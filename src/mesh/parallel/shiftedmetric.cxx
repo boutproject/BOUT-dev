@@ -6,17 +6,17 @@
  *
  */
 
-#include <bout/constants.hxx>
-#include <bout/mesh.hxx>
 #include "bout/paralleltransform.hxx"
-#include <fft.hxx>
+#include <bout/constants.hxx>
+#include <bout/fft.hxx>
+#include <bout/mesh.hxx>
+#include <bout/output.hxx>
+#include <bout/sys/timer.hxx>
 
 #include <cmath>
 
-#include <output.hxx>
-
 ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
-    BoutReal zlength_in, Options* opt)
+                             BoutReal zlength_in, Options* opt)
     : ParallelTransform(m, opt), location(location_in), zShift(std::move(zShift_)),
       zlength(zlength_in) {
   ASSERT1(zShift.getLocation() == location);
@@ -28,7 +28,8 @@ ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
 
 void ShiftedMetric::checkInputGrid() {
   std::string parallel_transform;
-  if (mesh.isDataSourceGridFile() and !mesh.get(parallel_transform, "parallel_transform")) {
+  if (mesh.isDataSourceGridFile()
+      and !mesh.get(parallel_transform, "parallel_transform")) {
     if (parallel_transform != "shiftedmetric") {
       throw BoutException("Incorrect parallel transform type '" + parallel_transform
                           + "' used to generate metric components for ShiftedMetric. "
@@ -39,10 +40,12 @@ void ShiftedMetric::checkInputGrid() {
     //       correct
 }
 
-void ShiftedMetric::outputVars(Datafile& file) {
-  const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
+void ShiftedMetric::outputVars(Options& output_options) {
+  Timer time("io");
+  const std::string loc_string =
+      (location == CELL_CENTRE) ? "" : "_" + toString(location);
 
-  file.addOnce(zShift, "zShift" + loc_string);
+  output_options["zShift" + loc_string].force(zShift, "ShiftedMetric");
 }
 
 void ShiftedMetric::cachePhases() {
@@ -184,7 +187,7 @@ FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
 
   int y = f.getIndex();
   // Note that this loop is essentially hardcoded to be RGN_NOX
-  for (int i=mesh.xstart; i<=mesh.xend; ++i) {
+  for (int i = mesh.xstart; i <= mesh.xend; ++i) {
     shiftZ(&f(i, 0), &phs(i, y, 0), &result(i, 0));
   }
 
@@ -286,46 +289,4 @@ ShiftedMetric::shiftZ(const Field3D& f,
   }
 
   return results;
-}
-
-// Old approach retained so we can still specify a general zShift
-Field3D ShiftedMetric::shiftZ(const Field3D& f, const Field2D& zangle,
-                              const std::string& region) const {
-  ASSERT1(&mesh == f.getMesh());
-  ASSERT1(f.getLocation() == zangle.getLocation());
-  if (mesh.LocalNz == 1)
-    return f; // Shifting makes no difference
-
-  Field3D result{emptyFrom(f)};
-
-  // We only use methods in ShiftedMetric to get fields for parallel operations
-  // like interp_to or DDY.
-  // Therefore we don't need x-guard cells, so do not set them.
-  // (Note valgrind complains about corner guard cells if we try to loop over
-  // the whole grid, because zShift is not initialized in the corner guard
-  // cells.)
-  BOUT_FOR(i, mesh.getRegion2D(toString(region))) {
-    shiftZ(&f(i, 0), mesh.LocalNz, zangle[i], &result(i, 0));
-  }
-
-  return result;
-}
-
-void ShiftedMetric::shiftZ(const BoutReal* in, int len, BoutReal zangle,
-                           BoutReal* out) const {
-  int nmodes = len / 2 + 1;
-
-  // Complex array used for FFTs
-  Array<dcomplex> cmplxLoc(nmodes);
-
-  // Take forward FFT
-  rfft(in, len, &cmplxLoc[0]);
-
-  // Apply phase shift
-  for (int jz = 1; jz < nmodes; jz++) {
-    BoutReal kwave = jz * 2.0 * PI / zlength; // wave number is 1/[rad]
-    cmplxLoc[jz] *= dcomplex(cos(kwave * zangle), -sin(kwave * zangle));
-  }
-
-  irfft(&cmplxLoc[0], len, out); // Reverse FFT
 }

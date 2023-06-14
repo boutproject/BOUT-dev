@@ -9,6 +9,7 @@ endif()
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.15)
   cmake_policy(SET CMP0094 NEW)
 endif()
+cmake_policy(SET CMP0095 NEW)
 # We support the new syntax, so avoid deprecation warning
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.22)
   cmake_policy(SET CMP0127 NEW)
@@ -16,14 +17,31 @@ endif()
 
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
-set(BOUT_FULL_VERSION 5.0.0-alpha)
-string(REGEX REPLACE "^([0-9]+\.[0-9]+\.[0-9]+)-.*" "\\1" BOUT_CMAKE_ACCEPTABLE_VERSION ${BOUT_FULL_VERSION})
-string(REGEX REPLACE "^[0-9]+\.[0-9]+\.[0-9]+-(.*)" "\\1" BOUT_VERSION_TAG ${BOUT_FULL_VERSION})
+# We try to use git to get a full description, inspired by setuptools_scm
+set(_bout_previous_version "v5.0.0")
+set(_bout_next_version "5.1.0")
+execute_process(
+  COMMAND "git" describe --tags --match=${_bout_previous_version}
+  COMMAND sed -e s/${_bout_previous_version}-/${_bout_next_version}.dev/ -e s/-/+/
+  RESULTS_VARIABLE error_codes
+  OUTPUT_VARIABLE BOUT_FULL_VERSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+foreach(error_code ${error_codes})
+  if (NOT ${error_code} STREQUAL 0)
+    set(BOUT_FULL_VERSION ${_bout_next_version})
+  endif()
+endforeach()
+string(REGEX REPLACE "^([0-9]+\.[0-9]+\.[0-9]+)\..*" "\\1" BOUT_CMAKE_ACCEPTABLE_VERSION ${BOUT_FULL_VERSION})
+string(REGEX REPLACE "^[0-9]+\.[0-9]+\.[0-9]+\.(.*)" "\\1" BOUT_VERSION_TAG ${BOUT_FULL_VERSION})
 
 project(BOUT++
   DESCRIPTION "Fluid PDE solver framework"
   VERSION ${BOUT_CMAKE_ACCEPTABLE_VERSION}
   LANGUAGES CXX)
+
+message(STATUS "Configuring BOUT++ version ${BOUT_FULL_VERSION}")
 
 include(CMakeDependentOption)
 
@@ -46,7 +64,7 @@ function(bout_update_submodules)
   if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     message(STATUS "Submodule update")
     execute_process(COMMAND ${GIT_EXECUTABLE} -c submodule.recurse=false submodule update --init --recursive
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
       RESULT_VARIABLE GIT_SUBMOD_RESULT)
     if(NOT GIT_SUBMOD_RESULT EQUAL "0")
       message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
@@ -55,56 +73,94 @@ function(bout_update_submodules)
 endfunction()
 
 set(BOUT_SOURCES
-  ./include/boundary_factory.hxx
-  ./include/boundary_op.hxx
-  ./include/boundary_region.hxx
-  ./include/boundary_standard.hxx
-  ./include/bout.hxx
   ./include/bout/array.hxx
   ./include/bout/assert.hxx
+  ./include/bout/boundary_factory.hxx
+  ./include/bout/boundary_op.hxx
+  ./include/bout/boundary_region.hxx
+  ./include/bout/boundary_standard.hxx
+  ./include/bout/bout.hxx
   ./include/bout/bout_enum_class.hxx
+  ./include/bout/bout_types.hxx
+  ./include/bout/build_config.hxx
+  ./include/bout/boutcomm.hxx
+  ./include/bout/boutexception.hxx
   ./include/bout/caliper_wrapper.hxx
   ./include/bout/constants.hxx
   ./include/bout/coordinates.hxx
   ./include/bout/coordinates_accessor.hxx
-  ./include/bout/deprecated.hxx
+  ./include/bout/cyclic_reduction.hxx
+  ./include/bout/dcomplex.hxx
   ./include/bout/deriv_store.hxx
+  ./include/bout/derivs.hxx
+  ./include/bout/difops.hxx
   ./include/bout/expr.hxx
+  ./include/bout/fft.hxx
+  ./include/bout/field.hxx
+  ./include/bout/field2d.hxx
+  ./include/bout/field3d.hxx
+  ./include/bout/field_accessor.hxx
+  ./include/bout/field_data.hxx
+  ./include/bout/field_factory.hxx
   ./include/bout/fieldgroup.hxx
+  ./include/bout/fieldperp.hxx
   ./include/bout/format.hxx
   ./include/bout/fv_ops.hxx
   ./include/bout/generic_factory.hxx
   ./include/bout/globalfield.hxx
   ./include/bout/globalindexer.hxx
+  ./include/bout/globals.hxx
   ./include/bout/griddata.hxx
+  ./include/bout/gyro_average.hxx
   ./include/bout/hypre_interface.hxx
   ./include/bout/index_derivs.hxx
   ./include/bout/index_derivs_interface.hxx
+  ./include/bout/initialprofiles.hxx
+  ./include/bout/interpolation.hxx
+  ./include/bout/interpolation_xz.hxx
+  ./include/bout/interpolation_z.hxx
   ./include/bout/invert/laplacexy.hxx
   ./include/bout/invert/laplacexz.hxx
+  ./include/bout/invert_laplace.hxx
+  ./include/bout/invert_parderiv.hxx
+  ./include/bout/invert_pardiv.hxx
   ./include/bout/invertable_operator.hxx
+  ./include/bout/lapack_routines.hxx
   ./include/bout/macro_for_each.hxx
+  ./include/bout/mask.hxx
   ./include/bout/mesh.hxx
   ./include/bout/monitor.hxx
   ./include/bout/mpi_wrapper.hxx
+  ./include/bout/msg_stack.hxx
+  ./include/bout/multiostream.hxx
   ./include/bout/openmpwrap.hxx
+  ./include/bout/operatorstencil.hxx
+  ./include/bout/options.hxx
+  ./include/bout/options_netcdf.hxx
+  ./include/bout/optionsreader.hxx
+  ./include/bout/output.hxx
+  ./include/bout/output_bout_types.hxx
+  ./include/bout/parallel_boundary_op.hxx
+  ./include/bout/parallel_boundary_region.hxx
   ./include/bout/paralleltransform.hxx
-  ./include/bout/petsclib.hxx
   ./include/bout/petsc_interface.hxx
+  ./include/bout/petsclib.hxx
   ./include/bout/physicsmodel.hxx
+  ./include/bout/rajalib.hxx
   ./include/bout/region.hxx
   ./include/bout/rkscheme.hxx
   ./include/bout/rvec.hxx
   ./include/bout/scorepwrapper.hxx
   ./include/bout/single_index_ops.hxx
-  ./include/bout/field_accessor.hxx
   ./include/bout/slepclib.hxx
+  ./include/bout/smoothing.hxx
   ./include/bout/snb.hxx
   ./include/bout/solver.hxx
   ./include/bout/solverfactory.hxx
+  ./include/bout/sourcex.hxx
+  ./include/bout/stencils.hxx
+  ./include/bout/sundials_backports.hxx
   ./include/bout/surfaceiter.hxx
-  ./include/bout/operatorstencil.hxx
-  ./include/bout/output_bout_types.hxx
   ./include/bout/sys/expressionparser.hxx
   ./include/bout/sys/generator_context.hxx
   ./include/bout/sys/gettext.hxx
@@ -112,50 +168,16 @@ set(BOUT_SOURCES
   ./include/bout/sys/timer.hxx
   ./include/bout/sys/type_name.hxx
   ./include/bout/sys/uncopyable.hxx
+  ./include/bout/sys/uuid.h
   ./include/bout/sys/variant.hxx
   ./include/bout/template_combinations.hxx
   ./include/bout/traits.hxx
-  ./include/bout_types.hxx
-  ./include/boutcomm.hxx
-  ./include/boutexception.hxx
-  ./include/cyclic_reduction.hxx
-  ./include/datafile.hxx
-  ./include/dataformat.hxx
-  ./include/dcomplex.hxx
-  ./include/derivs.hxx
-  ./include/difops.hxx
-  ./include/fft.hxx
-  ./include/field.hxx
-  ./include/field2d.hxx
-  ./include/field3d.hxx
-  ./include/field_data.hxx
-  ./include/field_factory.hxx
-  ./include/fieldperp.hxx
-  ./include/globals.hxx
-  ./include/gyro_average.hxx
-  ./include/initialprofiles.hxx
-  ./include/interpolation.hxx
-  ./include/invert_laplace.hxx
-  ./include/invert_parderiv.hxx
-  ./include/lapack_routines.hxx
-  ./include/mask.hxx
-  ./include/msg_stack.hxx
-  ./include/multiostream.hxx
-  ./include/options.hxx
-  ./include/options_netcdf.hxx
-  ./include/optionsreader.hxx
-  ./include/output.hxx
-  ./include/parallel_boundary_op.hxx
-  ./include/parallel_boundary_region.hxx
-  ./include/smoothing.hxx
-  ./include/sourcex.hxx
-  ./include/stencils.hxx
-  ./include/unused.hxx
-  ./include/utils.hxx
-  ./include/vecops.hxx
-  ./include/vector2d.hxx
-  ./include/vector3d.hxx
-  ./include/where.hxx
+  ./include/bout/unused.hxx
+  ./include/bout/utils.hxx
+  ./include/bout/vecops.hxx
+  ./include/bout/vector2d.hxx
+  ./include/bout/vector3d.hxx
+  ./include/bout/where.hxx
   ./src/bout++.cxx
   ./src/bout++-time.hxx
   ./src/field/field.cxx
@@ -174,17 +196,6 @@ set(BOUT_SOURCES
   ./src/field/vector2d.cxx
   ./src/field/vector3d.cxx
   ./src/field/where.cxx
-  ./src/fileio/datafile.cxx
-  ./src/fileio/dataformat.cxx
-  ./src/fileio/formatfactory.cxx
-  ./src/fileio/formatfactory.hxx
-  ./src/fileio/impls/emptyformat.hxx
-  ./src/fileio/impls/netcdf/nc_format.cxx
-  ./src/fileio/impls/netcdf/nc_format.hxx
-  ./src/fileio/impls/netcdf4/ncxx4.cxx
-  ./src/fileio/impls/netcdf4/ncxx4.hxx
-  ./src/fileio/impls/pnetcdf/pnetcdf.cxx
-  ./src/fileio/impls/pnetcdf/pnetcdf.hxx
   ./src/invert/fft_fftw.cxx
   ./src/invert/lapack_routines.cxx
   ./src/invert/laplace/impls/cyclic/cyclic_laplace.cxx
@@ -199,8 +210,8 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/naulin/naulin_laplace.hxx
   ./src/invert/laplace/impls/pcr/pcr.cxx
   ./src/invert/laplace/impls/pcr/pcr.hxx
-  ./src/invert/laplace/impls/pdd/pdd.cxx
-  ./src/invert/laplace/impls/pdd/pdd.hxx
+  ./src/invert/laplace/impls/pcr_thomas/pcr_thomas.cxx
+  ./src/invert/laplace/impls/pcr_thomas/pcr_thomas.hxx
   ./src/invert/laplace/impls/petsc/petsc_laplace.cxx
   ./src/invert/laplace/impls/petsc/petsc_laplace.hxx
   ./src/invert/laplace/impls/petsc3damg/petsc3damg.cxx
@@ -227,6 +238,9 @@ set(BOUT_SOURCES
   ./src/invert/parderiv/impls/cyclic/cyclic.cxx
   ./src/invert/parderiv/impls/cyclic/cyclic.hxx
   ./src/invert/parderiv/invert_parderiv.cxx
+  ./src/invert/pardiv/impls/cyclic/pardiv_cyclic.cxx
+  ./src/invert/pardiv/impls/cyclic/pardiv_cyclic.hxx
+  ./src/invert/pardiv/invert_pardiv.cxx
   ./src/mesh/boundary_factory.cxx
   ./src/mesh/boundary_region.cxx
   ./src/mesh/boundary_standard.cxx
@@ -239,12 +253,10 @@ set(BOUT_SOURCES
   ./src/mesh/impls/bout/boutmesh.cxx
   ./src/mesh/impls/bout/boutmesh.hxx
   ./src/mesh/index_derivs.cxx
-  ./include/interpolation_xz.hxx
   ./src/mesh/interpolation_xz.cxx
   ./src/mesh/interpolation/bilinear_xz.cxx
   ./src/mesh/interpolation/hermite_spline_xz.cxx
   ./src/mesh/interpolation/hermite_spline_z.cxx
-  ./include/interpolation_z.hxx
   ./src/mesh/interpolation/interpolation_z.cxx
   ./src/mesh/interpolation/lagrange_4pt_xz.cxx
   ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
@@ -339,6 +351,14 @@ else()
   set(BOUT_GENERATE_FIELDOPS_DEFAULT OFF)
 endif()
 
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import zoidberg"
+  RESULT_VARIABLE zoidberg_FOUND)
+if (zoidberg_FOUND EQUAL 0)
+  set(zoidberg_FOUND ON)
+else()
+  set(zoidberg_FOUND OFF)
+endif()
+
 option(BOUT_GENERATE_FIELDOPS "Automatically re-generate the Field arithmetic operators from the Python templates. \
 Requires Python3, clang-format, and Jinja2. Turn this OFF to skip generating them if, for example, \
 you are unable to install the Jinja2 Python module. This is only important for BOUT++ developers." ${BOUT_GENERATE_FIELDOPS_DEFAULT})
@@ -368,9 +388,31 @@ This warning is only important for BOUT++ developers and can otherwise be \
 safely ignored.")
 endif()
 
+include(GNUInstallDirs)
+
+# use, i.e. don't skip the full RPATH for the build tree
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+
+# when building, don't use the install RPATH already
+# (but later on when installing)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import site ; print('/'.join(site.getusersitepackages().split('/')[-2:]))"
+  RESULT_VARIABLE PYTHON_WORKING
+  OUTPUT_VARIABLE PYTHON_SITEPATH_SUFFIX
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+set(CMAKE_INSTALL_PYTHON_SITEARCH lib/${PYTHON_SITEPATH_SUFFIX} CACHE STRING "Location to install python arch-specific modules")
+
 set(BOUT_ENABLE_PYTHON MAYBE CACHE STRING "Build the Python interface")
 if (BOUT_ENABLE_PYTHON OR BOUT_ENABLE_PYTHON STREQUAL "MAYBE")
-  add_subdirectory(tools/pylib/_boutcore_build)
+  add_subdirectory(tools/pylib/_boutpp_build)
 else()
   set(BOUT_ENABLE_PYTHON OFF)
 endif()
@@ -383,6 +425,7 @@ add_custom_command(
   DEPENDS ${BOUT_SOURCES}
   MAIN_DEPENDENCY "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
   )
+
 
 add_library(bout++
   ${BOUT_SOURCES}
@@ -612,9 +655,11 @@ if(BOUT_TESTS)
   add_subdirectory(tests/MMS EXCLUDE_FROM_ALL)
 
   # Targets for running the tests
-  add_custom_target(check-unit-tests
-    COMMAND ctest -R serial_tests --output-on-failure)
-  add_dependencies(check-unit-tests build-check-unit-tests)
+  if (BOUT_ENABLE_UNIT_TESTS)
+    add_custom_target(check-unit-tests
+      COMMAND ctest -R serial_tests --output-on-failure)
+    add_dependencies(check-unit-tests build-check-unit-tests)
+  endif()
 
   add_custom_target(check-integrated-tests
     COMMAND ctest -R "test-" --output-on-failure)
@@ -626,7 +671,11 @@ if(BOUT_TESTS)
 
   # Run all the tests
   add_custom_target(check)
-  add_dependencies(check check-unit-tests check-integrated-tests check-mms-tests)
+  add_dependencies(check check-integrated-tests check-mms-tests)
+  if (BOUT_ENABLE_UNIT_TESTS)
+    add_dependencies(check check-unit-tests)
+  endif()
+
 endif()
 
 option(BOUT_BUILD_EXAMPLES "Build the examples" ON)
@@ -634,6 +683,35 @@ if(BOUT_BUILD_EXAMPLES)
   add_custom_target(build-all-examples)
   add_subdirectory(examples EXCLUDE_FROM_ALL)
 endif()
+
+
+##################################################
+# L10N: localisation - include translations
+
+find_package(Gettext)
+
+if (GETTEXT_FOUND)
+  #add_custom_target(mofiles ALL)
+  set(bout_langs es de fr zh_CN zh_TW)
+
+  foreach(_lang IN LISTS bout_langs)
+    set(_gmoFile ${CMAKE_CURRENT_BINARY_DIR}/locale/${_lang}/libbout.gmo)
+    set(_poFile ${CMAKE_CURRENT_SOURCE_DIR}/locale/${_lang}/libbout.po)
+    add_custom_command(OUTPUT ${_gmoFile} _mo_file_${_lang}
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/locale/${_lang}/
+      COMMAND ${GETTEXT_MSGFMT_EXECUTABLE} -o ${_gmoFile} ${_poFile}
+      WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+      DEPENDS ${_poFile}
+    )
+
+    list(APPEND _gmoFiles ${_gmoFile})
+
+    install(FILES ${_gmoFile} DESTINATION ${CMAKE_INSTALL_LOCALEDIR}/${_lang}/LC_MESSAGES/ RENAME libbout.mo)
+  endforeach()
+  add_custom_target(mofiles ALL
+    DEPENDS ${_gmoFiles})
+endif()
+
 
 ##################################################
 # Documentation
@@ -643,6 +721,13 @@ if (BOUT_BUILD_DOCS)
   add_subdirectory(manual EXCLUDE_FROM_ALL)
 endif()
 
+
+add_custom_target(dist
+  COMMAND ${CMAKE_SOURCE_DIR}/bin/bout-archive-helper.sh v${BOUT_FULL_VERSION}
+  # there is no cmake equivalent to `mv` - so only works on systems that are not inentionally non-POSIX complient
+  COMMAND mv BOUT++-v${BOUT_FULL_VERSION}.tar.gz ${CMAKE_CURRENT_BINARY_DIR}/
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  )
 ##################################################
 # Generate the build config header
 
@@ -674,8 +759,12 @@ else()
   set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS}")
 endif()
 
+set(ISINSTALLED "FALSE")
+
 # This version of the file allows the build directory to be used directly
 configure_file(bin/bout-config.in bin/bout-config @ONLY)
+configure_file(tools/pylib/boutconfig/__init__.py.cin tools/pylib/boutconfig/__init__.py @ONLY)
+configure_file(bout++Config.cmake.in bout++Config.cmake @ONLY)
 
 # We need to generate a separate version for installation, with the
 # correct install paths. So first we need to replace the build
@@ -683,6 +772,7 @@ configure_file(bin/bout-config.in bin/bout-config @ONLY)
 string(REPLACE
   "${CMAKE_BINARY_DIR}/lib" "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}"
   CONFIG_LDFLAGS "${CONFIG_LDFLAGS}")
+set(BOUT_LIB_PATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 # Update mpark.variant and fmt include paths if we're building them
 if (NOT BOUT_USE_SYSTEM_MPARK_VARIANT)
   set(MPARK_VARIANT_INCLUDE_PATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
@@ -694,13 +784,17 @@ set(BOUT_INCLUDE_PATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
 # We don't need the build include path any more
 string(REPLACE "-I${CMAKE_CURRENT_BINARY_DIR}/include" "" CONFIG_CFLAGS "${CONFIG_CFLAGS}")
 
+set(PYTHONCONFIGPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHON_SITEARCH}")
+set(ISINSTALLED "TRUE")
+
 # This version now has the correct paths to use the final installation
 configure_file(bin/bout-config.in bin/bout-config-install @ONLY)
+configure_file(tools/pylib/boutconfig/__init__.py.cin tools/pylib/boutconfig/__init__.py-install @ONLY)
+configure_file(bout++Config.cmake.in bout++Config.cmake-install @ONLY)
 
 ##################################################
 # Installation
 
-include(GNUInstallDirs)
 install(TARGETS bout++
   EXPORT bout++Targets
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
@@ -718,7 +812,11 @@ install(DIRECTORY "${PROJECT_BINARY_DIR}/include/"
 # The various helper scripts
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin/"
   USE_SOURCE_PERMISSIONS
-  DESTINATION "${CMAKE_INSTALL_BINDIR}")
+  DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  REGEX "bout-squashoutput" EXCLUDE
+  REGEX "bout-config\.in" EXCLUDE
+  REGEX "bout-pylib-cmd-to-bin" EXCLUDE
+)
 
 # The installed version of bout-config needs renaming when we install
 # it. Note this MUST be done after the installation of bin/, to make
@@ -727,6 +825,12 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin/"
 install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/bin/bout-config-install"
   DESTINATION "${CMAKE_INSTALL_BINDIR}"
   RENAME "bout-config"
+  )
+
+install(
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py-install"
+  DESTINATION "${CMAKE_INSTALL_PYTHON_SITEARCH}/boutconfig"
+  RENAME "__init__.py"
   )
 
 include(CMakePackageConfigHelpers)
@@ -742,14 +846,9 @@ install(EXPORT bout++Targets
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bout++"
   )
 
-configure_package_config_file(bout++Config.cmake.in bout++Config.cmake
-  INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
-  )
-
 # CMake configuration files
 install(
   FILES
-      "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
       "${CMAKE_CURRENT_BINARY_DIR}/bout++ConfigVersion.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BOUT++functions.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CorrectWindowsPaths.cmake"
@@ -768,14 +867,11 @@ install(
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ResolveCompilerPaths.cmake"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bout++"
   )
-
-configure_package_config_file(tools/pylib/boutconfig/__init__.py.cin tools/pylib/boutconfig/__init__.py
-  INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py"
-  )
-
 install(
-  FILES "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py"
-  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/boutconfig"
+  FILES
+      "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake-install"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bout++"
+  RENAME "bout++Config.cmake"
   )
 
 export(EXPORT bout++Targets
@@ -815,7 +911,7 @@ message("
    RAJA enabled             : ${BOUT_HAS_RAJA}
    Umpire enabled           : ${BOUT_HAS_UMPIRE}
    Caliper enabled          : ${BOUT_HAS_CALIPER}
-   CUDA enabled             : ${BOUT_USE_CUDA}
+   CUDA enabled             : ${BOUT_HAS_CUDA}
    Metric type              : ${BOUT_METRIC_TYPE}
    Python API support       : ${BOUT_USE_PYTHON}
    Sanitizers enabled       : ${BOUT_USE_SANITIZERS}

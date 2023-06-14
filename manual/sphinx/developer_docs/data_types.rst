@@ -347,7 +347,7 @@ offsets there is a function ``offset(x,y,z)`` so that
 Note that by default no bounds checking is performed. If the checking
 level is increased to 3 or above then bounds checks will be
 performed. This will have a significant (bad) impact on performance, so is
-just for debugging purposes. Configure with ``--enable-checks=3``
+just for debugging purposes. Configure with ``-DCHECK=3``
 option to do this.
 
 

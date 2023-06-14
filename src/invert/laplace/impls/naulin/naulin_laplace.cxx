@@ -1,3 +1,4 @@
+// clang-format off
 /*!
  * \file naulin_laplace.cxx
  *
@@ -77,7 +78,7 @@
  *         vort = (vortD/n) - grad_perp(ln_n)*grad_perp(phiCur)
  *         [Delp2(phiNext) + 1/DC(C2*D)*grad_perp(DC(C2))*grad_perp(phiNext) + DC(A/D)*phiNext
  *          = b(phiCur)
- *          = (rhs/D) - (1/C1/D*grad_perp(C2)*grad_perp(phiCur) - 1/DC(C2*D)*grad_perp(DC(C2))*grad_perp(phiNext)) - (A/D - DC(A/D))*phiCur]
+ *          = (rhs/D) - (1/C1/D*grad_perp(C2)*grad_perp(phiCur) - 1/DC(C2*D)*grad_perp(DC(C2))*grad_perp(phiCur)) - (A/D - DC(A/D))*phiCur]
  *         \endcode
  *         where phiCur is phi of the current iteration
  *         [and DC(f) is the constant-in-z component of f]
@@ -135,23 +136,25 @@
  *          * if no
  *              * Stop: Function returns phiNext
  */
+// clang-format on
 
-#include <boutexception.hxx>
-#include <bout/mesh.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/coordinates.hxx>
+#include <bout/derivs.hxx>
+#include <bout/difops.hxx>
+#include <bout/globals.hxx>
+#include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
-#include <derivs.hxx>
-#include <difops.hxx>
-#include <globals.hxx>
 
 #include "naulin_laplace.hxx"
 
 LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
-                             Solver* UNUSED(solver), Datafile* UNUSED(dump))
+                             Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(0.0), Dcoef(1.0),
       delp2solver(nullptr), naulinsolver_mean_its(0.), ncalls(0) {
 
-  ASSERT1(opt != nullptr); // An Options pointer should always be passed in by LaplaceFactory
+  ASSERT1(opt
+          != nullptr); // An Options pointer should always be passed in by LaplaceFactory
 
   Acoef.setLocation(location);
   C1coef.setLocation(location);
@@ -169,18 +172,14 @@ LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   opt->getSection("delp2solver")->get("type", delp2type, "cyclic");
   // Check delp2solver is using an FFT scheme, otherwise it will not exactly
   // invert Delp2 and we will not converge
-  ASSERT0( delp2type=="cyclic" || delp2type=="spt" || delp2type=="tri" );
+  ASSERT0(delp2type == "cyclic" || delp2type == "spt" || delp2type == "tri");
   // Use same flags for FFT solver as for NaulinSolver
   delp2solver->setGlobalFlags(global_flags);
   delp2solver->setInnerBoundaryFlags(inner_boundary_flags);
   delp2solver->setOuterBoundaryFlags(outer_boundary_flags);
 
   static int naulinsolver_count = 1;
-  bout::globals::dump.addRepeat(naulinsolver_mean_its,
-      "naulinsolver"+std::to_string(naulinsolver_count)+"_mean_its");
-  bout::globals::dump.addRepeat(naulinsolver_mean_underrelax_counts,
-      "naulinsolver"+std::to_string(naulinsolver_count)+"_mean_underrelax_counts");
-  ++naulinsolver_count;
+  setPerformanceName(fmt::format("{}{}", "naulinsolver", ++naulinsolver_count));
 }
 
 Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
@@ -198,21 +197,20 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
   ASSERT1(Acoef.getLocation() == location);
   ASSERT1(localmesh == rhs.getMesh() && localmesh == x0.getMesh());
 
-  Field3D rhsOverD = rhs/Dcoef;
+  Field3D rhsOverD = rhs / Dcoef;
 
-  Field3D C1TimesD = C1coef*Dcoef; // This is needed several times
+  Field3D C1TimesD = C1coef * Dcoef; // This is needed several times
 
   // x-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_x = DDX(C2coef, location, "C2")/C1TimesD;
+  Field3D coef_x = DDX(C2coef, location, "C2") / C1TimesD;
 
   // y-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_y = DDY(C2coef, location, "C2")/C1TimesD;
+  Field3D coef_y = DDY(C2coef, location, "C2") / C1TimesD;
 
   // z-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_z = DDZ(C2coef, location, "FFT")/C1TimesD;
+  Field3D coef_z = DDZ(C2coef, location, "FFT") / C1TimesD;
 
-  Field3D AOverD = Acoef/Dcoef;
-
+  Field3D AOverD = Acoef / Dcoef;
 
   // Split coefficients into DC and AC parts so that delp2solver can use DC part.
   // This allows all-Neumann boundary conditions as long as AOverD_DC is non-zero
@@ -225,39 +223,42 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
   // necessarily in phase.
   // This is the piece that cannot be passed to an FFT-based Laplacian solver
   // (through our current interface).
-  Field3D coef_x_AC = coef_x - DDX(C2coef_DC, location, "C2")/C1coefTimesD_DC;
+  Field3D coef_x_AC = coef_x - DDX(C2coef_DC, location, "C2") / C1coefTimesD_DC;
 
   // coef_z is a z-derivative so must already have zero DC component
 
   Field2D AOverD_DC = DC(AOverD);
   Field3D AOverD_AC = AOverD - AOverD_DC;
 
-
   delp2solver->setCoefA(AOverD_DC);
   delp2solver->setCoefC1(C1coefTimesD_DC);
   delp2solver->setCoefC2(C2coef_DC);
 
   // Use this below to normalize error for relative error estimate
-  BoutReal RMS_rhsOverD = sqrt(mean(SQ(rhsOverD), true, "RGN_NOBNDRY")); // use sqrt(mean(SQ)) to make sure we do not divide by zero at a point
+  BoutReal RMS_rhsOverD = sqrt(mean(
+      SQ(rhsOverD), true,
+      "RGN_NOBNDRY")); // use sqrt(mean(SQ)) to make sure we do not divide by zero at a point
 
-  BoutReal error_rel = 1e20, error_abs=1e20, last_error=error_abs;
+  BoutReal error_rel = 1e20, error_abs = 1e20, last_error = error_abs;
   int count = 0;
   int underrelax_count = 0;
   BoutReal underrelax_factor = initial_underrelax_factor;
 
-  auto calc_b_guess = [&] (const Field3D& x_in) {
+  auto calc_b_guess = [&](const Field3D& x_in) {
     // Derivatives of x
     Field3D ddx_x = DDX(x_in, location, "C2");
     Field3D ddz_x = DDZ(x_in, location, "FFT");
-    return rhsOverD - (coords->g11*coef_x_AC*ddx_x + coords->g33*coef_z*ddz_x
-        + coords->g13*(coef_x_AC*ddz_x + coef_z*ddx_x)) - AOverD_AC*x_in;
+    return rhsOverD
+           - (coords->g11 * coef_x_AC * ddx_x + coords->g33 * coef_z * ddz_x
+              + coords->g13 * (coef_x_AC * ddz_x + coef_z * ddx_x))
+           - AOverD_AC * x_in;
   };
 
-  auto calc_b_x_pair = [&, this] (Field3D b, Field3D x_guess) {
+  auto calc_b_x_pair = [&, this](Field3D b, Field3D x_guess) {
     // Note take a copy of the 'b' argument, because we want to return a copy of it in the
     // result
 
-    if ( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) ) {
+    if ((inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET)) {
       // This passes in the boundary conditions from x0's guard cells
       copy_x_boundaries(x_guess, x0, localmesh);
     }
@@ -282,10 +283,12 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
     error_abs = max(abs(error3D, "RGN_NOBNDRY"), true, "RGN_NOBNDRY");
     error_rel = error_abs / RMS_rhsOverD;
 
-    if (error_rel<rtol or error_abs<atol) break;
+    if (error_rel < rtol or error_abs < atol) {
+      break;
+    }
 
     ++count;
-    if (count>maxits) {
+    if (count > maxits) {
       throw BoutException(
           "LaplaceNaulin error: Not converged within maxits={:d} iterations.", maxits);
     }
@@ -297,7 +300,9 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
 
       // Restart from b_x_pair_old - that was our best guess
       bnew = calc_b_guess(b_x_pair_old.second);
-      b_x_pair = calc_b_x_pair(underrelax_factor*bnew + (1. - underrelax_factor)*b_x_pair_old.first, b_x_pair_old.second);
+      b_x_pair = calc_b_x_pair(underrelax_factor * bnew
+                                   + (1. - underrelax_factor) * b_x_pair_old.first,
+                               b_x_pair_old.second);
 
       bnew = calc_b_guess(b_x_pair.second);
 
@@ -307,43 +312,62 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
 
       // effectively another iteration, so increment the counter
       ++count;
-      if (count>maxits) {
+      if (count > maxits) {
         throw BoutException(
             "LaplaceNaulin error: Not converged within maxits={:d} iterations.", maxits);
       }
     }
 
     // Might have met convergence criterion while in underrelaxation loop
-    if (error_rel<rtol or error_abs<atol) break;
+    if (error_rel < rtol or error_abs < atol) {
+      break;
+    }
 
     last_error = error_abs;
     b_x_pair_old = b_x_pair;
-    b_x_pair = calc_b_x_pair(underrelax_factor*bnew + (1. - underrelax_factor)*b_x_pair.first, b_x_pair.second);
-
+    b_x_pair = calc_b_x_pair(underrelax_factor * bnew
+                                 + (1. - underrelax_factor) * b_x_pair.first,
+                             b_x_pair.second);
   }
 
   ++ncalls;
-  naulinsolver_mean_its = (naulinsolver_mean_its * BoutReal(ncalls-1)
-                           + BoutReal(count))/BoutReal(ncalls);
-  naulinsolver_mean_underrelax_counts = (naulinsolver_mean_underrelax_counts * BoutReal(ncalls - 1)
-                                         + BoutReal(underrelax_count)) / BoutReal(ncalls);
+  naulinsolver_mean_its =
+      (naulinsolver_mean_its * BoutReal(ncalls - 1) + BoutReal(count)) / BoutReal(ncalls);
+  naulinsolver_mean_underrelax_counts =
+      (naulinsolver_mean_underrelax_counts * BoutReal(ncalls - 1)
+       + BoutReal(underrelax_count))
+      / BoutReal(ncalls);
 
   checkData(b_x_pair.second);
 
   return b_x_pair.second;
 }
 
-void LaplaceNaulin::copy_x_boundaries(Field3D &x, const Field3D &x0, Mesh *localmesh) {
+void LaplaceNaulin::copy_x_boundaries(Field3D& x, const Field3D& x0, Mesh* localmesh) {
   if (localmesh->firstX()) {
-    for (int i=localmesh->xstart-1; i>=0; --i)
-      for (int j=localmesh->ystart; j<=localmesh->yend; ++j)
-        for (int k=0; k<localmesh->LocalNz; ++k)
+    for (int i = localmesh->xstart - 1; i >= 0; --i) {
+      for (int j = localmesh->ystart; j <= localmesh->yend; ++j) {
+        for (int k = 0; k < localmesh->LocalNz; ++k) {
           x(i, j, k) = x0(i, j, k);
+        }
+      }
+    }
   }
   if (localmesh->lastX()) {
-    for (int i=localmesh->xend+1; i<localmesh->LocalNx; ++i)
-      for (int j=localmesh->ystart; j<=localmesh->yend; ++j)
-        for (int k=0; k<localmesh->LocalNz; ++k)
+    for (int i = localmesh->xend + 1; i < localmesh->LocalNx; ++i) {
+      for (int j = localmesh->ystart; j <= localmesh->yend; ++j) {
+        for (int k = 0; k < localmesh->LocalNz; ++k) {
           x(i, j, k) = x0(i, j, k);
+        }
+      }
+    }
   }
+}
+
+void LaplaceNaulin::outputVars(Options& output_options,
+                               const std::string& time_dimension) const {
+  output_options[fmt::format("{}_mean_its", getPerformanceName())].assignRepeat(
+      naulinsolver_mean_its, time_dimension);
+  output_options[fmt::format("{}_mean_underrelax_counts", getPerformanceName())]
+      .assignRepeat(naulinsolver_mean_underrelax_counts, time_dimension);
 }

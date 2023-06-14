@@ -1,5 +1,13 @@
 bout_update_submodules()
 
+if (NOT EXISTS "${PROJECT_SOURCE_DIR}/externalpackages/googletest/CMakeLists.txt")
+  set(BOUT_ENABLE_UNIT_TESTS OFF PARENT_SCOPE)
+  message(WARNING "googletest not found! Have you disabled the git submodules (GIT_SUBMODULE)?")
+  return()
+endif()
+
+set(BOUT_ENABLE_UNIT_TESTS ON PARENT_SCOPE)
+
 # disable gtest pthreads for proper execution of Death tests (on some platforms)
 add_definitions(-DGTEST_HAS_PTHREAD=0)
 set(gtest_disable_pthreads ON CACHE BOOL "" FORCE)
@@ -50,6 +58,7 @@ set(serial_tests_source
   ./include/test_mask.cxx
   ./invert/test_fft.cxx
   ./invert/laplace/test_laplace_petsc3damg.cxx
+  ./invert/laplace/test_laplace_cyclic.cxx
   ./mesh/data/test_gridfromoptions.cxx
   ./mesh/parallel/test_shiftedmetric.cxx
   ./mesh/test_boundary_factory.cxx
@@ -99,7 +108,7 @@ add_test(NAME serial_tests COMMAND serial_tests --gtest_brief=1)
 set_target_properties(serial_tests PROPERTIES FOLDER tests/unit)
 add_dependencies(build-check-unit-tests serial_tests)
 
-if (BOUT_USE_CUDA)
+if (BOUT_HAS_CUDA)
    set_source_files_properties(${serial_tests_source} PROPERTIES LANGUAGE CUDA )
    set_target_properties(serial_tests PROPERTIES CUDA_STANDARD 14)
 endif ()   

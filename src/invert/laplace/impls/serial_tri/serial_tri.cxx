@@ -24,28 +24,28 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
 #include "serial_tri.hxx"
+#include "bout/globals.hxx"
 
-#include <bout/mesh.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
-#include <fft.hxx>
-#include <lapack_routines.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/fft.hxx>
+#include <bout/lapack_routines.hxx>
+#include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
+#include <bout/utils.hxx>
 #include <cmath>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 LaplaceSerialTri::LaplaceSerialTri(Options* opt, CELL_LOC loc, Mesh* mesh_in,
-                                   Solver* UNUSED(solver), Datafile* UNUSED(dump))
+                                   Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0) {
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);
 
-  if(!localmesh->firstX() || !localmesh->lastX()) {
+  if (!localmesh->firstX() || !localmesh->lastX()) {
     throw BoutException("LaplaceSerialTri only works for localmesh->NXPE = 1");
   }
 }
@@ -88,16 +88,18 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
-  int inbndry = localmesh->xstart, outbndry=localmesh->xstart;
+  int inbndry = localmesh->xstart, outbndry = localmesh->xstart;
 
   // If the flags to assign that only one guard cell should be used is set
-  if((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2))  {
+  if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
-  if (inner_boundary_flags & INVERT_BNDRY_ONE)
+  if (inner_boundary_flags & INVERT_BNDRY_ONE) {
     inbndry = 1;
-  if (outer_boundary_flags & INVERT_BNDRY_ONE)
+  }
+  if (outer_boundary_flags & INVERT_BNDRY_ONE) {
     outbndry = 1;
+  }
 
   /* Allocation fo
    * bk   = The fourier transformed of b, where b is one of the inputs in
@@ -138,8 +140,8 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
      * If the INVERT_SET flag is set (meaning that x0 will be used to set the
      * bounadry values),
      */
-    if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET)) ||
-        ((ncx - 1 - ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
+    if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET))
+        || ((ncx - 1 - ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
       // Use the values in x0 in the boundary
 
       // x0 is the input
@@ -226,15 +228,18 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   // Done inversion, transform back
   for (int ix = 0; ix < ncx; ix++) {
 
-    if(global_flags & INVERT_ZERO_DC)
+    if (global_flags & INVERT_ZERO_DC) {
       xk(ix, 0) = 0.0;
+    }
 
     irfft(&xk(ix, 0), ncz, x[ix]);
 
 #if CHECK > 2
-    for(int kz=0;kz<ncz;kz++)
-      if(!finite(x(ix,kz)))
+    for (int kz = 0; kz < ncz; kz++) {
+      if (!finite(x(ix, kz))) {
         throw BoutException("Non-finite at {:d}, {:d}, {:d}", ix, jy, kz);
+      }
+    }
 #endif
   }
 

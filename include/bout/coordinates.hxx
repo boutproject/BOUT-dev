@@ -33,21 +33,19 @@
 #ifndef __COORDINATES_H__
 #define __COORDINATES_H__
 
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/paralleltransform.hxx"
-#include "datafile.hxx"
-#include "utils.hxx"
-#include <bout_types.hxx>
-#include "field2d.hxx"
-#include "field3d.hxx"
+#include "bout/utils.hxx"
+#include <bout/bout_types.hxx>
 
-class Datafile;
 class Mesh;
 
 /*!
  * Represents a coordinate system, and associated operators
  *
  * This is a container for a collection of metric tensor components
- */ 
+ */
 class Coordinates {
 public:
 #if BOUT_USE_METRIC_3D
@@ -57,7 +55,7 @@ public:
 #endif
 
   /// Standard constructor from input
-  Coordinates(Mesh *mesh, Options* options = nullptr);
+  Coordinates(Mesh* mesh, Options* options = nullptr);
 
   /// Constructor interpolating from another Coordinates object
   /// By default attempts to read staggered Coordinates from grid data source,
@@ -65,8 +63,8 @@ public:
   /// force_interpolate_from_centre argument to true to always interpolate
   /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
   /// would not be correct).
-  Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc, const Coordinates* coords_in,
-      bool force_interpolate_from_centre=false);
+  Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
+              const Coordinates* coords_in, bool force_interpolate_from_centre = false);
 
   /// A constructor useful for testing purposes. To use it, inherit
   /// from Coordinates. If \p calculate_geometry is true (default),
@@ -81,12 +79,8 @@ public:
 
   ~Coordinates() = default;
 
-  /*!
-   * Adds variables to the output file, for post-processing
-   * 
-   * Must be a better way so that Coordinates doesn't depend on Datafile
-   */
-  void outputVars(Datafile &file);
+  /// Add variables to \p output_options, for post-processing
+  void outputVars(Options& output_options);
 
   FieldMetric dx, dy, dz; ///< Mesh spacing in x, y and z
 
@@ -122,7 +116,7 @@ public:
 
   /// Calculate differential geometry quantities from the metric tensor
   int geometry(bool recalculate_staggered = true,
-      bool force_interpolate_from_centre = false);
+               bool force_interpolate_from_centre = false);
   /// Invert contravatiant metric to get covariant components
   int calcCovariant(const std::string& region = "RGN_ALL");
   /// Invert covariant metric to get contravariant components
@@ -149,53 +143,17 @@ public:
   // Operators
   ///////////////////////////////////////////////////////////
 
-#ifdef DERIV_FUNC_REGION_ENUM_TO_STRING
-#error This utility macro should not clash with another one
-#else
-#define DERIV_FUNC_REGION_ENUM_TO_STRING(func, ResultType, T)                          \
-  [[deprecated(                                                                        \
-      "Please use Coordinates::#func(const #T& f, "                                    \
-      "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", "      \
-      "const std::string& region = \"RGN_ALL\") instead")]] inline ResultType          \
-  func(const T& f, CELL_LOC outloc, const std::string& method, REGION region) {        \
-    return func(f, outloc, method, toString(region));                                  \
-  }                                                                                    \
-  [[deprecated(                                                                        \
-      "Please use Coordinates::#func(const #T& f, "                                    \
-      "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", "      \
-      "const std::string& region = \"RGN_ALL\") instead")]] inline ResultType          \
-  func(const T& f, CELL_LOC outloc, DIFF_METHOD method, REGION region = RGN_NOBNDRY) { \
-    return func(f, outloc, toString(method), toString(region));                        \
-  }
-#endif
-
-#ifdef GRAD_FUNC_REGION_ENUM_TO_STRING
-#error This utility macro should not clash with another one
-#else
-#define GRAD_FUNC_REGION_ENUM_TO_STRING(func, ResultType, T)                      \
-  [[deprecated(                                                                   \
-      "Please use Coordinates::#func(const #T& f, "                               \
-      "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\") " \
-      "instead")]] inline ResultType                                              \
-  func(const T& f, CELL_LOC outloc, DIFF_METHOD method) {                         \
-    return func(f, outloc, toString(method));                                     \
-  }
-#endif
-
   FieldMetric DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& method = "DEFAULT",
                   const std::string& region = "RGN_NOBNDRY");
-  DERIV_FUNC_REGION_ENUM_TO_STRING(DDX, FieldMetric, Field2D);
 
   FieldMetric DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& method = "DEFAULT",
-                  const std::string& region = "RGN_NOBNDRY");
-  DERIV_FUNC_REGION_ENUM_TO_STRING(DDY, FieldMetric, Field2D);
+                  const std::string& region = "RGN_NOBNDRY") const;
 
   FieldMetric DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& method = "DEFAULT",
                   const std::string& region = "RGN_NOBNDRY");
-  DERIV_FUNC_REGION_ENUM_TO_STRING(DDZ, FieldMetric, Field2D);
 
   Field3D DDX(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",
@@ -203,7 +161,7 @@ public:
 
   Field3D DDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",
-              const std::string& region = "RGN_NOBNDRY");
+              const std::string& region = "RGN_NOBNDRY") const;
 
   Field3D DDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",
@@ -212,54 +170,32 @@ public:
   /// Gradient along magnetic field  b.Grad(f)
   FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
                        const std::string& method = "DEFAULT");
-  GRAD_FUNC_REGION_ENUM_TO_STRING(Grad_par, FieldMetric, Field2D);
 
   Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
-      const std::string& method = "DEFAULT");
-  GRAD_FUNC_REGION_ENUM_TO_STRING(Grad_par, Field3D, Field3D);
+                   const std::string& method = "DEFAULT");
 
   /// Advection along magnetic field V*b.Grad(f)
   FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
                             CELL_LOC outloc = CELL_DEFAULT,
                             const std::string& method = "DEFAULT");
-  [[deprecated("Please use Coordinates::Vpar_Grad_par(const Field2D& v, "
-               "const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, "
-               "const std::string& method = \"DEFAULT\") instead")]] inline FieldMetric
-  Vpar_Grad_par(const Field2D& v, const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
-    return Vpar_Grad_par(v, f, outloc, toString(method));
-  }
 
   Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
-      CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT");
-  [[deprecated("Please use Coordinates::Vpar_Grad_par(const Field3D& v, "
-      "const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, "
-      "const std::string& method = \"DEFAULT\") instead")]]
-  inline Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
-      DIFF_METHOD method) {
-    return Vpar_Grad_par(v, f, outloc, toString(method));
-  }
+                        CELL_LOC outloc = CELL_DEFAULT,
+                        const std::string& method = "DEFAULT");
 
   /// Divergence along magnetic field  Div(b*f) = B.Grad(f/B)
   FieldMetric Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                       const std::string& method = "DEFAULT");
-  GRAD_FUNC_REGION_ENUM_TO_STRING(Div_par, FieldMetric, Field2D);
 
   Field3D Div_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-      const std::string& method = "DEFAULT");
-  GRAD_FUNC_REGION_ENUM_TO_STRING(Div_par, Field3D, Field3D);
+                  const std::string& method = "DEFAULT");
 
   // Second derivative along magnetic field
   FieldMetric Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                          const std::string& method = "DEFAULT");
-  GRAD_FUNC_REGION_ENUM_TO_STRING(Grad2_par2, FieldMetric, Field2D);
 
   Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-      const std::string& method = "DEFAULT");
-  GRAD_FUNC_REGION_ENUM_TO_STRING(Grad2_par2, Field3D, Field3D);
-
-#undef DERIV_FUNC_REGION_ENUM_TO_STRING
-#undef GRAD_FUNC_REGION_ENUM_TO_STRING
-
+                     const std::string& method = "DEFAULT");
   // Perpendicular Laplacian operator, using only X-Z derivatives
   // NOTE: This might be better bundled with the Laplacian inversion code
   // since it makes use of the same coefficients and FFT routines
@@ -270,8 +206,8 @@ public:
   // Full parallel Laplacian operator on scalar field
   // Laplace_par(f) = Div( b (b dot Grad(f)) )
   FieldMetric Laplace_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT);
-  Field3D Laplace_par(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
-  
+  Field3D Laplace_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT);
+
   // Full Laplacian operator on scalar field
   FieldMetric Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                       const std::string& dfdy_boundary_conditions = "free_o3",
@@ -286,7 +222,7 @@ public:
 
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
-  Mesh * localmesh;
+  Mesh* localmesh;
   CELL_LOC location;
 
   /// Handles calculation of yup and ydown
@@ -296,9 +232,22 @@ private:
   /// `Coordinates::geometry` is called
   mutable std::unique_ptr<Field2D> zlength_cache{nullptr};
 
+  /// Cache variable for Grad2_par2
+  mutable std::map<std::string, std::unique_ptr<FieldMetric>> Grad2_par2_DDY_invSgCache;
+  mutable std::unique_ptr<FieldMetric> invSgCache{nullptr};
+
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
+
+  const FieldMetric& invSg() const;
+  const FieldMetric& Grad2_par2_DDY_invSg(CELL_LOC outloc,
+                                          const std::string& method) const;
+
+  // check that covariant tensors are positive (if expected) and finite (always)
+  void checkCovariant();
+  // check that contravariant tensors are positive (if expected) and finite (always)
+  void checkContravariant();
 };
 
 /*

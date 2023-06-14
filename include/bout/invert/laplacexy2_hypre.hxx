@@ -41,9 +41,9 @@
 #warning LaplaceXY requires Hypre. No LaplaceXY available
 
 #include "bout/globalindexer.hxx"
+#include <bout/boutexception.hxx>
 #include <bout/mesh.hxx>
-#include <boutexception.hxx>
-#include <options.hxx>
+#include <bout/options.hxx>
 
 /*!
  * Create a dummy class so that code will compile
@@ -66,7 +66,7 @@ public:
 
 class Mesh;
 
-#include "utils.hxx"
+#include "bout/utils.hxx"
 #include <bout/hypre_interface.hxx>
 
 class LaplaceXY2Hypre {

@@ -46,7 +46,7 @@ private:
     B.covariant = false; // evolve contravariant components
     solver->add(B, "B");
 
-    Coordinates *coord = mesh->getCoordinates();
+    Coordinates* coord = mesh->getCoordinates();
     output.write("dx(0,0,0) = {:e}, dy(0,0,0) = {:e}, dz(0,0,0) = {:e}\n",
                  coord->dx(0, 0, 0), coord->dy(0, 0, 0), coord->dz(0, 0, 0));
 

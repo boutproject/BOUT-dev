@@ -28,7 +28,7 @@
 #define __EXPRESSION_PARSER_H__
 
 #include "bout/format.hxx"
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 #include "fmt/core.h"
 
@@ -65,12 +65,12 @@ public:
     return nullptr;
   }
 
-  /// Note: This will be removed in a future version. Implementations should
-  /// override the Context version of this function.
-  DEPRECATED(virtual double generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t)) {
+  [[deprecated("This will be removed in a future version. Implementations should "
+               "override the Context version of this function.")]] virtual double
+  generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
     return generate(bout::generator::Context().set("x", x, "y", y, "z", z, "t", t));
   }
-  
+
   /// Generate a value at the given coordinates (x,y,z,t)
   /// This should be deterministic, always returning the same value given the same inputs
   ///
@@ -125,7 +125,9 @@ public:
 
 protected:
   /// This will be called to resolve any unknown symbols
-  virtual FieldGeneratorPtr resolve(const std::string& UNUSED(name)) const { return nullptr; }
+  virtual FieldGeneratorPtr resolve(const std::string& UNUSED(name)) const {
+    return nullptr;
+  }
 
   /// A result that's almost what we were looking for. Return type of
   /// `ExpressionParser::fuzzyFind`
@@ -187,7 +189,7 @@ private:
   /// Matches
   /// [ symbol = expression , symbol = expression ... ] ( expression )
   FieldGeneratorPtr parseContextExpr(LexInfo& lex) const;
-  
+
   /// Parse a primary expression, one of:
   ///   - number
   ///   - identifier
@@ -229,9 +231,7 @@ public:
     return std::make_shared<FieldValue>(value);
   }
 
-  double generate(const bout::generator::Context&) override {
-    return value;
-  }
+  double generate(const bout::generator::Context&) override { return value; }
   std::string str() const override {
     std::stringstream ss;
     ss << value;

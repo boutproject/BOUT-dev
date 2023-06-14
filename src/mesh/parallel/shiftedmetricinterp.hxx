@@ -27,8 +27,8 @@
 #ifndef __SHIFTEDINTERP_H__
 #define __SHIFTEDINTERP_H__
 
+#include <bout/interpolation_z.hxx>
 #include <bout/paralleltransform.hxx>
-#include <interpolation_z.hxx>
 
 /*!
  * Shifted metric method
@@ -75,7 +75,7 @@ public:
     throw BoutException("Not implemented yet");
   }
 
-  bool canToFromFieldAligned() override { return true; }
+  bool canToFromFieldAligned() const override { return true; }
 
   std::vector<ParallelTransform::PositionsAndWeights>
   getWeightsForYUpApproximation(int i, int j, int k) override {

@@ -23,7 +23,7 @@
 #include <sunnonlinsol/sunnonlinsol_newton.h>
 #endif
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 #if SUNDIALS_VERSION_MAJOR < 3
 using SUNLinearSolver = int*;

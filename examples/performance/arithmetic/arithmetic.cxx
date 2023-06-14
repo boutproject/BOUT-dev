@@ -13,17 +13,15 @@ using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
 using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
 
-#define TIMEIT(elapsed, ...)                                                             \
-  {                                                                                      \
-    SteadyClock start = steady_clock::now();                                             \
-    {                                                                                    \
-      __VA_ARGS__ ;                                                                      \
-    }                                                                                    \
-    Duration diff = steady_clock::now() - start;                                         \
-    elapsed.min = diff > elapsed.min ? elapsed.min : diff;                               \
-    elapsed.max = diff < elapsed.max ? elapsed.max : diff;                               \
-    elapsed.count++;                                                                     \
-    elapsed.avg = elapsed.avg * (1 - 1. / elapsed.count) + diff / elapsed.count;         \
+#define TIMEIT(elapsed, ...)                                                     \
+  {                                                                              \
+    SteadyClock start = steady_clock::now();                                     \
+    { __VA_ARGS__; }                                                             \
+    Duration diff = steady_clock::now() - start;                                 \
+    elapsed.min = diff > elapsed.min ? elapsed.min : diff;                       \
+    elapsed.max = diff < elapsed.max ? elapsed.max : diff;                       \
+    elapsed.count++;                                                             \
+    elapsed.avg = elapsed.avg * (1 - 1. / elapsed.count) + diff / elapsed.count; \
   }
 
 struct Durations {
@@ -55,19 +53,20 @@ protected:
 
       // Using C loops
       result2.allocate();
-      BoutReal *rd = &result2(0, 0, 0);
-      BoutReal *ad = &a(0, 0, 0);
-      BoutReal *bd = &b(0, 0, 0);
-      BoutReal *cd = &c(0, 0, 0);
-      TIMEIT(elapsed2,
-             for (int i = 0, iend = (mesh->LocalNx * mesh->LocalNy * mesh->LocalNz) - 1;
-                  i != iend; i++) {
-               *rd = 2. * (*ad) + (*bd) * (*cd);
-               rd++;
-               ad++;
-               bd++;
-               cd++;
-             });
+      BoutReal* rd = &result2(0, 0, 0);
+      BoutReal* ad = &a(0, 0, 0);
+      BoutReal* bd = &b(0, 0, 0);
+      BoutReal* cd = &c(0, 0, 0);
+      TIMEIT(
+          elapsed2,
+          for (int i = 0, iend = (mesh->LocalNx * mesh->LocalNy * mesh->LocalNz) - 1;
+               i != iend; i++) {
+            *rd = 2. * (*ad) + (*bd) * (*cd);
+            rd++;
+            ad++;
+            bd++;
+            cd++;
+          });
 
       // Template expressions
       TIMEIT(elapsed3, result3 = eval3D(add(mul(2, a), mul(b, c))););
@@ -81,9 +80,9 @@ protected:
     output << "TIMING\n======\n";
     //#define PRINT(str,elapsed)   output << str << elapsed.min.count()<<
     //elapsed.avg.count()<< elapsed.max.count() << endl;
-#define PRINT(str, elapsed)                                                              \
-  output.write("{:s} {:8.3g} {:8.3g} {:8.3g}\n", str, elapsed.min.count(), elapsed.avg.count(),  \
-               elapsed.max.count())
+#define PRINT(str, elapsed)                                                \
+  output.write("{:s} {:8.3g} {:8.3g} {:8.3g}\n", str, elapsed.min.count(), \
+               elapsed.avg.count(), elapsed.max.count())
     PRINT("Fields:    ", elapsed1);
     PRINT("C loop:    ", elapsed2);
     PRINT("Templates: ", elapsed3);

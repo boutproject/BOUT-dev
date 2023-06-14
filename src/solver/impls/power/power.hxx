@@ -29,7 +29,7 @@ class PowerSolver;
 #ifndef __POWER_SOLVER_H__
 #define __POWER_SOLVER_H__
 
-#include <bout_types.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/solver.hxx>
 
 namespace {
@@ -46,13 +46,7 @@ public:
   int init() override;
   int run() override;
 
-  void outputVars(Datafile& outputfile, bool save_repeat = true) override {
-    // Include base class functionality
-    this->Solver::outputVars(outputfile, save_repeat);
-
-    // Save the eigenvalue to the output
-    outputfile.add(eigenvalue, "eigenvalue", true);
-  }
+  void outputVars(Options& output_options, bool save_repeat = true) override;
 
 private:
   BoutReal curtime; //< Current simulation time (fixed)
@@ -67,4 +61,3 @@ private:
 };
 
 #endif // __KARNIADAKIS_SOLVER_H__
-

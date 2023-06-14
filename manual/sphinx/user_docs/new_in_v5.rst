@@ -22,12 +22,6 @@ To enable 3D metrics, build BOUT++ like:
 
 .. code-block:: console
 
-   ./configure --enable-metric-3D
-
-or, with CMake:
-
-.. code-block:: console
-
    cmake . -B build -DBOUT_ENABLE_METRIC_3D=ON
 
 Changes

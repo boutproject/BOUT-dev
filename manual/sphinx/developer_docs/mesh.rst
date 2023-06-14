@@ -41,17 +41,10 @@ read in all the appropriate variables from the `GridDataSource`::
 
 For post-processing of the results, it’s useful to have mesh
 quantities in the dump files along with the results. To do this,
-there’s the function `Mesh::outputVars` (see also `Datafile` and
-`Options`)::
+there’s the function `Mesh::outputVars` (see :ref:`sec-file-io`)::
 
-    // Create an output file from an Options object
-    dump = Datafile(options->getSection("output"));
-
-    // Possibly add some other variables to the output file
-    ...
-
-    // Save mesh configuration into output file
-    mesh->outputVars(dump);
+    // Save mesh configuration into output options
+    mesh->outputVars(output_options);
 
 which is called during BOUT++ initialisation.
 
@@ -270,7 +263,7 @@ The mesh spacing is given by the public members `Coordinates::dx`,
     Field2D zlength();   // Computed from dz
 
 `Coordinates::FieldMetric` can be either `Field2D` or if BOUT++ has
-been configured with `--enable-metric-3d` then a `Field3D`.
+been configured with ``-DBOUT_ENABLE_METRIC_3D`` then a `Field3D`.
 
 Metrics
 -------

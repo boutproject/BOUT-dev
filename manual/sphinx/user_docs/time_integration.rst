@@ -34,33 +34,33 @@ needed to make the solver available.
 .. _tab-solvers:
 .. table:: Available time integration solvers
 	   
-   +---------------+-----------------------------------------+--------------------+
-   | Name          | Description                             | Compile options    |
-   +===============+=========================================+====================+
-   | euler         | Euler explicit method (example only)    | Always available   |
-   +---------------+-----------------------------------------+--------------------+
-   | rk4           | Runge-Kutta 4th-order explicit method   | Always available   |
-   +---------------+-----------------------------------------+--------------------+
-   | rkgeneric     | Generic Runge Kutta explicit methods    | Always available   |
-   +---------------+-----------------------------------------+--------------------+
-   | rk3ssp        | 3rd-order Strong Stability Preserving   | Always available   |
-   +---------------+-----------------------------------------+--------------------+
-   | splitrk       | Split RK3-SSP and RK-Legendre           | Always available   |
-   +---------------+-----------------------------------------+--------------------+
-   | pvode         | 1998 PVODE with BDF method              | Always available   |
-   +---------------+-----------------------------------------+--------------------+
-   | cvode         | SUNDIALS CVODE. BDF and Adams methods   | –with-cvode        |
-   +---------------+-----------------------------------------+--------------------+
-   | ida           | SUNDIALS IDA. DAE solver                | –with-ida          |
-   +---------------+-----------------------------------------+--------------------+
-   | arkode        | SUNDIALS ARKODE IMEX solver             | –with-arkode       |
-   +---------------+-----------------------------------------+--------------------+
-   | petsc         | PETSc TS methods                        | –with-petsc        |
-   +---------------+-----------------------------------------+--------------------+
-   | imexbdf2      | IMEX-BDF2 scheme                        | –with-petsc        |
-   +---------------+-----------------------------------------+--------------------+
-   | beuler / snes | Backward Euler with SNES solvers        | --with-petsc       |
-   +---------------+-----------------------------------------+--------------------+
+   +---------------+-----------------------------------------+------------------------+
+   | Name          | Description                             | Compile options        |
+   +===============+=========================================+========================+
+   | euler         | Euler explicit method (example only)    | Always available       |
+   +---------------+-----------------------------------------+------------------------+
+   | rk4           | Runge-Kutta 4th-order explicit method   | Always available       |
+   +---------------+-----------------------------------------+------------------------+
+   | rkgeneric     | Generic Runge Kutta explicit methods    | Always available       |
+   +---------------+-----------------------------------------+------------------------+
+   | rk3ssp        | 3rd-order Strong Stability Preserving   | Always available       |
+   +---------------+-----------------------------------------+------------------------+
+   | splitrk       | Split RK3-SSP and RK-Legendre           | Always available       |
+   +---------------+-----------------------------------------+------------------------+
+   | pvode         | 1998 PVODE with BDF method              | Always available       |
+   +---------------+-----------------------------------------+------------------------+
+   | cvode         | SUNDIALS CVODE. BDF and Adams methods   | -DBOUT_USE_SUNDIALS=ON |
+   +---------------+-----------------------------------------+------------------------+
+   | ida           | SUNDIALS IDA. DAE solver                | -DBOUT_USE_SUNDIALS=ON |
+   +---------------+-----------------------------------------+------------------------+
+   | arkode        | SUNDIALS ARKODE IMEX solver             | -DBOUT_USE_SUNDIALS=ON |
+   +---------------+-----------------------------------------+------------------------+
+   | petsc         | PETSc TS methods                        | -DBOUT_USE_PETSC=ON    |
+   +---------------+-----------------------------------------+------------------------+
+   | imexbdf2      | IMEX-BDF2 scheme                        | -DBOUT_USE_PETSC=ON    |
+   +---------------+-----------------------------------------+------------------------+
+   | beuler / snes | Backward Euler with SNES solvers        | -DBOUT_USE_PETSC=ON    |
+   +---------------+-----------------------------------------+------------------------+
 
 Each solver can have its own settings which work in slightly different
 ways, but some common settings and which solvers they are used in are
@@ -356,7 +356,7 @@ iterations within a given range.
 +===========================+===============+====================================================+
 | snes_type                 | newtonls      | PETSc SNES nonlinear solver (try anderson, qn)     |
 +---------------------------+---------------+----------------------------------------------------+
-| ksp_type                  | gmres         | PETSc KSP linear solver
+| ksp_type                  | gmres         | PETSc KSP linear solver                            |
 +---------------------------+---------------+----------------------------------------------------+
 | pc_type                   | ilu / bjacobi | PETSc PC preconditioner                            |
 +---------------------------+---------------+----------------------------------------------------+
@@ -378,7 +378,7 @@ iterations within a given range.
 +---------------------------+---------------+----------------------------------------------------+
 | matrix_free               | false         | Use matrix free Jacobian-vector product?           |
 +---------------------------+---------------+----------------------------------------------------+
-| use_coloring              | true          | If `matrix_free=false`, use coloring to speed up   |
+| use_coloring              | true          | If ``matrix_free=false``, use coloring to speed up |
 |                           |               | calculation of the Jacobian elements.              |
 +---------------------------+---------------+----------------------------------------------------+
 | lag_jacobian              | 50            | Re-use the Jacobian for successive inner solves    |
@@ -406,14 +406,14 @@ function includes Fourier transforms, or matrix inversions
 (e.g. potential solves) then these will introduce longer-range
 coupling and the Jacobian calculation will give spurious
 results. Generally the method will then fail to converge. Two
-solutions are to a) switch to matrix-free (`matrix_free=true`), or b)
+solutions are to a) switch to matrix-free (``matrix_free=true``), or b)
 solve the matrix inversion as a constraint.
 
 The `SNES type
 <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESType.html>`_
 can be set through PETSc command-line options, or in the BOUT++
 options as setting `snes_type`. Good choices for unpreconditioned
-problems where the Jacobian is not available (`matrix_free=true`) seem to be `anderson
+problems where the Jacobian is not available (``matrix_free=true``) seem to be `anderson
 <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESANDERSON.html#SNESANDERSON>`_
 and `qn
 <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESQN.html#SNESQN>`_

@@ -29,8 +29,8 @@ class LaplaceIPT;
 #ifndef __IPT_H__
 #define __IPT_H__
 
-#include "invert_laplace.hxx"
 #include "bout/build_config.hxx"
+#include "bout/invert_laplace.hxx"
 
 #if BOUT_USE_METRIC_3D
 
@@ -41,9 +41,9 @@ RegisterUnavailableLaplace registerlaplaceipt(LAPLACE_IPT,
 
 #else
 
-#include <dcomplex.hxx>
-#include <options.hxx>
-#include <utils.hxx>
+#include <bout/dcomplex.hxx>
+#include <bout/options.hxx>
+#include <bout/utils.hxx>
 
 namespace {
 RegisterLaplace<LaplaceIPT> registerlaplaceipt(LAPLACE_IPT);
@@ -52,7 +52,7 @@ RegisterLaplace<LaplaceIPT> registerlaplaceipt(LAPLACE_IPT);
 class LaplaceIPT : public Laplacian {
 public:
   LaplaceIPT(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-             Mesh* mesh_in = nullptr, Solver* solver = nullptr, Datafile* dump = nullptr);
+             Mesh* mesh_in = nullptr, Solver* solver = nullptr);
   ~LaplaceIPT() = default;
 
   friend class Level;
@@ -143,6 +143,8 @@ public:
     void synchronize_reduced_field(const LaplaceIPT& lap, Matrix<dcomplex>& field);
     void update_solution(const LaplaceIPT& lap);
   };
+
+  void outputVars(Options& options, const std::string& time_dimension) const override;
 
 private:
   /// Solver tolerances

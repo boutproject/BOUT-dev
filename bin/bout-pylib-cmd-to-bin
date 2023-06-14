@@ -275,7 +275,7 @@ if __name__ == "__main__":
     realfun = None
     if len(sys.argv) < 3:
         print("Please wait, scanning modules ...")
-        x = boutmodules(["boutcore", "boutdata", "boututils", "post_bout", "zoidberg"])
+        x = boutmodules(["boutpp", "boutdata", "boututils", "post_bout", "zoidberg"])
         readline.set_completer(completer(x.modules).complete)
         mod = input("Module: ")
         x.scanFunctions(mod)

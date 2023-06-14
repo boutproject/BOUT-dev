@@ -2,11 +2,11 @@
 
 #include "gtest/gtest.h"
 
-#include "dcomplex.hxx"
-#include "fft.hxx"
 #include "test_extras.hxx"
 #include "bout/array.hxx"
 #include "bout/constants.hxx"
+#include "bout/dcomplex.hxx"
+#include "bout/fft.hxx"
 
 #include <algorithm>
 #include <iostream>

@@ -2,46 +2,45 @@
 
 #if BOUT_HAS_PETSC
 
-#include <petscksp.h>
-
 #include <bout/invert/laplacexy.hxx>
 
 #include <bout/assert.hxx>
-
-#include <boutcomm.hxx>
-#include <derivs.hxx>
-#include <globals.hxx>
-#include <utils.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/derivs.hxx>
+#include <bout/globals.hxx>
+#include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
+#include <bout/utils.hxx>
 
-#include <output.hxx>
+#include <petscksp.h>
 
 #include <cmath>
 
-
-static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
+static PetscErrorCode laplacePCapply(PC pc, Vec x, Vec y) {
   int ierr;
-  
+
   // Get the context
-  LaplaceXY *s;
-  ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s)); CHKERRQ(ierr);
-  
+  LaplaceXY* s;
+  ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s));
+  CHKERRQ(ierr);
+
   PetscFunctionReturn(s->precon(x, y));
 }
 
-LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
-    : lib(opt==nullptr ? &(Options::root()["laplacexy"]) : opt),
-      localmesh(m==nullptr ? bout::globals::mesh : m), location(loc), monitor(*this) {
+LaplaceXY::LaplaceXY(Mesh* m, Options* opt, const CELL_LOC loc)
+    : lib(opt == nullptr ? &(Options::root()["laplacexy"]) : opt),
+      localmesh(m == nullptr ? bout::globals::mesh : m), location(loc), monitor(*this) {
   Timer timer("invert");
 
   if (opt == nullptr) {
     // If no options supplied, use default
     opt = &(Options::root()["laplacexy"]);
   }
-  
-  finite_volume = (*opt)["finite_volume"].doc(
-      "Use finite volume rather than finite difference discretisation."
-      ).withDefault(true);
+
+  finite_volume =
+      (*opt)["finite_volume"]
+          .doc("Use finite volume rather than finite difference discretisation.")
+          .withDefault(true);
 
   ///////////////////////////////////////////////////
   // Boundary condititions options
@@ -60,10 +59,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   }
 
   // Check value of y_bndry is a supported option
-  if (not(
-    y_bndry == "dirichlet"
-    or y_bndry == "neumann"
-    or y_bndry == "free_o3")) {
+  if (not(y_bndry == "dirichlet" or y_bndry == "neumann" or y_bndry == "free_o3")) {
 
     throw BoutException("Unrecognized option '{}' for laplacexy:ybndry", y_bndry);
   }
@@ -82,74 +78,77 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
 
   // Get MPI communicator
   auto comm = BoutComm::get();
-  
+
   // Local size
   const int localN = localSize();
 
-  // Create Vectors 
-  VecCreate( comm, &xs );
-  VecSetSizes( xs, localN, PETSC_DETERMINE );
-  VecSetFromOptions( xs );
-  VecDuplicate( xs , &bs );
+  // Create Vectors
+  VecCreate(comm, &xs);
+  VecSetSizes(xs, localN, PETSC_DETERMINE);
+  VecSetFromOptions(xs);
+  VecDuplicate(xs, &bs);
 
   // Set size of Matrix on each processor to localN x localN
-  MatCreate( comm, &MatA );                                
-  MatSetSizes( MatA, localN, localN, PETSC_DETERMINE, PETSC_DETERMINE );
+  MatCreate(comm, &MatA);
+  MatSetSizes(MatA, localN, localN, PETSC_DETERMINE, PETSC_DETERMINE);
   MatSetFromOptions(MatA);
-  
+
   //////////////////////////////////////////////////
   // Specify local indices. This creates a mapping
   // from local indices to index, using a Field2D object
 
-  indexXY = -1;  // Set all points to -1, indicating out of domain
+  indexXY = -1; // Set all points to -1, indicating out of domain
 
   int ind = 0;
-  
+
   // Y boundaries
-  for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+  for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
     // Should not go into corner cells, LaplaceXY stencil does not include them
     if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
       continue;
     }
-    indexXY(it.ind, localmesh->ystart-1) = ind++;
+    indexXY(it.ind, localmesh->ystart - 1) = ind++;
   }
   if ((not finite_volume) and localmesh->hasBndryLowerY()) {
     // Corner boundary cells
     if (localmesh->firstX()) {
-      indexXY(localmesh->xstart-1, localmesh->ystart-1) = ind++;
+      indexXY(localmesh->xstart - 1, localmesh->ystart - 1) = ind++;
     }
     if (localmesh->lastX()) {
-      indexXY(localmesh->xend+1, localmesh->ystart-1) = ind++;
+      indexXY(localmesh->xend + 1, localmesh->ystart - 1) = ind++;
     }
   }
-  for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+  for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
     // Should not go into corner cells, LaplaceXY stencil does not include them
     if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
       continue;
     }
-    indexXY(it.ind, localmesh->yend+1) = ind++;
+    indexXY(it.ind, localmesh->yend + 1) = ind++;
   }
   if ((not finite_volume) and localmesh->hasBndryUpperY()) {
     // Corner boundary cells
     if (localmesh->firstX()) {
-      indexXY(localmesh->xstart-1, localmesh->yend+1) = ind++;
+      indexXY(localmesh->xstart - 1, localmesh->yend + 1) = ind++;
     }
     if (localmesh->lastX()) {
-      indexXY(localmesh->xend+1, localmesh->yend+1) = ind++;
+      indexXY(localmesh->xend + 1, localmesh->yend + 1) = ind++;
     }
   }
-  
+
   xstart = localmesh->xstart;
-  if(localmesh->firstX())
+  if (localmesh->firstX()) {
     xstart -= 1; // Include X guard cells
+  }
   xend = localmesh->xend;
-  if(localmesh->lastX())
+  if (localmesh->lastX()) {
     xend += 1;
-  for(int x=xstart;x<=xend;x++)
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-      indexXY(x,y) = ind++;
+  }
+  for (int x = xstart; x <= xend; x++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      indexXY(x, y) = ind++;
     }
-  
+  }
+
   ASSERT1(ind == localN); // Reached end of range
 
   //////////////////////////////////////////////////
@@ -169,95 +168,100 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
 
   //////////////////////////////////////////////////
   // Pre-allocate PETSc storage
-  
+
   PetscInt *d_nnz, *o_nnz;
-  PetscMalloc( (localN)*sizeof(PetscInt), &d_nnz );
-  PetscMalloc( (localN)*sizeof(PetscInt), &o_nnz );
-  
+  PetscMalloc((localN) * sizeof(PetscInt), &d_nnz);
+  PetscMalloc((localN) * sizeof(PetscInt), &o_nnz);
+
   if (finite_volume) {
     setPreallocationFiniteVolume(d_nnz, o_nnz);
   } else {
     setPreallocationFiniteDifference(d_nnz, o_nnz);
   }
   // Pre-allocate
-  MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
-  MatSetUp(MatA); 
-  
-  PetscFree( d_nnz );
-  PetscFree( o_nnz );
-  
+  MatMPIAIJSetPreallocation(MatA, 0, d_nnz, 0, o_nnz);
+  MatSetUp(MatA);
+
+  PetscFree(d_nnz);
+  PetscFree(o_nnz);
+
   // Determine which row/columns of the matrix are locally owned
   int Istart, Iend;
-  MatGetOwnershipRange( MatA, &Istart, &Iend );
-  
+  MatGetOwnershipRange(MatA, &Istart, &Iend);
+
   // Convert indexXY from local index to global index
   indexXY += Istart;
-  
+
   // Now communicate to fill guard cells
   // Note, this includes corner cells if necessary
   localmesh->communicate(indexXY);
 
   //////////////////////////////////////////////////
   // Set up KSP
-  
-  // Declare KSP Context 
-  KSPCreate( comm, &ksp ); 
-  
+
+  // Declare KSP Context
+  KSPCreate(comm, &ksp);
+
   // Configure Linear Solver
-  
+
   const bool direct = (*opt)["direct"].doc("Use a direct LU solver").withDefault(false);
-  
-  if(direct) {
-    KSPGetPC(ksp,&pc);
-    PCSetType(pc,PCLU);
-#if PETSC_VERSION_GE(3,9,0)
-    PCFactorSetMatSolverType(pc,"mumps");
+
+  if (direct) {
+    KSPGetPC(ksp, &pc);
+    PCSetType(pc, PCLU);
+#if PETSC_VERSION_GE(3, 9, 0)
+    PCFactorSetMatSolverType(pc, "mumps");
 #else
-    PCFactorSetMatSolverPackage(pc,"mumps");
+    PCFactorSetMatSolverPackage(pc, "mumps");
 #endif
-  }else {
-    
+  } else {
+
     // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
     // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
 
     const BoutReal rtol = (*opt)["rtol"].doc("Relative tolerance").withDefault(1e-5);
-    const BoutReal atol = (*opt)["atol"]
+    const BoutReal atol =
+        (*opt)["atol"]
             .doc("Absolute tolerance. The solution is considered converged if |Ax-b| "
                  "< max( rtol * |b| , atol )")
             .withDefault(1e-10);
-    const BoutReal dtol = (*opt)["dtol"]
-                        .doc("The solution is considered diverged if |Ax-b| > dtol * |b|")
-                        .withDefault(1e3);
+    const BoutReal dtol =
+        (*opt)["dtol"]
+            .doc("The solution is considered diverged if |Ax-b| > dtol * |b|")
+            .withDefault(1e3);
     const int maxits = (*opt)["maxits"].doc("Maximum iterations").withDefault(100000);
 
     // Get KSP Solver Type
-    const std::string ksptype = (*opt)["ksptype"].doc("KSP solver type").withDefault("gmres");
-    
-    // Get PC type
-    const std::string pctype = (*opt)["pctype"].doc("Preconditioner type").withDefault("none");
+    const std::string ksptype =
+        (*opt)["ksptype"].doc("KSP solver type").withDefault("gmres");
 
-    KSPSetType( ksp, ksptype.c_str() );
-    KSPSetTolerances( ksp, rtol, atol, dtol, maxits );
+    // Get PC type
+    const std::string pctype =
+        (*opt)["pctype"].doc("Preconditioner type").withDefault("none");
+
+    KSPSetType(ksp, ksptype.c_str());
+    KSPSetTolerances(ksp, rtol, atol, dtol, maxits);
 
     KSPSetInitialGuessNonzero(ksp, static_cast<PetscBool>(true));
 
-    KSPGetPC(ksp,&pc);
+    KSPGetPC(ksp, &pc);
     PCSetType(pc, pctype.c_str());
 
     if (pctype == "shell") {
       // Using tridiagonal solver as preconditioner
-      PCShellSetApply(pc,laplacePCapply);
-      PCShellSetContext(pc,this);
-      
-      const bool rightprec = (*opt)["rightprec"].doc("Use right preconditioning?").withDefault(true);
+      PCShellSetApply(pc, laplacePCapply);
+      PCShellSetContext(pc, this);
+
+      const bool rightprec =
+          (*opt)["rightprec"].doc("Use right preconditioning?").withDefault(true);
       if (rightprec) {
         KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
       } else {
-        KSPSetPCSide(ksp, PC_LEFT);  // Left preconditioning
+        KSPSetPCSide(ksp, PC_LEFT); // Left preconditioning
       }
     }
   }
-  
+
   lib.setOptionsFromInputFile(ksp);
 
   ///////////////////////////////////////////////////
@@ -280,7 +284,7 @@ void LaplaceXY::setPreallocationFiniteVolume(PetscInt* d_nnz, PetscInt* o_nnz) {
   const int localN = localSize();
 
   // This discretisation uses a 5-point stencil
-  for(int i=0;i<localN;i++) {
+  for (int i = 0; i < localN; i++) {
     // Non-zero elements on this processor
     d_nnz[i] = 5; // Star pattern in 2D
     // Non-zero elements on neighboring processor
@@ -288,44 +292,44 @@ void LaplaceXY::setPreallocationFiniteVolume(PetscInt* d_nnz, PetscInt* o_nnz) {
   }
 
   // X boundaries
-  if(localmesh->firstX()) {
+  if (localmesh->firstX()) {
     // Lower X boundary
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       const int localIndex = globalIndex(localmesh->xstart - 1, y);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
 
       d_nnz[localIndex] = 2; // Diagonal sub-matrix
       o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
     }
-  }else {
+  } else {
     // On another processor
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       const int localIndex = globalIndex(localmesh->xstart, y);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
       d_nnz[localIndex] -= 1;
       o_nnz[localIndex] += 1;
     }
   }
-  if(localmesh->lastX()) {
+  if (localmesh->lastX()) {
     // Upper X boundary
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       const int localIndex = globalIndex(localmesh->xend + 1, y);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
       d_nnz[localIndex] = 2; // Diagonal sub-matrix
       o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
     }
-  }else {
+  } else {
     // On another processor
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       const int localIndex = globalIndex(localmesh->xend, y);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
       d_nnz[localIndex] -= 1;
       o_nnz[localIndex] += 1;
     }
   }
   // Y boundaries
 
-  for(int x=localmesh->xstart; x <=localmesh->xend; x++) {
+  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
     // Default to no boundary
     // NOTE: This assumes that communications in Y are to other
     //   processors. If Y is communicated with this processor (e.g. NYPE=1)
@@ -344,7 +348,7 @@ void LaplaceXY::setPreallocationFiniteVolume(PetscInt* d_nnz, PetscInt* o_nnz) {
     }
   }
 
-  for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+  for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
     // Should not go into corner cells, LaplaceXY stencil does not include them
     if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
       continue;
@@ -362,7 +366,7 @@ void LaplaceXY::setPreallocationFiniteVolume(PetscInt* d_nnz, PetscInt* o_nnz) {
       o_nnz[localIndex] -= 1;
     }
   }
-  for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+  for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
     // Should not go into corner cells, LaplaceXY stencil does not include them
     if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
       continue;
@@ -386,7 +390,7 @@ void LaplaceXY::setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nn
   const int localN = localSize();
 
   // This discretisation uses a 9-point stencil
-  for(int i=0;i<localN;i++) {
+  for (int i = 0; i < localN; i++) {
     // Non-zero elements on this processor
     d_nnz[i] = 9; // Square pattern in 2D
     // Non-zero elements on neighboring processor
@@ -394,37 +398,37 @@ void LaplaceXY::setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nn
   }
 
   // X boundaries
-  if(localmesh->firstX()) {
+  if (localmesh->firstX()) {
     // Lower X boundary
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       const int localIndex = globalIndex(localmesh->xstart - 1, y);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
 
       d_nnz[localIndex] = 2; // Diagonal sub-matrix
       o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
     }
-  }else {
+  } else {
     // On another processor
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       const int localIndex = globalIndex(localmesh->xstart, y);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
       d_nnz[localIndex] -= 3;
       o_nnz[localIndex] += 3;
     }
   }
-  if(localmesh->lastX()) {
+  if (localmesh->lastX()) {
     // Upper X boundary
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       const int localIndex = globalIndex(localmesh->xend + 1, y);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
       d_nnz[localIndex] = 2; // Diagonal sub-matrix
       o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
     }
-  }else {
+  } else {
     // On another processor
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       const int localIndex = globalIndex(localmesh->xend, y);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
       d_nnz[localIndex] -= 3;
       o_nnz[localIndex] += 3;
     }
@@ -432,7 +436,7 @@ void LaplaceXY::setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nn
   // Y boundaries
   const int y_bndry_stencil_size = (y_bndry == "free_o3") ? 4 : 2;
 
-  for(int x=localmesh->xstart; x <=localmesh->xend; x++) {
+  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
     // Default to no boundary
     // NOTE: This assumes that communications in Y are to other
     //   processors. If Y is communicated with this processor (e.g. NYPE=1)
@@ -451,7 +455,7 @@ void LaplaceXY::setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nn
     }
   }
 
-  for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+  for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
     // Should not go into corner cells, they are handled specially below
     if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
       continue;
@@ -460,7 +464,7 @@ void LaplaceXY::setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nn
       const int localIndex = globalIndex(it.ind, localmesh->ystart - 1);
       ASSERT1((localIndex >= 0) && (localIndex < localN));
       d_nnz[localIndex] = y_bndry_stencil_size; // Diagonal sub-matrix
-      o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+      o_nnz[localIndex] = 0;                    // Off-diagonal sub-matrix
     }
     {
       const int localIndex = globalIndex(it.ind, localmesh->ystart);
@@ -474,29 +478,29 @@ void LaplaceXY::setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nn
       // special handling for the corners, since we use a free_o3 y-boundary
       // condition just in the corners when y_bndry=="dirichlet"
       if (localmesh->firstX()) {
-        const int localIndex = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
+        const int localIndex = globalIndex(localmesh->xstart - 1, localmesh->ystart - 1);
         ASSERT1((localIndex >= 0) && (localIndex < localN));
         d_nnz[localIndex] = 4;
       }
       if (localmesh->lastX()) {
-        const int localIndex = globalIndex(localmesh->xend+1, localmesh->ystart-1);
+        const int localIndex = globalIndex(localmesh->xend + 1, localmesh->ystart - 1);
         ASSERT1((localIndex >= 0) && (localIndex < localN));
         d_nnz[localIndex] = 4;
       }
     } else {
       if (localmesh->firstX()) {
-        const int localIndex = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
+        const int localIndex = globalIndex(localmesh->xstart - 1, localmesh->ystart - 1);
         ASSERT1((localIndex >= 0) && (localIndex < localN));
         d_nnz[localIndex] = y_bndry_stencil_size;
       }
       if (localmesh->lastX()) {
-        const int localIndex = globalIndex(localmesh->xend+1, localmesh->ystart-1);
+        const int localIndex = globalIndex(localmesh->xend + 1, localmesh->ystart - 1);
         ASSERT1((localIndex >= 0) && (localIndex < localN));
         d_nnz[localIndex] = y_bndry_stencil_size;
       }
     }
   }
-  for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+  for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
     // Should not go into corner cells, they are handled specially below
     if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
       continue;
@@ -505,7 +509,7 @@ void LaplaceXY::setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nn
       const int localIndex = globalIndex(it.ind, localmesh->yend + 1);
       ASSERT1((localIndex >= 0) && (localIndex < localN));
       d_nnz[localIndex] = y_bndry_stencil_size; // Diagonal sub-matrix
-      o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+      o_nnz[localIndex] = 0;                    // Off-diagonal sub-matrix
     }
     {
       const int localIndex = globalIndex(it.ind, localmesh->yend);
@@ -519,23 +523,23 @@ void LaplaceXY::setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nn
       // special handling for the corners, since we use a free_o3 y-boundary
       // condition just in the corners when y_bndry=="dirichlet"
       if (localmesh->firstX()) {
-        const int localIndex = globalIndex(localmesh->xstart-1, localmesh->yend+1);
+        const int localIndex = globalIndex(localmesh->xstart - 1, localmesh->yend + 1);
         ASSERT1((localIndex >= 0) && (localIndex < localN));
         d_nnz[localIndex] = 4;
       }
       if (localmesh->lastX()) {
-        const int localIndex = globalIndex(localmesh->xend+1, localmesh->yend+1);
+        const int localIndex = globalIndex(localmesh->xend + 1, localmesh->yend + 1);
         ASSERT1((localIndex >= 0) && (localIndex < localN));
         d_nnz[localIndex] = 4;
       }
     } else {
       if (localmesh->firstX()) {
-        const int localIndex = globalIndex(localmesh->xstart-1, localmesh->yend+1);
+        const int localIndex = globalIndex(localmesh->xstart - 1, localmesh->yend + 1);
         ASSERT1((localIndex >= 0) && (localIndex < localN));
         d_nnz[localIndex] = y_bndry_stencil_size;
       }
       if (localmesh->lastX()) {
-        const int localIndex = globalIndex(localmesh->xend+1, localmesh->yend+1);
+        const int localIndex = globalIndex(localmesh->xend + 1, localmesh->yend + 1);
         ASSERT1((localIndex >= 0) && (localIndex < localN));
         d_nnz[localIndex] = y_bndry_stencil_size;
       }
@@ -543,7 +547,7 @@ void LaplaceXY::setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nn
   }
 }
 
-void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
+void LaplaceXY::setCoefs(const Field2D& A, const Field2D& B) {
   Timer timer("invert");
 
   ASSERT1(A.getMesh() == localmesh);
@@ -556,54 +560,54 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
   } else {
     setMatrixElementsFiniteDifference(A, B);
   }
-  
+
   // X boundaries
-  if(localmesh->firstX()) {
-    if(x_inner_dirichlet) {
+  if (localmesh->firstX()) {
+    if (x_inner_dirichlet) {
 
       // Dirichlet on inner X boundary
-      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-        int row = globalIndex(localmesh->xstart-1,y);
+      for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+        int row = globalIndex(localmesh->xstart - 1, y);
         PetscScalar val = 0.5;
-        MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
-        
-        int col = globalIndex(localmesh->xstart,y);
-        MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
-        
+        MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+
+        int col = globalIndex(localmesh->xstart, y);
+        MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+
         // Preconditioner
         bcoef(y - localmesh->ystart, 0) = 0.5;
         ccoef(y - localmesh->ystart, 0) = 0.5;
       }
-      
-    }else {
-      
+
+    } else {
+
       // Neumann on inner X boundary
-      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-        int row = globalIndex(localmesh->xstart-1,y);
+      for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+        int row = globalIndex(localmesh->xstart - 1, y);
         PetscScalar val = 1.0;
-        MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
-        
-        int col = globalIndex(localmesh->xstart,y);
+        MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+
+        int col = globalIndex(localmesh->xstart, y);
         val = -1.0;
-        MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
-        
+        MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+
         // Preconditioner
         bcoef(y - localmesh->ystart, 0) = 1.0;
         ccoef(y - localmesh->ystart, 0) = -1.0;
       }
     }
   }
-  if(localmesh->lastX()) {
+  if (localmesh->lastX()) {
     // Dirichlet on outer X boundary
-    
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-      int row = globalIndex(localmesh->xend+1,y);
+
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      int row = globalIndex(localmesh->xend + 1, y);
       PetscScalar val = 0.5;
-      MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
-      
-      int col = globalIndex(localmesh->xend,y);
-      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
-      
+      MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+
+      int col = globalIndex(localmesh->xend, y);
+      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
+
       // Preconditioner
       acoef(y - localmesh->ystart, localmesh->xend + 1 - xstart) = 0.5;
       bcoef(y - localmesh->ystart, localmesh->xend + 1 - xstart) = 0.5;
@@ -612,105 +616,105 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
 
   if (y_bndry == "dirichlet") {
     // Dirichlet on Y boundaries
-    for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+    for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
       // Should not go into corner cells, LaplaceXY stencil does not include them
       if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
         continue;
       }
-      int row = globalIndex(it.ind, localmesh->ystart-1);
+      int row = globalIndex(it.ind, localmesh->ystart - 1);
       PetscScalar val = 0.5;
-      MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
-      
+      MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+
       int col = globalIndex(it.ind, localmesh->ystart);
-      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
     }
-    
-    for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+
+    for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
       // Should not go into corner cells, LaplaceXY stencil does not include them
       if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
         continue;
       }
-      int row = globalIndex(it.ind, localmesh->yend+1);
+      int row = globalIndex(it.ind, localmesh->yend + 1);
       PetscScalar val = 0.5;
-      MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
-      
+      MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
+
       int col = globalIndex(it.ind, localmesh->yend);
-      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
     }
   } else if (y_bndry == "neumann") {
     // Neumann on Y boundaries
-    for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+    for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
       // Should not go into corner cells, LaplaceXY stencil does not include them
       if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
         continue;
       }
-      int row = globalIndex(it.ind, localmesh->ystart-1);
+      int row = globalIndex(it.ind, localmesh->ystart - 1);
       PetscScalar val = 1.0;
-      MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+      MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
       val = -1.0;
       int col = globalIndex(it.ind, localmesh->ystart);
 
-      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
     }
-    
-    for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+
+    for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
       // Should not go into corner cells, LaplaceXY stencil does not include them
       if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
         continue;
       }
-      int row = globalIndex(it.ind, localmesh->yend+1);
+      int row = globalIndex(it.ind, localmesh->yend + 1);
       PetscScalar val = 1.0;
-      MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+      MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
       val = -1.0;
       int col = globalIndex(it.ind, localmesh->yend);
-      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
     }
   } else if (y_bndry == "free_o3") {
     // 'free_o3' extrapolating boundary condition on Y boundaries
-    for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+    for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
       // Should not go into corner cells, LaplaceXY stencil does not include them
       if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
         continue;
       }
-      int row = globalIndex(it.ind, localmesh->ystart-1);
+      int row = globalIndex(it.ind, localmesh->ystart - 1);
       PetscScalar val = 1.0;
-      MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+      MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
       val = -3.0;
       int col = globalIndex(it.ind, localmesh->ystart);
-      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
       val = 3.0;
-      col = globalIndex(it.ind, localmesh->ystart+1);
-      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+      col = globalIndex(it.ind, localmesh->ystart + 1);
+      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
       val = -1.0;
-      col = globalIndex(it.ind, localmesh->ystart+2);
-      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+      col = globalIndex(it.ind, localmesh->ystart + 2);
+      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
     }
 
-    for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+    for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
       // Should not go into corner cells, LaplaceXY stencil does not include them
       if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
         continue;
       }
-      int row = globalIndex(it.ind, localmesh->yend+1);
+      int row = globalIndex(it.ind, localmesh->yend + 1);
       PetscScalar val = 1.0;
-      MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+      MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
       val = -3.0;
       int col = globalIndex(it.ind, localmesh->yend);
-      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
       val = 3.0;
-      col = globalIndex(it.ind, localmesh->yend-1);
-      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+      col = globalIndex(it.ind, localmesh->yend - 1);
+      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
       val = -1.0;
-      col = globalIndex(it.ind, localmesh->yend-2);
-      MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+      col = globalIndex(it.ind, localmesh->yend - 2);
+      MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
     }
   } else {
     throw BoutException("Unsupported option for y_bndry");
@@ -727,12 +731,12 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           // Neumann y-bc
           // f(xs-1,ys-1) = f(xs-1,ys)
           PetscScalar val = 1.0;
-          int row = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
-          MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          int row = globalIndex(localmesh->xstart - 1, localmesh->ystart - 1);
+          MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           val = -1.0;
-          int col = globalIndex(localmesh->xstart-1, localmesh->ystart);
-          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          int col = globalIndex(localmesh->xstart - 1, localmesh->ystart);
+          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
         } else if (y_bndry == "free_o3" or y_bndry == "dirichlet") {
           // 'free_o3' extrapolating boundary condition on Y boundaries
           // f(xs-1,ys-1) = 3*f(xs-1,ys) - 3*f(xs-1,ys+1) + f(xs-1,ys+2)
@@ -740,20 +744,20 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           // Use free_o3 at the corners for Dirichlet y-boundaries because we don't know
           // what value to pass for the corner
           PetscScalar val = 1.0;
-          int row = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
-          MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          int row = globalIndex(localmesh->xstart - 1, localmesh->ystart - 1);
+          MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           val = -3.0;
-          int col = globalIndex(localmesh->xstart-1, localmesh->ystart);
-          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          int col = globalIndex(localmesh->xstart - 1, localmesh->ystart);
+          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           val = 3.0;
-          col = globalIndex(localmesh->xstart-1, localmesh->ystart+1);
-          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          col = globalIndex(localmesh->xstart - 1, localmesh->ystart + 1);
+          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           val = -1.0;
-          col = globalIndex(localmesh->xstart-1, localmesh->ystart+2);
-          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          col = globalIndex(localmesh->xstart - 1, localmesh->ystart + 2);
+          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
         } else {
           throw BoutException("Unsupported option for y_bndry");
         }
@@ -763,12 +767,12 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           // Neumann y-bc
           // f(xe+1,ys-1) = f(xe+1,ys)
           PetscScalar val = 1.0;
-          int row = globalIndex(localmesh->xend+1, localmesh->ystart-1);
-          MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          int row = globalIndex(localmesh->xend + 1, localmesh->ystart - 1);
+          MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           val = -1.0;
-          int col = globalIndex(localmesh->xend+1, localmesh->ystart);
-          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          int col = globalIndex(localmesh->xend + 1, localmesh->ystart);
+          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
         } else if (y_bndry == "free_o3" or y_bndry == "dirichlet") {
           // 'free_o3' extrapolating boundary condition on Y boundaries
           // f(xe+1,ys-1) = 3*f(xe+1,ys) - 3*f(xe+1,ys+1) + f(xe+1,ys+2)
@@ -776,24 +780,23 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           // Use free_o3 at the corners for Dirichlet y-boundaries because we don't know
           // what value to pass for the corner
           PetscScalar val = 1.0;
-          int row = globalIndex(localmesh->xend+1, localmesh->ystart-1);
-          MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          int row = globalIndex(localmesh->xend + 1, localmesh->ystart - 1);
+          MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           val = -3.0;
-          int col = globalIndex(localmesh->xend+1, localmesh->ystart);
-          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          int col = globalIndex(localmesh->xend + 1, localmesh->ystart);
+          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           val = 3.0;
-          col = globalIndex(localmesh->xend+1, localmesh->ystart+1);
-          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          col = globalIndex(localmesh->xend + 1, localmesh->ystart + 1);
+          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           val = -1.0;
-          col = globalIndex(localmesh->xend+1, localmesh->ystart+2);
-          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          col = globalIndex(localmesh->xend + 1, localmesh->ystart + 2);
+          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
         } else {
           throw BoutException("Unsupported option for y_bndry");
         }
-
       }
     }
     if (localmesh->hasBndryUpperY()) {
@@ -802,12 +805,12 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           // Neumann y-bc
           // f(xs-1,ys-1) = f(xs-1,ys)
           PetscScalar val = 1.0;
-          int row = globalIndex(localmesh->xstart-1, localmesh->yend+1);
-          MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          int row = globalIndex(localmesh->xstart - 1, localmesh->yend + 1);
+          MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           val = -1.0;
-          int col = globalIndex(localmesh->xstart-1, localmesh->yend);
-          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          int col = globalIndex(localmesh->xstart - 1, localmesh->yend);
+          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
         } else if (y_bndry == "free_o3" or y_bndry == "dirichlet") {
           // 'free_o3' extrapolating boundary condition on Y boundaries
           // f(xs-1,ys-1) = 3*f(xs-1,ys) - 3*f(xs-1,ys+1) + f(xs-1,ys+2)
@@ -815,20 +818,20 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           // Use free_o3 at the corners for Dirichlet y-boundaries because we don't know
           // what value to pass for the corner
           PetscScalar val = 1.0;
-          int row = globalIndex(localmesh->xstart-1, localmesh->yend+1);
-          MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          int row = globalIndex(localmesh->xstart - 1, localmesh->yend + 1);
+          MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           val = -3.0;
-          int col = globalIndex(localmesh->xstart-1, localmesh->yend);
-          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          int col = globalIndex(localmesh->xstart - 1, localmesh->yend);
+          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           val = 3.0;
-          col = globalIndex(localmesh->xstart-1, localmesh->yend-1);
-          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          col = globalIndex(localmesh->xstart - 1, localmesh->yend - 1);
+          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           val = -1.0;
-          col = globalIndex(localmesh->xstart-1, localmesh->yend-2);
-          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          col = globalIndex(localmesh->xstart - 1, localmesh->yend - 2);
+          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
         } else {
           throw BoutException("Unsupported option for y_bndry");
         }
@@ -838,12 +841,12 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           // Neumann y-bc
           // f(xe+1,ys-1) = f(xe+1,ys)
           PetscScalar val = 1.0;
-          int row = globalIndex(localmesh->xend+1, localmesh->yend+1);
-          MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          int row = globalIndex(localmesh->xend + 1, localmesh->yend + 1);
+          MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           val = -1.0;
-          int col = globalIndex(localmesh->xend+1, localmesh->yend);
-          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          int col = globalIndex(localmesh->xend + 1, localmesh->yend);
+          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
         } else if (y_bndry == "free_o3" or y_bndry == "dirichlet") {
           // 'free_o3' extrapolating boundary condition on Y boundaries
           // f(xe+1,ys-1) = 3*f(xe+1,ys) - 3*f(xe+1,ys+1) + f(xe+1,ys+2)
@@ -851,44 +854,43 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           // Use free_o3 at the corners for Dirichlet y-boundaries because we don't know
           // what value to pass for the corner
           PetscScalar val = 1.0;
-          int row = globalIndex(localmesh->xend+1, localmesh->yend+1);
-          MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+          int row = globalIndex(localmesh->xend + 1, localmesh->yend + 1);
+          MatSetValues(MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
           val = -3.0;
-          int col = globalIndex(localmesh->xend+1, localmesh->yend);
-          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          int col = globalIndex(localmesh->xend + 1, localmesh->yend);
+          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           val = 3.0;
-          col = globalIndex(localmesh->xend+1, localmesh->yend-1);
-          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          col = globalIndex(localmesh->xend + 1, localmesh->yend - 1);
+          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           val = -1.0;
-          col = globalIndex(localmesh->xend+1, localmesh->yend-2);
-          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+          col = globalIndex(localmesh->xend + 1, localmesh->yend - 2);
+          MatSetValues(MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
         } else {
           throw BoutException("Unsupported option for y_bndry");
         }
-
       }
     }
   }
-  
+
   // Assemble Matrix
-  MatAssemblyBegin( MatA, MAT_FINAL_ASSEMBLY );
-  MatAssemblyEnd( MatA, MAT_FINAL_ASSEMBLY );
+  MatAssemblyBegin(MatA, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(MatA, MAT_FINAL_ASSEMBLY);
 
   // Set the operator
-#if PETSC_VERSION_GE(3,5,0)
-  KSPSetOperators( ksp,MatA,MatA );
+#if PETSC_VERSION_GE(3, 5, 0)
+  KSPSetOperators(ksp, MatA, MatA);
 #else
-  KSPSetOperators( ksp,MatA,MatA,DIFFERENT_NONZERO_PATTERN );
+  KSPSetOperators(ksp, MatA, MatA, DIFFERENT_NONZERO_PATTERN);
 #endif
-  
+
   // Set coefficients for preconditioner
   cr->setCoefs(acoef, bcoef, ccoef);
 }
 
-void LaplaceXY::setMatrixElementsFiniteVolume(const Field2D &A, const Field2D &B) {
+void LaplaceXY::setMatrixElementsFiniteVolume(const Field2D& A, const Field2D& B) {
   //////////////////////////////////////////////////
   // Set Matrix elements
   //
@@ -903,8 +905,8 @@ void LaplaceXY::setMatrixElementsFiniteVolume(const Field2D &A, const Field2D &B
   const Field2D g_23_DC = DC(coords->g_23);
   const Field2D g23_DC = DC(coords->g23);
 
-  for(int x=localmesh->xstart; x <= localmesh->xend; x++) {
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       // stencil entries
       PetscScalar c, xm, xp, ym, yp;
 
@@ -914,30 +916,30 @@ void LaplaceXY::setMatrixElementsFiniteVolume(const Field2D &A, const Field2D &B
       BoutReal J = 0.5 * (J_DC(x, y) + J_DC(x + 1, y));
       BoutReal g11 = 0.5 * (g11_DC(x, y) + g11_DC(x + 1, y));
       BoutReal dx = 0.5 * (dx_DC(x, y) + dx_DC(x + 1, y));
-      BoutReal Acoef = 0.5*(A(x,y) + A(x+1,y));
+      BoutReal Acoef = 0.5 * (A(x, y) + A(x + 1, y));
 
       BoutReal val = Acoef * J * g11 / (J_DC(x, y) * dx * dx_DC(x, y));
       xp = val;
-      c  = -val;
+      c = -val;
 
       // Metrics on x-1/2 boundary
       J = 0.5 * (J_DC(x, y) + J_DC(x - 1, y));
       g11 = 0.5 * (g11_DC(x, y) + g11_DC(x - 1, y));
       dx = 0.5 * (dx_DC(x, y) + dx_DC(x - 1, y));
-      Acoef = 0.5*(A(x,y) + A(x-1,y));
+      Acoef = 0.5 * (A(x, y) + A(x - 1, y));
 
       val = Acoef * J * g11 / (J_DC(x, y) * dx * dx_DC(x, y));
       xm = val;
-      c  -= val;
+      c -= val;
 
-      c += B(x,y);
+      c += B(x, y);
 
       // Put values into the preconditioner, X derivatives only
       acoef(y - localmesh->ystart, x - xstart) = xm;
       bcoef(y - localmesh->ystart, x - xstart) = c;
       ccoef(y - localmesh->ystart, x - xstart) = xp;
 
-      if( include_y_derivs ) {
+      if (include_y_derivs) {
         // YY component
         // Metrics at y+1/2
         J = 0.5 * (J_DC(x, y) + J_DC(x, y + 1));
@@ -945,7 +947,7 @@ void LaplaceXY::setMatrixElementsFiniteVolume(const Field2D &A, const Field2D &B
         BoutReal g23 = 0.5 * (g23_DC(x, y) + g23_DC(x, y + 1));
         BoutReal g_23 = 0.5 * (g_23_DC(x, y) + g_23_DC(x, y + 1));
         BoutReal dy = 0.5 * (dy_DC(x, y) + dy_DC(x, y + 1));
-        Acoef = 0.5*(A(x,y+1) + A(x,y));
+        Acoef = 0.5 * (A(x, y + 1) + A(x, y));
 
         val = -Acoef * J * g23 * g_23 / (g_22 * J_DC(x, y) * dy * dy_DC(x, y));
         yp = val;
@@ -957,7 +959,7 @@ void LaplaceXY::setMatrixElementsFiniteVolume(const Field2D &A, const Field2D &B
         g23 = 0.5 * (g23_DC(x, y) + g23_DC(x, y - 1));
         g_23 = 0.5 * (g_23_DC(x, y) + g_23_DC(x, y - 1));
         dy = 0.5 * (dy_DC(x, y) + dy_DC(x, y - 1));
-        Acoef = 0.5*(A(x,y-1) + A(x,y));
+        Acoef = 0.5 * (A(x, y - 1) + A(x, y));
 
         val = -Acoef * J * g23 * g_23 / (g_22 * J_DC(x, y) * dy * dy_DC(x, y));
         ym = val;
@@ -967,33 +969,33 @@ void LaplaceXY::setMatrixElementsFiniteVolume(const Field2D &A, const Field2D &B
       /////////////////////////////////////////////////
       // Now have a 5-point stencil for the Laplacian
 
-      int row = globalIndex(x,y);
+      int row = globalIndex(x, y);
 
       // Set the centre (diagonal)
-      MatSetValues(MatA,1,&row,1,&row,&c,INSERT_VALUES);
+      MatSetValues(MatA, 1, &row, 1, &row, &c, INSERT_VALUES);
 
       // X + 1
-      int col = globalIndex(x+1, y);
-      MatSetValues(MatA,1,&row,1,&col,&xp,INSERT_VALUES);
+      int col = globalIndex(x + 1, y);
+      MatSetValues(MatA, 1, &row, 1, &col, &xp, INSERT_VALUES);
 
       // X - 1
-      col = globalIndex(x-1, y);
-      MatSetValues(MatA,1,&row,1,&col,&xm,INSERT_VALUES);
+      col = globalIndex(x - 1, y);
+      MatSetValues(MatA, 1, &row, 1, &col, &xm, INSERT_VALUES);
 
-      if( include_y_derivs ) {
+      if (include_y_derivs) {
         // Y + 1
-        col = globalIndex(x, y+1);
-        MatSetValues(MatA,1,&row,1,&col,&yp,INSERT_VALUES);
+        col = globalIndex(x, y + 1);
+        MatSetValues(MatA, 1, &row, 1, &col, &yp, INSERT_VALUES);
 
         // Y - 1
-        col = globalIndex(x, y-1);
-        MatSetValues(MatA,1,&row,1,&col,&ym,INSERT_VALUES);
+        col = globalIndex(x, y - 1);
+        MatSetValues(MatA, 1, &row, 1, &col, &ym, INSERT_VALUES);
       }
     }
   }
 }
 
-void LaplaceXY::setMatrixElementsFiniteDifference(const Field2D &A, const Field2D &B) {
+void LaplaceXY::setMatrixElementsFiniteDifference(const Field2D& A, const Field2D& B) {
   //////////////////////////////////////////////////
   // Set Matrix elements
   //
@@ -1019,8 +1021,8 @@ void LaplaceXY::setMatrixElementsFiniteDifference(const Field2D &A, const Field2
 
   const Field2D coef_dfdy = G2_2D - DC(DDY(J_2D / g_22_2D) / J_2D);
 
-  for(int x = localmesh->xstart; x <= localmesh->xend; x++) {
-    for(int y = localmesh->ystart; y <= localmesh->yend; y++) {
+  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       // stencil entries
       PetscScalar c, xm, xp, ym, yp, xpyp, xpym, xmyp, xmym;
 
@@ -1034,7 +1036,7 @@ void LaplaceXY::setMatrixElementsFiniteDifference(const Field2D &A, const Field2
       // A*g11*d2fdx2
       val = A(x, y) * g11_2D(x, y) / SQ(dx);
       xp += val;
-      c = -2.*val;
+      c = -2. * val;
       xm += val;
       // Non-uniform grid correction
       val = A(x, y) * g11_2D(x, y) * d1_dx_2D(x, y) / (2. * dx);
@@ -1047,27 +1049,27 @@ void LaplaceXY::setMatrixElementsFiniteDifference(const Field2D &A, const Field2
       xm -= val;
 
       // B*f
-      c += B(x,y);
+      c += B(x, y);
 
       // Put values into the preconditioner, X derivatives only
       acoef(y - localmesh->ystart, x - xstart) = xm;
       bcoef(y - localmesh->ystart, x - xstart) = c;
       ccoef(y - localmesh->ystart, x - xstart) = xp;
 
-      if(include_y_derivs) {
+      if (include_y_derivs) {
         BoutReal dy = dy_2D(x, y);
-        BoutReal dAdx = (A(x+1, y) - A(x-1, y))/(2.*dx);
-        BoutReal dAdy = (A(x, y+1) - A(x, y-1))/(2.*dy);
+        BoutReal dAdx = (A(x + 1, y) - A(x - 1, y)) / (2. * dx);
+        BoutReal dAdy = (A(x, y + 1) - A(x, y - 1)) / (2. * dy);
 
         // A*(G2-1/J*d/dy(J/g_22))*dfdy
-        val = A(x, y)*coef_dfdy(x, y)/(2.*dy);
+        val = A(x, y) * coef_dfdy(x, y) / (2. * dy);
         yp = val;
         ym = -val;
 
         // A*(g22-1/g_22)*d2fdy2
         val = A(x, y) * (g22_2D(x, y) - 1. / g_22_2D(x, y)) / SQ(dy);
         yp += val;
-        c -= 2.*val;
+        c -= 2. * val;
         ym += val;
         // Non-uniform mesh correction
         val = A(x, y) * (g22_2D(x, y) - 1. / g_22_2D(x, y)) * d1_dy_2D(x, y) / (2. * dy);
@@ -1098,43 +1100,43 @@ void LaplaceXY::setMatrixElementsFiniteDifference(const Field2D &A, const Field2
       /////////////////////////////////////////////////
       // Now have a 9-point stencil for the Laplacian
 
-      int row = globalIndex(x,y);
+      int row = globalIndex(x, y);
 
       // Set the centre (diagonal)
-      MatSetValues(MatA,1,&row,1,&row,&c,INSERT_VALUES);
+      MatSetValues(MatA, 1, &row, 1, &row, &c, INSERT_VALUES);
 
       // X + 1
-      int col = globalIndex(x+1, y);
-      MatSetValues(MatA,1,&row,1,&col,&xp,INSERT_VALUES);
+      int col = globalIndex(x + 1, y);
+      MatSetValues(MatA, 1, &row, 1, &col, &xp, INSERT_VALUES);
 
       // X - 1
-      col = globalIndex(x-1, y);
-      MatSetValues(MatA,1,&row,1,&col,&xm,INSERT_VALUES);
+      col = globalIndex(x - 1, y);
+      MatSetValues(MatA, 1, &row, 1, &col, &xm, INSERT_VALUES);
 
-      if( include_y_derivs ) {
+      if (include_y_derivs) {
         // Y + 1
-        col = globalIndex(x, y+1);
-        MatSetValues(MatA,1,&row,1,&col,&yp,INSERT_VALUES);
+        col = globalIndex(x, y + 1);
+        MatSetValues(MatA, 1, &row, 1, &col, &yp, INSERT_VALUES);
 
         // Y - 1
-        col = globalIndex(x, y-1);
-        MatSetValues(MatA,1,&row,1,&col,&ym,INSERT_VALUES);
+        col = globalIndex(x, y - 1);
+        MatSetValues(MatA, 1, &row, 1, &col, &ym, INSERT_VALUES);
 
         // X + 1, Y + 1
-        col = globalIndex(x+1, y+1);
-        MatSetValues(MatA,1,&row,1,&col,&xpyp,INSERT_VALUES);
+        col = globalIndex(x + 1, y + 1);
+        MatSetValues(MatA, 1, &row, 1, &col, &xpyp, INSERT_VALUES);
 
         // X + 1, Y - 1
-        col = globalIndex(x+1, y-1);
-        MatSetValues(MatA,1,&row,1,&col,&xpym,INSERT_VALUES);
+        col = globalIndex(x + 1, y - 1);
+        MatSetValues(MatA, 1, &row, 1, &col, &xpym, INSERT_VALUES);
 
         // X - 1, Y + 1
-        col = globalIndex(x-1, y+1);
-        MatSetValues(MatA,1,&row,1,&col,&xmyp,INSERT_VALUES);
+        col = globalIndex(x - 1, y + 1);
+        MatSetValues(MatA, 1, &row, 1, &col, &xmyp, INSERT_VALUES);
 
         // X - 1, Y - 1
-        col = globalIndex(x-1, y-1);
-        MatSetValues(MatA,1,&row,1,&col,&xmym,INSERT_VALUES);
+        col = globalIndex(x - 1, y - 1);
+        MatSetValues(MatA, 1, &row, 1, &col, &xmym, INSERT_VALUES);
       }
     }
   }
@@ -1234,8 +1236,9 @@ const Field2D LaplaceXY::solve(const Field2D& rhs, const Field2D& x0) {
       int ind = globalIndex(localmesh->xstart - 1, y);
       PetscScalar val;
       VecGetValues(xs, 1, &ind, &val);
-      for (int x = localmesh->xstart - 1; x >= 0; x--)
+      for (int x = localmesh->xstart - 1; x >= 0; x--) {
         result(x, y) = val;
+      }
     }
   }
 
@@ -1245,47 +1248,48 @@ const Field2D LaplaceXY::solve(const Field2D& rhs, const Field2D& x0) {
       int ind = globalIndex(localmesh->xend + 1, y);
       PetscScalar val;
       VecGetValues(xs, 1, &ind, &val);
-      for (int x = localmesh->xend + 1; x < localmesh->LocalNx; x++)
+      for (int x = localmesh->xend + 1; x < localmesh->LocalNx; x++) {
         result(x, y) = val;
+      }
     }
   }
 
   // Lower Y boundary
   for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
     if (
-         // Should not go into corner cells, finite-volume LaplaceXY stencil does not include
-         // them
-         (finite_volume and (it.ind < localmesh->xstart or it.ind > localmesh->xend))
+        // Should not go into corner cells, finite-volume LaplaceXY stencil does not include
+        // them
+        (finite_volume and (it.ind < localmesh->xstart or it.ind > localmesh->xend))
 
-         // Only go into first corner cell for finite-difference
-         or (it.ind < localmesh->xstart - 1 or it.ind > localmesh->xend + 1)
-       ) {
+        // Only go into first corner cell for finite-difference
+        or (it.ind < localmesh->xstart - 1 or it.ind > localmesh->xend + 1)) {
       continue;
     }
     int ind = globalIndex(it.ind, localmesh->ystart - 1);
     PetscScalar val;
     VecGetValues(xs, 1, &ind, &val);
-    for (int y = localmesh->ystart - 1; y >= 0; y--)
+    for (int y = localmesh->ystart - 1; y >= 0; y--) {
       result(it.ind, y) = val;
+    }
   }
 
   // Upper Y boundary
   for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
     if (
-         // Should not go into corner cells, finite-volume LaplaceXY stencil does not include
-         // them
-         (finite_volume and (it.ind < localmesh->xstart or it.ind > localmesh->xend))
+        // Should not go into corner cells, finite-volume LaplaceXY stencil does not include
+        // them
+        (finite_volume and (it.ind < localmesh->xstart or it.ind > localmesh->xend))
 
-         // Only go into first corner cell for finite-difference
-         or (it.ind < localmesh->xstart - 1 or it.ind > localmesh->xend + 1)
-       ) {
+        // Only go into first corner cell for finite-difference
+        or (it.ind < localmesh->xstart - 1 or it.ind > localmesh->xend + 1)) {
       continue;
     }
     int ind = globalIndex(it.ind, localmesh->yend + 1);
     PetscScalar val;
     VecGetValues(xs, 1, &ind, &val);
-    for (int y = localmesh->yend + 1; y < localmesh->LocalNy; y++)
+    for (int y = localmesh->yend + 1; y < localmesh->LocalNy; y++) {
       result(it.ind, y) = val;
+    }
   }
 
   return result;
@@ -1741,47 +1745,47 @@ void LaplaceXY::solveFiniteDifference(const Field2D& x0) {
  * indexing patterns, so incrementing an integer would be tricky.
  */
 int LaplaceXY::precon(Vec input, Vec result) {
-  
-  for(auto itdwn=localmesh->iterateBndryLowerY(); !itdwn.isDone(); itdwn++) {
+
+  for (auto itdwn = localmesh->iterateBndryLowerY(); !itdwn.isDone(); itdwn++) {
     // Should not go into corner cells, LaplaceXY stencil does not include them
     if (itdwn.ind < localmesh->xstart or itdwn.ind > localmesh->xend) {
       continue;
     }
-    const int ind = globalIndex(itdwn.ind, localmesh->ystart-1);
+    const int ind = globalIndex(itdwn.ind, localmesh->ystart - 1);
     PetscScalar val;
-    VecGetValues(input, 1, &ind, &val );
-    VecSetValues(result, 1, &ind, &val, INSERT_VALUES );
+    VecGetValues(input, 1, &ind, &val);
+    VecSetValues(result, 1, &ind, &val, INSERT_VALUES);
   }
-  for(auto itup=localmesh->iterateBndryUpperY(); !itup.isDone(); itup++) {
+  for (auto itup = localmesh->iterateBndryUpperY(); !itup.isDone(); itup++) {
     // Should not go into corner cells, LaplaceXY stencil does not include them
     if (itup.ind < localmesh->xstart or itup.ind > localmesh->xend) {
       continue;
     }
-    const int ind = globalIndex(itup.ind, localmesh->yend+1);
+    const int ind = globalIndex(itup.ind, localmesh->yend + 1);
     PetscScalar val;
-    VecGetValues(input, 1, &ind, &val );
-    VecSetValues(result, 1, &ind, &val, INSERT_VALUES );
+    VecGetValues(input, 1, &ind, &val);
+    VecSetValues(result, 1, &ind, &val, INSERT_VALUES);
   }
-    
+
   // Load vector x into bvals array
-  for(int x=xstart; x<=xend; x++) {
-    for(int y=localmesh->ystart; y<=localmesh->yend; y++) {
+  for (int x = xstart; x <= xend; x++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       const int ind = globalIndex(x, y);
       PetscScalar val;
-      VecGetValues(input, 1, &ind, &val );
+      VecGetValues(input, 1, &ind, &val);
       bvals(y - localmesh->ystart, x - xstart) = val;
     }
   }
-  
+
   // Solve tridiagonal systems using CR solver
   cr->solve(bvals, xvals);
 
   // Save result xvals into y array
-  for(int x=xstart; x<=xend; x++) {
-    for(int y=localmesh->ystart; y<=localmesh->yend; y++) {
+  for (int x = xstart; x <= xend; x++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       const int ind = globalIndex(x, y);
       PetscScalar val = xvals(y - localmesh->ystart, x - xstart);
-      VecSetValues(result, 1, &ind, &val, INSERT_VALUES );
+      VecSetValues(result, 1, &ind, &val, INSERT_VALUES);
     }
   }
   VecAssemblyBegin(result);
@@ -1792,21 +1796,23 @@ int LaplaceXY::precon(Vec input, Vec result) {
 ///////////////////////////////////////////////////////////////
 
 int LaplaceXY::localSize() {
-  
+
   // Bulk of points
   const int nx = localmesh->xend - localmesh->xstart + 1;
   const int ny = localmesh->yend - localmesh->ystart + 1;
-  
-  int n = nx * ny;  
-  
+
+  int n = nx * ny;
+
   // X boundaries
-  if(localmesh->firstX())
+  if (localmesh->firstX()) {
     n += ny;
-  if(localmesh->lastX())
+  }
+  if (localmesh->lastX()) {
     n += ny;
-  
+  }
+
   // Y boundaries
-  for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+  for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
     // Should not go into corner cells, LaplaceXY stencil does not include them
     if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
       continue;
@@ -1821,7 +1827,7 @@ int LaplaceXY::localSize() {
       n++;
     }
   }
-  for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+  for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
     // Should not go into corner cells, LaplaceXY stencil does not include them
     if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
       continue;
@@ -1836,32 +1842,47 @@ int LaplaceXY::localSize() {
       n++;
     }
   }
-  
+
   return n;
 }
 
 int LaplaceXY::globalIndex(int x, int y) {
-  if( (x < 0) || (x >= localmesh->LocalNx) ||
-      (y < 0) || (y >= localmesh->LocalNy) )
+  if ((x < 0) || (x >= localmesh->LocalNx) || (y < 0) || (y >= localmesh->LocalNy)) {
     return -1; // Out of range
- 
+  }
+
   // Get the index from a Field2D, round to integer
   return static_cast<int>(std::round(indexXY(x, y)));
 }
 
-void LaplaceXY::savePerformance(Datafile& output_file, Solver& solver,
-                                std::string name) {
+void LaplaceXY::savePerformance(Solver& solver, const std::string& name) {
   // set flag so that performance monitoring values are calculated
   save_performance = true;
 
   // add values to be saved to the output
-  if (name == "") {
-    name = default_prefix;
+  if (not name.empty()) {
+    default_prefix = name;
   }
-  output_file.addRepeat(output_average_iterations, name + "_average_iterations");
 
   // add monitor to reset counters/averages for new output timestep
   // monitor added to back of queue, so that values are reset after being saved
   solver.addMonitor(&monitor, Solver::BACK);
 }
+
+int LaplaceXY::LaplaceXYMonitor::call(Solver* /*solver*/, BoutReal /*time*/, int /*iter*/,
+                                      int /*nout*/) {
+  laplacexy.output_average_iterations = laplacexy.average_iterations;
+
+  laplacexy.n_calls = 0;
+  laplacexy.average_iterations = 0.;
+
+  return 0;
+}
+
+void LaplaceXY::LaplaceXYMonitor::outputVars(Options& output_options,
+                                             const std::string& time_dimension) {
+  output_options[fmt::format("{}_average_iterations", laplacexy.default_prefix)]
+      .assignRepeat(laplacexy.output_average_iterations, time_dimension);
+}
+
 #endif // BOUT_HAS_PETSC

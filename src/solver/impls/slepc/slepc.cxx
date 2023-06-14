@@ -28,13 +28,30 @@
 #if BOUT_HAS_SLEPC
 
 #include "slepc.hxx"
-#include <boutcomm.hxx>
-#include <globals.hxx>
-#include <interpolation.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/globals.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 
 #include <cstdlib>
+
+#if BOUT_USE_SIGFPE
+#include <fenv.h>
+#endif
+
+namespace {
+/// Disable floating-point exceptions in a scope, reenable them on exit
+struct QuietFPE {
+#if BOUT_USE_SIGFPE
+  QuietFPE() : flags(fegetexcept()) { fedisableexcept(flags); }
+  ~QuietFPE() { feenableexcept(flags); }
+
+private:
+  int flags;
+#endif
+};
+} // namespace
 
 std::string formatEig(BoutReal reEig, BoutReal imEig);
 
@@ -118,7 +135,6 @@ PetscErrorCode stBackTransformWrapper(ST st, PetscInt nEig, PetscScalar* eigr,
 
 // Helper function
 std::string formatEig(BoutReal reEig, BoutReal imEig) {
-
   const std::string rePad = (reEig < 0) ? "-" : " ";
   const std::string imPad = (imEig < 0) ? "-" : "+";
 
@@ -204,8 +220,7 @@ SlepcSolver::SlepcSolver(Options* options) {
 
   if (!selfSolve && !ddtMode) {
     // Use a sub-section called "advance"
-    advanceSolver =
-        SolverFactory::getInstance().create(options->getSection("advance"));
+    advanceSolver = SolverFactory::getInstance().create(options->getSection("advance"));
   }
 }
 
@@ -369,7 +384,8 @@ void SlepcSolver::createShellMat() {
                  &shellMat);
   // Define the mat_mult operation --> Define what routine returns M.x, where M
   // is the time advance operator and x are the initial field conditions
-  MatShellSetOperation(shellMat, MATOP_MULT, reinterpret_cast<void (*)()>(&advanceStepWrapper));
+  MatShellSetOperation(shellMat, MATOP_MULT,
+                       reinterpret_cast<void (*)()>(&advanceStepWrapper));
 
   // The above function callback can cause issues as member functions have a hidden "this"
   // argument which means if Slepc calls this->advanceStep(Mat,Vec,Vec) this is actually
@@ -553,41 +569,48 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
                           PetscScalar eigi[], PetscReal errest[], PetscInt UNUSED(nest)) {
   static int nConvPrev = 0;
 
+  // Disable floating-point exceptions for the duration of this function
+  MAYBE_UNUSED(QuietFPE quiet_fpe{});
+
   // No output until after first iteration
   if (its < 1) {
     return;
   }
 
-  extern BoutReal simtime;
   static bool first = true;
   if (eigenValOnly && first) {
     first = false;
-    iteration = 0;
+    resetIterationCounter();
   }
-  BoutReal reEigBout, imEigBout;
-  slepcToBout(eigr[nconv], eigi[nconv], reEigBout, imEigBout);
 
-  // This line more or less replicates the normal slepc output (when using -eps_monitor)
-  // but reports Bout eigenvalues rather than the Slepc values. Note we haven't changed
-  // error estimate.
-  output << " " << its << " nconv=" << nconv << "\t first unconverged value (error) "
-         << formatEig(reEigBout, imEigBout) << "\t (" << errest[nconv] << ")\n";
+  // Temporary eigenvalues, converted from the SLEPc eigenvalues
+  BoutReal reEigBout, imEigBout;
+
+  // Only report unconverged eigenvalues if we don't have all the requested ones
+  if (nconv < nEig) {
+    slepcToBout(eigr[nconv], eigi[nconv], reEigBout, imEigBout);
+
+    // This line more or less replicates the normal slepc output (when using -eps_monitor)
+    // but reports Bout eigenvalues rather than the Slepc values. Note we haven't changed
+    // error estimate.
+    output.write(" {} nconv={}\t first unconverged value (error) {}\t({})\n", its, nconv,
+                 formatEig(reEigBout, imEigBout), errest[nconv]);
+  }
 
   // The following can be quite noisy so may want to add a flag to disable/enable.
   const int newConv = nconv - nConvPrev;
   if (newConv > 0) {
-    output << "Found " << newConv << " new converged eigenvalues:\n";
+    output.write("Found {} new converged eigenvalues:\n", newConv);
     for (PetscInt i = nConvPrev; i < nconv; i++) {
       slepcToBout(eigr[i], eigi[i], reEigBout, imEigBout);
-      output << "\t" << i << "\t: " << formatEig(eigr[i], eigi[i]) << " --> ";
-      output << formatEig(reEigBout, imEigBout) << "\n";
+      output.write("\t{}\t: {} --> {}\n", i, formatEig(eigr[i], eigi[i]),
+                   formatEig(reEigBout, imEigBout));
       if (eigenValOnly) {
-        simtime = reEigBout;
-        bout::globals::dump.write();
-        iteration++;
-        simtime = imEigBout;
-        bout::globals::dump.write();
-        iteration++;
+        // Silence the default monitor
+        WithQuietOutput progress{output_progress};
+        // Call monitors so fields get written
+        call_monitors(reEigBout, incrementIterationCounter(), getNumberOutputSteps());
+        call_monitors(imEigBout, incrementIterationCounter(), getNumberOutputSteps());
       }
     }
   }
@@ -599,7 +622,6 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
 // Convert a slepc eigenvalue to a BOUT one
 void SlepcSolver::slepcToBout(PetscScalar& reEigIn, PetscScalar& imEigIn,
                               BoutReal& reEigOut, BoutReal& imEigOut, bool force) {
-
   // If not stIsShell then the slepc eigenvalue is actually
   // Exp(-i*Eig_Bout*tstep) for ddtMode = false
   //-i*Eig_Bout for ddtMode = true
@@ -680,7 +702,7 @@ void SlepcSolver::analyseResults() {
   output << "Converged eigenvalues :\n"
             "\tIndex\tSlepc eig (mag.)\t\t\tBOUT eig (mag.)\n";
 
-  iteration = 0;
+  resetIterationCounter();
 
   // Declare and create vectors to store eigenfunctions
   Vec vecReal, vecImag;
@@ -689,10 +711,6 @@ void SlepcSolver::analyseResults() {
 #else
   MatCreateVecs(shellMat, &vecReal, &vecImag);
 #endif
-
-  // This allows us to set the simtime in bout++.cxx directly
-  // rather than calling the monitors which are noisy |--> Not very nice way to do this
-  extern BoutReal simtime;
 
   for (PetscInt iEig = 0; iEig < nEigFound; iEig++) {
     // Get slepc eigenvalue
@@ -719,25 +737,19 @@ void SlepcSolver::analyseResults() {
     // Write real part of eigen data
     // First dump real part to fields
     vecToFields(vecReal);
-    // Set the simtime to omega
-    simtime = reEigBout;
 
     // Run the rhs in order to calculate aux fields
     run_rhs(0.0);
 
-    // Write to file
-    bout::globals::dump.write();
-    iteration++;
+    // Silence the default monitor
+    WithQuietOutput progress{output_progress};
+    // Call monitors so fields get written
+    call_monitors(reEigBout, incrementIterationCounter(), getNumberOutputSteps());
 
     // Now write imaginary part of eigen data
     // First dump imag part to fields
     vecToFields(vecImag);
-    // Set the simtime to gamma
-    simtime = imEigBout;
-
-    // Write to file
-    bout::globals::dump.write();
-    iteration++;
+    call_monitors(imEigBout, incrementIterationCounter(), getNumberOutputSteps());
   }
 
   // Destroy vectors

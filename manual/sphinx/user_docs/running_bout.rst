@@ -135,11 +135,6 @@ xBOUT documentation
 `xbout.readthedocs.io <https://xbout.readthedocs.io/en/latest/>`_.
 
 There is also an older set of NumPy-based Python tools, described below.
-
-.. note:: We now recommend using `xBOUT
-          <https://xbout.readthedocs.io/en/latest>` to analyse BOUT++
-          simulations.
-
 In order to analyse the output of the simulation using Python, you
 will first need to have set up python to use the BOUT++ libraries
 ``boutdata`` and ``boututils``; see section
@@ -237,26 +232,25 @@ when you need a way to debug your code too.
   which shows which functions were being run (most recent first). This
   should give a good indication of where an error occurred. If this
   stack isn’t printed, make sure checking is set to level 2 or higher
-  (``./configure –-enable-checks=2``).
+  (``cmake -DCHECK=2``).
 
 - If the error is due to non-finite numbers, increase the checking
-  level (``./configure –-enable-checks=3``) to perform more checking of
+  level (``cmake -DCHECK=3``) to perform more checking of
   values and (hopefully) find an error as soon as possible after it
   occurs.
 
 - If the error is a segmentation fault, you can try a debugger such as
   gdb or totalview. You will likely need to compile with some
-  debugging flags (``./configure --enable-debug``).
+  debugging flags (``cmake -DCMAKE_CXX_FLAGS=" -g "``).
 
 - You can also enable exceptions on floating point errors
-  (``./configure --enable-sigfpe``), though the majority of these
+  (``cmake -DBOUT_ENABLE_SIGFPE``), though the majority of these
   types of errors should be caught with checking level set to 3.
 
 - Expert users can try AddressSanitizer, which is a tool that comes
   with recent versions of GCC and Clang. To enable AddressSanitizer,
   include ``-fsanitize=leak -fsanitize=address -fsanitize=undefined``
-  in ``CXXFLAGS`` when configuring BOUT++, or add them to
-  ``BOUT_FLAGS``.
+  in ``-DCMAKE_CXX_FLAGS`` when configuring BOUT++.
 
 Startup output
 --------------
@@ -485,7 +479,7 @@ starts::
     Run started at  : Tue 07 Dec 2021 17:50:39 GMT
 
 The ``Run ID`` here is a `universally unique identifier
-<https://en.wikipedia.org/wiki/Universally_unique_identifier>` (UUID)
+<https://en.wikipedia.org/wiki/Universally_unique_identifier>`_ (UUID)
 which is a random 128-bit label unique to this current
 simulation. This makes it easier to identify all of the associated
 outputs of a simulation, and record the data for future reference.
@@ -559,9 +553,9 @@ it never will be (regardless of the values of ``restart`` and ``append``).
 
 If you need to restart from a different point in your simulation, or
 the ``BOUT.restart`` files become corrupted, you can use `xBOUT
-<https://xbout.readthedocs.io/en/latest>` to create new restart files
+<https://xbout.readthedocs.io/en/latest>`_ to create new restart files
 from any time-point in your output files. Use the `.to_restart()
-<https://xbout.readthedocs.io/en/latest/xbout.html#xbout.boutdataset.BoutDatasetAccessor.to_restart>`
+<https://xbout.readthedocs.io/en/latest/xbout.html#xbout.boutdataset.BoutDatasetAccessor.to_restart>`_
 method:
 
 .. code-block:: pycon

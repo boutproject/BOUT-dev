@@ -8,6 +8,6 @@ endif()
 
 bout_add_example(blob2d-outerloop SOURCES blob2d.cxx)
 
-if(BOUT_USE_CUDA)
+if(BOUT_HAS_CUDA)
   set_source_files_properties(blob2d.cxx PROPERTIES LANGUAGE CUDA)
 endif()
