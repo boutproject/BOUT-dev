@@ -14,53 +14,24 @@ SUNDIALS and PETSc.
 Optimisation and run-time checking
 ----------------------------------
 
-Configure with ``--enable-checks=3`` enables a lot of checks of
+Configure with ``-DCHECK=3`` enables a lot of checks of
 operations performed by the field objects. This is very useful for
 debugging a code, and can be omitted once bugs have been removed.
-``--enable=checks=2`` enables less checking, especially the
-computationally rather expensive ones, while ``--enable-checks=0``
+``-DCHECK=2`` enables less checking, especially the
+computationally rather expensive ones, while ``-DCHECK=0``
 disables most checks.
 
-To get most checking, both from BOUT++ and from the compiler
-``--enable-debug`` can be used. That enables checks of level 3, as
-well as debug flags, e.g. ``-g`` for gcc.
-
 For (sometimes) more useful error messages, there is the
-``--enable-track`` option. This keeps track of the names of variables
-and includes these in error messages.
+``-DBOUT_ENABLE_TRACK=ON`` option. This keeps track of the names of
+variables and includes these in error messages.
 
 To get a backtrace, you can set the environment variable
 ``BOUT_SHOW_BACKTRACE`` in order for the exception to include the
 backtrace.
 
-To enable optimization, configure with ``--enable-optimize=3``.
-This will try to set appropriate flags, but may not set the best ones.
-This should work well for gcc. Similar to checks, different levels can
-be specified, where 3 is high, and 0 means disabling all
-optimization. ``--enable-optimize=fast`` will set the ``-Ofast`` flag
-for gcc which enables optimizations that are not standard conforming, so
-proceed at own risk.
+To enable optimization, configure with appropriate flags for your
+compiler, e.g. with ``-DCMAKE_CXX_FLAGS=" -O3 "`` for a gnu compiler.
 
-Manually set compilation flags
-------------------------------
-
-You can set the following environment variables if you need more
-control over how BOUT++ is built:
-
-- ``LDFLAGS``: extra flags for linking, e.g. ``-L<library dir>``
-
-- ``LIBS``: extra libraries for linking, e.g. ``-l<library>``
-
-- ``CPPFLAGS``: preprocessor flags, e.g. ``-I<include dir>``
-
-- ``CXXFLAGS``: compiler flags, e.g. ``-Wall``
-
-- ``SUNDIALS_EXTRA_LIBS`` specifies additional libraries for linking
-  to SUNDIALS, which are put at the end of the link command.
-
-It is possible to change flags for BOUT++ after running configure, by
-editing the ``make.config`` file. Note that this is not recommended,
-as e.g. PVODE will not be built with these flags.
 
 Install dependencies:
 ---------------------
@@ -228,9 +199,11 @@ Compiling with Apple Clang 12, the following configuration has been known to wor
 
 .. code-block:: tcsh
 
-   cmake . -B build -DBOUT_ENABLE_BACKTRACE=Off -DBUILD_SHARED_LIBS=Off -DBOUT_USE_NLS=Off -DBOUT_USE_UUID_SYSTEM_GENERATOR=Off
-   cd build
-   make
+   cmake . -B <build-directory> -DBOUT_ENABLE_BACKTRACE=Off -DBUILD_SHARED_LIBS=Off -DBOUT_USE_NLS=Off -DBOUT_USE_UUID_SYSTEM_GENERATOR=Off
+   cd <build-directory>
+   cmake --build <build-directory>
+
+where ``<build-directory>`` is the path to the build directory
 
 Marconi
 ~~~~~~~
@@ -328,7 +301,7 @@ BOUT++ will look for ``ncxx4-config`` or ``nc-config`` in your
 version than the one you want, you can point it at the correct version
 using::
 
-   ./configure --with-netcdf=/path/to/ncxx4-config
+   cmake -S .. -B . -DBOUT_USE_NETCDF=ON -DnetCDFCxx_ROOT=/path/to/ncxx4-config
 
 where ``/path/to/ncxx4-config`` is the location of the
 ``ncxx4-config`` tool (``nc-config`` will also work, but
@@ -385,9 +358,9 @@ OpenMP
 ------
 
 BOUT++ can make use of OpenMP parallelism. To enable OpenMP, use the
-``--enable-openmp`` flag to configure::
+``-DBOUT_ENABLE_OPENMP=ON`` flag to configure::
 
-    ./configure --enable-openmp
+    cmake -S .. -B . -DBOUT_ENABLE_OPENMP=ON
 
 OpenMP can be used to parallelise in more directions than can be
 achieved with MPI alone. For example, it is currently difficult to
@@ -410,7 +383,7 @@ some problem sizes on some machines) is setting the OpenMP schedule
 used in some of the OpenMP loops (specifically those using
 `BOUT_FOR`). This can be set using::
 
-    ./configure --enable-openmp --with-openmp-schedule=<schedule>
+    cmake . -DBOUT_ENABLE_OPENMP=ON -DBOUT_OPENMP_SCHEDULE=<schedule>
 
 with ``<schedule>`` being one of: ``static`` (the default),
 ``dynamic``, ``guided``, ``auto`` or ``runtime``.
@@ -480,9 +453,9 @@ solver, which evolves a system of the form
 :math:`\mathbf{f}(\mathbf{u},\dot{\mathbf{u}},t) = 0`. This allows
 algebraic constraints on variables to be specified.
 
-Use the ``--with-sundials`` option to configure BOUT++ with SUNDIALS::
+Use the ``-DBOUT_USE_SUNDIALS=ON -DSUNDIALS_ROOT=`` option to configure BOUT++ with SUNDIALS::
 
-    $ ./configure --with-sundials=/path/to/sundials/install
+    $ cmake . -DBOUT_USE_SUNDIALS=ON -DSUNDIALS_ROOT=/path/to/sundials/install
 
 SUNDIALS will allow you to select at run-time which solver to use. See
 :ref:`sec-timeoptions` for more details on how to do this.
@@ -490,8 +463,6 @@ SUNDIALS will allow you to select at run-time which solver to use. See
 Notes:
 
 * If compiling SUNDIALS, make sure that it is configured with MPI (``MPI_ENABLE=ON``)
-* If you install SUNDIALS to a non-standard (system) directory, you will probably have
-  to add the ``lib`` directory to the ``LD_LIBRARY_PATH`` environment variable.
 
 .. _sec-PETSc-install:
 
@@ -502,15 +473,15 @@ BOUT++ can use PETSc https://www.mcs.anl.gov/petsc/ for time-integration
 and for solving elliptic problems, such as inverting Poisson and
 Helmholtz equations.
 
-Currently, BOUT++ supports PETSc versions 3.7 - 3.14. More recent versions may
+Currently, BOUT++ supports PETSc versions 3.7 - 3.19. More recent versions may
 well work, but the PETSc API does sometimes change in backward-incompatible
-ways, so this is not guaranteed. To install PETSc version 3.13, use the
+ways, so this is not guaranteed. To install PETSc version 3.19, use the
 following steps::
 
     $ cd ~
-    $ wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.13.4.tar.gz
-    $ tar -xzvf petsc-3.13.4.tar.gz
-    $ cd petsc-3.13.4
+    $ wget https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.19.1.tar.gz
+    $ tar -xzvf petsc-3.19.1.tar.gz
+    $ cd petsc-3.19.1
 
 Use the following configure options to ensure PETSc is compatible with BOUT++::
 
@@ -545,10 +516,10 @@ installed to.
 
           to ``./configure``.
 
-To make PETSc type what is shown in the terminal output after the configure
+To make PETSc, type what is shown in the terminal output after the configure
 step, something like::
 
-    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug all
+    $ make PETSC_DIR=$HOME/petsc-3.19.1 PETSC_ARCH=arch-linux2-cxx-debug all
 
 Should BLAS, LAPACK, or any other packages be missing, you will get an
 error, and a suggestion that you can append
@@ -557,20 +528,20 @@ error, and a suggestion that you can append
 You may want to test that everything is configured properly. To do this replace
 ``all`` with ``test`` in the make command. It should be something like::
 
-    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug test
+    $ make PETSC_DIR=$HOME/petsc-3.19.1 PETSC_ARCH=arch-linux2-cxx-debug test
 
 To install PETSc, replace ``test``/``all`` with ``install`` and run
 something like::
 
-    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug install
+    $ make PETSC_DIR=$HOME/petsc-3.19.1 PETSC_ARCH=arch-linux2-cxx-debug install
 
 To configure BOUT++ with PETSc, add to the cmake configure command::
 
-    -DBOUT_USE_PETSC=ON -DPETSC_ROOT=$HOME/local/petsc-version-options
+    -DBOUT_USE_PETSC=ON -DPETSC_DIR=$HOME/local/petsc-version-options
 
 For example like this::
 
-    $ cmake -DBOUT_USE_PETSC=ON -DPETSC_ROOT=$HOME/local/petsc-version-options
+    $ cmake -S . -B <build-directory> -DBOUT_USE_PETSC=ON -DPETSC_DIR=$HOME/local/petsc-version-options
 
 BOUT++ can also work with PETSc if it has not been installed. In this
 case ensure that ``PETSC_DIR`` and ``PETSC_ARCH`` are set, for example
@@ -590,11 +561,11 @@ serial performance. This does not add new features, but may be faster
 in some cases. LAPACK is however written in FORTRAN 77, which can
 cause linking headaches. To enable these routines use::
 
-    $ ./configure --with-lapack
+    $ cmake -S . -B <build-directory> -DBOUT_USE_LAPACK=ON
 
 and to specify a non-standard path::
 
-    $ ./configure --with-lapack=/path/to/lapack
+    $ cmake -S . -B <build-directory> -DBOUT_USE_LAPACK=ON -DLAPACK_ROOT=/path/to/lapack
 
 
 MPI compilers
@@ -602,9 +573,7 @@ MPI compilers
 
 These are usually called something like mpicc and mpiCC (or mpicxx), and
 the configure script will look for several common names. If your
-compilers aren’t recognised then set them using::
-
-    $ ./configure MPICC=<your C compiler> MPICXX=<your C++ compiler>
+compilers aren’t recognised then check the `cmake documentation for MPI <https://cmake.org/cmake/help/latest/module/FindMPI.html#variables-for-locating-mpi>`_
 
 NOTES:
 
@@ -881,15 +850,11 @@ to ``next``, with an error like the following::
    make: *** [src] Error 2
 
 it's possible something has gone wrong with the submodules. To fix,
-just run ``make submodules``::
+just run::
 
-  $ make submodules
-  Downloading mpark.variant
-  git submodule update --init --recursive /home/peter/Codes/BOUT-dev/externalpackages/mpark.variant
-  Submodule path 'externalpackages/mpark.variant': checked out '0b488da9bebac980e7ba0e158a959c956a449676'
+  $ git submodule update --init --recursive  ./externalpackages/*
 
-If you regularly work on two different branches and need to run ``make
-submodules`` a lot, you may consider telling git to automatically
+If you regularly work on two different branches and need to run the above command a lot, you may consider telling git to automatically
 update the submodules::
 
   git config submodule.recurse=true
