@@ -62,9 +62,7 @@ for solver in ["cyclic", "pcr", "pcr_thomas"]:
             + str(nxpe)
             + " laplace:type="
             + solver
-            + (" laplace:ngather=" + str(ngather))
-            if solver == "cyclic"
-            else ""
+            + ((" laplace:ngather=" + str(ngather)) if solver == "cyclic" else "")
         )
 
         shell("rm data/BOUT.dmp.*.nc")
