@@ -196,7 +196,7 @@ public:
   /// The type used to store values
   using ValueType =
       bout::utils::variant<bool, int, BoutReal, std::string, Field2D, Field3D, FieldPerp,
-                           Array<BoutReal>, Matrix<BoutReal>, Tensor<BoutReal>>;
+                           Array<BoutReal>, Array<int>, Matrix<BoutReal>, Tensor<BoutReal>>;
 
   /// The type used to store attributes
   /// Extends the variant class so that cast operator can be implemented
@@ -874,6 +874,8 @@ void Options::assign<>(FieldPerp val, std::string source);
 template <>
 void Options::assign<>(Array<BoutReal> val, std::string source);
 template <>
+void Options::assign<>(Array<int> val, std::string source);
+template <>
 void Options::assign<>(Matrix<BoutReal> val, std::string source);
 template <>
 void Options::assign<>(Tensor<BoutReal> val, std::string source);
@@ -901,6 +903,8 @@ template <>
 FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const;
 template <>
 Array<BoutReal> Options::as<Array<BoutReal>>(const Array<BoutReal>& similar_to) const;
+template <>
+Array<int> Options::as<Array<int>>(const Array<int>& similar_to) const;
 template <>
 Matrix<BoutReal> Options::as<Matrix<BoutReal>>(const Matrix<BoutReal>& similar_to) const;
 template <>

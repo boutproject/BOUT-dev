@@ -138,7 +138,8 @@ struct GetDimensions {
   std::vector<int> operator()(MAYBE_UNUSED(int value)) { return {1}; }
   std::vector<int> operator()(MAYBE_UNUSED(BoutReal value)) { return {1}; }
   std::vector<int> operator()(MAYBE_UNUSED(const std::string& value)) { return {1}; }
-  std::vector<int> operator()(const Array<BoutReal>& array) { return {array.size()}; }
+  template<typename T>
+  std::vector<int> operator()(const Array<T>& array) { return {array.size()}; }
   std::vector<int> operator()(const Matrix<BoutReal>& array) {
     const auto shape = array.shape();
     return {std::get<0>(shape), std::get<1>(shape)};
@@ -471,13 +472,20 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
   }
 }
 
-bool GridFile::get(MAYBE_UNUSED(Mesh* m), MAYBE_UNUSED(std::vector<int>& var),
-                   MAYBE_UNUSED(const std::string& name), MAYBE_UNUSED(int len),
-                   MAYBE_UNUSED(int offset),
-                   MAYBE_UNUSED(GridDataSource::Direction dir)) {
+bool GridFile::get(Mesh* UNUSED(m), std::vector<int>& var, const std::string& name,
+                   int len, int offset, GridDataSource::Direction UNUSED(dir)) {
   TRACE("GridFile::get(vector<int>)");
 
-  return false;
+  if (not data.isSet(name)) {
+    return false;
+  }
+
+  const auto full_var = data[name].as<Array<int>>();
+  const auto* it = std::begin(full_var);
+  std::advance(it, offset);
+  std::copy_n(it, len, std::begin(var));
+
+  return true;
 }
 
 bool GridFile::get(Mesh* UNUSED(m), std::vector<BoutReal>& var, const std::string& name,

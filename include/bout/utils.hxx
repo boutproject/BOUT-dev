@@ -543,8 +543,8 @@ std::string toString(const T& val) {
 /// where the type may be std::string.
 inline std::string toString(const std::string& val) { return val; }
 
-template <>
-inline std::string toString<>(const Array<BoutReal>& UNUSED(val)) {
+template <typename T>
+inline std::string toString(const Array<T>& UNUSED(val)) {
   return "<Array>";
 }
 
