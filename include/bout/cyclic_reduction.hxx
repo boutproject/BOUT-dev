@@ -247,9 +247,11 @@ public:
         if (p == myproc) {
           // Just copy the data
           BOUT_OMP(parallel for)
-          for (int i = 0; i < myns; i++)
-            for (int j = 0; j < 8; j++)
+          for (int i = 0; i < myns; i++) {
+            for (int j = 0; j < 8; j++) {
               ifcs(i, 8 * p + j) = myif(sys0 + i, j);
+            }
+          }
         } else {
 #ifdef DIAGNOSE
           output << "Expecting to receive " << len << " from " << p << endl;
@@ -327,13 +329,14 @@ public:
           output << "Copying received data from " << p << endl;
 #endif
           BOUT_OMP(parallel for)
-          for (int i = 0; i < myns; i++)
+          for (int i = 0; i < myns; i++) {
             for (int j = 0; j < 8; j++) {
 #ifdef DIAGNOSE
               output << "Value " << j << " : " << all_buffer(p, 8 * i + j) << endl;
 #endif
               ifcs(i, 8 * p + j) = all_buffer(p, 8 * i + j);
             }
+          }
           all_req[p] = MPI_REQUEST_NULL;
         }
       } while (p != MPI_UNDEFINED);
@@ -480,7 +483,7 @@ public:
   }
 
 private:
-  MPI_Comm comm;             ///< Communicator
+  MPI_Comm comm{};           ///< Communicator
   int nprocs{0}, myproc{-1}; ///< Number of processors and ID of my processor
 
   int ngatherprocs{0};                 ///< Number of processors to gather onto
@@ -512,8 +515,9 @@ private:
   /// Allocate memory arrays
   /// @param[in] nsys  Number of independent systems to solve
   void allocMemory(int nsys) {
-    if (nsys == Nsys)
+    if (nsys == Nsys) {
       return; // No need to allocate memory
+    }
 
     Nsys = nsys;
 
