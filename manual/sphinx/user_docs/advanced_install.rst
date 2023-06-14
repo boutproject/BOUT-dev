@@ -17,7 +17,7 @@ Optimisation and run-time checking
 Configure with ``-DCHECK=3`` enables a lot of checks of
 operations performed by the field objects. This is very useful for
 debugging a code, and can be omitted once bugs have been removed.
-``--DCHECK=2`` enables less checking, especially the
+``-DCHECK=2`` enables less checking, especially the
 computationally rather expensive ones, while ``-DCHECK=0``
 disables most checks.
 
@@ -199,9 +199,11 @@ Compiling with Apple Clang 12, the following configuration has been known to wor
 
 .. code-block:: tcsh
 
-   cmake . -B build -DBOUT_ENABLE_BACKTRACE=Off -DBUILD_SHARED_LIBS=Off -DBOUT_USE_NLS=Off -DBOUT_USE_UUID_SYSTEM_GENERATOR=Off
-   cd build
-   make
+   cmake . -B <build-directory> -DBOUT_ENABLE_BACKTRACE=Off -DBUILD_SHARED_LIBS=Off -DBOUT_USE_NLS=Off -DBOUT_USE_UUID_SYSTEM_GENERATOR=Off
+   cd <build-directory>
+   cmake --build <build-directory>
+
+where ``<build-directory>`` is the path to the build directory
 
 Marconi
 ~~~~~~~
@@ -471,15 +473,15 @@ BOUT++ can use PETSc https://www.mcs.anl.gov/petsc/ for time-integration
 and for solving elliptic problems, such as inverting Poisson and
 Helmholtz equations.
 
-Currently, BOUT++ supports PETSc versions 3.7 - 3.14. More recent versions may
+Currently, BOUT++ supports PETSc versions 3.7 - 3.19. More recent versions may
 well work, but the PETSc API does sometimes change in backward-incompatible
-ways, so this is not guaranteed. To install PETSc version 3.13, use the
+ways, so this is not guaranteed. To install PETSc version 3.19, use the
 following steps::
 
     $ cd ~
-    $ wget https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.17.5.tar.gz
-    $ tar -xzvf petsc-3.17.5.tar.gz
-    $ cd petsc-3.17.5
+    $ wget https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.19.1.tar.gz
+    $ tar -xzvf petsc-3.19.1.tar.gz
+    $ cd petsc-3.19.1
 
 Use the following configure options to ensure PETSc is compatible with BOUT++::
 
@@ -514,10 +516,10 @@ installed to.
 
           to ``./configure``.
 
-To make PETSc type what is shown in the terminal output after the configure
+To make PETSc, type what is shown in the terminal output after the configure
 step, something like::
 
-    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug all
+    $ make PETSC_DIR=$HOME/petsc-3.19.1 PETSC_ARCH=arch-linux2-cxx-debug all
 
 Should BLAS, LAPACK, or any other packages be missing, you will get an
 error, and a suggestion that you can append
@@ -526,20 +528,20 @@ error, and a suggestion that you can append
 You may want to test that everything is configured properly. To do this replace
 ``all`` with ``test`` in the make command. It should be something like::
 
-    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug test
+    $ make PETSC_DIR=$HOME/petsc-3.19.1 PETSC_ARCH=arch-linux2-cxx-debug test
 
 To install PETSc, replace ``test``/``all`` with ``install`` and run
 something like::
 
-    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug install
+    $ make PETSC_DIR=$HOME/petsc-3.19.1 PETSC_ARCH=arch-linux2-cxx-debug install
 
 To configure BOUT++ with PETSc, add to the cmake configure command::
 
-    -DBOUT_USE_PETSC=ON -DPETSC_ROOT=$HOME/local/petsc-version-options
+    -DBOUT_USE_PETSC=ON -DPETSC_DIR=$HOME/local/petsc-version-options
 
 For example like this::
 
-    $ cmake -DBOUT_USE_PETSC=ON -DPETSC_ROOT=$HOME/local/petsc-version-options
+    $ cmake -S . -B <build-directory> -DBOUT_USE_PETSC=ON -DPETSC_DIR=$HOME/local/petsc-version-options
 
 BOUT++ can also work with PETSc if it has not been installed. In this
 case ensure that ``PETSC_DIR`` and ``PETSC_ARCH`` are set, for example
@@ -559,11 +561,11 @@ serial performance. This does not add new features, but may be faster
 in some cases. LAPACK is however written in FORTRAN 77, which can
 cause linking headaches. To enable these routines use::
 
-    $ cmake . -DBOUT_USE_LAPACK=ON
+    $ cmake -S . -B <build-directory> -DBOUT_USE_LAPACK=ON
 
 and to specify a non-standard path::
 
-    $ cmake . -DBOUT_USE_LAPACK=ON -DLAPACK_ROOT=/path/to/lapack
+    $ cmake -S . -B <build-directory> -DBOUT_USE_LAPACK=ON -DLAPACK_ROOT=/path/to/lapack
 
 
 MPI compilers

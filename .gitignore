@@ -81,4 +81,5 @@ coverage/
 # Python stuff
 /_wheel*/
 /dist/
+/manual/sphinx/_build
 /_version.txt
