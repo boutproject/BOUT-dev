@@ -88,6 +88,10 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
         Array<double> value(static_cast<int>(dims[0].getSize()));
         var.getVar(value.begin());
         result[var_name] = value;
+      } else if (var_type == ncInt or var_type == ncShort) {
+        Array<int> value(static_cast<int>(dims[0].getSize()));
+        var.getVar(value.begin());
+        result[var_name] = value;
       } else if ((var_type == ncString) or (var_type == ncChar)) {
         std::string value;
         value.resize(dims[0].getSize());
