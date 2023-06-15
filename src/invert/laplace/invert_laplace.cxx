@@ -269,7 +269,7 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz, dcomplex& a, dcomplex& b, dc
 
   ASSERT1(ccoef == nullptr || ccoef->getLocation() == loc);
   ASSERT1(d == nullptr || d->getLocation() == loc);
-  BoutReal kwave = jz * 2.0 * PI / coords->zlength()(jx, jy); // wave number is 1/[rad]
+  BoutReal kwave = jz * 2.0 * PI / coords->zlength()(jx, jy, jz); // wave number is 1/[rad]
 
   tridagCoefs(jx, jy, jz, kwave, a, b, c, ccoef, d, loc);
 }
@@ -316,7 +316,7 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz, BoutReal kwave, dcomplex& a,
    */
 #if not BOUT_USE_METRIC_3D
   jz = 0;
-#else
+#endif
   Coordinates* localcoords;
   if (loc == CELL_DEFAULT) {
     loc = location;
@@ -384,7 +384,6 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz, BoutReal kwave, dcomplex& a,
   b = dcomplex(-2.0 * coef1 - SQ(kwave) * coef2, kwave * coef5);
   c = dcomplex(coef1 + coef4, kwave * coef3);
 }
-#endif
 
 /*!
  * Set the matrix components of A in Ax=b
@@ -445,7 +444,7 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
   ASSERT1(c1coef->getLocation() == location);
   ASSERT1(c2coef->getLocation() == location);
   ASSERT1(d->getLocation() == location);
-
+  ASSERT1(dz.isuniform());
   // Better have either both or neither C coefficients
   ASSERT3((c1coef == nullptr and c2coef == nullptr)
           or (c1coef != nullptr and c2coef != nullptr))
@@ -494,7 +493,6 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
   for (int ix = 0; ix <= ncx; ix++) {
     // Actually set the metric coefficients
     for (int jz = 0; jz <= ncz; jz++) {
-
       tridagCoefs(xs + ix, jy, jz, kwave, avec[ix], bvec[ix], cvec[ix], c1coef, c2coef, d);
     }
     if (a != nullptr) {
