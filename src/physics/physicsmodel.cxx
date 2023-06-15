@@ -99,7 +99,6 @@ void PhysicsModel::initialise(Solver* s) {
   solver = s;
 
   bout::experimental::addBuildFlagsToOptions(output_options);
-  mesh->outputVars(output_options);
 
   // Restart option
   const bool restarting = Options::root()["restart"].withDefault(false);
@@ -112,6 +111,8 @@ void PhysicsModel::initialise(Solver* s) {
   if (init(restarting) != 0) {
     throw BoutException("Couldn't initialise physics model");
   }
+
+  mesh->outputVars(output_options);
 
   // Post-initialise, which reads restart files
   // This function can be overridden by the user

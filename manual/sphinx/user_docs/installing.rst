@@ -443,27 +443,27 @@ configuration::
 If not, see :ref:`sec-advancedinstall` for some things you can try to
 resolve common problems.
 
-Working with an active `conda` environment
+Working with an active ``conda`` environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When `conda` is used, it installs separate versions of several libraries. These
+When ``conda`` is used, it installs separate versions of several libraries. These
 can cause warnings or even failures when linking BOUT++ executables. There are
 several alternatives to deal with this problem:
-* The simplest but least convenient option is to use `conda deactivate` before
+* The simplest but least convenient option is to use ``conda deactivate`` before
   configuring, compiling, or running any BOUT++ program.
 * You might sometimes want to link to the conda-installed libraries. This is
   probably not ideal for production runs on an HPC system (as conda downloads
   binary packages that will not be optimized for specific hardware), but can be
   a simple way to get packages for testing or on a personal computer. In this
-  case just keep your `conda` environment active, and with luck the libraries
+  case just keep your ``conda`` environment active, and with luck the libraries
   should be picked up by the standard search mechanisms.
 * In case you do want a fully optimized and as-stable-as-possible build for
   production runs, it is probably best not to depend on any conda packages for
-  compiling or running BOUT++ executables (restrict `conda` to providing Python
+  compiling or running BOUT++ executables (restrict ``conda`` to providing Python
   packages for post-processing, and their dependencies). Passing
-  `-DBOUT_IGNORE_CONDA_ENV=ON` (default `OFF`) excludes anything in the conda
+  ``-DBOUT_IGNORE_CONDA_ENV=ON`` (default ``OFF``) excludes anything in the conda
   environment from CMake search paths. This should totally separate BOUT++ from
-  the `conda` environment.
+  the ``conda`` environment.
 
 .. _sec-config-nls:
 
@@ -476,14 +476,9 @@ gettext. If you are planning on installing BOUT++ (see
 you will be running BOUT++ from the directory you downloaded it into,
 then configure with the option::
 
-  ./configure --localedir=$PWD/locale
+  cmake . -DCMAKE_INSTALL_LOCALEDIR=$PWD/locale
 
-This will enable BOUT++ to find the translations. When ``configure``
-finishes, the configuration summary should contain a line like::
-
-  configure:   Natural language support: yes (path: /home/user/BOUT-dev/locale)
-
-where the ``path`` is the directory containing the translations.
+This will enable BOUT++ to find the translations.
 
 See :ref:`sec-run-nls` for details of how to switch language when running
 BOUT++ simulations.
@@ -531,7 +526,11 @@ or conda::
 
     $ conda install numpy scipy matplotlib sympy netcdf4 h5py future importlib-metadata
 
-They may also be available from your Linux system's package manager.
+They may also be available from your Linux system's package manager. 
+
+For example on Fedora::
+
+    $ sudo dnf install python3-boututils python3-boutdata
 
 To use the versions of ``boututils`` and ``boutdata`` provided by BOUT++,  the path to
 ``tools/pylib`` should be added to the ``PYTHONPATH`` environment variable. This is not
@@ -590,25 +589,14 @@ Compiling BOUT++
 ----------------
 
 Once BOUT++ has been configured, you can compile the bulk of the code by
-going to the ``BOUT-dev`` directory (same as ``configure``) and running::
+going to the ``BOUT-dev`` directory and running::
 
-    $ make
+    $ cmake --build <build-directory>
 
-(on OS-X, FreeBSD, and AIX this should be ``gmake``). This should print
-something like::
+where ``<build-directory>`` is the path to the build directory
 
-    ----- Compiling BOUT++ -----
-    CXX      =  mpicxx
-    CFLAGS   =  -O -DCHECK=2 -DSIGHANDLE \
-     -DREVISION=13571f760cec446d907e1bbeb1d7a3b1c6e0212a \
-     -DNCDF -DBOUT_HAS_PVODE
-    CHECKSUM =  ff3fb702b13acc092613cfce3869b875
-    INCLUDE  =  -I../include
-      Compiling  field.cxx
-      Compiling  field2d.cxx
-
-At the end of this, you should see a file ``libbout++.a`` in the
-``lib/`` subdirectory of the BOUT++ distribution. If you get an error,
+At the end of this, you should see a file ``libbout++.so`` in the
+``lib/`` subdirectory of the BOUT++ build directory. If you get an error,
 please `create an issue on Github <https://github.com/boutproject/BOUT-dev/issues>`__
 including:
 
@@ -616,7 +604,7 @@ including:
 
 -  The output from make, including full error message
 
--  The ``make.config`` file in the BOUT++ root directory
+-  The ``CMakeCache.txt`` file in the BOUT++ build directory
 
 .. _sec-runtestsuite:
 
@@ -627,25 +615,25 @@ BOUT++ comes with three sets of test suites: unit tests, integrated
 tests and method of manufactured solutions (MMS) tests. The easiest
 way to run all of them is to simply do::
 
-    $ make check
+    $ cmake --build <build-directory> --target check
 
-from the top-level directory. Alternatively, if you just want to run
-one them individually, you can do::
+Alternatively, if you just want to run
+one set of them individually, you can do::
 
-    $ make check-unit-tests
-    $ make check-integrated-tests
-    $ make check-mms-tests
+    $ cmake --build <build-directory> --target check-unit-tests
+    $ cmake --build <build-directory> --target check-integrated-tests
+    $ cmake --build <build-directory> --target check-mms-tests
 
-**Note:** The integrated test suite currently uses the ``mpirun``
+**Note:** The integrated and MMS test suites currently uses the ``mpirun``
 command to launch the runs, so won’t work on machines which use a job
-submission system like PBS or SGE.
+submission system like slurm or PBS.
 
 These tests should all pass, but if not please `create an issue on Github <https://github.com/boutproject/BOUT-dev/issues>`__
 containing:
 
 -  Which machine you’re running on
 
--  The ``make.config`` file in the BOUT++ root directory
+-  The ``CMakeCache.txt`` file in the BOUT++ build directory
 
 -  The ``run.log.*`` files in the directory of the test which failed
 
@@ -667,7 +655,7 @@ not widely used and so should be considered experimental.
 After configuring and compiling BOUT++ as above, BOUT++ can be installed
 to system directories by running as superuser or ``sudo``::
 
-   $ sudo make install
+   $ sudo cmake --build <build-directory> --target install
 
 .. DANGER:: Do not do this unless you know what you're doing!
 
@@ -677,39 +665,35 @@ This will install the following files under ``/usr/local/``:
 
 * ``/usr/local/include/bout++/...`` header files for BOUT++
 
-* ``/usr/local/lib/libbout++.a``  The main BOUT++ library
+* ``/usr/local/lib/libbout++.so``  The main BOUT++ library
 
-* ``/usr/local/lib/libpvode.a`` and ``/usr/local/lib/libpvpre.a``, the PVODE library
+* ``/usr/local/lib/libpvode.so`` and ``/usr/local/lib/libpvpre.so``, the PVODE library
 
 * ``/usr/local/share/bout++/pylib/...`` Python analysis routines
 
 * ``/usr/local/share/bout++/idllib/...`` IDL analysis routines
 
-* ``/usr/local/share/bout++/make.config`` A ``makefile`` configuration, used to compile many BOUT++ examples
 
-
-To install BOUT++ under a different directory, use the ``--prefix=``
+To install BOUT++ under a different directory, use the ``prefix=``
 flag e.g. to install in your home directory::
 
-   $ make install prefix=$HOME/local/
+   $ cmake --build <build-directory> --target install -DCMAKE_INSTALL_PREFIX=$HOME/local/
 
 You can also specify this prefix when configuring, in the usual way
 (see :ref:`sec-config-bout`)::
 
-     $ ./configure --prefix=$HOME/local/
-     $ make
-     $ make install
+     $ cmake -S . -B <build-directory> -DCMAKE_INSTALL_PREFIX=$HOME/local/
+     $ cmake --build <build-directory> -j 4
+     $ cmake --build <build-directory> --target install
 
 More control over where files are installed is possible by passing options to
-``configure``, following the GNU conventions:
+``cmake``, following the GNU conventions:
 
-* ``--bindir=``  sets where ``bout-config`` will be installed ( default ``/usr/local/bin``)
+* ``-DCMAKE_INSTALL_BINDIR=``  sets where ``bout-config`` will be installed ( default ``/usr/local/bin``)
 
-* ``--includedir=`` sets where the ``bout++/*.hxx`` header files wil be installed (default ``/usr/local/include``)
+* ``-DCMAKE_INSTALL_INCLUDEDIR=`` sets where the ``bout++/*.hxx`` header files wil be installed (default ``/usr/local/include``)
 
-* ``--libdir=`` sets where the ``libbout++.a``, ``libpvode.a`` and ``libpvpre.a`` libraries are installed (default ``/usr/local/lib``)
-
-* ``--datadir=`` sets where ``idllib``, ``pylib`` and ``make.config`` are installed (default ``/usr/local/share/``)
+* ``-DCMAKE_INSTALL_LIBDIR=`` sets where the ``libbout++.so``, ``libpvode.so`` and ``libpvpre.so`` libraries are installed (default ``/usr/local/lib``)
 
 
 After installing, that you can run ``bout-config`` e.g::

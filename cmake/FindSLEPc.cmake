@@ -137,10 +137,9 @@ show :
 endif()
 
 if (SLEPC_SKIP_BUILD_TESTS)
-  set(SLEPC_TEST_RUNS TRUE)
   set(SLEPC_VERSION "UNKNOWN")
   set(SLEPC_VERSION_OK TRUE)
-elseif (SLEPC_LIBRARIES AND SLEPC_INCLUDE_DIRS AND NOT SLEPC_TEST_RUNS)
+elseif (SLEPC_LIBRARIES AND SLEPC_INCLUDE_DIRS)
 
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${SLEPC_INCLUDE_DIRS})
@@ -192,72 +191,6 @@ int main() {
     set(SLEPC_VERSION_OK TRUE CACHE BOOL "")
   endif()
   mark_as_advanced(SLEPC_VERSION_OK)
-
-  # Run SLEPc test program
-  set(SLEPC_TEST_LIB_CPP
-    "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/slepc_test_lib.cpp")
-  file(WRITE ${SLEPC_TEST_LIB_CPP} "
-#include \"petsc.h\"
-#include \"slepceps.h\"
-int main()
-{
-  PetscErrorCode ierr;
-  int argc = 0;
-  char** argv = NULL;
-  ierr = SlepcInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
-  EPS eps;
-  ierr = EPSCreate(PETSC_COMM_SELF, &eps); CHKERRQ(ierr);
-  //ierr = EPSSetFromOptions(eps); CHKERRQ(ierr);
-#if PETSC_VERSION_MAJOR == 3 && PETSC_VERSION_MINOR <= 1
-  ierr = EPSDestroy(eps); CHKERRQ(ierr);
-#else
-  ierr = EPSDestroy(&eps); CHKERRQ(ierr);
-#endif
-  ierr = SlepcFinalize(); CHKERRQ(ierr);
-  return 0;
-}
-")
-
-  try_run(
-    SLEPC_TEST_LIB_EXITCODE
-    SLEPC_TEST_LIB_COMPILED
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${SLEPC_TEST_LIB_CPP}
-    CMAKE_FLAGS "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
-    LINK_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES}
-    COMPILE_OUTPUT_VARIABLE SLEPC_TEST_LIB_COMPILE_OUTPUT
-    RUN_OUTPUT_VARIABLE SLEPC_TEST_LIB_OUTPUT
-    )
-
-  if (SLEPC_TEST_LIB_COMPILED AND SLEPC_TEST_LIB_EXITCODE EQUAL 0)
-    message(STATUS "Performing test SLEPC_TEST_RUNS - Success")
-    set(SLEPC_TEST_RUNS TRUE CACHE BOOL "SLEPc test program can run")
-  else()
-    message(STATUS "Performing test SLEPC_TEST_RUNS - Failed")
-
-    # Test program does not run - try adding SLEPc 3rd party libs and test again
-    list(APPEND CMAKE_REQUIRED_LIBRARIES ${SLEPC_EXTERNAL_LIBRARIES})
-
-    try_run(
-      SLEPC_TEST_3RD_PARTY_LIBS_EXITCODE
-      SLEPC_TEST_3RD_PARTY_LIBS_COMPILED
-      ${CMAKE_CURRENT_BINARY_DIR}
-      ${SLEPC_TEST_LIB_CPP}
-      CMAKE_FLAGS "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
-      LINK_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES}
-      COMPILE_OUTPUT_VARIABLE SLEPC_TEST_3RD_PARTY_LIBS_COMPILE_OUTPUT
-      RUN_OUTPUT_VARIABLE SLEPC_TEST_3RD_PARTY_LIBS_OUTPUT
-      )
-
-    if (SLEPC_TEST_3RD_PARTY_LIBS_COMPILED AND SLEPC_TEST_3RD_PARTY_LIBS_EXITCODE EQUAL 0)
-      message(STATUS "Performing test SLEPC_TEST_3RD_PARTY_LIBS_RUNS - Success")
-      set(SLEPC_LIBRARIES ${SLEPC_LIBRARIES} ${SLEPC_EXTERNAL_LIBRARIES}
-        CACHE STRING "SLEPc libraries." FORCE)
-      set(SLEPC_TEST_RUNS TRUE CACHE BOOL "SLEPc test program can run")
-    else()
-      message(STATUS "Performing test SLEPC_TEST_3RD_PARTY_LIBS_RUNS - Failed")
-    endif()
-  endif()
 endif()
 
 # Standard package handling
@@ -266,8 +199,7 @@ find_package_handle_standard_args(SLEPc
   FOUND_VAR SLEPC_FOUND
   FAIL_MESSAGE "SLEPc could not be found. Be sure to set SLEPC_DIR, PETSC_DIR, and PETSC_ARCH."
   VERSION_VAR SLEPC_VERSION
-  REQUIRED_VARS SLEPC_LIBRARIES SLEPC_DIR SLEPC_INCLUDE_DIRS SLEPC_TEST_RUNS
-                SLEPC_VERSION_OK)
+  REQUIRED_VARS SLEPC_LIBRARIES SLEPC_DIR SLEPC_INCLUDE_DIRS SLEPC_VERSION_OK)
 
 if (SLEPC_FOUND)
   if (NOT TARGET SLEPc::SLEPc)
