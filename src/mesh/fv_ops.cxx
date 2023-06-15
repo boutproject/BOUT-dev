@@ -96,7 +96,9 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
   // Result of the Y and Z fluxes
   Field3D yzresult(0.0, mesh);
-  // yzresult.allocate();
+  if (!fci) {
+    yzresult.setDirectionY(YDirectionType::Aligned);
+  }
 
   // Y flux
 
