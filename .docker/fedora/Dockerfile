@@ -4,13 +4,8 @@ FROM ghcr.io/dschwoerer/bout-container-base:$BASE
 # ----------------------------------------------------------------
 # Build and install BOUT++
 # ----------------------------------------------------------------
+# user: boutuser
 # password: boutforever
-RUN useradd boutuser -G wheel -p '$6$MoHfQDiMU5ajgDMm$9FAMLxMflKwQCZ.sJBNG6wLGnPeySVizdA8wN0k8LSXKPkCfOb/sM9Y4jKFvh5rzKSwLtYSTzvJyETqrFlxBV.'
-
-RUN echo '%wheel ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-
-USER boutuser
-WORKDIR /home/boutuser
 
 ARG MPI
 ARG URL
