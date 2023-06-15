@@ -37,9 +37,9 @@ jobs:
 
           - name: "Optimised, static"
             os: ubuntu-20.04
-            cmake_options: "-DBOUT_ENABLE_CHECKS=OFF
+            cmake_options: "-DCHECK=OFF
                             -DBUILD_SHARED_LIBS=OFF
-                            -DCXXFLAGS=-Ofast
+                            -DCMAKE_CXX_FLAGS=-Ofast
                             -DBOUT_ENABLE_SIGNAL=OFF
                             -DBOUT_ENABLE_TRACK=OFF
                             -DBOUT_ENABLE_BACKTRACE=OFF
@@ -50,7 +50,7 @@ jobs:
 
           - name: "Debug, shared"
             os: ubuntu-20.04
-            cmake_options: "-DBOUT_ENABLE_CHECKS=3
+            cmake_options: "-DCHECK=3
                             -DCMAKE_BUILD_TYPE=Debug
                             -DBOUT_ENABLE_SIGNAL=ON
                             -DBOUT_ENABLE_TRACK=ON
