@@ -444,7 +444,7 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
   ASSERT1(c1coef->getLocation() == location);
   ASSERT1(c2coef->getLocation() == location);
   ASSERT1(d->getLocation() == location);
-  ASSERT1(dz.isuniform());
+  ASSERT1(isUniform(coords->dz));
   // Better have either both or neither C coefficients
   ASSERT3((c1coef == nullptr and c2coef == nullptr)
           or (c1coef != nullptr and c2coef != nullptr))
