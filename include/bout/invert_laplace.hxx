@@ -312,12 +312,12 @@ protected:
   int inner_boundary_flags; ///< Flags to set inner boundary condition
   int outer_boundary_flags; ///< Flags to set outer boundary condition
 
-  void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomplex& b, dcomplex& c,
+  void tridagCoefs(int jx, int jy, int jz, BoutReal kwave, dcomplex& a, dcomplex& b, dcomplex& c,
                    const Field2D* ccoef = nullptr, const Field2D* d = nullptr,
                    CELL_LOC loc = CELL_DEFAULT) {
-    tridagCoefs(jx, jy, kwave, a, b, c, ccoef, ccoef, d, loc);
+    tridagCoefs(jx, jy, jz, kwave, a, b, c, ccoef, ccoef, d, loc);
   }
-  void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomplex& b, dcomplex& c,
+  void tridagCoefs(int jx, int jy, int jz, BoutReal kwave, dcomplex& a, dcomplex& b, dcomplex& c,
                    const Field2D* c1coef, const Field2D* c2coef, const Field2D* d,
                    CELL_LOC loc = CELL_DEFAULT);
 

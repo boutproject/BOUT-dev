@@ -36,7 +36,7 @@
 #include "cyclic_laplace.hxx"
 #include "bout/build_config.hxx"
 
-#if not BOUT_USE_METRIC_3D
+//#if not BOUT_USE_METRIC_3D
 
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
@@ -642,4 +642,4 @@ void LaplaceCyclic ::verify_solution(const Matrix<dcomplex>& a_ver,
   output.write("max abs error {}\n", max_error);
 }
 
-#endif // BOUT_USE_METRIC_3D
+//#endif // BOUT_USE_METRIC_3D
