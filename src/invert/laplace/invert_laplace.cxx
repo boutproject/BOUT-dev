@@ -315,7 +315,7 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz, BoutReal kwave, dcomplex& a,
    *             here)
    */
 #if not BOUT_USE_METRIC_3D
-  jz = 0
+  jz = 0;
 #else
   Coordinates* localcoords;
   if (loc == CELL_DEFAULT) {
