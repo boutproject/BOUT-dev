@@ -735,9 +735,8 @@ Array<int> Options::as<Array<int>>(const Array<int>& similar_to) const {
 
   Array<int> result = bout::utils::visit(
       ConvertContainer<Array<int>>{
-          fmt::format(
-              _("Value for option {:s} cannot be converted to an Array<int>"),
-              full_name),
+          fmt::format(_("Value for option {:s} cannot be converted to an Array<int>"),
+                      full_name),
           similar_to},
       value);
 

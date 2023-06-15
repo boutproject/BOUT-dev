@@ -194,9 +194,9 @@ public:
   static void cleanup();
 
   /// The type used to store values
-  using ValueType =
-      bout::utils::variant<bool, int, BoutReal, std::string, Field2D, Field3D, FieldPerp,
-                           Array<BoutReal>, Array<int>, Matrix<BoutReal>, Tensor<BoutReal>>;
+  using ValueType = bout::utils::variant<bool, int, BoutReal, std::string, Field2D,
+                                         Field3D, FieldPerp, Array<BoutReal>, Array<int>,
+                                         Matrix<BoutReal>, Tensor<BoutReal>>;
 
   /// The type used to store attributes
   /// Extends the variant class so that cast operator can be implemented
