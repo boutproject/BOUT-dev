@@ -481,6 +481,16 @@ bool GridFile::get(Mesh* UNUSED(m), std::vector<int>& var, const std::string& na
   }
 
   const auto full_var = data[name].as<Array<int>>();
+
+  // Check size
+  if (full_var.size() < len + offset) {
+    throw BoutException("{} has length {}. Expected {} elements + {} offset",
+                        name, full_var.size(), len, offset);
+  }
+
+  // Ensure that output variable has the correct size
+  var.resize(len);
+
   const auto* it = std::begin(full_var);
   std::advance(it, offset);
   std::copy_n(it, len, std::begin(var));
