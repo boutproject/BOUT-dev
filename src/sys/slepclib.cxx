@@ -18,7 +18,7 @@ SlepcLib::SlepcLib() {
     // Initialise SLEPc
 
     output << "Initialising SLEPc\n";
-    SlepcInitialize(pargc, pargv, PETSC_NULL, help);
+    SlepcInitialize(pargc, pargv, nullptr, help);
     PetscLogEventRegister("Total BOUT++", 0, &USER_EVENT);
     PetscLogEventBegin(USER_EVENT, 0, 0, 0, 0);
   }
