@@ -37,7 +37,7 @@ jobs:
 
           - name: "Optimised, static"
             os: ubuntu-20.04
-            cmake_options: "-DCHECK=OFF
+            cmake_options: "-DCHECK=0
                             -DBUILD_SHARED_LIBS=OFF
                             -DCMAKE_CXX_FLAGS=-Ofast
                             -DBOUT_ENABLE_SIGNAL=OFF
