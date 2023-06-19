@@ -15,6 +15,13 @@ if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.22)
   cmake_policy(SET CMP0127 NEW)
 endif()
 
+if ("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+  option(BOUT_ALLOW_INSOURCE_BUILD "Whether BOUT++ should really allow to build in source." OFF)
+  if (NOT ${BOUT_ALLOW_INSOURCE_BUILD})
+    message(FATAL_ERROR "BOUT++ does not recommend in source builds. Try building out of source, e.g. with `cmake -S . -B build` or set -DBOUT_ALLOW_INSOURCE_BUILD=ON - but things may break!")
+  endif()
+endif()
+
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
 # We try to use git to get a full description, inspired by setuptools_scm
@@ -760,6 +767,26 @@ else()
 endif()
 
 set(ISINSTALLED "FALSE")
+
+set(_CONFIG_LDFLAGS)
+string(REPLACE " " ";" CONFIG_LDFLAGS_LIST ${CONFIG_LDFLAGS})
+foreach (flag ${CONFIG_LDFLAGS_LIST})
+  string(REGEX MATCH "^-.*$" isopt "${flag}")
+  if (isopt)
+    # message("${flag} is an option")
+    set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} ${flag}")
+    # All good
+  else()
+    if(EXISTS ${flag})
+      # message("${flag} is a file")
+      set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} ${flag}")
+    else()
+      message("Fixing ${flag} to -l${flag}")
+      set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} -l${flag}")
+    endif()
+  endif()
+endforeach()
+set( CONFIG_LDFLAGS ${_CONFIG_LDFLAGS})
 
 # This version of the file allows the build directory to be used directly
 configure_file(bin/bout-config.in bin/bout-config @ONLY)

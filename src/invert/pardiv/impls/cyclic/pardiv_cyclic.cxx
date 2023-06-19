@@ -47,9 +47,8 @@
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>
 #include <bout/msg_stack.hxx>
-#include <bout/utils.hxx>
-
 #include <bout/surfaceiter.hxx>
+#include <bout/utils.hxx>
 
 #include <cmath>
 
