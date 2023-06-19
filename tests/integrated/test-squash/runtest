@@ -67,13 +67,17 @@ def verify(f1, f2):
                 v1[0, 0] = v1[0, -1] = v1[-1, 0] = v1[-1, -1] = 0.0
                 v2[0, 0] = v2[0, -1] = v2[-1, 0] = v2[-1, -1] = 0.0
 
-            if not np.allclose(v1, v2, equal_nan=True):
-                err = ""
-                dimensions = [range(x) for x in v1.shape]
-                for i in itertools.product(*dimensions):
-                    if v1[i] != v2[i]:
-                        err += "{}: {} != {}\n".format(i, v1[i], v2[i])
-                raise RuntimeError("data mismatch in ", v, err, v1, v2)
+            if v1.dtype.char in "SU":
+                if v1 != v2:
+                    raise RuntimeError("data mismatch in ", v, v1, v2)
+            else:
+                if not np.allclose(v1, v2, equal_nan=True):
+                    err = ""
+                    dimensions = [range(x) for x in v1.shape]
+                    for i in itertools.product(*dimensions):
+                        if v1[i] != v2[i]:
+                            err += "{}: {} != {}\n".format(i, v1[i], v2[i])
+                    raise RuntimeError("data mismatch in ", v, err, v1, v2)
 
 
 parser = argparse.ArgumentParser(description="Test the bout-squashoutput wrapper")

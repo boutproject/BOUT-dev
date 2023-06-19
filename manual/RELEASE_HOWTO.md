@@ -56,7 +56,7 @@ Before merging PR:
 
 After PR is merged:
 
-- [ ] Make tarball: `./configure && make dist`
+- [ ] Make tarball: `make dist` from build directory. Ensure you are on a tag and correct version is used for archive and folder within.
 - [ ] Try to summarise the changes!
 - [ ] Make [GitHub Release][gh_release], include change summary **NB:** tag should have
       leading `v`

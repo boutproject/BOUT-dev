@@ -102,6 +102,7 @@ We can now have a look at the results using xBOUT:
     >>> import xbout
     >>> df = xbout.open_boutdataset("data/BOUT.dmp.*.nc")
     >>> df["T"].plot()
+    >>> import matplotlib.pyplot as plt ; plt.show()
 
 which should produce something similar to the following figure:
 

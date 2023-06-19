@@ -4,7 +4,7 @@ set -e
 
 export PATH=${HOME}/.local/bin:${PATH}
 pip3 install --user --upgrade pip~=20.0 setuptools~=46.1
-pip3 install --user --upgrade scipy~=1.4 numpy~=1.18
+pip3 install --user --upgrade scipy~=1.4 numpy~=1.18 natsort~=8.1.0
 for package in $@
 do
     if test $package == "cython"

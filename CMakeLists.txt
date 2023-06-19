@@ -26,7 +26,7 @@ endif()
 # Set the version here, strip any extra tags to use in `project`
 # We try to use git to get a full description, inspired by setuptools_scm
 set(_bout_previous_version "v5.0.0")
-set(_bout_next_version "5.0.1")
+set(_bout_next_version "5.1.0")
 execute_process(
   COMMAND "git" describe --tags --match=${_bout_previous_version}
   COMMAND sed -e s/${_bout_previous_version}-/${_bout_next_version}.dev/ -e s/-/+/
@@ -395,6 +395,21 @@ This warning is only important for BOUT++ developers and can otherwise be \
 safely ignored.")
 endif()
 
+include(GNUInstallDirs)
+
+# use, i.e. don't skip the full RPATH for the build tree
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+
+# when building, don't use the install RPATH already
+# (but later on when installing)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+
 execute_process(COMMAND ${Python3_EXECUTABLE} -c "import site ; print('/'.join(site.getusersitepackages().split('/')[-2:]))"
   RESULT_VARIABLE PYTHON_WORKING
   OUTPUT_VARIABLE PYTHON_SITEPATH_SUFFIX
@@ -417,6 +432,7 @@ add_custom_command(
   DEPENDS ${BOUT_SOURCES}
   MAIN_DEPENDENCY "${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateDateTimeFile.cmake"
   )
+
 
 add_library(bout++
   ${BOUT_SOURCES}
@@ -679,9 +695,6 @@ endif()
 ##################################################
 # L10N: localisation - include translations
 
-
-include(GNUInstallDirs)
-
 find_package(Gettext)
 
 if (GETTEXT_FOUND)
@@ -753,8 +766,32 @@ else()
   set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS}")
 endif()
 
+set(ISINSTALLED "FALSE")
+
+set(_CONFIG_LDFLAGS)
+string(REPLACE " " ";" CONFIG_LDFLAGS_LIST ${CONFIG_LDFLAGS})
+foreach (flag ${CONFIG_LDFLAGS_LIST})
+  string(REGEX MATCH "^-.*$" isopt "${flag}")
+  if (isopt)
+    # message("${flag} is an option")
+    set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} ${flag}")
+    # All good
+  else()
+    if(EXISTS ${flag})
+      # message("${flag} is a file")
+      set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} ${flag}")
+    else()
+      message("Fixing ${flag} to -l${flag}")
+      set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} -l${flag}")
+    endif()
+  endif()
+endforeach()
+set( CONFIG_LDFLAGS ${_CONFIG_LDFLAGS})
+
 # This version of the file allows the build directory to be used directly
 configure_file(bin/bout-config.in bin/bout-config @ONLY)
+configure_file(tools/pylib/boutconfig/__init__.py.cin tools/pylib/boutconfig/__init__.py @ONLY)
+configure_file(bout++Config.cmake.in bout++Config.cmake @ONLY)
 
 # We need to generate a separate version for installation, with the
 # correct install paths. So first we need to replace the build
@@ -762,6 +799,7 @@ configure_file(bin/bout-config.in bin/bout-config @ONLY)
 string(REPLACE
   "${CMAKE_BINARY_DIR}/lib" "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}"
   CONFIG_LDFLAGS "${CONFIG_LDFLAGS}")
+set(BOUT_LIB_PATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 # Update mpark.variant and fmt include paths if we're building them
 if (NOT BOUT_USE_SYSTEM_MPARK_VARIANT)
   set(MPARK_VARIANT_INCLUDE_PATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
@@ -773,8 +811,13 @@ set(BOUT_INCLUDE_PATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
 # We don't need the build include path any more
 string(REPLACE "-I${CMAKE_CURRENT_BINARY_DIR}/include" "" CONFIG_CFLAGS "${CONFIG_CFLAGS}")
 
+set(PYTHONCONFIGPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHON_SITEARCH}")
+set(ISINSTALLED "TRUE")
+
 # This version now has the correct paths to use the final installation
 configure_file(bin/bout-config.in bin/bout-config-install @ONLY)
+configure_file(tools/pylib/boutconfig/__init__.py.cin tools/pylib/boutconfig/__init__.py-install @ONLY)
+configure_file(bout++Config.cmake.in bout++Config.cmake-install @ONLY)
 
 ##################################################
 # Installation
@@ -811,6 +854,12 @@ install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/bin/bout-config-install"
   RENAME "bout-config"
   )
 
+install(
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py-install"
+  DESTINATION "${CMAKE_INSTALL_PYTHON_SITEARCH}/boutconfig"
+  RENAME "__init__.py"
+  )
+
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
   bout++ConfigVersion.cmake
@@ -824,14 +873,9 @@ install(EXPORT bout++Targets
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bout++"
   )
 
-configure_package_config_file(bout++Config.cmake.in bout++Config.cmake
-  INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
-  )
-
 # CMake configuration files
 install(
   FILES
-      "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
       "${CMAKE_CURRENT_BINARY_DIR}/bout++ConfigVersion.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BOUT++functions.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CorrectWindowsPaths.cmake"
@@ -850,14 +894,11 @@ install(
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ResolveCompilerPaths.cmake"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bout++"
   )
-
-configure_package_config_file(tools/pylib/boutconfig/__init__.py.cin tools/pylib/boutconfig/__init__.py
-  INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py"
-  )
-
 install(
-  FILES "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py"
-  DESTINATION "${CMAKE_INSTALL_PYTHON_SITEARCH}/boutconfig"
+  FILES
+      "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake-install"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bout++"
+  RENAME "bout++Config.cmake"
   )
 
 export(EXPORT bout++Targets
@@ -897,7 +938,7 @@ message("
    RAJA enabled             : ${BOUT_HAS_RAJA}
    Umpire enabled           : ${BOUT_HAS_UMPIRE}
    Caliper enabled          : ${BOUT_HAS_CALIPER}
-   CUDA enabled             : ${BOUT_USE_CUDA}
+   CUDA enabled             : ${BOUT_HAS_CUDA}
    Metric type              : ${BOUT_METRIC_TYPE}
    Python API support       : ${BOUT_USE_PYTHON}
    Sanitizers enabled       : ${BOUT_USE_SANITIZERS}

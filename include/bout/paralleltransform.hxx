@@ -60,7 +60,7 @@ public:
     return f;
   }
 
-  virtual bool canToFromFieldAligned() = 0;
+  virtual bool canToFromFieldAligned() const = 0;
 
   struct PositionsAndWeights {
     int i, j, k;
@@ -157,7 +157,7 @@ public:
     return {{i, j + yoffset, k, 1.0}};
   }
 
-  bool canToFromFieldAligned() override { return true; }
+  bool canToFromFieldAligned() const override { return true; }
 
   bool requiresTwistShift(bool twist_shift_enabled,
                           YDirectionType UNUSED(ytype)) override {
@@ -219,7 +219,7 @@ public:
                         "for `type = shifted`. Try `type = shiftedinterp`");
   }
 
-  bool canToFromFieldAligned() override { return true; }
+  bool canToFromFieldAligned() const override { return true; }
 
   /// Save zShift to the output
   void outputVars(Options& output_options) override;

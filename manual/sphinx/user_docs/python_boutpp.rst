@@ -1,55 +1,51 @@
 The python boutpp module
-==========================
+========================
 
 Installing
 ----------
 
-Installing boutpp can be tricky.
-Ideally it should be just
+Installing boutpp can be tricky, however in most cases it should be
+automatically enabled if all dependencies are available.
+To error out on missing dependencies, explicitly enable it::
 
 .. code-block:: bash
 
-   ./configure --enable-shared
-   make -j 4 python
+   cmake -DBOUT_ENABLE_PYTHON=ON
 
 
-but getting all the
-dependencies can be difficult.
-``make python`` creates the python3 module.
-
-If problems arise, it might be worth checking a copy of the bout
-module out, to reduce the risk of causing issues with the old bout
-installation. This is especially true if you are trying to run
-boutpp not on compute nodes of a super computer but rather on
-post-processing/login/... nodes.
-
-To use boutpp on the login node, a self compiled version of mpi may be
-required, as the provided one may be only for the compute nodes.
-Further, numpy header files are required, therefore numpy needs to be
-compiled as well.
-Further, the header files need to be exposed to the boutpp cython
-compilation, e.g. by adding them to ``_boutpp_build/boutpp.pyx.in``.
-It seems both ``NUMPY/numpy/core/include`` and
-``NUMPY/build/src.linux-x86_64-2.7/numpy/core/include/numpy`` need to be
-added, where ``NUMPY`` is the path of the numpy directory.
-For running boutpp on the post processing nodes, fftw3 needs to be
-compiled as well, if certain fftw routines are used. Note, fftw needs
-to be configured with ``--enable-shared``.
-
-After installing mpi e.g. in ``~/local/mpich``, bout needs to be
-configured with something like:
-``./configure --enable-shared MPICC=~/local/mpich/bin/mpicc MPICXX=~/local/mpich/bin/mpicxx --with-fftw=~/local/fftw/``
-
-``--enable-shared`` is required, so that pvode etc. is compiles as position
-independent code.
+It can be especially tricky if you want to run boutpp on login nodes
+for simple post processing, but due to differences in the instruction
+set the compiled modules for the compute nodes do not run there. In
+that case you need to manually install all needed dependencies.  It is
+probably a good idea to use a different build directory, to not
+unintentionally modify your BOUT++ compilation for the compute nodes.
 
 If you are running fedora - you can install pre-build binaries:
 
 .. code-block:: bash
 
-   sudo dnf copr enable davidsch/bout
    sudo dnf install python3-bout++-mpich
    module load mpi/mpich-$(arch)
+
+You can also pip install boutpp with:
+
+.. code-block:: bash
+
+   pip install boutpp-nightly
+
+This will download the latest boutpp-nightly version, compile and
+install it. Note that you still need all the non-python dependencies
+like mpi. Note that after ``pip install boutpp-nightly`` the
+``boutpp`` module is installed, so you can use ``import boutpp``
+independent of the version used.
+
+After the 5.0.0 release you will also be able to install the latest
+released version of boutpp with:
+
+.. code-block:: bash
+
+   pip install boutpp
+
 
 
 Purpose
@@ -58,18 +54,18 @@ Purpose
 The boutpp module exposes (part) of the BOUT++ C++ library to python.
 It allows to calculate e.g. BOUT++ derivatives in python.
 
-State
------
-Field3D and Field2D are working. If other fields are needed, please open an issue.
-Fields can be accessed directly using the [] operators, and give a list of slice objects.
-The get all data, ``f3d.getAll()`` is equivalent to ``f3d[:,:,]`` and returns a numpy array.
-This array can be addressed with
-e.g. ``[]`` operators, and then the field can be set again with
-``f3d.setAll(numpyarray)``.
-It is also possible to set a part of an Field3D with the ``[]`` operators.
-Addition, multiplication etc. are all available.
-The derivatives should all be working, if find a missing one, please open an issue.
-Vectors are not exposed yet.
+State ----- Field3D and Field2D are working. If other fields are
+needed, please open an issue.  Fields can be accessed directly using
+the [] operators, similar to numpy.  The get all data, ``f3d[:]`` is
+equivalent to ``f3d[:, :, :]`` and returns a numpy array.  This array
+can be addressed with e.g. ``[]`` operators, and then the field can be
+set again with ``f3d[:] = numpyarray``.  It is also possible to set a
+part of an Field3D with the ``[]`` operators.  Addition,
+multiplication etc. are all available.  The derivatives should all be
+working, if find a missing one, please open an issue.
+
+Note that views are currently not supported, thus ``f3d[:] += 1`` will
+modify the returned copy, and the ``f3d`` object will be unchanged.
 
 Functions
 ---------
@@ -84,12 +80,12 @@ Some trivial post processing:
 
    import boutpp
    import numpy as np
-   args="-d data -f BOUT.settings -o BOUT.post".split(" ")
+   args="-d data -f BOUT.settings -o BOUT.post"
    boutpp.init(args)
-   dens=boutpp.Field3D.fromCollect("n",path="data")
-   temp=boutpp.Field3D.fromCollect("T",path="data")
-   pres=dens*temp
-   dpdz=boutpp.DDZ(pres,outloc="CELL_ZLOW")
+   dens = boutpp.Field3D.fromCollect("n", path="data")
+   temp = boutpp.Field3D.fromCollect("T", path="data")
+   pres = dens * temp
+   dpdz = boutpp.DDZ(pres, outloc="CELL_ZLOW")
 
 
 
@@ -100,14 +96,14 @@ A simple MMS test:
    import boutpp
    import numpy as np
    boutpp.init("-d data -f BOUT.settings -o BOUT.post")
-   for nz in [64,128,256]:
-       boutpp.setOption("meshz:nz","%d"%nz)
-       mesh=boutpp.Mesh(OptionSection="meshz")
-       f=boutpp.create3D("sin(z)",mesh)
-       sim=boutpp.DDZ(f)
-       ana=boutpp.create3D("cos(z)",mesh)
-       err=sim-ana
-       err=boutpp.max(boutpp.abs(err))
+   for nz in [64, 128, 256]:
+       boutpp.setOption("meshz:nz", "%d"%nz)
+       mesh = boutpp.Mesh(OptionSection="meshz")
+       f = boutpp.create3D("sin(z)", mesh)
+       sim = boutpp.DDZ(f)
+       ana = boutpp.create3D("cos(z)", mesh)
+       err = sim - ana
+       err = boutpp.max(boutpp.abs(err))
        errors.append(err)
 
 
@@ -118,10 +114,10 @@ A real example - unstagger data:
    import boutpp
    boutpp.init("-d data -f BOUT.settings -o BOUT.post")
    # uses location from dump - is already staggered
-   upar=boutpp.Field3D.fromCollect("Upar")
-   upar=boutpp.interp_to(upar,"CELL_CENTRE")
+   upar = boutpp.Field3D.fromCollect("Upar")
+   upar = boutpp.interp_to(upar, "CELL_CENTRE")
    # convert to numpy array
-   upar=upar.getAll()
+   upar = upar[:]
 
 
 A real example - check derivative contributions:
