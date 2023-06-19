@@ -113,32 +113,38 @@ Cori
 First set up the environment by loading the correct modules. For Bash shell use:
 
 .. code-block:: bash
+
    source config/cori/setup-env-cgpu.sh
 
 and for C shell:
 
 .. code-block:: csh
+
    source config/cori/setup-env-cgpu.sh
 
 Then configure BOUT++ by running a script which calls CMake. Under bash:
 
 .. code-block:: bash
+
    ./config/cori/config-bout-cgpu.sh
 
 and C shell:
 
 .. code-block:: csh
+
    ./config/cori/config-bout-cgpu.csh
 
 At the time of writing, Hypre linking is not working with CUDA. If you come across
 errors with the above configuration, try turning off Hypre support:
 
 .. code-block:: bash
+
    ./config/cori/config-bout-cgpu-nohypre.sh
 
 or
 
 .. code-block:: csh
+
    ./config/cori/config-bout-cgpu-nohypre.csh
 
 See section :ref:`sec-gpusupport` for details of compiling and running

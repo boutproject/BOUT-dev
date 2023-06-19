@@ -151,6 +151,20 @@ for a certain variable (e.g. ``[n]``), setting the option
 ``positivity_constraint`` to one of ``positive``, ``non_negative``,
 ``negative``, or ``non_positive``.
 
+Additional options can be used to modify the behaviour of the linear and
+nonlinear solvers:
+
+- ``cvode_nonlinear_convergence_coef`` specifies the safety factor
+  used in the nonlinear convergence test. Passed as a parameter to
+  `CVodeSetNonlinConvCoef
+  <https://sundials.readthedocs.io/en/latest/cvodes/Usage/SIM.html#c.CVodeSetNonlinConvCoef>`_.
+
+- ``cvode_linear_convergence_coef`` specifies the factor by which the
+  Krylov linear solver’s convergence test constant is reduced from the
+  nonlinear solver test constant. Passed as a parameter to
+  `CVodeSetEpsLin
+  <https://sundials.readthedocs.io/en/latest/cvodes/Usage/SIM.html#c.CVodeSetEpsLin>`_.
+
 IMEX-BDF2
 ---------
 
@@ -358,7 +372,10 @@ iterations within a given range.
 +---------------------------+---------------+----------------------------------------------------+
 | ksp_type                  | gmres         | PETSc KSP linear solver                            |
 +---------------------------+---------------+----------------------------------------------------+
-| pc_type                   | ilu / bjacobi | PETSc PC preconditioner                            |
+| pc_type                   | ilu / bjacobi | PETSc PC preconditioner (try hypre in parallel)    |
++---------------------------+---------------+----------------------------------------------------+
+| pc_hypre_type             | pilut         | If ``pc_type = hypre``.                            |
+|                           |               | Hypre preconditioner type: euclid, boomeramg       |
 +---------------------------+---------------+----------------------------------------------------+
 | max_nonlinear_iterations  | 20            | If exceeded, solve restarts with timestep / 2      |
 +---------------------------+---------------+----------------------------------------------------+
