@@ -42,11 +42,38 @@
 #include <pvode/iterativ.h> // contains the enum for types of preconditioning
 #include <pvode/pvbbdpre.h> // band preconditioner function prototypes
 
+#include <string>
+
 using namespace pvode;
 
 void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void* f_data);
 void solver_gloc(integer N, BoutReal t, BoutReal* u, BoutReal* udot, void* f_data);
 void solver_cfn(integer N, BoutReal t, N_Vector u, void* f_data);
+
+namespace {
+// local only
+void pvode_load_data_f3d(const std::vector<bool>& evolve_bndrys,
+                         std::vector<Field3D>& ffs, BoutReal* udata) {
+  int p = 0;
+  Mesh* mesh = ffs[0].getMesh();
+  const int nz = mesh->LocalNz;
+  for (const auto& bndry : {true, false}) {
+    for (const auto& i2d : mesh->getRegion2D(bndry ? "RGN_BNDRY" : "RGN_NOBNDRY")) {
+      for (int jz = 0; jz < nz; jz++) {
+        // Loop over 3D variables
+        std::vector<bool>::const_iterator evolve_bndry = evolve_bndrys.begin();
+        for (std::vector<Field3D>::iterator ff = ffs.begin(); ff != ffs.end(); ++ff) {
+          if (bndry && !*evolve_bndry)
+            continue;
+          (*ff)[mesh->ind2Dto3D(i2d, jz)] = udata[p];
+          p++;
+        }
+        ++evolve_bndry;
+      }
+    }
+  }
+}
+} // namespace
 
 const BoutReal ZERO = 0.0;
 
