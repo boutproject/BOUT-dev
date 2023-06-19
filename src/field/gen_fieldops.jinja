@@ -61,6 +61,10 @@
 	}
   {% endif %}
 
+#if BOUT_USE_TRACK
+  {{out.name}}.name = fmt::format("{:s} {{operator}} {:s}", {{'"BR"' if lhs == "BoutReal" else lhs.name + ".name"}}
+  		      				     	  , {{'"BR"' if rhs == "BoutReal" else rhs.name + ".name"}});
+#endif
   checkData({{out.name}});
   return {{out.name}};
 }
@@ -129,9 +133,19 @@
     }
   {% endif %}
 
+  {% if lhs == "Field3D" %}
+    track(rhs, "operator{{operator}}=");
+  {% endif %}
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} {{operator}}= {:s}", this->name, {{'"BR"' if rhs == "BoutReal" else rhs.name + ".name"}});
+#endif
+
     checkData(*this);
 
   } else {
+  {% if lhs == "Field3D" %}
+    track(rhs, "operator{{operator}}=");
+  {% endif %}
     (*this) = (*this) {{operator}} {{rhs.name}};
   }
   return *this;

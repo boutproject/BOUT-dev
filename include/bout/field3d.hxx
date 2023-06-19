@@ -295,6 +295,10 @@ public:
   /// cuts on closed field lines?
   bool requiresTwistShift(bool twist_shift_enabled);
 
+  /// Enable a special tracking mode for debugging
+  /// Save all changes that, are done to the field, to tracking
+  Field3D& enableTracking(const std::string& name, Options& tracking);
+
   /////////////////////////////////////////////////////////
   // Data access
 

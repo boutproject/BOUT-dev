@@ -243,6 +243,7 @@ Field3D& Field3D::operator=(const Field3D& rhs) {
   }
 
   TRACE("Field3D: Assignment from Field3D");
+  track(rhs, "operator=");
 
   // Copy base slice
   Field::operator=(rhs);
@@ -263,6 +264,7 @@ Field3D& Field3D::operator=(const Field3D& rhs) {
 
 Field3D& Field3D::operator=(Field3D&& rhs) {
   TRACE("Field3D: Assignment from Field3D");
+  track(rhs, "operator=");
 
   // Move parallel slices or delete existing ones.
   yup_fields = std::move(rhs.yup_fields);
@@ -283,6 +285,7 @@ Field3D& Field3D::operator=(Field3D&& rhs) {
 
 Field3D& Field3D::operator=(const Field2D& rhs) {
   TRACE("Field3D = Field2D");
+  track(rhs, "operator=");
 
   /// Check that the data is allocated
   ASSERT1(rhs.isAllocated());
@@ -327,6 +330,7 @@ void Field3D::operator=(const FieldPerp& rhs) {
 
 Field3D& Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
+  track(val, "operator=");
 
   // Delete existing parallel slices. We don't copy parallel slices, so any
   // that currently exist will be incorrect.
@@ -830,4 +834,44 @@ Field3D::getValidRegionWithDefault(const std::string& region_name) const {
 
 void Field3D::setRegion(const std::string& region_name) {
   regionID = fieldmesh->getRegionID(region_name);
+}
+
+Field3D& Field3D::enableTracking(const std::string& name, Options& _tracking) {
+  tracking = &_tracking;
+  tracking_state = 1;
+  selfname = name;
+  return *this;
+}
+
+template <class T>
+Options* Field3D::track(const T& change, std::string op) {
+  if (tracking and tracking_state) {
+    const std::string outname{fmt::format("track_{:s}_{:d}", selfname, tracking_state++)};
+    tracking->set(outname, change, "tracking");
+    (*tracking)[outname].setAttributes({
+      {"operation", op},
+#if BOUT_USE_TRACK
+          {"rhs.name", change.name},
+#endif
+    });
+    return &(*tracking)[outname];
+  }
+  return nullptr;
+}
+
+template Options* Field3D::track<Field3D>(const Field3D&, std::string);
+template Options* Field3D::track<Field2D>(const Field2D&, std::string);
+template Options* Field3D::track<FieldPerp>(const FieldPerp&, std::string);
+
+Options* Field3D::track(const BoutReal& change, std::string op) {
+  if (tracking and tracking_state) {
+    const std::string outname{fmt::format("track_{:s}_{:d}", selfname, tracking_state++)};
+    tracking->set(outname, change, "tracking");
+    (*tracking)[outname].setAttributes({
+        {"operation", op},
+        {"rhs.name", "BR"},
+    });
+    return &(*tracking)[outname];
+  }
+  return nullptr;
 }
