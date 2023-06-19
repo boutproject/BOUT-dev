@@ -40,7 +40,7 @@ public:
   static BoutComm* getInstance();
 
   /// Shortcut method
-  static MPI_Comm get();
+  static MPI_Comm& get();
 
   static void setArgs(int& c, char**& v);
 
@@ -53,7 +53,7 @@ public:
   void setComm(MPI_Comm c);
 
   // Getters
-  MPI_Comm getComm();
+  MPI_Comm& getComm();
   bool isSet();
 
 private:
