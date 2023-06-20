@@ -98,6 +98,9 @@ class FieldPerp : public Field {
   /// Return a Region<IndPerp> reference to use to iterate over this field
   const Region<IndPerp>& getRegion(REGION region) const;  
   const Region<IndPerp>& getRegion(const std::string &region_name) const;
+  const Region<IndPerp>& getDefaultRegion(const std::string& region_name) const {
+    return getRegion(region_name);
+  }
 
   Region<IndPerp>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
   Region<IndPerp>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};

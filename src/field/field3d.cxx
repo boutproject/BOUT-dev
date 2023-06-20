@@ -173,7 +173,7 @@ const Field3D& Field3D::ynext(int dir) const {
   if (dir > 0) {
     return yup(dir - 1);
   } else if (dir < 0) {
-    return ydown(std::abs(dir) - 1);
+    return ydown(-dir - 1);
   } else {
     return *this;
   }
@@ -737,7 +737,7 @@ namespace {
 #if CHECK > 2
 void checkDataIsFiniteOnRegion(const Field3D& f, const std::string& region) {
   // Do full checks
-  BOUT_FOR_SERIAL(i, f.getRegion(region)) {
+  BOUT_FOR_SERIAL(i, f.getDefaultRegion(region)) {
     if (!finite(f[i])) {
       throw BoutException("Field3D: Operation on non-finite data at [{:d}][{:d}][{:d}]\n",
                           i.x(), i.y(), i.z());
@@ -811,4 +811,15 @@ void swap(Field3D& first, Field3D& second) noexcept {
   swap(first.deriv, second.deriv);
   swap(first.yup_fields, second.yup_fields);
   swap(first.ydown_fields, second.ydown_fields);
+}
+
+const Region<Ind3D>& Field3D::getDefaultRegion(const std::string& region_name) const {
+  if (regionID != -1) {
+    return fieldmesh->getRegion(regionID);
+  }
+  return fieldmesh->getRegion(region_name);
+}
+
+void Field3D::setRegion(const std::string& region_name) {
+  regionID = fieldmesh->getRegionID(region_name);
 }

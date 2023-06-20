@@ -69,6 +69,11 @@ public:
       : y_offset(y_offset), localmesh(mesh) {
     setRegion(region);
   }
+  XZInterpolation(const std::string& region_name, int y_offset = 0, Mesh* mesh = nullptr)
+      : y_offset(y_offset), localmesh(mesh), region_name(region_name) {}
+  XZInterpolation(std::shared_ptr<Region<Ind3D>> region, int y_offset = 0,
+                  Mesh* mesh = nullptr)
+      : y_offset(y_offset), localmesh(mesh), region(std::move(region)) {}
   virtual ~XZInterpolation() = default;
 
   void setMask(const BoutMask& mask) { setRegion(regionFromMask(mask, localmesh)); }

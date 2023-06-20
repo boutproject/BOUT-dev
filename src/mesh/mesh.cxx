@@ -560,6 +560,14 @@ const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
   if (found == end(regionMap3D)) {
     throw BoutException(_("Couldn't find region {:s} in regionMap3D"), region_name);
   }
+  return region3D[found->second];
+}
+
+int Mesh::getRegionID(const std::string& region_name) const {
+  const auto found = regionMap3D.find(region_name);
+  if (found == end(regionMap3D)) {
+    throw BoutException(_("Couldn't find region {:s} in regionMap3D"), region_name);
+  }
   return found->second;
 }
 
@@ -596,7 +604,21 @@ void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
     throw BoutException(_("Trying to add an already existing region {:s} to regionMap3D"),
                         region_name);
   }
-  regionMap3D[region_name] = region;
+
+  int id = -1;
+  for (size_t i = 0; i < region3D.size(); ++i) {
+    if (region3D[i] == region) {
+      id = i;
+      break;
+    }
+  }
+  if (id == -1) {
+    id = region3D.size();
+    region3D.push_back(region);
+  }
+
+  regionMap3D[region_name] = id;
+
   output_verbose.write(_("Registered region 3D {:s}"),region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
 }
@@ -732,3 +754,59 @@ constexpr decltype(MeshFactory::type_name) MeshFactory::type_name;
 constexpr decltype(MeshFactory::section_name) MeshFactory::section_name;
 constexpr decltype(MeshFactory::option_name) MeshFactory::option_name;
 constexpr decltype(MeshFactory::default_type) MeshFactory::default_type;
+
+int Mesh::getCommonRegion(int lhs, int rhs) {
+  if (lhs == rhs) {
+    return lhs;
+  }
+  int low = std::min(lhs, rhs);
+  int high = std::max(lhs, rhs);
+  if (low == -1) {
+    return high;
+  }
+  /* Memory layout of indices
+   * left is lower index, bottom is higher index
+   *    0  1  2  3
+   * 0
+   * 1  0
+   * 2  1  2
+   * 3  3  4  5
+   * 4  6  7  8  9
+   *
+   * As we only need half of the square, the indices do not depend on
+   * the total number of elements.
+   */
+  const size_t pos = (high * (high - 1)) / 2 + low;
+  if (region3Dintersect.size() <= pos) {
+    BOUT_OMP(critical(mesh_getIntersection_realloc))
+#if BOUT_USE_OPENMP
+    if (region3Dintersect.size() <= pos)
+#endif
+    {
+      region3Dintersect.resize(pos + 1, -1);
+    }
+  }
+  if (region3Dintersect[pos] != -1) {
+    return region3Dintersect[pos];
+  }
+  {
+    BOUT_OMP(critical(mesh_getIntersection))
+#if BOUT_USE_OPENMP
+    if (region3Dintersect[pos] == -1)
+#endif
+    {
+      auto common = getIntersection(region3D[low], region3D[high]);
+      for (size_t i = 0; i < region3D.size(); ++i) {
+        if (common == region3D[i]) {
+          region3Dintersect[pos] = i;
+          break;
+        }
+      }
+      if (region3Dintersect[pos] == -1) {
+        region3D.push_back(common);
+        region3Dintersect[pos] = region3D.size() - 1;
+      }
+    }
+  }
+  return region3Dintersect[pos];
+}
