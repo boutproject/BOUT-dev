@@ -773,6 +773,26 @@ endif()
 
 set(ISINSTALLED "FALSE")
 
+set(_CONFIG_LDFLAGS)
+string(REPLACE " " ";" CONFIG_LDFLAGS_LIST ${CONFIG_LDFLAGS})
+foreach (flag ${CONFIG_LDFLAGS_LIST})
+  string(REGEX MATCH "^-.*$" isopt "${flag}")
+  if (isopt)
+    # message("${flag} is an option")
+    set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} ${flag}")
+    # All good
+  else()
+    if(EXISTS ${flag})
+      # message("${flag} is a file")
+      set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} ${flag}")
+    else()
+      message("Fixing ${flag} to -l${flag}")
+      set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} -l${flag}")
+    endif()
+  endif()
+endforeach()
+set( CONFIG_LDFLAGS ${_CONFIG_LDFLAGS})
+
 # This version of the file allows the build directory to be used directly
 configure_file(bin/bout-config.in bin/bout-config @ONLY)
 configure_file(tools/pylib/boutconfig/__init__.py.cin tools/pylib/boutconfig/__init__.py @ONLY)
