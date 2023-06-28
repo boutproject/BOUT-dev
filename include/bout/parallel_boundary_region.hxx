@@ -195,7 +195,7 @@ private:
   BoutReal& ynext(Field3D& f) const { return f.ynext(dir)[ind().yp(dir)]; }
   const BoutReal& yprev(const Field3D& f) const { return f.ynext(-dir)[ind().yp(-dir)]; }
   BoutReal& yprev(Field3D& f) const { return f.ynext(-dir)[ind().yp(-dir)]; }
-  Ind3D xyz2ind(int x, int y, int z, Mesh* mesh) const {
+  static Ind3D xyz2ind(int x, int y, int z, Mesh* mesh) {
     const int ny = mesh->LocalNy;
     const int nz = mesh->LocalNz;
     return Ind3D{(x * ny + y) * nz + z, ny, nz};
