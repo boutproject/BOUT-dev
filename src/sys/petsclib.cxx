@@ -135,4 +135,13 @@ void PetscLib::setPetscOptions(Options& options, const std::string& prefix) {
     }
   }
 }
+
+BoutException PetscLib::SNESFailure(SNES& snes) {
+  SNESConvergedReason reason;
+  const char* message;
+  BOUT_DO_PETSC(SNESGetConvergedReason(snes, &reason));
+  BOUT_DO_PETSC(SNESGetConvergedReasonString(snes, &message));
+  return BoutException("SNES failed to converge. Reason: {} ({:d})", message,
+                       static_cast<int>(reason));
+}
 #endif // BOUT_HAS_PETSC

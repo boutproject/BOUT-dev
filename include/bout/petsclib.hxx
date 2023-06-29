@@ -118,6 +118,9 @@ public:
       throw BoutException("{:s} failed with {:d}", op, ierr);
     }
   }
+
+  static BoutException SNESFailure(SNES& snes);
+
 private:
   static int count;   ///< How many instances?
   static char help[]; ///< Help string
