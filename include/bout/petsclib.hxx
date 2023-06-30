@@ -64,6 +64,8 @@ class Options;
 #include <petsc.h>
 #include <petscversion.h>
 
+#include "bout/boutexception.hxx"
+
 #define BOUT_DO_PETSC(cmd) PetscLib::assertIerr(cmd, #cmd)
 
 /*!
