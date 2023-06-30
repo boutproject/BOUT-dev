@@ -6,6 +6,7 @@ import tempfile  # corelib
 import subprocess  # corelib
 import re  # corelib
 import pathlib  # corelib
+import contextlib  # corelib
 
 try:
     import packaging.tags  # packaging
@@ -27,8 +28,12 @@ def getversion():
     """
     global version
     if version is None:
+        with contextlib.suppress(KeyError):
+            version = os.environ["BOUT_PRETEND_VERSION"]
+            return version
+
         _bout_previous_version = "v5.0.0"
-        _bout_next_version = "5.1.0"
+        _bout_next_version = "v5.1.0"
 
         try:
             try:
@@ -152,6 +157,7 @@ def build_sdist(sdist_directory, config_settings=None):
     print(config_settings, sdist_directory)
     enable_gz = True
     enable_xz = False
+    external = {"fmt", "mpark.variant"}
     if config_settings is not None:
         global useLocalVersion, pkgname
         for k, v in config_settings.items():
@@ -166,6 +172,10 @@ def build_sdist(sdist_directory, config_settings=None):
                     enable_xz = True
                 else:
                     raise ValueError(f"unknown option {v} for {k}")
+            if k == "dist":
+                enable_xz = True
+                pkgname = "BOUT++"
+                external.add("googletest")
             if k == "useLocalVersion":
                 useLocalVersion = False
             if k == "nightly":
@@ -175,7 +185,7 @@ def build_sdist(sdist_directory, config_settings=None):
     fname = f"{prefix}.tar"
     run(f"git archive HEAD --prefix {prefix}/ -o {sdist_directory}/{fname}")
     _, tmp = tempfile.mkstemp(suffix=".tar")
-    for ext in "fmt", "mpark.variant":
+    for ext in sorted(external):
         run(
             f"git archive --remote=externalpackages/{ext} HEAD --prefix  {prefix}/externalpackages/{ext}/ --format=tar > {tmp}"
         )
@@ -275,22 +285,70 @@ def parse(fn):
 
 
 def nightly():
+    """
+    Build the python sdist for upload to boutpp-nightly.
+    """
     return build_sdist(os.getcwd() + "/dist/", dict(nightly=True))
 
 
 def sdist():
+    """
+    Build the python sdist
+    """
     return build_sdist(os.getcwd() + "/dist/")
 
 
 def wheel():
+    """
+    Build the python binary wheel
+    """
     return build_wheel(os.getcwd() + "/dist/")
 
+
+def dist():
+    """
+    Build an archive for BOUT++ release
+    """
+    return build_sdist(os.getcwd(), config_settings=dict(dist=True))
+
+
+def help():
+    """
+    Print this help
+    """
+    table = []
+    for k, v in todos.items():
+        try:
+            doc = v.__doc__.strip()
+            doc = " : " + doc
+        except:
+            doc = ""
+        table.append((k, doc))
+    maxkey = max([len(k) for k, _ in table])
+    fmt = f"   %-{maxkey}s%s"
+    print(f"{sys.argv[0]} [command] [command]")
+    for row in table:
+        print(fmt % row)
+
+
+todos = dict(
+    nightly=nightly,
+    sdist=sdist,
+    wheel=wheel,
+    dist=dist,
+    version=lambda: print(getversion()),
+    help=help,
+)
+todos.update(
+    {
+        "--help": help,
+        "-?": help,
+        "-h": help,
+    }
+)
 
 if __name__ == "__main__":
     import sys
 
-    todos = dict(
-        nightly=nightly, sdist=sdist, wheel=wheel, version=lambda: print(getversion())
-    )
     for todo in sys.argv[1:]:
         todos[todo]()

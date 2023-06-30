@@ -20,7 +20,7 @@ if test $BUILD_PETSC ; then
 	    --with-scalar-type=real \
 	    --with-shared-libraries=1 \
 	    --with-debugging=0 \
-	    {C,CXX,F}OPTFLAGS="-O3 -march=native" \
+	    {C,CXX,F}OPTFLAGS="-O3" \
 	    --prefix=$HOME/local/petsc
 
 	make && make install
