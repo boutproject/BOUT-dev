@@ -6,8 +6,9 @@
 #include "bout/openmpwrap.hxx"
 #include "bout/options.hxx"
 #include <bout/petsclib.hxx>
-
 #include <bout/output.hxx>
+
+#include "petscsnes.h"
 
 // Define all the static member variables
 int PetscLib::count = 0;
