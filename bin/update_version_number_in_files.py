@@ -12,7 +12,7 @@ def get_full_filepath(filepath):
 def update_version_number_in_file(relative_filepath, pattern, new_version_number):
 
     def get_replacement(match):
-        return match[0].replace(match[1], new_version_number)
+        return match[0].replace(match[1], new_version_number.as_string())
 
     full_filepath = get_full_filepath(relative_filepath)
     with open(full_filepath, "r", encoding='UTF-8') as file:
@@ -24,9 +24,10 @@ def update_version_number_in_file(relative_filepath, pattern, new_version_number
 
 def bump_version_numbers(new_version_number):
 
-    short_version_number = new_version_number[0:3]
-    new_minor_version_number = str(int(new_version_number[2]) + 1)
-    bout_next_version_number = re.sub(r"(?<=\d\.)\d+(?=\.\d+)", new_minor_version_number, new_version_number)
+    short_version_number = ShortVersionNumber(new_version_number.major_version, new_version_number.minor_version)
+    bout_next_version_number = VersionNumber(new_version_number.major_version,
+                                             new_version_number.minor_version + 1,
+                                             new_version_number.patch_version)
 
     update_version_number_in_file("configure.ac",
                                   r"^AC_INIT\(\[BOUT\+\+\],\[(\d+\.\d+\.\d+)\]", new_version_number)
@@ -50,6 +51,32 @@ def bump_version_numbers(new_version_number):
                                   r"_bout_next_version = \"v(\d+\.\d+\.\d+)\"", bout_next_version_number)
 
 
+class VersionNumber:
+
+    major_version: int
+    minor_version: int
+    patch_version: int
+
+    def __init__(self, major_version, minor_version, patch_version):
+        self.major_version = major_version
+        self.minor_version = minor_version
+        self.patch_version = patch_version
+
+    def as_string(self):
+        return "%d.%d.%d" % (self.major_version, self.minor_version, self.patch_version)
+
+
+class ShortVersionNumber(VersionNumber):
+
+    def __init__(self, major_version, minor_version):
+        self.major_version = major_version
+        self.minor_version = minor_version
+        self.patch_version = None
+
+    def as_string(self):
+        return "%d.%d" % (self.major_version, self.minor_version)
+
+
 if __name__ == '__main__':
 
-    bump_version_numbers(new_version_number="6.1.0")
+    bump_version_numbers(new_version_number=VersionNumber(63, 15, 12))
