@@ -1,10 +1,12 @@
 from pathlib import Path
+import os
 import re
 
 
 def get_full_filepath(filepath):
 
-    return Path(r"C:\git\BOUT-dev") / filepath
+    main_directory = Path(os.path.abspath(__file__)).parent.parent
+    return Path(main_directory) / filepath
 
 
 def update_version_number_in_file(relative_filepath, pattern, new_version_number):
