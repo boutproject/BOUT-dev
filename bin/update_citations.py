@@ -15,7 +15,7 @@ def get_authors_from_git():
     main_directory = get_main_directory()
     subprocess.run(["cd", main_directory], shell=True)
 
-    output = subprocess.run(["git", "log", "--format='%aN'"], capture_output=True)
+    output = subprocess.run(["git", "log", "--format='%aN %aE'"], capture_output=True)
     if output.stderr:
         return output.stderr
 
@@ -24,8 +24,9 @@ def get_authors_from_git():
     authors_without_quotes = [a.strip("'") for a in authors_list]
 
     distinct_authors = set(authors_without_quotes)
-    distinct_authors_list_without_initial_empty_string = list(distinct_authors)[1:]
-    return distinct_authors_list_without_initial_empty_string
+    distinct_authors_list_without_empty_strings = [a for a in distinct_authors if a]
+    authors_with_emails = [a.rsplit(maxsplit=1) for a in distinct_authors_list_without_empty_strings]
+    return authors_with_emails
 
 
 def parse_cff_file(filename):
@@ -106,6 +107,7 @@ class ExistingAuthorNames:
 
 
 def author_found_in_existing_authors(author, existing_authors):
+
     existing_author_names = ExistingAuthorNames(existing_authors)
 
     names = author.split()
@@ -139,16 +141,16 @@ def author_found_in_existing_authors(author, existing_authors):
 
 def update_citations():
 
-    nonhuman_authors = [a for a in authors_from_git if "github" in a.casefold() or "dependabot" in a.casefold()]
+    nonhuman_authors = [a for a in authors_from_git if "github" in a[0].casefold() or "dependabot" in a[0].casefold()]
 
-    known_authors = [a for a in authors_from_git if a in KNOWN_AUTHORS]
+    known_authors = [a for a in authors_from_git if a[0] in KNOWN_AUTHORS]
 
     human_authors = [a for a in authors_from_git if a not in nonhuman_authors]
 
     authors_to_search_for = [a for a in human_authors if a not in known_authors]
 
     unrecognised_authors = [a for a in authors_to_search_for if
-                            not author_found_in_existing_authors(a, existing_authors)]
+                            not author_found_in_existing_authors(a[0], existing_authors)]
 
     print("The following authors were not recognised. Add to citations?")
     for author in unrecognised_authors:
