@@ -1,24 +1,27 @@
+import subprocess
 from pathlib import Path
 import os
 import yaml
 from unidecode import unidecode
 from typing import NamedTuple
 
-authors_from_git = ["A Allen", "Aaron Fisher", "Adam Dempsey", "Andrew Allen", "arkabokshi", "Ben Dudson", "bendudson",
-                    "Benjamin Dudson", "Brendan", "Brendan Shanahan", "Brett Friedman", "brey", "BS", "bshanahan",
-                    "Chenhao Ma", "Chris MacMackin", "D Dickinson", "David", "David Bold", "David Dickinson",
-                    "David Schwörer", "dependabot[bot]", "Dmitry Feliksovich Meyerson", "Dmitry Meyerson", "dschwoerer",
-                    "Eric Medwedeff", "Erik Grinaker", "Fabio Riva", "George Breyiannis", "GitHub Merge Button",
-                    "github-actions[bot]", "hahahasan", "Haruki Seto", "Haruki SETO", "holger", "Holger Jones",
-                    "Hong Zhang", "Ilon Joseph", "Ilon Joseph - x31405", "Jarrod Leddy", "JB Leddy", "j-b-o",
-                    "Jed Brown", "Jens Madsen", "John Omotani", "johnomotani", "jonesholger", "Joseph Parker",
-                    "Joshua Sauppe", "Kab Seok Kang", "kangkabseok", "Kevin Savage", "Licheng Wang", "loeiten",
-                    "Luke Easy", "M Leconte", "M V Umansky", "Marta Estarellas", "Matt Thomas", "Maxim Umansky",
-                    "Maxim Umansky - x26041", "Michael Løiten", "Michael Loiten Magnussen", "Minwoo Kim",
-                    "Nicholas Walkden", "Nick Walkden", "nick-walkden", "Olivier Izacard", "Pengwei Xi", "Peter Hill",
-                    "Peter Naylor", "Qin, Yining", "Sajidah Ahmed", "Sanat Tiwari", "Sean Farley", "seanfarley",
-                    "Seto Haruki", "Simon Myers", "Tianyang Xia", "Toby James", "tomc271", "Tongnyeol Rhee",
-                    "Xiang Liu", "Xinliang Xu", "Xueqiao Xu", "Yining Qin", "ZedThree", "Zhanhui Wang"]
+
+def get_authors_from_git():
+
+    main_directory = Path(os.path.abspath(__file__)).parent.parent
+    subprocess.run(["cd", main_directory], shell=True)
+
+    output = subprocess.run(["git", "log", "--format='%aN'"], capture_output=True)
+    if output.stderr:
+        return output.stderr
+
+    authors_string = output.stdout.decode()
+    authors_list = authors_string.split('\n')
+    authors_without_quotes = [a.strip("'") for a in authors_list]
+
+    distinct_authors = set(authors_without_quotes)
+    distinct_authors_list_without_initial_empty_string = list(distinct_authors)[1:]
+    return distinct_authors_list_without_initial_empty_string
 
 
 def parse_cff_file(filename):
@@ -132,8 +135,6 @@ def author_found_in_existing_authors(author, existing_authors):
 
 def update_citations():
 
-    existing_authors = get_authors_from_cff_file()
-
     nonhuman_authors = [a for a in authors_from_git if "github" in a.casefold() or "dependabot" in a.casefold()]
 
     known_authors = [a for a in authors_from_git if a in KNOWN_AUTHORS]
@@ -171,4 +172,7 @@ KNOWN_AUTHORS = {"bendudson": KnownAuthor("Dodson", "Benjamin"),
                  }
 
 if __name__ == '__main__':
+
+    authors_from_git = get_authors_from_git()
+    existing_authors = get_authors_from_cff_file()
     update_citations()
