@@ -6,9 +6,13 @@ from unidecode import unidecode
 from typing import NamedTuple
 
 
+def get_main_directory():
+    return Path(os.path.abspath(__file__)).parent.parent
+
+
 def get_authors_from_git():
 
-    main_directory = Path(os.path.abspath(__file__)).parent.parent
+    main_directory = get_main_directory()
     subprocess.run(["cd", main_directory], shell=True)
 
     output = subprocess.run(["git", "log", "--format='%aN'"], capture_output=True)
