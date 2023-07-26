@@ -30,7 +30,7 @@ Requirements
 
 The Python tools provided with BOUT++ make heavy use of numpy_ and
 scipy_, as well as matplotlib_ for the plotting routines. In order
-to read BOUT++ output in Python, you will need either netcdf4_ or h5py_.
+to read BOUT++ output in Python, you will need either netcdf4_.
 
 While we try to ensure that the Python tools are compatible with both
 Python 2 and 3, we officially only support Python 3.
@@ -55,7 +55,6 @@ supported versions of numpy, scipy, netcdf4, matplotlib and jinja2.
 .. _scipy: http://www.scipy.org/
 .. _matplotlib: https://www.matplotlib.org
 .. _netcdf4: http://unidata.github.io/netcdf4-python/
-.. _h5py: http://www.h5py.org
 .. _Jinja2: http://jinja.pocoo.org/
 .. _installation instructions: https://www.scipy.org/install.html
 

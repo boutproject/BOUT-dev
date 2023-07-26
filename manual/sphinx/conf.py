@@ -49,7 +49,6 @@ if on_readthedocs:
             return MagicMock()
 
     MOCK_MODULES = [
-        "h5py",
         "netCDF4",
         "mayavi2",
         "enthought",
