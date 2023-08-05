@@ -19,8 +19,7 @@ releases
 - [ ] Run `make check-all`
     - Raise issues for any tests that fail
 - Possibly run `clang-tidy`, `clang-check`, `coverity`, etc.
-- [ ] Review pinned pip package versions for CI
-- [ ] Review bundled libraries
+- [ ] Review pinned pip package versions for Travis
     
 Before merging PR:
 
@@ -56,7 +55,6 @@ Before merging PR:
 
 After PR is merged:
 
-- [ ] Make tarball: `make dist` from build directory. Ensure you are on a tag and correct version is used for archive and folder within.
 - [ ] Try to summarise the changes!
 - [ ] Make [GitHub Release][gh_release], include change summary **NB:** tag should have
       leading `v`
@@ -74,6 +72,7 @@ After PR is merged:
     - [ ]  [`manual/doxygen/Doxyfile`][Doxyfile]: `PROJECT_NUMBER`
     - [ ]  [`CMakeLists.txt`][CMakeLists]: `_bout_previous_version`, `_bout_next_version`
     - [ ]  [`tools/pylib/_boutpp_build/backend.py`][backend.py]: `_bout_previous_version`, `_bout_next_version`
+- [ ] Make tarball: `cmake -S . -B build && make dist -C build`
 
 [Doxyfile]: ../manual/doxygen/Doxyfile
 [Doxyfile_readthedocs]: ../manual/doxygen/Doxyfile_readthedocs

@@ -41,13 +41,14 @@ int Test_globalfield::init(bool UNUSED(restarting)) {
   if (gX.dataIsLocal()) {
     // Data is on this processor
     bool gather_pass = true;
-    for (int x = 0; x < gX.xSize(); x++)
+    for (int x = 0; x < gX.xSize(); x++) {
       for (int y = 0; y < gX.ySize(); y++) {
         if ((ROUND(gX(x, y)) != x) || (ROUND(gY(x, y)) != y)) {
           output.write("{:d}, {:d} :  {:e}, {:e}\n", x, y, gX(x, y), gY(x, y));
           gather_pass = false;
         }
       }
+    }
     output << "2D GATHER TEST: " << gather_pass << endl;
   }
 
@@ -56,7 +57,7 @@ int Test_globalfield::init(bool UNUSED(restarting)) {
   Field2D scatY = gY.scatter();
 
   bool scatter_pass = true;
-  for (int x = mesh->xstart; x <= mesh->xend; x++)
+  for (int x = mesh->xstart; x <= mesh->xend; x++) {
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
       if ((localX(x, y) != scatX(x, y)) || (localY(x, y) != scatY(x, y))) {
         output.write("{:d}, {:d} :  ({:e}, {:e}) ({:e}, {:e})", x, y, localX(x, y),
@@ -64,6 +65,7 @@ int Test_globalfield::init(bool UNUSED(restarting)) {
         scatter_pass = false;
       }
     }
+  }
   output << "2D SCATTER TEST: " << scatter_pass << endl;
 
   /////////////////////////////////////////////////////////////
@@ -75,12 +77,14 @@ int Test_globalfield::init(bool UNUSED(restarting)) {
   localX3D.allocate();
   localY3D.allocate();
 
-  for (int x = 0; x < mesh->LocalNx; x++)
-    for (int y = 0; y < mesh->LocalNy; y++)
+  for (int x = 0; x < mesh->LocalNx; x++) {
+    for (int y = 0; y < mesh->LocalNy; y++) {
       for (int z = 0; z < mesh->LocalNz; z++) {
         localX3D(x, y, z) = mesh->getGlobalXIndex(x) + z;
         localY3D(x, y, z) = mesh->getGlobalYIndex(y - mesh->ystart) + z;
       }
+    }
+  }
 
   // Gather onto one processor (0 by default)
   GlobalField3D gX3D(mesh), gY3D(mesh);
@@ -91,8 +95,8 @@ int Test_globalfield::init(bool UNUSED(restarting)) {
   if (gX3D.dataIsLocal()) {
     // Data is on this processor
     bool gather_pass3D = true;
-    for (int x = 0; x < gX3D.xSize(); x++)
-      for (int y = 0; y < gX3D.ySize(); y++)
+    for (int x = 0; x < gX3D.xSize(); x++) {
+      for (int y = 0; y < gX3D.ySize(); y++) {
         for (int z = 0; z < gX3D.zSize(); z++) {
           if ((ROUND(gX3D(x, y, z)) != x + z) || (ROUND(gY3D(x, y, z)) != y + z)) {
             output.write("{:d}, {:d}, {:d} :  {:e}, {:e}\n", x, y, z, gX3D(x, y, z),
@@ -100,6 +104,8 @@ int Test_globalfield::init(bool UNUSED(restarting)) {
             gather_pass3D = false;
           }
         }
+      }
+    }
     output << "3D GATHER TEST: " << gather_pass3D << endl;
   }
 
@@ -108,8 +114,8 @@ int Test_globalfield::init(bool UNUSED(restarting)) {
   Field3D scatY3D = gY3D.scatter();
 
   bool scatter_pass3D = true;
-  for (int x = mesh->xstart; x <= mesh->xend; x++)
-    for (int y = mesh->ystart; y <= mesh->yend; y++)
+  for (int x = mesh->xstart; x <= mesh->xend; x++) {
+    for (int y = mesh->ystart; y <= mesh->yend; y++) {
       for (int z = 0; z < mesh->LocalNz; z++) {
         if ((localX3D(x, y, z) != scatX3D(x, y, z))
             || (localY3D(x, y, z) != scatY3D(x, y, z))) {
@@ -119,6 +125,8 @@ int Test_globalfield::init(bool UNUSED(restarting)) {
           scatter_pass3D = false;
         }
       }
+    }
+  }
   output << "2D SCATTER TEST: " << scatter_pass3D << endl;
 
   return 1; // Signal an error, so quits
