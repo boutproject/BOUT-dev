@@ -813,7 +813,7 @@ BoutMonitor::BoutMonitor(BoutReal timestep, Options& options)
                           .doc(_("Name of file whose existence triggers a stop"))
                           .withDefault("BOUT.stop"))) {}
 
-int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
+int BoutMonitor::call(Solver* solver, BoutReal t, MAYBE_UNUSED(int iter), int NOUT) {
   TRACE("BoutMonitor::call({:e}, {:d}, {:d})", t, iter, NOUT);
 
   // Increment Solver's iteration counter, and set the global `iteration`

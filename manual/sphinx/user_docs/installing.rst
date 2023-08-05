@@ -443,27 +443,27 @@ configuration::
 If not, see :ref:`sec-advancedinstall` for some things you can try to
 resolve common problems.
 
-Working with an active `conda` environment
+Working with an active ``conda`` environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When `conda` is used, it installs separate versions of several libraries. These
+When ``conda`` is used, it installs separate versions of several libraries. These
 can cause warnings or even failures when linking BOUT++ executables. There are
 several alternatives to deal with this problem:
-* The simplest but least convenient option is to use `conda deactivate` before
+* The simplest but least convenient option is to use ``conda deactivate`` before
   configuring, compiling, or running any BOUT++ program.
 * You might sometimes want to link to the conda-installed libraries. This is
   probably not ideal for production runs on an HPC system (as conda downloads
   binary packages that will not be optimized for specific hardware), but can be
   a simple way to get packages for testing or on a personal computer. In this
-  case just keep your `conda` environment active, and with luck the libraries
+  case just keep your ``conda`` environment active, and with luck the libraries
   should be picked up by the standard search mechanisms.
 * In case you do want a fully optimized and as-stable-as-possible build for
   production runs, it is probably best not to depend on any conda packages for
-  compiling or running BOUT++ executables (restrict `conda` to providing Python
+  compiling or running BOUT++ executables (restrict ``conda`` to providing Python
   packages for post-processing, and their dependencies). Passing
-  `-DBOUT_IGNORE_CONDA_ENV=ON` (default `OFF`) excludes anything in the conda
+  ``-DBOUT_IGNORE_CONDA_ENV=ON`` (default ``OFF``) excludes anything in the conda
   environment from CMake search paths. This should totally separate BOUT++ from
-  the `conda` environment.
+  the ``conda`` environment.
 
 .. _sec-config-nls:
 
