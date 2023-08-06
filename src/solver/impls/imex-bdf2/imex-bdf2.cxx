@@ -1240,7 +1240,7 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
     if (verbose) {
       output << "SNES failed to converge with reason " << reason << endl;
     }
-    throw BoutException("SNES failed to converge. Reason: {:d}\n", reason);
+    throw PetscLib::SNESFailure(snesUse);
   }
 
   int its;
