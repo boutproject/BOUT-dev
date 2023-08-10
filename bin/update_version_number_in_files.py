@@ -15,15 +15,39 @@ def get_full_filepath(filepath):
 
 def update_version_number_in_file(relative_filepath, pattern, new_version_number):
 
-    def get_replacement(match):
-        return match[0].replace(match[1], new_version_number.as_string())
-
     full_filepath = get_full_filepath(relative_filepath)
+
     with open(full_filepath, "r", encoding='UTF-8') as file:
+
         file_contents = file.read()
-        updated_text = re.sub(pattern, get_replacement, file_contents, flags=re.MULTILINE)
-    with open(full_filepath, "w", encoding='UTF-8') as file:
-        file.write(updated_text)
+        original = copy.deepcopy(file_contents)
+
+        modified = apply_fixes(pattern, new_version_number, file_contents)
+        patch = create_patch(str(full_filepath), original, modified)
+
+        if args.patch_only:
+            print(patch)
+            return
+
+        if not patch:
+            if not args.quiet:
+                print("No changes to make to {}".format(full_filepath))
+            return
+
+        if not args.quiet:
+            print("\n******************************************")
+            print("Changes to {}\n".format(full_filepath))
+            print(patch)
+            print("\n******************************************")
+
+        if args.force:
+            make_change = True
+        else:
+            make_change = yes_or_no("Make changes to {}?".format(full_filepath))
+
+        if make_change:
+            with open(full_filepath, "w", encoding='UTF-8') as file:
+                file.write(modified)
 
 
 def bump_version_numbers(new_version_number):
@@ -81,9 +105,27 @@ class ShortVersionNumber(VersionNumber):
         return "%d.%d" % (self.major_version, self.minor_version)
 
 
-def apply_fixes(replacements, source):
+def apply_fixes(pattern, new_version_number, source):
+    """Apply the various fixes for each factory to source. Returns
+    modified source
 
-    raise NotImplementedError
+    Parameters
+    ----------
+    pattern
+        Regex pattern to apply for replacement
+    new_version_number
+        New version number to use in replacement
+    source
+        Text to update
+    """
+
+    def get_replacement(match):
+        return match[0].replace(match[1], new_version_number.as_string())
+
+    modified = re.sub(pattern, get_replacement, source, flags=re.MULTILINE)
+
+    return modified
+
     # """Apply all fixes in this module"""
     # modified = copy.deepcopy(source)
     #
@@ -141,26 +183,11 @@ if __name__ == '__main__':
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=textwrap.dedent(
             """\
-            Fix macro defines for BOUT++ v4 -> v5
-
-            Please note that this is only slightly better than dumb text replacement. It
-            will fix the following:
-
-            * replacement of macros with variables or new names
-            * inclusion of correct headers for new variables
-            * removal of #if(n)def/#endif blocks that do simple checks for the old
-              macro, keeping the appriopriate part, if replaced by a variable
-            * change '#if(n)def' for '#if (!)' if the replacment is always defined
-
-            It will try not to replace quoted macro names, but may
-            still replace them in strings or comments.
-
-            Please check the diff output carefully!
+            TODO: Description here...
             """
         ),
     )
 
-    parser.add_argument("files", action="store", nargs="+", help="Input files")
     parser.add_argument(
         "--force", "-f", action="store_true", help="Make changes without asking"
     )
@@ -176,35 +203,4 @@ if __name__ == '__main__':
     if args.force and args.patch_only:
         raise ValueError("Incompatible options: --force and --patch")
 
-    for filename in args.files:
-        with open(filename, "r") as f:
-            contents = f.read()
-        original = copy.deepcopy(contents)
-
-        replacements = bump_version_numbers(new_version_number=VersionNumber(63, 15, 12))
-        modified = apply_fixes(replacements, contents)
-        patch = create_patch(filename, original, modified)
-
-        if args.patch_only:
-            print(patch)
-            continue
-
-        if not patch:
-            if not args.quiet:
-                print("No changes to make to {}".format(filename))
-            continue
-
-        if not args.quiet:
-            print("\n******************************************")
-            print("Changes to {}\n".format(filename))
-            print(patch)
-            print("\n******************************************")
-
-        if args.force:
-            make_change = True
-        else:
-            make_change = yes_or_no("Make changes to {}?".format(filename))
-
-        if make_change:
-            with open(filename, "w") as f:
-                f.write(modified)
+    bump_version_numbers(new_version_number=VersionNumber(63, 15, 12))
