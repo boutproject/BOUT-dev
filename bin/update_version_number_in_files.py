@@ -117,12 +117,10 @@ class VersionNumber:
         return "%d.%d.%d" % (self.major_version, self.minor_version, self.patch_version)
 
 
-class ShortVersionNumber(VersionNumber):
-
+class ShortVersionNumber:
     def __init__(self, major_version, minor_version):
         self.major_version = major_version
         self.minor_version = minor_version
-        self.patch_version = None
 
     def as_string(self):
         return "%d.%d" % (self.major_version, self.minor_version)
