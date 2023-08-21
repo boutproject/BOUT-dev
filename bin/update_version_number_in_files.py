@@ -144,30 +144,6 @@ def apply_fixes(pattern, new_version_number, source):
 
     return modified
 
-    # """Apply all fixes in this module"""
-    # modified = copy.deepcopy(source)
-    #
-    # for replacement in replacements:
-    #     if replacement["new"] is None:
-    #         print(
-    #             "'%s' has been removed, please delete from your code"
-    #             % replacement["old"]
-    #         )
-    #         continue
-    #
-    #     modified = fix_include_version_header(
-    #         replacement["old"], replacement["headers"], modified
-    #     )
-    #     if replacement["macro"] and replacement["always_defined"]:
-    #         modified = fix_always_defined_macros(
-    #             replacement["old"], replacement["new"], modified
-    #         )
-    #     elif replacement["always_defined"]:
-    #         modified = fix_ifdefs(replacement["old"], modified)
-    #     modified = fix_replacement(replacement["old"], replacement["new"], modified)
-    #
-    # return modified
-
 
 def yes_or_no(question):
     """Convert user input from yes/no variations to True/False"""
