@@ -190,10 +190,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--patch-only", "-p", action="store_true", help="Print the patches and exit"
     )
+    parser.add_argument("new_version", help="Specify the new version number")
 
     args = parser.parse_args()
 
     if args.force and args.patch_only:
         raise ValueError("Incompatible options: --force and --patch")
-
-    bump_version_numbers(new_version_number=VersionNumber(63, 15, 12))
+    major, minor, patch = map(int, args.new_version.split("."))
+    bump_version_numbers(new_version_number=VersionNumber(major, minor, patch))
