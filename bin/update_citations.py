@@ -13,10 +13,8 @@ def get_main_directory():
 def get_authors_from_git():
     main_directory = get_main_directory()
     output = subprocess.run(
-        ["git", "log", "--format='%aN %aE'"], capture_output=True, cwd=main_directory
+        ["git", "log", "--format='%aN %aE'"], capture_output=True, cwd=main_directory, check=True
     )
-    if output.stderr:
-        return output.stderr
 
     authors_string = output.stdout.decode()
     authors_list = authors_string.split("\n")
