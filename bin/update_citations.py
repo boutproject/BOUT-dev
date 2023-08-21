@@ -13,10 +13,14 @@ def get_main_directory():
 def get_authors_from_git():
     main_directory = get_main_directory()
     output = subprocess.run(
-        ["git", "log", "--format='%aN %aE'"], capture_output=True, cwd=main_directory, check=True
+        ["git", "log", "--format='%aN %aE'"],
+        capture_output=True,
+        cwd=main_directory,
+        check=True,
+        text=True,
     )
 
-    authors_string = output.stdout.decode()
+    authors_string = output.stdout
     authors_list = authors_string.split("\n")
     authors_without_quotes = [a.strip("'") for a in authors_list]
 
@@ -31,7 +35,7 @@ def get_authors_from_git():
 def parse_cff_file(filename):
     with open(filename, "r", encoding="UTF-8") as stream:
         try:
-            return yaml.safe_load(stream)
+        return yaml.safe_load(stream)
         except yaml.YAMLError as exc:
             print(exc)
 
