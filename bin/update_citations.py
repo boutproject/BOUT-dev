@@ -44,7 +44,7 @@ def get_authors_from_cff_file():
     try:
         return file_contents["authors"]
     except KeyError as key_error:
-        print("Failed to find section:", key_error, "in", filename)
+        raise ValueError(f"Failed to find section:{key_error} in {filename}")
 
 
 class ExistingAuthorNames:
