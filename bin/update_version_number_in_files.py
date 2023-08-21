@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 import argparse
 import difflib
@@ -103,15 +104,11 @@ def bump_version_numbers(new_version_number):
     )
 
 
+@dataclass
 class VersionNumber:
     major_version: int
     minor_version: int
     patch_version: int
-
-    def __init__(self, major_version, minor_version, patch_version):
-        self.major_version = major_version
-        self.minor_version = minor_version
-        self.patch_version = patch_version
 
     def as_string(self):
         return "%d.%d.%d" % (self.major_version, self.minor_version, self.patch_version)
