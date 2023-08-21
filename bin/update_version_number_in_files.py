@@ -99,7 +99,7 @@ def bump_version_numbers(new_version_number):
     )
     update_version_number_in_file(
         "tools/pylib/_boutpp_build/backend.py",
-        r"_bout_next_version = \"v(\d+\.\d+\.\d+)\"",
+        r"_bout_next_version = \"(\d+\.\d+\.\d+)\"",
         bout_next_version_number,
     )
 
