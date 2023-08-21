@@ -110,7 +110,7 @@ class VersionNumber:
     minor_version: int
     patch_version: int
 
-    def as_string(self):
+    def __str__(self):
         return "%d.%d.%d" % (self.major_version, self.minor_version, self.patch_version)
 
 
@@ -119,7 +119,7 @@ class ShortVersionNumber:
         self.major_version = major_version
         self.minor_version = minor_version
 
-    def as_string(self):
+    def __str__(self):
         return "%d.%d" % (self.major_version, self.minor_version)
 
 
@@ -138,7 +138,7 @@ def apply_fixes(pattern, new_version_number, source):
     """
 
     def get_replacement(match):
-        return match[0].replace(match[1], new_version_number.as_string())
+        return match[0].replace(match[1], str(new_version_number))
 
     modified = re.sub(pattern, get_replacement, source, flags=re.MULTILINE)
 
