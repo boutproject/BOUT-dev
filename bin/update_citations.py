@@ -12,9 +12,9 @@ def get_main_directory():
 
 def get_authors_from_git():
     main_directory = get_main_directory()
-    subprocess.run(["cd", main_directory], shell=True)
-
-    output = subprocess.run(["git", "log", "--format='%aN %aE'"], capture_output=True)
+    output = subprocess.run(
+        ["git", "log", "--format='%aN %aE'"], capture_output=True, cwd=main_directory
+    )
     if output.stderr:
         return output.stderr
 
