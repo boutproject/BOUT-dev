@@ -8,17 +8,14 @@ import re
 
 
 def get_full_filepath(filepath):
-
     main_directory = Path(os.path.abspath(__file__)).parent.parent
     return Path(main_directory) / filepath
 
 
 def update_version_number_in_file(relative_filepath, pattern, new_version_number):
-
     full_filepath = get_full_filepath(relative_filepath)
 
-    with open(full_filepath, "r", encoding='UTF-8') as file:
-
+    with open(full_filepath, "r", encoding="UTF-8") as file:
         file_contents = file.read()
         original = copy.deepcopy(file_contents)
 
@@ -46,41 +43,67 @@ def update_version_number_in_file(relative_filepath, pattern, new_version_number
             make_change = yes_or_no("Make changes to {}?".format(full_filepath))
 
         if make_change:
-            with open(full_filepath, "w", encoding='UTF-8') as file:
+            with open(full_filepath, "w", encoding="UTF-8") as file:
                 file.write(modified)
 
 
 def bump_version_numbers(new_version_number):
+    short_version_number = ShortVersionNumber(
+        new_version_number.major_version, new_version_number.minor_version
+    )
+    bout_next_version_number = VersionNumber(
+        new_version_number.major_version,
+        new_version_number.minor_version + 1,
+        new_version_number.patch_version,
+    )
 
-    short_version_number = ShortVersionNumber(new_version_number.major_version, new_version_number.minor_version)
-    bout_next_version_number = VersionNumber(new_version_number.major_version,
-                                             new_version_number.minor_version + 1,
-                                             new_version_number.patch_version)
-
-    update_version_number_in_file("configure.ac",
-                                  r"^AC_INIT\(\[BOUT\+\+\],\[(\d+\.\d+\.\d+)\]", new_version_number)
-    update_version_number_in_file("CITATION.cff",
-                                  r"^version: (\d+\.\d+\.\d+)", new_version_number)
-    update_version_number_in_file("manual/sphinx/conf.py",
-                                  r"^version = \"(\d+\.\d+)\"", short_version_number)
-    update_version_number_in_file("manual/sphinx/conf.py",
-                                  r"^release = \"(\d+\.\d+\.\d+)\"", new_version_number)
-    update_version_number_in_file("manual/doxygen/Doxyfile_readthedocs",
-                                  r"^PROJECT_NUMBER         = (\d+\.\d+\.\d+)", new_version_number)
-    update_version_number_in_file("manual/doxygen/Doxyfile",
-                                  r"^PROJECT_NUMBER         = (\d+\.\d+\.\d+)", new_version_number)
-    update_version_number_in_file("CMakeLists.txt",
-                                  r"^set\(_bout_previous_version \"v(\d+\.\d+\.\d+)\"\)", new_version_number)
-    update_version_number_in_file("CMakeLists.txt",
-                                  r"^set\(_bout_next_version \"(\d+\.\d+\.\d+)\"\)", bout_next_version_number)
-    update_version_number_in_file("tools/pylib/_boutpp_build/backend.py",
-                                  r"_bout_previous_version = \"v(\d+\.\d+\.\d+)\"", new_version_number)
-    update_version_number_in_file("tools/pylib/_boutpp_build/backend.py",
-                                  r"_bout_next_version = \"v(\d+\.\d+\.\d+)\"", bout_next_version_number)
+    update_version_number_in_file(
+        "configure.ac",
+        r"^AC_INIT\(\[BOUT\+\+\],\[(\d+\.\d+\.\d+)\]",
+        new_version_number,
+    )
+    update_version_number_in_file(
+        "CITATION.cff", r"^version: (\d+\.\d+\.\d+)", new_version_number
+    )
+    update_version_number_in_file(
+        "manual/sphinx/conf.py", r"^version = \"(\d+\.\d+)\"", short_version_number
+    )
+    update_version_number_in_file(
+        "manual/sphinx/conf.py", r"^release = \"(\d+\.\d+\.\d+)\"", new_version_number
+    )
+    update_version_number_in_file(
+        "manual/doxygen/Doxyfile_readthedocs",
+        r"^PROJECT_NUMBER         = (\d+\.\d+\.\d+)",
+        new_version_number,
+    )
+    update_version_number_in_file(
+        "manual/doxygen/Doxyfile",
+        r"^PROJECT_NUMBER         = (\d+\.\d+\.\d+)",
+        new_version_number,
+    )
+    update_version_number_in_file(
+        "CMakeLists.txt",
+        r"^set\(_bout_previous_version \"v(\d+\.\d+\.\d+)\"\)",
+        new_version_number,
+    )
+    update_version_number_in_file(
+        "CMakeLists.txt",
+        r"^set\(_bout_next_version \"(\d+\.\d+\.\d+)\"\)",
+        bout_next_version_number,
+    )
+    update_version_number_in_file(
+        "tools/pylib/_boutpp_build/backend.py",
+        r"_bout_previous_version = \"v(\d+\.\d+\.\d+)\"",
+        new_version_number,
+    )
+    update_version_number_in_file(
+        "tools/pylib/_boutpp_build/backend.py",
+        r"_bout_next_version = \"v(\d+\.\d+\.\d+)\"",
+        bout_next_version_number,
+    )
 
 
 class VersionNumber:
-
     major_version: int
     minor_version: int
     patch_version: int
@@ -177,8 +200,7 @@ def create_patch(filename, original, modified):
     return patch
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=textwrap.dedent(
