@@ -38,8 +38,7 @@ def parse_cff_file(filename):
 
 
 def get_authors_from_cff_file():
-    main_directory = Path(os.path.abspath(__file__)).parent.parent
-    filename = Path(main_directory) / "CITATION.cff"
+    filename = get_main_directory() / "CITATION.cff"
     file_contents = parse_cff_file(filename)
     try:
         return file_contents["authors"]
