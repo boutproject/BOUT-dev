@@ -114,10 +114,10 @@ class VersionNumber:
         return "%d.%d.%d" % (self.major_version, self.minor_version, self.patch_version)
 
 
+@dataclass
 class ShortVersionNumber:
-    def __init__(self, major_version, minor_version):
-        self.major_version = major_version
-        self.minor_version = minor_version
+    major_version: int
+    minor_version: int
 
     def __str__(self):
         return "%d.%d" % (self.major_version, self.minor_version)
