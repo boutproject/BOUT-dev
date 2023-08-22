@@ -176,7 +176,18 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=textwrap.dedent(
             """\
-            TODO: Description here...
+            Update the software version number to the specified version, 
+            to be given in the form major.minor.patch, 
+            e.g. 5.10.3
+            
+            Where the 3rd ('patch') part of the version is omitted, 
+            only the 'major' and 'minor' parts will be used, 
+            e.g. 5.10.3 -> 5.10 
+            
+            For the 'bout-next' version number, 
+            the 'minor' version number of the provided version will be incremented by 1, 
+            e.g. 5.10.3 -> 5.11.3
+            
             """
         ),
     )
