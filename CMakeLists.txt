@@ -147,6 +147,7 @@ set(BOUT_SOURCES
   ./include/bout/operatorstencil.hxx
   ./include/bout/options.hxx
   ./include/bout/options_netcdf.hxx
+  ./include/bout/options_adios.hxx
   ./include/bout/optionsreader.hxx
   ./include/bout/output.hxx
   ./include/bout/output_bout_types.hxx
