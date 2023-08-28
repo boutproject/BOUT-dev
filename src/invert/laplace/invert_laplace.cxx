@@ -324,9 +324,11 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomple
 
   BoutReal coef1, coef2, coef3, coef4, coef5;
 
-  coef1 = localcoords->g11(jx, jy);      ///< X 2nd derivative coefficient
-  coef2 = localcoords->g33(jx, jy);      ///< Z 2nd derivative coefficient
-  coef3 = 2. * localcoords->g13(jx, jy); ///< X-Z mixed derivative coefficient
+  Coordinates::MetricTensor g = localcoords->getContravariantMetricTensor();
+
+  coef1 = g.g11(jx, jy);      ///< X 2nd derivative coefficient
+  coef2 = g.g33(jx, jy);      ///< Z 2nd derivative coefficient
+  coef3 = 2. * g.g13(jx, jy); ///< X-Z mixed derivative coefficient
 
   coef4 = 0.0;
   coef5 = 0.0;
@@ -360,14 +362,14 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomple
     if ((jx > 0) && (jx < (localmesh->LocalNx - 1))) {
       BoutReal dc2dx_over_c1 = ((*c2coef)(jx + 1, jy) - (*c2coef)(jx - 1, jy))
                                / (2. * localcoords->dx(jx, jy) * ((*c1coef)(jx, jy)));
-      coef4 += localcoords->g11(jx, jy) * dc2dx_over_c1;
-      coef5 += localcoords->g13(jx, jy) * dc2dx_over_c1;
+      coef4 += g.g11(jx, jy) * dc2dx_over_c1;
+      coef5 += g.g13(jx, jy) * dc2dx_over_c1;
     }
   }
 
   if (localmesh->IncIntShear) {
     // d2dz2 term
-    coef2 += localcoords->g11(jx, jy) * localcoords->IntShiftTorsion(jx, jy)
+    coef2 += g.g11(jx, jy) * localcoords->IntShiftTorsion(jx, jy)
              * localcoords->IntShiftTorsion(jx, jy);
     // Mixed derivative
     coef3 = 0.0; // This cancels out
@@ -492,6 +494,7 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
 
   // Set the boundary conditions if x is not periodic
   if (!localmesh->periodicX) {
+    Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
     if (localmesh->firstX()) {
       // INNER BOUNDARY ON THIS PROCESSOR
 
@@ -546,7 +549,7 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
           for (int ix = 0; ix < inbndry; ix++) {
             avec[ix] = 0.;
             bvec[ix] = 1.;
-            cvec[ix] = -exp(-k * coords->dx(ix, jy) / sqrt(coords->g11(ix, jy)));
+            cvec[ix] = -exp(-k * coords->dx(ix, jy) / sqrt(g.g11(ix, jy)));
           }
         } else if (inner_boundary_flags & INVERT_IN_CYLINDER) {
           // Condition for inner radial boundary for cylindrical coordinates
@@ -623,7 +626,7 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
           for (int ix = 0; ix < inbndry; ix++) {
             avec[ix] = 0.0;
             bvec[ix] = 1.0;
-            cvec[ix] = -exp(-1.0 * sqrt(coords->g33(ix, jy) / coords->g11(ix, jy)) * kwave
+            cvec[ix] = -exp(-1.0 * sqrt(g.g33(ix, jy) / g.g11(ix, jy)) * kwave
                             * coords->dx(ix, jy));
           }
         } else if (inner_boundary_flags & INVERT_IN_CYLINDER) {
@@ -707,7 +710,7 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
             cvec[ncx - ix] = 0.;
             bvec[ncx - ix] = 1.;
             avec[ncx - ix] =
-                -exp(-k * coords->dx(ncx - ix, jy) / sqrt(coords->g11(ncx - ix, jy)));
+                -exp(-k * coords->dx(ncx - ix, jy) / sqrt(g.g11(ncx - ix, jy)));
           }
         } else {
           // Order 2 dirichlet BC (boundary half between points)
@@ -743,7 +746,7 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
           // Use decaying zero-Laplacian solution in the boundary
           for (int ix = 0; ix < outbndry; ix++) {
             avec[ncx - ix] =
-                -exp(-1.0 * sqrt(coords->g33(xe - ix, jy) / coords->g11(xe - ix, jy))
+                -exp(-1.0 * sqrt(g.g33(xe - ix, jy) / g.g11(xe - ix, jy))
                      * kwave * coords->dx(xe - ix, jy));
             bvec[ncx - ix] = 1.0;
             cvec[ncx - ix] = 0.0;
