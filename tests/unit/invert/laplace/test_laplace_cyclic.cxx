@@ -39,8 +39,9 @@ public:
   }
 
   const Field3D operator()(Field3D& f) {
+    Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
     auto result = d * Delp2(f)
-                  + (coords->g11 * DDX(f) + coords->g13 * DDZ(f)) * DDX(c2) / c1 + a * f
+                  + (g.g11 * DDX(f) + g.g13 * DDZ(f)) * DDX(c2) / c1 + a * f
                   + ex * DDX(f) + ez * DDZ(f);
     applyBoundaries(result, f);
     return result;

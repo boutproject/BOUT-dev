@@ -31,6 +31,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
   Field3D result{zeroFrom(f)};
 
   Coordinates* coord = f.getCoordinates();
+  Coordinates::MetricTensor g = coord->getContravariantMetricTensor();
 
   // Flux in x
 
@@ -52,8 +53,8 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
         // Calculate flux from i to i+1
 
         BoutReal fout = 0.5 * (a(i, j, k) + a(i + 1, j, k))
-                        * (coord->J(i, j, k) * coord->g11(i, j, k)
-                           + coord->J(i + 1, j, k) * coord->g11(i + 1, j, k))
+                        * (coord->J(i, j, k) * g.g11(i, j, k)
+                           + coord->J(i + 1, j, k) * g.g11(i + 1, j, k))
                         * (f(i + 1, j, k) - f(i, j, k))
                         / (coord->dx(i, j, k) + coord->dx(i + 1, j, k));
 
@@ -69,7 +70,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     // 3D Metric, need yup/ydown fields.
     // Requires previous communication of metrics
     // -- should insert communication here?
-    if (!coord->g23.hasParallelSlices() || !coord->g_23.hasParallelSlices()
+    if (!g.g23.hasParallelSlices() || !coord->g_23.hasParallelSlices()
         || !coord->dy.hasParallelSlices() || !coord->dz.hasParallelSlices()
         || !coord->Bxy.hasParallelSlices() || !coord->J.hasParallelSlices()) {
       throw BoutException("metrics have no yup/down: Maybe communicate in init?");
@@ -87,7 +88,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
   // Only in 3D case with FCI do the metrics have parallel slices
   const bool metric_fci = fci and bout::build::use_metric_3d;
-  const auto g23 = makeslices(metric_fci, coord->g23);
+  const auto g23 = makeslices(metric_fci, g.g23);
   const auto g_23 = makeslices(metric_fci, coord->g_23);
   const auto J = makeslices(metric_fci, coord->J);
   const auto dy = makeslices(metric_fci, coord->dy);
@@ -156,7 +157,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
       const BoutReal fout =
           0.25 * (a_slice.c[i] + a_slice.c[ikp])
-          * (J.c[i] * coord->g33[i] + J.c[ikp] * coord->g33[ikp])
+          * (J.c[i] * g.g33[i] + J.c[ikp] * g.g33[ikp])
           * ( // df/dz
               (f_slice.c[ikp] - f_slice.c[i]) / dz.c[i]
               // - g_yz * df/dy / SQ(J*B)
@@ -498,6 +499,7 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
   //
   Coordinates* coords = a.getCoordinates(outloc);
   Mesh* mesh = f.getMesh();
+  Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
 
   for (int i = mesh->xstart; i <= mesh->xend; i++) {
     for (int j = mesh->ystart; j <= mesh->yend; j++) {
@@ -510,32 +512,32 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
         // Calculate gradients on cell faces -- assumes constant grid spacing
 
         BoutReal gR =
-            (coords->g11(i, j, k) + coords->g11(i + 1, j, k))
+            (g.g11(i, j, k) + g.g11(i + 1, j, k))
                 * (f(i + 1, j, k) - f(i, j, k))
                 / (coords->dx(i + 1, j, k) + coords->dx(i, j, k))
-            + 0.5 * (coords->g13(i, j, k) + coords->g13(i + 1, j, k))
+            + 0.5 * (g.g13(i, j, k) + g.g13(i + 1, j, k))
                   * (f(i + 1, j, kp) - f(i + 1, j, km) + f(i, j, kp) - f(i, j, km))
                   / (4. * coords->dz(i, j, k));
 
         BoutReal gL =
-            (coords->g11(i - 1, j, k) + coords->g11(i, j, k))
+            (g.g11(i - 1, j, k) + g.g11(i, j, k))
                 * (f(i, j, k) - f(i - 1, j, k))
                 / (coords->dx(i - 1, j, k) + coords->dx(i, j, k))
-            + 0.5 * (coords->g13(i - 1, j, k) + coords->g13(i, j, k))
+            + 0.5 * (g.g13(i - 1, j, k) + g.g13(i, j, k))
                   * (f(i - 1, j, kp) - f(i - 1, j, km) + f(i, j, kp) - f(i, j, km))
                   / (4 * coords->dz(i, j, k));
 
         BoutReal gD =
-            coords->g13(i, j, k)
+                g.g13(i, j, k)
                 * (f(i + 1, j, km) - f(i - 1, j, km) + f(i + 1, j, k) - f(i - 1, j, k))
                 / (4. * coords->dx(i, j, k))
-            + coords->g33(i, j, k) * (f(i, j, k) - f(i, j, km)) / coords->dz(i, j, k);
+            + g.g33(i, j, k) * (f(i, j, k) - f(i, j, km)) / coords->dz(i, j, k);
 
         BoutReal gU =
-            coords->g13(i, j, k)
+                g.g13(i, j, k)
                 * (f(i + 1, j, kp) - f(i - 1, j, kp) + f(i + 1, j, k) - f(i - 1, j, k))
                 / (4. * coords->dx(i, j, k))
-            + coords->g33(i, j, k) * (f(i, j, kp) - f(i, j, k)) / coords->dz(i, j, k);
+            + g.g33(i, j, k) * (f(i, j, kp) - f(i, j, k)) / coords->dz(i, j, k);
 
         // Flow right
         BoutReal flux = gR * 0.25 * (coords->J(i + 1, j, k) + coords->J(i, j, k))
