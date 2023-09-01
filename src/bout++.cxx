@@ -59,6 +59,10 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/bout.hxx"
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
+#if BOUT_HAS_ADIOS
+#include "bout/adios_object.hxx"
+#endif
+
 #include <fmt/format.h>
 
 #include <csignal>
@@ -160,6 +164,10 @@ int BoutInitialise(int& argc, char**& argv) {
     setupOutput(args.data_dir, args.log_file, args.verbosity, MYPE);
 
     savePIDtoFile(args.data_dir, MYPE);
+
+#if BOUT_HAS_ADIOS
+    bout::ADIOSInit(BoutComm::get());
+#endif
 
     // Print the different parts of the startup info
     printStartupHeader(MYPE, BoutComm::size());
@@ -564,6 +572,7 @@ void printCompileTimeOptions() {
   constexpr auto netcdf_flavour =
       has_netcdf ? (has_legacy_netcdf ? " (Legacy)" : " (NetCDF4)") : "";
   output_info.write(_("\tNetCDF support {}{}\n"), is_enabled(has_netcdf), netcdf_flavour);
+  output_info.write(_("\tADIOS support {}\n"), is_enabled(has_adios));
   output_info.write(_("\tPETSc support {}\n"), is_enabled(has_petsc));
   output_info.write(_("\tPretty function name support {}\n"),
                     is_enabled(has_pretty_function));
@@ -641,7 +650,7 @@ void setupOutput(const std::string& data_dir, const std::string& log_file, int v
   {
     Output& output = *Output::getInstance();
     if (MYPE == 0) {
-      output.enable(); // Enable writing to stdout
+      output.enable();  // Enable writing to stdout
     } else {
       output.disable(); // No writing to stdout
     }
@@ -690,6 +699,7 @@ void addBuildFlagsToOptions(Options& options) {
   options["has_gettext"] = bout::build::has_gettext;
   options["has_lapack"] = bout::build::has_lapack;
   options["has_netcdf"] = bout::build::has_netcdf;
+  options["has_adios"] = bout::build::has_adios;
   options["has_petsc"] = bout::build::has_petsc;
   options["has_pretty_function"] = bout::build::has_pretty_function;
   options["has_pvode"] = bout::build::has_pvode;
@@ -777,6 +787,10 @@ int BoutFinalise(bool write_settings) {
 
   // Call HYPER_Finalize if not already called
   bout::HypreLib::cleanup();
+
+#if BOUT_HAS_ADIOS
+    bout::ADIOSFinalize();
+#endif
 
   // MPI communicator, including MPI_Finalize()
   BoutComm::cleanup();
@@ -1033,6 +1047,6 @@ void RunMetrics::writeProgress(BoutReal simtime, bool output_split) {
                           100. * wtime_comms / wtime,  // Communications
                           100. * wtime_io / wtime,     // I/O
                           100. * (wtime - wtime_io - wtime_rhs)
-                              / wtime); // Everything else
+                              / wtime);                // Everything else
   }
 }

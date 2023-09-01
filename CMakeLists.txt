@@ -80,6 +80,7 @@ function(bout_update_submodules)
 endfunction()
 
 set(BOUT_SOURCES
+  ./include/bout/adios_object.hxx
   ./include/bout/array.hxx
   ./include/bout/assert.hxx
   ./include/bout/boundary_factory.hxx
@@ -323,6 +324,7 @@ set(BOUT_SOURCES
   ./src/solver/impls/split-rk/split-rk.cxx
   ./src/solver/impls/split-rk/split-rk.hxx
   ./src/solver/solver.cxx
+  ./src/sys/adios_object.cxx
   ./src/sys/bout_types.cxx
   ./src/sys/boutcomm.cxx
   ./src/sys/boutexception.cxx
@@ -882,6 +884,7 @@ message("
    SUNDIALS support         : ${BOUT_HAS_SUNDIALS}
    HYPRE support            : ${BOUT_HAS_HYPRE}
    NetCDF support           : ${BOUT_HAS_NETCDF}
+   ADIOS support            : ${BOUT_HAS_ADIOS}
    FFTW support             : ${BOUT_HAS_FFTW}
    LAPACK support           : ${BOUT_HAS_LAPACK}
    OpenMP support           : ${BOUT_USE_OPENMP}
