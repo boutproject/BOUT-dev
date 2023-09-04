@@ -83,3 +83,5 @@ coverage/
 /dist/
 /manual/sphinx/_build
 /_version.txt
+/.idea
+/cmake-build-debug
