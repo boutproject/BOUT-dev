@@ -1,6 +1,6 @@
 #include "bout/build_config.hxx"
 
-#if BOUT_HAS_ADIOS 
+#if BOUT_HAS_ADIOS
 
 #include "bout/options_adios.hxx"
 
@@ -9,9 +9,9 @@
 #include "bout/mesh.hxx"
 #include "bout/sys/timer.hxx"
 
+#include "adios2.h"
 #include <exception>
 #include <iostream>
-#include <adios2>
 #include <vector>
 
 using namespace ADIOS;
