@@ -109,22 +109,9 @@ public:
     FieldMetric g11, g22, g33, g12, g13, g23;
   };
 
-  MetricTensor getContravariantMetricTensor()
-  {
-    MetricTensor g_contravariant = { g11, g22, g33, g12, g13, g23 };
-    return g_contravariant;
-  }
+  MetricTensor getContravariantMetricTensor() const;
 
-  void setContravariantMetricTensor(MetricTensor g)
-  {
-    g11 = g.g11;
-    g22 = g.g22;
-    g33 = g.g33;
-    g12 = g.g12;
-    g13 = g.g13;
-    g23 = g.g23;
-    calcContravariant();
-  }
+  void setContravariantMetricTensor(MetricTensor g);
 
   /// Christoffel symbol of the second kind (connection coefficients)
   FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;

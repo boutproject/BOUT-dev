@@ -2020,3 +2020,20 @@ void Coordinates::checkContravariant() {
     }
   }
 }
+
+Coordinates::MetricTensor Coordinates::getContravariantMetricTensor() const {
+    MetricTensor g_contravariant = { g11, g22, g33, g12, g13, g23 };
+    return g_contravariant;
+}
+
+void Coordinates::setContravariantMetricTensor(Coordinates::MetricTensor g) {
+    g11 = g.g11;
+    g22 = g.g22;
+    g33 = g.g33;
+    g12 = g.g12;
+    g13 = g.g13;
+    g23 = g.g23;
+    calcContravariant();
+}
+
+
