@@ -60,7 +60,15 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
         coords->Bxy.ydown()[ind];
 
     COPY_STRIPE(G1, G3);
-    COPY_STRIPE(g11, g12, g13, g22, g23, g33);
+    Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
+//    COPY_STRIPE(g11, g12, g13, g22, g23, g33);
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g11)] = g.g11[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g12)] = g.g12[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g13)] = g.g13[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g22)] = g.g22[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g23)] = g.g23[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g33)] = g.g33[ind];
+
     COPY_STRIPE(g_11, g_12, g_13, g_22, g_23, g_33);
   }
 }
