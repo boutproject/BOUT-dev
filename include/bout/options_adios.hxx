@@ -6,7 +6,7 @@
 
 #include "bout/build_config.hxx"
 
-#if !BOUT_HAS_ADIOS 
+#if !BOUT_HAS_ADIOS
 
 #include <string>
 
@@ -44,15 +44,14 @@ public:
 #include <memory>
 #include <string>
 
+#include "bout/adios_object.hxx"
 #include "bout/options.hxx"
+
+namespace bout {
 
 /// Forward declare ADIOS file type so we don't need to depend
 /// directly on ADIOS
-namespace ADIOS {
-class BPStream;
-}
-
-namespace bout {
+struct ADIOSStream;
 
 class OptionsADIOS {
 public:
@@ -89,30 +88,11 @@ private:
   /// How to open the file for writing
   FileMode file_mode{FileMode::replace};
   /// Pointer to ADIOS file so we don't introduce direct dependence
-  std::unique_ptr<ADIOS::BPStream> data_file;
+  std::unique_ptr<ADIOSStream> data_file;
 };
 
 } // namespace bout
 
-#endif
-
-namespace bout {
-/// Name of the directory for restart files
-std::string getRestartDirectoryName(Options& options);
-/// Name of the restart file on this rank
-std::string getRestartFilename(Options& options);
-/// Name of the restart file on \p rank
-std::string getRestartFilename(Options& options, int rank);
-/// Name of the main output file on this rank
-std::string getOutputFilename(Options& options);
-/// Name of the main output file on \p rank
-std::string getOutputFilename(Options& options, int rank);
-/// Write `Options::root()` to the main output file, overwriting any
-/// existing files
-void writeDefaultOutputFile();
-/// Write \p options to the main output file, overwriting any existing
-/// files
-void writeDefaultOutputFile(Options& options);
-} // namespace bout
+#endif // BOUT_HAS_ADIOS
 
 #endif //  __OPTIONS_ADIOS_H__
