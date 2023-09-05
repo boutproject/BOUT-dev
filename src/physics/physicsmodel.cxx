@@ -73,20 +73,31 @@ bool DataFileFacade::write() {
 } // namespace bout
 
 PhysicsModel::PhysicsModel()
-    : mesh(bout::globals::mesh),
-      output_file(bout::getOutputFilename(Options::root()),
-                  Options::root()["append"]
-                          .doc("Add output data to existing (dump) files?")
-                          .withDefault(false)
-                      ? bout::OptionsNetCDF::FileMode::append
-                      : bout::OptionsNetCDF::FileMode::replace),
-      output_enabled(Options::root()["output"]["enabled"]
-                         .doc("Write output files")
-                         .withDefault(true)),
-      restart_file(bout::getRestartFilename(Options::root())),
+    : mesh(bout::globals::mesh), output_enabled(Options::root()["output"]["enabled"]
+                                                    .doc("Write output files")
+                                                    .withDefault(true)),
       restart_enabled(Options::root()["restart_files"]["enabled"]
                           .doc("Write restart files")
-                          .withDefault(true)) {}
+                          .withDefault(true))
+
+{
+  bout::OptionsIO::Library iolibrary = bout::getIOLibrary(Options::root());
+  if (output_enabled) {
+    std::string outputFileName = bout::getOutputFilename(Options::root(), iolibrary);
+    auto mode = Options::root()["append"]
+                        .doc("Add output data to existing (dump) files?")
+                        .withDefault(false)
+                    ? bout::OptionsIO::FileMode::append
+                    : bout::OptionsIO::FileMode::replace;
+    output_file = bout::OptionsIOFactory(outputFileName, mode, iolibrary);
+  }
+
+  if (restart_enabled) {
+    std::string restartFileName = bout::getRestartFilename(Options::root(), iolibrary);
+    restart_file = bout::OptionsIOFactory(restartFileName,
+                                          bout::OptionsIO::FileMode::replace, iolibrary);
+  }
+}
 
 void PhysicsModel::initialise(Solver* s) {
   if (initialised) {
@@ -104,7 +115,7 @@ void PhysicsModel::initialise(Solver* s) {
   const bool restarting = Options::root()["restart"].withDefault(false);
 
   if (restarting) {
-    restart_options = restart_file.read();
+    restart_options = restart_file->read();
   }
 
   // Call user init code to specify evolving variables
@@ -187,7 +198,7 @@ int PhysicsModel::postInit(bool restarting) {
     restart_options["BOUT_VERSION"].force(bout::version::as_double, "PhysicsModel");
 
     // Write _everything_ to restart file
-    restart_file.write(restart_options);
+    restart_file->write(restart_options);
   }
 
   // Add monitor to the solver which calls restart.write() and
@@ -219,7 +230,7 @@ void PhysicsModel::restartVars(Options& options) {
 
 void PhysicsModel::writeRestartFile() {
   if (restart_enabled) {
-    restart_file.write(restart_options);
+    restart_file->write(restart_options);
   }
 }
 
@@ -227,20 +238,20 @@ void PhysicsModel::writeOutputFile() { writeOutputFile(output_options); }
 
 void PhysicsModel::writeOutputFile(const Options& options) {
   if (output_enabled) {
-    output_file.write(options, "t");
+    output_file->write(options, "t");
   }
 }
 
 void PhysicsModel::writeOutputFile(const Options& options,
                                    const std::string& time_dimension) {
   if (output_enabled) {
-    output_file.write(options, time_dimension);
+    output_file->write(options, time_dimension);
   }
 }
 
 void PhysicsModel::finishOutputTimestep() const {
   if (output_enabled) {
-    output_file.verifyTimesteps();
+    output_file->verifyTimesteps();
   }
 }
 

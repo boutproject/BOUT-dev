@@ -42,7 +42,7 @@ class PhysicsModel;
 #include "bout/macro_for_each.hxx"
 #include "bout/msg_stack.hxx"
 #include "bout/options.hxx"
-#include "bout/options_netcdf.hxx"
+#include "bout/options_io.hxx"
 #include "bout/sys/variant.hxx"
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
@@ -383,13 +383,13 @@ private:
   /// State for outputs
   Options output_options;
   /// File to write the outputs to
-  bout::OptionsNetCDF output_file;
+  std::shared_ptr<bout::OptionsIO> output_file;
   /// Should we write output files
   bool output_enabled{true};
   /// Stores the state for restarting
   Options restart_options;
   /// File to write the restart-state to
-  bout::OptionsNetCDF restart_file;
+  std::shared_ptr<bout::OptionsIO> restart_file;
   /// Should we write restart files
   bool restart_enabled{true};
   /// Split operator model?

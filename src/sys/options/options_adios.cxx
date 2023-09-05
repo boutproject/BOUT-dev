@@ -14,402 +14,139 @@
 #include <iostream>
 #include <vector>
 
-using namespace ADIOS;
+namespace bout {
 
-namespace {
+struct ADIOSStream {
+  adios2::IO io;
+  adios2::Engine engine;
+  adios2::Variable<int> vStep;
+  adios2::Variable<double> vTime;
+  int adiosStep = 0;
+};
+
 /// Name of the attribute used to track individual variable's time indices
 constexpr auto current_time_index_name = "current_time_index";
 
-/// ADIOS doesn't keep track of the current for each variable
-/// (although the underlying HDF5 file does!), so we need to do it
-/// ourselves. We'll use an attribute in the file to do so, which
-/// means we don't need to keep track of it in the code
-int getCurrentTimeIndex(const NcVar& var) {
-  const auto atts_map = var.getAtts();
-  const auto time_index_attribute = atts_map.find(current_time_index_name);
-  if (time_index_attribute == atts_map.end()) {
-    // Attribute doesn't exist, so let's start at zero. There
-    // are various ways this might break, for example, if the
-    // variable was added to the file by a different
-    // program. But note, that if we use the size of the time
-    // dimension here, this will increase every time we add a
-    // new variable! So zero is probably the only sensible
-    // choice for this
-    return 0;
-  }
-  int current_time_index;
-  time_index_attribute->second.getValues(&current_time_index);
-  return current_time_index;
-}
-
 template <class T>
-T readVariable(const NcVar& variable) {
-  T value;
-  variable.getVar(&value);
-  return value;
-}
+bool readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& name,
+                  const std::string& type, Options& result) {
+  bool ret = false;
+  std::vector<T> data;
+  adios2::Variable<T> variable = io.InquireVariable<T>(name);
 
-template <class T>
-T readAttribute(const NcAtt& attribute) {
-  T value;
-  attribute.getValues(&value);
-  return value;
-}
-
-void readGroup(const std::string& filename, const NcGroup& group, Options& result) {
-
-  // Iterate over all variables
-  for (const auto& varpair : group.getVars()) {
-    const auto& var_name = varpair.first; // Name of the variable
-    const auto& var = varpair.second;     // The NcVar object
-
-    auto var_type = var.getType();  // Variable type
-    auto ndims = var.getDimCount(); // Number of dimensions
-    auto dims = var.getDims();      // Vector of dimensions
-
-    switch (ndims) {
-    case 0: {
-      // Scalar variables
-      if (var_type == ncDouble) {
-        result[var_name] = readVariable<double>(var);
-      } else if (var_type == ncFloat) {
-        result[var_name] = readVariable<float>(var);
-      } else if (var_type == ncInt or var_type == ncShort) {
-        result[var_name] = readVariable<int>(var);
-      } else if (var_type == ncString) {
-        result[var_name] = std::string(readVariable<char*>(var));
-      }
-      // Note: ADIOS does not support boolean atoms
-      // else ignore
-      break;
-    }
-    case 1: {
-      if (var_type == ncDouble or var_type == ncFloat) {
-        Array<double> value(static_cast<int>(dims[0].getSize()));
-        var.getVar(value.begin());
-        result[var_name] = value;
-      } else if ((var_type == ncString) or (var_type == ncChar)) {
-        std::string value;
-        value.resize(dims[0].getSize());
-        var.getVar(&(value[0]));
-        result[var_name] = value;
-      }
-      break;
-    }
-    case 2: {
-      if (var_type == ncDouble or var_type == ncFloat) {
-        Matrix<double> value(static_cast<int>(dims[0].getSize()),
-                             static_cast<int>(dims[1].getSize()));
-        var.getVar(value.begin());
-        result[var_name] = value;
-      }
-      break;
-    }
-    case 3: {
-      if (var_type == ncDouble or var_type == ncFloat) {
-        Tensor<double> value(static_cast<int>(dims[0].getSize()),
-                             static_cast<int>(dims[1].getSize()),
-                             static_cast<int>(dims[2].getSize()));
-        var.getVar(value.begin());
-        result[var_name] = value;
-      }
-    }
-    }
-    result[var_name].attributes["source"] = filename;
-
-    // Get variable attributes
-    for (const auto& attpair : var.getAtts()) {
-      const auto& att_name = attpair.first; // Attribute name
-      const auto& att = attpair.second;     // NcVarAtt object
-
-      auto att_type = att.getType(); // Type of the attribute
-
-      if (att_type == ncInt) {
-        result[var_name].attributes[att_name] = readAttribute<int>(att);
-      } else if (att_type == ncFloat) {
-        result[var_name].attributes[att_name] = readAttribute<float>(att);
-      } else if (att_type == ncDouble) {
-        result[var_name].attributes[att_name] = readAttribute<double>(att);
-      } else if ((att_type == ncString) or (att_type == ncChar)) {
-        std::string value;
-        att.getValues(value);
-        result[var_name].attributes[att_name] = value;
-      }
-      // Else ignore
-    }
+  if (variable.ShapeID() == adios2::ShapeID::GlobalValue) {
+    T value;
+    io.Get<T>(variable, &value, adios2::Mode::Sync);
+    result[name] = value;
+    return true;
   }
 
-  // Iterate over groups
-  for (const auto& grouppair : group.getGroups()) {
-    const auto& name = grouppair.first;
-    const auto& subgroup = grouppair.second;
-
-    readGroup(filename, subgroup, result[name]);
+  if (variable.ShapeID() == adios2::ShapeID::LocalArray) {
+    if (!rank)
+      std::cout << "    LocalArray not supported" << std::endl;
+    return ret;
   }
-}
-} // namespace
 
-namespace bout {
+  auto dims = variable.Shape();
+  auto ndim = shape.size();
+
+  switch (ndims) {
+  case 1: {
+    Array<T> value(static_cast<int>(dims[0]));
+    io.Get<T>(variable, value.data(), adios2::Mode::Sync);
+    result[name] = value;
+  }
+  case 2: {
+    Matrix<T> value(static_cast<int>(dims[0].getSize()),
+                    static_cast<int>(dims[1].getSize()));
+    io.Get<T>(variable, value.data(), adios2::Mode::Sync);
+    result[name] = value;
+  }
+  case 3: {
+    Tensor<T> value(static_cast<int>(dims[0].getSize()),
+                    static_cast<int>(dims[1].getSize()),
+                    static_cast<int>(dims[2].getSize()));
+    io.Get<T>(variable, value.data(), adios2::Mode::Sync);
+    result[name] = value;
+  }
+  }
+
+  if (!rank)
+    std::cout << "    array has " << variable.Steps() << " steps" << std::endl;
+
+  /* Need to read the data here */
+  result[name] = data.data();
+  return ret;
+}
+
+bool readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& name,
+                  const std::string& type, Options& result) {
+  bool ret;
+#define declare_template_instantiation(T)                  \
+  if (type == adios2::GetType<T>()) {                      \
+    ret = readVariable<T>(reader, io, name, type, result); \
+  }
+  ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(declare_template_instantiation)
+#undef declare_template_instantiation
+  return ret;
+}
+
+bool readAttribute(adios2::Engine& reader, adios2::IO& io, const std::string& name,
+                   const std::string& type, Options& result) {
+  bool ret;
+#define declare_template_instantiation(T)                  \
+  if (type == adios2::GetType<T>()) {                      \
+    adios2::Attribute<T> a = io.InquireAtrribute<T>(name); \
+    result[name] = a.Data().data();                        \
+  }
+  ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(declare_template_instantiation)
+#undef declare_template_instantiation
+  return ret;
+} // namespace bout
+
+void readGroup(const std::string& filename, ADIOSStruct& group, Options& result) {}
 
 Options OptionsADIOS::read() {
   Timer timer("io");
 
   // Open file
-  const NcFile read_file(filename, NcFile::read);
+  ADIOSPtr adiosp = GetADIOSPtr();
+  adios2::IO io;
+  try {
+    io = adiosp->AtIO(filename);
+  } catch (const std::invalid_argument& e) {
+    std::cerr << e.what() << '\n';
+    io = adiosp->DeclareIO(filename);
+  }
 
-  if (read_file.isNull()) {
+  adios2::Engine reader = io.Open(filename, adios2::Mode::ReadRandomAccess);
+  if (!reader) {
     throw BoutException("Could not open ADIOS file '{:s}' for reading", filename);
   }
 
   Options result;
-  readGroup(filename, read_file, result);
+
+  // Iterate over all variables
+  for (const auto& varpair : io.AvailableVariables()) {
+    const auto& var_name = varpair.first; // Name of the variable
+
+    auto it = varpair.second.find("Type");
+    const std::string& var_type = it->second;
+    readVariable(reader, io, var_name, var_type, result);
+
+    result[var_name].attributes["source"] = filename;
+
+    // Get variable attributes
+    for (const auto& attpair : io.AvailableAttributes(var_name, "/", true)) {
+      const auto& att_name = attpair.first; // Attribute name
+      const auto& att = attpair.second;     // NcVarAtt object
+      auto it = attpair.second.find("Type");
+      const std::string& att_type = it->second;
+      readAttribute(reader, io, att_name, att_type, result);
+    }
+  }
 
   return result;
-}
-
-} // namespace bout
-
-namespace {
-
-/// Convert variant into NcType
-/// If the type is not recognised then NcType null object is returned
-struct NcTypeVisitor {
-  template <typename T>
-  NcType operator()(const T& UNUSED(t)) {
-    return {}; // Null object by default
-  }
-};
-
-template <>
-NcType NcTypeVisitor::operator()<bool>(const bool& UNUSED(t)) {
-  return ncInt;
-}
-
-template <>
-NcType NcTypeVisitor::operator()<int>(const int& UNUSED(t)) {
-  return ncInt;
-}
-
-template <>
-NcType NcTypeVisitor::operator()<double>(const double& UNUSED(t)) {
-  return ncDouble;
-}
-
-template <>
-MAYBE_UNUSED()
-NcType NcTypeVisitor::operator()<float>(const float& UNUSED(t)) {
-  return ncFloat;
-}
-
-template <>
-NcType NcTypeVisitor::operator()<std::string>(const std::string& UNUSED(t)) {
-  return ncString;
-}
-
-template <>
-NcType NcTypeVisitor::operator()<Field2D>(const Field2D& UNUSED(t)) {
-  return operator()<BoutReal>(0.0);
-}
-
-template <>
-NcType NcTypeVisitor::operator()<Field3D>(const Field3D& UNUSED(t)) {
-  return operator()<BoutReal>(0.0);
-}
-
-template <>
-NcType NcTypeVisitor::operator()<FieldPerp>(const FieldPerp& UNUSED(t)) {
-  return operator()<BoutReal>(0.0);
-}
-
-/// Visit a variant type, returning dimensions
-struct NcDimVisitor {
-  NcDimVisitor(NcGroup& group) : group(group) {}
-  template <typename T>
-  std::vector<NcDim> operator()(const T& UNUSED(value)) {
-    return {};
-  }
-
-private:
-  NcGroup& group;
-};
-
-NcDim findDimension(NcGroup& group, const std::string& name, unsigned int size) {
-  // Get the dimension
-  try {
-    auto dim = group.getDim(name, NcGroup::ParentsAndCurrent);
-    if (dim.isNull()) {
-      // Dimension doesn't yet exist
-      dim = group.addDim(name, size);
-    } else {
-      // Dimension exists, check it's the right size
-      if (dim.getSize() != size) {
-        // wrong size. Check this group
-        dim = group.getDim(name, NcGroup::Current);
-        if (!dim.isNull()) {
-          // Already defined in this group
-          return {}; // Return null object
-        }
-        // Define in this group
-        dim = group.addDim(name, size);
-      }
-    }
-    return dim;
-  } catch (const std::exception& e) {
-    throw BoutException("Error in findDimension('{:s}'): {:s}", name, e.what());
-  }
-}
-
-template <>
-std::vector<NcDim> NcDimVisitor::operator()<Field2D>(const Field2D& value) {
-  auto xdim = findDimension(group, "x", value.getNx());
-  ASSERT0(!xdim.isNull());
-
-  auto ydim = findDimension(group, "y", value.getNy());
-  ASSERT0(!ydim.isNull());
-
-  return {xdim, ydim};
-}
-
-template <>
-std::vector<NcDim> NcDimVisitor::operator()<Field3D>(const Field3D& value) {
-  auto xdim = findDimension(group, "x", value.getNx());
-  ASSERT0(!xdim.isNull());
-
-  auto ydim = findDimension(group, "y", value.getNy());
-  ASSERT0(!ydim.isNull());
-
-  auto zdim = findDimension(group, "z", value.getNz());
-  ASSERT0(!zdim.isNull());
-
-  return {xdim, ydim, zdim};
-}
-
-template <>
-std::vector<NcDim> NcDimVisitor::operator()<FieldPerp>(const FieldPerp& value) {
-  auto xdim = findDimension(group, "x", value.getNx());
-  ASSERT0(!xdim.isNull());
-
-  auto zdim = findDimension(group, "z", value.getNz());
-  ASSERT0(!zdim.isNull());
-
-  return {xdim, zdim};
-}
-
-/// Visit a variant type, and put the data into a NcVar
-struct NcPutVarVisitor {
-  NcPutVarVisitor(NcVar& var) : var(var) {}
-  template <typename T>
-  void operator()(const T& value) {
-    var.putVar(&value);
-  }
-
-private:
-  NcVar& var;
-};
-
-template <>
-void NcPutVarVisitor::operator()<bool>(const bool& value) {
-  int int_val = value ? 1 : 0;
-  var.putVar(&int_val);
-}
-
-template <>
-void NcPutVarVisitor::operator()<std::string>(const std::string& value) {
-  const char* cstr = value.c_str();
-  var.putVar(&cstr);
-}
-
-/// In addition to writing the data, set the "cell_location" attribute
-template <>
-void NcPutVarVisitor::operator()<Field2D>(const Field2D& value) {
-  // Pointer to data. Assumed to be contiguous array
-  var.putVar(&value(0, 0));
-}
-
-/// In addition to writing the data, set the "cell_location" attribute
-template <>
-void NcPutVarVisitor::operator()<Field3D>(const Field3D& value) {
-  // Pointer to data. Assumed to be contiguous array
-  var.putVar(&value(0, 0, 0));
-}
-
-template <>
-void NcPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
-  // Pointer to data. Assumed to be contiguous array
-  var.putVar(&value(0, 0));
-}
-
-/// Visit a variant type, and put the data into a NcVar
-struct NcPutVarCountVisitor {
-  NcPutVarCountVisitor(NcVar& var, const std::vector<size_t>& start,
-                       const std::vector<size_t>& count)
-      : var(var), start(start), count(count) {}
-  template <typename T>
-  void operator()(const T& value) {
-    var.putVar(start, &value);
-  }
-
-private:
-  NcVar& var;
-  const std::vector<size_t>& start; ///< Starting (corner) index
-  const std::vector<size_t>& count; ///< Index count in each dimension
-};
-
-template <>
-void NcPutVarCountVisitor::operator()<std::string>(const std::string& value) {
-  const char* cstr = value.c_str();
-  var.putVar(start, &cstr);
-}
-template <>
-void NcPutVarCountVisitor::operator()<Field2D>(const Field2D& value) {
-  // Pointer to data. Assumed to be contiguous array
-  var.putVar(start, count, &value(0, 0));
-}
-template <>
-void NcPutVarCountVisitor::operator()<Field3D>(const Field3D& value) {
-  // Pointer to data. Assumed to be contiguous array
-  var.putVar(start, count, &value(0, 0, 0));
-}
-template <>
-void NcPutVarCountVisitor::operator()<FieldPerp>(const FieldPerp& value) {
-  // Pointer to data. Assumed to be contiguous array
-  var.putVar(start, count, &value(0, 0));
-}
-
-/// Visit a variant type, and put the data into an attributute
-struct NcPutAttVisitor {
-  NcPutAttVisitor(NcVar& var, std::string name) : var(var), name(std::move(name)) {}
-  template <typename T>
-  void operator()(const T& UNUSED(value)) {
-    // Default is to ignore if unhandled
-  }
-
-private:
-  NcVar& var;
-  std::string name;
-};
-
-template <>
-void NcPutAttVisitor::operator()(const bool& value) {
-  int ival = value ? 1 : 0;
-  var.putAtt(name, ncInt, ival);
-}
-template <>
-void NcPutAttVisitor::operator()(const int& value) {
-  var.putAtt(name, ncInt, value);
-}
-template <>
-void NcPutAttVisitor::operator()(const double& value) {
-  var.putAtt(name, ncDouble, value);
-}
-template <>
-MAYBE_UNUSED()
-void NcPutAttVisitor::operator()(const float& value) {
-  var.putAtt(name, ncFloat, value);
-}
-template <>
-void NcPutAttVisitor::operator()(const std::string& value) {
-  var.putAtt(name, value);
 }
 
 void writeGroup(const Options& options, NcGroup group,
@@ -639,10 +376,6 @@ std::vector<TimeDimensionError> verifyTimesteps(const NcGroup& group) {
   return errors;
 }
 
-} // namespace
-
-namespace bout {
-
 OptionsADIOS::OptionsADIOS() : data_file(nullptr) {}
 
 OptionsADIOS::OptionsADIOS(std::string filename, FileMode mode)
@@ -676,62 +409,30 @@ void OptionsADIOS::verifyTimesteps() const {
 void OptionsADIOS::write(const Options& options, const std::string& time_dim) {
   Timer timer("io");
 
-  // Check the file mode to use
-  auto ncmode = NcFile::replace;
-  if (file_mode == FileMode::append) {
-    // ADIOS doesn't have a "read-write, create if exists" mode, so
-    // we need to check ourselves if the file already exists; if it
-    // doesn't, tell ADIOS to create it
-    std::ifstream file(filename);
-    ncmode = file.good() ? NcFile::FileMode::write : NcFile::FileMode::newFile;
-  }
+  adios2::Mode mode =
+      (file_mode == FileMode::replace) ? adios2::Mode::Write : adios2::Mode::Append;
 
   if (not data_file) {
-    data_file = std::make_unique<netCDF::NcFile>(filename, ncmode);
+    data_file = std::make_unique<ADIOSStream>();
   }
 
-  if (data_file->isNull()) {
+  // Open file
+  ADIOSPtr adiosp = GetADIOSPtr();
+  try {
+    data_file->io = adiosp->AtIO(filename);
+  } catch (const std::invalid_argument& e) {
+    std::cerr << e.what() << '\n';
+    data_file->io = adiosp->DeclareIO(filename);
+  }
+
+  data_file->engine = data_file->io.Open(filename, mode);
+  if (!data_file->engine) {
     throw BoutException("Could not open ADIOS file '{:s}' for writing", filename);
   }
 
   writeGroup(options, *data_file, time_dim);
 
   data_file->sync();
-}
-
-std::string getRestartDirectoryName(Options& options) {
-  if (options["restartdir"].isSet()) {
-    // Solver-specific restart directory
-    return options["restartdir"].withDefault<std::string>("data");
-  }
-  // Use the root data directory
-  return options["datadir"].withDefault<std::string>("data");
-}
-
-std::string getRestartFilename(Options& options) {
-  return getRestartFilename(options, BoutComm::rank());
-}
-
-std::string getRestartFilename(Options& options, int rank) {
-  return fmt::format("{}/BOUT.restart.{}.nc", bout::getRestartDirectoryName(options),
-                     rank);
-}
-
-std::string getOutputFilename(Options& options) {
-  return getOutputFilename(options, BoutComm::rank());
-}
-
-std::string getOutputFilename(Options& options, int rank) {
-  return fmt::format("{}/BOUT.dmp.{}.nc",
-                     options["datadir"].withDefault<std::string>("data"), rank);
-}
-
-void writeDefaultOutputFile() { writeDefaultOutputFile(Options::root()); }
-
-void writeDefaultOutputFile(Options& options) {
-  bout::experimental::addBuildFlagsToOptions(options);
-  bout::globals::mesh->outputVars(options);
-  OptionsADIOS(getOutputFilename(Options::root())).write(options);
 }
 
 } // namespace bout
