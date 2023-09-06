@@ -45,6 +45,7 @@ public:
 #include <string>
 
 #include "bout/options.hxx"
+#include "bout/options_io.hxx"
 
 /// Forward declare netCDF file type so we don't need to depend
 /// directly on netCDF
@@ -54,13 +55,8 @@ class NcFile;
 
 namespace bout {
 
-class OptionsNetCDF {
+class OptionsNetCDF : public OptionsIO {
 public:
-  enum class FileMode {
-    replace, ///< Overwrite file when writing
-    append   ///< Append to file when writing
-  };
-
   // Constructors need to be defined in implementation due to forward
   // declaration of NcFile
   OptionsNetCDF();
@@ -84,10 +80,6 @@ public:
   void verifyTimesteps() const;
 
 private:
-  /// Name of the file on disk
-  std::string filename;
-  /// How to open the file for writing
-  FileMode file_mode{FileMode::replace};
   /// Pointer to netCDF file so we don't introduce direct dependence
   std::unique_ptr<netCDF::NcFile> data_file;
 };
