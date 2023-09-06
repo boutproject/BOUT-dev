@@ -295,12 +295,14 @@ int GBS::init(bool restarting) {
   dz4 = SQ(SQ(coords->dz));
 
   SAVE_REPEAT(Ve);
-
+  
+  Coordinates::MetricTensor metric_tensor = coords->getContravariantMetricTensor();
+  
   output.write("dx = {:e}, dy = {:e}, dz = {:e}\n", coords->dx(2, 2), coords->dy(2, 2),
                coords->dz);
-  output.write("g11 = {:e}, g22 = {:e}, g33 = {:e}\n", coords->g11(2, 2),
-               coords->g22(2, 2), coords->g33(2, 2));
-  output.write("g12 = {:e}, g23 = {:e}\n", coords->g12(2, 2), coords->g23(2, 2));
+  output.write("g11 = {:e}, g22 = {:e}, g33 = {:e}\n", metric_tensor.g11(2, 2),
+               metric_tensor.g22(2, 2), metric_tensor.g33(2, 2));
+  output.write("g12 = {:e}, g23 = {:e}\n", metric_tensor.g12(2, 2), metric_tensor.g23(2, 2));
   output.write("g_11 = {:e}, g_22 = {:e}, g_33 = {:e}\n", coords->g_11(2, 2),
                coords->g_22(2, 2), coords->g_33(2, 2));
   output.write("g_12 = {:e}, g_23 = {:e}\n", coords->g_12(2, 2), coords->g_23(2, 2));
@@ -348,16 +350,16 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
     sbp = -1.0;
   }
 
-  coords->g11 = SQ(Rxy * Bpxy);
-  coords->g22 = 1.0 / SQ(hthe);
-  coords->g33 = SQ(sinty) * coords->g11 + SQ(coords->Bxy) / coords->g11;
-  coords->g12 = 0.0;
-  coords->g13 = -sinty * coords->g11;
-  coords->g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
+  metric_tensor.g11 = SQ(Rxy * Bpxy);
+  metric_tensor.g22 = 1.0 / SQ(hthe);
+  metric_tensor.g33 = SQ(sinty) * metric_tensor.g11 + SQ(coords->Bxy) / metric_tensor.g11;
+  metric_tensor.g12 = 0.0;
+  metric_tensor.g13 = -sinty * metric_tensor.g11;
+  metric_tensor.g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
 
   coords->J = hthe / Bpxy;
 
-  coords->g_11 = 1.0 / coords->g11 + SQ(sinty * Rxy);
+  coords->g_11 = 1.0 / metric_tensor.g11 + SQ(sinty * Rxy);
   coords->g_22 = SQ(coords->Bxy * hthe / Bpxy);
   coords->g_33 = Rxy * Rxy;
   coords->g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;

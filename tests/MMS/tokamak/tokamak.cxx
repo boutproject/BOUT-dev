@@ -80,16 +80,17 @@ public:
       sbp = -1.0;
     }
 
-    coords->g11 = SQ(Rxy * Bpxy);
-    coords->g22 = 1.0 / SQ(hthe);
-    coords->g33 = SQ(sinty) * coords->g11 + SQ(coords->Bxy) / coords->g11;
-    coords->g12 = 0.0;
-    coords->g13 = -sinty * coords->g11;
-    coords->g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
+    Coordinates::MetricTensor metric_tensor = coords->getContravariantMetricTensor();
+    metric_tensor.g11 = SQ(Rxy * Bpxy);
+    metric_tensor.g22 = 1.0 / SQ(hthe);
+    metric_tensor.g33 = SQ(sinty) * metric_tensor.g11 + SQ(coords->Bxy) / metric_tensor.g11;
+    metric_tensor.g12 = 0.0;
+    metric_tensor.g13 = -sinty * metric_tensor.g11;
+    metric_tensor.g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
 
     coords->J = hthe / Bpxy;
 
-    coords->g_11 = 1.0 / coords->g11 + SQ(sinty * Rxy);
+    coords->g_11 = 1.0 / metric_tensor.g11 + SQ(sinty * Rxy);
     coords->g_22 = SQ(coords->Bxy * hthe / Bpxy);
     coords->g_33 = Rxy * Rxy;
     coords->g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
