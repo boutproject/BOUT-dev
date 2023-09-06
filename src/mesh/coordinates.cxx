@@ -834,20 +834,22 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     dz = interpolateAndExtrapolate(coords_in->dz, location, true, true, false,
                                    transform.get());
 
+    Coordinates::MetricTensor metric_tensor = coords_in->getContravariantMetricTensor();
+
     // Diagonal components of metric tensor g^{ij}
-    g11 = interpolateAndExtrapolate(coords_in->g11, location, true, true, false,
+    g11 = interpolateAndExtrapolate(metric_tensor.g11, location, true, true, false,
                                     transform.get());
-    g22 = interpolateAndExtrapolate(coords_in->g22, location, true, true, false,
+    g22 = interpolateAndExtrapolate(metric_tensor.g22, location, true, true, false,
                                     transform.get());
-    g33 = interpolateAndExtrapolate(coords_in->g33, location, true, true, false,
+    g33 = interpolateAndExtrapolate(metric_tensor.g33, location, true, true, false,
                                     transform.get());
 
     // Off-diagonal elements.
-    g12 = interpolateAndExtrapolate(coords_in->g12, location, true, true, false,
+    g12 = interpolateAndExtrapolate(metric_tensor.g12, location, true, true, false,
                                     transform.get());
-    g13 = interpolateAndExtrapolate(coords_in->g13, location, true, true, false,
+    g13 = interpolateAndExtrapolate(metric_tensor.g13, location, true, true, false,
                                     transform.get());
-    g23 = interpolateAndExtrapolate(coords_in->g23, location, true, true, false,
+    g23 = interpolateAndExtrapolate(metric_tensor.g23, location, true, true, false,
                                     transform.get());
 
     // 3x3 matrix inversion can exaggerate small interpolation errors, so it is
