@@ -416,18 +416,19 @@ public:
     dump.add(eta, "eta", 0);
 
     /**************** CALCULATE METRICS ******************/
-
-    coords->g11 = SQ(Rxy * Bpxy);
-    coords->g22 = 1.0 / SQ(hthe);
-    coords->g33 = SQ(I) * coords->g11 + SQ(B0) / coords->g11;
-    coords->g12 = 0.0;
-    coords->g13 = -I * coords->g11;
-    coords->g23 = -Btxy / (hthe * Bpxy * Rxy);
+    
+    Coordinates::MetricTensor metric_tensor = coords->getContravariantMetricTensor();
+    metric_tensor.g11 = SQ(Rxy * Bpxy);
+    metric_tensor.g22 = 1.0 / SQ(hthe);
+    metric_tensor.g33 = SQ(I) * metric_tensor.g11 + SQ(B0) / metric_tensor.g11;
+    metric_tensor.g12 = 0.0;
+    metric_tensor.g13 = -I * metric_tensor.g11;
+    metric_tensor.g23 = -Btxy / (hthe * Bpxy * Rxy);
 
     coords->J = hthe / Bpxy;
     coords->Bxy = B0;
 
-    coords->g_11 = 1.0 / coords->g11 + (SQ(I * Rxy));
+    coords->g_11 = 1.0 / metric_tensor.g11 + (SQ(I * Rxy));
     coords->g_22 = SQ(B0 * hthe / Bpxy);
     coords->g_33 = Rxy * Rxy;
     coords->g_12 = Btxy * hthe * I * Rxy / Bpxy;
