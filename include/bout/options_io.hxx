@@ -12,13 +12,6 @@
 
 #include "bout/options.hxx"
 
-#if BOUT_HAS_ADIOS
-#include "bout/options_adios.hxx"
-#endif
-#if BOUT_HAS_NETCDF
-#include "bout/options_netcdf.hxx"
-#endif
-
 namespace bout {
 
 class OptionsIO {
@@ -67,7 +60,7 @@ public:
   /// any differences, otherwise is silent
   virtual void verifyTimesteps() const = 0;
 
-private:
+protected:
   /// Name of the file on disk
   std::string filename;
   /// How to open the file for writing

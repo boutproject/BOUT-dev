@@ -11,6 +11,13 @@
 #include <iostream>
 #include <vector>
 
+#if BOUT_HAS_ADIOS
+#include "bout/options_adios.hxx"
+#endif
+#if BOUT_HAS_NETCDF
+#include "bout/options_netcdf.hxx"
+#endif
+
 namespace bout {
 
 OptionsIO::OptionsIO() {}
@@ -35,6 +42,22 @@ OptionsIO::Library getIOLibrary(Options& options) {
       return OptionsIO::Library::Invalid;
   } else {
     return OptionsIO::defaultIOLibrary;
+  }
+}
+
+std::shared_ptr<OptionsIO> OptionsIOFactory(std::string filename,
+                                            OptionsIO::FileMode mode,
+                                            const OptionsIO::Library library) {
+  if (library == OptionsIO::Library::ADIOS) {
+    std::shared_ptr<OptionsIO> ptr(OptionsADIOS);
+    //std::shared_ptr<OptionsIO> ptr =
+    //    std::make_shared<OptionsADIOS>(OptionsADIOS(filename, mode));
+    //std::shared_ptr<OptionsIO> p2 = std::shared_ptr<OptionsIO>(ptr);
+    return ptr;
+  } else if (library == OptionsIO::Library::NetCDF) {
+    return std::make_shared<OptionsIO>(OptionsNetCDF(filename, mode));
+  } else {
+    return nullptr;
   }
 }
 

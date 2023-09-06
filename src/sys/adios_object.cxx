@@ -11,8 +11,8 @@
 namespace bout {
 
 static ADIOSPtr adios = nullptr;
-ADIOSStruct adios_restart;
-ADIOSStruct adios_dump;
+ADIOSStream adios_restart;
+ADIOSStream adios_dump;
 //ADIOS2Param* adios2params;
 
 void ADIOSInit(MPI_Comm comm) { adios = std::make_shared<adios2::ADIOS>(comm); }
@@ -50,7 +50,7 @@ IOPtr GetIOPtr(const std::string IOName) {
   return io;
 }
 
-ADIOSStruct& ADIOSGetStruct(const std::string& fname) {
+ADIOSStream& ADIOSGetStream(const std::string& fname) {
   if (fname.find(".restart") != std::string::npos)
     return adios_restart;
   //if (fname.find(".dmp") != std::string::npos)

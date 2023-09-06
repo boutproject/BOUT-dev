@@ -44,10 +44,12 @@ public:
 #include <memory>
 #include <string>
 
-#include "bout/adios_object.hxx"
 #include "bout/options.hxx"
+#include "bout/options_io.hxx"
 
 namespace bout {
+const Options& x = Options::root();
+const bout::OptionsIO::FileMode m = OptionsIO::FileMode::replace;
 
 /// Forward declare ADIOS file type so we don't need to depend
 /// directly on ADIOS
@@ -55,15 +57,11 @@ struct ADIOSStream;
 
 class OptionsADIOS {
 public:
-  enum class FileMode {
-    replace, ///< Overwrite file when writing
-    append   ///< Append to file when writing
-  };
-
   // Constructors need to be defined in implementation due to forward
-  // declaration of NcFile
+  // declaration of ADIOSStream
   OptionsADIOS();
-  explicit OptionsADIOS(std::string filename, FileMode mode = FileMode::replace);
+  explicit OptionsADIOS(std::string filename, bout::OptionsIO::FileMode mode =
+                                                  bout::OptionsIO::FileMode::replace);
   ~OptionsADIOS();
   OptionsADIOS(const OptionsADIOS&) = delete;
   OptionsADIOS(OptionsADIOS&&) noexcept;
@@ -83,12 +81,8 @@ public:
   void verifyTimesteps() const;
 
 private:
-  /// Name of the file on disk
-  std::string filename;
-  /// How to open the file for writing
-  FileMode file_mode{FileMode::replace};
-  /// Pointer to ADIOS file so we don't introduce direct dependence
-  std::unique_ptr<ADIOSStream> data_file;
+  /// Pointer to ADIOS stream so we don't introduce direct dependence
+  std::unique_ptr<ADIOSStream> stream;
 };
 
 } // namespace bout
