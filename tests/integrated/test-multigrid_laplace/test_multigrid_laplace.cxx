@@ -298,9 +298,9 @@ int main(int argc, char** argv) {
 Field3D this_Grad_perp_dot_Grad_perp(const Field3D& f, const Field3D& g) {
   auto* mesh = f.getMesh();
 
-  Field3D result = mesh->getCoordinates()->g11 * ::DDX(f) * ::DDX(g)
-                   + mesh->getCoordinates()->g33 * ::DDZ(f) * ::DDZ(g)
-                   + mesh->getCoordinates()->g13 * (DDX(f) * DDZ(g) + DDZ(f) * DDX(g));
+  Field3D result = mesh->getCoordinates()->getContravariantMetricTensor().g11 * ::DDX(f) * ::DDX(g)
+                   + mesh->getCoordinates()->getContravariantMetricTensor().g33 * ::DDZ(f) * ::DDZ(g)
+                   + mesh->getCoordinates()->getContravariantMetricTensor().g13 * (DDX(f) * DDZ(g) + DDZ(f) * DDX(g));
 
   return result;
 }

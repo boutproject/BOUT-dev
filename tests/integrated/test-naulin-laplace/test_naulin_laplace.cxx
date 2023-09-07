@@ -304,8 +304,9 @@ int main(int argc, char** argv) {
 
 Field3D this_Grad_perp_dot_Grad_perp(const Field3D& f, const Field3D& g) {
   const auto* coords = f.getCoordinates();
-  Field3D result = coords->g11 * ::DDX(f) * ::DDX(g) + coords->g33 * ::DDZ(f) * ::DDZ(g)
-                   + coords->g13 * (DDX(f) * DDZ(g) + DDZ(f) * DDX(g));
+  Coordinates::MetricTensor metric_tensor = coords->getContravariantMetricTensor();
+  Field3D result = metric_tensor.g11 * ::DDX(f) * ::DDX(g) + metric_tensor.g33 * ::DDZ(f) * ::DDZ(g)
+                   + metric_tensor.g13 * (DDX(f) * DDZ(g) + DDZ(f) * DDX(g));
 
   return result;
 }
