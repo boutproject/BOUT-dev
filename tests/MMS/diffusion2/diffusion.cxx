@@ -38,12 +38,13 @@ protected:
     SAVE_ONCE3(Dx, Dy, Dz);
 
     // set mesh
-    coords->g11 = 1.0;
-    coords->g22 = 1.0;
-    coords->g33 = 1.0;
-    coords->g12 = 0.0;
-    coords->g13 = 0.0;
-    coords->g23 = 0.0;
+    Coordinates::MetricTensor metric_tensor = coords->getContravariantMetricTensor();
+    metric_tensor.g11 = 1.0;
+    metric_tensor.g22 = 1.0;
+    metric_tensor.g33 = 1.0;
+    metric_tensor.g12 = 0.0;
+    metric_tensor.g13 = 0.0;
+    metric_tensor.g23 = 0.0;
 
     coords->g_11 = 1.0;
     coords->g_22 = 1.0;
