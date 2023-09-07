@@ -217,16 +217,17 @@ protected:
 
     /**************** CALCULATE METRICS ******************/
 
-    coord->g11 = SQ(Rxy * Bpxy);
-    coord->g22 = 1.0 / SQ(hthe);
-    coord->g33 = SQ(I) * coord->g11 + SQ(coord->Bxy) / coord->g11;
-    coord->g12 = 0.0;
-    coord->g13 = -I * coord->g11;
-    coord->g23 = -Btxy / (hthe * Bpxy * Rxy);
+    Coordinates::MetricTensor metric_tensor = coord->getContravariantMetricTensor();
+    metric_tensor.g11 = SQ(Rxy * Bpxy);
+    metric_tensor.g22 = 1.0 / SQ(hthe);
+    metric_tensor.g33 = SQ(I) * metric_tensor.g11 + SQ(coord->Bxy) / metric_tensor.g11;
+    metric_tensor.g12 = 0.0;
+    metric_tensor.g13 = -I * metric_tensor.g11;
+    metric_tensor.g23 = -Btxy / (hthe * Bpxy * Rxy);
 
     coord->J = hthe / Bpxy;
 
-    coord->g_11 = 1.0 / coord->g11 + SQ(I * Rxy);
+    coord->g_11 = 1.0 / metric_tensor.g11 + SQ(I * Rxy);
     coord->g_22 = SQ(coord->Bxy * hthe / Bpxy);
     coord->g_33 = Rxy * Rxy;
     coord->g_12 = Btxy * hthe * I * Rxy / Bpxy;

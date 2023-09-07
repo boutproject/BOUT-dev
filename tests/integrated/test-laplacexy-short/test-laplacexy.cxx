@@ -65,8 +65,9 @@ int main(int argc, char** argv) {
   if (include_y_derivs) {
     rhs = a * DC(Laplace_perp(f)) + DC(Grad_perp(a) * Grad_perp(f)) + b * f;
   } else {
+    Coordinates::MetricTensor metric_tensor = coords->getContravariantMetricTensor();
     rhs =
-        a * DC(Delp2(f, CELL_DEFAULT, false)) + DC(coords->g11 * DDX(a) * DDX(f)) + b * f;
+        a * DC(Delp2(f, CELL_DEFAULT, false)) + DC(metric_tensor.g11 * DDX(a) * DDX(f)) + b * f;
   }
 
   laplacexy.setCoefs(a, b);
@@ -82,8 +83,9 @@ int main(int argc, char** argv) {
   if (include_y_derivs) {
     rhs_check = a * DC(Laplace_perp(sol)) + DC(Grad_perp(a) * Grad_perp(sol)) + b * sol;
   } else {
+    Coordinates::MetricTensor metric_tensor = coords->getContravariantMetricTensor();
     rhs_check = a * DC(Delp2(sol, CELL_DEFAULT, false))
-                + DC(coords->g11 * DDX(a) * DDX(sol)) + b * sol;
+                + DC(metric_tensor.g11 * DDX(a) * DDX(sol)) + b * sol;
   }
 
   Options dump;

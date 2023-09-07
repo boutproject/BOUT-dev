@@ -49,16 +49,17 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
     sbp = -1.0;
   }
 
-  coords->g11 = pow(Rxy * Bpxy, 2);
-  coords->g22 = 1.0 / pow(hthe, 2);
-  coords->g33 = pow(sinty, 2) * coords->g11 + pow(coords->Bxy, 2) / coords->g11;
-  coords->g12 = 0.0;
-  coords->g13 = -sinty * coords->g11;
-  coords->g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
+  Coordinates::MetricTensor metric_tensor = coords->getContravariantMetricTensor();
+  metric_tensor.g11 = pow(Rxy * Bpxy, 2);
+  metric_tensor.g22 = 1.0 / pow(hthe, 2);
+  metric_tensor.g33 = pow(sinty, 2) * metric_tensor.g11 + pow(coords->Bxy, 2) / metric_tensor.g11;
+  metric_tensor.g12 = 0.0;
+  metric_tensor.g13 = -sinty * metric_tensor.g11;
+  metric_tensor.g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
 
   coords->J = hthe / Bpxy;
 
-  coords->g_11 = 1.0 / coords->g11 + pow(sinty * Rxy, 2);
+  coords->g_11 = 1.0 / metric_tensor.g11 + pow(sinty * Rxy, 2);
   coords->g_22 = pow(coords->Bxy * hthe / Bpxy, 2);
   coords->g_33 = Rxy * Rxy;
   coords->g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;

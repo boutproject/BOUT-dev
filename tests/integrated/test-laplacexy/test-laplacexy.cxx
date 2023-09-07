@@ -61,7 +61,8 @@ int main(int argc, char** argv) {
   if (include_y_derivs) {
     rhs = a * Laplace_perp(f) + Grad_perp(a) * Grad_perp(f) + b * f;
   } else {
-    rhs = a * Delp2(f, CELL_DEFAULT, false) + coords->g11 * DDX(a) * DDX(f) + b * f;
+    Coordinates::MetricTensor metric_tensor = coords->getContravariantMetricTensor();
+    rhs = a * Delp2(f, CELL_DEFAULT, false) + metric_tensor.g11 * DDX(a) * DDX(f) + b * f;
   }
 
   LaplaceXY laplacexy;
@@ -77,11 +78,12 @@ int main(int argc, char** argv) {
   mesh->communicate(solution);
   Field2D rhs_check;
   if (include_y_derivs) {
-    rhs_check =
+    rhs_check = 
         a * Laplace_perp(solution) + Grad_perp(a) * Grad_perp(solution) + b * solution;
   } else {
+    Coordinates::MetricTensor metric_tensor = coords->getContravariantMetricTensor();
     rhs_check = a * Delp2(solution, CELL_DEFAULT, false)
-                + coords->g11 * DDX(a) * DDX(solution) + b * solution;
+                + metric_tensor.g11 * DDX(a) * DDX(solution) + b * solution;
   }
 
   Options dump;
