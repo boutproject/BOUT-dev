@@ -49,13 +49,9 @@ std::shared_ptr<OptionsIO> OptionsIOFactory(std::string filename,
                                             OptionsIO::FileMode mode,
                                             const OptionsIO::Library library) {
   if (library == OptionsIO::Library::ADIOS) {
-    std::shared_ptr<OptionsIO> ptr(OptionsADIOS);
-    //std::shared_ptr<OptionsIO> ptr =
-    //    std::make_shared<OptionsADIOS>(OptionsADIOS(filename, mode));
-    //std::shared_ptr<OptionsIO> p2 = std::shared_ptr<OptionsIO>(ptr);
-    return ptr;
+    return std::make_shared<OptionsADIOS>(OptionsADIOS(filename, mode));
   } else if (library == OptionsIO::Library::NetCDF) {
-    return std::make_shared<OptionsIO>(OptionsNetCDF(filename, mode));
+    return std::make_shared<OptionsNetCDF>(OptionsNetCDF(filename, mode));
   } else {
     return nullptr;
   }

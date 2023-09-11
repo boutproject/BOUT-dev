@@ -48,14 +48,12 @@ public:
 #include "bout/options_io.hxx"
 
 namespace bout {
-const Options& x = Options::root();
-const bout::OptionsIO::FileMode m = OptionsIO::FileMode::replace;
 
 /// Forward declare ADIOS file type so we don't need to depend
 /// directly on ADIOS
 struct ADIOSStream;
 
-class OptionsADIOS {
+class OptionsADIOS : public OptionsIO {
 public:
   // Constructors need to be defined in implementation due to forward
   // declaration of ADIOSStream
