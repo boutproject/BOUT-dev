@@ -221,10 +221,62 @@ private:
   ADIOSStream& stream;
 };
 
-//template <>
-//void ADIOSPutVarVisitor::operator()<bool>(const bool& value) {
-//  int int_val = value ? 1 : 0;
-//}
+template <>
+void ADIOSPutVarVisitor::operator()<bool>(const bool& value) {
+  adios2::Variable<int> var = stream.io.DefineVariable<int>(varname);
+  stream.engine.Put<int>(var, (int)value);
+}
+
+template <>
+void ADIOSPutVarVisitor::operator()<Field2D>(const Field2D& value) {
+  // Pointer to data. Assumed to be contiguous array
+  adios2::Dims shape = {(size_t)value.getNx(), (size_t)value.getNy()};
+  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape);
+  stream.engine.Put<BoutReal>(var, &value(0, 0));
+}
+
+template <>
+void ADIOSPutVarVisitor::operator()<Field3D>(const Field3D& value) {
+  // Pointer to data. Assumed to be contiguous array
+  adios2::Dims shape = {(size_t)value.getNx(), (size_t)value.getNz()};
+  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape);
+  stream.engine.Put<BoutReal>(var, &value(0, 0, 0));
+}
+
+template <>
+void ADIOSPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
+  // Pointer to data. Assumed to be contiguous array
+  adios2::Dims shape = {(size_t)value.getNx(), (size_t)value.getNz()};
+  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape);
+  stream.engine.Put<BoutReal>(var, &value(0, 0));
+}
+
+template <>
+void ADIOSPutVarVisitor::operator()<Array<BoutReal>>(const Array<BoutReal>& value) {
+  // Pointer to data. Assumed to be contiguous array
+  adios2::Dims shape = {(size_t)value.size()};
+  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape);
+  stream.engine.Put<BoutReal>(var, value.begin());
+}
+
+template <>
+void ADIOSPutVarVisitor::operator()<Matrix<BoutReal>>(const Matrix<BoutReal>& value) {
+  // Pointer to data. Assumed to be contiguous array
+  auto s = value.shape();
+  adios2::Dims shape = {(size_t)std::get<0>(s), (size_t)std::get<1>(s)};
+  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape);
+  stream.engine.Put<BoutReal>(var, value.begin());
+}
+
+template <>
+void ADIOSPutVarVisitor::operator()<Tensor<BoutReal>>(const Tensor<BoutReal>& value) {
+  // Pointer to data. Assumed to be contiguous array
+  auto s = value.shape();
+  adios2::Dims shape = {(size_t)std::get<0>(s), (size_t)std::get<1>(s),
+                        (size_t)std::get<2>(s)};
+  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape);
+  stream.engine.Put<BoutReal>(var, value.begin());
+}
 
 /// Visit a variant type, and put the data into a NcVar
 struct ADIOSPutAttVisitor {
@@ -233,7 +285,7 @@ struct ADIOSPutAttVisitor {
       : varname(varname), attrname(attrname), stream(stream) {}
   template <typename T>
   void operator()(const T& value) {
-    stream.io.DefineAttribute(attrname, value, varname, "/", false);
+    stream.io.DefineAttribute<T>(attrname, value, varname, "/", false);
   }
 
 private:
@@ -241,6 +293,11 @@ private:
   const std::string& attrname;
   ADIOSStream& stream;
 };
+
+template <>
+void ADIOSPutAttVisitor::operator()<bool>(const bool& value) {
+  stream.io.DefineAttribute<int>(attrname, (int)value, varname, "/", false);
+}
 
 void writeGroup(const Options& options, ADIOSStream& stream, const std::string& groupname,
                 const std::string& time_dimension) {
