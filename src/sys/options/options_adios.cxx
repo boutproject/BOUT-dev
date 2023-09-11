@@ -112,11 +112,11 @@ Options OptionsADIOS::read() {
   // Open file
   ADIOSPtr adiosp = GetADIOSPtr();
   adios2::IO io;
+  std::string ioname = "read_"+filename;
   try {
-    io = adiosp->AtIO(filename);
+    io = adiosp->AtIO(ioname);
   } catch (const std::invalid_argument& e) {
-    std::cerr << e.what() << '\n';
-    io = adiosp->DeclareIO(filename);
+    io = adiosp->DeclareIO(ioname);
   }
 
   adios2::Engine reader = io.Open(filename, adios2::Mode::ReadRandomAccess);
@@ -228,6 +228,13 @@ void ADIOSPutVarVisitor::operator()<bool>(const bool& value) {
 }
 
 template <>
+void ADIOSPutVarVisitor::operator()<std::string>(const std::string& value) {
+  adios2::Variable<std::string> var = stream.io.DefineVariable<std::string>(varname);
+  std::cout << "-- Write string variable " << var.Name() << " value = " << value << std::endl;
+  stream.engine.Put<std::string>(var, (std::string)value, adios2::Mode::Sync);
+}
+
+template <>
 void ADIOSPutVarVisitor::operator()<Field2D>(const Field2D& value) {
   // Pointer to data. Assumed to be contiguous array
   adios2::Dims shape = {(size_t)value.getNx(), (size_t)value.getNy()};
@@ -332,11 +339,14 @@ void writeGroup(const Options& options, ADIOSStream& stream, const std::string& 
         bout::utils::visit(ADIOSPutVarVisitor(varname, stream), child.value);
 
         // Write attributes
-        for (const auto& attribute : child.attributes) {
-          const std::string& att_name = attribute.first;
-          const auto& att = attribute.second;
+        if (!BoutComm::rank())
+        {
+          for (const auto& attribute : child.attributes) {
+           const std::string& att_name = attribute.first;
+           const auto& att = attribute.second;
 
-          bout::utils::visit(ADIOSPutAttVisitor(varname, att_name, stream), att);
+            bout::utils::visit(ADIOSPutAttVisitor(varname, att_name, stream), att);
+          }
         }
 
       } catch (const std::exception& e) {
@@ -359,11 +369,11 @@ void OptionsADIOS::write(const Options& options, const std::string& time_dim) {
 
   // Open file
   ADIOSPtr adiosp = GetADIOSPtr();
+  std::string ioname = "write_"+filename;
   try {
-    stream->io = adiosp->AtIO(filename);
+    stream->io = adiosp->AtIO(ioname);
   } catch (const std::invalid_argument& e) {
-    std::cerr << e.what() << '\n';
-    stream->io = adiosp->DeclareIO(filename);
+    stream->io = adiosp->DeclareIO(ioname);
   }
 
   stream->engine = stream->io.Open(filename, mode);

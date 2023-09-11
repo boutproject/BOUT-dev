@@ -5,24 +5,20 @@
 #define __OPTIONS_ADIOS_H__
 
 #include "bout/build_config.hxx"
+#include "bout/options.hxx"
+#include "bout/options_io.hxx"
 
 #if !BOUT_HAS_ADIOS
 
 #include <string>
 
 #include "bout/boutexception.hxx"
-#include "bout/options.hxx"
 
 namespace bout {
 
-class OptionsADIOS {
+class OptionsADIOS : public OptionsIO {
 public:
-  enum class FileMode {
-    replace, ///< Overwrite file when writing
-    append   ///< Append to file when writing
-  };
-
-  OptionsADIOS(const std::string& filename, FileMode mode = FileMode::replace) {}
+  OptionsADIOS(const std::string& filename, bout::OptionsIO::FileMode mode = bout::OptionsIO::FileMode::replace) {}
   OptionsADIOS(const OptionsADIOS&) = default;
   OptionsADIOS(OptionsADIOS&&) = default;
   OptionsADIOS& operator=(const OptionsADIOS&) = default;
@@ -43,9 +39,6 @@ public:
 
 #include <memory>
 #include <string>
-
-#include "bout/options.hxx"
-#include "bout/options_io.hxx"
 
 namespace bout {
 

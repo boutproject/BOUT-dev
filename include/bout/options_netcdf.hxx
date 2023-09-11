@@ -6,6 +6,9 @@
 
 #include "bout/build_config.hxx"
 
+#include "bout/options.hxx"
+#include "bout/options_io.hxx"
+
 #if !BOUT_HAS_NETCDF || BOUT_HAS_LEGACY_NETCDF
 
 #include <string>
@@ -15,14 +18,9 @@
 
 namespace bout {
 
-class OptionsNetCDF {
+class OptionsNetCDF : public OptionsIO{
 public:
-  enum class FileMode {
-    replace, ///< Overwrite file when writing
-    append   ///< Append to file when writing
-  };
-
-  OptionsNetCDF(const std::string& filename, FileMode mode = FileMode::replace) {}
+  OptionsNetCDF(const std::string& filename, bout::OptionsIO::FileMode mode = bout::OptionsIO::FileMode::replace) {}
   OptionsNetCDF(const OptionsNetCDF&) = default;
   OptionsNetCDF(OptionsNetCDF&&) = default;
   OptionsNetCDF& operator=(const OptionsNetCDF&) = default;
@@ -43,9 +41,6 @@ public:
 
 #include <memory>
 #include <string>
-
-#include "bout/options.hxx"
-#include "bout/options_io.hxx"
 
 /// Forward declare netCDF file type so we don't need to depend
 /// directly on netCDF
