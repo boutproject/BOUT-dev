@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
   data["field"] = Field3D(3.0);
 
   // Append data to file
-  OptionsADIOS("time.nc", bout::OptionsIO::FileMode::append).write(data);
+  OptionsADIOS("time.bp", bout::OptionsIO::FileMode::append).write(data);
 
   BoutFinalise();
 };

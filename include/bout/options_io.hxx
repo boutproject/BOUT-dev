@@ -22,12 +22,8 @@ public:
   };
 
   enum class Library {
-#if BOUT_HAS_ADIOS
     ADIOS,
-#endif
-#if BOUT_HAS_NETCDF
     NetCDF,
-#endif
     Invalid
   };
 
@@ -41,7 +37,7 @@ public:
 #endif
 
   OptionsIO();
-  explicit OptionsIO(std::string filename, FileMode mode = FileMode::replace);
+  OptionsIO(std::string filename, FileMode mode = FileMode::replace);
   ~OptionsIO();
   OptionsIO(const OptionsIO&) = delete;
   OptionsIO(OptionsIO&&) noexcept;

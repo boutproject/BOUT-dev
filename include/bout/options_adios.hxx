@@ -18,7 +18,7 @@ namespace bout {
 
 class OptionsADIOS : public OptionsIO {
 public:
-  OptionsADIOS(const std::string& filename, bout::OptionsIO::FileMode mode = bout::OptionsIO::FileMode::replace) {}
+  explicit OptionsADIOS(const std::string& filename, bout::OptionsIO::FileMode mode = bout::OptionsIO::FileMode::replace) {}
   OptionsADIOS(const OptionsADIOS&) = default;
   OptionsADIOS(OptionsADIOS&&) = default;
   OptionsADIOS& operator=(const OptionsADIOS&) = default;
@@ -28,9 +28,15 @@ public:
   Options read() { throw BoutException("OptionsADIOS not available\n"); }
 
   /// Write options to file
-  void write(const Options& options) {
+  void write(const Options& options, const std::string& time_dim) {
     throw BoutException("OptionsADIOS not available\n");
   }
+
+  void verifyTimesteps() const{
+    throw BoutException("OptionsADIOS not available\n");
+  }
+
+
 };
 
 } // namespace bout
@@ -51,7 +57,7 @@ public:
   // Constructors need to be defined in implementation due to forward
   // declaration of ADIOSStream
   OptionsADIOS();
-  explicit OptionsADIOS(std::string filename, bout::OptionsIO::FileMode mode =
+  OptionsADIOS(std::string filename, bout::OptionsIO::FileMode mode =
                                                   bout::OptionsIO::FileMode::replace);
   ~OptionsADIOS();
   OptionsADIOS(const OptionsADIOS&) = delete;
