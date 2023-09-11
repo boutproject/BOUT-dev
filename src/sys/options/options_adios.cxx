@@ -20,7 +20,7 @@ namespace bout {
 OptionsADIOS::OptionsADIOS() : stream(nullptr) {}
 
 OptionsADIOS::OptionsADIOS(std::string filename, FileMode mode)
-    : filename(std::move(filename)), file_mode(mode), stream(nullptr) {}
+    : OptionsIO(filename, mode), stream(nullptr) {}
 
 OptionsADIOS::~OptionsADIOS() = default;
 OptionsADIOS::OptionsADIOS(OptionsADIOS&&) noexcept = default;
