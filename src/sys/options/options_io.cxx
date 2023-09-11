@@ -11,12 +11,8 @@
 #include <iostream>
 #include <vector>
 
-#if BOUT_HAS_ADIOS
 #include "bout/options_adios.hxx"
-#endif
-#if BOUT_HAS_NETCDF
 #include "bout/options_netcdf.hxx"
-#endif
 
 namespace bout {
 

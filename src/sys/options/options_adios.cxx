@@ -237,32 +237,41 @@ void ADIOSPutVarVisitor::operator()<std::string>(const std::string& value) {
 template <>
 void ADIOSPutVarVisitor::operator()<Field2D>(const Field2D& value) {
   // Pointer to data. Assumed to be contiguous array
-  adios2::Dims shape = {(size_t)value.getNx(), (size_t)value.getNy()};
-  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape);
+  auto mesh = value.getMesh();
+  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)value.getNx(), (size_t)value.getNy()};
+  adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0};
+  adios2::Dims count = {1, shape[1], shape[2]};
+  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape, start, count);
   stream.engine.Put<BoutReal>(var, &value(0, 0));
 }
 
 template <>
 void ADIOSPutVarVisitor::operator()<Field3D>(const Field3D& value) {
   // Pointer to data. Assumed to be contiguous array
-  adios2::Dims shape = {(size_t)value.getNx(), (size_t)value.getNz()};
-  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape);
+  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)value.getNx(), (size_t)value.getNy(), (size_t)value.getNz()};
+  adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0, 0};
+  adios2::Dims count = {1, shape[1], shape[2], shape[3]};
+  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape, start, count);
   stream.engine.Put<BoutReal>(var, &value(0, 0, 0));
 }
 
 template <>
 void ADIOSPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
   // Pointer to data. Assumed to be contiguous array
-  adios2::Dims shape = {(size_t)value.getNx(), (size_t)value.getNz()};
-  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape);
+  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)value.getNx(), (size_t)value.getNz()};
+  adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0};
+  adios2::Dims count = {1, shape[1], shape[2]};
+  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape, start, count);
   stream.engine.Put<BoutReal>(var, &value(0, 0));
 }
 
 template <>
 void ADIOSPutVarVisitor::operator()<Array<BoutReal>>(const Array<BoutReal>& value) {
   // Pointer to data. Assumed to be contiguous array
-  adios2::Dims shape = {(size_t)value.size()};
-  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape);
+  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)value.size()};
+  adios2::Dims start = {(size_t)BoutComm::rank(), 0};
+  adios2::Dims count = {1, shape[1]};
+  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape, start, count);
   stream.engine.Put<BoutReal>(var, value.begin());
 }
 
@@ -270,8 +279,10 @@ template <>
 void ADIOSPutVarVisitor::operator()<Matrix<BoutReal>>(const Matrix<BoutReal>& value) {
   // Pointer to data. Assumed to be contiguous array
   auto s = value.shape();
-  adios2::Dims shape = {(size_t)std::get<0>(s), (size_t)std::get<1>(s)};
-  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape);
+  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)std::get<0>(s), (size_t)std::get<1>(s)};
+  adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0};
+  adios2::Dims count = {1, shape[1], shape[2]};
+  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape, start, count);
   stream.engine.Put<BoutReal>(var, value.begin());
 }
 
@@ -279,9 +290,11 @@ template <>
 void ADIOSPutVarVisitor::operator()<Tensor<BoutReal>>(const Tensor<BoutReal>& value) {
   // Pointer to data. Assumed to be contiguous array
   auto s = value.shape();
-  adios2::Dims shape = {(size_t)std::get<0>(s), (size_t)std::get<1>(s),
+  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)std::get<0>(s), (size_t)std::get<1>(s),
                         (size_t)std::get<2>(s)};
-  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape);
+  adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0, 0};
+  adios2::Dims count = {1, shape[1], shape[2], shape[3]};
+  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape,  start, count);
   stream.engine.Put<BoutReal>(var, value.begin());
 }
 

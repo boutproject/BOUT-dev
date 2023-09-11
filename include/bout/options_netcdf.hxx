@@ -30,8 +30,12 @@ public:
   Options read() { throw BoutException("OptionsNetCDF not available\n"); }
 
   /// Write options to file
-  void write(const Options& options) {
+  void write(const Options& options, const std::string& time_dim) {
     throw BoutException("OptionsNetCDF not available\n");
+  }
+
+  void verifyTimesteps() const{
+    throw BoutException("OptionsADIOS not available\n");
   }
 };
 
@@ -55,7 +59,7 @@ public:
   // Constructors need to be defined in implementation due to forward
   // declaration of NcFile
   OptionsNetCDF();
-  explicit OptionsNetCDF(std::string filename, FileMode mode = FileMode::replace);
+  OptionsNetCDF(std::string filename, FileMode mode = FileMode::replace);
   ~OptionsNetCDF();
   OptionsNetCDF(const OptionsNetCDF&) = delete;
   OptionsNetCDF(OptionsNetCDF&&) noexcept;
