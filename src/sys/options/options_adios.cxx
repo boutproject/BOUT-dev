@@ -223,46 +223,149 @@ private:
 
 template <>
 void ADIOSPutVarVisitor::operator()<bool>(const bool& value) {
+  // Scalars are only written from processor 0
+  if (BoutComm::rank() != 0) {
+    return;
+  }
   adios2::Variable<int> var = stream.io.DefineVariable<int>(varname);
-  stream.engine.Put<int>(var, (int)value);
+  stream.engine.Put<int>(var, static_cast<int>(value));
+}
+
+template <>
+void ADIOSPutVarVisitor::operator()<int>(const int& value) {
+  // Scalars are only written from processor 0
+  if (BoutComm::rank() != 0) {
+    return;
+  }
+  adios2::Variable<int> var = stream.io.DefineVariable<int>(varname);
+  stream.engine.Put<int>(var, value);
+}
+
+template <>
+void ADIOSPutVarVisitor::operator()<BoutReal>(const BoutReal& value) {
+  // Scalars are only written from processor 0
+  if (BoutComm::rank() != 0) {
+    return;
+  }
+  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname);
+  stream.engine.Put<BoutReal>(var, value);
 }
 
 template <>
 void ADIOSPutVarVisitor::operator()<std::string>(const std::string& value) {
+  // Scalars are only written from processor 0
+  if (BoutComm::rank() != 0) {
+    return;
+  }
+
   adios2::Variable<std::string> var = stream.io.DefineVariable<std::string>(varname);
   std::cout << "-- Write string variable " << var.Name() << " value = " << value << std::endl;
-  stream.engine.Put<std::string>(var, (std::string)value, adios2::Mode::Sync);
+  stream.engine.Put<std::string>(var, value, adios2::Mode::Sync);
 }
 
 template <>
 void ADIOSPutVarVisitor::operator()<Field2D>(const Field2D& value) {
-  // Pointer to data. Assumed to be contiguous array
+  // Get the mesh that describes how local data relates to global arrays
   auto mesh = value.getMesh();
-  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)value.getNx(), (size_t)value.getNy()};
-  adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0};
-  adios2::Dims count = {1, shape[1], shape[2]};
+
+  // The global size of this array includes boundary cells but not communication guard cells.
+  // In general this array will be sparse because it may have gaps.
+  adios2::Dims shape = {static_cast<size_t>(mesh->GlobalNx),
+                        static_cast<size_t>(mesh->GlobalNy)};
+
+  // Offset of this processor's data into the global array
+  adios2::Dims start = {static_cast<size_t>(mesh->MapGlobalX), static_cast<size_t>(mesh->MapGlobalY)};
+
+  // The size of the mapped region
+  adios2::Dims count = {static_cast<size_t>(mesh->MapCountX), static_cast<size_t>(mesh->MapCountY)};
   adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape, start, count);
-  stream.engine.Put<BoutReal>(var, &value(0, 0));
+
+  // Get a Span of an internal engine buffer that we can fill with data
+  auto span = stream.engine.Put<BoutReal>(var);
+
+  // Iterate over the span and the Field2D array
+  // Note: The Field2D includes communication guard cells that are not written
+  auto it = span.begin();
+  for (int x = mesh->MapLocalX; x < (mesh->MapLocalX + mesh->MapCountX); ++x) {
+    for (int y = mesh->MapLocalY; y < (mesh->MapLocalY + mesh->MapCountY); ++y) {
+      *it = value(x, y);
+      ++it;
+    }
+  }
+  ASSERT1(it == span.end());
 }
 
 template <>
 void ADIOSPutVarVisitor::operator()<Field3D>(const Field3D& value) {
-  // Pointer to data. Assumed to be contiguous array
-  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)value.getNx(), (size_t)value.getNy(), (size_t)value.getNz()};
-  adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0, 0};
-  adios2::Dims count = {1, shape[1], shape[2], shape[3]};
+  // Get the mesh that describes how local data relates to global arrays
+  auto mesh = value.getMesh();
+
+  // The global size of this array includes boundary cells but not communication guard cells.
+  // In general this array will be sparse because it may have gaps.
+  adios2::Dims shape = {static_cast<size_t>(mesh->GlobalNx),
+                        static_cast<size_t>(mesh->GlobalNy),
+                        static_cast<size_t>(mesh->GlobalNz)};
+
+  // Offset of this processor's data into the global array
+  adios2::Dims start = {static_cast<size_t>(mesh->MapGlobalX),
+                        static_cast<size_t>(mesh->MapGlobalY),
+                        static_cast<size_t>(mesh->MapGlobalZ)};
+
+  // The size of the mapped region
+  adios2::Dims count = {static_cast<size_t>(mesh->MapCountX),
+                        static_cast<size_t>(mesh->MapCountY),
+                        static_cast<size_t>(mesh->MapCountZ)};
   adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape, start, count);
-  stream.engine.Put<BoutReal>(var, &value(0, 0, 0));
+
+  // Get a Span of an internal engine buffer.
+  auto span = stream.engine.Put<BoutReal>(var);
+
+  // Iterate over the span and the Field3D array
+  // Note: The Field3D includes communication guard cells that are not written
+  auto it = span.begin();
+  for (int x = mesh->MapLocalX; x < (mesh->MapLocalX + mesh->MapCountX); ++x) {
+    for (int y = mesh->MapLocalY; y < (mesh->MapLocalY + mesh->MapCountY); ++y) {
+      for (int z = mesh->MapLocalZ; z < (mesh->MapLocalZ + mesh->MapCountZ); ++z) {
+        *it = value(x, y, z);
+        ++it;
+      }
+    }
+  }
+  ASSERT1(it == span.end());
 }
 
 template <>
 void ADIOSPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
-  // Pointer to data. Assumed to be contiguous array
-  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)value.getNx(), (size_t)value.getNz()};
-  adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0};
-  adios2::Dims count = {1, shape[1], shape[2]};
+  // Get the mesh that describes how local data relates to global arrays
+  auto mesh = value.getMesh();
+
+  // The global size of this array includes boundary cells but not communication guard cells.
+  // In general this array will be sparse because it may have gaps.
+  adios2::Dims shape = {static_cast<size_t>(mesh->GlobalNx),
+                        static_cast<size_t>(mesh->GlobalNz)};
+
+  // Offset of this processor's data into the global array
+  adios2::Dims start = {static_cast<size_t>(mesh->MapGlobalX),
+                        static_cast<size_t>(mesh->MapGlobalZ)};
+
+  // The size of the mapped region
+  adios2::Dims count = {static_cast<size_t>(mesh->MapCountX),
+                        static_cast<size_t>(mesh->MapCountZ)};
   adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape, start, count);
-  stream.engine.Put<BoutReal>(var, &value(0, 0));
+
+  // Get a Span of an internal engine buffer.
+  auto span = stream.engine.Put<BoutReal>(var);
+
+  // Iterate over the span and the Field3D array
+  // Note: The Field3D includes communication guard cells that are not written
+  auto it = span.begin();
+  for (int x = mesh->MapLocalX; x < (mesh->MapLocalX + mesh->MapCountX); ++x) {
+    for (int z = mesh->MapLocalZ; z < (mesh->MapLocalZ + mesh->MapCountZ); ++z) {
+      *it = value(x, z);
+      ++it;
+    }
+  }
+  ASSERT1(it == span.end());
 }
 
 template <>
