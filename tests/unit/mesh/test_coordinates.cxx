@@ -310,3 +310,78 @@ TEST_F(CoordinatesTest, NegativeB) {
   output_warn.enable();
   output_info.enable();
 }
+
+TEST_F(CoordinatesTest, GetCovariantMetricTensor) {
+  Coordinates coords{mesh,
+                     FieldMetric{1.0},  // dx
+                     FieldMetric{1.0},  // dy
+                     FieldMetric{1.0},  // dz
+                     FieldMetric{0.0},  // J
+                     FieldMetric{0.0},  // Bxy
+                     FieldMetric{1.2},  // g11
+                     FieldMetric{2.3},  // g22
+                     FieldMetric{3.4},  // g33
+                     FieldMetric{4.5},  // g12
+                     FieldMetric{5.6},  // g13
+                     FieldMetric{6.7},  // g23
+                     FieldMetric{1.0},  // g_11
+                     FieldMetric{1.0},  // g_22
+                     FieldMetric{1.0},  // g_23
+                     FieldMetric{0.0},  // g_12
+                     FieldMetric{0.0},  // g_13
+                     FieldMetric{0.0},  // g_23
+                     FieldMetric{0.0},  // ShiftTorsion
+                     FieldMetric{0.0}}; // IntShiftTorsion
+
+  Coordinates::MetricTensor const contravariant_components = coords.getContravariantMetricTensor();
+
+  EXPECT_TRUE(IsFieldEqual(contravariant_components.g11, 1.2));
+  EXPECT_TRUE(IsFieldEqual(contravariant_components.g22, 2.3));
+  EXPECT_TRUE(IsFieldEqual(contravariant_components.g33, 3.4));
+  EXPECT_TRUE(IsFieldEqual(contravariant_components.g12, 4.5));
+  EXPECT_TRUE(IsFieldEqual(contravariant_components.g13, 5.6));
+  EXPECT_TRUE(IsFieldEqual(contravariant_components.g23, 6.7));
+}
+
+TEST_F(CoordinatesTest, SetCovariantMetricTensor) {
+  // Set initial values for the metric tensor in the Coordinates constructor
+  Coordinates coords{mesh,
+                     FieldMetric{1.0},  // dx
+                     FieldMetric{1.0},  // dy
+                     FieldMetric{1.0},  // dz
+                     FieldMetric{0.0},  // J
+                     FieldMetric{0.0},  // Bxy
+                     FieldMetric{0.0},  // g11
+                     FieldMetric{0.0},  // g22
+                     FieldMetric{0.0},  // g33
+                     FieldMetric{0.0},  // g12
+                     FieldMetric{0.0},  // g13
+                     FieldMetric{0.0},  // g23
+                     FieldMetric{1.0},  // g_11
+                     FieldMetric{1.0},  // g_22
+                     FieldMetric{1.0},  // g_23
+                     FieldMetric{0.0},  // g_12
+                     FieldMetric{0.0},  // g_13
+                     FieldMetric{0.0},  // g_23
+                     FieldMetric{0.0},  // ShiftTorsion
+                     FieldMetric{0.0}}; // IntShiftTorsion
+
+  //  Modify with setter
+  Coordinates::MetricTensor updated_metric_tensor;
+  updated_metric_tensor.g11 = 1.7;
+  updated_metric_tensor.g22 = 2.3;
+  updated_metric_tensor.g33 = 3.1;
+  updated_metric_tensor.g12 = 0.9;
+  updated_metric_tensor.g13 = 5.7;
+  updated_metric_tensor.g23 = 1.9;
+  coords.setContravariantMetricTensor(updated_metric_tensor);
+
+  //  Get values with getter and check they have been modified as expected
+  Coordinates::MetricTensor g = coords.getContravariantMetricTensor();
+  EXPECT_TRUE(IsFieldEqual(g.g11, 1.7));
+  EXPECT_TRUE(IsFieldEqual(g.g22, 2.3));
+  EXPECT_TRUE(IsFieldEqual(g.g33, 3.1));
+  EXPECT_TRUE(IsFieldEqual(g.g12, 0.9));
+  EXPECT_TRUE(IsFieldEqual(g.g13, 5.7));
+  EXPECT_TRUE(IsFieldEqual(g.g23, 1.9));
+}
