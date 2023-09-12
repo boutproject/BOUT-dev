@@ -2035,5 +2035,5 @@ void Coordinates::setContravariantMetricTensor(
     g12 = metric_tensor.g12;
     g13 = metric_tensor.g13;
     g23 = metric_tensor.g23;
-    calcContravariant();
+    calcCovariant();
 }
