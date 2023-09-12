@@ -17,10 +17,10 @@
 
 namespace bout {
 
-OptionsADIOS::OptionsADIOS() : stream(nullptr) {}
+OptionsADIOS::OptionsADIOS() {}
 
 OptionsADIOS::OptionsADIOS(std::string filename, FileMode mode)
-    : OptionsIO(filename, mode), stream(nullptr) {}
+    : OptionsIO(filename, mode) {}
 
 OptionsADIOS::~OptionsADIOS() = default;
 OptionsADIOS::OptionsADIOS(OptionsADIOS&&) noexcept = default;
@@ -84,7 +84,7 @@ bool readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& nam
 
 bool readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& name,
                   const std::string& type, Options& result) {
-  bool ret;
+  bool ret = false;
 #define declare_template_instantiation(T)            \
   if (type == adios2::GetType<T>()) {                \
     ret = readVariable<T>(reader, io, name, result); \
@@ -112,13 +112,14 @@ Options OptionsADIOS::read() {
   // Open file
   ADIOSPtr adiosp = GetADIOSPtr();
   adios2::IO io;
-  std::string ioname = "read_"+filename;
+  std::string ioname = "read_" + filename;
   try {
     io = adiosp->AtIO(ioname);
   } catch (const std::invalid_argument& e) {
     io = adiosp->DeclareIO(ioname);
   }
 
+  std::cout << "OptionsADIOS::read: open " << filename << std::endl;
   adios2::Engine reader = io.Open(filename, adios2::Mode::ReadRandomAccess);
   if (!reader) {
     throw BoutException("Could not open ADIOS file '{:s}' for reading", filename);
@@ -172,38 +173,12 @@ std::vector<TimeDimensionError> verifyTimesteps(adios2::Engine& reader) {
 }
 
 void OptionsADIOS::verifyTimesteps() const {
-
-  // Open file
-  ADIOSPtr adiosp = GetADIOSPtr();
-  adios2::IO io;
-  try {
-    io = adiosp->AtIO(filename);
-  } catch (const std::invalid_argument& e) {
-    std::cerr << e.what() << '\n';
-    io = adiosp->DeclareIO(filename);
-  }
-
-  adios2::Engine reader = io.Open(filename, adios2::Mode::ReadRandomAccess);
-  if (!reader) {
-    throw BoutException("Could not open ADIOS file '{:s}' for reading", filename);
-  }
-
-  auto errors = bout::verifyTimesteps(reader);
-
-  if (errors.empty()) {
-    // No errors
-    return;
-  }
-
-  std::string error_string;
-  for (const auto& error : errors) {
-    error_string += fmt::format(
-        "  variable: {}; dimension: {}; expected size: {}; actual size: {}\n",
-        error.variable_name, error.time_name, error.expected_size, error.current_size);
-  }
-  throw BoutException("ERROR: When checking timesteps in file '{}', some ({}) variables "
-                      "did not have the expected size(s):\n{}",
-                      filename, errors.size(), error_string);
+  ADIOSStream& stream = ADIOSStream::ADIOSGetStream(filename);
+  std::cout << "OptionsADIOS::write: END adios step = " << stream.engine.CurrentStep()
+            << std::endl;
+  stream.engine.EndStep();
+  stream.isInStep = false;
+  return;
 }
 
 /// Visit a variant type, and put the data into a NcVar
@@ -212,7 +187,7 @@ struct ADIOSPutVarVisitor {
       : varname(name), stream(stream) {}
   template <typename T>
   void operator()(const T& value) {
-    adios2::Variable<T> var = stream.io.DefineVariable<T>(varname);
+    adios2::Variable<T> var = stream.GetValueVariable<T>(varname);
     stream.engine.Put(var, value);
   }
 
@@ -227,7 +202,7 @@ void ADIOSPutVarVisitor::operator()<bool>(const bool& value) {
   if (BoutComm::rank() != 0) {
     return;
   }
-  adios2::Variable<int> var = stream.io.DefineVariable<int>(varname);
+  adios2::Variable<int> var = stream.GetValueVariable<int>(varname);
   stream.engine.Put<int>(var, static_cast<int>(value));
 }
 
@@ -237,7 +212,7 @@ void ADIOSPutVarVisitor::operator()<int>(const int& value) {
   if (BoutComm::rank() != 0) {
     return;
   }
-  adios2::Variable<int> var = stream.io.DefineVariable<int>(varname);
+  adios2::Variable<int> var = stream.GetValueVariable<int>(varname);
   stream.engine.Put<int>(var, value);
 }
 
@@ -247,7 +222,7 @@ void ADIOSPutVarVisitor::operator()<BoutReal>(const BoutReal& value) {
   if (BoutComm::rank() != 0) {
     return;
   }
-  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname);
+  adios2::Variable<BoutReal> var = stream.GetValueVariable<BoutReal>(varname);
   stream.engine.Put<BoutReal>(var, value);
 }
 
@@ -257,9 +232,7 @@ void ADIOSPutVarVisitor::operator()<std::string>(const std::string& value) {
   if (BoutComm::rank() != 0) {
     return;
   }
-
-  adios2::Variable<std::string> var = stream.io.DefineVariable<std::string>(varname);
-  std::cout << "-- Write string variable " << var.Name() << " value = " << value << std::endl;
+  adios2::Variable<std::string> var = stream.GetValueVariable<std::string>(varname);
   stream.engine.Put<std::string>(var, value, adios2::Mode::Sync);
 }
 
@@ -274,11 +247,14 @@ void ADIOSPutVarVisitor::operator()<Field2D>(const Field2D& value) {
                         static_cast<size_t>(mesh->GlobalNy)};
 
   // Offset of this processor's data into the global array
-  adios2::Dims start = {static_cast<size_t>(mesh->MapGlobalX), static_cast<size_t>(mesh->MapGlobalY)};
+  adios2::Dims start = {static_cast<size_t>(mesh->MapGlobalX),
+                        static_cast<size_t>(mesh->MapGlobalY)};
 
   // The size of the mapped region
-  adios2::Dims count = {static_cast<size_t>(mesh->MapCountX), static_cast<size_t>(mesh->MapCountY)};
-  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape, start, count);
+  adios2::Dims count = {static_cast<size_t>(mesh->MapCountX),
+                        static_cast<size_t>(mesh->MapCountY)};
+  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  var.SetSelection({start, count});
 
   // Get a Span of an internal engine buffer that we can fill with data
   auto span = stream.engine.Put<BoutReal>(var);
@@ -315,8 +291,9 @@ void ADIOSPutVarVisitor::operator()<Field3D>(const Field3D& value) {
   adios2::Dims count = {static_cast<size_t>(mesh->MapCountX),
                         static_cast<size_t>(mesh->MapCountY),
                         static_cast<size_t>(mesh->MapCountZ)};
-  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape, start, count);
 
+  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  var.SetSelection({start, count});
   // Get a Span of an internal engine buffer.
   auto span = stream.engine.Put<BoutReal>(var);
 
@@ -351,7 +328,9 @@ void ADIOSPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
   // The size of the mapped region
   adios2::Dims count = {static_cast<size_t>(mesh->MapCountX),
                         static_cast<size_t>(mesh->MapCountZ)};
-  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape, start, count);
+
+  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  var.SetSelection({start, count});
 
   // Get a Span of an internal engine buffer.
   auto span = stream.engine.Put<BoutReal>(var);
@@ -374,7 +353,8 @@ void ADIOSPutVarVisitor::operator()<Array<BoutReal>>(const Array<BoutReal>& valu
   adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)value.size()};
   adios2::Dims start = {(size_t)BoutComm::rank(), 0};
   adios2::Dims count = {1, shape[1]};
-  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape, start, count);
+  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  var.SetSelection({start, count});
   stream.engine.Put<BoutReal>(var, value.begin());
 }
 
@@ -382,10 +362,12 @@ template <>
 void ADIOSPutVarVisitor::operator()<Matrix<BoutReal>>(const Matrix<BoutReal>& value) {
   // Pointer to data. Assumed to be contiguous array
   auto s = value.shape();
-  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)std::get<0>(s), (size_t)std::get<1>(s)};
+  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)std::get<0>(s),
+                        (size_t)std::get<1>(s)};
   adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0};
   adios2::Dims count = {1, shape[1], shape[2]};
-  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape, start, count);
+  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  var.SetSelection({start, count});
   stream.engine.Put<BoutReal>(var, value.begin());
 }
 
@@ -393,11 +375,12 @@ template <>
 void ADIOSPutVarVisitor::operator()<Tensor<BoutReal>>(const Tensor<BoutReal>& value) {
   // Pointer to data. Assumed to be contiguous array
   auto s = value.shape();
-  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)std::get<0>(s), (size_t)std::get<1>(s),
-                        (size_t)std::get<2>(s)};
+  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)std::get<0>(s),
+                        (size_t)std::get<1>(s), (size_t)std::get<2>(s)};
   adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0, 0};
   adios2::Dims count = {1, shape[1], shape[2], shape[3]};
-  adios2::Variable<BoutReal> var = stream.io.DefineVariable<BoutReal>(varname, shape,  start, count);
+  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  var.SetSelection({start, count});
   stream.engine.Put<BoutReal>(var, value.begin());
 }
 
@@ -438,7 +421,12 @@ void writeGroup(const Options& options, ADIOSStream& stream, const std::string& 
     if (child.isValue()) {
       try {
         auto time_it = child.attributes.find("time_dimension");
-        if (time_it != child.attributes.end()) {
+        if (time_it == child.attributes.end()) {
+          if (stream.adiosStep > 0) {
+            // we should only write the non-varying values in the first step
+            continue;
+          }
+        } else {
           // Has a time dimension
 
           const auto& time_name = bout::utils::get<std::string>(time_it->second);
@@ -455,11 +443,10 @@ void writeGroup(const Options& options, ADIOSStream& stream, const std::string& 
         bout::utils::visit(ADIOSPutVarVisitor(varname, stream), child.value);
 
         // Write attributes
-        if (!BoutComm::rank())
-        {
+        if (!BoutComm::rank()) {
           for (const auto& attribute : child.attributes) {
-           const std::string& att_name = attribute.first;
-           const auto& att = attribute.second;
+            const std::string& att_name = attribute.first;
+            const auto& att = attribute.second;
 
             bout::utils::visit(ADIOSPutAttVisitor(varname, att_name, stream), att);
           }
@@ -476,31 +463,58 @@ void writeGroup(const Options& options, ADIOSStream& stream, const std::string& 
 void OptionsADIOS::write(const Options& options, const std::string& time_dim) {
   Timer timer("io");
 
-  adios2::Mode mode =
-      (file_mode == FileMode::replace) ? adios2::Mode::Write : adios2::Mode::Append;
+  // ADIOSStream is just a BOUT++ object, it does not create anything inside ADIOS
+  ADIOSStream& stream = ADIOSStream::ADIOSGetStream(filename);
 
-  if (not stream) {
-    stream = std::make_unique<ADIOSStream>();
+  // Need to have an adios2::IO object first, which can only be created once.
+  if (!stream.io) {
+    ADIOSPtr adiosp = GetADIOSPtr();
+    std::string ioname = "write_" + filename;
+    try {
+      stream.io = adiosp->AtIO(ioname);
+    } catch (const std::invalid_argument& e) {
+      stream.io = adiosp->DeclareIO(ioname);
+      stream.io.SetEngine("BP4");
+    }
   }
 
-  // Open file
-  ADIOSPtr adiosp = GetADIOSPtr();
-  std::string ioname = "write_"+filename;
-  try {
-    stream->io = adiosp->AtIO(ioname);
-  } catch (const std::invalid_argument& e) {
-    stream->io = adiosp->DeclareIO(ioname);
+  if (file_mode == FileMode::append) {
+    // Open file once and keep it open, close in stream desctructor
+    if (!stream.engine) {
+      std::cout << "OptionsADIOS::write: open for append " << filename
+                << " timedim = " << time_dim << std::endl;
+      stream.engine = stream.io.Open(filename, adios2::Mode::Append);
+      if (!stream.engine) {
+        throw BoutException("Could not open ADIOS file '{:s}' for writing", filename);
+      }
+    } else {
+      std::cout << "OptionsADIOS::write: revisiting append  " << filename
+                << " timedim = " << time_dim << std::endl;
+    }
+  } else {
+    if (!stream.engine) {
+      std::cout << "OptionsADIOS::write: create " << filename << " timedim = " << time_dim
+                << std::endl;
+      stream.engine = stream.io.Open(filename, adios2::Mode::Write);
+    } else {
+      std::cout << "OptionsADIOS::write: revisiting write  " << filename
+                << " timedim = " << time_dim << std::endl;
+    }
   }
 
-  stream->engine = stream->io.Open(filename, mode);
-  if (!stream->engine) {
-    throw BoutException("Could not open ADIOS file '{:s}' for writing", filename);
+  std::cout << "          BetweenStepPairs = " << stream.isInStep << std::endl;
+
+  if (!stream.isInStep) {
+    stream.engine.BeginStep();
+    stream.isInStep = true;
+    stream.adiosStep = stream.engine.CurrentStep();
+    std::cout << "OptionsADIOS::write: BEGIN adios step = " << stream.adiosStep
+              << "  BetweenStepPairs = " << stream.isInStep << std::endl;
+  } else {
+    std::cout << "OptionsADIOS::write: continue writing adios step = " << stream.adiosStep
+              << std::endl;
   }
-
-  stream->engine.BeginStep();
-  writeGroup(options, *stream, "", time_dim);
-
-  stream->engine.EndStep();
+  writeGroup(options, stream, "", time_dim);
 }
 
 } // namespace bout

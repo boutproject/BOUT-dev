@@ -21,11 +21,7 @@ public:
     append   ///< Append to file when writing
   };
 
-  enum class Library {
-    ADIOS,
-    NetCDF,
-    Invalid
-  };
+  enum class Library { ADIOS, NetCDF, Invalid };
 
   static const Library defaultIOLibrary =
 #if BOUT_HAS_ADIOS
