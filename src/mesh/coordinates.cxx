@@ -2027,15 +2027,13 @@ Coordinates::MetricTensor Coordinates::getContravariantMetricTensor() const {
     MetricTensor g_contravariant = { g11, g22, g33, g12, g13, g23 };
     return g_contravariant;
 }
-
-void Coordinates::setContravariantMetricTensor(Coordinates::MetricTensor g) {
-    g11 = g.g11;
-    g22 = g.g22;
-    g33 = g.g33;
-    g12 = g.g12;
-    g13 = g.g13;
-    g23 = g.g23;
+void Coordinates::setContravariantMetricTensor(
+    const Coordinates::MetricTensor& metric_tensor) {
+    g11 = metric_tensor.g11;
+    g22 = metric_tensor.g22;
+    g33 = metric_tensor.g33;
+    g12 = metric_tensor.g12;
+    g13 = metric_tensor.g13;
+    g23 = metric_tensor.g23;
     calcContravariant();
 }
-
-

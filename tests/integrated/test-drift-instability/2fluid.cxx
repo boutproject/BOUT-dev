@@ -217,13 +217,14 @@ protected:
 
     /**************** CALCULATE METRICS ******************/
 
-    Coordinates::MetricTensor metric_tensor = coord->getContravariantMetricTensor();
+    Coordinates::MetricTensor metric_tensor;
     metric_tensor.g11 = SQ(Rxy * Bpxy);
     metric_tensor.g22 = 1.0 / SQ(hthe);
     metric_tensor.g33 = SQ(I) * metric_tensor.g11 + SQ(coord->Bxy) / metric_tensor.g11;
     metric_tensor.g12 = 0.0;
     metric_tensor.g13 = -I * metric_tensor.g11;
     metric_tensor.g23 = -Btxy / (hthe * Bpxy * Rxy);
+    coord->setContravariantMetricTensor(metric_tensor);
 
     coord->J = hthe / Bpxy;
 
