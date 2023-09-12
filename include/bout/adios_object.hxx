@@ -29,14 +29,38 @@ public:
   adios2::Variable<double> vTime;
   adios2::Variable<int> vStep;
   int adiosStep = 0;
+  bool isInStep = false; // true if BeginStep was called and EndStep was not yet called
+
+  /** create or return the ADIOSStream based on the target file name */
+  static ADIOSStream& ADIOSGetStream(const std::string& fname);
+
+  ~ADIOSStream();
+
+  template <class T>
+  adios2::Variable<T> GetValueVariable(const std::string& varname) {
+    auto v = io.InquireVariable<T>(varname);
+    if (!v) {
+      v = io.DefineVariable<T>(varname);
+    }
+    return v;
+  }
+
+  template <class T>
+  adios2::Variable<T> GetArrayVariable(const std::string& varname, adios2::Dims& shape) {
+    adios2::Variable<T> v = io.InquireVariable<T>(varname);
+    if (!v) {
+      adios2::Dims start(shape.size());
+      v = io.DefineVariable<T>(varname, shape, start, shape);
+    } else {
+      v.SetShape(shape);
+    }
+    return v;
+  }
+
+private:
+  ADIOSStream(const std::string fname) : fname(fname){};
+  std::string fname;
 };
-
-extern ADIOSStream adios_restart;
-extern ADIOSStream adios_dump;
-//extern ADIOS2Param *adios2params;
-
-/** return one of the extern variable based on the target file name */
-ADIOSStream& ADIOSGetStream(const std::string& fname);
 
 /** Set user parameters for an IO group */
 void ADIOSSetParameters(const std::string& input, const char delimKeyValue,

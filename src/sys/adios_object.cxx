@@ -11,9 +11,7 @@
 namespace bout {
 
 static ADIOSPtr adios = nullptr;
-ADIOSStream adios_restart;
-ADIOSStream adios_dump;
-//ADIOS2Param* adios2params;
+static std::unordered_map<std::string, ADIOSStream> adiosStreams;
 
 void ADIOSInit(MPI_Comm comm) { adios = std::make_shared<adios2::ADIOS>(comm); }
 
@@ -26,9 +24,7 @@ void ADIOSFinalize() {
     throw std::runtime_error(
         "ADIOS needs to be initialized first before calling ADIOSFinalize()");
   }
-  if (adios_dump.adiosStep > 0 && adios_dump.engine) {
-    adios_dump.engine.Close();
-  }
+  adiosStreams.clear();
   adios.reset();
 }
 
@@ -50,12 +46,24 @@ IOPtr GetIOPtr(const std::string IOName) {
   return io;
 }
 
-ADIOSStream& ADIOSGetStream(const std::string& fname) {
-  if (fname.find(".restart") != std::string::npos)
-    return adios_restart;
-  //if (fname.find(".dmp") != std::string::npos)
-  //  return adios_dump;
-  return adios_dump;
+ADIOSStream::~ADIOSStream() {
+  if (engine) {
+    if (isInStep) {
+      engine.EndStep();
+      isInStep = false;
+      std::cout << "ADIOSStream::~ADIOSStream: END adios file = " << engine.Name()
+                << " step = " << engine.CurrentStep() << std::endl;
+    }
+    engine.Close();
+  }
+}
+
+ADIOSStream& ADIOSStream::ADIOSGetStream(const std::string& fname) {
+  auto it = adiosStreams.find(fname);
+  if (it == adiosStreams.end()) {
+    it = adiosStreams.emplace(fname, ADIOSStream(fname)).first;
+  }
+  return it->second;
 }
 
 void ADIOSSetParameters(const std::string& input, const char delimKeyValue,
