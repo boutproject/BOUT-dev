@@ -31,7 +31,7 @@ constexpr auto current_time_index_name = "current_time_index";
 
 template <class T>
 bool readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& name,
-                  Options& result) {
+                  const std::string& type, Options& result) {
   std::vector<T> data;
   adios2::Variable<T> variable = io.InquireVariable<T>(name);
 
@@ -43,48 +43,70 @@ bool readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& nam
   }
 
   if (variable.ShapeID() == adios2::ShapeID::LocalArray) {
-    if (!BoutComm::rank()) {
-      std::cout << "    LocalArray not supported" << std::endl;
-    }
-    return false;
+    throw std::invalid_argument(
+        "ADIOS reader did not implement reading local arrays like " + type + " " + name
+        + " in file " + reader.Name());
+  }
+
+  if (type != "double" && type != "float") {
+    throw std::invalid_argument(
+        "ADIOS reader did not implement reading arrays that are not double/float type. "
+        "Found "
+        + type + " " + name + " in file " + reader.Name());
+  }
+
+  if (type == "double" && sizeof(BoutReal) != sizeof(double)) {
+    throw std::invalid_argument(
+        "ADIOS does not allow for implicit type conversions. BoutReal type is "
+        "float but found "
+        + type + " " + name + " in file " + reader.Name());
+  }
+
+  if (type == "float" && sizeof(BoutReal) != sizeof(float)) {
+    throw std::invalid_argument(
+        "ADIOS reader does not allow for implicit type conversions. BoutReal type is "
+        "double but found "
+        + type + " " + name + " in file " + reader.Name());
   }
 
   auto dims = variable.Shape();
   auto ndims = dims.size();
+  adios2::Variable<BoutReal> variableD = io.InquireVariable<BoutReal>(name);
 
   switch (ndims) {
   case 1: {
-    Array<T> value(static_cast<int>(dims[0]));
-    reader.Get<T>(variable, value.begin(), adios2::Mode::Sync);
-    //result[name] = value;
+    Array<BoutReal> value(static_cast<int>(dims[0]));
+    BoutReal* data = value.begin();
+    reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
+    result[name] = value;
     break;
   }
   case 2: {
-    Matrix<T> value(static_cast<int>(dims[0]), static_cast<int>(dims[1]));
-    reader.Get<T>(variable, value.begin(), adios2::Mode::Sync);
-    //[name] = value;
+    Matrix<BoutReal> value(static_cast<int>(dims[0]), static_cast<int>(dims[1]));
+    BoutReal* data = value.begin();
+    reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
+    result[name] = value;
     break;
   }
   case 3: {
-    Tensor<T> value(static_cast<int>(dims[0]), static_cast<int>(dims[1]),
-                    static_cast<int>(dims[2]));
-    reader.Get<T>(variable, value.begin(), adios2::Mode::Sync);
-    //result[name] = value;
+    Tensor<BoutReal> value(static_cast<int>(dims[0]), static_cast<int>(dims[1]),
+                           static_cast<int>(dims[2]));
+    BoutReal* data = value.begin();
+    reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
+    result[name] = value;
     break;
   }
   }
 
-  /* Need to read the data here */
-  result[name] = data.data();
   return true;
 }
 
 bool readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& name,
                   const std::string& type, Options& result) {
   bool ret = false;
-#define declare_template_instantiation(T)            \
-  if (type == adios2::GetType<T>()) {                \
-    ret = readVariable<T>(reader, io, name, result); \
+#define declare_template_instantiation(T)                  \
+  if (type == adios2::GetType<T>()) {                      \
+    ret = readVariable<T>(reader, io, name, type, result); \
   }
   ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(declare_template_instantiation)
 #undef declare_template_instantiation
