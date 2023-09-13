@@ -19,7 +19,7 @@ then
 	cmd="sudo docker"
     fi
     test . != ".$2" && mpi="$2" || mpi=openmpi
-    test . != ".$3" && version="$3" || version=latest
+    test . != ".$3" && version="$3" || version=rawhide
     time $cmd pull registry.fedoraproject.org/fedora:$version
     time $cmd create --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
          --name mobydick registry.fedoraproject.org/fedora:$version \
