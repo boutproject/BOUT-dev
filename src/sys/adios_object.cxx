@@ -51,8 +51,6 @@ ADIOSStream::~ADIOSStream() {
     if (isInStep) {
       engine.EndStep();
       isInStep = false;
-      std::cout << "ADIOSStream::~ADIOSStream: END adios file = " << engine.Name()
-                << " step = " << engine.CurrentStep() << std::endl;
     }
     engine.Close();
   }

@@ -25,7 +25,7 @@ public:
 
   static const Library defaultIOLibrary =
 #if BOUT_HAS_ADIOS
-      Library::ADIOS;
+      Library::NetCDF;
 #elif BOUT_HAS_NETCDF
       Library::NetCDF;
 #else
