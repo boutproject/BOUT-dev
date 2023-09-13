@@ -40,16 +40,15 @@
 
 #if not BOUT_USE_METRIC_3D
 
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
-#include <boutexception.hxx>
-#include <cyclic_reduction.hxx>
-#include <derivs.hxx>
-#include <fft.hxx>
-#include <globals.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
-
+#include <bout/cyclic_reduction.hxx>
+#include <bout/derivs.hxx>
+#include <bout/fft.hxx>
+#include <bout/globals.hxx>
+#include <bout/msg_stack.hxx>
 #include <bout/surfaceiter.hxx>
+#include <bout/utils.hxx>
 
 #include <cmath>
 

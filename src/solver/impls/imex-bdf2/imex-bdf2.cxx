@@ -676,9 +676,9 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
           BoutComm::get(), nlocal, nlocal,  // Local sizes
           PETSC_DETERMINE, PETSC_DETERMINE, // Global sizes
           3, // Number of nonzero entries in diagonal portion of local submatrix
-          PETSC_NULL,
+          nullptr,
           0, // Number of nonzeros per row in off-diagonal portion of local submatrix
-          PETSC_NULL, &Jmf);
+          nullptr, &Jmf);
 
 #if PETSC_VERSION_GE(3, 4, 0)
       SNESSetJacobian(*snesIn, Jmf, Jmf, SNESComputeJacobianDefault, this);
@@ -1240,7 +1240,7 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
     if (verbose) {
       output << "SNES failed to converge with reason " << reason << endl;
     }
-    throw BoutException("SNES failed to converge. Reason: {:d}\n", reason);
+    throw PetscLib::SNESFailure(snesUse);
   }
 
   int its;

@@ -1,0 +1,84 @@
+name: Docker
+
+on:
+  push:
+    branches:
+      - master
+      - next
+      # Add your branch here if you want containers for it
+      - db-WIP
+      - docker-ci
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    name: Build ${{ matrix.config.name }} Container (${{ matrix.metric3d.name }} ; ${{matrix.mpi}})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        mpi: [mpich]
+        metric3d:
+          - name: "With OpenMP"
+            cmake: ON
+            base_prefix: "openmp-"
+            tag_prefix: "3d-"
+          - name: "Without OpenMP"
+            cmake: OFF
+            base_prefix: ""
+            tag_prefix: ""
+        config:
+          - name: "Debug"
+            tag_postfix: "debug"
+            options: "-DCHECK=3"
+            base_postfix: "mini"
+
+          - name: "Optimised"
+            tag_postfix: "opt"
+            options: "-DCHECK=0"
+            base_postfix: "mini"
+
+          - name: "Full"
+            tag_postfix: "full"
+            options: "-DCHECK=3"
+            base_postfix: "full"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            prefix=${{ matrix.mpi }}-${{matrix.metric3d.tag_prefix}}${{ matrix.config.tag_postfix }}-
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          build-args: |
+            BASE=${{ matrix.mpi }}-${{ matrix.metric3d.base_prefix }}${{ matrix.config.base_postfix }}-main
+            MPI=${{ matrix.mpi }}
+            CMAKE_OPTIONS=${{ matrix.config.options }} -DBOUT_ENABLE_METRIC_3D=${{ matrix.metric3d.cmake }} -DBOUT_ENABLE_OPENMP=${{ matrix.metric3d.cmake }}
+            COMMIT=${{ github.sha }}
+            URL=${{ github.server_url }}/${{ github.repository }}
+          context: .docker/fedora/
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

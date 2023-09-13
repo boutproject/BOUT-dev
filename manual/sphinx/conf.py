@@ -49,7 +49,6 @@ if on_readthedocs:
             return MagicMock()
 
     MOCK_MODULES = [
-        "h5py",
         "netCDF4",
         "mayavi2",
         "enthought",
@@ -67,6 +66,8 @@ if on_readthedocs:
         "scipy.ndimage.filters",
         "scipy.ndimage.morphology",
         "scipy.spatial",
+        "past",
+        "crosslines",
     ]
     sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
     print(os.environ)
@@ -86,6 +87,7 @@ if on_readthedocs:
         + " -DBOUT_ENABLE_PYTHON=ON"
         + " -DBOUT_UPDATE_GIT_SUBMODULE=OFF"
         + " -DBOUT_TESTS=OFF"
+        + " -DBOUT_ALLOW_INSOURCE_BUILD=ON"
         + f" -DPython_ROOT_DIR={pydir}"
         + f" -Dmpark_variant_DIR={pwd}/externalpackages/mpark.variant/"
         + f" -Dfmt_DIR={pwd}/externalpackages/fmt/"
@@ -174,8 +176,8 @@ master_doc = "index"
 
 # General information about the project.
 project = "BOUT++"
-copyright = "2017, B. Dudson"
-author = "The BOUT++ team"
+copyright = "2017-2023"
+author = "B. Dudson and The BOUT++ team"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -231,6 +233,7 @@ html_theme = "sphinx_book_theme"
 #
 html_theme_options = dict(
     repository_url="https://github.com/boutproject/BOUT-dev",
+    repository_branch="master",
     path_to_docs="manual/sphinx",
     use_edit_page_button=True,
     use_repository_button=True,
