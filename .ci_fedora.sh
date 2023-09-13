@@ -15,6 +15,8 @@ then
   #         3. docker start -a mobydick                       <=> start to run the container (initialized with docker-cp)
     if test $1 = podman ; then
 	cmd=podman
+	# For the use of testing
+	git submodule update --init # --recursive
     else
 	cmd="sudo docker"
     fi
