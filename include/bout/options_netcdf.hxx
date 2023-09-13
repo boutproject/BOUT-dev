@@ -21,7 +21,8 @@ namespace bout {
 class OptionsNetCDF : public OptionsIO {
 public:
   OptionsNetCDF(const std::string& filename,
-                bout::OptionsIO::FileMode mode = bout::OptionsIO::FileMode::replace) {}
+                bout::OptionsIO::FileMode mode = bout::OptionsIO::FileMode::replace,
+                bool singleWriteFile = false) {}
   OptionsNetCDF(const OptionsNetCDF&) = default;
   OptionsNetCDF(OptionsNetCDF&&) = default;
   OptionsNetCDF& operator=(const OptionsNetCDF&) = default;

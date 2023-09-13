@@ -20,7 +20,8 @@ class OptionsADIOS : public OptionsIO {
 public:
   explicit OptionsADIOS(
       const std::string& filename,
-      bout::OptionsIO::FileMode mode = bout::OptionsIO::FileMode::replace) {}
+      bout::OptionsIO::FileMode mode = bout::OptionsIO::FileMode::replace,
+      bool singleWriteFile = false) {}
   OptionsADIOS(const OptionsADIOS&) = default;
   OptionsADIOS(OptionsADIOS&&) = default;
   OptionsADIOS& operator=(const OptionsADIOS&) = default;
