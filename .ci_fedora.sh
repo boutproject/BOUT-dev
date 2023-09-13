@@ -39,9 +39,9 @@ then
     echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
     time dnf -y install dnf5-plugins python3-pip cmake
     # Allow to override packages - see #2073
-    time dnf copr enable -y davidsch/fixes4bout || :
-    time dnf -y upgrade
-    time dnf -y builddep bout++
+    time dnf5 copr enable -y davidsch/fixes4bout || :
+    time dnf5 -y upgrade
+    time dnf5 -y builddep bout++
     useradd test
     cp -a /tmp/BOUT-dev /home/test/
     chown -R test /home/test
