@@ -26,7 +26,7 @@ then
     time $cmd create --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
          --name mobydick registry.fedoraproject.org/fedora:$version \
 	     /tmp/BOUT-dev/.ci_fedora.sh $mpi
-    time $cmd cp ${TRAVIS_BUILD_DIR} mobydick:/tmp
+    time $cmd cp ${TRAVIS_BUILD_DIR:-$(pwd)} mobydick:/tmp/BOUT-dev
     time $cmd start -a mobydick
     exit 0
 fi
