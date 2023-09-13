@@ -19,8 +19,8 @@ namespace bout {
 
 OptionsADIOS::OptionsADIOS() {}
 
-OptionsADIOS::OptionsADIOS(std::string filename, FileMode mode)
-    : OptionsIO(filename, mode) {}
+OptionsADIOS::OptionsADIOS(std::string filename, FileMode mode, bool singleWriteFile)
+    : OptionsIO(filename, mode, singleWriteFile) {}
 
 OptionsADIOS::~OptionsADIOS() = default;
 OptionsADIOS::OptionsADIOS(OptionsADIOS&&) noexcept = default;
@@ -74,9 +74,6 @@ bool readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& nam
   }
   }
 
-  if (!BoutComm::rank())
-    std::cout << "    array has " << variable.Steps() << " steps" << std::endl;
-
   /* Need to read the data here */
   result[name] = data.data();
   return true;
@@ -119,7 +116,6 @@ Options OptionsADIOS::read() {
     io = adiosp->DeclareIO(ioname);
   }
 
-  std::cout << "OptionsADIOS::read: open " << filename << std::endl;
   adios2::Engine reader = io.Open(filename, adios2::Mode::ReadRandomAccess);
   if (!reader) {
     throw BoutException("Could not open ADIOS file '{:s}' for reading", filename);
@@ -152,30 +148,8 @@ Options OptionsADIOS::read() {
   return result;
 }
 
-/// Helper struct for returning errors from verifyTimesteps(NcGroup)
-struct TimeDimensionError {
-  std::string variable_name;
-  std::string time_name;
-  std::size_t expected_size;
-  std::size_t current_size;
-};
-
-std::vector<TimeDimensionError> verifyTimesteps(adios2::Engine& reader) {
-  reader.CurrentStep(); // just to avoid warning on unused variable
-
-  // Variables with mismatched dimension sizes. Note that this might
-  // be a little odd: if the first variable we come across has the
-  // "wrong" dimension size, we will actually list all the others as
-  // being wrong!
-  std::vector<TimeDimensionError> errors;
-
-  return errors;
-}
-
 void OptionsADIOS::verifyTimesteps() const {
   ADIOSStream& stream = ADIOSStream::ADIOSGetStream(filename);
-  std::cout << "OptionsADIOS::write: END adios step = " << stream.engine.CurrentStep()
-            << std::endl;
   stream.engine.EndStep();
   stream.isInStep = false;
   return;
@@ -253,22 +227,24 @@ void ADIOSPutVarVisitor::operator()<Field2D>(const Field2D& value) {
   // The size of the mapped region
   adios2::Dims count = {static_cast<size_t>(mesh->MapCountX),
                         static_cast<size_t>(mesh->MapCountY)};
+
+  // Where the actual data starts in data pointer (to exclude ghost cells)
+  adios2::Dims memStart = {static_cast<size_t>(mesh->MapLocalX),
+                           static_cast<size_t>(mesh->MapLocalY)};
+
+  // The actual size of data pointer in memory (including ghost cells)
+  adios2::Dims memCount = {static_cast<size_t>(value.getNx()),
+                           static_cast<size_t>(value.getNy())};
+
   adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  /* std::cout << "PutVar Field2D rank " << BoutComm::rank() << " var = " << varname
+            << " shape = " << shape[0] << "x" << shape[1] << " count = " << count[0]
+            << "x" << count[1] << " Nx*Ny = " << value.getNx() << "x" << value.getNy()
+            << " memStart = " << memStart[0] << "x" << memStart[1]
+            << " memCount = " << memCount[0] << "x" << memCount[1] << std::endl;*/
   var.SetSelection({start, count});
-
-  // Get a Span of an internal engine buffer that we can fill with data
-  auto span = stream.engine.Put<BoutReal>(var);
-
-  // Iterate over the span and the Field2D array
-  // Note: The Field2D includes communication guard cells that are not written
-  auto it = span.begin();
-  for (int x = mesh->MapLocalX; x < (mesh->MapLocalX + mesh->MapCountX); ++x) {
-    for (int y = mesh->MapLocalY; y < (mesh->MapLocalY + mesh->MapCountY); ++y) {
-      *it = value(x, y);
-      ++it;
-    }
-  }
-  ASSERT1(it == span.end());
+  var.SetMemorySelection({memStart, memCount});
+  stream.engine.Put<BoutReal>(var, &value(0, 0));
 }
 
 template <>
@@ -292,23 +268,27 @@ void ADIOSPutVarVisitor::operator()<Field3D>(const Field3D& value) {
                         static_cast<size_t>(mesh->MapCountY),
                         static_cast<size_t>(mesh->MapCountZ)};
 
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
-  var.SetSelection({start, count});
-  // Get a Span of an internal engine buffer.
-  auto span = stream.engine.Put<BoutReal>(var);
+  // Where the actual data starts in data pointer (to exclude ghost cells)
+  adios2::Dims memStart = {static_cast<size_t>(mesh->MapLocalX),
+                           static_cast<size_t>(mesh->MapLocalY),
+                           static_cast<size_t>(mesh->MapLocalZ)};
 
-  // Iterate over the span and the Field3D array
-  // Note: The Field3D includes communication guard cells that are not written
-  auto it = span.begin();
-  for (int x = mesh->MapLocalX; x < (mesh->MapLocalX + mesh->MapCountX); ++x) {
-    for (int y = mesh->MapLocalY; y < (mesh->MapLocalY + mesh->MapCountY); ++y) {
-      for (int z = mesh->MapLocalZ; z < (mesh->MapLocalZ + mesh->MapCountZ); ++z) {
-        *it = value(x, y, z);
-        ++it;
-      }
-    }
-  }
-  ASSERT1(it == span.end());
+  // The actual size of data pointer in memory (including ghost cells)
+  adios2::Dims memCount = {static_cast<size_t>(value.getNx()),
+                           static_cast<size_t>(value.getNy()),
+                           static_cast<size_t>(value.getNz())};
+
+  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  /*std::cout << "PutVar Field3D rank " << BoutComm::rank() << " var = " << varname
+            << " shape = " << shape[0] << "x" << shape[1] << "x" << shape[2]
+            << " count = " << count[0] << "x" << count[1] << "x" << count[2]
+            << " Nx*Ny = " << value.getNx() << "x" << value.getNy() << "x"
+            << value.getNz() << " memStart = " << memStart[0] << "x" << memStart[1] << "x"
+            << memStart[2] << " memCount = " << memCount[0] << "x" << memCount[1] << "x"
+            << memCount[2] << std::endl;*/
+  var.SetSelection({start, count});
+  var.SetMemorySelection({memStart, memCount});
+  stream.engine.Put<BoutReal>(var, &value(0, 0, 0));
 }
 
 template <>
@@ -329,22 +309,23 @@ void ADIOSPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
   adios2::Dims count = {static_cast<size_t>(mesh->MapCountX),
                         static_cast<size_t>(mesh->MapCountZ)};
 
+  // Where the actual data starts in data pointer (to exclude ghost cells)
+  adios2::Dims memStart = {static_cast<size_t>(mesh->MapLocalX),
+                           static_cast<size_t>(mesh->MapLocalZ)};
+
+  // The actual size of data pointer in memory (including ghost cells)
+  adios2::Dims memCount = {static_cast<size_t>(value.getNx()),
+                           static_cast<size_t>(value.getNz())};
+
   adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  /* std::cout << "PutVar FieldPerp rank " << BoutComm::rank() << " var = " << varname
+            << " shape = " << shape[0] << "x" << shape[1] << " count = " << count[0]
+            << "x" << count[1] << " Nx*Ny = " << value.getNx() << "x" << value.getNy()
+            << " memStart = " << memStart[0] << "x" << memStart[1]
+            << " memCount = " << memCount[0] << "x" << memCount[1] << std::endl; */
   var.SetSelection({start, count});
-
-  // Get a Span of an internal engine buffer.
-  auto span = stream.engine.Put<BoutReal>(var);
-
-  // Iterate over the span and the Field3D array
-  // Note: The Field3D includes communication guard cells that are not written
-  auto it = span.begin();
-  for (int x = mesh->MapLocalX; x < (mesh->MapLocalX + mesh->MapCountX); ++x) {
-    for (int z = mesh->MapLocalZ; z < (mesh->MapLocalZ + mesh->MapCountZ); ++z) {
-      *it = value(x, z);
-      ++it;
-    }
-  }
-  ASSERT1(it == span.end());
+  var.SetMemorySelection({memStart, memCount});
+  stream.engine.Put<BoutReal>(var, &value(0, 0));
 }
 
 template <>
@@ -474,47 +455,39 @@ void OptionsADIOS::write(const Options& options, const std::string& time_dim) {
       stream.io = adiosp->AtIO(ioname);
     } catch (const std::invalid_argument& e) {
       stream.io = adiosp->DeclareIO(ioname);
-      stream.io.SetEngine("BP4");
+      stream.io.SetEngine("BP5");
     }
   }
 
-  if (file_mode == FileMode::append) {
-    // Open file once and keep it open, close in stream desctructor
+  /* Open file once and keep it open, close in stream desctructor
+     or close after writing if singleWriteFile == true
+    */
+  if (!stream.engine) {
+    adios2::Mode amode =
+        (file_mode == FileMode::append ? adios2::Mode::Append : adios2::Mode::Write);
+    stream.engine = stream.io.Open(filename, amode);
     if (!stream.engine) {
-      std::cout << "OptionsADIOS::write: open for append " << filename
-                << " timedim = " << time_dim << std::endl;
-      stream.engine = stream.io.Open(filename, adios2::Mode::Append);
-      if (!stream.engine) {
-        throw BoutException("Could not open ADIOS file '{:s}' for writing", filename);
-      }
-    } else {
-      std::cout << "OptionsADIOS::write: revisiting append  " << filename
-                << " timedim = " << time_dim << std::endl;
-    }
-  } else {
-    if (!stream.engine) {
-      std::cout << "OptionsADIOS::write: create " << filename << " timedim = " << time_dim
-                << std::endl;
-      stream.engine = stream.io.Open(filename, adios2::Mode::Write);
-    } else {
-      std::cout << "OptionsADIOS::write: revisiting write  " << filename
-                << " timedim = " << time_dim << std::endl;
+      throw BoutException("Could not open ADIOS file '{:s}' for writing", filename);
     }
   }
 
-  std::cout << "          BetweenStepPairs = " << stream.isInStep << std::endl;
-
+  /* Multiple write() calls allowed in a single adios step to output multiple
+     Options objects in the same step. verifyTimesteps() will indicate the 
+     completion of the step (and adios will publish the step).
+  */
   if (!stream.isInStep) {
     stream.engine.BeginStep();
     stream.isInStep = true;
     stream.adiosStep = stream.engine.CurrentStep();
-    std::cout << "OptionsADIOS::write: BEGIN adios step = " << stream.adiosStep
-              << "  BetweenStepPairs = " << stream.isInStep << std::endl;
-  } else {
-    std::cout << "OptionsADIOS::write: continue writing adios step = " << stream.adiosStep
-              << std::endl;
   }
+
   writeGroup(options, stream, "", time_dim);
+
+  /* In singleWriteFile mode, we complete the step and close the file */
+  if (singleWriteFile) {
+    stream.engine.EndStep();
+    stream.engine.Close();
+  }
 }
 
 } // namespace bout

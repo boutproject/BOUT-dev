@@ -56,7 +56,8 @@ public:
   // declaration of ADIOSStream
   OptionsADIOS();
   OptionsADIOS(std::string filename,
-               bout::OptionsIO::FileMode mode = bout::OptionsIO::FileMode::replace);
+               bout::OptionsIO::FileMode mode = bout::OptionsIO::FileMode::replace,
+               bool singleWriteFile = false);
   ~OptionsADIOS();
   OptionsADIOS(const OptionsADIOS&) = delete;
   OptionsADIOS(OptionsADIOS&&) noexcept;

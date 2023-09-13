@@ -1,9 +1,9 @@
 
 #include "bout/bout.hxx"
 
+#include "bout/options_adios.hxx"
 #include "bout/options_io.hxx"
 #include "bout/options_netcdf.hxx"
-#include "bout/options_adios.hxx"
 #include "bout/optionsreader.hxx"
 
 using bout::OptionsADIOS;
@@ -23,12 +23,13 @@ int main(int argc, char** argv) {
   reader->write(&values, "test-out.ini");
 
   // Write to a NetCDF file
-  OptionsADIOS("test-out.bp").write(values);
+  OptionsADIOS("test-out.bp", bout::OptionsIO::FileMode::replace, true).write(values);
 
   ///////////////////////////
 
   // Write the BOUT.inp settings to NetCDF file
-  OptionsADIOS("settings.bp").write(Options::root());
+  OptionsADIOS("settings.bp", bout::OptionsIO::FileMode::replace, true)
+      .write(Options::root());
 
   // Read back in
   auto settings = OptionsADIOS("settings.bp").read();
@@ -43,7 +44,14 @@ int main(int argc, char** argv) {
   fields["f2d"] = Field2D(1.0);
   fields["f3d"] = Field3D(2.0);
   fields["fperp"] = FieldPerp(3.0);
-  OptionsADIOS("fields.bp").write(fields);
+  auto f = OptionsADIOS("fields.bp");
+  /*
+     write() for adios only buffers data but does not guarantee writing to disk
+     unless singleWriteFile is set to true 
+     */
+  f.write(fields);
+  // indicate completion of step, required to get data on disk
+  f.verifyTimesteps();
 
   ///////////////////////////
   // Read fields
@@ -60,7 +68,9 @@ int main(int argc, char** argv) {
   fields2["fperp"] = fperp;
 
   // Write out again
-  OptionsADIOS("fields2.bp").write(fields2);
+  auto f2 = bout::OptionsIOFactory("fields2.bp", bout::OptionsIO::FileMode::replace,
+                                   bout::OptionsIO::Library::ADIOS, true);
+  f2->write(fields2);
 
   ///////////////////////////
   // Time dependent values
@@ -72,14 +82,14 @@ int main(int argc, char** argv) {
   data["field"] = Field3D(2.0);
   data["field"].attributes["time_dimension"] = "t";
 
-  OptionsADIOS("time.bp").write(data);
+  OptionsADIOS("time.bp", bout::OptionsIO::FileMode::replace, true).write(data);
 
   // Update time-dependent values
   data["scalar"] = 2.0;
   data["field"] = Field3D(3.0);
 
   // Append data to file
-  OptionsADIOS("time.bp", bout::OptionsIO::FileMode::append).write(data);
+  OptionsADIOS("time.bp", bout::OptionsIO::FileMode::append, true).write(data);
 
   BoutFinalise();
 };

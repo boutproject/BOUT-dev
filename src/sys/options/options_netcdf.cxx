@@ -645,8 +645,8 @@ namespace bout {
 
 OptionsNetCDF::OptionsNetCDF() : data_file(nullptr) {}
 
-OptionsNetCDF::OptionsNetCDF(std::string filename, FileMode mode)
-    : OptionsIO(filename, mode), data_file(nullptr) {}
+OptionsNetCDF::OptionsNetCDF(std::string filename, FileMode mode, bool singleWriteFile)
+    : OptionsIO(filename, mode, singleWriteFile), data_file(nullptr) {}
 
 OptionsNetCDF::~OptionsNetCDF() = default;
 OptionsNetCDF::OptionsNetCDF(OptionsNetCDF&&) noexcept = default;

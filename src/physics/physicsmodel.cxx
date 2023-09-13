@@ -94,8 +94,8 @@ PhysicsModel::PhysicsModel()
 
   if (restart_enabled) {
     std::string restartFileName = bout::getRestartFilename(Options::root(), iolibrary);
-    restart_file = bout::OptionsIOFactory(restartFileName,
-                                          bout::OptionsIO::FileMode::replace, iolibrary);
+    restart_file = bout::OptionsIOFactory(
+        restartFileName, bout::OptionsIO::FileMode::replace, iolibrary, true);
   }
 }
 

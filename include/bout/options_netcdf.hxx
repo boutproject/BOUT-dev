@@ -18,9 +18,10 @@
 
 namespace bout {
 
-class OptionsNetCDF : public OptionsIO{
+class OptionsNetCDF : public OptionsIO {
 public:
-  OptionsNetCDF(const std::string& filename, bout::OptionsIO::FileMode mode = bout::OptionsIO::FileMode::replace) {}
+  OptionsNetCDF(const std::string& filename,
+                bout::OptionsIO::FileMode mode = bout::OptionsIO::FileMode::replace) {}
   OptionsNetCDF(const OptionsNetCDF&) = default;
   OptionsNetCDF(OptionsNetCDF&&) = default;
   OptionsNetCDF& operator=(const OptionsNetCDF&) = default;
@@ -34,9 +35,7 @@ public:
     throw BoutException("OptionsNetCDF not available\n");
   }
 
-  void verifyTimesteps() const{
-    throw BoutException("OptionsADIOS not available\n");
-  }
+  void verifyTimesteps() const { throw BoutException("OptionsADIOS not available\n"); }
 };
 
 } // namespace bout
@@ -59,7 +58,8 @@ public:
   // Constructors need to be defined in implementation due to forward
   // declaration of NcFile
   OptionsNetCDF();
-  OptionsNetCDF(std::string filename, FileMode mode = FileMode::replace);
+  OptionsNetCDF(std::string filename, FileMode mode = FileMode::replace,
+                bool singleWriteFile = false);
   ~OptionsNetCDF();
   OptionsNetCDF(const OptionsNetCDF&) = delete;
   OptionsNetCDF(OptionsNetCDF&&) noexcept;
