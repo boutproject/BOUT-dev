@@ -19,7 +19,7 @@ releases
 - [ ] Run `make check-all`
     - Raise issues for any tests that fail
 - Possibly run `clang-tidy`, `clang-check`, `coverity`, etc.
-- [ ] Review pinned pip package versions for Travis
+- [ ] Review pinned pip package versions for CI
     
 Before merging PR:
 
@@ -50,7 +50,6 @@ Before merging PR:
     - [ ]  [`manual/doxygen/Doxyfile_readthedocs`][Doxyfile_readthedocs]: `PROJECT_NUMBER`
     - [ ]  [`manual/doxygen/Doxyfile`][Doxyfile]: `PROJECT_NUMBER`
     - [ ]  [`CMakeLists.txt`][CMakeLists]: `_bout_previous_version`, `_bout_next_version`
-    - [ ]  [`tools/pylib/_boutpp_build/backend.py`][backend.py]: `_bout_previous_version`, `_bout_next_version`
 
 
 After PR is merged:
@@ -58,6 +57,10 @@ After PR is merged:
 - [ ] Try to summarise the changes!
 - [ ] Make [GitHub Release][gh_release], include change summary **NB:** tag should have
       leading `v`
+- [ ] Make tarball: `cmake -S . -B build && make dist -C build`
+- [ ] Check tarball:
+    - [ ] Is the folder name correct?
+    - [ ] grep for the version - is always the released version used, not a pre-release?
 - [ ] Upload tarball to GitHub Release
 - [ ] Upload tarball to Zenodo and publish new version
 - [ ] Email BOUT++ User Group mailing list, include change summary
@@ -72,7 +75,6 @@ After PR is merged:
     - [ ]  [`manual/doxygen/Doxyfile`][Doxyfile]: `PROJECT_NUMBER`
     - [ ]  [`CMakeLists.txt`][CMakeLists]: `_bout_previous_version`, `_bout_next_version`
     - [ ]  [`tools/pylib/_boutpp_build/backend.py`][backend.py]: `_bout_previous_version`, `_bout_next_version`
-- [ ] Make tarball: `cmake -S . -B build && make dist -C build`
 
 [Doxyfile]: ../manual/doxygen/Doxyfile
 [Doxyfile_readthedocs]: ../manual/doxygen/Doxyfile_readthedocs
