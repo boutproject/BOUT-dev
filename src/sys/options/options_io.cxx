@@ -18,8 +18,8 @@ namespace bout {
 
 OptionsIO::OptionsIO() {}
 
-OptionsIO::OptionsIO(std::string filename, FileMode mode)
-    : filename(std::move(filename)), file_mode(mode) {}
+OptionsIO::OptionsIO(std::string filename, FileMode mode, bool singleWriteFile)
+    : filename(std::move(filename)), file_mode(mode), singleWriteFile(singleWriteFile) {}
 
 OptionsIO::~OptionsIO() = default;
 OptionsIO::OptionsIO(OptionsIO&&) noexcept = default;
@@ -43,11 +43,13 @@ OptionsIO::Library getIOLibrary(Options& options) {
 
 std::shared_ptr<OptionsIO> OptionsIOFactory(std::string filename,
                                             OptionsIO::FileMode mode,
-                                            const OptionsIO::Library library) {
+                                            const OptionsIO::Library library,
+                                            const bool singleWriteFile) {
   if (library == OptionsIO::Library::ADIOS) {
-    return std::make_shared<OptionsADIOS>(OptionsADIOS(filename, mode));
+    return std::make_shared<OptionsADIOS>(OptionsADIOS(filename, mode, singleWriteFile));
   } else if (library == OptionsIO::Library::NetCDF) {
-    return std::make_shared<OptionsNetCDF>(OptionsNetCDF(filename, mode));
+    return std::make_shared<OptionsNetCDF>(
+        OptionsNetCDF(filename, mode, singleWriteFile));
   } else {
     return nullptr;
   }

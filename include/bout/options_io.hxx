@@ -33,7 +33,8 @@ public:
 #endif
 
   OptionsIO();
-  OptionsIO(std::string filename, FileMode mode = FileMode::replace);
+  OptionsIO(std::string filename, FileMode mode = FileMode::replace,
+            bool singleWriteFile = false);
   ~OptionsIO();
   OptionsIO(const OptionsIO&) = delete;
   OptionsIO(OptionsIO&&) noexcept;
@@ -47,23 +48,29 @@ public:
   void write(const Options& options) { write(options, "t"); }
   virtual void write(const Options& options, const std::string& time_dim) = 0;
 
-  /// Check that all variables with the same time dimension have the
+  /// NetCDF: Check that all variables with the same time dimension have the
   /// same size in that dimension. Throws BoutException if there are
-  /// any differences, otherwise is silent
+  /// any differences, otherwise is silent.
+  /// ADIOS: Indicate completion of an output step.
   virtual void verifyTimesteps() const = 0;
+
+  /// ADIOS: close file at the end of write(). NetCDF: no effect.
+  /// restart file must have this true if using ADIOS
+  //void setSingleWriteFile(const bool flag) { singleWriteFile = flag; };
 
 protected:
   /// Name of the file on disk
   std::string filename;
   /// How to open the file for writing
   FileMode file_mode{FileMode::replace};
-  Library library = Library::Invalid;
+  bool singleWriteFile = false;
 };
 
 std::shared_ptr<OptionsIO>
 OptionsIOFactory(std::string filename,
                  OptionsIO::FileMode mode = OptionsIO::FileMode::replace,
-                 const OptionsIO::Library library = OptionsIO::defaultIOLibrary);
+                 const OptionsIO::Library library = OptionsIO::defaultIOLibrary,
+                 const bool singleWriteFile = false);
 
 OptionsIO::Library getIOLibrary(Options& options);
 
