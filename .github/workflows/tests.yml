@@ -194,7 +194,7 @@ jobs:
         with:
           submodules: true
       - name: Build Fedora rawhide
-        run: ./.ci_fedora.sh setup openmpi rawhide
+        run: ./.ci_fedora.sh setup mpich rawhide
         shell: bash
         env:
           TRAVIS_BUILD_DIR: ${{ github.workspace }}
