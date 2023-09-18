@@ -134,12 +134,13 @@ public:
   /// Calculate differential geometry quantities from the metric tensor
   int geometry(bool recalculate_staggered = true,
                bool force_interpolate_from_centre = false);
-  /// Invert contravatiant metric to get covariant components
+  /// Invert contravariant metric to get covariant components
   int calcCovariant(const std::string& region = "RGN_ALL");
   /// Invert covariant metric to get contravariant components
   int calcContravariant(const std::string& region = "RGN_ALL");
   int jacobian(); ///< Calculate J and Bxy
-
+  void CalculateChristoffelSymbols(); /// Calculate Christoffel symbol terms
+  
   ///////////////////////////////////////////////////////////
   // Parallel transforms
   ///////////////////////////////////////////////////////////
