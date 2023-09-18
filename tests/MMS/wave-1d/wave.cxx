@@ -32,13 +32,14 @@ protected:
     SAVE_ONCE(Lx, Ly);
 
     //set mesh
-    Coordinates::MetricTensor metric_tensor = coord->getContravariantMetricTensor();
-    metric_tensor.g11 = 1.0;
-    metric_tensor.g22 = 1.0;
-    metric_tensor.g33 = 1.0;
-    metric_tensor.g12 = 0.0;
-    metric_tensor.g13 = 0.0;
-    metric_tensor.g23 = 0.0;
+    Coordinates::MetricTensor contravariant_components = coord->getContravariantMetricTensor();
+    contravariant_components.g11 = 1.0;
+    contravariant_components.g22 = 1.0;
+    contravariant_components.g33 = 1.0;
+    contravariant_components.g12 = 0.0;
+    contravariant_components.g13 = 0.0;
+    contravariant_components.g23 = 0.0;
+    coord->setContravariantMetricTensor(contravariant_components);
 
     coord->g_11 = 1.0;
     coord->g_22 = 1.0;

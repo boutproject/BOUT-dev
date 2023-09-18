@@ -350,16 +350,18 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
     sbp = -1.0;
   }
 
-  metric_tensor.g11 = SQ(Rxy * Bpxy);
-  metric_tensor.g22 = 1.0 / SQ(hthe);
-  metric_tensor.g33 = SQ(sinty) * metric_tensor.g11 + SQ(coords->Bxy) / metric_tensor.g11;
-  metric_tensor.g12 = 0.0;
-  metric_tensor.g13 = -sinty * metric_tensor.g11;
-  metric_tensor.g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
+  Coordinates::MetricTensor contravariant_components = coords->getContravariantMetricTensor();
+  contravariant_components.g11 = SQ(Rxy * Bpxy);
+  contravariant_components.g22 = 1.0 / SQ(hthe);
+  contravariant_components.g33 = SQ(sinty) * contravariant_components.g11 + SQ(coords->Bxy) / contravariant_components.g11;
+  contravariant_components.g12 = 0.0;
+  contravariant_components.g13 = -sinty * contravariant_components.g11;
+  contravariant_components.g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
+  coords->setContravariantMetricTensor(contravariant_components);
 
   coords->J = hthe / Bpxy;
 
-  coords->g_11 = 1.0 / metric_tensor.g11 + SQ(sinty * Rxy);
+  coords->g_11 = 1.0 / contravariant_components.g11 + SQ(sinty * Rxy);
   coords->g_22 = SQ(coords->Bxy * hthe / Bpxy);
   coords->g_33 = Rxy * Rxy;
   coords->g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
