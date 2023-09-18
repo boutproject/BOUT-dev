@@ -284,12 +284,13 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       // Neumann boundary condition
       if (inner_boundary_flags & INVERT_SET) {
         // guard cells of x0 specify gradient to set at inner boundary
+        Coordinates::MetricTensor covariant_components = coords->getCovariantMetricTensor();
         BOUT_OMP(parallel default(shared))
         BOUT_OMP(for)
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           x[k] = -x0(localmesh->xstart - 1, k2)
-                 * sqrt(coords->g_11(localmesh->xstart, yindex))
+                 * sqrt(covariant_components.g11(localmesh->xstart, yindex))
                  * coords->dx(localmesh->xstart, yindex);
         }
       } else {
@@ -328,12 +329,13 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       // Neumann boundary condition
       if (inner_boundary_flags & INVERT_SET) {
         // guard cells of x0 specify gradient to set at outer boundary
+        Coordinates::MetricTensor covariant_components = coords->getCovariantMetricTensor();
         BOUT_OMP(parallel default(shared))
         BOUT_OMP(for)
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           x[(lxx + 1) * lz2 + k] = x0(localmesh->xend + 1, k2)
-                                   * sqrt(coords->g_11(localmesh->xend, yindex))
+                                   * sqrt(covariant_components.g11(localmesh->xend, yindex))
                                    * coords->dx(localmesh->xend, yindex);
           // this is the value to set the gradient to at the outer boundary
         }
@@ -485,6 +487,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       // Neumann boundary condition
       if (inner_boundary_flags & INVERT_SET) {
         // guard cells of x0 specify gradient to set at inner boundary
+        Coordinates::MetricTensor covariant_components = coords->getCovariantMetricTensor();
         int i2 = -1 + localmesh->xstart;
         BOUT_OMP(parallel default(shared))
         BOUT_OMP(for)
@@ -492,7 +495,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
           int k2 = k - 1;
           result(i2, k2) = x[lz2 + k]
                            - x0(localmesh->xstart - 1, k2)
-                                 * sqrt(coords->g_11(localmesh->xstart, yindex))
+                                 * sqrt(covariant_components.g11(localmesh->xstart, yindex))
                                  * coords->dx(localmesh->xstart, yindex);
         }
       } else {
@@ -533,6 +536,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       // Neumann boundary condition
       if (inner_boundary_flags & INVERT_SET) {
         // guard cells of x0 specify gradient to set at outer boundary
+        Coordinates::MetricTensor covariant_components = coords->getCovariantMetricTensor();
         int i2 = lxx + localmesh->xstart;
         BOUT_OMP(parallel default(shared))
         BOUT_OMP(for)
@@ -540,7 +544,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
           int k2 = k - 1;
           result(i2, k2) = x[lxx * lz2 + k]
                            + x0(localmesh->xend + 1, k2)
-                                 * sqrt(coords->g_11(localmesh->xend, yindex))
+                                 * sqrt(covariant_components.g11(localmesh->xend, yindex))
                                  * coords->dx(localmesh->xend, yindex);
         }
       } else {
