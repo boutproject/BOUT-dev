@@ -1602,16 +1602,18 @@ void BoundaryNeumann_NonOrthogonal::apply(Field2D& f) {
   // Calculate derivatives for metric use
   mesh->communicate(f);
   Field2D dfdy = DDY(f);
-  Coordinates::MetricTensor g = metric->getContravariantMetricTensor();
+  Coordinates::MetricTensor contravariant_components = metric->getContravariantMetricTensor();
   // Loop over all elements and set equal to the next point in
   for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
     // Interpolate (linearly) metrics to halfway between last cell and boundary cell
     BoutReal g11shift =
         0.5
-        * (g.g11(bndry->x, bndry->y) + g.g11(bndry->x - bndry->bx, bndry->y));
+        * (contravariant_components.g11(bndry->x, bndry->y)
+           + contravariant_components.g11(bndry->x - bndry->bx, bndry->y));
     BoutReal g12shift =
         0.5
-        * (g.g12(bndry->x, bndry->y) + g.g12(bndry->x - bndry->bx, bndry->y));
+        * (contravariant_components.g12(bndry->x, bndry->y) +
+           contravariant_components.g12(bndry->x - bndry->bx, bndry->y));
     // Have to use derivatives at last gridpoint instead of derivatives on boundary layer
     //   because derivative values don't exist in boundary region
     // NOTE: should be fixed to interpolate to boundary line
@@ -2943,7 +2945,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     }
 
     jx = mesh->xend + 1;
-    Coordinates::MetricTensor g = metric->getContravariantMetricTensor();
+    Coordinates::MetricTensor contravariant_components = metric->getContravariantMetricTensor();
     for (jy = 1; jy < mesh->LocalNy - 1; jy++) {
       for (jz = 0; jz < ncz; jz++) {
         jzp = (jz + 1) % ncz;
@@ -2977,42 +2979,42 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
         //                    - d/dy( JB^y ) - d/dz( JB^z )
 
         tmp =
-            -(metric->J(jx, jy) * g.g12(jx, jy) * var.y(jx, jy, jz)
-              + metric->J(jx, jy) * g.g13(jx, jy) * var.z(jx, jy, jz)
-              - metric->J(jx - 2, jy) * g.g12(jx - 2, jy) * var.y(jx - 2, jy, jz)
-              + metric->J(jx - 2, jy) * g.g13(jx - 2, jy) * var.z(jx - 2, jy, jz))
+            -(metric->J(jx, jy) * contravariant_components.g12(jx, jy) * var.y(jx, jy, jz)
+              + metric->J(jx, jy) * contravariant_components.g13(jx, jy) * var.z(jx, jy, jz)
+              - metric->J(jx - 2, jy) * contravariant_components.g12(jx - 2, jy) * var.y(jx - 2, jy, jz)
+              + metric->J(jx - 2, jy) * contravariant_components.g13(jx - 2, jy) * var.z(jx - 2, jy, jz))
             / (metric->dx(jx - 2, jy)
                + metric->dx(jx - 1, jy)); // First term (d/dx) using vals calculated above
-        tmp -= (metric->J(jx - 1, jy + 1) * g.g12(jx - 1, jy + 1)
+        tmp -= (metric->J(jx - 1, jy + 1) * contravariant_components.g12(jx - 1, jy + 1)
                     * var.x(jx - 1, jy + 1, jz)
-                - metric->J(jx - 1, jy - 1) * g.g12(jx - 1, jy - 1)
+                - metric->J(jx - 1, jy - 1) * contravariant_components.g12(jx - 1, jy - 1)
                       * var.x(jx - 1, jy - 1, jz)
-                + metric->J(jx - 1, jy + 1) * g.g22(jx - 1, jy + 1)
+                + metric->J(jx - 1, jy + 1) * contravariant_components.g22(jx - 1, jy + 1)
                       * var.y(jx - 1, jy + 1, jz)
-                - metric->J(jx - 1, jy - 1) * g.g22(jx - 1, jy - 1)
+                - metric->J(jx - 1, jy - 1) * contravariant_components.g22(jx - 1, jy - 1)
                       * var.y(jx - 1, jy - 1, jz)
-                + metric->J(jx - 1, jy + 1) * g.g23(jx - 1, jy + 1)
+                + metric->J(jx - 1, jy + 1) * contravariant_components.g23(jx - 1, jy + 1)
                       * var.z(jx - 1, jy + 1, jz)
-                - metric->J(jx - 1, jy - 1) * g.g23(jx - 1, jy - 1)
+                - metric->J(jx - 1, jy - 1) * contravariant_components.g23(jx - 1, jy - 1)
                       * var.z(jx - 1, jy - 1, jz))
                / (metric->dy(jx - 1, jy - 1) + metric->dy(jx - 1, jy)); // second (d/dy)
-        tmp -= (metric->J(jx - 1, jy) * g.g13(jx - 1, jy)
+        tmp -= (metric->J(jx - 1, jy) * contravariant_components.g13(jx - 1, jy)
                     * (var.x(jx - 1, jy, jzp) - var.x(jx - 1, jy, jzm))
-                + metric->J(jx - 1, jy) * g.g23(jx - 1, jy)
+                + metric->J(jx - 1, jy) * contravariant_components.g23(jx - 1, jy)
                       * (var.y(jx - 1, jy, jzp) - var.y(jx - 1, jy, jzm))
-                + metric->J(jx - 1, jy) * g.g33(jx - 1, jy)
+                + metric->J(jx - 1, jy) * contravariant_components.g33(jx - 1, jy)
                       * (var.z(jx - 1, jy, jzp) - var.z(jx - 1, jy, jzm)))
                / (2. * metric->dz(jx - 1, jy));
 
         var.x(jx, jy, jz) =
-            (metric->J(jx - 2, jy) * g.g11(jx - 2, jy) * var.x(jx - 2, jy, jz)
+            (metric->J(jx - 2, jy) * contravariant_components.g11(jx - 2, jy) * var.x(jx - 2, jy, jz)
              + (metric->dx(jx - 2, jy) + metric->dx(jx - 1, jy)) * tmp)
-            / metric->J(jx, jy) * g.g11(jx, jy);
+            / metric->J(jx, jy) * contravariant_components.g11(jx, jy);
         if (mesh->xstart == 2) {
           var.x(jx + 1, jy, jz) =
-              (metric->J(jx - 3, jy) * g.g11(jx - 3, jy) * var.x(jx - 3, jy, jz)
+              (metric->J(jx - 3, jy) * contravariant_components.g11(jx - 3, jy) * var.x(jx - 3, jy, jz)
                + 4. * metric->dx(jx, jy) * tmp)
-              / metric->J(jx + 1, jy) * g.g11(jx + 1, jy);
+              / metric->J(jx + 1, jy) * contravariant_components.g11(jx + 1, jy);
         }
       }
     }
