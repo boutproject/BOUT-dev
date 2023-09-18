@@ -217,23 +217,25 @@ protected:
 
     /**************** CALCULATE METRICS ******************/
 
-    Coordinates::MetricTensor metric_tensor;
-    metric_tensor.g11 = SQ(Rxy * Bpxy);
-    metric_tensor.g22 = 1.0 / SQ(hthe);
-    metric_tensor.g33 = SQ(I) * metric_tensor.g11 + SQ(coord->Bxy) / metric_tensor.g11;
-    metric_tensor.g12 = 0.0;
-    metric_tensor.g13 = -I * metric_tensor.g11;
-    metric_tensor.g23 = -Btxy / (hthe * Bpxy * Rxy);
-    coord->setContravariantMetricTensor(metric_tensor);
+    Coordinates::MetricTensor contravariant_components;
+    contravariant_components.g11 = SQ(Rxy * Bpxy);
+    contravariant_components.g22 = 1.0 / SQ(hthe);
+    contravariant_components.g33 = SQ(I) * contravariant_components.g11 + SQ(coord->Bxy) / contravariant_components.g11;
+    contravariant_components.g12 = 0.0;
+    contravariant_components.g13 = -I * contravariant_components.g11;
+    contravariant_components.g23 = -Btxy / (hthe * Bpxy * Rxy);
+    coord->setContravariantMetricTensor(contravariant_components);
 
     coord->J = hthe / Bpxy;
 
-    coord->g_11 = 1.0 / metric_tensor.g11 + SQ(I * Rxy);
-    coord->g_22 = SQ(coord->Bxy * hthe / Bpxy);
-    coord->g_33 = Rxy * Rxy;
-    coord->g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    coord->g_13 = I * Rxy * Rxy;
-    coord->g_23 = Btxy * hthe * Rxy / Bpxy;
+    Coordinates::MetricTensor covariant_components;
+    covariant_components.g11 = 1.0 / contravariant_components.g11 + SQ(I * Rxy);
+    covariant_components.g22 = SQ(coord->Bxy * hthe / Bpxy);
+    covariant_components.g33 = Rxy * Rxy;
+    covariant_components.g12 = Btxy * hthe * I * Rxy / Bpxy;
+    covariant_components.g13 = I * Rxy * Rxy;
+    covariant_components.g23 = Btxy * hthe * Rxy / Bpxy;
+    coord->setCovariantMetricTensor(covariant_components);
 
     coord->geometry();
 
