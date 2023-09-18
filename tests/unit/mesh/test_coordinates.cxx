@@ -314,7 +314,7 @@ TEST_F(CoordinatesTest, NegativeB) {
   output_info.enable();
 }
 
-TEST_F(CoordinatesTest, GetCovariantMetricTensor) {
+TEST_F(CoordinatesTest, GetContravariantMetricTensor) {
   Coordinates coords{mesh,
                      FieldMetric{1.0},  // dx
                      FieldMetric{1.0},  // dy
@@ -346,7 +346,7 @@ TEST_F(CoordinatesTest, GetCovariantMetricTensor) {
   EXPECT_TRUE(IsFieldEqual(contravariant_components.g23, 6.7));
 }
 
-TEST_F(CoordinatesTest, SetCovariantMetricTensor) {
+TEST_F(CoordinatesTest, SetContravariantMetricTensor) {
   // Set initial values for the metric tensor in the Coordinates constructor
   Coordinates coords{mesh,
                      FieldMetric{1.0},  // dx
