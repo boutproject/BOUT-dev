@@ -60,16 +60,36 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
         coords->Bxy.ydown()[ind];
 
     COPY_STRIPE(G1, G3);
-    Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
-//    COPY_STRIPE(g11, g12, g13, g22, g23, g33);
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g11)] = g.g11[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g12)] = g.g12[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g13)] = g.g13[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g22)] = g.g22[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g23)] = g.g23[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g33)] = g.g33[ind];
+    Coordinates::MetricTensor contravariant_components =
+        coords->getContravariantMetricTensor();
+    //    COPY_STRIPE(g11, g12, g13, g22, g23, g33);
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g11)] =
+        contravariant_components.g11[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g12)] =
+        contravariant_components.g12[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g13)] =
+        contravariant_components.g13[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g22)] =
+        contravariant_components.g22[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g23)] =
+        contravariant_components.g23[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g33)] =
+        contravariant_components.g33[ind];
 
-    COPY_STRIPE(g_11, g_12, g_13, g_22, g_23, g_33);
+    //    COPY_STRIPE(g_11, g_12, g_13, g_22, g_23, g_33);
+    Coordinates::MetricTensor covariant_components = coords->getCovariantMetricTensor();
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g_11)] =
+        covariant_components.g11[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g_12)] =
+        covariant_components.g12[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g_13)] =
+        covariant_components.g13[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g_22)] =
+        covariant_components.g22[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g_23)] =
+        covariant_components.g23[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g_33)] =
+        covariant_components.g33[ind];
   }
 }
 
