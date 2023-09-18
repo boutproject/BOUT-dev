@@ -47,12 +47,15 @@ protected:
     contravariant_components.g23 = 0.0;
     coords->setContravariantMetricTensor(contravariant_components);
 
-    coords->g_11 = 1.0;
-    coords->g_22 = 1.0;
-    coords->g_33 = 1.0;
-    coords->g_12 = 0.0;
-    coords->g_13 = 0.0;
-    coords->g_23 = 0.0;
+    Coordinates::MetricTensor covariant_components;
+    covariant_components.g11 = 1.0;
+    covariant_components.g22 = 1.0;
+    covariant_components.g33 = 1.0;
+    covariant_components.g12 = 0.0;
+    covariant_components.g13 = 0.0;
+    covariant_components.g23 = 0.0;
+    coords->setCovariantMetricTensor(covariant_components);
+
     coords->geometry();
 
     // Tell BOUT++ to solve N

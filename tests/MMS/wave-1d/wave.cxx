@@ -41,12 +41,15 @@ protected:
     contravariant_components.g23 = 0.0;
     coord->setContravariantMetricTensor(contravariant_components);
 
-    coord->g_11 = 1.0;
-    coord->g_22 = 1.0;
-    coord->g_33 = 1.0;
-    coord->g_12 = 0.0;
-    coord->g_13 = 0.0;
-    coord->g_23 = 0.0;
+    Coordinates::MetricTensor covariant_components;
+    covariant_components.g11 = 1.0;
+    covariant_components.g22 = 1.0;
+    covariant_components.g33 = 1.0;
+    covariant_components.g12 = 0.0;
+    covariant_components.g13 = 0.0;
+    covariant_components.g23 = 0.0;
+    coord->setCovariantMetricTensor(covariant_components);
+
     coord->geometry();
 
     g.setLocation(CELL_XLOW); // g staggered to the left of f
