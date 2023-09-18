@@ -143,11 +143,12 @@ void Vector2D::toContravariant() {
       const auto x_at_z = interp_to(x, z.getLocation());
       const auto y_at_z = interp_to(y, z.getLocation());
 
+      Coordinates::MetricTensor g_x = metric_x->getContravariantMetricTensor();
+      Coordinates::MetricTensor g_y = metric_y->getContravariantMetricTensor();
+      Coordinates::MetricTensor g_z = metric_z->getContravariantMetricTensor();
+
       // multiply by g_{ij}
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
-        Coordinates::MetricTensor g_x = metric_x->getContravariantMetricTensor();
-        Coordinates::MetricTensor g_y = metric_y->getContravariantMetricTensor();
-        Coordinates::MetricTensor g_z = metric_z->getContravariantMetricTensor();
         x[i] = g_x.g11[i] * x[i] + g_x.g12[i] * y_at_x[i] + g_x.g13[i] * z_at_x[i];
         y[i] = g_y.g22[i] * y[i] + g_y.g12[i] * x_at_y[i] + g_y.g23[i] * z_at_y[i];
         z[i] = g_z.g33[i] * z[i] + g_z.g13[i] * x_at_z[i] + g_z.g23[i] * y_at_z[i];
@@ -159,8 +160,9 @@ void Vector2D::toContravariant() {
       // Need to use temporary arrays to store result
       Coordinates::FieldMetric gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
+      Coordinates::MetricTensor g = metric->getContravariantMetricTensor();
+
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
-        Coordinates::MetricTensor g = metric->getContravariantMetricTensor();
         gx[i] = g.g11[i] * x[i] + g.g12[i] * y[i] + g.g13[i] * z[i];
         gy[i] = g.g22[i] * y[i] + g.g12[i] * x[i] + g.g23[i] * z[i];
         gz[i] = g.g33[i] * z[i] + g.g13[i] * x[i] + g.g23[i] * y[i];
