@@ -85,14 +85,18 @@ void Vector3D::toCovariant() {
       const auto x_at_z = interp_to(x, z.getLocation());
       const auto y_at_z = interp_to(y, z.getLocation());
 
+      Coordinates::MetricTensor g_x = metric_x->getCovariantMetricTensor();
+      Coordinates::MetricTensor g_y = metric_y->getCovariantMetricTensor();
+      Coordinates::MetricTensor g_z = metric_z->getCovariantMetricTensor();
+      
       // multiply by g_{ij}
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
-        x[i] = metric_x->g_11[i] * x[i] + metric_x->g_12[i] * y_at_x[i]
-               + metric_x->g_13[i] * z_at_x[i];
-        y[i] = metric_y->g_22[i] * y[i] + metric_y->g_12[i] * x_at_y[i]
-               + metric_y->g_23[i] * z_at_y[i];
-        z[i] = metric_z->g_33[i] * z[i] + metric_z->g_13[i] * x_at_z[i]
-               + metric_z->g_23[i] * y_at_z[i];
+        x[i] = g_x.g11[i] * x[i] + g_x.g12[i] * y_at_x[i]
+               + g_x.g13[i] * z_at_x[i];
+        y[i] = g_y.g22[i] * y[i] + g_y.g12[i] * x_at_y[i]
+               + g_y.g23[i] * z_at_y[i];
+        z[i] = g_z.g33[i] * z[i] + g_z.g13[i] * x_at_z[i]
+               + g_z.g23[i] * y_at_z[i];
       };
     } else {
       const auto metric = localmesh->getCoordinates(location);
@@ -100,10 +104,12 @@ void Vector3D::toCovariant() {
       // Need to use temporary arrays to store result
       Field3D gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
+      Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
+
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
-        gx[i] = metric->g_11[i] * x[i] + metric->g_12[i] * y[i] + metric->g_13[i] * z[i];
-        gy[i] = metric->g_22[i] * y[i] + metric->g_12[i] * x[i] + metric->g_23[i] * z[i];
-        gz[i] = metric->g_33[i] * z[i] + metric->g_13[i] * x[i] + metric->g_23[i] * y[i];
+        gx[i] = covariant_components.g11[i] * x[i] + covariant_components.g12[i] * y[i] + covariant_components.g13[i] * z[i];
+        gy[i] = covariant_components.g22[i] * y[i] + covariant_components.g12[i] * x[i] + covariant_components.g23[i] * z[i];
+        gz[i] = covariant_components.g33[i] * z[i] + covariant_components.g13[i] * x[i] + covariant_components.g23[i] * y[i];
       };
 
       x = gx;
@@ -129,7 +135,7 @@ void Vector3D::toContravariant() {
 
       // Fields at different locations so we need to interpolate
       // Note : Could reduce peak memory requirement here by just
-      // dealing with the three components seperately. This would
+      // dealing with the three components separately. This would
       // require the use of temporary fields to hold the intermediate
       // result so would likely only reduce memory usage by one field
       const auto y_at_x = interp_to(y, x.getLocation());
@@ -141,9 +147,9 @@ void Vector3D::toContravariant() {
 
       // multiply by g_{ij}
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
-        Coordinates::MetricTensor g_x = metric_x->getContravariantMetricTensor();
-        Coordinates::MetricTensor g_y = metric_y->getContravariantMetricTensor();
-        Coordinates::MetricTensor g_z = metric_z->getContravariantMetricTensor();
+      Coordinates::MetricTensor g_x = metric_x->getContravariantMetricTensor();
+      Coordinates::MetricTensor g_y = metric_y->getContravariantMetricTensor();
+      Coordinates::MetricTensor g_z = metric_z->getContravariantMetricTensor();
         x[i] = g_x.g11[i] * x[i] + g_x.g12[i] * y_at_x[i] + g_x.g13[i] * z_at_x[i];
         y[i] = g_y.g22[i] * y[i] + g_y.g12[i] * x_at_y[i] + g_y.g23[i] * z_at_y[i];
         z[i] = g_z.g33[i] * z[i] + g_z.g13[i] * x_at_z[i] + g_z.g23[i] * y_at_z[i];
@@ -491,11 +497,12 @@ const Field3D Vector3D::operator*(const Vector3D& rhs) const {
                 + (y * rhs.z + z * rhs.y) * g.g23;
     } else {
       // Both contravariant
+      Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
       result =
-          x * rhs.x * metric->g_11 + y * rhs.y * metric->g_22 + z * rhs.z * metric->g_33;
-      result += (x * rhs.y + y * rhs.x) * metric->g_12
-                + (x * rhs.z + z * rhs.x) * metric->g_13
-                + (y * rhs.z + z * rhs.y) * metric->g_23;
+          x * rhs.x * covariant_components.g11 + y * rhs.y * covariant_components.g22 + z * rhs.z * covariant_components.g33;
+      result += (x * rhs.y + y * rhs.x) * covariant_components.g12
+                + (x * rhs.z + z * rhs.x) * covariant_components.g13
+                + (y * rhs.z + z * rhs.y) * covariant_components.g23;
     }
   }
 
@@ -524,11 +531,12 @@ const Field3D Vector3D::operator*(const Vector2D& rhs) const {
                 + (y * rhs.z + z * rhs.y) * g.g23;
     } else {
       // Both contravariant
+      Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
       result =
-          x * rhs.x * metric->g_11 + y * rhs.y * metric->g_22 + z * rhs.z * metric->g_33;
-      result += (x * rhs.y + y * rhs.x) * metric->g_12
-                + (x * rhs.z + z * rhs.x) * metric->g_13
-                + (y * rhs.z + z * rhs.y) * metric->g_23;
+          x * rhs.x * covariant_components.g11 + y * rhs.y * covariant_components.g22 + z * rhs.z * covariant_components.g33;
+      result += (x * rhs.y + y * rhs.x) * covariant_components.g12
+                + (x * rhs.z + z * rhs.x) * covariant_components.g13
+                + (y * rhs.z + z * rhs.y) * covariant_components.g23;
     }
   }
 
