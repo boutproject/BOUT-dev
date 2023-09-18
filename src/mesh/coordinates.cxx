@@ -964,68 +964,7 @@ int Coordinates::geometry(bool recalculate_staggered,
   // Check input metrics
   checkContravariant();
   checkCovariant();
-
-  // Calculate Christoffel symbol terms (18 independent values)
-  // Note: This calculation is completely general: metric
-  // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
-
-  G1_11 = 0.5 * g11 * DDX(g_11) + g12 * (DDX(g_12) - 0.5 * DDY(g_11))
-          + g13 * (DDX(g_13) - 0.5 * DDZ(g_11));
-  G1_22 = g11 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g12 * DDY(g_22)
-          + g13 * (DDY(g_23) - 0.5 * DDZ(g_22));
-  G1_33 = g11 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g12 * (DDZ(g_23) - 0.5 * DDY(g_33))
-          + 0.5 * g13 * DDZ(g_33);
-  G1_12 = 0.5 * g11 * DDY(g_11) + 0.5 * g12 * DDX(g_22)
-          + 0.5 * g13 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-  G1_13 = 0.5 * g11 * DDZ(g_11) + 0.5 * g12 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
-          + 0.5 * g13 * DDX(g_33);
-  G1_23 = 0.5 * g11 * (DDZ(g_12) + DDY(g_13) - DDX(g_23))
-          + 0.5 * g12 * (DDZ(g_22) + DDY(g_23) - DDY(g_23))
-          // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
-          // which equals
-          + 0.5 * g13 * DDY(g_33);
-
-  G2_11 = 0.5 * g12 * DDX(g_11) + g22 * (DDX(g_12) - 0.5 * DDY(g_11))
-          + g23 * (DDX(g_13) - 0.5 * DDZ(g_11));
-  G2_22 = g12 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g22 * DDY(g_22)
-          + g23 * (DDY(g23) - 0.5 * DDZ(g_22));
-  G2_33 = g12 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g22 * (DDZ(g_23) - 0.5 * DDY(g_33))
-          + 0.5 * g23 * DDZ(g_33);
-  G2_12 = 0.5 * g12 * DDY(g_11) + 0.5 * g22 * DDX(g_22)
-          + 0.5 * g23 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-  G2_13 =
-      // 0.5 *g21*(DDZ(g_11) + DDX(g_13) - DDX(g_13))
-      // which equals
-      0.5 * g12 * (DDZ(g_11) + DDX(g_13) - DDX(g_13))
-      // + 0.5 *g22*(DDZ(g_21) + DDX(g_23) - DDY(g_13))
-      // which equals
-      + 0.5 * g22 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
-      // + 0.5 *g23*(DDZ(g_31) + DDX(g_33) - DDZ(g_13));
-      // which equals
-      + 0.5 * g23 * DDX(g_33);
-  G2_23 = 0.5 * g12 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g22 * DDZ(g_22)
-          + 0.5 * g23 * DDY(g_33);
-
-  G3_11 = 0.5 * g13 * DDX(g_11) + g23 * (DDX(g_12) - 0.5 * DDY(g_11))
-          + g33 * (DDX(g_13) - 0.5 * DDZ(g_11));
-  G3_22 = g13 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g23 * DDY(g_22)
-          + g33 * (DDY(g_23) - 0.5 * DDZ(g_22));
-  G3_33 = g13 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g23 * (DDZ(g_23) - 0.5 * DDY(g_33))
-          + 0.5 * g33 * DDZ(g_33);
-  G3_12 =
-      // 0.5 *g31*(DDY(g_11) + DDX(g_12) - DDX(g_12))
-      // which equals to
-      0.5 * g13 * DDY(g_11)
-      // + 0.5 *g32*(DDY(g_21) + DDX(g_22) - DDY(g_12))
-      // which equals to
-      + 0.5 * g23 * DDX(g_22)
-      //+ 0.5 *g33*(DDY(g_31) + DDX(g_32) - DDZ(g_12));
-      // which equals to
-      + 0.5 * g33 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-  G3_13 = 0.5 * g13 * DDZ(g_11) + 0.5 * g23 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
-          + 0.5 * g33 * DDX(g_33);
-  G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22)
-          + 0.5 * g33 * DDY(g_33);
+  CalculateChristoffelSymbols();
 
   auto tmp = J * g12;
   communicate(tmp);
@@ -1209,6 +1148,70 @@ int Coordinates::geometry(bool recalculate_staggered,
   invSgCache.reset();
 
   return 0;
+}
+
+void Coordinates::CalculateChristoffelSymbols() {
+  // Calculate Christoffel symbol terms (18 independent values)
+  // Note: This calculation is completely general: metric
+  // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
+
+  G1_11 = 0.5 * g11 * DDX(g_11) + g12 * (DDX(g_12) - 0.5 * DDY(g_11))
+          + g13 * (DDX(g_13) - 0.5 * DDZ(g_11));
+  G1_22 = g11 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g12 * DDY(g_22)
+          + g13 * (DDY(g_23) - 0.5 * DDZ(g_22));
+  G1_33 = g11 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g12 * (DDZ(g_23) - 0.5 * DDY(g_33))
+          + 0.5 * g13 * DDZ(g_33);
+  G1_12 = 0.5 * g11 * DDY(g_11) + 0.5 * g12 * DDX(g_22)
+          + 0.5 * g13 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+  G1_13 = 0.5 * g11 * DDZ(g_11) + 0.5 * g12 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
+          + 0.5 * g13 * DDX(g_33);
+  G1_23 = 0.5 * g11 * (DDZ(g_12) + DDY(g_13) - DDX(g_23))
+          + 0.5 * g12 * (DDZ(g_22) + DDY(g_23) - DDY(g_23))
+          // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
+          // which equals
+          + 0.5 * g13 * DDY(g_33);
+
+  G2_11 = 0.5 * g12 * DDX(g_11) + g22 * (DDX(g_12) - 0.5 * DDY(g_11))
+          + g23 * (DDX(g_13) - 0.5 * DDZ(g_11));
+  G2_22 = g12 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g22 * DDY(g_22)
+          + g23 * (DDY(g23) - 0.5 * DDZ(g_22));
+  G2_33 = g12 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g22 * (DDZ(g_23) - 0.5 * DDY(g_33))
+          + 0.5 * g23 * DDZ(g_33);
+  G2_12 = 0.5 * g12 * DDY(g_11) + 0.5 * g22 * DDX(g_22)
+          + 0.5 * g23 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+  G2_13 =
+      // 0.5 *g21*(DDZ(g_11) + DDX(g_13) - DDX(g_13))
+      // which equals
+      0.5 * g12 * (DDZ(g_11) + DDX(g_13) - DDX(g_13))
+      // + 0.5 *g22*(DDZ(g_21) + DDX(g_23) - DDY(g_13))
+      // which equals
+      + 0.5 * g22 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
+      // + 0.5 *g23*(DDZ(g_31) + DDX(g_33) - DDZ(g_13));
+      // which equals
+      + 0.5 * g23 * DDX(g_33);
+  G2_23 = 0.5 * g12 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g22 * DDZ(g_22)
+          + 0.5 * g23 * DDY(g_33);
+
+  G3_11 = 0.5 * g13 * DDX(g_11) + g23 * (DDX(g_12) - 0.5 * DDY(g_11))
+          + g33 * (DDX(g_13) - 0.5 * DDZ(g_11));
+  G3_22 = g13 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g23 * DDY(g_22)
+          + g33 * (DDY(g_23) - 0.5 * DDZ(g_22));
+  G3_33 = g13 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g23 * (DDZ(g_23) - 0.5 * DDY(g_33))
+          + 0.5 * g33 * DDZ(g_33);
+  G3_12 =
+      // 0.5 *g31*(DDY(g_11) + DDX(g_12) - DDX(g_12))
+      // which equals to
+      0.5 * g13 * DDY(g_11)
+      // + 0.5 *g32*(DDY(g_21) + DDX(g_22) - DDY(g_12))
+      // which equals to
+      + 0.5 * g23 * DDX(g_22)
+      //+ 0.5 *g33*(DDY(g_31) + DDX(g_32) - DDZ(g_12));
+      // which equals to
+      + 0.5 * g33 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+  G3_13 = 0.5 * g13 * DDZ(g_11) + 0.5 * g23 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
+          + 0.5 * g33 * DDX(g_33);
+  G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22)
+          + 0.5 * g33 * DDY(g_33);
 }
 
 int Coordinates::calcCovariant(const std::string& region) {
