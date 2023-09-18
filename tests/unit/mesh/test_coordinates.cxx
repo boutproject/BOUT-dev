@@ -143,12 +143,14 @@ TEST_F(CoordinatesTest, CalcContravariant) {
   coords.calcCovariant();
   output_info.enable();
 
-  EXPECT_TRUE(IsFieldEqual(coords.g_11, 1.0));
-  EXPECT_TRUE(IsFieldEqual(coords.g_22, 1.0));
-  EXPECT_TRUE(IsFieldEqual(coords.g_33, 1.0));
-  EXPECT_TRUE(IsFieldEqual(coords.g_12, 0.0));
-  EXPECT_TRUE(IsFieldEqual(coords.g_13, 0.0));
-  EXPECT_TRUE(IsFieldEqual(coords.g_23, 0.0));
+  Coordinates::MetricTensor updated_coords = coords.getCovariantMetricTensor();
+
+  EXPECT_TRUE(IsFieldEqual(updated_coords.g11, 1.0));
+  EXPECT_TRUE(IsFieldEqual(updated_coords.g22, 1.0));
+  EXPECT_TRUE(IsFieldEqual(updated_coords.g33, 1.0));
+  EXPECT_TRUE(IsFieldEqual(updated_coords.g12, 0.0));
+  EXPECT_TRUE(IsFieldEqual(updated_coords.g13, 0.0));
+  EXPECT_TRUE(IsFieldEqual(updated_coords.g23, 0.0));
 }
 
 TEST_F(CoordinatesTest, CalcCovariant) {
@@ -281,9 +283,10 @@ TEST_F(CoordinatesTest, ConstructWithDiagonalContravariantMetric) {
 
   // Covariant metric should be inverse
   // Note: Not calculated in corners
-  EXPECT_TRUE(IsFieldEqual(coords.g_11, 1. / 2.0, "RGN_NOCORNERS"));
-  EXPECT_TRUE(IsFieldEqual(coords.g_22, 1. / 3.2, "RGN_NOCORNERS"));
-  EXPECT_TRUE(IsFieldEqual(coords.g_33, 1. / 42, "RGN_NOCORNERS"));
+  Coordinates::MetricTensor updated_coords = coords.getCovariantMetricTensor();
+  EXPECT_TRUE(IsFieldEqual(updated_coords.g11, 1. / 2.0, "RGN_NOCORNERS"));
+  EXPECT_TRUE(IsFieldEqual(updated_coords.g22, 1. / 3.2, "RGN_NOCORNERS"));
+  EXPECT_TRUE(IsFieldEqual(updated_coords.g33, 1. / 42, "RGN_NOCORNERS"));
 
   EXPECT_TRUE(IsFieldEqual(coords.J, 1. / sqrt(2.0 * 3.2 * 42), "RGN_NOCORNERS"));
   EXPECT_TRUE(IsFieldEqual(coords.Bxy, sqrt(2.0 * 42), "RGN_NOCORNERS", 1e-10));
