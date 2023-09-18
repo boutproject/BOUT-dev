@@ -43,21 +43,24 @@ int Diffusion::init(bool UNUSED(restarting)) {
   SAVE_ONCE(mu_N);
 
   //set mesh
-  Coordinates::MetricTensor metric_tensor;
-  metric_tensor.g11 = 1.0;
-  metric_tensor.g22 = 1.0;
-  metric_tensor.g33 = 1.0;
-  metric_tensor.g12 = 0.0;
-  metric_tensor.g13 = 0.0;
-  metric_tensor.g23 = 0.0;
-  coord->setContravariantMetricTensor(metric_tensor);
-  
-  coord->g_11 = 1.0;
-  coord->g_22 = 1.0;
-  coord->g_33 = 1.0;
-  coord->g_12 = 0.0;
-  coord->g_13 = 0.0;
-  coord->g_23 = 0.0;
+  Coordinates::MetricTensor contravariant_components;
+  contravariant_components.g11 = 1.0;
+  contravariant_components.g22 = 1.0;
+  contravariant_components.g33 = 1.0;
+  contravariant_components.g12 = 0.0;
+  contravariant_components.g13 = 0.0;
+  contravariant_components.g23 = 0.0;
+  coord->setContravariantMetricTensor(contravariant_components);
+
+  Coordinates::MetricTensor covariant_components;
+  covariant_components.g11 = 1.0;
+  covariant_components.g22 = 1.0;
+  covariant_components.g33 = 1.0;
+  covariant_components.g12 = 0.0;
+  covariant_components.g13 = 0.0;
+  covariant_components.g23 = 0.0;
+  coord->setCovariantMetricTensor(covariant_components);
+
   coord->geometry();
 
   // Tell BOUT++ to solve N
