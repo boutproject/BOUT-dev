@@ -84,14 +84,18 @@ void Vector2D::toCovariant() {
       const auto x_at_z = interp_to(x, z.getLocation());
       const auto y_at_z = interp_to(y, z.getLocation());
 
+      Coordinates::MetricTensor covariant_components_x = metric_x->getCovariantMetricTensor();
+      Coordinates::MetricTensor covariant_components_y = metric_y->getCovariantMetricTensor();
+      Coordinates::MetricTensor covariant_components_z = metric_z->getCovariantMetricTensor();
+
       // multiply by g_{ij}
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
-        x[i] = metric_x->g_11[i] * x[i] + metric_x->g_12[i] * y_at_x[i]
-               + metric_x->g_13[i] * z_at_x[i];
-        y[i] = metric_y->g_22[i] * y[i] + metric_y->g_12[i] * x_at_y[i]
-               + metric_y->g_23[i] * z_at_y[i];
-        z[i] = metric_z->g_33[i] * z[i] + metric_z->g_13[i] * x_at_z[i]
-               + metric_z->g_23[i] * y_at_z[i];
+        x[i] = covariant_components_x.g11[i] * x[i] + covariant_components_x.g12[i] * y_at_x[i]
+               + covariant_components_x.g13[i] * z_at_x[i];
+        y[i] = covariant_components_y.g22[i] * y[i] + covariant_components_y.g12[i] * x_at_y[i]
+               + covariant_components_y.g23[i] * z_at_y[i];
+        z[i] = covariant_components_z.g33[i] * z[i] + covariant_components_z.g13[i] * x_at_z[i]
+               + covariant_components_z.g23[i] * y_at_z[i];
       };
     } else {
       const auto metric = localmesh->getCoordinates(location);
@@ -99,10 +103,11 @@ void Vector2D::toCovariant() {
       // Need to use temporary arrays to store result
       Coordinates::FieldMetric gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
+      Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
-        gx[i] = metric->g_11[i] * x[i] + metric->g_12[i] * y[i] + metric->g_13[i] * z[i];
-        gy[i] = metric->g_22[i] * y[i] + metric->g_12[i] * x[i] + metric->g_23[i] * z[i];
-        gz[i] = metric->g_33[i] * z[i] + metric->g_13[i] * x[i] + metric->g_23[i] * y[i];
+        gx[i] = covariant_components.g11[i] * x[i] + covariant_components.g12[i] * y[i] + covariant_components.g13[i] * z[i];
+        gy[i] = covariant_components.g22[i] * y[i] + covariant_components.g12[i] * x[i] + covariant_components.g23[i] * z[i];
+        gz[i] = covariant_components.g33[i] * z[i] + covariant_components.g13[i] * x[i] + covariant_components.g23[i] * y[i];
       };
 
       x = gx;
@@ -400,11 +405,12 @@ const Coordinates::FieldMetric Vector2D::operator*(const Vector2D& rhs) const {
                 + (y * rhs.z + z * rhs.y) * g.g23;
     } else {
       // Both contravariant
+      Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
       result =
-          x * rhs.x * metric->g_11 + y * rhs.y * metric->g_22 + z * rhs.z * metric->g_33;
-      result += (x * rhs.y + y * rhs.x) * metric->g_12
-                + (x * rhs.z + z * rhs.x) * metric->g_13
-                + (y * rhs.z + z * rhs.y) * metric->g_23;
+          x * rhs.x * covariant_components.g11 + y * rhs.y * covariant_components.g22 + z * rhs.z * covariant_components.g33;
+      result += (x * rhs.y + y * rhs.x) * covariant_components.g12
+                + (x * rhs.z + z * rhs.x) * covariant_components.g13
+                + (y * rhs.z + z * rhs.y) * covariant_components.g23;
     }
   }
 
