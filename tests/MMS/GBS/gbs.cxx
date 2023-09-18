@@ -361,12 +361,14 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
   coords->J = hthe / Bpxy;
 
-  coords->g_11 = 1.0 / contravariant_components.g11 + SQ(sinty * Rxy);
-  coords->g_22 = SQ(coords->Bxy * hthe / Bpxy);
-  coords->g_33 = Rxy * Rxy;
-  coords->g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
-  coords->g_13 = sinty * Rxy * Rxy;
-  coords->g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
+  Coordinates::MetricTensor covariant_components;
+  covariant_components.g11 = 1.0 / contravariant_components.g11 + SQ(sinty * Rxy);
+  covariant_components.g22 = SQ(coords->Bxy * hthe / Bpxy);
+  covariant_components.g33 = Rxy * Rxy;
+  covariant_components.g12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
+  covariant_components.g13 = sinty * Rxy * Rxy;
+  covariant_components.g23 = sbp * Btxy * hthe * Rxy / Bpxy;
+  coords->setCovariantMetricTensor(covariant_components);
 
   coords->geometry();
 }
