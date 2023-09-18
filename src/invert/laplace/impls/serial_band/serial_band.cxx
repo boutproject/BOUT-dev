@@ -266,6 +266,8 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
     if (iz == 0) {
       // DC
 
+      Coordinates::MetricTensor covariant_components = coords->getCovariantMetricTensor();
+
       // Inner boundary
       if (inner_boundary_flags & (INVERT_DC_GRAD + INVERT_SET)
           || inner_boundary_flags & (INVERT_DC_GRAD + INVERT_RHS)) {
@@ -274,8 +276,8 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         for (int ix = 0; ix < xbndry; ix++) {
           A(ix, 0) = 0.;
           A(ix, 1) = 0.;
-          A(ix, 2) = -.5 / sqrt(coords->g_11(ix, jy)) / coords->dx(ix, jy);
-          A(ix, 3) = .5 / sqrt(coords->g_11(ix, jy)) / coords->dx(ix, jy);
+          A(ix, 2) = -.5 / sqrt(covariant_components.g11(ix, jy)) / coords->dx(ix, jy);
+          A(ix, 3) = .5 / sqrt(covariant_components.g11(ix, jy)) / coords->dx(ix, jy);
           A(ix, 4) = 0.;
         }
 
@@ -294,17 +296,17 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         for (int ix = 0; ix < xbndry; ix++) {
           A(ix, 0) = 0.;
           A(ix, 1) = 0.;
-          A(ix, 2) = -3. / sqrt(coords->g_22(ix, jy));
-          A(ix, 3) = 4. / sqrt(coords->g_22(ix + 1, jy));
-          A(ix, 4) = -1. / sqrt(coords->g_22(ix + 2, jy));
+          A(ix, 2) = -3. / sqrt(covariant_components.g22(ix, jy));
+          A(ix, 3) = 4. / sqrt(covariant_components.g22(ix + 1, jy));
+          A(ix, 4) = -1. / sqrt(covariant_components.g22(ix + 2, jy));
         }
       } else if (inner_boundary_flags & INVERT_DC_GRADPARINV) {
         for (int ix = 0; ix < xbndry; ix++) {
           A(ix, 0) = 0.;
           A(ix, 1) = 0.;
-          A(ix, 2) = -3. * sqrt(coords->g_22(ix, jy));
-          A(ix, 3) = 4. * sqrt(coords->g_22(ix + 1, jy));
-          A(ix, 4) = -sqrt(coords->g_22(ix + 2, jy));
+          A(ix, 2) = -3. * sqrt(covariant_components.g22(ix, jy));
+          A(ix, 3) = 4. * sqrt(covariant_components.g22(ix + 1, jy));
+          A(ix, 4) = -sqrt(covariant_components.g22(ix + 2, jy));
         }
       } else if (inner_boundary_flags & INVERT_DC_LAP) {
         for (int ix = 0; ix < xbndry; ix++) {
