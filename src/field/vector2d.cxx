@@ -133,7 +133,7 @@ void Vector2D::toContravariant() {
 
       // Fields at different locations so we need to interpolate
       // Note : Could reduce peak memory requirement here by just
-      // dealing with the three components seperately. This would
+      // dealing with the three components separately. This would
       // require the use of temporary fields to hold the intermediate
       // result so would likely only reduce memory usage by one field
       const auto y_at_x = interp_to(y, x.getLocation());
@@ -160,12 +160,12 @@ void Vector2D::toContravariant() {
       // Need to use temporary arrays to store result
       Coordinates::FieldMetric gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
-      Coordinates::MetricTensor g = metric->getContravariantMetricTensor();
+      Coordinates::MetricTensor contravariant_components = metric->getContravariantMetricTensor();
 
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
-        gx[i] = g.g11[i] * x[i] + g.g12[i] * y[i] + g.g13[i] * z[i];
-        gy[i] = g.g22[i] * y[i] + g.g12[i] * x[i] + g.g23[i] * z[i];
-        gz[i] = g.g33[i] * z[i] + g.g13[i] * x[i] + g.g23[i] * y[i];
+        gx[i] = contravariant_components.g11[i] * x[i] + contravariant_components.g12[i] * y[i] + contravariant_components.g13[i] * z[i];
+        gy[i] = contravariant_components.g22[i] * y[i] + contravariant_components.g12[i] * x[i] + contravariant_components.g23[i] * z[i];
+        gz[i] = contravariant_components.g33[i] * z[i] + contravariant_components.g13[i] * x[i] + contravariant_components.g23[i] * y[i];
       };
 
       x = gx;
@@ -399,12 +399,12 @@ const Coordinates::FieldMetric Vector2D::operator*(const Vector2D& rhs) const {
     if (covariant) {
       // Both covariant
 
-      Coordinates::MetricTensor g = metric->getContravariantMetricTensor();
+      Coordinates::MetricTensor contravariant_components = metric->getContravariantMetricTensor();
       result =
-          x * rhs.x * g.g11 + y * rhs.y * g.g22 + z * rhs.z * g.g33;
-      result += (x * rhs.y + y * rhs.x) * g.g12
-                + (x * rhs.z + z * rhs.x) * g.g13
-                + (y * rhs.z + z * rhs.y) * g.g23;
+          x * rhs.x * contravariant_components.g11 + y * rhs.y * contravariant_components.g22 + z * rhs.z * contravariant_components.g33;
+      result += (x * rhs.y + y * rhs.x) * contravariant_components.g12
+                + (x * rhs.z + z * rhs.x) * contravariant_components.g13
+                + (y * rhs.z + z * rhs.y) * contravariant_components.g23;
     } else {
       // Both contravariant
       Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
