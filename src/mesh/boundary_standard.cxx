@@ -2451,12 +2451,13 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   void BoundaryNeumannPar::apply(Field2D & f) {
 #if not(BOUT_USE_METRIC_3D)
     Coordinates* metric = f.getCoordinates();
+    Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
     // Loop over all elements and set equal to the next point in
     for (bndry->first(); !bndry->isDone(); bndry->next()) {
       f(bndry->x, bndry->y) =
           f(bndry->x - bndry->bx, bndry->y - bndry->by)
-          * sqrt(metric->g_22(bndry->x, bndry->y)
-                 / metric->g_22(bndry->x - bndry->bx, bndry->y - bndry->by));
+          * sqrt(covariant_components.g22(bndry->x, bndry->y)
+                 / covariant_components.g22(bndry->x - bndry->bx, bndry->y - bndry->by));
     }
 #else
   throw BoutException("Applying boundary condition 'neumannpar' to Field2D not "
@@ -2468,12 +2469,13 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
     Coordinates* metric = f.getCoordinates();
+    Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
     for (bndry->first(); !bndry->isDone(); bndry->next()) {
       for (int z = 0; z < mesh->LocalNz; z++) {
         f(bndry->x, bndry->y, z) =
             f(bndry->x - bndry->bx, bndry->y - bndry->by, z)
-            * sqrt(metric->g_22(bndry->x, bndry->y, z)
-                   / metric->g_22(bndry->x - bndry->bx, bndry->y - bndry->by, z));
+            * sqrt(covariant_components.g22(bndry->x, bndry->y, z)
+                   / covariant_components.g22(bndry->x - bndry->bx, bndry->y - bndry->by, z));
       }
     }
   }
