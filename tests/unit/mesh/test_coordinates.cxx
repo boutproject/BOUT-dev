@@ -143,7 +143,7 @@ TEST_F(CoordinatesTest, CalcContravariant) {
   coords.calcCovariant();
   output_info.enable();
 
-  Coordinates::MetricTensor updated_coords = coords.getCovariantMetricTensor();
+  const auto updated_coords = coords.getCovariantMetricTensor();
 
   EXPECT_TRUE(IsFieldEqual(updated_coords.g11, 1.0));
   EXPECT_TRUE(IsFieldEqual(updated_coords.g22, 1.0));
@@ -180,7 +180,7 @@ TEST_F(CoordinatesTest, CalcCovariant) {
   coords.calcContravariant();
   output_info.enable();
 
-  Coordinates::MetricTensor g = coords.getContravariantMetricTensor();
+  const auto g = coords.getContravariantMetricTensor();
 
   EXPECT_TRUE(IsFieldEqual(g.g11, 1.0));
   EXPECT_TRUE(IsFieldEqual(g.g22, 1.0));
@@ -202,7 +202,7 @@ TEST_F(CoordinatesTest, DefaultConstructor) {
   EXPECT_TRUE(IsFieldEqual(coords.dy, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.dz, default_dz));
 
-  Coordinates::MetricTensor g = coords.getContravariantMetricTensor();
+  const auto g = coords.getContravariantMetricTensor();
 
   EXPECT_TRUE(IsFieldEqual(g.g11, 1.0));
   EXPECT_TRUE(IsFieldEqual(g.g22, 1.0));
@@ -230,7 +230,7 @@ TEST_F(CoordinatesTest, ConstructWithMeshSpacing) {
   EXPECT_TRUE(IsFieldEqual(coords.dy, 3.2));
   EXPECT_TRUE(IsFieldEqual(coords.dz, 42.));
 
-  Coordinates::MetricTensor g = coords.getContravariantMetricTensor();
+  const auto g = coords.getContravariantMetricTensor();
 
   EXPECT_TRUE(IsFieldEqual(g.g11, 1.0));
   EXPECT_TRUE(IsFieldEqual(g.g22, 1.0));
@@ -273,7 +273,7 @@ TEST_F(CoordinatesTest, ConstructWithDiagonalContravariantMetric) {
   EXPECT_TRUE(IsFieldEqual(coords.dz, default_dz));
 
   // Diagonal contravariant metric
-  Coordinates::MetricTensor g = coords.getContravariantMetricTensor();
+  const auto g = coords.getContravariantMetricTensor();
   EXPECT_TRUE(IsFieldEqual(g.g11, 2.0));
   EXPECT_TRUE(IsFieldEqual(g.g22, 3.2));
   EXPECT_TRUE(IsFieldEqual(g.g33, 42));
@@ -283,7 +283,7 @@ TEST_F(CoordinatesTest, ConstructWithDiagonalContravariantMetric) {
 
   // Covariant metric should be inverse
   // Note: Not calculated in corners
-  Coordinates::MetricTensor updated_coords = coords.getCovariantMetricTensor();
+  const auto updated_coords = coords.getCovariantMetricTensor();
   EXPECT_TRUE(IsFieldEqual(updated_coords.g11, 1. / 2.0, "RGN_NOCORNERS"));
   EXPECT_TRUE(IsFieldEqual(updated_coords.g22, 1. / 3.2, "RGN_NOCORNERS"));
   EXPECT_TRUE(IsFieldEqual(updated_coords.g33, 1. / 42, "RGN_NOCORNERS"));
@@ -336,7 +336,7 @@ TEST_F(CoordinatesTest, GetContravariantMetricTensor) {
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
 
-  Coordinates::MetricTensor const contravariant_components = coords.getContravariantMetricTensor();
+  const auto contravariant_components = coords.getContravariantMetricTensor();
 
   EXPECT_TRUE(IsFieldEqual(contravariant_components.g11, 1.2));
   EXPECT_TRUE(IsFieldEqual(contravariant_components.g22, 2.3));
@@ -380,7 +380,7 @@ TEST_F(CoordinatesTest, SetContravariantMetricTensor) {
   coords.setContravariantMetricTensor(updated_metric_tensor);
 
   //  Get values with getter and check they have been modified as expected
-  Coordinates::MetricTensor g = coords.getContravariantMetricTensor();
+  const auto g = coords.getContravariantMetricTensor();
   EXPECT_TRUE(IsFieldEqual(g.g11, 1.7));
   EXPECT_TRUE(IsFieldEqual(g.g22, 2.3));
   EXPECT_TRUE(IsFieldEqual(g.g33, 3.1));
@@ -411,7 +411,7 @@ TEST_F(CoordinatesTest, GetCovariantMetricTensor) {
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
 
-  Coordinates::MetricTensor const covariant_components = coords.getCovariantMetricTensor();
+  const auto covariant_components = coords.getCovariantMetricTensor();
 
   EXPECT_TRUE(IsFieldEqual(covariant_components.g11, 9.7));
   EXPECT_TRUE(IsFieldEqual(covariant_components.g22, 7.5));
@@ -456,7 +456,7 @@ TEST_F(CoordinatesTest, SetCovariantMetricTensor) {
     coords.setCovariantMetricTensor(updated_metric_tensor);
 
     //  Get values with getter and check they have been modified as expected
-    Coordinates::MetricTensor g = coords.getCovariantMetricTensor();
+    const auto g = coords.getCovariantMetricTensor();
     EXPECT_TRUE(IsFieldEqual(g.g11, 1.7));
     EXPECT_TRUE(IsFieldEqual(g.g22, 2.3));
     EXPECT_TRUE(IsFieldEqual(g.g33, 3.1));
