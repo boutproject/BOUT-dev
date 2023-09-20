@@ -185,6 +185,9 @@ authors:
   - family-names: James
     given-names: Toby
 
+  - family-names: Tom
+    given-names: Chapman
+
 version: 5.0.0
 date-released: 2023-02-08
 repository-code: https://github.com/boutproject/BOUT-dev
