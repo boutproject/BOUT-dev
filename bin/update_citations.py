@@ -217,8 +217,10 @@ KNOWN_AUTHORS = {
     "Michael Loiten Magnussen": KnownAuthor("Løiten", "Michael"),
     "Maxim Umansky - x26041": KnownAuthor("Umansky", "Maxim"),
     "nick-walkden": KnownAuthor("Walkden", "Nicholas"),
-    "ZedThree": KnownAuthor("Hill", "Peter")
-    # "tomc271": KnownAuthor("Chapman", "Tom")
+    "ZedThree": KnownAuthor("Hill", "Peter"),
+    "tomc271": KnownAuthor("Chapman", "Tom"),
+    "j-b-o": KnownAuthor("Omotani", "John"),
+    "BS": KnownAuthor("Brendan", "Shanahan"),
 }
 
 if __name__ == "__main__":
