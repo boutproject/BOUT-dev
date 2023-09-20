@@ -195,6 +195,9 @@ def update_citations():
         if not author_found_in_existing_authors(a[0], existing_authors)
     ]
 
+    if not unrecognised_authors:
+        return
+
     print("The following authors were not recognised. Add to citations?")
     for author in unrecognised_authors:
         print(author)
