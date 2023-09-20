@@ -209,7 +209,7 @@ class KnownAuthor(NamedTuple):
 
 
 KNOWN_AUTHORS = {
-    "bendudson": KnownAuthor("Dodson", "Benjamin"),
+    "bendudson": KnownAuthor("Dudson", "Benjamin"),
     "brey": KnownAuthor("Breyiannis", "George"),
     "David Schwörer": KnownAuthor("Bold", "David"),
     "dschwoerer": KnownAuthor("Bold", "David"),
