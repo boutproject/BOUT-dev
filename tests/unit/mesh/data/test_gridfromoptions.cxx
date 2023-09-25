@@ -359,7 +359,7 @@ TEST_F(GridFromOptionsTest, CoordinatesCentre) {
 
   mesh_from_options.communicate(expected_2d);
 
-  Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
+  Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
 
   EXPECT_TRUE(IsFieldEqual(g.g11, expected_metric + 5.));
   EXPECT_TRUE(IsFieldEqual(g.g22, expected_metric + 4.));
@@ -375,7 +375,7 @@ TEST_F(GridFromOptionsTest, CoordinatesZlow) {
 
   mesh_from_options.communicate(expected_2d);
 
-  Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
+  Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
 
   EXPECT_TRUE(IsFieldEqual(g.g11, expected_metric + 5.));
   EXPECT_TRUE(IsFieldEqual(g.g22, expected_metric + 4.));
@@ -405,7 +405,7 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowInterp) {
 
   mesh_from_options.communicate(expected_xlow);
 
-  Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
+  Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
 
   EXPECT_TRUE(
       IsFieldEqual(g.g11, expected_xlow + 5., "RGN_NOBNDRY", this_tolerance));
@@ -449,7 +449,7 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowRead) {
 
   mesh_from_options.communicate(expected_xlow);
 
-  Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
+  Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
 
   EXPECT_TRUE(IsFieldEqual(g.g11, expected_xlow + 5.));
   EXPECT_TRUE(g.g11.getLocation() == CELL_XLOW);
@@ -483,7 +483,7 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
 
   mesh_from_options.communicate(expected_ylow);
 
-  Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
+  Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
 
   EXPECT_TRUE(
       IsFieldEqual(g.g11, expected_ylow + 5., "RGN_NOBNDRY", this_tolerance));
@@ -536,7 +536,7 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowRead) {
 
   mesh_from_options.communicate(expected_ylow);
 
-  Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
+  Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
 
   EXPECT_TRUE(IsFieldEqual(g.g11, expected_ylow + 5., "RGN_ALL", this_tolerance));
   EXPECT_TRUE(g.g11.getLocation() == CELL_YLOW);
@@ -560,7 +560,7 @@ TEST_F(GridFromOptionsTest, CoordinatesZlowRead) {
 
   auto coords = mesh_from_options.getCoordinates(CELL_ZLOW);
 
-  Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
+  Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
 
   EXPECT_TRUE(IsFieldEqual(g.g11, expected_2d + 5.));
   EXPECT_TRUE(IsFieldEqual(g.g22, expected_2d + 4.));

@@ -106,7 +106,7 @@ Field3D InvertParDivCR::solve(const Field3D& f) {
 
   const Field2D dy = coord->dy;
   const Field2D J = coord->J;
-  const Field2D g_22 = coord->getCovariantMetricTensor().g22;
+  const Field2D g_22 = coord->getCovariantMetricTensor().g_22;
 
   const auto zlength = getUniform(coord->zlength());
   // Loop over flux-surfaces

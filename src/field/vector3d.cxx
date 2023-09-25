@@ -85,18 +85,18 @@ void Vector3D::toCovariant() {
       const auto x_at_z = interp_to(x, z.getLocation());
       const auto y_at_z = interp_to(y, z.getLocation());
 
-      Coordinates::MetricTensor g_x = metric_x->getCovariantMetricTensor();
-      Coordinates::MetricTensor g_y = metric_y->getCovariantMetricTensor();
-      Coordinates::MetricTensor g_z = metric_z->getCovariantMetricTensor();
+      Coordinates::CovariantMetricTensor g_x = metric_x->getCovariantMetricTensor();
+      Coordinates::CovariantMetricTensor g_y = metric_y->getCovariantMetricTensor();
+      Coordinates::CovariantMetricTensor g_z = metric_z->getCovariantMetricTensor();
       
       // multiply by g_{ij}
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
-        x[i] = g_x.g11[i] * x[i] + g_x.g12[i] * y_at_x[i]
-               + g_x.g13[i] * z_at_x[i];
-        y[i] = g_y.g22[i] * y[i] + g_y.g12[i] * x_at_y[i]
-               + g_y.g23[i] * z_at_y[i];
-        z[i] = g_z.g33[i] * z[i] + g_z.g13[i] * x_at_z[i]
-               + g_z.g23[i] * y_at_z[i];
+        x[i] = g_x.g_11[i] * x[i] + g_x.g_12[i] * y_at_x[i]
+               + g_x.g_13[i] * z_at_x[i];
+        y[i] = g_y.g_22[i] * y[i] + g_y.g_12[i] * x_at_y[i]
+               + g_y.g_23[i] * z_at_y[i];
+        z[i] = g_z.g_33[i] * z[i] + g_z.g_13[i] * x_at_z[i]
+               + g_z.g_23[i] * y_at_z[i];
       };
     } else {
       const auto metric = localmesh->getCoordinates(location);
@@ -104,12 +104,12 @@ void Vector3D::toCovariant() {
       // Need to use temporary arrays to store result
       Field3D gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
-      Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
+      Coordinates::CovariantMetricTensor covariant_components = metric->getCovariantMetricTensor();
 
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
-        gx[i] = covariant_components.g11[i] * x[i] + covariant_components.g12[i] * y[i] + covariant_components.g13[i] * z[i];
-        gy[i] = covariant_components.g22[i] * y[i] + covariant_components.g12[i] * x[i] + covariant_components.g23[i] * z[i];
-        gz[i] = covariant_components.g33[i] * z[i] + covariant_components.g13[i] * x[i] + covariant_components.g23[i] * y[i];
+        gx[i] = covariant_components.g_11[i] * x[i] + covariant_components.g_12[i] * y[i] + covariant_components.g_13[i] * z[i];
+        gy[i] = covariant_components.g_22[i] * y[i] + covariant_components.g_12[i] * x[i] + covariant_components.g_23[i] * z[i];
+        gz[i] = covariant_components.g_33[i] * z[i] + covariant_components.g_13[i] * x[i] + covariant_components.g_23[i] * y[i];
       };
 
       x = gx;
@@ -145,9 +145,9 @@ void Vector3D::toContravariant() {
       const auto x_at_z = interp_to(x, z.getLocation());
       const auto y_at_z = interp_to(y, z.getLocation());
 
-      Coordinates::MetricTensor g_x = metric_x->getContravariantMetricTensor();
-      Coordinates::MetricTensor g_y = metric_y->getContravariantMetricTensor();
-      Coordinates::MetricTensor g_z = metric_z->getContravariantMetricTensor();
+      Coordinates::ContravariantMetricTensor g_x = metric_x->getContravariantMetricTensor();
+      Coordinates::ContravariantMetricTensor g_y = metric_y->getContravariantMetricTensor();
+      Coordinates::ContravariantMetricTensor g_z = metric_z->getContravariantMetricTensor();
 
       // multiply by g_{ij}
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
@@ -162,7 +162,7 @@ void Vector3D::toContravariant() {
       // Need to use temporary arrays to store result
       Field3D gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
-      Coordinates::MetricTensor g = metric->getContravariantMetricTensor();
+      Coordinates::ContravariantMetricTensor g = metric->getContravariantMetricTensor();
 
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
         gx[i] = g.g11[i] * x[i] + g.g12[i] * y[i] + g.g13[i] * z[i];
@@ -491,7 +491,7 @@ const Field3D Vector3D::operator*(const Vector3D& rhs) const {
 
     if (covariant) {
       // Both covariant
-      Coordinates::MetricTensor g = metric->getContravariantMetricTensor();
+      Coordinates::ContravariantMetricTensor g = metric->getContravariantMetricTensor();
       result =
           x * rhs.x * g.g11 + y * rhs.y * g.g22 + z * rhs.z * g.g33;
       result += (x * rhs.y + y * rhs.x) * g.g12
@@ -499,12 +499,12 @@ const Field3D Vector3D::operator*(const Vector3D& rhs) const {
                 + (y * rhs.z + z * rhs.y) * g.g23;
     } else {
       // Both contravariant
-      Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
+      Coordinates::CovariantMetricTensor covariant_components = metric->getCovariantMetricTensor();
       result =
-          x * rhs.x * covariant_components.g11 + y * rhs.y * covariant_components.g22 + z * rhs.z * covariant_components.g33;
-      result += (x * rhs.y + y * rhs.x) * covariant_components.g12
-                + (x * rhs.z + z * rhs.x) * covariant_components.g13
-                + (y * rhs.z + z * rhs.y) * covariant_components.g23;
+          x * rhs.x * covariant_components.g_11 + y * rhs.y * covariant_components.g_22 + z * rhs.z * covariant_components.g_33;
+      result += (x * rhs.y + y * rhs.x) * covariant_components.g_12
+                + (x * rhs.z + z * rhs.x) * covariant_components.g_13
+                + (y * rhs.z + z * rhs.y) * covariant_components.g_23;
     }
   }
 
@@ -525,7 +525,7 @@ const Field3D Vector3D::operator*(const Vector2D& rhs) const {
     Coordinates* metric = x.getCoordinates(location);
     if (covariant) {
       // Both covariant
-      Coordinates::MetricTensor g = metric->getContravariantMetricTensor();
+      Coordinates::ContravariantMetricTensor g = metric->getContravariantMetricTensor();
       result =
           x * rhs.x * g.g11 + y * rhs.y * g.g22 + z * rhs.z * g.g33;
       result += (x * rhs.y + y * rhs.x) * g.g12
@@ -533,12 +533,12 @@ const Field3D Vector3D::operator*(const Vector2D& rhs) const {
                 + (y * rhs.z + z * rhs.y) * g.g23;
     } else {
       // Both contravariant
-      Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
+      Coordinates::CovariantMetricTensor covariant_components = metric->getCovariantMetricTensor();
       result =
-          x * rhs.x * covariant_components.g11 + y * rhs.y * covariant_components.g22 + z * rhs.z * covariant_components.g33;
-      result += (x * rhs.y + y * rhs.x) * covariant_components.g12
-                + (x * rhs.z + z * rhs.x) * covariant_components.g13
-                + (y * rhs.z + z * rhs.y) * covariant_components.g23;
+          x * rhs.x * covariant_components.g_11 + y * rhs.y * covariant_components.g_22 + z * rhs.z * covariant_components.g_33;
+      result += (x * rhs.y + y * rhs.x) * covariant_components.g_12
+                + (x * rhs.z + z * rhs.x) * covariant_components.g_13
+                + (y * rhs.z + z * rhs.y) * covariant_components.g_23;
     }
   }
 

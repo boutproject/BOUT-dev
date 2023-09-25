@@ -48,12 +48,12 @@ protected:
     coords->setContravariantMetricTensor(contravariant_components);
 
     Coordinates::MetricTensor covariant_components;
-    covariant_components.g11 = 1.0;
-    covariant_components.g22 = 1.0;
-    covariant_components.g33 = 1.0;
-    covariant_components.g12 = 0.0;
-    covariant_components.g13 = 0.0;
-    covariant_components.g23 = 0.0;
+    covariant_components.g_11 = 1.0;
+    covariant_components.g_22 = 1.0;
+    covariant_components.g_33 = 1.0;
+    covariant_components.g_12 = 0.0;
+    covariant_components.g_13 = 0.0;
+    covariant_components.g_23 = 0.0;
     coords->setCovariantMetricTensor(covariant_components);
 
     coords->geometry();

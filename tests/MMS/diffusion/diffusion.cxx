@@ -43,7 +43,7 @@ int Diffusion::init(bool UNUSED(restarting)) {
   SAVE_ONCE(mu_N);
 
   //set mesh
-  Coordinates::MetricTensor contravariant_components;
+  Coordinates::ContravariantMetricTensor contravariant_components;
   contravariant_components.g11 = 1.0;
   contravariant_components.g22 = 1.0;
   contravariant_components.g33 = 1.0;
@@ -52,13 +52,13 @@ int Diffusion::init(bool UNUSED(restarting)) {
   contravariant_components.g23 = 0.0;
   coord->setContravariantMetricTensor(contravariant_components);
 
-  Coordinates::MetricTensor covariant_components;
-  covariant_components.g11 = 1.0;
-  covariant_components.g22 = 1.0;
-  covariant_components.g33 = 1.0;
-  covariant_components.g12 = 0.0;
-  covariant_components.g13 = 0.0;
-  covariant_components.g23 = 0.0;
+  Coordinates::CovariantMetricTensor covariant_components;
+  covariant_components.g_11 = 1.0;
+  covariant_components.g_22 = 1.0;
+  covariant_components.g_33 = 1.0;
+  covariant_components.g_12 = 0.0;
+  covariant_components.g_13 = 0.0;
+  covariant_components.g_23 = 0.0;
   coord->setCovariantMetricTensor(covariant_components);
 
   coord->geometry();

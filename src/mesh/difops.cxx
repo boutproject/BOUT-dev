@@ -101,11 +101,11 @@ Field3D Grad_parP(const Field3D& apar, const Field3D& f) {
     }
   }
 
-  Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
+  Coordinates::CovariantMetricTensor covariant_components = metric->getCovariantMetricTensor();
   for (int x = 1; x <= mesh->LocalNx - 2; x++) {
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
       for (int z = 0; z < ncz; z++) {
-        BoutReal by = 1. / sqrt(covariant_components.g22(x, y, z));
+        BoutReal by = 1. / sqrt(covariant_components.g_22(x, y, z));
         // Z indices zm and zp
         int zm = (z - 1 + ncz) % ncz;
         int zp = (z + 1) % ncz;
@@ -248,7 +248,7 @@ Field3D Div_par(const Field3D& f, const Field3D& v) {
 
   Coordinates* coord = f.getCoordinates();
 
-  Coordinates::MetricTensor covariant_components = coord->getCovariantMetricTensor();
+  Coordinates::CovariantMetricTensor covariant_components = coord->getCovariantMetricTensor();
 
   for (int i = mesh->xstart; i <= mesh->xend; i++) {
     for (int j = mesh->ystart; j <= mesh->yend; j++) {
@@ -263,12 +263,12 @@ Field3D Div_par(const Field3D& f, const Field3D& v) {
         // Calculate flux at right boundary (y+1/2)
         BoutReal fluxRight =
             fR * vR * (coord->J(i, j, k) + coord->J(i, j + 1, k))
-            / (sqrt(covariant_components.g22(i, j, k)) + sqrt(covariant_components.g22(i, j + 1, k)));
+            / (sqrt(covariant_components.g_22(i, j, k)) + sqrt(covariant_components.g_22(i, j + 1, k)));
 
         // Calculate at left boundary (y-1/2)
         BoutReal fluxLeft =
             fL * vL * (coord->J(i, j, k) + coord->J(i, j - 1, k))
-            / (sqrt(covariant_components.g22(i, j, k)) + sqrt(covariant_components.g22(i, j - 1, k)));
+            / (sqrt(covariant_components.g_22(i, j, k)) + sqrt(covariant_components.g_22(i, j - 1, k)));
 
         result(i, j, k) =
             (fluxRight - fluxLeft) / (coord->dy(i, j, k) * coord->J(i, j, k));
@@ -290,7 +290,7 @@ Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
   if (!f.hasParallelSlices()) {
     return metric->Bxy
            * FDDY(v, f / Bxy_floc, outloc, method)
-           / sqrt(metric->getCovariantMetricTensor().g22);
+           / sqrt(metric->getCovariantMetricTensor().g_22);
   }
 
   // Need to modify yup and ydown fields
@@ -301,7 +301,7 @@ Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
   f_B.ydown() = f.ydown() / Bxy_floc;
   return metric->Bxy
          * FDDY(v, f_B, outloc, method)
-         / sqrt(metric->getCovariantMetricTensor().g22);
+         / sqrt(metric->getCovariantMetricTensor().g_22);
 }
 
 Field3D Div_par_flux(const Field3D& v, const Field3D& f, const std::string& method,
@@ -479,15 +479,15 @@ Coordinates::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
   Coordinates::FieldMetric dpdx = DDX(phi, outloc);
   Coordinates::FieldMetric dpdy = DDY(phi, outloc);
 
-  Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
+  Coordinates::CovariantMetricTensor covariant_components = metric->getCovariantMetricTensor();
 
   // Calculate advection velocity
-  Coordinates::FieldMetric vx = -covariant_components.g23 * dpdy;
-  Coordinates::FieldMetric vy = covariant_components.g23 * dpdx;
+  Coordinates::FieldMetric vx = -covariant_components.g_23 * dpdy;
+  Coordinates::FieldMetric vy = covariant_components.g_23 * dpdx;
 
   // Upwind A using these velocities
   Coordinates::FieldMetric result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
-  result /= metric->J * sqrt(covariant_components.g22);
+  result /= metric->J * sqrt(covariant_components.g_22);
 
   ASSERT1(result.getLocation() == outloc);
 
@@ -514,12 +514,12 @@ Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A, CELL_LOC outloc) 
   Coordinates::FieldMetric dpdx = DDX(phi, outloc);
   Coordinates::FieldMetric dpdy = DDY(phi, outloc);
 
-  Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
+  Coordinates::CovariantMetricTensor covariant_components = metric->getCovariantMetricTensor();
 
   // Calculate advection velocity
-  Coordinates::FieldMetric vx = -covariant_components.g23 * dpdy;
-  Coordinates::FieldMetric vy = covariant_components.g23 * dpdx;
-  Coordinates::FieldMetric vz = covariant_components.g12 * dpdy - covariant_components.g22 * dpdx;
+  Coordinates::FieldMetric vx = -covariant_components.g_23 * dpdy;
+  Coordinates::FieldMetric vy = covariant_components.g_23 * dpdx;
+  Coordinates::FieldMetric vz = covariant_components.g_12 * dpdy - covariant_components.g_22 * dpdx;
 
   if (mesh->IncIntShear) {
     // BOUT-06 style differencing
@@ -530,7 +530,7 @@ Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A, CELL_LOC outloc) 
 
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc) + VDDZ(vz, A, outloc);
 
-  result /= (metric->J * sqrt(covariant_components.g22));
+  result /= (metric->J * sqrt(covariant_components.g_22));
 
 #if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad(" + phi.name + "," + A.name + ")";
@@ -557,17 +557,17 @@ Field3D b0xGrad_dot_Grad(const Field3D& p, const Field2D& A, CELL_LOC outloc) {
   Field3D dpdy = DDY(p, outloc);
   Field3D dpdz = DDZ(p, outloc);
 
-  Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
+  Coordinates::CovariantMetricTensor covariant_components = metric->getCovariantMetricTensor();
 
   // Calculate advection velocity
-  Field3D vx = covariant_components.g22 * dpdz - covariant_components.g23 * dpdy;
-  Field3D vy = covariant_components.g23 * dpdx - covariant_components.g12 * dpdz;
+  Field3D vx = covariant_components.g_22 * dpdz - covariant_components.g_23 * dpdy;
+  Field3D vy = covariant_components.g_23 * dpdx - covariant_components.g_12 * dpdz;
 
   // Upwind A using these velocities
 
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
 
-  result /= (metric->J * sqrt(covariant_components.g22));
+  result /= (metric->J * sqrt(covariant_components.g_22));
 
 #if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad(" + p.name + "," + A.name + ")";
@@ -596,12 +596,12 @@ Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A, CELL_LOC outloc) 
   Field3D dpdy = DDY(phi, outloc);
   Field3D dpdz = DDZ(phi, outloc);
 
-  Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
+  Coordinates::CovariantMetricTensor covariant_components = metric->getCovariantMetricTensor();
 
   // Calculate advection velocity
-  Field3D vx = covariant_components.g22 * dpdz - covariant_components.g23 * dpdy;
-  Field3D vy = covariant_components.g23 * dpdx - covariant_components.g12 * dpdz;
-  Field3D vz = covariant_components.g12 * dpdy - covariant_components.g22 * dpdx;
+  Field3D vx = covariant_components.g_22 * dpdz - covariant_components.g_23 * dpdy;
+  Field3D vy = covariant_components.g_23 * dpdx - covariant_components.g_12 * dpdz;
+  Field3D vz = covariant_components.g_12 * dpdy - covariant_components.g_22 * dpdx;
 
   if (mesh->IncIntShear) {
     // BOUT-06 style differencing
@@ -610,7 +610,7 @@ Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A, CELL_LOC outloc) 
 
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc) + VDDZ(vz, A, outloc);
 
-  result /= (metric->J * sqrt(covariant_components.g22));
+  result /= (metric->J * sqrt(covariant_components.g_22));
 
 #if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad(" + phi.name + "," + A.name + ")";

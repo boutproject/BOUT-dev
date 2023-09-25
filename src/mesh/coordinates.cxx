@@ -834,7 +834,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     dz = interpolateAndExtrapolate(coords_in->dz, location, true, true, false,
                                    transform.get());
 
-    Coordinates::MetricTensor metric_tensor = coords_in->getContravariantMetricTensor();
+    Coordinates::ContravariantMetricTensor metric_tensor = coords_in->getContravariantMetricTensor();
 
     // Diagonal components of metric tensor g^{ij}
     g11 = interpolateAndExtrapolate(metric_tensor.g11, location, true, true, false,
@@ -2026,18 +2026,18 @@ void Coordinates::checkContravariant() {
   }
 }
 
-Coordinates::MetricTensor Coordinates::getContravariantMetricTensor() const {
-    MetricTensor g_contravariant = { g11, g22, g33, g12, g13, g23 };
+Coordinates::ContravariantMetricTensor Coordinates::getContravariantMetricTensor() const {
+  ContravariantMetricTensor g_contravariant = { g11, g22, g33, g12, g13, g23 };
     return g_contravariant;
 }
 
-Coordinates::MetricTensor Coordinates::getCovariantMetricTensor() const {
-    MetricTensor g_covariant = { g_11, g_22, g_33, g_12, g_13, g_23 };
+Coordinates::CovariantMetricTensor Coordinates::getCovariantMetricTensor() const {
+    CovariantMetricTensor g_covariant = { g_11, g_22, g_33, g_12, g_13, g_23 };
     return g_covariant;
 }
 
 void Coordinates::setContravariantMetricTensor(
-    const Coordinates::MetricTensor& metric_tensor) {
+    const Coordinates::ContravariantMetricTensor& metric_tensor) {
     g11 = metric_tensor.g11;
     g22 = metric_tensor.g22;
     g33 = metric_tensor.g33;
@@ -2048,12 +2048,12 @@ void Coordinates::setContravariantMetricTensor(
 }
 
 void Coordinates::setCovariantMetricTensor(
-    const Coordinates::MetricTensor& metric_tensor) {
-    g_11 = metric_tensor.g11;
-    g_22 = metric_tensor.g22;
-    g_33 = metric_tensor.g33;
-    g_12 = metric_tensor.g12;
-    g_13 = metric_tensor.g13;
-    g_23 = metric_tensor.g23;
+    const Coordinates::CovariantMetricTensor& metric_tensor) {
+    g_11 = metric_tensor.g_11;
+    g_22 = metric_tensor.g_22;
+    g_33 = metric_tensor.g_33;
+    g_12 = metric_tensor.g_12;
+    g_13 = metric_tensor.g_13;
+    g_23 = metric_tensor.g_23;
     calcContravariant();
 }
