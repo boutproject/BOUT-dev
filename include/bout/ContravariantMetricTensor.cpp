@@ -1,20 +1,28 @@
 
 #include "ContravariantMetricTensor.h"
 
-
-ContravariantMetricTensor ContravariantMetricTensor::getContravariantMetricTensor() const {
-  ContravariantMetricTensor g_contravariant = { g11, g22, g33, g12, g13, g23 };
-  return g_contravariant;
+ContravariantMetricTensor::ContravariantMetricTensor(
+    const FieldMetric g11, const FieldMetric g22, const FieldMetric g33,
+    const FieldMetric g12, const FieldMetric g13, const FieldMetric g23) {
+  contravariant_components = {g11, g22, g33, g12, g13, g23};
 }
 
-void ContravariantMetricTensor::setContravariantMetricTensor(
-    const ContravariantMetricTensor& metric_tensor) {
-  g11 = metric_tensor.g11;
-  g22 = metric_tensor.g22;
-  g33 = metric_tensor.g33;
-  g12 = metric_tensor.g12;
-  g13 = metric_tensor.g13;
-  g23 = metric_tensor.g23;
+ContravariantMetricTensor::ContravariantComponents ContravariantMetricTensor::getContravariantMetricTensor() const {
+  return ContravariantComponents{
+      contravariant_components.g11, contravariant_components.g22,
+      contravariant_components.g33, contravariant_components.g12,
+      contravariant_components.g13, contravariant_components.g23};
+}
+
+void ContravariantMetricTensor::setContravariantMetricTensor(const ContravariantMetricTensor& metric_tensor) {
+
+  const auto new_components = metric_tensor.getContravariantMetricTensor();
+  contravariant_components.g11 = new_components.g11;
+  contravariant_components.g22 = new_components.g22;
+  contravariant_components.g33 = new_components.g33;
+  contravariant_components.g12 = new_components.g12;
+  contravariant_components.g13 = new_components.g13;
+  contravariant_components.g23 = new_components.g23;
   calcCovariant();
 }
 
@@ -83,50 +91,50 @@ int ContravariantMetricTensor::calcCovariant(const std::string& region) {
 
 void ContravariantMetricTensor::checkContravariant() {
   // Diagonal metric components should be finite
-  bout::checkFinite(g11, "g11", "RGN_NOCORNERS");
-  bout::checkFinite(g22, "g22", "RGN_NOCORNERS");
-  bout::checkFinite(g33, "g33", "RGN_NOCORNERS");
-  if (g11.hasParallelSlices() && &g11.ynext(1) != &g11) {
+  bout::checkFinite(contravariant_components.g11, "g11", "RGN_NOCORNERS");
+  bout::checkFinite(contravariant_components.g22, "g22", "RGN_NOCORNERS");
+  bout::checkFinite(contravariant_components.g33, "g33", "RGN_NOCORNERS");
+  if (contravariant_components.g11.hasParallelSlices() && &contravariant_components.g11.ynext(1) != &contravariant_components.g11) {
     for (int dy = 1; dy <= localmesh->ystart; ++dy) {
       for (const auto sign : {1, -1}) {
-        bout::checkFinite(g11.ynext(sign * dy), "g11.ynext",
+        bout::checkFinite(contravariant_components.g11.ynext(sign * dy), "g11.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g22.ynext(sign * dy), "g22.ynext",
+        bout::checkFinite(contravariant_components.g22.ynext(sign * dy), "g22.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g33.ynext(sign * dy), "g33.ynext",
+        bout::checkFinite(contravariant_components.g33.ynext(sign * dy), "g33.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
       }
     }
   }
   // Diagonal metric components should be positive
-  bout::checkPositive(g11, "g11", "RGN_NOCORNERS");
-  bout::checkPositive(g22, "g22", "RGN_NOCORNERS");
-  bout::checkPositive(g33, "g33", "RGN_NOCORNERS");
-  if (g11.hasParallelSlices() && &g11.ynext(1) != &g11) {
+  bout::checkPositive(contravariant_components.g11, "g11", "RGN_NOCORNERS");
+  bout::checkPositive(contravariant_components.g22, "g22", "RGN_NOCORNERS");
+  bout::checkPositive(contravariant_components.g33, "g33", "RGN_NOCORNERS");
+  if (contravariant_components.g11.hasParallelSlices() && &contravariant_components.g11.ynext(1) != &contravariant_components.g11) {
     for (int dy = 1; dy <= localmesh->ystart; ++dy) {
       for (const auto sign : {1, -1}) {
-        bout::checkPositive(g11.ynext(sign * dy), "g11.ynext",
+        bout::checkPositive(contravariant_components.g11.ynext(sign * dy), "g11.ynext",
                             fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkPositive(g22.ynext(sign * dy), "g22.ynext",
+        bout::checkPositive(contravariant_components.g22.ynext(sign * dy), "g22.ynext",
                             fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkPositive(g33.ynext(sign * dy), "g33.ynext",
+        bout::checkPositive(contravariant_components.g33.ynext(sign * dy), "g33.ynext",
                             fmt::format("RGN_YPAR_{:+d}", sign * dy));
       }
     }
   }
 
   // Off-diagonal metric components should be finite
-  bout::checkFinite(g12, "g12", "RGN_NOCORNERS");
-  bout::checkFinite(g13, "g13", "RGN_NOCORNERS");
-  bout::checkFinite(g23, "g23", "RGN_NOCORNERS");
-  if (g23.hasParallelSlices() && &g23.ynext(1) != &g23) {
+  bout::checkFinite(contravariant_components.g12, "g12", "RGN_NOCORNERS");
+  bout::checkFinite(contravariant_components.g13, "g13", "RGN_NOCORNERS");
+  bout::checkFinite(contravariant_components.g23, "g23", "RGN_NOCORNERS");
+  if (contravariant_components.g23.hasParallelSlices() && &contravariant_components.g23.ynext(1) != &contravariant_components.g23) {
     for (int dy = 1; dy <= localmesh->ystart; ++dy) {
       for (const auto sign : {1, -1}) {
-        bout::checkFinite(g12.ynext(sign * dy), "g12.ynext",
+        bout::checkFinite(contravariant_components.g12.ynext(sign * dy), "g12.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g13.ynext(sign * dy), "g13.ynext",
+        bout::checkFinite(contravariant_components.g13.ynext(sign * dy), "g13.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g23.ynext(sign * dy), "g23.ynext",
+        bout::checkFinite(contravariant_components.g23.ynext(sign * dy), "g23.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
       }
     }

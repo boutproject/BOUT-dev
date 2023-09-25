@@ -111,7 +111,7 @@ public:
     FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
   };
 
-  ContravariantMetricTensor getContravariantMetricTensor() const;
+  ContravariantMetricTensor::ContravariantComponents getContravariantMetricTensor() const;
 
   CovariantMetricTensor getCovariantMetricTensor() const;
 
