@@ -1,5 +1,6 @@
 #include "bout/coordinates_accessor.hxx"
 
+#include "bout/ContravariantMetricTensor.h"
 #include "bout/mesh.hxx"
 
 #include <map>
@@ -60,7 +61,7 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
         coords->Bxy.ydown()[ind];
 
     COPY_STRIPE(G1, G3);
-    Coordinates::ContravariantMetricTensor contravariant_components =
+    const auto contravariant_components =
         coords->getContravariantMetricTensor();
     //    COPY_STRIPE(g11, g12, g13, g22, g23, g33);
     data[stripe_size * ind.ind + static_cast<int>(Offset::g11)] =
@@ -77,7 +78,7 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
         contravariant_components.g33[ind];
 
     //    COPY_STRIPE(g_11, g_12, g_13, g_22, g_23, g_33);
-    Coordinates::CovariantMetricTensor covariant_components = coords->getCovariantMetricTensor();
+    const auto covariant_components = coords->getCovariantMetricTensor();
     data[stripe_size * ind.ind + static_cast<int>(Offset::g_11)] =
         covariant_components.g_11[ind];
     data[stripe_size * ind.ind + static_cast<int>(Offset::g_12)] =

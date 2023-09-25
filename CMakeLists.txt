@@ -354,7 +354,9 @@ set(BOUT_SOURCES
   ./src/sys/utils.cxx
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/revision.hxx
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
-  )
+        include/bout/ContravariantMetricTensor.cpp
+        include/bout/ContravariantMetricTensor.h
+)
 
 
 find_package(Python3)
