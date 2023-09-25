@@ -370,7 +370,7 @@ TEST_F(CoordinatesTest, SetContravariantMetricTensor) {
                      FieldMetric{0.0}}; // IntShiftTorsion
 
   //  Modify with setter
-  Coordinates::ContravariantMetricTensor updated_metric_tensor;
+  const auto updated_metric_tensor;
   updated_metric_tensor.g11 = 1.7;
   updated_metric_tensor.g22 = 2.3;
   updated_metric_tensor.g33 = 3.1;
@@ -446,7 +446,7 @@ TEST_F(CoordinatesTest, SetCovariantMetricTensor) {
                        FieldMetric{0.0}}; // IntShiftTorsion
 
     //  Modify with setter
-    Coordinates::CovariantMetricTensor updated_metric_tensor;
+    const auto updated_metric_tensor;
     updated_metric_tensor.g_11 = 1.7;
     updated_metric_tensor.g_22 = 2.3;
     updated_metric_tensor.g_33 = 3.1;

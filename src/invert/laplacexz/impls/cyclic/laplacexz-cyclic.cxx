@@ -72,7 +72,7 @@ void LaplaceXZcyclic::setCoefs(const Field2D& A2D, const Field2D& B2D) {
   // Set coefficients
 
   Coordinates* coord = localmesh->getCoordinates(location);
-  Coordinates::ContravariantMetricTensor g = coord->getContravariantMetricTensor();
+  const auto g = coord->getContravariantMetricTensor();
 
   // NOTE: For now the X-Z terms are omitted, so check that they are small
   ASSERT2(max(abs(g.g13)) < 1e-5);

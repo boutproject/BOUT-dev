@@ -31,7 +31,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
   Field3D result{zeroFrom(f)};
 
   Coordinates* coord = f.getCoordinates();
-  Coordinates::ContravariantMetricTensor g = coord->getContravariantMetricTensor();
+  const auto g = coord->getContravariantMetricTensor();
 
   // Flux in x
 
@@ -70,7 +70,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     // 3D Metric, need yup/ydown fields.
     // Requires previous communication of metrics
     // -- should insert communication here?
-    Coordinates::CovariantMetricTensor covariant_components = coord->getCovariantMetricTensor();
+    const auto covariant_components = coord->getCovariantMetricTensor();
     if (!g.g23.hasParallelSlices() || !covariant_components.g_23.hasParallelSlices()
         || !coord->dy.hasParallelSlices() || !coord->dz.hasParallelSlices()
         || !coord->Bxy.hasParallelSlices() || !coord->J.hasParallelSlices()) {
@@ -211,7 +211,7 @@ const Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin,
     const auto iyp = i.yp();
     const auto iym = i.ym();
 
-    Coordinates::CovariantMetricTensor covariant_components = coord->getCovariantMetricTensor();
+    const auto covariant_components = coord->getCovariantMetricTensor();
 
     if (bndry_flux || mesh->periodicY(i.x()) || !mesh->lastY(i.x())
         || (i.y() != mesh->yend)) {
@@ -503,7 +503,7 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
   //
   Coordinates* coords = a.getCoordinates(outloc);
   Mesh* mesh = f.getMesh();
-  Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
+  const auto g = coords->getContravariantMetricTensor();
 
   for (int i = mesh->xstart; i <= mesh->xend; i++) {
     for (int j = mesh->ystart; j <= mesh->yend; j++) {

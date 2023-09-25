@@ -248,7 +248,7 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
     // Derivatives of x
     Field3D ddx_x = DDX(x_in, location, "C2");
     Field3D ddz_x = DDZ(x_in, location, "FFT");
-    Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
+    const auto g = coords->getContravariantMetricTensor();
     return rhsOverD
            - (g.g11 * coef_x_AC * ddx_x + g.g33 * coef_z * ddz_x
               + g.g13 * (coef_x_AC * ddz_x + coef_z * ddx_x))

@@ -105,7 +105,7 @@ Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc, const std::string& method)
 
   Vector3D result(f.getMesh());
 
-  Coordinates::CovariantMetricTensor covariant_components = metric->getCovariantMetricTensor();
+  const auto covariant_components = metric->getCovariantMetricTensor();
   result.x = DDX(f, outloc, method)
              - covariant_components.g_12 * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
   result.y = 0.0;
@@ -128,7 +128,7 @@ Vector2D Grad_perp(const Field2D& f, CELL_LOC outloc, const std::string& method)
 
   Vector2D result(f.getMesh());
 
-  Coordinates::CovariantMetricTensor covariant_components = metric->getCovariantMetricTensor();
+  const auto covariant_components = metric->getCovariantMetricTensor();
   result.x = DDX(f, outloc, method)
              - covariant_components.g_12 * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
   result.y = 0.0;

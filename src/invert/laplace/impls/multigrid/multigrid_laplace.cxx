@@ -280,7 +280,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       // Neumann boundary condition
       if (inner_boundary_flags & INVERT_SET) {
         // guard cells of x0 specify gradient to set at inner boundary
-        Coordinates::CovariantMetricTensor covariant_components = coords->getCovariantMetricTensor();
+        const auto covariant_components = coords->getCovariantMetricTensor();
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
@@ -325,7 +325,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       // Neumann boundary condition
       if (inner_boundary_flags & INVERT_SET) {
         // guard cells of x0 specify gradient to set at outer boundary
-        Coordinates::CovariantMetricTensor covariant_components = coords->getCovariantMetricTensor();
+        const auto covariant_components = coords->getCovariantMetricTensor();
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
@@ -483,7 +483,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       // Neumann boundary condition
       if (inner_boundary_flags & INVERT_SET) {
         // guard cells of x0 specify gradient to set at inner boundary
-        Coordinates::CovariantMetricTensor covariant_components = coords->getCovariantMetricTensor();
+        const auto covariant_components = coords->getCovariantMetricTensor();
         int i2 = -1 + localmesh->xstart;
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
@@ -532,7 +532,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       // Neumann boundary condition
       if (inner_boundary_flags & INVERT_SET) {
         // guard cells of x0 specify gradient to set at outer boundary
-        Coordinates::CovariantMetricTensor covariant_components = coords->getCovariantMetricTensor();
+        const auto covariant_components = coords->getCovariantMetricTensor();
         int i2 = lxx + localmesh->xstart;
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
@@ -601,7 +601,7 @@ void LaplaceMultigrid::generateMatrixF(int level) {
       int k2p = (k2 + 1) % Nz_global;
       int k2m = (k2 + Nz_global - 1) % Nz_global;
 
-      Coordinates::ContravariantMetricTensor contravariant_components = coords->getContravariantMetricTensor();
+      const auto contravariant_components = coords->getContravariantMetricTensor();
 
       BoutReal dz = coords->dz(i2, yindex);
       BoutReal ddx_C = (C2(i2 + 1, yindex, k2) - C2(i2 - 1, yindex, k2)) / 2.
