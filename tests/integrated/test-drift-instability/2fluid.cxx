@@ -217,7 +217,7 @@ protected:
 
     /**************** CALCULATE METRICS ******************/
 
-    Coordinates::ContravariantMetricTensor contravariant_components;
+    const auto contravariant_components;
     contravariant_components.g11 = SQ(Rxy * Bpxy);
     contravariant_components.g22 = 1.0 / SQ(hthe);
     contravariant_components.g33 = SQ(I) * contravariant_components.g11 + SQ(coord->Bxy) / contravariant_components.g11;
@@ -228,7 +228,7 @@ protected:
 
     coord->J = hthe / Bpxy;
 
-    Coordinates::CovariantMetricTensor covariant_components;
+    const auto covariant_components;
     covariant_components.g_11 = 1.0 / contravariant_components.g11 + SQ(I * Rxy);
     covariant_components.g_22 = SQ(coord->Bxy * hthe / Bpxy);
     covariant_components.g_33 = Rxy * Rxy;

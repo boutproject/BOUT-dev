@@ -324,7 +324,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomple
 
   BoutReal coef1, coef2, coef3, coef4, coef5;
 
-  Coordinates::ContravariantMetricTensor contravariant_components = localcoords->getContravariantMetricTensor();
+  const auto contravariant_components = localcoords->getContravariantMetricTensor();
 
   coef1 = contravariant_components.g11(jx, jy);      ///< X 2nd derivative coefficient
   coef2 = contravariant_components.g33(jx, jy);      ///< Z 2nd derivative coefficient
@@ -494,8 +494,8 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
 
   // Set the boundary conditions if x is not periodic
   if (!localmesh->periodicX) {
-    Coordinates::ContravariantMetricTensor contravariant_components = coords->getContravariantMetricTensor();
-    Coordinates::CovariantMetricTensor covariant_components = coords->getCovariantMetricTensor();
+    const auto contravariant_components = coords->getContravariantMetricTensor();
+    const auto covariant_components = coords->getCovariantMetricTensor();
     if (localmesh->firstX()) {
       // INNER BOUNDARY ON THIS PROCESSOR
 

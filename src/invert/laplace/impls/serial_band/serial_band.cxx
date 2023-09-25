@@ -158,7 +158,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
       A(ix, 4) = 0.;
 #else
       // Set coefficients
-      Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
+      const auto g = coords->getContravariantMetricTensor();
       coef1 = g.g11(ix, jy); // X 2nd derivative
       coef2 = g.g33(ix, jy); // Z 2nd derivative
       coef3 = g.g13(ix, jy); // X-Z mixed derivatives
@@ -215,7 +215,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
       int ix = 1;
 
       auto kwave = kwave_(ix, jy);
-      Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
+      const auto g = coords->getContravariantMetricTensor();
       coef1 = g.g11(ix, jy) / (SQ(coords->dx(ix, jy)));
       coef2 = g.g33(ix, jy);
       coef3 = kwave * g.g13(ix, jy) / (2. * coords->dx(ix, jy));
@@ -266,7 +266,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
     if (iz == 0) {
       // DC
 
-      Coordinates::CovariantMetricTensor covariant_components = coords->getCovariantMetricTensor();
+      const auto covariant_components = coords->getCovariantMetricTensor();
 
       // Inner boundary
       if (inner_boundary_flags & (INVERT_DC_GRAD + INVERT_SET)
@@ -341,7 +341,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         int ix = 1;
 
         auto kwave = kwave_(ix, jy);
-        Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
+        const auto g = coords->getContravariantMetricTensor();
         coef1 = g.g11(ix, jy) / (12. * SQ(coords->dx(ix, jy)));
 
         coef2 = g.g33(ix, jy);
@@ -386,7 +386,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
 
         int ix = ncx - 1;
 
-        Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
+        const auto g = coords->getContravariantMetricTensor();
         coef1 = g.g11(ix, jy) / (12. * SQ(coords->dx(ix, jy)));
 
         coef2 = g.g33(ix, jy);

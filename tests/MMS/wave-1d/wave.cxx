@@ -32,7 +32,7 @@ protected:
     SAVE_ONCE(Lx, Ly);
 
     //set mesh
-    Coordinates::ContravariantMetricTensor contravariant_components = coord->getContravariantMetricTensor();
+    const auto contravariant_components = coord->getContravariantMetricTensor();
     contravariant_components.g11 = 1.0;
     contravariant_components.g22 = 1.0;
     contravariant_components.g33 = 1.0;
@@ -41,7 +41,7 @@ protected:
     contravariant_components.g23 = 0.0;
     coord->setContravariantMetricTensor(contravariant_components);
 
-    Coordinates::CovariantMetricTensor covariant_components;
+    const auto covariant_components;
     covariant_components.g_11 = 1.0;
     covariant_components.g_22 = 1.0;
     covariant_components.g_33 = 1.0;

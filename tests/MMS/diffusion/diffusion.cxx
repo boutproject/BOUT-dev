@@ -52,7 +52,7 @@ int Diffusion::init(bool UNUSED(restarting)) {
   contravariant_components.g23 = 0.0;
   coord->setContravariantMetricTensor(contravariant_components);
 
-  Coordinates::CovariantMetricTensor covariant_components;
+  Coordinates:: covariant_components;
   covariant_components.g_11 = 1.0;
   covariant_components.g_22 = 1.0;
   covariant_components.g_33 = 1.0;
