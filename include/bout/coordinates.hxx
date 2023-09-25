@@ -33,6 +33,7 @@
 #ifndef __COORDINATES_H__
 #define __COORDINATES_H__
 
+#include "ContravariantMetricTensor.h"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/paralleltransform.hxx"
@@ -98,17 +99,12 @@ public:
 
 private:
 
-  /// Contravariant metric tensor (g^{ij})
-  FieldMetric g11, g22, g33, g12, g13, g23;
-
+  ContravariantMetricTensor contravariantMetricTensor;
   /// Covariant metric tensor
   FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
 public:
 
-  struct ContravariantMetricTensor {
-    FieldMetric g11, g22, g33, g12, g13, g23;
-  };
 
   struct CovariantMetricTensor
   {
