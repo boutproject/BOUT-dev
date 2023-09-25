@@ -1925,7 +1925,7 @@ void Coordinates::setContravariantMetricTensor(
   contravariantMetricTensor.setContravariantMetricTensor(metric_tensor);
 }
 
-ContravariantMetricTensor Coordinates::getContravariantMetricTensor() const {
+ContravariantMetricTensor::ContravariantComponents Coordinates::getContravariantMetricTensor() const {
   return contravariantMetricTensor.getContravariantMetricTensor();
 }
 
