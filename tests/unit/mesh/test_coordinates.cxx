@@ -370,7 +370,7 @@ TEST_F(CoordinatesTest, SetContravariantMetricTensor) {
                      FieldMetric{0.0}}; // IntShiftTorsion
 
   //  Modify with setter
-  Coordinates::MetricTensor updated_metric_tensor;
+  Coordinates::ContravariantMetricTensor updated_metric_tensor;
   updated_metric_tensor.g11 = 1.7;
   updated_metric_tensor.g22 = 2.3;
   updated_metric_tensor.g33 = 3.1;
@@ -413,12 +413,12 @@ TEST_F(CoordinatesTest, GetCovariantMetricTensor) {
 
   const auto covariant_components = coords.getCovariantMetricTensor();
 
-  EXPECT_TRUE(IsFieldEqual(covariant_components.g11, 9.7));
-  EXPECT_TRUE(IsFieldEqual(covariant_components.g22, 7.5));
-  EXPECT_TRUE(IsFieldEqual(covariant_components.g33, 4.7));
-  EXPECT_TRUE(IsFieldEqual(covariant_components.g12, 3.9));
-  EXPECT_TRUE(IsFieldEqual(covariant_components.g13, 1.7));
-  EXPECT_TRUE(IsFieldEqual(covariant_components.g23, 5.3));
+  EXPECT_TRUE(IsFieldEqual(covariant_components.g_11, 9.7));
+  EXPECT_TRUE(IsFieldEqual(covariant_components.g_22, 7.5));
+  EXPECT_TRUE(IsFieldEqual(covariant_components.g_33, 4.7));
+  EXPECT_TRUE(IsFieldEqual(covariant_components.g_12, 3.9));
+  EXPECT_TRUE(IsFieldEqual(covariant_components.g_13, 1.7));
+  EXPECT_TRUE(IsFieldEqual(covariant_components.g_23, 5.3));
 }
 
 TEST_F(CoordinatesTest, SetCovariantMetricTensor) {
@@ -446,13 +446,13 @@ TEST_F(CoordinatesTest, SetCovariantMetricTensor) {
                        FieldMetric{0.0}}; // IntShiftTorsion
 
     //  Modify with setter
-    Coordinates::MetricTensor updated_metric_tensor;
-    updated_metric_tensor.g11 = 1.7;
-    updated_metric_tensor.g22 = 2.3;
-    updated_metric_tensor.g33 = 3.1;
-    updated_metric_tensor.g12 = 0.9;
-    updated_metric_tensor.g13 = 5.7;
-    updated_metric_tensor.g23 = 1.9;
+    Coordinates::CovariantMetricTensor updated_metric_tensor;
+    updated_metric_tensor.g_11 = 1.7;
+    updated_metric_tensor.g_22 = 2.3;
+    updated_metric_tensor.g_33 = 3.1;
+    updated_metric_tensor.g_12 = 0.9;
+    updated_metric_tensor.g_13 = 5.7;
+    updated_metric_tensor.g_23 = 1.9;
     coords.setCovariantMetricTensor(updated_metric_tensor);
 
     //  Get values with getter and check they have been modified as expected

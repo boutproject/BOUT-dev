@@ -1602,7 +1602,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field2D& f) {
   // Calculate derivatives for metric use
   mesh->communicate(f);
   Field2D dfdy = DDY(f);
-  Coordinates::MetricTensor contravariant_components = metric->getContravariantMetricTensor();
+  Coordinates::ContravariantMetricTensor contravariant_components = metric->getContravariantMetricTensor();
   // Loop over all elements and set equal to the next point in
   for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
     // Interpolate (linearly) metrics to halfway between last cell and boundary cell
@@ -1660,7 +1660,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   mesh->communicate(f);
   Field3D dfdy = DDY(f);
   Field3D dfdz = DDZ(f);
-  Coordinates::MetricTensor g = metric->getContravariantMetricTensor();
+  Coordinates::ContravariantMetricTensor g = metric->getContravariantMetricTensor();
   // Loop over all elements and set equal to the next point in
   for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
 #if BOUT_USE_METRIC_3D
@@ -2451,13 +2451,13 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   void BoundaryNeumannPar::apply(Field2D & f) {
 #if not(BOUT_USE_METRIC_3D)
     Coordinates* metric = f.getCoordinates();
-    Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
+    Coordinates::CovariantMetricTensor covariant_components = metric->getCovariantMetricTensor();
     // Loop over all elements and set equal to the next point in
     for (bndry->first(); !bndry->isDone(); bndry->next()) {
       f(bndry->x, bndry->y) =
           f(bndry->x - bndry->bx, bndry->y - bndry->by)
-          * sqrt(covariant_components.g22(bndry->x, bndry->y)
-                 / covariant_components.g22(bndry->x - bndry->bx, bndry->y - bndry->by));
+          * sqrt(covariant_components.g_22(bndry->x, bndry->y)
+                 / covariant_components.g_22(bndry->x - bndry->bx, bndry->y - bndry->by));
     }
 #else
   throw BoutException("Applying boundary condition 'neumannpar' to Field2D not "
@@ -2469,13 +2469,13 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
     Coordinates* metric = f.getCoordinates();
-    Coordinates::MetricTensor covariant_components = metric->getCovariantMetricTensor();
+    Coordinates::CovariantMetricTensor covariant_components = metric->getCovariantMetricTensor();
     for (bndry->first(); !bndry->isDone(); bndry->next()) {
       for (int z = 0; z < mesh->LocalNz; z++) {
         f(bndry->x, bndry->y, z) =
             f(bndry->x - bndry->bx, bndry->y - bndry->by, z)
-            * sqrt(covariant_components.g22(bndry->x, bndry->y, z)
-                   / covariant_components.g22(bndry->x - bndry->bx, bndry->y - bndry->by, z));
+            * sqrt(covariant_components.g_22(bndry->x, bndry->y, z)
+                   / covariant_components.g_22(bndry->x - bndry->bx, bndry->y - bndry->by, z));
       }
     }
   }
@@ -2649,7 +2649,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     }
 
     int bx = bndry->bx;
-    Coordinates::MetricTensor g = metric->getContravariantMetricTensor();
+    Coordinates::ContravariantMetricTensor g = metric->getContravariantMetricTensor();
     // Loop over the Y dimension
     for (bndry->first(); !bndry->isDone(); bndry->nextY()) {
       // bndry->(x,y) is the first point in the boundary
@@ -2856,7 +2856,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     Array<dcomplex> c0(ncz / 2 + 1), c1(ncz / 2 + 1), c2(ncz / 2 + 1);
 
     int bx = bndry->bx;
-    Coordinates::MetricTensor g = metric->getContravariantMetricTensor();
+    Coordinates::ContravariantMetricTensor g = metric->getContravariantMetricTensor();
     // Loop over the Y dimension
     for (bndry->first(); !bndry->isDone(); bndry->nextY()) {
       int x = bndry->x;
@@ -2947,7 +2947,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     }
 
     jx = mesh->xend + 1;
-    Coordinates::MetricTensor contravariant_components = metric->getContravariantMetricTensor();
+    Coordinates::ContravariantMetricTensor contravariant_components = metric->getContravariantMetricTensor();
     for (jy = 1; jy < mesh->LocalNy - 1; jy++) {
       for (jz = 0; jz < ncz; jz++) {
         jzp = (jz + 1) % ncz;

@@ -31,7 +31,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
   Field3D result{zeroFrom(f)};
 
   Coordinates* coord = f.getCoordinates();
-  Coordinates::MetricTensor g = coord->getContravariantMetricTensor();
+  Coordinates::ContravariantMetricTensor g = coord->getContravariantMetricTensor();
 
   // Flux in x
 
@@ -70,8 +70,8 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     // 3D Metric, need yup/ydown fields.
     // Requires previous communication of metrics
     // -- should insert communication here?
-    Coordinates::MetricTensor covariant_components = coord->getCovariantMetricTensor();
-    if (!g.g23.hasParallelSlices() || !covariant_components.g23.hasParallelSlices()
+    Coordinates::CovariantMetricTensor covariant_components = coord->getCovariantMetricTensor();
+    if (!g.g23.hasParallelSlices() || !covariant_components.g_23.hasParallelSlices()
         || !coord->dy.hasParallelSlices() || !coord->dz.hasParallelSlices()
         || !coord->Bxy.hasParallelSlices() || !coord->J.hasParallelSlices()) {
       throw BoutException("metrics have no yup/down: Maybe communicate in init?");
@@ -91,7 +91,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
   const bool metric_fci = fci and bout::build::use_metric_3d;
   const auto g23 = makeslices(metric_fci, g.g23);
   const auto g_23 = makeslices(metric_fci,
-                               coord->getCovariantMetricTensor().g23);
+                               coord->getCovariantMetricTensor().g_23);
   const auto J = makeslices(metric_fci, coord->J);
   const auto dy = makeslices(metric_fci, coord->dy);
   const auto dz = makeslices(metric_fci, coord->dz);
@@ -209,14 +209,14 @@ const Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin,
     const auto iyp = i.yp();
     const auto iym = i.ym();
 
-    Coordinates::MetricTensor covariant_components = coord->getCovariantMetricTensor();
+    Coordinates::CovariantMetricTensor covariant_components = coord->getCovariantMetricTensor();
 
     if (bndry_flux || mesh->periodicY(i.x()) || !mesh->lastY(i.x())
         || (i.y() != mesh->yend)) {
 
       BoutReal c = 0.5 * (K[i] + Kup[iyp]);             // K at the upper boundary
       BoutReal J = 0.5 * (coord->J[i] + coord->J[iyp]); // Jacobian at boundary
-      BoutReal g_22 = 0.5 * (covariant_components.g22[i] + covariant_components.g22[iyp]);
+      BoutReal g_22 = 0.5 * (covariant_components.g_22[i] + covariant_components.g_22[iyp]);
 
       BoutReal gradient = 2. * (fup[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
 
@@ -231,7 +231,7 @@ const Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin,
       BoutReal c = 0.5 * (K[i] + Kdown[iym]);           // K at the lower boundary
       BoutReal J = 0.5 * (coord->J[i] + coord->J[iym]); // Jacobian at boundary
 
-      BoutReal g_22 = 0.5 * (covariant_components.g22[i] + covariant_components.g22[iym]);
+      BoutReal g_22 = 0.5 * (covariant_components.g_22[i] + covariant_components.g_22[iym]);
 
       BoutReal gradient = 2. * (f[i] - fdown[iym]) / (coord->dy[i] + coord->dy[iym]);
 
@@ -501,7 +501,7 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
   //
   Coordinates* coords = a.getCoordinates(outloc);
   Mesh* mesh = f.getMesh();
-  Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
+  Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
 
   for (int i = mesh->xstart; i <= mesh->xend; i++) {
     for (int j = mesh->ystart; j <= mesh->yend; j++) {

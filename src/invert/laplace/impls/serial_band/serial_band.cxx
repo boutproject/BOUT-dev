@@ -158,7 +158,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
       A(ix, 4) = 0.;
 #else
       // Set coefficients
-      Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
+      Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
       coef1 = g.g11(ix, jy); // X 2nd derivative
       coef2 = g.g33(ix, jy); // Z 2nd derivative
       coef3 = g.g13(ix, jy); // X-Z mixed derivatives
@@ -215,7 +215,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
       int ix = 1;
 
       auto kwave = kwave_(ix, jy);
-      Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
+      Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
       coef1 = g.g11(ix, jy) / (SQ(coords->dx(ix, jy)));
       coef2 = g.g33(ix, jy);
       coef3 = kwave * g.g13(ix, jy) / (2. * coords->dx(ix, jy));
@@ -266,7 +266,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
     if (iz == 0) {
       // DC
 
-      Coordinates::MetricTensor covariant_components = coords->getCovariantMetricTensor();
+      Coordinates::CovariantMetricTensor covariant_components = coords->getCovariantMetricTensor();
 
       // Inner boundary
       if (inner_boundary_flags & (INVERT_DC_GRAD + INVERT_SET)
@@ -276,8 +276,8 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         for (int ix = 0; ix < xbndry; ix++) {
           A(ix, 0) = 0.;
           A(ix, 1) = 0.;
-          A(ix, 2) = -.5 / sqrt(covariant_components.g11(ix, jy)) / coords->dx(ix, jy);
-          A(ix, 3) = .5 / sqrt(covariant_components.g11(ix, jy)) / coords->dx(ix, jy);
+          A(ix, 2) = -.5 / sqrt(covariant_components.g_11(ix, jy)) / coords->dx(ix, jy);
+          A(ix, 3) = .5 / sqrt(covariant_components.g_11(ix, jy)) / coords->dx(ix, jy);
           A(ix, 4) = 0.;
         }
 
@@ -296,17 +296,17 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         for (int ix = 0; ix < xbndry; ix++) {
           A(ix, 0) = 0.;
           A(ix, 1) = 0.;
-          A(ix, 2) = -3. / sqrt(covariant_components.g22(ix, jy));
-          A(ix, 3) = 4. / sqrt(covariant_components.g22(ix + 1, jy));
-          A(ix, 4) = -1. / sqrt(covariant_components.g22(ix + 2, jy));
+          A(ix, 2) = -3. / sqrt(covariant_components.g_22(ix, jy));
+          A(ix, 3) = 4. / sqrt(covariant_components.g_22(ix + 1, jy));
+          A(ix, 4) = -1. / sqrt(covariant_components.g_22(ix + 2, jy));
         }
       } else if (inner_boundary_flags & INVERT_DC_GRADPARINV) {
         for (int ix = 0; ix < xbndry; ix++) {
           A(ix, 0) = 0.;
           A(ix, 1) = 0.;
-          A(ix, 2) = -3. * sqrt(covariant_components.g22(ix, jy));
-          A(ix, 3) = 4. * sqrt(covariant_components.g22(ix + 1, jy));
-          A(ix, 4) = -sqrt(covariant_components.g22(ix + 2, jy));
+          A(ix, 2) = -3. * sqrt(covariant_components.g_22(ix, jy));
+          A(ix, 3) = 4. * sqrt(covariant_components.g_22(ix + 1, jy));
+          A(ix, 4) = -sqrt(covariant_components.g_22(ix + 2, jy));
         }
       } else if (inner_boundary_flags & INVERT_DC_LAP) {
         for (int ix = 0; ix < xbndry; ix++) {
@@ -341,7 +341,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         int ix = 1;
 
         auto kwave = kwave_(ix, jy);
-        Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
+        Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
         coef1 = g.g11(ix, jy) / (12. * SQ(coords->dx(ix, jy)));
 
         coef2 = g.g33(ix, jy);
@@ -386,7 +386,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
 
         int ix = ncx - 1;
 
-        Coordinates::MetricTensor g = coords->getContravariantMetricTensor();
+        Coordinates::ContravariantMetricTensor g = coords->getContravariantMetricTensor();
         coef1 = g.g11(ix, jy) / (12. * SQ(coords->dx(ix, jy)));
 
         coef2 = g.g33(ix, jy);

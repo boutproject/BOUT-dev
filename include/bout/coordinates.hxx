@@ -106,18 +106,22 @@ private:
 
 public:
 
-  struct MetricTensor
-  {
+  struct ContravariantMetricTensor {
     FieldMetric g11, g22, g33, g12, g13, g23;
   };
 
-  MetricTensor getContravariantMetricTensor() const;
+  struct CovariantMetricTensor
+  {
+    FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
+  };
 
-  MetricTensor getCovariantMetricTensor() const;
+  ContravariantMetricTensor getContravariantMetricTensor() const;
 
-  void setContravariantMetricTensor(const MetricTensor& metric_tensor);
+  CovariantMetricTensor getCovariantMetricTensor() const;
 
-  void setCovariantMetricTensor(const MetricTensor& metric_tensor);
+  void setContravariantMetricTensor(const ContravariantMetricTensor& metric_tensor);
+
+  void setCovariantMetricTensor(const CovariantMetricTensor& metric_tensor);
 
   /// Christoffel symbol of the second kind (connection coefficients)
   FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
