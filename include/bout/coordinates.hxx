@@ -100,20 +100,16 @@ public:
 private:
 
   ContravariantMetricTensor contravariantMetricTensor;
+
   /// Covariant metric tensor
-  FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
+  CovariantMetricTensor covariantMetricTensor;
+//  FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
 public:
 
-
-  struct CovariantMetricTensor
-  {
-    FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
-  };
-
   ContravariantMetricTensor::ContravariantComponents getContravariantMetricTensor() const;
 
-  CovariantMetricTensor getCovariantMetricTensor() const;
+  CovariantMetricTensor::CovariantComponents getCovariantMetricTensor() const;
 
   void setContravariantMetricTensor(const ContravariantMetricTensor& metric_tensor);
 
