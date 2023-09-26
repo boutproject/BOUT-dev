@@ -35,6 +35,8 @@ public:
 
   ContravariantComponents getContravariantMetricTensor() const;
 
+  void Allocate();
+
 private:
   ContravariantComponents contravariant_components;
 };

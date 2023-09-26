@@ -5,16 +5,19 @@ ContravariantMetricTensor::ContravariantMetricTensor(
     const FieldMetric g11, const FieldMetric g22, const FieldMetric g33,
     const FieldMetric g12, const FieldMetric g13, const FieldMetric g23) {
   contravariant_components = {g11, g22, g33, g12, g13, g23};
+  Allocate();  // Make sure metric elements are allocated //  ; TODO: Required?
 }
 
-ContravariantMetricTensor::ContravariantComponents ContravariantMetricTensor::getContravariantMetricTensor() const {
+ContravariantMetricTensor::ContravariantComponents
+ContravariantMetricTensor::getContravariantMetricTensor() const {
   return ContravariantComponents{
       contravariant_components.g11, contravariant_components.g22,
       contravariant_components.g33, contravariant_components.g12,
       contravariant_components.g13, contravariant_components.g23};
 }
 
-void ContravariantMetricTensor::setContravariantMetricTensor(const ContravariantMetricTensor& metric_tensor) {
+void ContravariantMetricTensor::setContravariantMetricTensor(
+    const ContravariantMetricTensor& metric_tensor) {
 
   const auto new_components = metric_tensor.getContravariantMetricTensor();
   contravariant_components.g11 = new_components.g11;
@@ -94,7 +97,8 @@ void ContravariantMetricTensor::checkContravariant() {
   bout::checkFinite(contravariant_components.g11, "g11", "RGN_NOCORNERS");
   bout::checkFinite(contravariant_components.g22, "g22", "RGN_NOCORNERS");
   bout::checkFinite(contravariant_components.g33, "g33", "RGN_NOCORNERS");
-  if (contravariant_components.g11.hasParallelSlices() && &contravariant_components.g11.ynext(1) != &contravariant_components.g11) {
+  if (contravariant_components.g11.hasParallelSlices()
+      && &contravariant_components.g11.ynext(1) != &contravariant_components.g11) {
     for (int dy = 1; dy <= localmesh->ystart; ++dy) {
       for (const auto sign : {1, -1}) {
         bout::checkFinite(contravariant_components.g11.ynext(sign * dy), "g11.ynext",
@@ -110,7 +114,8 @@ void ContravariantMetricTensor::checkContravariant() {
   bout::checkPositive(contravariant_components.g11, "g11", "RGN_NOCORNERS");
   bout::checkPositive(contravariant_components.g22, "g22", "RGN_NOCORNERS");
   bout::checkPositive(contravariant_components.g33, "g33", "RGN_NOCORNERS");
-  if (contravariant_components.g11.hasParallelSlices() && &contravariant_components.g11.ynext(1) != &contravariant_components.g11) {
+  if (contravariant_components.g11.hasParallelSlices()
+      && &contravariant_components.g11.ynext(1) != &contravariant_components.g11) {
     for (int dy = 1; dy <= localmesh->ystart; ++dy) {
       for (const auto sign : {1, -1}) {
         bout::checkPositive(contravariant_components.g11.ynext(sign * dy), "g11.ynext",
@@ -127,7 +132,8 @@ void ContravariantMetricTensor::checkContravariant() {
   bout::checkFinite(contravariant_components.g12, "g12", "RGN_NOCORNERS");
   bout::checkFinite(contravariant_components.g13, "g13", "RGN_NOCORNERS");
   bout::checkFinite(contravariant_components.g23, "g23", "RGN_NOCORNERS");
-  if (contravariant_components.g23.hasParallelSlices() && &contravariant_components.g23.ynext(1) != &contravariant_components.g23) {
+  if (contravariant_components.g23.hasParallelSlices()
+      && &contravariant_components.g23.ynext(1) != &contravariant_components.g23) {
     for (int dy = 1; dy <= localmesh->ystart; ++dy) {
       for (const auto sign : {1, -1}) {
         bout::checkFinite(contravariant_components.g12.ynext(sign * dy), "g12.ynext",
@@ -139,4 +145,13 @@ void ContravariantMetricTensor::checkContravariant() {
       }
     }
   }
+}
+
+void ContravariantMetricTensor::Allocate() { //  ; TODO: Required?
+  contravariant_components.g11.allocate();
+  contravariant_components.g22.allocate();
+  contravariant_components.g33.allocate();
+  contravariant_components.g12.allocate();
+  contravariant_components.g13.allocate();
+  contravariant_components.g23.allocate();
 }
