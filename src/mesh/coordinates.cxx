@@ -8,7 +8,6 @@
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/msg_stack.hxx>
-#include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
@@ -1814,7 +1813,7 @@ Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) co
   return *Grad2_par2_DDY_invSgCache[method];
 }
 
-void Coordinates::checkCovariant() { covariantMetricTensor.checkCovariant(); }
+void Coordinates::checkCovariant() { covariantMetricTensor.checkCovariant(localmesh->ystart); }
 
 void Coordinates::checkContravariant() { contravariantMetricTensor.checkContravariant(); }
 
