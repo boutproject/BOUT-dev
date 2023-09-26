@@ -27,7 +27,7 @@ void ContravariantMetricTensor::setContravariantMetricTensor(const Contravariant
 }
 
 int ContravariantMetricTensor::calcCovariant(const std::string& region) {
-  TRACE("Coordinates::calcCovariant");
+  TRACE("ContravariantMetricTensor::calcCovariant");
 
   // Make sure metric elements are allocated
   g_11.allocate();
