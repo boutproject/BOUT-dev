@@ -34,6 +34,7 @@
 #define __COORDINATES_H__
 
 #include "ContravariantMetricTensor.h"
+#include "CovariantMetricTensor.h"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/paralleltransform.hxx"
@@ -100,10 +101,7 @@ public:
 private:
 
   ContravariantMetricTensor contravariantMetricTensor;
-
-  /// Covariant metric tensor
   CovariantMetricTensor covariantMetricTensor;
-//  FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
 public:
 
