@@ -52,43 +52,43 @@ int CovariantMetricTensor::calcContravariant(const std::string& region) {
                          i.y());
       return 1;
     }
+  }
 
-    ContravariantMetricTensor const contravariantMetricTensor =
-        ContravariantMetricTensor(a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2));
+  ContravariantMetricTensor const contravariantMetricTensor =
+      ContravariantMetricTensor(a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2));
 
-    auto const contravariant_components =
-        contravariantMetricTensor.getContravariantMetricTensor();
+  auto const contravariant_components =
+      contravariantMetricTensor.getContravariantMetricTensor();
 
-    BoutReal maxerr;
-    maxerr = BOUTMAX(max(abs((covariant_components.g_11 * contravariant_components.g11
-                              + covariant_components.g_12 * contravariant_components.g12
-                              + covariant_components.g_13 * contravariant_components.g13)
-                             - 1)),
-                     max(abs((covariant_components.g_12 * contravariant_components.g12
-                              + covariant_components.g_22 * contravariant_components.g22
-                              + covariant_components.g_23 * contravariant_components.g23)
-                             - 1)),
-                     max(abs((covariant_components.g_13 * contravariant_components.g13
-                              + covariant_components.g_23 * contravariant_components.g23
-                              + covariant_components.g_33 * contravariant_components.g33)
-                             - 1)));
+  BoutReal maxerr;
+  maxerr = BOUTMAX(max(abs((covariant_components.g_11 * contravariant_components.g11
+                            + covariant_components.g_12 * contravariant_components.g12
+                            + covariant_components.g_13 * contravariant_components.g13)
+                           - 1)),
+                   max(abs((covariant_components.g_12 * contravariant_components.g12
+                            + covariant_components.g_22 * contravariant_components.g22
+                            + covariant_components.g_23 * contravariant_components.g23)
+                           - 1)),
+                   max(abs((covariant_components.g_13 * contravariant_components.g13
+                            + covariant_components.g_23 * contravariant_components.g23
+                            + covariant_components.g_33 * contravariant_components.g33)
+                           - 1)));
 
-    output_info.write("\tMaximum error in diagonal inversion is {:e}\n", maxerr);
+  output_info.write("\tMaximum error in diagonal inversion is {:e}\n", maxerr);
 
     maxerr =
         BOUTMAX(max(abs(covariant_components.g_11 * contravariant_components.g12
-                        + covariant_components.g_12 * contravariant_components.g22
-                        + covariant_components.g_13 * contravariant_components.g23)),
-                max(abs(covariant_components.g_11 * contravariant_components.g13
-                        + covariant_components.g_12 * contravariant_components.g23
-                        + covariant_components.g_13 * contravariant_components.g33)),
-                max(abs(covariant_components.g_12 * contravariant_components.g13
-                        + covariant_components.g_22 * contravariant_components.g23
-                        + covariant_components.g_23 * contravariant_components.g33)));
+                           + covariant_components.g_12 * contravariant_components.g22
+                           + covariant_components.g_13 * contravariant_components.g23)),
+                   max(abs(covariant_components.g_11 * contravariant_components.g13
+                           + covariant_components.g_12 * contravariant_components.g23
+                           + covariant_components.g_13 * contravariant_components.g33)),
+                   max(abs(covariant_components.g_12 * contravariant_components.g13
+                           + covariant_components.g_22 * contravariant_components.g23
+                           + covariant_components.g_23 * contravariant_components.g33)));
 
-    output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
-    return 0;
-  }
+  output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
+  return 0;
 }
 
 void CovariantMetricTensor::checkCovariant(int ystart) {
