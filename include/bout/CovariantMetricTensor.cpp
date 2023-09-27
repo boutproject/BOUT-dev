@@ -6,8 +6,11 @@
 
 CovariantMetricTensor::CovariantMetricTensor(
     const FieldMetric g_11, const FieldMetric g_22, const FieldMetric g_33,
-    const FieldMetric g_12, const FieldMetric g_13, const FieldMetric g_23) {
-  covariant_components = {g_11, g_22, g_33, g_12, g_13, g_23};
+    const FieldMetric g_12, const FieldMetric g_13, const FieldMetric g_23)
+    : covariant_components({g_11(std::move(g_11)), g_22(std::move(g_22)),
+                            g_33(std::move(g_33)), g_12(std::move(g_12)),
+                            g_13(std::move(g_13)), g_23(std::move(g_23))}) {
+
   Allocate(); // Make sure metric elements are allocated //  ; TODO: Required?
 }
 

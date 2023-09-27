@@ -375,12 +375,10 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric g_23, FieldMetric ShiftTorsion,
                          FieldMetric IntShiftTorsion)
     : dx(std::move(dx)), dy(std::move(dy)), dz(dz), J(std::move(J)), Bxy(std::move(Bxy)),
-      g11(std::move(g11)), g22(std::move(g22)), g33(std::move(g33)), g12(std::move(g12)),
-      g13(std::move(g13)), g23(std::move(g23)), g_11(std::move(g_11)),
-      g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
-      g_13(std::move(g_13)), g_23(std::move(g_23)), ShiftTorsion(std::move(ShiftTorsion)),
-      IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE) {}
+      ShiftTorsion(std::move(ShiftTorsion)), IntShiftTorsion(std::move(IntShiftTorsion)),
+      nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE),
+      contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
