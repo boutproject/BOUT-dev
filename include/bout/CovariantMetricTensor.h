@@ -32,6 +32,8 @@ public:
 
   CovariantComponents getCovariantMetricTensor() const;
 
+  void Allocate();
+
 private:
   CovariantComponents covariant_components;
 };

@@ -8,6 +8,7 @@ CovariantMetricTensor::CovariantMetricTensor(
     const FieldMetric g_11, const FieldMetric g_22, const FieldMetric g_33,
     const FieldMetric g_12, const FieldMetric g_13, const FieldMetric g_23) {
   covariant_components = {g_11, g_22, g_33, g_12, g_13, g_23};
+  Allocate(); // Make sure metric elements are allocated //  ; TODO: Required?
 }
 
 CovariantMetricTensor::CovariantComponents
@@ -76,8 +77,7 @@ int CovariantMetricTensor::calcContravariant(const std::string& region) {
 
   output_info.write("\tMaximum error in diagonal inversion is {:e}\n", maxerr);
 
-    maxerr =
-        BOUTMAX(max(abs(covariant_components.g_11 * contravariant_components.g12
+  maxerr = BOUTMAX(max(abs(covariant_components.g_11 * contravariant_components.g12
                            + covariant_components.g_12 * contravariant_components.g22
                            + covariant_components.g_13 * contravariant_components.g23)),
                    max(abs(covariant_components.g_11 * contravariant_components.g13
@@ -144,4 +144,13 @@ void CovariantMetricTensor::checkCovariant(int ystart) {
       }
     }
   }
+}
+
+void CovariantMetricTensor::Allocate() { //  ; TODO: Required?
+  covariant_components.g_11.allocate();
+  covariant_components.g_22.allocate();
+  covariant_components.g_33.allocate();
+  covariant_components.g_12.allocate();
+  covariant_components.g_13.allocate();
+  covariant_components.g_23.allocate();
 }
