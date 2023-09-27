@@ -1313,8 +1313,18 @@ int Coordinates::jacobian() {
   const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
   const bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
 
-  auto g = g11 * g22 * g33 + 2.0 * g12 * g13 * g23 - g11 * g23 * g23 - g22 * g13 * g13
-           - g33 * g12 * g12;
+  auto const contravariant_components =
+      contravariantMetricTensor.getContravariantMetricTensor();
+  auto g = contravariant_components.g11 * contravariant_components.g22
+               * contravariant_components.g33
+           + 2.0 * contravariant_components.g12 * contravariant_components.g13
+                 * contravariant_components.g23
+           - contravariant_components.g11 * contravariant_components.g23
+                 * contravariant_components.g23
+           - contravariant_components.g22 * contravariant_components.g13
+                 * contravariant_components.g13
+           - contravariant_components.g33 * contravariant_components.g12
+                 * contravariant_components.g12;
 
   // Check that g is positive
   bout::checkPositive(g, "The determinant of g^ij", "RGN_NOBNDRY");
@@ -1325,7 +1335,7 @@ int Coordinates::jacobian() {
   J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false,
                                 transform.get());
 
-  Bxy = sqrt(g_22) / J;
+  Bxy = sqrt(covariantMetricTensor.getCovariantMetricTensor().g_22) / J;
   Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
                                   transform.get());
 
