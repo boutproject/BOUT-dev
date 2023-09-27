@@ -950,8 +950,17 @@ const Field2D& Coordinates::zlength() const {
 int Coordinates::geometry(bool recalculate_staggered,
                           bool force_interpolate_from_centre) {
   TRACE("Coordinates::geometry");
-  communicate(dx, dy, dz, g11, g22, g33, g12, g13, g23, g_11, g_22, g_33, g_12, g_13,
-              g_23, J, Bxy);
+
+  auto const contravariant_components =
+      contravariantMetricTensor.getContravariantMetricTensor();
+  auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
+
+  communicate(dx, dy, dz, contravariant_components.g11, contravariant_components.g22,
+              contravariant_components.g33, contravariant_components.g12,
+              contravariant_components.g13, contravariant_components.g23,
+              covariant_components.g_11, covariant_components.g_22,
+              covariant_components.g_33, covariant_components.g_12,
+              covariant_components.g_13, covariant_components.g_23, J, Bxy);
 
   output_progress.write("Calculating differential geometry terms\n");
 
@@ -972,15 +981,21 @@ int Coordinates::geometry(bool recalculate_staggered,
   checkCovariant();
   CalculateChristoffelSymbols();
 
-  auto tmp = J * g12;
+  auto tmp = J * contravariant_components.g12;
   communicate(tmp);
-  G1 = (DDX(J * g11) + DDY(tmp) + DDZ(J * g13)) / J;
-  tmp = J * g22;
+  G1 = (DDX(J * contravariant_components.g11) + DDY(tmp)
+        + DDZ(J * contravariant_components.g13))
+       / J;
+  tmp = J * contravariant_components.g22;
   communicate(tmp);
-  G2 = (DDX(J * g12) + DDY(tmp) + DDZ(J * g23)) / J;
-  tmp = J * g23;
+  G2 = (DDX(J * contravariant_components.g12) + DDY(tmp)
+        + DDZ(J * contravariant_components.g23))
+       / J;
+  tmp = J * contravariant_components.g23;
   communicate(tmp);
-  G3 = (DDX(J * g13) + DDY(tmp) + DDZ(J * g33)) / J;
+  G3 = (DDX(J * contravariant_components.g13) + DDY(tmp)
+        + DDZ(J * contravariant_components.g33))
+       / J;
 
   // Communicate christoffel symbol terms
   output_progress.write("\tCommunicating connection terms\n");
