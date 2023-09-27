@@ -1511,8 +1511,9 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
   TRACE("Coordinates::Grad2_par2( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
+  auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
   auto result = Grad2_par2_DDY_invSg(outloc, method) * DDY(f, outloc, method)
-                + D2DY2(f, outloc, method) / g_22;
+                + D2DY2(f, outloc, method) / covariant_components.g_22;
 
   return result;
 }
@@ -1527,7 +1528,8 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
 
   Field3D result = ::DDY(f, outloc, method);
 
-  Field3D r2 = D2DY2(f, outloc, method) / g_22;
+  auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
+  Field3D r2 = D2DY2(f, outloc, method) / covariant_components.g_22;
 
   result = Grad2_par2_DDY_invSg(outloc, method) * result + r2;
 
@@ -1546,7 +1548,9 @@ Coordinates::FieldMetric Coordinates::Delp2(const Field2D& f, CELL_LOC outloc,
   TRACE("Coordinates::Delp2( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  auto result = G1 * DDX(f, outloc) + g11 * D2DX2(f, outloc);
+  auto const contravariant_components =
+      contravariantMetricTensor.getContravariantMetricTensor();
+  auto result = G1 * DDX(f, outloc) + contravariant_components.g11 * D2DX2(f, outloc);
 
   return result;
 }
@@ -1608,8 +1612,12 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
       }
     }
   } else {
-    result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * ::D2DX2(f, outloc)
-             + g33 * ::D2DZ2(f, outloc) + 2 * g13 * ::D2DXDZ(f, outloc);
+    auto const contravariant_components =
+        contravariantMetricTensor.getContravariantMetricTensor();
+    result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc)
+             + contravariant_components.g11 * ::D2DX2(f, outloc)
+             + contravariant_components.g33 * ::D2DZ2(f, outloc)
+             + 2 * contravariant_components.g13 * ::D2DXDZ(f, outloc);
   };
 
   ASSERT2(result.getLocation() == outloc);
@@ -1682,12 +1690,17 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
 
 Coordinates::FieldMetric Coordinates::Laplace_par(const Field2D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
-  return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * DDY(f, outloc) / J;
+
+  auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
+  return D2DY2(f, outloc) / covariant_components.g_22
+         + DDY(J / covariant_components.g_22, outloc) * DDY(f, outloc) / J;
 }
 
 Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
-  return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * ::DDY(f, outloc) / J;
+  auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
+  return D2DY2(f, outloc) / covariant_components.g_22
+         + DDY(J / covariant_components.g_22, outloc) * ::DDY(f, outloc) / J;
 }
 
 // Full Laplacian operator on scalar field
@@ -1698,9 +1711,12 @@ Coordinates::FieldMetric Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
   TRACE("Coordinates::Laplace( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  auto result = G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc)
-                + g22 * D2DY2(f, outloc)
-                + 2.0 * g12
+  auto const contravariant_components =
+      contravariantMetricTensor.getContravariantMetricTensor();
+  auto result = G1 * DDX(f, outloc) + G2 * DDY(f, outloc)
+                + contravariant_components.g11 * D2DX2(f, outloc)
+                + contravariant_components.g22 * D2DY2(f, outloc)
+                + 2.0 * contravariant_components.g12
                       * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
                                dfdy_boundary_conditions, dfdy_dy_region);
 
@@ -1713,14 +1729,18 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
   TRACE("Coordinates::Laplace( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
+  auto const contravariant_components =
+      contravariantMetricTensor.getContravariantMetricTensor();
   Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc)
-                   + g11 * D2DX2(f, outloc) + g22 * D2DY2(f, outloc)
-                   + g33 * D2DZ2(f, outloc)
+                   + contravariant_components.g11 * D2DX2(f, outloc)
+                   + contravariant_components.g22 * D2DY2(f, outloc)
+                   + contravariant_components.g33 * D2DZ2(f, outloc)
                    + 2.0
-                         * (g12
+                         * (contravariant_components.g12
                                 * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
                                          dfdy_boundary_conditions, dfdy_dy_region)
-                            + g13 * D2DXDZ(f, outloc) + g23 * D2DYDZ(f, outloc));
+                            + contravariant_components.g13 * D2DXDZ(f, outloc)
+                            + contravariant_components.g23 * D2DYDZ(f, outloc));
 
   return result;
 }
@@ -1740,7 +1760,8 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
     const auto outer_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xp()]); };
     const BoutReal outer_x_A = outer_x_avg(A);
     const BoutReal outer_x_J = outer_x_avg(J);
-    const BoutReal outer_x_g11 = outer_x_avg(g11);
+    const BoutReal outer_x_g11 =
+        outer_x_avg(contravariantMetricTensor.getContravariantMetricTensor().g11);
     const BoutReal outer_x_dx = outer_x_avg(dx);
     const BoutReal outer_x_value =
         outer_x_A * outer_x_J * outer_x_g11 / (J[i] * outer_x_dx * dx[i]);
@@ -1750,7 +1771,8 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
     const auto inner_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xm()]); };
     const BoutReal inner_x_A = inner_x_avg(A);
     const BoutReal inner_x_J = inner_x_avg(J);
-    const BoutReal inner_x_g11 = inner_x_avg(g11);
+    const BoutReal inner_x_g11 =
+        inner_x_avg(contravariantMetricTensor.getContravariantMetricTensor().g11);
     const BoutReal inner_x_dx = inner_x_avg(dx);
     const BoutReal inner_x_value =
         inner_x_A * inner_x_J * inner_x_g11 / (J[i] * inner_x_dx * dx[i]);
@@ -1758,11 +1780,14 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
 
     // upper y boundary
     const auto upper_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.yp()]); };
+    auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
+    auto const contravariant_components =
+        contravariantMetricTensor.getContravariantMetricTensor();
     const BoutReal upper_y_A = upper_y_avg(A);
     const BoutReal upper_y_J = upper_y_avg(J);
-    const BoutReal upper_y_g_22 = upper_y_avg(g_22);
-    const BoutReal upper_y_g23 = upper_y_avg(g23);
-    const BoutReal upper_y_g_23 = upper_y_avg(g_23);
+    const BoutReal upper_y_g_22 = upper_y_avg(covariant_components.g_22);
+    const BoutReal upper_y_g23 = upper_y_avg(contravariant_components.g23);
+    const BoutReal upper_y_g_23 = upper_y_avg(covariant_components.g_23);
     const BoutReal upper_y_dy = upper_y_avg(dy);
     const BoutReal upper_y_value = -upper_y_A * upper_y_J * upper_y_g23 * upper_y_g_23
                                    / (upper_y_g_22 * J[i] * upper_y_dy * dy[i]);
@@ -1772,9 +1797,9 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
     const auto lower_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.ym()]); };
     const BoutReal lower_y_A = lower_y_avg(A);
     const BoutReal lower_y_J = lower_y_avg(J);
-    const BoutReal lower_y_g_22 = lower_y_avg(g_22);
-    const BoutReal lower_y_g23 = lower_y_avg(g23);
-    const BoutReal lower_y_g_23 = lower_y_avg(g_23);
+    const BoutReal lower_y_g_22 = lower_y_avg(covariant_components.g_22);
+    const BoutReal lower_y_g23 = lower_y_avg(contravariant_components.g23);
+    const BoutReal lower_y_g_23 = lower_y_avg(covariant_components.g_23);
     const BoutReal lower_y_dy = lower_y_avg(dy);
     const BoutReal lower_y_value = -lower_y_A * lower_y_J * lower_y_g23 * lower_y_g_23
                                    / (lower_y_g_22 * J[i] * lower_y_dy * dy[i]);
@@ -1790,7 +1815,7 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
 const Coordinates::FieldMetric& Coordinates::invSg() const {
   if (invSgCache == nullptr) {
     auto ptr = std::make_unique<FieldMetric>();
-    (*ptr) = 1.0 / sqrt(g_22);
+    (*ptr) = 1.0 / sqrt(covariantMetricTensor.getCovariantMetricTensor().g_22);
     invSgCache = std::move(ptr);
   }
   return *invSgCache;
