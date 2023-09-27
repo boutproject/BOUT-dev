@@ -17,9 +17,9 @@
 
 #include <bout/globals.hxx>
 
-#include "bout/ContravariantMetricTensor.h"
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
+#include "bout/ContravariantMetricTensor.h"
 
 // use anonymous namespace so this utility function is not available outside this file
 namespace {
@@ -364,6 +364,7 @@ std::string getLocationSuffix(CELL_LOC location) {
   }
   }
 }
+
 } // anonymous namespace
 
 Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric dz,
@@ -468,6 +469,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   };
 
   // Diagonal components of metric tensor g^{ij} (default to 1)
+
   g11 = getUnalignedAtLocation(g11, "g11", 1.0);
   g22 = getUnalignedAtLocation(g22, "g22", 1.0);
   g33 = getUnalignedAtLocation(g33, "g33", 1.0);
@@ -1840,16 +1842,21 @@ Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) co
   return *Grad2_par2_DDY_invSgCache[method];
 }
 
-void Coordinates::checkCovariant() { covariantMetricTensor.checkCovariant(localmesh->ystart); }
+void Coordinates::checkCovariant() {
+  covariantMetricTensor.checkCovariant(localmesh->ystart);
+}
 
-void Coordinates::checkContravariant() { contravariantMetricTensor.checkContravariant(localmesh->ystart); }
+void Coordinates::checkContravariant() {
+  contravariantMetricTensor.checkContravariant(localmesh->ystart);
+}
 
 void Coordinates::setContravariantMetricTensor(
     const ContravariantMetricTensor& metric_tensor) {
   contravariantMetricTensor.setContravariantMetricTensor(location, metric_tensor);
 }
 
-ContravariantMetricTensor::ContravariantComponents Coordinates::getContravariantMetricTensor() const {
+ContravariantMetricTensor::ContravariantComponents
+Coordinates::getContravariantMetricTensor() const {
   return contravariantMetricTensor.getContravariantMetricTensor();
 }
 
