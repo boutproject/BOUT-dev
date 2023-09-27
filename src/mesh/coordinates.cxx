@@ -1216,8 +1216,10 @@ void Coordinates::CalculateChristoffelSymbols() {
 
 int Coordinates::calcCovariant(const std::string& region) {
   TRACE("Coordinates::calcCovariant");
-  return contravariantMetricTensor.calcCovariant(region);
+  return contravariantMetricTensor.calcCovariant(location,
+                                                 const_cast<std::string&>(region));
 }
+
 int Coordinates::calcContravariant(const std::string& region) {
   TRACE("Coordinates::calcContravariant");
   return covariantMetricTensor.calcContravariant();
@@ -1815,11 +1817,11 @@ Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) co
 
 void Coordinates::checkCovariant() { covariantMetricTensor.checkCovariant(localmesh->ystart); }
 
-void Coordinates::checkContravariant() { contravariantMetricTensor.checkContravariant(); }
+void Coordinates::checkContravariant() { contravariantMetricTensor.checkContravariant(localmesh->ystart); }
 
 void Coordinates::setContravariantMetricTensor(
     const ContravariantMetricTensor& metric_tensor) {
-  contravariantMetricTensor.setContravariantMetricTensor(metric_tensor);
+  contravariantMetricTensor.setContravariantMetricTensor(location, metric_tensor);
 }
 
 ContravariantMetricTensor::ContravariantComponents Coordinates::getContravariantMetricTensor() const {

@@ -26,12 +26,13 @@ public:
                             const FieldMetric g13, const FieldMetric g23);
 
   /// Invert contravariant metric to get covariant components
-  int calcCovariant(const std::string& region = "RGN_ALL");
+  int calcCovariant(CELL_LOC location, std::string& region = (std::string&)"RGN_ALL");
 
   // check that contravariant tensors are positive (if expected) and finite (always)
-  void checkContravariant();
+  void checkContravariant(int ystart);
 
-  void setContravariantMetricTensor(const ContravariantMetricTensor& metric_tensor);
+  void setContravariantMetricTensor(CELL_LOC location,
+                                    const ContravariantMetricTensor& metric_tensor);
 
   ContravariantComponents getContravariantMetricTensor() const;
 
