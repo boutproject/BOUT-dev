@@ -904,19 +904,23 @@ void Coordinates::outputVars(Options& output_options) {
   output_options["dy" + loc_string].force(dy, "Coordinates");
   output_options["dz" + loc_string].force(dz, "Coordinates");
 
-  output_options["g11" + loc_string].force(g11, "Coordinates");
-  output_options["g22" + loc_string].force(g22, "Coordinates");
-  output_options["g33" + loc_string].force(g33, "Coordinates");
-  output_options["g12" + loc_string].force(g12, "Coordinates");
-  output_options["g13" + loc_string].force(g13, "Coordinates");
-  output_options["g23" + loc_string].force(g23, "Coordinates");
+  auto const contravariant_components =
+      contravariantMetricTensor.getContravariantMetricTensor();
+  auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
 
-  output_options["g_11" + loc_string].force(g_11, "Coordinates");
-  output_options["g_22" + loc_string].force(g_22, "Coordinates");
-  output_options["g_33" + loc_string].force(g_33, "Coordinates");
-  output_options["g_12" + loc_string].force(g_12, "Coordinates");
-  output_options["g_13" + loc_string].force(g_13, "Coordinates");
-  output_options["g_23" + loc_string].force(g_23, "Coordinates");
+  output_options["g11" + loc_string].force(contravariant_components.g11, "Coordinates");
+  output_options["g22" + loc_string].force(contravariant_components.g22, "Coordinates");
+  output_options["g33" + loc_string].force(contravariant_components.g33, "Coordinates");
+  output_options["g12" + loc_string].force(contravariant_components.g12, "Coordinates");
+  output_options["g13" + loc_string].force(contravariant_components.g13, "Coordinates");
+  output_options["g23" + loc_string].force(contravariant_components.g23, "Coordinates");
+
+  output_options["g_11" + loc_string].force(covariant_components.g_11, "Coordinates");
+  output_options["g_22" + loc_string].force(covariant_components.g_22, "Coordinates");
+  output_options["g_33" + loc_string].force(covariant_components.g_33, "Coordinates");
+  output_options["g_12" + loc_string].force(covariant_components.g_12, "Coordinates");
+  output_options["g_13" + loc_string].force(covariant_components.g_13, "Coordinates");
+  output_options["g_23" + loc_string].force(covariant_components.g_23, "Coordinates");
 
   output_options["J" + loc_string].force(J, "Coordinates");
   output_options["Bxy" + loc_string].force(Bxy, "Coordinates");
