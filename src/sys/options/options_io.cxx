@@ -109,7 +109,9 @@ void writeDefaultOutputFile(Options& options, const OptionsIO::Library library) 
                       .withDefault(false)
                   ? bout::OptionsIO::FileMode::append
                   : bout::OptionsIO::FileMode::replace;
-  auto io = OptionsIOFactory(getOutputFilename(options, library), mode, library);
+  // Note: `options` contains the data to write.
+  //       Get the output file from the `Options::root()` input settings.
+  auto io = OptionsIOFactory(getOutputFilename(Options::root(), library), mode, library);
   io->write(options);
 }
 
