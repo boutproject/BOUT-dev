@@ -5,9 +5,21 @@
 ContravariantMetricTensor::ContravariantMetricTensor(
     const FieldMetric g11, const FieldMetric g22, const FieldMetric g33,
     const FieldMetric g12, const FieldMetric g13, const FieldMetric g23)
-    : contravariant_components({g11(std::move(g11)), g22(std::move(g22)),
-                                g33(std::move(g33)), g12(std::move(g12)),
-                                g13(std::move(g13)), g23(std::move(g23))}) {
+    : contravariant_components({FieldMetric(std::move(g11)), FieldMetric(std::move(g22)),
+                                FieldMetric(std::move(g33)), FieldMetric(std::move(g12)),
+                                FieldMetric(std::move(g13)),
+                                FieldMetric(std::move(g23))}) {
+
+  Allocate(); // Make sure metric elements are allocated //  ; TODO: Required?
+}
+
+ContravariantMetricTensor::ContravariantMetricTensor(
+    const Array<BoutReal> g11, const Array<BoutReal> g22, const Array<BoutReal> g33,
+    const Array<BoutReal> g12, const Array<BoutReal> g13, const Array<BoutReal> g23,
+    Mesh* mesh)
+    : contravariant_components({FieldMetric(g11, mesh), FieldMetric(g22, mesh),
+                                FieldMetric(g33, mesh), FieldMetric(g12, mesh),
+                                FieldMetric(g13, mesh), FieldMetric(g23, mesh)}) {
 
   Allocate(); // Make sure metric elements are allocated //  ; TODO: Required?
 }

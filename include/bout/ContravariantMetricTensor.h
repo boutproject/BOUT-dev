@@ -25,6 +25,11 @@ public:
                             const FieldMetric g33, const FieldMetric g12,
                             const FieldMetric g13, const FieldMetric g23);
 
+  ContravariantMetricTensor(const Array<BoutReal> g11, const Array<BoutReal> g22,
+                            const Array<BoutReal> g33, const Array<BoutReal> g12,
+                            const Array<BoutReal> g13, const Array<BoutReal> g23,
+                            Mesh* mesh);
+
   /// Invert contravariant metric to get covariant components
   int calcCovariant(CELL_LOC location, std::string& region = (std::string&)"RGN_ALL");
 

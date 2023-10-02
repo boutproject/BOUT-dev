@@ -382,15 +382,14 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
-      J(1., mesh), Bxy(1., mesh),
-      // Identity metric tensor
-      g11(1., mesh), g22(1., mesh), g33(1., mesh), g12(0, mesh), g13(0, mesh),
-      g23(0, mesh), g_11(1., mesh), g_22(1., mesh), g_33(1., mesh), g_12(0, mesh),
-      g_13(0, mesh), g_23(0, mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh),
+      J(1., mesh), Bxy(1., mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh),
       G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh),
       G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh),
       G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
+      IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE),
+      // Identity metric tensor
+      contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
+      covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh) {
 
   if (options == nullptr) {
     options = Options::getRoot()->getSection("mesh");
@@ -468,14 +467,21 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
   // Diagonal components of metric tensor g^{ij} (default to 1)
 
-  g11 = getUnalignedAtLocation(g11, "g11", 1.0);
-  g22 = getUnalignedAtLocation(g22, "g22", 1.0);
-  g33 = getUnalignedAtLocation(g33, "g33", 1.0);
+  auto const contravariant_components =
+      contravariantMetricTensor.getContravariantMetricTensor();
+
+  FieldMetric g11, g22, g33, g12, g13, g23;
+
+  g11 = getUnalignedAtLocation(contravariant_components.g11, "g11", 1.0);
+  g22 = getUnalignedAtLocation(contravariant_components.g22, "g22", 1.0);
+  g33 = getUnalignedAtLocation(contravariant_components.g33, "g33", 1.0);
 
   // Off-diagonal elements. Default to 0
-  g12 = getUnalignedAtLocation(g12, "g12", 0.0);
-  g13 = getUnalignedAtLocation(g13, "g13", 0.0);
-  g23 = getUnalignedAtLocation(g23, "g23", 0.0);
+  g12 = getUnalignedAtLocation(contravariant_components.g12, "g12", 0.0);
+  g13 = getUnalignedAtLocation(contravariant_components.g13, "g13", 0.0);
+  g23 = getUnalignedAtLocation(contravariant_components.g23, "g23", 0.0);
+
+  contravariantMetricTensor.setContravariantMetricTensor(g11, g22, g33, g12, g13, g23);
 
   // Check input metrics
   checkContravariant();
@@ -491,12 +497,15 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     // Check that all components are present
     if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
                     source_has_component)) {
-      g_11 = getUnaligned(g_11, "g_11", 1.0);
-      g_22 = getUnaligned(g_22, "g_22", 1.0);
-      g_33 = getUnaligned(g_33, "g_33", 1.0);
-      g_12 = getUnaligned(g_12, "g_12", 0.0);
-      g_13 = getUnaligned(g_13, "g_13", 0.0);
-      g_23 = getUnaligned(g_23, "g_23", 0.0);
+
+      auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
+
+      covariant_components.g_11 = getUnaligned(covariant_components.g_11, "g_11", 1.0);
+      covariant_components.g_22 = getUnaligned(covariant_components.g_22, "g_22", 1.0);
+      covariant_components.g_33 = getUnaligned(covariant_components.g_33, "g_33", 1.0);
+      covariant_components.g_12 = getUnaligned(covariant_components.g_12, "g_12", 0.0);
+      covariant_components.g_13 = getUnaligned(covariant_components.g_13, "g_13", 0.0);
+      covariant_components.g_23 = getUnaligned(covariant_components.g_23, "g_23", 0.0);
 
       output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                         "Contravariant components NOT recalculated\n");
