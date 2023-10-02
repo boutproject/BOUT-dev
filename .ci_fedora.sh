@@ -37,7 +37,7 @@ then
     cat /etc/os-release
     # Ignore weak depencies
     echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
-    time dnf -y install dnf-plugins-core python3-pip cmake
+    time dnf -y install dnf5-plugins python3-pip cmake
     # Allow to override packages - see #2073
     time dnf copr enable -y davidsch/fixes4bout || :
     time dnf -y upgrade
@@ -49,7 +49,7 @@ then
     sudo -u test ${0/\/tmp/\/home\/test} $mpi
 ## If we are called as normal user, run test
 else
-    pip install --user zoidberg
+    pip install --user zoidberg natsort
     . /etc/profile.d/modules.sh
     module load mpi/${1}-x86_64
     export OMPI_MCA_rmaps_base_oversubscribe=yes

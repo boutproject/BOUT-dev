@@ -137,11 +137,11 @@ private:
 class DummyOutput : public Output {
 public:
   template <class S, class... Args>
-  void write(const S&, const Args&...){};
+  void write([[maybe_unused]] const S& format, [[maybe_unused]] const Args&... args){};
   template <class S, class... Args>
-  void print(const S&, const Args&...){};
-  void write(const std::string& s) override{};
-  void print(const std::string& s) override{};
+  void print([[maybe_unused]] const S& format, [[maybe_unused]] const Args&... args){};
+  void write([[maybe_unused]] const std::string& message) override{};
+  void print([[maybe_unused]] const std::string& message) override{};
   void enable() override{};
   void disable() override{};
   void enable(MAYBE_UNUSED(bool enable)){};

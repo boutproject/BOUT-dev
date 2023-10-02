@@ -76,6 +76,7 @@ atol = 1e-13
 
 [laplace:petsc]
 mg_levels_ksp_max_it = 3
+mg_levels_pc_type = sor
 
 [input]
 transform_from_field_aligned = false

@@ -92,7 +92,7 @@ similar interface to ``Datafile``, and just like ``Datafile`` it also
 stores pointers to variables. This means that it still suffers from
 all of the downsides of ``Datafile``, and developers are encouraged to
 move to the ``outputVars`` approach. The `SAVE_ONCE`/`SAVE_REPEAT`
-macros also work through `DataFileFacade`` -- this means that they
+macros also work through ``DataFileFacade`` -- this means that they
 cannot be used outside of ``PhysicsModel`` methods!
 
 

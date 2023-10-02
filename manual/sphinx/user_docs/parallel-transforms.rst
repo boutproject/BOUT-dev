@@ -70,8 +70,8 @@ setting is
 
 .. code-block:: cfg
 
-   [mesh]
-   paralleltransform = identity
+   [mesh:paralleltransform]
+   type = identity
 
 
 This then uses the `ParallelTransformIdentity` class to calculate the
@@ -100,8 +100,8 @@ The shifted metric method is selected using:
 
 .. code-block:: cfg
 
-   [mesh]
-   paralleltransform = shifted
+   [mesh:paralleltransform]
+   type = shifted
 
 so that mesh uses the `ShiftedMetric` class to calculate parallel
 transforms.  During initialisation, this class reads a quantity zShift
@@ -141,8 +141,8 @@ calculation of parallel slices. Select it by using:
 
 .. code-block:: cfg
 
-   [mesh]
-   paralleltransform = shifted
+   [mesh:paralleltransform]
+   type = shifted
    calcParallelSlices_on_communicate = false
 
 With these settings, inputs to parallel derivative or interpolation
@@ -177,8 +177,8 @@ To use the FCI method for parallel transforms, set
 
 .. code-block:: cfg
 
-   [mesh]
-   paralleltransform = fci
+   [mesh:paralleltransform]
+   type = fci
 
 which causes the `FCITransform` class to be used for parallel
 transforms.  This reads four variables (3D fields) from the input

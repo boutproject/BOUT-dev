@@ -162,11 +162,13 @@ SlepcSolver::SlepcSolver(Options* options) {
              .withDefault(0);
 
   tol = options_ref["tol"].doc("SLEPc tolerance").withDefault(1.0e-6);
-  maxIt = options_ref["maxIt"].doc("Maximum iterations").withDefault(PETSC_DEFAULT);
+  maxIt = options_ref["maxIt"]
+              .doc("Maximum iterations")
+              .withDefault(static_cast<int>(PETSC_DEFAULT));
 
   mpd = options_ref["mpd"]
             .doc("Maximum dimension allowed for the projected problem")
-            .withDefault(PETSC_DEFAULT);
+            .withDefault(static_cast<int>(PETSC_DEFAULT));
 
   ddtMode = options_ref["ddtMode"].withDefault(true);
 

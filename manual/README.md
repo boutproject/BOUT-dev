@@ -12,22 +12,8 @@ To build the manual locally, you need at least "sphinx" and
 "recommonmark", which you can install using pip (or pip3):
 
 ```bash
-$ pip install --user sphinx
-$ pip install --user recommonmark
+$ pip install -r sphinx/requirements.txt
 ```
-
-These documents can be built into a PDF using "sphinx-build":
-
-```bash
-$ make
-```
-
-To use e.g. "sphinx-build-3" instead of "sphinx-build", run
-```bash
-$ make sphinx-build=sphinx-build-3
-```
-
-This should create a file "BOUT.pdf" in the "manual" directory.
 
 To get a local html version, run
 
@@ -36,6 +22,18 @@ $ make html
 ```
 
 This should create a file "index.html" in the "manual/html" directory.
+
+To use e.g. "sphinx-build-3" instead of "sphinx-build", run
+```bash
+$ make sphinx-build=sphinx-build-3
+```
+
+These documents can be built into a PDF using "sphinx-build":
+
+```bash
+$ make
+```
+This should create a file "BOUT.pdf" in the "manual" directory.
 
 ### API documentation
 
@@ -53,14 +51,7 @@ It is possible to build the API documentation into the main manual
 using "breathe". Install breathe:
 
 ```bash
-$ pip install --user breathe
-```
-
-and comment out the following line in `sphinx/conf.py`:
-
-```python
-# Disable breathe
-has_breathe = False
+$ pip install breathe
 ```
 
 You can then build the sphinx documentation as normal.

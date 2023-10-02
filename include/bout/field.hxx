@@ -345,7 +345,8 @@ inline bool isUniform(const T& f, bool allpe = false,
   auto element = f[*f.getRegion(region).begin()];
   // TODO: maybe parallise this loop, as the early return is unlikely
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
-    if (f[i] != element) {
+    // by default we only check for exact equality, as that should cover most cases
+    if (f[i] != element and (not almost_equal(f[i], element, 10))) {
       result = false;
       break;
     }
@@ -370,8 +371,12 @@ inline BoutReal getUniform(const T& f, MAYBE_UNUSED(bool allpe) = false,
                            const std::string& region = "RGN_ALL") {
 #if CHECK > 1
   if (not isUniform(f, allpe, region)) {
-    throw BoutException("Requested getUniform({}, {}, {}) but Field is not const", f.name,
-                        allpe, region);
+    const BoutReal f1 = min(f, allpe, region);
+    const BoutReal f2 = max(f, allpe, region);
+    throw BoutException("Requested getUniform({}, {}, {}) but Field is not const "
+                        "([{:.15f}...{:.15f}] Δ={:e} {:e}ε)",
+                        f.name, allpe, region, f1, f2, f2 - f1,
+                        (f2 - f1) / (f1 + f2) / std::numeric_limits<BoutReal>::epsilon());
   }
 #endif
   return f[*f.getRegion(region).begin()];
