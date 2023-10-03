@@ -679,20 +679,23 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     getAtLocAndFillGuards(mesh, dy, "dy", suffix, location, 1.0, extrapolate_x,
                           extrapolate_y, false, transform.get());
 
+    auto contravariant_components =
+        contravariantMetricTensor.getContravariantMetricTensor();
+
     // grid data source has staggered fields, so read instead of interpolating
     // Diagonal components of metric tensor g^{ij} (default to 1)
-    getAtLocAndFillGuards(mesh, g11, "g11", suffix, location, 1.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, g22, "g22", suffix, location, 1.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, g33, "g33", suffix, location, 1.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, g12, "g12", suffix, location, 0.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, g13, "g13", suffix, location, 0.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, g23, "g23", suffix, location, 0.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, contravariant_components.g11, "g11", suffix, location,
+                          1.0, extrapolate_x, extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, contravariant_components.g22, "g22", suffix, location,
+                          1.0, extrapolate_x, extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, contravariant_components.g33, "g33", suffix, location,
+                          1.0, extrapolate_x, extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, contravariant_components.g12, "g12", suffix, location,
+                          0.0, extrapolate_x, extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, contravariant_components.g13, "g13", suffix, location,
+                          0.0, extrapolate_x, extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, contravariant_components.g23, "g23", suffix, location,
+                          0.0, extrapolate_x, extrapolate_y, false, transform.get());
 
     // Check input metrics
     checkContravariant();
@@ -702,6 +705,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     auto source_has_component = [&suffix, &mesh](const std::string& name) {
       return mesh->sourceHasVar(name + suffix);
     };
+
+    auto covariant_components = covariantMetricTensor.getCovariantMetricTensor();
+
     // Check if any of the components are present
     if (std::any_of(begin(covariant_component_names), end(covariant_component_names),
                     source_has_component)) {
@@ -709,12 +715,12 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
                       source_has_component)) {
 
-        getAtLoc(mesh, g_11, "g_11", suffix, location);
-        getAtLoc(mesh, g_22, "g_22", suffix, location);
-        getAtLoc(mesh, g_33, "g_33", suffix, location);
-        getAtLoc(mesh, g_12, "g_12", suffix, location);
-        getAtLoc(mesh, g_13, "g_13", suffix, location);
-        getAtLoc(mesh, g_23, "g_23", suffix, location);
+        getAtLoc(mesh, covariant_components.g_11, "g_11", suffix, location);
+        getAtLoc(mesh, covariant_components.g_22, "g_22", suffix, location);
+        getAtLoc(mesh, covariant_components.g_33, "g_33", suffix, location);
+        getAtLoc(mesh, covariant_components.g_12, "g_12", suffix, location);
+        getAtLoc(mesh, covariant_components.g_13, "g_13", suffix, location);
+        getAtLoc(mesh, covariant_components.g_23, "g_23", suffix, location);
 
         output_warn.write(
             "\tWARNING! Staggered covariant components of metric tensor set manually. "
@@ -735,20 +741,23 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
         throw BoutException("Error in staggered calcCovariant call");
       }
     }
+
+    FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
+
     // More robust to extrapolate derived quantities directly, rather than
     // deriving from extrapolated covariant metric components
-    g_11 = interpolateAndExtrapolate(g_11, location, extrapolate_x, extrapolate_y, false,
-                                     transform.get());
-    g_22 = interpolateAndExtrapolate(g_22, location, extrapolate_x, extrapolate_y, false,
-                                     transform.get());
-    g_33 = interpolateAndExtrapolate(g_33, location, extrapolate_x, extrapolate_y, false,
-                                     transform.get());
-    g_12 = interpolateAndExtrapolate(g_12, location, extrapolate_x, extrapolate_y, false,
-                                     transform.get());
-    g_13 = interpolateAndExtrapolate(g_13, location, extrapolate_x, extrapolate_y, false,
-                                     transform.get());
-    g_23 = interpolateAndExtrapolate(g_23, location, extrapolate_x, extrapolate_y, false,
-                                     transform.get());
+    g_11 = interpolateAndExtrapolate(covariant_components.g_11, location, extrapolate_x,
+                                     extrapolate_y, false, transform.get());
+    g_22 = interpolateAndExtrapolate(covariant_components.g_22, location, extrapolate_x,
+                                     extrapolate_y, false, transform.get());
+    g_33 = interpolateAndExtrapolate(covariant_components.g_33, location, extrapolate_x,
+                                     extrapolate_y, false, transform.get());
+    g_12 = interpolateAndExtrapolate(covariant_components.g_12, location, extrapolate_x,
+                                     extrapolate_y, false, transform.get());
+    g_13 = interpolateAndExtrapolate(covariant_components.g_13, location, extrapolate_x,
+                                     extrapolate_y, false, transform.get());
+    g_23 = interpolateAndExtrapolate(covariant_components.g_23, location, extrapolate_x,
+                                     extrapolate_y, false, transform.get());
 
     // Check covariant metrics
     checkCovariant();
@@ -849,7 +858,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     dz = interpolateAndExtrapolate(coords_in->dz, location, true, true, false,
                                    transform.get());
 
-    ContravariantMetricTensor metric_tensor = coords_in->getContravariantMetricTensor();
+    ContravariantMetricTensor::ContravariantComponents metric_tensor =
+        coords_in->getContravariantMetricTensor();
+    FieldMetric g11, g22, g33, g12, g13, g23;
 
     // Diagonal components of metric tensor g^{ij}
     g11 = interpolateAndExtrapolate(metric_tensor.g11, location, true, true, false,
@@ -867,22 +878,32 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     g23 = interpolateAndExtrapolate(metric_tensor.g23, location, true, true, false,
                                     transform.get());
 
+    contravariantMetricTensor.setContravariantMetricTensor(
+        loc, ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
+
+    FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
+
+    const auto covariant_components = coords_in->getCovariantMetricTensor();
+
     // 3x3 matrix inversion can exaggerate small interpolation errors, so it is
     // more robust to interpolate and extrapolate derived quantities directly,
     // rather than deriving from interpolated/extrapolated covariant metric
     // components
-    g_11 = interpolateAndExtrapolate(coords_in->g_11, location, true, true, false,
-                                     transform.get());
-    g_22 = interpolateAndExtrapolate(coords_in->g_22, location, true, true, false,
-                                     transform.get());
-    g_33 = interpolateAndExtrapolate(coords_in->g_33, location, true, true, false,
-                                     transform.get());
-    g_12 = interpolateAndExtrapolate(coords_in->g_12, location, true, true, false,
-                                     transform.get());
-    g_13 = interpolateAndExtrapolate(coords_in->g_13, location, true, true, false,
-                                     transform.get());
-    g_23 = interpolateAndExtrapolate(coords_in->g_23, location, true, true, false,
-                                     transform.get());
+    g_11 = interpolateAndExtrapolate(covariant_components.g_11, location, true, true,
+                                     false, transform.get());
+    g_22 = interpolateAndExtrapolate(covariant_components.g_22, location, true, true,
+                                     false, transform.get());
+    g_33 = interpolateAndExtrapolate(covariant_components.g_33, location, true, true,
+                                     false, transform.get());
+    g_12 = interpolateAndExtrapolate(covariant_components.g_12, location, true, true,
+                                     false, transform.get());
+    g_13 = interpolateAndExtrapolate(covariant_components.g_13, location, true, true,
+                                     false, transform.get());
+    g_23 = interpolateAndExtrapolate(covariant_components.g_23, location, true, true,
+                                     false, transform.get());
+
+    covariantMetricTensor.setCovariantMetricTensor(
+        CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
     // Check input metrics
     checkContravariant();
