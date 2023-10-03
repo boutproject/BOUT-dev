@@ -677,6 +677,7 @@ BOUT_INCLUDE_PATH
 BOUT_LIB_PATH
 CONFIG_LDFLAGS
 CONFIG_CFLAGS
+BOUT_HAS_ADIOS
 BOUT_HAS_CALIPER
 BOUT_HAS_UMPIRE
 BOUT_HAS_RAJA
@@ -2400,6 +2401,8 @@ fi
 ac_config_guess="$SHELL $ac_aux_dir/config.guess"  # Please don't use this var.
 ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
 ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
+
+
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ./configure is deprecated and will be removed in a future version, please use CMake instead" >&5
@@ -7909,8 +7912,8 @@ else
 
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PETSc >= 3.4.0 " >&5
-$as_echo_n "checking for PETSc >= 3.4.0 ... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PETSC" >&5
+$as_echo_n "checking for PETSC... " >&6; }
 
 if test -n "$PETSC_CFLAGS"; then
     pkg_cv_PETSC_CFLAGS="$PETSC_CFLAGS"
@@ -7950,7 +7953,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -7969,8 +7972,8 @@ fi
 
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for petsc >= 3.4.0 " >&5
-$as_echo_n "checking for petsc >= 3.4.0 ... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PETSC" >&5
+$as_echo_n "checking for PETSC... " >&6; }
 
 if test -n "$PETSC_CFLAGS"; then
     pkg_cv_PETSC_CFLAGS="$PETSC_CFLAGS"
@@ -8010,7 +8013,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -8035,7 +8038,7 @@ fi
   " "$LINENO" 5
 
 elif test $pkg_failed = untried; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 	      as_fn_error $? "--with-petsc was specified but could not find PETSc distribution.
@@ -8054,13 +8057,13 @@ $as_echo "yes" >&6; }
 fi
 
 elif test $pkg_failed = untried; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for petsc >= 3.4.0 " >&5
-$as_echo_n "checking for petsc >= 3.4.0 ... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PETSC" >&5
+$as_echo_n "checking for PETSC... " >&6; }
 
 if test -n "$PETSC_CFLAGS"; then
     pkg_cv_PETSC_CFLAGS="$PETSC_CFLAGS"
@@ -8100,7 +8103,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -8125,7 +8128,7 @@ fi
   " "$LINENO" 5
 
 elif test $pkg_failed = untried; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
 	      as_fn_error $? "--with-petsc was specified but could not find PETSc distribution.
@@ -15268,6 +15271,7 @@ BOUT_HAS_CUDA="no"
 BOUT_HAS_RAJA="no"
 BOUT_HAS_UMPIRE="no"
 BOUT_HAS_CALIPER="no"
+BOUT_HAS_ADIOS="no"
 
 
 if test "x$BOUT_HAS_CUDA" = "xyes"; then :
@@ -15313,6 +15317,18 @@ $as_echo "#define BOUT_HAS_CALIPER 1" >>confdefs.h
 else
 
 $as_echo "#define BOUT_HAS_CALIPER 0" >>confdefs.h
+
+fi
+
+
+
+if test "x$BOUT_HAS_ADIOS" = "xyes"; then :
+
+$as_echo "#define BOUT_HAS_ADIOS 1" >>confdefs.h
+
+else
+
+$as_echo "#define BOUT_HAS_ADIOS 0" >>confdefs.h
 
 fi
 
