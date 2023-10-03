@@ -1350,11 +1350,13 @@ BOUT_USE_CUDA="no"
 BOUT_HAS_RAJA="no"
 BOUT_HAS_UMPIRE="no"
 BOUT_HAS_CALIPER="no"
+BOUT_HAS_ADIOS="no"
 
 BOUT_DEFINE_SUBST(BOUT_USE_CUDA, [Enable CUDA])
 BOUT_DEFINE_SUBST(BOUT_HAS_RAJA, [RAJA support])
 BOUT_DEFINE_SUBST(BOUT_HAS_UMPIRE, [Umpire support])
 BOUT_DEFINE_SUBST(BOUT_HAS_CALIPER, [Caliper support])
+BOUT_DEFINE_SUBST(BOUT_HAS_ADIOS, [ADIOS support])
 
 #############################################################
 # Write configuration to bout-config
