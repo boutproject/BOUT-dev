@@ -33,9 +33,9 @@ public:
   // check that covariant tensors are positive (if expected) and finite (always)
   void checkCovariant(int ystart);
 
-  void setCovariantMetricTensor(const CovariantMetricTensor& metric_tensor);
+  void setCovariantMetricTensor(CovariantMetricTensor& metric_tensor);
 
-  CovariantComponents getCovariantMetricTensor() const;
+  CovariantComponents getCovariantMetricTensor();
 
   void Allocate();
 
