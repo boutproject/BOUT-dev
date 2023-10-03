@@ -525,6 +525,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
       throw BoutException("Error in calcCovariant call");
     }
   }
+
+  FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
+
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
   g_11 = interpolateAndExtrapolate(g_11, location, extrapolate_x, extrapolate_y, false,
@@ -539,6 +542,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
                                    transform.get());
   g_23 = interpolateAndExtrapolate(g_23, location, extrapolate_x, extrapolate_y, false,
                                    transform.get());
+
+  covariantMetricTensor.setCovariantMetricTensor(
+      CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
   // Check covariant metrics
   checkCovariant();
