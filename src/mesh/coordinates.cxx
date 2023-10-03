@@ -1962,10 +1962,10 @@ Coordinates::getContravariantMetricTensor() const {
   return contravariantMetricTensor.getContravariantMetricTensor();
 }
 
-CovariantMetricTensor::CovariantComponents Coordinates::getCovariantMetricTensor() const {
+CovariantMetricTensor::CovariantComponents Coordinates::getCovariantMetricTensor() {
   return covariantMetricTensor.getCovariantMetricTensor();
 }
 
-void Coordinates::setCovariantMetricTensor(const CovariantMetricTensor& metric_tensor) {
+void Coordinates::setCovariantMetricTensor(CovariantMetricTensor& metric_tensor) {
   covariantMetricTensor.setCovariantMetricTensor(metric_tensor);
 }
