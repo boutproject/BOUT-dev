@@ -28,14 +28,14 @@ CovariantMetricTensor::CovariantMetricTensor(const Array<BoutReal> g_11,
 }
 
 CovariantMetricTensor::CovariantComponents
-CovariantMetricTensor::getCovariantMetricTensor() const {
+CovariantMetricTensor::getCovariantMetricTensor() {
   return CovariantComponents{covariant_components.g_11, covariant_components.g_22,
                              covariant_components.g_33, covariant_components.g_12,
                              covariant_components.g_13, covariant_components.g_23};
 }
 
 void CovariantMetricTensor::setCovariantMetricTensor(
-    const CovariantMetricTensor& metric_tensor) {
+    CovariantMetricTensor& metric_tensor) {
 
   const auto new_components = metric_tensor.getCovariantMetricTensor();
   covariant_components.g_11 = new_components.g_11;

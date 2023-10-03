@@ -467,7 +467,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
   // Diagonal components of metric tensor g^{ij} (default to 1)
 
-  auto const contravariant_components =
+  auto contravariant_components =
       contravariantMetricTensor.getContravariantMetricTensor();
 
   FieldMetric g11, g22, g33, g12, g13, g23;
@@ -498,7 +498,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
                     source_has_component)) {
 
-      auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
+      auto covariant_components = covariantMetricTensor.getCovariantMetricTensor();
 
       covariant_components.g_11 = getUnaligned(covariant_components.g_11, "g_11", 1.0);
       covariant_components.g_22 = getUnaligned(covariant_components.g_22, "g_22", 1.0);
