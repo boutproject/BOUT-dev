@@ -3,6 +3,9 @@
 /* Runtime error checking level */
 #undef BOUT_CHECK_LEVEL
 
+/* ADIOS support */
+#undef BOUT_HAS_ADIOS
+
 /* ARKODE support */
 #undef BOUT_HAS_ARKODE
 
