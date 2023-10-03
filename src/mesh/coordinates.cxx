@@ -616,15 +616,14 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
-      J(1., mesh), Bxy(1., mesh),
-      // Identity metric tensor
-      g11(1., mesh), g22(1., mesh), g33(1., mesh), g12(0, mesh), g13(0, mesh),
-      g23(0, mesh), g_11(1., mesh), g_22(1., mesh), g_33(1., mesh), g_12(0, mesh),
-      g_13(0, mesh), g_23(0, mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh),
+      J(1., mesh), Bxy(1., mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh),
       G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh),
       G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh),
       G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(loc) {
+      IntShiftTorsion(mesh), localmesh(mesh), location(loc),
+      // Identity metric tensor
+      contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
+      covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh) {
 
   std::string suffix = getLocationSuffix(location);
 
