@@ -35,7 +35,7 @@ CovariantMetricTensor::getCovariantMetricTensor() {
 }
 
 void CovariantMetricTensor::setCovariantMetricTensor(
-    CovariantMetricTensor& metric_tensor) {
+    CovariantMetricTensor metric_tensor) {
 
   const auto new_components = metric_tensor.getCovariantMetricTensor();
   covariant_components.g_11 = new_components.g_11;
