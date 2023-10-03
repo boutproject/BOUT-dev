@@ -481,7 +481,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   g13 = getUnalignedAtLocation(contravariant_components.g13, "g13", 0.0);
   g23 = getUnalignedAtLocation(contravariant_components.g23, "g23", 0.0);
 
-  contravariantMetricTensor.setContravariantMetricTensor(g11, g22, g33, g12, g13, g23);
+  contravariantMetricTensor.setContravariantMetricTensor(
+      location, ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
 
   // Check input metrics
   checkContravariant();
