@@ -107,7 +107,7 @@ public:
 
   ContravariantMetricTensor::ContravariantComponents getContravariantMetricTensor() const;
 
-  CovariantMetricTensor::CovariantComponents getCovariantMetricTensor();
+  CovariantMetricTensor::CovariantComponents getCovariantMetricTensor() const;
 
   void setContravariantMetricTensor(const ContravariantMetricTensor& metric_tensor);
 

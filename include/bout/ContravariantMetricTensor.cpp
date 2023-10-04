@@ -46,7 +46,7 @@ void ContravariantMetricTensor::setContravariantMetricTensor(
 }
 
 int ContravariantMetricTensor::calcCovariant(const CELL_LOC location,
-                                             std::string& region) {
+                                             const std::string& region) {
   TRACE("ContravariantMetricTensor::calcCovariant");
 
   // Perform inversion of g^{ij} to get g_{ij}
@@ -73,7 +73,7 @@ int ContravariantMetricTensor::calcCovariant(const CELL_LOC location,
   CovariantMetricTensor const covariantMetricTensor =
       CovariantMetricTensor(a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2));
 
-  auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
+  auto covariant_components = covariantMetricTensor.getCovariantMetricTensor();
 
   covariant_components.g_11.setLocation(location);
   covariant_components.g_22.setLocation(location);
