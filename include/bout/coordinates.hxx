@@ -99,17 +99,15 @@ public:
   FieldMetric Bxy; ///< Magnitude of B = nabla z times nabla x
 
 private:
-
   ContravariantMetricTensor contravariantMetricTensor;
   CovariantMetricTensor covariantMetricTensor;
 
 public:
-
   ContravariantMetricTensor::ContravariantComponents getContravariantMetricTensor() const;
 
   CovariantMetricTensor::CovariantComponents getCovariantMetricTensor() const;
 
-  void setContravariantMetricTensor(const ContravariantMetricTensor& metric_tensor);
+  void setContravariantMetricTensor(ContravariantMetricTensor& metric_tensor);
 
   void setCovariantMetricTensor(CovariantMetricTensor& metric_tensor);
 
@@ -132,9 +130,9 @@ public:
   int calcCovariant(const std::string& region = "RGN_ALL");
   /// Invert covariant metric to get contravariant components
   int calcContravariant(const std::string& region = "RGN_ALL");
-  int jacobian(); ///< Calculate J and Bxy
+  int jacobian();                     ///< Calculate J and Bxy
   void CalculateChristoffelSymbols(); /// Calculate Christoffel symbol terms
-  
+
   ///////////////////////////////////////////////////////////
   // Parallel transforms
   ///////////////////////////////////////////////////////////

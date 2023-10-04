@@ -1972,8 +1972,7 @@ void Coordinates::checkContravariant() {
   contravariantMetricTensor.checkContravariant(localmesh->ystart);
 }
 
-void Coordinates::setContravariantMetricTensor(
-    const ContravariantMetricTensor& metric_tensor) {
+void Coordinates::setContravariantMetricTensor(ContravariantMetricTensor& metric_tensor) {
   contravariantMetricTensor.setContravariantMetricTensor(location, metric_tensor);
 }
 
