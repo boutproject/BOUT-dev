@@ -370,13 +370,7 @@ TEST_F(CoordinatesTest, SetContravariantMetricTensor) {
                      FieldMetric{0.0}}; // IntShiftTorsion
 
   //  Modify with setter
-  const auto updated_metric_tensor;
-  updated_metric_tensor.g11 = 1.7;
-  updated_metric_tensor.g22 = 2.3;
-  updated_metric_tensor.g33 = 3.1;
-  updated_metric_tensor.g12 = 0.9;
-  updated_metric_tensor.g13 = 5.7;
-  updated_metric_tensor.g23 = 1.9;
+  auto updated_metric_tensor = ContravariantMetricTensor(1.7, 2.3, 3.1, 0.9, 5.7, 1.9);
   coords.setContravariantMetricTensor(updated_metric_tensor);
 
   //  Get values with getter and check they have been modified as expected
@@ -446,22 +440,16 @@ TEST_F(CoordinatesTest, SetCovariantMetricTensor) {
                        FieldMetric{0.0}}; // IntShiftTorsion
 
     //  Modify with setter
-    const auto updated_metric_tensor;
-    updated_metric_tensor.g_11 = 1.7;
-    updated_metric_tensor.g_22 = 2.3;
-    updated_metric_tensor.g_33 = 3.1;
-    updated_metric_tensor.g_12 = 0.9;
-    updated_metric_tensor.g_13 = 5.7;
-    updated_metric_tensor.g_23 = 1.9;
+    auto updated_metric_tensor = CovariantMetricTensor(1.7, 2.3, 3.1, 0.9, 5.7, 1.9);
     coords.setCovariantMetricTensor(updated_metric_tensor);
 
     //  Get values with getter and check they have been modified as expected
     const auto g = coords.getCovariantMetricTensor();
-    EXPECT_TRUE(IsFieldEqual(g.g11, 1.7));
-    EXPECT_TRUE(IsFieldEqual(g.g22, 2.3));
-    EXPECT_TRUE(IsFieldEqual(g.g33, 3.1));
-    EXPECT_TRUE(IsFieldEqual(g.g12, 0.9));
-    EXPECT_TRUE(IsFieldEqual(g.g13, 5.7));
-    EXPECT_TRUE(IsFieldEqual(g.g23, 1.9));
+    EXPECT_TRUE(IsFieldEqual(g.g_11, 1.7));
+    EXPECT_TRUE(IsFieldEqual(g.g_22, 2.3));
+    EXPECT_TRUE(IsFieldEqual(g.g_33, 3.1));
+    EXPECT_TRUE(IsFieldEqual(g.g_12, 0.9));
+    EXPECT_TRUE(IsFieldEqual(g.g_13, 5.7));
+    EXPECT_TRUE(IsFieldEqual(g.g_23, 1.9));
   }
 }
