@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
   OptionsReader* reader = OptionsReader::getInstance();
   reader->write(&values, "test-out.ini");
 
-  // Write to a NetCDF file
+  // Write to ADIOS file
   OptionsADIOS("test-out.bp", bout::OptionsIO::FileMode::replace, true).write(values);
 
   ///////////////////////////
