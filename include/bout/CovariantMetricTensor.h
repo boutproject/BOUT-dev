@@ -35,7 +35,7 @@ public:
 
   void setCovariantMetricTensor(CovariantMetricTensor metric_tensor);
 
-  CovariantComponents getCovariantMetricTensor();
+  CovariantComponents getCovariantMetricTensor() const;
 
   void Allocate();
 

@@ -31,7 +31,7 @@ public:
                             Mesh* mesh);
 
   /// Invert contravariant metric to get covariant components
-  int calcCovariant(CELL_LOC location, std::string& region = (std::string&)"RGN_ALL");
+  int calcCovariant(CELL_LOC location, const std::string& region = "RGN_ALL");
 
   // check that contravariant tensors are positive (if expected) and finite (always)
   void checkContravariant(int ystart);

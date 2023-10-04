@@ -985,9 +985,9 @@ int Coordinates::geometry(bool recalculate_staggered,
                           bool force_interpolate_from_centre) {
   TRACE("Coordinates::geometry");
 
-  auto const contravariant_components =
+  auto contravariant_components =
       contravariantMetricTensor.getContravariantMetricTensor();
-  auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
+  auto covariant_components = covariantMetricTensor.getCovariantMetricTensor();
 
   communicate(dx, dy, dz, contravariant_components.g11, contravariant_components.g22,
               contravariant_components.g33, contravariant_components.g12,
@@ -1331,8 +1331,7 @@ void Coordinates::CalculateChristoffelSymbols() {
 
 int Coordinates::calcCovariant(const std::string& region) {
   TRACE("Coordinates::calcCovariant");
-  return contravariantMetricTensor.calcCovariant(location,
-                                                 const_cast<std::string&>(region));
+  return contravariantMetricTensor.calcCovariant(location, region);
 }
 
 int Coordinates::calcContravariant(const std::string& region) {
@@ -1983,7 +1982,7 @@ Coordinates::getContravariantMetricTensor() const {
   return contravariantMetricTensor.getContravariantMetricTensor();
 }
 
-CovariantMetricTensor::CovariantComponents Coordinates::getCovariantMetricTensor() {
+CovariantMetricTensor::CovariantComponents Coordinates::getCovariantMetricTensor() const {
   return covariantMetricTensor.getCovariantMetricTensor();
 }
 
