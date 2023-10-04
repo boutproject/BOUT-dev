@@ -64,6 +64,10 @@ class Options;
 #include <petsc.h>
 #include <petscversion.h>
 
+#include "bout/boutexception.hxx"
+
+#define BOUT_DO_PETSC(cmd) PetscLib::assertIerr(cmd, #cmd)
+
 /*!
  * Handles initialisation and finalisation of PETSc library.
  * The first instance which is created initialises PETSc
@@ -110,6 +114,14 @@ public:
    * if any instances of PetscLib still exist
    */
   static void cleanup();
+
+  static inline void assertIerr(PetscErrorCode ierr, std::string op = "PETSc operation") {
+    if (ierr) {
+      throw BoutException("{:s} failed with {:d}", op, ierr);
+    }
+  }
+
+  static BoutException SNESFailure(SNES& snes);
 
 private:
   static int count;   ///< How many instances?

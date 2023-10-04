@@ -61,8 +61,8 @@ int main(int argc, char** argv) {
     p = 0.39503274;
     q = 0.20974396;
     f1.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++)
-      for (int jy = 0; jy < mesh->LocalNy; jy++)
+    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+      for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
           BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
           BoutReal z = BoutReal(jz) / nz;
@@ -80,9 +80,11 @@ int main(int argc, char** argv) {
               ;
           ASSERT0(finite(f1(jx, jy, jz)));
         }
-    if (mesh->firstX())
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+      }
+    }
+    if (mesh->firstX()) {
+      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
@@ -100,9 +102,12 @@ int main(int argc, char** argv) {
                               * (z - q)))); //make the gradients zero at both x-boundaries
             ASSERT0(finite(f1(jx, jy, jz)));
           }
-    if (mesh->lastX())
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+        }
+      }
+    }
+    if (mesh->lastX()) {
+      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
@@ -120,23 +125,28 @@ int main(int argc, char** argv) {
                               * (z - q)))); //make the gradients zero at both x-boundaries
             ASSERT0(finite(f1(jx, jy, jz)));
           }
+        }
+      }
+    }
 
     f1.applyBoundary("neumann");
 
     p = 0.512547;
     q = 0.30908712;
     d1.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++)
-      for (int jy = 0; jy < mesh->LocalNy; jy++)
+    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+      for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
           BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
           BoutReal z = BoutReal(jz) / nz;
           d1(jx, jy, jz) =
               1. + 0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.);
         }
-    if (mesh->firstX())
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+      }
+    }
+    if (mesh->firstX()) {
+      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
@@ -144,9 +154,12 @@ int main(int argc, char** argv) {
                 1. + 0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.);
             // 	  d1(jx, jy, jz) = d1(jx+1, jy, jz);
           }
-    if (mesh->lastX())
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+        }
+      }
+    }
+    if (mesh->lastX()) {
+      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
@@ -154,21 +167,26 @@ int main(int argc, char** argv) {
                 1. + 0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.);
             // 	  d1(jx, jy, jz) = d1(jx-1, jy, jz);
           }
+        }
+      }
+    }
 
     p = 0.18439023;
     q = 0.401089473;
     c1.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++)
-      for (int jy = 0; jy < mesh->LocalNy; jy++)
+    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+      for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
           BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
           BoutReal z = BoutReal(jz) / nz;
           c1(jx, jy, jz) =
               1. + 0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.);
         }
-    if (mesh->firstX())
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+      }
+    }
+    if (mesh->firstX()) {
+      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
@@ -176,9 +194,12 @@ int main(int argc, char** argv) {
                 1. + 0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.);
             // 	  c1(jx, jy, jz) = c1(jx+1, jy, jz);
           }
-    if (mesh->lastX())
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+        }
+      }
+    }
+    if (mesh->lastX()) {
+      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
@@ -186,21 +207,26 @@ int main(int argc, char** argv) {
                 1. + 0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.);
             // 	  c1(jx, jy, jz) = c1(jx-1, jy, jz);
           }
+        }
+      }
+    }
 
     p = 0.612547;
     q = 0.30908712;
     a1.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++)
-      for (int jy = 0; jy < mesh->LocalNy; jy++)
+    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+      for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
           BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
           BoutReal z = BoutReal(jz) / nz;
           a1(jx, jy, jz) =
               -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
         }
-    if (mesh->firstX())
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+      }
+    }
+    if (mesh->firstX()) {
+      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
@@ -208,9 +234,12 @@ int main(int argc, char** argv) {
                 -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
             // 	  a1(jx, jy, jz) = a1(jx+1, jy, jz);
           }
-    if (mesh->lastX())
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+        }
+      }
+    }
+    if (mesh->lastX()) {
+      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
@@ -218,6 +247,9 @@ int main(int argc, char** argv) {
                 -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
             // 	  a1(jx, jy, jz) = a1(jx-1, jy, jz);
           }
+        }
+      }
+    }
 
     checkData(f1);
     checkData(a1);
@@ -228,18 +260,24 @@ int main(int argc, char** argv) {
 
     b1 = d1 * Delp2(f1) + Grad_perp(c1) * Grad_perp(f1) / c1 + a1 * f1;
 
-    if (mesh->firstX())
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+    if (mesh->firstX()) {
+      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             b1(jx, jy, jz) = b1(jx + 1, jy, jz);
           }
-    if (mesh->lastX())
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+        }
+      }
+    }
+    if (mesh->lastX()) {
+      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             b1(jx, jy, jz) = b1(jx - 1, jy, jz);
           }
+        }
+      }
+    }
 
     invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
     invert->setOuterBoundaryFlags(INVERT_AC_GRAD);
@@ -332,18 +370,24 @@ int main(int argc, char** argv) {
     c3 = DC(c1);
     d3 = DC(d1);
     b3 = d3 * Delp2(f1) + Grad_perp(c3) * Grad_perp(f1) / c3 + a3 * f1;
-    if (mesh->firstX())
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+    if (mesh->firstX()) {
+      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             b3(jx, jy, jz) = b3(jx + 1, jy, jz);
           }
-    if (mesh->lastX())
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+        }
+      }
+    }
+    if (mesh->lastX()) {
+      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             b3(jx, jy, jz) = b3(jx - 1, jy, jz);
           }
+        }
+      }
+    }
 
     invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
     invert->setOuterBoundaryFlags(INVERT_AC_GRAD);
@@ -421,8 +465,8 @@ int main(int argc, char** argv) {
     p = 0.623901;
     q = 0.01209489;
     f5.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++)
-      for (int jy = 0; jy < mesh->LocalNy; jy++)
+    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+      for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
           BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
           BoutReal z = BoutReal(jz) / nz;
@@ -439,9 +483,11 @@ int main(int argc, char** argv) {
                               * (z - q)))) //make the gradients zero at both x-boundaries
               ;
         }
-    if (mesh->firstX())
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+      }
+    }
+    if (mesh->firstX()) {
+      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
@@ -458,9 +504,12 @@ int main(int argc, char** argv) {
                               2. * PI
                               * (z - q)))); //make the gradients zero at both x-boundaries
           }
-    if (mesh->lastX())
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+        }
+      }
+    }
+    if (mesh->lastX()) {
+      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
@@ -477,106 +526,139 @@ int main(int argc, char** argv) {
                               2. * PI
                               * (z - q)))); //make the gradients zero at both x-boundaries
           }
+        }
+      }
+    }
 
     p = 0.63298589;
     q = 0.889237890;
     d5.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++)
-      for (int jy = 0; jy < mesh->LocalNy; jy++)
+    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+      for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
           BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
           BoutReal z = BoutReal(jz) / nz;
           d5(jx, jy, jz) = 1. + p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.);
         }
-    if (mesh->firstX())
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+      }
+    }
+    if (mesh->firstX()) {
+      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             d5(jx, jy, jz) = 1. + p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.);
           }
-    if (mesh->lastX())
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+        }
+      }
+    }
+    if (mesh->lastX()) {
+      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             d5(jx, jy, jz) = 1. + p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.);
           }
+        }
+      }
+    }
 
     p = 0.160983834;
     q = 0.73050121087;
     c5.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++)
-      for (int jy = 0; jy < mesh->LocalNy; jy++)
+    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+      for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
           BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
           BoutReal z = BoutReal(jz) / nz;
           c5(jx, jy, jz) = 1. + p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.);
         }
-    if (mesh->firstX())
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+      }
+    }
+    if (mesh->firstX()) {
+      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             c5(jx, jy, jz) = 1. + p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.);
           }
-    if (mesh->lastX())
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+        }
+      }
+    }
+    if (mesh->lastX()) {
+      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             c5(jx, jy, jz) = 1. + p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.);
           }
+        }
+      }
+    }
 
     p = 0.5378950;
     q = 0.2805870;
     a5.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++)
-      for (int jy = 0; jy < mesh->LocalNy; jy++)
+    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+      for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
           BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
           BoutReal z = BoutReal(jz) / nz;
           a5(jx, jy, jz) = -1. + p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.);
         }
-    if (mesh->firstX())
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+      }
+    }
+    if (mesh->firstX()) {
+      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             a5(jx, jy, jz) =
                 -1. + p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.);
           }
-    if (mesh->lastX())
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+        }
+      }
+    }
+    if (mesh->lastX()) {
+      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             a5(jx, jy, jz) =
                 -1. + p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.);
           }
+        }
+      }
+    }
 
     f5.applyBoundary("neumann");
     mesh->communicate(f5, a5, c5, d5);
 
     b5 = d5 * Delp2(f5) + Grad_perp(c5) * Grad_perp(f5) / c5 + a5 * f5;
-    if (mesh->firstX())
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+    if (mesh->firstX()) {
+      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             b5(jx, jy, jz) = b5(jx + 1, jy, jz);
           }
-    if (mesh->lastX())
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+        }
+      }
+    }
+    if (mesh->lastX()) {
+      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             b5(jx, jy, jz) = b5(jx - 1, jy, jz);
           }
+        }
+      }
+    }
 
     invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
     invert->setOuterBoundaryFlags(INVERT_AC_GRAD);
@@ -668,18 +750,24 @@ int main(int argc, char** argv) {
     c7 = DC(c5);
     d7 = DC(d5);
     b7 = d7 * Delp2(f5) + Grad_perp(c7) * Grad_perp(f5) / c7 + a7 * f5;
-    if (mesh->firstX())
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+    if (mesh->firstX()) {
+      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             b7(jx, jy, jz) = b7(jx + 1, jy, jz);
           }
-    if (mesh->lastX())
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++)
-        for (int jy = 0; jy < mesh->LocalNy; jy++)
+        }
+      }
+    }
+    if (mesh->lastX()) {
+      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
+        for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             b7(jx, jy, jz) = b7(jx - 1, jy, jz);
           }
+        }
+      }
+    }
 
     invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
     invert->setOuterBoundaryFlags(INVERT_AC_GRAD);
@@ -766,10 +854,13 @@ BoutReal max_error_at_ystart(const Field3D& error) {
   const auto* mesh = error.getMesh();
   BoutReal local_max_error = error(mesh->xstart, mesh->ystart, 0);
 
-  for (int jx = mesh->xstart; jx <= mesh->xend; jx++)
-    for (int jz = 0; jz < mesh->LocalNz; jz++)
-      if (local_max_error < error(jx, mesh->ystart, jz))
+  for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+    for (int jz = 0; jz < mesh->LocalNz; jz++) {
+      if (local_max_error < error(jx, mesh->ystart, jz)) {
         local_max_error = error(jx, mesh->ystart, jz);
+      }
+    }
+  }
 
   BoutReal max_error;
 

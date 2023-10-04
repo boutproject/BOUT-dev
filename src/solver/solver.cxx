@@ -725,15 +725,23 @@ void Solver::outputVars(Options& output_options, bool save_repeat) {
 void Solver::readEvolvingVariablesFromOptions(Options& options) {
   run_id = options["run_id"].withDefault(default_run_id);
   simtime = options["tt"].as<BoutReal>();
-  iteration = options["hist_hi"].as<int>();
+  iteration = options["hist_hi"].withDefault<int>(0);
 
   for (auto& f : f2d) {
-    *(f.var) = options[f.name].as<Field2D>();
+    if (options.isSet(f.name)) {
+      *(f.var) = options[f.name].as<Field2D>();
+    } else {
+      output_warn.write("Restart does not contain Field2D '{}' => Initialising", f.name);
+    }
   }
   for (const auto& f : f3d) {
-    *(f.var) = options[f.name].as<Field3D>();
-    if (mms) {
-      *(f.MMS_err) = options["E_" + f.name].as<Field3D>();
+    if (options.isSet(f.name)) {
+      *(f.var) = options[f.name].as<Field3D>();
+      if (mms) {
+        *(f.MMS_err) = options["E_" + f.name].as<Field3D>();
+      }
+    } else {
+      output_warn.write("Restart does not contain Field3D '{}' => Initialising", f.name);
     }
   }
 }

@@ -28,18 +28,22 @@ int Test_region_iterator::init(bool UNUSED(restarting)) {
   //Check expected results
   int nerr = 0;
   for (const auto& i : a.getRegion(RGN_ALL)) {
-    if (a[i] != 3.0)
+    if (a[i] != 3.0) {
       nerr++;
+    }
   }
-  if (nerr != 0)
+  if (nerr != 0) {
     throw BoutException("Unexpected values found in 'a', count {:d}", nerr);
+  }
   nerr = 0;
   for (const auto& i : b.getRegion(RGN_ALL)) {
-    if (b[i] != c[i])
+    if (b[i] != c[i]) {
       nerr++;
+    }
   }
-  if (nerr != 0)
+  if (nerr != 0) {
     throw BoutException("Unexpected values found in 'b', count {:d}", nerr);
+  }
 
   Field3D d = 1.0, e = 1.0, f = 2.0;
   BOUT_FOR(i, d.getRegion("RGN_NOBNDRY")) {
@@ -54,18 +58,22 @@ int Test_region_iterator::init(bool UNUSED(restarting)) {
                             + 2 * mesh->ystart * (mesh->LocalNx - mesh->xstart * 2))
                            * mesh->LocalNz;
   for (const auto& i : d.getRegion(RGN_ALL)) {
-    if (d[i] != 3.0)
+    if (d[i] != 3.0) {
       nerr++;
+    }
   }
-  if (nerr != nerrExpected)
+  if (nerr != nerrExpected) {
     throw BoutException("Unexpected values found in 'd', count {:d}", nerr);
+  }
   nerr = 0;
   for (const auto& i : e.getRegion(RGN_ALL)) {
-    if (e[i] != f[i])
+    if (e[i] != f[i]) {
       nerr++;
+    }
   }
-  if (nerr != nerrExpected)
+  if (nerr != nerrExpected) {
     throw BoutException("Unexpected values found in 'e', count {:d}", nerr);
+  }
 
   SOLVE_FOR(n);
   return 0;

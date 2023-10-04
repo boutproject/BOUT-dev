@@ -129,8 +129,9 @@ protected:
     (globalOptions->getSection("Ti"))->get("evolve", evolve_ti, true);
     (globalOptions->getSection("Ajpar"))->get("evolve", evolve_ajpar, true);
 
-    if (ZeroElMass)
+    if (ZeroElMass) {
       evolve_ajpar = false; // Don't need ajpar - calculated from ohm's law
+    }
 
     /*************** INITIALIZE LAPLACIAN SOLVERS ********/
     phi_solver = Laplacian::create(globalOptions->getSection("phisolver"));
@@ -162,13 +163,15 @@ protected:
 
     if (nu_perp < 1.e-10) {
       mui_hat = (3. / 10.) * nuiix / wci;
-    } else
+    } else {
       mui_hat = nu_perp;
+    }
 
     if (estatic) {
       beta_p = 1.e-29;
-    } else
+    } else {
       beta_p = 4.03e-11 * Ni_x * Te_x / bmag / bmag;
+    }
 
     Vi_x = wci * rho_s;
 
@@ -240,22 +243,25 @@ protected:
       solver->add(rho, "rho");
       comms.add(rho);
       output.write("rho\n");
-    } else
+    } else {
       initial_profile("rho", rho);
+    }
 
     if (evolve_ni) {
       solver->add(Ni, "Ni");
       comms.add(Ni);
       output.write("ni\n");
-    } else
+    } else {
       initial_profile("Ni", Ni);
+    }
 
     if (evolve_te) {
       solver->add(Te, "Te");
       comms.add(Te);
       output.write("te\n");
-    } else
+    } else {
       initial_profile("Te", Te);
+    }
 
     if (evolve_ajpar) {
       solver->add(Ajpar, "Ajpar");
@@ -272,15 +278,17 @@ protected:
       solver->add(Vi, "Vi");
       comms.add(Vi);
       output.write("vi\n");
-    } else
+    } else {
       initial_profile("Vi", Vi);
+    }
 
     if (evolve_ti) {
       solver->add(Ti, "Ti");
       comms.add(Ti);
       output.write("ti\n");
-    } else
+    } else {
       initial_profile("Ti", Ti);
+    }
 
     // Set boundary conditions
     jpar.setBoundary("jpar");

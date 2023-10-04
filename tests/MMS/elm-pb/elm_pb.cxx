@@ -293,11 +293,13 @@ public:
 
     OPTION(globalOptions->getSection("solver"), mms, false);
 
-    if (!include_curvature)
+    if (!include_curvature) {
       b0xcv = 0.0;
+    }
 
-    if (!include_jpar0)
+    if (!include_jpar0) {
       J0 = 0.0;
+    }
 
     //////////////////////////////////////////////////////////////
     // INITIALIZE LAPLACIAN SOLVER
@@ -316,8 +318,9 @@ public:
 
       } else {
         // Dimits style, using local coordinate system
-        if (include_curvature)
+        if (include_curvature) {
           b0xcv.z += I * b0xcv.x;
+        }
         I = 0.0; // I disappears from metric
       }
     }
@@ -325,10 +328,12 @@ public:
     //////////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
 
-    if (mesh->get(Bbar, "bmag")) // Typical magnetic field
+    if (mesh->get(Bbar, "bmag")) { // Typical magnetic field
       Bbar = 1.0;
-    if (mesh->get(Lbar, "rmag")) // Typical length scale
+    }
+    if (mesh->get(Lbar, "rmag")) { // Typical length scale
       Lbar = 1.0;
+    }
 
     Va = sqrt(Bbar * Bbar / (MU0 * density * Mi));
 
@@ -343,8 +348,9 @@ public:
     output.write("                dnorm = {:e}\n", dnorm);
     output.write("    Resistivity\n");
 
-    if (eHall)
+    if (eHall) {
       output.write("                delta_i = {:e}   AA = {:e} \n", delta_i, AA);
+    }
 
     if (vac_lund > 0.0) {
       output.write("        Vacuum  Tau_R = {:e} s   eta = {:e} Ohm m\n", vac_lund * Tbar,
@@ -584,8 +590,9 @@ public:
                      + b0xGrad_dot_Grad(P0, Psi)); // electron parallel pressure
     }
 
-    if (diamag_phi0)
+    if (diamag_phi0) {
       ddt(Psi) -= b0xGrad_dot_Grad(phi0, Psi); // Equilibrium flow
+    }
 
     if (diamag_grad_t) {
       // grad_par(T_e) correction
@@ -613,8 +620,9 @@ public:
     // Parallel current term
     ddt(U) -= SQ(B0) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
 
-    if (diamag_phi0)
+    if (diamag_phi0) {
       ddt(U) -= b0xGrad_dot_Grad(phi0, U); // Equilibrium flow
+    }
 
     if (nonlinear) {
       ddt(U) -= bracket(phi, U, bm_exb) * B0; // Advection
@@ -622,8 +630,9 @@ public:
 
     // Viscosity terms
 
-    if (viscos_perp > 0.0)
+    if (viscos_perp > 0.0) {
       ddt(U) += viscos_perp * Delp2(U); // Perpendicular viscosity
+    }
 
     ddt(U) -= 10 * (SQ(SQ(coords->dx)) * D4DX4(U) + SQ(SQ(coords->dz)) * D4DZ4(U));
 
@@ -632,15 +641,18 @@ public:
 
     ddt(P) = -b0xGrad_dot_Grad(phi, P0);
 
-    if (diamag_phi0)
+    if (diamag_phi0) {
       ddt(P) -= b0xGrad_dot_Grad(phi0, P); // Equilibrium flow
+    }
 
-    if (nonlinear)
+    if (nonlinear) {
       ddt(P) -= bracket(phi, P, bm_exb) * B0; // Advection
+    }
 
     // Parallel diffusion terms
-    if (diffusion_par > 0.0)
+    if (diffusion_par > 0.0) {
       ddt(P) += diffusion_par * Grad2_par2(P); // Parallel diffusion
+    }
 
     ddt(P) -= 10 * (SQ(SQ(coords->dx)) * D4DX4(P) + SQ(SQ(coords->dz)) * D4DZ4(P));
 
@@ -661,8 +673,9 @@ public:
       //ddt(Vpar) = -0.5*Grad_parP(P + P0, CELL_YLOW);
       ddt(Vpar) = -0.5 * Grad_par_LtoC(P + P0);
 
-      if (nonlinear)
+      if (nonlinear) {
         ddt(Vpar) -= bracket(phi, Vpar, bm_exb) * B0; // Advection
+      }
     }
 
     if (filter_z) {

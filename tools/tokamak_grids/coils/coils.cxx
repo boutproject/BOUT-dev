@@ -104,8 +104,9 @@ const Point AfromLine(Point start, Point end, double current, Point pos) {
         integral += 1. / d;
       } else if (i % 2 == 1) {
         integral += 4. / d;
-      } else
+      } else {
         integral += 2. / d;
+      }
       integral *= h / 3.;
     }
   } while (abs((integral - last) / (integral + last)) > 1.e-3);
@@ -116,8 +117,9 @@ const Point AfromLine(Point start, Point end, double current, Point pos) {
 const Point AfromCoil(vector<Point> corners, double current, Point pos) {
   Point A;
 
-  for (int i = 0; i < corners.size(); i++)
+  for (int i = 0; i < corners.size(); i++) {
     A += AfromLine(corners[i], corners[(i + 1) % corners.size()], current, pos);
+  }
 
   return A;
 }
@@ -129,8 +131,9 @@ double** matrix(int nx, int ny) {
   double** m;
   m = new double*[nx];
   m[0] = new double[nx * ny];
-  for (int i = 1; i < nx; i++)
+  for (int i = 1; i < nx; i++) {
     m[i] = m[i - 1] + ny;
+  }
   return m;
 }
 
@@ -211,17 +214,19 @@ int main(int argc, char** argv) {
   int nx, ny;
 
   double** Rxy = readMatrix(dataFile, "Rxy", nx, ny);
-  if (!Rxy)
+  if (!Rxy) {
     return 1;
+  }
   double** Zxy = readMatrix(dataFile, "Zxy", nx, ny);
-  if (!Zxy)
+  if (!Zxy) {
     return 1;
+  }
 
   int nz = 16; // Number of points to use in Z
 
   // Loop over the grid points
-  for (int x = 0; x < nx; x++)
-    for (int y = 0; y < ny; y++)
+  for (int x = 0; x < nx; x++) {
+    for (int y = 0; y < ny; y++) {
       for (int z = 0; z < nz; z++) {
         double phi = 2. * PI * ((double)z) / ((double)nz);
 
@@ -230,6 +235,8 @@ int main(int argc, char** argv) {
 
         // Calculate A
       }
+    }
+  }
 
   return 0;
 }
