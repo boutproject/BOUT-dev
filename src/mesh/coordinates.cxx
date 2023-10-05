@@ -1344,7 +1344,7 @@ CovariantMetricTensor Coordinates::calcCovariant(const std::string& region) {
 
 int Coordinates::calcContravariant(const std::string& region) {
   TRACE("Coordinates::calcContravariant");
-  return covariantMetricTensor.calcContravariant();
+  return covariantMetricTensor.calcContravariant(region);
 }
 
 int Coordinates::jacobian() {
