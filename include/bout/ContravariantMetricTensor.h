@@ -2,6 +2,7 @@
 #ifndef BOUT_CONTRAVARIANTMETRICTENSOR_H
 #define BOUT_CONTRAVARIANTMETRICTENSOR_H
 
+#include "CovariantMetricTensor.h"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/paralleltransform.hxx"
@@ -31,7 +32,7 @@ public:
                             Mesh* mesh);
 
   /// Invert contravariant metric to get covariant components
-  int calcCovariant(CELL_LOC location, const std::string& region = "RGN_ALL");
+  CovariantMetricTensor calcCovariant(CELL_LOC location, const std::string& region = "RGN_ALL");
 
   // check that contravariant tensors are positive (if expected) and finite (always)
   void checkContravariant(int ystart);

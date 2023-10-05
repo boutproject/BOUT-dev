@@ -127,7 +127,7 @@ public:
   int geometry(bool recalculate_staggered = true,
                bool force_interpolate_from_centre = false);
   /// Invert contravariant metric to get covariant components
-  int calcCovariant(const std::string& region = "RGN_ALL");
+  CovariantMetricTensor calcCovariant(const std::string& region = "RGN_ALL");
   /// Invert covariant metric to get contravariant components
   int calcContravariant(const std::string& region = "RGN_ALL");
   int jacobian();                     ///< Calculate J and Bxy
