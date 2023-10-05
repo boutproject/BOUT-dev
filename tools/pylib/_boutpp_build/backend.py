@@ -29,6 +29,7 @@ def getversion():
     global version
     if version is None:
         with contextlib.suppress(KeyError):
+            # 0. Check whether version is set via environment variable
             version = os.environ["BOUT_PRETEND_VERSION"]
             return version
 
@@ -37,8 +38,10 @@ def getversion():
 
         try:
             try:
+                # 1. Check whether we are at a tag
                 version = run2("git describe --exact-match --tags HEAD").strip()
             except subprocess.CalledProcessError:
+                # 2. default mode, try to derive version from previous tag
                 tmp = run2(
                     f"git describe --tags --match={_bout_previous_version}"
                 ).strip()
