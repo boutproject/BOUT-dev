@@ -70,6 +70,8 @@ def getversion():
                     # 4.2 fallback
                     hash = "unknown"
                 version = _bout_previous_version + "-rc+" + hash
+                with open("_version.txt", "w") as f:
+                    f.write(version + "\n")
     return version
 
 
