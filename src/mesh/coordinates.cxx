@@ -515,13 +515,17 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
       output_warn.write("Not all covariant components of metric tensor found. "
                         "Calculating all from the contravariant tensor\n");
       /// Calculate contravariant metric components if not found
-      if (calcCovariant("RGN_NOCORNERS")) {
+      try {
+        calcCovariant("RGN_NOCORNERS");
+      } catch (BoutException) {
         throw BoutException("Error in calcCovariant call");
       }
     }
   } else {
     /// Calculate contravariant metric components if not found
-    if (calcCovariant("RGN_NOCORNERS")) {
+    try {
+      calcCovariant("RGN_NOCORNERS");
+    } catch (BoutException) {
       throw BoutException("Error in calcCovariant call");
     }
   }
@@ -731,13 +735,17 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
             "Not all staggered covariant components of metric tensor found. "
             "Calculating all from the contravariant tensor\n");
         /// Calculate contravariant metric components if not found
-        if (calcCovariant("RGN_NOCORNERS")) {
+        try {
+          calcCovariant("RGN_NOCORNERS");
+        } catch (BoutException) {
           throw BoutException("Error in staggered calcCovariant call");
         }
       }
     } else {
       /// Calculate contravariant metric components if not found
-      if (calcCovariant("RGN_NOCORNERS")) {
+      try {
+        calcCovariant("RGN_NOCORNERS");
+      } catch (BoutException) {
         throw BoutException("Error in staggered calcCovariant call");
       }
     }
@@ -1329,7 +1337,7 @@ void Coordinates::CalculateChristoffelSymbols() {
           + 0.5 * contravariant_components.g33 * DDY(covariant_components.g_33);
 }
 
-int Coordinates::calcCovariant(const std::string& region) {
+CovariantMetricTensor Coordinates::calcCovariant(const std::string& region) {
   TRACE("Coordinates::calcCovariant");
   return contravariantMetricTensor.calcCovariant(location, region);
 }
