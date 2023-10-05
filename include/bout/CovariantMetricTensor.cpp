@@ -47,7 +47,8 @@ void CovariantMetricTensor::setCovariantMetricTensor(
   calcContravariant();
 }
 
-int CovariantMetricTensor::calcContravariant(const std::string& region) {
+ContravariantMetricTensor
+CovariantMetricTensor::calcContravariant(const std::string& region) {
   TRACE("CovariantMetricTensor::calcContravariant");
 
   // Perform inversion of g_{ij} to get g^{ij}
@@ -65,9 +66,9 @@ int CovariantMetricTensor::calcContravariant(const std::string& region) {
     a(0, 2) = a(2, 0) = covariant_components.g_13[i];
 
     if (invert3x3(a)) {
-      output_error.write("\tERROR: metric tensor is singular at ({:d}, {:d})\n", i.x(),
-                         i.y());
-      return 1;
+      const auto error_message = "\tERROR: metric tensor is singular at ({:d}, {:d})\n";
+      output_error.write(error_message, i.x(), i.y());
+      throw BoutException(error_message);
     }
   }
 
@@ -104,7 +105,7 @@ int CovariantMetricTensor::calcContravariant(const std::string& region) {
                            + covariant_components.g_23 * contravariant_components.g33)));
 
   output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
-  return 0;
+  return contravariantMetricTensor;
 }
 
 void CovariantMetricTensor::checkCovariant(int ystart) {

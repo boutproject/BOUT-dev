@@ -5,6 +5,7 @@
 #include "field2d.hxx"
 #include "bout/field3d.hxx"
 
+class ContravariantMetricTensor;
 class CovariantMetricTensor {
 
 public:
@@ -28,7 +29,7 @@ public:
                         Mesh* mesh);
 
   /// Invert covariant metric to get contravariant components
-  int calcContravariant(const std::string& region = "RGN_ALL");
+  ContravariantMetricTensor calcContravariant(const std::string& region = "RGN_ALL");
 
   // check that covariant tensors are positive (if expected) and finite (always)
   void checkCovariant(int ystart);
