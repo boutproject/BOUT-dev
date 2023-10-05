@@ -56,8 +56,20 @@ def getversion():
             with open("_version.txt", "w") as f:
                 f.write(version + "\n")
         except subprocess.CalledProcessError:
-            with open("_version.txt") as f:
-                version = f.read().strip()
+            try:
+                # 3. Check whether there is a _version - e.g. we have a tarball
+                with open("_version.txt") as f:
+                    version = f.read().strip()
+            except FileNotFoundError:
+                # 4. Maybe not released yet, but version already bumped?
+                #    Things are messy here, so always assume useLocalVersion
+                try:
+                    # 4.1 us proper hash
+                    hash = run2('git log -n 1 --pretty=format:"%h"')
+                except subprocess.CalledProcessError:
+                    # 4.2 fallback
+                    hash = "unknown"
+                version = _bout_previous_version + "-rc+" + hash
     return version
 
 
