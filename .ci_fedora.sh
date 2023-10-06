@@ -42,7 +42,6 @@ then
     time dnf -y install dnf5
     time dnf5 -y install dnf5-plugins cmake python3-zoidberg python3-natsort
     # Allow to override packages - see #2073
-    time dnf5 copr enable -y davidsch/fixes4bout || :
     time dnf5 -y upgrade
     time dnf5 -y builddep bout++
     useradd test
