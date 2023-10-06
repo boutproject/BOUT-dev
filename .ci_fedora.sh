@@ -59,12 +59,7 @@ else
     cd
     cd BOUT-dev
     echo "starting configure"
-    time cmake -S . -B build -DBOUT_USE_PETSC=ON \
-	 -DBOUT_UPDATE_GIT_SUBMODULE=OFF \
-	 -DBOUT_USE_SYSTEM_FMT=ON \
-	 -DBOUT_USE_SYSTEM_MPARK_VARIANT=ON \
-	 -DBOUT_USE_SUNDIALS=ON
-
+    time cmake -S . -B build -DBOUT_USE_PETSC=ON
     time make -C build build-check -j 2
     time make -C build check
 fi
