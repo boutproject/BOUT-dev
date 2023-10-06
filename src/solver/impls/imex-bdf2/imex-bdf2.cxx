@@ -1228,7 +1228,8 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
     KSPGetConvergedReason(ksp, &kreason);
     if (kreason < 0) {
       if (verbose) {
-        output << "KSP Failed to converge with reason " << static_cast<int>(kreason) << endl;
+        output << "KSP Failed to converge with reason " << static_cast<int>(kreason)
+               << endl;
       }
       linear_fails++;
     } else {
@@ -1238,7 +1239,8 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
       }
     };
     if (verbose) {
-      output << "SNES failed to converge with reason " << static_cast<int>(reason) << endl;
+      output << "SNES failed to converge with reason " << static_cast<int>(reason)
+             << endl;
     }
     throw PetscLib::SNESFailure(snesUse);
   }
