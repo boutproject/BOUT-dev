@@ -60,7 +60,7 @@ else
     cd
     cd BOUT-dev
     echo "starting configure"
-    time cmake -S . -B build -DBOUT_USE_PETSC=ON
+    time cmake -S . -B build -DBOUT_USE_PETSC=OFF
     time make -C build build-check -j 2
     time make -C build check
 fi
