@@ -29,6 +29,7 @@ def getversion():
     global version
     if version is None:
         with contextlib.suppress(KeyError):
+            # 0. Check whether version is set via environment variable
             version = os.environ["BOUT_PRETEND_VERSION"]
             return version
 
@@ -37,8 +38,10 @@ def getversion():
 
         try:
             try:
+                # 1. Check whether we are at a tag
                 version = run2("git describe --exact-match --tags HEAD").strip()
             except subprocess.CalledProcessError:
+                # 2. default mode, try to derive version from previous tag
                 tmp = run2(
                     f"git describe --tags --match={_bout_previous_version}"
                 ).strip()
@@ -53,8 +56,22 @@ def getversion():
             with open("_version.txt", "w") as f:
                 f.write(version + "\n")
         except subprocess.CalledProcessError:
-            with open("_version.txt") as f:
-                version = f.read().strip()
+            try:
+                # 3. Check whether there is a _version - e.g. we have a tarball
+                with open("_version.txt") as f:
+                    version = f.read().strip()
+            except FileNotFoundError:
+                # 4. Maybe not released yet, but version already bumped?
+                #    Things are messy here, so always assume useLocalVersion
+                try:
+                    # 4.1 us proper hash
+                    hash = "g" + run2('git log -n 1 --pretty=format:"%h"')
+                except subprocess.CalledProcessError:
+                    # 4.2 fallback
+                    hash = "unknown"
+                version = _bout_previous_version + ".rc+" + hash
+                with open("_version.txt", "w") as f:
+                    f.write(version + "\n")
     return version
 
 
@@ -137,7 +154,7 @@ def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
     run(
         "cmake -S . -B _wheel_build/ -DBOUT_ENABLE_PYTHON=ON"
         + f" -DCMAKE_INSTALL_PREFIX={prefix} -DCMAKE_INSTALL_LIBDIR={prefix}"
-        + f" -DCMAKE_INSTALL_PYTHON_SITEARCH={trueprefix} -DCMAKE_INSTALL_RPATH=\$ORIGIN"
+        + f" -DCMAKE_INSTALL_PYTHON_SITEARCH={trueprefix} -DCMAKE_INSTALL_RPATH=$ORIGIN"
         + opts
     )
     run(f"cmake --build  _wheel_build/ -j {os.cpu_count()}")
