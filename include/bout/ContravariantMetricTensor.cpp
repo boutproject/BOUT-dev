@@ -14,9 +14,8 @@ ContravariantMetricTensor::ContravariantMetricTensor(
 }
 
 ContravariantMetricTensor::ContravariantMetricTensor(
-    const Array<BoutReal> g11, const Array<BoutReal> g22, const Array<BoutReal> g33,
-    const Array<BoutReal> g12, const Array<BoutReal> g13, const Array<BoutReal> g23,
-    Mesh* mesh)
+    const BoutReal g11, const BoutReal g22, const BoutReal g33, const BoutReal g12,
+    const BoutReal g13, const BoutReal g23, Mesh* mesh)
     : contravariant_components({FieldMetric(g11, mesh), FieldMetric(g22, mesh),
                                 FieldMetric(g33, mesh), FieldMetric(g12, mesh),
                                 FieldMetric(g13, mesh), FieldMetric(g23, mesh)}) {

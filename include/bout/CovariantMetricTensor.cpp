@@ -14,12 +14,12 @@ CovariantMetricTensor::CovariantMetricTensor(
   Allocate(); // Make sure metric elements are allocated //  ; TODO: Required?
 }
 
-CovariantMetricTensor::CovariantMetricTensor(const Array<BoutReal> g_11,
-                                             const Array<BoutReal> g_22,
-                                             const Array<BoutReal> g_33,
-                                             const Array<BoutReal> g_12,
-                                             const Array<BoutReal> g_13,
-                                             const Array<BoutReal> g_23, Mesh* mesh)
+CovariantMetricTensor::CovariantMetricTensor(const BoutReal g_11,
+                                             const BoutReal g_22,
+                                             const BoutReal g_33,
+                                             const BoutReal g_12,
+                                             const BoutReal g_13,
+                                             const BoutReal g_23, Mesh* mesh)
     : covariant_components({FieldMetric(g_11, mesh), FieldMetric(g_22, mesh),
                             FieldMetric(g_33, mesh), FieldMetric(g_12, mesh),
                             FieldMetric(g_13, mesh), FieldMetric(g_23, mesh)}) {
