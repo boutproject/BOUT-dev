@@ -23,9 +23,8 @@ public:
                         const FieldMetric g_33, const FieldMetric g_12,
                         const FieldMetric g_13, const FieldMetric g_23);
 
-  CovariantMetricTensor(const Array<BoutReal> g_11, const Array<BoutReal> g_22,
-                        const Array<BoutReal> g_33, const Array<BoutReal> g_12,
-                        const Array<BoutReal> g_13, const Array<BoutReal> g_23,
+  CovariantMetricTensor(const BoutReal g_11, const BoutReal g_22, const BoutReal g_33,
+                        const BoutReal g_12, const BoutReal g_13, const BoutReal g_23,
                         Mesh* mesh);
 
   /// Invert covariant metric to get contravariant components
