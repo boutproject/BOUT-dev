@@ -41,7 +41,7 @@ def has():
     _has = {}
     for k in config:
         if k.startswith("has_"):
-            _has[k[4:]] = _yesno[config[k]]
+            _has[k[4:]] = _yesno[config[k].upper()]
     return _has
 
 
