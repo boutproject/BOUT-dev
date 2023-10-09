@@ -25,7 +25,7 @@ void BoutComm::setComm(MPI_Comm c) {
   hasBeenSet = true;
 }
 
-MPI_Comm BoutComm::getComm() {
+MPI_Comm& BoutComm::getComm() {
   if (comm == MPI_COMM_NULL) {
     // No communicator set. Initialise MPI
     MPI_Init(pargc, pargv);
@@ -39,7 +39,7 @@ MPI_Comm BoutComm::getComm() {
 bool BoutComm::isSet() { return hasBeenSet; }
 
 // Static functions below. Must use getInstance()
-MPI_Comm BoutComm::get() { return getInstance()->getComm(); }
+MPI_Comm& BoutComm::get() { return getInstance()->getComm(); }
 
 void BoutComm::setArgs(int& c, char**& v) {
   getInstance()->pargc = &c;

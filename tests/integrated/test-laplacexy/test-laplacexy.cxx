@@ -30,27 +30,20 @@
 #include <bout/invert/laplacexy.hxx>
 #include <bout/options.hxx>
 
-using bout::globals::dump;
 using bout::globals::mesh;
 
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
 
-  auto coords = mesh->getCoordinates();
-
-  auto& opt = Options::root();
-
-  LaplaceXY laplacexy;
-
-  bool include_y_derivs = opt["laplacexy"]["include_y_derivs"];
+  auto* coords = mesh->getCoordinates();
 
   // Solving equations of the form
   // Div(A Grad_perp(f)) + B*f = rhs
   // A*Laplace_perp(f) + Grad_perp(A).Grad_perp(f) + B*f = rhs
-  Field2D f, a, b, sol;
-  Field2D error, absolute_error; //Absolute value of relative error: abs((f - sol)/f)
-  BoutReal max_error;            //Output of test
+  Field2D f;
+  Field2D a;
+  Field2D b;
 
   initial_profile("f", f);
   initial_profile("a", a);
@@ -63,42 +56,45 @@ int main(int argc, char** argv) {
 
   ////////////////////////////////////////////////////////////////////////////////////////
 
-  Field2D rhs, rhs_check;
+  Field2D rhs;
+  const bool include_y_derivs = Options::root()["laplacexy"]["include_y_derivs"];
   if (include_y_derivs) {
     rhs = a * Laplace_perp(f) + Grad_perp(a) * Grad_perp(f) + b * f;
   } else {
     rhs = a * Delp2(f, CELL_DEFAULT, false) + coords->g11 * DDX(a) * DDX(f) + b * f;
   }
 
+  LaplaceXY laplacexy;
   laplacexy.setCoefs(a, b);
 
-  sol = laplacexy.solve(rhs, 0.);
-  error = (f - sol) / f;
-  absolute_error = f - sol;
-  max_error = max(abs(absolute_error), true);
+  Field2D solution = laplacexy.solve(rhs, 0.);
+  Field2D relative_error = (f - solution) / f;
+  Field2D absolute_error = f - solution;
+  BoutReal max_error = max(abs(absolute_error), true);
 
-  output << "Magnitude of maximum absolute error is " << max_error << endl;
+  output.write("Magnitude of maximum absolute error is {}\n", max_error);
 
-  mesh->communicate(sol);
+  mesh->communicate(solution);
+  Field2D rhs_check;
   if (include_y_derivs) {
-    rhs_check = a * Laplace_perp(sol) + Grad_perp(a) * Grad_perp(sol) + b * sol;
-  } else {
     rhs_check =
-        a * Delp2(sol, CELL_DEFAULT, false) + coords->g11 * DDX(a) * DDX(sol) + b * sol;
+        a * Laplace_perp(solution) + Grad_perp(a) * Grad_perp(solution) + b * solution;
+  } else {
+    rhs_check = a * Delp2(solution, CELL_DEFAULT, false)
+                + coords->g11 * DDX(a) * DDX(solution) + b * solution;
   }
 
-  dump.add(a, "a");
-  dump.add(b, "b");
-  dump.add(f, "f");
-  dump.add(sol, "sol");
-  dump.add(error, "error");
-  dump.add(absolute_error, "absolute_error");
-  dump.add(max_error, "max_error");
-  dump.add(rhs, "rhs");
-  dump.add(rhs_check, "rhs_check");
-
-  dump.write();
-  dump.close();
+  Options dump;
+  dump["a"] = a;
+  dump["b"] = b;
+  dump["f"] = f;
+  dump["sol"] = solution;
+  dump["relative_error"] = relative_error;
+  dump["absolute_error"] = absolute_error;
+  dump["max_error"] = max_error;
+  dump["rhs"] = rhs;
+  dump["rhs_check"] = rhs_check;
+  bout::writeDefaultOutputFile(dump);
 
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
 
