@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BOUT++ 4.2.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-02-03 16:41+0000\n"
+"POT-Creation-Date: 2023-09-22 11:03+0100\n"
 "PO-Revision-Date: 2019-02-11 12:46+0900\n"
 "Last-Translator: Marta <mpee500@york.ac.uk>\n"
 "Language-Team: Spanish\n"
@@ -458,7 +458,7 @@ msgstr "Regiones frontera en este procesador: "
 msgid "Cannot split {:d} X points equally between {:d} processors\n"
 msgstr "No se pueden dividir {:d} X points entre {:d} procesadores por igual\n"
 
-#: ../src/bout++.cxx:808
+#: ../src/bout++.cxx:817
 msgid "Check if a file exists, and exit if it does."
 msgstr ""
 
@@ -522,7 +522,7 @@ msgstr ""
 "No se pudo ejecutar bout-log-color. Asegúrese de que se encuentre en su "
 "PATH\n"
 
-#: ../src/solver/solver.cxx:757
+#: ../src/solver/solver.cxx:765
 #, fuzzy
 msgid "Couldn't add Monitor: {:g} is not a multiple of {:g}!"
 msgstr "No se pudo añadir el Monitor: {:g} no és multiplo de {:g}!"
@@ -575,7 +575,7 @@ msgstr "ERROR: el Solver ya se encuentra inicializado\n"
 msgid "Error encountered during initialisation: {:s}\n"
 msgstr "Error encontrado durante la inicialización:{:s}\n"
 
-#: ../src/bout++.cxx:734
+#: ../src/bout++.cxx:743
 msgid "Error whilst writing settings"
 msgstr "Error durante el paso de opciones"
 
@@ -628,17 +628,17 @@ msgstr "La malla `mesh` debe contener ny"
 msgid "Missing integer array {:s}\n"
 msgstr "Fala la matriz entera {:s}\n"
 
-#: ../src/solver/solver.cxx:897
+#: ../src/solver/solver.cxx:905
 #, fuzzy
 msgid "Monitor signalled to quit (exception {})\n"
 msgstr "Monitor indicó salir\n"
 
-#: ../src/solver/solver.cxx:875
+#: ../src/solver/solver.cxx:883
 #, fuzzy
 msgid "Monitor signalled to quit (return code {})"
 msgstr "Monitor indicó salir"
 
-#: ../src/bout++.cxx:813
+#: ../src/bout++.cxx:822
 msgid "Name of file whose existence triggers a stop"
 msgstr ""
 
@@ -668,7 +668,7 @@ msgstr ""
 "d})\n"
 
 #. Less than 2 time-steps left
-#: ../src/bout++.cxx:886
+#: ../src/bout++.cxx:895
 #, fuzzy
 msgid "Only {:e} seconds ({:.2f} steps) left. Quitting\n"
 msgstr "Solo faltan {:e} segundos. Saliendo\n"
@@ -747,7 +747,7 @@ msgstr ""
 msgid "Signal"
 msgstr ""
 
-#: ../src/bout++.cxx:855
+#: ../src/bout++.cxx:864
 msgid ""
 "Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n"
 "\n"
@@ -756,7 +756,7 @@ msgstr ""
 "SOLVER\n"
 "\n"
 
-#: ../src/bout++.cxx:858
+#: ../src/bout++.cxx:867
 msgid ""
 "Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   "
 "Comm    I/O   SOLVER\n"
@@ -780,7 +780,7 @@ msgstr ""
 "Solver corriendo para {:d} outputs con intervalos de tiempo de output de {:"
 "e}\n"
 
-#: ../src/solver/solver.cxx:773
+#: ../src/solver/solver.cxx:781
 #, fuzzy
 msgid ""
 "Solver::addMonitor: Cannot reduce timestep (from {:g} to {:g}) after init is "
@@ -789,7 +789,7 @@ msgstr ""
 "Solver::addMonitor: No se puedo reducir el intervalo de tiempo (de {:g} a {:"
 "g}) después de que init fuera llamado!"
 
-#: ../src/solver/solver.cxx:1273
+#: ../src/solver/solver.cxx:1281
 #, fuzzy
 msgid ""
 "Time derivative at wrong location - Field is at {:s}, derivative is at {:s} "
@@ -798,7 +798,7 @@ msgstr ""
 "Derivada del tiempo en lugar erróneo - El field se encuentra en  {:s}, la "
 "derivada se encuentra en {:s} para el field '{:s}'\n"
 
-#: ../src/solver/solver.cxx:1472
+#: ../src/solver/solver.cxx:1480
 #, fuzzy
 msgid "Time derivative for variable '{:s}' not set"
 msgstr "Derivada del tiempo para la variable '{:s}' no fijada"
@@ -826,7 +826,7 @@ msgid ""
 "rename one of them.\n"
 msgstr ""
 
-#: ../src/mesh/coordinates.cxx:1546
+#: ../src/mesh/coordinates.cxx:1462
 msgid ""
 "Unrecognised paralleltransform option.\n"
 "Valid choices are 'identity', 'shifted', 'fci'"
@@ -879,7 +879,7 @@ msgstr ""
 "[VAR=VALUE]\n"
 
 #. restart file should be written by physics model
-#: ../src/solver/solver.cxx:913
+#: ../src/solver/solver.cxx:921
 #, fuzzy
 msgid "User signalled to quit. Returning\n"
 msgstr "Monitor indicó salir\n"
@@ -933,7 +933,7 @@ msgstr "Valor para la opción {:s} = {:e} no es un entero"
 msgid "Value for option {:s} is not an integer"
 msgstr "Valor para la opción {:s} = {:e} no es un entero"
 
-#: ../src/solver/solver.cxx:1224 ../src/solver/solver.cxx:1230
+#: ../src/solver/solver.cxx:1232 ../src/solver/solver.cxx:1238
 #, fuzzy
 msgid "Variable '{:s}' not initialised"
 msgstr "Variable '{:s}' sin inicializar"
@@ -947,7 +947,7 @@ msgstr ""
 "WARNING: el número de puntos toroidales debería ser 2^n para una FFT "
 "eficiente -- considere cambiar MZ si se usan FFTs\n"
 
-#: ../src/mesh/coordinates.cxx:655
+#: ../src/mesh/coordinates.cxx:633
 msgid "WARNING: extrapolating input mesh quantities into x-boundary cells\n"
 msgstr ""
 
@@ -957,7 +957,7 @@ msgid ""
 "option extrapolate_x=false to disable this.\n"
 msgstr ""
 
-#: ../src/mesh/coordinates.cxx:660
+#: ../src/mesh/coordinates.cxx:638
 msgid "WARNING: extrapolating input mesh quantities into y-boundary cells\n"
 msgstr ""
 
@@ -967,7 +967,7 @@ msgid ""
 "option extrapolate_y=false to disable this.\n"
 msgstr ""
 
-#: ../src/bout++.cxx:804
+#: ../src/bout++.cxx:813
 msgid "Wall time limit in hours. By default (< 0), no limit"
 msgstr ""
 

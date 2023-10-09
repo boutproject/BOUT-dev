@@ -62,7 +62,7 @@ We can now run the conduction example::
 
 You should see some output like::
 
-    BOUT++ version 5.0.0
+    BOUT++ version 5.1.0
     Revision: b3ee80bfa2ad9b875b69ab072a392b3f548efea8
     Code compiled on Jul 27 2022 at 18:13:23
 
@@ -102,6 +102,7 @@ We can now have a look at the results using xBOUT:
     >>> import xbout
     >>> df = xbout.open_boutdataset("data/BOUT.dmp.*.nc")
     >>> df["T"].plot()
+    >>> import matplotlib.pyplot as plt ; plt.show()
 
 which should produce something similar to the following figure:
 

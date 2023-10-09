@@ -172,15 +172,19 @@ int main(int argc, char** argv) {
 
   // make field to pass in boundary conditions
   Field3D x0 = 0.;
-  if (mesh->firstX())
-    for (int k = 0; k < mesh->LocalNz; k++)
+  if (mesh->firstX()) {
+    for (int k = 0; k < mesh->LocalNz; k++) {
       x0(mesh->xstart - 1, mesh->ystart, k) =
           0.5
           * (f3(mesh->xstart - 1, mesh->ystart, k) + f3(mesh->xstart, mesh->ystart, k));
-  if (mesh->lastX())
-    for (int k = 0; k < mesh->LocalNz; k++)
+    }
+  }
+  if (mesh->lastX()) {
+    for (int k = 0; k < mesh->LocalNz; k++) {
       x0(mesh->xend + 1, mesh->ystart, k) =
           0.5 * (f3(mesh->xend + 1, mesh->ystart, k) + f3(mesh->xend, mesh->ystart, k));
+    }
+  }
 
   try {
     sol3 = invert->solve(sliceXZ(b3, mesh->ystart), sliceXZ(x0, mesh->ystart));
@@ -233,18 +237,22 @@ int main(int argc, char** argv) {
 
   // make field to pass in boundary conditions
   x0 = 0.;
-  if (mesh->firstX())
-    for (int k = 0; k < mesh->LocalNz; k++)
+  if (mesh->firstX()) {
+    for (int k = 0; k < mesh->LocalNz; k++) {
       x0(mesh->xstart - 1, mesh->ystart, k) =
           (f4(mesh->xstart, mesh->ystart, k) - f4(mesh->xstart - 1, mesh->ystart, k))
           / mesh->getCoordinates()->dx(mesh->xstart, mesh->ystart, k)
           / sqrt(mesh->getCoordinates()->g_11(mesh->xstart, mesh->ystart, k));
-  if (mesh->lastX())
-    for (int k = 0; k < mesh->LocalNz; k++)
+    }
+  }
+  if (mesh->lastX()) {
+    for (int k = 0; k < mesh->LocalNz; k++) {
       x0(mesh->xend + 1, mesh->ystart, k) =
           (f4(mesh->xend + 1, mesh->ystart, k) - f4(mesh->xend, mesh->ystart, k))
           / mesh->getCoordinates()->dx(mesh->xend, mesh->ystart, k)
           / sqrt(mesh->getCoordinates()->g_11(mesh->xend, mesh->ystart, k));
+    }
+  }
 
   try {
     sol4 = invert->solve(sliceXZ(b4, mesh->ystart), sliceXZ(x0, mesh->ystart));
@@ -302,10 +310,13 @@ BoutReal max_error_at_ystart(const Field3D& error) {
 
   BoutReal local_max_error = error(mesh->xstart, mesh->ystart, 0);
 
-  for (int jx = mesh->xstart; jx <= mesh->xend; jx++)
-    for (int jz = 0; jz < mesh->LocalNz; jz++)
-      if (local_max_error < error(jx, mesh->ystart, jz))
+  for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+    for (int jz = 0; jz < mesh->LocalNz; jz++) {
+      if (local_max_error < error(jx, mesh->ystart, jz)) {
         local_max_error = error(jx, mesh->ystart, jz);
+      }
+    }
+  }
 
   BoutReal max_error;
 

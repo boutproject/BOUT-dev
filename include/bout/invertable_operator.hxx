@@ -430,7 +430,8 @@ public:
     KSPConvergedReason reason;
     ierr = KSPGetConvergedReason(ksp, &reason);
     if (reason <= 0) {
-      throw BoutException("KSPSolve failed with reason {:d}.", reason);
+      throw BoutException("KSPSolve failed. Reason {} ({:d})",
+                          KSPConvergedReasons[reason], static_cast<int>(reason));
     }
 
     // Probably want to remove the following in the long run
