@@ -618,7 +618,7 @@ void Mesh::addRegion3D(const std::string& region_name, const Region<>& region) {
 
   regionMap3D[region_name] = id;
 
-  output_verbose.write(_("Registered region 3D {:s}"),region_name);
+  output_verbose.write(_("Registered region 3D {:s}"), region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 

@@ -162,15 +162,14 @@ private:
 
 // Non-member overloaded operators
 
-const Vector2D operator*(BoutReal lhs, const Vector2D &rhs);
-const Vector2D operator*(const Field2D &lhs, const Vector2D &rhs);
-const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs);
-
+const Vector2D operator*(BoutReal lhs, const Vector2D& rhs);
+const Vector2D operator*(const Field2D& lhs, const Vector2D& rhs);
+const Vector3D operator*(const Field3D& lhs, const Vector2D& rhs);
 
 /// Cross product
-const Vector2D cross(const Vector2D & lhs, const Vector2D &rhs);
+const Vector2D cross(const Vector2D& lhs, const Vector2D& rhs);
 /// Cross product
-const Vector3D cross(const Vector2D & lhs, const Vector3D &rhs);
+const Vector3D cross(const Vector2D& lhs, const Vector3D& rhs);
 
 /*!
  * Absolute value (Modulus) of given vector \p v
@@ -180,12 +179,14 @@ const Vector3D cross(const Vector2D & lhs, const Vector3D &rhs);
 Coordinates::FieldMetric abs(const Vector2D& v, const std::string& region = "RGN_ALL");
 
 /// Transform to and from field-aligned coordinates
-inline Vector2D toFieldAligned(Vector2D v, const std::string& UNUSED(region) = "RGN_ALL") {
+inline Vector2D toFieldAligned(Vector2D v,
+                               const std::string& UNUSED(region) = "RGN_ALL") {
   // toFieldAligned is a null operation for the Field2D components of v, so return a copy
   // of the argument (hence pass-by-value instead of pass-by-reference)
   return v;
 }
-inline Vector2D fromFieldAligned(Vector2D v, const std::string& UNUSED(region) = "RGN_ALL") {
+inline Vector2D fromFieldAligned(Vector2D v,
+                                 const std::string& UNUSED(region) = "RGN_ALL") {
   // fromFieldAligned is a null operation for the Field2D components of v, so return a copy
   // of the argument (hence pass-by-value instead of pass-by-reference)
   return v;

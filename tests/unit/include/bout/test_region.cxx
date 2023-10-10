@@ -276,7 +276,8 @@ TEST_F(RegionTest, regionLoopAllSection) {
 
 int region_count_helper(Region<Ind3D> region) {
   int count = 0;
-  BOUT_OMP(parallel) {
+  BOUT_OMP(parallel)
+  {
     BOUT_FOR_OMP(i, region, for reduction(+:count)) {
       ++count;
     }

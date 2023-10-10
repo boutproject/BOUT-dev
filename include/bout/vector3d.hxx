@@ -50,9 +50,9 @@ class Vector2D; //#include "bout/vector2d.hxx"
  * a.x; // Error! a.x not allocated
  *
  * 
- */ 
+ */
 class Vector3D : public FieldData {
- public:
+public:
   /*!
    * Copy constructor. After this the components (x,y,z)
    * will refer to the same data as f.(x,y,z)
@@ -192,16 +192,15 @@ private:
 
 // Non-member overloaded operators
 
-const Vector3D operator*(BoutReal lhs, const Vector3D &rhs);
-const Vector3D operator*(const Field2D &lhs, const Vector3D &rhs);
-const Vector3D operator*(const Field3D &lhs, const Vector3D &rhs);
+const Vector3D operator*(BoutReal lhs, const Vector3D& rhs);
+const Vector3D operator*(const Field2D& lhs, const Vector3D& rhs);
+const Vector3D operator*(const Field3D& lhs, const Vector3D& rhs);
 
 /// Cross-product of two vectors
-const Vector3D cross(const Vector3D & lhs, const Vector3D &rhs);
+const Vector3D cross(const Vector3D& lhs, const Vector3D& rhs);
 
 /// Cross-product of two vectors
-const Vector3D cross(const Vector3D & lhs, const Vector2D &rhs);
-
+const Vector3D cross(const Vector3D& lhs, const Vector2D& rhs);
 
 /*!
  * Absolute magnitude (modulus) of a vector  |v|

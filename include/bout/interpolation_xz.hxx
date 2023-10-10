@@ -50,7 +50,7 @@ public:
   XZInterpolation(int y_offset = 0, Mesh* localmeshIn = nullptr)
       : y_offset(y_offset),
         localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn) {}
-  XZInterpolation(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
+  XZInterpolation(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZInterpolation(y_offset, mesh) {
     region = regionFromMask(mask, localmesh);
   }

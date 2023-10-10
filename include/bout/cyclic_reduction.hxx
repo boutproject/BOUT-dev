@@ -540,7 +540,6 @@ private:
     }
 #endif
 
-
     BOUT_OMP(parallel for)
     for (int j = 0; j < ns; j++) {
       // Calculate upper interface equation

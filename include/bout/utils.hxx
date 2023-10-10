@@ -37,8 +37,8 @@
 #include "bout/assert.hxx"
 #include "bout/build_config.hxx"
 #include "bout/msg_stack.hxx"
-#include "bout/unused.hxx"
 #include "bout/region.hxx"
+#include "bout/unused.hxx"
 
 #include <algorithm>
 #include <cmath>
@@ -236,7 +236,7 @@ public:
     data.ensureUnique();
     return *this;
   }
-  
+
   inline T& operator()(size_type i1, size_type i2) {
     ASSERT2(0 <= i1 && i1 < n1);
     ASSERT2(0 <= i2 && i2 < n2);
@@ -405,7 +405,8 @@ bool operator==(const Tensor<T>& lhs, const Tensor<T>& rhs) {
 /// us to throw due to the matrix being singular (ill conditioned);
 /// If small is less than zero then instead of throwing we return 1.
 /// This is ugly but can be used to support some use cases.
-template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
+template <typename T>
+int invert3x3(Matrix<T>& a, BoutReal small = 1.0e-15) {
   TRACE("invert3x3");
 
   // Calculate the first co-factors
@@ -682,8 +683,14 @@ almost_equal(T x, T y, int ulp = 2) {
 
 /// Convert pointer or reference to pointer
 /// This allows consistent handling of both in macros, templates
-template <typename T> T *pointer(T *val) { return val; }
-template <typename T> T *pointer(T &val) { return &val; }
+template <typename T>
+T* pointer(T* val) {
+  return val;
+}
+template <typename T>
+T* pointer(T& val) {
+  return &val;
+}
 
 #ifndef BOUT_CONCAT
 /// Utility to evaluate and concatenate macro symbols
