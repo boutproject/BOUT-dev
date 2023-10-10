@@ -8,7 +8,7 @@ if test $BUILD_PETSC ; then
 	echo "Building PETSc"
 	echo "****************************************"
 
-	git clone -b release https://gitlab.com/petsc/petsc.git petsc --depth=1
+	git clone -b ${1:-release} https://gitlab.com/petsc/petsc.git petsc --depth=1
 
 	unset PETSC_DIR
 	unset PETSC_ARCH
