@@ -535,18 +535,18 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
-  g_11 = interpolateAndExtrapolate(covariant_components.g_11, location, extrapolate_x, extrapolate_y, false,
-                                   transform.get());
-  g_22 = interpolateAndExtrapolate(covariant_components.g_22, location, extrapolate_x, extrapolate_y, false,
-                                   transform.get());
-  g_33 = interpolateAndExtrapolate(covariant_components.g_33, location, extrapolate_x, extrapolate_y, false,
-                                   transform.get());
-  g_12 = interpolateAndExtrapolate(covariant_components.g_12, location, extrapolate_x, extrapolate_y, false,
-                                   transform.get());
-  g_13 = interpolateAndExtrapolate(covariant_components.g_13, location, extrapolate_x, extrapolate_y, false,
-                                   transform.get());
-  g_23 = interpolateAndExtrapolate(covariant_components.g_23, location, extrapolate_x, extrapolate_y, false,
-                                   transform.get());
+  g_11 = interpolateAndExtrapolate(covariant_components.g_11, location, extrapolate_x,
+                                   extrapolate_y, false, transform.get());
+  g_22 = interpolateAndExtrapolate(covariant_components.g_22, location, extrapolate_x,
+                                   extrapolate_y, false, transform.get());
+  g_33 = interpolateAndExtrapolate(covariant_components.g_33, location, extrapolate_x,
+                                   extrapolate_y, false, transform.get());
+  g_12 = interpolateAndExtrapolate(covariant_components.g_12, location, extrapolate_x,
+                                   extrapolate_y, false, transform.get());
+  g_13 = interpolateAndExtrapolate(covariant_components.g_13, location, extrapolate_x,
+                                   extrapolate_y, false, transform.get());
+  g_23 = interpolateAndExtrapolate(covariant_components.g_23, location, extrapolate_x,
+                                   extrapolate_y, false, transform.get());
 
   covariantMetricTensor.setCovariantMetricTensor(
       CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
@@ -1986,7 +1986,7 @@ void Coordinates::checkContravariant() {
   contravariantMetricTensor.checkContravariant(localmesh->ystart);
 }
 
-void Coordinates::setContravariantMetricTensor(ContravariantMetricTensor& metric_tensor) {
+void Coordinates::setContravariantMetricTensor(ContravariantMetricTensor metric_tensor) {
   contravariantMetricTensor.setContravariantMetricTensor(location, metric_tensor);
 }
 
@@ -1999,6 +1999,6 @@ CovariantMetricTensor::CovariantComponents Coordinates::getCovariantMetricTensor
   return covariantMetricTensor.getCovariantMetricTensor();
 }
 
-void Coordinates::setCovariantMetricTensor(CovariantMetricTensor& metric_tensor) {
+void Coordinates::setCovariantMetricTensor(CovariantMetricTensor metric_tensor) {
   covariantMetricTensor.setCovariantMetricTensor(metric_tensor);
 }
