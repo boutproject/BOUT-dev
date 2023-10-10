@@ -520,11 +520,11 @@ You can also install all the packages directly (see the documentation in the `bo
 <https://github.com/boutproject/boutdata>`__ repos for the most up to date list)
 using pip::
 
-    $ pip install --user numpy scipy matplotlib sympy netCDF4 h5py future importlib-metadata
+    $ pip install --user numpy scipy matplotlib sympy netCDF4 future importlib-metadata
 
 or conda::
 
-    $ conda install numpy scipy matplotlib sympy netcdf4 h5py future importlib-metadata
+    $ conda install numpy scipy matplotlib sympy netcdf4 future importlib-metadata
 
 They may also be available from your Linux system's package manager. 
 

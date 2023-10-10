@@ -383,7 +383,8 @@ Field2D LaplaceXY2::solve(const Field2D& rhs, const Field2D& x0) {
   KSPGetConvergedReason(ksp, &reason);
 
   if (reason <= 0) {
-    throw BoutException("LaplaceXY2 failed to converge. Reason {:d}", reason);
+    throw BoutException("LaplaceXY2 failed to converge. Reason {} ({:d})",
+                        KSPConvergedReasons[reason], static_cast<int>(reason));
   }
 
   // Convert result into a Field2D

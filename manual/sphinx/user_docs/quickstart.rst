@@ -62,7 +62,7 @@ We can now run the conduction example::
 
 You should see some output like::
 
-    BOUT++ version 5.0.0
+    BOUT++ version 5.1.0
     Revision: b3ee80bfa2ad9b875b69ab072a392b3f548efea8
     Code compiled on Jul 27 2022 at 18:13:23
 
