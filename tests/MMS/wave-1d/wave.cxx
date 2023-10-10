@@ -32,24 +32,13 @@ protected:
     SAVE_ONCE(Lx, Ly);
 
     //set mesh
-    const auto contravariant_components = coord->getContravariantMetricTensor();
-    contravariant_components.g11 = 1.0;
-    contravariant_components.g22 = 1.0;
-    contravariant_components.g33 = 1.0;
-    contravariant_components.g12 = 0.0;
-    contravariant_components.g13 = 0.0;
-    contravariant_components.g23 = 0.0;
-    coord->setContravariantMetricTensor(contravariant_components);
+    auto contravariant_metric_tensor =
+        ContravariantMetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
+    coord->setContravariantMetricTensor(contravariant_metric_tensor);
 
-    const auto covariant_components;
-    covariant_components.g_11 = 1.0;
-    covariant_components.g_22 = 1.0;
-    covariant_components.g_33 = 1.0;
-    covariant_components.g_12 = 0.0;
-    covariant_components.g_13 = 0.0;
-    covariant_components.g_23 = 0.0;
-    coord->setCovariantMetricTensor(covariant_components);
-
+    auto covariant_metric_tensor = CovariantMetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
+    coord->setCovariantMetricTensor(covariant_metric_tensor);
+    
     coord->geometry();
 
     g.setLocation(CELL_XLOW); // g staggered to the left of f

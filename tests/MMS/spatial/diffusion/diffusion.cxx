@@ -39,21 +39,13 @@ protected:
     SAVE_ONCE3(Dx, Dy, Dz);
 
     // set mesh
-    Coordinates::MetricTensor contravariant_components = coords->getContravariantMetricTensor();
-    contravariant_components.g11 = 1.0;
-    contravariant_components.g22 = 1.0;
-    contravariant_components.g33 = 1.0;
-    contravariant_components.g12 = 0.0;
-    contravariant_components.g13 = 0.0;
-    contravariant_components.g23 = 0.0;
-    coords->setContravariantMetricTensor(contravariant_components);
+    auto contravariant_metric_tensor =
+        ContravariantMetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
+    coords->setContravariantMetricTensor(contravariant_metric_tensor);
 
-    coords->g_11 = 1.0;
-    coords->g_22 = 1.0;
-    coords->g_33 = 1.0;
-    coords->g_12 = 0.0;
-    coords->g_13 = 0.0;
-    coords->g_23 = 0.0;
+    auto covariant_metric_tensor = CovariantMetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
+    coords->setCovariantMetricTensor(covariant_metric_tensor);
+
     coords->geometry();
 
     // Tell BOUT++ to solve N
