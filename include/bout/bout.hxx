@@ -38,23 +38,23 @@
 
 #include "bout/build_config.hxx"
 
-#include "boutcomm.hxx"
-#include "difops.hxx" // Differential operators
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "globals.hxx"
-#include "options_netcdf.hxx"
-#include "output.hxx"
-#include "smoothing.hxx" // Smoothing functions
-#include "sourcex.hxx"   // source and mask functions
-#include "utils.hxx"
-#include "vecops.hxx" // Vector differential operations
-#include "vector2d.hxx"
-#include "vector3d.hxx"
-#include "where.hxx"
+#include "bout/boutcomm.hxx"
+#include "bout/difops.hxx" // Differential operators
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/options_netcdf.hxx"
+#include "bout/output.hxx"
+#include "bout/smoothing.hxx" // Smoothing functions
 #include "bout/solver.hxx"
+#include "bout/sourcex.hxx" // source and mask functions
+#include "bout/utils.hxx"
+#include "bout/vecops.hxx" // Vector differential operations
+#include "bout/vector2d.hxx"
+#include "bout/vector3d.hxx"
 #include "bout/version.hxx"
+#include "bout/where.hxx"
 
 // BOUT++ main functions
 

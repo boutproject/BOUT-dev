@@ -34,14 +34,29 @@
 
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
+#include <bout/vector2d.hxx>
+#include <bout/vector3d.hxx>
 
 #include <fmt/core.h>
 
 #include <string>
+using namespace std::literals;
 
 namespace bout {
 void DataFileFacade::add(ValueType value, const std::string& name, bool save_repeat) {
   data.emplace_back(name, value, save_repeat);
+}
+void DataFileFacade::add(Vector2D* value, const std::string& name, bool save_repeat) {
+  auto name_prefix = value->covariant ? name + "_" : name;
+  add(value->x, name_prefix + "x"s, save_repeat);
+  add(value->y, name_prefix + "y"s, save_repeat);
+  add(value->z, name_prefix + "z"s, save_repeat);
+}
+void DataFileFacade::add(Vector3D* value, const std::string& name, bool save_repeat) {
+  auto name_prefix = value->covariant ? name + "_" : name;
+  add(value->x, name_prefix + "x"s, save_repeat);
+  add(value->y, name_prefix + "y"s, save_repeat);
+  add(value->z, name_prefix + "z"s, save_repeat);
 }
 
 bool DataFileFacade::write() {
@@ -84,7 +99,6 @@ void PhysicsModel::initialise(Solver* s) {
   solver = s;
 
   bout::experimental::addBuildFlagsToOptions(output_options);
-  mesh->outputVars(output_options);
 
   // Restart option
   const bool restarting = Options::root()["restart"].withDefault(false);
@@ -98,6 +112,8 @@ void PhysicsModel::initialise(Solver* s) {
     throw BoutException("Couldn't initialise physics model");
   }
 
+  mesh->outputVars(output_options);
+
   // Post-initialise, which reads restart files
   // This function can be overridden by the user
   if (postInit(restarting) != 0) {
@@ -105,13 +121,9 @@ void PhysicsModel::initialise(Solver* s) {
   }
 }
 
-int PhysicsModel::runRHS(BoutReal time, bool linear) {
-  return rhs(time, linear);
-}
+int PhysicsModel::runRHS(BoutReal time, bool linear) { return rhs(time, linear); }
 
-bool PhysicsModel::splitOperator() {
-  return splitop;
-}
+bool PhysicsModel::splitOperator() { return splitop; }
 
 int PhysicsModel::runConvective(BoutReal time, bool linear) {
   return convective(time, linear);
@@ -124,36 +136,38 @@ int PhysicsModel::runDiffusive(BoutReal time, bool linear) {
 bool PhysicsModel::hasPrecon() { return (userprecon != nullptr); }
 
 int PhysicsModel::runPrecon(BoutReal t, BoutReal gamma, BoutReal delta) {
-  if(!userprecon)
+  if (!userprecon) {
     return 1;
+  }
   return (*this.*userprecon)(t, gamma, delta);
 }
 
 bool PhysicsModel::hasJacobian() { return (userjacobian != nullptr); }
 
 int PhysicsModel::runJacobian(BoutReal t) {
-  if (!userjacobian)
+  if (!userjacobian) {
     return 1;
+  }
   return (*this.*userjacobian)(t);
 }
 
-void PhysicsModel::bout_solve(Field2D &var, const char *name,
+void PhysicsModel::bout_solve(Field2D& var, const char* name,
                               const std::string& description) {
   // Add to solver
   solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Field3D &var, const char *name,
+void PhysicsModel::bout_solve(Field3D& var, const char* name,
                               const std::string& description) {
   solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Vector2D &var, const char *name,
+void PhysicsModel::bout_solve(Vector2D& var, const char* name,
                               const std::string& description) {
   solver->add(var, name, description);
 }
 
-void PhysicsModel::bout_solve(Vector3D &var, const char *name,
+void PhysicsModel::bout_solve(Vector3D& var, const char* name,
                               const std::string& description) {
   solver->add(var, name, description);
 }

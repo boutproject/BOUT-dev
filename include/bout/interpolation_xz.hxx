@@ -24,17 +24,17 @@
 #ifndef __INTERP_XZ_H__
 #define __INTERP_XZ_H__
 
-#include "mask.hxx"
+#include "bout/mask.hxx"
 
 class Options;
 
 /// Interpolate a field onto a perturbed set of points
-const Field3D interpolate(const Field3D &f, const Field3D &delta_x,
-                          const Field3D &delta_z);
+const Field3D interpolate(const Field3D& f, const Field3D& delta_x,
+                          const Field3D& delta_z);
 
-const Field3D interpolate(const Field2D &f, const Field3D &delta_x,
-                          const Field3D &delta_z);
-const Field3D interpolate(const Field2D &f, const Field3D &delta_x);
+const Field3D interpolate(const Field2D& f, const Field3D& delta_x,
+                          const Field3D& delta_z);
+const Field3D interpolate(const Field2D& f, const Field3D& delta_x);
 
 class XZInterpolation {
 public:
@@ -153,10 +153,9 @@ protected:
   Field3D h11_z;
 
 public:
-  XZHermiteSpline(Mesh *mesh = nullptr)
-      : XZHermiteSpline(0, mesh) {}
-  XZHermiteSpline(int y_offset = 0, Mesh *mesh = nullptr);
-  XZHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
+  XZHermiteSpline(Mesh* mesh = nullptr) : XZHermiteSpline(0, mesh) {}
+  XZHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr);
+  XZHermiteSpline(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZHermiteSpline(y_offset, mesh) {
     region = regionFromMask(mask, localmesh);
   }
@@ -189,11 +188,10 @@ public:
 /// problems most obviously occur.
 class XZMonotonicHermiteSpline : public XZHermiteSpline {
 public:
-  XZMonotonicHermiteSpline(Mesh *mesh = nullptr)
-      : XZHermiteSpline(0, mesh) {}
-  XZMonotonicHermiteSpline(int y_offset = 0, Mesh *mesh = nullptr)
+  XZMonotonicHermiteSpline(Mesh* mesh = nullptr) : XZHermiteSpline(0, mesh) {}
+  XZMonotonicHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr)
       : XZHermiteSpline(y_offset, mesh) {}
-  XZMonotonicHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
+  XZMonotonicHermiteSpline(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZHermiteSpline(mask, y_offset, mesh) {}
 
   using XZHermiteSpline::interpolate;
@@ -211,10 +209,9 @@ class XZLagrange4pt : public XZInterpolation {
   Field3D t_x, t_z;
 
 public:
-  XZLagrange4pt(Mesh *mesh = nullptr)
-      : XZLagrange4pt(0, mesh) {}
-  XZLagrange4pt(int y_offset = 0, Mesh *mesh = nullptr);
-  XZLagrange4pt(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
+  XZLagrange4pt(Mesh* mesh = nullptr) : XZLagrange4pt(0, mesh) {}
+  XZLagrange4pt(int y_offset = 0, Mesh* mesh = nullptr);
+  XZLagrange4pt(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZLagrange4pt(y_offset, mesh) {
     region = regionFromMask(mask, localmesh);
   }
@@ -245,9 +242,9 @@ class XZBilinear : public XZInterpolation {
   Field3D w0, w1, w2, w3;
 
 public:
-  XZBilinear(Mesh *mesh = nullptr) : XZBilinear(0, mesh) {}
-  XZBilinear(int y_offset = 0, Mesh *mesh = nullptr);
-  XZBilinear(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
+  XZBilinear(Mesh* mesh = nullptr) : XZBilinear(0, mesh) {}
+  XZBilinear(int y_offset = 0, Mesh* mesh = nullptr);
+  XZBilinear(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZBilinear(y_offset, mesh) {
     region = regionFromMask(mask, localmesh);
   }

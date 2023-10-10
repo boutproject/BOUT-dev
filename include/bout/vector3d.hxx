@@ -33,10 +33,10 @@ class Vector3D;
 #ifndef __VECTOR3D_H__
 #define __VECTOR3D_H__
 
-class Field2D; //#include "field2d.hxx"
-#include "field3d.hxx"
+class Field2D; //#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 
-class Vector2D; //#include "vector2d.hxx"
+class Vector2D; //#include "bout/vector2d.hxx"
 
 /*!
  * Represents a 3D vector, with x,y,z components
@@ -57,7 +57,7 @@ class Vector3D : public FieldData {
    * Copy constructor. After this the components (x,y,z)
    * will refer to the same data as f.(x,y,z)
    */
-  Vector3D(const Vector3D &f);
+  Vector3D(const Vector3D& f);
 
   /// Many-argument constructor for fully specifying the initialisation of a Vector3D
   Vector3D(Mesh* localmesh = nullptr, bool covariant = true,
@@ -74,7 +74,7 @@ class Vector3D : public FieldData {
    * The components of the vector. These can be 
    * either co- or contra-variant, depending on
    * the boolean flag "covariant"
-   */ 
+   */
   Field3D x, y, z;
 
   /*!
@@ -99,7 +99,7 @@ class Vector3D : public FieldData {
    * If contravariant, multiplies by metric tensor g_{ij}
    */
   void toCovariant();
-  
+
   /*!
    * In-place conversion to contravariant form
    *
@@ -108,7 +108,7 @@ class Vector3D : public FieldData {
    * 
    */
   void toContravariant();
-  
+
   /*!
    * Return a pointer to the time-derivative field
    *
@@ -127,44 +127,44 @@ class Vector3D : public FieldData {
   Vector3D* timeDeriv();
 
   // Assignment
-  Vector3D & operator=(const Vector3D &rhs);
-  Vector3D & operator=(const Vector2D &rhs);
-  Vector3D & operator=(BoutReal val);
-  
+  Vector3D& operator=(const Vector3D& rhs);
+  Vector3D& operator=(const Vector2D& rhs);
+  Vector3D& operator=(BoutReal val);
+
   // Operators
-  Vector3D & operator+=(const Vector3D &rhs);
-  Vector3D & operator+=(const Vector2D &rhs);
+  Vector3D& operator+=(const Vector3D& rhs);
+  Vector3D& operator+=(const Vector2D& rhs);
 
   const Vector3D operator-() const;
-  Vector3D & operator-=(const Vector3D &rhs);
-  Vector3D & operator-=(const Vector2D &rhs);
-  
-  Vector3D & operator*=(BoutReal rhs);
-  Vector3D & operator*=(const Field2D &rhs);
-  Vector3D & operator*=(const Field3D &rhs);
-  
-  Vector3D & operator/=(BoutReal rhs);
-  Vector3D & operator/=(const Field2D &rhs);
-  Vector3D & operator/=(const Field3D &rhs);
-  
+  Vector3D& operator-=(const Vector3D& rhs);
+  Vector3D& operator-=(const Vector2D& rhs);
+
+  Vector3D& operator*=(BoutReal rhs);
+  Vector3D& operator*=(const Field2D& rhs);
+  Vector3D& operator*=(const Field3D& rhs);
+
+  Vector3D& operator/=(BoutReal rhs);
+  Vector3D& operator/=(const Field2D& rhs);
+  Vector3D& operator/=(const Field3D& rhs);
+
   // Binary operators
 
-  const Vector3D operator+(const Vector3D &rhs) const;
-  const Vector3D operator+(const Vector2D &rhs) const;
+  const Vector3D operator+(const Vector3D& rhs) const;
+  const Vector3D operator+(const Vector2D& rhs) const;
 
-  const Vector3D operator-(const Vector3D &rhs) const;
-  const Vector3D operator-(const Vector2D &rhs) const;
+  const Vector3D operator-(const Vector3D& rhs) const;
+  const Vector3D operator-(const Vector2D& rhs) const;
 
   const Vector3D operator*(BoutReal rhs) const;
-  const Vector3D operator*(const Field2D &rhs) const;
-  const Vector3D operator*(const Field3D &rhs) const;
+  const Vector3D operator*(const Field2D& rhs) const;
+  const Vector3D operator*(const Field3D& rhs) const;
 
   const Vector3D operator/(BoutReal rhs) const;
-  const Vector3D operator/(const Field2D &rhs) const;
-  const Vector3D operator/(const Field3D &rhs) const;
+  const Vector3D operator/(const Field2D& rhs) const;
+  const Vector3D operator/(const Field3D& rhs) const;
 
-  const Field3D operator*(const Vector3D &rhs) const; // Dot product
-  const Field3D operator*(const Vector2D &rhs) const;
+  const Field3D operator*(const Vector3D& rhs) const; // Dot product
+  const Field3D operator*(const Vector2D& rhs) const;
 
   /// Set component locations consistently
   Vector3D& setLocation(CELL_LOC loc) override;
@@ -176,17 +176,18 @@ class Vector3D : public FieldData {
   bool is3D() const override { return true; }
   int elementSize() const override { return 3; }
 
-  void applyBoundary(bool init=false) override;
-  void applyBoundary(const std::string &condition) {
+  void applyBoundary(bool init = false) override;
+  void applyBoundary(const std::string& condition) {
     x.applyBoundary(condition);
     y.applyBoundary(condition);
     z.applyBoundary(condition);
   }
   void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
   void applyTDerivBoundary() override;
- private:
-   Vector3D* deriv{nullptr};       ///< Time-derivative, can be NULL
-   CELL_LOC location{CELL_CENTRE}; ///< Location of the variable in the cell
+
+private:
+  Vector3D* deriv{nullptr};       ///< Time-derivative, can be NULL
+  CELL_LOC location{CELL_CENTRE}; ///< Location of the variable in the cell
 };
 
 // Non-member overloaded operators
@@ -206,7 +207,7 @@ const Vector3D cross(const Vector3D & lhs, const Vector2D &rhs);
  * Absolute magnitude (modulus) of a vector  |v|
  * 
  * sqrt( v.x^2 + v.y^2 + v.z^2 )
- */ 
+ */
 const Field3D abs(const Vector3D& v, const std::string& region = "RGN_ALL");
 
 /// Transform to and from field-aligned coordinates
@@ -236,9 +237,6 @@ inline Vector3D zeroFrom(const Vector3D& v) {
 /*!
  * @brief Time derivative of 3D vector field
  */
-inline Vector3D& ddt(Vector3D &f) {
-  return *(f.timeDeriv());
-}
+inline Vector3D& ddt(Vector3D& f) { return *(f.timeDeriv()); }
 
 #endif // __VECTOR3D_H__
-

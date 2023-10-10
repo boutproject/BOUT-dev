@@ -30,8 +30,8 @@ class FieldData;
 #ifndef FIELD_DATA_H
 #define FIELD_DATA_H
 
-#include "bout_types.hxx"
-#include "unused.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/unused.hxx"
 
 #include <map>
 #include <memory>
@@ -39,14 +39,14 @@ class FieldData;
 #include <vector>
 
 // Including the next line leads to compiler errors
-//#include "boundary_op.hxx"
+//#include "bout/boundary_op.hxx"
 class BoundaryOp;
 class BoundaryOpPar;
 class Coordinates;
 class Mesh;
 
-#include "boundary_region.hxx"
-#include "parallel_boundary_region.hxx"
+#include "bout/boundary_region.hxx"
+#include "bout/parallel_boundary_region.hxx"
 
 #include "bout/sys/expressionparser.hxx"
 
@@ -78,19 +78,26 @@ public:
   /// Number of BoutReals in one element
   virtual int elementSize() const { return 1; }
 
-  virtual void doneComms() { }; // Notifies that communications done
-  
+  virtual void doneComms(){}; // Notifies that communications done
+
   // Boundary conditions
-  void setBoundary(const std::string &name); ///< Set the boundary conditions
+  void setBoundary(const std::string& name); ///< Set the boundary conditions
 
-  void copyBoundary(const FieldData &f); ///< Copy the boundary conditions from another field
+  void
+  copyBoundary(const FieldData& f); ///< Copy the boundary conditions from another field
 
-  virtual void applyBoundary(bool UNUSED(init)=false) {}
-  virtual void applyTDerivBoundary() {};
-//JMAD
+  virtual void applyBoundary(bool UNUSED(init) = false) {}
+  virtual void applyTDerivBoundary(){};
+
+  virtual void applyParallelBoundary(){};
+  virtual void applyParallelBoundary(BoutReal UNUSED(t)){};
+  virtual void applyParallelBoundary(const std::string& UNUSED(condition)){};
+  virtual void applyParallelBoundary(const std::string& UNUSED(region),
+                                     const std::string& UNUSED(condition)){};
+  // JMAD
   void addBndryFunction(FuncPtr userfunc, BndryLoc location);
   void addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location);
-  
+
   FieldGeneratorPtr getBndryGenerator(BndryLoc location);
 
   /// Returns a pointer to the `Mesh` object used by this field
@@ -120,14 +127,14 @@ protected:
   Mesh* fieldmesh{nullptr};
 
 private:
-  std::vector<BoundaryOp *> bndry_op; ///< Boundary conditions
-  bool boundaryIsCopy{false};         ///< True if bndry_op is a copy
-  bool boundaryIsSet{false};          ///< Set to true when setBoundary called
+  std::vector<BoundaryOp*> bndry_op; ///< Boundary conditions
+  bool boundaryIsCopy{false};        ///< True if bndry_op is a copy
+  bool boundaryIsSet{false};         ///< Set to true when setBoundary called
 
   // Parallel boundaries
-  std::vector<BoundaryOpPar *> bndry_op_par; ///< Boundary conditions
+  std::vector<BoundaryOpPar*> bndry_op_par; ///< Boundary conditions
 
-  std::map <BndryLoc,FieldGeneratorPtr> bndry_generator;
+  std::map<BndryLoc, FieldGeneratorPtr> bndry_generator;
 
   /// `Coordinates` used by this field, owned by `fieldmesh`
   mutable std::weak_ptr<Coordinates> fieldCoordinates{};

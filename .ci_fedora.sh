@@ -49,7 +49,7 @@ then
     sudo -u test ${0/\/tmp/\/home\/test} $mpi
 ## If we are called as normal user, run test
 else
-    pip install --user zoidberg
+    pip install --user zoidberg natsort
     . /etc/profile.d/modules.sh
     module load mpi/${1}-x86_64
     export OMPI_MCA_rmaps_base_oversubscribe=yes
@@ -58,7 +58,7 @@ else
     cd
     cd BOUT-dev
     echo "starting configure"
-    time cmake -DBOUT_USE_PETSC=ON -S . -B build
+    time cmake -S . -B build -DBOUT_USE_PETSC=ON
     time make -C build build-check -j 2
     time make -C build check
 fi

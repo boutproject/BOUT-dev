@@ -31,11 +31,11 @@
 #ifndef __LAPLACEXZ_H__
 #define __LAPLACEXZ_H__
 
-#include <options.hxx>
-#include <field3d.hxx>
-#include <bout/mesh.hxx>
-#include <unused.hxx>
+#include <bout/field3d.hxx>
 #include <bout/generic_factory.hxx>
+#include <bout/mesh.hxx>
+#include <bout/options.hxx>
+#include <bout/unused.hxx>
 
 class LaplaceXZ;
 
@@ -70,10 +70,10 @@ public:
       : localmesh(m == nullptr ? bout::globals::mesh : m), location(loc) {}
   virtual ~LaplaceXZ() = default;
 
-  virtual void setCoefs(const Field2D &A, const Field2D &B) = 0;
-  virtual void setCoefs(const Field3D &A, const Field3D &B) { setCoefs(DC(A), DC(B)); }
+  virtual void setCoefs(const Field2D& A, const Field2D& B) = 0;
+  virtual void setCoefs(const Field3D& A, const Field3D& B) { setCoefs(DC(A), DC(B)); }
 
-  virtual Field3D solve(const Field3D &b, const Field3D &x0) = 0;
+  virtual Field3D solve(const Field3D& b, const Field3D& x0) = 0;
 
   static std::unique_ptr<LaplaceXZ> create(Mesh* m = nullptr, Options* opt = nullptr,
                                            CELL_LOC loc = CELL_CENTRE) {
@@ -81,14 +81,14 @@ public:
   }
 
 protected:
-  static const int INVERT_DC_GRAD  = 1;
-  static const int INVERT_AC_GRAD  = 2;  // Use zero neumann (NOTE: AC is a misnomer)
-  static const int INVERT_SET      = 16; // Set boundary to x0 value
-  static const int INVERT_RHS      = 32; // Set boundary to b value
-  Mesh* localmesh;   ///< The mesh this operates on, provides metrics and communication
+  static const int INVERT_DC_GRAD = 1;
+  static const int INVERT_AC_GRAD = 2; // Use zero neumann (NOTE: AC is a misnomer)
+  static const int INVERT_SET = 16;    // Set boundary to x0 value
+  static const int INVERT_RHS = 32;    // Set boundary to b value
+  Mesh* localmesh; ///< The mesh this operates on, provides metrics and communication
   CELL_LOC location;
-private:
 
+private:
 };
 
 #endif // __LAPLACEXZ_H__

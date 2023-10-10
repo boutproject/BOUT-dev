@@ -674,6 +674,8 @@ happened will be printed::
     }
 
 
+.. _sec-physicsmodel-boundary-conditions:
+
 Boundary conditions
 ~~~~~~~~~~~~~~~~~~~
 
@@ -882,6 +884,9 @@ which is equivalent to::
 
 Output variables
 ~~~~~~~~~~~~~~~~
+
+.. warning:: File IO has changed significantly in BOUT++ v5. See
+             :ref:`sec-file-io-v5` for more details
 
 BOUT++ always writes the evolving variables to file, but often it’s
 useful to add other variables to the output. For convenience you might
@@ -1117,9 +1122,9 @@ everything except ``output_warn`` and ``output_error``.
 
 To enable the ``output_debug`` messages, configure BOUT++ with a
 ``CHECK`` level ``>= 3``. To enable it at lower check levels,
-configure BOUT++ with ``--enable-debug-output`` (for ``./configure``)
-or ``-DENABLE_OUTPUT_DEBUG`` (for ``CMake``). When running BOUT++ add
-a ``-v -v`` flag to see ``output_debug`` messages.
+configure BOUT++ with ``-DENABLE_OUTPUT_DEBUG`` (for ``CMake``;
+``--enable-debug-output`` for ``./configure``)). When running BOUT++
+add a ``-v -v`` flag to see ``output_debug`` messages.
 
 .. _sec-3to4:
 

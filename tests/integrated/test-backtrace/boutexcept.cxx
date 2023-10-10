@@ -1,5 +1,5 @@
-#include "boutexception.hxx"
-#include "msg_stack.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/msg_stack.hxx"
 
 void troublemaker() {
   AUTO_TRACE();

@@ -5,6 +5,9 @@ on:
     paths:
       - '**.cxx'
       - '**.hxx'
+    branches-ignore:
+      # Release candidate branches tend to have big PRs which causes all sorts of problems
+      - 'v*rc'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,7 +22,7 @@ jobs:
           submodules: true
 
       - name: Run clang-tidy
-        uses: ZedThree/clang-tidy-review@v0.8.3
+        uses: ZedThree/clang-tidy-review@v0.13.1
         id: review
         with:
           build_dir: build
@@ -41,3 +44,6 @@ jobs:
                              -DBOUT_ENABLE_PYTHON=OFF \
                              -DCMAKE_EXPORT_COMPILE_COMMANDS=On \
                              -DBOUT_UPDATE_GIT_SUBMODULE=OFF
+
+      - name: Upload clang-tidy fixes
+        uses: ZedThree/clang-tidy-review/upload@v0.13.1

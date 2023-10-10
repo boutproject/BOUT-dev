@@ -56,19 +56,20 @@ protected:
 
       // Using C loops
       result2.allocate();
-      BoutReal *rd = &result2(0, 0, 0);
-      BoutReal *ad = &a(0, 0, 0);
-      BoutReal *bd = &b(0, 0, 0);
-      BoutReal *cd = &c(0, 0, 0);
-      TIMEIT(elapsed2,
-             for (int i = 0, iend = (mesh->LocalNx * mesh->LocalNy * mesh->LocalNz) - 1;
-                  i != iend; i++) {
-               *rd = 2. * (*ad) + (*bd) * (*cd);
-               rd++;
-               ad++;
-               bd++;
-               cd++;
-             });
+      BoutReal* rd = &result2(0, 0, 0);
+      BoutReal* ad = &a(0, 0, 0);
+      BoutReal* bd = &b(0, 0, 0);
+      BoutReal* cd = &c(0, 0, 0);
+      TIMEIT(
+          elapsed2,
+          for (int i = 0, iend = (mesh->LocalNx * mesh->LocalNy * mesh->LocalNz) - 1;
+               i != iend; i++) {
+            *rd = 2. * (*ad) + (*bd) * (*cd);
+            rd++;
+            ad++;
+            bd++;
+            cd++;
+          });
 
       // Template expressions
       TIMEIT(elapsed3, result3 = eval3D(add(mul(2, a), mul(b, c))););

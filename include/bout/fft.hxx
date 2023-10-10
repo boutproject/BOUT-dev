@@ -28,7 +28,7 @@
 #ifndef __FFT_H__
 #define __FFT_H__
 
-#include "dcomplex.hxx"
+#include "bout/dcomplex.hxx"
 #include <bout/array.hxx>
 #include <bout/bout_enum_class.hxx>
 
@@ -53,7 +53,7 @@ namespace fft {
  * \param[in] length Number of points in the input array
  * \param[out] out   Pointer to the complex 1D array which is the FFT of in
  */
-void rfft(const BoutReal *in, int length, dcomplex *out);
+void rfft(const BoutReal* in, int length, dcomplex* out);
 
 /*!
  * Take the inverse fft of signal where the outputs are only reals.
@@ -71,21 +71,21 @@ void rfft(const BoutReal *in, int length, dcomplex *out);
  * \param[in] length Number of points in the input array
  * \param[out] out   Pointer to the complex 1D array which is IFFTed
  */
-void irfft(const dcomplex *in, int length, BoutReal *out);
+void irfft(const dcomplex* in, int length, BoutReal* out);
 
 /*!
  * Discrete Sine Transform
  *
  * \p in and \p out arrays must both be of the same \p length
  */
-void DST(const BoutReal *in, int length, dcomplex *out);
+void DST(const BoutReal* in, int length, dcomplex* out);
 
 /*!
  * Inverse Discrete Sine Transform
  *
  * \p in and \p out arrays must both be of the same \p length
  */
-void DST_rev(dcomplex *in, int length, BoutReal *out);
+void DST_rev(dcomplex* in, int length, BoutReal* out);
 
 /// Should the FFT functions find and use an optimised plan?
 void fft_init(bool fft_measure);
@@ -116,19 +116,19 @@ Array<BoutReal> irfft(const Array<dcomplex>& in, int length);
 
 // Legacy non-namespaced versions
 
-inline void rfft(const BoutReal *in, int length, dcomplex *out) {
+inline void rfft(const BoutReal* in, int length, dcomplex* out) {
   return bout::fft::rfft(in, length, out);
 }
 
-inline void irfft(const dcomplex *in, int length, BoutReal *out) {
+inline void irfft(const dcomplex* in, int length, BoutReal* out) {
   return bout::fft::irfft(in, length, out);
 }
 
-inline void DST(const BoutReal *in, int length, dcomplex *out) {
+inline void DST(const BoutReal* in, int length, dcomplex* out) {
   return bout::fft::DST(in, length, out);
 }
 
-inline void DST_rev(dcomplex *in, int length, BoutReal *out) {
+inline void DST_rev(dcomplex* in, int length, BoutReal* out) {
   return bout::fft::DST_rev(in, length, out);
 }
 

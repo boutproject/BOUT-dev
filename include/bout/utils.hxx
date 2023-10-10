@@ -29,15 +29,15 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
-#include "bout_types.hxx"
-#include "dcomplex.hxx"
-#include "boutexception.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/dcomplex.hxx"
 
-#include "msg_stack.hxx"
-#include "unused.hxx"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/build_config.hxx"
+#include "bout/msg_stack.hxx"
+#include "bout/unused.hxx"
 #include "bout/region.hxx"
 
 #include <algorithm>
@@ -211,7 +211,7 @@ public:
 
     data.reallocate(n1 * n2);
   }
-  Matrix(const Matrix &other) : n1(other.n1), n2(other.n2), data(other.data) {
+  Matrix(const Matrix& other) : n1(other.n1), n2(other.n2), data(other.data) {
     // Prevent copy on write for Matrix
     data.ensureUnique();
   }
@@ -228,7 +228,7 @@ public:
     data.reallocate(new_size_1 * new_size_2);
   }
 
-  Matrix& operator=(const Matrix &other) {
+  Matrix& operator=(const Matrix& other) {
     n1 = other.n1;
     n2 = other.n2;
     data = other.data;
@@ -238,27 +238,27 @@ public:
   }
   
   inline T& operator()(size_type i1, size_type i2) {
-    ASSERT2(0<=i1 && i1<n1);
-    ASSERT2(0<=i2 && i2<n2);
-    return data[i1*n2+i2];
+    ASSERT2(0 <= i1 && i1 < n1);
+    ASSERT2(0 <= i2 && i2 < n2);
+    return data[i1 * n2 + i2];
   }
   inline const T& operator()(size_type i1, size_type i2) const {
-    ASSERT2(0<=i1 && i1<n1);
-    ASSERT2(0<=i2 && i2<n2);
-    return data[i1*n2+i2];
+    ASSERT2(0 <= i1 && i1 < n1);
+    ASSERT2(0 <= i2 && i2 < n2);
+    return data[i1 * n2 + i2];
   }
 
-  Matrix& operator=(const T&val){
-    for (auto &i: data) {
+  Matrix& operator=(const T& val) {
+    for (auto& i : data) {
       i = val;
     };
     return *this;
   };
 
-  T* begin() { return std::begin(data);};
-  const T* begin() const { return std::begin(data);};
-  T* end() { return std::end(data);};
-  const T* end() const { return std::end(data);};
+  T* begin() { return std::begin(data); };
+  const T* begin() const { return std::begin(data); };
+  T* end() { return std::end(data); };
+  const T* end() const { return std::end(data); };
 
   std::tuple<size_type, size_type> shape() const { return std::make_tuple(n1, n2); };
 
@@ -269,10 +269,8 @@ public:
    * This should be called before performing any write operations
    * on the data.
    */
-  void ensureUnique() {
-    data.ensureUnique();
-  }
-  
+  void ensureUnique() { data.ensureUnique(); }
+
   /// Access the underlying storage
   Array<T>& getData() { return data; }
   const Array<T>& getData() const { return data; }
@@ -307,7 +305,8 @@ public:
     ASSERT2(n3 >= 0);
     data.reallocate(n1 * n2 * n3);
   }
-  Tensor(const Tensor &other) : n1(other.n1), n2(other.n2), n3(other.n3), data(other.data) {
+  Tensor(const Tensor& other)
+      : n1(other.n1), n2(other.n2), n3(other.n3), data(other.data) {
     // Prevent copy on write for Tensor
     data.ensureUnique();
   }
@@ -326,7 +325,7 @@ public:
     data.reallocate(new_size_1 * new_size_2 * new_size_3);
   }
 
-  Tensor& operator=(const Tensor &other) {
+  Tensor& operator=(const Tensor& other) {
     n1 = other.n1;
     n2 = other.n2;
     n3 = other.n3;
@@ -337,16 +336,16 @@ public:
   }
 
   T& operator()(size_type i1, size_type i2, size_type i3) {
-    ASSERT2(0<=i1 && i1<n1);
-    ASSERT2(0<=i2 && i2<n2);
-    ASSERT2(0<=i3 && i3<n3);
-    return data[(i1*n2+i2)*n3 + i3];
+    ASSERT2(0 <= i1 && i1 < n1);
+    ASSERT2(0 <= i2 && i2 < n2);
+    ASSERT2(0 <= i3 && i3 < n3);
+    return data[(i1 * n2 + i2) * n3 + i3];
   }
   const T& operator()(size_type i1, size_type i2, size_type i3) const {
-    ASSERT2(0<=i1 && i1<n1);
-    ASSERT2(0<=i2 && i2<n2);
-    ASSERT2(0<=i3 && i3<n3);
-    return data[(i1*n2+i2)*n3 + i3];
+    ASSERT2(0 <= i1 && i1 < n1);
+    ASSERT2(0 <= i2 && i2 < n2);
+    ASSERT2(0 <= i3 && i3 < n3);
+    return data[(i1 * n2 + i2) * n3 + i3];
   }
 
   const T& operator[](Ind3D i) const {
@@ -357,17 +356,17 @@ public:
     return data[i.ind];
   }
 
-  Tensor& operator=(const T&val){
-    for(auto &i: data){
+  Tensor& operator=(const T& val) {
+    for (auto& i : data) {
       i = val;
     };
     return *this;
   };
-  
-  T* begin() { return std::begin(data);};
-  const T* begin() const { return std::begin(data);};
-  T* end() { return std::end(data);};
-  const T* end() const { return std::end(data);};
+
+  T* begin() { return std::begin(data); };
+  const T* begin() const { return std::begin(data); };
+  T* end() { return std::end(data); };
+  const T* end() const { return std::end(data); };
 
   std::tuple<size_type, size_type, size_type> shape() const {
     return std::make_tuple(n1, n2, n3);
@@ -380,9 +379,7 @@ public:
    * This should be called before performing any write operations
    * on the data.
    */
-  void ensureUnique() {
-    data.ensureUnique();
-  }
+  void ensureUnique() { data.ensureUnique(); }
 
   /// Access the underlying storage
   Array<T>& getData() { return data; }
@@ -420,11 +417,11 @@ template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   T det = a(0, 0) * A + a(0, 1) * B + a(0, 2) * C;
 
   if (std::abs(det) < std::abs(small)) {
-    if (small >=0 ){
+    if (small >= 0) {
       throw BoutException("Determinant of matrix < {:e} --> Poorly conditioned", small);
     } else {
       return 1;
-    }      
+    }
   }
 
   // Calculate the rest of the co-factors
@@ -464,13 +461,13 @@ inline BoutReal randomu() {
  */
 template <typename T>
 BOUT_HOST_DEVICE inline T SQ(const T& t) {
-  return t*t;
+  return t * t;
 }
 
 /*!
  * Round \p x to the nearest integer
  */
-inline int ROUND(BoutReal x){
+inline int ROUND(BoutReal x) {
   return (x > 0.0) ? static_cast<int>(x + 0.5) : static_cast<int>(x - 0.5);
 }
 
@@ -500,10 +497,8 @@ T BOUTMIN(T a, T b, Args... args) {
 
 /*!
  * Check if a number is a power of 2
- */ 
-inline bool is_pow2(int x) {
-  return x && !((x-1) & x);
-}
+ */
+inline bool is_pow2(int x) { return x && !((x - 1) & x); }
 
 /*!
  * Return the sign of a number \p a
@@ -522,7 +517,7 @@ T SIGN(T a) { // Return +1 or -1 (0 -> +1)
  * if |a| < |b| then return a, otherwise return b
  */
 inline BoutReal MINMOD(BoutReal a, BoutReal b) {
-  return 0.5*(SIGN(a) + SIGN(b)) * BOUTMIN(std::abs(a), std::abs(b));
+  return 0.5 * (SIGN(a) + SIGN(b)) * BOUTMIN(std::abs(a), std::abs(b));
 }
 
 #if CHECK > 0
@@ -539,9 +534,8 @@ inline void checkData(BoutReal UNUSED(f)){};
 
 /*!
  * Allocate memory and copy string \p s
- */ 
+ */
 char* copy_string(const char* s);
-
 
 /// Convert a value to a string
 /// by writing to a stringstream
@@ -555,9 +549,7 @@ std::string toString(const T& val) {
 /// Simple case where input is already a string
 /// This is so that toString can be used in templates
 /// where the type may be std::string.
-inline std::string toString(const std::string& val) {
-  return val;
-}
+inline std::string toString(const std::string& val) { return val; }
 
 template <>
 inline std::string toString<>(const Array<BoutReal>& UNUSED(val)) {
@@ -583,7 +575,7 @@ inline std::string toString(const bool& val) {
 }
 
 inline std::string toString(const DirectionTypes& dir) {
-  return "{"+toString(dir.y)+", "+toString(dir.z)+"}";
+  return "{" + toString(dir.y) + ", " + toString(dir.z) + "}";
 }
 
 /// Convert a time stamp to a string
@@ -593,30 +585,30 @@ std::string toString(const time_t& time);
 /*!
  * Convert a string to lower case
  */
-const std::string lowercase(const std::string &str);
+const std::string lowercase(const std::string& str);
 
 /*!
  * Convert a string to upper case
  */
-const std::string uppercase(const std::string &str);
+const std::string uppercase(const std::string& str);
 
 /*!
  * Convert to lower case, except inside quotes (" or ')
  */
-const std::string lowercasequote(const std::string &str);
+const std::string lowercasequote(const std::string& str);
 
 /*!
  * Convert a string to a BoutReal
  * Throws BoutException if can't be done
- */ 
-BoutReal stringToReal(const std::string &s);
+ */
+BoutReal stringToReal(const std::string& s);
 
 /*!
  * Convert a string to an int
  * 
  * Throws BoutException if can't be done
  */
-int stringToInt(const std::string &s);
+int stringToInt(const std::string& s);
 
 /*!
  * Split a string on a given delimiter
@@ -625,7 +617,8 @@ int stringToInt(const std::string &s);
  * @param[in] delim The delimiter to split on (single char)
  * @param[in, out] elems  A list to which the pieces will be appended using push_back
  */
-std::list<std::string> &strsplit(const std::string &s, char delim, std::list<std::string> &elems);
+std::list<std::string>& strsplit(const std::string& s, char delim,
+                                 std::list<std::string>& elems);
 
 /*!
  * Split a string on a given delimiter
@@ -633,7 +626,7 @@ std::list<std::string> &strsplit(const std::string &s, char delim, std::list<std
  * @param[in] s     The string to split (not modified by call)
  * @param[in] delim The delimiter to split on (single char)
  */
-std::list<std::string> strsplit(const std::string &s, char delim);
+std::list<std::string> strsplit(const std::string& s, char delim);
 
 /*!
  * Strips leading and trailing spaces from a string
@@ -641,7 +634,7 @@ std::list<std::string> strsplit(const std::string &s, char delim);
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
-std::string trim(const std::string &s, const std::string &c=" \t\r");
+std::string trim(const std::string& s, const std::string& c = " \t\r");
 
 /*!
  * Strips leading spaces from a string
@@ -649,7 +642,7 @@ std::string trim(const std::string &s, const std::string &c=" \t\r");
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
-std::string trimLeft(const std::string &s, const std::string &c=" \t");
+std::string trimLeft(const std::string& s, const std::string& c = " \t");
 
 /*!
  * Strips leading spaces from a string
@@ -657,7 +650,7 @@ std::string trimLeft(const std::string &s, const std::string &c=" \t");
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
-std::string trimRight(const std::string &s, const std::string &c=" \t\r");
+std::string trimRight(const std::string& s, const std::string& c = " \t\r");
 
 /*!
  * Strips the comments from a string
@@ -665,7 +658,7 @@ std::string trimRight(const std::string &s, const std::string &c=" \t\r");
  * @param[in] s   The string to trim (not modified)
  * @param[in] c   Collection of characters to remove
  */
-std::string trimComments(const std::string &s, const std::string &c="#;");
+std::string trimComments(const std::string& s, const std::string& c = "#;");
 
 /// Returns the "edit distance" between two strings: how many
 /// insertions, deletions, substitutions and transpositions are needed
@@ -676,29 +669,16 @@ std::string trimComments(const std::string &s, const std::string &c="#;");
 /// https://en.wikipedia.org/wiki/Damerau%E2%80%93Levenshtein_distance#Optimal_string_alignment_distance
 std::string::size_type editDistance(const std::string& str1, const std::string& str2);
 
-/// the bout_vsnprintf macro:
-/// The first argument is an char * buffer of length len.
-/// It needs to have been allocated with new[], as it may be
-/// reallocated.
-/// len: the length of said buffer. May be changed, mussn't be const.
-/// fmt: the const char * descriping the format.
-/// note that fmt should be the first argument of the function of type
-/// const char * and has to be directly followed by the variable arguments.
-#define bout_vsnprintf(buf,len,fmt) {                   \
-    va_list va;                                         \
-    va_start(va, fmt);                                  \
-    int _vsnprintflen=vsnprintf(buf,len,fmt,va);        \
-    va_end(va);                                         \
-    if ( _vsnprintflen + 1 > int(len)) {                \
-      _vsnprintflen+=1;                                 \
-      delete[] buf;                                     \
-      buf = new char[_vsnprintflen];                    \
-      len = _vsnprintflen;                              \
-      va_start(va,fmt);                                 \
-      vsnprintf(buf,len,fmt,va);                        \
-      va_end(va);                                       \
-    }                                                   \
-  }
+// from https://en.cppreference.com/w/cpp/types/numeric_limits/epsilon
+template <class T>
+typename std::enable_if<!std::numeric_limits<T>::is_integer, bool>::type
+almost_equal(T x, T y, int ulp = 2) {
+  // the machine epsilon has to be scaled to the magnitude of the values used
+  // and multiplied by the desired precision in ULPs (units in the last place)
+  return std::fabs(x - y) <= std::numeric_limits<T>::epsilon() * std::fabs(x + y) * ulp
+         // unless the result is subnormal
+         || std::fabs(x - y) < std::numeric_limits<T>::min();
+}
 
 /// Convert pointer or reference to pointer
 /// This allows consistent handling of both in macros, templates
@@ -708,8 +688,8 @@ template <typename T> T *pointer(T &val) { return &val; }
 #ifndef BOUT_CONCAT
 /// Utility to evaluate and concatenate macro symbols
 /// Note that ## operator doesn't evaluate symols A or B
-#define BOUT_CONCAT_(A,B) A##B
-#define BOUT_CONCAT(A,B) BOUT_CONCAT_(A,B)
+#define BOUT_CONCAT_(A, B) A##B
+#define BOUT_CONCAT(A, B) BOUT_CONCAT_(A, B)
 #endif
 
 #endif // __UTILS_H__

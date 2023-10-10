@@ -1,6 +1,6 @@
+#include <bout/bout.hxx>
+#include <bout/field_factory.hxx>
 #include <bout/invert/laplacexy2_hypre.hxx>
-#include <bout.hxx>
-#include <field_factory.hxx>
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
@@ -13,15 +13,17 @@ int main(int argc, char** argv) {
                                                 bout::globals::mesh);
 
     /// Solution
-    Field2D x = 0.0;
+    Field2D solution = 0.0;
 
-    x = laplacexy.solve(rhs, x);
+    solution = laplacexy.solve(rhs, solution);
 
-    SAVE_ONCE2(rhs, x);
-    bout::globals::dump.write(); // Save output file
+    Options dump;
+    dump["rhs"] = rhs;
+    dump["x"] = solution;
+    bout::writeDefaultOutputFile(dump);
   }
   BoutFinalise();
-#if BOUT_USE_CUDA
+#if BOUT_HAS_CUDA
   cudaDeviceReset();
 #endif
   return 0;

@@ -1,6 +1,6 @@
+#include "bout/petsclib.hxx"
 #include "bout/physicsmodel.hxx"
 #include "bout/solver.hxx"
-#include "bout/petsclib.hxx"
 
 #include <cmath>
 #include <memory>

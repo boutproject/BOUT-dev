@@ -31,11 +31,11 @@
 #ifndef __INV_PAR_H__
 #define __INV_PAR_H__
 
-#include "field3d.hxx"
-#include "field2d.hxx"
-#include "options.hxx"
-#include "unused.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/generic_factory.hxx"
+#include "bout/options.hxx"
+#include "bout/unused.hxx"
 
 // Parderiv implementations
 constexpr auto PARDERIVCYCLIC = "cyclic";
@@ -83,69 +83,72 @@ using RegisterUnavailableInvertPar = InvertParFactory::RegisterUnavailableInFact
  */
 class InvertPar {
 public:
-  
   /*!
    * Constructor. Note that this is a base class,
    * with pure virtual members, so can't be created directly.
    * To create an InvertPar object call the create() static function.
-   */ 
-  InvertPar(Options *UNUSED(opt), CELL_LOC location_in, Mesh *mesh_in = nullptr)
-    : location(location_in),
-      localmesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in) {}
+   */
+  InvertPar(Options* UNUSED(opt), CELL_LOC location_in, Mesh* mesh_in = nullptr)
+      : location(location_in),
+        localmesh(mesh_in == nullptr ? bout::globals::mesh : mesh_in) {}
   virtual ~InvertPar() = default;
 
   /*!
    * Create an instance of InvertPar
    */
-  static std::unique_ptr<InvertPar> create(Options *opt_in = nullptr,
+  static std::unique_ptr<InvertPar> create(Options* opt_in = nullptr,
                                            CELL_LOC location_in = CELL_CENTRE,
-                                           Mesh *mesh_in = nullptr) {
+                                           Mesh* mesh_in = nullptr) {
     return InvertParFactory::getInstance().create(opt_in, location_in, mesh_in);
   }
-  
+
   /*!
    * Solve the system of equations
    * Warning: Default implementation very inefficient. This converts
    * the Field2D to a Field3D then calls solve() on the 3D variable
-   */ 
-  virtual const Field2D solve(const Field2D &f);
-  
+   */
+  virtual const Field2D solve(const Field2D& f);
+
   /*!
    * Solve the system of equations
    *
    * This method must be implemented
    */
-  virtual const Field3D solve(const Field3D &f) = 0;
-  
+  virtual const Field3D solve(const Field3D& f) = 0;
+
   /*!
    * Solve, given an initial guess for the solution
    * This can help if using an iterative scheme
    */
-  virtual const Field3D solve(const Field2D &f, const Field2D &UNUSED(start)) {return solve(f);}
-  virtual const Field3D solve(const Field3D &f, const Field3D &UNUSED(start)) {return solve(f);}
-  
+  virtual const Field3D solve(const Field2D& f, const Field2D& UNUSED(start)) {
+    return solve(f);
+  }
+  virtual const Field3D solve(const Field3D& f, const Field3D& UNUSED(start)) {
+    return solve(f);
+  }
+
   /*!
    * Set the constant coefficient A
    */
-  virtual void setCoefA(const Field2D &f) = 0;
-  virtual void setCoefA(const Field3D &f) {setCoefA(DC(f));}
+  virtual void setCoefA(const Field2D& f) = 0;
+  virtual void setCoefA(const Field3D& f) { setCoefA(DC(f)); }
   virtual void setCoefA(BoutReal f) {
     auto A = Field2D(f, localmesh);
     A.setLocation(location);
     setCoefA(A);
   }
-  
+
   /*!
    * Set the Grad2_par2 coefficient B
-   */ 
-  virtual void setCoefB(const Field2D &f) = 0;
-  virtual void setCoefB(const Field3D &f) {setCoefB(DC(f));}
+   */
+  virtual void setCoefB(const Field2D& f) = 0;
+  virtual void setCoefB(const Field3D& f) { setCoefB(DC(f)); }
   virtual void setCoefB(BoutReal f) {
     auto B = Field2D(f, localmesh);
     B.setLocation(location);
     setCoefB(B);
   }
-  
+
   /*!
    * Set the D2DYDZ coefficient C
    */
@@ -186,6 +189,4 @@ protected:
 private:
 };
 
-
 #endif // __INV_PAR_H__
-

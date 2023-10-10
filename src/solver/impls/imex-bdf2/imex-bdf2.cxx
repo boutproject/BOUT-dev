@@ -5,15 +5,15 @@
 #include "imex-bdf2.hxx"
 
 #include <bout/assert.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/mesh.hxx>
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/utils.hxx>
 
 #include <cmath>
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
 #include "petscmat.h"
 #include "petscsnes.h"
@@ -338,12 +338,14 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
             ASSERT2((localIndex >= 0) && (localIndex < localN));
             if (z == 0) {
               // All 2D and 3D fields
-              for (int i = 0; i < n2d + n3d; i++)
+              for (int i = 0; i < n2d + n3d; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
+              }
             } else {
               // Only 3D fields
-              for (int i = 0; i < n3d; i++)
+              for (int i = 0; i < n3d; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
+              }
             }
           }
         }
@@ -378,12 +380,14 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
             ASSERT2((localIndex >= 0) && (localIndex < localN));
             if (z == 0) {
               // All 2D and 3D fields
-              for (int i = 0; i < n2d + n3d; i++)
+              for (int i = 0; i < n2d + n3d; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
+              }
             } else {
               // Only 3D fields
-              for (int i = 0; i < n3d; i++)
+              for (int i = 0; i < n3d; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
+              }
             }
           }
         }
@@ -535,15 +539,16 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
               int xi = x + xoffset[c];
               int yi = y + yoffset[c];
 
-              if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx) || (yi >= mesh->LocalNy)) {
+              if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
+                  || (yi >= mesh->LocalNy)) {
                 continue;
-	      }
+              }
 
               int ind2 = ROUND(index(xi, yi, 0));
 
               if (ind2 < 0) {
                 continue; // A boundary point
-	      }
+              }
 
               // Depends on all variables on this cell
               for (int j = 0; j < n2d; j++) {
@@ -564,7 +569,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
               PetscInt row = ind + i;
               if (z == 0) {
                 row += n2d;
-	      }
+              }
 
               // Depends on 2D fields
               for (int j = 0; j < n2d; j++) {
@@ -581,16 +586,16 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
                 if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
                     || (yi >= mesh->LocalNy)) {
                   continue;
-		}
+                }
 
                 int ind2 = ROUND(index(xi, yi, z));
                 if (ind2 < 0) {
                   continue; // Boundary point
-		}
+                }
 
                 if (z == 0) {
                   ind2 += n2d;
-		}
+                }
 
                 // 3D fields on this cell
                 for (int j = 0; j < n3d; j++) {
@@ -609,7 +614,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
                 int ind2 = ROUND(index(x, y, zp));
                 if (zp == 0) {
                   ind2 += n2d;
-		}
+                }
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
                   // output.write("SETTING 4: {:d}, {:d}\n", row, col);
@@ -620,7 +625,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
                 ind2 = ROUND(index(x, y, zm));
                 if (zm == 0) {
                   ind2 += n2d;
-		}
+                }
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
                   // output.write("SETTING 5: {:d}, {:d}\n", row, col);
@@ -671,9 +676,9 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
           BoutComm::get(), nlocal, nlocal,  // Local sizes
           PETSC_DETERMINE, PETSC_DETERMINE, // Global sizes
           3, // Number of nonzero entries in diagonal portion of local submatrix
-          PETSC_NULL,
+          nullptr,
           0, // Number of nonzeros per row in off-diagonal portion of local submatrix
-          PETSC_NULL, &Jmf);
+          nullptr, &Jmf);
 
 #if PETSC_VERSION_GE(3, 4, 0)
       SNESSetJacobian(*snesIn, Jmf, Jmf, SNESComputeJacobianDefault, this);
@@ -790,11 +795,11 @@ int IMEXBDF2::run() {
 
         // Validate our desired next timestep
         if (dtNext < dtMinFatal) {
-	  // Don't allow the timestep to go below requested fatal min
+          // Don't allow the timestep to go below requested fatal min
           throw BoutException(
               "Aborting: Timestep ({:f}) tried to go below minimum allowed", dtNext);
         }
-	if (dtNext < dtMin) { // Don't allow timestep below requested min
+        if (dtNext < dtMin) { // Don't allow timestep below requested min
           dtNext = dtMin;
         } else if (dtNext > dtMax) { // Don't allow timestep above request max
           dtNext = dtMax;
@@ -837,7 +842,7 @@ int IMEXBDF2::run() {
             // An error occurred. If adaptive, reduce timestep
             if (!adaptive) {
               throw;
-	    }
+            }
 
             failCounter++;
             if (failCounter > 10) {
@@ -872,7 +877,7 @@ int IMEXBDF2::run() {
           // An error occurred. If adaptive, reduce timestep
           if (!adaptive) {
             throw;
-	  }
+          }
 
           failCounter++;
           if (failCounter > 10) {
@@ -997,8 +1002,6 @@ int IMEXBDF2::run() {
 
     loadVars(std::begin(u)); // Put result into variables
     run_rhs(simtime);        // Run RHS to calculate auxilliary variables
-
-    iteration++; // Advance iteration number
 
     /// Call the monitor function
 
@@ -1251,8 +1254,9 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
   ierr = VecGetArray(snes_x, &xdata);
   CHKERRQ(ierr);
 
-  for (int i = 0; i < nlocal; i++)
+  for (int i = 0; i < nlocal; i++) {
     u[i] = xdata[i];
+  }
   ierr = VecRestoreArray(snes_x, &xdata);
   CHKERRQ(ierr);
 
@@ -1369,20 +1373,22 @@ void IMEXBDF2::loopVars(BoutReal* u) {
 
       // Inner X
       if (mesh->firstX() && !mesh->periodicX) {
-        for (int jx = 0; jx < mesh->xstart; ++jx)
+        for (int jx = 0; jx < mesh->xstart; ++jx) {
           for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
             op.run(jx, jy, u);
             ++u;
           }
+        }
       }
 
       // Outer X
       if (mesh->lastX() && !mesh->periodicX) {
-        for (int jx = mesh->xend + 1; jx < mesh->LocalNx; ++jx)
+        for (int jx = mesh->xend + 1; jx < mesh->LocalNx; ++jx) {
           for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
             op.run(jx, jy, u);
             ++u;
           }
+        }
       }
       // Lower Y
       for (RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); ++xi) {
@@ -1402,11 +1408,12 @@ void IMEXBDF2::loopVars(BoutReal* u) {
     }
 
     // Bulk of points
-    for (int jx = mesh->xstart; jx <= mesh->xend; ++jx)
+    for (int jx = mesh->xstart; jx <= mesh->xend; ++jx) {
       for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
         op.run(jx, jy, u);
         ++u;
       }
+    }
   }
 
   // Loop over 3D variables

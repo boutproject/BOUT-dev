@@ -31,17 +31,17 @@ class Field2D;
 #define __FIELD2D_H__
 
 class Mesh;
-#include "field.hxx"
-#include "field_data.hxx"
-class Field3D; //#include "field3d.hxx"
-#include "fieldperp.hxx"
-#include "stencils.hxx"
+#include "bout/field.hxx"
+#include "bout/field_data.hxx"
+class Field3D; //#include "bout/field3d.hxx"
+#include "bout/fieldperp.hxx"
+#include "bout/stencils.hxx"
 
-#include "utils.hxx"
 #include "bout/array.hxx"
 #include "bout/region.hxx"
+#include "bout/utils.hxx"
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 #if BOUT_HAS_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib
@@ -202,25 +202,29 @@ public:
    * significantly reduce performance.
    */
   BOUT_HOST_DEVICE inline BoutReal& operator()(int jx, int jy) {
-#if CHECK > 2 && !BOUT_USE_CUDA
-    if (!isAllocated())
+#if CHECK > 2 && !BOUT_HAS_CUDA
+    if (!isAllocated()) {
       throw BoutException("Field2D: () operator on empty data");
+    }
 
-    if ((jx < 0) || (jx >= nx) || (jy < 0) || (jy >= ny))
+    if ((jx < 0) || (jx >= nx) || (jy < 0) || (jy >= ny)) {
       throw BoutException("Field2D: ({:d}, {:d}) index out of bounds ({:d} , {:d})\n", jx,
                           jy, nx, ny);
+    }
 #endif
 
     return data[jx * ny + jy];
   }
   BOUT_HOST_DEVICE inline const BoutReal& operator()(int jx, int jy) const {
-#if CHECK > 2 && !BOUT_USE_CUDA
-    if (!isAllocated())
+#if CHECK > 2 && !BOUT_HAS_CUDA
+    if (!isAllocated()) {
       throw BoutException("Field2D: () operator on empty data");
+    }
 
-    if ((jx < 0) || (jx >= nx) || (jy < 0) || (jy >= ny))
+    if ((jx < 0) || (jx >= nx) || (jy < 0) || (jy >= ny)) {
       throw BoutException("Field2D: ({:d}, {:d}) index out of bounds ({:d} , {:d})\n", jx,
                           jy, nx, ny);
+    }
 #endif
 
     return data[jx * ny + jy];

@@ -23,11 +23,11 @@
  *
  **************************************************************************/
 
+#include <bout/output.hxx>
+#include <bout/utils.hxx>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
-#include <output.hxx>
-#include <utils.hxx>
 
 void Output::enable() {
   add(std::cout);
@@ -79,7 +79,7 @@ void Output::print(const std::string& message) {
   std::cout.flush();
 }
 
-Output *Output::getInstance() {
+Output* Output::getInstance() {
   static Output instance;
   return &instance;
 }
@@ -109,5 +109,3 @@ ConditionalOutput output_progress(Output::getInstance());
 ConditionalOutput output_error(Output::getInstance());
 ConditionalOutput output_verbose(Output::getInstance(), false);
 ConditionalOutput output(Output::getInstance());
-
-#undef bout_vsnprint_pre

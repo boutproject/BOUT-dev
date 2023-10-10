@@ -45,9 +45,7 @@ public:
   virtual Field3D interpolate(const Field3D& f, const Field3D& delta_z,
                               const std::string& region_str = "DEFAULT") = 0;
 
-  void setRegion(Region<Ind3D> new_region) {
-    region = new_region;
-  }
+  void setRegion(Region<Ind3D> new_region) { region = new_region; }
 
   virtual std::vector<ParallelTransform::PositionsAndWeights>
   getWeightsForYUpApproximation(int i, int j, int k) const {
