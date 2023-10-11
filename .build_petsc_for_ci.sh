@@ -3,12 +3,13 @@
 set -e
 
 if test $BUILD_PETSC ; then
-    if [[ ! -d $HOME/local/petsc/include/petsc ]]; then
+    if [[ ! -d $HOME/local/petsc/include/petsc ]] || test $1 ; then
 	echo "****************************************"
 	echo "Building PETSc"
 	echo "****************************************"
 
-	git clone -b ${1:-release} https://gitlab.com/petsc/petsc.git petsc --depth=1
+	branch=${1:-release}
+	git clone -b $branch https://gitlab.com/petsc/petsc.git petsc --depth=1
 
 	unset PETSC_DIR
 	unset PETSC_ARCH
@@ -34,7 +35,7 @@ if test $BUILD_PETSC ; then
 	echo "Building SLEPc"
 	echo "****************************************"
 
-    git clone -b release https://gitlab.com/slepc/slepc.git slepc --depth=1
+    git clone -b $branch https://gitlab.com/slepc/slepc.git slepc --depth=1
 
     pushd slepc
 	unset SLEPC_DIR
