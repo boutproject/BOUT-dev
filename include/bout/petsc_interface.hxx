@@ -79,27 +79,27 @@ public:
   using ind_type = typename T::ind_type;
 
   struct VectorDeleter {
-    void operator()(Vec* v) const {
-      VecDestroy(v);
-      delete v;
+    void operator()(Vec* vec) const {
+      VecDestroy(vec);
+      delete vec;
     }
   };
 
   PetscVector() : vector(new Vec{}) {}
   ~PetscVector() = default;
 
-  PetscVector(const PetscVector<T>& v)
-      : vector(new Vec()), indexConverter(v.indexConverter), location(v.location),
-        initialised(v.initialised), vector_values(v.vector_values) {
-    VecDuplicate(*v.vector, vector.get());
-    VecCopy(*v.vector, *vector);
+  PetscVector(const PetscVector<T>& vec)
+      : vector(new Vec()), indexConverter(vec.indexConverter), location(vec.location),
+        initialised(vec.initialised), vector_values(vec.vector_values) {
+    VecDuplicate(*vec.vector, vector.get());
+    VecCopy(*vec.vector, *vector);
   }
 
-  PetscVector(PetscVector<T>&& v) noexcept
-      : indexConverter(v.indexConverter), location(v.location),
-        initialised(v.initialised), vector_values(std::move(v.vector_values)) {
-    std::swap(vector, v.vector);
-    v.initialised = false;
+  PetscVector(PetscVector<T>&& vec) noexcept
+      : indexConverter(vec.indexConverter), location(vec.location),
+        initialised(vec.initialised), vector_values(std::move(vec.vector_values)) {
+    std::swap(vector, vec.vector);
+    vec.initialised = false;
   }
 
   /// Construct from a field, copying over the field values
@@ -118,16 +118,16 @@ public:
 
   /// Construct a vector like v, but using data from a raw PETSc
   /// Vec. That Vec (not a copy) will then be owned by the new object.
-  PetscVector(const PetscVector<T>& v, Vec* vec) {
+  PetscVector(const PetscVector<T>& other, Vec* vec) {
 #if CHECKLEVEL >= 2
-    int fsize = v.indexConverter->size();
+    int fsize = other.indexConverter->size();
     int msize = 0;
     VecGetLocalSize(*vec, &msize);
     ASSERT2(fsize == msize);
 #endif
     vector.reset(vec);
-    indexConverter = v.indexConverter;
-    location = v.location;
+    indexConverter = other.indexConverter;
+    location = other.location;
     initialised = true;
   }
 
@@ -143,9 +143,9 @@ public:
     return *this;
   }
 
-  PetscVector<T>& operator=(const T& f) {
+  PetscVector<T>& operator=(const T& field) {
     ASSERT1(indexConverter); // Needs to have index set
-    BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) { (*this)(i) = f[i]; }
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) { (*this)(i) = field[i]; }
     assemble();
     return *this;
   }
@@ -254,9 +254,9 @@ public:
   using ind_type = typename T::ind_type;
 
   struct MatrixDeleter {
-    void operator()(Mat* m) const {
-      MatDestroy(m);
-      delete m;
+    void operator()(Mat* mat) const {
+      MatDestroy(mat);
+      delete mat;
     }
   };
 
@@ -265,17 +265,17 @@ public:
   ~PetscMatrix() = default;
 
   /// Copy constructor
-  PetscMatrix(const PetscMatrix<T>& m)
-      : matrix(new Mat()), indexConverter(m.indexConverter), pt(m.pt), yoffset(m.yoffset),
-        initialised(m.initialised) {
-    MatDuplicate(*m.matrix, MAT_COPY_VALUES, matrix.get());
+  PetscMatrix(const PetscMatrix<T>& mat)
+      : matrix(new Mat()), indexConverter(mat.indexConverter), pt(mat.pt), yoffset(mat.yoffset),
+        initialised(mat.initialised) {
+    MatDuplicate(*mat.matrix, MAT_COPY_VALUES, matrix.get());
   }
 
   /// Move constrcutor
-  PetscMatrix(PetscMatrix<T>&& m) noexcept
-      : matrix(m.matrix), indexConverter(m.indexConverter), pt(m.pt), yoffset(m.yoffset),
-        initialised(m.initialised) {
-    m.initialised = false;
+  PetscMatrix(PetscMatrix<T>&& mat) noexcept
+      : matrix(mat.matrix), indexConverter(mat.indexConverter), pt(mat.pt), yoffset(mat.yoffset),
+        initialised(mat.initialised) {
+    mat.initialised = false;
   }
 
   // Construct a matrix capable of operating on the specified field,
@@ -339,9 +339,9 @@ public:
     Element(Element&&) = delete;
     Element& operator=(Element&&) = delete;
     Element(const Element& other) = default;
-    Element(Mat* matrix, PetscInt row, PetscInt col, std::vector<PetscInt> p = {},
-            std::vector<BoutReal> w = {})
-        : petscMatrix(matrix), petscRow(row), petscCol(col), positions(p), weights(w) {
+    Element(Mat* matrix, PetscInt row, PetscInt col, std::vector<PetscInt> position = {},
+            std::vector<BoutReal> weight = {})
+      : petscMatrix(matrix), petscRow(row), petscCol(col), positions(std::move(position)), weights(std::move(weight)) {
       ASSERT2(positions.size() == weights.size());
 #if CHECK > 2
       for (const auto val : weights) {
@@ -378,8 +378,8 @@ public:
       ASSERT3(finite(val));
       auto columnPosition = std::find(positions.begin(), positions.end(), petscCol);
       if (columnPosition != positions.end()) {
-        int i = std::distance(positions.begin(), columnPosition);
-        value += weights[i] * val;
+        const int index = std::distance(positions.begin(), columnPosition);
+        value += weights[index] * val;
         ASSERT3(finite(value));
       }
       setValues(val, ADD_VALUES);
@@ -427,7 +427,7 @@ public:
     std::vector<PetscScalar> weights;
     if (yoffset != 0) {
       ASSERT1(yoffset == index2.y() - index1.y());
-      const auto pw =
+      const auto pws =
           pt->getWeightsForYApproximation(index2.x(), index1.y(), index2.z(), yoffset);
       const int ny =
           std::is_same<T, FieldPerp>::value ? 1 : indexConverter->getMesh()->LocalNy;
@@ -435,14 +435,14 @@ public:
           std::is_same<T, Field2D>::value ? 1 : indexConverter->getMesh()->LocalNz;
 
       std::transform(
-          pw.begin(), pw.end(), std::back_inserter(positions),
-          [this, ny, nz](ParallelTransform::PositionsAndWeights p) -> PetscInt {
+          pws.begin(), pws.end(), std::back_inserter(positions),
+          [this, ny, nz](ParallelTransform::PositionsAndWeights pos) -> PetscInt {
             return this->indexConverter->getGlobal(
-                ind_type(p.i * ny * nz + p.j * nz + p.k, ny, nz));
+                ind_type(pos.i * ny * nz + pos.j * nz + pos.k, ny, nz));
           });
-      std::transform(pw.begin(), pw.end(), std::back_inserter(weights),
-                     [](ParallelTransform::PositionsAndWeights p) -> PetscScalar {
-                       return p.weight;
+      std::transform(pws.begin(), pws.end(), std::back_inserter(weights),
+                     [](ParallelTransform::PositionsAndWeights pos) -> PetscScalar {
+                       return pos.weight;
                      });
     }
     return Element(matrix.get(), global1, global2, positions, weights);
