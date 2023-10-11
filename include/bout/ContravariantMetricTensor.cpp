@@ -69,9 +69,10 @@ ContravariantMetricTensor::calcCovariant(const CELL_LOC location,
       throw BoutException(error_message);
     }
   }
-
+  
+  const auto mesh = contravariant_components.g11.getMesh();  //TODO: Add a getMesh() method to ContravariantComponents?
   CovariantMetricTensor const covariantMetricTensor =
-      CovariantMetricTensor(a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2));
+      CovariantMetricTensor(a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2), mesh);
 
   auto covariant_components = covariantMetricTensor.getCovariantMetricTensor();
 
