@@ -72,8 +72,9 @@ CovariantMetricTensor::calcContravariant(const std::string& region) {
     }
   }
 
+  const auto mesh = covariant_components.g_11.getMesh();  //TODO: Add a getMesh() method to CovariantComponents?
   ContravariantMetricTensor const contravariantMetricTensor =
-      ContravariantMetricTensor(a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2));
+      ContravariantMetricTensor(a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2), mesh);
 
   auto const contravariant_components =
       contravariantMetricTensor.getContravariantMetricTensor();
