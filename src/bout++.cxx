@@ -650,7 +650,7 @@ void setupOutput(const std::string& data_dir, const std::string& log_file, int v
   {
     Output& output = *Output::getInstance();
     if (MYPE == 0) {
-      output.enable();  // Enable writing to stdout
+      output.enable(); // Enable writing to stdout
     } else {
       output.disable(); // No writing to stdout
     }
@@ -798,7 +798,7 @@ int BoutFinalise(bool write_settings) {
   bout::HypreLib::cleanup();
 
 #if BOUT_HAS_ADIOS
-    bout::ADIOSFinalize();
+  bout::ADIOSFinalize();
 #endif
 
   // MPI communicator, including MPI_Finalize()
@@ -1056,6 +1056,6 @@ void RunMetrics::writeProgress(BoutReal simtime, bool output_split) {
                           100. * wtime_comms / wtime,  // Communications
                           100. * wtime_io / wtime,     // I/O
                           100. * (wtime - wtime_io - wtime_rhs)
-                              / wtime);                // Everything else
+                              / wtime); // Everything else
   }
 }

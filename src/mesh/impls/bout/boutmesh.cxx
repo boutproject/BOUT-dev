@@ -333,7 +333,9 @@ void BoutMesh::setDerivedGridSizes() {
   }
 
   GlobalNx = nx;
-  GlobalNy = ny + 2 * MYG; // Note: For double null this should be be 4 * MYG if boundary cells are stored
+  GlobalNy =
+      ny
+      + 2 * MYG; // Note: For double null this should be be 4 * MYG if boundary cells are stored
   GlobalNz = nz;
 
   // If we've got a second pair of diverator legs, we need an extra
