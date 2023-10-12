@@ -124,7 +124,7 @@ Installing dependencies
 
 The bare-minimum requirements for compiling and running BOUT++ are:
 
-#. A C++ compiler that supports C++14
+#. A C++ compiler that supports C++17
 
 #. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <https://www.open-mpi.org/>`__),
    MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__)
@@ -140,7 +140,7 @@ FFTW-3, these options will not be available.
 
 .. note::
    If you use an Intel compiler, you must also make sure that you have
-   a version of GCC that supports C++14 (GCC 5+).
+   a version of GCC that supports C++17 (GCC 8+).
 
    On supercomputers, or in other environments that use a module
    system, you may need to load modules for both Intel and GCC.

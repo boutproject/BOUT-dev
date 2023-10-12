@@ -60,7 +60,7 @@ Homepage found at [http://boutproject.github.io/](http://boutproject.github.io/)
 
 BOUT++ needs the following:
 
-* A C++14 compiler
+* A C++17 compiler
 * MPI
 * NetCDF
 
