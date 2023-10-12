@@ -738,16 +738,19 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
         /// Calculate contravariant metric components if not found
         try {
           calcCovariant("RGN_NOCORNERS");
-        } catch (BoutException) {
-          throw BoutException("Error in staggered calcCovariant call");
+        } catch (BoutException& err) {
+          std::cout << err.what();
+          throw BoutException("Error in staggered calcCovariant call/n"
+                              + std::string(err.what()));
         }
       }
     } else {
       /// Calculate contravariant metric components if not found
       try {
         calcCovariant("RGN_NOCORNERS");
-      } catch (BoutException) {
-        throw BoutException("Error in staggered calcCovariant call");
+      } catch (BoutException& err) {
+        throw BoutException("Error in staggered calcCovariant call/n"
+                            + std::string(err.what()));
       }
     }
 
