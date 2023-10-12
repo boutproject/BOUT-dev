@@ -218,6 +218,7 @@ namespace experimental {
 void setupSignalHandler(SignalHandler signal_handler) {
 #if BOUT_USE_SIGNAL
   std::signal(SIGSEGV, signal_handler);
+  std::signal(SIGBUS, signal_handler);
 #endif
 #if BOUT_USE_SIGFPE
   std::signal(SIGFPE, signal_handler);
