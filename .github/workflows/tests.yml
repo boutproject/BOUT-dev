@@ -154,7 +154,7 @@ jobs:
           echo ~/.local/bin >> $GITHUB_PATH
 
       - name: Cache SUNDIALS build
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /home/runner/local
           key: bout-sundials-${{ matrix.config.os }}${{ matrix.config.build_petsc }}
