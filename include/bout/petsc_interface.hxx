@@ -336,8 +336,8 @@ public:
   public:
     Element() = delete;
     ~Element() = default;
-    Element(Element&&) = delete;
-    Element& operator=(Element&&) = delete;
+    Element(Element&&) noexcept = default;
+    Element& operator=(Element&&) noexcept = default;
     Element(const Element& other) = default;
     Element(Mat* matrix, PetscInt row, PetscInt col, std::vector<PetscInt> position = {},
             std::vector<BoutReal> weight = {})
