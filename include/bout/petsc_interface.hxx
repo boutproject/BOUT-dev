@@ -266,15 +266,15 @@ public:
 
   /// Copy constructor
   PetscMatrix(const PetscMatrix<T>& mat)
-      : matrix(new Mat()), indexConverter(mat.indexConverter), pt(mat.pt), yoffset(mat.yoffset),
-        initialised(mat.initialised) {
+      : matrix(new Mat()), indexConverter(mat.indexConverter), pt(mat.pt),
+        yoffset(mat.yoffset), initialised(mat.initialised) {
     MatDuplicate(*mat.matrix, MAT_COPY_VALUES, matrix.get());
   }
 
   /// Move constrcutor
   PetscMatrix(PetscMatrix<T>&& mat) noexcept
-      : matrix(mat.matrix), indexConverter(mat.indexConverter), pt(mat.pt), yoffset(mat.yoffset),
-        initialised(mat.initialised) {
+      : matrix(mat.matrix), indexConverter(mat.indexConverter), pt(mat.pt),
+        yoffset(mat.yoffset), initialised(mat.initialised) {
     mat.initialised = false;
   }
 
@@ -341,7 +341,8 @@ public:
     Element(const Element& other) = default;
     Element(Mat* matrix, PetscInt row, PetscInt col, std::vector<PetscInt> position = {},
             std::vector<BoutReal> weight = {})
-      : petscMatrix(matrix), petscRow(row), petscCol(col), positions(std::move(position)), weights(std::move(weight)) {
+        : petscMatrix(matrix), petscRow(row), petscCol(col),
+          positions(std::move(position)), weights(std::move(weight)) {
       ASSERT2(positions.size() == weights.size());
 #if CHECK > 2
       for (const auto val : weights) {
