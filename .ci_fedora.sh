@@ -22,6 +22,9 @@ then
     fi
     test . != ".$2" && mpi="$2" || mpi=openmpi
     test . != ".$3" && version="$3" || version=rawhide
+    cat /etc/os-release
+    cat /proc/cpuinfo
+    echo "Using $cmd and $mpi and $version"
     time $cmd pull registry.fedoraproject.org/fedora:$version
     time $cmd create --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
          --name mobydick registry.fedoraproject.org/fedora:$version \
@@ -37,6 +40,7 @@ test . != ".$1" && mpi="$1" || mpi=openmpi
 if [ $UID -eq 0 ]
 then
     cat /etc/os-release
+    cat /proc/cpuinfo
     # Ignore weak depencies
     echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
     time dnf -y install dnf5
