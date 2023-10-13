@@ -24,6 +24,7 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
+#include "bout/bout_types.hxx"
 #include "bout/build_config.hxx"
 
 #if BOUT_HAS_PETSC
@@ -178,7 +179,7 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   // Timing reported in the log files. Includes any matrix construction.
   // The timing for just the solve phase can be retrieved from the "petscsolve"
   // timer if desired.
-  Timer timer("invert");
+  const Timer timer("invert");
 
   // If necessary, update the values in the matrix operator and initialise
   // the Krylov solver
@@ -200,7 +201,7 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
 
   // Invoke solver
   {
-    Timer timer("petscsolve");
+    const Timer timer("petscsolve");
     KSPSolve(ksp, *rhs.get(), *guess.get());
   }
 
@@ -223,11 +224,11 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   if (solution.hasParallelSlices()) {
     BOUT_FOR(i, indexer->getRegionLowerY()) { solution.ydown()[i] = solution[i]; }
     BOUT_FOR(i, indexer->getRegionUpperY()) { solution.yup()[i] = solution[i]; }
-    for (int b = 1; b < localmesh->ystart; b++) {
+    for (int boundary = 1; boundary < localmesh->ystart; boundary++) {
       BOUT_FOR(i, indexer->getRegionLowerY()) {
-        solution.ydown(b)[i.ym(b)] = solution[i];
+        solution.ydown(boundary)[i.ym(boundary)] = solution[i];
       }
-      BOUT_FOR(i, indexer->getRegionUpperY()) { solution.yup(b)[i.yp(b)] = solution[i]; }
+      BOUT_FOR(i, indexer->getRegionUpperY()) { solution.yup(boundary)[i.yp(boundary)] = solution[i]; }
     }
   }
 
@@ -236,9 +237,9 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   // Note: RegionInnerX is the set of points just outside the domain
   //       (in the first boundary cell) so one boundary cell is already set
   BOUT_FOR(i, indexer->getRegionInnerX()) {
-    for (int b = 1; b < localmesh->xstart; b++) {
-      solution[i.xm(b)] =
-          3. * solution[i.xm(b - 1)] - 3. * solution[i.xm(b - 2)] + solution[i.xm(b - 3)];
+    for (int boundary = 1; boundary < localmesh->xstart; boundary++) {
+      solution[i.xm(boundary)] =
+          3. * solution[i.xm(boundary - 1)] - 3. * solution[i.xm(boundary - 2)] + solution[i.xm(boundary - 3)];
     }
   }
 
@@ -246,9 +247,9 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   // Note: RegionOuterX is the set of points just outside the domain
   //       (in the first boundary cell) so one boundary cell is already set
   BOUT_FOR(i, indexer->getRegionOuterX()) {
-    for (int b = 1; b < localmesh->xstart; b++) {
-      solution[i.xp(b)] =
-          3. * solution[i.xp(b - 1)] - 3. * solution[i.xp(b - 2)] + solution[i.xp(b - 3)];
+    for (int boundary = 1; boundary < localmesh->xstart; boundary++) {
+      solution[i.xp(boundary)] =
+          3. * solution[i.xp(boundary - 1)] - 3. * solution[i.xp(boundary - 2)] + solution[i.xp(boundary - 3)];
     }
   }
 
@@ -279,7 +280,8 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     // avoid confusing it with the x-index.
 
     // Calculate coefficients for the terms in the differential operator
-    BoutReal C_df_dx = coords->G1[l], C_df_dz = coords->G3[l];
+    BoutReal C_df_dx = coords->G1[l];
+    BoutReal C_df_dz = coords->G3[l];
     if (issetD) {
       C_df_dx *= D[l];
       C_df_dz *= D[l];
@@ -297,9 +299,9 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
       C_df_dz += Ez[l];
     }
 
-    BoutReal C_d2f_dx2 = coords->g11[l],
-             C_d2f_dy2 = (coords->g22[l] - 1.0 / coords->g_22[l]),
-             C_d2f_dz2 = coords->g33[l];
+    BoutReal C_d2f_dx2 = coords->g11[l];
+    BoutReal C_d2f_dy2 = (coords->g22[l] - 1.0 / coords->g_22[l]);
+    BoutReal C_d2f_dz2 = coords->g33[l];
     if (issetD) {
       C_d2f_dx2 *= D[l];
       C_d2f_dy2 *= D[l];
@@ -336,8 +338,8 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     // The values stored in the y-boundary are already interpolated
     // up/down, so we don't want the matrix to do any such
     // interpolation there.
-    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0,
-              ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
+    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0;
+    const int ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
     operator3D.yup(yup)(l, l.yp()) = 0.0;
     operator3D.ydown(ydown)(l, l.ym()) = 0.0;
     operator3D.yup(yup)(l, l.xp().yp()) = 0.0;
@@ -370,7 +372,8 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
       C_d2f_dy2 *= D[l];
     }
 
-    BoutReal C_d2f_dxdy = 2 * coords->g12[l], C_d2f_dydz = 2 * coords->g23[l];
+    BoutReal C_d2f_dxdy = 2 * coords->g12[l];
+    BoutReal C_d2f_dydz = 2 * coords->g23[l];
     if (issetD) {
       C_d2f_dxdy *= D[l];
       C_d2f_dydz *= D[l];
@@ -391,8 +394,8 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     // The values stored in the y-boundary are already interpolated
     // up/down, so we don't want the matrix to do any such
     // interpolation there.
-    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0,
-              ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
+    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0;
+    const int ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
 
     operator3D.yup(yup)(l, l.yp()) += C_df_dy + C_d2f_dy2;
     operator3D.ydown(ydown)(l, l.ym()) += -C_df_dy + C_d2f_dy2;
@@ -420,7 +423,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   KSPSetOperators(ksp, *operator3D.get(), *operator3D.get(), DIFFERENT_NONZERO_PATTERN);
 #endif
 
-  PC pc;
+  PC pc = nullptr;
   KSPGetPC(ksp, &pc);
 
   if (direct) {
@@ -475,33 +478,32 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
 
   // Get the pattern used for interpolation. This is assumed to be the
   // same across the whole grid.
-  const auto pw =
+  const auto positions_weights =
       localmesh->getCoordinates()->getParallelTransform().getWeightsForYDownApproximation(
           localmesh->xstart, localmesh->ystart + 1, localmesh->zstart);
   std::vector<OffsetInd3D> interpPattern;
-  std::transform(pw.begin(), pw.end(), std::back_inserter(interpPattern),
-                 [localmesh](ParallelTransform::PositionsAndWeights p) -> OffsetInd3D {
-                   return {localmesh->xstart - p.i, localmesh->ystart - p.j,
-                           localmesh->LocalNz - p.k < p.k ? p.k - localmesh->LocalNz
-                                                          : p.k};
-                 });
+  std::transform(
+      positions_weights.begin(), positions_weights.end(),
+      std::back_inserter(interpPattern),
+      [localmesh](ParallelTransform::PositionsAndWeights position) -> OffsetInd3D {
+        return {localmesh->xstart - position.i, localmesh->ystart - position.j,
+                ((localmesh->LocalNz - position.k) < position.k)
+                    ? position.k - localmesh->LocalNz
+                    : position.k};
+      });
 
-  OffsetInd3D zero;
+  const OffsetInd3D zero;
 
   // Add interior cells
-  const std::vector<OffsetInd3D> interpolatedUpElements = {zero.yp(), zero.xp().yp(),
-                                                           zero.xm().yp(), zero.yp().zp(),
-                                                           zero.yp().zm()},
-                                 interpolatedDownElements = {
-                                     zero.ym(), zero.xp().ym(), zero.xm().ym(),
-                                     zero.ym().zp(), zero.ym().zm()};
-  std::set<OffsetInd3D> interiorStencil = {zero,           zero.xp(),
-                                           zero.xm(),      zero.zp(),
-                                           zero.zm(),      zero.xp().zp(),
-                                           zero.xp().zm(), zero.xm().zp(),
-                                           zero.xm().zm()},
-                        lowerEdgeStencil = interiorStencil,
-                        upperEdgeStencil = interiorStencil;
+  const std::vector<OffsetInd3D> interpolatedUpElements = {
+      zero.yp(), zero.xp().yp(), zero.xm().yp(), zero.yp().zp(), zero.yp().zm()};
+  const std::vector<OffsetInd3D> interpolatedDownElements = {
+      zero.ym(), zero.xp().ym(), zero.xm().ym(), zero.ym().zp(), zero.ym().zm()};
+  std::set<OffsetInd3D> interiorStencil = {
+      zero,           zero.xp(),      zero.xm(),      zero.zp(),     zero.zm(),
+      zero.xp().zp(), zero.xp().zm(), zero.xm().zp(), zero.xm().zm()};
+  std::set<OffsetInd3D> lowerEdgeStencil = interiorStencil;
+  std::set<OffsetInd3D> upperEdgeStencil = interiorStencil;
 
   for (const auto& i : interpolatedDownElements) {
     for (auto& j : interpPattern) {

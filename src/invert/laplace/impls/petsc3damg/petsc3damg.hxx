@@ -216,7 +216,7 @@ private:
 
   IndexerPtr<Field3D> indexer;
   PetscMatrix<Field3D> operator3D;
-  KSP ksp;
+  KSP ksp = nullptr;
   bool kspInitialised = false;
   PetscLib lib;
 

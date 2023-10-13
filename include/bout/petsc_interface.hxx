@@ -27,8 +27,8 @@
  *
  **************************************************************************/
 
-#ifndef __PETSC_INTERFACE_H__
-#define __PETSC_INTERFACE_H__
+#ifndef BOUT_PETSC_INTERFACE_H
+#define BOUT_PETSC_INTERFACE_H
 
 #include "bout/build_config.hxx"
 
@@ -216,7 +216,7 @@ public:
     result.setLocation(location);
     // Note that this only populates boundaries to a depth of 1
     BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) {
-      PetscInt ind = indexConverter->getGlobal(i);
+      const PetscInt ind = indexConverter->getGlobal(i);
       PetscScalar val = BoutNaN;
       VecGetValues(*vector, 1, &ind, &val);
       result[i] = val;
@@ -231,7 +231,7 @@ public:
 private:
   PetscLib lib{};
   std::unique_ptr<Vec, VectorDeleter> vector = nullptr;
-  IndexerPtr<T> indexConverter;
+  IndexerPtr<T> indexConverter{};
   CELL_LOC location = CELL_LOC::deflt;
   bool initialised = false;
   Array<BoutReal> vector_values{};
@@ -273,7 +273,7 @@ public:
 
   /// Move constrcutor
   PetscMatrix(PetscMatrix<T>&& mat) noexcept
-      : matrix(mat.matrix), indexConverter(mat.indexConverter), pt(mat.pt),
+    : matrix(std::move(mat.matrix)), indexConverter(std::move(mat.indexConverter)), pt(mat.pt),
         yoffset(mat.yoffset), initialised(mat.initialised) {
     mat.initialised = false;
   }
@@ -349,11 +349,11 @@ public:
         ASSERT3(finite(val));
       }
 #endif
-      if (positions.size() == 0) {
+      if (positions.empty()) {
         positions = {col};
         weights = {1.0};
       }
-      PetscBool assembled;
+      PetscBool assembled = PETSC_FALSE;
       MatAssembled(*petscMatrix, &assembled);
       if (assembled == PETSC_TRUE) {
         BOUT_OMP(critical)
@@ -364,8 +364,12 @@ public:
     }
     Element& operator=(const Element& other) {
       AUTO_TRACE();
+      if (this == &other) {
+        return *this;
+      }
       ASSERT3(finite(static_cast<BoutReal>(other)));
-      return *this = static_cast<BoutReal>(other);
+      *this = static_cast<BoutReal>(other);
+      return *this;
     }
     Element& operator=(BoutReal val) {
       AUTO_TRACE();
@@ -517,7 +521,7 @@ public:
 private:
   PetscLib lib;
   std::shared_ptr<Mat> matrix = nullptr;
-  IndexerPtr<T> indexConverter;
+  IndexerPtr<T> indexConverter{};
   ParallelTransform* pt{};
   int yoffset = 0;
   bool initialised = false;
@@ -553,7 +557,7 @@ void swap(PetscMatrix<T>& first, PetscMatrix<T>& second) {
  */
 template <class T>
 PetscVector<T> operator*(const PetscMatrix<T>& mat, const PetscVector<T>& vec) {
-  const Vec rhs = *vec.get();
+  Vec rhs = *vec.get();
   Vec* result = new Vec();
   VecDuplicate(rhs, result);
   VecAssemblyBegin(*result);
@@ -565,4 +569,4 @@ PetscVector<T> operator*(const PetscMatrix<T>& mat, const PetscVector<T>& vec) {
 
 #endif // BOUT_HAS_PETSC
 
-#endif // __PETSC_INTERFACE_H__
+#endif // BOUT_PETSC_INTERFACE_H
