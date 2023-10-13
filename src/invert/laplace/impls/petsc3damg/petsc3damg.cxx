@@ -228,7 +228,9 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
       BOUT_FOR(i, indexer->getRegionLowerY()) {
         solution.ydown(boundary)[i.ym(boundary)] = solution[i];
       }
-      BOUT_FOR(i, indexer->getRegionUpperY()) { solution.yup(boundary)[i.yp(boundary)] = solution[i]; }
+      BOUT_FOR(i, indexer->getRegionUpperY()) {
+        solution.yup(boundary)[i.yp(boundary)] = solution[i];
+      }
     }
   }
 
@@ -238,8 +240,9 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   //       (in the first boundary cell) so one boundary cell is already set
   BOUT_FOR(i, indexer->getRegionInnerX()) {
     for (int boundary = 1; boundary < localmesh->xstart; boundary++) {
-      solution[i.xm(boundary)] =
-          3. * solution[i.xm(boundary - 1)] - 3. * solution[i.xm(boundary - 2)] + solution[i.xm(boundary - 3)];
+      solution[i.xm(boundary)] = 3. * solution[i.xm(boundary - 1)]
+                                 - 3. * solution[i.xm(boundary - 2)]
+                                 + solution[i.xm(boundary - 3)];
     }
   }
 
@@ -248,8 +251,9 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   //       (in the first boundary cell) so one boundary cell is already set
   BOUT_FOR(i, indexer->getRegionOuterX()) {
     for (int boundary = 1; boundary < localmesh->xstart; boundary++) {
-      solution[i.xp(boundary)] =
-          3. * solution[i.xp(boundary - 1)] - 3. * solution[i.xp(boundary - 2)] + solution[i.xp(boundary - 3)];
+      solution[i.xp(boundary)] = 3. * solution[i.xp(boundary - 1)]
+                                 - 3. * solution[i.xp(boundary - 2)]
+                                 + solution[i.xp(boundary - 3)];
     }
   }
 

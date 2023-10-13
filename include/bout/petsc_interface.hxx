@@ -273,8 +273,8 @@ public:
 
   /// Move constrcutor
   PetscMatrix(PetscMatrix<T>&& mat) noexcept
-    : matrix(std::move(mat.matrix)), indexConverter(std::move(mat.indexConverter)), pt(mat.pt),
-        yoffset(mat.yoffset), initialised(mat.initialised) {
+      : matrix(std::move(mat.matrix)), indexConverter(std::move(mat.indexConverter)),
+        pt(mat.pt), yoffset(mat.yoffset), initialised(mat.initialised) {
     mat.initialised = false;
   }
 
