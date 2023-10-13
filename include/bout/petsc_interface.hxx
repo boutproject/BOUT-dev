@@ -32,6 +32,8 @@
 
 #include "bout/build_config.hxx"
 
+#if BOUT_HAS_PETSC
+
 #include <algorithm>
 #include <iterator>
 #include <memory>
@@ -49,8 +51,6 @@
 #include <bout/petsclib.hxx>
 #include <bout/region.hxx>
 #include <bout/traits.hxx>
-
-#if BOUT_HAS_PETSC
 
 /*!
  * A class which wraps PETSc vector objects, allowing them to be
