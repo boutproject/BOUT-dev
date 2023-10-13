@@ -1,7 +1,14 @@
 # Changelog
 
-## [v5.1.0](https://github.com/boutproject/BOUT-dev/tree/v5.1.0
+## [v6.0.0](https://github.com/boutproject/BOUT-dev/tree/next)
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v5.1.0...next)
 
+### Breaking changes
+
+- The autotools `./configure` build system has been removed
+
+
+## [v5.1.0](https://github.com/boutproject/BOUT-dev/tree/v5.1.0)
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v5.0.0...v5.1.0)
 
 - Update RELEASE_HOWTO.md [\#2741][https://github.com/boutproject/BOUT-dev/pull/2741] ([dschwoerer][https://github.com/dschwoerer])
@@ -44,8 +51,8 @@
 - Merge v5 into next - resolve conflicts [\#2658][https://github.com/boutproject/BOUT-dev/pull/2658] ([dschwoerer][https://github.com/dschwoerer])
 - Update bundled boututils and boutdata [\#2657][https://github.com/boutproject/BOUT-dev/pull/2657] ([dschwoerer][https://github.com/dschwoerer])
 
-## [v5.0.0](https://github.com/boutproject/BOUT-dev/tree/next)
-[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.2...next)
+## [v5.0.0](https://github.com/boutproject/BOUT-dev/tree/v5.0.0)
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.2...v5.0.0)
 
 ### Breaking changes
 
