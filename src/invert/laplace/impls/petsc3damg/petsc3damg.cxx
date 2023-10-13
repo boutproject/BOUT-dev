@@ -267,7 +267,7 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   if (reason <= 0) {
     throw BoutException(
         "Petsc3dAmg: inversion failed to converge. KSPConvergedReason: {} ({})",
-        KSPConvergedReasons[reason], reason);
+        KSPConvergedReasons[reason], static_cast<int>(reason));
   }
 
   // Create field from result
