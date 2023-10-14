@@ -140,8 +140,8 @@ public:
   void write(const S&, const Args&...){};
   template <class S, class... Args>
   void print(const S&, const Args&...){};
-  void write(const std::string& s) override{};
-  void print(const std::string& s) override{};
+  void write([[maybe_unused]] const std::string& s) override{};
+  void print([[maybe_unused]] const std::string& s) override{};
   void enable() override{};
   void disable() override{};
   void enable(MAYBE_UNUSED(bool enable)){};
