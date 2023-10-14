@@ -549,7 +549,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
                                    extrapolate_y, false, transform.get());
 
   covariantMetricTensor.setCovariantMetricTensor(
-      CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+      location, CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
   // Check covariant metrics
   checkCovariant();
@@ -627,14 +627,14 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
-      J(1., mesh), Bxy(1., mesh), contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), G1_11(mesh), G1_22(mesh),
+      J(1., mesh), Bxy(1., mesh), contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
+      covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), G1_11(mesh), G1_22(mesh),
       G1_33(mesh), G1_12(mesh), G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh),
       G2_33(mesh), G2_12(mesh), G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh),
-      G3_33(mesh), G3_12(mesh), G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh),
-      G3(mesh), ShiftTorsion(mesh), IntShiftTorsion(mesh),
+      G3_33(mesh), G3_12(mesh), G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh), G3(mesh),
+      ShiftTorsion(mesh), IntShiftTorsion(mesh),
       // Identity metric tensor
-      localmesh(mesh),
-      location(loc) {
+      localmesh(mesh), location(loc) {
 
   std::string suffix = getLocationSuffix(location);
 
@@ -922,7 +922,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                                      false, transform.get());
 
     covariantMetricTensor.setCovariantMetricTensor(
-        CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+        location, CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
     // Check input metrics
     checkContravariant();
@@ -1358,7 +1358,8 @@ CovariantMetricTensor Coordinates::calcCovariant(const std::string& region) {
 
 ContravariantMetricTensor Coordinates::calcContravariant(const std::string& region) {
   TRACE("Coordinates::calcContravariant");
-  auto new_contravariantMetricTensor = covariantMetricTensor.calcContravariant(region);
+  auto new_contravariantMetricTensor =
+      covariantMetricTensor.calcContravariant(location, region);
   contravariantMetricTensor = new_contravariantMetricTensor;
   return new_contravariantMetricTensor;
 }
@@ -2010,5 +2011,5 @@ CovariantMetricTensor::CovariantComponents Coordinates::getCovariantMetricTensor
 }
 
 void Coordinates::setCovariantMetricTensor(CovariantMetricTensor metric_tensor) {
-  covariantMetricTensor.setCovariantMetricTensor(metric_tensor);
+  covariantMetricTensor.setCovariantMetricTensor(location, metric_tensor);
 }
