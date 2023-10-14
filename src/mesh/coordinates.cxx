@@ -375,21 +375,21 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric g_23, FieldMetric ShiftTorsion,
                          FieldMetric IntShiftTorsion)
     : dx(std::move(dx)), dy(std::move(dy)), dz(dz), J(std::move(J)), Bxy(std::move(Bxy)),
-      ShiftTorsion(std::move(ShiftTorsion)), IntShiftTorsion(std::move(IntShiftTorsion)),
-      nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE),
       contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23) {}
+      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23),
+      ShiftTorsion(std::move(ShiftTorsion)), IntShiftTorsion(std::move(IntShiftTorsion)),
+      nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
-      J(1., mesh), Bxy(1., mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh),
-      G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh),
-      G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh),
-      G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE),
+      J(1., mesh), Bxy(1., mesh), contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
+      covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), G1_11(mesh), G1_22(mesh),
+      G1_33(mesh), G1_12(mesh), G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh),
+      G2_33(mesh), G2_12(mesh), G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh),
+      G3_33(mesh), G3_12(mesh), G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh), G3(mesh),
+      ShiftTorsion(mesh), IntShiftTorsion(mesh),
       // Identity metric tensor
-      contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
-      covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh) {
+      localmesh(mesh), location(CELL_CENTRE) {
 
   if (options == nullptr) {
     options = Options::getRoot()->getSection("mesh");
@@ -627,14 +627,14 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
-      J(1., mesh), Bxy(1., mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh),
-      G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh),
-      G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh),
-      G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(loc),
+      J(1., mesh), Bxy(1., mesh), contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), G1_11(mesh), G1_22(mesh),
+      G1_33(mesh), G1_12(mesh), G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh),
+      G2_33(mesh), G2_12(mesh), G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh),
+      G3_33(mesh), G3_12(mesh), G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh),
+      G3(mesh), ShiftTorsion(mesh), IntShiftTorsion(mesh),
       // Identity metric tensor
-      contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
-      covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh) {
+      localmesh(mesh),
+      location(loc) {
 
   std::string suffix = getLocationSuffix(location);
 
@@ -689,7 +689,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
     // grid data source has staggered fields, so read instead of interpolating
     // Diagonal components of metric tensor g^{ij} (default to 1)
-    //    TODO: Method `getAtLocAndFillGuards` violates command–query separation principle?
+    //    TODO: Method `getAtLocAndFillGuards` violates commandâ€“query separation principle?
     getAtLocAndFillGuards(mesh, contravariant_components.g11, "g11", suffix, location,
                           1.0, extrapolate_x, extrapolate_y, false, transform.get());
     getAtLocAndFillGuards(mesh, contravariant_components.g22, "g22", suffix, location,
