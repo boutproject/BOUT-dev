@@ -689,6 +689,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
     // grid data source has staggered fields, so read instead of interpolating
     // Diagonal components of metric tensor g^{ij} (default to 1)
+    //    TODO: Method `getAtLocAndFillGuards` violates command–query separation principle?
     getAtLocAndFillGuards(mesh, contravariant_components.g11, "g11", suffix, location,
                           1.0, extrapolate_x, extrapolate_y, false, transform.get());
     getAtLocAndFillGuards(mesh, contravariant_components.g22, "g22", suffix, location,
@@ -701,6 +702,12 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                           0.0, extrapolate_x, extrapolate_y, false, transform.get());
     getAtLocAndFillGuards(mesh, contravariant_components.g23, "g23", suffix, location,
                           0.0, extrapolate_x, extrapolate_y, false, transform.get());
+
+    contravariantMetricTensor.setContravariantMetricTensor(
+        loc, ContravariantMetricTensor(
+                 contravariant_components.g11, contravariant_components.g22,
+                 contravariant_components.g33, contravariant_components.g12,
+                 contravariant_components.g13, contravariant_components.g23));
 
     // Check input metrics
     checkContravariant();
