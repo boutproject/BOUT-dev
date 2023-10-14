@@ -69,8 +69,10 @@ ContravariantMetricTensor::calcCovariant(const CELL_LOC location,
       throw BoutException(error_message);
     }
   }
-  
-  const auto mesh = contravariant_components.g11.getMesh();  //TODO: Add a getMesh() method to ContravariantComponents?
+
+  auto* const mesh =
+      contravariant_components.g11
+          .getMesh(); //TODO: Add a getMesh() method to ContravariantComponents?
   CovariantMetricTensor const covariantMetricTensor =
       CovariantMetricTensor(a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2), mesh);
 
@@ -82,14 +84,10 @@ ContravariantMetricTensor::calcCovariant(const CELL_LOC location,
   covariant_components.g_12.setLocation(location);
   covariant_components.g_13.setLocation(location);
   covariant_components.g_23.setLocation(location);
-  
+
   const auto updated_covariantMetricTensor = CovariantMetricTensor(
-      covariant_components.g_11,
-      covariant_components.g_22,
-      covariant_components.g_33,
-      covariant_components.g_12,
-      covariant_components.g_13,
-      covariant_components.g_23);
+      covariant_components.g_11, covariant_components.g_22, covariant_components.g_33,
+      covariant_components.g_12, covariant_components.g_13, covariant_components.g_23);
 
   contravariant_components.g11.setLocation(location);
   contravariant_components.g22.setLocation(location);
@@ -97,7 +95,7 @@ ContravariantMetricTensor::calcCovariant(const CELL_LOC location,
   contravariant_components.g12.setLocation(location);
   contravariant_components.g13.setLocation(location);
   contravariant_components.g23.setLocation(location);
-  
+
   BoutReal maxerr;
   maxerr = BOUTMAX(max(abs((covariant_components.g_11 * contravariant_components.g11
                             + covariant_components.g_12 * contravariant_components.g12
