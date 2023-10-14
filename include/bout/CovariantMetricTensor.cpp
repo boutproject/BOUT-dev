@@ -14,12 +14,10 @@ CovariantMetricTensor::CovariantMetricTensor(
   Allocate(); // Make sure metric elements are allocated //  ; TODO: Required?
 }
 
-CovariantMetricTensor::CovariantMetricTensor(const BoutReal g_11,
-                                             const BoutReal g_22,
-                                             const BoutReal g_33,
-                                             const BoutReal g_12,
-                                             const BoutReal g_13,
-                                             const BoutReal g_23, Mesh* mesh)
+CovariantMetricTensor::CovariantMetricTensor(const BoutReal g_11, const BoutReal g_22,
+                                             const BoutReal g_33, const BoutReal g_12,
+                                             const BoutReal g_13, const BoutReal g_23,
+                                             Mesh* mesh)
     : covariant_components({FieldMetric(g_11, mesh), FieldMetric(g_22, mesh),
                             FieldMetric(g_33, mesh), FieldMetric(g_12, mesh),
                             FieldMetric(g_13, mesh), FieldMetric(g_23, mesh)}) {
@@ -72,9 +70,11 @@ CovariantMetricTensor::calcContravariant(const std::string& region) {
     }
   }
 
-  const auto mesh = covariant_components.g_11.getMesh();  //TODO: Add a getMesh() method to CovariantComponents?
-  ContravariantMetricTensor const contravariantMetricTensor =
-      ContravariantMetricTensor(a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2), mesh);
+  auto* const mesh =
+      covariant_components.g_11
+          .getMesh(); //TODO: Add a getMesh() method to CovariantComponents?
+  ContravariantMetricTensor const contravariantMetricTensor = ContravariantMetricTensor(
+      a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2), mesh);
 
   auto const contravariant_components =
       contravariantMetricTensor.getContravariantMetricTensor();
