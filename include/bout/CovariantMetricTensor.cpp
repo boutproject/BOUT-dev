@@ -33,7 +33,7 @@ CovariantMetricTensor::getCovariantMetricTensor() const {
 }
 
 void CovariantMetricTensor::setCovariantMetricTensor(
-    CovariantMetricTensor metric_tensor) {
+    CELL_LOC location, CovariantMetricTensor metric_tensor) {
 
   const auto new_components = metric_tensor.getCovariantMetricTensor();
   covariant_components.g_11 = new_components.g_11;
@@ -42,11 +42,11 @@ void CovariantMetricTensor::setCovariantMetricTensor(
   covariant_components.g_12 = new_components.g_12;
   covariant_components.g_13 = new_components.g_13;
   covariant_components.g_23 = new_components.g_23;
-  calcContravariant();
+  calcContravariant(location);
 }
 
 ContravariantMetricTensor
-CovariantMetricTensor::calcContravariant(const std::string& region) {
+CovariantMetricTensor::calcContravariant(CELL_LOC location, const std::string& region) {
   TRACE("CovariantMetricTensor::calcContravariant");
 
   // Perform inversion of g_{ij} to get g^{ij}
@@ -76,8 +76,20 @@ CovariantMetricTensor::calcContravariant(const std::string& region) {
   ContravariantMetricTensor const contravariantMetricTensor = ContravariantMetricTensor(
       a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2), mesh);
 
-  auto const contravariant_components =
+  auto contravariant_components =
       contravariantMetricTensor.getContravariantMetricTensor();
+
+  contravariant_components.g11.setLocation(location);
+  contravariant_components.g22.setLocation(location);
+  contravariant_components.g33.setLocation(location);
+  contravariant_components.g12.setLocation(location);
+  contravariant_components.g13.setLocation(location);
+  contravariant_components.g23.setLocation(location);
+
+  const auto updated_contravariantMetricTensor = ContravariantMetricTensor(
+      contravariant_components.g11, contravariant_components.g22,
+      contravariant_components.g33, contravariant_components.g12,
+      contravariant_components.g13, contravariant_components.g23);
 
   BoutReal maxerr;
   maxerr = BOUTMAX(max(abs((covariant_components.g_11 * contravariant_components.g11
@@ -106,7 +118,7 @@ CovariantMetricTensor::calcContravariant(const std::string& region) {
                            + covariant_components.g_23 * contravariant_components.g33)));
 
   output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
-  return contravariantMetricTensor;
+  return updated_contravariantMetricTensor;
 }
 
 void CovariantMetricTensor::checkCovariant(int ystart) {

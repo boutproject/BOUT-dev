@@ -28,12 +28,13 @@ public:
                         Mesh* mesh);
 
   /// Invert covariant metric to get contravariant components
-  ContravariantMetricTensor calcContravariant(const std::string& region = "RGN_ALL");
+  ContravariantMetricTensor calcContravariant(CELL_LOC location,
+                                              const std::string& region = "RGN_ALL");
 
   // check that covariant tensors are positive (if expected) and finite (always)
   void checkCovariant(int ystart);
 
-  void setCovariantMetricTensor(CovariantMetricTensor metric_tensor);
+  void setCovariantMetricTensor(CELL_LOC location, CovariantMetricTensor metric_tensor);
 
   CovariantComponents getCovariantMetricTensor() const;
 
