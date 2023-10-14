@@ -33,7 +33,7 @@ CovariantMetricTensor::getCovariantMetricTensor() const {
 }
 
 void CovariantMetricTensor::setCovariantMetricTensor(
-    CELL_LOC location, CovariantMetricTensor metric_tensor) {
+    CELL_LOC location, const CovariantMetricTensor& metric_tensor) {
 
   const auto new_components = metric_tensor.getCovariantMetricTensor();
   covariant_components.g_11 = new_components.g_11;
@@ -118,6 +118,7 @@ CovariantMetricTensor::calcContravariant(CELL_LOC location, const std::string& r
                            + covariant_components.g_23 * contravariant_components.g33)));
 
   output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
+
   return updated_contravariantMetricTensor;
 }
 

@@ -34,7 +34,7 @@ ContravariantMetricTensor::getContravariantMetricTensor() const {
 void ContravariantMetricTensor::setContravariantMetricTensor(
     CELL_LOC location, const ContravariantMetricTensor& metric_tensor) {
 
-  auto new_components = metric_tensor.getContravariantMetricTensor();
+  const auto new_components = metric_tensor.getContravariantMetricTensor();
   contravariant_components.g11 = new_components.g11;
   contravariant_components.g22 = new_components.g22;
   contravariant_components.g33 = new_components.g33;
