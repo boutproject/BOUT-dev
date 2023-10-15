@@ -185,3 +185,12 @@ void CovariantMetricTensor::Allocate() { //  ; TODO: Required?
   covariant_components.g_13.allocate();
   covariant_components.g_23.allocate();
 }
+
+void CovariantMetricTensor::setLocation(const CELL_LOC location) {
+  covariant_components.g_11.setLocation(location);
+  covariant_components.g_22.setLocation(location);
+  covariant_components.g_33.setLocation(location);
+  covariant_components.g_12.setLocation(location);
+  covariant_components.g_13.setLocation(location);
+  covariant_components.g_23.setLocation(location);
+}
