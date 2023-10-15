@@ -83,12 +83,7 @@ ContravariantMetricTensor::calcCovariant(const CELL_LOC location,
       covariant_components.g_11, covariant_components.g_22, covariant_components.g_33,
       covariant_components.g_12, covariant_components.g_13, covariant_components.g_23);
 
-  contravariant_components.g11.setLocation(location);
-  contravariant_components.g22.setLocation(location);
-  contravariant_components.g33.setLocation(location);
-  contravariant_components.g12.setLocation(location);
-  contravariant_components.g13.setLocation(location);
-  contravariant_components.g23.setLocation(location);
+  setLocation(location);
 
   BoutReal maxerr;
   maxerr = BOUTMAX(max(abs((covariant_components.g_11 * contravariant_components.g11
@@ -183,4 +178,13 @@ void ContravariantMetricTensor::Allocate() { //  ; TODO: Required?
   contravariant_components.g12.allocate();
   contravariant_components.g13.allocate();
   contravariant_components.g23.allocate();
+}
+
+void ContravariantMetricTensor::setLocation(const CELL_LOC location) {
+  contravariant_components.g11.setLocation(location);
+  contravariant_components.g22.setLocation(location);
+  contravariant_components.g33.setLocation(location);
+  contravariant_components.g12.setLocation(location);
+  contravariant_components.g13.setLocation(location);
+  contravariant_components.g23.setLocation(location);
 }

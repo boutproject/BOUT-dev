@@ -44,6 +44,8 @@ public:
 
   void Allocate();
 
+  void setLocation(const CELL_LOC location);
+
 private:
   ContravariantComponents contravariant_components;
 };
