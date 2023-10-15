@@ -76,14 +76,10 @@ ContravariantMetricTensor::calcCovariant(const CELL_LOC location,
   CovariantMetricTensor covariantMetricTensor =
       CovariantMetricTensor(a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2), mesh);
 
+  setLocation(location);
   covariantMetricTensor.setLocation(location);
 
   auto covariant_components = covariantMetricTensor.getCovariantMetricTensor();
-  const auto updated_covariantMetricTensor = CovariantMetricTensor(
-      covariant_components.g_11, covariant_components.g_22, covariant_components.g_33,
-      covariant_components.g_12, covariant_components.g_13, covariant_components.g_23);
-
-  setLocation(location);
 
   BoutReal maxerr;
   maxerr = BOUTMAX(max(abs((covariant_components.g_11 * contravariant_components.g11
@@ -113,7 +109,7 @@ ContravariantMetricTensor::calcCovariant(const CELL_LOC location,
 
   output_info.write("\tLocal maximum error in off-diagonal inversion is {:e}\n", maxerr);
 
-  return updated_covariantMetricTensor;
+  return covariantMetricTensor;
 }
 
 void ContravariantMetricTensor::checkContravariant(int ystart) {
