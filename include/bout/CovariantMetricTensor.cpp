@@ -76,10 +76,10 @@ CovariantMetricTensor::calcContravariant(CELL_LOC location, const std::string& r
   ContravariantMetricTensor contravariantMetricTensor = ContravariantMetricTensor(
       a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2), mesh);
 
+  contravariantMetricTensor.setLocation(location);
+
   auto contravariant_components =
       contravariantMetricTensor.getContravariantMetricTensor();
-
-  contravariantMetricTensor.setLocation(location);
 
   const auto updated_contravariantMetricTensor = ContravariantMetricTensor(
       contravariant_components.g11, contravariant_components.g22,
