@@ -75,16 +75,11 @@ CovariantMetricTensor::calcContravariant(CELL_LOC location, const std::string& r
           .getMesh(); //TODO: Add a getMesh() method to CovariantComponents?
   ContravariantMetricTensor contravariantMetricTensor = ContravariantMetricTensor(
       a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2), mesh);
-
+  
   contravariantMetricTensor.setLocation(location);
 
   auto contravariant_components =
       contravariantMetricTensor.getContravariantMetricTensor();
-
-  const auto updated_contravariantMetricTensor = ContravariantMetricTensor(
-      contravariant_components.g11, contravariant_components.g22,
-      contravariant_components.g33, contravariant_components.g12,
-      contravariant_components.g13, contravariant_components.g23);
 
   BoutReal maxerr;
   maxerr = BOUTMAX(max(abs((covariant_components.g_11 * contravariant_components.g11
@@ -114,7 +109,7 @@ CovariantMetricTensor::calcContravariant(CELL_LOC location, const std::string& r
 
   output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
 
-  return updated_contravariantMetricTensor;
+  return contravariantMetricTensor;
 }
 
 void CovariantMetricTensor::checkCovariant(int ystart) {
