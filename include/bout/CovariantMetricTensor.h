@@ -41,6 +41,8 @@ public:
 
   void Allocate();
 
+  void setLocation(const CELL_LOC location);
+
 private:
   CovariantComponents covariant_components;
 };
