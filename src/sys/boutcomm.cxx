@@ -1,6 +1,7 @@
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
 #include <unistd.h>
+#include <bout/assert.hxx>
 
 BoutComm* BoutComm::instance = nullptr;
 
@@ -27,7 +28,7 @@ void BoutComm::setComm(MPI_Comm c) {
 }
 
 MPI_Comm& BoutComm::getComm() {
-  printf("Calling MPI_Init %p\n", getpid());
+  printf("Calling MPI_Init %d\n", getpid());
   if (comm == MPI_COMM_NULL) {
     // No communicator set. Initialise MPI
     MPI_Init(pargc, pargv);
