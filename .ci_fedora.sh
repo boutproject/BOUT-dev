@@ -42,6 +42,7 @@ if [ $UID -eq 0 ]
 then
     cat /etc/os-release
     cat /proc/cpuinfo
+    df -h |grep shm
     # Ignore weak depencies
     echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
     time dnf -y install dnf5
