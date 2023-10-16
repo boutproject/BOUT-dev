@@ -1,5 +1,6 @@
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
+#include <unistd.h>
 
 BoutComm* BoutComm::instance = nullptr;
 
