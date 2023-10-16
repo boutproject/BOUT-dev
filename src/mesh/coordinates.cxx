@@ -19,7 +19,7 @@
 
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
-#include "bout/ContravariantMetricTensor.h"
+#include "bout/ContravariantMetricTensor.hxx"
 
 // use anonymous namespace so this utility function is not available outside this file
 namespace {
@@ -500,7 +500,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
                     source_has_component)) {
 
       auto covariant_components = covariantMetricTensor.getCovariantMetricTensor();
-      
+
       FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
       g_11 = getUnaligned(covariant_components.g_11, "g_11", 1.0);
       g_22 = getUnaligned(covariant_components.g_22, "g_22", 1.0);

@@ -1,8 +1,8 @@
 
-#include "CovariantMetricTensor.h"
-#include "ContravariantMetricTensor.h"
-#include <bout/coordinates.hxx>
-#include <bout/output.hxx>
+#include "bout/CovariantMetricTensor.hxx"
+#include "bout/ContravariantMetricTensor.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/output.hxx"
 
 CovariantMetricTensor::CovariantMetricTensor(
     const FieldMetric g_11, const FieldMetric g_22, const FieldMetric g_33,

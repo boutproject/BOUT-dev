@@ -33,8 +33,8 @@
 #ifndef BOUT_COORDINATES_H
 #define BOUT_COORDINATES_H
 
-#include "ContravariantMetricTensor.h"
-#include "CovariantMetricTensor.h"
+#include "ContravariantMetricTensor.hxx"
+#include "CovariantMetricTensor.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/paralleltransform.hxx"

@@ -1,6 +1,6 @@
 
-#ifndef BOUT_COVARIANTMETRICTENSOR_H
-#define BOUT_COVARIANTMETRICTENSOR_H
+#ifndef BOUT_COVARIANTMETRICTENSOR_HXX
+#define BOUT_COVARIANTMETRICTENSOR_HXX
 
 #include "field2d.hxx"
 #include "bout/field3d.hxx"
@@ -47,4 +47,4 @@ private:
   CovariantComponents covariant_components;
 };
 
-#endif //BOUT_COVARIANTMETRICTENSOR_H
+#endif //BOUT_COVARIANTMETRICTENSOR_HXX
