@@ -24,10 +24,11 @@ then
     test . != ".$3" && version="$3" || version=rawhide
     cat /etc/os-release
     cat /proc/cpuinfo
+    df -h|grep shm
     echo "Using $cmd and $mpi and $version"
     time $cmd pull registry.fedoraproject.org/fedora:$version
     time $cmd create --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
-	 --tty \
+	 --tty --shm-size 1G \
          --name mobydick registry.fedoraproject.org/fedora:$version \
 	     /tmp/BOUT-dev/.ci_fedora.sh $mpi
     time $cmd cp ${TRAVIS_BUILD_DIR:-$(pwd)} mobydick:/tmp/BOUT-dev
