@@ -28,7 +28,7 @@ then
     echo "Using $cmd and $mpi and $version"
     time $cmd pull registry.fedoraproject.org/fedora:$version
     time $cmd create --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
-	 --shm-size 128M \
+	 --shm-size 256M \
          --name mobydick registry.fedoraproject.org/fedora:$version \
 	     /tmp/BOUT-dev/.ci_fedora.sh $mpi
     time $cmd cp ${TRAVIS_BUILD_DIR:-$(pwd)} mobydick:/tmp/BOUT-dev
