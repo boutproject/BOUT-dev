@@ -76,36 +76,36 @@ ContravariantMetricTensor::calcCovariant(const CELL_LOC location,
   CovariantMetricTensor covariantMetricTensor =
       CovariantMetricTensor(a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2), mesh);
 
-  setLocation(location);
+  this->setLocation(location);
   covariantMetricTensor.setLocation(location);
 
-  auto covariant_components = covariantMetricTensor.getCovariantMetricTensor();
-
   BoutReal maxerr;
-  maxerr = BOUTMAX(max(abs((covariant_components.g_11 * contravariant_components.g11
-                            + covariant_components.g_12 * contravariant_components.g12
-                            + covariant_components.g_13 * contravariant_components.g13)
-                           - 1)),
-                   max(abs((covariant_components.g_12 * contravariant_components.g12
-                            + covariant_components.g_22 * contravariant_components.g22
-                            + covariant_components.g_23 * contravariant_components.g23)
-                           - 1)),
-                   max(abs((covariant_components.g_13 * contravariant_components.g13
-                            + covariant_components.g_23 * contravariant_components.g23
-                            + covariant_components.g_33 * contravariant_components.g33)
-                           - 1)));
+  maxerr =
+      BOUTMAX(max(abs((covariantMetricTensor.Getg_11() * contravariant_components.g11
+                       + covariantMetricTensor.Getg_12() * contravariant_components.g12
+                       + covariantMetricTensor.Getg_13() * contravariant_components.g13)
+                      - 1)),
+              max(abs((covariantMetricTensor.Getg_12() * contravariant_components.g12
+                       + covariantMetricTensor.Getg_22() * contravariant_components.g22
+                       + covariantMetricTensor.Getg_23() * contravariant_components.g23)
+                      - 1)),
+              max(abs((covariantMetricTensor.Getg_13() * contravariant_components.g13
+                       + covariantMetricTensor.Getg_23() * contravariant_components.g23
+                       + covariantMetricTensor.Getg_33() * contravariant_components.g33)
+                      - 1)));
 
   output_info.write("\tLocal maximum error in diagonal inversion is {:e}\n", maxerr);
 
-  maxerr = BOUTMAX(max(abs(covariant_components.g_11 * contravariant_components.g12
-                           + covariant_components.g_12 * contravariant_components.g22
-                           + covariant_components.g_13 * contravariant_components.g23)),
-                   max(abs(covariant_components.g_11 * contravariant_components.g13
-                           + covariant_components.g_12 * contravariant_components.g23
-                           + covariant_components.g_13 * contravariant_components.g33)),
-                   max(abs(covariant_components.g_12 * contravariant_components.g13
-                           + covariant_components.g_22 * contravariant_components.g23
-                           + covariant_components.g_23 * contravariant_components.g33)));
+  maxerr =
+      BOUTMAX(max(abs(covariantMetricTensor.Getg_11() * contravariant_components.g12
+                      + covariantMetricTensor.Getg_12() * contravariant_components.g22
+                      + covariantMetricTensor.Getg_13() * contravariant_components.g23)),
+              max(abs(covariantMetricTensor.Getg_11() * contravariant_components.g13
+                      + covariantMetricTensor.Getg_12() * contravariant_components.g23
+                      + covariantMetricTensor.Getg_13() * contravariant_components.g33)),
+              max(abs(covariantMetricTensor.Getg_12() * contravariant_components.g13
+                      + covariantMetricTensor.Getg_22() * contravariant_components.g23
+                      + covariantMetricTensor.Getg_23() * contravariant_components.g33)));
 
   output_info.write("\tLocal maximum error in off-diagonal inversion is {:e}\n", maxerr);
 

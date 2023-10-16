@@ -1612,8 +1612,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field2D& f) {
            + contravariant_components.g11(bndry->x - bndry->bx, bndry->y));
     BoutReal g12shift =
         0.5
-        * (contravariant_components.g12(bndry->x, bndry->y) +
-           contravariant_components.g12(bndry->x - bndry->bx, bndry->y));
+        * (contravariant_components.g12(bndry->x, bndry->y)
+           + contravariant_components.g12(bndry->x - bndry->bx, bndry->y));
     // Have to use derivatives at last gridpoint instead of derivatives on boundary layer
     //   because derivative values don't exist in boundary region
     // NOTE: should be fixed to interpolate to boundary line
@@ -1669,15 +1669,12 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     int z = 0;
 #endif
       // Interpolate (linearly) metrics to halfway between last cell and boundary cell
-      BoutReal g11shift = 0.5
-                          * (g.g11(bndry->x, bndry->y, z)
-                             + g.g11(bndry->x - bndry->bx, bndry->y, z));
-      BoutReal g12shift = 0.5
-                          * (g.g12(bndry->x, bndry->y, z)
-                             + g.g12(bndry->x - bndry->bx, bndry->y, z));
-      BoutReal g13shift = 0.5
-                          * (g.g13(bndry->x, bndry->y, z)
-                             + g.g13(bndry->x - bndry->bx, bndry->y, z));
+      BoutReal g11shift =
+          0.5 * (g.g11(bndry->x, bndry->y, z) + g.g11(bndry->x - bndry->bx, bndry->y, z));
+      BoutReal g12shift =
+          0.5 * (g.g12(bndry->x, bndry->y, z) + g.g12(bndry->x - bndry->bx, bndry->y, z));
+      BoutReal g13shift =
+          0.5 * (g.g13(bndry->x, bndry->y, z) + g.g13(bndry->x - bndry->bx, bndry->y, z));
       // Have to use derivatives at last gridpoint instead of derivatives on boundary
       // layer
       //   because derivative values don't exist in boundary region
@@ -2451,13 +2448,12 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   void BoundaryNeumannPar::apply(Field2D & f) {
 #if not(BOUT_USE_METRIC_3D)
     Coordinates* metric = f.getCoordinates();
-    const auto covariant_components = metric->getCovariantMetricTensor();
     // Loop over all elements and set equal to the next point in
     for (bndry->first(); !bndry->isDone(); bndry->next()) {
       f(bndry->x, bndry->y) =
           f(bndry->x - bndry->bx, bndry->y - bndry->by)
-          * sqrt(covariant_components.g_22(bndry->x, bndry->y)
-                 / covariant_components.g_22(bndry->x - bndry->bx, bndry->y - bndry->by));
+          * sqrt(metric->g_22()(bndry->x, bndry->y)
+                 / metric->g_22()(bndry->x - bndry->bx, bndry->y - bndry->by));
     }
 #else
   throw BoutException("Applying boundary condition 'neumannpar' to Field2D not "
@@ -2469,13 +2465,12 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
     Coordinates* metric = f.getCoordinates();
-    const auto covariant_components = metric->getCovariantMetricTensor();
     for (bndry->first(); !bndry->isDone(); bndry->next()) {
       for (int z = 0; z < mesh->LocalNz; z++) {
         f(bndry->x, bndry->y, z) =
             f(bndry->x - bndry->bx, bndry->y - bndry->by, z)
-            * sqrt(covariant_components.g_22(bndry->x, bndry->y, z)
-                   / covariant_components.g_22(bndry->x - bndry->bx, bndry->y - bndry->by, z));
+            * sqrt(metric->g_22()(bndry->x, bndry->y, z)
+                   / metric->g_22()(bndry->x - bndry->bx, bndry->y - bndry->by, z));
       }
     }
   }
@@ -2672,8 +2667,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
         c0[0] += c1[0]; // Straight line
 
         // kz != 0 solution
-        BoutReal coef =
-            -1.0 * sqrt(g.g33(x, y) / g.g11(x, y)) * metric->dx(x, y);
+        BoutReal coef = -1.0 * sqrt(g.g33(x, y) / g.g11(x, y)) * metric->dx(x, y);
         for (int jz = 1; jz <= ncz / 2; jz++) {
           BoutReal kwave =
               jz * 2.0 * PI / metric->zlength()(x, y); // wavenumber in [rad^-1]
@@ -2887,8 +2881,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
         xpos -= metric->dx(x, y);
         c2[0] = c0[0] + k0lin * xpos + 0.5 * c1[0] * xpos * xpos / g.g11(x - bx, y);
         // kz != 0 solution
-        BoutReal coef = -1.0 * sqrt(g.g33(x - bx, y) / g.g11(x - bx, y))
-                        * metric->dx(x - bx, y);
+        BoutReal coef =
+            -1.0 * sqrt(g.g33(x - bx, y) / g.g11(x - bx, y)) * metric->dx(x - bx, y);
         for (int jz = 1; jz <= ncz / 2; jz++) {
           BoutReal kwave =
               jz * 2.0 * PI / getUniform(metric->zlength()); // wavenumber in [rad^-1]
@@ -2982,9 +2976,12 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
         tmp =
             -(metric->J(jx, jy) * contravariant_components.g12(jx, jy) * var.y(jx, jy, jz)
-              + metric->J(jx, jy) * contravariant_components.g13(jx, jy) * var.z(jx, jy, jz)
-              - metric->J(jx - 2, jy) * contravariant_components.g12(jx - 2, jy) * var.y(jx - 2, jy, jz)
-              + metric->J(jx - 2, jy) * contravariant_components.g13(jx - 2, jy) * var.z(jx - 2, jy, jz))
+              + metric->J(jx, jy) * contravariant_components.g13(jx, jy)
+                    * var.z(jx, jy, jz)
+              - metric->J(jx - 2, jy) * contravariant_components.g12(jx - 2, jy)
+                    * var.y(jx - 2, jy, jz)
+              + metric->J(jx - 2, jy) * contravariant_components.g13(jx - 2, jy)
+                    * var.z(jx - 2, jy, jz))
             / (metric->dx(jx - 2, jy)
                + metric->dx(jx - 1, jy)); // First term (d/dx) using vals calculated above
         tmp -= (metric->J(jx - 1, jy + 1) * contravariant_components.g12(jx - 1, jy + 1)
@@ -3009,12 +3006,14 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
                / (2. * metric->dz(jx - 1, jy));
 
         var.x(jx, jy, jz) =
-            (metric->J(jx - 2, jy) * contravariant_components.g11(jx - 2, jy) * var.x(jx - 2, jy, jz)
+            (metric->J(jx - 2, jy) * contravariant_components.g11(jx - 2, jy)
+                 * var.x(jx - 2, jy, jz)
              + (metric->dx(jx - 2, jy) + metric->dx(jx - 1, jy)) * tmp)
             / metric->J(jx, jy) * contravariant_components.g11(jx, jy);
         if (mesh->xstart == 2) {
           var.x(jx + 1, jy, jz) =
-              (metric->J(jx - 3, jy) * contravariant_components.g11(jx - 3, jy) * var.x(jx - 3, jy, jz)
+              (metric->J(jx - 3, jy) * contravariant_components.g11(jx - 3, jy)
+                   * var.x(jx - 3, jy, jz)
                + 4. * metric->dx(jx, jy) * tmp)
               / metric->J(jx + 1, jy) * contravariant_components.g11(jx + 1, jy);
         }

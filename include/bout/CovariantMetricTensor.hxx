@@ -15,10 +15,6 @@ public:
   using FieldMetric = Field2D;
 #endif
 
-      struct CovariantComponents {
-    FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
-  };
-
   CovariantMetricTensor(const FieldMetric g_11, const FieldMetric g_22,
                         const FieldMetric g_33, const FieldMetric g_12,
                         const FieldMetric g_13, const FieldMetric g_23);
@@ -34,17 +30,22 @@ public:
   // check that covariant tensors are positive (if expected) and finite (always)
   void checkCovariant(int ystart);
 
+  FieldMetric Getg_11() const;
+  FieldMetric Getg_22() const;
+  FieldMetric Getg_33() const;
+  FieldMetric Getg_12() const;
+  FieldMetric Getg_13() const;
+  FieldMetric Getg_23() const;
+
   void setCovariantMetricTensor(CELL_LOC location,
                                 const CovariantMetricTensor& metric_tensor);
-
-  CovariantComponents getCovariantMetricTensor() const;
 
   void Allocate();
 
   void setLocation(const CELL_LOC location);
 
 private:
-  CovariantComponents covariant_components;
+  FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 };
 
 #endif //BOUT_COVARIANTMETRICTENSOR_HXX

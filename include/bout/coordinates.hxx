@@ -105,7 +105,12 @@ private:
 public:
   ContravariantMetricTensor::ContravariantComponents getContravariantMetricTensor() const;
 
-  CovariantMetricTensor::CovariantComponents getCovariantMetricTensor() const;
+  FieldMetric g_11() const;
+  FieldMetric g_22() const;
+  FieldMetric g_33() const;
+  FieldMetric g_12() const;
+  FieldMetric g_13() const;
+  FieldMetric g_23() const;
 
   void setContravariantMetricTensor(ContravariantMetricTensor metric_tensor);
 

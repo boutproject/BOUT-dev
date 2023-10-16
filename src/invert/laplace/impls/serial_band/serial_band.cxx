@@ -162,9 +162,9 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
       coef1 = g.g11(ix, jy); // X 2nd derivative
       coef2 = g.g33(ix, jy); // Z 2nd derivative
       coef3 = g.g13(ix, jy); // X-Z mixed derivatives
-      coef4 = 0.0;                 // X 1st derivative
-      coef5 = 0.0;                 // Z 1st derivative
-      coef6 = Acoef(ix, jy);       // Constant
+      coef4 = 0.0;           // X 1st derivative
+      coef5 = 0.0;           // Z 1st derivative
+      coef6 = Acoef(ix, jy); // Constant
 
       // Multiply Delp2 component by a factor
       coef1 *= Dcoef(ix, jy);
@@ -266,8 +266,6 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
     if (iz == 0) {
       // DC
 
-      const auto covariant_components = coords->getCovariantMetricTensor();
-
       // Inner boundary
       if (inner_boundary_flags & (INVERT_DC_GRAD + INVERT_SET)
           || inner_boundary_flags & (INVERT_DC_GRAD + INVERT_RHS)) {
@@ -276,8 +274,8 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         for (int ix = 0; ix < xbndry; ix++) {
           A(ix, 0) = 0.;
           A(ix, 1) = 0.;
-          A(ix, 2) = -.5 / sqrt(covariant_components.g_11(ix, jy)) / coords->dx(ix, jy);
-          A(ix, 3) = .5 / sqrt(covariant_components.g_11(ix, jy)) / coords->dx(ix, jy);
+          A(ix, 2) = -.5 / sqrt(coords->g_11()(ix, jy)) / coords->dx(ix, jy);
+          A(ix, 3) = .5 / sqrt(coords->g_11()(ix, jy)) / coords->dx(ix, jy);
           A(ix, 4) = 0.;
         }
 
@@ -296,17 +294,17 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         for (int ix = 0; ix < xbndry; ix++) {
           A(ix, 0) = 0.;
           A(ix, 1) = 0.;
-          A(ix, 2) = -3. / sqrt(covariant_components.g_22(ix, jy));
-          A(ix, 3) = 4. / sqrt(covariant_components.g_22(ix + 1, jy));
-          A(ix, 4) = -1. / sqrt(covariant_components.g_22(ix + 2, jy));
+          A(ix, 2) = -3. / sqrt(coords->g_22()(ix, jy));
+          A(ix, 3) = 4. / sqrt(coords->g_22()(ix + 1, jy));
+          A(ix, 4) = -1. / sqrt(coords->g_22()(ix + 2, jy));
         }
       } else if (inner_boundary_flags & INVERT_DC_GRADPARINV) {
         for (int ix = 0; ix < xbndry; ix++) {
           A(ix, 0) = 0.;
           A(ix, 1) = 0.;
-          A(ix, 2) = -3. * sqrt(covariant_components.g_22(ix, jy));
-          A(ix, 3) = 4. * sqrt(covariant_components.g_22(ix + 1, jy));
-          A(ix, 4) = -sqrt(covariant_components.g_22(ix + 2, jy));
+          A(ix, 2) = -3. * sqrt(coords->g_22()(ix, jy));
+          A(ix, 3) = 4. * sqrt(coords->g_22()(ix + 1, jy));
+          A(ix, 4) = -sqrt(coords->g_22()(ix + 2, jy));
         }
       } else if (inner_boundary_flags & INVERT_DC_LAP) {
         for (int ix = 0; ix < xbndry; ix++) {
@@ -353,9 +351,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         // Combine 4th order at 1 with 2nd order at 0
         A(1, 0) = 0.0; // Not used
         A(1, 1) = dcomplex(
-            (14.
-             - SQ(coords->dx(0, jy) * kwave) * g.g33(0, jy) / g.g11(0, jy))
-                * coef1,
+            (14. - SQ(coords->dx(0, jy) * kwave) * g.g33(0, jy) / g.g11(0, jy)) * coef1,
             -coef3);
         A(1, 2) = dcomplex(-29. * coef1 - SQ(kwave) * coef2 + coef4, 0.0);
         A(1, 3) = dcomplex(16. * coef1, coef3);
@@ -400,11 +396,10 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         A(ix, 0) = dcomplex(-coef1, 0.0);
         A(ix, 1) = dcomplex(16. * coef1, -coef3);
         A(ix, 2) = dcomplex(-29. * coef1 - SQ(kwave) * coef2 + coef4, 0.0);
-        A(ix, 3) = dcomplex((14.
-                             - SQ(coords->dx(ncx, jy) * kwave) * g.g33(ncx, jy)
-                                   / g.g11(ncx, jy))
-                                * coef1,
-                            coef3);
+        A(ix, 3) = dcomplex(
+            (14. - SQ(coords->dx(ncx, jy) * kwave) * g.g33(ncx, jy) / g.g11(ncx, jy))
+                * coef1,
+            coef3);
         A(ix, 4) = 0.0; // Not used
 
         coef1 = g.g11(ix, jy) / (SQ(coords->dx(ix, jy)));
