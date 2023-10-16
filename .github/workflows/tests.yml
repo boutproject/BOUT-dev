@@ -143,18 +143,18 @@ jobs:
                  liblapack-dev
                  libparpack2-dev
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
 
       - name: Install pip packages
         run: |
-          ./.pip_install_for_ci.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'gcovr' 'cmake' 'h5py' zoidberg fastcov
+          ./.pip_install_for_ci.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'gcovr' 'cmake' zoidberg fastcov
           # Add the pip install location to the runner's PATH
           echo ~/.local/bin >> $GITHUB_PATH
 
       - name: Cache SUNDIALS build
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /home/runner/local
           key: bout-sundials-${{ matrix.config.os }}${{ matrix.config.build_petsc }}
@@ -182,7 +182,7 @@ jobs:
 
       - name: Upload coverage
         if: ${{ matrix.config.name == 'Coverage' }}
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
 
   Fedora:
     # This is its own job as it doesn't use most of the steps of the
@@ -190,7 +190,7 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - name: Build Fedora rawhide

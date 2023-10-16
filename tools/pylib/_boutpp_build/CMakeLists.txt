@@ -3,7 +3,7 @@
 macro(bout_python_maybe_error VAR NAME)
   if (NOT ${VAR})
     set(_error_msg "${NAME} is required for the Python interface")
-    if (NOT "${BOUT_ENABLE_PYTHON}" STREQUAL "MAYBE")
+    if (NOT "${BOUT_ENABLE_PYTHON}" STREQUAL "AUTO")
       message(FATAL_ERROR ${_error_msg})
     else()
       message(WARNING ${_error_msg})
@@ -49,7 +49,7 @@ if (NOT ${PYTHON_WORKING} EQUAL 0)
 endif()
 
 # No errors? We can build the interface!
-if ("${BOUT_ENABLE_PYTHON}" STREQUAL "MAYBE")
+if ("${BOUT_ENABLE_PYTHON}" STREQUAL "AUTO")
   set(BOUT_ENABLE_PYTHON ON PARENT_SCOPE)
 endif()
 
