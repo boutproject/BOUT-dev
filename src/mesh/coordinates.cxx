@@ -26,7 +26,7 @@ namespace {
 template <typename T, typename... Ts>
 // Use sendY()/sendX() and wait() instead of Mesh::communicate() to ensure we
 // don't try to calculate parallel slices as Coordinates are not constructed yet
-void communicate(T& t, Ts&... ts) {
+void communicate(T& t, Ts... ts) {
   FieldGroup g(t, ts...);
   auto h = t.getMesh()->sendY(g);
   t.getMesh()->wait(h);
@@ -39,7 +39,7 @@ void communicate(T& t, Ts&... ts) {
 /// Boundary guard cells are set by extrapolating from the grid, like
 /// 'free_o3' boundary conditions
 /// Corner guard cells are set to BoutNaN
-Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extrapolate_x,
+Field2D interpolateAndExtrapolate(const Field2D f, CELL_LOC location, bool extrapolate_x,
                                   bool extrapolate_y, bool no_extra_interpolate,
                                   ParallelTransform* UNUSED(pt) = nullptr) {
 
@@ -322,7 +322,7 @@ void checkStaggeredGet(Mesh* mesh, const std::string& name, const std::string& s
 }
 
 // convenience function for repeated code
-int getAtLoc(Mesh* mesh, Coordinates::FieldMetric& var, const std::string& name,
+int getAtLoc(Mesh* mesh, Coordinates::FieldMetric var, const std::string& name,
              const std::string& suffix, CELL_LOC location, BoutReal default_value = 0.) {
 
   checkStaggeredGet(mesh, name, suffix);
@@ -446,7 +446,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y, false,
                                  transform.get());
 
-  auto getUnaligned = [this](auto& field, const std::string& name,
+  auto getUnaligned = [this](auto field, const std::string& name,
                              BoutReal default_value) {
     localmesh->get(field, name, default_value, false);
     if (field.getDirectionY() == YDirectionType::Aligned
@@ -499,15 +499,13 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
                     source_has_component)) {
 
-      auto covariant_components = covariantMetricTensor.getCovariantMetricTensor();
-
       FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
-      g_11 = getUnaligned(covariant_components.g_11, "g_11", 1.0);
-      g_22 = getUnaligned(covariant_components.g_22, "g_22", 1.0);
-      g_33 = getUnaligned(covariant_components.g_33, "g_33", 1.0);
-      g_12 = getUnaligned(covariant_components.g_12, "g_12", 0.0);
-      g_13 = getUnaligned(covariant_components.g_13, "g_13", 0.0);
-      g_23 = getUnaligned(covariant_components.g_23, "g_23", 0.0);
+      g_11 = getUnaligned(covariantMetricTensor.Getg_11(), "g_11", 1.0);
+      g_22 = getUnaligned(covariantMetricTensor.Getg_22(), "g_22", 1.0);
+      g_33 = getUnaligned(covariantMetricTensor.Getg_33(), "g_33", 1.0);
+      g_12 = getUnaligned(covariantMetricTensor.Getg_12(), "g_12", 0.0);
+      g_13 = getUnaligned(covariantMetricTensor.Getg_13(), "g_13", 0.0);
+      g_23 = getUnaligned(covariantMetricTensor.Getg_23(), "g_23", 0.0);
 
       covariantMetricTensor.setCovariantMetricTensor(
           location, CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
@@ -534,23 +532,22 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     }
   }
 
-  auto covariant_components = covariantMetricTensor.getCovariantMetricTensor();
   FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
-  g_11 = interpolateAndExtrapolate(covariant_components.g_11, location, extrapolate_x,
-                                   extrapolate_y, false, transform.get());
-  g_22 = interpolateAndExtrapolate(covariant_components.g_22, location, extrapolate_x,
-                                   extrapolate_y, false, transform.get());
-  g_33 = interpolateAndExtrapolate(covariant_components.g_33, location, extrapolate_x,
-                                   extrapolate_y, false, transform.get());
-  g_12 = interpolateAndExtrapolate(covariant_components.g_12, location, extrapolate_x,
-                                   extrapolate_y, false, transform.get());
-  g_13 = interpolateAndExtrapolate(covariant_components.g_13, location, extrapolate_x,
-                                   extrapolate_y, false, transform.get());
-  g_23 = interpolateAndExtrapolate(covariant_components.g_23, location, extrapolate_x,
-                                   extrapolate_y, false, transform.get());
+  g_11 = interpolateAndExtrapolate(covariantMetricTensor.Getg_11(), location,
+                                   extrapolate_x, extrapolate_y, false, transform.get());
+  g_22 = interpolateAndExtrapolate(covariantMetricTensor.Getg_22(), location,
+                                   extrapolate_x, extrapolate_y, false, transform.get());
+  g_33 = interpolateAndExtrapolate(covariantMetricTensor.Getg_33(), location,
+                                   extrapolate_x, extrapolate_y, false, transform.get());
+  g_12 = interpolateAndExtrapolate(covariantMetricTensor.Getg_12(), location,
+                                   extrapolate_x, extrapolate_y, false, transform.get());
+  g_13 = interpolateAndExtrapolate(covariantMetricTensor.Getg_13(), location,
+                                   extrapolate_x, extrapolate_y, false, transform.get());
+  g_23 = interpolateAndExtrapolate(covariantMetricTensor.Getg_23(), location,
+                                   extrapolate_x, extrapolate_y, false, transform.get());
 
   covariantMetricTensor.setCovariantMetricTensor(
       location, CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
@@ -722,8 +719,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       return mesh->sourceHasVar(name + suffix);
     };
 
-    auto covariant_components = covariantMetricTensor.getCovariantMetricTensor();
-
     // Check if any of the components are present
     if (std::any_of(begin(covariant_component_names), end(covariant_component_names),
                     source_has_component)) {
@@ -731,12 +726,12 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
                       source_has_component)) {
 
-        getAtLoc(mesh, covariant_components.g_11, "g_11", suffix, location);
-        getAtLoc(mesh, covariant_components.g_22, "g_22", suffix, location);
-        getAtLoc(mesh, covariant_components.g_33, "g_33", suffix, location);
-        getAtLoc(mesh, covariant_components.g_12, "g_12", suffix, location);
-        getAtLoc(mesh, covariant_components.g_13, "g_13", suffix, location);
-        getAtLoc(mesh, covariant_components.g_23, "g_23", suffix, location);
+        getAtLoc(mesh, covariantMetricTensor.Getg_11(), "g_11", suffix, location);
+        getAtLoc(mesh, covariantMetricTensor.Getg_22(), "g_22", suffix, location);
+        getAtLoc(mesh, covariantMetricTensor.Getg_33(), "g_33", suffix, location);
+        getAtLoc(mesh, covariantMetricTensor.Getg_12(), "g_12", suffix, location);
+        getAtLoc(mesh, covariantMetricTensor.Getg_13(), "g_13", suffix, location);
+        getAtLoc(mesh, covariantMetricTensor.Getg_23(), "g_23", suffix, location);
 
         output_warn.write(
             "\tWARNING! Staggered covariant components of metric tensor set manually. "
@@ -769,18 +764,24 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
     // More robust to extrapolate derived quantities directly, rather than
     // deriving from extrapolated covariant metric components
-    g_11 = interpolateAndExtrapolate(covariant_components.g_11, location, extrapolate_x,
-                                     extrapolate_y, false, transform.get());
-    g_22 = interpolateAndExtrapolate(covariant_components.g_22, location, extrapolate_x,
-                                     extrapolate_y, false, transform.get());
-    g_33 = interpolateAndExtrapolate(covariant_components.g_33, location, extrapolate_x,
-                                     extrapolate_y, false, transform.get());
-    g_12 = interpolateAndExtrapolate(covariant_components.g_12, location, extrapolate_x,
-                                     extrapolate_y, false, transform.get());
-    g_13 = interpolateAndExtrapolate(covariant_components.g_13, location, extrapolate_x,
-                                     extrapolate_y, false, transform.get());
-    g_23 = interpolateAndExtrapolate(covariant_components.g_23, location, extrapolate_x,
-                                     extrapolate_y, false, transform.get());
+    g_11 =
+        interpolateAndExtrapolate(covariantMetricTensor.Getg_11(), location,
+                                  extrapolate_x, extrapolate_y, false, transform.get());
+    g_22 =
+        interpolateAndExtrapolate(covariantMetricTensor.Getg_22(), location,
+                                  extrapolate_x, extrapolate_y, false, transform.get());
+    g_33 =
+        interpolateAndExtrapolate(covariantMetricTensor.Getg_33(), location,
+                                  extrapolate_x, extrapolate_y, false, transform.get());
+    g_12 =
+        interpolateAndExtrapolate(covariantMetricTensor.Getg_12(), location,
+                                  extrapolate_x, extrapolate_y, false, transform.get());
+    g_13 =
+        interpolateAndExtrapolate(covariantMetricTensor.Getg_13(), location,
+                                  extrapolate_x, extrapolate_y, false, transform.get());
+    g_23 =
+        interpolateAndExtrapolate(covariantMetricTensor.Getg_23(), location,
+                                  extrapolate_x, extrapolate_y, false, transform.get());
 
     // Check covariant metrics
     checkCovariant();
@@ -906,24 +907,22 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
     FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
-    const auto covariant_components = coords_in->getCovariantMetricTensor();
-
     // 3x3 matrix inversion can exaggerate small interpolation errors, so it is
     // more robust to interpolate and extrapolate derived quantities directly,
     // rather than deriving from interpolated/extrapolated covariant metric
     // components
-    g_11 = interpolateAndExtrapolate(covariant_components.g_11, location, true, true,
-                                     false, transform.get());
-    g_22 = interpolateAndExtrapolate(covariant_components.g_22, location, true, true,
-                                     false, transform.get());
-    g_33 = interpolateAndExtrapolate(covariant_components.g_33, location, true, true,
-                                     false, transform.get());
-    g_12 = interpolateAndExtrapolate(covariant_components.g_12, location, true, true,
-                                     false, transform.get());
-    g_13 = interpolateAndExtrapolate(covariant_components.g_13, location, true, true,
-                                     false, transform.get());
-    g_23 = interpolateAndExtrapolate(covariant_components.g_23, location, true, true,
-                                     false, transform.get());
+    g_11 = interpolateAndExtrapolate(covariantMetricTensor.Getg_11(), location, true,
+                                     true, false, transform.get());
+    g_22 = interpolateAndExtrapolate(covariantMetricTensor.Getg_22(), location, true,
+                                     true, false, transform.get());
+    g_33 = interpolateAndExtrapolate(covariantMetricTensor.Getg_33(), location, true,
+                                     true, false, transform.get());
+    g_12 = interpolateAndExtrapolate(covariantMetricTensor.Getg_12(), location, true,
+                                     true, false, transform.get());
+    g_13 = interpolateAndExtrapolate(covariantMetricTensor.Getg_13(), location, true,
+                                     true, false, transform.get());
+    g_23 = interpolateAndExtrapolate(covariantMetricTensor.Getg_23(), location, true,
+                                     true, false, transform.get());
 
     covariantMetricTensor.setCovariantMetricTensor(
         location, CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
@@ -963,7 +962,6 @@ void Coordinates::outputVars(Options& output_options) {
 
   auto const contravariant_components =
       contravariantMetricTensor.getContravariantMetricTensor();
-  auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
 
   output_options["g11" + loc_string].force(contravariant_components.g11, "Coordinates");
   output_options["g22" + loc_string].force(contravariant_components.g22, "Coordinates");
@@ -972,12 +970,18 @@ void Coordinates::outputVars(Options& output_options) {
   output_options["g13" + loc_string].force(contravariant_components.g13, "Coordinates");
   output_options["g23" + loc_string].force(contravariant_components.g23, "Coordinates");
 
-  output_options["g_11" + loc_string].force(covariant_components.g_11, "Coordinates");
-  output_options["g_22" + loc_string].force(covariant_components.g_22, "Coordinates");
-  output_options["g_33" + loc_string].force(covariant_components.g_33, "Coordinates");
-  output_options["g_12" + loc_string].force(covariant_components.g_12, "Coordinates");
-  output_options["g_13" + loc_string].force(covariant_components.g_13, "Coordinates");
-  output_options["g_23" + loc_string].force(covariant_components.g_23, "Coordinates");
+  output_options["g_11" + loc_string].force(covariantMetricTensor.Getg_11(),
+                                            "Coordinates");
+  output_options["g_22" + loc_string].force(covariantMetricTensor.Getg_22(),
+                                            "Coordinates");
+  output_options["g_33" + loc_string].force(covariantMetricTensor.Getg_33(),
+                                            "Coordinates");
+  output_options["g_12" + loc_string].force(covariantMetricTensor.Getg_12(),
+                                            "Coordinates");
+  output_options["g_13" + loc_string].force(covariantMetricTensor.Getg_13(),
+                                            "Coordinates");
+  output_options["g_23" + loc_string].force(covariantMetricTensor.Getg_23(),
+                                            "Coordinates");
 
   output_options["J" + loc_string].force(J, "Coordinates");
   output_options["Bxy" + loc_string].force(Bxy, "Coordinates");
@@ -1010,14 +1014,13 @@ int Coordinates::geometry(bool recalculate_staggered,
 
   auto contravariant_components =
       contravariantMetricTensor.getContravariantMetricTensor();
-  auto covariant_components = covariantMetricTensor.getCovariantMetricTensor();
 
   communicate(dx, dy, dz, contravariant_components.g11, contravariant_components.g22,
               contravariant_components.g33, contravariant_components.g12,
               contravariant_components.g13, contravariant_components.g23,
-              covariant_components.g_11, covariant_components.g_22,
-              covariant_components.g_33, covariant_components.g_12,
-              covariant_components.g_13, covariant_components.g_23, J, Bxy);
+              covariantMetricTensor.Getg_11(), covariantMetricTensor.Getg_22(),
+              covariantMetricTensor.Getg_33(), covariantMetricTensor.Getg_12(),
+              covariantMetricTensor.Getg_13(), covariantMetricTensor.Getg_23(), J, Bxy);
 
   output_progress.write("Calculating differential geometry terms\n");
 
@@ -1235,121 +1238,144 @@ void Coordinates::CalculateChristoffelSymbols() {
 
   auto const contravariant_components =
       contravariantMetricTensor.getContravariantMetricTensor();
-  auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
 
-  G1_11 = 0.5 * contravariant_components.g11 * DDX(covariant_components.g_11)
+  G1_11 = 0.5 * contravariant_components.g11 * DDX(covariantMetricTensor.Getg_11())
           + contravariant_components.g12
-                * (DDX(covariant_components.g_12) - 0.5 * DDY(covariant_components.g_11))
+                * (DDX(covariantMetricTensor.Getg_12())
+                   - 0.5 * DDY(covariantMetricTensor.Getg_11()))
           + contravariant_components.g13
-                * (DDX(covariant_components.g_13) - 0.5 * DDZ(covariant_components.g_11));
+                * (DDX(covariantMetricTensor.Getg_13())
+                   - 0.5 * DDZ(covariantMetricTensor.Getg_11()));
   G1_22 = contravariant_components.g11
-              * (DDY(covariant_components.g_12) - 0.5 * DDX(covariant_components.g_22))
-          + 0.5 * contravariant_components.g12 * DDY(covariant_components.g_22)
+              * (DDY(covariantMetricTensor.Getg_12())
+                 - 0.5 * DDX(covariantMetricTensor.Getg_22()))
+          + 0.5 * contravariant_components.g12 * DDY(covariantMetricTensor.Getg_22())
           + contravariant_components.g13
-                * (DDY(covariant_components.g_23) - 0.5 * DDZ(covariant_components.g_22));
+                * (DDY(covariantMetricTensor.Getg_23())
+                   - 0.5 * DDZ(covariantMetricTensor.Getg_22()));
   G1_33 = contravariant_components.g11
-              * (DDZ(covariant_components.g_13) - 0.5 * DDX(covariant_components.g_33))
+              * (DDZ(covariantMetricTensor.Getg_13())
+                 - 0.5 * DDX(covariantMetricTensor.Getg_33()))
           + contravariant_components.g12
-                * (DDZ(covariant_components.g_23) - 0.5 * DDY(covariant_components.g_33))
-          + 0.5 * contravariant_components.g13 * DDZ(covariant_components.g_33);
-  G1_12 = 0.5 * contravariant_components.g11 * DDY(covariant_components.g_11)
-          + 0.5 * contravariant_components.g12 * DDX(covariant_components.g_22)
-          + 0.5 * contravariant_components.g13
-                * (DDY(covariant_components.g_13) + DDX(covariant_components.g_23)
-                   - DDZ(covariant_components.g_12));
-  G1_13 = 0.5 * contravariant_components.g11 * DDZ(covariant_components.g_11)
-          + 0.5 * contravariant_components.g12
-                * (DDZ(covariant_components.g_12) + DDX(covariant_components.g_23)
-                   - DDY(covariant_components.g_13))
-          + 0.5 * contravariant_components.g13 * DDX(covariant_components.g_33);
-  G1_23 = 0.5 * contravariant_components.g11
-              * (DDZ(covariant_components.g_12) + DDY(covariant_components.g_13)
-                 - DDX(covariant_components.g_23))
-          + 0.5 * contravariant_components.g12
-                * (DDZ(covariant_components.g_22) + DDY(covariant_components.g_23)
-                   - DDY(covariant_components.g_23))
-          // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
-          // which equals
-          + 0.5 * contravariant_components.g13 * DDY(covariant_components.g_33);
+                * (DDZ(covariantMetricTensor.Getg_23())
+                   - 0.5 * DDY(covariantMetricTensor.Getg_33()))
+          + 0.5 * contravariant_components.g13 * DDZ(covariantMetricTensor.Getg_33());
+  G1_12 =
+      0.5 * contravariant_components.g11 * DDY(covariantMetricTensor.Getg_11())
+      + 0.5 * contravariant_components.g12 * DDX(covariantMetricTensor.Getg_22())
+      + 0.5 * contravariant_components.g13
+            * (DDY(covariantMetricTensor.Getg_13()) + DDX(covariantMetricTensor.Getg_23())
+               - DDZ(covariantMetricTensor.Getg_12()));
+  G1_13 =
+      0.5 * contravariant_components.g11 * DDZ(covariantMetricTensor.Getg_11())
+      + 0.5 * contravariant_components.g12
+            * (DDZ(covariantMetricTensor.Getg_12()) + DDX(covariantMetricTensor.Getg_23())
+               - DDY(covariantMetricTensor.Getg_13()))
+      + 0.5 * contravariant_components.g13 * DDX(covariantMetricTensor.Getg_33());
+  G1_23 =
+      0.5 * contravariant_components.g11
+          * (DDZ(covariantMetricTensor.Getg_12()) + DDY(covariantMetricTensor.Getg_13())
+             - DDX(covariantMetricTensor.Getg_23()))
+      + 0.5 * contravariant_components.g12
+            * (DDZ(covariantMetricTensor.Getg_22()) + DDY(covariantMetricTensor.Getg_23())
+               - DDY(covariantMetricTensor.Getg_23()))
+      // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
+      // which equals
+      + 0.5 * contravariant_components.g13 * DDY(covariantMetricTensor.Getg_33());
 
-  G2_11 = 0.5 * contravariant_components.g12 * DDX(covariant_components.g_11)
+  G2_11 = 0.5 * contravariant_components.g12 * DDX(covariantMetricTensor.Getg_11())
           + contravariant_components.g22
-                * (DDX(covariant_components.g_12) - 0.5 * DDY(covariant_components.g_11))
+                * (DDX(covariantMetricTensor.Getg_12())
+                   - 0.5 * DDY(covariantMetricTensor.Getg_11()))
           + contravariant_components.g23
-                * (DDX(covariant_components.g_13) - 0.5 * DDZ(covariant_components.g_11));
-  G2_22 =
-      contravariant_components.g12
-          * (DDY(covariant_components.g_12) - 0.5 * DDX(covariant_components.g_22))
-      + 0.5 * contravariant_components.g22 * DDY(covariant_components.g_22)
-      + contravariant_components.g23
-            * (DDY(contravariant_components.g23) - 0.5 * DDZ(covariant_components.g_22));
+                * (DDX(covariantMetricTensor.Getg_13())
+                   - 0.5 * DDZ(covariantMetricTensor.Getg_11()));
+  G2_22 = contravariant_components.g12
+              * (DDY(covariantMetricTensor.Getg_12())
+                 - 0.5 * DDX(covariantMetricTensor.Getg_22()))
+          + 0.5 * contravariant_components.g22 * DDY(covariantMetricTensor.Getg_22())
+          + contravariant_components.g23
+                * (DDY(contravariant_components.g23)
+                   - 0.5 * DDZ(covariantMetricTensor.Getg_22()));
   G2_33 = contravariant_components.g12
-              * (DDZ(covariant_components.g_13) - 0.5 * DDX(covariant_components.g_33))
+              * (DDZ(covariantMetricTensor.Getg_13())
+                 - 0.5 * DDX(covariantMetricTensor.Getg_33()))
           + contravariant_components.g22
-                * (DDZ(covariant_components.g_23) - 0.5 * DDY(covariant_components.g_33))
-          + 0.5 * contravariant_components.g23 * DDZ(covariant_components.g_33);
-  G2_12 = 0.5 * contravariant_components.g12 * DDY(covariant_components.g_11)
-          + 0.5 * contravariant_components.g22 * DDX(covariant_components.g_22)
-          + 0.5 * contravariant_components.g23
-                * (DDY(covariant_components.g_13) + DDX(covariant_components.g_23)
-                   - DDZ(covariant_components.g_12));
+                * (DDZ(covariantMetricTensor.Getg_23())
+                   - 0.5 * DDY(covariantMetricTensor.Getg_33()))
+          + 0.5 * contravariant_components.g23 * DDZ(covariantMetricTensor.Getg_33());
+  G2_12 =
+      0.5 * contravariant_components.g12 * DDY(covariantMetricTensor.Getg_11())
+      + 0.5 * contravariant_components.g22 * DDX(covariantMetricTensor.Getg_22())
+      + 0.5 * contravariant_components.g23
+            * (DDY(covariantMetricTensor.Getg_13()) + DDX(covariantMetricTensor.Getg_23())
+               - DDZ(covariantMetricTensor.Getg_12()));
   G2_13 =
-      // 0.5 *g21*(DDZ(covariant_components.g_11) + DDX(covariant_components.g_13) - DDX(covariant_components.g_13))
+      // 0.5 *g21*(DDZ(covariantMetricTensor.Getg_11()) + DDX(covariantMetricTensor.Getg_13()) - DDX(covariantMetricTensor.Getg_13()))
       // which equals
       0.5 * contravariant_components.g12
-          * (DDZ(covariant_components.g_11) + DDX(covariant_components.g_13)
-             - DDX(covariant_components.g_13))
-      // + 0.5 *g22*(DDZ(covariant_components.g_21) + DDX(covariant_components.g_23) - DDY(covariant_components.g_13))
+          * (DDZ(covariantMetricTensor.Getg_11()) + DDX(covariantMetricTensor.Getg_13())
+             - DDX(covariantMetricTensor.Getg_13()))
+      // + 0.5 *g22*(DDZ(covariantMetricTensor.Getg_21()) + DDX(covariantMetricTensor.Getg_23()) - DDY(covariantMetricTensor.Getg_13()))
       // which equals
       + 0.5 * contravariant_components.g22
-            * (DDZ(covariant_components.g_12) + DDX(covariant_components.g_23)
-               - DDY(covariant_components.g_13))
-      // + 0.5 *g23*(DDZ(covariant_components.g_31) + DDX(covariant_components.g_33) - DDZ(g_13));
+            * (DDZ(covariantMetricTensor.Getg_12()) + DDX(covariantMetricTensor.Getg_23())
+               - DDY(covariantMetricTensor.Getg_13()))
+      // + 0.5 *g23*(DDZ(covariantMetricTensor.Getg_31()) + DDX(covariantMetricTensor.Getg_33()) - DDZ(g_13));
       // which equals
-      + 0.5 * contravariant_components.g23 * DDX(covariant_components.g_33);
-  G2_23 = 0.5 * contravariant_components.g12
-              * (DDZ(covariant_components.g_12) + DDY(covariant_components.g_13)
-                 - DDX(covariant_components.g_23))
-          + 0.5 * contravariant_components.g22 * DDZ(covariant_components.g_22)
-          + 0.5 * contravariant_components.g23 * DDY(covariant_components.g_33);
+      + 0.5 * contravariant_components.g23 * DDX(covariantMetricTensor.Getg_33());
+  G2_23 =
+      0.5 * contravariant_components.g12
+          * (DDZ(covariantMetricTensor.Getg_12()) + DDY(covariantMetricTensor.Getg_13())
+             - DDX(covariantMetricTensor.Getg_23()))
+      + 0.5 * contravariant_components.g22 * DDZ(covariantMetricTensor.Getg_22())
+      + 0.5 * contravariant_components.g23 * DDY(covariantMetricTensor.Getg_33());
 
-  G3_11 = 0.5 * contravariant_components.g13 * DDX(covariant_components.g_11)
+  G3_11 = 0.5 * contravariant_components.g13 * DDX(covariantMetricTensor.Getg_11())
           + contravariant_components.g23
-                * (DDX(covariant_components.g_12) - 0.5 * DDY(covariant_components.g_11))
+                * (DDX(covariantMetricTensor.Getg_12())
+                   - 0.5 * DDY(covariantMetricTensor.Getg_11()))
           + contravariant_components.g33
-                * (DDX(covariant_components.g_13) - 0.5 * DDZ(covariant_components.g_11));
+                * (DDX(covariantMetricTensor.Getg_13())
+                   - 0.5 * DDZ(covariantMetricTensor.Getg_11()));
   G3_22 = contravariant_components.g13
-              * (DDY(covariant_components.g_12) - 0.5 * DDX(covariant_components.g_22))
-          + 0.5 * contravariant_components.g23 * DDY(covariant_components.g_22)
+              * (DDY(covariantMetricTensor.Getg_12())
+                 - 0.5 * DDX(covariantMetricTensor.Getg_22()))
+          + 0.5 * contravariant_components.g23 * DDY(covariantMetricTensor.Getg_22())
           + contravariant_components.g33
-                * (DDY(covariant_components.g_23) - 0.5 * DDZ(covariant_components.g_22));
+                * (DDY(covariantMetricTensor.Getg_23())
+                   - 0.5 * DDZ(covariantMetricTensor.Getg_22()));
   G3_33 = contravariant_components.g13
-              * (DDZ(covariant_components.g_13) - 0.5 * DDX(covariant_components.g_33))
+              * (DDZ(covariantMetricTensor.Getg_13())
+                 - 0.5 * DDX(covariantMetricTensor.Getg_33()))
           + contravariant_components.g23
-                * (DDZ(covariant_components.g_23) - 0.5 * DDY(covariant_components.g_33))
-          + 0.5 * contravariant_components.g33 * DDZ(covariant_components.g_33);
+                * (DDZ(covariantMetricTensor.Getg_23())
+                   - 0.5 * DDY(covariantMetricTensor.Getg_33()))
+          + 0.5 * contravariant_components.g33 * DDZ(covariantMetricTensor.Getg_33());
   G3_12 =
-      // 0.5 *g31*(DDY(covariant_components.g_11) + DDX(covariant_components.g_12) - DDX(covariant_components.g_12))
+      // 0.5 *g31*(DDY(covariantMetricTensor.Getg_11()) + DDX(covariantMetricTensor.Getg_12()) - DDX(covariantMetricTensor.Getg_12()))
       // which equals to
-      0.5 * contravariant_components.g13 * DDY(covariant_components.g_11)
-      // + 0.5 *g32*(DDY(covariant_components.g_21) + DDX(covariant_components.g_22) - DDY(covariant_components.g_12))
+      0.5 * contravariant_components.g13 * DDY(covariantMetricTensor.Getg_11())
+      // + 0.5 *g32*(DDY(covariantMetricTensor.Getg_21()) + DDX(covariantMetricTensor.Getg_22()) - DDY(covariantMetricTensor.Getg_12()))
       // which equals to
-      + 0.5 * contravariant_components.g23 * DDX(covariant_components.g_22)
-      //+ 0.5 *g33*(DDY(covariant_components.g_31) + DDX(covariant_components.g_32) - DDZ(covariant_components.g_12));
+      + 0.5 * contravariant_components.g23 * DDX(covariantMetricTensor.Getg_22())
+      //+ 0.5 *g33*(DDY(covariantMetricTensor.Getg_31()) + DDX(covariantMetricTensor.Getg_32()) - DDZ(covariantMetricTensor.Getg_12()));
       // which equals to
       + 0.5 * contravariant_components.g33
-            * (DDY(covariant_components.g_13) + DDX(covariant_components.g_23)
-               - DDZ(covariant_components.g_12));
-  G3_13 = 0.5 * contravariant_components.g13 * DDZ(covariant_components.g_11)
-          + 0.5 * contravariant_components.g23
-                * (DDZ(covariant_components.g_12) + DDX(covariant_components.g_23)
-                   - DDY(covariant_components.g_13))
-          + 0.5 * contravariant_components.g33 * DDX(covariant_components.g_33);
-  G3_23 = 0.5 * contravariant_components.g13
-              * (DDZ(covariant_components.g_12) + DDY(covariant_components.g_13)
-                 - DDX(covariant_components.g_23))
-          + 0.5 * contravariant_components.g23 * DDZ(covariant_components.g_22)
-          + 0.5 * contravariant_components.g33 * DDY(covariant_components.g_33);
+            * (DDY(covariantMetricTensor.Getg_13()) + DDX(covariantMetricTensor.Getg_23())
+               - DDZ(covariantMetricTensor.Getg_12()));
+  G3_13 =
+      0.5 * contravariant_components.g13 * DDZ(covariantMetricTensor.Getg_11())
+      + 0.5 * contravariant_components.g23
+            * (DDZ(covariantMetricTensor.Getg_12()) + DDX(covariantMetricTensor.Getg_23())
+               - DDY(covariantMetricTensor.Getg_13()))
+      + 0.5 * contravariant_components.g33 * DDX(covariantMetricTensor.Getg_33());
+  G3_23 =
+      0.5 * contravariant_components.g13
+          * (DDZ(covariantMetricTensor.Getg_12()) + DDY(covariantMetricTensor.Getg_13())
+             - DDX(covariantMetricTensor.Getg_23()))
+      + 0.5 * contravariant_components.g23 * DDZ(covariantMetricTensor.Getg_22())
+      + 0.5 * contravariant_components.g33 * DDY(covariantMetricTensor.Getg_33());
 }
 
 CovariantMetricTensor Coordinates::calcCovariant(const std::string& region) {
@@ -1397,7 +1423,7 @@ int Coordinates::jacobian() {
   J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false,
                                 transform.get());
 
-  Bxy = sqrt(covariantMetricTensor.getCovariantMetricTensor().g_22) / J;
+  Bxy = sqrt(covariantMetricTensor.Getg_22()) / J;
   Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
                                   transform.get());
 
@@ -1664,9 +1690,8 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
   TRACE("Coordinates::Grad2_par2( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
-  auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
   auto result = Grad2_par2_DDY_invSg(outloc, method) * DDY(f, outloc, method)
-                + D2DY2(f, outloc, method) / covariant_components.g_22;
+                + D2DY2(f, outloc, method) / covariantMetricTensor.Getg_22();
 
   return result;
 }
@@ -1681,8 +1706,7 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
 
   Field3D result = ::DDY(f, outloc, method);
 
-  auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
-  Field3D r2 = D2DY2(f, outloc, method) / covariant_components.g_22;
+  Field3D r2 = D2DY2(f, outloc, method) / covariantMetricTensor.Getg_22();
 
   result = Grad2_par2_DDY_invSg(outloc, method) * result + r2;
 
@@ -1844,16 +1868,14 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
 Coordinates::FieldMetric Coordinates::Laplace_par(const Field2D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
-  return D2DY2(f, outloc) / covariant_components.g_22
-         + DDY(J / covariant_components.g_22, outloc) * DDY(f, outloc) / J;
+  return D2DY2(f, outloc) / covariantMetricTensor.Getg_22()
+         + DDY(J / covariantMetricTensor.Getg_22(), outloc) * DDY(f, outloc) / J;
 }
 
 Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
-  auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
-  return D2DY2(f, outloc) / covariant_components.g_22
-         + DDY(J / covariant_components.g_22, outloc) * ::DDY(f, outloc) / J;
+  return D2DY2(f, outloc) / covariantMetricTensor.Getg_22()
+         + DDY(J / covariantMetricTensor.Getg_22(), outloc) * ::DDY(f, outloc) / J;
 }
 
 // Full Laplacian operator on scalar field
@@ -1933,14 +1955,13 @@ Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
 
     // upper y boundary
     const auto upper_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.yp()]); };
-    auto const covariant_components = covariantMetricTensor.getCovariantMetricTensor();
     auto const contravariant_components =
         contravariantMetricTensor.getContravariantMetricTensor();
     const BoutReal upper_y_A = upper_y_avg(A);
     const BoutReal upper_y_J = upper_y_avg(J);
-    const BoutReal upper_y_g_22 = upper_y_avg(covariant_components.g_22);
+    const BoutReal upper_y_g_22 = upper_y_avg(covariantMetricTensor.Getg_22());
     const BoutReal upper_y_g23 = upper_y_avg(contravariant_components.g23);
-    const BoutReal upper_y_g_23 = upper_y_avg(covariant_components.g_23);
+    const BoutReal upper_y_g_23 = upper_y_avg(covariantMetricTensor.Getg_23());
     const BoutReal upper_y_dy = upper_y_avg(dy);
     const BoutReal upper_y_value = -upper_y_A * upper_y_J * upper_y_g23 * upper_y_g_23
                                    / (upper_y_g_22 * J[i] * upper_y_dy * dy[i]);
@@ -1950,9 +1971,9 @@ Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
     const auto lower_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.ym()]); };
     const BoutReal lower_y_A = lower_y_avg(A);
     const BoutReal lower_y_J = lower_y_avg(J);
-    const BoutReal lower_y_g_22 = lower_y_avg(covariant_components.g_22);
+    const BoutReal lower_y_g_22 = lower_y_avg(covariantMetricTensor.Getg_22());
     const BoutReal lower_y_g23 = lower_y_avg(contravariant_components.g23);
-    const BoutReal lower_y_g_23 = lower_y_avg(covariant_components.g_23);
+    const BoutReal lower_y_g_23 = lower_y_avg(covariantMetricTensor.Getg_23());
     const BoutReal lower_y_dy = lower_y_avg(dy);
     const BoutReal lower_y_value = -lower_y_A * lower_y_J * lower_y_g23 * lower_y_g_23
                                    / (lower_y_g_22 * J[i] * lower_y_dy * dy[i]);
@@ -1968,7 +1989,7 @@ Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
 const Coordinates::FieldMetric& Coordinates::invSg() const {
   if (invSgCache == nullptr) {
     auto ptr = std::make_unique<FieldMetric>();
-    (*ptr) = 1.0 / sqrt(covariantMetricTensor.getCovariantMetricTensor().g_22);
+    (*ptr) = 1.0 / sqrt(covariantMetricTensor.Getg_22());
     invSgCache = std::move(ptr);
   }
   return *invSgCache;
@@ -2010,8 +2031,23 @@ Coordinates::getContravariantMetricTensor() const {
   return contravariantMetricTensor.getContravariantMetricTensor();
 }
 
-CovariantMetricTensor::CovariantComponents Coordinates::getCovariantMetricTensor() const {
-  return covariantMetricTensor.getCovariantMetricTensor();
+CovariantMetricTensor::FieldMetric Coordinates::g_11() const {
+  return covariantMetricTensor.Getg_11();
+}
+CovariantMetricTensor::FieldMetric Coordinates::g_22() const {
+  return covariantMetricTensor.Getg_22();
+}
+CovariantMetricTensor::FieldMetric Coordinates::g_33() const {
+  return covariantMetricTensor.Getg_33();
+}
+CovariantMetricTensor::FieldMetric Coordinates::g_12() const {
+  return covariantMetricTensor.Getg_12();
+}
+CovariantMetricTensor::FieldMetric Coordinates::g_13() const {
+  return covariantMetricTensor.Getg_13();
+}
+CovariantMetricTensor::FieldMetric Coordinates::g_23() const {
+  return covariantMetricTensor.Getg_23();
 }
 
 void Coordinates::setCovariantMetricTensor(CovariantMetricTensor metric_tensor) {

@@ -61,8 +61,7 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
         coords->Bxy.ydown()[ind];
 
     COPY_STRIPE(G1, G3);
-    const auto contravariant_components =
-        coords->getContravariantMetricTensor();
+    const auto contravariant_components = coords->getContravariantMetricTensor();
     //    COPY_STRIPE(g11, g12, g13, g22, g23, g33);
     data[stripe_size * ind.ind + static_cast<int>(Offset::g11)] =
         contravariant_components.g11[ind];
@@ -78,19 +77,12 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
         contravariant_components.g33[ind];
 
     //    COPY_STRIPE(g_11, g_12, g_13, g_22, g_23, g_33);
-    const auto covariant_components = coords->getCovariantMetricTensor();
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g_11)] =
-        covariant_components.g_11[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g_12)] =
-        covariant_components.g_12[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g_13)] =
-        covariant_components.g_13[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g_22)] =
-        covariant_components.g_22[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g_23)] =
-        covariant_components.g_23[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g_33)] =
-        covariant_components.g_33[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g_11)] = coords->g_11()[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g_12)] = coords->g_12()[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g_13)] = coords->g_13()[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g_22)] = coords->g_22()[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g_23)] = coords->g_23()[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::g_33)] = coords->g_33()[ind];
   }
 }
 

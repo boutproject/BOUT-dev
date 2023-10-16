@@ -280,13 +280,12 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       // Neumann boundary condition
       if (inner_boundary_flags & INVERT_SET) {
         // guard cells of x0 specify gradient to set at inner boundary
-        const auto covariant_components = coords->getCovariantMetricTensor();
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           x[k] = -x0(localmesh->xstart - 1, k2)
-                 * sqrt(covariant_components.g_11(localmesh->xstart, yindex))
+                 * sqrt(coords->g_11()(localmesh->xstart, yindex))
                  * coords->dx(localmesh->xstart, yindex);
         }
       } else {
@@ -325,13 +324,12 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       // Neumann boundary condition
       if (inner_boundary_flags & INVERT_SET) {
         // guard cells of x0 specify gradient to set at outer boundary
-        const auto covariant_components = coords->getCovariantMetricTensor();
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           x[(lxx + 1) * lz2 + k] = x0(localmesh->xend + 1, k2)
-                                   * sqrt(covariant_components.g_11(localmesh->xend, yindex))
+                                   * sqrt(coords->g_11()(localmesh->xend, yindex))
                                    * coords->dx(localmesh->xend, yindex);
           // this is the value to set the gradient to at the outer boundary
         }
@@ -483,7 +481,6 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       // Neumann boundary condition
       if (inner_boundary_flags & INVERT_SET) {
         // guard cells of x0 specify gradient to set at inner boundary
-        const auto covariant_components = coords->getCovariantMetricTensor();
         int i2 = -1 + localmesh->xstart;
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
@@ -491,7 +488,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
           int k2 = k - 1;
           result(i2, k2) = x[lz2 + k]
                            - x0(localmesh->xstart - 1, k2)
-                                 * sqrt(covariant_components.g_11(localmesh->xstart, yindex))
+                                 * sqrt(coords->g_11()(localmesh->xstart, yindex))
                                  * coords->dx(localmesh->xstart, yindex);
         }
       } else {
@@ -532,7 +529,6 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       // Neumann boundary condition
       if (inner_boundary_flags & INVERT_SET) {
         // guard cells of x0 specify gradient to set at outer boundary
-        const auto covariant_components = coords->getCovariantMetricTensor();
         int i2 = lxx + localmesh->xstart;
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
@@ -540,7 +536,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
           int k2 = k - 1;
           result(i2, k2) = x[lxx * lz2 + k]
                            + x0(localmesh->xend + 1, k2)
-                                 * sqrt(covariant_components.g_11(localmesh->xend, yindex))
+                                 * sqrt(coords->g_11()(localmesh->xend, yindex))
                                  * coords->dx(localmesh->xend, yindex);
         }
       } else {
@@ -609,20 +605,22 @@ void LaplaceMultigrid::generateMatrixF(int level) {
       BoutReal ddz_C =
           (C2(i2, yindex, k2p) - C2(i2, yindex, k2m)) / 2. / dz / C1(i2, yindex, k2);
 
-      BoutReal ddx = D(i2, yindex, k2) * contravariant_components.g11(i2, yindex) / coords->dx(i2, yindex)
-                     / coords->dx(i2, yindex);
+      BoutReal ddx = D(i2, yindex, k2) * contravariant_components.g11(i2, yindex)
+                     / coords->dx(i2, yindex) / coords->dx(i2, yindex);
       // coefficient of 2nd derivative stencil (x-direction)
 
-      BoutReal ddz = D(i2, yindex, k2) * contravariant_components.g33(i2, yindex) / SQ(dz);
+      BoutReal ddz =
+          D(i2, yindex, k2) * contravariant_components.g33(i2, yindex) / SQ(dz);
       // coefficient of 2nd derivative stencil (z-direction)
 
-      BoutReal dxdz =
-          D(i2, yindex, k2) * 2. * contravariant_components.g13(i2, yindex) / coords->dx(i2, yindex) / dz;
+      BoutReal dxdz = D(i2, yindex, k2) * 2. * contravariant_components.g13(i2, yindex)
+                      / coords->dx(i2, yindex) / dz;
       // coefficient of mixed derivative stencil (could assume zero, at least initially,
       // if easier; then check this is true in constructor)
 
       BoutReal dxd =
-          (D(i2, yindex, k2) * coords->G1(i2, yindex) + contravariant_components.g11(i2, yindex) * ddx_C
+          (D(i2, yindex, k2) * coords->G1(i2, yindex)
+           + contravariant_components.g11(i2, yindex) * ddx_C
            + contravariant_components.g13(i2, yindex)
                  * ddz_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
            )
@@ -633,7 +631,8 @@ void LaplaceMultigrid::generateMatrixF(int level) {
       }
 
       BoutReal dzd =
-          (D(i2, yindex, k2) * coords->G3(i2, yindex) + contravariant_components.g33(i2, yindex) * ddz_C
+          (D(i2, yindex, k2) * coords->G3(i2, yindex)
+           + contravariant_components.g33(i2, yindex) * ddz_C
            + contravariant_components.g13(i2, yindex)
                  * ddx_C // (could assume zero, at least initially, if easier; then check
                          // this is true in constructor)

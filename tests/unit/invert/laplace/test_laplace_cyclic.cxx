@@ -40,9 +40,11 @@ public:
 
   const Field3D operator()(Field3D& f) {
     const auto contravariant_components = coords->getContravariantMetricTensor();
-    auto result = d * Delp2(f)
-                  + (contravariant_components.g11 * DDX(f) + contravariant_components.g13 * DDZ(f)) * DDX(c2) / c1 + a * f
-                  + ex * DDX(f) + ez * DDZ(f);
+    auto result =
+        d * Delp2(f)
+        + (contravariant_components.g11 * DDX(f) + contravariant_components.g13 * DDZ(f))
+              * DDX(c2) / c1
+        + a * f + ex * DDX(f) + ez * DDZ(f);
     applyBoundaries(result, f);
     return result;
   }
@@ -52,10 +54,9 @@ private:
   bool inner_x_neumann, outer_x_neumann; // If false then use Dirichlet conditions
 
   void applyBoundaries(Field3D& newF, const Field3D& f) {
-    const auto covariant_components = coords->getCovariantMetricTensor();
     BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_INNER_X")) {
       if (inner_x_neumann) {
-        newF[i] = (f[i.xp()] - f[i]) / coords->dx[i] / sqrt(covariant_components.g_11[i]);
+        newF[i] = (f[i.xp()] - f[i]) / coords->dx[i] / sqrt(coords->g_11()[i]);
       } else {
         newF[i] = 0.5 * (f[i] + f[i.xp()]);
       }
@@ -63,7 +64,7 @@ private:
 
     BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_OUTER_X")) {
       if (outer_x_neumann) {
-        newF[i] = (f[i] - f[i.xm()]) / coords->dx[i] / sqrt(covariant_components.g_11[i]);
+        newF[i] = (f[i] - f[i.xm()]) / coords->dx[i] / sqrt(coords->g_11()[i]);
       } else {
         newF[i] = 0.5 * (f[i.xm()] + f[i]);
       }

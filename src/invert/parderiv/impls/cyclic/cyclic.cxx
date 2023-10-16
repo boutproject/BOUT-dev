@@ -58,7 +58,7 @@ InvertParCR::InvertParCR(Options* opt, CELL_LOC location, Mesh* mesh_in)
   // Number of k equations to solve for each x location
   nsys = 1 + (localmesh->LocalNz) / 2;
 
-  sg = sqrt(localmesh->getCoordinates(location)->getCovariantMetricTensor().g_22);
+  sg = sqrt(localmesh->getCoordinates(location)->g_22());
   sg = DDY(1. / sg) / sg;
 }
 
@@ -154,9 +154,9 @@ const Field3D InvertParCR::solve(const Field3D& f) {
 
         BoutReal acoef = A(x, y + local_ystart); // Constant
         BoutReal bcoef =
-            B(x, y + local_ystart) / coord->getCovariantMetricTensor().g_22(x, y + local_ystart); // d2dy2
-        BoutReal ccoef = C(x, y + local_ystart);                       // d2dydz
-        BoutReal dcoef = D(x, y + local_ystart);                       // d2dz2
+            B(x, y + local_ystart) / coord->g_22()(x, y + local_ystart); // d2dy2
+        BoutReal ccoef = C(x, y + local_ystart);                         // d2dydz
+        BoutReal dcoef = D(x, y + local_ystart);                         // d2dz2
         BoutReal ecoef = E(x, y + local_ystart)
                          + sg(x, y + local_ystart) * B(x, y + local_ystart); // ddy
 

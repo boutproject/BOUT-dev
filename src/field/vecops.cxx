@@ -105,12 +105,11 @@ Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc, const std::string& method)
 
   Vector3D result(f.getMesh());
 
-  const auto covariant_components = metric->getCovariantMetricTensor();
   result.x = DDX(f, outloc, method)
-             - covariant_components.g_12 * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
+             - metric->g_12() * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
   result.y = 0.0;
   result.z = DDZ(f, outloc, method)
-             - covariant_components.g_23 * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
+             - metric->g_23() * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
 
   result.setLocation(result.x.getLocation());
 
@@ -128,11 +127,10 @@ Vector2D Grad_perp(const Field2D& f, CELL_LOC outloc, const std::string& method)
 
   Vector2D result(f.getMesh());
 
-  const auto covariant_components = metric->getCovariantMetricTensor();
   result.x = DDX(f, outloc, method)
-             - covariant_components.g_12 * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
+             - metric->g_12() * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
   result.y = 0.0;
-  result.z = - covariant_components.g_23 * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
+  result.z = -metric->g_23() * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
 
   result.setLocation(result.x.getLocation());
 
