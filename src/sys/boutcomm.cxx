@@ -33,6 +33,7 @@ MPI_Comm& BoutComm::getComm() {
 
     // Duplicate MPI_COMM_WORLD
     MPI_Comm_dup(MPI_COMM_WORLD, &comm);
+    ASSERT1(comm != MPI_COMM_NULL);
   }
   return comm;
 }
