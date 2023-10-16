@@ -69,4 +69,5 @@ else
     time cmake -S . -B build -DBOUT_USE_PETSC=OFF
     time make -C build build-check -j 2
     time make -C build check
+    df -h|grep shm
 fi
