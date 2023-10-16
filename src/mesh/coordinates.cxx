@@ -500,13 +500,17 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
                     source_has_component)) {
 
       auto covariant_components = covariantMetricTensor.getCovariantMetricTensor();
+      
+      FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
+      g_11 = getUnaligned(covariant_components.g_11, "g_11", 1.0);
+      g_22 = getUnaligned(covariant_components.g_22, "g_22", 1.0);
+      g_33 = getUnaligned(covariant_components.g_33, "g_33", 1.0);
+      g_12 = getUnaligned(covariant_components.g_12, "g_12", 0.0);
+      g_13 = getUnaligned(covariant_components.g_13, "g_13", 0.0);
+      g_23 = getUnaligned(covariant_components.g_23, "g_23", 0.0);
 
-      covariant_components.g_11 = getUnaligned(covariant_components.g_11, "g_11", 1.0);
-      covariant_components.g_22 = getUnaligned(covariant_components.g_22, "g_22", 1.0);
-      covariant_components.g_33 = getUnaligned(covariant_components.g_33, "g_33", 1.0);
-      covariant_components.g_12 = getUnaligned(covariant_components.g_12, "g_12", 0.0);
-      covariant_components.g_13 = getUnaligned(covariant_components.g_13, "g_13", 0.0);
-      covariant_components.g_23 = getUnaligned(covariant_components.g_23, "g_23", 0.0);
+      covariantMetricTensor.setCovariantMetricTensor(
+          location, CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
       output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                         "Contravariant components NOT recalculated\n");
