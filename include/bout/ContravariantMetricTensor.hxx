@@ -1,8 +1,8 @@
 
-#ifndef BOUT_CONTRAVARIANTMETRICTENSOR_H
-#define BOUT_CONTRAVARIANTMETRICTENSOR_H
+#ifndef BOUT_CONTRAVARIANTMETRICTENSOR_HXX
+#define BOUT_CONTRAVARIANTMETRICTENSOR_HXX
 
-#include "CovariantMetricTensor.h"
+#include "CovariantMetricTensor.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/paralleltransform.hxx"
@@ -50,4 +50,4 @@ private:
   ContravariantComponents contravariant_components;
 };
 
-#endif //BOUT_CONTRAVARIANTMETRICTENSOR_H
+#endif //BOUT_CONTRAVARIANTMETRICTENSOR_HXX

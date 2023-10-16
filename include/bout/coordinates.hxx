@@ -33,8 +33,8 @@
 #ifndef __COORDINATES_H__
 #define __COORDINATES_H__
 
-#include "ContravariantMetricTensor.h"
-#include "CovariantMetricTensor.h"
+#include "ContravariantMetricTensor.hxx"
+#include "CovariantMetricTensor.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/paralleltransform.hxx"
