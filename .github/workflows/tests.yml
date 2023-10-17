@@ -3,7 +3,8 @@ on:
   push:
   pull_request:
   schedule:
-    - cron: '30 6 * * *'
+    # run sunday moring
+    - cron: '30 6 * * 0'
 
 defaults:
   run:
