@@ -495,6 +495,8 @@ public:
 
   friend void swap(Field3D& first, Field3D& second) noexcept;
 
+  int size() const override { return nx * ny * nz; };
+
 private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1}, nz{-1};

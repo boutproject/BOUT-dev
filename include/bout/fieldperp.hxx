@@ -290,6 +290,8 @@ public:
 
   friend void swap(FieldPerp& first, FieldPerp& second) noexcept;
 
+  int size() const override { return nx * nz; };
+
 private:
   /// The Y index at which this FieldPerp is defined
   int yindex{-1};

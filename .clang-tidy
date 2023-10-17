@@ -359,5 +359,11 @@ CheckOptions:
     value:           'false'
   - key:             readability-simplify-subscript-expr.Types
     value:           '::std::basic_string;::std::basic_string_view;::std::vector;::std::array'
+  - key:             readability-identifier-length.IgnoredVariableNames
+    value:           '^n?[xyz]$'
+  - key:             readability-identifier-length.IgnoredParameterNames
+    value:           '^[ijkxyz][01]?$'
+  - key:             readability-identifier-length.IgnoredLoopCounterNames
+    value:           '^[ijkxyz_]$'
 ...
 
