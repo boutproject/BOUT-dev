@@ -23,10 +23,6 @@ public:
                         const BoutReal g_12, const BoutReal g_13, const BoutReal g_23,
                         Mesh* mesh);
 
-  /// Invert covariant metric to get contravariant components
-  ContravariantMetricTensor calcContravariant(CELL_LOC location,
-                                              const std::string& region = "RGN_ALL");
-
   // check that covariant tensors are positive (if expected) and finite (always)
   void checkCovariant(int ystart);
 
@@ -37,8 +33,7 @@ public:
   const FieldMetric& Getg_13() const;
   const FieldMetric& Getg_23() const;
 
-  void setCovariantMetricTensor(CELL_LOC location,
-                                const CovariantMetricTensor& metric_tensor);
+  void setCovariantMetricTensor(const CovariantMetricTensor& metric_tensor);
 
   void Allocate();
 
