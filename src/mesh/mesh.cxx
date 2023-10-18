@@ -784,7 +784,7 @@ int Mesh::getCommonRegion(int lhs, int rhs) {
    */
   const size_t pos = (high * (high - 1)) / 2 + low;
   if (region3Dintersect.size() <= pos) {
-    BOUT_OMP(critical(mesh_getIntersection_realloc))
+    BOUT_OMP(critical(mesh_intersection_realloc))
 #if BOUT_USE_OPENMP
     if (region3Dintersect.size() <= pos)
 #endif
@@ -796,12 +796,12 @@ int Mesh::getCommonRegion(int lhs, int rhs) {
     return region3Dintersect[pos];
   }
   {
-    BOUT_OMP(critical(mesh_getIntersection))
+    BOUT_OMP(critical(mesh_intersection))
 #if BOUT_USE_OPENMP
     if (region3Dintersect[pos] == -1)
 #endif
     {
-      auto common = getIntersection(region3D[low], region3D[high]);
+      auto common = intersection(region3D[low], region3D[high]);
       for (size_t i = 0; i < region3D.size(); ++i) {
         if (common == region3D[i]) {
           region3Dintersect[pos] = i;

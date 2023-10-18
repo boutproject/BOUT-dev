@@ -298,7 +298,7 @@ TEST_F(RegionTest, regionIntersection) {
   EXPECT_EQ(count1, nmesh);
   EXPECT_GT(count1, count2);
 
-  const auto& region3 = getIntersection(region1, region2);
+  const auto& region3 = intersection(region1, region2);
   int count3 = region_count_helper(region3);
   count1 = region_count_helper(region1);
 

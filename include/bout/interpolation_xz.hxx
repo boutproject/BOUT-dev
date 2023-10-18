@@ -88,7 +88,7 @@ public:
     const bool has_region = !region_name.empty() or this->region != nullptr;
     if (!region.empty() and region != "RGN_ALL") {
       if (has_region) {
-        return getIntersection(localmesh->getRegion(region), getRegion());
+        return intersection(localmesh->getRegion(region), getRegion());
       }
       return localmesh->getRegion(region);
     }

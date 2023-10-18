@@ -696,7 +696,7 @@ public:
     return *this; // To allow command chaining
   };
 
-  /// Returns a modified region including only indices that are also in the region.
+  /// Get a new region including only indices that are in both regions.
   Region<T> getIntersection(const Region<T>& otherRegion) {
     // Get other indices and sort as we're going to be searching through
     // this vector so if it's sorted we can be more efficient
@@ -953,7 +953,7 @@ Region<T> mask(const Region<T>& region, const Region<T>& mask) {
 
 /// Return the intersection of two regions
 template <typename T>
-Region<T> getIntersection(const Region<T>& region, const Region<T>& otherRegion) {
+Region<T> intersection(const Region<T>& region, const Region<T>& otherRegion) {
   auto result = region;
   return result.getIntersection(otherRegion);
 }
