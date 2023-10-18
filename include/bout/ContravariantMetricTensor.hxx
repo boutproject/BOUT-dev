@@ -19,7 +19,7 @@ public:
 #endif
 
       struct ContravariantComponents {
-    const FieldMetric g11, g22, g33, g12, g13, g23;
+    FieldMetric g11, g22, g33, g12, g13, g23;
   };
 
   ContravariantMetricTensor(const FieldMetric& g11, const FieldMetric& g22,
@@ -45,6 +45,10 @@ public:
   void Allocate();
 
   void setLocation(const CELL_LOC location);
+
+  /// Invert covariant metric to get contravariant components
+  void calcContravariant(CovariantMetricTensor covariantMetricTensor, CELL_LOC location,
+                         const std::string& region = "RGN_ALL");
 
 private:
   ContravariantComponents contravariant_components;

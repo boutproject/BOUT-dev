@@ -39,9 +39,10 @@ void communicate(T& t, Ts... ts) {
 /// Boundary guard cells are set by extrapolating from the grid, like
 /// 'free_o3' boundary conditions
 /// Corner guard cells are set to BoutNaN
-const Field2D& interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extrapolate_x,
-                                  bool extrapolate_y, bool no_extra_interpolate,
-                                  ParallelTransform* UNUSED(pt) = nullptr) {
+const Field2D& interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
+                                         bool extrapolate_x, bool extrapolate_y,
+                                         bool no_extra_interpolate,
+                                         ParallelTransform* UNUSED(pt) = nullptr) {
 
   Mesh* localmesh = f.getMesh();
   Field2D result = interp_to(f, location, "RGN_NOBNDRY");
@@ -446,9 +447,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y, false,
                                  transform.get());
 
-  auto getUnaligned = [this](const auto field, const std::string& name,
+  auto getUnaligned = [this](auto& field, const std::string& name,
                              BoutReal default_value) {
-    localmesh->get(field, name, default_value, false);
+    field = localmesh->get(name, default_value, false);
     if (field.getDirectionY() == YDirectionType::Aligned
         and transform->canToFromFieldAligned()) {
       return transform->fromFieldAligned(field);
@@ -458,7 +459,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   };
 
   auto getUnalignedAtLocation = [this, extrapolate_x, extrapolate_y,
-                                 getUnaligned](const auto& field, const std::string& name,
+                                 getUnaligned](auto& field, const std::string& name,
                                                BoutReal default_value) {
     field = getUnaligned(field, name, default_value);
     return interpolateAndExtrapolate(field, location, extrapolate_x, extrapolate_y, false,
@@ -470,16 +471,29 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   auto contravariant_components =
       contravariantMetricTensor.getContravariantMetricTensor();
 
+  //  FieldMetric old_g11 = contravariantMetricTensor.Getg11(); // non-const
+  //  FieldMetric old_g22 = contravariantMetricTensor.Getg22(); // non-const
+  //  FieldMetric old_g33 = contravariantMetricTensor.Getg33(); // non-const
+  //  FieldMetric old_g12 = contravariantMetricTensor.Getg12(); // non-const
+  //  FieldMetric old_g13 = contravariantMetricTensor.Getg13(); // non-const
+  //  FieldMetric old_g23 = contravariantMetricTensor.Getg23(); // non-const
+  FieldMetric old_g11 = contravariant_components.g11; // non-const
+  FieldMetric old_g22 = contravariant_components.g22; // non-const
+  FieldMetric old_g33 = contravariant_components.g33; // non-const
+  FieldMetric old_g12 = contravariant_components.g12; // non-const
+  FieldMetric old_g13 = contravariant_components.g13; // non-const
+  FieldMetric old_g23 = contravariant_components.g23; // non-const
+
   FieldMetric g11, g22, g33, g12, g13, g23;
 
-  g11 = getUnalignedAtLocation(contravariant_components.g11, "g11", 1.0);
-  g22 = getUnalignedAtLocation(contravariant_components.g22, "g22", 1.0);
-  g33 = getUnalignedAtLocation(contravariant_components.g33, "g33", 1.0);
+  g11 = getUnalignedAtLocation(old_g11, "g11", 1.0);
+  g22 = getUnalignedAtLocation(old_g22, "g22", 1.0);
+  g33 = getUnalignedAtLocation(old_g33, "g33", 1.0);
 
   // Off-diagonal elements. Default to 0
-  g12 = getUnalignedAtLocation(contravariant_components.g12, "g12", 0.0);
-  g13 = getUnalignedAtLocation(contravariant_components.g13, "g13", 0.0);
-  g23 = getUnalignedAtLocation(contravariant_components.g23, "g23", 0.0);
+  g12 = getUnalignedAtLocation(old_g12, "g12", 0.0);
+  g13 = getUnalignedAtLocation(old_g13, "g13", 0.0);
+  g23 = getUnalignedAtLocation(old_g23, "g23", 0.0);
 
   contravariantMetricTensor.setContravariantMetricTensor(
       location, ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
@@ -499,16 +513,23 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
                     source_has_component)) {
 
+      FieldMetric old_g_11 = covariantMetricTensor.Getg_11(); // non-const
+      FieldMetric old_g_22 = covariantMetricTensor.Getg_22(); // non-const
+      FieldMetric old_g_33 = covariantMetricTensor.Getg_33(); // non-const
+      FieldMetric old_g_12 = covariantMetricTensor.Getg_12(); // non-const
+      FieldMetric old_g_13 = covariantMetricTensor.Getg_13(); // non-const
+      FieldMetric old_g_23 = covariantMetricTensor.Getg_23(); // non-const
+
       FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
-      g_11 = getUnaligned(covariantMetricTensor.Getg_11(), "g_11", 1.0);
-      g_22 = getUnaligned(covariantMetricTensor.Getg_22(), "g_22", 1.0);
-      g_33 = getUnaligned(covariantMetricTensor.Getg_33(), "g_33", 1.0);
-      g_12 = getUnaligned(covariantMetricTensor.Getg_12(), "g_12", 0.0);
-      g_13 = getUnaligned(covariantMetricTensor.Getg_13(), "g_13", 0.0);
-      g_23 = getUnaligned(covariantMetricTensor.Getg_23(), "g_23", 0.0);
+      //      g_11 = getUnaligned(old_g_11, "g_11", 1.0);
+      //      g_22 = getUnaligned(old_g_22, "g_22", 1.0);
+      //      g_33 = getUnaligned(old_g_33, "g_33", 1.0);
+      //      g_12 = getUnaligned(old_g_12, "g_12", 0.0);
+      //      g_13 = getUnaligned(old_g_13, "g_13", 0.0);
+      //      g_23 = getUnaligned(old_g_23, "g_23", 0.0);
 
       covariantMetricTensor.setCovariantMetricTensor(
-          location, CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+          CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
       output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                         "Contravariant components NOT recalculated\n");
@@ -550,7 +571,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
                                    extrapolate_x, extrapolate_y, false, transform.get());
 
   covariantMetricTensor.setCovariantMetricTensor(
-      location, CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+      CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
   // Check covariant metrics
   checkCovariant();
@@ -688,21 +709,28 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     auto contravariant_components =
         contravariantMetricTensor.getContravariantMetricTensor();
 
+    FieldMetric old_g11 = contravariant_components.g11; // non-const
+    FieldMetric old_g22 = contravariant_components.g22; // non-const
+    FieldMetric old_g33 = contravariant_components.g33; // non-const
+    FieldMetric old_g12 = contravariant_components.g12; // non-const
+    FieldMetric old_g13 = contravariant_components.g13; // non-const
+    FieldMetric old_g23 = contravariant_components.g23; // non-const
+
     // grid data source has staggered fields, so read instead of interpolating
     // Diagonal components of metric tensor g^{ij} (default to 1)
     //    TODO: Method `getAtLocAndFillGuards` violates command–query separation principle?
-    getAtLocAndFillGuards(mesh, contravariant_components.g11, "g11", suffix, location,
-                          1.0, extrapolate_x, extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, contravariant_components.g22, "g22", suffix, location,
-                          1.0, extrapolate_x, extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, contravariant_components.g33, "g33", suffix, location,
-                          1.0, extrapolate_x, extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, contravariant_components.g12, "g12", suffix, location,
-                          0.0, extrapolate_x, extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, contravariant_components.g13, "g13", suffix, location,
-                          0.0, extrapolate_x, extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, contravariant_components.g23, "g23", suffix, location,
-                          0.0, extrapolate_x, extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, old_g11, "g11", suffix, location, 1.0, extrapolate_x,
+                          extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, old_g22, "g22", suffix, location, 1.0, extrapolate_x,
+                          extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, old_g33, "g33", suffix, location, 1.0, extrapolate_x,
+                          extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, old_g12, "g12", suffix, location, 0.0, extrapolate_x,
+                          extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, old_g13, "g13", suffix, location, 0.0, extrapolate_x,
+                          extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, old_g23, "g23", suffix, location, 0.0, extrapolate_x,
+                          extrapolate_y, false, transform.get());
 
     contravariantMetricTensor.setContravariantMetricTensor(
         loc, ContravariantMetricTensor(
@@ -726,12 +754,19 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
                       source_has_component)) {
 
-        getAtLoc(mesh, covariantMetricTensor.Getg_11(), "g_11", suffix, location);
-        getAtLoc(mesh, covariantMetricTensor.Getg_22(), "g_22", suffix, location);
-        getAtLoc(mesh, covariantMetricTensor.Getg_33(), "g_33", suffix, location);
-        getAtLoc(mesh, covariantMetricTensor.Getg_12(), "g_12", suffix, location);
-        getAtLoc(mesh, covariantMetricTensor.Getg_13(), "g_13", suffix, location);
-        getAtLoc(mesh, covariantMetricTensor.Getg_23(), "g_23", suffix, location);
+        FieldMetric old_g_11 = covariantMetricTensor.Getg_11(); // non-const
+        FieldMetric old_g_22 = covariantMetricTensor.Getg_22(); // non-const
+        FieldMetric old_g_33 = covariantMetricTensor.Getg_33(); // non-const
+        FieldMetric old_g_12 = covariantMetricTensor.Getg_12(); // non-const
+        FieldMetric old_g_13 = covariantMetricTensor.Getg_13(); // non-const
+        FieldMetric old_g_23 = covariantMetricTensor.Getg_23(); // non-const
+
+        getAtLoc(mesh, old_g_11, "g_11", suffix, location);
+        getAtLoc(mesh, old_g_22, "g_22", suffix, location);
+        getAtLoc(mesh, old_g_33, "g_33", suffix, location);
+        getAtLoc(mesh, old_g_12, "g_12", suffix, location);
+        getAtLoc(mesh, old_g_13, "g_13", suffix, location);
+        getAtLoc(mesh, old_g_23, "g_23", suffix, location);
 
         output_warn.write(
             "\tWARNING! Staggered covariant components of metric tensor set manually. "
@@ -925,7 +960,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                                      true, false, transform.get());
 
     covariantMetricTensor.setCovariantMetricTensor(
-        location, CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+        CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
     // Check input metrics
     checkContravariant();
@@ -1388,10 +1423,8 @@ CovariantMetricTensor Coordinates::calcCovariant(const std::string& region) {
 
 ContravariantMetricTensor Coordinates::calcContravariant(const std::string& region) {
   TRACE("Coordinates::calcContravariant");
-  auto new_contravariantMetricTensor =
-      covariantMetricTensor.calcContravariant(location, region);
-  contravariantMetricTensor = new_contravariantMetricTensor;
-  return new_contravariantMetricTensor;
+  contravariantMetricTensor.calcContravariant(covariantMetricTensor, location, region);
+  return contravariantMetricTensor;
 }
 
 int Coordinates::jacobian() {
@@ -2051,5 +2084,6 @@ const CovariantMetricTensor::FieldMetric& Coordinates::g_23() const {
 }
 
 void Coordinates::setCovariantMetricTensor(CovariantMetricTensor metric_tensor) {
-  covariantMetricTensor.setCovariantMetricTensor(location, metric_tensor);
+  covariantMetricTensor.setCovariantMetricTensor(metric_tensor);
+  contravariantMetricTensor.calcContravariant(covariantMetricTensor, location);
 }

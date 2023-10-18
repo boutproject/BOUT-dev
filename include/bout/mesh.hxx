@@ -186,6 +186,19 @@ public:
   int get(Field2D& var, const std::string& name, BoutReal def = 0.0,
           bool communicate = true, CELL_LOC location = CELL_DEFAULT);
 
+  /// Get a Field2D from the input source
+  /// including communicating guard cells
+  /// This is a new version of the `get` function, that returns the value
+  /// avoiding the use of an out parameter
+  ///
+  /// @param[in] name   Name of the variable to read
+  /// @param[in] def    The default value if not found
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
+  ///
+  /// @returns the value. Will be allocated if needed
+  Coordinates::FieldMetric& get(const std::string& name, BoutReal def = 0.0,
+          bool communicate = true, CELL_LOC location = CELL_DEFAULT);
+
   /// Get a Field3D from the input source
   ///
   /// @param[out] var   This will be set to the value. Will be allocated if needed
