@@ -179,14 +179,14 @@ Coordinates::FieldMetric& Mesh::get(const std::string& name, BoutReal def,
                                     bool communicate, CELL_LOC location) {
   TRACE("Loading 2D field: Mesh::get(Field2D, {:s})", name);
 
-  if (source == nullptr) {
-    throw BoutException("source == nullptr, in Coordinates::FieldMetric& Mesh::get");
-  }
   Field2D temporary_var = Field2D{}; // TODO: There must be a better way of doing this
   Field2D& var = temporary_var;
-  if (!source->get(this, var, name, def, location)) {
-    throw BoutException(
-        fmt::format("Exception thrown getting value of `def` from {}", toString(source)));
+
+  if (source == nullptr or !source->get(this, var, name, def, location)) {
+    // set val to default in source==nullptr too:
+    var = def;
+    var.setLocation(location);
+    return var;
   }
 
   // Communicate to get guard cell data
