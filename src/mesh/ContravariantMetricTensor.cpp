@@ -3,8 +3,8 @@
 #include "bout/CovariantMetricTensor.hxx"
 
 ContravariantMetricTensor::ContravariantMetricTensor(
-    const FieldMetric g11, const FieldMetric g22, const FieldMetric g33,
-    const FieldMetric g12, const FieldMetric g13, const FieldMetric g23)
+    const FieldMetric& g11, const FieldMetric& g22, const FieldMetric& g33,
+    const FieldMetric& g12, const FieldMetric& g13, const FieldMetric& g23)
     : contravariant_components({FieldMetric(std::move(g11)), FieldMetric(std::move(g22)),
                                 FieldMetric(std::move(g33)), FieldMetric(std::move(g12)),
                                 FieldMetric(std::move(g13)),
@@ -76,7 +76,7 @@ ContravariantMetricTensor::calcCovariant(const CELL_LOC location,
   CovariantMetricTensor covariantMetricTensor =
       CovariantMetricTensor(a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2), mesh);
 
-  this->setLocation(location);
+  setLocation(location);
   covariantMetricTensor.setLocation(location);
 
   BoutReal maxerr;

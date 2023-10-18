@@ -39,7 +39,7 @@ void communicate(T& t, Ts... ts) {
 /// Boundary guard cells are set by extrapolating from the grid, like
 /// 'free_o3' boundary conditions
 /// Corner guard cells are set to BoutNaN
-Field2D interpolateAndExtrapolate(const Field2D f, CELL_LOC location, bool extrapolate_x,
+const Field2D& interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extrapolate_x,
                                   bool extrapolate_y, bool no_extra_interpolate,
                                   ParallelTransform* UNUSED(pt) = nullptr) {
 
@@ -322,7 +322,7 @@ void checkStaggeredGet(Mesh* mesh, const std::string& name, const std::string& s
 }
 
 // convenience function for repeated code
-int getAtLoc(Mesh* mesh, Coordinates::FieldMetric var, const std::string& name,
+int getAtLoc(Mesh* mesh, Coordinates::FieldMetric& var, const std::string& name,
              const std::string& suffix, CELL_LOC location, BoutReal default_value = 0.) {
 
   checkStaggeredGet(mesh, name, suffix);
@@ -446,7 +446,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y, false,
                                  transform.get());
 
-  auto getUnaligned = [this](auto field, const std::string& name,
+  auto getUnaligned = [this](const auto field, const std::string& name,
                              BoutReal default_value) {
     localmesh->get(field, name, default_value, false);
     if (field.getDirectionY() == YDirectionType::Aligned
@@ -458,7 +458,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   };
 
   auto getUnalignedAtLocation = [this, extrapolate_x, extrapolate_y,
-                                 getUnaligned](auto& field, const std::string& name,
+                                 getUnaligned](const auto& field, const std::string& name,
                                                BoutReal default_value) {
     field = getUnaligned(field, name, default_value);
     return interpolateAndExtrapolate(field, location, extrapolate_x, extrapolate_y, false,
@@ -2031,22 +2031,22 @@ Coordinates::getContravariantMetricTensor() const {
   return contravariantMetricTensor.getContravariantMetricTensor();
 }
 
-CovariantMetricTensor::FieldMetric Coordinates::g_11() const {
+const CovariantMetricTensor::FieldMetric& Coordinates::g_11() const {
   return covariantMetricTensor.Getg_11();
 }
-CovariantMetricTensor::FieldMetric Coordinates::g_22() const {
+const CovariantMetricTensor::FieldMetric& Coordinates::g_22() const {
   return covariantMetricTensor.Getg_22();
 }
-CovariantMetricTensor::FieldMetric Coordinates::g_33() const {
+const CovariantMetricTensor::FieldMetric& Coordinates::g_33() const {
   return covariantMetricTensor.Getg_33();
 }
-CovariantMetricTensor::FieldMetric Coordinates::g_12() const {
+const CovariantMetricTensor::FieldMetric& Coordinates::g_12() const {
   return covariantMetricTensor.Getg_12();
 }
-CovariantMetricTensor::FieldMetric Coordinates::g_13() const {
+const CovariantMetricTensor::FieldMetric& Coordinates::g_13() const {
   return covariantMetricTensor.Getg_13();
 }
-CovariantMetricTensor::FieldMetric Coordinates::g_23() const {
+const CovariantMetricTensor::FieldMetric& Coordinates::g_23() const {
   return covariantMetricTensor.Getg_23();
 }
 

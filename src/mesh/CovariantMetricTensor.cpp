@@ -23,12 +23,12 @@ CovariantMetricTensor::CovariantMetricTensor(const BoutReal g_11, const BoutReal
   Allocate(); // Make sure metric elements are allocated //  ; TODO: Required?
 }
 
-CovariantMetricTensor::FieldMetric CovariantMetricTensor::Getg_11() const { return g_11; }
-CovariantMetricTensor::FieldMetric CovariantMetricTensor::Getg_22() const { return g_22; }
-CovariantMetricTensor::FieldMetric CovariantMetricTensor::Getg_33() const { return g_33; }
-CovariantMetricTensor::FieldMetric CovariantMetricTensor::Getg_12() const { return g_12; }
-CovariantMetricTensor::FieldMetric CovariantMetricTensor::Getg_13() const { return g_13; }
-CovariantMetricTensor::FieldMetric CovariantMetricTensor::Getg_23() const { return g_23; }
+const CovariantMetricTensor::FieldMetric& CovariantMetricTensor::Getg_11() const { return g_11; }
+const CovariantMetricTensor::FieldMetric& CovariantMetricTensor::Getg_22() const { return g_22; }
+const CovariantMetricTensor::FieldMetric& CovariantMetricTensor::Getg_33() const { return g_33; }
+const CovariantMetricTensor::FieldMetric& CovariantMetricTensor::Getg_12() const { return g_12; }
+const CovariantMetricTensor::FieldMetric& CovariantMetricTensor::Getg_13() const { return g_13; }
+const CovariantMetricTensor::FieldMetric& CovariantMetricTensor::Getg_23() const { return g_23; }
 
 void CovariantMetricTensor::setCovariantMetricTensor(
     CELL_LOC location, const CovariantMetricTensor& metric_tensor) {

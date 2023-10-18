@@ -30,12 +30,12 @@ public:
   // check that covariant tensors are positive (if expected) and finite (always)
   void checkCovariant(int ystart);
 
-  FieldMetric Getg_11() const;
-  FieldMetric Getg_22() const;
-  FieldMetric Getg_33() const;
-  FieldMetric Getg_12() const;
-  FieldMetric Getg_13() const;
-  FieldMetric Getg_23() const;
+  const FieldMetric& Getg_11() const;
+  const FieldMetric& Getg_22() const;
+  const FieldMetric& Getg_33() const;
+  const FieldMetric& Getg_12() const;
+  const FieldMetric& Getg_13() const;
+  const FieldMetric& Getg_23() const;
 
   void setCovariantMetricTensor(CELL_LOC location,
                                 const CovariantMetricTensor& metric_tensor);
