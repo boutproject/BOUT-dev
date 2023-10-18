@@ -17,12 +17,12 @@ jobs:
     if: always()
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
         submodules: true
     - name: Set up Python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v4
     - name: Install dependencies
       run: python -m pip install --upgrade pip &&
            pip install --upgrade build &&
@@ -57,12 +57,12 @@ jobs:
     if: always()
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
         submodules: true
     - name: Set up Python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v4
     - name: Install dependencies
       run: python -m pip install --upgrade pip &&
            pip install --upgrade build &&
@@ -106,12 +106,12 @@ jobs:
     if: always()
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
         submodules: true
     - name: Set up Python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v4
     - name: Install dependencies
       run: python -m pip install --upgrade pip &&
            pip install --upgrade build &&

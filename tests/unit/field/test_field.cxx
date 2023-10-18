@@ -33,6 +33,7 @@ public:
       : Field(localmesh, location_in, directions_in) {}
 
   bool is3D() const override { return false; }
+  int size() const override { return 42; }
 };
 } // namespace
 

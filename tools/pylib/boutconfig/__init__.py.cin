@@ -51,7 +51,7 @@ for k, v in config.items():
 has = {}
 for k in config:
     if k.startswith("has_"):
-        has[k[4:]] = _yesno[config[k]]
+        has[k[4:]] = _yesno[config[k].upper()]
 
 
 def isMetric2D():

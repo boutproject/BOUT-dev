@@ -29,6 +29,7 @@
 
 #include <bout/interpolation_z.hxx>
 #include <bout/paralleltransform.hxx>
+#include <cstddef>
 
 /*!
  * Shifted metric method
@@ -78,14 +79,17 @@ public:
   bool canToFromFieldAligned() const override { return true; }
 
   std::vector<ParallelTransform::PositionsAndWeights>
-  getWeightsForYUpApproximation(int i, int j, int k) override {
-    return parallel_slice_interpolators[yup_index]->getWeightsForYApproximation(i, j, k,
-                                                                                1);
-  }
-  std::vector<ParallelTransform::PositionsAndWeights>
-  getWeightsForYDownApproximation(int i, int j, int k) override {
-    return parallel_slice_interpolators[ydown_index]->getWeightsForYApproximation(i, j, k,
-                                                                                  -1);
+  getWeightsForYApproximation(int i, int j, int k, int y_offset) override {
+#if CHECK > 0
+    if (y_offset == 0) {
+      throw BoutException("Cannot get ShiftedMetricInterp parallel slice at zero offset");
+    }
+#endif
+    const auto index = static_cast<std::size_t>(std::abs(y_offset) - 1)
+                       + ((y_offset > 0) ? yup_index : ydown_index);
+
+    return parallel_slice_interpolators[index]->getWeightsForYApproximation(i, j, k,
+                                                                            y_offset);
   }
 
   bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) override {

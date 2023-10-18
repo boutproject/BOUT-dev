@@ -856,7 +856,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   if (reason <= 0) {
     throw BoutException(
         "petsc_laplace: inversion failed to converge. KSPConvergedReason: {} ({})",
-        KSPConvergedReasons[reason], reason);
+        KSPConvergedReasons[reason], static_cast<int>(reason));
   }
 
   // Add data to FieldPerp Object
