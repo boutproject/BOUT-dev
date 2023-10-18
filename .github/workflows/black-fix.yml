@@ -41,6 +41,6 @@ jobs:
         ls
         $HOME/.local/bin/black tests/ tools/ $(grep -EIlr '^#!.*python.*$' bin/ tests/ tools/ src/ | grep -v _boutpp_build)
 
-    - uses: stefanzweifel/git-auto-commit-action@v4
+    - uses: stefanzweifel/git-auto-commit-action@v5
       with:
         commit_message: "Apply black changes"
