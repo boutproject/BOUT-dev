@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-02-03 16:41+0000\n"
+"POT-Creation-Date: 2023-09-22 11:03+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -392,7 +392,7 @@ msgstr ""
 msgid "Cannot split {:d} X points equally between {:d} processors\n"
 msgstr ""
 
-#: ../src/bout++.cxx:808
+#: ../src/bout++.cxx:817
 msgid "Check if a file exists, and exit if it does."
 msgstr ""
 
@@ -445,7 +445,7 @@ msgstr ""
 msgid "Could not run bout-log-color. Make sure it is in your PATH\n"
 msgstr ""
 
-#: ../src/solver/solver.cxx:757
+#: ../src/solver/solver.cxx:765
 msgid "Couldn't add Monitor: {:g} is not a multiple of {:g}!"
 msgstr ""
 
@@ -490,7 +490,7 @@ msgstr ""
 msgid "Error encountered during initialisation: {:s}\n"
 msgstr ""
 
-#: ../src/bout++.cxx:734
+#: ../src/bout++.cxx:743
 msgid "Error whilst writing settings"
 msgstr ""
 
@@ -537,15 +537,15 @@ msgstr ""
 msgid "Missing integer array {:s}\n"
 msgstr ""
 
-#: ../src/solver/solver.cxx:897
+#: ../src/solver/solver.cxx:905
 msgid "Monitor signalled to quit (exception {})\n"
 msgstr ""
 
-#: ../src/solver/solver.cxx:875
+#: ../src/solver/solver.cxx:883
 msgid "Monitor signalled to quit (return code {})"
 msgstr ""
 
-#: ../src/bout++.cxx:813
+#: ../src/bout++.cxx:822
 msgid "Name of file whose existence triggers a stop"
 msgstr ""
 
@@ -568,7 +568,7 @@ msgid ""
 msgstr ""
 
 #. Less than 2 time-steps left
-#: ../src/bout++.cxx:886
+#: ../src/bout++.cxx:895
 msgid "Only {:e} seconds ({:.2f} steps) left. Quitting\n"
 msgstr ""
 
@@ -631,13 +631,13 @@ msgstr ""
 msgid "Signal"
 msgstr ""
 
-#: ../src/bout++.cxx:855
+#: ../src/bout++.cxx:864
 msgid ""
 "Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n"
 "\n"
 msgstr ""
 
-#: ../src/bout++.cxx:858
+#: ../src/bout++.cxx:867
 msgid ""
 "Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   "
 "Comm    I/O   SOLVER\n"
@@ -652,19 +652,19 @@ msgstr ""
 msgid "Solver running for {:d} outputs with output timestep of {:e}\n"
 msgstr ""
 
-#: ../src/solver/solver.cxx:773
+#: ../src/solver/solver.cxx:781
 msgid ""
 "Solver::addMonitor: Cannot reduce timestep (from {:g} to {:g}) after init is "
 "called!"
 msgstr ""
 
-#: ../src/solver/solver.cxx:1273
+#: ../src/solver/solver.cxx:1281
 msgid ""
 "Time derivative at wrong location - Field is at {:s}, derivative is at {:s} "
 "for field '{:s}'\n"
 msgstr ""
 
-#: ../src/solver/solver.cxx:1472
+#: ../src/solver/solver.cxx:1480
 msgid "Time derivative for variable '{:s}' not set"
 msgstr ""
 
@@ -688,7 +688,7 @@ msgid ""
 "rename one of them.\n"
 msgstr ""
 
-#: ../src/mesh/coordinates.cxx:1546
+#: ../src/mesh/coordinates.cxx:1462
 msgid ""
 "Unrecognised paralleltransform option.\n"
 "Valid choices are 'identity', 'shifted', 'fci'"
@@ -731,7 +731,7 @@ msgid ""
 msgstr ""
 
 #. restart file should be written by physics model
-#: ../src/solver/solver.cxx:913
+#: ../src/solver/solver.cxx:921
 msgid "User signalled to quit. Returning\n"
 msgstr ""
 
@@ -776,7 +776,7 @@ msgstr ""
 msgid "Value for option {:s} is not an integer"
 msgstr ""
 
-#: ../src/solver/solver.cxx:1224 ../src/solver/solver.cxx:1230
+#: ../src/solver/solver.cxx:1232 ../src/solver/solver.cxx:1238
 msgid "Variable '{:s}' not initialised"
 msgstr ""
 
@@ -786,7 +786,7 @@ msgid ""
 "performance -- consider changing MZ ({:d}) if using FFTs\n"
 msgstr ""
 
-#: ../src/mesh/coordinates.cxx:655
+#: ../src/mesh/coordinates.cxx:633
 msgid "WARNING: extrapolating input mesh quantities into x-boundary cells\n"
 msgstr ""
 
@@ -796,7 +796,7 @@ msgid ""
 "option extrapolate_x=false to disable this.\n"
 msgstr ""
 
-#: ../src/mesh/coordinates.cxx:660
+#: ../src/mesh/coordinates.cxx:638
 msgid "WARNING: extrapolating input mesh quantities into y-boundary cells\n"
 msgstr ""
 
@@ -806,7 +806,7 @@ msgid ""
 "option extrapolate_y=false to disable this.\n"
 msgstr ""
 
-#: ../src/bout++.cxx:804
+#: ../src/bout++.cxx:813
 msgid "Wall time limit in hours. By default (< 0), no limit"
 msgstr ""
 
