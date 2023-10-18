@@ -19,12 +19,12 @@ public:
 #endif
 
       struct ContravariantComponents {
-    FieldMetric g11, g22, g33, g12, g13, g23;
+    const FieldMetric g11, g22, g33, g12, g13, g23;
   };
 
-  ContravariantMetricTensor(const FieldMetric g11, const FieldMetric g22,
-                            const FieldMetric g33, const FieldMetric g12,
-                            const FieldMetric g13, const FieldMetric g23);
+  ContravariantMetricTensor(const FieldMetric& g11, const FieldMetric& g22,
+                            const FieldMetric& g33, const FieldMetric& g12,
+                            const FieldMetric& g13, const FieldMetric& g23);
 
   ContravariantMetricTensor(const BoutReal g11, const BoutReal g22, const BoutReal g33,
                             const BoutReal g12, const BoutReal g13, const BoutReal g23,
