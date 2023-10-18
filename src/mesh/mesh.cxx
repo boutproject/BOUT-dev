@@ -182,7 +182,8 @@ Coordinates::FieldMetric& Mesh::get(const std::string& name, BoutReal def,
   Field2D temporary_var = Field2D{}; // TODO: There must be a better way of doing this
   Field2D& var = temporary_var;
 
-  if (source == nullptr or !source->get(this, var, name, def, location)) {
+  bool failed_to_get_from_GridDataSource = !source->get(this, var, name, def, location);
+  if (source == nullptr or failed_to_get_from_GridDataSource) {
     // set val to default in source==nullptr too:
     var = def;
     var.setLocation(location);
