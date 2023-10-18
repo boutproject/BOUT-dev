@@ -122,6 +122,9 @@ public:
    */
   virtual int getNz() const;
 
+  /// Get the total number of points
+  virtual int size() const = 0;
+
   friend void swap(Field& first, Field& second) noexcept {
     using std::swap;
     swap(static_cast<FieldData&>(first), static_cast<FieldData&>(second));

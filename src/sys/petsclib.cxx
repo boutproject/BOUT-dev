@@ -5,9 +5,10 @@
 #include "bout/boutcomm.hxx"
 #include "bout/openmpwrap.hxx"
 #include "bout/options.hxx"
+#include <bout/output.hxx>
 #include <bout/petsclib.hxx>
 
-#include <bout/output.hxx>
+#include "petscsnes.h"
 
 // Define all the static member variables
 int PetscLib::count = 0;
@@ -68,27 +69,15 @@ PetscLib::~PetscLib() {
 }
 
 void PetscLib::setOptionsFromInputFile(KSP& ksp) {
-  auto ierr = KSPSetOptionsPrefix(ksp, options_prefix.c_str());
-  if (ierr) {
-    throw BoutException("KSPSetOptionsPrefix failed with error {}", ierr);
-  }
+  assertIerr(KSPSetOptionsPrefix(ksp, options_prefix.c_str()), "KSPSetOptionsPrefix");
 
-  ierr = KSPSetFromOptions(ksp);
-  if (ierr) {
-    throw BoutException("KSPSetFromOptions failed with error {}", ierr);
-  }
+  assertIerr(KSPSetFromOptions(ksp), "KSPSetFromOptions");
 }
 
 void PetscLib::setOptionsFromInputFile(SNES& snes) {
-  auto ierr = SNESSetOptionsPrefix(snes, options_prefix.c_str());
-  if (ierr) {
-    throw BoutException("SNESSetOptionsPrefix failed with error %i", ierr);
-  }
+  BOUT_DO_PETSC(SNESSetOptionsPrefix(snes, options_prefix.c_str()));
 
-  ierr = SNESSetFromOptions(snes);
-  if (ierr) {
-    throw BoutException("SNESSetFromOptions failed with error %i", ierr);
-  }
+  BOUT_DO_PETSC(SNESSetFromOptions(snes));
 }
 
 void PetscLib::cleanup() {
@@ -134,5 +123,18 @@ void PetscLib::setPetscOptions(Options& options, const std::string& prefix) {
                           ierr, petsc_option_name);
     }
   }
+}
+
+BoutException PetscLib::SNESFailure(SNES& snes) {
+  SNESConvergedReason reason;
+  BOUT_DO_PETSC(SNESGetConvergedReason(snes, &reason));
+#if PETSC_VERSION_GE(3, 15, 0)
+  const char* message;
+  BOUT_DO_PETSC(SNESGetConvergedReasonString(snes, &message));
+#else
+  const char* message{""};
+#endif
+  return BoutException("SNES failed to converge. Reason: {} ({:d})", message,
+                       static_cast<int>(reason));
 }
 #endif // BOUT_HAS_PETSC

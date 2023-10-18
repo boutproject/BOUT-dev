@@ -17,7 +17,7 @@ the following tools and libraries:
 
 * ``git`` (>= 2.x)
 * `CMake <https://cmake.org/>`_
-* a C++-14 compiler (for example, GCC >= 5.0)
+* a C++-17 compiler (for example, GCC >= 8.0)
 * an ``MPI`` implementation (for example OpenMPI or MPICH)
 * The `NetCDF C library
   <https://www.unidata.ucar.edu/downloads/netcdf>`__
@@ -62,7 +62,7 @@ We can now run the conduction example::
 
 You should see some output like::
 
-    BOUT++ version 5.0.0
+    BOUT++ version 5.1.0
     Revision: b3ee80bfa2ad9b875b69ab072a392b3f548efea8
     Code compiled on Jul 27 2022 at 18:13:23
 
