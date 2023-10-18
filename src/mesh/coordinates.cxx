@@ -39,7 +39,7 @@ void communicate(T& t, Ts... ts) {
 /// Boundary guard cells are set by extrapolating from the grid, like
 /// 'free_o3' boundary conditions
 /// Corner guard cells are set to BoutNaN
-const Field2D& interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
+const Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
                                          bool extrapolate_x, bool extrapolate_y,
                                          bool no_extra_interpolate,
                                          ParallelTransform* UNUSED(pt) = nullptr) {
