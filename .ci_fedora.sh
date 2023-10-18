@@ -24,6 +24,7 @@ then
     test . != ".$3" && version="$3" || version=rawhide
     time $cmd pull registry.fedoraproject.org/fedora:$version
     time $cmd create --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
+	 --shm-size 256M \
          --name mobydick registry.fedoraproject.org/fedora:$version \
 	     /tmp/BOUT-dev/.ci_fedora.sh $mpi
     time $cmd cp ${TRAVIS_BUILD_DIR:-$(pwd)} mobydick:/tmp/BOUT-dev
