@@ -77,7 +77,7 @@ rtol = 1e-10
 atol = 1e-13
 
 [laplace:petsc]
-mg_levels_ksp_max_it = 3
+mg_levels_ksp_max_it = 5
 
 [input]
 transform_from_field_aligned = false
