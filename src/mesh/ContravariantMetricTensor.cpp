@@ -212,11 +212,8 @@ void ContravariantMetricTensor::calcContravariant(
     }
   }
 
-  auto* const mesh =
-      covariantMetricTensor.Getg_11()
-          .getMesh(); //TODO: Add a getMesh() method to CovariantComponents?
-  ContravariantMetricTensor contravariantMetricTensor = ContravariantMetricTensor(
-      a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2), mesh);
+  contravariant_components =
+      ContravariantComponents{a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2)};
 
   setLocation(location);
 
