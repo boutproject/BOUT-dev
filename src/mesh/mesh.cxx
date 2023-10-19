@@ -179,7 +179,7 @@ Field2D Mesh::get(const std::string& name, BoutReal def, bool communicate,
                   CELL_LOC location) {
   TRACE("Loading 2D field: Mesh::get(Field2D, {:s})", name);
 
-  Field2D var = Field2D{};
+  Field2D var = Field2D(this, location);
 
   bool failed_to_get_from_GridDataSource = !source->get(this, var, name, def, location);
   if (source == nullptr or failed_to_get_from_GridDataSource) {
