@@ -175,12 +175,11 @@ int Mesh::get(Field2D& var, const std::string& name, BoutReal def, bool communic
   return 0;
 }
 
-Coordinates::FieldMetric& Mesh::get(const std::string& name, BoutReal def,
-                                    bool communicate, CELL_LOC location) {
+Field2D Mesh::get(const std::string& name, BoutReal def, bool communicate,
+                  CELL_LOC location) {
   TRACE("Loading 2D field: Mesh::get(Field2D, {:s})", name);
 
-  Field2D temporary_var = Field2D{}; // TODO: There must be a better way of doing this
-  Field2D& var = temporary_var;
+  Field2D var = Field2D{};
 
   bool failed_to_get_from_GridDataSource = !source->get(this, var, name, def, location);
   if (source == nullptr or failed_to_get_from_GridDataSource) {
