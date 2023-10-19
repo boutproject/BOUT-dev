@@ -40,9 +40,9 @@ void communicate(T& t, Ts... ts) {
 /// 'free_o3' boundary conditions
 /// Corner guard cells are set to BoutNaN
 const Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
-                                         bool extrapolate_x, bool extrapolate_y,
-                                         bool no_extra_interpolate,
-                                         ParallelTransform* UNUSED(pt) = nullptr) {
+                                        bool extrapolate_x, bool extrapolate_y,
+                                        bool no_extra_interpolate,
+                                        ParallelTransform* UNUSED(pt) = nullptr) {
 
   Mesh* localmesh = f.getMesh();
   Field2D result = interp_to(f, location, "RGN_NOBNDRY");
@@ -447,53 +447,35 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y, false,
                                  transform.get());
 
-  auto getUnaligned = [this](auto& field, const std::string& name,
-                             BoutReal default_value) {
-    field = localmesh->get(name, default_value, false);
+  auto getUnaligned = [this](const std::string& name, BoutReal default_value) {
+    auto field = localmesh->get(name, default_value, false);
     if (field.getDirectionY() == YDirectionType::Aligned
         and transform->canToFromFieldAligned()) {
       return transform->fromFieldAligned(field);
     } else {
-      return field.setDirectionY(YDirectionType::Standard);
+      field.setDirectionY(YDirectionType::Standard);
+      return field;
     }
   };
 
-  auto getUnalignedAtLocation = [this, extrapolate_x, extrapolate_y,
-                                 getUnaligned](auto& field, const std::string& name,
-                                               BoutReal default_value) {
-    field = getUnaligned(field, name, default_value);
+  auto getUnalignedAtLocation = [this, extrapolate_x, extrapolate_y, getUnaligned](
+                                    const std::string& name, BoutReal default_value) {
+    auto field = getUnaligned(name, default_value);
     return interpolateAndExtrapolate(field, location, extrapolate_x, extrapolate_y, false,
                                      transform.get());
   };
 
-  // Diagonal components of metric tensor g^{ij} (default to 1)
-
-  auto contravariant_components =
-      contravariantMetricTensor.getContravariantMetricTensor();
-
-  //  FieldMetric old_g11 = contravariantMetricTensor.Getg11(); // non-const
-  //  FieldMetric old_g22 = contravariantMetricTensor.Getg22(); // non-const
-  //  FieldMetric old_g33 = contravariantMetricTensor.Getg33(); // non-const
-  //  FieldMetric old_g12 = contravariantMetricTensor.Getg12(); // non-const
-  //  FieldMetric old_g13 = contravariantMetricTensor.Getg13(); // non-const
-  //  FieldMetric old_g23 = contravariantMetricTensor.Getg23(); // non-const
-  FieldMetric old_g11 = contravariant_components.g11; // non-const
-  FieldMetric old_g22 = contravariant_components.g22; // non-const
-  FieldMetric old_g33 = contravariant_components.g33; // non-const
-  FieldMetric old_g12 = contravariant_components.g12; // non-const
-  FieldMetric old_g13 = contravariant_components.g13; // non-const
-  FieldMetric old_g23 = contravariant_components.g23; // non-const
-
   FieldMetric g11, g22, g33, g12, g13, g23;
 
-  g11 = getUnalignedAtLocation(old_g11, "g11", 1.0);
-  g22 = getUnalignedAtLocation(old_g22, "g22", 1.0);
-  g33 = getUnalignedAtLocation(old_g33, "g33", 1.0);
+  // Diagonal components of metric tensor g^{ij} (default to 1)
+  g11 = getUnalignedAtLocation("g11", 1.0);
+  g22 = getUnalignedAtLocation("g22", 1.0);
+  g33 = getUnalignedAtLocation("g33", 1.0);
 
   // Off-diagonal elements. Default to 0
-  g12 = getUnalignedAtLocation(old_g12, "g12", 0.0);
-  g13 = getUnalignedAtLocation(old_g13, "g13", 0.0);
-  g23 = getUnalignedAtLocation(old_g23, "g23", 0.0);
+  g12 = getUnalignedAtLocation("g12", 0.0);
+  g13 = getUnalignedAtLocation("g13", 0.0);
+  g23 = getUnalignedAtLocation("g23", 0.0);
 
   contravariantMetricTensor.setContravariantMetricTensor(
       location, ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
