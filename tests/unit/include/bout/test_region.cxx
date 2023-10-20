@@ -274,38 +274,22 @@ TEST_F(RegionTest, regionLoopAllSection) {
   EXPECT_EQ(count, nmesh);
 }
 
-int region_count_helper(Region<Ind3D> region) {
-  int count = 0;
-  BOUT_OMP(parallel)
-  {
-    BOUT_FOR_OMP(i, region, for reduction(+:count)) {
-      ++count;
-    }
-  }
-  return count;
-}
-
 TEST_F(RegionTest, regionIntersection) {
   auto& region1 = mesh->getRegion3D("RGN_ALL");
 
   auto& region2 = mesh->getRegion3D("RGN_NOBNDRY");
 
-  int count1 = region_count_helper(region1);
-  int count2 = region_count_helper(region2);
-
   const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
 
-  EXPECT_EQ(count1, nmesh);
-  EXPECT_GT(count1, count2);
+  EXPECT_EQ(region1.size(), nmesh);
+  EXPECT_GT(region1.size(), region2.size());
 
   const auto& region3 = intersection(region1, region2);
-  int count3 = region_count_helper(region3);
-  count1 = region_count_helper(region1);
 
-  EXPECT_EQ(count2, count3);
+  EXPECT_EQ(region2.size(), region3.size());
   // Ensure this did not change
-  EXPECT_EQ(count1, nmesh);
-  EXPECT_EQ(region_count_helper(mesh->getRegion3D("RGN_ALL")), nmesh);
+  EXPECT_EQ(region1.size(), nmesh);
+  EXPECT_EQ(mesh->getRegion3D("RGN_ALL").size(), nmesh);
 }
 
 TEST_F(RegionTest, regionLoopNoBndrySection) {
