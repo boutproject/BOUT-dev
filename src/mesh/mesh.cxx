@@ -765,8 +765,8 @@ int Mesh::getCommonRegion(int lhs, int rhs) {
   if (lhs == rhs) {
     return lhs;
   }
-  int low = std::min(lhs, rhs);
-  int high = std::max(lhs, rhs);
+  const int low = std::min(lhs, rhs);
+  const int high = std::max(lhs, rhs);
   if (low == -1) {
     return high;
   }
