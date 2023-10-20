@@ -691,27 +691,20 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     auto contravariant_components =
         contravariantMetricTensor.getContravariantMetricTensor();
 
-    FieldMetric old_g11 = contravariant_components.g11; // non-const
-    FieldMetric old_g22 = contravariant_components.g22; // non-const
-    FieldMetric old_g33 = contravariant_components.g33; // non-const
-    FieldMetric old_g12 = contravariant_components.g12; // non-const
-    FieldMetric old_g13 = contravariant_components.g13; // non-const
-    FieldMetric old_g23 = contravariant_components.g23; // non-const
-
     // grid data source has staggered fields, so read instead of interpolating
     // Diagonal components of metric tensor g^{ij} (default to 1)
     //    TODO: Method `getAtLocAndFillGuards` violates command–query separation principle?
-    getAtLocAndFillGuards(mesh, old_g11, "g11", suffix, location, 1.0, extrapolate_x,
+    getAtLocAndFillGuards(mesh, contravariant_components.g11, "g11", suffix, location, 1.0, extrapolate_x,
                           extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, old_g22, "g22", suffix, location, 1.0, extrapolate_x,
+    getAtLocAndFillGuards(mesh, contravariant_components.g22, "g22", suffix, location, 1.0, extrapolate_x,
                           extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, old_g33, "g33", suffix, location, 1.0, extrapolate_x,
+    getAtLocAndFillGuards(mesh, contravariant_components.g33, "g33", suffix, location, 1.0, extrapolate_x,
                           extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, old_g12, "g12", suffix, location, 0.0, extrapolate_x,
+    getAtLocAndFillGuards(mesh, contravariant_components.g12, "g12", suffix, location, 0.0, extrapolate_x,
                           extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, old_g13, "g13", suffix, location, 0.0, extrapolate_x,
+    getAtLocAndFillGuards(mesh, contravariant_components.g13, "g13", suffix, location, 0.0, extrapolate_x,
                           extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, old_g23, "g23", suffix, location, 0.0, extrapolate_x,
+    getAtLocAndFillGuards(mesh, contravariant_components.g23, "g23", suffix, location, 0.0, extrapolate_x,
                           extrapolate_y, false, transform.get());
 
     contravariantMetricTensor.setContravariantMetricTensor(
