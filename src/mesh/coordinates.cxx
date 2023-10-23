@@ -477,8 +477,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   g13 = getUnalignedAtLocation("g13", 0.0);
   g23 = getUnalignedAtLocation("g23", 0.0);
 
-  contravariantMetricTensor.setContravariantMetricTensor(
-      location, ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
+  setContravariantMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
 
   // Check input metrics
   checkContravariant();
@@ -694,24 +693,23 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     // grid data source has staggered fields, so read instead of interpolating
     // Diagonal components of metric tensor g^{ij} (default to 1)
     //    TODO: Method `getAtLocAndFillGuards` violates command–query separation principle?
-    getAtLocAndFillGuards(mesh, contravariant_components.g11, "g11", suffix, location, 1.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, contravariant_components.g22, "g22", suffix, location, 1.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, contravariant_components.g33, "g33", suffix, location, 1.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, contravariant_components.g12, "g12", suffix, location, 0.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, contravariant_components.g13, "g13", suffix, location, 0.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, contravariant_components.g23, "g23", suffix, location, 0.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, contravariant_components.g11, "g11", suffix, location,
+                          1.0, extrapolate_x, extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, contravariant_components.g22, "g22", suffix, location,
+                          1.0, extrapolate_x, extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, contravariant_components.g33, "g33", suffix, location,
+                          1.0, extrapolate_x, extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, contravariant_components.g12, "g12", suffix, location,
+                          0.0, extrapolate_x, extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, contravariant_components.g13, "g13", suffix, location,
+                          0.0, extrapolate_x, extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, contravariant_components.g23, "g23", suffix, location,
+                          0.0, extrapolate_x, extrapolate_y, false, transform.get());
 
-    contravariantMetricTensor.setContravariantMetricTensor(
-        loc, ContravariantMetricTensor(
-                 contravariant_components.g11, contravariant_components.g22,
-                 contravariant_components.g33, contravariant_components.g12,
-                 contravariant_components.g13, contravariant_components.g23));
+    setContravariantMetricTensor(ContravariantMetricTensor(
+        contravariant_components.g11, contravariant_components.g22,
+        contravariant_components.g33, contravariant_components.g12,
+        contravariant_components.g13, contravariant_components.g23));
 
     // Check input metrics
     checkContravariant();
@@ -912,8 +910,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     g23 = interpolateAndExtrapolate(metric_tensor.g23, location, true, true, false,
                                     transform.get());
 
-    contravariantMetricTensor.setContravariantMetricTensor(
-        loc, ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
+    setContravariantMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
 
     FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
@@ -2031,7 +2028,8 @@ void Coordinates::checkContravariant() {
 }
 
 void Coordinates::setContravariantMetricTensor(ContravariantMetricTensor metric_tensor) {
-  contravariantMetricTensor.setContravariantMetricTensor(location, metric_tensor);
+  contravariantMetricTensor.setContravariantMetricTensor(metric_tensor);
+  contravariantMetricTensor.calcCovariant(location);
 }
 
 ContravariantMetricTensor::ContravariantComponents
