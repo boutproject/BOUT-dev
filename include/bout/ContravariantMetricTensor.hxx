@@ -37,8 +37,7 @@ public:
   // check that contravariant tensors are positive (if expected) and finite (always)
   void checkContravariant(int ystart);
 
-  void setContravariantMetricTensor(CELL_LOC location,
-                                    const ContravariantMetricTensor& metric_tensor);
+  void setContravariantMetricTensor(const ContravariantMetricTensor& metric_tensor);
 
   ContravariantComponents getContravariantMetricTensor() const;
 
