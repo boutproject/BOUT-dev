@@ -42,10 +42,11 @@ void communicate(T& t, Ts... ts) {
 const Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
                                         bool extrapolate_x, bool extrapolate_y,
                                         bool no_extra_interpolate,
-                                        ParallelTransform* UNUSED(pt) = nullptr) {
+                                        ParallelTransform* UNUSED(pt) = nullptr,
+                                        const std::string& region = "RGN_NOBNDRY") {
 
   Mesh* localmesh = f.getMesh();
-  Field2D result = interp_to(f, location, "RGN_NOBNDRY");
+  Field2D result = interp_to(f, location, region);
   // Ensure result's data is unique. Otherwise result might be a duplicate of
   // f (if no interpolation is needed, e.g. if interpolation is in the
   // z-direction); then f would be communicated. Since this function is used
@@ -943,26 +944,28 @@ void Coordinates::interpolateAndExtrapolateContravariantMetricTensor(
   ContravariantMetricTensor::ContravariantComponents metric_tensor =
       coords_in->getContravariantMetricTensor();
 
+  const auto region = "RGN_NOBNDRY";
+
   FieldMetric g11, g22, g33, g12, g13, g23;
 
   // Diagonal components of metric tensor g^{ij}
   g11 = interpolateAndExtrapolate(metric_tensor.g11, location, true, true, false,
-                                  transform.get());
+                                  transform.get(), region);
   g22 = interpolateAndExtrapolate(metric_tensor.g22, location, true, true, false,
-                                  transform.get());
+                                  transform.get(), region);
   g33 = interpolateAndExtrapolate(metric_tensor.g33, location, true, true, false,
-                                  transform.get());
+                                  transform.get(), region);
 
   // Off-diagonal elements.
   g12 = interpolateAndExtrapolate(metric_tensor.g12, location, true, true, false,
-                                  transform.get());
+                                  transform.get(), region);
   g13 = interpolateAndExtrapolate(metric_tensor.g13, location, true, true, false,
-                                  transform.get());
+                                  transform.get(), region);
   g23 = interpolateAndExtrapolate(metric_tensor.g23, location, true, true, false,
-                                  transform.get());
+                                  transform.get(), region);
 
   setContravariantMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-                               "RGN_NOBNDRY");
+                               region);
 }
 
 void Coordinates::outputVars(Options& output_options) {
