@@ -890,31 +890,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     dz = interpolateAndExtrapolate(coords_in->dz, location, true, true, false,
                                    transform.get());
 
-    ContravariantMetricTensor::ContravariantComponents metric_tensor =
-        coords_in->getContravariantMetricTensor();
-    FieldMetric g11, g22, g33, g12, g13, g23;
-
-    // Diagonal components of metric tensor g^{ij}
-    g11 = interpolateAndExtrapolate(metric_tensor.g11, location, true, true, false,
-                                    transform.get());
-    g22 = interpolateAndExtrapolate(metric_tensor.g22, location, true, true, false,
-                                    transform.get());
-    g33 = interpolateAndExtrapolate(metric_tensor.g33, location, true, true, false,
-                                    transform.get());
-
-    // Off-diagonal elements.
-    g12 = interpolateAndExtrapolate(metric_tensor.g12, location, true, true, false,
-                                    transform.get());
-    g13 = interpolateAndExtrapolate(metric_tensor.g13, location, true, true, false,
-                                    transform.get());
-    g23 = interpolateAndExtrapolate(metric_tensor.g23, location, true, true, false,
-                                    transform.get());
-
-    setContravariantMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-                                 "RGN_NOBNDRY");
+    interpolateAndExtrapolateContravariantMetricTensor(coords_in);
 
     FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
-
     // 3x3 matrix inversion can exaggerate small interpolation errors, so it is
     // more robust to interpolate and extrapolate derived quantities directly,
     // rather than deriving from interpolated/extrapolated covariant metric
@@ -957,6 +935,34 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                                                   true, true, false, transform.get());
     }
   }
+}
+
+void Coordinates::interpolateAndExtrapolateContravariantMetricTensor(
+    const Coordinates* coords_in) {
+
+  ContravariantMetricTensor::ContravariantComponents metric_tensor =
+      coords_in->getContravariantMetricTensor();
+
+  FieldMetric g11, g22, g33, g12, g13, g23;
+
+  // Diagonal components of metric tensor g^{ij}
+  g11 = interpolateAndExtrapolate(metric_tensor.g11, location, true, true, false,
+                                  transform.get());
+  g22 = interpolateAndExtrapolate(metric_tensor.g22, location, true, true, false,
+                                  transform.get());
+  g33 = interpolateAndExtrapolate(metric_tensor.g33, location, true, true, false,
+                                  transform.get());
+
+  // Off-diagonal elements.
+  g12 = interpolateAndExtrapolate(metric_tensor.g12, location, true, true, false,
+                                  transform.get());
+  g13 = interpolateAndExtrapolate(metric_tensor.g13, location, true, true, false,
+                                  transform.get());
+  g23 = interpolateAndExtrapolate(metric_tensor.g23, location, true, true, false,
+                                  transform.get());
+
+  setContravariantMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+                               "RGN_NOBNDRY");
 }
 
 void Coordinates::outputVars(Options& output_options) {

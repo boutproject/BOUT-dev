@@ -264,6 +264,7 @@ private:
   void checkCovariant();
   // check that contravariant tensors are positive (if expected) and finite (always)
   void checkContravariant();
+  void interpolateAndExtrapolateContravariantMetricTensor(const Coordinates* coords_in);
 };
 
 /*
