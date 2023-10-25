@@ -122,3 +122,68 @@ void CovariantMetricTensor::setLocation(const CELL_LOC location) {
   g_13.setLocation(location);
   g_23.setLocation(location);
 }
+
+void CovariantMetricTensor::calcCovariant(
+    ContravariantMetricTensor contravariantMetricTensor, const CELL_LOC location,
+    const std::string& region) {
+  TRACE("CovariantMetricTensor::calcCovariant");
+
+  // Perform inversion of g^{ij} to get g_{ij}
+  // NOTE: Currently this bit assumes that metric terms are Field2D objects
+
+  const auto contravariant_components =
+      contravariantMetricTensor.getContravariantMetricTensor();
+
+  auto a = Matrix<BoutReal>(3, 3);
+
+  BOUT_FOR_SERIAL(i, contravariant_components.g11.getRegion(region)) {
+    a(0, 0) = contravariant_components.g11[i];
+    a(1, 1) = contravariant_components.g22[i];
+    a(2, 2) = contravariant_components.g33[i];
+
+    a(0, 1) = a(1, 0) = contravariant_components.g12[i];
+    a(1, 2) = a(2, 1) = contravariant_components.g23[i];
+    a(0, 2) = a(2, 0) = contravariant_components.g13[i];
+
+    if (invert3x3(a)) {
+      const auto error_message = "\tERROR: metric tensor is singular at ({:d}, {:d})\n";
+      output_error.write(error_message, i.x(), i.y());
+      throw BoutException(error_message);
+    }
+  }
+
+  g_11 = a(0, 0);
+  g_22 = a(1, 1);
+  g_33 = a(2, 2);
+  g_12 = a(0, 1);
+  g_13 = a(0, 2);
+  g_23 = a(1, 2);
+  //  covariant_components =
+  //      CovariantComponents{(a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2))};
+
+  setLocation(location);
+
+  BoutReal maxerr;
+  maxerr = BOUTMAX(
+      max(abs((g_11 * contravariant_components.g11 + g_12 * contravariant_components.g12
+               + g_13 * contravariant_components.g13)
+              - 1)),
+      max(abs((g_12 * contravariant_components.g12 + g_22 * contravariant_components.g22
+               + g_23 * contravariant_components.g23)
+              - 1)),
+      max(abs((g_13 * contravariant_components.g13 + g_23 * contravariant_components.g23
+               + g_33 * contravariant_components.g33)
+              - 1)));
+
+  output_info.write("\tLocal maximum error in diagonal inversion is {:e}\n", maxerr);
+
+  maxerr = BOUTMAX(
+      max(abs(g_11 * contravariant_components.g12 + g_12 * contravariant_components.g22
+              + g_13 * contravariant_components.g23)),
+      max(abs(g_11 * contravariant_components.g13 + g_12 * contravariant_components.g23
+              + g_13 * contravariant_components.g33)),
+      max(abs(g_12 * contravariant_components.g13 + g_22 * contravariant_components.g23
+              + g_23 * contravariant_components.g33)));
+
+  output_info.write("\tLocal maximum error in off-diagonal inversion is {:e}\n", maxerr);
+}
