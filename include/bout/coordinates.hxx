@@ -112,7 +112,8 @@ public:
   const FieldMetric& g_13() const;
   const FieldMetric& g_23() const;
 
-  void setContravariantMetricTensor(ContravariantMetricTensor metric_tensor);
+  void setContravariantMetricTensor(ContravariantMetricTensor metric_tensor,
+                                    const std::string& region = "RGN_ALL");
 
   void setCovariantMetricTensor(CovariantMetricTensor metric_tensor);
 
