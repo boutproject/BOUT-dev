@@ -15,9 +15,9 @@ public:
   using FieldMetric = Field2D;
 #endif
 
-  CovariantMetricTensor(const FieldMetric g_11, const FieldMetric g_22,
-                        const FieldMetric g_33, const FieldMetric g_12,
-                        const FieldMetric g_13, const FieldMetric g_23);
+  CovariantMetricTensor(const FieldMetric& g_11, const FieldMetric& g_22,
+                        const FieldMetric& g_33, const FieldMetric& g_12,
+                        const FieldMetric& g_13, const FieldMetric& g_23);
 
   CovariantMetricTensor(const BoutReal g_11, const BoutReal g_22, const BoutReal g_33,
                         const BoutReal g_12, const BoutReal g_13, const BoutReal g_23,
