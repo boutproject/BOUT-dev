@@ -910,7 +910,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     g23 = interpolateAndExtrapolate(metric_tensor.g23, location, true, true, false,
                                     transform.get());
 
-    setContravariantMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
+    setContravariantMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+                                 "RGN_NOBNDRY");
 
     FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
@@ -2027,9 +2028,10 @@ void Coordinates::checkContravariant() {
   contravariantMetricTensor.checkContravariant(localmesh->ystart);
 }
 
-void Coordinates::setContravariantMetricTensor(ContravariantMetricTensor metric_tensor) {
+void Coordinates::setContravariantMetricTensor(ContravariantMetricTensor metric_tensor,
+                                               const std::string& region) {
   contravariantMetricTensor.setContravariantMetricTensor(metric_tensor);
-  contravariantMetricTensor.calcCovariant(location);
+  contravariantMetricTensor.calcCovariant(location, region);
 }
 
 ContravariantMetricTensor::ContravariantComponents
