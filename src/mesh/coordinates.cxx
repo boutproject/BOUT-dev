@@ -1388,7 +1388,7 @@ void Coordinates::CalculateChristoffelSymbols() {
 
 CovariantMetricTensor Coordinates::calcCovariant(const std::string& region) {
   TRACE("Coordinates::calcCovariant");
-  covariantMetricTensor = contravariantMetricTensor.calcCovariant(location, region);
+  covariantMetricTensor.calcCovariant(contravariantMetricTensor, location, region);
   return covariantMetricTensor;
 }
 
@@ -2029,7 +2029,7 @@ void Coordinates::checkContravariant() {
 void Coordinates::setContravariantMetricTensor(ContravariantMetricTensor metric_tensor,
                                                const std::string& region) {
   contravariantMetricTensor.setContravariantMetricTensor(metric_tensor);
-  contravariantMetricTensor.calcCovariant(location, region);
+  covariantMetricTensor.calcCovariant(contravariantMetricTensor, location, region);
 }
 
 ContravariantMetricTensor::ContravariantComponents

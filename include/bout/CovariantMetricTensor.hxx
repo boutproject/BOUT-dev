@@ -39,6 +39,10 @@ public:
 
   void setLocation(const CELL_LOC location);
 
+  /// Invert contravariant metric to get covariant components
+  void calcCovariant(ContravariantMetricTensor contravariantMetricTensor,
+                     CELL_LOC location, const std::string& region = "RGN_ALL");
+
 private:
   FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 };
