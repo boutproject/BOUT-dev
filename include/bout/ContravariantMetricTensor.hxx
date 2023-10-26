@@ -18,10 +18,6 @@ public:
   using FieldMetric = Field2D;
 #endif
 
-      struct ContravariantComponents {
-    FieldMetric g11, g22, g33, g12, g13, g23;
-  };
-
   ContravariantMetricTensor(const FieldMetric& g11, const FieldMetric& g22,
                             const FieldMetric& g33, const FieldMetric& g12,
                             const FieldMetric& g13, const FieldMetric& g23);
@@ -33,9 +29,14 @@ public:
   // check that contravariant tensors are positive (if expected) and finite (always)
   void checkContravariant(int ystart);
 
-  void setContravariantMetricTensor(const ContravariantMetricTensor& metric_tensor);
+  const FieldMetric& Getg11() const;
+  const FieldMetric& Getg22() const;
+  const FieldMetric& Getg33() const;
+  const FieldMetric& Getg12() const;
+  const FieldMetric& Getg13() const;
+  const FieldMetric& Getg23() const;
 
-  ContravariantComponents getContravariantMetricTensor() const;
+  void setContravariantMetricTensor(const ContravariantMetricTensor& metric_tensor);
 
   void Allocate();
 
@@ -46,7 +47,7 @@ public:
                          const std::string& region = "RGN_ALL");
 
 private:
-  ContravariantComponents contravariant_components;
+  FieldMetric g11, g22, g33, g12, g13, g23;
 };
 
 #endif //BOUT_CONTRAVARIANTMETRICTENSOR_HXX

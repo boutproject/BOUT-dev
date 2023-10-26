@@ -83,7 +83,7 @@ void Vector2D::toCovariant() {
       const auto z_at_y = interp_to(z, y.getLocation());
       const auto x_at_z = interp_to(x, z.getLocation());
       const auto y_at_z = interp_to(y, z.getLocation());
-      
+
       // multiply by g_{ij}
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
         x[i] = metric_x->g_11()[i] * x[i] + metric_x->g_12()[i] * y_at_x[i]
@@ -141,15 +141,14 @@ void Vector2D::toContravariant() {
       const auto x_at_z = interp_to(x, z.getLocation());
       const auto y_at_z = interp_to(y, z.getLocation());
 
-      const auto g_x = metric_x->getContravariantMetricTensor();
-      const auto g_y = metric_y->getContravariantMetricTensor();
-      const auto g_z = metric_z->getContravariantMetricTensor();
-
       // multiply by g_{ij}
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
-        x[i] = g_x.g11[i] * x[i] + g_x.g12[i] * y_at_x[i] + g_x.g13[i] * z_at_x[i];
-        y[i] = g_y.g22[i] * y[i] + g_y.g12[i] * x_at_y[i] + g_y.g23[i] * z_at_y[i];
-        z[i] = g_z.g33[i] * z[i] + g_z.g13[i] * x_at_z[i] + g_z.g23[i] * y_at_z[i];
+        x[i] = metric_x->g11()[i] * x[i] + metric_x->g12()[i] * y_at_x[i]
+               + metric_x->g13()[i] * z_at_x[i];
+        y[i] = metric_x->g22()[i] * y[i] + metric_x->g12()[i] * x_at_y[i]
+               + metric_x->g23()[i] * z_at_y[i];
+        z[i] = metric_x->g33()[i] * z[i] + metric_x->g13()[i] * x_at_z[i]
+               + metric_x->g23()[i] * y_at_z[i];
       };
 
     } else {
@@ -158,18 +157,13 @@ void Vector2D::toContravariant() {
       // Need to use temporary arrays to store result
       Coordinates::FieldMetric gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
-      const auto contravariant_components = metric->getContravariantMetricTensor();
-
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
-        gx[i] = contravariant_components.g11[i] * x[i]
-                + contravariant_components.g12[i] * y[i]
-                + contravariant_components.g13[i] * z[i];
-        gy[i] = contravariant_components.g22[i] * y[i]
-                + contravariant_components.g12[i] * x[i]
-                + contravariant_components.g23[i] * z[i];
-        gz[i] = contravariant_components.g33[i] * z[i]
-                + contravariant_components.g13[i] * x[i]
-                + contravariant_components.g23[i] * y[i];
+        gx[i] =
+            metric->g11()[i] * x[i] + metric->g12()[i] * y[i] + metric->g13()[i] * z[i];
+        gy[i] =
+            metric->g22()[i] * y[i] + metric->g12()[i] * x[i] + metric->g23()[i] * z[i];
+        gz[i] =
+            metric->g33()[i] * z[i] + metric->g13()[i] * x[i] + metric->g23()[i] * y[i];
       };
 
       x = gx;
@@ -403,13 +397,11 @@ const Coordinates::FieldMetric Vector2D::operator*(const Vector2D& rhs) const {
     if (covariant) {
       // Both covariant
 
-      const auto contravariant_components = metric->getContravariantMetricTensor();
-      result = x * rhs.x * contravariant_components.g11
-               + y * rhs.y * contravariant_components.g22
-               + z * rhs.z * contravariant_components.g33;
-      result += (x * rhs.y + y * rhs.x) * contravariant_components.g12
-                + (x * rhs.z + z * rhs.x) * contravariant_components.g13
-                + (y * rhs.z + z * rhs.y) * contravariant_components.g23;
+      result = x * rhs.x * metric->g11() + y * rhs.y * metric->g22()
+               + z * rhs.z * metric->g33();
+      result += (x * rhs.y + y * rhs.x) * metric->g12()
+                + (x * rhs.z + z * rhs.x) * metric->g13()
+                + (y * rhs.z + z * rhs.y) * metric->g23();
     } else {
       // Both contravariant
       result = x * rhs.x * metric->g_11() + y * rhs.y * metric->g_22()

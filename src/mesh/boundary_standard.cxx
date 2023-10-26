@@ -1602,18 +1602,15 @@ void BoundaryNeumann_NonOrthogonal::apply(Field2D& f) {
   // Calculate derivatives for metric use
   mesh->communicate(f);
   Field2D dfdy = DDY(f);
-  const auto contravariant_components = metric->getContravariantMetricTensor();
   // Loop over all elements and set equal to the next point in
   for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
     // Interpolate (linearly) metrics to halfway between last cell and boundary cell
-    BoutReal g11shift =
-        0.5
-        * (contravariant_components.g11(bndry->x, bndry->y)
-           + contravariant_components.g11(bndry->x - bndry->bx, bndry->y));
-    BoutReal g12shift =
-        0.5
-        * (contravariant_components.g12(bndry->x, bndry->y)
-           + contravariant_components.g12(bndry->x - bndry->bx, bndry->y));
+    BoutReal g11shift = 0.5
+                        * (metric->g11()(bndry->x, bndry->y)
+                           + metric->g11()(bndry->x - bndry->bx, bndry->y));
+    BoutReal g12shift = 0.5
+                        * (metric->g12()(bndry->x, bndry->y)
+                           + metric->g12()(bndry->x - bndry->bx, bndry->y));
     // Have to use derivatives at last gridpoint instead of derivatives on boundary layer
     //   because derivative values don't exist in boundary region
     // NOTE: should be fixed to interpolate to boundary line
@@ -1660,7 +1657,6 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   mesh->communicate(f);
   Field3D dfdy = DDY(f);
   Field3D dfdz = DDZ(f);
-  const auto g = metric->getContravariantMetricTensor();
   // Loop over all elements and set equal to the next point in
   for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
 #if BOUT_USE_METRIC_3D
@@ -1669,12 +1665,15 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     int z = 0;
 #endif
       // Interpolate (linearly) metrics to halfway between last cell and boundary cell
-      BoutReal g11shift =
-          0.5 * (g.g11(bndry->x, bndry->y, z) + g.g11(bndry->x - bndry->bx, bndry->y, z));
-      BoutReal g12shift =
-          0.5 * (g.g12(bndry->x, bndry->y, z) + g.g12(bndry->x - bndry->bx, bndry->y, z));
-      BoutReal g13shift =
-          0.5 * (g.g13(bndry->x, bndry->y, z) + g.g13(bndry->x - bndry->bx, bndry->y, z));
+      BoutReal g11shift = 0.5
+                          * (metric->g11()(bndry->x, bndry->y, z)
+                             + metric->g11()(bndry->x - bndry->bx, bndry->y, z));
+      BoutReal g12shift = 0.5
+                          * (metric->g12()(bndry->x, bndry->y, z)
+                             + metric->g12()(bndry->x - bndry->bx, bndry->y, z));
+      BoutReal g13shift = 0.5
+                          * (metric->g13()(bndry->x, bndry->y, z)
+                             + metric->g13()(bndry->x - bndry->bx, bndry->y, z));
       // Have to use derivatives at last gridpoint instead of derivatives on boundary
       // layer
       //   because derivative values don't exist in boundary region
@@ -2644,7 +2643,6 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     }
 
     int bx = bndry->bx;
-    const auto g = metric->getContravariantMetricTensor();
     // Loop over the Y dimension
     for (bndry->first(); !bndry->isDone(); bndry->nextY()) {
       // bndry->(x,y) is the first point in the boundary
@@ -2667,7 +2665,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
         c0[0] += c1[0]; // Straight line
 
         // kz != 0 solution
-        BoutReal coef = -1.0 * sqrt(g.g33(x, y) / g.g11(x, y)) * metric->dx(x, y);
+        BoutReal coef =
+            -1.0 * sqrt(metric->g33()(x, y) / metric->g11()(x, y)) * metric->dx(x, y);
         for (int jz = 1; jz <= ncz / 2; jz++) {
           BoutReal kwave =
               jz * 2.0 * PI / metric->zlength()(x, y); // wavenumber in [rad^-1]
@@ -2850,7 +2849,6 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     Array<dcomplex> c0(ncz / 2 + 1), c1(ncz / 2 + 1), c2(ncz / 2 + 1);
 
     int bx = bndry->bx;
-    const auto g = metric->getContravariantMetricTensor();
     // Loop over the Y dimension
     for (bndry->first(); !bndry->isDone(); bndry->nextY()) {
       int x = bndry->x;
@@ -2879,16 +2877,17 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       do {
         // kz = 0 solution
         xpos -= metric->dx(x, y);
-        c2[0] = c0[0] + k0lin * xpos + 0.5 * c1[0] * xpos * xpos / g.g11(x - bx, y);
+        c2[0] =
+            c0[0] + k0lin * xpos + 0.5 * c1[0] * xpos * xpos / metric->g11()(x - bx, y);
         // kz != 0 solution
-        BoutReal coef =
-            -1.0 * sqrt(g.g33(x - bx, y) / g.g11(x - bx, y)) * metric->dx(x - bx, y);
+        BoutReal coef = -1.0 * sqrt(metric->g33()(x - bx, y) / metric->g11()(x - bx, y))
+                        * metric->dx(x - bx, y);
         for (int jz = 1; jz <= ncz / 2; jz++) {
           BoutReal kwave =
               jz * 2.0 * PI / getUniform(metric->zlength()); // wavenumber in [rad^-1]
           c0[jz] *= exp(coef * kwave);                       // The decaying solution only
           // Add the particular solution
-          c2[jz] = c0[jz] - c1[jz] / (g.g33(x - bx, y) * kwave * kwave);
+          c2[jz] = c0[jz] - c1[jz] / (metric->g33()(x - bx, y) * kwave * kwave);
         }
         // Reverse FFT
         irfft(c2.begin(), ncz, f(x, y));
@@ -2941,7 +2940,6 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     }
 
     jx = mesh->xend + 1;
-    const auto contravariant_components = metric->getContravariantMetricTensor();
     for (jy = 1; jy < mesh->LocalNy - 1; jy++) {
       for (jz = 0; jz < ncz; jz++) {
         jzp = (jz + 1) % ncz;
@@ -2975,47 +2973,42 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
         //                    - d/dy( JB^y ) - d/dz( JB^z )
 
         tmp =
-            -(metric->J(jx, jy) * contravariant_components.g12(jx, jy) * var.y(jx, jy, jz)
-              + metric->J(jx, jy) * contravariant_components.g13(jx, jy)
-                    * var.z(jx, jy, jz)
-              - metric->J(jx - 2, jy) * contravariant_components.g12(jx - 2, jy)
-                    * var.y(jx - 2, jy, jz)
-              + metric->J(jx - 2, jy) * contravariant_components.g13(jx - 2, jy)
-                    * var.z(jx - 2, jy, jz))
+            -(metric->J(jx, jy) * metric->g12()(jx, jy) * var.y(jx, jy, jz)
+              + metric->J(jx, jy) * metric->g13()(jx, jy) * var.z(jx, jy, jz)
+              - metric->J(jx - 2, jy) * metric->g12()(jx - 2, jy) * var.y(jx - 2, jy, jz)
+              + metric->J(jx - 2, jy) * metric->g13()(jx - 2, jy) * var.z(jx - 2, jy, jz))
             / (metric->dx(jx - 2, jy)
                + metric->dx(jx - 1, jy)); // First term (d/dx) using vals calculated above
-        tmp -= (metric->J(jx - 1, jy + 1) * contravariant_components.g12(jx - 1, jy + 1)
+        tmp -= (metric->J(jx - 1, jy + 1) * metric->g12()(jx - 1, jy + 1)
                     * var.x(jx - 1, jy + 1, jz)
-                - metric->J(jx - 1, jy - 1) * contravariant_components.g12(jx - 1, jy - 1)
+                - metric->J(jx - 1, jy - 1) * metric->g12()(jx - 1, jy - 1)
                       * var.x(jx - 1, jy - 1, jz)
-                + metric->J(jx - 1, jy + 1) * contravariant_components.g22(jx - 1, jy + 1)
+                + metric->J(jx - 1, jy + 1) * metric->g22()(jx - 1, jy + 1)
                       * var.y(jx - 1, jy + 1, jz)
-                - metric->J(jx - 1, jy - 1) * contravariant_components.g22(jx - 1, jy - 1)
+                - metric->J(jx - 1, jy - 1) * metric->g22()(jx - 1, jy - 1)
                       * var.y(jx - 1, jy - 1, jz)
-                + metric->J(jx - 1, jy + 1) * contravariant_components.g23(jx - 1, jy + 1)
+                + metric->J(jx - 1, jy + 1) * metric->g23()(jx - 1, jy + 1)
                       * var.z(jx - 1, jy + 1, jz)
-                - metric->J(jx - 1, jy - 1) * contravariant_components.g23(jx - 1, jy - 1)
+                - metric->J(jx - 1, jy - 1) * metric->g23()(jx - 1, jy - 1)
                       * var.z(jx - 1, jy - 1, jz))
                / (metric->dy(jx - 1, jy - 1) + metric->dy(jx - 1, jy)); // second (d/dy)
-        tmp -= (metric->J(jx - 1, jy) * contravariant_components.g13(jx - 1, jy)
+        tmp -= (metric->J(jx - 1, jy) * metric->g13()(jx - 1, jy)
                     * (var.x(jx - 1, jy, jzp) - var.x(jx - 1, jy, jzm))
-                + metric->J(jx - 1, jy) * contravariant_components.g23(jx - 1, jy)
+                + metric->J(jx - 1, jy) * metric->g23()(jx - 1, jy)
                       * (var.y(jx - 1, jy, jzp) - var.y(jx - 1, jy, jzm))
-                + metric->J(jx - 1, jy) * contravariant_components.g33(jx - 1, jy)
+                + metric->J(jx - 1, jy) * metric->g33()(jx - 1, jy)
                       * (var.z(jx - 1, jy, jzp) - var.z(jx - 1, jy, jzm)))
                / (2. * metric->dz(jx - 1, jy));
 
         var.x(jx, jy, jz) =
-            (metric->J(jx - 2, jy) * contravariant_components.g11(jx - 2, jy)
-                 * var.x(jx - 2, jy, jz)
+            (metric->J(jx - 2, jy) * metric->g11()(jx - 2, jy) * var.x(jx - 2, jy, jz)
              + (metric->dx(jx - 2, jy) + metric->dx(jx - 1, jy)) * tmp)
-            / metric->J(jx, jy) * contravariant_components.g11(jx, jy);
+            / metric->J(jx, jy) * metric->g11()(jx, jy);
         if (mesh->xstart == 2) {
           var.x(jx + 1, jy, jz) =
-              (metric->J(jx - 3, jy) * contravariant_components.g11(jx - 3, jy)
-                   * var.x(jx - 3, jy, jz)
+              (metric->J(jx - 3, jy) * metric->g11()(jx - 3, jy) * var.x(jx - 3, jy, jz)
                + 4. * metric->dx(jx, jy) * tmp)
-              / metric->J(jx + 1, jy) * contravariant_components.g11(jx + 1, jy);
+              / metric->J(jx + 1, jy) * metric->g11()(jx + 1, jy);
         }
       }
     }
