@@ -416,24 +416,27 @@ public:
     dump.add(eta, "eta", 0);
 
     /**************** CALCULATE METRICS ******************/
-    
-    Coordinates::MetricTensor metric_tensor = coords->getContravariantMetricTensor();
-    metric_tensor.g11 = SQ(Rxy * Bpxy);
-    metric_tensor.g22 = 1.0 / SQ(hthe);
-    metric_tensor.g33 = SQ(I) * metric_tensor.g11 + SQ(B0) / metric_tensor.g11;
-    metric_tensor.g12 = 0.0;
-    metric_tensor.g13 = -I * metric_tensor.g11;
-    metric_tensor.g23 = -Btxy / (hthe * Bpxy * Rxy);
+
+    const auto g11 = SQ(Rxy * Bpxy);
+    const auto g22 = 1.0 / SQ(hthe);
+    const auto g33 = SQ(I) * coords->g11() + SQ(B0) / coords->g11();
+    const auto g12 = 0.0;
+    const auto g13 = -I * coords->g11();
+    const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
+    coords->setContravariantMetricTensor(
+        ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
 
     coords->J = hthe / Bpxy;
     coords->Bxy = B0;
 
-    coords->g_11 = 1.0 / metric_tensor.g11 + (SQ(I * Rxy));
-    coords->g_22 = SQ(B0 * hthe / Bpxy);
-    coords->g_33 = Rxy * Rxy;
-    coords->g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    coords->g_13 = I * Rxy * Rxy;
-    coords->g_23 = Btxy * hthe * Rxy / Bpxy;
+    const auto g_11 = 1.0 / coords->g11() + (SQ(I * Rxy));
+    const auto g_22 = SQ(B0 * hthe / Bpxy);
+    const auto g_33 = Rxy * Rxy;
+    const auto g_12 = Btxy * hthe * I * Rxy / Bpxy;
+    const auto g_13 = I * Rxy * Rxy;
+    const auto g_23 = Btxy * hthe * Rxy / Bpxy;
+    coords->setCovariantMetricTensor(
+        CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
     coords->geometry(); // Calculate quantities from metric tensor
 
