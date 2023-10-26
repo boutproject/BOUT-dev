@@ -295,17 +295,15 @@ int GBS::init(bool restarting) {
   dz4 = SQ(SQ(coords->dz));
 
   SAVE_REPEAT(Ve);
-  
-  Coordinates::MetricTensor metric_tensor = coords->getContravariantMetricTensor();
-  
-  output.write("dx = {:e}, dy = {:e}, dz = {:e}\n", coords->dx(2, 2), coords->dy(2, 2),
-               coords->dz);
-  output.write("g11 = {:e}, g22 = {:e}, g33 = {:e}\n", metric_tensor.g11(2, 2),
-               metric_tensor.g22(2, 2), metric_tensor.g33(2, 2));
-  output.write("g12 = {:e}, g23 = {:e}\n", metric_tensor.g12(2, 2), metric_tensor.g23(2, 2));
-  output.write("g_11 = {:e}, g_22 = {:e}, g_33 = {:e}\n", coords->g_11(2, 2),
-               coords->g_22(2, 2), coords->g_33(2, 2));
-  output.write("g_12 = {:e}, g_23 = {:e}\n", coords->g_12(2, 2), coords->g_23(2, 2));
+
+  output.write("dx = {:e}, dy = {:e}, dz = {:e}\n", (coords->dx)(2, 2),
+               (coords->dy)(2, 2), coords->dz);
+  output.write("g11 = {:e}, g22 = {:e}, g33 = {:e}\n", coords->g11()(2, 2),
+               coords->g22()(2, 2), coords->g33()(2, 2));
+  output.write("g12 = {:e}, g23 = {:e}\n", coords->g12()(2, 2), coords->g23()(2, 2));
+  output.write("g_11 = {:e}, g_22 = {:e}, g_33 = {:e}\n", coords->g_11()(2, 2),
+               coords->g_22()(2, 2), coords->g_33()(2, 2));
+  output.write("g_12 = {:e}, g_23 = {:e}\n", coords->g_12()(2, 2), coords->g_23()(2, 2));
 
   std::shared_ptr<FieldGenerator> gen =
       FieldFactory::get()->parse("source", Options::getRoot()->getSection("ne"));
@@ -350,25 +348,25 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
     sbp = -1.0;
   }
 
-  Coordinates::MetricTensor contravariant_components = coords->getContravariantMetricTensor();
-  contravariant_components.g11 = SQ(Rxy * Bpxy);
-  contravariant_components.g22 = 1.0 / SQ(hthe);
-  contravariant_components.g33 = SQ(sinty) * contravariant_components.g11 + SQ(coords->Bxy) / contravariant_components.g11;
-  contravariant_components.g12 = 0.0;
-  contravariant_components.g13 = -sinty * contravariant_components.g11;
-  contravariant_components.g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
-  coords->setContravariantMetricTensor(contravariant_components);
+  const auto g11 = SQ(Rxy * Bpxy);
+  const auto g22 = 1.0 / SQ(hthe);
+  const auto g33 = SQ(sinty) * coords->g11() + SQ(coords->Bxy) / coords->g11();
+  const auto g12 = 0.0;
+  const auto g13 = -sinty * coords->g11();
+  const auto g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
+  coords->setContravariantMetricTensor(
+      ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
 
   coords->J = hthe / Bpxy;
 
-  Coordinates::MetricTensor covariant_components;
-  covariant_components.g_11 = 1.0 / contravariant_components.g11 + SQ(sinty * Rxy);
-  covariant_components.g_22 = SQ(coords->Bxy * hthe / Bpxy);
-  covariant_components.g_33 = Rxy * Rxy;
-  covariant_components.g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
-  covariant_components.g_13 = sinty * Rxy * Rxy;
-  covariant_components.g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
-  coords->setCovariantMetricTensor(covariant_components);
+  const auto g_11 = 1.0 / coords->g11() + SQ(sinty * Rxy);
+  const auto g_22 = SQ(coords->Bxy * hthe / Bpxy);
+  const auto g_33 = Rxy * Rxy;
+  const auto g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
+  const auto g_13 = sinty * Rxy * Rxy;
+  const auto g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
+  coords->setCovariantMetricTensor(
+      CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
   coords->geometry();
 }
