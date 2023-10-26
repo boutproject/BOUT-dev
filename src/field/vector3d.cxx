@@ -142,15 +142,14 @@ void Vector3D::toContravariant() {
       const auto x_at_z = interp_to(x, z.getLocation());
       const auto y_at_z = interp_to(y, z.getLocation());
 
-      const auto g_x = metric_x->getContravariantMetricTensor();
-      const auto g_y = metric_y->getContravariantMetricTensor();
-      const auto g_z = metric_z->getContravariantMetricTensor();
-
       // multiply by g_{ij}
-      BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
-        x[i] = g_x.g11[i] * x[i] + g_x.g12[i] * y_at_x[i] + g_x.g13[i] * z_at_x[i];
-        y[i] = g_y.g22[i] * y[i] + g_y.g12[i] * x_at_y[i] + g_y.g23[i] * z_at_y[i];
-        z[i] = g_z.g33[i] * z[i] + g_z.g13[i] * x_at_z[i] + g_z.g23[i] * y_at_z[i];
+      BOUT_FOR(i, x.getRegion("RGN_ALL")) {
+        x[i] = metric_x->g11()[i] * x[i] + metric_x->g12()[i] * y_at_x[i]
+               + metric_x->g13()[i] * z_at_x[i];
+        y[i] = metric_x->g22()[i] * y[i] + metric_x->g12()[i] * x_at_y[i]
+               + metric_x->g23()[i] * z_at_y[i];
+        z[i] = metric_x->g33()[i] * z[i] + metric_x->g13()[i] * x_at_z[i]
+               + metric_x->g23()[i] * y_at_z[i];
       };
 
     } else {
@@ -159,12 +158,13 @@ void Vector3D::toContravariant() {
       // Need to use temporary arrays to store result
       Field3D gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
-      const auto g = metric->getContravariantMetricTensor();
-
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
-        gx[i] = g.g11[i] * x[i] + g.g12[i] * y[i] + g.g13[i] * z[i];
-        gy[i] = g.g22[i] * y[i] + g.g12[i] * x[i] + g.g23[i] * z[i];
-        gz[i] = g.g33[i] * z[i] + g.g13[i] * x[i] + g.g23[i] * y[i];
+        gx[i] =
+            metric->g11()[i] * x[i] + metric->g12()[i] * y[i] + metric->g13()[i] * z[i];
+        gy[i] =
+            metric->g22()[i] * y[i] + metric->g12()[i] * x[i] + metric->g23()[i] * z[i];
+        gz[i] =
+            metric->g33()[i] * z[i] + metric->g13()[i] * x[i] + metric->g23()[i] * y[i];
       };
 
       x = gx;
@@ -488,10 +488,11 @@ const Field3D Vector3D::operator*(const Vector3D& rhs) const {
 
     if (covariant) {
       // Both covariant
-      const auto g = metric->getContravariantMetricTensor();
-      result = x * rhs.x * g.g11 + y * rhs.y * g.g22 + z * rhs.z * g.g33;
-      result += (x * rhs.y + y * rhs.x) * g.g12 + (x * rhs.z + z * rhs.x) * g.g13
-                + (y * rhs.z + z * rhs.y) * g.g23;
+      result = x * rhs.x * metric->g11() + y * rhs.y * metric->g22()
+               + z * rhs.z * metric->g33();
+      result += (x * rhs.y + y * rhs.x) * metric->g12()
+                + (x * rhs.z + z * rhs.x) * metric->g13()
+                + (y * rhs.z + z * rhs.y) * metric->g23();
     } else {
       // Both contravariant
       result = x * rhs.x * metric->g_11() + y * rhs.y * metric->g_22()
@@ -519,10 +520,11 @@ const Field3D Vector3D::operator*(const Vector2D& rhs) const {
     Coordinates* metric = x.getCoordinates(location);
     if (covariant) {
       // Both covariant
-      const auto g = metric->getContravariantMetricTensor();
-      result = x * rhs.x * g.g11 + y * rhs.y * g.g22 + z * rhs.z * g.g33;
-      result += (x * rhs.y + y * rhs.x) * g.g12 + (x * rhs.z + z * rhs.x) * g.g13
-                + (y * rhs.z + z * rhs.y) * g.g23;
+      result = x * rhs.x * metric->g11() + y * rhs.y * metric->g22()
+               + z * rhs.z * metric->g33();
+      result += (x * rhs.y + y * rhs.x) * metric->g12()
+                + (x * rhs.z + z * rhs.x) * metric->g13()
+                + (y * rhs.z + z * rhs.y) * metric->g23();
     } else {
       // Both contravariant
       result = x * rhs.x * metric->g_11() + y * rhs.y * metric->g_22()

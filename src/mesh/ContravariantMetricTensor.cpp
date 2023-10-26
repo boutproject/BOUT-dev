@@ -5,10 +5,8 @@
 ContravariantMetricTensor::ContravariantMetricTensor(
     const FieldMetric& g11, const FieldMetric& g22, const FieldMetric& g33,
     const FieldMetric& g12, const FieldMetric& g13, const FieldMetric& g23)
-    : contravariant_components({FieldMetric(std::move(g11)), FieldMetric(std::move(g22)),
-                                FieldMetric(std::move(g33)), FieldMetric(std::move(g12)),
-                                FieldMetric(std::move(g13)),
-                                FieldMetric(std::move(g23))}) {
+    : g11(std::move(g11)), g22(std::move(g22)), g33(std::move(g33)), g12(std::move(g12)),
+      g13(std::move(g13)), g23(std::move(g23)) {
 
   Allocate(); // Make sure metric elements are allocated //  ; TODO: Required?
 }
@@ -16,82 +14,88 @@ ContravariantMetricTensor::ContravariantMetricTensor(
 ContravariantMetricTensor::ContravariantMetricTensor(
     const BoutReal g11, const BoutReal g22, const BoutReal g33, const BoutReal g12,
     const BoutReal g13, const BoutReal g23, Mesh* mesh)
-    : contravariant_components({FieldMetric(g11, mesh), FieldMetric(g22, mesh),
-                                FieldMetric(g33, mesh), FieldMetric(g12, mesh),
-                                FieldMetric(g13, mesh), FieldMetric(g23, mesh)}) {
+    : g11(g11, mesh), g22(g22, mesh), g33(g33, mesh), g12(g12, mesh), g13(g13, mesh),
+      g23(g23, mesh) {
 
   Allocate(); // Make sure metric elements are allocated //  ; TODO: Required?
 }
 
-ContravariantMetricTensor::ContravariantComponents
-ContravariantMetricTensor::getContravariantMetricTensor() const {
-  return ContravariantComponents{
-      contravariant_components.g11, contravariant_components.g22,
-      contravariant_components.g33, contravariant_components.g12,
-      contravariant_components.g13, contravariant_components.g23};
+const ContravariantMetricTensor::FieldMetric& ContravariantMetricTensor::Getg11() const {
+  return g11;
+}
+const ContravariantMetricTensor::FieldMetric& ContravariantMetricTensor::Getg22() const {
+  return g22;
+}
+const ContravariantMetricTensor::FieldMetric& ContravariantMetricTensor::Getg33() const {
+  return g33;
+}
+const ContravariantMetricTensor::FieldMetric& ContravariantMetricTensor::Getg12() const {
+  return g12;
+}
+const ContravariantMetricTensor::FieldMetric& ContravariantMetricTensor::Getg13() const {
+  return g13;
+}
+const ContravariantMetricTensor::FieldMetric& ContravariantMetricTensor::Getg23() const {
+  return g23;
 }
 
 void ContravariantMetricTensor::setContravariantMetricTensor(
     const ContravariantMetricTensor& metric_tensor) {
 
-  const auto new_components = metric_tensor.getContravariantMetricTensor();
-  contravariant_components.g11 = new_components.g11;
-  contravariant_components.g22 = new_components.g22;
-  contravariant_components.g33 = new_components.g33;
-  contravariant_components.g12 = new_components.g12;
-  contravariant_components.g13 = new_components.g13;
-  contravariant_components.g23 = new_components.g23;
+  g11 = metric_tensor.Getg11();
+  g22 = metric_tensor.Getg22();
+  g33 = metric_tensor.Getg33();
+  g12 = metric_tensor.Getg12();
+  g13 = metric_tensor.Getg13();
+  g23 = metric_tensor.Getg23();
 }
 
 void ContravariantMetricTensor::checkContravariant(int ystart) {
   // Diagonal metric components should be finite
-  bout::checkFinite(contravariant_components.g11, "g11", "RGN_NOCORNERS");
-  bout::checkFinite(contravariant_components.g22, "g22", "RGN_NOCORNERS");
-  bout::checkFinite(contravariant_components.g33, "g33", "RGN_NOCORNERS");
-  if (contravariant_components.g11.hasParallelSlices()
-      && &contravariant_components.g11.ynext(1) != &contravariant_components.g11) {
+  bout::checkFinite(g11, "g11", "RGN_NOCORNERS");
+  bout::checkFinite(g22, "g22", "RGN_NOCORNERS");
+  bout::checkFinite(g33, "g33", "RGN_NOCORNERS");
+  if (g11.hasParallelSlices() && &g11.ynext(1) != &g11) {
     for (int dy = 1; dy <= ystart; ++dy) {
       for (const auto sign : {1, -1}) {
-        bout::checkFinite(contravariant_components.g11.ynext(sign * dy), "g11.ynext",
+        bout::checkFinite(g11.ynext(sign * dy), "g11.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(contravariant_components.g22.ynext(sign * dy), "g22.ynext",
+        bout::checkFinite(g22.ynext(sign * dy), "g22.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(contravariant_components.g33.ynext(sign * dy), "g33.ynext",
+        bout::checkFinite(g33.ynext(sign * dy), "g33.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
       }
     }
   }
   // Diagonal metric components should be positive
-  bout::checkPositive(contravariant_components.g11, "g11", "RGN_NOCORNERS");
-  bout::checkPositive(contravariant_components.g22, "g22", "RGN_NOCORNERS");
-  bout::checkPositive(contravariant_components.g33, "g33", "RGN_NOCORNERS");
-  if (contravariant_components.g11.hasParallelSlices()
-      && &contravariant_components.g11.ynext(1) != &contravariant_components.g11) {
+  bout::checkPositive(g11, "g11", "RGN_NOCORNERS");
+  bout::checkPositive(g22, "g22", "RGN_NOCORNERS");
+  bout::checkPositive(g33, "g33", "RGN_NOCORNERS");
+  if (g11.hasParallelSlices() && &g11.ynext(1) != &g11) {
     for (int dy = 1; dy <= ystart; ++dy) {
       for (const auto sign : {1, -1}) {
-        bout::checkPositive(contravariant_components.g11.ynext(sign * dy), "g11.ynext",
+        bout::checkPositive(g11.ynext(sign * dy), "g11.ynext",
                             fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkPositive(contravariant_components.g22.ynext(sign * dy), "g22.ynext",
+        bout::checkPositive(g22.ynext(sign * dy), "g22.ynext",
                             fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkPositive(contravariant_components.g33.ynext(sign * dy), "g33.ynext",
+        bout::checkPositive(g33.ynext(sign * dy), "g33.ynext",
                             fmt::format("RGN_YPAR_{:+d}", sign * dy));
       }
     }
   }
 
   // Off-diagonal metric components should be finite
-  bout::checkFinite(contravariant_components.g12, "g12", "RGN_NOCORNERS");
-  bout::checkFinite(contravariant_components.g13, "g13", "RGN_NOCORNERS");
-  bout::checkFinite(contravariant_components.g23, "g23", "RGN_NOCORNERS");
-  if (contravariant_components.g23.hasParallelSlices()
-      && &contravariant_components.g23.ynext(1) != &contravariant_components.g23) {
+  bout::checkFinite(g12, "g12", "RGN_NOCORNERS");
+  bout::checkFinite(g13, "g13", "RGN_NOCORNERS");
+  bout::checkFinite(g23, "g23", "RGN_NOCORNERS");
+  if (g23.hasParallelSlices() && &g23.ynext(1) != &g23) {
     for (int dy = 1; dy <= ystart; ++dy) {
       for (const auto sign : {1, -1}) {
-        bout::checkFinite(contravariant_components.g12.ynext(sign * dy), "g12.ynext",
+        bout::checkFinite(g12.ynext(sign * dy), "g12.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(contravariant_components.g13.ynext(sign * dy), "g13.ynext",
+        bout::checkFinite(g13.ynext(sign * dy), "g13.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(contravariant_components.g23.ynext(sign * dy), "g23.ynext",
+        bout::checkFinite(g23.ynext(sign * dy), "g23.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
       }
     }
@@ -99,21 +103,21 @@ void ContravariantMetricTensor::checkContravariant(int ystart) {
 }
 
 void ContravariantMetricTensor::Allocate() { //  ; TODO: Required?
-  contravariant_components.g11.allocate();
-  contravariant_components.g22.allocate();
-  contravariant_components.g33.allocate();
-  contravariant_components.g12.allocate();
-  contravariant_components.g13.allocate();
-  contravariant_components.g23.allocate();
+  g11.allocate();
+  g22.allocate();
+  g33.allocate();
+  g12.allocate();
+  g13.allocate();
+  g23.allocate();
 }
 
 void ContravariantMetricTensor::setLocation(const CELL_LOC location) {
-  contravariant_components.g11.setLocation(location);
-  contravariant_components.g22.setLocation(location);
-  contravariant_components.g33.setLocation(location);
-  contravariant_components.g12.setLocation(location);
-  contravariant_components.g13.setLocation(location);
-  contravariant_components.g23.setLocation(location);
+  g11.setLocation(location);
+  g22.setLocation(location);
+  g33.setLocation(location);
+  g12.setLocation(location);
+  g13.setLocation(location);
+  g23.setLocation(location);
 }
 
 void ContravariantMetricTensor::calcContravariant(
@@ -143,38 +147,41 @@ void ContravariantMetricTensor::calcContravariant(
     }
   }
 
-  contravariant_components =
-      ContravariantComponents{a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2)};
+  g11 = a(0, 0);
+  g22 = a(1, 1);
+  g33 = a(2, 2);
+  g12 = a(0, 1);
+  g13 = a(0, 2);
+  g23 = a(1, 2);
+  //  contravariant_components = ContravariantComponents{a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2)};
 
   setLocation(location);
 
   BoutReal maxerr;
-  maxerr =
-      BOUTMAX(max(abs((covariantMetricTensor.Getg_11() * contravariant_components.g11
-                       + covariantMetricTensor.Getg_12() * contravariant_components.g12
-                       + covariantMetricTensor.Getg_13() * contravariant_components.g13)
-                      - 1)),
-              max(abs((covariantMetricTensor.Getg_12() * contravariant_components.g12
-                       + covariantMetricTensor.Getg_22() * contravariant_components.g22
-                       + covariantMetricTensor.Getg_23() * contravariant_components.g23)
-                      - 1)),
-              max(abs((covariantMetricTensor.Getg_13() * contravariant_components.g13
-                       + covariantMetricTensor.Getg_23() * contravariant_components.g23
-                       + covariantMetricTensor.Getg_33() * contravariant_components.g33)
-                      - 1)));
+  maxerr = BOUTMAX(max(abs((covariantMetricTensor.Getg_11() * g11
+                            + covariantMetricTensor.Getg_12() * g12
+                            + covariantMetricTensor.Getg_13() * g13)
+                           - 1)),
+                   max(abs((covariantMetricTensor.Getg_12() * g12
+                            + covariantMetricTensor.Getg_22() * g22
+                            + covariantMetricTensor.Getg_23() * g23)
+                           - 1)),
+                   max(abs((covariantMetricTensor.Getg_13() * g13
+                            + covariantMetricTensor.Getg_23() * g23
+                            + covariantMetricTensor.Getg_33() * g33)
+                           - 1)));
 
   output_info.write("\tMaximum error in diagonal inversion is {:e}\n", maxerr);
 
-  maxerr =
-      BOUTMAX(max(abs(covariantMetricTensor.Getg_11() * contravariant_components.g12
-                      + covariantMetricTensor.Getg_12() * contravariant_components.g22
-                      + covariantMetricTensor.Getg_13() * contravariant_components.g23)),
-              max(abs(covariantMetricTensor.Getg_11() * contravariant_components.g13
-                      + covariantMetricTensor.Getg_12() * contravariant_components.g23
-                      + covariantMetricTensor.Getg_13() * contravariant_components.g33)),
-              max(abs(covariantMetricTensor.Getg_12() * contravariant_components.g13
-                      + covariantMetricTensor.Getg_22() * contravariant_components.g23
-                      + covariantMetricTensor.Getg_23() * contravariant_components.g33)));
+  maxerr = BOUTMAX(max(abs(covariantMetricTensor.Getg_11() * g12
+                           + covariantMetricTensor.Getg_12() * g22
+                           + covariantMetricTensor.Getg_13() * g23)),
+                   max(abs(covariantMetricTensor.Getg_11() * g13
+                           + covariantMetricTensor.Getg_12() * g23
+                           + covariantMetricTensor.Getg_13() * g33)),
+                   max(abs(covariantMetricTensor.Getg_12() * g13
+                           + covariantMetricTensor.Getg_22() * g23
+                           + covariantMetricTensor.Getg_23() * g33)));
 
   output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
 }

@@ -103,7 +103,6 @@ private:
   CovariantMetricTensor covariantMetricTensor;
 
 public:
-  ContravariantMetricTensor::ContravariantComponents getContravariantMetricTensor() const;
 
   const FieldMetric& g_11() const;
   const FieldMetric& g_22() const;
@@ -111,6 +110,13 @@ public:
   const FieldMetric& g_12() const;
   const FieldMetric& g_13() const;
   const FieldMetric& g_23() const;
+
+  const FieldMetric& g11() const;
+  const FieldMetric& g22() const;
+  const FieldMetric& g33() const;
+  const FieldMetric& g12() const;
+  const FieldMetric& g13() const;
+  const FieldMetric& g23() const;
 
   void setContravariantMetricTensor(ContravariantMetricTensor metric_tensor,
                                     const std::string& region = "RGN_ALL");

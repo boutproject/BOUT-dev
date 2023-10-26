@@ -3,7 +3,7 @@
 #include "bout/ContravariantMetricTensor.hxx"
 #include "bout/coordinates.hxx"
 #include "bout/output.hxx"
-  
+
 CovariantMetricTensor::CovariantMetricTensor(
     const FieldMetric& g_11, const FieldMetric& g_22, const FieldMetric& g_33,
     const FieldMetric& g_12, const FieldMetric& g_13, const FieldMetric& g_23)
@@ -131,19 +131,16 @@ void CovariantMetricTensor::calcCovariant(
   // Perform inversion of g^{ij} to get g_{ij}
   // NOTE: Currently this bit assumes that metric terms are Field2D objects
 
-  const auto contravariant_components =
-      contravariantMetricTensor.getContravariantMetricTensor();
-
   auto a = Matrix<BoutReal>(3, 3);
 
-  BOUT_FOR_SERIAL(i, contravariant_components.g11.getRegion(region)) {
-    a(0, 0) = contravariant_components.g11[i];
-    a(1, 1) = contravariant_components.g22[i];
-    a(2, 2) = contravariant_components.g33[i];
+  BOUT_FOR_SERIAL(i, contravariantMetricTensor.Getg11().getRegion(region)) {
+    a(0, 0) = contravariantMetricTensor.Getg11()[i];
+    a(1, 1) = contravariantMetricTensor.Getg22()[i];
+    a(2, 2) = contravariantMetricTensor.Getg33()[i];
 
-    a(0, 1) = a(1, 0) = contravariant_components.g12[i];
-    a(1, 2) = a(2, 1) = contravariant_components.g23[i];
-    a(0, 2) = a(2, 0) = contravariant_components.g13[i];
+    a(0, 1) = a(1, 0) = contravariantMetricTensor.Getg12()[i];
+    a(1, 2) = a(2, 1) = contravariantMetricTensor.Getg23()[i];
+    a(0, 2) = a(2, 0) = contravariantMetricTensor.Getg13()[i];
 
     if (invert3x3(a)) {
       const auto error_message = "\tERROR: metric tensor is singular at ({:d}, {:d})\n";
@@ -158,32 +155,35 @@ void CovariantMetricTensor::calcCovariant(
   g_12 = a(0, 1);
   g_13 = a(0, 2);
   g_23 = a(1, 2);
-  //  covariant_components =
-  //      CovariantComponents{(a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2))};
+  //  covariant_components = CovariantComponents{(a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2))};
 
   setLocation(location);
 
   BoutReal maxerr;
-  maxerr = BOUTMAX(
-      max(abs((g_11 * contravariant_components.g11 + g_12 * contravariant_components.g12
-               + g_13 * contravariant_components.g13)
-              - 1)),
-      max(abs((g_12 * contravariant_components.g12 + g_22 * contravariant_components.g22
-               + g_23 * contravariant_components.g23)
-              - 1)),
-      max(abs((g_13 * contravariant_components.g13 + g_23 * contravariant_components.g23
-               + g_33 * contravariant_components.g33)
-              - 1)));
+  maxerr = BOUTMAX(max(abs((g_11 * contravariantMetricTensor.Getg11()
+                            + g_12 * contravariantMetricTensor.Getg12()
+                            + g_13 * contravariantMetricTensor.Getg13())
+                           - 1)),
+                   max(abs((g_12 * contravariantMetricTensor.Getg12()
+                            + g_22 * contravariantMetricTensor.Getg22()
+                            + g_23 * contravariantMetricTensor.Getg23())
+                           - 1)),
+                   max(abs((g_13 * contravariantMetricTensor.Getg13()
+                            + g_23 * contravariantMetricTensor.Getg23()
+                            + g_33 * contravariantMetricTensor.Getg33())
+                           - 1)));
 
   output_info.write("\tLocal maximum error in diagonal inversion is {:e}\n", maxerr);
 
-  maxerr = BOUTMAX(
-      max(abs(g_11 * contravariant_components.g12 + g_12 * contravariant_components.g22
-              + g_13 * contravariant_components.g23)),
-      max(abs(g_11 * contravariant_components.g13 + g_12 * contravariant_components.g23
-              + g_13 * contravariant_components.g33)),
-      max(abs(g_12 * contravariant_components.g13 + g_22 * contravariant_components.g23
-              + g_23 * contravariant_components.g33)));
+  maxerr = BOUTMAX(max(abs(g_11 * contravariantMetricTensor.Getg12()
+                           + g_12 * contravariantMetricTensor.Getg22()
+                           + g_13 * contravariantMetricTensor.Getg23())),
+                   max(abs(g_11 * contravariantMetricTensor.Getg13()
+                           + g_12 * contravariantMetricTensor.Getg23()
+                           + g_13 * contravariantMetricTensor.Getg33())),
+                   max(abs(g_12 * contravariantMetricTensor.Getg13()
+                           + g_22 * contravariantMetricTensor.Getg23()
+                           + g_23 * contravariantMetricTensor.Getg33())));
 
   output_info.write("\tLocal maximum error in off-diagonal inversion is {:e}\n", maxerr);
 }

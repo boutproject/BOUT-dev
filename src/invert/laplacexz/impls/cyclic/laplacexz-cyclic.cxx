@@ -72,10 +72,9 @@ void LaplaceXZcyclic::setCoefs(const Field2D& A2D, const Field2D& B2D) {
   // Set coefficients
 
   Coordinates* coord = localmesh->getCoordinates(location);
-  const auto g = coord->getContravariantMetricTensor();
 
   // NOTE: For now the X-Z terms are omitted, so check that they are small
-  ASSERT2(max(abs(g.g13)) < 1e-5);
+  ASSERT2(max(abs(coord->g13())) < 1e-5);
 
   int ind = 0;
   const BoutReal zlength = getUniform(coord->zlength());
@@ -118,7 +117,7 @@ void LaplaceXZcyclic::setCoefs(const Field2D& A2D, const Field2D& B2D) {
 
         // Metrics on x+1/2 boundary
         BoutReal J = 0.5 * (coord->J(x, y) + coord->J(x + 1, y));
-        BoutReal g11 = 0.5 * (g.g11(x, y) + g.g11(x + 1, y));
+        BoutReal g11 = 0.5 * (coord->g11()(x, y) + coord->g11()(x + 1, y));
         BoutReal dx = 0.5 * (coord->dx(x, y) + coord->dx(x + 1, y));
         BoutReal A = 0.5 * (A2D(x, y) + A2D(x + 1, y));
 
@@ -129,7 +128,7 @@ void LaplaceXZcyclic::setCoefs(const Field2D& A2D, const Field2D& B2D) {
 
         // Metrics on x-1/2 boundary
         J = 0.5 * (coord->J(x, y) + coord->J(x - 1, y));
-        g11 = 0.5 * (g.g11(x, y) + g.g11(x - 1, y));
+        g11 = 0.5 * (coord->g11()(x, y) + coord->g11()(x - 1, y));
         dx = 0.5 * (coord->dx(x, y) + coord->dx(x - 1, y));
         A = 0.5 * (A2D(x, y) + A2D(x - 1, y));
 
@@ -138,7 +137,7 @@ void LaplaceXZcyclic::setCoefs(const Field2D& A2D, const Field2D& B2D) {
         bcoef(ind, x - xstart) -= val;
 
         // ZZ component
-        bcoef(ind, x - xstart) -= A2D(x, y) * SQ(kwave) * g.g33(x, y);
+        bcoef(ind, x - xstart) -= A2D(x, y) * SQ(kwave) * coord->g33()(x, y);
       }
 
       // Outer X boundary
