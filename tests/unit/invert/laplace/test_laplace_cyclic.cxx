@@ -39,12 +39,9 @@ public:
   }
 
   const Field3D operator()(Field3D& f) {
-    const auto contravariant_components = coords->getContravariantMetricTensor();
-    auto result =
-        d * Delp2(f)
-        + (contravariant_components.g11 * DDX(f) + contravariant_components.g13 * DDZ(f))
-              * DDX(c2) / c1
-        + a * f + ex * DDX(f) + ez * DDZ(f);
+    auto result = d * Delp2(f)
+                  + (coords->g11() * DDX(f) + coords->g13() * DDZ(f)) * DDX(c2) / c1
+                  + a * f + ex * DDX(f) + ez * DDZ(f);
     applyBoundaries(result, f);
     return result;
   }

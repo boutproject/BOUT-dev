@@ -49,22 +49,25 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
     sbp = -1.0;
   }
 
-  Coordinates::MetricTensor metric_tensor = coords->getContravariantMetricTensor();
-  metric_tensor.g11 = pow(Rxy * Bpxy, 2);
-  metric_tensor.g22 = 1.0 / pow(hthe, 2);
-  metric_tensor.g33 = pow(sinty, 2) * metric_tensor.g11 + pow(coords->Bxy, 2) / metric_tensor.g11;
-  metric_tensor.g12 = 0.0;
-  metric_tensor.g13 = -sinty * metric_tensor.g11;
-  metric_tensor.g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
+  const auto g11 = pow(Rxy * Bpxy, 2);
+  const auto g22 = 1.0 / pow(hthe, 2);
+  const auto g33 = pow(sinty, 2) * coords->g11() + pow(coords->Bxy, 2) / coords->g11();
+  const auto g12 = 0.0;
+  const auto g13 = -sinty * coords->g11();
+  const auto g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
+  coords->setContravariantMetricTensor(
+      ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
 
   coords->J = hthe / Bpxy;
 
-  coords->g_11 = 1.0 / metric_tensor.g11 + pow(sinty * Rxy, 2);
-  coords->g_22 = pow(coords->Bxy * hthe / Bpxy, 2);
-  coords->g_33 = Rxy * Rxy;
-  coords->g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
-  coords->g_13 = sinty * Rxy * Rxy;
-  coords->g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
+  const auto g_11 = 1.0 / coords->g11() + pow(sinty * Rxy, 2);
+  const auto g_22 = pow(coords->Bxy * hthe / Bpxy, 2);
+  const auto g_33 = Rxy * Rxy;
+  const auto g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
+  const auto g_13 = sinty * Rxy * Rxy;
+  const auto g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
+  coords->setCovariantMetricTensor(
+      CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
   coords->geometry();
 }

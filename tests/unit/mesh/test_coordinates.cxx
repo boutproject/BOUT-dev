@@ -178,14 +178,12 @@ TEST_F(CoordinatesTest, CalcCovariant) {
   coords.calcContravariant();
   output_info.enable();
 
-  const auto g = coords.getContravariantMetricTensor();
-
-  EXPECT_TRUE(IsFieldEqual(g.g11, 1.0));
-  EXPECT_TRUE(IsFieldEqual(g.g22, 1.0));
-  EXPECT_TRUE(IsFieldEqual(g.g33, 1.0));
-  EXPECT_TRUE(IsFieldEqual(g.g12, 0.0));
-  EXPECT_TRUE(IsFieldEqual(g.g13, 0.0));
-  EXPECT_TRUE(IsFieldEqual(g.g23, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g11(), 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g22(), 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g33(), 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g12(), 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g13(), 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g23(), 0.0));
 }
 // #endif
 
@@ -200,14 +198,12 @@ TEST_F(CoordinatesTest, DefaultConstructor) {
   EXPECT_TRUE(IsFieldEqual(coords.dy, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.dz, default_dz));
 
-  const auto g = coords.getContravariantMetricTensor();
-
-  EXPECT_TRUE(IsFieldEqual(g.g11, 1.0));
-  EXPECT_TRUE(IsFieldEqual(g.g22, 1.0));
-  EXPECT_TRUE(IsFieldEqual(g.g33, 1.0));
-  EXPECT_TRUE(IsFieldEqual(g.g12, 0.0));
-  EXPECT_TRUE(IsFieldEqual(g.g13, 0.0));
-  EXPECT_TRUE(IsFieldEqual(g.g23, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g11(), 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g22(), 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g33(), 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g12(), 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g13(), 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g23(), 0.0));
 
   EXPECT_TRUE(IsFieldEqual(coords.J, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.Bxy, 1.0));
@@ -228,14 +224,12 @@ TEST_F(CoordinatesTest, ConstructWithMeshSpacing) {
   EXPECT_TRUE(IsFieldEqual(coords.dy, 3.2));
   EXPECT_TRUE(IsFieldEqual(coords.dz, 42.));
 
-  const auto g = coords.getContravariantMetricTensor();
-
-  EXPECT_TRUE(IsFieldEqual(g.g11, 1.0));
-  EXPECT_TRUE(IsFieldEqual(g.g22, 1.0));
-  EXPECT_TRUE(IsFieldEqual(g.g33, 1.0));
-  EXPECT_TRUE(IsFieldEqual(g.g12, 0.0));
-  EXPECT_TRUE(IsFieldEqual(g.g13, 0.0));
-  EXPECT_TRUE(IsFieldEqual(g.g23, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g11(), 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g22(), 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g33(), 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g12(), 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g13(), 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g23(), 0.0));
 
   EXPECT_TRUE(IsFieldEqual(coords.J, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.Bxy, 1.0));
@@ -271,13 +265,12 @@ TEST_F(CoordinatesTest, ConstructWithDiagonalContravariantMetric) {
   EXPECT_TRUE(IsFieldEqual(coords.dz, default_dz));
 
   // Diagonal contravariant metric
-  const auto g = coords.getContravariantMetricTensor();
-  EXPECT_TRUE(IsFieldEqual(g.g11, 2.0));
-  EXPECT_TRUE(IsFieldEqual(g.g22, 3.2));
-  EXPECT_TRUE(IsFieldEqual(g.g33, 42));
-  EXPECT_TRUE(IsFieldEqual(g.g12, 0.0));
-  EXPECT_TRUE(IsFieldEqual(g.g13, 0.0));
-  EXPECT_TRUE(IsFieldEqual(g.g23, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g11(), 2.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g22(), 3.2));
+  EXPECT_TRUE(IsFieldEqual(coords.g33(), 42));
+  EXPECT_TRUE(IsFieldEqual(coords.g12(), 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g13(), 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g23(), 0.0));
 
   // Covariant metric should be inverse
   // Note: Not calculated in corners
@@ -333,14 +326,12 @@ TEST_F(CoordinatesTest, GetContravariantMetricTensor) {
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
 
-  const auto contravariant_components = coords.getContravariantMetricTensor();
-
-  EXPECT_TRUE(IsFieldEqual(contravariant_components.g11, 1.2));
-  EXPECT_TRUE(IsFieldEqual(contravariant_components.g22, 2.3));
-  EXPECT_TRUE(IsFieldEqual(contravariant_components.g33, 3.4));
-  EXPECT_TRUE(IsFieldEqual(contravariant_components.g12, 4.5));
-  EXPECT_TRUE(IsFieldEqual(contravariant_components.g13, 5.6));
-  EXPECT_TRUE(IsFieldEqual(contravariant_components.g23, 6.7));
+  EXPECT_TRUE(IsFieldEqual(coords.g11(), 1.2));
+  EXPECT_TRUE(IsFieldEqual(coords.g22(), 2.3));
+  EXPECT_TRUE(IsFieldEqual(coords.g33(), 3.4));
+  EXPECT_TRUE(IsFieldEqual(coords.g12(), 4.5));
+  EXPECT_TRUE(IsFieldEqual(coords.g13(), 5.6));
+  EXPECT_TRUE(IsFieldEqual(coords.g23(), 6.7));
 }
 
 TEST_F(CoordinatesTest, SetContravariantMetricTensor) {
@@ -371,13 +362,12 @@ TEST_F(CoordinatesTest, SetContravariantMetricTensor) {
   coords.setContravariantMetricTensor(updated_metric_tensor);
 
   //  Get values with getter and check they have been modified as expected
-  const auto g = coords.getContravariantMetricTensor();
-  EXPECT_TRUE(IsFieldEqual(g.g11, 1.7));
-  EXPECT_TRUE(IsFieldEqual(g.g22, 2.3));
-  EXPECT_TRUE(IsFieldEqual(g.g33, 3.1));
-  EXPECT_TRUE(IsFieldEqual(g.g12, 0.9));
-  EXPECT_TRUE(IsFieldEqual(g.g13, 5.7));
-  EXPECT_TRUE(IsFieldEqual(g.g23, 1.9));
+  EXPECT_TRUE(IsFieldEqual(coords.g11(), 1.7));
+  EXPECT_TRUE(IsFieldEqual(coords.g22(), 2.3));
+  EXPECT_TRUE(IsFieldEqual(coords.g33(), 3.1));
+  EXPECT_TRUE(IsFieldEqual(coords.g12(), 0.9));
+  EXPECT_TRUE(IsFieldEqual(coords.g13(), 5.7));
+  EXPECT_TRUE(IsFieldEqual(coords.g23(), 1.9));
 }
 
 TEST_F(CoordinatesTest, GetCovariantMetricTensor) {
