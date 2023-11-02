@@ -502,20 +502,13 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
                     source_has_component)) {
 
-      FieldMetric old_g_11 = covariantMetricTensor.Getg_11(); // non-const
-      FieldMetric old_g_22 = covariantMetricTensor.Getg_22(); // non-const
-      FieldMetric old_g_33 = covariantMetricTensor.Getg_33(); // non-const
-      FieldMetric old_g_12 = covariantMetricTensor.Getg_12(); // non-const
-      FieldMetric old_g_13 = covariantMetricTensor.Getg_13(); // non-const
-      FieldMetric old_g_23 = covariantMetricTensor.Getg_23(); // non-const
-
       FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
-      //      g_11 = getUnaligned(old_g_11, "g_11", 1.0);
-      //      g_22 = getUnaligned(old_g_22, "g_22", 1.0);
-      //      g_33 = getUnaligned(old_g_33, "g_33", 1.0);
-      //      g_12 = getUnaligned(old_g_12, "g_12", 0.0);
-      //      g_13 = getUnaligned(old_g_13, "g_13", 0.0);
-      //      g_23 = getUnaligned(old_g_23, "g_23", 0.0);
+      g_11 = getUnaligned("g_11", 1.0);
+      g_22 = getUnaligned("g_22", 1.0);
+      g_33 = getUnaligned("g_33", 1.0);
+      g_12 = getUnaligned("g_12", 0.0);
+      g_13 = getUnaligned("g_13", 0.0);
+      g_23 = getUnaligned("g_23", 0.0);
 
       covariantMetricTensor.setCovariantMetricTensor(
           CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
