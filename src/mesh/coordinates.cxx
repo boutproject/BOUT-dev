@@ -324,21 +324,20 @@ void checkStaggeredGet(Mesh* mesh, const std::string& name, const std::string& s
 }
 
 // convenience function for repeated code
-int getAtLoc(Mesh* mesh, const Coordinates::FieldMetric& var, const std::string& name,
-             const std::string& suffix, CELL_LOC location, BoutReal default_value = 0.) {
+auto getAtLoc(Mesh* mesh, const std::string& name, const std::string& suffix,
+              CELL_LOC location, BoutReal default_value = 0.) {
 
   checkStaggeredGet(mesh, name, suffix);
-  auto field = mesh->get(name + suffix, default_value, false, location);
-  return 0;
+  return mesh->get(name + suffix, default_value, false, location);
 }
 
-const Coordinates::FieldMetric
+Coordinates::FieldMetric
 getAtLocAndFillGuards(Mesh* mesh, const Coordinates::FieldMetric& var,
                       const std::string& name, const std::string& suffix,
                       CELL_LOC location, BoutReal default_value, bool extrapolate_x,
                       bool extrapolate_y, bool no_extra_interpolate,
                       ParallelTransform* pt) {
-  auto ret = getAtLoc(mesh, var, name, suffix, location, default_value);
+  auto ret = getAtLoc(mesh, name, suffix, location, default_value);
   return interpolateAndExtrapolate(var, location, extrapolate_x, extrapolate_y,
                                    no_extra_interpolate, pt);
 }
@@ -670,7 +669,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                                     : options["ZMAX"].withDefault(1.0);
 
       const auto default_dz = (zmax - zmin) * TWOPI / nz;
-      getAtLoc(mesh, dz, "dz", suffix, location, default_dz);
+      dz = getAtLoc(mesh, "dz", suffix, location, default_dz);
     }
     setParallelTransform(options);
 
@@ -730,19 +729,15 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
                       source_has_component)) {
 
-        FieldMetric old_g_11 = covariantMetricTensor.Getg_11(); // non-const
-        FieldMetric old_g_22 = covariantMetricTensor.Getg_22(); // non-const
-        FieldMetric old_g_33 = covariantMetricTensor.Getg_33(); // non-const
-        FieldMetric old_g_12 = covariantMetricTensor.Getg_12(); // non-const
-        FieldMetric old_g_13 = covariantMetricTensor.Getg_13(); // non-const
-        FieldMetric old_g_23 = covariantMetricTensor.Getg_23(); // non-const
-
-        getAtLoc(mesh, old_g_11, "g_11", suffix, location);
-        getAtLoc(mesh, old_g_22, "g_22", suffix, location);
-        getAtLoc(mesh, old_g_33, "g_33", suffix, location);
-        getAtLoc(mesh, old_g_12, "g_12", suffix, location);
-        getAtLoc(mesh, old_g_13, "g_13", suffix, location);
-        getAtLoc(mesh, old_g_23, "g_23", suffix, location);
+        FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
+        g_11 = getAtLoc(mesh, "g_11", suffix, location);
+        g_22 = getAtLoc(mesh, "g_22", suffix, location);
+        g_33 = getAtLoc(mesh, "g_33", suffix, location);
+        g_12 = getAtLoc(mesh, "g_12", suffix, location);
+        g_22 = getAtLoc(mesh, "g_13", suffix, location);
+        g_33 = getAtLoc(mesh, "g_23", suffix, location);
+        covariantMetricTensor.setCovariantMetricTensor(
+            CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
         output_warn.write(
             "\tWARNING! Staggered covariant components of metric tensor set manually. "
@@ -805,12 +800,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
     // Attempt to read J from the grid file
     auto Jcalc = J;
-    if (getAtLoc(mesh, J, "J", suffix, location)) {
-      output_warn.write(
-          "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
-          suffix);
-      J = Jcalc;
-    } else {
+    try {
+      J = getAtLoc(mesh, "J", suffix, location);
       J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false,
                                     transform.get());
 
@@ -819,6 +810,11 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
       // Re-evaluate Bxy using new J
       Bxy = sqrt(g_22) / J;
+    } catch (BoutException) {
+      output_warn.write(
+          "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
+          suffix);
+      J = Jcalc;
     }
 
     // Check jacobian
@@ -830,17 +826,18 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
     // Attempt to read Bxy from the grid file
     auto Bcalc = Bxy;
-    if (getAtLoc(mesh, Bxy, "Bxy", suffix, location)) {
+    try {
+      Bxy = getAtLoc(mesh, "Bxy", suffix, location);
+      Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
+                                      transform.get());
+
+      output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
+    } catch (BoutException) {
       output_warn.write(
           "\tWARNING: Magnitude of B field 'Bxy_{:s}' not found. Calculating "
           " from metric tensor\n",
           suffix);
       Bxy = Bcalc;
-    } else {
-      Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
-                                      transform.get());
-
-      output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
     }
 
     // Check Bxy
