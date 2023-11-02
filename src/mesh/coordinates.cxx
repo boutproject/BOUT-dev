@@ -324,6 +324,15 @@ void checkStaggeredGet(Mesh* mesh, const std::string& name, const std::string& s
 }
 
 // convenience function for repeated code
+int getAtLoc(Mesh* mesh, Coordinates::FieldMetric& var, const std::string& name,
+             const std::string& suffix, CELL_LOC location, BoutReal default_value = 0.) {
+
+  checkStaggeredGet(mesh, name, suffix);
+  int result = mesh->get(var, name + suffix, default_value, false, location);
+
+  return result;
+}
+
 auto getAtLoc(Mesh* mesh, const std::string& name, const std::string& suffix,
               CELL_LOC location, BoutReal default_value = 0.) {
 
@@ -331,12 +340,12 @@ auto getAtLoc(Mesh* mesh, const std::string& name, const std::string& suffix,
   return mesh->get(name + suffix, default_value, false, location);
 }
 
-Coordinates::FieldMetric
-getAtLocAndFillGuards(Mesh* mesh,
-                      const std::string& name, const std::string& suffix,
-                      CELL_LOC location, BoutReal default_value, bool extrapolate_x,
-                      bool extrapolate_y, bool no_extra_interpolate,
-                      ParallelTransform* pt) {
+Coordinates::FieldMetric getAtLocAndFillGuards(Mesh* mesh, const std::string& name,
+                                               const std::string& suffix,
+                                               CELL_LOC location, BoutReal default_value,
+                                               bool extrapolate_x, bool extrapolate_y,
+                                               bool no_extra_interpolate,
+                                               ParallelTransform* pt) {
   auto var = getAtLoc(mesh, name, suffix, location, default_value);
   return interpolateAndExtrapolate(var, location, extrapolate_x, extrapolate_y,
                                    no_extra_interpolate, pt);
@@ -669,7 +678,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                                     : options["ZMAX"].withDefault(1.0);
 
       const auto default_dz = (zmax - zmin) * TWOPI / nz;
-      dz = getAtLoc(mesh, "dz", suffix, location, default_dz);
+      getAtLoc(mesh, dz, "dz", suffix, location, default_dz);
     }
     setParallelTransform(options);
 
@@ -692,24 +701,18 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
     FieldMetric g11, g22, g33, g12, g13, g23;
 
-    g11 = getAtLocAndFillGuards(mesh, "g11", suffix,
-                                location, 1.0, extrapolate_x, extrapolate_y, false,
-                                transform.get());
-    g22 = getAtLocAndFillGuards(mesh, "g22", suffix,
-                                location, 1.0, extrapolate_x, extrapolate_y, false,
-                                transform.get());
-    g33 = getAtLocAndFillGuards(mesh, "g33", suffix,
-                                location, 1.0, extrapolate_x, extrapolate_y, false,
-                                transform.get());
-    g12 = getAtLocAndFillGuards(mesh, "g12", suffix,
-                                location, 0.0, extrapolate_x, extrapolate_y, false,
-                                transform.get());
-    g13 = getAtLocAndFillGuards(mesh, "g13", suffix,
-                                location, 0.0, extrapolate_x, extrapolate_y, false,
-                                transform.get());
-    g23 = getAtLocAndFillGuards(mesh, "g23", suffix,
-                                location, 0.0, extrapolate_x, extrapolate_y, false,
-                                transform.get());
+    g11 = getAtLocAndFillGuards(mesh, "g11", suffix, location, 1.0, extrapolate_x,
+                                extrapolate_y, false, transform.get());
+    g22 = getAtLocAndFillGuards(mesh, "g22", suffix, location, 1.0, extrapolate_x,
+                                extrapolate_y, false, transform.get());
+    g33 = getAtLocAndFillGuards(mesh, "g33", suffix, location, 1.0, extrapolate_x,
+                                extrapolate_y, false, transform.get());
+    g12 = getAtLocAndFillGuards(mesh, "g12", suffix, location, 0.0, extrapolate_x,
+                                extrapolate_y, false, transform.get());
+    g13 = getAtLocAndFillGuards(mesh, "g13", suffix, location, 0.0, extrapolate_x,
+                                extrapolate_y, false, transform.get());
+    g23 = getAtLocAndFillGuards(mesh, "g23", suffix, location, 0.0, extrapolate_x,
+                                extrapolate_y, false, transform.get());
 
     setContravariantMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
 
@@ -800,8 +803,12 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
     // Attempt to read J from the grid file
     auto Jcalc = J;
-    try {
-      J = getAtLoc(mesh, "J", suffix, location);
+    if (getAtLoc(mesh, J, "J", suffix, location)) {
+      output_warn.write(
+          "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
+          suffix);
+      J = Jcalc;
+    } else {
       J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false,
                                     transform.get());
 
@@ -810,11 +817,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
       // Re-evaluate Bxy using new J
       Bxy = sqrt(g_22) / J;
-    } catch (BoutException) {
-      output_warn.write(
-          "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
-          suffix);
-      J = Jcalc;
     }
 
     // Check jacobian
@@ -826,18 +828,17 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
     // Attempt to read Bxy from the grid file
     auto Bcalc = Bxy;
-    try {
-      Bxy = getAtLoc(mesh, "Bxy", suffix, location);
-      Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
-                                      transform.get());
-
-      output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
-    } catch (BoutException) {
+    if (getAtLoc(mesh, Bxy, "Bxy", suffix, location)) {
       output_warn.write(
           "\tWARNING: Magnitude of B field 'Bxy_{:s}' not found. Calculating "
           " from metric tensor\n",
           suffix);
       Bxy = Bcalc;
+    } else {
+      Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
+                                      transform.get());
+
+      output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
     }
 
     // Check Bxy
