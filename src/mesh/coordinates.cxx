@@ -332,12 +332,12 @@ auto getAtLoc(Mesh* mesh, const std::string& name, const std::string& suffix,
 }
 
 Coordinates::FieldMetric
-getAtLocAndFillGuards(Mesh* mesh, const Coordinates::FieldMetric& var,
+getAtLocAndFillGuards(Mesh* mesh,
                       const std::string& name, const std::string& suffix,
                       CELL_LOC location, BoutReal default_value, bool extrapolate_x,
                       bool extrapolate_y, bool no_extra_interpolate,
                       ParallelTransform* pt) {
-  auto ret = getAtLoc(mesh, name, suffix, location, default_value);
+  auto var = getAtLoc(mesh, name, suffix, location, default_value);
   return interpolateAndExtrapolate(var, location, extrapolate_x, extrapolate_y,
                                    no_extra_interpolate, pt);
 }
@@ -676,14 +676,14 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     dz = interpolateAndExtrapolate(dz, location, extrapolate_x, extrapolate_y, false,
                                    transform.get());
 
-    dx = getAtLocAndFillGuards(mesh, dx, "dx", suffix, location, 1.0, extrapolate_x,
+    dx = getAtLocAndFillGuards(mesh, "dx", suffix, location, 1.0, extrapolate_x,
                                extrapolate_y, false, transform.get());
 
     if (mesh->periodicX) {
       communicate(dx);
     }
 
-    dy = getAtLocAndFillGuards(mesh, dy, "dy", suffix, location, 1.0, extrapolate_x,
+    dy = getAtLocAndFillGuards(mesh, "dy", suffix, location, 1.0, extrapolate_x,
                                extrapolate_y, false, transform.get());
 
     // grid data source has staggered fields, so read instead of interpolating
@@ -692,22 +692,22 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
     FieldMetric g11, g22, g33, g12, g13, g23;
 
-    g11 = getAtLocAndFillGuards(mesh, contravariantMetricTensor.Getg11(), "g11", suffix,
+    g11 = getAtLocAndFillGuards(mesh, "g11", suffix,
                                 location, 1.0, extrapolate_x, extrapolate_y, false,
                                 transform.get());
-    g22 = getAtLocAndFillGuards(mesh, contravariantMetricTensor.Getg22(), "g22", suffix,
+    g22 = getAtLocAndFillGuards(mesh, "g22", suffix,
                                 location, 1.0, extrapolate_x, extrapolate_y, false,
                                 transform.get());
-    g33 = getAtLocAndFillGuards(mesh, contravariantMetricTensor.Getg33(), "g33", suffix,
+    g33 = getAtLocAndFillGuards(mesh, "g33", suffix,
                                 location, 1.0, extrapolate_x, extrapolate_y, false,
                                 transform.get());
-    g12 = getAtLocAndFillGuards(mesh, contravariantMetricTensor.Getg12(), "g12", suffix,
+    g12 = getAtLocAndFillGuards(mesh, "g12", suffix,
                                 location, 0.0, extrapolate_x, extrapolate_y, false,
                                 transform.get());
-    g13 = getAtLocAndFillGuards(mesh, contravariantMetricTensor.Getg13(), "g13", suffix,
+    g13 = getAtLocAndFillGuards(mesh, "g13", suffix,
                                 location, 0.0, extrapolate_x, extrapolate_y, false,
                                 transform.get());
-    g23 = getAtLocAndFillGuards(mesh, contravariantMetricTensor.Getg23(), "g23", suffix,
+    g23 = getAtLocAndFillGuards(mesh, "g23", suffix,
                                 location, 0.0, extrapolate_x, extrapolate_y, false,
                                 transform.get());
 
