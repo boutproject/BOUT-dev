@@ -261,6 +261,13 @@ public:
 #endif
   }
 
+  /// get number of parallel slices
+  size_t numberParallelSlices() const {
+    // Do checks
+    hasParallelSlices();
+    return yup_fields.size();
+  }
+
   /// Check if this field has yup and ydown fields
   /// Return reference to yup field
   Field3D& yup(std::vector<Field3D>::size_type index = 0) {

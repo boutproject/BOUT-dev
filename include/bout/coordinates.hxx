@@ -133,6 +133,10 @@ public:
     transform = std::move(pt);
   }
 
+  bool hasParallelTransform() const{
+    return transform != nullptr;
+  }
+
   /// Return the parallel transform
   ParallelTransform& getParallelTransform() {
     ASSERT1(transform != nullptr);
