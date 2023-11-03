@@ -12,6 +12,15 @@
     {% if lhs == rhs == "Field3D" %}
       {{out.name}}.setRegion({{lhs.name}}.getMesh()->getCommonRegion({{lhs.name}}.getRegionID(),
                                                                      {{rhs.name}}.getRegionID()));
+#if BOUT_USE_FCI_AUTOMAGIC
+      if (isFci({{lhs.name}}) and {{lhs.name}}.hasParallelSlices() and {{rhs.name}}.hasParallelSlices()) {
+        {{out.name}}.splitParallelSlices();
+	for (size_t i{0} ; i < {{lhs.name}}.numberParallelSlices() ; ++i) {
+          {{out.name}}.yup(i) = {{lhs.name}}.yup(i) {{operator}} {{rhs.name}}.yup(i);
+          {{out.name}}.ydown(i) = {{lhs.name}}.ydown(i) {{operator}} {{rhs.name}}.ydown(i);
+        }
+      }
+#endif
     {% elif lhs == "Field3D" %}
       {{out.name}}.setRegion({{lhs.name}}.getRegionID());
     {% elif rhs == "Field3D" %}
@@ -78,7 +87,17 @@
     {% if (lhs == "Field3D") %}
       // Delete existing parallel slices. We don't copy parallel slices, so any
       // that currently exist will be incorrect.
-      clearParallelSlices();
+#if BOUT_USE_FCI_AUTOMAGIC
+      if (isFci(*this) and this->hasParallelSlices() {% if rhs == "Field3D" %} and {{rhs.name}}.hasParallelSlices() {% endif %}) {
+	for (size_t i{0} ; i < yup_fields.size() ; ++i) {
+          yup(i) {{operator}}= {{rhs.name}}{% if rhs == "Field3D" %}.yup(i){% endif %};
+          ydown(i) {{operator}}= {{rhs.name}}{% if rhs == "Field3D" %}.ydown(i){% endif %};
+        }
+      } else
+#endif
+      {
+        clearParallelSlices();
+      }
 
     {% endif %}
     checkData(*this);
