@@ -5,15 +5,15 @@
 #include "bout/output.hxx"
 
 CovariantMetricTensor::CovariantMetricTensor(
-    const FieldMetric& g11, const FieldMetric& g22, const FieldMetric& g33,
-    const FieldMetric& g12, const FieldMetric& g13, const FieldMetric& g23)
-    : MetricTensor::MetricTensor(g11, g22, g33, g12, g13, g23) {}
+    const FieldMetric& g_11, const FieldMetric& g_22, const FieldMetric& g_33,
+    const FieldMetric& g_12, const FieldMetric& g_13, const FieldMetric& g_23)
+    : MetricTensor::MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23) {}
 
-CovariantMetricTensor::CovariantMetricTensor(const BoutReal g11, const BoutReal g22,
-                                             const BoutReal g33, const BoutReal g12,
-                                             const BoutReal g13, const BoutReal g23,
+CovariantMetricTensor::CovariantMetricTensor(const BoutReal g_11, const BoutReal g_22,
+                                             const BoutReal g_33, const BoutReal g_12,
+                                             const BoutReal g_13, const BoutReal g_23,
                                              Mesh* mesh)
-    : MetricTensor::MetricTensor(g11, g22, g33, g12, g13, g23, mesh) {}
+    : MetricTensor::MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23, mesh) {}
 
 //[[maybe_unused]] METRIC_TYPE MetricType() { return TYPE_CONTRAVARIANT; }
 
