@@ -15,10 +15,10 @@ CovariantMetricTensor::CovariantMetricTensor(const BoutReal g_11, const BoutReal
                                              Mesh* mesh)
     : MetricTensor::MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23, mesh) {}
 
-void CovariantMetricTensor::calcCovariant(
-    ContravariantMetricTensor contravariantMetricTensor, const CELL_LOC location,
+void CovariantMetricTensor::CalculateOppositeRepresentation(
+    MetricTensor& contravariantMetricTensor, const CELL_LOC location,
     const std::string& region) {
-  TRACE("CovariantMetricTensor::calcCovariant");
+  TRACE("CovariantMetricTensor::CalculateOppositeRepresentation");
 
   // Perform inversion of g^{ij} to get g{ij}
   // NOTE: Currently this bit assumes that metric terms are Field2D objects

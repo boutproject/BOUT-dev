@@ -1386,14 +1386,16 @@ void Coordinates::CalculateChristoffelSymbols() {
 }
 
 CovariantMetricTensor Coordinates::calcCovariant(const std::string& region) {
-  TRACE("Coordinates::calcCovariant");
-  covariantMetricTensor.calcCovariant(contravariantMetricTensor, location, region);
+  TRACE("Coordinates::CalculateOppositeRepresentation");
+  covariantMetricTensor.CalculateOppositeRepresentation(contravariantMetricTensor,
+                                                        location, region);
   return covariantMetricTensor;
 }
 
 ContravariantMetricTensor Coordinates::calcContravariant(const std::string& region) {
-  TRACE("Coordinates::calcContravariant");
-  contravariantMetricTensor.calcContravariant(covariantMetricTensor, location, region);
+  TRACE("Coordinates::CalculateOppositeRepresentation");
+  contravariantMetricTensor.CalculateOppositeRepresentation(covariantMetricTensor,
+                                                            location, region);
   return contravariantMetricTensor;
 }
 
@@ -2013,7 +2015,8 @@ void Coordinates::checkContravariant() {
 void Coordinates::setMetricTensor(ContravariantMetricTensor metric_tensor,
                                   const std::string& region) {
   contravariantMetricTensor.setMetricTensor(metric_tensor);
-  covariantMetricTensor.calcCovariant(contravariantMetricTensor, location, region);
+  covariantMetricTensor.CalculateOppositeRepresentation(contravariantMetricTensor,
+                                                        location, region);
 }
 
 const CovariantMetricTensor::FieldMetric& Coordinates::g_11() const {
@@ -2056,5 +2059,6 @@ const ContravariantMetricTensor::FieldMetric& Coordinates::g23() const {
 
 void Coordinates::setMetricTensor(CovariantMetricTensor metric_tensor) {
   covariantMetricTensor.setMetricTensor(metric_tensor);
-  contravariantMetricTensor.calcContravariant(covariantMetricTensor, location);
+  contravariantMetricTensor.CalculateOppositeRepresentation(covariantMetricTensor,
+                                                            location);
 }
