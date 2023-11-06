@@ -354,7 +354,7 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   const auto g12 = 0.0;
   const auto g13 = -sinty * coords->g11();
   const auto g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
-  coords->setContravariantMetricTensor(
+  coords->setMetricTensor(
       ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
 
   coords->J = hthe / Bpxy;
@@ -365,7 +365,7 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   const auto g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
   const auto g_13 = sinty * Rxy * Rxy;
   const auto g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
-  coords->setCovariantMetricTensor(
+  coords->setMetricTensor(
       CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
   coords->geometry();
