@@ -1,6 +1,6 @@
 
-#include "bout/CovariantMetricTensor.hxx"
-#include "bout/ContravariantMetricTensor.hxx"
+#include "bout/covariantMetricTensor.hxx"
+#include "bout/contravariantMetricTensor.hxx"
 #include "bout/coordinates.hxx"
 #include "bout/output.hxx"
 

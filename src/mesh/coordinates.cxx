@@ -19,7 +19,7 @@
 
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
-#include "bout/ContravariantMetricTensor.hxx"
+#include "bout/contravariantMetricTensor.hxx"
 
 // use anonymous namespace so this utility function is not available outside this file
 namespace {
