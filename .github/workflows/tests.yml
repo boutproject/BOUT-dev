@@ -28,6 +28,7 @@ jobs:
       OMP_NUM_THREADS: ${{ matrix.config.omp_num_threads }}
       PYTHONPATH: ${{ github.workspace }}/tools/pylib
       OMPI_MCA_rmaps_base_oversubscribe: yes
+      PRTE_MCA_rmaps_default_mapping_policy: ":oversubscribe"
       MPIRUN: mpiexec -np
     strategy:
       fail-fast: true
