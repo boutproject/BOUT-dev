@@ -1,6 +1,6 @@
 #include "bout/coordinates_accessor.hxx"
 
-#include "bout/ContravariantMetricTensor.hxx"
+#include "bout/contravariantMetricTensor.hxx"
 #include "bout/mesh.hxx"
 
 #include <map>

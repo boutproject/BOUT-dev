@@ -2,7 +2,7 @@
 #ifndef BOUT_CONTRAVARIANTMETRICTENSOR_HXX
 #define BOUT_CONTRAVARIANTMETRICTENSOR_HXX
 
-#include "CovariantMetricTensor.hxx"
+#include "covariantMetricTensor.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/paralleltransform.hxx"

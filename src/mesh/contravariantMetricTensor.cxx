@@ -1,6 +1,6 @@
 
-#include "bout/ContravariantMetricTensor.hxx"
-#include "bout/CovariantMetricTensor.hxx"
+#include "bout/contravariantMetricTensor.hxx"
+#include "bout/covariantMetricTensor.hxx"
 
 ContravariantMetricTensor::ContravariantMetricTensor(
     const FieldMetric& g11, const FieldMetric& g22, const FieldMetric& g33,
