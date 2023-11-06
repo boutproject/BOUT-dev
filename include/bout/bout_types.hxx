@@ -46,10 +46,6 @@ constexpr CELL_LOC CELL_YLOW = CELL_LOC::ylow;
 constexpr CELL_LOC CELL_ZLOW = CELL_LOC::zlow;
 constexpr CELL_LOC CELL_VSHIFT = CELL_LOC::vshift;
 
-enum class METRIC_TYPE { contravariant, covariant };
-constexpr METRIC_TYPE TYPE_CONTRAVARIANT = METRIC_TYPE::contravariant;
-constexpr METRIC_TYPE TYPE_COVARIANT = METRIC_TYPE::covariant;
-
 std::string toString(CELL_LOC location);
 CELL_LOC CELL_LOCFromString(const std::string& location_string);
 

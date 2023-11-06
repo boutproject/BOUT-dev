@@ -40,8 +40,6 @@ public:
 
   void setLocation(const CELL_LOC location);
 
-//  [[maybe_unused]] virtual METRIC_TYPE MetricType() = 0;
-
 protected:
   FieldMetric g11, g22, g33, g12, g13, g23;
 };
