@@ -89,6 +89,15 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
   TRACE("Field3D: Copy constructor from value");
 
   *this = val;
+#if BOUT_USE_FCI_AUTOMAGIC
+  if (isFci(*this)) {
+    splitParallelSlices();
+    for (size_t i=0; i<numberParallelSlices(); ++i){
+      yup(i) = *this;
+      ydown(i) = *this;
+    }
+  }
+#endif
 }
 
 Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation,
@@ -341,6 +350,11 @@ Field3D& Field3D::operator=(const BoutReal val) {
 
 Field3D& Field3D::calcParallelSlices() {
   getCoordinates()->getParallelTransform().calcParallelSlices(*this);
+#if BOUT_USE_FCI_AUTOMAGIC
+  if (isFci(*this)) {
+    this->applyParallelBoundary("parallel_neumann_o2");
+  }
+#endif
   return *this;
 }
 
