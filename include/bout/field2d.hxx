@@ -133,8 +133,9 @@ public:
     return *this;
   }
 
-  /// Check if this field has yup and ydown fields
+  /// Dummy functions to increase portability
   bool hasParallelSlices() const { return true; }
+  void calcParallelSlices() const {}
 
   Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) { return *this; }
   const Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
