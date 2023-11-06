@@ -13,8 +13,6 @@ ContravariantMetricTensor::ContravariantMetricTensor(
     const BoutReal g13, const BoutReal g23, Mesh* mesh)
     : MetricTensor::MetricTensor(g11, g22, g33, g12, g13, g23, mesh) {}
 
-//[[maybe_unused]] METRIC_TYPE MetricType() { return TYPE_CONTRAVARIANT; }
-
 void ContravariantMetricTensor::calcContravariant(
     CovariantMetricTensor covariantMetricTensor, CELL_LOC location,
     const std::string& region) {
