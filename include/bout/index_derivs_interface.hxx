@@ -200,9 +200,17 @@ template <typename T>
 T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
       const std::string& region = "RGN_NOBNDRY") {
   AUTO_TRACE();
-  if (f.hasParallelSlices()) {
+  if (isFci(f)) {
     ASSERT1(f.getDirectionY() == YDirectionType::Standard);
-    return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::Standard>(f, outloc,
+    T f_tmp = f;
+    if (!f.hasParallelSlices()){
+#if BOUT_USE_FCI_AUTOMAGIC
+      f_tmp.calcParallelSlices();
+#else
+      raise BoutException("parallel slices needed for parallel derivatives. Make sure to communicate and apply parallel boundary conditions before calling derivative");
+#endif
+    }
+    return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::Standard>(f_tmp, outloc,
                                                                           method, region);
   } else {
     const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
