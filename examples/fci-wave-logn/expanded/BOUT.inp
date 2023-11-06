@@ -40,4 +40,4 @@ bndry_par_ydown = parallel_neumann
 
 [v]
 
-bndry_par_all = parallel_dirichlet
+bndry_par_all = parallel_dirichlet_o2
