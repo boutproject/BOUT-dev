@@ -14,9 +14,11 @@ public:
   ContravariantMetricTensor(const BoutReal g11, const BoutReal g22, const BoutReal g33,
                             const BoutReal g12, const BoutReal g13, const BoutReal g23,
                             Mesh* mesh);
+
   /// Invert covariant metric to get contravariant components
-  void calcContravariant(CovariantMetricTensor covariantMetricTensor, CELL_LOC location,
-                         const std::string& region = "RGN_ALL");
+  void CalculateOppositeRepresentation(MetricTensor& covariantMetricTensor,
+                                       CELL_LOC location,
+                                       const std::string& region = "RGN_ALL") override;
 };
 
 #endif //BOUT_CONTRAVARIANTMETRICTENSOR_HXX

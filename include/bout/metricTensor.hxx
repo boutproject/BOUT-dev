@@ -17,7 +17,6 @@ public:
   using FieldMetric = Field2D;
 #endif
 
-  MetricTensor();
   MetricTensor(const FieldMetric& g11, const FieldMetric& g22, const FieldMetric& g33,
                const FieldMetric& g12, const FieldMetric& g13, const FieldMetric& g23);
 
@@ -39,6 +38,10 @@ public:
   void Allocate();
 
   void setLocation(const CELL_LOC location);
+
+  virtual void CalculateOppositeRepresentation(MetricTensor& covariantMetricTensor,
+                                               CELL_LOC location,
+                                               const std::string& region) = 0;
 
 protected:
   FieldMetric g11, g22, g33, g12, g13, g23;
