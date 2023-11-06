@@ -118,10 +118,10 @@ public:
   const FieldMetric& g13() const;
   const FieldMetric& g23() const;
 
-  void setContravariantMetricTensor(ContravariantMetricTensor metric_tensor,
+  void setMetricTensor(ContravariantMetricTensor metric_tensor,
                                     const std::string& region = "RGN_ALL");
 
-  void setCovariantMetricTensor(CovariantMetricTensor metric_tensor);
+  void setMetricTensor(CovariantMetricTensor metric_tensor);
 
   /// Christoffel symbol of the second kind (connection coefficients)
   FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;

@@ -224,7 +224,7 @@ protected:
     g12 = 0.0;
     g13 = -I * coord->g11();
     g23 = -Btxy / (hthe * Bpxy * Rxy);
-    coord->setContravariantMetricTensor(
+    coord->setMetricTensor(
         ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
 
     coord->J = hthe / Bpxy;
@@ -236,7 +236,7 @@ protected:
     g_12 = Btxy * hthe * I * Rxy / Bpxy;
     g_13 = I * Rxy * Rxy;
     g_23 = Btxy * hthe * Rxy / Bpxy;
-    coord->setCovariantMetricTensor(
+    coord->setMetricTensor(
         CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
     coord->geometry();

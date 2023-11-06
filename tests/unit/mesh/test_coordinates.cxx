@@ -359,7 +359,7 @@ TEST_F(CoordinatesTest, SetContravariantMetricTensor) {
 
   //  Modify with setter
   auto updated_metric_tensor = ContravariantMetricTensor(1.7, 2.3, 3.1, 0.9, 5.7, 1.9);
-  coords.setContravariantMetricTensor(updated_metric_tensor);
+  coords.setMetricTensor(updated_metric_tensor);
 
   //  Get values with getter and check they have been modified as expected
   EXPECT_TRUE(IsFieldEqual(coords.g11(), 1.7));
@@ -426,7 +426,7 @@ TEST_F(CoordinatesTest, SetCovariantMetricTensor) {
 
     //  Modify with setter
     auto updated_metric_tensor = CovariantMetricTensor(1.7, 2.3, 3.1, 0.9, 5.7, 1.9);
-    coords.setCovariantMetricTensor(updated_metric_tensor);
+    coords.setMetricTensor(updated_metric_tensor);
 
     //  Get values with getter and check they have been modified as expected
     EXPECT_TRUE(IsFieldEqual(coords.g_11(), 1.7));

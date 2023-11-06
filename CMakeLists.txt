@@ -343,6 +343,8 @@ set(BOUT_SOURCES
         src/mesh/contravariantMetricTensor.cxx
         include/bout/covariantMetricTensor.hxx
         src/mesh/covariantMetricTensor.cxx
+        src/mesh/metricTensor.cxx
+        include/bout/metricTensor.hxx
 )
 
 
