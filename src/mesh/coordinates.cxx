@@ -522,7 +522,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
       /// Calculate contravariant metric components if not found
       try {
         calcCovariant("RGN_NOCORNERS");
-      } catch (BoutException) {
+      } catch (BoutException&) {
         throw BoutException("Error in calcCovariant call");
       }
     }
@@ -530,11 +530,11 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     /// Calculate contravariant metric components if not found
     try {
       calcCovariant("RGN_NOCORNERS");
-    } catch (BoutException) {
+    } catch (BoutException&) {
       throw BoutException("Error in calcCovariant call");
     }
   }
-
+  
   FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
   // More robust to extrapolate derived quantities directly, rather than
