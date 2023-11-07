@@ -44,11 +44,11 @@ int Diffusion::init(bool UNUSED(restarting)) {
 
   //set mesh
   auto contravariant_metric_tensor =
-      ContravariantMetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
-  coord->setMetricTensor(contravariant_metric_tensor);
+      MetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
+  coord->setContravariantMetricTensor(contravariant_metric_tensor);
 
-  auto covariant_metric_tensor = CovariantMetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
-  coord->setMetricTensor(covariant_metric_tensor);
+  auto covariant_metric_tensor = MetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
+  coord->setCovariantMetricTensor(covariant_metric_tensor);
 
   coord->geometry();
 

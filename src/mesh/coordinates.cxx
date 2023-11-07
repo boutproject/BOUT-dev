@@ -19,7 +19,6 @@
 
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
-#include "bout/contravariantMetricTensor.hxx"
 
 // use anonymous namespace so this utility function is not available outside this file
 namespace {
@@ -485,7 +484,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   g13 = getUnalignedAtLocation("g13", 0.0);
   g23 = getUnalignedAtLocation("g23", 0.0);
 
-  setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
+  setContravariantMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23));
 
   // Check input metrics
   checkContravariant();
@@ -511,7 +510,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
       g_23 = getUnaligned("g_23", 0.0);
 
       covariantMetricTensor.setMetricTensor(
-          CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+          MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
       output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                         "Contravariant components NOT recalculated\n");
@@ -534,7 +533,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
       throw BoutException("Error in calcCovariant call");
     }
   }
-  
+
   FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
   // More robust to extrapolate derived quantities directly, rather than
@@ -552,8 +551,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   g_23 = interpolateAndExtrapolate(covariantMetricTensor.Getg23(), location,
                                    extrapolate_x, extrapolate_y, false, transform.get());
 
-  covariantMetricTensor.setMetricTensor(
-      CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+  covariantMetricTensor.setMetricTensor(MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
   // Check covariant metrics
   checkCovariant();
@@ -707,7 +705,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     g23 = getAtLocAndFillGuards(mesh, "g23", suffix, location, 0.0, extrapolate_x,
                                 extrapolate_y, false, transform.get());
 
-    setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
+    setContravariantMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23));
 
     // Check input metrics
     checkContravariant();
@@ -733,7 +731,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
         g_22 = getAtLoc(mesh, "g_13", suffix, location);
         g_33 = getAtLoc(mesh, "g_23", suffix, location);
         covariantMetricTensor.setMetricTensor(
-            CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+            MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
         output_warn.write(
             "\tWARNING! Staggered covariant components of metric tensor set manually. "
@@ -905,7 +903,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                                      false, transform.get());
 
     covariantMetricTensor.setMetricTensor(
-        CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+        MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
     // Check input metrics
     checkContravariant();
@@ -954,7 +952,7 @@ void Coordinates::interpolateAndExtrapolateContravariantMetricTensor(
   g23 = interpolateAndExtrapolate(coords_in->g23(), location, true, true, false,
                                   transform.get(), region);
 
-  setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23), region);
+  setContravariantMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23), region);
 }
 
 void Coordinates::outputVars(Options& output_options) {
@@ -1385,15 +1383,15 @@ void Coordinates::CalculateChristoffelSymbols() {
       + 0.5 * contravariantMetricTensor.Getg33() * DDY(covariantMetricTensor.Getg33());
 }
 
-CovariantMetricTensor Coordinates::calcCovariant(const std::string& region) {
-  TRACE("Coordinates::CalculateOppositeRepresentation");
+MetricTensor Coordinates::calcCovariant(const std::string& region) {
+  TRACE("Coordinates::calcCovariant");
   covariantMetricTensor.CalculateOppositeRepresentation(contravariantMetricTensor,
                                                         location, region);
   return covariantMetricTensor;
 }
 
-ContravariantMetricTensor Coordinates::calcContravariant(const std::string& region) {
-  TRACE("Coordinates::CalculateOppositeRepresentation");
+MetricTensor Coordinates::calcContravariant(const std::string& region) {
+  TRACE("Coordinates::calcContravariant");
   contravariantMetricTensor.CalculateOppositeRepresentation(covariantMetricTensor,
                                                             location, region);
   return contravariantMetricTensor;
@@ -2012,53 +2010,54 @@ void Coordinates::checkContravariant() {
   contravariantMetricTensor.check(localmesh->ystart);
 }
 
-void Coordinates::setMetricTensor(ContravariantMetricTensor metric_tensor,
-                                  const std::string& region) {
+void Coordinates::setContravariantMetricTensor(MetricTensor metric_tensor,
+                                               const std::string& region) {
   contravariantMetricTensor.setMetricTensor(metric_tensor);
   covariantMetricTensor.CalculateOppositeRepresentation(contravariantMetricTensor,
                                                         location, region);
 }
 
-const CovariantMetricTensor::FieldMetric& Coordinates::g_11() const {
+void Coordinates::setCovariantMetricTensor(MetricTensor metric_tensor,
+                                           const std::string& region) {
+  covariantMetricTensor.setMetricTensor(metric_tensor);
+  contravariantMetricTensor.CalculateOppositeRepresentation(covariantMetricTensor,
+                                                            location, region);
+}
+
+const MetricTensor::FieldMetric& Coordinates::g_11() const {
   return covariantMetricTensor.Getg11();
 }
-const CovariantMetricTensor::FieldMetric& Coordinates::g_22() const {
+const MetricTensor::FieldMetric& Coordinates::g_22() const {
   return covariantMetricTensor.Getg22();
 }
-const CovariantMetricTensor::FieldMetric& Coordinates::g_33() const {
+const MetricTensor::FieldMetric& Coordinates::g_33() const {
   return covariantMetricTensor.Getg33();
 }
-const CovariantMetricTensor::FieldMetric& Coordinates::g_12() const {
+const MetricTensor::FieldMetric& Coordinates::g_12() const {
   return covariantMetricTensor.Getg12();
 }
-const CovariantMetricTensor::FieldMetric& Coordinates::g_13() const {
+const MetricTensor::FieldMetric& Coordinates::g_13() const {
   return covariantMetricTensor.Getg13();
 }
-const CovariantMetricTensor::FieldMetric& Coordinates::g_23() const {
+const MetricTensor::FieldMetric& Coordinates::g_23() const {
   return covariantMetricTensor.Getg23();
 }
 
-const ContravariantMetricTensor::FieldMetric& Coordinates::g11() const {
+const MetricTensor::FieldMetric& Coordinates::g11() const {
   return contravariantMetricTensor.Getg11();
 }
-const ContravariantMetricTensor::FieldMetric& Coordinates::g22() const {
+const MetricTensor::FieldMetric& Coordinates::g22() const {
   return contravariantMetricTensor.Getg22();
 }
-const ContravariantMetricTensor::FieldMetric& Coordinates::g33() const {
+const MetricTensor::FieldMetric& Coordinates::g33() const {
   return contravariantMetricTensor.Getg33();
 }
-const ContravariantMetricTensor::FieldMetric& Coordinates::g12() const {
+const MetricTensor::FieldMetric& Coordinates::g12() const {
   return contravariantMetricTensor.Getg12();
 }
-const ContravariantMetricTensor::FieldMetric& Coordinates::g13() const {
+const MetricTensor::FieldMetric& Coordinates::g13() const {
   return contravariantMetricTensor.Getg13();
 }
-const ContravariantMetricTensor::FieldMetric& Coordinates::g23() const {
+const MetricTensor::FieldMetric& Coordinates::g23() const {
   return contravariantMetricTensor.Getg23();
-}
-
-void Coordinates::setMetricTensor(CovariantMetricTensor metric_tensor) {
-  covariantMetricTensor.setMetricTensor(metric_tensor);
-  contravariantMetricTensor.CalculateOppositeRepresentation(covariantMetricTensor,
-                                                            location);
 }

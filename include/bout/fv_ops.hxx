@@ -243,9 +243,8 @@ const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
       // Pre-calculate factors which multiply fluxes
 #if not(BOUT_USE_METRIC_3D)
       // For right cell boundaries
-      BoutReal common_factor =
-          (coord->J(i, j) + coord->J(i, j + 1))
-          / (sqrt(coord->g_22()(i, j)) + sqrt(coord->g_22()(i, j + 1)));
+      BoutReal common_factor = (coord->J(i, j) + coord->J(i, j + 1))
+                               / (sqrt(coord->g_22()(i, j)) + sqrt(coord->g_22()(i, j + 1)));
 
       BoutReal flux_factor_rc = common_factor / (coord->dy(i, j) * coord->J(i, j));
       BoutReal flux_factor_rp =
