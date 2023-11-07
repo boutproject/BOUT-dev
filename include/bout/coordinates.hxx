@@ -33,8 +33,7 @@
 #ifndef BOUT_COORDINATES_H
 #define BOUT_COORDINATES_H
 
-#include "contravariantMetricTensor.hxx"
-#include "covariantMetricTensor.hxx"
+#include "metricTensor.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/paralleltransform.hxx"
@@ -99,11 +98,11 @@ public:
   FieldMetric Bxy; ///< Magnitude of B = nabla z times nabla x
 
 private:
-  ContravariantMetricTensor contravariantMetricTensor;
-  CovariantMetricTensor covariantMetricTensor;
+  MetricTensor contravariantMetricTensor;
+  MetricTensor covariantMetricTensor;
 
 public:
-
+  /// Covariant metric tensor
   const FieldMetric& g_11() const;
   const FieldMetric& g_22() const;
   const FieldMetric& g_33() const;
@@ -111,6 +110,7 @@ public:
   const FieldMetric& g_13() const;
   const FieldMetric& g_23() const;
 
+  /// Contravariant metric tensor (g^{ij})
   const FieldMetric& g11() const;
   const FieldMetric& g22() const;
   const FieldMetric& g33() const;
@@ -118,10 +118,11 @@ public:
   const FieldMetric& g13() const;
   const FieldMetric& g23() const;
 
-  void setMetricTensor(ContravariantMetricTensor metric_tensor,
+  void setContravariantMetricTensor(MetricTensor metric_tensor,
                                     const std::string& region = "RGN_ALL");
 
-  void setMetricTensor(CovariantMetricTensor metric_tensor);
+  void setCovariantMetricTensor(MetricTensor metric_tensor,
+                                const std::string& region = "RGN_ALL");
 
   /// Christoffel symbol of the second kind (connection coefficients)
   FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
@@ -139,9 +140,9 @@ public:
   int geometry(bool recalculate_staggered = true,
                bool force_interpolate_from_centre = false);
   /// Invert contravariant metric to get covariant components
-  CovariantMetricTensor calcCovariant(const std::string& region = "RGN_ALL");
+  MetricTensor calcCovariant(const std::string& region = "RGN_ALL");
   /// Invert covariant metric to get contravariant components
-  ContravariantMetricTensor calcContravariant(const std::string& region = "RGN_ALL");
+  MetricTensor calcContravariant(const std::string& region = "RGN_ALL");
   int jacobian();                     ///< Calculate J and Bxy
   void CalculateChristoffelSymbols(); /// Calculate Christoffel symbol terms
 

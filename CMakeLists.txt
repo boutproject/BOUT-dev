@@ -354,10 +354,6 @@ set(BOUT_SOURCES
   ./src/sys/utils.cxx
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/revision.hxx
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
-        include/bout/contravariantMetricTensor.hxx
-        src/mesh/contravariantMetricTensor.cxx
-        include/bout/covariantMetricTensor.hxx
-        src/mesh/covariantMetricTensor.cxx
         src/mesh/metricTensor.cxx
         include/bout/metricTensor.hxx
 )

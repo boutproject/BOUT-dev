@@ -40,11 +40,11 @@ protected:
 
     // set mesh
     auto contravariant_metric_tensor =
-        ContravariantMetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
-    coords->setMetricTensor(contravariant_metric_tensor);
+        MetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
+    coords->setContravariantMetricTensor(contravariant_metric_tensor);
 
-    auto covariant_metric_tensor = CovariantMetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
-    coords->setMetricTensor(covariant_metric_tensor);
+    auto covariant_metric_tensor = MetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
+    coords->setCovariantMetricTensor(covariant_metric_tensor);
 
     coords->geometry();
 

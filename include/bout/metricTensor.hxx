@@ -4,8 +4,6 @@
 
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
-//#include "bout/paralleltransform.hxx"
-//#include "bout/utils.hxx"
 #include <bout/bout_types.hxx>
 
 class MetricTensor {
@@ -39,9 +37,9 @@ public:
 
   void setLocation(const CELL_LOC location);
 
-  virtual void CalculateOppositeRepresentation(MetricTensor& covariantMetricTensor,
-                                               CELL_LOC location,
-                                               const std::string& region) = 0;
+  void CalculateOppositeRepresentation(MetricTensor& contravariantMetricTensor,
+                                       const CELL_LOC location,
+                                       const std::string& region = "RGN_ALL");
 
 protected:
   FieldMetric g11, g22, g33, g12, g13, g23;
