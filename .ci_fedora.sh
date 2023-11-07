@@ -56,6 +56,7 @@ else
     . /etc/profile.d/modules.sh
     module load mpi/${1}-x86_64
     export OMPI_MCA_rmaps_base_oversubscribe=yes
+    export PRTE_MCA_rmaps_default_mapping_policy=:oversubscribe
     export TRAVIS=true
     export FLEXIBLAS=NETLIB
     cd
