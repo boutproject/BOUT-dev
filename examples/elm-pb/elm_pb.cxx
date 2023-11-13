@@ -1479,15 +1479,16 @@ protected:
       }
     } else {
       // Vector potential
-      ddt(Psi) = -Grad_parP(phi, loc) + eta * Jpar;
+      ddt(Psi) = -Grad_parP(phi * B0, loc) / B0 + eta * Jpar;
 
       if (eHall) { // electron parallel pressure
         ddt(Psi) += 0.25 * delta_i
-                    * (Grad_parP(P, loc) + bracket(interp_to(P0, loc), Psi, bm_mag));
+                    * (Grad_parP(B0*P, loc) / B0
+                       + bracket(interp_to(P0, loc), Psi, bm_mag) * B0);
       }
 
       if (diamag_phi0) { // Equilibrium flow
-        ddt(Psi) -= bracket(interp_to(phi0, loc), Psi, bm_exb);
+        ddt(Psi) -= bracket(interp_to(phi0, loc), Psi, bm_exb) * B0;
       }
 
       if (withflow) { // net flow
