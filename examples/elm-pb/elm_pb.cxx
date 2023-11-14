@@ -37,11 +37,11 @@ BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xout", "none");
 class ELMpb : public PhysicsModel {
 private:
   // 2D inital profiles
-  Field2D J0, P0;         // Current and pressure
-  Vector2D b0xcv;         // Curvature term
-  Field2D beta;           // Used for Vpar terms
+  Field2D J0, P0; // Current and pressure
+  Vector2D b0xcv; // Curvature term
+  Field2D beta;   // Used for Vpar terms
   Coordinates::FieldMetric gradparB;
-  Field2D phi0;           // When diamagnetic terms used
+  Field2D phi0; // When diamagnetic terms used
   Field2D Psixy, x;
   Coordinates::FieldMetric U0; // 0th vorticity of equilibrium flow,
   // radial flux coordinate, normalized radial flux coordinate
@@ -205,13 +205,13 @@ private:
 
   bool phi_constraint; // Solver for phi using a solver constraint
 
-  bool include_rmp;     // Include RMP coil perturbation
-  bool simple_rmp;      // Just use a simple form for the perturbation
+  bool include_rmp; // Include RMP coil perturbation
+  bool simple_rmp;  // Just use a simple form for the perturbation
 
-  BoutReal rmp_factor;  // Multiply amplitude by this factor
-  BoutReal rmp_ramp;    // Ramp-up time for RMP [s]. negative -> instant
-  BoutReal rmp_freq;    // Amplitude oscillation frequency [Hz] (negative -> no oscillation)
-  BoutReal rmp_rotate;  // Rotation rate [Hz]
+  BoutReal rmp_factor; // Multiply amplitude by this factor
+  BoutReal rmp_ramp;   // Ramp-up time for RMP [s]. negative -> instant
+  BoutReal rmp_freq; // Amplitude oscillation frequency [Hz] (negative -> no oscillation)
+  BoutReal rmp_rotate; // Rotation rate [Hz]
   bool rmp_vac_mask;
   Field3D rmp_Psi0; // Parallel vector potential from Resonant Magnetic Perturbation (RMP)
                     // coils
@@ -372,8 +372,8 @@ protected:
     density = options["density"].doc("Number density [m^-3]").withDefault(1.0e19);
 
     evolve_jpar = options["evolve_jpar"]
-                       .doc("If true, evolve J rather than Psi")
-                       .withDefault(false);
+                      .doc("If true, evolve J rather than Psi")
+                      .withDefault(false);
     phi_constraint = options["phi_constraint"]
                          .doc("Use solver constraint for phi?")
                          .withDefault(false);
@@ -537,7 +537,8 @@ protected:
                             .withDefault(false);
 
     // Parallel differencing
-    parallel_lr_diff = options["parallel_lr_diff"]
+    parallel_lr_diff =
+        options["parallel_lr_diff"]
             .doc("Use left and right shifted stencils for parallel differences?")
             .withDefault<bool>(false);
 
@@ -546,23 +547,28 @@ protected:
                       .doc("Read RMP field rmp_A from grid?")
                       .withDefault<bool>(false);
 
-    simple_rmp = options["simple_rmp"].doc("Include a simple RMP model?").withDefault<bool>(false);
+    simple_rmp =
+        options["simple_rmp"].doc("Include a simple RMP model?").withDefault<bool>(false);
     rmp_factor = options["rmp_factor"].withDefault(1.0);
     rmp_ramp = options["rmp_ramp"].withDefault(-1.0);
     rmp_freq = options["rmp_freq"].withDefault(-1.0);
     rmp_rotate = options["rmp_rotate"].withDefault(0.0);
 
     // Vacuum region control
-    vacuum_pressure = options["vacuum_pressure"]
+    vacuum_pressure =
+        options["vacuum_pressure"]
             .doc("Fraction of peak pressure, below which is considered vacuum.")
             .withDefault(0.02);
-    vacuum_trans = options["vacuum_trans"]
+    vacuum_trans =
+        options["vacuum_trans"]
             .doc("Vacuum boundary transition width, as fraction of peak pressure.")
             .withDefault(0.005);
 
     // Resistivity and hyper-resistivity options
-    vac_lund = options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
-    core_lund = options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
+    vac_lund =
+        options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
+    core_lund =
+        options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
     hyperresist = options["hyperresist"].withDefault(-1.0);
     ehyperviscos = options["ehyperviscos"].withDefault(-1.0);
     spitzer_resist = options["spitzer_resist"]
@@ -574,7 +580,8 @@ protected:
     damp_width = options["damp_width"]
                      .doc("Width of the radial damping regions, in grid cells")
                      .withDefault(0);
-    damp_t_const = options["damp_t_const"]
+    damp_t_const =
+        options["damp_t_const"]
             .doc("Time constant for damping in radial regions. Normalised time units.")
             .withDefault(0.1);
 
@@ -583,7 +590,8 @@ protected:
     viscos_perp = options["viscos_perp"].doc("Perpendicular viscosity").withDefault(-1.0);
     hyperviscos = options["hyperviscos"].doc("Radial hyperviscosity").withDefault(-1.0);
 
-    diffusion_par = options["diffusion_par"].doc("Parallel pressure diffusion").withDefault(-1.0);
+    diffusion_par =
+        options["diffusion_par"].doc("Parallel pressure diffusion").withDefault(-1.0);
     diffusion_p4 = options["diffusion_p4"]
                        .doc("parallel hyper-viscous diffusion for pressure")
                        .withDefault(-1.0);
@@ -635,7 +643,8 @@ protected:
     su_lengthr = options["su_lengthr"].withDefault(0.15);
 
     // Compressional terms
-    phi_curv = options["phi_curv"].doc("ExB compression in P equation?").withDefault<bool>(true);
+    phi_curv =
+        options["phi_curv"].doc("ExB compression in P equation?").withDefault<bool>(true);
     g = options["gamma"].doc("Ratio of specific heats").withDefault(5.0 / 3.0);
 
     x = (Psixy - Psiaxis) / (Psibndry - Psiaxis);
@@ -1483,7 +1492,7 @@ protected:
 
       if (eHall) { // electron parallel pressure
         ddt(Psi) += 0.25 * delta_i
-                    * (Grad_parP(B0*P, loc) / B0
+                    * (Grad_parP(B0 * P, loc) / B0
                        + bracket(interp_to(P0, loc), Psi, bm_mag) * B0);
       }
 
@@ -1541,7 +1550,7 @@ protected:
 
     ddt(U) += b0xcv * Grad(P); // curvature term
 
-    if (!nogradparj) { // Parallel current term
+    if (!nogradparj) {                                 // Parallel current term
       ddt(U) -= SQ(B0) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
     }
 
@@ -1701,7 +1710,7 @@ protected:
                 * D2DX2(P) * (Tbar / Lbar / Lbar); // radial diffusion
     }
 
-    if (sink_P > 0.0) { // sink terms
+    if (sink_P > 0.0) {                                                  // sink terms
       ddt(P) -= sink_P * sink_tanhxr(P0, P, sp_width, sp_length) * Tbar; // sink
     }
 
