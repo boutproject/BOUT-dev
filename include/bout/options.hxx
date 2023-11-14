@@ -412,7 +412,7 @@ public:
   /// "time_dimension". This can be useful in some generic functions
   template <typename T>
   Options& assignRepeat(T val, std::string time_dimension = "t", bool save_repeat = true,
-                    std::string source = "") {
+                        std::string source = "") {
     force(val, std::move(source));
     if (save_repeat) {
       attributes["time_dimension"] = std::move(time_dimension);

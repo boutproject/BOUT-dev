@@ -70,11 +70,7 @@ private:
   ///
   /// @param[inout] state  A nested dictionary that can be added to
   void outputVars(Options& state) override {
-    state["divB"]
-      .assignRepeat(Div(B))
-      .setAttributes({
-          {"long_name", "Divergence of B"}
-        });
+    state["divB"].assignRepeat(Div(B)).setAttributes({{"long_name", "Divergence of B"}});
   }
 
   int rhs(BoutReal UNUSED(time)) override {
