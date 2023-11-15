@@ -188,21 +188,25 @@ private:
 
     /**************** CALCULATE METRICS ******************/
 
-    coord->g11 = SQ(Rxy * Bpxy);
-    coord->g22 = 1.0 / SQ(hthe);
-    coord->g33 = SQ(I) * coord->g11 + SQ(coord->Bxy) / coord->g11;
-    coord->g12 = 0.0;
-    coord->g13 = -I * coord->g11;
-    coord->g23 = -Btxy / (hthe * Bpxy * Rxy);
+    MetricTensor::FieldMetric g11, g22, g33, g12, g13, g23;
+    g11 = SQ(Rxy * Bpxy);
+    g22 = 1.0 / SQ(hthe);
+    g33 = SQ(I) * coord->g11() + SQ(coord->Bxy) / coord->g11();
+    g12 = 0.0;
+    g13 = -I * coord->g11();
+    g23 = -Btxy / (hthe * Bpxy * Rxy);
+    coord->setContravariantMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23));
 
     coord->J = hthe / Bpxy;
 
-    coord->g_11 = 1.0 / coord->g11 + SQ(I * Rxy);
-    coord->g_22 = SQ(coord->Bxy * hthe / Bpxy);
-    coord->g_33 = Rxy * Rxy;
-    coord->g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    coord->g_13 = I * Rxy * Rxy;
-    coord->g_23 = Btxy * hthe * Rxy / Bpxy;
+    MetricTensor::FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
+    g_11 = 1.0 / coord->g11() + SQ(I * Rxy);
+    g_22 = SQ(coord->Bxy * hthe / Bpxy);
+    g_33 = Rxy * Rxy;
+    g_12 = Btxy * hthe * I * Rxy / Bpxy;
+    g_13 = I * Rxy * Rxy;
+    g_23 = Btxy * hthe * Rxy / Bpxy;
+    coord->setCovariantMetricTensor(MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
     coord->geometry();
 
