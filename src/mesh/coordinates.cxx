@@ -782,6 +782,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     g_23 =
         interpolateAndExtrapolate(covariantMetricTensor.Getg23(), location, extrapolate_x,
                                   extrapolate_y, false, transform.get());
+    covariantMetricTensor.setMetricTensor(
+        MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
     // Check covariant metrics
     checkCovariant();
