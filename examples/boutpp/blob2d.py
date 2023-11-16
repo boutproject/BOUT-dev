@@ -5,7 +5,7 @@
 #
 #       2D blob simulations
 #
-#  Copyright:   NR Walkden, B Dudson, D Schwörer;  2012, 2017, 2018
+#  Copyright:   NR Walkden, B Dudson, D Bold;  2012, 2017, 2018
 #
 ###################################################################
 
