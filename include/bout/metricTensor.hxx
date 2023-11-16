@@ -37,7 +37,7 @@ public:
 
   void setLocation(const CELL_LOC location);
 
-  MetricTensor oppositeRepresentation(const CELL_LOC location,
+  MetricTensor oppositeRepresentation(const CELL_LOC location, Mesh* mesh,
                                       const std::string& region = "RGN_ALL");
 
 protected:
