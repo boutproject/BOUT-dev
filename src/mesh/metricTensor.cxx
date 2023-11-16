@@ -107,9 +107,8 @@ void MetricTensor::setLocation(const CELL_LOC location) {
   g23.setLocation(location);
 }
 
-void MetricTensor::CalculateOppositeRepresentation(MetricTensor& originalMetricTensor,
-                                                   CELL_LOC location,
-                                                   const std::string& region) {
+MetricTensor MetricTensor::oppositeRepresentation(CELL_LOC location,
+                                                  const std::string& region) {
 
   TRACE("MetricTensor::CalculateOppositeRepresentation");
 
@@ -118,14 +117,14 @@ void MetricTensor::CalculateOppositeRepresentation(MetricTensor& originalMetricT
 
   auto a = Matrix<BoutReal>(3, 3);
 
-  BOUT_FOR_SERIAL(i, originalMetricTensor.Getg11().getRegion(region)) {
-    a(0, 0) = originalMetricTensor.Getg11()[i];
-    a(1, 1) = originalMetricTensor.Getg22()[i];
-    a(2, 2) = originalMetricTensor.Getg33()[i];
+  BOUT_FOR_SERIAL(i, g11.getRegion(region)) {
+    a(0, 0) = g11[i];
+    a(1, 1) = g22[i];
+    a(2, 2) = g33[i];
 
-    a(0, 1) = a(1, 0) = originalMetricTensor.Getg12()[i];
-    a(1, 2) = a(2, 1) = originalMetricTensor.Getg23()[i];
-    a(0, 2) = a(2, 0) = originalMetricTensor.Getg13()[i];
+    a(0, 1) = a(1, 0) = g12[i];
+    a(1, 2) = a(2, 1) = g23[i];
+    a(0, 2) = a(2, 0) = g13[i];
 
     if (invert3x3(a)) {
       const auto error_message = "\tERROR: metric tensor is singular at ({:d}, {:d})\n";
@@ -134,37 +133,28 @@ void MetricTensor::CalculateOppositeRepresentation(MetricTensor& originalMetricT
     }
   }
 
-  g11 = a(0, 0);
-  g22 = a(1, 1);
-  g33 = a(2, 2);
-  g12 = a(0, 1);
-  g13 = a(0, 2);
-  g23 = a(1, 2);
-  //  contravariant_components = ContravariantComponents{a(0, 0), a(1, 1), a(2, 2), a(0, 1), a(0, 2), a(1, 2)};
-
-  setLocation(location);
+  FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
+  g_11 = a(0, 0);
+  g_22 = a(1, 1);
+  g_33 = a(2, 2);
+  g_12 = a(0, 1);
+  g_13 = a(0, 2);
+  g_23 = a(1, 2);
 
   BoutReal maxerr;
-  maxerr = BOUTMAX(
-      max(abs((originalMetricTensor.Getg11() * g11 + originalMetricTensor.Getg12() * g12
-               + originalMetricTensor.Getg13() * g13)
-              - 1)),
-      max(abs((originalMetricTensor.Getg12() * g12 + originalMetricTensor.Getg22() * g22
-               + originalMetricTensor.Getg23() * g23)
-              - 1)),
-      max(abs((originalMetricTensor.Getg13() * g13 + originalMetricTensor.Getg23() * g23
-               + originalMetricTensor.Getg33() * g33)
-              - 1)));
+  maxerr = BOUTMAX(max(abs((g_11 * g_11 + g_12 * g_12 + g_13 * g_13) - 1)),
+                   max(abs((g_12 * g_12 + g_22 * g_22 + g_23 * g_23) - 1)),
+                   max(abs((g_13 * g_13 + g_23 * g_23 + g_33 * g_33) - 1)));
 
   output_info.write("\tMaximum error in diagonal inversion is {:e}\n", maxerr);
 
-  maxerr = BOUTMAX(
-      max(abs(originalMetricTensor.Getg11() * g12 + originalMetricTensor.Getg12() * g22
-              + originalMetricTensor.Getg13() * g23)),
-      max(abs(originalMetricTensor.Getg11() * g13 + originalMetricTensor.Getg12() * g23
-              + originalMetricTensor.Getg13() * g33)),
-      max(abs(originalMetricTensor.Getg12() * g13 + originalMetricTensor.Getg22() * g23
-              + originalMetricTensor.Getg23() * g33)));
+  maxerr = BOUTMAX(max(abs(g_11 * g_12 + g_12 * g_22 + g_13 * g_23)),
+                   max(abs(g_11 * g_13 + g_12 * g_23 + g_13 * g_33)),
+                   max(abs(g_12 * g_13 + g_22 * g_23 + g_23 * g_33)));
 
   output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
+
+  auto other_representation = MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23);
+  other_representation.setLocation(location);
+  return other_representation;
 }
