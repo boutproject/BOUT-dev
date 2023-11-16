@@ -1383,18 +1383,16 @@ void Coordinates::CalculateChristoffelSymbols() {
       + 0.5 * contravariantMetricTensor.Getg33() * DDY(covariantMetricTensor.Getg33());
 }
 
-MetricTensor Coordinates::calcCovariant(const std::string& region) {
+void Coordinates::calcCovariant(const std::string& region) {
   TRACE("Coordinates::calcCovariant");
-  covariantMetricTensor.CalculateOppositeRepresentation(contravariantMetricTensor,
-                                                        location, region);
-  return covariantMetricTensor;
+  covariantMetricTensor.setMetricTensor(
+      contravariantMetricTensor.oppositeRepresentation(location, region));
 }
 
-MetricTensor Coordinates::calcContravariant(const std::string& region) {
+void Coordinates::calcContravariant(const std::string& region) {
   TRACE("Coordinates::calcContravariant");
-  contravariantMetricTensor.CalculateOppositeRepresentation(covariantMetricTensor,
-                                                            location, region);
-  return contravariantMetricTensor;
+  contravariantMetricTensor.setMetricTensor(
+      covariantMetricTensor.oppositeRepresentation(location, region));
 }
 
 int Coordinates::jacobian() {
@@ -2013,15 +2011,15 @@ void Coordinates::checkContravariant() {
 void Coordinates::setContravariantMetricTensor(MetricTensor metric_tensor,
                                                const std::string& region) {
   contravariantMetricTensor.setMetricTensor(metric_tensor);
-  covariantMetricTensor.CalculateOppositeRepresentation(contravariantMetricTensor,
-                                                        location, region);
+  covariantMetricTensor.setMetricTensor(
+      contravariantMetricTensor.oppositeRepresentation(location, region));
 }
 
 void Coordinates::setCovariantMetricTensor(MetricTensor metric_tensor,
                                            const std::string& region) {
   covariantMetricTensor.setMetricTensor(metric_tensor);
-  contravariantMetricTensor.CalculateOppositeRepresentation(covariantMetricTensor,
-                                                            location, region);
+  contravariantMetricTensor.setMetricTensor(
+      covariantMetricTensor.oppositeRepresentation(location, region));
 }
 
 const MetricTensor::FieldMetric& Coordinates::g_11() const {
