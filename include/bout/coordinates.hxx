@@ -97,11 +97,6 @@ public:
 
   FieldMetric Bxy; ///< Magnitude of B = nabla z times nabla x
 
-private:
-  MetricTensor contravariantMetricTensor;
-  MetricTensor covariantMetricTensor;
-
-public:
   /// Covariant metric tensor
   const FieldMetric& g_11() const;
   const FieldMetric& g_22() const;
@@ -272,6 +267,9 @@ private:
   // check that contravariant tensors are positive (if expected) and finite (always)
   void checkContravariant();
   void interpolateAndExtrapolateContravariantMetricTensor(const Coordinates* coords_in);
+
+  MetricTensor contravariantMetricTensor;
+  MetricTensor covariantMetricTensor;
 };
 
 /*
