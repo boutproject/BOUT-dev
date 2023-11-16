@@ -107,7 +107,7 @@ void MetricTensor::setLocation(const CELL_LOC location) {
   g23.setLocation(location);
 }
 
-MetricTensor MetricTensor::oppositeRepresentation(CELL_LOC location,
+MetricTensor MetricTensor::oppositeRepresentation(CELL_LOC location, Mesh* mesh,
                                                   const std::string& region) {
 
   TRACE("MetricTensor::CalculateOppositeRepresentation");
@@ -133,7 +133,7 @@ MetricTensor MetricTensor::oppositeRepresentation(CELL_LOC location,
     }
   }
 
-  FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
+  BoutReal g_11, g_22, g_33, g_12, g_13, g_23;
   g_11 = a(0, 0);
   g_22 = a(1, 1);
   g_33 = a(2, 2);
@@ -141,20 +141,31 @@ MetricTensor MetricTensor::oppositeRepresentation(CELL_LOC location,
   g_13 = a(0, 2);
   g_23 = a(1, 2);
 
-  BoutReal maxerr;
-  maxerr = BOUTMAX(max(abs((g_11 * g_11 + g_12 * g_12 + g_13 * g_13) - 1)),
-                   max(abs((g_12 * g_12 + g_22 * g_22 + g_23 * g_23) - 1)),
-                   max(abs((g_13 * g_13 + g_23 * g_23 + g_33 * g_33) - 1)));
+  //  BoutReal maxerr;
+  //  maxerr = BOUTMAX(
+  //      max(abs((g_11 * g_11 + g_12 * g_12
+  //               + g_13 * g_13)
+  //              - 1)),
+  //      max(abs((g_12 * g_12 + g_22 * g_22
+  //               + g_23 * g_23)
+  //              - 1)),
+  //      max(abs((g_13 * g_13 + g_23 * g_23
+  //               + g_33 * g_33)
+  //              - 1)));
+  //
+  //  output_info.write("\tMaximum error in diagonal inversion is {:e}\n", maxerr);
+  //
+  //  maxerr = BOUTMAX(
+  //      max(abs(g_11 * g_12 + g_12 * g_22
+  //              + g_13 * g_23)),
+  //      max(abs(g_11 * g_13 + g_12 * g_23
+  //              + g_13 * g_33)),
+  //      max(abs(g_12 * g_13 + g_22 * g_23
+  //              + g_23 * g_33)));
+  //
+  //  output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
 
-  output_info.write("\tMaximum error in diagonal inversion is {:e}\n", maxerr);
-
-  maxerr = BOUTMAX(max(abs(g_11 * g_12 + g_12 * g_22 + g_13 * g_23)),
-                   max(abs(g_11 * g_13 + g_12 * g_23 + g_13 * g_33)),
-                   max(abs(g_12 * g_13 + g_22 * g_23 + g_23 * g_33)));
-
-  output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
-
-  auto other_representation = MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23);
+  auto other_representation = MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23, mesh);
   other_representation.setLocation(location);
   return other_representation;
 }
