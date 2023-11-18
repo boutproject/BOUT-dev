@@ -243,20 +243,20 @@ const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
       // Pre-calculate factors which multiply fluxes
 #if not(BOUT_USE_METRIC_3D)
       // For right cell boundaries
-      BoutReal common_factor = (coord->J(i, j) + coord->J(i, j + 1))
+      BoutReal common_factor = (coord->J()(i, j) + coord->J()(i, j + 1))
                                / (sqrt(coord->g_22()(i, j)) + sqrt(coord->g_22()(i, j + 1)));
 
-      BoutReal flux_factor_rc = common_factor / (coord->dy(i, j) * coord->J(i, j));
+      BoutReal flux_factor_rc = common_factor / (coord->dy(i, j) * coord->J()(i, j));
       BoutReal flux_factor_rp =
-          common_factor / (coord->dy(i, j + 1) * coord->J(i, j + 1));
+          common_factor / (coord->dy(i, j + 1) * coord->J()(i, j + 1));
 
       // For left cell boundaries
-      common_factor = (coord->J(i, j) + coord->J(i, j - 1))
+      common_factor = (coord->J()(i, j) + coord->J()(i, j - 1))
                       / (sqrt(coord->g_22()(i, j)) + sqrt(coord->g_22()(i, j - 1)));
 
-      BoutReal flux_factor_lc = common_factor / (coord->dy(i, j) * coord->J(i, j));
+      BoutReal flux_factor_lc = common_factor / (coord->dy(i, j) * coord->J()(i, j));
       BoutReal flux_factor_lm =
-          common_factor / (coord->dy(i, j - 1) * coord->J(i, j - 1));
+          common_factor / (coord->dy(i, j - 1) * coord->J()(i, j - 1));
 #endif
       for (int k = 0; k < mesh->LocalNz; k++) {
 #if BOUT_USE_METRIC_3D
@@ -406,10 +406,10 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
 
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     // Calculate velocities
-    BoutReal vU = 0.25 * (vz[i.zp()] + vz[i]) * (coord->J[i.zp()] + coord->J[i]);
-    BoutReal vD = 0.25 * (vz[i.zm()] + vz[i]) * (coord->J[i.zm()] + coord->J[i]);
-    BoutReal vL = 0.25 * (vx[i.xm()] + vx[i]) * (coord->J[i.xm()] + coord->J[i]);
-    BoutReal vR = 0.25 * (vx[i.xp()] + vx[i]) * (coord->J[i.xp()] + coord->J[i]);
+    BoutReal vU = 0.25 * (vz[i.zp()] + vz[i]) * (coord->J()[i.zp()] + coord->J()[i]);
+    BoutReal vD = 0.25 * (vz[i.zm()] + vz[i]) * (coord->J()[i.zm()] + coord->J()[i]);
+    BoutReal vL = 0.25 * (vx[i.xm()] + vx[i]) * (coord->J()[i.xm()] + coord->J()[i]);
+    BoutReal vR = 0.25 * (vx[i.xp()] + vx[i]) * (coord->J()[i.xp()] + coord->J()[i]);
 
     // X direction
     Stencil1D s;
@@ -432,16 +432,16 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
           // Flux in from boundary
           flux = vR * 0.5 * (n[i.xp()] + n[i]);
         }
-        result[i] += flux / (coord->dx[i] * coord->J[i]);
-        result[i.xp()] -= flux / (coord->dx[i.xp()] * coord->J[i.xp()]);
+        result[i] += flux / (coord->dx[i] * coord->J()[i]);
+        result[i.xp()] -= flux / (coord->dx[i.xp()] * coord->J()[i.xp()]);
       }
     } else {
       // Not at a boundary
       if (vR > 0.0) {
         // Flux out into next cell
         BoutReal flux = vR * s.R;
-        result[i] += flux / (coord->dx[i] * coord->J[i]);
-        result[i.xp()] -= flux / (coord->dx[i.xp()] * coord->J[i.xp()]);
+        result[i] += flux / (coord->dx[i] * coord->J()[i]);
+        result[i.xp()] -= flux / (coord->dx[i.xp()] * coord->J()[i.xp()]);
       }
     }
 
@@ -459,15 +459,15 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
           // Flux in from boundary
           flux = vL * 0.5 * (n[i.xm()] + n[i]);
         }
-        result[i] -= flux / (coord->dx[i] * coord->J[i]);
-        result[i.xm()] += flux / (coord->dx[i.xm()] * coord->J[i.xm()]);
+        result[i] -= flux / (coord->dx[i] * coord->J()[i]);
+        result[i.xm()] += flux / (coord->dx[i.xm()] * coord->J()[i.xm()]);
       }
     } else {
       // Not at a boundary
       if (vL < 0.0) {
         BoutReal flux = vL * s.L;
-        result[i] -= flux / (coord->dx[i] * coord->J[i]);
-        result[i.xm()] += flux / (coord->dx[i.xm()] * coord->J[i.xm()]);
+        result[i] -= flux / (coord->dx[i] * coord->J()[i]);
+        result[i.xm()] += flux / (coord->dx[i.xm()] * coord->J()[i.xm()]);
       }
     }
 
@@ -483,13 +483,13 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
 
     if (vU > 0.0) {
       BoutReal flux = vU * s.R;
-      result[i] += flux / (coord->J[i] * coord->dz[i]);
-      result[i.zp()] -= flux / (coord->J[i.zp()] * coord->dz[i.zp()]);
+      result[i] += flux / (coord->J()[i] * coord->dz[i]);
+      result[i.zp()] -= flux / (coord->J()[i.zp()] * coord->dz[i.zp()]);
     }
     if (vD < 0.0) {
       BoutReal flux = vD * s.L;
-      result[i] -= flux / (coord->J[i] * coord->dz[i]);
-      result[i.zm()] += flux / (coord->J[i.zm()] * coord->dz[i.zm()]);
+      result[i] -= flux / (coord->J()[i] * coord->dz[i]);
+      result[i.zm()] += flux / (coord->J()[i.zm()] * coord->dz[i.zm()]);
     }
   }
 
@@ -507,15 +507,15 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
 
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     // Y velocities on y boundaries
-    BoutReal vU = 0.25 * (vy[i] + vy[i.yp()]) * (coord->J[i] + coord->J[i.yp()]);
-    BoutReal vD = 0.25 * (vy[i] + vy[i.ym()]) * (coord->J[i] + coord->J[i.ym()]);
+    BoutReal vU = 0.25 * (vy[i] + vy[i.yp()]) * (coord->J()[i] + coord->J()[i.yp()]);
+    BoutReal vD = 0.25 * (vy[i] + vy[i.ym()]) * (coord->J()[i] + coord->J()[i.ym()]);
 
     // n (advected quantity) on y boundaries
     // Note: Use unshifted n_in variable
     BoutReal nU = 0.5 * (n[i] + n[i.yp()]);
     BoutReal nD = 0.5 * (n[i] + n[i.ym()]);
 
-    yresult[i] = (nU * vU - nD * vD) / (coord->J[i] * coord->dy[i]);
+    yresult[i] = (nU * vU - nD * vD) / (coord->J()[i] * coord->dy[i]);
   }
   return result + fromFieldAligned(yresult, "RGN_NOBNDRY");
 }
