@@ -173,21 +173,21 @@ private:
     ddt(Psi) = -(1 / B0) * Grad_par(B0 * phi, CELL_YLOW); // + 1e-2*Jpar;
 
     if (nonlinear) {
-      ddt(Psi) += (1 / B0) * bracket(Psi, B0 * phi, bm) * coord->Bxy;
+      ddt(Psi) += (1 / B0) * bracket(Psi, B0 * phi, bm) * coord->Bxy();
     }
 
     //Parallel vorticity
 
     ddt(U) = (SQ(B0) / rho0) * (Grad_par(Jpar / interp_to(B0, CELL_YLOW), CELL_CENTRE));
 
-    ddt(U) -= (1 / rho0) * bracket(G, rho, bm) * coord->Bxy;
+    ddt(U) -= (1 / rho0) * bracket(G, rho, bm) * coord->Bxy();
 
-    ddt(U) -= (SQ(B0) / rho0) * bracket(Psi, Jpar0 / B0, bm) * coord->Bxy;
+    ddt(U) -= (SQ(B0) / rho0) * bracket(Psi, Jpar0 / B0, bm) * coord->Bxy();
 
     if (nonlinear) {
-      ddt(U) -= bracket(phi, U, bm) * coord->Bxy;
+      ddt(U) -= bracket(phi, U, bm) * coord->Bxy();
 
-      ddt(U) -= (SQ(B0) / rho0) * bracket(Psi, Jpar / B0, bm) * coord->Bxy;
+      ddt(U) -= (SQ(B0) / rho0) * bracket(Psi, Jpar / B0, bm) * coord->Bxy();
     }
 
     // Viscosity terms
@@ -200,43 +200,43 @@ private:
     }
 
     // Parallel velocity
-    ddt(Vpar) = bracket(Psi, p0, bm) * coord->Bxy / rho0;
+    ddt(Vpar) = bracket(Psi, p0, bm) * coord->Bxy() / rho0;
 
     ddt(Vpar) += -(Grad_par(p, CELL_YLOW)) / rho0;
 
-    ddt(Vpar) += bracket(G, Psi, bm) * coord->Bxy;
+    ddt(Vpar) += bracket(G, Psi, bm) * coord->Bxy();
 
     if (nonlinear) {
-      ddt(Vpar) -= bracket(phi, Vpar, bm) * coord->Bxy;
+      ddt(Vpar) -= bracket(phi, Vpar, bm) * coord->Bxy();
 
-      ddt(Vpar) += bracket(Psi, p, bm) * coord->Bxy / rho0;
+      ddt(Vpar) += bracket(Psi, p, bm) * coord->Bxy() / rho0;
     }
 
     //Pressure
     ddt(p) = -bracket(phi, p0, bm);
 
     ddt(p) += -((Gamma * p0) / (1 + Gamma * p0 * mu_0 / SQ(B0)))
-              * ((rho0 * mu_0 / SQ(B0)) * bracket(G, phi, bm) * coord->Bxy
+              * ((rho0 * mu_0 / SQ(B0)) * bracket(G, phi, bm) * coord->Bxy()
                  + Grad_par(Vpar, CELL_CENTRE) - (Vpar / B0) * Grad_par(B0));
 
     if (nonlinear) {
-      ddt(p) -= bracket(phi, p, bm) * coord->Bxy;
+      ddt(p) -= bracket(phi, p, bm) * coord->Bxy();
       ddt(p) += ((Gamma * p0) / (1 + Gamma * p0 * mu_0 / SQ(B0))) * bracket(Psi, Vpar, bm)
-                * coord->Bxy;
+                * coord->Bxy();
     }
 
     //Density
-    ddt(rho) = -bracket(phi, rho0, bm) * coord->Bxy;
+    ddt(rho) = -bracket(phi, rho0, bm) * coord->Bxy();
 
     ddt(rho) -= (rho0 / (1 + Gamma * p0 * mu_0 / SQ(B0)))
-                * ((rho0 * mu_0 / SQ(B0)) * bracket(G, phi, bm) * coord->Bxy
-                   + Grad_par(Vpar, CELL_CENTRE) - bracket(Psi, Vpar, bm) * coord->Bxy
-                   - (Vpar / B0) * Grad_par(B0));
+                * ((rho0 * mu_0 / SQ(B0)) * bracket(G, phi, bm) * coord->Bxy()
+           + Grad_par(Vpar, CELL_CENTRE) - bracket(Psi, Vpar, bm) * coord->Bxy()
+           - (Vpar / B0) * Grad_par(B0));
 
     if (nonlinear) {
-      ddt(rho) -= bracket(phi, rho, bm) * coord->Bxy;
+      ddt(rho) -= bracket(phi, rho, bm) * coord->Bxy();
       ddt(rho) += ((rho0) / (1 + Gamma * p0 * mu_0 / SQ(B0))) * bracket(Psi, Vpar, bm)
-                  * coord->Bxy;
+                  * coord->Bxy();
     }
 
     // Iterate over the lower Y boundary

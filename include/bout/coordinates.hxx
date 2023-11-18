@@ -93,8 +93,6 @@ public:
   /// 2nd-order correction for non-uniform meshes d/di(1/dx), d/di(1/dy) and d/di(1/dz)
   FieldMetric d1_dx, d1_dy, d1_dz;
 
-  FieldMetric Bxy; ///< Magnitude of B = nabla z times nabla x
-
   /// Covariant metric tensor
   const FieldMetric& g_11() const;
   const FieldMetric& g_22() const;
@@ -113,6 +111,9 @@ public:
 
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
   const FieldMetric J() const;
+
+  ///< Magnitude of B = nabla z times nabla x
+  const FieldMetric Bxy() const;
 
   void setContravariantMetricTensor(MetricTensor metric_tensor,
                                     const std::string& region = "RGN_ALL");
@@ -273,6 +274,7 @@ private:
   MetricTensor covariantMetricTensor;
 
   FieldMetric this_J;
+  FieldMetric this_Bxy; ///< Magnitude of B = nabla z times nabla x
 };
 
 /*

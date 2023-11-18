@@ -33,7 +33,7 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
   Bpxy /= Bnorm;
   Btxy /= Bnorm;
-  coords->Bxy /= Bnorm;
+  coords->Bxy() /= Bnorm;
 
   // Calculate metric components
   std::string ptstr;
@@ -51,7 +51,7 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
   const auto g11 = pow(Rxy * Bpxy, 2);
   const auto g22 = 1.0 / pow(hthe, 2);
-  const auto g33 = pow(sinty, 2) * coords->g11() + pow(coords->Bxy, 2) / coords->g11();
+  const auto g33 = pow(sinty, 2) * coords->g11() + pow(coords->Bxy(), 2) / coords->g11();
   const auto g12 = 0.0;
   const auto g13 = -sinty * coords->g11();
   const auto g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
@@ -61,7 +61,7 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   coords->J = hthe / Bpxy;
 
   const auto g_11 = 1.0 / coords->g11() + pow(sinty * Rxy, 2);
-  const auto g_22 = pow(coords->Bxy * hthe / Bpxy, 2);
+  const auto g_22 = pow(coords->Bxy() * hthe / Bpxy, 2);
   const auto g_33 = Rxy * Rxy;
   const auto g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
   const auto g_13 = sinty * Rxy * Rxy;

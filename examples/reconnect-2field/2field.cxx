@@ -71,7 +71,7 @@ protected:
 
     // Load metrics
     GRID_LOAD(Rxy, Bpxy, Btxy, hthe);
-    mesh->get(coord->Bxy, "Bxy");
+    mesh->get(coord->Bxy(), "Bxy");
 
     // Set locations of staggered fields
     Apar.setLocation(CELL_YLOW);
@@ -126,7 +126,7 @@ protected:
       Nenorm = 1.e19;
     }
 
-    Bnorm = max(coord->Bxy, true);
+    Bnorm = max(coord->Bxy(), true);
 
     // Sound speed in m/s
     Cs = sqrt(Charge * Tenorm / Mi);
@@ -156,7 +156,7 @@ protected:
     // Normalise magnetic field
     Bpxy /= Bnorm;
     Btxy /= Bnorm;
-    coord->Bxy /= Bnorm;
+    coord->Bxy() /= Bnorm;
 
     // Plasma quantities
     Jpar0 /= Nenorm * Charge * Cs;
@@ -166,7 +166,7 @@ protected:
     MetricTensor::FieldMetric g11, g22, g33, g12, g13, g23;
     g11 = SQ(Rxy * Bpxy);
     g22 = 1.0 / SQ(hthe);
-    g33 = SQ(coord->Bxy) / coord->g11();
+    g33 = SQ(coord->Bxy()) / coord->g11();
     g12 = 0.0;
     g13 = 0.;
     g23 = -Btxy / (hthe * Bpxy * Rxy);
@@ -176,7 +176,7 @@ protected:
 
     MetricTensor::FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
     g_11 = 1.0 / coord->g11();
-    g_22 = SQ(coord->Bxy * hthe / Bpxy);
+    g_22 = SQ(coord->Bxy() * hthe / Bpxy);
     g_33 = Rxy * Rxy;
     g_12 = 0.;
     g_13 = 0.;
@@ -203,7 +203,7 @@ protected:
     SAVE_ONCE(Apar_ext, Jpar_ext);
 
     initial_profile("Phi0_ext", Phi0_ext);
-    U0_ext = -Delp2(Phi0_ext) / coord->Bxy;
+    U0_ext = -Delp2(Phi0_ext) / coord->Bxy();
     SAVE_ONCE(Phi0_ext, U0_ext);
 
     // Give the solver the preconditioner function
@@ -238,7 +238,7 @@ protected:
     // Solve EM fields
 
     // U = (1/B) * Delp2(phi)
-    phi = phiSolver->solve(coord->Bxy * U);
+    phi = phiSolver->solve(coord->Bxy() * U);
     phi.applyBoundary(); // For target plates only
 
     mesh->communicate(U, phi, Apar);
@@ -270,12 +270,12 @@ protected:
     }
 
     // VORTICITY
-    ddt(U) = SQ(coord->Bxy) * Grad_parP(jpar / coord_ylow->Bxy, CELL_CENTRE);
+    ddt(U) = SQ(coord->Bxy()) * Grad_parP(jpar / coord_ylow->Bxy(), CELL_CENTRE);
 
     if (include_jpar0) {
       ddt(U) -=
-          SQ(coord->Bxy) * beta_hat
-          * interp_to(bracket(Apar + Apar_ext, Jpar0 / coord_ylow->Bxy, BRACKET_ARAKAWA),
+          SQ(coord->Bxy()) * beta_hat
+          * interp_to(bracket(Apar + Apar_ext, Jpar0 / coord_ylow->Bxy(), BRACKET_ARAKAWA),
                       CELL_CENTRE);
     }
 
@@ -339,13 +339,13 @@ public:
     }
 
     Field3D U1 =
-        ddt(U) + gamma * SQ(coord->Bxy) * Grad_par(Jp / coord_ylow->Bxy, CELL_CENTRE);
+        ddt(U) + gamma * SQ(coord->Bxy()) * Grad_par(Jp / coord_ylow->Bxy(), CELL_CENTRE);
 
-    inv->setCoefB(-SQ(gamma * coord->Bxy) / beta_hat);
+    inv->setCoefB(-SQ(gamma * coord->Bxy()) / beta_hat);
     ddt(U) = inv->solve(U1);
     ddt(U).applyBoundary();
 
-    Field3D phip = phiSolver->solve(coord->Bxy * ddt(U));
+    Field3D phip = phiSolver->solve(coord->Bxy() * ddt(U));
     mesh->communicate(phip);
 
     ddt(Apar) = ddt(Apar) - (gamma / beta_hat) * Grad_par(phip, CELL_YLOW);

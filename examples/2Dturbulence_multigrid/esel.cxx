@@ -69,7 +69,7 @@ protected:
     Coordinates* coord = mesh->getCoordinates();
 
     // generate coordinate system
-    coord->Bxy = 1;
+    coord->Bxy() = 1;
 
     MetricTensor::FieldMetric g11, g22, g33, g12, g13, g23;
     g11 = 1.0;

@@ -282,10 +282,10 @@ Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
                      const std::string& method) {
   Coordinates* metric = f.getCoordinates(outloc);
 
-  auto Bxy_floc = f.getCoordinates()->Bxy;
+  auto Bxy_floc = f.getCoordinates()->Bxy();
 
   if (!f.hasParallelSlices()) {
-    return metric->Bxy * FDDY(v, f / Bxy_floc, outloc, method) / sqrt(metric->g_22());
+    return metric->Bxy() * FDDY(v, f / Bxy_floc, outloc, method) / sqrt(metric->g_22());
   }
 
   // Need to modify yup and ydown fields
@@ -294,7 +294,7 @@ Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
   f_B.splitParallelSlices();
   f_B.yup() = f.yup() / Bxy_floc;
   f_B.ydown() = f.ydown() / Bxy_floc;
-  return metric->Bxy * FDDY(v, f_B, outloc, method) / sqrt(metric->g_22());
+  return metric->Bxy() * FDDY(v, f_B, outloc, method) / sqrt(metric->g_22());
 }
 
 Field3D Div_par_flux(const Field3D& v, const Field3D& f, const std::string& method,
@@ -630,7 +630,7 @@ Coordinates::FieldMetric bracket(const Field2D& f, const Field2D& g,
     result.setLocation(outloc);
   } else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(f, g, outloc) / f.getCoordinates(outloc)->Bxy;
+    result = b0xGrad_dot_Grad(f, g, outloc) / f.getCoordinates(outloc)->Bxy();
   }
   return result;
 }
@@ -818,7 +818,7 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
   }
   default: {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy;
+    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy();
   }
   }
   return result;
@@ -854,7 +854,7 @@ Field3D bracket(const Field2D& f, const Field3D& g, BRACKET_METHOD method,
   default: {
     // Use full expression with all terms
     Coordinates* metric = f.getCoordinates(outloc);
-    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy;
+    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy();
   }
   }
 
@@ -1154,7 +1154,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
   }
   default: {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy;
+    result = b0xGrad_dot_Grad(f, g, outloc) / metric->Bxy();
   }
   }
 

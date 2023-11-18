@@ -120,7 +120,7 @@ protected:
     // Normalise magnetic field
     Bpxy /= (bmag / 1e4);
     Btxy /= (bmag / 1e4);
-    coords->Bxy /= (bmag / 1e4);
+    coords->Bxy() /= (bmag / 1e4);
 
     // calculate pressures
     pei0 = (Ti0 + Te0) * Ni0;
@@ -142,7 +142,7 @@ protected:
 
     coords->g11 = pow(Rxy * Bpxy, 2.0);
     coords->g22 = 1.0 / pow(hthe, 2.0);
-    coords->g33 = pow(coords->Bxy, 2.0) / coords->g11;
+    coords->g33 = pow(coords->Bxy(), 2.0) / coords->g11;
     coords->g12 = 0.0;
     coords->g13 = 0.0;
     coords->g23 = -Btxy / (hthe * Bpxy * Rxy);
@@ -150,7 +150,7 @@ protected:
     coords->J = hthe / Bpxy;
 
     coords->g_11 = 1.0 / coords->g11;
-    coords->g_22 = pow(coords->Bxy * hthe / Bpxy, 2.0);
+    coords->g_22 = pow(coords->Bxy() * hthe / Bpxy, 2.0);
     coords->g_33 = Rxy * Rxy;
     coords->g_12 = 0.0;
     coords->g_13 = 0.0;
