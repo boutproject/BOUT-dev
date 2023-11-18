@@ -272,7 +272,7 @@ private:
   MetricTensor contravariantMetricTensor;
   MetricTensor covariantMetricTensor;
 
-  FieldMetric j;
+  FieldMetric this_J;
 };
 
 /*
