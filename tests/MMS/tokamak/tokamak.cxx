@@ -66,7 +66,7 @@ public:
 
     Bpxy /= Bnorm;
     Btxy /= Bnorm;
-    coords->Bxy /= Bnorm;
+    coords->Bxy() /= Bnorm;
 
     // Calculate metric components
     bool ShiftXderivs;
@@ -82,7 +82,7 @@ public:
 
     const auto g11 = SQ(Rxy * Bpxy);
     const auto g22 = 1.0 / SQ(hthe);
-    const auto g33 = SQ(sinty) * coords->g11() + SQ(coords->Bxy) / coords->g11();
+    const auto g33 = SQ(sinty) * coords->g11() + SQ(coords->Bxy()) / coords->g11();
     const auto g12 = 0.0;
     const auto g13 = -sinty * coords->g11();
     const auto g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
@@ -92,7 +92,7 @@ public:
     coords->J = hthe / Bpxy;
 
     const auto g_11 = 1.0 / coords->g11() + SQ(sinty * Rxy);
-    const auto g_22 = SQ(coords->Bxy * hthe / Bpxy);
+    const auto g_22 = SQ(coords->Bxy() * hthe / Bpxy);
     const auto g_33 = Rxy * Rxy;
     const auto g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
     const auto g_13 = sinty * Rxy * Rxy;

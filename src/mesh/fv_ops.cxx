@@ -71,7 +71,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     // -- should insert communication here?
     if (!coord->g23().hasParallelSlices() || !coord->g_23().hasParallelSlices()
         || !coord->dy.hasParallelSlices() || !coord->dz.hasParallelSlices()
-        || !coord->Bxy.hasParallelSlices() || !coord->J().hasParallelSlices()) {
+        || !coord->Bxy().hasParallelSlices() || !coord->J().hasParallelSlices()) {
       throw BoutException("metrics have no yup/down: Maybe communicate in init?");
     }
   }
@@ -92,7 +92,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
   const auto J = makeslices(metric_fci, coord->J());
   const auto dy = makeslices(metric_fci, coord->dy);
   const auto dz = makeslices(metric_fci, coord->dz);
-  const auto Bxy = makeslices(metric_fci, coord->Bxy);
+  const auto Bxy = makeslices(metric_fci, coord->Bxy());
 
   // Result of the Y and Z fluxes
   Field3D yzresult(0.0, mesh);

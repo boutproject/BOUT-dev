@@ -449,8 +449,8 @@ public:
     test_coords->d1_dx = test_coords->d1_dy = 0.2;
     test_coords->d1_dz = 0.0;
 #if BOUT_USE_METRIC_3D
-    test_coords->Bxy.splitParallelSlices();
-    test_coords->Bxy.yup() = test_coords->Bxy.ydown() = test_coords->Bxy;
+    test_coords->Bxy().splitParallelSlices();
+    test_coords->Bxy().yup() = test_coords->Bxy().ydown() = test_coords->Bxy();
 #endif
 
     // No call to Coordinates::geometry() needed here

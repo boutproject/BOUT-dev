@@ -111,7 +111,7 @@ TEST_F(CoordinatesTest, Jacobian) {
   EXPECT_NO_THROW(coords.jacobian());
 
   EXPECT_TRUE(IsFieldEqual(coords.J(), 1.0));
-  EXPECT_TRUE(IsFieldEqual(coords.Bxy, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.Bxy(), 1.0));
 }
 
 /// To do generalise these tests
@@ -206,7 +206,7 @@ TEST_F(CoordinatesTest, DefaultConstructor) {
   EXPECT_TRUE(IsFieldEqual(coords.g23(), 0.0));
 
   EXPECT_TRUE(IsFieldEqual(coords.J(), 1.0));
-  EXPECT_TRUE(IsFieldEqual(coords.Bxy, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.Bxy(), 1.0));
 }
 
 TEST_F(CoordinatesTest, ConstructWithMeshSpacing) {
@@ -232,7 +232,7 @@ TEST_F(CoordinatesTest, ConstructWithMeshSpacing) {
   EXPECT_TRUE(IsFieldEqual(coords.g23(), 0.0));
 
   EXPECT_TRUE(IsFieldEqual(coords.J(), 1.0));
-  EXPECT_TRUE(IsFieldEqual(coords.Bxy, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.Bxy(), 1.0));
 }
 
 TEST_F(CoordinatesTest, SmallMeshSpacing) {
@@ -279,7 +279,7 @@ TEST_F(CoordinatesTest, ConstructWithDiagonalContravariantMetric) {
   EXPECT_TRUE(IsFieldEqual(coords.g_33(), 1. / 42, "RGN_NOCORNERS"));
 
   EXPECT_TRUE(IsFieldEqual(coords.J(), 1. / sqrt(2.0 * 3.2 * 42), "RGN_NOCORNERS"));
-  EXPECT_TRUE(IsFieldEqual(coords.Bxy, sqrt(2.0 * 42), "RGN_NOCORNERS", 1e-10));
+  EXPECT_TRUE(IsFieldEqual(coords.Bxy(), sqrt(2.0 * 42), "RGN_NOCORNERS", 1e-10));
 }
 
 TEST_F(CoordinatesTest, NegativeJacobian) {

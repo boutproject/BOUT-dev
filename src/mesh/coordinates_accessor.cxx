@@ -54,10 +54,10 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
     COPY_STRIPE(d1_dx, d1_dy, d1_dz);
     data[stripe_size * ind.ind + static_cast<int>(Offset::J)] = coords->J()[ind];
 
-    data[stripe_size * ind.ind + static_cast<int>(Offset::B)] = coords->Bxy[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::Byup)] = coords->Bxy.yup()[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::B)] = coords->Bxy()[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::Byup)] = coords->Bxy().yup()[ind];
     data[stripe_size * ind.ind + static_cast<int>(Offset::Bydown)] =
-        coords->Bxy.ydown()[ind];
+        coords->Bxy().ydown()[ind];
 
     COPY_STRIPE(G1, G3);
     //    COPY_STRIPE(g11, g12, g13, g22, g23, g33);

@@ -382,15 +382,16 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
                          FieldMetric g_23, FieldMetric ShiftTorsion,
                          FieldMetric IntShiftTorsion)
-    : dx(std::move(dx)), dy(std::move(dy)), dz(dz), this_J(std::move(J)), Bxy(std::move(Bxy)), 
-      contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+    : dx(std::move(dx)), dy(std::move(dy)), dz(dz), this_J(std::move(J)),
+      this_Bxy(std::move(Bxy)), contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
       covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23),
       ShiftTorsion(std::move(ShiftTorsion)), IntShiftTorsion(std::move(IntShiftTorsion)),
       nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
-      this_J(1., mesh), Bxy(1., mesh), contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
+      this_J(1., mesh), this_Bxy(1., mesh),
+      contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
       covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), G1_11(mesh), G1_22(mesh),
       G1_33(mesh), G1_12(mesh), G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh),
       G2_33(mesh), G2_12(mesh), G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh),
@@ -577,7 +578,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     communicate(this_J);
 
     // Re-evaluate Bxy using new J
-    Bxy = sqrt(g_22) / this_J;
+    this_Bxy = sqrt(g_22) / this_J;
   }
 
   // Check jacobian
@@ -588,21 +589,22 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   }
 
   // Attempt to read Bxy from the grid file
-  auto Bcalc = Bxy;
-  if (mesh->get(Bxy, "Bxy", 0.0, false)) {
+  auto Bcalc = this_Bxy;
+  if (mesh->get(this_Bxy, "Bxy", 0.0, false)) {
     output_warn.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from "
                       "metric tensor\n");
-    Bxy = Bcalc;
+    this_Bxy = Bcalc;
   } else {
 
-    Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
-                                    transform.get());
-    output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy - Bcalc)));
+    this_Bxy = interpolateAndExtrapolate(this_Bxy, location, extrapolate_x, extrapolate_y,
+                                         false, transform.get());
+    output_warn.write("\tMaximum difference in Bxy is {:e}\n",
+                      max(abs(this_Bxy - Bcalc)));
   }
 
   // Check Bxy
-  bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
-  bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
+  bout::checkFinite(this_Bxy, "Bxy", "RGN_NOCORNERS");
+  bout::checkPositive(this_Bxy, "Bxy", "RGN_NOCORNERS");
 
   if (mesh->get(ShiftTorsion, "ShiftTorsion", 0.0, false)) {
     output_warn.write(
@@ -629,7 +631,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
-      _J(1., mesh), Bxy(1., mesh), contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
+      this_J(1., mesh), this_Bxy(1., mesh),
+      contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
       covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), G1_11(mesh), G1_22(mesh),
       G1_33(mesh), G1_12(mesh), G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh),
       G2_33(mesh), G2_12(mesh), G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh),
@@ -802,14 +805,14 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
           suffix);
       this_J = Jcalc;
     } else {
-      this_J = interpolateAndExtrapolate(this_J, location, extrapolate_x, extrapolate_y, false,
-                                    transform.get());
+      this_J = interpolateAndExtrapolate(this_J, location, extrapolate_x, extrapolate_y,
+                                         false, transform.get());
 
       // Compare calculated and loaded values
       output_warn.write("\tMaximum difference in J is %e\n", max(abs(this_J - Jcalc)));
 
       // Re-evaluate Bxy using new J
-      Bxy = sqrt(g_22) / this_J;
+      this_Bxy = sqrt(g_22) / this_J;
     }
 
     // Check jacobian
@@ -820,23 +823,24 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     }
 
     // Attempt to read Bxy from the grid file
-    auto Bcalc = Bxy;
-    if (getAtLoc(mesh, Bxy, "Bxy", suffix, location)) {
+    auto Bcalc = this_Bxy;
+    if (getAtLoc(mesh, this_Bxy, "Bxy", suffix, location)) {
       output_warn.write(
           "\tWARNING: Magnitude of B field 'Bxy_{:s}' not found. Calculating "
           " from metric tensor\n",
           suffix);
-      Bxy = Bcalc;
+      this_Bxy = Bcalc;
     } else {
-      Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
-                                      transform.get());
+      this_Bxy = interpolateAndExtrapolate(this_Bxy, location, extrapolate_x,
+                                           extrapolate_y, false, transform.get());
 
-      output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
+      output_warn.write("\tMaximum difference in Bxy is %e\n",
+                        max(abs(this_Bxy - Bcalc)));
     }
 
     // Check Bxy
-    bout::checkFinite(Bxy, "Bxy" + suffix, "RGN_NOCORNERS");
-    bout::checkPositive(Bxy, "Bxy" + suffix, "RGN_NOCORNERS");
+    bout::checkFinite(this_Bxy, "Bxy" + suffix, "RGN_NOCORNERS");
+    bout::checkPositive(this_Bxy, "Bxy" + suffix, "RGN_NOCORNERS");
 
     checkStaggeredGet(mesh, "ShiftTorsion", suffix);
     if (mesh->get(ShiftTorsion, "ShiftTorsion" + suffix, 0.0, false)) {
@@ -912,14 +916,14 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     checkCovariant();
 
     this_J = interpolateAndExtrapolate(coords_in->J(), location, true, true, false,
-                                  transform.get());
-    Bxy = interpolateAndExtrapolate(coords_in->Bxy, location, true, true, false,
-                                    transform.get());
+                                       transform.get());
+    this_Bxy = interpolateAndExtrapolate(coords_in->Bxy(), location, true, true, false,
+                                         transform.get());
 
     bout::checkFinite(this_J, "The Jacobian", "RGN_NOCORNERS");
     bout::checkPositive(this_J, "The Jacobian", "RGN_NOCORNERS");
-    bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
-    bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
+    bout::checkFinite(this_Bxy, "Bxy", "RGN_NOCORNERS");
+    bout::checkPositive(this_Bxy, "Bxy", "RGN_NOCORNERS");
 
     ShiftTorsion = interpolateAndExtrapolate(coords_in->ShiftTorsion, location, true,
                                              true, false, transform.get());
@@ -993,7 +997,7 @@ void Coordinates::outputVars(Options& output_options) {
                                             "Coordinates");
 
   output_options["J" + loc_string].force(this_J, "Coordinates");
-  output_options["Bxy" + loc_string].force(Bxy, "Coordinates");
+  output_options["Bxy" + loc_string].force(this_Bxy, "Coordinates");
 
   output_options["G1" + loc_string].force(G1, "Coordinates");
   output_options["G2" + loc_string].force(G2, "Coordinates");
@@ -1027,7 +1031,7 @@ int Coordinates::geometry(bool recalculate_staggered,
               contravariantMetricTensor.Getg23(), covariantMetricTensor.Getg11(),
               covariantMetricTensor.Getg22(), covariantMetricTensor.Getg33(),
               covariantMetricTensor.Getg12(), covariantMetricTensor.Getg13(),
-              covariantMetricTensor.Getg23(), this_J, Bxy);
+              covariantMetricTensor.Getg23(), this_J, this_Bxy);
 
   output_progress.write("Calculating differential geometry terms\n");
 
@@ -1421,12 +1425,12 @@ int Coordinates::jacobian() {
   this_J = 1. / sqrt(g);
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
-  this_J = interpolateAndExtrapolate(this_J, location, extrapolate_x, extrapolate_y, false,
-                                transform.get());
+  this_J = interpolateAndExtrapolate(this_J, location, extrapolate_x, extrapolate_y,
+                                     false, transform.get());
 
-  Bxy = sqrt(covariantMetricTensor.Getg22()) / this_J;
-  Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
-                                  transform.get());
+  this_Bxy = sqrt(covariantMetricTensor.Getg22()) / this_J;
+  this_Bxy = interpolateAndExtrapolate(this_Bxy, location, extrapolate_x, extrapolate_y,
+                                       false, transform.get());
 
   return 0;
 }
@@ -1652,9 +1656,9 @@ Coordinates::FieldMetric Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
 
   // Need Bxy at location of f, which might be different from location of this
   // Coordinates object
-  auto Bxy_floc = f.getCoordinates()->Bxy;
+  auto Bxy_floc = f.getCoordinates()->Bxy();
 
-  return Bxy * Grad_par(f / Bxy_floc, outloc, method);
+  return this_Bxy * Grad_par(f / Bxy_floc, outloc, method);
 }
 
 Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
@@ -1664,12 +1668,12 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
 
   // Need Bxy at location of f, which might be different from location of this
   // Coordinates object
-  auto Bxy_floc = f.getCoordinates()->Bxy;
+  auto Bxy_floc = f.getCoordinates()->Bxy();
 
   if (!f.hasParallelSlices()) {
     // No yup/ydown fields. The Grad_par operator will
     // shift to field aligned coordinates
-    return Bxy * Grad_par(f / Bxy_floc, outloc, method);
+    return this_Bxy * Grad_par(f / Bxy_floc, outloc, method);
   }
 
   // Need to modify yup and ydown fields
@@ -1679,7 +1683,7 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
     f_B.yup(i) = f.yup(i) / Bxy_floc.yup(i);
     f_B.ydown(i) = f.ydown(i) / Bxy_floc.ydown(i);
   }
-  return Bxy * Grad_par(f_B, outloc, method);
+  return this_Bxy * Grad_par(f_B, outloc, method);
 }
 
 /////////////////////////////////////////////////////////
@@ -1873,7 +1877,8 @@ Coordinates::FieldMetric Coordinates::Laplace_par(const Field2D& f, CELL_LOC out
 Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
   return D2DY2(f, outloc) / covariantMetricTensor.Getg22()
-         + DDY(this_J / covariantMetricTensor.Getg22(), outloc) * ::DDY(f, outloc) / this_J;
+         + DDY(this_J / covariantMetricTensor.Getg22(), outloc) * ::DDY(f, outloc)
+               / this_J;
 }
 
 // Full Laplacian operator on scalar field
@@ -1928,7 +1933,7 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
     // outer x boundary
     const auto outer_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xp()]); };
     const BoutReal outer_x_A = outer_x_avg(A);
-    const BoutReal outer_x_J = outer_x_avg(_J);
+    const BoutReal outer_x_J = outer_x_avg(this_J);
     const BoutReal outer_x_g11 = outer_x_avg(contravariantMetricTensor.Getg11());
     const BoutReal outer_x_dx = outer_x_avg(dx);
     const BoutReal outer_x_value =
@@ -2063,4 +2068,7 @@ const MetricTensor::FieldMetric& Coordinates::g23() const {
 }
 const MetricTensor::FieldMetric Coordinates::J() const {
   return this_J;
+}
+const MetricTensor::FieldMetric Coordinates::Bxy() const {
+  return this_Bxy;
 }
