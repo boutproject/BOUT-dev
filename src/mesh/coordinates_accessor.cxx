@@ -52,7 +52,7 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
   for (const auto& ind : coords->dx.getRegion("RGN_ALL")) {
     COPY_STRIPE(dx, dy, dz);
     COPY_STRIPE(d1_dx, d1_dy, d1_dz);
-    COPY_STRIPE(J);
+    data[stripe_size * ind.ind + static_cast<int>(Offset::J)] = coords->J()[ind];
 
     data[stripe_size * ind.ind + static_cast<int>(Offset::B)] = coords->Bxy[ind];
     data[stripe_size * ind.ind + static_cast<int>(Offset::Byup)] = coords->Bxy.yup()[ind];

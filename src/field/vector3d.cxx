@@ -385,9 +385,9 @@ Vector3D& Vector3D::operator/=(const Field3D& rhs) {
     Coordinates* metric = localmesh->getCoordinates(lhs.getLocation()); \
                                                                         \
     /* calculate contravariant components of cross-product */           \
-    result.x = (lco.y * rco.z - lco.z * rco.y) / metric->J;             \
-    result.y = (lco.z * rco.x - lco.x * rco.z) / metric->J;             \
-    result.z = (lco.x * rco.y - lco.y * rco.x) / metric->J;             \
+    result.x = (lco.y * rco.z - lco.z * rco.y) / metric->J();             \
+    result.y = (lco.z * rco.x - lco.x * rco.z) / metric->J();             \
+    result.z = (lco.x * rco.y - lco.y * rco.x) / metric->J();             \
     result.covariant = false;                                           \
                                                                         \
     return result;                                                      \

@@ -2973,42 +2973,42 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
         //                    - d/dy( JB^y ) - d/dz( JB^z )
 
         tmp =
-            -(metric->J(jx, jy) * metric->g12()(jx, jy) * var.y(jx, jy, jz)
-              + metric->J(jx, jy) * metric->g13()(jx, jy) * var.z(jx, jy, jz)
-              - metric->J(jx - 2, jy) * metric->g12()(jx - 2, jy) * var.y(jx - 2, jy, jz)
-              + metric->J(jx - 2, jy) * metric->g13()(jx - 2, jy) * var.z(jx - 2, jy, jz))
+            -(metric->J()(jx, jy) * metric->g12()(jx, jy) * var.y(jx, jy, jz)
+              + metric->J()(jx, jy) * metric->g13()(jx, jy) * var.z(jx, jy, jz)
+              - metric->J()(jx - 2, jy) * metric->g12()(jx - 2, jy) * var.y(jx - 2, jy, jz)
+              + metric->J()(jx - 2, jy) * metric->g13()(jx - 2, jy) * var.z(jx - 2, jy, jz))
             / (metric->dx(jx - 2, jy)
                + metric->dx(jx - 1, jy)); // First term (d/dx) using vals calculated above
-        tmp -= (metric->J(jx - 1, jy + 1) * metric->g12()(jx - 1, jy + 1)
+        tmp -= (metric->J()(jx - 1, jy + 1) * metric->g12()(jx - 1, jy + 1)
                     * var.x(jx - 1, jy + 1, jz)
-                - metric->J(jx - 1, jy - 1) * metric->g12()(jx - 1, jy - 1)
+                - metric->J()(jx - 1, jy - 1) * metric->g12()(jx - 1, jy - 1)
                       * var.x(jx - 1, jy - 1, jz)
-                + metric->J(jx - 1, jy + 1) * metric->g22()(jx - 1, jy + 1)
+                + metric->J()(jx - 1, jy + 1) * metric->g22()(jx - 1, jy + 1)
                       * var.y(jx - 1, jy + 1, jz)
-                - metric->J(jx - 1, jy - 1) * metric->g22()(jx - 1, jy - 1)
+                - metric->J()(jx - 1, jy - 1) * metric->g22()(jx - 1, jy - 1)
                       * var.y(jx - 1, jy - 1, jz)
-                + metric->J(jx - 1, jy + 1) * metric->g23()(jx - 1, jy + 1)
+                + metric->J()(jx - 1, jy + 1) * metric->g23()(jx - 1, jy + 1)
                       * var.z(jx - 1, jy + 1, jz)
-                - metric->J(jx - 1, jy - 1) * metric->g23()(jx - 1, jy - 1)
+                - metric->J()(jx - 1, jy - 1) * metric->g23()(jx - 1, jy - 1)
                       * var.z(jx - 1, jy - 1, jz))
                / (metric->dy(jx - 1, jy - 1) + metric->dy(jx - 1, jy)); // second (d/dy)
-        tmp -= (metric->J(jx - 1, jy) * metric->g13()(jx - 1, jy)
+        tmp -= (metric->J()(jx - 1, jy) * metric->g13()(jx - 1, jy)
                     * (var.x(jx - 1, jy, jzp) - var.x(jx - 1, jy, jzm))
-                + metric->J(jx - 1, jy) * metric->g23()(jx - 1, jy)
+                + metric->J()(jx - 1, jy) * metric->g23()(jx - 1, jy)
                       * (var.y(jx - 1, jy, jzp) - var.y(jx - 1, jy, jzm))
-                + metric->J(jx - 1, jy) * metric->g33()(jx - 1, jy)
+                + metric->J()(jx - 1, jy) * metric->g33()(jx - 1, jy)
                       * (var.z(jx - 1, jy, jzp) - var.z(jx - 1, jy, jzm)))
                / (2. * metric->dz(jx - 1, jy));
 
         var.x(jx, jy, jz) =
-            (metric->J(jx - 2, jy) * metric->g11()(jx - 2, jy) * var.x(jx - 2, jy, jz)
+            (metric->J()(jx - 2, jy) * metric->g11()(jx - 2, jy) * var.x(jx - 2, jy, jz)
              + (metric->dx(jx - 2, jy) + metric->dx(jx - 1, jy)) * tmp)
-            / metric->J(jx, jy) * metric->g11()(jx, jy);
+            / metric->J()(jx, jy) * metric->g11()(jx, jy);
         if (mesh->xstart == 2) {
           var.x(jx + 1, jy, jz) =
-              (metric->J(jx - 3, jy) * metric->g11()(jx - 3, jy) * var.x(jx - 3, jy, jz)
+              (metric->J()(jx - 3, jy) * metric->g11()(jx - 3, jy) * var.x(jx - 3, jy, jz)
                + 4. * metric->dx(jx, jy) * tmp)
-              / metric->J(jx + 1, jy) * metric->g11()(jx + 1, jy);
+              / metric->J()(jx + 1, jy) * metric->g11()(jx + 1, jy);
         }
       }
     }

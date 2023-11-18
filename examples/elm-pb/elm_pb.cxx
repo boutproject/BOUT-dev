@@ -1039,7 +1039,7 @@ protected:
     metric->g13 = -I * metric->g11;
     metric->g23 = -Btxy / (hthe * Bpxy * Rxy);
 
-    metric->J = hthe / Bpxy;
+    metric->J() = hthe / Bpxy;
     metric->Bxy = B0;
 
     metric->g_11 = 1.0 / metric->g11 + SQ(I * Rxy);

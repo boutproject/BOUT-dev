@@ -359,7 +359,7 @@ BoutReal Vol_Integral(const Field2D& var) {
   BoutReal Int_Glb;
   Coordinates* metric = var.getCoordinates();
 
-  auto result = metric->J * var * metric->dx * metric->dy;
+  auto result = metric->J() * var * metric->dx * metric->dy;
 
   Int_Glb = Average_XY(result);
   Int_Glb *= static_cast<BoutReal>(

@@ -259,16 +259,16 @@ Field3D Div_par(const Field3D& f, const Field3D& v) {
 
         // Calculate flux at right boundary (y+1/2)
         BoutReal fluxRight =
-            fR * vR * (coord->J(i, j, k) + coord->J(i, j + 1, k))
+            fR * vR * (coord->J()(i, j, k) + coord->J()(i, j + 1, k))
             / (sqrt(coord->g_22()(i, j, k)) + sqrt(coord->g_22()(i, j + 1, k)));
 
         // Calculate at left boundary (y-1/2)
         BoutReal fluxLeft =
-            fL * vL * (coord->J(i, j, k) + coord->J(i, j - 1, k))
+            fL * vL * (coord->J()(i, j, k) + coord->J()(i, j - 1, k))
             / (sqrt(coord->g_22()(i, j, k)) + sqrt(coord->g_22()(i, j - 1, k)));
 
         result(i, j, k) =
-            (fluxRight - fluxLeft) / (coord->dy(i, j, k) * coord->J(i, j, k));
+            (fluxRight - fluxLeft) / (coord->dy(i, j, k) * coord->J()(i, j, k));
       }
     }
   }
@@ -478,7 +478,7 @@ Coordinates::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
 
   // Upwind A using these velocities
   Coordinates::FieldMetric result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
-  result /= metric->J * sqrt(metric->g_22());
+  result /= metric->J() * sqrt(metric->g_22());
 
   ASSERT1(result.getLocation() == outloc);
 
@@ -519,7 +519,7 @@ Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A, CELL_LOC outloc) 
 
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc) + VDDZ(vz, A, outloc);
 
-  result /= (metric->J * sqrt(metric->g_22()));
+  result /= (metric->J() * sqrt(metric->g_22()));
 
 #if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad(" + phi.name + "," + A.name + ")";
@@ -554,7 +554,7 @@ Field3D b0xGrad_dot_Grad(const Field3D& p, const Field2D& A, CELL_LOC outloc) {
 
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
 
-  result /= (metric->J * sqrt(metric->g_22()));
+  result /= (metric->J() * sqrt(metric->g_22()));
 
 #if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad(" + p.name + "," + A.name + ")";
@@ -595,7 +595,7 @@ Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A, CELL_LOC outloc) 
 
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc) + VDDZ(vz, A, outloc);
 
-  result /= (metric->J * sqrt(metric->g_22()));
+  result /= (metric->J() * sqrt(metric->g_22()));
 
 #if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad(" + phi.name + "," + A.name + ")";

@@ -382,7 +382,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
                          FieldMetric g_23, FieldMetric ShiftTorsion,
                          FieldMetric IntShiftTorsion)
-    : dx(std::move(dx)), dy(std::move(dy)), dz(dz), J(std::move(J)), Bxy(std::move(Bxy)),
+    : dx(std::move(dx)), dy(std::move(dy)), dz(dz), j(std::move(J)), Bxy(std::move(Bxy)),
       contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
       covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23),
       ShiftTorsion(std::move(ShiftTorsion)), IntShiftTorsion(std::move(IntShiftTorsion)),
@@ -390,7 +390,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
-      J(1., mesh), Bxy(1., mesh), contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
+      j(1., mesh), Bxy(1., mesh), contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
       covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), G1_11(mesh), G1_22(mesh),
       G1_33(mesh), G1_12(mesh), G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh),
       G2_33(mesh), G2_12(mesh), G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh),
@@ -562,28 +562,28 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   }
 
   // Attempt to read J from the grid file
-  auto Jcalc = J;
-  if (mesh->get(J, "J", 0.0, false)) {
+  auto Jcalc = j;
+  if (mesh->get(j, "J", 0.0, false)) {
     output_warn.write(
         "\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
-    J = Jcalc;
+    j = Jcalc;
   } else {
-    J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false,
+    j = interpolateAndExtrapolate(j, location, extrapolate_x, extrapolate_y, false,
                                   transform.get());
 
     // Compare calculated and loaded values
-    output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J - Jcalc)));
+    output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(j - Jcalc)));
 
-    communicate(J);
+    communicate(j);
 
     // Re-evaluate Bxy using new J
-    Bxy = sqrt(g_22) / J;
+    Bxy = sqrt(g_22) / j;
   }
 
   // Check jacobian
-  bout::checkFinite(J, "J", "RGN_NOCORNERS");
-  bout::checkPositive(J, "J", "RGN_NOCORNERS");
-  if (min(abs(J)) < 1.0e-10) {
+  bout::checkFinite(j, "J", "RGN_NOCORNERS");
+  bout::checkPositive(j, "J", "RGN_NOCORNERS");
+  if (min(abs(j)) < 1.0e-10) {
     throw BoutException("\tERROR: Jacobian becomes very small\n");
   }
 
@@ -629,7 +629,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
-      J(1., mesh), Bxy(1., mesh), contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
+      j(1., mesh), Bxy(1., mesh), contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
       covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), G1_11(mesh), G1_22(mesh),
       G1_33(mesh), G1_12(mesh), G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh),
       G2_33(mesh), G2_12(mesh), G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh),
@@ -795,27 +795,27 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     }
 
     // Attempt to read J from the grid file
-    auto Jcalc = J;
-    if (getAtLoc(mesh, J, "J", suffix, location)) {
+    auto Jcalc = j;
+    if (getAtLoc(mesh, j, "J", suffix, location)) {
       output_warn.write(
           "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
           suffix);
-      J = Jcalc;
+      j = Jcalc;
     } else {
-      J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false,
+      j = interpolateAndExtrapolate(j, location, extrapolate_x, extrapolate_y, false,
                                     transform.get());
 
       // Compare calculated and loaded values
-      output_warn.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
+      output_warn.write("\tMaximum difference in J is %e\n", max(abs(j - Jcalc)));
 
       // Re-evaluate Bxy using new J
-      Bxy = sqrt(g_22) / J;
+      Bxy = sqrt(g_22) / j;
     }
 
     // Check jacobian
-    bout::checkFinite(J, "J" + suffix, "RGN_NOCORNERS");
-    bout::checkPositive(J, "J" + suffix, "RGN_NOCORNERS");
-    if (min(abs(J)) < 1.0e-10) {
+    bout::checkFinite(j, "J" + suffix, "RGN_NOCORNERS");
+    bout::checkPositive(j, "J" + suffix, "RGN_NOCORNERS");
+    if (min(abs(j)) < 1.0e-10) {
       throw BoutException("\tERROR: Jacobian{:s} becomes very small\n", suffix);
     }
 
@@ -911,13 +911,13 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     checkContravariant();
     checkCovariant();
 
-    J = interpolateAndExtrapolate(coords_in->J, location, true, true, false,
+    j = interpolateAndExtrapolate(coords_in->J(), location, true, true, false,
                                   transform.get());
     Bxy = interpolateAndExtrapolate(coords_in->Bxy, location, true, true, false,
                                     transform.get());
 
-    bout::checkFinite(J, "The Jacobian", "RGN_NOCORNERS");
-    bout::checkPositive(J, "The Jacobian", "RGN_NOCORNERS");
+    bout::checkFinite(j, "The Jacobian", "RGN_NOCORNERS");
+    bout::checkPositive(j, "The Jacobian", "RGN_NOCORNERS");
     bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
     bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
 
@@ -992,7 +992,7 @@ void Coordinates::outputVars(Options& output_options) {
   output_options["g_23" + loc_string].force(covariantMetricTensor.Getg23(),
                                             "Coordinates");
 
-  output_options["J" + loc_string].force(J, "Coordinates");
+  output_options["J" + loc_string].force(j, "Coordinates");
   output_options["Bxy" + loc_string].force(Bxy, "Coordinates");
 
   output_options["G1" + loc_string].force(G1, "Coordinates");
@@ -1027,7 +1027,7 @@ int Coordinates::geometry(bool recalculate_staggered,
               contravariantMetricTensor.Getg23(), covariantMetricTensor.Getg11(),
               covariantMetricTensor.Getg22(), covariantMetricTensor.Getg33(),
               covariantMetricTensor.Getg12(), covariantMetricTensor.Getg13(),
-              covariantMetricTensor.Getg23(), J, Bxy);
+              covariantMetricTensor.Getg23(), j, Bxy);
 
   output_progress.write("Calculating differential geometry terms\n");
 
@@ -1048,21 +1048,21 @@ int Coordinates::geometry(bool recalculate_staggered,
   checkCovariant();
   CalculateChristoffelSymbols();
 
-  auto tmp = J * contravariantMetricTensor.Getg12();
+  auto tmp = j * contravariantMetricTensor.Getg12();
   communicate(tmp);
-  G1 = (DDX(J * contravariantMetricTensor.Getg11()) + DDY(tmp)
-        + DDZ(J * contravariantMetricTensor.Getg13()))
-       / J;
-  tmp = J * contravariantMetricTensor.Getg22();
+  G1 = (DDX(j * contravariantMetricTensor.Getg11()) + DDY(tmp)
+        + DDZ(j * contravariantMetricTensor.Getg13()))
+       / j;
+  tmp = j * contravariantMetricTensor.Getg22();
   communicate(tmp);
-  G2 = (DDX(J * contravariantMetricTensor.Getg12()) + DDY(tmp)
-        + DDZ(J * contravariantMetricTensor.Getg23()))
-       / J;
-  tmp = J * contravariantMetricTensor.Getg23();
+  G2 = (DDX(j * contravariantMetricTensor.Getg12()) + DDY(tmp)
+        + DDZ(j * contravariantMetricTensor.Getg23()))
+       / j;
+  tmp = j * contravariantMetricTensor.Getg23();
   communicate(tmp);
-  G3 = (DDX(J * contravariantMetricTensor.Getg13()) + DDY(tmp)
-        + DDZ(J * contravariantMetricTensor.Getg33()))
-       / J;
+  G3 = (DDX(j * contravariantMetricTensor.Getg13()) + DDY(tmp)
+        + DDZ(j * contravariantMetricTensor.Getg33()))
+       / j;
 
   // Communicate christoffel symbol terms
   output_progress.write("\tCommunicating connection terms\n");
@@ -1418,13 +1418,13 @@ int Coordinates::jacobian() {
   // Check that g is positive
   bout::checkPositive(g, "The determinant of g^ij", "RGN_NOBNDRY");
 
-  J = 1. / sqrt(g);
+  j = 1. / sqrt(g);
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
-  J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false,
+  j = interpolateAndExtrapolate(j, location, extrapolate_x, extrapolate_y, false,
                                 transform.get());
 
-  Bxy = sqrt(covariantMetricTensor.Getg22()) / J;
+  Bxy = sqrt(covariantMetricTensor.Getg22()) / j;
   Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
                                   transform.get());
 
@@ -1867,13 +1867,13 @@ Coordinates::FieldMetric Coordinates::Laplace_par(const Field2D& f, CELL_LOC out
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   return D2DY2(f, outloc) / covariantMetricTensor.Getg22()
-         + DDY(J / covariantMetricTensor.Getg22(), outloc) * DDY(f, outloc) / J;
+         + DDY(j / covariantMetricTensor.Getg22(), outloc) * DDY(f, outloc) / j;
 }
 
 Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
   return D2DY2(f, outloc) / covariantMetricTensor.Getg22()
-         + DDY(J / covariantMetricTensor.Getg22(), outloc) * ::DDY(f, outloc) / J;
+         + DDY(j / covariantMetricTensor.Getg22(), outloc) * ::DDY(f, outloc) / j;
 }
 
 // Full Laplacian operator on scalar field
@@ -1928,45 +1928,45 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
     // outer x boundary
     const auto outer_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xp()]); };
     const BoutReal outer_x_A = outer_x_avg(A);
-    const BoutReal outer_x_J = outer_x_avg(J);
+    const BoutReal outer_x_J = outer_x_avg(j);
     const BoutReal outer_x_g11 = outer_x_avg(contravariantMetricTensor.Getg11());
     const BoutReal outer_x_dx = outer_x_avg(dx);
     const BoutReal outer_x_value =
-        outer_x_A * outer_x_J * outer_x_g11 / (J[i] * outer_x_dx * dx[i]);
+        outer_x_A * outer_x_J * outer_x_g11 / (j[i] * outer_x_dx * dx[i]);
     result[i] += outer_x_value * (f[i.xp()] - f[i]);
 
     // inner x boundary
     const auto inner_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xm()]); };
     const BoutReal inner_x_A = inner_x_avg(A);
-    const BoutReal inner_x_J = inner_x_avg(J);
+    const BoutReal inner_x_J = inner_x_avg(j);
     const BoutReal inner_x_g11 = inner_x_avg(contravariantMetricTensor.Getg11());
     const BoutReal inner_x_dx = inner_x_avg(dx);
     const BoutReal inner_x_value =
-        inner_x_A * inner_x_J * inner_x_g11 / (J[i] * inner_x_dx * dx[i]);
+        inner_x_A * inner_x_J * inner_x_g11 / (j[i] * inner_x_dx * dx[i]);
     result[i] += inner_x_value * (f[i.xm()] - f[i]);
 
     // upper y boundary
     const auto upper_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.yp()]); };
     const BoutReal upper_y_A = upper_y_avg(A);
-    const BoutReal upper_y_J = upper_y_avg(J);
+    const BoutReal upper_y_J = upper_y_avg(j);
     const BoutReal upper_y_g_22 = upper_y_avg(covariantMetricTensor.Getg22());
     const BoutReal upper_y_g23 = upper_y_avg(covariantMetricTensor.Getg23());
     const BoutReal upper_y_g_23 = upper_y_avg(covariantMetricTensor.Getg23());
     const BoutReal upper_y_dy = upper_y_avg(dy);
     const BoutReal upper_y_value = -upper_y_A * upper_y_J * upper_y_g23 * upper_y_g_23
-                                   / (upper_y_g_22 * J[i] * upper_y_dy * dy[i]);
+                                   / (upper_y_g_22 * j[i] * upper_y_dy * dy[i]);
     result[i] += upper_y_value * (f[i.yp()] - f[i]);
 
     // lower y boundary
     const auto lower_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.ym()]); };
     const BoutReal lower_y_A = lower_y_avg(A);
-    const BoutReal lower_y_J = lower_y_avg(J);
+    const BoutReal lower_y_J = lower_y_avg(j);
     const BoutReal lower_y_g_22 = lower_y_avg(covariantMetricTensor.Getg22());
     const BoutReal lower_y_g23 = lower_y_avg(contravariantMetricTensor.Getg23());
     const BoutReal lower_y_g_23 = lower_y_avg(covariantMetricTensor.Getg23());
     const BoutReal lower_y_dy = lower_y_avg(dy);
     const BoutReal lower_y_value = -lower_y_A * lower_y_J * lower_y_g23 * lower_y_g_23
-                                   / (lower_y_g_22 * J[i] * lower_y_dy * dy[i]);
+                                   / (lower_y_g_22 * j[i] * lower_y_dy * dy[i]);
     result[i] += lower_y_value * (f[i.ym()] - f[i]);
   }
 
@@ -2060,4 +2060,7 @@ const MetricTensor::FieldMetric& Coordinates::g13() const {
 }
 const MetricTensor::FieldMetric& Coordinates::g23() const {
   return contravariantMetricTensor.Getg23();
+}
+const MetricTensor::FieldMetric Coordinates::J() const {
+  return j;
 }

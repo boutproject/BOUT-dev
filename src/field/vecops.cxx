@@ -106,10 +106,10 @@ Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc, const std::string& method)
   Vector3D result(f.getMesh());
 
   result.x = DDX(f, outloc, method)
-             - metric->g_12() * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
+             - metric->g_12() * DDY(f, outloc, method) / SQ(metric->J() * metric->Bxy);
   result.y = 0.0;
   result.z = DDZ(f, outloc, method)
-             - metric->g_23() * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
+             - metric->g_23() * DDY(f, outloc, method) / SQ(metric->J() * metric->Bxy);
 
   result.setLocation(result.x.getLocation());
 
@@ -128,9 +128,9 @@ Vector2D Grad_perp(const Field2D& f, CELL_LOC outloc, const std::string& method)
   Vector2D result(f.getMesh());
 
   result.x = DDX(f, outloc, method)
-             - metric->g_12() * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
+             - metric->g_12() * DDY(f, outloc, method) / SQ(metric->J() * metric->Bxy);
   result.y = 0.0;
-  result.z = -metric->g_23() * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
+  result.z = -metric->g_23() * DDY(f, outloc, method) / SQ(metric->J() * metric->Bxy);
 
   result.setLocation(result.x.getLocation());
 
@@ -161,10 +161,10 @@ Coordinates::FieldMetric Div(const Vector2D& v, CELL_LOC outloc,
   Vector2D vcn = v;
   vcn.toContravariant();
 
-  Coordinates::FieldMetric result = DDX(metric->J * vcn.x, outloc, method);
-  result += DDY(metric->J * vcn.y, outloc, method);
-  result += DDZ(metric->J * vcn.z, outloc, method);
-  result /= metric->J;
+  Coordinates::FieldMetric result = DDX(metric->J() * vcn.x, outloc, method);
+  result += DDY(metric->J() * vcn.y, outloc, method);
+  result += DDZ(metric->J() * vcn.z, outloc, method);
+  result /= metric->J();
 
   return result;
 }
@@ -187,7 +187,7 @@ Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method) {
   Vector3D vcn = v;
   vcn.toContravariant();
 
-  auto vcnJy = vcn.y.getCoordinates()->J * vcn.y;
+  auto vcnJy = vcn.y.getCoordinates()->J() * vcn.y;
   if (v.y.hasParallelSlices()) {
     // If v.y has parallel slices then we are using ShiftedMetric (with
     // mesh:calcParallelSlices_on_communicate=true) or FCI, so we should calculate
@@ -196,9 +196,9 @@ Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method) {
   }
   auto result = DDY(vcnJy, outloc, method);
 
-  result += DDX(vcn.x.getCoordinates()->J * vcn.x, outloc, method);
-  result += DDZ(vcn.z.getCoordinates()->J * vcn.z, outloc, method);
-  result /= metric->J;
+  result += DDX(vcn.x.getCoordinates()->J() * vcn.x, outloc, method);
+  result += DDZ(vcn.z.getCoordinates()->J() * vcn.z, outloc, method);
+  result /= metric->J();
 
   return result;
 }
@@ -226,10 +226,10 @@ Coordinates::FieldMetric Div(const Vector2D& v, const Field2D& f, CELL_LOC outlo
   vcn.toContravariant();
 
   Coordinates::FieldMetric result =
-      FDDX(vcn.x.getCoordinates()->J * vcn.x, f, outloc, method);
-  result += FDDY(vcn.y.getCoordinates()->J * vcn.y, f, outloc, method);
-  result += FDDZ(vcn.z.getCoordinates()->J * vcn.z, f, outloc, method);
-  result /= metric->J;
+      FDDX(vcn.x.getCoordinates()->J() * vcn.x, f, outloc, method);
+  result += FDDY(vcn.y.getCoordinates()->J() * vcn.y, f, outloc, method);
+  result += FDDZ(vcn.z.getCoordinates()->J() * vcn.z, f, outloc, method);
+  result /= metric->J();
 
   return result;
 }
@@ -251,10 +251,10 @@ Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
   Vector3D vcn = v;
   vcn.toContravariant();
 
-  Field3D result = FDDX(vcn.x.getCoordinates()->J * vcn.x, f, outloc, method);
-  result += FDDY(vcn.y.getCoordinates()->J * vcn.y, f, outloc, method);
-  result += FDDZ(vcn.z.getCoordinates()->J * vcn.z, f, outloc, method);
-  result /= metric->J;
+  Field3D result = FDDX(vcn.x.getCoordinates()->J() * vcn.x, f, outloc, method);
+  result += FDDY(vcn.y.getCoordinates()->J() * vcn.y, f, outloc, method);
+  result += FDDZ(vcn.z.getCoordinates()->J() * vcn.z, f, outloc, method);
+  result /= metric->J();
 
   return result;
 }
@@ -277,12 +277,12 @@ Vector2D Curl(const Vector2D& v) {
 
   // get components (curl(v))^j
   Vector2D result(localmesh);
-  result.x = (DDY(vco.z) - DDZ(vco.y)) / metric->J;
-  result.y = (DDZ(vco.x) - DDX(vco.z)) / metric->J;
-  result.z = (DDX(vco.y) - DDY(vco.x)) / metric->J;
+  result.x = (DDY(vco.z) - DDZ(vco.y)) / metric->J();
+  result.y = (DDZ(vco.x) - DDX(vco.z)) / metric->J();
+  result.z = (DDX(vco.y) - DDY(vco.x)) / metric->J();
 
   /// Coordinate torsion
-  result.z -= metric->ShiftTorsion * vco.z / metric->J;
+  result.z -= metric->ShiftTorsion * vco.z / metric->J();
 
   result.setLocation(v.getLocation());
 
@@ -305,12 +305,12 @@ Vector3D Curl(const Vector3D& v) {
 
   // get components (curl(v))^j
   Vector3D result(localmesh);
-  result.x = (DDY(vco.z) - DDZ(vco.y)) / metric->J;
-  result.y = (DDZ(vco.x) - DDX(vco.z)) / metric->J;
-  result.z = (DDX(vco.y) - DDY(vco.x)) / metric->J;
+  result.x = (DDY(vco.z) - DDZ(vco.y)) / metric->J();
+  result.y = (DDZ(vco.x) - DDX(vco.z)) / metric->J();
+  result.z = (DDX(vco.y) - DDY(vco.x)) / metric->J();
 
   // Coordinate torsion
-  result.z -= metric->ShiftTorsion * vco.z / metric->J;
+  result.z -= metric->ShiftTorsion * vco.z / metric->J();
 
   result.setLocation(v.getLocation());
 
