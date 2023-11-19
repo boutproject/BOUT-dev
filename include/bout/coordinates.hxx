@@ -270,6 +270,8 @@ private:
   void checkContravariant();
   void interpolateAndExtrapolateContravariantMetricTensor(const Coordinates* coords_in);
 
+  FieldMetric getUnaligned(const std::string& name, BoutReal default_value);
+
   MetricTensor contravariantMetricTensor;
   MetricTensor covariantMetricTensor;
 
