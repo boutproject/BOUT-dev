@@ -455,18 +455,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y, false,
                                  transform.get());
 
-  auto getUnaligned = [this](const std::string& name, BoutReal default_value) {
-    auto field = localmesh->get(name, default_value, false);
-    if (field.getDirectionY() == YDirectionType::Aligned
-        and transform->canToFromFieldAligned()) {
-      return transform->fromFieldAligned(field);
-    } else {
-      field.setDirectionY(YDirectionType::Standard);
-      return field;
-    }
-  };
 
-  auto getUnalignedAtLocation = [this, extrapolate_x, extrapolate_y, getUnaligned](
+  auto getUnalignedAtLocation = [this, extrapolate_x, extrapolate_y](
                                     const std::string& name, BoutReal default_value) {
     auto field = getUnaligned(name, default_value);
     return interpolateAndExtrapolate(field, location, extrapolate_x, extrapolate_y, false,
@@ -625,6 +615,19 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   } else {
     // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
     IntShiftTorsion = 0.;
+  }
+}
+
+Coordinates::FieldMetric Coordinates::getUnaligned(const std::string& name,
+                                                   BoutReal default_value) {
+
+  auto field = localmesh->get(name, default_value, false);
+  if (field.getDirectionY() == YDirectionType::Aligned
+      and transform->canToFromFieldAligned()) {
+    return transform->fromFieldAligned(field);
+  } else {
+    field.setDirectionY(YDirectionType::Standard);
+    return field;
   }
 }
 
