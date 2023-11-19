@@ -751,24 +751,14 @@ void Coordinates::interpolateAndExtrapolateContravariantMetricTensor(
 
   const auto region = "RGN_NOBNDRY";
 
-  FieldMetric g11, g22, g33, g12, g13, g23;
-
-  // Diagonal components of metric tensor g^{ij}
-  g11 = interpolateAndExtrapolate(coords_in->g11(), location, true, true, false,
-                                  transform.get(), region);
-  g22 = interpolateAndExtrapolate(coords_in->g22(), location, true, true, false,
-                                  transform.get(), region);
-  g33 = interpolateAndExtrapolate(coords_in->g33(), location, true, true, false,
-                                  transform.get(), region);
-
-  // Off-diagonal elements.
-  g12 = interpolateAndExtrapolate(coords_in->g12(), location, true, true, false,
-                                  transform.get(), region);
-  g13 = interpolateAndExtrapolate(coords_in->g13(), location, true, true, false,
-                                  transform.get(), region);
-  g23 = interpolateAndExtrapolate(coords_in->g23(), location, true, true, false,
-                                  transform.get(), region);
-
+  const auto components = coords_in->contravariantMetricTensor.getComponents();
+  FieldMetric components_modified[6];
+  std::transform(components.begin(), components.end(), components_modified,
+                 [this, &region](const FieldMetric component) {
+                   return interpolateAndExtrapolate(component, location, true, true,
+                                                    false, transform.get(), region);
+                 });
+  auto [g11, g22, g33, g12, g13, g23] = components_modified;
   setContravariantMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23), region);
 }
 
