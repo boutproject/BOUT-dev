@@ -169,3 +169,8 @@ MetricTensor MetricTensor::oppositeRepresentation(CELL_LOC location, Mesh* mesh,
   other_representation.setLocation(location);
   return other_representation;
 }
+
+std::vector<MetricTensor::FieldMetric> MetricTensor::getComponents() const {
+
+  return std::vector<FieldMetric>{g11, g22, g33, g12, g13, g23};
+}
