@@ -731,8 +731,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
         g_22 = getAtLoc(mesh, "g_22", suffix, location);
         g_33 = getAtLoc(mesh, "g_33", suffix, location);
         g_12 = getAtLoc(mesh, "g_12", suffix, location);
-        g_22 = getAtLoc(mesh, "g_13", suffix, location);
-        g_33 = getAtLoc(mesh, "g_23", suffix, location);
+        g_13 = getAtLoc(mesh, "g_13", suffix, location);
+        g_23 = getAtLoc(mesh, "g_23", suffix, location);
         covariantMetricTensor.setMetricTensor(
             MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
