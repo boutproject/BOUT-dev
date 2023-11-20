@@ -327,9 +327,7 @@ int getAtLoc(Mesh* mesh, Coordinates::FieldMetric& var, const std::string& name,
              const std::string& suffix, CELL_LOC location, BoutReal default_value = 0.) {
 
   checkStaggeredGet(mesh, name, suffix);
-  int result = mesh->get(var, name + suffix, default_value, false, location);
-
-  return result;
+  return mesh->get(var, name + suffix, default_value, false, location);
 }
 
 auto getAtLoc(Mesh* mesh, const std::string& name, const std::string& suffix,
@@ -455,10 +453,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y, false,
                                  transform.get());
 
-
   auto getUnalignedAtLocation = [this, extrapolate_x, extrapolate_y](
                                     const std::string& name, BoutReal default_value) {
-    auto field = getUnaligned(name, default_value);
+    auto field = getAtLocOrUnaligned(localmesh, name, default_value);
     return interpolateAndExtrapolate(field, location, extrapolate_x, extrapolate_y, false,
                                      transform.get());
   };
@@ -493,12 +490,12 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
                     source_has_component)) {
 
       FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
-      g_11 = getUnaligned("g_11", 1.0);
-      g_22 = getUnaligned("g_22", 1.0);
-      g_33 = getUnaligned("g_33", 1.0);
-      g_12 = getUnaligned("g_12", 0.0);
-      g_13 = getUnaligned("g_13", 0.0);
-      g_23 = getUnaligned("g_23", 0.0);
+      g_11 = getAtLocOrUnaligned(localmesh, "g_11", 1.0);
+      g_22 = getAtLocOrUnaligned(localmesh, "g_22", 1.0);
+      g_33 = getAtLocOrUnaligned(localmesh, "g_33", 1.0);
+      g_12 = getAtLocOrUnaligned(localmesh, "g_12", 0.0);
+      g_13 = getAtLocOrUnaligned(localmesh, "g_13", 0.0);
+      g_23 = getAtLocOrUnaligned(localmesh, "g_23", 0.0);
 
       covariantMetricTensor.setMetricTensor(
           MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
@@ -618,6 +615,17 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   }
 }
 
+Coordinates::FieldMetric Coordinates::getAtLocOrUnaligned(Mesh* mesh,
+                                                          const std::string& name,
+                                                          BoutReal default_value,
+                                                          const std::string& suffix,
+                                                          CELL_LOC cell_location) {
+  if (suffix == "") {
+    return getUnaligned(name, default_value);
+  }
+  return getAtLoc(mesh, name, suffix, cell_location, default_value);
+}
+
 Coordinates::FieldMetric Coordinates::getUnaligned(const std::string& name,
                                                    BoutReal default_value) {
 
@@ -730,12 +738,12 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                       source_has_component)) {
 
         FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
-        g_11 = getAtLoc(mesh, "g_11", suffix, location);
-        g_22 = getAtLoc(mesh, "g_22", suffix, location);
-        g_33 = getAtLoc(mesh, "g_33", suffix, location);
-        g_12 = getAtLoc(mesh, "g_12", suffix, location);
-        g_13 = getAtLoc(mesh, "g_13", suffix, location);
-        g_23 = getAtLoc(mesh, "g_23", suffix, location);
+        g_11 = getAtLocOrUnaligned(mesh, "g_11", 0.0, suffix, location);
+        g_22 = getAtLocOrUnaligned(mesh, "g_22", 0.0, suffix, location);
+        g_33 = getAtLocOrUnaligned(mesh, "g_33", 0.0, suffix, location);
+        g_12 = getAtLocOrUnaligned(mesh, "g_12", 0.0, suffix, location);
+        g_13 = getAtLocOrUnaligned(mesh, "g_13", 0.0, suffix, location);
+        g_23 = getAtLocOrUnaligned(mesh, "g_23", 0.0, suffix, location);
         covariantMetricTensor.setMetricTensor(
             MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
@@ -2069,9 +2077,5 @@ const MetricTensor::FieldMetric& Coordinates::g13() const {
 const MetricTensor::FieldMetric& Coordinates::g23() const {
   return contravariantMetricTensor.Getg23();
 }
-const MetricTensor::FieldMetric Coordinates::J() const {
-  return this_J;
-}
-const MetricTensor::FieldMetric Coordinates::Bxy() const {
-  return this_Bxy;
-}
+const MetricTensor::FieldMetric Coordinates::J() const { return this_J; }
+const MetricTensor::FieldMetric Coordinates::Bxy() const { return this_Bxy; }

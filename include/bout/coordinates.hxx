@@ -270,6 +270,11 @@ private:
   void checkContravariant();
   void interpolateAndExtrapolateContravariantMetricTensor(const Coordinates* coords_in);
 
+  FieldMetric getAtLocOrUnaligned(Mesh* mesh, const std::string& name,
+                                  BoutReal default_value = 0.,
+                                  const std::string& suffix = "",
+                                  CELL_LOC cell_location = CELL_CENTRE);
+
   FieldMetric getUnaligned(const std::string& name, BoutReal default_value);
 
   MetricTensor contravariantMetricTensor;
