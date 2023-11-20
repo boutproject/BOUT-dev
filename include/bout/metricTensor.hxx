@@ -42,6 +42,9 @@ public:
 
   std::vector<FieldMetric> getComponents() const;
 
+  MetricTensor applyToComponents(
+      const std::function<const FieldMetric(const FieldMetric)> function) const;
+
 protected:
   FieldMetric g11, g22, g33, g12, g13, g23;
 };
