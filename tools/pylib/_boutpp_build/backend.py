@@ -34,7 +34,7 @@ def getversion():
             return version
 
         _bout_previous_version = "v5.1.0"
-        _bout_next_version = "v5.2.0"
+        _bout_next_version = "v5.1.1"
 
         try:
             try:
