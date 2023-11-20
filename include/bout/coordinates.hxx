@@ -271,8 +271,10 @@ private:
   void checkCovariant();
   // check that contravariant tensors are positive (if expected) and finite (always)
   void checkContravariant();
-  void interpolateAndExtrapolateContravariantMetricTensor(const Coordinates* coords_in);
 
+  // Transforms a MetricTensor by applying the given function to every component
+  MetricTensor applyToMetricTensor(
+      const std::function<const Field2D(const FieldMetric)> function) const;
   FieldMetric getAtLocOrUnaligned(Mesh* mesh, const std::string& name,
                                   BoutReal default_value = 0.,
                                   const std::string& suffix = "",

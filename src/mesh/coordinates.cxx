@@ -464,7 +464,16 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     dz = interpolateAndExtrapolate(coords_in->dz, location, true, true, false,
                                    transform.get());
 
-    interpolateAndExtrapolateContravariantMetricTensor(coords_in);
+    std::function<const FieldMetric(const FieldMetric)>
+        interpolateAndExtrapolate_function = [this](const FieldMetric component) {
+          return interpolateAndExtrapolate(component, location, true, true, false,
+                                           transform.get());
+        };
+
+    std::basic_string<char> region = std::basic_string("RGN_NOBNDRY");
+    const auto new_metric_tensor =
+        coords_in->applyToMetricTensor(interpolateAndExtrapolate_function);
+    setContravariantMetricTensor(new_metric_tensor, region);
 
     FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
     // 3x3 matrix inversion can exaggerate small interpolation errors, so it is
@@ -746,20 +755,17 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
   }
 }
 
-void Coordinates::interpolateAndExtrapolateContravariantMetricTensor(
-    const Coordinates* coords_in) {
+MetricTensor Coordinates::applyToMetricTensor(
+    const std::function<const Field2D(const FieldMetric)> function) const {
 
-  const auto region = "RGN_NOBNDRY";
+  const auto components_in = contravariantMetricTensor.getComponents();
 
-  const auto components = coords_in->contravariantMetricTensor.getComponents();
-  FieldMetric components_modified[6];
-  std::transform(components.begin(), components.end(), components_modified,
-                 [this, &region](const FieldMetric component) {
-                   return interpolateAndExtrapolate(component, location, true, true,
-                                                    false, transform.get(), region);
-                 });
-  auto [g11, g22, g33, g12, g13, g23] = components_modified;
-  setContravariantMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23), region);
+  FieldMetric components_out[6];
+
+  std::transform(components_in.begin(), components_in.end(), components_out, function);
+  auto [g11, g22, g33, g12, g13, g23] = components_out;
+
+  return MetricTensor(g11, g22, g33, g12, g13, g23);
 }
 
 void Coordinates::outputVars(Options& output_options) {
