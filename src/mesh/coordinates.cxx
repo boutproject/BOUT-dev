@@ -471,8 +471,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
         };
 
     std::basic_string<char> region = std::basic_string("RGN_NOBNDRY");
-    const auto new_metric_tensor =
-        coords_in->applyToMetricTensor(interpolateAndExtrapolate_function);
+    const auto new_metric_tensor = coords_in->contravariantMetricTensor.applyToComponents(
+        interpolateAndExtrapolate_function);
     setContravariantMetricTensor(new_metric_tensor, region);
 
     FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
@@ -753,19 +753,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       IntShiftTorsion = 0.;
     }
   }
-}
-
-MetricTensor Coordinates::applyToMetricTensor(
-    const std::function<const Field2D(const FieldMetric)> function) const {
-
-  const auto components_in = contravariantMetricTensor.getComponents();
-
-  FieldMetric components_out[6];
-
-  std::transform(components_in.begin(), components_in.end(), components_out, function);
-  auto [g11, g22, g33, g12, g13, g23] = components_out;
-
-  return MetricTensor(g11, g22, g33, g12, g13, g23);
 }
 
 void Coordinates::outputVars(Options& output_options) {
