@@ -277,6 +277,12 @@ private:
 
   FieldMetric getUnaligned(const std::string& name, BoutReal default_value);
 
+  FieldMetric getUnalignedAtLocationAndFillGuards(
+      Mesh* mesh, const std::string& name, BoutReal default_value,
+      const std::string& suffix = "", CELL_LOC cell_location = CELL_CENTRE,
+      bool extrapolate_x = false, bool extrapolate_y = false,
+      bool no_extra_interpolate = false, ParallelTransform* pParallelTransform = nullptr);
+
   MetricTensor contravariantMetricTensor;
   MetricTensor covariantMetricTensor;
 

@@ -337,17 +337,6 @@ auto getAtLoc(Mesh* mesh, const std::string& name, const std::string& suffix,
   return mesh->get(name + suffix, default_value, false, location);
 }
 
-Coordinates::FieldMetric getAtLocAndFillGuards(Mesh* mesh, const std::string& name,
-                                               const std::string& suffix,
-                                               CELL_LOC location, BoutReal default_value,
-                                               bool extrapolate_x, bool extrapolate_y,
-                                               bool no_extra_interpolate,
-                                               ParallelTransform* pt) {
-  auto var = getAtLoc(mesh, name, suffix, location, default_value);
-  return interpolateAndExtrapolate(var, location, extrapolate_x, extrapolate_y,
-                                   no_extra_interpolate, pt);
-}
-
 std::string getLocationSuffix(CELL_LOC location) {
   switch (location) {
   case CELL_CENTRE: {
@@ -372,6 +361,44 @@ std::string getLocationSuffix(CELL_LOC location) {
 }
 
 } // anonymous namespace
+
+Coordinates::FieldMetric Coordinates::getAtLocOrUnaligned(Mesh* mesh,
+                                                          const std::string& name,
+                                                          BoutReal default_value,
+                                                          const std::string& suffix,
+                                                          CELL_LOC cell_location) {
+  if (suffix == "") {
+    return getUnaligned(name, default_value);
+  }
+  return getAtLoc(mesh, name, suffix, cell_location, default_value);
+}
+
+Coordinates::FieldMetric Coordinates::getUnaligned(const std::string& name,
+                                                   BoutReal default_value) {
+
+  auto field = localmesh->get(name, default_value, false);
+  if (field.getDirectionY() == YDirectionType::Aligned
+      and transform->canToFromFieldAligned()) {
+    return transform->fromFieldAligned(field);
+  } else {
+    field.setDirectionY(YDirectionType::Standard);
+    return field;
+  }
+}
+
+Coordinates::FieldMetric Coordinates::getUnalignedAtLocationAndFillGuards(
+    Mesh* mesh, const std::string& name, BoutReal default_value,
+    const std::string& suffix, CELL_LOC location, bool extrapolate_x, bool extrapolate_y,
+    bool no_extra_interpolate, ParallelTransform* pParallelTransform) {
+
+  auto field = getAtLocOrUnaligned(mesh, name, default_value, suffix, location);
+  if (suffix == "") {
+    no_extra_interpolate = false;
+    pParallelTransform = transform.get();
+  }
+  return interpolateAndExtrapolate(field, location, extrapolate_x, extrapolate_y,
+                                   no_extra_interpolate, pParallelTransform);
+}
 
 Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric dz,
                          FieldMetric J, FieldMetric Bxy, FieldMetric g11, FieldMetric g22,
@@ -453,24 +480,17 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y, false,
                                  transform.get());
 
-  auto getUnalignedAtLocation = [this, extrapolate_x, extrapolate_y](
-                                    const std::string& name, BoutReal default_value) {
-    auto field = getAtLocOrUnaligned(localmesh, name, default_value);
-    return interpolateAndExtrapolate(field, location, extrapolate_x, extrapolate_y, false,
-                                     transform.get());
-  };
-
   FieldMetric g11, g22, g33, g12, g13, g23;
 
   // Diagonal components of metric tensor g^{ij} (default to 1)
-  g11 = getUnalignedAtLocation("g11", 1.0);
-  g22 = getUnalignedAtLocation("g22", 1.0);
-  g33 = getUnalignedAtLocation("g33", 1.0);
+  g11 = getUnalignedAtLocationAndFillGuards(localmesh, "g11", 1.0);
+  g22 = getUnalignedAtLocationAndFillGuards(localmesh, "g22", 1.0);
+  g33 = getUnalignedAtLocationAndFillGuards(localmesh, "g33", 1.0);
 
   // Off-diagonal elements. Default to 0
-  g12 = getUnalignedAtLocation("g12", 0.0);
-  g13 = getUnalignedAtLocation("g13", 0.0);
-  g23 = getUnalignedAtLocation("g23", 0.0);
+  g12 = getUnalignedAtLocationAndFillGuards(localmesh, "g12", 0.0);
+  g13 = getUnalignedAtLocationAndFillGuards(localmesh, "g13", 0.0);
+  g23 = getUnalignedAtLocationAndFillGuards(localmesh, "g23", 0.0);
 
   setContravariantMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23));
 
@@ -552,8 +572,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   // Attempt to read J from the grid file
   auto Jcalc = this_J;
   if (mesh->get(this_J, "J", 0.0, false)) {
-    output_warn.write(
-        "\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
+    output_warn.write("\tWARNING: Jacobian 'J' not found. Calculating from "
+                      "metric tensor\n");
     this_J = Jcalc;
   } else {
     this_J = interpolateAndExtrapolate(this_J, location, extrapolate_x, extrapolate_y,
@@ -594,8 +614,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   bout::checkPositive(this_Bxy, "Bxy", "RGN_NOCORNERS");
 
   if (mesh->get(ShiftTorsion, "ShiftTorsion", 0.0, false)) {
-    output_warn.write(
-        "\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
+    output_warn.write("\tWARNING: No Torsion specified for zShift. "
+                      "Derivatives may not be correct\n");
     ShiftTorsion = 0.0;
   }
   ShiftTorsion = interpolateAndExtrapolate(ShiftTorsion, location, extrapolate_x,
@@ -612,30 +632,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   } else {
     // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
     IntShiftTorsion = 0.;
-  }
-}
-
-Coordinates::FieldMetric Coordinates::getAtLocOrUnaligned(Mesh* mesh,
-                                                          const std::string& name,
-                                                          BoutReal default_value,
-                                                          const std::string& suffix,
-                                                          CELL_LOC cell_location) {
-  if (suffix == "") {
-    return getUnaligned(name, default_value);
-  }
-  return getAtLoc(mesh, name, suffix, cell_location, default_value);
-}
-
-Coordinates::FieldMetric Coordinates::getUnaligned(const std::string& name,
-                                                   BoutReal default_value) {
-
-  auto field = localmesh->get(name, default_value, false);
-  if (field.getDirectionY() == YDirectionType::Aligned
-      and transform->canToFromFieldAligned()) {
-    return transform->fromFieldAligned(field);
-  } else {
-    field.setDirectionY(YDirectionType::Standard);
-    return field;
   }
 }
 
@@ -690,34 +686,40 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     dz = interpolateAndExtrapolate(dz, location, extrapolate_x, extrapolate_y, false,
                                    transform.get());
 
-    dx = getAtLocAndFillGuards(mesh, "dx", suffix, location, 1.0, extrapolate_x,
-                               extrapolate_y, false, transform.get());
+    dx = getUnalignedAtLocationAndFillGuards(mesh, "dx", 1.0, suffix, location,
+                                             extrapolate_x, extrapolate_y, false,
+                                             transform.get());
 
     if (mesh->periodicX) {
       communicate(dx);
     }
 
-    dy = getAtLocAndFillGuards(mesh, "dy", suffix, location, 1.0, extrapolate_x,
-                               extrapolate_y, false, transform.get());
+    dy = getUnalignedAtLocationAndFillGuards(mesh, "dy", 1.0, suffix, location,
+                                             extrapolate_x, extrapolate_y, false,
+                                             transform.get());
 
     // grid data source has staggered fields, so read instead of interpolating
     // Diagonal components of metric tensor g^{ij} (default to 1)
     //    TODO: Method `getAtLocAndFillGuards` violates command–query separation principle?
-
     FieldMetric g11, g22, g33, g12, g13, g23;
-
-    g11 = getAtLocAndFillGuards(mesh, "g11", suffix, location, 1.0, extrapolate_x,
-                                extrapolate_y, false, transform.get());
-    g22 = getAtLocAndFillGuards(mesh, "g22", suffix, location, 1.0, extrapolate_x,
-                                extrapolate_y, false, transform.get());
-    g33 = getAtLocAndFillGuards(mesh, "g33", suffix, location, 1.0, extrapolate_x,
-                                extrapolate_y, false, transform.get());
-    g12 = getAtLocAndFillGuards(mesh, "g12", suffix, location, 0.0, extrapolate_x,
-                                extrapolate_y, false, transform.get());
-    g13 = getAtLocAndFillGuards(mesh, "g13", suffix, location, 0.0, extrapolate_x,
-                                extrapolate_y, false, transform.get());
-    g23 = getAtLocAndFillGuards(mesh, "g23", suffix, location, 0.0, extrapolate_x,
-                                extrapolate_y, false, transform.get());
+    g11 = getUnalignedAtLocationAndFillGuards(mesh, "g11", 1.0, suffix, location,
+                                              extrapolate_x, extrapolate_y, false,
+                                              transform.get());
+    g22 = getUnalignedAtLocationAndFillGuards(mesh, "g22", 1.0, suffix, location,
+                                              extrapolate_x, extrapolate_y, false,
+                                              transform.get());
+    g33 = getUnalignedAtLocationAndFillGuards(mesh, "g33", 1.0, suffix, location,
+                                              extrapolate_x, extrapolate_y, false,
+                                              transform.get());
+    g12 = getUnalignedAtLocationAndFillGuards(mesh, "g12", 0.0, suffix, location,
+                                              extrapolate_x, extrapolate_y, false,
+                                              transform.get());
+    g13 = getUnalignedAtLocationAndFillGuards(mesh, "g13", 0.0, suffix, location,
+                                              extrapolate_x, extrapolate_y, false,
+                                              transform.get());
+    g23 = getUnalignedAtLocationAndFillGuards(mesh, "g23", 0.0, suffix, location,
+                                              extrapolate_x, extrapolate_y, false,
+                                              transform.get());
 
     setContravariantMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23));
 
@@ -747,9 +749,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
         covariantMetricTensor.setMetricTensor(
             MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
-        output_warn.write(
-            "\tWARNING! Staggered covariant components of metric tensor set manually. "
-            "Contravariant components NOT recalculated\n");
+        output_warn.write("\tWARNING! Staggered covariant components of "
+                          "metric tensor set manually. "
+                          "Contravariant components NOT recalculated\n");
 
       } else {
         output_warn.write(
@@ -811,9 +813,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     // Attempt to read J from the grid file
     auto Jcalc = this_J;
     if (getAtLoc(mesh, this_J, "J", suffix, location)) {
-      output_warn.write(
-          "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
-          suffix);
+      output_warn.write("\tWARNING: Jacobian 'J_{:s}' not found. Calculating "
+                        "from metric tensor\n",
+                        suffix);
       this_J = Jcalc;
     } else {
       this_J = interpolateAndExtrapolate(this_J, location, extrapolate_x, extrapolate_y,
@@ -855,8 +857,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
     checkStaggeredGet(mesh, "ShiftTorsion", suffix);
     if (mesh->get(ShiftTorsion, "ShiftTorsion" + suffix, 0.0, false)) {
-      output_warn.write(
-          "\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
+      output_warn.write("\tWARNING: No Torsion specified for zShift. "
+                        "Derivatives may not be correct\n");
       ShiftTorsion = 0.0;
     }
     ShiftTorsion.setLocation(location);
@@ -886,9 +888,10 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       dz = coords_in->dz;
       dz.setLocation(location);
     } else {
-      throw BoutException(
-          "We are asked to transform dz to get dz before we have a transform, which "
-          "might require dz!\nPlease provide a dz for the staggered quantity!");
+      throw BoutException("We are asked to transform dz to get dz before we "
+                          "have a transform, which "
+                          "might require dz!\nPlease provide a dz for the "
+                          "staggered quantity!");
     }
     setParallelTransform(options);
     dx = interpolateAndExtrapolate(coords_in->dx, location, true, true, false,
@@ -1136,8 +1139,8 @@ int Coordinates::geometry(bool recalculate_staggered,
     bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
 
     if (localmesh->get(d2x, "d2x" + suffix, 0.0, false, location)) {
-      output_warn.write(
-          "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
+      output_warn.write("\tWARNING: differencing quantity 'd2x' not found. "
+                        "Calculating from dx\n");
       d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
 
       communicate(d1_dx);
@@ -1153,8 +1156,8 @@ int Coordinates::geometry(bool recalculate_staggered,
     }
 
     if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location)) {
-      output_warn.write(
-          "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
+      output_warn.write("\tWARNING: differencing quantity 'd2y' not found. "
+                        "Calculating from dy\n");
       d1_dy = DDY(1. / dy); // d/di(1/dy)
 
       communicate(d1_dy);
@@ -1171,8 +1174,8 @@ int Coordinates::geometry(bool recalculate_staggered,
 
 #if BOUT_USE_METRIC_3D
     if (localmesh->get(d2z, "d2z" + suffix, 0.0, false)) {
-      output_warn.write(
-          "\tWARNING: differencing quantity 'd2z' not found. Calculating from dz\n");
+      output_warn.write("\tWARNING: differencing quantity 'd2z' not found. "
+                        "Calculating from dz\n");
       d1_dz = bout::derivatives::index::DDZ(1. / dz);
       communicate(d1_dz);
       d1_dz =
@@ -1190,8 +1193,8 @@ int Coordinates::geometry(bool recalculate_staggered,
 #endif
   } else {
     if (localmesh->get(d2x, "d2x", 0.0, false)) {
-      output_warn.write(
-          "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
+      output_warn.write("\tWARNING: differencing quantity 'd2x' not found. "
+                        "Calculating from dx\n");
       d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
 
       communicate(d1_dx);
@@ -1205,8 +1208,8 @@ int Coordinates::geometry(bool recalculate_staggered,
     }
 
     if (localmesh->get(d2y, "d2y", 0.0, false)) {
-      output_warn.write(
-          "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
+      output_warn.write("\tWARNING: differencing quantity 'd2y' not found. "
+                        "Calculating from dy\n");
       d1_dy = DDY(1. / dy); // d/di(1/dy)
 
       communicate(d1_dy);
@@ -1221,8 +1224,8 @@ int Coordinates::geometry(bool recalculate_staggered,
 
 #if BOUT_USE_METRIC_3D
     if (localmesh->get(d2z, "d2z", 0.0, false)) {
-      output_warn.write(
-          "\tWARNING: differencing quantity 'd2z' not found. Calculating from dz\n");
+      output_warn.write("\tWARNING: differencing quantity 'd2z' not found. "
+                        "Calculating from dz\n");
       d1_dz = bout::derivatives::index::DDZ(1. / dz);
 
       communicate(d1_dz);
