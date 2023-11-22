@@ -656,8 +656,74 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
   bool extrapolate_x = true;
   bool extrapolate_y = true;
 
-  if (!force_interpolate_from_centre && mesh->sourceHasVar("dx" + suffix)) {
+  if (force_interpolate_from_centre || !mesh->sourceHasVar("dx" + suffix))
 
+  {
+    // Interpolate fields from coords_in
+
+    if (isUniform(coords_in->dz)) {
+      dz = coords_in->dz;
+      dz.setLocation(location);
+    } else {
+      throw BoutException("We are asked to transform dz to get dz before we "
+                          "have a transform, which "
+                          "might require dz!\nPlease provide a dz for the "
+                          "staggered quantity!");
+    }
+    setParallelTransform(options);
+    dx = interpolateAndExtrapolate(coords_in->dx, location, true, true, false,
+                                   transform.get());
+    dy = interpolateAndExtrapolate(coords_in->dy, location, true, true, false,
+                                   transform.get());
+    // not really needed - we have used dz already ...
+    dz = interpolateAndExtrapolate(coords_in->dz, location, true, true, false,
+                                   transform.get());
+
+    interpolateAndExtrapolateContravariantMetricTensor(coords_in);
+
+    FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
+    // 3x3 matrix inversion can exaggerate small interpolation errors, so it is
+    // more robust to interpolate and extrapolate derived quantities directly,
+    // rather than deriving from interpolated/extrapolated covariant metric
+    // components
+    g_11 = interpolateAndExtrapolate(covariantMetricTensor.Getg11(), location, true, true,
+                                     false, transform.get());
+    g_22 = interpolateAndExtrapolate(covariantMetricTensor.Getg22(), location, true, true,
+                                     false, transform.get());
+    g_33 = interpolateAndExtrapolate(covariantMetricTensor.Getg33(), location, true, true,
+                                     false, transform.get());
+    g_12 = interpolateAndExtrapolate(covariantMetricTensor.Getg12(), location, true, true,
+                                     false, transform.get());
+    g_13 = interpolateAndExtrapolate(covariantMetricTensor.Getg13(), location, true, true,
+                                     false, transform.get());
+    g_23 = interpolateAndExtrapolate(covariantMetricTensor.Getg23(), location, true, true,
+                                     false, transform.get());
+
+    covariantMetricTensor.setMetricTensor(
+        MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+
+    // Check input metrics
+    checkContravariant();
+    checkCovariant();
+
+    this_J = interpolateAndExtrapolate(coords_in->J(), location, true, true, false,
+                                       transform.get());
+    this_Bxy = interpolateAndExtrapolate(coords_in->Bxy(), location, true, true, false,
+                                         transform.get());
+
+    bout::checkFinite(this_J, "The Jacobian", "RGN_NOCORNERS");
+    bout::checkPositive(this_J, "The Jacobian", "RGN_NOCORNERS");
+    bout::checkFinite(this_Bxy, "Bxy", "RGN_NOCORNERS");
+    bout::checkPositive(this_Bxy, "Bxy", "RGN_NOCORNERS");
+
+    ShiftTorsion = interpolateAndExtrapolate(coords_in->ShiftTorsion, location, true,
+                                             true, false, transform.get());
+
+    if (mesh->IncIntShear) {
+      IntShiftTorsion = interpolateAndExtrapolate(coords_in->IntShiftTorsion, location,
+                                                  true, true, false, transform.get());
+    }
+  } else {
     extrapolate_x = not mesh->sourceHasXBoundaryGuards();
     extrapolate_y = not mesh->sourceHasYBoundaryGuards();
 
@@ -880,71 +946,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     } else {
       // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
       IntShiftTorsion = 0.;
-    }
-  } else {
-    // Interpolate fields from coords_in
-
-    if (isUniform(coords_in->dz)) {
-      dz = coords_in->dz;
-      dz.setLocation(location);
-    } else {
-      throw BoutException("We are asked to transform dz to get dz before we "
-                          "have a transform, which "
-                          "might require dz!\nPlease provide a dz for the "
-                          "staggered quantity!");
-    }
-    setParallelTransform(options);
-    dx = interpolateAndExtrapolate(coords_in->dx, location, true, true, false,
-                                   transform.get());
-    dy = interpolateAndExtrapolate(coords_in->dy, location, true, true, false,
-                                   transform.get());
-    // not really needed - we have used dz already ...
-    dz = interpolateAndExtrapolate(coords_in->dz, location, true, true, false,
-                                   transform.get());
-
-    interpolateAndExtrapolateContravariantMetricTensor(coords_in);
-
-    FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
-    // 3x3 matrix inversion can exaggerate small interpolation errors, so it is
-    // more robust to interpolate and extrapolate derived quantities directly,
-    // rather than deriving from interpolated/extrapolated covariant metric
-    // components
-    g_11 = interpolateAndExtrapolate(covariantMetricTensor.Getg11(), location, true, true,
-                                     false, transform.get());
-    g_22 = interpolateAndExtrapolate(covariantMetricTensor.Getg22(), location, true, true,
-                                     false, transform.get());
-    g_33 = interpolateAndExtrapolate(covariantMetricTensor.Getg33(), location, true, true,
-                                     false, transform.get());
-    g_12 = interpolateAndExtrapolate(covariantMetricTensor.Getg12(), location, true, true,
-                                     false, transform.get());
-    g_13 = interpolateAndExtrapolate(covariantMetricTensor.Getg13(), location, true, true,
-                                     false, transform.get());
-    g_23 = interpolateAndExtrapolate(covariantMetricTensor.Getg23(), location, true, true,
-                                     false, transform.get());
-
-    covariantMetricTensor.setMetricTensor(
-        MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
-
-    // Check input metrics
-    checkContravariant();
-    checkCovariant();
-
-    this_J = interpolateAndExtrapolate(coords_in->J(), location, true, true, false,
-                                       transform.get());
-    this_Bxy = interpolateAndExtrapolate(coords_in->Bxy(), location, true, true, false,
-                                         transform.get());
-
-    bout::checkFinite(this_J, "The Jacobian", "RGN_NOCORNERS");
-    bout::checkPositive(this_J, "The Jacobian", "RGN_NOCORNERS");
-    bout::checkFinite(this_Bxy, "Bxy", "RGN_NOCORNERS");
-    bout::checkPositive(this_Bxy, "Bxy", "RGN_NOCORNERS");
-
-    ShiftTorsion = interpolateAndExtrapolate(coords_in->ShiftTorsion, location, true,
-                                             true, false, transform.get());
-
-    if (mesh->IncIntShear) {
-      IntShiftTorsion = interpolateAndExtrapolate(coords_in->IntShiftTorsion, location,
-                                                  true, true, false, transform.get());
     }
   }
 }
