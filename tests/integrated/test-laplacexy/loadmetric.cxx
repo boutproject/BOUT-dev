@@ -58,7 +58,7 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   coords->setContravariantMetricTensor(
       MetricTensor(g11, g22, g33, g12, g13, g23));
 
-  coords->J = hthe / Bpxy;
+  coords->setJ(hthe / Bpxy);
 
   const auto g_11 = 1.0 / coords->g11() + pow(sinty * Rxy, 2);
   const auto g_22 = pow(coords->Bxy() * hthe / Bpxy, 2);

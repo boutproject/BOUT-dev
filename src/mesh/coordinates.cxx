@@ -1879,3 +1879,13 @@ const MetricTensor::FieldMetric& Coordinates::g23() const {
 const MetricTensor::FieldMetric& Coordinates::J() const { return this_J; }
 
 const MetricTensor::FieldMetric& Coordinates::Bxy() const { return this_Bxy; }
+
+void Coordinates::setJ(FieldMetric J) {
+  //TODO: Calculate J and check value is close
+  this_J = J;
+}
+
+void Coordinates::setBxy(FieldMetric Bxy) {
+  //TODO: Calculate Bxy and check value is close
+  this_Bxy = Bxy;
+}
