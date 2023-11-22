@@ -84,8 +84,8 @@ const Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
         // this point should already be set correctly because the metric
         // components have been interpolated to here.
         if (extrap_start > 0 and f.getLocation() != location) {
-          ASSERT1(bndry->bx == 0 or localmesh->xstart > 1);
-          ASSERT1(bndry->by == 0 or localmesh->ystart > 1);
+          ASSERT1(bndry->bx == 0 or localmesh->xstart > 1)
+          ASSERT1(bndry->by == 0 or localmesh->ystart > 1)
           // note that either bx or by is >0 here
           result(bndry->x, bndry->y) =
               (9.
@@ -1365,7 +1365,7 @@ void Coordinates::setParallelTransform(Options* options) {
 Coordinates::FieldMetric Coordinates::DDX(const Field2D& f, CELL_LOC loc,
                                           const std::string& method,
                                           const std::string& region) {
-  ASSERT1(location == loc || loc == CELL_DEFAULT);
+  ASSERT1(location == loc || loc == CELL_DEFAULT)
   return bout::derivatives::index::DDX(f, loc, method, region) / dx;
 }
 Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc, const std::string& method,
@@ -1380,12 +1380,12 @@ Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc, const std::string& m
   }
 
   return result;
-};
+}
 
 Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
                                           const std::string& method,
                                           const std::string& region) const {
-  ASSERT1(location == loc || loc == CELL_DEFAULT);
+  ASSERT1(location == loc || loc == CELL_DEFAULT)
   return bout::derivatives::index::DDY(f, loc, method, region) / dy;
 }
 
@@ -1400,13 +1400,13 @@ Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& m
   }
 #endif
   return bout::derivatives::index::DDY(f, outloc, method, region) / dy;
-};
+}
 
 Coordinates::FieldMetric Coordinates::DDZ(const Field2D& f, CELL_LOC loc,
                                           const std::string& UNUSED(method),
                                           const std::string& UNUSED(region)) {
-  ASSERT1(location == loc || loc == CELL_DEFAULT);
-  ASSERT1(f.getMesh() == localmesh);
+  ASSERT1(location == loc || loc == CELL_DEFAULT)
+  ASSERT1(f.getMesh() == localmesh)
   if (loc == CELL_DEFAULT) {
     loc = f.getLocation();
   }
@@ -1415,7 +1415,7 @@ Coordinates::FieldMetric Coordinates::DDZ(const Field2D& f, CELL_LOC loc,
 Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) {
   return bout::derivatives::index::DDZ(f, outloc, method, region) / dz;
-};
+}
 
 /////////////////////////////////////////////////////////
 // Parallel gradient
@@ -1424,8 +1424,7 @@ Coordinates::FieldMetric Coordinates::Grad_par(const Field2D& var,
                                                MAYBE_UNUSED(CELL_LOC outloc),
                                                const std::string& UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
-  ASSERT1(location == outloc
-          || (outloc == CELL_DEFAULT && location == var.getLocation()));
+  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == var.getLocation()))
 
   return DDY(var) * invSg();
 }
@@ -1433,7 +1432,7 @@ Coordinates::FieldMetric Coordinates::Grad_par(const Field2D& var,
 Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
                               const std::string& method) {
   TRACE("Coordinates::Grad_par( Field3D )");
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
   return ::DDY(var, outloc, method) * invSg();
 }
@@ -1445,14 +1444,14 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
 Coordinates::FieldMetric Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
                                                     MAYBE_UNUSED(CELL_LOC outloc),
                                                     const std::string& UNUSED(method)) {
-  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
+  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()))
 
   return VDDY(v, f) * invSg();
 }
 
 Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
                                    const std::string& method) {
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
   return VDDY(v, f, outloc, method) * invSg();
 }
@@ -1463,7 +1462,7 @@ Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC 
 Coordinates::FieldMetric Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
                                               const std::string& method) {
   TRACE("Coordinates::Div_par( Field2D )");
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
   // Need Bxy at location of f, which might be different from location of this
   // Coordinates object
@@ -1475,7 +1474,7 @@ Coordinates::FieldMetric Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
 Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
                              const std::string& method) {
   TRACE("Coordinates::Div_par( Field3D )");
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
   // Need Bxy at location of f, which might be different from location of this
   // Coordinates object
@@ -1504,7 +1503,7 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
 Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outloc,
                                                  const std::string& method) {
   TRACE("Coordinates::Grad2_par2( Field2D )");
-  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
+  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()))
 
   auto result = Grad2_par2_DDY_invSg(outloc, method) * DDY(f, outloc, method)
                 + D2DY2(f, outloc, method) / covariantMetricTensor.Getg22();
@@ -1518,7 +1517,7 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
-  ASSERT1(location == outloc);
+  ASSERT1(location == outloc)
 
   Field3D result = ::DDY(f, outloc, method);
 
@@ -1526,7 +1525,7 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
 
   result = Grad2_par2_DDY_invSg(outloc, method) * result + r2;
 
-  ASSERT2(result.getLocation() == outloc);
+  ASSERT2(result.getLocation() == outloc)
 
   return result;
 }
@@ -1539,7 +1538,7 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
 Coordinates::FieldMetric Coordinates::Delp2(const Field2D& f, CELL_LOC outloc,
                                             bool UNUSED(useFFT)) {
   TRACE("Coordinates::Delp2( Field2D )");
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
   auto result =
       G1 * DDX(f, outloc) + contravariantMetricTensor.Getg11() * D2DX2(f, outloc);
@@ -1554,14 +1553,14 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
     outloc = f.getLocation();
   }
 
-  ASSERT1(location == outloc);
-  ASSERT1(f.getLocation() == outloc);
+  ASSERT1(location == outloc)
+  ASSERT1(f.getLocation() == outloc)
 
   if (localmesh->GlobalNx == 1 && localmesh->GlobalNz == 1) {
     // copy mesh, location, etc
     return f * 0;
   }
-  ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
+  ASSERT2(localmesh->xstart > 0) // Need at least one guard cell
 
   Field3D result{emptyFrom(f).setLocation(outloc)};
 
@@ -1608,9 +1607,9 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
              + contravariantMetricTensor.Getg11() * ::D2DX2(f, outloc)
              + contravariantMetricTensor.Getg33() * ::D2DZ2(f, outloc)
              + 2 * contravariantMetricTensor.Getg13() * ::D2DXDZ(f, outloc);
-  };
+  }
 
-  ASSERT2(result.getLocation() == outloc);
+  ASSERT2(result.getLocation() == outloc)
 
   return result;
 }
@@ -1622,14 +1621,14 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
     outloc = f.getLocation();
   }
 
-  ASSERT1(location == outloc);
-  ASSERT1(f.getLocation() == outloc);
+  ASSERT1(location == outloc)
+  ASSERT1(f.getLocation() == outloc)
 
   if (localmesh->GlobalNx == 1 && localmesh->GlobalNz == 1) {
     // copy mesh, location, etc
     return f * 0;
   }
-  ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
+  ASSERT2(localmesh->xstart > 0) // Need at least one guard cell
 
   FieldPerp result{emptyFrom(f).setLocation(outloc)};
 
@@ -1673,20 +1672,20 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
     // yet
     // result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * ::D2DX2(f, outloc)
     //          + g33 * ::D2DZ2(f, outloc) + 2 * g13 * ::D2DXDZ(f, outloc);
-  };
+  }
 
   return result;
 }
 
 Coordinates::FieldMetric Coordinates::Laplace_par(const Field2D& f, CELL_LOC outloc) {
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
   return D2DY2(f, outloc) / covariantMetricTensor.Getg22()
          + DDY(this_J / covariantMetricTensor.Getg22(), outloc) * DDY(f, outloc) / this_J;
 }
 
 Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
   return D2DY2(f, outloc) / covariantMetricTensor.Getg22()
          + DDY(this_J / covariantMetricTensor.Getg22(), outloc) * ::DDY(f, outloc)
                / this_J;
@@ -1698,7 +1697,7 @@ Coordinates::FieldMetric Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
                                               const std::string& dfdy_boundary_conditions,
                                               const std::string& dfdy_dy_region) {
   TRACE("Coordinates::Laplace( Field2D )");
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
   auto result = G1 * DDX(f, outloc) + G2 * DDY(f, outloc)
                 + contravariantMetricTensor.Getg11() * D2DX2(f, outloc)
@@ -1714,7 +1713,7 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
                              const std::string& dfdy_boundary_conditions,
                              const std::string& dfdy_dy_region) {
   TRACE("Coordinates::Laplace( Field3D )");
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
   Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc)
                    + contravariantMetricTensor.Getg11() * D2DX2(f, outloc)
