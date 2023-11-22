@@ -410,24 +410,24 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
                          FieldMetric g_23, FieldMetric ShiftTorsion,
                          FieldMetric IntShiftTorsion)
-    : dx(std::move(dx)), dy(std::move(dy)), dz(dz), this_J(std::move(J)),
-      this_Bxy(std::move(Bxy)), contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23),
-      ShiftTorsion(std::move(ShiftTorsion)), IntShiftTorsion(std::move(IntShiftTorsion)),
-      nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE) {}
+    : dx(std::move(dx)), dy(std::move(dy)), dz(dz), ShiftTorsion(std::move(ShiftTorsion)),
+      IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
+      location(CELL_CENTRE), contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), this_J(std::move(J)),
+      this_Bxy(std::move(Bxy)) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
-      this_J(1., mesh), this_Bxy(1., mesh),
+      G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh), G1_23(mesh),
+      G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh), G2_23(mesh),
+      G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh), G3_23(mesh),
+      G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh), IntShiftTorsion(mesh),
+      localmesh(mesh), location(loc),
       contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
-      covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), G1_11(mesh), G1_22(mesh),
-      G1_33(mesh), G1_12(mesh), G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh),
-      G2_33(mesh), G2_12(mesh), G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh),
-      G3_33(mesh), G3_12(mesh), G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh), G3(mesh),
-      ShiftTorsion(mesh), IntShiftTorsion(mesh),
+      covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
       // Identity metric tensor
-      localmesh(mesh), location(loc) {
+      this_J(1., mesh), this_Bxy(1., mesh) {
 
   if (options == nullptr) {
     options = Options::getRoot()->getSection("mesh");
