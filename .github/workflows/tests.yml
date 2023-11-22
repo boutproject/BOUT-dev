@@ -28,6 +28,7 @@ jobs:
       OMP_NUM_THREADS: ${{ matrix.config.omp_num_threads }}
       PYTHONPATH: ${{ github.workspace }}/tools/pylib
       OMPI_MCA_rmaps_base_oversubscribe: yes
+      PRTE_MCA_rmaps_default_mapping_policy: ":oversubscribe"
       MPIRUN: mpiexec -np
     strategy:
       fail-fast: true
@@ -185,9 +186,8 @@ jobs:
 
       - name: Install pip packages
         run: |
-          ./.pip_install_for_ci.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'gcovr' 'cmake' zoidberg fastcov
-          # Add the pip install location to the runner's PATH
-          echo ~/.local/bin >> $GITHUB_PATH
+          python -m pip install --upgrade pip setuptools
+          python -m pip install -r requirements.txt
 
       - name: Cache SUNDIALS build
         uses: actions/cache@v3
