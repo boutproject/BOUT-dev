@@ -390,15 +390,16 @@ Coordinates::FieldMetric Coordinates::getUnaligned(const std::string& name,
 
 Coordinates::FieldMetric Coordinates::getUnalignedAtLocationAndFillGuards(
     Mesh* mesh, const std::string& name, BoutReal default_value,
-    const std::string& suffix, CELL_LOC location, bool extrapolate_x, bool extrapolate_y,
-    bool no_extra_interpolate, ParallelTransform* pParallelTransform) {
+    const std::string& suffix, CELL_LOC cell_location, bool extrapolate_x,
+    bool extrapolate_y, bool no_extra_interpolate,
+    ParallelTransform* pParallelTransform) {
 
-  auto field = getAtLocOrUnaligned(mesh, name, default_value, suffix, location);
+  auto field = getAtLocOrUnaligned(mesh, name, default_value, suffix, cell_location);
   if (suffix == "") {
     no_extra_interpolate = false;
     pParallelTransform = transform.get();
   }
-  return interpolateAndExtrapolate(field, location, extrapolate_x, extrapolate_y,
+  return interpolateAndExtrapolate(field, cell_location, extrapolate_x, extrapolate_y,
                                    no_extra_interpolate, pParallelTransform);
 }
 
