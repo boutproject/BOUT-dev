@@ -357,7 +357,7 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   coords->setContravariantMetricTensor(
       MetricTensor(g11, g22, g33, g12, g13, g23));
 
-  coords->J = hthe / Bpxy;
+  coords->setJ(hthe / Bpxy);
 
   const auto g_11 = 1.0 / coords->g11() + SQ(sinty * Rxy);
   const auto g_22 = SQ(coords->Bxy() * hthe / Bpxy);

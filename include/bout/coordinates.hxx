@@ -119,6 +119,10 @@ public:
   void setCovariantMetricTensor(MetricTensor metric_tensor,
                                 const std::string& region = "RGN_ALL");
 
+  void setJ(FieldMetric J);
+
+  void setBxy(FieldMetric Bxy);
+
   /// Christoffel symbol of the second kind (connection coefficients)
   FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
   FieldMetric G2_11, G2_22, G2_33, G2_12, G2_13, G2_23;

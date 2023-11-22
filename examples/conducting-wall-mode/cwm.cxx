@@ -197,7 +197,7 @@ private:
     g23 = -Btxy / (hthe * Bpxy * Rxy);
     coord->setContravariantMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23));
 
-    coord->J = hthe / Bpxy;
+    coord->setJ(hthe / Bpxy);
 
     MetricTensor::FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
     g_11 = 1.0 / coord->g11() + SQ(I * Rxy);
