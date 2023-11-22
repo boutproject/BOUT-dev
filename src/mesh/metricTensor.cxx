@@ -175,6 +175,15 @@ std::vector<MetricTensor::FieldMetric> MetricTensor::getComponents() const {
   return std::vector<FieldMetric>{g11, g22, g33, g12, g13, g23};
 }
 
+void MetricTensor::map(
+    const std::function<const FieldMetric(const FieldMetric)> function) {
+
+  const auto components_out = applyToComponents(function);
+
+  auto [g_11, g_22, g_33, g_12, g_13, g_23] = components_out;
+  setMetricTensor(MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+}
+
 MetricTensor MetricTensor::applyToComponents(
     const std::function<const FieldMetric(const FieldMetric)> function) const {
 

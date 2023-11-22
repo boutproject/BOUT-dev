@@ -634,30 +634,16 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       }
     }
 
-    FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
-
     // More robust to extrapolate derived quantities directly, rather than
     // deriving from extrapolated covariant metric components
-    g_11 =
-        interpolateAndExtrapolate(covariantMetricTensor.Getg11(), location, extrapolate_x,
-                                  extrapolate_y, false, transform.get());
-    g_22 =
-        interpolateAndExtrapolate(covariantMetricTensor.Getg22(), location, extrapolate_x,
-                                  extrapolate_y, false, transform.get());
-    g_33 =
-        interpolateAndExtrapolate(covariantMetricTensor.Getg33(), location, extrapolate_x,
-                                  extrapolate_y, false, transform.get());
-    g_12 =
-        interpolateAndExtrapolate(covariantMetricTensor.Getg12(), location, extrapolate_x,
-                                  extrapolate_y, false, transform.get());
-    g_13 =
-        interpolateAndExtrapolate(covariantMetricTensor.Getg13(), location, extrapolate_x,
-                                  extrapolate_y, false, transform.get());
-    g_23 =
-        interpolateAndExtrapolate(covariantMetricTensor.Getg23(), location, extrapolate_x,
-                                  extrapolate_y, false, transform.get());
-    covariantMetricTensor.setMetricTensor(
-        MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+
+    std::function<const FieldMetric(const FieldMetric)>
+        interpolateAndExtrapolate_function =
+            [this, extrapolate_y, extrapolate_x](const FieldMetric component) {
+              return interpolateAndExtrapolate(component, location, extrapolate_x,
+                                               extrapolate_y, false, transform.get());
+            };
+    covariantMetricTensor.map(interpolateAndExtrapolate_function);
 
     // Check covariant metrics
     checkCovariant();
@@ -684,7 +670,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       communicate(this_J);
 
       // Re-evaluate Bxy using new J
-      this_Bxy = sqrt(g_22) / this_J;
+      this_Bxy = sqrt(g_22()) / this_J;
     }
 
     // Check jacobian
