@@ -440,9 +440,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
   bool extrapolate_x = true;
   bool extrapolate_y = true;
 
-  if (force_interpolate_from_centre || !mesh->sourceHasVar("dx" + suffix))
+  if (coords_in && suffix != ""
+      && (force_interpolate_from_centre || !mesh->sourceHasVar("dx" + suffix))) {
 
-  {
     // Interpolate fields from coords_in
 
     if (isUniform(coords_in->dz)) {
