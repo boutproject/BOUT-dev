@@ -471,30 +471,14 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
         };
 
     std::basic_string<char> region = std::basic_string("RGN_NOBNDRY");
-    const auto new_metric_tensor = coords_in->contravariantMetricTensor.applyToComponents(
-        interpolateAndExtrapolate_function);
-    setContravariantMetricTensor(new_metric_tensor, region);
+    const auto new_contravariant_metric_tensor =
+        coords_in->contravariantMetricTensor.applyToComponents(
+            interpolateAndExtrapolate_function);
+    setContravariantMetricTensor(new_contravariant_metric_tensor, region);
 
-    FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
-    // 3x3 matrix inversion can exaggerate small interpolation errors, so it is
-    // more robust to interpolate and extrapolate derived quantities directly,
-    // rather than deriving from interpolated/extrapolated covariant metric
-    // components
-    g_11 = interpolateAndExtrapolate(covariantMetricTensor.Getg11(), location, true, true,
-                                     false, transform.get());
-    g_22 = interpolateAndExtrapolate(covariantMetricTensor.Getg22(), location, true, true,
-                                     false, transform.get());
-    g_33 = interpolateAndExtrapolate(covariantMetricTensor.Getg33(), location, true, true,
-                                     false, transform.get());
-    g_12 = interpolateAndExtrapolate(covariantMetricTensor.Getg12(), location, true, true,
-                                     false, transform.get());
-    g_13 = interpolateAndExtrapolate(covariantMetricTensor.Getg13(), location, true, true,
-                                     false, transform.get());
-    g_23 = interpolateAndExtrapolate(covariantMetricTensor.Getg23(), location, true, true,
-                                     false, transform.get());
-
-    covariantMetricTensor.setMetricTensor(
-        MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+    const auto new_covariant_metric_tensor =
+        covariantMetricTensor.applyToComponents(interpolateAndExtrapolate_function);
+    covariantMetricTensor.setMetricTensor(new_covariant_metric_tensor);
 
     // Check input metrics
     checkContravariant();
