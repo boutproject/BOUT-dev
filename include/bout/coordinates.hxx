@@ -55,17 +55,15 @@ public:
   using FieldMetric = Field2D;
 #endif
 
-  /// Standard constructor from input
-  Coordinates(Mesh* mesh, Options* options = nullptr);
-
   /// Constructor interpolating from another Coordinates object
   /// By default attempts to read staggered Coordinates from grid data source,
   /// interpolating from CELL_CENTRE if not present. Set
   /// force_interpolate_from_centre argument to true to always interpolate
   /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
   /// would not be correct).
-  Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
-              const Coordinates* coords_in, bool force_interpolate_from_centre = false);
+  Coordinates(Mesh* mesh, Options* options = nullptr, const CELL_LOC loc = CELL_CENTRE,
+              const Coordinates* coords_in = nullptr,
+              bool force_interpolate_from_centre = false);
 
   /// A constructor useful for testing purposes. To use it, inherit
   /// from Coordinates. If \p calculate_geometry is true (default),
