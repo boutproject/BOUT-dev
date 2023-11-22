@@ -367,7 +367,7 @@ Coordinates::FieldMetric Coordinates::getAtLocOrUnaligned(Mesh* mesh,
                                                           BoutReal default_value,
                                                           const std::string& suffix,
                                                           CELL_LOC cell_location) {
-  if (suffix == "") {
+  if (cell_location == CELL_CENTRE) {
     return getUnaligned(name, default_value);
   }
   return getAtLoc(mesh, name, suffix, cell_location, default_value);
