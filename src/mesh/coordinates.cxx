@@ -1165,12 +1165,12 @@ void Coordinates::calcContravariant(const std::string& region) {
 int Coordinates::jacobian() {
   TRACE("Coordinates::jacobian");
 
-  recalculateJacobian();
-  recalculateBxy();
+  this_J = recalculateJacobian();
+  this_Bxy = recalculateBxy();
   return 0;
 }
 
-void Coordinates::recalculateJacobian() {
+MetricTensor::FieldMetric Coordinates::recalculateJacobian() {
 
   // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
   auto g = contravariantMetricTensor.Getg11() * contravariantMetricTensor.Getg22()
@@ -1187,25 +1187,25 @@ void Coordinates::recalculateJacobian() {
   // Check that g is positive
   bout::checkPositive(g, "The determinant of g^ij", "RGN_NOBNDRY");
 
-  this_J = 1. / sqrt(g);
+  const auto J = 1. / sqrt(g);
 
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
   const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
   const bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
 
-  this_J = interpolateAndExtrapolate(this_J, location, extrapolate_x, extrapolate_y,
-                                     false, transform.get());
+  return interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false,
+                                   transform.get());
 }
 
-void Coordinates::recalculateBxy() {
+MetricTensor::FieldMetric Coordinates::recalculateBxy() {
 
   const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
   const bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
 
-  this_Bxy = sqrt(covariantMetricTensor.Getg22()) / this_J;
-  this_Bxy = interpolateAndExtrapolate(this_Bxy, location, extrapolate_x, extrapolate_y,
-                                       false, transform.get());
+  const auto Bxy = sqrt(covariantMetricTensor.Getg22()) / this_J;
+  return interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
+                                   transform.get());
 }
 
 namespace {
