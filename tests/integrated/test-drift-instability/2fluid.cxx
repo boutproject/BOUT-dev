@@ -209,7 +209,7 @@ protected:
     // Normalise magnetic field
     Bpxy /= (bmag / 1.e4);
     Btxy /= (bmag / 1.e4);
-    coord->Bxy() /= (bmag / 1.e4);
+    coord->setBxy(coord->Bxy() / (bmag / 1.e4));
 
     // calculate pressures
     pei0 = (Ti0 + Te0) * Ni0;

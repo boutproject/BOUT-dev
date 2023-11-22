@@ -156,7 +156,7 @@ protected:
     // Normalise magnetic field
     Bpxy /= Bnorm;
     Btxy /= Bnorm;
-    coord->Bxy() /= Bnorm;
+    coord->setBxy(coord->Bxy() / Bnorm);
 
     // Plasma quantities
     Jpar0 /= Nenorm * Charge * Cs;
@@ -273,10 +273,10 @@ protected:
     ddt(U) = SQ(coord->Bxy()) * Grad_parP(jpar / coord_ylow->Bxy(), CELL_CENTRE);
 
     if (include_jpar0) {
-      ddt(U) -=
-          SQ(coord->Bxy()) * beta_hat
-          * interp_to(bracket(Apar + Apar_ext, Jpar0 / coord_ylow->Bxy(), BRACKET_ARAKAWA),
-                      CELL_CENTRE);
+      ddt(U) -= SQ(coord->Bxy()) * beta_hat
+                * interp_to(
+                    bracket(Apar + Apar_ext, Jpar0 / coord_ylow->Bxy(), BRACKET_ARAKAWA),
+                    CELL_CENTRE);
     }
 
     ddt(U) -= bracket(Phi0_ext, U, bm); // ExB advection
