@@ -143,7 +143,7 @@ public:
   void calcCovariant(const std::string& region = "RGN_ALL");
   /// Invert covariant metric to get contravariant components
   void calcContravariant(const std::string& region = "RGN_ALL");
-  int jacobian();                     ///< Calculate J and Bxy
+  void jacobian();                     ///< Calculate J and Bxy
   void CalculateChristoffelSymbols(); /// Calculate Christoffel symbol terms
 
   ///////////////////////////////////////////////////////////

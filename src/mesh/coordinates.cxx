@@ -646,9 +646,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     checkCovariant();
 
     /// Calculate Jacobian and Bxy
-    if (jacobian()) {
-      throw BoutException("Error in jacobian call");
-    }
+    jacobian();
 
     // Attempt to read J from the grid file
     auto Jcalc = this_J;
@@ -1162,12 +1160,15 @@ void Coordinates::calcContravariant(const std::string& region) {
       covariantMetricTensor.oppositeRepresentation(location, localmesh, region));
 }
 
-int Coordinates::jacobian() {
+void Coordinates::jacobian() {
   TRACE("Coordinates::jacobian");
-
-  this_J = recalculateJacobian();
-  this_Bxy = recalculateBxy();
-  return 0;
+  try {
+    this_J = recalculateJacobian();
+    this_Bxy = recalculateBxy();
+  } catch (BoutException&) {
+    output_error.write("\tError in jacobian call\n");
+    throw;
+  }
 }
 
 MetricTensor::FieldMetric Coordinates::recalculateJacobian() {
