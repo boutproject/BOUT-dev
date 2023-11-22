@@ -471,10 +471,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
         };
 
     std::basic_string<char> region = std::basic_string("RGN_NOBNDRY");
-    const auto new_contravariant_metric_tensor =
-        coords_in->contravariantMetricTensor.applyToComponents(
-            interpolateAndExtrapolate_function);
-    setContravariantMetricTensor(new_contravariant_metric_tensor, region);
+    setContravariantMetricTensor(coords_in->contravariantMetricTensor.applyToComponents(
+                                     interpolateAndExtrapolate_function),
+                                 region);
 
     const auto new_covariant_metric_tensor =
         covariantMetricTensor.applyToComponents(interpolateAndExtrapolate_function);
@@ -583,7 +582,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                                               extrapolate_x, extrapolate_y, false,
                                               transform.get());
 
-    setContravariantMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23));
+    contravariantMetricTensor.setMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23));
 
     // Check input metrics
     checkContravariant();
