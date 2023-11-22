@@ -290,6 +290,8 @@ private:
 
   FieldMetric this_J;
   FieldMetric this_Bxy; ///< Magnitude of B = nabla z times nabla x
+
+  void recalculateBxy(const bool extrapolate_x, const bool extrapolate_y);
 };
 
 /*

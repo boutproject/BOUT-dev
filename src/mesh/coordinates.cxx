@@ -1166,9 +1166,6 @@ int Coordinates::jacobian() {
   TRACE("Coordinates::jacobian");
   // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
 
-  const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
-  const bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
-
   auto g = contravariantMetricTensor.Getg11() * contravariantMetricTensor.Getg22()
                * contravariantMetricTensor.Getg33()
            + 2.0 * contravariantMetricTensor.Getg12() * contravariantMetricTensor.Getg13()
@@ -1184,16 +1181,25 @@ int Coordinates::jacobian() {
   bout::checkPositive(g, "The determinant of g^ij", "RGN_NOBNDRY");
 
   this_J = 1. / sqrt(g);
+
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
+
+  const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
+  const bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
+
   this_J = interpolateAndExtrapolate(this_J, location, extrapolate_x, extrapolate_y,
                                      false, transform.get());
 
+  recalculateBxy(extrapolate_x, extrapolate_y);
+
+  return 0;
+}
+
+void Coordinates::recalculateBxy(const bool extrapolate_x, const bool extrapolate_y) {
   this_Bxy = sqrt(covariantMetricTensor.Getg22()) / this_J;
   this_Bxy = interpolateAndExtrapolate(this_Bxy, location, extrapolate_x, extrapolate_y,
                                        false, transform.get());
-
-  return 0;
 }
 
 namespace {
