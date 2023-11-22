@@ -183,7 +183,7 @@ protected:
 
     Bpxy /= Bnorm;
     Btxy /= Bnorm;
-    coord->Bxy() /= Bnorm;
+    coord->setBxy(coord->Bxy() / Bnorm);
 
     // Check type of parallel transform
     std::string ptstr =

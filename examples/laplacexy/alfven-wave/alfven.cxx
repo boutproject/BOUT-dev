@@ -192,7 +192,7 @@ protected:
 
     Bpxy /= Bnorm;
     Btxy /= Bnorm;
-    coord->Bxy() /= Bnorm;
+    coord->setBxy(coord->Bxy() / Bnorm);
 
     // Calculate metric components
     sinty = 0.0; // I disappears from metric for shifted coordinates

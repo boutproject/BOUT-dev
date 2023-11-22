@@ -181,7 +181,7 @@ private:
     // Normalise magnetic field
     Bpxy /= (bmag / 1.e4);
     Btxy /= (bmag / 1.e4);
-    coord->Bxy() /= (bmag / 1.e4);
+    coord->setBxy(coord->Bxy() / (bmag / 1.e4));
 
     // Set nu
     nu = nu_hat * Ni0 / pow(Te0, 1.5);
