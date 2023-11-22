@@ -1885,6 +1885,11 @@ void Coordinates::setJ(FieldMetric J) {
   this_J = J;
 }
 
+void Coordinates::setJ(BoutReal value, int x, int y) {
+  //TODO: Calculate Bxy and check value is close
+  this_J(x, y) = value;
+}
+
 void Coordinates::setBxy(FieldMetric Bxy) {
   //TODO: Calculate Bxy and check value is close
   this_Bxy = Bxy;
