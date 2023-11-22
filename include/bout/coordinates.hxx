@@ -120,6 +120,7 @@ public:
                                 const std::string& region = "RGN_ALL");
 
   void setJ(FieldMetric J);
+  void setJ(BoutReal value, int x, int y);
 
   void setBxy(FieldMetric Bxy);
 

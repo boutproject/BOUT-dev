@@ -212,7 +212,7 @@ int main(int argc, char** argv) {
         double yn = (double(y) + 0.5) / double(mesh->yend + 1);
 
         coord->dy(x, y) = 1. - 0.9 * yn;
-        coord->J(x, y) = (1. + yn * yn);
+        coord->setJ((1. + yn * yn), x, y);
       }
     }
 
@@ -229,7 +229,7 @@ int main(int argc, char** argv) {
     EXPECT_FALSE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"));
 
     const Field2D dy = coord->dy;
-    const Field2D J = coord->J;
+    const Field2D J = coord->J();
 
     // Integrate Div(q) over domain
     BoutReal q_sh = 0.0;
