@@ -1876,5 +1876,6 @@ const MetricTensor::FieldMetric& Coordinates::g13() const {
 const MetricTensor::FieldMetric& Coordinates::g23() const {
   return contravariantMetricTensor.Getg23();
 }
-const MetricTensor::FieldMetric Coordinates::J() const { return this_J; }
-const MetricTensor::FieldMetric Coordinates::Bxy() const { return this_Bxy; }
+const MetricTensor::FieldMetric& Coordinates::J() const { return this_J; }
+
+const MetricTensor::FieldMetric& Coordinates::Bxy() const { return this_Bxy; }
