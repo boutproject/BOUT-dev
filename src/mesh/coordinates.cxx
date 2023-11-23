@@ -475,9 +475,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                                      interpolateAndExtrapolate_function),
                                  region);
 
-    const auto new_covariant_metric_tensor =
-        covariantMetricTensor.applyToComponents(interpolateAndExtrapolate_function);
-    covariantMetricTensor.setMetricTensor(new_covariant_metric_tensor);
+    covariantMetricTensor.setMetricTensor(
+        covariantMetricTensor.applyToComponents(interpolateAndExtrapolate_function));
 
     // Check input metrics
     checkContravariant();
