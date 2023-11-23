@@ -341,6 +341,8 @@ set(BOUT_SOURCES
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
         src/mesh/metricTensor.cxx
         include/bout/metricTensor.hxx
+        include/bout/geometry.hxx
+        src/mesh/geometry.cxx
 )
 
 

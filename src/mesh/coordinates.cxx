@@ -412,22 +412,18 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric IntShiftTorsion)
     : dx(std::move(dx)), dy(std::move(dy)), dz(dz), ShiftTorsion(std::move(ShiftTorsion)),
       IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE), contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), this_J(std::move(J)),
-      this_Bxy(std::move(Bxy)) {}
+      location(CELL_CENTRE), geometry(Geometry(J, Bxy, g11, g22, g33, g12, g13, g23, g_11,
+                                               g_22, g_33, g_12, g_13, g_23)) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
-      G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh), G1_23(mesh),
-      G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh), G2_23(mesh),
-      G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh), G3_23(mesh),
-      G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh), IntShiftTorsion(mesh),
-      localmesh(mesh), location(loc),
-      contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
-      covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
-      // Identity metric tensor
-      this_J(1., mesh), this_Bxy(1., mesh) {
+      //      G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh), G1_23(mesh),
+      //      G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh), G2_23(mesh),
+      //      G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh), G3_23(mesh),
+      //      G1(mesh), G2(mesh), G3(mesh),
+      ShiftTorsion(mesh), IntShiftTorsion(mesh), localmesh(mesh), location(loc),
+      geometry(Geometry(mesh, loc)) {
 
   if (options == nullptr) {
     options = Options::getRoot()->getSection("mesh");
@@ -780,9 +776,9 @@ const Field2D& Coordinates::zlength() const {
   return *zlength_cache;
 }
 
-int Coordinates::geometry(bool recalculate_staggered,
-                          bool force_interpolate_from_centre) {
-  TRACE("Coordinates::geometry");
+int Coordinates::calculateGeometry(bool recalculate_staggered,
+                                   bool force_interpolate_from_centre) {
+  TRACE("Coordinates::calculateGeometry");
 
   communicate(dx, dy, dz, contravariantMetricTensor.Getg11(),
               contravariantMetricTensor.Getg22(), contravariantMetricTensor.Getg33(),
@@ -792,7 +788,7 @@ int Coordinates::geometry(bool recalculate_staggered,
               covariantMetricTensor.Getg12(), covariantMetricTensor.Getg13(),
               covariantMetricTensor.Getg23(), this_J, this_Bxy);
 
-  output_progress.write("Calculating differential geometry terms\n");
+  output_progress.write("Calculating differential calculateGeometry terms\n");
 
   if (min(abs(dx)) < 1e-8) {
     throw BoutException("dx magnitude less than 1e-8");
@@ -1151,13 +1147,13 @@ void Coordinates::CalculateChristoffelSymbols() {
 void Coordinates::calcCovariant(const std::string& region) {
   TRACE("Coordinates::calcCovariant");
   covariantMetricTensor.setMetricTensor(
-      contravariantMetricTensor.oppositeRepresentation(location, region));
+      contravariantMetricTensor.oppositeRepresentation(location, localmesh, region));
 }
 
 void Coordinates::calcContravariant(const std::string& region) {
   TRACE("Coordinates::calcContravariant");
   contravariantMetricTensor.setMetricTensor(
-      covariantMetricTensor.oppositeRepresentation(location, region));
+      covariantMetricTensor.oppositeRepresentation(location, localmesh, region));
 }
 
 void Coordinates::jacobian() {
@@ -1172,7 +1168,6 @@ void Coordinates::jacobian() {
 }
 
 MetricTensor::FieldMetric Coordinates::recalculateJacobian() {
-
   // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
   auto g = contravariantMetricTensor.Getg11() * contravariantMetricTensor.Getg22()
                * contravariantMetricTensor.Getg33()
@@ -1200,7 +1195,6 @@ MetricTensor::FieldMetric Coordinates::recalculateJacobian() {
 }
 
 MetricTensor::FieldMetric Coordinates::recalculateBxy() {
-
   const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
   const bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
 
@@ -1241,7 +1235,6 @@ void fixZShiftGuards(Field2D& zShift) {
 } // namespace
 
 void Coordinates::setParallelTransform(Options* options) {
-
   auto ptoptions = options->getSection("paralleltransform");
 
   std::string ptstr;
@@ -1333,7 +1326,6 @@ Coordinates::FieldMetric Coordinates::DDX(const Field2D& f, CELL_LOC loc,
 }
 Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) {
-
   auto result = bout::derivatives::index::DDX(f, outloc, method, region);
   result /= dx;
 
@@ -1782,24 +1774,20 @@ Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) co
   return *Grad2_par2_DDY_invSgCache[method];
 }
 
-void Coordinates::checkCovariant() { covariantMetricTensor.check(localmesh->ystart); }
+void Coordinates::checkCovariant() { return geometry.checkCovariant(localmesh->ystart); }
 
-void Coordinates::checkContravariant() {
-  contravariantMetricTensor.check(localmesh->ystart);
-}
+void Coordinates::checkContravariant() { geometry.checkContravariant(localmesh->ystart); }
 
 void Coordinates::setContravariantMetricTensor(MetricTensor metric_tensor,
                                                const std::string& region) {
-  contravariantMetricTensor.setMetricTensor(metric_tensor);
-  covariantMetricTensor.setMetricTensor(
-      contravariantMetricTensor.oppositeRepresentation(location, region));
+  geometry.setContravariantMetricTensor(metric_tensor, localmesh, region);
 }
 
 void Coordinates::setCovariantMetricTensor(MetricTensor metric_tensor,
                                            const std::string& region) {
   covariantMetricTensor.setMetricTensor(metric_tensor);
   contravariantMetricTensor.setMetricTensor(
-      covariantMetricTensor.oppositeRepresentation(location, region));
+      covariantMetricTensor.oppositeRepresentation(location, localmesh, region));
 }
 
 const MetricTensor::FieldMetric& Coordinates::g_11() const {
