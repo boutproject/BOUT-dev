@@ -33,6 +33,7 @@
 #ifndef BOUT_COORDINATES_H
 #define BOUT_COORDINATES_H
 
+#include "geometry.hxx"
 #include "metricTensor.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
@@ -44,8 +45,6 @@ class Mesh;
 
 /*!
  * Represents a coordinate system, and associated operators
- *
- * This is a container for a collection of metric tensor components
  */
 class Coordinates {
 public:
@@ -247,6 +246,7 @@ private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
   CELL_LOC location;
+  Geometry geometry;
 
   /// Handles calculation of yup and ydown
   std::unique_ptr<ParallelTransform> transform{nullptr};
@@ -285,11 +285,11 @@ private:
       bool extrapolate_x = false, bool extrapolate_y = false,
       bool no_extra_interpolate = false, ParallelTransform* pParallelTransform = nullptr);
 
-  MetricTensor contravariantMetricTensor;
-  MetricTensor covariantMetricTensor;
+  //  MetricTensor contravariantMetricTensor;
+  //  MetricTensor covariantMetricTensor;
 
-  FieldMetric this_J;
-  FieldMetric this_Bxy; ///< Magnitude of B = nabla z times nabla x
+  //  FieldMetric this_J;
+  //  FieldMetric this_Bxy; ///< Magnitude of B = nabla z times nabla x
 
   FieldMetric recalculateJacobian();
   FieldMetric recalculateBxy();
