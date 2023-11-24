@@ -870,12 +870,9 @@ Geometry::Geometry(Mesh* mesh, const CELL_LOC cell_location)
 //        covariantMetricTensor.oppositeRepresentation(location, localmesh, region));
 //  }
 //
-void Geometry::jacobian() {
+void Geometry::jacobian(bool extrapolate_x, bool extrapolate_y) {
   TRACE("Geometry::jacobian");
   try {
-    const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
-    const bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
-
     this_J = recalculateJacobian(extrapolate_x, extrapolate_y);
     this_Bxy = recalculateBxy(extrapolate_x, extrapolate_y);
   } catch (BoutException&) {

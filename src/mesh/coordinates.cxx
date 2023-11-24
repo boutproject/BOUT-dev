@@ -1059,13 +1059,11 @@ void Coordinates::calcContravariant(const std::string& region) {
 
 void Coordinates::jacobian() {
   TRACE("Coordinates::jacobian");
-  try {
-    this_J = recalculateJacobian();
-    this_Bxy = recalculateBxy();
-  } catch (BoutException&) {
-    output_error.write("\tError in jacobian call\n");
-    throw;
-  }
+
+  const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
+  const bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
+
+  geometry.jacobian(extrapolate_x, extrapolate_y);
 }
 
 MetricTensor::FieldMetric Coordinates::recalculateJacobian() {
