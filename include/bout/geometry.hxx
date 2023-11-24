@@ -89,6 +89,9 @@ public:
   const FieldMetric& g13() const;
   const FieldMetric& g23() const;
 
+  MetricTensor& getContravariantMetricTensor();
+  //  MetricTensor& getCovariantMetricTensor();
+
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
   const FieldMetric& J() const;
 
@@ -120,6 +123,12 @@ public:
 
   // check that contravariant tensors are positive (if expected) and finite (always)
   void checkContravariant(int ystart);
+
+  void applyToContravariantMetricTensor(
+      std::function<const FieldMetric(const FieldMetric)> function);
+
+  void applyToCovariantMetricTensor(
+      std::function<const FieldMetric(const FieldMetric)> function);
 
 private:
   //  Coordinates& coordinates;

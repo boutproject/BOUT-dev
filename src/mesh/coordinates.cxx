@@ -343,26 +343,25 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                                                       false, transform.get());
         };
 
-    std::basic_string<char> region = std::basic_string("RGN_NOBNDRY");
-    setContravariantMetricTensor(coords_in->contravariantMetricTensor.applyToComponents(
-                                     interpolateAndExtrapolate_function),
-                                 region);
+    const auto region = std::basic_string("RGN_NOBNDRY");
+    setContravariantMetricTensor(coords_in->getContravariantMetricTensor(), region);
 
-    covariantMetricTensor.map(interpolateAndExtrapolate_function);
+    geometry.applyToContravariantMetricTensor(interpolateAndExtrapolate_function);
+    geometry.applyToCovariantMetricTensor(interpolateAndExtrapolate_function);
 
     // Check input metrics
     checkContravariant();
     checkCovariant();
 
-    this_J = localmesh->interpolateAndExtrapolate(coords_in->J(), location, true, true,
-                                                  false, transform.get());
-    this_Bxy = localmesh->interpolateAndExtrapolate(coords_in->Bxy(), location, true,
-                                                    true, false, transform.get());
+    geometry.setJ(localmesh->interpolateAndExtrapolate(coords_in->J(), location, true,
+                                                       true, false, transform.get()));
+    geometry.setBxy(localmesh->interpolateAndExtrapolate(coords_in->Bxy(), location, true,
+                                                         true, false, transform.get()));
 
-    bout::checkFinite(this_J, "The Jacobian", "RGN_NOCORNERS");
-    bout::checkPositive(this_J, "The Jacobian", "RGN_NOCORNERS");
-    bout::checkFinite(this_Bxy, "Bxy", "RGN_NOCORNERS");
-    bout::checkPositive(this_Bxy, "Bxy", "RGN_NOCORNERS");
+    bout::checkFinite(geometry.J(), "The Jacobian", "RGN_NOCORNERS");
+    bout::checkPositive(geometry.J(), "The Jacobian", "RGN_NOCORNERS");
+    bout::checkFinite(geometry.Bxy(), "Bxy", "RGN_NOCORNERS");
+    bout::checkPositive(geometry.Bxy(), "Bxy", "RGN_NOCORNERS");
 
     ShiftTorsion = localmesh->interpolateAndExtrapolate(
         coords_in->ShiftTorsion, location, true, true, false, transform.get());
@@ -1745,4 +1744,8 @@ void Coordinates::setJ(BoutReal value, int x, int y) {
 void Coordinates::setBxy(FieldMetric Bxy) {
   //TODO: Calculate Bxy and check value is close
   this_Bxy = Bxy;
+}
+
+MetricTensor& Coordinates::getContravariantMetricTensor() const {
+  return geometry.getContravariantMetricTensor();
 }

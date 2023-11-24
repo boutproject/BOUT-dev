@@ -135,6 +135,8 @@ public:
 
   FieldMetric IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
 
+  MetricTensor& getContravariantMetricTensor() const;
+
   /// Calculate differential geometry quantities from the metric tensor
   int calculateGeometry(bool recalculate_staggered = true,
                         bool force_interpolate_from_centre = false);
@@ -157,7 +159,7 @@ public:
 
   /// Return the parallel transform
   ParallelTransform& getParallelTransform() {
-    ASSERT1(transform != nullptr);
+    ASSERT1(transform != nullptr)
     return *transform;
   }
 
