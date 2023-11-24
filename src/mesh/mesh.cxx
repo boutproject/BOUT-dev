@@ -11,6 +11,128 @@
 #include <bout/output.hxx>
 
 #include "impls/bout/boutmesh.hxx"
+#include "bout/interpolation.hxx"
+
+/// Interpolate a Field2D to a new CELL_LOC with interp_to.
+/// Communicates to set internal guard cells.
+/// Boundary guard cells are set by extrapolating from the grid, like
+/// 'free_o3' boundary conditions
+/// Corner guard cells are set to BoutNaN
+const Field2D Mesh::interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
+                                              bool extrapolate_x, bool extrapolate_y,
+                                              bool no_extra_interpolate,
+                                              ParallelTransform* UNUSED(pt),
+                                              const std::string& region) {
+
+  Field2D result = interp_to(f, location, region);
+  // Ensure result's data is unique. Otherwise result might be a duplicate of
+  // f (if no interpolation is needed, e.g. if interpolation is in the
+  // z-direction); then f would be communicated. Since this function is used
+  // on geometrical quantities that might not be periodic in y even on closed
+  // field lines (due to dependence on integrated shear), we don't want to
+  // communicate f. We will sort out result's boundary guard cells below, but
+  // not f's so we don't want to change f.
+  result.allocate();
+  communicate(result);
+
+  // Extrapolate into boundaries (if requested) so that differential geometry
+  // terms can be interpolated if necessary
+  // Note: cannot use applyBoundary("free_o3") here because applyBoundary()
+  // would try to create a new Coordinates object since we have not finished
+  // initializing yet, leading to an infinite recursion.
+  // Also, here we interpolate for the boundary points at xstart/ystart and
+  // (xend+1)/(yend+1) instead of extrapolating.
+  for (auto& bndry : getBoundaries()) {
+    if ((extrapolate_x and bndry->bx != 0) or (extrapolate_y and bndry->by != 0)) {
+      int extrap_start = 0;
+      if (not no_extra_interpolate) {
+        // Can use no_extra_interpolate argument to skip the extra interpolation when we
+        // want to extrapolate the Christoffel symbol terms which come from derivatives so
+        // don't have the extra point set already
+        if ((location == CELL_XLOW) && (bndry->bx > 0)) {
+          extrap_start = 1;
+        } else if ((location == CELL_YLOW) && (bndry->by > 0)) {
+          extrap_start = 1;
+        }
+      }
+      for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
+        // interpolate extra boundary point that is missed by interp_to, if
+        // necessary.
+        // Only interpolate this point if we are actually changing location. E.g.
+        // when we use this function to extrapolate J and Bxy on staggered grids,
+        // this point should already be set correctly because the metric
+        // components have been interpolated to here.
+        if (extrap_start > 0 and f.getLocation() != location) {
+          ASSERT1(bndry->bx == 0 or xstart > 1)
+          ASSERT1(bndry->by == 0 or ystart > 1)
+          // note that either bx or by is >0 here
+          result(bndry->x, bndry->y) =
+              (9.
+                   * (f(bndry->x - bndry->bx, bndry->y - bndry->by)
+                      + f(bndry->x, bndry->y))
+               - f(bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by)
+               - f(bndry->x + bndry->bx, bndry->y + bndry->by))
+              / 16.;
+        }
+
+        // set boundary guard cells
+        if ((bndry->bx != 0 && GlobalNx - 2 * bndry->width >= 3)
+            || (bndry->by != 0 && GlobalNy - numberOfYBoundaries() * bndry->width >= 3)) {
+          if (bndry->bx != 0 && LocalNx == 1 && bndry->width == 1) {
+            throw BoutException(
+                "Not enough points in the x-direction on this "
+                "processor for extrapolation needed to use staggered grids. "
+                "Increase number of x-guard cells MXG or decrease number of "
+                "processors in the x-direction NXPE.");
+          }
+          if (bndry->by != 0 && LocalNy == 1 && bndry->width == 1) {
+            throw BoutException(
+                "Not enough points in the y-direction on this "
+                "processor for extrapolation needed to use staggered grids. "
+                "Increase number of y-guard cells MYG or decrease number of "
+                "processors in the y-direction NYPE.");
+          }
+          // extrapolate into boundary guard cells if there are enough grid points
+          for (int i = extrap_start; i < bndry->width; i++) {
+            int xi = bndry->x + i * bndry->bx;
+            int yi = bndry->y + i * bndry->by;
+            result(xi, yi) = 3.0 * result(xi - bndry->bx, yi - bndry->by)
+                             - 3.0 * result(xi - 2 * bndry->bx, yi - 2 * bndry->by)
+                             + result(xi - 3 * bndry->bx, yi - 3 * bndry->by);
+          }
+        } else {
+          // not enough grid points to extrapolate, set equal to last grid point
+          for (int i = extrap_start; i < bndry->width; i++) {
+            result(bndry->x + i * bndry->bx, bndry->y + i * bndry->by) =
+                result(bndry->x - bndry->bx, bndry->y - bndry->by);
+          }
+        }
+      }
+    }
+  }
+#if CHECK > 0
+  if (not(
+          // if include_corner_cells=true, then we extrapolate valid data into the
+          // corner cells if they are not already filled
+          include_corner_cells
+
+          // if we are not extrapolating at all, the corner cells should contain valid
+          // data
+          or (not extrapolate_x and not extrapolate_y))) {
+    // Invalidate corner guard cells
+    for (int i = 0; i < xstart; i++) {
+      for (int j = 0; j < ystart; j++) {
+        result(i, j) = BoutNaN;
+        result(i, LocalNy - 1 - j) = BoutNaN;
+        result(LocalNx - 1 - i, j) = BoutNaN;
+        result(LocalNx - 1 - i, LocalNy - 1 - j) = BoutNaN;
+      }
+    }
+  }
+#endif
+
+  return result;
+}
 
 MeshFactory::ReturnType MeshFactory::create(Options* options,
                                             GridDataSource* source) const {

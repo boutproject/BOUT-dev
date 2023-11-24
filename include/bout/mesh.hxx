@@ -199,7 +199,7 @@ public:
   ///
   /// @returns the value. Will be allocated if needed
   Coordinates::FieldMetric get(const std::string& name, BoutReal def = 0.0,
-          bool communicate = true, CELL_LOC location = CELL_DEFAULT);
+                               bool communicate = true, CELL_LOC location = CELL_DEFAULT);
 
   /// Get a Field3D from the input source
   ///
@@ -828,6 +828,17 @@ public:
     ASSERT1(RegionID.has_value());
     return region3D[RegionID.value()];
   }
+
+  /// Interpolate a Field2D to a new CELL_LOC with interp_to.
+  /// Communicates to set internal guard cells.
+  /// Boundary guard cells are set by extrapolating from the grid, like
+  /// 'free_o3' boundary conditions
+  /// Corner guard cells are set to BoutNaN
+  const Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
+                                          bool extrapolate_x, bool extrapolate_y,
+                                          bool no_extra_interpolate,
+                                          ParallelTransform* UNUSED(pt) = nullptr,
+                                          const std::string& region = "RGN_NOBNDRY");
 
 private:
   /// Allocates default Coordinates objects
