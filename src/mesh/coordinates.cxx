@@ -1151,13 +1151,13 @@ void Coordinates::CalculateChristoffelSymbols() {
 void Coordinates::calcCovariant(const std::string& region) {
   TRACE("Coordinates::calcCovariant");
   covariantMetricTensor.setMetricTensor(
-      contravariantMetricTensor.oppositeRepresentation(location, localmesh, region));
+      contravariantMetricTensor.oppositeRepresentation(location, region));
 }
 
 void Coordinates::calcContravariant(const std::string& region) {
   TRACE("Coordinates::calcContravariant");
   contravariantMetricTensor.setMetricTensor(
-      covariantMetricTensor.oppositeRepresentation(location, localmesh, region));
+      covariantMetricTensor.oppositeRepresentation(location, region));
 }
 
 void Coordinates::jacobian() {
@@ -1792,14 +1792,14 @@ void Coordinates::setContravariantMetricTensor(MetricTensor metric_tensor,
                                                const std::string& region) {
   contravariantMetricTensor.setMetricTensor(metric_tensor);
   covariantMetricTensor.setMetricTensor(
-      contravariantMetricTensor.oppositeRepresentation(location, localmesh, region));
+      contravariantMetricTensor.oppositeRepresentation(location, region));
 }
 
 void Coordinates::setCovariantMetricTensor(MetricTensor metric_tensor,
                                            const std::string& region) {
   covariantMetricTensor.setMetricTensor(metric_tensor);
   contravariantMetricTensor.setMetricTensor(
-      covariantMetricTensor.oppositeRepresentation(location, localmesh, region));
+      covariantMetricTensor.oppositeRepresentation(location, region));
 }
 
 const MetricTensor::FieldMetric& Coordinates::g_11() const {
