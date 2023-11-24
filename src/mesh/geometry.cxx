@@ -1567,3 +1567,19 @@ void Geometry::setBxy(FieldMetric Bxy) {
   //TODO: Calculate Bxy and check value is close
   this_Bxy = Bxy;
 }
+
+MetricTensor& Geometry::getContravariantMetricTensor() {
+  return contravariantMetricTensor;
+}
+
+void Geometry::applyToContravariantMetricTensor(
+    std::function<const FieldMetric(const FieldMetric)> function) {
+  contravariantMetricTensor.map(function);
+}
+
+void Geometry::applyToCovariantMetricTensor(
+    std::function<const FieldMetric(const FieldMetric)> function) {
+  covariantMetricTensor.map(function);
+}
+
+//MetricTensor& Geometry::getCovariantMetricTensor() { return covariantMetricTensor; }
