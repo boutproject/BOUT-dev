@@ -96,20 +96,20 @@ public:
   const FieldMetric& Bxy() const;
 
   void setContravariantMetricTensor(MetricTensor metric_tensor, CELL_LOC cell_location,
-                                    Mesh* mesh, const std::string& region = "RGN_ALL");
+                                    const std::string& region = "RGN_ALL");
 
   void setCovariantMetricTensor(MetricTensor metric_tensor, CELL_LOC cell_location,
-                                Mesh* mesh, const std::string& region = "RGN_ALL");
+                                const std::string& region = "RGN_ALL");
 
   void setJ(FieldMetric J);
   void setJ(BoutReal value, int x, int y);
 
   void setBxy(FieldMetric Bxy);
 
-  void calcCovariant(const std::string& region = "RGN_ALL");
+  //  void calcCovariant(const std::string& region = "RGN_ALL");
 
-  /// Invert covariant metric to get contravariant components
-  void calcContravariant(const std::string& region = "RGN_ALL");
+  //  /// Invert covariant metric to get contravariant components
+  //  void calcContravariant(const std::string& region = "RGN_ALL");
 
   void jacobian(); ///< Calculate J and Bxy
 
@@ -133,8 +133,8 @@ private:
   FieldMetric this_J;
   FieldMetric this_Bxy; ///< Magnitude of B = nabla z times nabla x
 
-  //  FieldMetric recalculateJacobian();
-  //  FieldMetric recalculateBxy();
+  FieldMetric recalculateJacobian(bool extrapolate_x, bool extrapolate_y);
+  FieldMetric recalculateBxy(bool extrapolate_x, bool extrapolate_y);
 
   //  template <typename T, typename... Ts>
   //  void communicate(T& t, Ts... ts);
