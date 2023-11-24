@@ -137,13 +137,13 @@ public:
   FieldMetric IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
 
   /// Calculate differential geometry quantities from the metric tensor
-  int geometry(bool recalculate_staggered = true,
-               bool force_interpolate_from_centre = false);
+  int calculateGeometry(bool recalculate_staggered = true,
+                        bool force_interpolate_from_centre = false);
   /// Invert contravariant metric to get covariant components
   void calcCovariant(const std::string& region = "RGN_ALL");
   /// Invert covariant metric to get contravariant components
   void calcContravariant(const std::string& region = "RGN_ALL");
-  void jacobian();                     ///< Calculate J and Bxy
+  void jacobian();                    ///< Calculate J and Bxy
   void CalculateChristoffelSymbols(); /// Calculate Christoffel symbol terms
 
   ///////////////////////////////////////////////////////////
@@ -252,7 +252,7 @@ private:
   std::unique_ptr<ParallelTransform> transform{nullptr};
 
   /// Cache variable for `zlength`. Invalidated when
-  /// `Coordinates::geometry` is called
+  /// `Coordinates::calculateGeometry` is called
   mutable std::unique_ptr<Field2D> zlength_cache{nullptr};
 
   /// Cache variable for Grad2_par2

@@ -222,7 +222,7 @@ protected:
     g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
     coord->setCovariantMetricTensor(MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
-    coord->geometry();
+    coord->calculateGeometry();
   }
 };
 

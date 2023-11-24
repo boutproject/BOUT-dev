@@ -777,7 +777,7 @@ void Mesh::recalculateStaggeredCoordinates() {
     }
 
     *coords_map[location] = std::move(*createDefaultCoordinates(location, true));
-    coords_map[location]->geometry(false, true);
+    coords_map[location]->calculateGeometry(false, true);
   }
 }
 

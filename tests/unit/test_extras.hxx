@@ -440,7 +440,7 @@ public:
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0});
 
     // Set some auxilliary variables
-    // Usually set in geometry()
+    // Usually set in calculateGeometry()
     // Note: For testing these are set to non-zero values
     test_coords->G1 = test_coords->G2 = test_coords->G3 = 0.1;
 
@@ -453,7 +453,7 @@ public:
     test_coords->Bxy().yup() = test_coords->Bxy().ydown() = test_coords->Bxy();
 #endif
 
-    // No call to Coordinates::geometry() needed here
+    // No call to Coordinates::calculateGeometry() needed here
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
     static_cast<FakeMesh*>(bout::globals::mesh)
         ->setGridDataSource(new FakeGridDataSource());
@@ -498,7 +498,7 @@ public:
         test_coords_staggered->Bxy;
 #endif
 
-    // No call to Coordinates::geometry() needed here
+    // No call to Coordinates::calculateGeometry() needed here
     test_coords_staggered->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
 
