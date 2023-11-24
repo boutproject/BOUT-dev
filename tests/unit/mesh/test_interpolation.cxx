@@ -77,7 +77,7 @@ protected:
               Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh},
               Field2D{0.0, mesh}),
           location);
-      // No call to Coordinates::geometry() needed here
+      // No call to Coordinates::calculateGeometry() needed here
       mesh->getCoordinates(location)->setParallelTransform(
           bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
     }
@@ -324,7 +324,7 @@ protected:
               Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh},
               Field2D{0.0, mesh}),
           location);
-      // No call to Coordinates::geometry() needed here
+      // No call to Coordinates::calculateGeometry() needed here
       mesh->getCoordinates(location)->setParallelTransform(
           bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
     }

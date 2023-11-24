@@ -293,7 +293,7 @@ other useful quantities::
     FieldMetric Bxy; // Magnitude of B = nabla z times nabla x
 
     /// Calculate differential geometry quantities from the metric tensor
-    int geometry();
+    int calculateGeometry();
 
     // Christoffel symbol of the second kind (connection coefficients)
     FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13;

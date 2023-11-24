@@ -160,7 +160,7 @@ protected:
     g_23 = Btxy * hthe * Rxy / Bpxy;
     coords->setCovariantMetricTensor(MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
-    coords->geometry(); // Calculate other metrics
+    coords->calculateGeometry(); // Calculate other metrics
 
     //////////////// BOUNDARIES ///////////////////////
     //
