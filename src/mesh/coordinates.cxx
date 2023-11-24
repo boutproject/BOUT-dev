@@ -358,10 +358,10 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     geometry.setBxy(localmesh->interpolateAndExtrapolate(coords_in->Bxy(), location, true,
                                                          true, false, transform.get()));
 
-    bout::checkFinite(geometry.J(), "The Jacobian", "RGN_NOCORNERS");
-    bout::checkPositive(geometry.J(), "The Jacobian", "RGN_NOCORNERS");
-    bout::checkFinite(geometry.Bxy(), "Bxy", "RGN_NOCORNERS");
-    bout::checkPositive(geometry.Bxy(), "Bxy", "RGN_NOCORNERS");
+    bout::checkFinite(J(), "The Jacobian", "RGN_NOCORNERS");
+    bout::checkPositive(J(), "The Jacobian", "RGN_NOCORNERS");
+    bout::checkFinite(Bxy(), "Bxy", "RGN_NOCORNERS");
+    bout::checkPositive(Bxy(), "Bxy", "RGN_NOCORNERS");
 
     ShiftTorsion = localmesh->interpolateAndExtrapolate(
         coords_in->ShiftTorsion, location, true, true, false, transform.get());
@@ -452,7 +452,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                                               extrapolate_x, extrapolate_y, false,
                                               transform.get());
 
-    contravariantMetricTensor.setMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23));
+    geometry.setContravariantMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23),
+                                          location);
 
     // Check input metrics
     checkContravariant();
@@ -477,8 +478,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
         g_12 = getAtLocOrUnaligned(mesh, "g_12", 0.0, suffix, location);
         g_13 = getAtLocOrUnaligned(mesh, "g_13", 0.0, suffix, location);
         g_23 = getAtLocOrUnaligned(mesh, "g_23", 0.0, suffix, location);
-        covariantMetricTensor.setMetricTensor(
-            MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+        geometry.setContravariantMetricTensor(
+            MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), location);
 
         output_warn.write(
             "\tWARNING! Covariant components of metric tensor set manually. "
@@ -512,7 +513,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
           return localmesh->interpolateAndExtrapolate(
               component, location, extrapolate_x, extrapolate_y, false, transform.get());
         };
-    covariantMetricTensor.map(interpolateAndExtrapolate_function);
+    geometry.applyToCovariantMetricTensor(interpolateAndExtrapolate_function);
 
     // Check covariant metrics
     checkCovariant();
@@ -521,7 +522,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     jacobian();
 
     // Attempt to read J from the grid file
-    auto Jcalc = this_J;
+    auto Jcalc = J();
     if (getAtLoc(mesh, this_J, "J", suffix, location)) {
       output_warn.write(
           "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
@@ -1690,60 +1691,37 @@ void Coordinates::setCovariantMetricTensor(MetricTensor metric_tensor,
       covariantMetricTensor.oppositeRepresentation(location, localmesh, region));
 }
 
-const MetricTensor::FieldMetric& Coordinates::g_11() const {
-  return covariantMetricTensor.Getg11();
-}
-const MetricTensor::FieldMetric& Coordinates::g_22() const {
-  return covariantMetricTensor.Getg22();
-}
-const MetricTensor::FieldMetric& Coordinates::g_33() const {
-  return covariantMetricTensor.Getg33();
-}
-const MetricTensor::FieldMetric& Coordinates::g_12() const {
-  return covariantMetricTensor.Getg12();
-}
-const MetricTensor::FieldMetric& Coordinates::g_13() const {
-  return covariantMetricTensor.Getg13();
-}
-const MetricTensor::FieldMetric& Coordinates::g_23() const {
-  return covariantMetricTensor.Getg23();
-}
+const MetricTensor::FieldMetric& Coordinates::g_11() const { return geometry.g_11(); }
+const MetricTensor::FieldMetric& Coordinates::g_22() const { return geometry.g_22(); }
+const MetricTensor::FieldMetric& Coordinates::g_33() const { return geometry.g_33(); }
+const MetricTensor::FieldMetric& Coordinates::g_12() const { return geometry.g_12(); }
+const MetricTensor::FieldMetric& Coordinates::g_13() const { return geometry.g_13(); }
+const MetricTensor::FieldMetric& Coordinates::g_23() const { return geometry.g_23(); }
 
-const MetricTensor::FieldMetric& Coordinates::g11() const {
-  return contravariantMetricTensor.Getg11();
-}
-const MetricTensor::FieldMetric& Coordinates::g22() const {
-  return contravariantMetricTensor.Getg22();
-}
-const MetricTensor::FieldMetric& Coordinates::g33() const {
-  return contravariantMetricTensor.Getg33();
-}
-const MetricTensor::FieldMetric& Coordinates::g12() const {
-  return contravariantMetricTensor.Getg12();
-}
-const MetricTensor::FieldMetric& Coordinates::g13() const {
-  return contravariantMetricTensor.Getg13();
-}
-const MetricTensor::FieldMetric& Coordinates::g23() const {
-  return contravariantMetricTensor.Getg23();
-}
-const MetricTensor::FieldMetric& Coordinates::J() const { return this_J; }
+const MetricTensor::FieldMetric& Coordinates::g11() const { return geometry.g11(); }
+const MetricTensor::FieldMetric& Coordinates::g22() const { return geometry.g22(); }
+const MetricTensor::FieldMetric& Coordinates::g33() const { return geometry.g33(); }
+const MetricTensor::FieldMetric& Coordinates::g12() const { return geometry.g12(); }
+const MetricTensor::FieldMetric& Coordinates::g13() const { return geometry.g13(); }
+const MetricTensor::FieldMetric& Coordinates::g23() const { return geometry.g23(); }
 
-const MetricTensor::FieldMetric& Coordinates::Bxy() const { return this_Bxy; }
+const MetricTensor::FieldMetric& Coordinates::J() const { return geometry.J(); }
+
+const MetricTensor::FieldMetric& Coordinates::Bxy() const { return geometry.Bxy(); }
 
 void Coordinates::setJ(FieldMetric J) {
   //TODO: Calculate J and check value is close
-  this_J = J;
+  geometry.setJ(J);
 }
 
 void Coordinates::setJ(BoutReal value, int x, int y) {
   //TODO: Calculate Bxy and check value is close
-  this_J(x, y) = value;
+  geometry.setJ(value, x, y);
 }
 
 void Coordinates::setBxy(FieldMetric Bxy) {
   //TODO: Calculate Bxy and check value is close
-  this_Bxy = Bxy;
+  geometry.setBxy(Bxy);
 }
 
 MetricTensor& Coordinates::getContravariantMetricTensor() const {

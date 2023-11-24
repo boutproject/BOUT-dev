@@ -64,7 +64,7 @@ public:
       FieldMetric g_22, FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
       FieldMetric g_23);
 
-  Geometry(Mesh* mesh, const CELL_LOC cell_location);
+  Geometry(Mesh* mesh, CELL_LOC cell_location);
 
   /// Christoffel symbol of the second kind (connection coefficients)
   FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
@@ -89,14 +89,14 @@ public:
   const FieldMetric& g13() const;
   const FieldMetric& g23() const;
 
-  MetricTensor& getContravariantMetricTensor();
+  const MetricTensor& getContravariantMetricTensor() const;
   //  MetricTensor& getCovariantMetricTensor();
 
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
-  const FieldMetric& J() const;
+  const FieldMetric& J();
 
   ///< Magnitude of B = nabla z times nabla x
-  const FieldMetric& Bxy() const;
+  const FieldMetric& Bxy();
 
   void setContravariantMetricTensor(MetricTensor metric_tensor, CELL_LOC cell_location,
                                     const std::string& region = "RGN_ALL");
