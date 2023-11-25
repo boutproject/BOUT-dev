@@ -1,0 +1,107 @@
+
+#ifndef BOUT_DIFFERENTIALOPERATORS_HXX
+#define BOUT_DIFFERENTIALOPERATORS_HXX
+
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/index_derivs_interface.hxx"
+#include "bout/paralleltransform.hxx"
+#include <bout/derivs.hxx>
+
+class DifferentialOperators {
+
+public:
+#if BOUT_USE_METRIC_3D
+  using FieldMetric = Field3D;
+#else
+  using FieldMetric = Field2D;
+#endif
+
+  DifferentialOperators(CELL_LOC& location, FieldMetric& dx, FieldMetric& dy,
+                        FieldMetric& dz);
+
+  FieldMetric DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                  const std::string& method = "DEFAULT",
+                  const std::string& region = "RGN_NOBNDRY");
+
+  FieldMetric DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                  const std::string& method = "DEFAULT",
+                  const std::string& region = "RGN_NOBNDRY") const;
+
+  FieldMetric DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                  const std::string& method = "DEFAULT",
+                  const std::string& region = "RGN_NOBNDRY");
+
+  Field3D DDX(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+              const std::string& method = "DEFAULT",
+              const std::string& region = "RGN_NOBNDRY");
+
+  Field3D DDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+              const std::string& method = "DEFAULT",
+              const std::string& region = "RGN_NOBNDRY") const;
+
+  Field3D DDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+              const std::string& method = "DEFAULT",
+              const std::string& region = "RGN_NOBNDRY");
+
+  /// Gradient along magnetic field  b.Grad(f)
+  FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
+                       const std::string& method = "DEFAULT");
+
+  Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT");
+
+  /// Advection along magnetic field V*b.Grad(f)
+  FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
+                            CELL_LOC outloc = CELL_DEFAULT,
+                            const std::string& method = "DEFAULT");
+
+  Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
+                        CELL_LOC outloc = CELL_DEFAULT,
+                        const std::string& method = "DEFAULT");
+
+  /// Divergence along magnetic field  Div(b*f) = B.Grad(f/B)
+  FieldMetric Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                      const std::string& method = "DEFAULT");
+
+  Field3D Div_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                  const std::string& method = "DEFAULT");
+
+  // Second derivative along magnetic field
+  FieldMetric Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                         const std::string& method = "DEFAULT");
+
+  Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                     const std::string& method = "DEFAULT");
+  // Perpendicular Laplacian operator, using only X-Z derivatives
+  // NOTE: This might be better bundled with the Laplacian inversion code
+  // since it makes use of the same coefficients and FFT routines
+  FieldMetric Delp2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
+  Field3D Delp2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
+  FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
+
+  // Full parallel Laplacian operator on scalar field
+  // Laplace_par(f) = Div( b (b dot Grad(f)) )
+  FieldMetric Laplace_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT);
+  Field3D Laplace_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT);
+
+  // Full Laplacian operator on scalar field
+  FieldMetric Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                      const std::string& dfdy_boundary_conditions = "free_o3",
+                      const std::string& dfdy_dy_region = "");
+  Field3D Laplace(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                  const std::string& dfdy_boundary_conditions = "free_o3",
+                  const std::string& dfdy_dy_region = "");
+
+  // Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY
+  // solver
+  Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
+
+private:
+  CELL_LOC& location;
+  FieldMetric& dx;
+  FieldMetric& dy;
+  FieldMetric& dz;
+};
+
+#endif //BOUT_DIFFERENTIALOPERATORS_HXX
