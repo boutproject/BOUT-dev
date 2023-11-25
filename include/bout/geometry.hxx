@@ -114,7 +114,7 @@ public:
   //  /// Invert covariant metric to get contravariant components
   //  void calcContravariant(const std::string& region = "RGN_ALL");
 
-  void jacobian(bool extrapolate_x, bool extrapolate_y); ///< Calculate J and Bxy
+  //  void jacobian(bool extrapolate_x, bool extrapolate_y); ///< Calculate J and Bxy
 
   void CalculateChristoffelSymbols(); /// Calculate Christoffel symbol terms
 
@@ -123,6 +123,9 @@ public:
 
   // check that contravariant tensors are positive (if expected) and finite (always)
   void checkContravariant(int ystart);
+
+  FieldMetric recalculateJacobian();
+  FieldMetric recalculateBxy();
 
   void applyToContravariantMetricTensor(
       std::function<const FieldMetric(const FieldMetric)> function);
@@ -141,9 +144,6 @@ private:
 
   FieldMetric this_J;
   FieldMetric this_Bxy; ///< Magnitude of B = nabla z times nabla x
-
-  FieldMetric recalculateJacobian(bool extrapolate_x, bool extrapolate_y);
-  FieldMetric recalculateBxy(bool extrapolate_x, bool extrapolate_y);
 
   //  template <typename T, typename... Ts>
   //  void communicate(T& t, Ts... ts);

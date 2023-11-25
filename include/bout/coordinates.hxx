@@ -144,7 +144,7 @@ public:
   void calcCovariant(const std::string& region = "RGN_ALL");
   /// Invert covariant metric to get contravariant components
   void calcContravariant(const std::string& region = "RGN_ALL");
-  void jacobian();                    ///< Calculate J and Bxy
+  void jacobian(); ///< Calculate J and Bxy
   void CalculateChristoffelSymbols(); /// Calculate Christoffel symbol terms
 
   ///////////////////////////////////////////////////////////
@@ -292,9 +292,6 @@ private:
 
   //  FieldMetric this_J;
   //  FieldMetric this_Bxy; ///< Magnitude of B = nabla z times nabla x
-
-  FieldMetric recalculateJacobian();
-  FieldMetric recalculateBxy();
 };
 
 /*
