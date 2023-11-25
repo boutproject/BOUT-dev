@@ -1063,43 +1063,24 @@ void Coordinates::jacobian() {
   const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
   const bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
 
-  geometry.jacobian(extrapolate_x, extrapolate_y);
-}
+  //  geometry.jacobian(extrapolate_x, extrapolate_y);
+  TRACE("Geometry::jacobian");
+  try {
 
-MetricTensor::FieldMetric Coordinates::recalculateJacobian() {
-  // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
-  auto g = contravariantMetricTensor.Getg11() * contravariantMetricTensor.Getg22()
-               * contravariantMetricTensor.Getg33()
-           + 2.0 * contravariantMetricTensor.Getg12() * contravariantMetricTensor.Getg13()
-                 * contravariantMetricTensor.Getg23()
-           - contravariantMetricTensor.Getg11() * contravariantMetricTensor.Getg23()
-                 * contravariantMetricTensor.Getg23()
-           - contravariantMetricTensor.Getg22() * contravariantMetricTensor.Getg13()
-                 * contravariantMetricTensor.Getg13()
-           - contravariantMetricTensor.Getg33() * contravariantMetricTensor.Getg12()
-                 * contravariantMetricTensor.Getg12();
+    const auto j = geometry.recalculateJacobian();
+    // More robust to extrapolate derived quantities directly, rather than
+    // deriving from extrapolated covariant metric components
+    geometry.setJ(
+        localmesh->interpolateAndExtrapolate(j, extrapolate_x, extrapolate_y, false));
 
-  // Check that g is positive
-  bout::checkPositive(g, "The determinant of g^ij", "RGN_NOBNDRY");
-
-  const auto J = 1. / sqrt(g);
-
-  // More robust to extrapolate derived quantities directly, rather than
-  // deriving from extrapolated covariant metric components
-  const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
-  const bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
-
-  return localmesh->interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y,
-                                              false, transform.get());
-}
-
-MetricTensor::FieldMetric Coordinates::recalculateBxy() {
-  const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
-  const bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
-
-  const auto Bxy = sqrt(covariantMetricTensor.Getg22()) / this_J;
-  return localmesh->interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y,
-                                              false, transform.get());
+    const auto Bxy = geometry.recalculateBxy();
+    //    CELL_LOC location, ParallelTransform* pParallelTransform
+    geometry.setBxy(localmesh->interpolateAndExtrapolate(
+        Bxy, location, extrapolate_x, extrapolate_y, false, transform.get()));
+  } catch (BoutException&) {
+    output_error.write("\tError in jacobian call\n");
+    throw;
+  }
 }
 
 namespace {
