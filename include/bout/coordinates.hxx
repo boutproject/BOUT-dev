@@ -135,7 +135,7 @@ public:
 
   FieldMetric IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
 
-  MetricTensor& getContravariantMetricTensor() const;
+  const MetricTensor& getContravariantMetricTensor() const;
 
   /// Calculate differential geometry quantities from the metric tensor
   int calculateGeometry(bool recalculate_staggered = true,

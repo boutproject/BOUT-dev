@@ -93,10 +93,10 @@ public:
   //  MetricTensor& getCovariantMetricTensor();
 
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
-  const FieldMetric& J();
+  const FieldMetric& J() const;
 
   ///< Magnitude of B = nabla z times nabla x
-  const FieldMetric& Bxy();
+  const FieldMetric& Bxy() const;
 
   void setContravariantMetricTensor(MetricTensor metric_tensor, CELL_LOC cell_location,
                                     const std::string& region = "RGN_ALL");
@@ -109,10 +109,10 @@ public:
 
   void setBxy(FieldMetric Bxy);
 
-  //  void calcCovariant(const std::string& region = "RGN_ALL");
+  void calcCovariant(CELL_LOC cell_location, const std::string& region = "RGN_ALL");
 
-  //  /// Invert covariant metric to get contravariant components
-  //  void calcContravariant(const std::string& region = "RGN_ALL");
+  /// Invert covariant metric to get contravariant components
+  void calcContravariant(CELL_LOC cell_location, const std::string& region = "RGN_ALL");
 
   //  void jacobian(bool extrapolate_x, bool extrapolate_y); ///< Calculate J and Bxy
 
