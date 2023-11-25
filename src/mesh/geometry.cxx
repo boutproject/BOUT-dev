@@ -855,18 +855,18 @@ void Geometry::CalculateChristoffelSymbols() {
       + 0.5 * contravariantMetricTensor.Getg33() * DDY(covariantMetricTensor.Getg33());
 }
 
-//  void Geometry::calcCovariant(const std::string& region) {
-//    TRACE("Geometry::calcCovariant");
-//    covariantMetricTensor.setMetricTensor(
-//        contravariantMetricTensor.oppositeRepresentation(location, localmesh, region));
-//  }
-//
-//  void Geometry::calcContravariant(const std::string& region) {
-//    TRACE("Geometry::calcContravariant");
-//    contravariantMetricTensor.setMetricTensor(
-//        covariantMetricTensor.oppositeRepresentation(location, localmesh, region));
-//  }
-//
+void Geometry::calcCovariant(CELL_LOC cell_location, const std::string& region) {
+  TRACE("Geometry::calcCovariant");
+  covariantMetricTensor.setMetricTensor(
+      contravariantMetricTensor.oppositeRepresentation(cell_location, region));
+}
+
+void Geometry::calcContravariant(CELL_LOC cell_location, const std::string& region) {
+  TRACE("Geometry::calcContravariant");
+  contravariantMetricTensor.setMetricTensor(
+      covariantMetricTensor.oppositeRepresentation(cell_location, region));
+}
+
 //void Geometry::jacobian(bool extrapolate_x, bool extrapolate_y) {
 //  TRACE("Geometry::jacobian");
 //  try {
@@ -1542,9 +1542,9 @@ const MetricTensor::FieldMetric& Geometry::g23() const {
   return contravariantMetricTensor.Getg23();
 }
 
-const MetricTensor::FieldMetric& Geometry::J() { return this_J; }
+const Geometry::FieldMetric& Geometry::J() const { return this_J; }
 
-const MetricTensor::FieldMetric& Geometry::Bxy() { return this_Bxy; }
+const Geometry::FieldMetric& Geometry::Bxy() const { return this_Bxy; }
 
 void Geometry::setJ(FieldMetric J) {
   //TODO: Calculate J and check value is close
