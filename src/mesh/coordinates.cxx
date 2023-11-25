@@ -523,12 +523,13 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
     // Attempt to read J from the grid file
     auto Jcalc = J();
-    if (getAtLoc(mesh, this_J, "J", suffix, location)) {
+    try {
+      Jcalc = getAtLoc(mesh, "J", suffix, location);
       output_warn.write(
           "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
           suffix);
       setJ(Jcalc);
-    } else {
+    } catch (BoutException) {
       setJ(localmesh->interpolateAndExtrapolate(J(), location, extrapolate_x,
                                                 extrapolate_y, false, transform.get()));
 
@@ -550,12 +551,13 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
     // Attempt to read Bxy from the grid file
     auto Bcalc = Bxy();
-    if (getAtLoc(mesh, this_Bxy, "Bxy", suffix, location)) {
+    try {
+      Bcalc = getAtLoc(mesh, "Bxy", suffix, location);
       output_warn.write("\tWARNING: Magnitude of B field 'Bxy_{:s}' not found. "
                         "Calculating from metric tensor\n",
                         suffix);
       setBxy(Bcalc);
-    } else {
+    } catch (BoutException) {
       setBxy(localmesh->interpolateAndExtrapolate(Bxy(), location, extrapolate_x,
                                                   extrapolate_y, false, transform.get()));
       output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy() - Bcalc)));
