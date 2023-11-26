@@ -13,8 +13,6 @@
 
 #include <bout/fft.hxx>
 
-#include <bout/globals.hxx>
-
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
 
@@ -24,7 +22,6 @@
 #include "bout/field3d.hxx"
 #include "bout/geometry.hxx"
 #include "bout/metricTensor.hxx"
-#include "bout/utils.hxx"
 #include <bout/bout_types.hxx>
 
 // use anonymous namespace so this utility function is not available outside this file
@@ -265,10 +262,9 @@ Coordinates::FieldMetric Coordinates::getUnaligned(const std::string& name,
   if (field.getDirectionY() == YDirectionType::Aligned
       and transform->canToFromFieldAligned()) {
     return transform->fromFieldAligned(field);
-  } else {
-    field.setDirectionY(YDirectionType::Standard);
-    return field;
   }
+  field.setDirectionY(YDirectionType::Standard);
+  return field;
 }
 
 Coordinates::FieldMetric Coordinates::getUnalignedAtLocationAndFillGuards(
@@ -278,7 +274,7 @@ Coordinates::FieldMetric Coordinates::getUnalignedAtLocationAndFillGuards(
     ParallelTransform* pParallelTransform) {
 
   auto field = getAtLocOrUnaligned(mesh, name, default_value, suffix, cell_location);
-  if (suffix == "") {
+  if (suffix.empty()) {
     no_extra_interpolate = false;
     pParallelTransform = transform.get();
   }
@@ -297,10 +293,14 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric IntShiftTorsion)
     : dx(std::move(dx)), dy(std::move(dy)), dz(dz), ShiftTorsion(std::move(ShiftTorsion)),
       IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE), differential_operators(DifferentialOperators(
-                                 mesh, this->IntShiftTorsion, location, dx, dy, dz)),
-      geometry(Geometry(J, Bxy, g11, g22, g33, g12, g13, g23, g_11, g_22, g_33, g_12,
-                        g_13, g_23, differential_operators)) {}
+      location(CELL_CENTRE),
+      differential_operators(DifferentialOperators(mesh, this->IntShiftTorsion, location,
+                                                   this->dx, this->dy, dz)),
+      geometry(Geometry(std::move(J), std::move(Bxy), std::move(g11), std::move(g22),
+                        std::move(g33), std::move(g12), std::move(g13), std::move(g23),
+                        std::move(g_11), std::move(g_22), std::move(g_33),
+                        std::move(g_12), std::move(g_13), std::move(g_23),
+                        differential_operators)) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
@@ -323,10 +323,10 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
   nz = mesh->LocalNz;
 
   // Default to true in case staggered quantities are not read from file
-  bool extrapolate_x = true;
-  bool extrapolate_y = true;
+  const bool extrapolate_x = true;
+  const bool extrapolate_y = true;
 
-  if (coords_in && suffix != ""
+  if ((coords_in != nullptr) && !suffix.empty()
       && (force_interpolate_from_centre || !mesh->sourceHasVar("dx" + suffix))) {
 
     // Interpolate fields from coords_in
@@ -349,8 +349,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     dz = localmesh->interpolateAndExtrapolate(coords_in->dz, location, true, true, false,
                                               transform.get());
 
-    std::function<const FieldMetric(const FieldMetric)>
-        interpolateAndExtrapolate_function = [this](const FieldMetric component) {
+    std::function<const FieldMetric(const FieldMetric)> const
+        interpolateAndExtrapolate_function = [this](const FieldMetric& component) {
           return localmesh->interpolateAndExtrapolate(component, location, true, true,
                                                       false, transform.get());
         };
@@ -519,9 +519,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     // More robust to extrapolate derived quantities directly, rather than
     // deriving from extrapolated covariant metric components
 
-    std::function<const FieldMetric(const FieldMetric)>
+    std::function<const FieldMetric(const FieldMetric)> const
         interpolateAndExtrapolate_function = [this, extrapolate_y, extrapolate_x](
-                                                 const FieldMetric component) {
+                                                 const FieldMetric& component) {
           return localmesh->interpolateAndExtrapolate(
               component, location, extrapolate_x, extrapolate_y, false, transform.get());
         };
@@ -541,7 +541,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
           "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
           suffix);
       setJ(Jcalc);
-    } catch (BoutException) {
+    } catch (BoutException&) {
       setJ(localmesh->interpolateAndExtrapolate(J(), location, extrapolate_x,
                                                 extrapolate_y, false, transform.get()));
 
@@ -570,7 +570,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                         "Calculating from metric tensor\n",
                         suffix);
       setBxy(Bcalc);
-    } catch (BoutException) {
+    } catch (BoutException&) {
       setBxy(localmesh->interpolateAndExtrapolate(Bxy(), location, extrapolate_x,
                                                   extrapolate_y, false, transform.get()));
       output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy() - Bcalc)));
@@ -580,7 +580,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     bout::checkFinite(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
     bout::checkPositive(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
 
-    if (getAtLoc(mesh, ShiftTorsion, "ShiftTorsion", suffix, location)) {
+    if (getAtLoc(mesh, ShiftTorsion, "ShiftTorsion", suffix, location) != 0) {
       output_warn.write("\tWARNING: No Torsion specified for zShift. "
                         "Derivatives may not be correct\n");
       ShiftTorsion = 0.0;
@@ -592,7 +592,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
     if (mesh->IncIntShear) {
       checkStaggeredGet(mesh, "IntShiftTorsion", suffix);
-      if (mesh->get(IntShiftTorsion, "IntShiftTorsion" + suffix, 0.0, false)) {
+      if (mesh->get(IntShiftTorsion, "IntShiftTorsion" + suffix, 0.0, false) != 0) {
         output_warn.write("\tWARNING: No Integrated torsion specified\n");
         IntShiftTorsion = 0.0;
       }
@@ -608,7 +608,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 }
 
 void Coordinates::outputVars(Options& output_options) {
-  Timer time("io");
+  Timer const time("io");
   const std::string loc_string =
       (location == CELL_CENTRE) ? "" : "_" + toString(location);
 
@@ -758,17 +758,18 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
 
   OPTION(Options::getRoot(), non_uniform, true);
 
-  Coordinates::FieldMetric d2x(localmesh), d2y(localmesh),
-      d2z(localmesh); // d^2 x / d i^2
+  Coordinates::FieldMetric d2x(localmesh);
+  Coordinates::FieldMetric d2y(localmesh);
+  Coordinates::FieldMetric const d2z(localmesh); // d^2 x / d i^2
 
   // Read correction for non-uniform meshes
-  std::string suffix = getLocationSuffix(location);
+  std::string const suffix = getLocationSuffix(location);
   if (location == CELL_CENTRE
       or (!force_interpolate_from_centre and localmesh->sourceHasVar("dx" + suffix))) {
-    bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
-    bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
+    bool const extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
+    bool const extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
 
-    if (localmesh->get(d2x, "d2x" + suffix, 0.0, false, location)) {
+    if (localmesh->get(d2x, "d2x" + suffix, 0.0, false, location) != 0) {
       output_warn.write("\tWARNING: differencing quantity 'd2x' not found. "
                         "Calculating from dx\n");
       d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
@@ -785,7 +786,7 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
       d1_dx = -d2x / (dx * dx);
     }
 
-    if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location)) {
+    if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location) != 0) {
       output_warn.write("\tWARNING: differencing quantity 'd2y' not found. "
                         "Calculating from dy\n");
       d1_dy = DDY(1. / dy); // d/di(1/dy)
@@ -822,7 +823,7 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
     d1_dz = 0;
 #endif
   } else {
-    if (localmesh->get(d2x, "d2x", 0.0, false)) {
+    if (localmesh->get(d2x, "d2x", 0.0, false) != 0) {
       output_warn.write("\tWARNING: differencing quantity 'd2x' not found. "
                         "Calculating from dx\n");
       d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
@@ -838,7 +839,7 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
       d1_dx = -d2x / (dx * dx);
     }
 
-    if (localmesh->get(d2y, "d2y", 0.0, false)) {
+    if (localmesh->get(d2y, "d2y", 0.0, false) != 0) {
       output_warn.write("\tWARNING: differencing quantity 'd2y' not found. "
                         "Calculating from dy\n");
       d1_dy = DDY(1. / dy); // d/di(1/dy)
@@ -1055,10 +1056,10 @@ void Coordinates::jacobian() {
   TRACE("Geometry::jacobian");
   try {
 
-    const auto j = geometry.recalculateJacobian();
+    const auto jacobian = geometry.recalculateJacobian();
     // More robust to extrapolate derived quantities directly, rather than
     // deriving from extrapolated covariant metric components
-    geometry.setJ(localmesh->interpolateAndExtrapolate(j, location, extrapolate_x,
+    geometry.setJ(localmesh->interpolateAndExtrapolate(jacobian, location, extrapolate_x,
                                                        extrapolate_y, false));
 
     const auto Bxy = geometry.recalculateBxy();
@@ -1074,7 +1075,7 @@ void Coordinates::jacobian() {
 namespace {
 // Utility function for fixing up guard cells of zShift
 void fixZShiftGuards(Field2D& zShift) {
-  auto localmesh = zShift.getMesh();
+  auto* localmesh = zShift.getMesh();
 
   // extrapolate into boundary guard cells if necessary
   zShift = localmesh->interpolateAndExtrapolate(
@@ -1103,7 +1104,7 @@ void fixZShiftGuards(Field2D& zShift) {
 } // namespace
 
 void Coordinates::setParallelTransform(Options* options) {
-  auto ptoptions = options->getSection("paralleltransform");
+  auto* ptoptions = options->getSection("paralleltransform");
 
   std::string ptstr;
   ptoptions->get("type", ptstr, "identity");
@@ -1122,13 +1123,13 @@ void Coordinates::setParallelTransform(Options* options) {
     Field2D zShift{localmesh};
 
     // Read the zShift angle from the mesh
-    std::string suffix = getLocationSuffix(location);
+    std::string const suffix = getLocationSuffix(location);
     if (localmesh->sourceHasVar("dx" + suffix)) {
       // Grid file has variables at this location, so should be able to read
       checkStaggeredGet(localmesh, "zShift", suffix);
-      if (localmesh->get(zShift, "zShift" + suffix, 0.0, false, location)) {
+      if (localmesh->get(zShift, "zShift" + suffix, 0.0, false, location) != 0) {
         // No zShift variable. Try qinty in BOUT grid files
-        if (localmesh->get(zShift, "qinty" + suffix, 0.0, false, location)) {
+        if (localmesh->get(zShift, "qinty" + suffix, 0.0, false, location) != 0) {
           // Failed to find either variable, cannot use ShiftedMetric
           throw BoutException("Could not read zShift" + suffix + " from grid file");
         }
@@ -1140,9 +1141,9 @@ void Coordinates::setParallelTransform(Options* options) {
                             "file.");
       }
       Field2D zShift_centre;
-      if (localmesh->get(zShift_centre, "zShift", 0.0, false)) {
+      if (localmesh->get(zShift_centre, "zShift", 0.0, false) != 0) {
         // No zShift variable. Try qinty in BOUT grid files
-        if (localmesh->get(zShift_centre, "qinty", 0.0, false)) {
+        if (localmesh->get(zShift_centre, "qinty", 0.0, false) != 0) {
           // Failed to find either variable, cannot use ShiftedMetric
           throw BoutException("Could not read zShift from grid file");
         }
@@ -1361,6 +1362,7 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
 // perpendicular Laplacian operator
 
 #include <bout/invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
+#include <utility>
 
 Coordinates::FieldMetric Coordinates::Delp2(const Field2D& f, CELL_LOC outloc,
                                             bool UNUSED(useFFT)) {
@@ -1456,11 +1458,11 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
 
   FieldPerp result{emptyFrom(f).setLocation(outloc)};
 
-  int jy = f.getIndex();
+  int const jy = f.getIndex();
   result.setIndex(jy);
 
   if (useFFT) {
-    int ncz = localmesh->LocalNz;
+    int const ncz = localmesh->LocalNz;
 
     // Allocate memory
     auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
@@ -1644,12 +1646,12 @@ void Coordinates::checkContravariant() { geometry.checkContravariant(localmesh->
 
 void Coordinates::setContravariantMetricTensor(MetricTensor metric_tensor,
                                                const std::string& region) {
-  geometry.setContravariantMetricTensor(metric_tensor, location, region);
+  geometry.setContravariantMetricTensor(std::move(metric_tensor), location, region);
 }
 
 void Coordinates::setCovariantMetricTensor(MetricTensor metric_tensor,
                                            const std::string& region) {
-  geometry.setCovariantMetricTensor(metric_tensor, location, region);
+  geometry.setCovariantMetricTensor(std::move(metric_tensor), location, region);
 }
 
 const FieldMetric& Coordinates::g_11() const { return geometry.g_11(); }
@@ -1682,7 +1684,7 @@ void Coordinates::setJ(BoutReal value, int x, int y) {
 
 void Coordinates::setBxy(FieldMetric Bxy) {
   //TODO: Calculate Bxy and check value is close
-  geometry.setBxy(Bxy);
+  geometry.setBxy(std::move(Bxy));
 }
 
 const MetricTensor& Coordinates::getContravariantMetricTensor() const {
