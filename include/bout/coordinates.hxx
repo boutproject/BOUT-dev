@@ -82,7 +82,7 @@ public:
   const Field2D& zlength() const;
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
-  bool non_uniform;
+  bool non_uniform{};
   /// 2nd-order correction for non-uniform meshes d/di(1/dx), d/di(1/dy) and d/di(1/dz)
   FieldMetric d1_dx, d1_dy, d1_dz;
 
