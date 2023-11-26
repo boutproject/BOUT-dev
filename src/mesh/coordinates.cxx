@@ -19,10 +19,11 @@
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
 
-#include "bout/geometry.hxx"
-#include "bout/metricTensor.hxx"
+#include "bout/differential_operators.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
+#include "bout/geometry.hxx"
+#include "bout/metricTensor.hxx"
 #include "bout/utils.hxx"
 #include <bout/bout_types.hxx>
 
@@ -307,7 +308,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       //      G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh), G3_23(mesh),
       //      G1(mesh), G2(mesh), G3(mesh),
       ShiftTorsion(mesh), IntShiftTorsion(mesh), localmesh(mesh), location(loc),
-      geometry(Geometry(mesh, loc)) {
+      geometry(
+          Geometry(mesh, DifferentialOperators(mesh, IntShiftTorsion, loc, dx, dy, dz))) {
 
   if (options == nullptr) {
     options = Options::getRoot()->getSection("mesh");

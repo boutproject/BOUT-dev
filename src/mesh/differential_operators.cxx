@@ -1,10 +1,12 @@
 
 #include "bout/differential_operators.hxx"
+#include "bout/mesh.hxx"
 
-DifferentialOperators::DifferentialOperators(Mesh* mesh, CELL_LOC& location,
-                                             FieldMetric& dx, FieldMetric& dy,
-                                             FieldMetric& dz)
-    : mesh(mesh), location(location), dx(dx), dy(dy), dz(dz) {}
+DifferentialOperators::DifferentialOperators(Mesh* mesh, FieldMetric& intShiftTorsion,
+                                             const CELL_LOC& location, FieldMetric& dx,
+                                             FieldMetric& dy, FieldMetric& dz)
+    : mesh(mesh), intShiftTorsion(intShiftTorsion), location(location), dx(dx), dy(dy),
+      dz(dz) {}
 
 DifferentialOperators::FieldMetric DifferentialOperators::DDX(const Field2D& f,
                                                               CELL_LOC loc,
@@ -20,7 +22,7 @@ Field3D DifferentialOperators::DDX(const Field3D& f, CELL_LOC outloc,
 
   if (f.getMesh()->IncIntShear) {
     // Using BOUT-06 style shifting
-    result += IntShiftTorsion * DDZ(f, outloc, method, region);
+    result += intShiftTorsion * DDZ(f, outloc, method, region);
   }
 
   return result;
