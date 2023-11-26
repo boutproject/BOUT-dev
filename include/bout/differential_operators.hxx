@@ -10,9 +10,8 @@ class DifferentialOperators {
   using FieldMetric = MetricTensor::FieldMetric;
 
 public:
-  DifferentialOperators(Mesh* mesh, FieldMetric& intShiftTorsion,
-                        const CELL_LOC& location, FieldMetric& dx, FieldMetric& dy,
-                        FieldMetric& dz);
+  DifferentialOperators(Mesh* mesh, FieldMetric intShiftTorsion, const CELL_LOC& location,
+                        FieldMetric& dx, FieldMetric& dy, FieldMetric& dz);
 
   //  DifferentialOperators(DifferentialOperators operators,
   //                        DifferentialOperators::FieldMetric& dx);
@@ -79,16 +78,16 @@ public:
                      CELL_LOC outloc = CELL_DEFAULT,
                      const std::string& method = "DEFAULT");
 
-//  // Perpendicular Laplacian operator, using only X-Z derivatives
-//  // NOTE: This might be better bundled with the Laplacian inversion code
-//  // since it makes use of the same coefficients and FFT routines
-//  FieldMetric Delp2(const Field2D& f, const Field2D& g11, const Field2D& G1,
-//                    CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
-//
-//  Field3D Delp2(const Field3D& f, MetricTensor& covariantMetricTensor, const Field3D& G1,
-//                const Field3D& G3, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
-//
-//  FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
+  //  // Perpendicular Laplacian operator, using only X-Z derivatives
+  //  // NOTE: This might be better bundled with the Laplacian inversion code
+  //  // since it makes use of the same coefficients and FFT routines
+  //  FieldMetric Delp2(const Field2D& f, const Field2D& g11, const Field2D& G1,
+  //                    CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
+  //
+  //  Field3D Delp2(const Field3D& f, MetricTensor& covariantMetricTensor, const Field3D& G1,
+  //                const Field3D& G3, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
+  //
+  //  FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
 
   // Full parallel Laplacian operator on scalar field
   // Laplace_par(f) = Div( b (b dot Grad(f)) )
@@ -124,7 +123,7 @@ public:
 
 private:
   Mesh* mesh;
-  FieldMetric& intShiftTorsion;
+  FieldMetric intShiftTorsion;
   const CELL_LOC& location;
   FieldMetric& dx;
   FieldMetric& dy;
