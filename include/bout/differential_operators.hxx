@@ -42,21 +42,21 @@ public:
               const std::string& region = "RGN_NOBNDRY");
 
   /// Gradient along magnetic field  b.Grad(f)
-  FieldMetric Grad_par(const Field2D& var, MetricTensor& covariantMetricTensor,
+  FieldMetric Grad_par(const Field2D& var, const MetricTensor& covariantMetricTensor,
                        CELL_LOC outloc = CELL_DEFAULT,
                        const std::string& method = "DEFAULT");
 
-  Field3D Grad_par(const Field3D& var, MetricTensor& covariantMetricTensor,
+  Field3D Grad_par(const Field3D& var, const MetricTensor& covariantMetricTensor,
                    CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT");
 
   /// Advection along magnetic field V*b.Grad(f)
-  FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
-                            MetricTensor& covariantMetricTensor,
-                            CELL_LOC outloc = CELL_DEFAULT,
-                            const std::string& method = "DEFAULT");
+  Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f,
+                        const MetricTensor& covariantMetricTensor,
+                        CELL_LOC outloc = CELL_DEFAULT,
+                        const std::string& method = "DEFAULT");
 
   Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
-                        MetricTensor& covariantMetricTensor,
+                        const MetricTensor& covariantMetricTensor,
                         CELL_LOC outloc = CELL_DEFAULT,
                         const std::string& method = "DEFAULT");
 
@@ -128,9 +128,9 @@ private:
   mutable std::map<std::string, std::unique_ptr<FieldMetric>> Grad2_par2_DDY_invSgCache;
   mutable std::unique_ptr<FieldMetric> invSgCache{nullptr};
 
-  FieldMetric& invSg(MetricTensor& covariantMetricTensor) const;
+  FieldMetric& invSg(const MetricTensor& covariantMetricTensor) const;
 
-  const FieldMetric& Grad2_par2_DDY_invSg(MetricTensor& covariantMetricTensor,
+  const FieldMetric& Grad2_par2_DDY_invSg(const MetricTensor& covariantMetricTensor,
                                           CELL_LOC outloc,
                                           const std::string& method) const;
 };

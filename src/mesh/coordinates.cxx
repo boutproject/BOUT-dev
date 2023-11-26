@@ -1239,46 +1239,46 @@ void Coordinates::setParallelTransform(Options* options) {
 //                         const std::string& region) {
 //  return bout::derivatives::index::DDZ(f, outloc, method, region) / dz;
 //}
-//
-///////////////////////////////////////////////////////////
-//// Parallel gradient
-//
-//Coordinates::FieldMetric Coordinates::Grad_par(const Field2D& var,
-//                                               MAYBE_UNUSED(CELL_LOC outloc),
-//                                               const std::string& UNUSED(method)) {
-//  TRACE("Coordinates::Grad_par( Field2D )");
-//  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == var.getLocation()))
-//
-//  return DDY(var) * invSg();
-//}
-//
-//Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
-//                              const std::string& method) {
-//  TRACE("Coordinates::Grad_par( Field3D )");
-//  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
-//
-//  return ::DDY(var, outloc, method) * invSg();
-//}
-//
-///////////////////////////////////////////////////////////
-//// Vpar_Grad_par
-//// vparallel times the parallel derivative along unperturbed B-field
-//
-//Coordinates::FieldMetric Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
-//                                                    MAYBE_UNUSED(CELL_LOC outloc),
-//                                                    const std::string& UNUSED(method)) {
-//  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()))
-//
-//  return VDDY(v, f) * invSg();
-//}
-//
-//Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
-//                                   const std::string& method) {
-//  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
-//
-//  return VDDY(v, f, outloc, method) * invSg();
-//}
-//
+
+/////////////////////////////////////////////////////////
+// Parallel gradient
+
+Field2D Coordinates::Grad_par(const Field2D& var) {
+  TRACE("Coordinates::Grad_par( Field2D )");
+
+  return differential_operators.Grad_par(var, geometry.getCovariantMetricTensor());
+}
+
+Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
+                              const std::string& method) {
+  TRACE("Coordinates::Grad_par( Field3D )");
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
+
+  return differential_operators.Grad_par(var, geometry.getCovariantMetricTensor(), outloc,
+                                         method);
+}
+
+/////////////////////////////////////////////////////////
+// Vpar_Grad_par
+// vparallel times the parallel derivative along unperturbed B-field
+
+Field2D Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
+                                   MAYBE_UNUSED(CELL_LOC outloc),
+                                   const std::string& UNUSED(method)) {
+  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()))
+
+  return differential_operators.Vpar_Grad_par(v, f, geometry.getCovariantMetricTensor(),
+                                              outloc);
+}
+
+Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
+                                   const std::string& method) {
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
+
+  return differential_operators.Vpar_Grad_par(v, f, geometry.getCovariantMetricTensor(),
+                                              outloc, method);
+}
+
 ///////////////////////////////////////////////////////////
 //// Parallel divergence
 //
@@ -1683,5 +1683,9 @@ void Coordinates::setBxy(FieldMetric Bxy) {
 const MetricTensor& Coordinates::getContravariantMetricTensor() const {
   return geometry.getContravariantMetricTensor();
 }
+
+//const MetricTensor& Coordinates::getCovariantMetricTensor() const {
+//  return geometry.getCovariantMetricTensor();
+//}
 
 //const Coordinates::FieldMetric& Coordinates::invSg() const {}

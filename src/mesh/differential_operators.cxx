@@ -2,11 +2,11 @@
 #include "bout/differential_operators.hxx"
 //#include "bout/field2d.hxx"
 //#include "bout/field3d.hxx"
-//#include "bout/mesh.hxx"
+#include "bout/mesh.hxx"
 //#include "bout/metricTensor.hxx"
 //#include "bout/index_derivs_interface.hxx"
 //#include "bout/paralleltransform.hxx"
-//#include <bout/derivs.hxx>
+#include <bout/derivs.hxx>
 
 DifferentialOperators::DifferentialOperators(Mesh* mesh, FieldMetric& intShiftTorsion,
                                              const CELL_LOC& location, FieldMetric& dx,
@@ -74,41 +74,36 @@ Field3D DifferentialOperators::DDZ(const Field3D& f, CELL_LOC outloc,
 // Parallel gradient
 
 FieldMetric DifferentialOperators::Grad_par(const Field2D& var,
-                                            MetricTensor& covariantMetricTensor,
+                                            const MetricTensor& covariantMetricTensor,
                                             [[maybe_unused]] CELL_LOC outloc,
                                             const std::string& UNUSED(method)) {
   TRACE("DifferentialOperators::Grad_par( Field2D )");
-  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == var.getLocation()))
 
   return DDY(var) * invSg(covariantMetricTensor);
 }
 
 Field3D DifferentialOperators::Grad_par(const Field3D& var,
-                                        MetricTensor& covariantMetricTensor,
+                                        const MetricTensor& covariantMetricTensor,
                                         CELL_LOC outloc, const std::string& method) {
   TRACE("DifferentialOperators::Grad_par( Field3D )");
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return ::DDY(var, outloc, method) * invSg(covariantMetricTensor);
+  return DDY(var, outloc, method) * invSg(covariantMetricTensor);
 }
 
 /////////////////////////////////////////////////////////
 // Vpar_Grad_par
 // vparallel times the parallel derivative along unperturbed B-field
 
-FieldMetric DifferentialOperators::Vpar_Grad_par(const Field2D& v, const Field2D& f,
-                                                 MetricTensor& covariantMetricTensor,
-                                                 [[maybe_unused]] CELL_LOC outloc,
-                                                 const std::string& UNUSED(method)) {
-  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()))
-
+Field2D DifferentialOperators::Vpar_Grad_par(const Field2D& v, const Field2D& f,
+                                             const MetricTensor& covariantMetricTensor,
+                                             [[maybe_unused]] CELL_LOC outloc,
+                                             const std::string& UNUSED(method)) {
   return VDDY(v, f) * invSg(covariantMetricTensor);
 }
 
 Field3D DifferentialOperators::Vpar_Grad_par(const Field3D& v, const Field3D& f,
-                                             MetricTensor& covariantMetricTensor,
+                                             const MetricTensor& covariantMetricTensor,
                                              CELL_LOC outloc, const std::string& method) {
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
   return VDDY(v, f, outloc, method) * invSg(covariantMetricTensor);
 }
@@ -463,7 +458,8 @@ Field2D DifferentialOperators::Laplace_perpXY([[maybe_unused]] const Field2D& A,
 #endif
 }
 
-FieldMetric& DifferentialOperators::invSg(MetricTensor& covariantMetricTensor) const {
+FieldMetric&
+DifferentialOperators::invSg(const MetricTensor& covariantMetricTensor) const {
   if (invSgCache == nullptr) {
     auto ptr = std::make_unique<FieldMetric>();
     (*ptr) = 1.0 / sqrt(covariantMetricTensor.Getg22());
@@ -473,7 +469,7 @@ FieldMetric& DifferentialOperators::invSg(MetricTensor& covariantMetricTensor) c
 }
 
 const FieldMetric&
-DifferentialOperators::Grad2_par2_DDY_invSg(MetricTensor& covariantMetricTensor,
+DifferentialOperators::Grad2_par2_DDY_invSg(const MetricTensor& covariantMetricTensor,
                                             CELL_LOC outloc,
                                             const std::string& method) const {
   if (auto search = Grad2_par2_DDY_invSgCache.find(method);

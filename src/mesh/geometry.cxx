@@ -1579,6 +1579,10 @@ const MetricTensor& Geometry::getContravariantMetricTensor() const {
   return contravariantMetricTensor;
 }
 
+const MetricTensor& Geometry::getCovariantMetricTensor() const {
+  return covariantMetricTensor;
+}
+
 void Geometry::applyToContravariantMetricTensor(
     std::function<const FieldMetric(const FieldMetric)> function) {
   contravariantMetricTensor.map(function);
@@ -1588,5 +1592,3 @@ void Geometry::applyToCovariantMetricTensor(
     std::function<const FieldMetric(const FieldMetric)> function) {
   covariantMetricTensor.map(function);
 }
-
-//MetricTensor& Geometry::getCovariantMetricTensor() { return covariantMetricTensor; }
