@@ -9,7 +9,7 @@
 #include <bout/derivs.hxx>
 
 DifferentialOperators::DifferentialOperators(Mesh* mesh, FieldMetric intShiftTorsion,
-                                             const CELL_LOC& location, FieldMetric& dx,
+                                             const CELL_LOC location, FieldMetric& dx,
                                              FieldMetric& dy, FieldMetric& dz)
     : mesh(mesh), intShiftTorsion(intShiftTorsion), location(location), dx(dx), dy(dy),
       dz(dz) {}
