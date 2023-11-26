@@ -1243,7 +1243,8 @@ void Coordinates::setParallelTransform(Options* options) {
 /////////////////////////////////////////////////////////
 // Parallel gradient
 
-Field2D Coordinates::Grad_par(const Field2D& var) {
+Field2D Coordinates::Grad_par(const Field2D& var, MAYBE_UNUSED(CELL_LOC outloc),
+                              const std::string& UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
 
   return differential_operators.Grad_par(var, geometry.getCovariantMetricTensor());
