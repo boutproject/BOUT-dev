@@ -112,18 +112,19 @@ Field3D DifferentialOperators::Vpar_Grad_par(const Field3D& v, const Field3D& f,
 // Parallel divergence
 
 FieldMetric DifferentialOperators::Div_par(const Field2D& f, const Field2D& Bxy,
+                                           const MetricTensor& covariantMetricTensor,
                                            CELL_LOC outloc, const std::string& method) {
   TRACE("DifferentialOperators::Div_par( Field2D )");
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
   // Need Bxy at location of f, which might be different from location of this
   // Coordinates object
   auto Bxy_floc = f.getCoordinates()->Bxy();
 
-  return Bxy * Grad_par(f / Bxy_floc, outloc, method);
+  return Bxy * Grad_par(f / Bxy_floc, covariantMetricTensor, outloc, method);
 }
 
 Field3D DifferentialOperators::Div_par(const Field3D& f, const Field2D& Bxy,
+                                       const MetricTensor& covariantMetricTensor,
                                        CELL_LOC outloc, const std::string& method) {
   TRACE("DifferentialOperators::Div_par( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
@@ -135,7 +136,7 @@ Field3D DifferentialOperators::Div_par(const Field3D& f, const Field2D& Bxy,
   if (!f.hasParallelSlices()) {
     // No yup/ydown fields. The Grad_par operator will
     // shift to field aligned coordinates
-    return Bxy * Grad_par(f / Bxy_floc, outloc, method);
+    return Bxy * Grad_par(f / Bxy_floc, covariantMetricTensor, outloc, method);
   }
 
   // Need to modify yup and ydown fields
@@ -145,7 +146,7 @@ Field3D DifferentialOperators::Div_par(const Field3D& f, const Field2D& Bxy,
     f_B.yup(i) = f.yup(i) / Bxy_floc.yup(i);
     f_B.ydown(i) = f.ydown(i) / Bxy_floc.ydown(i);
   }
-  return Bxy * Grad_par(f_B, outloc, method);
+  return Bxy * Grad_par(f_B, covariantMetricTensor, outloc, method);
 }
 
 /////////////////////////////////////////////////////////
@@ -202,76 +203,76 @@ FieldMetric DifferentialOperators::Delp2(const Field2D& f, const Field2D& g11,
   return result;
 }
 
-Field3D DifferentialOperators::Delp2(const Field3D& f,
-                                     MetricTensor& covariantMetricTensor,
-                                     const Field3D& G1, const Field3D& G3,
-                                     CELL_LOC outloc, bool useFFT) {
-  TRACE("DifferentialOperators::Delp2( Field3D )");
-
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-
-  ASSERT1(location == outloc)
-  ASSERT1(f.getLocation() == outloc)
-
-  if (mesh->GlobalNx == 1 && mesh->GlobalNz == 1) {
-    // copy mesh, location, etc
-    return f * 0;
-  }
-  ASSERT2(mesh->xstart > 0) // Need at least one guard cell
-
-  Field3D result{emptyFrom(f).setLocation(outloc)};
-
-  if (useFFT and not bout::build::use_metric_3d) {
-    int ncz = mesh->LocalNz;
-
-    // Allocate memory
-    auto ft = Matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
-    auto delft = Matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
-
-    // Loop over y indices
-    // Note: should not include y-guard or y-boundary points here as that would
-    // use values from corner cells in dx, which may not be initialised.
-    for (int jy = mesh->ystart; jy <= mesh->yend; jy++) {
-
-      // Take forward FFT
-
-      for (int jx = 0; jx < mesh->LocalNx; jx++) {
-        rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
-      }
-
-      // Loop over kz
-      for (int jz = 0; jz <= ncz / 2; jz++) {
-
-        // No smoothing in the x direction
-        for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-          // Perform x derivative
-
-          dcomplex a, b, c;
-          laplace_tridag_coefs(jx, jy, jz, a, b, c, nullptr, nullptr, outloc);
-
-          delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
-        }
-      }
-
-      // Reverse FFT
-      for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-
-        irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
-      }
-    }
-  } else {
-    result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc)
-             + covariantMetricTensor.Getg11() * ::D2DX2(f, outloc)
-             + covariantMetricTensor.Getg33() * ::D2DZ2(f, outloc)
-             + 2 * covariantMetricTensor.Getg13() * ::D2DXDZ(f, outloc);
-  }
-
-  ASSERT2(result.getLocation() == outloc)
-
-  return result;
-}
+//Field3D DifferentialOperators::Delp2(const Field3D& f,
+//                                     MetricTensor& covariantMetricTensor,
+//                                     const Field3D& G1, const Field3D& G3,
+//                                     CELL_LOC outloc, bool useFFT) {
+//  TRACE("DifferentialOperators::Delp2( Field3D )");
+//
+//  if (outloc == CELL_DEFAULT) {
+//    outloc = f.getLocation();
+//  }
+//
+//  ASSERT1(location == outloc)
+//  ASSERT1(f.getLocation() == outloc)
+//
+//  if (mesh->GlobalNx == 1 && mesh->GlobalNz == 1) {
+//    // copy mesh, location, etc
+//    return f * 0;
+//  }
+//  ASSERT2(mesh->xstart > 0) // Need at least one guard cell
+//
+//  Field3D result{emptyFrom(f).setLocation(outloc)};
+//
+//  if (useFFT and not bout::build::use_metric_3d) {
+//    int ncz = mesh->LocalNz;
+//
+//    // Allocate memory
+//    auto ft = Matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
+//    auto delft = Matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
+//
+//    // Loop over y indices
+//    // Note: should not include y-guard or y-boundary points here as that would
+//    // use values from corner cells in dx, which may not be initialised.
+//    for (int jy = mesh->ystart; jy <= mesh->yend; jy++) {
+//
+//      // Take forward FFT
+//
+//      for (int jx = 0; jx < mesh->LocalNx; jx++) {
+//        rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
+//      }
+//
+//      // Loop over kz
+//      for (int jz = 0; jz <= ncz / 2; jz++) {
+//
+//        // No smoothing in the x direction
+//        for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+//          // Perform x derivative
+//
+//          dcomplex a, b, c;
+//          laplace_tridag_coefs(jx, jy, jz, a, b, c, nullptr, nullptr, outloc);
+//
+//          delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
+//        }
+//      }
+//
+//      // Reverse FFT
+//      for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+//
+//        irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
+//      }
+//    }
+//  } else {
+//    result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc)
+//             + covariantMetricTensor.Getg11() * ::D2DX2(f, outloc)
+//             + covariantMetricTensor.Getg33() * ::D2DZ2(f, outloc)
+//             + 2 * covariantMetricTensor.Getg13() * ::D2DXDZ(f, outloc);
+//  }
+//
+//  ASSERT2(result.getLocation() == outloc)
+//
+//  return result;
+//}
 
 FieldPerp DifferentialOperators::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
   TRACE("DifferentialOperators::Delp2( FieldPerp )");
