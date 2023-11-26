@@ -18,6 +18,7 @@
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
 
+#include "bout/derivs.hxx"
 #include "bout/differential_operators.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
