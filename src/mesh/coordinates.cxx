@@ -1660,7 +1660,7 @@ const MetricTensor::FieldMetric& Coordinates::g12() const { return geometry.g12(
 const MetricTensor::FieldMetric& Coordinates::g13() const { return geometry.g13(); }
 const MetricTensor::FieldMetric& Coordinates::g23() const { return geometry.g23(); }
 
-const MetricTensor::FieldMetric& Coordinates::J() const { return geometry.J(); }
+MetricTensor::FieldMetric& Coordinates::J() const { return geometry.J(); }
 
 const MetricTensor::FieldMetric& Coordinates::Bxy() const { return geometry.Bxy(); }
 

@@ -1569,7 +1569,7 @@ const MetricTensor::FieldMetric& Geometry::g23() const {
   return contravariantMetricTensor.Getg23();
 }
 
-const Geometry::FieldMetric& Geometry::J() const { return this_J; }
+Geometry::FieldMetric Geometry::J() const { return this_J; }
 
 const Geometry::FieldMetric& Geometry::Bxy() const { return this_Bxy; }
 
