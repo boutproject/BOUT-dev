@@ -1646,23 +1646,23 @@ void Coordinates::setCovariantMetricTensor(MetricTensor metric_tensor,
   geometry.setCovariantMetricTensor(metric_tensor, location, region);
 }
 
-const MetricTensor::FieldMetric& Coordinates::g_11() const { return geometry.g_11(); }
-const MetricTensor::FieldMetric& Coordinates::g_22() const { return geometry.g_22(); }
-const MetricTensor::FieldMetric& Coordinates::g_33() const { return geometry.g_33(); }
-const MetricTensor::FieldMetric& Coordinates::g_12() const { return geometry.g_12(); }
-const MetricTensor::FieldMetric& Coordinates::g_13() const { return geometry.g_13(); }
-const MetricTensor::FieldMetric& Coordinates::g_23() const { return geometry.g_23(); }
+const FieldMetric& Coordinates::g_11() const { return geometry.g_11(); }
+const FieldMetric& Coordinates::g_22() const { return geometry.g_22(); }
+const FieldMetric& Coordinates::g_33() const { return geometry.g_33(); }
+const FieldMetric& Coordinates::g_12() const { return geometry.g_12(); }
+const FieldMetric& Coordinates::g_13() const { return geometry.g_13(); }
+const FieldMetric& Coordinates::g_23() const { return geometry.g_23(); }
 
-const MetricTensor::FieldMetric& Coordinates::g11() const { return geometry.g11(); }
-const MetricTensor::FieldMetric& Coordinates::g22() const { return geometry.g22(); }
-const MetricTensor::FieldMetric& Coordinates::g33() const { return geometry.g33(); }
-const MetricTensor::FieldMetric& Coordinates::g12() const { return geometry.g12(); }
-const MetricTensor::FieldMetric& Coordinates::g13() const { return geometry.g13(); }
-const MetricTensor::FieldMetric& Coordinates::g23() const { return geometry.g23(); }
+const FieldMetric& Coordinates::g11() const { return geometry.g11(); }
+const FieldMetric& Coordinates::g22() const { return geometry.g22(); }
+const FieldMetric& Coordinates::g33() const { return geometry.g33(); }
+const FieldMetric& Coordinates::g12() const { return geometry.g12(); }
+const FieldMetric& Coordinates::g13() const { return geometry.g13(); }
+const FieldMetric& Coordinates::g23() const { return geometry.g23(); }
 
-MetricTensor::FieldMetric& Coordinates::J() const { return geometry.J(); }
+FieldMetric& Coordinates::J() const { return geometry.J(); }
 
-const MetricTensor::FieldMetric& Coordinates::Bxy() const { return geometry.Bxy(); }
+const FieldMetric& Coordinates::Bxy() const { return geometry.Bxy(); }
 
 void Coordinates::setJ(FieldMetric J) {
   //TODO: Calculate J and check value is close

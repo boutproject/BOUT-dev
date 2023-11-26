@@ -1556,9 +1556,9 @@ const MetricTensor::FieldMetric& Geometry::g23() const {
   return contravariantMetricTensor.Getg23();
 }
 
-Geometry::FieldMetric Geometry::J() const { return this_J; }
+FieldMetric Geometry::J() const { return this_J; }
 
-const Geometry::FieldMetric& Geometry::Bxy() const { return this_Bxy; }
+const FieldMetric& Geometry::Bxy() const { return this_Bxy; }
 
 void Geometry::setJ(FieldMetric J) {
   //TODO: Calculate J and check value is close
