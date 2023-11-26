@@ -17,7 +17,7 @@ public:
   DifferentialOperators& operator=(DifferentialOperators&) = delete;
 
   DifferentialOperators(Mesh* mesh, FieldMetric intShiftTorsion, CELL_LOC location,
-                        FieldMetric& dx, FieldMetric& dy, FieldMetric& dz);
+                        FieldMetric dx, FieldMetric dy, FieldMetric dz);
 
   //  DifferentialOperators(DifferentialOperators operators,
   //                        DifferentialOperators::FieldMetric& dx);
@@ -131,9 +131,9 @@ private:
   Mesh* mesh;
   FieldMetric intShiftTorsion;
   CELL_LOC location;
-  FieldMetric& dx;
-  FieldMetric& dy;
-  FieldMetric& dz;
+  FieldMetric dx;
+  FieldMetric dy;
+  FieldMetric dz;
 
   /// Cache variable for Grad2_par2
   mutable std::map<std::string, std::unique_ptr<FieldMetric>> Grad2_par2_DDY_invSgCache;
