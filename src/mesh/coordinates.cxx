@@ -548,7 +548,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       // Compare calculated and loaded values
       output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J() - Jcalc)));
 
-      communicate(J());
+      auto J_value = J(); // TODO: There may be a better way
+      communicate(J_value);
 
       // Re-evaluate Bxy using new J
       setBxy(sqrt(g_22()) / J());
@@ -1660,7 +1661,7 @@ const FieldMetric& Coordinates::g12() const { return geometry.g12(); }
 const FieldMetric& Coordinates::g13() const { return geometry.g13(); }
 const FieldMetric& Coordinates::g23() const { return geometry.g23(); }
 
-FieldMetric& Coordinates::J() const { return geometry.J(); }
+const FieldMetric& Coordinates::J() const { return geometry.J(); }
 
 const FieldMetric& Coordinates::Bxy() const { return geometry.Bxy(); }
 
