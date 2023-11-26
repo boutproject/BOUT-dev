@@ -33,12 +33,12 @@
 #ifndef __GEOMETRY_H__
 #define __GEOMETRY_H__
 
-#include "coordinates.hxx"
+//#include "coordinates.hxx"
 #include "differential_operators.hxx"
-#include "metricTensor.hxx"
-#include "bout/field2d.hxx"
-#include "bout/field3d.hxx"
-#include "bout/paralleltransform.hxx"
+//#include "metricTensor.hxx"
+//#include "bout/field2d.hxx"
+//#include "bout/field3d.hxx"
+//#include "bout/paralleltransform.hxx"
 #include "bout/utils.hxx"
 #include <bout/bout_types.hxx>
 

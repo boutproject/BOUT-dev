@@ -2,12 +2,13 @@
 #ifndef BOUT_DIFFERENTIALOPERATORS_HXX
 #define BOUT_DIFFERENTIALOPERATORS_HXX
 
-#include "bout/field2d.hxx"
-#include "bout/field3d.hxx"
-//#include "bout/index_derivs_interface.hxx"
+//#include "bout/field2d.hxx"
+//#include "bout/field3d.hxx"
 #include "bout/metricTensor.hxx"
-#include "bout/paralleltransform.hxx"
-#include <bout/derivs.hxx>
+//#include "bout/mesh.hxx"
+////#include "bout/index_derivs_interface.hxx"
+//#include "bout/paralleltransform.hxx"
+//#include <bout/derivs.hxx>
 
 class DifferentialOperators {
 

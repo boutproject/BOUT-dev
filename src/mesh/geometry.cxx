@@ -4,10 +4,18 @@
  * given the contravariant metric tensor terms
  **************************************************************************/
 
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/geometry.hxx"
+//#include "bout/metricTensor.hxx"
+#include "bout/paralleltransform.hxx"
+#include "bout/utils.hxx"
+#include <bout/bout_types.hxx>
+
 //#include <bout/assert.hxx>
 //#include <bout/constants.hxx>
 //#include <bout/coordinates.hxx>
-#include <bout/geometry.hxx>
+//#include <bout/geometry.hxx>
 //#include <bout/msg_stack.hxx>
 //#include <bout/sys/timer.hxx>
 //#include <bout/utils.hxx>
