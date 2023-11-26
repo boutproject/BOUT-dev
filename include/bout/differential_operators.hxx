@@ -62,11 +62,13 @@ public:
 
   /// Divergence along magnetic field  Div(b*f) = B.Grad(f/B)
   FieldMetric Div_par(const Field2D& f, const Field2D& Bxy,
+                      const MetricTensor& covariantMetricTensor,
                       CELL_LOC outloc = CELL_DEFAULT,
                       const std::string& method = "DEFAULT");
 
-  Field3D Div_par(const Field3D& f, const Field2D& Bxy, CELL_LOC outloc = CELL_DEFAULT,
-                  const std::string& method = "DEFAULT");
+  Field3D Div_par(const Field3D& f, const Field2D& Bxy,
+                  const MetricTensor& covariantMetricTensor,
+                  CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT");
 
   // Second derivative along magnetic field
   FieldMetric Grad2_par2(const Field2D& f, MetricTensor& covariantMetricTensor,
