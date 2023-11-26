@@ -17,7 +17,8 @@ public:
   using FieldMetric = Field2D;
 #endif
 
-  DifferentialOperators(Mesh* mesh, CELL_LOC& location, FieldMetric& dx, FieldMetric& dy,
+  DifferentialOperators(Mesh* mesh, FieldMetric& intShiftTorsion,
+                        const CELL_LOC& location, FieldMetric& dx, FieldMetric& dy,
                         FieldMetric& dz);
 
   FieldMetric DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
@@ -99,7 +100,8 @@ public:
 
 private:
   Mesh* mesh;
-  CELL_LOC& location;
+  FieldMetric& intShiftTorsion;
+  const CELL_LOC& location;
   FieldMetric& dx;
   FieldMetric& dy;
   FieldMetric& dz;
