@@ -1,9 +1,10 @@
 
 #include "bout/differential_operators.hxx"
 
-DifferentialOperators::DifferentialOperators(CELL_LOC& location, FieldMetric& dx,
-                                             FieldMetric& dy, FieldMetric& dz)
-    : location(location), dx(dx), dy(dy), dz(dz) {}
+DifferentialOperators::DifferentialOperators(Mesh* mesh, CELL_LOC& location,
+                                             FieldMetric& dx, FieldMetric& dy,
+                                             FieldMetric& dz)
+    : mesh(mesh), location(location), dx(dx), dy(dy), dz(dz) {}
 
 DifferentialOperators::FieldMetric DifferentialOperators::DDX(const Field2D& f,
                                                               CELL_LOC loc,
@@ -51,7 +52,7 @@ DifferentialOperators::DDZ(const Field2D& f, CELL_LOC loc,
                            const std::string& UNUSED(method),
                            const std::string& UNUSED(region)) {
   ASSERT1(location == loc || loc == CELL_DEFAULT)
-  ASSERT1(f.getMesh() == localmesh)
+  ASSERT1(f.getMesh() == mesh)
   if (loc == CELL_DEFAULT) {
     loc = f.getLocation();
   }
