@@ -33,13 +33,13 @@
 #ifndef BOUT_COORDINATES_H
 #define BOUT_COORDINATES_H
 
-#include "bout/field2d.hxx"
-#include "bout/field3d.hxx"
+//#include "bout/field2d.hxx"
+//#include "bout/field3d.hxx"
 #include "bout/geometry.hxx"
 #include "bout/metricTensor.hxx"
 #include "bout/paralleltransform.hxx"
-#include "bout/utils.hxx"
-#include <bout/bout_types.hxx>
+//#include "bout/utils.hxx"
+//#include <bout/bout_types.hxx>
 
 class Mesh;
 
