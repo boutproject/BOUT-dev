@@ -257,16 +257,16 @@ private:
   /// `Coordinates::calculateGeometry` is called
   mutable std::unique_ptr<Field2D> zlength_cache{nullptr};
 
-  /// Cache variable for Grad2_par2
-  mutable std::map<std::string, std::unique_ptr<FieldMetric>> Grad2_par2_DDY_invSgCache;
-  mutable std::unique_ptr<FieldMetric> invSgCache{nullptr};
+//  /// Cache variable for Grad2_par2
+//  mutable std::map<std::string, std::unique_ptr<FieldMetric>> Grad2_par2_DDY_invSgCache;
+//  mutable std::unique_ptr<FieldMetric> invSgCache{nullptr};
 
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
 
-  const FieldMetric& invSg() const;
-  const FieldMetric& Grad2_par2_DDY_invSg(CELL_LOC outloc,
+//  const FieldMetric& invSg() const;
+//  const FieldMetric& Grad2_par2_DDY_invSg(CELL_LOC outloc,
                                           const std::string& method) const;
 
   // check that covariant tensors are positive (if expected) and finite (always)

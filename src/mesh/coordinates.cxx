@@ -1680,3 +1680,6 @@ void Coordinates::setBxy(FieldMetric Bxy) {
 const MetricTensor& Coordinates::getContravariantMetricTensor() const {
   return geometry.getContravariantMetricTensor();
 }
+const Coordinates::FieldMetric& Coordinates::invSg() const {
+
+}
