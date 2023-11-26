@@ -11,7 +11,6 @@
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
-//#include <bout/derivs.hxx>
 #include <bout/fft.hxx>
 
 #include <bout/globals.hxx>
