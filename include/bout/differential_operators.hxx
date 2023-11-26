@@ -5,7 +5,7 @@
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 //#include "bout/index_derivs_interface.hxx"
-#include "metricTensor.hxx"
+#include "bout/metricTensor.hxx"
 #include "bout/paralleltransform.hxx"
 #include <bout/derivs.hxx>
 
@@ -21,6 +21,9 @@ public:
   DifferentialOperators(Mesh* mesh, FieldMetric& intShiftTorsion,
                         const CELL_LOC& location, FieldMetric& dx, FieldMetric& dy,
                         FieldMetric& dz);
+
+  //  DifferentialOperators(DifferentialOperators operators,
+  //                        DifferentialOperators::FieldMetric& dx);
 
   FieldMetric DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& method = "DEFAULT",
@@ -118,6 +121,8 @@ public:
   // solver
   Field2D Laplace_perpXY(const Field2D& A, const Field2D& f,
                          MetricTensor& covariantMetricTensor, const Field2D& J);
+
+  void invalidateAndRecalculateCachedVariables();
 
 private:
   Mesh* mesh;

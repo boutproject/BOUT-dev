@@ -489,3 +489,8 @@ DifferentialOperators::Grad2_par2_DDY_invSg(MetricTensor& covariantMetricTensor,
   Grad2_par2_DDY_invSgCache[method] = std::move(ptr);
   return *Grad2_par2_DDY_invSgCache[method];
 }
+
+void DifferentialOperators::invalidateAndRecalculateCachedVariables() {
+  Grad2_par2_DDY_invSgCache.clear();
+  invSgCache.reset();
+}
