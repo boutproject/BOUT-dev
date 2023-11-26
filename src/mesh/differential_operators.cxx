@@ -187,21 +187,21 @@ Field3D DifferentialOperators::Grad2_par2(const Field3D& f,
   return result;
 }
 
-/////////////////////////////////////////////////////////
-// perpendicular Laplacian operator
-
-#include <bout/invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
-
-FieldMetric DifferentialOperators::Delp2(const Field2D& f, const Field2D& g11,
-                                         const Field2D& G1, CELL_LOC outloc,
-                                         bool UNUSED(useFFT)) {
-  TRACE("DifferentialOperators::Delp2( Field2D )");
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
-
-  auto result = G1 * DDX(f, outloc) + g11 * D2DX2(f, outloc);
-
-  return result;
-}
+///////////////////////////////////////////////////////////
+//// perpendicular Laplacian operator
+//
+//#include <bout/invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
+//
+//FieldMetric DifferentialOperators::Delp2(const Field2D& f, const Field2D& g11,
+//                                         const Field2D& G1, CELL_LOC outloc,
+//                                         bool UNUSED(useFFT)) {
+//  TRACE("DifferentialOperators::Delp2( Field2D )");
+//  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
+//
+//  auto result = G1 * DDX(f, outloc) + g11 * D2DX2(f, outloc);
+//
+//  return result;
+//}
 
 //Field3D DifferentialOperators::Delp2(const Field3D& f,
 //                                     MetricTensor& covariantMetricTensor,
@@ -274,68 +274,68 @@ FieldMetric DifferentialOperators::Delp2(const Field2D& f, const Field2D& g11,
 //  return result;
 //}
 
-FieldPerp DifferentialOperators::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
-  TRACE("DifferentialOperators::Delp2( FieldPerp )");
-
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-
-  ASSERT1(location == outloc)
-  ASSERT1(f.getLocation() == outloc)
-
-  if (mesh->GlobalNx == 1 && mesh->GlobalNz == 1) {
-    // copy mesh, location, etc
-    return f * 0;
-  }
-  ASSERT2(mesh->xstart > 0) // Need at least one guard cell
-
-  FieldPerp result{emptyFrom(f).setLocation(outloc)};
-
-  int jy = f.getIndex();
-  result.setIndex(jy);
-
-  if (useFFT) {
-    int ncz = mesh->LocalNz;
-
-    // Allocate memory
-    auto ft = Matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
-    auto delft = Matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
-
-    // Take forward FFT
-    for (int jx = 0; jx < mesh->LocalNx; jx++) {
-      rfft(&f(jx, 0), ncz, &ft(jx, 0));
-    }
-
-    // Loop over kz
-    for (int jz = 0; jz <= ncz / 2; jz++) {
-
-      // No smoothing in the x direction
-      for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-        // Perform x derivative
-
-        dcomplex a, b, c;
-        laplace_tridag_coefs(jx, jy, jz, a, b, c);
-
-        delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
-      }
-    }
-
-    // Reverse FFT
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-      irfft(&delft(jx, 0), ncz, &result(jx, 0));
-    }
-
-  } else {
-    throw BoutException("Non-fourier Delp2 not currently implented for FieldPerp.");
-    // Would be the following but don't have standard derivative operators for FieldPerps
-    // yet
-    // result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * ::D2DX2(f, outloc)
-    //          + g33 * ::D2DZ2(f, outloc) + 2 * g13 * ::D2DXDZ(f, outloc);
-  }
-
-  return result;
-}
+//FieldPerp DifferentialOperators::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
+//  TRACE("DifferentialOperators::Delp2( FieldPerp )");
+//
+//  if (outloc == CELL_DEFAULT) {
+//    outloc = f.getLocation();
+//  }
+//
+//  ASSERT1(location == outloc)
+//  ASSERT1(f.getLocation() == outloc)
+//
+//  if (mesh->GlobalNx == 1 && mesh->GlobalNz == 1) {
+//    // copy mesh, location, etc
+//    return f * 0;
+//  }
+//  ASSERT2(mesh->xstart > 0) // Need at least one guard cell
+//
+//  FieldPerp result{emptyFrom(f).setLocation(outloc)};
+//
+//  int jy = f.getIndex();
+//  result.setIndex(jy);
+//
+//  if (useFFT) {
+//    int ncz = mesh->LocalNz;
+//
+//    // Allocate memory
+//    auto ft = Matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
+//    auto delft = Matrix<dcomplex>(mesh->LocalNx, ncz / 2 + 1);
+//
+//    // Take forward FFT
+//    for (int jx = 0; jx < mesh->LocalNx; jx++) {
+//      rfft(&f(jx, 0), ncz, &ft(jx, 0));
+//    }
+//
+//    // Loop over kz
+//    for (int jz = 0; jz <= ncz / 2; jz++) {
+//
+//      // No smoothing in the x direction
+//      for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+//        // Perform x derivative
+//
+//        dcomplex a, b, c;
+//        laplace_tridag_coefs(jx, jy, jz, a, b, c);
+//
+//        delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
+//      }
+//    }
+//
+//    // Reverse FFT
+//    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
+//      irfft(&delft(jx, 0), ncz, &result(jx, 0));
+//    }
+//
+//  } else {
+//    throw BoutException("Non-fourier Delp2 not currently implented for FieldPerp.");
+//    // Would be the following but don't have standard derivative operators for FieldPerps
+//    // yet
+//    // result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * ::D2DX2(f, outloc)
+//    //          + g33 * ::D2DZ2(f, outloc) + 2 * g13 * ::D2DXDZ(f, outloc);
+//  }
+//
+//  return result;
+//}
 
 FieldMetric DifferentialOperators::Laplace_par(const Field2D& f, const Field2D& g22,
                                                const Field2D& J, CELL_LOC outloc) {
