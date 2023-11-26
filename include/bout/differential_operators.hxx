@@ -17,7 +17,7 @@ public:
   using FieldMetric = Field2D;
 #endif
 
-  DifferentialOperators(CELL_LOC& location, FieldMetric& dx, FieldMetric& dy,
+  DifferentialOperators(Mesh* mesh, CELL_LOC& location, FieldMetric& dx, FieldMetric& dy,
                         FieldMetric& dz);
 
   FieldMetric DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
@@ -98,6 +98,7 @@ public:
   Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
 
 private:
+  Mesh* mesh;
   CELL_LOC& location;
   FieldMetric& dx;
   FieldMetric& dy;
