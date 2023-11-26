@@ -1243,7 +1243,8 @@ void Coordinates::setParallelTransform(Options* options) {
 /////////////////////////////////////////////////////////
 // Parallel gradient
 
-Field2D Coordinates::Grad_par(const Field2D& var) {
+Field2D Coordinates::Grad_par(const Field2D& var, [[maybe_unused]] CELL_LOC outloc,
+                              const std::string& UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
 
   return differential_operators.Grad_par(var, geometry.getCovariantMetricTensor());
@@ -1263,7 +1264,7 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
 // vparallel times the parallel derivative along unperturbed B-field
 
 Field2D Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
-                                   MAYBE_UNUSED(CELL_LOC outloc),
+                                   [[maybe_unused]] CELL_LOC outloc,
                                    const std::string& UNUSED(method)) {
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()))
 
@@ -1548,8 +1549,8 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
 
 // Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY
 // solver
-Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
-                                    MAYBE_UNUSED(const Field2D& f)) {
+Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
+                                    [[maybe_unused]] const Field2D& f) const {
   TRACE("Coordinates::Laplace_perpXY( Field2D )");
 #if not(BOUT_USE_METRIC_3D)
   Field2D result;
