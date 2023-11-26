@@ -5,9 +5,8 @@
  **************************************************************************/
 
 #include "bout/geometry.hxx"
-#include "bout/field2d.hxx"
-#include "bout/utils.hxx"
-#include <bout/bout_types.hxx>
+//#include "bout/field2d.hxx"
+//#include <bout/bout_types.hxx>
 
 //// use anonymous namespace so this utility function is not available outside this file
 //namespace {

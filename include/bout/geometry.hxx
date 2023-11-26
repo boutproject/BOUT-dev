@@ -33,14 +33,12 @@
 #ifndef __GEOMETRY_H__
 #define __GEOMETRY_H__
 
-//#include "coordinates.hxx"
 #include "differential_operators.hxx"
-//#include "metricTensor.hxx"
-//#include "bout/field2d.hxx"
-//#include "bout/field3d.hxx"
-//#include "bout/paralleltransform.hxx"
-#include "bout/utils.hxx"
-#include <bout/bout_types.hxx>
+#include "metricTensor.hxx"
+//#include "bout/utils.hxx"
+//#include <bout/bout_types.hxx>
+
+using FieldMetric = MetricTensor::FieldMetric;
 
 /*!
  * Represents the geometry a coordinate system, and associated operators
@@ -50,12 +48,6 @@
 class Geometry {
 
 public:
-#if BOUT_USE_METRIC_3D
-  using FieldMetric = Field3D;
-#else
-  using FieldMetric = Field2D;
-#endif
-
   Geometry(FieldMetric J, FieldMetric Bxy, FieldMetric g11, FieldMetric g22,
            FieldMetric g33, FieldMetric g12, FieldMetric g13, FieldMetric g23,
            FieldMetric g_11, FieldMetric g_22, FieldMetric g_33, FieldMetric g_12,

@@ -5,15 +5,9 @@
 #include "bout/metricTensor.hxx"
 //#include "bout/index_derivs_interface.hxx"
 
-
 class DifferentialOperators {
 
-public:
-#if BOUT_USE_METRIC_3D
-  using FieldMetric = Field3D;
-#else
-  using FieldMetric = Field2D;
-#endif
+  using FieldMetric = MetricTensor::FieldMetric;
 
   DifferentialOperators(Mesh* mesh, FieldMetric& intShiftTorsion,
                         const CELL_LOC& location, FieldMetric& dx, FieldMetric& dy,
