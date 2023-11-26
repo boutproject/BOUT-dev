@@ -9,6 +9,7 @@ class DifferentialOperators {
 
   using FieldMetric = MetricTensor::FieldMetric;
 
+public:
   DifferentialOperators(Mesh* mesh, FieldMetric& intShiftTorsion,
                         const CELL_LOC& location, FieldMetric& dx, FieldMetric& dy,
                         FieldMetric& dz);
