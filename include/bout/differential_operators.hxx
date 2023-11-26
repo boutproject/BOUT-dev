@@ -118,6 +118,10 @@ public:
 
   void invalidateAndRecalculateCachedVariables();
 
+  const FieldMetric& Grad2_par2_DDY_invSg(const MetricTensor& covariantMetricTensor,
+                                          CELL_LOC outloc,
+                                          const std::string& method) const;
+
 private:
   Mesh* mesh;
   FieldMetric& intShiftTorsion;
@@ -131,10 +135,6 @@ private:
   mutable std::unique_ptr<FieldMetric> invSgCache{nullptr};
 
   FieldMetric& invSg(const MetricTensor& covariantMetricTensor) const;
-
-  const FieldMetric& Grad2_par2_DDY_invSg(const MetricTensor& covariantMetricTensor,
-                                          CELL_LOC outloc,
-                                          const std::string& method) const;
 };
 
 #endif //BOUT_DIFFERENTIALOPERATORS_HXX

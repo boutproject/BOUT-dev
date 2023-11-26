@@ -1326,7 +1326,9 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
   TRACE("Coordinates::Grad2_par2( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()))
 
-  auto result = Grad2_par2_DDY_invSg(outloc, method) * DDY(f, outloc, method)
+  auto result = differential_operators.Grad2_par2_DDY_invSg(
+                    geometry.getCovariantMetricTensor(), outloc, method)
+                    * DDY(f, outloc, method)
                 + D2DY2(f, outloc, method) / g22();
 
   return result;
@@ -1344,7 +1346,10 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
 
   Field3D r2 = D2DY2(f, outloc, method) / g22();
 
-  result = Grad2_par2_DDY_invSg(outloc, method) * result + r2;
+  result = differential_operators.Grad2_par2_DDY_invSg(
+               geometry.getCovariantMetricTensor(), outloc, method)
+               * result
+           + r2;
 
   ASSERT2(result.getLocation() == outloc)
 
@@ -1603,33 +1608,34 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
 #endif
 }
 
-const Coordinates::FieldMetric& Coordinates::invSg() const {
-  if (invSgCache == nullptr) {
-    auto ptr = std::make_unique<FieldMetric>();
-    (*ptr) = 1.0 / sqrt(g22());
-    invSgCache = std::move(ptr);
-  }
-  return *invSgCache;
-}
+//const Coordinates::FieldMetric& Coordinates::invSg() const {
+//  if (invSgCache == nullptr) {
+//    auto ptr = std::make_unique<FieldMetric>();
+//    (*ptr) = 1.0 / sqrt(g22());
+//    invSgCache = std::move(ptr);
+//  }
+//  return *invSgCache;
+//}
 
-const Coordinates::FieldMetric&
-Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) const {
-  if (auto search = Grad2_par2_DDY_invSgCache.find(method);
-      search != Grad2_par2_DDY_invSgCache.end()) {
-    return *search->second;
-  }
-  invSg();
-
-  // Communicate to get parallel slices
-  localmesh->communicate(*invSgCache);
-  invSgCache->applyParallelBoundary("parallel_neumann");
-
-  // cache
-  auto ptr = std::make_unique<FieldMetric>();
-  *ptr = DDY(*invSgCache, outloc, method) * invSg();
-  Grad2_par2_DDY_invSgCache[method] = std::move(ptr);
-  return *Grad2_par2_DDY_invSgCache[method];
-}
+//const Coordinates::FieldMetric&
+//Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) const {
+//
+//  if (auto search = Grad2_par2_DDY_invSgCache.find(method);
+//      search != Grad2_par2_DDY_invSgCache.end()) {
+//    return *search->second;
+//  }
+//  invSg();
+//
+//  // Communicate to get parallel slices
+//  localmesh->communicate(*invSgCache);
+//  invSgCache->applyParallelBoundary("parallel_neumann");
+//
+//  // cache
+//  auto ptr = std::make_unique<FieldMetric>();
+//  *ptr = DDY(*invSgCache, outloc, method) * invSg();
+//  Grad2_par2_DDY_invSgCache[method] = std::move(ptr);
+//  return *Grad2_par2_DDY_invSgCache[method];
+//}
 
 void Coordinates::checkCovariant() { return geometry.checkCovariant(localmesh->ystart); }
 
