@@ -80,7 +80,7 @@ public:
   const FieldMetric& g23() const;
 
   const MetricTensor& getContravariantMetricTensor() const;
-  //  MetricTensor& getCovariantMetricTensor();
+  const MetricTensor& getCovariantMetricTensor() const;
 
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
   const FieldMetric& J() const;

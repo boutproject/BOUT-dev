@@ -132,6 +132,7 @@ public:
   FieldMetric IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
 
   const MetricTensor& getContravariantMetricTensor() const;
+  //  const MetricTensor& getCovariantMetricTensor() const;
 
   /// Calculate differential geometry quantities from the metric tensor
   int calculateGeometry(bool recalculate_staggered = true,
@@ -186,23 +187,22 @@ public:
   //  Field3D DDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
   //              const std::string& method = "DEFAULT",
   //              const std::string& region = "RGN_NOBNDRY");
-  //
-  //  /// Gradient along magnetic field  b.Grad(f)
-  //  FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
-  //                       const std::string& method = "DEFAULT");
-  //
-  //  Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
-  //                   const std::string& method = "DEFAULT");
-  //
-  //  /// Advection along magnetic field V*b.Grad(f)
-  //  FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
-  //                            CELL_LOC outloc = CELL_DEFAULT,
-  //                            const std::string& method = "DEFAULT");
-  //
-  //  Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
-  //                        CELL_LOC outloc = CELL_DEFAULT,
-  //                        const std::string& method = "DEFAULT");
-  //
+
+  /// Gradient along magnetic field  b.Grad(f)
+  Field2D Grad_par(const Field2D& var);
+
+  Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT");
+
+  /// Advection along magnetic field V*b.Grad(f)
+  FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
+                            CELL_LOC outloc = CELL_DEFAULT,
+                            const std::string& method = "DEFAULT");
+
+  Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
+                        CELL_LOC outloc = CELL_DEFAULT,
+                        const std::string& method = "DEFAULT");
+
   //  /// Divergence along magnetic field  Div(b*f) = B.Grad(f/B)
   //  FieldMetric Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
   //                      const std::string& method = "DEFAULT");
