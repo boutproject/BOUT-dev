@@ -297,8 +297,10 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric IntShiftTorsion)
     : dx(std::move(dx)), dy(std::move(dy)), dz(dz), ShiftTorsion(std::move(ShiftTorsion)),
       IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE), geometry(Geometry(J, Bxy, g11, g22, g33, g12, g13, g23, g_11,
-                                               g_22, g_33, g_12, g_13, g_23)) {}
+      location(CELL_CENTRE), differential_operators(DifferentialOperators(
+                                 mesh, IntShiftTorsion, location, dx, dy, dz)),
+      geometry(Geometry(J, Bxy, g11, g22, g33, g12, g13, g23, g_11, g_22, g_33, g_12,
+                        g_13, g_23, differential_operators)) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
@@ -308,8 +310,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       //      G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh), G3_23(mesh),
       //      G1(mesh), G2(mesh), G3(mesh),
       ShiftTorsion(mesh), IntShiftTorsion(mesh), localmesh(mesh), location(loc),
-      geometry(
-          Geometry(mesh, DifferentialOperators(mesh, IntShiftTorsion, loc, dx, dy, dz))) {
+      differential_operators(
+          DifferentialOperators(mesh, IntShiftTorsion, loc, dx, dy, dz)),
+      geometry(Geometry(mesh, differential_operators)) {
 
   if (options == nullptr) {
     options = Options::getRoot()->getSection("mesh");
@@ -879,8 +882,7 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
 
   // Invalidate and recalculate cached variables
   zlength_cache.reset();
-  Grad2_par2_DDY_invSgCache.clear();
-  invSgCache.reset();
+  differential_operators.invalidateAndRecalculateCachedVariables();
 
   return 0;
 }
@@ -1493,18 +1495,18 @@ void Coordinates::setParallelTransform(Options* options) {
 //
 //  return result;
 //}
-//
+
 //Coordinates::FieldMetric Coordinates::Laplace_par(const Field2D& f, CELL_LOC outloc) {
 //  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 //
 //  return D2DY2(f, outloc) / g22() + DDY(J() / g22(), outloc) * DDY(f, outloc) / J();
 //}
-//
+
 //Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
 //  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 //  return D2DY2(f, outloc) / g22() + DDY(J() / g22(), outloc) * ::DDY(f, outloc) / J();
 //}
-//
+
 //// Full Laplacian operator on scalar field
 //
 //Coordinates::FieldMetric Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
@@ -1680,6 +1682,5 @@ void Coordinates::setBxy(FieldMetric Bxy) {
 const MetricTensor& Coordinates::getContravariantMetricTensor() const {
   return geometry.getContravariantMetricTensor();
 }
-const Coordinates::FieldMetric& Coordinates::invSg() const {
 
-}
+//const Coordinates::FieldMetric& Coordinates::invSg() const {}

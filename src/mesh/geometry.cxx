@@ -6,7 +6,7 @@
 
 //#include <bout/assert.hxx>
 //#include <bout/constants.hxx>
-#include <bout/coordinates.hxx>
+//#include <bout/coordinates.hxx>
 #include <bout/geometry.hxx>
 //#include <bout/msg_stack.hxx>
 //#include <bout/sys/timer.hxx>
@@ -407,19 +407,17 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
 
 //Geometry::Geometry() {}
 
-//Geometry::Geometry(
-//    //    Coordinates& coordinates,
-//    FieldMetric J, FieldMetric Bxy, FieldMetric g11, FieldMetric g22, FieldMetric g33,
-//    FieldMetric g12, FieldMetric g13, FieldMetric g23, FieldMetric g_11, FieldMetric g_22,
-//    FieldMetric g_33, FieldMetric g_12, FieldMetric g_13, FieldMetric g_23,
-//    DifferentialOperators differential_operators)
-//    : //      coordinates(coordinates),
-//      contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-//      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), this_J(J), this_Bxy(Bxy),
-//      differential_operators(differential_operators) {}
+Geometry::Geometry(FieldMetric J, FieldMetric Bxy, FieldMetric g11, FieldMetric g22,
+                   FieldMetric g33, FieldMetric g12, FieldMetric g13, FieldMetric g23,
+                   FieldMetric g_11, FieldMetric g_22, FieldMetric g_33, FieldMetric g_12,
+                   FieldMetric g_13, FieldMetric g_23,
+                   DifferentialOperators& differential_operators)
+    : contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), this_J(J), this_Bxy(Bxy),
+      differential_operators(differential_operators) {}
 
-Geometry::Geometry(Mesh* mesh, DifferentialOperators differential_operators)
-    //bool force_interpolate_from_centre)
+Geometry::Geometry(Mesh* mesh, DifferentialOperators& differential_operators)
+    //bool force_interpolate_from_centre
     : G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh), G1_23(mesh),
       G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh), G2_23(mesh),
       G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh), G3_23(mesh),

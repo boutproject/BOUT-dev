@@ -56,16 +56,13 @@ public:
   using FieldMetric = Field2D;
 #endif
 
-  //  Geometry();
+  Geometry(FieldMetric J, FieldMetric Bxy, FieldMetric g11, FieldMetric g22,
+           FieldMetric g33, FieldMetric g12, FieldMetric g13, FieldMetric g23,
+           FieldMetric g_11, FieldMetric g_22, FieldMetric g_33, FieldMetric g_12,
+           FieldMetric g_13, FieldMetric g_23,
+           DifferentialOperators& differential_operators);
 
-//  Geometry(
-//      //      Coordinates& coordinates,
-//      FieldMetric J, FieldMetric Bxy, FieldMetric g11, FieldMetric g22, FieldMetric g33,
-//      FieldMetric g12, FieldMetric g13, FieldMetric g23, FieldMetric g_11,
-//      FieldMetric g_22, FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
-//      FieldMetric g_23, DifferentialOperators differential_operators);
-
-  Geometry(Mesh* mesh, DifferentialOperators differential_operators);
+  Geometry(Mesh* mesh, DifferentialOperators& differential_operators);
 
   /// Christoffel symbol of the second kind (connection coefficients)
   FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
@@ -146,7 +143,7 @@ private:
   FieldMetric this_J;
   FieldMetric this_Bxy; ///< Magnitude of B = nabla z times nabla x
 
-  DifferentialOperators differential_operators;
+  DifferentialOperators& differential_operators;
 
   //  template <typename T, typename... Ts>
   //  void communicate(T& t, Ts... ts);
