@@ -103,7 +103,7 @@ public:
   const FieldMetric& g23() const;
 
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
-  FieldMetric& J() const;
+  const FieldMetric& J() const;
 
   ///< Magnitude of B = nabla z times nabla x
   const FieldMetric& Bxy() const;

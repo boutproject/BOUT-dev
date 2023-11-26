@@ -1556,7 +1556,7 @@ const MetricTensor::FieldMetric& Geometry::g23() const {
   return contravariantMetricTensor.Getg23();
 }
 
-FieldMetric Geometry::J() const { return this_J; }
+const FieldMetric& Geometry::J() const { return this_J; }
 
 const FieldMetric& Geometry::Bxy() const { return this_Bxy; }
 
