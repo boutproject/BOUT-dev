@@ -8,6 +8,8 @@
 //#include "bout/paralleltransform.hxx"
 #include <bout/derivs.hxx>
 
+DifferentialOperators::DifferentialOperators(const DifferentialOperators& operators) {}
+
 DifferentialOperators::DifferentialOperators(Mesh* mesh, FieldMetric intShiftTorsion,
                                              const CELL_LOC location, FieldMetric& dx,
                                              FieldMetric& dy, FieldMetric& dz)
