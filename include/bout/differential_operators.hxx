@@ -19,6 +19,8 @@ public:
   DifferentialOperators(Mesh* mesh, FieldMetric intShiftTorsion, CELL_LOC location,
                         FieldMetric dx, FieldMetric dy, FieldMetric dz);
 
+  ~DifferentialOperators() = default;
+
   //  DifferentialOperators(DifferentialOperators operators,
   //                        DifferentialOperators::FieldMetric& dx);
 
