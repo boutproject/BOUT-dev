@@ -536,11 +536,11 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
           "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
           suffix);
     } else {
-      setJ(localmesh->interpolateAndExtrapolate(J(), location, extrapolate_x,
+      const auto Jcalc = getAtLoc(mesh, "J", suffix, location);
+      setJ(localmesh->interpolateAndExtrapolate(Jcalc, location, extrapolate_x,
                                                 extrapolate_y, false, transform.get()));
 
       // Compare calculated and loaded values
-      const auto Jcalc = getAtLoc(mesh, "J", suffix, location);
       output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J() - Jcalc)));
 
       auto J_value = J(); // TODO: There may be a better way
@@ -563,9 +563,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                         "Calculating from metric tensor\n",
                         suffix);
     } else {
-      setBxy(localmesh->interpolateAndExtrapolate(Bxy(), location, extrapolate_x,
-                                                  extrapolate_y, false, transform.get()));
       const auto Bcalc = getAtLoc(mesh, "Bxy", suffix, location);
+      setBxy(localmesh->interpolateAndExtrapolate(Bcalc, location, extrapolate_x,
+                                                  extrapolate_y, false, transform.get()));
       output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy() - Bcalc)));
     }
     // Check Bxy
