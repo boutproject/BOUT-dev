@@ -10,16 +10,9 @@ class DifferentialOperators {
   using FieldMetric = MetricTensor::FieldMetric;
 
 public:
-  DifferentialOperators(DifferentialOperators&&) = default;
-  DifferentialOperators& operator=(DifferentialOperators&&) = default;
-
-  DifferentialOperators(const DifferentialOperators& operators) = delete;
-  DifferentialOperators& operator=(DifferentialOperators&) = delete;
 
   DifferentialOperators(Mesh* mesh, FieldMetric intShiftTorsion, CELL_LOC location,
                         FieldMetric dx, FieldMetric dy, FieldMetric dz);
-
-  ~DifferentialOperators() = default;
 
   //  DifferentialOperators(DifferentialOperators operators,
   //                        DifferentialOperators::FieldMetric& dx);
