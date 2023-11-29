@@ -683,11 +683,7 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
   communicate(tmp);
   G3 = (DDX(J() * g13()) + DDY(tmp) + DDZ(J() * g33())) / J();
 
-  // Communicate christoffel symbol terms
-  output_progress.write("\tCommunicating connection terms\n");
-
-  communicate(G1_11, G1_22, G1_33, G1_12, G1_13, G1_23, G2_11, G2_22, G2_33, G2_12, G2_13,
-              G2_23, G3_11, G3_22, G3_33, G3_12, G3_13, G3_23, G1, G2, G3);
+  communicateChristoffelSymbolTerms();
 
   // Set boundary guard cells of Christoffel symbol terms
   // Ideally, when location is staggered, we would set the upper/outer boundary point
@@ -1649,6 +1645,14 @@ void Coordinates::setBxy(FieldMetric Bxy) {
 
 const MetricTensor& Coordinates::getContravariantMetricTensor() const {
   return geometry.getContravariantMetricTensor();
+}
+
+void Coordinates::communicateChristoffelSymbolTerms() {
+
+  output_progress.write("\tCommunicating connection terms\n");
+
+  communicate(G1_11, G1_22, G1_33, G1_12, G1_13, G1_23, G2_11, G2_22, G2_33, G2_12, G2_13,
+              G2_23, G3_11, G3_22, G3_33, G3_12, G3_13, G3_23, G1, G2, G3);
 }
 
 //const MetricTensor& Coordinates::getCovariantMetricTensor() const {
