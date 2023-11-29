@@ -1392,8 +1392,9 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
       }
     }
   } else {
-    result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc) + g11() * ::D2DX2(f, outloc)
-             + g33() * ::D2DZ2(f, outloc) + 2 * g13() * ::D2DXDZ(f, outloc);
+    result = G1() * ::DDX(f, outloc) + G3() * ::DDZ(f, outloc)
+             + g11() * ::D2DX2(f, outloc) + g33() * ::D2DZ2(f, outloc)
+             + 2 * g13() * ::D2DXDZ(f, outloc);
   }
 
   ASSERT2(result.getLocation() == outloc)
@@ -1483,7 +1484,7 @@ Coordinates::FieldMetric Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
   TRACE("Coordinates::Laplace( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11() * D2DX2(f, outloc)
+  return G1() * DDX(f, outloc) + G2() * DDY(f, outloc) + g11() * D2DX2(f, outloc)
          + g22() * D2DY2(f, outloc)
          + 2.0 * g12()
                * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY", dfdy_boundary_conditions,
@@ -1496,7 +1497,7 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
   TRACE("Coordinates::Laplace( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc)
+  return G1() * ::DDX(f, outloc) + G2() * ::DDY(f, outloc) + G3() * ::DDZ(f, outloc)
          + g11() * D2DX2(f, outloc) + g22() * D2DY2(f, outloc) + g33() * D2DZ2(f, outloc)
          + 2.0
                * (g12()
