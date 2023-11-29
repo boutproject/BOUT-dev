@@ -675,13 +675,13 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
 
   auto tmp = J() * g12();
   communicate(tmp);
-  G1 = (DDX(J() * g11()) + DDY(tmp) + DDZ(J() * g13())) / J();
+  geometry.setG1((DDX(J() * g11()) + DDY(tmp) + DDZ(J() * g13())) / J());
   tmp = J() * g22();
   communicate(tmp);
-  G2 = (DDX(J() * g12()) + DDY(tmp) + DDZ(J() * g23())) / J();
+  geometry.setG2((DDX(J() * g12()) + DDY(tmp) + DDZ(J() * g23())) / J());
   tmp = J() * g23();
   communicate(tmp);
-  G3 = (DDX(J() * g13()) + DDY(tmp) + DDZ(J() * g33())) / J();
+  geometry.setG3((DDX(J() * g13()) + DDY(tmp) + DDZ(J() * g33())) / J());
 
   communicateChristoffelSymbolTerms();
 
@@ -695,51 +695,51 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
   // CELL_YLOW grid is at a 'guard cell' location (yend+1).
   // However, the above would require lots of special handling, so just extrapolate for
   // now.
-  G1_11 = localmesh->interpolateAndExtrapolate(G1_11, location, true, true, true,
-                                               transform.get());
-  G1_22 = localmesh->interpolateAndExtrapolate(G1_22, location, true, true, true,
-                                               transform.get());
-  G1_33 = localmesh->interpolateAndExtrapolate(G1_33, location, true, true, true,
-                                               transform.get());
-  G1_12 = localmesh->interpolateAndExtrapolate(G1_12, location, true, true, true,
-                                               transform.get());
-  G1_13 = localmesh->interpolateAndExtrapolate(G1_13, location, true, true, true,
-                                               transform.get());
-  G1_23 = localmesh->interpolateAndExtrapolate(G1_23, location, true, true, true,
-                                               transform.get());
+  geometry.setG1_11(localmesh->interpolateAndExtrapolate(G1_11(), location, true, true,
+                                                         true, transform.get()));
+  geometry.setG1_22(localmesh->interpolateAndExtrapolate(G1_22(), location, true, true,
+                                                         true, transform.get()));
+  geometry.setG1_33(localmesh->interpolateAndExtrapolate(G1_33(), location, true, true,
+                                                         true, transform.get()));
+  geometry.setG1_12(localmesh->interpolateAndExtrapolate(G1_12(), location, true, true,
+                                                         true, transform.get()));
+  geometry.setG1_13(localmesh->interpolateAndExtrapolate(G1_13(), location, true, true,
+                                                         true, transform.get()));
+  geometry.setG1_23(localmesh->interpolateAndExtrapolate(G1_23(), location, true, true,
+                                                         true, transform.get()));
 
-  G2_11 = localmesh->interpolateAndExtrapolate(G2_11, location, true, true, true,
-                                               transform.get());
-  G2_22 = localmesh->interpolateAndExtrapolate(G2_22, location, true, true, true,
-                                               transform.get());
-  G2_33 = localmesh->interpolateAndExtrapolate(G2_33, location, true, true, true,
-                                               transform.get());
-  G2_12 = localmesh->interpolateAndExtrapolate(G2_12, location, true, true, true,
-                                               transform.get());
-  G2_13 = localmesh->interpolateAndExtrapolate(G2_13, location, true, true, true,
-                                               transform.get());
-  G2_23 = localmesh->interpolateAndExtrapolate(G2_23, location, true, true, true,
-                                               transform.get());
+  geometry.setG2_11(localmesh->interpolateAndExtrapolate(G2_11(), location, true, true,
+                                                         true, transform.get()));
+  geometry.setG2_22(localmesh->interpolateAndExtrapolate(G2_22(), location, true, true,
+                                                         true, transform.get()));
+  geometry.setG2_33(localmesh->interpolateAndExtrapolate(G2_33(), location, true, true,
+                                                         true, transform.get()));
+  geometry.setG2_12(localmesh->interpolateAndExtrapolate(G2_12(), location, true, true,
+                                                         true, transform.get()));
+  geometry.setG2_13(localmesh->interpolateAndExtrapolate(G2_13(), location, true, true,
+                                                         true, transform.get()));
+  geometry.setG2_23(localmesh->interpolateAndExtrapolate(G2_23(), location, true, true,
+                                                         true, transform.get()));
 
-  G3_11 = localmesh->interpolateAndExtrapolate(G3_11, location, true, true, true,
-                                               transform.get());
-  G3_22 = localmesh->interpolateAndExtrapolate(G3_22, location, true, true, true,
-                                               transform.get());
-  G3_33 = localmesh->interpolateAndExtrapolate(G3_33, location, true, true, true,
-                                               transform.get());
-  G3_12 = localmesh->interpolateAndExtrapolate(G3_12, location, true, true, true,
-                                               transform.get());
-  G3_13 = localmesh->interpolateAndExtrapolate(G3_13, location, true, true, true,
-                                               transform.get());
-  G3_23 = localmesh->interpolateAndExtrapolate(G3_23, location, true, true, true,
-                                               transform.get());
+  geometry.setG3_11(localmesh->interpolateAndExtrapolate(G3_11(), location, true, true,
+                                                         true, transform.get()));
+  geometry.setG3_22(localmesh->interpolateAndExtrapolate(G3_22(), location, true, true,
+                                                         true, transform.get()));
+  geometry.setG3_33(localmesh->interpolateAndExtrapolate(G3_33(), location, true, true,
+                                                         true, transform.get()));
+  geometry.setG3_12(localmesh->interpolateAndExtrapolate(G3_12(), location, true, true,
+                                                         true, transform.get()));
+  geometry.setG3_13(localmesh->interpolateAndExtrapolate(G3_13(), location, true, true,
+                                                         true, transform.get()));
+  geometry.setG3_23(localmesh->interpolateAndExtrapolate(G3_23(), location, true, true,
+                                                         true, transform.get()));
 
-  G1 = localmesh->interpolateAndExtrapolate(G1, location, true, true, true,
-                                            transform.get());
-  G2 = localmesh->interpolateAndExtrapolate(G2, location, true, true, true,
-                                            transform.get());
-  G3 = localmesh->interpolateAndExtrapolate(G3, location, true, true, true,
-                                            transform.get());
+  geometry.setG1(localmesh->interpolateAndExtrapolate(G1(), location, true, true, true,
+                                                      transform.get()));
+  geometry.setG2(localmesh->interpolateAndExtrapolate(G2(), location, true, true, true,
+                                                      transform.get()));
+  geometry.setG3(localmesh->interpolateAndExtrapolate(G3(), location, true, true, true,
+                                                      transform.get()));
 
   //////////////////////////////////////////////////////
   /// Non-uniform meshes. Need to use DDX, DDY
@@ -1332,7 +1332,7 @@ Coordinates::FieldMetric Coordinates::Delp2(const Field2D& f, CELL_LOC outloc,
   TRACE("Coordinates::Delp2( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return G1 * DDX(f, outloc) + g11() * D2DX2(f, outloc);
+  return G1() * DDX(f, outloc) + g11() * D2DX2(f, outloc);
 }
 
 Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {

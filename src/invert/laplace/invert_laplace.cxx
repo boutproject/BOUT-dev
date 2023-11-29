@@ -332,8 +332,8 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomple
   coef5 = 0.0;
   // If global flag all_terms are set (true by default)
   if (all_terms) {
-    coef4 = localcoords->G1(jx, jy); // X 1st derivative
-    coef5 = localcoords->G3(jx, jy); // Z 1st derivative
+    coef4 = localcoords->G1()(jx, jy); // X 1st derivative
+    coef5 = localcoords->G3()(jx, jy); // Z 1st derivative
   }
 
   if (d != nullptr) {
