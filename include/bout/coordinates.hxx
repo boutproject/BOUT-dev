@@ -289,6 +289,8 @@ private:
 
   //  FieldMetric recalculateJacobian();
   //  FieldMetric recalculateBxy();
+
+  void communicateChristoffelSymbolTerms();
 };
 
 /*
