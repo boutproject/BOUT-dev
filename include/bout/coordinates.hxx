@@ -69,14 +69,6 @@ public:
               FieldMetric g_22, FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
               FieldMetric g_23, FieldMetric ShiftTorsion, FieldMetric IntShiftTorsion);
 
-  Coordinates(Coordinates&&) = default;
-  Coordinates& operator=(Coordinates&&) = default;
-
-  Coordinates(const Coordinates&) = delete;
-  Coordinates& operator=(const Coordinates&) = delete;
-
-  ~Coordinates() = default;
-
   /// Add variables to \p output_options, for post-processing
   void outputVars(Options& output_options);
 
