@@ -337,7 +337,7 @@ public:
   /// Take an rvalue (e.g. initializer list), convert to lvalue and delegate constructor
   FakeGridDataSource(Options&& values) : FakeGridDataSource(values) {}
 
-  bool hasVar(const std::string& UNUSED(name)) override { return false; }
+  bool hasVar(const std::string& name) override { return values.isSet(name); }
 
   bool get(MAYBE_UNUSED(Mesh* m), std::string& sval, const std::string& name,
            const std::string& def = "") override {
