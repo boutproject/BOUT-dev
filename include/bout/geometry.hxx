@@ -56,13 +56,6 @@ public:
 
   Geometry(Mesh* mesh, DifferentialOperators* differential_operators);
 
-  /// Christoffel symbol of the second kind (connection coefficients)
-  FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
-  FieldMetric G2_11, G2_22, G2_33, G2_12, G2_13, G2_23;
-  FieldMetric G3_11, G3_22, G3_33, G3_12, G3_13, G3_23;
-
-  FieldMetric G1, G2, G3;
-
   /// Covariant metric tensor
   const FieldMetric& g_11() const;
   const FieldMetric& g_22() const;
@@ -82,6 +75,31 @@ public:
   const MetricTensor& getContravariantMetricTensor() const;
   const MetricTensor& getCovariantMetricTensor() const;
 
+  const FieldMetric& G1_11() const;
+  const FieldMetric& G1_22() const;
+  const FieldMetric& G1_33() const;
+  const FieldMetric& G1_12() const;
+  const FieldMetric& G1_13() const;
+  const FieldMetric& G1_23() const;
+
+  const FieldMetric& G2_11() const;
+  const FieldMetric& G2_22() const;
+  const FieldMetric& G2_33() const;
+  const FieldMetric& G2_12() const;
+  const FieldMetric& G2_13() const;
+  const FieldMetric& G2_23() const;
+
+  const FieldMetric& G3_11() const;
+  const FieldMetric& G3_22() const;
+  const FieldMetric& G3_33() const;
+  const FieldMetric& G3_12() const;
+  const FieldMetric& G3_13() const;
+  const FieldMetric& G3_23() const;
+
+  const FieldMetric& G1() const;
+  const FieldMetric& G2() const;
+  const FieldMetric& G3() const;
+  
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
   const FieldMetric& J() const;
 
@@ -132,6 +150,13 @@ private:
 
   MetricTensor contravariantMetricTensor;
   MetricTensor covariantMetricTensor;
+
+  /// Christoffel symbol of the second kind (connection coefficients)
+  FieldMetric G1_11_, G1_22_, G1_33_, G1_12_, G1_13_, G1_23_;
+  FieldMetric G2_11_, G2_22_, G2_33_, G2_12_, G2_13_, G2_23_;
+  FieldMetric G3_11_, G3_22_, G3_33_, G3_12_, G3_13_, G3_23_;
+
+  FieldMetric G1_, G2_, G3_;
 
   FieldMetric this_J;
   FieldMetric this_Bxy; ///< Magnitude of B = nabla z times nabla x

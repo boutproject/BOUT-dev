@@ -115,13 +115,6 @@ public:
 
   void setBxy(FieldMetric Bxy);
 
-  /// Christoffel symbol of the second kind (connection coefficients)
-  FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
-  FieldMetric G2_11, G2_22, G2_33, G2_12, G2_13, G2_23;
-  FieldMetric G3_11, G3_22, G3_33, G3_12, G3_13, G3_23;
-
-  FieldMetric G1, G2, G3;
-
   /// d pitch angle / dx. Needed for vector differentials (Curl)
   FieldMetric ShiftTorsion;
 
@@ -236,6 +229,31 @@ public:
   // Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY
   // solver
   Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
+
+  const FieldMetric& G1_11();
+  const FieldMetric& G1_22();
+  const FieldMetric& G1_33();
+  const FieldMetric& G1_12();
+  const FieldMetric& G1_13();
+  const FieldMetric& G1_23();
+
+  const FieldMetric& G2_11();
+  const FieldMetric& G2_22();
+  const FieldMetric& G2_33();
+  const FieldMetric& G2_12();
+  const FieldMetric& G2_13();
+  const FieldMetric& G2_23();
+
+  const FieldMetric& G3_11();
+  const FieldMetric& G3_22();
+  const FieldMetric& G3_33();
+  const FieldMetric& G3_12();
+  const FieldMetric& G3_13();
+  const FieldMetric& G3_23();
+
+  const FieldMetric& G1() const;
+  const FieldMetric& G2() const;
+  const FieldMetric& G3() const;
 
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1

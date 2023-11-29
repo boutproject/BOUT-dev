@@ -390,80 +390,80 @@ R V_dot_Grad(const T& v, const F& a) {
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     BOUT_FOR(i, result.x.getRegion("RGN_ALL")) {
       result.x[i] -= vcn.x[i]
-                     * (metric->G1_11[i] * a.x[i] + metric->G2_11[i] * a.y[i]
-                        + metric->G3_11[i] * a.z[i]);
+                     * (metric->G1_11()[i] * a.x[i] + metric->G2_11()[i] * a.y[i]
+                        + metric->G3_11()[i] * a.z[i]);
       result.x[i] -= vcn.y[i]
-                     * (metric->G1_12[i] * a.x[i] + metric->G2_12[i] * a.y[i]
-                        + metric->G3_12[i] * a.z[i]);
+                     * (metric->G1_12()[i] * a.x[i] + metric->G2_12()[i] * a.y[i]
+                        + metric->G3_12()[i] * a.z[i]);
       result.x[i] -= vcn.z[i]
-                     * (metric->G1_13[i] * a.x[i] + metric->G2_13[i] * a.y[i]
-                        + metric->G3_13[i] * a.z[i]);
+                     * (metric->G1_13()[i] * a.x[i] + metric->G2_13()[i] * a.y[i]
+                        + metric->G3_13()[i] * a.z[i]);
     }
 
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
     BOUT_FOR(i, result.y.getRegion("RGN_ALL")) {
       result.y[i] -= vcn.x[i]
-                     * (metric->G1_12[i] * a.x[i] + metric->G2_12[i] * a.y[i]
-                        + metric->G3_12[i] * a.z[i]);
+                     * (metric->G1_12()[i] * a.x[i] + metric->G2_12()[i] * a.y[i]
+                        + metric->G3_12()[i] * a.z[i]);
       result.y[i] -= vcn.y[i]
-                     * (metric->G1_22[i] * a.x[i] + metric->G2_22[i] * a.y[i]
-                        + metric->G3_22[i] * a.z[i]);
+                     * (metric->G1_22()[i] * a.x[i] + metric->G2_22()[i] * a.y[i]
+                        + metric->G3_22()[i] * a.z[i]);
       result.y[i] -= vcn.z[i]
-                     * (metric->G1_23[i] * a.x[i] + metric->G2_23[i] * a.y[i]
-                        + metric->G3_23[i] * a.z[i]);
+                     * (metric->G1_23()[i] * a.x[i] + metric->G2_23()[i] * a.y[i]
+                        + metric->G3_23()[i] * a.z[i]);
     }
 
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
     BOUT_FOR(i, result.z.getRegion("RGN_ALL")) {
       result.z[i] -= vcn.x[i]
-                     * (metric->G1_13[i] * a.x[i] + metric->G2_13[i] * a.y[i]
-                        + metric->G3_13[i] * a.z[i]);
+                     * (metric->G1_13()[i] * a.x[i] + metric->G2_13()[i] * a.y[i]
+                        + metric->G3_13()[i] * a.z[i]);
       result.z[i] -= vcn.y[i]
-                     * (metric->G1_23[i] * a.x[i] + metric->G2_23[i] * a.y[i]
-                        + metric->G3_23[i] * a.z[i]);
+                     * (metric->G1_23()[i] * a.x[i] + metric->G2_23()[i] * a.y[i]
+                        + metric->G3_23()[i] * a.z[i]);
       result.z[i] -= vcn.z[i]
-                     * (metric->G1_33[i] * a.x[i] + metric->G2_33[i] * a.y[i]
-                        + metric->G3_33[i] * a.z[i]);
+                     * (metric->G1_33()[i] * a.x[i] + metric->G2_33()[i] * a.y[i]
+                        + metric->G3_33()[i] * a.z[i]);
     }
     result.covariant = true;
   } else {
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     BOUT_FOR(i, result.x.getRegion("RGN_ALL")) {
       result.x[i] += vcn.x[i]
-                     * (metric->G1_11[i] * a.x[i] + metric->G1_12[i] * a.y[i]
-                        + metric->G1_13[i] * a.z[i]);
+                     * (metric->G1_11()[i] * a.x[i] + metric->G1_12()[i] * a.y[i]
+                        + metric->G1_13()[i] * a.z[i]);
       result.x[i] += vcn.y[i]
-                     * (metric->G1_12[i] * a.x[i] + metric->G1_22[i] * a.y[i]
-                        + metric->G1_23[i] * a.z[i]);
+                     * (metric->G1_12()[i] * a.x[i] + metric->G1_22()[i] * a.y[i]
+                        + metric->G1_23()[i] * a.z[i]);
       result.x[i] += vcn.z[i]
-                     * (metric->G1_13[i] * a.x[i] + metric->G1_23[i] * a.y[i]
-                        + metric->G1_33[i] * a.z[i]);
+                     * (metric->G1_13()[i] * a.x[i] + metric->G1_23()[i] * a.y[i]
+                        + metric->G1_33()[i] * a.z[i]);
     }
 
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
     BOUT_FOR(i, result.y.getRegion("RGN_ALL")) {
       result.y[i] += vcn.x[i]
-                     * (metric->G2_11[i] * a.x[i] + metric->G2_12[i] * a.y[i]
-                        + metric->G2_13[i] * a.z[i]);
+                     * (metric->G2_11()[i] * a.x[i] + metric->G2_12()[i] * a.y[i]
+                        + metric->G2_13()[i] * a.z[i]);
       result.y[i] += vcn.y[i]
-                     * (metric->G2_12[i] * a.x[i] + metric->G2_22[i] * a.y[i]
-                        + metric->G2_23[i] * a.z[i]);
+                     * (metric->G2_12()[i] * a.x[i] + metric->G2_22()[i] * a.y[i]
+                        + metric->G2_23()[i] * a.z[i]);
       result.y[i] += vcn.z[i]
-                     * (metric->G2_13[i] * a.x[i] + metric->G2_23[i] * a.y[i]
-                        + metric->G2_33[i] * a.z[i]);
+                     * (metric->G2_13()[i] * a.x[i] + metric->G2_23()[i] * a.y[i]
+                        + metric->G2_33()[i] * a.z[i]);
     }
 
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
     BOUT_FOR(i, result.z.getRegion("RGN_ALL")) {
       result.z[i] += vcn.x[i]
-                     * (metric->G3_11[i] * a.x[i] + metric->G3_12[i] * a.y[i]
-                        + metric->G3_13[i] * a.z[i]);
+                     * (metric->G3_11()[i] * a.x[i] + metric->G3_12()[i] * a.y[i]
+                        + metric->G3_13()[i] * a.z[i]);
       result.z[i] += vcn.y[i]
-                     * (metric->G3_12[i] * a.x[i] + metric->G3_22[i] * a.y[i]
-                        + metric->G3_23[i] * a.z[i]);
+                     * (metric->G3_12()[i] * a.x[i] + metric->G3_22()[i] * a.y[i]
+                        + metric->G3_23()[i] * a.z[i]);
       result.z[i] += vcn.z[i]
-                     * (metric->G3_13[i] * a.x[i] + metric->G3_23[i] * a.y[i]
-                        + metric->G3_33[i] * a.z[i]);
+                     * (metric->G3_13()[i] * a.x[i] + metric->G3_23()[i] * a.y[i]
+                        + metric->G3_33()[i] * a.z[i]);
     }
 
     result.covariant = false;
