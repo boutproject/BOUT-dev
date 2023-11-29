@@ -531,18 +531,16 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     jacobian();
 
     // Attempt to read J from the grid file
-    auto Jcalc = J();
-    try {
-      Jcalc = getAtLoc(mesh, "J", suffix, location);
+    if (!localmesh->sourceHasVar("J" + suffix)) {
       output_warn.write(
           "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
           suffix);
-      setJ(Jcalc);
-    } catch (BoutException&) {
+    } else {
       setJ(localmesh->interpolateAndExtrapolate(J(), location, extrapolate_x,
                                                 extrapolate_y, false, transform.get()));
 
       // Compare calculated and loaded values
+      const auto Jcalc = getAtLoc(mesh, "J", suffix, location);
       output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J() - Jcalc)));
 
       auto J_value = J(); // TODO: There may be a better way
@@ -560,19 +558,16 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     }
 
     // Attempt to read Bxy from the grid file
-    auto Bcalc = Bxy();
-    try {
-      Bcalc = getAtLoc(mesh, "Bxy", suffix, location);
+    if (!localmesh->sourceHasVar("Bxy" + suffix)) {
       output_warn.write("\tWARNING: Magnitude of B field 'Bxy_{:s}' not found. "
                         "Calculating from metric tensor\n",
                         suffix);
-      setBxy(Bcalc);
-    } catch (BoutException&) {
+    } else {
       setBxy(localmesh->interpolateAndExtrapolate(Bxy(), location, extrapolate_x,
                                                   extrapolate_y, false, transform.get()));
+      const auto Bcalc = getAtLoc(mesh, "Bxy", suffix, location);
       output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy() - Bcalc)));
     }
-
     // Check Bxy
     bout::checkFinite(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
     bout::checkPositive(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
