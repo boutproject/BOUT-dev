@@ -625,9 +625,9 @@ void Coordinates::outputVars(Options& output_options) {
   output_options["J" + loc_string].force(J(), "Coordinates");
   output_options["Bxy" + loc_string].force(Bxy(), "Coordinates");
 
-  output_options["G1" + loc_string].force(G1, "Coordinates");
-  output_options["G2" + loc_string].force(G2, "Coordinates");
-  output_options["G3" + loc_string].force(G3, "Coordinates");
+  output_options["G1" + loc_string].force(G1(), "Coordinates");
+  output_options["G2" + loc_string].force(G2(), "Coordinates");
+  output_options["G3" + loc_string].force(G3(), "Coordinates");
 
   getParallelTransform().outputVars(output_options);
 }
@@ -1628,6 +1628,31 @@ const FieldMetric& Coordinates::J() const { return geometry.J(); }
 
 const FieldMetric& Coordinates::Bxy() const { return geometry.Bxy(); }
 
+const FieldMetric& Coordinates::G1_11() { return geometry.G1_11(); }
+const FieldMetric& Coordinates::G1_22() { return geometry.G1_22(); }
+const FieldMetric& Coordinates::G1_33() { return geometry.G1_33(); }
+const FieldMetric& Coordinates::G1_12() { return geometry.G1_12(); }
+const FieldMetric& Coordinates::G1_13() { return geometry.G1_13(); }
+const FieldMetric& Coordinates::G1_23() { return geometry.G1_23(); }
+
+const FieldMetric& Coordinates::G2_11() { return geometry.G2_11(); }
+const FieldMetric& Coordinates::G2_22() { return geometry.G2_22(); }
+const FieldMetric& Coordinates::G2_33() { return geometry.G2_33(); }
+const FieldMetric& Coordinates::G2_12() { return geometry.G2_12(); }
+const FieldMetric& Coordinates::G2_13() { return geometry.G2_13(); }
+const FieldMetric& Coordinates::G2_23() { return geometry.G2_23(); }
+
+const FieldMetric& Coordinates::G3_11() { return geometry.G3_11(); }
+const FieldMetric& Coordinates::G3_22() { return geometry.G3_22(); }
+const FieldMetric& Coordinates::G3_33() { return geometry.G3_33(); }
+const FieldMetric& Coordinates::G3_12() { return geometry.G3_12(); }
+const FieldMetric& Coordinates::G3_13() { return geometry.G3_13(); }
+const FieldMetric& Coordinates::G3_23() { return geometry.G3_23(); }
+
+const FieldMetric& Coordinates::G1() const { return geometry.G1(); }
+const FieldMetric& Coordinates::G2() const { return geometry.G2(); }
+const FieldMetric& Coordinates::G3() const { return geometry.G3(); }
+
 void Coordinates::setJ(FieldMetric J) {
   //TODO: Calculate J and check value is close
   geometry.setJ(J);
@@ -1651,8 +1676,9 @@ void Coordinates::communicateChristoffelSymbolTerms() {
 
   output_progress.write("\tCommunicating connection terms\n");
 
-  communicate(G1_11, G1_22, G1_33, G1_12, G1_13, G1_23, G2_11, G2_22, G2_33, G2_12, G2_13,
-              G2_23, G3_11, G3_22, G3_33, G3_12, G3_13, G3_23, G1, G2, G3);
+  communicate(G1_11(), G1_22(), G1_33(), G1_12(), G1_13(), G1_23(), G2_11(), G2_22(),
+              G2_33(), G2_12(), G2_13(), G2_23(), G3_11(), G3_22(), G3_33(), G3_12(),
+              G3_13(), G3_23(), G1(), G2(), G3());
 }
 
 //const MetricTensor& Coordinates::getCovariantMetricTensor() const {

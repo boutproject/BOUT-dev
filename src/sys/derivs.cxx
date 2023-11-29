@@ -104,21 +104,21 @@ Vector3D DDZ(const Vector3D& v, CELL_LOC outloc, const std::string& method,
 
   if (v.covariant) {
     // From equation (2.6.32) in D'Haeseleer
-    result.x = DDZ(v.x, outloc, method, region) - v.x * metric->G1_13
-               - v.y * metric->G2_13 - v.z * metric->G3_13;
-    result.y = DDZ(v.y, outloc, method, region) - v.x * metric->G1_23
-               - v.y * metric->G2_23 - v.z * metric->G3_23;
-    result.z = DDZ(v.z, outloc, method, region) - v.x * metric->G1_33
-               - v.y * metric->G2_33 - v.z * metric->G3_33;
+    result.x = DDZ(v.x, outloc, method, region) - v.x * metric->G1_13()
+               - v.y * metric->G2_13() - v.z * metric->G3_13();
+    result.y = DDZ(v.y, outloc, method, region) - v.x * metric->G1_23()
+               - v.y * metric->G2_23() - v.z * metric->G3_23();
+    result.z = DDZ(v.z, outloc, method, region) - v.x * metric->G1_33()
+               - v.y * metric->G2_33() - v.z * metric->G3_33();
     result.covariant = true;
   } else {
     // From equation (2.6.31) in D'Haeseleer
-    result.x = DDZ(v.x, outloc, method, region) + v.x * metric->G1_13
-               + v.y * metric->G1_23 + v.z * metric->G1_33;
-    result.y = DDZ(v.y, outloc, method, region) + v.x * metric->G2_13
-               + v.y * metric->G2_23 + v.z * metric->G2_33;
-    result.z = DDZ(v.z, outloc, method, region) + v.x * metric->G3_13
-               + v.y * metric->G3_23 + v.z * metric->G3_33;
+    result.x = DDZ(v.x, outloc, method, region) + v.x * metric->G1_13()
+               + v.y * metric->G1_23() + v.z * metric->G1_33();
+    result.y = DDZ(v.y, outloc, method, region) + v.x * metric->G2_13()
+               + v.y * metric->G2_23() + v.z * metric->G2_33();
+    result.z = DDZ(v.z, outloc, method, region) + v.x * metric->G3_13()
+               + v.y * metric->G3_23() + v.z * metric->G3_33();
     result.covariant = false;
   }
 

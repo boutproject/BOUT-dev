@@ -1562,6 +1562,31 @@ const MetricTensor::FieldMetric& Geometry::g23() const {
   return contravariantMetricTensor.Getg23();
 }
 
+const FieldMetric& Geometry::G1_11() const { return G1_11_; }
+const FieldMetric& Geometry::G1_22() const { return G1_22_; }
+const FieldMetric& Geometry::G1_33() const { return G1_33_; }
+const FieldMetric& Geometry::G1_12() const { return G1_12_; }
+const FieldMetric& Geometry::G1_13() const { return G1_13_; }
+const FieldMetric& Geometry::G1_23() const { return G1_23_; }
+
+const FieldMetric& Geometry::G2_11() const { return G2_11_; }
+const FieldMetric& Geometry::G2_22() const { return G2_22_; }
+const FieldMetric& Geometry::G2_33() const { return G2_33_; }
+const FieldMetric& Geometry::G2_12() const { return G2_12_; }
+const FieldMetric& Geometry::G2_13() const { return G2_13_; }
+const FieldMetric& Geometry::G2_23() const { return G2_23_; }
+
+const FieldMetric& Geometry::G3_11() const { return G3_11_; }
+const FieldMetric& Geometry::G3_22() const { return G3_22_; }
+const FieldMetric& Geometry::G3_33() const { return G3_33_; }
+const FieldMetric& Geometry::G3_12() const { return G3_12_; }
+const FieldMetric& Geometry::G3_13() const { return G3_13_; }
+const FieldMetric& Geometry::G3_23() const { return G3_23_; }
+
+const FieldMetric& Geometry::G1() const { return G1_; }
+const FieldMetric& Geometry::G2() const { return G2_; }
+const FieldMetric& Geometry::G3() const { return G3_; }
+
 const FieldMetric& Geometry::J() const { return this_J; }
 
 const FieldMetric& Geometry::Bxy() const { return this_Bxy; }
