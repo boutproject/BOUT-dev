@@ -293,9 +293,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric IntShiftTorsion)
     : dx(std::move(dx)), dy(std::move(dy)), dz(dz), ShiftTorsion(std::move(ShiftTorsion)),
       IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE),
-      differential_operators(DifferentialOperators(mesh, this->IntShiftTorsion, location,
-                                                   this->dx, this->dy, dz)),
+      location(CELL_CENTRE), differential_operators(DifferentialOperators(mesh)),
       geometry(Geometry(std::move(J), std::move(Bxy), std::move(g11), std::move(g22),
                         std::move(g33), std::move(g12), std::move(g13), std::move(g23),
                         std::move(g_11), std::move(g_22), std::move(g_33),
@@ -310,8 +308,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       //      G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh), G3_23(mesh),
       //      G1(mesh), G2(mesh), G3(mesh),
       ShiftTorsion(mesh), IntShiftTorsion(mesh), localmesh(mesh), location(loc),
-      differential_operators(
-          DifferentialOperators(mesh, IntShiftTorsion, loc, dx, dy, dz)),
+      differential_operators(DifferentialOperators(mesh)),
       geometry(Geometry(mesh, &differential_operators)) {
 
   if (options == nullptr) {
@@ -679,7 +676,7 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
   // Check input metrics
   checkContravariant();
   checkCovariant();
-  geometry.CalculateChristoffelSymbols();
+  geometry.CalculateChristoffelSymbols(dx, dy);
 
   auto tmp = J() * g12();
   communicate(tmp);
@@ -1187,59 +1184,52 @@ void Coordinates::setParallelTransform(Options* options) {
  *
  *******************************************************************************/
 
-//Coordinates::FieldMetric Coordinates::DDX(const Field2D& f, CELL_LOC loc,
-//                                          const std::string& method,
-//                                          const std::string& region) {
-//  ASSERT1(location == loc || loc == CELL_DEFAULT)
-//  return bout::derivatives::index::DDX(f, loc, method, region) / dx;
-//}
-//Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc, const std::string& method,
-//                         const std::string& region) {
-//  auto result = bout::derivatives::index::DDX(f, outloc, method, region);
-//  result /= dx;
-//
-//  if (f.getMesh()->IncIntShear) {
-//    // Using BOUT-06 style shifting
-//    result += IntShiftTorsion * DDZ(f, outloc, method, region);
-//  }
-//
-//  return result;
-//}
-//
-//Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
-//                                          const std::string& method,
-//                                          const std::string& region) const {
-//  ASSERT1(location == loc || loc == CELL_DEFAULT)
-//  return bout::derivatives::index::DDY(f, loc, method, region) / dy;
-//}
-//
-//Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
-//                         const std::string& region) const {
-//#if BOUT_USE_METRIC_3D
-//  if (!f.hasParallelSlices() and !transform->canToFromFieldAligned()) {
-//    Field3D f_parallel = f;
-//    transform->calcParallelSlices(f_parallel);
-//    f_parallel.applyParallelBoundary("parallel_neumann");
-//    return bout::derivatives::index::DDY(f_parallel, outloc, method, region);
-//  }
-//#endif
-//  return bout::derivatives::index::DDY(f, outloc, method, region) / dy;
-//}
-//
-//Coordinates::FieldMetric Coordinates::DDZ(const Field2D& f, CELL_LOC loc,
-//                                          const std::string& UNUSED(method),
-//                                          const std::string& UNUSED(region)) {
-//  ASSERT1(location == loc || loc == CELL_DEFAULT)
-//  ASSERT1(f.getMesh() == localmesh)
-//  if (loc == CELL_DEFAULT) {
-//    loc = f.getLocation();
-//  }
-//  return zeroFrom(f).setLocation(loc);
-//}
-//Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
-//                         const std::string& region) {
-//  return bout::derivatives::index::DDZ(f, outloc, method, region) / dz;
-//}
+Coordinates::FieldMetric Coordinates::DDX(const Field2D& f, CELL_LOC loc,
+                                          const std::string& method,
+                                          const std::string& region) {
+  ASSERT1(location == loc || loc == CELL_DEFAULT)
+  return differential_operators.DDX(f, dx, loc, method, region);
+}
+
+Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc, const std::string& method,
+                         const std::string& region) {
+  return differential_operators.DDX(f, dx, dz, IntShiftTorsion, outloc, method, region);
+}
+
+Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
+                                          const std::string& method,
+                                          const std::string& region) const {
+  ASSERT1(location == loc || loc == CELL_DEFAULT)
+  return differential_operators.DDY(f, dy, loc, method, region);
+}
+
+Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
+                         const std::string& region) const {
+#if BOUT_USE_METRIC_3D
+  if (!f.hasParallelSlices() and !transform->canToFromFieldAligned()) {
+    Field3D f_parallel = f;
+    transform->calcParallelSlices(f_parallel);
+    f_parallel.applyParallelBoundary("parallel_neumann");
+    return bout::derivatives::index::DDY(f_parallel, outloc, method, region);
+  }
+#endif
+  return differential_operators.DDY(f, dy, outloc, method, region);
+}
+
+Coordinates::FieldMetric Coordinates::DDZ(const Field2D& f, CELL_LOC loc,
+                                          const std::string& UNUSED(method),
+                                          const std::string& UNUSED(region)) {
+  ASSERT1(location == loc || loc == CELL_DEFAULT)
+  ASSERT1(f.getMesh() == localmesh)
+  if (loc == CELL_DEFAULT) {
+    loc = f.getLocation();
+  }
+  return zeroFrom(f).setLocation(loc);
+}
+Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
+                         const std::string& region) {
+  return bout::derivatives::index::DDZ(f, outloc, method, region) / dz;
+}
 
 /////////////////////////////////////////////////////////
 // Parallel gradient
@@ -1248,7 +1238,7 @@ Field2D Coordinates::Grad_par(const Field2D& var, MAYBE_UNUSED(CELL_LOC outloc),
                               const std::string& UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
 
-  return differential_operators.Grad_par(var, geometry.getCovariantMetricTensor());
+  return differential_operators.Grad_par(var, dy, geometry.getCovariantMetricTensor());
 }
 
 Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
@@ -1256,8 +1246,8 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
   TRACE("Coordinates::Grad_par( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return differential_operators.Grad_par(var, geometry.getCovariantMetricTensor(), outloc,
-                                         method);
+  return differential_operators.Grad_par(var, dy, geometry.getCovariantMetricTensor(),
+                                         outloc, method);
 }
 
 /////////////////////////////////////////////////////////
@@ -1290,7 +1280,7 @@ Coordinates::FieldMetric Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
   return differential_operators.Div_par(
-      f, geometry.Bxy(), geometry.getCovariantMetricTensor(), outloc, method);
+      f, geometry.Bxy(), dy, geometry.getCovariantMetricTensor(), outloc, method);
 }
 
 Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
@@ -1306,7 +1296,7 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
     // No yup/ydown fields. The Grad_par operator will
     // shift to field aligned coordinates
     return differential_operators.Div_par(
-        f, geometry.Bxy(), geometry.getCovariantMetricTensor(), outloc, method);
+        f, dy, geometry.Bxy(), geometry.getCovariantMetricTensor(), outloc, method);
   }
 
   // Need to modify yup and ydown fields
@@ -1328,34 +1318,16 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
   TRACE("Coordinates::Grad2_par2( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()))
 
-  auto result = differential_operators.Grad2_par2_DDY_invSg(
-                    geometry.getCovariantMetricTensor(), outloc, method)
-                    * DDY(f, outloc, method)
-                + D2DY2(f, outloc, method) / g22();
-
-  return result;
+  return differential_operators.Grad2_par2_DDY_invSg(geometry.getCovariantMetricTensor(),
+                                                     dy, outloc, method);
 }
 
 Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
                                 const std::string& method) {
   TRACE("Coordinates::Grad2_par2( Field3D )");
-  if (outloc == CELL_DEFAULT) {
-    outloc = f.getLocation();
-  }
-  ASSERT1(location == outloc)
 
-  Field3D result = ::DDY(f, outloc, method);
-
-  Field3D r2 = D2DY2(f, outloc, method) / g22();
-
-  result = differential_operators.Grad2_par2_DDY_invSg(
-               geometry.getCovariantMetricTensor(), outloc, method)
-               * result
-           + r2;
-
-  ASSERT2(result.getLocation() == outloc)
-
-  return result;
+  return differential_operators.Grad2_par2_DDY_invSg(geometry.getCovariantMetricTensor(),
+                                                     dy, outloc, method);
 }
 
 /////////////////////////////////////////////////////////
@@ -1369,9 +1341,7 @@ Coordinates::FieldMetric Coordinates::Delp2(const Field2D& f, CELL_LOC outloc,
   TRACE("Coordinates::Delp2( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  auto result = G1 * DDX(f, outloc) + g11() * D2DX2(f, outloc);
-
-  return result;
+  return G1 * DDX(f, outloc) + g11() * D2DX2(f, outloc);
 }
 
 Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
@@ -1522,13 +1492,11 @@ Coordinates::FieldMetric Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
   TRACE("Coordinates::Laplace( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  auto result = G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11() * D2DX2(f, outloc)
-                + g22() * D2DY2(f, outloc)
-                + 2.0 * g12()
-                      * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
-                               dfdy_boundary_conditions, dfdy_dy_region);
-
-  return result;
+  return G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11() * D2DX2(f, outloc)
+         + g22() * D2DY2(f, outloc)
+         + 2.0 * g12()
+               * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY", dfdy_boundary_conditions,
+                        dfdy_dy_region);
 }
 
 Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
@@ -1537,16 +1505,13 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
   TRACE("Coordinates::Laplace( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc)
-                   + g11() * D2DX2(f, outloc) + g22() * D2DY2(f, outloc)
-                   + g33() * D2DZ2(f, outloc)
-                   + 2.0
-                         * (g12()
-                                * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
-                                         dfdy_boundary_conditions, dfdy_dy_region)
-                            + g13() * D2DXDZ(f, outloc) + g23() * D2DYDZ(f, outloc));
-
-  return result;
+  return G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc)
+         + g11() * D2DX2(f, outloc) + g22() * D2DY2(f, outloc) + g33() * D2DZ2(f, outloc)
+         + 2.0
+               * (g12()
+                      * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
+                               dfdy_boundary_conditions, dfdy_dy_region)
+                  + g13() * D2DXDZ(f, outloc) + g23() * D2DYDZ(f, outloc));
 }
 
 // Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY
