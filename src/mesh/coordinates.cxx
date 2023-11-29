@@ -300,7 +300,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                         std::move(g33), std::move(g12), std::move(g13), std::move(g23),
                         std::move(g_11), std::move(g_22), std::move(g_33),
                         std::move(g_12), std::move(g_13), std::move(g_23),
-                        differential_operators)) {}
+                        &differential_operators)) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
@@ -312,7 +312,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       ShiftTorsion(mesh), IntShiftTorsion(mesh), localmesh(mesh), location(loc),
       differential_operators(
           DifferentialOperators(mesh, IntShiftTorsion, loc, dx, dy, dz)),
-      geometry(Geometry(mesh, differential_operators)) {
+      geometry(Geometry(mesh, &differential_operators)) {
 
   if (options == nullptr) {
     options = Options::getRoot()->getSection("mesh");

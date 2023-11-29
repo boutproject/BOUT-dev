@@ -398,12 +398,12 @@ Geometry::Geometry(FieldMetric J, FieldMetric Bxy, FieldMetric g11, FieldMetric 
                    FieldMetric g33, FieldMetric g12, FieldMetric g13, FieldMetric g23,
                    FieldMetric g_11, FieldMetric g_22, FieldMetric g_33, FieldMetric g_12,
                    FieldMetric g_13, FieldMetric g_23,
-                   DifferentialOperators& differential_operators)
+                   DifferentialOperators* differential_operators)
     : contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
       covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), this_J(J), this_Bxy(Bxy),
       differential_operators(differential_operators) {}
 
-Geometry::Geometry(Mesh* mesh, DifferentialOperators& differential_operators)
+Geometry::Geometry(Mesh* mesh, DifferentialOperators* differential_operators)
     //bool force_interpolate_from_centre
     : G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh), G1_23(mesh),
       G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh), G2_23(mesh),
@@ -701,172 +701,172 @@ void Geometry::CalculateChristoffelSymbols() {
   // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
 
   G1_11 = 0.5 * contravariantMetricTensor.Getg11()
-              * differential_operators.DDX(covariantMetricTensor.Getg11())
+              * differential_operators->DDX(covariantMetricTensor.Getg11(), dx)
           + contravariantMetricTensor.Getg12()
-                * (differential_operators.DDX(covariantMetricTensor.Getg12())
-                   - 0.5 * differential_operators.DDY(covariantMetricTensor.Getg11()))
+                * (differential_operators->DDX(covariantMetricTensor.Getg12())
+                   - 0.5 * differential_operators->DDY(covariantMetricTensor.Getg11()))
           + contravariantMetricTensor.Getg13()
-                * (differential_operators.DDX(covariantMetricTensor.Getg13())
-                   - 0.5 * differential_operators.DDZ(covariantMetricTensor.Getg11()));
+                * (differential_operators->DDX(covariantMetricTensor.Getg13())
+                   - 0.5 * differential_operators->DDZ(covariantMetricTensor.Getg11()));
   G1_22 = contravariantMetricTensor.Getg11()
-              * (differential_operators.DDY(covariantMetricTensor.Getg12())
-                 - 0.5 * differential_operators.DDX(covariantMetricTensor.Getg22()))
+              * (differential_operators->DDY(covariantMetricTensor.Getg12())
+                 - 0.5 * differential_operators->DDX(covariantMetricTensor.Getg22()))
           + 0.5 * contravariantMetricTensor.Getg12()
-                * differential_operators.DDY(covariantMetricTensor.Getg22())
+                * differential_operators->DDY(covariantMetricTensor.Getg22())
           + contravariantMetricTensor.Getg13()
-                * (differential_operators.DDY(covariantMetricTensor.Getg23())
-                   - 0.5 * differential_operators.DDZ(covariantMetricTensor.Getg22()));
+                * (differential_operators->DDY(covariantMetricTensor.Getg23())
+                   - 0.5 * differential_operators->DDZ(covariantMetricTensor.Getg22()));
   G1_33 = contravariantMetricTensor.Getg11()
-              * (differential_operators.DDZ(covariantMetricTensor.Getg13())
-                 - 0.5 * differential_operators.DDX(covariantMetricTensor.Getg33()))
+              * (differential_operators->DDZ(covariantMetricTensor.Getg13())
+                 - 0.5 * differential_operators->DDX(covariantMetricTensor.Getg33()))
           + contravariantMetricTensor.Getg12()
-                * (differential_operators.DDZ(covariantMetricTensor.Getg23())
-                   - 0.5 * differential_operators.DDY(covariantMetricTensor.Getg33()))
+                * (differential_operators->DDZ(covariantMetricTensor.Getg23())
+                   - 0.5 * differential_operators->DDY(covariantMetricTensor.Getg33()))
           + 0.5 * contravariantMetricTensor.Getg13()
-                * differential_operators.DDZ(covariantMetricTensor.Getg33());
+                * differential_operators->DDZ(covariantMetricTensor.Getg33());
   G1_12 = 0.5 * contravariantMetricTensor.Getg11()
-              * differential_operators.DDY(covariantMetricTensor.Getg11())
+              * differential_operators->DDY(covariantMetricTensor.Getg11())
           + 0.5 * contravariantMetricTensor.Getg12()
-                * differential_operators.DDX(covariantMetricTensor.Getg22())
+                * differential_operators->DDX(covariantMetricTensor.Getg22())
           + 0.5 * contravariantMetricTensor.Getg13()
-                * (differential_operators.DDY(covariantMetricTensor.Getg13())
-                   + differential_operators.DDX(covariantMetricTensor.Getg23())
-                   - differential_operators.DDZ(covariantMetricTensor.Getg12()));
+                * (differential_operators->DDY(covariantMetricTensor.Getg13())
+                   + differential_operators->DDX(covariantMetricTensor.Getg23())
+                   - differential_operators->DDZ(covariantMetricTensor.Getg12()));
   G1_13 = 0.5 * contravariantMetricTensor.Getg11()
-              * differential_operators.DDZ(covariantMetricTensor.Getg11())
+              * differential_operators->DDZ(covariantMetricTensor.Getg11())
           + 0.5 * contravariantMetricTensor.Getg12()
-                * (differential_operators.DDZ(covariantMetricTensor.Getg12())
-                   + differential_operators.DDX(covariantMetricTensor.Getg23())
-                   - differential_operators.DDY(covariantMetricTensor.Getg13()))
+                * (differential_operators->DDZ(covariantMetricTensor.Getg12())
+                   + differential_operators->DDX(covariantMetricTensor.Getg23())
+                   - differential_operators->DDY(covariantMetricTensor.Getg13()))
           + 0.5 * contravariantMetricTensor.Getg13()
-                * differential_operators.DDX(covariantMetricTensor.Getg33());
+                * differential_operators->DDX(covariantMetricTensor.Getg33());
   G1_23 =
       0.5 * contravariantMetricTensor.Getg11()
-          * (differential_operators.DDZ(covariantMetricTensor.Getg12())
-             + differential_operators.DDY(covariantMetricTensor.Getg13())
-             - differential_operators.DDX(covariantMetricTensor.Getg23()))
+          * (differential_operators->DDZ(covariantMetricTensor.Getg12())
+             + differential_operators->DDY(covariantMetricTensor.Getg13())
+             - differential_operators->DDX(covariantMetricTensor.Getg23()))
       + 0.5 * contravariantMetricTensor.Getg12()
-            * (differential_operators.DDZ(covariantMetricTensor.Getg22())
-               + differential_operators.DDY(covariantMetricTensor.Getg23())
-               - differential_operators.DDY(covariantMetricTensor.Getg23()))
-      // + 0.5 *g13*(differential_operators.DDZ(g_32) + differential_operators.DDY(g_33) - differential_operators.DDZ(g_23));
+            * (differential_operators->DDZ(covariantMetricTensor.Getg22())
+               + differential_operators->DDY(covariantMetricTensor.Getg23())
+               - differential_operators->DDY(covariantMetricTensor.Getg23()))
+      // + 0.5 *g13*(differential_operators->DDZ(g_32) + differential_operators->DDY(g_33) - differential_operators->DDZ(g_23));
       // which equals
       + 0.5 * contravariantMetricTensor.Getg13()
-            * differential_operators.DDY(covariantMetricTensor.Getg33());
+            * differential_operators->DDY(covariantMetricTensor.Getg33());
 
   G2_11 = 0.5 * contravariantMetricTensor.Getg12()
-              * differential_operators.DDX(covariantMetricTensor.Getg11())
+              * differential_operators->DDX(covariantMetricTensor.Getg11())
           + contravariantMetricTensor.Getg22()
-                * (differential_operators.DDX(covariantMetricTensor.Getg12())
-                   - 0.5 * differential_operators.DDY(covariantMetricTensor.Getg11()))
+                * (differential_operators->DDX(covariantMetricTensor.Getg12())
+                   - 0.5 * differential_operators->DDY(covariantMetricTensor.Getg11()))
           + contravariantMetricTensor.Getg23()
-                * (differential_operators.DDX(covariantMetricTensor.Getg13())
-                   - 0.5 * differential_operators.DDZ(covariantMetricTensor.Getg11()));
+                * (differential_operators->DDX(covariantMetricTensor.Getg13())
+                   - 0.5 * differential_operators->DDZ(covariantMetricTensor.Getg11()));
   G2_22 = contravariantMetricTensor.Getg12()
-              * (differential_operators.DDY(covariantMetricTensor.Getg12())
-                 - 0.5 * differential_operators.DDX(covariantMetricTensor.Getg22()))
+              * (differential_operators->DDY(covariantMetricTensor.Getg12())
+                 - 0.5 * differential_operators->DDX(covariantMetricTensor.Getg22()))
           + 0.5 * contravariantMetricTensor.Getg22()
-                * differential_operators.DDY(covariantMetricTensor.Getg22())
+                * differential_operators->DDY(covariantMetricTensor.Getg22())
           + contravariantMetricTensor.Getg23()
-                * (differential_operators.DDY(contravariantMetricTensor.Getg23())
-                   - 0.5 * differential_operators.DDZ(covariantMetricTensor.Getg22()));
+                * (differential_operators->DDY(contravariantMetricTensor.Getg23())
+                   - 0.5 * differential_operators->DDZ(covariantMetricTensor.Getg22()));
   G2_33 = contravariantMetricTensor.Getg12()
-              * (differential_operators.DDZ(covariantMetricTensor.Getg13())
-                 - 0.5 * differential_operators.DDX(covariantMetricTensor.Getg33()))
+              * (differential_operators->DDZ(covariantMetricTensor.Getg13())
+                 - 0.5 * differential_operators->DDX(covariantMetricTensor.Getg33()))
           + contravariantMetricTensor.Getg22()
-                * (differential_operators.DDZ(covariantMetricTensor.Getg23())
-                   - 0.5 * differential_operators.DDY(covariantMetricTensor.Getg33()))
+                * (differential_operators->DDZ(covariantMetricTensor.Getg23())
+                   - 0.5 * differential_operators->DDY(covariantMetricTensor.Getg33()))
           + 0.5 * contravariantMetricTensor.Getg23()
-                * differential_operators.DDZ(covariantMetricTensor.Getg33());
+                * differential_operators->DDZ(covariantMetricTensor.Getg33());
   G2_12 = 0.5 * contravariantMetricTensor.Getg12()
-              * differential_operators.DDY(covariantMetricTensor.Getg11())
+              * differential_operators->DDY(covariantMetricTensor.Getg11())
           + 0.5 * contravariantMetricTensor.Getg22()
-                * differential_operators.DDX(covariantMetricTensor.Getg22())
+                * differential_operators->DDX(covariantMetricTensor.Getg22())
           + 0.5 * contravariantMetricTensor.Getg23()
-                * (differential_operators.DDY(covariantMetricTensor.Getg13())
-                   + differential_operators.DDX(covariantMetricTensor.Getg23())
-                   - differential_operators.DDZ(covariantMetricTensor.Getg12()));
+                * (differential_operators->DDY(covariantMetricTensor.Getg13())
+                   + differential_operators->DDX(covariantMetricTensor.Getg23())
+                   - differential_operators->DDZ(covariantMetricTensor.Getg12()));
   G2_13 =
-      // 0.5 *g21*(differential_operators.DDZ(covariantMetricTensor.Getg11()) + differential_operators.DDX(covariantMetricTensor.Getg13()) - differential_operators.DDX(covariantMetricTensor.Getg13()))
+      // 0.5 *g21*(differential_operators->DDZ(covariantMetricTensor.Getg11()) + differential_operators->DDX(covariantMetricTensor.Getg13()) - differential_operators->DDX(covariantMetricTensor.Getg13()))
       // which equals
       0.5 * contravariantMetricTensor.Getg12()
-          * (differential_operators.DDZ(covariantMetricTensor.Getg11())
-             + differential_operators.DDX(covariantMetricTensor.Getg13())
-             - differential_operators.DDX(covariantMetricTensor.Getg13()))
-      // + 0.5 *g22*(differential_operators.DDZ(covariantMetricTensor.Getg21()) + differential_operators.DDX(covariantMetricTensor.Getg23()) - differential_operators.DDY(covariantMetricTensor.Getg13()))
+          * (differential_operators->DDZ(covariantMetricTensor.Getg11())
+             + differential_operators->DDX(covariantMetricTensor.Getg13())
+             - differential_operators->DDX(covariantMetricTensor.Getg13()))
+      // + 0.5 *g22*(differential_operators->DDZ(covariantMetricTensor.Getg21()) + differential_operators->DDX(covariantMetricTensor.Getg23()) - differential_operators->DDY(covariantMetricTensor.Getg13()))
       // which equals
       + 0.5 * contravariantMetricTensor.Getg22()
-            * (differential_operators.DDZ(covariantMetricTensor.Getg12())
-               + differential_operators.DDX(covariantMetricTensor.Getg23())
-               - differential_operators.DDY(covariantMetricTensor.Getg13()))
-      // + 0.5 *g23*(differential_operators.DDZ(covariantMetricTensor.Getg31()) + differential_operators.DDX(covariantMetricTensor.Getg33()) - differential_operators.DDZ(g_13));
+            * (differential_operators->DDZ(covariantMetricTensor.Getg12())
+               + differential_operators->DDX(covariantMetricTensor.Getg23())
+               - differential_operators->DDY(covariantMetricTensor.Getg13()))
+      // + 0.5 *g23*(differential_operators->DDZ(covariantMetricTensor.Getg31()) + differential_operators->DDX(covariantMetricTensor.Getg33()) - differential_operators->DDZ(g_13));
       // which equals
       + 0.5 * contravariantMetricTensor.Getg23()
-            * differential_operators.DDX(covariantMetricTensor.Getg33());
+            * differential_operators->DDX(covariantMetricTensor.Getg33());
   G2_23 = 0.5 * contravariantMetricTensor.Getg12()
-              * (differential_operators.DDZ(covariantMetricTensor.Getg12())
-                 + differential_operators.DDY(covariantMetricTensor.Getg13())
-                 - differential_operators.DDX(covariantMetricTensor.Getg23()))
+              * (differential_operators->DDZ(covariantMetricTensor.Getg12())
+                 + differential_operators->DDY(covariantMetricTensor.Getg13())
+                 - differential_operators->DDX(covariantMetricTensor.Getg23()))
           + 0.5 * contravariantMetricTensor.Getg22()
-                * differential_operators.DDZ(covariantMetricTensor.Getg22())
+                * differential_operators->DDZ(covariantMetricTensor.Getg22())
           + 0.5 * contravariantMetricTensor.Getg23()
-                * differential_operators.DDY(covariantMetricTensor.Getg33());
+                * differential_operators->DDY(covariantMetricTensor.Getg33());
 
   G3_11 = 0.5 * contravariantMetricTensor.Getg13()
-              * differential_operators.DDX(covariantMetricTensor.Getg11())
+              * differential_operators->DDX(covariantMetricTensor.Getg11())
           + contravariantMetricTensor.Getg23()
-                * (differential_operators.DDX(covariantMetricTensor.Getg12())
-                   - 0.5 * differential_operators.DDY(covariantMetricTensor.Getg11()))
+                * (differential_operators->DDX(covariantMetricTensor.Getg12())
+                   - 0.5 * differential_operators->DDY(covariantMetricTensor.Getg11()))
           + contravariantMetricTensor.Getg33()
-                * (differential_operators.DDX(covariantMetricTensor.Getg13())
-                   - 0.5 * differential_operators.DDZ(covariantMetricTensor.Getg11()));
+                * (differential_operators->DDX(covariantMetricTensor.Getg13())
+                   - 0.5 * differential_operators->DDZ(covariantMetricTensor.Getg11()));
   G3_22 = contravariantMetricTensor.Getg13()
-              * (differential_operators.DDY(covariantMetricTensor.Getg12())
-                 - 0.5 * differential_operators.DDX(covariantMetricTensor.Getg22()))
+              * (differential_operators->DDY(covariantMetricTensor.Getg12())
+                 - 0.5 * differential_operators->DDX(covariantMetricTensor.Getg22()))
           + 0.5 * contravariantMetricTensor.Getg23()
-                * differential_operators.DDY(covariantMetricTensor.Getg22())
+                * differential_operators->DDY(covariantMetricTensor.Getg22())
           + contravariantMetricTensor.Getg33()
-                * (differential_operators.DDY(covariantMetricTensor.Getg23())
-                   - 0.5 * differential_operators.DDZ(covariantMetricTensor.Getg22()));
+                * (differential_operators->DDY(covariantMetricTensor.Getg23())
+                   - 0.5 * differential_operators->DDZ(covariantMetricTensor.Getg22()));
   G3_33 = contravariantMetricTensor.Getg13()
-              * (differential_operators.DDZ(covariantMetricTensor.Getg13())
-                 - 0.5 * differential_operators.DDX(covariantMetricTensor.Getg33()))
+              * (differential_operators->DDZ(covariantMetricTensor.Getg13())
+                 - 0.5 * differential_operators->DDX(covariantMetricTensor.Getg33()))
           + contravariantMetricTensor.Getg23()
-                * (differential_operators.DDZ(covariantMetricTensor.Getg23())
-                   - 0.5 * differential_operators.DDY(covariantMetricTensor.Getg33()))
+                * (differential_operators->DDZ(covariantMetricTensor.Getg23())
+                   - 0.5 * differential_operators->DDY(covariantMetricTensor.Getg33()))
           + 0.5 * contravariantMetricTensor.Getg33()
-                * differential_operators.DDZ(covariantMetricTensor.Getg33());
+                * differential_operators->DDZ(covariantMetricTensor.Getg33());
   G3_12 =
-      // 0.5 *g31*(differential_operators.DDY(covariantMetricTensor.Getg11()) + differential_operators.DDX(covariantMetricTensor.Getg12()) - differential_operators.DDX(covariantMetricTensor.Getg12()))
+      // 0.5 *g31*(differential_operators->DDY(covariantMetricTensor.Getg11()) + differential_operators->DDX(covariantMetricTensor.Getg12()) - differential_operators->DDX(covariantMetricTensor.Getg12()))
       // which equals to
       0.5 * contravariantMetricTensor.Getg13()
-          * differential_operators.DDY(covariantMetricTensor.Getg11())
-      // + 0.5 *g32*(differential_operators.DDY(covariantMetricTensor.Getg21()) + differential_operators.DDX(covariantMetricTensor.Getg22()) - differential_operators.DDY(covariantMetricTensor.Getg12()))
+          * differential_operators->DDY(covariantMetricTensor.Getg11())
+      // + 0.5 *g32*(differential_operators->DDY(covariantMetricTensor.Getg21()) + differential_operators->DDX(covariantMetricTensor.Getg22()) - differential_operators->DDY(covariantMetricTensor.Getg12()))
       // which equals to
       + 0.5 * contravariantMetricTensor.Getg23()
-            * differential_operators.DDX(covariantMetricTensor.Getg22())
-      //+ 0.5 *g33*(differential_operators.DDY(covariantMetricTensor.Getg31()) + differential_operators.DDX(covariantMetricTensor.Getg32()) - differential_operators.DDZ(covariantMetricTensor.Getg12()));
+            * differential_operators->DDX(covariantMetricTensor.Getg22())
+      //+ 0.5 *g33*(differential_operators->DDY(covariantMetricTensor.Getg31()) + differential_operators->DDX(covariantMetricTensor.Getg32()) - differential_operators->DDZ(covariantMetricTensor.Getg12()));
       // which equals to
       + 0.5 * contravariantMetricTensor.Getg33()
-            * (differential_operators.DDY(covariantMetricTensor.Getg13())
-               + differential_operators.DDX(covariantMetricTensor.Getg23())
-               - differential_operators.DDZ(covariantMetricTensor.Getg12()));
+            * (differential_operators->DDY(covariantMetricTensor.Getg13())
+               + differential_operators->DDX(covariantMetricTensor.Getg23())
+               - differential_operators->DDZ(covariantMetricTensor.Getg12()));
   G3_13 = 0.5 * contravariantMetricTensor.Getg13()
-              * differential_operators.DDZ(covariantMetricTensor.Getg11())
+              * differential_operators->DDZ(covariantMetricTensor.Getg11())
           + 0.5 * contravariantMetricTensor.Getg23()
-                * (differential_operators.DDZ(covariantMetricTensor.Getg12())
-                   + differential_operators.DDX(covariantMetricTensor.Getg23())
-                   - differential_operators.DDY(covariantMetricTensor.Getg13()))
+                * (differential_operators->DDZ(covariantMetricTensor.Getg12())
+                   + differential_operators->DDX(covariantMetricTensor.Getg23())
+                   - differential_operators->DDY(covariantMetricTensor.Getg13()))
           + 0.5 * contravariantMetricTensor.Getg33()
-                * differential_operators.DDX(covariantMetricTensor.Getg33());
+                * differential_operators->DDX(covariantMetricTensor.Getg33());
   G3_23 = 0.5 * contravariantMetricTensor.Getg13()
-              * (differential_operators.DDZ(covariantMetricTensor.Getg12())
-                 + differential_operators.DDY(covariantMetricTensor.Getg13())
-                 - differential_operators.DDX(covariantMetricTensor.Getg23()))
+              * (differential_operators->DDZ(covariantMetricTensor.Getg12())
+                 + differential_operators->DDY(covariantMetricTensor.Getg13())
+                 - differential_operators->DDX(covariantMetricTensor.Getg23()))
           + 0.5 * contravariantMetricTensor.Getg23()
-                * differential_operators.DDZ(covariantMetricTensor.Getg22())
+                * differential_operators->DDZ(covariantMetricTensor.Getg22())
           + 0.5 * contravariantMetricTensor.Getg33()
-                * differential_operators.DDY(covariantMetricTensor.Getg33());
+                * differential_operators->DDY(covariantMetricTensor.Getg33());
 }
 
 void Geometry::calcCovariant(CELL_LOC cell_location, const std::string& region) {
