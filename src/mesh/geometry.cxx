@@ -41,7 +41,7 @@
 //  result.allocate();
 //  communicate(result);
 //
-//  // Extrapolate into boundaries (if requested) so that differential calculateGeometry
+//  // Extrapolate into boundaries (if requested) so that differential geometry
 //  // terms can be interpolated if necessary
 //  // Note: cannot use applyBoundary("free_o3") here because applyBoundary()
 //  // would try to create a new Coordinates object since we have not finished
@@ -486,7 +486,7 @@ Geometry::Geometry(Mesh* mesh, DifferentialOperators* differential_operators)
 //              covariantMetricTensor.Getg12(), covariantMetricTensor.Getg13(),
 //              covariantMetricTensor.Getg23(), this_J, this_Bxy);
 //
-//  output_progress.write("Calculating differential calculateGeometry terms\n");
+//  output_progress.write("Calculating differential geometry terms\n");
 //
 //  if (min(abs(dx)) < 1e-8) {
 //    throw BoutException("dx magnitude less than 1e-8");

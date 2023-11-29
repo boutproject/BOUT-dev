@@ -654,7 +654,7 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
   communicate(dx, dy, dz, g11(), g22(), g33(), g12(), g13(), g23(), g11(), g22(), g33(),
               g12(), g13(), g23(), J(), Bxy());
 
-  output_progress.write("Calculating differential calculateGeometry terms\n");
+  output_progress.write("Calculating differential geometry terms\n");
 
   if (min(abs(dx)) < 1e-8) {
     throw BoutException("dx magnitude less than 1e-8");
