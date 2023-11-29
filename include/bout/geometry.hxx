@@ -99,7 +99,7 @@ public:
   const FieldMetric& G1() const;
   const FieldMetric& G2() const;
   const FieldMetric& G3() const;
-  
+
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
   const FieldMetric& J() const;
 
@@ -111,6 +111,31 @@ public:
 
   void setCovariantMetricTensor(MetricTensor metric_tensor, CELL_LOC cell_location,
                                 const std::string& region = "RGN_ALL");
+
+  void setG1_11(FieldMetric G1_11);
+  void setG1_22(FieldMetric G1_22);
+  void setG1_33(FieldMetric G1_33);
+  void setG1_12(FieldMetric G1_12);
+  void setG1_13(FieldMetric G1_13);
+  void setG1_23(FieldMetric G1_23);
+
+  void setG2_11(FieldMetric G2_11);
+  void setG2_22(FieldMetric G2_22);
+  void setG2_33(FieldMetric G2_33);
+  void setG2_12(FieldMetric G2_12);
+  void setG2_13(FieldMetric G2_13);
+  void setG2_23(FieldMetric G2_23);
+
+  void setG3_11(FieldMetric G3_11);
+  void setG3_22(FieldMetric G3_22);
+  void setG3_33(FieldMetric G3_33);
+  void setG3_12(FieldMetric G3_12);
+  void setG3_13(FieldMetric G3_13);
+  void setG3_23(FieldMetric G3_23);
+
+  void setG3(FieldMetric G3);
+  void setG1(FieldMetric G1);
+  void setG2(FieldMetric G2);
 
   void setJ(FieldMetric J);
   void setJ(BoutReal value, int x, int y);
@@ -148,15 +173,15 @@ private:
   //  int calculateGeometry(FieldMetric& dx, FieldMetric& dy, FieldMetric& dz,
   //                        bool recalculate_staggered, bool force_interpolate_from_centre);
 
-  MetricTensor contravariantMetricTensor;
-  MetricTensor covariantMetricTensor;
-
   /// Christoffel symbol of the second kind (connection coefficients)
   FieldMetric G1_11_, G1_22_, G1_33_, G1_12_, G1_13_, G1_23_;
   FieldMetric G2_11_, G2_22_, G2_33_, G2_12_, G2_13_, G2_23_;
   FieldMetric G3_11_, G3_22_, G3_33_, G3_12_, G3_13_, G3_23_;
 
   FieldMetric G1_, G2_, G3_;
+
+  MetricTensor contravariantMetricTensor;
+  MetricTensor covariantMetricTensor;
 
   FieldMetric this_J;
   FieldMetric this_Bxy; ///< Magnitude of B = nabla z times nabla x

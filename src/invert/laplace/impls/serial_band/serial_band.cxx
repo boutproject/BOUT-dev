@@ -171,8 +171,8 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
       coef3 *= Dcoef(ix, jy);
 
       if (all_terms) {
-        coef4 = coords->G1(ix, jy);
-        coef5 = coords->G3(ix, jy);
+        coef4 = coords->G1()(ix, jy);
+        coef5 = coords->G3()(ix, jy);
       }
 
       if (nonuniform) {
