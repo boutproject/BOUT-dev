@@ -106,7 +106,8 @@ public:
 
   //  void jacobian(bool extrapolate_x, bool extrapolate_y); ///< Calculate J and Bxy
 
-  void CalculateChristoffelSymbols(); /// Calculate Christoffel symbol terms
+  /// Calculate Christoffel symbol terms
+  void CalculateChristoffelSymbols(FieldMetric& dx, FieldMetric& dy);
 
   // check that covariant tensors are positive (if expected) and finite (always)
   void checkCovariant(int ystart);

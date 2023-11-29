@@ -156,33 +156,33 @@ public:
     return *transform;
   }
 
-  //  ///////////////////////////////////////////////////////////
-  //  // Operators
-  //  ///////////////////////////////////////////////////////////
-  //
-  //  FieldMetric DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-  //                  const std::string& method = "DEFAULT",
-  //                  const std::string& region = "RGN_NOBNDRY");
-  //
-  //  FieldMetric DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-  //                  const std::string& method = "DEFAULT",
-  //                  const std::string& region = "RGN_NOBNDRY") const;
-  //
-  //  FieldMetric DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-  //                  const std::string& method = "DEFAULT",
-  //                  const std::string& region = "RGN_NOBNDRY");
-  //
-  //  Field3D DDX(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-  //              const std::string& method = "DEFAULT",
-  //              const std::string& region = "RGN_NOBNDRY");
-  //
-  //  Field3D DDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-  //              const std::string& method = "DEFAULT",
-  //              const std::string& region = "RGN_NOBNDRY") const;
-  //
-  //  Field3D DDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-  //              const std::string& method = "DEFAULT",
-  //              const std::string& region = "RGN_NOBNDRY");
+  ///////////////////////////////////////////////////////////
+  // Operators
+  ///////////////////////////////////////////////////////////
+
+  FieldMetric DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                  const std::string& method = "DEFAULT",
+                  const std::string& region = "RGN_NOBNDRY");
+
+  FieldMetric DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                  const std::string& method = "DEFAULT",
+                  const std::string& region = "RGN_NOBNDRY") const;
+
+  FieldMetric DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                  const std::string& method = "DEFAULT",
+                  const std::string& region = "RGN_NOBNDRY");
+
+  Field3D DDX(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+              const std::string& method = "DEFAULT",
+              const std::string& region = "RGN_NOBNDRY");
+
+  Field3D DDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+              const std::string& method = "DEFAULT",
+              const std::string& region = "RGN_NOBNDRY") const;
+
+  Field3D DDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+              const std::string& method = "DEFAULT",
+              const std::string& region = "RGN_NOBNDRY");
 
   /// Gradient along magnetic field  b.Grad(f)
   Field2D Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
