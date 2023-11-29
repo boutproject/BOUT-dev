@@ -1,6 +1,6 @@
 #include "bout/coordinates_accessor.hxx"
-#include "bout/metricTensor.hxx"
 #include "bout/mesh.hxx"
+#include "bout/metricTensor.hxx"
 
 #include <map>
 
@@ -55,11 +55,13 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
     data[stripe_size * ind.ind + static_cast<int>(Offset::J)] = coords->J()[ind];
 
     data[stripe_size * ind.ind + static_cast<int>(Offset::B)] = coords->Bxy()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::Byup)] = coords->Bxy().yup()[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::Byup)] =
+        coords->Bxy().yup()[ind];
     data[stripe_size * ind.ind + static_cast<int>(Offset::Bydown)] =
         coords->Bxy().ydown()[ind];
 
-    COPY_STRIPE(G1, G3);
+    data[stripe_size * ind.ind + static_cast<int>(Offset::G1)] = coords->G1()[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::G3)] = coords->G3()[ind];
     //    COPY_STRIPE(g11, g12, g13, g22, g23, g33);
     data[stripe_size * ind.ind + static_cast<int>(Offset::g11)] = coords->g11()[ind];
     data[stripe_size * ind.ind + static_cast<int>(Offset::g12)] = coords->g12()[ind];
