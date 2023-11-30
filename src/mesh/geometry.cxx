@@ -6,10 +6,12 @@
 
 #include "bout/geometry.hxx"
 
-Geometry::Geometry(FieldMetric J, FieldMetric Bxy, FieldMetric g11, FieldMetric g22,
-                   FieldMetric g33, FieldMetric g12, FieldMetric g13, FieldMetric g23,
-                   FieldMetric g_11, FieldMetric g_22, FieldMetric g_33, FieldMetric g_12,
-                   FieldMetric g_13, FieldMetric g_23,
+Geometry::Geometry(const FieldMetric& J, const FieldMetric& Bxy, const FieldMetric& g11,
+                   const FieldMetric& g22, const FieldMetric& g33, const FieldMetric& g12,
+                   const FieldMetric& g13, const FieldMetric& g23,
+                   const FieldMetric& g_11, const FieldMetric& g_22,
+                   const FieldMetric& g_33, const FieldMetric& g_12,
+                   const FieldMetric& g_13, const FieldMetric& g_23,
                    DifferentialOperators* differential_operators)
     : contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
       covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), this_J(J), this_Bxy(Bxy),
@@ -386,5 +388,5 @@ void Geometry::applyToContravariantMetricTensor(
 
 void Geometry::applyToCovariantMetricTensor(
     std::function<const FieldMetric(const FieldMetric)> function) {
-  covariantMetricTensor.map(function);
+  covariantMetricTensor.map(std::move(function));
 }
