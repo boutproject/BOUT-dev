@@ -37,6 +37,17 @@ void communicate(T& t, Ts... ts) {
   t.getMesh()->wait(h);
 }
 
+template <typename T, typename... Ts>
+// Use sendY()/sendX() and wait() instead of Mesh::communicate() to ensure we
+// don't try to calculate parallel slices as Coordinates are not constructed yet
+void communicate(T& t, Ts&... ts) {
+  FieldGroup g(t, ts...);
+  auto h = t.getMesh()->sendY(g);
+  t.getMesh()->wait(h);
+  h = t.getMesh()->sendX(g);
+  t.getMesh()->wait(h);
+}
+
 #if BOUT_USE_METRIC_3D
 Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
                                   bool extrapolate_x, bool extrapolate_y,
