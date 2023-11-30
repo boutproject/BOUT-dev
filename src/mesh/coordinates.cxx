@@ -1655,6 +1655,10 @@ const FieldMetric& Coordinates::G1() const { return geometry.G1(); }
 const FieldMetric& Coordinates::G2() const { return geometry.G2(); }
 const FieldMetric& Coordinates::G3() const { return geometry.G3(); }
 
+void Coordinates::setG1(FieldMetric G1) { geometry.setG1(G1); }
+void Coordinates::setG2(FieldMetric G2) { geometry.setG2(G2); }
+void Coordinates::setG3(FieldMetric G3) { geometry.setG3(G3); }
+
 void Coordinates::setJ(FieldMetric J) {
   //TODO: Calculate J and check value is close
   geometry.setJ(J);
