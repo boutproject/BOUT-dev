@@ -255,6 +255,10 @@ public:
   const FieldMetric& G2() const;
   const FieldMetric& G3() const;
 
+  void setG1(FieldMetric G1);
+  void setG2(FieldMetric G2);
+  void setG3(FieldMetric G3);
+
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;

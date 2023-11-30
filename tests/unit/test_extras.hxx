@@ -442,7 +442,9 @@ public:
     // Set some auxilliary variables
     // Usually set in calculateGeometry()
     // Note: For testing these are set to non-zero values
-    test_coords->G1 = test_coords->G2 = test_coords->G3 = 0.1;
+    test_coords->setG1(0.1);
+    test_coords->setG2(0.1);
+    test_coords->setG3(0.1);
 
     // Set nonuniform corrections
     test_coords->non_uniform = true;
@@ -485,8 +487,9 @@ public:
         Field2D{0.0, mesh_staggered});
 
     // Set some auxilliary variables
-    test_coords_staggered->G1 = test_coords_staggered->G2 = test_coords_staggered->G3 =
-        0.1;
+    test_coords_staggered->setG1(0.1);
+    test_coords_staggered->setG2(0.1);
+    test_coords_staggered->setG3(0.1);
 
     // Set nonuniform corrections
     test_coords_staggered->non_uniform = true;
