@@ -35,8 +35,6 @@
 
 #include "differential_operators.hxx"
 #include "metricTensor.hxx"
-//#include "bout/utils.hxx"
-//#include <bout/bout_types.hxx>
 
 using FieldMetric = MetricTensor::FieldMetric;
 
@@ -147,8 +145,6 @@ public:
   /// Invert covariant metric to get contravariant components
   void calcContravariant(CELL_LOC cell_location, const std::string& region = "RGN_ALL");
 
-  //  void jacobian(bool extrapolate_x, bool extrapolate_y); ///< Calculate J and Bxy
-
   /// Calculate Christoffel symbol terms
   void CalculateChristoffelSymbols(FieldMetric& dx, FieldMetric& dy);
 
@@ -168,11 +164,6 @@ public:
       std::function<const FieldMetric(const FieldMetric)> function);
 
 private:
-  //  Coordinates& coordinates;
-
-  //  int calculateGeometry(FieldMetric& dx, FieldMetric& dy, FieldMetric& dz,
-  //                        bool recalculate_staggered, bool force_interpolate_from_centre);
-
   /// Christoffel symbol of the second kind (connection coefficients)
   FieldMetric G1_11_, G1_22_, G1_33_, G1_12_, G1_13_, G1_23_;
   FieldMetric G2_11_, G2_22_, G2_33_, G2_12_, G2_13_, G2_23_;
@@ -187,9 +178,6 @@ private:
   FieldMetric this_Bxy; ///< Magnitude of B = nabla z times nabla x
 
   DifferentialOperators* differential_operators;
-
-  //  template <typename T, typename... Ts>
-  //  void communicate(T& t, Ts... ts);
 };
 
 #endif // __GEOMETRY_H__

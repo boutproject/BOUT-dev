@@ -121,7 +121,6 @@ public:
   FieldMetric IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
 
   const MetricTensor& getContravariantMetricTensor() const;
-  //  const MetricTensor& getCovariantMetricTensor() const;
 
   /// Calculate differential geometry quantities from the metric tensor
   int calculateGeometry(bool recalculate_staggered = true,
@@ -131,7 +130,6 @@ public:
   /// Invert covariant metric to get contravariant components
   void calcContravariant(const std::string& region = "RGN_ALL");
   void jacobian(); ///< Calculate J and Bxy
-  //  void CalculateChristoffelSymbols(); /// Calculate Christoffel symbol terms
 
   ///////////////////////////////////////////////////////////
   // Parallel transforms
@@ -273,17 +271,9 @@ private:
   /// `Coordinates::calculateGeometry` is called
   mutable std::unique_ptr<Field2D> zlength_cache{nullptr};
 
-  //  /// Cache variable for Grad2_par2
-  //  mutable std::map<std::string, std::unique_ptr<FieldMetric>> Grad2_par2_DDY_invSgCache;
-  //  mutable std::unique_ptr<FieldMetric> invSgCache{nullptr};
-
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
-
-  //  const FieldMetric& invSg() const;
-  //  const FieldMetric& Grad2_par2_DDY_invSg(CELL_LOC outloc,
-  //                                          const std::string& method) const;
 
   // check that covariant tensors are positive (if expected) and finite (always)
   void checkCovariant();
@@ -302,15 +292,6 @@ private:
       const std::string& suffix = "", CELL_LOC cell_location = CELL_CENTRE,
       bool extrapolate_x = false, bool extrapolate_y = false,
       bool no_extra_interpolate = false, ParallelTransform* pParallelTransform = nullptr);
-
-  //  MetricTensor contravariantMetricTensor;
-  //  MetricTensor covariantMetricTensor;
-
-  //  FieldMetric this_J;
-  //  FieldMetric this_Bxy; ///< Magnitude of B = nabla z times nabla x
-
-  //  FieldMetric recalculateJacobian();
-  //  FieldMetric recalculateBxy();
 
   void communicateChristoffelSymbolTerms();
 };

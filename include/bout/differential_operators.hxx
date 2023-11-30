@@ -3,7 +3,6 @@
 #define BOUT_DIFFERENTIALOPERATORS_HXX
 
 #include "bout/metricTensor.hxx"
-//#include "bout/index_derivs_interface.hxx"
 
 class DifferentialOperators {
 
@@ -11,9 +10,6 @@ class DifferentialOperators {
 
 public:
   DifferentialOperators(Mesh* mesh);
-
-  //  DifferentialOperators(DifferentialOperators operators,
-  //                        DifferentialOperators::FieldMetric& dx);
 
   Field2D DDX(const Field2D& f, const Field2D& dx, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",
@@ -78,19 +74,6 @@ public:
                      MetricTensor& covariantMetricTensor, CELL_LOC outloc = CELL_DEFAULT,
                      const std::string& method = "DEFAULT");
 
-  //  // Perpendicular Laplacian operator, using only X-Z derivatives
-  //  // NOTE: This might be better bundled with the Laplacian inversion code
-  //  // since it makes use of the same coefficients and FFT routines
-  //  FieldMetric Delp2(const Field2D& f, const Field2D& g11, const Field2D& G1,
-  //                    CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
-  //
-  //  Field3D Delp2(const Field3D& f, MetricTensor& covariantMetricTensor, const Field3D& G1,
-  //                const Field3D& G3, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
-  //
-  //  FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
-
-  // Full parallel Laplacian operator on scalar field
-  // Laplace_par(f) = Div( b (b dot Grad(f)) )
   Field2D Laplace_par(const Field2D& f, const Field2D& g22, const Field2D& J,
                       const Field2D& dy, CELL_LOC outloc = CELL_DEFAULT);
 
