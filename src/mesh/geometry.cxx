@@ -15,7 +15,9 @@ Geometry::Geometry(const FieldMetric& J, const FieldMetric& Bxy, const FieldMetr
                    DifferentialOperators* differential_operators)
     : contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
       covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), this_J(J), this_Bxy(Bxy),
-      differential_operators(differential_operators) {}
+      differential_operators(differential_operators) {
+  ASSERT0(differential_operators != nullptr);
+}
 
 Geometry::Geometry(Mesh* mesh, DifferentialOperators* differential_operators)
     //bool force_interpolate_from_centre
@@ -27,7 +29,9 @@ Geometry::Geometry(Mesh* mesh, DifferentialOperators* differential_operators)
       covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
       // Identity metric tensor
       this_J(1., mesh), this_Bxy(1., mesh),
-      differential_operators(differential_operators) {}
+      differential_operators(differential_operators) {
+  ASSERT0(differential_operators != nullptr);
+}
 
 void Geometry::CalculateChristoffelSymbols(FieldMetric& dx, FieldMetric& dy) {
   // Calculate Christoffel symbol terms (18 independent values)
