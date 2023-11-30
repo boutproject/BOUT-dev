@@ -5,9 +5,7 @@
 MetricTensor::MetricTensor(const FieldMetric& g11, const FieldMetric& g22,
                            const FieldMetric& g33, const FieldMetric& g12,
                            const FieldMetric& g13, const FieldMetric& g23)
-    : g11(std::move(g11)), g22(std::move(g22)), g33(std::move(g33)), g12(std::move(g12)),
-      g13(std::move(g13)), g23(std::move(g23)) {
-
+    : g11(g11), g22(g22), g33(g33), g12(g12), g13(g13), g23(g23) {
   Allocate(); // Make sure metric elements are allocated //  ; TODO: Required?
 }
 
