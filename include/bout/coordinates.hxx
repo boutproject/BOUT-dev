@@ -261,7 +261,7 @@ private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
   CELL_LOC location;
-  DifferentialOperators differential_operators;
+  DifferentialOperators* differential_operators;
   Geometry geometry;
 
   /// Handles calculation of yup and ydown
