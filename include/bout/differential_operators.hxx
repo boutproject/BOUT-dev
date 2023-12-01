@@ -37,32 +37,26 @@ public:
               const std::string& region = "RGN_NOBNDRY") const;
 
   /// Gradient along magnetic field  b.Grad(f)
-  Field2D Grad_par(const Field2D& var, const Field2D& dy,
-                   const MetricTensor& covariantMetricTensor,
-                   CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT");
+  Field2D Grad_par(const Field2D& var, const Field2D& dy, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT");
 
-  Field3D Grad_par(const Field3D& var, const Field3D& dy,
-                   const MetricTensor& covariantMetricTensor,
-                   CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT");
+  Field3D Grad_par(const Field3D& var, const Field3D& dy, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT");
 
   /// Advection along magnetic field V*b.Grad(f)
   Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f,
-                        const MetricTensor& covariantMetricTensor,
-                        CELL_LOC outloc = CELL_DEFAULT,
+                        const Coordinates* coordinates, CELL_LOC outloc = CELL_DEFAULT,
                         const std::string& method = "DEFAULT");
 
   Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
-                        const MetricTensor& covariantMetricTensor,
-                        CELL_LOC outloc = CELL_DEFAULT,
+                        const Coordinates* coordinates, CELL_LOC outloc = CELL_DEFAULT,
                         const std::string& method = "DEFAULT");
 
   /// Divergence along magnetic field  Div(b*f) = B.Grad(f/B)
   Field2D Div_par(const Field2D& f, const Field2D& Bxy, const Field2D& dy,
-                  const MetricTensor& covariantMetricTensor,
                   CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT");
 
   Field3D Div_par(const Field3D& f, const Field3D& Bxy, const Field3D& dy,
-                  const MetricTensor& covariantMetricTensor,
                   CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT");
 
   // Second derivative along magnetic field
@@ -99,20 +93,8 @@ public:
                          MetricTensor& covariantMetricTensor, const Field2D& J,
                          const Field2D& dx, const Field2D& dy);
 
-  void invalidateAndRecalculateCachedVariables();
-
-  const Field2D& Grad2_par2_DDY_invSg(const MetricTensor& covariantMetricTensor,
-                                      const FieldMetric& dy, CELL_LOC outloc,
-                                      const std::string& method) const;
-
 private:
   Mesh* mesh;
-
-  /// Cache variable for Grad2_par2
-  mutable std::map<std::string, std::unique_ptr<FieldMetric>> Grad2_par2_DDY_invSgCache;
-  mutable std::unique_ptr<FieldMetric> invSgCache{nullptr};
-
-  FieldMetric& invSg(const MetricTensor& covariantMetricTensor) const;
 };
 
 #endif //BOUT_DIFFERENTIALOPERATORS_HXX
