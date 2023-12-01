@@ -257,6 +257,11 @@ public:
   void setG2(FieldMetric G2);
   void setG3(FieldMetric G3);
 
+  const FieldMetric& Grad2_par2_DDY_invSg(CELL_LOC outloc,
+                                          const std::string& method) const;
+
+  const FieldMetric& invSg() const;
+
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
@@ -270,6 +275,12 @@ private:
   /// Cache variable for `zlength`. Invalidated when
   /// `Coordinates::calculateGeometry` is called
   mutable std::unique_ptr<Field2D> zlength_cache{nullptr};
+
+  /// Cache variable for Grad2_par2
+  mutable std::map<std::string, std::unique_ptr<FieldMetric>> Grad2_par2_DDY_invSgCache;
+  mutable std::unique_ptr<FieldMetric> invSgCache{nullptr};
+
+  void invalidateAndRecalculateCachedVariables();
 
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.

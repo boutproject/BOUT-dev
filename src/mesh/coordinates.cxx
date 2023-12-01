@@ -869,7 +869,7 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
 
   // Invalidate and recalculate cached variables
   zlength_cache.reset();
-  differential_operators->invalidateAndRecalculateCachedVariables();
+  invalidateAndRecalculateCachedVariables();
 
   return 0;
 }
@@ -1067,7 +1067,7 @@ Field2D Coordinates::Grad_par(const Field2D& var, [[maybe_unused]] CELL_LOC outl
                               const std::string& UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
 
-  return differential_operators->Grad_par(var, dy, geometry.getCovariantMetricTensor());
+  return differential_operators->Grad_par(var, dy);
 }
 
 Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
@@ -1075,8 +1075,7 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
   TRACE("Coordinates::Grad_par( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return differential_operators->Grad_par(var, dy, geometry.getCovariantMetricTensor(),
-                                          outloc, method);
+  return differential_operators->Grad_par(var, dy, outloc, method);
 }
 
 /////////////////////////////////////////////////////////
@@ -1088,16 +1087,14 @@ Field2D Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
                                    const std::string& UNUSED(method)) {
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()))
 
-  return differential_operators->Vpar_Grad_par(v, f, geometry.getCovariantMetricTensor(),
-                                               outloc);
+  return differential_operators->Vpar_Grad_par(v, f, this, outloc);
 }
 
 Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
                                    const std::string& method) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return differential_operators->Vpar_Grad_par(v, f, geometry.getCovariantMetricTensor(),
-                                               outloc, method);
+  return differential_operators->Vpar_Grad_par(v, f, this, outloc, method);
 }
 
 /////////////////////////////////////////////////////////
@@ -1108,8 +1105,7 @@ Field2D Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
   TRACE("Coordinates::Div_par( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return differential_operators->Div_par(
-      f, geometry.Bxy(), dy, geometry.getCovariantMetricTensor(), outloc, method);
+  return differential_operators->Div_par(f, geometry.Bxy(), dy, outloc, method);
 }
 
 Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
@@ -1124,8 +1120,7 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
   if (!f.hasParallelSlices()) {
     // No yup/ydown fields. The Grad_par operator will
     // shift to field aligned coordinates
-    return differential_operators->Div_par(
-        f, dy, geometry.Bxy(), geometry.getCovariantMetricTensor(), outloc, method);
+    return differential_operators->Div_par(f, dy, geometry.Bxy(), outloc, method);
   }
 
   // Need to modify yup and ydown fields
@@ -1147,16 +1142,29 @@ Field2D Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outloc,
   TRACE("Coordinates::Grad2_par2( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()))
 
-  return differential_operators->Grad2_par2_DDY_invSg(geometry.getCovariantMetricTensor(),
-                                                      dy, outloc, method);
+  auto result = Grad2_par2_DDY_invSg(outloc, method) * DDY(f, outloc, method)
+                + D2DY2(f, outloc, method) / g_22();
+
+  return result;
 }
 
 Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
                                 const std::string& method) {
   TRACE("Coordinates::Grad2_par2( Field3D )");
+  if (outloc == CELL_DEFAULT) {
+    outloc = f.getLocation();
+  }
+  ASSERT1(location == outloc);
 
-  return differential_operators->Grad2_par2_DDY_invSg(geometry.getCovariantMetricTensor(),
-                                                      dy, outloc, method);
+  Field3D result = ::DDY(f, outloc, method);
+
+  Field3D r2 = D2DY2(f, outloc, method) / g_22();
+
+  result = Grad2_par2_DDY_invSg(outloc, method) * result + r2;
+
+  ASSERT2(result.getLocation() == outloc);
+
+  return result;
 }
 
 /////////////////////////////////////////////////////////
@@ -1405,6 +1413,35 @@ Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
 #endif
 }
 
+const Coordinates::FieldMetric& Coordinates::invSg() const {
+  if (invSgCache == nullptr) {
+    auto ptr = std::make_unique<FieldMetric>();
+    (*ptr) = 1.0 / sqrt(g22());
+    invSgCache = std::move(ptr);
+  }
+  return *invSgCache;
+}
+
+const Coordinates::FieldMetric&
+Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) const {
+
+  if (auto search = Grad2_par2_DDY_invSgCache.find(method);
+      search != Grad2_par2_DDY_invSgCache.end()) {
+    return *search->second;
+  }
+  invSg();
+
+  // Communicate to get parallel slices
+  localmesh->communicate(*invSgCache);
+  invSgCache->applyParallelBoundary("parallel_neumann");
+
+  // cache
+  auto ptr = std::make_unique<FieldMetric>();
+  *ptr = DDY(*invSgCache, outloc, method) * invSg();
+  Grad2_par2_DDY_invSgCache[method] = std::move(ptr);
+  return *Grad2_par2_DDY_invSgCache[method];
+}
+
 void Coordinates::checkCovariant() { return geometry.checkCovariant(localmesh->ystart); }
 
 void Coordinates::checkContravariant() { geometry.checkContravariant(localmesh->ystart); }
@@ -1493,4 +1530,9 @@ void Coordinates::communicateChristoffelSymbolTerms() {
   communicate(tmp, G1_22(), G1_33(), G1_12(), G1_13(), G1_23(), G2_11(), G2_22(), G2_33(),
               G2_12(), G2_13(), G2_23(), G3_11(), G3_22(), G3_33(), G3_12(), G3_13(),
               G3_23(), G1(), G2(), G3());
+}
+
+void Coordinates::invalidateAndRecalculateCachedVariables() {
+  Grad2_par2_DDY_invSgCache.clear();
+  invSgCache.reset();
 }
