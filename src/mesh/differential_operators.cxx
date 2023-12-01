@@ -6,13 +6,15 @@
 DifferentialOperators::DifferentialOperators(Mesh* mesh) : mesh(mesh) {}
 
 Field2D DifferentialOperators::DDX(const Field2D& f, const Field2D& dx, CELL_LOC loc,
-                                   const std::string& method, const std::string& region) {
+                                   const std::string& method,
+                                   const std::string& region) const {
   return bout::derivatives::index::DDX(f, loc, method, region) / dx;
 }
 
 Field3D DifferentialOperators::DDX(const Field3D& f, const Field3D& dx, const Field3D& dz,
-                                   FieldMetric& intShiftTorsion, CELL_LOC outloc,
-                                   const std::string& method, const std::string& region) {
+                                   const FieldMetric& intShiftTorsion, CELL_LOC outloc,
+                                   const std::string& method,
+                                   const std::string& region) const {
   auto result = bout::derivatives::index::DDX(f, outloc, method, region);
   result /= dx;
 
@@ -46,7 +48,7 @@ Field3D DifferentialOperators::DDY(const Field3D& f, const Field3D& dy, CELL_LOC
 
 Field2D DifferentialOperators::DDZ(const Field2D& f, CELL_LOC loc,
                                    const std::string& UNUSED(method),
-                                   const std::string& UNUSED(region)) {
+                                   const std::string& UNUSED(region)) const {
   if (loc == CELL_DEFAULT) {
     loc = f.getLocation();
   }
@@ -54,7 +56,8 @@ Field2D DifferentialOperators::DDZ(const Field2D& f, CELL_LOC loc,
 }
 
 Field3D DifferentialOperators::DDZ(const Field3D& f, const Field3D& dz, CELL_LOC outloc,
-                                   const std::string& method, const std::string& region) {
+                                   const std::string& method,
+                                   const std::string& region) const {
   return bout::derivatives::index::DDZ(f, outloc, method, region) / dz;
 }
 
