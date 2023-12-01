@@ -99,7 +99,9 @@ class Mesh {
 public:
   /// Constructor for a "bare", uninitialised Mesh
   /// Only useful for testing
-  Mesh() : source(nullptr), options(nullptr), include_corner_cells(true) {}
+  Mesh()
+      : source(nullptr), options(nullptr), include_corner_cells(true),
+        differential_operators(DifferentialOperators(this)) {}
 
   /// Constructor
   /// @param[in] s  The source to be used for loading variables
@@ -770,6 +772,8 @@ public:
   /// Creates RGN_{ALL,NOBNDRY,NOX,NOY}
   void createDefaultRegions();
 
+  DifferentialOperators* getDifferentialOperators();
+
 protected:
   /// Source for grid data
   GridDataSource* source{nullptr};
@@ -779,6 +783,8 @@ protected:
 
   /// Mesh options section
   Options* options{nullptr};
+
+  DifferentialOperators differential_operators;
 
   /// Set whether to call calcParallelSlices on all communicated fields (true) or not (false)
   bool calcParallelSlices_on_communicate{true};
