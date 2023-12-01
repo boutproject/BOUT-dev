@@ -1023,9 +1023,8 @@ void Coordinates::setParallelTransform(Options* options) {
  *
  *******************************************************************************/
 
-Coordinates::FieldMetric Coordinates::DDX(const Field2D& f, CELL_LOC loc,
-                                          const std::string& method,
-                                          const std::string& region) {
+Field2D Coordinates::DDX(const Field2D& f, CELL_LOC loc, const std::string& method,
+                         const std::string& region) {
   ASSERT1(location == loc || loc == CELL_DEFAULT)
   return differential_operators.DDX(f, dx, loc, method, region);
 }
@@ -1035,39 +1034,25 @@ Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc, const std::string& m
   return differential_operators.DDX(f, dx, dz, IntShiftTorsion, outloc, method, region);
 }
 
-Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
-                                          const std::string& method,
-                                          const std::string& region) const {
+Field2D Coordinates::DDY(const Field2D& f, CELL_LOC loc, const std::string& method,
+                         const std::string& region) const {
   ASSERT1(location == loc || loc == CELL_DEFAULT)
   return differential_operators.DDY(f, dy, loc, method, region);
 }
 
 Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) const {
-#if BOUT_USE_METRIC_3D
-  if (!f.hasParallelSlices() and !transform->canToFromFieldAligned()) {
-    Field3D f_parallel = f;
-    transform->calcParallelSlices(f_parallel);
-    f_parallel.applyParallelBoundary("parallel_neumann");
-    return bout::derivatives::index::DDY(f_parallel, outloc, method, region);
-  }
-#endif
   return differential_operators.DDY(f, dy, outloc, method, region);
 }
 
-Coordinates::FieldMetric Coordinates::DDZ(const Field2D& f, CELL_LOC loc,
-                                          const std::string& UNUSED(method),
-                                          const std::string& UNUSED(region)) {
+Field2D Coordinates::DDZ(const Field2D& f, CELL_LOC loc, const std::string& method,
+                         const std::string& region) {
   ASSERT1(location == loc || loc == CELL_DEFAULT)
   ASSERT1(f.getMesh() == localmesh)
   if (loc == CELL_DEFAULT) {
     loc = f.getLocation();
   }
-  return zeroFrom(f).setLocation(loc);
-}
-Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
-                         const std::string& region) {
-  return bout::derivatives::index::DDZ(f, outloc, method, region) / dz;
+  return differential_operators.DDZ(f, loc, method, region);
 }
 
 /////////////////////////////////////////////////////////
@@ -1113,7 +1098,7 @@ Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC 
 /////////////////////////////////////////////////////////
 // Parallel divergence
 
-Coordinates::FieldMetric Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
+Field2D Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
                                               const std::string& method) {
   TRACE("Coordinates::Div_par( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
@@ -1152,7 +1137,7 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
 // second parallel derivative (b dot Grad)(b dot Grad)
 // Note: For parallel Laplacian use Laplace_par
 
-Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outloc,
+Field2D Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outloc,
                                                  const std::string& method) {
   TRACE("Coordinates::Grad2_par2( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()))
@@ -1175,7 +1160,7 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
 #include <bout/invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 #include <utility>
 
-Coordinates::FieldMetric Coordinates::Delp2(const Field2D& f, CELL_LOC outloc,
+Field2D Coordinates::Delp2(const Field2D& f, CELL_LOC outloc,
                                             bool UNUSED(useFFT)) {
   TRACE("Coordinates::Delp2( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
@@ -1313,7 +1298,7 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
   return result;
 }
 
-Coordinates::FieldMetric Coordinates::Laplace_par(const Field2D& f, CELL_LOC outloc) {
+Field2D Coordinates::Laplace_par(const Field2D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
   return D2DY2(f, outloc) / g22() + DDY(J() / g22(), outloc) * DDY(f, outloc) / J();
@@ -1326,7 +1311,7 @@ Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
 
 // Full Laplacian operator on scalar field
 
-Coordinates::FieldMetric Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
+Field2D Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
                                               const std::string& dfdy_boundary_conditions,
                                               const std::string& dfdy_dy_region) {
   TRACE("Coordinates::Laplace( Field2D )");
