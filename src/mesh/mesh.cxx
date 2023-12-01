@@ -177,6 +177,7 @@ Mesh* Mesh::create(Options* opt) { return create(nullptr, opt); }
 
 Mesh::Mesh(GridDataSource* s, Options* opt)
     : source(s), options(opt == nullptr ? Options::getRoot()->getSection("mesh") : opt),
+      differential_operators(DifferentialOperators(this)),
       calcParallelSlices_on_communicate(
           (*options)["calcParallelSlices_on_communicate"]
               .doc("Calculate parallel slices on all communicated fields")
@@ -879,6 +880,10 @@ void Mesh::recalculateStaggeredCoordinates() {
     *coords_map[location] = std::move(*createDefaultCoordinates(location, true));
     coords_map[location]->calculateGeometry(false, true);
   }
+}
+
+DifferentialOperators* Mesh::getDifferentialOperators() {
+  return &differential_operators;
 }
 
 constexpr decltype(MeshFactory::type_name) MeshFactory::type_name;

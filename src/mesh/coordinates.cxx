@@ -294,19 +294,19 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric IntShiftTorsion)
     : dx(std::move(dx)), dy(std::move(dy)), dz(dz), ShiftTorsion(std::move(ShiftTorsion)),
       IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE), differential_operators(DifferentialOperators(mesh)),
+      location(CELL_CENTRE), differential_operators(mesh->getDifferentialOperators()),
       geometry(Geometry(std::move(J), std::move(Bxy), std::move(g11), std::move(g22),
                         std::move(g33), std::move(g12), std::move(g13), std::move(g23),
                         std::move(g_11), std::move(g_22), std::move(g_33),
                         std::move(g_12), std::move(g_13), std::move(g_23),
-                        &differential_operators)) {}
+                        differential_operators)) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
       ShiftTorsion(mesh), IntShiftTorsion(mesh), localmesh(mesh), location(loc),
-      differential_operators(DifferentialOperators(mesh)),
-      geometry(Geometry(mesh, &differential_operators)) {
+      differential_operators(mesh->getDifferentialOperators()),
+      geometry(Geometry(mesh, differential_operators)) {
 
   if (options == nullptr) {
     options = Options::getRoot()->getSection("mesh");
@@ -869,7 +869,7 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
 
   // Invalidate and recalculate cached variables
   zlength_cache.reset();
-  differential_operators.invalidateAndRecalculateCachedVariables();
+  differential_operators->invalidateAndRecalculateCachedVariables();
 
   return 0;
 }
@@ -1026,23 +1026,23 @@ void Coordinates::setParallelTransform(Options* options) {
 Field2D Coordinates::DDX(const Field2D& f, CELL_LOC loc, const std::string& method,
                          const std::string& region) const {
   ASSERT1(location == loc || loc == CELL_DEFAULT)
-  return differential_operators.DDX(f, dx, loc, method, region);
+  return differential_operators->DDX(f, dx, loc, method, region);
 }
 
 Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) const {
-  return differential_operators.DDX(f, dx, dz, IntShiftTorsion, outloc, method, region);
+  return differential_operators->DDX(f, dx, dz, IntShiftTorsion, outloc, method, region);
 }
 
 Field2D Coordinates::DDY(const Field2D& f, CELL_LOC loc, const std::string& method,
                          const std::string& region) const {
   ASSERT1(location == loc || loc == CELL_DEFAULT)
-  return differential_operators.DDY(f, dy, loc, method, region);
+  return differential_operators->DDY(f, dy, loc, method, region);
 }
 
 Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) const {
-  return differential_operators.DDY(f, dy, outloc, method, region);
+  return differential_operators->DDY(f, dy, outloc, method, region);
 }
 
 Field2D Coordinates::DDZ(const Field2D& f, CELL_LOC loc, const std::string& method,
@@ -1052,12 +1052,12 @@ Field2D Coordinates::DDZ(const Field2D& f, CELL_LOC loc, const std::string& meth
   if (loc == CELL_DEFAULT) {
     loc = f.getLocation();
   }
-  return differential_operators.DDZ(f, loc, method, region);
+  return differential_operators->DDZ(f, loc, method, region);
 }
 
 Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) const {
-  return differential_operators.DDZ(f, dz, outloc, method, region);
+  return differential_operators->DDZ(f, dz, outloc, method, region);
 }
 
 /////////////////////////////////////////////////////////
@@ -1067,7 +1067,7 @@ Field2D Coordinates::Grad_par(const Field2D& var, MAYBE_UNUSED(CELL_LOC outloc),
                               const std::string& UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
 
-  return differential_operators.Grad_par(var, dy, geometry.getCovariantMetricTensor());
+  return differential_operators->Grad_par(var, dy, geometry.getCovariantMetricTensor());
 }
 
 Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
@@ -1075,8 +1075,8 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
   TRACE("Coordinates::Grad_par( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return differential_operators.Grad_par(var, dy, geometry.getCovariantMetricTensor(),
-                                         outloc, method);
+  return differential_operators->Grad_par(var, dy, geometry.getCovariantMetricTensor(),
+                                          outloc, method);
 }
 
 /////////////////////////////////////////////////////////
@@ -1088,16 +1088,16 @@ Field2D Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
                                    const std::string& UNUSED(method)) {
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()))
 
-  return differential_operators.Vpar_Grad_par(v, f, geometry.getCovariantMetricTensor(),
-                                              outloc);
+  return differential_operators->Vpar_Grad_par(v, f, geometry.getCovariantMetricTensor(),
+                                               outloc);
 }
 
 Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
                                    const std::string& method) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return differential_operators.Vpar_Grad_par(v, f, geometry.getCovariantMetricTensor(),
-                                              outloc, method);
+  return differential_operators->Vpar_Grad_par(v, f, geometry.getCovariantMetricTensor(),
+                                               outloc, method);
 }
 
 /////////////////////////////////////////////////////////
@@ -1108,7 +1108,7 @@ Field2D Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
   TRACE("Coordinates::Div_par( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return differential_operators.Div_par(
+  return differential_operators->Div_par(
       f, geometry.Bxy(), dy, geometry.getCovariantMetricTensor(), outloc, method);
 }
 
@@ -1124,7 +1124,7 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
   if (!f.hasParallelSlices()) {
     // No yup/ydown fields. The Grad_par operator will
     // shift to field aligned coordinates
-    return differential_operators.Div_par(
+    return differential_operators->Div_par(
         f, dy, geometry.Bxy(), geometry.getCovariantMetricTensor(), outloc, method);
   }
 
@@ -1147,16 +1147,16 @@ Field2D Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outloc,
   TRACE("Coordinates::Grad2_par2( Field2D )");
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()))
 
-  return differential_operators.Grad2_par2_DDY_invSg(geometry.getCovariantMetricTensor(),
-                                                     dy, outloc, method);
+  return differential_operators->Grad2_par2_DDY_invSg(geometry.getCovariantMetricTensor(),
+                                                      dy, outloc, method);
 }
 
 Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
                                 const std::string& method) {
   TRACE("Coordinates::Grad2_par2( Field3D )");
 
-  return differential_operators.Grad2_par2_DDY_invSg(geometry.getCovariantMetricTensor(),
-                                                     dy, outloc, method);
+  return differential_operators->Grad2_par2_DDY_invSg(geometry.getCovariantMetricTensor(),
+                                                      dy, outloc, method);
 }
 
 /////////////////////////////////////////////////////////
