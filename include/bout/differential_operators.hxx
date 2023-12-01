@@ -13,7 +13,7 @@ public:
 
   Field2D DDX(const Field2D& f, const Field2D& dx, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",
-              const std::string& region = "RGN_NOBNDRY");
+              const std::string& region = "RGN_NOBNDRY") const;
 
   Field2D DDY(const Field2D& f, const Field2D& dy, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",
@@ -21,12 +21,12 @@ public:
 
   Field2D DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",
-              const std::string& region = "RGN_NOBNDRY");
+              const std::string& region = "RGN_NOBNDRY") const;
 
   Field3D DDX(const Field3D& f, const Field3D& dx, const Field3D& dz,
-              FieldMetric& intShiftTorsion, CELL_LOC outloc = CELL_DEFAULT,
+              const FieldMetric& intShiftTorsion, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",
-              const std::string& region = "RGN_NOBNDRY");
+              const std::string& region = "RGN_NOBNDRY") const;
 
   Field3D DDY(const Field3D& f, const Field3D& dy, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",
@@ -34,7 +34,7 @@ public:
 
   Field3D DDZ(const Field3D& f, const Field3D& dz, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",
-              const std::string& region = "RGN_NOBNDRY");
+              const std::string& region = "RGN_NOBNDRY") const;
 
   /// Gradient along magnetic field  b.Grad(f)
   Field2D Grad_par(const Field2D& var, const Field2D& dy,
