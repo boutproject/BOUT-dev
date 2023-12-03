@@ -668,38 +668,7 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
   // Check input metrics
   checkContravariant();
   checkCovariant();
-  geometry.CalculateChristoffelSymbols(dx, dy);
-
-  auto tmp = J() * g12();
-  communicate(tmp);
-  geometry.setG1((DDX(J() * g11()) + DDY(tmp) + DDZ(J() * g13())) / J());
-  tmp = J() * g22();
-  communicate(tmp);
-  geometry.setG2((DDX(J() * g12()) + DDY(tmp) + DDZ(J() * g23())) / J());
-  tmp = J() * g23();
-  communicate(tmp);
-  geometry.setG3((DDX(J() * g13()) + DDY(tmp) + DDZ(J() * g33())) / J());
-
-  communicateChristoffelSymbolTerms();
-
-  // Set boundary guard cells of Christoffel symbol terms
-  // Ideally, when location is staggered, we would set the upper/outer boundary point
-  // correctly rather than by extrapolating here: e.g. if location==CELL_YLOW and we are
-  // at the upper y-boundary the x- and z-derivatives at yend+1 at the boundary can be
-  // calculated because the guard cells are available, while the y-derivative could be
-  // calculated from the CELL_CENTRE metric components (which have guard cells available
-  // past the boundary location). This would avoid the problem that the y-boundary on the
-  // CELL_YLOW grid is at a 'guard cell' location (yend+1).
-  // However, the above would require lots of special handling, so just extrapolate for
-  // now.
-
-  std::function<const FieldMetric(const FieldMetric)> const
-      interpolateAndExtrapolate_function = [this](const FieldMetric& component) {
-        return localmesh->interpolateAndExtrapolate(component, location, true, true,
-                                                    false, transform.get());
-      };
-
-  geometry.applyToChristoffelSymbols(interpolateAndExtrapolate_function);
+  calculateCommunicateAndExtrapolateChristoffelSymbols();
 
   //////////////////////////////////////////////////////
   /// Non-uniform meshes. Need to use DDX, DDY
@@ -835,6 +804,41 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
   invalidateAndRecalculateCachedVariables();
 
   return 0;
+}
+
+void Coordinates::calculateCommunicateAndExtrapolateChristoffelSymbols() {
+  geometry.CalculateChristoffelSymbols(dx, dy);
+
+  auto tmp = J() * g12();
+  communicate(tmp);
+  geometry.setG1((DDX(J() * g11()) + DDY(tmp) + DDZ(J() * g13())) / J());
+  tmp = J() * g22();
+  communicate(tmp);
+  geometry.setG2((DDX(J() * g12()) + DDY(tmp) + DDZ(J() * g23())) / J());
+  tmp = J() * g23();
+  communicate(tmp);
+  geometry.setG3((DDX(J() * g13()) + DDY(tmp) + DDZ(J() * g33())) / J());
+
+  communicateChristoffelSymbolTerms();
+
+  // Set boundary guard cells of Christoffel symbol terms
+  // Ideally, when location is staggered, we would set the upper/outer boundary point
+  // correctly rather than by extrapolating here: e.g. if location==CELL_YLOW and we are
+  // at the upper y-boundary the x- and z-derivatives at yend+1 at the boundary can be
+  // calculated because the guard cells are available, while the y-derivative could be
+  // calculated from the CELL_CENTRE metric components (which have guard cells available
+  // past the boundary location). This would avoid the problem that the y-boundary on the
+  // CELL_YLOW grid is at a 'guard cell' location (yend+1).
+  // However, the above would require lots of special handling, so just extrapolate for
+  // now.
+
+  std::function<const FieldMetric(const FieldMetric)> const
+      interpolateAndExtrapolate_function = [this](const FieldMetric& component) {
+        return localmesh->interpolateAndExtrapolate(component, location, true, true,
+                                                    false, transform.get());
+      };
+
+  geometry.applyToChristoffelSymbols(interpolateAndExtrapolate_function);
 }
 
 void Coordinates::calcCovariant(const std::string& region) {

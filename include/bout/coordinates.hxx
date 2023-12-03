@@ -305,6 +305,7 @@ private:
       bool no_extra_interpolate = false, ParallelTransform* pParallelTransform = nullptr);
 
   void communicateChristoffelSymbolTerms();
+  void calculateCommunicateAndExtrapolateChristoffelSymbols();
 };
 
 /*
