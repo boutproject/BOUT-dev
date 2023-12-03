@@ -48,8 +48,6 @@ public:
 
 protected:
   FieldMetric g11, g22, g33, g12, g13, g23;
-
-  std::vector<FieldMetric> getComponents() const;
 };
 
 #endif //BOUT_METRICTENSOR_HXX
