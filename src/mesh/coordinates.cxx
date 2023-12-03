@@ -668,6 +668,7 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
   // Check input metrics
   checkContravariant();
   checkCovariant();
+
   calculateCommunicateAndExtrapolateChristoffelSymbols();
 
   //////////////////////////////////////////////////////
@@ -681,117 +682,69 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
 
   // Read correction for non-uniform meshes
   std::string const suffix = getLocationSuffix(location);
+
+  auto extrapolate_x = true;
+  auto extrapolate_y = true;
   if (location == CELL_CENTRE
       or (!force_interpolate_from_centre and localmesh->sourceHasVar("dx" + suffix))) {
-    bool const extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
-    bool const extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
-
-    if (localmesh->get(d2x, "d2x" + suffix, 0.0, false, location) != 0) {
-      output_warn.write("\tWARNING: differencing quantity 'd2x' not found. "
-                        "Calculating from dx\n");
-      d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
-
-      communicate(d1_dx);
-      d1_dx = localmesh->interpolateAndExtrapolate(d1_dx, location, true, true, true,
-                                                   transform.get());
-    } else {
-      d2x.setLocation(location);
-      // set boundary cells if necessary
-      d2x = localmesh->interpolateAndExtrapolate(d2x, location, extrapolate_x,
-                                                 extrapolate_y, false, transform.get());
-
-      d1_dx = -d2x / (dx * dx);
-    }
-
-    if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location) != 0) {
-      output_warn.write("\tWARNING: differencing quantity 'd2y' not found. "
-                        "Calculating from dy\n");
-      d1_dy = DDY(1. / dy); // d/di(1/dy)
-
-      communicate(d1_dy);
-      d1_dy = localmesh->interpolateAndExtrapolate(d1_dy, location, true, true, true,
-                                                   transform.get());
-    } else {
-      d2y.setLocation(location);
-      // set boundary cells if necessary
-      d2y = localmesh->interpolateAndExtrapolate(d2y, location, extrapolate_x,
-                                                 extrapolate_y, false, transform.get());
-
-      d1_dy = -d2y / (dy * dy);
-    }
-
-#if BOUT_USE_METRIC_3D
-    if (localmesh->get(d2z, "d2z" + suffix, 0.0, false)) {
-      output_warn.write("\tWARNING: differencing quantity 'd2z' not found. "
-                        "Calculating from dz\n");
-      d1_dz = bout::derivatives::index::DDZ(1. / dz);
-      communicate(d1_dz);
-      d1_dz = localmesh->interpolateAndExtrapolate(d1_dz, location, true, true, true,
-                                                   transform.get());
-    } else {
-      d2z.setLocation(location);
-      // set boundary cells if necessary
-      d2z = localmesh->interpolateAndExtrapolate(d2z, location, extrapolate_x,
-                                                 extrapolate_y, false, transform.get());
-
-      d1_dz = -d2z / (dz * dz);
-    }
-#else
-    d1_dz = 0;
-#endif
-  } else {
-    if (localmesh->get(d2x, "d2x", 0.0, false) != 0) {
-      output_warn.write("\tWARNING: differencing quantity 'd2x' not found. "
-                        "Calculating from dx\n");
-      d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
-
-      communicate(d1_dx);
-      d1_dx = localmesh->interpolateAndExtrapolate(d1_dx, location, true, true, true,
-                                                   transform.get());
-    } else {
-      // Shift d2x to our location
-      d2x = localmesh->interpolateAndExtrapolate(d2x, location, true, true, false,
-                                                 transform.get());
-
-      d1_dx = -d2x / (dx * dx);
-    }
-
-    if (localmesh->get(d2y, "d2y", 0.0, false) != 0) {
-      output_warn.write("\tWARNING: differencing quantity 'd2y' not found. "
-                        "Calculating from dy\n");
-      d1_dy = DDY(1. / dy); // d/di(1/dy)
-
-      communicate(d1_dy);
-      d1_dy = localmesh->interpolateAndExtrapolate(d1_dy, location, true, true, true,
-                                                   transform.get());
-    } else {
-      // Shift d2y to our location
-      d2y = localmesh->interpolateAndExtrapolate(d2y, location, true, true, false,
-                                                 transform.get());
-
-      d1_dy = -d2y / (dy * dy);
-    }
-
-#if BOUT_USE_METRIC_3D
-    if (localmesh->get(d2z, "d2z", 0.0, false)) {
-      output_warn.write("\tWARNING: differencing quantity 'd2z' not found. "
-                        "Calculating from dz\n");
-      d1_dz = bout::derivatives::index::DDZ(1. / dz);
-
-      communicate(d1_dz);
-      d1_dz = localmesh->interpolateAndExtrapolate(d1_dz, location, true, true, true,
-                                                   transform.get());
-    } else {
-      // Shift d2z to our location
-      d2z = localmesh->interpolateAndExtrapolate(d2z, location, true, true, false,
-                                                 transform.get());
-
-      d1_dz = -d2z / (dz * dz);
-    }
-#else
-    d1_dz = 0;
-#endif
+    extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
+    extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
   }
+
+  if (localmesh->get(d2x, "d2x" + suffix, 0.0, false, location) != 0) {
+    output_warn.write("\tWARNING: differencing quantity 'd2x' not found. "
+                      "Calculating from dx\n");
+    d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
+
+    communicate(d1_dx);
+    d1_dx = localmesh->interpolateAndExtrapolate(d1_dx, location, true, true, true,
+                                                 transform.get());
+  } else {
+    d2x.setLocation(location);
+    // set boundary cells if necessary
+    d2x = localmesh->interpolateAndExtrapolate(d2x, location, extrapolate_x,
+                                               extrapolate_y, false, transform.get());
+
+    d1_dx = -d2x / (dx * dx);
+  }
+
+  if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location) != 0) {
+    output_warn.write("\tWARNING: differencing quantity 'd2y' not found. "
+                      "Calculating from dy\n");
+    d1_dy = DDY(1. / dy); // d/di(1/dy)
+
+    communicate(d1_dy);
+    d1_dy = localmesh->interpolateAndExtrapolate(d1_dy, location, true, true, true,
+                                                 transform.get());
+  } else {
+    d2y.setLocation(location);
+    // set boundary cells if necessary
+    d2y = localmesh->interpolateAndExtrapolate(d2y, location, extrapolate_x,
+                                               extrapolate_y, false, transform.get());
+
+    d1_dy = -d2y / (dy * dy);
+  }
+
+#if BOUT_USE_METRIC_3D
+  if (localmesh->get(d2z, "d2z" + suffix, 0.0, false)) {
+    output_warn.write("\tWARNING: differencing quantity 'd2z' not found. "
+                      "Calculating from dz\n");
+    d1_dz = bout::derivatives::index::DDZ(1. / dz);
+    communicate(d1_dz);
+    d1_dz = localmesh->interpolateAndExtrapolate(d1_dz, location, true, true, true,
+                                                 transform.get());
+  } else {
+    d2z.setLocation(location);
+    // set boundary cells if necessary
+    d2z = localmesh->interpolateAndExtrapolate(d2z, location, extrapolate_x,
+                                               extrapolate_y, false, transform.get());
+
+    d1_dz = -d2z / (dz * dz);
+  }
+#else
+  d1_dz = 0;
+#endif
+
   communicate(d1_dx, d1_dy, d1_dz);
 
   if (location == CELL_CENTRE && recalculate_staggered) {
