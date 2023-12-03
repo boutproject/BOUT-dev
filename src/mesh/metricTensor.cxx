@@ -168,11 +168,6 @@ MetricTensor MetricTensor::oppositeRepresentation(CELL_LOC location,
   return other_representation;
 }
 
-std::vector<MetricTensor::FieldMetric> MetricTensor::getComponents() const {
-
-  return std::vector<FieldMetric>{g11, g22, g33, g12, g13, g23};
-}
-
 void MetricTensor::map(
     const std::function<const FieldMetric(const FieldMetric)> function) {
 
@@ -185,7 +180,7 @@ void MetricTensor::map(
 MetricTensor MetricTensor::applyToComponents(
     const std::function<const FieldMetric(const FieldMetric)> function) const {
 
-  const auto components_in = getComponents();
+  const auto components_in = std::vector<FieldMetric>{g11, g22, g33, g12, g13, g23};
 
   FieldMetric components_out[6];
 
