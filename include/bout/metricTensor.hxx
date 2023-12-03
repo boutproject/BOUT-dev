@@ -18,8 +18,8 @@ public:
   MetricTensor(const FieldMetric& g11, const FieldMetric& g22, const FieldMetric& g33,
                const FieldMetric& g12, const FieldMetric& g13, const FieldMetric& g23);
 
-  MetricTensor(const BoutReal g11, const BoutReal g22, const BoutReal g33,
-               const BoutReal g12, const BoutReal g13, const BoutReal g23, Mesh* mesh);
+  MetricTensor(BoutReal g11, BoutReal g22, BoutReal g33, BoutReal g12, BoutReal g13,
+               BoutReal g23, Mesh* mesh);
 
   // check that tensors are positive (if expected) and finite (always)
   void check(int ystart);
@@ -35,16 +35,16 @@ public:
 
   void Allocate();
 
-  void setLocation(const CELL_LOC location);
+  void setLocation(CELL_LOC location);
 
-  MetricTensor oppositeRepresentation(const CELL_LOC location,
+  MetricTensor oppositeRepresentation(CELL_LOC location,
                                       const std::string& region = "RGN_ALL");
 
   // Transforms the MetricTensor by applying the given function to every component
-  void map(const std::function<const Field2D(const FieldMetric)> function);
+  void map(std::function<const Field2D(const FieldMetric)> function);
 
-  MetricTensor applyToComponents(
-      const std::function<const FieldMetric(const FieldMetric)> function) const;
+  MetricTensor
+  applyToComponents(std::function<const FieldMetric(const FieldMetric)> function) const;
 
 protected:
   FieldMetric g11, g22, g33, g12, g13, g23;
