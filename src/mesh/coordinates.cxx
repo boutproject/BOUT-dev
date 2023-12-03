@@ -648,8 +648,8 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
                                    bool force_interpolate_from_centre) {
   TRACE("Coordinates::calculateGeometry");
 
-  communicate(dx, dy, dz, g11(), g22(), g33(), g12(), g13(), g23(), g_11(), g_22(), g_33(),
-              g_12(), g_13(), g_23(), J(), Bxy());
+  communicate(dx, dy, dz, g11(), g22(), g33(), g12(), g13(), g23(), g_11(), g_22(),
+              g_33(), g_12(), g_13(), g_23(), J(), Bxy());
 
   output_progress.write("Calculating differential geometry terms\n");
 
@@ -692,51 +692,14 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
   // CELL_YLOW grid is at a 'guard cell' location (yend+1).
   // However, the above would require lots of special handling, so just extrapolate for
   // now.
-  geometry.setG1_11(localmesh->interpolateAndExtrapolate(G1_11(), location, true, true,
-                                                         true, transform.get()));
-  geometry.setG1_22(localmesh->interpolateAndExtrapolate(G1_22(), location, true, true,
-                                                         true, transform.get()));
-  geometry.setG1_33(localmesh->interpolateAndExtrapolate(G1_33(), location, true, true,
-                                                         true, transform.get()));
-  geometry.setG1_12(localmesh->interpolateAndExtrapolate(G1_12(), location, true, true,
-                                                         true, transform.get()));
-  geometry.setG1_13(localmesh->interpolateAndExtrapolate(G1_13(), location, true, true,
-                                                         true, transform.get()));
-  geometry.setG1_23(localmesh->interpolateAndExtrapolate(G1_23(), location, true, true,
-                                                         true, transform.get()));
 
-  geometry.setG2_11(localmesh->interpolateAndExtrapolate(G2_11(), location, true, true,
-                                                         true, transform.get()));
-  geometry.setG2_22(localmesh->interpolateAndExtrapolate(G2_22(), location, true, true,
-                                                         true, transform.get()));
-  geometry.setG2_33(localmesh->interpolateAndExtrapolate(G2_33(), location, true, true,
-                                                         true, transform.get()));
-  geometry.setG2_12(localmesh->interpolateAndExtrapolate(G2_12(), location, true, true,
-                                                         true, transform.get()));
-  geometry.setG2_13(localmesh->interpolateAndExtrapolate(G2_13(), location, true, true,
-                                                         true, transform.get()));
-  geometry.setG2_23(localmesh->interpolateAndExtrapolate(G2_23(), location, true, true,
-                                                         true, transform.get()));
+  std::function<const FieldMetric(const FieldMetric)> const
+      interpolateAndExtrapolate_function = [this](const FieldMetric& component) {
+        return localmesh->interpolateAndExtrapolate(component, location, true, true,
+                                                    false, transform.get());
+      };
 
-  geometry.setG3_11(localmesh->interpolateAndExtrapolate(G3_11(), location, true, true,
-                                                         true, transform.get()));
-  geometry.setG3_22(localmesh->interpolateAndExtrapolate(G3_22(), location, true, true,
-                                                         true, transform.get()));
-  geometry.setG3_33(localmesh->interpolateAndExtrapolate(G3_33(), location, true, true,
-                                                         true, transform.get()));
-  geometry.setG3_12(localmesh->interpolateAndExtrapolate(G3_12(), location, true, true,
-                                                         true, transform.get()));
-  geometry.setG3_13(localmesh->interpolateAndExtrapolate(G3_13(), location, true, true,
-                                                         true, transform.get()));
-  geometry.setG3_23(localmesh->interpolateAndExtrapolate(G3_23(), location, true, true,
-                                                         true, transform.get()));
-
-  geometry.setG1(localmesh->interpolateAndExtrapolate(G1(), location, true, true, true,
-                                                      transform.get()));
-  geometry.setG2(localmesh->interpolateAndExtrapolate(G2(), location, true, true, true,
-                                                      transform.get()));
-  geometry.setG3(localmesh->interpolateAndExtrapolate(G3(), location, true, true, true,
-                                                      transform.get()));
+  geometry.applyToChristoffelSymbols(interpolateAndExtrapolate_function);
 
   //////////////////////////////////////////////////////
   /// Non-uniform meshes. Need to use DDX, DDY
