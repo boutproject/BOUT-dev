@@ -612,12 +612,12 @@ void Coordinates::outputVars(Options& output_options) {
   output_options["g13" + loc_string].force(g13(), "Coordinates");
   output_options["g23" + loc_string].force(g23(), "Coordinates");
 
-  output_options["g_11" + loc_string].force(g11(), "Coordinates");
-  output_options["g_22" + loc_string].force(g22(), "Coordinates");
-  output_options["g_33" + loc_string].force(g33(), "Coordinates");
-  output_options["g_12" + loc_string].force(g12(), "Coordinates");
-  output_options["g_13" + loc_string].force(g13(), "Coordinates");
-  output_options["g_23" + loc_string].force(g23(), "Coordinates");
+  output_options["g_11" + loc_string].force(g_11(), "Coordinates");
+  output_options["g_22" + loc_string].force(g_22(), "Coordinates");
+  output_options["g_33" + loc_string].force(g_33(), "Coordinates");
+  output_options["g_12" + loc_string].force(g_12(), "Coordinates");
+  output_options["g_13" + loc_string].force(g_13(), "Coordinates");
+  output_options["g_23" + loc_string].force(g_23(), "Coordinates");
 
   output_options["J" + loc_string].force(J(), "Coordinates");
   output_options["Bxy" + loc_string].force(Bxy(), "Coordinates");
@@ -648,8 +648,8 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
                                    bool force_interpolate_from_centre) {
   TRACE("Coordinates::calculateGeometry");
 
-  communicate(dx, dy, dz, g11(), g22(), g33(), g12(), g13(), g23(), g11(), g22(), g33(),
-              g12(), g13(), g23(), J(), Bxy());
+  communicate(dx, dy, dz, g11(), g22(), g33(), g12(), g13(), g23(), g_11(), g_22(), g_33(),
+              g_12(), g_13(), g_23(), J(), Bxy());
 
   output_progress.write("Calculating differential geometry terms\n");
 
@@ -1313,12 +1313,12 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
 Field2D Coordinates::Laplace_par(const Field2D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return D2DY2(f, outloc) / g22() + DDY(J() / g22(), outloc) * DDY(f, outloc) / J();
+  return D2DY2(f, outloc) / g_22() + DDY(J() / g_22(), outloc) * DDY(f, outloc) / J();
 }
 
 Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
-  return D2DY2(f, outloc) / g22() + DDY(J() / g22(), outloc) * ::DDY(f, outloc) / J();
+  return D2DY2(f, outloc) / g_22() + DDY(J() / g_22(), outloc) * ::DDY(f, outloc) / J();
 }
 
 // Full Laplacian operator on scalar field
@@ -1386,9 +1386,9 @@ Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
     const auto upper_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.yp()]); };
     const BoutReal upper_y_A = upper_y_avg(A);
     const BoutReal upper_y_J = upper_y_avg(J());
-    const BoutReal upper_y_g_22 = upper_y_avg(g22());
+    const BoutReal upper_y_g_22 = upper_y_avg(g_22());
     const BoutReal upper_y_g23 = upper_y_avg(g23());
-    const BoutReal upper_y_g_23 = upper_y_avg(g23());
+    const BoutReal upper_y_g_23 = upper_y_avg(g_23());
     const BoutReal upper_y_dy = upper_y_avg(dy);
     const BoutReal upper_y_value = -upper_y_A * upper_y_J * upper_y_g23 * upper_y_g_23
                                    / (upper_y_g_22 * J()[i] * upper_y_dy * dy[i]);
@@ -1398,9 +1398,9 @@ Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
     const auto lower_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.ym()]); };
     const BoutReal lower_y_A = lower_y_avg(A);
     const BoutReal lower_y_J = lower_y_avg(J());
-    const BoutReal lower_y_g_22 = lower_y_avg(g22());
+    const BoutReal lower_y_g_22 = lower_y_avg(g_22());
     const BoutReal lower_y_g23 = lower_y_avg(g23());
-    const BoutReal lower_y_g_23 = lower_y_avg(g23());
+    const BoutReal lower_y_g_23 = lower_y_avg(g_23());
     const BoutReal lower_y_dy = lower_y_avg(dy);
     const BoutReal lower_y_value = -lower_y_A * lower_y_J * lower_y_g23 * lower_y_g_23
                                    / (lower_y_g_22 * J()[i] * lower_y_dy * dy[i]);
@@ -1416,7 +1416,7 @@ Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
 const Coordinates::FieldMetric& Coordinates::invSg() const {
   if (invSgCache == nullptr) {
     auto ptr = std::make_unique<FieldMetric>();
-    (*ptr) = 1.0 / sqrt(g22());
+    (*ptr) = 1.0 / sqrt(g_22());
     invSgCache = std::move(ptr);
   }
   return *invSgCache;
