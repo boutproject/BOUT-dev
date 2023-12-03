@@ -394,3 +394,19 @@ void Geometry::applyToCovariantMetricTensor(
     std::function<const FieldMetric(const FieldMetric)> function) {
   covariantMetricTensor.map(std::move(function));
 }
+
+void Geometry::applyToChristoffelSymbols(
+    const std::function<const FieldMetric(const FieldMetric)> function) {
+
+  const auto components_in =
+      std::vector<FieldMetric>{G1_11_, G1_22_, G1_33_, G1_12_, G1_13_, G1_23_, G2_11_,
+                               G2_22_, G2_33_, G2_12_, G2_13_, G2_23_, G3_11_, G3_22_,
+                               G3_33_, G3_12_, G3_13_, G3_23_, G1_,    G2_,    G3_};
+
+  FieldMetric components_out[21] = {G1_11_, G1_22_, G1_33_, G1_12_, G1_13_, G1_23_,
+                                    G2_11_, G2_22_, G2_33_, G2_12_, G2_13_, G2_23_,
+                                    G3_11_, G3_22_, G3_33_, G3_12_, G3_13_, G3_23_,
+                                    G1_,    G2_,    G3_};
+
+  std::transform(components_in.begin(), components_in.end(), components_out, function);
+}
