@@ -1576,7 +1576,17 @@ public:
     Field3D B0U = B0 * U;
     mesh->communicate(B0U);
     auto B0U_acc = FieldAccessor<>(B0U);
-#endif
+#else
+    Field3D B0phi = B0 * phi;
+    mesh->communicate(B0phi);
+    auto B0phi_acc = FieldAccessor<>(B0phi);
+
+#if EHALL
+    Field3D B0P = B0 * P;
+    mesh->communicate(B0 * P);
+    auto B0P_acc = FieldAccessor<>(B0P);
+#endif // EHALL
+#endif // EVOLVE_JPAR
 
 #if RELAX_J_VAC
     auto vac_mask_acc = FieldAccessor<>(vac_mask);
@@ -1612,23 +1622,24 @@ public:
 
 #else
       // Evolve vector potential ddt(psi)
-      ddt(Psi_acc)[i] =
-          -GRAD_PARP(phi_acc) + eta_acc[i] * Jpar_acc[i]
+      ddt(Psi_acc)[i] = -GRAD_PARP(B0phi_acc) / B0_acc[i2d] + eta_acc[i] * Jpar_acc[i]
 
-          + EVAL_IF(EHALL, // electron parallel pressure
-                    0.25 * delta_i * (GRAD_PARP(P_acc) + bracket(P0_acc, Psi_acc, i)))
+                        + EVAL_IF(EHALL, // electron parallel pressure
+                                  0.25 * delta_i
+                                      * (GRAD_PARP(B0P_acc) / B0_acc[i2d]
+                                         + bracket(P0_acc, Psi_acc, i) * B0_acc[i2d]))
 
-          - EVAL_IF(DIAMAG_PHI0, // Equilibrium flow
-                    bracket(phi0_acc, Psi_acc, i))
+                        - EVAL_IF(DIAMAG_PHI0, // Equilibrium flow
+                                  bracket(phi0_acc, Psi_acc, i) * B0_acc[i2d])
 
-          + EVAL_IF(DIAMAG_GRAD_T, // grad_par(T_e) correction
-                    1.71 * dnorm * 0.5 * GRAD_PARP(P_acc) / B0_acc[i2d])
+                        + EVAL_IF(DIAMAG_GRAD_T, // grad_par(T_e) correction
+                                  1.71 * dnorm * 0.5 * GRAD_PARP(P_acc) / B0_acc[i2d])
 
-          - EVAL_IF(HYPERRESIST, // Hyper-resistivity
-                    eta_acc[i] * hyperresist * Delp2(Jpar_acc, i))
+                        - EVAL_IF(HYPERRESIST, // Hyper-resistivity
+                                  eta_acc[i] * hyperresist * Delp2(Jpar_acc, i))
 
-          - EVAL_IF(EHYPERVISCOS, // electron Hyper-viscosity
-                    eta_acc[i] * ehyperviscos * Delp2(Jpar2_acc, i));
+                        - EVAL_IF(EHYPERVISCOS, // electron Hyper-viscosity
+                                  eta_acc[i] * ehyperviscos * Delp2(Jpar2_acc, i));
 #endif
 
       ////////////////////////////////////////////////////
@@ -1669,12 +1680,12 @@ public:
 #endif
     };
 
-      // Terms which are not yet single index operators
-      // Note: Terms which are included in the single index loop
-      //       may be commented out here, to allow comparison/testing
+    // Terms which are not yet single index operators
+    // Note: Terms which are included in the single index loop
+    //       may be commented out here, to allow comparison/testing
 
-      ////////////////////////////////////////////////////
-      // Parallel electric field
+    ////////////////////////////////////////////////////
+    // Parallel electric field
 
 #if not EVOLVE_JPAR
     // Vector potential
