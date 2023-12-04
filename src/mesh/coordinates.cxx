@@ -311,11 +311,11 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
   std::string suffix = getLocationSuffix(location);
 
-  if ((coords_in != nullptr) && !suffix.empty()
-      && (force_interpolate_from_centre || !mesh->sourceHasVar("dx" + suffix))) {
-    interpolateFieldsFromOtherCoordinates(mesh, options, coords_in);
-  } else {
+  if (coords_in == nullptr || suffix.empty()
+      || !(force_interpolate_from_centre || !mesh->sourceHasVar("dx" + suffix))) {
     setBoundaryCells(mesh, options, coords_in, suffix);
+  } else {
+    interpolateFieldsFromOtherCoordinates(mesh, options, coords_in);
   }
 }
 
