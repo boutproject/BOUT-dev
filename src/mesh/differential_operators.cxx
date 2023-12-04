@@ -232,7 +232,7 @@ Field2D DifferentialOperators::Grad2_par2(const Field2D& f, const Field2D& dy,
          + D2DY2(f, outloc, method) / covariantMetricTensor.Getg22();
 }
 
-Field3D DifferentialOperators::Grad2_par2(const Field3D& f, const FieldMetric& dy,
+Field3D DifferentialOperators::Grad2_par2(const Field3D& f,
                                           MetricTensor& covariantMetricTensor,
                                           CELL_LOC outloc, const std::string& method) {
   TRACE("DifferentialOperators::Grad2_par2( Field3D )");
