@@ -5,6 +5,24 @@
 
 DifferentialOperators::DifferentialOperators(Mesh* mesh) : mesh(mesh) {}
 
+Field3D DifferentialOperators::DDX(const Field3D& f, CELL_LOC outloc,
+                                   const std::string& method,
+                                   const std::string& region) const {
+  return ::DDX(f, outloc, method, region);
+}
+
+Field3D DifferentialOperators::DDY(const Field3D& f, CELL_LOC outloc,
+                                   const std::string& method,
+                                   const std::string& region) const {
+  return ::DDY(f, outloc, method, region);
+}
+
+Field3D DifferentialOperators::DDZ(const Field3D& f, CELL_LOC outloc,
+                                   const std::string& method,
+                                   const std::string& region) const {
+  return ::DDZ(f, outloc, method, region);
+}
+
 Field2D DifferentialOperators::DDX(const Field2D& f, const Field2D& dx, CELL_LOC loc,
                                    const std::string& method,
                                    const std::string& region) const {
@@ -59,6 +77,64 @@ Field3D DifferentialOperators::DDZ(const Field3D& f, const Field3D& dz, CELL_LOC
                                    const std::string& method,
                                    const std::string& region) const {
   return bout::derivatives::index::DDZ(f, outloc, method, region) / dz;
+}
+
+Field2D DifferentialOperators::D2DX2(const Field2D& field2D, CELL_LOC outloc) {
+  return ::D2DX2(field2D, outloc);
+}
+
+Field3D DifferentialOperators::D2DX2(const Field3D& field3D, CELL_LOC outloc) {
+  return ::D2DX2(field3D, outloc);
+}
+
+Field2D DifferentialOperators::D2DY2(const Field2D& field2D, CELL_LOC outloc,
+                                     const std::string& method) {
+  return ::D2DY2(field2D, outloc, method);
+}
+
+Field3D DifferentialOperators::D2DY2(const Field3D& field3D, CELL_LOC outloc,
+                                     const std::string& method) {
+  return ::D2DY2(field3D, outloc, method);
+}
+
+Field2D DifferentialOperators::D2DZ2(const Field2D& field2D, CELL_LOC outloc) {
+  return ::D2DZ2(field2D, outloc);
+}
+
+Field3D DifferentialOperators::D2DZ2(const Field3D& field3D, CELL_LOC outloc) {
+  return ::D2DZ2(field3D, outloc);
+}
+
+Field2D DifferentialOperators::D2DXDY(const Field2D& field2D, CELL_LOC outloc,
+                                      const std::string& method,
+                                      const std::string& region,
+                                      const std::string& dfdy_boundary_condition,
+                                      const std::string& dfdy_region) {
+  return ::D2DXDY(field2D, outloc, method, region, dfdy_boundary_condition, dfdy_region);
+}
+
+Field3D DifferentialOperators::D2DXDY(const Field3D& field3D, CELL_LOC outloc,
+                                      const std::string& method,
+                                      const std::string& region,
+                                      const std::string& dfdy_boundary_condition,
+                                      const std::string& dfdy_region) {
+  return ::D2DXDY(field3D, outloc, method, region, dfdy_boundary_condition, dfdy_region);
+}
+
+Field2D DifferentialOperators::D2DXDZ(const Field2D& field2D, CELL_LOC outloc) {
+  return ::D2DXDZ(field2D, outloc);
+}
+
+Field2D DifferentialOperators::D2DYDZ(const Field2D& field2D, CELL_LOC outloc) {
+  return ::D2DYDZ(field2D, outloc);
+}
+
+Field3D DifferentialOperators::D2DXDZ(const Field3D& field3D, CELL_LOC outloc) {
+  return ::D2DXDZ(field3D, outloc);
+}
+
+Field3D DifferentialOperators::D2DYDZ(const Field3D& field3D, CELL_LOC outloc) {
+  return ::D2DYDZ(field3D, outloc);
 }
 
 /////////////////////////////////////////////////////////

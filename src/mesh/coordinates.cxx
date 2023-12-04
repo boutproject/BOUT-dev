@@ -16,8 +16,6 @@
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
 
-#include "bout/derivs.hxx"
-#include "bout/differential_operators.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/geometry.hxx"
@@ -1063,7 +1061,7 @@ Field2D Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outloc,
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()))
 
   auto result = Grad2_par2_DDY_invSg(outloc, method) * DDY(f, outloc, method)
-                + D2DY2(f, outloc, method) / g_22();
+                + differential_operators->D2DY2(f, outloc, method) / g_22(); // derivs 209
 
   return result;
 }
@@ -1076,9 +1074,9 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
   }
   ASSERT1(location == outloc);
 
-  Field3D result = ::DDY(f, outloc, method);
+  Field3D result = differential_operators->DDY(f, outloc, method);
 
-  Field3D r2 = D2DY2(f, outloc, method) / g_22();
+  Field3D r2 = differential_operators->D2DY2(f, outloc, method) / g_22();
 
   result = Grad2_par2_DDY_invSg(outloc, method) * result + r2;
 
@@ -1097,7 +1095,7 @@ Field2D Coordinates::Delp2(const Field2D& f, CELL_LOC outloc, bool UNUSED(useFFT
   TRACE("Coordinates::Delp2( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return G1() * DDX(f, outloc) + g11() * D2DX2(f, outloc);
+  return G1() * DDX(f, outloc) + g11() * differential_operators->D2DX2(f, outloc);
 }
 
 Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
@@ -1157,9 +1155,11 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
       }
     }
   } else {
-    result = G1() * ::DDX(f, outloc) + G3() * ::DDZ(f, outloc)
-             + g11() * ::D2DX2(f, outloc) + g33() * ::D2DZ2(f, outloc)
-             + 2 * g13() * ::D2DXDZ(f, outloc);
+    result = G1() * differential_operators->DDX(f, outloc)
+             + G3() * differential_operators->DDZ(f, outloc)
+             + g11() * differential_operators->D2DX2(f, outloc)
+             + g33() * differential_operators->D2DZ2(f, outloc)
+             + 2 * g13() * differential_operators->D2DXDZ(f, outloc);
   }
 
   ASSERT2(result.getLocation() == outloc)
@@ -1233,12 +1233,15 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
 Field2D Coordinates::Laplace_par(const Field2D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return D2DY2(f, outloc) / g_22() + DDY(J() / g_22(), outloc) * DDY(f, outloc) / J();
+  return differential_operators->D2DY2(f, outloc) / g_22()
+         + DDY(J() / g_22(), outloc) * DDY(f, outloc) / J();
 }
 
 Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
-  return D2DY2(f, outloc) / g_22() + DDY(J() / g_22(), outloc) * ::DDY(f, outloc) / J();
+  return differential_operators->D2DY2(f, outloc) / g_22()
+         + differential_operators->DDY(J() / g_22(), outloc)
+               * differential_operators->DDY(f, outloc) / J();
 }
 
 // Full Laplacian operator on scalar field
@@ -1249,11 +1252,12 @@ Field2D Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
   TRACE("Coordinates::Laplace( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return G1() * DDX(f, outloc) + G2() * DDY(f, outloc) + g11() * D2DX2(f, outloc)
-         + g22() * D2DY2(f, outloc)
+  return G1() * DDX(f, outloc) + G2() * DDY(f, outloc)
+         + g11() * differential_operators->D2DX2(f, outloc)
+         + g22() * differential_operators->D2DY2(f, outloc)
          + 2.0 * g12()
-               * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY", dfdy_boundary_conditions,
-                        dfdy_dy_region);
+               * differential_operators->D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
+                                                dfdy_boundary_conditions, dfdy_dy_region);
 }
 
 Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
@@ -1262,13 +1266,19 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
   TRACE("Coordinates::Laplace( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return G1() * ::DDX(f, outloc) + G2() * ::DDY(f, outloc) + G3() * ::DDZ(f, outloc)
-         + g11() * D2DX2(f, outloc) + g22() * D2DY2(f, outloc) + g33() * D2DZ2(f, outloc)
+  return G1() * differential_operators->DDX(f, outloc)
+         + G2() * differential_operators->DDY(f, outloc)
+         + G3() * differential_operators->DDZ(f, outloc)
+         + g11() * differential_operators->D2DX2(f, outloc)
+         + g22() * differential_operators->D2DY2(f, outloc)
+         + g33() * differential_operators->D2DZ2(f, outloc)
          + 2.0
                * (g12()
-                      * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
-                               dfdy_boundary_conditions, dfdy_dy_region)
-                  + g13() * D2DXDZ(f, outloc) + g23() * D2DYDZ(f, outloc));
+                      * differential_operators->D2DXDY(
+                          f, outloc, "DEFAULT", "RGN_NOBNDRY", dfdy_boundary_conditions,
+                          dfdy_dy_region)
+                  + g13() * differential_operators->D2DXDZ(f, outloc)
+                  + g23() * differential_operators->D2DYDZ(f, outloc));
 }
 
 // Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY
