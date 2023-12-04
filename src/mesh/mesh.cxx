@@ -688,18 +688,24 @@ const std::vector<int> Mesh::readInts(const std::string& name, int n) {
 }
 
 std::shared_ptr<Coordinates>
-Mesh::createDefaultCoordinates(const CELL_LOC location,
+Mesh::createDefaultCoordinates(const CELL_LOC location, bool recalculate_staggered,
                                bool force_interpolate_from_centre) {
 
   if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
-    return std::make_shared<Coordinates>(this, options);
-  } else {
-    // Interpolate coordinates from CELL_CENTRE version
-    return std::make_shared<Coordinates>(this, options, location,
-                                         getCoordinates(CELL_CENTRE),
+    const std::shared_ptr<Coordinates>& new_coordinates =
+        std::make_shared<Coordinates>(this, options);
+    new_coordinates->recalculateAndReset(recalculate_staggered,
                                          force_interpolate_from_centre);
+    return new_coordinates;
   }
+  // Interpolate coordinates from CELL_CENTRE version
+  const std::shared_ptr<Coordinates>& new_coordinates =
+      std::make_shared<Coordinates>(this, options, location, getCoordinates(CELL_CENTRE),
+                                    force_interpolate_from_centre);
+  new_coordinates->recalculateAndReset(recalculate_staggered,
+                                       force_interpolate_from_centre);
+  return new_coordinates;
 }
 
 const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
@@ -899,8 +905,8 @@ void Mesh::recalculateStaggeredCoordinates() {
       continue;
     }
 
-    *coords_map[location] = std::move(*createDefaultCoordinates(location, true));
-    coords_map[location]->calculateGeometry(false, true);
+    *coords_map[location] = std::move(*createDefaultCoordinates(location, false, true));
+    coords_map[location]->calculateGeometry();
   }
 }
 
