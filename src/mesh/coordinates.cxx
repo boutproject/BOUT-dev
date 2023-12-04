@@ -643,8 +643,7 @@ const Field2D& Coordinates::zlength() const {
   return *zlength_cache;
 }
 
-int Coordinates::calculateGeometry(bool recalculate_staggered,
-                                   bool force_interpolate_from_centre) {
+int Coordinates::calculateGeometry() {
   TRACE("Coordinates::calculateGeometry");
 
   communicate(dx, dy, dz, g11(), g22(), g33(), g12(), g13(), g23(), g_11(), g_22(),
@@ -664,6 +663,12 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
     throw BoutException("dz magnitude less than 1e-8");
   }
 
+  return 0;
+}
+
+void Coordinates::recalculateAndReset(bool recalculate_staggered,
+                                      bool force_interpolate_from_centre) {
+
   // Check input metrics
   checkContravariant();
   checkCovariant();
@@ -678,8 +683,6 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
   }
 
   invalidateAndRecalculateCachedVariables();
-
-  return 0;
 }
 
 void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_centre) {
@@ -758,6 +761,7 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
 }
 
 void Coordinates::calculateCommunicateAndExtrapolateChristoffelSymbols() {
+
   geometry.CalculateChristoffelSymbols(dx, dy);
 
   auto tmp = J() * g12();
@@ -1377,13 +1381,19 @@ void Coordinates::checkCovariant() { return geometry.checkCovariant(localmesh->y
 void Coordinates::checkContravariant() { geometry.checkContravariant(localmesh->ystart); }
 
 void Coordinates::setContravariantMetricTensor(MetricTensor metric_tensor,
-                                               const std::string& region) {
+                                               const std::string& region,
+                                               bool recalculate_staggered,
+                                               bool force_interpolate_from_centre) {
   geometry.setContravariantMetricTensor(std::move(metric_tensor), location, region);
+  recalculateAndReset(recalculate_staggered, force_interpolate_from_centre);
 }
 
 void Coordinates::setCovariantMetricTensor(MetricTensor metric_tensor,
-                                           const std::string& region) {
+                                           const std::string& region,
+                                           bool recalculate_staggered,
+                                           bool force_interpolate_from_centre) {
   geometry.setCovariantMetricTensor(std::move(metric_tensor), location, region);
+  recalculateAndReset(recalculate_staggered, force_interpolate_from_centre);
 }
 
 const FieldMetric& Coordinates::g_11() const { return geometry.g_11(); }

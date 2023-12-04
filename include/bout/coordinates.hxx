@@ -105,10 +105,14 @@ public:
   const FieldMetric& Bxy() const;
 
   void setContravariantMetricTensor(MetricTensor metric_tensor,
-                                    const std::string& region = "RGN_ALL");
+                                    const std::string& region = "RGN_ALL",
+                                    bool recalculate_staggered = true,
+                                    bool force_interpolate_from_centre = false);
 
   void setCovariantMetricTensor(MetricTensor metric_tensor,
-                                const std::string& region = "RGN_ALL");
+                                const std::string& region = "RGN_ALL",
+                                bool recalculate_staggered = true,
+                                bool force_interpolate_from_centre = false);
 
   void setJ(FieldMetric J);
   void setJ(BoutReal value, int x, int y);
@@ -123,12 +127,14 @@ public:
   const MetricTensor& getContravariantMetricTensor() const;
 
   /// Calculate differential geometry quantities from the metric tensor
-  int calculateGeometry(bool recalculate_staggered = true,
-                        bool force_interpolate_from_centre = false);
+  int calculateGeometry();
+
   /// Invert contravariant metric to get covariant components
   void calcCovariant(const std::string& region = "RGN_ALL");
+
   /// Invert covariant metric to get contravariant components
   void calcContravariant(const std::string& region = "RGN_ALL");
+
   void jacobian(); ///< Calculate J and Bxy
 
   ///////////////////////////////////////////////////////////
@@ -262,6 +268,9 @@ public:
 
   const FieldMetric& invSg() const;
 
+  void recalculateAndReset(bool recalculate_staggered,
+                           bool force_interpolate_from_centre);
+
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
@@ -310,7 +319,9 @@ private:
   /// Non-uniform meshes. Need to use DDX, DDY
   void correctionForNonUniformMeshes(bool force_interpolate_from_centre);
 
-  void interpolateFieldsFromOtherCoordinates(const Mesh* mesh, Options* options, const Coordinates* coords_in);
+  void interpolateFieldsFromOtherCoordinates(const Mesh* mesh, Options* options,
+                                             const Coordinates* coords_in);
+
   void setBoundaryCells(Mesh* mesh, Options* options, const Coordinates* coords_in,
                         const std::string& suffix);
 };
