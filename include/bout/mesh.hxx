@@ -102,7 +102,7 @@ public:
   /// Only useful for testing
   Mesh()
       : source(nullptr), options(nullptr), include_corner_cells(true),
-        differential_operators(DifferentialOperators(this)) {}
+        differential_operators(DifferentialOperators()) {}
 
   /// Constructor
   /// @param[in] s  The source to be used for loading variables
@@ -620,8 +620,8 @@ public:
 
   std::shared_ptr<Coordinates>
   getCoordinatesSmart(const CELL_LOC location = CELL_CENTRE) {
-    ASSERT1(location != CELL_DEFAULT);
-    ASSERT1(location != CELL_VSHIFT);
+    ASSERT1(location != CELL_DEFAULT)
+    ASSERT1(location != CELL_VSHIFT)
 
     auto found = coords_map.find(location);
     if (found != coords_map.end()) {

@@ -3,8 +3,6 @@
 #include "bout/mesh.hxx"
 #include <bout/derivs.hxx>
 
-DifferentialOperators::DifferentialOperators(Mesh* mesh) : mesh(mesh) {}
-
 Field3D DifferentialOperators::DDX(const Field3D& f, CELL_LOC outloc,
                                    const std::string& method,
                                    const std::string& region) const {

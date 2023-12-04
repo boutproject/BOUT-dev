@@ -177,7 +177,7 @@ Mesh* Mesh::create(Options* opt) { return create(nullptr, opt); }
 
 Mesh::Mesh(GridDataSource* s, Options* opt)
     : source(s), options(opt == nullptr ? Options::getRoot()->getSection("mesh") : opt),
-      differential_operators(DifferentialOperators(this)),
+      differential_operators(DifferentialOperators()),
       calcParallelSlices_on_communicate(
           (*options)["calcParallelSlices_on_communicate"]
               .doc("Calculate parallel slices on all communicated fields")
