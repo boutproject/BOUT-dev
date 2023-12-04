@@ -80,7 +80,7 @@ private:
   Field2D phi2D; // Axisymmetric potential, used when split_n0=true
 
 protected:
-  int init(bool UNUSED(restarting)) {
+  int init(bool UNUSED(restarting)) override {
 
     /////////////////////////////////////////////////////
     // Load data from the grid
@@ -114,11 +114,6 @@ protected:
     mesh->get(B0, "Bxy");    // T
     mesh->get(hthe, "hthe"); // m
     mesh->get(I, "sinty");   // m^-2 T^-1
-
-    // Set locations of staggered variables
-    jpar.setLocation(CELL_YLOW);
-    Ajpar.setLocation(CELL_YLOW);
-    apar.setLocation(CELL_YLOW);
 
     //////////////////////////////////////////////////////////////
     // Options
@@ -328,25 +323,14 @@ protected:
     return 2. * bracket(log(B0), f, bm);
   }
 
-  const Field3D Grad_parP(const Field3D& f, CELL_LOC loc) {
-    Field3D result;
-    if (mesh->StaggerGrids) {
-      result = Grad_par(f, loc);
-      if (nonlinear) {
-        result -=
-            beta_hat * bracket(interp_to(apar, loc), interp_to(f, loc), BRACKET_ARAKAWA);
-      }
-    } else {
-      if (nonlinear) {
-        result = ::Grad_parP(apar * beta_hat, f);
-      } else {
-        result = Grad_par(f, loc);
-      }
+  const Field3D Grad_parP(const Field3D& f) {
+    if (nonlinear) {
+      return ::Grad_parP(apar * beta_hat, f);
     }
-    return result;
+    return Grad_par(f);
   }
 
-  int rhs(BoutReal UNUSED(time)) {
+  int rhs(BoutReal UNUSED(time)) override {
 
     // Invert vorticity to get electrostatic potential
     if (split_n0) {
@@ -367,7 +351,7 @@ protected:
       apar = 0.;
       if (ZeroElMass) {
         // Not evolving Ajpar
-        jpar = Grad_par(Pe - phi, CELL_YLOW) / eta;
+        jpar = Grad_par(Pe - phi) / eta;
         jpar.applyBoundary();
       } else {
         jpar = Ajpar / mu_hat;
@@ -427,7 +411,7 @@ protected:
     }
 
     // Vorticity equation
-    ddt(Vort) = B0 * B0 * Grad_parP(jpar / interp_to(B0, CELL_YLOW), CELL_CENTRE)
+    ddt(Vort) = B0 * B0 * Grad_parP(jpar / B0)
                 - B0 * Kappa(Pe);
 
     if (nonlinear) {
@@ -452,7 +436,7 @@ protected:
     // Parallel Ohm's law
     if (!(estatic && ZeroElMass)) {
       // beta_hat*apar + mu_hat*jpar
-      ddt(Ajpar) = Grad_parP(Pe - phi, CELL_YLOW)
+      ddt(Ajpar) = Grad_parP(Pe - phi)
                    - beta_hat * bracket(apar, Pe0, BRACKET_ARAKAWA) - eta * jpar;
 
       if (nonlinear) {
@@ -465,8 +449,8 @@ protected:
     }
 
     // Parallel velocity
-    ddt(Vpar) = -Grad_parP(Pe, CELL_YLOW)
-                + beta_hat * bracket(apar, interp_to(Pe0, CELL_YLOW), BRACKET_ARAKAWA);
+    ddt(Vpar) = -Grad_parP(Pe)
+                + beta_hat * bracket(apar, Pe0);
 
     if (nonlinear) {
       ddt(Vpar) -= bracket(phi, Vpar, bm);
@@ -485,7 +469,7 @@ protected:
         -bracket(phi, Pet, bm)
         + Pet
               * (Kappa(phi - Pe)
-                 + B0 * Grad_parP((jpar - Vpar) / interp_to(B0, CELL_YLOW), CELL_YLOW));
+                 + B0 * Grad_parP(jpar - Vpar) / B0);
 
     if (smooth_separatrix) {
       // Experimental smoothing across separatrix
