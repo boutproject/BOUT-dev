@@ -411,8 +411,7 @@ protected:
     }
 
     // Vorticity equation
-    ddt(Vort) = B0 * B0 * Grad_parP(jpar / B0)
-                - B0 * Kappa(Pe);
+    ddt(Vort) = B0 * B0 * Grad_parP(jpar / B0) - B0 * Kappa(Pe);
 
     if (nonlinear) {
       ddt(Vort) -= bracket(phi, Vort, bm); // ExB advection
@@ -436,8 +435,8 @@ protected:
     // Parallel Ohm's law
     if (!(estatic && ZeroElMass)) {
       // beta_hat*apar + mu_hat*jpar
-      ddt(Ajpar) = Grad_parP(Pe - phi)
-                   - beta_hat * bracket(apar, Pe0, BRACKET_ARAKAWA) - eta * jpar;
+      ddt(Ajpar) = Grad_parP(Pe - phi) - beta_hat * bracket(apar, Pe0, BRACKET_ARAKAWA)
+                   - eta * jpar;
 
       if (nonlinear) {
         ddt(Ajpar) -= mu_hat * bracket(phi, jpar, bm);
@@ -449,8 +448,7 @@ protected:
     }
 
     // Parallel velocity
-    ddt(Vpar) = -Grad_parP(Pe)
-                + beta_hat * bracket(apar, Pe0);
+    ddt(Vpar) = -Grad_parP(Pe) + beta_hat * bracket(apar, Pe0);
 
     if (nonlinear) {
       ddt(Vpar) -= bracket(phi, Vpar, bm);
@@ -465,11 +463,8 @@ protected:
     }
 
     // Electron pressure
-    ddt(Pe) =
-        -bracket(phi, Pet, bm)
-        + Pet
-              * (Kappa(phi - Pe)
-                 + B0 * Grad_parP(jpar - Vpar) / B0);
+    ddt(Pe) = -bracket(phi, Pet, bm)
+              + Pet * (Kappa(phi - Pe) + B0 * Grad_parP(jpar - Vpar) / B0);
 
     if (smooth_separatrix) {
       // Experimental smoothing across separatrix
