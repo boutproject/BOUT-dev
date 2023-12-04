@@ -706,7 +706,7 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
   if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location) != 0) {
     output_warn.write("\tWARNING: differencing quantity 'd2y' not found. "
                       "Calculating from dy\n");
-    d1_dy = DDY(1. / dy); // d/di(1/dy)
+    d1_dy = bout::derivatives::index::DDY(1. / dy); // d/di(1/dy)
 
     communicate(d1_dy);
     d1_dy = localmesh->interpolateAndExtrapolate(d1_dy, location, true, true, true,
