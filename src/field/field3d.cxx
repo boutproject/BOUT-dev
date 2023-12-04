@@ -116,7 +116,9 @@ Field3D& Field3D::allocate() {
       nz = fieldmesh->LocalNz;
     }
     data.reallocate(nx * ny * nz);
-#if CHECK > 2
+#if CHECK > 3
+    *this = BoutNaN;
+#elif CHECK > 2
     invalidateGuards(*this);
 #endif
   } else {

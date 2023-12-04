@@ -102,7 +102,9 @@ Field2D& Field2D::allocate() {
       ny = fieldmesh->LocalNy;
     }
     data.reallocate(nx * ny);
-#if CHECK > 2
+#if CHECK > 3
+    *this = BoutNaN;
+#elif CHECK > 2
     invalidateGuards(*this);
 #endif
   } else {

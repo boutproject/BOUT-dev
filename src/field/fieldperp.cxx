@@ -66,7 +66,9 @@ FieldPerp& FieldPerp::allocate() {
       nz = fieldmesh->LocalNz;
     }
     data.reallocate(nx * nz);
-#if CHECK > 2
+#if CHECK > 3
+    *this = BoutNaN;
+#elif CHECK > 2
     invalidateGuards(*this);
 #endif
   } else {
