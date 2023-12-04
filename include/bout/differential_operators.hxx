@@ -99,8 +99,8 @@ public:
                      MetricTensor& covariantMetricTensor, CELL_LOC outloc = CELL_DEFAULT,
                      const std::string& method = "DEFAULT");
 
-  Field3D Grad2_par2(const Field3D& f, const FieldMetric& dy,
-                     MetricTensor& covariantMetricTensor, CELL_LOC outloc = CELL_DEFAULT,
+  Field3D Grad2_par2(const Field3D& f, MetricTensor& covariantMetricTensor,
+                     CELL_LOC outloc = CELL_DEFAULT,
                      const std::string& method = "DEFAULT");
 
   Field2D Laplace_par(const Field2D& f, const Field2D& g22, const Field2D& J,
