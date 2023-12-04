@@ -306,6 +306,9 @@ private:
 
   void communicateChristoffelSymbolTerms();
   void calculateCommunicateAndExtrapolateChristoffelSymbols();
+
+  /// Non-uniform meshes. Need to use DDX, DDY
+  void correctionForNonUniformMeshes(bool force_interpolate_from_centre);
 };
 
 /*

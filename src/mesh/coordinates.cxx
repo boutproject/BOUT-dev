@@ -666,14 +666,24 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
 
   calculateCommunicateAndExtrapolateChristoffelSymbols();
 
-  //////////////////////////////////////////////////////
-  /// Non-uniform meshes. Need to use DDX, DDY
+  correctionForNonUniformMeshes(force_interpolate_from_centre);
 
+  if (location == CELL_CENTRE && recalculate_staggered) {
+    // Re-calculate interpolated Coordinates at staggered locations
+    localmesh->recalculateStaggeredCoordinates();
+  }
+
+  invalidateAndRecalculateCachedVariables();
+
+  return 0;
+}
+
+void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_centre) {
   OPTION(Options::getRoot(), non_uniform, true);
 
-  Coordinates::FieldMetric d2x(localmesh);
-  Coordinates::FieldMetric d2y(localmesh);
-  Coordinates::FieldMetric const d2z(localmesh); // d^2 x / d i^2
+  FieldMetric d2x(localmesh);
+  FieldMetric d2y(localmesh);
+  FieldMetric const d2z(localmesh); // d^2 x / d i^2
 
   // Read correction for non-uniform meshes
   std::string const suffix = getLocationSuffix(location);
@@ -741,15 +751,6 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
 #endif
 
   communicate(d1_dx, d1_dy, d1_dz);
-
-  if (location == CELL_CENTRE && recalculate_staggered) {
-    // Re-calculate interpolated Coordinates at staggered locations
-    localmesh->recalculateStaggeredCoordinates();
-  }
-
-  invalidateAndRecalculateCachedVariables();
-
-  return 0;
 }
 
 void Coordinates::calculateCommunicateAndExtrapolateChristoffelSymbols() {
