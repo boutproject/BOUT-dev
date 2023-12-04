@@ -747,8 +747,6 @@ int Coordinates::calculateGeometry(bool recalculate_staggered,
     localmesh->recalculateStaggeredCoordinates();
   }
 
-  // Invalidate and recalculate cached variables
-  zlength_cache.reset();
   invalidateAndRecalculateCachedVariables();
 
   return 0;
@@ -1460,6 +1458,7 @@ void Coordinates::communicateChristoffelSymbolTerms() {
 }
 
 void Coordinates::invalidateAndRecalculateCachedVariables() {
+  zlength_cache.reset();
   Grad2_par2_DDY_invSgCache.clear();
   invSgCache.reset();
 }
