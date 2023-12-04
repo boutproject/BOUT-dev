@@ -358,16 +358,16 @@ TEST_F(CoordinatesTest, SetContravariantMetricTensor) {
                      FieldMetric{0.0}}; // IntShiftTorsion
 
   //  Modify with setter
-  auto updated_metric_tensor = MetricTensor(1.7, 2.3, 3.1, 0.9, 5.7, 1.9);
+  auto updated_metric_tensor = MetricTensor(1.0, 2.0, 0.4, 1.0, 0.0, 0.2);
   coords.setContravariantMetricTensor(updated_metric_tensor);
 
   //  Get values with getter and check they have been modified as expected
-  EXPECT_TRUE(IsFieldEqual(coords.g11(), 1.7));
-  EXPECT_TRUE(IsFieldEqual(coords.g22(), 2.3));
-  EXPECT_TRUE(IsFieldEqual(coords.g33(), 3.1));
-  EXPECT_TRUE(IsFieldEqual(coords.g12(), 0.9));
-  EXPECT_TRUE(IsFieldEqual(coords.g13(), 5.7));
-  EXPECT_TRUE(IsFieldEqual(coords.g23(), 1.9));
+  EXPECT_TRUE(IsFieldEqual(coords.g11(), 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g22(), 2.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g33(), 0.4));
+  EXPECT_TRUE(IsFieldEqual(coords.g12(), 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g13(), 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g23(), 0.2));
 }
 
 TEST_F(CoordinatesTest, GetCovariantMetricTensor) {
@@ -425,15 +425,15 @@ TEST_F(CoordinatesTest, SetCovariantMetricTensor) {
                        FieldMetric{0.0}}; // IntShiftTorsion
 
     //  Modify with setter
-    auto updated_metric_tensor = MetricTensor(1.7, 2.3, 3.1, 0.9, 5.7, 1.9);
+    auto updated_metric_tensor = MetricTensor(1.0, 2.0, 0.4, 1.0, 0.0, 0.2);
     coords.setCovariantMetricTensor(updated_metric_tensor);
 
     //  Get values with getter and check they have been modified as expected
-    EXPECT_TRUE(IsFieldEqual(coords.g_11(), 1.7));
-    EXPECT_TRUE(IsFieldEqual(coords.g_22(), 2.3));
-    EXPECT_TRUE(IsFieldEqual(coords.g_33(), 3.1));
-    EXPECT_TRUE(IsFieldEqual(coords.g_12(), 0.9));
-    EXPECT_TRUE(IsFieldEqual(coords.g_13(), 5.7));
-    EXPECT_TRUE(IsFieldEqual(coords.g_23(), 1.9));
+    EXPECT_TRUE(IsFieldEqual(coords.g_11(), 1.0));
+    EXPECT_TRUE(IsFieldEqual(coords.g_22(), 2.0));
+    EXPECT_TRUE(IsFieldEqual(coords.g_33(), 0.4));
+    EXPECT_TRUE(IsFieldEqual(coords.g_12(), 1.0));
+    EXPECT_TRUE(IsFieldEqual(coords.g_13(), 0.0));
+    EXPECT_TRUE(IsFieldEqual(coords.g_23(), 0.2));
   }
 }
