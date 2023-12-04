@@ -100,8 +100,8 @@ public:
   /// Constructor for a "bare", uninitialised Mesh
   /// Only useful for testing
   Mesh()
-      : source(nullptr), options(nullptr), include_corner_cells(true),
-        differential_operators(DifferentialOperators()) {}
+      : source(nullptr), options(nullptr),
+        differential_operators(DifferentialOperators()), include_corner_cells(true) {}
 
   /// Constructor
   /// @param[in] s  The source to be used for loading variables
