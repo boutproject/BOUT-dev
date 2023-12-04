@@ -315,8 +315,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
   nz = mesh->LocalNz;
 
   // Default to true in case staggered quantities are not read from file
-  const bool extrapolate_x = true;
-  const bool extrapolate_y = true;
+  bool extrapolate_x = true;
+  bool extrapolate_y = true;
 
   if ((coords_in != nullptr) && !suffix.empty()
       && (force_interpolate_from_centre || !mesh->sourceHasVar("dx" + suffix))) {
@@ -379,9 +379,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     // 'interpolateAndExtrapolate' to set them. Ensures that derivatives are
     // smooth at all the boundaries.
 
-    const bool extrapolate_x =
+    extrapolate_x =
         (*options)["extrapolate_x"].withDefault(not mesh->sourceHasXBoundaryGuards());
-    const bool extrapolate_y =
+    extrapolate_y =
         (*options)["extrapolate_y"].withDefault(not mesh->sourceHasYBoundaryGuards());
 
     if (extrapolate_x) {
@@ -1072,7 +1072,7 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
-  ASSERT1(location == outloc);
+  ASSERT1(location == outloc)
 
   Field3D result = differential_operators->DDY(f, outloc, method);
 
@@ -1080,7 +1080,7 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
 
   result = Grad2_par2_DDY_invSg(outloc, method) * result + r2;
 
-  ASSERT2(result.getLocation() == outloc);
+  ASSERT2(result.getLocation() == outloc)
 
   return result;
 }
