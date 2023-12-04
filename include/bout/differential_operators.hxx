@@ -9,8 +9,6 @@ class DifferentialOperators {
   using FieldMetric = MetricTensor::FieldMetric;
 
 public:
-  DifferentialOperators(Mesh* mesh);
-
   Field3D DDX(const Field3D& f, CELL_LOC outloc, const std::string& method = "DEFAULT",
               const std::string& region = "RGN_NOBNDRY") const;
 
@@ -129,9 +127,6 @@ public:
   Field2D Laplace_perpXY(const Field2D& A, const Field2D& f,
                          MetricTensor& covariantMetricTensor, const Field2D& J,
                          const Field2D& dx, const Field2D& dy);
-
-private:
-  Mesh* mesh;
 };
 
 #endif //BOUT_DIFFERENTIALOPERATORS_HXX
