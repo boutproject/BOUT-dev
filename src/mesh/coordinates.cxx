@@ -281,20 +281,20 @@ Coordinates::FieldMetric Coordinates::getUnalignedAtLocationAndFillGuards(
 }
 
 Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric dz,
-                         FieldMetric J, FieldMetric Bxy, FieldMetric g11, FieldMetric g22,
-                         FieldMetric g33, FieldMetric g12, FieldMetric g13,
-                         FieldMetric g23, FieldMetric g_11, FieldMetric g_22,
-                         FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
-                         FieldMetric g_23, FieldMetric ShiftTorsion,
-                         FieldMetric IntShiftTorsion)
-    : dx(std::move(dx)), dy(std::move(dy)), dz(dz), ShiftTorsion(std::move(ShiftTorsion)),
-      IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE), differential_operators(mesh->getDifferentialOperators()),
-      geometry(Geometry(std::move(J), std::move(Bxy), std::move(g11), std::move(g22),
-                        std::move(g33), std::move(g12), std::move(g13), std::move(g23),
-                        std::move(g_11), std::move(g_22), std::move(g_33),
-                        std::move(g_12), std::move(g_13), std::move(g_23),
-                        differential_operators)) {}
+                         const FieldMetric& J, const FieldMetric& Bxy,
+                         const FieldMetric& g11, const FieldMetric& g22,
+                         const FieldMetric& g33, const FieldMetric& g12,
+                         const FieldMetric& g13, const FieldMetric& g23,
+                         const FieldMetric& g_11, const FieldMetric& g_22,
+                         const FieldMetric& g_33, const FieldMetric& g_12,
+                         const FieldMetric& g_13, const FieldMetric& g_23,
+                         FieldMetric ShiftTorsion, FieldMetric IntShiftTorsion)
+    : dx(std::move(dx)), dy(std::move(dy)), dz(std::move(dz)),
+      ShiftTorsion(std::move(ShiftTorsion)), IntShiftTorsion(std::move(IntShiftTorsion)),
+      nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE),
+      differential_operators(mesh->getDifferentialOperators()),
+      geometry(Geometry(J, Bxy, g11, g22, g33, g12, g13, g23, g_11, g_22, g_33, g_12,
+                        g_13, g_23, differential_operators)) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
