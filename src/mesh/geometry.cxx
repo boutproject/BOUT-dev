@@ -215,14 +215,12 @@ void Geometry::CalculateChristoffelSymbols(FieldMetric& dx, FieldMetric& dy) {
 
 void Geometry::calcCovariant(const std::string& region) {
   TRACE("Geometry::calcCovariant");
-  covariantMetricTensor.setMetricTensor(
-      contravariantMetricTensor.oppositeRepresentation(region));
+  covariantMetricTensor.setMetricTensor(contravariantMetricTensor.inverse(region));
 }
 
 void Geometry::calcContravariant(const std::string& region) {
   TRACE("Geometry::calcContravariant");
-  contravariantMetricTensor.setMetricTensor(
-      covariantMetricTensor.oppositeRepresentation(region));
+  contravariantMetricTensor.setMetricTensor(covariantMetricTensor.inverse(region));
 }
 
 MetricTensor::FieldMetric Geometry::recalculateJacobian() {
@@ -257,15 +255,13 @@ void Geometry::checkContravariant(int ystart) { contravariantMetricTensor.check(
 void Geometry::setContravariantMetricTensor(MetricTensor metric_tensor,
                                             const std::string& region) {
   contravariantMetricTensor.setMetricTensor(metric_tensor);
-  covariantMetricTensor.setMetricTensor(
-      contravariantMetricTensor.oppositeRepresentation(region));
+  covariantMetricTensor.setMetricTensor(contravariantMetricTensor.inverse(region));
 }
 
 void Geometry::setCovariantMetricTensor(MetricTensor metric_tensor,
                                         const std::string& region) {
   covariantMetricTensor.setMetricTensor(metric_tensor);
-  contravariantMetricTensor.setMetricTensor(
-      covariantMetricTensor.oppositeRepresentation(region));
+  contravariantMetricTensor.setMetricTensor(covariantMetricTensor.inverse(region));
 }
 
 const MetricTensor::FieldMetric& Geometry::g_11() const {

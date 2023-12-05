@@ -105,7 +105,7 @@ void MetricTensor::setLocation(const CELL_LOC location) {
   g23.setLocation(location);
 }
 
-MetricTensor MetricTensor::oppositeRepresentation(const std::string& region) {
+MetricTensor MetricTensor::inverse(const std::string& region) {
 
   TRACE("MetricTensor::CalculateOppositeRepresentation");
 
