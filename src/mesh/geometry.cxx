@@ -321,27 +321,6 @@ const FieldMetric& Geometry::J() const { return this_J; }
 
 const FieldMetric& Geometry::Bxy() const { return this_Bxy; }
 
-void Geometry::setG1_11(FieldMetric G1_11) { G1_11_ = G1_11; }
-void Geometry::setG1_22(FieldMetric G1_22) { G1_11_ = G1_22; }
-void Geometry::setG1_33(FieldMetric G1_33) { G1_11_ = G1_33; }
-void Geometry::setG1_12(FieldMetric G1_12) { G1_11_ = G1_12; }
-void Geometry::setG1_13(FieldMetric G1_13) { G1_11_ = G1_13; }
-void Geometry::setG1_23(FieldMetric G1_23) { G1_11_ = G1_23; }
-
-void Geometry::setG2_11(FieldMetric G2_11) { G2_11_ = G2_11; }
-void Geometry::setG2_22(FieldMetric G2_22) { G2_11_ = G2_22; }
-void Geometry::setG2_33(FieldMetric G2_33) { G2_11_ = G2_33; }
-void Geometry::setG2_12(FieldMetric G2_12) { G2_11_ = G2_12; }
-void Geometry::setG2_13(FieldMetric G2_13) { G2_11_ = G2_13; }
-void Geometry::setG2_23(FieldMetric G2_23) { G2_11_ = G2_23; }
-
-void Geometry::setG3_11(FieldMetric G3_11) { G3_11_ = G3_11; }
-void Geometry::setG3_22(FieldMetric G3_22) { G3_11_ = G3_22; }
-void Geometry::setG3_33(FieldMetric G3_33) { G3_11_ = G3_33; }
-void Geometry::setG3_12(FieldMetric G3_12) { G3_11_ = G3_12; }
-void Geometry::setG3_13(FieldMetric G3_13) { G3_11_ = G3_13; }
-void Geometry::setG3_23(FieldMetric G3_23) { G3_11_ = G3_23; }
-
 void Geometry::setG1(FieldMetric G1) { G1_ = G1; }
 void Geometry::setG2(FieldMetric G2) { G2_ = G2; }
 void Geometry::setG3(FieldMetric G3) { G3_ = G3; }
