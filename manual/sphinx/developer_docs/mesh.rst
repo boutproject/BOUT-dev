@@ -278,9 +278,6 @@ metric tensor components are public members of `Coordinates`::
     // Covariant metric tensor
     FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
-    int calcCovariant();     // Invert contravatiant metric to get covariant
-    int calcContravariant(); // Invert covariant metric to get contravariant
-
 If only one of these sets is modified by an external code, then
 `Coordinates::calcCovariant()` and `Coordinates::calcContravariant()`
 can be used to calculate the other (uses Gauss-Jordan currently).
