@@ -460,8 +460,7 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* options,
                                             extrapolate_x, extrapolate_y, false,
                                             transform.get());
 
-  geometry.setContravariantMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23),
-                                        location);
+  geometry.setContravariantMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23));
 
   // Check input metrics
   checkContravariant();
@@ -486,8 +485,7 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* options,
       g_12 = getAtLocOrUnaligned(mesh, "g_12", 0.0, suffix, location);
       g_13 = getAtLocOrUnaligned(mesh, "g_13", 0.0, suffix, location);
       g_23 = getAtLocOrUnaligned(mesh, "g_23", 0.0, suffix, location);
-      geometry.setCovariantMetricTensor(MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23),
-                                        location);
+      geometry.setCovariantMetricTensor(MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
       output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                         "Contravariant components NOT recalculated\n");
@@ -798,12 +796,12 @@ void Coordinates::calculateCommunicateAndExtrapolateChristoffelSymbols() {
 
 void Coordinates::calcCovariant(const std::string& region) {
   TRACE("Coordinates::calcCovariant");
-  geometry.calcCovariant(location, region);
+  geometry.calcCovariant(region);
 }
 
 void Coordinates::calcContravariant(const std::string& region) {
   TRACE("Coordinates::calcContravariant");
-  geometry.calcContravariant(location, region);
+  geometry.calcContravariant(region);
 }
 
 void Coordinates::jacobian() {
@@ -1384,7 +1382,7 @@ void Coordinates::setContravariantMetricTensor(MetricTensor metric_tensor,
                                                const std::string& region,
                                                bool recalculate_staggered,
                                                bool force_interpolate_from_centre) {
-  geometry.setContravariantMetricTensor(std::move(metric_tensor), location, region);
+  geometry.setContravariantMetricTensor(std::move(metric_tensor), region);
   recalculateAndReset(recalculate_staggered, force_interpolate_from_centre);
 }
 
@@ -1392,7 +1390,7 @@ void Coordinates::setCovariantMetricTensor(MetricTensor metric_tensor,
                                            const std::string& region,
                                            bool recalculate_staggered,
                                            bool force_interpolate_from_centre) {
-  geometry.setCovariantMetricTensor(std::move(metric_tensor), location, region);
+  geometry.setCovariantMetricTensor(std::move(metric_tensor), region);
   recalculateAndReset(recalculate_staggered, force_interpolate_from_centre);
 }
 
