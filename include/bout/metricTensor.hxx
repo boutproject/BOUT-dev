@@ -37,7 +37,7 @@ public:
 
   void setLocation(CELL_LOC location);
 
-  MetricTensor oppositeRepresentation(const std::string& region = "RGN_ALL");
+  MetricTensor inverse(const std::string& region = "RGN_ALL");
 
   // Transforms the MetricTensor by applying the given function to every component
   void map(std::function<const Field2D(const FieldMetric)> function);
