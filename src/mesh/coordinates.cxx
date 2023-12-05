@@ -309,7 +309,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
   nz = mesh->LocalNz;
 
-  std::string suffix = getLocationSuffix(location);
+  const std::string suffix = getLocationSuffix(location);
 
   if (coords_in == nullptr || suffix.empty()
       || (!force_interpolate_from_centre && mesh->sourceHasVar("dx" + suffix))) {
