@@ -111,27 +111,6 @@ public:
   void setCovariantMetricTensor(MetricTensor metric_tensor,
                                 const std::string& region = "RGN_ALL");
 
-  void setG1_11(FieldMetric G1_11);
-  void setG1_22(FieldMetric G1_22);
-  void setG1_33(FieldMetric G1_33);
-  void setG1_12(FieldMetric G1_12);
-  void setG1_13(FieldMetric G1_13);
-  void setG1_23(FieldMetric G1_23);
-
-  void setG2_11(FieldMetric G2_11);
-  void setG2_22(FieldMetric G2_22);
-  void setG2_33(FieldMetric G2_33);
-  void setG2_12(FieldMetric G2_12);
-  void setG2_13(FieldMetric G2_13);
-  void setG2_23(FieldMetric G2_23);
-
-  void setG3_11(FieldMetric G3_11);
-  void setG3_22(FieldMetric G3_22);
-  void setG3_33(FieldMetric G3_33);
-  void setG3_12(FieldMetric G3_12);
-  void setG3_13(FieldMetric G3_13);
-  void setG3_23(FieldMetric G3_23);
-
   void setG3(FieldMetric G3);
   void setG1(FieldMetric G1);
   void setG2(FieldMetric G2);
