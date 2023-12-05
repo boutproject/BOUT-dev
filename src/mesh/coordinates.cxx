@@ -323,24 +323,6 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(const Mesh* mesh,
                                                         Options* options,
                                                         const Coordinates* coords_in) {
 
-  if (isUniform(coords_in->dz)) {
-    dz = coords_in->dz;
-    dz.setLocation(location);
-  } else {
-    throw BoutException("We are asked to transform dz to get dz before we "
-                        "have a transform, which "
-                        "might require dz!\nPlease provide a dz for the "
-                        "staggered quantity!");
-  }
-  setParallelTransform(options);
-  dx = localmesh->interpolateAndExtrapolate(coords_in->dx, location, true, true, false,
-                                            transform.get());
-  dy = localmesh->interpolateAndExtrapolate(coords_in->dy, location, true, true, false,
-                                            transform.get());
-  // not really needed - we have used dz already ...
-  dz = localmesh->interpolateAndExtrapolate(coords_in->dz, location, true, true, false,
-                                            transform.get());
-
   std::function<const FieldMetric(const FieldMetric)> const
       interpolateAndExtrapolate_function = [this](const FieldMetric& component) {
         return localmesh->interpolateAndExtrapolate(component, location, true, true,
@@ -374,6 +356,24 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(const Mesh* mesh,
     IntShiftTorsion = localmesh->interpolateAndExtrapolate(
         coords_in->IntShiftTorsion, location, true, true, false, transform.get());
   }
+
+  if (isUniform(coords_in->dz)) {
+    dz = coords_in->dz;
+    dz.setLocation(location);
+  } else {
+    throw BoutException("We are asked to transform dz to get dz before we "
+                        "have a transform, which "
+                        "might require dz!\nPlease provide a dz for the "
+                        "staggered quantity!");
+  }
+  setParallelTransform(options);
+  dx = localmesh->interpolateAndExtrapolate(coords_in->dx, location, true, true, false,
+                                            transform.get());
+  dy = localmesh->interpolateAndExtrapolate(coords_in->dy, location, true, true, false,
+                                            transform.get());
+  // not really needed - we have used dz already ...
+  dz = localmesh->interpolateAndExtrapolate(coords_in->dz, location, true, true, false,
+                                            transform.get());
 }
 
 // Note: If boundary cells were not loaded from the grid file, use
