@@ -201,7 +201,7 @@ protected:
     if (min(Bpxy, true) < 0.0) {
       sbp = -1.0;
     }
-    
+
     MetricTensor::FieldMetric g11, g22, g33, g12, g13, g23;
     g11 = SQ(Rxy * Bpxy);
     g22 = 1.0 / SQ(hthe);
@@ -221,8 +221,6 @@ protected:
     g_13 = sinty * Rxy * Rxy;
     g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
     coord->setCovariantMetricTensor(MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
-
-    coord->calculateGeometry();
   }
 };
 

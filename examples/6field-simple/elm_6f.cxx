@@ -1072,8 +1072,6 @@ protected:
     g_23 = Btxy * hthe * Rxy / Bpxy;
     coord->setCovariantMetricTensor(MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
-    coord->calculateGeometry(); // Calculate quantities from metric tensor
-
     // Set B field vector
 
     B0vec.covariant = false;

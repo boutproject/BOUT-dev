@@ -45,8 +45,6 @@ int main(int argc, char** argv) {
     g_13 = I * Rxy * Rxy;
     g_23 = Btxy * hthe * Rxy / Bpxy;
     coord->setCovariantMetricTensor(MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
-
-    coord->calculateGeometry();
   }
   ///////////////////////////////////////
 

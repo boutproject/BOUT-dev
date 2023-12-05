@@ -43,14 +43,11 @@ int Diffusion::init(bool UNUSED(restarting)) {
   SAVE_ONCE(mu_N);
 
   //set mesh
-  auto contravariant_metric_tensor =
-      MetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
+  auto contravariant_metric_tensor = MetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
   coord->setContravariantMetricTensor(contravariant_metric_tensor);
 
   auto covariant_metric_tensor = MetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
   coord->setCovariantMetricTensor(covariant_metric_tensor);
-
-  coord->calculateGeometry();
 
   // Tell BOUT++ to solve N
   SOLVE_FOR(N);
