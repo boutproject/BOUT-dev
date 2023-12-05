@@ -139,9 +139,7 @@ TEST_F(CoordinatesTest, CalcContravariant) {
                      FieldMetric{0.0}}; // IntShiftTorsion
   // No call to Coordinates::calculateGeometry() needed here
 
-  output_info.disable();
-  coords.calcCovariant();
-  output_info.enable();
+  coords.setContravariantMetricTensor(MetricTensor(1.0, 1.0, 1.0, 0.0, 0.0, 0.0));
 
   EXPECT_TRUE(IsFieldEqual(coords.g_11(), 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.g_22(), 1.0));
@@ -174,9 +172,7 @@ TEST_F(CoordinatesTest, CalcCovariant) {
                      FieldMetric{0.0}}; // IntShiftTorsion
   // No call to Coordinates::calculateGeometry() needed here
 
-  output_info.disable();
-  coords.calcContravariant();
-  output_info.enable();
+  coords.setCovariantMetricTensor(MetricTensor(1.0, 1.0, 1.0, 0.0, 0.0, 0.0));
 
   EXPECT_TRUE(IsFieldEqual(coords.g11(), 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.g22(), 1.0));

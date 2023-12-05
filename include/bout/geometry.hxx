@@ -141,12 +141,6 @@ public:
 
   void setBxy(FieldMetric Bxy);
 
-  /// Invert contravariant metric to get covariant components
-  void calcCovariant(const std::string& region = "RGN_ALL");
-
-  /// Invert covariant metric to get contravariant components
-  void calcContravariant(const std::string& region = "RGN_ALL");
-
   /// Calculate Christoffel symbol terms
   void CalculateChristoffelSymbols(FieldMetric& dx, FieldMetric& dy);
 
