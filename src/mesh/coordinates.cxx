@@ -493,19 +493,6 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* options,
     } else {
       output_warn.write("Not all covariant components of metric tensor found. "
                         "Calculating all from the contravariant tensor\n");
-      /// Calculate contravariant metric components if not found
-      try {
-        calcCovariant("RGN_NOCORNERS");
-      } catch (BoutException&) {
-        throw BoutException("Error in calcCovariant call");
-      }
-    }
-  } else {
-    /// Calculate contravariant metric components if not found
-    try {
-      calcCovariant("RGN_NOCORNERS");
-    } catch (BoutException&) {
-      throw BoutException("Error in calcCovariant call");
     }
   }
 
@@ -792,16 +779,6 @@ void Coordinates::calculateCommunicateAndExtrapolateChristoffelSymbols() {
       };
 
   geometry.applyToChristoffelSymbols(interpolateAndExtrapolate_function);
-}
-
-void Coordinates::calcCovariant(const std::string& region) {
-  TRACE("Coordinates::calcCovariant");
-  geometry.calcCovariant(region);
-}
-
-void Coordinates::calcContravariant(const std::string& region) {
-  TRACE("Coordinates::calcContravariant");
-  geometry.calcContravariant(region);
 }
 
 void Coordinates::jacobian() {

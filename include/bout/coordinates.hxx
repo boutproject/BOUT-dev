@@ -129,12 +129,6 @@ public:
   /// Calculate differential geometry quantities from the metric tensor
   int calculateGeometry();
 
-  /// Invert contravariant metric to get covariant components
-  void calcCovariant(const std::string& region = "RGN_ALL");
-
-  /// Invert covariant metric to get contravariant components
-  void calcContravariant(const std::string& region = "RGN_ALL");
-
   void jacobian(); ///< Calculate J and Bxy
 
   ///////////////////////////////////////////////////////////
