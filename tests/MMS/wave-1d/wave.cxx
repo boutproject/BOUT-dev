@@ -38,8 +38,6 @@ protected:
     auto covariant_metric_tensor = MetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
     coord->setCovariantMetricTensor(covariant_metric_tensor);
 
-    coord->calculateGeometry();
-
     g.setLocation(CELL_XLOW); // g staggered to the left of f
 
     // Tell BOUT++ to solve f and g

@@ -89,8 +89,6 @@ protected:
     g_23 = 0.0;
     coord->setCovariantMetricTensor(MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
-    coord->calculateGeometry();
-
     SOLVE_FOR(N, vort);
     SAVE_REPEAT(phi);
     if (test_laplacian) {

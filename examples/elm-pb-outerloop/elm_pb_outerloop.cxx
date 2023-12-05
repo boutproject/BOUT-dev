@@ -1109,8 +1109,6 @@ public:
     metric->g_13 = I * Rxy * Rxy;
     metric->g_23 = Btxy * hthe * Rxy / Bpxy;
 
-    metric->calculateGeometry(); // Calculate quantities from metric tensor
-
     // Set B field vector
 
     B0vec.covariant = false;
@@ -1669,12 +1667,12 @@ public:
 #endif
     };
 
-      // Terms which are not yet single index operators
-      // Note: Terms which are included in the single index loop
-      //       may be commented out here, to allow comparison/testing
+    // Terms which are not yet single index operators
+    // Note: Terms which are included in the single index loop
+    //       may be commented out here, to allow comparison/testing
 
-      ////////////////////////////////////////////////////
-      // Parallel electric field
+    ////////////////////////////////////////////////////
+    // Parallel electric field
 
 #if not EVOLVE_JPAR
     // Vector potential
