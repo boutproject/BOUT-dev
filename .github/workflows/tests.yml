@@ -47,12 +47,15 @@ jobs:
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
+                            -DBOUT_USE_ADIOS2=ON
                             -DBOUT_ENABLE_PYTHON=ON
+                            -DADIOS2_DIR=/home/runner/local/adios2
                             -DSUNDIALS_ROOT=/home/runner/local
                             -DPETSC_DIR=/home/runner/local/petsc
                             -DSLEPC_DIR=/home/runner/local/slepc"
             build_petsc: -petsc-main
             build_petsc_branch: main
+            build_adios2: true
             on_cron: true
 
           - name: "Default options, Ubuntu 20.04"
@@ -200,6 +203,9 @@ jobs:
 
       - name: Build PETSc
         run: BUILD_PETSC=${{ matrix.config.build_petsc }} ./.build_petsc_for_ci.sh ${{ matrix.config.build_petsc_branch }}
+
+      - name: Build ADIOS2
+        run: BUILD_ADIOS2=${{ matrix.config.build_adios2 }} ./.build_adios2_for_ci.sh 
 
       - name: Build BOUT++
         run: UNIT_ONLY=${{ matrix.config.unit_only }} ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}
