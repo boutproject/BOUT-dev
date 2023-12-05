@@ -213,16 +213,6 @@ void Geometry::CalculateChristoffelSymbols(FieldMetric& dx, FieldMetric& dy) {
                  * differential_operators->DDY(covariantMetricTensor.Getg33(), dy);
 }
 
-void Geometry::calcCovariant(const std::string& region) {
-  TRACE("Geometry::calcCovariant");
-  covariantMetricTensor.setMetricTensor(contravariantMetricTensor.inverse(region));
-}
-
-void Geometry::calcContravariant(const std::string& region) {
-  TRACE("Geometry::calcContravariant");
-  contravariantMetricTensor.setMetricTensor(covariantMetricTensor.inverse(region));
-}
-
 MetricTensor::FieldMetric Geometry::recalculateJacobian() {
 
   // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
