@@ -105,10 +105,10 @@ public:
   ///< Magnitude of B = nabla z times nabla x
   const FieldMetric& Bxy() const;
 
-  void setContravariantMetricTensor(MetricTensor metric_tensor, CELL_LOC cell_location,
+  void setContravariantMetricTensor(MetricTensor metric_tensor,
                                     const std::string& region = "RGN_ALL");
 
-  void setCovariantMetricTensor(MetricTensor metric_tensor, CELL_LOC cell_location,
+  void setCovariantMetricTensor(MetricTensor metric_tensor,
                                 const std::string& region = "RGN_ALL");
 
   void setG1_11(FieldMetric G1_11);
@@ -141,10 +141,11 @@ public:
 
   void setBxy(FieldMetric Bxy);
 
-  void calcCovariant(CELL_LOC cell_location, const std::string& region = "RGN_ALL");
+  /// Invert contravariant metric to get covariant components
+  void calcCovariant(const std::string& region = "RGN_ALL");
 
   /// Invert covariant metric to get contravariant components
-  void calcContravariant(CELL_LOC cell_location, const std::string& region = "RGN_ALL");
+  void calcContravariant(const std::string& region = "RGN_ALL");
 
   /// Calculate Christoffel symbol terms
   void CalculateChristoffelSymbols(FieldMetric& dx, FieldMetric& dy);
