@@ -213,16 +213,16 @@ void Geometry::CalculateChristoffelSymbols(FieldMetric& dx, FieldMetric& dy) {
                  * differential_operators->DDY(covariantMetricTensor.Getg33(), dy);
 }
 
-void Geometry::calcCovariant(CELL_LOC cell_location, const std::string& region) {
+void Geometry::calcCovariant(const std::string& region) {
   TRACE("Geometry::calcCovariant");
   covariantMetricTensor.setMetricTensor(
-      contravariantMetricTensor.oppositeRepresentation(cell_location, region));
+      contravariantMetricTensor.oppositeRepresentation(region));
 }
 
-void Geometry::calcContravariant(CELL_LOC cell_location, const std::string& region) {
+void Geometry::calcContravariant(const std::string& region) {
   TRACE("Geometry::calcContravariant");
   contravariantMetricTensor.setMetricTensor(
-      covariantMetricTensor.oppositeRepresentation(cell_location, region));
+      covariantMetricTensor.oppositeRepresentation(region));
 }
 
 MetricTensor::FieldMetric Geometry::recalculateJacobian() {
@@ -255,19 +255,17 @@ void Geometry::checkCovariant(int ystart) { covariantMetricTensor.check(ystart);
 void Geometry::checkContravariant(int ystart) { contravariantMetricTensor.check(ystart); }
 
 void Geometry::setContravariantMetricTensor(MetricTensor metric_tensor,
-                                            CELL_LOC cell_location,
                                             const std::string& region) {
   contravariantMetricTensor.setMetricTensor(metric_tensor);
   covariantMetricTensor.setMetricTensor(
-      contravariantMetricTensor.oppositeRepresentation(cell_location, region));
+      contravariantMetricTensor.oppositeRepresentation(region));
 }
 
 void Geometry::setCovariantMetricTensor(MetricTensor metric_tensor,
-                                        CELL_LOC cell_location,
                                         const std::string& region) {
   covariantMetricTensor.setMetricTensor(metric_tensor);
   contravariantMetricTensor.setMetricTensor(
-      covariantMetricTensor.oppositeRepresentation(cell_location, region));
+      covariantMetricTensor.oppositeRepresentation(region));
 }
 
 const MetricTensor::FieldMetric& Geometry::g_11() const {
