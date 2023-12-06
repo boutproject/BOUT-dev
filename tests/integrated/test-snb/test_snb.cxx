@@ -228,7 +228,7 @@ int main(int argc, char** argv) {
     // Check that fluxes are not equal
     EXPECT_FALSE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"));
 
-    const Field2D dy = coord->dy;
+    const Field2D dy = coord->dy();
     const Field2D J = coord->J();
 
     // Integrate Div(q) over domain

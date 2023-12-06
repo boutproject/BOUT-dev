@@ -23,7 +23,7 @@ TEST_F(CoordinatesAccessorTest, CreateAccessor) {
   // Basic sanity checks
   EXPECT_TRUE(acc.mesh_nz == mesh->LocalNz);
   EXPECT_TRUE(acc.data != nullptr);
-  EXPECT_FLOAT_EQ(mesh->getCoordinates()->dx(0, 0, 0), acc.dx(0));
+  EXPECT_FLOAT_EQ(mesh->getCoordinates()->dx()(0, 0, 0), acc.dx(0));
 }
 
 TEST_F(CoordinatesAccessorTest, CreateTwoAccessors) {

@@ -126,7 +126,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
     operator3D(i, i) = inner_X_BC[i];
     operator3D(i, i.xp()) = inner_X_BC_plus[i];
-  }
+    }
 
   const bool outer_X_neumann = flagSet(outer_boundary_flags, INVERT_AC_GRAD);
   const auto outer_X_BC = outer_X_neumann ? 1. / coords->dx / sqrt(coords->g_11) : 0.5;
@@ -135,7 +135,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
     operator3D(i, i) = outer_X_BC[i];
     operator3D(i, i.xm()) = outer_X_BC_minus[i];
-  }
+    }
 
   const bool lower_Y_neumann = flagSet(lower_boundary_flags, INVERT_AC_GRAD);
   const auto lower_Y_BC = lower_Y_neumann ? -1. / coords->dy / sqrt(coords->g_22) : 0.5;
@@ -144,7 +144,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
     operator3D(i, i) = lower_Y_BC[i];
     operator3D(i, i.yp()) = lower_Y_BC_plus[i];
-  }
+    }
 
   const bool upper_Y_neumann = flagSet(upper_boundary_flags, INVERT_AC_GRAD);
   const auto upper_Y_BC = upper_Y_neumann ? 1. / coords->dy / sqrt(coords->g_22) : 0.5;
@@ -153,8 +153,8 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
     operator3D(i, i) = upper_Y_BC[i];
     operator3D(i, i.ym()) = upper_Y_BC_minus[i];
+    }
   }
-}
 
 LaplacePetsc3dAmg::~LaplacePetsc3dAmg() {
   if (kspInitialised) {
@@ -321,14 +321,14 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     if (nonuniform) {
       C_df_dx += C_d2f_dx2 * coords->d1_dx[l];
     }
-    C_df_dx /= 2 * coords->dx[l];
-    C_df_dz /= 2 * coords->dz[l];
+    C_df_dx /= 2 * coords->dx()[l];
+    C_df_dz /= 2 * coords->dz()[l];
 
-    C_d2f_dx2 /= SQ(coords->dx[l]);
-    C_d2f_dy2 /= SQ(coords->dy[l]);
-    C_d2f_dz2 /= SQ(coords->dz[l]);
+    C_d2f_dx2 /= SQ(coords->dx()[l]);
+    C_d2f_dy2 /= SQ(coords->dy()[l]);
+    C_d2f_dz2 /= SQ(coords->dz()[l]);
 
-    C_d2f_dxdz /= 4 * coords->dx[l] * coords->dz[l];
+    C_d2f_dxdz /= 4 * coords->dx()[l] * coords->dz()[l];
 
     operator3D(l, l) = -2 * (C_d2f_dx2 + C_d2f_dy2 + C_d2f_dz2) + A[l];
     operator3D(l, l.xp()) = C_df_dx + C_d2f_dx2;
@@ -387,13 +387,13 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     if (nonuniform) {
       C_df_dy += C_d2f_dy2 * coords->d1_dy[l];
     }
-    C_df_dy /= 2 * coords->dy[l];
-    C_d2f_dy2 /= SQ(coords->dy[l]);
+    C_df_dy /= 2 * coords->dy()[l];
+    C_d2f_dy2 /= SQ(coords->dy()[l]);
     C_d2f_dxdy /=
-        4 * coords->dx[l]; // NOTE: This value is not completed here. It needs to
+        4 * coords->dx()[l]; // NOTE: This value is not completed here. It needs to
                            // be divide by dx(i +/- 1, j, k) when using to set a
                            // matrix element
-    C_d2f_dydz /= 4 * coords->dy[l] * coords->dz[l];
+    C_d2f_dydz /= 4 * coords->dy()[l] * coords->dz()[l];
 
     // The values stored in the y-boundary are already interpolated
     // up/down, so we don't want the matrix to do any such
@@ -403,10 +403,10 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
 
     operator3D.yup(yup)(l, l.yp()) += C_df_dy + C_d2f_dy2;
     operator3D.ydown(ydown)(l, l.ym()) += -C_df_dy + C_d2f_dy2;
-    operator3D.yup(yup)(l, l.xp().yp()) += C_d2f_dxdy / coords->dy[l.xp()];
-    operator3D.ydown(ydown)(l, l.xp().ym()) += -C_d2f_dxdy / coords->dy[l.xp()];
-    operator3D.yup(yup)(l, l.xm().yp()) += -C_d2f_dxdy / coords->dy[l.xm()];
-    operator3D.ydown(ydown)(l, l.xm().ym()) += C_d2f_dxdy / coords->dy[l.xm()];
+    operator3D.yup(yup)(l, l.xp().yp()) += C_d2f_dxdy / coords->dy()[l.xp()];
+    operator3D.ydown(ydown)(l, l.xp().ym()) += -C_d2f_dxdy / coords->dy()[l.xp()];
+    operator3D.yup(yup)(l, l.xm().yp()) += -C_d2f_dxdy / coords->dy()[l.xm()];
+    operator3D.ydown(ydown)(l, l.xm().ym()) += C_d2f_dxdy / coords->dy()[l.xm()];
     operator3D.yup(yup)(l, l.yp().zp()) += C_d2f_dydz;
     operator3D.yup(yup)(l, l.yp().zm()) += -C_d2f_dydz;
     operator3D.ydown(ydown)(l, l.ym().zp()) += -C_d2f_dydz;

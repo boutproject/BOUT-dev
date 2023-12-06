@@ -192,15 +192,15 @@ template <typename CellEdges = MC>
 const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
                       const Field3D& wave_speed_in, bool fixflux = true) {
 
-  ASSERT1_FIELDS_COMPATIBLE(f_in, v_in);
-  ASSERT1_FIELDS_COMPATIBLE(f_in, wave_speed_in);
+  ASSERT1_FIELDS_COMPATIBLE(f_in, v_in)
+  ASSERT1_FIELDS_COMPATIBLE(f_in, wave_speed_in)
 
   Mesh* mesh = f_in.getMesh();
 
   CellEdges cellboundary;
 
-  ASSERT2(f_in.getDirectionY() == v_in.getDirectionY());
-  ASSERT2(f_in.getDirectionY() == wave_speed_in.getDirectionY());
+  ASSERT2(f_in.getDirectionY() == v_in.getDirectionY())
+  ASSERT2(f_in.getDirectionY() == wave_speed_in.getDirectionY())
   const bool are_unaligned =
       ((f_in.getDirectionY() == YDirectionType::Standard)
        and (v_in.getDirectionY() == YDirectionType::Standard)
@@ -243,20 +243,21 @@ const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
       // Pre-calculate factors which multiply fluxes
 #if not(BOUT_USE_METRIC_3D)
       // For right cell boundaries
-      BoutReal common_factor = (coord->J()(i, j) + coord->J()(i, j + 1))
-                               / (sqrt(coord->g_22()(i, j)) + sqrt(coord->g_22()(i, j + 1)));
+      BoutReal common_factor =
+          (coord->J()(i, j) + coord->J()(i, j + 1))
+          / (sqrt(coord->g_22()(i, j)) + sqrt(coord->g_22()(i, j + 1)));
 
-      BoutReal flux_factor_rc = common_factor / (coord->dy(i, j) * coord->J()(i, j));
+      BoutReal flux_factor_rc = common_factor / (coord->dy()(i, j) * coord->J()(i, j));
       BoutReal flux_factor_rp =
-          common_factor / (coord->dy(i, j + 1) * coord->J()(i, j + 1));
+          common_factor / (coord->dy()(i, j + 1) * coord->J()(i, j + 1));
 
       // For left cell boundaries
       common_factor = (coord->J()(i, j) + coord->J()(i, j - 1))
                       / (sqrt(coord->g_22()(i, j)) + sqrt(coord->g_22()(i, j - 1)));
 
-      BoutReal flux_factor_lc = common_factor / (coord->dy(i, j) * coord->J()(i, j));
+      BoutReal flux_factor_lc = common_factor / (coord->dy()(i, j) * coord->J()(i, j));
       BoutReal flux_factor_lm =
-          common_factor / (coord->dy(i, j - 1) * coord->J()(i, j - 1));
+          common_factor / (coord->dy()(i, j - 1) * coord->J()(i, j - 1));
 #endif
       for (int k = 0; k < mesh->LocalNz; k++) {
 #if BOUT_USE_METRIC_3D
@@ -266,18 +267,18 @@ const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
             / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j + 1, k)));
 
         BoutReal flux_factor_rc =
-            common_factor / (coord->dy(i, j, k) * coord->J(i, j, k));
+            common_factor / (coord->dy()(i, j, k) * coord->J(i, j, k));
         BoutReal flux_factor_rp =
-            common_factor / (coord->dy(i, j + 1, k) * coord->J(i, j + 1, k));
+            common_factor / (coord->dy()(i, j + 1, k) * coord->J(i, j + 1, k));
 
         // For left cell boundaries
         common_factor = (coord->J(i, j, k) + coord->J(i, j - 1, k))
                         / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j - 1, k)));
 
         BoutReal flux_factor_lc =
-            common_factor / (coord->dy(i, j, k) * coord->J(i, j, k));
+            common_factor / (coord->dy()(i, j, k) * coord->J(i, j, k));
         BoutReal flux_factor_lm =
-            common_factor / (coord->dy(i, j - 1, k) * coord->J(i, j - 1, k));
+            common_factor / (coord->dy()(i, j - 1, k) * coord->J(i, j - 1, k));
 #endif
 
         ////////////////////////////////////////////
@@ -384,8 +385,8 @@ const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
    */
 template <typename CellEdges = MC>
 const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
-  ASSERT1(n_in.getLocation() == v.getLocation());
-  ASSERT1_FIELDS_COMPATIBLE(n_in, v.x);
+  ASSERT1(n_in.getLocation() == v.getLocation())
+  ASSERT1_FIELDS_COMPATIBLE(n_in, v.x)
 
   Mesh* mesh = n_in.getMesh();
 
@@ -432,16 +433,16 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
           // Flux in from boundary
           flux = vR * 0.5 * (n[i.xp()] + n[i]);
         }
-        result[i] += flux / (coord->dx[i] * coord->J()[i]);
-        result[i.xp()] -= flux / (coord->dx[i.xp()] * coord->J()[i.xp()]);
+        result[i] += flux / (coord->dx()[i] * coord->J()[i]);
+        result[i.xp()] -= flux / (coord->dx()[i.xp()] * coord->J()[i.xp()]);
       }
     } else {
       // Not at a boundary
       if (vR > 0.0) {
         // Flux out into next cell
         BoutReal flux = vR * s.R;
-        result[i] += flux / (coord->dx[i] * coord->J()[i]);
-        result[i.xp()] -= flux / (coord->dx[i.xp()] * coord->J()[i.xp()]);
+        result[i] += flux / (coord->dx()[i] * coord->J()[i]);
+        result[i.xp()] -= flux / (coord->dx()[i.xp()] * coord->J()[i.xp()]);
       }
     }
 
@@ -459,15 +460,15 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
           // Flux in from boundary
           flux = vL * 0.5 * (n[i.xm()] + n[i]);
         }
-        result[i] -= flux / (coord->dx[i] * coord->J()[i]);
-        result[i.xm()] += flux / (coord->dx[i.xm()] * coord->J()[i.xm()]);
+        result[i] -= flux / (coord->dx()[i] * coord->J()[i]);
+        result[i.xm()] += flux / (coord->dx()[i.xm()] * coord->J()[i.xm()]);
       }
     } else {
       // Not at a boundary
       if (vL < 0.0) {
         BoutReal flux = vL * s.L;
-        result[i] -= flux / (coord->dx[i] * coord->J()[i]);
-        result[i.xm()] += flux / (coord->dx[i.xm()] * coord->J()[i.xm()]);
+        result[i] -= flux / (coord->dx()[i] * coord->J()[i]);
+        result[i.xm()] += flux / (coord->dx()[i.xm()] * coord->J()[i.xm()]);
       }
     }
 
@@ -483,13 +484,13 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
 
     if (vU > 0.0) {
       BoutReal flux = vU * s.R;
-      result[i] += flux / (coord->J()[i] * coord->dz[i]);
-      result[i.zp()] -= flux / (coord->J()[i.zp()] * coord->dz[i.zp()]);
+      result[i] += flux / (coord->J()[i] * coord->dz()[i]);
+      result[i.zp()] -= flux / (coord->J()[i.zp()] * coord->dz()[i.zp()]);
     }
     if (vD < 0.0) {
       BoutReal flux = vD * s.L;
-      result[i] -= flux / (coord->J()[i] * coord->dz[i]);
-      result[i.zm()] += flux / (coord->J()[i.zm()] * coord->dz[i.zm()]);
+      result[i] -= flux / (coord->J()[i] * coord->dz()[i]);
+      result[i.zm()] += flux / (coord->J()[i.zm()] * coord->dz()[i.zm()]);
     }
   }
 
@@ -515,7 +516,7 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
     BoutReal nU = 0.5 * (n[i] + n[i.yp()]);
     BoutReal nD = 0.5 * (n[i] + n[i.ym()]);
 
-    yresult[i] = (nU * vU - nD * vD) / (coord->J()[i] * coord->dy[i]);
+    yresult[i] = (nU * vU - nD * vD) / (coord->J()[i] * coord->dy()[i]);
   }
   return result + fromFieldAligned(yresult, "RGN_NOBNDRY");
 }

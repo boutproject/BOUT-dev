@@ -361,7 +361,7 @@ class Elm_6f : public PhysicsModel {
       result.allocate();
       for (auto i : result) {
         result[i] =
-            (fp[i.yp()] - fm[i.ym()]) / (2. * coord->dy[i] * sqrt(coord->g_22[i]));
+            (fp[i.yp()] - fm[i.ym()]) / (2. * coord->dy()[i] * sqrt(coord->g_22[i]));
       }
     } else {
       result = Grad_par(f, loc);
@@ -867,7 +867,7 @@ protected:
     Btxy /= Bbar;
     B0 /= Bbar;
     hthe /= Lbar;
-    coord->dx /= Lbar * Lbar * Bbar;
+    coord->setDx(coord->dx() / (Lbar * Lbar * Bbar));
     I *= Lbar * Lbar * Bbar;
 
     if ((!T0_fake_prof) && n0_fake_prof) {
@@ -1448,7 +1448,7 @@ protected:
       if (hyperviscos > 0.0) {
         // Calculate coefficient.
 
-        hyper_mu_x = hyperviscos * coord->g_11 * SQ(coord->dx)
+        hyper_mu_x = hyperviscos * coord->g_11 * SQ(coord->dx())
                      * abs(coord->g11 * D2DX2(U)) / (abs(U) + 1e-3);
         hyper_mu_x.applyBoundary("dirichlet"); // Set to zero on all boundaries
 

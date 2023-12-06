@@ -83,7 +83,7 @@ protected:
     GRID_LOAD(Btxy);
     GRID_LOAD(hthe);
     mesh->get(coord->Bxy(), "Bxy");
-    mesh->get(coord->dx, "dpsi");
+    coord->setDx(mesh->get("dpsi"));
     mesh->get(I, "sinty");
 
     // Load normalisation values
@@ -169,7 +169,7 @@ protected:
     Rxy /= rho_s;
     hthe /= rho_s;
     I *= rho_s * rho_s * (bmag / 1e4) * ShearFactor;
-    coord->dx /= rho_s * rho_s * (bmag / 1e4);
+    coord->setDx(coord->dx() / (rho_s * rho_s * (bmag / 1e4)));
 
     // Normalise magnetic field
     Bpxy /= (bmag / 1.e4);

@@ -108,18 +108,18 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
     // Metrics on x+1/2 boundary
     BoutReal J = 0.5 * (coords->J[index] + coords->J[ind_xp]);
     BoutReal g11 = 0.5 * (coords->g11[index] + coords->g11[ind_xp]);
-    BoutReal dx = 0.5 * (coords->dx[index] + coords->dx[ind_xp]);
+    BoutReal dx = 0.5 * (coords->dx()[index] + coords->dx()[ind_xp]);
     BoutReal Acoef = 0.5 * (A[index] + A[ind_xp]);
 
-    BoutReal xp = Acoef * J * g11 / (coords->J[index] * dx * coords->dx[index]);
+    BoutReal xp = Acoef * J * g11 / (coords->J[index] * dx * coords->dx()[index]);
 
     // Metrics on x-1/2 boundary
     J = 0.5 * (coords->J[index] + coords->J[ind_xm]);
     g11 = 0.5 * (coords->g11[index] + coords->g11[ind_xm]);
-    dx = 0.5 * (coords->dx[index] + coords->dx[ind_xm]);
+    dx = 0.5 * (coords->dx()[index] + coords->dx()[ind_xm]);
     Acoef = 0.5 * (A[index] + A[ind_xm]);
 
-    BoutReal xm = Acoef * J * g11 / (coords->J[index] * dx * coords->dx[index]);
+    BoutReal xm = Acoef * J * g11 / (coords->J[index] * dx * coords->dx()[index]);
 
     BoutReal c = B[index] - xp - xm; // Central coefficient
 
@@ -136,11 +136,11 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
       BoutReal g_22 = 0.5 * (coords->g_22[index] + coords->g_22[ind_yp]);
       BoutReal g23 = 0.5 * (coords->g23[index] + coords->g23[ind_yp]);
       BoutReal g_23 = 0.5 * (coords->g_23[index] + coords->g_23[ind_yp]);
-      BoutReal dy = 0.5 * (coords->dy[index] + coords->dy[ind_yp]);
+      BoutReal dy = 0.5 * (coords->dy()[index] + coords->dy()[ind_yp]);
       Acoef = 0.5 * (A[ind_yp] + A[index]);
 
       BoutReal yp =
-          -Acoef * J * g23 * g_23 / (g_22 * coords->J[index] * dy * coords->dy[index]);
+          -Acoef * J * g23 * g_23 / (g_22 * coords->J[index] * dy * coords->dy()[index]);
       c -= yp;
 
       // Metrics at y-1/2
@@ -148,11 +148,11 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
       g_22 = 0.5 * (coords->g_22[index] + coords->g_22[ind_ym]);
       g23 = 0.5 * (coords->g23[index] + coords->g23[ind_ym]);
       g_23 = 0.5 * (coords->g_23[index] + coords->g_23[ind_ym]);
-      dy = 0.5 * (coords->dy[index] + coords->dy[ind_ym]);
+      dy = 0.5 * (coords->dy()[index] + coords->dy()[ind_ym]);
       Acoef = 0.5 * (A[ind_ym] + A[index]);
 
       BoutReal ym =
-          -Acoef * J * g23 * g_23 / (g_22 * coords->J[index] * dy * coords->dy[index]);
+          -Acoef * J * g23 * g_23 / (g_22 * coords->J[index] * dy * coords->dy()[index]);
       c -= ym;
       M(index, ind_yp) = yp;
       M(index, ind_ym) = ym;
