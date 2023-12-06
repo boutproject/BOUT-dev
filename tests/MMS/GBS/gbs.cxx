@@ -290,14 +290,14 @@ int GBS::init(bool restarting) {
   phiSolver = Laplacian::create(opt->getSection("phiSolver"));
   aparSolver = Laplacian::create(opt->getSection("aparSolver"));
 
-  dx4 = SQ(SQ(coords->dx));
-  dy4 = SQ(SQ(coords->dy));
-  dz4 = SQ(SQ(coords->dz));
+  dx4 = SQ(SQ(coords->dx()));
+  dy4 = SQ(SQ(coords->dy()));
+  dz4 = SQ(SQ(coords->dz()));
 
   SAVE_REPEAT(Ve);
 
-  output.write("dx = {:e}, dy = {:e}, dz = {:e}\n", (coords->dx)(2, 2),
-               (coords->dy)(2, 2), coords->dz);
+  output.write("dx = {:e}, dy = {:e}, dz = {:e}\n", (coords->dx())(2, 2),
+               (coords->dy())(2, 2), coords->dz());
   output.write("g11 = {:e}, g22 = {:e}, g33 = {:e}\n", coords->g11()(2, 2),
                coords->g22()(2, 2), coords->g33()(2, 2));
   output.write("g12 = {:e}, g23 = {:e}\n", coords->g12()(2, 2), coords->g23()(2, 2));
@@ -321,7 +321,7 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   Field2D dx;
   if (!mesh->get(dx, "dpsi")) {
     output << "\tUsing dpsi as the x grid spacing\n";
-    coords->dx = dx; // Only use dpsi if found
+    coords->setDx(dx); // Only use dpsi if found
   } else {
     // dx will have been read already from the grid
     output << "\tUsing dx as the x grid spacing\n";
@@ -330,11 +330,11 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   Rxy /= Lnorm;
   hthe /= Lnorm;
   sinty *= SQ(Lnorm) * Bnorm;
-  coords->dx /= SQ(Lnorm) * Bnorm;
+  coords->setDx(coords->dx() / (SQ(Lnorm) * Bnorm));
 
   Bpxy /= Bnorm;
   Btxy /= Bnorm;
-  coords->Bxy() /= Bnorm;
+  coords->setBxy(coords->Bxy() / Bnorm);
 
   // Calculate metric components
   bool ShiftXderivs;
@@ -354,8 +354,7 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   const auto g12 = 0.0;
   const auto g13 = -sinty * coords->g11();
   const auto g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
-  coords->setContravariantMetricTensor(
-      MetricTensor(g11, g22, g33, g12, g13, g23));
+  coords->setContravariantMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23));
 
   coords->setJ(hthe / Bpxy);
 
@@ -365,10 +364,7 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   const auto g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
   const auto g_13 = sinty * Rxy * Rxy;
   const auto g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
-  coords->setCovariantMetricTensor(
-      MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
-
-  coords->geometry();
+  coords->setCovariantMetricTensor(MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 }
 
 // just define a macro for V_E dot Grad
@@ -433,7 +429,8 @@ int GBS::rhs(BoutReal t) {
   Ge = 0.0;
   if (elecvis) {
     Ge = -(0.73 * Te * Ne * tau_e)
-         * (2. * Grad_par(Ve) + (5. * C(Te) + 5. * Te * C(logNe) + C(phi)) / coords->Bxy());
+         * (2. * Grad_par(Ve)
+            + (5. * C(Te) + 5. * Te * C(logNe) + C(phi)) / coords->Bxy());
     mesh->communicate(Ge);
     Ge.applyBoundary("neumann");
   } else {
@@ -447,7 +444,7 @@ int GBS::rhs(BoutReal t) {
 
   if (evolve_Ne) {
     // Density
-    ddt(Ne) = -vE_Grad(Ne, phi)                            // ExB term
+    ddt(Ne) = -vE_Grad(Ne, phi)                              // ExB term
               + (2. / coords->Bxy()) * (C(Pe) - Ne * C(phi)) // Perpendicular compression
               + D(Ne, Dn) + H(Ne, Hn);
 

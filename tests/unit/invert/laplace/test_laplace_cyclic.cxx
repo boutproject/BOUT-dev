@@ -53,7 +53,7 @@ private:
   void applyBoundaries(Field3D& newF, const Field3D& f) {
     BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_INNER_X")) {
       if (inner_x_neumann) {
-        newF[i] = (f[i.xp()] - f[i]) / coords->dx[i] / sqrt(coords->g_11()[i]);
+        newF[i] = (f[i.xp()] - f[i]) / coords->dx()[i] / sqrt(coords->g_11()[i]);
       } else {
         newF[i] = 0.5 * (f[i] + f[i.xp()]);
       }
@@ -61,7 +61,7 @@ private:
 
     BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_OUTER_X")) {
       if (outer_x_neumann) {
-        newF[i] = (f[i] - f[i.xm()]) / coords->dx[i] / sqrt(coords->g_11()[i]);
+        newF[i] = (f[i] - f[i.xm()]) / coords->dx()[i] / sqrt(coords->g_11()[i]);
       } else {
         newF[i] = 0.5 * (f[i.xm()] + f[i]);
       }

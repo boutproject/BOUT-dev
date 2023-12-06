@@ -365,7 +365,7 @@ class GEM : public PhysicsModel {
     Bxy /= Bbar;
 
     Rxy /= rho_s; // Perpendicular derivatives normalised to rho_s
-    coord->dx /= rho_s * rho_s * Bbar;
+    coord->setDx(coord->dx() / (rho_s * rho_s * Bbar));
 
     // Metric components
 

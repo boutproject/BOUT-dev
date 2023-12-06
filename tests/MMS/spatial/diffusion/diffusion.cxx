@@ -22,34 +22,31 @@ protected:
     meshoptions->get("Ly", Ly, 1.0);
 
     /*this assumes equidistant grid*/
-    coords->dx = Lx / (mesh->GlobalNx - 2 * mesh->xstart);
+    coords->setDx(Lx / (mesh->GlobalNx - 2 * mesh->xstart));
 
-    coords->dy = Ly / (mesh->GlobalNy - 2 * mesh->ystart);
+    coords->setDy(Ly / (mesh->GlobalNy - 2 * mesh->ystart));
 
     output.write("SIZES: {:d}, {:d}, {:e}\n", mesh->GlobalNy,
-                 (mesh->GlobalNy - 2 * mesh->ystart), coords->dy(0, 0, 0));
+                 (mesh->GlobalNy - 2 * mesh->ystart), coords->dy()(0, 0, 0));
 
-    SAVE_ONCE2(Lx, Ly);
+    SAVE_ONCE2(Lx, Ly)
 
     Options* cytooptions = Options::getRoot()->getSection("cyto");
     OPTION(cytooptions, Dx, 1.0);
     OPTION(cytooptions, Dy, -1.0);
     OPTION(cytooptions, Dz, -1.0);
 
-    SAVE_ONCE3(Dx, Dy, Dz);
+    SAVE_ONCE3(Dx, Dy, Dz)
 
     // set mesh
-    auto contravariant_metric_tensor =
-        MetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
+    auto contravariant_metric_tensor = MetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
     coords->setContravariantMetricTensor(contravariant_metric_tensor);
 
     auto covariant_metric_tensor = MetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
     coords->setCovariantMetricTensor(covariant_metric_tensor);
 
-    coords->geometry();
-
     // Tell BOUT++ to solve N
-    SOLVE_FOR(N);
+    SOLVE_FOR(N)
 
     return 0;
   }

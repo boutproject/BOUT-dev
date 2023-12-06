@@ -179,8 +179,8 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         // non-uniform localmesh correction
         if ((ix != 0) && (ix != ncx)) {
           coef4 += coords->g11()(ix, jy)
-                   * ((1.0 / coords->dx(ix + 1, jy)) - (1.0 / coords->dx(ix - 1, jy)))
-                   / (2.0 * coords->dx(ix, jy));
+                   * ((1.0 / coords->dx()(ix + 1, jy)) - (1.0 / coords->dx()(ix - 1, jy)))
+                   / (2.0 * coords->dx()(ix, jy));
         }
       }
 
@@ -190,14 +190,14 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         coef4 += coords->g11()(ix, jy)
                  * (Ccoef(ix - 2, jy) - 8. * Ccoef(ix - 1, jy) + 8. * Ccoef(ix + 1, jy)
                     - Ccoef(ix + 2, jy))
-                 / (12. * coords->dx(ix, jy) * (Ccoef(ix, jy)));
+                 / (12. * coords->dx()(ix, jy) * (Ccoef(ix, jy)));
       }
 
       // Put into matrix
-      coef1 /= 12. * SQ(coords->dx(ix, jy));
+      coef1 /= 12. * SQ(coords->dx()(ix, jy));
       coef2 *= SQ(kwave);
-      coef3 *= kwave / (12. * coords->dx(ix, jy));
-      coef4 /= 12. * coords->dx(ix, jy);
+      coef3 *= kwave / (12. * coords->dx()(ix, jy));
+      coef4 /= 12. * coords->dx()(ix, jy);
       coef5 *= kwave;
 
       A(ix, 0) = dcomplex(-coef1 + coef4, coef3);
@@ -214,9 +214,9 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
       int ix = 1;
 
       auto kwave = kwave_(ix, jy);
-      coef1 = coords->g11()(ix, jy) / (SQ(coords->dx(ix, jy)));
+      coef1 = coords->g11()(ix, jy) / (SQ(coords->dx()(ix, jy)));
       coef2 = coords->g33()(ix, jy);
-      coef3 = kwave * coords->g13()(ix, jy) / (2. * coords->dx(ix, jy));
+      coef3 = kwave * coords->g13()(ix, jy) / (2. * coords->dx()(ix, jy));
 
       // Multiply Delp2 component by a factor
       coef1 *= Dcoef(ix, jy);
@@ -231,9 +231,9 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       ix = ncx - 1;
 
-      coef1 = coords->g11()(ix, jy) / (SQ(coords->dx(ix, jy)));
+      coef1 = coords->g11()(ix, jy) / (SQ(coords->dx()(ix, jy)));
       coef2 = coords->g33()(ix, jy);
-      coef3 = kwave * coords->g13()(ix, jy) / (2. * coords->dx(ix, jy));
+      coef3 = kwave * coords->g13()(ix, jy) / (2. * coords->dx()(ix, jy));
 
       A(ix, 0) = 0.0;
       A(ix, 1) = dcomplex(coef1, -coef3);
@@ -272,8 +272,8 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         for (int ix = 0; ix < xbndry; ix++) {
           A(ix, 0) = 0.;
           A(ix, 1) = 0.;
-          A(ix, 2) = -.5 / sqrt(coords->g_11()(ix, jy)) / coords->dx(ix, jy);
-          A(ix, 3) = .5 / sqrt(coords->g_11()(ix, jy)) / coords->dx(ix, jy);
+          A(ix, 2) = -.5 / sqrt(coords->g_11()(ix, jy)) / coords->dx()(ix, jy);
+          A(ix, 3) = .5 / sqrt(coords->g_11()(ix, jy)) / coords->dx()(ix, jy);
           A(ix, 4) = 0.;
         }
 
@@ -337,18 +337,18 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         int ix = 1;
 
         auto kwave = kwave_(ix, jy);
-        coef1 = coords->g11()(ix, jy) / (12. * SQ(coords->dx(ix, jy)));
+        coef1 = coords->g11()(ix, jy) / (12. * SQ(coords->dx()(ix, jy)));
 
         coef2 = coords->g33()(ix, jy);
 
-        coef3 = kwave * coords->g13()(ix, jy) / (2. * coords->dx(ix, jy));
+        coef3 = kwave * coords->g13()(ix, jy) / (2. * coords->dx()(ix, jy));
 
         coef4 = Acoef(ix, jy);
 
         // Combine 4th order at 1 with 2nd order at 0
         A(1, 0) = 0.0; // Not used
         A(1, 1) = dcomplex((14.
-                            - SQ(coords->dx(0, jy) * kwave) * coords->g33()(0, jy)
+                            - SQ(coords->dx()(0, jy) * kwave) * coords->g33()(0, jy)
                                   / coords->g11()(0, jy))
                                * coef1,
                            -coef3);
@@ -356,9 +356,9 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         A(1, 3) = dcomplex(16. * coef1, coef3);
         A(1, 4) = dcomplex(-coef1, 0.0);
 
-        coef1 = coords->g11()(ix, jy) / (SQ(coords->dx(ix, jy)));
+        coef1 = coords->g11()(ix, jy) / (SQ(coords->dx()(ix, jy)));
         coef2 = coords->g33()(ix, jy);
-        coef3 = kwave * coords->g13()(ix, jy) / (2. * coords->dx(ix, jy));
+        coef3 = kwave * coords->g13()(ix, jy) / (2. * coords->dx()(ix, jy));
 
         // Use 2nd order at 1
         A(0, 0) = 0.0; // Should never be used
@@ -381,12 +381,12 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
 
         int ix = ncx - 1;
 
-        coef1 = coords->g11()(ix, jy) / (12. * SQ(coords->dx(ix, jy)));
+        coef1 = coords->g11()(ix, jy) / (12. * SQ(coords->dx()(ix, jy)));
 
         coef2 = coords->g33()(ix, jy);
 
         auto kwave = kwave_(ix, jy);
-        coef3 = kwave * coords->g13()(ix, jy) / (2. * coords->dx(ix, jy));
+        coef3 = kwave * coords->g13()(ix, jy) / (2. * coords->dx()(ix, jy));
 
         coef4 = Acoef(ix, jy);
 
@@ -395,15 +395,15 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         A(ix, 1) = dcomplex(16. * coef1, -coef3);
         A(ix, 2) = dcomplex(-29. * coef1 - SQ(kwave) * coef2 + coef4, 0.0);
         A(ix, 3) = dcomplex((14.
-                             - SQ(coords->dx(ncx, jy) * kwave) * coords->g33()(ncx, jy)
+                             - SQ(coords->dx()(ncx, jy) * kwave) * coords->g33()(ncx, jy)
                                    / coords->g11()(ncx, jy))
                                 * coef1,
                             coef3);
         A(ix, 4) = 0.0; // Not used
 
-        coef1 = coords->g11()(ix, jy) / (SQ(coords->dx(ix, jy)));
+        coef1 = coords->g11()(ix, jy) / (SQ(coords->dx()(ix, jy)));
         coef2 = coords->g33()(ix, jy);
-        coef3 = kwave * coords->g13()(ix, jy) / (2. * coords->dx(ix, jy));
+        coef3 = kwave * coords->g13()(ix, jy) / (2. * coords->dx()(ix, jy));
 
         // Use 2nd order at ncx - 1
         A(ncx, 0) = dcomplex(coef1, -coef3);

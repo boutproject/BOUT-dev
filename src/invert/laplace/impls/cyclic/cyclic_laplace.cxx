@@ -392,7 +392,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
-      const BoutReal zlen = getUniform(coords->dz) * (localmesh->LocalNz - 3);
+      const BoutReal zlen = getUniform(coords->dz()) * (localmesh->LocalNz - 3);
       BOUT_OMP(for nowait)
       for (int ind = 0; ind < nsys; ind++) {
         // ind = (iy - ys) * nmode + kz

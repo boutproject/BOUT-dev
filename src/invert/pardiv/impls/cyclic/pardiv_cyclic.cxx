@@ -105,7 +105,7 @@ Field3D InvertParDivCR::solve(const Field3D& f) {
   auto b = Matrix<dcomplex>(nsys, size);
   auto c = Matrix<dcomplex>(nsys, size);
 
-  const Field2D dy = coord->dy;
+  const Field2D dy = coord->dy();
   const Field2D J = coord->J();
   const Field2D g_22 = coord->g_22();
 

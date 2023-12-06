@@ -902,7 +902,7 @@ protected:
     Btxy /= Bbar;
     B0 /= Bbar;
     hthe /= Lbar;
-    metric->dx /= Lbar * Lbar * Bbar;
+    metric->setDx(metric->dx() / (Lbar * Lbar * Bbar));
     I *= Lbar * Lbar * Bbar;
 
     if (constn0) {
@@ -1587,7 +1587,7 @@ protected:
     if (hyperviscos > 0.0) {
       // Calculate coefficient.
 
-      hyper_mu_x = hyperviscos * metric->g_11 * SQ(metric->dx)
+      hyper_mu_x = hyperviscos * metric->g_11 * SQ(metric->dx())
                    * abs(metric->g11 * D2DX2(U)) / (abs(U) + 1e-3);
       hyper_mu_x.applyBoundary("dirichlet"); // Set to zero on all boundaries
 

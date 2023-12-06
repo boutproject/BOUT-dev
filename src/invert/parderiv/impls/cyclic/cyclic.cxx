@@ -164,9 +164,9 @@ const Field3D InvertParCR::solve(const Field3D& f) {
           ecoef += bcoef * coord->d1_dy(x, y + local_ystart);
         }
 
-        bcoef /= SQ(coord->dy(x, y + local_ystart));
-        ccoef /= coord->dy(x, y + local_ystart);
-        ecoef /= coord->dy(x, y + local_ystart);
+        bcoef /= SQ(coord->dy()(x, y + local_ystart));
+        ccoef /= coord->dy()(x, y + local_ystart);
+        ecoef /= coord->dy()(x, y + local_ystart);
 
         //           const       d2dy2        d2dydz              d2dz2           ddy
         //           -----       -----        ------              -----           ---

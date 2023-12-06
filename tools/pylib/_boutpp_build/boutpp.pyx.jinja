@@ -769,7 +769,7 @@ cdef class Mesh:
         Usefull if the Options are in SI units, but the simulation is written in Bohm units.
         Calling it multiple times will not change the mesh, if the normalisation is always the same.
 
-        It calls mesh->dx/=norm etc. followed by a call to geometry().
+        It calls mesh->dx()/=norm etc. followed by a call to geometry().
 
         Parameters
         ----------

@@ -22,13 +22,13 @@ protected:
     Coordinates* coord = mesh->getCoordinates();
 
     mesh->get(V0, "V0");
-    mesh->get(coord->dx, "dx");
-    mesh->get(coord->dy, "dy");
+    coord->setDx(mesh->get("dx"));
+    coord->setDy(mesh->get("dy"));
 
     // read options
 
     // Set evolving variables
-    SOLVE_FOR(V);
+    SOLVE_FOR(V)
 
     if (!restarting) {
       // Set variables to these values (+ the initial perturbation)

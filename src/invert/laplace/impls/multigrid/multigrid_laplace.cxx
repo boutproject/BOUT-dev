@@ -290,7 +290,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
           int k2 = k - 1;
           x[k] = -x0(localmesh->xstart - 1, k2)
                  * sqrt(coords->g_11()(localmesh->xstart, yindex))
-                 * coords->dx(localmesh->xstart, yindex);
+                 * coords->dx()(localmesh->xstart, yindex);
         }
       } else {
         // zero gradient inner boundary condition
@@ -334,7 +334,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
           int k2 = k - 1;
           x[(lxx + 1) * lz2 + k] = x0(localmesh->xend + 1, k2)
                                    * sqrt(coords->g_11()(localmesh->xend, yindex))
-                                   * coords->dx(localmesh->xend, yindex);
+                                   * coords->dx()(localmesh->xend, yindex);
           // this is the value to set the gradient to at the outer boundary
         }
       } else {
@@ -493,7 +493,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
           result(i2, k2) = x[lz2 + k]
                            - x0(localmesh->xstart - 1, k2)
                                  * sqrt(coords->g_11()(localmesh->xstart, yindex))
-                                 * coords->dx(localmesh->xstart, yindex);
+                                 * coords->dx()(localmesh->xstart, yindex);
         }
       } else {
         // zero gradient inner boundary condition
@@ -541,7 +541,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
           result(i2, k2) = x[lxx * lz2 + k]
                            + x0(localmesh->xend + 1, k2)
                                  * sqrt(coords->g_11()(localmesh->xend, yindex))
-                                 * coords->dx(localmesh->xend, yindex);
+                                 * coords->dx()(localmesh->xend, yindex);
         }
       } else {
         // zero gradient outer boundary condition
@@ -601,21 +601,21 @@ void LaplaceMultigrid::generateMatrixF(int level) {
       int k2p = (k2 + 1) % Nz_global;
       int k2m = (k2 + Nz_global - 1) % Nz_global;
 
-      BoutReal dz = coords->dz(i2, yindex);
+      BoutReal dz = coords->dz()(i2, yindex);
       BoutReal ddx_C = (C2(i2 + 1, yindex, k2) - C2(i2 - 1, yindex, k2)) / 2.
-                       / coords->dx(i2, yindex) / C1(i2, yindex, k2);
+                       / coords->dx()(i2, yindex) / C1(i2, yindex, k2);
       BoutReal ddz_C =
           (C2(i2, yindex, k2p) - C2(i2, yindex, k2m)) / 2. / dz / C1(i2, yindex, k2);
 
       BoutReal ddx = D(i2, yindex, k2) * coords->g11()(i2, yindex)
-                     / coords->dx(i2, yindex) / coords->dx(i2, yindex);
+                     / coords->dx()(i2, yindex) / coords->dx()(i2, yindex);
       // coefficient of 2nd derivative stencil (x-direction)
 
       BoutReal ddz = D(i2, yindex, k2) * coords->g33()(i2, yindex) / SQ(dz);
       // coefficient of 2nd derivative stencil (z-direction)
 
       BoutReal dxdz = D(i2, yindex, k2) * 2. * coords->g13()(i2, yindex)
-                      / coords->dx(i2, yindex) / dz;
+                      / coords->dx()(i2, yindex) / dz;
       // coefficient of mixed derivative stencil (could assume zero, at least initially,
       // if easier; then check this is true in constructor)
 
@@ -625,7 +625,7 @@ void LaplaceMultigrid::generateMatrixF(int level) {
            + coords->g13()(i2, yindex)
                  * ddz_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
            )
-          / coords->dx(i2, yindex); // coefficient of 1st derivative stencil (x-direction)
+          / coords->dx()(i2, yindex); // coefficient of 1st derivative stencil (x-direction)
       if (nonuniform) {
         // add correction for non-uniform dx
         dxd += D(i2, yindex, k2) * coords->d1_dx(i2, yindex);

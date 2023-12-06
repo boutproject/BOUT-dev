@@ -139,8 +139,8 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
     if ((inner_boundary_flags & INVERT_AC_GRAD) != 0) {
       // Neumann on inner X boundary
-      operator3D(i, i) = -1. / coords->dx[i] / sqrt(coords->g_11[i]);
-      operator3D(i, i.xp()) = 1. / coords->dx[i] / sqrt(coords->g_11[i]);
+      operator3D(i, i) = -1. / coords->dx()[i] / sqrt(coords->g_11[i]);
+      operator3D(i, i.xp()) = 1. / coords->dx()[i] / sqrt(coords->g_11[i]);
     } else {
       // Dirichlet on inner X boundary
       operator3D(i, i) = 0.5;
@@ -151,8 +151,8 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
     if ((outer_boundary_flags & INVERT_AC_GRAD) != 0) {
       // Neumann on outer X boundary
-      operator3D(i, i) = 1. / coords->dx[i] / sqrt(coords->g_11[i]);
-      operator3D(i, i.xm()) = -1. / coords->dx[i] / sqrt(coords->g_11[i]);
+      operator3D(i, i) = 1. / coords->dx()[i] / sqrt(coords->g_11[i]);
+      operator3D(i, i.xm()) = -1. / coords->dx()[i] / sqrt(coords->g_11[i]);
     } else {
       // Dirichlet on outer X boundary
       operator3D(i, i) = 0.5;
@@ -163,8 +163,8 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
     if ((lower_boundary_flags & INVERT_AC_GRAD) != 0) {
       // Neumann on lower Y boundary
-      operator3D(i, i) = -1. / coords->dy[i] / sqrt(coords->g_22[i]);
-      operator3D(i, i.yp()) = 1. / coords->dy[i] / sqrt(coords->g_22[i]);
+      operator3D(i, i) = -1. / coords->dy()[i] / sqrt(coords->g_22[i]);
+      operator3D(i, i.yp()) = 1. / coords->dy()[i] / sqrt(coords->g_22[i]);
     } else {
       // Dirichlet on lower Y boundary
       operator3D(i, i) = 0.5;
@@ -175,8 +175,8 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
     if ((upper_boundary_flags & INVERT_AC_GRAD) != 0) {
       // Neumann on upper Y boundary
-      operator3D(i, i) = 1. / coords->dy[i] / sqrt(coords->g_22[i]);
-      operator3D(i, i.ym()) = -1. / coords->dy[i] / sqrt(coords->g_22[i]);
+      operator3D(i, i) = 1. / coords->dy()[i] / sqrt(coords->g_22[i]);
+      operator3D(i, i.ym()) = -1. / coords->dy()[i] / sqrt(coords->g_22[i]);
     } else {
       // Dirichlet on upper Y boundary
       operator3D(i, i) = 0.5;
@@ -367,14 +367,14 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     if (nonuniform) {
       C_df_dx += C_d2f_dx2 * coords->d1_dx[l];
     }
-    C_df_dx /= 2 * coords->dx[l];
-    C_df_dz /= 2 * coords->dz[l];
+    C_df_dx /= 2 * coords->dx()[l];
+    C_df_dz /= 2 * coords->dz()[l];
 
-    C_d2f_dx2 /= SQ(coords->dx[l]);
-    C_d2f_dy2 /= SQ(coords->dy[l]);
-    C_d2f_dz2 /= SQ(coords->dz[l]);
+    C_d2f_dx2 /= SQ(coords->dx()[l]);
+    C_d2f_dy2 /= SQ(coords->dy()[l]);
+    C_d2f_dz2 /= SQ(coords->dz()[l]);
 
-    C_d2f_dxdz /= 4 * coords->dx[l] * coords->dz[l];
+    C_d2f_dxdz /= 4 * coords->dx()[l] * coords->dz()[l];
 
     operator3D(l, l) = -2 * (C_d2f_dx2 + C_d2f_dy2 + C_d2f_dz2) + A[l];
     operator3D(l, l.xp()) = C_df_dx + C_d2f_dx2;
@@ -432,13 +432,13 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     if (nonuniform) {
       C_df_dy += C_d2f_dy2 * coords->d1_dy[l];
     }
-    C_df_dy /= 2 * coords->dy[l];
-    C_d2f_dy2 /= SQ(coords->dy[l]);
+    C_df_dy /= 2 * coords->dy()[l];
+    C_d2f_dy2 /= SQ(coords->dy()[l]);
     C_d2f_dxdy /=
-        4 * coords->dx[l]; // NOTE: This value is not completed here. It needs to
+        4 * coords->dx()[l]; // NOTE: This value is not completed here. It needs to
                            // be divide by dx(i +/- 1, j, k) when using to set a
                            // matrix element
-    C_d2f_dydz /= 4 * coords->dy[l] * coords->dz[l];
+    C_d2f_dydz /= 4 * coords->dy()[l] * coords->dz()[l];
 
     // The values stored in the y-boundary are already interpolated
     // up/down, so we don't want the matrix to do any such
@@ -448,10 +448,10 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
 
     operator3D.yup(yup)(l, l.yp()) += C_df_dy + C_d2f_dy2;
     operator3D.ydown(ydown)(l, l.ym()) += -C_df_dy + C_d2f_dy2;
-    operator3D.yup(yup)(l, l.xp().yp()) += C_d2f_dxdy / coords->dy[l.xp()];
-    operator3D.ydown(ydown)(l, l.xp().ym()) += -C_d2f_dxdy / coords->dy[l.xp()];
-    operator3D.yup(yup)(l, l.xm().yp()) += -C_d2f_dxdy / coords->dy[l.xm()];
-    operator3D.ydown(ydown)(l, l.xm().ym()) += C_d2f_dxdy / coords->dy[l.xm()];
+    operator3D.yup(yup)(l, l.xp().yp()) += C_d2f_dxdy / coords->dy()[l.xp()];
+    operator3D.ydown(ydown)(l, l.xp().ym()) += -C_d2f_dxdy / coords->dy()[l.xp()];
+    operator3D.yup(yup)(l, l.xm().yp()) += -C_d2f_dxdy / coords->dy()[l.xm()];
+    operator3D.ydown(ydown)(l, l.xm().ym()) += C_d2f_dxdy / coords->dy()[l.xm()];
     operator3D.yup(yup)(l, l.yp().zp()) += C_d2f_dydz;
     operator3D.yup(yup)(l, l.yp().zm()) += -C_d2f_dydz;
     operator3D.ydown(ydown)(l, l.ym().zp()) += -C_d2f_dydz;

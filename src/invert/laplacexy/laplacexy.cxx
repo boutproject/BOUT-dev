@@ -899,8 +899,8 @@ void LaplaceXY::setMatrixElementsFiniteVolume(const Field2D& A, const Field2D& B
   auto coords = localmesh->getCoordinates(location);
   const Field2D J_DC = DC(coords->J);
   const Field2D g11_DC = DC(coords->g11);
-  const Field2D dx_DC = DC(coords->dx);
-  const Field2D dy_DC = DC(coords->dy);
+  const Field2D dx_DC = DC(coords->dx());
+  const Field2D dy_DC = DC(coords->dy());
   const Field2D g_22_DC = DC(coords->g_22);
   const Field2D g_23_DC = DC(coords->g_23);
   const Field2D g23_DC = DC(coords->g23);
@@ -1016,8 +1016,8 @@ void LaplaceXY::setMatrixElementsFiniteDifference(const Field2D& A, const Field2
   const Field2D g12_2D = DC(coords->g12);
   const Field2D d1_dx_2D = DC(coords->d1_dx);
   const Field2D d1_dy_2D = DC(coords->d1_dy);
-  const Field2D dx_2D = DC(coords->dx);
-  const Field2D dy_2D = DC(coords->dy);
+  const Field2D dx_2D = DC(coords->dx());
+  const Field2D dy_2D = DC(coords->dy());
 
   const Field2D coef_dfdy = G2_2D - DC(DDY(J_2D / g_22_2D) / J_2D);
 

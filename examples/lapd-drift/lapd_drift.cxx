@@ -142,7 +142,7 @@ protected:
     mesh->get(Bpxy, "Bpxy");
     mesh->get(Btxy, "Btxy");
     mesh->get(hthe, "hthe");
-    mesh->get(coord->dx, "dpsi");
+    coord->setDx(mesh->get("dpsi"));
     mesh->get(I, "sinty");
 
     // Load normalisation values
@@ -319,7 +319,7 @@ protected:
     Rxy /= rho_s;
     hthe /= rho_s;
     I *= rho_s * rho_s * (bmag / 1e4) * ShearFactor;
-    coord->dx /= rho_s * rho_s * (bmag / 1e4);
+    coord->setDx(coord->dx() / (rho_s * rho_s * (bmag / 1e4)));
 
     // Normalise magnetic field
     Bpxy /= (bmag / 1.e4);
@@ -416,7 +416,8 @@ protected:
 
     SAVE_ONCE(Ni0, Te0, phi0, rho0);
     SAVE_ONCE(Rxy, Bpxy, Btxy, Zxy, hthe);
-    dump.addOnce(coord->Bxy(), "Bxy");
+    const FieldMetric tmp = coord->Bxy();
+    dump.addOnce(tmp, "Bxy");
     dump.addOnce(my_ixseps, "ixseps");
 
     SAVE_ONCE(Te_x, Ti_x, Ni_x);
@@ -503,7 +504,8 @@ protected:
 
     // Calculate E cross B velocity
     if (nonlinear) {
-      VEt = sqrt(coord->g11 * DDX(phit) * DDX(phit) + coord->g33 * DDZ(phit) * DDZ(phit));
+      VEt = sqrt(coord->g11() * DDX(phit) * DDX(phit)
+                 + coord->g33() * DDZ(phit) * DDZ(phit));
 
       // Set boundary condition on VEt
       VEt.applyBoundary();
@@ -608,7 +610,7 @@ protected:
       }
 
       if (rho_ve2lin) {
-        ddt(rho) -= coord->g11 * coord->g33 * DDX(phi0)
+        ddt(rho) -= coord->g11() * coord->g33() * DDX(phi0)
                     * (DDX(Ni0) * D2DXDZ(phi) - D2DX2(phi0) * DDZ(ni));
       }
 
@@ -733,7 +735,7 @@ protected:
   /****************SPECIAL DIFFERENTIAL OPERATORS******************/
   Coordinates::FieldMetric Perp_Grad_dot_Grad(const Field2D& p, const Field2D& f) {
 
-    return DDX(p) * DDX(f) * mesh->getCoordinates()->g11;
+    return DDX(p) * DDX(f) * mesh->getCoordinates()->g11();
   }
 
   /////////////////////////////////////////////////////////////////
@@ -773,7 +775,7 @@ protected:
                 0.25
                 * ((p(jx, jy, jzp) - p(jx, jy, jzm)) * (f(jx + 1, jy) - f(jx - 1, jy))
                    - (p(jx + 1, jy, jz) - p(jx - 1, jy, jz)) * (f(jx, jy) - f(jx, jy)))
-                / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+                / (coord->dx()(jx, jy, jz) * coord->dz()(jx, jy, jz));
 
             // J+x
             BoutReal Jpx = 0.25
@@ -781,14 +783,14 @@ protected:
                               - f(jx - 1, jy) * (p(jx - 1, jy, jzp) - p(jx - 1, jy, jzm))
                               - f(jx, jy) * (p(jx + 1, jy, jzp) - p(jx - 1, jy, jzp))
                               + f(jx, jy) * (p(jx + 1, jy, jzm) - p(jx - 1, jy, jzm)))
-                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+                           / (coord->dx()(jx, jy, jz) * coord->dz()(jx, jy, jz));
             // Jx+
             BoutReal Jxp = 0.25
                            * (f(jx + 1, jy) * (p(jx, jy, jzp) - p(jx + 1, jy, jz))
                               - f(jx - 1, jy) * (p(jx - 1, jy, jz) - p(jx, jy, jzm))
                               - f(jx - 1, jy) * (p(jx, jy, jzp) - p(jx - 1, jy, jz))
                               + f(jx + 1, jy) * (p(jx + 1, jy, jz) - p(jx, jy, jzm)))
-                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+                           / (coord->dx()(jx, jy, jz) * coord->dz()(jx, jy, jz));
 
             result(jx, jy, jz) = (Jpp + Jpx + Jxp) / 3.;
           }
@@ -839,7 +841,7 @@ protected:
                                   * (f(jx + 1, jy, jz) - f(jx - 1, jy, jz))
                               - (p(jx + 1, jy, jz) - p(jx - 1, jy, jz))
                                     * (f(jx, jy, jzp) - f(jx, jy, jzm)))
-                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+                           / (coord->dx()(jx, jy, jz) * coord->dz()(jx, jy, jz));
 
             // J+x
             BoutReal Jpx =
@@ -848,14 +850,14 @@ protected:
                    - f(jx - 1, jy, jz) * (p(jx - 1, jy, jzp) - p(jx - 1, jy, jzm))
                    - f(jx, jy, jzp) * (p(jx + 1, jy, jzp) - p(jx - 1, jy, jzp))
                    + f(jx, jy, jzm) * (p(jx + 1, jy, jzm) - p(jx - 1, jy, jzm)))
-                / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+                / (coord->dx()(jx, jy, jz) * coord->dz()(jx, jy, jz));
             // Jx+
             BoutReal Jxp = 0.25
                            * (f(jx + 1, jy, jzp) * (p(jx, jy, jzp) - p(jx + 1, jy, jz))
                               - f(jx - 1, jy, jzm) * (p(jx - 1, jy, jz) - p(jx, jy, jzm))
                               - f(jx - 1, jy, jzp) * (p(jx, jy, jzp) - p(jx - 1, jy, jz))
                               + f(jx + 1, jy, jzm) * (p(jx + 1, jy, jz) - p(jx, jy, jzm)))
-                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+                           / (coord->dx()(jx, jy, jz) * coord->dz()(jx, jy, jz));
 
             result(jx, jy, jz) = (Jpp + Jpx + Jxp) / 3.;
           }

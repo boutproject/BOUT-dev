@@ -19,7 +19,7 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   Field2D dx;
   if (!mesh->get(dx, "dpsi")) {
     output << "\tUsing dpsi as the x grid spacing\n";
-    coords->dx = dx; // Only use dpsi if found
+    coords->setDx(dx); // Only use dpsi if found
   } else {
     // dx will have been read already from the grid
     output << "\tUsing dx as the x grid spacing\n";
@@ -29,11 +29,11 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   Rxy /= Lnorm;
   hthe /= Lnorm;
   sinty *= SQ(Lnorm) * Bnorm;
-  coords->dx /= SQ(Lnorm) * Bnorm;
+  coords->setDx(coords->dx() / (SQ(Lnorm) * Bnorm));
 
   Bpxy /= Bnorm;
   Btxy /= Bnorm;
-  coords->Bxy() /= Bnorm;
+  coords->setBxy(coords->Bxy() / Bnorm);
 
   // Calculate metric components
   std::string ptstr;

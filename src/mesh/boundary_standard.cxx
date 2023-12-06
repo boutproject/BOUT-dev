@@ -137,7 +137,7 @@ void BoundaryDirichlet::apply(Field2D& f, BoutReal t) {
   // cell to be val N.B. Only first guard cells (closest to the grid) should ever be used
 
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh == f.getMesh());
+  ASSERT1(mesh == f.getMesh())
   bndry->first();
 
   // Decide which generator to use
@@ -300,7 +300,7 @@ void BoundaryDirichlet::apply(Field3D& f, BoutReal t) {
   // cell to be val N.B. Only first guard cells (closest to the grid) should ever be used
 
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh == f.getMesh());
+  ASSERT1(mesh == f.getMesh())
   bndry->first();
 
   // Decide which generator to use
@@ -591,7 +591,7 @@ void BoundaryDirichlet::apply_ddt(Field2D& f) {
 
 void BoundaryDirichlet::apply_ddt(Field3D& f) {
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh == f.getMesh());
+  ASSERT1(mesh == f.getMesh())
   Field3D* dt = f.timeDeriv();
 
   for (bndry->first(); !bndry->isDone(); bndry->next()) {
@@ -622,7 +622,7 @@ void BoundaryDirichlet_O3::apply(Field2D& f, BoutReal t) {
   // cell to be val N.B. Only first guard cells (closest to the grid) should ever be used
 
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh == f.getMesh());
+  ASSERT1(mesh == f.getMesh())
   bndry->first();
 
   // Decide which generator to use
@@ -802,7 +802,7 @@ void BoundaryDirichlet_O3::apply(Field3D& f, BoutReal t) {
   // cell to be val N.B. Only first guard cells (closest to the grid) should ever be used
 
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh == f.getMesh());
+  ASSERT1(mesh == f.getMesh())
   bndry->first();
 
   // Decide which generator to use
@@ -1032,7 +1032,7 @@ void BoundaryDirichlet_O3::apply_ddt(Field2D& f) {
 void BoundaryDirichlet_O3::apply_ddt(Field3D& f) {
   Mesh* mesh = bndry->localmesh;
 
-  ASSERT1(mesh == f.getMesh());
+  ASSERT1(mesh == f.getMesh())
   Field3D* dt = f.timeDeriv();
 
   bndry->first();
@@ -1064,7 +1064,7 @@ void BoundaryDirichlet_O4::apply(Field2D& f, BoutReal t) {
   // cell to be val N.B. Only first guard cells (closest to the grid) should ever be used
 
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh == f.getMesh());
+  ASSERT1(mesh == f.getMesh())
   bndry->first();
 
   // Decide which generator to use
@@ -1259,7 +1259,7 @@ void BoundaryDirichlet_O4::apply(Field3D& f, BoutReal t) {
   // cell to be val N.B. Only first guard cells (closest to the grid) should ever be used
 
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh == f.getMesh());
+  ASSERT1(mesh == f.getMesh())
   bndry->first();
 
   // Decide which generator to use
@@ -1501,7 +1501,7 @@ void BoundaryDirichlet_O4::apply_ddt(Field2D& f) {
 
 void BoundaryDirichlet_O4::apply_ddt(Field3D& f) {
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh == f.getMesh());
+  ASSERT1(mesh == f.getMesh())
   Field3D* dt = f.timeDeriv();
   for (bndry->first(); !bndry->isDone(); bndry->next()) {
     for (int z = 0; z < mesh->LocalNz; z++) {
@@ -1542,7 +1542,7 @@ void BoundaryDirichlet_4thOrder::apply(Field2D& f) {
 
 void BoundaryDirichlet_4thOrder::apply(Field3D& f) {
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh == f.getMesh());
+  ASSERT1(mesh == f.getMesh())
   // Set (at 4th order) the value at the mid-point between the guard cell and the grid
   // cell to be val
   for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
@@ -1570,7 +1570,7 @@ void BoundaryDirichlet_4thOrder::apply_ddt(Field2D& f) {
 
 void BoundaryDirichlet_4thOrder::apply_ddt(Field3D& f) {
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh == f.getMesh());
+  ASSERT1(mesh == f.getMesh())
   Field3D* dt = f.timeDeriv();
   for (bndry->first(); !bndry->isDone(); bndry->next()) {
     for (int z = 0; z < mesh->LocalNz; z++) {
@@ -1596,7 +1596,7 @@ BoundaryOp* BoundaryNeumann_NonOrthogonal::clone(BoundaryRegion* region,
 void BoundaryNeumann_NonOrthogonal::apply(Field2D& f) {
 #if not(BOUT_USE_METRIC_3D)
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh == f.getMesh());
+  ASSERT1(mesh == f.getMesh())
   Coordinates* metric = f.getCoordinates();
 
   // Calculate derivatives for metric use
@@ -1618,7 +1618,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field2D& f) {
 
     if (bndry->bx != 0 && bndry->by == 0) {
       // x boundaries only
-      BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y);
+      BoutReal delta = bndry->bx * metric->dx()(bndry->x, bndry->y);
       f(bndry->x, bndry->y) =
           f(bndry->x - bndry->bx, bndry->y) + delta / g11shift * (val - xshift);
       if (bndry->bx == 2) {
@@ -1628,7 +1628,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field2D& f) {
     } else if (bndry->by != 0 && bndry->bx == 0) {
       // y boundaries only
       //   no need to shift this b/c we want parallel nuemann not theta
-      BoutReal delta = bndry->by * metric->dy(bndry->x, bndry->y);
+      BoutReal delta = bndry->by * metric->dy()(bndry->x, bndry->y);
       f(bndry->x, bndry->y) = f(bndry->x, bndry->y - bndry->by) + delta * val;
       if (bndry->width == 2) {
         f(bndry->x, bndry->y + bndry->by) =
@@ -1650,7 +1650,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field2D& f) {
 
 void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh == f.getMesh());
+  ASSERT1(mesh == f.getMesh())
   Coordinates* metric = f.getCoordinates();
 
   // Calculate derivatives for metric use
@@ -1685,7 +1685,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
                           + g13shift * dfdz(bndry->x - bndry->bx, bndry->y, z);
         if (bndry->bx != 0 && bndry->by == 0) {
           // x boundaries only
-          BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, z);
+          BoutReal delta = bndry->bx * metric->dx()(bndry->x, bndry->y, z);
           f(bndry->x, bndry->y, z) =
               f(bndry->x - bndry->bx, bndry->y, z) + delta / g11shift * (val - xshift);
           if (bndry->width == 2) {
@@ -1696,7 +1696,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
         } else if (bndry->by != 0 && bndry->bx == 0) {
           // y boundaries only
           //   no need to shift this b/c we want parallel nuemann not theta
-          BoutReal delta = bndry->by * metric->dy(bndry->x, bndry->y, z);
+          BoutReal delta = bndry->by * metric->dy()(bndry->x, bndry->y, z);
           f(bndry->x, bndry->y, z) = f(bndry->x, bndry->y - bndry->by, z) + delta * val;
           if (bndry->width == 2) {
             f(bndry->x, bndry->y + bndry->by, z) =
@@ -1736,7 +1736,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
 #if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     Coordinates* metric = f.getCoordinates();
 
     bndry->first();
@@ -1767,7 +1767,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
             if (fg) {
               val = fg->generate(Context(bndry, loc, t, mesh))
-                    * metric->dx(bndry->x, bndry->y);
+                    * metric->dx()(bndry->x, bndry->y);
             }
 
             f(bndry->x, bndry->y) = (4. * f(bndry->x - bndry->bx, bndry->y)
@@ -1793,7 +1793,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
             if (fg) {
               val = fg->generate(Context(bndry, loc, t, mesh))
-                    * metric->dx(bndry->x, bndry->y);
+                    * metric->dx()(bndry->x, bndry->y);
             }
 
             f(bndry->x - bndry->bx, bndry->y) =
@@ -1819,8 +1819,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
           // y boundaries
 
           for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
-            BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
-                             + bndry->by * metric->dy(bndry->x, bndry->y);
+            BoutReal delta = bndry->bx * metric->dx()(bndry->x, bndry->y)
+                             + bndry->by * metric->dy()(bndry->x, bndry->y);
 
             if (fg) {
               val = fg->generate(Context(bndry, loc, t, mesh));
@@ -1844,7 +1844,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
           for (; !bndry->isDone(); bndry->next1d()) {
             if (fg) {
               val = fg->generate(Context(bndry, loc, t, mesh))
-                    * metric->dy(bndry->x, bndry->y);
+                    * metric->dy()(bndry->x, bndry->y);
             }
             f(bndry->x, bndry->y) = (4. * f(bndry->x, bndry->y - bndry->by)
                                      - f(bndry->x, bndry->y - 2 * bndry->by) + 2. * val)
@@ -1870,7 +1870,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
             if (fg) {
               val = fg->generate(Context(bndry, loc, t, mesh))
-                    * metric->dy(bndry->x, bndry->y - bndry->by);
+                    * metric->dy()(bndry->x, bndry->y - bndry->by);
             }
             f(bndry->x, bndry->y - bndry->by) =
                 (4. * f(bndry->x, bndry->y - 2 * bndry->by)
@@ -1894,8 +1894,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
         if (bndry->bx != 0) {
           // x boundaries
           for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
-            BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
-                             + bndry->by * metric->dy(bndry->x, bndry->y);
+            BoutReal delta = bndry->bx * metric->dx()(bndry->x, bndry->y)
+                             + bndry->by * metric->dy()(bndry->x, bndry->y);
 
             if (fg) {
               val = fg->generate(Context(bndry, loc, t, mesh));
@@ -1915,8 +1915,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       // Non-staggered, standard case
 
       for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
-        BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
-                         + bndry->by * metric->dy(bndry->x, bndry->y);
+        BoutReal delta = bndry->bx * metric->dx()(bndry->x, bndry->y)
+                         + bndry->by * metric->dy()(bndry->x, bndry->y);
 
         if (fg) {
           val = fg->generate(Context(bndry, loc, t, mesh));
@@ -1940,7 +1940,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryNeumann::apply(Field3D & f, BoutReal t) {
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     Coordinates* metric = f.getCoordinates();
 
     bndry->first();
@@ -1970,7 +1970,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
             for (int zk = 0; zk < mesh->LocalNz; zk++) {
               if (fg) {
                 val = fg->generate(Context(bndry, zk, loc, t, mesh))
-                      * metric->dx(bndry->x, bndry->y, zk);
+                      * metric->dx()(bndry->x, bndry->y, zk);
               }
 
               f(bndry->x, bndry->y, zk) =
@@ -1999,7 +1999,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
             for (int zk = 0; zk < mesh->LocalNz; zk++) {
               if (fg) {
                 val = fg->generate(Context(bndry, zk, loc, t, mesh))
-                      * metric->dx(bndry->x - bndry->bx, bndry->y, zk);
+                      * metric->dx()(bndry->x - bndry->bx, bndry->y, zk);
               }
 
               f(bndry->x - bndry->bx, bndry->y, zk) =
@@ -2025,13 +2025,13 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
         if (bndry->by != 0) {
           for (; !bndry->isDone(); bndry->next1d()) {
 #if not(BOUT_USE_METRIC_3D)
-            BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
-                             + bndry->by * metric->dy(bndry->x, bndry->y);
+            BoutReal delta = bndry->bx * metric->dx()(bndry->x, bndry->y)
+                             + bndry->by * metric->dy()(bndry->x, bndry->y);
 #endif
             for (int zk = 0; zk < mesh->LocalNz; zk++) {
 #if BOUT_USE_METRIC_3D
-              BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
-                               + bndry->by * metric->dy(bndry->x, bndry->y, zk);
+              BoutReal delta = bndry->bx * metric->dx()(bndry->x, bndry->y, zk)
+                               + bndry->by * metric->dy()(bndry->x, bndry->y, zk);
 #endif
               if (fg) {
                 val = fg->generate(Context(bndry, zk, loc, t, mesh));
@@ -2055,7 +2055,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
             for (int zk = 0; zk < mesh->LocalNz; zk++) {
               if (fg) {
                 val = fg->generate(Context(bndry, zk, loc, t, mesh))
-                      * metric->dy(bndry->x, bndry->y, zk);
+                      * metric->dy()(bndry->x, bndry->y, zk);
               }
               f(bndry->x, bndry->y, zk) =
                   (4. * f(bndry->x, bndry->y - bndry->by, zk)
@@ -2083,7 +2083,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
             for (int zk = 0; zk < mesh->LocalNz; zk++) {
               if (fg) {
                 val = fg->generate(Context(bndry, zk, loc, t, mesh))
-                      * metric->dy(bndry->x, bndry->y - bndry->by, zk);
+                      * metric->dy()(bndry->x, bndry->y - bndry->by, zk);
               }
 
               f(bndry->x, bndry->y - bndry->by, zk) =
@@ -2111,13 +2111,13 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
           for (; !bndry->isDone(); bndry->next1d()) {
 #if not(BOUT_USE_METRIC_3D)
             int zk = 0;
-            BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
-                             + bndry->by * metric->dy(bndry->x, bndry->y, zk);
+            BoutReal delta = bndry->bx * metric->dx()(bndry->x, bndry->y, zk)
+                             + bndry->by * metric->dy()(bndry->x, bndry->y, zk);
 #endif
             for (int zk = 0; zk < mesh->LocalNz; zk++) {
 #if BOUT_USE_METRIC_3D
-              BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
-                               + bndry->by * metric->dy(bndry->x, bndry->y, zk);
+              BoutReal delta = bndry->bx * metric->dx()(bndry->x, bndry->y, zk)
+                               + bndry->by * metric->dy()(bndry->x, bndry->y, zk);
 #endif
               if (fg) {
                 val = fg->generate(Context(bndry, zk, loc, t, mesh));
@@ -2146,8 +2146,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
                               + mesh->GlobalY(bndry->y - bndry->by)); // the grid cell
 
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
-            BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
-                             + bndry->by * metric->dy(bndry->x, bndry->y, zk);
+            BoutReal delta = bndry->bx * metric->dx()(bndry->x, bndry->y, zk)
+                             + bndry->by * metric->dy()(bndry->x, bndry->y, zk);
             if (fg) {
               val = fg->generate(xnorm, TWOPI * ynorm,
                                  TWOPI * (zk - 0.5) / (mesh->LocalNz), t);
@@ -2168,11 +2168,11 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       for (; !bndry->isDone(); bndry->next1d()) {
 #if BOUT_USE_METRIC_3D
         for (int zk = 0; zk < mesh->LocalNz; zk++) {
-          BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
-                           + bndry->by * metric->dy(bndry->x, bndry->y, zk);
+          BoutReal delta = bndry->bx * metric->dx()(bndry->x, bndry->y, zk)
+                           + bndry->by * metric->dy()(bndry->x, bndry->y, zk);
 #else
-      BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
-                       + bndry->by * metric->dy(bndry->x, bndry->y);
+      BoutReal delta = bndry->bx * metric->dx()(bndry->x, bndry->y)
+                       + bndry->by * metric->dy()(bndry->x, bndry->y);
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
 #endif
           if (fg) {
@@ -2199,7 +2199,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryNeumann::apply_ddt(Field3D & f) {
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     Field3D* dt = f.timeDeriv();
     for (bndry->first(); !bndry->isDone(); bndry->next()) {
       for (int z = 0; z < mesh->LocalNz; z++) {
@@ -2225,7 +2225,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   void BoundaryNeumann_O4::apply(Field2D & f, BoutReal t) {
 #if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
 
     // Set (at 4th order) the value at the mid-point between the guard cell and the grid
     // cell to be val N.B. Only first guard cells (closest to the grid) should ever be
@@ -2250,8 +2250,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       Coordinates* coords = f.getCoordinates();
 
       for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
-        BoutReal delta = bndry->bx * coords->dx(bndry->x, bndry->y)
-                         + bndry->by * coords->dy(bndry->x, bndry->y);
+        BoutReal delta = bndry->bx * coords->dx()(bndry->x, bndry->y)
+                         + bndry->by * coords->dy()(bndry->x, bndry->y);
 
         if (fg) {
           val = fg->generate(Context(bndry, loc, t, mesh));
@@ -2281,7 +2281,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryNeumann_O4::apply(Field3D & f, BoutReal t) {
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     bndry->first();
 
     // Decide which generator to use
@@ -2300,8 +2300,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       Coordinates* coords = f.getCoordinates();
       for (; !bndry->isDone(); bndry->next1d()) {
         for (int zk = 0; zk < mesh->LocalNz; zk++) {
-          BoutReal delta = bndry->bx * coords->dx(bndry->x, bndry->y, zk)
-                           + bndry->by * coords->dy(bndry->x, bndry->y, zk);
+          BoutReal delta = bndry->bx * coords->dx()(bndry->x, bndry->y, zk)
+                           + bndry->by * coords->dy()(bndry->x, bndry->y, zk);
           if (fg) {
             val = fg->generate(Context(bndry, zk, loc, t, mesh));
           }
@@ -2332,7 +2332,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryNeumann_O4::apply_ddt(Field3D & f) {
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     Field3D* dt = f.timeDeriv();
     for (bndry->first(); !bndry->isDone(); bndry->next()) {
       for (int z = 0; z < mesh->LocalNz; z++) {
@@ -2361,8 +2361,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     // grid cell to be val This sets the value of the co-ordinate derivative, i.e. DDX/DDY
     // not Grad_par/Grad_perp.x
     for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
-      BoutReal delta = -(bndry->bx * metric->dx(bndry->x, bndry->y)
-                         + bndry->by * metric->dy(bndry->x, bndry->y));
+      BoutReal delta = -(bndry->bx * metric->dx()(bndry->x, bndry->y)
+                         + bndry->by * metric->dy()(bndry->x, bndry->y));
       f(bndry->x, bndry->y) =
           12. * delta / 11. * val
           + 17. / 22. * f(bndry->x - bndry->bx, bndry->y - bndry->by)
@@ -2388,15 +2388,15 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryNeumann_4thOrder::apply(Field3D & f) {
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     Coordinates* metric = f.getCoordinates();
     // Set (at 4th order) the gradient at the mid-point between the guard cell and the
     // grid cell to be val This sets the value of the co-ordinate derivative, i.e. DDX/DDY
     // not Grad_par/Grad_perp.x
     for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
       for (int z = 0; z < mesh->LocalNz; z++) {
-        BoutReal delta = -(bndry->bx * metric->dx(bndry->x, bndry->y, z)
-                           + bndry->by * metric->dy(bndry->x, bndry->y, z));
+        BoutReal delta = -(bndry->bx * metric->dx()(bndry->x, bndry->y, z)
+                           + bndry->by * metric->dy()(bndry->x, bndry->y, z));
         f(bndry->x, bndry->y, z) =
             12. * delta / 11. * val
             + 17. / 22. * f(bndry->x - bndry->bx, bndry->y - bndry->by, z)
@@ -2424,7 +2424,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryNeumann_4thOrder::apply_ddt(Field3D & f) {
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     Field3D* dt = f.timeDeriv();
     for (bndry->first(); !bndry->isDone(); bndry->next()) {
       for (int z = 0; z < mesh->LocalNz; z++) {
@@ -2462,7 +2462,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryNeumannPar::apply(Field3D & f) {
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     Coordinates* metric = f.getCoordinates();
     for (bndry->first(); !bndry->isDone(); bndry->next()) {
       for (int z = 0; z < mesh->LocalNz; z++) {
@@ -2529,7 +2529,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryRobin::apply(Field3D & f) {
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     if (fabs(bval) < 1.e-12) {
       for (bndry->first(); !bndry->isDone(); bndry->next()) {
         for (int z = 0; z < mesh->LocalNz; z++) {
@@ -2564,7 +2564,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryConstGradient::apply(Field3D & f) {
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     for (bndry->first(); !bndry->isDone(); bndry->next()) {
       for (int z = 0; z < mesh->LocalNz; z++) {
         f(bndry->x, bndry->y, z) =
@@ -2610,10 +2610,10 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     for (bndry->first(); !bndry->isDone(); bndry->nextY()) {
       int x = bndry->x;
       int y = bndry->y;
-      BoutReal g = (f(x - bx, y) - f(x - 2 * bx, y)) / metric->dx(x - bx, y);
+      BoutReal g = (f(x - bx, y) - f(x - 2 * bx, y)) / metric->dx()(x - bx, y);
       // Loop in X towards edge of domain
       do {
-        f(x, y) = f(x - bx, y) + g * metric->dx(x, y);
+        f(x, y) = f(x - bx, y) + g * metric->dx()(x, y);
         bndry->nextX();
         x = bndry->x;
         y = bndry->y;
@@ -2628,7 +2628,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   void BoundaryZeroLaplace::apply(Field3D & f) {
 #if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     int ncz = mesh->LocalNz;
 
     Coordinates* metric = f.getCoordinates();
@@ -2666,7 +2666,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
         // kz != 0 solution
         BoutReal coef =
-            -1.0 * sqrt(metric->g33()(x, y) / metric->g11()(x, y)) * metric->dx(x, y);
+            -1.0 * sqrt(metric->g33()(x, y) / metric->g11()(x, y)) * metric->dx()(x, y);
         for (int jz = 1; jz <= ncz / 2; jz++) {
           BoutReal kwave =
               jz * 2.0 * PI / metric->zlength()(x, y); // wavenumber in [rad^-1]
@@ -2713,10 +2713,10 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     for (bndry->first(); !bndry->isDone(); bndry->nextY()) {
       int x = bndry->x;
       int y = bndry->y;
-      BoutReal g = (f(x - bx, y) - f(x - 2 * bx, y)) / metric->dx(x - bx, y);
+      BoutReal g = (f(x - bx, y) - f(x - 2 * bx, y)) / metric->dx()(x - bx, y);
       // Loop in X towards edge of domain
       do {
-        f(x, y) = f(x - bx, y) + g * metric->dx(x, y);
+        f(x, y) = f(x - bx, y) + g * metric->dx()(x, y);
         bndry->nextX();
         x = bndry->x;
         y = bndry->y;
@@ -2731,10 +2731,10 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   void BoundaryZeroLaplace2::apply(Field3D & f) {
 #if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     const int ncz = mesh->LocalNz;
 
-    ASSERT0(ncz % 2 == 0); // Allocation assumes even number
+    ASSERT0(ncz % 2 == 0) // Allocation assumes even number
 
     // allocate memory
     Array<dcomplex> c0(ncz / 2 + 1), c1(ncz / 2 + 1), c2(ncz / 2 + 1);
@@ -2840,7 +2840,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     }
 
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     Coordinates* metric = f.getCoordinates();
 
     int ncz = mesh->LocalNz;
@@ -2858,7 +2858,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       rfft(f(x - bx, y), ncz, c0.begin());
       rfft(f(x - 2 * bx, y), ncz, c1.begin());
       rfft(f(x - 3 * bx, y), ncz, c2.begin());
-      dcomplex k0lin = (c1[0] - c0[0]) / metric->dx(x - bx, y); // for kz=0 solution
+      dcomplex k0lin = (c1[0] - c0[0]) / metric->dx()(x - bx, y); // for kz=0 solution
 
       // Calculate Delp2 on point MXG+1 (and put into c1)
       for (int jz = 0; jz <= ncz / 2; jz++) {
@@ -2876,12 +2876,12 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       // Loop in X towards edge of domain
       do {
         // kz = 0 solution
-        xpos -= metric->dx(x, y);
+        xpos -= metric->dx()(x, y);
         c2[0] =
             c0[0] + k0lin * xpos + 0.5 * c1[0] * xpos * xpos / metric->g11()(x - bx, y);
         // kz != 0 solution
         BoutReal coef = -1.0 * sqrt(metric->g33()(x - bx, y) / metric->g11()(x - bx, y))
-                        * metric->dx(x - bx, y);
+                        * metric->dx()(x - bx, y);
         for (int jz = 1; jz <= ncz / 2; jz++) {
           BoutReal kwave =
               jz * 2.0 * PI / getUniform(metric->zlength()); // wavenumber in [rad^-1]
@@ -2920,7 +2920,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   void BoundaryDivCurl::apply(Vector3D & var) {
 #if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == var.getMesh());
+    ASSERT1(mesh == var.getMesh())
 
     int jx, jy, jz, jzp, jzm;
     BoutReal tmp;
@@ -2949,65 +2949,68 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
         // dB_x / dy
         tmp = (var.x(jx - 1, jy + 1, jz) - var.x(jx - 1, jy - 1, jz))
-              / (metric->dy(jx - 1, jy - 1) + metric->dy(jx - 1, jy));
+              / (metric->dy()(jx - 1, jy - 1) + metric->dy()(jx - 1, jy));
 
         var.y(jx, jy, jz) = var.y(jx - 2, jy, jz)
-                            + (metric->dx(jx - 2, jy) + metric->dx(jx - 1, jy)) * tmp;
+                            + (metric->dx()(jx - 2, jy) + metric->dx()(jx - 1, jy)) * tmp;
         if (mesh->xstart == 2) {
           // 4th order to get last point
-          var.y(jx + 1, jy, jz) = var.y(jx - 3, jy, jz) + 4. * metric->dx(jx, jy) * tmp;
+          var.y(jx + 1, jy, jz) = var.y(jx - 3, jy, jz) + 4. * metric->dx()(jx, jy) * tmp;
         }
 
         // dB_z / dx = dB_x / dz
 
         tmp = (var.x(jx - 1, jy, jzp) - var.x(jx - 1, jy, jzm))
-              / (2. * metric->dz(jx - 1, jy));
+              / (2. * metric->dz()(jx - 1, jy));
 
         var.z(jx, jy, jz) = var.z(jx - 2, jy, jz)
-                            + (metric->dx(jx - 2, jy) + metric->dx(jx - 1, jy)) * tmp;
+                            + (metric->dx()(jx - 2, jy) + metric->dx()(jx - 1, jy)) * tmp;
         if (mesh->xstart == 2) {
-          var.z(jx + 1, jy, jz) = var.z(jx - 3, jy, jz) + 4. * metric->dx(jx, jy) * tmp;
+          var.z(jx + 1, jy, jz) = var.z(jx - 3, jy, jz) + 4. * metric->dx()(jx, jy) * tmp;
         }
 
         // d/dx( Jmetric->g11 B_x ) = - d/dx( Jmetric->g12 B_y + Jmetric->g13 B_z)
         //                    - d/dy( JB^y ) - d/dz( JB^z )
 
-        tmp =
-            -(metric->J()(jx, jy) * metric->g12()(jx, jy) * var.y(jx, jy, jz)
-              + metric->J()(jx, jy) * metric->g13()(jx, jy) * var.z(jx, jy, jz)
-              - metric->J()(jx - 2, jy) * metric->g12()(jx - 2, jy) * var.y(jx - 2, jy, jz)
-              + metric->J()(jx - 2, jy) * metric->g13()(jx - 2, jy) * var.z(jx - 2, jy, jz))
-            / (metric->dx(jx - 2, jy)
-               + metric->dx(jx - 1, jy)); // First term (d/dx) using vals calculated above
-        tmp -= (metric->J()(jx - 1, jy + 1) * metric->g12()(jx - 1, jy + 1)
-                    * var.x(jx - 1, jy + 1, jz)
-                - metric->J()(jx - 1, jy - 1) * metric->g12()(jx - 1, jy - 1)
-                      * var.x(jx - 1, jy - 1, jz)
-                + metric->J()(jx - 1, jy + 1) * metric->g22()(jx - 1, jy + 1)
-                      * var.y(jx - 1, jy + 1, jz)
-                - metric->J()(jx - 1, jy - 1) * metric->g22()(jx - 1, jy - 1)
-                      * var.y(jx - 1, jy - 1, jz)
-                + metric->J()(jx - 1, jy + 1) * metric->g23()(jx - 1, jy + 1)
-                      * var.z(jx - 1, jy + 1, jz)
-                - metric->J()(jx - 1, jy - 1) * metric->g23()(jx - 1, jy - 1)
-                      * var.z(jx - 1, jy - 1, jz))
-               / (metric->dy(jx - 1, jy - 1) + metric->dy(jx - 1, jy)); // second (d/dy)
+        tmp = -(metric->J()(jx, jy) * metric->g12()(jx, jy) * var.y(jx, jy, jz)
+                + metric->J()(jx, jy) * metric->g13()(jx, jy) * var.z(jx, jy, jz)
+                - metric->J()(jx - 2, jy) * metric->g12()(jx - 2, jy)
+                      * var.y(jx - 2, jy, jz)
+                + metric->J()(jx - 2, jy) * metric->g13()(jx - 2, jy)
+                      * var.z(jx - 2, jy, jz))
+              / (metric->dx()(jx - 2, jy)
+                 + metric->dx()(jx - 1,
+                                jy)); // First term (d/dx) using vals calculated above
+        tmp -=
+            (metric->J()(jx - 1, jy + 1) * metric->g12()(jx - 1, jy + 1)
+                 * var.x(jx - 1, jy + 1, jz)
+             - metric->J()(jx - 1, jy - 1) * metric->g12()(jx - 1, jy - 1)
+                   * var.x(jx - 1, jy - 1, jz)
+             + metric->J()(jx - 1, jy + 1) * metric->g22()(jx - 1, jy + 1)
+                   * var.y(jx - 1, jy + 1, jz)
+             - metric->J()(jx - 1, jy - 1) * metric->g22()(jx - 1, jy - 1)
+                   * var.y(jx - 1, jy - 1, jz)
+             + metric->J()(jx - 1, jy + 1) * metric->g23()(jx - 1, jy + 1)
+                   * var.z(jx - 1, jy + 1, jz)
+             - metric->J()(jx - 1, jy - 1) * metric->g23()(jx - 1, jy - 1)
+                   * var.z(jx - 1, jy - 1, jz))
+            / (metric->dy()(jx - 1, jy - 1) + metric->dy()(jx - 1, jy)); // second (d/dy)
         tmp -= (metric->J()(jx - 1, jy) * metric->g13()(jx - 1, jy)
                     * (var.x(jx - 1, jy, jzp) - var.x(jx - 1, jy, jzm))
                 + metric->J()(jx - 1, jy) * metric->g23()(jx - 1, jy)
                       * (var.y(jx - 1, jy, jzp) - var.y(jx - 1, jy, jzm))
                 + metric->J()(jx - 1, jy) * metric->g33()(jx - 1, jy)
                       * (var.z(jx - 1, jy, jzp) - var.z(jx - 1, jy, jzm)))
-               / (2. * metric->dz(jx - 1, jy));
+               / (2. * metric->dz()(jx - 1, jy));
 
         var.x(jx, jy, jz) =
             (metric->J()(jx - 2, jy) * metric->g11()(jx - 2, jy) * var.x(jx - 2, jy, jz)
-             + (metric->dx(jx - 2, jy) + metric->dx(jx - 1, jy)) * tmp)
+             + (metric->dx()(jx - 2, jy) + metric->dx()(jx - 1, jy)) * tmp)
             / metric->J()(jx, jy) * metric->g11()(jx, jy);
         if (mesh->xstart == 2) {
           var.x(jx + 1, jy, jz) =
               (metric->J()(jx - 3, jy) * metric->g11()(jx - 3, jy) * var.x(jx - 3, jy, jz)
-               + 4. * metric->dx(jx, jy) * tmp)
+               + 4. * metric->dx()(jx, jy) * tmp)
               / metric->J()(jx + 1, jy) * metric->g11()(jx + 1, jy);
         }
       }
@@ -3067,7 +3070,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     // used
 
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     bndry->first();
 
     // Check for staggered grids
@@ -3171,7 +3174,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     // order.
 
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     bndry->first();
 
     // Check for staggered grids
@@ -3297,7 +3300,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryFree_O2::apply_ddt(Field3D & f) {
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     Field3D* dt = f.timeDeriv();
     for (bndry->first(); !bndry->isDone(); bndry->next()) {
       for (int z = 0; z < mesh->LocalNz; z++) {
@@ -3322,7 +3325,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   void BoundaryFree_O3::apply(Field2D & f) {
 
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     bndry->first();
 
     // Check for staggered grids
@@ -3433,7 +3436,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     // order.
 
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     bndry->first();
 
     // Check for staggered grids
@@ -3566,7 +3569,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryFree_O3::apply_ddt(Field3D & f) {
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
     Field3D* dt = f.timeDeriv();
     for (bndry->first(); !bndry->isDone(); bndry->next()) {
       for (int z = 0; z < mesh->LocalNz; z++) {
@@ -3621,7 +3624,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     TRACE("BoundaryRelax::apply_ddt(Field3D)");
 
     Mesh* mesh = bndry->localmesh;
-    ASSERT1(mesh == f.getMesh());
+    ASSERT1(mesh == f.getMesh())
 
     // Make a copy of f
     Field3D g = f; // NOTE: This is not very efficient... copying entire field
@@ -3698,7 +3701,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   void BoundaryToFieldAligned::apply(Field2D & f, BoutReal t) { op->apply(f, t); }
 
   void BoundaryToFieldAligned::apply(Field3D & f, BoutReal t) {
-    ASSERT1(bndry->localmesh == f.getMesh());
+    ASSERT1(bndry->localmesh == f.getMesh())
 
     // NOTE: This is not very efficient... updating entire field
     f = fromFieldAligned(f);
@@ -3717,7 +3720,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   void BoundaryToFieldAligned::apply_ddt(Field2D & f) { op->apply_ddt(f); }
 
   void BoundaryToFieldAligned::apply_ddt(Field3D & f) {
-    ASSERT1(bndry->localmesh == f.getMesh());
+    ASSERT1(bndry->localmesh == f.getMesh())
 
     f = fromFieldAligned(f);
     ddt(f) = fromFieldAligned(ddt(f));
@@ -3741,7 +3744,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   void BoundaryFromFieldAligned::apply(Field2D & f, BoutReal t) { op->apply(f, t); }
 
   void BoundaryFromFieldAligned::apply(Field3D & f, BoutReal t) {
-    ASSERT1(bndry->localmesh == f.getMesh());
+    ASSERT1(bndry->localmesh == f.getMesh())
 
     // NOTE: This is not very efficient... shifting entire field
     f = toFieldAligned(f);
@@ -3760,7 +3763,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   void BoundaryFromFieldAligned::apply_ddt(Field2D & f) { op->apply_ddt(f); }
 
   void BoundaryFromFieldAligned::apply_ddt(Field3D & f) {
-    ASSERT1(bndry->localmesh == f.getMesh());
+    ASSERT1(bndry->localmesh == f.getMesh())
 
     f = toFieldAligned(f);
     ddt(f) = toFieldAligned(ddt(f));

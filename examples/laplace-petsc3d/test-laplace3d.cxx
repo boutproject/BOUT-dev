@@ -41,7 +41,7 @@ Field3D this_Laplace_perp(const Field3D& f) {
          + coords->G3 * DDZ(f) + coords->g11 * D2DX2(f)
          + (coords->g22 - 1. / coords->g_22) * D2DY2(f) + coords->g33 * D2DZ2(f)
          + 2.
-               * (coords->g12 * DDX(dfdy) / coords->dy + coords->g13 * D2DXDZ(f)
+               * (coords->g12 * DDX(dfdy) / coords->dy() + coords->g13 * D2DXDZ(f)
                   + coords->g23 * D2DYDZ(f));
 }
 

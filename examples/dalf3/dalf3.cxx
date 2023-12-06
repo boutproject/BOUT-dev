@@ -248,7 +248,7 @@ protected:
     Btxy /= Bnorm;
     B0 /= Bnorm;
 
-    coord->dx /= rho_s * rho_s * Bnorm;
+    coord->setDx(coord->dx() / (rho_s * rho_s * Bnorm));
 
     ///////////////////////////////////////////////////
     // CALCULATE METRICS

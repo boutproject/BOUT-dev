@@ -91,7 +91,7 @@ void BoundaryOpPar_dirichlet::apply(Field3D& f, BoutReal t) {
 
     // Scale the field and normalise to the desired value
     BoutReal y_prime = bndry->length;
-    BoutReal f2 = (f(x, y, z) - value) * (coord.dy(x, y, z) - y_prime) / y_prime;
+    BoutReal f2 = (f(x, y, z) - value) * (coord.dy()(x, y, z) - y_prime) / y_prime;
 
     f_next(x, y + bndry->dir, z) = value - f2;
   }
@@ -139,9 +139,9 @@ void BoundaryOpPar_dirichlet_O3::apply(Field3D& f, BoutReal t) {
     BoutReal fb = getValue(*bndry, t);
     BoutReal f1 = f_prev(x, y - bndry->dir, z);
     BoutReal f2 = f(x, y, z);
-    BoutReal l1 = coord.dy(x, y, z);
+    BoutReal l1 = coord.dy()(x, y, z);
     BoutReal l2 = bndry->length;
-    BoutReal l3 = coord.dy(x, y, z) - l2;
+    BoutReal l3 = coord.dy()(x, y, z) - l2;
 
     BoutReal denom = (l1 * l1 * l2 + l1 * l2 * l2);
     BoutReal term1 = (l2 * l2 * l3 + l2 * l3 * l3);
@@ -195,7 +195,7 @@ void BoundaryOpPar_dirichlet_interp::apply(Field3D& f, BoutReal t) {
     BoutReal fs = getValue(*bndry, t);
 
     // Scale the field and normalise to the desired value
-    BoutReal dy = coord.dy(x, y, z);
+    BoutReal dy = coord.dy()(x, y, z);
     BoutReal s = bndry->length * dy;
 
     f_next(x, y + bndry->dir, z) =
@@ -245,7 +245,7 @@ void BoundaryOpPar_neumann::apply(Field3D& f, BoutReal t) {
 
     // Generate the boundary value
     BoutReal value = getValue(x, y, z, t);
-    BoutReal dy = coord.dy(x, y, z);
+    BoutReal dy = coord.dy()(x, y, z);
 
     f_next(x, y + bndry->dir, z) = f(x, y, z) + bndry->dir * value * dy;
   }

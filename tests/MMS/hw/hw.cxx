@@ -39,12 +39,12 @@ protected:
 
     /*this assumes equidistant grid*/
     int nguard = mesh->xstart;
-    mesh->getCoordinates()->dx = Lx / (mesh->GlobalNx - 2 * nguard);
-    mesh->getCoordinates()->dz = TWOPI * Lx / (mesh->LocalNz);
+    mesh->getCoordinates()->setDx(Lx / (mesh->GlobalNx - 2 * nguard));
+    mesh->getCoordinates()->setDz(TWOPI * Lx / (mesh->LocalNz));
     /////
 
-    SOLVE_FOR2(n, vort);
-    SAVE_REPEAT(phi);
+    SOLVE_FOR2(n, vort)
+    SAVE_REPEAT(phi)
 
     phiSolver = Laplacian::create();
     phi = 0.; // Starting phi
