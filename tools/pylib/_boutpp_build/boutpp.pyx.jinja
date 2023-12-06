@@ -828,7 +828,7 @@ cdef class Coordinates:
     """
     cdef c.Coordinates * cobj
     cdef c.bool isSelfOwned
-    cdef public {{ metric_field }} dx, dy, dz
+    cdef {{ metric_field }} dx, dy, dz
     cdef {{ metric_field }} J
     cdef {{ metric_field }} Bxy
     cdef {{ metric_field }} g11, g22, g33, g12, g13, g23
@@ -845,7 +845,7 @@ cdef class Coordinates:
         self.isSelfOwned = False
 
     def _setmembers(self):
-{% for f in "dx", "dy", "dz", "ShiftTorsion", "IntShiftTorsion" %}
+{% for f in "ShiftTorsion", "IntShiftTorsion" %}
         self.{{f}} = {{ metric_field.fdd }}FromPtr(&self.cobj.{{f}})
 {% endfor %}
 
