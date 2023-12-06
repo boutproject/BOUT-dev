@@ -159,7 +159,8 @@ Field3D D2DX2(const Field3D& f, CELL_LOC outloc, const std::string& method,
 
   if (coords->non_uniform) {
     // Correction for non-uniform f.getMesh()
-    result += coords->d1_dx * bout::derivatives::index::DDX(f, outloc, "DEFAULT", region)
+    result += coords->d1_dx()
+              * bout::derivatives::index::DDX(f, outloc, "DEFAULT", region)
               / coords->dx();
   }
 
@@ -178,7 +179,8 @@ Coordinates::FieldMetric D2DX2(const Field2D& f, CELL_LOC outloc,
 
   if (coords->non_uniform) {
     // Correction for non-uniform f.getMesh()
-    result += coords->d1_dx * bout::derivatives::index::DDX(f, outloc, "DEFAULT", region)
+    result += coords->d1_dx()
+              * bout::derivatives::index::DDX(f, outloc, "DEFAULT", region)
               / coords->dx();
   }
 
@@ -196,7 +198,8 @@ Field3D D2DY2(const Field3D& f, CELL_LOC outloc, const std::string& method,
 
   if (coords->non_uniform) {
     // Correction for non-uniform f.getMesh()
-    result += coords->d1_dy * bout::derivatives::index::DDY(f, outloc, "DEFAULT", region)
+    result += coords->d1_dy()
+              * bout::derivatives::index::DDY(f, outloc, "DEFAULT", region)
               / coords->dy();
   }
 
@@ -214,7 +217,8 @@ Coordinates::FieldMetric D2DY2(const Field2D& f, CELL_LOC outloc,
       bout::derivatives::index::D2DY2(f, outloc, method, region) / SQ(coords->dy());
   if (coords->non_uniform) {
     // Correction for non-uniform f.getMesh()
-    result += coords->d1_dy * bout::derivatives::index::DDY(f, outloc, "DEFAULT", region)
+    result += coords->d1_dy()
+              * bout::derivatives::index::DDY(f, outloc, "DEFAULT", region)
               / coords->dy();
   }
 

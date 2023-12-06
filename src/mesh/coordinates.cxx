@@ -299,9 +299,9 @@ Coordinates::Coordinates(Mesh* mesh, const FieldMetric& dx, const FieldMetric& d
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
-    : dx_(1., mesh), dy_(1., mesh), dz_(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
-      ShiftTorsion(mesh), IntShiftTorsion(mesh), localmesh(mesh), location(loc),
-      differential_operators(mesh->getDifferentialOperators()),
+    : dx_(1., mesh), dy_(1., mesh), dz_(1., mesh), d1_dx_(mesh), d1_dy_(mesh),
+      d1_dz_(mesh), ShiftTorsion(mesh), IntShiftTorsion(mesh), localmesh(mesh),
+      location(loc), differential_operators(mesh->getDifferentialOperators()),
       geometry(Geometry(mesh, differential_operators)) {
 
   if (options == nullptr) {
@@ -693,58 +693,59 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
   if (localmesh->get(d2x, "d2x" + suffix, 0.0, false, location) != 0) {
     output_warn.write("\tWARNING: differencing quantity 'd2x' not found. "
                       "Calculating from dx\n");
-    d1_dx = bout::derivatives::index::DDX(1. / dx()); // d/di(1/dx)
+    d1_dx_ = bout::derivatives::index::DDX(1. / dx()); // d/di(1/dx)
 
-    communicate(d1_dx);
-    d1_dx = localmesh->interpolateAndExtrapolate(d1_dx, location, true, true, true,
-                                                 transform.get());
+    communicate(d1_dx_);
+    d1_dx_ = localmesh->interpolateAndExtrapolate(d1_dx_, location, true, true, true,
+                                                  transform.get());
   } else {
     d2x.setLocation(location);
     // set boundary cells if necessary
     d2x = localmesh->interpolateAndExtrapolate(d2x, location, extrapolate_x,
                                                extrapolate_y, false, transform.get());
 
-    d1_dx = -d2x / (dx() * dx());
+    d1_dx_ = -d2x / (dx() * dx());
   }
 
   if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location) != 0) {
     output_warn.write("\tWARNING: differencing quantity 'd2y' not found. "
                       "Calculating from dy\n");
-    d1_dy = bout::derivatives::index::DDY(1. / dy()); // d/di(1/dy)
+    d1_dy_ = bout::derivatives::index::DDY(1. / dy()); // d/di(1/dy)
 
-    communicate(d1_dy);
-    d1_dy = localmesh->interpolateAndExtrapolate(d1_dy, location, true, true, true,
-                                                 transform.get());
+    communicate(d1_dy_);
+    d1_dy_ = localmesh->interpolateAndExtrapolate(d1_dy_, location, true, true, true,
+                                                  transform.get());
   } else {
     d2y.setLocation(location);
     // set boundary cells if necessary
     d2y = localmesh->interpolateAndExtrapolate(d2y, location, extrapolate_x,
                                                extrapolate_y, false, transform.get());
 
-    d1_dy = -d2y / (dy() * dy());
+    d1_dy_ = -d2y / (dy() * dy());
   }
 
 #if BOUT_USE_METRIC_3D
   if (localmesh->get(d2z, "d2z" + suffix, 0.0, false)) {
     output_warn.write("\tWARNING: differencing quantity 'd2z' not found. "
                       "Calculating from dz\n");
-    d1_dz = bout::derivatives::index::DDZ(1. / dz());
-    communicate(d1_dz);
-    d1_dz = localmesh->interpolateAndExtrapolate(d1_dz, location, true, true, true,
-                                                 transform.get());
+    d1_dz_ = bout::derivatives::index::DDZ(1. / dz());
+    communicate(d1_dz_);
+    d1_dz_ = localmesh->interpolateAndExtrapolate(d1_dz_, location, true, true, true,
+                                                  transform.get());
   } else {
     d2z.setLocation(location);
     // set boundary cells if necessary
     d2z = localmesh->interpolateAndExtrapolate(d2z, location, extrapolate_x,
                                                extrapolate_y, false, transform.get());
 
-    d1_dz = -d2z / (dz() * dz());
+    d1_dz_ = -d2z / (dz() * dz());
   }
 #else
-  d1_dz = 0;
+  d1_dz_ = 0;
 #endif
 
-  communicate(d1_dx, d1_dy, d1_dz);
+  auto tmp = d1_dx(); // TODO: There must be a better way than this!
+  communicate(tmp, d1_dy(), d1_dz());
 }
 
 void Coordinates::calculateCommunicateAndExtrapolateChristoffelSymbols() {
@@ -1367,6 +1368,14 @@ void Coordinates::setDy(FieldMetric dy) { dy_ = dy; }
 void Coordinates::setDz(FieldMetric dz) { dz_ = dz; }
 
 void Coordinates::setDy(BoutReal value, int x, int y) { dy_(x, y) = value; }
+
+void Coordinates::setD1_dx(FieldMetric d1_dx) { d1_dx_ = d1_dx; }
+void Coordinates::setD1_dy(FieldMetric d1_dy) { d1_dy_ = d1_dy; }
+void Coordinates::setD1_dz(FieldMetric d1_dz) { d1_dz_ = d1_dz; }
+
+const FieldMetric& Coordinates::d1_dx() const { return d1_dx_; }
+const FieldMetric& Coordinates::d1_dy() const { return d1_dy_; }
+const FieldMetric& Coordinates::d1_dz() const { return d1_dz_; }
 
 void Coordinates::setContravariantMetricTensor(MetricTensor metric_tensor,
                                                const std::string& region,
