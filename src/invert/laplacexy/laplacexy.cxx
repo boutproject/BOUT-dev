@@ -1014,8 +1014,8 @@ void LaplaceXY::setMatrixElementsFiniteDifference(const Field2D& A, const Field2
   const Field2D g_22_2D = DC(coords->g_22);
   const Field2D g22_2D = DC(coords->g22);
   const Field2D g12_2D = DC(coords->g12);
-  const Field2D d1_dx_2D = DC(coords->d1_dx);
-  const Field2D d1_dy_2D = DC(coords->d1_dy);
+  const Field2D d1_dx_2D = DC(coords->d1_dx());
+  const Field2D d1_dy_2D = DC(coords->d1_dy());
   const Field2D dx_2D = DC(coords->dx());
   const Field2D dy_2D = DC(coords->dy());
 

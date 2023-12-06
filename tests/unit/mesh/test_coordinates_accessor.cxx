@@ -88,7 +88,9 @@ TEST_F(CoordinatesAccessorTest, ClearBoth) {
   coords.setG2(0.2);
   coords.setG3(0.2);
   coords.non_uniform = true;
-  coords.d1_dx = coords.d1_dy = coords.d1_dz = 0.1;
+  coords.setD1_dx(0.1);
+  coords.setD1_dy(0.1);
+  coords.setD1_dz(0.1);
 #if BOUT_USE_METRIC_3D
   coords.Bxy.splitParallelSlices();
   coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
@@ -130,7 +132,9 @@ TEST_F(CoordinatesAccessorTest, ClearOneTwo) {
   coords.setG2(0.2);
   coords.setG3(0.2);
   coords.non_uniform = true;
-  coords.d1_dx = coords.d1_dy = coords.d1_dz = 0.1;
+  coords.setD1_dx(0.1);
+  coords.setD1_dy(0.1);
+  coords.setD1_dz(0.1);
 #if BOUT_USE_METRIC_3D
   coords.Bxy.splitParallelSlices();
   coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
@@ -174,7 +178,9 @@ TEST_F(CoordinatesAccessorTest, ClearTwoOneNone) {
   coords.setG2(0.2);
   coords.setG3(0.2);
   coords.non_uniform = true;
-  coords.d1_dx = coords.d1_dy = coords.d1_dz = 0.1;
+  coords.setD1_dx(0.1);
+  coords.setD1_dy(0.1);
+  coords.setD1_dz(0.1);
 #if BOUT_USE_METRIC_3D
   coords.Bxy.splitParallelSlices();
   coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
