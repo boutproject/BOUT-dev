@@ -19,10 +19,10 @@ namespace bout {
 class OptionsADIOS : public OptionsIO {
 public:
   OptionsADIOS() {}
-  explicit OptionsADIOS(
-      const std::string& filename [[maybe_unused]],
-      [[maybe_unused]] bout::OptionsIO::FileMode mode = bout::OptionsIO::FileMode::replace,
-      [[maybe_unused]] bool singleWriteFile = false) {}
+  explicit OptionsADIOS(const std::string& filename [[maybe_unused]],
+                        [[maybe_unused]] bout::OptionsIO::FileMode mode =
+                            bout::OptionsIO::FileMode::replace,
+                        [[maybe_unused]] bool singleWriteFile = false) {}
   OptionsADIOS(const OptionsADIOS&) = delete;
   OptionsADIOS(OptionsADIOS&&) noexcept = default;
   ~OptionsADIOS() = default;
@@ -34,11 +34,14 @@ public:
   Options read() override { throw BoutException("OptionsADIOS not available\n"); }
 
   /// Write options to file
-  void write([[maybe_unused]] const Options& options, [[maybe_unused]] const std::string& time_dim) override {
+  void write([[maybe_unused]] const Options& options,
+             [[maybe_unused]] const std::string& time_dim) override {
     throw BoutException("OptionsADIOS not available\n");
   }
 
-  void verifyTimesteps() const override { throw BoutException("OptionsADIOS not available\n"); }
+  void verifyTimesteps() const override {
+    throw BoutException("OptionsADIOS not available\n");
+  }
 };
 
 } // namespace bout
@@ -61,7 +64,8 @@ public:
   OptionsADIOS() {}
   OptionsADIOS(std::string filename,
                bout::OptionsIO::FileMode mode = bout::OptionsIO::FileMode::replace,
-               bool singleWriteFile = false) : OptionsIO(filename, mode, singleWriteFile) {}
+               bool singleWriteFile = false)
+      : OptionsIO(filename, mode, singleWriteFile) {}
   OptionsADIOS(const OptionsADIOS&) = delete;
   OptionsADIOS(OptionsADIOS&&) noexcept = default;
   ~OptionsADIOS() = default;
