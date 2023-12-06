@@ -16,16 +16,6 @@
 #include <vector>
 
 namespace bout {
-
-OptionsADIOS::OptionsADIOS() {}
-
-OptionsADIOS::OptionsADIOS(std::string filename, FileMode mode, bool singleWriteFile)
-    : OptionsIO(filename, mode, singleWriteFile) {}
-
-OptionsADIOS::~OptionsADIOS() = default;
-OptionsADIOS::OptionsADIOS(OptionsADIOS&&) noexcept = default;
-OptionsADIOS& OptionsADIOS::operator=(OptionsADIOS&&) noexcept = default;
-
 /// Name of the attribute used to track individual variable's time indices
 constexpr auto current_time_index_name = "current_time_index";
 

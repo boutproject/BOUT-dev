@@ -2,8 +2,8 @@
 
 #pragma once
 
-#ifndef __OPTIONS_IO_H__
-#define __OPTIONS_IO_H__
+#ifndef OPTIONS_IO_H
+#define OPTIONS_IO_H
 
 #include "bout/build_config.hxx"
 
@@ -35,7 +35,7 @@ public:
   OptionsIO();
   OptionsIO(std::string filename, FileMode mode = FileMode::replace,
             bool singleWriteFile = false);
-  ~OptionsIO();
+  virtual ~OptionsIO();
   OptionsIO(const OptionsIO&) = delete;
   OptionsIO(OptionsIO&&) noexcept;
   OptionsIO& operator=(const OptionsIO&) = delete;
@@ -97,4 +97,4 @@ void writeDefaultOutputFile(
 
 } // namespace bout
 
-#endif //  __OPTIONS_IO_H__
+#endif //  OPTIONS_IO_H
