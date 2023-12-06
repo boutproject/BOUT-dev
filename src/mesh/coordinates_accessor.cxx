@@ -17,7 +17,7 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
   ASSERT0(coords != nullptr);
 
   // Size of the mesh in Z. Used to convert 3D -> 2D index
-  Mesh* mesh = coords->dx.getMesh();
+  Mesh* mesh = coords->dx().getMesh();
   mesh_nz = mesh->LocalNz;
 
   auto search = coords_store.find(coords);
@@ -49,9 +49,11 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
 
   // Iterate over all points in the field
   // Note this could be 2D or 3D, depending on FieldMetric type
-  for (const auto& ind : coords->dx.getRegion("RGN_ALL")) {
-    COPY_STRIPE(dx, dy, dz);
-    COPY_STRIPE(d1_dx, d1_dy, d1_dz);
+  for (const auto& ind : coords->dx().getRegion("RGN_ALL")) {
+    data[stripe_size * ind.ind + static_cast<int>(Offset::dx)] = coords->dx()[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::dy)] = coords->dy()[ind];
+    data[stripe_size * ind.ind + static_cast<int>(Offset::dz)] = coords->dz()[ind];
+
     data[stripe_size * ind.ind + static_cast<int>(Offset::J)] = coords->J()[ind];
 
     data[stripe_size * ind.ind + static_cast<int>(Offset::B)] = coords->Bxy()[ind];

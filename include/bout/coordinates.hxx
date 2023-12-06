@@ -63,24 +63,32 @@ public:
   /// A constructor useful for testing purposes. To use it, inherit
   /// from Coordinates. If \p calculate_geometry is true (default),
   /// calculate the non-uniform variables, Christoffel symbols
-  Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric dz,
-              const FieldMetric& J, const FieldMetric& Bxy, const FieldMetric& g11,
-              const FieldMetric& g22, const FieldMetric& g33, const FieldMetric& g12,
-              const FieldMetric& g13, const FieldMetric& g23, const FieldMetric& g_11,
-              const FieldMetric& g_22, const FieldMetric& g_33, const FieldMetric& g_12,
-              const FieldMetric& g_13, const FieldMetric& g_23, FieldMetric ShiftTorsion,
-              FieldMetric IntShiftTorsion);
+  Coordinates(Mesh* mesh, const FieldMetric& dx, const FieldMetric& dy,
+              const FieldMetric& dz, const FieldMetric& J, const FieldMetric& Bxy,
+              const FieldMetric& g11, const FieldMetric& g22, const FieldMetric& g33,
+              const FieldMetric& g12, const FieldMetric& g13, const FieldMetric& g23,
+              const FieldMetric& g_11, const FieldMetric& g_22, const FieldMetric& g_33,
+              const FieldMetric& g_12, const FieldMetric& g_13, const FieldMetric& g_23,
+              FieldMetric ShiftTorsion, FieldMetric IntShiftTorsion);
 
   /// Add variables to \p output_options, for post-processing
   void outputVars(Options& output_options);
 
-  FieldMetric dx, dy, dz; ///< Mesh spacing in x, y and z
+  ///< Mesh spacing in x, y and z
+  const FieldMetric& dx() const;
+  const FieldMetric& dy() const;
+  const FieldMetric& dz() const;
+
+  void setDx(FieldMetric dx);
+  void setDy(FieldMetric dy);
+  void setDz(FieldMetric dz);
 
   /// Length of the Z domain. Used for FFTs
   const Field2D& zlength() const;
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
   bool non_uniform{};
+
   /// 2nd-order correction for non-uniform meshes d/di(1/dx), d/di(1/dy) and d/di(1/dz)
   FieldMetric d1_dx, d1_dy, d1_dz;
 
@@ -129,7 +137,7 @@ public:
   const MetricTensor& getContravariantMetricTensor() const;
 
   /// Calculate differential geometry quantities from the metric tensor
-  int calculateGeometry();
+  int calculateGeometry() const;
 
   void jacobian(); ///< Calculate J and Bxy
 
@@ -228,7 +236,7 @@ public:
 
   // Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY
   // solver
-  Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
+  Field2D Laplace_perpXY(const Field2D& A, const Field2D& f) const;
 
   const FieldMetric& G1_11();
   const FieldMetric& G1_22();
@@ -273,6 +281,8 @@ private:
   CELL_LOC location;
   DifferentialOperators* differential_operators;
   Geometry geometry;
+
+  FieldMetric dx_, dy_, dz_; ///< Mesh spacing in x, y and z
 
   /// Handles calculation of yup and ydown
   std::unique_ptr<ParallelTransform> transform{nullptr};

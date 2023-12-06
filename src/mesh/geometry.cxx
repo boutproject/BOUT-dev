@@ -33,7 +33,7 @@ Geometry::Geometry(Mesh* mesh, DifferentialOperators* differential_operators)
   ASSERT0(differential_operators != nullptr);
 }
 
-void Geometry::CalculateChristoffelSymbols(FieldMetric& dx, FieldMetric& dy) {
+void Geometry::CalculateChristoffelSymbols(const FieldMetric& dx, const FieldMetric& dy) {
   // Calculate Christoffel symbol terms (18 independent values)
   // Note: This calculation is completely general: metric
   // tensor can be 2D or 3D. For 2D, all DDZ terms are zero

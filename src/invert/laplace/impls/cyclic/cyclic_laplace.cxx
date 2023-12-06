@@ -160,7 +160,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
-      BoutReal zlen = getUniform(coords->dz) * (localmesh->LocalNz - 3);
+      BoutReal zlen = getUniform(coords->dz()) * (localmesh->LocalNz - 3);
       BOUT_OMP_PERF(for nowait)
       for (int kz = 0; kz < nmode; kz++) {
         // wave number is 1/[rad]; DST has extra 2.
