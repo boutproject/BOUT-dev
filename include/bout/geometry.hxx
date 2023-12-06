@@ -121,7 +121,7 @@ public:
   void setBxy(FieldMetric Bxy);
 
   /// Calculate Christoffel symbol terms
-  void CalculateChristoffelSymbols(FieldMetric& dx, FieldMetric& dy);
+  void CalculateChristoffelSymbols(const FieldMetric& dx, const FieldMetric& dy);
 
   // check that covariant tensors are positive (if expected) and finite (always)
   void checkCovariant(int ystart);
