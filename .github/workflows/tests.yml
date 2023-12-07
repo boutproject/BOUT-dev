@@ -49,7 +49,7 @@ jobs:
                             -DBOUT_USE_SUNDIALS=ON
                             -DBOUT_USE_ADIOS2=ON
                             -DBOUT_ENABLE_PYTHON=ON
-                            -DADIOS2_DIR=/home/runner/local/adios2
+                            -DADIOS2_ROOT=/home/runner/local/adios2
                             -DSUNDIALS_ROOT=/home/runner/local
                             -DPETSC_DIR=/home/runner/local/petsc
                             -DSLEPC_DIR=/home/runner/local/slepc"
