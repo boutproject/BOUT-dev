@@ -110,7 +110,7 @@ Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in,
 
   nonuniform = (*options)["nonuniform"]
                    .doc("Use non-uniform grid corrections? Default is the mesh setting.")
-                   .withDefault(coords->non_uniform);
+                   .withDefault(coords->non_uniform());
 
   all_terms =
       (*options)["all_terms"].doc("Include first derivative terms?").withDefault(true);

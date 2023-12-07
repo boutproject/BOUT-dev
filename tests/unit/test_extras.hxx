@@ -447,7 +447,7 @@ public:
     test_coords->setG3(0.1);
 
     // Set nonuniform corrections
-    test_coords->non_uniform = true;
+    test_coords->setNon_uniform(true);
     test_coords->setD1_dx(0.2);
     test_coords->setD1_dy(0.2);
     test_coords->setD1_dz(0.0);
@@ -493,7 +493,7 @@ public:
     test_coords_staggered->setG3(0.1);
 
     // Set nonuniform corrections
-    test_coords_staggered->non_uniform = true;
+    test_coords_staggered->setNon_uniform(true);
     test_coords_staggered->setD1_dx(0.2);
     test_coords_staggered->setD1_dy(0.2);
     test_coords_staggered->setD1_dz(0.0);

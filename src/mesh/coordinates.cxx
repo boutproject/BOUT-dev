@@ -673,7 +673,7 @@ void Coordinates::recalculateAndReset(bool recalculate_staggered,
 }
 
 void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_centre) {
-  OPTION(Options::getRoot(), non_uniform, true);
+  OPTION(Options::getRoot(), non_uniform_, true);
 
   FieldMetric d2x(localmesh);
   FieldMetric d2y(localmesh);
@@ -1358,6 +1358,9 @@ Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) co
 void Coordinates::checkCovariant() { return geometry.checkCovariant(localmesh->ystart); }
 
 void Coordinates::checkContravariant() { geometry.checkContravariant(localmesh->ystart); }
+
+bool Coordinates::non_uniform() const { return non_uniform_; }
+void Coordinates::setNon_uniform(bool non_uniform) { non_uniform_ = non_uniform; }
 
 const FieldMetric& Coordinates::dx() const { return dx_; }
 const FieldMetric& Coordinates::dy() const { return dy_; }

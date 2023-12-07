@@ -160,7 +160,7 @@ const Field3D InvertParCR::solve(const Field3D& f) {
         BoutReal ecoef = E(x, y + local_ystart)
                          + sg(x, y + local_ystart) * B(x, y + local_ystart); // ddy
 
-        if (coord->non_uniform) {
+        if (coord->non_uniform()) {
           ecoef += bcoef * coord->d1_dy()(x, y + local_ystart);
         }
 
