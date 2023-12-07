@@ -58,18 +58,6 @@ void DataFileFacade::add(Vector3D* value, const std::string& name, bool save_rep
   add(value->y, name_prefix + "y"s, save_repeat);
   add(value->z, name_prefix + "z"s, save_repeat);
 }
-
-bool DataFileFacade::write() {
-  for (const auto& item : data) {
-    bout::utils::visit(bout::OptionsConversionVisitor{Options::root(), item.name},
-                       item.value);
-    if (item.repeat) {
-      Options::root()[item.name].attributes["time_dimension"] = "t";
-    }
-  }
-  writeDefaultOutputFile();
-  return true;
-}
 } // namespace bout
 
 PhysicsModel::PhysicsModel()
@@ -81,21 +69,12 @@ PhysicsModel::PhysicsModel()
                           .withDefault(true))
 
 {
-  bout::OptionsIO::Library iolibrary = bout::getIOLibrary(Options::root());
   if (output_enabled) {
-    std::string outputFileName = bout::getOutputFilename(Options::root(), iolibrary);
-    auto mode = Options::root()["append"]
-                        .doc("Add output data to existing (dump) files?")
-                        .withDefault(false)
-                    ? bout::OptionsIO::FileMode::append
-                    : bout::OptionsIO::FileMode::replace;
-    output_file = bout::OptionsIOFactory(outputFileName, mode, iolibrary);
+    output_file = bout::OptionsIOFactory::getInstance().createOutput();
   }
 
   if (restart_enabled) {
-    std::string restartFileName = bout::getRestartFilename(Options::root(), iolibrary);
-    restart_file = bout::OptionsIOFactory(
-        restartFileName, bout::OptionsIO::FileMode::replace, iolibrary, true);
+    restart_file = bout::OptionsIOFactory::getInstance().createRestart();
   }
 }
 

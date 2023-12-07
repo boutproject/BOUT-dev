@@ -2,7 +2,7 @@
 
 #if BOUT_HAS_NETCDF && !BOUT_HAS_LEGACY_NETCDF
 
-#include "bout/options_netcdf.hxx"
+#include "options_netcdf.hxx"
 
 #include "bout/bout.hxx"
 #include "bout/globals.hxx"
@@ -643,14 +643,19 @@ std::vector<TimeDimensionError> verifyTimesteps(const NcGroup& group) {
 
 namespace bout {
 
-OptionsNetCDF::OptionsNetCDF() : data_file(nullptr) {}
+OptionsNetCDF::OptionsNetCDF(Options& options) : OptionsIO(options) {
+  if (options["file"].doc("File name. Defaults to <path>/<prefix>.<rank>.nc").isSet()) {
+    filename = options["file"].as<std::string>();
+  } else {
+    // Both path and prefix must be set
+    filename = fmt::format("{}/{}.{}.nc", options["path"].as<std::string>(),
+                           options["prefix"].as<std::string>(), BoutComm::rank());
+  }
 
-OptionsNetCDF::OptionsNetCDF(std::string filename, FileMode mode, bool singleWriteFile)
-    : OptionsIO(filename, mode, singleWriteFile), data_file(nullptr) {}
-
-OptionsNetCDF::~OptionsNetCDF() = default;
-OptionsNetCDF::OptionsNetCDF(OptionsNetCDF&&) noexcept = default;
-OptionsNetCDF& OptionsNetCDF::operator=(OptionsNetCDF&&) noexcept = default;
+  file_mode = (options["append"].doc("Append to existing file?").withDefault<bool>(false))
+                  ? FileMode::append
+                  : FileMode::replace;
+}
 
 void OptionsNetCDF::verifyTimesteps() const {
   NcFile dataFile(filename, NcFile::read);

@@ -6,40 +6,29 @@
 #define OPTIONS_IO_H
 
 #include "bout/build_config.hxx"
+#include "bout/generic_factory.hxx"
+#include "bout/options.hxx"
 
 #include <memory>
 #include <string>
-
-#include "bout/options.hxx"
 
 namespace bout {
 
 class OptionsIO {
 public:
-  enum class FileMode {
-    replace, ///< Overwrite file when writing
-    append   ///< Append to file when writing
-  };
+  /// No default constructor, as settings are required
+  OptionsIO() = delete;
 
-  enum class Library { ADIOS, NetCDF, Invalid };
+  /// Constructor specifies the kind of file, and options to control
+  /// the name of file, mode of operation etc.
+  OptionsIO(Options&) {}
 
-  static const Library defaultIOLibrary =
-#if BOUT_HAS_ADIOS
-      Library::NetCDF;
-#elif BOUT_HAS_NETCDF
-      Library::NetCDF;
-#else
-      Library::Invalid;
-#endif
+  virtual ~OptionsIO() = default;
 
-  OptionsIO();
-  OptionsIO(std::string filename, FileMode mode = FileMode::replace,
-            bool singleWriteFile = false);
-  virtual ~OptionsIO();
   OptionsIO(const OptionsIO&) = delete;
-  OptionsIO(OptionsIO&&) noexcept;
+  OptionsIO(OptionsIO&&) noexcept = default;
   OptionsIO& operator=(const OptionsIO&) = delete;
-  OptionsIO& operator=(OptionsIO&&) noexcept;
+  OptionsIO& operator=(OptionsIO&&) noexcept = default;
 
   /// Read options from file
   virtual Options read() = 0;
@@ -54,46 +43,72 @@ public:
   /// ADIOS: Indicate completion of an output step.
   virtual void verifyTimesteps() const = 0;
 
-  /// ADIOS: close file at the end of write(). NetCDF: no effect.
-  /// restart file must have this true if using ADIOS
-  //void setSingleWriteFile(const bool flag) { singleWriteFile = flag; };
-
-protected:
-  /// Name of the file on disk
-  std::string filename;
-  /// How to open the file for writing
-  FileMode file_mode{FileMode::replace};
-  bool singleWriteFile = false;
+  static std::unique_ptr<OptionsIO> create(const std::string& file);
 };
 
-std::shared_ptr<OptionsIO>
-OptionsIOFactory(std::string filename,
-                 OptionsIO::FileMode mode = OptionsIO::FileMode::replace,
-                 const OptionsIO::Library library = OptionsIO::defaultIOLibrary,
-                 const bool singleWriteFile = false);
+class OptionsIOFactory : public Factory<OptionsIO, OptionsIOFactory, Options&> {
+public:
+  static constexpr auto type_name = "OptionsIO";
+  static constexpr auto section_name = "io";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type =
+#if BOUT_HAS_NETCDF
+      "netcdf";
+#elif BOUT_HAS_ADIOS
+      "adios";
+#else
+      "invalid";
+#endif
 
-OptionsIO::Library getIOLibrary(Options& options);
+  /// Create a restart file, configured with options (if given),
+  /// or root "restart_files" section.
+  ///
+  /// Options:
+  ///  - "type"    The type of file e.g "netcdf" or "adios"
+  ///  - "file"    Name of the file. Default is <path>/<prefix>.[type-dependent]
+  ///  - "path"    Path to restart files. Default is root "datadir" option,
+  ///              that defaults to "data"
+  ///  - "prefix"  Default is "BOUT.restart"
+  ReturnType createRestart(Options* optionsptr = nullptr) const;
 
-/// Name of the directory for restart files
-std::string getRestartDirectoryName(Options& options);
-/// Name of the restart file on this rank
-std::string getRestartFilename(Options& options, const OptionsIO::Library library);
-/// Name of the restart file on \p rank
-std::string getRestartFilename(Options& options, int rank,
-                               const OptionsIO::Library library);
-/// Name of the main output file on this rank
-std::string getOutputFilename(Options& options, const OptionsIO::Library library);
-/// Name of the main output file on \p rank
-std::string getOutputFilename(Options& options, int rank,
-                              const OptionsIO::Library library);
-/// Write `Options::root()` to the main output file, overwriting any
-/// existing files
-void writeDefaultOutputFile(
-    const OptionsIO::Library library = OptionsIO::defaultIOLibrary);
-/// Write \p options to the main output file, overwriting any existing
-/// files
-void writeDefaultOutputFile(
-    Options& options, const OptionsIO::Library library = OptionsIO::defaultIOLibrary);
+  /// Create an output file for writing time history.
+  /// Configure with options (if given), or root "output" section.
+  ///
+  /// Options:
+  ///  - "type"    The type of file e.g "netcdf" or "adios"
+  ///  - "file"    Name of the file. Default is <path>/<prefix>.[type]
+  ///  - "path"    Path to output files. Default is root "datadir" option,
+  ///              that defaults to "data"
+  ///  - "prefix"  Default is "BOUT.dmp"
+  ///  - "append"  Append to existing file? Default is root "append" option,
+  ///              that defaults to false.
+  ReturnType createOutput(Options* optionsptr = nullptr) const;
+
+  /// Create a single file (e.g. mesh file) of the default type
+  ReturnType createFile(const std::string& file) const;
+};
+
+/// Simpler name for Factory registration helper class
+///
+/// Usage:
+///
+///     #include <bout/options_io.hxx>
+///     namespace {
+///     RegisterOptionsIO<MyOptionsIO> registeroptionsiomine("myoptionsio");
+///     }
+template <typename DerivedType>
+using RegisterOptionsIO = OptionsIOFactory::RegisterInFactory<DerivedType>;
+
+/// Simpler name for indicating that an OptionsIO implementation
+/// is unavailable.
+///
+/// Usage:
+///
+///     namespace {
+///     RegisterUnavailableOptionsIO
+///         unavailablemyoptionsio("myoptiosio", "BOUT++ was not configured with MyOptionsIO");
+///     }
+using RegisterUnavailableOptionsIO = OptionsIOFactory::RegisterUnavailableInFactory;
 
 } // namespace bout
 

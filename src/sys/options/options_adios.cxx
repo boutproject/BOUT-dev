@@ -2,8 +2,8 @@
 
 #if BOUT_HAS_ADIOS
 
+#include "options_adios.hxx"
 #include "bout/adios_object.hxx"
-#include "bout/options_adios.hxx"
 
 #include "bout/bout.hxx"
 #include "bout/globals.hxx"
@@ -18,6 +18,22 @@
 namespace bout {
 /// Name of the attribute used to track individual variable's time indices
 constexpr auto current_time_index_name = "current_time_index";
+
+OptionsADIOS::OptionsADIOS(Options& options) {
+  if (options["file"].doc("File name. Defaults to <path>/<prefix>.pb").isSet()) {
+    filename = options["file"].as<std::string>();
+  } else {
+    // Both path and prefix must be set
+    filename = fmt::format("{}/{}.bp", options["path"].as<std::string>(),
+                           options["prefix"].as<std::string>());
+  }
+
+  file_mode = (options["append"].doc("Append to existing file?").withDefault<bool>(false))
+                  ? FileMode::append
+                  : FileMode::replace;
+
+  singleWriteFile = options["singleWriteFile"].withDefault<bool>(false);
+}
 
 template <class T>
 bool readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& name,

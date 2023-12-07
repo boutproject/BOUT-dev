@@ -1723,10 +1723,6 @@ cdef class Options:
             del self.cobj
             self.cobj = NULL
 
-
-def writeDefaultOutputFile(options: Options):
-    c.writeDefaultOutputFile(deref(options.cobj))
-
 def print(*args, sep=" ", end="\n"):
     _print(sep.join([str(a) for a in args]) + end)
 

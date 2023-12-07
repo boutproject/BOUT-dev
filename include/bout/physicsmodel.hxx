@@ -88,9 +88,6 @@ public:
   void add(Vector2D* value, const std::string& name, bool save_repeat = false);
   void add(Vector3D* value, const std::string& name, bool save_repeat = false);
 
-  /// Write stored data to file immediately
-  bool write();
-
 private:
   /// Helper struct to save enough information so that we can save an
   /// object to file later
@@ -148,7 +145,7 @@ public:
   bout::DataFileFacade restart{};
 
   /*!
-   * Initialse the model, calling the init() and postInit() methods
+   * Initialise the model, calling the init() and postInit() methods
    *
    * Note: this is usually only called by the Solver
    */
@@ -383,13 +380,13 @@ private:
   /// State for outputs
   Options output_options;
   /// File to write the outputs to
-  std::shared_ptr<bout::OptionsIO> output_file;
+  std::unique_ptr<bout::OptionsIO> output_file;
   /// Should we write output files
   bool output_enabled{true};
   /// Stores the state for restarting
   Options restart_options;
   /// File to write the restart-state to
-  std::shared_ptr<bout::OptionsIO> restart_file;
+  std::unique_ptr<bout::OptionsIO> restart_file;
   /// Should we write restart files
   bool restart_enabled{true};
   /// Split operator model?
