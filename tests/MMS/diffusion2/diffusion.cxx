@@ -38,14 +38,11 @@ protected:
     SAVE_ONCE3(Dx, Dy, Dz);
 
     // set mesh
-    auto contravariant_metric_tensor =
-        MetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
+    auto contravariant_metric_tensor = MetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
     coords->setContravariantMetricTensor(contravariant_metric_tensor);
 
     auto covariant_metric_tensor = MetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
     coords->setCovariantMetricTensor(covariant_metric_tensor);
-
-    coords->geometry();
 
     // Tell BOUT++ to solve N
     SOLVE_FOR(N);
