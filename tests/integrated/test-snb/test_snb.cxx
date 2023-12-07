@@ -96,8 +96,8 @@ int main(int argc, char** argv) {
     Field3D Div_q = snb.divHeatFlux(Te, Ne, &Div_q_SH);
 
     // Check that flux is not zero
-    EXPECT_FALSE(IsFieldEqual(Div_q_SH, 0.0, "RGN_NOBNDRY"));
-    EXPECT_FALSE(IsFieldEqual(Div_q, 0.0, "RGN_NOBNDRY"));
+    EXPECT_FALSE(IsFieldEqual(Div_q_SH, 0.0, "RGN_NOBNDRY"))
+    EXPECT_FALSE(IsFieldEqual(Div_q, 0.0, "RGN_NOBNDRY"))
   }
 
   ///////////////////////////////////////////////////////////
@@ -116,8 +116,8 @@ int main(int argc, char** argv) {
     Field3D Div_q = snb.divHeatFlux(Te, Ne, &Div_q_SH);
 
     // Check that flux is zero
-    EXPECT_TRUE(IsFieldEqual(Div_q_SH, 0.0, "RGN_NOBNDRY"));
-    EXPECT_TRUE(IsFieldEqual(Div_q, 0.0, "RGN_NOBNDRY"));
+    EXPECT_TRUE(IsFieldEqual(Div_q_SH, 0.0, "RGN_NOBNDRY"))
+    EXPECT_TRUE(IsFieldEqual(Div_q, 0.0, "RGN_NOBNDRY"))
   }
 
   ///////////////////////////////////////////////////////////
@@ -135,7 +135,7 @@ int main(int argc, char** argv) {
     Field3D Div_q = snb.divHeatFlux(Te, Ne, &Div_q_SH);
 
     // Check that flux is zero
-    EXPECT_TRUE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"));
+    EXPECT_TRUE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"))
   }
 
   ///////////////////////////////////////////////////////////
@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
     Field3D Div_q = snb.divHeatFlux(Te, Ne, &Div_q_SH);
 
     // Check that fluxes are not equal
-    EXPECT_FALSE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"));
+    EXPECT_FALSE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"))
   }
 
   ///////////////////////////////////////////////////////////
@@ -211,7 +211,7 @@ int main(int argc, char** argv) {
       for (int y = mesh->ystart; y <= mesh->yend; y++) {
         double yn = (double(y) + 0.5) / double(mesh->yend + 1);
 
-        coord->dy(x, y) = 1. - 0.9 * yn;
+        coord->setDy((1. - 0.9 * yn), x, y);
         coord->setJ((1. + yn * yn), x, y);
       }
     }
@@ -226,7 +226,7 @@ int main(int argc, char** argv) {
     Div_q *= SI::qe;
 
     // Check that fluxes are not equal
-    EXPECT_FALSE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"));
+    EXPECT_FALSE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"))
 
     const Field2D dy = coord->dy();
     const Field2D J = coord->J();
@@ -242,7 +242,7 @@ int main(int argc, char** argv) {
       q_maxabs = BOUTMAX(q_maxabs, fabs(q_sh), fabs(q_snb));
     }
     // Expect integrals to be the same
-    EXPECT_LT(fabs(q_sh - q_snb), 1e-8 * q_maxabs);
+    EXPECT_LT(fabs(q_sh - q_snb), 1e-8 * q_maxabs)
   }
 
   bout::checkForUnusedOptions();

@@ -1366,6 +1366,8 @@ void Coordinates::setDx(FieldMetric dx) { dx_ = dx; }
 void Coordinates::setDy(FieldMetric dy) { dy_ = dy; }
 void Coordinates::setDz(FieldMetric dz) { dz_ = dz; }
 
+void Coordinates::setDy(BoutReal value, int x, int y) { dy_(x, y) = value; }
+
 void Coordinates::setContravariantMetricTensor(MetricTensor metric_tensor,
                                                const std::string& region,
                                                bool recalculate_staggered,
