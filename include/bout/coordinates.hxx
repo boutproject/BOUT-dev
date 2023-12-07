@@ -290,7 +290,7 @@ private:
   std::unique_ptr<ParallelTransform> transform{nullptr};
 
   /// Cache variable for `zlength`. Invalidated when
-  /// `Coordinates::calculateGeometry` is called
+  /// `Coordinates::recalculateAndReset` is called
   mutable std::unique_ptr<Field2D> zlength_cache{nullptr};
 
   /// Cache variable for Grad2_par2
