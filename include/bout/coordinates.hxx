@@ -83,6 +83,8 @@ public:
   void setDy(FieldMetric dy);
   void setDz(FieldMetric dz);
 
+  void setDy(BoutReal value, int x, int y);
+
   /// Length of the Z domain. Used for FFTs
   const Field2D& zlength() const;
 
