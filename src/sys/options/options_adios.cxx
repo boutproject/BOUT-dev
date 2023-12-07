@@ -19,7 +19,7 @@ namespace bout {
 /// Name of the attribute used to track individual variable's time indices
 constexpr auto current_time_index_name = "current_time_index";
 
-OptionsADIOS::OptionsADIOS(Options& options) {
+OptionsADIOS::OptionsADIOS(Options& options) : OptionsIO(options) {
   if (options["file"].doc("File name. Defaults to <path>/<prefix>.pb").isSet()) {
     filename = options["file"].as<std::string>();
   } else {

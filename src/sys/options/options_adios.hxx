@@ -53,7 +53,6 @@ public:
   Options read() override;
 
   /// Write options to file
-  void write(const Options& options) override { write(options, "t"); }
   void write(const Options& options, const std::string& time_dim) override;
 
   /// Check that all variables with the same time dimension have the
