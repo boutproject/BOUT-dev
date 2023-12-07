@@ -93,7 +93,8 @@ public:
   const Field2D& zlength() const;
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
-  bool non_uniform{};
+  bool non_uniform() const;
+  void setNon_uniform(bool non_uniform);
 
   /// 2nd-order correction for non-uniform meshes d/di(1/dx), d/di(1/dy) and d/di(1/dz)
   const FieldMetric& d1_dx() const;
@@ -289,6 +290,9 @@ private:
   CELL_LOC location;
   DifferentialOperators* differential_operators;
   Geometry geometry;
+
+  /// True if corrections for non-uniform mesh spacing should be included in operators
+  bool non_uniform_{};
 
   FieldMetric dx_, dy_, dz_; ///< Mesh spacing in x, y and z
 

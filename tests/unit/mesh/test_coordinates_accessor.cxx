@@ -87,7 +87,7 @@ TEST_F(CoordinatesAccessorTest, ClearBoth) {
   coords.setG1(0.2);
   coords.setG2(0.2);
   coords.setG3(0.2);
-  coords.non_uniform = true;
+  coords.setNon_uniform(true);
   coords.setD1_dx(0.1);
   coords.setD1_dy(0.1);
   coords.setD1_dz(0.1);
@@ -131,7 +131,7 @@ TEST_F(CoordinatesAccessorTest, ClearOneTwo) {
   coords.setG1(0.2);
   coords.setG2(0.2);
   coords.setG3(0.2);
-  coords.non_uniform = true;
+  coords.setNon_uniform(true);
   coords.setD1_dx(0.1);
   coords.setD1_dy(0.1);
   coords.setD1_dz(0.1);
@@ -177,7 +177,7 @@ TEST_F(CoordinatesAccessorTest, ClearTwoOneNone) {
   coords.setG1(0.2);
   coords.setG2(0.2);
   coords.setG3(0.2);
-  coords.non_uniform = true;
+  coords.setNon_uniform(true);
   coords.setD1_dx(0.1);
   coords.setD1_dy(0.1);
   coords.setD1_dz(0.1);
