@@ -46,7 +46,6 @@ TEST_F(CoordinatesTest, ZLength) {
                      FieldMetric{0.0},  // g_23
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
-  // No call to Coordinates::calculateGeometry() needed here
 
   EXPECT_TRUE(IsFieldEqual(coords.zlength(), 7.0));
 }
@@ -79,7 +78,6 @@ TEST_F(CoordinatesTest, ZLength3D) {
                      FieldMetric{0.0},  // g_23
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
-  // No call to Coordinates::calculateGeometry() needed here
 
   EXPECT_TRUE(IsFieldEqual(coords.zlength(), expected));
 }
@@ -106,7 +104,6 @@ TEST_F(CoordinatesTest, Jacobian) {
                      FieldMetric{0.0},  // g_23
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
-  // No call to Coordinates::calculateGeometry() needed here
 
   EXPECT_NO_THROW(coords.jacobian());
 
@@ -137,7 +134,6 @@ TEST_F(CoordinatesTest, CalcContravariant) {
                      FieldMetric{0.0},  // g_23
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
-  // No call to Coordinates::calculateGeometry() needed here
 
   coords.setContravariantMetricTensor(MetricTensor(1.0, 1.0, 1.0, 0.0, 0.0, 0.0));
 
@@ -170,7 +166,6 @@ TEST_F(CoordinatesTest, CalcCovariant) {
                      FieldMetric{0.0},  // g_23
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
-  // No call to Coordinates::calculateGeometry() needed here
 
   coords.setCovariantMetricTensor(MetricTensor(1.0, 1.0, 1.0, 0.0, 0.0, 0.0));
 
@@ -238,7 +233,7 @@ TEST_F(CoordinatesTest, SmallMeshSpacing) {
   output_info.disable();
   output_warn.disable();
   Coordinates coords(mesh);
-  EXPECT_THROW(coords.calculateGeometry(), BoutException);
+  EXPECT_THROW(coords.communicateAndCheckMeshSpacing(), BoutException);
   output_warn.enable();
   output_info.enable();
 }
