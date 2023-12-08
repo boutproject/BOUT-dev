@@ -906,7 +906,7 @@ void Mesh::recalculateStaggeredCoordinates() {
     }
 
     *coords_map[location] = std::move(*createDefaultCoordinates(location, false, true));
-    coords_map[location]->calculateGeometry();
+    coords_map[location]->communicateAndCheckMeshSpacing();
   }
 }
 
