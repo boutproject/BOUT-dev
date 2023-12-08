@@ -9,6 +9,7 @@ cdef extern from "boutexception_helper.hxx":
 
 
 cdef extern from "bout/options_io.hxx" namespace "bout":
+    cdef void writeDefaultOutputFile(Options& options);
     cppclass OptionsIO:
         @staticmethod
         OptionsIO * create(string filename)

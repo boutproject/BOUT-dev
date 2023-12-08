@@ -43,4 +43,8 @@ OptionsIOFactory::ReturnType OptionsIOFactory::createFile(const std::string& fil
   return create(getDefaultType(), options);
 }
 
+void writeDefaultOutputFile(Options& data) {
+  OptionsIOFactory::getInstance().createOutput()->write(data);
+}
+
 } // namespace bout

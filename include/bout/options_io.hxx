@@ -1,4 +1,34 @@
-/* Parent class for IO/ADIOS option classes */
+/// Parent class for IO to binary files and streams
+///
+///
+/// Usage:
+///
+/// 1. Dump files, containing time history:
+///
+///       auto dump = OptionsIOFactory::getInstance().createOutput();
+///       dump->write(data);
+///
+///    where data is an Options tree. By default dump files are configured
+///    with the root `output` section, or an Option tree can be passed to
+///    `createOutput`.
+///
+/// 2. Restart files:
+///
+///       auto restart = OptionsIOFactory::getInstance().createOutput();
+///       restart->write(data);
+///
+///    where data is an Options tree. By default restart files are configured
+///    with the root `restart_files` section, or an Option tree can be passed to
+///    `createRestart`.
+///
+/// 3. Ad-hoc single files
+///   Note: The caller should consider how multiple processors interact with the file.
+///
+///       auto file = OptionsIOFactory::getInstance().createFile("some_file.nc");
+///   or
+///       auto file = OptionsIO::create("some_file.nc");
+///
+///
 
 #pragma once
 
@@ -43,8 +73,35 @@ public:
   /// ADIOS: Indicate completion of an output step.
   virtual void verifyTimesteps() const = 0;
 
+  /// Create an OptionsIO for I/O to the given file.
+  /// This uses the default file type and default options.
   static std::unique_ptr<OptionsIO> create(const std::string& file);
+
+  /// Create an OptionsIO for I/O to the given file.
+  /// The file will be configured using the given `config` options:
+  ///  - "type" : string   The file type e.g. "netcdf" or "adios"
+  ///  - "file" : string   Name of the file
+  ///  - "append" : bool   Append to existing data (Default is false)
   static std::unique_ptr<OptionsIO> create(Options& config);
+
+  /// Create an OptionsIO for I/O to the given file.
+  /// The file will be configured using the given `config` options:
+  ///  - "type" : string   The file type e.g. "netcdf" or "adios"
+  ///  - "file" : string   Name of the file
+  ///  - "append" : bool   Append to existing data (Default is false)
+  ///
+  /// Example:
+  ///
+  ///     auto file = OptionsIO::create({
+  ///         {"file", "some_file.nc"},
+  ///         {"type", "netcdf"},
+  ///         {"append", false}
+  ///     });
+  static std::unique_ptr<OptionsIO>
+  create(std::initializer_list<std::pair<std::string, Options>> config_list) {
+    Options config(config_list); // Construct an Options to pass by reference
+    return create(config);
+  }
 };
 
 class OptionsIOFactory : public Factory<OptionsIO, OptionsIOFactory, Options&> {
@@ -110,6 +167,11 @@ using RegisterOptionsIO = OptionsIOFactory::RegisterInFactory<DerivedType>;
 ///         unavailablemyoptionsio("myoptiosio", "BOUT++ was not configured with MyOptionsIO");
 ///     }
 using RegisterUnavailableOptionsIO = OptionsIOFactory::RegisterUnavailableInFactory;
+
+/// Convenient wrapper function around OptionsIOFactory::createOutput
+/// Opens a dump file configured with the `output` root section,
+/// and writes the given `data` to the file.
+void writeDefaultOutputFile(Options& data);
 
 } // namespace bout
 
