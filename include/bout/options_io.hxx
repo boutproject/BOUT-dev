@@ -44,6 +44,7 @@ public:
   virtual void verifyTimesteps() const = 0;
 
   static std::unique_ptr<OptionsIO> create(const std::string& file);
+  static std::unique_ptr<OptionsIO> create(Options& config);
 };
 
 class OptionsIOFactory : public Factory<OptionsIO, OptionsIOFactory, Options&> {

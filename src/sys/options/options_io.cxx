@@ -8,6 +8,11 @@ std::unique_ptr<OptionsIO> OptionsIO::create(const std::string& file) {
   return OptionsIOFactory::getInstance().createFile(file);
 }
 
+std::unique_ptr<OptionsIO> OptionsIO::create(Options& config) {
+  auto& factory = OptionsIOFactory::getInstance();
+  return factory.create(factory.getType(&config), config);
+}
+
 OptionsIOFactory::ReturnType OptionsIOFactory::createRestart(Options* optionsptr) const {
   Options& options = optionsptr ? *optionsptr : Options::root()["restart_files"];
 
