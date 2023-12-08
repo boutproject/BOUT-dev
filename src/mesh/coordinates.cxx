@@ -280,22 +280,22 @@ Coordinates::FieldMetric Coordinates::getUnalignedAtLocationAndFillGuards(
                                                     pParallelTransform);
 }
 
-Coordinates::Coordinates(Mesh* mesh, const FieldMetric& dx, const FieldMetric& dy,
-                         const FieldMetric& dz, const FieldMetric& J,
-                         const FieldMetric& Bxy, const FieldMetric& g11,
-                         const FieldMetric& g22, const FieldMetric& g33,
-                         const FieldMetric& g12, const FieldMetric& g13,
-                         const FieldMetric& g23, const FieldMetric& g_11,
-                         const FieldMetric& g_22, const FieldMetric& g_33,
-                         const FieldMetric& g_12, const FieldMetric& g_13,
-                         const FieldMetric& g_23, const FieldMetric& ShiftTorsion,
-                         const FieldMetric& IntShiftTorsion)
+Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric dz,
+                         const FieldMetric& J, const FieldMetric& Bxy,
+                         const FieldMetric& g11, const FieldMetric& g22,
+                         const FieldMetric& g33, const FieldMetric& g12,
+                         const FieldMetric& g13, const FieldMetric& g23,
+                         const FieldMetric& g_11, const FieldMetric& g_22,
+                         const FieldMetric& g_33, const FieldMetric& g_12,
+                         const FieldMetric& g_13, const FieldMetric& g_23,
+                         FieldMetric ShiftTorsion, FieldMetric IntShiftTorsion)
     : nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE),
       differential_operators(mesh->getDifferentialOperators()),
       geometry(Geometry(J, Bxy, g11, g22, g33, g12, g13, g23, g_11, g_22, g_33, g_12,
                         g_13, g_23, differential_operators)),
-      dx_(dx), dy_(dy), dz_(dz), ShiftTorsion_(ShiftTorsion),
-      IntShiftTorsion_(IntShiftTorsion) {}
+      dx_(std::move(dx)), dy_(std::move(dy)), dz_(std::move(dz)),
+      ShiftTorsion_(std::move(ShiftTorsion)),
+      IntShiftTorsion_(std::move(IntShiftTorsion)) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
@@ -1367,15 +1367,15 @@ const FieldMetric& Coordinates::dx() const { return dx_; }
 const FieldMetric& Coordinates::dy() const { return dy_; }
 const FieldMetric& Coordinates::dz() const { return dz_; }
 
-void Coordinates::setDx(FieldMetric dx) { dx_ = dx; }
-void Coordinates::setDy(FieldMetric dy) { dy_ = dy; }
-void Coordinates::setDz(FieldMetric dz) { dz_ = dz; }
+void Coordinates::setDx(FieldMetric dx) { dx_ = std::move(dx); }
+void Coordinates::setDy(FieldMetric dy) { dy_ = std::move(dy); }
+void Coordinates::setDz(FieldMetric dz) { dz_ = std::move(dz); }
 
 void Coordinates::setDy(BoutReal value, int x, int y) { dy_(x, y) = value; }
 
-void Coordinates::setD1_dx(FieldMetric d1_dx) { d1_dx_ = d1_dx; }
-void Coordinates::setD1_dy(FieldMetric d1_dy) { d1_dy_ = d1_dy; }
-void Coordinates::setD1_dz(FieldMetric d1_dz) { d1_dz_ = d1_dz; }
+void Coordinates::setD1_dx(FieldMetric d1_dx) { d1_dx_ = std::move(d1_dx); }
+void Coordinates::setD1_dy(FieldMetric d1_dy) { d1_dy_ = std::move(d1_dy); }
+void Coordinates::setD1_dz(FieldMetric d1_dz) { d1_dz_ = std::move(d1_dz); }
 
 const FieldMetric& Coordinates::d1_dx() const { return d1_dx_; }
 const FieldMetric& Coordinates::d1_dy() const { return d1_dy_; }
@@ -1386,7 +1386,7 @@ const FieldMetric& Coordinates::ShiftTorsion() const { return ShiftTorsion_; }
 const FieldMetric& Coordinates::IntShiftTorsion() const { return IntShiftTorsion_; }
 
 void Coordinates::setIntShiftTorsion(FieldMetric IntShiftTorsion) {
-  IntShiftTorsion_ = IntShiftTorsion;
+  IntShiftTorsion_ = std::move(IntShiftTorsion);
 }
 
 void Coordinates::setContravariantMetricTensor(MetricTensor metric_tensor,
@@ -1448,13 +1448,13 @@ const FieldMetric& Coordinates::G1() const { return geometry.G1(); }
 const FieldMetric& Coordinates::G2() const { return geometry.G2(); }
 const FieldMetric& Coordinates::G3() const { return geometry.G3(); }
 
-void Coordinates::setG1(FieldMetric G1) { geometry.setG1(G1); }
-void Coordinates::setG2(FieldMetric G2) { geometry.setG2(G2); }
-void Coordinates::setG3(FieldMetric G3) { geometry.setG3(G3); }
+void Coordinates::setG1(FieldMetric G1) { geometry.setG1(std::move(G1)); }
+void Coordinates::setG2(FieldMetric G2) { geometry.setG2(std::move(G2)); }
+void Coordinates::setG3(FieldMetric G3) { geometry.setG3(std::move(G3)); }
 
 void Coordinates::setJ(FieldMetric J) {
   //TODO: Calculate J and check value is close
-  geometry.setJ(J);
+  geometry.setJ(std::move(J));
 }
 
 void Coordinates::setJ(BoutReal value, int x, int y) {
