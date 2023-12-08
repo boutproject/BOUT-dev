@@ -630,8 +630,8 @@ const Field2D& Coordinates::zlength() const {
   return *zlength_cache;
 }
 
-int Coordinates::calculateGeometry() const {
-  TRACE("Coordinates::calculateGeometry");
+int Coordinates::communicateAndCheckMeshSpacing() const {
+  TRACE("Coordinates::communicateAndCheckMeshSpacing");
 
   auto tmp = dx(); // TODO: There must be a better way than this!
   communicate(tmp, dy(), dz(), g11(), g22(), g33(), g12(), g13(), g23(), g_11(), g_22(),

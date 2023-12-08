@@ -148,7 +148,7 @@ public:
   const MetricTensor& getContravariantMetricTensor() const;
 
   /// Calculate differential geometry quantities from the metric tensor
-  int calculateGeometry() const;
+  int communicateAndCheckMeshSpacing() const;
 
   void jacobian(); ///< Calculate J and Bxy
 
