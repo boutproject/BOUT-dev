@@ -337,7 +337,7 @@ public:
   /// Take an rvalue (e.g. initializer list), convert to lvalue and delegate constructor
   FakeGridDataSource(Options&& values) : FakeGridDataSource(values) {}
 
-  bool hasVar(const std::string& UNUSED(name)) override { return false; }
+  bool hasVar(const std::string& name) override { return values.isSet(name); }
 
   bool get(MAYBE_UNUSED(Mesh* m), std::string& sval, const std::string& name,
            const std::string& def = "") override {
@@ -440,9 +440,11 @@ public:
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0});
 
     // Set some auxilliary variables
-    // Usually set in geometry()
+    // Usually set in calculateGeometry()
     // Note: For testing these are set to non-zero values
-    test_coords->G1 = test_coords->G2 = test_coords->G3 = 0.1;
+    test_coords->setG1(0.1);
+    test_coords->setG2(0.1);
+    test_coords->setG3(0.1);
 
     // Set nonuniform corrections
     test_coords->non_uniform = true;
@@ -453,7 +455,7 @@ public:
     test_coords->Bxy().yup() = test_coords->Bxy().ydown() = test_coords->Bxy();
 #endif
 
-    // No call to Coordinates::geometry() needed here
+    // No call to Coordinates::calculateGeometry() needed here
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
     static_cast<FakeMesh*>(bout::globals::mesh)
         ->setGridDataSource(new FakeGridDataSource());
@@ -485,8 +487,9 @@ public:
         Field2D{0.0, mesh_staggered});
 
     // Set some auxilliary variables
-    test_coords_staggered->G1 = test_coords_staggered->G2 = test_coords_staggered->G3 =
-        0.1;
+    test_coords_staggered->setG1(0.1);
+    test_coords_staggered->setG2(0.1);
+    test_coords_staggered->setG3(0.1);
 
     // Set nonuniform corrections
     test_coords_staggered->non_uniform = true;
@@ -498,7 +501,7 @@ public:
         test_coords_staggered->Bxy;
 #endif
 
-    // No call to Coordinates::geometry() needed here
+    // No call to Coordinates::calculateGeometry() needed here
     test_coords_staggered->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
 

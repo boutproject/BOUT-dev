@@ -337,10 +337,14 @@ set(BOUT_SOURCES
   ./src/sys/timer.cxx
   ./src/sys/type_name.cxx
   ./src/sys/utils.cxx
+  ./include/bout/metricTensor.hxx
+  ./src/mesh/metricTensor.cxx
+  ./include/bout/geometry.hxx
+  ./src/mesh/geometry.cxx
+  ./include/bout/differential_operators.hxx
+  ./src/mesh/differential_operators.cxx
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/revision.hxx
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
-        src/mesh/metricTensor.cxx
-        include/bout/metricTensor.hxx
 )
 
 

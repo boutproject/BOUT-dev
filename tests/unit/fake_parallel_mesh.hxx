@@ -294,7 +294,7 @@ std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz, int n
           Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
           Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
           Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0});
-      // No call to Coordinates::geometry() needed here
+      // No call to Coordinates::calculateGeometry() needed here
       static_cast<FakeParallelMesh*>(&meshes[j + i * nype])->setCoordinates(test_coords);
       test_coords->setParallelTransform(
           bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));

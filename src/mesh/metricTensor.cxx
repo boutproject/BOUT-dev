@@ -107,7 +107,7 @@ void MetricTensor::setLocation(const CELL_LOC location) {
   g23.setLocation(location);
 }
 
-MetricTensor MetricTensor::oppositeRepresentation(CELL_LOC location, Mesh* mesh,
+MetricTensor MetricTensor::oppositeRepresentation(CELL_LOC location,
                                                   const std::string& region) {
 
   TRACE("MetricTensor::CalculateOppositeRepresentation");
@@ -164,7 +164,7 @@ MetricTensor MetricTensor::oppositeRepresentation(CELL_LOC location, Mesh* mesh,
   //              + g_23 * g_33)));
   //
   //  output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
-
+  const auto mesh = g11.getMesh(); // All the components have the same mesh
   auto other_representation = MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23, mesh);
   other_representation.setLocation(location);
   return other_representation;

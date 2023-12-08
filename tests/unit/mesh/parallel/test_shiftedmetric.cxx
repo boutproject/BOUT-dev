@@ -42,7 +42,7 @@ public:
         Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}));
-    // No call to Coordinates::geometry() needed here
+    // No call to Coordinates::calculateGeometry() needed here
 
     auto coords = mesh->getCoordinates();
     coords->setParallelTransform(bout::utils::make_unique<ShiftedMetric>(

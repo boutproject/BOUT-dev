@@ -85,7 +85,7 @@ public:
 
     static_cast<FakeMesh*>(bout::globals::mesh)
         ->setGridDataSource(new GridFromOptions(Options::getRoot()));
-    bout::globals::mesh->getCoordinates()->geometry();
+    bout::globals::mesh->getCoordinates()->calculateGeometry();
     f3.allocate();
     coef2.allocate();
     coef3.allocate();

@@ -37,7 +37,7 @@ public:
 
   void setLocation(const CELL_LOC location);
 
-  MetricTensor oppositeRepresentation(const CELL_LOC location, Mesh* mesh,
+  MetricTensor oppositeRepresentation(const CELL_LOC location,
                                       const std::string& region = "RGN_ALL");
 
   // Transforms the MetricTensor by applying the given function to every component

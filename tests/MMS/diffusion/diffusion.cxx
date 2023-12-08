@@ -50,7 +50,7 @@ int Diffusion::init(bool UNUSED(restarting)) {
   auto covariant_metric_tensor = MetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
   coord->setCovariantMetricTensor(covariant_metric_tensor);
 
-  coord->geometry();
+  coord->calculateGeometry();
 
   // Tell BOUT++ to solve N
   SOLVE_FOR(N);

@@ -1049,7 +1049,7 @@ protected:
     metric->g_13 = I * Rxy * Rxy;
     metric->g_23 = Btxy * hthe * Rxy / Bpxy;
 
-    metric->geometry(); // Calculate quantities from metric tensor
+    metric->calculateGeometry(); // Calculate quantities from metric tensor
 
     // Set B field vector
 

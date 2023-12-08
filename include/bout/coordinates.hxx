@@ -33,19 +33,14 @@
 #ifndef __COORDINATES_H__
 #define __COORDINATES_H__
 
-#include "metricTensor.hxx"
-#include "bout/field2d.hxx"
-#include "bout/field3d.hxx"
+#include "bout/geometry.hxx"
+#include "bout/metricTensor.hxx"
 #include "bout/paralleltransform.hxx"
-#include "bout/utils.hxx"
-#include <bout/bout_types.hxx>
 
 class Mesh;
 
 /*!
  * Represents a coordinate system, and associated operators
- *
- * This is a container for a collection of metric tensor components
  */
 class Coordinates {
 public:
@@ -61,7 +56,7 @@ public:
   /// force_interpolate_from_centre argument to true to always interpolate
   /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
   /// would not be correct).
-  Coordinates(Mesh* mesh, Options* options = nullptr, const CELL_LOC loc = CELL_CENTRE,
+  Coordinates(Mesh* mesh, Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
               const Coordinates* coords_in = nullptr,
               bool force_interpolate_from_centre = false);
 
@@ -74,10 +69,6 @@ public:
               FieldMetric g_22, FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
               FieldMetric g_23, FieldMetric ShiftTorsion, FieldMetric IntShiftTorsion);
 
-  Coordinates& operator=(Coordinates&&) = default;
-
-  ~Coordinates() = default;
-
   /// Add variables to \p output_options, for post-processing
   void outputVars(Options& output_options);
 
@@ -87,7 +78,7 @@ public:
   const Field2D& zlength() const;
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
-  bool non_uniform;
+  bool non_uniform{};
   /// 2nd-order correction for non-uniform meshes d/di(1/dx), d/di(1/dy) and d/di(1/dz)
   FieldMetric d1_dx, d1_dy, d1_dz;
 
@@ -124,27 +115,21 @@ public:
 
   void setBxy(FieldMetric Bxy);
 
-  /// Christoffel symbol of the second kind (connection coefficients)
-  FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
-  FieldMetric G2_11, G2_22, G2_33, G2_12, G2_13, G2_23;
-  FieldMetric G3_11, G3_22, G3_33, G3_12, G3_13, G3_23;
-
-  FieldMetric G1, G2, G3;
-
   /// d pitch angle / dx. Needed for vector differentials (Curl)
   FieldMetric ShiftTorsion;
 
   FieldMetric IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
 
+  const MetricTensor& getContravariantMetricTensor() const;
+
   /// Calculate differential geometry quantities from the metric tensor
-  int geometry(bool recalculate_staggered = true,
-               bool force_interpolate_from_centre = false);
+  int calculateGeometry(bool recalculate_staggered = true,
+                        bool force_interpolate_from_centre = false);
   /// Invert contravariant metric to get covariant components
   void calcCovariant(const std::string& region = "RGN_ALL");
   /// Invert covariant metric to get contravariant components
   void calcContravariant(const std::string& region = "RGN_ALL");
-  int jacobian();                     ///< Calculate J and Bxy
-  void CalculateChristoffelSymbols(); /// Calculate Christoffel symbol terms
+  void jacobian(); ///< Calculate J and Bxy
 
   ///////////////////////////////////////////////////////////
   // Parallel transforms
@@ -158,7 +143,7 @@ public:
 
   /// Return the parallel transform
   ParallelTransform& getParallelTransform() {
-    ASSERT1(transform != nullptr);
+    ASSERT1(transform != nullptr)
     return *transform;
   }
 
@@ -191,8 +176,8 @@ public:
               const std::string& region = "RGN_NOBNDRY");
 
   /// Gradient along magnetic field  b.Grad(f)
-  FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
-                       const std::string& method = "DEFAULT");
+  Field2D Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT");
 
   Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
                    const std::string& method = "DEFAULT");
@@ -243,29 +228,52 @@ public:
   // solver
   Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
 
+  const FieldMetric& G1_11();
+  const FieldMetric& G1_22();
+  const FieldMetric& G1_33();
+  const FieldMetric& G1_12();
+  const FieldMetric& G1_13();
+  const FieldMetric& G1_23();
+
+  const FieldMetric& G2_11();
+  const FieldMetric& G2_22();
+  const FieldMetric& G2_33();
+  const FieldMetric& G2_12();
+  const FieldMetric& G2_13();
+  const FieldMetric& G2_23();
+
+  const FieldMetric& G3_11();
+  const FieldMetric& G3_22();
+  const FieldMetric& G3_33();
+  const FieldMetric& G3_12();
+  const FieldMetric& G3_13();
+  const FieldMetric& G3_23();
+
+  const FieldMetric& G1() const;
+  const FieldMetric& G2() const;
+  const FieldMetric& G3() const;
+
+  void setG1(FieldMetric G1);
+  void setG2(FieldMetric G2);
+  void setG3(FieldMetric G3);
+
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
   CELL_LOC location;
+  DifferentialOperators differential_operators;
+  Geometry geometry;
 
   /// Handles calculation of yup and ydown
   std::unique_ptr<ParallelTransform> transform{nullptr};
 
   /// Cache variable for `zlength`. Invalidated when
-  /// `Coordinates::geometry` is called
+  /// `Coordinates::calculateGeometry` is called
   mutable std::unique_ptr<Field2D> zlength_cache{nullptr};
-
-  /// Cache variable for Grad2_par2
-  mutable std::map<std::string, std::unique_ptr<FieldMetric>> Grad2_par2_DDY_invSgCache;
-  mutable std::unique_ptr<FieldMetric> invSgCache{nullptr};
 
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
-
-  const FieldMetric& invSg() const;
-  const FieldMetric& Grad2_par2_DDY_invSg(CELL_LOC outloc,
-                                          const std::string& method) const;
 
   // check that covariant tensors are positive (if expected) and finite (always)
   void checkCovariant();
@@ -285,11 +293,7 @@ private:
       bool extrapolate_x = false, bool extrapolate_y = false,
       bool no_extra_interpolate = false, ParallelTransform* pParallelTransform = nullptr);
 
-  MetricTensor contravariantMetricTensor;
-  MetricTensor covariantMetricTensor;
-
-  FieldMetric this_J;
-  FieldMetric this_Bxy; ///< Magnitude of B = nabla z times nabla x
+  void communicateChristoffelSymbolTerms();
 };
 
 /*
