@@ -367,8 +367,8 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomple
 
   if (localmesh->IncIntShear) {
     // d2dz2 term
-    coef2 += localcoords->g11()(jx, jy) * localcoords->IntShiftTorsion(jx, jy)
-             * localcoords->IntShiftTorsion(jx, jy);
+    coef2 += localcoords->g11()(jx, jy) * localcoords->IntShiftTorsion()(jx, jy)
+             * localcoords->IntShiftTorsion()(jx, jy);
     // Mixed derivative
     coef3 = 0.0; // This cancels out
   }

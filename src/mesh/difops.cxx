@@ -512,7 +512,7 @@ Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A, CELL_LOC outloc) 
 
   if (mesh->IncIntShear) {
     // BOUT-06 style differencing
-    vz += metric->IntShiftTorsion * vx;
+    vz += metric->IntShiftTorsion() * vx;
   }
 
   // Upwind A using these velocities
@@ -590,7 +590,7 @@ Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A, CELL_LOC outloc) 
 
   if (mesh->IncIntShear) {
     // BOUT-06 style differencing
-    vz += metric->IntShiftTorsion * vx;
+    vz += metric->IntShiftTorsion() * vx;
   }
 
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc) + VDDZ(vz, A, outloc);

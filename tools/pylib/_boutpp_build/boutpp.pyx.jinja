@@ -837,17 +837,13 @@ cdef class Coordinates:
     cdef {{ metric_field }} G2_11, G2_22, G2_33, G2_12, G2_13, G2_23
     cdef {{ metric_field }} G3_11, G3_22, G3_33, G3_12, G3_13, G3_23
     cdef {{ metric_field }} G1, G2, G3
-    cdef public {{ metric_field }} ShiftTorsion
-    cdef public {{ metric_field }} IntShiftTorsion
+    cdef {{ metric_field }} ShiftTorsion
+    cdef {{ metric_field }} IntShiftTorsion
 
     def __init__(self):
         self.cobj = NULL
         self.isSelfOwned = False
 
-    def _setmembers(self):
-{% for f in "ShiftTorsion", "IntShiftTorsion" %}
-        self.{{f}} = {{ metric_field.fdd }}FromPtr(&self.cobj.{{f}})
-{% endfor %}
 
     def __dealloc__(self):
         self.__boutpp_dealloc()
