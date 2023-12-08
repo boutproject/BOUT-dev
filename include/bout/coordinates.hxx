@@ -69,7 +69,7 @@ public:
               const FieldMetric& g12, const FieldMetric& g13, const FieldMetric& g23,
               const FieldMetric& g_11, const FieldMetric& g_22, const FieldMetric& g_33,
               const FieldMetric& g_12, const FieldMetric& g_13, const FieldMetric& g_23,
-              FieldMetric ShiftTorsion, FieldMetric IntShiftTorsion);
+              const FieldMetric& ShiftTorsion, const FieldMetric& IntShiftTorsion);
 
   /// Add variables to \p output_options, for post-processing
   void outputVars(Options& output_options);
@@ -117,12 +117,6 @@ public:
   const FieldMetric& g13() const;
   const FieldMetric& g23() const;
 
-  ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
-  const FieldMetric& J() const;
-
-  ///< Magnitude of B = nabla z times nabla x
-  const FieldMetric& Bxy() const;
-
   void setContravariantMetricTensor(MetricTensor metric_tensor,
                                     const std::string& region = "RGN_ALL",
                                     bool recalculate_staggered = true,
@@ -133,15 +127,23 @@ public:
                                 bool recalculate_staggered = true,
                                 bool force_interpolate_from_centre = false);
 
+  ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
+  const FieldMetric& J() const;
+
+  ///< Magnitude of B = nabla z times nabla x
+  const FieldMetric& Bxy() const;
+
   void setJ(FieldMetric J);
   void setJ(BoutReal value, int x, int y);
 
   void setBxy(FieldMetric Bxy);
 
   /// d pitch angle / dx. Needed for vector differentials (Curl)
-  FieldMetric ShiftTorsion;
+  const FieldMetric& ShiftTorsion() const;
 
-  FieldMetric IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
+  ///< Integrated shear (I in BOUT notation)
+  const FieldMetric& IntShiftTorsion() const;
+  void setIntShiftTorsion(FieldMetric IntShiftTorsion);
 
   const MetricTensor& getContravariantMetricTensor() const;
 
@@ -298,6 +300,12 @@ private:
 
   /// 2nd-order correction for non-uniform meshes d/di(1/dx), d/di(1/dy) and d/di(1/dz)
   FieldMetric d1_dx_, d1_dy_, d1_dz_;
+
+  /// d pitch angle / dx. Needed for vector differentials (Curl)
+  FieldMetric ShiftTorsion_;
+
+  ///< Integrated shear (I in BOUT notation)
+  FieldMetric IntShiftTorsion_;
 
   /// Handles calculation of yup and ydown
   std::unique_ptr<ParallelTransform> transform{nullptr};

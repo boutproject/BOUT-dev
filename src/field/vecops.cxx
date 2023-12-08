@@ -282,7 +282,7 @@ Vector2D Curl(const Vector2D& v) {
   result.z = (DDX(vco.y) - DDY(vco.x)) / metric->J();
 
   /// Coordinate torsion
-  result.z -= metric->ShiftTorsion * vco.z / metric->J();
+  result.z -= metric->ShiftTorsion() * vco.z / metric->J();
 
   result.setLocation(v.getLocation());
 
@@ -310,7 +310,7 @@ Vector3D Curl(const Vector3D& v) {
   result.z = (DDX(vco.y) - DDY(vco.x)) / metric->J();
 
   // Coordinate torsion
-  result.z -= metric->ShiftTorsion * vco.z / metric->J();
+  result.z -= metric->ShiftTorsion() * vco.z / metric->J();
 
   result.setLocation(v.getLocation());
 

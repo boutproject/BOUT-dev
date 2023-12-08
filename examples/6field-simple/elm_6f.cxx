@@ -705,7 +705,7 @@ protected:
 
     if (mesh->IncIntShear) {
       // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      coord->IntShiftTorsion = I;
+      coord->setIntShiftTorsion(I);
 
     } else {
       // Dimits style, using local coordinate system

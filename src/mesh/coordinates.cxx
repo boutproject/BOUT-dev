@@ -288,21 +288,22 @@ Coordinates::Coordinates(Mesh* mesh, const FieldMetric& dx, const FieldMetric& d
                          const FieldMetric& g23, const FieldMetric& g_11,
                          const FieldMetric& g_22, const FieldMetric& g_33,
                          const FieldMetric& g_12, const FieldMetric& g_13,
-                         const FieldMetric& g_23, FieldMetric ShiftTorsion,
-                         FieldMetric IntShiftTorsion)
-    : ShiftTorsion(std::move(ShiftTorsion)), IntShiftTorsion(std::move(IntShiftTorsion)),
-      nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE),
+                         const FieldMetric& g_23, const FieldMetric& ShiftTorsion,
+                         const FieldMetric& IntShiftTorsion)
+    : nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE),
       differential_operators(mesh->getDifferentialOperators()),
       geometry(Geometry(J, Bxy, g11, g22, g33, g12, g13, g23, g_11, g_22, g_33, g_12,
                         g_13, g_23, differential_operators)),
-      dx_(dx), dy_(dy), dz_(dz) {}
+      dx_(dx), dy_(dy), dz_(dz), ShiftTorsion_(ShiftTorsion),
+      IntShiftTorsion_(IntShiftTorsion) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
-    : dx_(1., mesh), dy_(1., mesh), dz_(1., mesh), d1_dx_(mesh), d1_dy_(mesh),
-      d1_dz_(mesh), ShiftTorsion(mesh), IntShiftTorsion(mesh), localmesh(mesh),
-      location(loc), differential_operators(mesh->getDifferentialOperators()),
-      geometry(Geometry(mesh, differential_operators)) {
+    : localmesh(mesh), location(loc),
+      differential_operators(mesh->getDifferentialOperators()),
+      geometry(Geometry(mesh, differential_operators)), dx_(1., mesh), dy_(1., mesh),
+      dz_(1., mesh), d1_dx_(mesh), d1_dy_(mesh), d1_dz_(mesh), ShiftTorsion_(mesh),
+      IntShiftTorsion_(mesh) {
 
   if (options == nullptr) {
     options = Options::getRoot()->getSection("mesh");
@@ -350,12 +351,12 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(const Mesh* mesh,
   bout::checkFinite(Bxy(), "Bxy", "RGN_NOCORNERS");
   bout::checkPositive(Bxy(), "Bxy", "RGN_NOCORNERS");
 
-  ShiftTorsion = localmesh->interpolateAndExtrapolate(coords_in->ShiftTorsion, location,
-                                                      true, true, false, transform.get());
+  ShiftTorsion_ = localmesh->interpolateAndExtrapolate(
+      coords_in->ShiftTorsion(), location, true, true, false, transform.get());
 
   if (mesh->IncIntShear) {
-    IntShiftTorsion = localmesh->interpolateAndExtrapolate(
-        coords_in->IntShiftTorsion, location, true, true, false, transform.get());
+    IntShiftTorsion_ = localmesh->interpolateAndExtrapolate(
+        coords_in->IntShiftTorsion(), location, true, true, false, transform.get());
   }
 
   if (isUniform(coords_in->dz())) {
@@ -556,28 +557,28 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* options,
   bout::checkFinite(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
   bout::checkPositive(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
 
-  if (getAtLoc(mesh, ShiftTorsion, "ShiftTorsion", suffix, location) != 0) {
+  if (getAtLoc(mesh, ShiftTorsion_, "ShiftTorsion", suffix, location) != 0) {
     output_warn.write("\tWARNING: No Torsion specified for zShift. "
                       "Derivatives may not be correct\n");
-    ShiftTorsion = 0.0;
+    ShiftTorsion_ = 0.0;
   }
-  ShiftTorsion = localmesh->interpolateAndExtrapolate(
-      ShiftTorsion, location, extrapolate_x, extrapolate_y, false, transform.get());
+  ShiftTorsion_ = localmesh->interpolateAndExtrapolate(
+      ShiftTorsion_, location, extrapolate_x, extrapolate_y, false, transform.get());
 
   //////////////////////////////////////////////////////
 
   if (mesh->IncIntShear) {
     checkStaggeredGet(mesh, "IntShiftTorsion", suffix);
-    if (mesh->get(IntShiftTorsion, "IntShiftTorsion" + suffix, 0.0, false) != 0) {
+    if (mesh->get(IntShiftTorsion_, "IntShiftTorsion" + suffix, 0.0, false) != 0) {
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
-      IntShiftTorsion = 0.0;
+      IntShiftTorsion_ = 0.0;
     }
-    IntShiftTorsion.setLocation(location);
-    IntShiftTorsion = localmesh->interpolateAndExtrapolate(
-        IntShiftTorsion, location, extrapolate_x, extrapolate_y, false, transform.get());
+    IntShiftTorsion_.setLocation(location);
+    IntShiftTorsion_ = localmesh->interpolateAndExtrapolate(
+        IntShiftTorsion_, location, extrapolate_x, extrapolate_y, false, transform.get());
   } else {
     // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
-    IntShiftTorsion = 0.;
+    IntShiftTorsion_ = 0.;
   }
 }
 
@@ -931,7 +932,7 @@ Field2D Coordinates::DDX(const Field2D& f, CELL_LOC loc, const std::string& meth
 
 Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) const {
-  return differential_operators->DDX(f, dx(), dz(), IntShiftTorsion, outloc, method,
+  return differential_operators->DDX(f, dx(), dz(), IntShiftTorsion_, outloc, method,
                                      region);
 }
 
@@ -1379,6 +1380,14 @@ void Coordinates::setD1_dz(FieldMetric d1_dz) { d1_dz_ = d1_dz; }
 const FieldMetric& Coordinates::d1_dx() const { return d1_dx_; }
 const FieldMetric& Coordinates::d1_dy() const { return d1_dy_; }
 const FieldMetric& Coordinates::d1_dz() const { return d1_dz_; }
+
+const FieldMetric& Coordinates::ShiftTorsion() const { return ShiftTorsion_; }
+
+const FieldMetric& Coordinates::IntShiftTorsion() const { return IntShiftTorsion_; }
+
+void Coordinates::setIntShiftTorsion(FieldMetric IntShiftTorsion) {
+  IntShiftTorsion_ = IntShiftTorsion;
+}
 
 void Coordinates::setContravariantMetricTensor(MetricTensor metric_tensor,
                                                const std::string& region,
