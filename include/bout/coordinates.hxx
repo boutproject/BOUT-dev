@@ -56,9 +56,9 @@ public:
   /// force_interpolate_from_centre argument to true to always interpolate
   /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
   /// would not be correct).
-  Coordinates(Mesh* mesh, Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
-              const Coordinates* coords_in = nullptr,
-              bool force_interpolate_from_centre = false);
+  explicit Coordinates(Mesh* mesh, Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
+                       const Coordinates* coords_in = nullptr,
+                       bool force_interpolate_from_centre = false);
 
   /// A constructor useful for testing purposes. To use it, inherit
   /// from Coordinates. If \p calculate_geometry is true (default),
