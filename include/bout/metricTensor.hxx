@@ -24,12 +24,12 @@ public:
   // check that tensors are positive (if expected) and finite (always)
   void check(int ystart);
 
-  const FieldMetric& Getg11() const;
-  const FieldMetric& Getg22() const;
-  const FieldMetric& Getg33() const;
-  const FieldMetric& Getg12() const;
-  const FieldMetric& Getg13() const;
-  const FieldMetric& Getg23() const;
+  const FieldMetric& g11() const;
+  const FieldMetric& g22() const;
+  const FieldMetric& g33() const;
+  const FieldMetric& g12() const;
+  const FieldMetric& g13() const;
+  const FieldMetric& g23() const;
 
   void setMetricTensor(const MetricTensor& metric_tensor);
 
@@ -42,11 +42,11 @@ public:
   // Transforms the MetricTensor by applying the given function to every component
   void map(const std::function<const Field2D(const FieldMetric)>& function);
 
-  MetricTensor
-  applyToComponents(const std::function<const FieldMetric(const FieldMetric)>& function) const;
+  MetricTensor applyToComponents(
+      const std::function<const FieldMetric(const FieldMetric)>& function) const;
 
 protected:
-  FieldMetric g11, g22, g33, g12, g13, g23;
+  FieldMetric g11_, g22_, g33_, g12_, g13_, g23_;
 };
 
 #endif //BOUT_METRICTENSOR_HXX

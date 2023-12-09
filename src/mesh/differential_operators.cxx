@@ -229,7 +229,7 @@ Field2D DifferentialOperators::Grad2_par2(const Field2D& f, const Field2D& dy,
   const auto grad2_par2_DDY_invSg = coordinates->Grad2_par2_DDY_invSg(outloc, method);
 
   return grad2_par2_DDY_invSg * DDY(f, dy, outloc, method)
-         + D2DY2(f, outloc, method) / covariantMetricTensor.Getg22();
+         + D2DY2(f, outloc, method) / covariantMetricTensor.g22();
 }
 
 Field3D DifferentialOperators::Grad2_par2(const Field3D& f,
@@ -242,10 +242,10 @@ Field3D DifferentialOperators::Grad2_par2(const Field3D& f,
 
   Field3D result = ::DDY(f, outloc, method);
 
-  Field3D r2 = D2DY2(f, outloc, method) / covariantMetricTensor.Getg22();
+  Field3D r2 = D2DY2(f, outloc, method) / covariantMetricTensor.g22();
 
   const auto coordinates =
-      covariantMetricTensor.Getg11().getCoordinates(); //TODO: Find a better way
+      covariantMetricTensor.g11().getCoordinates(); //TODO: Find a better way
 
   const auto grad2_par2_DDY_invSg = coordinates->Grad2_par2_DDY_invSg(outloc, method);
 
@@ -277,9 +277,9 @@ FieldMetric DifferentialOperators::Laplace(
   TRACE("DifferentialOperators::Laplace( Field2D )");
 
   return G1 * DDX(f, dy, outloc) + G2 * DDY(f, dy, outloc)
-         + covariantMetricTensor.Getg11() * D2DX2(f, outloc)
-         + covariantMetricTensor.Getg22() * D2DY2(f, outloc)
-         + 2.0 * covariantMetricTensor.Getg12()
+         + covariantMetricTensor.g11() * D2DX2(f, outloc)
+         + covariantMetricTensor.g22() * D2DY2(f, outloc)
+         + 2.0 * covariantMetricTensor.g12()
                * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY", dfdy_boundary_conditions,
                         dfdy_dy_region);
 }
@@ -293,15 +293,15 @@ Field3D DifferentialOperators::Laplace(const Field3D& f,
   TRACE("DifferentialOperators::Laplace( Field3D )");
 
   Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc)
-                   + covariantMetricTensor.Getg11() * D2DX2(f, outloc)
-                   + covariantMetricTensor.Getg22() * D2DY2(f, outloc)
-                   + covariantMetricTensor.Getg33() * D2DZ2(f, outloc)
+                   + covariantMetricTensor.g11() * D2DX2(f, outloc)
+                   + covariantMetricTensor.g22() * D2DY2(f, outloc)
+                   + covariantMetricTensor.g33() * D2DZ2(f, outloc)
                    + 2.0
-                         * (covariantMetricTensor.Getg12()
+                         * (covariantMetricTensor.g12()
                                 * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
                                          dfdy_boundary_conditions, dfdy_dy_region)
-                            + covariantMetricTensor.Getg13() * D2DXDZ(f, outloc)
-                            + covariantMetricTensor.Getg23() * D2DYDZ(f, outloc));
+                            + covariantMetricTensor.g13() * D2DXDZ(f, outloc)
+                            + covariantMetricTensor.g23() * D2DYDZ(f, outloc));
 
   return result;
 }
@@ -324,7 +324,7 @@ Field2D DifferentialOperators::Laplace_perpXY([[maybe_unused]] const Field2D& A,
     const auto outer_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xp()]); };
     const BoutReal outer_x_A = outer_x_avg(A);
     const BoutReal outer_x_J = outer_x_avg(J);
-    const BoutReal outer_x_g11 = outer_x_avg(covariantMetricTensor.Getg11());
+    const BoutReal outer_x_g11 = outer_x_avg(covariantMetricTensor.g11());
     const BoutReal outer_x_dx = outer_x_avg(dx);
     const BoutReal outer_x_value =
         outer_x_A * outer_x_J * outer_x_g11 / (J[i] * outer_x_dx * dx[i]);
@@ -334,7 +334,7 @@ Field2D DifferentialOperators::Laplace_perpXY([[maybe_unused]] const Field2D& A,
     const auto inner_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xm()]); };
     const BoutReal inner_x_A = inner_x_avg(A);
     const BoutReal inner_x_J = inner_x_avg(J);
-    const BoutReal inner_x_g11 = inner_x_avg(covariantMetricTensor.Getg11());
+    const BoutReal inner_x_g11 = inner_x_avg(covariantMetricTensor.g11());
     const BoutReal inner_x_dx = inner_x_avg(dx);
     const BoutReal inner_x_value =
         inner_x_A * inner_x_J * inner_x_g11 / (J[i] * inner_x_dx * dx[i]);
@@ -344,9 +344,9 @@ Field2D DifferentialOperators::Laplace_perpXY([[maybe_unused]] const Field2D& A,
     const auto upper_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.yp()]); };
     const BoutReal upper_y_A = upper_y_avg(A);
     const BoutReal upper_y_J = upper_y_avg(J);
-    const BoutReal upper_y_g_22 = upper_y_avg(covariantMetricTensor.Getg22());
-    const BoutReal upper_y_g23 = upper_y_avg(covariantMetricTensor.Getg23());
-    const BoutReal upper_y_g_23 = upper_y_avg(covariantMetricTensor.Getg23());
+    const BoutReal upper_y_g_22 = upper_y_avg(covariantMetricTensor.g22());
+    const BoutReal upper_y_g23 = upper_y_avg(covariantMetricTensor.g23());
+    const BoutReal upper_y_g_23 = upper_y_avg(covariantMetricTensor.g23());
     const BoutReal upper_y_dy = upper_y_avg(dy);
     const BoutReal upper_y_value = -upper_y_A * upper_y_J * upper_y_g23 * upper_y_g_23
                                    / (upper_y_g_22 * J[i] * upper_y_dy * dy[i]);
@@ -356,9 +356,9 @@ Field2D DifferentialOperators::Laplace_perpXY([[maybe_unused]] const Field2D& A,
     const auto lower_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.ym()]); };
     const BoutReal lower_y_A = lower_y_avg(A);
     const BoutReal lower_y_J = lower_y_avg(J);
-    const BoutReal lower_y_g_22 = lower_y_avg(covariantMetricTensor.Getg22());
-    const BoutReal lower_y_g23 = lower_y_avg(covariantMetricTensor.Getg23());
-    const BoutReal lower_y_g_23 = lower_y_avg(covariantMetricTensor.Getg23());
+    const BoutReal lower_y_g_22 = lower_y_avg(covariantMetricTensor.g22());
+    const BoutReal lower_y_g23 = lower_y_avg(covariantMetricTensor.g23());
+    const BoutReal lower_y_g_23 = lower_y_avg(covariantMetricTensor.g23());
     const BoutReal lower_y_dy = lower_y_avg(dy);
     const BoutReal lower_y_value = -lower_y_A * lower_y_J * lower_y_g23 * lower_y_g_23
                                    / (lower_y_g_22 * J[i] * lower_y_dy * dy[i]);
