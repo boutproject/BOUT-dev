@@ -292,7 +292,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
     : nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE),
       differential_operators(mesh->getDifferentialOperators()),
       geometry(Geometry(J, Bxy, g11, g22, g33, g12, g13, g23, g_11, g_22, g_33, g_12,
-                        g_13, g_23, differential_operators)),
+                        g_13, g_23, differential_operators, mesh)),
       dx_(std::move(dx)), dy_(std::move(dy)), dz_(std::move(dz)),
       ShiftTorsion_(std::move(ShiftTorsion)),
       IntShiftTorsion_(std::move(IntShiftTorsion)) {}

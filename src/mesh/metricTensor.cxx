@@ -171,10 +171,11 @@ MetricTensor MetricTensor::inverse(const std::string& region) {
 void MetricTensor::map(
     const std::function<const FieldMetric(const FieldMetric)> function) {
 
-  const auto components_out = applyToComponents(function);
+  const MetricTensor updated_metric_tensor = applyToComponents(function);
 
-  auto [g_11, g_22, g_33, g_12, g_13, g_23] = components_out;
-  setMetricTensor(MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+  setMetricTensor(MetricTensor(updated_metric_tensor.g11, updated_metric_tensor.g22,
+                               updated_metric_tensor.g33, updated_metric_tensor.g12,
+                               updated_metric_tensor.g13, updated_metric_tensor.g23));
 }
 
 MetricTensor MetricTensor::applyToComponents(
