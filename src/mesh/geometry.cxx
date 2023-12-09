@@ -13,7 +13,7 @@ Geometry::Geometry(const FieldMetric& J, const FieldMetric& Bxy, const FieldMetr
                    const FieldMetric& g_33, const FieldMetric& g_12,
                    const FieldMetric& g_13, const FieldMetric& g_23,
                    DifferentialOperators* differential_operators, Mesh* mesh)
-    : christoffel_symbols(mesh, differential_operators),
+    : christoffel_symbols(differential_operators),
       contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
       covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), this_J(J), this_Bxy(Bxy),
       differential_operators(differential_operators) {

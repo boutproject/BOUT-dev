@@ -17,6 +17,14 @@ ChristoffelSymbols::ChristoffelSymbols(
       differential_operators(differential_operators){
           ASSERT0(differential_operators != nullptr)}
 
+      /// This constructor (taking no mesh) is needed because mesh may be a FakeMesh,
+      /// which has no 'source' set, leading to a SEGFAULT if the constructor leads
+      /// to initialisation of FieldMetric objects.
+      ChristoffelSymbols::ChristoffelSymbols(DifferentialOperators
+                                             * differential_operators)
+    : differential_operators(
+          differential_operators){ASSERT0(differential_operators != nullptr)}
+
       ChristoffelSymbols::ChristoffelSymbols(Mesh * mesh, DifferentialOperators
                                                               * differential_operators)
     : G1_11_(mesh), G1_22_(mesh), G1_33_(mesh), G1_12_(mesh), G1_13_(mesh), G1_23_(mesh),
