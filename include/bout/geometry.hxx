@@ -47,7 +47,7 @@ using FieldMetric = MetricTensor::FieldMetric;
 class Geometry {
 
 public:
-  Geometry(const FieldMetric& J, const FieldMetric& Bxy, const FieldMetric& g11,
+  Geometry(FieldMetric  J, FieldMetric  Bxy, const FieldMetric& g11,
            const FieldMetric& g22, const FieldMetric& g33, const FieldMetric& g12,
            const FieldMetric& g13, const FieldMetric& g23, const FieldMetric& g_11,
            const FieldMetric& g_22, const FieldMetric& g_33, const FieldMetric& g_12,

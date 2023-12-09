@@ -1,11 +1,12 @@
 
+#include <utility>
 #include "bout/metricTensor.hxx"
 #include "bout/output.hxx"
 
-MetricTensor::MetricTensor(const FieldMetric& g11, const FieldMetric& g22,
-                           const FieldMetric& g33, const FieldMetric& g12,
-                           const FieldMetric& g13, const FieldMetric& g23)
-    : g11_(g11), g22_(g22), g33_(g33), g12_(g12), g13_(g13), g23_(g23) {
+MetricTensor::MetricTensor(FieldMetric g11, FieldMetric g22, FieldMetric g33,
+                           FieldMetric g12, FieldMetric g13, FieldMetric g23)
+    : g11_(std::move(g11)), g22_(std::move(g22)), g33_(std::move(g33)),
+      g12_(std::move(g12)), g13_(std::move(g13)), g23_(std::move(g23)) {
   Allocate(); // Make sure metric elements are allocated //  ; TODO: Required?
 }
 

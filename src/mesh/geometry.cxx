@@ -4,9 +4,10 @@
  * given the contravariant metric tensor terms
  **************************************************************************/
 
+#include <utility>
 #include "bout/geometry.hxx"
 
-Geometry::Geometry(const FieldMetric& J, const FieldMetric& Bxy, const FieldMetric& g11,
+Geometry::Geometry(FieldMetric J, FieldMetric Bxy, const FieldMetric& g11,
                    const FieldMetric& g22, const FieldMetric& g33, const FieldMetric& g12,
                    const FieldMetric& g13, const FieldMetric& g23,
                    const FieldMetric& g_11, const FieldMetric& g_22,
@@ -15,9 +16,9 @@ Geometry::Geometry(const FieldMetric& J, const FieldMetric& Bxy, const FieldMetr
                    DifferentialOperators* differential_operators, Mesh* mesh)
     : christoffel_symbols(differential_operators),
       contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), this_J(J), this_Bxy(Bxy),
-      differential_operators(differential_operators){
-          ASSERT0(differential_operators != nullptr)}
+      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), this_J(std::move(J)),
+      this_Bxy(std::move(Bxy)), differential_operators(differential_operators){ASSERT0(
+                                    differential_operators != nullptr)}
 
       Geometry::Geometry(Mesh * mesh, DifferentialOperators * differential_operators)
     //bool force_interpolate_from_centre
@@ -148,7 +149,7 @@ void Geometry::setG3(FieldMetric G3) { christoffel_symbols.setG3(G3); }
 
 void Geometry::setJ(FieldMetric J) {
   //TODO: Calculate J and check value is close
-  this_J = J;
+  this_J = std::move(J);
 }
 
 void Geometry::setJ(BoutReal value, int x, int y) {
@@ -158,7 +159,7 @@ void Geometry::setJ(BoutReal value, int x, int y) {
 
 void Geometry::setBxy(FieldMetric Bxy) {
   //TODO: Calculate Bxy and check value is close
-  this_Bxy = Bxy;
+  this_Bxy = std::move(Bxy);
 }
 
 const MetricTensor& Geometry::getContravariantMetricTensor() const {
