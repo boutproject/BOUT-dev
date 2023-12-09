@@ -111,10 +111,10 @@ public:
   ///< Magnitude of B = nabla z times nabla x
   const FieldMetric& Bxy() const;
 
-  void setContravariantMetricTensor(MetricTensor metric_tensor,
+  void setContravariantMetricTensor(const MetricTensor& metric_tensor,
                                     const std::string& region = "RGN_ALL");
 
-  void setCovariantMetricTensor(MetricTensor metric_tensor,
+  void setCovariantMetricTensor(const MetricTensor& metric_tensor,
                                 const std::string& region = "RGN_ALL");
 
   void setJ(FieldMetric J);

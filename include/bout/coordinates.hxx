@@ -117,12 +117,12 @@ public:
   const FieldMetric& g13() const;
   const FieldMetric& g23() const;
 
-  void setContravariantMetricTensor(MetricTensor metric_tensor,
+  void setContravariantMetricTensor(const MetricTensor& metric_tensor,
                                     const std::string& region = "RGN_ALL",
                                     bool recalculate_staggered = true,
                                     bool force_interpolate_from_centre = false);
 
-  void setCovariantMetricTensor(MetricTensor metric_tensor,
+  void setCovariantMetricTensor(const MetricTensor& metric_tensor,
                                 const std::string& region = "RGN_ALL",
                                 bool recalculate_staggered = true,
                                 bool force_interpolate_from_centre = false);
