@@ -135,13 +135,13 @@ public:
   FieldMetric recalculateBxy();
 
   void applyToContravariantMetricTensor(
-      std::function<const FieldMetric(const FieldMetric)> function);
+      const std::function<const FieldMetric(const FieldMetric)>& function);
 
   void applyToCovariantMetricTensor(
-      std::function<const FieldMetric(const FieldMetric)> function);
+      const std::function<const FieldMetric(const FieldMetric)>& function);
 
-  void applyToChristoffelSymbols(
-      const std::function<const FieldMetric(const FieldMetric)> function);
+  void
+  applyToChristoffelSymbols(const std::function<const FieldMetric(const FieldMetric)>& function);
 
 private:
   /// Christoffel symbol of the second kind (connection coefficients)

@@ -169,7 +169,7 @@ MetricTensor MetricTensor::inverse(const std::string& region) {
 }
 
 void MetricTensor::map(
-    const std::function<const FieldMetric(const FieldMetric)> function) {
+    const std::function<const FieldMetric(const FieldMetric)>& function) {
 
   const MetricTensor updated_metric_tensor = applyToComponents(function);
 
@@ -179,7 +179,7 @@ void MetricTensor::map(
 }
 
 MetricTensor MetricTensor::applyToComponents(
-    const std::function<const FieldMetric(const FieldMetric)> function) const {
+    const std::function<const FieldMetric(const FieldMetric)>& function) const {
 
   const auto components_in = std::vector<FieldMetric>{g11, g22, g33, g12, g13, g23};
 
