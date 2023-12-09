@@ -85,7 +85,7 @@ public:
                                    const MetricTensor& covariantMetricTensor);
 
   // Transforms the ChristoffelSymbols by applying the given function to every element
-  void map(std::function<const FieldMetric(const FieldMetric)> function);
+  void map(const std::function<const FieldMetric(const FieldMetric)>& function);
 
 private:
   FieldMetric G1_11_, G1_22_, G1_33_, G1_12_, G1_13_, G1_23_;
@@ -96,7 +96,7 @@ private:
   DifferentialOperators* differential_operators;
 
   ChristoffelSymbols
-  applyToComponents(std::function<const FieldMetric(const FieldMetric)> function) const;
+  applyToComponents(const std::function<const FieldMetric(const FieldMetric)>& function) const;
 };
 
 #endif //BOUT_CHRISTOFFELSYMBOLS_HXX
