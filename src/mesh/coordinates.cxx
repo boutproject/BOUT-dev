@@ -1389,19 +1389,19 @@ void Coordinates::setIntShiftTorsion(FieldMetric IntShiftTorsion) {
   IntShiftTorsion_ = std::move(IntShiftTorsion);
 }
 
-void Coordinates::setContravariantMetricTensor(MetricTensor metric_tensor,
+void Coordinates::setContravariantMetricTensor(const MetricTensor& metric_tensor,
                                                const std::string& region,
                                                bool recalculate_staggered,
                                                bool force_interpolate_from_centre) {
-  geometry.setContravariantMetricTensor(std::move(metric_tensor), region);
+  geometry.setContravariantMetricTensor(metric_tensor, region);
   recalculateAndReset(recalculate_staggered, force_interpolate_from_centre);
 }
 
-void Coordinates::setCovariantMetricTensor(MetricTensor metric_tensor,
+void Coordinates::setCovariantMetricTensor(const MetricTensor& metric_tensor,
                                            const std::string& region,
                                            bool recalculate_staggered,
                                            bool force_interpolate_from_centre) {
-  geometry.setCovariantMetricTensor(std::move(metric_tensor), region);
+  geometry.setCovariantMetricTensor(metric_tensor, region);
   recalculateAndReset(recalculate_staggered, force_interpolate_from_centre);
 }
 
