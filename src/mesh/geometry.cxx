@@ -37,16 +37,16 @@ void Geometry::CalculateChristoffelSymbols(const FieldMetric& dx, const FieldMet
 MetricTensor::FieldMetric Geometry::recalculateJacobian() {
 
   // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
-  auto g = contravariantMetricTensor.Getg11() * contravariantMetricTensor.Getg22()
-               * contravariantMetricTensor.Getg33()
-           + 2.0 * contravariantMetricTensor.Getg12() * contravariantMetricTensor.Getg13()
-                 * contravariantMetricTensor.Getg23()
-           - contravariantMetricTensor.Getg11() * contravariantMetricTensor.Getg23()
-                 * contravariantMetricTensor.Getg23()
-           - contravariantMetricTensor.Getg22() * contravariantMetricTensor.Getg13()
-                 * contravariantMetricTensor.Getg13()
-           - contravariantMetricTensor.Getg33() * contravariantMetricTensor.Getg12()
-                 * contravariantMetricTensor.Getg12();
+  auto g = contravariantMetricTensor.g11() * contravariantMetricTensor.g22()
+               * contravariantMetricTensor.g33()
+           + 2.0 * contravariantMetricTensor.g12() * contravariantMetricTensor.g13()
+                 * contravariantMetricTensor.g23()
+           - contravariantMetricTensor.g11() * contravariantMetricTensor.g23()
+                 * contravariantMetricTensor.g23()
+           - contravariantMetricTensor.g22() * contravariantMetricTensor.g13()
+                 * contravariantMetricTensor.g13()
+           - contravariantMetricTensor.g33() * contravariantMetricTensor.g12()
+                 * contravariantMetricTensor.g12();
 
   // Check that g is positive
   bout::checkPositive(g, "The determinant of g^ij", "RGN_NOBNDRY");
@@ -56,7 +56,7 @@ MetricTensor::FieldMetric Geometry::recalculateJacobian() {
 
 MetricTensor::FieldMetric Geometry::recalculateBxy() {
 
-  return sqrt(covariantMetricTensor.Getg22()) / this_J;
+  return sqrt(covariantMetricTensor.g22()) / this_J;
 }
 
 void Geometry::checkCovariant(int ystart) { covariantMetricTensor.check(ystart); }
@@ -76,41 +76,41 @@ void Geometry::setCovariantMetricTensor(const MetricTensor& metric_tensor,
 }
 
 const MetricTensor::FieldMetric& Geometry::g_11() const {
-  return covariantMetricTensor.Getg11();
+  return covariantMetricTensor.g11();
 }
 const MetricTensor::FieldMetric& Geometry::g_22() const {
-  return covariantMetricTensor.Getg22();
+  return covariantMetricTensor.g22();
 }
 const MetricTensor::FieldMetric& Geometry::g_33() const {
-  return covariantMetricTensor.Getg33();
+  return covariantMetricTensor.g33();
 }
 const MetricTensor::FieldMetric& Geometry::g_12() const {
-  return covariantMetricTensor.Getg12();
+  return covariantMetricTensor.g12();
 }
 const MetricTensor::FieldMetric& Geometry::g_13() const {
-  return covariantMetricTensor.Getg13();
+  return covariantMetricTensor.g13();
 }
 const MetricTensor::FieldMetric& Geometry::g_23() const {
-  return covariantMetricTensor.Getg23();
+  return covariantMetricTensor.g23();
 }
 
 const MetricTensor::FieldMetric& Geometry::g11() const {
-  return contravariantMetricTensor.Getg11();
+  return contravariantMetricTensor.g11();
 }
 const MetricTensor::FieldMetric& Geometry::g22() const {
-  return contravariantMetricTensor.Getg22();
+  return contravariantMetricTensor.g22();
 }
 const MetricTensor::FieldMetric& Geometry::g33() const {
-  return contravariantMetricTensor.Getg33();
+  return contravariantMetricTensor.g33();
 }
 const MetricTensor::FieldMetric& Geometry::g12() const {
-  return contravariantMetricTensor.Getg12();
+  return contravariantMetricTensor.g12();
 }
 const MetricTensor::FieldMetric& Geometry::g13() const {
-  return contravariantMetricTensor.Getg13();
+  return contravariantMetricTensor.g13();
 }
 const MetricTensor::FieldMetric& Geometry::g23() const {
-  return contravariantMetricTensor.Getg23();
+  return contravariantMetricTensor.g23();
 }
 
 const FieldMetric& Geometry::G1_11() const { return christoffel_symbols.G1_11(); }
