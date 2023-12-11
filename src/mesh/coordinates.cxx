@@ -478,26 +478,22 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* options,
     return mesh->sourceHasVar(name + suffix);
   };
 
-  // Check if any of the components are present
-  if (std::any_of(begin(covariant_component_names), end(covariant_component_names),
+  // Check that all components are present
+  if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
                   source_has_component)) {
-    // Check that all components are present
-    if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
-                    source_has_component)) {
 
-      FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
-      g_11 = getAtLocOrUnaligned(mesh, "g_11", 1.0, suffix, location);
-      g_22 = getAtLocOrUnaligned(mesh, "g_22", 1.0, suffix, location);
-      g_33 = getAtLocOrUnaligned(mesh, "g_33", 1.0, suffix, location);
-      g_12 = getAtLocOrUnaligned(mesh, "g_12", 0.0, suffix, location);
-      g_13 = getAtLocOrUnaligned(mesh, "g_13", 0.0, suffix, location);
-      g_23 = getAtLocOrUnaligned(mesh, "g_23", 0.0, suffix, location);
-      covariantMetricTensor.setMetricTensor(
-          MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+    FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
+    g_11 = getAtLocOrUnaligned(mesh, "g_11", 1.0, suffix, location);
+    g_22 = getAtLocOrUnaligned(mesh, "g_22", 1.0, suffix, location);
+    g_33 = getAtLocOrUnaligned(mesh, "g_33", 1.0, suffix, location);
+    g_12 = getAtLocOrUnaligned(mesh, "g_12", 0.0, suffix, location);
+    g_13 = getAtLocOrUnaligned(mesh, "g_13", 0.0, suffix, location);
+    g_23 = getAtLocOrUnaligned(mesh, "g_23", 0.0, suffix, location);
+    covariantMetricTensor.setMetricTensor(
+        MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
-      output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
-                        "Contravariant components NOT recalculated\n");
-    }
+    output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
+                      "Contravariant components NOT recalculated\n");
   } else {
     covariantMetricTensor.setMetricTensor(contravariantMetricTensor.inverse());
     output_warn.write("Not all covariant components of metric tensor found. "
