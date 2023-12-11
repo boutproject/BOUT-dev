@@ -47,12 +47,11 @@ using FieldMetric = MetricTensor::FieldMetric;
 class Geometry {
 
 public:
-  Geometry(FieldMetric  J, FieldMetric  Bxy, const FieldMetric& g11,
-           const FieldMetric& g22, const FieldMetric& g33, const FieldMetric& g12,
-           const FieldMetric& g13, const FieldMetric& g23, const FieldMetric& g_11,
-           const FieldMetric& g_22, const FieldMetric& g_33, const FieldMetric& g_12,
-           const FieldMetric& g_13, const FieldMetric& g_23,
-           DifferentialOperators* differential_operators, Mesh* mesh);
+  Geometry(FieldMetric J, FieldMetric Bxy, const FieldMetric& g11, const FieldMetric& g22,
+           const FieldMetric& g33, const FieldMetric& g12, const FieldMetric& g13,
+           const FieldMetric& g23, const FieldMetric& g_11, const FieldMetric& g_22,
+           const FieldMetric& g_33, const FieldMetric& g_12, const FieldMetric& g_13,
+           const FieldMetric& g_23, DifferentialOperators* differential_operators);
 
   Geometry(Mesh* mesh, DifferentialOperators* differential_operators);
 

@@ -4,8 +4,8 @@
  * given the contravariant metric tensor terms
  **************************************************************************/
 
-#include <utility>
 #include "bout/geometry.hxx"
+#include <utility>
 
 Geometry::Geometry(FieldMetric J, FieldMetric Bxy, const FieldMetric& g11,
                    const FieldMetric& g22, const FieldMetric& g33, const FieldMetric& g12,
@@ -13,7 +13,7 @@ Geometry::Geometry(FieldMetric J, FieldMetric Bxy, const FieldMetric& g11,
                    const FieldMetric& g_11, const FieldMetric& g_22,
                    const FieldMetric& g_33, const FieldMetric& g_12,
                    const FieldMetric& g_13, const FieldMetric& g_23,
-                   DifferentialOperators* differential_operators, Mesh* mesh)
+                   DifferentialOperators* differential_operators)
     : christoffel_symbols(differential_operators),
       contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
       covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), this_J(std::move(J)),
