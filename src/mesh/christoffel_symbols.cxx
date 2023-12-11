@@ -1,19 +1,22 @@
 
+#include <utility>
+
 #include "bout/christoffel_symbols.hxx"
 
 ChristoffelSymbols::ChristoffelSymbols(
-    const FieldMetric& G1_11, const FieldMetric& G1_22, const FieldMetric& G1_33,
-    const FieldMetric& G1_12, const FieldMetric& G1_13, const FieldMetric& G1_23,
-    const FieldMetric& G2_11, const FieldMetric& G2_22, const FieldMetric& G2_33,
-    const FieldMetric& G2_12, const FieldMetric& G2_13, const FieldMetric& G2_23,
-    const FieldMetric& G3_11, const FieldMetric& G3_22, const FieldMetric& G3_33,
-    const FieldMetric& G3_12, const FieldMetric& G3_13, const FieldMetric& G3_23,
-    const FieldMetric& G1, const FieldMetric& G2, const FieldMetric& G3,
+    FieldMetric G1_11, FieldMetric G1_22, FieldMetric G1_33, FieldMetric G1_12,
+    FieldMetric G1_13, FieldMetric G1_23, FieldMetric G2_11, FieldMetric G2_22,
+    FieldMetric G2_33, FieldMetric G2_12, FieldMetric G2_13, FieldMetric G2_23,
+    FieldMetric G3_11, FieldMetric G3_22, FieldMetric G3_33, FieldMetric G3_12,
+    FieldMetric G3_13, FieldMetric G3_23, FieldMetric G1, FieldMetric G2, FieldMetric G3,
     DifferentialOperators* differential_operators)
-    : G1_11_(G1_11), G1_22_(G1_22), G1_33_(G1_33), G1_12_(G1_12), G1_13_(G1_13),
-      G1_23_(G1_23), G2_11_(G2_11), G2_22_(G2_22), G2_33_(G2_33), G2_12_(G2_12),
-      G2_13_(G2_13), G2_23_(G2_23), G3_11_(G3_11), G3_22_(G3_22), G3_33_(G3_33),
-      G3_12_(G3_12), G3_13_(G3_13), G3_23_(G3_23), G1_(G1), G2_(G2), G3_(G3),
+    : G1_11_(std::move(G1_11)), G1_22_(std::move(G1_22)), G1_33_(std::move(G1_33)),
+      G1_12_(std::move(G1_12)), G1_13_(std::move(G1_13)), G1_23_(std::move(G1_23)),
+      G2_11_(std::move(G2_11)), G2_22_(std::move(G2_22)), G2_33_(std::move(G2_33)),
+      G2_12_(std::move(G2_12)), G2_13_(std::move(G2_13)), G2_23_(std::move(G2_23)),
+      G3_11_(std::move(G3_11)), G3_22_(std::move(G3_22)), G3_33_(std::move(G3_33)),
+      G3_12_(std::move(G3_12)), G3_13_(std::move(G3_13)), G3_23_(std::move(G3_23)),
+      G1_(std::move(G1)), G2_(std::move(G2)), G3_(std::move(G3)),
       differential_operators(differential_operators){
           ASSERT0(differential_operators != nullptr)}
 
