@@ -15,8 +15,8 @@ public:
   using FieldMetric = Field2D;
 #endif
 
-  MetricTensor(FieldMetric  g11, FieldMetric  g22, FieldMetric  g33,
-               FieldMetric  g12, FieldMetric  g13, FieldMetric  g23);
+  MetricTensor(FieldMetric g11, FieldMetric g22, FieldMetric g33, FieldMetric g12,
+               FieldMetric g13, FieldMetric g23);
 
   MetricTensor(BoutReal g11, BoutReal g22, BoutReal g33, BoutReal g12, BoutReal g13,
                BoutReal g23, Mesh* mesh);
