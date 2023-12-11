@@ -1468,7 +1468,7 @@ void Coordinates::setJ(FieldMetric J) {
 }
 
 void Coordinates::setJ(BoutReal value, int x, int y) {
-  //TODO: Calculate Bxy and check value is close
+  //TODO: Calculate J and check value is close
   J_(x, y) = value;
 }
 
