@@ -467,7 +467,7 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* options,
                                             extrapolate_x, extrapolate_y, false,
                                             transform.get());
 
-  setContravariantMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23));
+  contravariantMetricTensor.setMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23));
 
   // Check input metrics
   checkContravariant();
@@ -492,7 +492,8 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* options,
       g_12 = getAtLocOrUnaligned(mesh, "g_12", 0.0, suffix, location);
       g_13 = getAtLocOrUnaligned(mesh, "g_13", 0.0, suffix, location);
       g_23 = getAtLocOrUnaligned(mesh, "g_23", 0.0, suffix, location);
-      setCovariantMetricTensor(MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+      covariantMetricTensor.setMetricTensor(
+          MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
       output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                         "Contravariant components NOT recalculated\n");
