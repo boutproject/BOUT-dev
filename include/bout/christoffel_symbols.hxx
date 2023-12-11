@@ -25,7 +25,7 @@ public:
   //  ChristoffelSymbols(BoutReal g11, BoutReal g22, BoutReal g33, BoutReal g12, BoutReal g13,
   //                     BoutReal g23, Mesh* mesh);
 
-  ChristoffelSymbols(DifferentialOperators* differential_operators);
+  explicit ChristoffelSymbols(DifferentialOperators* differential_operators);
 
   ChristoffelSymbols(Mesh* mesh, DifferentialOperators* differential_operators);
 
