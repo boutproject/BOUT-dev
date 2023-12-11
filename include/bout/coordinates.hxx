@@ -33,7 +33,8 @@
 #ifndef BOUT_COORDINATES_H
 #define BOUT_COORDINATES_H
 
-#include "bout/geometry.hxx"
+#include "christoffel_symbols.hxx"
+#include "differential_operators.hxx"
 #include "bout/metricTensor.hxx"
 #include "bout/paralleltransform.hxx"
 
@@ -63,12 +64,12 @@ public:
   /// A constructor useful for testing purposes. To use it, inherit
   /// from Coordinates. If \p calculate_geometry is true (default),
   /// calculate the non-uniform variables, Christoffel symbols
-  Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric dz,
-              const FieldMetric& J, const FieldMetric& Bxy, const FieldMetric& g11,
-              const FieldMetric& g22, const FieldMetric& g33, const FieldMetric& g12,
-              const FieldMetric& g13, const FieldMetric& g23, const FieldMetric& g_11,
-              const FieldMetric& g_22, const FieldMetric& g_33, const FieldMetric& g_12,
-              const FieldMetric& g_13, const FieldMetric& g_23, FieldMetric ShiftTorsion,
+  Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric dz, FieldMetric J,
+              FieldMetric Bxy, const FieldMetric& g11, const FieldMetric& g22,
+              const FieldMetric& g33, const FieldMetric& g12, const FieldMetric& g13,
+              const FieldMetric& g23, const FieldMetric& g_11, const FieldMetric& g_22,
+              const FieldMetric& g_33, const FieldMetric& g_12, const FieldMetric& g_13,
+              const FieldMetric& g_23, FieldMetric ShiftTorsion,
               FieldMetric IntShiftTorsion);
 
   /// Add variables to \p output_options, for post-processing
@@ -117,6 +118,9 @@ public:
   const FieldMetric& g13() const;
   const FieldMetric& g23() const;
 
+  const MetricTensor& getContravariantMetricTensor() const;
+  //  const MetricTensor& getCovariantMetricTensor() const;
+
   void setContravariantMetricTensor(const MetricTensor& metric_tensor,
                                     const std::string& region = "RGN_ALL",
                                     bool recalculate_staggered = true,
@@ -144,8 +148,6 @@ public:
   ///< Integrated shear (I in BOUT notation)
   const FieldMetric& IntShiftTorsion() const;
   void setIntShiftTorsion(FieldMetric IntShiftTorsion);
-
-  const MetricTensor& getContravariantMetricTensor() const;
 
   /// Calculate differential geometry quantities from the metric tensor
   int communicateAndCheckMeshSpacing() const;
@@ -249,26 +251,27 @@ public:
   // solver
   Field2D Laplace_perpXY(const Field2D& A, const Field2D& f) const;
 
-  const FieldMetric& G1_11();
-  const FieldMetric& G1_22();
-  const FieldMetric& G1_33();
-  const FieldMetric& G1_12();
-  const FieldMetric& G1_13();
-  const FieldMetric& G1_23();
+  /// Christoffel symbol of the second kind (connection coefficients)
+  const FieldMetric& G1_11() const;
+  const FieldMetric& G1_22() const;
+  const FieldMetric& G1_33() const;
+  const FieldMetric& G1_12() const;
+  const FieldMetric& G1_13() const;
+  const FieldMetric& G1_23() const;
 
-  const FieldMetric& G2_11();
-  const FieldMetric& G2_22();
-  const FieldMetric& G2_33();
-  const FieldMetric& G2_12();
-  const FieldMetric& G2_13();
-  const FieldMetric& G2_23();
+  const FieldMetric& G2_11() const;
+  const FieldMetric& G2_22() const;
+  const FieldMetric& G2_33() const;
+  const FieldMetric& G2_12() const;
+  const FieldMetric& G2_13() const;
+  const FieldMetric& G2_23() const;
 
-  const FieldMetric& G3_11();
-  const FieldMetric& G3_22();
-  const FieldMetric& G3_33();
-  const FieldMetric& G3_12();
-  const FieldMetric& G3_13();
-  const FieldMetric& G3_23();
+  const FieldMetric& G3_11() const;
+  const FieldMetric& G3_22() const;
+  const FieldMetric& G3_33() const;
+  const FieldMetric& G3_12() const;
+  const FieldMetric& G3_13() const;
+  const FieldMetric& G3_23() const;
 
   const FieldMetric& G1() const;
   const FieldMetric& G2() const;
@@ -290,8 +293,8 @@ private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
   CELL_LOC location;
+
   DifferentialOperators* differential_operators;
-  Geometry geometry;
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
   bool non_uniform_{};
@@ -318,6 +321,25 @@ private:
   mutable std::map<std::string, std::unique_ptr<FieldMetric>> Grad2_par2_DDY_invSgCache;
   mutable std::unique_ptr<FieldMetric> invSgCache{nullptr};
 
+  MetricTensor contravariantMetricTensor;
+  MetricTensor covariantMetricTensor;
+
+  /// Christoffel symbol of the second kind (connection coefficients)
+  ChristoffelSymbols christoffel_symbols;
+
+  void applyToContravariantMetricTensor(
+      const std::function<const FieldMetric(const FieldMetric)>& function);
+
+  void applyToCovariantMetricTensor(
+      const std::function<const FieldMetric(const FieldMetric)>& function);
+
+  void applyToChristoffelSymbols(
+      const std::function<const FieldMetric(const FieldMetric)>& function);
+
+  FieldMetric J_;
+
+  FieldMetric Bxy_; ///< Magnitude of B = nabla z times nabla x
+
   void invalidateAndRecalculateCachedVariables();
 
   /// Set the parallel (y) transform from the options file.
@@ -342,8 +364,11 @@ private:
       bool extrapolate_x = false, bool extrapolate_y = false,
       bool no_extra_interpolate = false, ParallelTransform* pParallelTransform = nullptr);
 
-  void communicateChristoffelSymbolTerms();
+  void communicateChristoffelSymbolTerms() const;
   void calculateCommunicateAndExtrapolateChristoffelSymbols();
+
+  FieldMetric recalculateJacobian();
+  FieldMetric recalculateBxy();
 
   /// Non-uniform meshes. Need to use DDX, DDY
   void correctionForNonUniformMeshes(bool force_interpolate_from_centre);
