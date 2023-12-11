@@ -497,11 +497,11 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* options,
 
       output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                         "Contravariant components NOT recalculated\n");
-
-    } else {
-      output_warn.write("Not all covariant components of metric tensor found. "
-                        "Calculating all from the contravariant tensor\n");
     }
+  } else {
+    covariantMetricTensor.setMetricTensor(contravariantMetricTensor.inverse());
+    output_warn.write("Not all covariant components of metric tensor found. "
+                      "Calculating all from the contravariant tensor\n");
   }
 
   // More robust to extrapolate derived quantities directly, rather than
