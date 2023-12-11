@@ -13,16 +13,13 @@ using FieldMetric = MetricTensor::FieldMetric;
 class ChristoffelSymbols {
 
 public:
-  ChristoffelSymbols(const FieldMetric& G1_11, const FieldMetric& G1_22,
-                     const FieldMetric& G1_33, const FieldMetric& G1_12,
-                     const FieldMetric& G1_13, const FieldMetric& G1_23,
-                     const FieldMetric& G2_11, const FieldMetric& G2_22,
-                     const FieldMetric& G2_33, const FieldMetric& G2_12,
-                     const FieldMetric& G2_13, const FieldMetric& G2_23,
-                     const FieldMetric& G3_11, const FieldMetric& G3_22,
-                     const FieldMetric& G3_33, const FieldMetric& G3_12,
-                     const FieldMetric& G3_13, const FieldMetric& G3_23,
-                     const FieldMetric& G1, const FieldMetric& G2, const FieldMetric& G3,
+  ChristoffelSymbols(FieldMetric G1_11, FieldMetric G1_22, FieldMetric G1_33,
+                     FieldMetric G1_12, FieldMetric G1_13, FieldMetric G1_23,
+                     FieldMetric G2_11, FieldMetric G2_22, FieldMetric G2_33,
+                     FieldMetric G2_12, FieldMetric G2_13, FieldMetric G2_23,
+                     FieldMetric G3_11, FieldMetric G3_22, FieldMetric G3_33,
+                     FieldMetric G3_12, FieldMetric G3_13, FieldMetric G3_23,
+                     FieldMetric G1, FieldMetric G2, FieldMetric G3,
                      DifferentialOperators* differential_operators);
 
   //  ChristoffelSymbols(BoutReal g11, BoutReal g22, BoutReal g33, BoutReal g12, BoutReal g13,
@@ -31,7 +28,6 @@ public:
   ChristoffelSymbols(DifferentialOperators* differential_operators);
 
   ChristoffelSymbols(Mesh* mesh, DifferentialOperators* differential_operators);
-
 
   const FieldMetric& G1_11() const;
   const FieldMetric& G1_22() const;
@@ -62,13 +58,14 @@ public:
   void setG2(FieldMetric& G2);
   void setG3(FieldMetric& G3);
 
-  void setChristoffelSymbols(const FieldMetric& G1_11, const FieldMetric& G1_22, const FieldMetric& G1_33,
-                             const FieldMetric& G1_12, const FieldMetric& G1_13, const FieldMetric& G1_23,
-                             const FieldMetric& G2_11, const FieldMetric& G2_22, const FieldMetric& G2_33,
-                             const FieldMetric& G2_12, const FieldMetric& G2_13, const FieldMetric& G2_23,
-                             const FieldMetric& G3_11, const FieldMetric& G3_22, const FieldMetric& G3_33,
-                             const FieldMetric& G3_12, const FieldMetric& G3_13, const FieldMetric& G3_23,
-                             const FieldMetric& G1, const FieldMetric& G2, const FieldMetric& G3);
+  void setChristoffelSymbols(
+      const FieldMetric& G1_11, const FieldMetric& G1_22, const FieldMetric& G1_33,
+      const FieldMetric& G1_12, const FieldMetric& G1_13, const FieldMetric& G1_23,
+      const FieldMetric& G2_11, const FieldMetric& G2_22, const FieldMetric& G2_33,
+      const FieldMetric& G2_12, const FieldMetric& G2_13, const FieldMetric& G2_23,
+      const FieldMetric& G3_11, const FieldMetric& G3_22, const FieldMetric& G3_33,
+      const FieldMetric& G3_12, const FieldMetric& G3_13, const FieldMetric& G3_23,
+      const FieldMetric& G1, const FieldMetric& G2, const FieldMetric& G3);
 
   //  void Allocate();
   //
@@ -95,8 +92,8 @@ private:
 
   DifferentialOperators* differential_operators;
 
-  ChristoffelSymbols
-  applyToComponents(const std::function<const FieldMetric(const FieldMetric)>& function) const;
+  ChristoffelSymbols applyToComponents(
+      const std::function<const FieldMetric(const FieldMetric)>& function) const;
 };
 
 #endif //BOUT_CHRISTOFFELSYMBOLS_HXX
