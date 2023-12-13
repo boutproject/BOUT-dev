@@ -1,4 +1,6 @@
 #include "bout/options_io.hxx"
+#include "bout/globals.hxx"
+#include "bout/mesh.hxx"
 
 #include "options_adios.hxx"
 #include "options_netcdf.hxx"
@@ -44,6 +46,9 @@ OptionsIOFactory::ReturnType OptionsIOFactory::createFile(const std::string& fil
 }
 
 void writeDefaultOutputFile(Options& data) {
+  // Add mesh information
+  bout::globals::mesh->outputVars(data);
+  // Write to the default output file
   OptionsIOFactory::getInstance().createOutput()->write(data);
 }
 
