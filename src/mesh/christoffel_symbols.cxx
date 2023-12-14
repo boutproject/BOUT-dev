@@ -1,6 +1,5 @@
 
 #include <utility>
-
 #include "bout/christoffel_symbols.hxx"
 
 ChristoffelSymbols::ChristoffelSymbols(
@@ -33,7 +32,9 @@ ChristoffelSymbols::ChristoffelSymbols(
     : G1_11_(mesh), G1_22_(mesh), G1_33_(mesh), G1_12_(mesh), G1_13_(mesh), G1_23_(mesh),
       G2_11_(mesh), G2_22_(mesh), G2_33_(mesh), G2_12_(mesh), G2_13_(mesh), G2_23_(mesh),
       G3_11_(mesh), G3_22_(mesh), G3_33_(mesh), G3_12_(mesh), G3_13_(mesh), G3_23_(mesh),
-      G1_(mesh), G2_(mesh), G3_(mesh), differential_operators(differential_operators) {}
+      G1_(mesh), G2_(mesh), G3_(mesh), differential_operators(differential_operators) {
+  ASSERT0(differential_operators != nullptr)
+}
 
 const FieldMetric& ChristoffelSymbols::G1_11() const { return G1_11_; }
 const FieldMetric& ChristoffelSymbols::G1_22() const { return G1_22_; }
