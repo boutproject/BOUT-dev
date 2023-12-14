@@ -425,10 +425,20 @@ bool Mesh::sourceHasVar(const std::string& name) {
 }
 
 /// Wrapper for GridDataSource::hasXBoundaryGuards
-bool Mesh::sourceHasXBoundaryGuards() { return source->hasXBoundaryGuards(this); }
+bool Mesh::sourceHasXBoundaryGuards() {
+  if (!source) {
+    throw BoutException("Mesh has no source. ");
+  }
+  return source->hasXBoundaryGuards(this);
+}
 
 /// Wrapper for GridDataSource::hasYBoundaryGuards
-bool Mesh::sourceHasYBoundaryGuards() { return source->hasYBoundaryGuards(); }
+bool Mesh::sourceHasYBoundaryGuards() {
+  if (!source) {
+    throw BoutException("Mesh has no source. ");
+  }
+  return source->hasYBoundaryGuards();
+}
 
 /**************************************************************************
  * Communications

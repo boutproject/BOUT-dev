@@ -33,6 +33,7 @@
 #ifndef __GEOMETRY_H__
 #define __GEOMETRY_H__
 
+#include "christoffel_symbols.hxx"
 #include "differential_operators.hxx"
 #include "metricTensor.hxx"
 
@@ -46,12 +47,11 @@ using FieldMetric = MetricTensor::FieldMetric;
 class Geometry {
 
 public:
-  Geometry(const FieldMetric& J, const FieldMetric& Bxy, const FieldMetric& g11,
-           const FieldMetric& g22, const FieldMetric& g33, const FieldMetric& g12,
-           const FieldMetric& g13, const FieldMetric& g23, const FieldMetric& g_11,
-           const FieldMetric& g_22, const FieldMetric& g_33, const FieldMetric& g_12,
-           const FieldMetric& g_13, const FieldMetric& g_23,
-           DifferentialOperators* differential_operators);
+  Geometry(FieldMetric J, FieldMetric Bxy, const FieldMetric& g11, const FieldMetric& g22,
+           const FieldMetric& g33, const FieldMetric& g12, const FieldMetric& g13,
+           const FieldMetric& g23, const FieldMetric& g_11, const FieldMetric& g_22,
+           const FieldMetric& g_33, const FieldMetric& g_12, const FieldMetric& g_13,
+           const FieldMetric& g_23, DifferentialOperators* differential_operators);
 
   Geometry(Mesh* mesh, DifferentialOperators* differential_operators);
 
@@ -74,6 +74,7 @@ public:
   const MetricTensor& getContravariantMetricTensor() const;
   const MetricTensor& getCovariantMetricTensor() const;
 
+  /// Christoffel symbol of the second kind (connection coefficients)
   const FieldMetric& G1_11() const;
   const FieldMetric& G1_22() const;
   const FieldMetric& G1_33() const;
@@ -99,21 +100,21 @@ public:
   const FieldMetric& G2() const;
   const FieldMetric& G3() const;
 
+  void setG1(FieldMetric G1);
+  void setG2(FieldMetric G2);
+  void setG3(FieldMetric G3);
+
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
   const FieldMetric& J() const;
 
   ///< Magnitude of B = nabla z times nabla x
   const FieldMetric& Bxy() const;
 
-  void setContravariantMetricTensor(MetricTensor metric_tensor,
+  void setContravariantMetricTensor(const MetricTensor& metric_tensor,
                                     const std::string& region = "RGN_ALL");
 
-  void setCovariantMetricTensor(MetricTensor metric_tensor,
+  void setCovariantMetricTensor(const MetricTensor& metric_tensor,
                                 const std::string& region = "RGN_ALL");
-
-  void setG3(FieldMetric G3);
-  void setG1(FieldMetric G1);
-  void setG2(FieldMetric G2);
 
   void setJ(FieldMetric J);
   void setJ(BoutReal value, int x, int y);
@@ -133,21 +134,17 @@ public:
   FieldMetric recalculateBxy();
 
   void applyToContravariantMetricTensor(
-      std::function<const FieldMetric(const FieldMetric)> function);
+      const std::function<const FieldMetric(const FieldMetric)>& function);
 
   void applyToCovariantMetricTensor(
-      std::function<const FieldMetric(const FieldMetric)> function);
+      const std::function<const FieldMetric(const FieldMetric)>& function);
 
-  void applyToChristoffelSymbols(
-      const std::function<const FieldMetric(const FieldMetric)> function);
+  void
+  applyToChristoffelSymbols(const std::function<const FieldMetric(const FieldMetric)>& function);
 
 private:
   /// Christoffel symbol of the second kind (connection coefficients)
-  FieldMetric G1_11_, G1_22_, G1_33_, G1_12_, G1_13_, G1_23_;
-  FieldMetric G2_11_, G2_22_, G2_33_, G2_12_, G2_13_, G2_23_;
-  FieldMetric G3_11_, G3_22_, G3_33_, G3_12_, G3_13_, G3_23_;
-
-  FieldMetric G1_, G2_, G3_;
+  ChristoffelSymbols christoffel_symbols;
 
   MetricTensor contravariantMetricTensor;
   MetricTensor covariantMetricTensor;
