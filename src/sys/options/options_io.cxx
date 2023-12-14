@@ -1,4 +1,5 @@
 #include "bout/options_io.hxx"
+#include "bout/bout.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 
@@ -46,6 +47,8 @@ OptionsIOFactory::ReturnType OptionsIOFactory::createFile(const std::string& fil
 }
 
 void writeDefaultOutputFile(Options& data) {
+  // Add BOUT++ version and flags
+  bout::experimental::addBuildFlagsToOptions(data);
   // Add mesh information
   bout::globals::mesh->outputVars(data);
   // Write to the default output file
