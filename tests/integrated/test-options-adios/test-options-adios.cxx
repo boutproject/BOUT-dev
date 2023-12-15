@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
 
   ///////////////////////////
 
-  // Write the BOUT.inp settings to NetCDF file
+  // Write the BOUT.inp settings to ADIOS file
   OptionsIO::create({{"file", "settings.bp"},
                      {"type", "adios"},
                      {"append", false},

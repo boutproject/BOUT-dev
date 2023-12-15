@@ -3,6 +3,7 @@
 #if BOUT_HAS_ADIOS
 
 #include "bout/adios_object.hxx"
+#include "bout/boutexception.hxx"
 
 #include <exception>
 #include <iostream>
@@ -21,7 +22,7 @@ void ADIOSInit(const std::string configFile, MPI_Comm comm) {
 
 void ADIOSFinalize() {
   if (adios == nullptr) {
-    throw std::runtime_error(
+    throw BoutException(
         "ADIOS needs to be initialized first before calling ADIOSFinalize()");
   }
   adiosStreams.clear();
@@ -30,7 +31,7 @@ void ADIOSFinalize() {
 
 ADIOSPtr GetADIOSPtr() {
   if (adios == nullptr) {
-    throw std::runtime_error(
+    throw BoutException(
         "ADIOS needs to be initialized first before calling GetADIOSPtr()");
   }
   return adios;
@@ -76,9 +77,9 @@ void ADIOSSetParameters(const std::string& input, const char delimKeyValue,
   while (std::getline(inputSS, parameter, delimItem)) {
     const size_t position = parameter.find(delimKeyValue);
     if (position == parameter.npos) {
-      throw std::invalid_argument("ADIOSSetParameters(): wrong format for IO parameter "
-                                  + parameter + ", format must be key" + delimKeyValue
-                                  + "value for each entry");
+      throw BoutException("ADIOSSetParameters(): wrong format for IO parameter "
+                          + parameter + ", format must be key" + delimKeyValue
+                          + "value for each entry");
     }
 
     std::string key = parameter.substr(0, position);
@@ -86,9 +87,8 @@ void ADIOSSetParameters(const std::string& input, const char delimKeyValue,
     std::string value = parameter.substr(position + 1);
     lf_Trim(value);
     if (value.length() == 0) {
-      throw std::invalid_argument("ADIOS2SetParameters: empty value in IO parameter "
-                                  + parameter + ", format must be key" + delimKeyValue
-                                  + "value");
+      throw BoutException("ADIOS2SetParameters: empty value in IO parameter " + parameter
+                          + ", format must be key" + delimKeyValue + "value");
     }
     io.SetParameter(key, value);
   }

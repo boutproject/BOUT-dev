@@ -1,3 +1,14 @@
+/*!************************************************************************
+ * Provides access to the ADIOS library, handling initialisation and
+ * finalisation.
+ *
+ * Usage
+ * -----
+ *
+ * #include <bout/adios_object.hxx>
+ *
+ **************************************************************************/
+
 #ifndef ADIOS_OBJECT_HXX
 #define ADIOS_OBJECT_HXX
 

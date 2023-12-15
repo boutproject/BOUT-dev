@@ -41,6 +41,7 @@ public:
 };
 
 int main(int argc, char** argv) {
+  BoutInitialise(argc, argv);
 
   // Absolute tolerance for difference between the actual value and the
   // expected value

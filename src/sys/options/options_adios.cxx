@@ -6,6 +6,7 @@
 #include "bout/adios_object.hxx"
 
 #include "bout/bout.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 #include "bout/sys/timer.hxx"
@@ -36,16 +37,15 @@ OptionsADIOS::OptionsADIOS(Options& options) : OptionsIO(options) {
 }
 
 template <class T>
-bool readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& name,
-                  const std::string& type, Options& result) {
+Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& name,
+                     const std::string& type) {
   std::vector<T> data;
   adios2::Variable<T> variable = io.InquireVariable<T>(name);
 
   if (variable.ShapeID() == adios2::ShapeID::GlobalValue) {
     T value;
     reader.Get<T>(variable, &value, adios2::Mode::Sync);
-    result[name] = value;
-    return true;
+    return Options(value);
   }
 
   if (variable.ShapeID() == adios2::ShapeID::LocalArray) {
@@ -84,51 +84,65 @@ bool readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& nam
     Array<BoutReal> value(static_cast<int>(dims[0]));
     BoutReal* data = value.begin();
     reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
-    result[name] = value;
-    break;
+    return Options(value);
   }
   case 2: {
     Matrix<BoutReal> value(static_cast<int>(dims[0]), static_cast<int>(dims[1]));
     BoutReal* data = value.begin();
     reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
-    result[name] = value;
-    break;
+    return Options(value);
   }
   case 3: {
     Tensor<BoutReal> value(static_cast<int>(dims[0]), static_cast<int>(dims[1]),
                            static_cast<int>(dims[2]));
     BoutReal* data = value.begin();
     reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
-    result[name] = value;
-    break;
+    return Options(value);
   }
   }
-
-  return true;
+  throw BoutException("ADIOS reader failed to read '{}' of dimension {} in file '{}'",
+                      name, ndims, reader.Name());
 }
 
-bool readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& name,
-                  const std::string& type, Options& result) {
-  bool ret = false;
-#define declare_template_instantiation(T)                  \
-  if (type == adios2::GetType<T>()) {                      \
-    ret = readVariable<T>(reader, io, name, type, result); \
+Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& name,
+                     const std::string& type) {
+#define declare_template_instantiation(T)           \
+  if (type == adios2::GetType<T>()) {               \
+    return readVariable<T>(reader, io, name, type); \
   }
   ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(declare_template_instantiation)
+  declare_template_instantiation(std::string)
 #undef declare_template_instantiation
-  return ret;
+      output_warn.write("ADIOS readVariable can't read type '{}' (variable '{}')", type,
+                        name);
+  return Options{};
 }
 
 bool readAttribute(adios2::IO& io, const std::string& name, const std::string& type,
                    Options& result) {
+  // Attribute is the part of 'name' after the last '/' separator
+  std::string attrname;
+  auto pos = name.find_last_of('/');
+  if (pos == std::string::npos) {
+    attrname = name;
+  } else {
+    attrname = name.substr(pos + 1);
+  }
+
 #define declare_template_instantiation(T)                  \
   if (type == adios2::GetType<T>()) {                      \
     adios2::Attribute<T> a = io.InquireAttribute<T>(name); \
-    result[name] = a.Data().data();                        \
+    result.attributes[attrname] = *a.Data().data();        \
+    return true;                                           \
   }
-  ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(declare_template_instantiation)
+  // Only some types of attributes are supported
+  //declare_template_instantiation(bool)
+  declare_template_instantiation(int) declare_template_instantiation(BoutReal)
+      declare_template_instantiation(std::string)
 #undef declare_template_instantiation
-  return true;
+          output_warn.write("ADIOS readAttribute can't read type '{}' (variable '{}')",
+                            type, name);
+  return false;
 }
 
 Options OptionsADIOS::read() {
@@ -157,17 +171,27 @@ Options OptionsADIOS::read() {
 
     auto it = varpair.second.find("Type");
     const std::string& var_type = it->second;
-    readVariable(reader, io, var_name, var_type, result);
 
-    result[var_name].attributes["source"] = filename;
+    Options* varptr = &result;
+    for (const auto& piece : strsplit(var_name, '/')) {
+      varptr = &(*varptr)[piece]; // Navigate to subsection if needed
+    }
+    Options& var = *varptr;
+
+    // Note: Copying the value rather than simple assignment is used
+    // because the Options assignment operator overwrites full_name.
+    var = 0; // Setting is_section to false
+    var.value = readVariable(reader, io, var_name, var_type).value;
+    var.attributes["source"] = filename;
 
     // Get variable attributes
     for (const auto& attpair : io.AvailableAttributes(var_name, "/", true)) {
       const auto& att_name = attpair.first; // Attribute name
       const auto& att = attpair.second;     // attribute params
+
       auto it = att.find("Type");
       const std::string& att_type = it->second;
-      readAttribute(io, att_name, att_type, result);
+      readAttribute(io, att_name, att_type, var);
     }
   }
 
@@ -448,6 +472,7 @@ void writeGroup(const Options& options, ADIOSStream& stream, const std::string& 
         }
 
         // Write the variable
+        // Note: ADIOS2 uses '/' to as a group separator; BOUT++ uses ':'
         std::string varname = groupname.empty() ? name : groupname + "/" + name;
         bout::utils::visit(ADIOSPutVarVisitor(varname, stream), child.value);
 
