@@ -25,7 +25,6 @@ public:
 };
 
 int main(int argc, char** argv) {
-  BoutInitialise(argc, argv);
 
   // The expected answer to the integral of \f$\int_0^{\pi/2}\sin^2(t)\f$
   constexpr BoutReal expected = PI / 4.;
@@ -146,8 +145,6 @@ int main(int argc, char** argv) {
       errors[name] = 0.;
     }
   }
-
-  BoutFinalise(false);
 
   if (!errors.empty()) {
     output_test << "\n => Some failed tests\n\n";
