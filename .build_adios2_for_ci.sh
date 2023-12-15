@@ -19,7 +19,7 @@ if test $BUILD_ADIOS2 ; then
     pushd build
 
     cmake .. \
-        -DCMAKE_INSTALL_PREFIX=$HOME/local/adios2  \
+        -DCMAKE_INSTALL_PREFIX=$HOME/local \
         -DADIOS2_USE_MPI=ON \
         -DADIOS2_USE_Fortran=OFF \
         -DADIOS2_USE_Python=OFF \
