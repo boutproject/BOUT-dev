@@ -83,6 +83,7 @@ function(bout_update_submodules)
 endfunction()
 
 set(BOUT_SOURCES
+  ./include/bout/adios_object.hxx
   ./include/bout/array.hxx
   ./include/bout/assert.hxx
   ./include/bout/boundary_factory.hxx
@@ -146,7 +147,7 @@ set(BOUT_SOURCES
   ./include/bout/openmpwrap.hxx
   ./include/bout/operatorstencil.hxx
   ./include/bout/options.hxx
-  ./include/bout/options_netcdf.hxx
+  ./include/bout/options_io.hxx
   ./include/bout/optionsreader.hxx
   ./include/bout/output.hxx
   ./include/bout/output_bout_types.hxx
@@ -325,6 +326,7 @@ set(BOUT_SOURCES
   ./src/solver/impls/split-rk/split-rk.cxx
   ./src/solver/impls/split-rk/split-rk.hxx
   ./src/solver/solver.cxx
+  ./src/sys/adios_object.cxx
   ./src/sys/bout_types.cxx
   ./src/sys/boutcomm.cxx
   ./src/sys/boutexception.cxx
@@ -338,7 +340,11 @@ set(BOUT_SOURCES
   ./src/sys/options/optionparser.hxx
   ./src/sys/options/options_ini.cxx
   ./src/sys/options/options_ini.hxx
+  ./src/sys/options/options_io.cxx
   ./src/sys/options/options_netcdf.cxx
+  ./src/sys/options/options_netcdf.hxx
+  ./src/sys/options/options_adios.cxx
+  ./src/sys/options/options_adios.hxx
   ./src/sys/optionsreader.cxx
   ./src/sys/output.cxx
   ./src/sys/petsclib.cxx
@@ -930,6 +936,7 @@ message("
    SUNDIALS support         : ${BOUT_HAS_SUNDIALS}
    HYPRE support            : ${BOUT_HAS_HYPRE}
    NetCDF support           : ${BOUT_HAS_NETCDF}
+   ADIOS support            : ${BOUT_HAS_ADIOS}
    FFTW support             : ${BOUT_HAS_FFTW}
    LAPACK support           : ${BOUT_HAS_LAPACK}
    OpenMP support           : ${BOUT_USE_OPENMP}

@@ -6,7 +6,7 @@
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
 #include <bout/msg_stack.hxx>
-#include <bout/options_netcdf.hxx>
+#include <bout/options_io.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/unused.hxx>
@@ -14,7 +14,7 @@
 #include <utility>
 
 GridFile::GridFile(std::string gridfilename)
-    : GridDataSource(true), data(bout::OptionsNetCDF(gridfilename).read()),
+    : GridDataSource(true), data(bout::OptionsIO::create(gridfilename)->read()),
       filename(std::move(gridfilename)) {
   TRACE("GridFile constructor");
 

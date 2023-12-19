@@ -42,6 +42,7 @@ The documentation is divided into the following sections:
    user_docs/boundary_options
    user_docs/testing
    user_docs/gpu_support
+   user_docs/adios2
    
 .. toctree::
    :maxdepth: 2

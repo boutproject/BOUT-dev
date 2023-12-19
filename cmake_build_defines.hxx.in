@@ -13,6 +13,7 @@
 #cmakedefine01 BOUT_HAS_IDA
 #cmakedefine01 BOUT_HAS_LAPACK
 #cmakedefine01 BOUT_HAS_NETCDF
+#cmakedefine01 BOUT_HAS_ADIOS
 #cmakedefine01 BOUT_HAS_PETSC
 #cmakedefine01 BOUT_HAS_PRETTY_FUNCTION
 #cmakedefine01 BOUT_HAS_PVODE

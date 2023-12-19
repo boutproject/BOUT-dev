@@ -33,8 +33,8 @@
  *
  **************************************************************************/
 
-#ifndef __SOLVER_H__
-#define __SOLVER_H__
+#ifndef SOLVER_H
+#define SOLVER_H
 
 #include "bout/build_config.hxx"
 
@@ -597,4 +597,4 @@ private:
   BoutReal output_timestep;
 };
 
-#endif // __SOLVER_H__
+#endif // SOLVER_H

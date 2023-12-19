@@ -2,7 +2,7 @@
 
 #if BOUT_HAS_NETCDF && !BOUT_HAS_LEGACY_NETCDF
 
-#include "bout/options_netcdf.hxx"
+#include "options_netcdf.hxx"
 
 #include "bout/bout.hxx"
 #include "bout/globals.hxx"
@@ -647,14 +647,19 @@ std::vector<TimeDimensionError> verifyTimesteps(const NcGroup& group) {
 
 namespace bout {
 
-OptionsNetCDF::OptionsNetCDF() : data_file(nullptr) {}
+OptionsNetCDF::OptionsNetCDF(Options& options) : OptionsIO(options) {
+  if (options["file"].doc("File name. Defaults to <path>/<prefix>.<rank>.nc").isSet()) {
+    filename = options["file"].as<std::string>();
+  } else {
+    // Both path and prefix must be set
+    filename = fmt::format("{}/{}.{}.nc", options["path"].as<std::string>(),
+                           options["prefix"].as<std::string>(), BoutComm::rank());
+  }
 
-OptionsNetCDF::OptionsNetCDF(std::string filename, FileMode mode)
-    : filename(std::move(filename)), file_mode(mode), data_file(nullptr) {}
-
-OptionsNetCDF::~OptionsNetCDF() = default;
-OptionsNetCDF::OptionsNetCDF(OptionsNetCDF&&) noexcept = default;
-OptionsNetCDF& OptionsNetCDF::operator=(OptionsNetCDF&&) noexcept = default;
+  file_mode = (options["append"].doc("Append to existing file?").withDefault<bool>(false))
+                  ? FileMode::append
+                  : FileMode::replace;
+}
 
 void OptionsNetCDF::verifyTimesteps() const {
   NcFile dataFile(filename, NcFile::read);
@@ -701,41 +706,6 @@ void OptionsNetCDF::write(const Options& options, const std::string& time_dim) {
   writeGroup(options, *data_file, time_dim);
 
   data_file->sync();
-}
-
-std::string getRestartDirectoryName(Options& options) {
-  if (options["restartdir"].isSet()) {
-    // Solver-specific restart directory
-    return options["restartdir"].withDefault<std::string>("data");
-  }
-  // Use the root data directory
-  return options["datadir"].withDefault<std::string>("data");
-}
-
-std::string getRestartFilename(Options& options) {
-  return getRestartFilename(options, BoutComm::rank());
-}
-
-std::string getRestartFilename(Options& options, int rank) {
-  return fmt::format("{}/BOUT.restart.{}.nc", bout::getRestartDirectoryName(options),
-                     rank);
-}
-
-std::string getOutputFilename(Options& options) {
-  return getOutputFilename(options, BoutComm::rank());
-}
-
-std::string getOutputFilename(Options& options, int rank) {
-  return fmt::format("{}/BOUT.dmp.{}.nc",
-                     options["datadir"].withDefault<std::string>("data"), rank);
-}
-
-void writeDefaultOutputFile() { writeDefaultOutputFile(Options::root()); }
-
-void writeDefaultOutputFile(Options& options) {
-  bout::experimental::addBuildFlagsToOptions(options);
-  bout::globals::mesh->outputVars(options);
-  OptionsNetCDF(getOutputFilename(Options::root())).write(options);
 }
 
 } // namespace bout
