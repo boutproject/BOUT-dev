@@ -187,7 +187,21 @@ FieldGeneratorPtr FieldBinary::clone(const list<FieldGeneratorPtr> args) {
 BoutReal FieldBinary::generate(const Context& ctx) {
   BoutReal lval = lhs->generate(ctx);
   BoutReal rval = rhs->generate(ctx);
+
+  // Convert a real value to a Boolean
+  auto toBool = [] (BoutReal rval) {
+    int ival = ROUND(rval);
+    if ((fabs(rval - static_cast<BoutReal>(ival)) > 1e-3) or (ival < 0) or (ival > 1)) {
+      throw BoutException(_("Boolean operator argument {:e} is not a bool"), rval);
+    }
+    return ival == 1;
+  };
+
   switch (op) {
+  case '|': // Logical OR
+    return (toBool(lval) or toBool(rval)) ? 1.0 : 0.0;
+  case '&': // Logical AND
+    return (toBool(lval) and toBool(rval)) ? 1.0 : 0.0;
   case '+':
     return lval + rval;
   case '-':
@@ -207,6 +221,8 @@ BoutReal FieldBinary::generate(const Context& ctx) {
 
 ExpressionParser::ExpressionParser() {
   // Add standard binary operations
+  addBinaryOp('|', std::make_shared<FieldBinary>(nullptr, nullptr, '|'), 3);
+  addBinaryOp('&', std::make_shared<FieldBinary>(nullptr, nullptr, '&'), 5);
   addBinaryOp('+', std::make_shared<FieldBinary>(nullptr, nullptr, '+'), 10);
   addBinaryOp('-', std::make_shared<FieldBinary>(nullptr, nullptr, '-'), 10);
   addBinaryOp('*', std::make_shared<FieldBinary>(nullptr, nullptr, '*'), 20);

@@ -114,6 +114,10 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   addGenerator("pi", std::make_shared<FieldValue>(PI));
   addGenerator("π", std::make_shared<FieldValue>(PI));
 
+  // Boolean values
+  addGenerator("true", std::make_shared<FieldValue>(1));
+  addGenerator("false", std::make_shared<FieldValue>(0));
+
   // Some standard functions
   addGenerator("sin", std::make_shared<FieldGenOneArg<sin>>(nullptr, "sin"));
   addGenerator("cos", std::make_shared<FieldGenOneArg<cos>>(nullptr, "cos"));

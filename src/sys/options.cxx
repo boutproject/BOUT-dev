@@ -433,19 +433,16 @@ bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
     result = bout::utils::get<bool>(value);
 
   } else if (bout::utils::holds_alternative<std::string>(value)) {
-    // case-insensitve check, so convert string to lower case
-    const auto strvalue = lowercase(bout::utils::get<std::string>(value));
+    // Parse as floating point because that's the only type the parser understands
+    BoutReal rval = parseExpression(value, this, "bool", full_name);
 
-    if ((strvalue == "y") or (strvalue == "yes") or (strvalue == "t")
-        or (strvalue == "true") or (strvalue == "1")) {
-      result = true;
-    } else if ((strvalue == "n") or (strvalue == "no") or (strvalue == "f")
-               or (strvalue == "false") or (strvalue == "0")) {
-      result = false;
-    } else {
-      throw BoutException(_("\tOption '{:s}': Boolean expected. Got '{:s}'\n"), full_name,
-                          strvalue);
+    // Check that the result is either close to 1 (true) or close to 0 (false)
+    int ival = ROUND(rval);
+    if ((fabs(rval - static_cast<BoutReal>(ival)) > 1e-3) or (ival < 0) or (ival > 1)) {
+      throw BoutException(_("Value for option {:s} = {:e} is not a bool"), full_name,
+                          rval);
     }
+    result = ival == 1;
   } else {
     throw BoutException(_("Value for option {:s} cannot be converted to a bool"),
                         full_name);
