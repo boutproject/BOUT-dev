@@ -232,10 +232,9 @@ TEST_F(OptionsTest, GetBoolFromString) {
 
   EXPECT_EQ(value, true);
 
+  // "yes" is not an acceptable bool
   bool value2;
-  options.get("bool_key2", value2, false, false);
-
-  EXPECT_EQ(value2, true);
+  EXPECT_THROW(options.get("bool_key2", value2, false, false), BoutException);
 }
 
 TEST_F(OptionsTest, DefaultValueBool) {
@@ -1361,8 +1360,7 @@ TEST_P(BoolTrueTestParametrized, BoolTrueFromString) {
 }
 
 INSTANTIATE_TEST_CASE_P(BoolTrueTests, BoolTrueTestParametrized,
-                        ::testing::Values("y", "Y", "yes", "Yes", "yeS", "t", "true", "T",
-                                          "True", "tRuE", "1"));
+                        ::testing::Values("true", "1"));
 
 class BoolFalseTestParametrized : public OptionsTest,
                                   public ::testing::WithParamInterface<std::string> {};
@@ -1376,8 +1374,7 @@ TEST_P(BoolFalseTestParametrized, BoolFalseFromString) {
 }
 
 INSTANTIATE_TEST_CASE_P(BoolFalseTests, BoolFalseTestParametrized,
-                        ::testing::Values("n", "N", "no", "No", "nO", "f", "false", "F",
-                                          "False", "fAlSe", "0"));
+                        ::testing::Values("false", "0"));
 
 class BoolInvalidTestParametrized : public OptionsTest,
                                     public ::testing::WithParamInterface<std::string> {};
@@ -1391,6 +1388,7 @@ TEST_P(BoolInvalidTestParametrized, BoolInvalidFromString) {
 }
 
 INSTANTIATE_TEST_CASE_P(BoolInvalidTests, BoolInvalidTestParametrized,
-                        ::testing::Values("a", "B", "yellow", "Yogi", "test", "truelong",
+                        ::testing::Values("yes", "no", "True", "False", "y", "n", "a",
+                                          "B", "yellow", "Yogi", "test", "truelong",
                                           "Tim", "2", "not", "No bool", "nOno",
-                                          "falsebuttoolong", "-1"));
+                                          "falsebuttoolong", "-1", "1.1"));
