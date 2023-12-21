@@ -189,7 +189,7 @@ BoutReal FieldBinary::generate(const Context& ctx) {
   BoutReal rval = rhs->generate(ctx);
 
   // Convert a real value to a Boolean
-  auto toBool = [] (BoutReal rval) {
+  auto toBool = [](BoutReal rval) {
     int ival = ROUND(rval);
     if ((fabs(rval - static_cast<BoutReal>(ival)) > 1e-3) or (ival < 0) or (ival > 1)) {
       throw BoutException(_("Boolean operator argument {:e} is not a bool"), rval);
