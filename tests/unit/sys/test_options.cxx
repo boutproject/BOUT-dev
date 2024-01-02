@@ -1388,10 +1388,10 @@ TEST_P(BoolInvalidTestParametrized, BoolInvalidFromString) {
 }
 
 INSTANTIATE_TEST_CASE_P(BoolInvalidTests, BoolInvalidTestParametrized,
-                        ::testing::Values("yes", "no", "y", "n", "a",
-                                          "B", "yellow", "Yogi", "test", "truelong",
-                                          "Tim", "2", "not", "No bool", "nOno",
-                                          "falsebuttoolong", "-1", "1.1"));
+                        ::testing::Values("yes", "no", "y", "n", "a", "B", "yellow",
+                                          "Yogi", "test", "truelong", "Tim", "2", "not",
+                                          "No bool", "nOno", "falsebuttoolong", "-1",
+                                          "1.1"));
 
 TEST_F(OptionsTest, BoolLogicalOR) {
   ASSERT_TRUE(Options("true | false").as<bool>());
