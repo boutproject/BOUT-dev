@@ -93,8 +93,18 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   // Note: don't use 'options' here because 'options' is a 'const Options*'
   // pointer, so this would fail if the "input" section is not present.
   Options& nonconst_options{opt == nullptr ? Options::root() : *opt};
-  transform_from_field_aligned =
-      nonconst_options["input"]["transform_from_field_aligned"].withDefault(true);
+
+  // Convert from string, or FieldFactory is used to parse the string
+  auto str = nonconst_options["input"]["transform_from_field_aligned"].withDefault<std::string>("true");
+  if ((str == "true") or (str == "True")) {
+    transform_from_field_aligned = true;
+  } else if ((str == "false") or (str == "False")) {
+    transform_from_field_aligned = false;
+  } else {
+    throw ParseException(
+        "Invalid boolean given as input:transform_from_field_aligned: '{:s}'",
+        nonconst_options["input"]["transform_from_field_aligned"].as<std::string>());
+  }
 
   // Convert using stoi rather than Options, or a FieldFactory is used to parse
   // the string, leading to infinite loop.
