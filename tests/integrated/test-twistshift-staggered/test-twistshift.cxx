@@ -4,11 +4,11 @@
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
-  Field3D test = FieldFactory::get()->create3D("test", nullptr, nullptr, CELL_YLOW);
+  using bout::globals::mesh;
+
+  Field3D test = FieldFactory::get()->create3D("test", nullptr, mesh, CELL_YLOW);
 
   Field3D test_aligned = toFieldAligned(test);
-
-  using bout::globals::mesh;
 
   // zero guard cells to check that communication is doing something
   for (int x = 0; x < mesh->LocalNx; x++) {
@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
   mesh->communicate(test_aligned);
 
   Options::root()["check"] =
-      FieldFactory::get()->create3D("check", nullptr, nullptr, CELL_YLOW);
+      FieldFactory::get()->create3D("check", nullptr, mesh, CELL_YLOW);
 
   Options::root()["test"] = test;
   Options::root()["test_aligned"] = test_aligned;
