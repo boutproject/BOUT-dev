@@ -95,7 +95,9 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   Options& nonconst_options{opt == nullptr ? Options::root() : *opt};
 
   // Convert from string, or FieldFactory is used to parse the string
-  auto str = nonconst_options["input"]["transform_from_field_aligned"].withDefault<std::string>("true");
+  auto str =
+      nonconst_options["input"]["transform_from_field_aligned"].withDefault<std::string>(
+          "true");
   if ((str == "true") or (str == "True")) {
     transform_from_field_aligned = true;
   } else if ((str == "false") or (str == "False")) {
