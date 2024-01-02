@@ -118,6 +118,10 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   addGenerator("true", std::make_shared<FieldValue>(1));
   addGenerator("false", std::make_shared<FieldValue>(0));
 
+  // Python converts booleans to True/False
+  addGenerator("True", std::make_shared<FieldValue>(1));
+  addGenerator("False", std::make_shared<FieldValue>(0));
+
   // Some standard functions
   addGenerator("sin", std::make_shared<FieldGenOneArg<sin>>(nullptr, "sin"));
   addGenerator("cos", std::make_shared<FieldGenOneArg<cos>>(nullptr, "cos"));

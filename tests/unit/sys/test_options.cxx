@@ -1360,7 +1360,7 @@ TEST_P(BoolTrueTestParametrized, BoolTrueFromString) {
 }
 
 INSTANTIATE_TEST_CASE_P(BoolTrueTests, BoolTrueTestParametrized,
-                        ::testing::Values("true", "1"));
+                        ::testing::Values("true", "True", "1"));
 
 class BoolFalseTestParametrized : public OptionsTest,
                                   public ::testing::WithParamInterface<std::string> {};
@@ -1374,7 +1374,7 @@ TEST_P(BoolFalseTestParametrized, BoolFalseFromString) {
 }
 
 INSTANTIATE_TEST_CASE_P(BoolFalseTests, BoolFalseTestParametrized,
-                        ::testing::Values("false", "0"));
+                        ::testing::Values("false", "False", "0"));
 
 class BoolInvalidTestParametrized : public OptionsTest,
                                     public ::testing::WithParamInterface<std::string> {};
@@ -1388,7 +1388,7 @@ TEST_P(BoolInvalidTestParametrized, BoolInvalidFromString) {
 }
 
 INSTANTIATE_TEST_CASE_P(BoolInvalidTests, BoolInvalidTestParametrized,
-                        ::testing::Values("yes", "no", "True", "False", "y", "n", "a",
+                        ::testing::Values("yes", "no", "y", "n", "a",
                                           "B", "yellow", "Yogi", "test", "truelong",
                                           "Tim", "2", "not", "No bool", "nOno",
                                           "falsebuttoolong", "-1", "1.1"));

@@ -136,12 +136,14 @@ Have a look through the examples to see how the options are used.
 Boolean expressions
 ~~~~~~~~~~~~~~~~~~~
 
-Boolean values must be either "true" or "false". Booleans can be
-combined into expressions using binary operators `&` (logical AND),
-`|` (logical OR), and unary operator `!` (logical NOT). For example
-"true & false" evaluates to `false`; "!false" evaluates to `true`.
-Like real values and integers, boolean expressions can refer to other
-variables:
+Boolean values must be "true", "false", "True", "False", "1" or
+"0". All lowercase ("true"/"false") is preferred, but the uppercase
+versions are allowed to support Python string conversions. Booleans
+can be combined into expressions using binary operators `&` (logical
+AND), `|` (logical OR), and unary operator `!` (logical NOT). For
+example "true & false" evaluates to `false`; "!false" evaluates to
+`true`.  Like real values and integers, boolean expressions can refer
+to other variables:
 
 .. code-block:: cfg
 
