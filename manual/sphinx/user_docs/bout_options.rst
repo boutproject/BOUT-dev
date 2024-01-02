@@ -48,9 +48,10 @@ name in square brackets.
 
 Option names can contain almost any character except ’=’ and ’:’,
 including unicode.  If they start with a number or ``.``, contain
-arithmetic symbols (``+-*/^``), brackets (``(){}[]``), equality
-(``=``), whitespace or comma ``,``, then these will need to be escaped
-in expressions. See below for how this is done.
+arithmetic/boolean operator symbols (``+-*/^&|!<>``), brackets
+(``(){}[]``), equality (``=``), whitespace or comma ``,``, then these
+will need to be escaped in expressions. See below for how this is
+done.
 
 Subsections can also be used, separated by colons ’:’, e.g.
 
@@ -87,6 +88,13 @@ operators, with the usual precedence rules. In addition to ``π``,
 expressions can use predefined variables ``x``, ``y``, ``z`` and ``t``
 to refer to the spatial and time coordinates (for definitions of the values
 these variables take see :ref:`sec-expressions`).
+
+.. note:: The variables ``x``, ``y``, ``z`` should only be defined
+   when reading a 3D field; ``t`` should only be defined when reading
+   a time-dependent value. Earlier BOUT++ versions (v5.1.0 and earler)
+   defined all of these to be 0 by default e.g. when reading scalar
+   inputs.
+
 A number of functions are defined, listed in table
 :numref:`tab-initexprfunc`. One slightly unusual feature (borrowed from `Julia <https://julialang.org/>`_)
 is that if a number comes before a symbol or an opening bracket (``(``)
@@ -109,11 +117,11 @@ The convention is the same as in `Python <https://www.python.org/>`_:
 If brackets are not balanced (closed) then the expression continues on the next line.
 
 All expressions are calculated in floating point and then converted to
-an integer if needed when read inside BOUT++. The conversion is done by rounding
-to the nearest integer, but throws an error if the floating point
-value is not within :math:`1e-3` of an integer. This is to minimise
-unexpected behaviour. If you want to round any result to an integer,
-use the ``round`` function:
+an integer (or boolean) if needed when read inside BOUT++. The
+conversion is done by rounding to the nearest integer, but throws an
+error if the floating point value is not within :math:`1e-3` of an
+integer. This is to minimise unexpected behaviour. If you want to
+round any result to an integer, use the ``round`` function:
 
 .. code-block:: cfg
 
@@ -124,6 +132,41 @@ Note that it is still possible to read ``bad_integer`` as a real
 number, since the type is determined by how it is used.
 
 Have a look through the examples to see how the options are used.
+
+Boolean expressions
+~~~~~~~~~~~~~~~~~~~
+
+Boolean values must be either "true" or "false". Booleans can be
+combined into expressions using binary operators `&` (logical AND),
+`|` (logical OR), and unary operator `!` (logical NOT). For example
+"true & false" evaluates to `false`; "!false" evaluates to `true`.
+Like real values and integers, boolean expressions can refer to other
+variables:
+
+.. code-block:: cfg
+
+   switch = true
+   other_switch = !switch
+
+Boolean expressions can be formed by comparing real values using
+`>` and `<` comparison operators:
+
+.. code-block:: cfg
+
+   value = 3.2
+   is_true = value > 3
+   is_false = value < 2
+
+.. note::
+   Previous BOUT++ versions (v5.1.0 and earlier) were case
+   insensitive when reading boolean values, so would read "True" or
+   "yEs" as `true`, and "False" or "No" as `false`. These earlier
+   versions did not allow boolean expressions.
+
+Internally, booleans are evaluated as real values, with `true` being 1
+and `false` being 0. Logical operators (`&`, `|`, `!`) check that
+their left and right arguments are either close to 0 or close to 1
+(like integers, "close to" is within 1e-3).
 
 Special symbols in Option names
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
