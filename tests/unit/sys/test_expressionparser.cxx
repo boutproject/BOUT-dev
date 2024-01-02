@@ -379,9 +379,9 @@ TEST_F(ExpressionParserTest, BadBinaryOp) {
 
 TEST_F(ExpressionParserTest, AddBinaryOp) {
   // Add a synonym for multiply with a lower precedence than addition
-  parser.addBinaryOp('&', std::make_shared<FieldBinary>(nullptr, nullptr, '*'), 5);
+  parser.addBinaryOp('$', std::make_shared<FieldBinary>(nullptr, nullptr, '*'), 5);
 
-  auto fieldgen = parser.parseString("2 & x + 3");
+  auto fieldgen = parser.parseString("2 $ x + 3");
   EXPECT_EQ(fieldgen->str(), "(2*(x+3))");
 
   for (auto x : x_array) {
@@ -679,3 +679,39 @@ TEST_F(ExpressionParserTest, FuzzyFind) {
   EXPECT_EQ(first_CAPS_match->name, "multiply");
   EXPECT_EQ(first_CAPS_match->distance, 1);
 }
+
+TEST_F(ExpressionParserTest, LogicalOR) {
+  EXPECT_DOUBLE_EQ(parser.parseString("1 | 0")->generate({}), 1.0);
+  EXPECT_DOUBLE_EQ(parser.parseString("0 | 1")->generate({}), 1.0);
+  EXPECT_DOUBLE_EQ(parser.parseString("1 | 1")->generate({}), 1.0);
+  EXPECT_DOUBLE_EQ(parser.parseString("0 | 0")->generate({}), 0.0);
+}
+
+TEST_F(ExpressionParserTest, LogicalAND) {
+  EXPECT_DOUBLE_EQ(parser.parseString("1 & 0")->generate({}), 0.0);
+  EXPECT_DOUBLE_EQ(parser.parseString("0 & 1")->generate({}), 0.0);
+  EXPECT_DOUBLE_EQ(parser.parseString("1 & 1")->generate({}), 1.0);
+  EXPECT_DOUBLE_EQ(parser.parseString("0 & 0")->generate({}), 0.0);
+}
+
+TEST_F(ExpressionParserTest, LogicalNOT) {
+  EXPECT_DOUBLE_EQ(parser.parseString("!0")->generate({}), 1.0);
+  EXPECT_DOUBLE_EQ(parser.parseString("!1")->generate({}), 0.0);
+}
+
+TEST_F(ExpressionParserTest, LogicalNOTprecedence) {
+  // Should bind more strongly than all binary operators
+  EXPECT_DOUBLE_EQ(parser.parseString("!1 & 0")->generate({}), 0.0);
+  EXPECT_DOUBLE_EQ(parser.parseString("1 & !0")->generate({}), 1.0);
+}
+
+TEST_F(ExpressionParserTest, CompareGT) {
+  EXPECT_DOUBLE_EQ(parser.parseString("1 > 0")->generate({}), 1.0);
+  EXPECT_DOUBLE_EQ(parser.parseString("3 > 5")->generate({}), 0.0);
+}
+
+TEST_F(ExpressionParserTest, CompareLT) {
+  EXPECT_DOUBLE_EQ(parser.parseString("1 < 0")->generate({}), 0.0);
+  EXPECT_DOUBLE_EQ(parser.parseString("3 < 5")->generate({}), 1.0);
+}
+

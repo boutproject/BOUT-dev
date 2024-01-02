@@ -184,24 +184,29 @@ FieldGeneratorPtr FieldBinary::clone(const list<FieldGeneratorPtr> args) {
   return std::make_shared<FieldBinary>(args.front(), args.back(), op);
 }
 
+/// Convert a real value to a Boolean
+/// Throw exception if `rval` isn't close to 0 or 1
+bool toBool(BoutReal rval) {
+  int ival = ROUND(rval);
+  if ((fabs(rval - static_cast<BoutReal>(ival)) > 1e-3) or (ival < 0) or (ival > 1)) {
+    throw BoutException(_("Boolean operator argument {:e} is not a bool"), rval);
+  }
+  return ival == 1;
+}
+
 BoutReal FieldBinary::generate(const Context& ctx) {
   BoutReal lval = lhs->generate(ctx);
   BoutReal rval = rhs->generate(ctx);
-
-  // Convert a real value to a Boolean
-  auto toBool = [](BoutReal rval) {
-    int ival = ROUND(rval);
-    if ((fabs(rval - static_cast<BoutReal>(ival)) > 1e-3) or (ival < 0) or (ival > 1)) {
-      throw BoutException(_("Boolean operator argument {:e} is not a bool"), rval);
-    }
-    return ival == 1;
-  };
 
   switch (op) {
   case '|': // Logical OR
     return (toBool(lval) or toBool(rval)) ? 1.0 : 0.0;
   case '&': // Logical AND
     return (toBool(lval) and toBool(rval)) ? 1.0 : 0.0;
+  case '>': // Comparison
+    return (lval > rval) ? 1.0 : 0.0;
+  case '<':
+    return (lval < rval) ? 1.0 : 0.0;
   case '+':
     return lval + rval;
   case '-':
@@ -217,12 +222,31 @@ BoutReal FieldBinary::generate(const Context& ctx) {
   throw ParseException("Unknown binary operator '{:c}'", op);
 }
 
+class LogicalNot : public FieldGenerator {
+public:
+  /// Logically negate a boolean expression
+  LogicalNot(FieldGeneratorPtr expr) : expr(expr) {}
+
+  /// Evaluate expression, check it's a bool, and return 1 or 0
+  double generate(const Context& ctx) override {
+    return toBool(expr->generate(ctx)) ? 0.0 : 1.0;
+  }
+
+  std::string str() const override {
+    return "!"s + expr->str();
+  }
+private:
+  FieldGeneratorPtr expr;
+};
+
 /////////////////////////////////////////////
 
 ExpressionParser::ExpressionParser() {
   // Add standard binary operations
   addBinaryOp('|', std::make_shared<FieldBinary>(nullptr, nullptr, '|'), 3);
   addBinaryOp('&', std::make_shared<FieldBinary>(nullptr, nullptr, '&'), 5);
+  addBinaryOp('<', std::make_shared<FieldBinary>(nullptr, nullptr, '<'), 7);
+  addBinaryOp('>', std::make_shared<FieldBinary>(nullptr, nullptr, '>'), 7);
   addBinaryOp('+', std::make_shared<FieldBinary>(nullptr, nullptr, '+'), 10);
   addBinaryOp('-', std::make_shared<FieldBinary>(nullptr, nullptr, '-'), 10);
   addBinaryOp('*', std::make_shared<FieldBinary>(nullptr, nullptr, '*'), 20);
@@ -497,6 +521,11 @@ FieldGeneratorPtr ExpressionParser::parsePrimary(LexInfo& lex) const {
     // Unary minus
     // Don't eat the minus, and return an implicit zero
     return std::make_shared<FieldValue>(0.0);
+  }
+  case '!': {
+    // Logical not
+    lex.nextToken(); // Eat '!'
+    return std::make_shared<LogicalNot>(parsePrimary(lex));
   }
   case '(': {
     return parseParenExpr(lex);

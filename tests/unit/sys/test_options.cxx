@@ -1392,3 +1392,48 @@ INSTANTIATE_TEST_CASE_P(BoolInvalidTests, BoolInvalidTestParametrized,
                                           "B", "yellow", "Yogi", "test", "truelong",
                                           "Tim", "2", "not", "No bool", "nOno",
                                           "falsebuttoolong", "-1", "1.1"));
+
+TEST_F(OptionsTest, BoolLogicalOR) {
+  ASSERT_TRUE(Options("true | false").as<bool>());
+  ASSERT_TRUE(Options("false | true").as<bool>());
+  ASSERT_TRUE(Options("true | true").as<bool>());
+  ASSERT_FALSE(Options("false | false").as<bool>());
+  ASSERT_TRUE(Options("true | false | true").as<bool>());
+}
+
+TEST_F(OptionsTest, BoolLogicalAND) {
+  ASSERT_FALSE(Options("true & false").as<bool>());
+  ASSERT_FALSE(Options("false & true").as<bool>());
+  ASSERT_TRUE(Options("true & true").as<bool>());
+  ASSERT_FALSE(Options("false & false").as<bool>());
+  ASSERT_FALSE(Options("true & false & true").as<bool>());
+
+  EXPECT_THROW(Options("true & 1.3").as<bool>(), BoutException);
+  EXPECT_THROW(Options("2 & false").as<bool>(), BoutException);
+}
+
+TEST_F(OptionsTest, BoolLogicalNOT) {
+  ASSERT_FALSE(Options("!true").as<bool>());
+  ASSERT_TRUE(Options("!false").as<bool>());
+  ASSERT_FALSE(Options("!true & false").as<bool>());
+  ASSERT_TRUE(Options("!(true & false)").as<bool>());
+  ASSERT_TRUE(Options("true & !false").as<bool>());
+
+  EXPECT_THROW(Options("!2").as<bool>(), BoutException);
+  EXPECT_THROW(Options("!1.2").as<bool>(), BoutException);
+}
+
+TEST_F(OptionsTest, BoolComparisonGT) {
+  ASSERT_TRUE(Options("2 > 1").as<bool>());
+  ASSERT_FALSE(Options("2 > 3").as<bool>());
+}
+
+TEST_F(OptionsTest, BoolComparisonLT) {
+  ASSERT_FALSE(Options("2 < 1").as<bool>());
+  ASSERT_TRUE(Options("2 < 3").as<bool>());
+}
+
+TEST_F(OptionsTest, BoolCompound) {
+  ASSERT_TRUE(Options("true & !false").as<bool>());
+  ASSERT_TRUE(Options("2 > 1 & 2 < 3").as<bool>());
+}
