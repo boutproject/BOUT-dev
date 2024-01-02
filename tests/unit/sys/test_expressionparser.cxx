@@ -714,4 +714,3 @@ TEST_F(ExpressionParserTest, CompareLT) {
   EXPECT_DOUBLE_EQ(parser.parseString("1 < 0")->generate({}), 0.0);
   EXPECT_DOUBLE_EQ(parser.parseString("3 < 5")->generate({}), 1.0);
 }
-

@@ -232,9 +232,8 @@ public:
     return toBool(expr->generate(ctx)) ? 0.0 : 1.0;
   }
 
-  std::string str() const override {
-    return "!"s + expr->str();
-  }
+  std::string str() const override { return "!"s + expr->str(); }
+
 private:
   FieldGeneratorPtr expr;
 };
