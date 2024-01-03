@@ -2,7 +2,7 @@ nout = 10
 timestep = 0.1
 
 [mesh]
-staggergrids = True
+staggergrids = true
 n = 1
 nx = n+2*MXG
 ny = 16

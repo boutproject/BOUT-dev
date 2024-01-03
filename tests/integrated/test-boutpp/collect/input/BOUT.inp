@@ -5,7 +5,7 @@ MXG = 2
 MYG = 2
 
 [mesh]
-staggergrids = True
+staggergrids = true
 n = 1
 nx = n+2*MXG
 ny = n
