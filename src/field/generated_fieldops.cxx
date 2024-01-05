@@ -16,7 +16,7 @@ Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs[index];
   }
 
@@ -60,7 +60,7 @@ Field3D operator/(const Field3D& lhs, const Field3D& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] / rhs[index];
   }
 
@@ -104,7 +104,7 @@ Field3D operator+(const Field3D& lhs, const Field3D& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs[index];
   }
 
@@ -148,7 +148,7 @@ Field3D operator-(const Field3D& lhs, const Field3D& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs[index];
   }
 
@@ -481,7 +481,7 @@ Field3D operator*(const Field3D& lhs, const BoutReal rhs) {
 
   result.setRegion(lhs.getRegionID());
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs;
   }
 
@@ -522,7 +522,7 @@ Field3D operator/(const Field3D& lhs, const BoutReal rhs) {
   result.setRegion(lhs.getRegionID());
 
   const auto tmp = 1.0 / rhs;
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * tmp;
   }
 
@@ -563,7 +563,7 @@ Field3D operator+(const Field3D& lhs, const BoutReal rhs) {
 
   result.setRegion(lhs.getRegionID());
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs;
   }
 
@@ -603,7 +603,7 @@ Field3D operator-(const Field3D& lhs, const BoutReal rhs) {
 
   result.setRegion(lhs.getRegionID());
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs;
   }
 
@@ -734,7 +734,7 @@ Field2D operator*(const Field2D& lhs, const Field2D& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs[index];
   }
 
@@ -770,7 +770,7 @@ Field2D operator/(const Field2D& lhs, const Field2D& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] / rhs[index];
   }
 
@@ -806,7 +806,7 @@ Field2D operator+(const Field2D& lhs, const Field2D& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs[index];
   }
 
@@ -842,7 +842,7 @@ Field2D operator-(const Field2D& lhs, const Field2D& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs[index];
   }
 
@@ -957,7 +957,7 @@ Field2D operator*(const Field2D& lhs, const BoutReal rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs;
   }
 
@@ -992,7 +992,7 @@ Field2D operator/(const Field2D& lhs, const BoutReal rhs) {
   checkData(rhs);
 
   const auto tmp = 1.0 / rhs;
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * tmp;
   }
 
@@ -1027,7 +1027,7 @@ Field2D operator+(const Field2D& lhs, const BoutReal rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs;
   }
 
@@ -1061,7 +1061,7 @@ Field2D operator-(const Field2D& lhs, const BoutReal rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs;
   }
 
@@ -1464,7 +1464,7 @@ FieldPerp operator*(const FieldPerp& lhs, const FieldPerp& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs[index];
   }
 
@@ -1500,7 +1500,7 @@ FieldPerp operator/(const FieldPerp& lhs, const FieldPerp& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] / rhs[index];
   }
 
@@ -1536,7 +1536,7 @@ FieldPerp operator+(const FieldPerp& lhs, const FieldPerp& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs[index];
   }
 
@@ -1572,7 +1572,7 @@ FieldPerp operator-(const FieldPerp& lhs, const FieldPerp& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs[index];
   }
 
@@ -1607,7 +1607,7 @@ FieldPerp operator*(const FieldPerp& lhs, const BoutReal rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs;
   }
 
@@ -1642,7 +1642,7 @@ FieldPerp operator/(const FieldPerp& lhs, const BoutReal rhs) {
   checkData(rhs);
 
   const auto tmp = 1.0 / rhs;
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * tmp;
   }
 
@@ -1676,7 +1676,7 @@ FieldPerp operator+(const FieldPerp& lhs, const BoutReal rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs;
   }
 
@@ -1710,7 +1710,7 @@ FieldPerp operator-(const FieldPerp& lhs, const BoutReal rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs;
   }
 
@@ -1746,7 +1746,7 @@ Field3D operator*(const BoutReal lhs, const Field3D& rhs) {
 
   result.setRegion(rhs.getRegionID());
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs * rhs[index];
   }
 
@@ -1763,7 +1763,7 @@ Field3D operator/(const BoutReal lhs, const Field3D& rhs) {
 
   result.setRegion(rhs.getRegionID());
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs / rhs[index];
   }
 
@@ -1780,7 +1780,7 @@ Field3D operator+(const BoutReal lhs, const Field3D& rhs) {
 
   result.setRegion(rhs.getRegionID());
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs + rhs[index];
   }
 
@@ -1797,7 +1797,7 @@ Field3D operator-(const BoutReal lhs, const Field3D& rhs) {
 
   result.setRegion(rhs.getRegionID());
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs - rhs[index];
   }
 
@@ -1812,7 +1812,7 @@ Field2D operator*(const BoutReal lhs, const Field2D& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs * rhs[index];
   }
 
@@ -1827,7 +1827,7 @@ Field2D operator/(const BoutReal lhs, const Field2D& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs / rhs[index];
   }
 
@@ -1842,7 +1842,7 @@ Field2D operator+(const BoutReal lhs, const Field2D& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs + rhs[index];
   }
 
@@ -1857,7 +1857,7 @@ Field2D operator-(const BoutReal lhs, const Field2D& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs - rhs[index];
   }
 
@@ -1872,7 +1872,7 @@ FieldPerp operator*(const BoutReal lhs, const FieldPerp& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs * rhs[index];
   }
 
@@ -1887,7 +1887,7 @@ FieldPerp operator/(const BoutReal lhs, const FieldPerp& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs / rhs[index];
   }
 
@@ -1902,7 +1902,7 @@ FieldPerp operator+(const BoutReal lhs, const FieldPerp& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs + rhs[index];
   }
 
@@ -1917,7 +1917,7 @@ FieldPerp operator-(const BoutReal lhs, const FieldPerp& rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getDefaultRegion("RGN_ALL")) {
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs - rhs[index];
   }
 

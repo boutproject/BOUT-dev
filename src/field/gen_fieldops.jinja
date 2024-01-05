@@ -52,11 +52,11 @@
 	}
   {% elif (operator == "/") and (rhs == "BoutReal") %}
       const auto tmp = 1.0 / {{rhs.index}};
-      {{region_loop}}({{index_var}}, {{out.name}}.getDefaultRegion({{region_name}})) {
+      {{region_loop}}({{index_var}}, {{out.name}}.getValidRegionWithDefault({{region_name}})) {
          {{out.index}} = {{lhs.index}} * tmp;
       }
   {% else %}
-    {{region_loop}}({{index_var}}, {{out.name}}.getDefaultRegion({{region_name}})) {
+    {{region_loop}}({{index_var}}, {{out.name}}.getValidRegionWithDefault({{region_name}})) {
 	    {{out.index}} = {{lhs.index}} {{operator}} {{rhs.index}};
 	}
   {% endif %}

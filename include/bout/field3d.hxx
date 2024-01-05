@@ -314,7 +314,7 @@ public:
   const Region<Ind3D>& getRegion(REGION region) const;
   const Region<Ind3D>& getRegion(const std::string& region_name) const;
   /// Use region provided by the default, and if none is set, use the provided one
-  const Region<Ind3D>& getDefaultRegion(const std::string& region_name) const;
+  const Region<Ind3D>& getValidRegionWithDefault(const std::string& region_name) const;
   void setRegion(const std::string& region_name);
   void resetRegion() { regionID = -1; };
   void setRegion(int id) { regionID = id; };
