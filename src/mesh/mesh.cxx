@@ -789,6 +789,10 @@ int Mesh::getCommonRegion(int lhs, int rhs) {
       // going to allocate global memory, we need to use a mutex.
       // Now that we have the mutex, we need to check again whether a
       // different thread was faster and already allocated.
+      // BOUT_OMP(single) would work in most cases, but it would fail if the
+      // function is called in parallel with different arguments. While BOUT++
+      // is not currently doing it, other openmp parallised projects might be
+      // calling BOUT++ in this way.
 #if BOUT_USE_OPENMP
     if (region3Dintersect.size() <= pos)
 #endif
