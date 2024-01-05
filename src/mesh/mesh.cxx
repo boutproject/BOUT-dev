@@ -785,6 +785,10 @@ int Mesh::getCommonRegion(int lhs, int rhs) {
   const size_t pos = (high * (high - 1)) / 2 + low;
   if (region3Dintersect.size() <= pos) {
     BOUT_OMP(critical(mesh_intersection_realloc))
+      // By default this function does not need the mutex, however, if we are
+      // going to allocate global memory, we need to use a mutex.
+      // Now that we have the mutex, we need to check again whether a
+      // different thread was faster and already allocated.
 #if BOUT_USE_OPENMP
     if (region3Dintersect.size() <= pos)
 #endif
@@ -797,6 +801,7 @@ int Mesh::getCommonRegion(int lhs, int rhs) {
   }
   {
     BOUT_OMP(critical(mesh_intersection))
+      // See comment above why we need to check again in case of OpenMP
 #if BOUT_USE_OPENMP
     if (region3Dintersect[pos] == -1)
 #endif
