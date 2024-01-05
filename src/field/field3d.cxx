@@ -820,7 +820,8 @@ void swap(Field3D& first, Field3D& second) noexcept {
   swap(first.ydown_fields, second.ydown_fields);
 }
 
-const Region<Ind3D>& Field3D::getValidRegionWithDefault(const std::string& region_name) const {
+const Region<Ind3D>&
+Field3D::getValidRegionWithDefault(const std::string& region_name) const {
   if (regionID.has_value()) {
     return fieldmesh->getRegion(regionID.value());
   }
