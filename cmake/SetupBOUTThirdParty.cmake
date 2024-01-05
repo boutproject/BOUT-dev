@@ -156,6 +156,7 @@ option(BOUT_USE_NETCDF "Enable support for NetCDF output" ON)
 option(BOUT_DOWNLOAD_NETCDF_CXX4 "Download and build netCDF-cxx4" OFF)
 if (BOUT_USE_NETCDF)
   if (BOUT_DOWNLOAD_NETCDF_CXX4)
+    message(STATUS "Downloading and configuring NetCDF-cxx4")
     include(FetchContent)
     FetchContent_Declare(
       netcdf-cxx4
@@ -184,6 +185,44 @@ if (BOUT_USE_NETCDF)
 endif()
 message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
 set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
+
+option(BOUT_USE_ADIOS "Enable support for ADIOS output" ON)
+option(BOUT_DOWNLOAD_ADIOS "Download and build ADIOS2" OFF)
+if (BOUT_USE_ADIOS)
+  if (BOUT_DOWNLOAD_ADIOS)
+    message(STATUS "Downloading and configuring ADIOS2")
+    include(FetchContent)
+    FetchContent_Declare(
+      adios2
+      GIT_REPOSITORY https://github.com/ornladios/ADIOS2.git
+      GIT_TAG origin/master
+      GIT_SHALLOW 1
+      )
+    set(ADIOS2_USE_MPI ON CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_Fortran OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_Python OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    # Disable testing, or ADIOS will try to find or install GTEST
+    set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+    # Note: SST requires <rdma/fabric.h> but doesn't check at configure time
+    set(ADIOS2_USE_SST OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(adios2)
+    target_link_libraries(bout++ PUBLIC adios2::cxx11_mpi)
+    message(STATUS "ADIOS2 done configuring")
+  else()
+    find_package(ADIOS2)
+    if (ADIOS2_FOUND)
+      ENABLE_LANGUAGE(C)
+      find_package(MPI REQUIRED COMPONENTS C)
+      target_link_libraries(bout++ PUBLIC adios2::cxx11_mpi MPI::MPI_C)
+    else()
+      set(BOUT_USE_ADIOS OFF)
+    endif()
+  endif()
+endif()
+message(STATUS "ADIOS support: ${BOUT_USE_ADIOS}")
+set(BOUT_HAS_ADIOS ${BOUT_USE_ADIOS})
+
 
 option(BOUT_USE_FFTW "Enable support for FFTW" ON)
 if (BOUT_USE_FFTW)

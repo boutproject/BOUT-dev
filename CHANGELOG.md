@@ -6,6 +6,8 @@
 ### Breaking changes
 
 - The autotools `./configure` build system has been removed
+- Parsing of booleans has changed [\#2828][https://github.com/boutproject/BOUT-dev/pull/2828] ([bendudson][https://github.com/bendudson]).
+  See the [manual page](https://bout-dev.readthedocs.io/en/stable/user_docs/bout_options.html#boolean-expressions) for details.
 
 
 ## [v5.1.0](https://github.com/boutproject/BOUT-dev/tree/v5.1.0)
