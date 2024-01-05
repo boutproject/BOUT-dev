@@ -74,6 +74,7 @@ class Mesh;
 #include <list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 
@@ -795,9 +796,13 @@ public:
   // Switch for communication of corner guard and boundary cells
   const bool include_corner_cells;
 
-  int getCommonRegion(int, int);
-  int getRegionID(const std::string& region) const;
-  const Region<Ind3D>& getRegion(int RegionID) const { return region3D[RegionID]; }
+  std::optional<size_t> getCommonRegion(std::optional<size_t>, std::optional<size_t>);
+  size_t getRegionID(const std::string& region) const;
+  const Region<Ind3D>& getRegion(size_t RegionID) const { return region3D[RegionID]; }
+  const Region<Ind3D>& getRegion(std::optional<size_t> RegionID) const {
+    ASSERT1(RegionID.has_value());
+    return region3D[RegionID.value()];
+  }
 
 private:
   /// Allocates default Coordinates objects
@@ -811,9 +816,9 @@ private:
                            bool force_interpolate_from_centre = false);
 
   //Internal region related information
-  std::map<std::string, int> regionMap3D;
+  std::map<std::string, size_t> regionMap3D;
   std::vector<Region<Ind3D>> region3D;
-  std::vector<int> region3Dintersect;
+  std::vector<std::optional<size_t>> region3Dintersect;
   std::map<std::string, Region<Ind2D>> regionMap2D;
   std::map<std::string, Region<IndPerp>> regionMapPerp;
   Array<int> indexLookup3Dto2D;

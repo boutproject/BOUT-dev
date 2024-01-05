@@ -562,7 +562,7 @@ const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
   return region3D[found->second];
 }
 
-int Mesh::getRegionID(const std::string& region_name) const {
+size_t Mesh::getRegionID(const std::string& region_name) const {
   const auto found = regionMap3D.find(region_name);
   if (found == end(regionMap3D)) {
     throw BoutException(_("Couldn't find region {:s} in regionMap3D"), region_name);
@@ -604,19 +604,19 @@ void Mesh::addRegion3D(const std::string& region_name, const Region<>& region) {
                         region_name);
   }
 
-  int id = -1;
+  std::optional<size_t> id;
   for (size_t i = 0; i < region3D.size(); ++i) {
     if (region3D[i] == region) {
       id = i;
       break;
     }
   }
-  if (id == -1) {
+  if (!id.has_value()) {
     id = region3D.size();
     region3D.push_back(region);
   }
 
-  regionMap3D[region_name] = id;
+  regionMap3D[region_name] = id.value();
 
   output_verbose.write(_("Registered region 3D {:s}"), region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
@@ -761,15 +761,20 @@ constexpr decltype(MeshFactory::section_name) MeshFactory::section_name;
 constexpr decltype(MeshFactory::option_name) MeshFactory::option_name;
 constexpr decltype(MeshFactory::default_type) MeshFactory::default_type;
 
-int Mesh::getCommonRegion(int lhs, int rhs) {
-  if (lhs == rhs) {
+std::optional<size_t> Mesh::getCommonRegion(std::optional<size_t> lhs,
+                                            std::optional<size_t> rhs) {
+  if (!lhs.has_value()) {
+    return rhs;
+  }
+  if (!rhs.has_value()) {
     return lhs;
   }
-  const int low = std::min(lhs, rhs);
-  const int high = std::max(lhs, rhs);
-  if (low == -1) {
-    return high;
+  if (lhs.value() == rhs.value()) {
+    return lhs;
   }
+  const size_t low = std::min(lhs.value(), rhs.value());
+  const size_t high = std::max(lhs.value(), rhs.value());
+
   /* Memory layout of indices
    * left is lower index, bottom is higher index
    *    0  1  2  3
@@ -797,17 +802,17 @@ int Mesh::getCommonRegion(int lhs, int rhs) {
     if (region3Dintersect.size() <= pos)
 #endif
     {
-      region3Dintersect.resize(pos + 1, -1);
+      region3Dintersect.resize(pos + 1, std::nullopt);
     }
   }
-  if (region3Dintersect[pos] != -1) {
+  if (region3Dintersect[pos].has_value()) {
     return region3Dintersect[pos];
   }
   {
     BOUT_OMP(critical(mesh_intersection))
-      // See comment above why we need to check again in case of OpenMP
+    // See comment above why we need to check again in case of OpenMP
 #if BOUT_USE_OPENMP
-    if (region3Dintersect[pos] == -1)
+    if (!region3Dintersect[pos].has_value())
 #endif
     {
       auto common = intersection(region3D[low], region3D[high]);
@@ -817,9 +822,9 @@ int Mesh::getCommonRegion(int lhs, int rhs) {
           break;
         }
       }
-      if (region3Dintersect[pos] == -1) {
+      if (!region3Dintersect[pos].has_value()) {
+        region3Dintersect[pos] = region3D.size();
         region3D.push_back(common);
-        region3Dintersect[pos] = region3D.size() - 1;
       }
     }
   }
