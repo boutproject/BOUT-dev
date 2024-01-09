@@ -226,6 +226,7 @@ function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
   set_tests_properties(${TESTNAME} PROPERTIES
     PROCESSORS ${BOUT_TEST_OPTIONS_PROCESSORS}
     PROCESSOR_AFFINITY ON
+    TIMEOUT ${BOUT_TEST_TIMEOUT}
     )
 
   # Copy the input file if needed
