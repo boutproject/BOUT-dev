@@ -567,16 +567,10 @@ public:
   Region<T>(ContiguousBlocks& blocks) : blocks(blocks) { indices = getRegionIndices(); };
 
   bool operator==(const Region<T>& other) const {
-    if (this->size() != other.size()) {
-      return false;
-    }
-    for (auto i1 = const_cast<const Region<T>*>(this)->begin(), i2 = other.begin();
-         i1 != this->end(); ++i1, ++i2) {
-      if (i1 != i2) {
-        return false;
-      }
-    }
-    return true;
+    return std::equal(
+      this->begin(), this->end(),
+      other.begin(), other.end()
+    );
   }
 
   /// Destructor
