@@ -775,17 +775,34 @@ std::optional<size_t> Mesh::getCommonRegion(std::optional<size_t> lhs,
   const size_t low = std::min(lhs.value(), rhs.value());
   const size_t high = std::max(lhs.value(), rhs.value());
 
-  /* Memory layout of indices
-   * left is lower index, bottom is higher index
-   *    0  1  2  3
-   * 0
-   * 1  0
-   * 2  1  2
-   * 3  3  4  5
-   * 4  6  7  8  9
-   *
-   * As we only need half of the square, the indices do not depend on
-   * the total number of elements.
+  /* This function finds the ID of the region corresponding to the
+     intersection of two regions, and caches the result. The cache is a
+     vector, indexed by some function of the two input IDs. Because the
+     intersection of two regions doesn't depend on the order, and the
+     intersection of a region with itself is the identity operation, we can
+     order the IDs numerically and use a generalised triangle number:
+     $[n (n - 1) / 2] + m$ to construct the cache index. This diagram shows
+     the result for the first few numbers:
+       |  0  1  2  3
+     ----------------
+     0 |
+     1 |  0
+     2 |  1  2
+     3 |  3  4  5
+     4 |  6  7  8  9
+
+     These indices might be sparse, but presumably we don't expect to store
+     very many intersections so this shouldn't give much overhead.
+
+     After calculating the cache index, we look it up in the cache (possibly
+     reallocating to ensure it's large enough). If the index is in the cache,
+     we can just return it as-is, otherwise we need to do a bit more work.
+
+     First, we need to fully compute the intersection of the two regions. We
+     then check if this corresponds to an existing region. If so, we cache the
+     ID of that region and return it. Otherwise, we need to store this new
+     region in `region3D` -- the index in this vector is the ID we need to
+     cache and return here.
    */
   const size_t pos = (high * (high - 1)) / 2 + low;
   if (region3Dintersect.size() <= pos) {
