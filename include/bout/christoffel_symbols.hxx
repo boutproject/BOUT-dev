@@ -10,6 +10,8 @@
 
 using FieldMetric = MetricTensor::FieldMetric;
 
+class Coordinates;
+
 class ChristoffelSymbols {
 
 public:
@@ -77,9 +79,7 @@ public:
   //  ChristoffelSymbols
   //  applyToComponents(std::function<const FieldMetric(const FieldMetric)> function) const;
 
-  void CalculateChristoffelSymbols(const FieldMetric& dx, const FieldMetric& dy,
-                                   const MetricTensor& contravariantMetricTensor,
-                                   const MetricTensor& covariantMetricTensor);
+  void CalculateChristoffelSymbols(const Coordinates& coordinates);
 
   // Transforms the ChristoffelSymbols by applying the given function to every element
   void map(const std::function<const FieldMetric(const FieldMetric)>& function);

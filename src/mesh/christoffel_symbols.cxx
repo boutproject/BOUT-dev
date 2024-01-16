@@ -1,6 +1,7 @@
 
-#include <utility>
 #include "bout/christoffel_symbols.hxx"
+#include "bout/coordinates.hxx"
+#include <utility>
 
 ChristoffelSymbols::ChristoffelSymbols(
     FieldMetric G1_11, FieldMetric G1_22, FieldMetric G1_33, FieldMetric G1_12,
@@ -17,18 +18,18 @@ ChristoffelSymbols::ChristoffelSymbols(
       G3_12_(std::move(G3_12)), G3_13_(std::move(G3_13)), G3_23_(std::move(G3_23)),
       G1_(std::move(G1)), G2_(std::move(G2)), G3_(std::move(G3)),
       differential_operators(differential_operators){
-          ASSERT0(differential_operators != nullptr)}
+          ASSERT0(differential_operators != nullptr)};
 
-      /// This constructor (taking no mesh) is needed because mesh may be a FakeMesh,
-      /// which has no 'source' set, leading to a SEGFAULT if the constructor leads
-      /// to initialisation of FieldMetric objects.
-      ChristoffelSymbols::ChristoffelSymbols(DifferentialOperators
-                                             * differential_operators)
-    : differential_operators(
-          differential_operators){ASSERT0(differential_operators != nullptr)}
+/// This constructor (taking no mesh) is needed because mesh may be a FakeMesh,
+/// which has no 'source' set, leading to a SEGFAULT if the constructor leads
+/// to initialisation of FieldMetric objects.
+ChristoffelSymbols::ChristoffelSymbols(DifferentialOperators* differential_operators)
+    : differential_operators(differential_operators) {
+  ASSERT0(differential_operators != nullptr);
+}
 
-      ChristoffelSymbols::ChristoffelSymbols(Mesh * mesh, DifferentialOperators
-                                                              * differential_operators)
+ChristoffelSymbols::ChristoffelSymbols(Mesh* mesh,
+                                       DifferentialOperators* differential_operators)
     : G1_11_(mesh), G1_22_(mesh), G1_33_(mesh), G1_12_(mesh), G1_13_(mesh), G1_23_(mesh),
       G2_11_(mesh), G2_22_(mesh), G2_33_(mesh), G2_12_(mesh), G2_13_(mesh), G2_23_(mesh),
       G3_11_(mesh), G3_22_(mesh), G3_33_(mesh), G3_12_(mesh), G3_13_(mesh), G3_23_(mesh),
@@ -96,13 +97,15 @@ void ChristoffelSymbols::setChristoffelSymbols(
   G3_ = G3;
 }
 
-void ChristoffelSymbols::CalculateChristoffelSymbols(
-    const FieldMetric& dx, const FieldMetric& dy,
-    const MetricTensor& contravariantMetricTensor,
-    const MetricTensor& covariantMetricTensor) {
+void ChristoffelSymbols::CalculateChristoffelSymbols(const Coordinates& coordinates) {
   // Calculate Christoffel symbol terms (18 independent values)
   // Note: This calculation is completely general: metric
   // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
+
+  const auto& dx = coordinates.dx();
+  const auto& dy = coordinates.dy();
+  const auto& contravariantMetricTensor = coordinates.getContravariantMetricTensor();
+  const auto& covariantMetricTensor = coordinates.getCovariantMetricTensor();
 
   G1_11_ = 0.5 * contravariantMetricTensor.g11()
                * differential_operators->DDX(covariantMetricTensor.g11(), dx)

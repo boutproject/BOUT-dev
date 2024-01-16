@@ -119,7 +119,7 @@ public:
   const FieldMetric& g23() const;
 
   const MetricTensor& getContravariantMetricTensor() const;
-  //  const MetricTensor& getCovariantMetricTensor() const;
+  const MetricTensor& getCovariantMetricTensor() const;
 
   void setContravariantMetricTensor(const MetricTensor& metric_tensor,
                                     const std::string& region = "RGN_ALL",
