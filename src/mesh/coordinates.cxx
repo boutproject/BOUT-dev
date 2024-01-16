@@ -753,8 +753,7 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
 
 void Coordinates::calculateCommunicateAndExtrapolateChristoffelSymbols() {
 
-  christoffel_symbols.CalculateChristoffelSymbols(dx(), dy(), contravariantMetricTensor,
-                                                  covariantMetricTensor);
+  christoffel_symbols.CalculateChristoffelSymbols(*this);
 
   auto tmp = J() * g12();
   communicate(tmp);
@@ -1514,9 +1513,9 @@ const MetricTensor& Coordinates::getContravariantMetricTensor() const {
   return contravariantMetricTensor;
 }
 
-//const MetricTensor& Coordinates::getCovariantMetricTensor() const {
-//  return covariantMetricTensor;
-//}
+const MetricTensor& Coordinates::getCovariantMetricTensor() const {
+  return covariantMetricTensor;
+}
 
 void Coordinates::setContravariantMetricTensor(const MetricTensor& metric_tensor,
                                                const std::string& region,
