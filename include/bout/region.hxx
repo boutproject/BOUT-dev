@@ -567,10 +567,7 @@ public:
   Region<T>(ContiguousBlocks& blocks) : blocks(blocks) { indices = getRegionIndices(); };
 
   bool operator==(const Region<T>& other) const {
-    return std::equal(
-      this->begin(), this->end(),
-      other.begin(), other.end()
-    );
+    return std::equal(this->begin(), this->end(), other.begin(), other.end());
   }
 
   /// Destructor
