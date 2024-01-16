@@ -286,6 +286,8 @@ public:
 
   const FieldMetric& invSg() const;
 
+  ChristoffelSymbols christoffel_symbols() const;
+
   void recalculateAndReset(bool recalculate_staggered,
                            bool force_interpolate_from_centre);
 
@@ -325,7 +327,7 @@ private:
   MetricTensor covariantMetricTensor;
 
   /// Christoffel symbol of the second kind (connection coefficients)
-  ChristoffelSymbols christoffel_symbols;
+  mutable std::unique_ptr<ChristoffelSymbols> christoffel_symbols_cache{nullptr};
 
   void applyToContravariantMetricTensor(
       const std::function<const FieldMetric(const FieldMetric)>& function);
