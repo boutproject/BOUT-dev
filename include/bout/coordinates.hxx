@@ -277,9 +277,9 @@ public:
   const FieldMetric& G2() const;
   const FieldMetric& G3() const;
 
-  void setG1(FieldMetric G1);
-  void setG2(FieldMetric G2);
-  void setG3(FieldMetric G3);
+  void setG1(const FieldMetric& G1);
+  void setG2(const FieldMetric& G2);
+  void setG3(const FieldMetric& G3);
 
   const FieldMetric& Grad2_par2_DDY_invSg(CELL_LOC outloc,
                                           const std::string& method) const;
@@ -336,7 +336,7 @@ private:
       const std::function<const FieldMetric(const FieldMetric)>& function);
 
   void applyToChristoffelSymbols(
-      const std::function<const FieldMetric(const FieldMetric)>& function);
+      const std::function<const FieldMetric(const FieldMetric)>& function) const;
 
   FieldMetric J_;
 
