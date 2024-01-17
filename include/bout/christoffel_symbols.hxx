@@ -29,7 +29,6 @@ public:
 
   explicit ChristoffelSymbols(DifferentialOperators* differential_operators);
 
-  ChristoffelSymbols(Mesh* mesh, DifferentialOperators* differential_operators);
 
   const FieldMetric& G1_11() const;
   const FieldMetric& G1_22() const;
