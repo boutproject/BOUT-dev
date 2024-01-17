@@ -62,12 +62,6 @@ public:
   //  void Allocate();
   //
   //  void setLocation(CELL_LOC location);
-  //
-  //  // Transforms the ChristoffelSymbols by applying the given function to every component
-  //  void map(std::function<const Field2D(const FieldMetric)> function);
-  //
-  //  ChristoffelSymbols
-  //  applyToComponents(std::function<const FieldMetric(const FieldMetric)> function) const;
 
   void CalculateChristoffelSymbols(const Coordinates& coordinates);
 
