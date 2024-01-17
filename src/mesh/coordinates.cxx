@@ -294,7 +294,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
       IntShiftTorsion_(std::move(IntShiftTorsion)),
       contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
       covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), J_(std::move(J)),
-      Bxy_(std::move(Bxy)){ASSERT0(differential_operators != nullptr)};
+      Bxy_(std::move(Bxy)){ASSERT0(differential_operators != nullptr)}
 
       Coordinates::Coordinates(Mesh * mesh, Options * options, const CELL_LOC loc,
                                const Coordinates* coords_in,
@@ -306,7 +306,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
       contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
       // Identity metric tensor
       covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), J_(1., mesh), Bxy_(1., mesh) {
-  ASSERT0(differential_operators != nullptr);
+  ASSERT0(differential_operators != nullptr)
 
   if (options == nullptr) {
     options = Options::getRoot()->getSection("mesh");
@@ -1512,12 +1512,12 @@ const FieldMetric& Coordinates::G1() const { return G1_; }
 const FieldMetric& Coordinates::G2() const { return G2_; }
 const FieldMetric& Coordinates::G3() const { return G3_; }
 
-void Coordinates::setG1(FieldMetric G1) { G1_ = G1; }
-void Coordinates::setG2(FieldMetric G2) { G2_ = G2; }
-void Coordinates::setG3(FieldMetric G3) { G3_ = G3; }
+void Coordinates::setG1(const FieldMetric& G1) { G1_ = G1; }
+void Coordinates::setG2(const FieldMetric& G2) { G2_ = G2; }
+void Coordinates::setG3(const FieldMetric& G3) { G3_ = G3; }
 
 void Coordinates::applyToChristoffelSymbols(
-    const std::function<const FieldMetric(const FieldMetric)>& function) {
+    const std::function<const FieldMetric(const FieldMetric)>& function) const {
   christoffel_symbols().map(function);
 }
 
