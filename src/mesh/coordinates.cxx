@@ -673,6 +673,10 @@ void Coordinates::recalculateAndReset(bool recalculate_staggered,
   communicate(tmp);
   setG3((DDX(J() * g13()) + DDY(tmp) + DDZ(J() * g33())) / J());
 
+  setG1(localmesh->interpolateAndExtrapolate(G1(), location, true, true, true, transform.get()));
+  setG2(localmesh->interpolateAndExtrapolate(G2(), location, true, true, true, transform.get()));
+  setG3(localmesh->interpolateAndExtrapolate(G3(), location, true, true, true, transform.get()));
+
   auto temp = G1(); // TODO: There must be a better way than this!
   communicate(temp, G2(), G3());
 
