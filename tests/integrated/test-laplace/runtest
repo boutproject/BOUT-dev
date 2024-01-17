@@ -54,18 +54,27 @@ print("Running Laplacian inversion test")
 success = True
 
 for solver in ["cyclic", "pcr", "pcr_thomas"]:
-    for nproc in [1, 2, 4]:
-        nxpe = 1
-        if nproc > 2:
-            nxpe = 2
-
-        cmd = "./test_laplace NXPE=" + str(nxpe) + " laplace:type=" + solver
+    # Try different combinations of processor numbers
+    # If not cyclic then ignore ngather option
+    for nproc, nxpe, ngather in [(1, 1, 1), (2, 1, 1), (2, 2, 2), (4, 2, 1), (4, 4, 2)]:
+        cmd = (
+            "./test_laplace NXPE="
+            + str(nxpe)
+            + " laplace:type="
+            + solver
+            + ((" laplace:ngather=" + str(ngather)) if solver == "cyclic" else "")
+        )
 
         shell("rm data/BOUT.dmp.*.nc")
 
-        print("   %s solver with %d processors (nxpe = %d)...." % (solver, nproc, nxpe))
+        print(
+            "   %s solver with %d processors (nxpe = %d, ngather = %d)...."
+            % (solver, nproc, nxpe, ngather)
+        )
         s, out = launch_safe(cmd, nproc=nproc, mthread=1, pipe=True)
-        with open("run.log." + str(nproc), "w") as f:
+        with open(
+            "run.log." + str(nproc) + "." + str(nxpe) + "." + str(ngather), "w"
+        ) as f:
             f.write(out)
 
         # Collect output data

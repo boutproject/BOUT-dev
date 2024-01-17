@@ -96,14 +96,14 @@ LaplaceCyclic::LaplaceCyclic(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   xcmplx.reallocate(nmode, n);
   bcmplx.reallocate(nmode, n);
 
-  // Create a cyclic reduction object, operating on dcomplex values
-  cr = new CyclicReduce<dcomplex>(localmesh->getXcomm(), n);
-  cr->setPeriodic(localmesh->periodicX);
-}
+  int ngather =
+      (*opt)["ngather"]
+          .doc("Number of processors in X to gather onto. Default (0) is all processors")
+          .withDefault(0);
 
-LaplaceCyclic::~LaplaceCyclic() {
-  // Delete tridiagonal solver
-  delete cr;
+  // Create a cyclic reduction object, operating on dcomplex values
+  cr = std::make_unique<CyclicReduce<dcomplex>>(localmesh->getXcomm(), n, ngather);
+  cr->setPeriodic(localmesh->periodicX);
 }
 
 FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
@@ -184,7 +184,6 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     BOUT_OMP(parallel)
     {
       /// Create a local thread-scope working array
-
       // ZFFT routine expects input of this length
       auto k1d = Array<dcomplex>(localmesh->LocalNz);
 

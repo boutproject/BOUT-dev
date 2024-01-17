@@ -28,8 +28,8 @@
 
 class LaplaceCyclic;
 
-#ifndef __LAP_CYCLIC_H__
-#define __LAP_CYCLIC_H__
+#ifndef LAP_CYCLIC_H_
+#define LAP_CYCLIC_H_
 
 #include "bout/build_config.hxx"
 #include "bout/invert_laplace.hxx"
@@ -61,7 +61,6 @@ class LaplaceCyclic : public Laplacian {
 public:
   LaplaceCyclic(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
                 Mesh* mesh_in = nullptr, Solver* solver = nullptr);
-  ~LaplaceCyclic();
 
   using Laplacian::setCoefA;
   void setCoefA(const Field2D& val) override {
@@ -120,9 +119,9 @@ private:
 
   bool dst;
 
-  CyclicReduce<dcomplex>* cr; ///< Tridiagonal solver
+  std::unique_ptr<CyclicReduce<dcomplex>> cr; ///< Tridiagonal solver
 };
 
 #endif // BOUT_USE_METRIC_3D
 
-#endif // __SPT_H__
+#endif // LAP_CYCLIC_H_
