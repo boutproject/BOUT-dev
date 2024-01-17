@@ -8,15 +8,13 @@ ChristoffelSymbols::ChristoffelSymbols(
     FieldMetric G1_13, FieldMetric G1_23, FieldMetric G2_11, FieldMetric G2_22,
     FieldMetric G2_33, FieldMetric G2_12, FieldMetric G2_13, FieldMetric G2_23,
     FieldMetric G3_11, FieldMetric G3_22, FieldMetric G3_33, FieldMetric G3_12,
-    FieldMetric G3_13, FieldMetric G3_23, FieldMetric G1, FieldMetric G2, FieldMetric G3,
-    DifferentialOperators* differential_operators)
+    FieldMetric G3_13, FieldMetric G3_23, DifferentialOperators* differential_operators)
     : G1_11_(std::move(G1_11)), G1_22_(std::move(G1_22)), G1_33_(std::move(G1_33)),
       G1_12_(std::move(G1_12)), G1_13_(std::move(G1_13)), G1_23_(std::move(G1_23)),
       G2_11_(std::move(G2_11)), G2_22_(std::move(G2_22)), G2_33_(std::move(G2_33)),
       G2_12_(std::move(G2_12)), G2_13_(std::move(G2_13)), G2_23_(std::move(G2_23)),
       G3_11_(std::move(G3_11)), G3_22_(std::move(G3_22)), G3_33_(std::move(G3_33)),
       G3_12_(std::move(G3_12)), G3_13_(std::move(G3_13)), G3_23_(std::move(G3_23)),
-      G1_(std::move(G1)), G2_(std::move(G2)), G3_(std::move(G3)),
       differential_operators(differential_operators){
           ASSERT0(differential_operators != nullptr)};
 
@@ -24,7 +22,6 @@ ChristoffelSymbols::ChristoffelSymbols(DifferentialOperators* differential_opera
     : differential_operators(differential_operators) {
   ASSERT0(differential_operators != nullptr);
 }
-
 
 const FieldMetric& ChristoffelSymbols::G1_11() const { return G1_11_; }
 const FieldMetric& ChristoffelSymbols::G1_22() const { return G1_22_; }
@@ -47,22 +44,13 @@ const FieldMetric& ChristoffelSymbols::G3_12() const { return G3_12_; }
 const FieldMetric& ChristoffelSymbols::G3_13() const { return G3_13_; }
 const FieldMetric& ChristoffelSymbols::G3_23() const { return G3_23_; }
 
-const FieldMetric& ChristoffelSymbols::G1() const { return G1_; }
-const FieldMetric& ChristoffelSymbols::G2() const { return G2_; }
-const FieldMetric& ChristoffelSymbols::G3() const { return G3_; }
-
-void ChristoffelSymbols::setG1(FieldMetric& G1) { G1_ = G1; }
-void ChristoffelSymbols::setG2(FieldMetric& G2) { G2_ = G2; }
-void ChristoffelSymbols::setG3(FieldMetric& G3) { G3_ = G3; }
-
 void ChristoffelSymbols::setChristoffelSymbols(
     const FieldMetric& G1_11, const FieldMetric& G1_22, const FieldMetric& G1_33,
     const FieldMetric& G1_12, const FieldMetric& G1_13, const FieldMetric& G1_23,
     const FieldMetric& G2_11, const FieldMetric& G2_22, const FieldMetric& G2_33,
     const FieldMetric& G2_12, const FieldMetric& G2_13, const FieldMetric& G2_23,
     const FieldMetric& G3_11, const FieldMetric& G3_22, const FieldMetric& G3_33,
-    const FieldMetric& G3_12, const FieldMetric& G3_13, const FieldMetric& G3_23,
-    const FieldMetric& G1, const FieldMetric& G2, const FieldMetric& G3) {
+    const FieldMetric& G3_12, const FieldMetric& G3_13, const FieldMetric& G3_23) {
   G1_11_ = G1_11;
   G1_22_ = G1_22;
   G1_33_ = G1_33;
@@ -81,9 +69,6 @@ void ChristoffelSymbols::setChristoffelSymbols(
   G3_12_ = G3_12;
   G3_13_ = G3_13;
   G3_23_ = G3_23;
-  G1_ = G1;
-  G2_ = G2;
-  G3_ = G3;
 }
 
 void ChristoffelSymbols::CalculateChristoffelSymbols(const Coordinates& coordinates) {
@@ -279,26 +264,23 @@ void ChristoffelSymbols::map(
       updated_christoffel_symbols.G2_13_, updated_christoffel_symbols.G2_23_,
       updated_christoffel_symbols.G3_11_, updated_christoffel_symbols.G3_22_,
       updated_christoffel_symbols.G3_33_, updated_christoffel_symbols.G3_12_,
-      updated_christoffel_symbols.G3_13_, updated_christoffel_symbols.G3_23_,
-      updated_christoffel_symbols.G1_, updated_christoffel_symbols.G2_,
-      updated_christoffel_symbols.G3_);
+      updated_christoffel_symbols.G3_13_, updated_christoffel_symbols.G3_23_);
 }
 
 ChristoffelSymbols ChristoffelSymbols::applyToComponents(
     const std::function<const FieldMetric(const FieldMetric)>& function) const {
 
-  const auto components_in =
-      std::vector<FieldMetric>{G1_11_, G1_22_, G1_33_, G1_12_, G1_13_, G1_23_, G2_11_,
-                               G2_22_, G2_33_, G2_12_, G2_13_, G2_23_, G3_11_, G3_22_,
-                               G3_33_, G3_12_, G3_13_, G3_23_, G1_,    G2_,    G3_};
+  const auto components_in = std::vector<FieldMetric>{
+      G1_11_, G1_22_, G1_33_, G1_12_, G1_13_, G1_23_, G2_11_, G2_22_, G2_33_,
+      G2_12_, G2_13_, G2_23_, G3_11_, G3_22_, G3_33_, G3_12_, G3_13_, G3_23_};
 
-  FieldMetric components_out[21];
+  FieldMetric components_out[18];
 
   std::transform(components_in.begin(), components_in.end(), components_out, function);
   auto [G1_11, G1_22, G1_33, G1_12, G1_13, G1_23, G2_11, G2_22, G2_33, G2_12, G2_13,
-        G2_23, G3_11, G3_22, G3_33, G3_12, G3_13, G3_23, G1, G2, G3] = components_out;
+        G2_23, G3_11, G3_22, G3_33, G3_12, G3_13, G3_23] = components_out;
 
   return ChristoffelSymbols(G1_11, G1_22, G1_33, G1_12, G1_13, G1_23, G2_11, G2_22, G2_33,
                             G2_12, G2_13, G2_23, G3_11, G3_22, G3_33, G3_12, G3_13, G3_23,
-                            G1, G2, G3, differential_operators);
+                            differential_operators);
 }

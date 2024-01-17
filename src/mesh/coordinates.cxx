@@ -296,8 +296,9 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
       covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), J_(std::move(J)),
       Bxy_(std::move(Bxy)){ASSERT0(differential_operators != nullptr)};
 
-Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
-                         const Coordinates* coords_in, bool force_interpolate_from_centre)
+      Coordinates::Coordinates(Mesh * mesh, Options * options, const CELL_LOC loc,
+                               const Coordinates* coords_in,
+                               bool force_interpolate_from_centre)
     : localmesh(mesh), location(loc),
       differential_operators(mesh->getDifferentialOperators()), dx_(1., mesh),
       dy_(1., mesh), dz_(1., mesh), d1_dx_(mesh), d1_dy_(mesh), d1_dz_(mesh),
@@ -662,6 +663,19 @@ void Coordinates::recalculateAndReset(bool recalculate_staggered,
 
   calculateCommunicateAndExtrapolateChristoffelSymbols();
 
+  auto tmp = J() * g12();
+  communicate(tmp);
+  setG1((DDX(J() * g11()) + DDY(tmp) + DDZ(J() * g13())) / J());
+  tmp = J() * g22();
+  communicate(tmp);
+  setG2((DDX(J() * g12()) + DDY(tmp) + DDZ(J() * g23())) / J());
+  tmp = J() * g23();
+  communicate(tmp);
+  setG3((DDX(J() * g13()) + DDY(tmp) + DDZ(J() * g33())) / J());
+
+  auto temp = G1(); // TODO: There must be a better way than this!
+  communicate(temp, G2(), G3());
+
   correctionForNonUniformMeshes(force_interpolate_from_centre);
 
   if (location == CELL_CENTRE && recalculate_staggered) {
@@ -751,16 +765,6 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
 void Coordinates::calculateCommunicateAndExtrapolateChristoffelSymbols() {
 
   christoffel_symbols_cache.reset();
-
-  auto tmp = J() * g12();
-  communicate(tmp);
-  setG1((DDX(J() * g11()) + DDY(tmp) + DDZ(J() * g13())) / J());
-  tmp = J() * g22();
-  communicate(tmp);
-  setG2((DDX(J() * g12()) + DDY(tmp) + DDZ(J() * g23())) / J());
-  tmp = J() * g23();
-  communicate(tmp);
-  setG3((DDX(J() * g13()) + DDY(tmp) + DDZ(J() * g33())) / J());
 
   communicateChristoffelSymbolTerms();
 
@@ -1482,50 +1486,31 @@ void Coordinates::setBxy(FieldMetric Bxy) {
 }
 
 const FieldMetric& Coordinates::G1_11() const { return christoffel_symbols().G1_11(); }
-
 const FieldMetric& Coordinates::G1_22() const { return christoffel_symbols().G1_22(); }
-
 const FieldMetric& Coordinates::G1_33() const { return christoffel_symbols().G1_33(); }
-
 const FieldMetric& Coordinates::G1_12() const { return christoffel_symbols().G1_12(); }
-
 const FieldMetric& Coordinates::G1_13() const { return christoffel_symbols().G1_13(); }
-
 const FieldMetric& Coordinates::G1_23() const { return christoffel_symbols().G1_23(); }
-
 const FieldMetric& Coordinates::G2_11() const { return christoffel_symbols().G2_11(); }
-
 const FieldMetric& Coordinates::G2_22() const { return christoffel_symbols().G2_22(); }
-
 const FieldMetric& Coordinates::G2_33() const { return christoffel_symbols().G2_33(); }
-
 const FieldMetric& Coordinates::G2_12() const { return christoffel_symbols().G2_12(); }
-
 const FieldMetric& Coordinates::G2_13() const { return christoffel_symbols().G2_13(); }
-
 const FieldMetric& Coordinates::G2_23() const { return christoffel_symbols().G2_23(); }
-
 const FieldMetric& Coordinates::G3_11() const { return christoffel_symbols().G3_11(); }
-
 const FieldMetric& Coordinates::G3_22() const { return christoffel_symbols().G3_22(); }
-
 const FieldMetric& Coordinates::G3_33() const { return christoffel_symbols().G3_33(); }
-
 const FieldMetric& Coordinates::G3_12() const { return christoffel_symbols().G3_12(); }
-
 const FieldMetric& Coordinates::G3_13() const { return christoffel_symbols().G3_13(); }
-
 const FieldMetric& Coordinates::G3_23() const { return christoffel_symbols().G3_23(); }
 
-const FieldMetric& Coordinates::G1() const { return christoffel_symbols().G1(); }
+const FieldMetric& Coordinates::G1() const { return G1_; }
+const FieldMetric& Coordinates::G2() const { return G2_; }
+const FieldMetric& Coordinates::G3() const { return G3_; }
 
-const FieldMetric& Coordinates::G2() const { return christoffel_symbols().G2(); }
-
-const FieldMetric& Coordinates::G3() const { return christoffel_symbols().G3(); }
-
-void Coordinates::setG1(FieldMetric G1) { christoffel_symbols().setG1(G1); }
-void Coordinates::setG2(FieldMetric G2) { christoffel_symbols().setG2(G2); }
-void Coordinates::setG3(FieldMetric G3) { christoffel_symbols().setG3(G3); }
+void Coordinates::setG1(FieldMetric G1) { G1_ = G1; }
+void Coordinates::setG2(FieldMetric G2) { G2_ = G2; }
+void Coordinates::setG3(FieldMetric G3) { G3_ = G3; }
 
 void Coordinates::applyToChristoffelSymbols(
     const std::function<const FieldMetric(const FieldMetric)>& function) {
@@ -1575,7 +1560,7 @@ void Coordinates::communicateChristoffelSymbolTerms() const {
   auto tmp = G1_11(); // TODO: There must be a better way than this!
   communicate(tmp, G1_22(), G1_33(), G1_12(), G1_13(), G1_23(), G2_11(), G2_22(), G2_33(),
               G2_12(), G2_13(), G2_23(), G3_11(), G3_22(), G3_33(), G3_12(), G3_13(),
-              G3_23(), G1(), G2(), G3());
+              G3_23());
 }
 
 void Coordinates::invalidateAndRecalculateCachedVariables() {

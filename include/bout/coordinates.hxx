@@ -342,6 +342,8 @@ private:
 
   FieldMetric Bxy_; ///< Magnitude of B = nabla z times nabla x
 
+  FieldMetric G1_, G2_, G3_;
+
   void invalidateAndRecalculateCachedVariables();
 
   /// Set the parallel (y) transform from the options file.
