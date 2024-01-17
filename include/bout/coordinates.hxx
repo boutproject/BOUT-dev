@@ -286,7 +286,7 @@ public:
 
   const FieldMetric& invSg() const;
 
-  ChristoffelSymbols christoffel_symbols() const;
+  ChristoffelSymbols& christoffel_symbols() const;
 
   void recalculateAndReset(bool recalculate_staggered,
                            bool force_interpolate_from_centre);
