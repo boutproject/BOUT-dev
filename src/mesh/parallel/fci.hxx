@@ -53,8 +53,9 @@ public:
   /// Direction of map
   const int offset;
 
-  /// boundary mask - has the field line left the domain
-  BoutMask boundary_mask;
+  /// region containing all points where the field line has not left the
+  /// domain
+  Region<Ind3D> region_no_boundary;
   /// If any of the integration area has left the domain
   BoutMask corner_boundary_mask;
 

@@ -3,9 +3,6 @@
 # Generate manufactured solution and sources for FCI test
 #
 
-from __future__ import division
-from __future__ import print_function
-
 from boutdata.mms import *
 
 from sympy import sin, cos, sqrt

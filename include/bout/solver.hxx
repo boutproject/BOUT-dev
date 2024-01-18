@@ -63,7 +63,6 @@ using Jacobian = int (*)(BoutReal t);
 /// Solution monitor, called each timestep
 using TimestepMonitorFunc = int (*)(Solver* solver, BoutReal simtime, BoutReal lastdt);
 
-//#include "bout/globals.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/generic_factory.hxx"
