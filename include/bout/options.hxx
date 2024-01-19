@@ -494,7 +494,7 @@ public:
       // Specify the source of the setting
       output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
     }
-    output_info << endl;
+    output_info << '\n';
 
     return val;
   }
@@ -513,7 +513,7 @@ public:
       value_used = true; // Mark the option as used
 
       output_info << _("\tOption ") << full_name << " = " << def << " (" << DEFAULT_SOURCE
-                  << ")" << std::endl;
+                  << ")\n";
       return def;
     }
     T val = as<T>(def);
@@ -546,7 +546,7 @@ public:
       *this = def;
 
       output_info << _("\tOption ") << full_name << " = " << def.full_name << " ("
-                  << DEFAULT_SOURCE << ")" << std::endl;
+                  << DEFAULT_SOURCE << ")\n";
     } else {
       // Check if this was previously set as a default option
       if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
@@ -570,7 +570,7 @@ public:
     if (is_section) {
       // Option not found
       output_info << _("\tOption ") << full_name << " = " << def << " (" << DEFAULT_SOURCE
-                  << ")" << std::endl;
+                  << ")\n";
       return def;
     }
     T val = as<T>(def);

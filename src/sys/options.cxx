@@ -332,7 +332,7 @@ std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) cons
     // Specify the source of the setting
     output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
   }
-  output_info << endl;
+  output_info << '\n';
 
   return result;
 }
@@ -401,7 +401,7 @@ int Options::as<int>(const int& UNUSED(similar_to)) const {
     // Specify the source of the setting
     output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
   }
-  output_info << endl;
+  output_info << '\n';
 
   return result;
 }
@@ -436,7 +436,7 @@ BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) const {
     // Specify the source of the setting
     output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
   }
-  output_info << endl;
+  output_info << '\n';
 
   return result;
 }
@@ -476,7 +476,7 @@ bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
     // Specify the source of the setting
     output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
   }
-  output_info << endl;
+  output_info << '\n';
 
   return result;
 }
@@ -735,7 +735,7 @@ Array<BoutReal> Options::as<Array<BoutReal>>(const Array<BoutReal>& similar_to) 
     // Specify the source of the setting
     output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
   }
-  output_info << endl;
+  output_info << '\n';
 
   return result;
 }
@@ -762,7 +762,7 @@ Matrix<BoutReal> Options::as<Matrix<BoutReal>>(const Matrix<BoutReal>& similar_t
     // Specify the source of the setting
     output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
   }
-  output_info << endl;
+  output_info << '\n';
 
   return result;
 }
@@ -789,7 +789,7 @@ Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_t
     // Specify the source of the setting
     output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
   }
-  output_info << endl;
+  output_info << '\n';
 
   return result;
 }
