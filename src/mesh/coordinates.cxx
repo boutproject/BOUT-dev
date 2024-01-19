@@ -661,7 +661,9 @@ void Coordinates::recalculateAndReset(bool recalculate_staggered,
   checkContravariant();
   checkCovariant();
 
-  calculateCommunicateAndExtrapolateChristoffelSymbols();
+  christoffel_symbols_cache.reset();
+  communicateChristoffelSymbolTerms();
+  extrapolateChristoffelSymbols();
 
   auto tmp = J() * g12();
   communicate(tmp);
@@ -769,11 +771,7 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
   communicate(tmp, d1_dy(), d1_dz());
 }
 
-void Coordinates::calculateCommunicateAndExtrapolateChristoffelSymbols() {
-
-  christoffel_symbols_cache.reset();
-
-  communicateChristoffelSymbolTerms();
+void Coordinates::extrapolateChristoffelSymbols() {
 
   // Set boundary guard cells of Christoffel symbol terms
   // Ideally, when location is staggered, we would set the upper/outer boundary point

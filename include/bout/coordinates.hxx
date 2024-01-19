@@ -369,7 +369,7 @@ private:
       bool no_extra_interpolate = false, ParallelTransform* pParallelTransform = nullptr);
 
   void communicateChristoffelSymbolTerms() const;
-  void calculateCommunicateAndExtrapolateChristoffelSymbols();
+  void extrapolateChristoffelSymbols();
 
   FieldMetric recalculateJacobian();
   FieldMetric recalculateBxy();
