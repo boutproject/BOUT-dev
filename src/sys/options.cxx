@@ -127,7 +127,7 @@ Options& Options::operator[](const std::string& name) {
   }
 
   // If name is compound, e.g. "section:subsection", then split the name
-  auto subsection_split = name.find(":");
+  auto subsection_split = name.find(':');
   if (subsection_split != std::string::npos) {
     return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split + 1)];
   }
@@ -166,7 +166,7 @@ const Options& Options::operator[](const std::string& name) const {
   }
 
   // If name is compound, e.g. "section:subsection", then split the name
-  auto subsection_split = name.find(":");
+  auto subsection_split = name.find(':');
   if (subsection_split != std::string::npos) {
     return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split + 1)];
   }
