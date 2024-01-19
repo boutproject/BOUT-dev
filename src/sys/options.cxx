@@ -1,12 +1,34 @@
-#include <bout/boutexception.hxx>
-#include <bout/field_factory.hxx> // Used for parsing expressions
-#include <bout/options.hxx>
-#include <bout/output.hxx>
-#include <bout/utils.hxx>
+#include "bout/options.hxx"
 
+#include "bout/array.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/field_factory.hxx" // Used for parsing expressions
+#include "bout/fieldperp.hxx"
+#include "bout/output.hxx"
+#include "bout/sys/expressionparser.hxx"
+#include "bout/sys/gettext.hxx"
+#include "bout/sys/type_name.hxx"
+#include "bout/sys/variant.hxx"
+#include "bout/traits.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
+
+#include <fmt/core.h>
 #include <fmt/format.h>
 
 #include <algorithm>
+#include <cmath>
+#include <initializer_list>
+#include <iterator>
+#include <map>
+#include <set>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 /// The source label given to default values
 const std::string Options::DEFAULT_SOURCE{_("default")};
