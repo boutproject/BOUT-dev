@@ -858,7 +858,7 @@ inline void Options::assign<>(std::string val, std::string source) {
 // Note: const char* version needed to avoid conversion to bool
 template <>
 inline void Options::assign<>(const char* val, std::string source) {
-  _set(std::string(val), source, false);
+  _set(std::string(val), std::move(source), false);
 }
 // Note: Field assignments don't check for previous assignment (always force)
 template <>
