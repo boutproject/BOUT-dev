@@ -229,6 +229,10 @@ Options::fuzzyFind(const std::string& name, std::string::size_type distance) con
 }
 
 Options& Options::operator=(const Options& other) {
+  if (this == &other) {
+    return *this;
+  }
+
   // Note: Here can't do copy-and-swap because pointers to parents are stored
 
   value = other.value;
