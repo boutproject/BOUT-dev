@@ -39,22 +39,13 @@ std::string Options::getDefaultSource() { return DEFAULT_SOURCE; }
 /// having been used
 constexpr auto conditionally_used_attribute = "conditionally used";
 
-Options* Options::root_instance{nullptr};
-
 Options& Options::root() {
-  if (root_instance == nullptr) {
-    // Create the singleton
-    root_instance = new Options();
-  }
-  return *root_instance;
+  static Options root_instance;
+  return root_instance;
 }
 
 void Options::cleanup() {
-  if (root_instance == nullptr) {
-    return;
-  }
-  delete root_instance;
-  root_instance = nullptr;
+  root() = Options{};
 }
 
 Options::Options(const Options& other)

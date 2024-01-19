@@ -782,8 +782,6 @@ private:
   /// The source label given to default values
   static const std::string DEFAULT_SOURCE;
 
-  static Options* root_instance; ///< Only instance of the root section
-
   Options* parent_instance{nullptr};
   std::string full_name; // full path name for logging only
 
