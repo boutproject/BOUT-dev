@@ -276,9 +276,8 @@ bool Options::isSection(const std::string& name) const {
   auto it = children.find(name);
   if (it == children.end()) {
     return false;
-  } else {
-    return it->second.isSection();
   }
+  return it->second.isSection();
 }
 
 template <>

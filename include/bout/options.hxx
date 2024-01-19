@@ -705,9 +705,8 @@ public:
     if (pos == std::string::npos) {
       // No parent section or sections
       return full_name;
-    } else {
-      return full_name.substr(pos + 1);
     }
+    return full_name.substr(pos + 1);
   }
 
   /// Return a new Options instance which contains all the values
