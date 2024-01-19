@@ -316,27 +316,6 @@ void Options::assign<>(Tensor<BoutReal> val, std::string source) {
   _set_no_check(std::move(val), std::move(source));
 }
 
-template <>
-std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) const {
-  if (is_section) {
-    throw BoutException(_("Option {:s} has no value"), full_name);
-  }
-
-  // Mark this option as used
-  value_used = true;
-
-  std::string result = bout::utils::variantToString(value);
-
-  output_info << _("\tOption ") << full_name << " = " << result;
-  if (attributes.count("source")) {
-    // Specify the source of the setting
-    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
-  }
-  output_info << '\n';
-
-  return result;
-}
-
 namespace {
 /// Use FieldFactory to evaluate expression
 double parseExpression(const Options::ValueType& value, const Options* options,
@@ -356,7 +335,35 @@ double parseExpression(const Options::ValueType& value, const Options* options,
                         full_name, bout::utils::variantToString(value), error.what());
   }
 }
+
+/// Helper function to print `key = value` with optional source
+template <class T>
+void printNameValueSourceLine(const Options& option, const T& value) {
+  output_info.write(_("\tOption {} = {}"), option.str(), value);
+  if (option.hasAttribute("source")) {
+    // Specify the source of the setting
+    output_info.write(" ({})",
+                      bout::utils::variantToString(option.attributes.at("source")));
+  }
+  output_info.write("\n");
+}
 } // namespace
+
+template <>
+std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) const {
+  if (is_section) {
+    throw BoutException(_("Option {:s} has no value"), full_name);
+  }
+
+  // Mark this option as used
+  value_used = true;
+
+  std::string result = bout::utils::variantToString(value);
+
+  printNameValueSourceLine(*this, result);
+
+  return result;
+}
 
 template <>
 int Options::as<int>(const int& UNUSED(similar_to)) const {
@@ -396,12 +403,7 @@ int Options::as<int>(const int& UNUSED(similar_to)) const {
 
   value_used = true;
 
-  output_info << _("\tOption ") << full_name << " = " << result;
-  if (attributes.count("source")) {
-    // Specify the source of the setting
-    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
-  }
-  output_info << '\n';
+  printNameValueSourceLine(*this, result);
 
   return result;
 }
@@ -431,12 +433,7 @@ BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) const {
   // Mark this option as used
   value_used = true;
 
-  output_info << _("\tOption ") << full_name << " = " << result;
-  if (attributes.count("source")) {
-    // Specify the source of the setting
-    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
-  }
-  output_info << '\n';
+  printNameValueSourceLine(*this, result);
 
   return result;
 }
@@ -470,13 +467,7 @@ bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
 
   value_used = true;
 
-  output_info << _("\tOption ") << full_name << " = " << toString(result);
-
-  if (attributes.count("source")) {
-    // Specify the source of the setting
-    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
-  }
-  output_info << '\n';
+  printNameValueSourceLine(*this, toString(result));
 
   return result;
 }
@@ -730,12 +721,7 @@ Array<BoutReal> Options::as<Array<BoutReal>>(const Array<BoutReal>& similar_to) 
   // Mark this option as used
   value_used = true;
 
-  output_info << _("\tOption ") << full_name << " = Array<BoutReal>";
-  if (hasAttribute("source")) {
-    // Specify the source of the setting
-    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
-  }
-  output_info << '\n';
+  printNameValueSourceLine(*this, "Array<BoutReal>");
 
   return result;
 }
@@ -757,12 +743,7 @@ Matrix<BoutReal> Options::as<Matrix<BoutReal>>(const Matrix<BoutReal>& similar_t
   // Mark this option as used
   value_used = true;
 
-  output_info << _("\tOption ") << full_name << " = Matrix<BoutReal>";
-  if (hasAttribute("source")) {
-    // Specify the source of the setting
-    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
-  }
-  output_info << '\n';
+  printNameValueSourceLine(*this, "Matrix<BoutReal>");
 
   return result;
 }
@@ -784,12 +765,7 @@ Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_t
   // Mark this option as used
   value_used = true;
 
-  output_info << _("\tOption ") << full_name << " = Tensor<BoutReal>";
-  if (hasAttribute("source")) {
-    // Specify the source of the setting
-    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
-  }
-  output_info << '\n';
+  printNameValueSourceLine(*this, "Tensor<BoutReal>");
 
   return result;
 }
