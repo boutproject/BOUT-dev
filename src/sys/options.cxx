@@ -61,6 +61,19 @@ Options::Options(const Options& other)
   }
 }
 
+Options::Options(Options&& other) noexcept
+  : value(std::move(other.value)), attributes(std::move(other.attributes)),
+    parent_instance(other.parent_instance), full_name(std::move(other.full_name)),
+    is_section(other.is_section), children(std::move(other.children)),
+    value_used(other.value_used) {
+
+  // Ensure that this is the parent of all children,
+  // otherwise will point to the original Options instance
+  for (auto& child : children) {
+    child.second.parent_instance = this;
+  }
+}
+
 template <>
 Options::Options(const char* value) {
   assign<std::string>(value);
@@ -237,6 +250,28 @@ Options& Options::operator=(const Options& other) {
   full_name = other.full_name;
   is_section = other.is_section;
   children = other.children;
+  value_used = other.value_used;
+
+  // Ensure that this is the parent of all children,
+  // otherwise will point to the original Options instance
+  for (auto& child : children) {
+    child.second.parent_instance = this;
+  }
+  return *this;
+}
+
+Options& Options::operator=(Options&& other) noexcept {
+  if (this == &other) {
+    return *this;
+  }
+
+  // Note: Here can't do copy-and-swap because pointers to parents are stored
+
+  value = std::move(other.value);
+  attributes = std::move(other.attributes);
+  full_name = std::move(other.full_name);
+  is_section = other.is_section;
+  children = std::move(other.children);
   value_used = other.value_used;
 
   // Ensure that this is the parent of all children,

@@ -181,8 +181,19 @@ public:
   /// Example:  { {"key1", 42}, {"key2", field} }
   Options(std::initializer_list<std::pair<std::string, Options>> values);
 
-  /// Copy constructor
   Options(const Options& other);
+
+  /// Copy assignment
+  ///
+  /// This replaces the value, attributes and all children
+  ///
+  /// Note that if only the value is desired, then that can be copied using
+  /// the value member directly e.g. option2.value = option1.value;
+  ///
+  Options& operator=(const Options& other);
+
+  Options(Options&& other) noexcept;
+  Options& operator=(Options&& other) noexcept;
 
   ~Options() = default;
 
@@ -209,14 +220,11 @@ public:
   public:
     using Base = bout::utils::variant<bool, int, BoutReal, std::string>;
 
-    /// Constructor
     AttributeType() = default;
-    /// Copy constructor
     AttributeType(const AttributeType& other) = default;
-    /// Move constructor
-    AttributeType(AttributeType&& other) : Base(std::move(other)) {}
-
-    /// Destructor
+    AttributeType(AttributeType&& other) = default;
+    AttributeType& operator=(const AttributeType& other) = default;
+    AttributeType& operator=(AttributeType&& other) = default;
     ~AttributeType() = default;
 
     /// Assignment operator, including move assignment
@@ -227,9 +235,6 @@ public:
       operator=(std::string(str));
       return *this;
     }
-
-    /// Copy assignment operator
-    AttributeType& operator=(const AttributeType& other) = default;
 
     /// Initialise with a value
     /// This enables AttributeTypes to be constructed using initializer lists
@@ -360,15 +365,6 @@ public:
     assign<T>(inputvalue);
     return inputvalue;
   }
-
-  /// Copy assignment
-  ///
-  /// This replaces the value, attributes and all children
-  ///
-  /// Note that if only the value is desired, then that can be copied using
-  /// the value member directly e.g. option2.value = option1.value;
-  ///
-  Options& operator=(const Options& other);
 
   /// Assign a value to the option.
   /// This will throw an exception if already has a value
