@@ -7,8 +7,6 @@
 #include <fmt/format.h>
 
 #include <algorithm>
-#include <iomanip>
-#include <sstream>
 
 /// The source label given to default values
 const std::string Options::DEFAULT_SOURCE{_("default")};

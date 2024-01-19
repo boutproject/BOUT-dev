@@ -53,7 +53,6 @@ class Options;
 #include <fmt/core.h>
 
 #include <cmath>
-#include <iomanip>
 #include <map>
 #include <ostream>
 #include <set>
