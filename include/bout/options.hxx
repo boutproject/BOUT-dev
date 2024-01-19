@@ -968,6 +968,8 @@ private:
 template <>
 struct fmt::formatter<Options> : public bout::details::OptionsFormatterBase {};
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
+
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def) pointer(options)->get(#var, var, def)
 
@@ -1027,5 +1029,7 @@ struct fmt::formatter<Options> : public bout::details::OptionsFormatterBase {};
   const auto BOUT_CONCAT(user_default,                                             \
                          __LINE__) = Options::root()[name].overrideDefault(value); \
   }
+
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 #endif // __OPTIONS_H__
