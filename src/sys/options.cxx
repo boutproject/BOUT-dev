@@ -267,7 +267,7 @@ bool Options::isSet() const {
 }
 
 bool Options::isSection(const std::string& name) const {
-  if (name == "") {
+  if (name.empty()) {
     // Test this object
     return is_section;
   }
