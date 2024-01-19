@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
   Options::root()["test"] = test;
   Options::root()["test_aligned"] = test_aligned;
 
-  bout::writeDefaultOutputFile();
+  bout::writeDefaultOutputFile(Options::root());
 
   BoutFinalise();
 }

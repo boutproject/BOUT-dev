@@ -28,6 +28,7 @@ jobs:
       OMP_NUM_THREADS: ${{ matrix.config.omp_num_threads }}
       PYTHONPATH: ${{ github.workspace }}/tools/pylib
       OMPI_MCA_rmaps_base_oversubscribe: yes
+      PRTE_MCA_rmaps_default_mapping_policy: ":oversubscribe"
       MPIRUN: mpiexec -np
     strategy:
       fail-fast: true
@@ -38,7 +39,7 @@ jobs:
         is_cron:
           - ${{ github.event_name == 'cron' }}
         config:
-          - name: "CMake, PETSc unreleased"
+          - name: "CMake, PETSc unreleased, ADIOS"
             os: ubuntu-20.04
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_METRIC_3D=ON
@@ -46,12 +47,15 @@ jobs:
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
+                            -DBOUT_USE_ADIOS2=ON
                             -DBOUT_ENABLE_PYTHON=ON
+                            -DADIOS2_ROOT=/home/runner/local/adios2
                             -DSUNDIALS_ROOT=/home/runner/local
                             -DPETSC_DIR=/home/runner/local/petsc
                             -DSLEPC_DIR=/home/runner/local/slepc"
             build_petsc: -petsc-main
             build_petsc_branch: main
+            build_adios2: true
             on_cron: true
 
           - name: "Default options, Ubuntu 20.04"
@@ -185,9 +189,8 @@ jobs:
 
       - name: Install pip packages
         run: |
-          ./.pip_install_for_ci.sh 'cython~=0.29' 'netcdf4~=1.5' 'sympy~=1.5' 'gcovr' 'cmake' zoidberg fastcov
-          # Add the pip install location to the runner's PATH
-          echo ~/.local/bin >> $GITHUB_PATH
+          python -m pip install --upgrade pip setuptools
+          python -m pip install -r requirements.txt
 
       - name: Cache SUNDIALS build
         uses: actions/cache@v3
@@ -200,6 +203,9 @@ jobs:
 
       - name: Build PETSc
         run: BUILD_PETSC=${{ matrix.config.build_petsc }} ./.build_petsc_for_ci.sh ${{ matrix.config.build_petsc_branch }}
+
+      - name: Build ADIOS2
+        run: BUILD_ADIOS2=${{ matrix.config.build_adios2 }} ./.build_adios2_for_ci.sh 
 
       - name: Build BOUT++
         run: UNIT_ONLY=${{ matrix.config.unit_only }} ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}

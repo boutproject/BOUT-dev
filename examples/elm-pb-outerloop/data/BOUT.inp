@@ -13,9 +13,6 @@ MZ = 16             # Number of points in Z
 
 grid = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
 
-dump_format = "nc"      # Dump file format. "nc" = NetCDF, "pdb" = PDB
-restart_format = "nc"   # Restart file format
-
 [mesh]
 
 staggergrids = false    # Use staggered grids
@@ -43,9 +40,6 @@ flux = C2
 first = C4  # Z derivatives can be done using FFT
 second = C4
 upwind = W3
-
-[output]
-shiftoutput = true  # Put the output into field-aligned coordinates
 
 ##################################################
 # FFTs

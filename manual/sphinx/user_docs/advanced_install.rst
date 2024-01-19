@@ -170,8 +170,10 @@ for a production run use:
 File formats
 ------------
 
-BOUT++ can currently use the NetCDF-4_ file format, with experimental
-support for the parallel flavour. NetCDF is a widely used format and
+BOUT++ can currently use the NetCDF-4_ file format and the ADIOS2 library
+for high-performance parallel output.
+
+NetCDF is a widely used format and
 has many tools for viewing and manipulating files.
 
 .. _NetCDF-4: https://www.unidata.ucar.edu/software/netcdf/

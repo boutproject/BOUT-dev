@@ -1,8 +1,8 @@
 /// Base type for factories
 
 #pragma once
-#ifndef __BOUT_GENERIC_FACTORY_H__
-#define __BOUT_GENERIC_FACTORY_H__
+#ifndef BOUT_GENERIC_FACTORY_H
+#define BOUT_GENERIC_FACTORY_H
 
 #include "bout/boutexception.hxx"
 #include "bout/options.hxx"
@@ -259,4 +259,4 @@ public:
   };
 };
 
-#endif // __BOUT_GENERIC_FACTORY_H__
+#endif // BOUT_GENERIC_FACTORY_H

@@ -39,7 +39,7 @@ class Vector2D;
 
 class Field2D;
 class Field3D;
-class Vector3D; //#include "bout/vector3d.hxx"
+class Vector3D;
 
 #include <bout/coordinates.hxx>
 
