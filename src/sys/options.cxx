@@ -44,9 +44,7 @@ Options& Options::root() {
   return root_instance;
 }
 
-void Options::cleanup() {
-  root() = Options{};
-}
+void Options::cleanup() { root() = Options{}; }
 
 Options::Options(const Options& other)
     : value(other.value), attributes(other.attributes),
@@ -62,10 +60,10 @@ Options::Options(const Options& other)
 }
 
 Options::Options(Options&& other) noexcept
-  : value(std::move(other.value)), attributes(std::move(other.attributes)),
-    parent_instance(other.parent_instance), full_name(std::move(other.full_name)),
-    is_section(other.is_section), children(std::move(other.children)),
-    value_used(other.value_used) {
+    : value(std::move(other.value)), attributes(std::move(other.attributes)),
+      parent_instance(other.parent_instance), full_name(std::move(other.full_name)),
+      is_section(other.is_section), children(std::move(other.children)),
+      value_used(other.value_used) {
 
   // Ensure that this is the parent of all children,
   // otherwise will point to the original Options instance
