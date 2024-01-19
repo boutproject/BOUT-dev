@@ -381,9 +381,9 @@ public:
   /// Note: Specialised versions for types stored in ValueType
   template <typename T>
   void assign(T val, std::string source = "") {
-    std::stringstream ss;
-    ss << val;
-    _set(ss.str(), std::move(source), false);
+    std::stringstream as_str;
+    as_str << val;
+    _set(as_str.str(), std::move(source), false);
   }
 
   /// Force to a value
@@ -461,20 +461,20 @@ public:
       // If the variant is a string then we may be able to parse it
 
       if (bout::utils::holds_alternative<std::string>(value)) {
-        std::stringstream ss(bout::utils::get<std::string>(value));
-        ss >> val;
+        std::stringstream as_str(bout::utils::get<std::string>(value));
+        as_str >> val;
 
         // Check if the parse failed
-        if (ss.fail()) {
+        if (as_str.fail()) {
           throw BoutException("Option {:s} could not be parsed ('{:s}')", full_name,
                               bout::utils::variantToString(value));
         }
 
         // Check if there are characters remaining
         std::string remainder;
-        std::getline(ss, remainder);
-        for (const char& ch : remainder) {
-          if (!std::isspace(static_cast<unsigned char>(ch))) {
+        std::getline(as_str, remainder);
+        for (const unsigned char chr : remainder) {
+          if (!std::isspace(chr)) {
             // Meaningful character not parsed
             throw BoutException("Option {:s} could not be parsed", full_name);
           }
@@ -656,8 +656,8 @@ public:
 
   // Setting options
   template <typename T>
-  void forceSet(const std::string& key, T t, const std::string& source = "") {
-    (*this)[key].force(t, source);
+  void forceSet(const std::string& key, T val, const std::string& source = "") {
+    (*this)[key].force(val, source);
   }
 
   /*!
@@ -669,11 +669,11 @@ public:
     if (!is_section) {
       return false;
     }
-    auto it = children.find(key);
-    if (it == children.end()) {
+    auto child = children.find(key);
+    if (child == children.end()) {
       return false;
     }
-    return it->second.isSet();
+    return child->second.isSet();
   }
 
   /// Get options, passing in a reference to a variable
@@ -835,8 +835,8 @@ private:
 
   /// Tests if two values are similar.
   template <typename T>
-  bool similar(T a, T b) const {
-    return a == b;
+  bool similar(T lhs, T rhs) const {
+    return lhs == rhs;
   }
 };
 
@@ -878,8 +878,8 @@ void Options::assign<>(Tensor<BoutReal> val, std::string source);
 
 /// Specialised similar comparison methods
 template <>
-inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const {
-  return fabs(a - b) < 1e-10;
+inline bool Options::similar<BoutReal>(BoutReal lhs, BoutReal rhs) const {
+  return fabs(lhs - rhs) < 1e-10;
 }
 
 /// Specialised as routines

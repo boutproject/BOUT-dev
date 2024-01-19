@@ -133,9 +133,9 @@ Options& Options::operator[](const std::string& name) {
   }
 
   // Find and return if already exists
-  auto it = children.find(name);
-  if (it != children.end()) {
-    return it->second;
+  auto child = children.find(name);
+  if (child != children.end()) {
+    return child->second;
   }
 
   // Doesn't exist yet, so add
@@ -172,13 +172,13 @@ const Options& Options::operator[](const std::string& name) const {
   }
 
   // Find and return if already exists
-  auto it = children.find(name);
-  if (it == children.end()) {
+  auto child = children.find(name);
+  if (child == children.end()) {
     // Doesn't exist
     throw BoutException(_("Option {:s}:{:s} does not exist"), full_name, name);
   }
 
-  return it->second;
+  return child->second;
 }
 
 std::multiset<Options::FuzzyMatch>
@@ -273,11 +273,11 @@ bool Options::isSection(const std::string& name) const {
   }
 
   // Is there a child section?
-  auto it = children.find(name);
-  if (it == children.end()) {
+  const auto child = children.find(name);
+  if (child == children.end()) {
     return false;
   }
-  return it->second.isSection();
+  return child->second.isSection();
 }
 
 template <>
@@ -874,9 +874,9 @@ void Options::cleanCache() { FieldFactory::get()->cleanCache(); }
 
 std::map<std::string, const Options*> Options::subsections() const {
   std::map<std::string, const Options*> sections;
-  for (const auto& it : children) {
-    if (it.second.is_section) {
-      sections[it.first] = &it.second;
+  for (const auto& child : children) {
+    if (child.second.is_section) {
+      sections[child.first] = &child.second;
     }
   }
   return sections;
@@ -907,8 +907,8 @@ fmt::format_parse_context::iterator
 bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
 
   const auto* closing_brace = std::find(ctx.begin(), ctx.end(), '}');
-  std::for_each(ctx.begin(), closing_brace, [&](auto it) {
-    switch (it) {
+  std::for_each(ctx.begin(), closing_brace, [&](auto ctx_opt) {
+    switch (ctx_opt) {
     case 'd':
       docstrings = true;
       break;
