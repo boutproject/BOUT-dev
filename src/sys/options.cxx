@@ -365,14 +365,14 @@ int Options::as<int>(const int& UNUSED(similar_to)) const {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
-  int result;
+  int result = 0;
 
   if (bout::utils::holds_alternative<int>(value)) {
     result = bout::utils::get<int>(value);
 
   } else {
     // Cases which get a BoutReal then check if close to an integer
-    BoutReal rval;
+    BoutReal rval = BoutNaN;
 
     if (bout::utils::holds_alternative<BoutReal>(value)) {
       rval = bout::utils::get<BoutReal>(value);
@@ -408,7 +408,7 @@ BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) const {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
-  BoutReal result;
+  BoutReal result = BoutNaN;
 
   if (bout::utils::holds_alternative<int>(value)) {
     result = static_cast<BoutReal>(bout::utils::get<int>(value));
@@ -438,7 +438,7 @@ bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
-  bool result;
+  bool result = false;
 
   if (bout::utils::holds_alternative<bool>(value)) {
     result = bout::utils::get<bool>(value);
