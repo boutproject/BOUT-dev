@@ -201,7 +201,7 @@ private:
    arguments and the optional arguments follow from there.
  */
 #define TRACE(...) \
-  MsgStackItem CONCATENATE(msgTrace_, __LINE__)(__FILE__, __LINE__, __VA_ARGS__)
+  const MsgStackItem CONCATENATE(msgTrace_, __LINE__)(__FILE__, __LINE__, __VA_ARGS__)
 #else
 #define TRACE(...)
 #endif

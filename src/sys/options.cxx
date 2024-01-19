@@ -100,7 +100,7 @@ Options::Options(std::initializer_list<std::pair<std::string, Options>> values) 
     append_impl(children, section_name, append_impl);
   };
 
-  for (auto& value : values) {
+  for (const auto& value : values) {
     (*this)[value.first] = value.second;
     // value.second was constructed from the "bare" `Options<T>(T)` so
     // doesn't have `full_name` set. This clobbers
@@ -454,10 +454,10 @@ bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
 
   } else if (bout::utils::holds_alternative<std::string>(value)) {
     // Parse as floating point because that's the only type the parser understands
-    BoutReal rval = parseExpression(value, this, "bool", full_name);
+    const BoutReal rval = parseExpression(value, this, "bool", full_name);
 
     // Check that the result is either close to 1 (true) or close to 0 (false)
-    int ival = ROUND(rval);
+    const int ival = ROUND(rval);
     if ((fabs(rval - static_cast<BoutReal>(ival)) > 1e-3) or (ival < 0) or (ival > 1)) {
       throw BoutException(_("Value for option {:s} = {:e} is not a bool"), full_name,
                           rval);
@@ -510,7 +510,7 @@ Field3D Options::as<Field3D>(const Field3D& similar_to) const {
 
   if (bout::utils::holds_alternative<BoutReal>(value)
       or bout::utils::holds_alternative<int>(value)) {
-    BoutReal scalar_value =
+    const BoutReal scalar_value =
         bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
 
     // Get metadata from similar_to, fill field with scalar_value
@@ -566,7 +566,7 @@ Field2D Options::as<Field2D>(const Field2D& similar_to) const {
 
   if (bout::utils::holds_alternative<BoutReal>(value)
       or bout::utils::holds_alternative<int>(value)) {
-    BoutReal scalar_value =
+    const BoutReal scalar_value =
         bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
 
     // Get metadata from similar_to, fill field with scalar_value
@@ -618,7 +618,7 @@ FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
 
   if (bout::utils::holds_alternative<BoutReal>(value)
       or bout::utils::holds_alternative<int>(value)) {
-    BoutReal scalar_value =
+    const BoutReal scalar_value =
         bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
 
     // Get metadata from similar_to, fill field with scalar_value
@@ -875,7 +875,7 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
 }
 
 void Options::printUnused() const {
-  Options unused = getUnused();
+  const Options unused = getUnused();
 
   // Two cases: single value, or a section.  If it's a single value,
   // we can check it directly. If it's a section, we can see if it has
@@ -1076,7 +1076,7 @@ void checkForUnusedOptions() {
 
 void checkForUnusedOptions(const Options& options, const std::string& data_dir,
                            const std::string& option_file) {
-  Options unused = options.getUnused();
+  const Options unused = options.getUnused();
   if (not unused.getChildren().empty()) {
 
     // Construct a string with all the fuzzy matches for each unused option
