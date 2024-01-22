@@ -85,9 +85,7 @@ Configure and build
 Configure with ``-BOUT_USE_SCOREP`` to enable Scorep instrumentation,
 then build as normal.  This option can be combined with other options,
 but it is usually desirable to profile the optimized code, configuring
-with the flags ````. Build the code with ``make`` as normal.
-
-With CMake:
+with the flags:
 
 .. code-block:: bash
 
@@ -95,14 +93,13 @@ With CMake:
       -DCMAKE_C_COMPILER=scorep-mpicc \
       -DCMAKE_CXX_COMPILER=scorep-mpicxx \
       -DCMAKE_CXX_FLAGS=-O3 -DCHECK=0 \
+      -DCMAKE_BUILD_TYPE=RelWithDebInfo \
       <other CMake options>
 
-This will turn off the instrumentation during the configure
-step. Please be aware that if you change ``CMakeLists.txt``, CMake
-will try to automatically reconfigure the build, which the Score-P
-wrappers interfere with. In this case you will need to restart the
-configure step from scratch (i.e. remove the build directory and start
-again).
+``SCOREP_WRAPPER=off`` is used turn off the instrumentation during the
+configure step. You probably want to use a fresh build directory to
+prevent any issues from cached results when setting the compilers like
+this.
 
 Run and analysis
 ~~~~~~~~~~~~~~~~
