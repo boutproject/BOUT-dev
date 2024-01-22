@@ -55,8 +55,6 @@ namespace {
 RegisterSolver<PetscSolver> registersolverpetsc("petsc");
 }
 
-using BoutReal = PetscScalar;
-
 extern BoutReal simtime;
 
 /// Monitor function called on every internal timestep
