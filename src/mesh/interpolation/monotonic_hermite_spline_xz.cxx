@@ -24,7 +24,6 @@
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
-#include "bout/output.hxx"
 
 #include <vector>
 
@@ -58,14 +57,11 @@ Field3D XZMonotonicHermiteSpline::interpolate(const Field3D& f,
     localmesh->wait(h);
   }
 
-  BOUT_FOR(i, f.getRegion(region)) {
+  const auto curregion{getRegion(region)};
+  BOUT_FOR(i, curregion) {
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();
-
-    if (skip_mask(x, y, z)) {
-      continue;
-    }
 
     // Due to lack of guard cells in z-direction, we need to ensure z-index
     // wraps around

@@ -23,8 +23,6 @@
  *
  **************************************************************************/
 
-//#include <bout/globals.hxx>
-
 #include <bout/boutexception.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/field.hxx>

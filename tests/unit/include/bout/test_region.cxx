@@ -274,6 +274,24 @@ TEST_F(RegionTest, regionLoopAllSection) {
   EXPECT_EQ(count, nmesh);
 }
 
+TEST_F(RegionTest, regionIntersection) {
+  auto& region1 = mesh->getRegion3D("RGN_ALL");
+
+  auto& region2 = mesh->getRegion3D("RGN_NOBNDRY");
+
+  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
+
+  EXPECT_EQ(region1.size(), nmesh);
+  EXPECT_GT(region1.size(), region2.size());
+
+  const auto& region3 = intersection(region1, region2);
+
+  EXPECT_EQ(region2.size(), region3.size());
+  // Ensure this did not change
+  EXPECT_EQ(region1.size(), nmesh);
+  EXPECT_EQ(mesh->getRegion3D("RGN_ALL").size(), nmesh);
+}
+
 TEST_F(RegionTest, regionLoopNoBndrySection) {
   const auto& region = mesh->getRegion3D("RGN_NOBNDRY");
 

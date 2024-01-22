@@ -39,7 +39,8 @@
 #include <bout/solver.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
-#include <datafile.hxx>
+
+#include <cmath>
 
 LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
                                Solver* solver)
@@ -146,14 +147,12 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   }
 
   // FIXME: This needs to be converted to outputVars
-  if (solver == nullptr or dump == nullptr) {
-    output_warn << "Warning: Need to pass both a Solver and a Datafile to "
+  if (solver == nullptr) {
+    output_warn << "Warning: Need to pass a Solver to "
                    "Laplacian::create() to get iteration counts in the output."
                 << endl;
   } else {
     solver->addMonitor(&monitor);
-    auto name = opt->name();
-    dump->addRepeat(average_iterations, name + "_average_iterations");
   }
 }
 
@@ -182,41 +181,41 @@ Field3D LaplaceHypre3d::solve(const Field3D& b_in, const Field3D& x0) {
   // boundary cells are finite
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
     const BoutReal val = (inner_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-    ASSERT1(finite(val));
+    ASSERT1(std::isfinite(val));
     if (!(inner_boundary_flags & INVERT_RHS)) {
       b[i] = val;
     } else {
-      ASSERT1(finite(b[i]));
+      ASSERT1(std::isfinite(b[i]));
     }
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
     const BoutReal val = (outer_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-    ASSERT1(finite(val));
+    ASSERT1(std::isfinite(val));
     if (!(outer_boundary_flags & INVERT_RHS)) {
       b[i] = val;
     } else {
-      ASSERT1(finite(b[i]));
+      ASSERT1(std::isfinite(b[i]));
     }
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
     const BoutReal val = (lower_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-    ASSERT1(finite(val));
+    ASSERT1(std::isfinite(val));
     if (!(lower_boundary_flags & INVERT_RHS)) {
       b[i] = val;
     } else {
-      ASSERT1(finite(b[i]));
+      ASSERT1(std::isfinite(b[i]));
     }
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
     const BoutReal val = (upper_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-    ASSERT1(finite(val));
+    ASSERT1(std::isfinite(val));
     if (!(upper_boundary_flags & INVERT_RHS)) {
       b[i] = val;
     } else {
-      ASSERT1(finite(b[i]));
+      ASSERT1(std::isfinite(b[i]));
     }
   }
   CALI_MARK_END("LaplaceHypre3d_solve:AdjustBoundary");

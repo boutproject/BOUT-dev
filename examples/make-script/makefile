@@ -22,11 +22,11 @@ LDFLAGS:=$(shell bout-config --libs)
 
 $(TARGET): makefile $(OBJ)
 	@echo "  Linking" $(TARGET)
-	@$(LD) -o $(TARGET) $(OBJ) $(LDFLAGS)
+	$(LD) -o $(TARGET) $(OBJ) $(LDFLAGS)
 
 %.o: %.cxx
 	@echo "  Compiling " $(@F:.o=.cxx)
-	@$(CXX) $(CFLAGS) -c $(@F:.o=.cxx) -o $@
+	$(CXX) $(CFLAGS) -c $(@F:.o=.cxx) -o $@
 
 .PHONY: clean
 clean:
