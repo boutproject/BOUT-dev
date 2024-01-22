@@ -397,7 +397,7 @@ installation for that.
 
 
 Working with an active ``conda`` environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When ``conda`` is used, it installs separate versions of several libraries. These
 can cause warnings or even failures when linking BOUT++ executables. There are
