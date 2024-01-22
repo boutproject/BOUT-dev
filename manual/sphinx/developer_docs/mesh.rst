@@ -1,3 +1,5 @@
+.. _sec-mesh:
+
 Mesh
 ====
 
@@ -98,6 +100,8 @@ it::
     s->close();                             // Close the source
 
 To read 2D and 3D fields, the branch-cuts need to be taken into account.
+
+.. _sec-communications:
 
 Communications
 --------------
