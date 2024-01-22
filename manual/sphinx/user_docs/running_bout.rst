@@ -457,7 +457,7 @@ values loaded, the solver can be started::
         3d fields = 2, 2d fields = 0 neq=100, local_N=100
 
 This last line gives the number of equations being evolved (in this case
-100), and the number of these on this processor (here 100).::
+100), and the number of these on this processor (here 100).
 
 The absolute and relative tolerances come next::
 
