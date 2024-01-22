@@ -57,8 +57,6 @@ RegisterSolver<PetscSolver> registersolverpetsc("petsc");
 
 using BoutReal = PetscScalar;
 
-using rhsfunc = int (*)(BoutReal);
-
 extern BoutReal simtime;
 
 /// Monitor function called on every internal timestep
