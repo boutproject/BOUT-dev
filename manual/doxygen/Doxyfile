@@ -1045,7 +1045,9 @@ PREDEFINED             = BACKTRACE \
                          PETSC_RELEASE \
                          PETSC_VERSION=3.8 \
                          UNUSED(x)=x \
-                         _OPENMP
+                         _OPENMP \
+                         BOUT_HOST_DEVICE \
+                         MAYBE_UNUSED(x)=x
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The
