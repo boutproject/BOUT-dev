@@ -56,7 +56,6 @@ RegisterSolver<PetscSolver> registersolverpetsc("petsc");
 }
 
 using BoutReal = PetscScalar;
-#define OPT_SIZE 40
 
 using rhsfunc = int (*)(BoutReal);
 
