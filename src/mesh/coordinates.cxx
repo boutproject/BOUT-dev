@@ -296,7 +296,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
       covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), J_(std::move(J)),
       Bxy_(std::move(Bxy)){ASSERT0(differential_operators != nullptr)};
 
-Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
+Coordinates::Coordinates(Mesh* mesh, Options* mesh_options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
     : localmesh(mesh), location(loc),
       differential_operators(mesh->getDifferentialOperators()), dx_(1., mesh),
@@ -307,8 +307,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), J_(1., mesh), Bxy_(1., mesh) {
   ASSERT0(differential_operators != nullptr)
 
-  if (options == nullptr) {
-    options = Options::getRoot()->getSection("mesh");
+  if (mesh_options == nullptr) {
+    mesh_options = Options::getRoot()->getSection("mesh");
   }
 
   nz = mesh->LocalNz;
@@ -323,15 +323,15 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       mesh->get(dy_, "dy", 1.0, false);
     }
 
-    setBoundaryCells(mesh, options, suffix);
+    setBoundaryCells(mesh, mesh_options, suffix);
 
   } else {
-    interpolateFieldsFromOtherCoordinates(mesh, options, coords_in);
+    interpolateFieldsFromOtherCoordinates(mesh, mesh_options, coords_in);
   }
 }
 
 void Coordinates::interpolateFieldsFromOtherCoordinates(const Mesh* mesh,
-                                                        Options* options,
+                                                        Options* mesh_options,
                                                         const Coordinates* coords_in) {
 
   std::function<const FieldMetric(const FieldMetric)> const
@@ -377,7 +377,7 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(const Mesh* mesh,
                         "might require dz!\nPlease provide a dz for the "
                         "staggered quantity!");
   }
-  setParallelTransform(options);
+  setParallelTransform(mesh_options);
   dx_ = localmesh->interpolateAndExtrapolate(coords_in->dx(), location, true, true, false,
                                              transform.get());
   dy_ = localmesh->interpolateAndExtrapolate(coords_in->dy(), location, true, true, false,
@@ -390,13 +390,13 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(const Mesh* mesh,
 // Note: If boundary cells were not loaded from the grid file, use
 // 'interpolateAndExtrapolate' to set them. Ensures that derivatives are
 // smooth at all the boundaries.
-void Coordinates::setBoundaryCells(Mesh* mesh, Options* options,
+void Coordinates::setBoundaryCells(Mesh* mesh, Options* mesh_options,
                                    const std::string& suffix) {
 
   const bool extrapolate_x =
-      (*options)["extrapolate_x"].withDefault(not mesh->sourceHasXBoundaryGuards());
+      (*mesh_options)["extrapolate_x"].withDefault(not mesh->sourceHasXBoundaryGuards());
   const bool extrapolate_y =
-      (*options)["extrapolate_y"].withDefault(not mesh->sourceHasYBoundaryGuards());
+      (*mesh_options)["extrapolate_y"].withDefault(not mesh->sourceHasYBoundaryGuards());
 
   if (extrapolate_x) {
     output_warn.write(_("WARNING: extrapolating input mesh quantities into x-boundary "
@@ -410,19 +410,17 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* options,
 
   nz = mesh->LocalNz;
 
-  {
-    auto& options = Options::root();
-    const bool has_zperiod = options.isSet("zperiod");
-    const auto zmin = has_zperiod ? 0.0 : options["ZMIN"].withDefault(0.0);
-    const auto zmax = has_zperiod ? 1.0 / options["zperiod"].withDefault(1.0)
-                                  : options["ZMAX"].withDefault(1.0);
+  auto& options_root = Options::root();
+  const bool has_zperiod = options_root.isSet("zperiod");
+  const auto zmin = has_zperiod ? 0.0 : options_root["ZMIN"].withDefault(0.0);
+  const auto zmax = has_zperiod ? 1.0 / options_root["zperiod"].withDefault(1.0)
+                                : options_root["ZMAX"].withDefault(1.0);
 
-    const auto default_dz = (zmax - zmin) * TWOPI / nz;
-    getAtLoc(mesh, dz_, "dz", suffix, location, default_dz);
-  }
+  const auto default_dz = (zmax - zmin) * TWOPI / nz;
+  getAtLoc(mesh, dz_, "dz", suffix, location, default_dz);
 
   // required early for differentiation.
-  setParallelTransform(options);
+  setParallelTransform(mesh_options);
 
   dz_ = localmesh->interpolateAndExtrapolate(dz_, location, extrapolate_x, extrapolate_y,
                                              false, transform.get());
@@ -873,8 +871,8 @@ void fixZShiftGuards(Field2D& zShift) {
 }
 } // namespace
 
-void Coordinates::setParallelTransform(Options* options) {
-  auto* ptoptions = options->getSection("paralleltransform");
+void Coordinates::setParallelTransform(Options* mesh_options) {
+  auto* ptoptions = mesh_options->getSection("paralleltransform");
 
   std::string ptstr;
   ptoptions->get("type", ptstr, "identity");
