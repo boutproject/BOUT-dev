@@ -31,173 +31,156 @@ ChristoffelSymbols::ChristoffelSymbols(const Coordinates& coordinates,
   const auto& contravariantMetricTensor = coordinates.getContravariantMetricTensor();
   const auto& covariantMetricTensor = coordinates.getCovariantMetricTensor();
 
-  G1_11_ = 0.5 * contravariantMetricTensor.g11()
-               * differential_operators->DDX(covariantMetricTensor.g11(), dx)
-           + contravariantMetricTensor.g12()
-                 * (differential_operators->DDX(covariantMetricTensor.g12(), dx)
-                    - 0.5 * differential_operators->DDY(covariantMetricTensor.g11(), dy))
-           + contravariantMetricTensor.g13()
-                 * (differential_operators->DDX(covariantMetricTensor.g13(), dx)
-                    - 0.5 * differential_operators->DDZ(covariantMetricTensor.g11()));
-  G1_22_ = contravariantMetricTensor.g11()
-               * (differential_operators->DDY(covariantMetricTensor.g12(), dy)
-                  - 0.5 * differential_operators->DDX(covariantMetricTensor.g22(), dx))
-           + 0.5 * contravariantMetricTensor.g12()
-                 * differential_operators->DDY(covariantMetricTensor.g22(), dy)
-           + contravariantMetricTensor.g13()
-                 * (differential_operators->DDY(covariantMetricTensor.g23(), dy)
-                    - 0.5 * differential_operators->DDZ(covariantMetricTensor.g22()));
-  G1_33_ = contravariantMetricTensor.g11()
-               * (differential_operators->DDZ(covariantMetricTensor.g13())
-                  - 0.5 * differential_operators->DDX(covariantMetricTensor.g33(), dx))
-           + contravariantMetricTensor.g12()
-                 * (differential_operators->DDZ(covariantMetricTensor.g23())
-                    - 0.5 * differential_operators->DDY(covariantMetricTensor.g33(), dy))
-           + 0.5 * contravariantMetricTensor.g13()
-                 * differential_operators->DDZ(covariantMetricTensor.g33());
-  G1_12_ = 0.5 * contravariantMetricTensor.g11()
-               * differential_operators->DDY(covariantMetricTensor.g11(), dy)
-           + 0.5 * contravariantMetricTensor.g12()
-                 * differential_operators->DDX(covariantMetricTensor.g22(), dx)
-           + 0.5 * contravariantMetricTensor.g13()
-                 * (differential_operators->DDY(covariantMetricTensor.g13(), dy)
-                    + differential_operators->DDX(covariantMetricTensor.g23(), dx)
-                    - differential_operators->DDZ(covariantMetricTensor.g12()));
-  G1_13_ = 0.5 * contravariantMetricTensor.g11()
-               * differential_operators->DDZ(covariantMetricTensor.g11())
-           + 0.5 * contravariantMetricTensor.g12()
-                 * (differential_operators->DDZ(covariantMetricTensor.g12())
-                    + differential_operators->DDX(covariantMetricTensor.g23(), dx)
-                    - differential_operators->DDY(covariantMetricTensor.g13(), dy))
-           + 0.5 * contravariantMetricTensor.g13()
-                 * differential_operators->DDX(covariantMetricTensor.g33(), dx);
+  const auto& g11 = contravariantMetricTensor.g11();
+  const auto& g22 = contravariantMetricTensor.g22();
+  const auto& g33 = contravariantMetricTensor.g33();
+  const auto& g12 = contravariantMetricTensor.g12();
+  const auto& g13 = contravariantMetricTensor.g13();
+  const auto& g23 = contravariantMetricTensor.g23();
+
+  const auto& g_11 = covariantMetricTensor.g11();
+  const auto& g_22 = covariantMetricTensor.g22();
+  const auto& g_33 = covariantMetricTensor.g33();
+  const auto& g_12 = covariantMetricTensor.g12();
+  const auto& g_13 = covariantMetricTensor.g13();
+  const auto& g_23 = covariantMetricTensor.g23();
+
+  G1_11_ = 0.5 * g11 * differential_operators->DDX(g_11, dx)
+           + g12
+                 * (differential_operators->DDX(g_12, dx)
+                    - 0.5 * differential_operators->DDY(g_11, dy))
+           + g13
+                 * (differential_operators->DDX(g_13, dx)
+                    - 0.5 * differential_operators->DDZ(g_11));
+  G1_22_ = g11
+               * (differential_operators->DDY(g_12, dy)
+                  - 0.5 * differential_operators->DDX(g_22, dx))
+           + 0.5 * g12 * differential_operators->DDY(g_22, dy)
+           + g13
+                 * (differential_operators->DDY(g_23, dy)
+                    - 0.5 * differential_operators->DDZ(g_22));
+  G1_33_ = g11
+               * (differential_operators->DDZ(g_13)
+                  - 0.5 * differential_operators->DDX(g_33, dx))
+           + g12
+                 * (differential_operators->DDZ(g_23)
+                    - 0.5 * differential_operators->DDY(g_33, dy))
+           + 0.5 * g13 * differential_operators->DDZ(g_33);
+  G1_12_ = 0.5 * g11 * differential_operators->DDY(g_11, dy)
+           + 0.5 * g12 * differential_operators->DDX(g_22, dx)
+           + 0.5 * g13
+                 * (differential_operators->DDY(g_13, dy)
+                    + differential_operators->DDX(g_23, dx)
+                    - differential_operators->DDZ(g_12));
+  G1_13_ =
+      0.5 * g11 * differential_operators->DDZ(g_11)
+      + 0.5 * g12
+            * (differential_operators->DDZ(g_12) + differential_operators->DDX(g_23, dx)
+               - differential_operators->DDY(g_13, dy))
+      + 0.5 * g13 * differential_operators->DDX(g_33, dx);
   G1_23_ =
-      0.5 * contravariantMetricTensor.g11()
-          * (differential_operators->DDZ(covariantMetricTensor.g12())
-             + differential_operators->DDY(covariantMetricTensor.g13(), dy)
-             - differential_operators->DDX(covariantMetricTensor.g23(), dx))
-      + 0.5 * contravariantMetricTensor.g12()
-            * (differential_operators->DDZ(covariantMetricTensor.g22())
-               + differential_operators->DDY(covariantMetricTensor.g23(), dy)
-               - differential_operators->DDY(covariantMetricTensor.g23(), dy))
+      0.5 * g11
+          * (differential_operators->DDZ(g_12) + differential_operators->DDY(g_13, dy)
+             - differential_operators->DDX(g_23, dx))
+      + 0.5 * g12
+            * (differential_operators->DDZ(g_22) + differential_operators->DDY(g_23, dy)
+               - differential_operators->DDY(g_23, dy))
       // + 0.5 *g13*(differential_operators->DDZ(g_32) + differential_operators->DDY(g_33) - differential_operators->DDZ(g_23));
       // which equals
-      + 0.5 * contravariantMetricTensor.g13()
-            * differential_operators->DDY(covariantMetricTensor.g33(), dy);
+      + 0.5 * g13 * differential_operators->DDY(g_33, dy);
 
-  G2_11_ = 0.5 * contravariantMetricTensor.g12()
-               * differential_operators->DDX(covariantMetricTensor.g11(), dx)
-           + contravariantMetricTensor.g22()
-                 * (differential_operators->DDX(covariantMetricTensor.g12(), dx)
-                    - 0.5 * differential_operators->DDY(covariantMetricTensor.g11(), dy))
-           + contravariantMetricTensor.g23()
-                 * (differential_operators->DDX(covariantMetricTensor.g13(), dx)
-                    - 0.5 * differential_operators->DDZ(covariantMetricTensor.g11()));
-  G2_22_ = contravariantMetricTensor.g12()
-               * (differential_operators->DDY(covariantMetricTensor.g12(), dy)
-                  - 0.5 * differential_operators->DDX(covariantMetricTensor.g22(), dx))
-           + 0.5 * contravariantMetricTensor.g22()
-                 * differential_operators->DDY(covariantMetricTensor.g22(), dy)
-           + contravariantMetricTensor.g23()
-                 * (differential_operators->DDY(contravariantMetricTensor.g23(), dy)
-                    - 0.5 * differential_operators->DDZ(covariantMetricTensor.g22()));
-  G2_33_ = contravariantMetricTensor.g12()
-               * (differential_operators->DDZ(covariantMetricTensor.g13())
-                  - 0.5 * differential_operators->DDX(covariantMetricTensor.g33(), dx))
-           + contravariantMetricTensor.g22()
-                 * (differential_operators->DDZ(covariantMetricTensor.g23())
-                    - 0.5 * differential_operators->DDY(covariantMetricTensor.g33(), dy))
-           + 0.5 * contravariantMetricTensor.g23()
-                 * differential_operators->DDZ(covariantMetricTensor.g33());
-  G2_12_ = 0.5 * contravariantMetricTensor.g12()
-               * differential_operators->DDY(covariantMetricTensor.g11(), dy)
-           + 0.5 * contravariantMetricTensor.g22()
-                 * differential_operators->DDX(covariantMetricTensor.g22(), dx)
-           + 0.5 * contravariantMetricTensor.g23()
-                 * (differential_operators->DDY(covariantMetricTensor.g13(), dy)
-                    + differential_operators->DDX(covariantMetricTensor.g23(), dx)
-                    - differential_operators->DDZ(covariantMetricTensor.g12()));
+  G2_11_ = 0.5 * g12 * differential_operators->DDX(g_11, dx)
+           + g22
+                 * (differential_operators->DDX(g_12, dx)
+                    - 0.5 * differential_operators->DDY(g_11, dy))
+           + g23
+                 * (differential_operators->DDX(g_13, dx)
+                    - 0.5 * differential_operators->DDZ(g_11));
+  G2_22_ = g12
+               * (differential_operators->DDY(g_12, dy)
+                  - 0.5 * differential_operators->DDX(g_22, dx))
+           + 0.5 * g22 * differential_operators->DDY(g_22, dy)
+           + g23
+                 * (differential_operators->DDY(g23, dy)
+                    - 0.5 * differential_operators->DDZ(g_22));
+  G2_33_ = g12
+               * (differential_operators->DDZ(g_13)
+                  - 0.5 * differential_operators->DDX(g_33, dx))
+           + g22
+                 * (differential_operators->DDZ(g_23)
+                    - 0.5 * differential_operators->DDY(g_33, dy))
+           + 0.5 * g23 * differential_operators->DDZ(g_33);
+  G2_12_ = 0.5 * g12 * differential_operators->DDY(g_11, dy)
+           + 0.5 * g22 * differential_operators->DDX(g_22, dx)
+           + 0.5 * g23
+                 * (differential_operators->DDY(g_13, dy)
+                    + differential_operators->DDX(g_23, dx)
+                    - differential_operators->DDZ(g_12));
   G2_13_ =
-      // 0.5 *g21*(differential_operators->DDZ(covariantMetricTensor.g11()) + differential_operators->DDX(covariantMetricTensor.Getg13()) - differential_operators->DDX(covariantMetricTensor.g13()))
+      // 0.5 *g21*(differential_operators->DDZ(g_11) + differential_operators->DDX(covariantMetricTensor.Getg13()) - differential_operators->DDX(g_13))
       // which equals
-      0.5 * contravariantMetricTensor.g12()
-          * (differential_operators->DDZ(covariantMetricTensor.g11())
-             + differential_operators->DDX(covariantMetricTensor.g13(), dx)
-             - differential_operators->DDX(covariantMetricTensor.g13(), dx))
-      // + 0.5 *g22*(differential_operators->DDZ(covariantMetricTensor.Getg21()) + differential_operators->DDX(covariantMetricTensor.g23()) - differential_operators->DDY(covariantMetricTensor.g13()))
+      0.5 * g12
+          * (differential_operators->DDZ(g_11) + differential_operators->DDX(g_13, dx)
+             - differential_operators->DDX(g_13, dx))
+      // + 0.5 *g22*(differential_operators->DDZ(covariantMetricTensor.Getg21()) + differential_operators->DDX(g_23) - differential_operators->DDY(g_13))
       // which equals
-      + 0.5 * contravariantMetricTensor.g22()
-            * (differential_operators->DDZ(covariantMetricTensor.g12())
-               + differential_operators->DDX(covariantMetricTensor.g23(), dx)
-               - differential_operators->DDY(covariantMetricTensor.g13(), dy))
-      // + 0.5 *g23*(differential_operators->DDZ(covariantMetricTensor.Getg31()) + differential_operators->DDX(covariantMetricTensor.g33()) - differential_operators->DDZ(g_13));
+      + 0.5 * g22
+            * (differential_operators->DDZ(g_12) + differential_operators->DDX(g_23, dx)
+               - differential_operators->DDY(g_13, dy))
+      // + 0.5 *g23*(differential_operators->DDZ(covariantMetricTensor.Getg31()) + differential_operators->DDX(g_33) - differential_operators->DDZ(g_13));
       // which equals
-      + 0.5 * contravariantMetricTensor.g23()
-            * differential_operators->DDX(covariantMetricTensor.g33(), dx);
-  G2_23_ = 0.5 * contravariantMetricTensor.g12()
-               * (differential_operators->DDZ(covariantMetricTensor.g12())
-                  + differential_operators->DDY(covariantMetricTensor.g13(), dy)
-                  - differential_operators->DDX(covariantMetricTensor.g23(), dx))
-           + 0.5 * contravariantMetricTensor.g22()
-                 * differential_operators->DDZ(covariantMetricTensor.g22())
-           + 0.5 * contravariantMetricTensor.g23()
-                 * differential_operators->DDY(covariantMetricTensor.g33(), dy);
+      + 0.5 * g23 * differential_operators->DDX(g_33, dx);
+  G2_23_ =
+      0.5 * g12
+          * (differential_operators->DDZ(g_12) + differential_operators->DDY(g_13, dy)
+             - differential_operators->DDX(g_23, dx))
+      + 0.5 * g22 * differential_operators->DDZ(g_22)
+      + 0.5 * g23 * differential_operators->DDY(g_33, dy);
 
-  G3_11_ = 0.5 * contravariantMetricTensor.g13()
-               * differential_operators->DDX(covariantMetricTensor.g11(), dx)
-           + contravariantMetricTensor.g23()
-                 * (differential_operators->DDX(covariantMetricTensor.g12(), dx)
-                    - 0.5 * differential_operators->DDY(covariantMetricTensor.g11(), dy))
-           + contravariantMetricTensor.g33()
-                 * (differential_operators->DDX(covariantMetricTensor.g13(), dx)
-                    - 0.5 * differential_operators->DDZ(covariantMetricTensor.g11()));
-  G3_22_ = contravariantMetricTensor.g13()
-               * (differential_operators->DDY(covariantMetricTensor.g12(), dy)
-                  - 0.5 * differential_operators->DDX(covariantMetricTensor.g22(), dx))
-           + 0.5 * contravariantMetricTensor.g23()
-                 * differential_operators->DDY(covariantMetricTensor.g22(), dy)
-           + contravariantMetricTensor.g33()
-                 * (differential_operators->DDY(covariantMetricTensor.g23(), dy)
-                    - 0.5 * differential_operators->DDZ(covariantMetricTensor.g22()));
-  G3_33_ = contravariantMetricTensor.g13()
-               * (differential_operators->DDZ(covariantMetricTensor.g13())
-                  - 0.5 * differential_operators->DDX(covariantMetricTensor.g33(), dx))
-           + contravariantMetricTensor.g23()
-                 * (differential_operators->DDZ(covariantMetricTensor.g23())
-                    - 0.5 * differential_operators->DDY(covariantMetricTensor.g33(), dy))
-           + 0.5 * contravariantMetricTensor.g33()
-                 * differential_operators->DDZ(covariantMetricTensor.g33());
+  G3_11_ = 0.5 * g13 * differential_operators->DDX(g_11, dx)
+           + g23
+                 * (differential_operators->DDX(g_12, dx)
+                    - 0.5 * differential_operators->DDY(g_11, dy))
+           + g33
+                 * (differential_operators->DDX(g_13, dx)
+                    - 0.5 * differential_operators->DDZ(g_11));
+  G3_22_ = g13
+               * (differential_operators->DDY(g_12, dy)
+                  - 0.5 * differential_operators->DDX(g_22, dx))
+           + 0.5 * g23 * differential_operators->DDY(g_22, dy)
+           + g33
+                 * (differential_operators->DDY(g_23, dy)
+                    - 0.5 * differential_operators->DDZ(g_22));
+  G3_33_ = g13
+               * (differential_operators->DDZ(g_13)
+                  - 0.5 * differential_operators->DDX(g_33, dx))
+           + g23
+                 * (differential_operators->DDZ(g_23)
+                    - 0.5 * differential_operators->DDY(g_33, dy))
+           + 0.5 * g33 * differential_operators->DDZ(g_33);
   G3_12_ =
-      // 0.5 *g31*(differential_operators->DDY(covariantMetricTensor.g11()) + differential_operators->DDX(covariantMetricTensor.Getg12()) - differential_operators->DDX(covariantMetricTensor.g12()))
+      // 0.5 *g31*(differential_operators->DDY(g_11) + differential_operators->DDX(covariantMetricTensor.Getg12()) - differential_operators->DDX(g_12))
       // which equals to
-      0.5 * contravariantMetricTensor.g13()
-          * differential_operators->DDY(covariantMetricTensor.g11(), dy)
-      // + 0.5 *g32*(differential_operators->DDY(covariantMetricTensor.Getg21()) + differential_operators->DDX(covariantMetricTensor.g22()) - differential_operators->DDY(covariantMetricTensor.g12()))
+      0.5 * g13 * differential_operators->DDY(g_11, dy)
+      // + 0.5 *g32*(differential_operators->DDY(covariantMetricTensor.Getg21()) + differential_operators->DDX(g_22) - differential_operators->DDY(g_12))
       // which equals to
-      + 0.5 * contravariantMetricTensor.g23()
-            * differential_operators->DDX(covariantMetricTensor.g22(), dx)
-      //+ 0.5 *g33*(differential_operators->DDY(covariantMetricTensor.Getg31()) + differential_operators->DDX(covariantMetricTensor.Getg32()) - differential_operators->DDZ(covariantMetricTensor.g12()));
+      + 0.5 * g23 * differential_operators->DDX(g_22, dx)
+      //+ 0.5 *g33*(differential_operators->DDY(covariantMetricTensor.Getg31()) + differential_operators->DDX(covariantMetricTensor.Getg32()) - differential_operators->DDZ(g_12));
       // which equals to
-      + 0.5 * contravariantMetricTensor.g33()
-            * (differential_operators->DDY(covariantMetricTensor.g13(), dy))
-      + differential_operators->DDX(covariantMetricTensor.g23(), dx)
-      - differential_operators->DDZ(covariantMetricTensor.g12());
-  G3_13_ = 0.5 * contravariantMetricTensor.g13()
-               * differential_operators->DDZ(covariantMetricTensor.g11())
-           + 0.5 * contravariantMetricTensor.g23()
-                 * (differential_operators->DDZ(covariantMetricTensor.g12())
-                    + differential_operators->DDX(covariantMetricTensor.g23(), dx)
-                    - differential_operators->DDY(covariantMetricTensor.g13(), dy))
-           + 0.5 * contravariantMetricTensor.g33()
-                 * differential_operators->DDX(covariantMetricTensor.g33(), dx);
-  G3_23_ = 0.5 * contravariantMetricTensor.g13()
-               * (differential_operators->DDZ(covariantMetricTensor.g12())
-                  + differential_operators->DDY(covariantMetricTensor.g13(), dy))
-           - differential_operators->DDX(covariantMetricTensor.g23(), dx)
-           + 0.5 * contravariantMetricTensor.g23()
-                 * differential_operators->DDZ(covariantMetricTensor.g22())
-           + 0.5 * contravariantMetricTensor.g33()
-                 * differential_operators->DDY(covariantMetricTensor.g33(), dy);
+      + 0.5 * g33 * (differential_operators->DDY(g_13, dy))
+      + differential_operators->DDX(g_23, dx) - differential_operators->DDZ(g_12);
+  G3_13_ =
+      0.5 * g13 * differential_operators->DDZ(g_11)
+      + 0.5 * g23
+            * (differential_operators->DDZ(g_12) + differential_operators->DDX(g_23, dx)
+               - differential_operators->DDY(g_13, dy))
+      + 0.5 * g33 * differential_operators->DDX(g_33, dx);
+  G3_23_ =
+      0.5 * g13
+          * (differential_operators->DDZ(g_12) + differential_operators->DDY(g_13, dy))
+      - differential_operators->DDX(g_23, dx)
+      + 0.5 * g23 * differential_operators->DDZ(g_22)
+      + 0.5 * g33 * differential_operators->DDY(g_33, dy);
 }
 
 ChristoffelSymbols::ChristoffelSymbols(DifferentialOperators* differential_operators)
