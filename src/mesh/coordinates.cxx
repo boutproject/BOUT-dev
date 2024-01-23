@@ -294,11 +294,10 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
       IntShiftTorsion_(std::move(IntShiftTorsion)),
       contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
       covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), J_(std::move(J)),
-      Bxy_(std::move(Bxy)){ASSERT0(differential_operators != nullptr)}
+      Bxy_(std::move(Bxy)){ASSERT0(differential_operators != nullptr)};
 
-      Coordinates::Coordinates(Mesh * mesh, Options * options, const CELL_LOC loc,
-                               const Coordinates* coords_in,
-                               bool force_interpolate_from_centre)
+Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
+                         const Coordinates* coords_in, bool force_interpolate_from_centre)
     : localmesh(mesh), location(loc),
       differential_operators(mesh->getDifferentialOperators()), dx_(1., mesh),
       dy_(1., mesh), dz_(1., mesh), d1_dx_(mesh), d1_dy_(mesh), d1_dz_(mesh),
