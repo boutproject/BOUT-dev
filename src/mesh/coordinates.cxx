@@ -317,7 +317,14 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
   if (coords_in == nullptr || suffix.empty()
       || (!force_interpolate_from_centre && mesh->sourceHasVar("dx" + suffix))) {
-    setBoundaryCells(mesh, options, coords_in, suffix);
+
+    if (coords_in == nullptr) {
+      mesh->get(dx_, "dx", 1.0, false);
+      mesh->get(dy_, "dy", 1.0, false);
+    }
+
+    setBoundaryCells(mesh, options, suffix);
+
   } else {
     interpolateFieldsFromOtherCoordinates(mesh, options, coords_in);
   }
@@ -384,7 +391,6 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(const Mesh* mesh,
 // 'interpolateAndExtrapolate' to set them. Ensures that derivatives are
 // smooth at all the boundaries.
 void Coordinates::setBoundaryCells(Mesh* mesh, Options* options,
-                                   const Coordinates* coords_in,
                                    const std::string& suffix) {
 
   const bool extrapolate_x =
@@ -400,11 +406,6 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* options,
   if (extrapolate_y) {
     output_warn.write(_("WARNING: extrapolating input mesh quantities into y-boundary "
                         "cells. Set option extrapolate_y=false to disable this.\n"));
-  }
-
-  if (coords_in == nullptr) {
-    mesh->get(dx_, "dx", 1.0, false);
-    mesh->get(dy_, "dy", 1.0, false);
   }
 
   nz = mesh->LocalNz;
