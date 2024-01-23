@@ -380,8 +380,7 @@ private:
   void interpolateFieldsFromOtherCoordinates(const Mesh* mesh, Options* options,
                                              const Coordinates* coords_in);
 
-  void setBoundaryCells(Mesh* mesh, Options* options, const Coordinates* coords_in,
-                        const std::string& suffix);
+  void setBoundaryCells(Mesh* mesh, Options* options, const std::string& suffix);
 };
 
 /*
