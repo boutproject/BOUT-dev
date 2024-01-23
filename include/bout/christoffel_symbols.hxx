@@ -23,6 +23,8 @@ public:
                      FieldMetric G3_12, FieldMetric G3_13, FieldMetric G3_23,
                      DifferentialOperators* differential_operators);
 
+  ChristoffelSymbols(const Coordinates& coordinates, DifferentialOperators* differential_operators);
+
   //  ChristoffelSymbols(BoutReal g11, BoutReal g22, BoutReal g33, BoutReal g12, BoutReal g13,
   //                     BoutReal g23, Mesh* mesh);
 
@@ -62,8 +64,6 @@ public:
   //  void Allocate();
   //
   //  void setLocation(CELL_LOC location);
-
-  void CalculateChristoffelSymbols(const Coordinates& coordinates);
 
   // Transforms the ChristoffelSymbols by applying the given function to every element
   void map(const std::function<const FieldMetric(const FieldMetric)>& function);

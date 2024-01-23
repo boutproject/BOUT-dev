@@ -1360,8 +1360,7 @@ Field2D Coordinates::Laplace_perpXY(MAYBE_UNUSED(const Field2D& A),
 
 ChristoffelSymbols& Coordinates::christoffel_symbols() const {
   if (christoffel_symbols_cache == nullptr) {
-    auto ptr = std::make_unique<ChristoffelSymbols>(differential_operators);
-    ptr->CalculateChristoffelSymbols(*this);
+    auto ptr = std::make_unique<ChristoffelSymbols>(*this, differential_operators);
     christoffel_symbols_cache = std::move(ptr);
   }
   return *christoffel_symbols_cache;
