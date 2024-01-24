@@ -126,11 +126,12 @@ if has_breathe:
     for key, value in apidoc.TYPEDICT.items():
         apidoc.create_modules_toc_file(key, value, apidoc_args)
 
-    # -- Options for breathe extension ----------------------------------------
 
-    breathe_projects = {"BOUT++": "../doxygen/bout/xml"}
-    breathe_default_project = "BOUT++"
-    breathe_default_members = ("members",)
+# -- Options for breathe extension ----------------------------------------
+
+breathe_projects = {"BOUT++": "../doxygen/bout/xml"}
+breathe_default_project = "BOUT++"
+breathe_default_members = ("members",)
 
 # -- General configuration ------------------------------------------------
 
