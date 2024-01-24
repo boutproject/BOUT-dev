@@ -299,15 +299,14 @@ Coordinates::Coordinates(Mesh* mesh, Options* mesh_options, const CELL_LOC loc,
       mesh->get(dy_, "dy", 1.0, false);
     }
 
-    setBoundaryCells(mesh, mesh_options, suffix);
+    setBoundaryCells(mesh_options, suffix);
 
   } else {
-    interpolateFieldsFromOtherCoordinates(mesh, mesh_options, coords_in);
+    interpolateFieldsFromOtherCoordinates(mesh_options, coords_in);
   }
 }
 
-void Coordinates::interpolateFieldsFromOtherCoordinates(const Mesh* mesh,
-                                                        Options* mesh_options,
+void Coordinates::interpolateFieldsFromOtherCoordinates(Options* mesh_options,
                                                         const Coordinates* coords_in) {
 
   std::function<const FieldMetric(const FieldMetric)> const
@@ -339,7 +338,7 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(const Mesh* mesh,
   ShiftTorsion_ = localmesh->interpolateAndExtrapolate(
       coords_in->ShiftTorsion(), location, true, true, false, transform.get());
 
-  if (mesh->IncIntShear) {
+  if (localmesh->IncIntShear) {
     IntShiftTorsion_ = localmesh->interpolateAndExtrapolate(
         coords_in->IntShiftTorsion(), location, true, true, false, transform.get());
   }
@@ -367,13 +366,12 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(const Mesh* mesh,
 // Note: If boundary cells were not loaded from the grid file, use
 // 'interpolateAndExtrapolate' to set them. Ensures that derivatives are
 // smooth at all the boundaries.
-void Coordinates::setBoundaryCells(Mesh* mesh, Options* mesh_options,
-                                   const std::string& suffix) {
+void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suffix) {
 
-  const bool extrapolate_x =
-      (*mesh_options)["extrapolate_x"].withDefault(not mesh->sourceHasXBoundaryGuards());
-  const bool extrapolate_y =
-      (*mesh_options)["extrapolate_y"].withDefault(not mesh->sourceHasYBoundaryGuards());
+  const bool extrapolate_x = (*mesh_options)["extrapolate_x"].withDefault(
+      not localmesh->sourceHasXBoundaryGuards());
+  const bool extrapolate_y = (*mesh_options)["extrapolate_y"].withDefault(
+      not localmesh->sourceHasYBoundaryGuards());
 
   if (extrapolate_x) {
     output_warn.write(_("WARNING: extrapolating input mesh quantities into x-boundary "
@@ -385,7 +383,7 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* mesh_options,
                         "cells. Set option extrapolate_y=false to disable this.\n"));
   }
 
-  dz_ = getDzFromOptionsFile(mesh, suffix);
+  dz_ = getDzFromOptionsFile(localmesh, suffix);
 
   // required early for differentiation.
   setParallelTransform(mesh_options);
@@ -393,27 +391,27 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* mesh_options,
   dz_ = localmesh->interpolateAndExtrapolate(dz_, location, extrapolate_x, extrapolate_y,
                                              false, transform.get());
 
-  dx_ = getAtLocOrUnaligned(mesh, "dx", 1.0, suffix, location);
+  dx_ = getAtLocOrUnaligned(localmesh, "dx", 1.0, suffix, location);
   dx_ = localmesh->interpolateAndExtrapolate(dx_, location, extrapolate_x, extrapolate_y,
                                              false, transform.get());
 
-  if (mesh->periodicX) {
+  if (localmesh->periodicX) {
     communicate(dx_);
   }
 
-  dy_ = getAtLocOrUnaligned(mesh, "dy", 1.0, suffix, location);
+  dy_ = getAtLocOrUnaligned(localmesh, "dy", 1.0, suffix, location);
   dy_ = localmesh->interpolateAndExtrapolate(dy_, location, extrapolate_x, extrapolate_y,
                                              false, transform.get());
 
   // grid data source has staggered fields, so read instead of interpolating
   // Diagonal components of metric tensor g^{ij} (default to 1)
   FieldMetric g11, g22, g33, g12, g13, g23;
-  g11 = getAtLocOrUnaligned(mesh, "g11", 1.0, suffix, location);
-  g22 = getAtLocOrUnaligned(mesh, "g22", 1.0, suffix, location);
-  g33 = getAtLocOrUnaligned(mesh, "g33", 1.0, suffix, location);
-  g12 = getAtLocOrUnaligned(mesh, "g12", 0.0, suffix, location);
-  g13 = getAtLocOrUnaligned(mesh, "g13", 0.0, suffix, location);
-  g23 = getAtLocOrUnaligned(mesh, "g23", 0.0, suffix, location);
+  g11 = getAtLocOrUnaligned(localmesh, "g11", 1.0, suffix, location);
+  g22 = getAtLocOrUnaligned(localmesh, "g22", 1.0, suffix, location);
+  g33 = getAtLocOrUnaligned(localmesh, "g33", 1.0, suffix, location);
+  g12 = getAtLocOrUnaligned(localmesh, "g12", 0.0, suffix, location);
+  g13 = getAtLocOrUnaligned(localmesh, "g13", 0.0, suffix, location);
+  g23 = getAtLocOrUnaligned(localmesh, "g23", 0.0, suffix, location);
   contravariantMetricTensor.setMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23));
 
   // More robust to extrapolate derived quantities directly, rather than
@@ -432,8 +430,8 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* mesh_options,
 
   /// Find covariant metric components
   auto covariant_component_names = {"g_11", "g_22", "g_33", "g_12", "g_13", "g_23"};
-  auto source_has_component = [&suffix, &mesh](const std::string& name) {
-    return mesh->sourceHasVar(name + suffix);
+  auto source_has_component = [&suffix, this](const std::string& name) {
+    return localmesh->sourceHasVar(name + suffix);
   };
 
   // Check that all components are present
@@ -441,12 +439,12 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* mesh_options,
                   source_has_component)) {
 
     FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
-    g_11 = getAtLocOrUnaligned(mesh, "g_11", 1.0, suffix, location);
-    g_22 = getAtLocOrUnaligned(mesh, "g_22", 1.0, suffix, location);
-    g_33 = getAtLocOrUnaligned(mesh, "g_33", 1.0, suffix, location);
-    g_12 = getAtLocOrUnaligned(mesh, "g_12", 0.0, suffix, location);
-    g_13 = getAtLocOrUnaligned(mesh, "g_13", 0.0, suffix, location);
-    g_23 = getAtLocOrUnaligned(mesh, "g_23", 0.0, suffix, location);
+    g_11 = getAtLocOrUnaligned(localmesh, "g_11", 1.0, suffix, location);
+    g_22 = getAtLocOrUnaligned(localmesh, "g_22", 1.0, suffix, location);
+    g_33 = getAtLocOrUnaligned(localmesh, "g_33", 1.0, suffix, location);
+    g_12 = getAtLocOrUnaligned(localmesh, "g_12", 0.0, suffix, location);
+    g_13 = getAtLocOrUnaligned(localmesh, "g_13", 0.0, suffix, location);
+    g_23 = getAtLocOrUnaligned(localmesh, "g_23", 0.0, suffix, location);
     covariantMetricTensor.setMetricTensor(
         MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
@@ -472,7 +470,7 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* mesh_options,
         "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
         suffix);
   } else {
-    const auto Jcalc = getAtLoc(mesh, "J", suffix, location);
+    const auto Jcalc = getAtLoc(localmesh, "J", suffix, location);
     setJ(localmesh->interpolateAndExtrapolate(Jcalc, location, extrapolate_x,
                                               extrapolate_y, false, transform.get()));
 
@@ -499,7 +497,7 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* mesh_options,
                       "Calculating from metric tensor\n",
                       suffix);
   } else {
-    const auto Bcalc = getAtLoc(mesh, "Bxy", suffix, location);
+    const auto Bcalc = getAtLoc(localmesh, "Bxy", suffix, location);
     setBxy(localmesh->interpolateAndExtrapolate(Bcalc, location, extrapolate_x,
                                                 extrapolate_y, false, transform.get()));
     output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy() - Bcalc)));
@@ -513,16 +511,16 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* mesh_options,
                       "Derivatives may not be correct\n");
     ShiftTorsion_ = 0.0;
   } else {
-    const auto shift_torsion = getAtLoc(mesh, "ShiftTorsion", suffix, location, 0.0);
+    const auto shift_torsion = getAtLoc(localmesh, "ShiftTorsion", suffix, location, 0.0);
     ShiftTorsion_ = localmesh->interpolateAndExtrapolate(
         ShiftTorsion_, location, extrapolate_x, extrapolate_y, false, transform.get());
   }
 
   //////////////////////////////////////////////////////
 
-  if (mesh->IncIntShear) {
-    checkStaggeredGet(mesh, "IntShiftTorsion", suffix);
-    if (mesh->get(IntShiftTorsion_, "IntShiftTorsion" + suffix, 0.0, false) != 0) {
+  if (localmesh->IncIntShear) {
+    checkStaggeredGet(localmesh, "IntShiftTorsion", suffix);
+    if (localmesh->get(IntShiftTorsion_, "IntShiftTorsion" + suffix, 0.0, false) != 0) {
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
       IntShiftTorsion_ = 0.0;
     }
@@ -534,8 +532,6 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* mesh_options,
 
 FieldMetric Coordinates::getDzFromOptionsFile(Mesh* mesh,
                                               const std::string& suffix) const {
-
-  auto& nz = mesh->LocalNz;
 
   auto& options_root = Options::root();
   const bool has_zperiod = options_root.isSet("zperiod");
