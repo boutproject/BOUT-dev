@@ -884,8 +884,10 @@ void Coordinates::setParallelTransform(Options* mesh_options) {
     // Identity method i.e. no transform needed
     transform =
         bout::utils::make_unique<ParallelTransformIdentity>(*localmesh, ptoptions);
+    return;
+  }
 
-  } else if (ptstr == "shifted" or ptstr == "shiftedinterp") {
+  if (ptstr == "shifted" or ptstr == "shiftedinterp") {
     // Shifted metric method
 
     Field2D zShift{localmesh};
@@ -928,12 +930,17 @@ void Coordinates::setParallelTransform(Options* mesh_options) {
     if (ptstr == "shifted") {
       transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
                                                           getUniform(zlength()));
-    } else if (ptstr == "shiftedinterp") {
+    }
+
+    if (ptstr == "shiftedinterp") {
       transform = bout::utils::make_unique<ShiftedMetricInterp>(
           *localmesh, location, zShift, getUniform(zlength()));
     }
 
-  } else if (ptstr == "fci") {
+    return;
+  }
+
+  if (ptstr == "fci") {
 
     if (location != CELL_CENTRE) {
       throw BoutException("FCITransform is not available on staggered grids.");
@@ -943,11 +950,11 @@ void Coordinates::setParallelTransform(Options* mesh_options) {
     const bool fci_zperiodic = (*ptoptions)["z_periodic"].withDefault(true);
     transform = bout::utils::make_unique<FCITransform>(*localmesh, dy(), fci_zperiodic,
                                                        ptoptions);
-
-  } else {
-    throw BoutException(_("Unrecognised paralleltransform option.\n"
-                          "Valid choices are 'identity', 'shifted', 'fci'"));
+    return;
   }
+
+  throw BoutException(_("Unrecognised paralleltransform option.\n"
+                        "Valid choices are 'identity', 'shifted', 'fci'"));
 }
 
 /*******************************************************************************
