@@ -132,6 +132,7 @@ if has_breathe:
 breathe_projects = {"BOUT++": "../doxygen/bout/xml"}
 breathe_default_project = "BOUT++"
 breathe_default_members = ("members",)
+breathe_show_include = False
 
 # -- General configuration ------------------------------------------------
 
