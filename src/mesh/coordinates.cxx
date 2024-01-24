@@ -408,16 +408,7 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* mesh_options,
                         "cells. Set option extrapolate_y=false to disable this.\n"));
   }
 
-  nz = mesh->LocalNz;
-
-  auto& options_root = Options::root();
-  const bool has_zperiod = options_root.isSet("zperiod");
-  const auto zmin = has_zperiod ? 0.0 : options_root["ZMIN"].withDefault(0.0);
-  const auto zmax = has_zperiod ? 1.0 / options_root["zperiod"].withDefault(1.0)
-                                : options_root["ZMAX"].withDefault(1.0);
-
-  const auto default_dz = (zmax - zmin) * TWOPI / nz;
-  getAtLoc(mesh, dz_, "dz", suffix, location, default_dz);
+  dz_ = getDzFromOptionsFile(mesh, suffix);
 
   // required early for differentiation.
   setParallelTransform(mesh_options);
@@ -578,6 +569,23 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* mesh_options,
     // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
     IntShiftTorsion_ = 0.;
   }
+}
+
+FieldMetric Coordinates::getDzFromOptionsFile(Mesh* mesh,
+                                              const std::string& suffix) const {
+
+  auto& nz = mesh->LocalNz;
+
+  auto& options_root = Options::root();
+  const bool has_zperiod = options_root.isSet("zperiod");
+  const auto zmin = has_zperiod ? 0.0 : options_root["ZMIN"].withDefault(0.0);
+  const auto zmax = has_zperiod ? 1.0 / options_root["zperiod"].withDefault(1.0)
+                                : options_root["ZMAX"].withDefault(1.0);
+
+  const auto default_dz = (zmax - zmin) * TWOPI / nz;
+  FieldMetric dz;
+  getAtLoc(mesh, dz, "dz", suffix, location, default_dz);
+  return dz;
 }
 
 void Coordinates::outputVars(Options& output_options) {
@@ -872,6 +880,7 @@ void fixZShiftGuards(Field2D& zShift) {
 } // namespace
 
 void Coordinates::setParallelTransform(Options* mesh_options) {
+
   auto* ptoptions = mesh_options->getSection("paralleltransform");
 
   std::string ptstr;
