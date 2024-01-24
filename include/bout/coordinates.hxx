@@ -371,10 +371,9 @@ private:
   /// Non-uniform meshes. Need to use DDX, DDY
   void correctionForNonUniformMeshes(bool force_interpolate_from_centre);
 
-  void interpolateFieldsFromOtherCoordinates(const Mesh* mesh, Options* options,
-                                             const Coordinates* coords_in);
+  void interpolateFieldsFromOtherCoordinates(Options* options, const Coordinates* coords_in);
 
-  void setBoundaryCells(Mesh* mesh, Options* options, const std::string& suffix);
+  void setBoundaryCells(Options* options, const std::string& suffix);
 
   FieldMetric getDzFromOptionsFile(Mesh* mesh, const std::string& suffix) const;
 };
