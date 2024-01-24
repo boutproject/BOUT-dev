@@ -198,13 +198,6 @@ void checkStaggeredGet(Mesh* mesh, const std::string& name, const std::string& s
 }
 
 // convenience function for repeated code
-int getAtLoc(Mesh* mesh, Coordinates::FieldMetric& var, const std::string& name,
-             const std::string& suffix, CELL_LOC location, BoutReal default_value = 0.) {
-
-  checkStaggeredGet(mesh, name, suffix);
-  return mesh->get(var, name + suffix, default_value, false, location);
-}
-
 auto getAtLoc(Mesh* mesh, const std::string& name, const std::string& suffix,
               CELL_LOC location, BoutReal default_value = 0.) {
 
@@ -372,12 +365,13 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(const Mesh* mesh,
     dz_ = coords_in->dz();
     dz_.setLocation(location);
   } else {
-    throw BoutException("We are asked to transform dz to get dz before we "
-                        "have a transform, which "
-                        "might require dz!\nPlease provide a dz for the "
-                        "staggered quantity!");
+    throw BoutException(
+        "We are asked to transform dz to get dz before we have a transform, which might "
+        "require dz! \nPlease provide a dz for the staggered quantity!");
   }
+
   setParallelTransform(mesh_options);
+
   dx_ = localmesh->interpolateAndExtrapolate(coords_in->dx(), location, true, true, false,
                                              transform.get());
   dy_ = localmesh->interpolateAndExtrapolate(coords_in->dy(), location, true, true, false,
@@ -546,13 +540,15 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* mesh_options,
   bout::checkFinite(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
   bout::checkPositive(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
 
-  if (getAtLoc(mesh, ShiftTorsion_, "ShiftTorsion", suffix, location) != 0) {
+  if (!localmesh->sourceHasVar("ShiftTorsion" + suffix)) {
     output_warn.write("\tWARNING: No Torsion specified for zShift. "
                       "Derivatives may not be correct\n");
     ShiftTorsion_ = 0.0;
+  } else {
+    const auto shift_torsion = getAtLoc(mesh, "ShiftTorsion", suffix, location, 0.0);
+    ShiftTorsion_ = localmesh->interpolateAndExtrapolate(
+        ShiftTorsion_, location, extrapolate_x, extrapolate_y, false, transform.get());
   }
-  ShiftTorsion_ = localmesh->interpolateAndExtrapolate(
-      ShiftTorsion_, location, extrapolate_x, extrapolate_y, false, transform.get());
 
   //////////////////////////////////////////////////////
 
@@ -583,8 +579,7 @@ FieldMetric Coordinates::getDzFromOptionsFile(Mesh* mesh,
                                 : options_root["ZMAX"].withDefault(1.0);
 
   const auto default_dz = (zmax - zmin) * TWOPI / nz;
-  FieldMetric dz;
-  getAtLoc(mesh, dz, "dz", suffix, location, default_dz);
+  FieldMetric dz = getAtLoc(mesh, "dz", suffix, location, default_dz);
   return dz;
 }
 
