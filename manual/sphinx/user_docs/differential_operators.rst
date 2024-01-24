@@ -528,7 +528,7 @@ cell is added to another. There are several caveats to this:
   precision.
 
 The methods can be used by including the
-:doc:`header<../_breathe_autogen/file/fv__ops_8cxx>`::
+:doc:`header<../_breathe_autogen/file/fv__ops_8hxx>`::
 
    #include "bout/fv_ops.hxx"
 
@@ -536,7 +536,7 @@ The methods can be used by including the
 **Note** The methods are defined in a namespace ``FV``.
 
 Some methods (those with templates) are defined in the header, but others
-are defined in :doc:`src/mesh/fv_ops.cxx<../_breathe_autogen/file/fv__ops_8cxx>`.
+are defined in the ``.cxx`` file.
 
 
 Parallel divergence ``Div_par``
