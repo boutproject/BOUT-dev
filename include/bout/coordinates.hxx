@@ -381,6 +381,8 @@ private:
                                              const Coordinates* coords_in);
 
   void setBoundaryCells(Mesh* mesh, Options* options, const std::string& suffix);
+
+  FieldMetric getDzFromOptionsFile(Mesh* mesh, const std::string& suffix) const;
 };
 
 /*
