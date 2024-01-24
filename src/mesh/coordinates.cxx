@@ -255,23 +255,6 @@ Coordinates::FieldMetric Coordinates::getUnaligned(const std::string& name,
   return field;
 }
 
-Coordinates::FieldMetric Coordinates::getUnalignedAtLocationAndFillGuards(
-    Mesh* mesh, const std::string& name, BoutReal default_value,
-    const std::string& suffix, CELL_LOC cell_location, bool extrapolate_x,
-    bool extrapolate_y, bool no_extra_interpolate,
-    ParallelTransform* pParallelTransform) {
-
-  auto field = getAtLocOrUnaligned(mesh, name, default_value, suffix, cell_location);
-  if (suffix.empty()) {
-    no_extra_interpolate = false;
-    pParallelTransform = transform.get();
-  }
-
-  return field.getMesh()->interpolateAndExtrapolate(field, cell_location, extrapolate_x,
-                                                    extrapolate_y, no_extra_interpolate,
-                                                    pParallelTransform);
-}
-
 Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric dz,
                          FieldMetric J, FieldMetric Bxy, const FieldMetric& g11,
                          const FieldMetric& g22, const FieldMetric& g33,
@@ -410,45 +393,39 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* mesh_options,
   dz_ = localmesh->interpolateAndExtrapolate(dz_, location, extrapolate_x, extrapolate_y,
                                              false, transform.get());
 
-  dx_ = getUnalignedAtLocationAndFillGuards(mesh, "dx", 1.0, suffix, location,
-                                            extrapolate_x, extrapolate_y, false,
-                                            transform.get());
+  dx_ = getAtLocOrUnaligned(mesh, "dx", 1.0, suffix, location);
+  dx_ = localmesh->interpolateAndExtrapolate(dx_, location, extrapolate_x, extrapolate_y,
+                                             false, transform.get());
 
   if (mesh->periodicX) {
     communicate(dx_);
   }
 
-  dy_ = getUnalignedAtLocationAndFillGuards(mesh, "dy", 1.0, suffix, location,
-                                            extrapolate_x, extrapolate_y, false,
-                                            transform.get());
+  dy_ = getAtLocOrUnaligned(mesh, "dy", 1.0, suffix, location);
+  dy_ = localmesh->interpolateAndExtrapolate(dy_, location, extrapolate_x, extrapolate_y,
+                                             false, transform.get());
 
   // grid data source has staggered fields, so read instead of interpolating
   // Diagonal components of metric tensor g^{ij} (default to 1)
-  //    TODO: Method `getAtLocAndFillGuards` violates command–query separation principle?
   FieldMetric g11, g22, g33, g12, g13, g23;
-
-  // Diagonal components of metric tensor g^{ij} (default to 1)
-  g11 = getUnalignedAtLocationAndFillGuards(mesh, "g11", 1.0, suffix, location,
-                                            extrapolate_x, extrapolate_y, false,
-                                            transform.get());
-  g22 = getUnalignedAtLocationAndFillGuards(mesh, "g22", 1.0, suffix, location,
-                                            extrapolate_x, extrapolate_y, false,
-                                            transform.get());
-  g33 = getUnalignedAtLocationAndFillGuards(mesh, "g33", 1.0, suffix, location,
-                                            extrapolate_x, extrapolate_y, false,
-                                            transform.get());
-  // Off-diagonal elements. Default to 0
-  g12 = getUnalignedAtLocationAndFillGuards(mesh, "g12", 0.0, suffix, location,
-                                            extrapolate_x, extrapolate_y, false,
-                                            transform.get());
-  g13 = getUnalignedAtLocationAndFillGuards(mesh, "g13", 0.0, suffix, location,
-                                            extrapolate_x, extrapolate_y, false,
-                                            transform.get());
-  g23 = getUnalignedAtLocationAndFillGuards(mesh, "g23", 0.0, suffix, location,
-                                            extrapolate_x, extrapolate_y, false,
-                                            transform.get());
-
+  g11 = getAtLocOrUnaligned(mesh, "g11", 1.0, suffix, location);
+  g22 = getAtLocOrUnaligned(mesh, "g22", 1.0, suffix, location);
+  g33 = getAtLocOrUnaligned(mesh, "g33", 1.0, suffix, location);
+  g12 = getAtLocOrUnaligned(mesh, "g12", 0.0, suffix, location);
+  g13 = getAtLocOrUnaligned(mesh, "g13", 0.0, suffix, location);
+  g23 = getAtLocOrUnaligned(mesh, "g23", 0.0, suffix, location);
   contravariantMetricTensor.setMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23));
+
+  // More robust to extrapolate derived quantities directly, rather than
+  // deriving from extrapolated covariant metric components
+
+  std::function<const FieldMetric(const FieldMetric)> const
+      interpolateAndExtrapolate_function = [this, extrapolate_y,
+                                            extrapolate_x](const FieldMetric& component) {
+        return localmesh->interpolateAndExtrapolate(
+            component, location, extrapolate_x, extrapolate_y, false, transform.get());
+      };
+  applyToContravariantMetricTensor(interpolateAndExtrapolate_function);
 
   // Check input metrics
   checkContravariant();
@@ -481,15 +458,6 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* mesh_options,
                       "Calculating all from the contravariant tensor\n");
   }
 
-  // More robust to extrapolate derived quantities directly, rather than
-  // deriving from extrapolated covariant metric components
-
-  std::function<const FieldMetric(const FieldMetric)> const
-      interpolateAndExtrapolate_function = [this, extrapolate_y,
-                                            extrapolate_x](const FieldMetric& component) {
-        return localmesh->interpolateAndExtrapolate(
-            component, location, extrapolate_x, extrapolate_y, false, transform.get());
-      };
   applyToCovariantMetricTensor(interpolateAndExtrapolate_function);
 
   // Check covariant metrics
