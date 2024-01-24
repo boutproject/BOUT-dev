@@ -561,9 +561,6 @@ void Coordinates::setBoundaryCells(Mesh* mesh, Options* mesh_options,
     IntShiftTorsion_.setLocation(location);
     IntShiftTorsion_ = localmesh->interpolateAndExtrapolate(
         IntShiftTorsion_, location, extrapolate_x, extrapolate_y, false, transform.get());
-  } else {
-    // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
-    IntShiftTorsion_ = 0.;
   }
 }
 
