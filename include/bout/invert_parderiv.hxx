@@ -57,7 +57,6 @@ public:
   ReturnType create(const std::string& type, Options* options) const {
     return Factory::create(type, options, CELL_CENTRE, nullptr);
   }
-  static void ensureRegistered();
 };
 
 template <class DerivedType>

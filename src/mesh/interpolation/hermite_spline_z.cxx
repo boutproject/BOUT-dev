@@ -187,8 +187,6 @@ Field3D ZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_z,
   return interpolate(f, region_str);
 }
 
-void ZInterpolationFactory::ensureRegistered() {}
-
 namespace {
 RegisterZInterpolation<ZHermiteSpline> registerzinterphermitespline{"hermitespline"};
 } // namespace

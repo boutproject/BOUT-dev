@@ -245,7 +245,6 @@ set(BOUT_SOURCES
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.hxx
   ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.cxx
   ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.hxx
-  ./src/invert/laplacexz/laplacexz.cxx
   ./src/invert/parderiv/impls/cyclic/cyclic.cxx
   ./src/invert/parderiv/impls/cyclic/cyclic.hxx
   ./src/invert/parderiv/invert_parderiv.cxx

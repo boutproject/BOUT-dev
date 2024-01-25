@@ -36,6 +36,3 @@ const Field2D InvertPar::solve(const Field2D& f) {
   var = solve(var);
   return DC(var);
 }
-
-// DO NOT REMOVE: ensures linker keeps all symbols in this TU
-void InvertParFactory::ensureRegistered() {}

@@ -85,8 +85,6 @@ public:
   ReturnType create(const std::string& type, MAYBE_UNUSED(Options* options)) const {
     return Factory::create(type, 0, nullptr, Region<Ind3D>{});
   }
-
-  static void ensureRegistered();
 };
 
 template <class DerivedType>
