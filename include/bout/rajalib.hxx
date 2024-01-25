@@ -1,4 +1,4 @@
-/*!
+/*! \file
  * RAJA library utilities and wrappers
  *
  * Defines:

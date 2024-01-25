@@ -1,18 +1,4 @@
-/*!
- * \file lapack_routines.cxx
- *
- * Serial code to invert a complex tridiagonal system
- *
- * Complex banded matrix solver
- *
- * Solves a banded matrix given the matrix in compact form
- * a[0...(n-1)][0...(m1+m2)]
- * and the rhs vector
- * b[0...(n-1)]
- * 
- * a is overwritten, and b is replaced by the solution
- *
- **************************************************************************
+/**************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk

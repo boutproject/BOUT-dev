@@ -1,7 +1,8 @@
+/// \file
+///
 /// FieldAccessor
 ///
 /// Provides quick but unsafe access to field and coordinate system data
-///
 
 #pragma once
 #ifndef FIELD_ACCESSOR_H__

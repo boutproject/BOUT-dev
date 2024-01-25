@@ -1,4 +1,8 @@
+/// \file
 /// Base type for factories
+
+// Copyright 2018-2022 Peter Hill, BOUT++ Team
+// SPDX-License-Identifier: MIT
 
 #pragma once
 #ifndef BOUT_GENERIC_FACTORY_H

@@ -1,3 +1,4 @@
+/// \file
 /// Parent class for IO to binary files and streams
 ///
 ///
