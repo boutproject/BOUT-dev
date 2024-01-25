@@ -114,7 +114,6 @@ namespace {
 constexpr auto is_enabled(bool enabled) { return enabled ? "enabled" : "disabled"; }
 } // namespace
 
-
 int BoutInitialise(int& argc, char**& argv) {
 
   using namespace bout::experimental;
