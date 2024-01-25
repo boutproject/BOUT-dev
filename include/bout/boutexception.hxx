@@ -10,8 +10,6 @@ class BoutException;
 #include <string>
 #include <utility>
 
-#include "bout/format.hxx"
-
 #include "fmt/core.h"
 
 /// Throw BoutRhsFail with \p message if any one process has non-zero
