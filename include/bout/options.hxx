@@ -53,7 +53,6 @@ class Options;
 #include <fmt/core.h>
 
 #include <cmath>
-#include <iomanip>
 #include <map>
 #include <ostream>
 #include <set>
@@ -182,8 +181,19 @@ public:
   /// Example:  { {"key1", 42}, {"key2", field} }
   Options(std::initializer_list<std::pair<std::string, Options>> values);
 
-  /// Copy constructor
   Options(const Options& other);
+
+  /// Copy assignment
+  ///
+  /// This replaces the value, attributes and all children
+  ///
+  /// Note that if only the value is desired, then that can be copied using
+  /// the value member directly e.g. option2.value = option1.value;
+  ///
+  Options& operator=(const Options& other);
+
+  Options(Options&& other) noexcept;
+  Options& operator=(Options&& other) noexcept;
 
   ~Options() = default;
 
@@ -210,14 +220,11 @@ public:
   public:
     using Base = bout::utils::variant<bool, int, BoutReal, std::string>;
 
-    /// Constructor
     AttributeType() = default;
-    /// Copy constructor
     AttributeType(const AttributeType& other) = default;
-    /// Move constructor
-    AttributeType(AttributeType&& other) : Base(std::move(other)) {}
-
-    /// Destructor
+    AttributeType(AttributeType&& other) = default;
+    AttributeType& operator=(const AttributeType& other) = default;
+    AttributeType& operator=(AttributeType&& other) = default;
     ~AttributeType() = default;
 
     /// Assignment operator, including move assignment
@@ -228,9 +235,6 @@ public:
       operator=(std::string(str));
       return *this;
     }
-
-    /// Copy assignment operator
-    AttributeType& operator=(const AttributeType& other) = default;
 
     /// Initialise with a value
     /// This enables AttributeTypes to be constructed using initializer lists
@@ -362,15 +366,6 @@ public:
     return inputvalue;
   }
 
-  /// Copy assignment
-  ///
-  /// This replaces the value, attributes and all children
-  ///
-  /// Note that if only the value is desired, then that can be copied using
-  /// the value member directly e.g. option2.value = option1.value;
-  ///
-  Options& operator=(const Options& other);
-
   /// Assign a value to the option.
   /// This will throw an exception if already has a value
   ///
@@ -382,9 +377,9 @@ public:
   /// Note: Specialised versions for types stored in ValueType
   template <typename T>
   void assign(T val, std::string source = "") {
-    std::stringstream ss;
-    ss << val;
-    _set(ss.str(), std::move(source), false);
+    std::stringstream as_str;
+    as_str << val;
+    _set(as_str.str(), std::move(source), false);
   }
 
   /// Force to a value
@@ -462,20 +457,20 @@ public:
       // If the variant is a string then we may be able to parse it
 
       if (bout::utils::holds_alternative<std::string>(value)) {
-        std::stringstream ss(bout::utils::get<std::string>(value));
-        ss >> val;
+        std::stringstream as_str(bout::utils::get<std::string>(value));
+        as_str >> val;
 
         // Check if the parse failed
-        if (ss.fail()) {
+        if (as_str.fail()) {
           throw BoutException("Option {:s} could not be parsed ('{:s}')", full_name,
                               bout::utils::variantToString(value));
         }
 
         // Check if there are characters remaining
         std::string remainder;
-        std::getline(ss, remainder);
-        for (const char& ch : remainder) {
-          if (!std::isspace(static_cast<unsigned char>(ch))) {
+        std::getline(as_str, remainder);
+        for (const unsigned char chr : remainder) {
+          if (!std::isspace(chr)) {
             // Meaningful character not parsed
             throw BoutException("Option {:s} could not be parsed", full_name);
           }
@@ -495,7 +490,7 @@ public:
       // Specify the source of the setting
       output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
     }
-    output_info << endl;
+    output_info << '\n';
 
     return val;
   }
@@ -514,7 +509,7 @@ public:
       value_used = true; // Mark the option as used
 
       output_info << _("\tOption ") << full_name << " = " << def << " (" << DEFAULT_SOURCE
-                  << ")" << std::endl;
+                  << ")\n";
       return def;
     }
     T val = as<T>(def);
@@ -547,7 +542,7 @@ public:
       *this = def;
 
       output_info << _("\tOption ") << full_name << " = " << def.full_name << " ("
-                  << DEFAULT_SOURCE << ")" << std::endl;
+                  << DEFAULT_SOURCE << ")\n";
     } else {
       // Check if this was previously set as a default option
       if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
@@ -571,7 +566,7 @@ public:
     if (is_section) {
       // Option not found
       output_info << _("\tOption ") << full_name << " = " << def << " (" << DEFAULT_SOURCE
-                  << ")" << std::endl;
+                  << ")\n";
       return def;
     }
     T val = as<T>(def);
@@ -657,8 +652,8 @@ public:
 
   // Setting options
   template <typename T>
-  void forceSet(const std::string& key, T t, const std::string& source = "") {
-    (*this)[key].force(t, source);
+  void forceSet(const std::string& key, T val, const std::string& source = "") {
+    (*this)[key].force(val, source);
   }
 
   /*!
@@ -670,11 +665,11 @@ public:
     if (!is_section) {
       return false;
     }
-    auto it = children.find(key);
-    if (it == children.end()) {
+    auto child = children.find(key);
+    if (child == children.end()) {
       return false;
     }
-    return it->second.isSet();
+    return child->second.isSet();
   }
 
   /// Get options, passing in a reference to a variable
@@ -702,13 +697,12 @@ public:
 
   /// Print just the name of this object without parent sections
   std::string name() const {
-    auto pos = full_name.rfind(":");
+    auto pos = full_name.rfind(':');
     if (pos == std::string::npos) {
       // No parent section or sections
       return full_name;
-    } else {
-      return full_name.substr(pos + 1);
     }
+    return full_name.substr(pos + 1);
   }
 
   /// Return a new Options instance which contains all the values
@@ -784,8 +778,6 @@ private:
   /// The source label given to default values
   static const std::string DEFAULT_SOURCE;
 
-  static Options* root_instance; ///< Only instance of the root section
-
   Options* parent_instance{nullptr};
   std::string full_name; // full path name for logging only
 
@@ -837,8 +829,8 @@ private:
 
   /// Tests if two values are similar.
   template <typename T>
-  bool similar(T a, T b) const {
-    return a == b;
+  bool similar(T lhs, T rhs) const {
+    return lhs == rhs;
   }
 };
 
@@ -862,7 +854,7 @@ inline void Options::assign<>(std::string val, std::string source) {
 // Note: const char* version needed to avoid conversion to bool
 template <>
 inline void Options::assign<>(const char* val, std::string source) {
-  _set(std::string(val), source, false);
+  _set(std::string(val), std::move(source), false);
 }
 // Note: Field assignments don't check for previous assignment (always force)
 template <>
@@ -880,8 +872,8 @@ void Options::assign<>(Tensor<BoutReal> val, std::string source);
 
 /// Specialised similar comparison methods
 template <>
-inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const {
-  return fabs(a - b) < 1e-10;
+inline bool Options::similar<BoutReal>(BoutReal lhs, BoutReal rhs) const {
+  return fabs(lhs - rhs) < 1e-10;
 }
 
 /// Specialised as routines
@@ -972,6 +964,8 @@ private:
 template <>
 struct fmt::formatter<Options> : public bout::details::OptionsFormatterBase {};
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
+
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def) pointer(options)->get(#var, var, def)
 
@@ -1031,5 +1025,7 @@ struct fmt::formatter<Options> : public bout::details::OptionsFormatterBase {};
   const auto BOUT_CONCAT(user_default,                                             \
                          __LINE__) = Options::root()[name].overrideDefault(value); \
   }
+
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 #endif // __OPTIONS_H__
