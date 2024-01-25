@@ -50,8 +50,8 @@ public:
   /// Callback function for when a clean shutdown is initiated
   virtual void cleanup(){};
 
-  virtual void outputVars(MAYBE_UNUSED(Options& options),
-                          MAYBE_UNUSED(const std::string& time_dimension)) {}
+  virtual void outputVars([[maybe_unused]] Options& options,
+                          [[maybe_unused]] const std::string& time_dimension) {}
 
 protected:
   /// Get the currently set timestep for this monitor

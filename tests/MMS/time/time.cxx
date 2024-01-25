@@ -10,7 +10,7 @@
 
 class TimeTest : public PhysicsModel {
 public:
-  int init(MAYBE_UNUSED(bool restart)) {
+  int init([[maybe_unused]] bool restart) {
     solver->add(f, "f"); // Solve a single 3D field
 
     setSplitOperator();
@@ -18,16 +18,16 @@ public:
     return 0;
   }
 
-  int rhs(MAYBE_UNUSED(BoutReal time)) {
+  int rhs([[maybe_unused]] BoutReal time) {
     ddt(f) = f;
     return 0;
   }
 
-  int convective(MAYBE_UNUSED(BoutReal time)) {
+  int convective([[maybe_unused]] BoutReal time) {
     ddt(f) = 0.5 * f;
     return 0;
   }
-  int diffusive(MAYBE_UNUSED(BoutReal time)) {
+  int diffusive([[maybe_unused]] BoutReal time) {
     ddt(f) = 0.5 * f;
     return 0;
   }

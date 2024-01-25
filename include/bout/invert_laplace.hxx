@@ -275,8 +275,8 @@ public:
   /// performance information, with optional name for the time
   /// dimension
   void outputVars(Options& output_options) const { outputVars(output_options, "t"); }
-  virtual void outputVars(MAYBE_UNUSED(Options& output_options),
-                          MAYBE_UNUSED(const std::string& time_dimension)) const {}
+  virtual void outputVars([[maybe_unused]] Options& output_options,
+                          [[maybe_unused]] const std::string& time_dimension) const {}
 
   /// Register performance monitor with \p solver, prefix output with
   /// `Options` section name

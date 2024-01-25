@@ -51,13 +51,13 @@ inline std::ostream& operator<<(std::ostream& out, const SpecificInd<N>& index) 
 }
 
 /// Helpers to get the type of a Field as a string
-auto inline getFieldType(MAYBE_UNUSED(const Field2D& field)) -> std::string {
+auto inline getFieldType([[maybe_unused]] const Field2D& field) -> std::string {
   return "Field2D";
 }
-auto inline getFieldType(MAYBE_UNUSED(const Field3D& field)) -> std::string {
+auto inline getFieldType([[maybe_unused]] const Field3D& field) -> std::string {
   return "Field3D";
 }
-auto inline getFieldType(MAYBE_UNUSED(const FieldPerp& field)) -> std::string {
+auto inline getFieldType([[maybe_unused]] const FieldPerp& field) -> std::string {
   return "FieldPerp";
 }
 
@@ -339,7 +339,7 @@ public:
 
   bool hasVar(const std::string& UNUSED(name)) override { return false; }
 
-  bool get(MAYBE_UNUSED(Mesh* m), std::string& sval, const std::string& name,
+  bool get([[maybe_unused]] Mesh* m, std::string& sval, const std::string& name,
            const std::string& def = "") override {
     if (values[name].isSet()) {
       sval = values[name].as<std::string>();
@@ -348,7 +348,7 @@ public:
     sval = def;
     return false;
   }
-  bool get(MAYBE_UNUSED(Mesh* m), int& ival, const std::string& name,
+  bool get([[maybe_unused]] Mesh* m, int& ival, const std::string& name,
            int def = 0) override {
     if (values[name].isSet()) {
       ival = values[name].as<int>();
@@ -357,7 +357,7 @@ public:
     ival = def;
     return false;
   }
-  bool get(MAYBE_UNUSED(Mesh* m), BoutReal& rval, const std::string& name,
+  bool get([[maybe_unused]] Mesh* m, BoutReal& rval, const std::string& name,
            BoutReal def = 0.0) override {
     if (values[name].isSet()) {
       rval = values[name].as<BoutReal>();
@@ -394,15 +394,15 @@ public:
     return false;
   }
 
-  bool get(MAYBE_UNUSED(Mesh* m), MAYBE_UNUSED(std::vector<int>& var),
-           MAYBE_UNUSED(const std::string& name), MAYBE_UNUSED(int len),
-           MAYBE_UNUSED(int def) = 0, Direction = GridDataSource::X) override {
+  bool get([[maybe_unused]] Mesh* m, [[maybe_unused]] std::vector<int>& var,
+           [[maybe_unused]] const std::string& name, [[maybe_unused]] int len,
+           [[maybe_unused]] int def = 0, Direction = GridDataSource::X) override {
     throw BoutException("Not Implemented");
     return false;
   }
-  bool get(MAYBE_UNUSED(Mesh* m), MAYBE_UNUSED(std::vector<BoutReal>& var),
-           MAYBE_UNUSED(const std::string& name), MAYBE_UNUSED(int len),
-           MAYBE_UNUSED(int def) = 0,
+  bool get([[maybe_unused]] Mesh* m, [[maybe_unused]] std::vector<BoutReal>& var,
+           [[maybe_unused]] const std::string& name, [[maybe_unused]] int len,
+           [[maybe_unused]] int def = 0,
            Direction UNUSED(dir) = GridDataSource::X) override {
     throw BoutException("Not Implemented");
     return false;

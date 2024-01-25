@@ -276,7 +276,7 @@ public:
   ReturnType create(Options* options = nullptr, Mesh* mesh = nullptr) const {
     return Factory::create(getType(options), mesh);
   }
-  ReturnType create(const std::string& type, MAYBE_UNUSED(Options* options)) const {
+  ReturnType create(const std::string& type, [[maybe_unused]] Options* options) const {
     return Factory::create(type, nullptr);
   }
 

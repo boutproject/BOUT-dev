@@ -683,7 +683,7 @@ struct ConvertContainer {
   Container operator()(const Container& value) { return value; }
 
   template <class Other>
-  Container operator()(MAYBE_UNUSED(const Other& value)) {
+  Container operator()([[maybe_unused]] const Other& value) {
     throw BoutException(error_message);
   }
 
