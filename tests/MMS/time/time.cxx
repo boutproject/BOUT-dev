@@ -10,7 +10,7 @@
 
 class TimeTest : public PhysicsModel {
 public:
-  int init([[maybe_unused]] bool restart) {
+  int init([[maybe_unused]] bool restart) override {
     solver->add(f, "f"); // Solve a single 3D field
 
     setSplitOperator();
@@ -18,7 +18,7 @@ public:
     return 0;
   }
 
-  int rhs([[maybe_unused]] BoutReal time) {
+  int rhs([[maybe_unused]] BoutReal time) override {
     ddt(f) = f;
     return 0;
   }
