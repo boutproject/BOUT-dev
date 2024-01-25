@@ -37,7 +37,6 @@ class Output;
 
 #include "bout/assert.hxx"
 #include "bout/boutexception.hxx"
-#include "bout/format.hxx"
 #include "bout/sys/gettext.hxx" // for gettext _() macro
 #include "bout/unused.hxx"
 
