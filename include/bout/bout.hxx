@@ -34,6 +34,7 @@
 #ifndef BOUT_H
 #define BOUT_H
 
+//NOLINTBEGIN(unused-includes)
 #include "bout/build_config.hxx"
 
 #include "bout/boutcomm.hxx"
@@ -53,6 +54,7 @@
 #include "bout/vector3d.hxx"
 #include "bout/version.hxx"
 #include "bout/where.hxx"
+//NOLINTEND(unused-includes)
 
 // BOUT++ main functions
 
@@ -78,6 +80,13 @@
  * Usually this function is called in a standard main() function,
  * either by including boutmain.hxx or by including bout/physicsmodel.hxx
  * and using the BOUTMAIN macro.
+ *
+ * Outputs
+ * -------
+ *
+ * Any non-zero return value should halt the simulation. If the return value is
+ * less than zero, the exit status from BOUT++ is 0, otherwise it is the return
+ * value of BoutInitialise.
  *
  */
 int BoutInitialise(int& argc, char**& argv);

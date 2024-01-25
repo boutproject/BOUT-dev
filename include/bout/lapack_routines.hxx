@@ -39,35 +39,34 @@
 
 #include <bout/utils.hxx>
 
-/* Tridiagonal inversion
- *
- * a = Left of diagonal (so a[0] not used)
- * b = diagonal terms
- * c = Right of diagonal (so c[n-1] not used)
- * r = RHS vector
- * u = Result vector
- * n = Length of vectors
- *
- * 
- * b[0]   c[0]
- * a[1]   b[1]   c[1]
- *         .       .    . 
- * 
- */
-
-// Tri-diagonal solvers
+/// Tridiagonal inversion
+///
+/// \param a Left of diagonal (so a[0] not used)
+/// \param b diagonal terms
+/// \param c Right of diagonal (so c[n-1] not used)
+/// \param r RHS vector
+/// \param u Result vector
+/// \param n Length of vectors
+///
+///     b[0]   c[0]
+///     a[1]   b[1]   c[1]
+///             .       .    .
+///
+/// Uses LAPACK routine ZGTSV
 int tridag(const dcomplex* a, const dcomplex* b, const dcomplex* c, const dcomplex* r,
            dcomplex* u, int n);
 bool tridag(const BoutReal* a, const BoutReal* b, const BoutReal* c, const BoutReal* r,
             BoutReal* x, int n);
 
-// Cyclic tridiagonal
+/// Cyclic tridiagonal
+///
+/// Uses Sherman-Morrison formula
 void cyclic_tridag(BoutReal* a, BoutReal* b, BoutReal* c, BoutReal* r, BoutReal* x,
                    int n);
 void cyclic_tridag(dcomplex* a, dcomplex* b, dcomplex* c, dcomplex* r, dcomplex* x,
                    int n);
 
-/// Complex band matrix solver
+/// Complex band matrix solver using ZGBSV
 void cband_solve(Matrix<dcomplex>& a, int n, int m1, int m2, Array<dcomplex>& b);
 
 #endif // __LAPACK_ROUTINES_H__

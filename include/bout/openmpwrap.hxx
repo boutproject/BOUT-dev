@@ -31,8 +31,8 @@
 #define INDIRECT1(a) INDIRECT0(omp a)
 #define INDIRECT2(b) INDIRECT1(b)
 
-//Define a macro wrapper to the use of `#pragma omp` to avoid unknown pragma
-//warnings when compiling without openmp support.
+/// Wrapper to use `#pragma omp` while avoiding unknown pragma
+/// warnings when compiling without openmp support.
 #if BOUT_USE_OPENMP
 #define BOUT_OMP(...) _Pragma(INDIRECT2(__VA_ARGS__))
 #else

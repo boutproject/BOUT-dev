@@ -47,11 +47,11 @@ class OptionsReader;
 /// Example
 /// -------
 ///
-/// Options opt;
-/// OptionsReader::getInstance()->read(&opt, "somefile.inp");
+///     Options opt;
+///     OptionsReader::getInstance()->read(&opt, "somefile.inp");
 ///
-/// opt now contains a tree of sections and options from the input file "somefile.inp"
-///
+/// ``opt`` now contains a tree of sections and options from the input
+/// file "somefile.inp"
 class OptionsReader {
 public:
   /// Return a pointer to the instance singleton

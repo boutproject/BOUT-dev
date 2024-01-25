@@ -402,19 +402,18 @@ private:
 };
 
 /*!
- * Macro to define a simple main() which creates
- * the given model and runs it. This should be sufficient
- * for most use cases, but a user can define their own
- * main() function if needed.
+ * Macro to define a simple ``main()`` which creates the given model
+ * and runs it. This should be sufficient for most use cases, but a
+ * user can define their own ``main()`` function if needed.
  *
  * Example
  * -------
  *
- * class MyModel : public PhysicsModel {
- *   ..
- * };
+ *     class MyModel : public PhysicsModel {
+ *       // ...
+ *     };
  *
- * BOUTMAIN(MyModel);
+ *     BOUTMAIN(MyModel);
  */
 #define BOUTMAIN(ModelClass)                                       \
   int main(int argc, char** argv) {                                \

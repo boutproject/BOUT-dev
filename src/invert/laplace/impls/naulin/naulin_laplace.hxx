@@ -2,14 +2,14 @@
 /// Iterative solver to handle non-constant-in-z coefficients
 ///
 /// Scheme suggested by Volker Naulin: solve
-/// \f[
+/// \f{eqnarray}
 ///   \nabla^2(\phi[i+1])
-///      + 1/DC(C_1 D)\nabla_\perp(DC(C_2))\nalba_\perp(\phi[i+1])
-///      + DC(A/D)*phi[i+1]
+///      + 1/DC(C_1 D)\nabla_\perp(DC(C_2))\nabla_\perp(\phi[i+1])
+///      + DC(A/D)\phi[i+1] \\
 ///   = rhs(\phi[i])
 ///        + 1/DC(C_1 D)\nabla_\perp(DC(C_2))\nabla_\perp(\phi[i])
-///        + DC(A/D)*\phi[i]
-/// \f]
+///        + DC(A/D)\phi[i]
+/// \f}
 ///
 /// using standard FFT-based solver, iterating to include other terms
 /// by evaluating them on ``rhs`` using \f$\phi\f$ from previous
@@ -46,7 +46,7 @@
 ///
 /// \f{eqnarray}{
 /// \nabla_\perp^2 \phi + <\frac{A}{D}>\phi
-/// &=& rhs/D - \frac{1}{D\,C1} \nabla_\perp C2\cdot\nabla_\perp \phi - (\frac{A}{D} - <\frac{A}{D}>)*\phi
+/// &=& rhs/D - \frac{1}{D\,C1} \nabla_\perp C2\cdot\nabla_\perp \phi - (\frac{A}{D} - <\frac{A}{D}>)\phi
 /// \f}
 ///
 /// The iteration can be under-relaxed to help it converge. Amount of under-relaxation is

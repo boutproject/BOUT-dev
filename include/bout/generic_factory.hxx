@@ -52,7 +52,7 @@
 ///     RegisterInFactory<Base, Derived, MyFactory, Options*> register("derived_type");
 ///     auto foo = MyFactory::getInstance().create("derived_type");
 ///
-///   In a .cxx file the static members should be declared:
+/// In a .cxx file the static members should be declared:
 ///
 ///     constexpr decltype(MyFactory::type_name) MyFactory::type_name;
 ///     constexpr decltype(MyFactory::section_name) MyFactory::section_name;
