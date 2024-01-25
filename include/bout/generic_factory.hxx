@@ -48,14 +48,6 @@
 ///     RegisterInFactory<Base, Derived, MyFactory, Options*> register("derived_type");
 ///     auto foo = MyFactory::getInstance().create("derived_type");
 ///
-///   In a .cxx file the static members should be declared:
-///
-///     constexpr decltype(MyFactory::type_name) MyFactory::type_name;
-///     constexpr decltype(MyFactory::section_name) MyFactory::section_name;
-///     constexpr decltype(MyFactory::option_name) MyFactory::option_name;
-///     constexpr decltype(MyFactory::default_type) MyFactory::default_type;
-///
-///
 /// @tparam BaseType       The base class that this factory creates
 /// @tparam DerivedFactory The derived factory inheriting from this class
 /// @tparam TypeCreator    The function signature for creating a new BaseType
