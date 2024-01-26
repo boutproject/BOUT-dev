@@ -18,9 +18,6 @@
 #include "petscmat.h"
 #include "petscsnes.h"
 
-// Redundent definition because < C++17
-constexpr int IMEXBDF2::MAX_SUPPORTED_ORDER;
-
 IMEXBDF2::IMEXBDF2(Options* opt)
     : Solver(opt), maxOrder((*options)["maxOrder"]
                                 .doc("Maximum order of the scheme (1/2/3)")

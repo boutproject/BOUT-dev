@@ -485,7 +485,6 @@ public:
   }
   static constexpr metaData meta{"FFT", 0, DERIV::Standard};
 };
-constexpr metaData FFTDerivativeType::meta;
 
 class FFT2ndDerivativeType {
 public:
@@ -544,7 +543,6 @@ public:
   }
   static constexpr metaData meta{"FFT", 0, DERIV::StandardSecond};
 };
-constexpr metaData FFT2ndDerivativeType::meta;
 
 produceCombinations<Set<WRAP_ENUM(DIRECTION, Z)>, Set<WRAP_ENUM(STAGGER, None)>,
                     Set<TypeContainer<Field3D>>,
@@ -574,7 +572,6 @@ public:
   }
   static constexpr metaData meta{"SPLIT", 2, DERIV::Flux};
 };
-constexpr metaData SplitFluxDerivativeType::meta;
 
 produceCombinations<
     Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y),
