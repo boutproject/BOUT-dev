@@ -174,7 +174,7 @@ def build_sdist(sdist_directory, config_settings=None):
     print(config_settings, sdist_directory)
     enable_gz = True
     enable_xz = False
-    external = {"fmt", "mpark.variant"}
+    external = {"fmt",}
     if config_settings is not None:
         global useLocalVersion, pkgname
         for k, v in config_settings.items():
