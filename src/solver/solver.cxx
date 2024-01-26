@@ -1498,7 +1498,7 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
   }
 
   // Make sure 3D fields are at the correct cell location, etc.
-  for (MAYBE_UNUSED(const auto& f) : f3d) {
+  for ([[maybe_unused]] const auto& f : f3d) {
     ASSERT1_FIELDS_COMPATIBLE(*f.var, *f.F_var);
   }
 

@@ -39,7 +39,7 @@ HypreLib::HypreLib() {
   }
 }
 
-HypreLib::HypreLib(MAYBE_UNUSED() const HypreLib& other) noexcept {
+HypreLib::HypreLib([[maybe_unused]] const HypreLib& other) noexcept {
   BOUT_OMP(critical(HypreLib))
   {
     // No need to initialise Hypre, because it must already be initialised
@@ -47,7 +47,7 @@ HypreLib::HypreLib(MAYBE_UNUSED() const HypreLib& other) noexcept {
   }
 }
 
-HypreLib::HypreLib(MAYBE_UNUSED() HypreLib&& other) noexcept {
+HypreLib::HypreLib([[maybe_unused]] HypreLib&& other) noexcept {
   BOUT_OMP(critical(HypreLib))
   {
     // No need to initialise Hypre, because it must already be initialised

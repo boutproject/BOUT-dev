@@ -269,7 +269,7 @@ public:
   virtual void constraint(Vector3D& v, Vector3D& C_v, std::string name);
 
   /// Set a maximum internal timestep (only for explicit schemes)
-  virtual void setMaxTimestep(MAYBE_UNUSED(BoutReal dt)) {}
+  virtual void setMaxTimestep([[maybe_unused]] BoutReal dt) {}
   /// Return the current internal timestep
   virtual BoutReal getCurrentTimestep() { return 0.0; }
 

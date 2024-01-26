@@ -331,8 +331,8 @@ Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
 }
 
 Coordinates::FieldMetric D2DXDZ(const Field2D& f, CELL_LOC outloc,
-                                MAYBE_UNUSED(const std::string& method),
-                                MAYBE_UNUSED(const std::string& region)) {
+                                [[maybe_unused]] const std::string& method,
+                                [[maybe_unused]] const std::string& region) {
 #if BOUT_USE_METRIC_3D
   Field3D tmp{f};
   return D2DXDZ(tmp, outloc, method, region);
@@ -356,8 +356,8 @@ Field3D D2DXDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
 }
 
 Coordinates::FieldMetric D2DYDZ(const Field2D& f, CELL_LOC outloc,
-                                MAYBE_UNUSED(const std::string& method),
-                                MAYBE_UNUSED(const std::string& region)) {
+                                [[maybe_unused]] const std::string& method,
+                                [[maybe_unused]] const std::string& region) {
 #if BOUT_USE_METRIC_3D
   Field3D tmp{f};
   return D2DYDZ(tmp, outloc, method, region);
@@ -369,8 +369,8 @@ Coordinates::FieldMetric D2DYDZ(const Field2D& f, CELL_LOC outloc,
 #endif
 }
 
-Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc, MAYBE_UNUSED(const std::string& method),
-               const std::string& region) {
+Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc,
+               [[maybe_unused]] const std::string& method, const std::string& region) {
   // If staggering in z, take y-derivative at f's location.
   const auto y_location =
       (outloc == CELL_ZLOW or f.getLocation() == CELL_ZLOW) ? CELL_DEFAULT : outloc;
@@ -426,9 +426,9 @@ Coordinates::FieldMetric VDDZ(const Field2D& v, const Field2D& f, CELL_LOC outlo
 }
 
 // Note that this is zero because no compression is included
-Coordinates::FieldMetric VDDZ(MAYBE_UNUSED(const Field3D& v), const Field2D& f,
-                              CELL_LOC outloc, MAYBE_UNUSED(const std::string& method),
-                              MAYBE_UNUSED(const std::string& region)) {
+Coordinates::FieldMetric VDDZ([[maybe_unused]] const Field3D& v, const Field2D& f,
+                              CELL_LOC outloc, [[maybe_unused]] const std::string& method,
+                              [[maybe_unused]] const std::string& region) {
 #if BOUT_USE_METRIC_3D
   Field3D tmp{f};
   return bout::derivatives::index::VDDZ(v, tmp, outloc, method, region)

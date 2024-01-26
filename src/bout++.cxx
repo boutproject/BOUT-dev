@@ -190,8 +190,7 @@ int BoutInitialise(int& argc, char**& argv) {
     // but it's possible that only happens in BoutFinalise, which is
     // too late for that check.
     const auto datadir = Options::root()["datadir"].withDefault<std::string>(DEFAULT_DIR);
-    MAYBE_UNUSED()
-    const auto optionfile =
+    [[maybe_unused]] const auto optionfile =
         Options::root()["optionfile"].withDefault<std::string>(args.opt_file);
     const auto settingsfile =
         Options::root()["settingsfile"].withDefault<std::string>(args.set_file);
@@ -837,7 +836,7 @@ BoutMonitor::BoutMonitor(BoutReal timestep, Options& options)
                           .doc(_("Name of file whose existence triggers a stop"))
                           .withDefault("BOUT.stop"))) {}
 
-int BoutMonitor::call(Solver* solver, BoutReal t, MAYBE_UNUSED(int iter), int NOUT) {
+int BoutMonitor::call(Solver* solver, BoutReal t, [[maybe_unused]] int iter, int NOUT) {
   TRACE("BoutMonitor::call({:e}, {:d}, {:d})", t, iter, NOUT);
 
   // Increment Solver's iteration counter, and set the global `iteration`

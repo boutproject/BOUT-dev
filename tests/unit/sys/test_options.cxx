@@ -326,7 +326,7 @@ TEST_F(OptionsTest, ValueUsed) {
   Options options;
   options["key1"] = 1;
   EXPECT_FALSE(options["key1"].valueUsed());
-  MAYBE_UNUSED(const int value) = options["key1"];
+  [[maybe_unused]] const int value = options["key1"];
   EXPECT_TRUE(options["key1"].valueUsed());
 }
 
@@ -1245,17 +1245,17 @@ TEST_F(OptionsTest, GetUnused) {
   // This shouldn't count as unused
   option["section2"]["value5"].attributes["source"] = "Output";
 
-  MAYBE_UNUSED(auto value1) = option["section1"]["value1"].as<int>();
-  MAYBE_UNUSED(auto value3) = option["section2"]["subsection1"]["value3"].as<bool>();
+  [[maybe_unused]] auto value1 = option["section1"]["value1"].as<int>();
+  [[maybe_unused]] auto value3 = option["section2"]["subsection1"]["value3"].as<bool>();
 
   Options expected_unused{{"section1", {{"value2", "hello"}}},
                           {"section2", {{"subsection1", {{"value4", 3.2}}}}}};
 
   EXPECT_EQ(option.getUnused(), expected_unused);
 
-  MAYBE_UNUSED(auto value2) = option["section1"]["value2"].as<std::string>();
-  MAYBE_UNUSED(auto value4) = option["section2"]["subsection1"]["value4"].as<double>();
-  MAYBE_UNUSED(auto value5) = option["section2"]["value5"].as<int>();
+  [[maybe_unused]] auto value2 = option["section1"]["value2"].as<std::string>();
+  [[maybe_unused]] auto value4 = option["section2"]["subsection1"]["value4"].as<double>();
+  [[maybe_unused]] auto value5 = option["section2"]["value5"].as<int>();
 
   Options expected_empty{};
 
@@ -1333,8 +1333,8 @@ TEST_F(OptionsTest, CheckForUnusedOptions) {
   // This shouldn't count as unused
   option["section2"]["value5"].attributes["source"] = "Output";
 
-  MAYBE_UNUSED(auto value1) = option["section1"]["value1"].as<int>();
-  MAYBE_UNUSED(auto value3) = option["section2"]["subsection1"]["value3"].as<bool>();
+  [[maybe_unused]] auto value1 = option["section1"]["value1"].as<int>();
+  [[maybe_unused]] auto value3 = option["section2"]["subsection1"]["value3"].as<bool>();
 
   EXPECT_THROW(bout::checkForUnusedOptions(option, "data", "BOUT.inp"), BoutException);
 }

@@ -83,7 +83,7 @@ public:
   }
 
   /// Output variables used by a ParallelTransform instance to \p output_options
-  virtual void outputVars(MAYBE_UNUSED(Options& output_options)) {}
+  virtual void outputVars([[maybe_unused]] Options& output_options) {}
 
   /// If \p twist_shift_enabled is true, does a `Field3D` with Y direction \p ytype
   /// require a twist-shift at branch cuts on closed field lines?

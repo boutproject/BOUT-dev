@@ -782,9 +782,10 @@ void Laplacian::savePerformance(Solver& solver, const std::string& name) {
   solver.addMonitor(&monitor, Solver::BACK);
 }
 
-int Laplacian::LaplacianMonitor::call(MAYBE_UNUSED(Solver* solver),
-                                      MAYBE_UNUSED(BoutReal time), MAYBE_UNUSED(int iter),
-                                      MAYBE_UNUSED(int nout)) {
+int Laplacian::LaplacianMonitor::call([[maybe_unused]] Solver* solver,
+                                      [[maybe_unused]] BoutReal time,
+                                      [[maybe_unused]] int iter,
+                                      [[maybe_unused]] int nout) {
   // Nothing to do, values are always calculated
   return 0;
 }

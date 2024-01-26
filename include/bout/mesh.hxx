@@ -135,7 +135,7 @@ public:
 
   /// Add output variables to \p output_options
   /// These are used for post-processing
-  virtual void outputVars(MAYBE_UNUSED(Options& output_options)) {}
+  virtual void outputVars([[maybe_unused]] Options& output_options) {}
 
   // Get routines to request data from mesh file
 

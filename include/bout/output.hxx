@@ -143,7 +143,7 @@ public:
   void print([[maybe_unused]] const std::string& message) override{};
   void enable() override{};
   void disable() override{};
-  void enable(MAYBE_UNUSED(bool enable)){};
+  void enable([[maybe_unused]] bool enable){};
   bool isEnabled() override { return false; }
 };
 
