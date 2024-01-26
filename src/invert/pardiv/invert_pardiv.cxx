@@ -36,3 +36,6 @@ Field2D InvertParDiv::solve(const Field2D& f) {
   var = solve(var);
   return DC(var);
 }
+
+// DO NOT REMOVE: ensures linker keeps all symbols in this TU
+void InvertParDivFactory::ensureRegistered() {}

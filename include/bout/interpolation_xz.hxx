@@ -279,6 +279,8 @@ public:
   ReturnType create(const std::string& type, MAYBE_UNUSED(Options* options)) const {
     return Factory::create(type, nullptr);
   }
+
+  static void ensureRegistered();
 };
 
 template <class DerivedType>

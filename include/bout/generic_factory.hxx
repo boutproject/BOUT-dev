@@ -68,6 +68,11 @@ protected:
 
   Factory() = default;
 
+  /// Disgusting hack to defeat linker throwing out the registration
+  /// symbols. If necessary, override this and put the (empty)
+  /// implementation in the same TU as the registration symbols
+  static void ensureRegistered() {}
+
   /// Return either \p options or the section from root
   Options* optionsOrDefaultSection(Options* options) const {
     if (options == nullptr) {
@@ -82,6 +87,7 @@ public:
   /// Get the singleton instance
   static DerivedFactory& getInstance() {
     static DerivedFactory instance{};
+    DerivedFactory::ensureRegistered();
     return instance;
   }
 

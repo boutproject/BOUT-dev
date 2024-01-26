@@ -84,6 +84,8 @@ const Field3D interpolate(const Field2D& f, const Field3D& delta_x) {
   return result;
 }
 
+void XZInterpolationFactory::ensureRegistered() {}
+
 namespace {
 RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{"hermitespline"};
 RegisterXZInterpolation<XZMonotonicHermiteSpline> registerinterpmonotonichermitespline{
