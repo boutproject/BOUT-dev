@@ -102,11 +102,10 @@ public:
 
     mesh->createDefaultRegions();
 
+    using std::invoke;
     // Make the input and expected output fields
-    // Weird `(i.*dir)()` syntax here in order to call the direction method
-    // C++17 makes this nicer with std::invoke
     input = makeField<Field3D>(
-        [&](Index& i) { return std::sin((i.*dir)() * box_length); }, mesh);
+        [&](Index& i) { return std::sin(invoke(dir, i) * box_length); }, mesh);
 
     // Make the velocity field
     velocity = makeField<Field3D>([&](Index& UNUSED(i)) { return 2.0; }, mesh);
@@ -115,19 +114,20 @@ public:
     switch (std::get<DERIV>(GetParam())) {
     case DERIV::Standard:
       expected = makeField<Field3D>(
-          [&](Index& i) { return std::cos((i.*dir)() * box_length) * box_length; }, mesh);
+          [&](Index& i) { return std::cos(invoke(dir, i) * box_length) * box_length; },
+          mesh);
       break;
     case DERIV::StandardSecond:
       expected = makeField<Field3D>(
           [&](Index& i) {
-            return -std::sin((i.*dir)() * box_length) * pow(box_length, 2);
+            return -std::sin(invoke(dir, i) * box_length) * pow(box_length, 2);
           },
           mesh);
       break;
     case DERIV::StandardFourth:
       expected = makeField<Field3D>(
           [&](Index& i) {
-            return std::sin((i.*dir)() * box_length) * pow(box_length, 4);
+            return std::sin(invoke(dir, i) * box_length) * pow(box_length, 4);
           },
           mesh);
       break;
@@ -136,7 +136,9 @@ public:
     case DERIV::Upwind:
     case DERIV::Flux:
       expected = makeField<Field3D>(
-          [&](Index& i) { return 2.0 * std::cos((i.*dir)() * box_length) * box_length; },
+          [&](Index& i) {
+            return 2.0 * std::cos(invoke(dir, i) * box_length) * box_length;
+          },
           mesh);
       break;
     default:
