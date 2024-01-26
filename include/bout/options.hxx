@@ -725,21 +725,6 @@ public:
   /// clean the cache of parsed options
   static void cleanCache();
 
-  /*!
-   * Class used to store values, together with
-   * information about their origin and usage
-   */
-  struct OptionValue {
-    std::string value;
-    std::string source;        // Source of the setting
-    mutable bool used = false; // Set to true when used
-
-    /// This constructor needed for map::emplace
-    /// Can be removed in C++17 with map::insert and brace initialisation
-    OptionValue(std::string value, std::string source, bool used)
-        : value(std::move(value)), source(std::move(source)), used(used) {}
-  };
-
   /// Read-only access to internal options and sections
   /// to allow iteration over the tree
   std::map<std::string, const Options*> subsections() const;
