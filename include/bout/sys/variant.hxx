@@ -27,10 +27,10 @@ namespace utils {
 
 /// Import variant, visit into bout::utils namespace
 
+using std::get;
+using std::holds_alternative;
 using std::variant;
 using std::visit;
-using std::holds_alternative;
-using std::get;
 
 ////////////////////////////////////////////////////////////
 // Variant comparison
@@ -72,7 +72,7 @@ struct isVariantMember;
 /// Is type `T` a member of variant `variant<ALL_T>`?
 template <typename T, typename... ALL_T>
 struct isVariantMember<T, variant<ALL_T...>>
-  : public std::disjunction<std::is_same<T, ALL_T>...> {};
+    : public std::disjunction<std::is_same<T, ALL_T>...> {};
 
 /// Return true only if the given variant \p v
 /// has the same type and value as \p t
