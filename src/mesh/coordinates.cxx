@@ -497,7 +497,7 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
                       "Calculating from metric tensor\n",
                       suffix);
     // Re-evaluate Bxy using new J
-    setBxy(sqrt(g_22()) / J());
+    setBxy(recalculateBxy());
   } else {
     const auto Bcalc = getAtLoc(localmesh, "Bxy", suffix, location);
     setBxy(localmesh->interpolateAndExtrapolate(Bcalc, location, extrapolate_x,
@@ -777,10 +777,7 @@ MetricTensor::FieldMetric Coordinates::recalculateJacobian() {
   return 1. / sqrt(g);
 }
 
-MetricTensor::FieldMetric Coordinates::recalculateBxy() {
-
-  return sqrt(covariantMetricTensor.g22()) / jacobian_cache;
-}
+MetricTensor::FieldMetric Coordinates::recalculateBxy() { return sqrt(g_22()) / J(); }
 
 void Coordinates::jacobian() {
   TRACE("Coordinates::jacobian");
