@@ -152,7 +152,7 @@ public:
   /// Calculate differential geometry quantities from the metric tensor
   int communicateAndCheckMeshSpacing() const;
 
-  void jacobian(); ///< Calculate J and Bxy
+  void jacobian(); ///< Calculate J
 
   ///////////////////////////////////////////////////////////
   // Parallel transforms
