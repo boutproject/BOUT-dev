@@ -281,7 +281,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* mesh_options, const CELL_LOC loc,
       ShiftTorsion_(mesh), IntShiftTorsion_(mesh),
       contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
       // Identity metric tensor
-      covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), jacobian_cache(1., mesh), Bxy_(1., mesh) {
+      covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), jacobian_cache(1., mesh),
+      Bxy_(1., mesh) {
   ASSERT0(differential_operators != nullptr)
 
   if (mesh_options == nullptr) {
@@ -462,14 +463,16 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
   // Check covariant metrics
   checkCovariant();
 
-  /// Calculate Jacobian and Bxy
-  jacobian();
-
   // Attempt to read J from the grid file
   if (!localmesh->sourceHasVar("J" + suffix)) {
+
     output_warn.write(
         "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
         suffix);
+
+    /// Calculate Jacobian and Bxy
+    jacobian();
+
   } else {
     const auto Jcalc = getAtLoc(localmesh, "J", suffix, location);
     setJ(localmesh->interpolateAndExtrapolate(Jcalc, location, extrapolate_x,
