@@ -777,7 +777,9 @@ MetricTensor::FieldMetric Coordinates::recalculateJacobian() {
   return 1. / sqrt(g);
 }
 
-MetricTensor::FieldMetric Coordinates::recalculateBxy() { return sqrt(g_22()) / J(); }
+MetricTensor::FieldMetric Coordinates::recalculateBxy() const {
+  return sqrt(g_22()) / J();
+}
 
 void Coordinates::jacobian() {
   TRACE("Coordinates::jacobian");
