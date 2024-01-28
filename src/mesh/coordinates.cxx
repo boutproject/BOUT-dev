@@ -483,11 +483,7 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
 
     auto J_value = J(); // TODO: There may be a better way
     communicate(J_value);
-
-    // Re-evaluate Bxy using new J
-    setBxy(sqrt(g_22()) / J());
   }
-
   // Check jacobian
   bout::checkFinite(J(), "J" + suffix, "RGN_NOCORNERS");
   bout::checkPositive(J(), "J" + suffix, "RGN_NOCORNERS");
@@ -500,6 +496,8 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
     output_warn.write("\tWARNING: Magnitude of B field 'Bxy_{:s}' not found. "
                       "Calculating from metric tensor\n",
                       suffix);
+    // Re-evaluate Bxy using new J
+    setBxy(sqrt(g_22()) / J());
   } else {
     const auto Bcalc = getAtLoc(localmesh, "Bxy", suffix, location);
     setBxy(localmesh->interpolateAndExtrapolate(Bcalc, location, extrapolate_x,
