@@ -366,12 +366,13 @@ private:
   void extrapolateChristoffelSymbols();
 
   FieldMetric recalculateJacobian();
-  FieldMetric recalculateBxy();
+  FieldMetric recalculateBxy() const;
 
   /// Non-uniform meshes. Need to use DDX, DDY
   void correctionForNonUniformMeshes(bool force_interpolate_from_centre);
 
-  void interpolateFieldsFromOtherCoordinates(Options* options, const Coordinates* coords_in);
+  void interpolateFieldsFromOtherCoordinates(Options* options,
+                                             const Coordinates* coords_in);
 
   void setBoundaryCells(Options* options, const std::string& suffix);
 
