@@ -470,7 +470,7 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
         "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
         suffix);
 
-    /// Calculate Jacobian and Bxy
+    /// Calculate Jacobian
     jacobian();
 
   } else {
@@ -497,7 +497,7 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
                       "Calculating from metric tensor\n",
                       suffix);
     // Re-evaluate Bxy using new J
-    setBxy(recalculateBxy());
+    const auto Bxy = recalculateBxy();
   } else {
     const auto Bcalc = getAtLoc(localmesh, "Bxy", suffix, location);
     setBxy(localmesh->interpolateAndExtrapolate(Bcalc, location, extrapolate_x,
@@ -794,11 +794,6 @@ void Coordinates::jacobian() {
     // deriving from extrapolated covariant metric components
     setJ(localmesh->interpolateAndExtrapolate(jacobian, location, extrapolate_x,
                                               extrapolate_y, false));
-
-    const auto Bxy = recalculateBxy();
-    //    CELL_LOC location, ParallelTransform* pParallelTransform
-    setBxy(localmesh->interpolateAndExtrapolate(Bxy, location, extrapolate_x,
-                                                extrapolate_y, false, transform.get()));
   } catch (BoutException&) {
     output_error.write("\tError in jacobian call\n");
     throw;
