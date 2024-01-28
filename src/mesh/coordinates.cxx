@@ -269,7 +269,8 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
       dy_(std::move(dy)), dz_(std::move(dz)), ShiftTorsion_(std::move(ShiftTorsion)),
       IntShiftTorsion_(std::move(IntShiftTorsion)),
       contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), J_(std::move(J)),
+      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23),
+      jacobian_cache(std::move(J)),
       Bxy_(std::move(Bxy)){ASSERT0(differential_operators != nullptr)};
 
 Coordinates::Coordinates(Mesh* mesh, Options* mesh_options, const CELL_LOC loc,
@@ -280,7 +281,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* mesh_options, const CELL_LOC loc,
       ShiftTorsion_(mesh), IntShiftTorsion_(mesh),
       contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
       // Identity metric tensor
-      covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), J_(1., mesh), Bxy_(1., mesh) {
+      covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), jacobian_cache(1., mesh), Bxy_(1., mesh) {
   ASSERT0(differential_operators != nullptr)
 
   if (mesh_options == nullptr) {
@@ -777,7 +778,7 @@ MetricTensor::FieldMetric Coordinates::recalculateJacobian() {
 
 MetricTensor::FieldMetric Coordinates::recalculateBxy() {
 
-  return sqrt(covariantMetricTensor.g22()) / J_;
+  return sqrt(covariantMetricTensor.g22()) / jacobian_cache;
 }
 
 void Coordinates::jacobian() {
@@ -1440,16 +1441,16 @@ const MetricTensor::FieldMetric& Coordinates::g23() const {
   return contravariantMetricTensor.g23();
 }
 
-const FieldMetric& Coordinates::J() const { return J_; }
+const FieldMetric& Coordinates::J() const { return jacobian_cache; }
 
 void Coordinates::setJ(FieldMetric J) {
   //TODO: Calculate J and check value is close
-  J_ = std::move(J);
+  jacobian_cache = std::move(J);
 }
 
 void Coordinates::setJ(BoutReal value, int x, int y) {
   //TODO: Calculate J and check value is close
-  J_(x, y) = value;
+  jacobian_cache(x, y) = value;
 }
 
 const FieldMetric& Coordinates::Bxy() const { return Bxy_; }
