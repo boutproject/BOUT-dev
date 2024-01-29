@@ -152,8 +152,6 @@ public:
   /// Calculate differential geometry quantities from the metric tensor
   int communicateAndCheckMeshSpacing() const;
 
-  void jacobian(); ///< Calculate J
-
   ///////////////////////////////////////////////////////////
   // Parallel transforms
   ///////////////////////////////////////////////////////////
@@ -291,6 +289,8 @@ public:
   void recalculateAndReset(bool recalculate_staggered,
                            bool force_interpolate_from_centre);
 
+  FieldMetric recalculateJacobian() const;
+
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
@@ -365,7 +365,6 @@ private:
   void communicateChristoffelSymbolTerms() const;
   void extrapolateChristoffelSymbols();
 
-  FieldMetric recalculateJacobian();
   FieldMetric recalculateBxy() const;
 
   /// Non-uniform meshes. Need to use DDX, DDY

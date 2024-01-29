@@ -105,7 +105,7 @@ TEST_F(CoordinatesTest, Jacobian) {
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
 
-  EXPECT_NO_THROW(coords.jacobian());
+  EXPECT_NO_THROW(coords.recalculateJacobian());
 
   EXPECT_TRUE(IsFieldEqual(coords.J(), 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.Bxy(), 1.0));
