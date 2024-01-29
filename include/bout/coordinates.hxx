@@ -339,7 +339,7 @@ private:
   void applyToChristoffelSymbols(
       const std::function<const FieldMetric(const FieldMetric)>& function) const;
 
-  FieldMetric jacobian_cache;
+  mutable std::unique_ptr<FieldMetric> jacobian_cache{nullptr};
 
   FieldMetric Bxy_; ///< Magnitude of B = nabla z times nabla x
 
