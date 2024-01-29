@@ -471,8 +471,7 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
         suffix);
 
     /// Calculate Jacobian
-    const auto jacobian = recalculateJacobian();
-    setJ(jacobian);
+    setJ(recalculateJacobian());
 
   } else {
     const auto Jcalc = getAtLoc(localmesh, "J", suffix, location);
@@ -502,8 +501,7 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
                       "Calculating from metric tensor\n",
                       suffix);
     // Re-evaluate Bxy using new J
-    const auto Bxy = recalculateBxy();
-    setBxy(Bxy);
+    setBxy(recalculateBxy());
   } else {
     const auto Bcalc = getAtLoc(localmesh, "Bxy", suffix, location);
     setBxy(Bcalc);
