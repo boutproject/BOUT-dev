@@ -472,22 +472,23 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
 
     /// Calculate Jacobian
     const auto jacobian = recalculateJacobian();
-    // More robust to extrapolate derived quantities directly, rather than
-    // deriving from extrapolated covariant metric components
-    setJ(localmesh->interpolateAndExtrapolate(jacobian, location, extrapolate_x,
-                                              extrapolate_y, false, transform.get()));
+    setJ(jacobian);
 
   } else {
     const auto Jcalc = getAtLoc(localmesh, "J", suffix, location);
-    setJ(localmesh->interpolateAndExtrapolate(Jcalc, location, extrapolate_x,
-                                              extrapolate_y, false, transform.get()));
-
+    setJ(Jcalc);
     // Compare calculated and loaded values
     output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J() - Jcalc)));
 
     auto J_value = J(); // TODO: There may be a better way
     communicate(J_value);
   }
+
+  // More robust to extrapolate derived quantities directly, rather than
+  // deriving from extrapolated covariant metric components
+  setJ(localmesh->interpolateAndExtrapolate(J(), location, extrapolate_x, extrapolate_y,
+                                            false, transform.get()));
+
   // Check jacobian
   bout::checkFinite(J(), "J" + suffix, "RGN_NOCORNERS");
   bout::checkPositive(J(), "J" + suffix, "RGN_NOCORNERS");
@@ -502,14 +503,16 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
                       suffix);
     // Re-evaluate Bxy using new J
     const auto Bxy = recalculateBxy();
-    setBxy(localmesh->interpolateAndExtrapolate(Bxy, location, extrapolate_x,
-                                                extrapolate_y, false, transform.get()));
+    setBxy(Bxy);
   } else {
     const auto Bcalc = getAtLoc(localmesh, "Bxy", suffix, location);
-    setBxy(localmesh->interpolateAndExtrapolate(Bcalc, location, extrapolate_x,
-                                                extrapolate_y, false, transform.get()));
+    setBxy(Bcalc);
     output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy() - Bcalc)));
   }
+
+  setBxy(localmesh->interpolateAndExtrapolate(Bxy(), location, extrapolate_x,
+                                              extrapolate_y, false, transform.get()));
+
   // Check Bxy
   bout::checkFinite(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
   bout::checkPositive(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
