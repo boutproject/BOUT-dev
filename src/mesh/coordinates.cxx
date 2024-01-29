@@ -471,7 +471,11 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
         suffix);
 
     /// Calculate Jacobian
-    jacobian();
+    const auto jacobian = recalculateJacobian();
+    // More robust to extrapolate derived quantities directly, rather than
+    // deriving from extrapolated covariant metric components
+    setJ(localmesh->interpolateAndExtrapolate(jacobian, location, extrapolate_x,
+                                              extrapolate_y, false, transform.get()));
 
   } else {
     const auto Jcalc = getAtLoc(localmesh, "J", suffix, location);
@@ -498,6 +502,8 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
                       suffix);
     // Re-evaluate Bxy using new J
     const auto Bxy = recalculateBxy();
+    setBxy(localmesh->interpolateAndExtrapolate(Bxy, location, extrapolate_x,
+                                                extrapolate_y, false, transform.get()));
   } else {
     const auto Bcalc = getAtLoc(localmesh, "Bxy", suffix, location);
     setBxy(localmesh->interpolateAndExtrapolate(Bcalc, location, extrapolate_x,
@@ -757,47 +763,34 @@ void Coordinates::extrapolateChristoffelSymbols() {
   applyToChristoffelSymbols(interpolateAndExtrapolate_function);
 }
 
-MetricTensor::FieldMetric Coordinates::recalculateJacobian() {
+MetricTensor::FieldMetric Coordinates::recalculateJacobian() const {
 
-  // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
-  auto g = contravariantMetricTensor.g11() * contravariantMetricTensor.g22()
-               * contravariantMetricTensor.g33()
-           + 2.0 * contravariantMetricTensor.g12() * contravariantMetricTensor.g13()
-                 * contravariantMetricTensor.g23()
-           - contravariantMetricTensor.g11() * contravariantMetricTensor.g23()
-                 * contravariantMetricTensor.g23()
-           - contravariantMetricTensor.g22() * contravariantMetricTensor.g13()
-                 * contravariantMetricTensor.g13()
-           - contravariantMetricTensor.g33() * contravariantMetricTensor.g12()
-                 * contravariantMetricTensor.g12();
-
-  // Check that g is positive
-  bout::checkPositive(g, "The determinant of g^ij", "RGN_NOBNDRY");
-
-  return 1. / sqrt(g);
-}
-
-MetricTensor::FieldMetric Coordinates::recalculateBxy() const {
-  return sqrt(g_22()) / J();
-}
-
-void Coordinates::jacobian() {
   TRACE("Coordinates::jacobian");
-
-  const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
-  const bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
-
   try {
+    // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
+    auto g = contravariantMetricTensor.g11() * contravariantMetricTensor.g22()
+                 * contravariantMetricTensor.g33()
+             + 2.0 * contravariantMetricTensor.g12() * contravariantMetricTensor.g13()
+                   * contravariantMetricTensor.g23()
+             - contravariantMetricTensor.g11() * contravariantMetricTensor.g23()
+                   * contravariantMetricTensor.g23()
+             - contravariantMetricTensor.g22() * contravariantMetricTensor.g13()
+                   * contravariantMetricTensor.g13()
+             - contravariantMetricTensor.g33() * contravariantMetricTensor.g12()
+                   * contravariantMetricTensor.g12();
 
-    const auto jacobian = recalculateJacobian();
-    // More robust to extrapolate derived quantities directly, rather than
-    // deriving from extrapolated covariant metric components
-    setJ(localmesh->interpolateAndExtrapolate(jacobian, location, extrapolate_x,
-                                              extrapolate_y, false));
+    // Check that g is positive
+    bout::checkPositive(g, "The determinant of g^ij", "RGN_NOBNDRY");
+
+    return 1. / sqrt(g);
   } catch (BoutException&) {
     output_error.write("\tError in jacobian call\n");
     throw;
   }
+}
+
+MetricTensor::FieldMetric Coordinates::recalculateBxy() const {
+  return sqrt(g_22()) / J();
 }
 
 namespace {
