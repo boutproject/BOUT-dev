@@ -523,22 +523,22 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
     ShiftTorsion_ = 0.0;
   } else {
     const auto shift_torsion = getAtLoc(localmesh, "ShiftTorsion", suffix, location, 0.0);
-    ShiftTorsion_ = localmesh->interpolateAndExtrapolate(
-        ShiftTorsion_, location, extrapolate_x, extrapolate_y, false, transform.get());
   }
+  setShiftTorsion(localmesh->interpolateAndExtrapolate(
+      ShiftTorsion(), location, extrapolate_x, extrapolate_y, false, transform.get()));
 
-  //////////////////////////////////////////////////////
-
-  if (localmesh->IncIntShear) {
-    checkStaggeredGet(localmesh, "IntShiftTorsion", suffix);
-    if (localmesh->get(IntShiftTorsion_, "IntShiftTorsion" + suffix, 0.0, false) != 0) {
-      output_warn.write("\tWARNING: No Integrated torsion specified\n");
-      IntShiftTorsion_ = 0.0;
-    }
-    IntShiftTorsion_.setLocation(location);
-    IntShiftTorsion_ = localmesh->interpolateAndExtrapolate(
-        IntShiftTorsion_, location, extrapolate_x, extrapolate_y, false, transform.get());
+  if (!localmesh->IncIntShear) {
+    return;
   }
+  if (!localmesh->sourceHasVar("IntShiftTorsion" + suffix)) {
+    output_warn.write("\tWARNING: No Integrated torsion specified\n");
+    IntShiftTorsion_ = 0.0;
+  } else {
+    const auto shift_torsion =
+        getAtLoc(localmesh, "IntShiftTorsion", suffix, location, 0.0);
+  }
+  setIntShiftTorsion(localmesh->interpolateAndExtrapolate(
+      IntShiftTorsion(), location, extrapolate_x, extrapolate_y, false, transform.get()));
 }
 
 FieldMetric Coordinates::getDzFromOptionsFile(Mesh* mesh,
@@ -1387,6 +1387,10 @@ const FieldMetric& Coordinates::d1_dy() const { return d1_dy_; }
 const FieldMetric& Coordinates::d1_dz() const { return d1_dz_; }
 
 const FieldMetric& Coordinates::ShiftTorsion() const { return ShiftTorsion_; }
+
+void Coordinates::setShiftTorsion(FieldMetric ShiftTorsion) {
+  ShiftTorsion_ = std::move(ShiftTorsion);
+}
 
 const FieldMetric& Coordinates::IntShiftTorsion() const { return IntShiftTorsion_; }
 
