@@ -144,6 +144,7 @@ public:
 
   /// d pitch angle / dx. Needed for vector differentials (Curl)
   const FieldMetric& ShiftTorsion() const;
+  void setShiftTorsion(FieldMetric ShiftTorsion);
 
   ///< Integrated shear (I in BOUT notation)
   const FieldMetric& IntShiftTorsion() const;
