@@ -270,7 +270,6 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
       IntShiftTorsion_(std::move(IntShiftTorsion)),
       contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
       covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23),
-      jacobian_cache(std::move(J)),
       Bxy_(std::move(Bxy)){ASSERT0(differential_operators != nullptr)};
 
 Coordinates::Coordinates(Mesh* mesh, Options* mesh_options, const CELL_LOC loc,
@@ -281,8 +280,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* mesh_options, const CELL_LOC loc,
       ShiftTorsion_(mesh), IntShiftTorsion_(mesh),
       contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
       // Identity metric tensor
-      covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), jacobian_cache(1., mesh),
-      Bxy_(1., mesh) {
+      covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), Bxy_(1., mesh) {
   ASSERT0(differential_operators != nullptr)
 
   if (mesh_options == nullptr) {
@@ -470,14 +468,11 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
         "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
         suffix);
 
-    /// Calculate Jacobian
-    setJ(recalculateJacobian());
-
   } else {
-    const auto Jcalc = getAtLoc(localmesh, "J", suffix, location);
-    setJ(Jcalc);
+    const auto J_from_file = getAtLoc(localmesh, "J", suffix, location);
     // Compare calculated and loaded values
-    output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J() - Jcalc)));
+    output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J() - J_from_file)));
+    setJ(J_from_file);
 
     auto J_value = J(); // TODO: There may be a better way
     communicate(J_value);
@@ -518,7 +513,7 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
   if (!localmesh->sourceHasVar("ShiftTorsion" + suffix)) {
     output_warn.write("\tWARNING: No Torsion specified for zShift. "
                       "Derivatives may not be correct\n");
-    ShiftTorsion_ = 0.0;
+    setShiftTorsion(0.0);
   } else {
     const auto shift_torsion = getAtLoc(localmesh, "ShiftTorsion", suffix, location, 0.0);
   }
@@ -1434,16 +1429,27 @@ const MetricTensor::FieldMetric& Coordinates::g23() const {
   return contravariantMetricTensor.g23();
 }
 
-const FieldMetric& Coordinates::J() const { return jacobian_cache; }
+const FieldMetric& Coordinates::J() const {
+  if (jacobian_cache == nullptr) {
+    const auto j = recalculateJacobian();
+    auto ptr = std::make_unique<FieldMetric>(j);
+    jacobian_cache = std::move(ptr);
+  }
+  return *jacobian_cache;
+}
 
 void Coordinates::setJ(FieldMetric J) {
   //TODO: Calculate J and check value is close
-  jacobian_cache = std::move(J);
+  auto ptr = std::make_unique<FieldMetric>(J);
+  jacobian_cache = std::move(ptr);
 }
 
 void Coordinates::setJ(BoutReal value, int x, int y) {
   //TODO: Calculate J and check value is close
-  jacobian_cache(x, y) = value;
+  FieldMetric f;
+  f(x, y) = value;
+  auto ptr = std::make_unique<FieldMetric>(f);
+  jacobian_cache = std::move(ptr);
 }
 
 const FieldMetric& Coordinates::Bxy() const { return Bxy_; }
