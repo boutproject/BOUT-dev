@@ -1446,7 +1446,7 @@ void Coordinates::setJ(FieldMetric J) {
 
 void Coordinates::setJ(BoutReal value, int x, int y) {
   //TODO: Calculate J and check value is close
-  FieldMetric f;
+  auto f = J();
   f(x, y) = value;
   auto ptr = std::make_unique<FieldMetric>(f);
   jacobian_cache = std::move(ptr);
