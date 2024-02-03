@@ -89,6 +89,69 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
     return Options(value);
   }
   case 2: {
+    // This could be a Field2D (XY) or FieldPerp (XZ)
+    // Here we look for array sizes, but if Y and Z dimensions are the same size
+    // then it's ambiguous. This method also depends on the global Mesh object.
+    // Some possibilities:
+    // - Add an attribute to specify field type or dimension labels
+    // - Load all the data, and select a region when converting to a Field in Options
+    // - Add a lazy loading type to Options, and load data when needed
+    if ((static_cast<int>(dims[0]) == mesh->GlobalNx)
+        and (static_cast<int>(dims[1]) == mesh->GlobalNy)) {
+      // Probably a Field2D
+
+      // Read just the local piece of the array
+      Matrix<BoutReal> value(mesh->LocalNx, mesh->LocalNy);
+
+      // Offset of this processor's data into the global array
+      adios2::Dims start = {static_cast<size_t>(mesh->MapGlobalX),
+                            static_cast<size_t>(mesh->MapGlobalY)};
+
+      // The size of the mapped region
+      adios2::Dims count = {static_cast<size_t>(mesh->MapCountX),
+                            static_cast<size_t>(mesh->MapCountY)};
+
+      // Where the actual data starts in data pointer (to exclude ghost cells)
+      adios2::Dims memStart = {static_cast<size_t>(mesh->MapLocalX),
+                               static_cast<size_t>(mesh->MapLocalY)};
+
+      // The actual size of data pointer in memory (including ghost cells)
+      adios2::Dims memCount = {static_cast<size_t>(mesh->LocalNx),
+                               static_cast<size_t>(mesh->LocalNy)};
+      variableD.SetSelection({start, count});
+      variableD.SetMemorySelection({memStart, memCount});
+      BoutReal* data = value.begin();
+      reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
+      return Options(value);
+    }
+    if ((static_cast<int>(dims[0]) == mesh->GlobalNx)
+        and (static_cast<int>(dims[2]) == mesh->GlobalNz)) {
+      // Probably a FieldPerp
+
+      // Read just the local piece of the array
+      Matrix<BoutReal> value(mesh->LocalNx, mesh->LocalNz);
+
+      // Offset of this processor's data into the global array
+      adios2::Dims start = {static_cast<size_t>(mesh->MapGlobalX),
+                            static_cast<size_t>(mesh->MapGlobalZ)};
+
+      // The size of the mapped region
+      adios2::Dims count = {static_cast<size_t>(mesh->MapCountX),
+                            static_cast<size_t>(mesh->MapCountZ)};
+
+      // Where the actual data starts in data pointer (to exclude ghost cells)
+      adios2::Dims memStart = {static_cast<size_t>(mesh->MapLocalX),
+                               static_cast<size_t>(mesh->MapLocalZ)};
+
+      // The actual size of data pointer in memory (including ghost cells)
+      adios2::Dims memCount = {static_cast<size_t>(mesh->LocalNx),
+                               static_cast<size_t>(mesh->LocalNz)};
+      variableD.SetSelection({start, count});
+      variableD.SetMemorySelection({memStart, memCount});
+      BoutReal* data = value.begin();
+      reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
+      return Options(value);
+    }
     Matrix<BoutReal> value(static_cast<int>(dims[0]), static_cast<int>(dims[1]));
     BoutReal* data = value.begin();
     reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
