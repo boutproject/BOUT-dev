@@ -558,6 +558,11 @@ Field3D Options::as<Field3D>(const Field3D& similar_to) const {
     // If dimension sizes not the same, may be able
     // to select a region from it using Mesh e.g. if this
     // is from the input grid file.
+    const auto [tx, ty, tz] = tensor.shape();
+    throw BoutException("Size mismatch for option {:s}: Tensor ({}, {}, {}) cannot be "
+                        "converted to Field3D ({}, {}, {})",
+                        full_name, tx, ty, tz, localmesh->LocalNx, localmesh->LocalNy,
+                        localmesh->LocalNz);
   }
 
   throw BoutException(_("Value for option {:s} cannot be converted to a Field3D"),
