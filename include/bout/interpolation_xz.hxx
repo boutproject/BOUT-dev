@@ -1,8 +1,7 @@
 /**************************************************************************
- * Copyright 2010-2020 B.D.Dudson, S.Farley, P. Hill, J.T. Omotani, J.T. Parker,
- * M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2024 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -21,8 +20,8 @@
  *
  **************************************************************************/
 
-#ifndef __INTERP_XZ_H__
-#define __INTERP_XZ_H__
+#ifndef INTERP_XZ_H
+#define INTERP_XZ_H
 
 #include "bout/mask.hxx"
 
@@ -95,20 +94,30 @@ public:
     ASSERT1(has_region);
     return getRegion();
   }
+  /// Calculate weights using given offsets in X and Z
   virtual void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                            const std::string& region = "RGN_NOBNDRY") = 0;
-  virtual void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
-                           const BoutMask& mask,
-                           const std::string& region = "RGN_NOBNDRY") = 0;
+  void calcWeights(const Field3D& delta_x, const Field3D& delta_z, const BoutMask& mask,
+                   const std::string& region = "RGN_NOBNDRY") {
+    setMask(mask);
+    calcWeights(delta_x, delta_z, region);
+  }
 
+  /// Use pre-calculated weights
   virtual Field3D interpolate(const Field3D& f,
                               const std::string& region = "RGN_NOBNDRY") const = 0;
-  virtual Field3D interpolate(const Field3D& f, const Field3D& delta_x,
-                              const Field3D& delta_z,
-                              const std::string& region = "RGN_NOBNDRY") = 0;
-  virtual Field3D interpolate(const Field3D& f, const Field3D& delta_x,
-                              const Field3D& delta_z, const BoutMask& mask,
-                              const std::string& region = "RGN_NOBNDRY") = 0;
+
+  /// Calculate weights then interpolate
+  Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
+                      const std::string& region = "RGN_NOBNDRY") {
+    calcWeights(delta_x, delta_z, region);
+    return interpolate(f, region);
+  }
+  Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
+                      const BoutMask& mask, const std::string& region = "RGN_NOBNDRY") {
+    calcWeights(delta_x, delta_z, mask, region);
+    return interpolate(f, region);
+  }
 
   // Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
   void setYOffset(int offset) { y_offset = offset; }
@@ -162,18 +171,10 @@ public:
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                    const std::string& region = "RGN_NOBNDRY") override;
-  void calcWeights(const Field3D& delta_x, const Field3D& delta_z, const BoutMask& mask,
-                   const std::string& region = "RGN_NOBNDRY") override;
 
-  // Use precalculated weights
   Field3D interpolate(const Field3D& f,
                       const std::string& region = "RGN_NOBNDRY") const override;
-  // Calculate weights and interpolate
-  Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
-                      const std::string& region = "RGN_NOBNDRY") override;
-  Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
-                      const BoutMask& mask,
-                      const std::string& region = "RGN_NOBNDRY") override;
+
   std::vector<ParallelTransform::PositionsAndWeights>
   getWeightsForYApproximation(int i, int j, int k, int yoffset) override;
 };
@@ -208,6 +209,10 @@ class XZLagrange4pt : public XZInterpolation {
 
   Field3D t_x, t_z;
 
+  BoutReal lagrange_4pt(BoutReal v2m, BoutReal vm, BoutReal vp, BoutReal v2p,
+                        BoutReal offset) const;
+  BoutReal lagrange_4pt(const BoutReal v[], BoutReal offset) const;
+
 public:
   XZLagrange4pt(Mesh* mesh = nullptr) : XZLagrange4pt(0, mesh) {}
   XZLagrange4pt(int y_offset = 0, Mesh* mesh = nullptr);
@@ -218,21 +223,10 @@ public:
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                    const std::string& region = "RGN_NOBNDRY") override;
-  void calcWeights(const Field3D& delta_x, const Field3D& delta_z, const BoutMask& mask,
-                   const std::string& region = "RGN_NOBNDRY") override;
 
   // Use precalculated weights
   Field3D interpolate(const Field3D& f,
                       const std::string& region = "RGN_NOBNDRY") const override;
-  // Calculate weights and interpolate
-  Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
-                      const std::string& region = "RGN_NOBNDRY") override;
-  Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
-                      const BoutMask& mask,
-                      const std::string& region = "RGN_NOBNDRY") override;
-  BoutReal lagrange_4pt(BoutReal v2m, BoutReal vm, BoutReal vp, BoutReal v2p,
-                        BoutReal offset) const;
-  BoutReal lagrange_4pt(const BoutReal v[], BoutReal offset) const;
 };
 
 class XZBilinear : public XZInterpolation {
@@ -251,18 +245,10 @@ public:
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                    const std::string& region = "RGN_NOBNDRY") override;
-  void calcWeights(const Field3D& delta_x, const Field3D& delta_z, const BoutMask& mask,
-                   const std::string& region = "RGN_NOBNDRY") override;
 
   // Use precalculated weights
   Field3D interpolate(const Field3D& f,
                       const std::string& region = "RGN_NOBNDRY") const override;
-  // Calculate weights and interpolate
-  Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
-                      const std::string& region = "RGN_NOBNDRY") override;
-  Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
-                      const BoutMask& mask,
-                      const std::string& region = "RGN_NOBNDRY") override;
 };
 
 class XZInterpolationFactory
@@ -279,11 +265,12 @@ public:
   ReturnType create(const std::string& type, [[maybe_unused]] Options* options) const {
     return Factory::create(type, nullptr);
   }
-
-  static void ensureRegistered();
 };
 
 template <class DerivedType>
 using RegisterXZInterpolation = XZInterpolationFactory::RegisterInFactory<DerivedType>;
 
-#endif // __INTERP_XZ_H__
+using RegisterUnavailableXZInterpolation =
+    XZInterpolationFactory::RegisterUnavailableInFactory;
+
+#endif // INTERP_XZ_H

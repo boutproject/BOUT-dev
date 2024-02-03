@@ -38,7 +38,9 @@ const Field3D interpolate(const Field3D& f, const Field3D& delta_x,
                           const Field3D& delta_z) {
   TRACE("Interpolating 3D field");
   XZLagrange4pt interpolateMethod{f.getMesh()};
-  return interpolateMethod.interpolate(f, delta_x, delta_z);
+  // Cast to base pointer so virtual function overload is resolved
+  return static_cast<XZInterpolation*>(&interpolateMethod)
+      ->interpolate(f, delta_x, delta_z);
 }
 
 const Field3D interpolate(const Field2D& f, const Field3D& delta_x,
@@ -83,8 +85,6 @@ const Field3D interpolate(const Field2D& f, const Field3D& delta_x) {
   }
   return result;
 }
-
-void XZInterpolationFactory::ensureRegistered() {}
 
 namespace {
 RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{"hermitespline"};
