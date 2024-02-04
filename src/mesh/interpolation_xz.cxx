@@ -85,11 +85,3 @@ const Field3D interpolate(const Field2D& f, const Field3D& delta_x) {
   }
   return result;
 }
-
-namespace {
-RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{"hermitespline"};
-RegisterXZInterpolation<XZMonotonicHermiteSpline> registerinterpmonotonichermitespline{
-    "monotonichermitespline"};
-RegisterXZInterpolation<XZLagrange4pt> registerinterplagrange4pt{"lagrange4pt"};
-RegisterXZInterpolation<XZBilinear> registerinterpbilinear{"bilinear"};
-} // namespace
