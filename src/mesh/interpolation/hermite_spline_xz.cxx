@@ -22,8 +22,8 @@
 
 #include "../impls/bout/boutmesh.hxx"
 #include "bout/globals.hxx"
-#include "bout/interpolation_xz.hxx"
 #include "bout/index_derivs_interface.hxx"
+#include "bout/interpolation_xz.hxx"
 
 #include <vector>
 
@@ -101,10 +101,10 @@ private:
   }
 };
 
-XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh *mesh)
-    : XZInterpolation(y_offset, mesh),
-      h00_x(localmesh), h01_x(localmesh), h10_x(localmesh), h11_x(localmesh),
-      h00_z(localmesh), h01_z(localmesh), h10_z(localmesh), h11_z(localmesh) {
+XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh* mesh)
+    : XZInterpolation(y_offset, mesh), h00_x(localmesh), h01_x(localmesh),
+      h10_x(localmesh), h11_x(localmesh), h00_z(localmesh), h01_z(localmesh),
+      h10_z(localmesh), h11_z(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
@@ -198,7 +198,7 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
     }
 
     i_corner[i] = SpecificInd<IND_TYPE::IND_3D>(
-					   (((i_corn * ny) + (y + y_offset)) * nz + k_corner(x, y, z)), ny, nz);
+        (((i_corn * ny) + (y + y_offset)) * nz + k_corner(x, y, z)), ny, nz);
 
     h00_x[i] = (2. * t_x * t_x * t_x) - (3. * t_x * t_x) + 1.;
     h00_z[i] = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;

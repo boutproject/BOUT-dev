@@ -75,9 +75,7 @@ public:
   void setRegion(const std::string& region_name) {
     this->region_id = localmesh->getRegionID(region_name);
   }
-  void setRegion(const std::unique_ptr<Region<Ind3D>> region){
-    setRegion(*region);
-  }
+  void setRegion(const std::unique_ptr<Region<Ind3D>> region) { setRegion(*region); }
   void setRegion(const Region<Ind3D>& region) {
     std::string name;
     int i = 0;
