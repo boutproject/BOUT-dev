@@ -267,7 +267,7 @@ Field3D FCIMap::integrate(Field3D& f) const {
 
   BOUT_FOR(i, region_no_boundary) {
     const auto inext = i.yp(offset);
-    BoutReal f_c = centre[inext];
+    const BoutReal f_c = centre[inext];
     const auto izm = i.zm();
     const int x = i.x();
     const int y = i.y();
@@ -281,10 +281,10 @@ Field3D FCIMap::integrate(Field3D& f) const {
       // currently applied to corners.
       result[inext] = f_c;
     } else {
-      BoutReal f_pp = corner[inext];           // (x+1/2, z+1/2)
-      BoutReal f_mp = corner[inext.xm()];      // (x-1/2, z+1/2)
-      BoutReal f_pm = corner[inext.zm()];      // (x+1/2, z-1/2)
-      BoutReal f_mm = corner[inext.xm().zm()]; // (x-1/2, z-1/2)
+      const BoutReal f_pp = corner[inext];           // (x+1/2, z+1/2)
+      const BoutReal f_mp = corner[inext.xm()];      // (x-1/2, z+1/2)
+      const BoutReal f_pm = corner[inext.zm()];      // (x+1/2, z-1/2)
+      const BoutReal f_mm = corner[inext.xm().zm()]; // (x-1/2, z-1/2)
 
       // This uses a simple weighted average of centre and corners
       // A more sophisticated approach might be to use e.g. Gauss-Lobatto points
