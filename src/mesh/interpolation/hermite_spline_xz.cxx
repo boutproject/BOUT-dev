@@ -182,7 +182,7 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
       t_x = 0.0;
     }
 
-    k_corner(x, y, z) = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
+    k_corner(x, y, z) = ((k_corner(x, y, z) % nz) + nz) % nz;
 
     // Check that t_x and t_z are in range
     if ((t_x < 0.0) || (t_x > 1.0)) {
@@ -198,7 +198,7 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
     }
 
     i_corner[i] = SpecificInd<IND_TYPE::IND_3D>(
-        (((i_corn * ny) + (y + y_offset)) * nz + k_corner(x, y, z)), ny, nz);
+					   (((i_corn * ny) + (y + y_offset)) * nz + k_corner(x, y, z)), ny, nz);
 
     h00_x[i] = (2. * t_x * t_x * t_x) - (3. * t_x * t_x) + 1.;
     h00_z[i] = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;
@@ -324,11 +324,11 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
  */
 std::vector<ParallelTransform::PositionsAndWeights>
 XZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) {
-  const int ncz = localmesh->LocalNz;
+  const int nz = localmesh->LocalNz;
   const int k_mod = k_corner(i, j, k);
-  const int k_mod_m1 = (k_mod > 0) ? (k_mod - 1) : (ncz - 1);
-  const int k_mod_p1 = (k_mod == ncz) ? 0 : k_mod + 1;
-  const int k_mod_p2 = (k_mod_p1 == ncz) ? 0 : k_mod_p1 + 1;
+  const int k_mod_m1 = (k_mod > 0) ? (k_mod - 1) : (nz - 1);
+  const int k_mod_p1 = (k_mod == nz) ? 0 : k_mod + 1;
+  const int k_mod_p2 = (k_mod_p1 == nz) ? 0 : k_mod_p1 + 1;
 
   return {{i, j + yoffset, k_mod_m1, -0.5 * h10_z(i, j, k)},
           {i, j + yoffset, k_mod, h00_z(i, j, k) - 0.5 * h11_z(i, j, k)},

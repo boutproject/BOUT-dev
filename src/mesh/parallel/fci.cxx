@@ -212,20 +212,8 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
     const BoutReal dR_dx = 0.5 * (R[i.xp()] - R[i.xm()]);
     const BoutReal dZ_dx = 0.5 * (Z[i.xp()] - Z[i.xm()]);
 
-    BoutReal dR_dz, dZ_dz;
-    // Handle the edge cases in Z
-    if (z == 0) {
-      dR_dz = R[i_zp] - R[i];
-      dZ_dz = Z[i_zp] - Z[i];
-
-    } else if (z == map_mesh.LocalNz - 1) {
-      dR_dz = R[i] - R[i_zm];
-      dZ_dz = Z[i] - Z[i_zm];
-
-    } else {
-      dR_dz = 0.5 * (R[i_zp] - R[i_zm]);
-      dZ_dz = 0.5 * (Z[i_zp] - Z[i_zm]);
-    }
+    const BoutReal dR_dz = 0.5 * (R[i_zp] - R[i_zm]);
+    const BoutReal dZ_dz = 0.5 * (Z[i_zp] - Z[i_zm]);
 
     const BoutReal det = dR_dx * dZ_dz - dR_dz * dZ_dx; // Determinant of 2x2 matrix
 
@@ -238,7 +226,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
 
     // Negative xt_prime means we've hit the inner boundary, otherwise
     // the outer boundary
-    auto* boundary = (xt_prime[i] < 0.0) ? inner_boundary : outer_boundary;
+    auto* boundary = (xt_prime[i] < map_mesh.xstart) ? inner_boundary : outer_boundary;
     boundary->add_point(x, y, z, x + dx, y + 0.5 * offset,
                         z + dz,      // Intersection point in local index space
                         0.5 * dy[i], // Distance to intersection
@@ -246,6 +234,8 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
     );
   }
   region_no_boundary = region_no_boundary.mask(to_remove);
+
+  interp->setRegion(region_no_boundary);
 
   const auto region = fmt::format("RGN_YPAR_{:+d}", offset);
   if (not map_mesh.hasRegion3D(region)) {
@@ -274,8 +264,6 @@ Field3D FCIMap::integrate(Field3D& f) const {
   // The more general version of invalidate guards
   result = BoutNaN;
 #endif
-
-  int nz = map_mesh.LocalNz;
 
   BOUT_FOR(i, region_no_boundary) {
     const auto inext = i.yp(offset);
@@ -337,6 +325,7 @@ void FCITransform::calcParallelSlices(Field3D& f) {
   // Interpolate f onto yup and ydown fields
   for (const auto& map : field_line_maps) {
     f.ynext(map.offset) = map.interpolate(f);
+    f.ynext(map.offset).setRegion(fmt::format("RGN_YPAR_{:+d}", map.offset));
   }
 }
 

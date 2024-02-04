@@ -704,7 +704,7 @@ void MultigridAlg::communications(BoutReal* x, int level) {
 
   MPI_Status status[4];
   int stag, rtag;
-  MAYBE_UNUSED(int ierr);
+  [[maybe_unused]] int ierr;
 
   if (zNP > 1) {
     MPI_Request requests[] = {MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,

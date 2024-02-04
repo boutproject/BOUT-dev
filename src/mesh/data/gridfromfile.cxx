@@ -6,7 +6,7 @@
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
 #include <bout/msg_stack.hxx>
-#include <bout/options_netcdf.hxx>
+#include <bout/options_io.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/unused.hxx>
@@ -14,7 +14,7 @@
 #include <utility>
 
 GridFile::GridFile(std::string gridfilename)
-    : GridDataSource(true), data(bout::OptionsNetCDF(gridfilename).read()),
+    : GridDataSource(true), data(bout::OptionsIO::create(gridfilename)->read()),
       filename(std::move(gridfilename)) {
   TRACE("GridFile constructor");
 
@@ -134,10 +134,10 @@ bool GridFile::get(Mesh* m, Field3D& var, const std::string& name, BoutReal def,
 namespace {
 /// Visitor that returns the shape of its argument
 struct GetDimensions {
-  std::vector<int> operator()(MAYBE_UNUSED(bool value)) { return {1}; }
-  std::vector<int> operator()(MAYBE_UNUSED(int value)) { return {1}; }
-  std::vector<int> operator()(MAYBE_UNUSED(BoutReal value)) { return {1}; }
-  std::vector<int> operator()(MAYBE_UNUSED(const std::string& value)) { return {1}; }
+  std::vector<int> operator()([[maybe_unused]] bool value) { return {1}; }
+  std::vector<int> operator()([[maybe_unused]] int value) { return {1}; }
+  std::vector<int> operator()([[maybe_unused]] BoutReal value) { return {1}; }
+  std::vector<int> operator()([[maybe_unused]] const std::string& value) { return {1}; }
   std::vector<int> operator()(const Array<BoutReal>& array) { return {array.size()}; }
   std::vector<int> operator()(const Matrix<BoutReal>& array) {
     const auto shape = array.shape();
@@ -471,10 +471,10 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
   }
 }
 
-bool GridFile::get(MAYBE_UNUSED(Mesh* m), MAYBE_UNUSED(std::vector<int>& var),
-                   MAYBE_UNUSED(const std::string& name), MAYBE_UNUSED(int len),
-                   MAYBE_UNUSED(int offset),
-                   MAYBE_UNUSED(GridDataSource::Direction dir)) {
+bool GridFile::get([[maybe_unused]] Mesh* m, [[maybe_unused]] std::vector<int>& var,
+                   [[maybe_unused]] const std::string& name, [[maybe_unused]] int len,
+                   [[maybe_unused]] int offset,
+                   [[maybe_unused]] GridDataSource::Direction dir) {
   TRACE("GridFile::get(vector<int>)");
 
   return false;

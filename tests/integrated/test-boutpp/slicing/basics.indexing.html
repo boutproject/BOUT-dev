@@ -1,0 +1,1368 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Indexing on ndarrays &#8212; NumPy v1.23 Manual</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/panels-main.c949a650a448cc0ae9fd3441c0e17fb0.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/panels-variables.06eb56fa6e07937060861dad626602ad.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/numpy.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script async="async" src="../_static/scipy-mathjax/MathJax.js?config=scipy-mathjax"></script>
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="I/O with NumPy" href="basics.io.html" />
+    <link rel="prev" title="Array creation" href="basics.creation.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+
+<a class="navbar-brand" href="../index.html">
+  <img src="../_static/numpylogo.svg" class="logo" alt="logo">
+</a>
+
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="index.html">
+  User Guide
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../reference/index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../dev/index.html">
+  Development
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../release.html">
+  Release notes
+ </a>
+</li>
+
+    
+    <li class="nav-item">
+        <a class="nav-link nav-external" href="https://numpy.org/numpy-tutorials/">Learn<i class="fas fa-external-link-alt"></i></a>
+    </li>
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        doc/1.23  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables user/basics.indexing and {'version_match': 'doc/1.23', 'json_url': 'https://numpy.org/doc/_static/versions.json'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "user/basics.indexing.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://numpy.org/doc/_static/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "user/basics.indexing.html";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's 1.23 variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "doc/1.23") {
+                node.classList.add("active");
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/numpy/numpy" rel="noopener" target="_blank" title="GitHub"><span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://twitter.com/numpy_team" rel="noopener" target="_blank" title="Twitter"><span><i class="fab fa-twitter-square"></i></span>
+            <label class="sr-only">Twitter</label></a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar">
+              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="whatisnumpy.html">
+   What is NumPy?
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://numpy.org/install/">
+   Installation
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="quickstart.html">
+   NumPy quickstart
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="absolute_beginners.html">
+   NumPy: the absolute basics for beginners
+  </a>
+ </li>
+ <li class="toctree-l1 current active has-children">
+  <a class="reference internal" href="basics.html">
+   NumPy fundamentals
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul class="current">
+   <li class="toctree-l2">
+    <a class="reference internal" href="basics.creation.html">
+     Array creation
+    </a>
+   </li>
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     Indexing on
+     <code class="xref py py-class docutils literal notranslate">
+      <span class="pre">
+       ndarrays
+      </span>
+     </code>
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="basics.io.html">
+     I/O with NumPy
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="basics.types.html">
+     Data types
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="basics.broadcasting.html">
+     Broadcasting
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="basics.byteswapping.html">
+     Byte-swapping
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="basics.rec.html">
+     Structured arrays
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="basics.dispatch.html">
+     Writing custom array containers
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="basics.subclassing.html">
+     Subclassing ndarray
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="basics.ufuncs.html">
+     Universal functions (
+     <code class="xref py py-class docutils literal notranslate">
+      <span class="pre">
+       ufunc
+      </span>
+     </code>
+     ) basics
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="basics.copies.html">
+     Copies and views
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="basics.interoperability.html">
+     Interoperability with NumPy
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="misc.html">
+   Miscellaneous
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="numpy-for-matlab-users.html">
+   NumPy for MATLAB users
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="building.html">
+   Building from source
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="c-info.html">
+   Using NumPy C-API
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference external" href="https://numpy.org/numpy-tutorials/features.html">
+   NumPy Tutorials
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="howtos_index.html">
+   NumPy How Tos
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="depending_on_numpy.html">
+   For downstream package authors
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../f2py/index.html">
+   F2PY user guide and reference manual
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../glossary.html">
+   Glossary
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../dev/underthehood.html">
+   Under-the-hood Documentation for developers
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../bugs.html">
+   Reporting bugs
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../release.html">
+   Release notes
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../license.html">
+   NumPy license
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+              </div>
+              <div class="sidebar-end-items">
+              </div>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#basic-indexing">
+   Basic indexing
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#single-element-indexing">
+     Single element indexing
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#slicing-and-striding">
+     Slicing and striding
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#dimensional-indexing-tools">
+     Dimensional indexing tools
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#advanced-indexing">
+   Advanced indexing
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#integer-array-indexing">
+     Integer array indexing
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#boolean-array-indexing">
+     Boolean array indexing
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#combining-advanced-and-basic-indexing">
+     Combining advanced and basic indexing
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#field-access">
+   Field access
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#flat-iterator-indexing">
+   Flat Iterator indexing
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#assigning-values-to-indexed-arrays">
+   Assigning values to indexed arrays
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#dealing-with-variable-numbers-of-indices-within-programs">
+   Dealing with variable numbers of indices within programs
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#detailed-notes">
+   Detailed notes
+  </a>
+ </li>
+</ul>
+
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <section id="indexing-on-ndarrays">
+<span id="basics-indexing"></span><h1>Indexing on <a class="reference internal" href="../reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarrays</span></code></a><a class="headerlink" href="#indexing-on-ndarrays" title="Permalink to this headline">#</a></h1>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../reference/arrays.indexing.html#routines-indexing"><span class="std std-ref">Indexing routines</span></a></p>
+</div>
+<p id="index-0"><a class="reference internal" href="../reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarrays</span></code></a> can be indexed using the standard Python
+<code class="docutils literal notranslate"><span class="pre">x[obj]</span></code> syntax, where <em>x</em> is the array and <em>obj</em> the selection.
+There are different kinds of indexing available depending on <em>obj</em>:
+basic indexing, advanced indexing and field access.</p>
+<p>Most of the following examples show the use of indexing when
+referencing data in an array. The examples work just as well
+when assigning to an array. See <a class="reference internal" href="#assigning-values-to-indexed-arrays"><span class="std std-ref">Assigning values to indexed arrays</span></a> for
+specific examples and explanations on how assignments work.</p>
+<p>Note that in Python, <code class="docutils literal notranslate"><span class="pre">x[(exp1,</span> <span class="pre">exp2,</span> <span class="pre">...,</span> <span class="pre">expN)]</span></code> is equivalent to
+<code class="docutils literal notranslate"><span class="pre">x[exp1,</span> <span class="pre">exp2,</span> <span class="pre">...,</span> <span class="pre">expN]</span></code>; the latter is just syntactic sugar
+for the former.</p>
+<section id="basic-indexing">
+<span id="id1"></span><h2>Basic indexing<a class="headerlink" href="#basic-indexing" title="Permalink to this headline">#</a></h2>
+<section id="single-element-indexing">
+<span id="id2"></span><h3>Single element indexing<a class="headerlink" href="#single-element-indexing" title="Permalink to this headline">#</a></h3>
+<p>Single element indexing works
+exactly like that for other standard Python sequences. It is 0-based,
+and accepts negative indices for indexing from the end of the array.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+<span class="go">8</span>
+</pre></div>
+</div>
+<p>It is not necessary to
+separate each dimension’s index into its own set of square brackets.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>  <span class="c1"># now x is 2-dimensional</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="go">8</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="go">9</span>
+</pre></div>
+</div>
+<p>Note that if one indexes a multidimensional array with fewer indices
+than dimensions, one gets a subdimensional array. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">array([0, 1, 2, 3, 4])</span>
+</pre></div>
+</div>
+<p>That is, each index specified selects the array corresponding to the
+rest of the dimensions selected. In the above example, choosing 0
+means that the remaining dimension of length 5 is being left unspecified,
+and that what is returned is an array of that dimensionality and size.
+It must be noted that the returned array is a <a class="reference internal" href="../glossary.html#term-view"><span class="xref std std-term">view</span></a>, i.e., it is not a
+copy of the original, but points to the same values in memory as does the
+original array.
+In  this case, the 1-D array at the first position (0) is returned.
+So using a single index on the returned array, results in a single
+element being returned. That is:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+<span class="go">2</span>
+</pre></div>
+</div>
+<p>So note that <code class="docutils literal notranslate"><span class="pre">x[0,</span> <span class="pre">2]</span> <span class="pre">==</span> <span class="pre">x[0][2]</span></code> though the second case is more
+inefficient as a new temporary array is created after the first index
+that is subsequently indexed by 2.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>NumPy uses C-order indexing. That means that the last
+index usually represents the most rapidly changing memory location,
+unlike Fortran or IDL, where the first index represents the most
+rapidly changing location in memory. This difference represents a
+great potential for confusion.</p>
+</div>
+</section>
+<section id="slicing-and-striding">
+<span id="id3"></span><h3>Slicing and striding<a class="headerlink" href="#slicing-and-striding" title="Permalink to this headline">#</a></h3>
+<p>Basic slicing extends Python’s basic concept of slicing to N
+dimensions. Basic slicing occurs when <em>obj</em> is a <a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">slice</span></code></a> object
+(constructed by <code class="docutils literal notranslate"><span class="pre">start:stop:step</span></code> notation inside of brackets), an
+integer, or a tuple of slice objects and integers. <a class="reference external" href="https://docs.python.org/3/library/constants.html#Ellipsis" title="(in Python v3.10)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Ellipsis</span></code></a>
+and <a class="reference internal" href="../reference/constants.html#numpy.newaxis" title="numpy.newaxis"><code class="xref py py-const docutils literal notranslate"><span class="pre">newaxis</span></code></a> objects can be interspersed with these as
+well.</p>
+<p id="index-1">The simplest case of indexing with <em>N</em> integers returns an <a class="reference internal" href="../reference/arrays.scalars.html#arrays-scalars"><span class="std std-ref">array
+scalar</span></a> representing the corresponding item.  As in
+Python, all indices are zero-based: for the <em>i</em>-th index <span class="math notranslate nohighlight">\(n_i\)</span>,
+the valid range is <span class="math notranslate nohighlight">\(0 \le n_i &lt; d_i\)</span> where <span class="math notranslate nohighlight">\(d_i\)</span> is the
+<em>i</em>-th element of the shape of the array.  Negative indices are
+interpreted as counting from the end of the array (<em>i.e.</em>, if
+<span class="math notranslate nohighlight">\(n_i &lt; 0\)</span>, it means <span class="math notranslate nohighlight">\(n_i + d_i\)</span>).</p>
+<p>All arrays generated by basic slicing are always <a class="reference internal" href="../glossary.html#term-view"><span class="xref std std-term">views</span></a>
+of the original array.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>NumPy slicing creates a <a class="reference internal" href="../glossary.html#term-view"><span class="xref std std-term">view</span></a> instead of a copy as in the case of
+built-in Python sequences such as string, tuple and list.
+Care must be taken when extracting
+a small portion from a large array which becomes useless after the
+extraction, because the small portion extracted contains a reference
+to the large original array whose memory will not be released until
+all arrays derived from it are garbage-collected. In such cases an
+explicit <code class="docutils literal notranslate"><span class="pre">copy()</span></code> is recommended.</p>
+</div>
+<p>The standard rules of sequence slicing apply to basic slicing on a
+per-dimension basis (including using a step index). Some useful
+concepts to remember include:</p>
+<ul>
+<li><p>The basic slice syntax is <code class="docutils literal notranslate"><span class="pre">i:j:k</span></code> where <em>i</em> is the starting index,
+<em>j</em> is the stopping index, and <em>k</em> is the step (<span class="math notranslate nohighlight">\(k\neq0\)</span>).
+This selects the <em>m</em> elements (in the corresponding dimension) with
+index values <em>i</em>, <em>i + k</em>, …, <em>i + (m - 1) k</em> where
+<span class="math notranslate nohighlight">\(m = q + (r\neq0)\)</span> and <em>q</em> and <em>r</em> are the quotient and remainder
+obtained by dividing <em>j - i</em> by <em>k</em>: <em>j - i = q k + r</em>, so that
+<em>i + (m - 1) k &lt; j</em>.
+For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">7</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+<span class="go">array([1, 3, 5])</span>
+</pre></div>
+</div>
+</li>
+<li><p>Negative <em>i</em> and <em>j</em> are interpreted as <em>n + i</em> and <em>n + j</em> where
+<em>n</em> is the number of elements in the corresponding dimension.
+Negative <em>k</em> makes stepping go towards smaller indices.
+From the above example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="mi">10</span><span class="p">]</span>
+<span class="go">array([8, 9])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:</span><span class="mi">3</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="go">array([7, 6, 5, 4])</span>
+</pre></div>
+</div>
+</li>
+<li><p>Assume <em>n</em> is the number of elements in the dimension being
+sliced. Then, if <em>i</em> is not given it defaults to 0 for <em>k &gt; 0</em> and
+<em>n - 1</em> for <em>k &lt; 0</em> . If <em>j</em> is not given it defaults to <em>n</em> for <em>k &gt; 0</em>
+and <em>-n-1</em> for <em>k &lt; 0</em> . If <em>k</em> is not given it defaults to 1. Note that
+<code class="docutils literal notranslate"><span class="pre">::</span></code> is the same as <code class="docutils literal notranslate"><span class="pre">:</span></code> and means select all indices along this
+axis.
+From the above example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span>
+<span class="go">array([5, 6, 7, 8, 9])</span>
+</pre></div>
+</div>
+</li>
+<li><p>If the number of objects in the selection tuple is less than
+<em>N</em>, then <code class="docutils literal notranslate"><span class="pre">:</span></code> is assumed for any subsequent dimensions.
+For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[[</span><span class="mi">1</span><span class="p">],[</span><span class="mi">2</span><span class="p">],[</span><span class="mi">3</span><span class="p">]],</span> <span class="p">[[</span><span class="mi">4</span><span class="p">],[</span><span class="mi">5</span><span class="p">],[</span><span class="mi">6</span><span class="p">]]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(2, 3, 1)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+<span class="go">array([[[4],</span>
+<span class="go">        [5],</span>
+<span class="go">        [6]]])</span>
+</pre></div>
+</div>
+</li>
+<li><p>An integer, <em>i</em>, returns the same values as <code class="docutils literal notranslate"><span class="pre">i:i+1</span></code>
+<strong>except</strong> the dimensionality of the returned object is reduced by
+1. In particular, a selection tuple with the <em>p</em>-th
+element an integer (and all other entries <code class="docutils literal notranslate"><span class="pre">:</span></code>) returns the
+corresponding sub-array with dimension <em>N - 1</em>. If <em>N = 1</em>
+then the returned object is an array scalar. These objects are
+explained in <a class="reference internal" href="../reference/arrays.scalars.html#arrays-scalars"><span class="std std-ref">Scalars</span></a>.</p></li>
+<li><p>If the selection tuple has all entries <code class="docutils literal notranslate"><span class="pre">:</span></code> except the
+<em>p</em>-th entry which is a slice object <code class="docutils literal notranslate"><span class="pre">i:j:k</span></code>,
+then the returned array has dimension <em>N</em> formed by
+concatenating the sub-arrays returned by integer indexing of
+elements <em>i</em>, <em>i+k</em>, …, <em>i + (m - 1) k &lt; j</em>,</p></li>
+<li><p>Basic slicing with more than one non-<code class="docutils literal notranslate"><span class="pre">:</span></code> entry in the slicing
+tuple, acts like repeated application of slicing using a single
+non-<code class="docutils literal notranslate"><span class="pre">:</span></code> entry, where the non-<code class="docutils literal notranslate"><span class="pre">:</span></code> entries are successively taken
+(with all other non-<code class="docutils literal notranslate"><span class="pre">:</span></code> entries replaced by <code class="docutils literal notranslate"><span class="pre">:</span></code>). Thus,
+<code class="docutils literal notranslate"><span class="pre">x[ind1,</span> <span class="pre">...,</span> <span class="pre">ind2,:]</span></code> acts like <code class="docutils literal notranslate"><span class="pre">x[ind1][...,</span> <span class="pre">ind2,</span> <span class="pre">:]</span></code> under basic
+slicing.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The above is <strong>not</strong> true for advanced indexing.</p>
+</div>
+</li>
+<li><p>You may use slicing to set values in the array, but (unlike lists) you
+can never grow the array. The size of the value to be set in
+<code class="docutils literal notranslate"><span class="pre">x[obj]</span> <span class="pre">=</span> <span class="pre">value</span></code> must be (broadcastable) to the same shape as
+<code class="docutils literal notranslate"><span class="pre">x[obj]</span></code>.</p></li>
+<li><p>A slicing tuple can always be constructed as <em>obj</em>
+and used in the <code class="docutils literal notranslate"><span class="pre">x[obj]</span></code> notation. Slice objects can be used in
+the construction in place of the <code class="docutils literal notranslate"><span class="pre">[start:stop:step]</span></code>
+notation. For example, <code class="docutils literal notranslate"><span class="pre">x[1:10:5,</span> <span class="pre">::-1]</span></code> can also be implemented
+as <code class="docutils literal notranslate"><span class="pre">obj</span> <span class="pre">=</span> <span class="pre">(slice(1,</span> <span class="pre">10,</span> <span class="pre">5),</span> <span class="pre">slice(None,</span> <span class="pre">None,</span> <span class="pre">-1));</span> <span class="pre">x[obj]</span></code> . This
+can be useful for constructing generic code that works on arrays
+of arbitrary dimensions. See <a class="reference internal" href="#dealing-with-variable-indices"><span class="std std-ref">Dealing with variable numbers of indices within programs</span></a>
+for more information.</p></li>
+</ul>
+</section>
+<section id="dimensional-indexing-tools">
+<span id="index-2"></span><span id="id4"></span><h3>Dimensional indexing tools<a class="headerlink" href="#dimensional-indexing-tools" title="Permalink to this headline">#</a></h3>
+<p>There are some tools to facilitate the easy matching of array shapes with
+expressions and in assignments.</p>
+<p><a class="reference external" href="https://docs.python.org/3/library/constants.html#Ellipsis" title="(in Python v3.10)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Ellipsis</span></code></a> expands to the number of <code class="docutils literal notranslate"><span class="pre">:</span></code> objects needed for the
+selection tuple to index all dimensions. In most cases, this means that the
+length of the expanded selection tuple is <code class="docutils literal notranslate"><span class="pre">x.ndim</span></code>. There may only be a
+single ellipsis present.
+From the above example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">array([[1, 2, 3],</span>
+<span class="go">      [4, 5, 6]])</span>
+</pre></div>
+</div>
+<p>This is equivalent to:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="go">array([[1, 2, 3],</span>
+<span class="go">      [4, 5, 6]])</span>
+</pre></div>
+</div>
+<p>Each <a class="reference internal" href="../reference/constants.html#numpy.newaxis" title="numpy.newaxis"><code class="xref py py-const docutils literal notranslate"><span class="pre">newaxis</span></code></a> object in the selection tuple serves to expand
+the dimensions of the resulting selection by one unit-length
+dimension.  The added dimension is the position of the <a class="reference internal" href="../reference/constants.html#numpy.newaxis" title="numpy.newaxis"><code class="xref py py-const docutils literal notranslate"><span class="pre">newaxis</span></code></a>
+object in the selection tuple. <a class="reference internal" href="../reference/constants.html#numpy.newaxis" title="numpy.newaxis"><code class="xref py py-const docutils literal notranslate"><span class="pre">newaxis</span></code></a> is an alias for
+<code class="docutils literal notranslate"><span class="pre">None</span></code>, and <code class="docutils literal notranslate"><span class="pre">None</span></code> can be used in place of this with the same result.
+From the above example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(2, 1, 3, 1)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(2, 1, 3, 1)</span>
+</pre></div>
+</div>
+<p>This can be handy to combine two
+arrays in a way that otherwise would require explicit reshaping
+operations. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
+<span class="go">array([[0, 1, 2, 3, 4],</span>
+<span class="go">      [1, 2, 3, 4, 5],</span>
+<span class="go">      [2, 3, 4, 5, 6],</span>
+<span class="go">      [3, 4, 5, 6, 7],</span>
+<span class="go">      [4, 5, 6, 7, 8]])</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="advanced-indexing">
+<span id="id5"></span><h2>Advanced indexing<a class="headerlink" href="#advanced-indexing" title="Permalink to this headline">#</a></h2>
+<p>Advanced indexing is triggered when the selection object, <em>obj</em>, is a
+non-tuple sequence object, an <a class="reference internal" href="../reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> (of data type integer or bool),
+or a tuple with at least one sequence object or ndarray (of data type
+integer or bool). There are two types of advanced indexing: integer
+and Boolean.</p>
+<p>Advanced indexing always returns a <em>copy</em> of the data (contrast with
+basic slicing that returns a <a class="reference internal" href="../glossary.html#term-view"><span class="xref std std-term">view</span></a>).</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The definition of advanced indexing means that <code class="docutils literal notranslate"><span class="pre">x[(1,</span> <span class="pre">2,</span> <span class="pre">3),]</span></code> is
+fundamentally different than <code class="docutils literal notranslate"><span class="pre">x[(1,</span> <span class="pre">2,</span> <span class="pre">3)]</span></code>. The latter is
+equivalent to <code class="docutils literal notranslate"><span class="pre">x[1,</span> <span class="pre">2,</span> <span class="pre">3]</span></code> which will trigger basic selection while
+the former will trigger advanced indexing. Be sure to understand
+why this occurs.</p>
+<p>Also recognize that <code class="docutils literal notranslate"><span class="pre">x[[1,</span> <span class="pre">2,</span> <span class="pre">3]]</span></code> will trigger advanced indexing,
+whereas due to the deprecated Numeric compatibility mentioned above,
+<code class="docutils literal notranslate"><span class="pre">x[[1,</span> <span class="pre">2,</span> <span class="pre">slice(None)]]</span></code> will trigger basic slicing.</p>
+</div>
+<section id="integer-array-indexing">
+<h3>Integer array indexing<a class="headerlink" href="#integer-array-indexing" title="Permalink to this headline">#</a></h3>
+<p>Integer array indexing allows selection of arbitrary items in the array
+based on their <em>N</em>-dimensional index. Each integer array represents a number
+of indices into that dimension.</p>
+<p>Negative values are permitted in the index arrays and work as they do with
+single indices or slices:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span>
+<span class="go">array([10,  9,  8,  7,  6,  5,  4,  3,  2])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">])]</span>
+<span class="go">array([7, 7, 9, 2])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">])]</span>
+<span class="go">array([7, 7, 4, 2])</span>
+</pre></div>
+</div>
+<p>If the index values are out of bounds then an <code class="docutils literal notranslate"><span class="pre">IndexError</span></code> is thrown:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])]</span>
+<span class="go">array([[3, 4],</span>
+<span class="go">      [5, 6]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])]</span>
+<span class="gt">Traceback (most recent call last):</span>
+  <span class="c">...</span>
+<span class="gr">IndexError</span>: <span class="n">index 3 is out of bounds for axis 0 with size 3</span>
+</pre></div>
+</div>
+<p>When the index consists of as many integer arrays as dimensions of the array
+being indexed, the indexing is straightforward, but different from slicing.</p>
+<p>Advanced indices always are <a class="reference internal" href="basics.broadcasting.html#basics-broadcasting"><span class="std std-ref">broadcast</span></a> and
+iterated as <em>one</em>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span><span class="p">[</span><span class="n">i_1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">i_M</span><span class="p">]</span> <span class="o">==</span> <span class="n">x</span><span class="p">[</span><span class="n">ind_1</span><span class="p">[</span><span class="n">i_1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">i_M</span><span class="p">],</span> <span class="n">ind_2</span><span class="p">[</span><span class="n">i_1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">i_M</span><span class="p">],</span>
+                           <span class="o">...</span><span class="p">,</span> <span class="n">ind_N</span><span class="p">[</span><span class="n">i_1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">i_M</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>Note that the resulting shape is identical to the (broadcast) indexing array
+shapes <code class="docutils literal notranslate"><span class="pre">ind_1,</span> <span class="pre">...,</span> <span class="pre">ind_N</span></code>. If the indices cannot be broadcast to the
+same shape, an exception <code class="docutils literal notranslate"><span class="pre">IndexError:</span> <span class="pre">shape</span> <span class="pre">mismatch:</span> <span class="pre">indexing</span> <span class="pre">arrays</span> <span class="pre">could</span>
+<span class="pre">not</span> <span class="pre">be</span> <span class="pre">broadcast</span> <span class="pre">together</span> <span class="pre">with</span> <span class="pre">shapes...</span></code> is raised.</p>
+<p>Indexing with multidimensional index arrays tend
+to be more unusual uses, but they are permitted, and they are useful for some
+problems. We’ll start with the simplest multidimensional case:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">35</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span>
+<span class="go">array([[ 0,  1,  2,  3,  4,  5,  6],</span>
+<span class="go">       [ 7,  8,  9, 10, 11, 12, 13],</span>
+<span class="go">       [14, 15, 16, 17, 18, 19, 20],</span>
+<span class="go">       [21, 22, 23, 24, 25, 26, 27],</span>
+<span class="go">       [28, 29, 30, 31, 32, 33, 34]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])]</span>
+<span class="go">array([ 0, 15, 30])</span>
+</pre></div>
+</div>
+<p>In this case, if the index arrays have a matching shape, and there is an
+index array for each dimension of the array being indexed, the resultant
+array has the same shape as the index arrays, and the values correspond
+to the index set for each position in the index arrays. In this example,
+the first index value is 0 for both index arrays, and thus the first value
+of the resultant array is <code class="docutils literal notranslate"><span class="pre">y[0,</span> <span class="pre">0]</span></code>. The next value is <code class="docutils literal notranslate"><span class="pre">y[2,</span> <span class="pre">1]</span></code>, and
+the last is <code class="docutils literal notranslate"><span class="pre">y[4,</span> <span class="pre">2]</span></code>.</p>
+<p>If the index arrays do not have the same shape, there is an attempt to
+broadcast them to the same shape. If they cannot be broadcast to the same
+shape, an exception is raised:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])]</span>
+<span class="gt">Traceback (most recent call last):</span>
+  <span class="c">...</span>
+<span class="gr">IndexError</span>: <span class="n">shape mismatch: indexing arrays could not be broadcast</span>
+<span class="go">together with shapes (3,) (2,)</span>
+</pre></div>
+</div>
+<p>The broadcasting mechanism permits index arrays to be combined with
+scalars for other indices. The effect is that the scalar value is used
+for all the corresponding values of the index arrays:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]),</span> <span class="mi">1</span><span class="p">]</span>
+<span class="go">array([ 1, 15, 29])</span>
+</pre></div>
+</div>
+<p>Jumping to the next level of complexity, it is possible to only partially
+index an array with index arrays. It takes a bit of thought to understand
+what happens in such cases. For example if we just use one index array
+with y:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">])]</span>
+<span class="go">array([[ 0,  1,  2,  3,  4,  5,  6],</span>
+<span class="go">      [14, 15, 16, 17, 18, 19, 20],</span>
+<span class="go">      [28, 29, 30, 31, 32, 33, 34]])</span>
+</pre></div>
+</div>
+<p>It results in the construction of a new array where each value of the
+index array selects one row from the array being indexed and the resultant
+array has the resulting shape (number of index elements, size of row).</p>
+<p>In general, the shape of the resultant array will be the concatenation of
+the shape of the index array (or the shape that all the index arrays were
+broadcast to) with the shape of any unused dimensions (those not indexed)
+in the array being indexed.</p>
+<p class="rubric">Example</p>
+<p>From each row, a specific element should be selected. The row index is just
+<code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1,</span> <span class="pre">2]</span></code> and the column index specifies the element to choose for the
+corresponding row, here <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1,</span> <span class="pre">0]</span></code>. Using both together the task
+can be solved using advanced indexing:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span>
+<span class="go">array([1, 4, 5])</span>
+</pre></div>
+</div>
+<p>To achieve a behaviour similar to the basic slicing above, broadcasting can be
+used. The function <a class="reference internal" href="../reference/generated/numpy.ix_.html#numpy.ix_" title="numpy.ix_"><code class="xref py py-func docutils literal notranslate"><span class="pre">ix_</span></code></a> can help with this broadcasting. This is best
+understood with an example.</p>
+<p class="rubric">Example</p>
+<p>From a 4x3 array the corner elements should be selected using advanced
+indexing. Thus all elements for which the column is one of <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">2]</span></code> and
+the row is one of <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">3]</span></code> need to be selected. To use advanced indexing
+one needs to select all elements <em>explicitly</em>. Using the method explained
+previously one could write:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span> <span class="mi">0</span><span class="p">,</span>  <span class="mi">1</span><span class="p">,</span>  <span class="mi">2</span><span class="p">],</span>
+<span class="gp">... </span>              <span class="p">[</span> <span class="mi">3</span><span class="p">,</span>  <span class="mi">4</span><span class="p">,</span>  <span class="mi">5</span><span class="p">],</span>
+<span class="gp">... </span>              <span class="p">[</span> <span class="mi">6</span><span class="p">,</span>  <span class="mi">7</span><span class="p">,</span>  <span class="mi">8</span><span class="p">],</span>
+<span class="gp">... </span>              <span class="p">[</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+<span class="gp">... </span>                 <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">columns</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+<span class="gp">... </span>                    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="p">]</span>
+<span class="go">array([[ 0,  2],</span>
+<span class="go">       [ 9, 11]])</span>
+</pre></div>
+</div>
+<p>However, since the indexing arrays above just repeat themselves,
+broadcasting can be used (compare operations such as
+<code class="docutils literal notranslate"><span class="pre">rows[:,</span> <span class="pre">np.newaxis]</span> <span class="pre">+</span> <span class="pre">columns</span></code>) to simplify this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">columns</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intp</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rows</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+<span class="go">array([[0],</span>
+<span class="go">       [3]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="n">rows</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">],</span> <span class="n">columns</span><span class="p">]</span>
+<span class="go">array([[ 0,  2],</span>
+<span class="go">       [ 9, 11]])</span>
+</pre></div>
+</div>
+<p>This broadcasting can also be achieved using the function <a class="reference internal" href="../reference/generated/numpy.ix_.html#numpy.ix_" title="numpy.ix_"><code class="xref py py-func docutils literal notranslate"><span class="pre">ix_</span></code></a>:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="p">)]</span>
+<span class="go">array([[ 0,  2],</span>
+<span class="go">       [ 9, 11]])</span>
+</pre></div>
+</div>
+<p>Note that without the <code class="docutils literal notranslate"><span class="pre">np.ix_</span></code> call, only the diagonal elements would
+be selected:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="p">]</span>
+<span class="go">array([ 0, 11])</span>
+</pre></div>
+</div>
+<p>This difference is the most important thing to remember about
+indexing with multiple advanced indices.</p>
+<p class="rubric">Example</p>
+<p>A real-life example of where advanced indexing may be useful is for a color
+lookup table where we want to map the values of an image into RGB triples for
+display. The lookup table could have a shape (nlookup, 3). Indexing
+such an array with an image with shape (ny, nx) with dtype=np.uint8
+(or any integer type so long as values are with the bounds of the
+lookup table) will result in an array of shape (ny, nx, 3) where a
+triple of RGB values is associated with each pixel location.</p>
+</section>
+<section id="boolean-array-indexing">
+<span id="boolean-indexing"></span><h3>Boolean array indexing<a class="headerlink" href="#boolean-array-indexing" title="Permalink to this headline">#</a></h3>
+<p>This advanced indexing occurs when <em>obj</em> is an array object of Boolean
+type, such as may be returned from comparison operators. A single
+boolean index array is practically identical to <code class="docutils literal notranslate"><span class="pre">x[obj.nonzero()]</span></code> where,
+as described above, <a class="reference internal" href="../reference/generated/numpy.ndarray.nonzero.html#numpy.ndarray.nonzero" title="numpy.ndarray.nonzero"><code class="xref py py-meth docutils literal notranslate"><span class="pre">obj.nonzero()</span></code></a> returns a
+tuple (of length <a class="reference internal" href="../reference/generated/numpy.ndarray.ndim.html#numpy.ndarray.ndim" title="numpy.ndarray.ndim"><code class="xref py py-attr docutils literal notranslate"><span class="pre">obj.ndim</span></code></a>) of integer index
+arrays showing the <a class="reference external" href="https://docs.python.org/3/library/constants.html#True" title="(in Python v3.10)"><code class="xref py py-data docutils literal notranslate"><span class="pre">True</span></code></a> elements of <em>obj</em>. However, it is
+faster when <code class="docutils literal notranslate"><span class="pre">obj.shape</span> <span class="pre">==</span> <span class="pre">x.shape</span></code>.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">obj.ndim</span> <span class="pre">==</span> <span class="pre">x.ndim</span></code>, <code class="docutils literal notranslate"><span class="pre">x[obj]</span></code> returns a 1-dimensional array
+filled with the elements of <em>x</em> corresponding to the <a class="reference external" href="https://docs.python.org/3/library/constants.html#True" title="(in Python v3.10)"><code class="xref py py-data docutils literal notranslate"><span class="pre">True</span></code></a>
+values of <em>obj</em>.  The search order will be <a class="reference internal" href="../glossary.html#term-row-major"><span class="xref std std-term">row-major</span></a>,
+C-style. If <em>obj</em> has <a class="reference external" href="https://docs.python.org/3/library/constants.html#True" title="(in Python v3.10)"><code class="xref py py-data docutils literal notranslate"><span class="pre">True</span></code></a> values at entries that are outside
+of the bounds of <em>x</em>, then an index error will be raised. If <em>obj</em> is
+smaller than <em>x</em> it is identical to filling it with <a class="reference external" href="https://docs.python.org/3/library/constants.html#False" title="(in Python v3.10)"><code class="xref py py-data docutils literal notranslate"><span class="pre">False</span></code></a>.</p>
+<p>A common use case for this is filtering for desired element values.
+For example, one may wish to select all entries from an array which
+are not <a class="reference internal" href="../reference/constants.html#numpy.NaN" title="numpy.NaN"><code class="xref py py-const docutils literal notranslate"><span class="pre">NaN</span></code></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span><span class="p">,</span> <span class="mf">2.</span><span class="p">],</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="mf">3.</span><span class="p">],</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">)]</span>
+<span class="go">array([1., 2., 3.])</span>
+</pre></div>
+</div>
+<p>Or wish to add a constant to all negative elements:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="n">x</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">20</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span>
+<span class="go">array([ 1., 19., 18., 3.])</span>
+</pre></div>
+</div>
+<p>In general if an index includes a Boolean array, the result will be
+identical to inserting <code class="docutils literal notranslate"><span class="pre">obj.nonzero()</span></code> into the same position
+and using the integer array indexing mechanism described above.
+<code class="docutils literal notranslate"><span class="pre">x[ind_1,</span> <span class="pre">boolean_array,</span> <span class="pre">ind_2]</span></code> is equivalent to
+<code class="docutils literal notranslate"><span class="pre">x[(ind_1,)</span> <span class="pre">+</span> <span class="pre">boolean_array.nonzero()</span> <span class="pre">+</span> <span class="pre">(ind_2,)]</span></code>.</p>
+<p>If there is only one Boolean array and no integer indexing array present,
+this is straightforward. Care must only be taken to make sure that the
+boolean index has <em>exactly</em> as many dimensions as it is supposed to work
+with.</p>
+<p>In general, when the boolean array has fewer dimensions than the array being
+indexed, this is equivalent to <code class="docutils literal notranslate"><span class="pre">x[b,</span> <span class="pre">...]</span></code>, which means x is indexed by b
+followed by as many <code class="docutils literal notranslate"><span class="pre">:</span></code> as are needed to fill out the rank of x. Thus the
+shape of the result is one dimension containing the number of True elements of
+the boolean array, followed by the remaining dimensions of the array being
+indexed:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">35</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">20</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">]</span>
+<span class="go">array([False, False, False,  True,  True])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="n">b</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">]]</span>
+<span class="go">array([[21, 22, 23, 24, 25, 26, 27],</span>
+<span class="go">      [28, 29, 30, 31, 32, 33, 34]])</span>
+</pre></div>
+</div>
+<p>Here the 4th and 5th rows are selected from the indexed array and
+combined to make a 2-D array.</p>
+<p class="rubric">Example</p>
+<p>From an array, select all rows which sum up to less or equal two:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rowsum</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="n">rowsum</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:]</span>
+<span class="go">array([[0, 1],</span>
+<span class="go">       [1, 1]])</span>
+</pre></div>
+</div>
+<p>Combining multiple Boolean indexing arrays or a Boolean with an integer
+indexing array can best be understood with the
+<a class="reference internal" href="../reference/generated/numpy.ndarray.nonzero.html#numpy.ndarray.nonzero" title="numpy.ndarray.nonzero"><code class="xref py py-meth docutils literal notranslate"><span class="pre">obj.nonzero()</span></code></a> analogy. The function <a class="reference internal" href="../reference/generated/numpy.ix_.html#numpy.ix_" title="numpy.ix_"><code class="xref py py-func docutils literal notranslate"><span class="pre">ix_</span></code></a>
+also supports boolean arrays and will work without any surprises.</p>
+<p class="rubric">Example</p>
+<p>Use boolean indexing to select all rows adding up to an even
+number. At the same time columns 0 and 2 should be selected with an
+advanced integer index. Using the <a class="reference internal" href="../reference/generated/numpy.ix_.html#numpy.ix_" title="numpy.ix_"><code class="xref py py-func docutils literal notranslate"><span class="pre">ix_</span></code></a> function this can be done
+with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span> <span class="mi">0</span><span class="p">,</span>  <span class="mi">1</span><span class="p">,</span>  <span class="mi">2</span><span class="p">],</span>
+<span class="gp">... </span>              <span class="p">[</span> <span class="mi">3</span><span class="p">,</span>  <span class="mi">4</span><span class="p">,</span>  <span class="mi">5</span><span class="p">],</span>
+<span class="gp">... </span>              <span class="p">[</span> <span class="mi">6</span><span class="p">,</span>  <span class="mi">7</span><span class="p">,</span>  <span class="mi">8</span><span class="p">],</span>
+<span class="gp">... </span>              <span class="p">[</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rows</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rows</span>
+<span class="go">array([False,  True, False,  True])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="p">)]</span>
+<span class="go">array([[ 3,  5],</span>
+<span class="go">       [ 9, 11]])</span>
+</pre></div>
+</div>
+<p>Without the <code class="docutils literal notranslate"><span class="pre">np.ix_</span></code> call, only the diagonal elements would be
+selected.</p>
+<p>Or without <code class="docutils literal notranslate"><span class="pre">np.ix_</span></code> (compare the integer array examples):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rows</span> <span class="o">=</span> <span class="n">rows</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="n">rows</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">],</span> <span class="n">columns</span><span class="p">]</span>
+<span class="go">array([[ 3,  5],</span>
+<span class="go">       [ 9, 11]])</span>
+</pre></div>
+</div>
+<p class="rubric">Example</p>
+<p>Use a 2-D boolean array of shape (2, 3)
+with four True elements to select rows from a 3-D array of shape
+(2, 3, 5) results in a 2-D result of shape (4, 5):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span>
+<span class="go">array([[[ 0,  1,  2,  3,  4],</span>
+<span class="go">        [ 5,  6,  7,  8,  9],</span>
+<span class="go">        [10, 11, 12, 13, 14]],</span>
+<span class="go">      [[15, 16, 17, 18, 19],</span>
+<span class="go">        [20, 21, 22, 23, 24],</span>
+<span class="go">        [25, 26, 27, 28, 29]]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">],</span> <span class="p">[</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="n">b</span><span class="p">]</span>
+<span class="go">array([[ 0,  1,  2,  3,  4],</span>
+<span class="go">      [ 5,  6,  7,  8,  9],</span>
+<span class="go">      [20, 21, 22, 23, 24],</span>
+<span class="go">      [25, 26, 27, 28, 29]])</span>
+</pre></div>
+</div>
+</section>
+<section id="combining-advanced-and-basic-indexing">
+<span id="id6"></span><h3>Combining advanced and basic indexing<a class="headerlink" href="#combining-advanced-and-basic-indexing" title="Permalink to this headline">#</a></h3>
+<p>When there is at least one slice (<code class="docutils literal notranslate"><span class="pre">:</span></code>), ellipsis (<code class="docutils literal notranslate"><span class="pre">...</span></code>) or <a class="reference internal" href="../reference/constants.html#numpy.newaxis" title="numpy.newaxis"><code class="xref py py-const docutils literal notranslate"><span class="pre">newaxis</span></code></a>
+in the index (or the array has more dimensions than there are advanced indices),
+then the behaviour can be more complicated. It is like concatenating the
+indexing result for each advanced index element.</p>
+<p>In the simplest case, there is only a <em>single</em> advanced index combined with
+a slice. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">35</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]),</span> <span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+<span class="go">array([[ 1,  2],</span>
+<span class="go">       [15, 16],</span>
+<span class="go">       [29, 30]])</span>
+</pre></div>
+</div>
+<p>In effect, the slice and index array operation are independent. The slice
+operation extracts columns with index 1 and 2, (i.e. the 2nd and 3rd columns),
+followed by the index array operation which extracts rows with index 0, 2 and 4
+(i.e the first, third and fifth rows). This is equivalent to:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]),</span> <span class="p">:]</span>
+<span class="go">array([[ 1,  2],</span>
+<span class="go">       [15, 16],</span>
+<span class="go">       [29, 30]])</span>
+</pre></div>
+</div>
+<p>A single advanced index can, for example, replace a slice and the result array
+will be the same. However, it is a copy and may have a different memory layout.
+A slice is preferable when it is possible.
+For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span> <span class="mi">0</span><span class="p">,</span>  <span class="mi">1</span><span class="p">,</span>  <span class="mi">2</span><span class="p">],</span>
+<span class="gp">... </span>              <span class="p">[</span> <span class="mi">3</span><span class="p">,</span>  <span class="mi">4</span><span class="p">,</span>  <span class="mi">5</span><span class="p">],</span>
+<span class="gp">... </span>              <span class="p">[</span> <span class="mi">6</span><span class="p">,</span>  <span class="mi">7</span><span class="p">,</span>  <span class="mi">8</span><span class="p">],</span>
+<span class="gp">... </span>              <span class="p">[</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+<span class="go">array([[4, 5]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]</span>
+<span class="go">array([[4, 5]])</span>
+</pre></div>
+</div>
+<p>The easiest way to understand a combination of <em>multiple</em> advanced indices may
+be to think in terms of the resulting shape. There are two parts to the indexing
+operation, the subspace defined by the basic indexing (excluding integers) and
+the subspace from the advanced indexing part. Two cases of index combination
+need to be distinguished:</p>
+<ul class="simple">
+<li><p>The advanced indices are separated by a slice, <a class="reference external" href="https://docs.python.org/3/library/constants.html#Ellipsis" title="(in Python v3.10)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Ellipsis</span></code></a> or
+<a class="reference internal" href="../reference/constants.html#numpy.newaxis" title="numpy.newaxis"><code class="xref py py-const docutils literal notranslate"><span class="pre">newaxis</span></code></a>. For example <code class="docutils literal notranslate"><span class="pre">x[arr1,</span> <span class="pre">:,</span> <span class="pre">arr2]</span></code>.</p></li>
+<li><p>The advanced indices are all next to each other.
+For example <code class="docutils literal notranslate"><span class="pre">x[...,</span> <span class="pre">arr1,</span> <span class="pre">arr2,</span> <span class="pre">:]</span></code> but <em>not</em> <code class="docutils literal notranslate"><span class="pre">x[arr1,</span> <span class="pre">:,</span> <span class="pre">1]</span></code>
+since <code class="docutils literal notranslate"><span class="pre">1</span></code> is an advanced index in this regard.</p></li>
+</ul>
+<p>In the first case, the dimensions resulting from the advanced indexing
+operation come first in the result array, and the subspace dimensions after
+that.
+In the second case, the dimensions from the advanced indexing operations
+are inserted into the result array at the same spot as they were in the
+initial array (the latter logic is what makes simple advanced indexing
+behave just like slicing).</p>
+<p class="rubric">Example</p>
+<p>Suppose <code class="docutils literal notranslate"><span class="pre">x.shape</span></code> is (10, 20, 30) and <code class="docutils literal notranslate"><span class="pre">ind</span></code> is a (2, 3, 4)-shaped
+indexing <a class="reference internal" href="../reference/arrays.scalars.html#numpy.intp" title="numpy.intp"><code class="xref py py-class docutils literal notranslate"><span class="pre">intp</span></code></a> array, then <code class="docutils literal notranslate"><span class="pre">result</span> <span class="pre">=</span> <span class="pre">x[...,</span> <span class="pre">ind,</span> <span class="pre">:]</span></code> has
+shape (10, 2, 3, 4, 30) because the (20,)-shaped subspace has been
+replaced with a (2, 3, 4)-shaped broadcasted indexing subspace. If
+we let <em>i, j, k</em> loop over the (2, 3, 4)-shaped subspace then
+<code class="docutils literal notranslate"><span class="pre">result[...,</span> <span class="pre">i,</span> <span class="pre">j,</span> <span class="pre">k,</span> <span class="pre">:]</span> <span class="pre">=</span> <span class="pre">x[...,</span> <span class="pre">ind[i,</span> <span class="pre">j,</span> <span class="pre">k],</span> <span class="pre">:]</span></code>. This example
+produces the same result as <a class="reference internal" href="../reference/generated/numpy.ndarray.take.html#numpy.ndarray.take" title="numpy.ndarray.take"><code class="xref py py-meth docutils literal notranslate"><span class="pre">x.take(ind,</span> <span class="pre">axis=-2)</span></code></a>.</p>
+<p class="rubric">Example</p>
+<p>Let <code class="docutils literal notranslate"><span class="pre">x.shape</span></code> be (10, 20, 30, 40, 50) and suppose <code class="docutils literal notranslate"><span class="pre">ind_1</span></code>
+and <code class="docutils literal notranslate"><span class="pre">ind_2</span></code> can be broadcast to the shape (2, 3, 4). Then
+<code class="docutils literal notranslate"><span class="pre">x[:,</span> <span class="pre">ind_1,</span> <span class="pre">ind_2]</span></code> has shape (10, 2, 3, 4, 40, 50) because the
+(20, 30)-shaped subspace from X has been replaced with the
+(2, 3, 4) subspace from the indices. However,
+<code class="docutils literal notranslate"><span class="pre">x[:,</span> <span class="pre">ind_1,</span> <span class="pre">:,</span> <span class="pre">ind_2]</span></code> has shape (2, 3, 4, 10, 30, 50) because there
+is no unambiguous place to drop in the indexing subspace, thus
+it is tacked-on to the beginning. It is always possible to use
+<a class="reference internal" href="../reference/generated/numpy.ndarray.transpose.html#numpy.ndarray.transpose" title="numpy.ndarray.transpose"><code class="xref py py-meth docutils literal notranslate"><span class="pre">.transpose()</span></code></a> to move the subspace
+anywhere desired. Note that this example cannot be replicated
+using <a class="reference internal" href="../reference/generated/numpy.take.html#numpy.take" title="numpy.take"><code class="xref py py-func docutils literal notranslate"><span class="pre">take</span></code></a>.</p>
+<p class="rubric">Example</p>
+<p>Slicing can be combined with broadcasted boolean indices:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">35</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">20</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span>
+<span class="go">array([[False, False, False, False, False, False, False],</span>
+<span class="go">      [False, False, False, False, False, False, False],</span>
+<span class="go">      [False, False, False, False, False, False, False],</span>
+<span class="go">      [ True,  True,  True,  True,  True,  True,  True],</span>
+<span class="go">      [ True,  True,  True,  True,  True,  True,  True]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="n">b</span><span class="p">[:,</span> <span class="mi">5</span><span class="p">],</span> <span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+<span class="go">array([[22, 23],</span>
+<span class="go">      [29, 30]])</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="field-access">
+<span id="arrays-indexing-fields"></span><h2>Field access<a class="headerlink" href="#field-access" title="Permalink to this headline">#</a></h2>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="basics.rec.html#structured-arrays"><span class="std std-ref">Structured arrays</span></a></p>
+</div>
+<p>If the <a class="reference internal" href="../reference/generated/numpy.ndarray.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> object is a structured array the <a class="reference internal" href="../glossary.html#term-field"><span class="xref std std-term">fields</span></a>
+of the array can be accessed by indexing the array with strings,
+dictionary-like.</p>
+<p>Indexing <code class="docutils literal notranslate"><span class="pre">x['field-name']</span></code> returns a new <a class="reference internal" href="../glossary.html#term-view"><span class="xref std std-term">view</span></a> to the array,
+which is of the same shape as <em>x</em> (except when the field is a
+sub-array) but of data type <code class="docutils literal notranslate"><span class="pre">x.dtype['field-name']</span></code> and contains
+only the part of the data in the specified field. Also,
+<a class="reference internal" href="../reference/arrays.classes.html#arrays-classes-rec"><span class="std std-ref">record array</span></a> scalars can be “indexed” this way.</p>
+<p>Indexing into a structured array can also be done with a list of field names,
+e.g. <code class="docutils literal notranslate"><span class="pre">x[['field-name1',</span> <span class="pre">'field-name2']]</span></code>. As of NumPy 1.16, this returns a
+view containing only those fields. In older versions of NumPy, it returned a
+copy. See the user guide section on <a class="reference internal" href="basics.rec.html#structured-arrays"><span class="std std-ref">Structured arrays</span></a> for more
+information on multifield indexing.</p>
+<p>If the accessed field is a sub-array, the dimensions of the sub-array
+are appended to the shape of the result.
+For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(2, 2)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+<span class="go">dtype(&#39;int32&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(2, 2, 3, 3)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+<span class="go">dtype(&#39;float64&#39;)</span>
+</pre></div>
+</div>
+</section>
+<section id="flat-iterator-indexing">
+<span id="id7"></span><h2>Flat Iterator indexing<a class="headerlink" href="#flat-iterator-indexing" title="Permalink to this headline">#</a></h2>
+<p><a class="reference internal" href="../reference/generated/numpy.ndarray.flat.html#numpy.ndarray.flat" title="numpy.ndarray.flat"><code class="xref py py-attr docutils literal notranslate"><span class="pre">x.flat</span></code></a> returns an iterator that will iterate
+over the entire array (in C-contiguous style with the last index
+varying the fastest). This iterator object can also be indexed using
+basic slicing or advanced indexing as long as the selection object is
+not a tuple. This should be clear from the fact that <a class="reference internal" href="../reference/generated/numpy.ndarray.flat.html#numpy.ndarray.flat" title="numpy.ndarray.flat"><code class="xref py py-attr docutils literal notranslate"><span class="pre">x.flat</span></code></a> is a 1-dimensional view. It can be used for integer
+indexing with 1-dimensional C-style-flat indices. The shape of any
+returned array is therefore the shape of the integer indexing object.</p>
+</section>
+<section id="assigning-values-to-indexed-arrays">
+<span id="index-3"></span><span id="id8"></span><h2>Assigning values to indexed arrays<a class="headerlink" href="#assigning-values-to-indexed-arrays" title="Permalink to this headline">#</a></h2>
+<p>As mentioned, one can select a subset of an array to assign to using
+a single index, slices, and index and mask arrays. The value being
+assigned to the indexed array must be shape consistent (the same shape
+or broadcastable to the shape the index produces). For example, it is
+permitted to assign a constant to a slice:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">7</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>or an array of the right size:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">7</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that assignments may result in changes if assigning
+higher types to lower types (like floats to ints) or even
+exceptions (assigning complex to floats or ints):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.2</span><span class="n">j</span>
+<span class="gt">Traceback (most recent call last):</span>
+  <span class="c">...</span>
+<span class="gr">TypeError</span>: <span class="n">can&#39;t convert complex to int</span>
+</pre></div>
+</div>
+<p>Unlike some of the references (such as array and mask indices)
+assignments are always made to the original data in the array
+(indeed, nothing else would make sense!). Note though, that some
+actions may not work as one may naively expect. This particular
+example is often surprising to people:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span>
+<span class="go">array([ 0, 10, 20, 30, 40])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">])]</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span>
+<span class="go">array([ 0, 11, 20, 31, 40])</span>
+</pre></div>
+</div>
+<p>Where people expect that the 1st location will be incremented by 3.
+In fact, it will only be incremented by 1. The reason is that
+a new array is extracted from the original (as a temporary) containing
+the values at 1, 1, 3, 1, then the value 1 is added to the temporary,
+and then the temporary is assigned back to the original array. Thus
+the value of the array at <code class="docutils literal notranslate"><span class="pre">x[1]</span> <span class="pre">+</span> <span class="pre">1</span></code> is assigned to <code class="docutils literal notranslate"><span class="pre">x[1]</span></code> three times,
+rather than being incremented 3 times.</p>
+</section>
+<section id="dealing-with-variable-numbers-of-indices-within-programs">
+<span id="dealing-with-variable-indices"></span><h2>Dealing with variable numbers of indices within programs<a class="headerlink" href="#dealing-with-variable-numbers-of-indices-within-programs" title="Permalink to this headline">#</a></h2>
+<p>The indexing syntax is very powerful but limiting when dealing with
+a variable number of indices. For example, if you want to write
+a function that can handle arguments with various numbers of
+dimensions without having to write special case code for each
+number of possible dimensions, how can that be done? If one
+supplies to the index a tuple, the tuple will be interpreted
+as a list of indices. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">81</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">indices</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+<span class="go">40</span>
+</pre></div>
+</div>
+<p>So one can use code to construct tuples of any number of indices
+and then use these within an index.</p>
+<p>Slices can be specified within programs by using the slice() function
+in Python. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">indices</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>  <span class="c1"># same as [1, 1, 1, 0:2]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+<span class="go">array([39, 40])</span>
+</pre></div>
+</div>
+<p>Likewise, ellipsis can be specified by code by using the Ellipsis
+object:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">indices</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">Ellipsis</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># same as [1, ..., 1]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+<span class="go">array([[28, 31, 34],</span>
+<span class="go">       [37, 40, 43],</span>
+<span class="go">       [46, 49, 52]])</span>
+</pre></div>
+</div>
+<p>For this reason, it is possible to use the output from the
+<a class="reference internal" href="../reference/generated/numpy.ndarray.nonzero.html#numpy.ndarray.nonzero" title="numpy.ndarray.nonzero"><code class="xref py py-meth docutils literal notranslate"><span class="pre">np.nonzero()</span></code></a> function directly as an index since
+it always returns a tuple of index arrays.</p>
+<p>Because of the special treatment of tuples, they are not automatically
+converted to an array as a list would be. As an example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">z</span><span class="p">[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>  <span class="c1"># produces a large array</span>
+<span class="go">array([[[[27, 28, 29],</span>
+<span class="go">         [30, 31, 32], ...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z</span><span class="p">[(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>  <span class="c1"># returns a single value</span>
+<span class="go">40</span>
+</pre></div>
+</div>
+</section>
+<section id="detailed-notes">
+<h2>Detailed notes<a class="headerlink" href="#detailed-notes" title="Permalink to this headline">#</a></h2>
+<p>These are some detailed notes, which are not of importance for day to day
+indexing (in no particular order):</p>
+<ul class="simple">
+<li><p>The native NumPy indexing type is <code class="docutils literal notranslate"><span class="pre">intp</span></code> and may differ from the
+default integer array type. <code class="docutils literal notranslate"><span class="pre">intp</span></code> is the smallest data type
+sufficient to safely index any array; for advanced indexing it may be
+faster than other types.</p></li>
+<li><p>For advanced assignments, there is in general no guarantee for the
+iteration order. This means that if an element is set more than once,
+it is not possible to predict the final result.</p></li>
+<li><p>An empty (tuple) index is a full scalar index into a zero-dimensional array.
+<code class="docutils literal notranslate"><span class="pre">x[()]</span></code> returns a <em>scalar</em> if <code class="docutils literal notranslate"><span class="pre">x</span></code> is zero-dimensional and a view
+otherwise. On the other hand, <code class="docutils literal notranslate"><span class="pre">x[...]</span></code> always returns a view.</p></li>
+<li><p>If a zero-dimensional array is present in the index <em>and</em> it is a full
+integer index the result will be a <em>scalar</em> and not a zero-dimensional array.
+(Advanced indexing is not triggered.)</p></li>
+<li><p>When an ellipsis (<code class="docutils literal notranslate"><span class="pre">...</span></code>) is present but has no size (i.e. replaces zero
+<code class="docutils literal notranslate"><span class="pre">:</span></code>) the result will still always be an array. A view if no advanced index
+is present, otherwise a copy.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">nonzero</span></code> equivalence for Boolean arrays does not hold for zero
+dimensional boolean arrays.</p></li>
+<li><p>When the result of an advanced indexing operation has no elements but an
+individual index is out of bounds, whether or not an <code class="docutils literal notranslate"><span class="pre">IndexError</span></code> is
+raised is undefined (e.g. <code class="docutils literal notranslate"><span class="pre">x[[],</span> <span class="pre">[123]]</span></code> with <code class="docutils literal notranslate"><span class="pre">123</span></code> being out of bounds).</p></li>
+<li><p>When a <em>casting</em> error occurs during assignment (for example updating a
+numerical array using a sequence of strings), the array being assigned
+to may end up in an unpredictable partially updated state.
+However, if any other error (such as an out of bounds index) occurs, the
+array will remain unchanged.</p></li>
+<li><p>The memory layout of an advanced indexing result is optimized for each
+indexing operation and no particular memory order can be assumed.</p></li>
+<li><p>When using a subclass (especially one which manipulates its shape), the
+default <code class="docutils literal notranslate"><span class="pre">ndarray.__setitem__</span></code> behaviour will call <code class="docutils literal notranslate"><span class="pre">__getitem__</span></code> for
+<em>basic</em> indexing but not for <em>advanced</em> indexing. For such a subclass it may
+be preferable to call <code class="docutils literal notranslate"><span class="pre">ndarray.__setitem__</span></code> with a <em>base class</em> ndarray
+view on the data. This <em>must</em> be done if the subclasses <code class="docutils literal notranslate"><span class="pre">__getitem__</span></code> does
+not return views.</p></li>
+</ul>
+</section>
+</section>
+
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="basics.creation.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">Array creation</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="basics.io.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">I/O with NumPy</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2008-2022, NumPy Developers.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

@@ -78,8 +78,9 @@ public:
   virtual void apply_ddt(Vector3D& f) { apply(ddt(f)); }
 
   BoundaryRegion* bndry;
-  bool
-      apply_to_ddt; // True if this boundary condition should be applied on the time derivatives, false if it should be applied to the field values
+  // True if this boundary condition should be applied on the time derivatives
+  // false if it should be applied to the field values
+  bool apply_to_ddt;
 };
 
 class BoundaryModifier : public BoundaryOp {

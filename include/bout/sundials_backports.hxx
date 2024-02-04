@@ -27,19 +27,19 @@
 
 #if SUNDIALS_VERSION_MAJOR < 3
 using SUNLinearSolver = int*;
-inline void SUNLinSolFree(MAYBE_UNUSED(SUNLinearSolver solver)) {}
+inline void SUNLinSolFree([[maybe_unused]] SUNLinearSolver solver) {}
 using sunindextype = long int;
 #endif
 
 #if SUNDIALS_VERSION_MAJOR < 4
 using SUNNonlinearSolver = int*;
-inline void SUNNonlinSolFree(MAYBE_UNUSED(SUNNonlinearSolver solver)) {}
+inline void SUNNonlinSolFree([[maybe_unused]] SUNNonlinearSolver solver) {}
 #endif
 
 #if SUNDIALS_VERSION_MAJOR < 6
 namespace sundials {
 struct Context {
-  Context(void* comm MAYBE_UNUSED()) {}
+  Context(void* comm [[maybe_unused]]) {}
 };
 } // namespace sundials
 
@@ -51,13 +51,13 @@ constexpr auto SUN_PREC_NONE = PREC_NONE;
 
 inline N_Vector N_VNew_Parallel(MPI_Comm comm, sunindextype local_length,
                                 sunindextype global_length,
-                                MAYBE_UNUSED(SUNContext sunctx)) {
+                                [[maybe_unused]] SUNContext sunctx) {
   return N_VNew_Parallel(comm, local_length, global_length);
 }
 
 #if SUNDIALS_VERSION_MAJOR >= 3
 inline SUNLinearSolver SUNLinSol_SPGMR(N_Vector y, int pretype, int maxl,
-                                       MAYBE_UNUSED(SUNContext sunctx)) {
+                                       [[maybe_unused]] SUNContext sunctx) {
 #if SUNDIALS_VERSION_MAJOR == 3
   return SUNSPGMR(y, pretype, maxl);
 #else
@@ -66,12 +66,12 @@ inline SUNLinearSolver SUNLinSol_SPGMR(N_Vector y, int pretype, int maxl,
 }
 #if SUNDIALS_VERSION_MAJOR >= 4
 inline SUNNonlinearSolver SUNNonlinSol_FixedPoint(N_Vector y, int m,
-                                                  MAYBE_UNUSED(SUNContext sunctx)) {
+                                                  [[maybe_unused]] SUNContext sunctx) {
   return SUNNonlinSol_FixedPoint(y, m);
 }
 
 inline SUNNonlinearSolver SUNNonlinSol_Newton(N_Vector y,
-                                              MAYBE_UNUSED(SUNContext sunctx)) {
+                                              [[maybe_unused]] SUNContext sunctx) {
   return SUNNonlinSol_Newton(y);
 }
 #endif // SUNDIALS_VERSION_MAJOR >= 4

@@ -85,7 +85,7 @@ constexpr auto& ida_pre_shim = ida_pre;
 #endif
 
 #if SUNDIALS_VERSION_MAJOR < 6
-void* IDACreate(MAYBE_UNUSED(SUNContext)) { return IDACreate(); }
+void* IDACreate([[maybe_unused]] SUNContext) { return IDACreate(); }
 #endif
 
 IdaSolver::IdaSolver(Options* opts)

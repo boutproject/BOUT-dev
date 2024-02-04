@@ -29,7 +29,6 @@
 
 #if BOUT_HAS_PETSC
 
-//#include <private/tsimpl.h>
 #include <petsc.h>
 
 #include <bout/boutcomm.hxx>
@@ -750,10 +749,10 @@ PetscErrorCode solver_rhsjacobian(TS UNUSED(ts), BoutReal UNUSED(t), Vec UNUSED(
   PetscFunctionReturn(0);
 }
 #else
-PetscErrorCode solver_rhsjacobian(MAYBE_UNUSED(TS ts), MAYBE_UNUSED(BoutReal t),
-                                  MAYBE_UNUSED(Vec globalin), Mat* J, Mat* Jpre,
-                                  MAYBE_UNUSED(MatStructure* str),
-                                  MAYBE_UNUSED(void* f_data)) {
+PetscErrorCode solver_rhsjacobian([[maybe_unused]] TS ts, [[maybe_unused]] BoutReal t,
+                                  [[maybe_unused]] Vec globalin, Mat* J, Mat* Jpre,
+                                  [[maybe_unused]] MatStructure* str,
+                                  [[maybe_unused]] void* f_data) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
@@ -798,8 +797,9 @@ PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin, Vec UNUSED(glob
 }
 #else
 PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin,
-                                MAYBE_UNUSED(Vec globalindot), MAYBE_UNUSED(PetscReal a),
-                                Mat* J, Mat* Jpre, MatStructure* str, void* f_data) {
+                                [[maybe_unused]] Vec globalindot,
+                                [[maybe_unused]] PetscReal a, Mat* J, Mat* Jpre,
+                                MatStructure* str, void* f_data) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;

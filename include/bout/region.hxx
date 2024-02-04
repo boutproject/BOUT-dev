@@ -566,6 +566,10 @@ public:
 
   Region<T>(ContiguousBlocks& blocks) : blocks(blocks) { indices = getRegionIndices(); };
 
+  bool operator==(const Region<T>& other) const {
+    return std::equal(this->begin(), this->end(), other.begin(), other.end());
+  }
+
   /// Destructor
   ~Region() = default;
 
@@ -683,8 +687,7 @@ public:
     return *this; // To allow command chaining
   };
 
-  /// Returns a new region including only indices contained in both
-  /// this region and the other.
+  /// Get a new region including only indices that are in both regions.
   Region<T> getIntersection(const Region<T>& otherRegion) {
     // Get other indices and sort as we're going to be searching through
     // this vector so if it's sorted we can be more efficient
@@ -941,7 +944,7 @@ Region<T> mask(const Region<T>& region, const Region<T>& mask) {
 
 /// Return the intersection of two regions
 template <typename T>
-Region<T> getIntersection(const Region<T>& region, const Region<T>& otherRegion) {
+Region<T> intersection(const Region<T>& region, const Region<T>& otherRegion) {
   auto result = region;
   return result.getIntersection(otherRegion);
 }

@@ -75,6 +75,9 @@ public:
   void setRegion(const std::string& region_name) {
     this->region_id = localmesh->getRegionID(region_name);
   }
+  void setRegion(const std::unique_ptr<Region<Ind3D>> region){
+    setRegion(*region);
+  }
   void setRegion(const Region<Ind3D>& region) {
     std::string name;
     int i = 0;
@@ -299,7 +302,7 @@ public:
   ReturnType create(Options* options = nullptr, Mesh* mesh = nullptr) const {
     return Factory::create(getType(options), mesh);
   }
-  ReturnType create(const std::string& type, MAYBE_UNUSED(Options* options)) const {
+  ReturnType create(const std::string& type, [[maybe_unused]] Options* options) const {
     return Factory::create(type, nullptr);
   }
 

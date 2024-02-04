@@ -112,7 +112,8 @@ constexpr auto CV_NEWTON = 0;
 #endif
 
 #if SUNDIALS_VERSION_MAJOR >= 3
-void* CVodeCreate(int lmm, MAYBE_UNUSED(int iter), MAYBE_UNUSED(SUNContext context)) {
+void* CVodeCreate(int lmm, [[maybe_unused]] int iter,
+                  [[maybe_unused]] SUNContext context) {
 #if SUNDIALS_VERSION_MAJOR == 3
   return CVodeCreate(lmm, iter);
 #elif SUNDIALS_VERSION_MAJOR == 4 || SUNDIALS_VERSION_MAJOR == 5
