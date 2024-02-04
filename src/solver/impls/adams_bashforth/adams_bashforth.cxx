@@ -2,12 +2,14 @@
 
 #include <array>
 
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/utils.hxx>
 
-#include <output.hxx>
+#include <bout/output.hxx>
+
+#include <array>
 
 namespace {
 BoutReal lagrange_at_position_denominator(const std::deque<BoutReal>& grid,
@@ -541,9 +543,6 @@ int AdamsBashforthSolver::run() {
     // calling rhs) which ensures the aux. variables are up to date in order to
     // avoid any additional unrequired work associated with run_rhs.
     run_rhs(simtime);
-
-    // Advance iteration number
-    iteration++;
 
     // Call the output step monitor function
     if (call_monitors(simtime, s, getNumberOutputSteps()) != 0) {

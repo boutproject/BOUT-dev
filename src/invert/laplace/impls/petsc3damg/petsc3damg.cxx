@@ -24,6 +24,7 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
+#include "bout/bout_types.hxx"
 #include "bout/build_config.hxx"
 
 #if BOUT_HAS_PETSC
@@ -31,22 +32,45 @@
 #include "petsc3damg.hxx"
 
 #include <bout/assert.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/derivs.hxx>
 #include <bout/mesh.hxx>
 #include <bout/operatorstencil.hxx>
 #include <bout/petsc_interface.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutcomm.hxx>
-#include <derivs.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
+
+using bout::utils::flagSet;
+
+#ifdef PETSC_HAVE_HYPRE
+static constexpr auto DEFAULT_PC_TYPE = PCHYPRE;
+#else
+static constexpr auto DEFAULT_PC_TYPE = PCGAMG;
+#endif // PETSC_HAVE_HYPRE
 
 LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
-                                     Solver* UNUSED(solver), Datafile* UNUSED(dump))
+                                     Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
+      opts(opt == nullptr ? &(Options::root()["laplace"]) : opt),
+      lower_boundary_flags((*opts)["lower_boundary_flags"].withDefault(0)),
+      upper_boundary_flags((*opts)["upper_boundary_flags"].withDefault(0)),
+      ksptype((*opts)["ksptype"].doc("KSP solver type").withDefault(KSPGMRES)),
+      pctype((*opts)["pctype"].doc("PC type").withDefault(DEFAULT_PC_TYPE)),
+      richardson_damping_factor((*opts)["richardson_damping_factor"].withDefault(1.0)),
+      chebyshev_max((*opts)["chebyshev_max"].withDefault(100.0)),
+      chebyshev_min((*opts)["chebyshev_min"].withDefault(0.01)),
+      gmres_max_steps((*opts)["gmres_max_steps"].withDefault(30)),
+      rtol((*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5)),
+      atol((*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-5)),
+      dtol((*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e6)),
+      maxits(
+          (*opts)["maxits"].doc("Maximum number of KSP iterations").withDefault(100000)),
+      direct((*opts)["direct"].doc("Use direct (LU) solver?").withDefault(false)),
       lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
       indexer(std::make_shared<GlobalIndexer<Field3D>>(
           localmesh, getStencil(localmesh, lowerY, upperY))),
-      operator3D(indexer), kspInitialised(false),
-      lib(opt == nullptr ? &(Options::root()["laplace"]) : opt) {
+      operator3D(indexer), lib(opts) {
+
   // Provide basic initialisation of field coefficients, etc.
   // Get relevent options from user input
   // Initialise PETSc objects
@@ -57,45 +81,32 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   Ex.setLocation(location);
   Ez.setLocation(location);
 
-  // Get Options in Laplace Section
-  if (!opt) {
-    opts = Options::getRoot()->getSection("laplace");
-  } else {
-    opts = opt;
-  }
-
-  // Get y boundary flags
-  lower_boundary_flags = (*opts)["lower_boundary_flags"].withDefault(0);
-  upper_boundary_flags = (*opts)["upper_boundary_flags"].withDefault(0);
-
 #if CHECK > 0
   // Checking flags are set to something which is not implemented
   // This is done binary (which is possible as each flag is a power of 2)
-  if ((global_flags & ~implemented_flags) != 0) {
-    if ((global_flags & INVERT_4TH_ORDER) != 0) {
-      output << "For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
-                "setting INVERT_4TH_ORDER flag"
-             << "\n";
+  if (flagSet(global_flags, INVERT_4TH_ORDER)) {
+    output.write("For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
+                 "setting INVERT_4TH_ORDER flag\n");
+  }
+
+  if (flagSet(global_flags, ~implemented_flags)) {
+    throw BoutException("Attempted to set global Laplacian inversion flag that is not "
+                        "implemented in petsc_laplace.cxx");
+  }
+
+  auto unimplementedBoundaryFlag = [](int boundary_flag,
+                                      const std::string& name) -> void {
+    if (flagSet(boundary_flag, ~implemented_boundary_flags)) {
+      throw BoutException("Attempted to set Laplacian inversion {} boundary flag "
+                          "that is not implemented in petsc3damg.cxx",
+                          name);
     }
-    throw BoutException("Attempted to set Laplacian inversion flag that is not "
-                        "implemented in petsc_laplace.cxx");
-  }
-  if ((inner_boundary_flags & ~implemented_boundary_flags) != 0) {
-    throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
-                        "implemented in petsc_laplace.cxx");
-  }
-  if ((outer_boundary_flags & ~implemented_boundary_flags) != 0) {
-    throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
-                        "implemented in petsc_laplace.cxx");
-  }
-  if ((lower_boundary_flags & ~implemented_boundary_flags) != 0) {
-    throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
-                        "implemented in petsc_laplace.cxx");
-  }
-  if ((upper_boundary_flags & ~implemented_boundary_flags) != 0) {
-    throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
-                        "implemented in petsc_laplace.cxx");
-  }
+  };
+  unimplementedBoundaryFlag(inner_boundary_flags, "inner");
+  unimplementedBoundaryFlag(outer_boundary_flags, "outer");
+  unimplementedBoundaryFlag(lower_boundary_flags, "lower");
+  unimplementedBoundaryFlag(upper_boundary_flags, "upper");
+
   if (localmesh->periodicX) {
     throw BoutException("LaplacePetsc3dAmg does not work with periodicity in the x "
                         "direction (localmesh->PeriodicX == true). Change boundary "
@@ -103,85 +114,45 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   }
 #endif
 
-  // Get Tolerances for KSP solver
-  rtol = (*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5);
-  atol = (*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-5);
-  dtol = (*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e6);
-  maxits = (*opts)["maxits"].doc("Maximum number of KSP iterations").withDefault(100000);
-
-  richardson_damping_factor = (*opts)["richardson_damping_factor"].withDefault(1.0);
-  chebyshev_max = (*opts)["chebyshev_max"].withDefault(100.0);
-  chebyshev_min = (*opts)["chebyshev_min"].withDefault(0.01);
-  gmres_max_steps = (*opts)["gmres_max_steps"].withDefault(30);
-
-  // Get KSP Solver Type (Generalizes Minimal RESidual is the default)
-  ksptype = (*opts)["ksptype"].doc("KSP solver type").withDefault(KSPGMRES);
-
-  // Get preconditioner type
-#ifdef PETSC_HAVE_HYPRE
-  // PETSc was compiled with Hypre
-  pctype = (*opts)["pctype"].doc("PC type").withDefault(PCHYPRE);
-#else
-  // Hypre not available
-  pctype = (*opts)["pctype"].doc("PC type").withDefault(PCGAMG);
-#endif // PETSC_HAVE_HYPRE
-
-  // Get direct solver switch
-  direct = (*opts)["direct"].doc("Use direct (LU) solver?").withDefault(false);
   if (direct) {
-    output << "\n"
-           << "Using LU decompostion for direct solution of system"
-           << "\n"
-           << "\n";
+    output.write("\nUsing LU decompostion for direct solution of system\n\n");
   }
 
   // Set up boundary conditions in operator
+  const bool inner_X_neumann = flagSet(inner_boundary_flags, INVERT_AC_GRAD);
+  const auto inner_X_BC = inner_X_neumann ? -1. / coords->dx / sqrt(coords->g_11) : 0.5;
+  const auto inner_X_BC_plus = inner_X_neumann ? -inner_X_BC : 0.5;
+
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
-    if ((inner_boundary_flags & INVERT_AC_GRAD) != 0) {
-      // Neumann on inner X boundary
-      operator3D(i, i) = -1. / coords->dx[i] / sqrt(coords->g_11[i]);
-      operator3D(i, i.xp()) = 1. / coords->dx[i] / sqrt(coords->g_11[i]);
-    } else {
-      // Dirichlet on inner X boundary
-      operator3D(i, i) = 0.5;
-      operator3D(i, i.xp()) = 0.5;
-    }
+    operator3D(i, i) = inner_X_BC[i];
+    operator3D(i, i.xp()) = inner_X_BC_plus[i];
   }
+
+  const bool outer_X_neumann = flagSet(outer_boundary_flags, INVERT_AC_GRAD);
+  const auto outer_X_BC = outer_X_neumann ? 1. / coords->dx / sqrt(coords->g_11) : 0.5;
+  const auto outer_X_BC_minus = outer_X_neumann ? -outer_X_BC : 0.5;
 
   BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
-    if ((outer_boundary_flags & INVERT_AC_GRAD) != 0) {
-      // Neumann on outer X boundary
-      operator3D(i, i) = 1. / coords->dx[i] / sqrt(coords->g_11[i]);
-      operator3D(i, i.xm()) = -1. / coords->dx[i] / sqrt(coords->g_11[i]);
-    } else {
-      // Dirichlet on outer X boundary
-      operator3D(i, i) = 0.5;
-      operator3D(i, i.xm()) = 0.5;
-    }
+    operator3D(i, i) = outer_X_BC[i];
+    operator3D(i, i.xm()) = outer_X_BC_minus[i];
   }
+
+  const bool lower_Y_neumann = flagSet(lower_boundary_flags, INVERT_AC_GRAD);
+  const auto lower_Y_BC = lower_Y_neumann ? -1. / coords->dy / sqrt(coords->g_22) : 0.5;
+  const auto lower_Y_BC_plus = lower_Y_neumann ? -lower_Y_BC : 0.5;
 
   BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
-    if ((lower_boundary_flags & INVERT_AC_GRAD) != 0) {
-      // Neumann on lower Y boundary
-      operator3D(i, i) = -1. / coords->dy[i] / sqrt(coords->g_22[i]);
-      operator3D(i, i.yp()) = 1. / coords->dy[i] / sqrt(coords->g_22[i]);
-    } else {
-      // Dirichlet on lower Y boundary
-      operator3D(i, i) = 0.5;
-      operator3D(i, i.yp()) = 0.5;
-    }
+    operator3D(i, i) = lower_Y_BC[i];
+    operator3D(i, i.yp()) = lower_Y_BC_plus[i];
   }
 
+  const bool upper_Y_neumann = flagSet(upper_boundary_flags, INVERT_AC_GRAD);
+  const auto upper_Y_BC = upper_Y_neumann ? 1. / coords->dy / sqrt(coords->g_22) : 0.5;
+  const auto upper_Y_BC_minus = upper_Y_neumann ? -upper_Y_BC : 0.5;
+
   BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
-    if ((upper_boundary_flags & INVERT_AC_GRAD) != 0) {
-      // Neumann on upper Y boundary
-      operator3D(i, i) = 1. / coords->dy[i] / sqrt(coords->g_22[i]);
-      operator3D(i, i.ym()) = -1. / coords->dy[i] / sqrt(coords->g_22[i]);
-    } else {
-      // Dirichlet on upper Y boundary
-      operator3D(i, i) = 0.5;
-      operator3D(i, i.ym()) = 0.5;
-    }
+    operator3D(i, i) = upper_Y_BC[i];
+    operator3D(i, i.ym()) = upper_Y_BC_minus[i];
   }
 }
 
@@ -191,69 +162,46 @@ LaplacePetsc3dAmg::~LaplacePetsc3dAmg() {
   }
 }
 
+void setBC(PetscVector<Field3D>& rhs, const Field3D& b_in,
+           const Region<Field3D::ind_type>& region, int boundary_flags,
+           const Field3D& x0) {
+  if (flagSet(boundary_flags, INVERT_RHS)) {
+    BOUT_FOR(index, region) { ASSERT1(std::isfinite(b_in[index])); }
+  } else {
+    const auto& outer_X_BC = (flagSet(boundary_flags, INVERT_SET)) ? x0 : 0.0;
+    BOUT_FOR_SERIAL(index, region) { rhs(index) = outer_X_BC[index]; }
+  }
+}
+
 Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   AUTO_TRACE();
 
   // Timing reported in the log files. Includes any matrix construction.
   // The timing for just the solve phase can be retrieved from the "petscsolve"
   // timer if desired.
-  Timer timer("invert");
+  const Timer timer("invert");
 
   // If necessary, update the values in the matrix operator and initialise
   // the Krylov solver
   if (updateRequired) {
     updateMatrix3D();
   }
-  PetscVector<Field3D> rhs(b_in, indexer), guess(x0, indexer);
+  PetscVector<Field3D> rhs(b_in, indexer);
+  PetscVector<Field3D> guess(x0, indexer);
 
   // Adjust vectors to represent boundary conditions and check that
   // boundary cells are finite
-  BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
-    const BoutReal val = (inner_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-    ASSERT1(std::isfinite(x0[i]));
-    if (!(inner_boundary_flags & INVERT_RHS)) {
-      rhs(i) = val;
-    } else {
-      ASSERT1(std::isfinite(b_in[i]));
-    }
-  }
-
-  BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
-    const BoutReal val = (outer_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-    ASSERT1(std::isfinite(x0[i]));
-    if (!(outer_boundary_flags & INVERT_RHS)) {
-      rhs(i) = val;
-    } else {
-      ASSERT1(std::isfinite(b_in[i]));
-    }
-  }
-
-  BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
-    const BoutReal val = (lower_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-    ASSERT1(std::isfinite(x0[i]));
-    if (!(lower_boundary_flags & INVERT_RHS)) {
-      rhs(i) = val;
-    } else {
-      ASSERT1(std::isfinite(b_in[i]));
-    }
-  }
-
-  BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
-    const BoutReal val = (upper_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-    ASSERT1(std::isfinite(x0[i]));
-    if (!(upper_boundary_flags & INVERT_RHS)) {
-      rhs(i) = val;
-    } else {
-      ASSERT1(std::isfinite(b_in[i]));
-    }
-  }
+  setBC(rhs, b_in, indexer->getRegionInnerX(), inner_boundary_flags, x0);
+  setBC(rhs, b_in, indexer->getRegionOuterX(), outer_boundary_flags, x0);
+  setBC(rhs, b_in, indexer->getRegionLowerY(), lower_boundary_flags, x0);
+  setBC(rhs, b_in, indexer->getRegionUpperY(), upper_boundary_flags, x0);
 
   rhs.assemble();
   guess.assemble();
 
   // Invoke solver
   {
-    Timer timer("petscsolve");
+    const Timer timer("petscsolve");
     KSPSolve(ksp, *rhs.get(), *guess.get());
   }
 
@@ -265,8 +213,9 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
     throw BoutIterationFail("Petsc3dAmg: too many iterations");
   }
   if (reason <= 0) {
-    output << "KSPConvergedReason is " << reason << "\n";
-    throw BoutException("Petsc3dAmg: inversion failed to converge.");
+    throw BoutException(
+        "Petsc3dAmg: inversion failed to converge. KSPConvergedReason: {} ({})",
+        KSPConvergedReasons[reason], static_cast<int>(reason));
   }
 
   // Create field from result
@@ -275,11 +224,13 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   if (solution.hasParallelSlices()) {
     BOUT_FOR(i, indexer->getRegionLowerY()) { solution.ydown()[i] = solution[i]; }
     BOUT_FOR(i, indexer->getRegionUpperY()) { solution.yup()[i] = solution[i]; }
-    for (int b = 1; b < localmesh->ystart; b++) {
+    for (int boundary = 1; boundary < localmesh->ystart; boundary++) {
       BOUT_FOR(i, indexer->getRegionLowerY()) {
-        solution.ydown(b)[i.ym(b)] = solution[i];
+        solution.ydown(boundary)[i.ym(boundary)] = solution[i];
       }
-      BOUT_FOR(i, indexer->getRegionUpperY()) { solution.yup(b)[i.yp(b)] = solution[i]; }
+      BOUT_FOR(i, indexer->getRegionUpperY()) {
+        solution.yup(boundary)[i.yp(boundary)] = solution[i];
+      }
     }
   }
 
@@ -288,8 +239,10 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   // Note: RegionInnerX is the set of points just outside the domain
   //       (in the first boundary cell) so one boundary cell is already set
   BOUT_FOR(i, indexer->getRegionInnerX()) {
-    for (int b = 1; b < localmesh->xstart; b++) {
-      solution[i.xm(b)] = 3.*solution[i.xm(b-1)] - 3.*solution[i.xm(b-2)] + solution[i.xm(b-3)];
+    for (int boundary = 1; boundary < localmesh->xstart; boundary++) {
+      solution[i.xm(boundary)] = 3. * solution[i.xm(boundary - 1)]
+                                 - 3. * solution[i.xm(boundary - 2)]
+                                 + solution[i.xm(boundary - 3)];
     }
   }
 
@@ -297,8 +250,10 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
   // Note: RegionOuterX is the set of points just outside the domain
   //       (in the first boundary cell) so one boundary cell is already set
   BOUT_FOR(i, indexer->getRegionOuterX()) {
-    for (int b = 1; b < localmesh->xstart; b++) {
-      solution[i.xp(b)] = 3.*solution[i.xp(b-1)] - 3.*solution[i.xp(b-2)] + solution[i.xp(b-3)];
+    for (int boundary = 1; boundary < localmesh->xstart; boundary++) {
+      solution[i.xp(boundary)] = 3. * solution[i.xp(boundary - 1)]
+                                 - 3. * solution[i.xp(boundary - 2)]
+                                 + solution[i.xp(boundary - 3)];
     }
   }
 
@@ -329,7 +284,8 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     // avoid confusing it with the x-index.
 
     // Calculate coefficients for the terms in the differential operator
-    BoutReal C_df_dx = coords->G1[l], C_df_dz = coords->G3[l];
+    BoutReal C_df_dx = coords->G1[l];
+    BoutReal C_df_dz = coords->G3[l];
     if (issetD) {
       C_df_dx *= D[l];
       C_df_dz *= D[l];
@@ -347,9 +303,9 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
       C_df_dz += Ez[l];
     }
 
-    BoutReal C_d2f_dx2 = coords->g11[l],
-             C_d2f_dy2 = (coords->g22[l] - 1.0 / coords->g_22[l]),
-             C_d2f_dz2 = coords->g33[l];
+    BoutReal C_d2f_dx2 = coords->g11[l];
+    BoutReal C_d2f_dy2 = (coords->g22[l] - 1.0 / coords->g_22[l]);
+    BoutReal C_d2f_dz2 = coords->g33[l];
     if (issetD) {
       C_d2f_dx2 *= D[l];
       C_d2f_dy2 *= D[l];
@@ -386,8 +342,8 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     // The values stored in the y-boundary are already interpolated
     // up/down, so we don't want the matrix to do any such
     // interpolation there.
-    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0,
-              ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
+    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0;
+    const int ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
     operator3D.yup(yup)(l, l.yp()) = 0.0;
     operator3D.ydown(ydown)(l, l.ym()) = 0.0;
     operator3D.yup(yup)(l, l.xp().yp()) = 0.0;
@@ -420,7 +376,8 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
       C_d2f_dy2 *= D[l];
     }
 
-    BoutReal C_d2f_dxdy = 2 * coords->g12[l], C_d2f_dydz = 2 * coords->g23[l];
+    BoutReal C_d2f_dxdy = 2 * coords->g12[l];
+    BoutReal C_d2f_dydz = 2 * coords->g23[l];
     if (issetD) {
       C_d2f_dxdy *= D[l];
       C_d2f_dydz *= D[l];
@@ -432,16 +389,17 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     }
     C_df_dy /= 2 * coords->dy[l];
     C_d2f_dy2 /= SQ(coords->dy[l]);
-    C_d2f_dxdy /= 4*coords->dx[l]; // NOTE: This value is not completed here. It needs to
-                                   // be divide by dx(i +/- 1, j, k) when using to set a
-                                   // matrix element
+    C_d2f_dxdy /=
+        4 * coords->dx[l]; // NOTE: This value is not completed here. It needs to
+                           // be divide by dx(i +/- 1, j, k) when using to set a
+                           // matrix element
     C_d2f_dydz /= 4 * coords->dy[l] * coords->dz[l];
 
     // The values stored in the y-boundary are already interpolated
     // up/down, so we don't want the matrix to do any such
     // interpolation there.
-    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0,
-              ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
+    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0;
+    const int ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
 
     operator3D.yup(yup)(l, l.yp()) += C_df_dy + C_d2f_dy2;
     operator3D.ydown(ydown)(l, l.ym()) += -C_df_dy + C_d2f_dy2;
@@ -469,7 +427,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   KSPSetOperators(ksp, *operator3D.get(), *operator3D.get(), DIFFERENT_NONZERO_PATTERN);
 #endif
 
-  PC pc;
+  PC pc = nullptr;
   KSPGetPC(ksp, &pc);
 
   if (direct) {
@@ -508,7 +466,9 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
 
     // Set the relative and absolute tolerances
     PCSetType(pc, pctype.c_str());
+#if PETSC_VERSION_LT(3, 18, 0)
     PCGAMGSetSymGraph(pc, PETSC_TRUE);
+#endif
   }
   lib.setOptionsFromInputFile(ksp);
 
@@ -522,33 +482,32 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
 
   // Get the pattern used for interpolation. This is assumed to be the
   // same across the whole grid.
-  const auto pw =
+  const auto positions_weights =
       localmesh->getCoordinates()->getParallelTransform().getWeightsForYDownApproximation(
           localmesh->xstart, localmesh->ystart + 1, localmesh->zstart);
   std::vector<OffsetInd3D> interpPattern;
-  std::transform(pw.begin(), pw.end(), std::back_inserter(interpPattern),
-                 [localmesh](ParallelTransform::PositionsAndWeights p) -> OffsetInd3D {
-                   return {localmesh->xstart - p.i, localmesh->ystart - p.j,
-                           localmesh->LocalNz - p.k < p.k ? p.k - localmesh->LocalNz
-                                                          : p.k};
-                 });
+  std::transform(
+      positions_weights.begin(), positions_weights.end(),
+      std::back_inserter(interpPattern),
+      [localmesh](ParallelTransform::PositionsAndWeights position) -> OffsetInd3D {
+        return {localmesh->xstart - position.i, localmesh->ystart - position.j,
+                ((localmesh->LocalNz - position.k) < position.k)
+                    ? position.k - localmesh->LocalNz
+                    : position.k};
+      });
 
-  OffsetInd3D zero;
+  const OffsetInd3D zero;
 
   // Add interior cells
-  const std::vector<OffsetInd3D> interpolatedUpElements = {zero.yp(), zero.xp().yp(),
-                                                           zero.xm().yp(), zero.yp().zp(),
-                                                           zero.yp().zm()},
-                                 interpolatedDownElements = {
-                                     zero.ym(), zero.xp().ym(), zero.xm().ym(),
-                                     zero.ym().zp(), zero.ym().zm()};
-  std::set<OffsetInd3D> interiorStencil = {zero,           zero.xp(),
-                                           zero.xm(),      zero.zp(),
-                                           zero.zm(),      zero.xp().zp(),
-                                           zero.xp().zm(), zero.xm().zp(),
-                                           zero.xm().zm()},
-                        lowerEdgeStencil = interiorStencil,
-                        upperEdgeStencil = interiorStencil;
+  const std::vector<OffsetInd3D> interpolatedUpElements = {
+      zero.yp(), zero.xp().yp(), zero.xm().yp(), zero.yp().zp(), zero.yp().zm()};
+  const std::vector<OffsetInd3D> interpolatedDownElements = {
+      zero.ym(), zero.xp().ym(), zero.xm().ym(), zero.ym().zp(), zero.ym().zm()};
+  std::set<OffsetInd3D> interiorStencil = {
+      zero,           zero.xp(),      zero.xm(),      zero.zp(),     zero.zm(),
+      zero.xp().zp(), zero.xp().zm(), zero.xm().zp(), zero.xm().zm()};
+  std::set<OffsetInd3D> lowerEdgeStencil = interiorStencil;
+  std::set<OffsetInd3D> upperEdgeStencil = interiorStencil;
 
   for (const auto& i : interpolatedDownElements) {
     for (auto& j : interpPattern) {

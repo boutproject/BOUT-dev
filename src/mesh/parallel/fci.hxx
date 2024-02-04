@@ -26,15 +26,14 @@
 #ifndef __FCITRANSFORM_H__
 #define __FCITRANSFORM_H__
 
+#include <bout/interpolation_xz.hxx>
+#include <bout/mask.hxx>
+#include <bout/parallel_boundary_region.hxx>
 #include <bout/paralleltransform.hxx>
-#include <interpolation_xz.hxx>
-#include <mask.hxx>
-#include <parallel_boundary_region.hxx>
-#include <unused.hxx>
+#include <bout/unused.hxx>
 
 #include <memory>
 #include <vector>
-
 
 /// Field line map - contains the coefficients for interpolation
 class FCIMap {
@@ -65,9 +64,8 @@ public:
     return interp->interpolate(f);
   }
 
-  Field3D integrate(Field3D &f) const;
+  Field3D integrate(Field3D& f) const;
 };
-
 
 /// Flux Coordinate Independent method for parallel derivatives
 class FCITransform : public ParallelTransform {
@@ -104,9 +102,9 @@ public:
     }
   }
 
-  void calcParallelSlices(Field3D &f) override;
-  
-  void integrateParallelSlices(Field3D &f) override;
+  void calcParallelSlices(Field3D& f) override;
+
+  void integrateParallelSlices(Field3D& f) override;
 
   Field3D toFieldAligned(const Field3D& UNUSED(f),
                          const std::string& UNUSED(region) = "RGN_ALL") override {
@@ -126,9 +124,10 @@ public:
     throw BoutException("FCI method cannot transform from field aligned grid");
   }
 
-  bool canToFromFieldAligned() override { return false; }
+  bool canToFromFieldAligned() const override { return false; }
 
-  bool requiresTwistShift(bool UNUSED(twist_shift_enabled), MAYBE_UNUSED(YDirectionType ytype)) override {
+  bool requiresTwistShift(bool UNUSED(twist_shift_enabled),
+                          MAYBE_UNUSED(YDirectionType ytype)) override {
     // No Field3Ds require twist-shift, because they cannot be field-aligned
     ASSERT1(ytype == YDirectionType::Standard);
 
@@ -137,7 +136,6 @@ public:
 
 protected:
   void checkInputGrid() override;
-
 
 private:
   /// FCI maps for each of the parallel slices

@@ -37,13 +37,13 @@
  **************************************************************************/
 
 #include "fci.hxx"
-#include "parallel_boundary_op.hxx"
-#include "parallel_boundary_region.hxx"
+#include "bout/parallel_boundary_op.hxx"
+#include "bout/parallel_boundary_region.hxx"
+#include <bout/bout_types.hxx>
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
-#include <bout_types.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/utils.hxx>
 
 #include <string>
 
@@ -136,10 +136,12 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
       zt_prime_corner[i] = -1.0;
     } else {
       xt_prime_corner[i] =
-          0.25 * (xt_prime[i] + xt_prime[i_xplus] + xt_prime[i_zplus] + xt_prime[i_xzplus]);
+          0.25
+          * (xt_prime[i] + xt_prime[i_xplus] + xt_prime[i_zplus] + xt_prime[i_xzplus]);
 
       zt_prime_corner[i] =
-          0.25 * (zt_prime[i] + zt_prime[i_xplus] + zt_prime[i_zplus] + zt_prime[i_xzplus]);
+          0.25
+          * (zt_prime[i] + zt_prime[i_xplus] + zt_prime[i_zplus] + zt_prime[i_xzplus]);
     }
   }
 
@@ -255,7 +257,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
   }
 }
 
-Field3D FCIMap::integrate(Field3D &f) const {
+Field3D FCIMap::integrate(Field3D& f) const {
   TRACE("FCIMap::integrate");
 
   ASSERT1(f.getDirectionY() == YDirectionType::Standard);
@@ -308,10 +310,13 @@ Field3D FCIMap::integrate(Field3D &f) const {
 
 void FCITransform::checkInputGrid() {
   std::string parallel_transform;
-  if (mesh.isDataSourceGridFile() && !mesh.get(parallel_transform, "parallel_transform")) {
+  if (mesh.isDataSourceGridFile()
+      && !mesh.get(parallel_transform, "parallel_transform")) {
     if (parallel_transform != "fci") {
-      throw BoutException("Incorrect parallel transform type '"+parallel_transform+"' used "
-          "to generate metric components for FCITransform. Should be 'fci'.");
+      throw BoutException(
+          "Incorrect parallel transform type '" + parallel_transform
+          + "' used "
+            "to generate metric components for FCITransform. Should be 'fci'.");
     }
   } // else: parallel_transform variable not found in grid input, indicates older input
     //       file or grid from options so must rely on the user having ensured the type is

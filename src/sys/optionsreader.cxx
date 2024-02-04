@@ -1,8 +1,8 @@
-#include <optionsreader.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
 #include <bout/assert.hxx>
-#include <utils.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/optionsreader.hxx>
+#include <bout/utils.hxx>
 
 // Interface for option file parsers
 #include "options/optionparser.hxx"
@@ -10,18 +10,19 @@
 // Individual parsers
 #include "options/options_ini.hxx"
 
-#include <output.hxx>
+#include <bout/output.hxx>
 
-OptionsReader *OptionsReader::instance = nullptr;
+OptionsReader* OptionsReader::instance = nullptr;
 
 OptionsReader* OptionsReader::getInstance() {
-  if (instance == nullptr)
+  if (instance == nullptr) {
     instance = new OptionsReader(); // Create the singleton object
+  }
 
   return instance;
 }
 
-void OptionsReader::read(Options *options, const std::string& filename) {
+void OptionsReader::read(Options* options, const std::string& filename) {
   TRACE("OptionsReader::read");
   if (filename.empty()) {
     throw BoutException("OptionsReader::read passed empty filename\n");
@@ -32,7 +33,7 @@ void OptionsReader::read(Options *options, const std::string& filename) {
   OptionINI{}.read(options, filename);
 }
 
-void OptionsReader::write(Options *options, const std::string& filename) {
+void OptionsReader::write(Options* options, const std::string& filename) {
   TRACE("OptionsReader::write");
   if (filename.empty()) {
     throw BoutException("OptionsReader::write passed empty filename\n");
@@ -47,7 +48,8 @@ void OptionsReader::parseCommandLine(Options* options, int argc, char** argv) {
   return parseCommandLine(options, std::vector<std::string>(argv, argv + argc));
 }
 
-void OptionsReader::parseCommandLine(Options *options, const std::vector<std::string>& argv) {
+void OptionsReader::parseCommandLine(Options* options,
+                                     const std::vector<std::string>& argv) {
 
   // A key/value pair, separated by a '=' or a switch
   // and sections separated with an '_' but don't start with a '-'
@@ -70,7 +72,8 @@ void OptionsReader::parseCommandLine(Options *options, const std::vector<std::st
     if (buffer[0] == '-') {
       buffer = buffer.substr(1); // Remove the first character (-)
       if (buffer.length() == 0) {
-        throw BoutException(_("Invalid command line option '-' found - maybe check whitespace?"));
+        throw BoutException(
+            _("Invalid command line option '-' found - maybe check whitespace?"));
       }
     }
     // Test to see if the user put spaces around the '=' sign
@@ -110,14 +113,14 @@ void OptionsReader::parseCommandLine(Options *options, const std::vector<std::st
       }
 
       std::string key = trim(buffer.substr(0, startpos));
-      std::string value = trim(buffer.substr(startpos+1));
-      
+      std::string value = trim(buffer.substr(startpos + 1));
+
       size_t scorepos;
-      while((scorepos = key.find_first_of(':')) != std::string::npos) {
-	// sub-section
-	std::string section = key.substr(0,scorepos);
-	key = trim(key.substr(scorepos+1));
-	options = options->getSection(section);
+      while ((scorepos = key.find_first_of(':')) != std::string::npos) {
+        // sub-section
+        std::string section = key.substr(0, scorepos);
+        key = trim(key.substr(scorepos + 1));
+        options = options->getSection(section);
       }
 
       if (key.empty() || value.empty()) {

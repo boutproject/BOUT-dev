@@ -2,18 +2,15 @@
 
 #if BOUT_HAS_PETSC and not BOUT_USE_METRIC_3D
 
-#include <petscksp.h>
-
-#include <bout/invert/laplacexy2.hxx>
-
 #include <bout/assert.hxx>
-
+#include <bout/boutcomm.hxx>
+#include <bout/globals.hxx>
+#include <bout/invert/laplacexy2.hxx>
+#include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutcomm.hxx>
-#include <globals.hxx>
-#include <utils.hxx>
+#include <bout/utils.hxx>
 
-#include <output.hxx>
+#include <petscksp.h>
 
 #include <cmath>
 
@@ -386,7 +383,8 @@ Field2D LaplaceXY2::solve(const Field2D& rhs, const Field2D& x0) {
   KSPGetConvergedReason(ksp, &reason);
 
   if (reason <= 0) {
-    throw BoutException("LaplaceXY2 failed to converge. Reason {:d}", reason);
+    throw BoutException("LaplaceXY2 failed to converge. Reason {} ({:d})",
+                        KSPConvergedReasons[reason], static_cast<int>(reason));
   }
 
   // Convert result into a Field2D

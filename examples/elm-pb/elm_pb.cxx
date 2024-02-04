@@ -5,17 +5,17 @@
  * Can also include the Vpar compressional term
  *******************************************************************************/
 
+#include <bout/bout.hxx>
 #include <bout/constants.hxx>
+#include <bout/derivs.hxx>
+#include <bout/initialprofiles.hxx>
+#include <bout/interpolation.hxx>
 #include <bout/invert/laplacexy.hxx>
-#include <bout.hxx>
-#include <derivs.hxx>
-#include <initialprofiles.hxx>
-#include <interpolation.hxx>
-#include <invert_laplace.hxx>
-#include <invert_parderiv.hxx>
-#include <msg_stack.hxx>
-#include <sourcex.hxx>
-#include <utils.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/invert_parderiv.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/sourcex.hxx>
+#include <bout/utils.hxx>
 
 #include <math.h>
 
@@ -23,7 +23,7 @@
 #include <bout/invert/laplacexy2_hypre.hxx>
 #endif
 
-#include <field_factory.hxx>
+#include <bout/field_factory.hxx>
 
 CELL_LOC loc = CELL_CENTRE;
 
@@ -37,11 +37,11 @@ BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xout", "none");
 class ELMpb : public PhysicsModel {
 private:
   // 2D inital profiles
-  Field2D J0, P0;         // Current and pressure
-  Vector2D b0xcv;         // Curvature term
-  Field2D beta;           // Used for Vpar terms
+  Field2D J0, P0; // Current and pressure
+  Vector2D b0xcv; // Curvature term
+  Field2D beta;   // Used for Vpar terms
   Coordinates::FieldMetric gradparB;
-  Field2D phi0;           // When diamagnetic terms used
+  Field2D phi0; // When diamagnetic terms used
   Field2D Psixy, x;
   Coordinates::FieldMetric U0; // 0th vorticity of equilibrium flow,
   // radial flux coordinate, normalized radial flux coordinate
@@ -205,11 +205,11 @@ private:
 
   bool phi_constraint; // Solver for phi using a solver constraint
 
-  bool include_rmp;     // Include RMP coil perturbation
-  bool simple_rmp;      // Just use a simple form for the perturbation
+  bool include_rmp; // Include RMP coil perturbation
+  bool simple_rmp;  // Just use a simple form for the perturbation
 
-  BoutReal rmp_factor;  // Multiply amplitude by this factor
-  BoutReal rmp_ramp;    // Ramp-up time for RMP [s]. negative -> instant
+  BoutReal rmp_factor; // Multiply amplitude by this factor
+  BoutReal rmp_ramp;   // Ramp-up time for RMP [s]. negative -> instant
   BoutReal rmp_freq; // Amplitude oscillation frequency [Hz] (negative -> no oscillation)
   BoutReal rmp_rotate; // Rotation rate [Hz]
   bool rmp_vac_mask;
@@ -371,9 +371,8 @@ protected:
 
     density = options["density"].doc("Number density [m^-3]").withDefault(1.0e19);
 
-    evolve_jpar = options["evolve_jpar"]
-                       .doc("If true, evolve J raher than Psi")
-                       .withDefault(false);
+    evolve_jpar =
+        options["evolve_jpar"].doc("If true, evolve J raher than Psi").withDefault(false);
     phi_constraint = options["phi_constraint"]
                          .doc("Use solver constraint for phi?")
                          .withDefault(false);
@@ -419,7 +418,8 @@ protected:
       throw BoutException("Invalid choice of bracket method. Must be 0 - 3\n");
     }
 
-    bm_mag_flag = options["bm_mag_flag"].doc("magnetic flutter Poisson Bracket").withDefault(0);
+    bm_mag_flag =
+        options["bm_mag_flag"].doc("magnetic flutter Poisson Bracket").withDefault(0);
     switch (bm_mag_flag) {
     case 0: {
       bm_mag = BRACKET_STD;
@@ -454,7 +454,8 @@ protected:
     diamag_grad_t = options["diamag_grad_t"]
                         .doc("Grad_par(Te) term in Psi equation")
                         .withDefault(diamag);
-    diamag_phi0 = options["diamag_phi0"].doc("Include equilibrium phi0").withDefault(diamag);
+    diamag_phi0 =
+        options["diamag_phi0"].doc("Include equilibrium phi0").withDefault(diamag);
     dia_fact = options["dia_fact"]
                    .doc("Scale diamagnetic effects by this factor")
                    .withDefault(1.0);
@@ -553,16 +554,20 @@ protected:
     rmp_rotate = options["rmp_rotate"].withDefault(0.0);
 
     // Vacuum region control
-    vacuum_pressure = options["vacuum_pressure"]
+    vacuum_pressure =
+        options["vacuum_pressure"]
             .doc("Fraction of peak pressure, below which is considered vacuum.")
             .withDefault(0.02);
-    vacuum_trans = options["vacuum_trans"]
+    vacuum_trans =
+        options["vacuum_trans"]
             .doc("Vacuum boundary transition width, as fraction of peak pressure.")
             .withDefault(0.005);
 
     // Resistivity and hyper-resistivity options
-    vac_lund = options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
-    core_lund = options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
+    vac_lund =
+        options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
+    core_lund =
+        options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
     hyperresist = options["hyperresist"].withDefault(-1.0);
     ehyperviscos = options["ehyperviscos"].withDefault(-1.0);
     spitzer_resist = options["spitzer_resist"]
@@ -574,7 +579,8 @@ protected:
     damp_width = options["damp_width"]
                      .doc("Width of the radial damping regions, in grid cells")
                      .withDefault(0);
-    damp_t_const = options["damp_t_const"]
+    damp_t_const =
+        options["damp_t_const"]
             .doc("Time constant for damping in radial regions. Normalised time units.")
             .withDefault(0.1);
 
@@ -583,7 +589,8 @@ protected:
     viscos_perp = options["viscos_perp"].doc("Perpendicular viscosity").withDefault(-1.0);
     hyperviscos = options["hyperviscos"].doc("Radial hyperviscosity").withDefault(-1.0);
 
-    diffusion_par = options["diffusion_par"].doc("Parallel pressure diffusion").withDefault(-1.0);
+    diffusion_par =
+        options["diffusion_par"].doc("Parallel pressure diffusion").withDefault(-1.0);
     diffusion_p4 = options["diffusion_p4"]
                        .doc("parallel hyper-viscous diffusion for pressure")
                        .withDefault(-1.0);
@@ -1107,7 +1114,7 @@ protected:
       setPrecon(&ELMpb::precon);
 
       // Set Jacobian
-      setJacobian( (jacobianfunc) &ELMpb::jacobian );
+      setJacobian((jacobianfunc)&ELMpb::jacobian);
     }
 
     // Diamagnetic phi0
@@ -1484,8 +1491,7 @@ protected:
 
       if (eHall) { // electron parallel pressure
         ddt(Psi) += 0.25 * delta_i
-                    * (Grad_parP(P, loc)
-                       + bracket(interp_to(P0, loc), Psi, bm_mag));
+                    * (Grad_parP(P, loc) + bracket(interp_to(P0, loc), Psi, bm_mag));
       }
 
       if (diamag_phi0) { // Equilibrium flow
@@ -1532,7 +1538,7 @@ protected:
 
     ////////////////////////////////////////////////////
     // Vorticity equation
-    Psi_loc = interp_to(Psi, CELL_CENTRE,"RGN_ALL");
+    Psi_loc = interp_to(Psi, CELL_CENTRE, "RGN_ALL");
     Psi_loc.applyBoundary();
     // Grad j term
     ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi_loc, J0, CELL_CENTRE);

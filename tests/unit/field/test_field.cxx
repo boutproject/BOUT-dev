@@ -1,11 +1,11 @@
 #include "gtest/gtest.h"
 
-#include "boutexception.hxx"
-#include "field.hxx"
-#include "output.hxx"
 #include "test_extras.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
+#include "bout/field.hxx"
 #include "bout/mesh.hxx"
+#include "bout/output.hxx"
 
 /// Global mesh
 namespace bout {
@@ -33,6 +33,7 @@ public:
       : Field(localmesh, location_in, directions_in) {}
 
   bool is3D() const override { return false; }
+  int size() const override { return 42; }
 };
 } // namespace
 

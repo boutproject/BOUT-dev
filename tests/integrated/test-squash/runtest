@@ -7,6 +7,7 @@ import numpy as np
 from boututils.run_wrapper import launch_safe, shell_safe, build_and_log
 import argparse
 import re
+import os.path
 
 
 # requires: all_tests
@@ -14,7 +15,7 @@ import re
 # cores: 4
 
 IGNORED_VARS_PATTERN = re.compile(
-    "(wtime|ncalls|arkode|cvode|run_id|run_restart_from|M.?SUB|N.?PE|iteration|wall_time|has_legacy_netcdf).*"
+    "(wtime|ncalls|arkode|cvode|run_id|run_restart_from|M.?SUB|N.?PE|iteration|wall_time|has_legacy_netcdf|hist_hi).*"
 )
 
 
@@ -66,24 +67,31 @@ def verify(f1, f2):
                 v1[0, 0] = v1[0, -1] = v1[-1, 0] = v1[-1, -1] = 0.0
                 v2[0, 0] = v2[0, -1] = v2[-1, 0] = v2[-1, -1] = 0.0
 
-            if not np.allclose(v1, v2, equal_nan=True):
-                err = ""
-                dimensions = [range(x) for x in v1.shape]
-                for i in itertools.product(*dimensions):
-                    if v1[i] != v2[i]:
-                        err += "{}: {} != {}\n".format(i, v1[i], v2[i])
-                raise RuntimeError("data mismatch in ", v, err, v1, v2)
+            if v1.dtype.char in "SU":
+                if v1 != v2:
+                    raise RuntimeError("data mismatch in ", v, v1, v2)
+            else:
+                if not np.allclose(v1, v2, equal_nan=True):
+                    err = ""
+                    dimensions = [range(x) for x in v1.shape]
+                    for i in itertools.product(*dimensions):
+                        if v1[i] != v2[i]:
+                            err += "{}: {} != {}\n".format(i, v1[i], v2[i])
+                    raise RuntimeError("data mismatch in ", v, err, v1, v2)
 
 
 parser = argparse.ArgumentParser(description="Test the bout-squashoutput wrapper")
 parser.add_argument(
-    "executable", help="Path to bout-squashoutput", default="../../../bin"
+    "executable", help="Path to bout-squashoutput", default="../../../bin", nargs="?"
 )
 args = parser.parse_args()
 
 build_and_log("Squash test")
 
 bout_squashoutput = args.executable + "/bout-squashoutput"
+
+if not os.path.exists(bout_squashoutput):
+    bout_squashoutput = "bout-squashoutput"
 
 print("Run once to get normal data")
 timed_shell_safe("./squash -q -q -q nout=2")

@@ -40,11 +40,11 @@ RegisterUnavailableSolver
 
 #else
 
-#include "bout_types.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/sundials_backports.hxx"
 
-#include <sundials/sundials_config.h>
 #include <nvector/nvector_parallel.h>
+#include <sundials/sundials_config.h>
 
 #include <vector>
 
@@ -123,6 +123,8 @@ private:
   /// Use right preconditioner? Otherwise use left.
   bool rightprec;
   bool use_jacobian;
+  BoutReal cvode_nonlinear_convergence_coef;
+  BoutReal cvode_linear_convergence_coef;
 
   // Diagnostics from CVODE
   int nsteps{0};

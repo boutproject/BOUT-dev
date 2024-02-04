@@ -4,11 +4,11 @@
 
 #include <bout/hyprelib.hxx>
 
-#include "boutcomm.hxx"
-#include "options.hxx"
-#include "output.hxx"
-#include "unused.hxx"
+#include "bout/boutcomm.hxx"
 #include "bout/openmpwrap.hxx"
+#include "bout/options.hxx"
+#include "bout/output.hxx"
+#include "bout/unused.hxx"
 
 #include <HYPRE.h>
 #include <HYPRE_utilities.h>
@@ -18,7 +18,7 @@ namespace bout {
 // Define all the static member variables
 int HypreLib::count = 0;
 
-#if BOUT_USE_CUDA
+#if BOUT_HAS_CUDA
 static constexpr auto BOUT_HYPRE_EXEC = HYPRE_EXEC_DEVICE;
 static constexpr auto BOUT_HYPRE_MEMORY = HYPRE_MEMORY_DEVICE;
 #else
@@ -27,7 +27,8 @@ static constexpr auto BOUT_HYPRE_MEMORY = HYPRE_MEMORY_HOST;
 #endif
 
 HypreLib::HypreLib() {
-  BOUT_OMP(critical(HypreLib)) {
+  BOUT_OMP(critical(HypreLib))
+  {
     if (count == 0) { // Initialise once
       output_progress.write("Initialising Hypre\n");
       HYPRE_Init();
@@ -39,21 +40,24 @@ HypreLib::HypreLib() {
 }
 
 HypreLib::HypreLib(MAYBE_UNUSED() const HypreLib& other) noexcept {
-  BOUT_OMP(critical(HypreLib)) {
+  BOUT_OMP(critical(HypreLib))
+  {
     // No need to initialise Hypre, because it must already be initialised
     count++; // Copying, so increase count
   }
 }
 
 HypreLib::HypreLib(MAYBE_UNUSED() HypreLib&& other) noexcept {
-  BOUT_OMP(critical(HypreLib)) {
+  BOUT_OMP(critical(HypreLib))
+  {
     // No need to initialise Hypre, because it must already be initialised
     count++; // Creating a new Hyprelib object; other will be deleted
   }
 }
 
 HypreLib::~HypreLib() {
-  BOUT_OMP(critical(HypreLib)) {
+  BOUT_OMP(critical(HypreLib))
+  {
     count--;
     if (count == 0) {
       output_progress.write("Finalising Hypre\n");
@@ -63,7 +67,8 @@ HypreLib::~HypreLib() {
 }
 
 void HypreLib::cleanup() {
-  BOUT_OMP(critical(HypreLib)) {
+  BOUT_OMP(critical(HypreLib))
+  {
     if (count > 0) {
       output << "Finalising Hypre. Warning: Instances of HypreLib still exist.\n";
       HYPRE_Finalize();

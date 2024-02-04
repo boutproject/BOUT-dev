@@ -3,9 +3,9 @@
  *
  */
 
-#include <bout.hxx>
-#include <invert_laplace.hxx>
-#include <field_factory.hxx>
+#include <bout/bout.hxx>
+#include <bout/field_factory.hxx>
+#include <bout/invert_laplace.hxx>
 
 #include <algorithm>
 #include <chrono>
@@ -20,15 +20,15 @@ using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
 using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
 
-#define TEST_BLOCK(NAME, ...)                                                            \
-  {                                                                                      \
-    __VA_ARGS__                                                                          \
-    names.push_back(NAME);                                                               \
-    SteadyClock start = steady_clock::now();                                             \
-    for (int repetitionIndex = 0; repetitionIndex < NUM_LOOPS; repetitionIndex++) {      \
-      __VA_ARGS__;                                                                       \
-    }                                                                                    \
-    times.push_back(steady_clock::now() - start);                                        \
+#define TEST_BLOCK(NAME, ...)                                                       \
+  {                                                                                 \
+    __VA_ARGS__                                                                     \
+    names.push_back(NAME);                                                          \
+    SteadyClock start = steady_clock::now();                                        \
+    for (int repetitionIndex = 0; repetitionIndex < NUM_LOOPS; repetitionIndex++) { \
+      __VA_ARGS__;                                                                  \
+    }                                                                               \
+    times.push_back(steady_clock::now() - start);                                   \
   }
 
 int main(int argc, char** argv) {

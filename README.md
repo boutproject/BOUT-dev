@@ -4,7 +4,7 @@
 [![Build Status](https://github.com/boutproject/BOUT-dev/actions/workflows/tests.yml/badge.svg?branch=next)](https://github.com/boutproject/BOUT-dev/actions)
 [![License](https://img.shields.io/badge/license-LGPL-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
 [![py3comp](https://img.shields.io/badge/py3-compatible-brightgreen.svg)](https://img.shields.io/badge/py3-compatible-brightgreen.svg)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1423213.svg)](https://doi.org/10.5281/zenodo.1423213)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8369888.svg)](https://doi.org/10.5281/zenodo.8369888)
 
 ```
 .______     ______    __    __  .___________.
@@ -60,7 +60,7 @@ Homepage found at [http://boutproject.github.io/](http://boutproject.github.io/)
 
 BOUT++ needs the following:
 
-* A C++14 compiler
+* A C++17 compiler
 * MPI
 * NetCDF
 
