@@ -212,21 +212,20 @@ public:
 /// problems most obviously occur.
 class XZMonotonicHermiteSpline : public XZHermiteSpline {
 public:
-  XZMonotonicHermiteSpline(Mesh* mesh = nullptr)
-      : XZHermiteSpline(0, mesh) {
-    if (localmesh->getNXPE() > 1){
+  XZMonotonicHermiteSpline(Mesh* mesh = nullptr) : XZHermiteSpline(0, mesh) {
+    if (localmesh->getNXPE() > 1) {
       throw BoutException("Do not support MPI splitting in X");
     }
   }
   XZMonotonicHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr)
       : XZHermiteSpline(y_offset, mesh) {
-    if (localmesh->getNXPE() > 1){
+    if (localmesh->getNXPE() > 1) {
       throw BoutException("Do not support MPI splitting in X");
     }
   }
-  XZMonotonicHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh* mesh = nullptr)
+  XZMonotonicHermiteSpline(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZHermiteSpline(mask, y_offset, mesh) {
-    if (localmesh->getNXPE() > 1){
+    if (localmesh->getNXPE() > 1) {
       throw BoutException("Do not support MPI splitting in X");
     }
   }
