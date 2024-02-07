@@ -46,17 +46,23 @@ Options& Options::root() {
 
 void Options::cleanup() { root() = Options{}; }
 
-Options::Options(const Options& other)
-    : value(other.value), attributes(other.attributes),
-      parent_instance(other.parent_instance), full_name(other.full_name),
-      is_section(other.is_section), children(other.children),
-      value_used(other.value_used) {
+Options Options::copy() const {
+  Options result;
 
-  // Ensure that this is the parent of all children,
-  // otherwise will point to the original Options instance
-  for (auto& child : children) {
-    child.second.parent_instance = this;
+  result.value = value;
+  result.attributes = attributes;
+  result.parent_instance = parent_instance;
+  result.full_name = full_name;
+  result.is_section = is_section;
+  result.value_used = value_used;
+
+  // Recursively copy children
+  for (const auto& child : children) {
+    // Note: The child's parent_instance pointer will be updated when
+    // result is moved.
+    result.children.emplace(child.first, child.second.copy());
   }
+  return result;
 }
 
 Options::Options(Options&& other) noexcept
@@ -103,7 +109,7 @@ Options::Options(std::initializer_list<std::pair<std::string, Options>> values) 
   };
 
   for (const auto& value : values) {
-    (*this)[value.first] = value.second;
+    (*this)[value.first] = value.second.copy();
     // value.second was constructed from the "bare" `Options<T>(T)` so
     // doesn't have `full_name` set. This clobbers
     // `(*this)[value.first].full_name` in the copy constructor, so we
@@ -228,34 +234,6 @@ Options::fuzzyFind(const std::string& name, std::string::size_type distance) con
   }
 
   return matches;
-}
-
-Options& Options::operator=(const Options& other) {
-  if (this == &other) {
-    return *this;
-  }
-
-  // Note: Here can't do copy-and-swap because pointers to parents are stored
-
-  value = other.value;
-
-  // Assigning the attributes.
-  // The simple assignment operator fails to compile with Apple Clang 12
-  //   attributes = other.attributes;
-  attributes.clear();
-  attributes.insert(other.attributes.begin(), other.attributes.end());
-
-  full_name = other.full_name;
-  is_section = other.is_section;
-  children = other.children;
-  value_used = other.value_used;
-
-  // Ensure that this is the parent of all children,
-  // otherwise will point to the original Options instance
-  for (auto& child : children) {
-    child.second.parent_instance = this;
-  }
-  return *this;
 }
 
 Options& Options::operator=(Options&& other) noexcept {
@@ -833,7 +811,7 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
   // Copy this object, and then we're going to chuck out everything
   // that has been used. This turns out to be easier than copying just
   // the unused options into an empty instance
-  Options unused = *this;
+  Options unused = this->copy();
 
   if (unused.isValue()) {
     // If this is from an excluded source, count it as being used

@@ -12,9 +12,9 @@
 * options and allows access to all sub-sections
 *
 **************************************************************************
-* Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+* Copyright 2010-2024 BOUT++ contributors
 *
-* Contact: Ben Dudson, bd512@york.ac.uk
+* Contact: Ben Dudson, dudson2@llnl.gov
 *
 * This file is part of BOUT++.
 *
@@ -36,8 +36,8 @@
 class Options;
 
 #pragma once
-#ifndef __OPTIONS_H__
-#define __OPTIONS_H__
+#ifndef OPTIONS_H
+#define OPTIONS_H
 
 #include "bout/bout_types.hxx"
 #include "bout/field2d.hxx"
@@ -155,6 +155,30 @@ class Options;
  * This is used to represent all the options passed to BOUT++ either in a file or on the
  * command line.
  *
+ * Copying options
+ * ---------------
+ *
+ * The copy constructor and copy assignment operator are deleted, so
+ * this is a compile-time error:
+ *
+ *     Options options2 = options1["value"];
+ *
+ * This is because it's ambiguous what is meant, and because accidental copies
+ * were a frequent source of hard-to-understand bugs. Usually a reference is
+ * intended, rather than a copy:
+ *
+ *     Options& ref = options1["value"];
+ *
+ * so that changes to `ref` or its children are reflected in `options1`.
+ * If the intent is to copy the value of the option, then just copy that:
+ *
+ *     option2.value = options1["value"].value;
+ *
+ * If a full deep copy of the option, its attributes and children
+ * (recursively) is really desired, then use the `copy()` method:
+ *
+ *     Options options2 = options1["value"].copy();
+ *
  */
 class Options {
 public:
@@ -181,16 +205,25 @@ public:
   /// Example:  { {"key1", 42}, {"key2", field} }
   Options(std::initializer_list<std::pair<std::string, Options>> values);
 
-  Options(const Options& other);
+  /// Options must be explicitly copied
+  ///
+  ///     Option option2 = option1.copy();
+  ///
+  Options(const Options& other) = delete;
 
-  /// Copy assignment
+  /// Copy assignment must be explicit
   ///
-  /// This replaces the value, attributes and all children
+  ///     Option option2 = option1.copy();
   ///
-  /// Note that if only the value is desired, then that can be copied using
-  /// the value member directly e.g. option2.value = option1.value;
+  /// Note that the value can be copied using:
   ///
-  Options& operator=(const Options& other);
+  ///     option2.value = option1.value;
+  ///
+  Options& operator=(const Options& other) = delete;
+
+  /// Make a deep copy of this Options,
+  /// recursively copying children.
+  Options copy() const;
 
   Options(Options&& other) noexcept;
   Options& operator=(Options&& other) noexcept;
@@ -539,7 +572,7 @@ public:
 
     if (is_section) {
       // Option not found
-      *this = def;
+      this->value = def.value;
 
       output_info << _("\tOption ") << full_name << " = " << def.full_name << " ("
                   << DEFAULT_SOURCE << ")\n";
@@ -1013,4 +1046,4 @@ struct fmt::formatter<Options> : public bout::details::OptionsFormatterBase {};
 
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
-#endif // __OPTIONS_H__
+#endif // OPTIONS_H
