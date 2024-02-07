@@ -308,8 +308,3 @@ void RKScheme::zeroSteps() {
     }
   }
 }
-
-constexpr decltype(RKSchemeFactory::type_name) RKSchemeFactory::type_name;
-constexpr decltype(RKSchemeFactory::section_name) RKSchemeFactory::section_name;
-constexpr decltype(RKSchemeFactory::option_name) RKSchemeFactory::option_name;
-constexpr decltype(RKSchemeFactory::default_type) RKSchemeFactory::default_type;

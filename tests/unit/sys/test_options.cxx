@@ -232,10 +232,9 @@ TEST_F(OptionsTest, GetBoolFromString) {
 
   EXPECT_EQ(value, true);
 
+  // "yes" is not an acceptable bool
   bool value2;
-  options.get("bool_key2", value2, false, false);
-
-  EXPECT_EQ(value2, true);
+  EXPECT_THROW(options.get("bool_key2", value2, false, false), BoutException);
 }
 
 TEST_F(OptionsTest, DefaultValueBool) {
@@ -327,7 +326,7 @@ TEST_F(OptionsTest, ValueUsed) {
   Options options;
   options["key1"] = 1;
   EXPECT_FALSE(options["key1"].valueUsed());
-  MAYBE_UNUSED(const int value) = options["key1"];
+  [[maybe_unused]] const int value = options["key1"];
   EXPECT_TRUE(options["key1"].valueUsed());
 }
 
@@ -1246,17 +1245,17 @@ TEST_F(OptionsTest, GetUnused) {
   // This shouldn't count as unused
   option["section2"]["value5"].attributes["source"] = "Output";
 
-  MAYBE_UNUSED(auto value1) = option["section1"]["value1"].as<int>();
-  MAYBE_UNUSED(auto value3) = option["section2"]["subsection1"]["value3"].as<bool>();
+  [[maybe_unused]] auto value1 = option["section1"]["value1"].as<int>();
+  [[maybe_unused]] auto value3 = option["section2"]["subsection1"]["value3"].as<bool>();
 
   Options expected_unused{{"section1", {{"value2", "hello"}}},
                           {"section2", {{"subsection1", {{"value4", 3.2}}}}}};
 
   EXPECT_EQ(option.getUnused(), expected_unused);
 
-  MAYBE_UNUSED(auto value2) = option["section1"]["value2"].as<std::string>();
-  MAYBE_UNUSED(auto value4) = option["section2"]["subsection1"]["value4"].as<double>();
-  MAYBE_UNUSED(auto value5) = option["section2"]["value5"].as<int>();
+  [[maybe_unused]] auto value2 = option["section1"]["value2"].as<std::string>();
+  [[maybe_unused]] auto value4 = option["section2"]["subsection1"]["value4"].as<double>();
+  [[maybe_unused]] auto value5 = option["section2"]["value5"].as<int>();
 
   Options expected_empty{};
 
@@ -1334,8 +1333,8 @@ TEST_F(OptionsTest, CheckForUnusedOptions) {
   // This shouldn't count as unused
   option["section2"]["value5"].attributes["source"] = "Output";
 
-  MAYBE_UNUSED(auto value1) = option["section1"]["value1"].as<int>();
-  MAYBE_UNUSED(auto value3) = option["section2"]["subsection1"]["value3"].as<bool>();
+  [[maybe_unused]] auto value1 = option["section1"]["value1"].as<int>();
+  [[maybe_unused]] auto value3 = option["section2"]["subsection1"]["value3"].as<bool>();
 
   EXPECT_THROW(bout::checkForUnusedOptions(option, "data", "BOUT.inp"), BoutException);
 }
@@ -1361,8 +1360,7 @@ TEST_P(BoolTrueTestParametrized, BoolTrueFromString) {
 }
 
 INSTANTIATE_TEST_CASE_P(BoolTrueTests, BoolTrueTestParametrized,
-                        ::testing::Values("y", "Y", "yes", "Yes", "yeS", "t", "true", "T",
-                                          "True", "tRuE", "1"));
+                        ::testing::Values("true", "True", "1"));
 
 class BoolFalseTestParametrized : public OptionsTest,
                                   public ::testing::WithParamInterface<std::string> {};
@@ -1376,8 +1374,7 @@ TEST_P(BoolFalseTestParametrized, BoolFalseFromString) {
 }
 
 INSTANTIATE_TEST_CASE_P(BoolFalseTests, BoolFalseTestParametrized,
-                        ::testing::Values("n", "N", "no", "No", "nO", "f", "false", "F",
-                                          "False", "fAlSe", "0"));
+                        ::testing::Values("false", "False", "0"));
 
 class BoolInvalidTestParametrized : public OptionsTest,
                                     public ::testing::WithParamInterface<std::string> {};
@@ -1391,6 +1388,52 @@ TEST_P(BoolInvalidTestParametrized, BoolInvalidFromString) {
 }
 
 INSTANTIATE_TEST_CASE_P(BoolInvalidTests, BoolInvalidTestParametrized,
-                        ::testing::Values("a", "B", "yellow", "Yogi", "test", "truelong",
-                                          "Tim", "2", "not", "No bool", "nOno",
-                                          "falsebuttoolong", "-1"));
+                        ::testing::Values("yes", "no", "y", "n", "a", "B", "yellow",
+                                          "Yogi", "test", "truelong", "Tim", "2", "not",
+                                          "No bool", "nOno", "falsebuttoolong", "-1",
+                                          "1.1"));
+
+TEST_F(OptionsTest, BoolLogicalOR) {
+  ASSERT_TRUE(Options("true | false").as<bool>());
+  ASSERT_TRUE(Options("false | true").as<bool>());
+  ASSERT_TRUE(Options("true | true").as<bool>());
+  ASSERT_FALSE(Options("false | false").as<bool>());
+  ASSERT_TRUE(Options("true | false | true").as<bool>());
+}
+
+TEST_F(OptionsTest, BoolLogicalAND) {
+  ASSERT_FALSE(Options("true & false").as<bool>());
+  ASSERT_FALSE(Options("false & true").as<bool>());
+  ASSERT_TRUE(Options("true & true").as<bool>());
+  ASSERT_FALSE(Options("false & false").as<bool>());
+  ASSERT_FALSE(Options("true & false & true").as<bool>());
+
+  EXPECT_THROW(Options("true & 1.3").as<bool>(), BoutException);
+  EXPECT_THROW(Options("2 & false").as<bool>(), BoutException);
+}
+
+TEST_F(OptionsTest, BoolLogicalNOT) {
+  ASSERT_FALSE(Options("!true").as<bool>());
+  ASSERT_TRUE(Options("!false").as<bool>());
+  ASSERT_FALSE(Options("!true & false").as<bool>());
+  ASSERT_TRUE(Options("!(true & false)").as<bool>());
+  ASSERT_TRUE(Options("true & !false").as<bool>());
+
+  EXPECT_THROW(Options("!2").as<bool>(), BoutException);
+  EXPECT_THROW(Options("!1.2").as<bool>(), BoutException);
+}
+
+TEST_F(OptionsTest, BoolComparisonGT) {
+  ASSERT_TRUE(Options("2 > 1").as<bool>());
+  ASSERT_FALSE(Options("2 > 3").as<bool>());
+}
+
+TEST_F(OptionsTest, BoolComparisonLT) {
+  ASSERT_FALSE(Options("2 < 1").as<bool>());
+  ASSERT_TRUE(Options("2 < 3").as<bool>());
+}
+
+TEST_F(OptionsTest, BoolCompound) {
+  ASSERT_TRUE(Options("true & !false").as<bool>());
+  ASSERT_TRUE(Options("2 > 1 & 2 < 3").as<bool>());
+}

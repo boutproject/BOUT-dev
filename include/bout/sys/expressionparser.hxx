@@ -3,9 +3,9 @@
  *
  * Parses strings containing expressions, returning a tree of generators
  *
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2024 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -24,10 +24,9 @@
  *
  **************************************************************************/
 
-#ifndef __EXPRESSION_PARSER_H__
-#define __EXPRESSION_PARSER_H__
+#ifndef EXPRESSION_PARSER_H
+#define EXPRESSION_PARSER_H
 
-#include "bout/format.hxx"
 #include "bout/unused.hxx"
 
 #include "fmt/core.h"
@@ -158,7 +157,7 @@ protected:
   /// Characters which cannot be used in symbols without escaping;
   /// all other allowed. In addition, whitespace cannot be used.
   /// Adding a binary operator adds its symbol to this string
-  std::string reserved_chars = "+-*/^[](){},=";
+  std::string reserved_chars = "+-*/^[](){},=!";
 
 private:
   std::map<std::string, FieldGeneratorPtr> gen; ///< Generators, addressed by name
@@ -260,4 +259,4 @@ private:
   std::string message;
 };
 
-#endif // __EXPRESSION_PARSER_H__
+#endif // EXPRESSION_PARSER_H

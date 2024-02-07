@@ -37,6 +37,7 @@
 #include "bout/assert.hxx"
 #include "bout/build_config.hxx"
 #include "bout/msg_stack.hxx"
+#include "bout/region.hxx"
 #include "bout/unused.hxx"
 
 #include <algorithm>
@@ -204,6 +205,8 @@ public:
   using size_type = int;
 
   Matrix() = default;
+  Matrix(Matrix&&) noexcept = default;
+  Matrix& operator=(Matrix&&) noexcept = default;
   Matrix(size_type n1, size_type n2) : n1(n1), n2(n2) {
     ASSERT2(n1 >= 0);
     ASSERT2(n2 >= 0);
@@ -214,6 +217,7 @@ public:
     // Prevent copy on write for Matrix
     data.ensureUnique();
   }
+  ~Matrix() = default;
 
   /// Reallocate the Matrix to shape \p new_size_1 by \p new_size_2
   ///
@@ -298,6 +302,8 @@ public:
   using size_type = int;
 
   Tensor() = default;
+  Tensor(Tensor&&) noexcept = default;
+  Tensor& operator=(Tensor&&) noexcept = default;
   Tensor(size_type n1, size_type n2, size_type n3) : n1(n1), n2(n2), n3(n3) {
     ASSERT2(n1 >= 0);
     ASSERT2(n2 >= 0);
@@ -309,6 +315,7 @@ public:
     // Prevent copy on write for Tensor
     data.ensureUnique();
   }
+  ~Tensor() = default;
 
   /// Reallocate the Tensor with shape \p new_size_1 by \p new_size_2 by \p new_size_3
   ///
@@ -345,6 +352,14 @@ public:
     ASSERT2(0 <= i2 && i2 < n2);
     ASSERT2(0 <= i3 && i3 < n3);
     return data[(i1 * n2 + i2) * n3 + i3];
+  }
+
+  const T& operator[](Ind3D i) const {
+    // ny and nz are private :-(
+    // ASSERT2(i.nz == n3);
+    // ASSERT2(i.ny == n2);
+    ASSERT2(0 <= i.ind && i.ind < n1 * n2 * n3);
+    return data[i.ind];
   }
 
   Tensor& operator=(const T& val) {

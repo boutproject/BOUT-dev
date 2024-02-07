@@ -106,8 +106,8 @@ void fft_init(bool fft_measure) {
 
 #if !BOUT_USE_OPENMP
 // Serial code
-void rfft(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
-          MAYBE_UNUSED(dcomplex* out)) {
+void rfft([[maybe_unused]] const BoutReal* in, [[maybe_unused]] int length,
+          [[maybe_unused]] dcomplex* out) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
@@ -170,8 +170,8 @@ void rfft(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
 #endif
 }
 
-void irfft(MAYBE_UNUSED(const dcomplex* in), MAYBE_UNUSED(int length),
-           MAYBE_UNUSED(BoutReal* out)) {
+void irfft([[maybe_unused]] const dcomplex* in, [[maybe_unused]] int length,
+           [[maybe_unused]] BoutReal* out) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
@@ -233,8 +233,8 @@ void irfft(MAYBE_UNUSED(const dcomplex* in), MAYBE_UNUSED(int length),
 }
 #else
 // Parallel thread-safe version of rfft and irfft
-void rfft(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
-          MAYBE_UNUSED(dcomplex* out)) {
+void rfft([[maybe_unused]] const BoutReal* in, [[maybe_unused]] int length,
+          [[maybe_unused]] dcomplex* out) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
@@ -312,8 +312,8 @@ void rfft(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
 #endif
 }
 
-void irfft(MAYBE_UNUSED(const dcomplex* in), MAYBE_UNUSED(int length),
-           MAYBE_UNUSED(BoutReal* out)) {
+void irfft([[maybe_unused]] const dcomplex* in, [[maybe_unused]] int length,
+           [[maybe_unused]] BoutReal* out) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
@@ -388,8 +388,8 @@ void irfft(MAYBE_UNUSED(const dcomplex* in), MAYBE_UNUSED(int length),
 #endif
 //  Discrete sine transforms (B Shanahan)
 
-void DST(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
-         MAYBE_UNUSED(dcomplex* out)) {
+void DST([[maybe_unused]] const BoutReal* in, [[maybe_unused]] int length,
+         [[maybe_unused]] dcomplex* out) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
@@ -446,8 +446,8 @@ void DST(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
 #endif
 }
 
-void DST_rev(MAYBE_UNUSED(dcomplex* in), MAYBE_UNUSED(int length),
-             MAYBE_UNUSED(BoutReal* out)) {
+void DST_rev([[maybe_unused]] dcomplex* in, [[maybe_unused]] int length,
+             [[maybe_unused]] BoutReal* out) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else

@@ -338,7 +338,9 @@ void BoutMesh::setDerivedGridSizes() {
   }
 
   GlobalNx = nx;
-  GlobalNy = ny + 2 * MYG;
+  GlobalNy =
+      ny
+      + 2 * MYG; // Note: For double null this should be be 4 * MYG if boundary cells are stored
   GlobalNz = nz;
 
   // If we've got a second pair of diverator legs, we need an extra
@@ -379,6 +381,7 @@ void BoutMesh::setDerivedGridSizes() {
   }
 
   // Set global offsets
+  // Note: These don't properly include guard/boundary cells
   OffsetX = PE_XIND * MXSUB;
   OffsetY = PE_YIND * MYSUB;
   OffsetZ = 0;
@@ -397,6 +400,48 @@ void BoutMesh::setDerivedGridSizes() {
 
   zstart = MZG;
   zend = MZG + MZSUB - 1;
+
+  // Mapping local to global indices
+  if (periodicX) {
+    // No boundary cells in X
+    MapGlobalX = PE_XIND * MXSUB;
+    MapLocalX = MXG;
+    MapCountX = MXSUB;
+  } else {
+    // X boundaries stored for firstX and lastX processors
+    if (firstX()) {
+      MapGlobalX = 0;
+      MapLocalX = 0;
+      MapCountX = MXG + MXSUB;
+    } else {
+      MapGlobalX = MXG + PE_XIND * MXSUB;
+      MapLocalX = MXG; // Guard cells not included
+      MapCountX = MXSUB;
+    }
+    if (lastX()) {
+      // Doesn't change the origin, but adds outer X boundary cells
+      MapCountX += MXG;
+    }
+  }
+
+  if (PE_YIND == 0) {
+    // Include Y boundary cells
+    MapGlobalY = 0;
+    MapLocalY = 0;
+    MapCountY = MYG + MYSUB;
+  } else {
+    MapGlobalY = MYG + PE_YIND * MYSUB;
+    MapLocalY = MYG;
+    MapCountY = MYSUB;
+  }
+  if (PE_YIND == NYPE - 1) {
+    // Include Y upper boundary region.
+    MapCountY += MYG;
+  }
+
+  MapGlobalZ = 0;
+  MapLocalZ = MZG; // Omit boundary cells
+  MapCountZ = MZSUB;
 }
 
 int BoutMesh::load() {

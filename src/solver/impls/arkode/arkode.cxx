@@ -161,7 +161,7 @@ constexpr auto& ARKStepSetUserData = ARKodeSetUserData;
 
 #if SUNDIALS_VERSION_MAJOR < 6
 void* ARKStepCreate(ARKRhsFn fe, ARKRhsFn fi, BoutReal t0, N_Vector y0,
-                    MAYBE_UNUSED(SUNContext context)) {
+                    [[maybe_unused]] SUNContext context) {
   return ARKStepCreate(fe, fi, t0, y0);
 }
 #endif

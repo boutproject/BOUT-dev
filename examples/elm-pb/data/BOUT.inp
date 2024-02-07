@@ -12,21 +12,18 @@ zperiod = 15        # Fraction of a torus to simulate
 MZ = 16             # Number of points in Z
 
 grid = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
-restart_format = "nc"   # Restart file format
 
 [mesh]
 
 staggergrids = false    # Use staggered grids
 
 [mesh:paralleltransform]
-
 type = shifted # Use shifted metric method
 
 ##################################################
 # derivative methods
 
 [mesh:ddx]
-
 first = C4  # order of first x derivatives
 second = C4 # order of second x derivatives
 upwind = W3 # order of upwinding method W3 = Weno3
@@ -42,9 +39,6 @@ first = C4  # Z derivatives can be done using FFT
 second = C4
 upwind = W3
 
-[output]
-shiftoutput = true  # Put the output into field-aligned coordinates
-
 ##################################################
 # FFTs
 
@@ -58,8 +52,8 @@ fft_measurement_flag = measure  # If using FFTW, perform tests to determine fast
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-atol = 1e-08 # absolute tolerance
-rtol = 1e-05  # relative tolerance
+atol = 1.0e-8 # absolute tolerance
+rtol = 1.0e-5  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
 
@@ -160,7 +154,7 @@ damp_t_const = 1e-2  # Damping time constant
 
 diffusion_par = -1.0   # Parallel pressure diffusion (< 0 = none)
 diffusion_p4 = -1e-05   # parallel hyper-viscous diffusion for pressure (< 0 = none)
-diffusion_u4 = 1e-05    # parallel hyper-viscous diffusion for vorticity (< 0 = none)
+diffusion_u4 = -1e-05    # parallel hyper-viscous diffusion for vorticity (< 0 = none)
 diffusion_a4 = -1e-05   # parallel hyper-viscous diffusion for vector potential (< 0 = none)
 
 ## heat source in pressure in watts
