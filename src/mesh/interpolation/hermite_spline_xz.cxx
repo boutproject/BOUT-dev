@@ -145,6 +145,11 @@ XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh* mesh)
   MatCreateAIJ(MPI_COMM_WORLD, m, m, M, M, 16, nullptr, 16, nullptr, &petscWeights);
 #endif
 #endif
+#ifndef HS_USE_PETSC
+  if (localmesh->getNXPE() > 1){
+    throw BoutException("Require PETSc for MPI splitting in X");
+  }
+#endif
 }
 
 void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
