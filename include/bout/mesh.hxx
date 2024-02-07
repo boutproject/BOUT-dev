@@ -74,6 +74,7 @@ class BoundaryRegionPar;
 #include <list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 
@@ -503,8 +504,19 @@ public:
   int GlobalNx, GlobalNy, GlobalNz; ///< Size of the global arrays. Note: can have holes
   /// Size of the global arrays excluding boundary points.
   int GlobalNxNoBoundaries, GlobalNyNoBoundaries, GlobalNzNoBoundaries;
+
+  /// Note: These offsets only correct if Y guards are not included in the global array
+  ///       and are corrected in gridfromfile.cxx
   int OffsetX, OffsetY, OffsetZ; ///< Offset of this mesh within the global array
                                  ///< so startx on this processor is OffsetX in global
+
+  /// Map between local and global indices
+  /// (MapGlobalX, MapGlobalY, MapGlobalZ) in the global index space maps to (MapLocalX, MapLocalY, MapLocalZ) locally.
+  /// Note that boundary cells are included in the global index space, but communication
+  /// guard cells are not.
+  int MapGlobalX, MapGlobalY, MapGlobalZ; ///< Start global indices
+  int MapLocalX, MapLocalY, MapLocalZ;    ///< Start local indices
+  int MapCountX, MapCountY, MapCountZ;    ///< Size of the mapped region
 
   /// Returns the number of unique cells (i.e., ones not used for
   /// communication) on this processor for 3D fields. Boundaries
@@ -795,6 +807,14 @@ public:
   // Switch for communication of corner guard and boundary cells
   const bool include_corner_cells;
 
+  std::optional<size_t> getCommonRegion(std::optional<size_t>, std::optional<size_t>);
+  size_t getRegionID(const std::string& region) const;
+  const Region<Ind3D>& getRegion(size_t RegionID) const { return region3D[RegionID]; }
+  const Region<Ind3D>& getRegion(std::optional<size_t> RegionID) const {
+    ASSERT1(RegionID.has_value());
+    return region3D[RegionID.value()];
+  }
+
 private:
   /// Allocates default Coordinates objects
   /// By default attempts to read staggered Coordinates from grid data source,
@@ -807,7 +827,9 @@ private:
                            bool force_interpolate_from_centre = false);
 
   //Internal region related information
-  std::map<std::string, Region<Ind3D>> regionMap3D;
+  std::map<std::string, size_t> regionMap3D;
+  std::vector<Region<Ind3D>> region3D;
+  std::vector<std::optional<size_t>> region3Dintersect;
   std::map<std::string, Region<Ind2D>> regionMap2D;
   std::map<std::string, Region<IndPerp>> regionMapPerp;
   Array<int> indexLookup3Dto2D;

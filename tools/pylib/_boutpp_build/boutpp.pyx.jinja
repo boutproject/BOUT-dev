@@ -1723,7 +1723,6 @@ cdef class Options:
             del self.cobj
             self.cobj = NULL
 
-
 def writeDefaultOutputFile(options: Options):
     c.writeDefaultOutputFile(deref(options.cobj))
 

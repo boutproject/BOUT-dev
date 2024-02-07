@@ -2,8 +2,6 @@
  *
  * @mainpage BOUT++
  *
- * @version 3.0
- *
  * @par Description
  * Framework for the solution of partial differential
  * equations, in particular fluid models in plasma physics.
@@ -33,8 +31,8 @@
  *
  **************************************************************************/
 
-#ifndef __BOUT_H__
-#define __BOUT_H__
+#ifndef BOUT_H
+#define BOUT_H
 
 #include "bout/build_config.hxx"
 
@@ -44,7 +42,7 @@
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
-#include "bout/options_netcdf.hxx"
+#include "bout/options_io.hxx"
 #include "bout/output.hxx"
 #include "bout/smoothing.hxx" // Smoothing functions
 #include "bout/solver.hxx"
@@ -206,4 +204,4 @@ private:
  */
 int BoutFinalise(bool write_settings = true);
 
-#endif // __BOUT_H__
+#endif // BOUT_H

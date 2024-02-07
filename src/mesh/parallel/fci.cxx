@@ -50,7 +50,8 @@
 FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& options,
                int offset_, BoundaryRegionPar* inner_boundary,
                BoundaryRegionPar* outer_boundary, bool zperiodic)
-    : map_mesh(mesh), offset(offset_), boundary_mask(map_mesh),
+    : map_mesh(mesh), offset(offset_),
+      region_no_boundary(map_mesh.getRegion("RGN_NOBNDRY")),
       corner_boundary_mask(map_mesh) {
 
   TRACE("Creating FCIMAP for direction {:d}", offset);
@@ -158,6 +159,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
 
   const int ncz = map_mesh.LocalNz;
 
+  BoutMask to_remove(map_mesh);
   // Serial loop because call to BoundaryRegionPar::addPoint
   // (probably?) can't be done in parallel
   BOUT_FOR_SERIAL(i, xt_prime.getRegion("RGN_NOBNDRY")) {
@@ -187,7 +189,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
     // indices (forward/backward_xt_prime and forward/backward_zt_prime)
     // are set to -1
 
-    boundary_mask(x, y, z) = true;
+    to_remove(x, y, z) = true;
 
     // Need to specify the index of the boundary intersection, but
     // this may not be defined in general.
@@ -202,28 +204,14 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
     // and the gradients dR/dx etc. are evaluated at (x,y,z)
 
     // Cache the offsets
-    const auto i_xp = i.xp();
-    const auto i_xm = i.xm();
     const auto i_zp = i.zp();
     const auto i_zm = i.zm();
 
-    const BoutReal dR_dx = 0.5 * (R[i_xp] - R[i_xm]);
-    const BoutReal dZ_dx = 0.5 * (Z[i_xp] - Z[i_xm]);
+    const BoutReal dR_dx = 0.5 * (R[i.xp()] - R[i.xm()]);
+    const BoutReal dZ_dx = 0.5 * (Z[i.xp()] - Z[i.xm()]);
 
-    BoutReal dR_dz, dZ_dz;
-    // Handle the edge cases in Z
-    if (z == 0) {
-      dR_dz = R[i_zp] - R[i];
-      dZ_dz = Z[i_zp] - Z[i];
-
-    } else if (z == map_mesh.LocalNz - 1) {
-      dR_dz = R[i] - R[i_zm];
-      dZ_dz = Z[i] - Z[i_zm];
-
-    } else {
-      dR_dz = 0.5 * (R[i_zp] - R[i_zm]);
-      dZ_dz = 0.5 * (Z[i_zp] - Z[i_zm]);
-    }
+    const BoutReal dR_dz = 0.5 * (R[i_zp] - R[i_zm]);
+    const BoutReal dZ_dz = 0.5 * (Z[i_zp] - Z[i_zm]);
 
     const BoutReal det = dR_dx * dZ_dz - dR_dz * dZ_dx; // Determinant of 2x2 matrix
 
@@ -236,15 +224,25 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
 
     // Negative xt_prime means we've hit the inner boundary, otherwise
     // the outer boundary
-    auto* boundary = (xt_prime[i] < 0.0) ? inner_boundary : outer_boundary;
+    auto* boundary = (xt_prime[i] < map_mesh.xstart) ? inner_boundary : outer_boundary;
     boundary->add_point(x, y, z, x + dx, y + 0.5 * offset,
                         z + dz, // Intersection point in local index space
                         0.5,    // Distance to intersection
                         1       // Default to that there is a point in the other direction
     );
   }
+  region_no_boundary = region_no_boundary.mask(to_remove);
 
-  interp->setMask(boundary_mask);
+  interp->setRegion(region_no_boundary);
+
+  const auto region = fmt::format("RGN_YPAR_{:+d}", offset);
+  if (not map_mesh.hasRegion3D(region)) {
+    // The valid region for this slice
+    map_mesh.addRegion3D(
+        region, Region<Ind3D>(map_mesh.xstart, map_mesh.xend, map_mesh.ystart + offset,
+                              map_mesh.yend + offset, 0, map_mesh.LocalNz - 1,
+                              map_mesh.LocalNy, map_mesh.LocalNz));
+  }
 }
 
 Field3D FCIMap::integrate(Field3D& f) const {
@@ -265,48 +263,33 @@ Field3D FCIMap::integrate(Field3D& f) const {
   result = BoutNaN;
 #endif
 
-  int nz = map_mesh.LocalNz;
+  BOUT_FOR(i, region_no_boundary) {
+    const auto inext = i.yp(offset);
+    const BoutReal f_c = centre[inext];
+    const auto izm = i.zm();
+    const int x = i.x();
+    const int y = i.y();
+    const int z = i.z();
+    const int zm = izm.z();
+    if (corner_boundary_mask(x, y, z) || corner_boundary_mask(x - 1, y, z)
+        || corner_boundary_mask(x, y, zm) || corner_boundary_mask(x - 1, y, zm)
+        || (x == map_mesh.xstart)) {
+      // One of the corners leaves the domain.
+      // Use the cell centre value, since boundary conditions are not
+      // currently applied to corners.
+      result[inext] = f_c;
+    } else {
+      const BoutReal f_pp = corner[inext];           // (x+1/2, z+1/2)
+      const BoutReal f_mp = corner[inext.xm()];      // (x-1/2, z+1/2)
+      const BoutReal f_pm = corner[inext.zm()];      // (x+1/2, z-1/2)
+      const BoutReal f_mm = corner[inext.xm().zm()]; // (x-1/2, z-1/2)
 
-  for (int x = map_mesh.xstart; x <= map_mesh.xend; x++) {
-    for (int y = map_mesh.ystart; y <= map_mesh.yend; y++) {
-
-      int ynext = y + offset;
-
-      for (int z = 0; z < nz; z++) {
-        if (boundary_mask(x, y, z)) {
-          continue;
-        }
-
-        int zm = z - 1;
-        if (z == 0) {
-          zm = nz - 1;
-        }
-
-        BoutReal f_c = centre(x, ynext, z);
-
-        if (corner_boundary_mask(x, y, z) || corner_boundary_mask(x - 1, y, z)
-            || corner_boundary_mask(x, y, zm) || corner_boundary_mask(x - 1, y, zm)
-            || (x == map_mesh.xstart)) {
-          // One of the corners leaves the domain.
-          // Use the cell centre value, since boundary conditions are not
-          // currently applied to corners.
-          result(x, ynext, z) = f_c;
-
-        } else {
-          BoutReal f_pp = corner(x, ynext, z);      // (x+1/2, z+1/2)
-          BoutReal f_mp = corner(x - 1, ynext, z);  // (x-1/2, z+1/2)
-          BoutReal f_pm = corner(x, ynext, zm);     // (x+1/2, z-1/2)
-          BoutReal f_mm = corner(x - 1, ynext, zm); // (x-1/2, z-1/2)
-
-          // This uses a simple weighted average of centre and corners
-          // A more sophisticated approach might be to use e.g. Gauss-Lobatto points
-          // which would include cell edges and corners
-          result(x, ynext, z) = 0.5 * (f_c + 0.25 * (f_pp + f_mp + f_pm + f_mm));
-
-          ASSERT2(std::isfinite(result(x, ynext, z)));
-        }
-      }
+      // This uses a simple weighted average of centre and corners
+      // A more sophisticated approach might be to use e.g. Gauss-Lobatto points
+      // which would include cell edges and corners
+      result[inext] = 0.5 * (f_c + 0.25 * (f_pp + f_mp + f_pm + f_mm));
     }
+    ASSERT2(finite(result[inext]));
   }
   return result;
 }
@@ -340,6 +323,7 @@ void FCITransform::calcParallelSlices(Field3D& f) {
   // Interpolate f onto yup and ydown fields
   for (const auto& map : field_line_maps) {
     f.ynext(map.offset) = map.interpolate(f);
+    f.ynext(map.offset).setRegion(fmt::format("RGN_YPAR_{:+d}", map.offset));
   }
 }
 

@@ -34,9 +34,8 @@ class Vector3D;
 #define __VECTOR3D_H__
 
 class Field2D;
-#include "bout/field3d.hxx"
-
 class Vector2D;
+#include "bout/field3d.hxx"
 
 /*!
  * Represents a 3D vector, with x,y,z components

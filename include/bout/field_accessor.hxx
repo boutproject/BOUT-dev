@@ -39,9 +39,9 @@ struct BoutRealArray {
 
   /// Cast operators, so can be assigned to a raw pointer
   /// Note: Not explicit, so can be cast implicitly
-  operator BoutReal*() { return data; }
+  BOUT_HOST_DEVICE operator BoutReal*() { return data; }
 
-  operator const BoutReal*() const { return data; }
+  BOUT_HOST_DEVICE operator const BoutReal*() const { return data; }
 };
 
 /// Thin wrapper around field data, for fast but unsafe access

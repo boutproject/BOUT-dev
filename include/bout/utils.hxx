@@ -37,6 +37,7 @@
 #include "bout/assert.hxx"
 #include "bout/build_config.hxx"
 #include "bout/msg_stack.hxx"
+#include "bout/region.hxx"
 #include "bout/unused.hxx"
 
 #include <algorithm>
@@ -345,6 +346,14 @@ public:
     ASSERT2(0 <= i2 && i2 < n2);
     ASSERT2(0 <= i3 && i3 < n3);
     return data[(i1 * n2 + i2) * n3 + i3];
+  }
+
+  const T& operator[](Ind3D i) const {
+    // ny and nz are private :-(
+    // ASSERT2(i.nz == n3);
+    // ASSERT2(i.ny == n2);
+    ASSERT2(0 <= i.ind && i.ind < n1 * n2 * n3);
+    return data[i.ind];
   }
 
   Tensor& operator=(const T& val) {

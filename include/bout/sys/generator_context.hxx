@@ -31,10 +31,7 @@ public:
   Context(BoutReal x, BoutReal y, BoutReal z, Mesh* msh, BoutReal t);
 
   /// If constructed without parameters, contains no values (null).
-  /// Requesting x,y,z or t should throw an exception
-  ///
-  /// NOTE: For backward compatibility, all locations are set to zero.
-  /// This should be changed in a future release.
+  /// Requesting x,y,z or t throws an exception
   Context() = default;
 
   /// The location on the boundary
@@ -63,7 +60,13 @@ public:
   }
 
   /// Retrieve a value previously set
-  BoutReal get(const std::string& name) const { return parameters.at(name); }
+  BoutReal get(const std::string& name) const {
+    auto it = parameters.find(name);
+    if (it != parameters.end()) {
+      return it->second;
+    }
+    throw BoutException("Generator context doesn't contain '{:s}'", name);
+  }
 
   /// Get the mesh for this context (position)
   /// If the mesh is null this will throw a BoutException (if CHECK >= 1)
@@ -76,8 +79,7 @@ private:
   Mesh* localmesh{nullptr}; ///< The mesh on which the position is defined
 
   /// Contains user-set values which can be set and retrieved
-  std::map<std::string, BoutReal> parameters{
-      {"x", 0.0}, {"y", 0.0}, {"z", 0.0}, {"t", 0.0}};
+  std::map<std::string, BoutReal> parameters{};
 };
 
 } // namespace generator

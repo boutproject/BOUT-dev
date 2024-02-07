@@ -164,7 +164,7 @@ if False:
                 dx,
                 error_inf[nslice],
                 "--",
-                label="{} $l_\inf$".format(method_orders[nslice]["name"]),
+                label="{} $l_\\inf$".format(method_orders[nslice]["name"]),
             )
         ax.legend(loc="upper left")
         ax.grid()
