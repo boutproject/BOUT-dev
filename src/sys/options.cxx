@@ -56,10 +56,10 @@ Options Options::copy() const {
   result.value_used = value_used;
 
   // Recursively copy children
-  for (const auto& child : children) {
-    // Note: The child's parent_instance pointer will be updated when
-    // result is moved.
-    result.children.emplace(child.first, child.second.copy());
+  for (const auto& child_it : children) {
+    auto pair_it = result.children.emplace(child_it.first, child_it.second.copy());
+    Options& child = pair_it.first->second;
+    child.parent_instance = &result;
   }
   return result;
 }
@@ -80,6 +80,25 @@ Options::Options(Options&& other) noexcept
 template <>
 Options::Options(const char* value) {
   assign<std::string>(value);
+}
+
+Options::Options(InitializerList values, Options* parent_instance, std::string section_name)
+  : parent_instance(parent_instance), full_name(std::move(section_name)),
+    is_section(true) {
+  for (const auto& value_it : values) {
+    std::string child_name = full_name.empty() ? value_it.first : fmt::format("{}:{}", full_name, value_it.first);
+    if (value_it.second.children.size() != 0) {
+      // A section, so construct with an initializer_list
+      children.emplace(value_it.first, Options(value_it.second.children,
+                                               this, std::move(child_name)));
+    } else {
+      // A value
+      auto pair_it =
+        children.emplace(value_it.first, Options(this, std::move(child_name)));
+      Options& child = pair_it.first->second;
+      child._set_no_check(value_it.second.value, "");
+    }
+  }
 }
 
 Options& Options::operator[](const std::string& name) {

@@ -214,7 +214,7 @@ public:
 
     CopyableOptions(
         std::initializer_list<std::pair<std::string, CopyableOptions>> children)
-        : children(std::move(children)) {}
+        : children(children) {}
     ValueType value;
     std::initializer_list<std::pair<std::string, CopyableOptions>> children;
   };
@@ -232,23 +232,7 @@ public:
   ///       don't play nicely with uncopyable types. Instead, we create
   ///       a tree of CopyableOptions and then move.
   Options(InitializerList values, Options* parent_instance = nullptr,
-          const std::string& full_name = "")
-      : parent_instance(parent_instance), full_name(std::move(full_name)),
-        is_section(true) {
-    for (const auto& value_it : values) {
-      std::string child_name = fmt::format("{}:{}", full_name, value_it.first);
-      if (value_it.second.children.size() != 0) {
-        // A section, so construct with an initializer_list
-        children.emplace(value_it.first, Options(std::move(value_it.second.children),
-                                                 this, std::move(child_name)));
-      } else {
-        // A value
-        auto pair_it =
-            children.emplace(value_it.first, Options(this, std::move(child_name)));
-        pair_it.first->second.value = std::move(value_it.second.value);
-      }
-    }
-  }
+          std::string section_name = "");
 
   /// Options must be explicitly copied
   ///
@@ -611,8 +595,8 @@ public:
     ASSERT0(def.isValue());
 
     if (is_section) {
-      // Option not found
-      this->value = def.value;
+      // Option not found. Copy the value from the default.
+      this->_set_no_check(def.value, DEFAULT_SOURCE);
 
       output_info << _("\tOption ") << full_name << " = " << def.full_name << " ("
                   << DEFAULT_SOURCE << ")\n";
