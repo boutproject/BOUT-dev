@@ -51,11 +51,15 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
       for (int k = 0; k < mesh->LocalNz; k++) {
         // Calculate flux from i to i+1
 
-        BoutReal fout = 0.5 * (a(i, j, k) + a(i + 1, j, k))
-                        * (coord->J(i, j, k) * coord->g11(i, j, k)
-                           + coord->J(i + 1, j, k) * coord->g11(i + 1, j, k))
-                        * (f(i + 1, j, k) - f(i, j, k))
-                        / (coord->dx(i, j, k) + coord->dx(i + 1, j, k));
+        BoutReal fout =
+            0.5
+            * (a(i, j, k) + a(i + 1, j, k))
+            // Average <J g^{xx} / dx>
+            * 0.5
+            * (coord->J(i, j, k) * coord->g11(i, j, k) / coord->dx(i, j, k)
+               + coord->J(i + 1, j, k) * coord->g11(i + 1, j, k) / coord->dx(i + 1, j, k))
+            // X derivative at X boundary
+            * (f(i + 1, j, k) - f(i, j, k));
 
         result(i, j, k) += fout / (coord->dx(i, j, k) * coord->J(i, j, k));
         result(i + 1, j, k) -= fout / (coord->dx(i + 1, j, k) * coord->J(i + 1, j, k));
@@ -106,44 +110,48 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     auto ikp = i.zp();
     auto ikm = i.zm();
     {
-      const BoutReal coef = 0.5
-                            * (g_23.c[i] / SQ(J.c[i] * Bxy.c[i])
-                               + g_23.up[i.yp()] / SQ(J.up[i.yp()] * Bxy.up[i.yp()]));
-
-      // Calculate Z derivative at y boundary
-      const BoutReal dfdz = 0.5
-                            * (f_slice.c[ikp] - f_slice.c[ikm] + f_slice.up[ikp.yp()]
-                               - f_slice.up[ikm.yp()])
-                            / (dz.c[i] + dz.up[i.yp()]);
-
-      // Y derivative
-      const BoutReal dfdy =
-          2. * (f_slice.up[i.yp()] - f_slice.c[i]) / (dy.up[i.yp()] + dy.c[i]);
-
-      const BoutReal fout = 0.25 * (a_slice.c[i] + a_slice.up[i.yp()])
-                            * (J.c[i] * g23.c[i] + J.up[i.yp()] * g23.up[i.yp()])
-                            * (dfdz - coef * dfdy);
+      const BoutReal fout =
+          0.5 * (a_slice.c[i] + a_slice.up[i.yp()])
+          * (
+              // Average <J g^{yz} / dz>
+              0.5
+                  * (J.c[i] * g23.c[i] / dz.c[i]
+                     + J.up[i.yp()] * g23.up[i.yp()] / dz.up[i.yp()])
+                  // Z derivative at y boundary
+                  * 0.25
+                  * (f_slice.c[ikp] - f_slice.c[ikm] + f_slice.up[ikp.yp()]
+                     - f_slice.up[ikm.yp()])
+              // Average <J g^{yz} g_{yz} / (g_{yy} dy)>
+              - 0.5
+                    * (J.c[i] * g23.c[i] * g_23.c[i] / (SQ(J.c[i] * Bxy.c[i]) * dy.c[i])
+                       + J.up[i.yp()] * g23.up[i.yp()] * g_23.up[i.yp()]
+                             / (SQ(J.up[i.yp()] * Bxy.up[i.yp()]) * dy.up[i.yp()]))
+                    // Y derivative at Y boundary
+                    * (f_slice.up[i.yp()] - f_slice.c[i]));
 
       yzresult[i] += fout / (dy.c[i] * J.c[i]);
     }
     {
       // Calculate flux between j and j-1
-      const BoutReal coef =
-          0.5
-          * (g_23.c[i] / SQ(J.c[i] * Bxy.c[i])
-             + g_23.down[i.ym()] / SQ(J.down[i.ym()] * Bxy.down[i.ym()]));
 
-      const BoutReal dfdz = 0.5
-                            * (f_slice.c[ikp] - f_slice.c[ikm] + f_slice.down[ikp.ym()]
-                               - f_slice.down[ikm.ym()])
-                            / (dz.c[i] + dz.down[i.ym()]);
-
-      const BoutReal dfdy =
-          2. * (f_slice.c[i] - f_slice.down[i.ym()]) / (dy.c[i] + dy.down[i.ym()]);
-
-      const BoutReal fout = 0.25 * (a_slice.c[i] + a_slice.down[i.ym()])
-                            * (J.c[i] * g23.c[i] + J.down[i.ym()] * g23.down[i.ym()])
-                            * (dfdz - coef * dfdy);
+      const BoutReal fout =
+          0.5 * (a_slice.c[i] + a_slice.down[i.ym()])
+          * (
+              // Average <J g^{yz} / dz>
+              0.5
+                  * (J.c[i] * g23.c[i] / dz.c[i]
+                     + J.down[i.ym()] * g23.down[i.ym()] / dz.down[i.ym()])
+                  // Z derivative at y boundary
+                  * 0.25
+                  * (f_slice.c[ikp] - f_slice.c[ikm] + f_slice.down[ikp.ym()]
+                     - f_slice.down[ikm.ym()])
+              // Average <J g^{yz} g_{yz} / (g_{yy} dy)>
+              - 0.5
+                    * (J.c[i] * g23.c[i] * g_23.c[i] / (SQ(J.c[i] * Bxy.c[i]) * dy.c[i])
+                       + J.down[i.ym()] * g23.down[i.ym()] * g_23.down[i.ym()]
+                             / (SQ(J.down[i.ym()] * Bxy.down[i.ym()]) * dy.down[i.ym()]))
+                    // Y derivative at Y boundary
+                    * (f_slice.c[i] - f_slice.down[i.ym()]));
 
       yzresult[i] -= fout / (dy.c[i] * J.c[i]);
     }
