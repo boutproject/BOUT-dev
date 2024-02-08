@@ -97,8 +97,7 @@ public:
   ///         {"type", "netcdf"},
   ///         {"append", false}
   ///     });
-  static std::unique_ptr<OptionsIO>
-  create(Options::InitializerList config_list) {
+  static std::unique_ptr<OptionsIO> create(Options::InitializerList config_list) {
     Options config(config_list); // Construct an Options to pass by reference
     return create(config);
   }
