@@ -108,7 +108,8 @@ of a crash. This is a compile-time option in the BOUT++ library
 (``-DBOUT_ENABLE_BACKTRACE=ON``, the default, requires the
 ``addr2line`` program to be installed), and debug symbols to be turned
 on (``-DCMAKE_BUILD_TYPE=Debug`` or ``=RelWithDebInfo``) in BOUT++
-_and_ the physics model.
+_and_ the physics model. If debug symbols are only present in part, the
+backtrace will be missing names for the other part.
 
 The output looks something like this:
 
