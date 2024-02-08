@@ -105,7 +105,7 @@ Backtrace
 
 Lastly, BOUT++ can also automatically print a backtrace in the event
 of a crash. This is a compile-time option in the BOUT++ library
-(``-DBOUT_ENABLE_BACKTRACE=on``, the default, requires the
+(``-DBOUT_ENABLE_BACKTRACE=ON``, the default, requires the
 ``addr2line`` program to be installed), and debug symbols to be turned
 on (``-DCMAKE_BUILD_TYPE=Debug`` or ``=RelWithDebInfo``) in BOUT++
 _and_ the physics model.
