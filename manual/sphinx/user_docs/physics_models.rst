@@ -1108,7 +1108,7 @@ that they will not appear in the console or log file. Running with
 
 To enable the ``output_debug`` messages, configure BOUT++ with a
 ``CHECK`` level ``>= 3``. To enable it at lower check levels,
-configure BOUT++ with ``-DENABLE_OUTPUT_DEBUG``. When running BOUT++
+configure BOUT++ with ``-DBOUT_ENABLE_OUTPUT_DEBUG=ON``. When running BOUT++
 add a ``-v -v`` flag to see ``output_debug`` messages.
 
 .. _sec-3to4:

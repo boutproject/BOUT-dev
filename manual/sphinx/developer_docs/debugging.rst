@@ -140,7 +140,7 @@ The output looks something like this:
     BoutException::BoutException<char [19]>(char const (&) [19]) at /path/to/BOUT-dev/build/../include/bout/../boutexception.hxx:28 (discriminator 2)
               
 
-This output tends to be much less user-friendly than the message stack
+This output tends to be much harder to read than the message stack
 from ``TRACE`` macros, but the advantage is that it doesn't require
 any modifications to the code to use, and can give you more precise
 location information.
