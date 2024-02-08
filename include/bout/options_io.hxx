@@ -98,7 +98,7 @@ public:
   ///         {"append", false}
   ///     });
   static std::unique_ptr<OptionsIO>
-  create(std::initializer_list<std::pair<std::string, Options>> config_list) {
+  create(Options::InitializerList config_list) {
     Options config(config_list); // Construct an Options to pass by reference
     return create(config);
   }
