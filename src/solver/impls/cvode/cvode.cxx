@@ -347,7 +347,8 @@ int CvodeSolver::init() {
     CVodeSetMaxNonlinIters(cvode_mem, max_nonlinear_iterations);
   }
 
-#if not(SUNDIALS_VERSION_MAJOR >= 3 and SUNDIALS_VERSION_MINOR >= 2)
+#if (SUNDIALS_VERSION_MAJOR < 3) \
+    or (SUNDIALS_VERSION_MAJOR == 3 and SUNDIALS_VERSION_MINOR < 2)
   if (apply_positivity_constraints) {
     throw BoutException("The apply_positivity_constraints option is only available with "
                         "SUNDIALS>=3.2.0");
