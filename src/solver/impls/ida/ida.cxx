@@ -238,7 +238,7 @@ int IdaSolver::init() {
       }
     } else {
       output.write("\tUsing user-supplied preconditioner\n");
-      if (IDASetPreconditioner(idamem, nullptr, ida_pre_shim)) {
+      if (IDASetPreconditioner(idamem, nullptr, ida_pre_shim) != 0) {
         throw BoutException("IDASetPreconditioner failed\n");
       }
     }
