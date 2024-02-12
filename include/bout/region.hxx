@@ -649,7 +649,6 @@ public:
     auto currentIndices = getIndices();
 
     // Lambda that returns true/false depending if the passed value is in maskIndices
-    // With C++14 T can be auto instead
     auto isInVector = [&](T val) {
       return std::binary_search(std::begin(maskIndices), std::end(maskIndices), val);
     };
@@ -673,7 +672,6 @@ public:
     auto currentIndices = getIndices();
 
     // Lambda that returns true/false depending if the passed value is in maskIndices
-    // With C++14 T can be auto instead
     auto isInVector = [&](T val) { return mask[val]; };
 
     // Erase elements of currentIndices that are in maskIndices
@@ -699,7 +697,6 @@ public:
     auto currentIndices = getIndices();
 
     // Lambda that returns true/false depending if the passed value is in otherIndices
-    // With C++14 T can be auto instead
     auto notInVector = [&](T val) {
       return !std::binary_search(std::begin(otherIndices), std::end(otherIndices), val);
     };
