@@ -127,15 +127,15 @@ TYPED_TEST(IndexOffsetStructTests, AddToIndex) {
                          offset4 = {2, 3, -2};
   EXPECT_EQ(this->zero + offset1, this->zero.xp());
   EXPECT_EQ(offset1 + this->zero, this->zero.xp());
-  if (!std::is_same_v<TypeParam, IndPerp>) {
+  if constexpr (!std::is_same_v<TypeParam, IndPerp>) {
     EXPECT_EQ(this->zero + offset2, this->zero.yp(2));
     EXPECT_EQ(offset2 + this->zero, this->zero.yp(2));
   }
-  if (!std::is_same_v<TypeParam, Ind2D>) {
+  if constexpr (!std::is_same_v<TypeParam, Ind2D>) {
     EXPECT_EQ(this->zero + offset3, this->zero.zp(11));
     EXPECT_EQ(offset3 + this->zero, this->zero.zp(11));
   }
-  if (std::is_same_v<TypeParam, Ind3D>) {
+  if constexpr (std::is_same_v<TypeParam, Ind3D>) {
     EXPECT_EQ(this->zero + offset4, this->zero.xp(2).yp(3).zm(2));
     EXPECT_EQ(offset4 + this->zero, this->zero.xp(2).yp(3).zm(2));
   }
@@ -145,13 +145,13 @@ TYPED_TEST(IndexOffsetStructTests, SubtractFromIndex) {
   IndexOffset<TypeParam> offset1 = {1, 0, 0}, offset2 = {0, 2, 0}, offset3 = {0, 0, 11},
                          offset4 = {2, 3, -2};
   EXPECT_EQ(this->zero - offset1, this->zero.xm());
-  if (!std::is_same_v<TypeParam, IndPerp>) {
+  if constexpr (!std::is_same_v<TypeParam, IndPerp>) {
     EXPECT_EQ(this->zero - offset2, this->zero.ym(2));
   }
-  if (!std::is_same_v<TypeParam, Ind2D>) {
+  if constexpr (!std::is_same_v<TypeParam, Ind2D>) {
     EXPECT_EQ(this->zero - offset3, this->zero.zm(11));
   }
-  if (std::is_same_v<TypeParam, Ind3D>) {
+  if constexpr (std::is_same_v<TypeParam, Ind3D>) {
     EXPECT_EQ(this->zero - offset4, this->zero.zp(2).xm(2).ym(3));
   }
 }

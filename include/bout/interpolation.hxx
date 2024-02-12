@@ -126,7 +126,7 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
                                     : (var.getDirectionY() == YDirectionType::Standard);
       const T var_fa = is_unaligned ? toFieldAligned(var, "RGN_NOX") : var;
 
-      if (not std::is_base_of_v<Field2D, T>) {
+      if constexpr (not std::is_base_of_v<Field2D, T>) {
         // Field2D is axisymmetric, so YDirectionType::Standard and
         // YDirectionType::Aligned are equivalent, but trying to set
         // YDirectionType::Aligned explicitly is an error

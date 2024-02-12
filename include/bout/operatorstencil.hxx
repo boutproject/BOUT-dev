@@ -246,7 +246,7 @@ OperatorStencil<T> squareStencil(Mesh* localmesh) {
       zero.xp(),
       zero.xm(),
   };
-  if (!std::is_same_v<T, IndPerp>) {
+  if constexpr (!std::is_same_v<T, IndPerp>) {
     offsets.insert(zero.yp());
     offsets.insert(zero.ym());
     offsets.insert(zero.xp().yp());
@@ -254,7 +254,7 @@ OperatorStencil<T> squareStencil(Mesh* localmesh) {
     offsets.insert(zero.xm().yp());
     offsets.insert(zero.xm().ym());
   }
-  if (!std::is_same_v<T, Ind2D>) {
+  if constexpr (!std::is_same_v<T, Ind2D>) {
     offsets.insert(zero.zp());
     offsets.insert(zero.zm());
     offsets.insert(zero.xp().zp());
@@ -262,7 +262,7 @@ OperatorStencil<T> squareStencil(Mesh* localmesh) {
     offsets.insert(zero.xm().zp());
     offsets.insert(zero.xm().zm());
   }
-  if (std::is_same_v<T, Ind3D>) {
+  if constexpr (std::is_same_v<T, Ind3D>) {
     offsets.insert(zero.yp().zp());
     offsets.insert(zero.yp().zm());
     offsets.insert(zero.ym().zp());
@@ -294,11 +294,11 @@ OperatorStencil<T> starStencil(Mesh* localmesh) {
       zero.xp(),
       zero.xm(),
   };
-  if (!std::is_same_v<T, IndPerp>) {
+  if constexpr (!std::is_same_v<T, IndPerp>) {
     offsets.insert(zero.yp());
     offsets.insert(zero.ym());
   }
-  if (!std::is_same_v<T, Ind2D>) {
+  if constexpr (!std::is_same_v<T, Ind2D>) {
     offsets.insert(zero.zp());
     offsets.insert(zero.zm());
   }

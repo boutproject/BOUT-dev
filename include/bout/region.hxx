@@ -521,7 +521,7 @@ public:
             int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE)
       : ny(ny), nz(nz) {
 #if CHECK > 1
-    if (std::is_base_of_v<Ind2D, T>) {
+    if constexpr (std::is_base_of_v<Ind2D, T>) {
       if (nz != 1) {
         throw BoutException(
             "Trying to make Region<Ind2D> with nz = {:d}, but expected nz = 1", nz);
@@ -537,7 +537,7 @@ public:
       }
     }
 
-    if (std::is_base_of_v<IndPerp, T>) {
+    if constexpr (std::is_base_of_v<IndPerp, T>) {
       if (ny != 1) {
         throw BoutException(
             "Trying to make Region<IndPerp> with ny = {:d}, but expected ny = 1", ny);

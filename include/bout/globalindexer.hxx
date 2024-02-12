@@ -72,7 +72,7 @@ public:
 
     regionInnerX = intersection(bndryCandidate, indices.getRegion("RGN_INNER_X"));
     regionOuterX = intersection(bndryCandidate, indices.getRegion("RGN_OUTER_X"));
-    if (std::is_same_v<T, FieldPerp>) {
+    if constexpr (std::is_same_v<T, FieldPerp>) {
       regionLowerY = Region<ind_type>({});
       regionUpperY = Region<ind_type>({});
     } else {

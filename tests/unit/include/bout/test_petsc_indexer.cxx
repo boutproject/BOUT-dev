@@ -107,7 +107,7 @@ TYPED_TEST(IndexerTest, TestConvertIndex) {
   }
 
   // Check indices of Y guard cells are unique
-  if (!std::is_same_v<TypeParam, FieldPerp>) {
+  if constexpr (!std::is_same_v<TypeParam, FieldPerp>) {
     BOUT_FOR(i, f.getRegion("RGN_YGUARDS")) {
       int global = this->globalSquareIndexer.getGlobal(i);
       EXPECT_GE(global, 0);
@@ -177,7 +177,7 @@ TYPED_TEST(IndexerTest, TestGetRegionNobndry) {
   BOUT_FOR(i, rgn) {
     EXPECT_GE(i.x(), this->globalSquareIndexer.getMesh()->xstart);
     EXPECT_LE(i.x(), this->globalSquareIndexer.getMesh()->xend);
-    if (!std::is_same_v<TypeParam, FieldPerp>) {
+    if constexpr (!std::is_same_v<TypeParam, FieldPerp>) {
       EXPECT_GE(i.y(), this->globalSquareIndexer.getMesh()->ystart);
       EXPECT_LE(i.y(), this->globalSquareIndexer.getMesh()->yend);
     }
@@ -187,7 +187,7 @@ TYPED_TEST(IndexerTest, TestGetRegionNobndry) {
   BOUT_FOR(i, rgn) {
     EXPECT_GE(i.x(), this->globalStarIndexer.getMesh()->xstart);
     EXPECT_LE(i.x(), this->globalStarIndexer.getMesh()->xend);
-    if (!std::is_same_v<TypeParam, FieldPerp>) {
+    if constexpr (!std::is_same_v<TypeParam, FieldPerp>) {
       EXPECT_GE(i.y(), this->globalStarIndexer.getMesh()->ystart);
       EXPECT_LE(i.y(), this->globalStarIndexer.getMesh()->yend);
     }
@@ -197,7 +197,7 @@ TYPED_TEST(IndexerTest, TestGetRegionNobndry) {
   BOUT_FOR(i, rgn) {
     EXPECT_GE(i.x(), this->globalDefaultIndexer.getMesh()->xstart);
     EXPECT_LE(i.x(), this->globalDefaultIndexer.getMesh()->xend);
-    if (!std::is_same_v<TypeParam, FieldPerp>) {
+    if constexpr (!std::is_same_v<TypeParam, FieldPerp>) {
       EXPECT_GE(i.y(), this->globalDefaultIndexer.getMesh()->ystart);
       EXPECT_LE(i.y(), this->globalDefaultIndexer.getMesh()->yend);
     }
@@ -207,7 +207,7 @@ TYPED_TEST(IndexerTest, TestGetRegionNobndry) {
   BOUT_FOR(i, rgn) {
     EXPECT_GE(i.x(), this->localIndexer.getMesh()->xstart);
     EXPECT_LE(i.x(), this->localIndexer.getMesh()->xend);
-    if (!std::is_same_v<TypeParam, FieldPerp>) {
+    if constexpr (!std::is_same_v<TypeParam, FieldPerp>) {
       EXPECT_GE(i.y(), this->localIndexer.getMesh()->ystart);
       EXPECT_LE(i.y(), this->localIndexer.getMesh()->yend);
     }
@@ -229,7 +229,7 @@ TYPED_TEST(IndexerTest, TestGetRegionBndry) {
 
 TYPED_TEST(IndexerTest, TestGetRegionLowerY) {
   Region<typename TypeParam::ind_type> rgn;
-  if (std::is_same_v<TypeParam, FieldPerp>) {
+  if constexpr (std::is_same_v<TypeParam, FieldPerp>) {
     rgn = this->globalSquareIndexer.getRegionLowerY();
     EXPECT_EQ(rgn.asUnique().size(), 0);
     rgn = this->globalStarIndexer.getRegionLowerY();
@@ -250,7 +250,7 @@ TYPED_TEST(IndexerTest, TestGetRegionLowerY) {
 
 TYPED_TEST(IndexerTest, TestGetRegionUpperY) {
   Region<typename TypeParam::ind_type> rgn;
-  if (std::is_same_v<TypeParam, FieldPerp>) {
+  if constexpr (std::is_same_v<TypeParam, FieldPerp>) {
     rgn = this->globalSquareIndexer.getRegionUpperY();
     EXPECT_EQ(rgn.asUnique().size(), 0);
     rgn = this->globalStarIndexer.getRegionUpperY();
