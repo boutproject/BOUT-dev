@@ -120,7 +120,7 @@ PetscErrorCode petscVecToField(Vec in, T& out) {
 template <typename T>
 class InvertableOperator {
   static_assert(
-      bout::utils::is_Field<T>::value,
+      bout::utils::is_Field_v<T>,
       "InvertableOperator must be templated with one of FieldPerp, Field2D or Field3D");
 
 public:

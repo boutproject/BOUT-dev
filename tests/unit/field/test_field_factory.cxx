@@ -41,7 +41,7 @@ public:
   // FieldFactory::create3D
   template <class... Args>
   T create(Args&&... args) {
-    if constexpr (bout::utils::is_Field3D<T>{}) {
+    if constexpr (bout::utils::is_Field3D_v<T>) {
       return factory.create3D(std::forward<Args>(args)...);
     } else {
       return factory.create2D(std::forward<Args>(args)...);
@@ -210,7 +210,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateZStaggered) {
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
         auto offset = BoutReal{0.0};
-        if (bout::utils::is_Field3D<TypeParam>::value) {
+        if (bout::utils::is_Field3D_v<TypeParam>) {
           offset = 0.5;
         }
 

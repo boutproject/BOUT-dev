@@ -35,7 +35,7 @@ using InterpolationWeights = std::vector<ParallelTransform::PositionsAndWeights>
 template <class T>
 class GlobalIndexer {
 public:
-  static_assert(bout::utils::is_Field<T>::value, "GlobalIndexer only works with Fields");
+  static_assert(bout::utils::is_Field_v<T>, "GlobalIndexer only works with Fields");
   using ind_type = typename T::ind_type;
 
   GlobalIndexer() = default;

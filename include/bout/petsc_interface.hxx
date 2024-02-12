@@ -75,7 +75,7 @@ inline MPI_Comm getComm([[maybe_unused]] const FieldPerp& field) {
 template <class T>
 class PetscVector {
 public:
-  static_assert(bout::utils::is_Field<T>::value, "PetscVector only works with Fields");
+  static_assert(bout::utils::is_Field_v<T>, "PetscVector only works with Fields");
   using ind_type = typename T::ind_type;
 
   struct VectorDeleter {
@@ -250,7 +250,7 @@ void swap(PetscMatrix<T>& first, PetscMatrix<T>& second);
 template <class T>
 class PetscMatrix {
 public:
-  static_assert(bout::utils::is_Field<T>::value, "PetscMatrix only works with Fields");
+  static_assert(bout::utils::is_Field_v<T>, "PetscMatrix only works with Fields");
   using ind_type = typename T::ind_type;
 
   struct MatrixDeleter {

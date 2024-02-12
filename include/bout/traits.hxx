@@ -32,25 +32,40 @@ namespace utils {
 template <class T>
 using is_Field = std::is_base_of<Field, T>;
 
+template <class T>
+inline constexpr bool is_Field_v = std::is_base_of_v<Field, T>;
+
 /// If `T` is derived from `Field2D`, provides the member constant
 /// `value` equal to `true`. Otherwise `value is `false`.
 template <class T>
 using is_Field2D = std::is_base_of<Field2D, T>;
+
+template <class T>
+inline constexpr bool is_Field2D_v = std::is_base_of_v<Field2D, T>;
 
 /// If `T` is derived from `Field3D`, provides the member constant
 /// `value` equal to `true`. Otherwise `value is `false`.
 template <class T>
 using is_Field3D = std::is_base_of<Field3D, T>;
 
+template <class T>
+inline constexpr bool is_Field3D_v = std::is_base_of_v<Field3D, T>;
+
 /// If `T` is derived from `FieldPerp`, provides the member constant
 /// `value` equal to `true`. Otherwise `value is `false`.
 template <class T>
 using is_FieldPerp = std::is_base_of<FieldPerp, T>;
 
+template <class T>
+inline constexpr bool is_FieldPerp_v = std::is_base_of_v<FieldPerp, T>;
+
 /// If `T` is derived from `Options`, provides the member constant
 /// `value` equal to `true`. Otherwise `value is `false`.
 template <class T>
 using is_Options = std::is_base_of<Options, T>;
+
+template <class T>
+inline constexpr bool is_Options_v = std::is_base_of_v<Options, T>;
 
 /// Enable a function if all the Ts are subclasses of `Field`, and
 /// returns the common type: i.e. `Field3D` if at least one argument

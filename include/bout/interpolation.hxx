@@ -56,7 +56,7 @@ inline BoutReal interp(const stencil& s) {
 template <typename T>
 const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_ALL") {
   AUTO_TRACE();
-  static_assert(bout::utils::is_Field2D<T>::value || bout::utils::is_Field3D<T>::value,
+  static_assert(bout::utils::is_Field2D_v<T> || bout::utils::is_Field3D_v<T>,
                 "interp_to must be templated with one of Field2D or Field3D.");
   ASSERT1(loc != CELL_DEFAULT); // doesn't make sense to interplote to CELL_DEFAULT
 

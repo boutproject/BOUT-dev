@@ -73,7 +73,7 @@ class HypreVector {
   HypreLib hyprelib{};
 
 public:
-  static_assert(bout::utils::is_Field<T>::value, "HypreVector only works with Fields");
+  static_assert(bout::utils::is_Field_v<T>, "HypreVector only works with Fields");
   using ind_type = typename T::ind_type;
 
   HypreVector() = default;
@@ -338,7 +338,7 @@ class HypreMatrix {
   };
 
 public:
-  static_assert(bout::utils::is_Field<T>::value, "HypreMatrix only works with Fields");
+  static_assert(bout::utils::is_Field_v<T>, "HypreMatrix only works with Fields");
   using ind_type = typename T::ind_type;
 
   HypreMatrix() = default;
