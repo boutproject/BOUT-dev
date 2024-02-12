@@ -124,6 +124,18 @@ void* CVodeCreate(int lmm, [[maybe_unused]] int iter,
 }
 #endif
 
+#if (SUNDIALS_VERSION_MAJOR < 4)
+int CVodeSetLinearSolver(void* cvode_mem, SUNLinearSolver LS,
+                         [[maybe_unused]] SUNMatrix A) {
+  return CVSpilsSetLinearSolver(cvode_mem, LS);
+}
+constexpr auto& CVodeSetPreconditioner = CVSpilsSetPreconditioner;
+constexpr auto& CVodeSetJacTimes = CVSpilsSetJacTimes;
+constexpr auto& CVodeGetNumPrecSolves = CVSpilsGetNumPrecSolves;
+constexpr auto& CVodeGetNumLinIters = CVSpilsGetNumLinIters;
+constexpr auto& CVodeGetNumPrecSolves = CVSpilsGetNumPrecSolves;
+#endif
+
 CvodeSolver::CvodeSolver(Options* opts)
     : Solver(opts), diagnose((*options)["diagnose"]
                                  .doc("Print solver diagnostic information?")
@@ -386,7 +398,7 @@ int CvodeSolver::init() {
       if ((sun_solver = SUNLinSol_SPGMR(uvec, prectype, maxl, suncontext)) == nullptr) {
         throw BoutException("Creating SUNDIALS linear solver failed\n");
       }
-      if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS) {
+      if (CVodeSetLinearSolver(cvode_mem, sun_solver, nullptr) != CV_SUCCESS) {
         throw BoutException("CVSpilsSetLinearSolver failed\n");
       }
 #else
@@ -424,7 +436,7 @@ int CvodeSolver::init() {
       } else {
         output_info.write("\tUsing user-supplied preconditioner\n");
 
-        if (CVSpilsSetPreconditioner(cvode_mem, nullptr, cvode_pre_shim)) {
+        if (CVodeSetPreconditioner(cvode_mem, nullptr, cvode_pre_shim) != 0) {
           throw BoutException("CVSpilsSetPreconditioner failed\n");
         }
       }
@@ -436,7 +448,7 @@ int CvodeSolver::init() {
           == nullptr) {
         throw BoutException("Creating SUNDIALS linear solver failed\n");
       }
-      if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS) {
+      if (CVodeSetLinearSolver(cvode_mem, sun_solver, nullptr) != CV_SUCCESS) {
         throw BoutException("CVSpilsSetLinearSolver failed\n");
       }
 #else
@@ -450,7 +462,7 @@ int CvodeSolver::init() {
     if (use_jacobian and hasJacobian()) {
       output_info.write("\tUsing user-supplied Jacobian function\n");
 
-      if (CVSpilsSetJacTimes(cvode_mem, nullptr, cvode_jac) != CV_SUCCESS) {
+      if (CVodeSetJacTimes(cvode_mem, nullptr, cvode_jac) != CV_SUCCESS) {
         throw BoutException("CVSpilsSetJacTimesVecFn failed\n");
       }
     } else {
@@ -545,9 +557,9 @@ int CvodeSolver::run() {
     nfevals = int(temp_long_int);
     CVodeGetNumNonlinSolvIters(cvode_mem, &temp_long_int);
     nniters = int(temp_long_int);
-    CVSpilsGetNumPrecSolves(cvode_mem, &temp_long_int);
+    CVodeGetNumPrecSolves(cvode_mem, &temp_long_int);
     npevals = int(temp_long_int);
-    CVSpilsGetNumLinIters(cvode_mem, &temp_long_int);
+    CVodeGetNumLinIters(cvode_mem, &temp_long_int);
     nliters = int(temp_long_int);
 
     // Last step size

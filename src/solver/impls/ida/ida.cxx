@@ -88,6 +88,13 @@ constexpr auto& ida_pre_shim = ida_pre;
 void* IDACreate([[maybe_unused]] SUNContext) { return IDACreate(); }
 #endif
 
+#if (SUNDIALS_VERSION_MAJOR < 4)
+int IDASetLinearSolver(void* ida_mem, SUNLinearSolver LS, [[maybe_unused]] SUNMatrix A) {
+  return IDASpilsSetLinearSolver(ida_mem, LS);
+}
+constexpr auto& IDASetPreconditioner = IDASpilsSetPreconditioner;
+#endif
+
 IdaSolver::IdaSolver(Options* opts)
     : Solver(opts),
       abstol((*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12)),
@@ -196,8 +203,8 @@ int IdaSolver::init() {
   if ((sun_solver = SUNLinSol_SPGMR(uvec, SUN_PREC_NONE, maxl, suncontext)) == nullptr) {
     throw BoutException("Creating SUNDIALS linear solver failed\n");
   }
-  if (IDASpilsSetLinearSolver(idamem, sun_solver) != IDA_SUCCESS) {
-    throw BoutException("IDASpilsSetLinearSolver failed\n");
+  if (IDASetLinearSolver(idamem, sun_solver, nullptr) != IDA_SUCCESS) {
+    throw BoutException("IDASetLinearSolver failed\n");
   }
 #else
   if (IDASpgmr(idamem, maxl)) {
@@ -231,8 +238,8 @@ int IdaSolver::init() {
       }
     } else {
       output.write("\tUsing user-supplied preconditioner\n");
-      if (IDASpilsSetPreconditioner(idamem, nullptr, ida_pre_shim)) {
-        throw BoutException("IDASpilsSetPreconditioner failed\n");
+      if (IDASetPreconditioner(idamem, nullptr, ida_pre_shim)) {
+        throw BoutException("IDASetPreconditioner failed\n");
       }
     }
   }
