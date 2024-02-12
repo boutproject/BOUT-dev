@@ -12,58 +12,48 @@ class Options;
 namespace bout {
 namespace utils {
 
-/// If `T` is derived from `Field`, provides the member constant
-/// `value` equal to `true`. Otherwise `value is `false`.
-///
-/// The following is C++14, but simplifies the use of `is_field`:
-///
-///     template <class T>
-///     constexpr bool is_field_v = is_field<T>::value;
+template <class T>
+using is_Field = std::is_base_of<Field, T>;
+
+/// True if `T` is derived from `Field`, otherwise false
 ///
 /// Examples
 /// --------
 ///
 ///     template <class T>
 ///     void print_field(const T& field) {
-///       static_assert(bout::utils::is_field<T>::value,
+///       static_assert(bout::utils::is_Field_v<T>,
 ///           "print_field only works with Field2Ds, Field3Ds or FieldPerps")
 ///       // implementation
 ///     }
 template <class T>
-using is_Field = std::is_base_of<Field, T>;
-
-template <class T>
 inline constexpr bool is_Field_v = std::is_base_of_v<Field, T>;
 
-/// If `T` is derived from `Field2D`, provides the member constant
-/// `value` equal to `true`. Otherwise `value is `false`.
 template <class T>
 using is_Field2D = std::is_base_of<Field2D, T>;
 
+/// True if `T` is derived from `Field2D`, otherwise false
 template <class T>
 inline constexpr bool is_Field2D_v = std::is_base_of_v<Field2D, T>;
 
-/// If `T` is derived from `Field3D`, provides the member constant
-/// `value` equal to `true`. Otherwise `value is `false`.
 template <class T>
 using is_Field3D = std::is_base_of<Field3D, T>;
 
+/// True if `T` is derived from `Field3D`, otherwise false
 template <class T>
 inline constexpr bool is_Field3D_v = std::is_base_of_v<Field3D, T>;
 
-/// If `T` is derived from `FieldPerp`, provides the member constant
-/// `value` equal to `true`. Otherwise `value is `false`.
 template <class T>
 using is_FieldPerp = std::is_base_of<FieldPerp, T>;
 
+/// True if `T` is derived from `FieldPerp`, otherwise false
 template <class T>
 inline constexpr bool is_FieldPerp_v = std::is_base_of_v<FieldPerp, T>;
 
-/// If `T` is derived from `Options`, provides the member constant
-/// `value` equal to `true`. Otherwise `value is `false`.
 template <class T>
 using is_Options = std::is_base_of<Options, T>;
 
+/// True if `T` is derived from `Options`, otherwise false
 template <class T>
 inline constexpr bool is_Options_v = std::is_base_of_v<Options, T>;
 
