@@ -482,9 +482,10 @@ template <typename T = Ind3D>
 class Region {
   // Following prevents a Region being created with anything other
   // than Ind2D, Ind3D or IndPerp as template type
-  static_assert(std::is_base_of_v<Ind2D, T> || std::is_base_of_v<Ind3D, T>
-                    || std::is_base_of_v<IndPerp, T>,
-                "Region must be templated with one of IndPerp, Ind2D or Ind3D");
+  static_assert(
+      std::is_base_of_v<
+          Ind2D, T> || std::is_base_of_v<Ind3D, T> || std::is_base_of_v<IndPerp, T>,
+      "Region must be templated with one of IndPerp, Ind2D or Ind3D");
 
 public:
   using data_type = T;
