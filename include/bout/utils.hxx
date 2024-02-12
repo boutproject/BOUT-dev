@@ -106,7 +106,7 @@ struct function_traits;
 ///         bout::utils::function_traits<some_function>::arg<1>::type;
 ///     // The following prints "true":
 ///     std::cout << std::boolalpha
-///         << std::is_same<double, first_argument_type>::value;
+///         << std::is_same_v<double, first_argument_type>;
 ///
 /// Adapted from https://stackoverflow.com/a/9065203/2043465
 template <typename R, typename... Args>

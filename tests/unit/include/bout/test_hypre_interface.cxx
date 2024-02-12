@@ -185,7 +185,7 @@ public:
 
     indexA =
         ind_type((1 + field.getNy()) * field.getNz() + 1, field.getNy(), field.getNz());
-    if (std::is_same<T, FieldPerp>::value) {
+    if (std::is_same_v<T, FieldPerp>) {
       indexB = indexA.zp();
 
       iWD0 = indexB.zm();
@@ -389,7 +389,7 @@ TYPED_TEST(HypreMatrixTest, YUp) {
 
   HypreMatrix<TypeParam> matrix(this->indexer);
 
-  if (std::is_same<TypeParam, FieldPerp>::value) {
+  if (std::is_same_v<TypeParam, FieldPerp>) {
     EXPECT_THROW(matrix.yup(), BoutException);
     return;
   }
@@ -398,7 +398,7 @@ TYPED_TEST(HypreMatrixTest, YUp) {
   MockTransform* transform = this->pt;
   const BoutReal value = 42.0;
 
-  if (std::is_same<TypeParam, Field2D>::value) {
+  if (std::is_same_v<TypeParam, Field2D>) {
     expected(this->indexA, this->indexB) = value;
   } else {
     EXPECT_CALL(*transform, getWeightsForYUpApproximation(
@@ -422,7 +422,7 @@ TYPED_TEST(HypreMatrixTest, YDown) {
 
   HypreMatrix<TypeParam> matrix(this->indexer);
 
-  if (std::is_same<TypeParam, FieldPerp>::value) {
+  if (std::is_same_v<TypeParam, FieldPerp>) {
     EXPECT_THROW(matrix.yup(), BoutException);
     return;
   }
@@ -431,7 +431,7 @@ TYPED_TEST(HypreMatrixTest, YDown) {
   MockTransform* transform = this->pt;
   const BoutReal value = 42.0;
 
-  if (std::is_same<TypeParam, Field2D>::value) {
+  if (std::is_same_v<TypeParam, Field2D>) {
     expected(this->indexB, this->indexA) = value;
   } else {
     EXPECT_CALL(*transform, getWeightsForYDownApproximation(

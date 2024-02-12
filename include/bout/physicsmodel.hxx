@@ -128,10 +128,10 @@ public:
   using jacobianfunc = int (PhysicsModel::*)(BoutReal t);
 
   template <class Model, typename = typename std::enable_if_t<
-                             std::is_base_of<PhysicsModel, Model>::value>>
+                             std::is_base_of_v<PhysicsModel, Model>>>
   using ModelPreconFunc = int (Model::*)(BoutReal t, BoutReal gamma, BoutReal delta);
   template <class Model, typename = typename std::enable_if_t<
-                             std::is_base_of<PhysicsModel, Model>::value>>
+                             std::is_base_of_v<PhysicsModel, Model>>>
   using ModelJacobianFunc = int (Model::*)(BoutReal t);
 
   PhysicsModel();

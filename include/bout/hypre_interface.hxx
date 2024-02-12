@@ -138,7 +138,7 @@ public:
       : indexConverter(indConverter) {
     ASSERT1(indConverter->getMesh() == f.getMesh());
     const MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
+        std::is_same_v<T, FieldPerp> ? f.getMesh()->getXcomm() : BoutComm::get();
 
     HYPRE_BigInt jlower = indConverter->getGlobalStart();
     HYPRE_BigInt jupper = jlower + indConverter->size() - 1; // inclusive end
@@ -159,7 +159,7 @@ public:
   explicit HypreVector(IndexerPtr<T> indConverter) : indexConverter(indConverter) {
     Mesh& mesh = *indConverter->getMesh();
     const MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
+        std::is_same_v<T, FieldPerp> ? mesh.getXcomm() : BoutComm::get();
 
     HYPRE_BigInt jlower = indConverter->getGlobalStart();
     HYPRE_BigInt jupper = jlower + indConverter->size() - 1; // inclusive end
@@ -380,7 +380,7 @@ public:
       : hypre_matrix(new HYPRE_IJMatrix, MatrixDeleter{}), index_converter(indConverter) {
     Mesh* mesh = indConverter->getMesh();
     const MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? mesh->getXcomm() : BoutComm::get();
+        std::is_same_v<T, FieldPerp> ? mesh->getXcomm() : BoutComm::get();
     parallel_transform = &mesh->getCoordinates()->getParallelTransform();
 
     ilower = indConverter->getGlobalStart();
@@ -651,9 +651,8 @@ public:
       }();
 
       const int ny =
-          std::is_same<T, FieldPerp>::value ? 1 : index_converter->getMesh()->LocalNy;
-      const int nz =
-          std::is_same<T, Field2D>::value ? 1 : index_converter->getMesh()->LocalNz;
+          std::is_same_v<T, FieldPerp> ? 1 : index_converter->getMesh()->LocalNy;
+      const int nz = std::is_same_v<T, Field2D> ? 1 : index_converter->getMesh()->LocalNz;
       std::transform(
           pw.begin(), pw.end(), std::back_inserter(positions),
           [this, ny, nz](ParallelTransform::PositionsAndWeights p) -> HYPRE_Int {
@@ -714,7 +713,7 @@ public:
   HypreMatrix<T> yup(int index = 0) { return ynext(index + 1); }
   HypreMatrix<T> ydown(int index = 0) { return ynext(-index - 1); }
   HypreMatrix<T> ynext(int dir) {
-    if (std::is_same<T, FieldPerp>::value and ((yoffset + dir) != 0)) {
+    if (std::is_same_v<T, FieldPerp> and ((yoffset + dir) != 0)) {
       throw BoutException("Can not get ynext for FieldPerp");
     }
     HypreMatrix<T> result;
@@ -726,7 +725,7 @@ public:
     result.index_converter = index_converter;
     result.location = location;
     result.initialised = initialised;
-    result.yoffset = std::is_same<T, Field2D>::value ? 0 : yoffset + dir;
+    result.yoffset = std::is_same_v<T, Field2D> ? 0 : yoffset + dir;
     result.parallel_transform = parallel_transform;
     result.assembled = assembled;
     result.num_rows = num_rows;
@@ -804,7 +803,7 @@ public:
                            "values are: gmres, bicgstab, pcg")
                       .withDefault(HYPRE_SOLVER_TYPE::bicgstab);
 
-    comm = std::is_same<T, FieldPerp>::value ? mesh.getXcomm() : BoutComm::get();
+    comm = std::is_same_v<T, FieldPerp> ? mesh.getXcomm() : BoutComm::get();
 
     auto print_level =
         options["hypre_print_level"]

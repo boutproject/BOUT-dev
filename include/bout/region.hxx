@@ -482,8 +482,8 @@ template <typename T = Ind3D>
 class Region {
   // Following prevents a Region being created with anything other
   // than Ind2D, Ind3D or IndPerp as template type
-  static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value
-                    || std::is_base_of<IndPerp, T>::value,
+  static_assert(std::is_base_of_v<Ind2D, T> || std::is_base_of_v<Ind3D, T>
+                    || std::is_base_of_v<IndPerp, T>,
                 "Region must be templated with one of IndPerp, Ind2D or Ind3D");
 
 public:
@@ -521,7 +521,7 @@ public:
             int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE)
       : ny(ny), nz(nz) {
 #if CHECK > 1
-    if (std::is_base_of<Ind2D, T>::value) {
+    if (std::is_base_of_v<Ind2D, T>) {
       if (nz != 1) {
         throw BoutException(
             "Trying to make Region<Ind2D> with nz = {:d}, but expected nz = 1", nz);
@@ -537,7 +537,7 @@ public:
       }
     }
 
-    if (std::is_base_of<IndPerp, T>::value) {
+    if (std::is_base_of_v<IndPerp, T>) {
       if (ny != 1) {
         throw BoutException(
             "Trying to make Region<IndPerp> with ny = {:d}, but expected ny = 1", ny);

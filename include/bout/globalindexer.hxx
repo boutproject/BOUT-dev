@@ -72,7 +72,7 @@ public:
 
     regionInnerX = intersection(bndryCandidate, indices.getRegion("RGN_INNER_X"));
     regionOuterX = intersection(bndryCandidate, indices.getRegion("RGN_OUTER_X"));
-    if (std::is_same<T, FieldPerp>::value) {
+    if (std::is_same_v<T, FieldPerp>) {
       regionLowerY = Region<ind_type>({});
       regionUpperY = Region<ind_type>({});
     } else {
@@ -86,7 +86,7 @@ public:
 
     int localSize = size();
     MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? fieldmesh->getXcomm() : BoutComm::get();
+        std::is_same_v<T, FieldPerp> ? fieldmesh->getXcomm() : BoutComm::get();
     fieldmesh->getMpi().MPI_Scan(&localSize, &globalEnd, 1, MPI_INT, MPI_SUM, comm);
     globalEnd--;
     int counter = globalStart = globalEnd - size() + 1;

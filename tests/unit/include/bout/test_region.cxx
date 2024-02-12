@@ -1119,36 +1119,27 @@ TEST_F(RegionTest, regionGetStatsEmpty) {
 }
 
 TEST(RegionIndexConversionTest, Ind3DtoInd2D) {
-  // This could just be:
-  //     EXPECT_FALSE(std::is_convertible<Ind3D, Ind2D>::value());
-  // but requires C++14
-  bool convert = std::is_convertible<Ind3D, Ind2D>::value;
-  EXPECT_FALSE(convert);
+  EXPECT_FALSE((std::is_convertible_v<Ind3D, Ind2D>));
 }
 
 TEST(RegionIndexConversionTest, Ind2DtoInd3D) {
-  bool convert = std::is_convertible<Ind2D, Ind3D>::value;
-  EXPECT_FALSE(convert);
+  EXPECT_FALSE((std::is_convertible_v<Ind2D, Ind3D>));
 }
 
 TEST(RegionIndexConversionTest, Ind2Dtoint) {
-  bool convert = std::is_convertible<Ind2D, int>::value;
-  EXPECT_FALSE(convert);
+  EXPECT_FALSE((std::is_convertible_v<Ind2D, int>));
 }
 
 TEST(RegionIndexConversionTest, Ind3Dtoint) {
-  bool convert = std::is_convertible<Ind3D, int>::value;
-  EXPECT_FALSE(convert);
+  EXPECT_FALSE((std::is_convertible_v<Ind3D, int>));
 }
 
 TEST(RegionIndexConversionTest, inttoInd2D) {
-  bool convert = std::is_convertible<int, Ind2D>::value;
-  EXPECT_FALSE(convert);
+  EXPECT_FALSE((std::is_convertible_v<int, Ind2D>));
 }
 
 TEST(RegionIndexConversionTest, inttoInd3D) {
-  bool convert = std::is_convertible<int, Ind3D>::value;
-  EXPECT_FALSE(convert);
+  EXPECT_FALSE((std::is_convertible_v<int, Ind3D>));
 }
 
 TEST(RegionIndex2DTest, MemberSize) {

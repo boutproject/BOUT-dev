@@ -84,50 +84,50 @@ auto example_function(T, U) -> ResultType {
 
 TEST(BoutTraitsTest, EnableIfFieldOverloads) {
   using namespace bout::utils;
-  static_assert(std::is_same<CorrectForFields, decltype(function_overloads(
-                                                   std::declval<Field2D>(),
-                                                   std::declval<Field3D>()))>::value,
+  static_assert(std::is_same_v<CorrectForFields,
+                               decltype(function_overloads(std::declval<Field2D>(),
+                                                           std::declval<Field3D>()))>,
                 "EnableIfField should enable function_overloads for two Fields");
   static_assert(
-      std::is_same<CorrectForBoutReal,
-                   decltype(function_overloads(std::declval<Field2D>(),
-                                               std::declval<BoutReal>()))>::value,
+      std::is_same_v<CorrectForBoutReal,
+                     decltype(function_overloads(std::declval<Field2D>(),
+                                                 std::declval<BoutReal>()))>,
       "EnableIfField should disable one overload of function_overloads.\n"
       "This static_assert should fail if the `function_overloads(T, BoutReal)` template\n"
       "is commented out");
   static_assert(
-      std::is_same<OnlyForField2D,
-                   decltype(specific_function_overloads(std::declval<Field2D>(),
-                                                        std::declval<Field2D>()))>::value,
+      std::is_same_v<OnlyForField2D,
+                     decltype(specific_function_overloads(std::declval<Field2D>(),
+                                                          std::declval<Field2D>()))>,
       "EnableIfField should pick the correct version of specific_function_overloads");
   static_assert(
-      std::is_same<OnlyForField3D,
-                   decltype(specific_function_overloads(std::declval<Field3D>(),
-                                                        std::declval<Field3D>()))>::value,
+      std::is_same_v<OnlyForField3D,
+                     decltype(specific_function_overloads(std::declval<Field3D>(),
+                                                          std::declval<Field3D>()))>,
       "EnableIfField should pick the correct version of specific_function_overloads");
   static_assert(
-      std::is_same<OnlyForFieldPerp,
-                   decltype(specific_function_overloads(
-                       std::declval<FieldPerp>(), std::declval<FieldPerp>()))>::value,
+      std::is_same_v<OnlyForFieldPerp,
+                     decltype(specific_function_overloads(std::declval<FieldPerp>(),
+                                                          std::declval<FieldPerp>()))>,
       "EnableIfField should pick the correct version of specific_function_overloads");
 }
 
 TEST(BoutTraitsTest, EnableIfFieldReturnType) {
   using namespace bout::utils;
   static_assert(
-      std::is_same<Field2D, decltype(example_function(std::declval<Field2D>(),
-                                                      std::declval<Field2D>()))>::value,
+      std::is_same_v<Field2D, decltype(example_function(std::declval<Field2D>(),
+                                                        std::declval<Field2D>()))>,
       "EnableIfField should return Field2D for two Field2Ds");
   static_assert(
-      std::is_same<Field3D, decltype(example_function(std::declval<Field2D>(),
-                                                      std::declval<Field3D>()))>::value,
+      std::is_same_v<Field3D, decltype(example_function(std::declval<Field2D>(),
+                                                        std::declval<Field3D>()))>,
       "EnableIfField should return Field3D for a Field2D and a Field3D");
   static_assert(
-      std::is_same<Field3D, decltype(example_function(std::declval<Field3D>(),
-                                                      std::declval<Field2D>()))>::value,
+      std::is_same_v<Field3D, decltype(example_function(std::declval<Field3D>(),
+                                                        std::declval<Field2D>()))>,
       "EnableIfField should return Field3D for a Field2D and a Field3D");
   static_assert(
-      std::is_same<Field3D, decltype(example_function(std::declval<Field3D>(),
-                                                      std::declval<Field3D>()))>::value,
+      std::is_same_v<Field3D, decltype(example_function(std::declval<Field3D>(),
+                                                        std::declval<Field3D>()))>,
       "EnableIfField should return Field3D for a Field3D and a Field3D");
 }

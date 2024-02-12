@@ -121,7 +121,7 @@ using EnableIfFieldPerp =
 
 /// Enable a function if T is a subclass of Options
 template <class T>
-using EnableIfOptions = std::enable_if_t<std::is_base_of<Options, T>::value>;
+using EnableIfOptions = std::enable_if_t<std::is_base_of_v<Options, T>>;
 } // namespace utils
 } // namespace bout
 
