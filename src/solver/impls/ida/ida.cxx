@@ -40,53 +40,21 @@
 #include "bout/unused.hxx"
 
 #include <ida/ida.h>
-
-#if SUNDIALS_VERSION_MAJOR >= 3
 #include <ida/ida_spils.h>
 #include <sunlinsol/sunlinsol_spgmr.h>
-#else
-#include <ida/ida_spgmr.h>
-#endif
-
 #include <ida/ida_bbdpre.h>
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_types.h>
 
 #include <numeric>
 
-#define ZERO RCONST(0.)
-#define ONE RCONST(1.0)
-
-#ifndef IDAINT
-#if SUNDIALS_VERSION_MAJOR < 3
-using IDAINT = bout::utils::function_traits<IDABBDLocalFn>::arg_t<0>;
-#else
-using IDAINT = sunindextype;
-#endif
-#endif
-
 static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data);
-static int ida_bbd_res(IDAINT Nlocal, BoutReal t, N_Vector u, N_Vector du, N_Vector rr,
+static int ida_bbd_res(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du, N_Vector rr,
                        void* user_data);
 
 static int ida_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rr, N_Vector rvec,
                    N_Vector zvec, BoutReal cj, BoutReal delta, void* user_data);
 
-#if SUNDIALS_VERSION_MAJOR < 3
-// Shim for earlier versions
-inline static int ida_pre_shim(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rr,
-                               N_Vector rvec, N_Vector zvec, BoutReal cj, BoutReal delta,
-                               void* user_data, N_Vector UNUSED(tmp)) {
-  return ida_pre(t, yy, yp, rr, rvec, zvec, cj, delta, user_data);
-}
-#else
-// Alias for newer versions
-constexpr auto& ida_pre_shim = ida_pre;
-#endif
-
-#if SUNDIALS_VERSION_MAJOR < 6
-void* IDACreate([[maybe_unused]] SUNContext) { return IDACreate(); }
-#endif
 
 IdaSolver::IdaSolver(Options* opts)
     : Solver(opts),
@@ -101,7 +69,7 @@ IdaSolver::IdaSolver(Options* opts)
       correct_start((*options)["correct_start"]
                         .doc("Correct the initial values")
                         .withDefault(true)),
-      suncontext(static_cast<void*>(&BoutComm::get())) {
+      suncontext(createSUNContext(BoutComm::get())) {
   has_constraints = true; // This solver has constraints
 }
 
@@ -144,13 +112,14 @@ int IdaSolver::init() {
                neq, local_N);
 
   // Allocate memory
-  if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext)) == nullptr) {
+  uvec = callWithSUNContext(N_VNew_Parallel, suncontext, BoutComm::get(), local_N, neq);
+  if (uvec == nullptr) {
     throw BoutException("SUNDIALS memory allocation failed\n");
   }
-  if ((duvec = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext)) == nullptr) {
+  if ((duvec = N_VClone(uvec)) == nullptr) {
     throw BoutException("SUNDIALS memory allocation failed\n");
   }
-  if ((id = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext)) == nullptr) {
+  if ((id = N_VClone(uvec)) == nullptr) {
     throw BoutException("SUNDIALS memory allocation failed\n");
   }
 
@@ -167,7 +136,8 @@ int IdaSolver::init() {
   set_id(NV_DATA_P(id));
 
   // Call IDACreate to initialise
-  if ((idamem = IDACreate(suncontext)) == nullptr) {
+  idamem = callWithSUNContext(IDACreate, suncontext);
+  if (idamem == nullptr) {
     throw BoutException("IDACreate failed\n");
   }
 
@@ -192,18 +162,13 @@ int IdaSolver::init() {
 
   // Call IDASpgmr to specify the IDA linear solver IDASPGMR
   const auto maxl = (*options)["maxl"].withDefault(6 * n3d);
-#if SUNDIALS_VERSION_MAJOR >= 3
-  if ((sun_solver = SUNLinSol_SPGMR(uvec, SUN_PREC_NONE, maxl, suncontext)) == nullptr) {
+  sun_solver = callWithSUNContext(SUNLinSol_SPGMR, suncontext, uvec, SUN_PREC_NONE, maxl);
+  if (sun_solver == nullptr) {
     throw BoutException("Creating SUNDIALS linear solver failed\n");
   }
   if (IDASpilsSetLinearSolver(idamem, sun_solver) != IDA_SUCCESS) {
     throw BoutException("IDASpilsSetLinearSolver failed\n");
   }
-#else
-  if (IDASpgmr(idamem, maxl)) {
-    throw BoutException("IDASpgmr failed\n");
-  }
-#endif
 
   if (use_precon) {
     if (!hasPreconditioner()) {
@@ -225,13 +190,13 @@ int IdaSolver::init() {
       const auto mldq = (*options)["mldq"].withDefault(band_width_default);
       const auto mukeep = (*options)["mukeep"].withDefault(n3d);
       const auto mlkeep = (*options)["mlkeep"].withDefault(n3d);
-      if (IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, ZERO, ida_bbd_res,
+      if (IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, 0, ida_bbd_res,
                          nullptr)) {
         throw BoutException("IDABBDPrecInit failed\n");
       }
     } else {
       output.write("\tUsing user-supplied preconditioner\n");
-      if (IDASpilsSetPreconditioner(idamem, nullptr, ida_pre_shim)) {
+      if (IDASpilsSetPreconditioner(idamem, nullptr, ida_pre)) {
         throw BoutException("IDASpilsSetPreconditioner failed\n");
       }
     }
@@ -381,7 +346,7 @@ static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_d
 }
 
 /// Residual function for BBD preconditioner
-static int ida_bbd_res(IDAINT UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
+static int ida_bbd_res(sunindextype UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
                        N_Vector rr, void* user_data) {
   return idares(t, u, du, rr, user_data);
 }
