@@ -1,4 +1,4 @@
-// Backports for SUNDIALS compatibility between versions 3-6
+// Backports for SUNDIALS compatibility between versions 4-7
 //
 // These are common backports shared between the CVode, ARKode, and IDA solvers
 //
@@ -8,74 +8,61 @@
 #ifndef BOUT_SUNDIALS_BACKPORTS_H
 #define BOUT_SUNDIALS_BACKPORTS_H
 
+#include <type_traits>
+
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_config.h>
 #include <sundials/sundials_iterative.h>
 #include <sundials/sundials_types.h>
-
-#if SUNDIALS_VERSION_MAJOR >= 3
 #include <sunlinsol/sunlinsol_spgmr.h>
-#endif
-
-#if SUNDIALS_VERSION_MAJOR >= 4
 #include <sundials/sundials_nonlinearsolver.h>
 #include <sunnonlinsol/sunnonlinsol_fixedpoint.h>
 #include <sunnonlinsol/sunnonlinsol_newton.h>
+
+#if SUNDIALS_VERSION_MAJOR >= 6
+#include <sundials/sundials_context.hpp>
 #endif
 
 #include "bout/unused.hxx"
 
-#if SUNDIALS_VERSION_MAJOR < 3
-using SUNLinearSolver = int*;
-inline void SUNLinSolFree(MAYBE_UNUSED(SUNLinearSolver solver)) {}
-using sunindextype = long int;
+static_assert(std::is_same<BoutReal,
+#if SUNDIALS_VERSION_MAJOR < 6
+              realtype
+#else
+              sunrealtype
 #endif
-
-#if SUNDIALS_VERSION_MAJOR < 4
-using SUNNonlinearSolver = int*;
-inline void SUNNonlinSolFree(MAYBE_UNUSED(SUNNonlinearSolver solver)) {}
-#endif
+              >::value,
+              "BOUT++ and SUNDIALS real types do not match");
 
 #if SUNDIALS_VERSION_MAJOR < 6
-namespace sundials {
-struct Context {
-  Context(void* comm MAYBE_UNUSED()) {}
-};
-} // namespace sundials
-
-using SUNContext = sundials::Context;
-
 constexpr auto SUN_PREC_RIGHT = PREC_RIGHT;
 constexpr auto SUN_PREC_LEFT = PREC_LEFT;
 constexpr auto SUN_PREC_NONE = PREC_NONE;
 
-inline N_Vector N_VNew_Parallel(MPI_Comm comm, sunindextype local_length,
-                                sunindextype global_length,
-                                MAYBE_UNUSED(SUNContext sunctx)) {
-  return N_VNew_Parallel(comm, local_length, global_length);
-}
+namespace sundials {
+using Context = std::nullptr_t;
+} // namespace sundials
+#endif
 
-#if SUNDIALS_VERSION_MAJOR >= 3
-inline SUNLinearSolver SUNLinSol_SPGMR(N_Vector y, int pretype, int maxl,
-                                       MAYBE_UNUSED(SUNContext sunctx)) {
-#if SUNDIALS_VERSION_MAJOR == 3
-  return SUNSPGMR(y, pretype, maxl);
+inline sundials::Context createSUNContext(MAYBE_UNUSED(MPI_Comm& comm)) {
+#if SUNDIALS_VERSION_MAJOR < 6
+  return nullptr;
+#elif SUNDIALS_VERSION_MAJOR < 7
+  return sundials::Context(static_cast<void*>(&comm));
 #else
-  return SUNLinSol_SPGMR(y, pretype, maxl);
+  return sundials::Context(comm);
 #endif
 }
-#if SUNDIALS_VERSION_MAJOR >= 4
-inline SUNNonlinearSolver SUNNonlinSol_FixedPoint(N_Vector y, int m,
-                                                  MAYBE_UNUSED(SUNContext sunctx)) {
-  return SUNNonlinSol_FixedPoint(y, m);
-}
 
-inline SUNNonlinearSolver SUNNonlinSol_Newton(N_Vector y,
-                                              MAYBE_UNUSED(SUNContext sunctx)) {
-  return SUNNonlinSol_Newton(y);
+template<typename Func, typename... Args>
+inline decltype(auto) callWithSUNContext(Func f,
+                                        MAYBE_UNUSED(sundials::Context& ctx),
+                                        Args&&... args) {
+#if SUNDIALS_VERSION_MAJOR < 6
+  return f(std::forward<Args>(args)...);
+#else
+  return f(std::forward<Args>(args)..., ctx);
+#endif
 }
-#endif // SUNDIALS_VERSION_MAJOR >= 4
-#endif // SUNDIALS_VERSION_MAJOR >= 3
-#endif // SUNDIALS_VERSION_MAJOR < 6
 
 #endif // BOUT_SUNDIALS_BACKPORTS_H
