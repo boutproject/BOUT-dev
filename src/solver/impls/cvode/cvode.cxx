@@ -26,9 +26,9 @@
 
 #include "bout/build_defines.hxx"
 
-#include "cvode.hxx"
-
 #if BOUT_HAS_CVODE
+
+#include "cvode.hxx"
 
 #include "bout/bout_enum_class.hxx"
 #include "bout/boutcomm.hxx"

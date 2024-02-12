@@ -29,9 +29,9 @@
 
 #include "bout/build_defines.hxx"
 
-#include "ida.hxx"
-
 #if BOUT_HAS_IDA
+
+#include "ida.hxx"
 
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
