@@ -125,7 +125,6 @@ public:
 
 private:
   static int count;   ///< How many instances?
-  static char help[]; ///< Help string
 
   // Command-line arguments
   static int* pargc;
