@@ -43,12 +43,10 @@
  *
  **************************************************************************/
 
-class PetscLib;
+#ifndef BOUT_PETSCLIB_H
+#define BOUT_PETSCLIB_H
 
-#ifndef __PETSCLIB_H__
-#define __PETSCLIB_H__
-
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 class Options;
 
@@ -66,7 +64,8 @@ class Options;
 
 #include "bout/boutexception.hxx"
 
-#define BOUT_DO_PETSC(cmd) PetscLib::assertIerr(cmd, #cmd)
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
+#define BOUT_DO_PETSC(cmd) PetscLib::assertIerr((cmd), #cmd)
 
 /*!
  * Handles initialisation and finalisation of PETSc library.
@@ -81,6 +80,11 @@ public:
    */
   explicit PetscLib(Options* opt = nullptr);
 
+  PetscLib(const PetscLib&) = default;
+  PetscLib(PetscLib&&) = default;
+  PetscLib& operator=(const PetscLib&) = default;
+  PetscLib& operator=(PetscLib&&) = default;
+
   /*!
    * Calls PetscFinalize when all PetscLib instances are destroyed
    */
@@ -92,9 +96,9 @@ public:
    * PetscLib are created.
    * The arguments will be passed to PetscInitialize()
    */
-  static void setArgs(int& c, char**& v) {
-    pargc = &c;
-    pargv = &v;
+  static void setArgs(int& argc, char**& argv) {
+    pargc = &argc;
+    pargv = &argv;
   }
 
   /// Set options for a KSP linear solver that uses the options specific to this PetscLib,
@@ -115,9 +119,9 @@ public:
    */
   static void cleanup();
 
-  static inline void assertIerr(PetscErrorCode ierr, std::string op = "PETSc operation") {
-    if (ierr) {
-      throw BoutException("{:s} failed with {:d}", op, ierr);
+  static inline void assertIerr(PetscErrorCode ierr, const std::string& petsc_op = "PETSc operation") {
+    if (ierr != 0) {
+      throw BoutException("{:s} failed with {:d}", petsc_op, ierr);
     }
   }
 
@@ -136,8 +140,6 @@ private:
 
   static inline PetscLogEvent USER_EVENT;
   // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
-
-  void setPetscOptions(Options& options, const std::string& pass_options_prefix);
 };
 
 #ifndef PETSC_VERSION_GE
@@ -177,4 +179,4 @@ public:
 
 #endif // BOUT_HAS_PETSC
 
-#endif //  __PETSCLIB_H__
+#endif // BOUT_PETSCLIB_H
