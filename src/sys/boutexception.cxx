@@ -13,7 +13,9 @@
 #include <execinfo.h>
 #endif
 
+#include <array>
 #include <cstdlib>
+#include <string>
 
 #include <fmt/format.h>
 
@@ -74,18 +76,15 @@ std::string BoutException::getBacktrace() const {
     const auto syscom = fmt::format(
         FMT_STRING("addr2line {:p} -Cfpie {:.{}s} 2> /dev/null"), ptr, messages[i], p);
     // last parameter is the file name of the symbol
-    FILE* fp = popen(syscom.c_str(), "r");
-    if (fp != nullptr) {
-      char out[1024];
-      char* retstr;
+    FILE* file = popen(syscom.c_str(), "r");
+    if (file != nullptr) {
+      std::array<char, 1024> out{};
+      char* retstr = nullptr;
       std::string buf;
-      do {
-        retstr = fgets(out, sizeof(out) - 1, fp);
-        if (retstr != nullptr) {
-          buf += retstr;
-        }
-      } while (retstr != nullptr);
-      int status = pclose(fp);
+      while ((retstr = fgets(out.data(), out.size() - 1, file)) != nullptr) {
+        buf += retstr;
+      }
+      int status = pclose(file);
       if (status == 0) {
         backtrace_message += buf;
       }
@@ -100,7 +99,7 @@ std::string BoutException::getBacktrace() const {
 
 void BoutException::makeBacktrace() {
 #if BOUT_USE_BACKTRACE
-  trace_size = backtrace(trace, TRACE_MAX);
-  messages = backtrace_symbols(trace, trace_size);
+  trace_size = backtrace(trace.data(), TRACE_MAX);
+  messages = backtrace_symbols(trace.data(), trace_size);
 #endif
 }
