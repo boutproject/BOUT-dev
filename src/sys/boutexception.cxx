@@ -87,7 +87,7 @@ std::string BoutException::getBacktrace() const {
       while ((retstr = fgets(out.data(), out.size() - 1, file)) != nullptr) {
         buf += retstr;
       }
-      int status = pclose(file);
+      int const status = pclose(file);
       if (status == 0) {
         backtrace_message += buf;
       }
