@@ -18,5 +18,25 @@ CheckOptions:
   # otherwise this breaks `ASSERT` macros!
   - key:             readability-simplify-boolean-expr.IgnoreMacros
     value:           'true'
-...
+---
 
+Disabled checks and reasons:
+
+These are all basically unavoidable in HPC numeric code:
+-readability-magic-numbers
+-cppcoreguidelines-avoid-magic-numbers
+-cppcoreguidelines-pro-bounds-pointer-arithmetic
+-readability-function-cognitive-complexity
+-bugprone-easily-swappable-parameters
+
+This doesn't work very well:
+-clang-analyzer-optin.mpi*
+
+This is a suggestion, and is perfectly fine:
+-misc-no-recursion
+
+Expensive (and noisy, because we let exceptions escape from `main`):
+-bugprone-exception-escape
+
+TODO: This would be good to fix and re-enable:
+-misc-non-private-member-variables-in-classes
