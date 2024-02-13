@@ -124,16 +124,18 @@ public:
   static BoutException SNESFailure(SNES& snes);
 
 private:
-  static int count;   ///< How many instances?
+  // NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
+  static inline int count = 0;   ///< How many instances?
 
   // Command-line arguments
-  static int* pargc;
-  static char*** pargv;
+  static inline int* pargc = nullptr;
+  static inline char*** pargv = nullptr;
 
   // Prefix for object-specific options
   std::string options_prefix;
 
-  static PetscLogEvent USER_EVENT;
+  static inline PetscLogEvent USER_EVENT;
+  // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
   void setPetscOptions(Options& options, const std::string& pass_options_prefix);
 };

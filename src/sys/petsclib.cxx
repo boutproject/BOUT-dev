@@ -10,12 +10,6 @@
 
 #include "petscsnes.h"
 
-// Define all the static member variables
-int PetscLib::count = 0;
-int* PetscLib::pargc = nullptr;
-char*** PetscLib::pargv = nullptr;
-PetscLogEvent PetscLib::USER_EVENT = 0;
-
 namespace {
 constexpr const char* PetscLibHelp =
     "BOUT++: Uses finite difference methods to solve plasma fluid "
