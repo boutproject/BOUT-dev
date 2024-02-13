@@ -4,8 +4,10 @@ WarningsAsErrors: ''
 HeaderFilterRegex: ''
 FormatStyle:     file
 CheckOptions:
+
+  # Allow some common short names
   - key:             readability-identifier-length.IgnoredVariableNames
-    value:           '^n?[xyz]$'
+    value:           '^[dn]?[xyz]$'
   - key:             readability-identifier-length.IgnoredParameterNames
     value:           '^[fijkxyz][01]?$'
   - key:             readability-identifier-length.IgnoredLoopCounterNames
