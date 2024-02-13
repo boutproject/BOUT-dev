@@ -8,7 +8,7 @@ CheckOptions:
   - key:             readability-identifier-length.IgnoredVariableNames
     value:           '^n?[xyz]$'
   - key:             readability-identifier-length.IgnoredParameterNames
-    value:           '^[ijkxyz][01]?$'
+    value:           '^[fijkxyz][01]?$'
   - key:             readability-identifier-length.IgnoredLoopCounterNames
     value:           '^[ijkxyz_]$'
 ...
