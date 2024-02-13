@@ -17,7 +17,7 @@
 
 #include <fmt/format.h>
 
-namespace{
+namespace {
 const std::string header{"====== Exception thrown ======\n"};
 }
 

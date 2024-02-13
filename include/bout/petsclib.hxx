@@ -119,7 +119,8 @@ public:
    */
   static void cleanup();
 
-  static inline void assertIerr(PetscErrorCode ierr, const std::string& petsc_op = "PETSc operation") {
+  static inline void assertIerr(PetscErrorCode ierr,
+                                const std::string& petsc_op = "PETSc operation") {
     if (ierr != 0) {
       throw BoutException("{:s} failed with {:d}", petsc_op, ierr);
     }
@@ -129,7 +130,7 @@ public:
 
 private:
   // NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
-  static inline int count = 0;   ///< How many instances?
+  static inline int count = 0; ///< How many instances?
 
   // Command-line arguments
   static inline int* pargc = nullptr;
