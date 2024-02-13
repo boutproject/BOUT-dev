@@ -13,5 +13,10 @@ CheckOptions:
     value:           '^[fijkxyz][01]?$'
   - key:             readability-identifier-length.IgnoredLoopCounterNames
     value:           '^[ijkxyz_]$'
+
+  # Don't expand macros when simplifying boolean expressions,
+  # otherwise this breaks `ASSERT` macros!
+  - key:             readability-simplify-boolean-expr.IgnoreMacros
+    value:           'true'
 ...
 
