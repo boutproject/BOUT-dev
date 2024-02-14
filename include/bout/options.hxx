@@ -224,7 +224,7 @@ public:
   using InitializerList = std::initializer_list<std::pair<std::string, CopyableOptions>>;
 
   /// Construct with a nested initializer list
-  /// This allows Options trees to be constructed, using a mix of types.
+  /// This allows Options trees to be constructed using a mix of types.
   ///
   /// Example:  { {"key1", 42}, {"key2", field} }
   ///
@@ -238,7 +238,7 @@ public:
   ///
   ///     Option option2 = option1.copy();
   ///
-  Options(const Options& other) = delete;
+  Options(const Options& other) = delete; // Use a reference or .copy() method
 
   /// Copy assignment must be explicit
   ///
@@ -248,7 +248,7 @@ public:
   ///
   ///     option2.value = option1.value;
   ///
-  Options& operator=(const Options& other) = delete;
+  Options& operator=(const Options& other) = delete; // Use a reference or .copy() method
 
   /// Make a deep copy of this Options,
   /// recursively copying children.
