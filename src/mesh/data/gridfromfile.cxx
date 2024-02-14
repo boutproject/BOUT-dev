@@ -157,7 +157,7 @@ template <typename T>
 bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
                         CELL_LOC location) {
   static_assert(
-      bout::utils::is_Field<T>::value,
+      bout::utils::is_Field_v<T>,
       "templated GridFile::getField only works for Field2D, Field3D or FieldPerp");
 
   Timer timer("io");
@@ -195,7 +195,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
   }
   case 3: {
     // Check size if getting Field3D
-    if (bout::utils::is_Field2D<T>::value or bout::utils::is_FieldPerp<T>::value) {
+    if constexpr (bout::utils::is_Field2D_v<T> or bout::utils::is_FieldPerp_v<T>) {
       output_warn.write(
           "WARNING: Variable '{:s}' should be 2D, but has {:d} dimensions. Ignored\n",
           name, size.size());
@@ -272,7 +272,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
         name, grid_xguards, mxg);
   }
 
-  if (not bout::utils::is_FieldPerp<T>::value) {
+  if constexpr (not bout::utils::is_FieldPerp_v<T>) {
     // Check if field dimensions are correct. y-direction
     if (grid_yguards > 0) {
       // including ghostpoints
@@ -325,7 +325,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
       }
     }
 
-    if (not bout::utils::is_FieldPerp<T>::value) {
+    if constexpr (not bout::utils::is_FieldPerp_v<T>) {
       ///If field does not include ghost points in y-direction ->
       ///Upper and lower Y boundaries copied from nearest point
       if (grid_yguards == 0) {

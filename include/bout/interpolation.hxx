@@ -56,7 +56,7 @@ inline BoutReal interp(const stencil& s) {
 template <typename T>
 const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_ALL") {
   AUTO_TRACE();
-  static_assert(bout::utils::is_Field2D<T>::value || bout::utils::is_Field3D<T>::value,
+  static_assert(bout::utils::is_Field2D_v<T> || bout::utils::is_Field3D_v<T>,
                 "interp_to must be templated with one of Field2D or Field3D.");
   ASSERT1(loc != CELL_DEFAULT); // doesn't make sense to interplote to CELL_DEFAULT
 
@@ -121,12 +121,12 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
       // We can't interpolate in y unless we're field-aligned
       // Field2D doesn't need to shift to/from field-aligned because it is axisymmetric,
       // so always set is_unaligned=false for Field2D.
-      const bool is_unaligned = std::is_same<T, Field2D>::value
+      const bool is_unaligned = std::is_same_v<T, Field2D>
                                     ? false
                                     : (var.getDirectionY() == YDirectionType::Standard);
       const T var_fa = is_unaligned ? toFieldAligned(var, "RGN_NOX") : var;
 
-      if (not std::is_base_of<Field2D, T>::value) {
+      if constexpr (not std::is_base_of_v<Field2D, T>) {
         // Field2D is axisymmetric, so YDirectionType::Standard and
         // YDirectionType::Aligned are equivalent, but trying to set
         // YDirectionType::Aligned explicitly is an error
