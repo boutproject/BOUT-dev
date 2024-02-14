@@ -485,7 +485,7 @@ CvodeSolver::create_constraints(const std::vector<VarStr<FieldType>>& fields) {
   constraints.reserve(fields.size());
   std::transform(begin(fields), end(fields), std::back_inserter(constraints),
                  [](const VarStr<FieldType>& f) {
-                   auto f_options = Options::root()[f.name];
+                   auto& f_options = Options::root()[f.name];
                    const auto value =
                        f_options["positivity_constraint"]
                            .doc(fmt::format("Constraint to apply to {} if "
