@@ -218,7 +218,7 @@ jobs:
 
       - name: Upload coverage
         if: ${{ matrix.config.name == 'Coverage' }}
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
 
   Fedora:
     # This is its own job as it doesn't use most of the steps of the
