@@ -40,7 +40,7 @@ for nslice in nslices:
         _, out = launch_safe(cmd, nproc=NXPE * NYPE, mthread=mthread, pipe=True)
 
         # Save output to log file
-        with open("run.log.{NXPE}.{NYPE}.{nslice}.log", "w") as f:
+        with open(f"run.log.{NXPE}.{NYPE}.{nslice}.log", "w") as f:
             f.write(out)
 
         collect_kw = dict(info=False, xguards=False, yguards=False, path="data")
