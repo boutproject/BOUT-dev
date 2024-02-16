@@ -349,7 +349,7 @@ test6 = h2`+`:on`e-`more             # Escape sequences in the middle
   OptionsReader reader;
   reader.read(Options::getRoot(), filename.string());
 
-  auto options = Options::root()["tests"];
+  auto& options = Options::root()["tests"];
 
   EXPECT_EQ(options["test1"].as<int>(), 3);
   EXPECT_EQ(options["test2"].as<int>(), 15);
@@ -395,7 +395,7 @@ twopi = 2 * π   # Unicode symbol defined for pi
   OptionsReader reader;
   reader.read(Options::getRoot(), filename.string());
 
-  auto options = Options::root()["tests"];
+  auto& options = Options::root()["tests"];
 
   EXPECT_EQ(options["結果"].as<int>(), 8);
   EXPECT_DOUBLE_EQ(options["value"].as<BoutReal>(), 1.3 * (1 + 3));
@@ -422,7 +422,7 @@ value = [a = 1,
   OptionsReader reader;
   reader.read(Options::getRoot(), filename.c_str());
 
-  auto options = Options::root();
+  auto& options = Options::root();
 
   EXPECT_EQ(options["result"].as<int>(), 6);
   EXPECT_EQ(options["value"].as<int>(), 5);
@@ -449,7 +449,7 @@ value = [a = 1,
   OptionsReader reader;
   reader.read(Options::getRoot(), filename.c_str());
 
-  auto options = Options::root();
+  auto& options = Options::root();
 
   EXPECT_EQ(options["result"].as<int>(), 6);
   EXPECT_EQ(options["value"].as<int>(), 5);

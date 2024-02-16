@@ -357,7 +357,7 @@ int ArkodeSolver::init() {
     f2dtols.reserve(f2d.size());
     std::transform(begin(f2d), end(f2d), std::back_inserter(f2dtols),
                    [abstol = abstol](const VarStr<Field2D>& f2) {
-                     auto f2_options = Options::root()[f2.name];
+                     auto& f2_options = Options::root()[f2.name];
                      const auto wrong_name = f2_options.isSet("abstol");
                      if (wrong_name) {
                        output_warn << "WARNING: Option 'abstol' for field " << f2.name
