@@ -18,9 +18,6 @@
 #include "petscmat.h"
 #include "petscsnes.h"
 
-// Redundent definition because < C++17
-constexpr int IMEXBDF2::MAX_SUPPORTED_ORDER;
-
 IMEXBDF2::IMEXBDF2(Options* opt)
     : Solver(opt), maxOrder((*options)["maxOrder"]
                                 .doc("Maximum order of the scheme (1/2/3)")
@@ -1228,19 +1225,21 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
     KSPGetConvergedReason(ksp, &kreason);
     if (kreason < 0) {
       if (verbose) {
-        output << "KSP Failed to converge with reason " << kreason << endl;
+        output << "KSP Failed to converge with reason " << static_cast<int>(kreason)
+               << endl;
       }
       linear_fails++;
     } else {
       nonlinear_fails++;
       if (verbose) {
-        output << "KSP Succeeded with reason " << kreason << endl;
+        output << "KSP Succeeded with reason " << static_cast<int>(kreason) << endl;
       }
     };
     if (verbose) {
-      output << "SNES failed to converge with reason " << reason << endl;
+      output << "SNES failed to converge with reason " << static_cast<int>(reason)
+             << endl;
     }
-    throw BoutException("SNES failed to converge. Reason: {:d}\n", reason);
+    throw PetscLib::SNESFailure(snesUse);
   }
 
   int its;

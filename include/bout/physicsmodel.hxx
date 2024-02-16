@@ -42,7 +42,7 @@ class PhysicsModel;
 #include "bout/macro_for_each.hxx"
 #include "bout/msg_stack.hxx"
 #include "bout/options.hxx"
-#include "bout/options_netcdf.hxx"
+#include "bout/options_io.hxx"
 #include "bout/sys/variant.hxx"
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
@@ -88,9 +88,6 @@ public:
   void add(Vector2D* value, const std::string& name, bool save_repeat = false);
   void add(Vector3D* value, const std::string& name, bool save_repeat = false);
 
-  /// Write stored data to file immediately
-  bool write();
-
 private:
   /// Helper struct to save enough information so that we can save an
   /// object to file later
@@ -130,11 +127,11 @@ public:
   using preconfunc = int (PhysicsModel::*)(BoutReal t, BoutReal gamma, BoutReal delta);
   using jacobianfunc = int (PhysicsModel::*)(BoutReal t);
 
-  template <class Model, typename = typename std::enable_if_t<
-                             std::is_base_of<PhysicsModel, Model>::value>>
+  template <class Model,
+            typename = std::enable_if_t<std::is_base_of_v<PhysicsModel, Model>>>
   using ModelPreconFunc = int (Model::*)(BoutReal t, BoutReal gamma, BoutReal delta);
-  template <class Model, typename = typename std::enable_if_t<
-                             std::is_base_of<PhysicsModel, Model>::value>>
+  template <class Model,
+            typename = std::enable_if_t<std::is_base_of_v<PhysicsModel, Model>>>
   using ModelJacobianFunc = int (Model::*)(BoutReal t);
 
   PhysicsModel();
@@ -148,7 +145,7 @@ public:
   bout::DataFileFacade restart{};
 
   /*!
-   * Initialse the model, calling the init() and postInit() methods
+   * Initialise the model, calling the init() and postInit() methods
    *
    * Note: this is usually only called by the Solver
    */
@@ -383,13 +380,13 @@ private:
   /// State for outputs
   Options output_options;
   /// File to write the outputs to
-  bout::OptionsNetCDF output_file;
+  std::unique_ptr<bout::OptionsIO> output_file;
   /// Should we write output files
   bool output_enabled{true};
   /// Stores the state for restarting
   Options restart_options;
   /// File to write the restart-state to
-  bout::OptionsNetCDF restart_file;
+  std::unique_ptr<bout::OptionsIO> restart_file;
   /// Should we write restart files
   bool restart_enabled{true};
   /// Split operator model?

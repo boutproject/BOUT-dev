@@ -53,8 +53,9 @@ public:
   /// Direction of map
   const int offset;
 
-  /// boundary mask - has the field line left the domain
-  BoutMask boundary_mask;
+  /// region containing all points where the field line has not left the
+  /// domain
+  Region<Ind3D> region_no_boundary;
   /// If any of the integration area has left the domain
   BoutMask corner_boundary_mask;
 
@@ -126,7 +127,7 @@ public:
   bool canToFromFieldAligned() const override { return false; }
 
   bool requiresTwistShift(bool UNUSED(twist_shift_enabled),
-                          MAYBE_UNUSED(YDirectionType ytype)) override {
+                          [[maybe_unused]] YDirectionType ytype) override {
     // No Field3Ds require twist-shift, because they cannot be field-aligned
     ASSERT1(ytype == YDirectionType::Standard);
 

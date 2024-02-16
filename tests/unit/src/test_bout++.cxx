@@ -378,7 +378,7 @@ TEST(BoutInitialiseFunctions, SetRunStartInfo) {
 
   bout::experimental::setRunStartInfo(options);
 
-  auto run_section = options["run"];
+  auto& run_section = options["run"];
 
   ASSERT_TRUE(run_section.isSection());
   EXPECT_TRUE(run_section.isSet("version"));

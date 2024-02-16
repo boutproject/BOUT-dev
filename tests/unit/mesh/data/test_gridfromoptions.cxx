@@ -33,6 +33,8 @@ public:
     output_progress.disable();
     output_warn.disable();
     options["f"] = expected_string;
+    options["n"] = 12;
+    options["r"] = 3.14;
 
     // modify mesh section in global options
     options["dx"] = "1.";
@@ -116,10 +118,11 @@ TEST_F(GridFromOptionsTest, GetStringNone) {
 
 TEST_F(GridFromOptionsTest, GetInt) {
   int result{-1};
-  int expected{3};
 
-  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f"));
-  EXPECT_EQ(result, expected);
+  // The expression must not depend on x,y,z or t
+  EXPECT_THROW(griddata->get(&mesh_from_options, result, "f"), BoutException);
+  griddata->get(&mesh_from_options, result, "n");
+  EXPECT_EQ(result, 12);
 }
 
 TEST_F(GridFromOptionsTest, GetIntNone) {
@@ -132,9 +135,9 @@ TEST_F(GridFromOptionsTest, GetIntNone) {
 
 TEST_F(GridFromOptionsTest, GetBoutReal) {
   BoutReal result{-1.};
-  BoutReal expected{3.};
+  BoutReal expected{3.14};
 
-  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f"));
+  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "r"));
   EXPECT_EQ(result, expected);
 }
 

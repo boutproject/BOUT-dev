@@ -1,7 +1,60 @@
 # Changelog
 
-## [v5.0.0](https://github.com/boutproject/BOUT-dev/tree/next)
-[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.2...next)
+## [v6.0.0](https://github.com/boutproject/BOUT-dev/tree/next)
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v5.1.0...next)
+
+### Breaking changes
+
+- The autotools `./configure` build system has been removed
+- Parsing of booleans has changed [\#2828][https://github.com/boutproject/BOUT-dev/pull/2828] ([bendudson][https://github.com/bendudson]).
+  See the [manual page](https://bout-dev.readthedocs.io/en/stable/user_docs/bout_options.html#boolean-expressions) for details.
+
+
+## [v5.1.0](https://github.com/boutproject/BOUT-dev/tree/v5.1.0)
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v5.0.0...v5.1.0)
+
+- Update RELEASE_HOWTO.md [\#2741][https://github.com/boutproject/BOUT-dev/pull/2741] ([dschwoerer][https://github.com/dschwoerer])
+- Remove h5py - we only support netcdf [\#2735][https://github.com/boutproject/BOUT-dev/pull/2735] ([dschwoerer][https://github.com/dschwoerer])
+- CI: Install dnf5 for Fedora [\#2731][https://github.com/boutproject/BOUT-dev/pull/2731] ([dschwoerer][https://github.com/dschwoerer])
+- Improving compatibility with fmt 10 [\#2730][https://github.com/boutproject/BOUT-dev/pull/2730] ([dschwoerer][https://github.com/dschwoerer])
+- Bump `clang-tidy-review` version [\#2726][https://github.com/boutproject/BOUT-dev/pull/2726] ([ZedThree][https://github.com/ZedThree])
+- Revert sundials detection [\#2725][https://github.com/boutproject/BOUT-dev/pull/2725] ([dschwoerer][https://github.com/dschwoerer])
+- Fix static CI build [\#2724][https://github.com/boutproject/BOUT-dev/pull/2724] ([dschwoerer][https://github.com/dschwoerer])
+- CI install natsort [\#2723][https://github.com/boutproject/BOUT-dev/pull/2723] ([bendudson][https://github.com/bendudson])
+- Fix FV::Div_a_Grad_perp Y alignment [\#2722][https://github.com/boutproject/BOUT-dev/pull/2722] ([bendudson][https://github.com/bendudson])
+- Generate BOUT++ tar via boutpp backend [\#2708][https://github.com/boutproject/BOUT-dev/pull/2708] ([dschwoerer][https://github.com/dschwoerer])
+- Build containers in GHA CI [\#2511][https://github.com/boutproject/BOUT-dev/pull/2511] ([dschwoerer][https://github.com/dschwoerer])
+- Update to dnf5 (master) [\#2732][https://github.com/boutproject/BOUT-dev/pull/2732] ([dschwoerer][https://github.com/dschwoerer])
+- Solver improvements [\#2716][https://github.com/boutproject/BOUT-dev/pull/2716] ([bendudson][https://github.com/bendudson])
+- Get mesh outputs after physics init [\#2714][https://github.com/boutproject/BOUT-dev/pull/2714] ([bendudson][https://github.com/bendudson])
+- Remove unnecessary check for aligned fields when applying twist-shift [\#2711][https://github.com/boutproject/BOUT-dev/pull/2711] ([dschwoerer][https://github.com/dschwoerer])
+- Do not try to run SLEPc or PETSc in configure [\#2709][https://github.com/boutproject/BOUT-dev/pull/2709] ([dschwoerer][https://github.com/dschwoerer])
+- Update `make dist` invocation [\#2707][https://github.com/boutproject/BOUT-dev/pull/2707] ([dschwoerer][https://github.com/dschwoerer])
+- Add support for PETSc & SLEPc 3.18 / 3.19 [\#2704][https://github.com/boutproject/BOUT-dev/pull/2704] ([ZedThree][https://github.com/ZedThree])
+- mesh:paralleltransform is a section [\#2702][https://github.com/boutproject/BOUT-dev/pull/2702] ([dschwoerer][https://github.com/dschwoerer])
+- Remove last uses of `bout::globals::dump` [\#2699][https://github.com/boutproject/BOUT-dev/pull/2699] ([ZedThree][https://github.com/ZedThree])
+- Docs: Fix default branch for "suggest edit"  [\#2697][https://github.com/boutproject/BOUT-dev/pull/2697] ([ZedThree][https://github.com/ZedThree])
+- CI: do not run on removed old ubuntu [\#2695][https://github.com/boutproject/BOUT-dev/pull/2695] ([dschwoerer][https://github.com/dschwoerer])
+- isUniform: Do not fail if numbers are only almost equal [\#2693][https://github.com/boutproject/BOUT-dev/pull/2693] ([dschwoerer][https://github.com/dschwoerer])
+- Docs for docs improvements [\#2690][https://github.com/boutproject/BOUT-dev/pull/2690] ([dschwoerer][https://github.com/dschwoerer])
+- Recommend `requirements.txt` for dependencies [\#2689][https://github.com/boutproject/BOUT-dev/pull/2689] ([dschwoerer][https://github.com/dschwoerer])
+- Fall back to pkgconfig for finding netcdf-cxx4 [\#2686][https://github.com/boutproject/BOUT-dev/pull/2686] ([dschwoerer][https://github.com/dschwoerer])
+- Fix pvode warnings [\#2684][https://github.com/boutproject/BOUT-dev/pull/2684] ([dschwoerer][https://github.com/dschwoerer])
+- Python: If we are on a tag, we should use that as version [\#2683][https://github.com/boutproject/BOUT-dev/pull/2683] ([dschwoerer][https://github.com/dschwoerer])
+- CI: switch to openmpi for fedora GHA [\#2682][https://github.com/boutproject/BOUT-dev/pull/2682] ([dschwoerer][https://github.com/dschwoerer])
+- Fix SUNDIALS `Context` construction for MPICH [\#2678][https://github.com/boutproject/BOUT-dev/pull/2678] ([dschwoerer][https://github.com/dschwoerer])
+- Fix versions after release [\#2669][https://github.com/boutproject/BOUT-dev/pull/2669] ([dschwoerer][https://github.com/dschwoerer])
+- Some fixes for tokamak-2fluid example [\#2668][https://github.com/boutproject/BOUT-dev/pull/2668] ([ZedThree][https://github.com/ZedThree])
+- Fix some warnings and deprecated headers [\#2666][https://github.com/boutproject/BOUT-dev/pull/2666] ([ZedThree][https://github.com/ZedThree])
+- Improve docs + fix boutpp docs (master) [\#2664][https://github.com/boutproject/BOUT-dev/pull/2664] ([dschwoerer][https://github.com/dschwoerer])
+- Fix some warnings [\#2661][https://github.com/boutproject/BOUT-dev/pull/2661] ([dschwoerer][https://github.com/dschwoerer])
+- Error early with in-source-builds [\#2660][https://github.com/boutproject/BOUT-dev/pull/2660] ([dschwoerer][https://github.com/dschwoerer])
+- Squash optional [\#2659][https://github.com/boutproject/BOUT-dev/pull/2659] ([dschwoerer][https://github.com/dschwoerer])
+- Merge v5 into next - resolve conflicts [\#2658][https://github.com/boutproject/BOUT-dev/pull/2658] ([dschwoerer][https://github.com/dschwoerer])
+- Update bundled boututils and boutdata [\#2657][https://github.com/boutproject/BOUT-dev/pull/2657] ([dschwoerer][https://github.com/dschwoerer])
+
+## [v5.0.0](https://github.com/boutproject/BOUT-dev/tree/v5.0.0)
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.2...v5.0.0)
 
 ### Breaking changes
 

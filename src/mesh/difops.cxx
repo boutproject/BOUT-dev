@@ -645,7 +645,7 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
   }
   ASSERT1(outloc == g.getLocation());
 
-  MAYBE_UNUSED(Mesh * mesh) = f.getMesh();
+  [[maybe_unused]] Mesh* mesh = f.getMesh();
 
   Field3D result{emptyFrom(f).setLocation(outloc)};
 
@@ -862,7 +862,7 @@ Field3D bracket(const Field2D& f, const Field3D& g, BRACKET_METHOD method,
 }
 
 Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
-                CELL_LOC outloc, MAYBE_UNUSED(Solver* solver)) {
+                CELL_LOC outloc, [[maybe_unused]] Solver* solver) {
   TRACE("Field3D, Field3D");
 
   ASSERT1_FIELDS_COMPATIBLE(f, g);

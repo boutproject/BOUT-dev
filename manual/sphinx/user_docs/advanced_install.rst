@@ -47,7 +47,7 @@ source directory:
     CHECK=no bin/bout-build-deps.sh
     # or with openmp - not tested, maybe not good to add it to FFTW
     PETSCFLAGS=--with-openmp=1 FFTWFLAGS="--enable-avx512 --enable-avx-128-fma --with-openmp --enable-threads" bin/bout-build-deps.sh
-    # and add "--enable-openmp" to ./configure
+    # and add "-DBOUT_ENABLE_OPENMP=ON" to cmake configure line
 
 Infos about options and further info can be obtained by running:
 
@@ -83,29 +83,6 @@ As of 20th April 2018, the following configuration should work
 When using CMake on Cray systems like Archer, you need to pass
 ``-DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment`` so that the Cray compiler
 wrappers are detected properly.
-
-KNL @ Archer
-~~~~~~~~~~~~
-
-To use the KNL system, configure BOUT++ as follows:
-
-.. code-block:: bash
-
-    ./configure MPICXX=CC --host=knl --with-netcdf --with-pnetcdf=no --with-hypre=no CXXFLAGS="-xMIC-AVX512 -D_GLIBCXX_USE_CXX11_ABI=0"
-
-Atlas
-~~~~~
-
-.. code-block:: bash
-
-   ./configure --with-netcdf=/usr/local/tools/hdf5-gnu-serial-1.8.1/lib --with-fftw=/usr/local --with-pdb=/usr/gapps/pact/new/lnx-2.5-ib/gnu
-
-Cab
-~~~
-
-.. code-block:: bash
-
-   ./configure --with-netcdf=/usr/local/tools/hdf5-gnu-serial-1.8.1/lib --with-fftw=/usr/local/tools/fftw3-3.2 --with-pdb=/usr/gapps/pact/new/lnx-2.5-ib/gnu
 
 Cori
 ~~~~
@@ -152,52 +129,6 @@ on GPU machines, including Cori. Note that in order to access GPU
 nodes a request must be made through `NERSC services
 <https://nersc.servicenowservices.com/>`_.
 
-Edison
-~~~~~~
-
-.. code-block:: bash
-
-   module swap PrgEnv-intel PrgEnv-gnu
-   module load fftw
-   ./configure MPICC=cc MPICXX=CC --with-netcdf=/global/u2/c/chma/PUBLIC/netcdf_edison/netcdf --with-fftw=/opt/fftw/3.3.0.1/x86_64
-
-Hoffman2
-~~~~~~~~
-
-.. code-block:: bash
-
-   ./configure --with-netcdf=/u/local/apps/netcdf/current --with-fftw=/u/local/apps/fftw3/current --with-cvode=/u/local/apps/sundials/2.4.0 --with-lapack=/u/local/apps/lapack/current
-
-Hopper
-~~~~~~
-
-.. code-block:: bash
-
-    module swap PrgEnv-pgi PrgEnv-gnu
-    module load netcdf
-    module swap netcdf netcdf/4.1.3
-    module swap gcc gcc/4.6.3
-    ./configure MPICC=cc MPICXX=CC --with-fftw=/opt/fftw/3.2.2.1 --with-pdb=/global/homes/u/umansky/PUBLIC/PACT_HOPP2/pact
-
-Hyperion
-~~~~~~~~
-
-With the bash shell use
-
-.. code-block:: bash
-
-   export PETSC_DIR=~farley9/projects/petsc/petsc-3.2-p1
-   export PETSC_ARCH=arch-c
-   ./configure --with-netcdf=/usr/local/tools/netcdf-gnu-4.1 --with-fftw=/usr/local MPICXX=mpiCC EXTRA_LIBS=-lcurl --with-petsc --with-cvode=~farley9/local --with-ida=~farley9/local
-
-With the tcsh shell use
-
-.. code-block:: tcsh
-
-   setenv PETSC_DIR ~farley9/projects/petsc/petsc-3.2-p1
-   setenv PETSC_ARCH arch-c
-   ./configure --with-netcdf=/usr/local/tools/netcdf-gnu-4.1 --with-fftw=/usr/local MPICXX=mpiCC EXTRA_LIBS=-lcurl --with-petsc --with-cvode=~farley9/local --with-ida=~farley9/local
-
 MacOS / Apple Darwin
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -211,71 +142,9 @@ Compiling with Apple Clang 12, the following configuration has been known to wor
 
 where ``<build-directory>`` is the path to the build directory
 
-Marconi
-~~~~~~~
 
-.. code-block:: bash
-
-   module load intel intelmpi fftw lapack
-   module load szip zlib/1.2.8--gnu--6.1.0
-   module load hdf5/1.8.17--intel--pe-xe-2017--binary
-   module load netcdf-cxx4
-   module load python
-
-To compile for the SKL partition, configure with
-
-.. code-block:: bash
-
-   ./configure --enable-checks=0 CPPFLAGS="-Ofast -funroll-loops -xCORE-AVX512 -mtune=skylake" --host skl
-
-to enable AVX512 vectorization.
-
-.. note:: As of 20/04/2018, an issue with the netcdf and netcdf-cxx4
-          modules means that you will need to remove ``-lnetcdf`` from
-          ``EXTRA_LIBS`` in ``make.config`` after running
-          ``./configure`` and before running ``make``. ``-lnetcdf``
-          needs also to be removed from ``bin/bout-config`` to allow a
-          successful build of the python interface. Recreation of
-          ``boutpp.pyx`` needs to be manually triggered, if
-          ``boutpp.pyx`` has already been created.
-
-Marconi with gnu compilers
-**************************
-
-It is also possible to configure on Marconi using gnu compilers, which may give better performance. A set of modules which work as of 4/5/2021 is
-
-.. code-block:: bash
-
-    module load env-skl
-    module load profile/advanced
-    module load intel/pe-xe-2018--binary  # note need to keep the 'intel' module loaded in order for shared libraries needed by numpy/scipy to be available
-    module load gnu/7.3.0
-    module load openmpi/4.0.1--gnu--7.3.0
-    module load mkl/2017--binary
-    module load python/3.6.4
-    module load szip/2.1--gnu--6.1.0 zlib/1.2.8--gnu--6.1.0
-
-    bin/bout-build-deps.sh
-
-And follow the instructions. The result could look something like this with <...> the appropriate path.
-
-* for an optimized build (some experimentation with optimisation flags would be welcome, please share the results if you do!)::
-
-    ./configure --enable-optimize=3 --enable-checks=no --enable-static --with-netcdf=<...> --with-sundials=<...> --with-fftw=<...> --with-petsc=<...>
-
-* for a debugging build::
-
-    ./configure --enable-debug --enable-static --with-netcdf=<...> --with-sundials=<...> --with-fftw=<...> --with-petsc=<...>
-
-Ubgl
-~~~~
-
-.. code-block:: bash
-
-   ./configure --with-netcdf CXXFLAGS=-DMPICH_IGNORE_CXX_SEEK CFLAGS=-DMPICH_IGNORE_CXX_SEEK --with-pdb=/usr/gapps/pact/new_s/lnx-2.5-ib --with-netcdf=/usr/local/tools/netcdf/netcdf-4.1_c++
-
-Raven / Cobra / Draco
-~~~~~~~~~~~~~~~~~~~~~
+MPCDF HPC Systems
+~~~~~~~~~~~~~~~~~
 .. code-block:: bash
 
     module purge # or at least onload intel and impi and mkl
@@ -290,14 +159,21 @@ for a production run use:
 .. code-block:: bash
 
     module load bout-dep
-    ./configure --with-netcdf=$BOUT_DEP --with-sundials=$BOUT_DEP --with-fftw=$BOUT_DEP --with-petsc=$BOUT_DEP --enable-optimize --enable-openmp
+    cmake .. -DBOUT_USE_NETCDF=ON -DnetCDF_ROOT=$BOUT_DEP -DnetCDFCxx_ROOT=$BOUT_DEP \
+      -DBOUT_USE_PETSC=ON -DPETSC_DIR=$BOUT_DEP \
+      -DBOUT_USE_FFTW=ON -DFFTW_ROOT=$BOUT_DEP \
+      -DBOUT_USE_SUNDIALS=ON -DSUNDIALS_ROOT=$BOUT_DEP \
+      -DBOUT_ENABLE_OPENMP=ON \
+      -DCMAKE_BUILD_TYPE=Release
 
 
 File formats
 ------------
 
-BOUT++ can currently use the NetCDF-4_ file format, with experimental
-support for the parallel flavour. NetCDF is a widely used format and
+BOUT++ can currently use the NetCDF-4_ file format and the ADIOS2 library
+for high-performance parallel output.
+
+NetCDF is a widely used format and
 has many tools for viewing and manipulating files.
 
 .. _NetCDF-4: https://www.unidata.ucar.edu/software/netcdf/

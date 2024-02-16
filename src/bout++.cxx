@@ -4,9 +4,9 @@
  * Adapted from the BOUT code by B.Dudson, University of York, Oct 2007
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2023 BOUT++ contributors
  *
- * Contact Ben Dudson, bd512@york.ac.uk
+ * Contact Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -58,6 +58,10 @@ const char DEFAULT_DIR[] = "data";
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout/bout.hxx"
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
+
+#if BOUT_HAS_ADIOS
+#include "bout/adios_object.hxx"
+#endif
 
 #include <fmt/format.h>
 
@@ -161,6 +165,10 @@ int BoutInitialise(int& argc, char**& argv) {
 
     savePIDtoFile(args.data_dir, MYPE);
 
+#if BOUT_HAS_ADIOS
+    bout::ADIOSInit(BoutComm::get());
+#endif
+
     // Print the different parts of the startup info
     printStartupHeader(MYPE, BoutComm::size());
     printCompileTimeOptions();
@@ -182,8 +190,7 @@ int BoutInitialise(int& argc, char**& argv) {
     // but it's possible that only happens in BoutFinalise, which is
     // too late for that check.
     const auto datadir = Options::root()["datadir"].withDefault<std::string>(DEFAULT_DIR);
-    MAYBE_UNUSED()
-    const auto optionfile =
+    [[maybe_unused]] const auto optionfile =
         Options::root()["optionfile"].withDefault<std::string>(args.opt_file);
     const auto settingsfile =
         Options::root()["settingsfile"].withDefault<std::string>(args.set_file);
@@ -218,6 +225,7 @@ namespace experimental {
 void setupSignalHandler(SignalHandler signal_handler) {
 #if BOUT_USE_SIGNAL
   std::signal(SIGSEGV, signal_handler);
+  std::signal(SIGBUS, signal_handler);
 #endif
 #if BOUT_USE_SIGFPE
   std::signal(SIGFPE, signal_handler);
@@ -564,6 +572,7 @@ void printCompileTimeOptions() {
   constexpr auto netcdf_flavour =
       has_netcdf ? (has_legacy_netcdf ? " (Legacy)" : " (NetCDF4)") : "";
   output_info.write(_("\tNetCDF support {}{}\n"), is_enabled(has_netcdf), netcdf_flavour);
+  output_info.write(_("\tADIOS support {}\n"), is_enabled(has_adios));
   output_info.write(_("\tPETSc support {}\n"), is_enabled(has_petsc));
   output_info.write(_("\tPretty function name support {}\n"),
                     is_enabled(has_pretty_function));
@@ -692,6 +701,7 @@ void addBuildFlagsToOptions(Options& options) {
   options["has_gettext"].force(bout::build::has_gettext);
   options["has_lapack"].force(bout::build::has_lapack);
   options["has_netcdf"].force(bout::build::has_netcdf);
+  options["has_adios"].force(bout::build::has_adios);
   options["has_petsc"].force(bout::build::has_petsc);
   options["has_hypre"].force(bout::build::has_hypre);
   options["has_umpire"].force(bout::build::has_umpire);
@@ -787,6 +797,10 @@ int BoutFinalise(bool write_settings) {
   // Call HYPER_Finalize if not already called
   bout::HypreLib::cleanup();
 
+#if BOUT_HAS_ADIOS
+  bout::ADIOSFinalize();
+#endif
+
   // MPI communicator, including MPI_Finalize()
   BoutComm::cleanup();
 
@@ -822,7 +836,7 @@ BoutMonitor::BoutMonitor(BoutReal timestep, Options& options)
                           .doc(_("Name of file whose existence triggers a stop"))
                           .withDefault("BOUT.stop"))) {}
 
-int BoutMonitor::call(Solver* solver, BoutReal t, MAYBE_UNUSED(int iter), int NOUT) {
+int BoutMonitor::call(Solver* solver, BoutReal t, [[maybe_unused]] int iter, int NOUT) {
   TRACE("BoutMonitor::call({:e}, {:d}, {:d})", t, iter, NOUT);
 
   // Increment Solver's iteration counter, and set the global `iteration`

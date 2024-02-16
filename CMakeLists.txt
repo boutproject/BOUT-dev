@@ -25,10 +25,10 @@ endif()
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
 # We try to use git to get a full description, inspired by setuptools_scm
-set(_bout_previous_version "v5.0.0")
-set(_bout_next_version "5.1.0")
+set(_bout_previous_version "5.1.0")
+set(_bout_next_version "5.2.0")
 execute_process(
-  COMMAND "git" describe --tags --match=${_bout_previous_version}
+  COMMAND "git" describe --tags --match=v${_bout_previous_version}
   COMMAND sed -e s/${_bout_previous_version}-/${_bout_next_version}.dev/ -e s/-/+/
   RESULTS_VARIABLE error_codes
   OUTPUT_VARIABLE BOUT_FULL_VERSION
@@ -40,15 +40,18 @@ foreach(error_code ${error_codes})
     set(BOUT_FULL_VERSION ${_bout_next_version})
   endif()
 endforeach()
+# Remove leading "v"
+string(REGEX REPLACE "^v(.*)" "\\1" BOUT_FULL_VERSION ${BOUT_FULL_VERSION})
+# Remove trailing tag
 string(REGEX REPLACE "^([0-9]+\.[0-9]+\.[0-9]+)\..*" "\\1" BOUT_CMAKE_ACCEPTABLE_VERSION ${BOUT_FULL_VERSION})
+# Get the trailing tag
 string(REGEX REPLACE "^[0-9]+\.[0-9]+\.[0-9]+\.(.*)" "\\1" BOUT_VERSION_TAG ${BOUT_FULL_VERSION})
 
+message(STATUS "Configuring BOUT++ version ${BOUT_FULL_VERSION}")
 project(BOUT++
   DESCRIPTION "Fluid PDE solver framework"
   VERSION ${BOUT_CMAKE_ACCEPTABLE_VERSION}
   LANGUAGES CXX)
-
-message(STATUS "Configuring BOUT++ version ${BOUT_FULL_VERSION}")
 
 include(CMakeDependentOption)
 
@@ -80,6 +83,7 @@ function(bout_update_submodules)
 endfunction()
 
 set(BOUT_SOURCES
+  ./include/bout/adios_object.hxx
   ./include/bout/array.hxx
   ./include/bout/assert.hxx
   ./include/bout/boundary_factory.hxx
@@ -111,7 +115,6 @@ set(BOUT_SOURCES
   ./include/bout/field_factory.hxx
   ./include/bout/fieldgroup.hxx
   ./include/bout/fieldperp.hxx
-  ./include/bout/format.hxx
   ./include/bout/fv_ops.hxx
   ./include/bout/generic_factory.hxx
   ./include/bout/globalfield.hxx
@@ -143,7 +146,7 @@ set(BOUT_SOURCES
   ./include/bout/openmpwrap.hxx
   ./include/bout/operatorstencil.hxx
   ./include/bout/options.hxx
-  ./include/bout/options_netcdf.hxx
+  ./include/bout/options_io.hxx
   ./include/bout/optionsreader.hxx
   ./include/bout/output.hxx
   ./include/bout/output_bout_types.hxx
@@ -322,6 +325,7 @@ set(BOUT_SOURCES
   ./src/solver/impls/split-rk/split-rk.cxx
   ./src/solver/impls/split-rk/split-rk.hxx
   ./src/solver/solver.cxx
+  ./src/sys/adios_object.cxx
   ./src/sys/bout_types.cxx
   ./src/sys/boutcomm.cxx
   ./src/sys/boutexception.cxx
@@ -335,7 +339,11 @@ set(BOUT_SOURCES
   ./src/sys/options/optionparser.hxx
   ./src/sys/options/options_ini.cxx
   ./src/sys/options/options_ini.hxx
+  ./src/sys/options/options_io.cxx
   ./src/sys/options/options_netcdf.cxx
+  ./src/sys/options/options_netcdf.hxx
+  ./src/sys/options/options_adios.cxx
+  ./src/sys/options/options_adios.hxx
   ./src/sys/optionsreader.cxx
   ./src/sys/output.cxx
   ./src/sys/petsclib.cxx
@@ -417,8 +425,13 @@ execute_process(COMMAND ${Python3_EXECUTABLE} -c "import site ; print('/'.join(s
 )
 set(CMAKE_INSTALL_PYTHON_SITEARCH lib/${PYTHON_SITEPATH_SUFFIX} CACHE STRING "Location to install python arch-specific modules")
 
-set(BOUT_ENABLE_PYTHON MAYBE CACHE STRING "Build the Python interface")
-if (BOUT_ENABLE_PYTHON OR BOUT_ENABLE_PYTHON STREQUAL "MAYBE")
+set(ON_OFF_AUTO ON OFF AUTO)
+set(BOUT_ENABLE_PYTHON AUTO CACHE STRING "Build the Python interface")
+set_property(CACHE BOUT_ENABLE_PYTHON PROPERTY STRINGS ${ON_OFF_AUTO})
+if (NOT BOUT_ENABLE_PYTHON IN_LIST ON_OFF_AUTO)
+  message(FATAL_ERROR "BOUT_ENABLE_PYTHON must be one of ${ON_OFF_AUTO}")
+endif()
+if (BOUT_ENABLE_PYTHON OR BOUT_ENABLE_PYTHON STREQUAL "AUTO")
   add_subdirectory(tools/pylib/_boutpp_build)
 else()
   set(BOUT_ENABLE_PYTHON OFF)
@@ -449,14 +462,14 @@ set(BOUT_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}/lib")
 set_target_properties(bout++ PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
   ARCHIVE_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
-  SOVERSION 5.0.0)
+  SOVERSION 5.1.0)
 
 # Set some variables for the bout-config script
 set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -L\$BOUT_LIB_PATH -lbout++")
 set(BOUT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CXX_FLAGS}")
+set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CXX_FLAGS} -std=c++17")
 
-target_compile_features(bout++ PUBLIC cxx_std_14)
+target_compile_features(bout++ PUBLIC cxx_std_17)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
 # Optional compiler features
@@ -730,7 +743,7 @@ endif()
 
 
 add_custom_target(dist
-  COMMAND ${CMAKE_SOURCE_DIR}/bin/bout-archive-helper.sh v${BOUT_FULL_VERSION}
+  COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/pylib/_boutpp_build/backend.py dist
   # there is no cmake equivalent to `mv` - so only works on systems that are not inentionally non-POSIX complient
   COMMAND mv BOUT++-v${BOUT_FULL_VERSION}.tar.gz ${CMAKE_CURRENT_BINARY_DIR}/
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -767,6 +780,26 @@ else()
 endif()
 
 set(ISINSTALLED "FALSE")
+
+set(_CONFIG_LDFLAGS)
+string(REPLACE " " ";" CONFIG_LDFLAGS_LIST ${CONFIG_LDFLAGS})
+foreach (flag ${CONFIG_LDFLAGS_LIST})
+  string(REGEX MATCH "^-.*$" isopt "${flag}")
+  if (isopt)
+    # message("${flag} is an option")
+    set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} ${flag}")
+    # All good
+  else()
+    if(EXISTS ${flag})
+      # message("${flag} is a file")
+      set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} ${flag}")
+    else()
+      message("Fixing ${flag} to -l${flag}")
+      set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} -l${flag}")
+    endif()
+  endif()
+endforeach()
+set( CONFIG_LDFLAGS ${_CONFIG_LDFLAGS})
 
 # This version of the file allows the build directory to be used directly
 configure_file(bin/bout-config.in bin/bout-config @ONLY)
@@ -902,6 +935,7 @@ message("
    SUNDIALS support         : ${BOUT_HAS_SUNDIALS}
    HYPRE support            : ${BOUT_HAS_HYPRE}
    NetCDF support           : ${BOUT_HAS_NETCDF}
+   ADIOS support            : ${BOUT_HAS_ADIOS}
    FFTW support             : ${BOUT_HAS_FFTW}
    LAPACK support           : ${BOUT_HAS_LAPACK}
    OpenMP support           : ${BOUT_USE_OPENMP}

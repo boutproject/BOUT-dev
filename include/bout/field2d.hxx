@@ -33,7 +33,7 @@ class Field2D;
 class Mesh;
 #include "bout/field.hxx"
 #include "bout/field_data.hxx"
-class Field3D; //#include "bout/field3d.hxx"
+class Field3D;
 #include "bout/fieldperp.hxx"
 #include "bout/stencils.hxx"
 
@@ -174,6 +174,9 @@ public:
   /// Return a Region<Ind2D> reference to use to iterate over this field
   const Region<Ind2D>& getRegion(REGION region) const;
   const Region<Ind2D>& getRegion(const std::string& region_name) const;
+  const Region<Ind2D>& getValidRegionWithDefault(const std::string& region_name) const {
+    return getRegion(region_name);
+  }
 
   Region<Ind2D>::RegionIndices::const_iterator begin() const {
     return std::begin(getRegion("RGN_ALL"));
@@ -277,10 +280,12 @@ public:
 
   friend void swap(Field2D& first, Field2D& second) noexcept;
 
+  int size() const override { return nx * ny; };
+
+private:
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
 
-private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1};
 

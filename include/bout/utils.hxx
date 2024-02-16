@@ -37,6 +37,7 @@
 #include "bout/assert.hxx"
 #include "bout/build_config.hxx"
 #include "bout/msg_stack.hxx"
+#include "bout/region.hxx"
 #include "bout/unused.hxx"
 
 #include <algorithm>
@@ -105,7 +106,7 @@ struct function_traits;
 ///         bout::utils::function_traits<some_function>::arg<1>::type;
 ///     // The following prints "true":
 ///     std::cout << std::boolalpha
-///         << std::is_same<double, first_argument_type>::value;
+///         << std::is_same_v<double, first_argument_type>;
 ///
 /// Adapted from https://stackoverflow.com/a/9065203/2043465
 template <typename R, typename... Args>
@@ -204,6 +205,8 @@ public:
   using size_type = int;
 
   Matrix() = default;
+  Matrix(Matrix&&) noexcept = default;
+  Matrix& operator=(Matrix&&) noexcept = default;
   Matrix(size_type n1, size_type n2) : n1(n1), n2(n2) {
     ASSERT2(n1 >= 0);
     ASSERT2(n2 >= 0);
@@ -214,6 +217,7 @@ public:
     // Prevent copy on write for Matrix
     data.ensureUnique();
   }
+  ~Matrix() = default;
 
   /// Reallocate the Matrix to shape \p new_size_1 by \p new_size_2
   ///
@@ -298,6 +302,8 @@ public:
   using size_type = int;
 
   Tensor() = default;
+  Tensor(Tensor&&) noexcept = default;
+  Tensor& operator=(Tensor&&) noexcept = default;
   Tensor(size_type n1, size_type n2, size_type n3) : n1(n1), n2(n2), n3(n3) {
     ASSERT2(n1 >= 0);
     ASSERT2(n2 >= 0);
@@ -309,6 +315,7 @@ public:
     // Prevent copy on write for Tensor
     data.ensureUnique();
   }
+  ~Tensor() = default;
 
   /// Reallocate the Tensor with shape \p new_size_1 by \p new_size_2 by \p new_size_3
   ///
@@ -345,6 +352,14 @@ public:
     ASSERT2(0 <= i2 && i2 < n2);
     ASSERT2(0 <= i3 && i3 < n3);
     return data[(i1 * n2 + i2) * n3 + i3];
+  }
+
+  const T& operator[](Ind3D i) const {
+    // ny and nz are private :-(
+    // ASSERT2(i.nz == n3);
+    // ASSERT2(i.ny == n2);
+    ASSERT2(0 <= i.ind && i.ind < n1 * n2 * n3);
+    return data[i.ind];
   }
 
   Tensor& operator=(const T& val) {
@@ -689,5 +704,12 @@ T* pointer(T& val) {
 #define BOUT_CONCAT_(A, B) A##B
 #define BOUT_CONCAT(A, B) BOUT_CONCAT_(A, B)
 #endif
+
+namespace bout {
+namespace utils {
+/// Check that \p flag is set in \p bitset
+inline bool flagSet(int bitset, int flag) { return (bitset & flag) != 0; }
+} // namespace utils
+} // namespace bout
 
 #endif // __UTILS_H__

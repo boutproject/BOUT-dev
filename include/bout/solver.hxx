@@ -33,8 +33,8 @@
  *
  **************************************************************************/
 
-#ifndef __SOLVER_H__
-#define __SOLVER_H__
+#ifndef SOLVER_H
+#define SOLVER_H
 
 #include "bout/build_config.hxx"
 
@@ -63,7 +63,6 @@ using Jacobian = int (*)(BoutReal t);
 /// Solution monitor, called each timestep
 using TimestepMonitorFunc = int (*)(Solver* solver, BoutReal simtime, BoutReal lastdt);
 
-//#include "bout/globals.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/generic_factory.hxx"
@@ -270,7 +269,7 @@ public:
   virtual void constraint(Vector3D& v, Vector3D& C_v, std::string name);
 
   /// Set a maximum internal timestep (only for explicit schemes)
-  virtual void setMaxTimestep(MAYBE_UNUSED(BoutReal dt)) {}
+  virtual void setMaxTimestep([[maybe_unused]] BoutReal dt) {}
   /// Return the current internal timestep
   virtual BoutReal getCurrentTimestep() { return 0.0; }
 
@@ -399,16 +398,6 @@ protected:
     const auto in_vars = std::find(begin(vars), end(vars), name);
     return in_vars != end(vars);
   }
-
-  /// Helper function for getLocalN: return the number of points to
-  /// evolve in \p f, plus the accumulator \p value
-  ///
-  /// If f.evolve_bndry, includes the boundary (NB: not guard!) points
-  ///
-  /// FIXME: This could be a lambda local to getLocalN with an `auto`
-  /// argument in C++14
-  template <class T>
-  friend int local_N_sum(int value, const VarStr<T>& f);
 
   /// Vectors of variables to evolve
   std::vector<VarStr<Field2D>> f2d;
@@ -597,4 +586,4 @@ private:
   BoutReal output_timestep;
 };
 
-#endif // __SOLVER_H__
+#endif // SOLVER_H

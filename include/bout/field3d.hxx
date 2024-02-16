@@ -40,6 +40,7 @@ class Mesh; // #include "bout/mesh.hxx"
 
 #include "bout/utils.hxx"
 
+#include <optional>
 #include <vector>
 
 /// Class for 3D X-Y-Z scalar fields
@@ -313,6 +314,13 @@ public:
   ///
   const Region<Ind3D>& getRegion(REGION region) const;
   const Region<Ind3D>& getRegion(const std::string& region_name) const;
+  /// Use region provided by the default, and if none is set, use the provided one
+  const Region<Ind3D>& getValidRegionWithDefault(const std::string& region_name) const;
+  void setRegion(const std::string& region_name);
+  void resetRegion() { regionID.reset(); };
+  void setRegion(size_t id) { regionID = id; };
+  void setRegion(std::optional<size_t> id) { regionID = id; };
+  std::optional<size_t> getRegionID() const { return regionID; };
 
   /// Return a Region<Ind2D> reference to use to iterate over the x- and
   /// y-indices of this field
@@ -489,6 +497,8 @@ public:
 
   friend void swap(Field3D& first, Field3D& second) noexcept;
 
+  int size() const override { return nx * ny * nz; };
+
 private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1}, nz{-1};
@@ -501,6 +511,9 @@ private:
 
   /// Fields containing values along Y
   std::vector<Field3D> yup_fields{}, ydown_fields{};
+
+  /// RegionID over which the field is valid
+  std::optional<size_t> regionID;
 };
 
 // Non-member overloaded operators

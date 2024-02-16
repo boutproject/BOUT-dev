@@ -782,9 +782,10 @@ void Laplacian::savePerformance(Solver& solver, const std::string& name) {
   solver.addMonitor(&monitor, Solver::BACK);
 }
 
-int Laplacian::LaplacianMonitor::call(MAYBE_UNUSED(Solver* solver),
-                                      MAYBE_UNUSED(BoutReal time), MAYBE_UNUSED(int iter),
-                                      MAYBE_UNUSED(int nout)) {
+int Laplacian::LaplacianMonitor::call([[maybe_unused]] Solver* solver,
+                                      [[maybe_unused]] BoutReal time,
+                                      [[maybe_unused]] int iter,
+                                      [[maybe_unused]] int nout) {
   // Nothing to do, values are always calculated
   return 0;
 }
@@ -805,7 +806,3 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex& a, dcomplex& b, dcom
                           const Field2D* ccoef, const Field2D* d, CELL_LOC loc) {
   Laplacian::defaultInstance()->tridagCoefs(jx, jy, jz, a, b, c, ccoef, d, loc);
 }
-constexpr decltype(LaplaceFactory::type_name) LaplaceFactory::type_name;
-constexpr decltype(LaplaceFactory::section_name) LaplaceFactory::section_name;
-constexpr decltype(LaplaceFactory::option_name) LaplaceFactory::option_name;
-constexpr decltype(LaplaceFactory::default_type) LaplaceFactory::default_type;

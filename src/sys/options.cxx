@@ -1,14 +1,33 @@
-#include <bout/boutexception.hxx>
-#include <bout/field_factory.hxx> // Used for parsing expressions
-#include <bout/options.hxx>
-#include <bout/output.hxx>
-#include <bout/utils.hxx>
+#include "bout/options.hxx"
 
+#include "bout/array.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/field_factory.hxx" // Used for parsing expressions
+#include "bout/fieldperp.hxx"
+#include "bout/output.hxx"
+#include "bout/sys/expressionparser.hxx"
+#include "bout/sys/gettext.hxx"
+#include "bout/sys/type_name.hxx"
+#include "bout/sys/variant.hxx"
+#include "bout/traits.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
+
+#include <fmt/core.h>
 #include <fmt/format.h>
 
 #include <algorithm>
-#include <iomanip>
-#include <sstream>
+#include <cmath>
+#include <iterator>
+#include <map>
+#include <set>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 /// The source label given to default values
 const std::string Options::DEFAULT_SOURCE{_("default")};
@@ -19,28 +38,36 @@ std::string Options::getDefaultSource() { return DEFAULT_SOURCE; }
 /// having been used
 constexpr auto conditionally_used_attribute = "conditionally used";
 
-Options* Options::root_instance{nullptr};
-
 Options& Options::root() {
-  if (root_instance == nullptr) {
-    // Create the singleton
-    root_instance = new Options();
-  }
-  return *root_instance;
+  static Options root_instance;
+  return root_instance;
 }
 
-void Options::cleanup() {
-  if (root_instance == nullptr) {
-    return;
+void Options::cleanup() { root() = Options{}; }
+
+Options Options::copy() const {
+  Options result;
+
+  result.value = value;
+  result.attributes = attributes;
+  result.parent_instance = parent_instance;
+  result.full_name = full_name;
+  result.is_section = is_section;
+  result.value_used = value_used;
+
+  // Recursively copy children
+  for (const auto& child_it : children) {
+    auto pair_it = result.children.emplace(child_it.first, child_it.second.copy());
+    Options& child = pair_it.first->second;
+    child.parent_instance = &result;
   }
-  delete root_instance;
-  root_instance = nullptr;
+  return result;
 }
 
-Options::Options(const Options& other)
-    : value(other.value), attributes(other.attributes),
-      parent_instance(other.parent_instance), full_name(other.full_name),
-      is_section(other.is_section), children(other.children),
+Options::Options(Options&& other) noexcept
+    : value(std::move(other.value)), attributes(std::move(other.attributes)),
+      parent_instance(other.parent_instance), full_name(std::move(other.full_name)),
+      is_section(other.is_section), children(std::move(other.children)),
       value_used(other.value_used) {
 
   // Ensure that this is the parent of all children,
@@ -55,39 +82,25 @@ Options::Options(const char* value) {
   assign<std::string>(value);
 }
 
-Options::Options(std::initializer_list<std::pair<std::string, Options>> values) {
-  // Yes, this looks bad, but bear with me...  The _only_ way to
-  // construct a nested initializer_list is inside-out, from the
-  // bottom of the tree structure. Unfortunately, this is very much
-  // not how you would want to construct the tree of options, as we
-  // don't have the parent section's name as we construct each
-  // child. Therefore, when we _do_ construct the parent, we'll need
-  // to recursively step down the tree, prepending the parent's name
-  // to each child. Rather than have a private member to do that, we
-  // use a lambda. And to make that lambda recursive, we need to have
-  // a nested lambda.
-  auto append_section_name = [](auto& children, const std::string& section_name) {
-    auto append_impl = [](auto& children, const std::string& section_name,
-                          auto& append_ref) mutable -> void {
-      for (auto& child : children) {
-        child.second.full_name =
-            fmt::format("{}:{}", section_name, child.second.full_name);
-        if (child.second.is_section) {
-          append_ref(child.second.children, section_name, append_ref);
-        }
-      }
-    };
-    append_impl(children, section_name, append_impl);
-  };
-
-  for (auto& value : values) {
-    (*this)[value.first] = value.second;
-    // value.second was constructed from the "bare" `Options<T>(T)` so
-    // doesn't have `full_name` set. This clobbers
-    // `(*this)[value.first].full_name` in the copy constructor, so we
-    // need to explicitly set it again
-    (*this)[value.first].full_name = value.first;
-    append_section_name((*this)[value.first].children, value.first);
+Options::Options(InitializerList values, Options* parent_instance,
+                 std::string section_name)
+    : parent_instance(parent_instance), full_name(std::move(section_name)),
+      is_section(true) {
+  for (const auto& value_it : values) {
+    std::string child_name = full_name.empty()
+                                 ? value_it.first
+                                 : fmt::format("{}:{}", full_name, value_it.first);
+    if (value_it.second.children.size() != 0) {
+      // A section, so construct with an initializer_list
+      children.emplace(value_it.first,
+                       Options(value_it.second.children, this, std::move(child_name)));
+    } else {
+      // A value
+      auto pair_it =
+          children.emplace(value_it.first, Options(this, std::move(child_name)));
+      Options& child = pair_it.first->second;
+      child._set_no_check(value_it.second.value, "");
+    }
   }
 }
 
@@ -107,15 +120,15 @@ Options& Options::operator[](const std::string& name) {
   }
 
   // If name is compound, e.g. "section:subsection", then split the name
-  auto subsection_split = name.find(":");
+  auto subsection_split = name.find(':');
   if (subsection_split != std::string::npos) {
     return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split + 1)];
   }
 
   // Find and return if already exists
-  auto it = children.find(name);
-  if (it != children.end()) {
-    return it->second;
+  auto child = children.find(name);
+  if (child != children.end()) {
+    return child->second;
   }
 
   // Doesn't exist yet, so add
@@ -146,19 +159,19 @@ const Options& Options::operator[](const std::string& name) const {
   }
 
   // If name is compound, e.g. "section:subsection", then split the name
-  auto subsection_split = name.find(":");
+  auto subsection_split = name.find(':');
   if (subsection_split != std::string::npos) {
     return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split + 1)];
   }
 
   // Find and return if already exists
-  auto it = children.find(name);
-  if (it == children.end()) {
+  auto child = children.find(name);
+  if (child == children.end()) {
     // Doesn't exist
     throw BoutException(_("Option {:s}:{:s} does not exist"), full_name, name);
   }
 
-  return it->second;
+  return child->second;
 }
 
 std::multiset<Options::FuzzyMatch>
@@ -208,20 +221,18 @@ Options::fuzzyFind(const std::string& name, std::string::size_type distance) con
   return matches;
 }
 
-Options& Options::operator=(const Options& other) {
+Options& Options::operator=(Options&& other) noexcept {
+  if (this == &other) {
+    return *this;
+  }
+
   // Note: Here can't do copy-and-swap because pointers to parents are stored
 
-  value = other.value;
-
-  // Assigning the attributes.
-  // The simple assignment operator fails to compile with Apple Clang 12
-  //   attributes = other.attributes;
-  attributes.clear();
-  attributes.insert(other.attributes.begin(), other.attributes.end());
-
-  full_name = other.full_name;
+  value = std::move(other.value);
+  attributes = std::move(other.attributes);
+  full_name = std::move(other.full_name);
   is_section = other.is_section;
-  children = other.children;
+  children = std::move(other.children);
   value_used = other.value_used;
 
   // Ensure that this is the parent of all children,
@@ -247,18 +258,17 @@ bool Options::isSet() const {
 }
 
 bool Options::isSection(const std::string& name) const {
-  if (name == "") {
+  if (name.empty()) {
     // Test this object
     return is_section;
   }
 
   // Is there a child section?
-  auto it = children.find(name);
-  if (it == children.end()) {
+  const auto child = children.find(name);
+  if (child == children.end()) {
     return false;
-  } else {
-    return it->second.isSection();
   }
+  return child->second.isSection();
 }
 
 template <>
@@ -300,27 +310,6 @@ void Options::assign<>(Tensor<BoutReal> val, std::string source) {
   _set_no_check(std::move(val), std::move(source));
 }
 
-template <>
-std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) const {
-  if (is_section) {
-    throw BoutException(_("Option {:s} has no value"), full_name);
-  }
-
-  // Mark this option as used
-  value_used = true;
-
-  std::string result = bout::utils::variantToString(value);
-
-  output_info << _("\tOption ") << full_name << " = " << result;
-  if (attributes.count("source")) {
-    // Specify the source of the setting
-    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
-  }
-  output_info << endl;
-
-  return result;
-}
-
 namespace {
 /// Use FieldFactory to evaluate expression
 double parseExpression(const Options::ValueType& value, const Options* options,
@@ -340,7 +329,35 @@ double parseExpression(const Options::ValueType& value, const Options* options,
                         full_name, bout::utils::variantToString(value), error.what());
   }
 }
+
+/// Helper function to print `key = value` with optional source
+template <class T>
+void printNameValueSourceLine(const Options& option, const T& value) {
+  output_info.write(_("\tOption {} = {}"), option.str(), value);
+  if (option.hasAttribute("source")) {
+    // Specify the source of the setting
+    output_info.write(" ({})",
+                      bout::utils::variantToString(option.attributes.at("source")));
+  }
+  output_info.write("\n");
+}
 } // namespace
+
+template <>
+std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) const {
+  if (is_section) {
+    throw BoutException(_("Option {:s} has no value"), full_name);
+  }
+
+  // Mark this option as used
+  value_used = true;
+
+  std::string result = bout::utils::variantToString(value);
+
+  printNameValueSourceLine(*this, result);
+
+  return result;
+}
 
 template <>
 int Options::as<int>(const int& UNUSED(similar_to)) const {
@@ -348,14 +365,14 @@ int Options::as<int>(const int& UNUSED(similar_to)) const {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
-  int result;
+  int result = 0;
 
   if (bout::utils::holds_alternative<int>(value)) {
     result = bout::utils::get<int>(value);
 
   } else {
     // Cases which get a BoutReal then check if close to an integer
-    BoutReal rval;
+    BoutReal rval = BoutNaN;
 
     if (bout::utils::holds_alternative<BoutReal>(value)) {
       rval = bout::utils::get<BoutReal>(value);
@@ -380,12 +397,7 @@ int Options::as<int>(const int& UNUSED(similar_to)) const {
 
   value_used = true;
 
-  output_info << _("\tOption ") << full_name << " = " << result;
-  if (attributes.count("source")) {
-    // Specify the source of the setting
-    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
-  }
-  output_info << endl;
+  printNameValueSourceLine(*this, result);
 
   return result;
 }
@@ -396,7 +408,7 @@ BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) const {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
-  BoutReal result;
+  BoutReal result = BoutNaN;
 
   if (bout::utils::holds_alternative<int>(value)) {
     result = static_cast<BoutReal>(bout::utils::get<int>(value));
@@ -415,12 +427,7 @@ BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) const {
   // Mark this option as used
   value_used = true;
 
-  output_info << _("\tOption ") << full_name << " = " << result;
-  if (attributes.count("source")) {
-    // Specify the source of the setting
-    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
-  }
-  output_info << endl;
+  printNameValueSourceLine(*this, result);
 
   return result;
 }
@@ -431,25 +438,22 @@ bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
     throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
-  bool result;
+  bool result = false;
 
   if (bout::utils::holds_alternative<bool>(value)) {
     result = bout::utils::get<bool>(value);
 
   } else if (bout::utils::holds_alternative<std::string>(value)) {
-    // case-insensitve check, so convert string to lower case
-    const auto strvalue = lowercase(bout::utils::get<std::string>(value));
+    // Parse as floating point because that's the only type the parser understands
+    const BoutReal rval = parseExpression(value, this, "bool", full_name);
 
-    if ((strvalue == "y") or (strvalue == "yes") or (strvalue == "t")
-        or (strvalue == "true") or (strvalue == "1")) {
-      result = true;
-    } else if ((strvalue == "n") or (strvalue == "no") or (strvalue == "f")
-               or (strvalue == "false") or (strvalue == "0")) {
-      result = false;
-    } else {
-      throw BoutException(_("\tOption '{:s}': Boolean expected. Got '{:s}'\n"), full_name,
-                          strvalue);
+    // Check that the result is either close to 1 (true) or close to 0 (false)
+    const int ival = ROUND(rval);
+    if ((fabs(rval - static_cast<BoutReal>(ival)) > 1e-3) or (ival < 0) or (ival > 1)) {
+      throw BoutException(_("Value for option {:s} = {:e} is not a bool"), full_name,
+                          rval);
     }
+    result = ival == 1;
   } else {
     throw BoutException(_("Value for option {:s} cannot be converted to a bool"),
                         full_name);
@@ -457,13 +461,7 @@ bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
 
   value_used = true;
 
-  output_info << _("\tOption ") << full_name << " = " << toString(result);
-
-  if (attributes.count("source")) {
-    // Specify the source of the setting
-    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
-  }
-  output_info << endl;
+  printNameValueSourceLine(*this, toString(result));
 
   return result;
 }
@@ -497,7 +495,7 @@ Field3D Options::as<Field3D>(const Field3D& similar_to) const {
 
   if (bout::utils::holds_alternative<BoutReal>(value)
       or bout::utils::holds_alternative<int>(value)) {
-    BoutReal scalar_value =
+    const BoutReal scalar_value =
         bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
 
     // Get metadata from similar_to, fill field with scalar_value
@@ -527,6 +525,11 @@ Field3D Options::as<Field3D>(const Field3D& similar_to) const {
     // If dimension sizes not the same, may be able
     // to select a region from it using Mesh e.g. if this
     // is from the input grid file.
+    const auto [tx, ty, tz] = tensor.shape();
+    throw BoutException("Size mismatch for option {:s}: Tensor ({}, {}, {}) cannot be "
+                        "converted to Field3D ({}, {}, {})",
+                        full_name, tx, ty, tz, localmesh->LocalNx, localmesh->LocalNy,
+                        localmesh->LocalNz);
   }
 
   throw BoutException(_("Value for option {:s} cannot be converted to a Field3D"),
@@ -553,7 +556,7 @@ Field2D Options::as<Field2D>(const Field2D& similar_to) const {
 
   if (bout::utils::holds_alternative<BoutReal>(value)
       or bout::utils::holds_alternative<int>(value)) {
-    BoutReal scalar_value =
+    const BoutReal scalar_value =
         bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
 
     // Get metadata from similar_to, fill field with scalar_value
@@ -605,7 +608,7 @@ FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
 
   if (bout::utils::holds_alternative<BoutReal>(value)
       or bout::utils::holds_alternative<int>(value)) {
-    BoutReal scalar_value =
+    const BoutReal scalar_value =
         bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
 
     // Get metadata from similar_to, fill field with scalar_value
@@ -690,7 +693,7 @@ struct ConvertContainer {
   Container operator()(const Container& value) { return value; }
 
   template <class Other>
-  Container operator()(MAYBE_UNUSED(const Other& value)) {
+  Container operator()([[maybe_unused]] const Other& value) {
     throw BoutException(error_message);
   }
 
@@ -717,12 +720,7 @@ Array<BoutReal> Options::as<Array<BoutReal>>(const Array<BoutReal>& similar_to) 
   // Mark this option as used
   value_used = true;
 
-  output_info << _("\tOption ") << full_name << " = Array<BoutReal>";
-  if (hasAttribute("source")) {
-    // Specify the source of the setting
-    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
-  }
-  output_info << endl;
+  printNameValueSourceLine(*this, "Array<BoutReal>");
 
   return result;
 }
@@ -771,12 +769,7 @@ Matrix<BoutReal> Options::as<Matrix<BoutReal>>(const Matrix<BoutReal>& similar_t
   // Mark this option as used
   value_used = true;
 
-  output_info << _("\tOption ") << full_name << " = Matrix<BoutReal>";
-  if (hasAttribute("source")) {
-    // Specify the source of the setting
-    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
-  }
-  output_info << endl;
+  printNameValueSourceLine(*this, "Matrix<BoutReal>");
 
   return result;
 }
@@ -798,12 +791,7 @@ Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_t
   // Mark this option as used
   value_used = true;
 
-  output_info << _("\tOption ") << full_name << " = Tensor<BoutReal>";
-  if (hasAttribute("source")) {
-    // Specify the source of the setting
-    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
-  }
-  output_info << endl;
+  printNameValueSourceLine(*this, "Tensor<BoutReal>");
 
   return result;
 }
@@ -839,7 +827,7 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
   // Copy this object, and then we're going to chuck out everything
   // that has been used. This turns out to be easier than copying just
   // the unused options into an empty instance
-  Options unused = *this;
+  Options unused = this->copy();
 
   if (unused.isValue()) {
     // If this is from an excluded source, count it as being used
@@ -889,7 +877,7 @@ Options Options::getUnused(const std::vector<std::string>& exclude_sources) cons
 }
 
 void Options::printUnused() const {
-  Options unused = getUnused();
+  const Options unused = getUnused();
 
   // Two cases: single value, or a section.  If it's a single value,
   // we can check it directly. If it's a section, we can see if it has
@@ -913,9 +901,9 @@ void Options::cleanCache() { FieldFactory::get()->cleanCache(); }
 
 std::map<std::string, const Options*> Options::subsections() const {
   std::map<std::string, const Options*> sections;
-  for (const auto& it : children) {
-    if (it.second.is_section) {
-      sections[it.first] = &it.second;
+  for (const auto& child : children) {
+    if (child.second.is_section) {
+      sections[child.first] = &child.second;
     }
   }
   return sections;
@@ -946,8 +934,8 @@ fmt::format_parse_context::iterator
 bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
 
   const auto* closing_brace = std::find(ctx.begin(), ctx.end(), '}');
-  std::for_each(ctx.begin(), closing_brace, [&](auto it) {
-    switch (it) {
+  std::for_each(ctx.begin(), closing_brace, [&](auto ctx_opt) {
+    switch (ctx_opt) {
     case 'd':
       docstrings = true;
       break;
@@ -1045,7 +1033,7 @@ bout::details::OptionsFormatterBase::format(const Options& options,
 
   // Only print section headers if the section has a name and it has
   // non-section children
-  const auto children = options.getChildren();
+  const auto& children = options.getChildren();
   const bool has_child_values =
       std::any_of(children.begin(), children.end(),
                   [](const auto& child) { return child.second.isValue(); });
@@ -1090,7 +1078,7 @@ void checkForUnusedOptions() {
 
 void checkForUnusedOptions(const Options& options, const std::string& data_dir,
                            const std::string& option_file) {
-  Options unused = options.getUnused();
+  const Options unused = options.getUnused();
   if (not unused.getChildren().empty()) {
 
     // Construct a string with all the fuzzy matches for each unused option

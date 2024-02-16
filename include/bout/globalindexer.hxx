@@ -35,7 +35,7 @@ using InterpolationWeights = std::vector<ParallelTransform::PositionsAndWeights>
 template <class T>
 class GlobalIndexer {
 public:
-  static_assert(bout::utils::is_Field<T>::value, "GlobalIndexer only works with Fields");
+  static_assert(bout::utils::is_Field_v<T>, "GlobalIndexer only works with Fields");
   using ind_type = typename T::ind_type;
 
   GlobalIndexer() = default;
@@ -45,7 +45,8 @@ public:
                          bool autoInitialise = true)
       : fieldmesh(localmesh), indices(-1., localmesh), stencils(std::move(stencil)) {
 
-    Region<ind_type> allCandidate, bndryCandidate;
+    Region<ind_type> allCandidate;
+    Region<ind_type> bndryCandidate;
     if (stencils.getNumParts() > 0) {
       std::set<ind_type> allIndices(getRegionNobndry().getIndices().begin(),
                                     getRegionNobndry().getIndices().end());
@@ -69,14 +70,14 @@ public:
 
     bndryCandidate = mask(allCandidate, getRegionNobndry());
 
-    regionInnerX = getIntersection(bndryCandidate, indices.getRegion("RGN_INNER_X"));
-    regionOuterX = getIntersection(bndryCandidate, indices.getRegion("RGN_OUTER_X"));
-    if (std::is_same<T, FieldPerp>::value) {
+    regionInnerX = intersection(bndryCandidate, indices.getRegion("RGN_INNER_X"));
+    regionOuterX = intersection(bndryCandidate, indices.getRegion("RGN_OUTER_X"));
+    if constexpr (std::is_same_v<T, FieldPerp>) {
       regionLowerY = Region<ind_type>({});
       regionUpperY = Region<ind_type>({});
     } else {
-      regionLowerY = getIntersection(bndryCandidate, indices.getRegion("RGN_LOWER_Y"));
-      regionUpperY = getIntersection(bndryCandidate, indices.getRegion("RGN_UPPER_Y"));
+      regionLowerY = intersection(bndryCandidate, indices.getRegion("RGN_LOWER_Y"));
+      regionUpperY = intersection(bndryCandidate, indices.getRegion("RGN_UPPER_Y"));
     }
     regionBndry = regionLowerY + regionInnerX + regionOuterX + regionUpperY;
     regionAll = getRegionNobndry() + regionBndry;
@@ -85,7 +86,7 @@ public:
 
     int localSize = size();
     MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? fieldmesh->getXcomm() : BoutComm::get();
+        std::is_same_v<T, FieldPerp> ? fieldmesh->getXcomm() : BoutComm::get();
     fieldmesh->getMpi().MPI_Scan(&localSize, &globalEnd, 1, MPI_INT, MPI_SUM, comm);
     globalEnd--;
     int counter = globalStart = globalEnd - size() + 1;
@@ -105,7 +106,18 @@ public:
   /// Finish setting up the indexer, communicating indices across
   /// processes and, if possible, calculating the sparsity pattern of
   /// any matrices.
-  void initialise() { fieldmesh->communicate(indices); }
+  void initialise() {
+    // We need to ensure any _guard_ cells are -1 so we don't include them
+    int_indices.reallocate(indices.size());
+    BOUT_FOR(index, indices.getRegion("RGN_GUARDS")) { int_indices[index.ind] = -1; }
+    // Now we can communicate to get global indices from neighbouring processes
+    fieldmesh->communicate(indices);
+    // Finally, we fill in the global indices including in the
+    // _boundaries_ (*not* guards)
+    BOUT_FOR(index, regionAll) {
+      int_indices[index.ind] = static_cast<int>(indices[index]);
+    }
+  }
 
   Mesh* getMesh() const { return fieldmesh; }
 
@@ -157,6 +169,8 @@ public:
 
   int size() const { return regionAll.size(); }
 
+  const Array<int>& getIntIndices() const { return int_indices; }
+
 protected:
   // Must not be const as the index field needs to be mutable in order
   // to fake parallel communication in the unit tests.
@@ -206,6 +220,8 @@ private:
 
   /// Fields containing the indices for each element (as reals)
   T indices;
+  /// Indices as integers
+  Array<int> int_indices;
   /// The first and last global index on this processor (inclusive in
   /// both cases)
   int globalStart, globalEnd;

@@ -37,7 +37,6 @@ class Output;
 
 #include "bout/assert.hxx"
 #include "bout/boutexception.hxx"
-#include "bout/format.hxx"
 #include "bout/sys/gettext.hxx" // for gettext _() macro
 #include "bout/unused.hxx"
 
@@ -144,7 +143,7 @@ public:
   void print([[maybe_unused]] const std::string& message) override{};
   void enable() override{};
   void disable() override{};
-  void enable(MAYBE_UNUSED(bool enable)){};
+  void enable([[maybe_unused]] bool enable){};
   bool isEnabled() override { return false; }
 };
 

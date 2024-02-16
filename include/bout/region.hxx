@@ -51,6 +51,7 @@
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/openmpwrap.hxx"
+class BoutMask;
 
 /// The MAXREGIONBLOCKSIZE value can be tuned to try to optimise
 /// performance on specific hardware. It determines what the largest
@@ -481,9 +482,10 @@ template <typename T = Ind3D>
 class Region {
   // Following prevents a Region being created with anything other
   // than Ind2D, Ind3D or IndPerp as template type
-  static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value
-                    || std::is_base_of<IndPerp, T>::value,
-                "Region must be templated with one of IndPerp, Ind2D or Ind3D");
+  static_assert(
+      std::is_base_of_v<
+          Ind2D, T> || std::is_base_of_v<Ind3D, T> || std::is_base_of_v<IndPerp, T>,
+      "Region must be templated with one of IndPerp, Ind2D or Ind3D");
 
 public:
   using data_type = T;
@@ -520,7 +522,7 @@ public:
             int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE)
       : ny(ny), nz(nz) {
 #if CHECK > 1
-    if (std::is_base_of<Ind2D, T>::value) {
+    if constexpr (std::is_base_of_v<Ind2D, T>) {
       if (nz != 1) {
         throw BoutException(
             "Trying to make Region<Ind2D> with nz = {:d}, but expected nz = 1", nz);
@@ -536,7 +538,7 @@ public:
       }
     }
 
-    if (std::is_base_of<IndPerp, T>::value) {
+    if constexpr (std::is_base_of_v<IndPerp, T>) {
       if (ny != 1) {
         throw BoutException(
             "Trying to make Region<IndPerp> with ny = {:d}, but expected ny = 1", ny);
@@ -564,6 +566,10 @@ public:
   };
 
   Region<T>(ContiguousBlocks& blocks) : blocks(blocks) { indices = getRegionIndices(); };
+
+  bool operator==(const Region<T>& other) const {
+    return std::equal(this->begin(), this->end(), other.begin(), other.end());
+  }
 
   /// Destructor
   ~Region() = default;
@@ -644,7 +650,6 @@ public:
     auto currentIndices = getIndices();
 
     // Lambda that returns true/false depending if the passed value is in maskIndices
-    // With C++14 T can be auto instead
     auto isInVector = [&](T val) {
       return std::binary_search(std::begin(maskIndices), std::end(maskIndices), val);
     };
@@ -660,8 +665,28 @@ public:
     return *this; // To allow command chaining
   };
 
-  /// Returns a new region including only indices contained in both
-  /// this region and the other.
+  /// Return a new region equivalent to *this but with indices contained
+  /// in mask Region removed
+  Region<T> mask(const BoutMask& mask) {
+    // Get the current set of indices that we're going to mask and then
+    // use to create the result region.
+    auto currentIndices = getIndices();
+
+    // Lambda that returns true/false depending if the passed value is in maskIndices
+    auto isInVector = [&](T val) { return mask[val]; };
+
+    // Erase elements of currentIndices that are in maskIndices
+    currentIndices.erase(
+        std::remove_if(std::begin(currentIndices), std::end(currentIndices), isInVector),
+        std::end(currentIndices));
+
+    // Update indices
+    setIndices(currentIndices);
+
+    return *this; // To allow command chaining
+  };
+
+  /// Get a new region including only indices that are in both regions.
   Region<T> getIntersection(const Region<T>& otherRegion) {
     // Get other indices and sort as we're going to be searching through
     // this vector so if it's sorted we can be more efficient
@@ -673,7 +698,6 @@ public:
     auto currentIndices = getIndices();
 
     // Lambda that returns true/false depending if the passed value is in otherIndices
-    // With C++14 T can be auto instead
     auto notInVector = [&](T val) {
       return !std::binary_search(std::begin(otherIndices), std::end(otherIndices), val);
     };
@@ -918,7 +942,7 @@ Region<T> mask(const Region<T>& region, const Region<T>& mask) {
 
 /// Return the intersection of two regions
 template <typename T>
-Region<T> getIntersection(const Region<T>& region, const Region<T>& otherRegion) {
+Region<T> intersection(const Region<T>& region, const Region<T>& otherRegion) {
   auto result = region;
   return result.getIntersection(otherRegion);
 }
