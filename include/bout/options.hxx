@@ -213,7 +213,7 @@ public:
     CopyableOptions(T value) : value(std::move(value)) {}
 
     /// Special case for char*, which can otherwise become cast to bool
-    CopyableOptions(const char* value): value(std::string(value)) {}
+    CopyableOptions(const char* value) : value(std::string(value)) {}
 
     CopyableOptions(
         std::initializer_list<std::pair<std::string, CopyableOptions>> children)
