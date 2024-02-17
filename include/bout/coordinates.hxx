@@ -152,8 +152,6 @@ public:
   /// Calculate differential geometry quantities from the metric tensor
   int communicateAndCheckMeshSpacing() const;
 
-  void jacobian(); ///< Calculate J and Bxy
-
   ///////////////////////////////////////////////////////////
   // Parallel transforms
   ///////////////////////////////////////////////////////////
@@ -277,17 +275,21 @@ public:
   const FieldMetric& G2() const;
   const FieldMetric& G3() const;
 
-  void setG1(FieldMetric G1);
-  void setG2(FieldMetric G2);
-  void setG3(FieldMetric G3);
+  void setG1(const FieldMetric& G1);
+  void setG2(const FieldMetric& G2);
+  void setG3(const FieldMetric& G3);
 
   const FieldMetric& Grad2_par2_DDY_invSg(CELL_LOC outloc,
                                           const std::string& method) const;
 
   const FieldMetric& invSg() const;
 
+  ChristoffelSymbols& christoffel_symbols() const;
+
   void recalculateAndReset(bool recalculate_staggered,
                            bool force_interpolate_from_centre);
+
+  FieldMetric recalculateJacobian() const;
 
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
@@ -325,7 +327,7 @@ private:
   MetricTensor covariantMetricTensor;
 
   /// Christoffel symbol of the second kind (connection coefficients)
-  ChristoffelSymbols christoffel_symbols;
+  mutable std::unique_ptr<ChristoffelSymbols> christoffel_symbols_cache{nullptr};
 
   void applyToContravariantMetricTensor(
       const std::function<const FieldMetric(const FieldMetric)>& function);
@@ -334,11 +336,13 @@ private:
       const std::function<const FieldMetric(const FieldMetric)>& function);
 
   void applyToChristoffelSymbols(
-      const std::function<const FieldMetric(const FieldMetric)>& function);
+      const std::function<const FieldMetric(const FieldMetric)>& function) const;
 
-  FieldMetric J_;
+  mutable std::unique_ptr<FieldMetric> jacobian_cache{nullptr};
 
   FieldMetric Bxy_; ///< Magnitude of B = nabla z times nabla x
+
+  FieldMetric G1_, G2_, G3_;
 
   void invalidateAndRecalculateCachedVariables();
 
@@ -358,26 +362,20 @@ private:
 
   FieldMetric getUnaligned(const std::string& name, BoutReal default_value);
 
-  FieldMetric getUnalignedAtLocationAndFillGuards(
-      Mesh* mesh, const std::string& name, BoutReal default_value,
-      const std::string& suffix = "", CELL_LOC cell_location = CELL_CENTRE,
-      bool extrapolate_x = false, bool extrapolate_y = false,
-      bool no_extra_interpolate = false, ParallelTransform* pParallelTransform = nullptr);
-
   void communicateChristoffelSymbolTerms() const;
-  void calculateCommunicateAndExtrapolateChristoffelSymbols();
+  void extrapolateChristoffelSymbols();
 
-  FieldMetric recalculateJacobian();
-  FieldMetric recalculateBxy();
+  FieldMetric recalculateBxy() const;
 
   /// Non-uniform meshes. Need to use DDX, DDY
   void correctionForNonUniformMeshes(bool force_interpolate_from_centre);
 
-  void interpolateFieldsFromOtherCoordinates(const Mesh* mesh, Options* options,
+  void interpolateFieldsFromOtherCoordinates(Options* options,
                                              const Coordinates* coords_in);
 
-  void setBoundaryCells(Mesh* mesh, Options* options, const Coordinates* coords_in,
-                        const std::string& suffix);
+  void setBoundaryCells(Options* options, const std::string& suffix);
+
+  FieldMetric getDzFromOptionsFile(Mesh* mesh, const std::string& suffix) const;
 };
 
 /*
