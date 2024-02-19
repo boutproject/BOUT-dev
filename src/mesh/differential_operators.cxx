@@ -3,43 +3,10 @@
 #include "bout/mesh.hxx"
 #include <bout/derivs.hxx>
 
-Field3D DifferentialOperators::DDX(const Field3D& f, CELL_LOC outloc,
-                                   const std::string& method,
-                                   const std::string& region) const {
-  return ::DDX(f, outloc, method, region);
-}
-
-Field3D DifferentialOperators::DDY(const Field3D& f, CELL_LOC outloc,
-                                   const std::string& method,
-                                   const std::string& region) const {
-  return ::DDY(f, outloc, method, region);
-}
-
-Field3D DifferentialOperators::DDZ(const Field3D& f, CELL_LOC outloc,
-                                   const std::string& method,
-                                   const std::string& region) const {
-  return ::DDZ(f, outloc, method, region);
-}
-
 Field2D DifferentialOperators::DDX(const Field2D& f, const Field2D& dx, CELL_LOC loc,
                                    const std::string& method,
                                    const std::string& region) const {
   return bout::derivatives::index::DDX(f, loc, method, region) / dx;
-}
-
-Field3D DifferentialOperators::DDX(const Field3D& f, const Field3D& dx, const Field3D& dz,
-                                   const FieldMetric& intShiftTorsion, CELL_LOC outloc,
-                                   const std::string& method,
-                                   const std::string& region) const {
-  auto result = bout::derivatives::index::DDX(f, outloc, method, region);
-  result /= dx;
-
-  if (f.getMesh()->IncIntShear) {
-    // Using BOUT-06 style shifting
-    result += intShiftTorsion * DDZ(f, dz, outloc, method, region);
-  }
-
-  return result;
 }
 
 Field2D DifferentialOperators::DDY(const Field2D& f, const Field2D& dy, CELL_LOC loc,
@@ -71,18 +38,8 @@ Field2D DifferentialOperators::DDZ(const Field2D& f, CELL_LOC loc,
   return zeroFrom(f).setLocation(loc);
 }
 
-Field3D DifferentialOperators::DDZ(const Field3D& f, const Field3D& dz, CELL_LOC outloc,
-                                   const std::string& method,
-                                   const std::string& region) const {
-  return bout::derivatives::index::DDZ(f, outloc, method, region) / dz;
-}
-
 Field2D DifferentialOperators::D2DX2(const Field2D& field2D, CELL_LOC outloc) {
   return ::D2DX2(field2D, outloc);
-}
-
-Field3D DifferentialOperators::D2DX2(const Field3D& field3D, CELL_LOC outloc) {
-  return ::D2DX2(field3D, outloc);
 }
 
 Field2D DifferentialOperators::D2DY2(const Field2D& field2D, CELL_LOC outloc,
@@ -95,44 +52,12 @@ Field3D DifferentialOperators::D2DY2(const Field3D& field3D, CELL_LOC outloc,
   return ::D2DY2(field3D, outloc, method);
 }
 
-Field2D DifferentialOperators::D2DZ2(const Field2D& field2D, CELL_LOC outloc) {
-  return ::D2DZ2(field2D, outloc);
-}
-
-Field3D DifferentialOperators::D2DZ2(const Field3D& field3D, CELL_LOC outloc) {
-  return ::D2DZ2(field3D, outloc);
-}
-
-Field2D DifferentialOperators::D2DXDY(const Field2D& field2D, CELL_LOC outloc,
-                                      const std::string& method,
-                                      const std::string& region,
-                                      const std::string& dfdy_boundary_condition,
-                                      const std::string& dfdy_region) {
-  return ::D2DXDY(field2D, outloc, method, region, dfdy_boundary_condition, dfdy_region);
-}
-
 Field3D DifferentialOperators::D2DXDY(const Field3D& field3D, CELL_LOC outloc,
                                       const std::string& method,
                                       const std::string& region,
                                       const std::string& dfdy_boundary_condition,
                                       const std::string& dfdy_region) {
   return ::D2DXDY(field3D, outloc, method, region, dfdy_boundary_condition, dfdy_region);
-}
-
-Field2D DifferentialOperators::D2DXDZ(const Field2D& field2D, CELL_LOC outloc) {
-  return ::D2DXDZ(field2D, outloc);
-}
-
-Field2D DifferentialOperators::D2DYDZ(const Field2D& field2D, CELL_LOC outloc) {
-  return ::D2DYDZ(field2D, outloc);
-}
-
-Field3D DifferentialOperators::D2DXDZ(const Field3D& field3D, CELL_LOC outloc) {
-  return ::D2DXDZ(field3D, outloc);
-}
-
-Field3D DifferentialOperators::D2DYDZ(const Field3D& field3D, CELL_LOC outloc) {
-  return ::D2DYDZ(field3D, outloc);
 }
 
 /////////////////////////////////////////////////////////
@@ -280,8 +205,8 @@ FieldMetric DifferentialOperators::Laplace(
          + covariantMetricTensor.g11() * D2DX2(f, outloc)
          + covariantMetricTensor.g22() * D2DY2(f, outloc)
          + 2.0 * covariantMetricTensor.g12()
-               * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY", dfdy_boundary_conditions,
-                        dfdy_dy_region);
+               * ::D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY", dfdy_boundary_conditions,
+                          dfdy_dy_region);
 }
 
 Field3D DifferentialOperators::Laplace(const Field3D& f,
@@ -293,15 +218,15 @@ Field3D DifferentialOperators::Laplace(const Field3D& f,
   TRACE("DifferentialOperators::Laplace( Field3D )");
 
   Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc)
-                   + covariantMetricTensor.g11() * D2DX2(f, outloc)
+                   + covariantMetricTensor.g11() * ::D2DX2(f, outloc)
                    + covariantMetricTensor.g22() * D2DY2(f, outloc)
-                   + covariantMetricTensor.g33() * D2DZ2(f, outloc)
+                   + covariantMetricTensor.g33() * ::D2DZ2(f, outloc)
                    + 2.0
                          * (covariantMetricTensor.g12()
                                 * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
                                          dfdy_boundary_conditions, dfdy_dy_region)
-                            + covariantMetricTensor.g13() * D2DXDZ(f, outloc)
-                            + covariantMetricTensor.g23() * D2DYDZ(f, outloc));
+                            + covariantMetricTensor.g13() * ::D2DXDZ(f, outloc)
+                            + covariantMetricTensor.g23() * ::D2DYDZ(f, outloc));
 
   return result;
 }
