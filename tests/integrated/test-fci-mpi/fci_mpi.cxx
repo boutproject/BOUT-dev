@@ -8,7 +8,7 @@ int main(int argc, char** argv) {
     using bout::globals::mesh;
     Options* options = Options::getRoot();
     int i = 0;
-    std::string default_str{"not_set"};
+    const std::string default_str{"not_set"};
     Options dump;
     while (true) {
       std::string temp_str;
@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
       mesh->communicate(input);
       input.applyParallelBoundary("parallel_neumann");
       for (int slice = -mesh->ystart; slice <= mesh->ystart; ++slice) {
-        if (slice) {
+        if (slice != 0) {
           Field3D tmp{0.};
           BOUT_FOR(i, tmp.getRegion("RGN_NOBNDRY")) {
             tmp[i] = input.ynext(slice)[i.yp(slice)];

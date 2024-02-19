@@ -32,30 +32,30 @@ int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
   {
     // Random number generator
-    std::default_random_engine generator;
+    const std::default_random_engine generator;
     // Uniform distribution of BoutReals from 0 to 1
-    std::uniform_real_distribution<BoutReal> distribution{0.0, 1.0};
+    const std::uniform_real_distribution<BoutReal> distribution{0.0, 1.0};
 
     using bout::globals::mesh;
 
-    FieldFactory f(mesh);
+    const FieldFactory fieldfact(mesh);
 
     // Set up generators and solutions for three different analtyic functions
     std::string a_func;
     auto a_gen = getGeneratorFromOptions("a", a_func);
-    Field3D a = f.create3D(a_func);
+    const Field3D a = fieldfact.create3D(a_func);
     Field3D a_solution = 0.0;
     Field3D a_interp = 0.0;
 
     std::string b_func;
     auto b_gen = getGeneratorFromOptions("b", b_func);
-    Field3D b = f.create3D(b_func);
+    const Field3D b = fieldfact.create3D(b_func);
     Field3D b_solution = 0.0;
     Field3D b_interp = 0.0;
 
     std::string c_func;
     auto c_gen = getGeneratorFromOptions("c", c_func);
-    Field3D c = f.create3D(c_func);
+    const Field3D c = fieldfact.create3D(c_func);
     Field3D c_solution = 0.0;
     Field3D c_interp = 0.0;
 
