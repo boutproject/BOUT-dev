@@ -75,12 +75,6 @@ void XZLagrange4pt::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
   }
 }
 
-void XZLagrange4pt::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
-                                const BoutMask& mask, const std::string& region) {
-  setMask(mask);
-  calcWeights(delta_x, delta_z, region);
-}
-
 Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) const {
 
   ASSERT1(f.getMesh() == localmesh);
@@ -130,19 +124,6 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) 
     f_interp(x, y_next, z) = lagrange_4pt(xvals, t_x(x, y, z));
   }
   return f_interp;
-}
-
-Field3D XZLagrange4pt::interpolate(const Field3D& f, const Field3D& delta_x,
-                                   const Field3D& delta_z, const std::string& region) {
-  calcWeights(delta_x, delta_z, region);
-  return interpolate(f, region);
-}
-
-Field3D XZLagrange4pt::interpolate(const Field3D& f, const Field3D& delta_x,
-                                   const Field3D& delta_z, const BoutMask& mask,
-                                   const std::string& region) {
-  calcWeights(delta_x, delta_z, mask, region);
-  return interpolate(f, region);
 }
 
 // 4-point Lagrangian interpolation

@@ -83,12 +83,6 @@ void XZBilinear::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
   }
 }
 
-void XZBilinear::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
-                             const BoutMask& mask, const std::string& region) {
-  setMask(mask);
-  calcWeights(delta_x, delta_z, region);
-}
-
 Field3D XZBilinear::interpolate(const Field3D& f, const std::string& region) const {
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
@@ -112,17 +106,4 @@ Field3D XZBilinear::interpolate(const Field3D& f, const std::string& region) con
                              + f(i_corner(x, y, z) + 1, y_next, z_mod_p1) * w3(x, y, z);
   }
   return f_interp;
-}
-
-Field3D XZBilinear::interpolate(const Field3D& f, const Field3D& delta_x,
-                                const Field3D& delta_z, const std::string& region) {
-  calcWeights(delta_x, delta_z, region);
-  return interpolate(f, region);
-}
-
-Field3D XZBilinear::interpolate(const Field3D& f, const Field3D& delta_x,
-                                const Field3D& delta_z, const BoutMask& mask,
-                                const std::string& region) {
-  calcWeights(delta_x, delta_z, mask, region);
-  return interpolate(f, region);
 }
