@@ -715,6 +715,13 @@ void addBuildFlagsToOptions(Options& options) {
   options["use_backtrace"].force(bout::build::use_backtrace);
   options["use_color"].force(bout::build::use_color);
   options["use_openmp"].force(bout::build::use_openmp);
+  options["openmp_threads"].force(
+#ifdef _OPENMP
+				  omp_get_max_threads()
+#else
+				  1
+#endif
+				  );
   options["use_output_debug"].force(bout::build::use_output_debug);
   options["use_sigfpe"].force(bout::build::use_sigfpe);
   options["use_signal"].force(bout::build::use_signal);
