@@ -339,9 +339,12 @@ set(BOUT_SOURCES
   ./src/sys/utils.cxx
   ./include/bout/metricTensor.hxx
   ./src/mesh/metricTensor.cxx
-        ./include/bout/differential_operators.hxx
+  ./include/bout/differential_operators.hxx
   ./src/mesh/differential_operators.cxx
+  ./include/bout/christoffel_symbols.hxx
   ./src/mesh/christoffel_symbols.cxx
+  ./include/bout/g_values.hxx
+  ./src/mesh/g_values.cxx
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/revision.hxx
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
 )
