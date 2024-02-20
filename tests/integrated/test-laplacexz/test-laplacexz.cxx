@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
 
   auto coord = bout::globals::mesh->getCoordinates();
   const auto g13 = 1.8; // test off-diagonal components with nonzero value
-  coord->setContravariantMetricTensor(MetricTensor(
+  coord->setContravariantMetricTensor(ContravariantMetricTensor(
       coord->g11(), coord->g22(), coord->g33(), coord->g12(), g13, coord->g23()));
 
   // create some input field
@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
   Field3D f2 = inv->solve(g, 0.0); // Invert the Laplacian.
 
   // reset to 0.0 for original laplacexz test
-  coord->setContravariantMetricTensor(MetricTensor(
+  coord->setContravariantMetricTensor(ContravariantMetricTensor(
       coord->g11(), coord->g22(), coord->g33(), coord->g12(), 0.0, coord->g23()));
 
   // Now the normal test.

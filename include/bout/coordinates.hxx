@@ -34,8 +34,8 @@
 #define BOUT_COORDINATES_H
 
 #include "christoffel_symbols.hxx"
-#include "g_values.hxx"
 #include "differential_operators.hxx"
+#include "g_values.hxx"
 #include "bout/metricTensor.hxx"
 #include "bout/paralleltransform.hxx"
 
@@ -119,15 +119,15 @@ public:
   const FieldMetric& g13() const;
   const FieldMetric& g23() const;
 
-  const MetricTensor& getContravariantMetricTensor() const;
-  const MetricTensor& getCovariantMetricTensor() const;
+  const ContravariantMetricTensor& getContravariantMetricTensor() const;
+  const CovariantMetricTensor& getCovariantMetricTensor() const;
 
-  void setContravariantMetricTensor(const MetricTensor& metric_tensor,
+  void setContravariantMetricTensor(const ContravariantMetricTensor& metric_tensor,
                                     const std::string& region = "RGN_ALL",
                                     bool recalculate_staggered = true,
                                     bool force_interpolate_from_centre = false);
 
-  void setCovariantMetricTensor(const MetricTensor& metric_tensor,
+  void setCovariantMetricTensor(const CovariantMetricTensor& metric_tensor,
                                 const std::string& region = "RGN_ALL",
                                 bool recalculate_staggered = true,
                                 bool force_interpolate_from_centre = false);
@@ -329,8 +329,8 @@ private:
   mutable std::map<std::string, std::unique_ptr<FieldMetric>> Grad2_par2_DDY_invSgCache;
   mutable std::unique_ptr<FieldMetric> invSgCache{nullptr};
 
-  MetricTensor contravariantMetricTensor;
-  MetricTensor covariantMetricTensor;
+  ContravariantMetricTensor contravariantMetricTensor;
+  CovariantMetricTensor covariantMetricTensor;
 
   /// Christoffel symbol of the second kind (connection coefficients)
   mutable std::unique_ptr<ChristoffelSymbols> christoffel_symbols_cache{nullptr};

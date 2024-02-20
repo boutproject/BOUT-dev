@@ -441,7 +441,8 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
   g12 = getAtLocOrUnaligned(localmesh, "g12", 0.0, suffix, location);
   g13 = getAtLocOrUnaligned(localmesh, "g13", 0.0, suffix, location);
   g23 = getAtLocOrUnaligned(localmesh, "g23", 0.0, suffix, location);
-  contravariantMetricTensor.setMetricTensor(MetricTensor(g11, g22, g33, g12, g13, g23));
+  contravariantMetricTensor.setMetricTensor(
+      ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
 
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
@@ -475,7 +476,7 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
     g_13 = getAtLocOrUnaligned(localmesh, "g_13", 0.0, suffix, location);
     g_23 = getAtLocOrUnaligned(localmesh, "g_23", 0.0, suffix, location);
     covariantMetricTensor.setMetricTensor(
-        MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+        CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
     output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                       "Contravariant components NOT recalculated\n");
@@ -1492,24 +1493,23 @@ void Coordinates::applyToChristoffelSymbols(
   christoffel_symbols().map(function);
 }
 
-const MetricTensor& Coordinates::getContravariantMetricTensor() const {
+const ContravariantMetricTensor& Coordinates::getContravariantMetricTensor() const {
   return contravariantMetricTensor;
 }
 
-const MetricTensor& Coordinates::getCovariantMetricTensor() const {
+const CovariantMetricTensor& Coordinates::getCovariantMetricTensor() const {
   return covariantMetricTensor;
 }
 
-void Coordinates::setContravariantMetricTensor(const MetricTensor& metric_tensor,
-                                               const std::string& region,
-                                               bool recalculate_staggered,
-                                               bool force_interpolate_from_centre) {
+void Coordinates::setContravariantMetricTensor(
+    const ContravariantMetricTensor& metric_tensor, const std::string& region,
+    bool recalculate_staggered, bool force_interpolate_from_centre) {
   contravariantMetricTensor.setMetricTensor(metric_tensor);
   covariantMetricTensor.setMetricTensor(contravariantMetricTensor.inverse(region));
   recalculateAndReset(recalculate_staggered, force_interpolate_from_centre);
 }
 
-void Coordinates::setCovariantMetricTensor(const MetricTensor& metric_tensor,
+void Coordinates::setCovariantMetricTensor(const CovariantMetricTensor& metric_tensor,
                                            const std::string& region,
                                            bool recalculate_staggered,
                                            bool force_interpolate_from_centre) {
