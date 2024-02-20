@@ -294,6 +294,9 @@ public:
 
   FieldMetric recalculateJacobian() const;
 
+  template <typename T, typename... Ts>
+  void communicate(T& t, Ts... ts) const;
+
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
@@ -369,6 +372,9 @@ private:
   void communicateChristoffelSymbolTerms() const;
   void extrapolateChristoffelSymbols();
 
+  void communicateGValues() const;
+  void extrapolateGValues();
+
   FieldMetric recalculateBxy() const;
 
   /// Non-uniform meshes. Need to use DDX, DDY
@@ -380,6 +386,8 @@ private:
   void setBoundaryCells(Options* options, const std::string& suffix);
 
   FieldMetric getDzFromOptionsFile(Mesh* mesh, const std::string& suffix) const;
+
+  void fixZShiftGuards(Field2D& zShift) const;
 };
 
 /*

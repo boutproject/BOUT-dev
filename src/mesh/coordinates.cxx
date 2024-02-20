@@ -21,17 +21,6 @@
 // use anonymous namespace so this utility function is not available outside this file
 namespace {
 
-template <typename T, typename... Ts>
-// Use sendY()/sendX() and wait() instead of Mesh::communicate() to ensure we
-// don't try to calculate parallel slices as Coordinates are not constructed yet
-void communicate(T& t, Ts... ts) {
-  FieldGroup g(t, ts...);
-  auto h = t.getMesh()->sendY(g);
-  t.getMesh()->wait(h);
-  h = t.getMesh()->sendX(g);
-  t.getMesh()->wait(h);
-}
-
 #if BOUT_USE_METRIC_3D
 Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
                                   bool extrapolate_x, bool extrapolate_y,
@@ -229,6 +218,46 @@ std::string getLocationSuffix(CELL_LOC location) {
 }
 
 } // anonymous namespace
+
+template <typename T, typename... Ts>
+// Use sendY()/sendX() and wait() instead of Mesh::communicate() to ensure we
+// don't try to calculate parallel slices as Coordinates are not constructed yet
+void Coordinates::communicate(T& t, Ts... ts) const {
+  FieldGroup g(t, ts...);
+  auto h = t.getMesh()->sendY(g);
+  t.getMesh()->wait(h);
+  h = t.getMesh()->sendX(g);
+  t.getMesh()->wait(h);
+}
+
+// Utility function for fixing up guard cells of zShift
+void Coordinates::fixZShiftGuards(Field2D& zShift) const {
+  auto* localmesh = zShift.getMesh();
+
+  // extrapolate into boundary guard cells if necessary
+  zShift = localmesh->interpolateAndExtrapolate(
+      zShift, zShift.getLocation(), not localmesh->sourceHasXBoundaryGuards(),
+      not localmesh->sourceHasYBoundaryGuards(), false);
+
+  // make sure zShift has been communicated
+  communicate(zShift);
+
+  // Correct guard cells for discontinuity of zShift at poloidal branch cut
+  for (int x = 0; x < localmesh->LocalNx; x++) {
+    const auto lower = localmesh->hasBranchCutLower(x);
+    if (lower.first) {
+      for (int y = 0; y < localmesh->ystart; y++) {
+        zShift(x, y) -= lower.second;
+      }
+    }
+    const auto upper = localmesh->hasBranchCutUpper(x);
+    if (upper.first) {
+      for (int y = localmesh->yend + 1; y < localmesh->LocalNy; y++) {
+        zShift(x, y) += upper.second;
+      }
+    }
+  }
+}
 
 Coordinates::FieldMetric Coordinates::getAtLocOrUnaligned(Mesh* mesh,
                                                           const std::string& name,
@@ -631,25 +660,9 @@ void Coordinates::recalculateAndReset(bool recalculate_staggered,
   communicateChristoffelSymbolTerms();
   extrapolateChristoffelSymbols();
 
-  auto tmp = J() * g12();
-  communicate(tmp);
-  setG1((DDX(J() * g11()) + DDY(tmp) + DDZ(J() * g13())) / J());
-  tmp = J() * g22();
-  communicate(tmp);
-  setG2((DDX(J() * g12()) + DDY(tmp) + DDZ(J() * g23())) / J());
-  tmp = J() * g23();
-  communicate(tmp);
-  setG3((DDX(J() * g13()) + DDY(tmp) + DDZ(J() * g33())) / J());
-
-  setG1(localmesh->interpolateAndExtrapolate(G1(), location, true, true, true,
-                                             transform.get()));
-  setG2(localmesh->interpolateAndExtrapolate(G2(), location, true, true, true,
-                                             transform.get()));
-  setG3(localmesh->interpolateAndExtrapolate(G3(), location, true, true, true,
-                                             transform.get()));
-
-  auto temp = G1(); // TODO: There must be a better way than this!
-  communicate(temp, G2(), G3());
+  g_values_cache.reset();
+  communicateGValues();
+  extrapolateGValues();
 
   correctionForNonUniformMeshes(force_interpolate_from_centre);
 
@@ -759,6 +772,21 @@ void Coordinates::extrapolateChristoffelSymbols() {
   applyToChristoffelSymbols(interpolateAndExtrapolate_function);
 }
 
+void Coordinates::communicateGValues() const {
+  auto temp = G1(); // TODO: There must be a better way than this!
+  communicate(temp, G2(), G3());
+}
+
+void Coordinates::extrapolateGValues() {
+
+  setG1(localmesh->interpolateAndExtrapolate(G1(), location, true, true, true,
+                                             transform.get()));
+  setG2(localmesh->interpolateAndExtrapolate(G2(), location, true, true, true,
+                                             transform.get()));
+  setG3(localmesh->interpolateAndExtrapolate(G3(), location, true, true, true,
+                                             transform.get()));
+}
+
 MetricTensor::FieldMetric Coordinates::recalculateJacobian() const {
 
   TRACE("Coordinates::jacobian");
@@ -788,37 +816,6 @@ MetricTensor::FieldMetric Coordinates::recalculateJacobian() const {
 MetricTensor::FieldMetric Coordinates::recalculateBxy() const {
   return sqrt(g_22()) / J();
 }
-
-namespace {
-// Utility function for fixing up guard cells of zShift
-void fixZShiftGuards(Field2D& zShift) {
-  auto* localmesh = zShift.getMesh();
-
-  // extrapolate into boundary guard cells if necessary
-  zShift = localmesh->interpolateAndExtrapolate(
-      zShift, zShift.getLocation(), not localmesh->sourceHasXBoundaryGuards(),
-      not localmesh->sourceHasYBoundaryGuards(), false);
-
-  // make sure zShift has been communicated
-  communicate(zShift);
-
-  // Correct guard cells for discontinuity of zShift at poloidal branch cut
-  for (int x = 0; x < localmesh->LocalNx; x++) {
-    const auto lower = localmesh->hasBranchCutLower(x);
-    if (lower.first) {
-      for (int y = 0; y < localmesh->ystart; y++) {
-        zShift(x, y) -= lower.second;
-      }
-    }
-    const auto upper = localmesh->hasBranchCutUpper(x);
-    if (upper.first) {
-      for (int y = localmesh->yend + 1; y < localmesh->LocalNy; y++) {
-        zShift(x, y) += upper.second;
-      }
-    }
-  }
-}
-} // namespace
 
 void Coordinates::setParallelTransform(Options* mesh_options) {
 
@@ -1325,7 +1322,7 @@ ChristoffelSymbols& Coordinates::christoffel_symbols() const {
 
 GValues& Coordinates::g_values() const {
   if (g_values_cache == nullptr) {
-    auto ptr = std::make_unique<GValues>();
+    auto ptr = std::make_unique<GValues>(*this);
     g_values_cache = std::move(ptr);
   }
   return *g_values_cache;

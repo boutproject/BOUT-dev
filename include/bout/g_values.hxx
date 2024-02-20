@@ -12,7 +12,7 @@ class GValues {
 public:
   GValues(FieldMetric G1, FieldMetric G2, FieldMetric G3);
 
-  GValues();
+  explicit GValues(const Coordinates& coordinates);
 
   const FieldMetric& G1() const;
   const FieldMetric& G2() const;
