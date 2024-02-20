@@ -1,23 +1,18 @@
 
-#include <utility>
 #include "bout/metricTensor.hxx"
 #include "bout/output.hxx"
+#include <utility>
 
 MetricTensor::MetricTensor(FieldMetric g11, FieldMetric g22, FieldMetric g33,
                            FieldMetric g12, FieldMetric g13, FieldMetric g23)
     : g11_(std::move(g11)), g22_(std::move(g22)), g33_(std::move(g33)),
-      g12_(std::move(g12)), g13_(std::move(g13)), g23_(std::move(g23)) {
-  Allocate(); // Make sure metric elements are allocated //  ; TODO: Required?
-}
+      g12_(std::move(g12)), g13_(std::move(g13)), g23_(std::move(g23)) {}
 
 MetricTensor::MetricTensor(const BoutReal g11, const BoutReal g22, const BoutReal g33,
                            const BoutReal g12, const BoutReal g13, const BoutReal g23,
                            Mesh* mesh)
     : g11_(g11, mesh), g22_(g22, mesh), g33_(g33, mesh), g12_(g12, mesh), g13_(g13, mesh),
-      g23_(g23, mesh) {
-
-  Allocate(); // Make sure metric elements are allocated //  ; TODO: Required?
-}
+      g23_(g23, mesh) {}
 
 const MetricTensor::FieldMetric& MetricTensor::g11() const { return g11_; }
 const MetricTensor::FieldMetric& MetricTensor::g22() const { return g22_; }
@@ -86,15 +81,6 @@ void MetricTensor::check(int ystart) {
       }
     }
   }
-}
-
-void MetricTensor::Allocate() { //  ; TODO: Required?
-  g11_.allocate();
-  g22_.allocate();
-  g33_.allocate();
-  g12_.allocate();
-  g13_.allocate();
-  g23_.allocate();
 }
 
 void MetricTensor::setLocation(const CELL_LOC location) {

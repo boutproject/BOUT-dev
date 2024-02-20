@@ -33,8 +33,6 @@ public:
 
   void setMetricTensor(const MetricTensor& metric_tensor);
 
-  void Allocate();
-
   void setLocation(CELL_LOC location);
 
   MetricTensor inverse(const std::string& region = "RGN_ALL");
