@@ -1323,6 +1323,14 @@ ChristoffelSymbols& Coordinates::christoffel_symbols() const {
   return *christoffel_symbols_cache;
 }
 
+GValues& Coordinates::g_values() const {
+  if (g_values_cache == nullptr) {
+    auto ptr = std::make_unique<GValues>();
+    g_values_cache = std::move(ptr);
+  }
+  return *g_values_cache;
+}
+
 const Coordinates::FieldMetric& Coordinates::invSg() const {
   if (invSgCache == nullptr) {
     auto ptr = std::make_unique<FieldMetric>();
@@ -1474,13 +1482,13 @@ const FieldMetric& Coordinates::G3_12() const { return christoffel_symbols().G3_
 const FieldMetric& Coordinates::G3_13() const { return christoffel_symbols().G3_13(); }
 const FieldMetric& Coordinates::G3_23() const { return christoffel_symbols().G3_23(); }
 
-const FieldMetric& Coordinates::G1() const { return G1_; }
-const FieldMetric& Coordinates::G2() const { return G2_; }
-const FieldMetric& Coordinates::G3() const { return G3_; }
+const FieldMetric& Coordinates::G1() const { return g_values().G1(); }
+const FieldMetric& Coordinates::G2() const { return g_values().G2(); }
+const FieldMetric& Coordinates::G3() const { return g_values().G3(); }
 
-void Coordinates::setG1(const FieldMetric& G1) { G1_ = G1; }
-void Coordinates::setG2(const FieldMetric& G2) { G2_ = G2; }
-void Coordinates::setG3(const FieldMetric& G3) { G3_ = G3; }
+void Coordinates::setG1(const FieldMetric& G1) const { g_values().setG1(G1); }
+void Coordinates::setG2(const FieldMetric& G2) const { g_values().setG2(G2); }
+void Coordinates::setG3(const FieldMetric& G3) const { g_values().setG3(G3); }
 
 void Coordinates::applyToChristoffelSymbols(
     const std::function<const FieldMetric(const FieldMetric)>& function) const {
