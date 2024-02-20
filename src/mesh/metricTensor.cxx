@@ -94,7 +94,7 @@ void MetricTensor::setLocation(const CELL_LOC location) {
 
 MetricTensor MetricTensor::inverse(const std::string& region) {
 
-  TRACE("MetricTensor::CalculateOppositeRepresentation");
+  TRACE("MetricTensor::inverse");
 
   // Perform inversion of g{ij} to get g^{ij}, or vice versa
   // NOTE: Currently this bit assumes that metric terms are Field2D objects
