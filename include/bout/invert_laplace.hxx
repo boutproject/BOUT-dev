@@ -51,7 +51,6 @@ class Laplacian;
 #include "bout/dcomplex.hxx"
 
 class Solver;
-class Datafile;
 
 constexpr auto LAPLACE_SPT = "spt";
 constexpr auto LAPLACE_TRI = "tri";
