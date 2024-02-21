@@ -582,7 +582,8 @@ void printCompileTimeOptions() {
   output_info.write(_("\tSUNDIALS support {}\n"), is_enabled(has_sundials));
   output_info.write(_("\tBacktrace in exceptions {}\n"), is_enabled(use_backtrace));
   output_info.write(_("\tColour in logs {}\n"), is_enabled(use_color));
-  output_info.write(_("\tOpenMP parallelisation {}, using {} threads\n"), is_enabled(use_openmp), omp_get_max_threads());
+  output_info.write(_("\tOpenMP parallelisation {}, using {} threads\n"),
+                    is_enabled(use_openmp), omp_get_max_threads());
   output_info.write(_("\tExtra debug output {}\n"), is_enabled(use_output_debug));
   output_info.write(_("\tFloating-point exceptions {}\n"), is_enabled(use_sigfpe));
   output_info.write(_("\tSignal handling support {}\n"), is_enabled(use_signal));
