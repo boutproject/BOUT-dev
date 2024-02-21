@@ -44,9 +44,13 @@
 #define BOUT_OMP(...) _Pragma(INDIRECT2(__VA_ARGS__))
 #else
 #define BOUT_OMP(...)
+#ifdef _OPENMP
 inline int constexpr omp_get_max_threads() { return 1; }
 inline int constexpr omp_get_num_threads() { return 1; }
 inline int constexpr omp_get_thread_num() { return 0; }
+#else
+#error OpenMP used but BOUT++ thinks it is disabled
+#endif
 #endif
 
 //Perhaps want to cleanup local helpers with below, but DON'T!

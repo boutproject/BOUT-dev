@@ -31,7 +31,7 @@
 #include <memory>
 #include <vector>
 
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP
 #include <omp.h>
 #endif
 
