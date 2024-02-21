@@ -31,6 +31,8 @@
 
 #if BOUT_USE_OPENMP
 
+#warning "BOUT++ is using OpenMP"
+
 #include "omp.h"
 
 //Some helpers for indirection -- required so that the _Pragma gets "omp <x>"
@@ -42,16 +44,22 @@
 //Define a macro wrapper to the use of `#pragma omp` to avoid unknown pragma
 //warnings when compiling without openmp support.
 #define BOUT_OMP(...) _Pragma(INDIRECT2(__VA_ARGS__))
-#else
+
+#else // BOUT_USE_OPENMP
+
+#warning "BOUT++ is NOT using OpenMP"
+
 #define BOUT_OMP(...)
+
 #ifdef _OPENMP
 #error OpenMP used but BOUT++ thinks it is disabled
-#else
+#endif
+
 inline int constexpr omp_get_max_threads() { return 1; }
 inline int constexpr omp_get_num_threads() { return 1; }
 inline int constexpr omp_get_thread_num() { return 0; }
-#endif
-#endif
+
+#endif // BOUT_USE_OPENMP
 
 //Perhaps want to cleanup local helpers with below, but DON'T!
 //This would cause uses of BOUT_OMP to break
