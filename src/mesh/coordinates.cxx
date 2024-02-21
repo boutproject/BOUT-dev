@@ -294,24 +294,19 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          const FieldMetric& g_12, const FieldMetric& g_13,
                          const FieldMetric& g_23, FieldMetric ShiftTorsion,
                          FieldMetric IntShiftTorsion)
-    : nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE),
-      differential_operators(mesh->getDifferentialOperators()), dx_(std::move(dx)),
+    : nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE), dx_(std::move(dx)),
       dy_(std::move(dy)), dz_(std::move(dz)), ShiftTorsion_(std::move(ShiftTorsion)),
       IntShiftTorsion_(std::move(IntShiftTorsion)),
       contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23),
-      Bxy_(std::move(Bxy)){ASSERT0(differential_operators != nullptr)};
+      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), Bxy_(std::move(Bxy)){};
 
 Coordinates::Coordinates(Mesh* mesh, Options* mesh_options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
-    : localmesh(mesh), location(loc),
-      differential_operators(mesh->getDifferentialOperators()), dx_(1., mesh),
-      dy_(1., mesh), dz_(1., mesh), d1_dx_(mesh), d1_dy_(mesh), d1_dz_(mesh),
-      ShiftTorsion_(mesh), IntShiftTorsion_(mesh),
-      contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
+    : localmesh(mesh), location(loc), dx_(1., mesh), dy_(1., mesh), dz_(1., mesh),
+      d1_dx_(mesh), d1_dy_(mesh), d1_dz_(mesh), ShiftTorsion_(mesh),
+      IntShiftTorsion_(mesh), contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
       // Identity metric tensor
       covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), Bxy_(1., mesh) {
-  ASSERT0(differential_operators != nullptr)
 
   if (mesh_options == nullptr) {
     mesh_options = Options::getRoot()->getSection("mesh");
@@ -916,9 +911,9 @@ Field2D Coordinates::DDX(const Field2D& f, CELL_LOC loc, const std::string& meth
   ASSERT1(location == loc || loc == CELL_DEFAULT)
   return bout::derivatives::index::DDX(f, loc, method, region) / dx();
 }
-
 Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) const {
+
   auto result = bout::derivatives::index::DDX(f, outloc, method, region);
   result /= dx();
 
@@ -932,29 +927,37 @@ Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc, const std::string& m
 
 Field2D Coordinates::DDY(const Field2D& f, CELL_LOC loc, const std::string& method,
                          const std::string& region) const {
-  ASSERT1(location == loc || loc == CELL_DEFAULT)
-  return differential_operators->DDY(f, dy(), loc, method, region);
+  ASSERT1(location == loc || loc == CELL_DEFAULT);
+  return bout::derivatives::index::DDY(f, loc, method, region) / dy();
 }
 
 Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) const {
-  return differential_operators->DDY(f, dy(), outloc, method, region);
-}
+#if BOUT_USE_METRIC_3D
+  if (!f.hasParallelSlices() and !transform->canToFromFieldAligned()) {
+    Field3D f_parallel = f;
+    transform->calcParallelSlices(f_parallel);
+    f_parallel.applyParallelBoundary("parallel_neumann");
+    return bout::derivatives::index::DDY(f_parallel, outloc, method, region);
+  }
+#endif
+  return bout::derivatives::index::DDY(f, outloc, method, region) / dy();
+};
 
-Field2D Coordinates::DDZ(const Field2D& f, CELL_LOC loc, const std::string& method,
-                         const std::string& region) const {
-  ASSERT1(location == loc || loc == CELL_DEFAULT)
-  ASSERT1(f.getMesh() == localmesh)
+Field2D Coordinates::DDZ(const Field2D& f, CELL_LOC loc,
+                         const std::string& UNUSED(method),
+                         const std::string& UNUSED(region)) const {
+  ASSERT1(location == loc || loc == CELL_DEFAULT);
+  ASSERT1(f.getMesh() == localmesh);
   if (loc == CELL_DEFAULT) {
     loc = f.getLocation();
   }
-  return differential_operators->DDZ(f, loc, method, region);
+  return zeroFrom(f).setLocation(loc);
 }
-
 Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) const {
   return bout::derivatives::index::DDZ(f, outloc, method, region) / dz();
-}
+};
 
 /////////////////////////////////////////////////////////
 // Parallel gradient
@@ -962,16 +965,18 @@ Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc, const std::string& m
 Field2D Coordinates::Grad_par(const Field2D& var, [[maybe_unused]] CELL_LOC outloc,
                               const std::string& UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
+  ASSERT1(location == outloc
+          || (outloc == CELL_DEFAULT && location == var.getLocation()));
 
-  return differential_operators->Grad_par(var, dy());
+  return DDY(var) * invSg();
 }
 
 Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
                               const std::string& method) {
   TRACE("Coordinates::Grad_par( Field3D )");
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  return differential_operators->Grad_par(var, dy(), outloc, method);
+  return ::DDY(var, outloc, method) * invSg();
 }
 
 /////////////////////////////////////////////////////////
@@ -981,16 +986,16 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
 Field2D Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
                                    [[maybe_unused]] CELL_LOC outloc,
                                    const std::string& UNUSED(method)) {
-  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()))
+  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
-  return differential_operators->Vpar_Grad_par(v, f, this, outloc);
+  return VDDY(v, f) * invSg();
 }
 
 Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
                                    const std::string& method) {
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  return differential_operators->Vpar_Grad_par(v, f, this, outloc, method);
+  return VDDY(v, f, outloc, method) * invSg();
 }
 
 /////////////////////////////////////////////////////////
@@ -999,9 +1004,13 @@ Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC 
 Field2D Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
                              const std::string& method) {
   TRACE("Coordinates::Div_par( Field2D )");
-  ASSERT1(location == outloc || outloc == CELL_DEFAULT)
+  ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  return differential_operators->Div_par(f, Bxy(), dy(), outloc, method);
+  // Need Bxy at location of f, which might be different from location of this
+  // Coordinates object
+  auto Bxy_floc = f.getCoordinates()->Bxy();
+
+  return Bxy() * Grad_par(f / Bxy_floc, outloc, method);
 }
 
 Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
@@ -1016,7 +1025,7 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
   if (!f.hasParallelSlices()) {
     // No yup/ydown fields. The Grad_par operator will
     // shift to field aligned coordinates
-    return differential_operators->Div_par(f, dy(), Bxy(), outloc, method);
+    return Bxy() * Grad_par(f / Bxy_floc, outloc, method);
   }
 
   // Need to modify yup and ydown fields
@@ -1036,10 +1045,10 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
 Field2D Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outloc,
                                 const std::string& method) {
   TRACE("Coordinates::Grad2_par2( Field2D )");
-  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()))
+  ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
   auto result = Grad2_par2_DDY_invSg(outloc, method) * DDY(f, outloc, method)
-                + differential_operators->D2DY2(f, outloc, method) / g_22(); // derivs 209
+                + D2DY2(f, outloc, method) / g_22();
 
   return result;
 }
@@ -1050,11 +1059,11 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
-  ASSERT1(location == outloc)
+  ASSERT1(location == outloc);
 
   Field3D result = ::DDY(f, outloc, method);
 
-  Field3D r2 = differential_operators->D2DY2(f, outloc, method) / g_22();
+  Field3D r2 = D2DY2(f, outloc, method) / g_22();
 
   result = Grad2_par2_DDY_invSg(outloc, method) * result + r2;
 
@@ -1067,13 +1076,12 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
 // perpendicular Laplacian operator
 
 #include <bout/invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
-#include <utility>
 
 Field2D Coordinates::Delp2(const Field2D& f, CELL_LOC outloc, bool UNUSED(useFFT)) {
   TRACE("Coordinates::Delp2( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return G1() * DDX(f, outloc) + g11() * differential_operators->D2DX2(f, outloc);
+  return G1() * DDX(f, outloc) + g11() * D2DX2(f, outloc);
 }
 
 Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
@@ -1209,14 +1217,12 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
 Field2D Coordinates::Laplace_par(const Field2D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return differential_operators->D2DY2(f, outloc) / g_22()
-         + DDY(J() / g_22(), outloc) * DDY(f, outloc) / J();
+  return D2DY2(f, outloc) / g_22() + DDY(J() / g_22(), outloc) * DDY(f, outloc) / J();
 }
 
 Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
-  return differential_operators->D2DY2(f, outloc) / g_22()
-         + ::DDY(J() / g_22(), outloc) * ::DDY(f, outloc) / J();
+  return D2DY2(f, outloc) / g_22() + ::DDY(J() / g_22(), outloc) * ::DDY(f, outloc) / J();
 }
 
 // Full Laplacian operator on scalar field
@@ -1227,9 +1233,8 @@ Field2D Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
   TRACE("Coordinates::Laplace( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT)
 
-  return G1() * DDX(f, outloc) + G2() * DDY(f, outloc)
-         + g11() * differential_operators->D2DX2(f, outloc)
-         + g22() * differential_operators->D2DY2(f, outloc)
+  return G1() * DDX(f, outloc) + G2() * DDY(f, outloc) + g11() * D2DX2(f, outloc)
+         + g22() * D2DY2(f, outloc)
          + 2.0 * g12()
                * ::D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY", dfdy_boundary_conditions,
                           dfdy_dy_region);
@@ -1246,9 +1251,8 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
          + g33() * ::D2DZ2(f, outloc)
          + 2.0
                * (g12()
-                      * differential_operators->D2DXDY(
-                          f, outloc, "DEFAULT", "RGN_NOBNDRY", dfdy_boundary_conditions,
-                          dfdy_dy_region)
+                      * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
+                               dfdy_boundary_conditions, dfdy_dy_region)
                   + g13() * ::D2DXDZ(f, outloc) + g23() * ::D2DYDZ(f, outloc));
 }
 
@@ -1316,7 +1320,7 @@ Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
 
 ChristoffelSymbols& Coordinates::christoffel_symbols() const {
   if (christoffel_symbols_cache == nullptr) {
-    auto ptr = std::make_unique<ChristoffelSymbols>(*this, differential_operators);
+    auto ptr = std::make_unique<ChristoffelSymbols>(*this);
     christoffel_symbols_cache = std::move(ptr);
   }
   return *christoffel_symbols_cache;

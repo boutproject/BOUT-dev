@@ -2,7 +2,6 @@
 #ifndef BOUT_CHRISTOFFELSYMBOLS_HXX
 #define BOUT_CHRISTOFFELSYMBOLS_HXX
 
-#include "differential_operators.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/metricTensor.hxx"
@@ -20,15 +19,14 @@ public:
                      FieldMetric G2_11, FieldMetric G2_22, FieldMetric G2_33,
                      FieldMetric G2_12, FieldMetric G2_13, FieldMetric G2_23,
                      FieldMetric G3_11, FieldMetric G3_22, FieldMetric G3_33,
-                     FieldMetric G3_12, FieldMetric G3_13, FieldMetric G3_23,
-                     DifferentialOperators* differential_operators);
+                     FieldMetric G3_12, FieldMetric G3_13, FieldMetric G3_23);
 
-  ChristoffelSymbols(const Coordinates& coordinates, DifferentialOperators* differential_operators);
+  explicit ChristoffelSymbols(const Coordinates& coordinates);
 
   //  ChristoffelSymbols(BoutReal g11, BoutReal g22, BoutReal g33, BoutReal g12, BoutReal g13,
   //                     BoutReal g23, Mesh* mesh);
 
-  explicit ChristoffelSymbols(DifferentialOperators* differential_operators);
+  //  ChristoffelSymbols() = default;
 
   const FieldMetric& G1_11() const;
   const FieldMetric& G1_22() const;
@@ -72,8 +70,6 @@ private:
   FieldMetric G1_11_, G1_22_, G1_33_, G1_12_, G1_13_, G1_23_;
   FieldMetric G2_11_, G2_22_, G2_33_, G2_12_, G2_13_, G2_23_;
   FieldMetric G3_11_, G3_22_, G3_33_, G3_12_, G3_13_, G3_23_;
-
-  DifferentialOperators* differential_operators;
 
   ChristoffelSymbols applyToComponents(
       const std::function<const FieldMetric(const FieldMetric)>& function) const;

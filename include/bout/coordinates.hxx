@@ -34,7 +34,6 @@
 #define BOUT_COORDINATES_H
 
 #include "christoffel_symbols.hxx"
-#include "differential_operators.hxx"
 #include "g_values.hxx"
 #include "bout/metricTensor.hxx"
 #include "bout/paralleltransform.hxx"
@@ -301,8 +300,6 @@ private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
   CELL_LOC location;
-
-  DifferentialOperators* differential_operators;
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
   bool non_uniform_{};

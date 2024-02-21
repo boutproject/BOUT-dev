@@ -8,26 +8,19 @@ ChristoffelSymbols::ChristoffelSymbols(
     FieldMetric G1_13, FieldMetric G1_23, FieldMetric G2_11, FieldMetric G2_22,
     FieldMetric G2_33, FieldMetric G2_12, FieldMetric G2_13, FieldMetric G2_23,
     FieldMetric G3_11, FieldMetric G3_22, FieldMetric G3_33, FieldMetric G3_12,
-    FieldMetric G3_13, FieldMetric G3_23, DifferentialOperators* differential_operators)
+    FieldMetric G3_13, FieldMetric G3_23)
     : G1_11_(std::move(G1_11)), G1_22_(std::move(G1_22)), G1_33_(std::move(G1_33)),
       G1_12_(std::move(G1_12)), G1_13_(std::move(G1_13)), G1_23_(std::move(G1_23)),
       G2_11_(std::move(G2_11)), G2_22_(std::move(G2_22)), G2_33_(std::move(G2_33)),
       G2_12_(std::move(G2_12)), G2_13_(std::move(G2_13)), G2_23_(std::move(G2_23)),
       G3_11_(std::move(G3_11)), G3_22_(std::move(G3_22)), G3_33_(std::move(G3_33)),
-      G3_12_(std::move(G3_12)), G3_13_(std::move(G3_13)), G3_23_(std::move(G3_23)),
-      differential_operators(differential_operators){
-          ASSERT0(differential_operators != nullptr)};
+      G3_12_(std::move(G3_12)), G3_13_(std::move(G3_13)), G3_23_(std::move(G3_23)){};
 
-ChristoffelSymbols::ChristoffelSymbols(const Coordinates& coordinates,
-                                       DifferentialOperators* differential_operators)
-    : differential_operators(differential_operators) {
-  ASSERT0(differential_operators != nullptr);
+ChristoffelSymbols::ChristoffelSymbols(const Coordinates& coordinates) {
   // Calculate Christoffel symbol terms (18 independent values)
   // Note: This calculation is completely general: metric
   // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
 
-  const auto& dx = coordinates.dx();
-  const auto& dy = coordinates.dy();
   const auto& contravariantMetricTensor = coordinates.getContravariantMetricTensor();
   const auto& covariantMetricTensor = coordinates.getCovariantMetricTensor();
 
@@ -45,148 +38,89 @@ ChristoffelSymbols::ChristoffelSymbols(const Coordinates& coordinates,
   const auto& g_13 = covariantMetricTensor.g13();
   const auto& g_23 = covariantMetricTensor.g23();
 
-  G1_11_ = 0.5 * g11 * differential_operators->DDX(g_11, dx)
-           + g12
-                 * (differential_operators->DDX(g_12, dx)
-                    - 0.5 * differential_operators->DDY(g_11, dy))
-           + g13
-                 * (differential_operators->DDX(g_13, dx)
-                    - 0.5 * differential_operators->DDZ(g_11));
-  G1_22_ = g11
-               * (differential_operators->DDY(g_12, dy)
-                  - 0.5 * differential_operators->DDX(g_22, dx))
-           + 0.5 * g12 * differential_operators->DDY(g_22, dy)
-           + g13
-                 * (differential_operators->DDY(g_23, dy)
-                    - 0.5 * differential_operators->DDZ(g_22));
-  G1_33_ = g11
-               * (differential_operators->DDZ(g_13)
-                  - 0.5 * differential_operators->DDX(g_33, dx))
-           + g12
-                 * (differential_operators->DDZ(g_23)
-                    - 0.5 * differential_operators->DDY(g_33, dy))
-           + 0.5 * g13 * differential_operators->DDZ(g_33);
-  G1_12_ = 0.5 * g11 * differential_operators->DDY(g_11, dy)
-           + 0.5 * g12 * differential_operators->DDX(g_22, dx)
-           + 0.5 * g13
-                 * (differential_operators->DDY(g_13, dy)
-                    + differential_operators->DDX(g_23, dx)
-                    - differential_operators->DDZ(g_12));
-  G1_13_ =
-      0.5 * g11 * differential_operators->DDZ(g_11)
-      + 0.5 * g12
-            * (differential_operators->DDZ(g_12) + differential_operators->DDX(g_23, dx)
-               - differential_operators->DDY(g_13, dy))
-      + 0.5 * g13 * differential_operators->DDX(g_33, dx);
+  G1_11_ = 0.5 * g11 * coordinates.DDX(g_11)
+           + g12 * (coordinates.DDX(g_12) - 0.5 * coordinates.DDY(g_11))
+           + g13 * (coordinates.DDX(g_13) - 0.5 * coordinates.DDZ(g_11));
+  G1_22_ = g11 * (coordinates.DDY(g_12) - 0.5 * coordinates.DDX(g_22))
+           + 0.5 * g12 * coordinates.DDY(g_22)
+           + g13 * (coordinates.DDY(g_23) - 0.5 * coordinates.DDZ(g_22));
+  G1_33_ = g11 * (coordinates.DDZ(g_13) - 0.5 * coordinates.DDX(g_33))
+           + g12 * (coordinates.DDZ(g_23) - 0.5 * coordinates.DDY(g_33))
+           + 0.5 * g13 * coordinates.DDZ(g_33);
+  G1_12_ =
+      0.5 * g11 * coordinates.DDY(g_11) + 0.5 * g12 * coordinates.DDX(g_22)
+      + 0.5 * g13
+            * (coordinates.DDY(g_13) + coordinates.DDX(g_23) - coordinates.DDZ(g_12));
+  G1_13_ = 0.5 * g11 * coordinates.DDZ(g_11)
+           + 0.5 * g12
+                 * (coordinates.DDZ(g_12) + coordinates.DDX(g_23) - coordinates.DDY(g_13))
+           + 0.5 * g13 * coordinates.DDX(g_33);
   G1_23_ =
-      0.5 * g11
-          * (differential_operators->DDZ(g_12) + differential_operators->DDY(g_13, dy)
-             - differential_operators->DDX(g_23, dx))
+      0.5 * g11 * (coordinates.DDZ(g_12) + coordinates.DDY(g_13) - coordinates.DDX(g_23))
       + 0.5 * g12
-            * (differential_operators->DDZ(g_22) + differential_operators->DDY(g_23, dy)
-               - differential_operators->DDY(g_23, dy))
-      // + 0.5 *g13*(differential_operators->DDZ(g_32) + differential_operators->DDY(g_33) - differential_operators->DDZ(g_23));
+            * (coordinates.DDZ(g_22) + coordinates.DDY(g_23) - coordinates.DDY(g_23))
+      // + 0.5 *g13*(coordinates.DDZ(g_32) + coordinates.DDY(g_33) - coordinates.DDZ(g_23));
       // which equals
-      + 0.5 * g13 * differential_operators->DDY(g_33, dy);
+      + 0.5 * g13 * coordinates.DDY(g_33);
 
-  G2_11_ = 0.5 * g12 * differential_operators->DDX(g_11, dx)
-           + g22
-                 * (differential_operators->DDX(g_12, dx)
-                    - 0.5 * differential_operators->DDY(g_11, dy))
-           + g23
-                 * (differential_operators->DDX(g_13, dx)
-                    - 0.5 * differential_operators->DDZ(g_11));
-  G2_22_ = g12
-               * (differential_operators->DDY(g_12, dy)
-                  - 0.5 * differential_operators->DDX(g_22, dx))
-           + 0.5 * g22 * differential_operators->DDY(g_22, dy)
-           + g23
-                 * (differential_operators->DDY(g23, dy)
-                    - 0.5 * differential_operators->DDZ(g_22));
-  G2_33_ = g12
-               * (differential_operators->DDZ(g_13)
-                  - 0.5 * differential_operators->DDX(g_33, dx))
-           + g22
-                 * (differential_operators->DDZ(g_23)
-                    - 0.5 * differential_operators->DDY(g_33, dy))
-           + 0.5 * g23 * differential_operators->DDZ(g_33);
-  G2_12_ = 0.5 * g12 * differential_operators->DDY(g_11, dy)
-           + 0.5 * g22 * differential_operators->DDX(g_22, dx)
-           + 0.5 * g23
-                 * (differential_operators->DDY(g_13, dy)
-                    + differential_operators->DDX(g_23, dx)
-                    - differential_operators->DDZ(g_12));
+  G2_11_ = 0.5 * g12 * coordinates.DDX(g_11)
+           + g22 * (coordinates.DDX(g_12) - 0.5 * coordinates.DDY(g_11))
+           + g23 * (coordinates.DDX(g_13) - 0.5 * coordinates.DDZ(g_11));
+  G2_22_ = g12 * (coordinates.DDY(g_12) - 0.5 * coordinates.DDX(g_22))
+           + 0.5 * g22 * coordinates.DDY(g_22)
+           + g23 * (coordinates.DDY(g23) - 0.5 * coordinates.DDZ(g_22));
+  G2_33_ = g12 * (coordinates.DDZ(g_13) - 0.5 * coordinates.DDX(g_33))
+           + g22 * (coordinates.DDZ(g_23) - 0.5 * coordinates.DDY(g_33))
+           + 0.5 * g23 * coordinates.DDZ(g_33);
+  G2_12_ =
+      0.5 * g12 * coordinates.DDY(g_11) + 0.5 * g22 * coordinates.DDX(g_22)
+      + 0.5 * g23
+            * (coordinates.DDY(g_13) + coordinates.DDX(g_23) - coordinates.DDZ(g_12));
   G2_13_ =
-      // 0.5 *g21*(differential_operators->DDZ(g_11) + differential_operators->DDX(covariantMetricTensor.Getg13()) - differential_operators->DDX(g_13))
+      // 0.5 *g21*(coordinates.DDZ(g_11) + coordinates.DDX(covariantMetricTensor.Getg13()) - coordinates.DDX(g_13))
       // which equals
-      0.5 * g12
-          * (differential_operators->DDZ(g_11) + differential_operators->DDX(g_13, dx)
-             - differential_operators->DDX(g_13, dx))
-      // + 0.5 *g22*(differential_operators->DDZ(covariantMetricTensor.Getg21()) + differential_operators->DDX(g_23) - differential_operators->DDY(g_13))
+      0.5 * g12 * (coordinates.DDZ(g_11) + coordinates.DDX(g_13) - coordinates.DDX(g_13))
+      // + 0.5 *g22*(coordinates.DDZ(covariantMetricTensor.Getg21()) + coordinates.DDX(g_23) - coordinates.DDY(g_13))
       // which equals
       + 0.5 * g22
-            * (differential_operators->DDZ(g_12) + differential_operators->DDX(g_23, dx)
-               - differential_operators->DDY(g_13, dy))
-      // + 0.5 *g23*(differential_operators->DDZ(covariantMetricTensor.Getg31()) + differential_operators->DDX(g_33) - differential_operators->DDZ(g_13));
+            * (coordinates.DDZ(g_12) + coordinates.DDX(g_23) - coordinates.DDY(g_13))
+      // + 0.5 *g23*(coordinates.DDZ(covariantMetricTensor.Getg31()) + coordinates.DDX(g_33) - coordinates.DDZ(g_13));
       // which equals
-      + 0.5 * g23 * differential_operators->DDX(g_33, dx);
+      + 0.5 * g23 * coordinates.DDX(g_33);
   G2_23_ =
-      0.5 * g12
-          * (differential_operators->DDZ(g_12) + differential_operators->DDY(g_13, dy)
-             - differential_operators->DDX(g_23, dx))
-      + 0.5 * g22 * differential_operators->DDZ(g_22)
-      + 0.5 * g23 * differential_operators->DDY(g_33, dy);
+      0.5 * g12 * (coordinates.DDZ(g_12) + coordinates.DDY(g_13) - coordinates.DDX(g_23))
+      + 0.5 * g22 * coordinates.DDZ(g_22) + 0.5 * g23 * coordinates.DDY(g_33);
 
-  G3_11_ = 0.5 * g13 * differential_operators->DDX(g_11, dx)
-           + g23
-                 * (differential_operators->DDX(g_12, dx)
-                    - 0.5 * differential_operators->DDY(g_11, dy))
-           + g33
-                 * (differential_operators->DDX(g_13, dx)
-                    - 0.5 * differential_operators->DDZ(g_11));
-  G3_22_ = g13
-               * (differential_operators->DDY(g_12, dy)
-                  - 0.5 * differential_operators->DDX(g_22, dx))
-           + 0.5 * g23 * differential_operators->DDY(g_22, dy)
-           + g33
-                 * (differential_operators->DDY(g_23, dy)
-                    - 0.5 * differential_operators->DDZ(g_22));
-  G3_33_ = g13
-               * (differential_operators->DDZ(g_13)
-                  - 0.5 * differential_operators->DDX(g_33, dx))
-           + g23
-                 * (differential_operators->DDZ(g_23)
-                    - 0.5 * differential_operators->DDY(g_33, dy))
-           + 0.5 * g33 * differential_operators->DDZ(g_33);
+  G3_11_ = 0.5 * g13 * coordinates.DDX(g_11)
+           + g23 * (coordinates.DDX(g_12) - 0.5 * coordinates.DDY(g_11))
+           + g33 * (coordinates.DDX(g_13) - 0.5 * coordinates.DDZ(g_11));
+  G3_22_ = g13 * (coordinates.DDY(g_12) - 0.5 * coordinates.DDX(g_22))
+           + 0.5 * g23 * coordinates.DDY(g_22)
+           + g33 * (coordinates.DDY(g_23) - 0.5 * coordinates.DDZ(g_22));
+  G3_33_ = g13 * (coordinates.DDZ(g_13) - 0.5 * coordinates.DDX(g_33))
+           + g23 * (coordinates.DDZ(g_23) - 0.5 * coordinates.DDY(g_33))
+           + 0.5 * g33 * coordinates.DDZ(g_33);
   G3_12_ =
-      // 0.5 *g31*(differential_operators->DDY(g_11) + differential_operators->DDX(covariantMetricTensor.Getg12()) - differential_operators->DDX(g_12))
+      // 0.5 *g31*(coordinates.DDY(g_11) + coordinates.DDX(covariantMetricTensor.Getg12()) - coordinates.DDX(g_12))
       // which equals to
-      0.5 * g13 * differential_operators->DDY(g_11, dy)
-      // + 0.5 *g32*(differential_operators->DDY(covariantMetricTensor.Getg21()) + differential_operators->DDX(g_22) - differential_operators->DDY(g_12))
+      0.5 * g13 * coordinates.DDY(g_11)
+      // + 0.5 *g32*(coordinates.DDY(covariantMetricTensor.Getg21()) + coordinates.DDX(g_22) - coordinates.DDY(g_12))
       // which equals to
-      + 0.5 * g23 * differential_operators->DDX(g_22, dx)
-      //+ 0.5 *g33*(differential_operators->DDY(covariantMetricTensor.Getg31()) + differential_operators->DDX(covariantMetricTensor.Getg32()) - differential_operators->DDZ(g_12));
+      + 0.5 * g23 * coordinates.DDX(g_22)
+      //+ 0.5 *g33*(coordinates.DDY(covariantMetricTensor.Getg31()) + coordinates.DDX(covariantMetricTensor.Getg32()) - coordinates.DDZ(g_12));
       // which equals to
-      + 0.5 * g33 * (differential_operators->DDY(g_13, dy))
-      + differential_operators->DDX(g_23, dx) - differential_operators->DDZ(g_12);
-  G3_13_ =
-      0.5 * g13 * differential_operators->DDZ(g_11)
-      + 0.5 * g23
-            * (differential_operators->DDZ(g_12) + differential_operators->DDX(g_23, dx)
-               - differential_operators->DDY(g_13, dy))
-      + 0.5 * g33 * differential_operators->DDX(g_33, dx);
-  G3_23_ =
-      0.5 * g13
-          * (differential_operators->DDZ(g_12) + differential_operators->DDY(g_13, dy))
-      - differential_operators->DDX(g_23, dx)
-      + 0.5 * g23 * differential_operators->DDZ(g_22)
-      + 0.5 * g33 * differential_operators->DDY(g_33, dy);
+      + 0.5 * g33 * (coordinates.DDY(g_13)) + coordinates.DDX(g_23)
+      - coordinates.DDZ(g_12);
+  G3_13_ = 0.5 * g13 * coordinates.DDZ(g_11)
+           + 0.5 * g23
+                 * (coordinates.DDZ(g_12) + coordinates.DDX(g_23) - coordinates.DDY(g_13))
+           + 0.5 * g33 * coordinates.DDX(g_33);
+  G3_23_ = 0.5 * g13 * (coordinates.DDZ(g_12) + coordinates.DDY(g_13))
+           - coordinates.DDX(g_23) + 0.5 * g23 * coordinates.DDZ(g_22)
+           + 0.5 * g33 * coordinates.DDY(g_33);
 }
 
-ChristoffelSymbols::ChristoffelSymbols(DifferentialOperators* differential_operators)
-    : differential_operators(differential_operators) {
-  ASSERT0(differential_operators != nullptr);
-}
+//ChristoffelSymbols::ChristoffelSymbols() {}
 
 const FieldMetric& ChristoffelSymbols::G1_11() const { return G1_11_; }
 const FieldMetric& ChristoffelSymbols::G1_22() const { return G1_22_; }
@@ -267,6 +201,6 @@ ChristoffelSymbols ChristoffelSymbols::applyToComponents(
         G2_23, G3_11, G3_22, G3_33, G3_12, G3_13, G3_23] = components_out;
 
   return ChristoffelSymbols(G1_11, G1_22, G1_33, G1_12, G1_13, G1_23, G2_11, G2_22, G2_33,
-                            G2_12, G2_13, G2_23, G3_11, G3_22, G3_33, G3_12, G3_13, G3_23,
-                            differential_operators);
+                            G2_12, G2_13, G2_23, G3_11, G3_22, G3_33, G3_12, G3_13,
+                            G3_23);
 }
