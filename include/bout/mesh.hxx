@@ -490,7 +490,12 @@ public:
   /// Add a boundary region to this processor
   virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
 
-  /// Get all the parallel (Y) boundaries on this processor
+  /// Allow to iterate over only spefic parallel boundaries
+  /// For example:
+  /// get all regions:
+  /// mesh->getBoundariesPar(Mesh::BoundaryParType::all)
+  /// get only xout:
+  /// mesh->getBoundariesPar(Mesh::BoundaryParType::xout)
   virtual std::vector<std::shared_ptr<BoundaryRegionPar>>
   getBoundariesPar(BoundaryParType type = BoundaryParType::all) = 0;
 
