@@ -582,11 +582,7 @@ void printCompileTimeOptions() {
   output_info.write(_("\tSUNDIALS support {}\n"), is_enabled(has_sundials));
   output_info.write(_("\tBacktrace in exceptions {}\n"), is_enabled(use_backtrace));
   output_info.write(_("\tColour in logs {}\n"), is_enabled(use_color));
-  output_info.write(_("\tOpenMP parallelisation {}"), is_enabled(use_openmp));
-#ifdef _OPENMP
-  output_info.write(_(", using {} threads"), omp_get_max_threads());
-#endif
-  output_info.write("\n");
+  output_info.write(_("\tOpenMP parallelisation {}, using {} threads\n"), is_enabled(use_openmp), omp_get_max_threads());
   output_info.write(_("\tExtra debug output {}\n"), is_enabled(use_output_debug));
   output_info.write(_("\tFloating-point exceptions {}\n"), is_enabled(use_sigfpe));
   output_info.write(_("\tSignal handling support {}\n"), is_enabled(use_signal));
@@ -715,13 +711,7 @@ void addBuildFlagsToOptions(Options& options) {
   options["use_backtrace"].force(bout::build::use_backtrace);
   options["use_color"].force(bout::build::use_color);
   options["use_openmp"].force(bout::build::use_openmp);
-  options["openmp_threads"].force(
-#ifdef _OPENMP
-      omp_get_max_threads()
-#else
-      1
-#endif
-  );
+  options["openmp_threads"].force(omp_get_max_threads());
   options["use_output_debug"].force(bout::build::use_output_debug);
   options["use_sigfpe"].force(bout::build::use_sigfpe);
   options["use_signal"].force(bout::build::use_signal);
