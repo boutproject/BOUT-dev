@@ -40,6 +40,7 @@
 #else
 #define BOUT_OMP(...)
 int constexpr omp_get_max_threads() { return 1; }
+int constexpr omp_get_num_threads() { return 1; }
 int constexpr omp_get_thread_num() { return 0; }
 #endif
 
