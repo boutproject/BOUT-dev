@@ -29,6 +29,10 @@
 
 #include "bout/build_defines.hxx"
 
+#if BOUT_USE_OPENMP
+
+#include "omp.h"
+
 //Some helpers for indirection -- required so that the _Pragma gets "omp <x>"
 //where <x> is any number of valid omp options/environments (e.g. atomic, critical etc.)
 #define INDIRECT0(a) #a
@@ -37,7 +41,6 @@
 
 //Define a macro wrapper to the use of `#pragma omp` to avoid unknown pragma
 //warnings when compiling without openmp support.
-#if BOUT_USE_OPENMP
 #define BOUT_OMP(...) _Pragma(INDIRECT2(__VA_ARGS__))
 #else
 #define BOUT_OMP(...)
