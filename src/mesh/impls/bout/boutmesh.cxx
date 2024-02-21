@@ -72,7 +72,6 @@ If you want the old setting, you have to specify mesh:symmetricGlobalY=false in 
   comm_outer = MPI_COMM_NULL;
 
   mpi = bout::globals::mpi;
-  par_boundary.resize(static_cast<int>(BoundaryParType::SIZE));
 }
 
 BoutMesh::~BoutMesh() {
@@ -82,11 +81,6 @@ BoutMesh::~BoutMesh() {
   // Delete the boundary regions
   for (const auto& bndry : boundary) {
     delete bndry;
-  }
-  if (!par_boundary.empty()) {
-    for (const auto& bndry : par_boundary[0]) {
-      delete bndry;
-    }
   }
 
   if (comm_x != MPI_COMM_NULL) {
@@ -3016,11 +3010,13 @@ RangeIterator BoutMesh::iterateBndryUpperY() const {
 
 std::vector<BoundaryRegion*> BoutMesh::getBoundaries() { return boundary; }
 
-std::vector<BoundaryRegionPar*> BoutMesh::getBoundariesPar(BoundaryParType type) {
+std::vector<std::shared_ptr<BoundaryRegionPar>>
+BoutMesh::getBoundariesPar(BoundaryParType type) {
   return par_boundary[static_cast<int>(type)];
 }
 
-void BoutMesh::addBoundaryPar(BoundaryRegionPar* bndry, BoundaryParType type) {
+void BoutMesh::addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
+                              BoundaryParType type) {
   output_info << "Adding new parallel boundary: " << bndry->label << endl;
   switch (type) {
   case BoundaryParType::xin_fwd:

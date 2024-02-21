@@ -506,7 +506,7 @@ void Field3D::applyParallelBoundary(const std::string& condition) {
   /// Loop over the mesh boundary regions
   for (const auto& reg : fieldmesh->getBoundariesPar()) {
     auto op = std::unique_ptr<BoundaryOpPar>{
-        dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
+        dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg.get()))};
     op->apply(*this);
   }
 }
@@ -526,7 +526,7 @@ void Field3D::applyParallelBoundary(const std::string& region,
   for (const auto& reg : fieldmesh->getBoundariesPar()) {
     if (reg->label == region) {
       auto op = std::unique_ptr<BoundaryOpPar>{
-          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
+          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg.get()))};
       op->apply(*this);
       break;
     }
@@ -550,9 +550,9 @@ void Field3D::applyParallelBoundary(const std::string& region,
       // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
       // boundary of the right type
       auto tmp = std::unique_ptr<BoundaryOpPar>{
-          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
+          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg.get()))};
       // then clone that with the actual argument
-      auto op = std::unique_ptr<BoundaryOpPar>{tmp->clone(reg, f)};
+      auto op = std::unique_ptr<BoundaryOpPar>{tmp->clone(reg.get(), f)};
       op->apply(*this);
       break;
     }

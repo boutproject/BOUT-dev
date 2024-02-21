@@ -491,11 +491,11 @@ public:
   virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
 
   /// Get all the parallel (Y) boundaries on this processor
-  virtual std::vector<BoundaryRegionPar*>
+  virtual std::vector<std::shared_ptr<BoundaryRegionPar>>
   getBoundariesPar(BoundaryParType type = BoundaryParType::all) = 0;
 
   /// Add a parallel(Y) boundary to this processor
-  virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry),
+  virtual void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> UNUSED(bndry),
                               BoundaryParType UNUSED(type)) {}
 
   /// Branch-cut special handling (experimental)
