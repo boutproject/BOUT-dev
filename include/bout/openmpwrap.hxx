@@ -29,7 +29,7 @@
 
 #include "bout/build_defines.hxx"
 
-#if BOUT_USE_OPENMP
+#if BOUT_USE_OPENMP || defined(_OPENMP)
 #include "omp.h"
 #endif
 
