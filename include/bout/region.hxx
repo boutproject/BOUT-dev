@@ -565,7 +565,9 @@ public:
     blocks = getContiguousBlocks(maxregionblocksize);
   };
 
-  Region(ContiguousBlocks& blocks) : indices(getRegionIndices()), blocks(blocks){};
+  // We need to first set the blocks, and only after that call getRegionIndices.
+  // Do not put in the member initialisation
+  Region(ContiguousBlocks& blocks) : blocks(blocks) { indices = getRegionIndices(); };
 
   bool operator==(const Region<T>& other) const {
     return std::equal(this->begin(), this->end(), other.begin(), other.end());
