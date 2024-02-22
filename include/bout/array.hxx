@@ -382,7 +382,7 @@ private:
 
     // Clean by deleting all data -- possible that just stores.clear() is
     // sufficient rather than looping over each entry.
-    BOUT_OMP(single)
+    BOUT_OMP_SAFE(single)
     {
       for (auto& stores : arena) {
         for (auto& p : stores) {

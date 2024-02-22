@@ -30,9 +30,10 @@
 #include "bout/build_defines.hxx"
 
 #if BOUT_USE_OPENMP
-
 #include "omp.h"
+#endif
 
+#ifdef _OPENMP
 //Some helpers for indirection -- required so that the _Pragma gets "omp <x>"
 //where <x> is any number of valid omp options/environments (e.g. atomic, critical etc.)
 #define INDIRECT0(a) #a
@@ -41,16 +42,28 @@
 
 //Define a macro wrapper to the use of `#pragma omp` to avoid unknown pragma
 //warnings when compiling without openmp support.
+#define BOUT_OMP_SAFE(...) _Pragma(INDIRECT2(__VA_ARGS__))
 #define BOUT_OMP(...) _Pragma(INDIRECT2(__VA_ARGS__))
 #else
+#define BOUT_OMP_SAFE(...)
 #define BOUT_OMP(...)
-#ifdef _OPENMP
-#error OpenMP used but BOUT++ thinks it is disabled
+#endif
+
+#if BOUT_USE_OPENMP
+
+#ifndef INDIRECT2
+#error expected macro INDIRECT2 to be available
+#endif
+
+#define BOUT_OMP_PERF(...) _Pragma(INDIRECT2(__VA_ARGS__))
 #else
+#define BOUT_OMP_PERF(...)
+#endif
+
+#ifndef _OPENMP
 inline int constexpr omp_get_max_threads() { return 1; }
 inline int constexpr omp_get_num_threads() { return 1; }
 inline int constexpr omp_get_thread_num() { return 0; }
-#endif
 #endif
 
 //Perhaps want to cleanup local helpers with below, but DON'T!

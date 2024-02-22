@@ -480,7 +480,7 @@ public:
           weights.begin(), weights.end(), std::back_inserter(values),
           [&value_](BoutReal weight) -> HYPRE_Complex { return weight * value_; });
       const HYPRE_BigInt ncolumns = static_cast<HYPRE_BigInt>(positions.size());
-      // BOUT_OMP(critical)
+      // BOUT_OMP_SAFE(critical)
       for (HYPRE_BigInt i = 0; i < ncolumns; ++i) {
         matrix->setVal(row, positions[i], values[i]);
       }
@@ -495,7 +495,7 @@ public:
           weights.begin(), weights.end(), std::back_inserter(values),
           [&value_](BoutReal weight) -> HYPRE_Complex { return weight * value_; });
       const HYPRE_BigInt ncolumns = static_cast<HYPRE_BigInt>(positions.size());
-      // BOUT_OMP(critical)
+      // BOUT_OMP_SAFE(critical)
       for (HYPRE_BigInt i = 0; i < ncolumns; ++i) {
         matrix->addVal(row, positions[i], values[i]);
       }

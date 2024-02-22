@@ -262,7 +262,7 @@ TEST_F(RegionTest, regionLoopAllSection) {
   const auto& region = mesh->getRegion3D("RGN_ALL");
 
   int count = 0;
-  BOUT_OMP(parallel)
+  BOUT_OMP_PERF(parallel)
   {
     BOUT_FOR_OMP(i, region, for reduction(+:count)) {
       ++count;
@@ -296,7 +296,7 @@ TEST_F(RegionTest, regionLoopNoBndrySection) {
   const auto& region = mesh->getRegion3D("RGN_NOBNDRY");
 
   int count = 0;
-  BOUT_OMP(parallel)
+  BOUT_OMP_PERF(parallel)
   {
     BOUT_FOR_OMP(i, region, for reduction(+:count)) {
       ++count;
@@ -313,7 +313,7 @@ TEST_F(RegionTest, regionLoopAllInner) {
   const auto& region = mesh->getRegion3D("RGN_ALL");
 
   Field3D a{0.};
-  BOUT_OMP(parallel)
+  BOUT_OMP_PERF(parallel)
   {
     BOUT_FOR_INNER(i, region) { a[i] = 1.0; }
   }
@@ -331,7 +331,7 @@ TEST_F(RegionTest, regionLoopNoBndryInner) {
   const auto& region = mesh->getRegion3D("RGN_NOBNDRY");
 
   Field3D a{0.};
-  BOUT_OMP(parallel)
+  BOUT_OMP_PERF(parallel)
   {
     BOUT_FOR_INNER(i, region) { a[i] = 1.0; }
   }

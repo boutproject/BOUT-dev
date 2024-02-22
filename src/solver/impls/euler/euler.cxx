@@ -144,7 +144,7 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& star
   run_rhs(curtime);
   save_derivs(std::begin(result));
 
-  BOUT_OMP(parallel for)
+  BOUT_OMP_PERF(parallel for)
   for (int i = 0; i < nlocal; i++) {
     result[i] = start[i] + dt * result[i];
   }

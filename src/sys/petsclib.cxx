@@ -58,7 +58,7 @@ void setPetscOptions(Options& options, const std::string& prefix) {
 } // namespace
 
 PetscLib::PetscLib(Options* opt) {
-  BOUT_OMP(critical(PetscLib))
+  BOUT_OMP_SAFE(critical(PetscLib))
   {
     if (count == 0) {
       // Initialise PETSc
@@ -95,7 +95,7 @@ PetscLib::PetscLib(Options* opt) {
 }
 
 PetscLib::~PetscLib() {
-  BOUT_OMP(critical(PetscLib))
+  BOUT_OMP_SAFE(critical(PetscLib))
   {
     count--;
     if (count == 0) {
@@ -120,7 +120,7 @@ void PetscLib::setOptionsFromInputFile(SNES& snes) {
 }
 
 void PetscLib::cleanup() {
-  BOUT_OMP(critical(PetscLib))
+  BOUT_OMP_SAFE(critical(PetscLib))
   {
     if (count > 0) {
       output << "Finalising PETSc. Warning: Instances of PetscLib still exist.\n";

@@ -105,7 +105,7 @@ int RK4Solver::run() {
 
           // Check accuracy
           BoutReal local_err = 0.;
-          BOUT_OMP(parallel for reduction(+: local_err)   )
+          BOUT_OMP_PERF(parallel for reduction(+: local_err)   )
           for (int i = 0; i < nlocal; i++) {
             local_err += fabs(f2[i] - f1[i]) / (fabs(f1[i]) + fabs(f2[i]) + atol);
           }
@@ -182,7 +182,7 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
   run_rhs(curtime);
   save_derivs(std::begin(k1));
 
-  BOUT_OMP(parallel for)
+  BOUT_OMP_PERF(parallel for)
   for (int i = 0; i < nlocal; i++) {
     k5[i] = start[i] + 0.5 * dt * k1[i];
   }
@@ -191,7 +191,7 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
   run_rhs(curtime + 0.5 * dt);
   save_derivs(std::begin(k2));
 
-  BOUT_OMP(parallel for )
+  BOUT_OMP_PERF(parallel for )
   for (int i = 0; i < nlocal; i++) {
     k5[i] = start[i] + 0.5 * dt * k2[i];
   }
@@ -200,7 +200,7 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
   run_rhs(curtime + 0.5 * dt);
   save_derivs(std::begin(k3));
 
-  BOUT_OMP(parallel for)
+  BOUT_OMP_PERF(parallel for)
   for (int i = 0; i < nlocal; i++) {
     k5[i] = start[i] + dt * k3[i];
   }
@@ -209,7 +209,7 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
   run_rhs(curtime + dt);
   save_derivs(std::begin(k4));
 
-  BOUT_OMP(parallel for)
+  BOUT_OMP_PERF(parallel for)
   for (int i = 0; i < nlocal; i++) {
     result[i] = start[i] + (1. / 6.) * dt * (k1[i] + 2. * k2[i] + 2. * k3[i] + k4[i]);
   }

@@ -175,7 +175,7 @@ public:
 #endif
     BoutReal value = BoutNaN;
     int status = 0;
-    BOUT_OMP(critical)
+    BOUT_OMP_SAFE(critical)
     status = VecGetValues(*get(), 1, &global, &value);
     if (status != 0) {
       throw BoutException("Error when getting element of a PETSc vector.");
@@ -355,7 +355,7 @@ public:
       PetscBool assembled = PETSC_FALSE;
       MatAssembled(*petscMatrix, &assembled);
       if (assembled == PETSC_TRUE) {
-        BOUT_OMP(critical)
+        BOUT_OMP_SAFE(critical)
         MatGetValues(*petscMatrix, 1, &petscRow, 1, &petscCol, &value);
       } else {
         value = 0.;
@@ -400,7 +400,7 @@ public:
                      [&val](BoutReal weight) -> PetscScalar { return weight * val; });
 
       int status = 0;
-      BOUT_OMP(critical)
+      BOUT_OMP_SAFE(critical)
       status = MatSetValues(*petscMatrix, 1, &petscRow, positions.size(),
                             positions.data(), values.data(), mode);
       if (status != 0) {
@@ -467,7 +467,7 @@ public:
 #endif
     BoutReal value = BoutNaN;
     int status = 0;
-    BOUT_OMP(critical)
+    BOUT_OMP_SAFE(critical)
     status = MatGetValues(*get(), 1, &global1, 1, &global2, &value);
     if (status != 0) {
       throw BoutException("Error when getting elements of a PETSc matrix.");

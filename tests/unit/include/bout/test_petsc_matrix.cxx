@@ -177,7 +177,7 @@ TYPED_TEST(PetscMatrixTest, TestGetElements) {
       int i_ind = this->indexer->getGlobal(i);
       int j_ind = this->indexer->getGlobal(j);
       PetscScalar matContents;
-      BOUT_OMP(critical)
+      BOUT_OMP_SAFE(critical)
       MatGetValues(*rawmat, 1, &i_ind, 1, &j_ind, &matContents);
       if (i == j) {
         EXPECT_EQ(matContents, static_cast<BoutReal>(i.ind));

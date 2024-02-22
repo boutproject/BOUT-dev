@@ -117,7 +117,7 @@ class BoutMask;
 
 #if BOUT_USE_OPENMP
 #define BOUT_FOR_OMP(index, region, omp_pragmas)                                    \
-  BOUT_OMP(omp_pragmas)                                                             \
+  BOUT_OMP_PERF(omp_pragmas)                                                        \
   for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend(); \
        ++block)                                                                     \
     for (auto index = block->first; index < block->second; ++index)
