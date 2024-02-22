@@ -516,9 +516,9 @@ public:
 
   // Want to make this private to disable but think it may be needed as we put Regions
   // into maps which seems to need to be able to make "empty" objects.
-  Region<T>() = default;
+  Region() = default;
 
-  Region<T>(int xstart, int xend, int ystart, int yend, int zstart, int zend, int ny,
+  Region(int xstart, int xend, int ystart, int yend, int zstart, int zend, int ny,
             int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE)
       : ny(ny), nz(nz) {
 #if CHECK > 1
@@ -560,12 +560,12 @@ public:
     blocks = getContiguousBlocks(maxregionblocksize);
   };
 
-  Region<T>(RegionIndices& indices, int maxregionblocksize = MAXREGIONBLOCKSIZE)
+  Region(RegionIndices& indices, int maxregionblocksize = MAXREGIONBLOCKSIZE)
       : indices(indices) {
     blocks = getContiguousBlocks(maxregionblocksize);
   };
 
-  Region<T>(ContiguousBlocks& blocks) : blocks(blocks) { indices = getRegionIndices(); };
+  Region(ContiguousBlocks& blocks) : blocks(blocks) { indices = getRegionIndices(); };
 
   bool operator==(const Region<T>& other) const {
     return std::equal(this->begin(), this->end(), other.begin(), other.end());
