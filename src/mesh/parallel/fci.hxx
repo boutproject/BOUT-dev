@@ -44,8 +44,8 @@ class FCIMap {
 public:
   FCIMap() = delete;
   FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options, int offset,
-         std::shared_ptr<BoundaryRegionPar> inner_boundary,
-         std::shared_ptr<BoundaryRegionPar> outer_boundary, bool zperiodic);
+         const std::shared_ptr<BoundaryRegionPar>& inner_boundary,
+         const std::shared_ptr<BoundaryRegionPar>& outer_boundary, bool zperiodic);
 
   // The mesh this map was created on
   Mesh& map_mesh;

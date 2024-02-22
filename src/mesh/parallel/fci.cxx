@@ -48,8 +48,8 @@
 #include <string>
 
 FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
-               int offset_, std::shared_ptr<BoundaryRegionPar> inner_boundary,
-               std::shared_ptr<BoundaryRegionPar> outer_boundary, bool zperiodic)
+               int offset_, const std::shared_ptr<BoundaryRegionPar>& inner_boundary,
+               const std::shared_ptr<BoundaryRegionPar>& outer_boundary, bool zperiodic)
     : map_mesh(mesh), offset(offset_),
       region_no_boundary(map_mesh.getRegion("RGN_NOBNDRY")),
       corner_boundary_mask(map_mesh) {
