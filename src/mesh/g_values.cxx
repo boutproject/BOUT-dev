@@ -27,11 +27,3 @@ GValues::GValues(const Coordinates& coordinates) {
   coordinates.communicate(tmp);
   setG3((coordinates.DDX(J * g13) + coordinates.DDY(tmp) + coordinates.DDZ(J * g33)) / J);
 }
-
-const FieldMetric& GValues::G1() const { return G1_; }
-const FieldMetric& GValues::G2() const { return G2_; }
-const FieldMetric& GValues::G3() const { return G3_; }
-
-void GValues::setG1(const FieldMetric& G1) { G1_ = G1; }
-void GValues::setG2(const FieldMetric& G2) { G2_ = G2; }
-void GValues::setG3(const FieldMetric& G3) { G3_ = G3; }
