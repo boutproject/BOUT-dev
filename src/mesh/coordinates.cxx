@@ -1369,73 +1369,6 @@ void Coordinates::checkContravariant() {
   contravariantMetricTensor.check(localmesh->ystart);
 }
 
-bool Coordinates::non_uniform() const { return non_uniform_; }
-void Coordinates::setNon_uniform(bool non_uniform) { non_uniform_ = non_uniform; }
-
-const FieldMetric& Coordinates::dx() const { return dx_; }
-const FieldMetric& Coordinates::dy() const { return dy_; }
-const FieldMetric& Coordinates::dz() const { return dz_; }
-
-void Coordinates::setDx(FieldMetric dx) { dx_ = std::move(dx); }
-void Coordinates::setDy(FieldMetric dy) { dy_ = std::move(dy); }
-void Coordinates::setDz(FieldMetric dz) { dz_ = std::move(dz); }
-
-void Coordinates::setDy(BoutReal value, int x, int y) { dy_(x, y) = value; }
-
-void Coordinates::setD1_dx(FieldMetric d1_dx) { d1_dx_ = std::move(d1_dx); }
-void Coordinates::setD1_dy(FieldMetric d1_dy) { d1_dy_ = std::move(d1_dy); }
-void Coordinates::setD1_dz(FieldMetric d1_dz) { d1_dz_ = std::move(d1_dz); }
-
-const FieldMetric& Coordinates::d1_dx() const { return d1_dx_; }
-const FieldMetric& Coordinates::d1_dy() const { return d1_dy_; }
-const FieldMetric& Coordinates::d1_dz() const { return d1_dz_; }
-
-const FieldMetric& Coordinates::ShiftTorsion() const { return ShiftTorsion_; }
-
-const FieldMetric& Coordinates::IntShiftTorsion() const { return IntShiftTorsion_; }
-
-void Coordinates::setIntShiftTorsion(FieldMetric IntShiftTorsion) {
-  IntShiftTorsion_ = std::move(IntShiftTorsion);
-}
-
-const MetricTensor::FieldMetric& Coordinates::g_11() const {
-  return covariantMetricTensor.g11();
-}
-const MetricTensor::FieldMetric& Coordinates::g_22() const {
-  return covariantMetricTensor.g22();
-}
-const MetricTensor::FieldMetric& Coordinates::g_33() const {
-  return covariantMetricTensor.g33();
-}
-const MetricTensor::FieldMetric& Coordinates::g_12() const {
-  return covariantMetricTensor.g12();
-}
-const MetricTensor::FieldMetric& Coordinates::g_13() const {
-  return covariantMetricTensor.g13();
-}
-const MetricTensor::FieldMetric& Coordinates::g_23() const {
-  return covariantMetricTensor.g23();
-}
-
-const MetricTensor::FieldMetric& Coordinates::g11() const {
-  return contravariantMetricTensor.g11();
-}
-const MetricTensor::FieldMetric& Coordinates::g22() const {
-  return contravariantMetricTensor.g22();
-}
-const MetricTensor::FieldMetric& Coordinates::g33() const {
-  return contravariantMetricTensor.g33();
-}
-const MetricTensor::FieldMetric& Coordinates::g12() const {
-  return contravariantMetricTensor.g12();
-}
-const MetricTensor::FieldMetric& Coordinates::g13() const {
-  return contravariantMetricTensor.g13();
-}
-const MetricTensor::FieldMetric& Coordinates::g23() const {
-  return contravariantMetricTensor.g23();
-}
-
 const FieldMetric& Coordinates::J() const {
   if (jacobian_cache == nullptr) {
     const auto j = recalculateJacobian();
@@ -1459,51 +1392,14 @@ void Coordinates::setJ(BoutReal value, int x, int y) {
   jacobian_cache = std::move(ptr);
 }
 
-const FieldMetric& Coordinates::Bxy() const { return Bxy_; }
-
 void Coordinates::setBxy(FieldMetric Bxy) {
   //TODO: Calculate Bxy and check value is close
   Bxy_ = std::move(Bxy);
 }
 
-const FieldMetric& Coordinates::G1_11() const { return christoffel_symbols().G1_11(); }
-const FieldMetric& Coordinates::G1_22() const { return christoffel_symbols().G1_22(); }
-const FieldMetric& Coordinates::G1_33() const { return christoffel_symbols().G1_33(); }
-const FieldMetric& Coordinates::G1_12() const { return christoffel_symbols().G1_12(); }
-const FieldMetric& Coordinates::G1_13() const { return christoffel_symbols().G1_13(); }
-const FieldMetric& Coordinates::G1_23() const { return christoffel_symbols().G1_23(); }
-const FieldMetric& Coordinates::G2_11() const { return christoffel_symbols().G2_11(); }
-const FieldMetric& Coordinates::G2_22() const { return christoffel_symbols().G2_22(); }
-const FieldMetric& Coordinates::G2_33() const { return christoffel_symbols().G2_33(); }
-const FieldMetric& Coordinates::G2_12() const { return christoffel_symbols().G2_12(); }
-const FieldMetric& Coordinates::G2_13() const { return christoffel_symbols().G2_13(); }
-const FieldMetric& Coordinates::G2_23() const { return christoffel_symbols().G2_23(); }
-const FieldMetric& Coordinates::G3_11() const { return christoffel_symbols().G3_11(); }
-const FieldMetric& Coordinates::G3_22() const { return christoffel_symbols().G3_22(); }
-const FieldMetric& Coordinates::G3_33() const { return christoffel_symbols().G3_33(); }
-const FieldMetric& Coordinates::G3_12() const { return christoffel_symbols().G3_12(); }
-const FieldMetric& Coordinates::G3_13() const { return christoffel_symbols().G3_13(); }
-const FieldMetric& Coordinates::G3_23() const { return christoffel_symbols().G3_23(); }
-
-const FieldMetric& Coordinates::G1() const { return g_values().G1(); }
-const FieldMetric& Coordinates::G2() const { return g_values().G2(); }
-const FieldMetric& Coordinates::G3() const { return g_values().G3(); }
-
-void Coordinates::setG1(const FieldMetric& G1) const { g_values().setG1(G1); }
-void Coordinates::setG2(const FieldMetric& G2) const { g_values().setG2(G2); }
-void Coordinates::setG3(const FieldMetric& G3) const { g_values().setG3(G3); }
-
 void Coordinates::applyToChristoffelSymbols(
     const std::function<const FieldMetric(const FieldMetric)>& function) const {
   christoffel_symbols().map(function);
-}
-
-const ContravariantMetricTensor& Coordinates::getContravariantMetricTensor() const {
-  return contravariantMetricTensor;
-}
-
-const CovariantMetricTensor& Coordinates::getCovariantMetricTensor() const {
-  return covariantMetricTensor;
 }
 
 void Coordinates::setContravariantMetricTensor(

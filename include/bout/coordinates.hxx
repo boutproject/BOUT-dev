@@ -76,50 +76,55 @@ public:
   void outputVars(Options& output_options);
 
   ///< Mesh spacing in x, y and z
-  const FieldMetric& dx() const;
-  const FieldMetric& dy() const;
-  const FieldMetric& dz() const;
+  const FieldMetric& dx() const { return dx_; }
+  const FieldMetric& dy() const { return dy_; }
+  const FieldMetric& dz() const { return dz_; }
 
-  void setDx(FieldMetric dx);
-  void setDy(FieldMetric dy);
-  void setDz(FieldMetric dz);
+  void setDx(FieldMetric dx) { dx_ = std::move(dx); }
+  void setDy(FieldMetric dy) { dy_ = std::move(dy); }
+  void setDz(FieldMetric dz) { dz_ = std::move(dz); }
 
-  void setDy(BoutReal value, int x, int y);
+  void setDy(BoutReal value, int x, int y) { dy_(x, y) = value; }
 
-  void setD1_dx(FieldMetric d1_dx);
-  void setD1_dy(FieldMetric d1_dy);
-  void setD1_dz(FieldMetric d1_dz);
+  void setD1_dx(FieldMetric d1_dx) { d1_dx_ = std::move(d1_dx); }
+  void setD1_dy(FieldMetric d1_dy) { d1_dy_ = std::move(d1_dy); }
+  void setD1_dz(FieldMetric d1_dz) { d1_dz_ = std::move(d1_dz); }
 
   /// Length of the Z domain. Used for FFTs
   const Field2D& zlength() const;
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
-  bool non_uniform() const;
-  void setNon_uniform(bool non_uniform);
+  bool non_uniform() const { return non_uniform_; }
+  void setNon_uniform(bool non_uniform) { non_uniform_ = non_uniform; }
 
   /// 2nd-order correction for non-uniform meshes d/di(1/dx), d/di(1/dy) and d/di(1/dz)
-  const FieldMetric& d1_dx() const;
-  const FieldMetric& d1_dy() const;
-  const FieldMetric& d1_dz() const;
+  const FieldMetric& d1_dx() const { return d1_dx_; }
+  const FieldMetric& d1_dy() const { return d1_dy_; }
+  const FieldMetric& d1_dz() const { return d1_dz_; }
 
   /// Covariant metric tensor
-  const FieldMetric& g_11() const;
-  const FieldMetric& g_22() const;
-  const FieldMetric& g_33() const;
-  const FieldMetric& g_12() const;
-  const FieldMetric& g_13() const;
-  const FieldMetric& g_23() const;
+  const MetricTensor::FieldMetric& g_11() const { return covariantMetricTensor.g11(); }
+  const MetricTensor::FieldMetric& g_22() const { return covariantMetricTensor.g22(); }
+  const MetricTensor::FieldMetric& g_33() const { return covariantMetricTensor.g33(); }
+  const MetricTensor::FieldMetric& g_12() const { return covariantMetricTensor.g12(); }
+  const MetricTensor::FieldMetric& g_13() const { return covariantMetricTensor.g13(); }
+  const MetricTensor::FieldMetric& g_23() const { return covariantMetricTensor.g23(); }
 
   /// Contravariant metric tensor (g^{ij})
-  const FieldMetric& g11() const;
-  const FieldMetric& g22() const;
-  const FieldMetric& g33() const;
-  const FieldMetric& g12() const;
-  const FieldMetric& g13() const;
-  const FieldMetric& g23() const;
+  const MetricTensor::FieldMetric& g11() const { return contravariantMetricTensor.g11(); }
+  const MetricTensor::FieldMetric& g22() const { return contravariantMetricTensor.g22(); }
+  const MetricTensor::FieldMetric& g33() const { return contravariantMetricTensor.g33(); }
+  const MetricTensor::FieldMetric& g12() const { return contravariantMetricTensor.g12(); }
+  const MetricTensor::FieldMetric& g13() const { return contravariantMetricTensor.g13(); }
+  const MetricTensor::FieldMetric& g23() const { return contravariantMetricTensor.g23(); }
 
-  const ContravariantMetricTensor& getContravariantMetricTensor() const;
-  const CovariantMetricTensor& getCovariantMetricTensor() const;
+  const ContravariantMetricTensor& getContravariantMetricTensor() const {
+    return contravariantMetricTensor;
+  }
+
+  const CovariantMetricTensor& getCovariantMetricTensor() const {
+    return covariantMetricTensor;
+  }
 
   void setContravariantMetricTensor(const ContravariantMetricTensor& metric_tensor,
                                     const std::string& region = "RGN_ALL",
@@ -135,7 +140,7 @@ public:
   const FieldMetric& J() const;
 
   ///< Magnitude of B = nabla z times nabla x
-  const FieldMetric& Bxy() const;
+  const FieldMetric& Bxy() const { return Bxy_; }
 
   void setJ(FieldMetric J);
   void setJ(BoutReal value, int x, int y);
@@ -143,11 +148,14 @@ public:
   void setBxy(FieldMetric Bxy);
 
   /// d pitch angle / dx. Needed for vector differentials (Curl)
-  const FieldMetric& ShiftTorsion() const;
+  const FieldMetric& ShiftTorsion() const { return ShiftTorsion_; }
 
   ///< Integrated shear (I in BOUT notation)
-  const FieldMetric& IntShiftTorsion() const;
-  void setIntShiftTorsion(FieldMetric IntShiftTorsion);
+  const FieldMetric& IntShiftTorsion() const { return IntShiftTorsion_; }
+
+  void setIntShiftTorsion(FieldMetric IntShiftTorsion) {
+    IntShiftTorsion_ = std::move(IntShiftTorsion);
+  }
 
   /// Calculate differential geometry quantities from the metric tensor
   int communicateAndCheckMeshSpacing() const;
@@ -250,34 +258,32 @@ public:
   Field2D Laplace_perpXY(const Field2D& A, const Field2D& f) const;
 
   /// Christoffel symbol of the second kind (connection coefficients)
-  const FieldMetric& G1_11() const;
-  const FieldMetric& G1_22() const;
-  const FieldMetric& G1_33() const;
-  const FieldMetric& G1_12() const;
-  const FieldMetric& G1_13() const;
-  const FieldMetric& G1_23() const;
+  const FieldMetric& G1_11() const { return christoffel_symbols().G1_11(); }
+  const FieldMetric& G1_22() const { return christoffel_symbols().G1_22(); }
+  const FieldMetric& G1_33() const { return christoffel_symbols().G1_33(); }
+  const FieldMetric& G1_12() const { return christoffel_symbols().G1_12(); }
+  const FieldMetric& G1_13() const { return christoffel_symbols().G1_13(); }
+  const FieldMetric& G1_23() const { return christoffel_symbols().G1_23(); }
+  const FieldMetric& G2_11() const { return christoffel_symbols().G2_11(); }
+  const FieldMetric& G2_22() const { return christoffel_symbols().G2_22(); }
+  const FieldMetric& G2_33() const { return christoffel_symbols().G2_33(); }
+  const FieldMetric& G2_12() const { return christoffel_symbols().G2_12(); }
+  const FieldMetric& G2_13() const { return christoffel_symbols().G2_13(); }
+  const FieldMetric& G2_23() const { return christoffel_symbols().G2_23(); }
+  const FieldMetric& G3_11() const { return christoffel_symbols().G3_11(); }
+  const FieldMetric& G3_22() const { return christoffel_symbols().G3_22(); }
+  const FieldMetric& G3_33() const { return christoffel_symbols().G3_33(); }
+  const FieldMetric& G3_12() const { return christoffel_symbols().G3_12(); }
+  const FieldMetric& G3_13() const { return christoffel_symbols().G3_13(); }
+  const FieldMetric& G3_23() const { return christoffel_symbols().G3_23(); }
 
-  const FieldMetric& G2_11() const;
-  const FieldMetric& G2_22() const;
-  const FieldMetric& G2_33() const;
-  const FieldMetric& G2_12() const;
-  const FieldMetric& G2_13() const;
-  const FieldMetric& G2_23() const;
+  const FieldMetric& G1() const { return g_values().G1(); }
+  const FieldMetric& G2() const { return g_values().G2(); }
+  const FieldMetric& G3() const { return g_values().G3(); }
 
-  const FieldMetric& G3_11() const;
-  const FieldMetric& G3_22() const;
-  const FieldMetric& G3_33() const;
-  const FieldMetric& G3_12() const;
-  const FieldMetric& G3_13() const;
-  const FieldMetric& G3_23() const;
-
-  const FieldMetric& G1() const;
-  const FieldMetric& G2() const;
-  const FieldMetric& G3() const;
-
-  void setG1(const FieldMetric& G1) const;
-  void setG2(const FieldMetric& G2) const;
-  void setG3(const FieldMetric& G3) const;
+  void setG1(const FieldMetric& G1) const { g_values().setG1(G1); }
+  void setG2(const FieldMetric& G2) const { g_values().setG2(G2); }
+  void setG3(const FieldMetric& G3) const { g_values().setG3(G3); }
 
   const FieldMetric& Grad2_par2_DDY_invSg(CELL_LOC outloc,
                                           const std::string& method) const;
