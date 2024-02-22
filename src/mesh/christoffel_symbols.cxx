@@ -120,56 +120,6 @@ ChristoffelSymbols::ChristoffelSymbols(const Coordinates& coordinates) {
            + 0.5 * g33 * coordinates.DDY(g_33);
 }
 
-//ChristoffelSymbols::ChristoffelSymbols() {}
-
-const FieldMetric& ChristoffelSymbols::G1_11() const { return G1_11_; }
-const FieldMetric& ChristoffelSymbols::G1_22() const { return G1_22_; }
-const FieldMetric& ChristoffelSymbols::G1_33() const { return G1_33_; }
-const FieldMetric& ChristoffelSymbols::G1_12() const { return G1_12_; }
-const FieldMetric& ChristoffelSymbols::G1_13() const { return G1_13_; }
-const FieldMetric& ChristoffelSymbols::G1_23() const { return G1_23_; }
-
-const FieldMetric& ChristoffelSymbols::G2_11() const { return G2_11_; }
-const FieldMetric& ChristoffelSymbols::G2_22() const { return G2_22_; }
-const FieldMetric& ChristoffelSymbols::G2_33() const { return G2_33_; }
-const FieldMetric& ChristoffelSymbols::G2_12() const { return G2_12_; }
-const FieldMetric& ChristoffelSymbols::G2_13() const { return G2_13_; }
-const FieldMetric& ChristoffelSymbols::G2_23() const { return G2_23_; }
-
-const FieldMetric& ChristoffelSymbols::G3_11() const { return G3_11_; }
-const FieldMetric& ChristoffelSymbols::G3_22() const { return G3_22_; }
-const FieldMetric& ChristoffelSymbols::G3_33() const { return G3_33_; }
-const FieldMetric& ChristoffelSymbols::G3_12() const { return G3_12_; }
-const FieldMetric& ChristoffelSymbols::G3_13() const { return G3_13_; }
-const FieldMetric& ChristoffelSymbols::G3_23() const { return G3_23_; }
-
-void ChristoffelSymbols::setChristoffelSymbols(
-    const FieldMetric& G1_11, const FieldMetric& G1_22, const FieldMetric& G1_33,
-    const FieldMetric& G1_12, const FieldMetric& G1_13, const FieldMetric& G1_23,
-    const FieldMetric& G2_11, const FieldMetric& G2_22, const FieldMetric& G2_33,
-    const FieldMetric& G2_12, const FieldMetric& G2_13, const FieldMetric& G2_23,
-    const FieldMetric& G3_11, const FieldMetric& G3_22, const FieldMetric& G3_33,
-    const FieldMetric& G3_12, const FieldMetric& G3_13, const FieldMetric& G3_23) {
-  G1_11_ = G1_11;
-  G1_22_ = G1_22;
-  G1_33_ = G1_33;
-  G1_12_ = G1_12;
-  G1_13_ = G1_13;
-  G1_23_ = G1_23;
-  G2_11_ = G2_11;
-  G2_22_ = G2_22;
-  G2_33_ = G2_33;
-  G2_12_ = G2_12;
-  G2_13_ = G2_13;
-  G2_23_ = G2_23;
-  G3_11_ = G3_11;
-  G3_22_ = G3_22;
-  G3_33_ = G3_33;
-  G3_12_ = G3_12;
-  G3_13_ = G3_13;
-  G3_23_ = G3_23;
-}
-
 void ChristoffelSymbols::map(
     const std::function<const FieldMetric(const FieldMetric)>& function) {
 
