@@ -518,8 +518,8 @@ public:
   // into maps which seems to need to be able to make "empty" objects.
   Region() = default;
 
-  Region(int xstart, int xend, int ystart, int yend, int zstart, int zend, int ny,
-            int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE)
+  Region(int xstart, int xend, int ystart, int yend, int zstart, int zend, int ny, int nz,
+         int maxregionblocksize = MAXREGIONBLOCKSIZE)
       : ny(ny), nz(nz) {
 #if CHECK > 1
     if constexpr (std::is_base_of_v<Ind2D, T>) {
