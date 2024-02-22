@@ -565,7 +565,7 @@ public:
     blocks = getContiguousBlocks(maxregionblocksize);
   };
 
-  Region(ContiguousBlocks& blocks) : blocks(blocks) { indices = getRegionIndices(); };
+  Region(ContiguousBlocks& blocks) : indices(getRegionIndices()), blocks(blocks) { };
 
   bool operator==(const Region<T>& other) const {
     return std::equal(this->begin(), this->end(), other.begin(), other.end());
