@@ -561,9 +561,7 @@ public:
   };
 
   Region(RegionIndices& indices, int maxregionblocksize = MAXREGIONBLOCKSIZE)
-      : indices(indices) {
-    blocks = getContiguousBlocks(maxregionblocksize);
-  };
+      : indices(indices), blocks(getContiguousBlocks(maxregionblocksize)){};
 
   // We need to first set the blocks, and only after that call getRegionIndices.
   // Do not put in the member initialisation
