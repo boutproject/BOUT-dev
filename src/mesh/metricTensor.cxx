@@ -14,23 +14,6 @@ MetricTensor::MetricTensor(const BoutReal g11, const BoutReal g22, const BoutRea
     : g11_(g11, mesh), g22_(g22, mesh), g33_(g33, mesh), g12_(g12, mesh), g13_(g13, mesh),
       g23_(g23, mesh) {}
 
-const MetricTensor::FieldMetric& MetricTensor::g11() const { return g11_; }
-const MetricTensor::FieldMetric& MetricTensor::g22() const { return g22_; }
-const MetricTensor::FieldMetric& MetricTensor::g33() const { return g33_; }
-const MetricTensor::FieldMetric& MetricTensor::g12() const { return g12_; }
-const MetricTensor::FieldMetric& MetricTensor::g13() const { return g13_; }
-const MetricTensor::FieldMetric& MetricTensor::g23() const { return g23_; }
-
-void MetricTensor::setMetricTensor(const MetricTensor& metric_tensor) {
-
-  g11_ = metric_tensor.g11();
-  g22_ = metric_tensor.g22();
-  g33_ = metric_tensor.g33();
-  g12_ = metric_tensor.g12();
-  g13_ = metric_tensor.g13();
-  g23_ = metric_tensor.g23();
-}
-
 void MetricTensor::check(int ystart) {
   // Diagonal metric components should be finite
   bout::checkFinite(g11_, "g11", "RGN_NOCORNERS");
@@ -81,15 +64,6 @@ void MetricTensor::check(int ystart) {
       }
     }
   }
-}
-
-void MetricTensor::setLocation(const CELL_LOC location) {
-  g11_.setLocation(location);
-  g22_.setLocation(location);
-  g33_.setLocation(location);
-  g12_.setLocation(location);
-  g13_.setLocation(location);
-  g23_.setLocation(location);
 }
 
 MetricTensor MetricTensor::inverse(const std::string& region) {

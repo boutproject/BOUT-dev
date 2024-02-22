@@ -24,16 +24,31 @@ public:
   // check that tensors are positive (if expected) and finite (always)
   void check(int ystart);
 
-  const FieldMetric& g11() const;
-  const FieldMetric& g22() const;
-  const FieldMetric& g33() const;
-  const FieldMetric& g12() const;
-  const FieldMetric& g13() const;
-  const FieldMetric& g23() const;
+  const FieldMetric& g11() const { return g11_; }
+  const FieldMetric& g22() const { return g22_; }
+  const FieldMetric& g33() const { return g33_; }
+  const FieldMetric& g12() const { return g12_; }
+  const FieldMetric& g13() const { return g13_; }
+  const FieldMetric& g23() const { return g23_; }
 
-  void setMetricTensor(const MetricTensor& metric_tensor);
+  void setMetricTensor(const MetricTensor& metric_tensor) {
 
-  void setLocation(CELL_LOC location);
+    g11_ = metric_tensor.g11();
+    g22_ = metric_tensor.g22();
+    g33_ = metric_tensor.g33();
+    g12_ = metric_tensor.g12();
+    g13_ = metric_tensor.g13();
+    g23_ = metric_tensor.g23();
+  }
+
+  void setLocation(const CELL_LOC location) {
+    g11_.setLocation(location);
+    g22_.setLocation(location);
+    g33_.setLocation(location);
+    g12_.setLocation(location);
+    g13_.setLocation(location);
+    g23_.setLocation(location);
+  }
 
   MetricTensor inverse(const std::string& region = "RGN_ALL");
 
