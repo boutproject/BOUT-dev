@@ -490,7 +490,9 @@ public:
   /// Add a boundary region to this processor
   virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
 
-  /// Allow to iterate over only spefic parallel boundaries
+  /// Get the list of parallel boundary regions. The option specifies with
+  /// region to get. Default is to get all regions. All possible options are
+  /// listed at the top of this file, see BoundaryParType.
   /// For example:
   /// get all regions:
   /// mesh->getBoundariesPar(Mesh::BoundaryParType::all)
