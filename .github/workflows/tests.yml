@@ -264,6 +264,7 @@ jobs:
             -DCMAKE_CUDA_ARCHITECTURES=80 \
             -DCUDA_ARCH=compute_80,code=sm_80 \
             -DBOUT_ENABLE_WARNINGS=off \
-            -DBOUT_USE_SYSTEM_FMT=on
+            -DBOUT_USE_SYSTEM_FMT=on \
+            -DBOUT_ENABLE_OPENMP=ON
           cd build
           make -j 4
