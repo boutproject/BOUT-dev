@@ -188,7 +188,7 @@ public:
   const int dir;
 
 private:
-  const BoutReal small_value = 1e-2;
+  constexpr static BoutReal small_value = 1e-2;
 
   // BoutReal get(const Field3D& f, int off)
   const BoutReal& ynext(const Field3D& f) const { return f.ynext(dir)[ind().yp(dir)]; }
