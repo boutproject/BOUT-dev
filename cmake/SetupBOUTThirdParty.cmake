@@ -9,6 +9,7 @@ endif ()
 if (BOUT_USE_OPENMP)
   target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
   set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -fopenmp")
+  set(CONFIG_LDFLAGS_SHARED "${CONFIG_LDFLAGS_SHARED} -fopenmp")
   set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -fopenmp")
 endif()
 
