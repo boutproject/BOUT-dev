@@ -833,7 +833,7 @@ void MultigridAlg::solveMG(BoutReal* sol, BoutReal* rhs, int level) {
 
    perror = ini_e;
    for (m = 0; m < MAXIT; m++) {
-    BOUT_OMP_PERF(parallel default(shared))
+     BOUT_OMP_PERF(parallel default(shared))
     BOUT_OMP_PERF(for)
     for (int i = 0; i < ldim; i++) {
       y[i] = 0.0;
