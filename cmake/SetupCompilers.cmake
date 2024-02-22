@@ -39,6 +39,8 @@ if(BOUT_ENABLE_CUDA)
    if (BOUT_ENABLE_OPENMP)
       # CMAKE_CUDA_FLAGS does not pass OpenMP_CXX_FLAGS to the host compiler by default
       set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler ${OpenMP_CXX_FLAGS}")
+      message(FATAL_ERROR "Enabling OpenMP with CUDA for some reason")
    endif ()
 endif()
 set(BOUT_HAS_CUDA ${BOUT_ENABLE_CUDA})
+message(STATUS "Enable CUDA: ${BOUT_ENABLE_CUDA} (with flags: ${CMAKE_CUDA_FLAGS})")
