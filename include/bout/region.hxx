@@ -792,8 +792,9 @@ public:
     std::vector<int> blockSizes(result.numBlocks);
 
     // Get the size of each block using lambda to calculate size
-    std::transform(std::begin(blocks), std::end(blocks), std::begin(blockSizes),
-                   [](const ContiguousBlock& a) { return a.second.ind - a.first.ind; });
+    std::transform(
+        std::begin(blocks), std::end(blocks), std::begin(blockSizes),
+        [](const ContiguousBlock& block) { return block.second.ind - block.first.ind; });
 
     auto minMaxSize = std::minmax_element(std::begin(blockSizes), std::end(blockSizes));
 
@@ -860,10 +861,10 @@ private:
     int z = zstart;
 
     bool done = false;
-    int j = -1;
+    int ind = -1;
     while (!done) {
-      j++;
-      region[j].ind = (x * ny + y) * nz + z;
+      ind++;
+      region[ind].ind = (x * ny + y) * nz + z;
       if (x == xend && y == yend && z == zend) {
         done = true;
       }
