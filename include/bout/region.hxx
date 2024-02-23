@@ -239,7 +239,7 @@ struct SpecificInd {
   /// and is determined by the `dir` template argument. The offset corresponds
   /// to the `dd` template argument.
   template <int dd, DIRECTION dir>
-  const inline SpecificInd plus() const {
+  inline SpecificInd plus() const {
     static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
                       || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
                   "Unhandled DIRECTION in SpecificInd::plus");
@@ -259,7 +259,7 @@ struct SpecificInd {
   /// and is determined by the `dir` template argument. The offset corresponds
   /// to the `dd` template argument.
   template <int dd, DIRECTION dir>
-  const inline SpecificInd minus() const {
+  inline SpecificInd minus() const {
     static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
                       || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
                   "Unhandled DIRECTION in SpecificInd::minus");
@@ -275,11 +275,11 @@ struct SpecificInd {
     }
   }
 
-  const inline SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }
+  inline SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }
   /// The index one point -1 in x
-  const inline SpecificInd xm(int dx = 1) const { return xp(-dx); }
+  inline SpecificInd xm(int dx = 1) const { return xp(-dx); }
   /// The index one point +1 in y
-  const inline SpecificInd yp(int dy = 1) const {
+  inline SpecificInd yp(int dy = 1) const {
 #if CHECK >= 4
     if (y() + dy < 0 or y() + dy >= ny) {
       throw BoutException("Offset in y ({:d}) would go out of bounds at {:d}", dy, ind);
@@ -289,12 +289,12 @@ struct SpecificInd {
     return {ind + (dy * nz), ny, nz};
   }
   /// The index one point -1 in y
-  const inline SpecificInd ym(int dy = 1) const { return yp(-dy); }
+  inline SpecificInd ym(int dy = 1) const { return yp(-dy); }
   /// The index one point +1 in z. Wraps around zend to zstart
   /// An alternative, non-branching calculation is :
   /// ind + dz - nz * ((ind + dz) / nz  - ind / nz)
   /// but this appears no faster (and perhaps slower).
-  const inline SpecificInd zp(int dz = 1) const {
+  inline SpecificInd zp(int dz = 1) const {
     ASSERT3(dz >= 0);
     dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
     return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz};
@@ -303,22 +303,22 @@ struct SpecificInd {
   /// An alternative, non-branching calculation is :
   /// ind - dz + nz * ( (nz + ind) / nz - (nz + ind - dz) / nz)
   /// but this appears no faster (and perhaps slower).
-  const inline SpecificInd zm(int dz = 1) const {
+  inline SpecificInd zm(int dz = 1) const {
     dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
     ASSERT3(dz >= 0);
     return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
   }
 
   // and for 2 cells
-  const inline SpecificInd xpp() const { return xp(2); }
-  const inline SpecificInd xmm() const { return xm(2); }
-  const inline SpecificInd ypp() const { return yp(2); }
-  const inline SpecificInd ymm() const { return ym(2); }
-  const inline SpecificInd zpp() const { return zp(2); }
-  const inline SpecificInd zmm() const { return zm(2); }
+  inline SpecificInd xpp() const { return xp(2); }
+  inline SpecificInd xmm() const { return xm(2); }
+  inline SpecificInd ypp() const { return yp(2); }
+  inline SpecificInd ymm() const { return ym(2); }
+  inline SpecificInd zpp() const { return zp(2); }
+  inline SpecificInd zmm() const { return zm(2); }
 
   /// Generic offset of \p index in multiple directions simultaneously
-  const inline SpecificInd offset(int dx, int dy, int dz) const {
+  inline SpecificInd offset(int dx, int dy, int dz) const {
     auto temp = (dz > 0) ? zp(dz) : zm(-dz);
     return temp.yp(dy).xp(dx);
   }
@@ -387,16 +387,16 @@ using Ind2D = SpecificInd<IND_TYPE::IND_2D>;
 using IndPerp = SpecificInd<IND_TYPE::IND_PERP>;
 
 /// Get string representation of Ind3D
-inline const std::string toString(const Ind3D& i) {
+inline std::string toString(const Ind3D& i) {
   return "(" + std::to_string(i.x()) + ", " + std::to_string(i.y()) + ", "
          + std::to_string(i.z()) + ")";
 }
 /// Get string representation of Ind2D
-inline const std::string toString(const Ind2D& i) {
+inline std::string toString(const Ind2D& i) {
   return "(" + std::to_string(i.x()) + ", " + std::to_string(i.y()) + ")";
 }
 /// Get string representation of IndPerp
-inline const std::string toString(const IndPerp& i) {
+inline std::string toString(const IndPerp& i) {
   return "(" + std::to_string(i.x()) + ", " + std::to_string(i.z()) + ")";
 }
 
