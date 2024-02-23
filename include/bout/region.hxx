@@ -798,15 +798,15 @@ public:
 
     auto minMaxSize = std::minmax_element(std::begin(blockSizes), std::end(blockSizes));
 
-    result.minBlockSize =
-        *(minMaxSize.first); //Note have to derefence to get actual value
-    result.numMinBlocks =
-        std::count(std::begin(blockSizes), std::end(blockSizes), result.minBlockSize);
+    // Note have to derefence to get actual value
+    result.minBlockSize = *(minMaxSize.first);
+    result.numMinBlocks = static_cast<int>(
+        std::count(std::begin(blockSizes), std::end(blockSizes), result.minBlockSize));
 
-    result.maxBlockSize =
-        *(minMaxSize.second); //Note have to derefence to get actual value
-    result.numMaxBlocks =
-        std::count(std::begin(blockSizes), std::end(blockSizes), result.maxBlockSize);
+    // Note have to derefence to get actual value
+    result.maxBlockSize = *(minMaxSize.second);
+    result.numMaxBlocks = static_cast<int>(
+        std::count(std::begin(blockSizes), std::end(blockSizes), result.maxBlockSize));
 
     result.maxImbalance = static_cast<BoutReal>(result.maxBlockSize)
                           / static_cast<BoutReal>(result.minBlockSize);
