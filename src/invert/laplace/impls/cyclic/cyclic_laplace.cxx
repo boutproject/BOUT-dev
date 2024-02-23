@@ -131,7 +131,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
   }
 
   if (dst) {
-    BOUT_OMP(parallel)
+    BOUT_OMP_PERF(parallel)
     {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>(
@@ -139,7 +139,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
       // Loop over X indices, including boundaries but not guard cells. (unless periodic
       // in x)
-      BOUT_OMP(for)
+      BOUT_OMP_PERF(for)
       for (int ix = xs; ix <= xe; ix++) {
         // Take DST in Z direction and put result in k1d
 
@@ -161,7 +161,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       // Get elements of the tridiagonal matrix
       // including boundary conditions
       BoutReal zlen = getUniform(coords->dz) * (localmesh->LocalNz - 3);
-      BOUT_OMP(for nowait)
+      BOUT_OMP_PERF(for nowait)
       for (int kz = 0; kz < nmode; kz++) {
         // wave number is 1/[rad]; DST has extra 2.
         BoutReal kwave = kz * 2.0 * PI / (2. * zlen);
@@ -181,14 +181,14 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     cr->solve(bcmplx, xcmplx);
 
     // FFT back to real space
-    BOUT_OMP(parallel)
+    BOUT_OMP_PERF(parallel)
     {
       /// Create a local thread-scope working array
 
       // ZFFT routine expects input of this length
       auto k1d = Array<dcomplex>(localmesh->LocalNz);
 
-      BOUT_OMP(for nowait)
+      BOUT_OMP_PERF(for nowait)
       for (int ix = xs; ix <= xe; ix++) {
         for (int kz = 0; kz < nmode; kz++) {
           k1d[kz] = xcmplx(kz, ix - xs);
@@ -206,7 +206,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     }
   } else {
     const BoutReal zlength = getUniform(coords->zlength());
-    BOUT_OMP(parallel)
+    BOUT_OMP_PERF(parallel)
     {
       /// Create a local thread-scope working array
       // ZFFT routine expects input of this length
@@ -214,7 +214,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
       // Loop over X indices, including boundaries but not guard
       // cells (unless periodic in x)
-      BOUT_OMP(for)
+      BOUT_OMP_PERF(for)
       for (int ix = xs; ix <= xe; ix++) {
         // Take FFT in Z direction, apply shift, and put result in k1d
 
@@ -235,7 +235,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
-      BOUT_OMP(for nowait)
+      BOUT_OMP_PERF(for nowait)
       for (int kz = 0; kz < nmode; kz++) {
         BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
         tridagMatrix(&a(kz, 0), &b(kz, 0), &c(kz, 0), &bcmplx(kz, 0), jy,
@@ -269,7 +269,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     }
 
     // FFT back to real space
-    BOUT_OMP(parallel)
+    BOUT_OMP_PERF(parallel)
     {
       /// Create a local thread-scope working array
       // ZFFT routine expects input of this length
@@ -277,7 +277,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
       const bool zero_DC = (global_flags & INVERT_ZERO_DC) != 0;
 
-      BOUT_OMP(for nowait)
+      BOUT_OMP_PERF(for nowait)
       for (int ix = xs; ix <= xe; ix++) {
         if (zero_DC) {
           k1d[0] = 0.;
@@ -358,7 +358,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
   auto bcmplx3D = Matrix<dcomplex>(nsys, nx);
 
   if (dst) {
-    BOUT_OMP(parallel)
+    BOUT_OMP_PERF(parallel)
     {
       /// Create a local thread-scope working array
       // ZFFT routine expects input of this length
@@ -366,7 +366,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
       // Loop over X and Y indices, including boundaries but not guard cells.
       // (unless periodic in x)
-      BOUT_OMP(for)
+      BOUT_OMP_PERF(for)
       for (int ind = 0; ind < nxny; ++ind) {
         // ind = (ix - xs)*(ye - ys + 1) + (iy - ys)
         int ix = xs + ind / ny;
@@ -393,7 +393,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       // Get elements of the tridiagonal matrix
       // including boundary conditions
       const BoutReal zlen = getUniform(coords->dz) * (localmesh->LocalNz - 3);
-      BOUT_OMP(for nowait)
+      BOUT_OMP_PERF(for nowait)
       for (int ind = 0; ind < nsys; ind++) {
         // ind = (iy - ys) * nmode + kz
         int iy = ys + ind / nmode;
@@ -417,13 +417,13 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     cr->solve(bcmplx3D, xcmplx3D);
 
     // FFT back to real space
-    BOUT_OMP(parallel)
+    BOUT_OMP_PERF(parallel)
     {
       /// Create a local thread-scope working array
       // ZFFT routine expects input of length LocalNz
       auto k1d = Array<dcomplex>(localmesh->LocalNz);
 
-      BOUT_OMP(for nowait)
+      BOUT_OMP_PERF(for nowait)
       for (int ind = 0; ind < nxny; ++ind) { // Loop over X and Y
         // ind = (ix - xs)*(ye - ys + 1) + (iy - ys)
         int ix = xs + ind / ny;
@@ -445,7 +445,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     }
   } else {
     const BoutReal zlength = getUniform(coords->zlength());
-    BOUT_OMP(parallel)
+    BOUT_OMP_PERF(parallel)
     {
       /// Create a local thread-scope working array
       // ZFFT routine expects input of this length
@@ -454,7 +454,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       // Loop over X and Y indices, including boundaries but not guard cells
       // (unless periodic in x)
 
-      BOUT_OMP(for)
+      BOUT_OMP_PERF(for)
       for (int ind = 0; ind < nxny; ++ind) {
         // ind = (ix - xs)*(ye - ys + 1) + (iy - ys)
         int ix = xs + ind / ny;
@@ -480,7 +480,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
-      BOUT_OMP(for nowait)
+      BOUT_OMP_PERF(for nowait)
       for (int ind = 0; ind < nsys; ind++) {
         // ind = (iy - ys) * nmode + kz
         int iy = ys + ind / nmode;
@@ -524,7 +524,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     }
 
     // FFT back to real space
-    BOUT_OMP(parallel)
+    BOUT_OMP_PERF(parallel)
     {
       /// Create a local thread-scope working array
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
@@ -532,7 +532,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
       const bool zero_DC = (global_flags & INVERT_ZERO_DC) != 0;
 
-      BOUT_OMP(for nowait)
+      BOUT_OMP_PERF(for nowait)
       for (int ind = 0; ind < nxny; ++ind) { // Loop over X and Y
         // ind = (ix - xs)*(ye - ys + 1) + (iy - ys)
         int ix = xs + ind / ny;
