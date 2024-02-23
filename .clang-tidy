@@ -9,7 +9,7 @@ CheckOptions:
   - key:             readability-identifier-length.IgnoredVariableNames
     value:           '^[dn]?[xyz]$'
   - key:             readability-identifier-length.IgnoredParameterNames
-    value:           '^[fijkxyz][01xyz]?$'
+    value:           '^[dfijknxyz][01xyz]?$'
   - key:             readability-identifier-length.IgnoredLoopCounterNames
     value:           '^[ijkxyz_]$'
 
