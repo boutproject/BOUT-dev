@@ -366,7 +366,7 @@ else()
   set(BOUT_GENERATE_FIELDOPS_DEFAULT OFF)
 endif()
 
-execute_process(COMMAND ${Python3_EXECUTABLE} -c "import zoidberg"
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import importlib.util ; import sys; sys.exit(importlib.util.find_spec(\"zoidberg\") is None)"
   RESULT_VARIABLE zoidberg_FOUND)
 if (zoidberg_FOUND EQUAL 0)
   set(zoidberg_FOUND ON)
