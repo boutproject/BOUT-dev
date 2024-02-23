@@ -767,8 +767,8 @@ public:
     //   globalPos = (index/period) * period; // Find which period block we're in
     //   newIndex = globalPos + localPos;
     for (unsigned int i = 0; i < newInd.size(); i++) {
-      int index = newInd[i].ind;
-      int whichBlock = index / period;
+      const int index = newInd[i].ind;
+      const int whichBlock = index / period;
       newInd[i].ind = ((index + shift) % period) + period * whichBlock;
     };
 
