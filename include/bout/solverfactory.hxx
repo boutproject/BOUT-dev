@@ -1,5 +1,5 @@
-#ifndef __SOLVER_FACTORY_H__
-#define __SOLVER_FACTORY_H__
+#ifndef BOUT_SOLVER_FACTORY_H
+#define BOUT_SOLVER_FACTORY_H
 
 #ifndef _MSC_VER
 #warning("Deprecated header: use #include <bout/solver.hxx> instead")
@@ -9,4 +9,4 @@
 
 #include <bout/solver.hxx>
 
-#endif // __SOLVER_FACTORY_H__
+#endif // BOUT_SOLVER_FACTORY_H

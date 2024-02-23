@@ -30,8 +30,8 @@
  *
  **************************************************************************/
 
-#ifndef __COORDINATES_H__
-#define __COORDINATES_H__
+#ifndef BOUT_COORDINATES_H
+#define BOUT_COORDINATES_H
 
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
@@ -262,4 +262,4 @@ private:
 };
 */
 
-#endif // __COORDINATES_H__
+#endif // BOUT_COORDINATES_H

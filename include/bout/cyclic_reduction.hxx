@@ -38,8 +38,8 @@
  *
  ************************************************************************/
 
-#ifndef __CYCLIC_REDUCE_H__
-#define __CYCLIC_REDUCE_H__
+#ifndef BOUT_CYCLIC_REDUCE_H
+#define BOUT_CYCLIC_REDUCE_H
 
 #ifdef DIAGNOSE
 #undef DIAGNOSE
@@ -640,4 +640,4 @@ private:
   }
 };
 
-#endif // __CYCLIC_REDUCE_H__
+#endif // BOUT_CYCLIC_REDUCE_H

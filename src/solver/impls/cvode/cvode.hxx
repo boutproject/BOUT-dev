@@ -25,8 +25,8 @@
  *
  **************************************************************************/
 
-#ifndef __SUNDIAL_SOLVER_H__
-#define __SUNDIAL_SOLVER_H__
+#ifndef BOUT_SUNDIAL_SOLVER_H
+#define BOUT_SUNDIAL_SOLVER_H
 
 #include "bout/build_config.hxx"
 #include "bout/solver.hxx"
@@ -157,4 +157,4 @@ private:
 };
 
 #endif // BOUT_HAS_CVODE
-#endif // __SUNDIAL_SOLVER_H__
+#endif // BOUT_SUNDIAL_SOLVER_H

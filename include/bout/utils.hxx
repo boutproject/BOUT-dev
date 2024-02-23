@@ -26,8 +26,8 @@
  *
  **************************************************************************/
 
-#ifndef __UTILS_H__
-#define __UTILS_H__
+#ifndef BOUT_UTILS_H
+#define BOUT_UTILS_H
 
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
@@ -712,4 +712,4 @@ inline bool flagSet(int bitset, int flag) { return (bitset & flag) != 0; }
 } // namespace utils
 } // namespace bout
 
-#endif // __UTILS_H__
+#endif // BOUT_UTILS_H

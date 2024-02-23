@@ -39,8 +39,8 @@
 /// because an Ind2D essentially doesn't keep track of the
 /// z-dimension.
 
-#ifndef __REGION_H__
-#define __REGION_H__
+#ifndef BOUT_REGION_H
+#define BOUT_REGION_H
 
 #include <algorithm>
 #include <ostream>
@@ -979,4 +979,4 @@ unsigned int size(const Region<T>& region) {
   return region.size();
 }
 
-#endif /* __REGION_H__ */
+#endif /* BOUT_REGION_H */
