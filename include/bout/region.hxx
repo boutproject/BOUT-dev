@@ -57,6 +57,8 @@
 
 class BoutMask;
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
+
 /// The MAXREGIONBLOCKSIZE value can be tuned to try to optimise
 /// performance on specific hardware. It determines what the largest
 /// contiguous block size can be. As we hope the compiler will vectorise
@@ -135,6 +137,7 @@ class BoutMask;
 
 #define BOUT_FOR_INNER(index, region) \
   BOUT_FOR_OMP(index, region, for schedule(BOUT_OPENMP_SCHEDULE) nowait)
+// NOLINTEND(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 
 enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };
 
@@ -569,6 +572,7 @@ public:
 
   // We need to first set the blocks, and only after that call getRegionIndices.
   // Do not put in the member initialisation
+  // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
   Region(ContiguousBlocks& blocks) : blocks(blocks) { indices = getRegionIndices(); };
 
   bool operator==(const Region<T>& other) const {
