@@ -44,13 +44,17 @@
 
 #include <algorithm>
 #include <ostream>
+#include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
-#include "bout/openmpwrap.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/build_defines.hxx"
+#include "bout/openmpwrap.hxx" // IWYU pragma: keep
+
 class BoutMask;
 
 /// The MAXREGIONBLOCKSIZE value can be tuned to try to optimise
