@@ -1,5 +1,5 @@
-#ifndef __PAR_BNDRY_OP_H__
-#define __PAR_BNDRY_OP_H__
+#ifndef BOUT_PAR_BNDRY_OP_H
+#define BOUT_PAR_BNDRY_OP_H
 
 #include "bout/boundary_op.hxx"
 #include "bout/bout_types.hxx"
@@ -136,4 +136,4 @@ public:
   void apply(Field3D& f, BoutReal t) override;
 };
 
-#endif // __PAR_BNDRY_OP_H__
+#endif // BOUT_PAR_BNDRY_OP_H

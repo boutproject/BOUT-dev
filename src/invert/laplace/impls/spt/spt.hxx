@@ -38,8 +38,8 @@
 
 class LaplaceSPT;
 
-#ifndef __SPT_H__
-#define __SPT_H__
+#ifndef BOUT_SPT_H
+#define BOUT_SPT_H
 
 #include <bout/dcomplex.hxx>
 #include <bout/invert_laplace.hxx>
@@ -159,4 +159,4 @@ namespace {
 RegisterLaplace<LaplaceSPT> registerlaplacespt(LAPLACE_SPT);
 } // namespace
 
-#endif // __SPT_H__
+#endif // BOUT_SPT_H

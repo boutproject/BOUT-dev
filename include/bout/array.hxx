@@ -23,8 +23,8 @@
  *     o Added Umpire support, in multiple iterations/variations
  */
 
-#ifndef __ARRAY_H__
-#define __ARRAY_H__
+#ifndef BOUT_ARRAY_H
+#define BOUT_ARRAY_H
 
 #include <algorithm>
 #include <map>
@@ -486,4 +486,4 @@ bool operator==(const Array<T, B1>& lhs, const Array<T, B2>& rhs) {
   return std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
-#endif // __ARRAY_H__
+#endif // BOUT_ARRAY_H

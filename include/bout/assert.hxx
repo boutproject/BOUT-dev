@@ -14,8 +14,8 @@
  * 
  */
 
-#ifndef __BOUT_ASSERT_H__
-#define __BOUT_ASSERT_H__
+#ifndef BOUT_ASSERT_H
+#define BOUT_ASSERT_H
 
 #include "bout/boutexception.hxx"
 
@@ -65,4 +65,4 @@
 #define ASSERT3(condition)
 #endif
 
-#endif // __BOUT_ASSERT_H__
+#endif // BOUT_ASSERT_H

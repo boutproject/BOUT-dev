@@ -31,8 +31,8 @@
 
 class Laplacian;
 
-#ifndef __LAPLACE_H__
-#define __LAPLACE_H__
+#ifndef BOUT_LAPLACE_H
+#define BOUT_LAPLACE_H
 
 #include "bout/build_config.hxx"
 
@@ -374,4 +374,4 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex& a, dcomplex& b, dcom
                           const Field2D* ccoef = nullptr, const Field2D* d = nullptr,
                           CELL_LOC loc = CELL_DEFAULT);
 
-#endif // __LAPLACE_H__
+#endif // BOUT_LAPLACE_H

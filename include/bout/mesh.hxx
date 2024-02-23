@@ -40,8 +40,8 @@
 
 class Mesh;
 
-#ifndef __MESH_H__
-#define __MESH_H__
+#ifndef BOUT_MESH_H
+#define BOUT_MESH_H
 
 #include "mpi.h"
 
@@ -853,4 +853,4 @@ Mesh::getRegion<FieldPerp>(const std::string& region_name) const {
   return getRegionPerp(region_name);
 }
 
-#endif // __MESH_H__
+#endif // BOUT_MESH_H

@@ -39,8 +39,8 @@
  *
  ************************************************************************/
 
-#ifndef __INV_PAR_CR_H__
-#define __INV_PAR_CR_H__
+#ifndef BOUT_INV_PAR_CR_H
+#define BOUT_INV_PAR_CR_H
 
 #include "bout/build_config.hxx"
 #include "bout/invert_parderiv.hxx"
@@ -110,4 +110,4 @@ RegisterInvertPar<InvertParCR> registerinvertparcyclic{PARDERIVCYCLIC};
 
 #endif // BOUT_USE_METRIC_3D
 
-#endif // __INV_PAR_CR_H__
+#endif // BOUT_INV_PAR_CR_H
