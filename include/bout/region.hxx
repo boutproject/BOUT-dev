@@ -578,9 +578,6 @@ public:
     return std::equal(this->begin(), this->end(), other.begin(), other.end());
   }
 
-  /// Destructor
-  ~Region() = default;
-
   /// Expose the iterator over indices for use in range-based
   /// for-loops or with STL algorithms, etc.
   ///
