@@ -380,16 +380,14 @@ to read and write this high-performance parallel file format.
 Bundled Dependencies
 ~~~~~~~~~~~~~~~~~~~~
 
-BOUT++ bundles some dependencies, currently `mpark.variant
-<https://github.com/mpark/variant>`_, `fmt <https://fmt.dev>`_ and
-`googletest <https://github.com/google/googletest>`_. If you wish to
-use an existing installation of ``mpark.variant``, you can set
-``-DBOUT_USE_SYSTEM_MPARK_VARIANT=ON``, and supply the installation
-path using ``mpark_variant_ROOT`` via the command line or environment
-variable if it is installed in a non standard loction. Similarly for
-``fmt``, using ``-DBOUT_USE_SYSTEM_FMT=ON`` and ``fmt_ROOT``
-respectively. To turn off both, you can set
-``-DBOUT_USE_GIT_SUBMODULE=OFF``.
+BOUT++ bundles some dependencies, currently `fmt <https://fmt.dev>`_
+and `googletest <https://github.com/google/googletest>`_. If you wish
+to use an existing installation of ``fmt``, you can set
+``-DBOUT_USE_SYSTEM_FMT=ON``, and supply the installation path using
+``fmt_ROOT`` via the command line or environment variable if it is
+installed in a non standard location. It's also possible to turn off
+all bundled dependencies with ``-DBOUT_USE_GIT_SUBMODULE=OFF``
+(currently this just affects ``fmt``).
 
 The recommended way to use ``googletest`` is to compile it at the same
 time as your project, therefore there is no option to use an external

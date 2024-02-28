@@ -39,9 +39,6 @@ for k, v in config.items():
             "${BOUT_INCLUDE_PATH}", "@BOUT_INCLUDE_PATH@"
         )
         .replace(
-            "${MPARK_VARIANT_INCLUDE_PATH}", "@MPARK_VARIANT_INCLUDE_PATH@"
-        )
-        .replace(
             "${FMT_INCLUDE_PATH}", "@FMT_INCLUDE_PATH@"
         )
     )

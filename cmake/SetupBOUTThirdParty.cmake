@@ -94,26 +94,6 @@ endif()
 message(STATUS "PETSc support: ${BOUT_USE_PETSC}")
 set(BOUT_HAS_PETSC ${BOUT_USE_PETSC})
 
-
-cmake_dependent_option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF
-  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS ${PROJECT_SOURCE_DIR}/externalpackages/mpark.variant/CMakeLists.txt" ON)
-
-if(BOUT_USE_SYSTEM_MPARK_VARIANT)
-  message(STATUS "Using external mpark.variant")
-  find_package(mpark_variant REQUIRED)
-  get_target_property(MPARK_VARIANT_INCLUDE_PATH mpark_variant INTERFACE_INCLUDE_DIRECTORIES)
-else()
-  message(STATUS "Using mpark.variant submodule")
-  bout_update_submodules()
-  add_subdirectory(externalpackages/mpark.variant)
-  if(NOT TARGET mpark_variant)
-    message(FATAL_ERROR "mpark_variant not found! Have you disabled the git submodules (BOUT_UPDATE_GIT_SUBMODULE)?")
-  endif()
-  set(MPARK_VARIANT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externalpackages/mpark.variant/include")
-  set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${MPARK_VARIANT_INCLUDE_PATH}")
-endif()
-target_link_libraries(bout++ PUBLIC mpark_variant)
-
 cmake_dependent_option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" OFF
   "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS ${PROJECT_SOURCE_DIR}/externalpackages/fmt/CMakeLists.txt" ON)
 

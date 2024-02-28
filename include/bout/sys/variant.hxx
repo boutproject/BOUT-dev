@@ -18,10 +18,7 @@
 #ifndef __VARIANT_HXX__
 #define __VARIANT_HXX__
 
-// std::variant added in C++17
-//#include <variant>
-
-#include "mpark/variant.hpp"
+#include <variant>
 
 #include "bout/utils.hxx"
 
@@ -30,16 +27,10 @@ namespace utils {
 
 /// Import variant, visit into bout::utils namespace
 
-// From C++17
-// using std::variant;
-// using std::visit;
-// using std::holds_alternative;
-// using std::get;
-
-using mpark::get;
-using mpark::holds_alternative;
-using mpark::variant;
-using mpark::visit;
+using std::get;
+using std::holds_alternative;
+using std::variant;
+using std::visit;
 
 ////////////////////////////////////////////////////////////
 // Variant comparison
@@ -73,15 +64,6 @@ struct IsEqual {
   }
 };
 
-/// Backport of std::disjunction
-template <class...>
-struct disjunction : std::false_type {};
-template <class B1>
-struct disjunction<B1> : B1 {};
-template <class B1, class... Bn>
-struct disjunction<B1, Bn...>
-    : std::conditional_t<bool(B1::value), B1, disjunction<Bn...>> {};
-
 } // namespace details
 
 template <typename T, typename VARIANT_T>
@@ -90,7 +72,7 @@ struct isVariantMember;
 /// Is type `T` a member of variant `variant<ALL_T>`?
 template <typename T, typename... ALL_T>
 struct isVariantMember<T, variant<ALL_T...>>
-    : public details::disjunction<std::is_same<T, ALL_T>...> {};
+    : public std::disjunction<std::is_same<T, ALL_T>...> {};
 
 /// Return true only if the given variant \p v
 /// has the same type and value as \p t
