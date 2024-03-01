@@ -1,11 +1,9 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/msg_stack.hxx>
-#include <bout/output.hxx>
 #include <bout/utils.hxx>
-#include <iostream>
 #include <mpi.h>
 
 #if BOUT_USE_BACKTRACE
@@ -13,9 +11,15 @@
 #include <execinfo.h>
 #endif
 
+#include <array>
 #include <cstdlib>
+#include <string>
 
 #include <fmt/format.h>
+
+namespace {
+const std::string header{"====== Exception thrown ======\n"};
+}
 
 void BoutParallelThrowRhsFail(int status, const char* message) {
   int allstatus;
@@ -39,7 +43,8 @@ BoutException::~BoutException() {
   // just clear everything
   msg_stack.clear();
 #if BOUT_USE_BACKTRACE
-  free(messages);
+  // Call required for memory allocated by `backtrace_symbols`
+  free(messages); // NOLINT
 #endif
 }
 
@@ -74,18 +79,15 @@ std::string BoutException::getBacktrace() const {
     const auto syscom = fmt::format(
         FMT_STRING("addr2line {:p} -Cfpie {:.{}s} 2> /dev/null"), ptr, messages[i], p);
     // last parameter is the file name of the symbol
-    FILE* fp = popen(syscom.c_str(), "r");
-    if (fp != nullptr) {
-      char out[1024];
-      char* retstr;
+    FILE* file = popen(syscom.c_str(), "r");
+    if (file != nullptr) {
+      std::array<char, 1024> out{};
+      char* retstr = nullptr;
       std::string buf;
-      do {
-        retstr = fgets(out, sizeof(out) - 1, fp);
-        if (retstr != nullptr) {
-          buf += retstr;
-        }
-      } while (retstr != nullptr);
-      int status = pclose(fp);
+      while ((retstr = fgets(out.data(), out.size() - 1, file)) != nullptr) {
+        buf += retstr;
+      }
+      int const status = pclose(file);
       if (status == 0) {
         backtrace_message += buf;
       }
@@ -100,7 +102,7 @@ std::string BoutException::getBacktrace() const {
 
 void BoutException::makeBacktrace() {
 #if BOUT_USE_BACKTRACE
-  trace_size = backtrace(trace, TRACE_MAX);
-  messages = backtrace_symbols(trace, trace_size);
+  trace_size = backtrace(trace.data(), TRACE_MAX);
+  messages = backtrace_symbols(trace.data(), trace_size);
 #endif
 }

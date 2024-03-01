@@ -112,7 +112,8 @@ constexpr auto CV_NEWTON = 0;
 #endif
 
 #if SUNDIALS_VERSION_MAJOR >= 3
-void* CVodeCreate(int lmm, MAYBE_UNUSED(int iter), MAYBE_UNUSED(SUNContext context)) {
+void* CVodeCreate(int lmm, [[maybe_unused]] int iter,
+                  [[maybe_unused]] SUNContext context) {
 #if SUNDIALS_VERSION_MAJOR == 3
   return CVodeCreate(lmm, iter);
 #elif SUNDIALS_VERSION_MAJOR == 4 || SUNDIALS_VERSION_MAJOR == 5
@@ -289,7 +290,7 @@ int CvodeSolver::init() {
     f2dtols.reserve(f2d.size());
     std::transform(begin(f2d), end(f2d), std::back_inserter(f2dtols),
                    [this](const VarStr<Field2D>& f2) {
-                     auto f2_options = Options::root()[f2.name];
+                     auto& f2_options = Options::root()[f2.name];
                      const auto wrong_name = f2_options.isSet("abstol");
                      if (wrong_name) {
                        output_warn << "WARNING: Option 'abstol' for field " << f2.name
@@ -484,7 +485,7 @@ CvodeSolver::create_constraints(const std::vector<VarStr<FieldType>>& fields) {
   constraints.reserve(fields.size());
   std::transform(begin(fields), end(fields), std::back_inserter(constraints),
                  [](const VarStr<FieldType>& f) {
-                   auto f_options = Options::root()[f.name];
+                   auto& f_options = Options::root()[f.name];
                    const auto value =
                        f_options["positivity_constraint"]
                            .doc(fmt::format("Constraint to apply to {} if "

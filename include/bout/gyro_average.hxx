@@ -29,8 +29,8 @@
  *
  **************************************************************/
 
-#ifndef __GYRO_AVERAGE_H__
-#define __GYRO_AVERAGE_H__
+#ifndef BOUT_GYRO_AVERAGE_H
+#define BOUT_GYRO_AVERAGE_H
 
 #include "bout/field3d.hxx"
 #include "bout/invert_laplace.hxx"
@@ -123,4 +123,4 @@ Field3D gyroPade2(const Field3D& f, const Field2D& rho,
 Field3D gyroPade2(const Field3D& f, BoutReal rho, int inner_boundary_flags = GYRO_FLAGS,
                   int outer_boundary_flags = GYRO_FLAGS);
 
-#endif // __GYRO_AVERAGE_H__
+#endif // BOUT_GYRO_AVERAGE_H

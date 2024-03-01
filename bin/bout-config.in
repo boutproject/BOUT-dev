@@ -123,6 +123,7 @@ all()
         echo "  --has-slepc   -> $has_slepc"
         echo "  --has-arkode  -> $has_arkode"
         echo "  --has-nls     -> $has_nls"
+        echo "  --has-openmp  -> $has_openmp"
         echo
         echo "  --petsc-has-sundials -> $petsc_has_sundials"
         echo

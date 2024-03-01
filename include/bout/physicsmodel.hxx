@@ -34,8 +34,8 @@
 
 class PhysicsModel;
 
-#ifndef __PHYSICS_MODEL_H__
-#define __PHYSICS_MODEL_H__
+#ifndef BOUT_PHYSICS_MODEL_H
+#define BOUT_PHYSICS_MODEL_H
 
 #include "solver.hxx"
 #include "bout/bout.hxx"
@@ -127,11 +127,11 @@ public:
   using preconfunc = int (PhysicsModel::*)(BoutReal t, BoutReal gamma, BoutReal delta);
   using jacobianfunc = int (PhysicsModel::*)(BoutReal t);
 
-  template <class Model, typename = typename std::enable_if_t<
-                             std::is_base_of<PhysicsModel, Model>::value>>
+  template <class Model,
+            typename = std::enable_if_t<std::is_base_of_v<PhysicsModel, Model>>>
   using ModelPreconFunc = int (Model::*)(BoutReal t, BoutReal gamma, BoutReal delta);
-  template <class Model, typename = typename std::enable_if_t<
-                             std::is_base_of<PhysicsModel, Model>::value>>
+  template <class Model,
+            typename = std::enable_if_t<std::is_base_of_v<PhysicsModel, Model>>>
   using ModelJacobianFunc = int (Model::*)(BoutReal t);
 
   PhysicsModel();
@@ -565,4 +565,4 @@ private:
 #define SAVE_REPEAT(...) \
   { MACRO_FOR_EACH(SAVE_REPEAT1, __VA_ARGS__) }
 
-#endif // __PHYSICS_MODEL_H__
+#endif // BOUT_PHYSICS_MODEL_H

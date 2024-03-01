@@ -26,8 +26,8 @@
 class Output;
 
 #pragma once
-#ifndef __OUTPUT_H__
-#define __OUTPUT_H__
+#ifndef BOUT_OUTPUT_H
+#define BOUT_OUTPUT_H
 
 #include "bout/multiostream.hxx"
 #include <fstream>
@@ -37,7 +37,6 @@ class Output;
 
 #include "bout/assert.hxx"
 #include "bout/boutexception.hxx"
-#include "bout/format.hxx"
 #include "bout/sys/gettext.hxx" // for gettext _() macro
 #include "bout/unused.hxx"
 
@@ -143,7 +142,7 @@ public:
   void print([[maybe_unused]] const std::string& message) override{};
   void enable() override{};
   void disable() override{};
-  void enable(MAYBE_UNUSED(bool enable)){};
+  void enable([[maybe_unused]] bool enable){};
   bool isEnabled() override { return false; }
 };
 
@@ -304,4 +303,4 @@ extern ConditionalOutput output_verbose;  ///< less interesting messages
 /// Generic output, given the same level as output_progress
 extern ConditionalOutput output;
 
-#endif // __OUTPUT_H__
+#endif // BOUT_OUTPUT_H

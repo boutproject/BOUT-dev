@@ -37,32 +37,15 @@ public:
 
   FieldFactory factory;
 
-  // We can't just decide which FieldFactory::create?D function to
-  // call with
-  //
-  //     if (bout::utils::is_Field3D<T>::value) {
-  //       return factory.create3D(...);
-  //     } else {
-  //       return factory.create2D(...);
-  //     }
-  //
-  // as this is *runtime* so the compiler still needs to evaluate both
-  // branches -- until C++17 when we can use `if constexpr ...`
-  template <class... Args>
-  T createDispatch(std::true_type, Args&&... args) {
-    return factory.create3D(std::forward<Args>(args)...);
-  }
-
-  template <class... Args>
-  T createDispatch(std::false_type, Args&&... args) {
-    return factory.create2D(std::forward<Args>(args)...);
-  }
-
   // Generic way of calling either FieldFactory::create2D or
   // FieldFactory::create3D
   template <class... Args>
   T create(Args&&... args) {
-    return createDispatch(bout::utils::is_Field3D<T>{}, std::forward<Args>(args)...);
+    if constexpr (bout::utils::is_Field3D_v<T>) {
+      return factory.create3D(std::forward<Args>(args)...);
+    } else {
+      return factory.create2D(std::forward<Args>(args)...);
+    }
   }
 };
 
@@ -227,7 +210,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateZStaggered) {
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
         auto offset = BoutReal{0.0};
-        if (bout::utils::is_Field3D<TypeParam>::value) {
+        if constexpr (bout::utils::is_Field3D_v<TypeParam>) {
           offset = 0.5;
         }
 

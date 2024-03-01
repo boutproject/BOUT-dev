@@ -27,8 +27,8 @@
  *
  **************************************************************************/
 
-#ifndef __OPERATORSTENCIL_H__
-#define __OPERATORSTENCIL_H__
+#ifndef BOUT_OPERATORSTENCIL_H
+#define BOUT_OPERATORSTENCIL_H
 
 #include <algorithm>
 #include <functional>
@@ -45,9 +45,9 @@
 /// subtracted from them.
 template <class T>
 struct IndexOffset {
-  static_assert(std::is_same<T, Ind3D>::value || std::is_same<T, Ind2D>::value
-                    || std::is_same<T, IndPerp>::value,
-                "IndexOffset only works with SpecificInd types");
+  static_assert(
+      std::is_same_v<T, Ind3D> || std::is_same_v<T, Ind2D> || std::is_same_v<T, IndPerp>,
+      "IndexOffset only works with SpecificInd types");
   int dx = 0, dy = 0, dz = 0;
 
   const inline IndexOffset xp(int delta_x = 1) const { return {dx + delta_x, dy, dz}; }
@@ -133,9 +133,9 @@ using OffsetIndPerp = IndexOffset<IndPerp>;
 template <class T>
 class OperatorStencil {
 public:
-  static_assert(std::is_same<T, Ind3D>::value || std::is_same<T, Ind2D>::value
-                    || std::is_same<T, IndPerp>::value,
-                "OperatorStencil only works with SpecificInd types");
+  static_assert(
+      std::is_same_v<T, Ind3D> || std::is_same_v<T, Ind2D> || std::is_same_v<T, IndPerp>,
+      "OperatorStencil only works with SpecificInd types");
   using offset = IndexOffset<T>;
   using stencil_part = std::vector<offset>;
   using stencil_test = std::function<bool(T)>;
@@ -246,7 +246,7 @@ OperatorStencil<T> squareStencil(Mesh* localmesh) {
       zero.xp(),
       zero.xm(),
   };
-  if (!std::is_same<T, IndPerp>::value) {
+  if constexpr (!std::is_same_v<T, IndPerp>) {
     offsets.insert(zero.yp());
     offsets.insert(zero.ym());
     offsets.insert(zero.xp().yp());
@@ -254,7 +254,7 @@ OperatorStencil<T> squareStencil(Mesh* localmesh) {
     offsets.insert(zero.xm().yp());
     offsets.insert(zero.xm().ym());
   }
-  if (!std::is_same<T, Ind2D>::value) {
+  if constexpr (!std::is_same_v<T, Ind2D>) {
     offsets.insert(zero.zp());
     offsets.insert(zero.zm());
     offsets.insert(zero.xp().zp());
@@ -262,7 +262,7 @@ OperatorStencil<T> squareStencil(Mesh* localmesh) {
     offsets.insert(zero.xm().zp());
     offsets.insert(zero.xm().zm());
   }
-  if (std::is_same<T, Ind3D>::value) {
+  if constexpr (std::is_same_v<T, Ind3D>) {
     offsets.insert(zero.yp().zp());
     offsets.insert(zero.yp().zm());
     offsets.insert(zero.ym().zp());
@@ -271,11 +271,14 @@ OperatorStencil<T> squareStencil(Mesh* localmesh) {
   std::vector<IndexOffset<T>> offsetsVec(offsets.begin(), offsets.end());
   stencil.add(
       [localmesh](T ind) -> bool {
-        return (localmesh->xstart <= ind.x() && ind.x() <= localmesh->xend
-                && (std::is_same<T, IndPerp>::value
-                    || (localmesh->ystart <= ind.y() && ind.y() <= localmesh->yend))
-                && (std::is_same<T, Ind2D>::value
-                    || (localmesh->zstart <= ind.z() && ind.z() <= localmesh->zend)));
+        return (
+            localmesh->xstart <= ind.x() && ind.x() <= localmesh->xend
+            && (std::is_same_v<
+                    T,
+                    IndPerp> || (localmesh->ystart <= ind.y() && ind.y() <= localmesh->yend))
+            && (std::is_same_v<
+                    T,
+                    Ind2D> || (localmesh->zstart <= ind.z() && ind.z() <= localmesh->zend)));
       },
       offsetsVec);
   stencil.add([](T UNUSED(ind)) -> bool { return true; }, {zero});
@@ -294,26 +297,29 @@ OperatorStencil<T> starStencil(Mesh* localmesh) {
       zero.xp(),
       zero.xm(),
   };
-  if (!std::is_same<T, IndPerp>::value) {
+  if constexpr (!std::is_same_v<T, IndPerp>) {
     offsets.insert(zero.yp());
     offsets.insert(zero.ym());
   }
-  if (!std::is_same<T, Ind2D>::value) {
+  if constexpr (!std::is_same_v<T, Ind2D>) {
     offsets.insert(zero.zp());
     offsets.insert(zero.zm());
   }
   std::vector<IndexOffset<T>> offsetsVec(offsets.begin(), offsets.end());
   stencil.add(
       [localmesh](T ind) -> bool {
-        return (localmesh->xstart <= ind.x() && ind.x() <= localmesh->xend
-                && (std::is_same<T, IndPerp>::value
-                    || (localmesh->ystart <= ind.y() && ind.y() <= localmesh->yend))
-                && (std::is_same<T, Ind2D>::value
-                    || (localmesh->zstart <= ind.z() && ind.z() <= localmesh->zend)));
+        return (
+            localmesh->xstart <= ind.x() && ind.x() <= localmesh->xend
+            && (std::is_same_v<
+                    T,
+                    IndPerp> || (localmesh->ystart <= ind.y() && ind.y() <= localmesh->yend))
+            && (std::is_same_v<
+                    T,
+                    Ind2D> || (localmesh->zstart <= ind.z() && ind.z() <= localmesh->zend)));
       },
       offsetsVec);
   stencil.add([](T UNUSED(ind)) -> bool { return true; }, {zero});
   return stencil;
 }
 
-#endif // __OPERATORSTENCIL_H__
+#endif // BOUT_OPERATORSTENCIL_H

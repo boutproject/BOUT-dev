@@ -25,8 +25,8 @@
 
 class FieldPerp;
 
-#ifndef __FIELDPERP_H__
-#define __FIELDPERP_H__
+#ifndef BOUT_FIELDPERP_H
+#define BOUT_FIELDPERP_H
 
 #include "bout/field.hxx"
 

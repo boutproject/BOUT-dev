@@ -756,11 +756,6 @@ void Mesh::recalculateStaggeredCoordinates() {
   }
 }
 
-constexpr decltype(MeshFactory::type_name) MeshFactory::type_name;
-constexpr decltype(MeshFactory::section_name) MeshFactory::section_name;
-constexpr decltype(MeshFactory::option_name) MeshFactory::option_name;
-constexpr decltype(MeshFactory::default_type) MeshFactory::default_type;
-
 std::optional<size_t> Mesh::getCommonRegion(std::optional<size_t> lhs,
                                             std::optional<size_t> rhs) {
   if (!lhs.has_value()) {
@@ -806,12 +801,12 @@ std::optional<size_t> Mesh::getCommonRegion(std::optional<size_t> lhs,
    */
   const size_t pos = (high * (high - 1)) / 2 + low;
   if (region3Dintersect.size() <= pos) {
-    BOUT_OMP(critical(mesh_intersection_realloc))
+    BOUT_OMP_SAFE(critical(mesh_intersection_realloc))
     // By default this function does not need the mutex, however, if we are
     // going to allocate global memory, we need to use a mutex.
     // Now that we have the mutex, we need to check again whether a
     // different thread was faster and already allocated.
-    // BOUT_OMP(single) would work in most cases, but it would fail if the
+    // BOUT_OMP_SAFE(single) would work in most cases, but it would fail if the
     // function is called in parallel with different arguments. While BOUT++
     // is not currently doing it, other openmp parallised projects might be
     // calling BOUT++ in this way.
@@ -826,7 +821,7 @@ std::optional<size_t> Mesh::getCommonRegion(std::optional<size_t> lhs,
     return region3Dintersect[pos];
   }
   {
-    BOUT_OMP(critical(mesh_intersection))
+    BOUT_OMP_SAFE(critical(mesh_intersection))
     // See comment above why we need to check again in case of OpenMP
 #if BOUT_USE_OPENMP
     if (!region3Dintersect[pos].has_value())
