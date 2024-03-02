@@ -1440,7 +1440,7 @@ protected:
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           // Zero-gradient potential
-          BoutReal phisheath = phi_fa(r.ind, mesh->ystart, jz);
+          BoutReal const phisheath = phi_fa(r.ind, mesh->ystart, jz);
 
           BoutReal jsheath = -(sqrt(mi_me) / (2. * sqrt(PI))) * phisheath;
 
@@ -1461,7 +1461,7 @@ protected:
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           // Zero-gradient potential
-          BoutReal phisheath = phi_fa(r.ind, mesh->yend, jz);
+          BoutReal const phisheath = phi_fa(r.ind, mesh->yend, jz);
 
           BoutReal jsheath = (sqrt(mi_me) / (2. * sqrt(PI))) * phisheath;
 
