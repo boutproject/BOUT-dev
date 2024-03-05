@@ -702,14 +702,13 @@ Mesh::createDefaultCoordinates(const CELL_LOC location, bool recalculate_stagger
 
   if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
-    const std::shared_ptr<Coordinates>& new_coordinates =
-        std::make_shared<Coordinates>(this, options);
+    const auto new_coordinates = std::make_shared<Coordinates>(this, options);
     new_coordinates->recalculateAndReset(recalculate_staggered,
                                          force_interpolate_from_centre);
     return new_coordinates;
   }
   // Interpolate coordinates from CELL_CENTRE version
-  const std::shared_ptr<Coordinates>& new_coordinates =
+  const auto new_coordinates =
       std::make_shared<Coordinates>(this, options, location, getCoordinates(CELL_CENTRE),
                                     force_interpolate_from_centre);
   new_coordinates->recalculateAndReset(recalculate_staggered,
