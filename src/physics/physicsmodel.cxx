@@ -43,7 +43,7 @@
 using namespace std::literals;
 
 namespace bout {
-void DataFileFacade::add(const ValueType value, const std::string& name, bool save_repeat) {
+void DataFileFacade::add(ValueType value, const std::string& name, bool save_repeat) {
   data.emplace_back(name, value, save_repeat);
 }
 void DataFileFacade::add(Vector2D* value, const std::string& name, bool save_repeat) {

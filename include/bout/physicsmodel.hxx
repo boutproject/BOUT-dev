@@ -88,7 +88,7 @@ public:
 
   void addRepeat(ValueType value, const std::string& name) { add(value, name, true); }
   void addOnce(ValueType value, const std::string& name) { add(value, name, false); }
-  void add(const ValueType value, const std::string& name, bool save_repeat = false);
+  void add(ValueType value, const std::string& name, bool save_repeat = false);
   void add(Vector2D* value, const std::string& name, bool save_repeat = false);
   void add(Vector3D* value, const std::string& name, bool save_repeat = false);
 
