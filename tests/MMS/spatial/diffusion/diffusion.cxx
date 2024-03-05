@@ -46,7 +46,7 @@ protected:
     coords->setCovariantMetricTensor(covariant_metric_tensor);
 
     // Tell BOUT++ to solve N
-    SOLVE_FOR(N)
+    SOLVE_FOR(N);
 
     return 0;
   }

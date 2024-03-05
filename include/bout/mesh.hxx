@@ -618,8 +618,8 @@ public:
 
   std::shared_ptr<Coordinates>
   getCoordinatesSmart(const CELL_LOC location = CELL_CENTRE) {
-    ASSERT1(location != CELL_DEFAULT)
-    ASSERT1(location != CELL_VSHIFT)
+    ASSERT1(location != CELL_DEFAULT);
+    ASSERT1(location != CELL_VSHIFT);
 
     auto found = coords_map.find(location);
     if (found != coords_map.end()) {

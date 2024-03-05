@@ -43,8 +43,8 @@ protected:
     mesh->getCoordinates()->setDz(TWOPI * Lx / (mesh->LocalNz));
     /////
 
-    SOLVE_FOR2(n, vort)
-    SAVE_REPEAT(phi)
+    SOLVE_FOR2(n, vort);
+    SAVE_REPEAT(phi);
 
     phiSolver = Laplacian::create();
     phi = 0.; // Starting phi

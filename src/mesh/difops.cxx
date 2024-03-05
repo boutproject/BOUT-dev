@@ -77,8 +77,8 @@ Field3D Grad_par(const Field3D& var, const std::string& method, CELL_LOC outloc)
 *******************************************************************************/
 
 Field3D Grad_parP(const Field3D& apar, const Field3D& f) {
-  ASSERT1_FIELDS_COMPATIBLE(apar, f)
-  ASSERT1(f.hasParallelSlices())
+  ASSERT1_FIELDS_COMPATIBLE(apar, f);
+  ASSERT1(f.hasParallelSlices());
 
   Mesh* mesh = apar.getMesh();
 
@@ -182,7 +182,7 @@ Field3D Grad_parP(const Field3D& apar, const Field3D& f) {
     }
   }
 
-  ASSERT2(result.getLocation() == f.getLocation())
+  ASSERT2(result.getLocation() == f.getLocation());
 
   return result;
 }
@@ -235,9 +235,9 @@ Field3D Div_par(const Field3D& f, const std::string& method, CELL_LOC outloc) {
 }
 
 Field3D Div_par(const Field3D& f, const Field3D& v) {
-  ASSERT1_FIELDS_COMPATIBLE(f, v)
-  ASSERT1(f.hasParallelSlices())
-  ASSERT1(v.hasParallelSlices())
+  ASSERT1_FIELDS_COMPATIBLE(f, v);
+  ASSERT1(f.hasParallelSlices());
+  ASSERT1(v.hasParallelSlices());
 
   // Parallel divergence, using velocities at cell boundaries
   // Note: Not guaranteed to be flux conservative
@@ -464,7 +464,7 @@ Coordinates::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
     outloc = A.getLocation();
   }
 
-  ASSERT1(phi.getMesh() == A.getMesh())
+  ASSERT1(phi.getMesh() == A.getMesh());
 
   Coordinates* metric = phi.getCoordinates(outloc);
 
@@ -480,7 +480,7 @@ Coordinates::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
   Coordinates::FieldMetric result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
   result /= metric->J() * sqrt(metric->g_22());
 
-  ASSERT1(result.getLocation() == outloc)
+  ASSERT1(result.getLocation() == outloc);
 
 #if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad(" + phi.name + "," + A.name + ")";
@@ -495,7 +495,7 @@ Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A, CELL_LOC outloc) 
     outloc = A.getLocation();
   }
 
-  ASSERT1(phi.getMesh() == A.getMesh())
+  ASSERT1(phi.getMesh() == A.getMesh());
 
   Mesh* mesh = phi.getMesh();
 
@@ -525,7 +525,7 @@ Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A, CELL_LOC outloc) 
   result.name = "b0xGrad_dot_Grad(" + phi.name + "," + A.name + ")";
 #endif
 
-  ASSERT2(result.getLocation() == outloc)
+  ASSERT2(result.getLocation() == outloc);
 
   return result;
 }
@@ -537,7 +537,7 @@ Field3D b0xGrad_dot_Grad(const Field3D& p, const Field2D& A, CELL_LOC outloc) {
     outloc = A.getLocation();
   }
 
-  ASSERT1(p.getMesh() == A.getMesh())
+  ASSERT1(p.getMesh() == A.getMesh());
 
   Coordinates* metric = p.getCoordinates(outloc);
 
@@ -560,7 +560,7 @@ Field3D b0xGrad_dot_Grad(const Field3D& p, const Field2D& A, CELL_LOC outloc) {
   result.name = "b0xGrad_dot_Grad(" + p.name + "," + A.name + ")";
 #endif
 
-  ASSERT2(result.getLocation() == outloc)
+  ASSERT2(result.getLocation() == outloc);
 
   return result;
 }
@@ -572,7 +572,7 @@ Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A, CELL_LOC outloc) 
     outloc = A.getLocation();
   }
 
-  ASSERT1(phi.getMesh() == A.getMesh())
+  ASSERT1(phi.getMesh() == A.getMesh());
 
   Mesh* mesh = phi.getMesh();
 
@@ -601,7 +601,7 @@ Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A, CELL_LOC outloc) 
   result.name = "b0xGrad_dot_Grad(" + phi.name + "," + A.name + ")";
 #endif
 
-  ASSERT2(result.getLocation() == outloc)
+  ASSERT2(result.getLocation() == outloc);
 
   return result;
 }
@@ -616,11 +616,11 @@ Coordinates::FieldMetric bracket(const Field2D& f, const Field2D& g,
                                  Solver* UNUSED(solver)) {
   TRACE("bracket(Field2D, Field2D)");
 
-  ASSERT1_FIELDS_COMPATIBLE(f, g)
+  ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
-  ASSERT1(outloc == g.getLocation())
+  ASSERT1(outloc == g.getLocation());
 
   Coordinates::FieldMetric result{emptyFrom(f)};
 
@@ -639,11 +639,11 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
                 CELL_LOC outloc, Solver* solver) {
   TRACE("bracket(Field3D, Field2D)");
 
-  ASSERT1_FIELDS_COMPATIBLE(f, g)
+  ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
-  ASSERT1(outloc == g.getLocation())
+  ASSERT1(outloc == g.getLocation());
 
   [[maybe_unused]] Mesh* mesh = f.getMesh();
 
@@ -829,11 +829,11 @@ Field3D bracket(const Field2D& f, const Field3D& g, BRACKET_METHOD method,
                 CELL_LOC outloc, Solver* solver) {
   TRACE("bracket(Field2D, Field3D)");
 
-  ASSERT1_FIELDS_COMPATIBLE(f, g)
+  ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
-  ASSERT1(outloc == g.getLocation())
+  ASSERT1(outloc == g.getLocation());
 
   Mesh* mesh = f.getMesh();
 
@@ -866,11 +866,11 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
                 CELL_LOC outloc, [[maybe_unused]] Solver* solver) {
   TRACE("Field3D, Field3D");
 
-  ASSERT1_FIELDS_COMPATIBLE(f, g)
+  ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
-  ASSERT1(outloc == g.getLocation())
+  ASSERT1(outloc == g.getLocation());
 
   Mesh* mesh = f.getMesh();
 

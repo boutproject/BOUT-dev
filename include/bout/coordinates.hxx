@@ -172,7 +172,7 @@ public:
 
   /// Return the parallel transform
   ParallelTransform& getParallelTransform() {
-    ASSERT1(transform != nullptr)
+    ASSERT1(transform != nullptr);
     return *transform;
   }
 

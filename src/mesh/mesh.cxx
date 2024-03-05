@@ -63,8 +63,8 @@ const Field2D Mesh::interpolateAndExtrapolate(const Field2D& f, CELL_LOC locatio
         // this point should already be set correctly because the metric
         // components have been interpolated to here.
         if (extrap_start > 0 and f.getLocation() != location) {
-          ASSERT1(bndry->bx == 0 or xstart > 1)
-          ASSERT1(bndry->by == 0 or ystart > 1)
+          ASSERT1(bndry->bx == 0 or xstart > 1);
+          ASSERT1(bndry->by == 0 or ystart > 1);
           // note that either bx or by is >0 here
           result(bndry->x, bndry->y) =
               (9.

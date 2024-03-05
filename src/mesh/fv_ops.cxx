@@ -184,7 +184,7 @@ const Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin,
                                  bool bndry_flux) {
   TRACE("FV::Div_par_K_Grad_par");
 
-  ASSERT2(Kin.getLocation() == fin.getLocation())
+  ASSERT2(Kin.getLocation() == fin.getLocation());
 
   Mesh* mesh = Kin.getMesh();
 
@@ -250,13 +250,13 @@ const Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin,
 }
 
 const Field3D D4DY4(const Field3D& d_in, const Field3D& f_in) {
-  ASSERT1_FIELDS_COMPATIBLE(d_in, f_in)
+  ASSERT1_FIELDS_COMPATIBLE(d_in, f_in);
 
   Mesh* mesh = d_in.getMesh();
 
   Coordinates* coord = f_in.getCoordinates();
 
-  ASSERT2(d_in.getDirectionY() == f_in.getDirectionY())
+  ASSERT2(d_in.getDirectionY() == f_in.getDirectionY());
   const bool are_unaligned = ((d_in.getDirectionY() == YDirectionType::Standard)
                               and (f_in.getDirectionY() == YDirectionType::Standard));
 

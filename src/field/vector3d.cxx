@@ -476,7 +476,7 @@ const Field3D Vector3D::operator*(const Vector3D& rhs) const {
   Mesh* mesh = getMesh();
 
   Field3D result{emptyFrom(x)};
-  ASSERT2(location == rhs.getLocation())
+  ASSERT2(location == rhs.getLocation());
 
   if (rhs.covariant ^ covariant) {
     // Both different - just multiply components
