@@ -75,6 +75,13 @@ MetricTensor MetricTensor::inverse(const std::string& region) {
 
   auto a = Matrix<BoutReal>(3, 3);
 
+  FieldMetric g_11 = emptyFrom(g11_);
+  FieldMetric g_22 = emptyFrom(g22_);
+  FieldMetric g_33 = emptyFrom(g33_);
+  FieldMetric g_12 = emptyFrom(g12_);
+  FieldMetric g_13 = emptyFrom(g13_);
+  FieldMetric g_23 = emptyFrom(g23_);
+
   BOUT_FOR_SERIAL(i, g11_.getRegion(region)) {
     a(0, 0) = g11_[i];
     a(1, 1) = g22_[i];
@@ -89,15 +96,14 @@ MetricTensor MetricTensor::inverse(const std::string& region) {
       output_error.write(error_message, i.x(), i.y());
       throw BoutException(error_message);
     }
-  }
 
-  BoutReal g_11, g_22, g_33, g_12, g_13, g_23;
-  g_11 = a(0, 0);
-  g_22 = a(1, 1);
-  g_33 = a(2, 2);
-  g_12 = a(0, 1);
-  g_13 = a(0, 2);
-  g_23 = a(1, 2);
+    g_11[i] = a(0, 0);
+    g_22[i] = a(1, 1);
+    g_33[i] = a(2, 2);
+    g_12[i] = a(0, 1);
+    g_13[i] = a(0, 2);
+    g_23[i] = a(1, 2);
+  }
 
   //  BoutReal maxerr;
   //  maxerr = BOUTMAX(
@@ -122,8 +128,8 @@ MetricTensor MetricTensor::inverse(const std::string& region) {
   //              + g_23 * g_33)));
   //
   //  output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
-  const auto mesh = g11_.getMesh(); // All the components have the same mesh
-  auto other_representation = MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23, mesh);
+  
+  auto other_representation = MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23);
   const auto location = g11_.getLocation();
   other_representation.setLocation(location);
   return other_representation;
