@@ -23,8 +23,8 @@
 class Field3D;
 
 #pragma once
-#ifndef __FIELD3D_H__
-#define __FIELD3D_H__
+#ifndef BOUT_FIELD3D_H
+#define BOUT_FIELD3D_H
 
 class Mesh; // #include "bout/mesh.hxx"
 #include "bout/bout_types.hxx"
@@ -656,4 +656,4 @@ bool operator==(const Field3D& a, const Field3D& b);
 /// Output a string describing a Field3D to a stream
 std::ostream& operator<<(std::ostream& out, const Field3D& value);
 
-#endif /* __FIELD3D_H__ */
+#endif /* BOUT_FIELD3D_H */

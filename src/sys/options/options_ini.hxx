@@ -33,8 +33,8 @@
 
 class OptionINI;
 
-#ifndef __OPTIONS_INI_H__
-#define __OPTIONS_INI_H__
+#ifndef BOUT_OPTIONS_INI_H
+#define BOUT_OPTIONS_INI_H
 
 #include "optionparser.hxx"
 
@@ -59,4 +59,4 @@ private:
   std::string getNextLine(std::ifstream& fin);
 };
 
-#endif // __OPTIONS_INI_H__
+#endif // BOUT_OPTIONS_INI_H

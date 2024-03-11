@@ -103,7 +103,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
     xbndry = 1;
   }
 
-  BOUT_OMP(parallel for)
+  BOUT_OMP_PERF(parallel for)
   for (int ix = 0; ix < localmesh->LocalNx; ix++) {
     // for fixed ix,jy set a complex vector rho(z)
 

@@ -32,8 +32,8 @@
 
 class RKScheme;
 
-#ifndef __RKSCHEME_H__
-#define __RKSCHEME_H__
+#ifndef BOUT_RKSCHEME_H
+#define BOUT_RKSCHEME_H
 
 #include "bout/generic_factory.hxx"
 #include <bout/bout_types.hxx>
@@ -140,4 +140,4 @@ private:
   void zeroSteps();
 };
 
-#endif // __RKSCHEME_H__
+#endif // BOUT_RKSCHEME_H

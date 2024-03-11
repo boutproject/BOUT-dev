@@ -32,8 +32,8 @@
  *
  **************************************************************************/
 
-#ifndef __IMEXBDF2_SOLVER_H__
-#define __IMEXBDF2_SOLVER_H__
+#ifndef BOUT_IMEXBDF2_SOLVER_H
+#define BOUT_IMEXBDF2_SOLVER_H
 
 #include "bout/build_config.hxx"
 #include "bout/solver.hxx"
@@ -221,6 +221,6 @@ private:
   void saveDerivs(BoutReal* u);
 };
 
-#endif // __IMEXBDF2_SOLVER_H__
+#endif // BOUT_IMEXBDF2_SOLVER_H
 
 #endif // BOUT_HAS_PETSC

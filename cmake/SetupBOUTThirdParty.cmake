@@ -8,6 +8,9 @@ endif ()
 # determined in SetupCompilers.cmake
 if (BOUT_USE_OPENMP)
   target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
+  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -fopenmp")
+  set(CONFIG_LDFLAGS_SHARED "${CONFIG_LDFLAGS_SHARED} -fopenmp")
+  set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -fopenmp")
 endif()
 
 # determined in SetupCompilers.cmake
@@ -19,9 +22,10 @@ if (BOUT_HAS_CUDA)
   set(BOUT_SOURCES_CXX ${BOUT_SOURCES})
   list(FILTER BOUT_SOURCES_CXX INCLUDE REGEX ".*\.cxx")
 
-  set_source_files_properties(${BOUT_SOURCES_CXX} PROPERTIES LANGUAGE CUDA )
+  # NOTE: CUDA inherits the CXX standard setting from the top-level
+  # compile features, set for the bout++ target.
+  set_source_files_properties(${BOUT_SOURCES_CXX} PROPERTIES LANGUAGE CUDA)
   find_package(CUDAToolkit)
-  set_target_properties(bout++ PROPERTIES CUDA_STANDARD 14)
   set_target_properties(bout++ PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
   set_target_properties(bout++ PROPERTIES POSITION_INDEPENDENT_CODE ON)
   set_target_properties(bout++ PROPERTIES LINKER_LANGUAGE CUDA)

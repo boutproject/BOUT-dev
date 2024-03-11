@@ -26,8 +26,8 @@
 
 class LaplaceIPT;
 
-#ifndef __IPT_H__
-#define __IPT_H__
+#ifndef BOUT_IPT_H
+#define BOUT_IPT_H
 
 #include "bout/build_config.hxx"
 #include "bout/invert_laplace.hxx"
@@ -246,4 +246,4 @@ private:
 
 #endif // BOUT_USE_METRIC_3D
 
-#endif // __IPT_H__
+#endif // BOUT_IPT_H

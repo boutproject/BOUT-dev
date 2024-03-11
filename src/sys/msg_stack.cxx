@@ -58,7 +58,7 @@ void MsgStack::pop() {
   if (position <= 0) {
     return;
   }
-  BOUT_OMP(single)
+  BOUT_OMP_SAFE(single)
   { --position; }
 }
 
@@ -78,7 +78,7 @@ void MsgStack::pop(int id) {
 }
 
 void MsgStack::clear() {
-  BOUT_OMP(single)
+  BOUT_OMP_SAFE(single)
   {
     stack.clear();
     position = 0;
@@ -86,7 +86,7 @@ void MsgStack::clear() {
 }
 
 void MsgStack::dump() {
-  BOUT_OMP(single)
+  BOUT_OMP_SAFE(single)
   { output << this->getDump(); }
 }
 

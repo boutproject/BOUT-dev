@@ -34,8 +34,8 @@
 
 class Laplacian;
 
-#ifndef __LAPLACE_H__
-#define __LAPLACE_H__
+#ifndef BOUT_LAPLACE_H
+#define BOUT_LAPLACE_H
 
 #include "bout/build_config.hxx"
 
@@ -278,8 +278,8 @@ public:
   /// performance information, with optional name for the time
   /// dimension
   void outputVars(Options& output_options) const { outputVars(output_options, "t"); }
-  virtual void outputVars(MAYBE_UNUSED(Options& output_options),
-                          MAYBE_UNUSED(const std::string& time_dimension)) const {}
+  virtual void outputVars([[maybe_unused]] Options& output_options,
+                          [[maybe_unused]] const std::string& time_dimension) const {}
 
   /// Register performance monitor with \p solver, prefix output with
   /// `Options` section name
@@ -377,4 +377,4 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex& a, dcomplex& b, dcom
                           const Field2D* ccoef = nullptr, const Field2D* d = nullptr,
                           CELL_LOC loc = CELL_DEFAULT);
 
-#endif // __LAPLACE_H__
+#endif // BOUT_LAPLACE_H

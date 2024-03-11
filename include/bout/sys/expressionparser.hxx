@@ -27,7 +27,6 @@
 #ifndef EXPRESSION_PARSER_H
 #define EXPRESSION_PARSER_H
 
-#include "bout/format.hxx"
 #include "bout/unused.hxx"
 
 #include "fmt/core.h"

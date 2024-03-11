@@ -23,8 +23,8 @@
  *
  **************************************************************************/
 
-#ifndef __INITIALPROF_H__
-#define __INITIALPROF_H__
+#ifndef BOUT_INITIALPROF_H
+#define BOUT_INITIALPROF_H
 
 #include <string>
 
@@ -113,4 +113,4 @@ void initial_profile(const std::string& name, Vector2D& var);
  */
 void initial_profile(const std::string& name, Vector3D& var);
 
-#endif // __INITIALPROF_H__
+#endif // BOUT_INITIALPROF_H

@@ -27,8 +27,8 @@
  *
  **************************************************************************/
 
-#ifndef __PETSC_LAPLACE_H__
-#define __PETSC_LAPLACE_H__
+#ifndef BOUT_PETSC_LAPLACE_H
+#define BOUT_PETSC_LAPLACE_H
 
 #include "bout/build_config.hxx"
 #include "bout/invert_laplace.hxx"
@@ -263,4 +263,4 @@ private:
 
 #endif //BOUT_HAS_PETSC
 
-#endif //__PETSC_LAPLACE_H__
+#endif //BOUT_PETSC_LAPLACE_H

@@ -3,8 +3,8 @@
  * values along Y
  */
 
-#ifndef __PARALLELTRANSFORM_H__
-#define __PARALLELTRANSFORM_H__
+#ifndef BOUT_PARALLELTRANSFORM_H
+#define BOUT_PARALLELTRANSFORM_H
 
 #include "bout/bout_types.hxx"
 #include "bout/field3d.hxx"
@@ -83,7 +83,7 @@ public:
   }
 
   /// Output variables used by a ParallelTransform instance to \p output_options
-  virtual void outputVars(MAYBE_UNUSED(Options& output_options)) {}
+  virtual void outputVars([[maybe_unused]] Options& output_options) {}
 
   /// If \p twist_shift_enabled is true, does a `Field3D` with Y direction \p ytype
   /// require a twist-shift at branch cuts on closed field lines?
@@ -317,4 +317,4 @@ private:
                               const std::vector<ParallelSlicePhase>& phases) const;
 };
 
-#endif // __PARALLELTRANSFORM_H__
+#endif // BOUT_PARALLELTRANSFORM_H
