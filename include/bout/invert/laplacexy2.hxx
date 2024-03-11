@@ -1,14 +1,16 @@
 /**************************************************************************
+ * \file
  * Laplacian solver in 2D (X-Y)
  *
  * Equation solved is:
+ * \f[
+ *   \nabla(A \cdot \nabla_\perp(x)) + B x = b
+ * \f]
  *
- * Div( A * Grad_perp(x) ) + B*x = b
- *
- * Intended for use in solving n = 0 component of potential
+ * Intended for use in solving ``n = 0`` component of potential
  * from inversion of vorticity equation
- *
- **************************************************************************
+ */
+/**************************************************************************
  * Copyright 2015 B.Dudson
  *
  * Contact: Ben Dudson, bd512@york.ac.uk

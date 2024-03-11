@@ -1,8 +1,8 @@
+/// \file
+/// Interface to PETSc solver
+/// NOTE: This class needs tidying, generalising to use FieldData interface
+
 /**************************************************************************
- * Interface to PETSc solver
- * NOTE: This class needs tidying, generalising to use FieldData interface
- *
- **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
@@ -54,11 +54,6 @@ class PetscSolver;
 namespace {
 RegisterSolver<PetscSolver> registersolverpetsc("petsc");
 }
-
-using BoutReal = PetscScalar;
-#define OPT_SIZE 40
-
-using rhsfunc = int (*)(BoutReal);
 
 extern BoutReal simtime;
 

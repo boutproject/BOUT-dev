@@ -1,24 +1,24 @@
-/*!************************************************************************
+/*! \file ******************************************************************
  * Provides access to the Hypre library, handling initialisation and
  * finalisation.
  *
  * Usage
  * -----
  *
- * #include <bout/hyprelib.hxx>
+ *     #include <bout/hyprelib.hxx>
  *
- * class MyClass {
- *   public:
+ *     class MyClass {
+ *       HypreLib lib;
+ *     public:
+ *       // ...
+ *     };
  *
- *   private:
- *     HypreLib lib;
- * };
  *
- *
- * This will then automatically initialise Hypre the first time an object
- * is created, and finalise it when the last object is destroyed.
- *
- **************************************************************************
+ * This will then automatically ensure Hypre is initialised the first
+ * time an instance is created, and finalise it when the last instances is
+ * destroyed (across all objects using `HypreLib`)
+ */
+/**************************************************************************
  * Copyright 2012 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
@@ -43,16 +43,17 @@
 #ifndef BOUT_HYPRELIB_H
 #define BOUT_HYPRELIB_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 namespace bout {
-#if BOUT_HAS_HYPRE
 /*!
  * Handles initialisation and finalisation of Hypre library.
- * The first instance which is created initialises Hypre.
- * Keeps a count of the number of how many instances exist
- * when the last instance is destroyed it finalises Hypre.
+ *
+ * The first instance which is created initialises Hypre. Keeps a
+ * count of the number of how many instances exist, and when the last
+ * instance is destroyed it finalises Hypre.
  */
+#if BOUT_HAS_HYPRE
 class HypreLib {
 public:
   explicit HypreLib();
@@ -64,10 +65,11 @@ public:
 
   ~HypreLib();
 
+  /// Immediately finalise Hypre library
   static void cleanup();
 
 private:
-  static int count; ///< How many instances?
+  static int count; ///< Current number of instances
 };
 
 #else // BOUT_HAS_HYPRE

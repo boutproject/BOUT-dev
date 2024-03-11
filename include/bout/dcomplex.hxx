@@ -37,7 +37,9 @@
 
 using dcomplex = std::complex<BoutReal>;
 
-const dcomplex Im(0, 1); // 1i
+/// Imaginary unit, ``1i``
+//NOLINTNEXTLINE(readability-identifier-length)
+constexpr dcomplex Im{0, 1};
 
 /// Complex type for passing data to/from FORTRAN
 struct fcmplx {

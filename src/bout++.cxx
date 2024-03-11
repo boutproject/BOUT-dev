@@ -114,24 +114,6 @@ namespace {
 constexpr auto is_enabled(bool enabled) { return enabled ? "enabled" : "disabled"; }
 } // namespace
 
-/*!
-  Initialise BOUT++
-
-  Inputs
-  ------
-
-  The command-line arguments argc and argv are passed by
-  reference, and pointers to these will be stored in various
-  places in BOUT++.
-
-  Outputs
-  -------
-
-  Any non-zero return value should halt the simulation. If the return value is
-  less than zero, the exit status from BOUT++ is 0, otherwise it is the return
-  value of BoutInitialise.
-
- */
 int BoutInitialise(int& argc, char**& argv) {
 
   using namespace bout::experimental;

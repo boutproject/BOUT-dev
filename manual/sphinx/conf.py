@@ -31,7 +31,8 @@ import os
 import subprocess
 import sys
 
-sys.path.append("../../tools/pylib")
+sys.path.append("../../tools/pylib/boutpp")
+sys.path.append("../../tools/pylib/boutconfig")
 
 # Are we running on readthedocs?
 on_readthedocs = os.environ.get("READTHEDOCS") == "True"
@@ -103,10 +104,7 @@ if on_readthedocs:
 # readthedocs currently runs out of memory if we actually dare to try to do this
 if has_breathe:
     # Run doxygen to generate the XML sources
-    if on_readthedocs:
-        subprocess.call("cd ../doxygen; doxygen Doxyfile_readthedocs", shell=True)
-    else:
-        subprocess.call("cd ../doxygen; doxygen Doxyfile", shell=True)
+    subprocess.run(["doxygen", "Doxyfile"], cwd="../doxygen", check=True)
     # Now use breathe.apidoc to autogen rst files for each XML file
     apidoc_args = argparse.Namespace(
         destdir="_breathe_autogen/",
@@ -128,11 +126,13 @@ if has_breathe:
     for key, value in apidoc.TYPEDICT.items():
         apidoc.create_modules_toc_file(key, value, apidoc_args)
 
-    # -- Options for breathe extension ----------------------------------------
 
-    breathe_projects = {"BOUT++": "../doxygen/bout/xml"}
-    breathe_default_project = "BOUT++"
-    breathe_default_members = ("members",)
+# -- Options for breathe extension ----------------------------------------
+
+breathe_projects = {"BOUT++": "../doxygen/bout/xml"}
+breathe_default_project = "BOUT++"
+breathe_default_members = ("members",)
+breathe_show_include = False
 
 # -- General configuration ------------------------------------------------
 

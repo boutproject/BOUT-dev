@@ -1,7 +1,126 @@
+/// \file
+/// Iterative solver to handle non-constant-in-z coefficients
+///
+/// Scheme suggested by Volker Naulin: solve
+/// \f{eqnarray}
+///   \nabla^2(\phi[i+1])
+///      + 1/DC(C_1 D)\nabla_\perp(DC(C_2))\nabla_\perp(\phi[i+1])
+///      + DC(A/D)\phi[i+1] \\
+///   = rhs(\phi[i])
+///        + 1/DC(C_1 D)\nabla_\perp(DC(C_2))\nabla_\perp(\phi[i])
+///        + DC(A/D)\phi[i]
+/// \f}
+///
+/// using standard FFT-based solver, iterating to include other terms
+/// by evaluating them on ``rhs`` using \f$\phi\f$ from previous
+/// iteration.  DC part (i.e. `Field2D` part) of \f$C_1 D\f$,
+/// \f$C_2\f$ and \f$A,D\f$ is kept in the FFT inversion to improve
+/// convergence by including as much as possible in the direct solve
+/// and so that all Neumann boundary conditions can be used at least
+/// when \f$DC(A/D)!=0\f$
+///
+/// Explanation of the procedure
+/// ----------------------------
+///
+/// A way to invert the equation
+/// \f$\Omega^D = \nabla\cdot(n\nabla_\perp \phi)\f$
+/// invented by Naulin, V.
+/// In an orthogonal system, we have that:
+///
+/// \f{eqnarray}{
+/// \Omega^D &=& \nabla\cdot(n\nabla_\perp \phi)\                    \
+///       &=& n \nabla_\perp^2 \phi + \nabla n\cdot\nabla_\perp \phi\\
+///       &=& n \Omega + \nabla n\cdot\nabla_\perp \phi\\
+///       &=& n \Omega + \nabla_\perp n\cdot\nabla_\perp \phi
+/// \f}
+///
+/// Rearranging gives
+///
+/// \f{eqnarray}{
+/// \Omega  &=& \frac{\Omega^D}{n} - \nabla_\perp \ln(n)\cdot\nabla_\perp \phi\ \
+/// \nabla_\perp^2 \phi
+/// &=& \frac{\Omega^D}{n} - \nabla_\perp \ln(n)\cdot\nabla_\perp \phi
+/// \f}
+///
+/// In fact we allow for the slightly more general form
+///
+/// \f{eqnarray}{
+/// \nabla_\perp^2 \phi + <\frac{A}{D}>\phi
+/// &=& rhs/D - \frac{1}{D\,C1} \nabla_\perp C2\cdot\nabla_\perp \phi - (\frac{A}{D} - <\frac{A}{D}>)\phi
+/// \f}
+///
+/// The iteration can be under-relaxed to help it converge. Amount of under-relaxation is
+/// set by the parameter 'underrelax_factor'. 0<underrelax_factor<=1, with
+/// underrelax_factor=1 corresponding to no under-relaxation. The amount of
+/// under-relaxation is temporarily increased if the iteration starts diverging, the
+/// starting value uof underrelax_factor can be set with the initial_underrelax_factor
+/// option.
+///
+/// The iteration now works as follows:
+///  1. Get the vorticity from
+///     \code{.cpp}
+///     vort = (vortD/n) - grad_perp(ln_n)*grad_perp(phiCur)
+///     [Delp2(phiNext) + 1/DC(C2*D)*grad_perp(DC(C2))*grad_perp(phiNext) + DC(A/D)*phiNext
+///      = b(phiCur)
+///      = (rhs/D) - (1/C1/D*grad_perp(C2)*grad_perp(phiCur) - 1/DC(C2*D)*grad_perp(DC(C2))*grad_perp(phiCur)) - (A/D - DC(A/D))*phiCur]
+///    \endcode
+///    where phiCur is phi of the current iteration
+///    [and DC(f) is the constant-in-z component of f]
+/// 2. Invert \f$phi\f$ to find the voricity using
+///    \code{.cpp}
+///    phiNext = invert_laplace_perp(vort)
+///    [set Acoef of laplace_perp solver to DC(A/D)
+///     and C1coef of laplace_perp solver to DC(C1*D)
+///     and C2coef of laplace_perp solver to DC(C2)
+///     then phiNext = invert_laplace_perp(underrelax_factor*b(phiCur) - (1-underrelax_factor)*b(phiPrev))]
+///     where b(phiPrev) is the previous rhs value, which (up to rounding errors) is
+///     the same as the lhs of the direct solver applied to phiCur.
+///    \endcode
+///    where phiNext is the newly obtained \f$phi\f$
+/// 3. Calculate the error at phi=phiNext
+///    \code{.cpp}
+///    error3D = Delp2(phiNext) + 1/C1*grad_perp(C2)*grad_perp(phiNext) + A/D*phiNext - rhs/D
+///            = b(phiCur) - b(phiNext)
+///    as b(phiCur) = Delp2(phiNext) + 1/DC(C2*D)*grad_perp(DC(C2))*grad_perp(phiNext) + DC(A/D)*phiNext
+///    up to rounding errors
+///    \endcode
+/// 4. Calculate the infinity norms of the error
+///    \code{.cpp}
+///    EAbsLInf = max(error3D)
+///    ERelLInf = EAbsLInf/sqrt( max((rhs/D)^2) )
+///    \endcode
+/// 5. Check whether
+///    \code{.cpp}
+///    EAbsLInf > atol
+///    \endcode
+///     * If yes
+///         * Check whether
+///           \code{.cpp}
+///           ERelLInf > rtol
+///           \endcode
+///         * If yes
+///             * Check whether
+///             \code{.cpp}
+///             EAbsLInf > EAbsLInf(previous step)
+///             \endcode
+///               * If yes
+///                 \code{.cpp}
+///                 underrelax_factor *= 0.9
+///                 \endcode
+///                 Restart iteration
+///               * If no
+///                 * Set
+///                   \code{.cpp}
+///                   phiCur = phiNext
+///                   \endcode
+///                   increase curCount and start from step 1
+///                 * If number of iteration is above maxit, throw exception
+///         * If no
+///             * Stop: Function returns phiNext
+///     * if no
+///         * Stop: Function returns phiNext
+
 /**************************************************************************
- * Iterative solver to handle non-constant-in-z coefficients
- * 
- **************************************************************************
  * Copyright 2018 B.D.Dudson, M. Loiten, J. Omotani
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
