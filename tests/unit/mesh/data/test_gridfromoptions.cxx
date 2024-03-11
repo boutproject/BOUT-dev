@@ -393,7 +393,7 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowInterp) {
 
   auto coords = mesh_from_options.getCoordinates(CELL_XLOW);
 
-  Coordinates::FieldMetric expected_xlow = makeField<Coordinates::FieldMetric>(
+  auto expected_xlow = makeField<Coordinates::FieldMetric>(
       [](Coordinates::FieldMetric::ind_type& index) {
         return index.x() - 0.5 + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
       },
@@ -434,7 +434,7 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowRead) {
 
   auto coords = mesh_from_options.getCoordinates(CELL_XLOW);
 
-  Field2D expected_xlow = makeField<Field2D>(
+  auto expected_xlow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
         return (nx - index.x() + 0.5) + (TWOPI * index.y()) + (TWOPI * index.z() / nz)
                + 3;
@@ -467,7 +467,7 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
 
   auto* coords = mesh_from_options.getCoordinates(CELL_YLOW);
 
-  Field2D expected_ylow = makeField<Field2D>(
+  auto expected_ylow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
         return index.x() + (TWOPI * (index.y() - 0.5)) + (TWOPI * index.z() / nz) + 3;
       },
@@ -517,7 +517,7 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowRead) {
 
   auto coords = mesh_from_options.getCoordinates(CELL_YLOW);
 
-  Field2D expected_ylow = makeField<Field2D>(
+  auto expected_ylow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
         return index.x() + (TWOPI * (ny - index.y() + 0.5)) + (TWOPI * index.z() / nz)
                + 3;
