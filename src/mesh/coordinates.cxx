@@ -340,8 +340,7 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(Options* mesh_options,
                                                     false, transform.get());
       };
 
-  const auto region = std::basic_string("RGN_NOBNDRY");
-  setContravariantMetricTensor(coords_in->getContravariantMetricTensor(), region);
+  setContravariantMetricTensor(coords_in->getContravariantMetricTensor());
 
   applyToContravariantMetricTensor(interpolateAndExtrapolate_function);
   applyToCovariantMetricTensor(interpolateAndExtrapolate_function);
