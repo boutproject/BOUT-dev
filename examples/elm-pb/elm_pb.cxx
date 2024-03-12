@@ -1429,23 +1429,30 @@ protected:
 
     if (sheath_boundaries) {
 
+      // Need to shift into field-aligned coordinates before applying
+      // parallel boundary conditions
+
+      auto phi_fa = toFieldAligned(phi);
+      auto P_fa = toFieldAligned(P);
+      auto Jpar_fa = toFieldAligned(Jpar);
+
       // At y = ystart (lower boundary)
 
       for (RangeIterator r = mesh->iterateBndryLowerY(); !r.isDone(); r++) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           // Zero-gradient potential
-          BoutReal phisheath = phi(r.ind, mesh->ystart, jz);
+          BoutReal const phisheath = phi_fa(r.ind, mesh->ystart, jz);
 
           BoutReal jsheath = -(sqrt(mi_me) / (2. * sqrt(PI))) * phisheath;
 
           // Apply boundary condition half-way between cells
           for (int jy = mesh->ystart - 1; jy >= 0; jy--) {
             // Neumann conditions
-            P(r.ind, jy, jz) = P(r.ind, mesh->ystart, jz);
-            phi(r.ind, jy, jz) = phisheath;
+            P_fa(r.ind, jy, jz) = P_fa(r.ind, mesh->ystart, jz);
+            phi_fa(r.ind, jy, jz) = phisheath;
             // Dirichlet condition on Jpar
-            Jpar(r.ind, jy, jz) = 2. * jsheath - Jpar(r.ind, mesh->ystart, jz);
+            Jpar_fa(r.ind, jy, jz) = 2. * jsheath - Jpar_fa(r.ind, mesh->ystart, jz);
           }
         }
       }
@@ -1456,22 +1463,27 @@ protected:
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           // Zero-gradient potential
-          BoutReal phisheath = phi(r.ind, mesh->yend, jz);
+          BoutReal const phisheath = phi_fa(r.ind, mesh->yend, jz);
 
           BoutReal jsheath = (sqrt(mi_me) / (2. * sqrt(PI))) * phisheath;
 
           // Apply boundary condition half-way between cells
           for (int jy = mesh->yend + 1; jy < mesh->LocalNy; jy++) {
             // Neumann conditions
-            P(r.ind, jy, jz) = P(r.ind, mesh->yend, jz);
-            phi(r.ind, jy, jz) = phisheath;
+            P_fa(r.ind, jy, jz) = P_fa(r.ind, mesh->yend, jz);
+            phi_fa(r.ind, jy, jz) = phisheath;
             // Dirichlet condition on Jpar
             // WARNING: this is not correct if staggered grids are used
             ASSERT3(not mesh->StaggerGrids);
-            Jpar(r.ind, jy, jz) = 2. * jsheath - Jpar(r.ind, mesh->yend, jz);
+            Jpar_fa(r.ind, jy, jz) = 2. * jsheath - Jpar_fa(r.ind, mesh->yend, jz);
           }
         }
       }
+
+      // Shift back from field aligned coordinates
+      phi = fromFieldAligned(phi_fa);
+      P = fromFieldAligned(P_fa);
+      Jpar = fromFieldAligned(Jpar_fa);
     }
 
     ////////////////////////////////////////////////////
