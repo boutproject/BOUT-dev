@@ -103,7 +103,6 @@ public:
     int nx = mesh->GlobalNx, ny = mesh->GlobalNy, nz = mesh->GlobalNz;
     static_cast<FakeMesh*>(bout::globals::mesh)
         ->setGridDataSource(new GridFromOptions(Options::getRoot()));
-    bout::globals::mesh->getCoordinates()->geometry();
     f3.allocate();
     coef2.allocate();
     coef3.allocate();
