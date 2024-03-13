@@ -193,8 +193,8 @@ protected:
   // Operator for radial diffusive flux
   /*
     Field3D Div_X_K_Grad_X(const Field3D &difVi, const Field3D &Vi) {
-    Field2D sg = 1./sqrt(mesh->g_11);
-    return difVi * D2DX2(Vi)/mesh->g_11
+    Field2D sg = 1./sqrt(mesh->g_11());
+    return difVi * D2DX2(Vi)/mesh->g_11()
     + DDX( difVi * sg ) * DDX(Vi) * sg;
     }
   */

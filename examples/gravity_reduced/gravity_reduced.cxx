@@ -115,8 +115,8 @@ private:
     Lz = options["Lz"].withDefault(1.);
 
     // Set the metric tensor components to get Lz
-    coord->g33 = SQ(2. * PI / Lz);
-    coord->g_33 = 1. / coord->g33;
+    coord->g33() = SQ(2. * PI / Lz);
+    coord->g_33() = 1. / coord->g33();
 
     /**************** SET EVOLVING VARIABLES *************/
 
@@ -129,7 +129,7 @@ private:
       // Set initial perturbation
       //     U = U0;
       //     U = Delp2(phi0);
-      U = coord->g11 * D2DX2(phi0) + coord->g33 * D2DZ2(phi0);
+      U = coord->g11() * D2DX2(phi0) + coord->g33() * D2DZ2(phi0);
       Vpar = Vpar0;
     }
 

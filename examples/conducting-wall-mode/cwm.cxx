@@ -308,8 +308,8 @@ private:
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           var(xrup.ind, jy, jz) = var(xrup.ind, jy - 1, jz)
-                                  + coord->dy(xrup.ind, jy, jz)
-                                        * sqrt(coord->g_22(xrup.ind, jy, jz))
+                                  + coord->dy()(xrup.ind, jy, jz)
+                                        * sqrt(coord->g_22()(xrup.ind, jy, jz))
                                         * value(xrup.ind, jy, jz);
         }
       }
@@ -325,8 +325,8 @@ private:
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
           var(xrdn.ind, jy, jz) = var(xrdn.ind, jy + 1, jz)
-                                  - coord->dy(xrdn.ind, jy, jz)
-                                        * sqrt(coord->g_22(xrdn.ind, jy, jz))
+                                  - coord->dy()(xrdn.ind, jy, jz)
+                                        * sqrt(coord->g_22()(xrdn.ind, jy, jz))
                                         * value(xrdn.ind, jy, jz);
         }
       }

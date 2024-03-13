@@ -36,13 +36,13 @@ Field3D this_Laplace_perp(const Field3D& f) {
   // dfdy not divided by dy yet
   auto dfdy = bout::derivatives::index::DDY(f, CELL_DEFAULT, "DEFAULT", "RGN_NOY");
 
-  return coords->G1 * DDX(f)
-         + (coords->G2 - DDY(coords->J / coords->g_22) / coords->J) * DDY(f)
-         + coords->G3 * DDZ(f) + coords->g11 * D2DX2(f)
-         + (coords->g22 - 1. / coords->g_22) * D2DY2(f) + coords->g33 * D2DZ2(f)
+  return coords->G1() * DDX(f)
+         + (coords->G2() - DDY(coords->J() / coords->g_22()) / coords->J()) * DDY(f)
+         + coords->G3() * DDZ(f) + coords->g11() * D2DX2(f)
+         + (coords->g22() - 1. / coords->g_22()) * D2DY2(f) + coords->g33() * D2DZ2(f)
          + 2.
-               * (coords->g12 * DDX(dfdy) / coords->dy() + coords->g13 * D2DXDZ(f)
-                  + coords->g23 * D2DYDZ(f));
+               * (coords->g12() * DDX(dfdy) / coords->dy() + coords->g13() * D2DXDZ(f)
+                  + coords->g23() * D2DYDZ(f));
 }
 
 int main(int argc, char** argv) {
@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
   ///////////////////////////////////////////////////////////////////////////////////////
   // Calculate error
   ///////////////////////////////////////////////////////////////////////////////////////
-  auto& g_22 = mesh->getCoordinates()->g_22;
+  auto& g_22 = mesh->getCoordinates()->g_22();
   Field3D rhs_check = D * this_Laplace_perp(f)
                       + (Grad(f) * Grad(C2) - DDY(C2) * DDY(f) / g_22) / C1 + A * f;
   // The usual way to do this would be

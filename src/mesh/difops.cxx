@@ -1018,7 +1018,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
         const int jzm = ncz - 1;
 #if BOUT_USE_METRIC_3D
         const BoutReal spacingFactor =
-            1.0 / (12 * metric->dz(jx, jy, jz) * metric->dx(jx, jy, jz));
+            1.0 / (12 * metric->dz()(jx, jy, jz) * metric->dx()(jx, jy, jz));
 #endif
 
         // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
@@ -1041,7 +1041,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
       for (int jz = 1; jz < mesh->LocalNz - 1; jz++) {
 #if BOUT_USE_METRIC_3D
         const BoutReal spacingFactor =
-            1.0 / (12 * metric->dz(jx, jy, jz) * metric->dx(jx, jy, jz));
+            1.0 / (12 * metric->dz()(jx, jy, jz) * metric->dx()(jx, jy, jz));
 #endif
         const int jzp = jz + 1;
         const int jzm = jz - 1;
@@ -1069,7 +1069,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
         const int jzm = ncz - 2;
 #if BOUT_USE_METRIC_3D
         const BoutReal spacingFactor =
-            1.0 / (12 * metric->dz(jx, jy, jz) * metric->dx(jx, jy, jz));
+            1.0 / (12 * metric->dz()(jx, jy, jz) * metric->dx()(jx, jy, jz));
 #endif
 
         // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)

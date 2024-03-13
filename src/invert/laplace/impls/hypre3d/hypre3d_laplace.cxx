@@ -101,8 +101,8 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
     if (inner_boundary_flags & INVERT_AC_GRAD) {
       // Neumann on inner X boundary
-      operator3D(i, i) = -1. / coords->dx()[i] / sqrt(coords->g_11[i]);
-      operator3D(i, i.xp()) = 1. / coords->dx()[i] / sqrt(coords->g_11[i]);
+      operator3D(i, i) = -1. / coords->dx()[i] / sqrt(coords->g_11()[i]);
+      operator3D(i, i.xp()) = 1. / coords->dx()[i] / sqrt(coords->g_11()[i]);
     } else {
       // Dirichlet on inner X boundary
       operator3D(i, i) = 0.5;
@@ -113,8 +113,8 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
     if (outer_boundary_flags & INVERT_AC_GRAD) {
       // Neumann on outer X boundary
-      operator3D(i, i) = 1. / coords->dx()[i] / sqrt(coords->g_11[i]);
-      operator3D(i, i.xm()) = -1. / coords->dx()[i] / sqrt(coords->g_11[i]);
+      operator3D(i, i) = 1. / coords->dx()[i] / sqrt(coords->g_11()[i]);
+      operator3D(i, i.xm()) = -1. / coords->dx()[i] / sqrt(coords->g_11()[i]);
     } else {
       // Dirichlet on outer X boundary
       operator3D(i, i) = 0.5;
@@ -125,8 +125,8 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
     if (lower_boundary_flags & INVERT_AC_GRAD) {
       // Neumann on lower Y boundary
-      operator3D(i, i) = -1. / coords->dy()[i] / sqrt(coords->g_22[i]);
-      operator3D(i, i.yp()) = 1. / coords->dy()[i] / sqrt(coords->g_22[i]);
+      operator3D(i, i) = -1. / coords->dy()[i] / sqrt(coords->g_22()[i]);
+      operator3D(i, i.yp()) = 1. / coords->dy()[i] / sqrt(coords->g_22()[i]);
     } else {
       // Dirichlet on lower Y boundary
       operator3D(i, i) = 0.5;
@@ -137,8 +137,8 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
     if (upper_boundary_flags & INVERT_AC_GRAD) {
       // Neumann on upper Y boundary
-      operator3D(i, i) = 1. / coords->dy()[i] / sqrt(coords->g_22[i]);
-      operator3D(i, i.ym()) = -1. / coords->dy()[i] / sqrt(coords->g_22[i]);
+      operator3D(i, i) = 1. / coords->dy()[i] / sqrt(coords->g_22()[i]);
+      operator3D(i, i.ym()) = -1. / coords->dy()[i] / sqrt(coords->g_22()[i]);
     } else {
       // Dirichlet on upper Y boundary
       operator3D(i, i) = 0.5;
@@ -277,7 +277,7 @@ void LaplaceHypre3d::updateMatrix3D() {
   const Field3D dc_dx = issetC ? DDX(C2) : Field3D();
   const Field3D dc_dy = issetC ? DDY(C2) : Field3D();
   const Field3D dc_dz = issetC ? DDZ(C2) : Field3D();
-  const Field2D dJ_dy = DDY(coords->J / coords->g_22);
+  const Field2D dJ_dy = DDY(coords->J() / coords->g_22());
 
   // Set up the matrix for the internal points on the grid.
   // Boundary conditions were set in the constructor.
@@ -286,17 +286,17 @@ void LaplaceHypre3d::updateMatrix3D() {
     // avoid confusing it with the x-index.
 
     // Calculate coefficients for the terms in the differential operator
-    BoutReal C_df_dx = coords->G1[l], C_df_dz = coords->G3[l];
+    BoutReal C_df_dx = coords->G1()[l], C_df_dz = coords->G3()[l];
     if (issetD) {
       C_df_dx *= D[l];
       C_df_dz *= D[l];
     }
     if (issetC) {
-      C_df_dx += (coords->g11[l] * dc_dx[l] + coords->g12[l] * dc_dy[l]
-                  + coords->g13[l] * dc_dz[l])
+      C_df_dx += (coords->g11()[l] * dc_dx[l] + coords->g12()[l] * dc_dy[l]
+                  + coords->g13()[l] * dc_dz[l])
                  / C1[l];
-      C_df_dz += (coords->g13[l] * dc_dx[l] + coords->g23[l] * dc_dy[l]
-                  + coords->g33[l] * dc_dz[l])
+      C_df_dz += (coords->g13()[l] * dc_dx[l] + coords->g23()[l] * dc_dy[l]
+                  + coords->g33()[l] * dc_dz[l])
                  / C1[l];
     }
     if (issetE) {
@@ -304,16 +304,16 @@ void LaplaceHypre3d::updateMatrix3D() {
       C_df_dz += Ez[l];
     }
 
-    BoutReal C_d2f_dx2 = coords->g11[l],
-             C_d2f_dy2 = (coords->g22[l] - 1.0 / coords->g_22[l]),
-             C_d2f_dz2 = coords->g33[l];
+    BoutReal C_d2f_dx2 = coords->g11()[l],
+             C_d2f_dy2 = (coords->g22()[l] - 1.0 / coords->g_22()[l]),
+             C_d2f_dz2 = coords->g33()[l];
     if (issetD) {
       C_d2f_dx2 *= D[l];
       C_d2f_dy2 *= D[l];
       C_d2f_dz2 *= D[l];
     }
 
-    BoutReal C_d2f_dxdz = 2 * coords->g13[l];
+    BoutReal C_d2f_dxdz = 2 * coords->g13()[l];
     if (issetD) {
       C_d2f_dxdz *= D[l];
     }
@@ -360,23 +360,23 @@ void LaplaceHypre3d::updateMatrix3D() {
   // Must add these (rather than assign) so that elements used in
   // interpolation don't overwrite each other.
   BOUT_FOR_SERIAL(l, indexer->getRegionNobndry()) {
-    BoutReal C_df_dy = (coords->G2[l] - dJ_dy[l] / coords->J[l]);
+    BoutReal C_df_dy = (coords->G2()[l] - dJ_dy[l] / coords->J()[l]);
     if (issetD) {
       C_df_dy *= D[l];
     }
     if (issetC) {
       C_df_dy +=
-          (coords->g12[l] * dc_dx[l] + (coords->g22[l] - 1. / coords->g_22[l]) * dc_dy[l]
-           + coords->g23[l] * dc_dz[l])
+          (coords->g12()[l] * dc_dx[l] + (coords->g22()[l] - 1. / coords->g_22()[l]) * dc_dy[l]
+           + coords->g23()[l] * dc_dz[l])
           / C1[l];
     }
 
-    BoutReal C_d2f_dy2 = (coords->g22[l] - 1.0 / coords->g_22[l]);
+    BoutReal C_d2f_dy2 = (coords->g22()[l] - 1.0 / coords->g_22()[l]);
     if (issetD) {
       C_d2f_dy2 *= D[l];
     }
 
-    BoutReal C_d2f_dxdy = 2 * coords->g12[l], C_d2f_dydz = 2 * coords->g23[l];
+    BoutReal C_d2f_dxdy = 2 * coords->g12()[l], C_d2f_dydz = 2 * coords->g23()[l];
     if (issetD) {
       C_d2f_dxdy *= D[l];
       C_d2f_dydz *= D[l];
@@ -384,7 +384,7 @@ void LaplaceHypre3d::updateMatrix3D() {
 
     // Adjust the coefficients to include finite-difference factors
     if (nonuniform) {
-      C_df_dy += C_d2f_dy2 * coords->d1_dy[l];
+      C_df_dy += C_d2f_dy2 * coords->d1_dy()[l];
     }
     C_df_dy /= 2 * coords->dy()[l];
     C_d2f_dy2 /= SQ(coords->dy()[l]);

@@ -361,7 +361,7 @@ class Elm_6f : public PhysicsModel {
       result.allocate();
       for (auto i : result) {
         result[i] =
-            (fp[i.yp()] - fm[i.ym()]) / (2. * coord->dy()[i] * sqrt(coord->g_22[i]));
+            (fp[i.yp()] - fm[i.ym()]) / (2. * coord->dy()[i] * sqrt(coord->g_22()[i]));
       }
     } else {
       result = Grad_par(f, loc);
@@ -1448,11 +1448,11 @@ protected:
       if (hyperviscos > 0.0) {
         // Calculate coefficient.
 
-        hyper_mu_x = hyperviscos * coord->g_11 * SQ(coord->dx())
-                     * abs(coord->g11 * D2DX2(U)) / (abs(U) + 1e-3);
+        hyper_mu_x = hyperviscos * coord->g_11() * SQ(coord->dx())
+                     * abs(coord->g11() * D2DX2(U)) / (abs(U) + 1e-3);
         hyper_mu_x.applyBoundary("dirichlet"); // Set to zero on all boundaries
 
-        ddt(U) += hyper_mu_x * coord->g11 * D2DX2(U);
+        ddt(U) += hyper_mu_x * coord->g11() * D2DX2(U);
 
         if (first_run) {
           // Print out maximum values of viscosity used on this processor
