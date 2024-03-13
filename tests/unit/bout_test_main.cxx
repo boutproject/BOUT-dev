@@ -21,6 +21,7 @@ GTEST_API_ int main(int argc, char** argv) {
 
   printf("Running main() from bout_test_main.cxx\n");
   testing::InitGoogleTest(&argc, argv);
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
 
   // Explicitly setup and teardown PETSc to avoid reentry problems
   // with certain MPI implementations (see #1916 for details)
