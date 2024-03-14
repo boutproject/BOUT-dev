@@ -286,14 +286,14 @@ Coordinates::FieldMetric Coordinates::getUnaligned(const std::string& name,
 }
 
 Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric dz,
-                         FieldMetric J, FieldMetric Bxy, const FieldMetric& g11,
-                         const FieldMetric& g22, const FieldMetric& g33,
-                         const FieldMetric& g12, const FieldMetric& g13,
-                         const FieldMetric& g23, const FieldMetric& g_11,
-                         const FieldMetric& g_22, const FieldMetric& g_33,
-                         const FieldMetric& g_12, const FieldMetric& g_13,
-                         const FieldMetric& g_23, FieldMetric ShiftTorsion,
-                         FieldMetric IntShiftTorsion)
+                         [[maybe_unused]] const FieldMetric& J, FieldMetric Bxy,
+                         const FieldMetric& g11, const FieldMetric& g22,
+                         const FieldMetric& g33, const FieldMetric& g12,
+                         const FieldMetric& g13, const FieldMetric& g23,
+                         const FieldMetric& g_11, const FieldMetric& g_22,
+                         const FieldMetric& g_33, const FieldMetric& g_12,
+                         const FieldMetric& g_13, const FieldMetric& g_23,
+                         FieldMetric ShiftTorsion, FieldMetric IntShiftTorsion)
     : nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE), dx_(std::move(dx)),
       dy_(std::move(dy)), dz_(std::move(dz)), ShiftTorsion_(std::move(ShiftTorsion)),
       IntShiftTorsion_(std::move(IntShiftTorsion)),
