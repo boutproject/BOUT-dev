@@ -1,6 +1,6 @@
 #include "bout/coordinates_accessor.hxx"
 #include "bout/mesh.hxx"
-#include "bout/metricTensor.hxx"
+#include "bout/metric_tensor.hxx"
 
 #include <map>
 

@@ -4,7 +4,7 @@
 
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
-#include "bout/metricTensor.hxx"
+#include "bout/metric_tensor.hxx"
 #include <bout/bout_types.hxx>
 
 using FieldMetric = MetricTensor::FieldMetric;

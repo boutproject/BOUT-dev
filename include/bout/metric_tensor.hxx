@@ -1,6 +1,6 @@
 
-#ifndef BOUT_METRICTENSOR_HXX
-#define BOUT_METRICTENSOR_HXX
+#ifndef BOUT_METRIC_TENSOR_HXX
+#define BOUT_METRIC_TENSOR_HXX
 
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
@@ -90,4 +90,4 @@ public:
       : MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23, mesh){};
 };
 
-#endif //BOUT_METRICTENSOR_HXX
+#endif //BOUT_METRIC_TENSOR_HXX

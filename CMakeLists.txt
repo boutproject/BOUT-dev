@@ -352,8 +352,8 @@ set(BOUT_SOURCES
   ./src/sys/timer.cxx
   ./src/sys/type_name.cxx
   ./src/sys/utils.cxx
-  ./include/bout/metricTensor.hxx
-  ./src/mesh/metricTensor.cxx
+  ./include/bout/metric_tensor.hxx
+  ./src/mesh/metric_tensor.cxx
   ./include/bout/christoffel_symbols.hxx
   ./src/mesh/christoffel_symbols.cxx
   ./include/bout/g_values.hxx

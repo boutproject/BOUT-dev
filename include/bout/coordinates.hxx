@@ -35,7 +35,7 @@
 
 #include "christoffel_symbols.hxx"
 #include "g_values.hxx"
-#include "bout/metricTensor.hxx"
+#include "bout/metric_tensor.hxx"
 #include "bout/paralleltransform.hxx"
 
 class Mesh;

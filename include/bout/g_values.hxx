@@ -2,7 +2,7 @@
 #ifndef BOUT_GVALUES_HXX
 #define BOUT_GVALUES_HXX
 
-#include "bout/metricTensor.hxx"
+#include "bout/metric_tensor.hxx"
 
 using FieldMetric = MetricTensor::FieldMetric;
 

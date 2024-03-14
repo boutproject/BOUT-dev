@@ -1,5 +1,5 @@
 
-#include "bout/metricTensor.hxx"
+#include "bout/metric_tensor.hxx"
 #include "bout/output.hxx"
 #include <utility>
 
