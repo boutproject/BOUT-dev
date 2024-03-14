@@ -41,7 +41,7 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
   // Copy data from Coordinates variable into data array
   // Uses the symbol to look up the corresponding Offset
 #define COPY_STRIPE1(symbol) \
-  data[stripe_size * ind.ind + static_cast<int>(Offset::symbol)] = coords->symbol[ind];
+  data[stripe_size * ind.ind + static_cast<int>(Offset::symbol)] = coords->symbol()[ind];
 
   // Implement copy for each argument
 #define COPY_STRIPE(...) \
@@ -50,39 +50,17 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
   // Iterate over all points in the field
   // Note this could be 2D or 3D, depending on FieldMetric type
   for (const auto& ind : coords->dx().getRegion("RGN_ALL")) {
-    data[stripe_size * ind.ind + static_cast<int>(Offset::dx)] = coords->dx()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::dy)] = coords->dy()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::dz)] = coords->dz()[ind];
-
-    data[stripe_size * ind.ind + static_cast<int>(Offset::d1_dx)] = coords->d1_dx()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::d1_dy)] = coords->d1_dy()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::d1_dz)] = coords->d1_dz()[ind];
-
-    data[stripe_size * ind.ind + static_cast<int>(Offset::J)] = coords->J()[ind];
-
+    COPY_STRIPE(dx, dy, dz);
+    COPY_STRIPE(d1_dx, d1_dy, d1_dz);
+    COPY_STRIPE(J);
     data[stripe_size * ind.ind + static_cast<int>(Offset::B)] = coords->Bxy()[ind];
     data[stripe_size * ind.ind + static_cast<int>(Offset::Byup)] =
         coords->Bxy().yup()[ind];
     data[stripe_size * ind.ind + static_cast<int>(Offset::Bydown)] =
         coords->Bxy().ydown()[ind];
-
-    data[stripe_size * ind.ind + static_cast<int>(Offset::G1)] = coords->G1()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::G3)] = coords->G3()[ind];
-    //    COPY_STRIPE(g11, g12, g13, g22, g23, g33);
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g11)] = coords->g11()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g12)] = coords->g12()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g13)] = coords->g13()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g22)] = coords->g22()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g23)] = coords->g23()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g33)] = coords->g33()[ind];
-
-    //    COPY_STRIPE(g_11, g_12, g_13, g_22, g_23, g_33);
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g_11)] = coords->g_11()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g_12)] = coords->g_12()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g_13)] = coords->g_13()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g_22)] = coords->g_22()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g_23)] = coords->g_23()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::g_33)] = coords->g_33()[ind];
+    COPY_STRIPE(G1, G3);
+    COPY_STRIPE(g11, g12, g13, g22, g23, g33);
+    COPY_STRIPE(g_11, g_12, g_13, g_22, g_23, g_33);
   }
 }
 
