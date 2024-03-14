@@ -101,7 +101,7 @@ Solver::Solver(Options* opts)
                                .doc("Output time step size")
                                .withDefault(1.0))) {}
 
-  addMonitor(&solver_monitor, MonitorPosition::FRONT);
+addMonitor(&solver_monitor, MonitorPosition::FRONT);
 }
 
 /**************************************************************************

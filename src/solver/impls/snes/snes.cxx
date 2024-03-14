@@ -900,7 +900,7 @@ int SNESSolver::run() {
     }
     run_rhs(simtime); // Run RHS to calculate auxilliary variables
 
-    if (call_monitors(simtime, s+1, getNumberOutputSteps()) != 0) {
+    if (call_monitors(simtime, s + 1, getNumberOutputSteps()) != 0) {
       break; // User signalled to quit
     }
   }
