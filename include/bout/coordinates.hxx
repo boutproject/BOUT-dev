@@ -157,7 +157,6 @@ public:
     IntShiftTorsion_ = std::move(IntShiftTorsion);
   }
 
-  /// Calculate differential geometry quantities from the metric tensor
   int communicateAndCheckMeshSpacing() const;
 
   ///////////////////////////////////////////////////////////
