@@ -1398,7 +1398,7 @@ void Coordinates::setBxy(FieldMetric Bxy) {
 
 void Coordinates::applyToChristoffelSymbols(
     const std::function<const FieldMetric(const FieldMetric)>& function) const {
-  christoffel_symbols().map(function);
+  christoffel_symbols().applyToComponents(function);
 }
 
 void Coordinates::setContravariantMetricTensor(
