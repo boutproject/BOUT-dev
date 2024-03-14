@@ -180,8 +180,8 @@ void LaplaceXY2::setCoefs(const Field2D& A, const Field2D& B) {
       BoutReal dy = 0.5 * (coords->dy()[index] + coords->dy()[ind_yp]);
       Acoef = 0.5 * (A[ind_yp] + A[index]);
 
-      BoutReal yp =
-          -Acoef * J * g23 * g_23 / (g_22 * coords->J()[index] * dy * coords->dy()[index]);
+      BoutReal yp = -Acoef * J * g23 * g_23
+                    / (g_22 * coords->J()[index] * dy * coords->dy()[index]);
       c -= yp;
       matrix(index, ind_yp) = yp;
 
@@ -193,8 +193,8 @@ void LaplaceXY2::setCoefs(const Field2D& A, const Field2D& B) {
       dy = 0.5 * (coords->dy()[index] + coords->dy()[ind_ym]);
       Acoef = 0.5 * (A[ind_ym] + A[index]);
 
-      BoutReal ym =
-          -Acoef * J * g23 * g_23 / (g_22 * coords->J()[index] * dy * coords->dy()[index]);
+      BoutReal ym = -Acoef * J * g23 * g_23
+                    / (g_22 * coords->J()[index] * dy * coords->dy()[index]);
       c -= ym;
       matrix(index, ind_ym) = ym;
     }

@@ -39,7 +39,8 @@ protected:
     SAVE_ONCE3(Dx, Dy, Dz)
 
     // set mesh
-    auto contravariant_metric_tensor = ContravariantMetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
+    auto contravariant_metric_tensor =
+        ContravariantMetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);
     coords->setContravariantMetricTensor(contravariant_metric_tensor);
 
     auto covariant_metric_tensor = CovariantMetricTensor(1.1, 1.1, 1.1, 0.0, 0.0, 0.0);

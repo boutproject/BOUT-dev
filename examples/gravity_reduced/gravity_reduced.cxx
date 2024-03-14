@@ -230,8 +230,8 @@ private:
 
     ddt(rho) -= (rho0 / (1 + Gamma * p0 * mu_0 / SQ(B0)))
                 * ((rho0 * mu_0 / SQ(B0)) * bracket(G, phi, bm) * coord->Bxy()
-           + Grad_par(Vpar, CELL_CENTRE) - bracket(Psi, Vpar, bm) * coord->Bxy()
-           - (Vpar / B0) * Grad_par(B0));
+                   + Grad_par(Vpar, CELL_CENTRE) - bracket(Psi, Vpar, bm) * coord->Bxy()
+                   - (Vpar / B0) * Grad_par(B0));
 
     if (nonlinear) {
       ddt(rho) -= bracket(phi, rho, bm) * coord->Bxy();

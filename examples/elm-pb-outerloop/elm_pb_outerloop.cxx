@@ -1099,7 +1099,8 @@ public:
     g12 = 0.0;
     g13 = -I * metric->g11();
     g23 = -Btxy / (hthe * Bpxy * Rxy);
-    metric->setContravariantMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
+    metric->setContravariantMetricTensor(
+        ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
 
     metric->setJ(hthe / Bpxy);
     metric->setBxy(B0);
@@ -1111,7 +1112,8 @@ public:
     g_12 = Btxy * hthe * I * Rxy / Bpxy;
     g_13 = I * Rxy * Rxy;
     g_23 = Btxy * hthe * Rxy / Bpxy;
-    metric->setCovariantMetricTensor(CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+    metric->setCovariantMetricTensor(
+        CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
     // Set B field vector
 
@@ -1682,12 +1684,12 @@ public:
 #endif
     };
 
-    // Terms which are not yet single index operators
-    // Note: Terms which are included in the single index loop
-    //       may be commented out here, to allow comparison/testing
+      // Terms which are not yet single index operators
+      // Note: Terms which are included in the single index loop
+      //       may be commented out here, to allow comparison/testing
 
-    ////////////////////////////////////////////////////
-    // Parallel electric field
+      ////////////////////////////////////////////////////
+      // Parallel electric field
 
 #if not EVOLVE_JPAR
     // Vector potential

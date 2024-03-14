@@ -81,7 +81,8 @@ public:
   //  void setLocation(CELL_LOC location);
 
   // Transforms the ChristoffelSymbols by applying the given function to every element
-  void applyToComponents(const std::function<const FieldMetric(const FieldMetric)>& function);
+  void
+  applyToComponents(const std::function<const FieldMetric(const FieldMetric)>& function);
 
 private:
   FieldMetric G1_11_, G1_22_, G1_33_, G1_12_, G1_13_, G1_23_;

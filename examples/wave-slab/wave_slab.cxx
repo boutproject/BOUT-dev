@@ -38,7 +38,8 @@ public:
     g12 = 0.0;
     g13 = -I * coords->g11();
     g23 = -Btxy / (hthe * Bpxy * Rxy);
-    coords->setContravariantMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
+    coords->setContravariantMetricTensor(
+        ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
 
     coords->setJ(hthe / Bpxy);
 
@@ -49,7 +50,8 @@ public:
     g_12 = Btxy * hthe * I * Rxy / Bpxy;
     g_13 = I * Rxy * Rxy;
     g_23 = Btxy * hthe * Rxy / Bpxy;
-    coords->setCovariantMetricTensor(CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+    coords->setCovariantMetricTensor(
+        CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
     solver->add(f, "f");
     solver->add(g, "g");

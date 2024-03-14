@@ -420,7 +420,8 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
             if (fourth_order) {
               // Fourth Order Accuracy on Boundary
               Element(i, x, z, 0, 0,
-                      -25.0 / (12.0 * coords->dx()(x, y, z)) / sqrt(coords->g_11()(x, y, z)),
+                      -25.0 / (12.0 * coords->dx()(x, y, z))
+                          / sqrt(coords->g_11()(x, y, z)),
                       MatA);
               Element(i, x, z, 1, 0,
                       4.0 / coords->dx()(x, y, z) / sqrt(coords->g_11()(x, y, z)), MatA);
@@ -430,7 +431,8 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
                       4.0 / (3.0 * coords->dx()(x, y, z)) / sqrt(coords->g_11()(x, y, z)),
                       MatA);
               Element(i, x, z, 4, 0,
-                      -1.0 / (4.0 * coords->dx()(x, y, z)) / sqrt(coords->g_11()(x, y, z)),
+                      -1.0 / (4.0 * coords->dx()(x, y, z))
+                          / sqrt(coords->g_11()(x, y, z)),
                       MatA);
             } else {
               // Second Order Accuracy on Boundary
@@ -685,14 +687,16 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
             if (fourth_order) {
               // Fourth Order Accuracy on Boundary
               Element(i, x, z, 0, 0,
-                      25.0 / (12.0 * coords->dx()(x, y, z)) / sqrt(coords->g_11()(x, y, z)),
+                      25.0 / (12.0 * coords->dx()(x, y, z))
+                          / sqrt(coords->g_11()(x, y, z)),
                       MatA);
               Element(i, x, z, -1, 0,
                       -4.0 / coords->dx()(x, y, z) / sqrt(coords->g_11()(x, y, z)), MatA);
               Element(i, x, z, -2, 0,
                       3.0 / coords->dx()(x, y, z) / sqrt(coords->g_11()(x, y, z)), MatA);
               Element(i, x, z, -3, 0,
-                      -4.0 / (3.0 * coords->dx()(x, y, z)) / sqrt(coords->g_11()(x, y, z)),
+                      -4.0 / (3.0 * coords->dx()(x, y, z))
+                          / sqrt(coords->g_11()(x, y, z)),
                       MatA);
               Element(i, x, z, -4, 0,
                       1.0 / (4.0 * coords->dx()(x, y, z)) / sqrt(coords->g_11()(x, y, z)),

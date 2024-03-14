@@ -403,7 +403,8 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
         {
           // Metrics on x+1/2 boundary
           const BoutReal J = 0.5 * (coords->J()(x, y, z) + coords->J()(x + 1, y, z));
-          const BoutReal g11 = 0.5 * (coords->g11()(x, y, z) + coords->g11()(x + 1, y, z));
+          const BoutReal g11 =
+              0.5 * (coords->g11()(x, y, z) + coords->g11()(x + 1, y, z));
           const BoutReal dx = 0.5 * (coords->dx()(x, y, z) + coords->dx()(x + 1, y, z));
           const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x + 1, y, z));
 
@@ -416,7 +417,8 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
         {
           // Metrics on x-1/2 boundary
           const BoutReal J = 0.5 * (coords->J()(x, y, z) + coords->J()(x - 1, y, z));
-          const BoutReal g11 = 0.5 * (coords->g11()(x, y, z) + coords->g11()(x - 1, y, z));
+          const BoutReal g11 =
+              0.5 * (coords->g11()(x, y, z) + coords->g11()(x - 1, y, z));
           const BoutReal dx = 0.5 * (coords->dx()(x, y, z) + coords->dx()(x - 1, y, z));
           const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x - 1, y, z));
 
@@ -433,7 +435,8 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
 
         {
           const BoutReal J = 0.5 * (coords->J()(x, y, z) + coords->J()(x, y, zplus));
-          const BoutReal g33 = 0.5 * (coords->g33()(x, y, z) + coords->g33()(x, y, zplus));
+          const BoutReal g33 =
+              0.5 * (coords->g33()(x, y, z) + coords->g33()(x, y, zplus));
           const BoutReal dz = 0.5 * (coords->dz()(x, y, z) + coords->dz()(x, y, zplus));
           // Metrics on z+1/2 boundary
           const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zplus));
@@ -445,7 +448,8 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
         {
           // Metrics on z-1/2 boundary
           const BoutReal J = 0.5 * (coords->J()(x, y, z) + coords->J()(x, y, zminus));
-          const BoutReal g33 = 0.5 * (coords->g33()(x, y, z) + coords->g33()(x, y, zminus));
+          const BoutReal g33 =
+              0.5 * (coords->g33()(x, y, z) + coords->g33()(x, y, zminus));
           const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zminus));
           const BoutReal dz = 0.5 * (coords->dz()(x, y, z) + coords->dz()(x, y, zminus));
 
@@ -471,7 +475,8 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
 
           // Metrics
           const BoutReal J = 0.5 * (coords->J()(x, y, z) + coords->J()(x + 1, y, z));
-          const BoutReal g13 = 0.5 * (coords->g13()(x, y, z) + coords->g13()(x + 1, y, z));
+          const BoutReal g13 =
+              0.5 * (coords->g13()(x, y, z) + coords->g13()(x + 1, y, z));
           const BoutReal dz = 0.5 * (coords->dz()(x, y, z) + coords->dz()(x + 1, y, z));
           const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x + 1, y, z));
 
@@ -507,7 +512,8 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
           //   so metrics at (x-1/2,z)
 
           const BoutReal J = 0.5 * (coords->J()(x, y, z) + coords->J()(x - 1, y, z));
-          const BoutReal g13 = 0.5 * (coords->g13()(x, y, z) + coords->g13()(x - 1, y, z));
+          const BoutReal g13 =
+              0.5 * (coords->g13()(x, y, z) + coords->g13()(x - 1, y, z));
           const BoutReal dz = 0.5 * (coords->dz()(x, y, z) + coords->dz()(x - 1, y, z));
           const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x - 1, y, z));
 
@@ -540,7 +546,8 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
           //   so metrics at (x,z+1/2)
 
           const BoutReal J = 0.5 * (coords->J()(x, y, z) + coords->J()(x, y, zplus));
-          const BoutReal g13 = 0.5 * (coords->g13()(x, y, z) + coords->g13()(x, y, zplus));
+          const BoutReal g13 =
+              0.5 * (coords->g13()(x, y, z) + coords->g13()(x, y, zplus));
           const BoutReal dx = 0.5 * (coords->dx()(x, y, z) + coords->dx()(x, y, zplus));
           const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zplus));
 
@@ -573,7 +580,8 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
           //   so metrics at (x,z-1/2)
 
           const BoutReal J = 0.5 * (coords->J()(x, y, z) + coords->J()(x, y, zminus));
-          const BoutReal g13 = 0.5 * (coords->g13()(x, y, z) + coords->g13()(x, y, zminus));
+          const BoutReal g13 =
+              0.5 * (coords->g13()(x, y, z) + coords->g13()(x, y, zminus));
           const BoutReal dx = 0.5 * (coords->dx()(x, y, z) + coords->dx()(x, y, zminus));
           const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zminus));
 
