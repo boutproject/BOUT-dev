@@ -376,7 +376,8 @@ class GEM : public PhysicsModel {
     g12 = 0.0;
     g13 = 0.;
     g23 = -Btxy / (hthe * Bpxy * Rxy);
-    coord->setContravariantMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
+    coord->setContravariantMetricTensor(
+        ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
 
     coord->setJ(hthe / Bpxy);
     coord->setBxy(Bxy);
@@ -388,7 +389,8 @@ class GEM : public PhysicsModel {
     g_12 = 0.;
     g_13 = 0.;
     g_23 = Btxy * hthe * Rxy / Bpxy;
-    coord->setCovariantMetricTensor(CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+    coord->setCovariantMetricTensor(
+        CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
     // Set B field vector
 

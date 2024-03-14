@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
   mesh->communicate(solution);
   Field2D rhs_check;
   if (include_y_derivs) {
-    rhs_check = 
+    rhs_check =
         a * Laplace_perp(solution) + Grad_perp(a) * Grad_perp(solution) + b * solution;
   } else {
     rhs_check = a * Delp2(solution, CELL_DEFAULT, false)

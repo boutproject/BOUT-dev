@@ -365,10 +365,10 @@ void LaplaceHypre3d::updateMatrix3D() {
       C_df_dy *= D[l];
     }
     if (issetC) {
-      C_df_dy +=
-          (coords->g12()[l] * dc_dx[l] + (coords->g22()[l] - 1. / coords->g_22()[l]) * dc_dy[l]
-           + coords->g23()[l] * dc_dz[l])
-          / C1[l];
+      C_df_dy += (coords->g12()[l] * dc_dx[l]
+                  + (coords->g22()[l] - 1. / coords->g_22()[l]) * dc_dy[l]
+                  + coords->g23()[l] * dc_dz[l])
+                 / C1[l];
     }
 
     BoutReal C_d2f_dy2 = (coords->g22()[l] - 1.0 / coords->g_22()[l]);
@@ -389,8 +389,8 @@ void LaplaceHypre3d::updateMatrix3D() {
     C_df_dy /= 2 * coords->dy()[l];
     C_d2f_dy2 /= SQ(coords->dy()[l]);
     C_d2f_dxdy /= 4 * coords->dx()[l]; // NOTE: This value is not completed here. It needs
-                                     // to be divide by dx(i +/- 1, j, k) when using to
-                                     // set a matrix element
+                                       // to be divide by dx(i +/- 1, j, k) when using to
+                                       // set a matrix element
     C_d2f_dydz /= 4 * coords->dy()[l] * coords->dz()[l];
 
     // The values stored in the y-boundary are already interpolated

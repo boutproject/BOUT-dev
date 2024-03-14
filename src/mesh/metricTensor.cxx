@@ -104,7 +104,7 @@ MetricTensor MetricTensor::inverse(const std::string& region) {
     g_13[i] = a(0, 2);
     g_23[i] = a(1, 2);
   }
-  
+
   BoutReal maxerr;
   maxerr = BOUTMAX(max(abs((g_11 * g_11 + g_12 * g_12 + g_13 * g_13) - 1)),
                    max(abs((g_12 * g_12 + g_22 * g_22 + g_23 * g_23) - 1)),
@@ -117,7 +117,7 @@ MetricTensor MetricTensor::inverse(const std::string& region) {
                    max(abs(g_12 * g_13 + g_22 * g_23 + g_23 * g_33)));
 
   output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
-  
+
   auto other_representation = MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23);
   const auto location = g11_.getLocation();
   other_representation.setLocation(location);
