@@ -9,11 +9,11 @@ timestep = 0.1   # time between outputs
 
 twistshift = false  # use twist-shift condition?
 
-MZ = 129     # number of points in z direction
+MZ = 128     # number of points in z direction
 ZMIN = 0.0
 ZMAX = 0.031831  # 0.2 NOTE: Length of y is 1 and this *2pi is Z length
 
-MXG = 0
+MXG = 2
 MYG = 2
 
 grid = "rt.grd.nc"
@@ -66,11 +66,11 @@ scale = 0.0 # default size of initial perturbations
 # neumann = zero gradient
 
 # most variables free at boundaries
+bndry_xin = neumann
+bndry_xout = neumann
 bndry_all = free_o3
 
 [v]
-
-bndry_all = dirichlet
 
 [vy] # evolving contravariant components
 scale = 0.001 # initial velocity perturbation

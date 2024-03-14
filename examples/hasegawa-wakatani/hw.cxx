@@ -28,12 +28,10 @@ private:
     mesh->communicate(tmp);
     tmp.applyBoundary("neumann");
     return Delp2(tmp);
-
-    //return Delp2(var);
   }
 
 protected:
-  int init(bool UNUSED(restart)) {
+  int init(bool UNUSED(restart)) override {
 
     auto& options = Options::root()["hw"];
     alpha = options["alpha"].withDefault(1.0);
@@ -44,7 +42,6 @@ protected:
     modified = options["modified"].withDefault(false);
 
     SOLVE_FOR(n, vort);
-    SAVE_REPEAT(phi);
 
     // Split into convective and diffusive parts
     setSplitOperator();
@@ -84,7 +81,17 @@ protected:
     return 0;
   }
 
-  int convective(BoutReal UNUSED(time)) {
+  /// Add variables to the output. This can be used to calculate
+  /// diagnostics
+  ///
+  /// @param[inout] state  A nested dictionary that can be added to
+  void outputVars(Options& state) override {
+    // Set time-varying quantity (assignRepeat)
+    state["phi"].assignRepeat(phi).setAttributes(
+        {{"standard_name", "potential"}, {"long_name", "Plasma potential"}});
+  }
+
+  int convective(BoutReal UNUSED(time)) override {
     // Non-stiff, convective part of the problem
 
     // Solve for potential
@@ -110,7 +117,7 @@ protected:
     return 0;
   }
 
-  int diffusive(BoutReal UNUSED(time)) {
+  int diffusive(BoutReal UNUSED(time)) override {
     // Diffusive terms
     mesh->communicate(n, vort);
     ddt(n) = -Dn * Delp4(n);

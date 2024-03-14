@@ -14,14 +14,13 @@
 class CWM : public PhysicsModel {
 private:
   // 2D initial profiles
-  Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, rho0, Ajpar0;
-  Vector2D b0xcv; // for curvature terms
+  Field2D Ni0, Te0;
 
   // 3D evolving fields
-  Field3D rho, te, ajpar;
+  Field3D rho, te;
 
   // Derived 3D variables
-  Field3D phi, jpar;
+  Field3D phi;
 
   // e-i Collision frequency
   Field3D nu;
@@ -33,8 +32,8 @@ private:
   Field2D Rxy, Bpxy, Btxy, hthe, Zxy;
 
   // parameters
-  BoutReal Te_x, Ti_x, Ni_x, Vi_x, bmag, rho_s, fmei, AA, ZZ;
-  BoutReal lambda_ei, lambda_ii;
+  BoutReal Te_x, Ni_x, Vi_x, bmag, rho_s, fmei, AA, ZZ;
+  BoutReal lambda_ei;
   BoutReal nu_hat, wci, nueix;
 
   bool bout_exb; // Use BOUT-06 expression for ExB velocity
@@ -48,12 +47,6 @@ private:
   // Coefficients for linear sheath problem
   Field2D LAMBDA1, LAMBDA2;
 
-  // My ixseps variables
-  int my_ixseps;
-
-  // Communication object
-  FieldGroup comms;
-
   // Coordinate system
   Coordinates* coord;
 
@@ -63,43 +56,20 @@ private:
   int init(bool UNUSED(restarting)) override {
     Field2D I; // Shear factor
 
-    output.write("Solving 6-variable 2-fluid equations\n");
-
     /************* LOAD DATA FROM GRID FILE ****************/
 
     // Load 2D profiles (set to zero if not found)
-    mesh->get(Ni0, "Ni0");
-    mesh->get(Ti0, "Ti0");
-    mesh->get(Te0, "Te0");
-    mesh->get(Vi0, "Vi0");
-    mesh->get(Ve0, "Ve0");
-    mesh->get(phi0, "phi0");
-    mesh->get(rho0, "rho0");
-    mesh->get(Ajpar0, "Ajpar0");
+    GRID_LOAD(Ni0, Te0);
 
     coord = mesh->getCoordinates();
 
-    // Load magnetic curvature term
-    b0xcv.covariant = false;  // Read contravariant components
-    mesh->get(b0xcv, "bxcv"); // b0xkappa terms
-
     // Load metrics
-    mesh->get(Rxy, "Rxy");
-    mesh->get(Zxy, "Zxy");
-    mesh->get(Bpxy, "Bpxy");
-    mesh->get(Btxy, "Btxy");
-    mesh->get(hthe, "hthe");
+    GRID_LOAD(Rxy, Zxy, Bpxy, Btxy, hthe);
     mesh->get(coord->dx, "dpsi");
     mesh->get(I, "sinty");
 
     // Load normalisation values
-    mesh->get(Te_x, "Te_x");
-    mesh->get(Ti_x, "Ti_x");
-    mesh->get(Ni_x, "Ni_x");
-    mesh->get(bmag, "bmag");
-
-    // Get separatrix location
-    mesh->get(my_ixseps, "ixseps1");
+    GRID_LOAD(Te_x, Ni_x, bmag);
 
     Ni_x *= 1.0e14;
     bmag *= 1.0e4;
@@ -129,7 +99,6 @@ private:
 
     if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0; // I disappears from metric
-      b0xcv.z += I * b0xcv.x;
     }
 
     /************** CALCULATE PARAMETERS *****************/
@@ -138,7 +107,6 @@ private:
     fmei = 1. / 1836.2 / AA;
 
     lambda_ei = 24. - log(sqrt(Ni_x) / Te_x);
-    lambda_ii = 23. - log(ZZ * ZZ * ZZ * sqrt(2. * Ni_x) / pow(Ti_x, 1.5));
     wci = 9.58e3 * ZZ * bmag / AA;
     nueix = 2.91e-6 * Ni_x * lambda_ei / pow(Te_x, 1.5);
     nu_hat = zeff * nueix / wci;
@@ -162,15 +130,7 @@ private:
 
     // Normalise profiles
     Ni0 /= Ni_x / 1.0e14;
-    Ti0 /= Te_x;
     Te0 /= Te_x;
-    phi0 /= Te_x;
-    Vi0 /= Vi_x;
-
-    // Normalise curvature term
-    b0xcv.x /= (bmag / 1e4);
-    b0xcv.y *= rho_s * rho_s;
-    b0xcv.z *= rho_s * rho_s;
 
     // Normalise geometry
     Rxy /= rho_s;
@@ -210,31 +170,9 @@ private:
 
     // Tell BOUT++ which variables to evolve
     // add evolving variables to the communication object
-    SOLVE_FOR(rho);
-    comms.add(rho);
+    SOLVE_FOR(rho, te);
 
-    SOLVE_FOR(te);
-    comms.add(te);
-
-    // Set boundary conditions for phi
-    phi.setBoundary("phi");
-
-    /************** SETUP COMMUNICATIONS **************/
-
-    // add extra variables to communication
-    comms.add(phi);
-
-    /*************** DUMP VARIABLES TO OUTPUT**********/
-    dump.add(phi, "phi", 1);
-
-    SAVE_ONCE(Ni0, Te0, phi0, rho0);
     SAVE_ONCE(Rxy, Bpxy, Btxy, Zxy, hthe);
-
-    SAVE_ONCE(Te_x, Ti_x, Ni_x);
-    SAVE_ONCE(AA, ZZ, zeff, rho_s, wci, bmag);
-    dump.addOnce(mesh->LocalNx, "ngx");
-    dump.addOnce(mesh->LocalNy, "ngy");
-    dump.addOnce(mesh->LocalNz, "ngz");
     SAVE_ONCE(nu_hat, hthe0);
 
     // Create a solver for the Laplacian
@@ -245,17 +183,86 @@ private:
 
   //////////////////////////////////////////////////////////////////
 
+  /// Add variables to the output. This can be used to calculate
+  /// diagnostics
+  ///
+  /// @param[inout] state  A nested dictionary that can be added to
+  void outputVars(Options& state) override {
+    // Set time-varying quantity (assignRepeat)
+    state["phi"].assignRepeat(phi).setAttributes({{"units", "V"},
+                                                  {"conversion", Te_x},
+                                                  {"standard_name", "potential"},
+                                                  {"long_name", "Plasma potential"}});
+
+    // Force updates to non-varying quantities
+    state["Ni0"].force(Ni0).setAttributes(
+        {{"units", "m^-3"},
+         {"conversion", Ni_x},
+         {"standard_name", "background ion density"},
+         {"long_name", "Background ion number density"}});
+
+    state["Te0"].force(Te0).setAttributes(
+        {{"units", "eV"},
+         {"conversion", Te_x},
+         {"standard_name", "background electron temperature"},
+         {"long_name", "Background electron temperature"}});
+
+    state["rho_s"].force(rho_s).setAttributes(
+        {{"units", "m"},
+         {"conversion", 1},
+         {"standard_name", "length normalisation"},
+         {"long_name", "Gyro-radius length normalisation"}});
+
+    state["wci"].force(wci).setAttributes(
+        {{"units", "s^-1"},
+         {"conversion", 1},
+         {"standard_name", "frequency normalisation"},
+         {"long_name", "Cyclotron frequency normalisation"}});
+
+    state["Te_x"].force(Te_x).setAttributes(
+        {{"units", "eV"},
+         {"conversion", 1},
+         {"standard_name", "temperature normalisation"},
+         {"long_name", "Temperature normalisation"}});
+
+    state["Ni_x"].force(Ni_x).setAttributes(
+        {{"units", "m^-3"},
+         {"conversion", 1},
+         {"standard_name", "density temperature"},
+         {"long_name", "Number density normalisation"}});
+
+    state["bmag"].force(bmag).setAttributes({{"units", "G"},
+                                             {"conversion", 1},
+                                             {"standard_name", "B field normalisation"},
+                                             {"long_name", "B field normalisation"}});
+
+    state["AA"].force(AA).setAttributes({{"units", ""},
+                                         {"conversion", 1},
+                                         {"standard_name", "amu"},
+                                         {"long_name", "Atomic mass number"}});
+
+    state["ZZ"].force(ZZ).setAttributes({{"units", ""},
+                                         {"conversion", 1},
+                                         {"standard_name", "ion charge"},
+                                         {"long_name", "Ion charge"}});
+
+    state["zeff"].force(zeff).setAttributes({{"units", ""},
+                                             {"conversion", 1},
+                                             {"standard_name", "Zeff"},
+                                             {"long_name", "Effective ion charge"}});
+  }
+
   ///////////////////////////////////////////////////////////////////
   // Function called at each time step
   // Time derivatives calculated here
-  int rhs(BoutReal UNUSED(t)) {
+  int rhs(BoutReal UNUSED(t)) override {
     // Invert vorticity to get phi
 
     // Solves \nabla^2_\perp x + (1./c)*\nabla_perp c\cdot\nabla_\perp x + a x = b
     phi = phiSolver->solve(rho / Ni0);
 
     // Communicate variables
-    mesh->communicate(comms);
+    mesh->communicate(phi, te, rho);
 
     // 'initial guess' for phi boundary values, before applying sheath boundary conditions
     // to set the parallel current.
