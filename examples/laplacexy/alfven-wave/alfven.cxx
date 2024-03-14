@@ -179,7 +179,7 @@ protected:
     Field2D dx;
     if (!mesh->get(dx, "dpsi")) {
       output << "\tUsing dpsi as the x grid spacing\n";
-      coord->dx() = dx; // Only use dpsi if found
+      coord->setDx(dx); // Only use dpsi if found
     } else {
       // dx will have been read already from the grid
       output << "\tUsing dx as the x grid spacing\n";
