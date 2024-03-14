@@ -188,7 +188,7 @@ int SplitRK::run() {
     // Call rhs function to get extra variables at this time
     run_rhs(simtime);
 
-    if (call_monitors(simtime, step, getNumberOutputSteps())) {
+    if (call_monitors(simtime, step+1, getNumberOutputSteps())) {
       // User signalled to quit
       break;
     }

@@ -269,7 +269,7 @@ int IdaSolver::run() {
       throw BoutException("SUNDIALS IDA timestep failed\n");
     }
 
-    if (call_monitors(simtime, i, getNumberOutputSteps())) {
+    if (call_monitors(simtime, i+1, getNumberOutputSteps())) {
       // User signalled to quit
       break;
     }

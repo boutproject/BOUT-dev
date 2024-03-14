@@ -92,7 +92,7 @@ int RK3SSP::run() {
     // Call rhs function to get extra variables at this time
     run_rhs(simtime);
 
-    if (call_monitors(simtime, s, getNumberOutputSteps())) {
+    if (call_monitors(simtime, s+1, getNumberOutputSteps())) {
       // User signalled to quit
       break;
     }

@@ -600,7 +600,7 @@ int ArkodeSolver::run() {
                    static_cast<BoutReal>(npevals) / static_cast<BoutReal>(nniters));
     }
 
-    if (call_monitors(simtime, i, getNumberOutputSteps())) {
+    if (call_monitors(simtime, i+1, getNumberOutputSteps())) {
       // User signalled to quit
       break;
     }

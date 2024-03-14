@@ -566,7 +566,7 @@ int Solver::solve(int nout, BoutReal timestep) {
     /// Write initial state as time-point 0
 
     // Call monitors so initial values are written to output dump files
-    if (call_monitors(simtime, -1, nout)) {
+    if (call_monitors(simtime, 0, NOUT)) {
       throw BoutException("Initial monitor call failed!");
     }
 
