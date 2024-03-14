@@ -116,20 +116,12 @@ private:
 
     // Set the metric tensor components to get Lz
     const auto g33 = SQ(2. * PI / Lz);
-    coord->setContravariantMetricTensor(ContravariantMetricTensor(coord->g11(),
-                                                          coord->g22(),
-                                                          g33,
-                                                          coord->g12(),
-                                                          coord->g13(),
-                                                          coord->g23()));
+    coord->setContravariantMetricTensor(ContravariantMetricTensor(
+        coord->g11(), coord->g22(), g33, coord->g12(), coord->g13(), coord->g23()));
 
     const auto g_33 = 1. / coord->g33();
-    coord->setCovariantMetricTensor(CovariantMetricTensor(coord->g_11(),
-                                                          coord->g_22(),
-                                                          g_33,
-                                                          coord->g_12(),
-                                                          coord->g_13(),
-                                                          coord->g_23()));
+    coord->setCovariantMetricTensor(CovariantMetricTensor(
+        coord->g_11(), coord->g_22(), g_33, coord->g_12(), coord->g_13(), coord->g_23()));
 
     /**************** SET EVOLVING VARIABLES *************/
 
