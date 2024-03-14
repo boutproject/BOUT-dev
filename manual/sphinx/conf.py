@@ -31,8 +31,7 @@ import os
 import subprocess
 import sys
 
-sys.path.append("../../tools/pylib/boutpp")
-sys.path.append("../../tools/pylib/boutconfig")
+sys.path.append("../../tools/pylib")
 
 # Are we running on readthedocs?
 on_readthedocs = os.environ.get("READTHEDOCS") == "True"
