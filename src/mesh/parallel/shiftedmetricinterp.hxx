@@ -24,8 +24,8 @@
  *
  **************************************************************************/
 
-#ifndef __SHIFTEDINTERP_H__
-#define __SHIFTEDINTERP_H__
+#ifndef BOUT_SHIFTEDINTERP_H
+#define BOUT_SHIFTEDINTERP_H
 
 #include <bout/interpolation_z.hxx>
 #include <bout/paralleltransform.hxx>
@@ -129,4 +129,4 @@ private:
   const std::size_t ydown_index;
 };
 
-#endif // __SHIFTEDINTERP_H__
+#endif // BOUT_SHIFTEDINTERP_H

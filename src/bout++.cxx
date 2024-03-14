@@ -190,8 +190,7 @@ int BoutInitialise(int& argc, char**& argv) {
     // but it's possible that only happens in BoutFinalise, which is
     // too late for that check.
     const auto datadir = Options::root()["datadir"].withDefault<std::string>(DEFAULT_DIR);
-    MAYBE_UNUSED()
-    const auto optionfile =
+    [[maybe_unused]] const auto optionfile =
         Options::root()["optionfile"].withDefault<std::string>(args.opt_file);
     const auto settingsfile =
         Options::root()["settingsfile"].withDefault<std::string>(args.set_file);
@@ -583,11 +582,8 @@ void printCompileTimeOptions() {
   output_info.write(_("\tSUNDIALS support {}\n"), is_enabled(has_sundials));
   output_info.write(_("\tBacktrace in exceptions {}\n"), is_enabled(use_backtrace));
   output_info.write(_("\tColour in logs {}\n"), is_enabled(use_color));
-  output_info.write(_("\tOpenMP parallelisation {}"), is_enabled(use_openmp));
-#ifdef _OPENMP
-  output_info.write(_(", using {} threads"), omp_get_max_threads());
-#endif
-  output_info.write("\n");
+  output_info.write(_("\tOpenMP parallelisation {}, using {} threads\n"),
+                    is_enabled(use_openmp), omp_get_max_threads());
   output_info.write(_("\tExtra debug output {}\n"), is_enabled(use_output_debug));
   output_info.write(_("\tFloating-point exceptions {}\n"), is_enabled(use_sigfpe));
   output_info.write(_("\tSignal handling support {}\n"), is_enabled(use_signal));
@@ -716,6 +712,7 @@ void addBuildFlagsToOptions(Options& options) {
   options["use_backtrace"].force(bout::build::use_backtrace);
   options["use_color"].force(bout::build::use_color);
   options["use_openmp"].force(bout::build::use_openmp);
+  options["openmp_threads"].force(omp_get_max_threads());
   options["use_output_debug"].force(bout::build::use_output_debug);
   options["use_sigfpe"].force(bout::build::use_sigfpe);
   options["use_signal"].force(bout::build::use_signal);
@@ -837,7 +834,7 @@ BoutMonitor::BoutMonitor(BoutReal timestep, Options& options)
                           .doc(_("Name of file whose existence triggers a stop"))
                           .withDefault("BOUT.stop"))) {}
 
-int BoutMonitor::call(Solver* solver, BoutReal t, MAYBE_UNUSED(int iter), int NOUT) {
+int BoutMonitor::call(Solver* solver, BoutReal t, [[maybe_unused]] int iter, int NOUT) {
   TRACE("BoutMonitor::call({:e}, {:d}, {:d})", t, iter, NOUT);
 
   // Increment Solver's iteration counter, and set the global `iteration`

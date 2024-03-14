@@ -1,8 +1,8 @@
 
 class CASHKARPScheme;
 
-#ifndef __CASHKARP_SCHEME_H__
-#define __CASHKARP_SCHEME_H__
+#ifndef BOUT_CASHKARP_SCHEME_H
+#define BOUT_CASHKARP_SCHEME_H
 
 #include <bout/rkscheme.hxx>
 #include <bout/utils.hxx>
@@ -16,4 +16,4 @@ namespace {
 RegisterRKScheme<CASHKARPScheme> registerrkschemecashkarp(RKSCHEME_CASHKARP);
 }
 
-#endif // __CASHKARP_SCHEME_H__
+#endif // BOUT_CASHKARP_SCHEME_H

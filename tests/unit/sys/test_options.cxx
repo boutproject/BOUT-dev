@@ -326,7 +326,7 @@ TEST_F(OptionsTest, ValueUsed) {
   Options options;
   options["key1"] = 1;
   EXPECT_FALSE(options["key1"].valueUsed());
-  MAYBE_UNUSED(const int value) = options["key1"];
+  [[maybe_unused]] const int value = options["key1"];
   EXPECT_TRUE(options["key1"].valueUsed());
 }
 
@@ -602,23 +602,23 @@ TEST_F(OptionsTest, OptionsMacroConstReference) {
   EXPECT_EQ(val, 42);
 }
 
-/// Copy constructor copies value
+/// Copy method copies value
 TEST_F(OptionsTest, CopyOption) {
   Options option1;
 
   option1 = 42;
 
-  Options option2(option1);
+  Options option2(option1.copy());
 
   EXPECT_EQ(option2.as<int>(), 42);
 }
 
-/// Copy constructor makes independent copy
+/// Copy method makes independent copy
 TEST_F(OptionsTest, CopyOptionDistinct) {
   Options option1;
   option1 = 42;
 
-  Options option2(option1);
+  Options option2(option1.copy());
 
   option1.force(23);
 
@@ -632,7 +632,7 @@ TEST_F(OptionsTest, CopySection) {
 
   option1["key"] = 42; // option1 now a section
 
-  Options option2(option1);
+  Options option2(option1.copy());
 
   EXPECT_EQ(option2["key"].as<int>(), 42);
 }
@@ -643,7 +643,7 @@ TEST_F(OptionsTest, CopySectionParent) {
 
   option1["key"] = 42;
 
-  Options option2(option1);
+  Options option2(option1.copy());
 
   EXPECT_TRUE(&option2["key"].parent() == &option2);
 }
@@ -653,7 +653,7 @@ TEST_F(OptionsTest, AssignOption) {
 
   option1 = 42;
 
-  option2 = option1;
+  option2 = option1.copy();
 
   EXPECT_EQ(option2.as<int>(), 42);
 }
@@ -663,7 +663,7 @@ TEST_F(OptionsTest, AssignSection) {
 
   option1["key"] = 42;
 
-  option2 = option1;
+  option2 = option1.copy();
 
   EXPECT_EQ(option2["key"].as<int>(), 42);
   EXPECT_TRUE(option2["key"].isValue());
@@ -675,7 +675,7 @@ TEST_F(OptionsTest, AssignSectionReplace) {
   option1["key"] = 42;
   option2["key"] = 23;
 
-  option2 = option1;
+  option2 = option1.copy();
 
   EXPECT_EQ(option2["key"].as<int>(), 42);
 }
@@ -685,7 +685,7 @@ TEST_F(OptionsTest, AssignSectionParent) {
 
   option1["key"] = 42;
 
-  option2 = option1;
+  option2 = option1.copy();
 
   EXPECT_TRUE(&option2["key"].parent() == &option2);
 }
@@ -695,7 +695,7 @@ TEST_F(OptionsTest, AssignSubSection) {
 
   option1["key1"] = 42;
 
-  option2["key2"] = option1;
+  option2["key2"] = option1.copy();
 
   EXPECT_EQ(option2["key2"]["key1"].as<int>(), 42);
 }
@@ -705,7 +705,7 @@ TEST_F(OptionsTest, AssignSubSectionParent) {
 
   option1["key1"] = 42;
 
-  option2["key2"] = option1;
+  option2["key2"] = option1.copy();
 
   EXPECT_EQ(&option2["key2"].parent(), &option2);
   EXPECT_EQ(&option2["key2"]["key1"].parent(), &option2["key2"]);
@@ -1042,7 +1042,7 @@ TEST_F(OptionsTest, DocStringNotCopied) {
   Options option;
   option = 32;
 
-  Options option2 = option;
+  Options option2 = option.copy();
 
   int value = option2.doc("test value");
 
@@ -1245,17 +1245,17 @@ TEST_F(OptionsTest, GetUnused) {
   // This shouldn't count as unused
   option["section2"]["value5"].attributes["source"] = "Output";
 
-  MAYBE_UNUSED(auto value1) = option["section1"]["value1"].as<int>();
-  MAYBE_UNUSED(auto value3) = option["section2"]["subsection1"]["value3"].as<bool>();
+  [[maybe_unused]] auto value1 = option["section1"]["value1"].as<int>();
+  [[maybe_unused]] auto value3 = option["section2"]["subsection1"]["value3"].as<bool>();
 
   Options expected_unused{{"section1", {{"value2", "hello"}}},
                           {"section2", {{"subsection1", {{"value4", 3.2}}}}}};
 
   EXPECT_EQ(option.getUnused(), expected_unused);
 
-  MAYBE_UNUSED(auto value2) = option["section1"]["value2"].as<std::string>();
-  MAYBE_UNUSED(auto value4) = option["section2"]["subsection1"]["value4"].as<double>();
-  MAYBE_UNUSED(auto value5) = option["section2"]["value5"].as<int>();
+  [[maybe_unused]] auto value2 = option["section1"]["value2"].as<std::string>();
+  [[maybe_unused]] auto value4 = option["section2"]["subsection1"]["value4"].as<double>();
+  [[maybe_unused]] auto value5 = option["section2"]["value5"].as<int>();
 
   Options expected_empty{};
 
@@ -1333,8 +1333,8 @@ TEST_F(OptionsTest, CheckForUnusedOptions) {
   // This shouldn't count as unused
   option["section2"]["value5"].attributes["source"] = "Output";
 
-  MAYBE_UNUSED(auto value1) = option["section1"]["value1"].as<int>();
-  MAYBE_UNUSED(auto value3) = option["section2"]["subsection1"]["value3"].as<bool>();
+  [[maybe_unused]] auto value1 = option["section1"]["value1"].as<int>();
+  [[maybe_unused]] auto value3 = option["section2"]["subsection1"]["value3"].as<bool>();
 
   EXPECT_THROW(bout::checkForUnusedOptions(option, "data", "BOUT.inp"), BoutException);
 }

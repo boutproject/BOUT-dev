@@ -29,8 +29,8 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-#ifndef __DCOMPLEX_H__
-#define __DCOMPLEX_H__
+#ifndef BOUT_DCOMPLEX_H
+#define BOUT_DCOMPLEX_H
 
 #include "bout/bout_types.hxx"
 #include <complex>
@@ -44,4 +44,4 @@ struct fcmplx {
   BoutReal r, i;
 };
 
-#endif // __DCOMPLEX_H__
+#endif // BOUT_DCOMPLEX_H

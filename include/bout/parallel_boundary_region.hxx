@@ -1,5 +1,5 @@
-#ifndef __PAR_BNDRY_H__
-#define __PAR_BNDRY_H__
+#ifndef BOUT_PAR_BNDRY_H
+#define BOUT_PAR_BNDRY_H
 
 #include "bout/boundary_region.hxx"
 #include "bout/bout_types.hxx"
@@ -70,4 +70,4 @@ public:
   const int dir;
 };
 
-#endif //  __PAR_BNDRY_H__
+#endif //  BOUT_PAR_BNDRY_H

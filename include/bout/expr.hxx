@@ -9,8 +9,8 @@
  *
  **************************************************************************/
 
-#ifndef __EXPR_H__
-#define __EXPR_H__
+#ifndef BOUT_EXPR_H
+#define BOUT_EXPR_H
 
 #warning expr.hxx is deprecated. Do not use!
 
@@ -205,4 +205,4 @@ const Field3D eval3D(Expr e) {
   return result;
 }
 
-#endif // __EXPR_H__
+#endif // BOUT_EXPR_H

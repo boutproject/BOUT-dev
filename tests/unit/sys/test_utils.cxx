@@ -693,10 +693,10 @@ void function_template(T) {}
 
 TEST(FunctionTraitsTest, ResultType) {
   using bout::utils::function_traits;
-  static_assert(std::is_same<function_traits<function_typedef>::result_type, int>::value,
+  static_assert(std::is_same_v<function_traits<function_typedef>::result_type, int>,
                 "Wrong result_type for function_traits of a typedef");
   static_assert(
-      std::is_same<function_traits<decltype(&function_pointer)>::result_type, int>::value,
+      std::is_same_v<function_traits<decltype(&function_pointer)>::result_type, int>,
       "Wrong result_type for function_traits of a function pointer");
   static_assert(
       std::is_same<function_traits<decltype(&function_template<int>)>::result_type,
@@ -719,9 +719,8 @@ TEST(FunctionTraitsTest, NumberOfArgs) {
 
 TEST(FunctionTraitsTest, FirstArg) {
   using bout::utils::function_traits;
-  static_assert(
-      std::is_same<function_traits<function_typedef>::arg<0>::type, char>::value,
-      "Wrong first argument type for function_traits of a typedef");
+  static_assert(std::is_same_v<function_traits<function_typedef>::arg<0>::type, char>,
+                "Wrong first argument type for function_traits of a typedef");
   static_assert(std::is_same<function_traits<decltype(&function_pointer)>::arg<0>::type,
                              double>::value,
                 "Wrong first argument type for function_traits of a function pointer");
@@ -730,10 +729,10 @@ TEST(FunctionTraitsTest, FirstArg) {
                    int>::value,
       "Wrong first argument type for function_traits of a template function");
 
-  static_assert(std::is_same<function_traits<function_typedef>::arg_t<0>, char>::value,
+  static_assert(std::is_same_v<function_traits<function_typedef>::arg_t<0>, char>,
                 "Wrong first argument type for function_traits of a typedef using arg_t");
   static_assert(
-      std::is_same<function_traits<decltype(&function_pointer)>::arg_t<0>, double>::value,
+      std::is_same_v<function_traits<decltype(&function_pointer)>::arg_t<0>, double>,
       "Wrong first argument type for function_traits of a function pointer using arg_t");
   static_assert(
       std::is_same<function_traits<decltype(&function_template<int>)>::arg_t<0>,
@@ -743,10 +742,10 @@ TEST(FunctionTraitsTest, FirstArg) {
 
 TEST(FunctionTraitsTest, SecondArg) {
   using bout::utils::function_traits;
-  static_assert(std::is_same<function_traits<function_typedef>::arg<1>::type, int>::value,
+  static_assert(std::is_same_v<function_traits<function_typedef>::arg<1>::type, int>,
                 "Wrong second argument type for function_traits of a typedef");
   static_assert(
-      std::is_same<function_traits<function_typedef>::arg_t<1>, int>::value,
+      std::is_same_v<function_traits<function_typedef>::arg_t<1>, int>,
       "Wrong second argument type for function_traits of a typedef using arg_t");
 }
 
