@@ -1380,7 +1380,7 @@ const FieldMetric& Coordinates::J() const {
   return *jacobian_cache;
 }
 
-void Coordinates::setJ(FieldMetric J) {
+void Coordinates::setJ(const FieldMetric& J) {
   //TODO: Calculate J and check value is close
   auto ptr = std::make_unique<FieldMetric>(J);
   jacobian_cache = std::move(ptr);

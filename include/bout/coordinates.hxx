@@ -142,7 +142,7 @@ public:
   ///< Magnitude of B = nabla z times nabla x
   const FieldMetric& Bxy() const { return Bxy_; }
 
-  void setJ(FieldMetric J);
+  void setJ(const FieldMetric& J);
   void setJ(BoutReal value, int x, int y);
 
   void setBxy(FieldMetric Bxy);
