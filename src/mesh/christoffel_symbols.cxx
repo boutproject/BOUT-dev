@@ -21,6 +21,8 @@ ChristoffelSymbols::ChristoffelSymbols(const Coordinates& coordinates) {
   // Note: This calculation is completely general: metric
   // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
 
+  coordinates.communicateAndCheckMeshSpacing();
+
   const auto& contravariantMetricTensor = coordinates.getContravariantMetricTensor();
   const auto& covariantMetricTensor = coordinates.getCovariantMetricTensor();
 
