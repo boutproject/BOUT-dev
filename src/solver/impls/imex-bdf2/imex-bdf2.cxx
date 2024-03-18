@@ -1002,7 +1002,7 @@ int IMEXBDF2::run() {
 
     /// Call the monitor function
 
-    if (call_monitors(simtime, s + 1, getNumberOutputSteps())) {
+    if (call_monitors(simtime, s, getNumberOutputSteps())) {
       // User signalled to quit
       break;
     }

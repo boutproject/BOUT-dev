@@ -239,7 +239,7 @@ int PvodeSolver::run() {
 
     /// Call the monitor function
 
-    if (call_monitors(simtime, i + 1, getNumberOutputSteps())) {
+    if (call_monitors(simtime, i, getNumberOutputSteps())) {
       // User signalled to quit
       break;
     }

@@ -877,7 +877,7 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
       if ((iter % monitor.monitor->period) == 0) {
         // Call each monitor one by one
         const int ret =
-            monitor.monitor->call(this, simtime, iter / monitor.monitor->period - 1,
+            monitor.monitor->call(this, simtime, iter / monitor.monitor->period,
                                   NOUT / monitor.monitor->period);
         if (ret != 0) {
           throw BoutException(_("Monitor signalled to quit (return code {})"), ret);
