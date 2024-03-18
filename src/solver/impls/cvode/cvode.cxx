@@ -79,7 +79,7 @@ CvodeSolver::CvodeSolver(Options* opts)
                     .doc("Use functional iteration instead of Newton")
                     .withDefault(adams_moulton)),
       max_order((*options)["cvode_max_order"]
-                    .doc("Maximum order of method to use. < 0 means no limit.")
+                    .doc("Maximum order of method to use. <= 0 means default limit.")
                     .withDefault(-1)),
       stablimdet((*options)["cvode_stability_limit_detection"].withDefault(false)),
       abstol((*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12)),
@@ -91,19 +91,18 @@ CvodeSolver::CvodeSolver(Options* opts)
                   .doc("Maximum number of internal steps between outputs.")
                   .withDefault(500)),
       max_timestep(
-          (*options)["max_timestep"].doc("Maximum time step size").withDefault(-1.0)),
+          (*options)["max_timestep"].doc("Maximum time step size").withDefault(0.0)),
       min_timestep(
-          (*options)["min_timestep"].doc("Minimum time step size").withDefault(-1.0)),
+          (*options)["min_timestep"].doc("Minimum time step size").withDefault(0.0)),
       start_timestep((*options)["start_timestep"]
-                         .doc("Starting time step. < 0 then chosen by CVODE.")
-                         .withDefault(-1.0)),
+                         .doc("Starting time step. = 0 then chosen by CVODE.")
+                         .withDefault(0.0)),
       mxorder((*options)["mxorder"].doc("Maximum order").withDefault(-1)),
       max_nonlinear_iterations(
           (*options)["max_nonlinear_iterations"]
               .doc("Maximum number of nonlinear iterations allowed by CVODE before "
-                   "reducing "
-                   "timestep. CVODE default (used if this option is negative) is 3.")
-              .withDefault(-1)),
+                   "reducing timestep.")
+              .withDefault(3)),
       apply_positivity_constraints(
           (*options)["apply_positivity_constraints"]
               .doc("Use CVODE function CVodeSetConstraints to constrain variables - the "
@@ -191,7 +190,7 @@ int CvodeSolver::init() {
   }
 
   // Put the variables into uvec
-  save_vars(NV_DATA_P(uvec));
+  save_vars(N_VGetArrayPointer(uvec));
 
   if (adams_moulton) {
     // By default use functional iteration for Adams-Moulton
@@ -217,8 +216,10 @@ int CvodeSolver::init() {
     throw BoutException("CVodeInit failed\n");
   }
 
-  if (CVodeSetMaxOrd(cvode_mem, max_order) != CV_SUCCESS) {
-    throw BoutException("CVodeSetMaxOrder failed\n");
+  if (max_order > 0) {
+    if (CVodeSetMaxOrd(cvode_mem, max_order) != CV_SUCCESS) {
+      throw BoutException("CVodeSetMaxOrder failed\n");
+    }
   }
 
   if (CVodeSetStabLimDet(cvode_mem, stablimdet) != CV_SUCCESS) {
@@ -252,7 +253,7 @@ int CvodeSolver::init() {
       throw BoutException("SUNDIALS memory allocation (abstol vector) failed\n");
     }
 
-    set_vector_option_values(NV_DATA_P(abstolvec), f2dtols, f3dtols);
+    set_vector_option_values(N_VGetArrayPointer(abstolvec), f2dtols, f3dtols);
 
     if (CVodeSVtolerances(cvode_mem, reltol, abstolvec) != CV_SUCCESS) {
       throw BoutException("CVodeSVtolerances failed\n");
@@ -295,7 +296,7 @@ int CvodeSolver::init() {
                           "failed\n");
     }
 
-    set_vector_option_values(NV_DATA_P(constraints_vec), f2d_constraints,
+    set_vector_option_values(N_VGetArrayPointer(constraints_vec), f2d_constraints,
                              f3d_constraints);
 
     if (CVodeSetConstraints(cvode_mem, constraints_vec) != CV_SUCCESS) {
@@ -320,7 +321,7 @@ int CvodeSolver::init() {
     output_info.write("\tUsing Newton iteration\n");
     TRACE("Setting preconditioner");
 
-    const auto prectype = use_prec ?
+    const auto prectype = use_precon ?
                           (rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT) :
                           SUN_PREC_NONE;
     sun_solver = callWithSUNContext(SUNLinSol_SPGMR, suncontext, uvec, prectype, maxl);
@@ -551,7 +552,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
   }
 
   // Copy variables
-  load_vars(NV_DATA_P(uvec));
+  load_vars(N_VGetArrayPointer(uvec));
 
   // Call rhs function to get extra variables at this time
   run_rhs(simtime);
@@ -595,7 +596,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
 
   BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
-  int N = NV_LOCLENGTH_P(uvec);
+  int N = N_VGetLocalLength(uvec);
 
   if (!hasPreconditioner()) {
     // Identity (but should never happen)
@@ -650,8 +651,8 @@ void CvodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jv
 
 static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 
-  BoutReal* udata = NV_DATA_P(u);
-  BoutReal* dudata = NV_DATA_P(du);
+  BoutReal* udata = N_VGetArrayPointer(u);
+  BoutReal* dudata = N_VGetArrayPointer(du);
 
   auto* s = static_cast<CvodeSolver*>(user_data);
 
@@ -674,9 +675,9 @@ static int cvode_bbd_rhs(sunindextype UNUSED(Nlocal), BoutReal t, N_Vector u, N_
 static int cvode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec,
                      N_Vector zvec, BoutReal gamma, BoutReal delta, int UNUSED(lr),
                      void* user_data) {
-  BoutReal* udata = NV_DATA_P(yy);
-  BoutReal* rdata = NV_DATA_P(rvec);
-  BoutReal* zdata = NV_DATA_P(zvec);
+  BoutReal* udata = N_VGetArrayPointer(yy);
+  BoutReal* rdata = N_VGetArrayPointer(rvec);
+  BoutReal* zdata = N_VGetArrayPointer(zvec);
 
   auto* s = static_cast<CvodeSolver*>(user_data);
 
@@ -689,9 +690,9 @@ static int cvode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec
 /// Jacobian-vector multiplication function
 static int cvode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector UNUSED(fy),
                      void* user_data, N_Vector UNUSED(tmp)) {
-  BoutReal* ydata = NV_DATA_P(y);   ///< System state
-  BoutReal* vdata = NV_DATA_P(v);   ///< Input vector
-  BoutReal* Jvdata = NV_DATA_P(Jv); ///< Jacobian*vector output
+  BoutReal* ydata = N_VGetArrayPointer(y);   ///< System state
+  BoutReal* vdata = N_VGetArrayPointer(v);   ///< Input vector
+  BoutReal* Jvdata = N_VGetArrayPointer(Jv); ///< Jacobian*vector output
 
   auto* s = static_cast<CvodeSolver*>(user_data);
 
@@ -746,7 +747,7 @@ void CvodeSolver::loop_vector_option_values_op(Ind2D UNUSED(i2d), BoutReal* opti
 
 void CvodeSolver::resetInternalFields() {
   TRACE("CvodeSolver::resetInternalFields");
-  save_vars(NV_DATA_P(uvec));
+  save_vars(N_VGetArrayPointer(uvec));
 
   if (CVodeReInit(cvode_mem, simtime, uvec) != CV_SUCCESS) {
     throw BoutException("CVodeReInit failed\n");

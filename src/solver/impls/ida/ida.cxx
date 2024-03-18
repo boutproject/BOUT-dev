@@ -123,16 +123,16 @@ int IdaSolver::init() {
   }
 
   // Put the variables into uvec
-  save_vars(NV_DATA_P(uvec));
+  save_vars(N_VGetArrayPointer(uvec));
 
   // Get the starting time derivative
   run_rhs(simtime);
 
   // Put the time-derivatives into duvec
-  save_derivs(NV_DATA_P(duvec));
+  save_derivs(N_VGetArrayPointer(duvec));
 
   // Set the equation type in id(Differential or Algebraic. This is optional)
-  set_id(NV_DATA_P(id));
+  set_id(N_VGetArrayPointer(id));
 
   // Call IDACreate to initialise
   idamem = callWithSUNContext(IDACreate, suncontext);
@@ -141,23 +141,25 @@ int IdaSolver::init() {
   }
 
   // For callbacks, need pointer to solver object
-  if (IDASetUserData(idamem, this) < 0) {
+  if (IDASetUserData(idamem, this) != IDA_SUCCESS) {
     throw BoutException("IDASetUserData failed\n");
   }
 
-  if (IDASetId(idamem, id) < 0) {
+  if (IDASetId(idamem, id) != IDA_SUCCESS) {
     throw BoutException("IDASetID failed\n");
   }
 
-  if (IDAInit(idamem, idares, simtime, uvec, duvec) < 0) {
+  if (IDAInit(idamem, idares, simtime, uvec, duvec) != IDA_SUCCESS) {
     throw BoutException("IDAInit failed\n");
   }
 
-  if (IDASStolerances(idamem, reltol, abstol) < 0) {
+  if (IDASStolerances(idamem, reltol, abstol) != IDA_SUCCESS) {
     throw BoutException("IDASStolerances failed\n");
   }
 
-  IDASetMaxNumSteps(idamem, mxsteps);
+  if (IDASetMaxNumSteps(idamem, mxsteps) != IDA_SUCCESS) {
+    throw BoutException("IDASetMaxNumSteps failed\n");
+  }
 
   // Call IDASpgmr to specify the IDA linear solver IDASPGMR
   const auto maxl = (*options)["maxl"].withDefault(6 * n3d);
@@ -170,7 +172,12 @@ int IdaSolver::init() {
   }
 
   if (use_precon) {
-    if (!hasPreconditioner()) {
+    if (hasPreconditioner()) {
+      output.write("\tUsing user-supplied preconditioner\n");
+      if (IDASetPreconditioner(idamem, nullptr, ida_pre) != IDALS_SUCCESS) {
+        throw BoutException("IDASetPreconditioner failed\n");
+      }
+    } else {
       output.write("\tUsing BBD preconditioner\n");
       /// Get options
       // Compute band_width_default from actually added fields, to allow for multiple Mesh
@@ -190,20 +197,15 @@ int IdaSolver::init() {
       const auto mukeep = (*options)["mukeep"].withDefault(n3d);
       const auto mlkeep = (*options)["mlkeep"].withDefault(n3d);
       if (IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, 0, ida_bbd_res,
-                         nullptr)) {
+                         nullptr) != IDALS_SUCCESS) {
         throw BoutException("IDABBDPrecInit failed\n");
-      }
-    } else {
-      output.write("\tUsing user-supplied preconditioner\n");
-      if (IDASetPreconditioner(idamem, nullptr, ida_pre) != IDALS_SUCCESS) {
-        throw BoutException("IDASetPreconditioner failed\n");
       }
     }
   }
 
   // Call IDACalcIC (with default options) to correct the initial values
   if (correct_start) {
-    if (IDACalcIC(idamem, IDA_YA_YDP_INIT, 1e-6)) {
+    if (IDACalcIC(idamem, IDA_YA_YDP_INIT, 1e-6) != IDA_SUCCESS) {
       throw BoutException("IDACalcIC failed\n");
     }
   }
@@ -255,7 +257,7 @@ BoutReal IdaSolver::run(BoutReal tout) {
   const int flag = IDASolve(idamem, tout, &simtime, uvec, duvec, IDA_NORMAL);
 
   // Copy variables
-  load_vars(NV_DATA_P(uvec));
+  load_vars(N_VGetArrayPointer(uvec));
 
   // Call rhs function to get extra variables at this time
   run_rhs(simtime);
@@ -286,8 +288,8 @@ void IdaSolver::res(BoutReal t, BoutReal* udata, BoutReal* dudata, BoutReal* rda
   save_derivs(rdata);
 
   // If a differential equation, subtract dudata
-  const int N = NV_LOCLENGTH_P(id);
-  const BoutReal* idd = NV_DATA_P(id);
+  const auto N = N_VGetLocalLength(id);
+  const BoutReal* idd = N_VGetArrayPointer(id);
   for (int i = 0; i < N; i++) {
     if (idd[i] > 0.5) { // 1 -> differential, 0 -> algebraic
       rdata[i] -= dudata[i];
@@ -307,7 +309,7 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal* udata,
 
   if (!hasPreconditioner()) {
     // Identity (but should never happen)
-    const int N = NV_LOCLENGTH_P(id);
+    const int N = N_VGetLocalLength(id);
     std::copy(rvec, rvec + N, zvec);
     return;
   }
@@ -332,9 +334,9 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal* udata,
  **************************************************************************/
 
 static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data) {
-  BoutReal* udata = NV_DATA_P(u);
-  BoutReal* dudata = NV_DATA_P(du);
-  BoutReal* rdata = NV_DATA_P(rr);
+  BoutReal* udata = N_VGetArrayPointer(u);
+  BoutReal* dudata = N_VGetArrayPointer(du);
+  BoutReal* rdata = N_VGetArrayPointer(rr);
 
   auto* s = static_cast<IdaSolver*>(user_data);
 
@@ -354,9 +356,9 @@ static int ida_bbd_res(sunindextype UNUSED(Nlocal), BoutReal t, N_Vector u, N_Ve
 static int ida_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector UNUSED(rr),
                    N_Vector rvec, N_Vector zvec, BoutReal cj, BoutReal delta,
                    void* user_data) {
-  BoutReal* udata = NV_DATA_P(yy);
-  BoutReal* rdata = NV_DATA_P(rvec);
-  BoutReal* zdata = NV_DATA_P(zvec);
+  BoutReal* udata = N_VGetArrayPointer(yy);
+  BoutReal* rdata = N_VGetArrayPointer(rvec);
+  BoutReal* zdata = N_VGetArrayPointer(zvec);
 
   auto* s = static_cast<IdaSolver*>(user_data);
 
