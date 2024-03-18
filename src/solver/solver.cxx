@@ -866,7 +866,6 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     calculate_mms_error(simtime);
   }
 
-  ++iter;
   try {
     // We need to write each time dimension a maximum of once per
     // timestep. The set of unique time dimensions may be the same

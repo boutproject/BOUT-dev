@@ -520,7 +520,6 @@ protected:
   private:
     int call(Solver* solver, BoutReal UNUSED(t), int UNUSED(iter),
              int UNUSED(NOUT)) override {
-      solver->iteration++;
       return 0;
     }
   };
