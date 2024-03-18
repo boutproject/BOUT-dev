@@ -677,7 +677,25 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
       result[d] = f;
     }
   }
-
+#if BOUT_USE_FCI_AUTOMAGIC
+  if (isFci(var)) {
+    for (size_t i=0; i < result.numberParallelSlices(); ++i) {
+      BOUT_FOR(d, result.yup(i).getRegion(rgn)) {
+ 	if (result.yup(i)[d] < f) {
+ 	  result.yup(i)[d] = f;
+ 	}
+      }
+      BOUT_FOR(d, result.ydown(i).getRegion(rgn)) {
+	if (result.ydown(i)[d] < f) {
+	  result.ydown(i)[d] = f;
+	}
+      }
+    }
+  } else
+#endif
+  {
+    result.clearParallelSlices();
+  }
   return result;
 }
 
