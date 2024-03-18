@@ -40,7 +40,6 @@
 #include "bout/unused.hxx"
 
 #include <ida/ida.h>
-#include <ida/ida_spils.h>
 #include <sunlinsol/sunlinsol_spgmr.h>
 #include <ida/ida_bbdpre.h>
 #include <nvector/nvector_parallel.h>
@@ -75,9 +74,9 @@ IdaSolver::IdaSolver(Options* opts)
 
 IdaSolver::~IdaSolver() {
   if (initialised) {
-    N_VDestroy_Parallel(uvec);
-    N_VDestroy_Parallel(duvec);
-    N_VDestroy_Parallel(id);
+    N_VDestroy(uvec);
+    N_VDestroy(duvec);
+    N_VDestroy(id);
     IDAFree(&idamem);
     SUNLinSolFree(sun_solver);
   }
@@ -166,8 +165,8 @@ int IdaSolver::init() {
   if (sun_solver == nullptr) {
     throw BoutException("Creating SUNDIALS linear solver failed\n");
   }
-  if (IDASpilsSetLinearSolver(idamem, sun_solver) != IDA_SUCCESS) {
-    throw BoutException("IDASpilsSetLinearSolver failed\n");
+  if (IDASetLinearSolver(idamem, sun_solver, nullptr) != IDALS_SUCCESS) {
+    throw BoutException("IDASetLinearSolver failed\n");
   }
 
   if (use_precon) {
@@ -196,8 +195,8 @@ int IdaSolver::init() {
       }
     } else {
       output.write("\tUsing user-supplied preconditioner\n");
-      if (IDASpilsSetPreconditioner(idamem, nullptr, ida_pre)) {
-        throw BoutException("IDASpilsSetPreconditioner failed\n");
+      if (IDASetPreconditioner(idamem, nullptr, ida_pre) != IDALS_SUCCESS) {
+        throw BoutException("IDASetPreconditioner failed\n");
       }
     }
   }
