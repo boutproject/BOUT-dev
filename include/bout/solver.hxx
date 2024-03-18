@@ -350,7 +350,7 @@ public:
 
   /// Add one to the iteration count, used by BoutMonitor, but could be called by a
   // user-defined monitor (if `bout_run()` is not used)
-  int incrementIterationCounter() { return ++iteration; }
+  int incrementIterationCounter() { return iteration++; }
 
   /// Write \p options to the model's output file
   void writeToModelOutputFile(const Options& options);
