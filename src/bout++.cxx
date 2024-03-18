@@ -891,7 +891,8 @@ int BoutMonitor::call(Solver* solver, BoutReal t, [[maybe_unused]] int iter, int
                         NOUT + iteration_offset, time_to_hms(run_data.t_elapsed));
   output_progress.print(
       " ETA {:s}",
-      time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT + iteration_offset - iteration)));
+      time_to_hms(run_data.wtime
+                  * static_cast<BoutReal>(NOUT + iteration_offset - iteration)));
 
   // Write dump file
   Options run_data_output;
