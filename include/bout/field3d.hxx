@@ -650,4 +650,14 @@ bool operator==(const Field3D& a, const Field3D& b);
 /// Output a string describing a Field3D to a stream
 std::ostream& operator<<(std::ostream& out, const Field3D& value);
 
+inline Field3D copy(const Field3D& f) {
+  Field3D result{f};
+  result.allocate();
+  for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
+    result.yup(i).allocate();
+    result.ydown(i).allocate();
+  }
+  return result;
+}
+
 #endif /* BOUT_FIELD3D_H */
