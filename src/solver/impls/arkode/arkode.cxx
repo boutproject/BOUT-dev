@@ -141,7 +141,7 @@ ArkodeSolver::ArkodeSolver(Options* opts)
 }
 
 ArkodeSolver::~ArkodeSolver() {
-  N_VDestroy_Parallel(uvec);
+  N_VDestroy(uvec);
   ARKStepFree(&arkode_mem);
   SUNLinSolFree(sun_solver);
   SUNNonlinSolFree(nonlinear_solver);
@@ -284,7 +284,7 @@ int ArkodeSolver::init() {
       throw BoutException("ARKStepSVtolerances failed\n");
     }
 
-    N_VDestroy_Parallel(abstolvec);
+    N_VDestroy(abstolvec);
   } else {
     if (ARKStepSStolerances(arkode_mem, reltol, abstol) != ARK_SUCCESS) {
       throw BoutException("ARKStepSStolerances failed\n");
