@@ -726,6 +726,7 @@ void Solver::readEvolvingVariablesFromOptions(Options& options) {
   run_id = options["run_id"].withDefault(default_run_id);
   simtime = options["tt"].as<BoutReal>();
   iteration = options["hist_hi"].withDefault<int>(0);
+  iteration_offset = iteration;
 
   for (auto& f : f2d) {
     if (options.isSet(f.name)) {

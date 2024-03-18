@@ -355,6 +355,8 @@ public:
   /// Write \p options to the model's output file
   void writeToModelOutputFile(const Options& options);
 
+  int getIterationOffset() const { return iteration_offset; }
+
 protected:
   /// Number of command-line arguments
   static int* pargc;
@@ -543,6 +545,7 @@ private:
 
   /// Current iteration (output time-step) number
   int iteration{0};
+  int iteration_offset{0};
 
   /// Number of calls to the RHS function
   int rhs_ncalls{0};
