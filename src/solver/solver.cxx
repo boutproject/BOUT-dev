@@ -99,9 +99,8 @@ Solver::Solver(Options* opts)
               .doc("Output time step size. Overrides global 'timestep' setting.")
               .withDefault(Options::root()["timestep"]
                                .doc("Output time step size")
-                               .withDefault(1.0))) {}
-
-addMonitor(&solver_monitor, MonitorPosition::FRONT);
+                               .withDefault(1.0))) {
+  addMonitor(&solver_monitor, MonitorPosition::FRONT);
 }
 
 /**************************************************************************
@@ -566,7 +565,7 @@ int Solver::solve(int nout, BoutReal timestep) {
     /// Write initial state as time-point 0
 
     // Call monitors so initial values are written to output dump files
-    if (call_monitors(simtime, 0, NOUT)) {
+    if (call_monitors(simtime, 0, nout)) {
       throw BoutException("Initial monitor call failed!");
     }
 
