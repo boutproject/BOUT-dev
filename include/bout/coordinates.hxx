@@ -38,6 +38,8 @@
 #include "bout/paralleltransform.hxx"
 #include "bout/utils.hxx"
 #include <bout/bout_types.hxx>
+#include <bout/field_tracking_coords.hxx>
+
 
 class Mesh;
 
@@ -82,7 +84,7 @@ public:
   /// Add variables to \p output_options, for post-processing
   void outputVars(Options& output_options);
 
-  FieldMetric dx, dy, dz; ///< Mesh spacing in x, y and z
+  TrackingFieldNoOp dx, dy, dz; ///< Mesh spacing in x, y and z
 
   /// Length of the Z domain. Used for FFTs
   const Field2D& zlength() const;

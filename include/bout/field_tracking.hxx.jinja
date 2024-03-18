@@ -1,0 +1,39 @@
+#pragma once
+
+template <class F, class D>
+class FieldTracking : public F {
+public:
+  using F::F;
+  FieldTracking(const F& f) : F(f){};
+
+  template <class... Args>
+  FieldTracking& operator=(const Args&... args) {
+    F::operator=(args...);
+    static_cast<D*>(this)->onChange();
+  }
+{% for op in ops %}
+  template <class... Args>
+  FieldTracking& operator{{op}}=(const Args&... args) {
+    F::operator/=(args...);
+    static_cast<D*>(this)->onChange();
+    return *this;
+  }
+{% endfor %}
+  operator const F&() const { return static_cast<F*>(this); }
+};
+{% for op in ops %}
+template <class F, class D>
+F operator{{op}}(FieldTracking<F, D> f1, F f2) {
+  return *static_cast<F*>(&f1) {{op}} f2;
+}
+
+template <class F, class D>
+F operator{{op}}(FieldTracking<F, D> f1, FieldTracking<F, D> f2) {
+  return *static_cast<F*>(&f1) {{op}} *static_cast<F*>(&f2);
+}
+
+template <class F, class D>
+F operator{{op}}(F f1, FieldTracking<F, D> f2) {
+  return f1 {{op}} *static_cast<F*>(&f2);
+}
+{% endfor %}

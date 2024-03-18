@@ -373,7 +373,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
                          FieldMetric g_23, FieldMetric ShiftTorsion,
                          FieldMetric IntShiftTorsion)
-    : dx(std::move(dx)), dy(std::move(dy)), dz(dz), J(std::move(J)), Bxy(std::move(Bxy)),
+    : dx(dx), dy(dy), dz(dz), J(std::move(J)), Bxy(std::move(Bxy)),
       g11(std::move(g11)), g22(std::move(g22)), g33(std::move(g33)), g12(std::move(g12)),
       g13(std::move(g13)), g23(std::move(g23)), g_11(std::move(g_11)),
       g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
