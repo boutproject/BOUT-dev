@@ -864,7 +864,6 @@ int BoutMonitor::call(Solver* solver, BoutReal t, [[maybe_unused]] int iter, int
 
   const int iteration_offset = solver->getIterationOffset();
   // First time the monitor has been called
-  static bool first_time = true;
   if (first_time) {
 
     // Record the starting time
