@@ -481,6 +481,7 @@ public:
   /// Note: does not just copy values in boundary region.
   void setBoundaryTo(const Field3D& f3d);
 
+  using FieldData::applyParallelBoundary;
   void applyParallelBoundary() override;
   void applyParallelBoundary(BoutReal t) override;
   void applyParallelBoundary(const std::string& condition) override;
