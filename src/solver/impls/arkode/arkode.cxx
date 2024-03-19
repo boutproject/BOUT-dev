@@ -617,7 +617,7 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* uda
 
   if (!hasPreconditioner()) {
     // Identity (but should never happen)
-    const int N = N_VGetLocalLength(uvec);
+    const int N = N_VGetLocalLength_Parallel(uvec);
     std::copy(rvec, rvec + N, zvec);
     return;
   }
