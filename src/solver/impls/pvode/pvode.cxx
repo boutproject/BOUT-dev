@@ -242,10 +242,12 @@ int PvodeSolver::init() {
       iopt[MAXORD] = maxOrder;
     }
   }
-  const bool use_adam((*options)["adams_moulton"].doc("Use Adams Moulton solver instead of BDF").withDefault(false));
+  const bool use_adam((*options)["adams_moulton"]
+                          .doc("Use Adams Moulton solver instead of BDF")
+                          .withDefault(false));
 
-  cvode_mem = CVodeMalloc(neq, solver_f, simtime, u, use_adam ? ADAMS : BDF, NEWTON, SS, &reltol, &abstol,
-                          this, nullptr, optIn, iopt, ropt, machEnv);
+  cvode_mem = CVodeMalloc(neq, solver_f, simtime, u, use_adam ? ADAMS : BDF, NEWTON, SS,
+                          &reltol, &abstol, this, nullptr, optIn, iopt, ropt, machEnv);
 
   if (cvode_mem == nullptr) {
     throw BoutException("\tError: CVodeMalloc failed.\n");
@@ -373,12 +375,12 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
       for (auto& f : f3d) {
         f.F_var->enableTracking(fmt::format("ddt_{:s}", f.name), debug);
-	setName(*f.var, f.name);
+        setName(*f.var, f.name);
       }
       run_rhs(simtime);
 
       for (auto& f : f3d) {
-	debug[f.name] = *f.var;
+        debug[f.name] = *f.var;
       }
 
       if (mesh) {
