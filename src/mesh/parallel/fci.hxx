@@ -23,8 +23,8 @@
  *
  **************************************************************************/
 
-#ifndef __FCITRANSFORM_H__
-#define __FCITRANSFORM_H__
+#ifndef BOUT_FCITRANSFORM_H
+#define BOUT_FCITRANSFORM_H
 
 #include <bout/interpolation_xz.hxx>
 #include <bout/mask.hxx>
@@ -142,7 +142,7 @@ public:
   bool canToFromFieldAligned() const override { return false; }
 
   bool requiresTwistShift(bool UNUSED(twist_shift_enabled),
-                          MAYBE_UNUSED(YDirectionType ytype)) override {
+                          [[maybe_unused]] YDirectionType ytype) override {
     // No Field3Ds require twist-shift, because they cannot be field-aligned
     ASSERT1(ytype == YDirectionType::Standard);
 
@@ -157,4 +157,4 @@ private:
   std::vector<FCIMap> field_line_maps;
 };
 
-#endif // __FCITRANSFORM_H__
+#endif // BOUT_FCITRANSFORM_H

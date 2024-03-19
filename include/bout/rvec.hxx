@@ -1,11 +1,11 @@
 
 #pragma once
-#ifndef __RVEC_H__
-#define __RVEC_H__
+#ifndef BOUT_RVEC_H
+#define BOUT_RVEC_H
 
 #include <bout/bout_types.hxx>
 
 #include <vector>
 using rvec = std::vector<BoutReal>;
 
-#endif // __RVEC_H__
+#endif // BOUT_RVEC_H

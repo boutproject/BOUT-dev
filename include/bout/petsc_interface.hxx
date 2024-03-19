@@ -75,7 +75,7 @@ inline MPI_Comm getComm([[maybe_unused]] const FieldPerp& field) {
 template <class T>
 class PetscVector {
 public:
-  static_assert(bout::utils::is_Field<T>::value, "PetscVector only works with Fields");
+  static_assert(bout::utils::is_Field_v<T>, "PetscVector only works with Fields");
   using ind_type = typename T::ind_type;
 
   struct VectorDeleter {
@@ -175,7 +175,7 @@ public:
 #endif
     BoutReal value = BoutNaN;
     int status = 0;
-    BOUT_OMP(critical)
+    BOUT_OMP_SAFE(critical)
     status = VecGetValues(*get(), 1, &global, &value);
     if (status != 0) {
       throw BoutException("Error when getting element of a PETSc vector.");
@@ -250,7 +250,7 @@ void swap(PetscMatrix<T>& first, PetscMatrix<T>& second);
 template <class T>
 class PetscMatrix {
 public:
-  static_assert(bout::utils::is_Field<T>::value, "PetscMatrix only works with Fields");
+  static_assert(bout::utils::is_Field_v<T>, "PetscMatrix only works with Fields");
   using ind_type = typename T::ind_type;
 
   struct MatrixDeleter {
@@ -283,9 +283,8 @@ public:
   PetscMatrix(IndexerPtr<T> indConverter, bool preallocate = true)
       : matrix(new Mat()), indexConverter(indConverter),
         pt(&indConverter->getMesh()->getCoordinates()->getParallelTransform()) {
-    MPI_Comm comm = std::is_same<T, FieldPerp>::value
-                        ? indConverter->getMesh()->getXcomm()
-                        : BoutComm::get();
+    MPI_Comm comm = std::is_same_v<T, FieldPerp> ? indConverter->getMesh()->getXcomm()
+                                                 : BoutComm::get();
     const int size = indexConverter->size();
 
     MatCreate(comm, matrix.get());
@@ -356,7 +355,7 @@ public:
       PetscBool assembled = PETSC_FALSE;
       MatAssembled(*petscMatrix, &assembled);
       if (assembled == PETSC_TRUE) {
-        BOUT_OMP(critical)
+        BOUT_OMP_SAFE(critical)
         MatGetValues(*petscMatrix, 1, &petscRow, 1, &petscCol, &value);
       } else {
         value = 0.;
@@ -401,7 +400,7 @@ public:
                      [&val](BoutReal weight) -> PetscScalar { return weight * val; });
 
       int status = 0;
-      BOUT_OMP(critical)
+      BOUT_OMP_SAFE(critical)
       status = MatSetValues(*petscMatrix, 1, &petscRow, positions.size(),
                             positions.data(), values.data(), mode);
       if (status != 0) {
@@ -435,9 +434,8 @@ public:
       const auto pws =
           pt->getWeightsForYApproximation(index2.x(), index1.y(), index2.z(), yoffset);
       const int ny =
-          std::is_same<T, FieldPerp>::value ? 1 : indexConverter->getMesh()->LocalNy;
-      const int nz =
-          std::is_same<T, Field2D>::value ? 1 : indexConverter->getMesh()->LocalNz;
+          std::is_same_v<T, FieldPerp> ? 1 : indexConverter->getMesh()->LocalNy;
+      const int nz = std::is_same_v<T, Field2D> ? 1 : indexConverter->getMesh()->LocalNz;
 
       std::transform(
           pws.begin(), pws.end(), std::back_inserter(positions),
@@ -469,7 +467,7 @@ public:
 #endif
     BoutReal value = BoutNaN;
     int status = 0;
-    BOUT_OMP(critical)
+    BOUT_OMP_SAFE(critical)
     status = MatGetValues(*get(), 1, &global1, 1, &global2, &value);
     if (status != 0) {
       throw BoutException("Error when getting elements of a PETSc matrix.");
@@ -501,7 +499,7 @@ public:
   PetscMatrix<T> yup(int index = 0) { return ynext(index + 1); }
   PetscMatrix<T> ydown(int index = 0) { return ynext(-index - 1); }
   PetscMatrix<T> ynext(int dir) {
-    if (std::is_same<T, FieldPerp>::value && yoffset + dir != 0) {
+    if (std::is_same_v<T, FieldPerp> && yoffset + dir != 0) {
       throw BoutException("Can not get ynext for FieldPerp");
     }
     PetscMatrix<T> result; // Can't use copy constructor because don't
@@ -509,7 +507,7 @@ public:
     result.matrix = matrix;
     result.indexConverter = indexConverter;
     result.pt = pt;
-    result.yoffset = std::is_same<T, Field2D>::value ? 0 : yoffset + dir;
+    result.yoffset = std::is_same_v<T, Field2D> ? 0 : yoffset + dir;
     result.initialised = initialised;
     return result;
   }

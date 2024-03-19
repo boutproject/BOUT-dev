@@ -85,10 +85,6 @@ public:
   Mesh* mesh_staggered = nullptr;
 };
 
-constexpr int Vector2DTest::nx;
-constexpr int Vector2DTest::ny;
-constexpr int Vector2DTest::nz;
-
 TEST_F(Vector2DTest, ApplyBoundaryString) {
   Vector2D v;
   v = 0.0;

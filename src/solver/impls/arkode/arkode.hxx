@@ -26,8 +26,8 @@
  *
  **************************************************************************/
 
-#ifndef __ARKODE_SOLVER_H__
-#define __ARKODE_SOLVER_H__
+#ifndef BOUT_ARKODE_SOLVER_H
+#define BOUT_ARKODE_SOLVER_H
 
 #include "bout/build_config.hxx"
 #include "bout/solver.hxx"
@@ -160,4 +160,4 @@ private:
 };
 
 #endif // BOUT_HAS_ARKODE
-#endif // __ARKODE_SOLVER_H__
+#endif // BOUT_ARKODE_SOLVER_H

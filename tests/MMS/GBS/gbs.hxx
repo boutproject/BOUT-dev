@@ -1,8 +1,8 @@
 
 class GBS;
 
-#ifndef __GBS_H__
-#define __GBS_H__
+#ifndef BOUT_GBS_H
+#define BOUT_GBS_H
 
 #include <bout/physicsmodel.hxx>
 
@@ -96,4 +96,4 @@ private:
   std::unique_ptr<Laplacian> aparSolver{nullptr};
 };
 
-#endif // __GBS_H__
+#endif // BOUT_GBS_H

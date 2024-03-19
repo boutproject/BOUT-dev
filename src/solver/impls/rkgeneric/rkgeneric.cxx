@@ -75,7 +75,7 @@ int RKGenericSolver::init() {
 
 void RKGenericSolver::resetInternalFields() {
   //Zero out history
-  BOUT_OMP(parallel for)
+  BOUT_OMP_PERF(parallel for)
   for (int i = 0; i < nlocal; i++) {
     tmpState[i] = 0;
     f2[i] = 0;

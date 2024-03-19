@@ -25,8 +25,8 @@
 
 class LaplaceNaulin;
 
-#ifndef __LAP_NAULIN_H__
-#define __LAP_NAULIN_H__
+#ifndef BOUT_LAP_NAULIN_H
+#define BOUT_LAP_NAULIN_H
 
 #include <bout/invert_laplace.hxx>
 #include <bout/options.hxx>
@@ -179,4 +179,4 @@ private:
   void copy_x_boundaries(Field3D& x, const Field3D& x0, Mesh* mesh);
 };
 
-#endif // __LAP_NAULIN_H__
+#endif // BOUT_LAP_NAULIN_H

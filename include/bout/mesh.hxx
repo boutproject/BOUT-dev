@@ -40,8 +40,8 @@
 
 class Mesh;
 
-#ifndef __MESH_H__
-#define __MESH_H__
+#ifndef BOUT_MESH_H
+#define BOUT_MESH_H
 
 #include "mpi.h"
 
@@ -135,7 +135,7 @@ public:
 
   /// Add output variables to \p output_options
   /// These are used for post-processing
-  virtual void outputVars(MAYBE_UNUSED(Options& output_options)) {}
+  virtual void outputVars([[maybe_unused]] Options& output_options) {}
 
   // Get routines to request data from mesh file
 
@@ -853,4 +853,4 @@ Mesh::getRegion<FieldPerp>(const std::string& region_name) const {
   return getRegionPerp(region_name);
 }
 
-#endif // __MESH_H__
+#endif // BOUT_MESH_H

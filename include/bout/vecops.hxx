@@ -26,8 +26,8 @@
  *
  **************************************************************************/
 
-#ifndef __VECOPS_H__
-#define __VECOPS_H__
+#ifndef BOUT_VECOPS_H
+#define BOUT_VECOPS_H
 
 #include "bout/bout_types.hxx"
 #include "bout/coordinates.hxx"
@@ -129,4 +129,4 @@ Vector3D V_dot_Grad(const Vector2D& v, const Vector3D& a);
 Vector3D V_dot_Grad(const Vector3D& v, const Vector2D& a);
 Vector3D V_dot_Grad(const Vector3D& v, const Vector3D& a);
 
-#endif // __VECOPS_H__
+#endif // BOUT_VECOPS_H
