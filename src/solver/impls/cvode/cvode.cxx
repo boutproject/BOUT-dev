@@ -360,7 +360,7 @@ int CvodeSolver::init() {
         const auto mukeep = (*options)["mukeep"].withDefault(n3Dvars() + n2Dvars());
         const auto mlkeep = (*options)["mlkeep"].withDefault(n3Dvars() + n2Dvars());
 
-        if (CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, mukeep, mlkeep, 0,
+        if (CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, mukeep, mlkeep, 0.0,
                           cvode_bbd_rhs, nullptr) != CVLS_SUCCESS) {
           throw BoutException("CVBBDPrecInit failed\n");
         }
