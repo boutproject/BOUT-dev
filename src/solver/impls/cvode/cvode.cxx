@@ -596,7 +596,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
 
   BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
-  int N = N_VGetLocalLength(uvec);
+  int N = N_VGetLocalLength_Parallel(uvec);
 
   if (!hasPreconditioner()) {
     // Identity (but should never happen)
