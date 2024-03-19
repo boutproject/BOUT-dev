@@ -684,6 +684,13 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
 #undef FIELD_FUNC
 
 template <typename T, typename = bout::utils::EnableIfField<T>, class... Types>
+inline void setName(T& f, const std::string& name, Types... args) {
+#if BOUT_USE_TRACK
+  f.name = fmt::format(name, args...);
+#endif
+}
+
+template <typename T, typename = bout::utils::EnableIfField<T>, class... Types>
 inline T setName(T&& f, const std::string& name, Types... args) {
 #if BOUT_USE_TRACK
   f.name = fmt::format(name, args...);

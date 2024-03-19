@@ -373,7 +373,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
       for (auto& f : f3d) {
         f.F_var->enableTracking(fmt::format("ddt_{:s}", f.name), debug);
-	setName(f.var, f.name);
+	setName(*f.var, f.name);
       }
       run_rhs(simtime);
 
@@ -390,7 +390,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
           "{}/BOUT.debug.{}.nc",
           Options::root()["datadir"].withDefault<std::string>("data"), BoutComm::rank());
 
-      bout::OptionsNetCDF(outname).write(debug);
+      bout::OptionsIO::create(outname)->write(debug);
       MPI_Barrier(BoutComm::get());
     }
     return (-1.0);
