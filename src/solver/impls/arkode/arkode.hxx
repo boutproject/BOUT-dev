@@ -47,6 +47,10 @@ RegisterUnavailableSolver
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_config.h>
 
+#if SUNDIALS_CONTROLLER_SUPPORT
+#include <sundials/sundials_adaptcontroller.h>
+#endif
+
 #include <vector>
 
 class ArkodeSolver;
