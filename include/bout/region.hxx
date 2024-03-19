@@ -309,9 +309,7 @@ struct SpecificInd {
     return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
   }
   /// Automatically select zm or zp depending on sign
-  inline SpecificInd zpm(int dz) const {
-    return dz > 0? zp(dz) : zm(-dz);
-  }
+  inline SpecificInd zpm(int dz) const { return dz > 0 ? zp(dz) : zm(-dz); }
 
   // and for 2 cells
   inline SpecificInd xpp() const { return xp(2); }
