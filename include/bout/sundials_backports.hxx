@@ -34,6 +34,8 @@ static_assert(std::is_same<BoutReal,
               >::value,
               "BOUT++ and SUNDIALS real types do not match");
 
+#define SUNDIALS_CONTROLLER_SUPPORT (SUNDIALS_VERSION_MAJOR > 5 || SUNDIALS_VERSION_MAJOR == 5 && SUNDIALS_VERSION_MINOR >= 7)
+
 #if SUNDIALS_VERSION_MAJOR < 6
 constexpr auto SUN_PREC_RIGHT = PREC_RIGHT;
 constexpr auto SUN_PREC_LEFT = PREC_LEFT;

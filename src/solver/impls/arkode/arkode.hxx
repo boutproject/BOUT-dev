@@ -153,8 +153,12 @@ private:
 
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};
-  /// Solver for functional iterations for Adams-Moulton
+  /// Solver for implicit stages
   SUNNonlinearSolver nonlinear_solver{nullptr};
+#if SUNDIALS_CONTROLLER_SUPPORT
+  /// Timestep controller
+  SUNAdaptController controller{nullptr};
+#endif
   /// Context for SUNDIALS memory allocations
   sundials::Context suncontext;
 };
