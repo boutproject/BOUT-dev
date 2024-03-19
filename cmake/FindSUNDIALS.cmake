@@ -122,7 +122,7 @@ if (SUNDIALS_INCLUDE_DIR)
 endif()
 
 if("${SUNDIALS_VERSION_MAJOR}" LESS 4)
-  message(WARNING "SUNDIALS versions <4 are depricated and will not be supported in the next release")
+  message(FATAL_ERROR "SUNDIALS versions <4 are not supported")
 endif()
 
 if (SUNDIALS_DEBUG)
