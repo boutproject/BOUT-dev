@@ -178,6 +178,11 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 #define ASSERT1_FIELDS_COMPATIBLE(field1, field2) ;
 #endif
 
+template <typename F>
+inline bool isFci(const F& f) {
+  return not f.getCoordinates()->getParallelTransform().canToFromFieldAligned();
+}
+
 /// Return an empty shell field of some type derived from Field, with metadata
 /// copied and a data array that is allocated but not initialised.
 template <typename T>
