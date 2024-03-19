@@ -196,7 +196,7 @@ int IdaSolver::init() {
       const auto mldq = (*options)["mldq"].withDefault(band_width_default);
       const auto mukeep = (*options)["mukeep"].withDefault(n3d);
       const auto mlkeep = (*options)["mlkeep"].withDefault(n3d);
-      if (IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, 0, ida_bbd_res,
+      if (IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, 0.0, ida_bbd_res,
                          nullptr) != IDALS_SUCCESS) {
         throw BoutException("IDABBDPrecInit failed\n");
       }
