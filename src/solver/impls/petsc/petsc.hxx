@@ -24,8 +24,8 @@
  *
  **************************************************************************/
 
-#ifndef __PETSC_SOLVER_H__
-#define __PETSC_SOLVER_H__
+#ifndef BOUT_PETSC_SOLVER_H
+#define BOUT_PETSC_SOLVER_H
 
 #include "bout/build_config.hxx"
 #include "bout/solver.hxx"
@@ -149,4 +149,4 @@ private:
 
 #endif // BOUT_HAS_PETSC
 
-#endif // __PETSC_SOLVER_H__
+#endif // BOUT_PETSC_SOLVER_H

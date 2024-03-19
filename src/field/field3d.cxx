@@ -618,7 +618,7 @@ Field3D filter(const Field3D& var, int N0, const std::string& rgn) {
 
   const Region<Ind2D>& region = var.getRegion2D(region_str);
 
-  BOUT_OMP(parallel)
+  BOUT_OMP_PERF(parallel)
   {
     Array<dcomplex> f(ncz / 2 + 1);
 
@@ -668,7 +668,7 @@ Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, const std::string
 
   const Region<Ind2D>& region = var.getRegion2D(region_str);
 
-  BOUT_OMP(parallel)
+  BOUT_OMP_PERF(parallel)
   {
     Array<dcomplex> f(ncz / 2 + 1);
 

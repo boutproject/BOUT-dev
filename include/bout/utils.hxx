@@ -26,8 +26,8 @@
  *
  **************************************************************************/
 
-#ifndef __UTILS_H__
-#define __UTILS_H__
+#ifndef BOUT_UTILS_H
+#define BOUT_UTILS_H
 
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
@@ -106,7 +106,7 @@ struct function_traits;
 ///         bout::utils::function_traits<some_function>::arg<1>::type;
 ///     // The following prints "true":
 ///     std::cout << std::boolalpha
-///         << std::is_same<double, first_argument_type>::value;
+///         << std::is_same_v<double, first_argument_type>;
 ///
 /// Adapted from https://stackoverflow.com/a/9065203/2043465
 template <typename R, typename... Args>
@@ -719,4 +719,4 @@ inline bool flagSet(int bitset, int flag) { return (bitset & flag) != 0; }
 } // namespace utils
 } // namespace bout
 
-#endif // __UTILS_H__
+#endif // BOUT_UTILS_H

@@ -1,7 +1,7 @@
 /// Some standard boundary conditions
 
-#ifndef __BNDRY_STD_H__
-#define __BNDRY_STD_H__
+#ifndef BOUT_BNDRY_STD_H
+#define BOUT_BNDRY_STD_H
 
 #include "bout/boundary_op.hxx"
 #include "bout/bout_types.hxx"
@@ -516,4 +516,4 @@ public:
 private:
 };
 
-#endif // __BNDRY_STD_H__
+#endif // BOUT_BNDRY_STD_H

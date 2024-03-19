@@ -973,12 +973,6 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
  * Useful routines (protected)
  **************************************************************************/
 
-template <class T>
-int local_N_sum(int value, const Solver::VarStr<T>& f) {
-  const auto boundary_size = f.evolve_bndry ? size(f.var->getRegion("RGN_BNDRY")) : 0;
-  return value + boundary_size + size(f.var->getRegion("RGN_NOBNDRY"));
-}
-
 int Solver::getLocalN() {
 
   // Cache the value, so this is not repeatedly called.
@@ -991,8 +985,16 @@ int Solver::getLocalN() {
   // Must be initialised
   ASSERT0(initialised);
 
-  const auto local_N_2D = std::accumulate(begin(f2d), end(f2d), 0, local_N_sum<Field2D>);
-  const auto local_N_3D = std::accumulate(begin(f3d), end(f3d), 0, local_N_sum<Field3D>);
+  // Return the number of points to evolve in f, plus the accumulator value.
+  // If f.evolve_bndry, includes the boundary (NB: not guard!) points
+  auto local_N_sum = [](int value, const auto& field) -> int {
+    const auto boundary_size =
+        field.evolve_bndry ? size(field.var->getRegion("RGN_BNDRY")) : 0;
+    return value + boundary_size + size(field.var->getRegion("RGN_NOBNDRY"));
+  };
+
+  const auto local_N_2D = std::accumulate(begin(f2d), end(f2d), 0, local_N_sum);
+  const auto local_N_3D = std::accumulate(begin(f3d), end(f3d), 0, local_N_sum);
   const auto local_N = local_N_2D + local_N_3D;
 
   cacheLocalN = local_N;

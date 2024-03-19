@@ -30,8 +30,8 @@ class LaplaceHypre3d;
 
 #include "bout/build_config.hxx"
 
-#ifndef __LAPLACE_HYPRE3D_H__
-#define __LAPLACE_HYPRE3D_H__
+#ifndef BOUT_LAPLACE_HYPRE3D_H
+#define BOUT_LAPLACE_HYPRE3D_H
 
 #if BOUT_HAS_HYPRE
 
@@ -227,4 +227,4 @@ public:
 
 #endif // BOUT_HAS_HYPRE
 
-#endif //__LAPLACE_HYPRE3D_H__
+#endif //BOUT_LAPLACE_HYPRE3D_H

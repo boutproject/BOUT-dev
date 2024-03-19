@@ -426,10 +426,9 @@ public:
     AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::Standard)
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
-    ASSERT2(direction == DIRECTION::Z); // Only in Z for now
-    ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
-    ASSERT2(
-        bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
+    ASSERT2(direction == DIRECTION::Z);    // Only in Z for now
+    ASSERT2(stagger == STAGGER::None);     // Staggering not currently supported
+    ASSERT2(bout::utils::is_Field3D_v<T>); // Should never need to call this with Field2D
 
     auto* theMesh = var.getMesh();
 
@@ -446,7 +445,7 @@ public:
     }
     const int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
 
-    BOUT_OMP(parallel)
+    BOUT_OMP_PERF(parallel)
     {
       Array<dcomplex> cv(ncz / 2 + 1);
       const BoutReal kwaveFac = TWOPI / ncz;
@@ -493,10 +492,9 @@ public:
     AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::StandardSecond);
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
-    ASSERT2(direction == DIRECTION::Z); // Only in Z for now
-    ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
-    ASSERT2(
-        bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
+    ASSERT2(direction == DIRECTION::Z);    // Only in Z for now
+    ASSERT2(stagger == STAGGER::None);     // Staggering not currently supported
+    ASSERT2(bout::utils::is_Field3D_v<T>); // Should never need to call this with Field2D
 
     auto* theMesh = var.getMesh();
 
@@ -504,7 +502,7 @@ public:
     const int ncz = theMesh->getNpoints(direction);
     const int kmax = ncz / 2;
 
-    BOUT_OMP(parallel)
+    BOUT_OMP_PERF(parallel)
     {
       Array<dcomplex> cv(ncz / 2 + 1);
       const BoutReal kwaveFac = TWOPI / ncz;

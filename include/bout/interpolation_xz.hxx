@@ -21,8 +21,8 @@
  *
  **************************************************************************/
 
-#ifndef __INTERP_XZ_H__
-#define __INTERP_XZ_H__
+#ifndef BOUT_INTERP_XZ_H
+#define BOUT_INTERP_XZ_H
 
 #include "bout/mask.hxx"
 
@@ -322,4 +322,4 @@ public:
 template <class DerivedType>
 using RegisterXZInterpolation = XZInterpolationFactory::RegisterInFactory<DerivedType>;
 
-#endif // __INTERP_XZ_H__
+#endif // BOUT_INTERP_XZ_H

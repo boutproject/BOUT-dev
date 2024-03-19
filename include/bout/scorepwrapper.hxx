@@ -1,5 +1,5 @@
-#ifndef __BOUT_SCOREP_H__
-#define __BOUT_SCOREP_H__
+#ifndef BOUT_SCOREP_H
+#define BOUT_SCOREP_H
 
 #include "bout/build_config.hxx"
 

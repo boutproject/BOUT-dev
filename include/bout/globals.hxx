@@ -24,8 +24,8 @@
  *
  **************************************************************************/
 
-#ifndef __GLOBALS_H__
-#define __GLOBALS_H__
+#ifndef BOUT_GLOBALS_H
+#define BOUT_GLOBALS_H
 
 #include "bout/macro_for_each.hxx"
 
@@ -97,4 +97,4 @@ SETTING(MpiWrapper* mpi, nullptr); ///< The MPI wrapper object
 } // namespace globals
 } // namespace bout
 
-#endif // __GLOBALS_H__
+#endif // BOUT_GLOBALS_H
