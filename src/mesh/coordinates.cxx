@@ -1542,10 +1542,6 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
   TRACE("Coordinates::Grad_par( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  if (invSg == nullptr) {
-    invSg = std::make_unique<FieldMetric>();
-    (*invSg) = 1.0 / sqrt(g_22);
-  }
   return setName(::DDY(var, outloc, method) * invSg(), "Grad_par({:s})", var.name);
 }
 
