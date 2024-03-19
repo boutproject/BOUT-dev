@@ -12,9 +12,9 @@
 * options and allows access to all sub-sections
 *
 **************************************************************************
-* Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+* Copyright 2010-2024 BOUT++ contributors
 *
-* Contact: Ben Dudson, bd512@york.ac.uk
+* Contact: Ben Dudson, dudson2@llnl.gov
 *
 * This file is part of BOUT++.
 *
@@ -36,8 +36,8 @@
 class Options;
 
 #pragma once
-#ifndef __OPTIONS_H__
-#define __OPTIONS_H__
+#ifndef OPTIONS_H
+#define OPTIONS_H
 
 #include "bout/bout_types.hxx"
 #include "bout/field2d.hxx"
@@ -155,6 +155,30 @@ class Options;
  * This is used to represent all the options passed to BOUT++ either in a file or on the
  * command line.
  *
+ * Copying options
+ * ---------------
+ *
+ * The copy constructor and copy assignment operator are deleted, so
+ * this is a compile-time error:
+ *
+ *     Options options2 = options1["value"];
+ *
+ * This is because it's ambiguous what is meant, and because accidental copies
+ * were a frequent source of hard-to-understand bugs. Usually a reference is
+ * intended, rather than a copy:
+ *
+ *     Options& ref = options1["value"];
+ *
+ * so that changes to `ref` or its children are reflected in `options1`.
+ * If the intent is to copy the value of the option, then just copy that:
+ *
+ *     option2.value = options1["value"].value;
+ *
+ * If a full deep copy of the option, its attributes and children
+ * (recursively) is really desired, then use the `copy()` method:
+ *
+ *     Options options2 = options1["value"].copy();
+ *
  */
 class Options {
 public:
@@ -175,22 +199,63 @@ public:
     assign<T>(value);
   }
 
+  /// The type used to store values
+  using ValueType =
+      bout::utils::variant<bool, int, BoutReal, std::string, Field2D, Field3D, FieldPerp,
+                           Array<BoutReal>, Matrix<BoutReal>, Tensor<BoutReal>>;
+
+  /// A tree representation with leaves containing ValueType.
+  /// Used to construct Options from initializer lists.
+  ///
+  /// Note: Either there are children OR value is assigned
+  struct CopyableOptions {
+    template <typename T>
+    CopyableOptions(T value) : value(std::move(value)) {}
+
+    /// Special case for char*, which can otherwise become cast to bool
+    CopyableOptions(const char* value) : value(std::string(value)) {}
+
+    CopyableOptions(
+        std::initializer_list<std::pair<std::string, CopyableOptions>> children)
+        : children(children) {}
+    ValueType value;
+    std::initializer_list<std::pair<std::string, CopyableOptions>> children;
+  };
+
+  /// Type of initializer_list that can be used to create Options
+  /// This is a workaround for initializer_lists not being movable.
+  using InitializerList = std::initializer_list<std::pair<std::string, CopyableOptions>>;
+
   /// Construct with a nested initializer list
-  /// This allows Options trees to be constructed, using a mix of types.
+  /// This allows Options trees to be constructed using a mix of types.
   ///
   /// Example:  { {"key1", 42}, {"key2", field} }
-  Options(std::initializer_list<std::pair<std::string, Options>> values);
+  ///
+  /// Note: Options doesn't have a copy constructor, and initializer lists
+  ///       don't play nicely with uncopyable types. Instead, we create
+  ///       a tree of CopyableOptions and then move.
+  Options(InitializerList values, Options* parent_instance = nullptr,
+          std::string section_name = "");
 
-  Options(const Options& other);
+  /// Options must be explicitly copied
+  ///
+  ///     Option option2 = option1.copy();
+  ///
+  Options(const Options& other) = delete; // Use a reference or .copy() method
 
-  /// Copy assignment
+  /// Copy assignment must be explicit
   ///
-  /// This replaces the value, attributes and all children
+  ///     Option option2 = option1.copy();
   ///
-  /// Note that if only the value is desired, then that can be copied using
-  /// the value member directly e.g. option2.value = option1.value;
+  /// Note that the value can be copied using:
   ///
-  Options& operator=(const Options& other);
+  ///     option2.value = option1.value;
+  ///
+  Options& operator=(const Options& other) = delete; // Use a reference or .copy() method
+
+  /// Make a deep copy of this Options,
+  /// recursively copying children.
+  Options copy() const;
 
   Options(Options&& other) noexcept;
   Options& operator=(Options&& other) noexcept;
@@ -202,11 +267,6 @@ public:
 
   /// Free all memory
   static void cleanup();
-
-  /// The type used to store values
-  using ValueType =
-      bout::utils::variant<bool, int, BoutReal, std::string, Field2D, Field3D, FieldPerp,
-                           Array<BoutReal>, Matrix<BoutReal>, Tensor<BoutReal>>;
 
   /// The type used to store attributes
   /// Extends the variant class so that cast operator can be implemented
@@ -538,8 +598,8 @@ public:
     ASSERT0(def.isValue());
 
     if (is_section) {
-      // Option not found
-      *this = def;
+      // Option not found. Copy the value from the default.
+      this->_set_no_check(def.value, DEFAULT_SOURCE);
 
       output_info << _("\tOption ") << full_name << " = " << def.full_name << " ("
                   << DEFAULT_SOURCE << ")\n";
@@ -1013,4 +1073,4 @@ struct fmt::formatter<Options> : public bout::details::OptionsFormatterBase {};
 
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
-#endif // __OPTIONS_H__
+#endif // OPTIONS_H

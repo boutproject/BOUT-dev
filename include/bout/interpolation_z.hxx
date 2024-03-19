@@ -20,8 +20,8 @@
  *
  **************************************************************************/
 
-#ifndef __INTERP_Z_H__
-#define __INTERP_Z_H__
+#ifndef BOUT_INTERP_Z_H
+#define BOUT_INTERP_Z_H
 
 #include "bout/generic_factory.hxx"
 #include "bout/paralleltransform.hxx"
@@ -125,4 +125,4 @@ private:
   Field3D h11;
 };
 
-#endif // __INTERP_Z_H__
+#endif // BOUT_INTERP_Z_H

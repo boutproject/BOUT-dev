@@ -1,5 +1,5 @@
-#ifndef __UNUSED_H__
-#define __UNUSED_H__
+#ifndef BOUT_UNUSED_H
+#define BOUT_UNUSED_H
 
 /// Mark a function parameter as unused in the function body
 ///
@@ -37,4 +37,4 @@
 #define UNUSED(x) x
 #endif
 
-#endif //__UNUSED_H__
+#endif //BOUT_UNUSED_H

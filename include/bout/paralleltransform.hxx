@@ -3,8 +3,8 @@
  * values along Y
  */
 
-#ifndef __PARALLELTRANSFORM_H__
-#define __PARALLELTRANSFORM_H__
+#ifndef BOUT_PARALLELTRANSFORM_H
+#define BOUT_PARALLELTRANSFORM_H
 
 #include "bout/bout_types.hxx"
 #include "bout/field3d.hxx"
@@ -317,4 +317,4 @@ private:
                               const std::vector<ParallelSlicePhase>& phases) const;
 };
 
-#endif // __PARALLELTRANSFORM_H__
+#endif // BOUT_PARALLELTRANSFORM_H

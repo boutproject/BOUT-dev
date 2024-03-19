@@ -157,7 +157,7 @@ template <typename T>
 bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
                         CELL_LOC location) {
   static_assert(
-      bout::utils::is_Field<T>::value,
+      bout::utils::is_Field_v<T>,
       "templated GridFile::getField only works for Field2D, Field3D or FieldPerp");
 
   Timer timer("io");
@@ -172,7 +172,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
     return false;
   }
 
-  Options option = data[name];
+  Options& option = data[name];
 
   // Global (x, y, z) dimensions of field
   const std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
@@ -195,7 +195,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
   }
   case 3: {
     // Check size if getting Field3D
-    if (bout::utils::is_Field2D<T>::value or bout::utils::is_FieldPerp<T>::value) {
+    if constexpr (bout::utils::is_Field2D_v<T> or bout::utils::is_FieldPerp_v<T>) {
       output_warn.write(
           "WARNING: Variable '{:s}' should be 2D, but has {:d} dimensions. Ignored\n",
           name, size.size());
@@ -272,7 +272,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
         name, grid_xguards, mxg);
   }
 
-  if (not bout::utils::is_FieldPerp<T>::value) {
+  if constexpr (not bout::utils::is_FieldPerp_v<T>) {
     // Check if field dimensions are correct. y-direction
     if (grid_yguards > 0) {
       // including ghostpoints
@@ -325,7 +325,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
       }
     }
 
-    if (not bout::utils::is_FieldPerp<T>::value) {
+    if constexpr (not bout::utils::is_FieldPerp_v<T>) {
       ///If field does not include ghost points in y-direction ->
       ///Upper and lower Y boundaries copied from nearest point
       if (grid_yguards == 0) {
@@ -499,8 +499,7 @@ bool GridFile::get(Mesh* UNUSED(m), std::vector<BoutReal>& var, const std::strin
 bool GridFile::hasXBoundaryGuards(Mesh* m) {
   // Global (x,y) dimensions of some field
   // a grid file should always contain "dx"
-  Options option = data["dx"];
-  const std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
+  const std::vector<int> size = bout::utils::visit(GetDimensions{}, data["dx"].value);
 
   if (size.empty()) {
     // handle case where "dx" is not present - non-standard grid file
@@ -535,8 +534,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh* m, const std::string& name, int yread, i
   }
 
   /// Check the size of the data
-  Options option = data[name];
-  const std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
+  const std::vector<int> size = bout::utils::visit(GetDimensions{}, data[name].value);
 
   if (size.size() != 3) {
     output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);
@@ -622,7 +620,7 @@ bool GridFile::readgrid_3dvar_real(const std::string& name, int yread, int ydest
     return false;
   }
 
-  Options option = data[name];
+  Options& option = data[name];
 
   /// Check the size of the data
   const std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
@@ -665,7 +663,7 @@ bool GridFile::readgrid_perpvar_fft(Mesh* m, const std::string& name, int xread,
   }
 
   /// Check the size of the data
-  Options option = data[name];
+  Options& option = data[name];
   const std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
 
   if (size.size() != 2) {
@@ -748,7 +746,7 @@ bool GridFile::readgrid_perpvar_real(const std::string& name, int xread, int xde
   }
 
   /// Check the size of the data
-  Options option = data[name];
+  Options& option = data[name];
   const std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
 
   if (size.size() != 2) {

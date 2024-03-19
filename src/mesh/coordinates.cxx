@@ -925,7 +925,7 @@ void Coordinates::outputVars(Options& output_options) {
 }
 
 const Field2D& Coordinates::zlength() const {
-  BOUT_OMP(critical)
+  BOUT_OMP_SAFE(critical)
   if (not zlength_cache) {
     zlength_cache = std::make_unique<Field2D>(0., localmesh);
 

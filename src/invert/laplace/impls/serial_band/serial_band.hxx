@@ -26,8 +26,8 @@
 
 class LaplaceSerialBand;
 
-#ifndef __SERIAL_BAND_H__
-#define __SERIAL_BAND_H__
+#ifndef BOUT_SERIAL_BAND_H
+#define BOUT_SERIAL_BAND_H
 
 #include "bout/build_config.hxx"
 #include "bout/invert_laplace.hxx"
@@ -95,4 +95,4 @@ private:
 
 #endif // BOUT_USE_METRIC_3D
 
-#endif // __SERIAL_BAND_H__
+#endif // BOUT_SERIAL_BAND_H

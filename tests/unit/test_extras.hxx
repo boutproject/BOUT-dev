@@ -334,7 +334,7 @@ class FakeGridDataSource : public GridDataSource {
 public:
   FakeGridDataSource() {}
   /// Constructor setting values which can be fetched from this source
-  FakeGridDataSource(Options& values) : values(values) {}
+  FakeGridDataSource(const Options& values) : values(values.copy()) {}
 
   /// Take an rvalue (e.g. initializer list), convert to lvalue and delegate constructor
   FakeGridDataSource(Options&& values) : FakeGridDataSource(values) {}

@@ -27,8 +27,8 @@
  *
  **************************************************************************/
 
-#ifndef __IDA_SOLVER_H__
-#define __IDA_SOLVER_H__
+#ifndef BOUT_IDA_SOLVER_H
+#define BOUT_IDA_SOLVER_H
 
 #include "bout/build_config.hxx"
 #include "bout/solver.hxx"
@@ -97,4 +97,4 @@ private:
 };
 
 #endif // BOUT_HAS_IDA
-#endif // __IDA_SOLVER_H__
+#endif // BOUT_IDA_SOLVER_H

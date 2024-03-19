@@ -1,8 +1,8 @@
 
 class BoundaryFactory;
 
-#ifndef __BNDRY_FACTORY_H__
-#define __BNDRY_FACTORY_H__
+#ifndef BOUT_BNDRY_FACTORY_H
+#define BOUT_BNDRY_FACTORY_H
 
 class BoundaryOpBase;
 class BoundaryOpPar;
@@ -129,4 +129,4 @@ private:
   // BoundaryModifier* findBoundaryMod(const string &s);
 };
 
-#endif // __BNDRY_FACTORY_H__
+#endif // BOUT_BNDRY_FACTORY_H

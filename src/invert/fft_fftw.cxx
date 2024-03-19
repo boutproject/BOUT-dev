@@ -258,7 +258,7 @@ void rfft([[maybe_unused]] const BoutReal* in, [[maybe_unused]] int length,
     // use a `single` block here as that requires all threads to reach the
     // block (implicit barrier) which may not be true in all cases (e.g.
     // if there are 8 threads but only 4 call the fft routine).
-    BOUT_OMP(critical(rfft))
+    BOUT_OMP_SAFE(critical(rfft))
     if ((size != length) || (nthreads < n_th)) {
       if (size > 0) {
         // Free all memory
@@ -335,7 +335,7 @@ void irfft([[maybe_unused]] const dcomplex* in, [[maybe_unused]] int length,
     // use a `single` block here as that requires all threads to reach the
     // block (implicit barrier) which may not be true in all cases (e.g.
     // if there are 8 threads but only 4 call the fft routine).
-    BOUT_OMP(critical(irfft))
+    BOUT_OMP_SAFE(critical(irfft))
     if ((size != length) || (nthreads < n_th)) {
       if (size > 0) {
         // Free all memory

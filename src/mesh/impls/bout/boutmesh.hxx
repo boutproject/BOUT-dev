@@ -1,6 +1,6 @@
 
-#ifndef __BOUTMESH_H__
-#define __BOUTMESH_H__
+#ifndef BOUT_BOUTMESH_H
+#define BOUT_BOUTMESH_H
 
 #include "mpi.h"
 
@@ -489,4 +489,4 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
                                             int ny_inner);
 } // namespace bout
 
-#endif // __BOUTMESH_H__
+#endif // BOUT_BOUTMESH_H

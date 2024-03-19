@@ -26,8 +26,8 @@
 
 class LaplaceSerialTri;
 
-#ifndef __SERIAL_TRI_H__
-#define __SERIAL_TRI_H__
+#ifndef BOUT_SERIAL_TRI_H
+#define BOUT_SERIAL_TRI_H
 
 #include <bout/dcomplex.hxx>
 #include <bout/invert_laplace.hxx>
@@ -80,4 +80,4 @@ private:
   Field2D A, C, D;
 };
 
-#endif // __SERIAL_TRI_H__
+#endif // BOUT_SERIAL_TRI_H

@@ -26,8 +26,8 @@
 class Output;
 
 #pragma once
-#ifndef __OUTPUT_H__
-#define __OUTPUT_H__
+#ifndef BOUT_OUTPUT_H
+#define BOUT_OUTPUT_H
 
 #include "bout/multiostream.hxx"
 #include <fstream>
@@ -304,4 +304,4 @@ extern ConditionalOutput output_verbose;  ///< less interesting messages
 /// Generic output, given the same level as output_progress
 extern ConditionalOutput output;
 
-#endif // __OUTPUT_H__
+#endif // BOUT_OUTPUT_H

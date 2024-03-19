@@ -30,8 +30,8 @@ class InvertableOperator;
 };
 }; // namespace bout
 
-#ifndef __INVERTABLE_OPERATOR_H__
-#define __INVERTABLE_OPERATOR_H__
+#ifndef BOUT_INVERTABLE_OPERATOR_H
+#define BOUT_INVERTABLE_OPERATOR_H
 
 #include "bout/build_config.hxx"
 
@@ -120,7 +120,7 @@ PetscErrorCode petscVecToField(Vec in, T& out) {
 template <typename T>
 class InvertableOperator {
   static_assert(
-      bout::utils::is_Field<T>::value,
+      bout::utils::is_Field_v<T>,
       "InvertableOperator must be templated with one of FieldPerp, Field2D or Field3D");
 
 public:
@@ -197,7 +197,7 @@ public:
     }
 
     // Add the RGN_WITHBNDRIES region to the mesh. Requires RGN_NOBNDRY to be defined.
-    if (std::is_same<Field3D, T>::value) {
+    if constexpr (std::is_same_v<Field3D, T>) {
       if (not localmesh->hasRegion3D("RGN_WITHBNDRIES")) {
         // This avoids all guard cells and corners but includes boundaries
         // Note we probably don't want to include periodic boundaries as these
@@ -242,7 +242,7 @@ public:
         localmesh->addRegion3D("RGN_WITHBNDRIES", nocorner3D);
       }
 
-    } else if (std::is_same<Field2D, T>::value) {
+    } else if constexpr (std::is_same_v<Field2D, T>) {
       if (not localmesh->hasRegion2D("RGN_WITHBNDRIES")) {
         // This avoids all guard cells and corners but includes boundaries
         Region<Ind2D> nocorner2D = localmesh->getRegion2D("RGN_NOBNDRY");
@@ -280,7 +280,7 @@ public:
         localmesh->addRegion2D("RGN_WITHBNDRIES", nocorner2D);
       }
 
-    } else if (std::is_same<FieldPerp, T>::value) {
+    } else if constexpr (std::is_same_v<FieldPerp, T>) {
       if (not localmesh->hasRegionPerp("RGN_WITHBNDRIES")) {
         // This avoids all guard cells and corners but includes boundaries
         Region<IndPerp> nocornerPerp = localmesh->getRegionPerp("RGN_NOBNDRY");
