@@ -228,7 +228,7 @@ int ArkodeSolver::init() {
     throw BoutException("ARKStepSetUserData failed\n");
   }
 
-  if (ARKStepSetLinear(arkode_mem, 1) != ARK_SUCCESS) {
+  if (ARKStepSetLinear(arkode_mem, set_linear) != ARK_SUCCESS) {
     throw BoutException("ARKStepSetLinear failed\n");
   }
 
