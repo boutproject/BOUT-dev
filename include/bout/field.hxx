@@ -181,7 +181,7 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 template <typename F>
 inline bool isFci(const F& f) {
   const auto coords = f.getCoordinates();
-  if (coords == nullptr){
+  if (coords == nullptr) {
     return false;
   }
   if (not coords->hasParallelTransform()) {
