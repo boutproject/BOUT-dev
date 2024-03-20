@@ -90,7 +90,7 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
 
   *this = val;
 #if BOUT_USE_FCI_AUTOMAGIC
-  if (isFci(*this)) {
+  if (this->isFci()) {
     splitParallelSlices();
     for (size_t i=0; i<numberParallelSlices(); ++i){
       yup(i) = *this;
@@ -351,7 +351,7 @@ Field3D& Field3D::operator=(const BoutReal val) {
 Field3D& Field3D::calcParallelSlices() {
   getCoordinates()->getParallelTransform().calcParallelSlices(*this);
 #if BOUT_USE_FCI_AUTOMAGIC
-  if (isFci(*this)) {
+  if (this->isFci()) {
     this->applyParallelBoundary("parallel_neumann_o2");
   }
 #endif

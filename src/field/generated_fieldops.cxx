@@ -16,7 +16,7 @@ Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
 #if BOUT_USE_FCI_AUTOMAGIC
-  if (isFci(lhs) and lhs.hasParallelSlices() and rhs.hasParallelSlices()) {
+  if (lhs.isFci() and lhs.hasParallelSlices() and rhs.hasParallelSlices()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) * rhs.yup(i);
@@ -43,7 +43,7 @@ Field3D& Field3D::operator*=(const Field3D& rhs) {
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
 #if BOUT_USE_FCI_AUTOMAGIC
-    if (isFci(*this) and this->hasParallelSlices() and rhs.hasParallelSlices()) {
+    if (this->isFci() and this->hasParallelSlices() and rhs.hasParallelSlices()) {
       for (size_t i{0}; i < yup_fields.size(); ++i) {
         yup(i) *= rhs.yup(i);
         ydown(i) *= rhs.ydown(i);
@@ -79,7 +79,7 @@ Field3D operator/(const Field3D& lhs, const Field3D& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
 #if BOUT_USE_FCI_AUTOMAGIC
-  if (isFci(lhs) and lhs.hasParallelSlices() and rhs.hasParallelSlices()) {
+  if (lhs.isFci() and lhs.hasParallelSlices() and rhs.hasParallelSlices()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) / rhs.yup(i);
@@ -106,7 +106,7 @@ Field3D& Field3D::operator/=(const Field3D& rhs) {
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
 #if BOUT_USE_FCI_AUTOMAGIC
-    if (isFci(*this) and this->hasParallelSlices() and rhs.hasParallelSlices()) {
+    if (this->isFci() and this->hasParallelSlices() and rhs.hasParallelSlices()) {
       for (size_t i{0}; i < yup_fields.size(); ++i) {
         yup(i) /= rhs.yup(i);
         ydown(i) /= rhs.ydown(i);
@@ -142,7 +142,7 @@ Field3D operator+(const Field3D& lhs, const Field3D& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
 #if BOUT_USE_FCI_AUTOMAGIC
-  if (isFci(lhs) and lhs.hasParallelSlices() and rhs.hasParallelSlices()) {
+  if (lhs.isFci() and lhs.hasParallelSlices() and rhs.hasParallelSlices()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) + rhs.yup(i);
@@ -169,7 +169,7 @@ Field3D& Field3D::operator+=(const Field3D& rhs) {
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
 #if BOUT_USE_FCI_AUTOMAGIC
-    if (isFci(*this) and this->hasParallelSlices() and rhs.hasParallelSlices()) {
+    if (this->isFci() and this->hasParallelSlices() and rhs.hasParallelSlices()) {
       for (size_t i{0}; i < yup_fields.size(); ++i) {
         yup(i) += rhs.yup(i);
         ydown(i) += rhs.ydown(i);
@@ -205,7 +205,7 @@ Field3D operator-(const Field3D& lhs, const Field3D& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
 #if BOUT_USE_FCI_AUTOMAGIC
-  if (isFci(lhs) and lhs.hasParallelSlices() and rhs.hasParallelSlices()) {
+  if (lhs.isFci() and lhs.hasParallelSlices() and rhs.hasParallelSlices()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) - rhs.yup(i);
@@ -232,7 +232,7 @@ Field3D& Field3D::operator-=(const Field3D& rhs) {
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
 #if BOUT_USE_FCI_AUTOMAGIC
-    if (isFci(*this) and this->hasParallelSlices() and rhs.hasParallelSlices()) {
+    if (this->isFci() and this->hasParallelSlices() and rhs.hasParallelSlices()) {
       for (size_t i{0}; i < yup_fields.size(); ++i) {
         yup(i) -= rhs.yup(i);
         ydown(i) -= rhs.ydown(i);
@@ -291,7 +291,7 @@ Field3D& Field3D::operator*=(const Field2D& rhs) {
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
 #if BOUT_USE_FCI_AUTOMAGIC
-    if (isFci(*this) and this->hasParallelSlices()) {
+    if (this->isFci() and this->hasParallelSlices()) {
       for (size_t i{0}; i < yup_fields.size(); ++i) {
         yup(i) *= rhs;
         ydown(i) *= rhs;
@@ -354,7 +354,7 @@ Field3D& Field3D::operator/=(const Field2D& rhs) {
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
 #if BOUT_USE_FCI_AUTOMAGIC
-    if (isFci(*this) and this->hasParallelSlices()) {
+    if (this->isFci() and this->hasParallelSlices()) {
       for (size_t i{0}; i < yup_fields.size(); ++i) {
         yup(i) /= rhs;
         ydown(i) /= rhs;
@@ -417,7 +417,7 @@ Field3D& Field3D::operator+=(const Field2D& rhs) {
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
 #if BOUT_USE_FCI_AUTOMAGIC
-    if (isFci(*this) and this->hasParallelSlices()) {
+    if (this->isFci() and this->hasParallelSlices()) {
       for (size_t i{0}; i < yup_fields.size(); ++i) {
         yup(i) += rhs;
         ydown(i) += rhs;
@@ -479,7 +479,7 @@ Field3D& Field3D::operator-=(const Field2D& rhs) {
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
 #if BOUT_USE_FCI_AUTOMAGIC
-    if (isFci(*this) and this->hasParallelSlices()) {
+    if (this->isFci() and this->hasParallelSlices()) {
       for (size_t i{0}; i < yup_fields.size(); ++i) {
         yup(i) -= rhs;
         ydown(i) -= rhs;
@@ -614,7 +614,7 @@ Field3D& Field3D::operator*=(const BoutReal rhs) {
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
 #if BOUT_USE_FCI_AUTOMAGIC
-    if (isFci(*this) and this->hasParallelSlices()) {
+    if (this->isFci() and this->hasParallelSlices()) {
       for (size_t i{0}; i < yup_fields.size(); ++i) {
         yup(i) *= rhs;
         ydown(i) *= rhs;
@@ -665,7 +665,7 @@ Field3D& Field3D::operator/=(const BoutReal rhs) {
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
 #if BOUT_USE_FCI_AUTOMAGIC
-    if (isFci(*this) and this->hasParallelSlices()) {
+    if (this->isFci() and this->hasParallelSlices()) {
       for (size_t i{0}; i < yup_fields.size(); ++i) {
         yup(i) /= rhs;
         ydown(i) /= rhs;
@@ -716,7 +716,7 @@ Field3D& Field3D::operator+=(const BoutReal rhs) {
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
 #if BOUT_USE_FCI_AUTOMAGIC
-    if (isFci(*this) and this->hasParallelSlices()) {
+    if (this->isFci() and this->hasParallelSlices()) {
       for (size_t i{0}; i < yup_fields.size(); ++i) {
         yup(i) += rhs;
         ydown(i) += rhs;
@@ -766,7 +766,7 @@ Field3D& Field3D::operator-=(const BoutReal rhs) {
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
 #if BOUT_USE_FCI_AUTOMAGIC
-    if (isFci(*this) and this->hasParallelSlices()) {
+    if (this->isFci() and this->hasParallelSlices()) {
       for (size_t i{0}; i < yup_fields.size(); ++i) {
         yup(i) -= rhs;
         ydown(i) -= rhs;

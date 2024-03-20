@@ -200,7 +200,7 @@ template <typename T>
 T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
       const std::string& region = "RGN_NOBNDRY") {
   AUTO_TRACE();
-  if (isFci(f)) {
+  if (f.isFci()) {
     ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     T f_tmp = f;
     if (!f.hasParallelSlices()){
