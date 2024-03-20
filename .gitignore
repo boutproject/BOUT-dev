@@ -85,3 +85,5 @@ coverage/
 /_version.txt
 /BOUT++-v*.tar.gz
 /BOUT++-v*.tar.xz
+/CMakeCache.txt
+/CMakeFiles/cmake.check_cache

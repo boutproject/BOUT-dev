@@ -3,7 +3,7 @@
 // These are common backports shared between the CVode, ARKode, and IDA solvers
 //
 // Copyright 2022 Peter Hill, BOUT++ Team
-// SPDX-License-Identifier: LGPLv3
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
 #ifndef BOUT_SUNDIALS_BACKPORTS_H
 #define BOUT_SUNDIALS_BACKPORTS_H
