@@ -384,12 +384,12 @@ BoutReal PvodeSolver::run(BoutReal tout) {
         debug[f.name] = *f.var;
       }
 
-      if (mesh) {
+      if (mesh != nullptr) {
         mesh->outputVars(debug);
         debug["BOUT_VERSION"].force(bout::version::as_double);
       }
 
-      std::string outname = fmt::format(
+      const std::string outname = fmt::format(
           "{}/BOUT.debug.{}.nc",
           Options::root()["datadir"].withDefault<std::string>("data"), BoutComm::rank());
 
