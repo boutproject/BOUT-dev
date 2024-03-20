@@ -29,7 +29,9 @@
 
 #include "shiftedmetricinterp.hxx"
 #include "bout/constants.hxx"
-#include "bout/parallel_boundary_region.hxx"
+#include "bout/mask.hxx"
+#include <bout/boundary_region.hxx>
+#include <bout/parallel_boundary_region.hxx>
 
 ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
                                          Field2D zShift_in, BoutReal zlength_in,
@@ -122,8 +124,8 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
   // Create regions for parallel boundary conditions
   Field2D dy;
   mesh.get(dy, "dy", 1.);
-  auto forward_boundary_xin =
-      new BoundaryRegionPar("parallel_forward_xin", BNDRY_PAR_FWD_XIN, +1, &mesh);
+  auto forward_boundary_xin = std::make_shared<BoundaryRegionPar>(
+      "parallel_forward_xin", BNDRY_PAR_FWD_XIN, +1, &mesh);
   for (auto it = mesh.iterateBndryUpperY(); not it.isDone(); it.next()) {
     for (int z = mesh.zstart; z <= mesh.zend; z++) {
       forward_boundary_xin->add_point(
@@ -138,8 +140,8 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           yvalid);
     }
   }
-  auto backward_boundary_xin =
-      new BoundaryRegionPar("parallel_backward_xin", BNDRY_PAR_BKWD_XIN, -1, &mesh);
+  auto backward_boundary_xin = std::make_shared<BoundaryRegionPar>(
+      "parallel_backward_xin", BNDRY_PAR_BKWD_XIN, -1, &mesh);
   for (auto it = mesh.iterateBndryLowerY(); not it.isDone(); it.next()) {
     for (int z = mesh.zstart; z <= mesh.zend; z++) {
       backward_boundary_xin->add_point(
@@ -155,8 +157,8 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     }
   }
   // Create regions for parallel boundary conditions
-  auto forward_boundary_xout =
-      new BoundaryRegionPar("parallel_forward_xout", BNDRY_PAR_FWD_XOUT, +1, &mesh);
+  auto forward_boundary_xout = std::make_shared<BoundaryRegionPar>(
+      "parallel_forward_xout", BNDRY_PAR_FWD_XOUT, +1, &mesh);
   for (auto it = mesh.iterateBndryUpperY(); not it.isDone(); it.next()) {
     for (int z = mesh.zstart; z <= mesh.zend; z++) {
       forward_boundary_xout->add_point(
@@ -171,8 +173,8 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           yvalid);
     }
   }
-  auto backward_boundary_xout =
-      new BoundaryRegionPar("parallel_backward_xout", BNDRY_PAR_BKWD_XOUT, -1, &mesh);
+  auto backward_boundary_xout = std::make_shared<BoundaryRegionPar>(
+      "parallel_backward_xout", BNDRY_PAR_BKWD_XOUT, -1, &mesh);
   for (auto it = mesh.iterateBndryLowerY(); not it.isDone(); it.next()) {
     for (int z = mesh.zstart; z <= mesh.zend; z++) {
       backward_boundary_xout->add_point(
@@ -189,10 +191,10 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
   }
 
   // Add the boundary region to the mesh's vector of parallel boundaries
-  mesh.addBoundaryPar(forward_boundary_xin);
-  mesh.addBoundaryPar(backward_boundary_xin);
-  mesh.addBoundaryPar(forward_boundary_xout);
-  mesh.addBoundaryPar(backward_boundary_xout);
+  mesh.addBoundaryPar(forward_boundary_xin, BoundaryParType::xin_fwd);
+  mesh.addBoundaryPar(backward_boundary_xin, BoundaryParType::xin_bwd);
+  mesh.addBoundaryPar(forward_boundary_xout, BoundaryParType::xout_fwd);
+  mesh.addBoundaryPar(backward_boundary_xout, BoundaryParType::xin_bwd);
 }
 
 void ShiftedMetricInterp::checkInputGrid() {

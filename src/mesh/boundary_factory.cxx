@@ -1,3 +1,5 @@
+#include "bout/parallel_boundary_op.hxx"
+#include "bout/parallel_boundary_region.hxx"
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_standard.hxx>
 #include <bout/globals.hxx>

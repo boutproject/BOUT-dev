@@ -233,8 +233,9 @@ public:
   RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
   void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
   std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
-  std::vector<BoundaryRegionPar*> getBoundariesPar() override {
-    return std::vector<BoundaryRegionPar*>();
+  std::vector<std::shared_ptr<BoundaryRegionPar>>
+  getBoundariesPar(BoundaryParType) override {
+    return std::vector<std::shared_ptr<BoundaryRegionPar>>();
   }
   BoutReal GlobalX(int jx) const override { return jx; }
   BoutReal GlobalY(int jy) const override { return jy; }
