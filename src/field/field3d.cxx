@@ -848,10 +848,14 @@ Options* Field3D::track(const T& change, std::string operation) {
   if (tracking != nullptr and tracking_state != 0) {
     const std::string outname{fmt::format("track_{:s}_{:d}", selfname, tracking_state++)};
     tracking->set(outname, change, "tracking");
+    // Workaround for bug in gcc9.4
+#if BOUT_USE_TRACK
+    const std::string changename = change.name;
+#endif
     (*tracking)[outname].setAttributes({
       {"operation", operation},
 #if BOUT_USE_TRACK
-          {"rhs.name", change.name},
+          {"rhs.name", changename},
 #endif
     });
     return &(*tracking)[outname];
