@@ -8,6 +8,7 @@
 #include <numeric>
 #include <vector>
 
+#include "bout/boundary_region.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/coordinates.hxx"
 #include "bout/field3d.hxx"

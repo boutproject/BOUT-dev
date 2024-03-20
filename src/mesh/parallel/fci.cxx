@@ -47,7 +47,7 @@
 
 #include <string>
 
-FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
+FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& options,
                int offset_, BoundaryRegionPar* inner_boundary,
                BoundaryRegionPar* outer_boundary, bool zperiodic)
     : map_mesh(mesh), offset(offset_),
@@ -228,9 +228,9 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options,
     // the outer boundary
     auto* boundary = (xt_prime[i] < map_mesh.xstart) ? inner_boundary : outer_boundary;
     boundary->add_point(x, y, z, x + dx, y + 0.5 * offset,
-                        z + dz,      // Intersection point in local index space
-                        0.5 * dy[i], // Distance to intersection
-                        PI           // Right-angle intersection
+                        z + dz, // Intersection point in local index space
+                        0.5,    // Distance to intersection
+                        1       // Default to that there is a point in the other direction
     );
   }
   region_no_boundary = region_no_boundary.mask(to_remove);

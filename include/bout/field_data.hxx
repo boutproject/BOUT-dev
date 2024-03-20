@@ -44,7 +44,7 @@ class Coordinates;
 class Mesh;
 
 #include "bout/boundary_region.hxx"
-#include "bout/parallel_boundary_region.hxx"
+class BoundaryRegionPar;
 
 #include "bout/sys/expressionparser.hxx"
 
