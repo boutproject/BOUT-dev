@@ -64,13 +64,13 @@ void OptionsReader::parseCommandLine(Options* options,
     options = Options::getRoot();
 
     buffer = argv[i];
-    if (buffer.length() == 0) {
+    if (buffer.empty()) {
       continue;
     }
     // Test if name starts with a '-', and remove if found
     if (buffer[0] == '-') {
       buffer = buffer.substr(1); // Remove the first character (-)
-      if (buffer.length() == 0) {
+      if (buffer.empty()) {
         throw BoutException(
             _("Invalid command line option '-' found - maybe check whitespace?"));
       }
