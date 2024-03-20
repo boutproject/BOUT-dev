@@ -65,7 +65,7 @@ void pvode_load_data_f3d(const std::vector<bool>& evolve_bndrys,
         for (std::vector<Field3D>::iterator ff = ffs.begin(); ff != ffs.end(); ++ff) {
           if (bndry && !*evolve_bndry) {
             continue;
-	  }
+          }
           (*ff)[mesh->ind2Dto3D(i2d, jz)] = udata[p];
           p++;
         }
