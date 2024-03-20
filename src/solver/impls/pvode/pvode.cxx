@@ -359,18 +359,18 @@ BoutReal PvodeSolver::run(BoutReal tout) {
       using namespace std::string_literals;
       Mesh* mesh{};
       for (const auto& prefix : {"pre_"s, "residuum_"s}) {
-        std::vector<Field3D> ffs{};
+        std::vector<Field3D> list_of_fields{};
         std::vector<bool> evolve_bndrys{};
         for (const auto& f : f3d) {
-          Field3D ff{0.};
-          ff.allocate();
-          ff.setLocation(f.location);
-          mesh = ff.getMesh();
-          debug[fmt::format("{:s}{:s}", prefix, f.name)] = ff;
-          ffs.push_back(ff);
+          mesh = f.var->getMesh();
+          Field3D to_load{0., mesh};
+          to_load.allocate();
+          to_load.setLocation(f.location);
+          debug[fmt::format("{:s}{:s}", prefix, f.name)] = to_load;
+          list_of_fields.push_back(to_load);
           evolve_bndrys.push_back(f.evolve_bndry);
         }
-        pvode_load_data_f3d(evolve_bndrys, ffs,
+        pvode_load_data_f3d(evolve_bndrys, list_of_fields,
                             prefix == "pre_"s ? udata : N_VDATA(cv_mem->cv_acor));
       }
 
