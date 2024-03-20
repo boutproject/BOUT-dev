@@ -844,12 +844,12 @@ Field3D& Field3D::enableTracking(const std::string& name, Options& _tracking) {
 }
 
 template <class T>
-Options* Field3D::track(const T& change, std::string op) {
-  if (tracking and tracking_state) {
+Options* Field3D::track(const T& change, std::string operation) {
+  if (tracking != nullptr and tracking_state != 0) {
     const std::string outname{fmt::format("track_{:s}_{:d}", selfname, tracking_state++)};
     tracking->set(outname, change, "tracking");
     (*tracking)[outname].setAttributes({
-      {"operation", op},
+      {"operation", operation},
 #if BOUT_USE_TRACK
           {"rhs.name", change.name},
 #endif
@@ -863,12 +863,12 @@ template Options* Field3D::track<Field3D>(const Field3D&, std::string);
 template Options* Field3D::track<Field2D>(const Field2D&, std::string);
 template Options* Field3D::track<FieldPerp>(const FieldPerp&, std::string);
 
-Options* Field3D::track(const BoutReal& change, std::string op) {
+Options* Field3D::track(const BoutReal& change, std::string operation) {
   if (tracking and tracking_state) {
     const std::string outname{fmt::format("track_{:s}_{:d}", selfname, tracking_state++)};
     tracking->set(outname, change, "tracking");
     (*tracking)[outname].setAttributes({
-        {"operation", op},
+        {"operation", operation},
         {"rhs.name", "BR"},
     });
     return &(*tracking)[outname];

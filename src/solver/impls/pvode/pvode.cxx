@@ -53,7 +53,7 @@ void solver_cfn(integer N, BoutReal t, N_Vector u, void* f_data);
 namespace {
 // local only
 void pvode_load_data_f3d(const std::vector<bool>& evolve_bndrys,
-                         std::vector<Field3D>& ffs, BoutReal* udata) {
+                         std::vector<Field3D>& ffs, const BoutReal* udata) {
   int p = 0;
   Mesh* mesh = ffs[0].getMesh();
   const int nz = mesh->LocalNz;
@@ -63,8 +63,9 @@ void pvode_load_data_f3d(const std::vector<bool>& evolve_bndrys,
         // Loop over 3D variables
         std::vector<bool>::const_iterator evolve_bndry = evolve_bndrys.begin();
         for (std::vector<Field3D>::iterator ff = ffs.begin(); ff != ffs.end(); ++ff) {
-          if (bndry && !*evolve_bndry)
+          if (bndry && !*evolve_bndry) {
             continue;
+	  }
           (*ff)[mesh->ind2Dto3D(i2d, jz)] = udata[p];
           p++;
         }

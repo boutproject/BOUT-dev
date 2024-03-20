@@ -521,10 +521,10 @@ private:
 
   int tracking_state{0};
   Options* tracking{nullptr};
-  std::string selfname{""};
+  std::string selfname;
   template <class T>
-  Options* track(const T& change, std::string op);
-  Options* track(const BoutReal& change, std::string op);
+  Options* track(const T& change, std::string operation);
+  Options* track(const BoutReal& change, std::string operation);
 };
 
 // Non-member overloaded operators
