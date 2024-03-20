@@ -100,7 +100,7 @@ public:
   ///   ...
   ///   return 0;
   /// }
-  void parseCommandLine(Options* options, int argc, char** argv);
+  [[maybe_unused]] void parseCommandLine(Options* options, int argc, char** argv);
   void parseCommandLine(Options* options, const std::vector<std::string>& argv);
 
 private:

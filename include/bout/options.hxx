@@ -783,7 +783,7 @@ public:
   void setConditionallyUsed();
 
   /// clean the cache of parsed options
-  static void cleanCache();
+  [[maybe_unused]] static void cleanCache();
 
   /// Read-only access to internal options and sections
   /// to allow iteration over the tree

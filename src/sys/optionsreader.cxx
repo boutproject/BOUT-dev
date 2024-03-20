@@ -43,7 +43,7 @@ void OptionsReader::write(Options* options, const std::string& filename) {
   OptionINI{}.write(options, filename);
 }
 
-void OptionsReader::parseCommandLine(Options* options, int argc, char** argv) {
+[[maybe_unused]] void OptionsReader::parseCommandLine(Options* options, int argc, char** argv) {
   return parseCommandLine(options, std::vector<std::string>(argv, argv + argc));
 }
 

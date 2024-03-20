@@ -863,7 +863,7 @@ void Options::setConditionallyUsed() {
   }
 }
 
-void Options::cleanCache() { FieldFactory::get()->cleanCache(); }
+[[maybe_unused]] void Options::cleanCache() { FieldFactory::get()->cleanCache(); }
 
 std::map<std::string, const Options*> Options::subsections() const {
   std::map<std::string, const Options*> sections;
