@@ -39,16 +39,12 @@
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/dcomplex.hxx>
-#include <bout/derivs.hxx>
-#include <bout/fft.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
 #include <algorithm>
-#include <iterator>
 #include <set>
 
 /// MPI type of BoutReal for communications

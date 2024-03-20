@@ -1,6 +1,5 @@
 #include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
-#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/utils.hxx>
@@ -10,7 +9,6 @@
 #include <bout/boutcomm.hxx>
 #include <bout/output.hxx>
 
-#include "impls/bout/boutmesh.hxx"
 #include "bout/interpolation.hxx"
 
 /// Interpolate a Field2D to a new CELL_LOC with interp_to.
