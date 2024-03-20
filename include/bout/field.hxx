@@ -86,6 +86,8 @@ public:
 
   std::string name;
 
+  bool isFci() const;
+
 #if CHECK > 0
   // Routines to test guard/boundary cells set
 
@@ -177,18 +179,6 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 #else
 #define ASSERT1_FIELDS_COMPATIBLE(field1, field2) ;
 #endif
-
-template <typename F>
-inline bool isFci(const F& f) {
-  const auto coords = f.getCoordinates();
-  if (coords == nullptr) {
-    return false;
-  }
-  if (not coords->hasParallelTransform()) {
-    return false;
-  }
-  return not coords->getParallelTransform().canToFromFieldAligned();
-}
 
 /// Return an empty shell field of some type derived from Field, with metadata
 /// copied and a data array that is allocated but not initialised.
