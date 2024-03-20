@@ -19,7 +19,7 @@
 /// conventions.
 class BoutMesh : public Mesh {
 public:
-  BoutMesh(GridDataSource* s, Options* options = nullptr);
+  explicit BoutMesh(GridDataSource* s, Options* options = nullptr);
   ~BoutMesh() override;
 
   /// Read in the mesh from data sources
