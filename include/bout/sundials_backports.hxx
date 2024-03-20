@@ -25,14 +25,13 @@
 
 #include "bout/unused.hxx"
 
-static_assert(std::is_same<BoutReal,
 #if SUNDIALS_VERSION_MAJOR < 6
-              realtype
+using sundials_real_type = realtype;
 #else
-              sunrealtype
+using sundials_real_type = sunrealtype;
 #endif
-              >::value,
-              "BOUT++ and SUNDIALS real types do not match");
+
+static_assert(std::is_same_v<BoutReal, sundials_real_type>, "BOUT++ and SUNDIALS real types do not match");
 
 #define SUNDIALS_CONTROLLER_SUPPORT (SUNDIALS_VERSION_MAJOR > 6 || SUNDIALS_VERSION_MAJOR == 6 && SUNDIALS_VERSION_MINOR >= 7)
 
