@@ -45,7 +45,7 @@ using Context = std::nullptr_t;
 } // namespace sundials
 #endif
 
-inline sundials::Context createSUNContext(MAYBE_UNUSED(MPI_Comm& comm)) {
+inline sundials::Context createSUNContext([[maybe_unused]] MPI_Comm& comm) {
 #if SUNDIALS_VERSION_MAJOR < 6
   return nullptr;
 #elif SUNDIALS_VERSION_MAJOR < 7
@@ -57,7 +57,7 @@ inline sundials::Context createSUNContext(MAYBE_UNUSED(MPI_Comm& comm)) {
 
 template<typename Func, typename... Args>
 inline decltype(auto) callWithSUNContext(Func f,
-                                        MAYBE_UNUSED(sundials::Context& ctx),
+                                        [[maybe_unused]] sundials::Context& ctx,
                                         Args&&... args) {
 #if SUNDIALS_VERSION_MAJOR < 6
   return f(std::forward<Args>(args)...);
