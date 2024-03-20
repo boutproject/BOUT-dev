@@ -2318,7 +2318,7 @@ int BoutMesh::pack_data(const std::vector<FieldData*>& var_list, int xge, int xl
 }
 
 int BoutMesh::unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt,
-                          int yge, int ylt, BoutReal* buffer) {
+                          int yge, int ylt, const BoutReal* buffer) {
 
   int len = 0;
 

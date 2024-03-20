@@ -16,7 +16,7 @@
 /// Boundary guard cells are set by extrapolating from the grid, like
 /// 'free_o3' boundary conditions
 /// Corner guard cells are set to BoutNaN
-const Field2D Mesh::interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
+Field2D Mesh::interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
                                               bool extrapolate_x, bool extrapolate_y,
                                               bool no_extra_interpolate,
                                               ParallelTransform* UNUSED(pt),
@@ -522,7 +522,7 @@ void Mesh::communicate(FieldPerp& f) {
 }
 
 int Mesh::msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                  int ylt) {
+                  int ylt) const {
   int len = 0;
 
   /// Loop over variables
@@ -671,7 +671,7 @@ int Mesh::globalStartIndexPerp() {
   return cumulativeSize - localSize;
 }
 
-const std::vector<int> Mesh::readInts(const std::string& name, int n) {
+std::vector<int> Mesh::readInts(const std::string& name, int n) {
   TRACE("Mesh::readInts({:s})", name);
 
   if (source == nullptr) {

@@ -461,7 +461,7 @@ private:
   /// Copy data from a buffer back into the fields
 
   int unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                  int ylt, BoutReal* buffer);
+                  int ylt, const BoutReal* buffer);
 };
 
 namespace {
