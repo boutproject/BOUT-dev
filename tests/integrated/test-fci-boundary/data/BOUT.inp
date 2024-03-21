@@ -1,0 +1,20 @@
+grid = grid.fci.nc
+
+MXG = 1
+NXPE = 1
+MYG = 1
+
+[mesh]
+symmetricglobalx = true
+
+[mesh:ddy]
+first = C2
+second = C2
+
+[mesh:paralleltransform]
+type = fci
+y_periodic = true
+z_periodic = true
+
+[mesh:paralleltransform:xzinterpolation]
+type = lagrange4pt
