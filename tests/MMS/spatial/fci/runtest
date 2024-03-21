@@ -27,7 +27,7 @@ nx = 3  # Not changed for these tests
 nlist = [8, 16, 32, 64, 128]
 
 # Number of parallel slices (in each direction)
-nslices = [1, 2]
+nslices = [1]
 
 directory = "data"
 

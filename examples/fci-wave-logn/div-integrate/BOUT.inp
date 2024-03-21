@@ -20,7 +20,7 @@ expand_divergence = false
 background = 1e-06   # Background density
 
 [all]
-bndry_par_all = parallel_neumann
+bndry_par_all = parallel_neumann_o2
 bndry_all = neumann
 
 [n]
@@ -28,15 +28,15 @@ bndry_all = neumann
 zl = z / (2*pi)
 function = fciwave:background + 1e-3*exp(-((x-0.7)/0.1)^2 - ((zl-0.3)/0.1)^2)
 
-bndry_par_yup = parallel_neumann
-bndry_par_ydown = parallel_neumann
+bndry_par_yup = parallel_neumann_o2
+bndry_par_ydown = parallel_neumann_o2
 
 [logn]
 
 function = log(n:function)
 
-bndry_par_yup = parallel_neumann
-bndry_par_ydown = parallel_neumann
+bndry_par_yup = parallel_neumann_o2
+bndry_par_ydown = parallel_neumann_o2
 
 [v]
 

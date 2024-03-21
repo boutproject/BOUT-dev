@@ -69,7 +69,7 @@ protected:
 
     // Neumann boundaries simplifies parallel derivatives
     Bxyz.applyBoundary("neumann");
-    Bxyz.applyParallelBoundary("parallel_neumann");
+    Bxyz.applyParallelBoundary("parallel_neumann_o2");
     SAVE_ONCE(Bxyz);
 
     SOLVE_FOR(nv);
