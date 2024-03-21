@@ -34,6 +34,7 @@ using sundials_real_type = sunrealtype;
 static_assert(std::is_same_v<BoutReal, sundials_real_type>, "BOUT++ and SUNDIALS real types do not match");
 
 #define SUNDIALS_CONTROLLER_SUPPORT (SUNDIALS_VERSION_MAJOR > 6 || SUNDIALS_VERSION_MAJOR == 6 && SUNDIALS_VERSION_MINOR >= 7)
+#define SUNDIALS_TABLE_BY_NAME_SUPPORT (SUNDIALS_VERSION_MAJOR > 6 || SUNDIALS_VERSION_MAJOR == 6 && SUNDIALS_VERSION_MINOR >= 4)
 
 #if SUNDIALS_VERSION_MAJOR < 6
 constexpr auto SUN_PREC_RIGHT = PREC_RIGHT;

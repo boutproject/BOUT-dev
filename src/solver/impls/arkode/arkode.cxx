@@ -85,6 +85,14 @@ ArkodeSolver::ArkodeSolver(Options* opts)
                           "not recommended except for code comparison")
                      .withDefault(false)),
       order((*options)["order"].doc("Order of internal step").withDefault(4)),
+#if SUNDIALS_TABLE_BY_NAME_SUPPORT
+      implicit_table((*options)["implicit_table"]
+                         .doc("Name of the implicit Butcher table")
+                         .withDefault("")),
+      explicit_table((*options)["explicit_table"]
+                         .doc("Name of the explicit Butcher table")
+                         .withDefault("")),
+#endif
       cfl_frac((*options)["cfl_frac"]
                    .doc("Fraction of the estimated explicitly stable step to use")
                    .withDefault(-1.0)),
@@ -243,6 +251,16 @@ int ArkodeSolver::init() {
   if (ARKStepSetOrder(arkode_mem, order) != ARK_SUCCESS) {
     throw BoutException("ARKStepSetOrder failed\n");
   }
+
+#if SUNDIALS_TABLE_BY_NAME_SUPPORT
+  if (!implicit_table.empty() || !explicit_table.empty()) {
+    if (ARKStepSetTableName(arkode_mem,
+      implicit_table.empty() ? "ARKODE_DIRK_NONE" : implicit_table.c_str(),
+      explicit_table.empty() ? "ARKODE_ERK_NONE" : explicit_table.c_str()) != ARK_SUCCESS) {
+      throw BoutException("ARKStepSetTableName failed\n");
+    }
+  }
+#endif
 
   if (ARKStepSetCFLFraction(arkode_mem, cfl_frac) != ARK_SUCCESS) {
     throw BoutException("ARKStepSetCFLFraction failed\n");
