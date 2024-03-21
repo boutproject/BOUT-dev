@@ -104,25 +104,13 @@ endforeach()
 
 if (SUNDIALS_INCLUDE_DIR)
   file(READ "${SUNDIALS_INCLUDE_DIR}/sundials_config.h" SUNDIALS_CONFIG_FILE)
-  string(FIND "${SUNDIALS_CONFIG_FILE}" "SUNDIALS_PACKAGE_VERSION" index)
-  if("${index}" LESS 0)
-    # Version >3
-    set(SUNDIALS_VERSION_REGEX_PATTERN
-      ".*#define SUNDIALS_VERSION \"([0-9]+)\\.([0-9]+)\\.([0-9]+)\".*")
-  else()
-    # Version <3
-    set(SUNDIALS_VERSION_REGEX_PATTERN
-      ".*#define SUNDIALS_PACKAGE_VERSION \"([0-9]+)\\.([0-9]+)\\.([0-9]+)\".*")
-  endif()
+  set(SUNDIALS_VERSION_REGEX_PATTERN
+    ".*#define SUNDIALS_VERSION \"([0-9]+)\\.([0-9]+)\\.([0-9]+)\".*")
   string(REGEX MATCH ${SUNDIALS_VERSION_REGEX_PATTERN} _ "${SUNDIALS_CONFIG_FILE}")
   set(SUNDIALS_VERSION_MAJOR ${CMAKE_MATCH_1} CACHE STRING "")
   set(SUNDIALS_VERSION_MINOR ${CMAKE_MATCH_2} CACHE STRING "")
   set(SUNDIALS_VERSION_PATCH ${CMAKE_MATCH_3} CACHE STRING "")
   set(SUNDIALS_VERSION "${SUNDIALS_VERSION_MAJOR}.${SUNDIALS_VERSION_MINOR}.${SUNDIALS_VERSION_PATCH}" CACHE STRING "SUNDIALS version")
-endif()
-
-if("${SUNDIALS_VERSION_MAJOR}" LESS 4)
-  message(WARNING "SUNDIALS versions <4 are depricated and will not be supported in the next release")
 endif()
 
 if (SUNDIALS_DEBUG)
