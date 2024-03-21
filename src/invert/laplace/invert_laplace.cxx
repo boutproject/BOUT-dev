@@ -681,29 +681,29 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
             bvec[ncx - ix] = dcomplex(-1., 0.);
             cvec[ncx - ix] = dcomplex(0., 0.);
           }
-        } else if (inner_boundary_flags & INVERT_DC_GRADPAR) {
-          for (int ix = 0; ix < inbndry; ix++) {
+        } else if (outer_boundary_flags & INVERT_DC_GRADPAR) {
+          for (int ix = 0; ix < outbndry; ix++) {
             avec[ncx - ix] = 1.0 / sqrt(coords->g_22(ncx - ix + 1, jy));
             bvec[ncx - ix] = -1.0 / sqrt(coords->g_22(ncx - ix, jy));
             cvec[ncx - ix] = 0.0;
           }
-        } else if (inner_boundary_flags & INVERT_DC_GRADPARINV) {
-          for (int ix = 0; ix < inbndry; ix++) {
+        } else if (outer_boundary_flags & INVERT_DC_GRADPARINV) {
+          for (int ix = 0; ix < outbndry; ix++) {
             avec[ncx - ix] = sqrt(coords->g_22(ncx - ix - 1, jy));
             bvec[ncx - ix] = -sqrt(coords->g_22(ncx - ix, jy));
             cvec[ncx - ix] = 0.0;
           }
-        } else if (inner_boundary_flags & INVERT_DC_LAP) {
+        } else if (outer_boundary_flags & INVERT_DC_LAP) {
           // Decaying boundary conditions
           BoutReal k = 0.0;
           if (a != nullptr) {
-            BoutReal ksq = -((*a)(inbndry, jy));
+            BoutReal ksq = -((*a)(ncx - outbndry, jy));
             if (ksq < 0.0) {
               throw BoutException("ksq must be positive");
             }
             k = sqrt(ksq);
           }
-          for (int ix = 0; ix < inbndry; ix++) {
+          for (int ix = 0; ix < outbndry; ix++) {
             cvec[ncx - ix] = 0.;
             bvec[ncx - ix] = 1.;
             avec[ncx - ix] =
