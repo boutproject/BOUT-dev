@@ -106,6 +106,10 @@ private:
   bool fixed_step;
   /// Order of internal step
   int order;
+  /// Name of the implicit Butcher table
+  std::string implicit_table;
+  /// Name of the explicit Butcher table
+  std::string explicit_table;
   /// Fraction of the estimated explicitly stable step to use
   BoutReal cfl_frac;
   /// Set timestep adaptivity function:
