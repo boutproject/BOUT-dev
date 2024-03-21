@@ -41,7 +41,7 @@ then
     # Ignore weak depencies
     echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
     time dnf -y install dnf5
-    time dnf5 -y install dnf5-plugins cmake python3-zoidberg python3-natsort
+    time dnf5 -y install dnf5-plugins cmake python3-zoidberg python3-natsort wget
     # Allow to override packages - see #2073
     time dnf5 copr enable -y davidsch/fixes4bout || :
     time dnf5 -y upgrade
