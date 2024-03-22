@@ -24,7 +24,7 @@ class Blob2D(PhysicsModel):
 
         self.phiSolver = bc.Laplacian()
 
-        options = bc.Options("model")
+        options = bc.Options.root("model")
         # Temperature in eV
         Te0 = options.get("Te0", 30)
         e = options.get("e", 1.602e-19)
@@ -70,12 +70,20 @@ class Blob2D(PhysicsModel):
 
         # /************ Create a solver for potential ********/
 
+        opts_boussinesq = bc.Options.root("phiBoussinesq")
+        opts_non_boussinesq = bc.Options.root("phiSolver")
+
         if self.boussinesq:
             # BOUT.inp section "phiBoussinesq"
-            self.phiSolver = bc.Laplacian(bc.Options("phiBoussinesq"))
+            opts_used = opts_boussinesq
+            opts_unused = opts_non_boussinesq
         else:
             # BOUT.inp section "phiSolver"
-            self.phiSolver = bc.Laplacian(bc.Options("phiSolver"))
+            opts_used = opts_non_boussinesq
+            opts_unused = opts_boussinesq
+
+        self.phiSolver = bc.Laplacian(opts_used)
+        opts_unused.setConditionallyUsed()
 
         # Starting guess for first solve (if iterative)
         self.phi = bc.create3D("0")
@@ -165,8 +173,8 @@ def ensure_blob():
 
 # settings used by the core code
 
-NOUT = 50      # number of time-steps
-TIMESTEP = 50  # time between outputs [1/wci]
+nout = 50      # number of time-steps
+timestep = 50  # time between outputs [1/wci]
 
 
 MXG = 2      # Number of X guard cells
@@ -198,8 +206,8 @@ upwind = W3
 
 [mesh:ddz]
 
-first = FFT
-second = FFT
+first = C2
+second = C2
 upwind = W3
 
 ###################################################
@@ -207,8 +215,8 @@ upwind = W3
 
 [solver]
 
-ATOL = 1.0e-10  # absolute tolerance
-RTOL = 1.0e-5   # relative tolerance
+atol = 1e-10  # absolute tolerance
+rtol = 1e-05   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
 
 ###################################################
@@ -221,22 +229,20 @@ pctype = user  # Preconditioning type
 
 fourth_order = true  # 4th order or 2nd order
 
-flags = 0  # inversion flags for phi
-             # 0  = Zero value
-             # 10 = Zero gradient AC inner & outer
-             # 15 = Zero gradient AC and DC
-             # 768 = Zero laplace inner & outer
+# 0  = Zero value
+# 10 = Zero gradient AC inner & outer
+# 15 = Zero gradient AC and DC
+# 768 = Zero laplace inner & outer
 
 [phiSolver:precon]  # Preconditioner (if pctype=user)
-filter     = 0.     # Must not filter solution
-flags      = 49152  # set_rhs i.e. identity matrix in boundaries
+filter = 0.0     # Must not filter solution
+flags = 49152  # set_rhs i.e. identity matrix in boundaries
 
 ###################################################
 # Electrostatic potential solver (Boussinesq)
 
 [phiBoussinesq]
 # By default type is tri (serial) or spt (parallel)
-flags = 0
 
 ##################################################
 # general settings for the model
@@ -249,8 +255,8 @@ compressible = false  # Compressibility?
 
 boussinesq = true  # Boussinesq approximation (no perturbed n in vorticity)
 
-D_vort = 1e-6  # Viscosity
-D_n = 1e-6    # Diffusion
+D_vort = 1e-06  # Viscosity
+D_n = 1e-06    # Diffusion
 
 R_c = 1.5  # Radius of curvature (m)
 
@@ -259,7 +265,7 @@ R_c = 1.5  # Radius of curvature (m)
 # These can be overridden for individual variables in
 # a section of that name.
 
-[All]
+[all]
 scale = 0.0 # default size of initial perturbations
 
 bndry_all = neumann # Zero-gradient on all boundaries
