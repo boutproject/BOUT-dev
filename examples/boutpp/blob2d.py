@@ -282,9 +282,8 @@ function = 1 + height * exp(-((x-0.25)/width)^2 - ((z/(2*pi) - 0.5)/width)^2)
 
 
 if __name__ == "__main__":
-    if "--create" in sys.argv:
-        sys.argv.remove("--create")
-        ensure_blob()
+    ensure_blob()
+
     bc.init("-d blob".split(" ") + sys.argv[1:])
 
     # Create an instance
