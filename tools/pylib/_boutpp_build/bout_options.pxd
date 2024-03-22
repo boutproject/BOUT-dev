@@ -52,6 +52,7 @@ cdef extern from "bout/options.hxx":
         void get(string, double&, double)
         void get(string, bool&, bool)
         void cleanCache()
+        void setConditionallyUsed()
 
 
 cdef extern from "bout/optionsreader.hxx":
