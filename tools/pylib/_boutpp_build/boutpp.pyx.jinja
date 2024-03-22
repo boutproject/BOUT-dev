@@ -1209,8 +1209,9 @@ def finalise():
             else:
                 for ourClass in ourClasses:
                     if isinstance(obj, ourClass):
-                         ourClass.__boutpp_dealloc(obj)
-                         break
+                        if hasattr(ourClass, "__boutpp_dealloc"):
+                            ourClass.__boutpp_dealloc(obj)
+                            break
     del objects
     # Actually finalise
     if wasInit:
@@ -1714,6 +1715,15 @@ cdef class Options:
             default_= str(default).encode()
             opt.get(key, ret_str, default_)
             return ret_str.decode()
+
+    def setConditionallyUsed(self):
+        """Set the attribute "conditionally used" to be true for \p options
+        and all its children/sections, causing `Options::getUnused` to
+        assume those options have been used. This is useful to ignore
+        options when checking for typos etc.
+        """
+        cdef c.Options* opt = self.cobj
+        opt.setConditionallyUsed()
 
     def __dealloc__(self):
         self.__boutpp_dealloc()
