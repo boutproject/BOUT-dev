@@ -245,8 +245,6 @@ flags = 0
 
 Te0 = 5    # Electron Temperature (eV)
 
-n0 = 2e18  # Background plasma density (m^-3)
-
 compressible = false  # Compressibility?
 
 boussinesq = true  # Boussinesq approximation (no perturbed n in vorticity)
