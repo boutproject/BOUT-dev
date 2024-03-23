@@ -390,6 +390,21 @@ private:
   FieldMetric getDzFromOptionsFile(Mesh* mesh, const std::string& suffix) const;
 
   void fixZShiftGuards(Field2D& zShift) const;
+
+  Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
+                                          bool extrapolate_x, bool extrapolate_y,
+                                          bool no_extra_interpolate,
+                                          ParallelTransform* UNUSED_pt,
+                                          const std::string& region) const;
+
+#if BOUT_USE_METRIC_3D
+  Field3D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
+                                          bool extrapolate_x, bool extrapolate_y,
+                                          bool no_extra_interpolate,
+                                          ParallelTransform* UNUSED_pt,
+                                          const std::string& region) const;
+#endif // BOUT_USE_METRIC_3D
+
 };
 
 /*
