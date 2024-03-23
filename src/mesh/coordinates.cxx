@@ -737,7 +737,7 @@ const Field2D& Coordinates::zlength() const {
     zlength_cache = std::make_unique<Field2D>(0., localmesh);
 
 #if BOUT_USE_METRIC_3D
-    BOUT_FOR_SERIAL(i, dz.getRegion("RGN_ALL")) { (*zlength_cache)[i] += dz[i]; }
+    BOUT_FOR_SERIAL(i, dz().getRegion("RGN_ALL")) { (*zlength_cache)[i] += dz()[i]; }
 #else
     (*zlength_cache) = dz_ * nz;
 #endif
@@ -800,7 +800,7 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
 
   FieldMetric d2x(localmesh);
   FieldMetric d2y(localmesh);
-  FieldMetric const d2z(localmesh); // d^2 x / d i^2
+  FieldMetric d2z(localmesh); // d^2 x / d i^2
 
   // Read correction for non-uniform meshes
   std::string const suffix = getLocationSuffix(location);
@@ -848,7 +848,7 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
   }
 
 #if BOUT_USE_METRIC_3D
-  if (localmesh->get(d2z, "d2z" + suffix, 0.0, false)) {
+  if (localmesh->get(d2z, "d2z" + suffix, 0.0, false, location)) {
     output_warn.write("\tWARNING: differencing quantity 'd2z' not found. "
                       "Calculating from dz\n");
     d1_dz_ = bout::derivatives::index::DDZ(1. / dz());
