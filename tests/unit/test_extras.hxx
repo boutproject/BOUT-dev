@@ -439,12 +439,6 @@ public:
         Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0});
 
-    // Set some auxilliary variables
-    // Note: For testing these are set to non-zero values
-    test_coords->setG1(0.1);
-    test_coords->setG2(0.1);
-    test_coords->setG3(0.1);
-
     // Set nonuniform corrections
     test_coords->setNon_uniform(true);
     test_coords->setD1_dx(0.2);
@@ -493,11 +487,6 @@ public:
         Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
         Field2D{0.0, mesh_staggered});
 
-    // Set some auxilliary variables
-    test_coords_staggered->setG1(0.1);
-    test_coords_staggered->setG2(0.1);
-    test_coords_staggered->setG3(0.1);
-
     // Set nonuniform corrections
     test_coords_staggered->setNon_uniform(true);
     test_coords_staggered->setD1_dx(0.2);
@@ -513,7 +502,7 @@ public:
     mutable_Bxy.yup() = test_coords_staggered->Bxy();
     mutable_Bxy.ydown() = test_coords_staggered->Bxy();
     test_coords_staggered->setBxy(mutable_Bxy);
-    
+
 #endif
 
     test_coords_staggered->setParallelTransform(

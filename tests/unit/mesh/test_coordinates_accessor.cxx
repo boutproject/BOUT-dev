@@ -83,10 +83,6 @@ TEST_F(CoordinatesAccessorTest, ClearBoth) {
                      FieldMetric{0.0},  // g_23
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
-  // Need to set geometry information
-  coords.setG1(0.2);
-  coords.setG2(0.2);
-  coords.setG3(0.2);
   coords.setNon_uniform(true);
   coords.setD1_dx(0.1);
   coords.setD1_dy(0.1);
@@ -135,10 +131,6 @@ TEST_F(CoordinatesAccessorTest, ClearOneTwo) {
                      FieldMetric{0.0},  // g_23
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
-  // Need to set geometry information
-  coords.setG1(0.2);
-  coords.setG2(0.2);
-  coords.setG3(0.2);
   coords.setNon_uniform(true);
   coords.setD1_dx(0.1);
   coords.setD1_dy(0.1);
@@ -189,10 +181,6 @@ TEST_F(CoordinatesAccessorTest, ClearTwoOneNone) {
                      FieldMetric{0.0},  // g_23
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
-  // Need to set geometry information
-  coords.setG1(0.2);
-  coords.setG2(0.2);
-  coords.setG3(0.2);
   coords.setNon_uniform(true);
   coords.setD1_dx(0.1);
   coords.setD1_dy(0.1);
