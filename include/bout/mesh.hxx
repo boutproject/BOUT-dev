@@ -632,7 +632,6 @@ public:
     // (circular dependency between Mesh and Coordinates)
     auto inserted = coords_map.emplace(location, nullptr);
     inserted.first->second = createDefaultCoordinates(location, false);
-    inserted.first->second->communicateAndCheckMeshSpacing();
     return inserted.first->second;
   }
 
