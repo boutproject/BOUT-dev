@@ -172,7 +172,7 @@ int Mesh::get(Field2D& var, const std::string& name, BoutReal def, bool communic
   return 0;
 }
 
-Field2D Mesh::get(const std::string& name, BoutReal def, bool communicate,
+FieldMetric Mesh::get(const std::string& name, BoutReal def, bool communicate,
                   CELL_LOC location) {
   TRACE("Loading 2D field: Mesh::get(Field2D, {:s})", name);
 
