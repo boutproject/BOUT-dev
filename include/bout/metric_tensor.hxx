@@ -10,7 +10,7 @@ class MetricTensor {
 
 public:
 #if BOUT_USE_METRIC_3D
-  using FieldMetric = Field
+  using FieldMetric = Field3D;
 #else
   using FieldMetric = Field2D;
 #endif
