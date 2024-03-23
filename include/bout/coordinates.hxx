@@ -84,7 +84,11 @@ public:
   void setDy(FieldMetric dy) { dy_ = std::move(dy); }
   void setDz(FieldMetric dz) { dz_ = std::move(dz); }
 
+#if BOUT_USE_METRIC_3D
+  void setDy(BoutReal value, int x, int y, int z) { dy_(x, y, z) = value; }
+#else
   void setDy(BoutReal value, int x, int y) { dy_(x, y) = value; }
+#endif
 
   void setD1_dx(FieldMetric d1_dx) { d1_dx_ = std::move(d1_dx); }
   void setD1_dy(FieldMetric d1_dy) { d1_dy_ = std::move(d1_dy); }
