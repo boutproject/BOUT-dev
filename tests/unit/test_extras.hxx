@@ -456,7 +456,11 @@ public:
     mutable_Bxy.splitParallelSlices();
     test_coords->setBxy(mutable_Bxy);
 
-    test_coords->Bxy().yup() = test_coords->Bxy().ydown() = test_coords->Bxy();
+    mutable_Bxy = test_coords->Bxy();
+    mutable_Bxy.yup() = test_coords->Bxy();
+    mutable_Bxy.ydown() = test_coords->Bxy();
+    test_coords->setBxy(mutable_Bxy);
+
 #endif
 
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
@@ -503,10 +507,13 @@ public:
 
     mutable_Bxy = test_coords_staggered->Bxy();
     mutable_Bxy.splitParallelSlices();
-    test_coords->setBxy(mutable_Bxy);
+    test_coords_staggered->setBxy(mutable_Bxy);
 
-    test_coords_staggered->Bxy.yup() = test_coords_staggered->Bxy.ydown() =
-        test_coords_staggered->Bxy;
+    mutable_Bxy = test_coords_staggered->Bxy();
+    mutable_Bxy.yup() = test_coords_staggered->Bxy();
+    mutable_Bxy.ydown() = test_coords_staggered->Bxy();
+    test_coords_staggered->setBxy(mutable_Bxy);
+    
 #endif
 
     test_coords_staggered->setParallelTransform(
