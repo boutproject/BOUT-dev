@@ -97,7 +97,10 @@ TEST_F(CoordinatesAccessorTest, ClearBoth) {
   mutable_Bxy.splitParallelSlices();
   coords.setBxy(mutable_Bxy);
 
-  coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
+  mutable_Bxy = coords.Bxy();
+  mutable_Bxy.yup() = coords.Bxy();
+  mutable_Bxy.ydown() = coords.Bxy();
+  coords.setBxy(mutable_Bxy);
 
 #endif
 
@@ -146,7 +149,10 @@ TEST_F(CoordinatesAccessorTest, ClearOneTwo) {
   mutable_Bxy.splitParallelSlices();
   coords.setBxy(mutable_Bxy);
 
-  coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
+  mutable_Bxy = coords.Bxy();
+  mutable_Bxy.yup() = coords.Bxy();
+  mutable_Bxy.ydown() = coords.Bxy();
+  coords.setBxy(mutable_Bxy);
 
 #endif
 
@@ -197,7 +203,10 @@ TEST_F(CoordinatesAccessorTest, ClearTwoOneNone) {
   mutable_Bxy.splitParallelSlices();
   coords.setBxy(mutable_Bxy);
 
-  coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
+  mutable_Bxy = coords.Bxy();
+  mutable_Bxy.yup() = coords.Bxy();
+  mutable_Bxy.ydown() = coords.Bxy();
+  coords.setBxy(mutable_Bxy);
 
 #endif
 
