@@ -451,7 +451,11 @@ public:
     test_coords->setD1_dy(0.2);
     test_coords->setD1_dz(0.0);
 #if BOUT_USE_METRIC_3D
-    test_coords->Bxy().splitParallelSlices();
+
+    FieldMetric mutable_Bxy = test_coords->Bxy();
+    mutable_Bxy.splitParallelSlices();
+    test_coords->setBxy(mutable_Bxy);
+
     test_coords->Bxy().yup() = test_coords->Bxy().ydown() = test_coords->Bxy();
 #endif
 
@@ -496,7 +500,11 @@ public:
     test_coords_staggered->setD1_dy(0.2);
     test_coords_staggered->setD1_dz(0.0);
 #if BOUT_USE_METRIC_3D
-    test_coords_staggered->Bxy.splitParallelSlices();
+
+    mutable_Bxy = test_coords_staggered->Bxy();
+    mutable_Bxy.splitParallelSlices();
+    test_coords->setBxy(mutable_Bxy);
+
     test_coords_staggered->Bxy.yup() = test_coords_staggered->Bxy.ydown() =
         test_coords_staggered->Bxy;
 #endif
