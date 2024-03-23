@@ -1085,7 +1085,7 @@ Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc, const std::string& m
 /////////////////////////////////////////////////////////
 // Parallel gradient
 
-Field2D Coordinates::Grad_par(const Field2D& var, [[maybe_unused]] CELL_LOC outloc,
+FieldMetric Coordinates::Grad_par(const Field2D& var, [[maybe_unused]] CELL_LOC outloc,
                               const std::string& UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
   ASSERT1(location == outloc
@@ -1106,7 +1106,7 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
 // Vpar_Grad_par
 // vparallel times the parallel derivative along unperturbed B-field
 
-Field2D Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
+FieldMetric Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
                                    [[maybe_unused]] CELL_LOC outloc,
                                    const std::string& UNUSED(method)) {
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));

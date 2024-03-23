@@ -208,7 +208,7 @@ public:
               const std::string& region = "RGN_NOBNDRY") const;
 
   /// Gradient along magnetic field  b.Grad(f)
-  Field2D Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
+  FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
                    const std::string& method = "DEFAULT");
 
   Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
