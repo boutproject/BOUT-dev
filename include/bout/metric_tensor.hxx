@@ -53,7 +53,7 @@ public:
   MetricTensor inverse(const std::string& region = "RGN_ALL");
 
   // Transforms the MetricTensor by applying the given function to every component
-  void map(const std::function<const Field2D(const FieldMetric)>& function);
+  void map(const std::function<const FieldMetric(const FieldMetric)>& function);
 
   MetricTensor applyToComponents(
       const std::function<const FieldMetric(const FieldMetric)>& function) const;
