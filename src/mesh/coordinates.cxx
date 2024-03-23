@@ -1508,6 +1508,15 @@ void Coordinates::setJ(const FieldMetric& J) {
   jacobian_cache = std::move(ptr);
 }
 
+#if BOUT_USE_METRIC_3D
+void Coordinates::setJ(BoutReal value, int x, int y, int z) {
+  //TODO: Calculate J and check value is close
+  auto f = J();
+  f(x, y, z) = value;
+  auto ptr = std::make_unique<FieldMetric>(f);
+  jacobian_cache = std::move(ptr);
+}
+#else
 void Coordinates::setJ(BoutReal value, int x, int y) {
   //TODO: Calculate J and check value is close
   auto f = J();
@@ -1515,6 +1524,7 @@ void Coordinates::setJ(BoutReal value, int x, int y) {
   auto ptr = std::make_unique<FieldMetric>(f);
   jacobian_cache = std::move(ptr);
 }
+#endif
 
 void Coordinates::setBxy(FieldMetric Bxy) {
   //TODO: Calculate Bxy and check value is close

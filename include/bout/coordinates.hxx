@@ -147,7 +147,12 @@ public:
   const FieldMetric& Bxy() const { return Bxy_; }
 
   void setJ(const FieldMetric& J);
+
+#if BOUT_USE_METRIC_3D
+  void setJ(BoutReal value, int x, int y, int z);
+#else
   void setJ(BoutReal value, int x, int y);
+#endif
 
   void setBxy(FieldMetric Bxy);
 
