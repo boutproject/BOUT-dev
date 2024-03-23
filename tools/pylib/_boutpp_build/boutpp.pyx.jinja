@@ -818,7 +818,6 @@ cdef Mesh meshFromPtr(c.Mesh * obj):
 cdef Coordinates coordsFromPtr(c.Coordinates * obj):
     coords = Coordinates()
     coords.cobj = obj
-    coords._setmembers()
     coords.isSelfOwned = False
     return coords
 
