@@ -92,8 +92,16 @@ TEST_F(CoordinatesAccessorTest, ClearBoth) {
   coords.setD1_dy(0.1);
   coords.setD1_dz(0.1);
 #if BOUT_USE_METRIC_3D
-  coords.Bxy.splitParallelSlices();
-  coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
+
+  FieldMetric mutable_Bxy = coords.Bxy();
+  mutable_Bxy.splitParallelSlices();
+  coords.setBxy(mutable_Bxy);
+
+  mutable_Bxy = coords.Bxy();
+  mutable_Bxy.yup() = coords.Bxy();
+  mutable_Bxy.ydown() = coords.Bxy();
+  coords.setBxy(mutable_Bxy);
+
 #endif
 
   CoordinatesAccessor acc(mesh->getCoordinates());
@@ -136,8 +144,16 @@ TEST_F(CoordinatesAccessorTest, ClearOneTwo) {
   coords.setD1_dy(0.1);
   coords.setD1_dz(0.1);
 #if BOUT_USE_METRIC_3D
-  coords.Bxy.splitParallelSlices();
-  coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
+
+  FieldMetric mutable_Bxy = coords.Bxy();
+  mutable_Bxy.splitParallelSlices();
+  coords.setBxy(mutable_Bxy);
+
+  mutable_Bxy = coords.Bxy();
+  mutable_Bxy.yup() = coords.Bxy();
+  mutable_Bxy.ydown() = coords.Bxy();
+  coords.setBxy(mutable_Bxy);
+
 #endif
 
   CoordinatesAccessor acc(mesh->getCoordinates());
@@ -182,8 +198,16 @@ TEST_F(CoordinatesAccessorTest, ClearTwoOneNone) {
   coords.setD1_dy(0.1);
   coords.setD1_dz(0.1);
 #if BOUT_USE_METRIC_3D
-  coords.Bxy.splitParallelSlices();
-  coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
+
+  FieldMetric mutable_Bxy = coords.Bxy();
+  mutable_Bxy.splitParallelSlices();
+  coords.setBxy(mutable_Bxy);
+
+  mutable_Bxy = coords.Bxy();
+  mutable_Bxy.yup() = coords.Bxy();
+  mutable_Bxy.ydown() = coords.Bxy();
+  coords.setBxy(mutable_Bxy);
+
 #endif
 
   CoordinatesAccessor acc(mesh->getCoordinates());

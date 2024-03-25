@@ -451,8 +451,16 @@ public:
     test_coords->setD1_dy(0.2);
     test_coords->setD1_dz(0.0);
 #if BOUT_USE_METRIC_3D
-    test_coords->Bxy().splitParallelSlices();
-    test_coords->Bxy().yup() = test_coords->Bxy().ydown() = test_coords->Bxy();
+
+    FieldMetric mutable_Bxy = test_coords->Bxy();
+    mutable_Bxy.splitParallelSlices();
+    test_coords->setBxy(mutable_Bxy);
+
+    mutable_Bxy = test_coords->Bxy();
+    mutable_Bxy.yup() = test_coords->Bxy();
+    mutable_Bxy.ydown() = test_coords->Bxy();
+    test_coords->setBxy(mutable_Bxy);
+
 #endif
 
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
@@ -496,9 +504,16 @@ public:
     test_coords_staggered->setD1_dy(0.2);
     test_coords_staggered->setD1_dz(0.0);
 #if BOUT_USE_METRIC_3D
-    test_coords_staggered->Bxy.splitParallelSlices();
-    test_coords_staggered->Bxy.yup() = test_coords_staggered->Bxy.ydown() =
-        test_coords_staggered->Bxy;
+
+    mutable_Bxy = test_coords_staggered->Bxy();
+    mutable_Bxy.splitParallelSlices();
+    test_coords_staggered->setBxy(mutable_Bxy);
+
+    mutable_Bxy = test_coords_staggered->Bxy();
+    mutable_Bxy.yup() = test_coords_staggered->Bxy();
+    mutable_Bxy.ydown() = test_coords_staggered->Bxy();
+    test_coords_staggered->setBxy(mutable_Bxy);
+    
 #endif
 
     test_coords_staggered->setParallelTransform(

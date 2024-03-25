@@ -84,7 +84,11 @@ public:
   void setDy(FieldMetric dy) { dy_ = std::move(dy); }
   void setDz(FieldMetric dz) { dz_ = std::move(dz); }
 
+#if BOUT_USE_METRIC_3D
+  void setDy(BoutReal value, int x, int y, int z) { dy_(x, y, z) = value; }
+#else
   void setDy(BoutReal value, int x, int y) { dy_(x, y) = value; }
+#endif
 
   void setD1_dx(FieldMetric d1_dx) { d1_dx_ = std::move(d1_dx); }
   void setD1_dy(FieldMetric d1_dy) { d1_dy_ = std::move(d1_dy); }
@@ -143,7 +147,12 @@ public:
   const FieldMetric& Bxy() const { return Bxy_; }
 
   void setJ(const FieldMetric& J);
+
+#if BOUT_USE_METRIC_3D
+  void setJ(BoutReal value, int x, int y, int z);
+#else
   void setJ(BoutReal value, int x, int y);
+#endif
 
   void setBxy(FieldMetric Bxy);
 
@@ -204,7 +213,7 @@ public:
               const std::string& region = "RGN_NOBNDRY") const;
 
   /// Gradient along magnetic field  b.Grad(f)
-  Field2D Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
+  FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
                    const std::string& method = "DEFAULT");
 
   Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
@@ -392,19 +401,18 @@ private:
   void fixZShiftGuards(Field2D& zShift) const;
 
   Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
-                                          bool extrapolate_x, bool extrapolate_y,
-                                          bool no_extra_interpolate,
-                                          ParallelTransform* UNUSED_pt,
-                                          const std::string& region) const;
+                                    bool extrapolate_x, bool extrapolate_y,
+                                    bool no_extra_interpolate,
+                                    ParallelTransform* UNUSED_pt,
+                                    const std::string& region) const;
 
 #if BOUT_USE_METRIC_3D
-  Field3D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
-                                          bool extrapolate_x, bool extrapolate_y,
-                                          bool no_extra_interpolate,
-                                          ParallelTransform* UNUSED_pt,
-                                          const std::string& region) const;
-#endif // BOUT_USE_METRIC_3D
+  Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
+                                    bool extrapolate_x, bool extrapolate_y,
+                                    bool no_extra_interpolate,
+                                    ParallelTransform* pt_) const;
 
+#endif // BOUT_USE_METRIC_3D
 };
 
 /*

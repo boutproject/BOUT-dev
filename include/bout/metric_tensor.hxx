@@ -10,7 +10,7 @@ class MetricTensor {
 
 public:
 #if BOUT_USE_METRIC_3D
-  using FieldMetric = Field
+  using FieldMetric = Field3D;
 #else
   using FieldMetric = Field2D;
 #endif
@@ -53,7 +53,7 @@ public:
   MetricTensor inverse(const std::string& region = "RGN_ALL");
 
   // Transforms the MetricTensor by applying the given function to every component
-  void map(const std::function<const Field2D(const FieldMetric)>& function);
+  void map(const std::function<const FieldMetric(const FieldMetric)>& function);
 
   MetricTensor applyToComponents(
       const std::function<const FieldMetric(const FieldMetric)>& function) const;

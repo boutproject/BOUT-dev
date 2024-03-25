@@ -172,12 +172,12 @@ int Mesh::get(Field2D& var, const std::string& name, BoutReal def, bool communic
   return 0;
 }
 
-Field2D Mesh::get(const std::string& name, BoutReal def, bool communicate,
-                  CELL_LOC location) {
-  TRACE("Loading 2D field: Mesh::get(Field2D, {:s})", name);
+FieldMetric Mesh::get(const std::string& name, BoutReal def, bool communicate,
+                      CELL_LOC location) {
+  TRACE("Loading field: Mesh::get(FieldMetric, {:s})", name);
 
-  Field2D var = Field2D(this, location);
-
+  auto var = FieldMetric(this, location);
+  
   bool failed_to_get_from_GridDataSource = !source->get(this, var, name, def, location);
   if (source == nullptr or failed_to_get_from_GridDataSource) {
     // set val to default in source==nullptr too:
