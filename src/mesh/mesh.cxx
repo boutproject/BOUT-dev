@@ -572,7 +572,7 @@ int Mesh::localSizePerp() {
 }
 
 std::shared_ptr<Coordinates>
-Mesh::createDefaultCoordinates(const CELL_LOC location, bool recalculate_staggered,
+Mesh::createDefaultCoordinates(const CELL_LOC location,
                                bool force_interpolate_from_centre) {
 
   std::shared_ptr<Coordinates> new_coordinates;
@@ -585,8 +585,6 @@ Mesh::createDefaultCoordinates(const CELL_LOC location, bool recalculate_stagger
                                                     getCoordinates(CELL_CENTRE),
                                                     force_interpolate_from_centre);
   }
-  new_coordinates->recalculateAndReset(recalculate_staggered,
-                                       force_interpolate_from_centre);
   return new_coordinates;
 }
 
@@ -787,7 +785,14 @@ void Mesh::recalculateStaggeredCoordinates() {
       continue;
     }
 
-    *coords_map[location] = std::move(*createDefaultCoordinates(location, false, true));
+    auto force_interpolate_from_centre = true;
+    Coordinates& new_coordinates =
+        *createDefaultCoordinates(location, force_interpolate_from_centre);
+    *coords_map[location] = std::move(new_coordinates);
+
+    auto recalculate_staggered = false;
+    new_coordinates.recalculateAndReset(recalculate_staggered,
+                                        force_interpolate_from_centre);
   }
 }
 

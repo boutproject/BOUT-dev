@@ -631,7 +631,13 @@ public:
     // Note that this can't be allocated here due to incomplete type
     // (circular dependency between Mesh and Coordinates)
     auto inserted = coords_map.emplace(location, nullptr);
-    inserted.first->second = createDefaultCoordinates(location, false);
+    auto force_interpolate_from_centre = false;
+    inserted.first->second = createDefaultCoordinates(location, force_interpolate_from_centre);
+
+    auto recalculate_staggered = false;
+    inserted.first->second->recalculateAndReset(recalculate_staggered,
+                                                force_interpolate_from_centre);
+
     return inserted.first->second;
   }
 
@@ -835,8 +841,7 @@ private:
   /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
   /// would not be correct).
   std::shared_ptr<Coordinates>
-  createDefaultCoordinates(CELL_LOC location, bool recalculate_staggered = true,
-                           bool force_interpolate_from_centre = false);
+  createDefaultCoordinates(CELL_LOC location, bool force_interpolate_from_centre = false);
 
   //Internal region related information
   std::map<std::string, size_t> regionMap3D;
