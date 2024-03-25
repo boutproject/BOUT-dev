@@ -81,11 +81,10 @@ void Coordinates::communicate(T& t, Ts... ts) const {
 /// Boundary guard cells are set by extrapolating from the grid, like
 /// 'free_o3' boundary conditions
 /// Corner guard cells are set to BoutNaN
-Field2D Coordinates::interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
-                                        bool extrapolate_x, bool extrapolate_y,
-                                        bool no_extra_interpolate,
-                                        ParallelTransform* UNUSED(pt) = nullptr,
-                                        const std::string& region = "RGN_NOBNDRY") const {
+Field2D Coordinates::interpolateAndExtrapolate(
+    const Field2D& f, CELL_LOC location, bool extrapolate_x, bool extrapolate_y,
+    bool no_extra_interpolate, ParallelTransform* UNUSED(pt) = nullptr,
+    const std::string& region = "RGN_NOBNDRY") const {
 
   Mesh* localmesh = f.getMesh();
   Field2D result = interp_to(f, location, region);
@@ -202,8 +201,9 @@ Field2D Coordinates::interpolateAndExtrapolate(const Field2D& f, CELL_LOC locati
 
 #if BOUT_USE_METRIC_3D
 Field3D Coordinates::interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
-                                  bool extrapolate_x, bool extrapolate_y,
-                                  bool no_extra_interpolate, ParallelTransform* pt_) {
+                                               bool extrapolate_x, bool extrapolate_y,
+                                               bool no_extra_interpolate,
+                                               ParallelTransform* pt_) const {
 
   Mesh* localmesh = f_.getMesh();
   Field3D result;
@@ -361,9 +361,9 @@ void Coordinates::fixZShiftGuards(Field2D& zShift) const {
   auto* localmesh = zShift.getMesh();
 
   // extrapolate into boundary guard cells if necessary
-  zShift = interpolateAndExtrapolate(
-      zShift, zShift.getLocation(), not localmesh->sourceHasXBoundaryGuards(),
-      not localmesh->sourceHasYBoundaryGuards(), false);
+  zShift = interpolateAndExtrapolate(zShift, zShift.getLocation(),
+                                     not localmesh->sourceHasXBoundaryGuards(),
+                                     not localmesh->sourceHasYBoundaryGuards(), false);
 
   // make sure zShift has been communicated
   communicate(zShift);
@@ -461,8 +461,8 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(Options* mesh_options,
 
   std::function<const FieldMetric(const FieldMetric)> const
       interpolateAndExtrapolate_function = [this](const FieldMetric& component) {
-        return interpolateAndExtrapolate(component, location, true, true,
-                                                    false, transform.get());
+        return interpolateAndExtrapolate(component, location, true, true, false,
+                                         transform.get());
       };
 
   setContravariantMetricTensor(coords_in->getContravariantMetricTensor());
@@ -475,21 +475,21 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(Options* mesh_options,
   checkCovariant();
 
   setJ(interpolateAndExtrapolate(coords_in->J(), location, true, true, false,
-                                            transform.get()));
-  setBxy(interpolateAndExtrapolate(coords_in->Bxy(), location, true, true,
-                                              false, transform.get()));
+                                 transform.get()));
+  setBxy(interpolateAndExtrapolate(coords_in->Bxy(), location, true, true, false,
+                                   transform.get()));
 
   bout::checkFinite(J(), "The Jacobian", "RGN_NOCORNERS");
   bout::checkPositive(J(), "The Jacobian", "RGN_NOCORNERS");
   bout::checkFinite(Bxy(), "Bxy", "RGN_NOCORNERS");
   bout::checkPositive(Bxy(), "Bxy", "RGN_NOCORNERS");
 
-  ShiftTorsion_ = interpolateAndExtrapolate(
-      coords_in->ShiftTorsion(), location, true, true, false, transform.get());
+  ShiftTorsion_ = interpolateAndExtrapolate(coords_in->ShiftTorsion(), location, true,
+                                            true, false, transform.get());
 
   if (localmesh->IncIntShear) {
-    IntShiftTorsion_ = interpolateAndExtrapolate(
-        coords_in->IntShiftTorsion(), location, true, true, false, transform.get());
+    IntShiftTorsion_ = interpolateAndExtrapolate(coords_in->IntShiftTorsion(), location,
+                                                 true, true, false, transform.get());
   }
 
   if (isUniform(coords_in->dz())) {
@@ -504,12 +504,12 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(Options* mesh_options,
   setParallelTransform(mesh_options);
 
   dx_ = interpolateAndExtrapolate(coords_in->dx(), location, true, true, false,
-                                             transform.get());
+                                  transform.get());
   dy_ = interpolateAndExtrapolate(coords_in->dy(), location, true, true, false,
-                                             transform.get());
+                                  transform.get());
   // not really needed - we have used dz already ...
   dz_ = interpolateAndExtrapolate(coords_in->dz(), location, true, true, false,
-                                             transform.get());
+                                  transform.get());
 }
 
 // Note: If boundary cells were not loaded from the grid file, use
@@ -537,20 +537,20 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
   // required early for differentiation.
   setParallelTransform(mesh_options);
 
-  dz_ = interpolateAndExtrapolate(dz_, location, extrapolate_x, extrapolate_y,
-                                             false, transform.get());
+  dz_ = interpolateAndExtrapolate(dz_, location, extrapolate_x, extrapolate_y, false,
+                                  transform.get());
 
   dx_ = getAtLocOrUnaligned(localmesh, "dx", 1.0, suffix, location);
-  dx_ = interpolateAndExtrapolate(dx_, location, extrapolate_x, extrapolate_y,
-                                             false, transform.get());
+  dx_ = interpolateAndExtrapolate(dx_, location, extrapolate_x, extrapolate_y, false,
+                                  transform.get());
 
   if (localmesh->periodicX) {
     communicate(dx_);
   }
 
   dy_ = getAtLocOrUnaligned(localmesh, "dy", 1.0, suffix, location);
-  dy_ = interpolateAndExtrapolate(dy_, location, extrapolate_x, extrapolate_y,
-                                             false, transform.get());
+  dy_ = interpolateAndExtrapolate(dy_, location, extrapolate_x, extrapolate_y, false,
+                                  transform.get());
 
   // grid data source has staggered fields, so read instead of interpolating
   // Diagonal components of metric tensor g^{ij} (default to 1)
@@ -568,11 +568,11 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
   // deriving from extrapolated covariant metric components
 
   std::function<const FieldMetric(const FieldMetric)> const
-      interpolateAndExtrapolate_function = [this, extrapolate_y,
-                                            extrapolate_x](const FieldMetric& component) {
-        return interpolateAndExtrapolate(
-            component, location, extrapolate_x, extrapolate_y, false, transform.get());
-      };
+      interpolateAndExtrapolate_function =
+          [this, extrapolate_y, extrapolate_x](const FieldMetric& component) {
+            return interpolateAndExtrapolate(component, location, extrapolate_x,
+                                             extrapolate_y, false, transform.get());
+          };
   applyToContravariantMetricTensor(interpolateAndExtrapolate_function);
 
   // Check input metrics
@@ -630,8 +630,8 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
 
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
-  setJ(interpolateAndExtrapolate(J(), location, extrapolate_x, extrapolate_y,
-                                            false, transform.get()));
+  setJ(interpolateAndExtrapolate(J(), location, extrapolate_x, extrapolate_y, false,
+                                 transform.get()));
 
   // Check jacobian
   bout::checkFinite(J(), "J" + suffix, "RGN_NOCORNERS");
@@ -653,8 +653,8 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
     output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy() - Bcalc)));
   }
 
-  setBxy(interpolateAndExtrapolate(Bxy(), location, extrapolate_x,
-                                              extrapolate_y, false, transform.get()));
+  setBxy(interpolateAndExtrapolate(Bxy(), location, extrapolate_x, extrapolate_y, false,
+                                   transform.get()));
 
   // Check Bxy
   bout::checkFinite(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
@@ -667,8 +667,8 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
   } else {
     const auto shift_torsion = getAtLoc(localmesh, "ShiftTorsion", suffix, location, 0.0);
   }
-  ShiftTorsion_ = (interpolateAndExtrapolate(
-      ShiftTorsion(), location, extrapolate_x, extrapolate_y, false, transform.get()));
+  ShiftTorsion_ = (interpolateAndExtrapolate(ShiftTorsion(), location, extrapolate_x,
+                                             extrapolate_y, false, transform.get()));
 
   if (!localmesh->IncIntShear) {
     return;
@@ -680,8 +680,8 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
     const auto shift_torsion =
         getAtLoc(localmesh, "IntShiftTorsion", suffix, location, 0.0);
   }
-  setIntShiftTorsion(interpolateAndExtrapolate(
-      IntShiftTorsion(), location, extrapolate_x, extrapolate_y, false, transform.get()));
+  setIntShiftTorsion(interpolateAndExtrapolate(IntShiftTorsion(), location, extrapolate_x,
+                                               extrapolate_y, false, transform.get()));
 }
 
 FieldMetric Coordinates::getDzFromOptionsFile(Mesh* mesh,
@@ -737,7 +737,7 @@ const Field2D& Coordinates::zlength() const {
     zlength_cache = std::make_unique<Field2D>(0., localmesh);
 
 #if BOUT_USE_METRIC_3D
-    BOUT_FOR_SERIAL(i, dz.getRegion("RGN_ALL")) { (*zlength_cache)[i] += dz[i]; }
+    BOUT_FOR_SERIAL(i, dz().getRegion("RGN_ALL")) { (*zlength_cache)[i] += dz()[i]; }
 #else
     (*zlength_cache) = dz_ * nz;
 #endif
@@ -800,7 +800,7 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
 
   FieldMetric d2x(localmesh);
   FieldMetric d2y(localmesh);
-  FieldMetric const d2z(localmesh); // d^2 x / d i^2
+  FieldMetric d2z(localmesh); // d^2 x / d i^2
 
   // Read correction for non-uniform meshes
   std::string const suffix = getLocationSuffix(location);
@@ -819,13 +819,13 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
     d1_dx_ = bout::derivatives::index::DDX(1. / dx()); // d/di(1/dx)
 
     communicate(d1_dx_);
-    d1_dx_ = interpolateAndExtrapolate(d1_dx_, location, true, true, true,
-                                                  transform.get());
+    d1_dx_ =
+        interpolateAndExtrapolate(d1_dx_, location, true, true, true, transform.get());
   } else {
     d2x.setLocation(location);
     // set boundary cells if necessary
-    d2x = interpolateAndExtrapolate(d2x, location, extrapolate_x,
-                                               extrapolate_y, false, transform.get());
+    d2x = interpolateAndExtrapolate(d2x, location, extrapolate_x, extrapolate_y, false,
+                                    transform.get());
 
     d1_dx_ = -d2x / (dx() * dx());
   }
@@ -836,30 +836,30 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
     d1_dy_ = bout::derivatives::index::DDY(1. / dy()); // d/di(1/dy)
 
     communicate(d1_dy_);
-    d1_dy_ = interpolateAndExtrapolate(d1_dy_, location, true, true, true,
-                                                  transform.get());
+    d1_dy_ =
+        interpolateAndExtrapolate(d1_dy_, location, true, true, true, transform.get());
   } else {
     d2y.setLocation(location);
     // set boundary cells if necessary
-    d2y = interpolateAndExtrapolate(d2y, location, extrapolate_x,
-                                               extrapolate_y, false, transform.get());
+    d2y = interpolateAndExtrapolate(d2y, location, extrapolate_x, extrapolate_y, false,
+                                    transform.get());
 
     d1_dy_ = -d2y / (dy() * dy());
   }
 
 #if BOUT_USE_METRIC_3D
-  if (localmesh->get(d2z, "d2z" + suffix, 0.0, false)) {
+  if (localmesh->get(d2z, "d2z" + suffix, 0.0, false, location)) {
     output_warn.write("\tWARNING: differencing quantity 'd2z' not found. "
                       "Calculating from dz\n");
     d1_dz_ = bout::derivatives::index::DDZ(1. / dz());
     communicate(d1_dz_);
-    d1_dz_ = interpolateAndExtrapolate(d1_dz_, location, true, true, true,
-                                                  transform.get());
+    d1_dz_ =
+        interpolateAndExtrapolate(d1_dz_, location, true, true, true, transform.get());
   } else {
     d2z.setLocation(location);
     // set boundary cells if necessary
-    d2z = interpolateAndExtrapolate(d2z, location, extrapolate_x,
-                                               extrapolate_y, false, transform.get());
+    d2z = interpolateAndExtrapolate(d2z, location, extrapolate_x, extrapolate_y, false,
+                                    transform.get());
 
     d1_dz_ = -d2z / (dz() * dz());
   }
@@ -886,8 +886,8 @@ void Coordinates::extrapolateChristoffelSymbols() {
 
   std::function<const FieldMetric(const FieldMetric)> const
       interpolateAndExtrapolate_function = [this](const FieldMetric& component) {
-        return interpolateAndExtrapolate(component, location, true, true,
-                                                    false, transform.get());
+        return interpolateAndExtrapolate(component, location, true, true, false,
+                                         transform.get());
       };
 
   applyToChristoffelSymbols(interpolateAndExtrapolate_function);
@@ -900,12 +900,9 @@ void Coordinates::communicateGValues() const {
 
 void Coordinates::extrapolateGValues() {
 
-  setG1(interpolateAndExtrapolate(G1(), location, true, true, true,
-                                             transform.get()));
-  setG2(interpolateAndExtrapolate(G2(), location, true, true, true,
-                                             transform.get()));
-  setG3(interpolateAndExtrapolate(G3(), location, true, true, true,
-                                             transform.get()));
+  setG1(interpolateAndExtrapolate(G1(), location, true, true, true, transform.get()));
+  setG2(interpolateAndExtrapolate(G2(), location, true, true, true, transform.get()));
+  setG3(interpolateAndExtrapolate(G3(), location, true, true, true, transform.get()));
 }
 
 MetricTensor::FieldMetric Coordinates::recalculateJacobian() const {
@@ -989,8 +986,8 @@ void Coordinates::setParallelTransform(Options* mesh_options) {
 
       fixZShiftGuards(zShift_centre);
 
-      zShift = interpolateAndExtrapolate(zShift_centre, location, true, true,
-                                                    false, transform.get());
+      zShift = interpolateAndExtrapolate(zShift_centre, location, true, true, false,
+                                         transform.get());
     }
 
     fixZShiftGuards(zShift);
@@ -1088,7 +1085,7 @@ Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc, const std::string& m
 /////////////////////////////////////////////////////////
 // Parallel gradient
 
-Field2D Coordinates::Grad_par(const Field2D& var, [[maybe_unused]] CELL_LOC outloc,
+FieldMetric Coordinates::Grad_par(const Field2D& var, [[maybe_unused]] CELL_LOC outloc,
                               const std::string& UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
   ASSERT1(location == outloc
@@ -1109,7 +1106,7 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
 // Vpar_Grad_par
 // vparallel times the parallel derivative along unperturbed B-field
 
-Field2D Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
+FieldMetric Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
                                    [[maybe_unused]] CELL_LOC outloc,
                                    const std::string& UNUSED(method)) {
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
@@ -1511,6 +1508,15 @@ void Coordinates::setJ(const FieldMetric& J) {
   jacobian_cache = std::move(ptr);
 }
 
+#if BOUT_USE_METRIC_3D
+void Coordinates::setJ(BoutReal value, int x, int y, int z) {
+  //TODO: Calculate J and check value is close
+  auto f = J();
+  f(x, y, z) = value;
+  auto ptr = std::make_unique<FieldMetric>(f);
+  jacobian_cache = std::move(ptr);
+}
+#else
 void Coordinates::setJ(BoutReal value, int x, int y) {
   //TODO: Calculate J and check value is close
   auto f = J();
@@ -1518,6 +1524,7 @@ void Coordinates::setJ(BoutReal value, int x, int y) {
   auto ptr = std::make_unique<FieldMetric>(f);
   jacobian_cache = std::move(ptr);
 }
+#endif
 
 void Coordinates::setBxy(FieldMetric Bxy) {
   //TODO: Calculate Bxy and check value is close
