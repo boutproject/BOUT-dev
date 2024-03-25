@@ -218,6 +218,36 @@ Options::fuzzyFind(const std::string& name, std::string::size_type distance) con
   return matches;
 }
 
+Options::Options(const Options& other) { (*this) = other.copy(); }
+
+Options& Options::operator=(const Options& other) {
+  if (this == &other) {
+    return *this;
+  }
+
+  // Note: Here can't do copy-and-swap because pointers to parents are stored
+
+  value = other.value;
+
+  // Assigning the attributes.
+  // The simple assignment operator fails to compile with Apple Clang 12
+  //   attributes = other.attributes;
+  attributes.clear();
+  attributes.insert(other.attributes.begin(), other.attributes.end());
+
+  full_name = other.full_name;
+  is_section = other.is_section;
+  children = other.children;
+  value_used = other.value_used;
+
+  // Ensure that this is the parent of all children,
+  // otherwise will point to the original Options instance
+  for (auto& child : children) {
+    child.second.parent_instance = this;
+  }
+  return *this;
+}
+
 Options& Options::operator=(Options&& other) noexcept {
   if (this == &other) {
     return *this;

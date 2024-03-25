@@ -241,7 +241,8 @@ public:
   ///
   ///     Option option2 = option1.copy();
   ///
-  Options(const Options& other) = delete; // Use a reference or .copy() method
+  [[deprecated("Please use a reference or .copy() instead")]] Options(
+      const Options& other);
 
   /// Copy assignment must be explicit
   ///
@@ -251,7 +252,8 @@ public:
   ///
   ///     option2.value = option1.value;
   ///
-  Options& operator=(const Options& other) = delete; // Use a reference or .copy() method
+  [[deprecated("Please use a reference or .copy() instead")]] Options&
+  operator=(const Options& other); // Use a reference or .copy() method
 
   /// Make a deep copy of this Options,
   /// recursively copying children.
@@ -364,7 +366,8 @@ public:
   ///         {"long_name", "some velocity"}
   ///       });
   Options& setAttributes(
-      std::initializer_list<std::pair<std::string, Options::AttributeType>> attrs) {
+      const std::initializer_list<std::pair<std::string, Options::AttributeType>>&
+          attrs) {
     for (const auto& attr : attrs) {
       attributes[attr.first] = attr.second;
     }
