@@ -28,8 +28,6 @@
  *
  **************************************************************************/
 
-#include <bout/globals.hxx>
-
 #include <bout/assert.hxx>
 #include <bout/boundary_op.hxx>
 #include <bout/boutexception.hxx>
@@ -124,7 +122,9 @@ void Vector3D::toContravariant() {
     Mesh* localmesh = getMesh();
 
     if (location == CELL_VSHIFT) {
-      Coordinates *metric_x, *metric_y, *metric_z;
+      Coordinates *metric_x;
+      [[maybe_unused]] Coordinates *metric_y;
+      [[maybe_unused]] Coordinates *metric_z;
 
       metric_x = localmesh->getCoordinates(CELL_XLOW);
       metric_y = localmesh->getCoordinates(CELL_YLOW);

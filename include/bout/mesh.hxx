@@ -288,7 +288,7 @@ public:
   }
 
   template <typename... Ts>
-  void communicateYZ(Ts&... ts) {
+  [[maybe_unused]] void communicateYZ(Ts&... ts) {
     FieldGroup g(ts...);
     communicateYZ(g);
   }
@@ -407,7 +407,7 @@ public:
   /// @param[in] tag     A label for the communication. Must be the same as sent
   virtual comm_handle irecvXIn(BoutReal* buffer, int size, int tag) = 0;
 
-  MPI_Comm getXcomm() {
+  MPI_Comm getXcomm() const {
     return getXcomm(0);
   } ///< Return communicator containing all processors in X
   virtual MPI_Comm getXcomm(int jy) const = 0; ///< Return X communicator
@@ -476,10 +476,10 @@ public:
 
   /// Iterate over the upper Y boundary
   virtual RangeIterator iterateBndryUpperY() const = 0;
-  virtual RangeIterator iterateBndryLowerOuterY() const = 0;
-  virtual RangeIterator iterateBndryLowerInnerY() const = 0;
-  virtual RangeIterator iterateBndryUpperOuterY() const = 0;
-  virtual RangeIterator iterateBndryUpperInnerY() const = 0;
+  [[maybe_unused]] virtual RangeIterator iterateBndryLowerOuterY() const = 0;
+  [[maybe_unused]] virtual RangeIterator iterateBndryLowerInnerY() const = 0;
+  [[maybe_unused]] virtual RangeIterator iterateBndryUpperOuterY() const = 0;
+  [[maybe_unused]] virtual RangeIterator iterateBndryUpperInnerY() const = 0;
 
   /// Is there a boundary on the lower guard cells in Y
   /// on any processor along the X direction?
@@ -546,11 +546,11 @@ public:
   virtual int localSizePerp();
 
   /// Get the value of the first global 3D index on this processor.
-  virtual int globalStartIndex3D();
+  [[maybe_unused]] virtual int globalStartIndex3D();
   /// Get the value of the first global 2D index on this processor.
-  virtual int globalStartIndex2D();
+  [[maybe_unused]] virtual int globalStartIndex2D();
   /// Get the value of the first global perpendicular index on this processor.
-  virtual int globalStartIndexPerp();
+  [[maybe_unused]] virtual int globalStartIndexPerp();
 
   /// Returns a global X index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
@@ -638,7 +638,7 @@ public:
 
   /// Returns the non-CELL_CENTRE location
   /// allowed as a staggered location
-  CELL_LOC getAllowedStaggerLoc(DIRECTION direction) const {
+  static CELL_LOC getAllowedStaggerLoc(DIRECTION direction) {
     AUTO_TRACE();
     switch (direction) {
     case (DIRECTION::X):
@@ -697,7 +697,7 @@ public:
   // INDEX DERIVATIVE OPERATORS
   ///////////////////////////////////////////////////////////
 
-  ////// Utilties and parameters
+  ////// Utilities and parameters
 
   /// Fraction of modes to filter. This is set in derivs_init from option "ddz:fft_filter"
   BoutReal fft_derivs_filter{0.0};
@@ -705,15 +705,15 @@ public:
   /// Determines the resultant output stagger location in derivatives
   /// given the input and output location. Also checks that the
   /// combination of locations is allowed
-  STAGGER getStagger(const CELL_LOC inloc, const CELL_LOC outloc,
-                     const CELL_LOC allowedloc) const;
+  STAGGER getStagger(CELL_LOC inloc, CELL_LOC outloc,
+                     CELL_LOC allowedloc) const;
 
   /// Determines the resultant output stagger location in derivatives
   /// given the input and output location. Also checks that the
   /// combination of locations is allowed. This overload also checks
   /// the location of a second input field (velocity) is consistent.
-  STAGGER getStagger(const CELL_LOC vloc, const CELL_LOC inloc, const CELL_LOC outloc,
-                     const CELL_LOC allowedloc) const;
+  STAGGER getStagger(CELL_LOC vloc, CELL_LOC inloc, CELL_LOC outloc,
+                     CELL_LOC allowedloc) const;
 
   ///////////////////////////////////////////////////////////
   // REGION RELATED ROUTINES
@@ -754,20 +754,20 @@ public:
   void addRegionPerp(const std::string& region_name, const Region<IndPerp>& region);
 
   /// Converts an Ind2D to an Ind3D using calculation
-  Ind3D ind2Dto3D(const Ind2D& ind2D, int jz = 0) {
+  Ind3D ind2Dto3D(const Ind2D& ind2D, int jz = 0) const {
     return {ind2D.ind * LocalNz + jz, LocalNy, LocalNz};
   }
 
   /// Converts an Ind3D to an Ind2D using calculation
-  Ind2D ind3Dto2D(const Ind3D& ind3D) { return {ind3D.ind / LocalNz, LocalNy, 1}; }
+  Ind2D ind3Dto2D(const Ind3D& ind3D) const { return {ind3D.ind / LocalNz, LocalNy, 1}; }
 
   /// Converts an Ind3D to an IndPerp using calculation
-  IndPerp ind3DtoPerp(const Ind3D& ind3D) {
+  IndPerp ind3DtoPerp(const Ind3D& ind3D) const {
     return {ind3D.x() * LocalNz + ind3D.z(), 1, LocalNz};
   }
 
   /// Converts an IndPerp to an Ind3D using calculation
-  Ind3D indPerpto3D(const IndPerp& indPerp, int jy = 0) {
+  Ind3D indPerpto3D(const IndPerp& indPerp, int jy = 0) const {
     int jz = indPerp.z();
     return {(indPerp.ind - jz) * LocalNy + LocalNz * jy + jz, LocalNy, LocalNz};
   }
@@ -796,11 +796,11 @@ protected:
   bool calcParallelSlices_on_communicate{true};
 
   /// Read a 1D array of integers
-  const std::vector<int> readInts(const std::string& name, int n);
+  [[maybe_unused]] std::vector<int> readInts(const std::string& name, int n);
 
   /// Calculates the size of a message for a given x and y range
   int msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-              int ylt);
+              int ylt) const;
 
   /// Initialise derivatives
   void derivs_init(Options* options);
@@ -834,7 +834,7 @@ public:
   /// Boundary guard cells are set by extrapolating from the grid, like
   /// 'free_o3' boundary conditions
   /// Corner guard cells are set to BoutNaN
-  const Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
+  Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
                                           bool extrapolate_x, bool extrapolate_y,
                                           bool no_extra_interpolate,
                                           ParallelTransform* UNUSED(pt) = nullptr,

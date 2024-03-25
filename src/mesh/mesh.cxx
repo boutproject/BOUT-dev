@@ -1,6 +1,5 @@
 #include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
-#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/utils.hxx>
@@ -10,7 +9,6 @@
 #include <bout/boutcomm.hxx>
 #include <bout/output.hxx>
 
-#include "impls/bout/boutmesh.hxx"
 #include "bout/interpolation.hxx"
 
 /// Interpolate a Field2D to a new CELL_LOC with interp_to.
@@ -18,7 +16,7 @@
 /// Boundary guard cells are set by extrapolating from the grid, like
 /// 'free_o3' boundary conditions
 /// Corner guard cells are set to BoutNaN
-const Field2D Mesh::interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
+Field2D Mesh::interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
                                               bool extrapolate_x, bool extrapolate_y,
                                               bool no_extra_interpolate,
                                               ParallelTransform* UNUSED(pt),
@@ -524,7 +522,7 @@ void Mesh::communicate(FieldPerp& f) {
 }
 
 int Mesh::msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                  int ylt) {
+                  int ylt) const {
   int len = 0;
 
   /// Loop over variables
@@ -652,28 +650,28 @@ int Mesh::localSizePerp() {
   return localNumCellsPerp;
 }
 
-int Mesh::globalStartIndex3D() {
+[[maybe_unused]] int Mesh::globalStartIndex3D() {
   int localSize = localSize3D();
   int cumulativeSize = 0;
   mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
   return cumulativeSize - localSize;
 }
 
-int Mesh::globalStartIndex2D() {
+[[maybe_unused]] int Mesh::globalStartIndex2D() {
   int localSize = localSize2D();
   int cumulativeSize = 0;
   mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
   return cumulativeSize - localSize;
 }
 
-int Mesh::globalStartIndexPerp() {
+[[maybe_unused]] int Mesh::globalStartIndexPerp() {
   int localSize = localSizePerp();
   int cumulativeSize = 0;
   mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXcomm());
   return cumulativeSize - localSize;
 }
 
-const std::vector<int> Mesh::readInts(const std::string& name, int n) {
+[[maybe_unused]] std::vector<int> Mesh::readInts(const std::string& name, int n) {
   TRACE("Mesh::readInts({:s})", name);
 
   if (source == nullptr) {

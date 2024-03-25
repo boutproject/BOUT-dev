@@ -39,16 +39,12 @@
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/dcomplex.hxx>
-#include <bout/derivs.hxx>
-#include <bout/fft.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
 #include <algorithm>
-#include <iterator>
 #include <set>
 
 /// MPI type of BoutReal for communications
@@ -1706,7 +1702,7 @@ int BoutMesh::getLocalYIndexNoBoundaries(int yglobal) const {
   return yglobal - PE_YIND * MYSUB + MYG;
 }
 
-int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + yproc * MYSUB - MYG; }
+[[maybe_unused]] int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + yproc * MYSUB - MYG; }
 
 int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - yproc * MYSUB + MYG; }
 
@@ -2322,7 +2318,7 @@ int BoutMesh::pack_data(const std::vector<FieldData*>& var_list, int xge, int xl
 }
 
 int BoutMesh::unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt,
-                          int yge, int ylt, BoutReal* buffer) {
+                          int yge, int ylt, const BoutReal* buffer) {
 
   int len = 0;
 
