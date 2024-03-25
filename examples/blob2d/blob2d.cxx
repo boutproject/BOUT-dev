@@ -25,7 +25,6 @@ private:
   BoutReal rho_s;   ///< Bohm gyro radius
   BoutReal Omega_i; ///< Ion cyclotron frequency
   BoutReal c_s;     ///< Bohm sound speed
-  BoutReal n0;      ///< Reference density
 
   // Constants to calculate the parameters
   BoutReal Te0; ///< Isothermal temperature [eV]
@@ -61,7 +60,6 @@ protected:
     m_i = options["m_i"].withDefault(2 * 1.667e-27);
     m_e = options["m_e"].withDefault(9.11e-31);
 
-    n0 = options["n0"].doc("Background density in cubic m").withDefault(1e19);
     D_vort = options["D_vort"].doc("Viscous diffusion coefficient").withDefault(0.0);
     D_n = options["D_n"].doc("Density diffusion coefficient").withDefault(0.0);
 

@@ -148,10 +148,10 @@ cdef extern from "bout/physicsmodel.hxx":
 ctypedef void (*Method)(void *param, void *user_data)
 cdef extern from "helper.h":
     cppclass PythonModel(PhysicsModel):
-        int rhs(double t)
+        int rhs(double t) except +raise_bout_py_error
         void pyinit()
         void free()
-        void solve()
+        void solve() except +raise_bout_py_error
         Solver * getSolver()
         void set_rhs_func(PythonModelCallback*)
         void set_init_func(PythonModelCallback*)
