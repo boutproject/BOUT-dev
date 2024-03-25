@@ -575,17 +575,16 @@ std::shared_ptr<Coordinates>
 Mesh::createDefaultCoordinates(const CELL_LOC location, bool recalculate_staggered,
                                bool force_interpolate_from_centre) {
 
+  std::shared_ptr<Coordinates> new_coordinates;
   if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
-    const auto new_coordinates = std::make_shared<Coordinates>(this, options);
-    new_coordinates->recalculateAndReset(recalculate_staggered,
-                                         force_interpolate_from_centre);
-    return new_coordinates;
+    new_coordinates = std::make_shared<Coordinates>(this, options);
+  } else {
+    // Interpolate coordinates from CELL_CENTRE version
+    new_coordinates = std::make_shared<Coordinates>(this, options, location,
+                                                    getCoordinates(CELL_CENTRE),
+                                                    force_interpolate_from_centre);
   }
-  // Interpolate coordinates from CELL_CENTRE version
-  const auto new_coordinates =
-      std::make_shared<Coordinates>(this, options, location, getCoordinates(CELL_CENTRE),
-                                    force_interpolate_from_centre);
   new_coordinates->recalculateAndReset(recalculate_staggered,
                                        force_interpolate_from_centre);
   return new_coordinates;
