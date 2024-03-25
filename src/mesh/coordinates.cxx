@@ -1057,6 +1057,7 @@ Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
 Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) const {
 #if BOUT_USE_METRIC_3D
+  ASSERT0(transform != nullptr);
   if (!f.hasParallelSlices() and !transform->canToFromFieldAligned()) {
     Field3D f_parallel = f;
     transform->calcParallelSlices(f_parallel);
@@ -1086,7 +1087,7 @@ Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc, const std::string& m
 // Parallel gradient
 
 FieldMetric Coordinates::Grad_par(const Field2D& var, [[maybe_unused]] CELL_LOC outloc,
-                              const std::string& UNUSED(method)) {
+                                  const std::string& UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
   ASSERT1(location == outloc
           || (outloc == CELL_DEFAULT && location == var.getLocation()));
@@ -1107,8 +1108,8 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
 // vparallel times the parallel derivative along unperturbed B-field
 
 FieldMetric Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
-                                   [[maybe_unused]] CELL_LOC outloc,
-                                   const std::string& UNUSED(method)) {
+                                       [[maybe_unused]] CELL_LOC outloc,
+                                       const std::string& UNUSED(method)) {
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
   return VDDY(v, f) * invSg();
