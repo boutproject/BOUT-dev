@@ -423,7 +423,12 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
       dy_(std::move(dy)), dz_(std::move(dz)), ShiftTorsion_(std::move(ShiftTorsion)),
       IntShiftTorsion_(std::move(IntShiftTorsion)),
       contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), Bxy_(std::move(Bxy)){};
+      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), Bxy_(std::move(Bxy)) {
+
+  // required early for differentiation.
+  // Identity method i.e. no transform needed
+  transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh);
+};
 
 Coordinates::Coordinates(Mesh* mesh, Options* mesh_options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
