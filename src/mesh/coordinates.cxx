@@ -468,7 +468,6 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(Options* mesh_options,
   // but setParallelTransform() requires that dz is already set!
   if (isUniform(coords_in->dz())) {
     dz_ = coords_in->dz();
-    dz_.setLocation(location);
   } else {
     throw BoutException(
         "We are asked to transform dz to get dz before we have a transform, which might "
