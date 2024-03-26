@@ -464,6 +464,19 @@ Coordinates::Coordinates(Mesh* mesh, Options* mesh_options, const CELL_LOC loc,
 void Coordinates::interpolateFieldsFromOtherCoordinates(Options* mesh_options,
                                                         const Coordinates* coords_in) {
 
+  // Need to ensure parallel transform is set before differential operators are used,
+  // but setParallelTransform() requires that dz is already set!
+  if (isUniform(coords_in->dz())) {
+    dz_ = coords_in->dz();
+    dz_.setLocation(location);
+  } else {
+    throw BoutException(
+        "We are asked to transform dz to get dz before we have a transform, which might "
+        "require dz! \nPlease provide a dz for the staggered quantity!");
+  }
+
+  setParallelTransform(mesh_options);
+
   std::function<const FieldMetric(const FieldMetric)> const
       interpolateAndExtrapolate_function = [this](const FieldMetric& component) {
         return interpolateAndExtrapolate(component, location, true, true, false,
@@ -496,17 +509,6 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(Options* mesh_options,
     IntShiftTorsion_ = interpolateAndExtrapolate(coords_in->IntShiftTorsion(), location,
                                                  true, true, false, transform.get());
   }
-
-  if (isUniform(coords_in->dz())) {
-    dz_ = coords_in->dz();
-    dz_.setLocation(location);
-  } else {
-    throw BoutException(
-        "We are asked to transform dz to get dz before we have a transform, which might "
-        "require dz! \nPlease provide a dz for the staggered quantity!");
-  }
-
-  setParallelTransform(mesh_options);
 
   dx_ = interpolateAndExtrapolate(coords_in->dx(), location, true, true, false,
                                   transform.get());
