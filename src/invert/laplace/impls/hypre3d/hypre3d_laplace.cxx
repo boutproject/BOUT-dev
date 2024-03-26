@@ -277,7 +277,7 @@ void LaplaceHypre3d::updateMatrix3D() {
   const Field3D dc_dx = issetC ? DDX(C2) : Field3D();
   const Field3D dc_dy = issetC ? DDY(C2) : Field3D();
   const Field3D dc_dz = issetC ? DDZ(C2) : Field3D();
-  const Field2D dJ_dy = DDY(coords->J() / coords->g_22());
+  const Field3D dJ_dy = DDY(coords->J() / coords->g_22());
 
   // Set up the matrix for the internal points on the grid.
   // Boundary conditions were set in the constructor.
