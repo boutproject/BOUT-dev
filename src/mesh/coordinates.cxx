@@ -476,14 +476,13 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(Options* mesh_options,
 
   setParallelTransform(mesh_options);
 
+  setContravariantMetricTensor(coords_in->getContravariantMetricTensor());
+
   std::function<const FieldMetric(const FieldMetric)> const
       interpolateAndExtrapolate_function = [this](const FieldMetric& component) {
         return interpolateAndExtrapolate(component, location, true, true, false,
                                          transform.get());
       };
-
-  setContravariantMetricTensor(coords_in->getContravariantMetricTensor());
-
   applyToContravariantMetricTensor(interpolateAndExtrapolate_function);
   applyToCovariantMetricTensor(interpolateAndExtrapolate_function);
 
