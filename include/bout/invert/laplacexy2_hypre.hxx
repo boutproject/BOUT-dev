@@ -35,6 +35,7 @@
 
 #include <bout/build_defines.hxx>
 
+#if not BOUT_USE_METRIC_3D
 #if not BOUT_HAS_HYPRE
 // If no Hypre
 
@@ -136,3 +137,4 @@ private:
 
 #endif // BOUT_HAS_HYPRE
 #endif // LAPLACE_XY_HYPRE_H
+#endif // not BOUT_USE_METRIC_3D

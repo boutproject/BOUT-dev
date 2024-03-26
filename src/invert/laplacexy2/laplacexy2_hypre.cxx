@@ -1,5 +1,6 @@
 #include <bout/invert/laplacexy2_hypre.hxx>
 
+#if not BOUT_USE_METRIC_3D
 #if BOUT_HAS_HYPRE
 
 #include "bout/assert.hxx"
@@ -345,3 +346,4 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
 }
 
 #endif // BOUT_HAS_HYPRE
+#endif // not BOUT_USE_METRIC_3D
