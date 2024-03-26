@@ -49,8 +49,8 @@
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
-#include "boundary_region.hxx"
-#include "parallel_boundary_region.hxx"
+#include "bout/boundary_region.hxx"
+#include "bout/parallel_boundary_region.hxx"
 
 #include <algorithm>
 #include <iterator>
