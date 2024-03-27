@@ -4,6 +4,9 @@ class BoundaryRegion;
 #ifndef BOUT_BNDRY_REGION_H
 #define BOUT_BNDRY_REGION_H
 
+#include "bout/mesh.hxx"
+#include "bout/region.hxx"
+#include "bout/sys/parallel_stencils.hxx"
 #include <string>
 #include <utility>
 
@@ -62,6 +65,7 @@ public:
   isDone() = 0; ///< Returns true if outside domain. Can use this with nested nextX, nextY
 };
 
+class BoundaryRegionIter;
 /// Describes a region of the boundary, and a means of iterating over it
 class BoundaryRegion : public BoundaryRegionBase {
 public:
@@ -80,6 +84,95 @@ public:
   virtual void next1d() = 0; ///< Loop over the innermost elements
   virtual void nextX() = 0;  ///< Just loop over X
   virtual void nextY() = 0;  ///< Just loop over Y
+
+  BoundaryRegionIter begin();
+  BoundaryRegionIter end();
+};
+
+class BoundaryRegionIter {
+public:
+  BoundaryRegionIter(BoundaryRegion* rgn, bool is_end)
+      : rgn(rgn), is_end(is_end), dir(rgn->bx + rgn->by) {
+    //static_assert(std::is_base_of<BoundaryRegion, T>, "BoundaryRegionIter only works on BoundaryRegion");
+
+    // Ensure only one is non-zero
+    ASSERT3(rgn->bx * rgn->by == 0);
+    if (!is_end) {
+      rgn->first();
+    }
+  }
+  bool operator!=(const BoundaryRegionIter& rhs) {
+    if (is_end) {
+      if (rhs.is_end || rhs.rgn->isDone()) {
+        return false;
+      } else {
+        return true;
+      }
+    }
+    if (rhs.is_end) {
+      return !rgn->isDone();
+    }
+    return ind() != rhs.ind();
+  }
+
+  Ind3D ind() const { return xyz2ind(rgn->x - rgn->bx, rgn->y - rgn->by, z); }
+  BoundaryRegionIter& operator++() {
+    ASSERT3(z < nz());
+    z++;
+    if (z == nz()) {
+      z = 0;
+      rgn->next();
+    }
+    return *this;
+  }
+  BoundaryRegionIter& operator*() { return *this; }
+
+  void dirichlet_o2(Field3D& f, BoutReal value) const {
+    ynext(f) = parallel_stencil::dirichlet_o2(1, f[ind()], 0.5, value);
+  }
+
+  BoutReal extrapolate_grad_o2(const Field3D& f) const { return f[ind()] - yprev(f); }
+
+  BoutReal extrapolate_sheath_o2(const Field3D& f) const {
+    return (f[ind()] * 3 - yprev(f)) * 0.5;
+  }
+
+  BoutReal extrapolate_next_o2(const Field3D& f) const { return 2 * f[ind()] - yprev(f); }
+
+  BoutReal
+  extrapolate_next_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+    return 2 * f(0, ind()) - f(0, ind().yp(-rgn->by).xp(-rgn->bx));
+  }
+
+  BoutReal interpolate_sheath(const Field3D& f) const {
+    return (f[ind()] + ynext(f)) * 0.5;
+  }
+
+  BoutReal& ynext(Field3D& f) const { return f[ind().yp(rgn->by).xp(rgn->bx)]; }
+  const BoutReal& ynext(const Field3D& f) const {
+    return f[ind().yp(rgn->by).xp(rgn->bx)];
+  }
+  BoutReal& yprev(Field3D& f) const { return f[ind().yp(-rgn->by).xp(-rgn->bx)]; }
+  const BoutReal& yprev(const Field3D& f) const {
+    return f[ind().yp(-rgn->by).xp(-rgn->bx)];
+  }
+
+private:
+  BoundaryRegion* rgn;
+  const bool is_end;
+  int z{0};
+
+public:
+  const int dir;
+
+private:
+  int nx() const { return rgn->localmesh->LocalNx; }
+  int ny() const { return rgn->localmesh->LocalNy; }
+  int nz() const { return rgn->localmesh->LocalNz; }
+
+  Ind3D xyz2ind(int x, int y, int z) const {
+    return Ind3D{(x * ny() + y) * nz() + z, ny(), nz()};
+  }
 };
 
 class BoundaryRegionXIn : public BoundaryRegion {
