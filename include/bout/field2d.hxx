@@ -136,6 +136,8 @@ public:
   /// Dummy functions to increase portability
   bool hasParallelSlices() const { return true; }
   void calcParallelSlices() const {}
+  void clearParallelSlices() {}
+  int numberParallelSlices() { return 0; }
 
   Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) { return *this; }
   const Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
@@ -275,7 +277,7 @@ public:
 
   friend void swap(Field2D& first, Field2D& second) noexcept;
 
-  int size() const override { return nx * ny; };
+  int size() const override { return nx * ny; }
 
 private:
   /// Internal data array. Handles allocation/freeing of memory
