@@ -632,7 +632,8 @@ public:
     // (circular dependency between Mesh and Coordinates)
     auto inserted = coords_map.emplace(location, nullptr);
     auto force_interpolate_from_centre = false;
-    inserted.first->second = createDefaultCoordinates(location, force_interpolate_from_centre);
+    inserted.first->second =
+        createDefaultCoordinates(location, force_interpolate_from_centre);
 
     auto recalculate_staggered = false;
     inserted.first->second->recalculateAndReset(recalculate_staggered,
