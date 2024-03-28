@@ -593,7 +593,10 @@ private:
   BoutReal adjustMonitorPeriods(Monitor* monitor);
 
   /// Fix all the monitor periods based on \p output_timestep, as well
-  /// as adjusting \p NOUT and \p output_timestep to be consistent
+  /// as adjusting \p NOUT and \p output_timestep to be consistent. On
+  /// output, \p NOUT and \p output_timestep will be the internal
+  /// total steps and timestep respectively; that is, they will be the
+  /// total steps and timestep of the fastest monitor.
   void finaliseMonitorPeriods(int& NOUT, BoutReal& output_timestep);
 
   /// Number of requested output steps
