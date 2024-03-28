@@ -862,8 +862,8 @@ int BoutMonitor::call(Solver* solver, BoutReal t, [[maybe_unused]] int iter, int
 
   output_progress.print("\r"); // Only goes to screen
 
+  const int iteration_offset = solver->getIterationOffset();
   // First time the monitor has been called
-  static bool first_time = true;
   if (first_time) {
 
     // Record the starting time
@@ -888,10 +888,11 @@ int BoutMonitor::call(Solver* solver, BoutReal t, [[maybe_unused]] int iter, int
   run_data.t_elapsed = bout::globals::mpi->MPI_Wtime() - mpi_start_time;
 
   output_progress.print("{:c}  Step {:d} of {:d}. Elapsed {:s}", get_spin(), iteration,
-                        NOUT, time_to_hms(run_data.t_elapsed));
+                        NOUT + iteration_offset, time_to_hms(run_data.t_elapsed));
   output_progress.print(
       " ETA {:s}",
-      time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 2)));
+      time_to_hms(run_data.wtime
+                  * static_cast<BoutReal>(NOUT + iteration_offset - iteration)));
 
   // Write dump file
   Options run_data_output;
