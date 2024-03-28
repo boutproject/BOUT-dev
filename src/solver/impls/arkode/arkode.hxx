@@ -47,6 +47,10 @@ RegisterUnavailableSolver
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_config.h>
 
+#if SUNDIALS_CONTROLLER_SUPPORT
+#include <sundials/sundials_adaptcontroller.h>
+#endif
+
 #include <vector>
 
 class ArkodeSolver;
@@ -102,6 +106,10 @@ private:
   bool fixed_step;
   /// Order of internal step
   int order;
+  /// Name of the implicit Butcher table
+  std::string implicit_table;
+  /// Name of the explicit Butcher table
+  std::string explicit_table;
   /// Fraction of the estimated explicitly stable step to use
   BoutReal cfl_frac;
   /// Set timestep adaptivity function:
@@ -153,8 +161,12 @@ private:
 
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};
-  /// Solver for functional iterations for Adams-Moulton
+  /// Solver for implicit stages
   SUNNonlinearSolver nonlinear_solver{nullptr};
+#if SUNDIALS_CONTROLLER_SUPPORT
+  /// Timestep controller
+  SUNAdaptController controller{nullptr};
+#endif
   /// Context for SUNDIALS memory allocations
   sundials::Context suncontext;
 };

@@ -306,9 +306,10 @@ solver. Currently, BOUT++ also supports the SUNDIALS solvers CVODE, IDA
 and ARKODE which are available from
 https://computation.llnl.gov/casc/sundials/main.html.
 
-.. note:: BOUT++ currently supports SUNDIALS > 2.6, up to 5.4.0 as of
-          September 2020. It is advisable to use the highest possible
-          version
+.. note:: BOUT++ currently supports SUNDIALS > 2.6, up to 6.7.0 as of
+          January 2024. It is advisable to use the highest possible
+          version. Support for SUNDIALS versions < 4 will be removed
+          in the next release.
 
 The full installation guide is found in the downloaded ``.tar.gz``,
 but we will provide a step-by-step guide to install it and make it
