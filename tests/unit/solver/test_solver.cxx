@@ -71,7 +71,7 @@ public:
 
 class SolverTest : public FakeMeshFixture {
 public:
-  SolverTest() : FakeMeshFixture() {
+  SolverTest() {
     Options::root()["field"]["function"] = "1.0";
     Options::root()["field"]["solution"] = "2.0";
     Options::root()["another_field"]["function"] = "3.0";
@@ -84,7 +84,11 @@ public:
     Options::root()["another_vectorz"]["function"] = "10.0";
     Options::root()["input"]["error_on_unused_options"] = false;
   }
-  virtual ~SolverTest() { Options::cleanup(); }
+  SolverTest(const SolverTest&) = delete;
+  SolverTest(SolverTest&&) = delete;
+  SolverTest& operator=(const SolverTest&) = delete;
+  SolverTest& operator=(SolverTest&&) = delete;
+  ~SolverTest() override { Options::cleanup(); }
 
   WithQuietOutput quiet_info{output_info};
   WithQuietOutput quiet_progress{output_progress};
@@ -98,7 +102,7 @@ TEST_F(SolverTest, Create) {
 
   solver->run();
 
-  EXPECT_TRUE(static_cast<FakeSolver*>(solver.get())->run_called);
+  EXPECT_TRUE(dynamic_cast<FakeSolver*>(solver.get())->run_called);
 
   Options::cleanup();
 }
@@ -120,7 +124,7 @@ TEST_F(SolverTest, CreateFromOptions) {
 
   solver->run();
 
-  EXPECT_TRUE(static_cast<FakeSolver*>(solver.get())->run_called);
+  EXPECT_TRUE(dynamic_cast<FakeSolver*>(solver.get())->run_called);
 }
 
 TEST_F(SolverTest, CreateFromName) {
@@ -207,7 +211,8 @@ TEST_F(SolverTest, AddField2D) {
   Options options;
   FakeSolver solver{&options};
 
-  Field2D field1{}, field2{};
+  Field2D field1{};
+  Field2D field2{};
   EXPECT_NO_THROW(solver.add(field1, "field"));
   EXPECT_EQ(solver.n2Dvars(), 1);
   EXPECT_EQ(solver.n3Dvars(), 0);
@@ -234,7 +239,8 @@ TEST_F(SolverTest, AddField2DMMS) {
   options["mms_initialise"] = true;
   FakeSolver solver{&options};
 
-  Field2D field1{}, field2{};
+  Field2D field1{};
+  Field2D field2{};
   EXPECT_NO_THROW(solver.add(field1, "field"));
   EXPECT_EQ(solver.n2Dvars(), 1);
   EXPECT_EQ(solver.n3Dvars(), 0);
@@ -259,7 +265,8 @@ TEST_F(SolverTest, AddField3D) {
   Options options;
   FakeSolver solver{&options};
 
-  Field3D field1{}, field2{};
+  Field3D field1{};
+  Field3D field2{};
   EXPECT_NO_THROW(solver.add(field1, "field"));
   EXPECT_EQ(solver.n2Dvars(), 0);
   EXPECT_EQ(solver.n3Dvars(), 1);
@@ -286,7 +293,8 @@ TEST_F(SolverTest, AddField3DMMS) {
   options["mms_initialise"] = true;
   FakeSolver solver{&options};
 
-  Field3D field1{}, field2{};
+  Field3D field1{};
+  Field3D field2{};
   EXPECT_NO_THROW(solver.add(field1, "field"));
   EXPECT_EQ(solver.n2Dvars(), 0);
   EXPECT_EQ(solver.n3Dvars(), 1);
@@ -311,12 +319,15 @@ TEST_F(SolverTest, AddVector2D) {
   Options options;
   FakeSolver solver{&options};
 
-  Vector2D vector1{}, vector2{};
+  Vector2D vector1{};
+  Vector2D vector2{};
   EXPECT_NO_THROW(solver.add(vector1, "vector"));
 #if not(BOUT_USE_METRIC_3D)
-  constexpr int n2d = 3, n3d = 0;
+  constexpr int n2d = 3;
+  constexpr int n3d = 0;
 #else
-  constexpr int n2d = 0, n3d = 3;
+  constexpr int n2d = 0;
+  constexpr int n3d = 3;
 #endif
   EXPECT_EQ(solver.n2Dvars(), n2d);
   EXPECT_EQ(solver.n3Dvars(), n3d);
@@ -346,7 +357,8 @@ TEST_F(SolverTest, AddVector3D) {
   Options options;
   FakeSolver solver{&options};
 
-  Vector3D vector1{}, vector2{};
+  Vector3D vector1{};
+  Vector3D vector2{};
   EXPECT_NO_THROW(solver.add(vector1, "vector"));
   EXPECT_EQ(solver.n2Dvars(), 0);
   EXPECT_EQ(solver.n3Dvars(), 3);
@@ -376,7 +388,8 @@ TEST_F(SolverTest, ConstraintField2D) {
   Options options;
   FakeSolver solver{&options};
 
-  Field2D field1{}, field2{};
+  Field2D field1{};
+  Field2D field2{};
   EXPECT_NO_THROW(solver.constraint(field1, field1, "field"));
   EXPECT_EQ(solver.n2Dvars(), 1);
   EXPECT_EQ(solver.n3Dvars(), 0);
@@ -409,7 +422,8 @@ TEST_F(SolverTest, ConstraintField3D) {
   Options options;
   FakeSolver solver{&options};
 
-  Field3D field1{}, field2{};
+  Field3D field1{};
+  Field3D field2{};
   EXPECT_NO_THROW(solver.constraint(field1, field1, "field"));
   EXPECT_EQ(solver.n2Dvars(), 0);
   EXPECT_EQ(solver.n3Dvars(), 1);
@@ -442,12 +456,15 @@ TEST_F(SolverTest, ConstraintVector2D) {
   Options options;
   FakeSolver solver{&options};
 
-  Vector2D vector1{}, vector2{};
+  Vector2D vector1{};
+  Vector2D vector2{};
   EXPECT_NO_THROW(solver.constraint(vector1, vector1, "vector"));
 #if not(BOUT_USE_METRIC_3D)
-  constexpr int n2d = 3, n3d = 0;
+  constexpr int n2d = 3;
+  constexpr int n3d = 0;
 #else
-  constexpr int n2d = 0, n3d = 3;
+  constexpr int n2d = 0;
+  constexpr int n3d = 3;
 #endif
   EXPECT_EQ(solver.n2Dvars(), n2d);
   EXPECT_EQ(solver.n3Dvars(), n3d);
@@ -481,7 +498,8 @@ TEST_F(SolverTest, ConstraintVector3D) {
   Options options;
   FakeSolver solver{&options};
 
-  Vector3D vector1{}, vector2{};
+  Vector3D vector1{};
+  Vector3D vector2{};
   EXPECT_NO_THROW(solver.constraint(vector1, vector1, "vector"));
   EXPECT_EQ(solver.n2Dvars(), 0);
   EXPECT_EQ(solver.n3Dvars(), 3);
