@@ -365,28 +365,32 @@ class GEM : public PhysicsModel {
     Bxy /= Bbar;
 
     Rxy /= rho_s; // Perpendicular derivatives normalised to rho_s
-    coord->dx /= rho_s * rho_s * Bbar;
+    coord->setDx(coord->dx() / (rho_s * rho_s * Bbar));
 
     // Metric components
 
-    coord->g11 = SQ(Rxy * Bpxy);
-    coord->g22 = 1.0 / SQ(hthe);
-    coord->g33 = SQ(Bxy) / coord->g11;
-    coord->g12 = 0.0;
-    coord->g13 = 0.;
-    coord->g23 = -Btxy / (hthe * Bpxy * Rxy);
+    MetricTensor::FieldMetric g11, g22, g33, g12, g13, g23;
+    g11 = SQ(Rxy * Bpxy);
+    g22 = 1.0 / SQ(hthe);
+    g33 = SQ(Bxy) / coord->g11();
+    g12 = 0.0;
+    g13 = 0.;
+    g23 = -Btxy / (hthe * Bpxy * Rxy);
+    coord->setContravariantMetricTensor(
+        ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
 
-    coord->J = hthe / Bpxy;
-    coord->Bxy = Bxy;
+    coord->setJ(hthe / Bpxy);
+    coord->setBxy(Bxy);
 
-    coord->g_11 = 1.0 / coord->g11;
-    coord->g_22 = SQ(Bxy * hthe / Bpxy);
-    coord->g_33 = Rxy * Rxy;
-    coord->g_12 = 0.;
-    coord->g_13 = 0.;
-    coord->g_23 = Btxy * hthe * Rxy / Bpxy;
-
-    coord->geometry();
+    MetricTensor::FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
+    g_11 = 1.0 / coord->g11();
+    g_22 = SQ(Bxy * hthe / Bpxy);
+    g_33 = Rxy * Rxy;
+    g_12 = 0.;
+    g_13 = 0.;
+    g_23 = Btxy * hthe * Rxy / Bpxy;
+    coord->setCovariantMetricTensor(
+        CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
     // Set B field vector
 
@@ -400,7 +404,7 @@ class GEM : public PhysicsModel {
       if (curv_logB) {
         Grad_par_logB = Grad_par(logB);
       } else {
-        Grad_par_logB = Grad_par(log(coord->Bxy));
+        Grad_par_logB = Grad_par(log(coord->Bxy()));
       }
     } else {
       Grad_par_logB = 0.;
@@ -1153,7 +1157,7 @@ class GEM : public PhysicsModel {
     if (curv_logB) {
       return -bracket(2. * logB, f, BRACKET_ARAKAWA);
     }
-    return -bracket(2. * log(coord->Bxy), f, BRACKET_ARAKAWA);
+    return -bracket(2. * log(coord->Bxy()), f, BRACKET_ARAKAWA);
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -1168,7 +1172,7 @@ class GEM : public PhysicsModel {
     delp2.applyBoundary("neumann");
     mesh->communicate(delp2);
 
-    return nu_perp * Delp2(delp2 * SQ(SQ(1. / coord->Bxy)))
+    return nu_perp * Delp2(delp2 * SQ(SQ(1. / coord->Bxy())))
            - nu_par * Grad2_par2(f) // NB: This should be changed for variable B
         ;
   }
@@ -1184,8 +1188,8 @@ class GEM : public PhysicsModel {
   }
 
   const Field3D Div_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) {
-    return interp_to(coord->Bxy, loc)
-           * Grad_parP(f / interp_to(coord->Bxy, f.getLocation()), loc);
+    return interp_to(coord->Bxy(), loc)
+           * Grad_parP(f / interp_to(coord->Bxy(), f.getLocation()), loc);
   }
 };
 

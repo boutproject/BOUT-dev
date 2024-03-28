@@ -26,10 +26,10 @@ public:
   FieldGroup& operator=(FieldGroup&& other) = default;
 
   /// Constructor with a single FieldData \p f
-  FieldGroup(FieldData& f) { fvec.push_back(&f); }
+  explicit FieldGroup(FieldData& f) { fvec.push_back(&f); }
 
   /// Constructor with a single Field3D \p f
-  FieldGroup(Field3D& f) {
+  explicit FieldGroup(Field3D& f) {
     fvec.push_back(&f);
     f3vec.push_back(&f);
   }
@@ -37,7 +37,7 @@ public:
   /// Constructor with a single Vector2D \p v
   ///
   /// This is needed so that fvec only contains Field2D or Field3D
-  FieldGroup(Vector2D& v) {
+  explicit FieldGroup(Vector2D& v) {
     fvec.push_back(&v.x);
     fvec.push_back(&v.y);
     fvec.push_back(&v.z);
@@ -46,7 +46,7 @@ public:
   /// Constructor with a single Vector3D \p v
   ///
   /// This is needed so that fvec only contains Field2D or Field3D
-  FieldGroup(Vector3D& v) {
+  explicit FieldGroup(Vector3D& v) {
     fvec.push_back(&v.x);
     fvec.push_back(&v.y);
     fvec.push_back(&v.z);

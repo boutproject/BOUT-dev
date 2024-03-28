@@ -39,7 +39,7 @@ constexpr BndryLoc BNDRY_PAR_BKWD_XOUT = BndryLoc::par_bkwd_xout;
 class BoundaryRegionBase {
 public:
   BoundaryRegionBase() = delete;
-  BoundaryRegionBase(std::string name, Mesh* passmesh = nullptr)
+  explicit BoundaryRegionBase(std::string name, Mesh* passmesh = nullptr)
       : localmesh(passmesh ? passmesh : bout::globals::mesh), label(std::move(name)) {}
   BoundaryRegionBase(std::string name, BndryLoc loc, Mesh* passmesh = nullptr)
       : localmesh(passmesh ? passmesh : bout::globals::mesh), label(std::move(name)),
@@ -67,9 +67,9 @@ class BoundaryRegion : public BoundaryRegionBase {
 public:
   BoundaryRegion() = delete;
   BoundaryRegion(std::string name, BndryLoc loc, Mesh* passmesh = nullptr)
-      : BoundaryRegionBase(name, loc, passmesh) {}
+      : BoundaryRegionBase(std::move(name), loc, passmesh) {}
   BoundaryRegion(std::string name, int xd, int yd, Mesh* passmesh = nullptr)
-      : BoundaryRegionBase(name, passmesh), bx(xd), by(yd), width(2) {}
+      : BoundaryRegionBase(std::move(name), passmesh), bx(xd), by(yd), width(2) {}
   ~BoundaryRegion() override = default;
 
   int x, y;   ///< Indices of the point in the boundary

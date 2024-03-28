@@ -23,12 +23,9 @@
  *
  **************************************************************************/
 
-#include <bout/boutexception.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/field.hxx>
 #include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
-#include <bout/output.hxx>
 #include <bout/utils.hxx>
 
 Field::Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)

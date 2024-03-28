@@ -1,5 +1,4 @@
 
-#include "bout/unused.hxx"
 #include <bout/boundary_factory.hxx>
 #include <bout/field_data.hxx>
 #include <bout/field_factory.hxx>

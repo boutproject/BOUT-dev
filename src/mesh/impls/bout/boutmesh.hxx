@@ -19,7 +19,7 @@
 /// conventions.
 class BoutMesh : public Mesh {
 public:
-  BoutMesh(GridDataSource* s, Options* options = nullptr);
+  explicit BoutMesh(GridDataSource* s, Options* options = nullptr);
   ~BoutMesh() override;
 
   /// Read in the mesh from data sources
@@ -172,8 +172,8 @@ public:
   BoutReal GlobalX(BoutReal jx) const override;
   BoutReal GlobalY(BoutReal jy) const override;
 
-  BoutReal getIxseps1() const { return ixseps1; }
-  BoutReal getIxseps2() const { return ixseps2; }
+  [[maybe_unused]] BoutReal getIxseps1() const { return ixseps1; }
+  [[maybe_unused]] BoutReal getIxseps2() const { return ixseps2; }
 
   void outputVars(Options& output_options) override;
 
@@ -318,7 +318,7 @@ protected:
   /// Returns the processor number, given X (\p xind) and Y (\p yind)
   /// processor indices. Returns -1 if out of range (no processor)
   int PROC_NUM(int xind, int yind) const;
-  int YGLOBAL(int yloc, int yproc) const;
+  [[maybe_unused]] int YGLOBAL(int yloc, int yproc) const;
   int YLOCAL(int yglo, int yproc) const;
   /// Return the Y processor number given a global Y index
   int YPROC(int yind) const;
@@ -461,7 +461,7 @@ private:
   /// Copy data from a buffer back into the fields
 
   int unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                  int ylt, BoutReal* buffer);
+                  int ylt, const BoutReal* buffer);
 };
 
 namespace {
