@@ -13,9 +13,9 @@
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_config.h>
 #include <sundials/sundials_iterative.h>
+#include <sundials/sundials_nonlinearsolver.h>
 #include <sundials/sundials_types.h>
 #include <sunlinsol/sunlinsol_spgmr.h>
-#include <sundials/sundials_nonlinearsolver.h>
 #include <sunnonlinsol/sunnonlinsol_fixedpoint.h>
 #include <sunnonlinsol/sunnonlinsol_newton.h>
 
@@ -31,10 +31,15 @@ using sundials_real_type = realtype;
 using sundials_real_type = sunrealtype;
 #endif
 
-static_assert(std::is_same_v<BoutReal, sundials_real_type>, "BOUT++ and SUNDIALS real types do not match");
+static_assert(std::is_same_v<BoutReal, sundials_real_type>,
+              "BOUT++ and SUNDIALS real types do not match");
 
-#define SUNDIALS_CONTROLLER_SUPPORT (SUNDIALS_VERSION_MAJOR > 6 || SUNDIALS_VERSION_MAJOR == 6 && SUNDIALS_VERSION_MINOR >= 7)
-#define SUNDIALS_TABLE_BY_NAME_SUPPORT (SUNDIALS_VERSION_MAJOR > 6 || SUNDIALS_VERSION_MAJOR == 6 && SUNDIALS_VERSION_MINOR >= 4)
+#define SUNDIALS_CONTROLLER_SUPPORT \
+  (SUNDIALS_VERSION_MAJOR > 6       \
+   || SUNDIALS_VERSION_MAJOR == 6 && SUNDIALS_VERSION_MINOR >= 7)
+#define SUNDIALS_TABLE_BY_NAME_SUPPORT \
+  (SUNDIALS_VERSION_MAJOR > 6          \
+   || SUNDIALS_VERSION_MAJOR == 6 && SUNDIALS_VERSION_MINOR >= 4)
 
 #if SUNDIALS_VERSION_MAJOR < 6
 constexpr auto SUN_PREC_RIGHT = PREC_RIGHT;
@@ -56,10 +61,9 @@ inline sundials::Context createSUNContext([[maybe_unused]] MPI_Comm& comm) {
 #endif
 }
 
-template<typename Func, typename... Args>
-inline decltype(auto) callWithSUNContext(Func f,
-                                        [[maybe_unused]] sundials::Context& ctx,
-                                        Args&&... args) {
+template <typename Func, typename... Args>
+inline decltype(auto) callWithSUNContext(Func f, [[maybe_unused]] sundials::Context& ctx,
+                                         Args&&... args) {
 #if SUNDIALS_VERSION_MAJOR < 6
   return f(std::forward<Args>(args)...);
 #else
