@@ -40,20 +40,19 @@
 #include "bout/unused.hxx"
 
 #include <ida/ida.h>
-#include <sunlinsol/sunlinsol_spgmr.h>
 #include <ida/ida_bbdpre.h>
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_types.h>
+#include <sunlinsol/sunlinsol_spgmr.h>
 
 #include <numeric>
 
 static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data);
-static int ida_bbd_res(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du, N_Vector rr,
-                       void* user_data);
+static int ida_bbd_res(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du,
+                       N_Vector rr, void* user_data);
 
 static int ida_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rr, N_Vector rvec,
                    N_Vector zvec, BoutReal cj, BoutReal delta, void* user_data);
-
 
 IdaSolver::IdaSolver(Options* opts)
     : Solver(opts),
@@ -197,7 +196,8 @@ int IdaSolver::init() {
       const auto mukeep = (*options)["mukeep"].withDefault(n3d);
       const auto mlkeep = (*options)["mlkeep"].withDefault(n3d);
       if (IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, 0.0, ida_bbd_res,
-                         nullptr) != IDALS_SUCCESS) {
+                         nullptr)
+          != IDALS_SUCCESS) {
         throw BoutException("IDABBDPrecInit failed\n");
       }
     }

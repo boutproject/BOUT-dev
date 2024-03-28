@@ -44,9 +44,9 @@
 #include "fmt/core.h"
 
 #include <cvode/cvode.h>
-#include <sunlinsol/sunlinsol_spgmr.h>
 #include <cvode/cvode_bbdpre.h>
 #include <sundials/sundials_types.h>
+#include <sunlinsol/sunlinsol_spgmr.h>
 
 #include <algorithm>
 #include <numeric>
@@ -201,7 +201,7 @@ int CvodeSolver::init() {
   }
 
   const auto lmm = adams_moulton ? CV_ADAMS : CV_BDF;
-  
+
   cvode_mem = callWithSUNContext(CVodeCreate, suncontext, lmm);
   if (cvode_mem == nullptr) {
     throw BoutException("CVodeCreate failed\n");
@@ -321,9 +321,8 @@ int CvodeSolver::init() {
     output_info.write("\tUsing Newton iteration\n");
     TRACE("Setting preconditioner");
 
-    const auto prectype = use_precon ?
-                          (rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT) :
-                          SUN_PREC_NONE;
+    const auto prectype =
+        use_precon ? (rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT) : SUN_PREC_NONE;
     sun_solver = callWithSUNContext(SUNLinSol_SPGMR, suncontext, uvec, prectype, maxl);
     if (sun_solver == nullptr) {
       throw BoutException("Creating SUNDIALS linear solver failed\n");
@@ -361,7 +360,8 @@ int CvodeSolver::init() {
         const auto mlkeep = (*options)["mlkeep"].withDefault(n3Dvars() + n2Dvars());
 
         if (CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, mukeep, mlkeep, 0.0,
-                          cvode_bbd_rhs, nullptr) != CVLS_SUCCESS) {
+                          cvode_bbd_rhs, nullptr)
+            != CVLS_SUCCESS) {
           throw BoutException("CVBBDPrecInit failed\n");
         }
       }
