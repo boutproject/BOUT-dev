@@ -720,9 +720,9 @@ TEST_F(SolverTest, AddMonitor) {
 
   EXPECT_THROW(monitor.setTimestepShim(20.0), BoutException);
 
-  EXPECT_CALL(monitor, call(_, 0.0, 9, 10));
+  EXPECT_CALL(monitor, call(_, 0.0, 10, 10));
   EXPECT_CALL(monitor, cleanup());
-  EXPECT_NO_THROW(solver.call_monitors(0.0, 9, 10));
+  EXPECT_NO_THROW(solver.call_monitors(0.0, 10, 10));
 }
 
 TEST_F(SolverTest, AddMonitorFront) {
@@ -751,11 +751,11 @@ TEST_F(SolverTest, AddMonitorFront) {
   EXPECT_THROW(solver.call_monitors(5.0, 1, nout), BoutException);
 
   // Last timestep
-  EXPECT_CALL(monitor1, call(_, 0.0, nout - 1, nout));
-  EXPECT_CALL(monitor2, call(_, 0.0, nout - 1, nout));
+  EXPECT_CALL(monitor1, call(_, 0.0, nout, nout));
+  EXPECT_CALL(monitor2, call(_, 0.0, nout, nout));
   EXPECT_CALL(monitor1, cleanup());
   EXPECT_CALL(monitor2, cleanup());
-  solver.call_monitors(0.0, nout - 1, nout);
+  solver.call_monitors(0.0, nout, nout);
 }
 
 TEST_F(SolverTest, AddMonitorBack) {
@@ -783,11 +783,11 @@ TEST_F(SolverTest, AddMonitorBack) {
   EXPECT_THROW(solver.call_monitors(5.0, 1, nout), BoutException);
 
   // Last timestep
-  EXPECT_CALL(monitor1, call(_, 0.0, nout - 1, nout));
-  EXPECT_CALL(monitor2, call(_, 0.0, nout - 1, nout));
+  EXPECT_CALL(monitor1, call(_, 0.0, nout, nout));
+  EXPECT_CALL(monitor2, call(_, 0.0, nout, nout));
   EXPECT_CALL(monitor1, cleanup());
   EXPECT_CALL(monitor2, cleanup());
-  solver.call_monitors(0.0, nout - 1, nout);
+  solver.call_monitors(0.0, nout, nout);
 }
 
 TEST_F(SolverTest, AddMonitorCheckFrequencies) {
@@ -811,26 +811,25 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   EXPECT_THROW(solver.addMonitor(&incompatible_timestep), BoutException);
 
   // Everything should trigger on initial timestep
-  EXPECT_CALL(default_timestep, call(_, _, -1, nout));
-  EXPECT_CALL(smaller_timestep, call(_, _, -1, nout * 10));
-  EXPECT_CALL(even_smaller_timestep, call(_, _, -1, nout * 100));
-  EXPECT_CALL(larger_timestep, call(_, _, -1, nout / 2));
+  EXPECT_CALL(default_timestep, call(_, _, 0, nout));
+  EXPECT_CALL(smaller_timestep, call(_, _, 0, nout * 10));
+  EXPECT_CALL(even_smaller_timestep, call(_, _, 0, nout * 100));
+  EXPECT_CALL(larger_timestep, call(_, _, 0, nout / 2));
 
   // This call is *required* to resolve all the monitor timesteps
   solver.solve(nout, timestep);
 
   // Everything should trigger when the periods line up (here, at 10%
   // of total internal timesteps)
-  EXPECT_CALL(default_timestep, call(_, _, (nout / 10) - 1, nout));
-  EXPECT_CALL(smaller_timestep, call(_, _, ((nout * 10) / 10) - 1, nout * 10));
-  EXPECT_CALL(even_smaller_timestep, call(_, _, ((nout * 100) / 10) - 1, nout * 100));
-  EXPECT_CALL(larger_timestep, call(_, _, ((nout / 2) / 10) - 1, nout / 2));
-  solver.call_monitors(0.0, (nout_total / 10) - 1, nout_total);
+  EXPECT_CALL(default_timestep, call(_, _, (nout / 10), nout));
+  EXPECT_CALL(smaller_timestep, call(_, _, ((nout * 10) / 10), nout * 10));
+  EXPECT_CALL(even_smaller_timestep, call(_, _, ((nout * 100) / 10), nout * 100));
+  EXPECT_CALL(larger_timestep, call(_, _, ((nout / 2) / 10), nout / 2));
+  solver.call_monitors(0.0, (nout_total / 10), nout_total);
 
   // But on the next internal timestep, only the fastest monitor should trigger.
-  // `- 1 + 1` is for clarity that this is the _next_ timestep from previous call
-  EXPECT_CALL(even_smaller_timestep, call(_, _, ((nout * 100) / 10) - 1 + 1, nout * 100));
-  solver.call_monitors(0.0, (nout_total / 10) - 1 + 1, nout_total);
+  EXPECT_CALL(even_smaller_timestep, call(_, _, ((nout * 100) / 10) + 1, nout * 100));
+  solver.call_monitors(0.0, (nout_total / 10) + 1, nout_total);
 
   // It's not possible to add a new monitor with a timestep shorter
   // than the current internal timestep, once we've initialised the solver
@@ -843,15 +842,15 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   solver.addMonitor(&larger_postinit_timestep, Solver::BACK);
 
   // The *penultimate* timestep should only trigger the fastest monitor
-  EXPECT_CALL(even_smaller_timestep, call(_, _, (nout * 100) - 1 - 1, nout * 100));
-  solver.call_monitors(0.0, nout_total - 1 - 1, nout_total);
+  EXPECT_CALL(even_smaller_timestep, call(_, _, (nout * 100) - 1, nout * 100));
+  solver.call_monitors(0.0, nout_total - 1, nout_total);
 
   // Everything should trigger on the final timestep
-  EXPECT_CALL(default_timestep, call(_, _, (nout)-1, nout));
-  EXPECT_CALL(smaller_timestep, call(_, _, (nout * 10) - 1, nout * 10));
-  EXPECT_CALL(even_smaller_timestep, call(_, _, (nout * 100) - 1, nout * 100));
-  EXPECT_CALL(larger_timestep, call(_, _, (nout / 2) - 1, nout / 2));
-  EXPECT_CALL(larger_postinit_timestep, call(_, _, (nout / 4) - 1, nout / 4));
+  EXPECT_CALL(default_timestep, call(_, _, nout, nout));
+  EXPECT_CALL(smaller_timestep, call(_, _, (nout * 10), nout * 10));
+  EXPECT_CALL(even_smaller_timestep, call(_, _, (nout * 100), nout * 100));
+  EXPECT_CALL(larger_timestep, call(_, _, (nout / 2), nout / 2));
+  EXPECT_CALL(larger_postinit_timestep, call(_, _, (nout / 4), nout / 4));
 
   // The final timestep should also trigger all monitors to cleanup
   EXPECT_CALL(default_timestep, cleanup());
@@ -860,7 +859,7 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   EXPECT_CALL(larger_timestep, cleanup());
   EXPECT_CALL(larger_postinit_timestep, cleanup());
 
-  solver.call_monitors(0.0, nout_total - 1, nout_total);
+  solver.call_monitors(0.0, nout_total, nout_total);
 }
 
 TEST_F(SolverTest, RemoveMonitor) {
@@ -1067,23 +1066,23 @@ TEST_F(SolverTest, SolveFixDefaultTimestep) {
 
   Options::cleanup();
 
-  EXPECT_CALL(default_timestep, call(_, _, -1, nout));
-  EXPECT_CALL(smaller_timestep, call(_, _, -1, nout * 10));
-  EXPECT_CALL(even_smaller_timestep, call(_, _, -1, nout * 100));
-  EXPECT_CALL(larger_timestep, call(_, _, -1, nout / 2));
+  EXPECT_CALL(default_timestep, call(_, _, 0, nout));
+  EXPECT_CALL(smaller_timestep, call(_, _, 0, nout * 10));
+  EXPECT_CALL(even_smaller_timestep, call(_, _, 0, nout * 100));
+  EXPECT_CALL(larger_timestep, call(_, _, 0, nout / 2));
 
   solver.solve(nout, timestep);
 
-  EXPECT_CALL(default_timestep, call(_, _, nout - 1, nout));
-  EXPECT_CALL(smaller_timestep, call(_, _, (nout * 10) - 1, nout * 10));
-  EXPECT_CALL(even_smaller_timestep, call(_, _, (nout * 100) - 1, nout * 100));
-  EXPECT_CALL(larger_timestep, call(_, _, (nout / 2) - 1, nout / 2));
+  EXPECT_CALL(default_timestep, call(_, _, nout, nout));
+  EXPECT_CALL(smaller_timestep, call(_, _, (nout * 10), nout * 10));
+  EXPECT_CALL(even_smaller_timestep, call(_, _, (nout * 100), nout * 100));
+  EXPECT_CALL(larger_timestep, call(_, _, (nout / 2), nout / 2));
 
   EXPECT_CALL(default_timestep, cleanup());
   EXPECT_CALL(smaller_timestep, cleanup());
   EXPECT_CALL(even_smaller_timestep, cleanup());
   EXPECT_CALL(larger_timestep, cleanup());
-  solver.call_monitors(0.0, nout_total - 1, nout_total);
+  solver.call_monitors(0.0, nout_total, nout_total);
 }
 
 TEST_F(SolverTest, SolveFixDefaultTimestepBad) {
@@ -1120,15 +1119,15 @@ TEST_F(SolverTest, SolveFixDefaultTimestepSmaller) {
 
   Options::cleanup();
 
-  EXPECT_CALL(default_timestep, call(_, _, -1, nout));
-  EXPECT_CALL(larger_timestep, call(_, _, -1, nout / 10));
+  EXPECT_CALL(default_timestep, call(_, _, 0, nout));
+  EXPECT_CALL(larger_timestep, call(_, _, 0, nout / 10));
   solver.solve(nout, timestep);
 
-  EXPECT_CALL(default_timestep, call(_, _, nout - 1, nout));
-  EXPECT_CALL(larger_timestep, call(_, _, (nout / 10) - 1, nout / 10));
+  EXPECT_CALL(default_timestep, call(_, _, nout, nout));
+  EXPECT_CALL(larger_timestep, call(_, _, (nout / 10), nout / 10));
   EXPECT_CALL(default_timestep, cleanup());
   EXPECT_CALL(larger_timestep, cleanup());
-  solver.call_monitors(0.0, nout - 1, nout);
+  solver.call_monitors(0.0, nout, nout);
 }
 
 TEST_F(SolverTest, SolveFixDefaultTimestepLarger) {
@@ -1146,13 +1145,13 @@ TEST_F(SolverTest, SolveFixDefaultTimestepLarger) {
 
   Options::cleanup();
 
-  EXPECT_CALL(default_timestep, call(_, _, -1, nout));
-  EXPECT_CALL(smaller_timestep, call(_, _, -1, nout * 10));
+  EXPECT_CALL(default_timestep, call(_, _, 0, nout));
+  EXPECT_CALL(smaller_timestep, call(_, _, 0, nout * 10));
   solver.solve(nout, timestep);
 
-  EXPECT_CALL(default_timestep, call(_, _, nout - 1, nout));
-  EXPECT_CALL(smaller_timestep, call(_, _, (nout * 10) - 1, (nout * 10)));
+  EXPECT_CALL(default_timestep, call(_, _, nout, nout));
+  EXPECT_CALL(smaller_timestep, call(_, _, (nout * 10), (nout * 10)));
   EXPECT_CALL(default_timestep, cleanup());
   EXPECT_CALL(smaller_timestep, cleanup());
-  solver.call_monitors(0.0, (nout * 10) - 1, (nout * 10));
+  solver.call_monitors(0.0, (nout * 10), (nout * 10));
 }
