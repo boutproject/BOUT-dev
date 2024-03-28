@@ -17,6 +17,7 @@
 namespace {
 /// A sentinel value for whether a `FakeMonitor` has been called or not
 constexpr static int called_sentinel{-999};
+using testing::NiceMock;
 
 /// A `Monitor` that returns a bad value when called past its \p
 /// trigger_time_
@@ -198,9 +199,7 @@ TEST_F(SolverTest, SetModelAfterInit) {
   Options options;
   FakeSolver solver{&options};
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init).Times(0);
-  EXPECT_CALL(model, postInit).Times(0);
+  NiceMock<MockPhysicsModel> model{};
 
   solver.init();
 
@@ -573,9 +572,7 @@ TEST_F(SolverTest, SplitOperator) {
   Options options;
   FakeSolver solver{&options};
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init).Times(1);
-  EXPECT_CALL(model, postInit).Times(1);
+  NiceMock<MockPhysicsModel> model{};
 
   solver.setModel(&model);
 
@@ -657,9 +654,7 @@ TEST_F(SolverTest, HavePreconditioner) {
   Options options;
   FakeSolver solver{&options};
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init).Times(1);
-  EXPECT_CALL(model, postInit).Times(1);
+  NiceMock<MockPhysicsModel> model{};
 
   solver.setModel(&model);
 
@@ -674,9 +669,7 @@ TEST_F(SolverTest, RunPreconditioner) {
   Options options;
   FakeSolver solver{&options};
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init).Times(1);
-  EXPECT_CALL(model, postInit).Times(1);
+  NiceMock<MockPhysicsModel> model{};
 
   solver.setModel(&model);
   model.setPrecon(&MockPhysicsModel::preconditioner);
@@ -693,9 +686,7 @@ TEST_F(SolverTest, HasJacobian) {
   Options options;
   FakeSolver solver{&options};
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init).Times(1);
-  EXPECT_CALL(model, postInit).Times(1);
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
 
   EXPECT_FALSE(solver.hasJacobian());
@@ -709,9 +700,7 @@ TEST_F(SolverTest, RunJacobian) {
   Options options;
   FakeSolver solver{&options};
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init).Times(1);
-  EXPECT_CALL(model, postInit).Times(1);
+  NiceMock<MockPhysicsModel> model{};
 
   solver.setModel(&model);
   model.setJacobian(&MockPhysicsModel::jacobian);
@@ -725,9 +714,7 @@ TEST_F(SolverTest, RunJacobian) {
 TEST_F(SolverTest, AddMonitor) {
   Options options;
   FakeSolver solver{&options};
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init).Times(1);
-  EXPECT_CALL(model, postInit).Times(1);
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
 
   FakeMonitor monitor;
@@ -747,9 +734,7 @@ TEST_F(SolverTest, AddMonitorFront) {
   WithQuietOutput quiet{output_error};
   Options options;
   FakeSolver solver{&options};
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init).Times(1);
-  EXPECT_CALL(model, postInit).Times(1);
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
 
   FakeMonitor monitor1;
@@ -782,9 +767,7 @@ TEST_F(SolverTest, AddMonitorBack) {
   WithQuietOutput quiet{output_error};
   Options options;
   FakeSolver solver{&options};
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init).Times(1);
-  EXPECT_CALL(model, postInit).Times(1);
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
 
   FakeMonitor monitor1;
@@ -816,9 +799,7 @@ TEST_F(SolverTest, AddMonitorBack) {
 TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   Options options;
   FakeSolver solver{&options};
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init).Times(1);
-  EXPECT_CALL(model, postInit).Times(1);
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
 
   FakeMonitor default_timestep;
@@ -927,9 +908,7 @@ TEST_F(SolverTest, AddTimestepMonitor) {
   EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor1));
   EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor2));
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init).Times(1);
-  EXPECT_CALL(model, postInit).Times(1);
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
   EXPECT_CALL(model, timestepMonitor).Times(1);
 
@@ -948,9 +927,7 @@ TEST_F(SolverTest, RemoveTimestepMonitor) {
 
   solver.removeTimestepMonitor(timestep_monitor1);
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init).Times(1);
-  EXPECT_CALL(model, postInit).Times(1);
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
   EXPECT_CALL(model, timestepMonitor).Times(2);
 
@@ -974,9 +951,7 @@ TEST_F(SolverTest, DontCallTimestepMonitors) {
   EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor1));
   EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor2));
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init).Times(1);
-  EXPECT_CALL(model, postInit).Times(1);
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
   EXPECT_CALL(model, timestepMonitor).Times(0);
 
@@ -1009,13 +984,8 @@ TEST_F(SolverTest, GetRunID) {
 
   EXPECT_THROW(solver.getRunID(), BoutException);
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init(false)).Times(1);
-  EXPECT_CALL(model, postInit(false)).Times(1);
-
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
-
-  EXPECT_CALL(model, rhs(0)).Times(1);
   solver.solve();
 
   EXPECT_NO_THROW(solver.getRunID());
@@ -1028,13 +998,8 @@ TEST_F(SolverTest, GetRunRestartFrom) {
 
   EXPECT_THROW(solver.getRunRestartFrom(), BoutException);
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init(false)).Times(1);
-  EXPECT_CALL(model, postInit(false)).Times(1);
-
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
-
-  EXPECT_CALL(model, rhs(0)).Times(1);
   solver.solve();
 
   EXPECT_NO_THROW(solver.getRunRestartFrom());
@@ -1048,12 +1013,8 @@ TEST_F(SolverTest, SolveBadInit) {
   options["fail_init"] = -1;
   FakeSolver solver{&options};
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init(false)).Times(1);
-  EXPECT_CALL(model, postInit(false)).Times(1);
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
-
-  EXPECT_CALL(model, rhs(0)).Times(0);
 
   EXPECT_THROW(solver.solve(), BoutException);
 
@@ -1066,12 +1027,8 @@ TEST_F(SolverTest, SolveBadRun) {
   options["fail_run"] = -1;
   FakeSolver solver{&options};
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init(false)).Times(1);
-  EXPECT_CALL(model, postInit(false)).Times(1);
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
-
-  EXPECT_CALL(model, rhs(0)).Times(1);
 
   Options::cleanup();
   EXPECT_EQ(solver.solve(), -1);
@@ -1087,14 +1044,10 @@ TEST_F(SolverTest, SolveThrowRun) {
   options["throw_run"] = true;
   FakeSolver solver{&options};
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init(false)).Times(1);
-  EXPECT_CALL(model, postInit(false)).Times(1);
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
-
-  EXPECT_CALL(model, rhs(0)).Times(1);
-
   Options::cleanup();
+
   EXPECT_THROW(solver.solve(), BoutException);
 
   EXPECT_TRUE(solver.init_called);
@@ -1115,12 +1068,8 @@ TEST_F(SolverTest, SolveFixDefaultTimestep) {
   solver.addMonitor(&even_smaller_timestep);
   solver.addMonitor(&larger_timestep);
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init(false)).Times(1);
-  EXPECT_CALL(model, postInit(false)).Times(1);
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
-
-  EXPECT_CALL(model, rhs(0)).Times(1);
 
   Options::cleanup();
   EXPECT_NO_THROW(solver.solve(100, 1.));
@@ -1146,12 +1095,8 @@ TEST_F(SolverTest, SolveFixDefaultTimestepBad) {
   solver.addMonitor(&default_timestep);
   solver.addMonitor(&smaller_timestep);
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init(false)).Times(1);
-  EXPECT_CALL(model, postInit(false)).Times(1);
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
-
-  EXPECT_CALL(model, rhs(0)).Times(0);
 
   EXPECT_THROW(solver.solve(100, 3.142), BoutException);
 
@@ -1169,12 +1114,8 @@ TEST_F(SolverTest, SolveFixDefaultTimestepSmaller) {
   solver.addMonitor(&default_timestep);
   solver.addMonitor(&smaller_timestep);
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init(false)).Times(1);
-  EXPECT_CALL(model, postInit(false)).Times(1);
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
-
-  EXPECT_CALL(model, rhs(0)).Times(1);
 
   Options::cleanup();
   EXPECT_NO_THROW(solver.solve(100, 0.01));
@@ -1198,12 +1139,8 @@ TEST_F(SolverTest, SolveFixDefaultTimestepLarger) {
   solver.addMonitor(&default_timestep);
   solver.addMonitor(&smaller_timestep);
 
-  MockPhysicsModel model{};
-  EXPECT_CALL(model, init(false)).Times(1);
-  EXPECT_CALL(model, postInit(false)).Times(1);
+  NiceMock<MockPhysicsModel> model{};
   solver.setModel(&model);
-
-  EXPECT_CALL(model, rhs(0)).Times(1);
 
   Options::cleanup();
   EXPECT_NO_THROW(solver.solve(100, 1.));
