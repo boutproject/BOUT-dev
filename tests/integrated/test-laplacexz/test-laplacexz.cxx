@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
   auto inv = LaplaceXZ::create(bout::globals::mesh);
 
   auto coord = bout::globals::mesh->getCoordinates();
-  const auto g13 = 1.8; // test off-diagonal components with nonzero value
+  const auto g13 = 0.8; // test off-diagonal components with nonzero value
   coord->setContravariantMetricTensor(ContravariantMetricTensor(
       coord->g11(), coord->g22(), coord->g33(), coord->g12(), g13, coord->g23()));
 
