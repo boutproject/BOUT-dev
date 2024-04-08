@@ -57,15 +57,17 @@ class Field2D;
 BOUT_ENUM_CLASS(positivity_constraint, none, positive, non_negative, negative,
                 non_positive);
 
-static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
-static int cvode_bbd_rhs(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du,
+namespace {
+int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
+int cvode_bbd_rhs(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du,
                          void* user_data);
 
-static int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zvec,
+int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zvec,
                      BoutReal gamma, BoutReal delta, int lr, void* user_data);
 
-static int cvode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
+int cvode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
                      void* user_data, N_Vector tmp);
+}
 
 CvodeSolver::CvodeSolver(Options* opts)
     : Solver(opts), diagnose((*options)["diagnose"]
@@ -649,7 +651,8 @@ void CvodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jv
  * CVODE RHS functions
  **************************************************************************/
 
-static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
+namespace {
+int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 
   BoutReal* udata = N_VGetArrayPointer(u);
   BoutReal* dudata = N_VGetArrayPointer(du);
@@ -666,13 +669,13 @@ static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 }
 
 /// RHS function for BBD preconditioner
-static int cvode_bbd_rhs(sunindextype UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
+int cvode_bbd_rhs(sunindextype UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
                          void* user_data) {
   return cvode_rhs(t, u, du, user_data);
 }
 
 /// Preconditioner function
-static int cvode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec,
+int cvode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec,
                      N_Vector zvec, BoutReal gamma, BoutReal delta, int UNUSED(lr),
                      void* user_data) {
   BoutReal* udata = N_VGetArrayPointer(yy);
@@ -688,7 +691,7 @@ static int cvode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec
 }
 
 /// Jacobian-vector multiplication function
-static int cvode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector UNUSED(fy),
+int cvode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector UNUSED(fy),
                      void* user_data, N_Vector UNUSED(tmp)) {
   BoutReal* ydata = N_VGetArrayPointer(y);   ///< System state
   BoutReal* vdata = N_VGetArrayPointer(v);   ///< Input vector
@@ -699,6 +702,7 @@ static int cvode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector U
   s->jac(t, ydata, vdata, Jvdata);
 
   return 0;
+}
 }
 
 /**************************************************************************

@@ -47,12 +47,15 @@
 
 #include <numeric>
 
-static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data);
-static int ida_bbd_res(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du,
+namespace {
+int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data);
+int ida_bbd_res(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du,
                        N_Vector rr, void* user_data);
 
-static int ida_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rr, N_Vector rvec,
+int ida_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rr, N_Vector rvec,
                    N_Vector zvec, BoutReal cj, BoutReal delta, void* user_data);
+}
+
 
 IdaSolver::IdaSolver(Options* opts)
     : Solver(opts),
@@ -333,7 +336,8 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal* udata,
  * IDA res function
  **************************************************************************/
 
-static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data) {
+namespace {
+int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data) {
   BoutReal* udata = N_VGetArrayPointer(u);
   BoutReal* dudata = N_VGetArrayPointer(du);
   BoutReal* rdata = N_VGetArrayPointer(rr);
@@ -347,13 +351,13 @@ static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_d
 }
 
 /// Residual function for BBD preconditioner
-static int ida_bbd_res(sunindextype UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
+int ida_bbd_res(sunindextype UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
                        N_Vector rr, void* user_data) {
   return idares(t, u, du, rr, user_data);
 }
 
 // Preconditioner function
-static int ida_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector UNUSED(rr),
+int ida_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector UNUSED(rr),
                    N_Vector rvec, N_Vector zvec, BoutReal cj, BoutReal delta,
                    void* user_data) {
   BoutReal* udata = N_VGetArrayPointer(yy);
@@ -366,6 +370,7 @@ static int ida_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector UNUSED
   s->pre(t, cj, delta, udata, rdata, zdata);
 
   return 0;
+}
 }
 
 #endif
