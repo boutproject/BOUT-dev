@@ -50,12 +50,12 @@
 // NOLINTBEGIN(readability-identifier-length)
 namespace {
 int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data);
-int ida_bbd_res(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du,
-                       N_Vector rr, void* user_data);
+int ida_bbd_res(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du, N_Vector rr,
+                void* user_data);
 
 int ida_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rr, N_Vector rvec,
-                   N_Vector zvec, BoutReal cj, BoutReal delta, void* user_data);
-}
+            N_Vector zvec, BoutReal cj, BoutReal delta, void* user_data);
+} // namespace
 // NOLINTEND(readability-identifier-length)
 
 IdaSolver::IdaSolver(Options* opts)
@@ -356,14 +356,13 @@ int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data) {
 
 /// Residual function for BBD preconditioner
 int ida_bbd_res(sunindextype UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
-                       N_Vector rr, void* user_data) {
+                N_Vector rr, void* user_data) {
   return idares(t, u, du, rr, user_data);
 }
 
 // Preconditioner function
 int ida_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector UNUSED(rr),
-                   N_Vector rvec, N_Vector zvec, BoutReal cj, BoutReal delta,
-                   void* user_data) {
+            N_Vector rvec, N_Vector zvec, BoutReal cj, BoutReal delta, void* user_data) {
   BoutReal* udata = N_VGetArrayPointer(yy);
   BoutReal* rdata = N_VGetArrayPointer(rvec);
   BoutReal* zdata = N_VGetArrayPointer(zvec);
@@ -375,7 +374,7 @@ int ida_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector UNUSED(rr),
 
   return 0;
 }
-}
+} // namespace
 // NOLINTEND(readability-identifier-length)
 
 #endif

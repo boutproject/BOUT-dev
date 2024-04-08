@@ -58,13 +58,13 @@ int arkode_rhs_implicit(BoutReal t, N_Vector u, N_Vector du, void* user_data);
 int arkode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
 
 int arkode_bbd_rhs(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du,
-                          void* user_data);
+                   void* user_data);
 int arkode_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zvec,
-                      BoutReal gamma, BoutReal delta, int lr, void* user_data);
+               BoutReal gamma, BoutReal delta, int lr, void* user_data);
 
 int arkode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
-                      void* user_data, N_Vector tmp);
-}
+               void* user_data, N_Vector tmp);
+} // namespace
 // NOLINTEND(readability-identifier-length)
 
 ArkodeSolver::ArkodeSolver(Options* opts)
@@ -736,15 +736,14 @@ int arkode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 }
 
 /// RHS function for BBD preconditioner
-int arkode_bbd_rhs(sunindextype UNUSED(Nlocal), BoutReal t, N_Vector u,
-                          N_Vector du, void* user_data) {
+int arkode_bbd_rhs(sunindextype UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
+                   void* user_data) {
   return arkode_rhs_implicit(t, u, du, user_data);
 }
 
 /// Preconditioner function
-int arkode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec,
-                      N_Vector zvec, BoutReal gamma, BoutReal delta, int UNUSED(lr),
-                      void* user_data) {
+int arkode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec, N_Vector zvec,
+               BoutReal gamma, BoutReal delta, int UNUSED(lr), void* user_data) {
   BoutReal* udata = N_VGetArrayPointer(yy);
   BoutReal* rdata = N_VGetArrayPointer(rvec);
   BoutReal* zdata = N_VGetArrayPointer(zvec);
@@ -758,8 +757,8 @@ int arkode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec,
 }
 
 /// Jacobian-vector multiplication function
-int arkode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y,
-                      N_Vector UNUSED(fy), void* user_data, N_Vector UNUSED(tmp)) {
+int arkode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector UNUSED(fy),
+               void* user_data, N_Vector UNUSED(tmp)) {
   BoutReal* ydata = N_VGetArrayPointer(y);   ///< System state
   BoutReal* vdata = N_VGetArrayPointer(v);   ///< Input vector
   BoutReal* Jvdata = N_VGetArrayPointer(Jv); ///< Jacobian*vector output
@@ -770,7 +769,7 @@ int arkode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y,
 
   return 0;
 }
-}
+} // namespace
 // NOLINTEND(readability-identifier-length)
 
 /**************************************************************************
