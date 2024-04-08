@@ -292,9 +292,9 @@ void IdaSolver::res(BoutReal t, BoutReal* udata, BoutReal* dudata, BoutReal* rda
   save_derivs(rdata);
 
   // If a differential equation, subtract dudata
-  const auto N = N_VGetLocalLength_Parallel(id);
+  const auto length = N_VGetLocalLength_Parallel(id);
   const BoutReal* idd = N_VGetArrayPointer(id);
-  for (int i = 0; i < N; i++) {
+  for (int i = 0; i < length; i++) {
     if (idd[i] > 0.5) { // 1 -> differential, 0 -> algebraic
       rdata[i] -= dudata[i];
     }
@@ -313,8 +313,8 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal* udata,
 
   if (!hasPreconditioner()) {
     // Identity (but should never happen)
-    const int N = N_VGetLocalLength_Parallel(id);
-    std::copy(rvec, rvec + N, zvec);
+    const auto length = N_VGetLocalLength_Parallel(id);
+    std::copy(rvec, rvec + length, zvec);
     return;
   }
 

@@ -600,11 +600,11 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
 
   BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
-  int N = N_VGetLocalLength_Parallel(uvec);
+  const auto length = N_VGetLocalLength_Parallel(uvec);
 
   if (!hasPreconditioner()) {
     // Identity (but should never happen)
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < length; i++) {
       zvec[i] = rvec[i];
     }
     return;
