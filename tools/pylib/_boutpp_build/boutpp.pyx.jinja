@@ -583,9 +583,9 @@ cdef class {{ field.field_type }}:
 
 {% endfor %}
     def __dealloc__(self):
-        self.__boutpp_dealloc()
+        self._boutpp_dealloc()
 
-    def __boutpp_dealloc(self):
+    def _boutpp_dealloc(self):
         if self.isSelfOwned and self.cobj != NULL:
             del self.cobj
             self.cobj = NULL
@@ -645,9 +645,9 @@ cdef class {{ vec }}:
 
 
     def __dealloc__(self):
-        self.__boutpp_dealloc()
+        self._boutpp_dealloc()
 
-    def __boutpp_dealloc(self):
+    def _boutpp_dealloc(self):
         if self.isSelfOwned and self.cobj != NULL:
             del self.cobj
             self.cobj=NULL
@@ -742,9 +742,9 @@ cdef class Mesh:
         return msh
 
     def __dealloc__(self):
-        self.__boutpp_dealloc()
+        self._boutpp_dealloc()
 
-    def __boutpp_dealloc(self):
+    def _boutpp_dealloc(self):
         if self.cobj and self.isSelfOwned:
             del self.cobj
             self.cobj = NULL
@@ -845,9 +845,9 @@ cdef class Coordinates:
 
 
     def __dealloc__(self):
-        self.__boutpp_dealloc()
+        self._boutpp_dealloc()
 
-    def __boutpp_dealloc(self):
+    def _boutpp_dealloc(self):
         if self.cobj and self.isSelfOwned:
             del self.cobj
             self.cobj = NULL
@@ -926,9 +926,9 @@ cdef class FieldFactory:
         checkInit()
         cobj=< c.FieldFactory*>0
     def __dealloc__(self):
-        self.__boutpp_dealloc()
+        self._boutpp_dealloc()
 
-    def __boutpp_dealloc(self):
+    def _boutpp_dealloc(self):
         if self.cobj != NULL:
             del self.cobj
             self.cobj = NULL
@@ -960,9 +960,9 @@ cdef class PythonModelCallback:
         self.cobj = new c.PythonModelCallback(callback, <void*>method)
 
     def __dealloc__(self):
-        self.__boutpp_dealloc()
+        self._boutpp_dealloc()
 
-    def __boutpp_dealloc(self):
+    def _boutpp_dealloc(self):
         if self.cobj:
             del self.cobj
             self.cobj = NULL
@@ -1032,12 +1032,12 @@ cdef class PhysicsModelBase(object):
         self.cmodel.set_init_func(self.callbackinit)
 
     def __dealloc__(self):
-        if hasattr(self, "__boutpp_dealloc"):
-            self.__boutpp_dealloc()
+        if hasattr(self, "_boutpp_dealloc"):
+            self._boutpp_dealloc()
         else:
-            PhysicsModelBase.__boutpp_dealloc(self)
+            PhysicsModelBase._boutpp_dealloc(self)
 
-    def __boutpp_dealloc(self):
+    def _boutpp_dealloc(self):
         if self.cmodel != <c.PythonModel *> 0:
             self.cmodel.free()
             del self.cmodel
@@ -1118,8 +1118,8 @@ class PhysicsModel(PhysicsModelBase):
     def __dealloc__(self):
         super(PhysicsModel,self).__dealloc__()
 
-    def __boutpp_dealloc(self):
-        super(PhysicsModel,self).__boutpp_dealloc()
+    def _boutpp_dealloc(self):
+        super(PhysicsModel,self)._boutpp_dealloc()
 
 cdef extern from "bout/bout.hxx":
     int BoutInitialise(int&, char **&) except +raise_bout_py_error
@@ -1199,13 +1199,14 @@ def finalise():
                   PythonModelCallback)
     for obj in objects:
         if isinstance(obj, ourClasses):
-            if hasattr(obj, "__boutpp_dealloc"):
-                obj.__boutpp_dealloc()
+            if hasattr(obj, "_boutpp_dealloc"):
+                obj._boutpp_dealloc()
             else:
                 for ourClass in ourClasses:
                     if isinstance(obj, ourClass):
-                         ourClass.__boutpp_dealloc(obj)
-                         break
+                        if hasattr(ourClass, "_boutpp_dealloc"):
+                            ourClass._boutpp_dealloc(obj)
+                            break
     del objects
     # Actually finalise
     if wasInit:
@@ -1710,10 +1711,19 @@ cdef class Options:
             opt.get(key, ret_str, default_)
             return ret_str.decode()
 
-    def __dealloc__(self):
-        self.__boutpp_dealloc()
+    def setConditionallyUsed(self):
+        """Set the attribute "conditionally used" to be true for \p options
+        and all its children/sections, causing `Options::getUnused` to
+        assume those options have been used. This is useful to ignore
+        options when checking for typos etc.
+        """
+        cdef c.Options* opt = self.cobj
+        opt.setConditionallyUsed()
 
-    def __boutpp_dealloc(self):
+    def __dealloc__(self):
+        self._boutpp_dealloc()
+
+    def _boutpp_dealloc(self):
         if self.isSelfOwned and self.cobj != NULL:
             del self.cobj
             self.cobj = NULL
