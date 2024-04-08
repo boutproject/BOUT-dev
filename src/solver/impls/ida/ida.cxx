@@ -118,10 +118,12 @@ int IdaSolver::init() {
   if (uvec == nullptr) {
     throw BoutException("SUNDIALS memory allocation failed\n");
   }
-  if ((duvec = N_VClone(uvec)) == nullptr) {
+  duvec = N_VClone(uvec);
+  if (duvec == nullptr) {
     throw BoutException("SUNDIALS memory allocation failed\n");
   }
-  if ((id = N_VClone(uvec)) == nullptr) {
+  id = N_VClone(uvec);
+  if (id == nullptr) {
     throw BoutException("SUNDIALS memory allocation failed\n");
   }
 
