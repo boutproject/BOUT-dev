@@ -51,17 +51,19 @@
 
 class Field2D;
 
-static int arkode_rhs_explicit(BoutReal t, N_Vector u, N_Vector du, void* user_data);
-static int arkode_rhs_implicit(BoutReal t, N_Vector u, N_Vector du, void* user_data);
-static int arkode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
+namespace {
+int arkode_rhs_explicit(BoutReal t, N_Vector u, N_Vector du, void* user_data);
+int arkode_rhs_implicit(BoutReal t, N_Vector u, N_Vector du, void* user_data);
+int arkode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
 
-static int arkode_bbd_rhs(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du,
+int arkode_bbd_rhs(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du,
                           void* user_data);
-static int arkode_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zvec,
+int arkode_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zvec,
                       BoutReal gamma, BoutReal delta, int lr, void* user_data);
 
-static int arkode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
+int arkode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
                       void* user_data, N_Vector tmp);
+}
 
 ArkodeSolver::ArkodeSolver(Options* opts)
     : Solver(opts), diagnose((*options)["diagnose"]
@@ -681,7 +683,8 @@ void ArkodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* J
  * ARKODE explicit RHS functions
  **************************************************************************/
 
-static int arkode_rhs_explicit(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
+namespace {
+int arkode_rhs_explicit(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 
   BoutReal* udata = N_VGetArrayPointer(u);
   BoutReal* dudata = N_VGetArrayPointer(du);
@@ -697,7 +700,7 @@ static int arkode_rhs_explicit(BoutReal t, N_Vector u, N_Vector du, void* user_d
   return 0;
 }
 
-static int arkode_rhs_implicit(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
+int arkode_rhs_implicit(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 
   BoutReal* udata = N_VGetArrayPointer(u);
   BoutReal* dudata = N_VGetArrayPointer(du);
@@ -713,7 +716,7 @@ static int arkode_rhs_implicit(BoutReal t, N_Vector u, N_Vector du, void* user_d
   return 0;
 }
 
-static int arkode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
+int arkode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 
   BoutReal* udata = N_VGetArrayPointer(u);
   BoutReal* dudata = N_VGetArrayPointer(du);
@@ -730,13 +733,13 @@ static int arkode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 }
 
 /// RHS function for BBD preconditioner
-static int arkode_bbd_rhs(sunindextype UNUSED(Nlocal), BoutReal t, N_Vector u,
+int arkode_bbd_rhs(sunindextype UNUSED(Nlocal), BoutReal t, N_Vector u,
                           N_Vector du, void* user_data) {
   return arkode_rhs_implicit(t, u, du, user_data);
 }
 
 /// Preconditioner function
-static int arkode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec,
+int arkode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec,
                       N_Vector zvec, BoutReal gamma, BoutReal delta, int UNUSED(lr),
                       void* user_data) {
   BoutReal* udata = N_VGetArrayPointer(yy);
@@ -752,7 +755,7 @@ static int arkode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rve
 }
 
 /// Jacobian-vector multiplication function
-static int arkode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y,
+int arkode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y,
                       N_Vector UNUSED(fy), void* user_data, N_Vector UNUSED(tmp)) {
   BoutReal* ydata = N_VGetArrayPointer(y);   ///< System state
   BoutReal* vdata = N_VGetArrayPointer(v);   ///< Input vector
@@ -763,6 +766,7 @@ static int arkode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y,
   s->jac(t, ydata, vdata, Jvdata);
 
   return 0;
+}
 }
 
 /**************************************************************************
