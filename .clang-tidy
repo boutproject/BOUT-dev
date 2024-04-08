@@ -2,7 +2,6 @@
 Checks:          'clang-diagnostic-*,clang-analyzer-*,-*,performance-*,readability-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,mpi-*,misc-*,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers,-misc-non-private-member-variables-in-classes,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-cppcoreguidelines-pro-type-vararg,-clang-analyzer-optin.mpi*,-bugprone-exception-escape,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-readability-function-cognitive-complexity'
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
-AnalyzeTemporaryDtors: false
 FormatStyle:     file
 CheckOptions:
   - key:             performance-unnecessary-copy-initialization.ExcludedContainerTypes
