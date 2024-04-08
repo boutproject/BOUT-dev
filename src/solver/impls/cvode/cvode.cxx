@@ -226,7 +226,7 @@ int CvodeSolver::init() {
     }
   }
 
-  if (CVodeSetStabLimDet(cvode_mem, stablimdet) != CV_SUCCESS) {
+  if (CVodeSetStabLimDet(cvode_mem, static_cast<int>(stablimdet)) != CV_SUCCESS) {
     throw BoutException("CVodeSetStabLimDet failed\n");
   }
 
@@ -318,7 +318,7 @@ int CvodeSolver::init() {
       throw BoutException("SUNNonlinSol_FixedPoint failed\n");
     }
 
-    if (CVodeSetNonlinearSolver(cvode_mem, nonlinear_solver)) {
+    if (CVodeSetNonlinearSolver(cvode_mem, nonlinear_solver) != 0) {
       throw BoutException("CVodeSetNonlinearSolver failed\n");
     }
   } else {
