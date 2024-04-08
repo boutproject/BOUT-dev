@@ -8,6 +8,8 @@
 #ifndef BOUT_SUNDIALS_BACKPORTS_H
 #define BOUT_SUNDIALS_BACKPORTS_H
 
+#include "bout/bout_types.hxx"
+
 #include <type_traits>
 
 #include <nvector/nvector_parallel.h>
@@ -22,8 +24,6 @@
 #if SUNDIALS_VERSION_MAJOR >= 6
 #include <sundials/sundials_context.hpp>
 #endif
-
-#include "bout/unused.hxx"
 
 #if SUNDIALS_VERSION_MAJOR < 6
 using sundials_real_type = realtype;
