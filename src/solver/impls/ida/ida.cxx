@@ -47,6 +47,7 @@
 
 #include <numeric>
 
+// NOLINTBEGIN(readability-identifier-length)
 namespace {
 int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data);
 int ida_bbd_res(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du,
@@ -55,7 +56,7 @@ int ida_bbd_res(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du,
 int ida_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rr, N_Vector rvec,
                    N_Vector zvec, BoutReal cj, BoutReal delta, void* user_data);
 }
-
+// NOLINTEND(readability-identifier-length)
 
 IdaSolver::IdaSolver(Options* opts)
     : Solver(opts),
@@ -336,6 +337,7 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal* udata,
  * IDA res function
  **************************************************************************/
 
+// NOLINTBEGIN(readability-identifier-length)
 namespace {
 int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data) {
   BoutReal* udata = N_VGetArrayPointer(u);
@@ -372,5 +374,6 @@ int ida_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector UNUSED(rr),
   return 0;
 }
 }
+// NOLINTEND(readability-identifier-length)
 
 #endif

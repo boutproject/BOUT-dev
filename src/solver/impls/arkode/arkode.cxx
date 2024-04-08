@@ -51,6 +51,7 @@
 
 class Field2D;
 
+// NOLINTBEGIN(readability-identifier-length)
 namespace {
 int arkode_rhs_explicit(BoutReal t, N_Vector u, N_Vector du, void* user_data);
 int arkode_rhs_implicit(BoutReal t, N_Vector u, N_Vector du, void* user_data);
@@ -64,6 +65,7 @@ int arkode_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zve
 int arkode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
                       void* user_data, N_Vector tmp);
 }
+// NOLINTEND(readability-identifier-length)
 
 ArkodeSolver::ArkodeSolver(Options* opts)
     : Solver(opts), diagnose((*options)["diagnose"]
@@ -683,6 +685,7 @@ void ArkodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* J
  * ARKODE explicit RHS functions
  **************************************************************************/
 
+// NOLINTBEGIN(readability-identifier-length)
 namespace {
 int arkode_rhs_explicit(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 
@@ -768,6 +771,7 @@ int arkode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y,
   return 0;
 }
 }
+// NOLINTEND(readability-identifier-length)
 
 /**************************************************************************
  * vector abstol functions
