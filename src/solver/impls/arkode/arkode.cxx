@@ -413,9 +413,9 @@ int ArkodeSolver::init() {
         //   int MXSUB = mesh->xend - mesh->xstart + 1;
         //   int band_width_default = n3Dvars()*(MXSUB+2);
         const int band_width_default = std::accumulate(
-            begin(f3d), end(f3d), 0, [](int a, const VarStr<Field3D>& fvar) {
+            begin(f3d), end(f3d), 0, [](int acc, const VarStr<Field3D>& fvar) {
               Mesh* localmesh = fvar.var->getMesh();
-              return a + localmesh->xend - localmesh->xstart + 3;
+              return acc + localmesh->xend - localmesh->xstart + 3;
             });
 
         const auto mudq = (*options)["mudq"]
@@ -637,8 +637,8 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* uda
 
   if (!hasPreconditioner()) {
     // Identity (but should never happen)
-    const int N = N_VGetLocalLength_Parallel(uvec);
-    std::copy(rvec, rvec + N, zvec);
+    const auto length = N_VGetLocalLength_Parallel(uvec);
+    std::copy(rvec, rvec + length, zvec);
     return;
   }
 
