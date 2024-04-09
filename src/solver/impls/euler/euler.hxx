@@ -64,6 +64,8 @@ private:
   /// Take a single step to calculate f1
   void take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
                  Array<BoutReal>& result);
+
+  BoutReal dump_at_time{-1.};
 };
 
 #endif // BOUT_KARNIADAKIS_SOLVER_H

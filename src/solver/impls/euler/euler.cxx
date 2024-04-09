@@ -20,7 +20,10 @@ EulerSolver::EulerSolver(Options* options)
                      .withDefault(2.)),
       timestep((*options)["timestep"]
                    .doc("Internal timestep (defaults to output timestep)")
-                   .withDefault(getOutputTimestep())) {}
+                   .withDefault(getOutputTimestep())),
+      dump_at_time((*options)["dump_at_time"]
+                       .doc("Dump debug info about the simulation")
+                       .withDefault(-1)) {}
 
 void EulerSolver::setMaxTimestep(BoutReal dt) {
   if (dt >= cfl_factor * timestep) {
@@ -141,7 +144,38 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& star
                             Array<BoutReal>& result) {
 
   load_vars(std::begin(start));
+  const bool dump_now = dump_at_time > 0 && std::abs(dump_at_time - curtime) < dt;
+  std::unique_ptr<Options> debug_ptr;
+  if (dump_now) {
+    debug_ptr = std::make_unique<Options>();
+    Options& debug = *debug_ptr;
+    for (auto& f : f3d) {
+      f.F_var->enableTracking(fmt::format("ddt_{:s}", f.name), debug);
+      setName(*f.var, f.name);
+    }
+  }
+
   run_rhs(curtime);
+  if (dump_now) {
+    Options& debug = *debug_ptr;
+    Mesh* mesh;
+    for (auto& f : f3d) {
+      debug[f.name] = *f.var;
+      mesh = f.var->getMesh();
+    }
+
+    if (mesh != nullptr) {
+      mesh->outputVars(debug);
+      debug["BOUT_VERSION"].force(bout::version::as_double);
+    }
+
+    const std::string outname = fmt::format(
+        "{}/BOUT.debug.{}.nc",
+        Options::root()["datadir"].withDefault<std::string>("data"), BoutComm::rank());
+
+    bout::OptionsIO::create(outname)->write(debug);
+    MPI_Barrier(BoutComm::get());
+  }
   save_derivs(std::begin(result));
 
   BOUT_OMP_PERF(parallel for)

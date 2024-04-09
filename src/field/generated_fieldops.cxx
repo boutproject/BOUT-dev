@@ -29,6 +29,9 @@ Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
     result[index] = lhs[index] * rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -61,9 +64,15 @@ Field3D& Field3D::operator*=(const Field3D& rhs) {
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
 
+    track(rhs, "operator*=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} *= {:s}", this->name, rhs.name);
+#endif
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator*=");
     (*this) = (*this) * rhs;
   }
   return *this;
@@ -92,6 +101,9 @@ Field3D operator/(const Field3D& lhs, const Field3D& rhs) {
     result[index] = lhs[index] / rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -124,9 +136,15 @@ Field3D& Field3D::operator/=(const Field3D& rhs) {
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
 
+    track(rhs, "operator/=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} /= {:s}", this->name, rhs.name);
+#endif
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator/=");
     (*this) = (*this) / rhs;
   }
   return *this;
@@ -155,6 +173,9 @@ Field3D operator+(const Field3D& lhs, const Field3D& rhs) {
     result[index] = lhs[index] + rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -187,9 +208,15 @@ Field3D& Field3D::operator+=(const Field3D& rhs) {
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
 
+    track(rhs, "operator+=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} += {:s}", this->name, rhs.name);
+#endif
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator+=");
     (*this) = (*this) + rhs;
   }
   return *this;
@@ -218,6 +245,9 @@ Field3D operator-(const Field3D& lhs, const Field3D& rhs) {
     result[index] = lhs[index] - rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -250,9 +280,15 @@ Field3D& Field3D::operator-=(const Field3D& rhs) {
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
 
+    track(rhs, "operator-=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} -= {:s}", this->name, rhs.name);
+#endif
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator-=");
     (*this) = (*this) - rhs;
   }
   return *this;
@@ -277,6 +313,9 @@ Field3D operator*(const Field3D& lhs, const Field2D& rhs) {
     }
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -312,9 +351,15 @@ Field3D& Field3D::operator*=(const Field2D& rhs) {
       }
     }
 
+    track(rhs, "operator*=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} *= {:s}", this->name, rhs.name);
+#endif
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator*=");
     (*this) = (*this) * rhs;
   }
   return *this;
@@ -340,6 +385,9 @@ Field3D operator/(const Field3D& lhs, const Field2D& rhs) {
     }
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -376,9 +424,15 @@ Field3D& Field3D::operator/=(const Field2D& rhs) {
       }
     }
 
+    track(rhs, "operator/=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} /= {:s}", this->name, rhs.name);
+#endif
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator/=");
     (*this) = (*this) / rhs;
   }
   return *this;
@@ -403,6 +457,9 @@ Field3D operator+(const Field3D& lhs, const Field2D& rhs) {
     }
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -438,9 +495,15 @@ Field3D& Field3D::operator+=(const Field2D& rhs) {
       }
     }
 
+    track(rhs, "operator+=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} += {:s}", this->name, rhs.name);
+#endif
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator+=");
     (*this) = (*this) + rhs;
   }
   return *this;
@@ -465,6 +528,9 @@ Field3D operator-(const Field3D& lhs, const Field2D& rhs) {
     }
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -500,9 +566,15 @@ Field3D& Field3D::operator-=(const Field2D& rhs) {
       }
     }
 
+    track(rhs, "operator-=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} -= {:s}", this->name, rhs.name);
+#endif
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator-=");
     (*this) = (*this) - rhs;
   }
   return *this;
@@ -524,6 +596,9 @@ FieldPerp operator*(const Field3D& lhs, const FieldPerp& rhs) {
     result[index] = lhs[base_ind] * rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -544,6 +619,9 @@ FieldPerp operator/(const Field3D& lhs, const FieldPerp& rhs) {
     result[index] = lhs[base_ind] / rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -564,6 +642,9 @@ FieldPerp operator+(const Field3D& lhs, const FieldPerp& rhs) {
     result[index] = lhs[base_ind] + rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -584,6 +665,9 @@ FieldPerp operator-(const Field3D& lhs, const FieldPerp& rhs) {
     result[index] = lhs[base_ind] - rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -601,6 +685,9 @@ Field3D operator*(const Field3D& lhs, const BoutReal rhs) {
     result[index] = lhs[index] * rhs;
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, "BR");
+#endif
   checkData(result);
   return result;
 }
@@ -630,9 +717,15 @@ Field3D& Field3D::operator*=(const BoutReal rhs) {
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
 
+    track(rhs, "operator*=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} *= {:s}", this->name, "BR");
+#endif
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator*=");
     (*this) = (*this) * rhs;
   }
   return *this;
@@ -652,6 +745,9 @@ Field3D operator/(const Field3D& lhs, const BoutReal rhs) {
     result[index] = lhs[index] * tmp;
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, "BR");
+#endif
   checkData(result);
   return result;
 }
@@ -682,9 +778,15 @@ Field3D& Field3D::operator/=(const BoutReal rhs) {
     const auto tmp = 1.0 / rhs;
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= tmp; }
 
+    track(rhs, "operator/=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} /= {:s}", this->name, "BR");
+#endif
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator/=");
     (*this) = (*this) / rhs;
   }
   return *this;
@@ -703,6 +805,9 @@ Field3D operator+(const Field3D& lhs, const BoutReal rhs) {
     result[index] = lhs[index] + rhs;
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, "BR");
+#endif
   checkData(result);
   return result;
 }
@@ -732,9 +837,15 @@ Field3D& Field3D::operator+=(const BoutReal rhs) {
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
 
+    track(rhs, "operator+=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} += {:s}", this->name, "BR");
+#endif
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator+=");
     (*this) = (*this) + rhs;
   }
   return *this;
@@ -753,6 +864,9 @@ Field3D operator-(const Field3D& lhs, const BoutReal rhs) {
     result[index] = lhs[index] - rhs;
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, "BR");
+#endif
   checkData(result);
   return result;
 }
@@ -782,9 +896,15 @@ Field3D& Field3D::operator-=(const BoutReal rhs) {
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
 
+    track(rhs, "operator-=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} -= {:s}", this->name, "BR");
+#endif
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator-=");
     (*this) = (*this) - rhs;
   }
   return *this;
@@ -809,6 +929,9 @@ Field3D operator*(const Field2D& lhs, const Field3D& rhs) {
     }
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -832,6 +955,9 @@ Field3D operator/(const Field2D& lhs, const Field3D& rhs) {
     }
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -855,6 +981,9 @@ Field3D operator+(const Field2D& lhs, const Field3D& rhs) {
     }
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -878,6 +1007,9 @@ Field3D operator-(const Field2D& lhs, const Field3D& rhs) {
     }
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -894,6 +1026,9 @@ Field2D operator*(const Field2D& lhs, const Field2D& rhs) {
     result[index] = lhs[index] * rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -909,6 +1044,10 @@ Field2D& Field2D::operator*=(const Field2D& rhs) {
     checkData(rhs);
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} *= {:s}", this->name, rhs.name);
+#endif
 
     checkData(*this);
 
@@ -930,6 +1069,9 @@ Field2D operator/(const Field2D& lhs, const Field2D& rhs) {
     result[index] = lhs[index] / rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -945,6 +1087,10 @@ Field2D& Field2D::operator/=(const Field2D& rhs) {
     checkData(rhs);
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} /= {:s}", this->name, rhs.name);
+#endif
 
     checkData(*this);
 
@@ -966,6 +1112,9 @@ Field2D operator+(const Field2D& lhs, const Field2D& rhs) {
     result[index] = lhs[index] + rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -981,6 +1130,10 @@ Field2D& Field2D::operator+=(const Field2D& rhs) {
     checkData(rhs);
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} += {:s}", this->name, rhs.name);
+#endif
 
     checkData(*this);
 
@@ -1002,6 +1155,9 @@ Field2D operator-(const Field2D& lhs, const Field2D& rhs) {
     result[index] = lhs[index] - rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1017,6 +1173,10 @@ Field2D& Field2D::operator-=(const Field2D& rhs) {
     checkData(rhs);
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} -= {:s}", this->name, rhs.name);
+#endif
 
     checkData(*this);
 
@@ -1042,6 +1202,9 @@ FieldPerp operator*(const Field2D& lhs, const FieldPerp& rhs) {
     result[index] = lhs[base_ind] * rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1062,6 +1225,9 @@ FieldPerp operator/(const Field2D& lhs, const FieldPerp& rhs) {
     result[index] = lhs[base_ind] / rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1082,6 +1248,9 @@ FieldPerp operator+(const Field2D& lhs, const FieldPerp& rhs) {
     result[index] = lhs[base_ind] + rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1102,6 +1271,9 @@ FieldPerp operator-(const Field2D& lhs, const FieldPerp& rhs) {
     result[index] = lhs[base_ind] - rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1117,6 +1289,9 @@ Field2D operator*(const Field2D& lhs, const BoutReal rhs) {
     result[index] = lhs[index] * rhs;
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, "BR");
+#endif
   checkData(result);
   return result;
 }
@@ -1131,6 +1306,10 @@ Field2D& Field2D::operator*=(const BoutReal rhs) {
     checkData(rhs);
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} *= {:s}", this->name, "BR");
+#endif
 
     checkData(*this);
 
@@ -1152,6 +1331,9 @@ Field2D operator/(const Field2D& lhs, const BoutReal rhs) {
     result[index] = lhs[index] * tmp;
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, "BR");
+#endif
   checkData(result);
   return result;
 }
@@ -1167,6 +1349,10 @@ Field2D& Field2D::operator/=(const BoutReal rhs) {
 
     const auto tmp = 1.0 / rhs;
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= tmp; }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} /= {:s}", this->name, "BR");
+#endif
 
     checkData(*this);
 
@@ -1187,6 +1373,9 @@ Field2D operator+(const Field2D& lhs, const BoutReal rhs) {
     result[index] = lhs[index] + rhs;
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, "BR");
+#endif
   checkData(result);
   return result;
 }
@@ -1201,6 +1390,10 @@ Field2D& Field2D::operator+=(const BoutReal rhs) {
     checkData(rhs);
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} += {:s}", this->name, "BR");
+#endif
 
     checkData(*this);
 
@@ -1221,6 +1414,9 @@ Field2D operator-(const Field2D& lhs, const BoutReal rhs) {
     result[index] = lhs[index] - rhs;
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, "BR");
+#endif
   checkData(result);
   return result;
 }
@@ -1235,6 +1431,10 @@ Field2D& Field2D::operator-=(const BoutReal rhs) {
     checkData(rhs);
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} -= {:s}", this->name, "BR");
+#endif
 
     checkData(*this);
 
@@ -1260,6 +1460,9 @@ FieldPerp operator*(const FieldPerp& lhs, const Field3D& rhs) {
     result[index] = lhs[index] * rhs[base_ind];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1281,6 +1484,10 @@ FieldPerp& FieldPerp::operator*=(const Field3D& rhs) {
       const auto base_ind = localmesh->indPerpto3D(index, yind);
       (*this)[index] *= rhs[base_ind];
     }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} *= {:s}", this->name, rhs.name);
+#endif
 
     checkData(*this);
 
@@ -1306,6 +1513,9 @@ FieldPerp operator/(const FieldPerp& lhs, const Field3D& rhs) {
     result[index] = lhs[index] / rhs[base_ind];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1327,6 +1537,10 @@ FieldPerp& FieldPerp::operator/=(const Field3D& rhs) {
       const auto base_ind = localmesh->indPerpto3D(index, yind);
       (*this)[index] /= rhs[base_ind];
     }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} /= {:s}", this->name, rhs.name);
+#endif
 
     checkData(*this);
 
@@ -1352,6 +1566,9 @@ FieldPerp operator+(const FieldPerp& lhs, const Field3D& rhs) {
     result[index] = lhs[index] + rhs[base_ind];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1373,6 +1590,10 @@ FieldPerp& FieldPerp::operator+=(const Field3D& rhs) {
       const auto base_ind = localmesh->indPerpto3D(index, yind);
       (*this)[index] += rhs[base_ind];
     }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} += {:s}", this->name, rhs.name);
+#endif
 
     checkData(*this);
 
@@ -1398,6 +1619,9 @@ FieldPerp operator-(const FieldPerp& lhs, const Field3D& rhs) {
     result[index] = lhs[index] - rhs[base_ind];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1419,6 +1643,10 @@ FieldPerp& FieldPerp::operator-=(const Field3D& rhs) {
       const auto base_ind = localmesh->indPerpto3D(index, yind);
       (*this)[index] -= rhs[base_ind];
     }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} -= {:s}", this->name, rhs.name);
+#endif
 
     checkData(*this);
 
@@ -1444,6 +1672,9 @@ FieldPerp operator*(const FieldPerp& lhs, const Field2D& rhs) {
     result[index] = lhs[index] * rhs[base_ind];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1465,6 +1696,10 @@ FieldPerp& FieldPerp::operator*=(const Field2D& rhs) {
       const auto base_ind = localmesh->indPerpto3D(index, yind);
       (*this)[index] *= rhs[base_ind];
     }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} *= {:s}", this->name, rhs.name);
+#endif
 
     checkData(*this);
 
@@ -1490,6 +1725,9 @@ FieldPerp operator/(const FieldPerp& lhs, const Field2D& rhs) {
     result[index] = lhs[index] / rhs[base_ind];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1511,6 +1749,10 @@ FieldPerp& FieldPerp::operator/=(const Field2D& rhs) {
       const auto base_ind = localmesh->indPerpto3D(index, yind);
       (*this)[index] /= rhs[base_ind];
     }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} /= {:s}", this->name, rhs.name);
+#endif
 
     checkData(*this);
 
@@ -1536,6 +1778,9 @@ FieldPerp operator+(const FieldPerp& lhs, const Field2D& rhs) {
     result[index] = lhs[index] + rhs[base_ind];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1557,6 +1802,10 @@ FieldPerp& FieldPerp::operator+=(const Field2D& rhs) {
       const auto base_ind = localmesh->indPerpto3D(index, yind);
       (*this)[index] += rhs[base_ind];
     }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} += {:s}", this->name, rhs.name);
+#endif
 
     checkData(*this);
 
@@ -1582,6 +1831,9 @@ FieldPerp operator-(const FieldPerp& lhs, const Field2D& rhs) {
     result[index] = lhs[index] - rhs[base_ind];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1604,6 +1856,10 @@ FieldPerp& FieldPerp::operator-=(const Field2D& rhs) {
       (*this)[index] -= rhs[base_ind];
     }
 
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} -= {:s}", this->name, rhs.name);
+#endif
+
     checkData(*this);
 
   } else {
@@ -1624,6 +1880,9 @@ FieldPerp operator*(const FieldPerp& lhs, const FieldPerp& rhs) {
     result[index] = lhs[index] * rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1639,6 +1898,10 @@ FieldPerp& FieldPerp::operator*=(const FieldPerp& rhs) {
     checkData(rhs);
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} *= {:s}", this->name, rhs.name);
+#endif
 
     checkData(*this);
 
@@ -1660,6 +1923,9 @@ FieldPerp operator/(const FieldPerp& lhs, const FieldPerp& rhs) {
     result[index] = lhs[index] / rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1675,6 +1941,10 @@ FieldPerp& FieldPerp::operator/=(const FieldPerp& rhs) {
     checkData(rhs);
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} /= {:s}", this->name, rhs.name);
+#endif
 
     checkData(*this);
 
@@ -1696,6 +1966,9 @@ FieldPerp operator+(const FieldPerp& lhs, const FieldPerp& rhs) {
     result[index] = lhs[index] + rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1711,6 +1984,10 @@ FieldPerp& FieldPerp::operator+=(const FieldPerp& rhs) {
     checkData(rhs);
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} += {:s}", this->name, rhs.name);
+#endif
 
     checkData(*this);
 
@@ -1732,6 +2009,9 @@ FieldPerp operator-(const FieldPerp& lhs, const FieldPerp& rhs) {
     result[index] = lhs[index] - rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1747,6 +2027,10 @@ FieldPerp& FieldPerp::operator-=(const FieldPerp& rhs) {
     checkData(rhs);
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} -= {:s}", this->name, rhs.name);
+#endif
 
     checkData(*this);
 
@@ -1767,6 +2051,9 @@ FieldPerp operator*(const FieldPerp& lhs, const BoutReal rhs) {
     result[index] = lhs[index] * rhs;
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, "BR");
+#endif
   checkData(result);
   return result;
 }
@@ -1781,6 +2068,10 @@ FieldPerp& FieldPerp::operator*=(const BoutReal rhs) {
     checkData(rhs);
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} *= {:s}", this->name, "BR");
+#endif
 
     checkData(*this);
 
@@ -1802,6 +2093,9 @@ FieldPerp operator/(const FieldPerp& lhs, const BoutReal rhs) {
     result[index] = lhs[index] * tmp;
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, "BR");
+#endif
   checkData(result);
   return result;
 }
@@ -1816,6 +2110,10 @@ FieldPerp& FieldPerp::operator/=(const BoutReal rhs) {
     checkData(rhs);
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs; }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} /= {:s}", this->name, "BR");
+#endif
 
     checkData(*this);
 
@@ -1836,6 +2134,9 @@ FieldPerp operator+(const FieldPerp& lhs, const BoutReal rhs) {
     result[index] = lhs[index] + rhs;
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, "BR");
+#endif
   checkData(result);
   return result;
 }
@@ -1850,6 +2151,10 @@ FieldPerp& FieldPerp::operator+=(const BoutReal rhs) {
     checkData(rhs);
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} += {:s}", this->name, "BR");
+#endif
 
     checkData(*this);
 
@@ -1870,6 +2175,9 @@ FieldPerp operator-(const FieldPerp& lhs, const BoutReal rhs) {
     result[index] = lhs[index] - rhs;
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, "BR");
+#endif
   checkData(result);
   return result;
 }
@@ -1884,6 +2192,10 @@ FieldPerp& FieldPerp::operator-=(const BoutReal rhs) {
     checkData(rhs);
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
+
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} -= {:s}", this->name, "BR");
+#endif
 
     checkData(*this);
 
@@ -1906,6 +2218,9 @@ Field3D operator*(const BoutReal lhs, const Field3D& rhs) {
     result[index] = lhs * rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", "BR", rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1923,6 +2238,9 @@ Field3D operator/(const BoutReal lhs, const Field3D& rhs) {
     result[index] = lhs / rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", "BR", rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1940,6 +2258,9 @@ Field3D operator+(const BoutReal lhs, const Field3D& rhs) {
     result[index] = lhs + rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", "BR", rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1957,6 +2278,9 @@ Field3D operator-(const BoutReal lhs, const Field3D& rhs) {
     result[index] = lhs - rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", "BR", rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1972,6 +2296,9 @@ Field2D operator*(const BoutReal lhs, const Field2D& rhs) {
     result[index] = lhs * rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", "BR", rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -1987,6 +2314,9 @@ Field2D operator/(const BoutReal lhs, const Field2D& rhs) {
     result[index] = lhs / rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", "BR", rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -2002,6 +2332,9 @@ Field2D operator+(const BoutReal lhs, const Field2D& rhs) {
     result[index] = lhs + rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", "BR", rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -2017,6 +2350,9 @@ Field2D operator-(const BoutReal lhs, const Field2D& rhs) {
     result[index] = lhs - rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", "BR", rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -2032,6 +2368,9 @@ FieldPerp operator*(const BoutReal lhs, const FieldPerp& rhs) {
     result[index] = lhs * rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", "BR", rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -2047,6 +2386,9 @@ FieldPerp operator/(const BoutReal lhs, const FieldPerp& rhs) {
     result[index] = lhs / rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", "BR", rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -2062,6 +2404,9 @@ FieldPerp operator+(const BoutReal lhs, const FieldPerp& rhs) {
     result[index] = lhs + rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", "BR", rhs.name);
+#endif
   checkData(result);
   return result;
 }
@@ -2077,6 +2422,9 @@ FieldPerp operator-(const BoutReal lhs, const FieldPerp& rhs) {
     result[index] = lhs - rhs[index];
   }
 
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", "BR", rhs.name);
+#endif
   checkData(result);
   return result;
 }
