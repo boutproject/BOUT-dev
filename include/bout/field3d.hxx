@@ -300,7 +300,7 @@ public:
   Field3D& enableTracking(const std::string& name, Options& tracking);
 
   /// Disable tracking
-  Field3D& disableTracking(){
+  Field3D& disableTracking() {
     tracking = nullptr;
     tracking_state = 0;
     return *this;
