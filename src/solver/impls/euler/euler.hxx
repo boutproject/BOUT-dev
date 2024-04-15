@@ -66,6 +66,7 @@ private:
                  Array<BoutReal>& result);
 
   BoutReal dump_at_time{-1.};
+  int debug_counter{0};
 };
 
 #endif // BOUT_KARNIADAKIS_SOLVER_H

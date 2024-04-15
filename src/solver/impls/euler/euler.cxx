@@ -144,7 +144,8 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& star
                             Array<BoutReal>& result) {
 
   load_vars(std::begin(start));
-  const bool dump_now = dump_at_time > 0 && std::abs(dump_at_time - curtime) < dt;
+  const bool dump_now =
+      (dump_at_time >= 0 && std::abs(dump_at_time - curtime) < dt) || dump_at_time < -3;
   std::unique_ptr<Options> debug_ptr;
   if (dump_now) {
     debug_ptr = std::make_unique<Options>();
@@ -152,6 +153,8 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& star
     for (auto& f : f3d) {
       f.F_var->enableTracking(fmt::format("ddt_{:s}", f.name), debug);
       setName(*f.var, f.name);
+      debug[fmt::format("pre_{:s}", f.name)] = *f.var;
+      f.var->allocate();
     }
   }
 
@@ -169,9 +172,12 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& star
       debug["BOUT_VERSION"].force(bout::version::as_double);
     }
 
-    const std::string outname = fmt::format(
-        "{}/BOUT.debug.{}.nc",
-        Options::root()["datadir"].withDefault<std::string>("data"), BoutComm::rank());
+    const std::string outnumber =
+        dump_at_time < -3 ? fmt::format(".{}", debug_counter++) : "";
+    const std::string outname =
+        fmt::format("{}/BOUT.debug{}.{}.nc",
+                    Options::root()["datadir"].withDefault<std::string>("data"),
+                    outnumber, BoutComm::rank());
 
     bout::OptionsIO::create(outname)->write(debug);
     MPI_Barrier(BoutComm::get());
