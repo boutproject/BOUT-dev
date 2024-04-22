@@ -111,7 +111,7 @@ public:
   static constexpr auto default_type =
 #if BOUT_HAS_NETCDF
       "netcdf";
-#elif BOUT_HAS_ADIOS
+#elif BOUT_HAS_ADIOS2
       "adios";
 #else
       "invalid";

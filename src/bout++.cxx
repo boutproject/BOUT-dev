@@ -59,7 +59,7 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/bout.hxx"
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
-#if BOUT_HAS_ADIOS
+#if BOUT_HAS_ADIOS2
 #include "bout/adios_object.hxx"
 #endif
 
@@ -165,7 +165,7 @@ int BoutInitialise(int& argc, char**& argv) {
 
     savePIDtoFile(args.data_dir, MYPE);
 
-#if BOUT_HAS_ADIOS
+#if BOUT_HAS_ADIOS2
     bout::ADIOSInit(BoutComm::get());
 #endif
 
@@ -572,7 +572,7 @@ void printCompileTimeOptions() {
   constexpr auto netcdf_flavour =
       has_netcdf ? (has_legacy_netcdf ? " (Legacy)" : " (NetCDF4)") : "";
   output_info.write(_("\tNetCDF support {}{}\n"), is_enabled(has_netcdf), netcdf_flavour);
-  output_info.write(_("\tADIOS support {}\n"), is_enabled(has_adios));
+  output_info.write(_("\tADIOS2 support {}\n"), is_enabled(has_adios2));
   output_info.write(_("\tPETSc support {}\n"), is_enabled(has_petsc));
   output_info.write(_("\tPretty function name support {}\n"),
                     is_enabled(has_pretty_function));
@@ -795,7 +795,7 @@ int BoutFinalise(bool write_settings) {
   // Call HYPER_Finalize if not already called
   bout::HypreLib::cleanup();
 
-#if BOUT_HAS_ADIOS
+#if BOUT_HAS_ADIOS2
   bout::ADIOSFinalize();
 #endif
 
