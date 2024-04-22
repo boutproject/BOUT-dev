@@ -698,7 +698,7 @@ void addBuildFlagsToOptions(Options& options) {
   options["has_gettext"].force(bout::build::has_gettext);
   options["has_lapack"].force(bout::build::has_lapack);
   options["has_netcdf"].force(bout::build::has_netcdf);
-  options["has_adios"].force(bout::build::has_adios);
+  options["has_adios2"].force(bout::build::has_adios2);
   options["has_petsc"].force(bout::build::has_petsc);
   options["has_hypre"].force(bout::build::has_hypre);
   options["has_umpire"].force(bout::build::has_umpire);
