@@ -14,7 +14,7 @@
 
 #include "bout/build_config.hxx"
 
-#if BOUT_HAS_ADIOS
+#if BOUT_HAS_ADIOS2
 
 #include <adios2.h>
 #include <memory>
@@ -79,5 +79,5 @@ void ADIOSSetParameters(const std::string& input, const char delimKeyValue,
 
 } // namespace bout
 
-#endif //BOUT_HAS_ADIOS
+#endif //BOUT_HAS_ADIOS2
 #endif //ADIOS_OBJECT_HXX
