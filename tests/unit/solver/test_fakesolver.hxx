@@ -72,7 +72,6 @@ public:
   using Solver::MonitorInfo;
   using Solver::runJacobian;
   using Solver::runPreconditioner;
-  Monitor& getSolverMonitor() { return this->solver_monitor; }
 };
 
 // Equality operator for tests

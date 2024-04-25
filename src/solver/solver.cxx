@@ -99,9 +99,7 @@ Solver::Solver(Options* opts)
               .doc("Output time step size. Overrides global 'timestep' setting.")
               .withDefault(Options::root()["timestep"]
                                .doc("Output time step size")
-                               .withDefault(1.0))) {
-  addMonitor(&solver_monitor, MonitorPosition::FRONT);
-}
+                               .withDefault(1.0))) {}
 
 /**************************************************************************
  * Add physics models
