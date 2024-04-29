@@ -48,8 +48,8 @@
 #include <string>
 
 FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& options,
-               int offset_, BoundaryRegionPar* inner_boundary,
-               BoundaryRegionPar* outer_boundary, bool zperiodic)
+               int offset_, const std::shared_ptr<BoundaryRegionPar>& inner_boundary,
+               const std::shared_ptr<BoundaryRegionPar>& outer_boundary, bool zperiodic)
     : map_mesh(mesh), offset(offset_),
       region_no_boundary(map_mesh.getRegion("RGN_NOBNDRY")),
       corner_boundary_mask(map_mesh) {
@@ -222,9 +222,12 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
     const BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
     const BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
 
-    // Negative xt_prime means we've hit the inner boundary, otherwise
-    // the outer boundary
-    auto* boundary = (xt_prime[i] < map_mesh.xstart) ? inner_boundary : outer_boundary;
+    // Negative xt_prime means we've hit the inner boundary, otherwise the
+    // outer boundary. However, if any of the surrounding points are negative,
+    // that also means inner. So to differentiate between inner and outer we
+    // need at least 2 points in the domain.
+    ASSERT2(map_mesh.xend - map_mesh.xstart >= 2);
+    auto boundary = (xt_prime[i] < map_mesh.xstart) ? inner_boundary : outer_boundary;
     boundary->add_point(x, y, z, x + dx, y + 0.5 * offset,
                         z + dz, // Intersection point in local index space
                         0.5,    // Distance to intersection

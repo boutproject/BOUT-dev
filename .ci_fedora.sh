@@ -50,7 +50,7 @@ then
     cp -a /tmp/BOUT-dev /home/test/
     chown -R test /home/test
     chmod u+rwX /home/test -R
-    sudo -u test ${0/\/tmp/\/home\/test} $mpi
+    su - test -c "${0/\/tmp/\/home\/test} $mpi"
 ## If we are called as normal user, run test
 else
     . /etc/profile.d/modules.sh

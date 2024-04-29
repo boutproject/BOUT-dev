@@ -45,6 +45,7 @@ class Mesh;
 
 #include "bout/boundary_region.hxx"
 class BoundaryRegionPar;
+enum class BndryLoc;
 
 #include "bout/sys/expressionparser.hxx"
 
