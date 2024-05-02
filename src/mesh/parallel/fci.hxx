@@ -44,8 +44,8 @@ class FCIMap {
 public:
   FCIMap() = delete;
   FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options, int offset,
-         BoundaryRegionPar* inner_boundary, BoundaryRegionPar* outer_boundary,
-         bool zperiodic);
+         const std::shared_ptr<BoundaryRegionPar>& inner_boundary,
+         const std::shared_ptr<BoundaryRegionPar>& outer_boundary, bool zperiodic);
 
   // The mesh this map was created on
   Mesh& map_mesh;
@@ -79,19 +79,19 @@ public:
     FCITransform::checkInputGrid();
 
     auto forward_boundary_xin =
-        new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD_XIN, +1, &mesh);
-    auto backward_boundary_xin =
-        new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD_XIN, -1, &mesh);
+        std::make_shared<BoundaryRegionPar>("FCI_forward", BNDRY_PAR_FWD_XIN, +1, &mesh);
+    auto backward_boundary_xin = std::make_shared<BoundaryRegionPar>(
+        "FCI_backward", BNDRY_PAR_BKWD_XIN, -1, &mesh);
     auto forward_boundary_xout =
-        new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD_XOUT, +1, &mesh);
-    auto backward_boundary_xout =
-        new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD_XOUT, -1, &mesh);
+        std::make_shared<BoundaryRegionPar>("FCI_forward", BNDRY_PAR_FWD_XOUT, +1, &mesh);
+    auto backward_boundary_xout = std::make_shared<BoundaryRegionPar>(
+        "FCI_backward", BNDRY_PAR_BKWD_XOUT, -1, &mesh);
 
     // Add the boundary region to the mesh's vector of parallel boundaries
-    mesh.addBoundaryPar(forward_boundary_xin);
-    mesh.addBoundaryPar(backward_boundary_xin);
-    mesh.addBoundaryPar(forward_boundary_xout);
-    mesh.addBoundaryPar(backward_boundary_xout);
+    mesh.addBoundaryPar(forward_boundary_xin, BoundaryParType::xin_fwd);
+    mesh.addBoundaryPar(backward_boundary_xin, BoundaryParType::xin_bwd);
+    mesh.addBoundaryPar(forward_boundary_xout, BoundaryParType::xout_fwd);
+    mesh.addBoundaryPar(backward_boundary_xout, BoundaryParType::xout_bwd);
 
     field_line_maps.reserve(mesh.ystart * 2);
     for (int offset = 1; offset < mesh.ystart + 1; ++offset) {
