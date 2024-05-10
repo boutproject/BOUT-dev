@@ -5,6 +5,7 @@
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include <bout/bout_types.hxx>
+#include <functional>
 
 class MetricTensor {
 
