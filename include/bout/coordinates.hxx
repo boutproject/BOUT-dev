@@ -140,6 +140,9 @@ public:
                                 bool recalculate_staggered = true,
                                 bool force_interpolate_from_centre = false);
 
+  void setMetricTensor(ContravariantMetricTensor contravariant_metric_tensor,
+                                      CovariantMetricTensor covariant_metric_tensor);
+
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
   const FieldMetric& J() const;
 

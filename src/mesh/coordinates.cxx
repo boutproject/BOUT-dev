@@ -476,7 +476,7 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(Options* mesh_options,
 
   setParallelTransform(mesh_options);
 
-  setContravariantMetricTensor(coords_in->getContravariantMetricTensor());
+  setMetricTensor(coords_in->getContravariantMetricTensor(), coords_in->getCovariantMetricTensor());
 
   std::function<const FieldMetric(const FieldMetric)> const
       interpolateAndExtrapolate_function = [this](const FieldMetric& component) {
@@ -1557,6 +1557,12 @@ void Coordinates::setCovariantMetricTensor(const CovariantMetricTensor& metric_t
   covariantMetricTensor.setMetricTensor(metric_tensor);
   contravariantMetricTensor.setMetricTensor(covariantMetricTensor.inverse(region));
   recalculateAndReset(recalculate_staggered, force_interpolate_from_centre);
+}
+
+void Coordinates::setMetricTensor(ContravariantMetricTensor contravariant_metric_tensor,
+                                  CovariantMetricTensor covariant_metric_tensor) {
+    contravariantMetricTensor.setMetricTensor(contravariant_metric_tensor);
+    covariantMetricTensor.setMetricTensor(covariant_metric_tensor);
 }
 
 void Coordinates::applyToContravariantMetricTensor(
