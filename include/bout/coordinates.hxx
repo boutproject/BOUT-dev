@@ -309,13 +309,14 @@ public:
                            bool force_interpolate_from_centre);
 
   FieldMetric recalculateJacobian() const;
+  
+  void communicate(const Field2D& f) const;
+#if BOUT_USE_METRIC_3D
+  // In this case we also need to be able to call with a Field3D
+  void communicate(const Field3D& f) const;
+#endif
 
-  template <typename T, typename... Ts>
-  void communicate(T& t, Ts... ts) const;
-
-  template <typename T, typename... Ts>
-  void communicate(const T& t,  const Ts... ts) const;
-
+  
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;

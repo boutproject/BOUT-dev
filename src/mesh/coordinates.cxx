@@ -65,27 +65,25 @@ std::string getLocationSuffix(CELL_LOC location) {
 
 } // anonymous namespace
 
-template <typename T, typename... Ts>
-// Use sendY()/sendX() and wait() instead of Mesh::communicate() to ensure we
-// don't try to calculate parallel slices as Coordinates are not constructed yet
-void Coordinates::communicate(T& t, Ts... ts) const {
-  FieldGroup g(t, ts...);
-  auto h = t.getMesh()->sendY(g);
-  t.getMesh()->wait(h);
-  h = t.getMesh()->sendX(g);
-  t.getMesh()->wait(h);
-}
 
-template <typename T, typename... Ts>
 // Use sendY()/sendX() and wait() instead of Mesh::communicate() to ensure we
 // don't try to calculate parallel slices as Coordinates are not constructed yet
-void Coordinates::communicate(const T& t, const Ts... ts) const {
-    FieldGroup g(t, ts...);
-    auto h = t.getMesh()->sendY(g);
-    t.getMesh()->wait(h);
-    h = t.getMesh()->sendX(g);
-    t.getMesh()->wait(h);
+void Coordinates::communicate(const Field2D& f) const {
+    FieldGroup g(f);
+    auto h = f.getMesh()->sendY(g);
+    f.getMesh()->wait(h);
+    h = f.getMesh()->sendX(g);
+    f.getMesh()->wait(h);
 }
+#if BOUT_USE_METRIC_3D
+void Coordinates::communicate(const Field3D& f) const {
+    FieldGroup g(f);
+    auto h = f.getMesh()->sendY(g);
+    f.getMesh()->wait(h);
+    h = f.getMesh()->sendX(g);
+    f.getMesh()->wait(h);
+}
+#endif
 
 /// Interpolate a Field2D to a new CELL_LOC with interp_to.
 /// Communicates to set internal guard cells.
