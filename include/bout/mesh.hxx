@@ -285,6 +285,11 @@ public:
     FieldGroup g(ts...);
     communicate(g);
   }
+  template <typename... Ts>
+  void communicate(const Ts&... ts) {
+      FieldGroup g(ts...);
+      communicate(g);
+  }
 
   template <typename... Ts>
   void communicateXZ(Ts&... ts) {
