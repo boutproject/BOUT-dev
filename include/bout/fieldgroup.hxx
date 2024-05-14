@@ -65,10 +65,6 @@ public:
   explicit FieldGroup(Ts&... ts) {
     add(ts...);
   }
-  template <typename... Ts>
-  explicit FieldGroup(const Ts&... ts) {
-    add(ts...);
-  }
 
   /// Copy contents of another FieldGroup \p other into this group.
   void add(const FieldGroup& other) {
