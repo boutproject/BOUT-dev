@@ -65,6 +65,10 @@ public:
   explicit FieldGroup(Ts&... ts) {
     add(ts...);
   }
+  template <typename... Ts>
+  explicit FieldGroup(const Ts&... ts) {
+    add(ts...);
+  }
 
   /// Copy contents of another FieldGroup \p other into this group.
   void add(const FieldGroup& other) {
@@ -131,10 +135,22 @@ public:
     add(ts...); // Add the rest
   }
 
+  template <typename... T>
+  void add(const Field3D& t) {
+      auto temp = t; // Copy value to remove const qualifier (because std::vector can't take cv-qualified items)
+      add(temp);     // Add using functions above
+  }
+  
   template <typename... Ts>
   void add(Field3D& t, Ts&... ts) {
     add(t);     // Add the first using functions above
     add(ts...); // Add the rest
+  }
+  template <typename... Ts>
+  void add(const Field3D& t, const Ts&... ts) {
+      auto temp = t; // Copy value to remove const qualifier (because std::vector can't take cv-qualified items)
+      add(temp);     // Add the first using functions above
+      add(ts...); // Add the rest
   }
 
   template <typename... Ts>
@@ -142,11 +158,23 @@ public:
     add(t);     // Add the first using functions above
     add(ts...); // Add the rest
   }
+  template <typename... Ts>
+  void add(const Vector3D& t, const Ts&... ts) {
+      auto temp = t; // Copy value to remove const qualifier (because std::vector can't take cv-qualified items)
+      add(temp);     // Add the first using functions above
+      add(ts...); // Add the rest
+  }
 
   template <typename... Ts>
   void add(Vector2D& t, Ts&... ts) {
     add(t);     // Add the first using functions above
     add(ts...); // Add the rest
+  }
+  template <typename... Ts>
+  void add(const Vector2D& t, const Ts&... ts) {
+      auto temp = t; // Copy value to remove const qualifier (because std::vector can't take cv-qualified items)
+      add(temp);     // Add the first using functions above
+      add(ts...); // Add the rest
   }
 
   /// Return number of fields
