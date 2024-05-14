@@ -140,8 +140,8 @@ public:
                                 bool recalculate_staggered = true,
                                 bool force_interpolate_from_centre = false);
 
-  void setMetricTensor(ContravariantMetricTensor contravariant_metric_tensor,
-                                      CovariantMetricTensor covariant_metric_tensor);
+  void setMetricTensor(const ContravariantMetricTensor& contravariant_metric_tensor,
+                                      const CovariantMetricTensor& covariant_metric_tensor);
 
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
   const FieldMetric& J() const;
@@ -310,13 +310,13 @@ public:
 
   FieldMetric recalculateJacobian() const;
   
-  void communicate(const Field2D& f) const;
+  static void communicate(const Field2D& f) ;
 #if BOUT_USE_METRIC_3D
   // In this case we also need to be able to call with a Field3D
-  void communicate(const Field3D& f) const;
+  static void communicate(const Field3D& f) ;
 #endif
 
-  
+
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
@@ -407,17 +407,17 @@ private:
 
   void fixZShiftGuards(Field2D& zShift) const;
 
-  Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
+  static Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
                                     bool extrapolate_x, bool extrapolate_y,
                                     bool no_extra_interpolate,
                                     ParallelTransform* UNUSED_pt,
-                                    const std::string& region) const;
+                                    const std::string& region) ;
 
 #if BOUT_USE_METRIC_3D
-  Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
+  static Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
                                     bool extrapolate_x, bool extrapolate_y,
                                     bool no_extra_interpolate,
-                                    ParallelTransform* pt_) const;
+                                    ParallelTransform* pt_) ;
 
 #endif // BOUT_USE_METRIC_3D
 };

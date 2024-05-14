@@ -68,17 +68,17 @@ std::string getLocationSuffix(CELL_LOC location) {
 
 // Use sendY()/sendX() and wait() instead of Mesh::communicate() to ensure we
 // don't try to calculate parallel slices as Coordinates are not constructed yet
-void Coordinates::communicate(const Field2D& f) const {
+void Coordinates::communicate(const Field2D& f) {
     FieldGroup g(f);
-    auto h = f.getMesh()->sendY(g);
+    auto* h = f.getMesh()->sendY(g);
     f.getMesh()->wait(h);
     h = f.getMesh()->sendX(g);
     f.getMesh()->wait(h);
 }
 #if BOUT_USE_METRIC_3D
-void Coordinates::communicate(const Field3D& f) const {
+void Coordinates::communicate(const Field3D& f) {
     FieldGroup g(f);
-    auto h = f.getMesh()->sendY(g);
+    auto* h = f.getMesh()->sendY(g);
     f.getMesh()->wait(h);
     h = f.getMesh()->sendX(g);
     f.getMesh()->wait(h);
@@ -93,7 +93,7 @@ void Coordinates::communicate(const Field3D& f) const {
 Field2D Coordinates::interpolateAndExtrapolate(
     const Field2D& f, CELL_LOC location, bool extrapolate_x, bool extrapolate_y,
     bool no_extra_interpolate, ParallelTransform* UNUSED(pt) = nullptr,
-    const std::string& region = "RGN_NOBNDRY") const {
+    const std::string& region = "RGN_NOBNDRY") {
 
   Mesh* localmesh = f.getMesh();
   Field2D result = interp_to(f, location, region);
@@ -212,7 +212,7 @@ Field2D Coordinates::interpolateAndExtrapolate(
 Field3D Coordinates::interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
                                                bool extrapolate_x, bool extrapolate_y,
                                                bool no_extra_interpolate,
-                                               ParallelTransform* pt_) const {
+                                               ParallelTransform* pt_) {
 
   Mesh* localmesh = f_.getMesh();
   Field3D result;
@@ -237,7 +237,7 @@ Field3D Coordinates::interpolateAndExtrapolate(const Field3D& f_, CELL_LOC locat
   if (location == CELL_YLOW and f.getLocation() != CELL_YLOW) {
     auto f_aligned = pt_f->toFieldAligned(f, "RGN_NOX");
     result = interp_to(f_aligned, location, "RGN_NOBNDRY");
-    ParallelTransform* pt_result;
+    ParallelTransform* pt_result = nullptr;
     if (result.getCoordinates() == nullptr) {
       pt_result = pt_;
     } else {
@@ -1566,8 +1566,8 @@ void Coordinates::setCovariantMetricTensor(const CovariantMetricTensor& metric_t
   recalculateAndReset(recalculate_staggered, force_interpolate_from_centre);
 }
 
-void Coordinates::setMetricTensor(ContravariantMetricTensor contravariant_metric_tensor,
-                                  CovariantMetricTensor covariant_metric_tensor) {
+void Coordinates::setMetricTensor(const ContravariantMetricTensor& contravariant_metric_tensor,
+                                  const CovariantMetricTensor& covariant_metric_tensor) {
     contravariantMetricTensor.setMetricTensor(contravariant_metric_tensor);
     covariantMetricTensor.setMetricTensor(covariant_metric_tensor);
 }
