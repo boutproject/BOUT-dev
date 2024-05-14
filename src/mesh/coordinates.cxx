@@ -76,6 +76,17 @@ void Coordinates::communicate(T& t, Ts... ts) const {
   t.getMesh()->wait(h);
 }
 
+template <typename T, typename... Ts>
+// Use sendY()/sendX() and wait() instead of Mesh::communicate() to ensure we
+// don't try to calculate parallel slices as Coordinates are not constructed yet
+void Coordinates::communicate(const T& t, const Ts... ts) const {
+    FieldGroup g(t, ts...);
+    auto h = t.getMesh()->sendY(g);
+    t.getMesh()->wait(h);
+    h = t.getMesh()->sendX(g);
+    t.getMesh()->wait(h);
+}
+
 /// Interpolate a Field2D to a new CELL_LOC with interp_to.
 /// Communicates to set internal guard cells.
 /// Boundary guard cells are set by extrapolating from the grid, like

@@ -313,6 +313,9 @@ public:
   template <typename T, typename... Ts>
   void communicate(T& t, Ts... ts) const;
 
+  template <typename T, typename... Ts>
+  void communicate(const T& t,  const Ts... ts) const;
+
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
