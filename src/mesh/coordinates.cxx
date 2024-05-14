@@ -69,7 +69,8 @@ std::string getLocationSuffix(CELL_LOC location) {
 // Use sendY()/sendX() and wait() instead of Mesh::communicate() to ensure we
 // don't try to calculate parallel slices as Coordinates are not constructed yet
 void Coordinates::communicate(const Field2D& f) {
-    FieldGroup g(f);
+    auto f_copy = f; // Copy value to remove const qualifier (because std::vector can't take cv-qualified items)
+    FieldGroup g(f_copy);
     auto* h = f.getMesh()->sendY(g);
     f.getMesh()->wait(h);
     h = f.getMesh()->sendX(g);
@@ -77,7 +78,8 @@ void Coordinates::communicate(const Field2D& f) {
 }
 #if BOUT_USE_METRIC_3D
 void Coordinates::communicate(const Field3D& f) {
-    FieldGroup g(f);
+    auto f_copy = f; // Copy value to remove const qualifier (because std::vector can't take cv-qualified items)
+    FieldGroup g(f_copy);
     auto* h = f.getMesh()->sendY(g);
     f.getMesh()->wait(h);
     h = f.getMesh()->sendX(g);
@@ -906,8 +908,7 @@ void Coordinates::extrapolateChristoffelSymbols() {
 }
 
 void Coordinates::communicateGValues() const {
-  auto temp = G1(); // TODO: There must be a better way than this!
-  localmesh->communicate(temp, G2(), G3());
+  localmesh->communicate(G1(), G2(), G3());
 }
 
 void Coordinates::extrapolateGValues() {
@@ -1586,8 +1587,7 @@ void Coordinates::communicateChristoffelSymbolTerms() const {
 
   output_progress.write("\tCommunicating connection terms\n");
 
-  auto tmp = G1_11(); // TODO: There must be a better way than this!
-  localmesh->communicate(tmp, G1_22(), G1_33(), G1_12(), G1_13(), G1_23(), G2_11(), G2_22(), G2_33(),
+  localmesh->communicate(G1_11(), G1_22(), G1_33(), G1_12(), G1_13(), G1_23(), G2_11(), G2_22(), G2_33(),
               G2_12(), G2_13(), G2_23(), G3_11(), G3_22(), G3_33(), G3_12(), G3_13(),
               G3_23());
 }
