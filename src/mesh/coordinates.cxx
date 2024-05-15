@@ -65,16 +65,27 @@ std::string getLocationSuffix(CELL_LOC location) {
 
 } // anonymous namespace
 
-template <typename T, typename... Ts>
+
 // Use sendY()/sendX() and wait() instead of Mesh::communicate() to ensure we
 // don't try to calculate parallel slices as Coordinates are not constructed yet
-void Coordinates::communicate(T& t, Ts... ts) const {
-  FieldGroup g(t, ts...);
-  auto h = t.getMesh()->sendY(g);
-  t.getMesh()->wait(h);
-  h = t.getMesh()->sendX(g);
-  t.getMesh()->wait(h);
+void Coordinates::communicate(const Field2D& f) {
+    auto f_copy = f; // Copy value to remove const qualifier (because std::vector can't take cv-qualified items)
+    FieldGroup g(f_copy);
+    auto* h = f.getMesh()->sendY(g);
+    f.getMesh()->wait(h);
+    h = f.getMesh()->sendX(g);
+    f.getMesh()->wait(h);
 }
+#if BOUT_USE_METRIC_3D
+void Coordinates::communicate(const Field3D& f) {
+    auto f_copy = f; // Copy value to remove const qualifier (because std::vector can't take cv-qualified items)
+    FieldGroup g(f_copy);
+    auto* h = f.getMesh()->sendY(g);
+    f.getMesh()->wait(h);
+    h = f.getMesh()->sendX(g);
+    f.getMesh()->wait(h);
+}
+#endif
 
 /// Interpolate a Field2D to a new CELL_LOC with interp_to.
 /// Communicates to set internal guard cells.
@@ -84,7 +95,7 @@ void Coordinates::communicate(T& t, Ts... ts) const {
 Field2D Coordinates::interpolateAndExtrapolate(
     const Field2D& f, CELL_LOC location, bool extrapolate_x, bool extrapolate_y,
     bool no_extra_interpolate, ParallelTransform* UNUSED(pt) = nullptr,
-    const std::string& region = "RGN_NOBNDRY") const {
+    const std::string& region = "RGN_NOBNDRY") {
 
   Mesh* localmesh = f.getMesh();
   Field2D result = interp_to(f, location, region);
@@ -203,7 +214,7 @@ Field2D Coordinates::interpolateAndExtrapolate(
 Field3D Coordinates::interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
                                                bool extrapolate_x, bool extrapolate_y,
                                                bool no_extra_interpolate,
-                                               ParallelTransform* pt_) const {
+                                               ParallelTransform* pt_) {
 
   Mesh* localmesh = f_.getMesh();
   Field3D result;
@@ -228,7 +239,7 @@ Field3D Coordinates::interpolateAndExtrapolate(const Field3D& f_, CELL_LOC locat
   if (location == CELL_YLOW and f.getLocation() != CELL_YLOW) {
     auto f_aligned = pt_f->toFieldAligned(f, "RGN_NOX");
     result = interp_to(f_aligned, location, "RGN_NOBNDRY");
-    ParallelTransform* pt_result;
+    ParallelTransform* pt_result = nullptr;
     if (result.getCoordinates() == nullptr) {
       pt_result = pt_;
     } else {
@@ -754,9 +765,26 @@ const Field2D& Coordinates::zlength() const {
 int Coordinates::communicateAndCheckMeshSpacing() const {
   TRACE("Coordinates::communicateAndCheckMeshSpacing");
 
-  auto tmp = dx(); // TODO: There must be a better way than this!
-  communicate(tmp, dy(), dz(), g11(), g22(), g33(), g12(), g13(), g23(), g_11(), g_22(),
-              g_33(), g_12(), g_13(), g_23(), J(), Bxy());
+  auto tmp1 = dx();
+  auto tmp2 = dy();
+  auto tmp3 = dz();
+  auto tmp4 = g11();
+  auto tmp5 = g22();
+  auto tmp6 = g33();
+  auto tmp7 = g12();
+  auto tmp8 = g13();
+  auto tmp9 = g23();
+  auto tmp10 = g_11();
+  auto tmp11 = g_22();
+  auto tmp12 = g_33();
+  auto tmp13 = g_12();
+  auto tmp14 = g_13();
+  auto tmp15 = g_23();
+  auto tmp16 = J();
+  auto tmp17 = Bxy();
+  localmesh->communicate(tmp1, tmp2, tmp3, tmp4, tmp5, tmp6,
+                           tmp7, tmp8, tmp9, tmp10, tmp11, tmp12,
+                           tmp13, tmp14, tmp15, tmp16, tmp17);
 
   output_progress.write("Calculating differential geometry terms\n");
 
@@ -872,8 +900,10 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
   d1_dz_ = 0;
 #endif
 
-  auto tmp = d1_dx(); // TODO: There must be a better way than this!
-  communicate(tmp, d1_dy(), d1_dz());
+  auto tmp1 = d1_dx();
+  auto tmp2 = d1_dy();
+  auto tmp3 = d1_dz();
+  localmesh->communicate(tmp1, tmp2, tmp3);
 }
 
 void Coordinates::extrapolateChristoffelSymbols() {
@@ -899,8 +929,10 @@ void Coordinates::extrapolateChristoffelSymbols() {
 }
 
 void Coordinates::communicateGValues() const {
-  auto temp = G1(); // TODO: There must be a better way than this!
-  communicate(temp, G2(), G3());
+    auto tmp1 = G1();
+    auto tmp2 = G2();
+    auto tmp3 = G3();
+    localmesh->communicate(tmp1, tmp2, tmp3);
 }
 
 void Coordinates::extrapolateGValues() {
@@ -1559,8 +1591,8 @@ void Coordinates::setCovariantMetricTensor(const CovariantMetricTensor& metric_t
   recalculateAndReset(recalculate_staggered, force_interpolate_from_centre);
 }
 
-void Coordinates::setMetricTensor(ContravariantMetricTensor contravariant_metric_tensor,
-                                  CovariantMetricTensor covariant_metric_tensor) {
+void Coordinates::setMetricTensor(const ContravariantMetricTensor& contravariant_metric_tensor,
+                                  const CovariantMetricTensor& covariant_metric_tensor) {
     contravariantMetricTensor.setMetricTensor(contravariant_metric_tensor);
     covariantMetricTensor.setMetricTensor(covariant_metric_tensor);
 }
@@ -1577,12 +1609,29 @@ void Coordinates::applyToCovariantMetricTensor(
 
 void Coordinates::communicateChristoffelSymbolTerms() const {
 
-  output_progress.write("\tCommunicating connection terms\n");
+    output_progress.write("\tCommunicating connection terms\n");
 
-  auto tmp = G1_11(); // TODO: There must be a better way than this!
-  communicate(tmp, G1_22(), G1_33(), G1_12(), G1_13(), G1_23(), G2_11(), G2_22(), G2_33(),
-              G2_12(), G2_13(), G2_23(), G3_11(), G3_22(), G3_33(), G3_12(), G3_13(),
-              G3_23());
+    auto tmp1 = G1_11();
+    auto tmp2 = G1_22();
+    auto tmp3 = G1_33();
+    auto tmp4 = G1_12();
+    auto tmp5 = G1_13();
+    auto tmp6 = G1_23();
+    auto tmp7 = G2_11();
+    auto tmp8 = G2_22();
+    auto tmp9 = G2_33();
+    auto tmp10 = G2_12();
+    auto tmp11 = G2_13();
+    auto tmp12 = G2_23();
+    auto tmp13 = G3_11();
+    auto tmp14 = G3_22();
+    auto tmp15 = G3_33();
+    auto tmp16 = G3_12();
+    auto tmp17 = G3_13();
+    auto tmp18 = G3_23();
+    localmesh->communicate(tmp1, tmp2, tmp3, tmp4, tmp5, tmp6,
+                           tmp7, tmp8, tmp9, tmp10, tmp11, tmp12,
+                           tmp13, tmp14, tmp15, tmp16, tmp17, tmp18);
 }
 
 void Coordinates::invalidateAndRecalculateCachedVariables() {
