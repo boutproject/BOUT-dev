@@ -287,24 +287,6 @@ public:
   }
 
   template <typename... Ts>
-  void communicate(const Ts&... ts) {
-      // Copy values to remove const qualifier (because std::vector can't take cv-qualified items)
-
-      //Get the type of the first parameter and make a vector of that type to store the copies
-      auto first_parameter = []
-              (auto first_parameter, auto...) -> auto { return first_parameter; }(ts...);
-      using type_of_first = typeof(first_parameter);
-      std::vector<type_of_first> all_copies;
-
-      for (auto x : {ts...}){
-          auto copied_x = x;
-          all_copies.push_back(copied_x);
-      }
-      FieldGroup g(all_copies);
-      communicate(g);
-  }
-
-  template <typename... Ts>
   void communicateXZ(Ts&... ts) {
     FieldGroup g(ts...);
     communicateXZ(g);

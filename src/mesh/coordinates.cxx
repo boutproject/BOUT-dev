@@ -765,8 +765,26 @@ const Field2D& Coordinates::zlength() const {
 int Coordinates::communicateAndCheckMeshSpacing() const {
   TRACE("Coordinates::communicateAndCheckMeshSpacing");
 
-  localmesh->communicate(dx(), dy(), dz(), g11(), g22(), g33(), g12(), g13(), g23(), g_11(), g_22(), g_33(),
-                         g_12(), g_13(), g_23(), J(), Bxy());
+  auto tmp1 = dx();
+  auto tmp2 = dy();
+  auto tmp3 = dz();
+  auto tmp4 = g11();
+  auto tmp5 = g22();
+  auto tmp6 = g33();
+  auto tmp7 = g12();
+  auto tmp8 = g13();
+  auto tmp9 = g23();
+  auto tmp10 = g_11();
+  auto tmp11 = g_22();
+  auto tmp12 = g_33();
+  auto tmp13 = g_12();
+  auto tmp14 = g_13();
+  auto tmp15 = g_23();
+  auto tmp16 = J();
+  auto tmp17 = Bxy();
+  localmesh->communicate(tmp1, tmp2, tmp3, tmp4, tmp5, tmp6,
+                           tmp7, tmp8, tmp9, tmp10, tmp11, tmp12,
+                           tmp13, tmp14, tmp15, tmp16, tmp17);
 
   output_progress.write("Calculating differential geometry terms\n");
 
@@ -882,7 +900,10 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
   d1_dz_ = 0;
 #endif
 
-  localmesh->communicate(d1_dx(), d1_dy(), d1_dz());
+  auto tmp1 = d1_dx();
+  auto tmp2 = d1_dy();
+  auto tmp3 = d1_dz();
+  localmesh->communicate(tmp1, tmp2, tmp3);
 }
 
 void Coordinates::extrapolateChristoffelSymbols() {
@@ -908,7 +929,10 @@ void Coordinates::extrapolateChristoffelSymbols() {
 }
 
 void Coordinates::communicateGValues() const {
-  localmesh->communicate(G1(), G2(), G3());
+    auto tmp1 = G1();
+    auto tmp2 = G2();
+    auto tmp3 = G3();
+    localmesh->communicate(tmp1, tmp2, tmp3);
 }
 
 void Coordinates::extrapolateGValues() {
@@ -1585,11 +1609,29 @@ void Coordinates::applyToCovariantMetricTensor(
 
 void Coordinates::communicateChristoffelSymbolTerms() const {
 
-  output_progress.write("\tCommunicating connection terms\n");
+    output_progress.write("\tCommunicating connection terms\n");
 
-  localmesh->communicate(G1_11(), G1_22(), G1_33(), G1_12(), G1_13(), G1_23(), G2_11(), G2_22(), G2_33(),
-              G2_12(), G2_13(), G2_23(), G3_11(), G3_22(), G3_33(), G3_12(), G3_13(),
-              G3_23());
+    auto tmp1 = G1_11();
+    auto tmp2 = G1_22();
+    auto tmp3 = G1_33();
+    auto tmp4 = G1_12();
+    auto tmp5 = G1_13();
+    auto tmp6 = G1_23();
+    auto tmp7 = G2_11();
+    auto tmp8 = G2_22();
+    auto tmp9 = G2_33();
+    auto tmp10 = G2_12();
+    auto tmp11 = G2_13();
+    auto tmp12 = G2_23();
+    auto tmp13 = G3_11();
+    auto tmp14 = G3_22();
+    auto tmp15 = G3_33();
+    auto tmp16 = G3_12();
+    auto tmp17 = G3_13();
+    auto tmp18 = G3_23();
+    localmesh->communicate(tmp1, tmp2, tmp3, tmp4, tmp5, tmp6,
+                           tmp7, tmp8, tmp9, tmp10, tmp11, tmp12,
+                           tmp13, tmp14, tmp15, tmp16, tmp17, tmp18);
 }
 
 void Coordinates::invalidateAndRecalculateCachedVariables() {

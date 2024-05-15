@@ -66,13 +66,6 @@ public:
     add(ts...);
   }
 
-  template <typename T>
-  explicit FieldGroup(std::vector<T> items) {
-      for (auto i : items){
-          add(i);
-      }
-  }
-
   /// Copy contents of another FieldGroup \p other into this group.
   void add(const FieldGroup& other) {
     fvec.insert(fvec.end(), other.fvec.begin(), other.fvec.end());
