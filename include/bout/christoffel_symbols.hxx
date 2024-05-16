@@ -84,6 +84,9 @@ public:
   void
   applyToComponents(const std::function<const FieldMetric(const FieldMetric)>& function);
 
+  void communicate(Mesh* mesh);
+
+
 private:
   FieldMetric G1_11_, G1_22_, G1_33_, G1_12_, G1_13_, G1_23_;
   FieldMetric G2_11_, G2_22_, G2_33_, G2_12_, G2_13_, G2_23_;

@@ -1591,30 +1591,8 @@ void Coordinates::applyToCovariantMetricTensor(
 }
 
 void Coordinates::communicateChristoffelSymbolTerms() {
-
     output_progress.write("\tCommunicating connection terms\n");
-
-    auto tmp1 = G1_11();
-    auto tmp2 = G1_22();
-    auto tmp3 = G1_33();
-    auto tmp4 = G1_12();
-    auto tmp5 = G1_13();
-    auto tmp6 = G1_23();
-    auto tmp7 = G2_11();
-    auto tmp8 = G2_22();
-    auto tmp9 = G2_33();
-    auto tmp10 = G2_12();
-    auto tmp11 = G2_13();
-    auto tmp12 = G2_23();
-    auto tmp13 = G3_11();
-    auto tmp14 = G3_22();
-    auto tmp15 = G3_33();
-    auto tmp16 = G3_12();
-    auto tmp17 = G3_13();
-    auto tmp18 = G3_23();
-    localmesh->communicate(tmp1, tmp2, tmp3, tmp4, tmp5, tmp6,
-                           tmp7, tmp8, tmp9, tmp10, tmp11, tmp12,
-                           tmp13, tmp14, tmp15, tmp16, tmp17, tmp18);
+    christoffel_symbols().communicate(localmesh);
 }
 
 void Coordinates::invalidateAndRecalculateCachedVariables() {
