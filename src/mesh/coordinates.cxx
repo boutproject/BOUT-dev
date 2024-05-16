@@ -909,10 +909,7 @@ void Coordinates::extrapolateChristoffelSymbols() {
 }
 
 void Coordinates::communicateGValues() const {
-    auto tmp1 = G1();
-    auto tmp2 = G2();
-    auto tmp3 = G3();
-    localmesh->communicate(tmp1, tmp2, tmp3);
+    g_values().communicate(localmesh);
 }
 
 void Coordinates::extrapolateGValues() {
