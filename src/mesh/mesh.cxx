@@ -9,6 +9,8 @@
 #include <bout/boutcomm.hxx>
 #include <bout/output.hxx>
 
+#include "impls/bout/boutmesh.hxx"
+
 MeshFactory::ReturnType MeshFactory::create(Options* options,
                                             GridDataSource* source) const {
   return create(getType(options), options, source);
