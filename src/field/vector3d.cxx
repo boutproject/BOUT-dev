@@ -123,8 +123,8 @@ void Vector3D::toContravariant() {
 
     if (location == CELL_VSHIFT) {
       Coordinates* metric_x;
-      [[maybe_unused]] Coordinates* metric_y;
-      [[maybe_unused]] Coordinates* metric_z;
+      Coordinates* metric_y;
+      Coordinates* metric_z;
 
       metric_x = localmesh->getCoordinates(CELL_XLOW);
       metric_y = localmesh->getCoordinates(CELL_YLOW);
@@ -146,10 +146,10 @@ void Vector3D::toContravariant() {
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
         x[i] = metric_x->g11()[i] * x[i] + metric_x->g12()[i] * y_at_x[i]
                + metric_x->g13()[i] * z_at_x[i];
-        y[i] = metric_x->g22()[i] * y[i] + metric_x->g12()[i] * x_at_y[i]
-               + metric_x->g23()[i] * z_at_y[i];
-        z[i] = metric_x->g33()[i] * z[i] + metric_x->g13()[i] * x_at_z[i]
-               + metric_x->g23()[i] * y_at_z[i];
+        y[i] = metric_y->g22()[i] * y[i] + metric_y->g12()[i] * x_at_y[i]
+               + metric_y->g23()[i] * z_at_y[i];
+        z[i] = metric_z->g33()[i] * z[i] + metric_z->g13()[i] * x_at_z[i]
+               + metric_z->g23()[i] * y_at_z[i];
       };
 
     } else {

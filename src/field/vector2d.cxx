@@ -66,8 +66,8 @@ void Vector2D::toCovariant() {
 
     if (location == CELL_VSHIFT) {
       Coordinates* metric_x;
-      [[maybe_unused]] Coordinates* metric_y;
-      [[maybe_unused]] Coordinates* metric_z;
+      Coordinates* metric_y;
+      Coordinates* metric_z;
       metric_x = localmesh->getCoordinates(CELL_XLOW);
       metric_y = localmesh->getCoordinates(CELL_YLOW);
       metric_z = localmesh->getCoordinates(CELL_ZLOW);
@@ -88,10 +88,10 @@ void Vector2D::toCovariant() {
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
         x[i] = metric_x->g_11()[i] * x[i] + metric_x->g_12()[i] * y_at_x[i]
                + metric_x->g_13()[i] * z_at_x[i];
-        y[i] = metric_x->g_22()[i] * y[i] + metric_x->g_12()[i] * x_at_y[i]
-               + metric_x->g_23()[i] * z_at_y[i];
-        z[i] = metric_x->g_33()[i] * z[i] + metric_x->g_13()[i] * x_at_z[i]
-               + metric_x->g_23()[i] * y_at_z[i];
+        y[i] = metric_y->g_22()[i] * y[i] + metric_y->g_12()[i] * x_at_y[i]
+               + metric_y->g_23()[i] * z_at_y[i];
+        z[i] = metric_z->g_33()[i] * z[i] + metric_z->g_13()[i] * x_at_z[i]
+               + metric_z->g_23()[i] * y_at_z[i];
       };
     } else {
       const auto metric = localmesh->getCoordinates(location);
