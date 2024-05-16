@@ -762,29 +762,12 @@ const Field2D& Coordinates::zlength() const {
   return *zlength_cache;
 }
 
-int Coordinates::communicateAndCheckMeshSpacing() const {
+int Coordinates::communicateAndCheckMeshSpacing() {
   TRACE("Coordinates::communicateAndCheckMeshSpacing");
 
-  auto tmp1 = dx();
-  auto tmp2 = dy();
-  auto tmp3 = dz();
-  auto tmp4 = g11();
-  auto tmp5 = g22();
-  auto tmp6 = g33();
-  auto tmp7 = g12();
-  auto tmp8 = g13();
-  auto tmp9 = g23();
-  auto tmp10 = g_11();
-  auto tmp11 = g_22();
-  auto tmp12 = g_33();
-  auto tmp13 = g_12();
-  auto tmp14 = g_13();
-  auto tmp15 = g_23();
-  auto tmp16 = J();
-  auto tmp17 = Bxy();
-  localmesh->communicate(tmp1, tmp2, tmp3, tmp4, tmp5, tmp6,
-                           tmp7, tmp8, tmp9, tmp10, tmp11, tmp12,
-                           tmp13, tmp14, tmp15, tmp16, tmp17);
+  localmesh->communicate(dx_, dy_, dz_, Bxy_, J());
+  covariantMetricTensor.communicate(localmesh);
+  contravariantMetricTensor.communicate(localmesh);
 
   output_progress.write("Calculating differential geometry terms\n");
 
@@ -1480,7 +1463,7 @@ Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
 #endif
 }
 
-ChristoffelSymbols& Coordinates::christoffel_symbols() const {
+ChristoffelSymbols& Coordinates::christoffel_symbols() {
   if (christoffel_symbols_cache == nullptr) {
     auto ptr = std::make_unique<ChristoffelSymbols>(*this);
     christoffel_symbols_cache = std::move(ptr);
@@ -1531,7 +1514,7 @@ void Coordinates::checkContravariant() {
   contravariantMetricTensor.check(localmesh->ystart);
 }
 
-const FieldMetric& Coordinates::J() const {
+FieldMetric& Coordinates::J() const {
   if (jacobian_cache == nullptr) {
     const auto j = recalculateJacobian();
     auto ptr = std::make_unique<FieldMetric>(j);
@@ -1570,7 +1553,7 @@ void Coordinates::setBxy(FieldMetric Bxy) {
 }
 
 void Coordinates::applyToChristoffelSymbols(
-    const std::function<const FieldMetric(const FieldMetric)>& function) const {
+    const std::function<const FieldMetric(const FieldMetric)>& function) {
   christoffel_symbols().applyToComponents(function);
 }
 
@@ -1607,7 +1590,7 @@ void Coordinates::applyToCovariantMetricTensor(
   covariantMetricTensor.map(function);
 }
 
-void Coordinates::communicateChristoffelSymbolTerms() const {
+void Coordinates::communicateChristoffelSymbolTerms() {
 
     output_progress.write("\tCommunicating connection terms\n");
 

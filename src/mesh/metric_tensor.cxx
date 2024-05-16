@@ -2,6 +2,7 @@
 #include "bout/metric_tensor.hxx"
 #include "bout/output.hxx"
 #include <utility>
+#include "bout/mesh.hxx"
 
 MetricTensor::MetricTensor(FieldMetric g11, FieldMetric g22, FieldMetric g33,
                            FieldMetric g12, FieldMetric g13, FieldMetric g23)
@@ -145,4 +146,8 @@ MetricTensor MetricTensor::applyToComponents(
   auto [g_11, g_22, g_33, g_12, g_13, g_23] = components_out;
 
   return MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23);
+}
+
+void MetricTensor::communicate(Mesh* mesh) {
+    mesh->communicate(g11_, g22_, g33_, g12_, g13_, g23_);
 }

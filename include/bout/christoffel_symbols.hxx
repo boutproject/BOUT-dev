@@ -21,7 +21,7 @@ public:
                      FieldMetric G3_11, FieldMetric G3_22, FieldMetric G3_33,
                      FieldMetric G3_12, FieldMetric G3_13, FieldMetric G3_23);
 
-  explicit ChristoffelSymbols(const Coordinates& coordinates);
+  explicit ChristoffelSymbols(Coordinates& coordinates);
 
   //  ChristoffelSymbols(BoutReal g11, BoutReal g22, BoutReal g33, BoutReal g12, BoutReal g13,
   //                     BoutReal g23, Mesh* mesh);
