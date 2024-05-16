@@ -883,10 +883,7 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
   d1_dz_ = 0;
 #endif
 
-  auto tmp1 = d1_dx();
-  auto tmp2 = d1_dy();
-  auto tmp3 = d1_dz();
-  localmesh->communicate(tmp1, tmp2, tmp3);
+  localmesh->communicate(d1_dx_, d1_dy_, d1_dz_);
 }
 
 void Coordinates::extrapolateChristoffelSymbols() {
