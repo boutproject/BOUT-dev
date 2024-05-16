@@ -43,10 +43,12 @@ BoundaryFactory::BoundaryFactory() {
   addMod(new BoundaryFromFieldAligned(), "fromFieldAligned");
 
   // Parallel boundaries
-  add(new BoundaryOpPar_dirichlet(), "parallel_dirichlet");
-  add(new BoundaryOpPar_dirichlet_O3(), "parallel_dirichlet_O3");
-  add(new BoundaryOpPar_dirichlet_interp(), "parallel_dirichlet_interp");
-  add(new BoundaryOpPar_neumann(), "parallel_neumann");
+  add(new BoundaryOpPar_dirichlet_o1(), "parallel_dirichlet_o1");
+  add(new BoundaryOpPar_dirichlet_o2(), "parallel_dirichlet_o2");
+  add(new BoundaryOpPar_dirichlet_o3(), "parallel_dirichlet_o3");
+  add(new BoundaryOpPar_neumann_o1(), "parallel_neumann_o1");
+  add(new BoundaryOpPar_neumann_o2(), "parallel_neumann_o2");
+  add(new BoundaryOpPar_neumann_o3(), "parallel_neumann_o3");
 }
 
 BoundaryFactory::~BoundaryFactory() {
