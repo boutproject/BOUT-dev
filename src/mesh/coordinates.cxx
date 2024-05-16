@@ -794,11 +794,11 @@ void Coordinates::recalculateAndReset(bool recalculate_staggered,
   checkCovariant();
 
   christoffel_symbols_cache.reset();
-  communicateChristoffelSymbolTerms();
+  christoffel_symbols().communicate(localmesh);
   extrapolateChristoffelSymbols();
 
   g_values_cache.reset();
-  communicateGValues();
+  g_values().communicate(localmesh);
   extrapolateGValues();
 
   correctionForNonUniformMeshes(force_interpolate_from_centre);
@@ -906,10 +906,6 @@ void Coordinates::extrapolateChristoffelSymbols() {
       };
 
   applyToChristoffelSymbols(interpolateAndExtrapolate_function);
-}
-
-void Coordinates::communicateGValues() const {
-    g_values().communicate(localmesh);
 }
 
 void Coordinates::extrapolateGValues() {
@@ -1582,11 +1578,6 @@ void Coordinates::applyToContravariantMetricTensor(
 void Coordinates::applyToCovariantMetricTensor(
     const std::function<const FieldMetric(const FieldMetric)>& function) {
   covariantMetricTensor.map(function);
-}
-
-void Coordinates::communicateChristoffelSymbolTerms() {
-    output_progress.write("\tCommunicating connection terms\n");
-    christoffel_symbols().communicate(localmesh);
 }
 
 void Coordinates::invalidateAndRecalculateCachedVariables() {

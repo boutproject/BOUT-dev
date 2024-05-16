@@ -387,10 +387,8 @@ private:
 
   FieldMetric getUnaligned(const std::string& name, BoutReal default_value);
 
-  void communicateChristoffelSymbolTerms();
   void extrapolateChristoffelSymbols();
 
-  void communicateGValues() const;
   void extrapolateGValues();
 
   FieldMetric recalculateBxy() const;

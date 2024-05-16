@@ -141,6 +141,9 @@ void ChristoffelSymbols::applyToComponents(
 }
 
 void ChristoffelSymbols::communicate(Mesh* mesh) {
+
+    output_progress.write("\tCommunicating connection terms\n");
+
     mesh->communicate(G1_11_, G1_22_, G1_33_, G1_12_, G1_13_, G1_23_,
                       G2_11_, G2_22_, G2_33_, G2_12_, G2_13_, G2_23_,
                       G3_11_, G3_22_, G3_33_, G3_12_, G3_13_, G3_23_);
