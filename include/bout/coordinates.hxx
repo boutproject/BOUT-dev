@@ -310,10 +310,11 @@ public:
 
   FieldMetric recalculateJacobian() const;
   
-  static void communicate(const Field2D& f) ;
+  static void communicate(Field2D& f) ;
+
 #if BOUT_USE_METRIC_3D
   // In this case we also need to be able to call with a Field3D
-  static void communicate(const Field3D& f) ;
+  static void communicate(Field3D& f) ;
 #endif
 
 

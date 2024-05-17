@@ -68,18 +68,16 @@ std::string getLocationSuffix(CELL_LOC location) {
 
 // Use sendY()/sendX() and wait() instead of Mesh::communicate() to ensure we
 // don't try to calculate parallel slices as Coordinates are not constructed yet
-void Coordinates::communicate(const Field2D& f) {
-    auto f_copy = f; // Copy value to remove const qualifier (because std::vector can't take cv-qualified items)
-    FieldGroup g(f_copy);
+void Coordinates::communicate(Field2D& f) {
+    FieldGroup g(f);
     auto* h = f.getMesh()->sendY(g);
     f.getMesh()->wait(h);
     h = f.getMesh()->sendX(g);
     f.getMesh()->wait(h);
 }
 #if BOUT_USE_METRIC_3D
-void Coordinates::communicate(const Field3D& f) {
-    auto f_copy = f; // Copy value to remove const qualifier (because std::vector can't take cv-qualified items)
-    FieldGroup g(f_copy);
+void Coordinates::communicate(Field3D& f) {
+    FieldGroup g(f);
     auto* h = f.getMesh()->sendY(g);
     f.getMesh()->wait(h);
     h = f.getMesh()->sendX(g);
@@ -640,8 +638,7 @@ void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suf
     output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J() - J_from_file)));
     setJ(J_from_file);
 
-    auto J_value = J(); // TODO: There may be a better way
-    communicate(J_value);
+    communicate(J());
   }
 
   // More robust to extrapolate derived quantities directly, rather than
