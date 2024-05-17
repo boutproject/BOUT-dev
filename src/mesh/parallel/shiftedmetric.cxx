@@ -6,6 +6,7 @@
  *
  */
 
+#include "bout/parallel_boundary_region.hxx"
 #include "bout/paralleltransform.hxx"
 #include <bout/boundary_region.hxx>
 #include <bout/constants.hxx>
