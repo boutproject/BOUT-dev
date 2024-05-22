@@ -529,28 +529,28 @@ int Mesh::localSizePerp() {
   return localNumCellsPerp;
 }
 
-[[maybe_unused]] int Mesh::globalStartIndex3D() {
+int Mesh::globalStartIndex3D() {
   int localSize = localSize3D();
   int cumulativeSize = 0;
   mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
   return cumulativeSize - localSize;
 }
 
-[[maybe_unused]] int Mesh::globalStartIndex2D() {
+int Mesh::globalStartIndex2D() {
   int localSize = localSize2D();
   int cumulativeSize = 0;
   mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
   return cumulativeSize - localSize;
 }
 
-[[maybe_unused]] int Mesh::globalStartIndexPerp() {
+int Mesh::globalStartIndexPerp() {
   int localSize = localSizePerp();
   int cumulativeSize = 0;
   mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXcomm());
   return cumulativeSize - localSize;
 }
 
-[[maybe_unused]] std::vector<int> Mesh::readInts(const std::string& name, int n) {
+std::vector<int> Mesh::readInts(const std::string& name, int n) {
   TRACE("Mesh::readInts({:s})", name);
 
   if (source == nullptr) {

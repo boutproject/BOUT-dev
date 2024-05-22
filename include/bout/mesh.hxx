@@ -293,7 +293,7 @@ public:
   }
 
   template <typename... Ts>
-  [[maybe_unused]] void communicateYZ(Ts&... ts) {
+  void communicateYZ(Ts&... ts) {
     FieldGroup g(ts...);
     communicateYZ(g);
   }
@@ -560,11 +560,11 @@ public:
   virtual int localSizePerp();
 
   /// Get the value of the first global 3D index on this processor.
-  [[maybe_unused]] virtual int globalStartIndex3D();
+  virtual int globalStartIndex3D();
   /// Get the value of the first global 2D index on this processor.
-  [[maybe_unused]] virtual int globalStartIndex2D();
+  virtual int globalStartIndex2D();
   /// Get the value of the first global perpendicular index on this processor.
-  [[maybe_unused]] virtual int globalStartIndexPerp();
+  virtual int globalStartIndexPerp();
 
   /// Returns a global X index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
@@ -815,7 +815,7 @@ protected:
   bool calcParallelSlices_on_communicate{true};
 
   /// Read a 1D array of integers
-  [[maybe_unused]] std::vector<int> readInts(const std::string& name, int n);
+  const std::vector<int> readInts(const std::string& name, int n);
 
   /// Calculates the size of a message for a given x and y range
   int msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,

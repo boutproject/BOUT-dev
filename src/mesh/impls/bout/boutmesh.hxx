@@ -174,8 +174,8 @@ public:
   BoutReal GlobalX(BoutReal jx) const override;
   BoutReal GlobalY(BoutReal jy) const override;
 
-  [[maybe_unused]] BoutReal getIxseps1() const { return ixseps1; }
-  [[maybe_unused]] BoutReal getIxseps2() const { return ixseps2; }
+  BoutReal getIxseps1() const { return ixseps1; }
+  BoutReal getIxseps2() const { return ixseps2; }
 
   void outputVars(Options& output_options) override;
 
@@ -320,7 +320,7 @@ protected:
   /// Returns the processor number, given X (\p xind) and Y (\p yind)
   /// processor indices. Returns -1 if out of range (no processor)
   int PROC_NUM(int xind, int yind) const;
-  [[maybe_unused]] int YGLOBAL(int yloc, int yproc) const;
+  int YGLOBAL(int yloc, int yproc) const;
   int YLOCAL(int yglo, int yproc) const;
   /// Return the Y processor number given a global Y index
   int YPROC(int yind) const;
