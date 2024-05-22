@@ -481,10 +481,10 @@ public:
 
   /// Iterate over the upper Y boundary
   virtual RangeIterator iterateBndryUpperY() const = 0;
-  [[maybe_unused]] virtual RangeIterator iterateBndryLowerOuterY() const = 0;
-  [[maybe_unused]] virtual RangeIterator iterateBndryLowerInnerY() const = 0;
-  [[maybe_unused]] virtual RangeIterator iterateBndryUpperOuterY() const = 0;
-  [[maybe_unused]] virtual RangeIterator iterateBndryUpperInnerY() const = 0;
+  virtual RangeIterator iterateBndryLowerOuterY() const = 0;
+  virtual RangeIterator iterateBndryLowerInnerY() const = 0;
+  virtual RangeIterator iterateBndryUpperOuterY() const = 0;
+  virtual RangeIterator iterateBndryUpperInnerY() const = 0;
 
   /// Is there a boundary on the lower guard cells in Y
   /// on any processor along the X direction?
