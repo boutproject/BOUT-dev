@@ -401,7 +401,7 @@ void Mesh::communicate(FieldPerp& f) {
 }
 
 int Mesh::msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                  int ylt) const {
+                  int ylt) {
   int len = 0;
 
   /// Loop over variables
@@ -550,7 +550,7 @@ int Mesh::globalStartIndexPerp() {
   return cumulativeSize - localSize;
 }
 
-std::vector<int> Mesh::readInts(const std::string& name, int n) {
+const std::vector<int> Mesh::readInts(const std::string& name, int n) {
   TRACE("Mesh::readInts({:s})", name);
 
   if (source == nullptr) {
