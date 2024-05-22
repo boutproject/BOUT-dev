@@ -144,7 +144,7 @@ public:
                                       const CovariantMetricTensor& covariant_metric_tensor);
 
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
-  const FieldMetric& J() const;
+  FieldMetric& J() const;
 
   ///< Magnitude of B = nabla z times nabla x
   const FieldMetric& Bxy() const { return Bxy_; }
@@ -169,7 +169,7 @@ public:
     IntShiftTorsion_ = std::move(IntShiftTorsion);
   }
 
-  int communicateAndCheckMeshSpacing() const;
+  int communicateAndCheckMeshSpacing();
 
   ///////////////////////////////////////////////////////////
   // Parallel transforms
@@ -269,24 +269,24 @@ public:
   Field2D Laplace_perpXY(const Field2D& A, const Field2D& f) const;
 
   /// Christoffel symbol of the second kind (connection coefficients)
-  const FieldMetric& G1_11() const { return christoffel_symbols().G1_11(); }
-  const FieldMetric& G1_22() const { return christoffel_symbols().G1_22(); }
-  const FieldMetric& G1_33() const { return christoffel_symbols().G1_33(); }
-  const FieldMetric& G1_12() const { return christoffel_symbols().G1_12(); }
-  const FieldMetric& G1_13() const { return christoffel_symbols().G1_13(); }
-  const FieldMetric& G1_23() const { return christoffel_symbols().G1_23(); }
-  const FieldMetric& G2_11() const { return christoffel_symbols().G2_11(); }
-  const FieldMetric& G2_22() const { return christoffel_symbols().G2_22(); }
-  const FieldMetric& G2_33() const { return christoffel_symbols().G2_33(); }
-  const FieldMetric& G2_12() const { return christoffel_symbols().G2_12(); }
-  const FieldMetric& G2_13() const { return christoffel_symbols().G2_13(); }
-  const FieldMetric& G2_23() const { return christoffel_symbols().G2_23(); }
-  const FieldMetric& G3_11() const { return christoffel_symbols().G3_11(); }
-  const FieldMetric& G3_22() const { return christoffel_symbols().G3_22(); }
-  const FieldMetric& G3_33() const { return christoffel_symbols().G3_33(); }
-  const FieldMetric& G3_12() const { return christoffel_symbols().G3_12(); }
-  const FieldMetric& G3_13() const { return christoffel_symbols().G3_13(); }
-  const FieldMetric& G3_23() const { return christoffel_symbols().G3_23(); }
+  const FieldMetric& G1_11() { return christoffel_symbols().G1_11(); }
+  const FieldMetric& G1_22() { return christoffel_symbols().G1_22(); }
+  const FieldMetric& G1_33() { return christoffel_symbols().G1_33(); }
+  const FieldMetric& G1_12() { return christoffel_symbols().G1_12(); }
+  const FieldMetric& G1_13() { return christoffel_symbols().G1_13(); }
+  const FieldMetric& G1_23() { return christoffel_symbols().G1_23(); }
+  const FieldMetric& G2_11() { return christoffel_symbols().G2_11(); }
+  const FieldMetric& G2_22() { return christoffel_symbols().G2_22(); }
+  const FieldMetric& G2_33() { return christoffel_symbols().G2_33(); }
+  const FieldMetric& G2_12() { return christoffel_symbols().G2_12(); }
+  const FieldMetric& G2_13() { return christoffel_symbols().G2_13(); }
+  const FieldMetric& G2_23() { return christoffel_symbols().G2_23(); }
+  const FieldMetric& G3_11() { return christoffel_symbols().G3_11(); }
+  const FieldMetric& G3_22() { return christoffel_symbols().G3_22(); }
+  const FieldMetric& G3_33() { return christoffel_symbols().G3_33(); }
+  const FieldMetric& G3_12() { return christoffel_symbols().G3_12(); }
+  const FieldMetric& G3_13() { return christoffel_symbols().G3_13(); }
+  const FieldMetric& G3_23() { return christoffel_symbols().G3_23(); }
 
   const FieldMetric& G1() const { return g_values().G1(); }
   const FieldMetric& G2() const { return g_values().G2(); }
@@ -301,7 +301,7 @@ public:
 
   const FieldMetric& invSg() const;
 
-  ChristoffelSymbols& christoffel_symbols() const;
+  ChristoffelSymbols& christoffel_symbols();
 
   GValues& g_values() const;
 
@@ -310,10 +310,11 @@ public:
 
   FieldMetric recalculateJacobian() const;
   
-  static void communicate(const Field2D& f) ;
+  static void communicate(Field2D& f) ;
+
 #if BOUT_USE_METRIC_3D
   // In this case we also need to be able to call with a Field3D
-  static void communicate(const Field3D& f) ;
+  static void communicate(Field3D& f) ;
 #endif
 
 
@@ -363,7 +364,7 @@ private:
       const std::function<const FieldMetric(const FieldMetric)>& function);
 
   void applyToChristoffelSymbols(
-      const std::function<const FieldMetric(const FieldMetric)>& function) const;
+      const std::function<const FieldMetric(const FieldMetric)>& function);
 
   mutable std::unique_ptr<FieldMetric> jacobian_cache{nullptr};
 
@@ -387,10 +388,8 @@ private:
 
   FieldMetric getUnaligned(const std::string& name, BoutReal default_value);
 
-  void communicateChristoffelSymbolTerms() const;
   void extrapolateChristoffelSymbols();
 
-  void communicateGValues() const;
   void extrapolateGValues();
 
   FieldMetric recalculateBxy() const;

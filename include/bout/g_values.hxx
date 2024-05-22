@@ -22,6 +22,8 @@ public:
   void setG2(const FieldMetric& G2) { G2_ = G2; }
   void setG3(const FieldMetric& G3) { G3_ = G3; }
 
+  void communicate(Mesh* mesh);
+
 private:
   FieldMetric G1_, G2_, G3_;
 };

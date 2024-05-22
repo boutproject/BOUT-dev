@@ -2,6 +2,7 @@
 #include "bout/christoffel_symbols.hxx"
 #include "bout/coordinates.hxx"
 #include <utility>
+#include "bout/mesh.hxx"
 
 ChristoffelSymbols::ChristoffelSymbols(
     FieldMetric G1_11, FieldMetric G1_22, FieldMetric G1_33, FieldMetric G1_12,
@@ -16,7 +17,7 @@ ChristoffelSymbols::ChristoffelSymbols(
       G3_11_(std::move(G3_11)), G3_22_(std::move(G3_22)), G3_33_(std::move(G3_33)),
       G3_12_(std::move(G3_12)), G3_13_(std::move(G3_13)), G3_23_(std::move(G3_23)){};
 
-ChristoffelSymbols::ChristoffelSymbols(const Coordinates& coordinates) {
+ChristoffelSymbols::ChristoffelSymbols(Coordinates& coordinates) {
   // Calculate Christoffel symbol terms (18 independent values)
   // Note: This calculation is completely general: metric
   // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
@@ -137,4 +138,13 @@ void ChristoffelSymbols::applyToComponents(
 
   setChristoffelSymbols(G1_11, G1_22, G1_33, G1_12, G1_13, G1_23, G2_11, G2_22, G2_33,
                         G2_12, G2_13, G2_23, G3_11, G3_22, G3_33, G3_12, G3_13, G3_23);
+}
+
+void ChristoffelSymbols::communicate(Mesh* mesh) {
+
+    output_progress.write("\tCommunicating connection terms\n");
+
+    mesh->communicate(G1_11_, G1_22_, G1_33_, G1_12_, G1_13_, G1_23_,
+                      G2_11_, G2_22_, G2_33_, G2_12_, G2_13_, G2_23_,
+                      G3_11_, G3_22_, G3_33_, G3_12_, G3_13_, G3_23_);
 }

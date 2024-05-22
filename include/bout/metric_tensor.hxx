@@ -59,6 +59,8 @@ public:
   MetricTensor applyToComponents(
       const std::function<const FieldMetric(const FieldMetric)>& function) const;
 
+  void communicate(Mesh* mesh);
+
 protected:
   FieldMetric g11_, g22_, g33_, g12_, g13_, g23_;
 };

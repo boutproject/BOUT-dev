@@ -1,6 +1,7 @@
 
 #include "bout/g_values.hxx"
 #include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
 
 GValues::GValues(FieldMetric G1, FieldMetric G2, FieldMetric G3)
     : G1_(std::move(G1)), G2_(std::move(G2)), G3_(std::move(G3)){};
@@ -26,4 +27,8 @@ GValues::GValues(const Coordinates& coordinates) {
   tmp = J * g23;
   coordinates.communicate(tmp);
   setG3((coordinates.DDX(J * g13) + coordinates.DDY(tmp) + coordinates.DDZ(J * g33)) / J);
+}
+
+void GValues::communicate(Mesh* mesh) {
+    mesh->communicate(G1_, G2_, G3_);
 }
