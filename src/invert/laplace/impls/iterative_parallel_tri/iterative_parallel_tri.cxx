@@ -293,10 +293,8 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
    */
   auto bcmplx = Matrix<dcomplex>(nmode, ncx);
 
-  const bool invert_inner_boundary =
-      isInnerBoundaryFlagSet(INVERT_SET) and localmesh->firstX();
-  const bool invert_outer_boundary =
-      isOuterBoundaryFlagSet(INVERT_SET) and localmesh->lastX();
+  const bool invert_inner_boundary = isInnerBoundaryFlagSetOnFirstX(INVERT_SET);
+  const bool invert_outer_boundary = isOuterBoundaryFlagSetOnLastX(INVERT_SET);
 
   BOUT_OMP_PERF(parallel for)
   for (int ix = 0; ix < ncx; ix++) {

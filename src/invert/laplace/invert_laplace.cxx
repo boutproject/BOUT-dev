@@ -799,6 +799,13 @@ void Laplacian::LaplacianMonitor::outputVars(Options& output_options,
   laplacian->outputVars(output_options, time_dimension);
 }
 
+bool Laplacian::isInnerBoundaryFlagSetOnFirstX(int flag) const {
+  return isInnerBoundaryFlagSet(flag) and localmesh->firstX();
+}
+bool Laplacian::isOuterBoundaryFlagSetOnLastX(int flag) const {
+  return isOuterBoundaryFlagSet(flag) and localmesh->lastX();
+}
+
 /**********************************************************************************
  *                              LEGACY INTERFACE
  *

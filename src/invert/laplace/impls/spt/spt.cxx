@@ -98,7 +98,7 @@ FieldPerp LaplaceSPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     if (isGlobalFlagSet(INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
       xbndry = 1;
     }
-    if (isInnerBoundaryFlagSet(INVERT_SET) && localmesh->firstX()) {
+    if (isInnerBoundaryFlagSetOnFirstX(INVERT_SET)) {
       // Copy x0 inner boundary into bs
       for (int ix = 0; ix < xbndry; ix++) {
         for (int iz = 0; iz < localmesh->LocalNz; iz++) {
@@ -106,7 +106,7 @@ FieldPerp LaplaceSPT::solve(const FieldPerp& b, const FieldPerp& x0) {
         }
       }
     }
-    if (isOuterBoundaryFlagSet(INVERT_SET) && localmesh->lastX()) {
+    if (isOuterBoundaryFlagSetOnLastX(INVERT_SET)) {
       // Copy x0 outer boundary into bs
       for (int ix = localmesh->LocalNx - 1; ix >= localmesh->LocalNx - xbndry; ix--) {
         for (int iz = 0; iz < localmesh->LocalNz; iz++) {
@@ -173,8 +173,8 @@ Field3D LaplaceSPT::solve(const Field3D& b) {
 Field3D LaplaceSPT::solve(const Field3D& b, const Field3D& x0) {
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
 
-  if ((isInnerBoundaryFlagSet(INVERT_SET) && localmesh->firstX())
-      || (isOuterBoundaryFlagSet(INVERT_SET) && localmesh->lastX())) {
+  if ((isInnerBoundaryFlagSetOnFirstX(INVERT_SET))
+      || isOuterBoundaryFlagSetOnLastX(INVERT_SET)) {
     Field3D bs = copy(b);
 
     int xbndry = localmesh->xstart;
@@ -183,7 +183,7 @@ Field3D LaplaceSPT::solve(const Field3D& b, const Field3D& x0) {
       xbndry = 1;
     }
 
-    if (isInnerBoundaryFlagSet(INVERT_SET) && localmesh->firstX()) {
+    if (isInnerBoundaryFlagSetOnFirstX(INVERT_SET)) {
       // Copy x0 inner boundary into bs
       for (int ix = 0; ix < xbndry; ix++) {
         for (int iy = 0; iy < localmesh->LocalNy; iy++) {
@@ -193,7 +193,7 @@ Field3D LaplaceSPT::solve(const Field3D& b, const Field3D& x0) {
         }
       }
     }
-    if (isOuterBoundaryFlagSet(INVERT_SET) && localmesh->lastX()) {
+    if (isOuterBoundaryFlagSetOnLastX(INVERT_SET)) {
       // Copy x0 outer boundary into bs
       for (int ix = localmesh->LocalNx - 1; ix >= localmesh->LocalNx - xbndry; ix--) {
         for (int iy = 0; iy < localmesh->LocalNy; iy++) {

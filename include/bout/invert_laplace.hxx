@@ -319,6 +319,13 @@ protected:
     return (outer_boundary_flags & flag) != 0;
   }
 
+  /// Return true if \p flag is set for the inner boundary condition
+  /// on the inner processor(s)
+  bool isInnerBoundaryFlagSetOnFirstX(int flag) const;
+  /// Return true if \p flag is set for the outer boundary condition
+  /// on the outer processor(s)
+  bool isOuterBoundaryFlagSetOnLastX(int flag) const;
+
   int global_flags;         ///< Default flags
   int inner_boundary_flags; ///< Flags to set inner boundary condition
   int outer_boundary_flags; ///< Flags to set outer boundary condition

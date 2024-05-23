@@ -143,9 +143,9 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       for (int ix = xs; ix <= xe; ix++) {
         // Take DST in Z direction and put result in k1d
 
-        if (((ix < inbndry) && isInnerBoundaryFlagSet(INVERT_SET) && localmesh->firstX())
+        if (((ix < inbndry) && isInnerBoundaryFlagSetOnFirstX(INVERT_SET))
             || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && (isOuterBoundaryFlagSet(INVERT_SET)) && localmesh->lastX())) {
+                && isOuterBoundaryFlagSetOnLastX(INVERT_SET))) {
           // Use the values in x0 in the boundary
           DST(x0[ix] + 1, localmesh->LocalNz - 2, std::begin(k1d));
         } else {
@@ -218,9 +218,9 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       for (int ix = xs; ix <= xe; ix++) {
         // Take FFT in Z direction, apply shift, and put result in k1d
 
-        if (((ix < inbndry) && isInnerBoundaryFlagSet(INVERT_SET) && localmesh->firstX())
+        if (((ix < inbndry) && isInnerBoundaryFlagSetOnFirstX(INVERT_SET))
             || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && (isOuterBoundaryFlagSet(INVERT_SET)) && localmesh->lastX())) {
+                && isOuterBoundaryFlagSetOnLastX(INVERT_SET))) {
           // Use the values in x0 in the boundary
           rfft(x0[ix], localmesh->LocalNz, std::begin(k1d));
         } else {
@@ -374,9 +374,9 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
         // Take DST in Z direction and put result in k1d
 
-        if (((ix < inbndry) && isInnerBoundaryFlagSet(INVERT_SET) && localmesh->firstX())
+        if (((ix < inbndry) && isInnerBoundaryFlagSetOnFirstX(INVERT_SET))
             || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && isOuterBoundaryFlagSet(INVERT_SET) && localmesh->lastX())) {
+                && isOuterBoundaryFlagSetOnLastX(INVERT_SET))) {
           // Use the values in x0 in the boundary
           DST(x0(ix, iy) + 1, localmesh->LocalNz - 2, std::begin(k1d));
         } else {
@@ -461,9 +461,9 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
         // Take FFT in Z direction, apply shift, and put result in k1d
 
-        if (((ix < inbndry) && isInnerBoundaryFlagSet(INVERT_SET) && localmesh->firstX())
+        if (((ix < inbndry) && isInnerBoundaryFlagSetOnFirstX(INVERT_SET))
             || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && isOuterBoundaryFlagSet(INVERT_SET) && localmesh->lastX())) {
+                && isOuterBoundaryFlagSetOnLastX(INVERT_SET))) {
           // Use the values in x0 in the boundary
           rfft(x0(ix, iy), localmesh->LocalNz, std::begin(k1d));
         } else {
