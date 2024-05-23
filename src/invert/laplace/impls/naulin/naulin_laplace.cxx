@@ -258,7 +258,7 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
     // Note take a copy of the 'b' argument, because we want to return a copy of it in the
     // result
 
-    if ((inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET)) {
+    if (isInnerBoundaryFlagSet(INVERT_SET) || isOuterBoundaryFlagSet(INVERT_SET)) {
       // This passes in the boundary conditions from x0's guard cells
       copy_x_boundaries(x_guess, x0, localmesh);
     }

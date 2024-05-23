@@ -90,15 +90,15 @@ FieldPerp LaplaceSPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   FieldPerp x{emptyFrom(b)};
 
-  if ((inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET)) {
+  if (isInnerBoundaryFlagSet(INVERT_SET) || isOuterBoundaryFlagSet(INVERT_SET)) {
     FieldPerp bs = copy(b);
 
     int xbndry = localmesh->xstart;
     // If the flags to assign that only one guard cell should be used is set
-    if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
+    if (isGlobalFlagSet(INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
       xbndry = 1;
     }
-    if ((inner_boundary_flags & INVERT_SET) && localmesh->firstX()) {
+    if (isInnerBoundaryFlagSet(INVERT_SET) && localmesh->firstX()) {
       // Copy x0 inner boundary into bs
       for (int ix = 0; ix < xbndry; ix++) {
         for (int iz = 0; iz < localmesh->LocalNz; iz++) {
@@ -106,7 +106,7 @@ FieldPerp LaplaceSPT::solve(const FieldPerp& b, const FieldPerp& x0) {
         }
       }
     }
-    if ((outer_boundary_flags & INVERT_SET) && localmesh->lastX()) {
+    if (isOuterBoundaryFlagSet(INVERT_SET) && localmesh->lastX()) {
       // Copy x0 outer boundary into bs
       for (int ix = localmesh->LocalNx - 1; ix >= localmesh->LocalNx - xbndry; ix--) {
         for (int iz = 0; iz < localmesh->LocalNz; iz++) {
@@ -173,17 +173,17 @@ Field3D LaplaceSPT::solve(const Field3D& b) {
 Field3D LaplaceSPT::solve(const Field3D& b, const Field3D& x0) {
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
 
-  if (((inner_boundary_flags & INVERT_SET) && localmesh->firstX())
-      || ((outer_boundary_flags & INVERT_SET) && localmesh->lastX())) {
+  if ((isInnerBoundaryFlagSet(INVERT_SET) && localmesh->firstX())
+      || (isOuterBoundaryFlagSet(INVERT_SET) && localmesh->lastX())) {
     Field3D bs = copy(b);
 
     int xbndry = localmesh->xstart;
     // If the flags to assign that only one guard cell should be used is set
-    if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
+    if (isGlobalFlagSet(INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
       xbndry = 1;
     }
 
-    if ((inner_boundary_flags & INVERT_SET) && localmesh->firstX()) {
+    if (isInnerBoundaryFlagSet(INVERT_SET) && localmesh->firstX()) {
       // Copy x0 inner boundary into bs
       for (int ix = 0; ix < xbndry; ix++) {
         for (int iy = 0; iy < localmesh->LocalNy; iy++) {
@@ -193,7 +193,7 @@ Field3D LaplaceSPT::solve(const Field3D& b, const Field3D& x0) {
         }
       }
     }
-    if ((outer_boundary_flags & INVERT_SET) && localmesh->lastX()) {
+    if (isOuterBoundaryFlagSet(INVERT_SET) && localmesh->lastX()) {
       // Copy x0 outer boundary into bs
       for (int ix = localmesh->LocalNx - 1; ix >= localmesh->LocalNx - xbndry; ix--) {
         for (int iy = 0; iy < localmesh->LocalNy; iy++) {
@@ -516,7 +516,7 @@ void LaplaceSPT::finish(SPT_data& data, FieldPerp& x) {
       dc1d[kz] = 0.0;
     }
 
-    if (global_flags & INVERT_ZERO_DC) {
+    if (isGlobalFlagSet(INVERT_ZERO_DC)) {
       dc1d[0] = 0.0;
     }
 

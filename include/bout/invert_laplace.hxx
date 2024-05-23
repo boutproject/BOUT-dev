@@ -308,6 +308,17 @@ protected:
   int extra_yguards_lower; ///< exclude some number of points at the lower boundary, useful for staggered grids or when boundary conditions make inversion redundant
   int extra_yguards_upper; ///< exclude some number of points at the upper boundary, useful for staggered grids or when boundary conditions make inversion redundant
 
+  /// Return true if global/default \p flag is set
+  bool isGlobalFlagSet(int flag) const { return (global_flags & flag) != 0; }
+  /// Return true if \p flag is set for the inner boundary condition
+  bool isInnerBoundaryFlagSet(int flag) const {
+    return (inner_boundary_flags & flag) != 0;
+  }
+  /// Return true if \p flag is set for the outer boundary condition
+  bool isOuterBoundaryFlagSet(int flag) const {
+    return (outer_boundary_flags & flag) != 0;
+  }
+
   int global_flags;         ///< Default flags
   int inner_boundary_flags; ///< Flags to set inner boundary condition
   int outer_boundary_flags; ///< Flags to set outer boundary condition
