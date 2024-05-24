@@ -20,7 +20,12 @@
  *
  **************************************************************************/
 
+#include "bout/build_defines.hxx"
+
+#if BOUT_HAS_PETSC
+
 #include "../impls/bout/boutmesh.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
 #include "bout/globalindexer.hxx"
 #include "bout/globals.hxx"
@@ -31,7 +36,6 @@
 
 #include <array>
 #include <cstddef>
-#include <petscsystypes.h>
 #include <vector>
 
 class IndConverter {
@@ -103,8 +107,6 @@ private:
     return (n < 0) ? ((n - d + 1) / d) : (n / d);
   }
 };
-
-#if BOUT_HAS_PETSC
 
 namespace {
 // A 4x4 stencil in x-z, covering (x-1, z-1) to (x+2, z+2)
