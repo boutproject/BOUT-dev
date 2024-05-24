@@ -224,6 +224,8 @@ public:
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                    const std::string& region = "RGN_NOBNDRY") override;
 
+  using XZInterpolation::interpolate;
+
   // Use precalculated weights
   Field3D interpolate(const Field3D& f,
                       const std::string& region = "RGN_NOBNDRY") const override;
@@ -245,6 +247,8 @@ public:
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                    const std::string& region = "RGN_NOBNDRY") override;
+
+  using XZInterpolation::interpolate;
 
   // Use precalculated weights
   Field3D interpolate(const Field3D& f,
