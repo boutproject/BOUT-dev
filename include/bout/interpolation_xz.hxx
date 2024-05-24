@@ -23,8 +23,12 @@
 #ifndef BOUT_INTERP_XZ_H
 #define BOUT_INTERP_XZ_H
 
+#include "bout/bout_types.hxx"
 #include "bout/build_defines.hxx"
+#include "bout/field3d.hxx"
+#include "bout/globalindexer.hxx"
 #include "bout/mask.hxx"
+#include "bout/petsc_interface.hxx"
 #include "bout/petsclib.hxx"
 
 class Options;
@@ -257,13 +261,15 @@ public:
 class PetscXZHermiteSpline : public XZInterpolation {
   PetscLib petsclib;
   bool isInit{false};
+  IndexerPtr<Field3D> indexer;
+  PetscMatrix<Field3D> weights;
   Mat petscWeights{nullptr};
   Vec rhs{nullptr};
   Vec result{nullptr};
   std::vector<Field3D> newWeights;
 
-  Tensor<SpecificInd<IND_TYPE::IND_3D>> i_corner; // x-index of bottom-left grid point
-  Tensor<int> k_corner;                           // z-index of bottom-left grid point
+  Tensor<Field3D::ind_type> i_corner; // x-index of bottom-left grid point
+  Tensor<int> k_corner;               // z-index of bottom-left grid point
 
   // Basis functions for cubic Hermite spline interpolation
   //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
