@@ -20,11 +20,29 @@
  *
  **************************************************************************/
 
+#include "bout/bout_types.hxx"
 #include "bout/globals.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
 
-#include <vector>
+#include <array>
+
+namespace {
+// 4-point Lagrangian interpolation
+// offset must be between 0 and 1
+BoutReal lagrange_4pt(const BoutReal v2m, const BoutReal v1m, const BoutReal v1p,
+                      const BoutReal v2p, const BoutReal offset) {
+  return -offset * (offset - 1.0) * (offset - 2.0) * v2m / 6.0
+         + 0.5 * (offset * offset - 1.0) * (offset - 2.0) * v1m
+         - 0.5 * offset * (offset + 1.0) * (offset - 2.0) * v1p
+         + offset * (offset * offset - 1.0) * v2p / 6.0;
+}
+// Convenience helper
+BoutReal lagrange_4pt(const std::array<BoutReal, 4>& x, const BoutReal offset) {
+  return lagrange_4pt(x[0], x[1], x[2], x[3], offset);
+}
+
+} // namespace
 
 XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh* mesh)
     : XZInterpolation(y_offset, mesh), t_x(localmesh), t_z(localmesh) {
@@ -101,42 +119,25 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) 
     const int jz2mnew = (jz - 1 + ncz) % ncz;
 
     // Interpolate in Z first
-    BoutReal xvals[4];
-
     const int y_next = y + y_offset;
 
-    xvals[0] = lagrange_4pt(f(jx2mnew, y_next, jz2mnew), f(jx2mnew, y_next, jz),
-                            f(jx2mnew, y_next, jzpnew), f(jx2mnew, y_next, jz2pnew),
-                            t_z(x, y, z));
+    const std::array<BoutReal, 4> xvals{
+        lagrange_4pt(f(jx2mnew, y_next, jz2mnew), f(jx2mnew, y_next, jz),
+                     f(jx2mnew, y_next, jzpnew), f(jx2mnew, y_next, jz2pnew),
+                     t_z(x, y, z)),
 
-    xvals[1] = lagrange_4pt(f(jx, y_next, jz2mnew), f(jx, y_next, jz),
-                            f(jx, y_next, jzpnew), f(jx, y_next, jz2pnew), t_z(x, y, z));
+        lagrange_4pt(f(jx, y_next, jz2mnew), f(jx, y_next, jz), f(jx, y_next, jzpnew),
+                     f(jx, y_next, jz2pnew), t_z(x, y, z)),
 
-    xvals[2] =
         lagrange_4pt(f(jxpnew, y_next, jz2mnew), f(jxpnew, y_next, jz),
-                     f(jxpnew, y_next, jzpnew), f(jxpnew, y_next, jz2pnew), t_z(x, y, z));
+                     f(jxpnew, y_next, jzpnew), f(jxpnew, y_next, jz2pnew), t_z(x, y, z)),
 
-    xvals[3] = lagrange_4pt(f(jx2pnew, y_next, jz2mnew), f(jx2pnew, y_next, jz),
-                            f(jx2pnew, y_next, jzpnew), f(jx2pnew, y_next, jz2pnew),
-                            t_z(x, y, z));
-
+        lagrange_4pt(f(jx2pnew, y_next, jz2mnew), f(jx2pnew, y_next, jz),
+                     f(jx2pnew, y_next, jzpnew), f(jx2pnew, y_next, jz2pnew),
+                     t_z(x, y, z)),
+    };
     // Then in X
     f_interp(x, y_next, z) = lagrange_4pt(xvals, t_x(x, y, z));
   }
   return f_interp;
-}
-
-// 4-point Lagrangian interpolation
-// offset must be between 0 and 1
-BoutReal XZLagrange4pt::lagrange_4pt(const BoutReal v2m, const BoutReal vm,
-                                     const BoutReal vp, const BoutReal v2p,
-                                     const BoutReal offset) const {
-  return -offset * (offset - 1.0) * (offset - 2.0) * v2m / 6.0
-         + 0.5 * (offset * offset - 1.0) * (offset - 2.0) * vm
-         - 0.5 * offset * (offset + 1.0) * (offset - 2.0) * vp
-         + offset * (offset * offset - 1.0) * v2p / 6.0;
-}
-
-BoutReal XZLagrange4pt::lagrange_4pt(const BoutReal v[], const BoutReal offset) const {
-  return lagrange_4pt(v[0], v[1], v[2], v[3], offset);
 }

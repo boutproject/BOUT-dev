@@ -209,10 +209,6 @@ class XZLagrange4pt : public XZInterpolation {
 
   Field3D t_x, t_z;
 
-  BoutReal lagrange_4pt(BoutReal v2m, BoutReal vm, BoutReal vp, BoutReal v2p,
-                        BoutReal offset) const;
-  BoutReal lagrange_4pt(const BoutReal v[], BoutReal offset) const;
-
 public:
   XZLagrange4pt(Mesh* mesh = nullptr) : XZLagrange4pt(0, mesh) {}
   XZLagrange4pt(int y_offset = 0, Mesh* mesh = nullptr);
