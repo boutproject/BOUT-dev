@@ -274,11 +274,12 @@ using RegisterUnavailableXZInterpolation =
     XZInterpolationFactory::RegisterUnavailableInFactory;
 
 namespace {
-RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{"hermitespline"};
-RegisterXZInterpolation<XZMonotonicHermiteSpline> registerinterpmonotonichermitespline{
+const inline RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{"hermitespline"};
+const inline RegisterXZInterpolation<XZMonotonicHermiteSpline> registerinterpmonotonichermitespline{
     "monotonichermitespline"};
-RegisterXZInterpolation<XZLagrange4pt> registerinterplagrange4pt{"lagrange4pt"};
-RegisterXZInterpolation<XZBilinear> registerinterpbilinear{"bilinear"};
+const inline RegisterXZInterpolation<XZLagrange4pt> registerinterplagrange4pt{
+    "lagrange4pt"};
+const inline RegisterXZInterpolation<XZBilinear> registerinterpbilinear{"bilinear"};
 } // namespace
 
 #endif // BOUT_INTERP_XZ_H
