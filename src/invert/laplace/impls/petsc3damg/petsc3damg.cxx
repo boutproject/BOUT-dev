@@ -102,8 +102,8 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
                           name);
     }
   };
-  unimplementedBoundaryFlag(inner_boundary_flags, "inner");
-  unimplementedBoundaryFlag(outer_boundary_flags, "outer");
+  unimplementedBoundaryFlag(getInnerBoundaryFlags(), "inner");
+  unimplementedBoundaryFlag(getOuterBoundaryFlags(), "outer");
   unimplementedBoundaryFlag(lower_boundary_flags, "lower");
   unimplementedBoundaryFlag(upper_boundary_flags, "upper");
 
@@ -191,8 +191,8 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
 
   // Adjust vectors to represent boundary conditions and check that
   // boundary cells are finite
-  setBC(rhs, b_in, indexer->getRegionInnerX(), inner_boundary_flags, x0);
-  setBC(rhs, b_in, indexer->getRegionOuterX(), outer_boundary_flags, x0);
+  setBC(rhs, b_in, indexer->getRegionInnerX(), getInnerBoundaryFlags(), x0);
+  setBC(rhs, b_in, indexer->getRegionOuterX(), getOuterBoundaryFlags(), x0);
   setBC(rhs, b_in, indexer->getRegionLowerY(), lower_boundary_flags, x0);
   setBC(rhs, b_in, indexer->getRegionUpperY(), upper_boundary_flags, x0);
 

@@ -174,9 +174,9 @@ LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   // invert Delp2 and we will not converge
   ASSERT0(delp2type == "cyclic" || delp2type == "spt" || delp2type == "tri");
   // Use same flags for FFT solver as for NaulinSolver
-  delp2solver->setGlobalFlags(global_flags);
-  delp2solver->setInnerBoundaryFlags(inner_boundary_flags);
-  delp2solver->setOuterBoundaryFlags(outer_boundary_flags);
+  delp2solver->setGlobalFlags(getGlobalFlags());
+  delp2solver->setInnerBoundaryFlags(getInnerBoundaryFlags());
+  delp2solver->setOuterBoundaryFlags(getOuterBoundaryFlags());
 
   static int naulinsolver_count = 1;
   setPerformanceName(fmt::format("{}{}", "naulinsolver", ++naulinsolver_count));

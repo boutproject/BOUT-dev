@@ -238,6 +238,10 @@ public:
   virtual void setInnerBoundaryFlags(int f) { inner_boundary_flags = f; }
   virtual void setOuterBoundaryFlags(int f) { outer_boundary_flags = f; }
 
+  virtual int getGlobalFlags() const { return global_flags; }
+  virtual int getInnerBoundaryFlags() const { return inner_boundary_flags; }
+  virtual int getOuterBoundaryFlags() const { return outer_boundary_flags; }
+
   /// Does this solver use Field3D coefficients (true) or only their DC component (false)
   virtual bool uses3DCoefs() const { return false; }
 
@@ -326,10 +330,6 @@ protected:
   /// on the outer processor(s)
   bool isOuterBoundaryFlagSetOnLastX(int flag) const;
 
-  int global_flags;         ///< Default flags
-  int inner_boundary_flags; ///< Flags to set inner boundary condition
-  int outer_boundary_flags; ///< Flags to set outer boundary condition
-
   void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomplex& b, dcomplex& c,
                    const Field2D* ccoef = nullptr, const Field2D* d = nullptr,
                    CELL_LOC loc = CELL_DEFAULT) {
@@ -355,6 +355,10 @@ protected:
                        ///  localmesh->getCoordinates(location) once
 
 private:
+  int global_flags;         ///< Default flags
+  int inner_boundary_flags; ///< Flags to set inner boundary condition
+  int outer_boundary_flags; ///< Flags to set outer boundary condition
+
   /// Singleton instance
   static std::unique_ptr<Laplacian> instance;
   /// Name for writing performance infomation; default taken from
