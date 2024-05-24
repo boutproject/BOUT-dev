@@ -65,20 +65,14 @@ LaplaceSPT::LaplaceSPT(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
     ye = localmesh->LocalNy - 1; // Contains upper boundary
   }
 
-  alldata = new SPT_data[ye - ys + 1];
-  alldata -= ys; // Re-number indices to start at ys
+  alldata.reallocate(ye - ys + 1);
   for (int jy = ys; jy <= ye; jy++) {
-    alldata[jy].comm_tag = SPT_DATA + jy; // Give each one a different tag
+    alldata[jy - ys].comm_tag = SPT_DATA + jy; // Give each one a different tag
   }
 
   // Temporary array for taking FFTs
   int ncz = localmesh->LocalNz;
   dc1d.reallocate(ncz / 2 + 1);
-}
-
-LaplaceSPT::~LaplaceSPT() {
-  alldata += ys; // Return to index from 0
-  delete[] alldata;
 }
 
 FieldPerp LaplaceSPT::solve(const FieldPerp& b) { return solve(b, b); }
@@ -141,29 +135,29 @@ Field3D LaplaceSPT::solve(const Field3D& b) {
 
   for (int jy = ys; jy <= ye; jy++) {
     // And start another one going
-    start(sliceXZ(b, jy), alldata[jy]);
+    start(sliceXZ(b, jy), alldata[jy - ys]);
 
     // Move each calculation along one processor
     for (int jy2 = ys; jy2 < jy; jy2++) {
-      next(alldata[jy2]);
+      next(alldata[jy2 - ys]);
     }
   }
 
   bool running = true;
-  do {
+  while (running) {
     // Move each calculation along until the last one is finished
-    for (int jy = ys; jy <= ye; jy++) {
-      running = next(alldata[jy]) == 0;
+    for (auto& data : alldata) {
+      running = next(data) == 0;
     }
-  } while (running);
+  }
 
   FieldPerp xperp(localmesh);
   xperp.setLocation(location);
   xperp.allocate();
 
   // All calculations finished. Get result
-  for (int jy = ys; jy <= ye; jy++) {
-    finish(alldata[jy], xperp);
+  for (auto& data : alldata) {
+    finish(data, xperp);
     x = xperp;
   }
 
