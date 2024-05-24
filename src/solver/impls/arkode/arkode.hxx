@@ -26,8 +26,8 @@
  *
  **************************************************************************/
 
-#ifndef __ARKODE_SOLVER_H__
-#define __ARKODE_SOLVER_H__
+#ifndef BOUT_ARKODE_SOLVER_H
+#define BOUT_ARKODE_SOLVER_H
 
 #include "bout/build_config.hxx"
 #include "bout/solver.hxx"
@@ -46,6 +46,10 @@ RegisterUnavailableSolver
 
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_config.h>
+
+#if SUNDIALS_CONTROLLER_SUPPORT
+#include <sundials/sundials_adaptcontroller.h>
+#endif
 
 #include <vector>
 
@@ -102,6 +106,10 @@ private:
   bool fixed_step;
   /// Order of internal step
   int order;
+  /// Name of the implicit Butcher table
+  std::string implicit_table;
+  /// Name of the explicit Butcher table
+  std::string explicit_table;
   /// Fraction of the estimated explicitly stable step to use
   BoutReal cfl_frac;
   /// Set timestep adaptivity function:
@@ -153,11 +161,15 @@ private:
 
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};
-  /// Solver for functional iterations for Adams-Moulton
+  /// Solver for implicit stages
   SUNNonlinearSolver nonlinear_solver{nullptr};
+#if SUNDIALS_CONTROLLER_SUPPORT
+  /// Timestep controller
+  SUNAdaptController controller{nullptr};
+#endif
   /// Context for SUNDIALS memory allocations
   sundials::Context suncontext;
 };
 
 #endif // BOUT_HAS_ARKODE
-#endif // __ARKODE_SOLVER_H__
+#endif // BOUT_ARKODE_SOLVER_H

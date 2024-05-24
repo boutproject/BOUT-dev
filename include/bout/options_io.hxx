@@ -97,8 +97,7 @@ public:
   ///         {"type", "netcdf"},
   ///         {"append", false}
   ///     });
-  static std::unique_ptr<OptionsIO>
-  create(std::initializer_list<std::pair<std::string, Options>> config_list) {
+  static std::unique_ptr<OptionsIO> create(Options::InitializerList config_list) {
     Options config(config_list); // Construct an Options to pass by reference
     return create(config);
   }
@@ -112,7 +111,7 @@ public:
   static constexpr auto default_type =
 #if BOUT_HAS_NETCDF
       "netcdf";
-#elif BOUT_HAS_ADIOS
+#elif BOUT_HAS_ADIOS2
       "adios";
 #else
       "invalid";

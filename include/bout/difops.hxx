@@ -33,8 +33,8 @@
  * 
  *******************************************************************************/
 
-#ifndef __DIFOPS_H__
-#define __DIFOPS_H__
+#ifndef BOUT_DIFOPS_H
+#define BOUT_DIFOPS_H
 
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
@@ -310,4 +310,4 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method = BRAC
 Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method = BRACKET_STD,
                 CELL_LOC outloc = CELL_DEFAULT, Solver* solver = nullptr);
 
-#endif /* __DIFOPS_H__ */
+#endif /* BOUT_DIFOPS_H */

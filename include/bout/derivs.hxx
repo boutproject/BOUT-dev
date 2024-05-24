@@ -26,8 +26,8 @@
  *
  **************************************************************************/
 
-#ifndef __DERIVS_H__
-#define __DERIVS_H__
+#ifndef BOUT_DERIVS_H
+#define BOUT_DERIVS_H
 
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
@@ -701,4 +701,4 @@ Coordinates::FieldMetric D2DYDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT
                                 const std::string& method = "DEFAULT",
                                 const std::string& region = "RGN_NOBNDRY");
 
-#endif // __DERIVS_H__
+#endif // BOUT_DERIVS_H

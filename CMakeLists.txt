@@ -366,7 +366,7 @@ else()
   set(BOUT_GENERATE_FIELDOPS_DEFAULT OFF)
 endif()
 
-execute_process(COMMAND ${Python3_EXECUTABLE} -c "import zoidberg"
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import importlib.util ; import sys; sys.exit(importlib.util.find_spec(\"zoidberg\") is None)"
   RESULT_VARIABLE zoidberg_FOUND)
 if (zoidberg_FOUND EQUAL 0)
   set(zoidberg_FOUND ON)
@@ -774,7 +774,7 @@ set(BOUT_HAS_PNETCDF OFF)
 # while for static builds we need the dependencies too
 if (BUILD_SHARED_LIBS)
   # Include rpath linker flag so user doesn't need to set LD_LIBRARY_PATH
-  set(CONFIG_LDFLAGS "${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}\$BOUT_LIB_PATH -L\$BOUT_LIB_PATH -lbout++ -lfmt")
+  set(CONFIG_LDFLAGS "${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}\$BOUT_LIB_PATH -L\$BOUT_LIB_PATH -lbout++ -lfmt ${CONFIG_LDFLAGS_SHARED}")
 else()
   set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS}")
 endif()
@@ -935,7 +935,7 @@ message("
    SUNDIALS support         : ${BOUT_HAS_SUNDIALS}
    HYPRE support            : ${BOUT_HAS_HYPRE}
    NetCDF support           : ${BOUT_HAS_NETCDF}
-   ADIOS support            : ${BOUT_HAS_ADIOS}
+   ADIOS2 support           : ${BOUT_HAS_ADIOS2}
    FFTW support             : ${BOUT_HAS_FFTW}
    LAPACK support           : ${BOUT_HAS_LAPACK}
    OpenMP support           : ${BOUT_USE_OPENMP}

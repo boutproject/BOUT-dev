@@ -602,23 +602,23 @@ TEST_F(OptionsTest, OptionsMacroConstReference) {
   EXPECT_EQ(val, 42);
 }
 
-/// Copy constructor copies value
+/// Copy method copies value
 TEST_F(OptionsTest, CopyOption) {
   Options option1;
 
   option1 = 42;
 
-  Options option2(option1);
+  Options option2(option1.copy());
 
   EXPECT_EQ(option2.as<int>(), 42);
 }
 
-/// Copy constructor makes independent copy
+/// Copy method makes independent copy
 TEST_F(OptionsTest, CopyOptionDistinct) {
   Options option1;
   option1 = 42;
 
-  Options option2(option1);
+  Options option2(option1.copy());
 
   option1.force(23);
 
@@ -632,7 +632,7 @@ TEST_F(OptionsTest, CopySection) {
 
   option1["key"] = 42; // option1 now a section
 
-  Options option2(option1);
+  Options option2(option1.copy());
 
   EXPECT_EQ(option2["key"].as<int>(), 42);
 }
@@ -643,7 +643,7 @@ TEST_F(OptionsTest, CopySectionParent) {
 
   option1["key"] = 42;
 
-  Options option2(option1);
+  Options option2(option1.copy());
 
   EXPECT_TRUE(&option2["key"].parent() == &option2);
 }
@@ -653,7 +653,7 @@ TEST_F(OptionsTest, AssignOption) {
 
   option1 = 42;
 
-  option2 = option1;
+  option2 = option1.copy();
 
   EXPECT_EQ(option2.as<int>(), 42);
 }
@@ -663,7 +663,7 @@ TEST_F(OptionsTest, AssignSection) {
 
   option1["key"] = 42;
 
-  option2 = option1;
+  option2 = option1.copy();
 
   EXPECT_EQ(option2["key"].as<int>(), 42);
   EXPECT_TRUE(option2["key"].isValue());
@@ -675,7 +675,7 @@ TEST_F(OptionsTest, AssignSectionReplace) {
   option1["key"] = 42;
   option2["key"] = 23;
 
-  option2 = option1;
+  option2 = option1.copy();
 
   EXPECT_EQ(option2["key"].as<int>(), 42);
 }
@@ -685,7 +685,7 @@ TEST_F(OptionsTest, AssignSectionParent) {
 
   option1["key"] = 42;
 
-  option2 = option1;
+  option2 = option1.copy();
 
   EXPECT_TRUE(&option2["key"].parent() == &option2);
 }
@@ -695,7 +695,7 @@ TEST_F(OptionsTest, AssignSubSection) {
 
   option1["key1"] = 42;
 
-  option2["key2"] = option1;
+  option2["key2"] = option1.copy();
 
   EXPECT_EQ(option2["key2"]["key1"].as<int>(), 42);
 }
@@ -705,7 +705,7 @@ TEST_F(OptionsTest, AssignSubSectionParent) {
 
   option1["key1"] = 42;
 
-  option2["key2"] = option1;
+  option2["key2"] = option1.copy();
 
   EXPECT_EQ(&option2["key2"].parent(), &option2);
   EXPECT_EQ(&option2["key2"]["key1"].parent(), &option2["key2"]);
@@ -1042,7 +1042,7 @@ TEST_F(OptionsTest, DocStringNotCopied) {
   Options option;
   option = 32;
 
-  Options option2 = option;
+  Options option2 = option.copy();
 
   int value = option2.doc("test value");
 

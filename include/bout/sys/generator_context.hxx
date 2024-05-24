@@ -27,6 +27,9 @@ public:
   ///
   Context(int ix, int iy, int iz, CELL_LOC loc, Mesh* msh, BoutReal t);
 
+  /// Specify the values directly
+  Context(BoutReal x, BoutReal y, BoutReal z, Mesh* msh, BoutReal t);
+
   /// If constructed without parameters, contains no values (null).
   /// Requesting x,y,z or t throws an exception
   Context() = default;

@@ -1,5 +1,5 @@
-#ifndef __FIELDGROUP_H__
-#define __FIELDGROUP_H__
+#ifndef BOUT_FIELDGROUP_H
+#define BOUT_FIELDGROUP_H
 
 #include "bout/field_data.hxx"
 #include <bout/field3d.hxx>
@@ -190,4 +190,4 @@ private:
 /// Combine two FieldGroups
 FieldGroup operator+(const FieldGroup& lhs, const FieldGroup& rhs);
 
-#endif // __FIELDGROUP_H__
+#endif // BOUT_FIELDGROUP_H

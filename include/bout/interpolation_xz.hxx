@@ -20,8 +20,8 @@
  *
  **************************************************************************/
 
-#ifndef INTERP_XZ_H
-#define INTERP_XZ_H
+#ifndef BOUT_INTERP_XZ_H
+#define BOUT_INTERP_XZ_H
 
 #include "bout/mask.hxx"
 
@@ -281,4 +281,4 @@ RegisterXZInterpolation<XZLagrange4pt> registerinterplagrange4pt{"lagrange4pt"};
 RegisterXZInterpolation<XZBilinear> registerinterpbilinear{"bilinear"};
 } // namespace
 
-#endif // INTERP_XZ_H
+#endif // BOUT_INTERP_XZ_H

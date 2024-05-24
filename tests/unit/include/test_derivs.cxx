@@ -70,8 +70,7 @@ public:
     const BoutReal box_length{TWOPI / grid_size};
 
     // Set all the variables for this direction
-    // In C++14 this can be the more explicit std::get<DIRECTION>()
-    switch (std::get<0>(GetParam())) {
+    switch (std::get<DIRECTION>(GetParam())) {
     case DIRECTION::X:
       nx = grid_size;
       dir = &Index::x;
@@ -103,33 +102,32 @@ public:
 
     mesh->createDefaultRegions();
 
+    using std::invoke;
     // Make the input and expected output fields
-    // Weird `(i.*dir)()` syntax here in order to call the direction method
-    // C++17 makes this nicer with std::invoke
     input = makeField<Field3D>(
-        [&](Index& i) { return std::sin((i.*dir)() * box_length); }, mesh);
+        [&](Index& i) { return std::sin(invoke(dir, i) * box_length); }, mesh);
 
     // Make the velocity field
     velocity = makeField<Field3D>([&](Index& UNUSED(i)) { return 2.0; }, mesh);
 
     // Get the expected result for this order of derivative
-    // Again, could be nicer in C++17 with std::get<DERIV>(GetParam())
-    switch (std::get<1>(GetParam())) {
+    switch (std::get<DERIV>(GetParam())) {
     case DERIV::Standard:
       expected = makeField<Field3D>(
-          [&](Index& i) { return std::cos((i.*dir)() * box_length) * box_length; }, mesh);
+          [&](Index& i) { return std::cos(invoke(dir, i) * box_length) * box_length; },
+          mesh);
       break;
     case DERIV::StandardSecond:
       expected = makeField<Field3D>(
           [&](Index& i) {
-            return -std::sin((i.*dir)() * box_length) * pow(box_length, 2);
+            return -std::sin(invoke(dir, i) * box_length) * pow(box_length, 2);
           },
           mesh);
       break;
     case DERIV::StandardFourth:
       expected = makeField<Field3D>(
           [&](Index& i) {
-            return std::sin((i.*dir)() * box_length) * pow(box_length, 4);
+            return std::sin(invoke(dir, i) * box_length) * pow(box_length, 4);
           },
           mesh);
       break;
@@ -138,7 +136,9 @@ public:
     case DERIV::Upwind:
     case DERIV::Flux:
       expected = makeField<Field3D>(
-          [&](Index& i) { return 2.0 * std::cos((i.*dir)() * box_length) * box_length; },
+          [&](Index& i) {
+            return 2.0 * std::cos(invoke(dir, i) * box_length) * box_length;
+          },
           mesh);
       break;
     default:
@@ -191,7 +191,7 @@ auto getMethodsForDirection(DERIV derivative_order, DIRECTION direction)
 auto methodDirectionTupleToString(
     const ::testing::TestParamInfo<std::tuple<DIRECTION, DERIV, std::string>>& param)
     -> std::string {
-  return std::get<2>(param.param);
+  return std::get<std::string>(param.param);
 }
 
 // Instantiate the test for X, Y, Z for first derivatives
@@ -278,8 +278,8 @@ INSTANTIATE_TEST_SUITE_P(FluxZ, DerivativesTestAdvection,
 // single test, just instantiate it for each direction/order combination
 TEST_P(DerivativesTest, Sanity) {
   auto derivative = DerivativeStore<Field3D>::getInstance().getStandardDerivative(
-      std::get<2>(GetParam()), std::get<0>(GetParam()), STAGGER::None,
-      std::get<1>(GetParam()));
+      std::get<std::string>(GetParam()), std::get<DIRECTION>(GetParam()), STAGGER::None,
+      std::get<DERIV>(GetParam()));
 
   Field3D result{mesh};
   result.allocate();
@@ -292,8 +292,8 @@ TEST_P(DerivativesTest, Sanity) {
 // single test, just instantiate it for each direction/order combination
 TEST_P(DerivativesTestAdvection, Sanity) {
   auto derivative = DerivativeStore<Field3D>::getInstance().getFlowDerivative(
-      std::get<2>(GetParam()), std::get<0>(GetParam()), STAGGER::None,
-      std::get<1>(GetParam()));
+      std::get<std::string>(GetParam()), std::get<DIRECTION>(GetParam()), STAGGER::None,
+      std::get<DERIV>(GetParam()));
 
   Field3D result{mesh};
   result.allocate();
@@ -327,7 +327,7 @@ INSTANTIATE_TEST_SUITE_P(FirstZ, FirstDerivativesInterfaceTest,
 
 TEST_P(FirstDerivativesInterfaceTest, Sanity) {
   Field3D result;
-  switch (std::get<0>(GetParam())) {
+  switch (std::get<DIRECTION>(GetParam())) {
   case DIRECTION::X:
     result = bout::derivatives::index::DDX(input);
     break;
@@ -363,7 +363,7 @@ INSTANTIATE_TEST_SUITE_P(Z, SecondDerivativesInterfaceTest,
 
 TEST_P(SecondDerivativesInterfaceTest, Sanity) {
   Field3D result;
-  switch (std::get<0>(GetParam())) {
+  switch (std::get<DIRECTION>(GetParam())) {
   case DIRECTION::X:
     result = bout::derivatives::index::D2DX2(input);
     break;
@@ -399,7 +399,7 @@ INSTANTIATE_TEST_SUITE_P(Z, FourthDerivativesInterfaceTest,
 
 TEST_P(FourthDerivativesInterfaceTest, Sanity) {
   Field3D result;
-  switch (std::get<0>(GetParam())) {
+  switch (std::get<DIRECTION>(GetParam())) {
   case DIRECTION::X:
     result = bout::derivatives::index::D4DX4(input);
     break;
@@ -437,7 +437,7 @@ INSTANTIATE_TEST_SUITE_P(Z, UpwindDerivativesInterfaceTest,
 TEST_P(UpwindDerivativesInterfaceTest, Sanity) {
   Field3D result;
 
-  switch (std::get<0>(GetParam())) {
+  switch (std::get<DIRECTION>(GetParam())) {
   case DIRECTION::X:
     result = bout::derivatives::index::VDDX(velocity, input);
     break;
@@ -475,7 +475,7 @@ INSTANTIATE_TEST_SUITE_P(Z, FluxDerivativesInterfaceTest,
 TEST_P(FluxDerivativesInterfaceTest, Sanity) {
   Field3D result;
 
-  switch (std::get<0>(GetParam())) {
+  switch (std::get<DIRECTION>(GetParam())) {
   case DIRECTION::X:
     result = bout::derivatives::index::FDDX(velocity, input);
     break;

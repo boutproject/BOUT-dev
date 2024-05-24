@@ -25,8 +25,8 @@
  *
  **************************************************************************/
 
-#ifndef __SNES_SOLVER_H__
-#define __SNES_SOLVER_H__
+#ifndef BOUT_SNES_SOLVER_H
+#define BOUT_SNES_SOLVER_H
 
 #include <bout/build_config.hxx>
 #include <bout/solver.hxx>
@@ -143,4 +143,4 @@ RegisterUnavailableSolver
 
 #endif // BOUT_HAS_PETSC
 
-#endif // __SNES_SOLVER_H__
+#endif // BOUT_SNES_SOLVER_H

@@ -25,8 +25,8 @@
  *
  **************************************************************************/
 
-#ifndef __WHERE_H__
-#define __WHERE_H__
+#ifndef BOUT_WHERE_H
+#define BOUT_WHERE_H
 
 #include "bout/field.hxx"
 #include "bout/field2d.hxx"
@@ -85,4 +85,4 @@ auto where(const T& test, BoutReal gt0, BoutReal le0) -> ResultType {
   return result;
 }
 
-#endif // __WHERE_H__
+#endif // BOUT_WHERE_H

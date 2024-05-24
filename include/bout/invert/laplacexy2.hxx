@@ -30,8 +30,8 @@
  *
  **************************************************************************/
 
-#ifndef __LAPLACE_XY2_H__
-#define __LAPLACE_XY2_H__
+#ifndef BOUT_LAPLACE_XY2_H
+#define BOUT_LAPLACE_XY2_H
 
 #include "bout/build_defines.hxx"
 
@@ -141,4 +141,4 @@ private:
 };
 
 #endif // BOUT_HAS_PETSC
-#endif // __LAPLACE_XY_H__
+#endif // BOUT_LAPLACE_XY2_H

@@ -39,7 +39,7 @@ jobs:
         is_cron:
           - ${{ github.event_name == 'cron' }}
         config:
-          - name: "CMake, PETSc unreleased, ADIOS"
+          - name: "CMake, PETSc unreleased, ADIOS2"
             os: ubuntu-20.04
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_METRIC_3D=ON
@@ -240,3 +240,30 @@ jobs:
         shell: bash
         env:
           TRAVIS_BUILD_DIR: ${{ github.workspace }}
+  CUDA:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    container: ghcr.io/ggeorgakoudis/boutdev-cuda:latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Build minimal CUDA 12.2 @ GCC9.4.0 @ Ubuntu 20.04
+        run: |
+          . /spack/share/spack/setup-env.sh
+          spack env activate -p /spack-env
+          git config --global --add safe.directory $GITHUB_WORKSPACE
+          rm -rf build
+          cmake -S $GITHUB_WORKSPACE -B build \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DBOUT_ENABLE_RAJA=on \
+            -DBOUT_ENABLE_UMPIRE=on \
+            -DBOUT_ENABLE_CUDA=on \
+            -DCMAKE_CUDA_ARCHITECTURES=80 \
+            -DCUDA_ARCH=compute_80,code=sm_80 \
+            -DBOUT_ENABLE_WARNINGS=off \
+            -DBOUT_USE_SYSTEM_FMT=on
+          cd build
+          make -j 4

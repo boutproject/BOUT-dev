@@ -19,8 +19,8 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  **************************************************************************/
 
-#ifndef __MASK_H__
-#define __MASK_H__
+#ifndef BOUT_MASK_H
+#define BOUT_MASK_H
 
 #include <vector>
 
@@ -79,4 +79,4 @@ inline std::unique_ptr<Region<Ind3D>> regionFromMask(const BoutMask& mask,
   }
   return std::make_unique<Region<Ind3D>>(indices);
 }
-#endif //__MASK_H__
+#endif //BOUT_MASK_H

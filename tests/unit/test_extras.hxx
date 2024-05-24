@@ -8,6 +8,7 @@
 #include <numeric>
 #include <vector>
 
+#include "bout/boundary_region.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/coordinates.hxx"
 #include "bout/field3d.hxx"
@@ -232,8 +233,9 @@ public:
   RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
   void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
   std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
-  std::vector<BoundaryRegionPar*> getBoundariesPar() override {
-    return std::vector<BoundaryRegionPar*>();
+  std::vector<std::shared_ptr<BoundaryRegionPar>>
+  getBoundariesPar(BoundaryParType UNUSED(type)) override {
+    return std::vector<std::shared_ptr<BoundaryRegionPar>>();
   }
   BoutReal GlobalX(int jx) const override { return jx; }
   BoutReal GlobalY(int jy) const override { return jy; }
@@ -332,7 +334,7 @@ class FakeGridDataSource : public GridDataSource {
 public:
   FakeGridDataSource() {}
   /// Constructor setting values which can be fetched from this source
-  FakeGridDataSource(Options& values) : values(values) {}
+  FakeGridDataSource(const Options& values) : values(values.copy()) {}
 
   /// Take an rvalue (e.g. initializer list), convert to lvalue and delegate constructor
   FakeGridDataSource(Options&& values) : FakeGridDataSource(values) {}
