@@ -23,7 +23,9 @@
 #ifndef BOUT_INTERP_XZ_H
 #define BOUT_INTERP_XZ_H
 
+#include "bout/build_defines.hxx"
 #include "bout/mask.hxx"
+#include "bout/petsclib.hxx"
 
 class Options;
 
@@ -251,6 +253,64 @@ public:
                       const std::string& region = "RGN_NOBNDRY") const override;
 };
 
+#if BOUT_HAS_PETSC
+class PetscXZHermiteSpline : public XZInterpolation {
+  PetscLib petsclib;
+  bool isInit{false};
+  Mat petscWeights{nullptr};
+  Vec rhs{nullptr};
+  Vec result{nullptr};
+  std::vector<Field3D> newWeights;
+
+  Tensor<SpecificInd<IND_TYPE::IND_3D>> i_corner; // x-index of bottom-left grid point
+  Tensor<int> k_corner;                           // z-index of bottom-left grid point
+
+  // Basis functions for cubic Hermite spline interpolation
+  //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
+  // The h00 and h01 basis functions are applied to the function itself
+  // and the h10 and h11 basis functions are applied to its derivative
+  // along the interpolation direction.
+  Field3D h00_x;
+  Field3D h01_x;
+  Field3D h10_x;
+  Field3D h11_x;
+  Field3D h00_z;
+  Field3D h01_z;
+  Field3D h10_z;
+  Field3D h11_z;
+
+public:
+  PetscXZHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr);
+  PetscXZHermiteSpline(Mesh* mesh = nullptr) : PetscXZHermiteSpline(0, mesh) {}
+  PetscXZHermiteSpline(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
+      : PetscXZHermiteSpline(y_offset, mesh) {
+    region = regionFromMask(mask, localmesh);
+  }
+  PetscXZHermiteSpline(const PetscXZHermiteSpline& other) = delete;
+  PetscXZHermiteSpline(PetscXZHermiteSpline&& other) = default;
+  PetscXZHermiteSpline& operator=(const PetscXZHermiteSpline& other) = delete;
+  PetscXZHermiteSpline& operator=(PetscXZHermiteSpline&& other) = delete;
+  ~PetscXZHermiteSpline() override;
+
+  void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
+                   const std::string& region = "RGN_NOBNDRY") override;
+  void calcWeights(const Field3D& delta_x, const Field3D& delta_z, const BoutMask& mask,
+                   const std::string& region = "RGN_NOBNDRY");
+
+  // Use precalculated weights
+  Field3D interpolate(const Field3D& f,
+                      const std::string& region = "RGN_NOBNDRY") const override;
+  // Calculate weights and interpolate
+  Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
+                      const std::string& region = "RGN_NOBNDRY");
+  Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
+                      const BoutMask& mask, const std::string& region = "RGN_NOBNDRY");
+
+  std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYApproximation(int i, int j, int k, int yoffset) override;
+};
+#endif // BOUT_HAS_PETSC
+
 class XZInterpolationFactory
     : public Factory<XZInterpolation, XZInterpolationFactory, Mesh*> {
 public:
@@ -274,12 +334,21 @@ using RegisterUnavailableXZInterpolation =
     XZInterpolationFactory::RegisterUnavailableInFactory;
 
 namespace {
-const inline RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{"hermitespline"};
-const inline RegisterXZInterpolation<XZMonotonicHermiteSpline> registerinterpmonotonichermitespline{
-    "monotonichermitespline"};
+const inline RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{
+    "hermitespline"};
+const inline RegisterXZInterpolation<XZMonotonicHermiteSpline>
+    registerinterpmonotonichermitespline{"monotonichermitespline"};
 const inline RegisterXZInterpolation<XZLagrange4pt> registerinterplagrange4pt{
     "lagrange4pt"};
 const inline RegisterXZInterpolation<XZBilinear> registerinterpbilinear{"bilinear"};
+
+#if BOUT_HAS_PETSC
+const inline RegisterXZInterpolation<PetscXZHermiteSpline> registerpetschermitespline{
+    "petschermitespline"};
+#else
+const inline RegisterUnavailableXZInterpolation register_unavailable_petsc_hermite_spline{
+    "petschermitespline", "BOUT++ was not configured with PETSc"};
+#endif
 } // namespace
 
 #endif // BOUT_INTERP_XZ_H
