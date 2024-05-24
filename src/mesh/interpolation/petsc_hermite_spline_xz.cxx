@@ -140,7 +140,7 @@ auto XZstencil(const Mesh& localmesh) {
 
   return stencil;
 }
-}
+} // namespace
 
 PetscXZHermiteSpline::PetscXZHermiteSpline(int y_offset, Mesh* mesh)
     : XZInterpolation(y_offset, mesh),
@@ -204,9 +204,7 @@ void PetscXZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& de
   // PETSc doesn't like mixing `INSERT` and `ADD`, so first make sure matrix is zeroed
   // TODO: PetscMatrix could buffer and insert all at once
   weights.partialAssemble();
-  BOUT_FOR(i, actual_region) {
-    weights(i, i) = 0.0;
-  }
+  BOUT_FOR(i, actual_region) { weights(i, i) = 0.0; }
   weights.partialAssemble();
 
   BOUT_FOR(i, actual_region) {
@@ -359,7 +357,8 @@ void PetscXZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& de
                                         k_corner(x, y, z) - 1 + k);
         vals[k] = newWeights[j * 4 + k][i];
       }
-      MatSetValues(petscWeights, 1, idxn.data(), 4, idxm.data(), vals.data(), INSERT_VALUES);
+      MatSetValues(petscWeights, 1, idxn.data(), 4, idxm.data(), vals.data(),
+                   INSERT_VALUES);
     }
   }
 
