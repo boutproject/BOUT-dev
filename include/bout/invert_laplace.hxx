@@ -340,15 +340,13 @@ protected:
                    CELL_LOC loc = CELL_DEFAULT);
 
   void tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dcomplex* bk, int jy,
-                    int kz, BoutReal kwave, int flags, int inner_boundary_flags,
-                    int outer_boundary_flags, const Field2D* a, const Field2D* ccoef,
+                    int kz, BoutReal kwave, const Field2D* a, const Field2D* ccoef,
                     const Field2D* d, bool includeguards = true, bool zperiodic = true) {
-    tridagMatrix(avec, bvec, cvec, bk, jy, kz, kwave, flags, inner_boundary_flags,
-                 outer_boundary_flags, a, ccoef, ccoef, d, includeguards, zperiodic);
+    tridagMatrix(avec, bvec, cvec, bk, jy, kz, kwave, a, ccoef, ccoef, d, includeguards,
+                 zperiodic);
   }
   void tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dcomplex* bk, int jy,
-                    int kz, BoutReal kwave, int flags, int inner_boundary_flags,
-                    int outer_boundary_flags, const Field2D* a, const Field2D* c1coef,
+                    int kz, BoutReal kwave, const Field2D* a, const Field2D* c1coef,
                     const Field2D* c2coef, const Field2D* d, bool includeguards = true,
                     bool zperiodic = true);
   CELL_LOC location;   ///< staggered grid location of this solver

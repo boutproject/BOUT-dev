@@ -169,8 +169,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
         tridagMatrix(&a(kz, 0), &b(kz, 0), &c(kz, 0), &bcmplx(kz, 0), jy,
                      kz,    // wave number index
                      kwave, // kwave (inverse wave length)
-                     global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
-                     &C1coef, &C2coef, &Dcoef,
+                     &Acoef, &C1coef, &C2coef, &Dcoef,
                      false,  // Don't include guard cells in arrays
                      false); // Z domain not periodic
       }
@@ -241,8 +240,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
         tridagMatrix(&a(kz, 0), &b(kz, 0), &c(kz, 0), &bcmplx(kz, 0), jy,
                      kz,    // True for the component constant (DC) in Z
                      kwave, // Z wave number
-                     global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
-                     &C1coef, &C2coef, &Dcoef,
+                     &Acoef, &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
       }
     }
@@ -404,8 +402,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
         tridagMatrix(&a3D(ind, 0), &b3D(ind, 0), &c3D(ind, 0), &bcmplx3D(ind, 0), iy,
                      kz,    // wave number index
                      kwave, // kwave (inverse wave length)
-                     global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
-                     &C1coef, &C2coef, &Dcoef,
+                     &Acoef, &C1coef, &C2coef, &Dcoef,
                      false,  // Don't include guard cells in arrays
                      false); // Z domain not periodic
       }
@@ -488,8 +485,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
         tridagMatrix(&a3D(ind, 0), &b3D(ind, 0), &c3D(ind, 0), &bcmplx3D(ind, 0), iy,
                      kz,    // True for the component constant (DC) in Z
                      kwave, // Z wave number
-                     global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
-                     &C1coef, &C2coef, &Dcoef,
+                     &Acoef, &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
       }
     }
