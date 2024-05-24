@@ -33,11 +33,13 @@
  *
  */
 
-#include "cyclic_laplace.hxx"
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if not BOUT_USE_METRIC_3D
 
+#include "cyclic_laplace.hxx"
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
@@ -47,7 +49,7 @@
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
-#include "cyclic_laplace.hxx"
+#include <vector>
 
 LaplaceCyclic::LaplaceCyclic(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
                              Solver* UNUSED(solver))
@@ -348,6 +350,9 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
   const int nsys = nmode * ny;  // Number of systems of equations to solve
   const int nxny = nx * ny;     // Number of points in X-Y
 
+  // This is just to silence static analysis
+  ASSERT0(ny > 0);
+
   auto a3D = Matrix<dcomplex>(nsys, nx);
   auto b3D = Matrix<dcomplex>(nsys, nx);
   auto c3D = Matrix<dcomplex>(nsys, nx);
@@ -496,9 +501,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
     if (localmesh->periodicX) {
       // Subtract X average of kz=0 mode
-      BoutReal local[ny + 1];
+      std::vector<BoutReal> local(ny + 1, 0.0);
       for (int y = 0; y < ny; y++) {
-        local[y] = 0.0;
         for (int ix = xs; ix <= xe; ix++) {
           local[y] += xcmplx3D(y * nmode, ix - xs).real();
         }
@@ -506,8 +510,9 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       local[ny] = static_cast<BoutReal>(xe - xs + 1);
 
       // Global reduce
-      BoutReal global[ny + 1];
-      MPI_Allreduce(local, global, ny + 1, MPI_DOUBLE, MPI_SUM, localmesh->getXcomm());
+      std::vector<BoutReal> global(ny + 1, 0.0);
+      MPI_Allreduce(local.data(), global.data(), ny + 1, MPI_DOUBLE, MPI_SUM,
+                    localmesh->getXcomm());
       // Subtract average from kz=0 modes
       for (int y = 0; y < ny; y++) {
         BoutReal avg = global[y] / global[ny];
