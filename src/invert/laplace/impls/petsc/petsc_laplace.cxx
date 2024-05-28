@@ -50,6 +50,7 @@
 
 static PetscErrorCode laplacePCapply(PC pc, Vec x, Vec y) {
   int ierr;
+  PetscFunctionBegin;
 
   // Get the context
   LaplacePetsc* s;
