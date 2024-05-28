@@ -23,15 +23,68 @@
  *
  **************************************************************************/
 
+#include "bout/bout.hxx"
 #include "bout/bout_types.hxx"
-#include <bout/bout.hxx>
-#include <bout/boutexception.hxx>
-#include <bout/constants.hxx>
-#include <bout/invert_laplace.hxx>
-#include <bout/options.hxx>
+#include "bout/boutexception.hxx"
+#include "bout/constants.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/invert_laplace.hxx"
+#include "bout/options.hxx"
+#include "bout/output.hxx"
+#include "bout/traits.hxx"
+
+#include "fmt/core.h"
+
 #include <cmath>
+#include <string_view>
 
 BoutReal max_error_at_ystart(const Field3D& error);
+void apply_flat_boundary(Field3D& bcoef);
+
+template <class T, class U>
+void check_laplace(int test_num, std::string_view test_name, Laplacian& invert,
+                   int inner_flags, int outer_flags, const T& acoef, const T& ccoef,
+                   const T& dcoef, const U& bcoef, const Field3D& field, int ystart,
+                   Options& dump) {
+  static_assert(bout::utils::is_Field_v<T>, "check_laplace requires Field2D or Field3D");
+  static_assert(bout::utils::is_Field_v<U>, "check_laplace requires Field2D or Field3D");
+
+  invert.setInnerBoundaryFlags(inner_flags);
+  invert.setOuterBoundaryFlags(outer_flags);
+  invert.setCoefA(acoef);
+  invert.setCoefC(ccoef);
+  invert.setCoefD(dcoef);
+
+  checkData(bcoef);
+
+  Field3D sol;
+  Field3D error;
+  Field3D abs_error;
+  BoutReal max_error = -1;
+
+  try {
+    sol = invert.solve(sliceXZ(bcoef, ystart));
+    error = (field - sol) / field;
+    abs_error = field - sol;
+    max_error = max_error_at_ystart(abs(abs_error));
+  } catch (BoutException& err) {
+    output.write("BoutException occured in invert->solve(b1): {}\n", err.what());
+  }
+
+  output.write("\nTest {}: {}\n", test_num, test_name);
+  output.write("Magnitude of maximum absolute error is {}\n", max_error);
+
+  dump[fmt::format("a{}", test_num)] = acoef;
+  dump[fmt::format("b{}", test_num)] = bcoef;
+  dump[fmt::format("c{}", test_num)] = ccoef;
+  dump[fmt::format("d{}", test_num)] = dcoef;
+  dump[fmt::format("f{}", test_num)] = field;
+  dump[fmt::format("sol{}", test_num)] = sol;
+  dump[fmt::format("error{}", test_num)] = error;
+  dump[fmt::format("absolute_error{}", test_num)] = abs_error;
+  dump[fmt::format("max_error{}", test_num)] = max_error;
+}
 
 int main(int argc, char** argv) {
 
@@ -42,25 +95,22 @@ int main(int argc, char** argv) {
     options = Options::getRoot()->getSection("petsc4th");
     auto invert_4th = Laplacian::create(options);
 
+    Options dump;
+
     // Solving equations of the form d*Delp2(f) + 1/c*Grad_perp(c).Grad_perp(f) + a*f = b for various f, a, c, d
     Field3D f1;
     Field3D a1;
-    Field3D b1;
     Field3D c1;
     Field3D d1;
-    Field3D sol1;
     BoutReal p;
     BoutReal q; //Use to set parameters in constructing trial functions
-    Field3D error1;
-    Field3D absolute_error1; //Absolute value of relative error: abs( (f1-sol1)/f1 )
-    BoutReal max_error1 = -1;     //Output of test
 
     using bout::globals::mesh;
 
     // Only Neumann x-boundary conditions are implemented so far, so test functions should be Neumann in x and periodic in z.
     // Use Field3D's, but solver only works on FieldPerp slices, so only use 1 y-point
-    BoutReal nx = mesh->GlobalNx - 2 * mesh->xstart - 1;
-    BoutReal nz = mesh->GlobalNz;
+    const BoutReal nx = mesh->GlobalNx - 2 * mesh->xstart - 1;
+    const BoutReal nz = mesh->GlobalNz;
 
     /////////////////////////////////////////////////////
     // Test 1: Gaussian x-profiles, 2nd order Krylov
@@ -248,182 +298,41 @@ int main(int argc, char** argv) {
 
     mesh->communicate(f1, a1, c1, d1);
 
-    b1 = d1 * Delp2(f1) + Grad_perp(c1) * Grad_perp(f1) / c1 + a1 * f1;
+    Field3D b1 = d1 * Delp2(f1) + Grad_perp(c1) * Grad_perp(f1) / c1 + a1 * f1;
+    apply_flat_boundary(b1);
 
-    if (mesh->firstX()) {
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            b1(jx, jy, jz) = b1(jx + 1, jy, jz);
-          }
-        }
-      }
-    }
-    if (mesh->lastX()) {
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            b1(jx, jy, jz) = b1(jx - 1, jy, jz);
-          }
-        }
-      }
-    }
-
-    invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
-    invert->setOuterBoundaryFlags(INVERT_AC_GRAD);
-    invert->setCoefA(a1);
-    invert->setCoefC(c1);
-    invert->setCoefD(d1);
-
-    checkData(b1);
-
-    try {
-      sol1 = invert->solve(sliceXZ(b1, mesh->ystart));
-      error1 = (f1 - sol1) / f1;
-      absolute_error1 = f1 - sol1;
-      max_error1 = max_error_at_ystart(abs(absolute_error1));
-    } catch (BoutException& err) {
-      output.write("BoutException occured in invert->solve(b1): {}\n", err.what());
-    }
-
-    output.write("\nTest 1: PETSc 2nd order\n");
-    output.write("Magnitude of maximum absolute error is {}\n", max_error1);
-
-    Options dump;
-    dump["a1"] = a1;
-    dump["b1"] = b1;
-    dump["c1"] = c1;
-    dump["d1"] = d1;
-    dump["f1"] = f1;
-    dump["sol1"] = sol1;
-    dump["error1"] = error1;
-    dump["absolute_error1"] = absolute_error1;
-    dump["max_error1"] = max_error1;
+    int test_num = 0;
+    check_laplace(++test_num, "PETSc 2nd order", *invert, INVERT_AC_GRAD, INVERT_AC_GRAD, a1, c1,
+                  d1, b1, f1, mesh->ystart, dump);
 
     /////////////////////////////////////////////////
     // Test 2: Gaussian x-profiles, 4th order Krylov
-    Field3D sol2;
-    Field3D error2;
-    Field3D absolute_error2;       //Absolute value of relative error: abs( (f3-sol3)/f3 )
-    BoutReal max_error2 = -1; //Output of test
 
-    invert_4th->setInnerBoundaryFlags(INVERT_AC_GRAD);
-    invert_4th->setOuterBoundaryFlags(INVERT_AC_GRAD);
-    invert_4th->setCoefA(a1);
-    invert_4th->setCoefC(c1);
-    invert_4th->setCoefD(d1);
-
-    try {
-      sol2 = invert_4th->solve(sliceXZ(b1, mesh->ystart));
-      error2 = (f1 - sol2) / f1;
-      absolute_error2 = f1 - sol2;
-      max_error2 = max_error_at_ystart(abs(absolute_error2));
-    } catch (BoutException& err) {
-      output.write("BoutException occured in invert->solve(b1): {}\n", err.what());
-    }
-
-    output.write("\nTest 2: PETSc 4th order\n");
-    output.write("Magnitude of maximum absolute error is {}\n", max_error2);
-
-    dump["a2"] = a1;
-    dump["b2"] = b1;
-    dump["c2"] = c1;
-    dump["d2"] = d1;
-    dump["f2"] = f1;
-    dump["sol2"] = sol2;
-    dump["error2"] = error2;
-    dump["absolute_error2"] = absolute_error2;
-    dump["max_error2"] = max_error2;
+    check_laplace(++test_num, "PETSc 4th order", *invert_4th, INVERT_AC_GRAD, INVERT_AC_GRAD, a1,
+                  c1, d1, b1, f1, mesh->ystart, dump);
 
     ////////////////////////////////////////////////////////////////////////////////////////
     // Test 3+4: Gaussian x-profiles, z-independent coefficients and compare with SPT method
-    Field3D sol3, sol4;
-    Field3D error3, absolute_error3, error4, absolute_error4;
-    BoutReal max_error3 = -1;
 
-    Field2D a3 = DC(a1);
-    Field2D c3 = DC(c1);
-    Field2D d3 = DC(d1);
+    const Field2D a3 = DC(a1);
+    const Field2D c3 = DC(c1);
+    const Field2D d3 = DC(d1);
     Field3D b3 = d3 * Delp2(f1) + Grad_perp(c3) * Grad_perp(f1) / c3 + a3 * f1;
-    if (mesh->firstX()) {
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            b3(jx, jy, jz) = b3(jx + 1, jy, jz);
-          }
-        }
-      }
-    }
-    if (mesh->lastX()) {
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            b3(jx, jy, jz) = b3(jx - 1, jy, jz);
-          }
-        }
-      }
-    }
+    apply_flat_boundary(b3);
 
-    invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
-    invert->setOuterBoundaryFlags(INVERT_AC_GRAD);
-    invert->setCoefA(a3);
-    invert->setCoefC(c3);
-    invert->setCoefD(d3);
-
-    try {
-      sol3 = invert->solve(sliceXZ(b3, mesh->ystart));
-      error3 = (f1 - sol3) / f1;
-      absolute_error3 = f1 - sol3;
-      max_error3 = max_error_at_ystart(abs(absolute_error3));
-    } catch (BoutException& err) {
-      output.write("BoutException occured in invert->solve(b3): {}\n", err.what());
-    }
-
-    output.write("\nTest 3: with coefficients constant in z, PETSc 2nd order\n");
-    output.write("Magnitude of maximum absolute error is {}\n", max_error3);
-
-    dump["a3"] = a3;
-    dump["b3"] = b3;
-    dump["c3"] = c3;
-    dump["d3"] = d3;
-    dump["f3"] = f1;
-    dump["sol3"] = sol3;
-    dump["error3"] = error3;
-    dump["absolute_error3"] = absolute_error3;
-    dump["max_error3"] = max_error3;
+    check_laplace(++test_num, "with coefficients constant in z, PETSc 2nd order", *invert,
+                  INVERT_AC_GRAD, INVERT_AC_GRAD, a3, c3, d3, b3, f1, mesh->ystart, dump);
 
     Options* SPT_options = Options::getRoot()->getSection("SPT");
     auto invert_SPT = Laplacian::create(SPT_options);
-    invert_SPT->setInnerBoundaryFlags(INVERT_AC_GRAD);
-    invert_SPT->setOuterBoundaryFlags(INVERT_AC_GRAD | INVERT_DC_GRAD);
-    invert_SPT->setCoefA(a3);
-    invert_SPT->setCoefC(c3);
-    invert_SPT->setCoefD(d3);
 
-    sol4 = invert_SPT->solve(sliceXZ(b3, mesh->ystart));
-    error4 = (f1 - sol4) / f1;
-    absolute_error4 = f1 - sol4;
-    const BoutReal max_error4 = max_error_at_ystart(abs(absolute_error4));
+    check_laplace(++test_num, "with coefficients constant in z, default solver", *invert_SPT,
+                  INVERT_AC_GRAD, INVERT_AC_GRAD | INVERT_DC_GRAD, a3, c3, d3, b3, f1,
+                  mesh->ystart, dump);
 
-    output.write("\nTest 4: with coefficients constant in z, default solver\n");
-    output.write("Magnitude of maximum absolute error is {}\n", max_error4);
-
-    dump["a4"] = a3;
-    dump["b4"] = b3;
-    dump["c4"] = c3;
-    dump["d4"] = d3;
-    dump["f4"] = f1;
-    dump["sol4"] = sol4;
-    dump["error4"] = error4;
-    dump["absolute_error4"] = absolute_error4;
-    dump["max_error4"] = max_error4;
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////
     // Test 5: Cosine x-profiles, 2nd order Krylov
-    Field3D f5, a5, b5, c5, d5, sol5;
-    Field3D error5;
-    Field3D absolute_error5; //Absolute value of relative error: abs( (f5-sol5)/f5 )
-    BoutReal max_error5 = -1; //Output of test
+    Field3D f5, a5, c5, d5;
 
     p = 0.623901;
     q = 0.01209489;
@@ -593,175 +502,34 @@ int main(int argc, char** argv) {
     f5.applyBoundary("neumann");
     mesh->communicate(f5, a5, c5, d5);
 
-    b5 = d5 * Delp2(f5) + Grad_perp(c5) * Grad_perp(f5) / c5 + a5 * f5;
-    if (mesh->firstX()) {
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            b5(jx, jy, jz) = b5(jx + 1, jy, jz);
-          }
-        }
-      }
-    }
-    if (mesh->lastX()) {
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            b5(jx, jy, jz) = b5(jx - 1, jy, jz);
-          }
-        }
-      }
-    }
+    Field3D b5 = d5 * Delp2(f5) + Grad_perp(c5) * Grad_perp(f5) / c5 + a5 * f5;
+    apply_flat_boundary(b5);
 
-    invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
-    invert->setOuterBoundaryFlags(INVERT_AC_GRAD);
-    invert->setCoefA(a5);
-    invert->setCoefC(c5);
-    invert->setCoefD(d5);
-
-    try {
-      sol5 = invert->solve(sliceXZ(b5, mesh->ystart));
-      error5 = (f5 - sol5) / f5;
-      absolute_error5 = f5 - sol5;
-      max_error5 = max_error_at_ystart(abs(absolute_error5));
-    } catch (BoutException& err) {
-      output.write("BoutException occured in invert->solve(b5): {}\n", err.what());
-    }
-
-    output.write("\nTest 5: different profiles, PETSc 2nd order\n");
-    output.write("Magnitude of maximum absolute error is {}\n", max_error5);
-
-    dump["a5"] = a5;
-    dump["b5"] = b5;
-    dump["c5"] = c5;
-    dump["d5"] = d5;
-    dump["f5"] = f5;
-    dump["sol5"] = sol5;
-    dump["error5"] = error5;
-    dump["absolute_error5"] = absolute_error5;
-    dump["max_error5"] = max_error5;
+    check_laplace(++test_num, "different profiles, PETSc 2nd order", *invert, INVERT_AC_GRAD,
+                  INVERT_AC_GRAD, a5, c5, d5, b5, f5, mesh->ystart, dump);
 
     //////////////////////////////////////////////
     // Test 6: Cosine x-profiles, 4th order Krylov
-    Field3D sol6;
-    Field3D error6;
-    Field3D absolute_error6;       //Absolute value of relative error: abs( (f5-sol5)/f5 )
-    BoutReal max_error6 = -1; //Output of test
-    invert_4th->setInnerBoundaryFlags(INVERT_AC_GRAD);
-    invert_4th->setOuterBoundaryFlags(INVERT_AC_GRAD);
-    invert_4th->setCoefA(a5);
-    invert_4th->setCoefC(c5);
-    invert_4th->setCoefD(d5);
 
-    try {
-      sol6 = invert_4th->solve(sliceXZ(b5, mesh->ystart));
-      error6 = (f5 - sol6) / f5;
-      absolute_error6 = f5 - sol6;
-      max_error6 = max_error_at_ystart(abs(absolute_error6));
-    } catch (BoutException& err) {
-      output.write(
-          "BoutException occured in invert->solve(b6): Laplacian inversion failed to "
-          "converge (probably): {}\n",
-          err.what());
-    }
-
-    output.write("\nTest 6: different profiles, PETSc 4th order\n");
-    output.write("Magnitude of maximum absolute error is {}\n", max_error6);
-
-    dump["a6"] = a5;
-    dump["b6"] = b5;
-    dump["c6"] = c5;
-    dump["d6"] = d5;
-    dump["f6"] = f5;
-    dump["sol6"] = sol6;
-    dump["error6"] = error6;
-    dump["absolute_error6"] = absolute_error6;
-    dump["max_error6"] = max_error6;
+    check_laplace(++test_num, "different profiles, PETSc 4th order", *invert_4th, INVERT_AC_GRAD,
+                  INVERT_AC_GRAD, a5, c5, d5, b5, f5, mesh->ystart, dump);
 
     //////////////////////////////////////////////////////////////////////////////////////
     // Test 7+8: Cosine x-profiles, z-independent coefficients and compare with SPT method
-    Field2D a7, c7, d7;
-    Field3D b7;
-    Field3D sol7, sol8;
-    Field3D error7, absolute_error7, error8, absolute_error8;
-    BoutReal max_error7 = -1;
 
-    a7 = DC(a5);
-    c7 = DC(c5);
-    d7 = DC(d5);
-    b7 = d7 * Delp2(f5) + Grad_perp(c7) * Grad_perp(f5) / c7 + a7 * f5;
-    if (mesh->firstX()) {
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            b7(jx, jy, jz) = b7(jx + 1, jy, jz);
-          }
-        }
-      }
-    }
-    if (mesh->lastX()) {
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            b7(jx, jy, jz) = b7(jx - 1, jy, jz);
-          }
-        }
-      }
-    }
+    const Field2D a7 = DC(a5);
+    const Field2D c7 = DC(c5);
+    const Field2D d7 = DC(d5);
+    Field3D b7 = d7 * Delp2(f5) + Grad_perp(c7) * Grad_perp(f5) / c7 + a7 * f5;
+    apply_flat_boundary(b7);
 
-    invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
-    invert->setOuterBoundaryFlags(INVERT_AC_GRAD);
-    invert->setCoefA(a7);
-    invert->setCoefC(c7);
-    invert->setCoefD(d7);
+    check_laplace(++test_num, "different profiles, with coefficients constant in z, PETSc 2nd order",
+        *invert, INVERT_AC_GRAD, INVERT_AC_GRAD, a7, c7, d7, b7, f5, mesh->ystart, dump);
 
-    try {
-      sol7 = invert->solve(sliceXZ(b7, mesh->ystart));
-      error7 = (f5 - sol7) / f5;
-      absolute_error7 = f5 - sol7;
-      max_error7 = max_error_at_ystart(abs(absolute_error7));
-    } catch (BoutException& err) {
-      output.write("BoutException occured in invert->solve(b7): {}\n", err.what());
-    }
-
-    output.write(
-        "Test 7: different profiles, with coefficients constant in z, PETSc 2nd order\n");
-    output.write("Magnitude of maximum absolute error is {}\n", max_error7);
-
-    dump["a7"] = a7;
-    dump["b7"] = b7;
-    dump["c7"] = c7;
-    dump["d7"] = d7;
-    dump["f7"] = f5;
-    dump["sol7"] = sol7;
-    dump["error7"] = error7;
-    dump["absolute_error7"] = absolute_error7;
-    dump["max_error7"] = max_error7;
-
-    invert_SPT->setInnerBoundaryFlags(INVERT_AC_GRAD);
-    invert_SPT->setOuterBoundaryFlags(INVERT_AC_GRAD | INVERT_DC_GRAD);
-    invert_SPT->setCoefA(a7);
-    invert_SPT->setCoefC(c7);
-    invert_SPT->setCoefD(d7);
-
-    sol8 = invert_SPT->solve(sliceXZ(b7, mesh->ystart));
-    error8 = (f5 - sol8) / f5;
-    absolute_error8 = f5 - sol8;
-    const BoutReal max_error8 = max_error_at_ystart(abs(absolute_error8));
-
-    output.write(
-        "Test 8: different profiles, with coefficients constant in z, default solver\n");
-    output.write("Magnitude of maximum absolute error is {}\n", max_error8);
-
-    dump["a8"] = a7;
-    dump["b8"] = b7;
-    dump["c8"] = c7;
-    dump["d8"] = d7;
-    dump["f8"] = f5;
-    dump["sol8"] = sol8;
-    dump["error8"] = error8;
-    dump["absolute_error8"] = absolute_error8;
-    dump["max_error8"] = max_error8;
+    check_laplace(++test_num,
+                  "different profiles, with coefficients constant in z, default solver",
+                  *invert_SPT, INVERT_AC_GRAD, INVERT_AC_GRAD | INVERT_DC_GRAD, a7, c7,
+                  d7, b7, f5, mesh->ystart, dump);
 
     // Write and close the output file
     bout::writeDefaultOutputFile(dump);
@@ -792,4 +560,26 @@ BoutReal max_error_at_ystart(const Field3D& error) {
   MPI_Allreduce(&local_max_error, &max_error, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
 
   return max_error;
+}
+
+void apply_flat_boundary(Field3D& bcoef) {
+  const Mesh& mesh = *bcoef.getMesh();
+  if (mesh.firstX()) {
+    for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          bcoef(jx, jy, jz) = bcoef(jx + 1, jy, jz);
+        }
+      }
+    }
+  }
+  if (mesh.lastX()) {
+    for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          bcoef(jx, jy, jz) = bcoef(jx - 1, jy, jz);
+        }
+      }
+    }
+  }
 }
