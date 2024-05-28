@@ -23,18 +23,21 @@
  *
  **************************************************************************/
 
-#include "bout/bout.hxx"
+#include "bout/bout.hxx" // NOLINT
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
+#include "bout/difops.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/invert_laplace.hxx"
 #include "bout/options.hxx"
+#include "bout/options_io.hxx"
 #include "bout/output.hxx"
 #include "bout/traits.hxx"
 
 #include "fmt/core.h"
+#include <mpi.h>
 
 #include <cmath>
 #include <string_view>
@@ -86,6 +89,25 @@ void check_laplace(int test_num, std::string_view test_name, Laplacian& invert,
   dump[fmt::format("max_error{}", test_num)] = max_error;
 }
 
+template <class T>
+Field3D forward_laplace(const Field3D& field, const T& acoef, const T& ccoef,
+                        const T& dcoef) {
+  auto bcoef =
+      dcoef * Delp2(field) + Grad_perp(ccoef) * Grad_perp(field) / ccoef + acoef * field;
+  apply_flat_boundary(bcoef);
+  return bcoef;
+}
+
+Field3D generate_f1(const Mesh& mesh);
+Field3D generate_a1(const Mesh& mesh);
+Field3D generate_c1(const Mesh& mesh);
+Field3D generate_d1(const Mesh& mesh);
+
+Field3D generate_f5(const Mesh& mesh);
+Field3D generate_a5(const Mesh& mesh);
+Field3D generate_c5(const Mesh& mesh);
+Field3D generate_d5(const Mesh& mesh);
+
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
@@ -98,438 +120,90 @@ int main(int argc, char** argv) {
     Options dump;
 
     // Solving equations of the form d*Delp2(f) + 1/c*Grad_perp(c).Grad_perp(f) + a*f = b for various f, a, c, d
-    Field3D f1;
-    Field3D a1;
-    Field3D c1;
-    Field3D d1;
-    BoutReal p;
-    BoutReal q; //Use to set parameters in constructing trial functions
-
     using bout::globals::mesh;
 
     // Only Neumann x-boundary conditions are implemented so far, so test functions should be Neumann in x and periodic in z.
     // Use Field3D's, but solver only works on FieldPerp slices, so only use 1 y-point
-    const BoutReal nx = mesh->GlobalNx - 2 * mesh->xstart - 1;
-    const BoutReal nz = mesh->GlobalNz;
 
     /////////////////////////////////////////////////////
     // Test 1: Gaussian x-profiles, 2nd order Krylov
-    p = 0.39503274;
-    q = 0.20974396;
-    f1.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-      for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
-          const BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          const BoutReal z = BoutReal(jz) / nz;
-          //make the gradients zero at both x-boundaries
-          f1(jx, jy, jz) = 0. + exp(-(100. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
-                           - 50.
-                                 * (2. * p * exp(-100. * pow(-p, 2)) * x
-                                    + (-p * exp(-100. * pow(-p, 2))
-                                       - (1 - p) * exp(-100. * pow(1 - p, 2)))
-                                          * pow(x, 2))
-                                 * exp(-(1. - cos(2. * PI * (z - q))));
-          ASSERT0(finite(f1(jx, jy, jz)));
-        }
-      }
-    }
-    if (mesh->firstX()) {
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            const BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            const BoutReal z = BoutReal(jz) / nz;
-            //make the gradients zero at both x-boundaries
-            f1(jx, jy, jz) = 0.
-                             + exp(-(60. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
-                             - 50.
-                                   * (2. * p * exp(-60. * pow(-p, 2)) * x
-                                      + (-p * exp(-60. * pow(-p, 2))
-                                         - (1 - p) * exp(-60. * pow(1 - p, 2)))
-                                            * pow(x, 2))
-                                   * exp(-(1. - cos(2. * PI * (z - q))));
-            ASSERT0(finite(f1(jx, jy, jz)));
-          }
-        }
-      }
-    }
-    if (mesh->lastX()) {
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            const BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            const BoutReal z = BoutReal(jz) / nz;
-            //make the gradients zero at both x-boundaries
-            f1(jx, jy, jz) = 0.
-                             + exp(-(60. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
-                             - 50.
-                                   * (2. * p * exp(-60. * pow(-p, 2)) * x
-                                      + (-p * exp(-60. * pow(-p, 2))
-                                         - (1 - p) * exp(-60. * pow(1 - p, 2)))
-                                            * pow(x, 2))
-                                   * exp(-(1. - cos(2. * PI * (z - q))));
-            ASSERT0(finite(f1(jx, jy, jz)));
-          }
-        }
-      }
-    }
+    Field3D f_1 = generate_f1(*mesh);
+    Field3D a_1 = generate_a1(*mesh);
+    Field3D c_1 = generate_c1(*mesh);
+    Field3D d_1 = generate_d1(*mesh);
 
-    f1.applyBoundary("neumann");
+    mesh->communicate(f_1, a_1, c_1, d_1);
 
-    p = 0.512547;
-    q = 0.30908712;
-    d1.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-      for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
-          BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          BoutReal z = BoutReal(jz) / nz;
-          d1(jx, jy, jz) =
-              1. + 0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.);
-        }
-      }
-    }
-    if (mesh->firstX()) {
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
-            d1(jx, jy, jz) =
-                1. + 0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.);
-          }
-        }
-      }
-    }
-    if (mesh->lastX()) {
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
-            d1(jx, jy, jz) =
-                1. + 0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.);
-          }
-        }
-      }
-    }
-
-    p = 0.18439023;
-    q = 0.401089473;
-    c1.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-      for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
-          BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          BoutReal z = BoutReal(jz) / nz;
-          c1(jx, jy, jz) =
-              1. + 0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.);
-        }
-      }
-    }
-    if (mesh->firstX()) {
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
-            c1(jx, jy, jz) =
-                1. + 0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.);
-          }
-        }
-      }
-    }
-    if (mesh->lastX()) {
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
-            c1(jx, jy, jz) =
-                1. + 0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.);
-          }
-        }
-      }
-    }
-
-    p = 0.612547;
-    q = 0.30908712;
-    a1.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-      for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
-          BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          BoutReal z = BoutReal(jz) / nz;
-          a1(jx, jy, jz) =
-              -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
-        }
-      }
-    }
-    if (mesh->firstX()) {
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
-            a1(jx, jy, jz) =
-                -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
-          }
-        }
-      }
-    }
-    if (mesh->lastX()) {
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
-            a1(jx, jy, jz) =
-                -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
-          }
-        }
-      }
-    }
-
-    checkData(f1);
-    checkData(a1);
-    checkData(c1);
-    checkData(d1);
-
-    mesh->communicate(f1, a1, c1, d1);
-
-    Field3D b1 = d1 * Delp2(f1) + Grad_perp(c1) * Grad_perp(f1) / c1 + a1 * f1;
-    apply_flat_boundary(b1);
+    const Field3D b_1 = forward_laplace(f_1, a_1, c_1, d_1);
 
     int test_num = 0;
-    check_laplace(++test_num, "PETSc 2nd order", *invert, INVERT_AC_GRAD, INVERT_AC_GRAD, a1, c1,
-                  d1, b1, f1, mesh->ystart, dump);
+    check_laplace(++test_num, "PETSc 2nd order", *invert, INVERT_AC_GRAD, INVERT_AC_GRAD,
+                  a_1, c_1, d_1, b_1, f_1, mesh->ystart, dump);
 
     /////////////////////////////////////////////////
     // Test 2: Gaussian x-profiles, 4th order Krylov
 
-    check_laplace(++test_num, "PETSc 4th order", *invert_4th, INVERT_AC_GRAD, INVERT_AC_GRAD, a1,
-                  c1, d1, b1, f1, mesh->ystart, dump);
+    check_laplace(++test_num, "PETSc 4th order", *invert_4th, INVERT_AC_GRAD,
+                  INVERT_AC_GRAD, a_1, c_1, d_1, b_1, f_1, mesh->ystart, dump);
 
     ////////////////////////////////////////////////////////////////////////////////////////
     // Test 3+4: Gaussian x-profiles, z-independent coefficients and compare with SPT method
 
-    const Field2D a3 = DC(a1);
-    const Field2D c3 = DC(c1);
-    const Field2D d3 = DC(d1);
-    Field3D b3 = d3 * Delp2(f1) + Grad_perp(c3) * Grad_perp(f1) / c3 + a3 * f1;
-    apply_flat_boundary(b3);
+    const Field2D a_3 = DC(a_1);
+    const Field2D c_3 = DC(c_1);
+    const Field2D d_3 = DC(d_1);
+    const Field3D b_3 = forward_laplace(f_1, a_3, c_3, d_3);
 
     check_laplace(++test_num, "with coefficients constant in z, PETSc 2nd order", *invert,
-                  INVERT_AC_GRAD, INVERT_AC_GRAD, a3, c3, d3, b3, f1, mesh->ystart, dump);
+                  INVERT_AC_GRAD, INVERT_AC_GRAD, a_3, c_3, d_3, b_3, f_1, mesh->ystart,
+                  dump);
 
     Options* SPT_options = Options::getRoot()->getSection("SPT");
     auto invert_SPT = Laplacian::create(SPT_options);
 
-    check_laplace(++test_num, "with coefficients constant in z, default solver", *invert_SPT,
-                  INVERT_AC_GRAD, INVERT_AC_GRAD | INVERT_DC_GRAD, a3, c3, d3, b3, f1,
-                  mesh->ystart, dump);
+    check_laplace(++test_num, "with coefficients constant in z, default solver",
+                  *invert_SPT, INVERT_AC_GRAD, INVERT_AC_GRAD | INVERT_DC_GRAD, a_3, c_3,
+                  d_3, b_3, f_1, mesh->ystart, dump);
 
     //////////////////////////////////////////////
     // Test 5: Cosine x-profiles, 2nd order Krylov
-    Field3D f5, a5, c5, d5;
+    Field3D f_5 = generate_f5(*mesh);
+    Field3D a_5 = generate_a5(*mesh);
+    Field3D c_5 = generate_c5(*mesh);
+    Field3D d_5 = generate_d5(*mesh);
 
-    p = 0.623901;
-    q = 0.01209489;
-    f5.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-      for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
-          const BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          const BoutReal z = BoutReal(jz) / nz;
-          //make the gradients zero at both x-boundaries
-          f5(jx, jy, jz) = 0. + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
-                           - 50.
-                                 * (2. * p * exp(-50. * pow(-p, 2)) * x
-                                    + (-p * exp(-50. * pow(-p, 2))
-                                       - (1 - p) * exp(-50. * pow(1 - p, 2)))
-                                          * pow(x, 2))
-                                 * exp(-(1. - cos(2. * PI * (z - q))));
-        }
-      }
-    }
-    if (mesh->firstX()) {
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
-            //make the gradients zero at both x-boundaries
-            f5(jx, jy, jz) = 0.
-                             + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
-                             - 50.
-                                   * (2. * p * exp(-50. * pow(-p, 2)) * x
-                                      + (-p * exp(-50. * pow(-p, 2))
-                                         - (1 - p) * exp(-50. * pow(1 - p, 2)))
-                                            * pow(x, 2))
-                                   * exp(-(1. - cos(2. * PI * (z - q))));
-          }
-        }
-      }
-    }
-    if (mesh->lastX()) {
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
-            //make the gradients zero at both x-boundaries
-            f5(jx, jy, jz) = 0.
-                             + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
-                             - 50.
-                                   * (2. * p * exp(-50. * pow(-p, 2)) * x
-                                      + (-p * exp(-50. * pow(-p, 2))
-                                         - (1 - p) * exp(-50. * pow(1 - p, 2)))
-                                            * pow(x, 2))
-                                   * exp(-(1. - cos(2. * PI * (z - q))));
-          }
-        }
-      }
-    }
+    mesh->communicate(f_5, a_5, c_5, d_5);
 
-    p = 0.63298589;
-    q = 0.889237890;
-    d5.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-      for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
-          BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          BoutReal z = BoutReal(jz) / nz;
-          d5(jx, jy, jz) = 1. + p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.);
-        }
-      }
-    }
-    if (mesh->firstX()) {
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
-            d5(jx, jy, jz) = 1. + p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.);
-          }
-        }
-      }
-    }
-    if (mesh->lastX()) {
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
-            d5(jx, jy, jz) = 1. + p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.);
-          }
-        }
-      }
-    }
+    const Field3D b_5 = forward_laplace(f_5, a_5, c_5, d_5);
 
-    p = 0.160983834;
-    q = 0.73050121087;
-    c5.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-      for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
-          BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          BoutReal z = BoutReal(jz) / nz;
-          c5(jx, jy, jz) = 1. + p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.);
-        }
-      }
-    }
-    if (mesh->firstX()) {
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
-            c5(jx, jy, jz) = 1. + p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.);
-          }
-        }
-      }
-    }
-    if (mesh->lastX()) {
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
-            c5(jx, jy, jz) = 1. + p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.);
-          }
-        }
-      }
-    }
-
-    p = 0.5378950;
-    q = 0.2805870;
-    a5.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-      for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
-          BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          BoutReal z = BoutReal(jz) / nz;
-          a5(jx, jy, jz) = -1. + p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.);
-        }
-      }
-    }
-    if (mesh->firstX()) {
-      for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
-            a5(jx, jy, jz) =
-                -1. + p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.);
-          }
-        }
-      }
-    }
-    if (mesh->lastX()) {
-      for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
-        for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
-            a5(jx, jy, jz) =
-                -1. + p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.);
-          }
-        }
-      }
-    }
-
-    f5.applyBoundary("neumann");
-    mesh->communicate(f5, a5, c5, d5);
-
-    Field3D b5 = d5 * Delp2(f5) + Grad_perp(c5) * Grad_perp(f5) / c5 + a5 * f5;
-    apply_flat_boundary(b5);
-
-    check_laplace(++test_num, "different profiles, PETSc 2nd order", *invert, INVERT_AC_GRAD,
-                  INVERT_AC_GRAD, a5, c5, d5, b5, f5, mesh->ystart, dump);
+    check_laplace(++test_num, "different profiles, PETSc 2nd order", *invert,
+                  INVERT_AC_GRAD, INVERT_AC_GRAD, a_5, c_5, d_5, b_5, f_5, mesh->ystart,
+                  dump);
 
     //////////////////////////////////////////////
     // Test 6: Cosine x-profiles, 4th order Krylov
 
-    check_laplace(++test_num, "different profiles, PETSc 4th order", *invert_4th, INVERT_AC_GRAD,
-                  INVERT_AC_GRAD, a5, c5, d5, b5, f5, mesh->ystart, dump);
+    check_laplace(++test_num, "different profiles, PETSc 4th order", *invert_4th,
+                  INVERT_AC_GRAD, INVERT_AC_GRAD, a_5, c_5, d_5, b_5, f_5, mesh->ystart,
+                  dump);
 
     //////////////////////////////////////////////////////////////////////////////////////
     // Test 7+8: Cosine x-profiles, z-independent coefficients and compare with SPT method
 
-    const Field2D a7 = DC(a5);
-    const Field2D c7 = DC(c5);
-    const Field2D d7 = DC(d5);
-    Field3D b7 = d7 * Delp2(f5) + Grad_perp(c7) * Grad_perp(f5) / c7 + a7 * f5;
-    apply_flat_boundary(b7);
+    const Field2D a_7 = DC(a_5);
+    const Field2D c_7 = DC(c_5);
+    const Field2D d_7 = DC(d_5);
+    const Field3D b_7 = forward_laplace(f_5, a_7, c_7, d_7);
 
-    check_laplace(++test_num, "different profiles, with coefficients constant in z, PETSc 2nd order",
-        *invert, INVERT_AC_GRAD, INVERT_AC_GRAD, a7, c7, d7, b7, f5, mesh->ystart, dump);
+    check_laplace(++test_num,
+                  "different profiles, with coefficients constant in z, PETSc 2nd order",
+                  *invert, INVERT_AC_GRAD, INVERT_AC_GRAD, a_7, c_7, d_7, b_7, f_5,
+                  mesh->ystart, dump);
 
     check_laplace(++test_num,
                   "different profiles, with coefficients constant in z, default solver",
-                  *invert_SPT, INVERT_AC_GRAD, INVERT_AC_GRAD | INVERT_DC_GRAD, a7, c7,
-                  d7, b7, f5, mesh->ystart, dump);
+                  *invert_SPT, INVERT_AC_GRAD, INVERT_AC_GRAD | INVERT_DC_GRAD, a_7, c_7,
+                  d_7, b_7, f_5, mesh->ystart, dump);
 
     // Write and close the output file
     bout::writeDefaultOutputFile(dump);
@@ -582,4 +256,414 @@ void apply_flat_boundary(Field3D& bcoef) {
       }
     }
   }
+}
+
+Field3D generate_f1(const Mesh& mesh) {
+  const BoutReal nx = mesh.GlobalNx - 2 * mesh.xstart - 1;
+  const BoutReal nz = mesh.GlobalNz;
+
+  constexpr BoutReal p = 0.39503274; // NOLINT
+  constexpr BoutReal q = 0.20974396; // NOLINT
+
+  Field3D result;
+  result.allocate();
+  for (int jx = mesh.xstart; jx <= mesh.xend; jx++) {
+    const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+    for (int jy = 0; jy < mesh.LocalNy; jy++) {
+      for (int jz = 0; jz < mesh.LocalNz; jz++) {
+        const BoutReal z = BoutReal(jz) / nz;
+        //make the gradients zero at both x-boundaries
+        result(jx, jy, jz) = 0.
+                             + exp(-(100. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+                             - 50.
+                                   * (2. * p * exp(-100. * pow(-p, 2)) * x
+                                      + (-p * exp(-100. * pow(-p, 2))
+                                         - (1 - p) * exp(-100. * pow(1 - p, 2)))
+                                            * pow(x, 2))
+                                   * exp(-(1. - cos(2. * PI * (z - q))));
+      }
+    }
+  }
+  if (mesh.firstX()) {
+    for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
+      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          const BoutReal z = BoutReal(jz) / nz;
+          //make the gradients zero at both x-boundaries
+          result(jx, jy, jz) = 0.
+                               + exp(-(60. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+                               - 50.
+                                     * (2. * p * exp(-60. * pow(-p, 2)) * x
+                                        + (-p * exp(-60. * pow(-p, 2))
+                                           - (1 - p) * exp(-60. * pow(1 - p, 2)))
+                                              * pow(x, 2))
+                                     * exp(-(1. - cos(2. * PI * (z - q))));
+        }
+      }
+    }
+  }
+  if (mesh.lastX()) {
+    for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
+      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          const BoutReal z = BoutReal(jz) / nz;
+          //make the gradients zero at both x-boundaries
+          result(jx, jy, jz) = 0.
+                               + exp(-(60. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+                               - 50.
+                                     * (2. * p * exp(-60. * pow(-p, 2)) * x
+                                        + (-p * exp(-60. * pow(-p, 2))
+                                           - (1 - p) * exp(-60. * pow(1 - p, 2)))
+                                              * pow(x, 2))
+                                     * exp(-(1. - cos(2. * PI * (z - q))));
+        }
+      }
+    }
+  }
+
+  checkData(result);
+  result.applyBoundary("neumann");
+  return result;
+}
+
+Field3D generate_d1(const Mesh& mesh) {
+  const BoutReal nx = mesh.GlobalNx - 2 * mesh.xstart - 1;
+  const BoutReal nz = mesh.GlobalNz;
+
+  constexpr BoutReal p = 0.512547;   // NOLINT
+  constexpr BoutReal q = 0.30908712; // NOLINT
+  Field3D result;
+  result.allocate();
+  for (int jx = mesh.xstart; jx <= mesh.xend; jx++) {
+    const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+    for (int jy = 0; jy < mesh.LocalNy; jy++) {
+      for (int jz = 0; jz < mesh.LocalNz; jz++) {
+        const BoutReal z = BoutReal(jz) / nz;
+        result(jx, jy, jz) =
+            1. + 0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.);
+      }
+    }
+  }
+  if (mesh.firstX()) {
+    for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
+      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          const BoutReal z = BoutReal(jz) / nz;
+          result(jx, jy, jz) =
+              1. + 0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.);
+        }
+      }
+    }
+  }
+  if (mesh.lastX()) {
+    for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
+      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          const BoutReal z = BoutReal(jz) / nz;
+          result(jx, jy, jz) =
+              1. + 0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.);
+        }
+      }
+    }
+  }
+  checkData(result);
+  return result;
+}
+
+Field3D generate_c1(const Mesh& mesh) {
+  const BoutReal nx = mesh.GlobalNx - 2 * mesh.xstart - 1;
+  const BoutReal nz = mesh.GlobalNz;
+
+  constexpr BoutReal p = 0.18439023;  // NOLINT
+  constexpr BoutReal q = 0.401089473; // NOLINT
+  Field3D result;
+  result.allocate();
+  for (int jx = mesh.xstart; jx <= mesh.xend; jx++) {
+    const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+    for (int jy = 0; jy < mesh.LocalNy; jy++) {
+      for (int jz = 0; jz < mesh.LocalNz; jz++) {
+        const BoutReal z = BoutReal(jz) / nz;
+        result(jx, jy, jz) =
+            1. + 0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.);
+      }
+    }
+  }
+  if (mesh.firstX()) {
+    for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
+      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          const BoutReal z = BoutReal(jz) / nz;
+          result(jx, jy, jz) =
+              1. + 0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.);
+        }
+      }
+    }
+  }
+  if (mesh.lastX()) {
+    for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
+      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          const BoutReal z = BoutReal(jz) / nz;
+          result(jx, jy, jz) =
+              1. + 0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.);
+        }
+      }
+    }
+  }
+
+  checkData(result);
+  return result;
+}
+
+Field3D generate_a1(const Mesh& mesh) {
+  const BoutReal nx = mesh.GlobalNx - 2 * mesh.xstart - 1;
+  const BoutReal nz = mesh.GlobalNz;
+
+  constexpr BoutReal p = 0.612547;   // NOLINT
+  constexpr BoutReal q = 0.30908712; // NOLINT
+  Field3D result;
+  result.allocate();
+  for (int jx = mesh.xstart; jx <= mesh.xend; jx++) {
+    const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+    for (int jy = 0; jy < mesh.LocalNy; jy++) {
+      for (int jz = 0; jz < mesh.LocalNz; jz++) {
+        const BoutReal z = BoutReal(jz) / nz;
+        result(jx, jy, jz) =
+            -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
+      }
+    }
+  }
+  if (mesh.firstX()) {
+    for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
+      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          const BoutReal z = BoutReal(jz) / nz;
+          result(jx, jy, jz) =
+              -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
+        }
+      }
+    }
+  }
+  if (mesh.lastX()) {
+    for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
+      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          const BoutReal z = BoutReal(jz) / nz;
+          result(jx, jy, jz) =
+              -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
+        }
+      }
+    }
+  }
+
+  checkData(result);
+  return result;
+}
+
+Field3D generate_f5(const Mesh& mesh) {
+  const BoutReal nx = mesh.GlobalNx - 2 * mesh.xstart - 1;
+  const BoutReal nz = mesh.GlobalNz;
+  constexpr BoutReal p = 0.623901;   // NOLINT
+  constexpr BoutReal q = 0.01209489; // NOLINT
+  Field3D result;
+  result.allocate();
+  for (int jx = mesh.xstart; jx <= mesh.xend; jx++) {
+    const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+    for (int jy = 0; jy < mesh.LocalNy; jy++) {
+      for (int jz = 0; jz < mesh.LocalNz; jz++) {
+        const BoutReal z = BoutReal(jz) / nz;
+        //make the gradients zero at both x-boundaries
+        result(jx, jy, jz) =
+            0. + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+            - 50.
+                  * (2. * p * exp(-50. * pow(-p, 2)) * x
+                     + (-p * exp(-50. * pow(-p, 2)) - (1 - p) * exp(-50. * pow(1 - p, 2)))
+                           * pow(x, 2))
+                  * exp(-(1. - cos(2. * PI * (z - q))));
+      }
+    }
+  }
+  if (mesh.firstX()) {
+    for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
+      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          const BoutReal z = BoutReal(jz) / nz;
+          //make the gradients zero at both x-boundaries
+          result(jx, jy, jz) = 0.
+                               + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+                               - 50.
+                                     * (2. * p * exp(-50. * pow(-p, 2)) * x
+                                        + (-p * exp(-50. * pow(-p, 2))
+                                           - (1 - p) * exp(-50. * pow(1 - p, 2)))
+                                              * pow(x, 2))
+                                     * exp(-(1. - cos(2. * PI * (z - q))));
+        }
+      }
+    }
+  }
+  if (mesh.lastX()) {
+    for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
+      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          const BoutReal z = BoutReal(jz) / nz;
+          //make the gradients zero at both x-boundaries
+          result(jx, jy, jz) = 0.
+                               + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+                               - 50.
+                                     * (2. * p * exp(-50. * pow(-p, 2)) * x
+                                        + (-p * exp(-50. * pow(-p, 2))
+                                           - (1 - p) * exp(-50. * pow(1 - p, 2)))
+                                              * pow(x, 2))
+                                     * exp(-(1. - cos(2. * PI * (z - q))));
+        }
+      }
+    }
+  }
+  result.applyBoundary("neumann");
+  checkData(result);
+  return result;
+}
+
+Field3D generate_d5(const Mesh& mesh) {
+  const BoutReal nx = mesh.GlobalNx - 2 * mesh.xstart - 1;
+  const BoutReal nz = mesh.GlobalNz;
+  constexpr BoutReal p = 0.63298589;  // NOLINT
+  constexpr BoutReal q = 0.889237890; // NOLINT
+  Field3D result;
+  result.allocate();
+  for (int jx = mesh.xstart; jx <= mesh.xend; jx++) {
+    const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+    for (int jy = 0; jy < mesh.LocalNy; jy++) {
+      for (int jz = 0; jz < mesh.LocalNz; jz++) {
+        const BoutReal z = BoutReal(jz) / nz;
+        result(jx, jy, jz) = 1. + p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.);
+      }
+    }
+  }
+  if (mesh.firstX()) {
+    for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
+      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          const BoutReal z = BoutReal(jz) / nz;
+          result(jx, jy, jz) = 1. + p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.);
+        }
+      }
+    }
+  }
+  if (mesh.lastX()) {
+    for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
+      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          const BoutReal z = BoutReal(jz) / nz;
+          result(jx, jy, jz) = 1. + p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.);
+        }
+      }
+    }
+  }
+  checkData(result);
+  return result;
+}
+
+Field3D generate_c5(const Mesh& mesh) {
+  const BoutReal nx = mesh.GlobalNx - 2 * mesh.xstart - 1;
+  const BoutReal nz = mesh.GlobalNz;
+  constexpr BoutReal p = 0.160983834;   // NOLINT
+  constexpr BoutReal q = 0.73050121087; // NOLINT
+
+  Field3D result;
+
+  result.allocate();
+  for (int jx = mesh.xstart; jx <= mesh.xend; jx++) {
+    const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+    for (int jy = 0; jy < mesh.LocalNy; jy++) {
+      for (int jz = 0; jz < mesh.LocalNz; jz++) {
+        const BoutReal z = BoutReal(jz) / nz;
+        result(jx, jy, jz) = 1. + p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.);
+      }
+    }
+  }
+  if (mesh.firstX()) {
+    for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
+      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          const BoutReal z = BoutReal(jz) / nz;
+          result(jx, jy, jz) =
+              1. + p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.);
+        }
+      }
+    }
+  }
+  if (mesh.lastX()) {
+    for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
+      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          const BoutReal z = BoutReal(jz) / nz;
+          result(jx, jy, jz) =
+              1. + p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.);
+        }
+      }
+    }
+  }
+  checkData(result);
+  return result;
+}
+
+Field3D generate_a5(const Mesh& mesh) {
+  const BoutReal nx = mesh.GlobalNx - 2 * mesh.xstart - 1;
+  const BoutReal nz = mesh.GlobalNz;
+  constexpr BoutReal p = 0.5378950; // NOLINT
+  constexpr BoutReal q = 0.2805870; // NOLINT
+  Field3D result;
+  result.allocate();
+  for (int jx = mesh.xstart; jx <= mesh.xend; jx++) {
+    const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+    for (int jy = 0; jy < mesh.LocalNy; jy++) {
+      for (int jz = 0; jz < mesh.LocalNz; jz++) {
+        const BoutReal z = BoutReal(jz) / nz;
+        result(jx, jy, jz) =
+            -1. + p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.);
+      }
+    }
+  }
+  if (mesh.firstX()) {
+    for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
+      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          const BoutReal z = BoutReal(jz) / nz;
+          result(jx, jy, jz) =
+              -1. + p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.);
+        }
+      }
+    }
+  }
+  if (mesh.lastX()) {
+    for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
+      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      for (int jy = 0; jy < mesh.LocalNy; jy++) {
+        for (int jz = 0; jz < mesh.LocalNz; jz++) {
+          const BoutReal z = BoutReal(jz) / nz;
+          result(jx, jy, jz) =
+              -1. + p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.);
+        }
+      }
+    }
+  }
+  checkData(result);
+  return result;
 }
