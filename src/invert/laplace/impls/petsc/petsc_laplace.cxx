@@ -32,6 +32,7 @@
 #include <bout/assert.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/mesh.hxx>
+#include <bout/petsclib.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
@@ -49,15 +50,13 @@
 #define KSP_PREONLY "preonly"
 
 static PetscErrorCode laplacePCapply(PC pc, Vec x, Vec y) {
-  int ierr;
-  PetscFunctionBegin;
+  PetscFunctionBegin; // NOLINT
 
-  // Get the context
-  LaplacePetsc* s;
-  ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s));
+  LaplacePetsc* laplace = nullptr;
+  const int ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&laplace)); // NOLINT
   CHKERRQ(ierr);
 
-  PetscFunctionReturn(s->precon(x, y));
+  PetscFunctionReturn(laplace->precon(x, y)); // NOLINT
 }
 
 LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
