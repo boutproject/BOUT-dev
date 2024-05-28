@@ -23,7 +23,8 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-#include "bout/build_config.hxx"
+
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_PETSC
 
@@ -32,6 +33,7 @@
 #include <bout/assert.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/mesh.hxx>
+#include <bout/output.hxx>
 #include <bout/petsclib.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
@@ -79,28 +81,9 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   }
 
 #if CHECK > 0
-  // These are the implemented flags
-  implemented_flags = INVERT_START_NEW;
-  implemented_boundary_flags = INVERT_AC_GRAD + INVERT_SET + INVERT_RHS;
   // Checking flags are set to something which is not implemented
-  // This is done binary (which is possible as each flag is a power of 2)
-  if (isGlobalFlagSet(~implemented_flags)) {
-    if (isGlobalFlagSet(INVERT_4TH_ORDER)) {
-      output << "For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
-                "setting INVERT_4TH_ORDER flag"
-             << endl;
-    }
-    throw BoutException("Attempted to set Laplacian inversion flag that is not "
-                        "implemented in petsc_laplace.cxx");
-  }
-  if (isInnerBoundaryFlagSet(~implemented_boundary_flags)) {
-    throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
-                        "implemented in petsc_laplace.cxx");
-  }
-  if (isOuterBoundaryFlagSet(~implemented_boundary_flags)) {
-    throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
-                        "implemented in petsc_laplace.cxx");
-  }
+  checkFlags();
+
   if (localmesh->periodicX) {
     throw BoutException("LaplacePetsc does not work with periodicity in the x direction "
                         "(localmesh->PeriodicX == true). Change boundary conditions or "
@@ -360,25 +343,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   ASSERT1(x0.getLocation() == location);
 
 #if CHECK > 0
-  // Checking flags are set to something which is not implemented (see
-  // constructor for details)
-  if (isGlobalFlagSet(~implemented_flags)) {
-    if (isGlobalFlagSet(INVERT_4TH_ORDER)) {
-      output << "For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
-                "setting INVERT_4TH_ORDER flag"
-             << endl;
-    }
-    throw BoutException("Attempted to set Laplacian inversion flag that is not "
-                        "implemented in petsc_laplace.cxx");
-  }
-  if (isInnerBoundaryFlagSet(~implemented_boundary_flags)) {
-    throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
-                        "implemented in petsc_laplace.cxx");
-  }
-  if (isOuterBoundaryFlagSet(~implemented_boundary_flags)) {
-    throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
-                        "implemented in petsc_laplace.cxx");
-  }
+  checkFlags();
 #endif
 
   int y = b.getIndex(); // Get the Y index
@@ -1192,6 +1157,26 @@ int LaplacePetsc::precon(Vec x, Vec y) {
   // Put result into y
   fieldToVec(yfield, y);
   return 0;
+}
+
+void LaplacePetsc::checkFlags() {
+  if (isGlobalFlagSet(~implemented_flags)) {
+    if (isGlobalFlagSet(INVERT_4TH_ORDER)) {
+      output_error.write(
+          "For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
+          "setting INVERT_4TH_ORDER flag\n");
+    }
+    throw BoutException("Attempted to set Laplacian inversion flag that is not "
+                        "implemented in petsc_laplace.cxx");
+  }
+  if (isInnerBoundaryFlagSet(~implemented_boundary_flags)) {
+    throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
+                        "implemented in petsc_laplace.cxx");
+  }
+  if (isOuterBoundaryFlagSet(~implemented_boundary_flags)) {
+    throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
+                        "implemented in petsc_laplace.cxx");
+  }
 }
 
 #endif // BOUT_HAS_PETSC_3_3
