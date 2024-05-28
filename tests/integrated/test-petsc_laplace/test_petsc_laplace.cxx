@@ -23,10 +23,10 @@
  *
  **************************************************************************/
 
+#include "bout/bout_types.hxx"
 #include <bout/bout.hxx>
-#include <bout/constants.hxx>
-// #include <bout/sys/timer.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/constants.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/options.hxx>
 #include <cmath>
@@ -43,11 +43,17 @@ int main(int argc, char** argv) {
     auto invert_4th = Laplacian::create(options);
 
     // Solving equations of the form d*Delp2(f) + 1/c*Grad_perp(c).Grad_perp(f) + a*f = b for various f, a, c, d
-    Field3D f1, a1, b1, c1, d1, sol1;
-    BoutReal p, q; //Use to set parameters in constructing trial functions
-    Field3D error1,
-        absolute_error1; //Absolute value of relative error: abs( (f1-sol1)/f1 )
-    BoutReal max_error1; //Output of test
+    Field3D f1;
+    Field3D a1;
+    Field3D b1;
+    Field3D c1;
+    Field3D d1;
+    Field3D sol1;
+    BoutReal p;
+    BoutReal q; //Use to set parameters in constructing trial functions
+    Field3D error1;
+    Field3D absolute_error1; //Absolute value of relative error: abs( (f1-sol1)/f1 )
+    BoutReal max_error1 = -1;     //Output of test
 
     using bout::globals::mesh;
 
@@ -56,7 +62,7 @@ int main(int argc, char** argv) {
     BoutReal nx = mesh->GlobalNx - 2 * mesh->xstart - 1;
     BoutReal nz = mesh->GlobalNz;
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
     // Test 1: Gaussian x-profiles, 2nd order Krylov
     p = 0.39503274;
     q = 0.20974396;
@@ -64,20 +70,16 @@ int main(int argc, char** argv) {
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
-          BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          BoutReal z = BoutReal(jz) / nz;
-          f1(jx, jy, jz) =
-              0. + exp(-(100. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
-              - 50.
-                    * (2. * p * exp(-100. * pow(-p, 2)) * x
-                       + (-p * exp(-100. * pow(-p, 2))
-                          - (1 - p) * exp(-100. * pow(1 - p, 2)))
-                             * pow(x, 2))
-                    * exp(-(
-                        1.
-                        - cos(2. * PI
-                              * (z - q)))) //make the gradients zero at both x-boundaries
-              ;
+          const BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
+          const BoutReal z = BoutReal(jz) / nz;
+          //make the gradients zero at both x-boundaries
+          f1(jx, jy, jz) = 0. + exp(-(100. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+                           - 50.
+                                 * (2. * p * exp(-100. * pow(-p, 2)) * x
+                                    + (-p * exp(-100. * pow(-p, 2))
+                                       - (1 - p) * exp(-100. * pow(1 - p, 2)))
+                                          * pow(x, 2))
+                                 * exp(-(1. - cos(2. * PI * (z - q))));
           ASSERT0(finite(f1(jx, jy, jz)));
         }
       }
@@ -86,20 +88,17 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
-            f1(jx, jy, jz) =
-                0. + exp(-(60. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
-                - 50.
-                      * (2. * p * exp(-60. * pow(-p, 2)) * x
-                         + (-p * exp(-60. * pow(-p, 2))
-                            - (1 - p) * exp(-60. * pow(1 - p, 2)))
-                               * pow(x, 2))
-                      * exp(-(
-                          1.
-                          - cos(
-                              2. * PI
-                              * (z - q)))); //make the gradients zero at both x-boundaries
+            const BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
+            const BoutReal z = BoutReal(jz) / nz;
+            //make the gradients zero at both x-boundaries
+            f1(jx, jy, jz) = 0.
+                             + exp(-(60. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+                             - 50.
+                                   * (2. * p * exp(-60. * pow(-p, 2)) * x
+                                      + (-p * exp(-60. * pow(-p, 2))
+                                         - (1 - p) * exp(-60. * pow(1 - p, 2)))
+                                            * pow(x, 2))
+                                   * exp(-(1. - cos(2. * PI * (z - q))));
             ASSERT0(finite(f1(jx, jy, jz)));
           }
         }
@@ -109,20 +108,17 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
-            f1(jx, jy, jz) =
-                0. + exp(-(60. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
-                - 50.
-                      * (2. * p * exp(-60. * pow(-p, 2)) * x
-                         + (-p * exp(-60. * pow(-p, 2))
-                            - (1 - p) * exp(-60. * pow(1 - p, 2)))
-                               * pow(x, 2))
-                      * exp(-(
-                          1.
-                          - cos(
-                              2. * PI
-                              * (z - q)))); //make the gradients zero at both x-boundaries
+            const BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
+            const BoutReal z = BoutReal(jz) / nz;
+            //make the gradients zero at both x-boundaries
+            f1(jx, jy, jz) = 0.
+                             + exp(-(60. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+                             - 50.
+                                   * (2. * p * exp(-60. * pow(-p, 2)) * x
+                                      + (-p * exp(-60. * pow(-p, 2))
+                                         - (1 - p) * exp(-60. * pow(1 - p, 2)))
+                                            * pow(x, 2))
+                                   * exp(-(1. - cos(2. * PI * (z - q))));
             ASSERT0(finite(f1(jx, jy, jz)));
           }
         }
@@ -152,7 +148,6 @@ int main(int argc, char** argv) {
             BoutReal z = BoutReal(jz) / nz;
             d1(jx, jy, jz) =
                 1. + 0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.);
-            // 	  d1(jx, jy, jz) = d1(jx+1, jy, jz);
           }
         }
       }
@@ -165,7 +160,6 @@ int main(int argc, char** argv) {
             BoutReal z = BoutReal(jz) / nz;
             d1(jx, jy, jz) =
                 1. + 0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.);
-            // 	  d1(jx, jy, jz) = d1(jx-1, jy, jz);
           }
         }
       }
@@ -192,7 +186,6 @@ int main(int argc, char** argv) {
             BoutReal z = BoutReal(jz) / nz;
             c1(jx, jy, jz) =
                 1. + 0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.);
-            // 	  c1(jx, jy, jz) = c1(jx+1, jy, jz);
           }
         }
       }
@@ -205,7 +198,6 @@ int main(int argc, char** argv) {
             BoutReal z = BoutReal(jz) / nz;
             c1(jx, jy, jz) =
                 1. + 0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.);
-            // 	  c1(jx, jy, jz) = c1(jx-1, jy, jz);
           }
         }
       }
@@ -232,7 +224,6 @@ int main(int argc, char** argv) {
             BoutReal z = BoutReal(jz) / nz;
             a1(jx, jy, jz) =
                 -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
-            // 	  a1(jx, jy, jz) = a1(jx+1, jy, jz);
           }
         }
       }
@@ -245,7 +236,6 @@ int main(int argc, char** argv) {
             BoutReal z = BoutReal(jz) / nz;
             a1(jx, jy, jz) =
                 -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
-            // 	  a1(jx, jy, jz) = a1(jx-1, jy, jz);
           }
         }
       }
@@ -291,19 +281,13 @@ int main(int argc, char** argv) {
       sol1 = invert->solve(sliceXZ(b1, mesh->ystart));
       error1 = (f1 - sol1) / f1;
       absolute_error1 = f1 - sol1;
-      //     max_error1 = max_error_at_ystart(abs(error1));
       max_error1 = max_error_at_ystart(abs(absolute_error1));
     } catch (BoutException& err) {
-      output << "BoutException occured in invert->solve(b1): " << err.what() << endl;
-      max_error1 = -1;
+      output.write("BoutException occured in invert->solve(b1): {}\n", err.what());
     }
 
-    output << endl << "Test 1: PETSc 2nd order" << endl;
-    //   output<<"Time to set up is "<<Timer::getTime("petscsetup")<<". Time to solve is "<<Timer::getTime("petscsolve")<<endl;
-    //   output<<"Magnitude of maximum relative error is "<<max_error1<<endl;
-    output << "Magnitude of maximum absolute error is " << max_error1 << endl;
-    //   Timer::resetTime("petscsetup");
-    //   Timer::resetTime("petscsolve");
+    output.write("\nTest 1: PETSc 2nd order\n");
+    output.write("Magnitude of maximum absolute error is {}\n", max_error1);
 
     Options dump;
     dump["a1"] = a1;
@@ -316,12 +300,12 @@ int main(int argc, char** argv) {
     dump["absolute_error1"] = absolute_error1;
     dump["max_error1"] = max_error1;
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////
     // Test 2: Gaussian x-profiles, 4th order Krylov
     Field3D sol2;
-    Field3D error2,
-        absolute_error2; //Absolute value of relative error: abs( (f3-sol3)/f3 )
-    BoutReal max_error2; //Output of test
+    Field3D error2;
+    Field3D absolute_error2;       //Absolute value of relative error: abs( (f3-sol3)/f3 )
+    BoutReal max_error2 = -1; //Output of test
 
     invert_4th->setInnerBoundaryFlags(INVERT_AC_GRAD);
     invert_4th->setOuterBoundaryFlags(INVERT_AC_GRAD);
@@ -333,19 +317,13 @@ int main(int argc, char** argv) {
       sol2 = invert_4th->solve(sliceXZ(b1, mesh->ystart));
       error2 = (f1 - sol2) / f1;
       absolute_error2 = f1 - sol2;
-      //     max_error2 = max_error_at_ystart(abs(error2));
       max_error2 = max_error_at_ystart(abs(absolute_error2));
     } catch (BoutException& err) {
-      output << "BoutException occured in invert->solve(b1): " << err.what() << endl;
-      max_error2 = -1;
+      output.write("BoutException occured in invert->solve(b1): {}\n", err.what());
     }
 
-    output << endl << "Test 2: PETSc 4th order" << endl;
-    //   output<<"Time to set up is "<<Timer::getTime("petscsetup")<<". Time to solve is "<<Timer::getTime("petscsolve")<<endl;
-    //   output<<"Magnitude of maximum relative error is "<<max_error2<<endl;
-    output << "Magnitude of maximum absolute error is " << max_error2 << endl;
-    //   Timer::resetTime("petscsetup");
-    //   Timer::resetTime("petscsolve");
+    output.write("\nTest 2: PETSc 4th order\n");
+    output.write("Magnitude of maximum absolute error is {}\n", max_error2);
 
     dump["a2"] = a1;
     dump["b2"] = b1;
@@ -357,18 +335,16 @@ int main(int argc, char** argv) {
     dump["absolute_error2"] = absolute_error2;
     dump["max_error2"] = max_error2;
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
     // Test 3+4: Gaussian x-profiles, z-independent coefficients and compare with SPT method
-    Field2D a3, c3, d3;
-    Field3D b3;
     Field3D sol3, sol4;
     Field3D error3, absolute_error3, error4, absolute_error4;
-    BoutReal max_error3, max_error4;
+    BoutReal max_error3 = -1;
 
-    a3 = DC(a1);
-    c3 = DC(c1);
-    d3 = DC(d1);
-    b3 = d3 * Delp2(f1) + Grad_perp(c3) * Grad_perp(f1) / c3 + a3 * f1;
+    Field2D a3 = DC(a1);
+    Field2D c3 = DC(c1);
+    Field2D d3 = DC(d1);
+    Field3D b3 = d3 * Delp2(f1) + Grad_perp(c3) * Grad_perp(f1) / c3 + a3 * f1;
     if (mesh->firstX()) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
@@ -398,19 +374,13 @@ int main(int argc, char** argv) {
       sol3 = invert->solve(sliceXZ(b3, mesh->ystart));
       error3 = (f1 - sol3) / f1;
       absolute_error3 = f1 - sol3;
-      //     max_error3 = max_error_at_ystart(abs(error3));
       max_error3 = max_error_at_ystart(abs(absolute_error3));
     } catch (BoutException& err) {
-      output << "BoutException occured in invert->solve(b3): " << err.what() << endl;
-      max_error3 = -1;
+      output.write("BoutException occured in invert->solve(b3): {}\n", err.what());
     }
 
-    output << endl << "Test 3: with coefficients constant in z, PETSc 2nd order" << endl;
-    //   output<<"Time to set up is "<<Timer::getTime("petscsetup")<<". Time to solve is "<<Timer::getTime("petscsolve")<<endl;
-    //   output<<"Magnitude of maximum relative error is "<<max_error3<<endl;
-    output << "Magnitude of maximum absolute error is " << max_error3 << endl;
-    //   Timer::resetTime("petscsetup");
-    //   Timer::resetTime("petscsolve");
+    output.write("\nTest 3: with coefficients constant in z, PETSc 2nd order\n");
+    output.write("Magnitude of maximum absolute error is {}\n", max_error3);
 
     dump["a3"] = a3;
     dump["b3"] = b3;
@@ -422,8 +392,7 @@ int main(int argc, char** argv) {
     dump["absolute_error3"] = absolute_error3;
     dump["max_error3"] = max_error3;
 
-    Options* SPT_options;
-    SPT_options = Options::getRoot()->getSection("SPT");
+    Options* SPT_options = Options::getRoot()->getSection("SPT");
     auto invert_SPT = Laplacian::create(SPT_options);
     invert_SPT->setInnerBoundaryFlags(INVERT_AC_GRAD);
     invert_SPT->setOuterBoundaryFlags(INVERT_AC_GRAD | INVERT_DC_GRAD);
@@ -434,15 +403,10 @@ int main(int argc, char** argv) {
     sol4 = invert_SPT->solve(sliceXZ(b3, mesh->ystart));
     error4 = (f1 - sol4) / f1;
     absolute_error4 = f1 - sol4;
-    //   max_error4 = max_error_at_ystart(abs(error4));
-    max_error4 = max_error_at_ystart(abs(absolute_error4));
+    const BoutReal max_error4 = max_error_at_ystart(abs(absolute_error4));
 
-    output << endl << "Test 4: with coefficients constant in z, default solver" << endl;
-    //   output<<"Time to set up is "<<Timer::getTime("petscsetup")<<". Time to solve is "<<Timer::getTime("petscsolve")<<endl;
-    //   output<<"Magnitude of maximum relative error is "<<max_error4<<endl;
-    output << "Magnitude of maximum absolute error is " << max_error4 << endl;
-    //   Timer::resetTime("petscsetup");
-    //   Timer::resetTime("petscsolve");
+    output.write("\nTest 4: with coefficients constant in z, default solver\n");
+    output.write("Magnitude of maximum absolute error is {}\n", max_error4);
 
     dump["a4"] = a3;
     dump["b4"] = b3;
@@ -457,9 +421,9 @@ int main(int argc, char** argv) {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Test 5: Cosine x-profiles, 2nd order Krylov
     Field3D f5, a5, b5, c5, d5, sol5;
-    Field3D error5,
-        absolute_error5; //Absolute value of relative error: abs( (f5-sol5)/f5 )
-    BoutReal max_error5; //Output of test
+    Field3D error5;
+    Field3D absolute_error5; //Absolute value of relative error: abs( (f5-sol5)/f5 )
+    BoutReal max_error5 = -1; //Output of test
 
     p = 0.623901;
     q = 0.01209489;
@@ -467,20 +431,16 @@ int main(int argc, char** argv) {
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
-          BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          BoutReal z = BoutReal(jz) / nz;
-          f5(jx, jy, jz) =
-              0. + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
-              - 50.
-                    * (2. * p * exp(-50. * pow(-p, 2)) * x
-                       + (-p * exp(-50. * pow(-p, 2))
-                          - (1 - p) * exp(-50. * pow(1 - p, 2)))
-                             * pow(x, 2))
-                    * exp(-(
-                        1.
-                        - cos(2. * PI
-                              * (z - q)))) //make the gradients zero at both x-boundaries
-              ;
+          const BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
+          const BoutReal z = BoutReal(jz) / nz;
+          //make the gradients zero at both x-boundaries
+          f5(jx, jy, jz) = 0. + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+                           - 50.
+                                 * (2. * p * exp(-50. * pow(-p, 2)) * x
+                                    + (-p * exp(-50. * pow(-p, 2))
+                                       - (1 - p) * exp(-50. * pow(1 - p, 2)))
+                                          * pow(x, 2))
+                                 * exp(-(1. - cos(2. * PI * (z - q))));
         }
       }
     }
@@ -490,18 +450,15 @@ int main(int argc, char** argv) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
-            f5(jx, jy, jz) =
-                0. + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
-                - 50.
-                      * (2. * p * exp(-50. * pow(-p, 2)) * x
-                         + (-p * exp(-50. * pow(-p, 2))
-                            - (1 - p) * exp(-50. * pow(1 - p, 2)))
-                               * pow(x, 2))
-                      * exp(-(
-                          1.
-                          - cos(
-                              2. * PI
-                              * (z - q)))); //make the gradients zero at both x-boundaries
+            //make the gradients zero at both x-boundaries
+            f5(jx, jy, jz) = 0.
+                             + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+                             - 50.
+                                   * (2. * p * exp(-50. * pow(-p, 2)) * x
+                                      + (-p * exp(-50. * pow(-p, 2))
+                                         - (1 - p) * exp(-50. * pow(1 - p, 2)))
+                                            * pow(x, 2))
+                                   * exp(-(1. - cos(2. * PI * (z - q))));
           }
         }
       }
@@ -512,18 +469,15 @@ int main(int argc, char** argv) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
-            f5(jx, jy, jz) =
-                0. + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
-                - 50.
-                      * (2. * p * exp(-50. * pow(-p, 2)) * x
-                         + (-p * exp(-50. * pow(-p, 2))
-                            - (1 - p) * exp(-50. * pow(1 - p, 2)))
-                               * pow(x, 2))
-                      * exp(-(
-                          1.
-                          - cos(
-                              2. * PI
-                              * (z - q)))); //make the gradients zero at both x-boundaries
+            //make the gradients zero at both x-boundaries
+            f5(jx, jy, jz) = 0.
+                             + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+                             - 50.
+                                   * (2. * p * exp(-50. * pow(-p, 2)) * x
+                                      + (-p * exp(-50. * pow(-p, 2))
+                                         - (1 - p) * exp(-50. * pow(1 - p, 2)))
+                                            * pow(x, 2))
+                                   * exp(-(1. - cos(2. * PI * (z - q))));
           }
         }
       }
@@ -669,19 +623,13 @@ int main(int argc, char** argv) {
       sol5 = invert->solve(sliceXZ(b5, mesh->ystart));
       error5 = (f5 - sol5) / f5;
       absolute_error5 = f5 - sol5;
-      //     max_error5 = max_error_at_ystart(abs(error5));
       max_error5 = max_error_at_ystart(abs(absolute_error5));
     } catch (BoutException& err) {
-      output << "BoutException occured in invert->solve(b5): " << err.what() << endl;
-      max_error5 = -1;
+      output.write("BoutException occured in invert->solve(b5): {}\n", err.what());
     }
 
-    output << endl << "Test 5: different profiles, PETSc 2nd order" << endl;
-    //   output<<"Time to set up is "<<Timer::getTime("petscsetup")<<". Time to solve is "<<Timer::getTime("petscsolve")<<endl;
-    //   output<<"Magnitude of maximum relative error is "<<max_error5<<endl;
-    output << "Magnitude of maximum absolute error is " << max_error5 << endl;
-    //   Timer::resetTime("petscsetup");
-    //   Timer::resetTime("petscsolve");
+    output.write("\nTest 5: different profiles, PETSc 2nd order\n");
+    output.write("Magnitude of maximum absolute error is {}\n", max_error5);
 
     dump["a5"] = a5;
     dump["b5"] = b5;
@@ -693,12 +641,12 @@ int main(int argc, char** argv) {
     dump["absolute_error5"] = absolute_error5;
     dump["max_error5"] = max_error5;
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////
     // Test 6: Cosine x-profiles, 4th order Krylov
     Field3D sol6;
-    Field3D error6,
-        absolute_error6; //Absolute value of relative error: abs( (f5-sol5)/f5 )
-    BoutReal max_error6; //Output of test
+    Field3D error6;
+    Field3D absolute_error6;       //Absolute value of relative error: abs( (f5-sol5)/f5 )
+    BoutReal max_error6 = -1; //Output of test
     invert_4th->setInnerBoundaryFlags(INVERT_AC_GRAD);
     invert_4th->setOuterBoundaryFlags(INVERT_AC_GRAD);
     invert_4th->setCoefA(a5);
@@ -709,22 +657,16 @@ int main(int argc, char** argv) {
       sol6 = invert_4th->solve(sliceXZ(b5, mesh->ystart));
       error6 = (f5 - sol6) / f5;
       absolute_error6 = f5 - sol6;
-      //     max_error6 = max_error_at_ystart(abs(error6));
       max_error6 = max_error_at_ystart(abs(absolute_error6));
     } catch (BoutException& err) {
-      output
-          << "BoutException occured in invert->solve(b6): Laplacian inversion failed to "
-             "converge (probably)"
-          << endl;
-      max_error6 = -1;
+      output.write(
+          "BoutException occured in invert->solve(b6): Laplacian inversion failed to "
+          "converge (probably): {}\n",
+          err.what());
     }
 
-    output << endl << "Test 6: different profiles, PETSc 4th order" << endl;
-    //   output<<"Time to set up is "<<Timer::getTime("petscsetup")<<". Time to solve is "<<Timer::getTime("petscsolve")<<endl;
-    //   output<<"Magnitude of maximum relative error is "<<max_error6<<endl;
-    output << "Magnitude of maximum absolute error is " << max_error6 << endl;
-    //   Timer::resetTime("petscsetup");
-    //   Timer::resetTime("petscsolve");
+    output.write("\nTest 6: different profiles, PETSc 4th order\n");
+    output.write("Magnitude of maximum absolute error is {}\n", max_error6);
 
     dump["a6"] = a5;
     dump["b6"] = b5;
@@ -736,13 +678,13 @@ int main(int argc, char** argv) {
     dump["absolute_error6"] = absolute_error6;
     dump["max_error6"] = max_error6;
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////
     // Test 7+8: Cosine x-profiles, z-independent coefficients and compare with SPT method
     Field2D a7, c7, d7;
     Field3D b7;
     Field3D sol7, sol8;
     Field3D error7, absolute_error7, error8, absolute_error8;
-    BoutReal max_error7, max_error8;
+    BoutReal max_error7 = -1;
 
     a7 = DC(a5);
     c7 = DC(c5);
@@ -777,22 +719,14 @@ int main(int argc, char** argv) {
       sol7 = invert->solve(sliceXZ(b7, mesh->ystart));
       error7 = (f5 - sol7) / f5;
       absolute_error7 = f5 - sol7;
-      //     max_error7 = max_error_at_ystart(abs(error7));
       max_error7 = max_error_at_ystart(abs(absolute_error7));
     } catch (BoutException& err) {
-      output << "BoutException occured in invert->solve(b7): " << err.what() << endl;
-      max_error7 = -1;
+      output.write("BoutException occured in invert->solve(b7): {}\n", err.what());
     }
 
-    output
-        << endl
-        << "Test 7: different profiles, with coefficients constant in z, PETSc 2nd order"
-        << endl;
-    //   output<<"Time to set up is "<<Timer::getTime("petscsetup")<<". Time to solve is "<<Timer::getTime("petscsolve")<<endl;
-    //   output<<"Magnitude of maximum relative error is "<<max_error7<<endl;
-    output << "Magnitude of maximum absolute error is " << max_error7 << endl;
-    //   Timer::resetTime("petscsetup");
-    //   Timer::resetTime("petscsolve");
+    output.write(
+        "Test 7: different profiles, with coefficients constant in z, PETSc 2nd order\n");
+    output.write("Magnitude of maximum absolute error is {}\n", max_error7);
 
     dump["a7"] = a7;
     dump["b7"] = b7;
@@ -813,18 +747,11 @@ int main(int argc, char** argv) {
     sol8 = invert_SPT->solve(sliceXZ(b7, mesh->ystart));
     error8 = (f5 - sol8) / f5;
     absolute_error8 = f5 - sol8;
-    //   max_error8 = max_error_at_ystart(abs(error8));
-    max_error8 = max_error_at_ystart(abs(absolute_error8));
+    const BoutReal max_error8 = max_error_at_ystart(abs(absolute_error8));
 
-    output
-        << endl
-        << "Test 8: different profiles, with coefficients constant in z, default solver"
-        << endl;
-    //   output<<"Time to set up is "<<Timer::getTime("petscsetup")<<". Time to solve is "<<Timer::getTime("petscsolve")<<endl;
-    //   output<<"Magnitude of maximum relative error is "<<max_error8<<endl;
-    output << "Magnitude of maximum absolute error is " << max_error8 << endl;
-    //   Timer::resetTime("petscsetup");
-    //   Timer::resetTime("petscsolve");
+    output.write(
+        "Test 8: different profiles, with coefficients constant in z, default solver\n");
+    output.write("Magnitude of maximum absolute error is {}\n", max_error8);
 
     dump["a8"] = a7;
     dump["b8"] = b7;
@@ -860,7 +787,7 @@ BoutReal max_error_at_ystart(const Field3D& error) {
     }
   }
 
-  BoutReal max_error;
+  BoutReal max_error = BoutNaN;
 
   MPI_Allreduce(&local_max_error, &max_error, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
 
