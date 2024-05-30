@@ -24,6 +24,8 @@
 
 #if BOUT_HAS_PETSC
 
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
 #include "bout/globalindexer.hxx"
@@ -31,10 +33,15 @@
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/operatorstencil.hxx"
+#include "bout/paralleltransform.hxx"
 #include "bout/petsc_interface.hxx"
+#include "bout/petsclib.hxx"
+#include "bout/region.hxx"
 
+#include <cmath>
+#include <memory>
+#include <string>
 #include <vector>
-
 
 PetscXZHermiteSpline::PetscXZHermiteSpline(int y_offset, Mesh* mesh)
     : XZInterpolation(y_offset, mesh),
@@ -64,6 +71,7 @@ PetscXZHermiteSpline::PetscXZHermiteSpline(int y_offset, Mesh* mesh)
 
   // The stencil has 16 elements, so maximum number of columns in any
   // given row (whether on local or remote process) is 16
+  // NOLINTNEXTLINE(misc-include-cleaner)
   MatMPIAIJSetPreallocation(*weights.get(), 16, nullptr, 16, nullptr);
 }
 
@@ -85,8 +93,8 @@ void PetscXZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& de
 
     // The integer part of xt_prime, zt_prime are the indices of the cell
     // containing the field line end-point
-    int i_corn = static_cast<int>(floor(delta_x(x, y, z)));
-    k_corner(x, y, z) = static_cast<int>(floor(delta_z(x, y, z)));
+    int i_corn = static_cast<int>(std::floor(delta_x(x, y, z)));
+    k_corner(x, y, z) = static_cast<int>(std::floor(delta_z(x, y, z)));
 
     // t_x, t_z are the normalised coordinates \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index

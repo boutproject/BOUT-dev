@@ -11,14 +11,19 @@
 #include <string>
 
 #include "bout/bout.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
+#include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
+#include "bout/globals.hxx"
 #include "bout/interpolation_xz.hxx"
+#include "bout/options.hxx"
+#include "bout/options_io.hxx"
 #include "bout/sys/generator_context.hxx"
 
 /// Get a FieldGenerator from the options for a variable
-std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string& varname,
-                                                        std::string& func) {
+auto getGeneratorFromOptions(const std::string& varname, std::string& func) {
   Options* options = Options::getRoot()->getSection(varname);
   options->get("solution", func, "0.0");
 
@@ -69,7 +74,7 @@ int main(int argc, char** argv) {
     for (const auto& index : deltax) {
       // Get some random displacements
       BoutReal dx = index.x() + dice();
-      BoutReal dz = index.z() + dice();
+      const BoutReal dz = index.z() + dice();
       // For the last point, put the displacement inwards
       // Otherwise we try to interpolate in the guard cells, which doesn't work so well
       if (index.x() >= mesh->xend && mesh->getNXPE() - 1 == mesh->getXProcIndex()) {
@@ -79,8 +84,7 @@ int main(int argc, char** argv) {
       deltaz[index] = dz;
       // Get the global indices
       bout::generator::Context pos{index, CELL_CENTRE, deltax.getMesh(), 0.0};
-      pos.set("x", mesh->GlobalX(dx), "z",
-              TWOPI * static_cast<BoutReal>(dz) / static_cast<BoutReal>(mesh->LocalNz));
+      pos.set("x", mesh->GlobalX(dx), "z", TWOPI * dz / mesh->LocalNz);
       // Generate the analytic solution at the displacements
       a_solution[index] = a_gen->generate(pos);
       b_solution[index] = b_gen->generate(pos);
