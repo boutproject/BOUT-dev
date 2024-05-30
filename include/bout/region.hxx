@@ -116,16 +116,16 @@ class BoutMask;
 ///     }
 //
 
-#define BOUT_FOR_SERIAL(index, region)                                            \
+#define BOUT_FOR_SERIAL(index, region)                                                \
   for (auto block = (region).getBlocks().cbegin(), end = (region).getBlocks().cend(); \
-       block < end; ++block)                                                      \
+       block < end; ++block)                                                          \
     for (auto index = block->first; index < block->second; ++index)
 
 #if BOUT_USE_OPENMP
-#define BOUT_FOR_OMP(index, region, omp_pragmas)                                    \
-  BOUT_OMP_PERF(omp_pragmas)                                                        \
+#define BOUT_FOR_OMP(index, region, omp_pragmas)                                        \
+  BOUT_OMP_PERF(omp_pragmas)                                                            \
   for (auto block = (region).getBlocks().cbegin(); block < (region).getBlocks().cend(); \
-       ++block)                                                                     \
+       ++block)                                                                         \
     for (auto index = block->first; index < block->second; ++index)
 #else
 // No OpenMP, so fall back to slightly more efficient serial form
