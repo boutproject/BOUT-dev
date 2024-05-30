@@ -23,7 +23,6 @@
 #ifndef BOUT_INTERP_XZ_H
 #define BOUT_INTERP_XZ_H
 
-#include "bout/bout_types.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/field3d.hxx"
 #include "bout/globalindexer.hxx"
@@ -260,13 +259,8 @@ public:
 #if BOUT_HAS_PETSC
 class PetscXZHermiteSpline : public XZInterpolation {
   PetscLib petsclib;
-  bool isInit{false};
   IndexerPtr<Field3D> indexer;
   PetscMatrix<Field3D> weights;
-  Mat petscWeights{nullptr};
-  Vec rhs{nullptr};
-  Vec result{nullptr};
-  std::vector<Field3D> newWeights;
 
   Tensor<Field3D::ind_type> i_corner; // x-index of bottom-left grid point
   Tensor<int> k_corner;               // z-index of bottom-left grid point
@@ -296,7 +290,7 @@ public:
   PetscXZHermiteSpline(PetscXZHermiteSpline&& other) = default;
   PetscXZHermiteSpline& operator=(const PetscXZHermiteSpline& other) = delete;
   PetscXZHermiteSpline& operator=(PetscXZHermiteSpline&& other) = delete;
-  ~PetscXZHermiteSpline() override;
+  ~PetscXZHermiteSpline() override = default;
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                    const std::string& region = "RGN_NOBNDRY") override;

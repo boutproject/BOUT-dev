@@ -24,7 +24,6 @@
 
 #if BOUT_HAS_PETSC
 
-#include "../impls/bout/boutmesh.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
 #include "bout/globalindexer.hxx"
@@ -34,119 +33,14 @@
 #include "bout/operatorstencil.hxx"
 #include "bout/petsc_interface.hxx"
 
-#include <array>
-#include <cstddef>
 #include <vector>
 
-class IndConverter {
-public:
-  IndConverter(Mesh* mesh)
-      : mesh(dynamic_cast<BoutMesh*>(mesh)), nxpe(mesh->getNXPE()),
-        nype(mesh->getNYPE()) {}
-  // ix and iy are global indices
-  // iy is local
-  int fromMeshToGlobal(int ix, int iy, int iz) {
-    const int xstart = mesh->xstart;
-    const int lnx = mesh->LocalNx - xstart * 2;
-    // x-proc-id
-    int pex = divToNeg(ix - xstart, lnx);
-    if (pex < 0) {
-      pex = 0;
-    }
-    if (pex >= nxpe) {
-      pex = nxpe - 1;
-    }
-    const int zstart = 0;
-    const int lnz = mesh->LocalNz - zstart * 2;
-    // z-proc-id
-    // pez only for wrapping around ; later needs similar treatment than pey
-    const int pez = divToNeg(iz - zstart, lnz);
-    // y proc-id - y is already local
-    const int ystart = mesh->ystart;
-    const int lny = mesh->LocalNy - ystart * 2;
-    const int pey_offset = divToNeg(iy - ystart, lny);
-    int pey = pey_offset + mesh->getYProcIndex();
-    while (pey < 0) {
-      pey += nype;
-    }
-    while (pey >= nype) {
-      pey -= nype;
-    }
-    ASSERT2(pex >= 0);
-    ASSERT2(pex < nxpe);
-    ASSERT2(pey >= 0);
-    ASSERT2(pey < nype);
-    return fromLocalToGlobal(ix - pex * lnx, iy - pey_offset * lny, iz - pez * lnz, pex,
-                             pey, 0);
-  }
-  int fromLocalToGlobal(const int ilocalx, const int ilocaly, const int ilocalz) {
-    return fromLocalToGlobal(ilocalx, ilocaly, ilocalz, mesh->getXProcIndex(),
-                             mesh->getYProcIndex(), 0);
-  }
-  int fromLocalToGlobal(const int ilocalx, const int ilocaly, const int ilocalz,
-                        const int pex, const int pey, const int pez) {
-    ASSERT3(ilocalx >= 0);
-    ASSERT3(ilocaly >= 0);
-    ASSERT3(ilocalz >= 0);
-    const int ilocal = ((ilocalx * mesh->LocalNy) + ilocaly) * mesh->LocalNz + ilocalz;
-    const int ret = ilocal
-                    + mesh->LocalNx * mesh->LocalNy * mesh->LocalNz
-                          * ((pey * nxpe + pex) * nzpe + pez);
-    ASSERT3(ret >= 0);
-    ASSERT3(ret < nxpe * nype * mesh->LocalNx * mesh->LocalNy * mesh->LocalNz);
-    return ret;
-  }
-
-private:
-  // number of procs
-  BoutMesh* mesh;
-  int nxpe;
-  int nype;
-  int nzpe{1};
-  static int divToNeg(const int n, const int d) {
-    return (n < 0) ? ((n - d + 1) / d) : (n / d);
-  }
-};
-
-namespace {
-// A 4x4 stencil in x-z, covering (x-1, z-1) to (x+2, z+2)
-auto XZstencil(const Mesh& localmesh) {
-  using ind_type = Field3D::ind_type;
-  OperatorStencil<ind_type> stencil;
-  IndexOffset<ind_type> zero;
-
-  // Stencil pattern
-  //        x -->
-  //    0   4   8    12
-  // z  1   5   9    13
-  // |  2   6   10   14
-  // V  3   7   11   15
-
-  const std::vector<IndexOffset<ind_type>> offsets = {
-      zero.xm().zm(),      zero.xm(),      zero.xm().zp(),      zero.xm().zp().zp(),
-      zero.zm(),           zero,           zero.zp(),           zero.zp().zp(),
-      zero.xp().zm(),      zero.xp(),      zero.xp().zp(),      zero.xp().zp().zp(),
-      zero.xp().xp().zm(), zero.xp().xp(), zero.xp().xp().zp(), zero.xp().xp().zp().zp(),
-  };
-
-  stencil.add(
-      [&localmesh](ind_type ind) -> bool {
-        return (localmesh.xstart <= ind.x() and ind.x() <= localmesh.xend)
-               and (localmesh.ystart <= ind.y() and ind.y() <= localmesh.yend)
-               and (localmesh.zstart <= ind.z() and ind.z() <= localmesh.zend);
-      },
-      offsets);
-  stencil.add([]([[maybe_unused]] auto ind) -> bool { return true; }, {zero});
-
-  return stencil;
-}
-} // namespace
 
 PetscXZHermiteSpline::PetscXZHermiteSpline(int y_offset, Mesh* mesh)
     : XZInterpolation(y_offset, mesh),
       petsclib(&Options::root()["mesh:paralleltransform:xzinterpolation:hermitespline"]),
-      indexer(std::make_shared<GlobalIndexer<Field3D>>(localmesh, XZstencil(*localmesh))),
-      weights(indexer), h00_x(localmesh), h01_x(localmesh), h10_x(localmesh),
+      indexer(std::make_shared<bout::SimpleGlobalIndexer>(localmesh)),
+      weights(indexer, false), h00_x(localmesh), h01_x(localmesh), h10_x(localmesh),
       h11_x(localmesh), h00_z(localmesh), h01_z(localmesh), h10_z(localmesh),
       h11_z(localmesh) {
 
@@ -168,25 +62,9 @@ PetscXZHermiteSpline::PetscXZHermiteSpline(int y_offset, Mesh* mesh)
   h10_z.allocate();
   h11_z.allocate();
 
-  newWeights.reserve(16);
-  for (int w = 0; w < 16; ++w) {
-    newWeights.emplace_back(localmesh);
-    newWeights[w].allocate();
-  }
-
-  const int grid_size = localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz;
-  const int proc_size = grid_size * localmesh->getNXPE() * localmesh->getNYPE();
-  MatCreateAIJ(MPI_COMM_WORLD, grid_size, grid_size, proc_size, proc_size, 16, nullptr,
-               16, nullptr, &petscWeights);
-}
-
-PetscXZHermiteSpline::~PetscXZHermiteSpline() {
-  if (!isInit) {
-    return;
-  }
-  MatDestroy(&petscWeights);
-  VecDestroy(&rhs);
-  VecDestroy(&result);
+  // The stencil has 16 elements, so maximum number of columns in any
+  // given row (whether on local or remote process) is 16
+  MatMPIAIJSetPreallocation(*weights.get(), 16, nullptr, 16, nullptr);
 }
 
 void PetscXZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
@@ -197,16 +75,9 @@ void PetscXZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& de
   const int xend = (localmesh->xend - localmesh->xstart + 1) * localmesh->getNXPE()
                    + localmesh->xstart - 1;
 
-  IndConverter conv{localmesh};
-
+  // TODO: work out why using `getRegion(region)` directly causes
+  // issues on more than one core
   const auto actual_region = getRegion(region);
-
-  // PETSc doesn't like mixing `INSERT` and `ADD`, so first make sure matrix is zeroed
-  // TODO: PetscMatrix could buffer and insert all at once
-  weights.partialAssemble();
-  BOUT_FOR(i, actual_region) { weights(i, i) = 0.0; }
-  weights.partialAssemble();
-
   BOUT_FOR(i, actual_region) {
     const int x = i.x();
     const int y = i.y();
@@ -220,7 +91,7 @@ void PetscXZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& de
     // t_x, t_z are the normalised coordinates \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
     BoutReal t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corn);
-    BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+    const BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
     // NOTE: A (small) hack to avoid one-sided differences
     if (i_corn >= xend) {
@@ -247,9 +118,6 @@ void PetscXZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& de
           x, y, z, delta_z(x, y, z), k_corner(x, y, z));
     }
 
-    i_corner[i] = SpecificInd<IND_TYPE::IND_3D>(
-        (((i_corn * ny) + (y + y_offset)) * nz + k_corner(x, y, z)), ny, nz);
-
     h00_x[i] = (2. * t_x * t_x * t_x) - (3. * t_x * t_x) + 1.;
     h00_z[i] = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;
 
@@ -262,114 +130,41 @@ void PetscXZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& de
     h11_x[i] = (t_x * t_x * t_x) - (t_x * t_x);
     h11_z[i] = (t_z * t_z * t_z) - (t_z * t_z);
 
-    for (int w = 0; w < 16; ++w) {
-      newWeights[w][i] = 0;
-    }
-    // The distribution of our weights:
-    //  0   4   8    12
-    //  1   5   9    13
-    //  2   6   10   14
-    //  3   7   11   15
-    // e.g. 1 == ic.xm(); 4 == ic.zm(); 5 == ic;  7 == ic.zp(2);
+    // Need to convert from global indices to local
+    const auto i_c = Field3D::ind_type(
+        (((localmesh->getLocalXIndex(i_corn) * ny) + (y + y_offset)) * nz
+         + localmesh->getLocalZIndex(k_corner(x, y, z))),
+        ny, nz);
 
     // f[ic] * h00_x[i] + f[icxp] * h01_x[i] + fx[ic] * h10_x[i] + fx[icxp] * h11_x[i];
-    weights(i, i) += (h00_x[i] * h00_z[i]) - (h11_x[i] * h00_z[i] / 2);
-    weights(i, i.xp()) += (h01_x[i] * h00_z[i]) + (h10_x[i] * h00_z[i] / 2);
-    weights(i, i.xm()) += -(h10_x[i] * h00_z[i] / 2);
-    weights(i, i.xp(2)) += (h11_x[i] * h00_z[i] / 2);
+    // f[iczp] * h00_x[i] + f[icxpzp] * h01_x[i] + fx[iczp] * h10_x[i] + fx[icxpzp] * h11_x[i];
+    // fz[ic] * h00_x[i] + fz[icxp] * h01_x[i] + fxz[ic] * h10_x[i]+ fxz[icxp] * h11_x[i];
+    // fz[iczp] * h00_x[i] + fz[icxpzp] * h01_x[i] + fxz[iczp] * h10_x[i] + fxz[icxpzp] * h11_x[i];
 
-    newWeights[5][i] += h00_x[i] * h00_z[i];
-    newWeights[9][i] += h01_x[i] * h00_z[i];
-    newWeights[9][i] += h10_x[i] * h00_z[i] / 2;
-    newWeights[1][i] -= h10_x[i] * h00_z[i] / 2;
-    newWeights[13][i] += h11_x[i] * h00_z[i] / 2;
-    newWeights[5][i] -= h11_x[i] * h00_z[i] / 2;
-
-    // f[iczp] * h00_x[i] + f[icxpzp] * h01_x[i] +
-    // fx[iczp] * h10_x[i] + fx[icxpzp] * h11_x[i];
-    weights(i, i.zp()) += (h00_x[i] * h01_z[i]) - (h11_x[i] * h01_z[i] / 2);
-    weights(i, i.zp().xp()) += (h01_x[i] * h01_z[i]) + (h10_x[i] * h01_z[i] / 2);
-    weights(i, i.zp().xm()) += -(h10_x[i] * h01_z[i] / 2);
-    weights(i, i.zp().xp(2)) += h11_x[i] * h01_z[i] / 2;
-
-    newWeights[6][i] += h00_x[i] * h01_z[i];
-    newWeights[10][i] += h01_x[i] * h01_z[i];
-    newWeights[10][i] += h10_x[i] * h01_z[i] / 2;
-    newWeights[2][i] -= h10_x[i] * h01_z[i] / 2;
-    newWeights[14][i] += h11_x[i] * h01_z[i] / 2;
-    newWeights[6][i] -= h11_x[i] * h01_z[i] / 2;
-
-    // fz[ic] * h00_x[i] + fz[icxp] * h01_x[i] +
-    // fxz[ic] * h10_x[i]+ fxz[icxp] * h11_x[i];
-    weights(i, i.zp()) += (h00_x[i] * h10_z[i] / 2) - (h11_x[i] * h10_z[i] / 4);
-    weights(i, i.zm()) += -(h00_x[i] * h10_z[i] / 2) + (h11_x[i] * h10_z[i] / 4);
-    weights(i, i.xp().zp()) += (h01_x[i] * h10_z[i] / 2) + (h10_x[i] * h10_z[i] / 4);
-    weights(i, i.xp().zm()) += -(h01_x[i] * h10_z[i] / 2) - (h10_x[i] * h10_z[i] / 4);
-    weights(i, i.xm().zp()) += -(h10_x[i] * h10_z[i] / 4);
-    weights(i, i.xm().zm()) += (h10_x[i] * h10_z[i] / 4);
-    weights(i, i.xp(2).zp()) += h11_x[i] * h10_z[i] / 4;
-    weights(i, i.xp(2).zm()) += -(h11_x[i] * h10_z[i] / 4);
-
-    newWeights[6][i] += h00_x[i] * h10_z[i] / 2;
-    newWeights[4][i] -= h00_x[i] * h10_z[i] / 2;
-    newWeights[10][i] += h01_x[i] * h10_z[i] / 2;
-    newWeights[8][i] -= h01_x[i] * h10_z[i] / 2;
-    newWeights[10][i] += h10_x[i] * h10_z[i] / 4;
-    newWeights[8][i] -= h10_x[i] * h10_z[i] / 4;
-    newWeights[2][i] -= h10_x[i] * h10_z[i] / 4;
-    newWeights[0][i] += h10_x[i] * h10_z[i] / 4;
-    newWeights[14][i] += h11_x[i] * h10_z[i] / 4;
-    newWeights[12][i] -= h11_x[i] * h10_z[i] / 4;
-    newWeights[6][i] -= h11_x[i] * h10_z[i] / 4;
-    newWeights[4][i] += h11_x[i] * h10_z[i] / 4;
-
-    // fz[iczp] * h00_x[i] + fz[icxpzp] * h01_x[i] +
-    // fxz[iczp] * h10_x[i] + fxz[icxpzp] * h11_x[i];
-    weights(i, i.zp(2)) += (h00_x[i] * h11_z[i] / 2) - (h11_x[i] * h11_z[i] / 4);
-    weights(i, i) += -(h00_x[i] * h11_z[i] / 2) + (h11_x[i] * h11_z[i] / 4);
-    weights(i, i.xp().zp(2)) += (h01_x[i] * h11_z[i] / 2) + (h10_x[i] * h11_z[i] / 4);
-    weights(i, i.xp()) += -(h01_x[i] * h11_z[i] / 2) - (h10_x[i] * h11_z[i] / 4);
-    weights(i, i.xm().zp(2)) += -(h10_x[i] * h11_z[i] / 4);
-    weights(i, i.xm()) += (h10_x[i] * h11_z[i] / 4);
-    weights(i, i.xp(2).zp(2)) += h11_x[i] * h11_z[i] / 4;
-    weights(i, i.xp(2)) += -(h11_x[i] * h11_z[i] / 4);
-    weights(i, i.zp(2)) += -(h11_x[i] * h11_z[i] / 4);
-
-    newWeights[7][i] += h00_x[i] * h11_z[i] / 2;
-    newWeights[5][i] -= h00_x[i] * h11_z[i] / 2;
-    newWeights[11][i] += h01_x[i] * h11_z[i] / 2;
-    newWeights[9][i] -= h01_x[i] * h11_z[i] / 2;
-    newWeights[11][i] += h10_x[i] * h11_z[i] / 4;
-    newWeights[9][i] -= h10_x[i] * h11_z[i] / 4;
-    newWeights[3][i] -= h10_x[i] * h11_z[i] / 4;
-    newWeights[1][i] += h10_x[i] * h11_z[i] / 4;
-    newWeights[15][i] += h11_x[i] * h11_z[i] / 4;
-    newWeights[13][i] -= h11_x[i] * h11_z[i] / 4;
-    newWeights[7][i] -= h11_x[i] * h11_z[i] / 4;
-    newWeights[5][i] += h11_x[i] * h11_z[i] / 4;
-
-    std::array<PetscInt, 1> idxn = {conv.fromLocalToGlobal(x, y + y_offset, z)};
-    for (int j = 0; j < 4; ++j) {
-      std::array<PetscInt, 4> idxm{};
-      std::array<PetscScalar, 4> vals{};
-      for (std::size_t k = 0; k < 4; ++k) {
-        idxm[k] = conv.fromMeshToGlobal(i_corn - 1 + j, y + y_offset,
-                                        k_corner(x, y, z) - 1 + k);
-        vals[k] = newWeights[j * 4 + k][i];
-      }
-      MatSetValues(petscWeights, 1, idxn.data(), 4, idxm.data(), vals.data(),
-                   INSERT_VALUES);
-    }
+    // Quite a few duplicated terms, could pre-calculate
+    weights(i, i_c.xm()) = (h10_x[i] * h11_z[i] / 4) - (h10_x[i] * h00_z[i] / 2);
+    weights(i, i_c.xm().zm()) = (h10_x[i] * h10_z[i] / 4);
+    weights(i, i_c.xm().zp()) = -(h10_x[i] * h01_z[i] / 2) - (h10_x[i] * h10_z[i] / 4);
+    weights(i, i_c.xm().zp(2)) = -(h10_x[i] * h11_z[i] / 4);
+    weights(i, i_c.xp()) = (h01_x[i] * h00_z[i]) + (h10_x[i] * h00_z[i] / 2)
+                           - (h01_x[i] * h11_z[i] / 2) - (h10_x[i] * h11_z[i] / 4);
+    weights(i, i_c.xp().zm()) = -(h01_x[i] * h10_z[i] / 2) - (h10_x[i] * h10_z[i] / 4);
+    weights(i, i_c.xp().zp()) = (h01_x[i] * h01_z[i]) + (h01_x[i] * h10_z[i] / 2)
+                                + (h10_x[i] * h01_z[i] / 2) + (h10_x[i] * h10_z[i] / 4);
+    weights(i, i_c.xp().zp(2)) = (h01_x[i] * h11_z[i] / 2) + (h10_x[i] * h11_z[i] / 4);
+    weights(i, i_c.xp(2)) = (h11_x[i] * h00_z[i] / 2) - (h11_x[i] * h11_z[i] / 4);
+    weights(i, i_c.xp(2).zm()) = -(h11_x[i] * h10_z[i] / 4);
+    weights(i, i_c.xp(2).zp()) = (h11_x[i] * h01_z[i] / 2) + (h11_x[i] * h10_z[i] / 4);
+    weights(i, i_c.xp(2).zp(2)) = (h11_x[i] * h11_z[i] / 4);
+    weights(i, i_c) = (h00_x[i] * h00_z[i]) + (h11_x[i] * h11_z[i] / 4)
+                      - (h00_x[i] * h11_z[i] / 2) - (h11_x[i] * h00_z[i] / 2);
+    weights(i, i_c.zm()) = (h11_x[i] * h10_z[i] / 4) - (h00_x[i] * h10_z[i] / 2);
+    weights(i, i_c.zp()) = (h00_x[i] * h01_z[i]) + (h00_x[i] * h10_z[i] / 2)
+                           - (h11_x[i] * h01_z[i] / 2) - (h11_x[i] * h10_z[i] / 4);
+    weights(i, i_c.zp(2)) = (h00_x[i] * h11_z[i] / 2) - (h11_x[i] * h11_z[i] / 4);
   }
 
   weights.assemble();
-
-  MatAssemblyBegin(petscWeights, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(petscWeights, MAT_FINAL_ASSEMBLY);
-  if (!isInit) {
-    MatCreateVecs(petscWeights, &rhs, &result);
-  }
-  isInit = true;
 }
 
 void PetscXZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
@@ -408,32 +203,16 @@ PetscXZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffs
           {i, j + yoffset, k_mod_p2, 0.5 * h11_z(i, j, k)}};
 }
 
-Field3D PetscXZHermiteSpline::interpolate(const Field3D& f,
-                                          const std::string& region) const {
+Field3D
+PetscXZHermiteSpline::interpolate(const Field3D& f,
+                                  [[maybe_unused]] const std::string& region) const {
 
   ASSERT1(f.getMesh() == localmesh);
-  Field3D f_interp{emptyFrom(f)};
-
-  BoutReal* ptr = nullptr;
-  const BoutReal* cptr = nullptr;
-  VecGetArray(rhs, &ptr);
-  BOUT_FOR(i, f.getRegion("RGN_NOY")) { ptr[int(i)] = f[i]; }
-  VecRestoreArray(rhs, &ptr);
-  MatMult(petscWeights, rhs, result);
-  VecGetArrayRead(result, &cptr);
-  const auto region2 = y_offset == 0 ? region : fmt::format("RGN_YPAR_{:+d}", y_offset);
-  BOUT_FOR(i, f.getRegion(region2)) {
-    f_interp[i] = cptr[int(i)];
-    ASSERT2(std::isfinite(cptr[int(i)]));
-  }
-  VecRestoreArrayRead(result, &cptr);
-
-  PetscVector<Field3D> f_petsc(f, indexer);
-  PetscVector<Field3D> f_result = weights * f_petsc;
-  auto new_result = f_result.toField();
-  // Using the Petsc interface classes gives pretty shoddy results
-  // return new_result;
-  return f_interp;
+  const PetscVector<Field3D> f_petsc(f, indexer);
+  const PetscVector<Field3D> f_result = weights * f_petsc;
+  // TODO: we should only consider the passed-in region
+  // const auto region2 = y_offset == 0 ? region : fmt::format("RGN_YPAR_{:+d}", y_offset);
+  return f_result.toField();
 }
 
 Field3D PetscXZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_x,
