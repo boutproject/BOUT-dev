@@ -128,7 +128,6 @@ public:
   /// Convert the local index object to a global index which can be
   /// used in PETSc vectors and matrices.
   virtual int getGlobal(const ind_type& ind) const {
-    ASSERT1(isLocal(ind));
     return static_cast<int>(std::round(indices[ind]));
   }
 
