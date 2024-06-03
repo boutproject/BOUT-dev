@@ -59,7 +59,7 @@ class Options;
 // means we _must_ `#include` this header _before_ any PETSc header!
 #define PETSC_HAVE_BROKEN_RECURSIVE_MACRO
 
-#include <petsc.h>
+#include <petsc.h> // IWYU pragma: export
 #include <petscversion.h>
 
 #include "bout/boutexception.hxx"

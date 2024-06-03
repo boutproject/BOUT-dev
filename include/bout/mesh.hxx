@@ -55,16 +55,16 @@ class Mesh;
 #include "bout/field_data.hxx"
 #include "bout/options.hxx"
 
-#include "fieldgroup.hxx"
+#include "bout/fieldgroup.hxx"
 
 class BoundaryRegion;
 class BoundaryRegionPar;
 
-#include "sys/range.hxx" // RangeIterator
+#include "bout/sys/range.hxx" // RangeIterator
 
 #include <bout/griddata.hxx>
 
-#include "coordinates.hxx" // Coordinates class
+#include "bout/coordinates.hxx" // Coordinates class
 
 #include "bout/unused.hxx"
 
