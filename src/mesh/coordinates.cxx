@@ -135,8 +135,8 @@ Field2D Coordinates::interpolateAndExtrapolate(
         // this point should already be set correctly because the metric
         // components have been interpolated to here.
         if (extrap_start > 0 and f.getLocation() != location) {
-          ASSERT1(bndry->bx == 0 or localmesh->xstart > 1)
-          ASSERT1(bndry->by == 0 or localmesh->ystart > 1)
+          ASSERT1(bndry->bx == 0 or localmesh->xstart > 1);
+          ASSERT1(bndry->by == 0 or localmesh->ystart > 1);
           // note that either bx or by is >0 here
           result(bndry->x, bndry->y) =
               (9.
@@ -1052,7 +1052,7 @@ Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc, const std::string& m
   }
 
   return result;
-}
+};
 
 Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
                                           const std::string& method,
@@ -1341,7 +1341,7 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
     // yet
     // result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * ::D2DX2(f, outloc)
     //          + g33 * ::D2DZ2(f, outloc) + 2 * g13 * ::D2DXDZ(f, outloc);
-  }
+  };
 
   return result;
 }
