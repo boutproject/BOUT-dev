@@ -1,5 +1,6 @@
 
 #include <bout/boundary_region.hxx>
+#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
 #include <bout/utils.hxx>
 
