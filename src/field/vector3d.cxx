@@ -122,13 +122,10 @@ void Vector3D::toContravariant() {
     Mesh* localmesh = getMesh();
 
     if (location == CELL_VSHIFT) {
-      Coordinates* metric_x;
-      Coordinates* metric_y;
-      Coordinates* metric_z;
 
-      metric_x = localmesh->getCoordinates(CELL_XLOW);
-      metric_y = localmesh->getCoordinates(CELL_YLOW);
-      metric_z = localmesh->getCoordinates(CELL_ZLOW);
+      const auto* metric_x = localmesh->getCoordinates(CELL_XLOW);
+      const auto* metric_y = localmesh->getCoordinates(CELL_YLOW);
+      const auto* metric_z = localmesh->getCoordinates(CELL_ZLOW);
 
       // Fields at different locations so we need to interpolate
       // Note : Could reduce peak memory requirement here by just
@@ -153,10 +150,12 @@ void Vector3D::toContravariant() {
       };
 
     } else {
-      const auto metric = localmesh->getCoordinates(location);
+      const auto* metric = localmesh->getCoordinates(location);
 
       // Need to use temporary arrays to store result
-      Field3D gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
+      Field3D gx{emptyFrom(x)};
+      Field3D gy{emptyFrom(y)};
+      Field3D gz{emptyFrom(z)};
 
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
         gx[i] =

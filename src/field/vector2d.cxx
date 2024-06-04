@@ -65,12 +65,10 @@ void Vector2D::toCovariant() {
     Mesh* localmesh = getMesh();
 
     if (location == CELL_VSHIFT) {
-      Coordinates* metric_x;
-      Coordinates* metric_y;
-      Coordinates* metric_z;
-      metric_x = localmesh->getCoordinates(CELL_XLOW);
-      metric_y = localmesh->getCoordinates(CELL_YLOW);
-      metric_z = localmesh->getCoordinates(CELL_ZLOW);
+
+      const auto* metric_x = localmesh->getCoordinates(CELL_XLOW);
+      const auto* metric_y = localmesh->getCoordinates(CELL_YLOW);
+      const auto* metric_z = localmesh->getCoordinates(CELL_ZLOW);
 
       // Fields at different locations so we need to interpolate
       // Note : Could reduce peak memory requirement here by just
@@ -94,10 +92,12 @@ void Vector2D::toCovariant() {
                + metric_z->g_23()[i] * y_at_z[i];
       };
     } else {
-      const auto metric = localmesh->getCoordinates(location);
+      const auto* metric = localmesh->getCoordinates(location);
 
       // Need to use temporary arrays to store result
-      Coordinates::FieldMetric gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
+      Coordinates::FieldMetric gx{emptyFrom(x)};
+      Coordinates::FieldMetric gy{emptyFrom(y)};
+      Coordinates::FieldMetric gz{emptyFrom(z)};
 
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
         gx[i] = metric->g_11()[i] * x[i] + metric->g_12()[i] * y[i]
@@ -123,13 +123,10 @@ void Vector2D::toContravariant() {
     Mesh* localmesh = getMesh();
 
     if (location == CELL_VSHIFT) {
-      Coordinates* metric_x;
-      Coordinates* metric_y;
-      Coordinates* metric_z;
 
-      metric_x = localmesh->getCoordinates(CELL_XLOW);
-      metric_y = localmesh->getCoordinates(CELL_YLOW);
-      metric_z = localmesh->getCoordinates(CELL_ZLOW);
+      const auto* metric_x = localmesh->getCoordinates(CELL_XLOW);
+      const auto* metric_y = localmesh->getCoordinates(CELL_YLOW);
+      const auto* metric_z = localmesh->getCoordinates(CELL_ZLOW);
 
       // Fields at different locations so we need to interpolate
       // Note : Could reduce peak memory requirement here by just
@@ -154,10 +151,12 @@ void Vector2D::toContravariant() {
       };
 
     } else {
-      const auto metric = localmesh->getCoordinates(location);
+      const auto* metric = localmesh->getCoordinates(location);
 
       // Need to use temporary arrays to store result
-      Coordinates::FieldMetric gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
+      Coordinates::FieldMetric gx{emptyFrom(x)};
+      Coordinates::FieldMetric gy{emptyFrom(y)};
+      Coordinates::FieldMetric gz{emptyFrom(z)};
 
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
         gx[i] =
