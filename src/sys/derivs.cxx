@@ -41,8 +41,13 @@
 #include <bout/constants.hxx>
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
+#include <bout/globals.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/stencils.hxx>
+#include <bout/utils.hxx>
+
+#include <cmath>
 
 #include <bout/output.hxx>
 #include <bout/unused.hxx>

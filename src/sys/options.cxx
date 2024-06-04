@@ -10,7 +10,9 @@
 #include "bout/output.hxx"
 #include "bout/sys/expressionparser.hxx"
 #include "bout/sys/gettext.hxx"
+#include "bout/sys/type_name.hxx"
 #include "bout/sys/variant.hxx"
+#include "bout/traits.hxx"
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
 
@@ -19,6 +21,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iterator>
 #include <map>
 #include <set>
 #include <string>

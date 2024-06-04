@@ -1,3 +1,4 @@
+#include <bout/assert.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/optionsreader.hxx>
