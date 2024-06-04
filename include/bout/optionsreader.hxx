@@ -100,8 +100,8 @@ public:
   ///   ...
   ///   return 0;
   /// }
-  static void parseCommandLine(Options* options, int argc, char** argv);
-  static void parseCommandLine(Options* options, const std::vector<std::string>& argv);
+  void parseCommandLine(Options* options, int argc, char** argv);
+  void parseCommandLine(Options* options, const std::vector<std::string>& argv);
 
 private:
   /// The instance of this singleton
