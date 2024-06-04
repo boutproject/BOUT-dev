@@ -39,7 +39,7 @@ constexpr BndryLoc BNDRY_PAR_BKWD_XOUT = BndryLoc::par_bkwd_xout;
 class BoundaryRegionBase {
 public:
   BoundaryRegionBase() = delete;
-  explicit BoundaryRegionBase(std::string name, Mesh* passmesh = nullptr)
+  BoundaryRegionBase(std::string name, Mesh* passmesh = nullptr)
       : localmesh(passmesh ? passmesh : bout::globals::mesh), label(std::move(name)) {}
   BoundaryRegionBase(std::string name, BndryLoc loc, Mesh* passmesh = nullptr)
       : localmesh(passmesh ? passmesh : bout::globals::mesh), label(std::move(name)),
