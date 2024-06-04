@@ -67,9 +67,9 @@ class BoundaryRegion : public BoundaryRegionBase {
 public:
   BoundaryRegion() = delete;
   BoundaryRegion(std::string name, BndryLoc loc, Mesh* passmesh = nullptr)
-      : BoundaryRegionBase(std::move(name), loc, passmesh) {}
+      : BoundaryRegionBase(name, loc, passmesh) {}
   BoundaryRegion(std::string name, int xd, int yd, Mesh* passmesh = nullptr)
-      : BoundaryRegionBase(std::move(name), passmesh), bx(xd), by(yd), width(2) {}
+      : BoundaryRegionBase(name, passmesh), bx(xd), by(yd), width(2) {}
   ~BoundaryRegion() override = default;
 
   int x, y;   ///< Indices of the point in the boundary
