@@ -71,9 +71,8 @@ protected:
     // generate coordinate system
     coord->setBxy(1);
 
-    coord->setContravariantMetricTensor(
-        ContravariantMetricTensor(1.0, 1.0, 1.0, 0.0, 0.0, 0.0));
-    coord->setCovariantMetricTensor(CovariantMetricTensor(1.0, 1.0, 1.0, 0.0, 0.0, 0.0));
+    coord->setMetricTensor(ContravariantMetricTensor(1.0, 1.0, 1.0, 0.0, 0.0, 0.0),
+                           CovariantMetricTensor(1.0, 1.0, 1.0, 0.0, 0.0, 0.0));
 
     SOLVE_FOR(N, vort);
     SAVE_REPEAT(phi);

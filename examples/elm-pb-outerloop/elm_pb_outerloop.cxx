@@ -1095,25 +1095,24 @@ public:
     MetricTensor::FieldMetric g11, g22, g33, g12, g13, g23;
     g11 = SQ(Rxy * Bpxy);
     g22 = 1.0 / SQ(hthe);
-    g33 = SQ(I) * metric->g11() + SQ(B0) / metric->g11();
+    g33 = SQ(I) * g11 + SQ(B0) / g11;
     g12 = 0.0;
-    g13 = -I * metric->g11();
+    g13 = -I * g11;
     g23 = -Btxy / (hthe * Bpxy * Rxy);
-    metric->setContravariantMetricTensor(
-        ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
 
     metric->setJ(hthe / Bpxy);
     metric->setBxy(B0);
 
     MetricTensor::FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
-    g_11 = 1.0 / metric->g11() + SQ(I * Rxy);
+    g_11 = 1.0 / g11 + SQ(I * Rxy);
     g_22 = SQ(B0 * hthe / Bpxy);
     g_33 = Rxy * Rxy;
     g_12 = Btxy * hthe * I * Rxy / Bpxy;
     g_13 = I * Rxy * Rxy;
     g_23 = Btxy * hthe * Rxy / Bpxy;
-    metric->setCovariantMetricTensor(
-        CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+
+    metric->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+                            CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
     // Set B field vector
 
