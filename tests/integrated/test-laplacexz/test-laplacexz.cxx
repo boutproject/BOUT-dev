@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
   // Calculate the Laplacian with non-zero g13
   const Field3D g =
       coord->g11() * D2DX2(f) + coord->g13() * D2DXDZ(f) + coord->g33() * D2DZ2(f);
-  
+
   inv->setCoefs(Field2D(1.0), Field2D(0.0));
 
   Field3D f2 = inv->solve(g, 0.0); // Invert the Laplacian.
