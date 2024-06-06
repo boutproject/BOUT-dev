@@ -19,13 +19,13 @@ GValues::GValues(const Coordinates& coordinates) {
   const auto& g23 = contravariantMetricTensor.g23();
 
   auto tmp = J * g12;
-  coordinates.communicate(tmp);
+  Coordinates::communicate(tmp);
   setG1((coordinates.DDX(J * g11) + coordinates.DDY(tmp) + coordinates.DDZ(J * g13)) / J);
   tmp = J * g22;
-  coordinates.communicate(tmp);
+  Coordinates::communicate(tmp);
   setG2((coordinates.DDX(J * g12) + coordinates.DDY(tmp) + coordinates.DDZ(J * g23)) / J);
   tmp = J * g23;
-  coordinates.communicate(tmp);
+  Coordinates::communicate(tmp);
   setG3((coordinates.DDX(J * g13) + coordinates.DDY(tmp) + coordinates.DDZ(J * g33)) / J);
 }
 
