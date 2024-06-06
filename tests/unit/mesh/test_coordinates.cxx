@@ -364,8 +364,8 @@ TEST_F(CoordinatesTest, SetContravariantMetricTensor) {
 
 TEST_F(CoordinatesTest, CheckCovariantCalculatedFromContravariant) {
 
-    // Set initial values for the metric tensor in the Coordinates constructor
-    Coordinates coords{mesh,
+  // Set initial values for the metric tensor in the Coordinates constructor
+  Coordinates coords{mesh,
                      FieldMetric{1.0},  // dx
                      FieldMetric{1.0},  // dy
                      FieldMetric{1.0},  // dz
@@ -386,36 +386,36 @@ TEST_F(CoordinatesTest, CheckCovariantCalculatedFromContravariant) {
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
 
-    //  Modify contravariant components
-    constexpr double g11 = 1.0;
-    constexpr double g22 = 1.0;
-    constexpr double g33 = 1.0;
-    const double g12 = sqrt(3.0)/4.0; // (std::sqrt only constexpr since C++26)
-    constexpr double g13 = 0.5;
-    const double g23 = sqrt(3.0)/4.0; // (std::sqrt only constexpr since C++26)
-    auto updated_metric_tensor = ContravariantMetricTensor(g11, g22, g33, g12, g13, g23);
-    coords.setContravariantMetricTensor(updated_metric_tensor);
+  //  Modify contravariant components
+  constexpr double g11 = 1.0;
+  constexpr double g22 = 1.0;
+  constexpr double g33 = 1.0;
+  const double g12 = sqrt(3.0) / 4.0; // (std::sqrt only constexpr since C++26)
+  constexpr double g13 = 0.5;
+  const double g23 = sqrt(3.0) / 4.0; // (std::sqrt only constexpr since C++26)
+  auto updated_metric_tensor = ContravariantMetricTensor(g11, g22, g33, g12, g13, g23);
+  coords.setContravariantMetricTensor(updated_metric_tensor);
 
-    //  Check that the covariant components have been calculated corrected
-    constexpr double expected_g_11 = 13.0 / 9.0;
-    constexpr double expected_g_22 = 4.0 / 3.0;
-    constexpr double expected_g_33 = 13.0 / 9.0;
-    const double expected_g_12 = -2.0 * sqrt(3.0) / 9.0;
-    constexpr double expected_g_13 = -5.0 / 9.0;
-    const double expected_g_23 = -2.0 * sqrt(3.0) / 9.0;
+  //  Check that the covariant components have been calculated corrected
+  constexpr double expected_g_11 = 13.0 / 9.0;
+  constexpr double expected_g_22 = 4.0 / 3.0;
+  constexpr double expected_g_33 = 13.0 / 9.0;
+  const double expected_g_12 = -2.0 * sqrt(3.0) / 9.0;
+  constexpr double expected_g_13 = -5.0 / 9.0;
+  const double expected_g_23 = -2.0 * sqrt(3.0) / 9.0;
 
-    EXPECT_TRUE(IsFieldEqual(coords.g_11(), expected_g_11));
-    EXPECT_TRUE(IsFieldEqual(coords.g_22(), expected_g_22));
-    EXPECT_TRUE(IsFieldEqual(coords.g_33(), expected_g_33));
-    EXPECT_TRUE(IsFieldEqual(coords.g_12(), expected_g_12));
-    EXPECT_TRUE(IsFieldEqual(coords.g_13(), expected_g_13));
-    EXPECT_TRUE(IsFieldEqual(coords.g_23(), expected_g_23));
+  EXPECT_TRUE(IsFieldEqual(coords.g_11(), expected_g_11));
+  EXPECT_TRUE(IsFieldEqual(coords.g_22(), expected_g_22));
+  EXPECT_TRUE(IsFieldEqual(coords.g_33(), expected_g_33));
+  EXPECT_TRUE(IsFieldEqual(coords.g_12(), expected_g_12));
+  EXPECT_TRUE(IsFieldEqual(coords.g_13(), expected_g_13));
+  EXPECT_TRUE(IsFieldEqual(coords.g_23(), expected_g_23));
 }
 
 TEST_F(CoordinatesTest, CheckContravariantCalculatedFromCovariant) {
 
-    // Set initial values for the metric tensor in the Coordinates constructor
-    Coordinates coords{mesh,
+  // Set initial values for the metric tensor in the Coordinates constructor
+  Coordinates coords{mesh,
                      FieldMetric{1.0},  // dx
                      FieldMetric{1.0},  // dy
                      FieldMetric{1.0},  // dz
@@ -436,30 +436,30 @@ TEST_F(CoordinatesTest, CheckContravariantCalculatedFromCovariant) {
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
 
-    //  Modify covariant components
-    constexpr double g_11 = 1.0;
-    constexpr double g_22 = 1.0;
-    constexpr double g_33 = 1.0;
-    const double g_12 = sqrt(3.0)/4.0; // (std::sqrt only constexpr since C++26)
-    constexpr double g_13 = 0.5;
-    const double g_23 = sqrt(3.0)/4.0; // (std::sqrt only constexpr since C++26)
-    auto updated_metric_tensor = CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23);
-    coords.setCovariantMetricTensor(updated_metric_tensor);
+  //  Modify covariant components
+  constexpr double g_11 = 1.0;
+  constexpr double g_22 = 1.0;
+  constexpr double g_33 = 1.0;
+  const double g_12 = sqrt(3.0) / 4.0; // (std::sqrt only constexpr since C++26)
+  constexpr double g_13 = 0.5;
+  const double g_23 = sqrt(3.0) / 4.0; // (std::sqrt only constexpr since C++26)
+  auto updated_metric_tensor = CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23);
+  coords.setCovariantMetricTensor(updated_metric_tensor);
 
-    //  Check that the contravariant components have been calculated corrected
-    constexpr double expected_g11 = 13.0 / 9.0;
-    constexpr double expected_g22 = 4.0 / 3.0;
-    constexpr double expected_g33 = 13.0 / 9.0;
-    const double expected_g12 = -2.0 * sqrt(3.0) / 9.0;
-    constexpr double expected_g13 = -5.0 / 9.0;
-    const double expected_g23 = -2.0 * sqrt(3.0) / 9.0;
+  //  Check that the contravariant components have been calculated corrected
+  constexpr double expected_g11 = 13.0 / 9.0;
+  constexpr double expected_g22 = 4.0 / 3.0;
+  constexpr double expected_g33 = 13.0 / 9.0;
+  const double expected_g12 = -2.0 * sqrt(3.0) / 9.0;
+  constexpr double expected_g13 = -5.0 / 9.0;
+  const double expected_g23 = -2.0 * sqrt(3.0) / 9.0;
 
-    EXPECT_TRUE(IsFieldEqual(coords.g11(), expected_g11));
-    EXPECT_TRUE(IsFieldEqual(coords.g22(), expected_g22));
-    EXPECT_TRUE(IsFieldEqual(coords.g33(), expected_g33));
-    EXPECT_TRUE(IsFieldEqual(coords.g12(), expected_g12));
-    EXPECT_TRUE(IsFieldEqual(coords.g13(), expected_g13));
-    EXPECT_TRUE(IsFieldEqual(coords.g23(), expected_g23));
+  EXPECT_TRUE(IsFieldEqual(coords.g11(), expected_g11));
+  EXPECT_TRUE(IsFieldEqual(coords.g22(), expected_g22));
+  EXPECT_TRUE(IsFieldEqual(coords.g33(), expected_g33));
+  EXPECT_TRUE(IsFieldEqual(coords.g12(), expected_g12));
+  EXPECT_TRUE(IsFieldEqual(coords.g13(), expected_g13));
+  EXPECT_TRUE(IsFieldEqual(coords.g23(), expected_g23));
 }
 
 TEST_F(CoordinatesTest, GetCovariantMetricTensor) {

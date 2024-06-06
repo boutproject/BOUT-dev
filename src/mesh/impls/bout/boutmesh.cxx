@@ -1701,9 +1701,7 @@ int BoutMesh::getLocalYIndexNoBoundaries(int yglobal) const {
   return yglobal - PE_YIND * MYSUB + MYG;
 }
 
-int BoutMesh::YGLOBAL(int yloc, int yproc) const {
-  return yloc + yproc * MYSUB - MYG;
-}
+int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + yproc * MYSUB - MYG; }
 
 int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - yproc * MYSUB + MYG; }
 

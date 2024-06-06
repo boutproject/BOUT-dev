@@ -29,6 +29,4 @@ GValues::GValues(const Coordinates& coordinates) {
   setG3((coordinates.DDX(J * g13) + coordinates.DDY(tmp) + coordinates.DDZ(J * g33)) / J);
 }
 
-void GValues::communicate(Mesh* mesh) {
-    mesh->communicate(G1_, G2_, G3_);
-}
+void GValues::communicate(Mesh* mesh) { mesh->communicate(G1_, G2_, G3_); }

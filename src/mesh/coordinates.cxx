@@ -65,23 +65,22 @@ std::string getLocationSuffix(CELL_LOC location) {
 
 } // anonymous namespace
 
-
 // Use sendY()/sendX() and wait() instead of Mesh::communicate() to ensure we
 // don't try to calculate parallel slices as Coordinates are not constructed yet
 void Coordinates::communicate(Field2D& f) {
-    FieldGroup g(f);
-    auto* h = f.getMesh()->sendY(g);
-    f.getMesh()->wait(h);
-    h = f.getMesh()->sendX(g);
-    f.getMesh()->wait(h);
+  FieldGroup g(f);
+  auto* h = f.getMesh()->sendY(g);
+  f.getMesh()->wait(h);
+  h = f.getMesh()->sendX(g);
+  f.getMesh()->wait(h);
 }
 #if BOUT_USE_METRIC_3D
 void Coordinates::communicate(Field3D& f) {
-    FieldGroup g(f);
-    auto* h = f.getMesh()->sendY(g);
-    f.getMesh()->wait(h);
-    h = f.getMesh()->sendX(g);
-    f.getMesh()->wait(h);
+  FieldGroup g(f);
+  auto* h = f.getMesh()->sendY(g);
+  f.getMesh()->wait(h);
+  h = f.getMesh()->sendX(g);
+  f.getMesh()->wait(h);
 }
 #endif
 
@@ -485,7 +484,8 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(Options* mesh_options,
 
   setParallelTransform(mesh_options);
 
-  setMetricTensor(coords_in->getContravariantMetricTensor(), coords_in->getCovariantMetricTensor());
+  setMetricTensor(coords_in->getContravariantMetricTensor(),
+                  coords_in->getCovariantMetricTensor());
 
   std::function<const FieldMetric(const FieldMetric)> const
       interpolateAndExtrapolate_function = [this](const FieldMetric& component) {
@@ -1561,10 +1561,11 @@ void Coordinates::setCovariantMetricTensor(const CovariantMetricTensor& metric_t
   recalculateAndReset(recalculate_staggered, force_interpolate_from_centre);
 }
 
-void Coordinates::setMetricTensor(const ContravariantMetricTensor& contravariant_metric_tensor,
-                                  const CovariantMetricTensor& covariant_metric_tensor) {
-    contravariantMetricTensor.setMetricTensor(contravariant_metric_tensor);
-    covariantMetricTensor.setMetricTensor(covariant_metric_tensor);
+void Coordinates::setMetricTensor(
+    const ContravariantMetricTensor& contravariant_metric_tensor,
+    const CovariantMetricTensor& covariant_metric_tensor) {
+  contravariantMetricTensor.setMetricTensor(contravariant_metric_tensor);
+  covariantMetricTensor.setMetricTensor(covariant_metric_tensor);
 }
 
 void Coordinates::applyToContravariantMetricTensor(
