@@ -74,7 +74,7 @@ non-zero ``g_{xz}`` terms.
 FIXME WHEN COORDINATES REFACTORED
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In order to simplify a lot of code, the call to `Coordinates::calculateGeometry`, which
+In order to simplify a lot of code, the call to `Coordinates::geometry`, which
 calculates the connection coefficients `Coordinates::G1_11` and so on, has been
 moved out of the `Coordinates` constructor. This is because computing the
 coefficients involves derivatives which requires `Coordinates` and causes all
