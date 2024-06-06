@@ -192,15 +192,15 @@ template <typename CellEdges = MC>
 const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
                       const Field3D& wave_speed_in, bool fixflux = true) {
 
-  ASSERT1_FIELDS_COMPATIBLE(f_in, v_in)
-  ASSERT1_FIELDS_COMPATIBLE(f_in, wave_speed_in)
+  ASSERT1_FIELDS_COMPATIBLE(f_in, v_in);
+  ASSERT1_FIELDS_COMPATIBLE(f_in, wave_speed_in);
 
   Mesh* mesh = f_in.getMesh();
 
   CellEdges cellboundary;
 
-  ASSERT2(f_in.getDirectionY() == v_in.getDirectionY())
-  ASSERT2(f_in.getDirectionY() == wave_speed_in.getDirectionY())
+  ASSERT2(f_in.getDirectionY() == v_in.getDirectionY());
+  ASSERT2(f_in.getDirectionY() == wave_speed_in.getDirectionY());
   const bool are_unaligned =
       ((f_in.getDirectionY() == YDirectionType::Standard)
        and (v_in.getDirectionY() == YDirectionType::Standard)
@@ -386,8 +386,8 @@ const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
    */
 template <typename CellEdges = MC>
 const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
-  ASSERT1(n_in.getLocation() == v.getLocation())
-  ASSERT1_FIELDS_COMPATIBLE(n_in, v.x)
+  ASSERT1(n_in.getLocation() == v.getLocation());
+  ASSERT1_FIELDS_COMPATIBLE(n_in, v.x);
 
   Mesh* mesh = n_in.getMesh();
 
