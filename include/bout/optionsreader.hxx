@@ -67,7 +67,7 @@ public:
   ///
   /// @param[inout] options  The options section to insert values and subsections into
   /// @param[in] file  The name of the file. printf style arguments can be used to create the file name.
-  static void read(Options* options, const std::string& filename);
+  void read(Options* options, const std::string& filename);
 
   template <class S, class... Args>
   void read(Options* options, const S& format, const Args&... args) {
@@ -78,7 +78,7 @@ public:
   ///
   /// @param[in] options  The options tree to be written
   /// @param[in] file   The name of the file to (over)write
-  static void write(Options* options, const std::string& filename);
+  void write(Options* options, const std::string& filename);
 
   template <class S, class... Args>
   void write(Options* options, const S& format, const Args&... args) {

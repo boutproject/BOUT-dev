@@ -658,7 +658,7 @@ public:
 
   /// Returns the non-CELL_CENTRE location
   /// allowed as a staggered location
-  static CELL_LOC getAllowedStaggerLoc(DIRECTION direction) {
+  CELL_LOC getAllowedStaggerLoc(DIRECTION direction) const {
     AUTO_TRACE();
     switch (direction) {
     case (DIRECTION::X):
