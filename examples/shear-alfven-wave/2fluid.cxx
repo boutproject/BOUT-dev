@@ -82,7 +82,8 @@ protected:
     GRID_LOAD(Bpxy);
     GRID_LOAD(Btxy);
     GRID_LOAD(hthe);
-    mesh->get(coord->Bxy(), "Bxy");
+    auto tmp = coord->Bxy();
+    mesh->get(tmp, "Bxy");
     coord->setDx(mesh->get("dpsi"));
     mesh->get(I, "sinty");
 
