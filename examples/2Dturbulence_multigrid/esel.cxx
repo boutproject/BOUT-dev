@@ -113,7 +113,7 @@ protected:
       Field3D vort2 = D2DX2(phi) + D2DZ2(phi) + DDX(N) * DDX(phi) + DDZ(N) * DDZ(phi);
       vort_error = (vort - vort2);
 
-      dump.write();
+//      dump.write();
 
       MPI_Barrier(BoutComm::get());
 
