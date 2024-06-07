@@ -454,7 +454,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* mesh_options, const CELL_LOC loc,
 
   const std::string suffix = getLocationSuffix(location);
 
-  if (coords_in == nullptr || suffix.empty()
+  if (coords_in == nullptr || location == CELL_CENTRE
       || (!force_interpolate_from_centre && mesh->sourceHasVar("dx" + suffix))) {
 
     if (coords_in == nullptr) {
@@ -462,14 +462,14 @@ Coordinates::Coordinates(Mesh* mesh, Options* mesh_options, const CELL_LOC loc,
       mesh->get(dy_, "dy", 1.0, false);
     }
 
-    setBoundaryCells(mesh_options, suffix);
+    readFromMesh(mesh_options, suffix);
 
   } else {
-    interpolateFieldsFromOtherCoordinates(mesh_options, coords_in);
+    interpolateFromCoordinates(mesh_options, coords_in);
   }
 }
 
-void Coordinates::interpolateFieldsFromOtherCoordinates(Options* mesh_options,
+void Coordinates::interpolateFromCoordinates(Options* mesh_options,
                                                         const Coordinates* coords_in) {
 
   // Need to ensure parallel transform is set before differential operators are used,
@@ -529,7 +529,7 @@ void Coordinates::interpolateFieldsFromOtherCoordinates(Options* mesh_options,
 // Note: If boundary cells were not loaded from the grid file, use
 // 'interpolateAndExtrapolate' to set them. Ensures that derivatives are
 // smooth at all the boundaries.
-void Coordinates::setBoundaryCells(Options* mesh_options, const std::string& suffix) {
+void Coordinates::readFromMesh(Options* mesh_options, const std::string& suffix) {
 
   const bool extrapolate_x = (*mesh_options)["extrapolate_x"].withDefault(
       not localmesh->sourceHasXBoundaryGuards());
