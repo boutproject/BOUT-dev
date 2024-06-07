@@ -30,9 +30,9 @@ private:
       const Field3D& B_next = Bxyz.ynext(reg->dir);
 
       for (reg->first(); !reg->isDone(); reg->next()) {
-        f_B_next(reg->x, reg->y + reg->dir, reg->z) =
-            f_next(reg->x, reg->y + reg->dir, reg->z)
-            / B_next(reg->x, reg->y + reg->dir, reg->z);
+        f_B_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z()) =
+            f_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z())
+            / B_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z());
       }
     }
 
@@ -108,15 +108,17 @@ protected:
         const Field3D& v_next = v.ynext(reg->dir);
 
         for (reg->first(); !reg->isDone(); reg->next()) {
-          BoutReal n_b = exp(0.5
-                             * (logn_next(reg->x, reg->y + reg->dir, reg->z)
-                                + logn(reg->x, reg->y, reg->z)));
+          BoutReal n_b =
+              exp(0.5
+                  * (logn_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z())
+                     + logn(reg->ind().x(), reg->ind().y(), reg->ind().z())));
           BoutReal v_b =
               0.5
-              * (v_next(reg->x, reg->y + reg->dir, reg->z) + v(reg->x, reg->y, reg->z));
+              * (v_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z())
+                 + v(reg->ind().x(), reg->ind().y(), reg->ind().z()));
 
-          nv_next(reg->x, reg->y + reg->dir, reg->z) =
-              2. * n_b * v_b - nv(reg->x, reg->y, reg->z);
+          nv_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z()) =
+              2. * n_b * v_b - nv(reg->ind().x(), reg->ind().y(), reg->ind().z());
         }
       }
 
