@@ -71,7 +71,8 @@ protected:
 
     // Load metrics
     GRID_LOAD(Rxy, Bpxy, Btxy, hthe);
-    mesh->get(coord->Bxy(), "Bxy");
+    auto tmp = coord->Bxy();
+    mesh->get(tmp, "Bxy");
 
     // Set locations of staggered fields
     Apar.setLocation(CELL_YLOW);
