@@ -415,7 +415,7 @@ protected:
 
     SAVE_ONCE(Ni0, Te0, phi0, rho0);
     SAVE_ONCE(Rxy, Bpxy, Btxy, Zxy, hthe);
-    const FieldMetric tmp = coord->Bxy();
+    FieldMetric tmp = coord->Bxy();
     dump.addOnce(tmp, "Bxy");
     dump.addOnce(my_ixseps, "ixseps");
 
