@@ -470,7 +470,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* mesh_options, const CELL_LOC loc,
 }
 
 void Coordinates::interpolateFromCoordinates(Options* mesh_options,
-                                                        const Coordinates* coords_in) {
+                                             const Coordinates* coords_in) {
 
   // Need to ensure parallel transform is set before differential operators are used,
   // but setParallelTransform() requires that dz is already set!

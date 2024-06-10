@@ -366,7 +366,6 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
                           CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
   coords->setJ(hthe / Bpxy);
-
 }
 
 // just define a macro for V_E dot Grad

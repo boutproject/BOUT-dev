@@ -147,7 +147,6 @@ protected:
     const auto g13 = 0.0;
     const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
 
-
     const auto g_11 = 1.0 / g11;
     const auto g_22 = pow(coords->Bxy() * hthe / Bpxy, 2.0);
     const auto g_33 = Rxy * Rxy;
