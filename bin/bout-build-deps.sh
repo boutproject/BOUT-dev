@@ -98,7 +98,7 @@ netcdf() {
 
 nccxx() {
     cd $BUILD
-    wget -c https://downloads.unidata.ucar.edu/netcdf-cxx/4.3.1/netcdf-cxx4-$NCCXXVER.tar.gz || :
+    wget -c https://downloads.unidata.ucar.edu/netcdf-cxx/$NCCXXVER/netcdf-cxx4-$NCCXXVER.tar.gz || :
     tar -xf netcdf-cxx4-$NCCXXVER.tar.gz
     cd netcdf-cxx4-$NCCXXVER
     CPPFLAGS="-I$PREFIX/include" LDFLAGS="-L$PREFIX/lib/" ./configure --prefix=$PREFIX $NCCXXFLAGS
