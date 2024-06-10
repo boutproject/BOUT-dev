@@ -38,8 +38,6 @@ public:
     const auto g13 = -I * g11;
     const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
 
-    coords->setJ(hthe / Bpxy);
-
     const auto g_11 = 1.0 / g11 + (pow(I * Rxy, 2.0));
     const auto g_22 = pow(coords->Bxy() * hthe / Bpxy, 2.0);
     const auto g_33 = Rxy * Rxy;
@@ -49,6 +47,8 @@ public:
 
     coords->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
                             CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+
+    coords->setJ(hthe / Bpxy);
 
     solver->add(f, "f");
     solver->add(g, "g");
