@@ -568,13 +568,12 @@ void Coordinates::readFromMesh(Options* mesh_options, const std::string& suffix)
 
   // grid data source has staggered fields, so read instead of interpolating
   // Diagonal components of metric tensor g^{ij} (default to 1)
-  FieldMetric g11, g22, g33, g12, g13, g23;
-  g11 = getAtLocOrUnaligned(localmesh, "g11", 1.0, suffix, location);
-  g22 = getAtLocOrUnaligned(localmesh, "g22", 1.0, suffix, location);
-  g33 = getAtLocOrUnaligned(localmesh, "g33", 1.0, suffix, location);
-  g12 = getAtLocOrUnaligned(localmesh, "g12", 0.0, suffix, location);
-  g13 = getAtLocOrUnaligned(localmesh, "g13", 0.0, suffix, location);
-  g23 = getAtLocOrUnaligned(localmesh, "g23", 0.0, suffix, location);
+  const auto g11 = getAtLocOrUnaligned(localmesh, "g11", 1.0, suffix, location);
+  const auto g22 = getAtLocOrUnaligned(localmesh, "g22", 1.0, suffix, location);
+  const auto g33 = getAtLocOrUnaligned(localmesh, "g33", 1.0, suffix, location);
+  const auto g12 = getAtLocOrUnaligned(localmesh, "g12", 0.0, suffix, location);
+  const auto g13 = getAtLocOrUnaligned(localmesh, "g13", 0.0, suffix, location);
+  const auto g23 = getAtLocOrUnaligned(localmesh, "g23", 0.0, suffix, location);
   contravariantMetricTensor.setMetricTensor(
       ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
 
@@ -602,13 +601,12 @@ void Coordinates::readFromMesh(Options* mesh_options, const std::string& suffix)
   if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
                   source_has_component)) {
 
-    FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
-    g_11 = getAtLocOrUnaligned(localmesh, "g_11", 1.0, suffix, location);
-    g_22 = getAtLocOrUnaligned(localmesh, "g_22", 1.0, suffix, location);
-    g_33 = getAtLocOrUnaligned(localmesh, "g_33", 1.0, suffix, location);
-    g_12 = getAtLocOrUnaligned(localmesh, "g_12", 0.0, suffix, location);
-    g_13 = getAtLocOrUnaligned(localmesh, "g_13", 0.0, suffix, location);
-    g_23 = getAtLocOrUnaligned(localmesh, "g_23", 0.0, suffix, location);
+    const auto g_11 = getAtLocOrUnaligned(localmesh, "g_11", 1.0, suffix, location);
+    const auto g_22 = getAtLocOrUnaligned(localmesh, "g_22", 1.0, suffix, location);
+    const auto g_33 = getAtLocOrUnaligned(localmesh, "g_33", 1.0, suffix, location);
+    const auto g_12 = getAtLocOrUnaligned(localmesh, "g_12", 0.0, suffix, location);
+    const auto g_13 = getAtLocOrUnaligned(localmesh, "g_13", 0.0, suffix, location);
+    const auto g_23 = getAtLocOrUnaligned(localmesh, "g_23", 0.0, suffix, location);
     covariantMetricTensor.setMetricTensor(
         CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
