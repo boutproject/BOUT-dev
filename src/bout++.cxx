@@ -189,7 +189,7 @@ int BoutInitialise(int& argc, char**& argv) {
     // when checking for unused options. They normally _do_ get used,
     // but it's possible that only happens in BoutFinalise, which is
     // too late for that check.
-    const auto datadir = Options::root()["datadir"].withDefault<std::string>(DEFAULT_DIR);
+    const auto& datadir = Options::root()["datadir"].withDefault<std::string>(DEFAULT_DIR);
     [[maybe_unused]] const auto optionfile =
         Options::root()["optionfile"].withDefault<std::string>(args.opt_file);
     const auto settingsfile =

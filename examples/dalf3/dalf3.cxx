@@ -118,8 +118,8 @@ protected:
     //////////////////////////////////////////////////////////////
     // Options
 
-    auto globalOptions = Options::root();
-    auto options = globalOptions["dalf3"];
+    auto& globalOptions = Options::root();
+    auto& options = globalOptions["dalf3"];
 
     split_n0 = options["split_n0"].withDefault(false);
     estatic = options["estatic"].withDefault(false);
