@@ -39,3 +39,14 @@ int Field::getNx() const { return getMesh()->LocalNx; }
 int Field::getNy() const { return getMesh()->LocalNy; }
 
 int Field::getNz() const { return getMesh()->LocalNz; }
+
+bool Field::isFci() const {
+  const auto* coords = this->getCoordinates();
+  if (coords == nullptr) {
+    return false;
+  }
+  if (not coords->hasParallelTransform()) {
+    return false;
+  }
+  return not coords->getParallelTransform().canToFromFieldAligned();
+}

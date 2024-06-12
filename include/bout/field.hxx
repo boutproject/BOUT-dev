@@ -86,6 +86,8 @@ public:
 
   std::string name;
 
+  bool isFci() const;
+
 #if CHECK > 0
   // Routines to test guard/boundary cells set
 
