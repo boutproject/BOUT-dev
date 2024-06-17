@@ -324,10 +324,10 @@ protected:
   }
 
   /// Return true if \p flag is set for the inner boundary condition
-  /// on the inner processor(s)
+  /// and this is the first proc in X direction
   bool isInnerBoundaryFlagSetOnFirstX(int flag) const;
   /// Return true if \p flag is set for the outer boundary condition
-  /// on the outer processor(s)
+  /// and this the last proc in X direction
   bool isOuterBoundaryFlagSetOnLastX(int flag) const;
 
   void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomplex& b, dcomplex& c,
