@@ -1,8 +1,8 @@
-Jinja2>=2.11.3
-numpy>=1.14.1
-scipy>=1.0.0
-netcdf4~=1.6.0
-matplotlib>=2.0.0
-Cython~=3.0.0
-boututils~=0.2.1
-boutdata~=0.2.1
+Jinja2
+numpy
+scipy
+netcdf4
+matplotlib
+Cython
+boututils
+boutdata
