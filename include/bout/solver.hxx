@@ -66,6 +66,7 @@ using TimestepMonitorFunc = int (*)(Solver* solver, BoutReal simtime, BoutReal l
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/generic_factory.hxx"
+#include "bout/scalar.hxx"
 #include "bout/vector2d.hxx"
 #include "bout/vector3d.hxx"
 
@@ -257,6 +258,8 @@ public:
                    const std::string& description = "");
   virtual void add(Vector3D& v, const std::string& name,
                    const std::string& description = "");
+  virtual void add(bout::Scalar& var, const std::string& name,
+                   const std::string& description = "");
 
   /// Returns true if constraints available
   virtual bool constraints() { return has_constraints; }
@@ -302,6 +305,8 @@ public:
   virtual int n2Dvars() const { return static_cast<int>(f2d.size()); }
   /// Number of 3D variables. Vectors count as 3
   virtual int n3Dvars() const { return static_cast<int>(f3d.size()); }
+  /// Number of scalar variables
+  virtual int nscalars() const { return static_cast<int>(scalars.size()); }
 
   /// Get and reset the number of calls to the RHS function
   int resetRHSCounter();
@@ -404,6 +409,7 @@ protected:
   std::vector<VarStr<Field3D>> f3d;
   std::vector<VarStr<Vector2D>> v2d;
   std::vector<VarStr<Vector3D>> v3d;
+  std::vector<VarStr<bout::Scalar>> scalars;
 
   /// Vectors of diagnostic variables to save
   std::vector<VarStr<int>> diagnostic_int;

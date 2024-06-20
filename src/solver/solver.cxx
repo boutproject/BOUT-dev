@@ -20,6 +20,7 @@
  *
  **************************************************************************/
 
+#include "bout/bout_types.hxx"
 #include "bout/build_config.hxx"
 
 #include "bout/array.hxx"
@@ -32,6 +33,7 @@
 #include "bout/msg_stack.hxx"
 #include "bout/output.hxx"
 #include "bout/region.hxx"
+#include "bout/scalar.hxx"
 #include "bout/solver.hxx"
 #include "bout/sys/timer.hxx"
 #include "bout/sys/uuid.h"
@@ -63,6 +65,8 @@
 
 int* Solver::pargc = nullptr;
 char*** Solver::pargv = nullptr;
+
+using namespace bout;
 
 /**************************************************************************
  * Constructor
@@ -325,6 +329,51 @@ void Solver::add(Vector3D& v, const std::string& name, const std::string& descri
 
   v.applyBoundary(true);
   v3d.emplace_back(std::move(d));
+}
+
+void Solver::add(Scalar& var, const std::string& name, const std::string& description) {
+  TRACE("Adding scalar: Solver::add({:s})", name);
+
+#if CHECK > 0
+  if (varAdded(name)) {
+    throw BoutException("Variable '{:s}' already added to Solver", name);
+  }
+#endif
+
+  if (initialised) {
+    throw BoutException("Error: Cannot add to solver after initialisation\n");
+  }
+
+  VarStr<Scalar> deriv;
+
+  deriv.var = &var;
+  deriv.F_var = &ddt(var);
+  deriv.name = name;
+  deriv.description = description;
+
+#if BOUT_USE_TRACK
+  var.name = name;
+#endif
+
+  /// Generate initial perturbations.
+  /// NOTE: This could be done in init, but this would prevent the user
+  ///       from modifying the initial perturbation (e.g. to prevent unphysical situations)
+  ///       before it's loaded into the solver. If restarting, this perturbation
+  ///       will be over-written anyway
+  if (mms_initialise) {
+    var = Options::root()[name]["solution"];
+  } else {
+    var = FieldFactory{}
+              .parse(Options::root()[name]["function"].withDefault("0.0"))
+              ->generate({});
+  }
+
+  if (mms) {
+    // Allocate storage for error variable
+    deriv.MMS_err = bout::utils::make_unique<Scalar>(0.0);
+  }
+
+  scalars.emplace_back(std::move(deriv));
 }
 
 /**************************************************************************
@@ -995,7 +1044,7 @@ int Solver::getLocalN() {
 
   const auto local_N_2D = std::accumulate(begin(f2d), end(f2d), 0, local_N_sum);
   const auto local_N_3D = std::accumulate(begin(f3d), end(f3d), 0, local_N_sum);
-  const auto local_N = local_N_2D + local_N_3D;
+  const auto local_N = local_N_2D + local_N_3D + static_cast<int>(scalars.size());
 
   cacheLocalN = local_N;
 
@@ -1180,6 +1229,27 @@ void Solver::loop_vars(BoutReal* udata, SOLVER_VAR_OP op) {
   // Bulk of points
   for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
     loop_vars_op(i2d, udata, p, op, false);
+  }
+
+  for (const auto& scalar : scalars) {
+    switch (op) {
+    case SOLVER_VAR_OP::LOAD_VARS:
+      *scalar.var = udata[p];
+      break;
+    case SOLVER_VAR_OP::LOAD_DERIVS:
+      *scalar.F_var = udata[p];
+      break;
+    case SOLVER_VAR_OP::SAVE_VARS:
+      udata[p] = *scalar.var;
+      break;
+    case SOLVER_VAR_OP::SAVE_DERIVS:
+      udata[p] = *scalar.F_var;
+      break;
+    case SOLVER_VAR_OP::SET_ID:
+      udata[p] = 1;
+      break;
+    }
+    ++p;
   }
 }
 
@@ -1530,7 +1600,7 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
 
 bool Solver::varAdded(const std::string& name) {
   return contains(f2d, name) || contains(f3d, name) || contains(v2d, name)
-         || contains(v3d, name);
+         || contains(v3d, name) || contains(scalars, name);
 }
 
 bool Solver::hasPreconditioner() { return model->hasPrecon(); }

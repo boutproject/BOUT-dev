@@ -160,6 +160,7 @@ set(BOUT_SOURCES
   ./include/bout/region.hxx
   ./include/bout/rkscheme.hxx
   ./include/bout/rvec.hxx
+  ./include/bout/scalar.hxx
   ./include/bout/scorepwrapper.hxx
   ./include/bout/single_index_ops.hxx
   ./include/bout/slepclib.hxx
