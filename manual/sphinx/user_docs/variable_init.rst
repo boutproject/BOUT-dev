@@ -328,22 +328,20 @@ to ``generate`` in the ``Context`` object.
 
   Field3D shear = ...; // Value calculated in BOUT++
   
-  FieldFactory factory(mesh);
-  auto gen = factory->parse("model:viscosity");
+  Options& model_options = options["model"];
+  auto str = model_options["viscosity"].doc("Viscosity").as<std::string()>;
+
+  auto gen = FieldFactory::get()->parse(str, &model_options);
 
   Field3D viscosity;
   viscosity.allocate();
-  
-  BOUT_FOR(i, viscosity.region("RGN_ALL")) {
-    viscosity[i] = gen->generate(bout::generator::Context(i, CELL_CENTRE, mesh, 0.0)
-                                   .set("shear", shear[i]));
+
+  BOUT_FOR(i, viscosity.getRegion("RGN_ALL")) {
+    viscosity[i] = gen->generate(bout::generator::Context().set("shear", shear[i]));
   }
 
-Note that the ``Context`` constructor takes the index, the cell
-location (e.g. staggered), a mesh, and then the time (set to 0.0
-here). Additional variables can be ``set``, "shear" in this case.  In
-the input options file (or command line) the viscosity could now be a
-function of ``{shear}``
+In the input options file (or command line) the viscosity can now be written as
+a function of ``{shear}``
 
 .. code-block:: cfg
 
