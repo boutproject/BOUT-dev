@@ -39,7 +39,7 @@ public:
   ///  - "append"  File mode, default is false
   OptionsNetCDF(Options& options);
 
-  ~OptionsNetCDF() {}
+  ~OptionsNetCDF() override = default;
 
   OptionsNetCDF(const OptionsNetCDF&) = delete;
   OptionsNetCDF(OptionsNetCDF&&) noexcept = default;
