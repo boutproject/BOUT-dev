@@ -1,3 +1,19 @@
+#pragma once
+
+#ifndef OPTIONS_IO_H
+#define OPTIONS_IO_H
+
+#include "bout/build_defines.hxx"
+#include "bout/generic_factory.hxx"
+#include "bout/options.hxx"
+
+#include <memory>
+#include <string>
+
+class Mesh;
+
+namespace bout {
+
 /// Parent class for IO to binary files and streams
 ///
 ///
@@ -36,22 +52,6 @@
 ///
 ///    if mesh is omitted, no grid information is added.
 ///
-
-#pragma once
-
-#ifndef OPTIONS_IO_H
-#define OPTIONS_IO_H
-
-#include "bout/build_defines.hxx"
-#include "bout/generic_factory.hxx"
-#include "bout/mesh.hxx"
-#include "bout/options.hxx"
-
-#include <memory>
-#include <string>
-
-namespace bout {
-
 class OptionsIO {
 public:
   /// No default constructor, as settings are required
