@@ -1,3 +1,17 @@
+#pragma once
+
+#ifndef OPTIONS_IO_H
+#define OPTIONS_IO_H
+
+#include "bout/build_defines.hxx"
+#include "bout/generic_factory.hxx"
+#include "bout/options.hxx"
+
+#include <memory>
+#include <string>
+
+namespace bout {
+
 /// Parent class for IO to binary files and streams
 ///
 ///
@@ -29,21 +43,6 @@
 ///       auto file = OptionsIO::create("some_file.nc");
 ///
 ///
-
-#pragma once
-
-#ifndef OPTIONS_IO_H
-#define OPTIONS_IO_H
-
-#include "bout/build_defines.hxx"
-#include "bout/generic_factory.hxx"
-#include "bout/options.hxx"
-
-#include <memory>
-#include <string>
-
-namespace bout {
-
 class OptionsIO {
 public:
   /// No default constructor, as settings are required
