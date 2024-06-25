@@ -3,9 +3,9 @@
  *
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2024 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -59,7 +59,8 @@ BOUT_ENUM_CLASS(positivity_constraint, none, positive, non_negative, negative,
 
 // NOLINTBEGIN(readability-identifier-length)
 namespace {
-int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
+int cvode_linear_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
+int cvode_nonlinear_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
 int cvode_bbd_rhs(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du,
                   void* user_data);
 
@@ -216,7 +217,7 @@ int CvodeSolver::init() {
     throw BoutException("CVodeSetUserData failed\n");
   }
 
-  if (CVodeInit(cvode_mem, cvode_rhs, simtime, uvec) != CV_SUCCESS) {
+  if (CVodeInit(cvode_mem, cvode_linear_rhs, simtime, uvec) != CV_SUCCESS) {
     throw BoutException("CVodeInit failed\n");
   }
 
@@ -384,6 +385,9 @@ int CvodeSolver::init() {
       output_info.write("\tUsing difference quotient approximation for Jacobian\n");
     }
   }
+
+  // Set the RHS function to be used in the nonlinear solver
+  CVodeSetNlsRhsFn(cvode_mem, cvode_nonlinear_rhs);
 
   // Set internal tolerance factors
   if (CVodeSetNonlinConvCoef(cvode_mem, cvode_nonlinear_convergence_coef) != CV_SUCCESS) {
@@ -573,7 +577,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
  * RHS function du = F(t, u)
  **************************************************************************/
 
-void CvodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata) {
+void CvodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata, bool linear) {
   TRACE("Running RHS: CvodeSolver::res({})", t);
 
   // Load state from udata
@@ -584,7 +588,7 @@ void CvodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata) {
   CVodeGetLastStep(cvode_mem, &hcur);
 
   // Call RHS function
-  run_rhs(t);
+  run_rhs(t, linear);
 
   // Save derivatives to dudata
   save_derivs(dudata);
@@ -655,7 +659,7 @@ void CvodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jv
 
 // NOLINTBEGIN(readability-identifier-length)
 namespace {
-int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
+int cvode_linear_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 
   BoutReal* udata = N_VGetArrayPointer(u);
   BoutReal* dudata = N_VGetArrayPointer(du);
@@ -664,7 +668,23 @@ int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 
   // Calculate RHS function
   try {
-    s->rhs(t, udata, dudata);
+    s->rhs(t, udata, dudata, true);
+  } catch (BoutRhsFail& error) {
+    return 1;
+  }
+  return 0;
+}
+
+int cvode_nonlinear_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
+
+  BoutReal* udata = N_VGetArrayPointer(u);
+  BoutReal* dudata = N_VGetArrayPointer(du);
+
+  auto* s = static_cast<CvodeSolver*>(user_data);
+
+  // Calculate RHS function
+  try {
+    s->rhs(t, udata, dudata, false);
   } catch (BoutRhsFail& error) {
     return 1;
   }
@@ -674,7 +694,7 @@ int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 /// RHS function for BBD preconditioner
 int cvode_bbd_rhs(sunindextype UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
                   void* user_data) {
-  return cvode_rhs(t, u, du, user_data);
+  return cvode_linear_rhs(t, u, du, user_data);
 }
 
 /// Preconditioner function

@@ -68,8 +68,8 @@ public:
 
   void resetInternalFields() override;
 
-  // These functions used internally (but need to be public)
-  void rhs(BoutReal t, BoutReal* udata, BoutReal* dudata);
+  // These functions are used internally (but need to be public)
+  void rhs(BoutReal t, BoutReal* udata, BoutReal* dudata, bool linear);
   void pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata, BoutReal* rvec,
            BoutReal* zvec);
   void jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata);
