@@ -245,16 +245,16 @@ int main(int argc, char** argv) {
     for (int k = 0; k < mesh->LocalNz; k++) {
       x0(mesh->xstart - 1, mesh->ystart, k) =
           (f4(mesh->xstart, mesh->ystart, k) - f4(mesh->xstart - 1, mesh->ystart, k))
-          / mesh->getCoordinates()->dx(mesh->xstart, mesh->ystart, k)
-          / sqrt(mesh->getCoordinates()->g_11(mesh->xstart, mesh->ystart, k));
+          / mesh->getCoordinates()->dx()(mesh->xstart, mesh->ystart, k)
+          / sqrt(mesh->getCoordinates()->g_11()(mesh->xstart, mesh->ystart, k));
     }
   }
   if (mesh->lastX()) {
     for (int k = 0; k < mesh->LocalNz; k++) {
       x0(mesh->xend + 1, mesh->ystart, k) =
           (f4(mesh->xend + 1, mesh->ystart, k) - f4(mesh->xend, mesh->ystart, k))
-          / mesh->getCoordinates()->dx(mesh->xend, mesh->ystart, k)
-          / sqrt(mesh->getCoordinates()->g_11(mesh->xend, mesh->ystart, k));
+          / mesh->getCoordinates()->dx()(mesh->xend, mesh->ystart, k)
+          / sqrt(mesh->getCoordinates()->g_11()(mesh->xend, mesh->ystart, k));
     }
   }
 
@@ -304,8 +304,9 @@ int main(int argc, char** argv) {
 
 Field3D this_Grad_perp_dot_Grad_perp(const Field3D& f, const Field3D& g) {
   const auto* coords = f.getCoordinates();
-  Field3D result = coords->g11 * ::DDX(f) * ::DDX(g) + coords->g33 * ::DDZ(f) * ::DDZ(g)
-                   + coords->g13 * (DDX(f) * DDZ(g) + DDZ(f) * DDX(g));
+  Field3D result = coords->g11() * ::DDX(f) * ::DDX(g)
+                   + coords->g33() * ::DDZ(f) * ::DDZ(g)
+                   + coords->g13() * (DDX(f) * DDZ(g) + DDZ(f) * DDX(g));
 
   return result;
 }

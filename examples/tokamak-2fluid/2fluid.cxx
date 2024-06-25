@@ -138,7 +138,7 @@ private:
     Field2D dx;
     if (!mesh->get(dx, "dpsi")) {
       output << "\tUsing dpsi as the x grid spacing\n";
-      coord->dx = dx; // Only use dpsi if found
+      coord->setDx(dx); // Only use dpsi if found
     } else {
       // dx will have been read already from the grid
       output << "\tUsing dx as the x grid spacing\n";
@@ -385,12 +385,12 @@ private:
     Rxy /= rho_s;
     hthe /= rho_s;
     I *= rho_s * rho_s * (bmag / 1e4) * ShearFactor;
-    coord->dx /= rho_s * rho_s * (bmag / 1e4);
+    coord->setDx(coord->dx() / (rho_s * rho_s * (bmag / 1e4)));
 
     // Normalise magnetic field
     Bpxy /= (bmag / 1.e4);
     Btxy /= (bmag / 1.e4);
-    coord->Bxy /= (bmag / 1.e4);
+    coord->setBxy(coord->Bxy() / (bmag / 1.e4));
 
     // calculate pressures
     pei0 = (Ti0 + Te0) * Ni0;
@@ -399,21 +399,24 @@ private:
     ////////////////////////////////////////////////////////
     // CALCULATE METRICS
 
-    coord->g11 = SQ(Rxy * Bpxy);
-    coord->g22 = 1.0 / SQ(hthe);
-    coord->g33 = SQ(I) * coord->g11 + SQ(coord->Bxy) / coord->g11;
-    coord->g12 = 0.0;
-    coord->g13 = -I * coord->g11;
-    coord->g23 = -Btxy / (hthe * Bpxy * Rxy);
+    const auto g11 = SQ(Rxy * Bpxy);
+    const auto g22 = 1.0 / SQ(hthe);
+    const auto g33 = SQ(I) * g11 + SQ(coord->Bxy()) / g11;
+    const auto g12 = 0.0;
+    const auto g13 = -I * g11;
+    const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
 
-    coord->J = hthe / Bpxy;
+    const auto g_11 = 1.0 / g11 + SQ(I * Rxy);
+    const auto g_22 = SQ(coord->Bxy() * hthe / Bpxy);
+    const auto g_33 = Rxy * Rxy;
+    const auto g_12 = Btxy * hthe * I * Rxy / Bpxy;
+    const auto g_13 = I * Rxy * Rxy;
+    const auto g_23 = Btxy * hthe * Rxy / Bpxy;
 
-    coord->g_11 = 1.0 / coord->g11 + SQ(I * Rxy);
-    coord->g_22 = SQ(coord->Bxy * hthe / Bpxy);
-    coord->g_33 = Rxy * Rxy;
-    coord->g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    coord->g_13 = I * Rxy * Rxy;
-    coord->g_23 = Btxy * hthe * Rxy / Bpxy;
+    coord->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+                           CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+
+    coord->setJ(hthe / Bpxy);
 
     ////////////////////////////////////////////////////////
     // SET EVOLVING VARIABLES
@@ -871,14 +874,14 @@ private:
 
       if (rho_pei1) {
         if (curv_upwind) {
-          ddt(rho) += 2.0 * coord->Bxy * V_dot_Grad(b0xcv, pei); // Use upwinding
+          ddt(rho) += 2.0 * coord->Bxy() * V_dot_Grad(b0xcv, pei); // Use upwinding
         } else {
-          ddt(rho) += 2.0 * coord->Bxy * b0xcv * Grad(pei); // Use central differencing
+          ddt(rho) += 2.0 * coord->Bxy() * b0xcv * Grad(pei); // Use central differencing
         }
       }
 
       if (rho_jpar1) {
-        ddt(rho) += SQ(coord->Bxy) * Div_par(jpar, CELL_CENTRE);
+        ddt(rho) += SQ(coord->Bxy()) * Div_par(jpar, CELL_CENTRE);
       }
 
       if (rho_rho1) {

@@ -59,7 +59,7 @@ protected:
     GRID_LOAD(Rxy);        // Major radius [m]
     GRID_LOAD(Bpxy, Btxy); // Poloidal, Toroidal B field [T]
     GRID_LOAD(hthe);       // Poloidal arc length [m / radian]
-    mesh->get(mesh->getCoordinates()->dx, "dpsi");
+    mesh->getCoordinates()->setDx(mesh->get("dpsi"));
 
     // Load normalisation values
     GRID_LOAD(Te_x, Ti_x, Ni_x, bmag);
@@ -115,12 +115,12 @@ protected:
     // Normalise geometry
     Rxy /= rho_s;
     hthe /= rho_s;
-    coords->dx /= rho_s * rho_s * (bmag / 1e4);
+    coords->setDx(coords->dx() / (rho_s * rho_s * (bmag / 1e4)));
 
     // Normalise magnetic field
     Bpxy /= (bmag / 1e4);
     Btxy /= (bmag / 1e4);
-    coords->Bxy /= (bmag / 1e4);
+    coords->setBxy(coords->Bxy() / (bmag / 1e4));
 
     // calculate pressures
     pei0 = (Ti0 + Te0) * Ni0;
@@ -140,23 +140,24 @@ protected:
 
     /////////////// CALCULATE METRICS /////////////////
 
-    coords->g11 = pow(Rxy * Bpxy, 2.0);
-    coords->g22 = 1.0 / pow(hthe, 2.0);
-    coords->g33 = pow(coords->Bxy, 2.0) / coords->g11;
-    coords->g12 = 0.0;
-    coords->g13 = 0.0;
-    coords->g23 = -Btxy / (hthe * Bpxy * Rxy);
+    const auto g11 = pow(Rxy * Bpxy, 2.0);
+    const auto g22 = 1.0 / pow(hthe, 2.0);
+    const auto g33 = pow(coords->Bxy(), 2.0) / g11;
+    const auto g12 = 0.0;
+    const auto g13 = 0.0;
+    const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
 
-    coords->J = hthe / Bpxy;
+    const auto g_11 = 1.0 / g11;
+    const auto g_22 = pow(coords->Bxy() * hthe / Bpxy, 2.0);
+    const auto g_33 = Rxy * Rxy;
+    const auto g_12 = 0.0;
+    const auto g_13 = 0.0;
+    const auto g_23 = Btxy * hthe * Rxy / Bpxy;
 
-    coords->g_11 = 1.0 / coords->g11;
-    coords->g_22 = pow(coords->Bxy * hthe / Bpxy, 2.0);
-    coords->g_33 = Rxy * Rxy;
-    coords->g_12 = 0.0;
-    coords->g_13 = 0.0;
-    coords->g_23 = Btxy * hthe * Rxy / Bpxy;
+    coords->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+                            CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
-    coords->geometry(); // Calculate other metrics
+    coords->setJ(hthe / Bpxy);
 
     //////////////// BOUNDARIES ///////////////////////
     //
@@ -191,8 +192,8 @@ protected:
   // Operator for radial diffusive flux
   /*
     Field3D Div_X_K_Grad_X(const Field3D &difVi, const Field3D &Vi) {
-    Field2D sg = 1./sqrt(mesh->g_11);
-    return difVi * D2DX2(Vi)/mesh->g_11
+    Field2D sg = 1./sqrt(mesh->g_11());
+    return difVi * D2DX2(Vi)/mesh->g_11()
     + DDX( difVi * sg ) * DDX(Vi) * sg;
     }
   */

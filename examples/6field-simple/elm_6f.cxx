@@ -361,7 +361,7 @@ class Elm_6f : public PhysicsModel {
       result.allocate();
       for (auto i : result) {
         result[i] =
-            (fp[i.yp()] - fm[i.ym()]) / (2. * coord->dy[i] * sqrt(coord->g_22[i]));
+            (fp[i.yp()] - fm[i.ym()]) / (2. * coord->dy()[i] * sqrt(coord->g_22()[i]));
       }
     } else {
       result = Grad_par(f, loc);
@@ -705,7 +705,7 @@ protected:
 
     if (mesh->IncIntShear) {
       // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      coord->IntShiftTorsion = I;
+      coord->setIntShiftTorsion(I);
 
     } else {
       // Dimits style, using local coordinate system
@@ -867,7 +867,7 @@ protected:
     Btxy /= Bbar;
     B0 /= Bbar;
     hthe /= Lbar;
-    coord->dx /= Lbar * Lbar * Bbar;
+    coord->setDx(coord->dx() / (Lbar * Lbar * Bbar));
     I *= Lbar * Lbar * Bbar;
 
     if ((!T0_fake_prof) && n0_fake_prof) {
@@ -1051,24 +1051,25 @@ protected:
 
     /**************** CALCULATE METRICS ******************/
 
-    coord->g11 = SQ(Rxy * Bpxy);
-    coord->g22 = 1.0 / SQ(hthe);
-    coord->g33 = SQ(I) * coord->g11 + SQ(B0) / coord->g11;
-    coord->g12 = 0.0;
-    coord->g13 = -I * coord->g11;
-    coord->g23 = -Btxy / (hthe * Bpxy * Rxy);
+    const auto g11 = SQ(Rxy * Bpxy);
+    const auto g22 = 1.0 / SQ(hthe);
+    const auto g33 = SQ(I) * g11 + SQ(B0) / g11;
+    const auto g12 = 0.0;
+    const auto g13 = -I * g11;
+    const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
 
-    coord->J = hthe / Bpxy;
-    coord->Bxy = B0;
+    const auto g_11 = 1.0 / g11 + SQ(I * Rxy);
+    const auto g_22 = SQ(B0 * hthe / Bpxy);
+    const auto g_33 = Rxy * Rxy;
+    const auto g_12 = Btxy * hthe * I * Rxy / Bpxy;
+    const auto g_13 = I * Rxy * Rxy;
+    const auto g_23 = Btxy * hthe * Rxy / Bpxy;
 
-    coord->g_11 = 1.0 / coord->g11 + SQ(I * Rxy);
-    coord->g_22 = SQ(B0 * hthe / Bpxy);
-    coord->g_33 = Rxy * Rxy;
-    coord->g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    coord->g_13 = I * Rxy * Rxy;
-    coord->g_23 = Btxy * hthe * Rxy / Bpxy;
+    coord->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+                           CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
-    coord->geometry(); // Calculate quantities from metric tensor
+    coord->setJ(hthe / Bpxy);
+    coord->setBxy(B0);
 
     // Set B field vector
 
@@ -1446,11 +1447,11 @@ protected:
       if (hyperviscos > 0.0) {
         // Calculate coefficient.
 
-        hyper_mu_x = hyperviscos * coord->g_11 * SQ(coord->dx)
-                     * abs(coord->g11 * D2DX2(U)) / (abs(U) + 1e-3);
+        hyper_mu_x = hyperviscos * coord->g_11() * SQ(coord->dx())
+                     * abs(coord->g11() * D2DX2(U)) / (abs(U) + 1e-3);
         hyper_mu_x.applyBoundary("dirichlet"); // Set to zero on all boundaries
 
-        ddt(U) += hyper_mu_x * coord->g11 * D2DX2(U);
+        ddt(U) += hyper_mu_x * coord->g11() * D2DX2(U);
 
         if (first_run) {
           // Print out maximum values of viscosity used on this processor
