@@ -217,9 +217,16 @@ int CvodeSolver::init() {
     throw BoutException("CVodeSetUserData failed\n");
   }
 
+#if SUNDIALS_VERSION_MAJOR >= 6
+  // Set the default RHS to linear, then pass nonlinear rhs to NL solver
   if (CVodeInit(cvode_mem, cvode_linear_rhs, simtime, uvec) != CV_SUCCESS) {
     throw BoutException("CVodeInit failed\n");
   }
+#else
+  if (CVodeInit(cvode_mem, cvode_nonlinear_rhs, simtime, uvec) != CV_SUCCESS) {
+    throw BoutException("CVodeInit failed\n");
+  }
+#endif
 
   if (max_order > 0) {
     if (CVodeSetMaxOrd(cvode_mem, max_order) != CV_SUCCESS) {
@@ -386,8 +393,10 @@ int CvodeSolver::init() {
     }
   }
 
+#if SUNDIALS_VERSION_MAJOR >= 6
   // Set the RHS function to be used in the nonlinear solver
   CVodeSetNlsRhsFn(cvode_mem, cvode_nonlinear_rhs);
+#endif
 
   // Set internal tolerance factors
   if (CVodeSetNonlinConvCoef(cvode_mem, cvode_nonlinear_convergence_coef) != CV_SUCCESS) {

@@ -138,7 +138,7 @@ private:
   int nonlin_fails{0};
   int stab_lims{0};
 
-  bool cvode_initialised = false;
+  bool cvode_initialised {false};
 
   void set_vector_option_values(BoutReal* option_data, std::vector<BoutReal>& f2dtols,
                                 std::vector<BoutReal>& f3dtols);
