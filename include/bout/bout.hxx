@@ -187,6 +187,8 @@ private:
   BoutReal mpi_start_time;
   /// Stop if file `stop_check_name` exists
   bool stop_check;
+  /// Check if this is the first time the monitor is called
+  bool first_time{true};
   /// Filename for `stop_check`
   std::string stop_check_name;
 };

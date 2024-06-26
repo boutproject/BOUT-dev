@@ -8,6 +8,13 @@
 - The autotools `./configure` build system has been removed
 - Parsing of booleans has changed [\#2828][https://github.com/boutproject/BOUT-dev/pull/2828] ([bendudson][https://github.com/bendudson]).
   See the [manual page](https://bout-dev.readthedocs.io/en/stable/user_docs/bout_options.html#boolean-expressions) for details.
+- Previously, the `Solver` implementations passed the loop counter to
+  the `iter` argument of `call_monitors`, but since the iteration has
+  already been completed when the monitors are called, this results in
+  iter always being one less than the number of completed
+  monitor-steps at the point when the moniters are called, which is
+  confusing. Now, monitors are called with the current number of
+  completed monitor-steps.
 
 
 ## [v5.1.0](https://github.com/boutproject/BOUT-dev/tree/v5.1.0)
