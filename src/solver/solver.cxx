@@ -1364,6 +1364,12 @@ int Solver::run_rhs(BoutReal t, bool linear) {
 
   Timer timer("rhs");
 
+  if (first_rhs_call) {
+    // Ensure that nonlinear terms are calculated on first call
+    linear = false;
+    first_rhs_call = false;
+  }
+
   if (model->splitOperator()) {
     // Run both parts
 
