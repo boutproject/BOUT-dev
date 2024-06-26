@@ -174,9 +174,9 @@ LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   // invert Delp2 and we will not converge
   ASSERT0(delp2type == "cyclic" || delp2type == "spt" || delp2type == "tri");
   // Use same flags for FFT solver as for NaulinSolver
-  delp2solver->setGlobalFlags(global_flags);
-  delp2solver->setInnerBoundaryFlags(inner_boundary_flags);
-  delp2solver->setOuterBoundaryFlags(outer_boundary_flags);
+  delp2solver->setGlobalFlags(getGlobalFlags());
+  delp2solver->setInnerBoundaryFlags(getInnerBoundaryFlags());
+  delp2solver->setOuterBoundaryFlags(getOuterBoundaryFlags());
 
   static int naulinsolver_count = 1;
   setPerformanceName(fmt::format("{}{}", "naulinsolver", ++naulinsolver_count));
@@ -258,7 +258,7 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
     // Note take a copy of the 'b' argument, because we want to return a copy of it in the
     // result
 
-    if ((inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET)) {
+    if (isInnerBoundaryFlagSet(INVERT_SET) || isOuterBoundaryFlagSet(INVERT_SET)) {
       // This passes in the boundary conditions from x0's guard cells
       copy_x_boundaries(x_guess, x0, localmesh);
     }
