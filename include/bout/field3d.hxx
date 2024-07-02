@@ -302,6 +302,13 @@ public:
     return *this;
   }
 
+  /// Disable tracking
+  Field3D& disableTracking() {
+    tracking = nullptr;
+    tracking_state = 0;
+    return *this;
+  }
+
   /////////////////////////////////////////////////////////
   // Data access
 
