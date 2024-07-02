@@ -306,6 +306,13 @@ public:
   /// Save all changes that, are done to the field, to tracking
   Field3D& enableTracking(const std::string& name, Options& tracking);
 
+  /// Disable tracking
+  Field3D& disableTracking() {
+    tracking = nullptr;
+    tracking_state = 0;
+    return *this;
+  }
+
   /////////////////////////////////////////////////////////
   // Data access
 
