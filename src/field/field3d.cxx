@@ -47,6 +47,26 @@
 #include <bout/output.hxx>
 #include <bout/utils.hxx>
 
+
+#include "bout/output.hxx"
+#include <fmt/format.h>
+
+namespace fmt {
+template <typename T>
+struct formatter<std::optional<T>> : fmt::formatter<T> {
+
+  template <typename FormatContext>
+  auto format(const std::optional<T>& opt, FormatContext& ctx) {
+    if (opt) {
+      fmt::formatter<T>::format(opt.value(), ctx);
+      return ctx.out();
+    }
+    return fmt::format_to(ctx.out(), "NO VALUE");
+  }
+};
+} // namespace fmt
+
+
 /// Constructor
 Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
     : Field(localmesh, location_in, directions_in) {
@@ -850,7 +870,22 @@ Field3D::getValidRegionWithDefault(const std::string& region_name) const {
 
 void Field3D::setRegion(const std::string& region_name) {
   regionID = fieldmesh->getRegionID(region_name);
+  output.write("{:p}: set {} {}\n", static_cast<void*>(this), regionID, region_name);
 }
+
+void Field3D::resetRegion() {
+  regionID.reset();
+  output.write("{:p}: reset\n", static_cast<void*>(this));
+};
+void Field3D::setRegion(size_t id) {
+  regionID = id;
+  //output.write("{:p}: set {:d}\n", static_cast<void*>(this), regionID);
+  output.write("{:p}: set {}\n", static_cast<void*>(this), regionID);
+};
+void Field3D::setRegion(std::optional<size_t> id) {
+  regionID = id;
+  output.write("{:p}: set {}\n", static_cast<void*>(this), regionID);
+};
 
 Field3D& Field3D::enableTracking(const std::string& name, Options& _tracking) {
   tracking = &_tracking;
