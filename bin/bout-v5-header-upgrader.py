@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
+import boutupgrader
+
 import argparse
 import copy
-import difflib
 import re
 import textwrap
 from pathlib import Path
@@ -93,32 +94,6 @@ def apply_fixes(header_regex, source):
     return header_regex.sub(r"\1bout/\2\3", modified)
 
 
-def yes_or_no(question):
-    """Convert user input from yes/no variations to True/False"""
-    while True:
-        reply = input(question + " [y/N] ").lower().strip()
-        if not reply or reply[0] == "n":
-            return False
-        if reply[0] == "y":
-            return True
-
-
-def create_patch(filename, original, modified):
-    """Create a unified diff between original and modified"""
-
-    patch = "\n".join(
-        difflib.unified_diff(
-            original.splitlines(),
-            modified.splitlines(),
-            fromfile=filename,
-            tofile=filename,
-            lineterm="",
-        )
-    )
-
-    return patch
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -145,16 +120,8 @@ if __name__ == "__main__":
             """
         ),
     )
+    parser = boutupgrader.default_args(parser, pos_files=False)
 
-    parser.add_argument(
-        "--force", "-f", action="store_true", help="Make changes without asking"
-    )
-    parser.add_argument(
-        "--quiet", "-q", action="store_true", help="Don't print patches"
-    )
-    parser.add_argument(
-        "--patch-only", "-p", action="store_true", help="Print the patches and exit"
-    )
     parser.add_argument(
         "--include-path",
         "-i",
@@ -190,28 +157,7 @@ if __name__ == "__main__":
         original = copy.deepcopy(contents)
 
         modified = apply_fixes(header_regex, contents)
-        patch = create_patch(filename, original, modified)
 
-        if args.patch_only:
-            print(patch)
-            continue
-
-        if not patch:
-            if not args.quiet:
-                print(f"No changes to make to {filename}")
-            continue
-
-        if not args.quiet:
-            print("\n******************************************")
-            print(f"Changes to {filename}\n")
-            print(patch)
-            print("\n******************************************")
-
-        if args.force:
-            make_change = True
-        else:
-            make_change = yes_or_no(f"Make changes to {filename}?")
-
-        if make_change:
-            with open(filename, "w") as f:
-                f.write(modified)
+        boutupgrader.apply_or_display_patch(
+            filename, original, modified, args.patch_only, args.quiet, args.force
+        )

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
+from boutupgrader import create_patch, yes_or_no, default_args
+
 import argparse
 import copy
-import difflib
 import itertools
 import textwrap
 import warnings
@@ -221,32 +222,6 @@ def apply_fixes(replacements, deleted, options_file):
     return modified
 
 
-def yes_or_no(question):
-    """Convert user input from yes/no variations to True/False"""
-    while True:
-        reply = input(question + " [y/N] ").lower().strip()
-        if not reply or reply[0] == "n":
-            return False
-        if reply[0] == "y":
-            return True
-
-
-def create_patch(filename, original, modified):
-    """Create a unified diff between original and modified"""
-
-    patch = "\n".join(
-        difflib.unified_diff(
-            original.splitlines(),
-            modified.splitlines(),
-            fromfile=filename,
-            tofile=filename,
-            lineterm="",
-        )
-    )
-
-    return patch
-
-
 def possibly_apply_patch(patch, options_file, quiet=False, force=False):
     """Possibly apply patch to options_file. If force is True, applies the
     patch without asking, overwriting any existing file. Otherwise,
@@ -303,20 +278,8 @@ if __name__ == "__main__":
             fixer" patch will still include it."""
         ),
     )
+    parser = default_args(parser)
 
-    parser.add_argument("files", action="store", nargs="+", help="Input files")
-
-    force_patch_group = parser.add_mutually_exclusive_group()
-    force_patch_group.add_argument(
-        "--force", "-f", action="store_true", help="Make changes without asking"
-    )
-    force_patch_group.add_argument(
-        "--patch-only", "-p", action="store_true", help="Print the patches and exit"
-    )
-
-    parser.add_argument(
-        "--quiet", "-q", action="store_true", help="Don't print patches"
-    )
     parser.add_argument(
         "--accept-canonical",
         "-c",
@@ -345,11 +308,7 @@ if __name__ == "__main__":
 
         canonicalised_patch = create_patch(filename, original_source, str(original))
         if canonicalised_patch and not args.patch_only:
-            print(
-                "WARNING: original input file '{}' not in canonical form!".format(
-                    filename
-                )
-            )
+            print(f"WARNING: original input file '{filename}' not in canonical form!")
             applied_patch = possibly_apply_patch(
                 canonicalised_patch,
                 original,
@@ -376,7 +335,7 @@ if __name__ == "__main__":
 
         if not patch:
             if not args.quiet:
-                print("No changes to make to {}".format(filename))
+                print(f"No changes to make to {filename}")
             continue
 
         possibly_apply_patch(patch, modified, args.quiet, args.force)
