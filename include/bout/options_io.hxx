@@ -72,6 +72,9 @@ public:
   /// ADIOS: Indicate completion of an output step.
   virtual void verifyTimesteps() const = 0;
 
+  /// NetCDF: Flush file to disk
+  virtual void flush() {}
+
   /// Create an OptionsIO for I/O to the given file.
   /// This uses the default file type and default options.
   static std::unique_ptr<OptionsIO> create(const std::string& file);

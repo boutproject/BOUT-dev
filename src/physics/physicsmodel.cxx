@@ -33,12 +33,14 @@
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
 #include <bout/mesh.hxx>
+#include <bout/options.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/vector2d.hxx>
 #include <bout/vector3d.hxx>
 
 #include <fmt/core.h>
 
+#include <cstddef>
 #include <string>
 using namespace std::literals;
 
@@ -66,9 +68,10 @@ PhysicsModel::PhysicsModel()
                                                     .withDefault(true)),
       restart_enabled(Options::root()["restart_files"]["enabled"]
                           .doc("Write restart files")
-                          .withDefault(true))
-
-{
+                          .withDefault(true)),
+      flush_frequency(Options::root()["output"]["flush_frequency"]
+                          .doc("How often to flush to disk")
+                          .withDefault<std::size_t>(1)) {
   if (output_enabled) {
     output_file = bout::OptionsIOFactory::getInstance().createOutput();
   }
@@ -216,9 +219,7 @@ void PhysicsModel::writeRestartFile() {
 void PhysicsModel::writeOutputFile() { writeOutputFile(output_options); }
 
 void PhysicsModel::writeOutputFile(const Options& options) {
-  if (output_enabled) {
-    output_file->write(options, "t");
-  }
+  writeOutputFile(options, "t");
 }
 
 void PhysicsModel::writeOutputFile(const Options& options,
@@ -229,13 +230,19 @@ void PhysicsModel::writeOutputFile(const Options& options,
 }
 
 void PhysicsModel::finishOutputTimestep() const {
-  if (output_enabled) {
+  Timer timer("io");
+
+  if (output_enabled and (flush_counter % flush_frequency == 0)) {
+    output_file->flush();
     output_file->verifyTimesteps();
   }
 }
 
 int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime,
                                             int iteration, int nout) {
+
+  model->setFlushCounter(static_cast<std::size_t>(iteration));
+
   // Restart file variables
   solver->outputVars(model->restart_options, false);
   model->restartVars(model->restart_options);
