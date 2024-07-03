@@ -59,7 +59,7 @@ public:
 
   /// Constructor specifies the kind of file, and options to control
   /// the name of file, mode of operation etc.
-  OptionsIO(Options&) {}
+  OptionsIO(Options& /*unused*/) {}
 
   virtual ~OptionsIO() = default;
 
