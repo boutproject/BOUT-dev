@@ -257,6 +257,9 @@ int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime,
   model->outputVars(model->output_options);
   model->writeOutputFile();
 
+  // Reset output options, this avoids rewriting time-independent data
+  model->output_options = Options{};
+
   // Call user output monitor
   return model->outputMonitor(simtime, iteration, nout);
 }
