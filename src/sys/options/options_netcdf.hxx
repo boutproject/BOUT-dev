@@ -58,6 +58,9 @@ public:
   /// any differences, otherwise is silent
   void verifyTimesteps() const override;
 
+  /// Flush file to disk
+  void flush() override;
+
 private:
   enum class FileMode {
     replace, ///< Overwrite file when writing
