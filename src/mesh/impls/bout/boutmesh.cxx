@@ -2817,6 +2817,9 @@ void BoutMesh::addBoundaryRegions() {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
 
   int xs = 0;
   int xe = LocalNx - 1;
@@ -2852,6 +2855,9 @@ RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
 
   int xs = 0;
   int xe = LocalNx - 1;
@@ -2886,6 +2892,10 @@ RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+
   int xs = 0;
   int xe = LocalNx - 1;
   if ((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart)) {
@@ -2915,6 +2925,10 @@ RangeIterator BoutMesh::iterateBndryLowerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+
   int xs = 0;
   int xe = LocalNx - 1;
 
@@ -2949,6 +2963,10 @@ RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+
   int xs = 0;
   int xe = LocalNx - 1;
 
@@ -2983,6 +3001,10 @@ RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+
   int xs = 0;
   int xe = LocalNx - 1;
   if ((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart)) {
