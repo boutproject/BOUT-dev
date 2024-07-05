@@ -34,8 +34,8 @@
 
 class PhysicsModel;
 
-#ifndef __PHYSICS_MODEL_H__
-#define __PHYSICS_MODEL_H__
+#ifndef BOUT_PHYSICS_MODEL_H
+#define BOUT_PHYSICS_MODEL_H
 
 #include "solver.hxx"
 #include "bout/bout.hxx"
@@ -566,4 +566,4 @@ private:
 #define SAVE_REPEAT(...) \
   { MACRO_FOR_EACH(SAVE_REPEAT1, __VA_ARGS__) }
 
-#endif // __PHYSICS_MODEL_H__
+#endif // BOUT_PHYSICS_MODEL_H

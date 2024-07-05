@@ -2,7 +2,6 @@
 Checks:          'clang-diagnostic-*,clang-analyzer-*,performance-*,readability-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,mpi-*,misc-*,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers,-misc-non-private-member-variables-in-classes,-clang-analyzer-optin.mpi*,-bugprone-exception-escape,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-readability-function-cognitive-complexity,-misc-no-recursion,-bugprone-easily-swappable-parameters'
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
-AnalyzeTemporaryDtors: false
 FormatStyle:     file
 CheckOptions:
 
@@ -10,7 +9,7 @@ CheckOptions:
   - key:             readability-identifier-length.IgnoredVariableNames
     value:           '^[dn]?[xyz]$'
   - key:             readability-identifier-length.IgnoredParameterNames
-    value:           '^[fijkxyz][01xyz]?$'
+    value:           '^[dfijknxyz][01xyz]?$'
   - key:             readability-identifier-length.IgnoredLoopCounterNames
     value:           '^[ijkxyz_]$'
 

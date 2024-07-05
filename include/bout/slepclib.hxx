@@ -42,8 +42,8 @@
 
 class SlepcLib;
 
-#ifndef __SLEPCLIB_H__
-#define __SLEPCLIB_H__
+#ifndef BOUT_SLEPCLIB_H
+#define BOUT_SLEPCLIB_H
 
 #include "bout/build_config.hxx"
 
@@ -89,4 +89,4 @@ public:
 
 #endif // BOUT_HAS_SLEPC
 
-#endif //  __SLEPCLIB_H__
+#endif //  BOUT_SLEPCLIB_H

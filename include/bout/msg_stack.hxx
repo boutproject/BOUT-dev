@@ -26,8 +26,8 @@
 
 class MsgStack;
 
-#ifndef __MSG_STACK_H__
-#define __MSG_STACK_H__
+#ifndef BOUT_MSG_STACK_H
+#define BOUT_MSG_STACK_H
 
 #include "bout/build_config.hxx"
 
@@ -212,4 +212,4 @@ private:
  */
 #define AUTO_TRACE() TRACE(__thefunc__) // NOLINT
 
-#endif // __MSG_STACK_H__
+#endif // BOUT_MSG_STACK_H

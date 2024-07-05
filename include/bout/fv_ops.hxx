@@ -2,8 +2,8 @@
   Finite-volume discretisation methods. Flux-conservative form
  */
 
-#ifndef __FV_OPS_H__
-#define __FV_OPS_H__
+#ifndef BOUT_FV_OPS_H
+#define BOUT_FV_OPS_H
 
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
@@ -525,4 +525,4 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
    */
 Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT);
 } // namespace FV
-#endif // __FV_OPS_H__
+#endif // BOUT_FV_OPS_H

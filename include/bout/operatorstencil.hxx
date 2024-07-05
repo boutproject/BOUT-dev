@@ -27,8 +27,8 @@
  *
  **************************************************************************/
 
-#ifndef __OPERATORSTENCIL_H__
-#define __OPERATORSTENCIL_H__
+#ifndef BOUT_OPERATORSTENCIL_H
+#define BOUT_OPERATORSTENCIL_H
 
 #include <algorithm>
 #include <functional>
@@ -322,4 +322,4 @@ OperatorStencil<T> starStencil(Mesh* localmesh) {
   return stencil;
 }
 
-#endif // __OPERATORSTENCIL_H__
+#endif // BOUT_OPERATORSTENCIL_H

@@ -40,8 +40,8 @@
 
 class Mesh;
 
-#ifndef __MESH_H__
-#define __MESH_H__
+#ifndef BOUT_MESH_H
+#define BOUT_MESH_H
 
 #include "mpi.h"
 
@@ -55,21 +55,23 @@ class Mesh;
 #include "bout/field_data.hxx"
 #include "bout/options.hxx"
 
-#include "fieldgroup.hxx"
+#include "bout/fieldgroup.hxx"
 
-#include "bout/boundary_region.hxx"
-#include "bout/parallel_boundary_region.hxx"
+class BoundaryRegion;
+class BoundaryRegionPar;
 
-#include "sys/range.hxx" // RangeIterator
+#include "bout/sys/range.hxx" // RangeIterator
 
 #include <bout/griddata.hxx>
 
-#include "coordinates.hxx" // Coordinates class
+#include "bout/coordinates.hxx" // Coordinates class
 
 #include "bout/unused.hxx"
 
 #include "bout/generic_factory.hxx"
 #include <bout/region.hxx>
+
+#include <bout/bout_enum_class.hxx>
 
 #include <list>
 #include <map>
@@ -89,6 +91,9 @@ public:
                     GridDataSource* source = nullptr) const;
   ReturnType create(Options* options = nullptr, GridDataSource* source = nullptr) const;
 };
+
+BOUT_ENUM_CLASS(BoundaryParType, all, xin, xout, fwd, bwd, xin_fwd, xout_fwd, xin_bwd,
+                xout_bwd, SIZE);
 
 template <class DerivedType>
 using RegisterMesh = MeshFactory::RegisterInFactory<DerivedType>;
@@ -485,11 +490,20 @@ public:
   /// Add a boundary region to this processor
   virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
 
-  /// Get all the parallel (Y) boundaries on this processor
-  virtual std::vector<BoundaryRegionPar*> getBoundariesPar() = 0;
+  /// Get the list of parallel boundary regions. The option specifies with
+  /// region to get. Default is to get all regions. All possible options are
+  /// listed at the top of this file, see BoundaryParType.
+  /// For example:
+  /// get all regions:
+  /// mesh->getBoundariesPar(Mesh::BoundaryParType::all)
+  /// get only xout:
+  /// mesh->getBoundariesPar(Mesh::BoundaryParType::xout)
+  virtual std::vector<std::shared_ptr<BoundaryRegionPar>>
+  getBoundariesPar(BoundaryParType type = BoundaryParType::all) = 0;
 
   /// Add a parallel(Y) boundary to this processor
-  virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry)) {}
+  virtual void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> UNUSED(bndry),
+                              BoundaryParType UNUSED(type)) {}
 
   /// Branch-cut special handling (experimental)
   virtual Field3D smoothSeparatrix(const Field3D& f) { return f; }
@@ -853,4 +867,4 @@ Mesh::getRegion<FieldPerp>(const std::string& region_name) const {
   return getRegionPerp(region_name);
 }
 
-#endif // __MESH_H__
+#endif // BOUT_MESH_H

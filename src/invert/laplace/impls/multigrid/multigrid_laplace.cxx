@@ -67,7 +67,6 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
   opts->get("atol", atol, pow(10.0, -20), true);
   opts->get("dtol", dtol, pow(10.0, 5), true);
   opts->get("smtype", mgsm, 1, true);
-#if BOUT_USE_OPENMP
   if (mgsm != 0 && omp_get_max_threads() > 1) {
     output_warn << "WARNING: in multigrid Laplace solver, for smtype!=0 the smoothing "
                    "cannot be parallelised with OpenMP threads."
@@ -75,7 +74,6 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
                 << "         Consider using smtype=0 instead when using OpenMP threads."
                 << endl;
   }
-#endif
   opts->get("jacomega", omega, 0.8, true);
   opts->get("solvertype", mgplag, 1, true);
   opts->get("cftype", cftype, 0, true);
@@ -86,19 +84,18 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
   // Initialize, allocate memory, etc.
   comms_tagbase = 385; // Some random number
 
-  int implemented_global_flags = INVERT_START_NEW;
-  if (global_flags & ~implemented_global_flags) {
+  constexpr int implemented_global_flags = INVERT_START_NEW;
+  if (isGlobalFlagSet(~implemented_global_flags)) {
     throw BoutException("Attempted to set Laplacian inversion flag that is not "
                         "implemented in LaplaceMultigrid.");
   }
-  int implemented_boundary_flags =
-      INVERT_AC_GRAD + INVERT_SET
-      + INVERT_DC_GRAD; // INVERT_DC_GRAD does not actually do anything, but harmless to set while comparing to Fourier solver with Neumann boundary conditions
-  if (inner_boundary_flags & ~implemented_boundary_flags) {
+  // INVERT_DC_GRAD does not actually do anything, but harmless to set while comparing to Fourier solver with Neumann boundary conditions
+  constexpr int implemented_boundary_flags = INVERT_AC_GRAD + INVERT_SET + INVERT_DC_GRAD;
+  if (isInnerBoundaryFlagSet(~implemented_boundary_flags)) {
     throw BoutException("Attempted to set Laplacian inner boundary inversion flag that "
                         "is not implemented in LaplaceMultigrid.");
   }
-  if (outer_boundary_flags & ~implemented_boundary_flags) {
+  if (isOuterBoundaryFlagSet(~implemented_boundary_flags)) {
     throw BoutException("Attempted to set Laplacian outer boundary inversion flag that "
                         "is not implemented in LaplaceMultigrid.");
   }
@@ -218,11 +215,9 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
     } else {
       output << "Multigrid solver with merging " << mgmpi << endl;
     }
-#if BOUT_USE_OPENMP
-    BOUT_OMP(parallel)
-    BOUT_OMP(master)
+    BOUT_OMP_SAFE(parallel)
+    BOUT_OMP_SAFE(master)
     { output << "Num threads = " << omp_get_num_threads() << endl; }
-#endif
   }
 }
 
@@ -246,10 +241,10 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
   int lz2 = lzz + 2;
   int lxx = kMG->lnx[level];
 
-  if (global_flags & INVERT_START_NEW) {
+  if (isGlobalFlagSet(INVERT_START_NEW)) {
     // set initial guess to zero
-    BOUT_OMP(parallel default(shared))
-    BOUT_OMP(for collapse(2))
+    BOUT_OMP_PERF(parallel default(shared))
+    BOUT_OMP_PERF(for collapse(2))
     for (int i = 1; i < lxx + 1; i++) {
       for (int k = 1; k < lzz + 1; k++) {
         x[i * lz2 + k] = 0.;
@@ -257,8 +252,8 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
     }
   } else {
     // Read initial guess into local array, ignoring guard cells
-    BOUT_OMP(parallel default(shared))
-    BOUT_OMP(for collapse(2))
+    BOUT_OMP_PERF(parallel default(shared))
+    BOUT_OMP_PERF(for collapse(2))
     for (int i = 1; i < lxx + 1; i++) {
       for (int k = 1; k < lzz + 1; k++) {
         int i2 = i - 1 + localmesh->xstart;
@@ -269,8 +264,8 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
   }
 
   // Read RHS into local array
-  BOUT_OMP(parallel default(shared))
-  BOUT_OMP(for collapse(2))
+  BOUT_OMP_PERF(parallel default(shared))
+  BOUT_OMP_PERF(for collapse(2))
   for (int i = 1; i < lxx + 1; i++) {
     for (int k = 1; k < lzz + 1; k++) {
       int i2 = i - 1 + localmesh->xstart;
@@ -280,12 +275,12 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
   }
 
   if (localmesh->firstX()) {
-    if (inner_boundary_flags & INVERT_AC_GRAD) {
+    if (isInnerBoundaryFlagSet(INVERT_AC_GRAD)) {
       // Neumann boundary condition
-      if (inner_boundary_flags & INVERT_SET) {
+      if (isInnerBoundaryFlagSet(INVERT_SET)) {
         // guard cells of x0 specify gradient to set at inner boundary
-        BOUT_OMP(parallel default(shared))
-        BOUT_OMP(for)
+        BOUT_OMP_PERF(parallel default(shared))
+        BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           x[k] = -x0(localmesh->xstart - 1, k2)
@@ -294,8 +289,8 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
         }
       } else {
         // zero gradient inner boundary condition
-        BOUT_OMP(parallel default(shared))
-        BOUT_OMP(for)
+        BOUT_OMP_PERF(parallel default(shared))
+        BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           // set inner guard cells
           x[k] = 0.0;
@@ -303,10 +298,10 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       }
     } else {
       // Dirichlet boundary condition
-      if (inner_boundary_flags & INVERT_SET) {
+      if (isInnerBoundaryFlagSet(INVERT_SET)) {
         // guard cells of x0 specify value to set at inner boundary
-        BOUT_OMP(parallel default(shared))
-        BOUT_OMP(for)
+        BOUT_OMP_PERF(parallel default(shared))
+        BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           x[k] = 2. * x0(localmesh->xstart - 1, k2);
@@ -314,8 +309,8 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
         }
       } else {
         // zero value inner boundary condition
-        BOUT_OMP(parallel default(shared))
-        BOUT_OMP(for)
+        BOUT_OMP_PERF(parallel default(shared))
+        BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           // set inner guard cells
           x[k] = 0.;
@@ -324,12 +319,12 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
     }
   }
   if (localmesh->lastX()) {
-    if (outer_boundary_flags & INVERT_AC_GRAD) {
+    if (isOuterBoundaryFlagSet(INVERT_AC_GRAD)) {
       // Neumann boundary condition
-      if (inner_boundary_flags & INVERT_SET) {
+      if (isInnerBoundaryFlagSet(INVERT_SET)) {
         // guard cells of x0 specify gradient to set at outer boundary
-        BOUT_OMP(parallel default(shared))
-        BOUT_OMP(for)
+        BOUT_OMP_PERF(parallel default(shared))
+        BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           x[(lxx + 1) * lz2 + k] = x0(localmesh->xend + 1, k2)
@@ -339,8 +334,8 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
         }
       } else {
         // zero gradient outer boundary condition
-        BOUT_OMP(parallel default(shared))
-        BOUT_OMP(for)
+        BOUT_OMP_PERF(parallel default(shared))
+        BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           // set outer guard cells
           x[(lxx + 1) * lz2 + k] = 0.;
@@ -348,10 +343,10 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       }
     } else {
       // Dirichlet boundary condition
-      if (outer_boundary_flags & INVERT_SET) {
+      if (isOuterBoundaryFlagSet(INVERT_SET)) {
         // guard cells of x0 specify value to set at outer boundary
-        BOUT_OMP(parallel default(shared))
-        BOUT_OMP(for)
+        BOUT_OMP_PERF(parallel default(shared))
+        BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           x[(lxx + 1) * lz2 + k] = 2. * x0(localmesh->xend + 1, k2);
@@ -359,8 +354,8 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
         }
       } else {
         // zero value inner boundary condition
-        BOUT_OMP(parallel default(shared))
-        BOUT_OMP(for)
+        BOUT_OMP_PERF(parallel default(shared))
+        BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           // set outer guard cells
           x[(lxx + 1) * lz2 + k] = 0.;
@@ -370,8 +365,8 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
   }
 
   // Exchange ghost cells of initial guess
-  BOUT_OMP(parallel default(shared))
-  BOUT_OMP(for)
+  BOUT_OMP_PERF(parallel default(shared))
+  BOUT_OMP_PERF(for)
   for (int i = 0; i < lxx + 2; i++) {
     x[i * lz2] = x[(i + 1) * lz2 - 2];
     x[(i + 1) * lz2 - 1] = x[i * lz2 + 1];
@@ -471,8 +466,8 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
 #endif
 
   // Copy solution into a FieldPerp to return
-  BOUT_OMP(parallel default(shared))
-  BOUT_OMP(for collapse(2))
+  BOUT_OMP_PERF(parallel default(shared))
+  BOUT_OMP_PERF(for collapse(2))
   for (int i = 1; i < lxx + 1; i++) {
     for (int k = 1; k < lzz + 1; k++) {
       int i2 = i - 1 + localmesh->xstart;
@@ -481,13 +476,13 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
     }
   }
   if (localmesh->firstX()) {
-    if (inner_boundary_flags & INVERT_AC_GRAD) {
+    if (isInnerBoundaryFlagSet(INVERT_AC_GRAD)) {
       // Neumann boundary condition
-      if (inner_boundary_flags & INVERT_SET) {
+      if (isInnerBoundaryFlagSet(INVERT_SET)) {
         // guard cells of x0 specify gradient to set at inner boundary
         int i2 = -1 + localmesh->xstart;
-        BOUT_OMP(parallel default(shared))
-        BOUT_OMP(for)
+        BOUT_OMP_PERF(parallel default(shared))
+        BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           result(i2, k2) = x[lz2 + k]
@@ -498,8 +493,8 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       } else {
         // zero gradient inner boundary condition
         int i2 = -1 + localmesh->xstart;
-        BOUT_OMP(parallel default(shared))
-        BOUT_OMP(for)
+        BOUT_OMP_PERF(parallel default(shared))
+        BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           result(i2, k2) = x[lz2 + k];
@@ -507,11 +502,11 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       }
     } else {
       // Dirichlet boundary condition
-      if (inner_boundary_flags & INVERT_SET) {
+      if (isInnerBoundaryFlagSet(INVERT_SET)) {
         // guard cells of x0 specify value to set at inner boundary
         int i2 = -1 + localmesh->xstart;
-        BOUT_OMP(parallel default(shared))
-        BOUT_OMP(for)
+        BOUT_OMP_PERF(parallel default(shared))
+        BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           result(i2, k2) = 2. * x0(localmesh->xstart - 1, k2) - x[lz2 + k];
@@ -519,8 +514,8 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       } else {
         // zero value inner boundary condition
         int i2 = -1 + localmesh->xstart;
-        BOUT_OMP(parallel default(shared))
-        BOUT_OMP(for)
+        BOUT_OMP_PERF(parallel default(shared))
+        BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           result(i2, k2) = -x[lz2 + k];
@@ -529,13 +524,13 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
     }
   }
   if (localmesh->lastX()) {
-    if (outer_boundary_flags & INVERT_AC_GRAD) {
+    if (isOuterBoundaryFlagSet(INVERT_AC_GRAD)) {
       // Neumann boundary condition
-      if (inner_boundary_flags & INVERT_SET) {
+      if (isInnerBoundaryFlagSet(INVERT_SET)) {
         // guard cells of x0 specify gradient to set at outer boundary
         int i2 = lxx + localmesh->xstart;
-        BOUT_OMP(parallel default(shared))
-        BOUT_OMP(for)
+        BOUT_OMP_PERF(parallel default(shared))
+        BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           result(i2, k2) = x[lxx * lz2 + k]
@@ -546,8 +541,8 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       } else {
         // zero gradient outer boundary condition
         int i2 = lxx + localmesh->xstart;
-        BOUT_OMP(parallel default(shared))
-        BOUT_OMP(for)
+        BOUT_OMP_PERF(parallel default(shared))
+        BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           result(i2, k2) = x[lxx * lz2 + k];
@@ -555,11 +550,11 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       }
     } else {
       // Dirichlet boundary condition
-      if (outer_boundary_flags & INVERT_SET) {
+      if (isOuterBoundaryFlagSet(INVERT_SET)) {
         // guard cells of x0 specify value to set at outer boundary
         int i2 = lxx + localmesh->xstart;
-        BOUT_OMP(parallel default(shared))
-        BOUT_OMP(for)
+        BOUT_OMP_PERF(parallel default(shared))
+        BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           result(i2, k2) = 2. * x0(localmesh->xend + 1, k2) - x[lxx * lz2 + k];
@@ -567,8 +562,8 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       } else {
         // zero value inner boundary condition
         int i2 = lxx + localmesh->xstart;
-        BOUT_OMP(parallel default(shared))
-        BOUT_OMP(for)
+        BOUT_OMP_PERF(parallel default(shared))
+        BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           result(i2, k2) = -x[lxx * lz2 + k];
@@ -592,8 +587,8 @@ void LaplaceMultigrid::generateMatrixF(int level) {
   int llx = kMG->lnx[level];
   int llz = kMG->lnz[level];
 
-  BOUT_OMP(parallel default(shared))
-  BOUT_OMP(for collapse(2))
+  BOUT_OMP_PERF(parallel default(shared))
+  BOUT_OMP_PERF(for collapse(2))
   for (int i = 1; i < llx + 1; i++) {
     for (int k = 1; k < llz + 1; k++) {
       int i2 = i - 1 + localmesh->xstart;
@@ -655,10 +650,10 @@ void LaplaceMultigrid::generateMatrixF(int level) {
   // Here put boundary conditions
 
   if (kMG->rProcI == 0) {
-    if (inner_boundary_flags & INVERT_AC_GRAD) {
+    if (isInnerBoundaryFlagSet(INVERT_AC_GRAD)) {
       // Neumann boundary condition
-      BOUT_OMP(parallel default(shared))
-      BOUT_OMP(for)
+      BOUT_OMP_PERF(parallel default(shared))
+      BOUT_OMP_PERF(for)
       for (int k = 1; k < llz + 1; k++) {
         int ic = llz + 2 + k;
         mat[ic * 9 + 3] += mat[ic * 9];
@@ -673,8 +668,8 @@ void LaplaceMultigrid::generateMatrixF(int level) {
       }
     } else {
       // Dirichlet boundary condition
-      BOUT_OMP(parallel default(shared))
-      BOUT_OMP(for)
+      BOUT_OMP_PERF(parallel default(shared))
+      BOUT_OMP_PERF(for)
       for (int k = 1; k < llz + 1; k++) {
         int ic = llz + 2 + k;
         mat[ic * 9 + 3] -= mat[ic * 9];
@@ -690,10 +685,10 @@ void LaplaceMultigrid::generateMatrixF(int level) {
     }
   }
   if (kMG->rProcI == kMG->xNP - 1) {
-    if (outer_boundary_flags & INVERT_AC_GRAD) {
+    if (isOuterBoundaryFlagSet(INVERT_AC_GRAD)) {
       // Neumann boundary condition
-      BOUT_OMP(parallel default(shared))
-      BOUT_OMP(for)
+      BOUT_OMP_PERF(parallel default(shared))
+      BOUT_OMP_PERF(for)
       for (int k = 1; k < llz + 1; k++) {
         int ic = llx * (llz + 2) + k;
         mat[ic * 9 + 3] += mat[ic * 9 + 6];
@@ -708,8 +703,8 @@ void LaplaceMultigrid::generateMatrixF(int level) {
       }
     } else {
       // Dirichlet boundary condition
-      BOUT_OMP(parallel default(shared))
-      BOUT_OMP(for)
+      BOUT_OMP_PERF(parallel default(shared))
+      BOUT_OMP_PERF(for)
       for (int k = 1; k < llz + 1; k++) {
         int ic = llx * (llz + 2) + k;
         mat[ic * 9 + 3] -= mat[ic * 9 + 6];

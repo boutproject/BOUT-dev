@@ -27,8 +27,8 @@
 class Field2D;
 
 #pragma once
-#ifndef __FIELD2D_H__
-#define __FIELD2D_H__
+#ifndef BOUT_FIELD2D_H
+#define BOUT_FIELD2D_H
 
 class Mesh;
 #include "bout/field.hxx"
@@ -374,4 +374,4 @@ bool operator==(const Field2D& a, const Field2D& b);
 
 std::ostream& operator<<(std::ostream& out, const Field2D& value);
 
-#endif /* __FIELD2D_H__ */
+#endif /* BOUT_FIELD2D_H */

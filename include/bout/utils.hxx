@@ -26,8 +26,8 @@
  *
  **************************************************************************/
 
-#ifndef __UTILS_H__
-#define __UTILS_H__
+#ifndef BOUT_UTILS_H
+#define BOUT_UTILS_H
 
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
@@ -355,6 +355,14 @@ public:
   }
 
   const T& operator[](Ind3D i) const {
+    // ny and nz are private :-(
+    // ASSERT2(i.nz == n3);
+    // ASSERT2(i.ny == n2);
+    ASSERT2(0 <= i.ind && i.ind < n1 * n2 * n3);
+    return data[i.ind];
+  }
+
+  T& operator[](Ind3D i) {
     // ny and nz are private :-(
     // ASSERT2(i.nz == n3);
     // ASSERT2(i.ny == n2);
@@ -712,4 +720,4 @@ inline bool flagSet(int bitset, int flag) { return (bitset & flag) != 0; }
 } // namespace utils
 } // namespace bout
 
-#endif // __UTILS_H__
+#endif // BOUT_UTILS_H

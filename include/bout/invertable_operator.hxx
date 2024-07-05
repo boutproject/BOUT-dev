@@ -30,8 +30,8 @@ class InvertableOperator;
 };
 }; // namespace bout
 
-#ifndef __INVERTABLE_OPERATOR_H__
-#define __INVERTABLE_OPERATOR_H__
+#ifndef BOUT_INVERTABLE_OPERATOR_H
+#define BOUT_INVERTABLE_OPERATOR_H
 
 #include "bout/build_config.hxx"
 

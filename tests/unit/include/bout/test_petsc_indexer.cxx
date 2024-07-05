@@ -81,15 +81,15 @@ TYPED_TEST(IndexerTest, TestConvertIndex) {
   BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
     int global = this->globalSquareIndexer.getGlobal(i);
     EXPECT_GE(global, 0);
-    BOUT_OMP(critical)
+    BOUT_OMP_SAFE(critical)
     EXPECT_TRUE(indicesGlobalSquare.insert(global).second);
     global = this->globalStarIndexer.getGlobal(i);
     EXPECT_GE(global, 0);
-    BOUT_OMP(critical)
+    BOUT_OMP_SAFE(critical)
     EXPECT_TRUE(indicesGlobalStar.insert(global).second);
     global = this->globalDefaultIndexer.getGlobal(i);
     EXPECT_GE(global, 0);
-    BOUT_OMP(critical)
+    BOUT_OMP_SAFE(critical)
     EXPECT_TRUE(indicesGlobalDefault.insert(global).second);
   }
 
@@ -97,11 +97,11 @@ TYPED_TEST(IndexerTest, TestConvertIndex) {
   BOUT_FOR(i, f.getRegion("RGN_XGUARDS")) {
     int global = this->globalSquareIndexer.getGlobal(i);
     EXPECT_GE(global, 0);
-    BOUT_OMP(critical)
+    BOUT_OMP_SAFE(critical)
     EXPECT_TRUE(indicesGlobalSquare.insert(global).second);
     global = this->globalStarIndexer.getGlobal(i);
     EXPECT_GE(global, 0);
-    BOUT_OMP(critical)
+    BOUT_OMP_SAFE(critical)
     EXPECT_TRUE(indicesGlobalStar.insert(global).second);
     EXPECT_LT(this->globalDefaultIndexer.getGlobal(i), 0);
   }
@@ -111,11 +111,11 @@ TYPED_TEST(IndexerTest, TestConvertIndex) {
     BOUT_FOR(i, f.getRegion("RGN_YGUARDS")) {
       int global = this->globalSquareIndexer.getGlobal(i);
       EXPECT_GE(global, 0);
-      BOUT_OMP(critical)
+      BOUT_OMP_SAFE(critical)
       EXPECT_TRUE(indicesGlobalSquare.insert(global).second);
       global = this->globalStarIndexer.getGlobal(i);
       EXPECT_GE(global, 0);
-      BOUT_OMP(critical)
+      BOUT_OMP_SAFE(critical)
       EXPECT_TRUE(indicesGlobalStar.insert(global).second);
       EXPECT_LT(this->globalDefaultIndexer.getGlobal(i), 0);
     }

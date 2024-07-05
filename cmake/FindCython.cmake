@@ -10,7 +10,7 @@
 #   CYTHON_FOUND - true if Cython was found
 #   CYTHON_VERSION - Cython version
 
-execute_process(COMMAND ${Python_EXECUTABLE} -c "import cython ; print(cython.__version__)"
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import cython ; print(cython.__version__)"
   RESULT_VARIABLE _cython_runs
   OUTPUT_VARIABLE CYTHON_VERSION
   OUTPUT_STRIP_TRAILING_WHITESPACE

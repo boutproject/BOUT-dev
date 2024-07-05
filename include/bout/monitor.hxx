@@ -1,5 +1,5 @@
-#ifndef __MONITOR_H__
-#define __MONITOR_H__
+#ifndef BOUT_MONITOR_H
+#define BOUT_MONITOR_H
 
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
@@ -125,4 +125,4 @@ public:
   void writeProgress(BoutReal simtime, bool output_split);
 };
 
-#endif // __MONITOR_H__
+#endif // BOUT_MONITOR_H

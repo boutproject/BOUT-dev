@@ -23,8 +23,8 @@
  *
  **************************************************************************/
 
-#ifndef __INTERP_H__
-#define __INTERP_H__
+#ifndef BOUT_INTERP_H
+#define BOUT_INTERP_H
 
 #include "bout/mesh.hxx"
 
@@ -202,4 +202,4 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
   return result;
 }
 
-#endif // __INTERP_H__
+#endif // BOUT_INTERP_H

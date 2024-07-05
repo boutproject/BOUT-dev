@@ -1,6 +1,6 @@
 
-#ifndef __MACRO_FOR_EACH_H__
-#define __MACRO_FOR_EACH_H__
+#ifndef BOUT_MACRO_FOR_EACH_H
+#define BOUT_MACRO_FOR_EACH_H
 
 // Provides a macro MACRO_FOR_EACH which applies a
 // macro to each argument in a VA_ARGS list

@@ -3,8 +3,8 @@
  * 
  **************************************************************************/
 
-#ifndef __CONSTANTS_H__
-#define __CONSTANTS_H__
+#ifndef BOUT_CONSTANTS_H
+#define BOUT_CONSTANTS_H
 
 #include <bout/bout_types.hxx>
 
@@ -28,4 +28,4 @@ constexpr BoutReal M_Deuterium = 2.01410178 * amu; ///< Mass of a Deuterium atom
 constexpr BoutReal M_Tritium = 3.0160492 * amu;    ///< Mass of a Tritium atom
 } // namespace SI
 
-#endif // __CONSTANTS_H__
+#endif // BOUT_CONSTANTS_H

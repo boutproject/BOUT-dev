@@ -30,8 +30,8 @@
 class Vector3D;
 
 #pragma once
-#ifndef __VECTOR3D_H__
-#define __VECTOR3D_H__
+#ifndef BOUT_VECTOR3D_H
+#define BOUT_VECTOR3D_H
 
 class Field2D;
 class Vector2D;
@@ -237,4 +237,4 @@ inline Vector3D zeroFrom(const Vector3D& v) {
  */
 inline Vector3D& ddt(Vector3D& f) { return *(f.timeDeriv()); }
 
-#endif // __VECTOR3D_H__
+#endif // BOUT_VECTOR3D_H
