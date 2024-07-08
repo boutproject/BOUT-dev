@@ -31,7 +31,7 @@ using sundials_real_type = realtype;
 using sundials_real_type = sunrealtype;
 #endif
 
-static_assert(std::is_same_v<BoutReal, sundials_real_type>,
+static_assert(std::is_same<BoutReal, sundials_real_type>::value,
               "BOUT++ and SUNDIALS real types do not match");
 
 #define SUNDIALS_CONTROLLER_SUPPORT \
