@@ -5,6 +5,7 @@
 #include <bout/utils.hxx>
 
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
 #include <algorithm>
 #include <iomanip>
