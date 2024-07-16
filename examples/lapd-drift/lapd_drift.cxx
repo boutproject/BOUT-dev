@@ -774,7 +774,7 @@ protected:
                 0.25
                 * ((p(jx, jy, jzp) - p(jx, jy, jzm)) * (f(jx + 1, jy) - f(jx - 1, jy))
                    - (p(jx + 1, jy, jz) - p(jx - 1, jy, jz)) * (f(jx, jy) - f(jx, jy)))
-                / (coord->dx()(jx, jy, jz) * coord->dz()(jx, jy, jz));
+                / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
 
             // J+x
             BoutReal Jpx = 0.25
@@ -782,14 +782,14 @@ protected:
                               - f(jx - 1, jy) * (p(jx - 1, jy, jzp) - p(jx - 1, jy, jzm))
                               - f(jx, jy) * (p(jx + 1, jy, jzp) - p(jx - 1, jy, jzp))
                               + f(jx, jy) * (p(jx + 1, jy, jzm) - p(jx - 1, jy, jzm)))
-                           / (coord->dx()(jx, jy, jz) * coord->dz()(jx, jy, jz));
+                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
             // Jx+
             BoutReal Jxp = 0.25
                            * (f(jx + 1, jy) * (p(jx, jy, jzp) - p(jx + 1, jy, jz))
                               - f(jx - 1, jy) * (p(jx - 1, jy, jz) - p(jx, jy, jzm))
                               - f(jx - 1, jy) * (p(jx, jy, jzp) - p(jx - 1, jy, jz))
                               + f(jx + 1, jy) * (p(jx + 1, jy, jz) - p(jx, jy, jzm)))
-                           / (coord->dx()(jx, jy, jz) * coord->dz()(jx, jy, jz));
+                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
 
             result(jx, jy, jz) = (Jpp + Jpx + Jxp) / 3.;
           }
@@ -840,7 +840,7 @@ protected:
                                   * (f(jx + 1, jy, jz) - f(jx - 1, jy, jz))
                               - (p(jx + 1, jy, jz) - p(jx - 1, jy, jz))
                                     * (f(jx, jy, jzp) - f(jx, jy, jzm)))
-                           / (coord->dx()(jx, jy, jz) * coord->dz()(jx, jy, jz));
+                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
 
             // J+x
             BoutReal Jpx =
@@ -849,14 +849,14 @@ protected:
                    - f(jx - 1, jy, jz) * (p(jx - 1, jy, jzp) - p(jx - 1, jy, jzm))
                    - f(jx, jy, jzp) * (p(jx + 1, jy, jzp) - p(jx - 1, jy, jzp))
                    + f(jx, jy, jzm) * (p(jx + 1, jy, jzm) - p(jx - 1, jy, jzm)))
-                / (coord->dx()(jx, jy, jz) * coord->dz()(jx, jy, jz));
+                / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
             // Jx+
             BoutReal Jxp = 0.25
                            * (f(jx + 1, jy, jzp) * (p(jx, jy, jzp) - p(jx + 1, jy, jz))
                               - f(jx - 1, jy, jzm) * (p(jx - 1, jy, jz) - p(jx, jy, jzm))
                               - f(jx - 1, jy, jzp) * (p(jx, jy, jzp) - p(jx - 1, jy, jz))
                               + f(jx + 1, jy, jzm) * (p(jx + 1, jy, jz) - p(jx, jy, jzm)))
-                           / (coord->dx()(jx, jy, jz) * coord->dz()(jx, jy, jz));
+                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
 
             result(jx, jy, jz) = (Jpp + Jpx + Jxp) / 3.;
           }

@@ -349,8 +349,8 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomple
     // non-uniform mesh correction
     if ((jx != 0) && (jx != (localmesh->LocalNx - 1))) {
       coef4 -= 0.5
-               * ((localcoords->dx()(jx + 1, jy) - localcoords->dx()(jx - 1, jy))
-                  / SQ(localcoords->dx()(jx, jy)))
+               * ((localcoords->dx(jx + 1, jy) - localcoords->dx(jx - 1, jy))
+                  / SQ(localcoords->dx(jx, jy)))
                * coef1;
     }
   }
@@ -359,7 +359,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomple
     // First derivative terms
     if ((jx > 0) && (jx < (localmesh->LocalNx - 1))) {
       BoutReal dc2dx_over_c1 = ((*c2coef)(jx + 1, jy) - (*c2coef)(jx - 1, jy))
-                               / (2. * localcoords->dx()(jx, jy) * ((*c1coef)(jx, jy)));
+                               / (2. * localcoords->dx(jx, jy) * ((*c1coef)(jx, jy)));
       coef4 += localcoords->g11()(jx, jy) * dc2dx_over_c1;
       coef5 += localcoords->g13()(jx, jy) * dc2dx_over_c1;
     }
@@ -373,9 +373,9 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomple
     coef3 = 0.0; // This cancels out
   }
 
-  coef1 /= SQ(localcoords->dx()(jx, jy));
-  coef3 /= 2. * localcoords->dx()(jx, jy);
-  coef4 /= 2. * localcoords->dx()(jx, jy);
+  coef1 /= SQ(localcoords->dx(jx, jy));
+  coef3 /= 2. * localcoords->dx(jx, jy);
+  coef4 /= 2. * localcoords->dx(jx, jy);
 
   a = dcomplex(coef1 - coef4, -kwave * coef3);
   b = dcomplex(-2.0 * coef1 - SQ(kwave) * coef2, kwave * coef5);
@@ -511,8 +511,8 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
           // Zero gradient at inner boundary
           for (int ix = 0; ix < inbndry; ix++) {
             avec[ix] = 0.;
-            bvec[ix] = -1. / sqrt(coords->g_11()(ix, jy)) / coords->dx()(ix, jy);
-            cvec[ix] = 1. / sqrt(coords->g_11()(ix, jy)) / coords->dx()(ix, jy);
+            bvec[ix] = -1. / sqrt(coords->g_11()(ix, jy)) / coords->dx(ix, jy);
+            cvec[ix] = 1. / sqrt(coords->g_11()(ix, jy)) / coords->dx(ix, jy);
           }
         } else if (inner_boundary_flags & INVERT_DC_GRAD) {
           // Zero gradient at inner boundary
@@ -546,7 +546,7 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
           for (int ix = 0; ix < inbndry; ix++) {
             avec[ix] = 0.;
             bvec[ix] = 1.;
-            cvec[ix] = -exp(-k * coords->dx()(ix, jy) / sqrt(coords->g11()(ix, jy)));
+            cvec[ix] = -exp(-k * coords->dx(ix, jy) / sqrt(coords->g11()(ix, jy)));
           }
         } else if (inner_boundary_flags & INVERT_IN_CYLINDER) {
           // Condition for inner radial boundary for cylindrical coordinates
@@ -608,9 +608,9 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
           for (int ix = 0; ix < inbndry; ix++) {
             avec[ix] = dcomplex(0., 0.);
             bvec[ix] =
-                dcomplex(-1., 0.) / sqrt(coords->g_11()(ix, jy)) / coords->dx()(ix, jy);
+                dcomplex(-1., 0.) / sqrt(coords->g_11()(ix, jy)) / coords->dx(ix, jy);
             cvec[ix] =
-                dcomplex(1., 0.) / sqrt(coords->g_11()(ix, jy)) / coords->dx()(ix, jy);
+                dcomplex(1., 0.) / sqrt(coords->g_11()(ix, jy)) / coords->dx(ix, jy);
           }
         } else if (inner_boundary_flags & INVERT_AC_GRAD) {
           // Zero gradient at inner boundary
@@ -625,7 +625,7 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
             avec[ix] = 0.0;
             bvec[ix] = 1.0;
             cvec[ix] = -exp(-1.0 * sqrt(coords->g33()(ix, jy) / coords->g11()(ix, jy))
-                            * kwave * coords->dx()(ix, jy));
+                            * kwave * coords->dx(ix, jy));
           }
         } else if (inner_boundary_flags & INVERT_IN_CYLINDER) {
           // Condition for inner radial boundary for cylindrical coordinates
@@ -670,9 +670,9 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
           // Zero gradient at outer boundary
           for (int ix = 0; ix < outbndry; ix++) {
             avec[ncx - ix] = dcomplex(-1., 0.) / sqrt(coords->g_11()(xe - ix, jy))
-                             / coords->dx()(xe - ix, jy);
+                             / coords->dx(xe - ix, jy);
             bvec[ncx - ix] = dcomplex(1., 0.) / sqrt(coords->g_11()(xe - ix, jy))
-                             / coords->dx()(xe - ix, jy);
+                             / coords->dx(xe - ix, jy);
             cvec[ncx - ix] = dcomplex(0., 0.);
           }
         } else if (outer_boundary_flags & INVERT_DC_GRAD) {
@@ -708,7 +708,7 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
             cvec[ncx - ix] = 0.;
             bvec[ncx - ix] = 1.;
             avec[ncx - ix] =
-                -exp(-k * coords->dx()(xe - ix, jy) / sqrt(coords->g11()(xe - ix, jy)));
+                -exp(-k * coords->dx(xe - ix, jy) / sqrt(coords->g11()(xe - ix, jy)));
           }
         } else {
           // Order 2 dirichlet BC (boundary half between points)
@@ -728,9 +728,9 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
           // Zero gradient at outer boundary
           for (int ix = 0; ix < outbndry; ix++) {
             avec[ncx - ix] = dcomplex(-1., 0.) / sqrt(coords->g_11()(xe - ix, jy))
-                             / coords->dx()(xe - ix, jy);
+                             / coords->dx(xe - ix, jy);
             bvec[ncx - ix] = dcomplex(1., 0.) / sqrt(coords->g_11()(xe - ix, jy))
-                             / coords->dx()(xe - ix, jy);
+                             / coords->dx(xe - ix, jy);
             cvec[ncx - ix] = dcomplex(0., 0.);
           }
         } else if (outer_boundary_flags & INVERT_AC_GRAD) {
@@ -745,7 +745,7 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
           for (int ix = 0; ix < outbndry; ix++) {
             avec[ncx - ix] =
                 -exp(-1.0 * sqrt(coords->g33()(xe - ix, jy) / coords->g11()(xe - ix, jy))
-                     * kwave * coords->dx()(xe - ix, jy));
+                     * kwave * coords->dx(xe - ix, jy));
             bvec[ncx - ix] = 1.0;
             cvec[ncx - ix] = 0.0;
           }

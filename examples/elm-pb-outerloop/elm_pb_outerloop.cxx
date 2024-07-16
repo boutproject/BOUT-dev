@@ -769,7 +769,7 @@ public:
 
                   BoutReal angle =
                       rmp_m * pol_angle(jx, jy)
-                      + rmp_n * ((BoutReal)jz) * mesh->getCoordinates()->dz()(jx, jy, jz);
+                      + rmp_n * ((BoutReal)jz) * mesh->getCoordinates()->dz(jx, jy, jz);
                   rmp_Psi0(jx, jy, jz) =
                       (((BoutReal)(jx - 4)) / ((BoutReal)(mesh->LocalNx - 5)))
                       * rmp_factor * cos(angle);
