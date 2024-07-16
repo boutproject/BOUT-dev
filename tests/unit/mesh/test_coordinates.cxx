@@ -529,3 +529,49 @@ TEST_F(CoordinatesTest, SetCovariantMetricTensor) {
     EXPECT_TRUE(IsFieldEqual(coords.g_23(), 0.2));
   }
 }
+
+TEST_F(CoordinatesTest, IndexedAccessors) {
+
+  int x = mesh->xstart;
+  int y = mesh->ystart;
+#if BOUT_USE_METRIC_3D
+  int z = mesh->LocalNz;
+#endif
+
+  output_info.disable();
+  output_warn.disable();
+  Coordinates coords(mesh);
+  output_warn.enable();
+  output_info.enable();
+
+  const auto& dx = coords.dx();
+  const auto& dy = coords.dy();
+#if BOUT_USE_METRIC_3D
+  const auto& dz = coords.dz();
+#endif
+
+#if not(BOUT_USE_METRIC_3D)
+  const BoutReal expected_dx = dx(x, y);
+  const BoutReal expected_dy = dy(x, y);
+#else
+  const BoutReal expected_dx = dx(x, y, z);
+  const BoutReal expected_dy = dy(x, y, z);
+  const BoutReal expected_dz = dz(x, y, z);
+#endif
+
+#if not(BOUT_USE_METRIC_3D)
+  const FieldMetric& actual_dx = coords.dx(x, y);
+  const FieldMetric& actual_dy = coords.dy(x, y);
+#else
+  const Field3D& actual_dx = coords.dx(x, y, z);
+  const Field3D& actual_dy = coords.dy(x, y, z);
+  const Field3D& actual_dz = coords.dz(x, y, z);
+#endif
+
+  EXPECT_EQ(actual_dx, expected_dx);
+  EXPECT_EQ(actual_dy, expected_dy);
+#if BOUT_USE_METRIC_3D
+  EXPECT_EQ(actual_dz, expected_dz);
+#endif
+
+}
