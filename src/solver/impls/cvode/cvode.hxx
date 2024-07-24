@@ -138,6 +138,8 @@ private:
   int nonlin_fails{0};
   int stab_lims{0};
 
+  void do_debug();
+
   bool cvode_initialised = false;
 
   void set_vector_option_values(BoutReal* option_data, std::vector<BoutReal>& f2dtols,
