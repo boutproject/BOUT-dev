@@ -220,6 +220,13 @@ int CvodeSolver::init() {
     throw BoutException("CVodeInit failed\n");
   }
 
+  if (mxorder > 0) {
+    output_warn << "WARNING: Option 'mxorder' is deprecated. Please use "
+                   "'cvode_max_order' instead\n";
+    if (CVodeSetMaxOrd(cvode_mem, mxorder) != CV_SUCCESS) {
+      throw BoutException("CVodeSetMaxOrder failed\n");
+    }
+  }
   if (max_order > 0) {
     if (CVodeSetMaxOrd(cvode_mem, max_order) != CV_SUCCESS) {
       throw BoutException("CVodeSetMaxOrder failed\n");
