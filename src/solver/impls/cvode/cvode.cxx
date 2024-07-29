@@ -519,7 +519,7 @@ CvodeSolver::create_constraints(const std::vector<VarStr<FieldType>>& fields) {
   return constraints;
 }
 
-void CVode::do_debug() {
+void CvodeSolver::do_debug() {
   if (not(f2d.empty() and v2d.empty() and v3d.empty())) {
     output_warn.write("debug_on_failure is currently only supported for Field3Ds");
     return;
@@ -534,16 +534,22 @@ void CVode::do_debug() {
     f.var->allocate();
   }
   // pre
-  load_vars(udata);
+  load_vars(NV_DATA_P(uvec));
   for (const auto& f : f3d) {
-    debug[fmt::format("pre_{:s}", prefix, f.name)] = *f.var;
+    debug[fmt::format("pre_{:s}", f.name)] = *f.var;
   }
   // residuum
+  int neq;
+  int local_N = getLocalN();
+  if (bout::globals::mpi->MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
+    throw BoutException("Allreduce localN -> GlobalN failed!\n");
+  }
   N_Vector res_data = N_VNew_Parallel(BoutComm::get(), local_N, neq, suncontext);
-  CVodeGetEstLocalErrors(cv_mem, res_data);
-  load_vars(res_data);
+  CVodeGetEstLocalErrors(cvode_mem, res_data);
+  load_vars(NV_DATA_P(res_data));
   for (const auto& f : f3d) {
-    debug[fmt::format("pre_{:s}", prefix, f.name)] = *f.var;
+    debug[fmt::format("pre_{:s}", f.name)] = *f.var;
   }
   // restore
   for (int i = 0; i < f3d.size(); ++i) {
@@ -709,7 +715,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
 
   if (flag < 0) {
     if (debug_on_failure) {
-      output.info("ERROR CVODE solve failed at t = {:e}, flag = {:d}\n", simtime, flag);
+      output_info.write("ERROR CVODE solve failed at t = {:e}, flag = {:d}\n", simtime, flag);
       do_debug();
     }
     throw BoutException("ERROR CVODE solve failed at t = {:e}, flag = {:d}\n", simtime,

@@ -138,6 +138,7 @@ private:
   int nonlin_fails{0};
   int stab_lims{0};
 
+  bool debug_on_failure;
   void do_debug();
 
   bool cvode_initialised = false;
