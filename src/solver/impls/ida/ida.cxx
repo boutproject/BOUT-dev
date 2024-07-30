@@ -48,8 +48,8 @@
 #include "bout/unused.hxx"
 
 #include <ida/ida.h>
-#include <ida/ida_ls.h>
 #include <ida/ida_bbdpre.h>
+#include <ida/ida_ls.h>
 
 #include <algorithm>
 #include <iterator>
