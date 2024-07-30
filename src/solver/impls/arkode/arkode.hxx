@@ -29,7 +29,7 @@
 #ifndef __ARKODE_SOLVER_H__
 #define __ARKODE_SOLVER_H__
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/solver.hxx"
 
 #if not BOUT_HAS_ARKODE
@@ -42,15 +42,14 @@ RegisterUnavailableSolver
 #else
 
 #include "bout/bout_types.hxx"
+#include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
 
-#include <nvector/nvector_parallel.h>
-#include <sundials/sundials_config.h>
-
 #if SUNDIALS_CONTROLLER_SUPPORT
-#include <sundials/sundials_adaptcontroller.h>
+#include <sundials/sundials_adaptcontroller.h> // IWYU pragma: export
 #endif
 
+#include <string>
 #include <vector>
 
 class ArkodeSolver;

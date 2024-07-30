@@ -12,10 +12,15 @@
 
 #include <type_traits>
 
+#include <mpi.h>
+
+// IWYU pragma: begin_exports
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_config.h>
 #include <sundials/sundials_iterative.h>
+#include <sundials/sundials_linearsolver.h>
 #include <sundials/sundials_nonlinearsolver.h>
+#include <sundials/sundials_nvector.h>
 #include <sundials/sundials_types.h>
 #include <sunlinsol/sunlinsol_spgmr.h>
 #include <sunnonlinsol/sunnonlinsol_fixedpoint.h>
@@ -24,6 +29,7 @@
 #if SUNDIALS_VERSION_MAJOR >= 6
 #include <sundials/sundials_context.hpp>
 #endif
+// IWYU pragma: end_exports
 
 #if SUNDIALS_VERSION_MAJOR < 6
 using sundials_real_type = realtype;
