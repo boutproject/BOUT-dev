@@ -62,7 +62,7 @@ RegisterSolver<ArkodeSolver> registersolverarkode("arkode");
 class ArkodeSolver : public Solver {
 public:
   explicit ArkodeSolver(Options* opts = nullptr);
-  ~ArkodeSolver();
+  ~ArkodeSolver() override;
 
   BoutReal getCurrentTimestep() override { return hcur; }
 

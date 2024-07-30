@@ -57,7 +57,7 @@ RegisterSolver<IdaSolver> registersolverida("ida");
 class IdaSolver : public Solver {
 public:
   explicit IdaSolver(Options* opts = nullptr);
-  ~IdaSolver();
+  ~IdaSolver() override;
 
   int init() override;
   int run() override;

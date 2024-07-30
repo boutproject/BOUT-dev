@@ -57,7 +57,7 @@ RegisterSolver<CvodeSolver> registersolvercvode("cvode");
 class CvodeSolver : public Solver {
 public:
   explicit CvodeSolver(Options* opts = nullptr);
-  ~CvodeSolver();
+  ~CvodeSolver() override;
 
   BoutReal getCurrentTimestep() override { return hcur; }
 
