@@ -61,6 +61,9 @@ inline sundials::Context createSUNContext([[maybe_unused]] MPI_Comm& comm) {
 #if SUNDIALS_VERSION_MAJOR < 6
   return nullptr;
 #elif SUNDIALS_VERSION_MAJOR < 7
+  // clang-tidy can see through `MPI_Comm` which might be a typedef to
+  // a pointer. We don't care, so tell it to be quiet
+  // NOLINTNEXTLINE(bugprone-multi-level-implicit-pointer-conversion)
   return sundials::Context(static_cast<void*>(&comm));
 #else
   return sundials::Context(comm);
