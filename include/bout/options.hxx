@@ -53,6 +53,7 @@ class Options;
 #include <fmt/core.h>
 
 #include <cmath>
+#include <functional>
 #include <map>
 #include <ostream>
 #include <set>
@@ -821,6 +822,13 @@ public:
   }
 
   static std::string getDefaultSource();
+
+  /// function to load a chunk of the data
+  std::unique_ptr<std::function<Tensor<BoutReal>(int xstart, int xend, int ystart,
+                                                 int yend, int zstart, int zend)>>
+      lazyLoad{nullptr};
+  bool is_loaded{true};
+  std::vector<size_t> shape;
 
 private:
   /// The source label given to default values

@@ -175,7 +175,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
   Options& option = data[name];
 
   // Global (x, y, z) dimensions of field
-  const std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
+  std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
 
   switch (size.size()) {
   case 1: {
@@ -194,6 +194,11 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
     break;
   }
   case 3: {
+    if (not option.is_loaded) {
+      size[0] = option.shape[0];
+      size[1] = option.shape[1];
+      size[2] = option.shape[2];
+    }
     // Check size if getting Field3D
     if constexpr (bout::utils::is_Field2D_v<T> or bout::utils::is_FieldPerp_v<T>) {
       output_warn.write(
@@ -630,14 +635,27 @@ bool GridFile::readgrid_3dvar_real(const std::string& name, int yread, int ydest
     return false;
   }
 
-  const auto full_var = option.as<Tensor<BoutReal>>();
+  if (not option.is_loaded) {
+    const auto& chunk = (*option.lazyLoad)(xread, xread + xsize - 1, yread,
+                                           yread + ysize - 1, 0, size[2] - 1);
+    for (int jx = 0; jx < xsize; jx++) {
+      for (int jy = 0; jy < ysize; jy++) {
+        for (int jz = 0; jz < size[2]; ++jz) {
+          var(jx + xdest, jy + ydest, jz) = chunk(jx, jy, jz);
+        }
+      }
+    }
 
-  for (int jx = xread; jx < xread + xsize; jx++) {
-    // jx is global x-index to start from
-    for (int jy = yread; jy < yread + ysize; jy++) {
-      // jy is global y-index to start from
-      for (int jz = 0; jz < size[2]; ++jz) {
-        var(jx - xread + xdest, jy - yread + ydest, jz) = full_var(jx, jy, jz);
+  } else {
+    const auto full_var = option.as<Tensor<BoutReal>>();
+
+    for (int jx = xread; jx < xread + xsize; jx++) {
+      // jx is global x-index to start from
+      for (int jy = yread; jy < yread + ysize; jy++) {
+        // jy is global y-index to start from
+        for (int jz = 0; jz < size[2]; ++jz) {
+          var(jx - xread + xdest, jy - yread + ydest, jz) = full_var(jx, jy, jz);
+        }
       }
     }
   }
