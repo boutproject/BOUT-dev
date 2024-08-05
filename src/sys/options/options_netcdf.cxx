@@ -108,30 +108,38 @@ void readGroup(const std::string& filename, const NcGroup group, Options& result
     }
     case 3: {
       if (var_type == ncDouble or var_type == ncFloat) {
-        Tensor<double> dummy(0, 0, 0);
-        result[var_name] = dummy;
-        result[var_name].is_loaded = false;
-        result[var_name].shape = {dims[0].getSize(), dims[1].getSize(),
-                                  dims[2].getSize()};
-        // We need to explicitly copy file, so that there is a pointer to the file, and
-        // the file does not get closed, which would prevent us from reading.
-        result[var_name].lazyLoad =
-            std::make_unique<std::function<Tensor<double>(int, int, int, int, int, int)>>(
-                [=, file](int xstart, int xend, int ystart, int yend, int zstart,
+        if (file) {
+          Tensor<double> dummy(0, 0, 0);
+          result[var_name] = dummy;
+          result[var_name].is_loaded = false;
+          result[var_name].shape = {dims[0].getSize(), dims[1].getSize(),
+                                    dims[2].getSize()};
+          // We need to explicitly copy file, so that there is a pointer to the file, and
+          // the file does not get closed, which would prevent us from reading.
+          result[var_name].lazyLoad = std::make_unique<
+              std::function<Tensor<double>(int, int, int, int, int, int)>>(
+              [file, var](int xstart, int xend, int ystart, int yend, int zstart,
                           int zend) {
-                  Tensor<double> value(xend - xstart + 1, yend - ystart + 1,
-                                       zend - zstart + 1);
-                  std::vector<size_t> index;
-                  index.push_back(xstart);
-                  index.push_back(ystart);
-                  index.push_back(zstart);
-                  std::vector<size_t> count;
-                  count.push_back(xend - xstart + 1);
-                  count.push_back(yend - ystart + 1);
-                  count.push_back(zend - zstart + 1);
-                  var.getVar(index, count, value.begin());
-                  return value;
-                });
+                Tensor<double> value(xend - xstart + 1, yend - ystart + 1,
+                                     zend - zstart + 1);
+                std::vector<size_t> index;
+                index.push_back(xstart);
+                index.push_back(ystart);
+                index.push_back(zstart);
+                std::vector<size_t> count;
+                count.push_back(xend - xstart + 1);
+                count.push_back(yend - ystart + 1);
+                count.push_back(zend - zstart + 1);
+                var.getVar(index, count, value.begin());
+                return value;
+              });
+        } else {
+          Tensor<double> value(static_cast<int>(dims[0].getSize()),
+                               static_cast<int>(dims[1].getSize()),
+                               static_cast<int>(dims[2].getSize()));
+          var.getVar(value.begin());
+          result[var_name] = value;
+        }
       }
     }
     }
@@ -171,7 +179,7 @@ void readGroup(const std::string& filename, const NcGroup group, Options& result
 
 namespace bout {
 
-Options OptionsNetCDF::read() {
+Options OptionsNetCDF::read(bool lazy) {
   Timer timer("io");
 
   // Open file
@@ -182,7 +190,7 @@ Options OptionsNetCDF::read() {
   }
 
   Options result;
-  readGroup(filename, *read_file, result, read_file);
+  readGroup(filename, *read_file, result, lazy ? read_file : nullptr);
 
   return result;
 }

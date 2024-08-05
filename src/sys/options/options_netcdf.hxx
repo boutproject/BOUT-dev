@@ -47,7 +47,7 @@ public:
   OptionsNetCDF& operator=(OptionsNetCDF&&) noexcept = default;
 
   /// Read options from file
-  Options read();
+  Options read(bool lazy = true);
 
   /// Write options to file
   void write(const Options& options) { write(options, "t"); }
