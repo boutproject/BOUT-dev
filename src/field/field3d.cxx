@@ -116,8 +116,8 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
   if (this->isFci()) {
     splitParallelSlices();
     for (size_t i=0; i<numberParallelSlices(); ++i){
-      yup(i) = *this;
-      ydown(i) = *this;
+      yup(i) = val;
+      ydown(i) = val;
     }
   }
 #endif
