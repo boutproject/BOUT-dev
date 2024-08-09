@@ -518,6 +518,8 @@ public:
 
   int size() const override { return nx * ny * nz; };
 
+  Options* getTracking() { return tracking; };
+
 private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1}, nz{-1};
