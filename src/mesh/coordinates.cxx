@@ -942,6 +942,13 @@ const Field2D& Coordinates::zlength() const {
 int Coordinates::geometry(bool recalculate_staggered,
                           bool force_interpolate_from_centre) {
   TRACE("Coordinates::geometry");
+  {
+    std::vector<Field3D> fields{dx, dy, dz, g11, g22, g33, g12, g13, g23, g_11, g_22, g_33, g_12, g_13,
+				g_23, J};
+    for (auto& f: fields) {
+      f.allowParallelSlices(false);
+    }
+  }
   communicate(dx, dy, dz, g11, g22, g33, g12, g13, g23, g_11, g_22, g_33, g_12, g_13,
               g_23, J, Bxy);
 
