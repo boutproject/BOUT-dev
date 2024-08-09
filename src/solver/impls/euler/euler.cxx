@@ -144,7 +144,8 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& star
                             Array<BoutReal>& result) {
 
   load_vars(std::begin(start));
-  const bool dump_now = dump_at_time > 0 && std::abs(dump_at_time - curtime) < dt;
+  const bool dump_now =
+      (dump_at_time >= 0 && std::abs(dump_at_time - curtime) < dt) || dump_at_time < -3;
   std::unique_ptr<Options> debug_ptr;
   if (dump_now) {
     debug_ptr = std::make_unique<Options>();
