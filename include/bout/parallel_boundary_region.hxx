@@ -99,6 +99,66 @@ public:
     return f[ind()] * (1 + length()) - f.ynext(-dir)[ind().yp(-dir)] * length();
   }
 
+  inline BoutReal
+  extrapolate_sheath_o1(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+    return f(0, ind());
+  }
+  inline BoutReal
+  extrapolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+    ASSERT3(valid() >= 0);
+    if (valid() < 1) {
+      return extrapolate_sheath_o1(f);
+    }
+    return f(0, ind()) * (1 + length()) - f(-dir, ind().yp(-dir)) * length();
+  }
+
+  inline BoutReal interpolate_sheath_o1(const Field3D& f) const {
+    return f[ind()] * (1 - length()) + ynext(f) * length();
+  }
+
+  inline BoutReal extrapolate_next_o1(const Field3D& f) const { return f[ind()]; }
+  inline BoutReal extrapolate_next_o2(const Field3D& f) const {
+    ASSERT3(valid() >= 0);
+    if (valid() < 1) {
+      return extrapolate_next_o1(f);
+    }
+    return f[ind()] * 2 - f.ynext(-dir)[ind().yp(-dir)];
+  }
+
+  inline BoutReal
+  extrapolate_next_o1(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+    return f(0, ind());
+  }
+  inline BoutReal
+  extrapolate_next_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+    ASSERT3(valid() >= 0);
+    if (valid() < 1) {
+      return extrapolate_sheath_o1(f);
+    }
+    return f(0, ind()) * 2 - f(-dir, ind().yp(-dir));
+  }
+
+  // extrapolate the gradient into the boundary
+  inline BoutReal extrapolate_grad_o1(const Field3D& f) const { return 0; }
+  inline BoutReal extrapolate_grad_o2(const Field3D& f) const {
+    ASSERT3(valid() >= 0);
+    if (valid() < 1) {
+      return extrapolate_grad_o1(f);
+    }
+    return f[ind()] - f.ynext(-dir)[ind().yp(-dir)];
+  }
+
+  BoundaryRegionParIterBase& operator*() { return *this; }
+
+  BoundaryRegionParIterBase& operator++() {
+    ++bndry_position;
+    return *this;
+  }
+
+  bool operator!=(const BoundaryRegionParIterBase& rhs) {
+    return bndry_position != rhs.bndry_position;
+  }
+
   // dirichlet boundary code
   void dirichlet_o1(Field3D& f, BoutReal value) const {
     f.ynext(dir)[ind().yp(dir)] = value;
