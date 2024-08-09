@@ -153,6 +153,8 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& star
     for (auto& f : f3d) {
       f.F_var->enableTracking(fmt::format("ddt_{:s}", f.name), debug);
       setName(*f.var, f.name);
+      debug[fmt::format("pre_{:s}", f.name)] = *f.var;
+      f.var->allocate();
     }
   }
 
