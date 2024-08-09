@@ -63,7 +63,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     }
   }
 
-  if (a.isFci())
+  if (a.isFci()) {
     throw BoutException("FCI does not work with FV methods in y direction");
   }
 
@@ -73,11 +73,11 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
   // Values on this y slice (centre).
   // This is needed because toFieldAligned may modify the field
-  const auto f_slice = makeslices(fci, f);
-  const auto a_slice = makeslices(fci, a);
+  const auto f_slice = makeslices(false, f);
+  const auto a_slice = makeslices(false, a);
 
   // Only in 3D case with FCI do the metrics have parallel slices
-  const bool metric_fci = a.isFci() and bout::build::use_metric_3d;
+  const bool metric_fci = false;
   const auto g23 = makeslices(metric_fci, coord->g23);
   const auto g_23 = makeslices(metric_fci, coord->g_23);
   const auto J = makeslices(metric_fci, coord->J);
@@ -87,9 +87,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
   // Result of the Y and Z fluxes
   Field3D yzresult(0.0, mesh);
-  if (!fci) {
-    yzresult.setDirectionY(YDirectionType::Aligned);
-  }
+  yzresult.setDirectionY(YDirectionType::Aligned);
 
   // Y flux
 
@@ -160,12 +158,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     }
   }
 
-  // Check if we need to transform back
-  if (fci) {
-    result += yzresult;
-  } else {
-    result += fromFieldAligned(yzresult);
-  }
+  result += fromFieldAligned(yzresult);
 
   return result;
 }
