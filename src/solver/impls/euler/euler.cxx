@@ -172,9 +172,12 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& star
       debug["BOUT_VERSION"].force(bout::version::as_double);
     }
 
-    const std::string outname = fmt::format(
-        "{}/BOUT.debug.{}.nc",
-        Options::root()["datadir"].withDefault<std::string>("data"), BoutComm::rank());
+    const std::string outnumber =
+        dump_at_time < -3 ? fmt::format(".{}", debug_counter++) : "";
+    const std::string outname =
+        fmt::format("{}/BOUT.debug{}.{}.nc",
+                    Options::root()["datadir"].withDefault<std::string>("data"),
+                    outnumber, BoutComm::rank());
 
     bout::OptionsIO::create(outname)->write(debug);
     MPI_Barrier(BoutComm::get());
