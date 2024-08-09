@@ -163,7 +163,7 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& star
     Options& debug = *debug_ptr;
     Mesh* mesh{nullptr};
     for (auto& f : f3d) {
-      debug[f.name] = *f.var;
+      saveParallel(debug, f.name, *f.var);
       mesh = f.var->getMesh();
     }
 
