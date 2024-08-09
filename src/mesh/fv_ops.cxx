@@ -63,17 +63,8 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     }
   }
 
-  const bool fci = f.hasParallelSlices() && a.hasParallelSlices();
-
-  if (bout::build::use_metric_3d and fci) {
-    // 3D Metric, need yup/ydown fields.
-    // Requires previous communication of metrics
-    // -- should insert communication here?
-    if (!coord->g23.hasParallelSlices() || !coord->g_23.hasParallelSlices()
-        || !coord->dy.hasParallelSlices() || !coord->dz.hasParallelSlices()
-        || !coord->Bxy.hasParallelSlices() || !coord->J.hasParallelSlices()) {
-      throw BoutException("metrics have no yup/down: Maybe communicate in init?");
-    }
+  if (a.isFci())
+    throw BoutException("FCI does not work with FV methods in y direction");
   }
 
   // Y and Z fluxes require Y derivatives
@@ -183,6 +174,10 @@ const Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin,
                                  bool bndry_flux) {
   TRACE("FV::Div_par_K_Grad_par");
 
+  if (Kin.isFci()) {
+    return ::Div_par_K_Grad_par(Kin, fin);
+  }
+  
   ASSERT2(Kin.getLocation() == fin.getLocation());
 
   Mesh* mesh = Kin.getMesh();
