@@ -358,8 +358,8 @@ BoutReal PvodeSolver::run(BoutReal tout) {
   // Check return flag
   if (flag != SUCCESS) {
     output_error.write("ERROR CVODE step failed, flag = {:d}\n", flag);
-    CVodeMemRec* cv_mem = (CVodeMem)cvode_mem;
     if (debug_on_failure) {
+      CVodeMemRec* cv_mem = (CVodeMem)cvode_mem;
       if (f2d.empty() and v2d.empty() and v3d.empty()) {
         Options debug{};
         using namespace std::string_literals;
@@ -388,6 +388,9 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
         for (auto& f : f3d) {
           debug[f.name] = *f.var;
+	  if (f.var->hasParallelSlices()) {
+	    saveParallel(debug, f.name, *f.var);
+	  }
         }
 
         if (mesh != nullptr) {
