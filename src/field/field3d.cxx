@@ -370,7 +370,16 @@ Field3D& Field3D::operator=(const BoutReal val) {
 
   // Delete existing parallel slices. We don't copy parallel slices, so any
   // that currently exist will be incorrect.
+#if BOUT_USE_FCI_AUTOMAGIC
+  if (isFci() && hasParallelSlices()) {
+    for (size_t i=0; i<numberParallelSlices(); ++i){
+      yup(i) = val;
+      ydown(i) = val;
+    }
+  }
+#else
   clearParallelSlices();
+#endif
   resetRegion();
 
   allocate();
