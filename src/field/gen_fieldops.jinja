@@ -23,8 +23,30 @@
 #endif
     {% elif lhs == "Field3D" %}
       {{out.name}}.setRegion({{lhs.name}}.getRegionID());
+      {% if rhs == "BoutReal" %}
+#if BOUT_USE_FCI_AUTOMAGIC
+      if ({{lhs.name}}.isFci() and {{lhs.name}}.hasParallelSlices()) {
+        {{out.name}}.splitParallelSlices();
+	for (size_t i{0} ; i < {{lhs.name}}.numberParallelSlices() ; ++i) {
+          {{out.name}}.yup(i) = {{lhs.name}}.yup(i) {{operator}} {{rhs.name}};
+          {{out.name}}.ydown(i) = {{lhs.name}}.ydown(i) {{operator}} {{rhs.name}};
+        }
+      }
+#endif
+      {% endif %}
     {% elif rhs == "Field3D" %}
       {{out.name}}.setRegion({{rhs.name}}.getRegionID());
+      {% if lhs == "BoutReal" %}
+#if BOUT_USE_FCI_AUTOMAGIC
+      if ({{rhs.name}}.isFci() and {{rhs.name}}.hasParallelSlices()) {
+        {{out.name}}.splitParallelSlices();
+	for (size_t i{0} ; i < {{rhs.name}}.numberParallelSlices() ; ++i) {
+          {{out.name}}.yup(i) = {{lhs.name}} {{operator}} {{rhs.name}}.yup(i);
+          {{out.name}}.ydown(i) = {{lhs.name}} {{operator}} {{rhs.name}}.ydown(i);
+        }
+      }
+#endif
+      {% endif %}
     {% endif %}
   {% endif %}
 
@@ -91,6 +113,7 @@
     {% if (lhs == "Field3D") %}
       // Delete existing parallel slices. We don't copy parallel slices, so any
       // that currently exist will be incorrect.
+      {% if (rhs == "Field3D" or rhs == "BoutReal") %}
 #if BOUT_USE_FCI_AUTOMAGIC
       if (this->isFci() and this->hasParallelSlices() {% if rhs == "Field3D" %} and {{rhs.name}}.hasParallelSlices() {% endif %}) {
 	for (size_t i{0} ; i < yup_fields.size() ; ++i) {
@@ -99,6 +122,7 @@
         }
       } else
 #endif
+      {% endif %}
       {
         clearParallelSlices();
       }
