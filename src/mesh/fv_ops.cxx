@@ -77,7 +77,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
   const auto a_slice = makeslices(fci, a);
 
   // Only in 3D case with FCI do the metrics have parallel slices
-  const bool metric_fci = fci and bout::build::use_metric_3d;
+  const bool metric_fci = a.isFci() and bout::build::use_metric_3d;
   const auto g23 = makeslices(metric_fci, coord->g23);
   const auto g_23 = makeslices(metric_fci, coord->g_23);
   const auto J = makeslices(metric_fci, coord->J);
