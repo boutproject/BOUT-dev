@@ -146,6 +146,7 @@ BOUT_HOST_DEVICE Field3D* Field3D::timeDeriv() {
 
 void Field3D::splitParallelSlices() {
   TRACE("Field3D::splitParallelSlices");
+  ASSERT2(allow_parallel_slices);
 
   if (hasParallelSlices()) {
     return;
@@ -172,6 +173,7 @@ void Field3D::clearParallelSlices() {
 
 const Field3D& Field3D::ynext(int dir) const {
 #if CHECK > 0
+  ASSERT2(allow_parallel_slices);
   // Asked for more than yguards
   if (std::abs(dir) > fieldmesh->ystart) {
     throw BoutException(
@@ -351,6 +353,7 @@ Field3D& Field3D::operator=(const BoutReal val) {
 }
 
 Field3D& Field3D::calcParallelSlices() {
+  ASSERT2(allow_parallel_slices);
   getCoordinates()->getParallelTransform().calcParallelSlices(*this);
 #if BOUT_USE_FCI_AUTOMAGIC
   if (this->isFci()) {
