@@ -346,6 +346,8 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
+  const auto region2 = fmt::format("RGN_YPAR_{:+d}", y_offset);
+
 #if USE_NEW_WEIGHTS
 #ifdef HS_USE_PETSC
   BoutReal* ptr;
@@ -355,7 +357,6 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
   VecRestoreArray(rhs, &ptr);
   MatMult(petscWeights, rhs, result);
   VecGetArrayRead(result, &cptr);
-  const auto region2 = y_offset == 0 ? region : fmt::format("RGN_YPAR_{:+d}", y_offset);
   BOUT_FOR(i, f.getRegion(region2)) {
     f_interp[i] = cptr[int(i)];
     ASSERT2(std::isfinite(cptr[int(i)]));
@@ -375,11 +376,10 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
     }
   }
 #endif
-  return f_interp;
 #else
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
-  const auto region2 = fmt::format("RGN_YPAR_{:+d}", y_offset);
+
   // f has been communcated, and thus we can assume that the x-boundaries are
   // also valid in the y-boundary.  Thus the differentiated field needs no
   // extra comms.
@@ -418,8 +418,10 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
     ASSERT2(std::isfinite(f_interp[iyp]) || i.x() < localmesh->xstart
             || i.x() > localmesh->xend);
   }
-  return f_interp;
 #endif
+  f_interp.setRegion(region2);
+  ASSERT2(f_interp.getRegionID());
+  return f_interp;
 }
 
 Field3D XZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_x,
