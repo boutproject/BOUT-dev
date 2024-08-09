@@ -202,6 +202,3 @@ void BoundaryRegionYUp::nextY() {
 bool BoundaryRegionYUp::isDone() {
   return (x > xe) || (y >= localmesh->LocalNy); // Return true if gone out of the boundary
 }
-
-BoundaryRegionIter BoundaryRegion::begin() { return BoundaryRegionIter(this, false); }
-BoundaryRegionIter BoundaryRegion::end() { return BoundaryRegionIter(this, true); }
