@@ -176,7 +176,9 @@ void Field3D::splitParallelSlices() {
     // Note the fields constructed here will be fully overwritten by the
     // ParallelTransform, so we don't need a full constructor
     yup_fields.emplace_back(fieldmesh);
+    yup_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", i + 1));
     ydown_fields.emplace_back(fieldmesh);
+    yup_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", -i - 1));
   }
 }
 
