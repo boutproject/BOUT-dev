@@ -2164,7 +2164,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       } else {
         throw BoutException("Unrecognized location");
       }
-    } else {
+    } else { // loc == CELL_CENTRE
       for (; !bndry->isDone(); bndry->next1d()) {
 #if BOUT_USE_METRIC_3D
         for (int zk = 0; zk < mesh->LocalNz; zk++) {
