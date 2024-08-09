@@ -1611,6 +1611,12 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
     return Bxy * Grad_par(f / Bxy_floc, outloc, method);
   }
 
+#if BOUT_USE_FCI_AUTOMAGIC
+  if (!Bxy_floc.hasParallelSlices()) {
+    localmesh->communicate(Bxy_floc);
+    Bxy_floc.applyParallelBoundary("parallel_neumann_o2");
+  }
+#endif
   // Need to modify yup and ydown fields
   Field3D f_B = f / Bxy_floc;
   f_B.splitParallelSlices();
