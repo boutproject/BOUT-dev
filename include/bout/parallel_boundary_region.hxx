@@ -82,7 +82,7 @@ public:
     return f(0, ind()) * (1 + length()) - f(-dir, ind().yp(-dir)) * length();
   }
 
-  inline BoutReal interpolate_sheath(const Field3D& f) const {
+  inline BoutReal interpolate_sheath_o1(const Field3D& f) const {
     return f[ind()] * (1 - length()) + ynext(f) * length();
   }
 
