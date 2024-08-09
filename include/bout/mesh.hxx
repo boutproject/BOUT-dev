@@ -636,6 +636,19 @@ public:
     return inserted.first->second;
   }
 
+  std::shared_ptr<Coordinates>
+  getCoordinatesConst(const CELL_LOC location = CELL_CENTRE) const {
+    ASSERT1(location != CELL_DEFAULT);
+    ASSERT1(location != CELL_VSHIFT);
+
+    auto found = coords_map.find(location);
+    if (found != coords_map.end()) {
+      // True branch most common, returns immediately
+      return found->second;
+    }
+    throw BoutException("Coordinates not yet set. Use non-const version!");
+  }
+
   /// Returns the non-CELL_CENTRE location
   /// allowed as a staggered location
   CELL_LOC getAllowedStaggerLoc(DIRECTION direction) const {
