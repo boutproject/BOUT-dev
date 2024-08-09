@@ -69,7 +69,6 @@ public:
 
   inline bool& operator[](const Ind3D& i) { return mask[i]; }
   inline const bool& operator[](const Ind3D& i) const { return mask[i]; }
-  inline bool& operator[](const Ind3D& i) { return mask[i]; }
 };
 
 inline std::unique_ptr<Region<Ind3D>> regionFromMask(const BoutMask& mask,

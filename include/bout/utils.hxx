@@ -361,13 +361,6 @@ public:
     ASSERT2(0 <= i.ind && i.ind < n1 * n2 * n3);
     return data[i.ind];
   }
-  T& operator[](Ind3D i) {
-    // ny and nz are private :-(
-    // ASSERT2(i.nz == n3);
-    // ASSERT2(i.ny == n2);
-    ASSERT2(0 <= i.ind && i.ind < n1 * n2 * n3);
-    return data[i.ind];
-  }
 
   T& operator[](Ind3D i) {
     // ny and nz are private :-(
