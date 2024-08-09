@@ -181,6 +181,9 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& star
 
     bout::OptionsIO::create(outname)->write(debug);
     MPI_Barrier(BoutComm::get());
+    for (auto& f : f3d) {
+      f.F_var->disableTracking();
+    }
   }
   save_derivs(std::begin(result));
 
