@@ -456,23 +456,27 @@ void Field3D::setBoundaryTo(const Field3D& f3d) {
     if (fieldmesh->firstX()) {
       for (int jy = fieldmesh->ystart; jy <= fieldmesh->yend; ++jy) {
         for (int jz = 0; jz < fieldmesh->LocalNz; jz++) {
-          BoutReal val = 0.5 * (f3d(fieldmesh->xstart, jy, jz) + f3d(fieldmesh->xstart - 1, jy, jz));
-          (*this)(fieldmesh->xstart - 1, jy, jz) = 2. * val - (*this)(fieldmesh->xstart, jy, jz);
+          BoutReal val =
+              0.5 * (f3d(fieldmesh->xstart, jy, jz) + f3d(fieldmesh->xstart - 1, jy, jz));
+          (*this)(fieldmesh->xstart - 1, jy, jz) =
+              2. * val - (*this)(fieldmesh->xstart, jy, jz);
         }
       }
     }
     if (fieldmesh->lastX()) {
       for (int jy = fieldmesh->ystart; jy <= fieldmesh->yend; ++jy) {
         for (int jz = 0; jz < fieldmesh->LocalNz; jz++) {
-          BoutReal val = 0.5 * (f3d(fieldmesh->xend, jy, jz) + f3d(fieldmesh->xend + 1, jy, jz));
-          (*this)(fieldmesh->xend + 1, jy, jz) = 2. * val - (*this)(fieldmesh->xend, jy, jz);
+          BoutReal val =
+              0.5 * (f3d(fieldmesh->xend, jy, jz) + f3d(fieldmesh->xend + 1, jy, jz));
+          (*this)(fieldmesh->xend + 1, jy, jz) =
+              2. * val - (*this)(fieldmesh->xend, jy, jz);
         }
       }
     }
   }
 
   // Y boundaries
-  
+
   if (f3d.hasParallelSlices()) {
     // Argument has parallel slices, so this field must as well.
     ASSERT1(hasParallelSlices());
@@ -497,21 +501,27 @@ void Field3D::setBoundaryTo(const Field3D& f3d) {
     clearParallelSlices();
 
     // Shift into field-aligned coordinates to apply Y boundary conditions.
-    
+
     const Field3D f3d_fa = toFieldAligned(f3d);
     (*this) = toFieldAligned(*this);
-    
+
     for (RangeIterator r = fieldmesh->iterateBndryLowerY(); !r.isDone(); r++) {
       for (int jz = 0; jz < fieldmesh->LocalNz; jz++) {
-        BoutReal val = 0.5 * (f3d_fa(r.ind, fieldmesh->ystart, jz) + f3d_fa(r.ind, fieldmesh->ystart - 1, jz));
-        (*this)(r.ind, fieldmesh->ystart - 1, jz) = 2. * val - (*this)(r.ind, fieldmesh->ystart, jz);
+        BoutReal val = 0.5
+                       * (f3d_fa(r.ind, fieldmesh->ystart, jz)
+                          + f3d_fa(r.ind, fieldmesh->ystart - 1, jz));
+        (*this)(r.ind, fieldmesh->ystart - 1, jz) =
+            2. * val - (*this)(r.ind, fieldmesh->ystart, jz);
       }
     }
 
     for (RangeIterator r = fieldmesh->iterateBndryUpperY(); !r.isDone(); r++) {
       for (int jz = 0; jz < fieldmesh->LocalNz; jz++) {
-        BoutReal val = 0.5 * (f3d_fa(r.ind, fieldmesh->yend, jz) + f3d_fa(r.ind, fieldmesh->yend + 1, jz));
-        (*this)(r.ind, fieldmesh->yend + 1, jz) = 2. * val - (*this)(r.ind, fieldmesh->yend, jz);
+        BoutReal val = 0.5
+                       * (f3d_fa(r.ind, fieldmesh->yend, jz)
+                          + f3d_fa(r.ind, fieldmesh->yend + 1, jz));
+        (*this)(r.ind, fieldmesh->yend + 1, jz) =
+            2. * val - (*this)(r.ind, fieldmesh->yend, jz);
       }
     }
 
