@@ -485,6 +485,11 @@ public:
   /// This uses 2nd order central differences to set the value
   /// on the boundary to the value on the boundary in field \p f3d.
   /// Note: does not just copy values in boundary region.
+  ///
+  /// - If f3d has parallel slices then this field must also have them.
+  /// - If f3d has no parallel slices then this field's parallel slices
+  ///   (if any) will be cleared, and to/fromFieldAligned will be used
+  ///   to set parallel boundary conditions.
   void setBoundaryTo(const Field3D& f3d);
 
   void applyParallelBoundary() override;
