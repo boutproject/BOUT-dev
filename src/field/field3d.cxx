@@ -456,40 +456,36 @@ void Field3D::setBoundaryTo(const Field3D& f3d) {
     if (fieldmesh->firstX()) {
       for (int jy = fieldmesh->ystart; jy <= fieldmesh->yend; ++jy) {
         for (int jz = 0; jz < fieldmesh->LocalNz; jz++) {
-          BoutReal val = 0.5 * (f3d(fieldmesh->xstart, jy, jz) + f3d(fieldmesh->xstart - 1, jy, jz));
-          (*this)(fieldmesh->xstart - 1, jy, jz) = 2. * val - (*this)(fieldmesh->xstart, jy, jz);
+          BoutReal const val =
+	    0.5 * (f3d(fieldmesh->xstart, jy, jz) + f3d(fieldmesh->xstart - 1, jy, jz));
+          (*this)(fieldmesh->xstart - 1, jy, jz) =
+              2. * val - (*this)(fieldmesh->xstart, jy, jz);
         }
       }
     }
     if (fieldmesh->lastX()) {
       for (int jy = fieldmesh->ystart; jy <= fieldmesh->yend; ++jy) {
         for (int jz = 0; jz < fieldmesh->LocalNz; jz++) {
-          BoutReal val = 0.5 * (f3d(fieldmesh->xend, jy, jz) + f3d(fieldmesh->xend + 1, jy, jz));
-          (*this)(fieldmesh->xend + 1, jy, jz) = 2. * val - (*this)(fieldmesh->xend, jy, jz);
-        }
+	  BoutReal val =
+            0.5 * (f3d(fieldmesh->xend, jy, jz) + f3d(fieldmesh->xend + 1, jy, jz));
+	  (*this)(fieldmesh->xend + 1, jy, jz) =
+            2. * val - (*this)(fieldmesh->xend, jy, jz);
+	}
       }
     }
   }
 
   // Y boundaries
-  
+
   if (f3d.hasParallelSlices()) {
     // Argument has parallel slices, so this field must as well.
     ASSERT1(hasParallelSlices());
 
     for (auto& bndry : fieldmesh->getBoundariesPar()) {
-      const Field3D& f3d_next = f3d.ynext(bndry->dir);
-      Field3D& this_next = ynext(bndry->dir);
-
-      for (bndry->first(); !bndry->isDone(); bndry->next()) {
-        const int x = bndry->x;
-        const int y = bndry->y;
-        const int z = bndry->z;
-        BoutReal val = 0.5 * (f3d(x, y, z) + f3d_next(x, y, z));
-        this_next(x, y, z) = 2. * val - (*this)(x, y, z);
+      for (bndry->first(); bndry->isDone(); bndry->next()) {
+        bndry->dirichlet_o1(*this, 0.5 * (f3d[bndry->ind()] + bndry->ynext(f3d)));
       }
     }
-
   } else {
     // Argument does not have parallel slices
     // Make sure that this field also doesn't have them because in that case
@@ -497,21 +493,26 @@ void Field3D::setBoundaryTo(const Field3D& f3d) {
     clearParallelSlices();
 
     // Shift into field-aligned coordinates to apply Y boundary conditions.
-    
+
     const Field3D f3d_fa = toFieldAligned(f3d);
-    (*this) = toFieldAligned(*this);
-    
+
     for (RangeIterator r = fieldmesh->iterateBndryLowerY(); !r.isDone(); r++) {
       for (int jz = 0; jz < fieldmesh->LocalNz; jz++) {
-        BoutReal val = 0.5 * (f3d_fa(r.ind, fieldmesh->ystart, jz) + f3d_fa(r.ind, fieldmesh->ystart - 1, jz));
-        (*this)(r.ind, fieldmesh->ystart - 1, jz) = 2. * val - (*this)(r.ind, fieldmesh->ystart, jz);
+	BoutReal val = 0.5
+	  * (f3d_fa(r.ind, fieldmesh->ystart, jz)
+	     + f3d_fa(r.ind, fieldmesh->ystart - 1, jz));
+	(*this)(r.ind, fieldmesh->ystart - 1, jz) =
+          2. * val - (*this)(r.ind, fieldmesh->ystart, jz);
       }
     }
 
     for (RangeIterator r = fieldmesh->iterateBndryUpperY(); !r.isDone(); r++) {
       for (int jz = 0; jz < fieldmesh->LocalNz; jz++) {
-        BoutReal val = 0.5 * (f3d_fa(r.ind, fieldmesh->yend, jz) + f3d_fa(r.ind, fieldmesh->yend + 1, jz));
-        (*this)(r.ind, fieldmesh->yend + 1, jz) = 2. * val - (*this)(r.ind, fieldmesh->yend, jz);
+	BoutReal val =
+          0.5
+          * (f3d_fa(r.ind, fieldmesh->yend, jz) + f3d_fa(r.ind, fieldmesh->yend + 1, jz));
+	(*this)(r.ind, fieldmesh->yend + 1, jz) =
+          2. * val - (*this)(r.ind, fieldmesh->yend, jz);
       }
     }
 
