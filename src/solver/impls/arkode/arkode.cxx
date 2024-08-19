@@ -74,11 +74,14 @@ ArkodeSolver::ArkodeSolver(Options* opts)
       mxsteps((*options)["mxstep"]
                   .doc("Maximum number of steps to take between outputs")
                   .withDefault(500)),
-      imex((*options)["imex"].doc("Use ImEx capability").withDefault(true)),
+      treatment((*options)["treatment"]
+                    .doc("Use default capability (imex) or provide a specific treatment: implicit or explicit")
+                    .withDefault("")),
+      imex((*options)["imex"].doc("Use ImEx capability").withDefault(false)),
       solve_explicit(
-          (*options)["explicit"].doc("Solve only explicit part").withDefault(true)),
+          (*options)["explicit"].doc("Solve only explicit part").withDefault(false)),
       solve_implicit(
-          (*options)["implicit"].doc("Solve only implicit part").withDefault(true)),
+          (*options)["implicit"].doc("Solve only implicit part").withDefault(false)),      
       set_linear(
           (*options)["set_linear"]
               .doc("Use linear implicit solver (only evaluates jacobian inversion once)")
@@ -194,16 +197,23 @@ int ArkodeSolver::init() {
 
   // Put the variables into uvec
   save_vars(N_VGetArrayPointer(uvec));
-
-  ASSERT1(imex or solve_explicit or solve_implicit);
-
-  if(imex or (solve_explicit and solve_implicit))
+  
+  if(treatment == "")
   {
-    imex = true;
+    if(imex or (solve_explicit and solve_implicit)) {treatment = "imex";}
+    else if (solve_explicit) {treatment = "explicit";}
+    else if (solve_implicit) {treatment = "implicit";}
+    else {treatment = "imex";}
+  }
+
+  ASSERT1(treatment == "imex" or treatment == "implicit" or treatment == "explicit");
+
+  if(treatment == "imex")
+  {
     arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs_explicit, arkode_rhs_implicit,
                                     simtime, uvec);    
   }
-  else if (solve_explicit)
+  else if (treatment == "explicit")
   {
     arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs, nullptr,
                                     simtime, uvec);    
@@ -217,12 +227,12 @@ int ArkodeSolver::init() {
     throw BoutException("ARKStepCreate failed\n");
   }  
 
-  if (imex) {
+  if (treatment == "imex") {
     output_info.write("\tUsing ARKode ImEx solver \n");
     if (ARKStepSetImEx(arkode_mem) != ARK_SUCCESS) {
       throw BoutException("ARKStepSetImEx failed\n");
     }
-  } else if (solve_explicit) {
+  } else if (treatment == "explicit") {
     output_info.write("\tUsing ARKStep Explicit solver \n");
     if (ARKStepSetExplicit(arkode_mem) != ARK_SUCCESS) {
       throw BoutException("ARKStepSetExplicit failed\n");
@@ -371,7 +381,7 @@ int ArkodeSolver::init() {
     }
   }
 
-  if (imex or solve_implicit)
+  if (treatment == "imex" or treatment == "implicit")
   {
     if (fixed_point) {
       output.write("\tUsing accelerated fixed point solver\n");
@@ -501,7 +511,7 @@ int ArkodeSolver::run() {
     ARKStepGetNumRhsEvals(arkode_mem, &temp_long_int, &temp_long_int2);
     nfe_evals = int(temp_long_int);
     nfi_evals = int(temp_long_int2);
-    if(imex or solve_implicit)
+    if (treatment == "imex" or treatment == "implicit")
     {
       ARKStepGetNumNonlinSolvIters(arkode_mem, &temp_long_int);
       nniters = int(temp_long_int);
@@ -515,7 +525,7 @@ int ArkodeSolver::run() {
       output.write("\nARKODE: nsteps {:d}, nfe_evals {:d}, nfi_evals {:d}, nniters {:d}, "
                    "npevals {:d}, nliters {:d}\n",
                    nsteps, nfe_evals, nfi_evals, nniters, npevals, nliters);
-      if(imex or solve_implicit)
+      if (treatment == "imex" or treatment == "implicit")
       {
         output.write("    -> Newton iterations per step: {:e}\n",
                     static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));

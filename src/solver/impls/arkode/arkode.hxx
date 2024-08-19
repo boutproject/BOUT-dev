@@ -93,6 +93,8 @@ private:
 
   /// Maximum number of steps to take between outputs
   int mxsteps;
+  /// Name of the integrator treatment, imex, implicit or explicit
+  std::string treatment;
   /// Use ImEx capability
   bool imex;
   /// Solve only explicit part
