@@ -489,7 +489,7 @@ void Field3D::setBoundaryTo(const Field3D& f3d) {
         const int x = bndry->x;
         const int y = bndry->y;
         const int z = bndry->z;
-        BoutReal val = 0.5 * (f3d(x, y, z) + f3d_next(x, y, z));
+        BoutReal val = 0.5 * (f3d(x, y, z) + f3d_next(x, y+bndr->dir, z));
         this_next(x, y, z) = 2. * val - (*this)(x, y, z);
       }
     }
