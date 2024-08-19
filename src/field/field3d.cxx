@@ -503,7 +503,7 @@ void Field3D::setBoundaryTo(const Field3D& f3d) {
     // Shift into field-aligned coordinates to apply Y boundary conditions.
 
     const Field3D f3d_fa = toFieldAligned(f3d);
-    (*this) = toFieldAligned(*this);
+        BoutReal const val = 0.5 * (f3d_fa(r.ind, fieldmesh->ystart, jz) + f3d_fa(r.ind, fieldmesh->ystart - 1, jz));
 
     for (RangeIterator r = fieldmesh->iterateBndryLowerY(); !r.isDone(); r++) {
       for (int jz = 0; jz < fieldmesh->LocalNz; jz++) {
