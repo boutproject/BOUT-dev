@@ -464,7 +464,7 @@ void Field3D::setBoundaryTo(const Field3D& f3d) {
       }
     }
     if (fieldmesh->lastX()) {
-      for (int jy = fieldmesh->ystart; jy <= fieldmesh->yend; ++jy) {
+          BoutReal const val = 0.5 * (f3d(fieldmesh->xend, jy, jz) + f3d(fieldmesh->xend + 1, jy, jz));
         for (int jz = 0; jz < fieldmesh->LocalNz; jz++) {
           BoutReal val =
               0.5 * (f3d(fieldmesh->xend, jy, jz) + f3d(fieldmesh->xend + 1, jy, jz));
