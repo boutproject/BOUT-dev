@@ -218,10 +218,12 @@ int ArkodeSolver::init() {
     arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs, nullptr,
                                     simtime, uvec);    
   }
-  else
+  else if (treatment == "implicit")
   {
     arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, nullptr, arkode_rhs,
                                     simtime, uvec);
+  } else {
+    throw BoutException("Invalid treatment: {}\n", treatment);
   }
   if (arkode_mem == nullptr) {
     throw BoutException("ARKStepCreate failed\n");
