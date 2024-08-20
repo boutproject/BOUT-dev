@@ -206,8 +206,6 @@ int ArkodeSolver::init() {
     else {treatment = "implicit";}
   }
 
-  ASSERT1(treatment == "imex" or treatment == "implicit" or treatment == "explicit");
-
   if(treatment == "imex")
   {
     arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs_explicit, arkode_rhs_implicit,
