@@ -199,7 +199,7 @@ int ArkodeSolver::init() {
   // Put the variables into uvec
   save_vars(N_VGetArrayPointer(uvec));
   
-  if(treatment == "")
+  if(treatment.empty())
   {
     if(imex or (solve_explicit and solve_implicit)) {treatment = "imex";}
     else if (solve_explicit) {treatment = "explicit";}
