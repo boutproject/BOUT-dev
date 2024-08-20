@@ -75,14 +75,15 @@ ArkodeSolver::ArkodeSolver(Options* opts)
                   .doc("Maximum number of steps to take between outputs")
                   .withDefault(500)),
       treatment((*options)["treatment"]
-                    .doc("Use default capability (imex) or provide a specific treatment: implicit or explicit")
+                    .doc("Use default capability (imex) or provide a specific treatment: "
+                         "implicit or explicit")
                     .withDefault("")),
       // TODO: remove imex, explicit, and implicit options. These are deprecated in favor of treatment
       imex((*options)["imex"].doc("Use ImEx capability").withDefault(false)),
       solve_explicit(
           (*options)["explicit"].doc("Solve only explicit part").withDefault(false)),
       solve_implicit(
-          (*options)["implicit"].doc("Solve only implicit part").withDefault(false)),      
+          (*options)["implicit"].doc("Solve only implicit part").withDefault(false)),
       set_linear(
           (*options)["set_linear"]
               .doc("Use linear implicit solver (only evaluates jacobian inversion once)")
@@ -198,34 +199,32 @@ int ArkodeSolver::init() {
 
   // Put the variables into uvec
   save_vars(N_VGetArrayPointer(uvec));
-  
-  if(treatment.empty())
-  {
-    if(imex or (solve_explicit == solve_implicit)) {treatment = "imex";}
-    else if (solve_explicit) {treatment = "explicit";}
-    else {treatment = "implicit";}
+
+  if (treatment.empty()) {
+    if (imex or (solve_explicit == solve_implicit)) {
+      treatment = "imex";
+    } else if (solve_explicit) {
+      treatment = "explicit";
+    } else {
+      treatment = "implicit";
+    }
   }
 
-  if(treatment == "imex")
-  {
-    arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs_explicit, arkode_rhs_implicit,
-                                    simtime, uvec);    
-  }
-  else if (treatment == "explicit")
-  {
-    arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs, nullptr,
-                                    simtime, uvec);    
-  }
-  else if (treatment == "implicit")
-  {
-    arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, nullptr, arkode_rhs,
-                                    simtime, uvec);
+  if (treatment == "imex") {
+    arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs_explicit,
+                                    arkode_rhs_implicit, simtime, uvec);
+  } else if (treatment == "explicit") {
+    arkode_mem =
+        callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs, nullptr, simtime, uvec);
+  } else if (treatment == "implicit") {
+    arkode_mem =
+        callWithSUNContext(ARKStepCreate, suncontext, nullptr, arkode_rhs, simtime, uvec);
   } else {
     throw BoutException("Invalid treatment: {}\n", treatment);
   }
   if (arkode_mem == nullptr) {
     throw BoutException("ARKStepCreate failed\n");
-  }  
+  }
 
   if (treatment == "imex") {
     output_info.write("\tUsing ARKode ImEx solver \n");
@@ -381,8 +380,7 @@ int ArkodeSolver::init() {
     }
   }
 
-  if (treatment == "imex" or treatment == "implicit")
-  {
+  if (treatment == "imex" or treatment == "implicit") {
     if (fixed_point) {
       output.write("\tUsing accelerated fixed point solver\n");
       nonlinear_solver = callWithSUNContext(SUNNonlinSol_FixedPoint, suncontext, uvec, 3);
@@ -410,7 +408,8 @@ int ArkodeSolver::init() {
         if (hasPreconditioner()) {
           output.write("\tUsing user-supplied preconditioner\n");
 
-          if (ARKStepSetPreconditioner(arkode_mem, nullptr, arkode_pre) != ARKLS_SUCCESS) {
+          if (ARKStepSetPreconditioner(arkode_mem, nullptr, arkode_pre)
+              != ARKLS_SUCCESS) {
             throw BoutException("ARKStepSetPreconditioner failed\n");
           }
         } else {
@@ -459,7 +458,7 @@ int ArkodeSolver::init() {
     }
 
     /// Set Jacobian-vector multiplication function
-    
+
     if (use_jacobian and hasJacobian()) {
       output.write("\tUsing user-supplied Jacobian function\n");
 
@@ -467,7 +466,7 @@ int ArkodeSolver::init() {
         throw BoutException("ARKStepSetJacTimes failed\n");
       }
     } else {
-    output.write("\tUsing difference quotient approximation for Jacobian\n");
+      output.write("\tUsing difference quotient approximation for Jacobian\n");
     }
   }
 
@@ -511,8 +510,7 @@ int ArkodeSolver::run() {
     ARKStepGetNumRhsEvals(arkode_mem, &temp_long_int, &temp_long_int2);
     nfe_evals = int(temp_long_int);
     nfi_evals = int(temp_long_int2);
-    if (treatment == "imex" or treatment == "implicit")
-    {
+    if (treatment == "imex" or treatment == "implicit") {
       ARKStepGetNumNonlinSolvIters(arkode_mem, &temp_long_int);
       nniters = int(temp_long_int);
       ARKStepGetNumPrecEvals(arkode_mem, &temp_long_int);
@@ -525,14 +523,13 @@ int ArkodeSolver::run() {
       output.write("\nARKODE: nsteps {:d}, nfe_evals {:d}, nfi_evals {:d}, nniters {:d}, "
                    "npevals {:d}, nliters {:d}\n",
                    nsteps, nfe_evals, nfi_evals, nniters, npevals, nliters);
-      if (treatment == "imex" or treatment == "implicit")
-      {
+      if (treatment == "imex" or treatment == "implicit") {
         output.write("    -> Newton iterations per step: {:e}\n",
-                    static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
+                     static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
         output.write("    -> Linear iterations per Newton iteration: {:e}\n",
-                    static_cast<BoutReal>(nliters) / static_cast<BoutReal>(nniters));
+                     static_cast<BoutReal>(nliters) / static_cast<BoutReal>(nniters));
         output.write("    -> Preconditioner evaluations per Newton: {:e}\n",
-                    static_cast<BoutReal>(npevals) / static_cast<BoutReal>(nniters));
+                     static_cast<BoutReal>(npevals) / static_cast<BoutReal>(nniters));
       }
     }
 
@@ -833,4 +830,3 @@ void ArkodeSolver::loop_abstol_values_op(Ind2D UNUSED(i2d), BoutReal* abstolvec_
 }
 
 #endif
-
