@@ -201,10 +201,9 @@ int ArkodeSolver::init() {
   
   if(treatment.empty())
   {
-    if(imex or (solve_explicit and solve_implicit)) {treatment = "imex";}
+    if(imex or (solve_explicit == solve_implicit)) {treatment = "imex";}
     else if (solve_explicit) {treatment = "explicit";}
-    else if (solve_implicit) {treatment = "implicit";}
-    else {treatment = "imex";}
+    else {treatment = "implicit";}
   }
 
   ASSERT1(treatment == "imex" or treatment == "implicit" or treatment == "explicit");
