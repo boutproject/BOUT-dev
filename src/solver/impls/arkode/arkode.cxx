@@ -77,6 +77,7 @@ ArkodeSolver::ArkodeSolver(Options* opts)
       treatment((*options)["treatment"]
                     .doc("Use default capability (imex) or provide a specific treatment: implicit or explicit")
                     .withDefault("")),
+      // TODO: remove imex, explicit, and implicit options. These are deprecated in favor of treatment
       imex((*options)["imex"].doc("Use ImEx capability").withDefault(false)),
       solve_explicit(
           (*options)["explicit"].doc("Solve only explicit part").withDefault(false)),
