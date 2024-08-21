@@ -124,7 +124,7 @@ public:
   static BoutException SNESFailure(SNES& snes);
 
 private:
-  static int count;   ///< How many instances?
+  static int count; ///< How many instances?
 
   // Command-line arguments
   static int* pargc;

@@ -28,7 +28,7 @@
 #ifndef __SUNDIAL_SOLVER_H__
 #define __SUNDIAL_SOLVER_H__
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/solver.hxx"
 
 #if not BOUT_HAS_CVODE
@@ -41,11 +41,10 @@ RegisterUnavailableSolver
 #else
 
 #include "bout/bout_types.hxx"
+#include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
 
-#include <nvector/nvector_parallel.h>
-#include <sundials/sundials_config.h>
-
+#include <string>
 #include <vector>
 
 class CvodeSolver;
@@ -58,7 +57,7 @@ RegisterSolver<CvodeSolver> registersolvercvode("cvode");
 class CvodeSolver : public Solver {
 public:
   explicit CvodeSolver(Options* opts = nullptr);
-  ~CvodeSolver();
+  ~CvodeSolver() override;
 
   BoutReal getCurrentTimestep() override { return hcur; }
 
