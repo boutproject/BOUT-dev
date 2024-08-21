@@ -187,14 +187,12 @@ public:
 
   const int dir;
 
-private:
-  constexpr static BoutReal small_value = 1e-2;
-
-  // BoutReal get(const Field3D& f, int off)
   const BoutReal& ynext(const Field3D& f) const { return f.ynext(dir)[ind().yp(dir)]; }
   BoutReal& ynext(Field3D& f) const { return f.ynext(dir)[ind().yp(dir)]; }
   const BoutReal& yprev(const Field3D& f) const { return f.ynext(-dir)[ind().yp(-dir)]; }
   BoutReal& yprev(Field3D& f) const { return f.ynext(-dir)[ind().yp(-dir)]; }
+private:
+  constexpr static BoutReal small_value = 1e-2;
   static Ind3D xyz2ind(int x, int y, int z, Mesh* mesh) {
     const int ny = mesh->LocalNy;
     const int nz = mesh->LocalNz;
