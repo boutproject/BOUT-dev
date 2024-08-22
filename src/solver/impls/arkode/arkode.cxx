@@ -4,9 +4,7 @@
  * NOTE: ARKode is still in beta testing so use with cautious optimism
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
- *
- * Contact: Nick Walkden, nick.walkden@ccfe.ac.uk
+ * Copyright 2010-2024 BOUT++ contributors
  *
  * This file is part of BOUT++.
  *
@@ -32,6 +30,7 @@
 #if BOUT_HAS_ARKODE
 
 #include "bout/boutcomm.hxx"
+#include "bout/bout_enum_class.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
@@ -75,15 +74,9 @@ ArkodeSolver::ArkodeSolver(Options* opts)
                   .doc("Maximum number of steps to take between outputs")
                   .withDefault(500)),
       treatment((*options)["treatment"]
-                    .doc("Use default capability (imex) or provide a specific treatment: "
+                .doc("Use default capability (imex) or provide a specific treatment: "
                          "implicit or explicit")
-                    .withDefault("")),
-      // TODO: remove imex, explicit, and implicit options. These are deprecated in favor of treatment
-      imex((*options)["imex"].doc("Use ImEx capability").withDefault(false)),
-      solve_explicit(
-          (*options)["explicit"].doc("Solve only explicit part").withDefault(false)),
-      solve_implicit(
-          (*options)["implicit"].doc("Solve only implicit part").withDefault(false)),
+                .withDefault(Treatment::IMEX)),
       set_linear(
           (*options)["set_linear"]
               .doc("Use linear implicit solver (only evaluates jacobian inversion once)")
@@ -200,47 +193,47 @@ int ArkodeSolver::init() {
   // Put the variables into uvec
   save_vars(N_VGetArrayPointer(uvec));
 
-  if (treatment.empty()) {
-    if (imex or (solve_explicit == solve_implicit)) {
-      treatment = "imex";
-    } else if (solve_explicit) {
-      treatment = "explicit";
-    } else {
-      treatment = "implicit";
-    }
-  }
-
-  if (treatment == "imex") {
+  switch (treatment) {
+  case Treatment::IMEX:
     arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs_explicit,
                                     arkode_rhs_implicit, simtime, uvec);
-  } else if (treatment == "explicit") {
+    break;
+  case Treatment::Explicit:
     arkode_mem =
         callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs, nullptr, simtime, uvec);
-  } else if (treatment == "implicit") {
+    break;
+  case Treatment::Implicit:
     arkode_mem =
         callWithSUNContext(ARKStepCreate, suncontext, nullptr, arkode_rhs, simtime, uvec);
-  } else {
-    throw BoutException("Invalid treatment: {}\n", treatment);
+    break;
+  default:
+    throw BoutException("Invalid treatment: {}\n", toString(treatment));
   }
   if (arkode_mem == nullptr) {
     throw BoutException("ARKStepCreate failed\n");
   }
 
-  if (treatment == "imex") {
+  switch (treatment) {
+  case Treatment::IMEX:
     output_info.write("\tUsing ARKode ImEx solver \n");
     if (ARKStepSetImEx(arkode_mem) != ARK_SUCCESS) {
       throw BoutException("ARKStepSetImEx failed\n");
     }
-  } else if (treatment == "explicit") {
+    break;
+  case Treatment::Explicit:
     output_info.write("\tUsing ARKStep Explicit solver \n");
     if (ARKStepSetExplicit(arkode_mem) != ARK_SUCCESS) {
       throw BoutException("ARKStepSetExplicit failed\n");
     }
-  } else {
+    break;
+  case Treatment::Implicit:
     output_info.write("\tUsing ARKStep Implicit solver \n");
     if (ARKStepSetImplicit(arkode_mem) != ARK_SUCCESS) {
       throw BoutException("ARKStepSetImplicit failed\n");
     }
+    break;
+  default:
+    throw BoutException("Invalid treatment: {}\n", toString(treatment));
   }
 
   // For callbacks, need pointer to solver object
@@ -380,7 +373,7 @@ int ArkodeSolver::init() {
     }
   }
 
-  if (treatment == "imex" or treatment == "implicit") {
+  if (treatment == Treatment::IMEX or treatment == Treatment::Implicit) {
     if (fixed_point) {
       output.write("\tUsing accelerated fixed point solver\n");
       nonlinear_solver = callWithSUNContext(SUNNonlinSol_FixedPoint, suncontext, uvec, 3);
@@ -510,7 +503,7 @@ int ArkodeSolver::run() {
     ARKStepGetNumRhsEvals(arkode_mem, &temp_long_int, &temp_long_int2);
     nfe_evals = int(temp_long_int);
     nfi_evals = int(temp_long_int2);
-    if (treatment == "imex" or treatment == "implicit") {
+    if (treatment == Treatment::IMEX or treatment == Treatment::Implicit) {
       ARKStepGetNumNonlinSolvIters(arkode_mem, &temp_long_int);
       nniters = int(temp_long_int);
       ARKStepGetNumPrecEvals(arkode_mem, &temp_long_int);
@@ -523,7 +516,7 @@ int ArkodeSolver::run() {
       output.write("\nARKODE: nsteps {:d}, nfe_evals {:d}, nfi_evals {:d}, nniters {:d}, "
                    "npevals {:d}, nliters {:d}\n",
                    nsteps, nfe_evals, nfi_evals, nniters, npevals, nliters);
-      if (treatment == "imex" or treatment == "implicit") {
+      if (treatment == Treatment::IMEX or treatment == Treatment::Implicit) {
         output.write("    -> Newton iterations per step: {:e}\n",
                      static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
         output.write("    -> Linear iterations per Newton iteration: {:e}\n",
