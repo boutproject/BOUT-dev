@@ -16,7 +16,9 @@ class Monitor1dDump : public Monitor {
 public:
   Monitor1dDump(BoutReal timestep, std::string section_name)
       : Monitor(timestep),
-        output_file(bout::OptionsIOFactory::getInstance().createOutput()) {}
+        output_file(bout::OptionsIO::create(
+            {{"file", getCustomOutputName(Options::root()[section_name])},
+             {"append", Options::root()[section_name]["append"].withDefault(false)}})) {}
 
   int call(Solver*, BoutReal _time, int, int) override {
     // This method writes all the diagnostics to a unique file
