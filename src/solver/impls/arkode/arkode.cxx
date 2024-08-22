@@ -29,8 +29,8 @@
 
 #if BOUT_HAS_ARKODE
 
-#include "bout/boutcomm.hxx"
 #include "bout/bout_enum_class.hxx"
+#include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
@@ -74,9 +74,9 @@ ArkodeSolver::ArkodeSolver(Options* opts)
                   .doc("Maximum number of steps to take between outputs")
                   .withDefault(500)),
       treatment((*options)["treatment"]
-                .doc("Use default capability (imex) or provide a specific treatment: "
+                    .doc("Use default capability (imex) or provide a specific treatment: "
                          "implicit or explicit")
-                .withDefault(Treatment::IMEX)),
+                    .withDefault(Treatment::ImEx)),
       set_linear(
           (*options)["set_linear"]
               .doc("Use linear implicit solver (only evaluates jacobian inversion once)")
@@ -97,11 +97,11 @@ ArkodeSolver::ArkodeSolver(Options* opts)
       cfl_frac((*options)["cfl_frac"]
                    .doc("Fraction of the estimated explicitly stable step to use")
                    .withDefault(-1.0)),
-      adap_method((*options)["adap_method"]
-                      .doc("Set timestep adaptivity function: 0 -> PID adaptivity "
-                           "(default); 1 -> PI; 2 -> I; 3 -> explicit Gustafsson; 4 -> "
-                           "implicit Gustafsson; 5 -> ImEx Gustafsson;")
-                      .withDefault(0)),
+      adap_method(
+          (*options)["adap_method"]
+              .doc("Set timestep adaptivity function: pid, pi, i, explicit_gustafsson,  "
+                   "implicit_gustafsson, imex_gustafsson.")
+              .withDefault(AdapMethod::PID)),
       abstol((*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12)),
       reltol((*options)["rtol"].doc("Relative tolerance").withDefault(1.0e-5)),
       use_vector_abstol((*options)["use_vector_abstol"]
@@ -194,7 +194,7 @@ int ArkodeSolver::init() {
   save_vars(N_VGetArrayPointer(uvec));
 
   switch (treatment) {
-  case Treatment::IMEX:
+  case Treatment::ImEx:
     arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs_explicit,
                                     arkode_rhs_implicit, simtime, uvec);
     break;
@@ -214,7 +214,7 @@ int ArkodeSolver::init() {
   }
 
   switch (treatment) {
-  case Treatment::IMEX:
+  case Treatment::ImEx:
     output_info.write("\tUsing ARKode ImEx solver \n");
     if (ARKStepSetImEx(arkode_mem) != ARK_SUCCESS) {
       throw BoutException("ARKStepSetImEx failed\n");
@@ -275,25 +275,24 @@ int ArkodeSolver::init() {
 
 #if SUNDIALS_CONTROLLER_SUPPORT
   switch (adap_method) {
-  case 0:
+  case AdapMethod::PID:
     controller = SUNAdaptController_PID(suncontext);
     break;
-  case 1:
+  case AdapMethod::PI:
     controller = SUNAdaptController_PI(suncontext);
     break;
-  case 2:
+  case AdapMethod::I:
     controller = SUNAdaptController_I(suncontext);
     break;
-  case 3:
+  case AdapMethod::Explicit_Gustafsson:
     controller = SUNAdaptController_ExpGus(suncontext);
     break;
-  case 4:
+  case AdapMethod::Implicit_Gustafsson:
     controller = SUNAdaptController_ImpGus(suncontext);
     break;
-  case 5:
+  case AdapMethod::ImEx_Gustafsson:
     controller = SUNAdaptController_ImExGus(suncontext);
     break;
-
   default:
     throw BoutException("Invalid adap_method\n");
   }
@@ -306,7 +305,33 @@ int ArkodeSolver::init() {
     throw BoutException("ARKStepSetAdaptivityAdjustment failed\n");
   }
 #else
-  if (ARKStepSetAdaptivityMethod(arkode_mem, adap_method, 1, 1, nullptr) != ARK_SUCCESS) {
+  int adap_method_int;
+  // Could cast to underlying integer, but this is more explicit
+  switch (adap_method) {
+  case AdapMethod::PID:
+    adap_method_int = 0;
+    break;
+  case AdapMethod::PI:
+    adap_method_int = 1;
+    break;
+  case AdapMethod::I:
+    adap_method_int = 2;
+    break;
+  case AdapMethod::Explicit_Gustafsson:
+    adap_method_int = 3;
+    break;
+  case AdapMethod::Implicit_Gustafsson:
+    adap_method_int = 4;
+    break;
+  case AdapMethod::ImEx_Gustafsson:
+    adap_method_int = 5;
+    break;
+  default:
+    throw BoutException("Invalid adap_method\n");
+  }
+
+  if (ARKStepSetAdaptivityMethod(arkode_mem, adap_method_int, 1, 1, nullptr)
+      != ARK_SUCCESS) {
     throw BoutException("ARKStepSetAdaptivityMethod failed\n");
   }
 #endif
@@ -373,7 +398,7 @@ int ArkodeSolver::init() {
     }
   }
 
-  if (treatment == Treatment::IMEX or treatment == Treatment::Implicit) {
+  if (treatment == Treatment::ImEx or treatment == Treatment::Implicit) {
     if (fixed_point) {
       output.write("\tUsing accelerated fixed point solver\n");
       nonlinear_solver = callWithSUNContext(SUNNonlinSol_FixedPoint, suncontext, uvec, 3);
@@ -503,7 +528,7 @@ int ArkodeSolver::run() {
     ARKStepGetNumRhsEvals(arkode_mem, &temp_long_int, &temp_long_int2);
     nfe_evals = int(temp_long_int);
     nfi_evals = int(temp_long_int2);
-    if (treatment == Treatment::IMEX or treatment == Treatment::Implicit) {
+    if (treatment == Treatment::ImEx or treatment == Treatment::Implicit) {
       ARKStepGetNumNonlinSolvIters(arkode_mem, &temp_long_int);
       nniters = int(temp_long_int);
       ARKStepGetNumPrecEvals(arkode_mem, &temp_long_int);
@@ -516,7 +541,7 @@ int ArkodeSolver::run() {
       output.write("\nARKODE: nsteps {:d}, nfe_evals {:d}, nfi_evals {:d}, nniters {:d}, "
                    "npevals {:d}, nliters {:d}\n",
                    nsteps, nfe_evals, nfi_evals, nniters, npevals, nliters);
-      if (treatment == Treatment::IMEX or treatment == Treatment::Implicit) {
+      if (treatment == Treatment::ImEx or treatment == Treatment::Implicit) {
         output.write("    -> Newton iterations per step: {:e}\n",
                      static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
         output.write("    -> Linear iterations per Newton iteration: {:e}\n",

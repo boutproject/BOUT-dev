@@ -63,7 +63,11 @@ RegisterSolver<ArkodeSolver> registersolverarkode("arkode");
 
 // enum describing treatment of equations
 // Note: Capitalized because `explicit` is a C++ reserved keyword
-BOUT_ENUM_CLASS(Treatment, IMEX, Implicit, Explicit);
+BOUT_ENUM_CLASS(Treatment, ImEx, Implicit, Explicit);
+
+// Adaptivity method
+BOUT_ENUM_CLASS(AdapMethod, PID, PI, I, Explicit_Gustafsson, Implicit_Gustafsson,
+                ImEx_Gustafsson);
 
 class ArkodeSolver : public Solver {
 public:
@@ -113,14 +117,8 @@ private:
   std::string explicit_table;
   /// Fraction of the estimated explicitly stable step to use
   BoutReal cfl_frac;
-  /// Set timestep adaptivity function:
-  /// - 0: PID adaptivity (default)
-  /// - 1: PI
-  /// - 2: I
-  /// - 3: explicit Gustafsson
-  /// - 4: implicit Gustafsson
-  /// - 5: ImEx Gustafsson
-  int adap_method;
+  /// Timestep adaptivity function
+  AdapMethod adap_method;
   /// Absolute tolerance
   BoutReal abstol;
   /// Relative tolerance
