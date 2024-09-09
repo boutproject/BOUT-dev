@@ -329,6 +329,10 @@ void Options::assign<>(Array<BoutReal> val, std::string source) {
   _set_no_check(std::move(val), std::move(source));
 }
 template <>
+void Options::assign<>(Array<int> val, std::string source) {
+  _set_no_check(std::move(val), std::move(source));
+}
+template <>
 void Options::assign<>(Matrix<BoutReal> val, std::string source) {
   _set_no_check(std::move(val), std::move(source));
 }
@@ -748,6 +752,33 @@ Array<BoutReal> Options::as<Array<BoutReal>>(const Array<BoutReal>& similar_to) 
   value_used = true;
 
   printNameValueSourceLine(*this, "Array<BoutReal>");
+
+  return result;
+}
+
+template <>
+Array<int> Options::as<Array<int>>(const Array<int>& similar_to) const {
+  if (is_section) {
+    throw BoutException(_("Option {:s} has no value"), full_name);
+  }
+
+  Array<int> result = bout::utils::visit(
+      ConvertContainer<Array<int>>{
+          fmt::format(
+              _("Value for option {:s} cannot be converted to an Array<int>"),
+              full_name),
+          similar_to},
+      value);
+
+  // Mark this option as used
+  value_used = true;
+
+  output_info << _("\tOption ") << full_name << " = Array<int>";
+  if (hasAttribute("source")) {
+    // Specify the source of the setting
+    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
+  }
+  output_info << endl;
 
   return result;
 }

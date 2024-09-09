@@ -2117,6 +2117,32 @@ void BoutMesh::topology() {
     add_target(ny_inner - 1, 0, nx);
   }
 
+  // Additional limiters
+  // Each limiter needs 3 indices: A Y index, start and end X indices
+  int limiter_count = 0;
+  Mesh::get(limiter_count, "limiter_count", 0);
+  if (limiter_count > 0) {
+    std::vector<int> limiter_yinds, limiter_xstarts, limiter_xends;
+    if (!source->get(this, limiter_yinds, "limiter_yinds", limiter_count)) {
+      throw BoutException("Couldn't read limiter_yinds vector of length {} from mesh", limiter_count);
+    }
+    if (!source->get(this, limiter_xstarts, "limiter_xstarts", limiter_count)) {
+      throw BoutException("Couldn't read limiter_xstarts vector of length {} from mesh", limiter_count);
+    }
+    if (!source->get(this, limiter_xends, "limiter_xends", limiter_count)) {
+      throw BoutException("Couldn't read limiter_xend vector of length {} from mesh", limiter_count);
+    }
+
+    for (int i = 0; i < limiter_count; ++i) {
+      int yind = limiter_yinds[i];
+      int xstart = limiter_xstarts[i];
+      int xend = limiter_xends[i];
+      output_info.write("Adding a limiter between y={} and {}. X indices {} to {}\n",
+                        yind, yind+1, xstart, xend);
+      add_target(yind, xstart, xend);
+    }
+  }
+
   if ((ixseps_inner > 0)
       && (((PE_YIND * MYSUB > jyseps1_1) && (PE_YIND * MYSUB <= jyseps2_1))
           || ((PE_YIND * MYSUB > jyseps1_2) && (PE_YIND * MYSUB <= jyseps2_2)))) {

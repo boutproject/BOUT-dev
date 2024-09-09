@@ -138,7 +138,8 @@ struct GetDimensions {
   std::vector<int> operator()([[maybe_unused]] int value) { return {1}; }
   std::vector<int> operator()([[maybe_unused]] BoutReal value) { return {1}; }
   std::vector<int> operator()([[maybe_unused]] const std::string& value) { return {1}; }
-  std::vector<int> operator()(const Array<BoutReal>& array) { return {array.size()}; }
+  template<typename T>
+  std::vector<int> operator()(const Array<T>& array) { return {array.size()}; }
   std::vector<int> operator()(const Matrix<BoutReal>& array) {
     const auto shape = array.shape();
     return {std::get<0>(shape), std::get<1>(shape)};
@@ -477,7 +478,26 @@ bool GridFile::get([[maybe_unused]] Mesh* m, [[maybe_unused]] std::vector<int>& 
                    [[maybe_unused]] GridDataSource::Direction dir) {
   TRACE("GridFile::get(vector<int>)");
 
-  return false;
+  if (not data.isSet(name)) {
+    return false;
+  }
+
+  const auto full_var = data[name].as<Array<int>>();
+
+  // Check size
+  if (full_var.size() < len + offset) {
+    throw BoutException("{} has length {}. Expected {} elements + {} offset",
+                        name, full_var.size(), len, offset);
+  }
+
+  // Ensure that output variable has the correct size
+  var.resize(len);
+
+  const auto* it = std::begin(full_var);
+  std::advance(it, offset);
+  std::copy_n(it, len, std::begin(var));
+
+  return true;
 }
 
 bool GridFile::get(Mesh* UNUSED(m), std::vector<BoutReal>& var, const std::string& name,
