@@ -1,22 +1,46 @@
 #!/usr/bin/env python3
+import argparse
 import subprocess
+from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
-import os
-import yaml
+
+from ruamel.yaml import YAML
 from unidecode import unidecode
-from typing import NamedTuple
 
 
-def get_main_directory():
-    return Path(os.path.abspath(__file__)).parent.parent
+@dataclass
+class KnownAuthor:
+    family_names: str
+    given_names: str
+
+
+TOP_DIR = Path(__file__).parent.parent
+CITATION_FILE = TOP_DIR / "CITATION.cff"
+NONHUMAN_AUTHORS = ("github", "dependabot")
+KNOWN_AUTHORS = {
+    "bendudson": KnownAuthor("Dudson", "Benjamin"),
+    "brey": KnownAuthor("Breyiannis", "George"),
+    "David Schwörer": KnownAuthor("Bold", "David"),
+    "dschwoerer": KnownAuthor("Bold", "David"),
+    "hahahasan": KnownAuthor("Muhammed", "Hasan"),
+    "Ilon Joseph - x31405": KnownAuthor("Joseph", "Ilon"),
+    "kangkabseok": KnownAuthor("Kang", "Kab Seok"),
+    "loeiten": KnownAuthor("Løiten", "Michael"),
+    "Michael Loiten Magnussen": KnownAuthor("Løiten", "Michael"),
+    "Maxim Umansky - x26041": KnownAuthor("Umansky", "Maxim"),
+    "nick-walkden": KnownAuthor("Walkden", "Nicholas"),
+    "ZedThree": KnownAuthor("Hill", "Peter"),
+    "tomc271": KnownAuthor("Chapman", "Tom"),
+    "j-b-o": KnownAuthor("Bold", "Jessica"),
+    "BS": KnownAuthor("Brendan", "Shanahan"),
+}
 
 
 def get_authors_from_git():
-    main_directory = get_main_directory()
     output = subprocess.run(
         ["git", "log", "--format='%aN %aE'"],
         capture_output=True,
-        cwd=main_directory,
         check=True,
         text=True,
     )
@@ -26,16 +50,20 @@ def get_authors_from_git():
     authors_without_quotes = [a.strip("'") for a in authors_list]
 
     distinct_authors = set(authors_without_quotes)
-    distinct_authors_list_without_empty_strings = [a for a in distinct_authors if a]
-    authors_with_emails = [
-        a.rsplit(maxsplit=1) for a in distinct_authors_list_without_empty_strings
+    distinct_authors_list_without_empty_strings = [
+        a.rsplit(maxsplit=1) for a in distinct_authors if a
     ]
+    authors_with_emails = defaultdict(list)
+    for author, email in distinct_authors_list_without_empty_strings:
+        authors_with_emails[author].append(email)
+
     return authors_with_emails
 
 
-def parse_cff_file(filename):
-    with open(filename, "r", encoding="UTF-8") as stream:
-        return yaml.safe_load(stream)
+def parse_cff_file():
+    yaml = YAML(typ="rt")
+    with open(CITATION_FILE, "r", encoding="UTF-8") as stream:
+        return yaml.load(stream)
 
 
 def get_authors_from_cff_file():
@@ -174,57 +202,66 @@ def author_found_in_existing_authors(author, existing_authors):
     return False
 
 
+def is_nonhuman(author: str) -> bool:
+    lower_case_author = author.casefold()
+    return any(nonhuman in lower_case_author for nonhuman in NONHUMAN_AUTHORS)
+
+
 def update_citations():
-    nonhuman_authors = [
-        a
-        for a in authors_from_git
-        if "github" in a[0].casefold() or "dependabot" in a[0].casefold()
-    ]
+    authors_from_git = get_authors_from_git()
+    existing_authors = get_authors_from_cff_file()
 
-    known_authors = [a for a in authors_from_git if a[0] in KNOWN_AUTHORS]
+    known_authors = [a for a in authors_from_git if a in KNOWN_AUTHORS]
+    human_authors = {a: e for a, e in authors_from_git.items() if not is_nonhuman(a)}
+    authors_to_search_for = {
+        a: e for a, e in human_authors.items() if a not in known_authors
+    }
 
-    human_authors = [a for a in authors_from_git if a not in nonhuman_authors]
-
-    authors_to_search_for = [a for a in human_authors if a not in known_authors]
-
-    unrecognised_authors = [
-        a
-        for a in authors_to_search_for
-        if not author_found_in_existing_authors(a[0], existing_authors)
-    ]
+    unrecognised_authors = {
+        a: e
+        for a, e in authors_to_search_for.items()
+        if not author_found_in_existing_authors(a, existing_authors)
+    }
 
     if not unrecognised_authors:
         return
 
-    print("The following authors were not recognised. Add to citations?")
+    for author, email in unrecognised_authors.items():
+        print(f"{author} (email(s): {email})")
+
+    while True:
+        reply = (
+            input("\nThe above authors were not recognised. Add to citations? [y/N] ")
+            .lower()
+            .strip()
+        )
+        if not reply or reply[0] == "n":
+            return
+        if reply[0] == "y":
+            break
+
+    new_authors = []
     for author in unrecognised_authors:
-        print(author)
+        first_name, last_name = author.rsplit(maxsplit=1)
+        new_authors.append({"family-names": last_name, "given-names": first_name})
 
+    print(f"Adding new authors:\n{new_authors}")
 
-class KnownAuthor(NamedTuple):
-    family_names: str
-    given_names: str
+    yaml_file = parse_cff_file()
+    yaml_file["authors"].extend(new_authors)
 
+    # Try to preserve indentation and quotes as much as possible
+    yaml = YAML()
+    yaml.indent(mapping=2, sequence=4, offset=2)
+    yaml.preserve_quotes = True
+    with open(CITATION_FILE, "w", encoding="UTF-8") as f:
+        yaml.dump(yaml_file, f)
 
-KNOWN_AUTHORS = {
-    "bendudson": KnownAuthor("Dudson", "Benjamin"),
-    "brey": KnownAuthor("Breyiannis", "George"),
-    "David Schwörer": KnownAuthor("Bold", "David"),
-    "dschwoerer": KnownAuthor("Bold", "David"),
-    "hahahasan": KnownAuthor("Muhammed", "Hasan"),
-    "Ilon Joseph - x31405": KnownAuthor("Joseph", "Ilon"),
-    "kangkabseok": KnownAuthor("Kang", "Kab Seok"),
-    "loeiten": KnownAuthor("Løiten", "Michael"),
-    "Michael Loiten Magnussen": KnownAuthor("Løiten", "Michael"),
-    "Maxim Umansky - x26041": KnownAuthor("Umansky", "Maxim"),
-    "nick-walkden": KnownAuthor("Walkden", "Nicholas"),
-    "ZedThree": KnownAuthor("Hill", "Peter"),
-    "tomc271": KnownAuthor("Chapman", "Tom"),
-    "j-b-o": KnownAuthor("Bold", "Jessica"),
-    "BS": KnownAuthor("Brendan", "Shanahan"),
-}
 
 if __name__ == "__main__":
-    authors_from_git = get_authors_from_git()
-    existing_authors = get_authors_from_cff_file()
+    parser = argparse.ArgumentParser(
+        description="Update CITATIONS.cff based on git authors"
+    )
+    parser.parse_args()
+
     update_citations()
