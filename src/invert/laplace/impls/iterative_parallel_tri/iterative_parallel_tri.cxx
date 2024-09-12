@@ -293,10 +293,8 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
    */
   auto bcmplx = Matrix<dcomplex>(nmode, ncx);
 
-  const bool invert_inner_boundary =
-      isInnerBoundaryFlagSet(INVERT_SET) and localmesh->firstX();
-  const bool invert_outer_boundary =
-      isOuterBoundaryFlagSet(INVERT_SET) and localmesh->lastX();
+  const bool invert_inner_boundary = isInnerBoundaryFlagSetOnFirstX(INVERT_SET);
+  const bool invert_outer_boundary = isOuterBoundaryFlagSetOnLastX(INVERT_SET);
 
   BOUT_OMP_PERF(parallel for)
   for (int ix = 0; ix < ncx; ix++) {
@@ -345,8 +343,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
                  kz,
                  // wave number (different from kz only if we are taking a part
                  // of the z-domain [and not from 0 to 2*pi])
-                 kz * kwaveFactor, global_flags, inner_boundary_flags,
-                 outer_boundary_flags, &A, &C, &D);
+                 kz * kwaveFactor, &A, &C, &D);
 
     // Patch up internal boundaries
     if (not localmesh->lastX()) {

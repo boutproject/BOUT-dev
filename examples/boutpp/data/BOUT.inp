@@ -1,16 +1,9 @@
-nout = 10
-timestep = 0.1
+nout=10
+timestep=10
 
 [mesh]
-n = 1
-nx = n+2*MXG
-ny = n
-nz = n
-dy = 1/n/2/pi
+nx=160
+ny=1
+nz=n/n
 
-MXG = 1
-MYG = 1
-
-[solver]
-rtol = 1e-14
-atol = 1e-18
+MYG=0

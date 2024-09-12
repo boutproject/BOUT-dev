@@ -34,7 +34,7 @@ assert result["int"] == 42
 assert math.isclose(result["real"], 3.1415)
 assert result["string"] == "hello"
 
-print("Checking saved ADIOS test-out file -- Not implemented")
+print("Checking saved ADIOS2 test-out file -- Not implemented")
 
 # Check the output NetCDF file
 # with DataFile("test-out.nc") as f:

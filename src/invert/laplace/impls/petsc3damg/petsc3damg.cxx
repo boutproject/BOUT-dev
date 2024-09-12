@@ -84,12 +84,12 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
 #if CHECK > 0
   // Checking flags are set to something which is not implemented
   // This is done binary (which is possible as each flag is a power of 2)
-  if (flagSet(global_flags, INVERT_4TH_ORDER)) {
+  if (isGlobalFlagSet(INVERT_4TH_ORDER)) {
     output.write("For PETSc based Laplacian inverter, use 'fourth_order=true' instead of "
                  "setting INVERT_4TH_ORDER flag\n");
   }
 
-  if (flagSet(global_flags, ~implemented_flags)) {
+  if (isGlobalFlagSet(~implemented_flags)) {
     throw BoutException("Attempted to set global Laplacian inversion flag that is not "
                         "implemented in petsc_laplace.cxx");
   }
@@ -102,8 +102,8 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
                           name);
     }
   };
-  unimplementedBoundaryFlag(inner_boundary_flags, "inner");
-  unimplementedBoundaryFlag(outer_boundary_flags, "outer");
+  unimplementedBoundaryFlag(getInnerBoundaryFlags(), "inner");
+  unimplementedBoundaryFlag(getOuterBoundaryFlags(), "outer");
   unimplementedBoundaryFlag(lower_boundary_flags, "lower");
   unimplementedBoundaryFlag(upper_boundary_flags, "upper");
 
@@ -119,7 +119,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   }
 
   // Set up boundary conditions in operator
-  const bool inner_X_neumann = flagSet(inner_boundary_flags, INVERT_AC_GRAD);
+  const bool inner_X_neumann = isInnerBoundaryFlagSet(INVERT_AC_GRAD);
   const auto inner_X_BC = inner_X_neumann ? -1. / coords->dx / sqrt(coords->g_11) : 0.5;
   const auto inner_X_BC_plus = inner_X_neumann ? -inner_X_BC : 0.5;
 
@@ -128,7 +128,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
     operator3D(i, i.xp()) = inner_X_BC_plus[i];
   }
 
-  const bool outer_X_neumann = flagSet(outer_boundary_flags, INVERT_AC_GRAD);
+  const bool outer_X_neumann = isOuterBoundaryFlagSet(INVERT_AC_GRAD);
   const auto outer_X_BC = outer_X_neumann ? 1. / coords->dx / sqrt(coords->g_11) : 0.5;
   const auto outer_X_BC_minus = outer_X_neumann ? -outer_X_BC : 0.5;
 
@@ -191,8 +191,8 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
 
   // Adjust vectors to represent boundary conditions and check that
   // boundary cells are finite
-  setBC(rhs, b_in, indexer->getRegionInnerX(), inner_boundary_flags, x0);
-  setBC(rhs, b_in, indexer->getRegionOuterX(), outer_boundary_flags, x0);
+  setBC(rhs, b_in, indexer->getRegionInnerX(), getInnerBoundaryFlags(), x0);
+  setBC(rhs, b_in, indexer->getRegionOuterX(), getOuterBoundaryFlags(), x0);
   setBC(rhs, b_in, indexer->getRegionLowerY(), lower_boundary_flags, x0);
   setBC(rhs, b_in, indexer->getRegionUpperY(), upper_boundary_flags, x0);
 
@@ -460,7 +460,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     KSPSetTolerances(ksp, rtol, atol, dtol, maxits);
 
     // If the initial guess is not set to zero
-    if ((global_flags & INVERT_START_NEW) == 0) {
+    if (!isGlobalFlagSet(INVERT_START_NEW)) {
       KSPSetInitialGuessNonzero(ksp, (PetscBool) true);
     }
 

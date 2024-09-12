@@ -8,7 +8,7 @@
 #include "bout/options.hxx"
 #include "bout/options_io.hxx"
 
-#if !BOUT_HAS_ADIOS
+#if !BOUT_HAS_ADIOS2
 
 namespace {
 bout::RegisterUnavailableOptionsIO
@@ -79,5 +79,5 @@ RegisterOptionsIO<OptionsADIOS> registeroptionsadios("adios");
 
 } // namespace bout
 
-#endif // BOUT_HAS_ADIOS
+#endif // BOUT_HAS_ADIOS2
 #endif // OPTIONS_ADIOS_H
