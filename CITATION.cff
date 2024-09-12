@@ -188,7 +188,7 @@ authors:
   - family-names: Chapman
     given-names: Tom
 
-version: 5.1.0
+version: 5.1.1
 date-released: 2023-04-10
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/
