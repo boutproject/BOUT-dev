@@ -85,7 +85,7 @@ def bump_version_numbers(new_version_number):
     )
     update_version_number_in_file(
         "CMakeLists.txt",
-        r"^set\(_bout_previous_version \"v(\d+\.\d+\.\d+)\"\)",
+        r"^set\(_bout_previous_version \"(\d+\.\d+\.\d+)\"\)",
         new_version_number,
     )
     update_version_number_in_file(
