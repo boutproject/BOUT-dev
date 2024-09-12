@@ -63,13 +63,9 @@ def update_version_number_in_file(relative_filepath, pattern, new_version_number
                 file.write(modified)
 
 
-def bump_version_numbers(new_version_number):
-    bout_next_version_number = VersionNumber(
-        new_version_number.major_version,
-        new_version_number.minor_version + 1,
-        new_version_number.patch_version,
-    )
-
+def bump_version_numbers(
+    new_version_number: VersionNumber, next_version_number: VersionNumber
+):
     update_version_number_in_file(
         "configure.ac",
         r"^AC_INIT\(\[BOUT\+\+\],\[(\d+\.\d+\.\d+)\]",
@@ -102,7 +98,7 @@ def bump_version_numbers(new_version_number):
     update_version_number_in_file(
         "CMakeLists.txt",
         r"^set\(_bout_next_version \"(\d+\.\d+\.\d+)\"\)",
-        bout_next_version_number,
+        next_version_number,
     )
     update_version_number_in_file(
         "tools/pylib/_boutpp_build/backend.py",
@@ -112,7 +108,7 @@ def bump_version_numbers(new_version_number):
     update_version_number_in_file(
         "tools/pylib/_boutpp_build/backend.py",
         r"_bout_next_version = \"v(\d+\.\d+\.\d+)\"",
-        bout_next_version_number,
+        next_version_number,
     )
 
 
@@ -194,11 +190,23 @@ if __name__ == "__main__":
     parser.add_argument(
         "--patch-only", "-p", action="store_true", help="Print the patches and exit"
     )
-    parser.add_argument("new_version", help="Specify the new version number")
+    parser.add_argument("new_version", help="New (current) version number")
+    parser.add_argument(
+        "next_version", help="Next version number", nargs="?", default=None
+    )
 
     args = parser.parse_args()
 
     if args.force and args.patch_only:
         raise ValueError("Incompatible options: --force and --patch")
-    major, minor, patch = map(int, args.new_version.split("."))
-    bump_version_numbers(new_version_number=VersionNumber(major, minor, patch))
+
+    new_version = VersionNumber(*map(int, args.new_version.split(".")))
+    next_version = (
+        VersionNumber(new_version.major, new_version.minor + 1, 0)
+        if args.next_version is None
+        else VersionNumber(*map(int, args.next_version.split(".")))
+    )
+
+    bump_version_numbers(
+        new_version_number=new_version, next_version_number=next_version
+    )
