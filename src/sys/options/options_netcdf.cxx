@@ -698,9 +698,9 @@ void OptionsNetCDF::write(const Options& options, const std::string& time_dim) {
   }
 
   writeGroup(options, *data_file, time_dim);
-
-  data_file->sync();
 }
+
+void OptionsNetCDF::flush() { data_file->sync(); }
 
 } // namespace bout
 
