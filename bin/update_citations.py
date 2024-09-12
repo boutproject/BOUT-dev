@@ -222,7 +222,7 @@ KNOWN_AUTHORS = {
     "nick-walkden": KnownAuthor("Walkden", "Nicholas"),
     "ZedThree": KnownAuthor("Hill", "Peter"),
     "tomc271": KnownAuthor("Chapman", "Tom"),
-    "j-b-o": KnownAuthor("Omotani", "John"),
+    "j-b-o": KnownAuthor("Bold", "Jessica"),
     "BS": KnownAuthor("Brendan", "Shanahan"),
 }
 
