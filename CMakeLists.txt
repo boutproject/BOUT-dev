@@ -25,8 +25,8 @@ endif()
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
 # We try to use git to get a full description, inspired by setuptools_scm
-set(_bout_previous_version "5.1.0")
-set(_bout_next_version "5.1.1")
+set(_bout_previous_version "5.1.1")
+set(_bout_next_version "5.2.0")
 execute_process(
   COMMAND "git" describe --tags --match=v${_bout_previous_version}
   COMMAND sed -e s/${_bout_previous_version}-/${_bout_next_version}.dev/ -e s/-/+/

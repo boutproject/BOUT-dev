@@ -40,6 +40,7 @@ then
     cat /etc/os-release
     # Ignore weak depencies
     echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
+    echo "minrate=10M" >> /etc/dnf/dnf.conf
     time dnf -y install dnf5
     time dnf5 -y install dnf5-plugins cmake python3-zoidberg python3-natsort
     # Allow to override packages - see #2073
@@ -50,7 +51,7 @@ then
     cp -a /tmp/BOUT-dev /home/test/
     chown -R test /home/test
     chmod u+rwX /home/test -R
-    sudo -u test ${0/\/tmp/\/home\/test} $mpi
+    su - test -c "${0/\/tmp/\/home\/test} $mpi"
 ## If we are called as normal user, run test
 else
     . /etc/profile.d/modules.sh

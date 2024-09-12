@@ -1,4 +1,4 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_PETSC
 
@@ -12,11 +12,15 @@
 
 // Define all the static member variables
 int PetscLib::count = 0;
-char PetscLib::help[] = "BOUT++: Uses finite difference methods to solve plasma fluid "
-                        "problems in curvilinear coordinates";
 int* PetscLib::pargc = nullptr;
 char*** PetscLib::pargv = nullptr;
 PetscLogEvent PetscLib::USER_EVENT = 0;
+
+namespace {
+constexpr const char* PetscLibHelp =
+    "BOUT++: Uses finite difference methods to solve plasma fluid "
+    "problems in curvilinear coordinates";
+}
 
 PetscLib::PetscLib(Options* opt) {
   BOUT_OMP(critical(PetscLib))
@@ -31,7 +35,7 @@ PetscLib::PetscLib(Options* opt) {
 
       output << "Initialising PETSc\n";
       PETSC_COMM_WORLD = BoutComm::getInstance()->getComm();
-      PetscInitialize(pargc, pargv, nullptr, help);
+      PetscInitialize(pargc, pargv, nullptr, PetscLibHelp);
       PetscPopSignalHandler();
 
       PetscLogEventRegister("Total BOUT++", 0, &USER_EVENT);

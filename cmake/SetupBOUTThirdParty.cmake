@@ -238,19 +238,27 @@ if (BOUT_USE_SUNDIALS)
     include(FetchContent)
     FetchContent_Declare(
       sundials
-      GIT_REPOSITORY https://github.com/ZedThree/sundials
-      GIT_TAG        cmake-export-fixes
+      GIT_REPOSITORY https://github.com/LLNL/sundials
+      GIT_TAG        v7.0.0
       )
     # Note: These are settings for building SUNDIALS
     set(EXAMPLES_ENABLE_C OFF CACHE BOOL "" FORCE)
     set(EXAMPLES_INSTALL OFF CACHE BOOL "" FORCE)
     set(ENABLE_MPI ${BOUT_USE_MPI} CACHE BOOL "" FORCE)
     set(ENABLE_OPENMP OFF CACHE BOOL "" FORCE)
-    set(BUILD_STATIC_LIBS OFF CACHE BOOL "" FORCE)
+    if (BUILD_SHARED_LIBS)
+      set(BUILD_STATIC_LIBS OFF CACHE BOOL "" FORCE)
+    else()
+      set(BUILD_STATIC_LIBS ON CACHE BOOL "" FORCE)
+    endif()
     FetchContent_MakeAvailable(sundials)
     message(STATUS "SUNDIALS done configuring")
   else()
+    enable_language(C)
     find_package(SUNDIALS REQUIRED)
+    if (SUNDIALS_VERSION VERSION_LESS 4.0.0)
+      message(FATAL_ERROR "SUNDIALS_VERSION 4.0.0 or newer is required. Found version ${SUNDIALS_VERSION}.")
+    endif()
   endif()
   target_link_libraries(bout++ PUBLIC SUNDIALS::nvecparallel)
   target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)

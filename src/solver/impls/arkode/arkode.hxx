@@ -29,7 +29,7 @@
 #ifndef __ARKODE_SOLVER_H__
 #define __ARKODE_SOLVER_H__
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/solver.hxx"
 
 #if not BOUT_HAS_ARKODE
@@ -42,11 +42,14 @@ RegisterUnavailableSolver
 #else
 
 #include "bout/bout_types.hxx"
+#include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
 
-#include <nvector/nvector_parallel.h>
-#include <sundials/sundials_config.h>
+#if SUNDIALS_CONTROLLER_SUPPORT
+#include <sundials/sundials_adaptcontroller.h> // IWYU pragma: export
+#endif
 
+#include <string>
 #include <vector>
 
 class ArkodeSolver;
@@ -59,7 +62,7 @@ RegisterSolver<ArkodeSolver> registersolverarkode("arkode");
 class ArkodeSolver : public Solver {
 public:
   explicit ArkodeSolver(Options* opts = nullptr);
-  ~ArkodeSolver();
+  ~ArkodeSolver() override;
 
   BoutReal getCurrentTimestep() override { return hcur; }
 
@@ -102,6 +105,10 @@ private:
   bool fixed_step;
   /// Order of internal step
   int order;
+  /// Name of the implicit Butcher table
+  std::string implicit_table;
+  /// Name of the explicit Butcher table
+  std::string explicit_table;
   /// Fraction of the estimated explicitly stable step to use
   BoutReal cfl_frac;
   /// Set timestep adaptivity function:
@@ -153,8 +160,12 @@ private:
 
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};
-  /// Solver for functional iterations for Adams-Moulton
+  /// Solver for implicit stages
   SUNNonlinearSolver nonlinear_solver{nullptr};
+#if SUNDIALS_CONTROLLER_SUPPORT
+  /// Timestep controller
+  SUNAdaptController controller{nullptr};
+#endif
   /// Context for SUNDIALS memory allocations
   sundials::Context suncontext;
 };
