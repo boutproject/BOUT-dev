@@ -82,12 +82,12 @@ def bump_version_numbers(
     )
     update_version_number_in_file(
         "manual/doxygen/Doxyfile_readthedocs",
-        r"^PROJECT_NUMBER         = (\d+\.\d+\.\d+)",
+        r"^PROJECT_NUMBER\s*=\s*(\d+\.\d+\.\d+)",
         new_version_number,
     )
     update_version_number_in_file(
         "manual/doxygen/Doxyfile",
-        r"^PROJECT_NUMBER         = (\d+\.\d+\.\d+)",
+        r"^PROJECT_NUMBER\s*=\s*(\d+\.\d+\.\d+)",
         new_version_number,
     )
     update_version_number_in_file(
