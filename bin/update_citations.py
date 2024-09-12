@@ -39,12 +39,11 @@ def parse_cff_file(filename):
 
 
 def get_authors_from_cff_file():
-    filename = get_main_directory() / "CITATION.cff"
-    file_contents = parse_cff_file(filename)
+    file_contents = parse_cff_file()
     try:
         return file_contents["authors"]
     except KeyError as key_error:
-        raise ValueError(f"Failed to find section:{key_error} in {filename}")
+        raise ValueError(f"Failed to find section:{key_error} in {CITATION_FILE}")
 
 
 class ExistingAuthorNames:
@@ -57,35 +56,34 @@ class ExistingAuthorNames:
     def last_name_matches_surname_and_first_name_or_first_letter_matches_given_name(
         self, last_name, first_name
     ):
+        # Last name matches surname
         matches = [
             n
             for n in self._existing_author_names
             if n[1].casefold() == last_name.casefold()
-        ]  # Last name matches surname
+        ]
 
         for match in matches:
-            if (
-                match[0].casefold() == first_name.casefold()
-            ):  # The given name also matches author first name
+            # The given name also matches author first name
+            if match[0].casefold() == first_name.casefold():
                 return True
-            if (
-                match[0][0].casefold() == first_name[0].casefold()
-            ):  # The first initial matches author first name
+            # The first initial matches author first name
+            if match[0][0].casefold() == first_name[0].casefold():
                 return True
 
     def first_name_matches_surname_and_last_name_matches_given_name(
         self, first_name, last_name
     ):
+        # First name matches surname
         matches = [
             n
             for n in self._existing_author_names
             if n[1].casefold() == first_name.casefold()
-        ]  # First name matches surname
+        ]
 
+        # The given name also matches author last name
         for match in matches:
-            if (
-                match[0].casefold() == last_name.casefold()
-            ):  # The given name also matches author last name
+            if match[0].casefold() == last_name.casefold():
                 return True
 
     def surname_matches_whole_author_name(self, author):
@@ -127,15 +125,15 @@ class ExistingAuthorNames:
     def author_name_is_first_initial_and_surname_concatenated(self, author):
         first_character = author[0]
         remaining_characters = author[1:]
+        # Second part of name matches surname
         matches = [
             n
             for n in self._existing_author_names
             if n[1].casefold() == remaining_characters.casefold()
-        ]  # Second part of name matches surname
+        ]
         for match in matches:
-            if (
-                match[0][0].casefold() == first_character.casefold()
-            ):  # The first initial matches author first name
+            # The first initial matches author first name
+            if match[0][0].casefold() == first_character.casefold():
                 return True
 
 
