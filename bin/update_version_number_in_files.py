@@ -9,6 +9,20 @@ import os
 import re
 
 
+@dataclass
+class VersionNumber:
+    major: int
+    minor: int
+    patch: int
+
+    def __str__(self):
+        return f"{self.major}.{self.minor}.{self.patch}"
+
+    @property
+    def short(self) -> str:
+        return f"{self.major}.{self.minor}"
+
+
 def get_full_filepath(filepath):
     main_directory = Path(os.path.abspath(__file__)).parent.parent
     return Path(main_directory) / filepath
@@ -50,9 +64,6 @@ def update_version_number_in_file(relative_filepath, pattern, new_version_number
 
 
 def bump_version_numbers(new_version_number):
-    short_version_number = ShortVersionNumber(
-        new_version_number.major_version, new_version_number.minor_version
-    )
     bout_next_version_number = VersionNumber(
         new_version_number.major_version,
         new_version_number.minor_version + 1,
@@ -68,7 +79,7 @@ def bump_version_numbers(new_version_number):
         "CITATION.cff", r"^version: (\d+\.\d+\.\d+)", new_version_number
     )
     update_version_number_in_file(
-        "manual/sphinx/conf.py", r"^version = \"(\d+\.\d+)\"", short_version_number
+        "manual/sphinx/conf.py", r"^version = \"(\d+\.\d+)\"", new_version_number.short
     )
     update_version_number_in_file(
         "manual/sphinx/conf.py", r"^release = \"(\d+\.\d+\.\d+)\"", new_version_number
@@ -103,25 +114,6 @@ def bump_version_numbers(new_version_number):
         r"_bout_next_version = \"v(\d+\.\d+\.\d+)\"",
         bout_next_version_number,
     )
-
-
-@dataclass
-class VersionNumber:
-    major_version: int
-    minor_version: int
-    patch_version: int
-
-    def __str__(self):
-        return "%d.%d.%d" % (self.major_version, self.minor_version, self.patch_version)
-
-
-@dataclass
-class ShortVersionNumber:
-    major_version: int
-    minor_version: int
-
-    def __str__(self):
-        return "%d.%d" % (self.major_version, self.minor_version)
 
 
 def apply_fixes(pattern, new_version_number, source):
