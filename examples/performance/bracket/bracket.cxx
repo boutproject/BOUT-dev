@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
 
   // Get options root
   auto& globalOptions = Options::root();
-  auto modelOpts = globalOptions["performance"];
+  auto& modelOpts = globalOptions["performance"];
   int NUM_LOOPS;
   NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(100);
   bool profileMode, includeHeader, do2D3D, do3D3D;

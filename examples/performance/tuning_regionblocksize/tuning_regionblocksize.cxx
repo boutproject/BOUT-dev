@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
 
   // Get options root
   auto& globalOptions = Options::root();
-  auto modelOpts = globalOptions["tuningRegionBlockSize"];
+  auto& modelOpts = globalOptions["tuningRegionBlockSize"];
   const int NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(100);
   const int numSteps = modelOpts["numSteps"].withDefault(16);
 
