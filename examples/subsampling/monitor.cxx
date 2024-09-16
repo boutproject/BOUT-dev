@@ -30,7 +30,7 @@ public:
         output[item.name].attributes["time_dimension"] = "t";
       }
     }
-//    output_file.write(output);
+    output_file->write(output);
 
     return 0;
   }
