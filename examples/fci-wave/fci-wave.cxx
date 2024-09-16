@@ -132,16 +132,21 @@ protected:
         // Note: If evolving density, this should interpolate logn
         // but neumann boundaries are used here anyway.
         BoutReal n_b =
-            0.5 * (n_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z()) + n(reg->ind().x(), reg->ind().y(), reg->ind().z()));
+            0.5
+            * (n_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z())
+               + n(reg->ind().x(), reg->ind().y(), reg->ind().z()));
         // Velocity at the boundary
         BoutReal v_b =
-            0.5 * (v_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z()) + v(reg->ind().x(), reg->ind().y(), reg->ind().z()));
+            0.5
+            * (v_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z())
+               + v(reg->ind().x(), reg->ind().y(), reg->ind().z()));
 
         nv_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z()) =
             2. * n_b * v_b - nv(reg->ind().x(), reg->ind().y(), reg->ind().z());
 
         momflux_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z()) =
-            2. * n_b * v_b * v_b - momflux(reg->ind().x(), reg->ind().y(), reg->ind().z());
+            2. * n_b * v_b * v_b
+            - momflux(reg->ind().x(), reg->ind().y(), reg->ind().z());
       }
     }
 
