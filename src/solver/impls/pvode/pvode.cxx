@@ -42,11 +42,39 @@
 #include <pvode/iterativ.h> // contains the enum for types of preconditioning
 #include <pvode/pvbbdpre.h> // band preconditioner function prototypes
 
+#include <string>
+
 using namespace pvode;
 
 void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void* f_data);
 void solver_gloc(integer N, BoutReal t, BoutReal* u, BoutReal* udot, void* f_data);
 void solver_cfn(integer N, BoutReal t, N_Vector u, void* f_data);
+
+namespace {
+// local only
+void pvode_load_data_f3d(const std::vector<bool>& evolve_bndrys,
+                         std::vector<Field3D>& ffs, const BoutReal* udata) {
+  int p = 0;
+  Mesh* mesh = ffs[0].getMesh();
+  const int nz = mesh->LocalNz;
+  for (const auto& bndry : {true, false}) {
+    for (const auto& i2d : mesh->getRegion2D(bndry ? "RGN_BNDRY" : "RGN_NOBNDRY")) {
+      for (int jz = 0; jz < nz; jz++) {
+        // Loop over 3D variables
+        std::vector<bool>::const_iterator evolve_bndry = evolve_bndrys.begin();
+        for (std::vector<Field3D>::iterator ff = ffs.begin(); ff != ffs.end(); ++ff) {
+          if (bndry && !*evolve_bndry) {
+            continue;
+          }
+          (*ff)[mesh->ind2Dto3D(i2d, jz)] = udata[p];
+          p++;
+        }
+        ++evolve_bndry;
+      }
+    }
+  }
+}
+} // namespace
 
 const BoutReal ZERO = 0.0;
 
@@ -185,10 +213,47 @@ int PvodeSolver::init() {
   for (i = 0; i < OPT_SIZE; i++) {
     ropt[i] = ZERO;
   }
+  /* iopt[MXSTEP] : maximum number of internal steps to be taken by *
+   *                the solver in its attempt to reach tout.        *
+   *                Optional input. (Default = 500).                */
   iopt[MXSTEP] = pvode_mxstep;
 
-  cvode_mem = CVodeMalloc(neq, solver_f, simtime, u, BDF, NEWTON, SS, &reltol, &abstol,
-                          this, nullptr, optIn, iopt, ropt, machEnv);
+  {
+    /* ropt[H0]      : initial step size. Optional input.             */
+
+    /* ropt[HMAX]    : maximum absolute value of step size allowed.   *
+     *                 Optional input. (Default is infinity).         */
+    const BoutReal hmax(
+        (*options)["max_timestep"].doc("Maximum internal timestep").withDefault(-1.));
+    if (hmax > 0) {
+      ropt[HMAX] = hmax;
+    }
+    /* ropt[HMIN]    : minimum absolute value of step size allowed.   *
+     *                 Optional input. (Default is 0.0).              */
+    const BoutReal hmin(
+        (*options)["min_timestep"].doc("Minimum internal timestep").withDefault(-1.));
+    if (hmin > 0) {
+      ropt[HMIN] = hmin;
+    }
+    /* iopt[MAXORD] : maximum lmm order to be used by the solver.     *
+     *                Optional input. (Default = 12 for ADAMS, 5 for  *
+     *                BDF).                                           */
+    const int maxOrder((*options)["max_order"].doc("Maximum order").withDefault(-1));
+    if (maxOrder > 0) {
+      iopt[MAXORD] = maxOrder;
+    }
+  }
+  const bool use_adam((*options)["adams_moulton"]
+                          .doc("Use Adams Moulton solver instead of BDF")
+                          .withDefault(false));
+
+  debug_on_failure =
+      (*options)["debug_on_failure"]
+          .doc("Run an aditional rhs if the solver fails with extra tracking")
+          .withDefault(false);
+
+  cvode_mem = CVodeMalloc(neq, solver_f, simtime, u, use_adam ? ADAMS : BDF, NEWTON, SS,
+                          &reltol, &abstol, this, nullptr, optIn, iopt, ropt, machEnv);
 
   if (cvode_mem == nullptr) {
     throw BoutException("\tError: CVodeMalloc failed.\n");
@@ -293,6 +358,54 @@ BoutReal PvodeSolver::run(BoutReal tout) {
   // Check return flag
   if (flag != SUCCESS) {
     output_error.write("ERROR CVODE step failed, flag = {:d}\n", flag);
+    CVodeMemRec* cv_mem = (CVodeMem)cvode_mem;
+    if (debug_on_failure) {
+      if (f2d.empty() and v2d.empty() and v3d.empty()) {
+        Options debug{};
+        using namespace std::string_literals;
+        Mesh* mesh{};
+        for (const auto& prefix : {"pre_"s, "residuum_"s}) {
+          std::vector<Field3D> list_of_fields{};
+          std::vector<bool> evolve_bndrys{};
+          for (const auto& f : f3d) {
+            mesh = f.var->getMesh();
+            Field3D to_load{0., mesh};
+            to_load.allocate();
+            to_load.setLocation(f.location);
+            debug[fmt::format("{:s}{:s}", prefix, f.name)] = to_load;
+            list_of_fields.push_back(to_load);
+            evolve_bndrys.push_back(f.evolve_bndry);
+          }
+          pvode_load_data_f3d(evolve_bndrys, list_of_fields,
+                              prefix == "pre_"s ? udata : N_VDATA(cv_mem->cv_acor));
+        }
+
+        for (auto& f : f3d) {
+          f.F_var->enableTracking(fmt::format("ddt_{:s}", f.name), debug);
+          setName(*f.var, f.name);
+        }
+        run_rhs(simtime);
+
+        for (auto& f : f3d) {
+          debug[f.name] = *f.var;
+        }
+
+        if (mesh != nullptr) {
+          mesh->outputVars(debug);
+          debug["BOUT_VERSION"].force(bout::version::as_double);
+        }
+
+        const std::string outname =
+            fmt::format("{}/BOUT.debug.{}.nc",
+                        Options::root()["datadir"].withDefault<std::string>("data"),
+                        BoutComm::rank());
+
+        bout::OptionsIO::create(outname)->write(debug);
+        MPI_Barrier(BoutComm::get());
+      } else {
+        output_warn.write("debug_on_failure is currently only supported for Field3Ds");
+      }
+    }
     return (-1.0);
   }
 
