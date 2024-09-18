@@ -161,7 +161,7 @@ During initialisation (the ``init`` function), the conduction example
 first reads an option (lines 21 and 24) from the input settings file
 (``data/BOUT.inp`` by default)::
 
-    auto options = Options::root()["conduction"];
+    auto& options = Options::root()["conduction"];
 
     OPTION(options, chi, 1.0);
 
@@ -500,8 +500,8 @@ object in the initialisation function::
       BoutReal gamma;
 
       int init(bool restarting) override {
-        auto globalOptions = Options::root();
-        auto options = globalOptions["mhd"];
+        auto& globalOptions = Options::root();
+        auto& options = globalOptions["mhd"];
 
         OPTION(options, g, 5.0 / 3.0);
         ...

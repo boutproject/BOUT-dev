@@ -39,8 +39,8 @@ int main(int argc, char** argv) {
   std::vector<Duration> times;
 
   // Get options root
-  auto globalOptions = Options::root();
-  auto modelOpts = globalOptions["LaplaceTest"];
+  auto& globalOptions = Options::root();
+  auto& modelOpts = globalOptions["LaplaceTest"];
   int NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(1000);
 
   ConditionalOutput time_output(Output::getInstance());
