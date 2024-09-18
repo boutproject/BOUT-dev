@@ -40,7 +40,7 @@ jobs:
           - ${{ github.event_name == 'cron' }}
         config:
           - name: "CMake, PETSc unreleased"
-            os: ubuntu-20.04
+            os: ubuntu-24.04
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_METRIC_3D=ON
                             -DBOUT_ENABLE_OPENMP=ON
@@ -55,13 +55,13 @@ jobs:
             build_petsc_branch: main
             on_cron: true
 
-          - name: "Default options, Ubuntu 20.04"
-            os: ubuntu-20.04
+          - name: "Default options, Ubuntu 22.04"
+            os: ubuntu-22.04
             cmake_options: ""
             on_cron: false
 
           - name: "Optimised, static"
-            os: ubuntu-20.04
+            os: ubuntu-latest
             cmake_options: "-DCHECK=0
                             -DBUILD_SHARED_LIBS=OFF
                             -DCMAKE_CXX_FLAGS=-Ofast
@@ -75,7 +75,7 @@ jobs:
             on_cron: false
 
           - name: "Debug, shared"
-            os: ubuntu-20.04
+            os: ubuntu-latest
             cmake_options: "-DCHECK=3
                             -DCMAKE_BUILD_TYPE=Debug
                             -DBOUT_ENABLE_SIGNAL=ON
@@ -86,8 +86,8 @@ jobs:
                             -DSUNDIALS_ROOT=/home/runner/local"
             on_cron: false
 
-          - name: "Shared, release, Ubuntu 20.04"
-            os: ubuntu-20.04
+          - name: "Shared, release"
+            os: ubuntu-latest
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_OPENMP=ON
                             -DCMAKE_BUILD_TYPE=Release
@@ -113,7 +113,7 @@ jobs:
             on_cron: false
 
           - name: "CMake, new PETSc"
-            os: ubuntu-20.04
+            os: ubuntu-latest
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_METRIC_3D=ON
                             -DBOUT_ENABLE_OPENMP=ON
@@ -128,7 +128,7 @@ jobs:
             on_cron: false
 
           - name: "Coverage"
-            os: ubuntu-20.04
+            os: ubuntu-latest
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DCMAKE_BUILD_TYPE=Debug
                             -DCHECK=3
