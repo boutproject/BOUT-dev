@@ -226,20 +226,6 @@ jobs:
         if: ${{ matrix.config.name == 'Coverage' }}
         uses: codecov/codecov-action@v3
 
-  Fedora:
-    # This is its own job as it doesn't use most of the steps of the
-    # standard_tests
-    timeout-minutes: 60
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: Build Fedora rawhide
-        run: ./.ci_fedora.sh setup openmpi rawhide
-        shell: bash
-        env:
-          TRAVIS_BUILD_DIR: ${{ github.workspace }}
   CUDA:
     timeout-minutes: 60
     runs-on: ubuntu-latest
