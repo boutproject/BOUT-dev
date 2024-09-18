@@ -12,10 +12,15 @@
 
 #include <type_traits>
 
+#include <mpi.h>
+
+// IWYU pragma: begin_exports
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_config.h>
 #include <sundials/sundials_iterative.h>
+#include <sundials/sundials_linearsolver.h>
 #include <sundials/sundials_nonlinearsolver.h>
+#include <sundials/sundials_nvector.h>
 #include <sundials/sundials_types.h>
 #include <sunlinsol/sunlinsol_spgmr.h>
 #include <sunnonlinsol/sunnonlinsol_fixedpoint.h>
@@ -24,6 +29,7 @@
 #if SUNDIALS_VERSION_MAJOR >= 6
 #include <sundials/sundials_context.hpp>
 #endif
+// IWYU pragma: end_exports
 
 #if SUNDIALS_VERSION_MAJOR < 6
 using sundials_real_type = realtype;
@@ -55,6 +61,9 @@ inline sundials::Context createSUNContext([[maybe_unused]] MPI_Comm& comm) {
 #if SUNDIALS_VERSION_MAJOR < 6
   return nullptr;
 #elif SUNDIALS_VERSION_MAJOR < 7
+  // clang-tidy can see through `MPI_Comm` which might be a typedef to
+  // a pointer. We don't care, so tell it to be quiet
+  // NOLINTNEXTLINE(bugprone-multi-level-implicit-pointer-conversion)
   return sundials::Context(static_cast<void*>(&comm));
 #else
   return sundials::Context(comm);
