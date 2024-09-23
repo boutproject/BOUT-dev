@@ -981,7 +981,7 @@ namespace details {
 /// avoiding lengthy recompilation if we change it
 struct OptionsFormatterBase {
   auto parse(fmt::format_parse_context& ctx) -> fmt::format_parse_context::iterator;
-  auto format(const Options& options, fmt::format_context& ctx)
+  auto format(const Options& options, fmt::format_context& ctx) const
       -> fmt::format_context::iterator;
 
 private:
