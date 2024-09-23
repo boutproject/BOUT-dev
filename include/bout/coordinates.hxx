@@ -80,15 +80,14 @@ public:
   const FieldMetric& dy() const { return dy_; }
   const FieldMetric& dz() const { return dz_; }
 
-#if BOUT_USE_METRIC_3D
   const BoutReal& dx(int x, int y, int z) const { return dx_(x, y, z); }
   const BoutReal& dy(int x, int y, int z) const { return dy_(x, y, z); }
   const BoutReal& dz(int x, int y, int z) const { return dz_(x, y, z); }
-#else
+
   const BoutReal& dx(int x, int y) const { return dx_(x, y); }
   const BoutReal& dy(int x, int y) const { return dy_(x, y); }
   const BoutReal& dz(int x, int y) const { return dz_(x, y); }
-#endif
+
 
   void setDx(FieldMetric dx) { dx_ = std::move(dx); }
   void setDy(FieldMetric dy) { dy_ = std::move(dy); }
@@ -115,6 +114,16 @@ public:
   const FieldMetric& d1_dx() const { return d1_dx_; }
   const FieldMetric& d1_dy() const { return d1_dy_; }
   const FieldMetric& d1_dz() const { return d1_dz_; }
+
+  #if BOUT_USE_METRIC_3D
+  const BoutReal& d1_dx(int x, int y, int z) const { return d1_dx_(x, y, z); }
+  const BoutReal& d1_dy(int x, int y, int z) const { return d1_dy_(x, y, z); }
+  const BoutReal& d1_dz(int x, int y, int z) const { return d1_dz_(x, y, z); }
+#else
+  const BoutReal& d1_dx(int x, int y) const { return d1_dx_(x, y); }
+  const BoutReal& d1_dy(int x, int y) const { return d1_dy_(x, y); }
+  const BoutReal& d1_dz(int x, int y) const { return d1_dz_(x, y); }
+#endif
 
   /// Covariant metric tensor
   const MetricTensor::FieldMetric& g_11() const { return covariantMetricTensor.g11(); }
