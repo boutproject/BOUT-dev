@@ -146,6 +146,22 @@ public:
   const MetricTensor::FieldMetric& g13() const { return contravariantMetricTensor.g13(); }
   const MetricTensor::FieldMetric& g23() const { return contravariantMetricTensor.g23(); }
 
+  /// Covariant metric tensor
+  BoutReal g_11(int x, int y, int z) const { return covariantMetricTensor.g11(x, y, z); }
+  BoutReal g_22(int x, int y, int z) const { return covariantMetricTensor.g22(x, y, z); }
+  BoutReal g_33(int x, int y, int z) const { return covariantMetricTensor.g33(x, y, z); }
+  BoutReal g_12(int x, int y, int z) const { return covariantMetricTensor.g12(x, y, z); }
+  BoutReal g_13(int x, int y, int z) const { return covariantMetricTensor.g13(x, y, z); }
+  BoutReal g_23(int x, int y, int z) const { return covariantMetricTensor.g23(x, y, z); }
+
+  /// Contravariant metric tensor (g^{ij})
+  BoutReal g11(int x, int y, int z) const { return contravariantMetricTensor.g11(x, y, z); }
+  BoutReal g22(int x, int y, int z) const { return contravariantMetricTensor.g22(x, y, z); }
+  BoutReal g33(int x, int y, int z) const { return contravariantMetricTensor.g33(x, y, z); }
+  BoutReal g12(int x, int y, int z) const { return contravariantMetricTensor.g12(x, y, z); }
+  BoutReal g13(int x, int y, int z) const { return contravariantMetricTensor.g13(x, y, z); }
+  BoutReal g23(int x, int y, int z) const { return contravariantMetricTensor.g23(x, y, z); }
+  
   const ContravariantMetricTensor& getContravariantMetricTensor() const {
     return contravariantMetricTensor;
   }
