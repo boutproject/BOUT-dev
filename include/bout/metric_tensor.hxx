@@ -32,12 +32,19 @@ public:
   const FieldMetric& g13() const { return g13_; }
   const FieldMetric& g23() const { return g23_; }
 
-  BoutReal g11(int x, int y, int z) const { return g11_(x, y, z); }
-  BoutReal g22(int x, int y, int z) const { return g22_(x, y, z); }
-  BoutReal g33(int x, int y, int z) const { return g33_(x, y, z); }
-  BoutReal g12(int x, int y, int z) const { return g12_(x, y, z); }
-  BoutReal g13(int x, int y, int z) const { return g13_(x, y, z); }
-  BoutReal g23(int x, int y, int z) const { return g23_(x, y, z); }
+  const BoutReal& g11(int x, int y, int z) const { return g11_(x, y, z); }
+  const BoutReal& g22(int x, int y, int z) const { return g22_(x, y, z); }
+  const BoutReal& g33(int x, int y, int z) const { return g33_(x, y, z); }
+  const BoutReal& g12(int x, int y, int z) const { return g12_(x, y, z); }
+  const BoutReal& g13(int x, int y, int z) const { return g13_(x, y, z); }
+  const BoutReal& g23(int x, int y, int z) const { return g23_(x, y, z); }
+
+  const BoutReal& g11(int x, int y) const { return g11_(x, y); }
+  const BoutReal& g22(int x, int y) const { return g22_(x, y); }
+  const BoutReal& g33(int x, int y) const { return g33_(x, y); }
+  const BoutReal& g12(int x, int y) const { return g12_(x, y); }
+  const BoutReal& g13(int x, int y) const { return g13_(x, y); }
+  const BoutReal& g23(int x, int y) const { return g23_(x, y); }
 
   void setMetricTensor(const MetricTensor& metric_tensor) {
 
