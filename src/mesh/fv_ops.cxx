@@ -52,8 +52,8 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
         // Calculate flux from i to i+1
 
         BoutReal const fout = 0.5 * (a(i, j, k) + a(i + 1, j, k))
-                              * (coord->J()(i, j, k) * coord->g11()(i, j, k)
-                                 + coord->J()(i + 1, j, k) * coord->g11()(i + 1, j, k))
+                              * (coord->J()(i, j, k) * coord->g11(i, j, k)
+                                 + coord->J()(i + 1, j, k) * coord->g11(i + 1, j, k))
                               * (f(i + 1, j, k) - f(i, j, k))
                               / (coord->dx(i, j, k) + coord->dx(i + 1, j, k));
 
@@ -514,32 +514,32 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
         // Calculate gradients on cell faces -- assumes constant grid spacing
 
         BoutReal const gR =
-            (coords->g11()(i, j, k) + coords->g11()(i + 1, j, k))
+            (coords->g11(i, j, k) + coords->g11(i + 1, j, k))
                 * (f(i + 1, j, k) - f(i, j, k))
                 / (coords->dx(i + 1, j, k) + coords->dx(i, j, k))
-            + 0.5 * (coords->g13()(i, j, k) + coords->g13()(i + 1, j, k))
+            + 0.5 * (coords->g13(i, j, k) + coords->g13(i + 1, j, k))
                   * (f(i + 1, j, kp) - f(i + 1, j, km) + f(i, j, kp) - f(i, j, km))
                   / (4. * coords->dz(i, j, k));
 
         BoutReal const gL =
-            (coords->g11()(i - 1, j, k) + coords->g11()(i, j, k))
+            (coords->g11(i - 1, j, k) + coords->g11(i, j, k))
                 * (f(i, j, k) - f(i - 1, j, k))
                 / (coords->dx(i - 1, j, k) + coords->dx(i, j, k))
-            + 0.5 * (coords->g13()(i - 1, j, k) + coords->g13()(i, j, k))
+            + 0.5 * (coords->g13(i - 1, j, k) + coords->g13(i, j, k))
                   * (f(i - 1, j, kp) - f(i - 1, j, km) + f(i, j, kp) - f(i, j, km))
                   / (4 * coords->dz(i, j, k));
 
         BoutReal const gD =
-            coords->g13()(i, j, k)
+            coords->g13(i, j, k)
                 * (f(i + 1, j, km) - f(i - 1, j, km) + f(i + 1, j, k) - f(i - 1, j, k))
                 / (4. * coords->dx(i, j, k))
-            + coords->g33()(i, j, k) * (f(i, j, k) - f(i, j, km)) / coords->dz(i, j, k);
+            + coords->g33(i, j, k) * (f(i, j, k) - f(i, j, km)) / coords->dz(i, j, k);
 
         BoutReal const gU =
-            coords->g13()(i, j, k)
+            coords->g13(i, j, k)
                 * (f(i + 1, j, kp) - f(i - 1, j, kp) + f(i + 1, j, k) - f(i - 1, j, k))
                 / (4. * coords->dx(i, j, k))
-            + coords->g33()(i, j, k) * (f(i, j, kp) - f(i, j, k)) / coords->dz(i, j, k);
+            + coords->g33(i, j, k) * (f(i, j, kp) - f(i, j, k)) / coords->dz(i, j, k);
 
         // Flow right
         BoutReal flux = gR * 0.25 * (coords->J()(i + 1, j, k) + coords->J()(i, j, k))

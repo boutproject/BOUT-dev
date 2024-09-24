@@ -971,9 +971,9 @@ void LaplacePetsc::Element(int i, int x, int z, int xshift, int zshift, PetscSca
 void LaplacePetsc::Coeffs(int x, int y, int z, BoutReal& coef1, BoutReal& coef2,
                           BoutReal& coef3, BoutReal& coef4, BoutReal& coef5) {
 
-  coef1 = coords->g11()(x, y, z);      // X 2nd derivative coefficient
-  coef2 = coords->g33()(x, y, z);      // Z 2nd derivative coefficient
-  coef3 = 2. * coords->g13()(x, y, z); // X-Z mixed derivative coefficient
+  coef1 = coords->g11(x, y, z);      // X 2nd derivative coefficient
+  coef2 = coords->g33(x, y, z);      // Z 2nd derivative coefficient
+  coef3 = 2. * coords->g13(x, y, z); // X-Z mixed derivative coefficient
 
   coef4 = 0.0;
   coef5 = 0.0;
@@ -998,7 +998,7 @@ void LaplacePetsc::Coeffs(int x, int y, int z, BoutReal& coef1, BoutReal& coef2,
 
   if (localmesh->IncIntShear) {
     // d2dz2 term
-    coef2 += coords->g11()(x, y, z) * coords->IntShiftTorsion()(x, y, z)
+    coef2 += coords->g11(x, y, z) * coords->IntShiftTorsion()(x, y, z)
              * coords->IntShiftTorsion()(x, y, z);
     // Mixed derivative
     coef3 = 0.0; // This cancels out
@@ -1052,8 +1052,8 @@ void LaplacePetsc::Coeffs(int x, int y, int z, BoutReal& coef1, BoutReal& coef2,
             (C2(x, y, zp) - C2(x, y, zm)) / (2. * coords->dz(x, y, z) * (C1(x, y, z)));
       }
 
-      coef4 += coords->g11()(x, y, z) * ddx_C + coords->g13()(x, y, z) * ddz_C;
-      coef5 += coords->g13()(x, y, z) * ddx_C + coords->g33()(x, y, z) * ddz_C;
+      coef4 += coords->g11(x, y, z) * ddx_C + coords->g13(x, y, z) * ddz_C;
+      coef5 += coords->g13(x, y, z) * ddx_C + coords->g33(x, y, z) * ddz_C;
     }
   }
 

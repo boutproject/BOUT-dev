@@ -602,22 +602,22 @@ void LaplaceMultigrid::generateMatrixF(int level) {
       BoutReal ddz_C =
           (C2(i2, yindex, k2p) - C2(i2, yindex, k2m)) / 2. / dz / C1(i2, yindex, k2);
 
-      BoutReal ddx = D(i2, yindex, k2) * coords->g11()(i2, yindex)
+      BoutReal ddx = D(i2, yindex, k2) * coords->g11(i2, yindex)
                      / coords->dx(i2, yindex) / coords->dx(i2, yindex);
       // coefficient of 2nd derivative stencil (x-direction)
 
-      BoutReal ddz = D(i2, yindex, k2) * coords->g33()(i2, yindex) / SQ(dz);
+      BoutReal ddz = D(i2, yindex, k2) * coords->g33(i2, yindex) / SQ(dz);
       // coefficient of 2nd derivative stencil (z-direction)
 
-      BoutReal dxdz = D(i2, yindex, k2) * 2. * coords->g13()(i2, yindex)
+      BoutReal dxdz = D(i2, yindex, k2) * 2. * coords->g13(i2, yindex)
                       / coords->dx(i2, yindex) / dz;
       // coefficient of mixed derivative stencil (could assume zero, at least initially,
       // if easier; then check this is true in constructor)
 
       BoutReal dxd =
           (D(i2, yindex, k2) * coords->G1()(i2, yindex)
-           + coords->g11()(i2, yindex) * ddx_C
-           + coords->g13()(i2, yindex)
+           + coords->g11(i2, yindex) * ddx_C
+           + coords->g13(i2, yindex)
                  * ddz_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
            )
           / coords->dx(i2,
@@ -629,8 +629,8 @@ void LaplaceMultigrid::generateMatrixF(int level) {
 
       BoutReal dzd =
           (D(i2, yindex, k2) * coords->G3()(i2, yindex)
-           + coords->g33()(i2, yindex) * ddz_C
-           + coords->g13()(i2, yindex)
+           + coords->g33(i2, yindex) * ddz_C
+           + coords->g13(i2, yindex)
                  * ddx_C // (could assume zero, at least initially, if easier; then check
                          // this is true in constructor)
            )

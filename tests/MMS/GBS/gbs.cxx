@@ -298,9 +298,9 @@ int GBS::init(bool restarting) {
 
   output.write("dx = {:e}, dy = {:e}, dz = {:e}\n", (coords->dx())(2, 2),
                (coords->dy())(2, 2), coords->dz());
-  output.write("g11 = {:e}, g22 = {:e}, g33 = {:e}\n", coords->g11()(2, 2),
-               coords->g22()(2, 2), coords->g33()(2, 2));
-  output.write("g12 = {:e}, g23 = {:e}\n", coords->g12()(2, 2), coords->g23()(2, 2));
+  output.write("g11 = {:e}, g22 = {:e}, g33 = {:e}\n", coords->g11(2, 2),
+               coords->g22(2, 2), coords->g33(2, 2));
+  output.write("g12 = {:e}, g23 = {:e}\n", coords->g12(2, 2), coords->g23(2, 2));
   output.write("g_11 = {:e}, g_22 = {:e}, g_33 = {:e}\n", coords->g_11()(2, 2),
                coords->g_22()(2, 2), coords->g_33()(2, 2));
   output.write("g_12 = {:e}, g_23 = {:e}\n", coords->g_12()(2, 2), coords->g_23()(2, 2));
