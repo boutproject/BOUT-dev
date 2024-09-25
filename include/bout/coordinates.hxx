@@ -84,11 +84,16 @@ public:
   const BoutReal& dy(int x, int y, int z) const { return dy_(x, y, z); }
   const BoutReal& dz(int x, int y, int z) const { return dz_(x, y, z); }
 
+#if BOUT_USE_METRIC_3D
+  const BoutReal* dx(int x, int y) const { return dx_(x, y); }
+  const BoutReal* dy(int x, int y) const { return dy_(x, y); }
+  const BoutReal* dz(int x, int y) const { return dz_(x, y); }
+#else
   const BoutReal& dx(int x, int y) const { return dx_(x, y); }
   const BoutReal& dy(int x, int y) const { return dy_(x, y); }
   const BoutReal& dz(int x, int y) const { return dz_(x, y); }
-
-
+#endif
+  
   void setDx(FieldMetric dx) { dx_ = std::move(dx); }
   void setDy(FieldMetric dy) { dy_ = std::move(dy); }
   void setDz(FieldMetric dz) { dz_ = std::move(dz); }
