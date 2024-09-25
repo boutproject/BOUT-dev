@@ -39,12 +39,21 @@ public:
   const BoutReal& g13(int x, int y, int z) const { return g13_(x, y, z); }
   const BoutReal& g23(int x, int y, int z) const { return g23_(x, y, z); }
 
+#if BOUT_USE_METRIC_3D
+  const BoutReal* g11(int x, int y) const { return g11_(x, y); }
+  const BoutReal* g22(int x, int y) const { return g22_(x, y); }
+  const BoutReal* g33(int x, int y) const { return g33_(x, y); }
+  const BoutReal* g12(int x, int y) const { return g12_(x, y); }
+  const BoutReal* g13(int x, int y) const { return g13_(x, y); }
+  const BoutReal* g23(int x, int y) const { return g23_(x, y); }
+#else
   const BoutReal& g11(int x, int y) const { return g11_(x, y); }
   const BoutReal& g22(int x, int y) const { return g22_(x, y); }
   const BoutReal& g33(int x, int y) const { return g33_(x, y); }
   const BoutReal& g12(int x, int y) const { return g12_(x, y); }
   const BoutReal& g13(int x, int y) const { return g13_(x, y); }
   const BoutReal& g23(int x, int y) const { return g23_(x, y); }
+#endif
 
   void setMetricTensor(const MetricTensor& metric_tensor) {
 
