@@ -45,6 +45,7 @@
 // Implementations:
 #include "impls/adams_bashforth/adams_bashforth.hxx"
 #include "impls/arkode/arkode.hxx"
+#include "impls/arkode/arkode_mri.hxx"
 #include "impls/cvode/cvode.hxx"
 #include "impls/euler/euler.hxx"
 #include "impls/ida/ida.hxx"
