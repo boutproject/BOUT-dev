@@ -385,6 +385,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
           setName(*f.var, f.name);
         }
         run_rhs(simtime);
+        modelOutputVars(debug);
 
         for (auto& f : f3d) {
           debug[f.name] = *f.var;
