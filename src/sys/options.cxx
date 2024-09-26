@@ -307,7 +307,7 @@ void Options::assign<>(Tensor<BoutReal> val, std::string source) {
 }
 
 void saveParallel(Options& opt, const std::string name, const Field3D& tosave){
-  ASSERT2(tosave.hasParallelSlices());
+  ASSERT0(tosave.isAllocated());
   opt[name] = tosave;
   for (size_t i0=1 ;  i0 <= tosave.numberParallelSlices(); ++i0) {
     for (int i: {i0, -i0} ) {
