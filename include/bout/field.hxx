@@ -294,6 +294,7 @@ inline void checkPositive(const T& f, const std::string& name = "field",
 template <typename T>
 inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   static_assert(bout::utils::is_Field_v<T>, "toFieldAligned only works on Fields");
+  ASSERT3(f.getCoordinates() != nullptr);
   return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
 }
 
@@ -301,6 +302,7 @@ inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
 template <typename T>
 inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   static_assert(bout::utils::is_Field_v<T>, "fromFieldAligned only works on Fields");
+  ASSERT3(f.getCoordinates() != nullptr);
   return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
 }
 
