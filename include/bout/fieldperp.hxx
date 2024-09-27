@@ -157,6 +157,25 @@ public:
     return *this;
   }
 
+  /// Dummy functions to increase portability
+  bool hasParallelSlices() const { return true; }
+  void calcParallelSlices() const {}
+  void clearParallelSlices() {}
+  int numberParallelSlices() { return 0; }
+
+  FieldPerp& yup(std::vector<FieldPerp>::size_type UNUSED(index) = 0) { return *this; }
+  const FieldPerp& yup(std::vector<FieldPerp>::size_type UNUSED(index) = 0) const {
+    return *this;
+  }
+
+  FieldPerp& ydown(std::vector<FieldPerp>::size_type UNUSED(index) = 0) { return *this; }
+  const FieldPerp& ydown(std::vector<FieldPerp>::size_type UNUSED(index) = 0) const {
+    return *this;
+  }
+
+  FieldPerp& ynext(int UNUSED(dir)) { return *this; }
+  const FieldPerp& ynext(int UNUSED(dir)) const { return *this; }
+
   /*!
    * Ensure that data array is allocated and unique
    */
