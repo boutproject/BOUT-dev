@@ -346,7 +346,7 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
-  const auto region2 = fmt::format("RGN_YPAR_{:+d}", y_offset);
+  const auto region2 = y_offset != 0 ? fmt::format("RGN_YPAR_{:+d}", y_offset) : region;
 
 #if USE_NEW_WEIGHTS
 #ifdef HS_USE_PETSC
