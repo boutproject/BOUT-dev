@@ -101,10 +101,11 @@ public:
                                    backward_boundary_xout, zperiodic);
     }
     ASSERT0(mesh.ystart == 1);
-    std::shared_ptr<BoundaryRegionPar> bndries[]{forward_boundary_xin, forward_boundary_xout,
-						 backward_boundary_xin, backward_boundary_xout};
-    for (auto bndry : bndries) {
-      for (auto bndry2 : bndries) {
+    std::shared_ptr<BoundaryRegionPar> bndries[]{
+        forward_boundary_xin, forward_boundary_xout, backward_boundary_xin,
+        backward_boundary_xout};
+    for (auto& bndry : bndries) {
+      for (const auto& bndry2 : bndries) {
         if (bndry->dir == bndry2->dir) {
           continue;
         }

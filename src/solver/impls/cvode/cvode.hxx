@@ -68,8 +68,8 @@ public:
 
   void resetInternalFields() override;
 
-  // These functions used internally (but need to be public)
-  void rhs(BoutReal t, BoutReal* udata, BoutReal* dudata);
+  // These functions are used internally (but need to be public)
+  void rhs(BoutReal t, BoutReal* udata, BoutReal* dudata, bool linear);
   void pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata, BoutReal* rvec,
            BoutReal* zvec);
   void jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata);
@@ -138,7 +138,7 @@ private:
   int nonlin_fails{0};
   int stab_lims{0};
 
-  bool cvode_initialised = false;
+  bool cvode_initialised{false};
 
   void set_vector_option_values(BoutReal* option_data, std::vector<BoutReal>& f2dtols,
                                 std::vector<BoutReal>& f3dtols);
