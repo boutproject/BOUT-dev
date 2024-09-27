@@ -246,7 +246,7 @@ int main(int argc, char** argv) {
       x0(mesh->xstart - 1, mesh->ystart, k) =
           (f4(mesh->xstart, mesh->ystart, k) - f4(mesh->xstart - 1, mesh->ystart, k))
           / mesh->getCoordinates()->dx(mesh->xstart, mesh->ystart, k)
-          / sqrt(mesh->getCoordinates()->g_11()(mesh->xstart, mesh->ystart, k));
+          / sqrt(mesh->getCoordinates()->g_11(mesh->xstart, mesh->ystart, k));
     }
   }
   if (mesh->lastX()) {
@@ -254,7 +254,7 @@ int main(int argc, char** argv) {
       x0(mesh->xend + 1, mesh->ystart, k) =
           (f4(mesh->xend + 1, mesh->ystart, k) - f4(mesh->xend, mesh->ystart, k))
           / mesh->getCoordinates()->dx(mesh->xend, mesh->ystart, k)
-          / sqrt(mesh->getCoordinates()->g_11()(mesh->xend, mesh->ystart, k));
+          / sqrt(mesh->getCoordinates()->g_11(mesh->xend, mesh->ystart, k));
     }
   }
 

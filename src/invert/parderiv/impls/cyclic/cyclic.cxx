@@ -154,7 +154,7 @@ const Field3D InvertParCR::solve(const Field3D& f) {
 
         BoutReal acoef = A(x, y + local_ystart); // Constant
         BoutReal bcoef =
-            B(x, y + local_ystart) / coord->g_22()(x, y + local_ystart); // d2dy2
+            B(x, y + local_ystart) / coord->g_22(x, y + local_ystart); // d2dy2
         BoutReal ccoef = C(x, y + local_ystart);                         // d2dydz
         BoutReal dcoef = D(x, y + local_ystart);                         // d2dz2
         BoutReal ecoef = E(x, y + local_ystart)

@@ -386,18 +386,18 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
               // Fourth Order Accuracy on Boundary
               Element(i, x, z, 0, 0,
                       -25.0 / (12.0 * coords->dx(x, y, z))
-                          / sqrt(coords->g_11()(x, y, z)),
+                          / sqrt(coords->g_11(x, y, z)),
                       MatA);
               Element(i, x, z, 1, 0,
-                      4.0 / coords->dx(x, y, z) / sqrt(coords->g_11()(x, y, z)), MatA);
+                      4.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
               Element(i, x, z, 2, 0,
-                      -3.0 / coords->dx(x, y, z) / sqrt(coords->g_11()(x, y, z)), MatA);
+                      -3.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
               Element(i, x, z, 3, 0,
-                      4.0 / (3.0 * coords->dx(x, y, z)) / sqrt(coords->g_11()(x, y, z)),
+                      4.0 / (3.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
                       MatA);
               Element(i, x, z, 4, 0,
                       -1.0 / (4.0 * coords->dx(x, y, z))
-                          / sqrt(coords->g_11()(x, y, z)),
+                          / sqrt(coords->g_11(x, y, z)),
                       MatA);
             } else {
               // Second Order Accuracy on Boundary
@@ -409,9 +409,9 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
               //   Element(i,x,z, 4, 0, 0.0, MatA );
               // Second Order Accuracy on Boundary, set half-way between grid points
               Element(i, x, z, 0, 0,
-                      -1.0 / coords->dx(x, y, z) / sqrt(coords->g_11()(x, y, z)), MatA);
+                      -1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
               Element(i, x, z, 1, 0,
-                      1.0 / coords->dx(x, y, z) / sqrt(coords->g_11()(x, y, z)), MatA);
+                      1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
               Element(i, x, z, 2, 0, 0.0, MatA);
               //                      Element(i,x,z, 3, 0, 0.0, MatA );  // Reset
               //                      these elements to 0 in case 4th order flag was
@@ -653,18 +653,18 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
               // Fourth Order Accuracy on Boundary
               Element(i, x, z, 0, 0,
                       25.0 / (12.0 * coords->dx(x, y, z))
-                          / sqrt(coords->g_11()(x, y, z)),
+                          / sqrt(coords->g_11(x, y, z)),
                       MatA);
               Element(i, x, z, -1, 0,
-                      -4.0 / coords->dx(x, y, z) / sqrt(coords->g_11()(x, y, z)), MatA);
+                      -4.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
               Element(i, x, z, -2, 0,
-                      3.0 / coords->dx(x, y, z) / sqrt(coords->g_11()(x, y, z)), MatA);
+                      3.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
               Element(i, x, z, -3, 0,
                       -4.0 / (3.0 * coords->dx(x, y, z))
-                          / sqrt(coords->g_11()(x, y, z)),
+                          / sqrt(coords->g_11(x, y, z)),
                       MatA);
               Element(i, x, z, -4, 0,
-                      1.0 / (4.0 * coords->dx(x, y, z)) / sqrt(coords->g_11()(x, y, z)),
+                      1.0 / (4.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
                       MatA);
             } else {
               // // Second Order Accuracy on Boundary
@@ -677,9 +677,9 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
               // Second Order Accuracy on Boundary, set half-way between grid
               // points
               Element(i, x, z, 0, 0,
-                      1.0 / coords->dx(x, y, z) / sqrt(coords->g_11()(x, y, z)), MatA);
+                      1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
               Element(i, x, z, -1, 0,
-                      -1.0 / coords->dx(x, y, z) / sqrt(coords->g_11()(x, y, z)), MatA);
+                      -1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
               Element(i, x, z, -2, 0, 0.0, MatA);
               // Element(i,x,z, -3, 0,  0.0, MatA );  // Reset these elements to 0
               // in case 4th order flag was used previously: not allowed now

@@ -2451,8 +2451,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     for (bndry->first(); !bndry->isDone(); bndry->next()) {
       f(bndry->x, bndry->y) =
           f(bndry->x - bndry->bx, bndry->y - bndry->by)
-          * sqrt(metric->g_22()(bndry->x, bndry->y)
-                 / metric->g_22()(bndry->x - bndry->bx, bndry->y - bndry->by));
+          * sqrt(metric->g_22(bndry->x, bndry->y)
+                 / metric->g_22(bndry->x - bndry->bx, bndry->y - bndry->by));
     }
 #else
   throw BoutException("Applying boundary condition 'neumannpar' to Field2D not "
@@ -2468,8 +2468,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       for (int z = 0; z < mesh->LocalNz; z++) {
         f(bndry->x, bndry->y, z) =
             f(bndry->x - bndry->bx, bndry->y - bndry->by, z)
-            * sqrt(metric->g_22()(bndry->x, bndry->y, z)
-                   / metric->g_22()(bndry->x - bndry->bx, bndry->y - bndry->by, z));
+            * sqrt(metric->g_22(bndry->x, bndry->y, z)
+                   / metric->g_22(bndry->x - bndry->bx, bndry->y - bndry->by, z));
       }
     }
   }

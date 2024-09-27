@@ -284,7 +284,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           x[k] = -x0(localmesh->xstart - 1, k2)
-                 * sqrt(coords->g_11()(localmesh->xstart, yindex))
+                 * sqrt(coords->g_11(localmesh->xstart, yindex))
                  * coords->dx(localmesh->xstart, yindex);
         }
       } else {
@@ -328,7 +328,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
         for (int k = 1; k < lzz + 1; k++) {
           int k2 = k - 1;
           x[(lxx + 1) * lz2 + k] = x0(localmesh->xend + 1, k2)
-                                   * sqrt(coords->g_11()(localmesh->xend, yindex))
+                                   * sqrt(coords->g_11(localmesh->xend, yindex))
                                    * coords->dx(localmesh->xend, yindex);
           // this is the value to set the gradient to at the outer boundary
         }
@@ -487,7 +487,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
           int k2 = k - 1;
           result(i2, k2) = x[lz2 + k]
                            - x0(localmesh->xstart - 1, k2)
-                                 * sqrt(coords->g_11()(localmesh->xstart, yindex))
+                                 * sqrt(coords->g_11(localmesh->xstart, yindex))
                                  * coords->dx(localmesh->xstart, yindex);
         }
       } else {
@@ -535,7 +535,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
           int k2 = k - 1;
           result(i2, k2) = x[lxx * lz2 + k]
                            + x0(localmesh->xend + 1, k2)
-                                 * sqrt(coords->g_11()(localmesh->xend, yindex))
+                                 * sqrt(coords->g_11(localmesh->xend, yindex))
                                  * coords->dx(localmesh->xend, yindex);
         }
       } else {

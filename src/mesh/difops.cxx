@@ -104,7 +104,7 @@ Field3D Grad_parP(const Field3D& apar, const Field3D& f) {
   for (int x = 1; x <= mesh->LocalNx - 2; x++) {
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
       for (int z = 0; z < ncz; z++) {
-        BoutReal by = 1. / sqrt(metric->g_22()(x, y, z));
+        BoutReal by = 1. / sqrt(metric->g_22(x, y, z));
         // Z indices zm and zp
         int const zm = (z - 1 + ncz) % ncz;
         int const zp = (z + 1) % ncz;
@@ -260,12 +260,12 @@ Field3D Div_par(const Field3D& f, const Field3D& v) {
         // Calculate flux at right boundary (y+1/2)
         BoutReal const fluxRight =
             fR * vR * (coord->J()(i, j, k) + coord->J()(i, j + 1, k))
-            / (sqrt(coord->g_22()(i, j, k)) + sqrt(coord->g_22()(i, j + 1, k)));
+            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j + 1, k)));
 
         // Calculate at left boundary (y-1/2)
         BoutReal const fluxLeft =
             fL * vL * (coord->J()(i, j, k) + coord->J()(i, j - 1, k))
-            / (sqrt(coord->g_22()(i, j, k)) + sqrt(coord->g_22()(i, j - 1, k)));
+            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j - 1, k)));
 
         result(i, j, k) =
             (fluxRight - fluxLeft) / (coord->dy(i, j, k) * coord->J()(i, j, k));

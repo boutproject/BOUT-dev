@@ -308,7 +308,7 @@ private:
 
           var(xrup.ind, jy, jz) = var(xrup.ind, jy - 1, jz)
                                   + coord->dy(xrup.ind, jy, jz)
-                                        * sqrt(coord->g_22()(xrup.ind, jy, jz))
+                                        * sqrt(coord->g_22(xrup.ind, jy, jz))
                                         * value(xrup.ind, jy, jz);
         }
       }
@@ -325,7 +325,7 @@ private:
 
           var(xrdn.ind, jy, jz) = var(xrdn.ind, jy + 1, jz)
                                   - coord->dy(xrdn.ind, jy, jz)
-                                        * sqrt(coord->g_22()(xrdn.ind, jy, jz))
+                                        * sqrt(coord->g_22(xrdn.ind, jy, jz))
                                         * value(xrdn.ind, jy, jz);
         }
       }
