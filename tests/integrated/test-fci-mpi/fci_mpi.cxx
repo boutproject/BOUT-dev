@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
                                                   Options::getRoot(), mesh)};
       // options->get(fmt::format("input_{:d}:boundary_perp", i), temp_str, s"free_o3");
       mesh->communicate(input);
-      input.applyParallelBoundary("parallel_neumann");
+      input.applyParallelBoundary("parallel_neumann_o2");
       for (int slice = -mesh->ystart; slice <= mesh->ystart; ++slice) {
         if (slice != 0) {
           Field3D tmp{0.};
