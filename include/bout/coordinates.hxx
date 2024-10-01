@@ -154,7 +154,7 @@ public:
   const BoutReal& g_13(int x, int y, int z) const { return covariantMetricTensor.g13(x, y, z); }
   const BoutReal& g_23(int x, int y, int z) const { return covariantMetricTensor.g23(x, y, z); }
 
-#if BOUT_USE_METRIC_3D != 1
+#if not(BOUT_USE_METRIC_3D)
   const BoutReal& g_11(int x, int y) const { return covariantMetricTensor.g11(x, y); }
   const BoutReal& g_22(int x, int y) const { return covariantMetricTensor.g22(x, y); }
   const BoutReal& g_33(int x, int y) const { return covariantMetricTensor.g33(x, y); }
