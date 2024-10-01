@@ -116,23 +116,23 @@ void LaplaceXZcyclic::setCoefs(const Field2D& A2D, const Field2D& B2D) {
         // XX component
 
         // Metrics on x+1/2 boundary
-        BoutReal J = 0.5 * (coord->J()(x, y) + coord->J()(x + 1, y));
+        BoutReal J = 0.5 * (coord->J(x, y) + coord->J(x + 1, y));
         BoutReal g11 = 0.5 * (coord->g11(x, y) + coord->g11(x + 1, y));
         BoutReal dx = 0.5 * (coord->dx(x, y) + coord->dx(x + 1, y));
         BoutReal A = 0.5 * (A2D(x, y) + A2D(x + 1, y));
 
-        BoutReal val = A * J * g11 / (coord->J()(x, y) * dx * coord->dx(x, y));
+        BoutReal val = A * J * g11 / (coord->J(x, y) * dx * coord->dx(x, y));
 
         ccoef(ind, x - xstart) += val;
         bcoef(ind, x - xstart) -= val;
 
         // Metrics on x-1/2 boundary
-        J = 0.5 * (coord->J()(x, y) + coord->J()(x - 1, y));
+        J = 0.5 * (coord->J(x, y) + coord->J(x - 1, y));
         g11 = 0.5 * (coord->g11(x, y) + coord->g11(x - 1, y));
         dx = 0.5 * (coord->dx(x, y) + coord->dx(x - 1, y));
         A = 0.5 * (A2D(x, y) + A2D(x - 1, y));
 
-        val = A * J * g11 / (coord->J()(x, y) * dx * coord->dx(x, y));
+        val = A * J * g11 / (coord->J(x, y) * dx * coord->dx(x, y));
         acoef(ind, x - xstart) += val;
         bcoef(ind, x - xstart) -= val;
 

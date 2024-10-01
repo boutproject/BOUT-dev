@@ -259,16 +259,16 @@ Field3D Div_par(const Field3D& f, const Field3D& v) {
 
         // Calculate flux at right boundary (y+1/2)
         BoutReal const fluxRight =
-            fR * vR * (coord->J()(i, j, k) + coord->J()(i, j + 1, k))
+            fR * vR * (coord->J(i, j, k) + coord->J(i, j + 1, k))
             / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j + 1, k)));
 
         // Calculate at left boundary (y-1/2)
         BoutReal const fluxLeft =
-            fL * vL * (coord->J()(i, j, k) + coord->J()(i, j - 1, k))
+            fL * vL * (coord->J(i, j, k) + coord->J(i, j - 1, k))
             / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j - 1, k)));
 
         result(i, j, k) =
-            (fluxRight - fluxLeft) / (coord->dy(i, j, k) * coord->J()(i, j, k));
+            (fluxRight - fluxLeft) / (coord->dy(i, j, k) * coord->J(i, j, k));
       }
     }
   }

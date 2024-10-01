@@ -102,6 +102,14 @@ public:
     return IntShiftTorsion_(x, y); }
 #endif
 
+  const BoutReal& J(int x, int y, int z) const {
+    return J()(x, y, z); }
+
+#if not(BOUT_USE_METRIC_3D)
+  const BoutReal& J(int x, int y) const {
+    return J()(x, y); }
+#endif
+
   void setDx(FieldMetric dx) { dx_ = std::move(dx); }
   void setDy(FieldMetric dy) { dy_ = std::move(dy); }
   void setDz(FieldMetric dz) { dz_ = std::move(dz); }
