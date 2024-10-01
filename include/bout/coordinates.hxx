@@ -127,6 +127,9 @@ public:
   /// Length of the Z domain. Used for FFTs
   const Field2D& zlength() const;
 
+  const BoutReal& zlength(int x, int y) const {
+    return zlength()(x, y); }
+
   /// True if corrections for non-uniform mesh spacing should be included in operators
   bool non_uniform() const { return non_uniform_; }
   void setNon_uniform(bool non_uniform) { non_uniform_ = non_uniform; }

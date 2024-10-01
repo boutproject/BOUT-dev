@@ -714,7 +714,7 @@ void shiftZ(Field3D& var, int jx, int jy, double zangle) {
 
   rfft(&(var(jx, jy, 0)), ncz, v.begin()); // Forward FFT
 
-  BoutReal zlength = var.getCoordinates()->zlength()(jx, jy);
+  BoutReal zlength = var.getCoordinates()->zlength(jx, jy);
 
   // Apply phase shift
   for (int jz = 1; jz <= ncz / 2; jz++) {

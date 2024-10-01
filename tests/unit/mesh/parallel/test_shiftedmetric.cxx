@@ -45,7 +45,7 @@ public:
 
     auto coords = mesh->getCoordinates();
     coords->setParallelTransform(bout::utils::make_unique<ShiftedMetric>(
-        *mesh, CELL_CENTRE, zShift, coords->zlength()(0, 0)));
+        *mesh, CELL_CENTRE, zShift, coords->zlength(0, 0)));
 
     Field3D input_temp{mesh};
 
