@@ -192,6 +192,20 @@ public:
     return f.ynext(-dir)[ind().yp(-dir)];
   }
 
+#if BOUT_USE_METRIC_3D == 0
+  const BoutReal& ynext(const Field2D& f) const { return f.ynext(dir)[ind().yp(dir)]; }
+  BoutReal& ynext(Field2D& f) const { return f.ynext(dir)[ind().yp(dir)]; }
+
+  const BoutReal& yprev(const Field2D& f) const {
+    ASSERT3(valid() > 0);
+    return f.ynext(-dir)[ind().yp(-dir)];
+  }
+  BoutReal& yprev(Field2D& f) const {
+    ASSERT3(valid() > 0);
+    return f.ynext(-dir)[ind().yp(-dir)];
+  }
+#endif
+
 private:
   const IndicesVec& bndry_points;
   IndicesIter bndry_position;
