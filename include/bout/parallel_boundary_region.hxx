@@ -216,8 +216,111 @@ private:
   // BoutReal get(const Field3D& f, int off)
   const BoutReal& ynext(const Field3D& f) const { return f.ynext(dir)[ind().yp(dir)]; }
   BoutReal& ynext(Field3D& f) const { return f.ynext(dir)[ind().yp(dir)]; }
-  const BoutReal& yprev(const Field3D& f) const { return f.ynext(-dir)[ind().yp(-dir)]; }
-  BoutReal& yprev(Field3D& f) const { return f.ynext(-dir)[ind().yp(-dir)]; }
+
+  const BoutReal& yprev(const Field3D& f) const {
+    ASSERT3(valid() > 0);
+    return f.ynext(-dir)[ind().yp(-dir)];
+  }
+  BoutReal& yprev(Field3D& f) const {
+    ASSERT3(valid() > 0);
+    return f.ynext(-dir)[ind().yp(-dir)];
+  }
+
+#if BOUT_USE_METRIC_3D == 0
+  const BoutReal& ynext(const Field2D& f) const { return f.ynext(dir)[ind().yp(dir)]; }
+  BoutReal& ynext(Field2D& f) const { return f.ynext(dir)[ind().yp(dir)]; }
+
+  const BoutReal& yprev(const Field2D& f) const {
+    ASSERT3(valid() > 0);
+    return f.ynext(-dir)[ind().yp(-dir)];
+  }
+  BoutReal& yprev(Field2D& f) const {
+    ASSERT3(valid() > 0);
+    return f.ynext(-dir)[ind().yp(-dir)];
+  }
+#endif
+
+private:
+  const IndicesVec& bndry_points;
+  IndicesIter bndry_position;
+
+  constexpr static BoutReal small_value = 1e-2;
+
+public:
+  const int dir;
+  Mesh* localmesh;
+};
+} // namespace parallel_boundary_region
+} // namespace bout
+using BoundaryRegionParIter = bout::parallel_boundary_region::BoundaryRegionParIterBase<
+    bout::parallel_boundary_region::IndicesVec,
+    bout::parallel_boundary_region::IndicesIter>;
+using BoundaryRegionParIterConst =
+    bout::parallel_boundary_region::BoundaryRegionParIterBase<
+        const bout::parallel_boundary_region::IndicesVec,
+        bout::parallel_boundary_region::IndicesIterConst>;
+
+class BoundaryRegionPar : public BoundaryRegionBase {
+public:
+  BoundaryRegionPar(const std::string& name, int dir, Mesh* passmesh)
+      : BoundaryRegionBase(name, passmesh), dir(dir) {
+    ASSERT0(std::abs(dir) == 1);
+    BoundaryRegionBase::isParallel = true;
+  }
+  BoundaryRegionPar(const std::string& name, BndryLoc loc, int dir, Mesh* passmesh)
+      : BoundaryRegionBase(name, loc, passmesh), dir(dir) {
+    BoundaryRegionBase::isParallel = true;
+    ASSERT0(std::abs(dir) == 1);
+  }
+
+  /// Add a point to the boundary
+  void add_point(Ind3D ind, BoutReal x, BoutReal y, BoutReal z, BoutReal length,
+                 char valid) {
+    bndry_points.push_back({ind, {x, y, z}, length, valid});
+  }
+  void add_point(int ix, int iy, int iz, BoutReal x, BoutReal y, BoutReal z,
+                 BoutReal length, char valid) {
+    bndry_points.push_back({xyz2ind(ix, iy, iz, localmesh), {x, y, z}, length, valid});
+  }
+
+  // final, so they can be inlined
+  void first() final { bndry_position = std::begin(bndry_points); }
+  void next() final { ++bndry_position; }
+  bool isDone() final { return (bndry_position == std::end(bndry_points)); }
+
+  bool contains(const BoundaryRegionPar& bndry) const {
+    return std::binary_search(std::begin(bndry_points), std::end(bndry_points),
+                              *bndry.bndry_position,
+                              [](const bout::parallel_boundary_region::Indices& i1,
+                                 const bout::parallel_boundary_region::Indices& i2) {
+                                return i1.index < i2.index;
+                              });
+  }
+
+  // setter
+  void setValid(char val) { bndry_position->valid = val; }
+
+  // BoundaryRegionParIterConst begin() const {
+  //   return BoundaryRegionParIterConst(bndry_points, bndry_points.begin(), dir);
+  // }
+  // BoundaryRegionParIterConst end() const {
+  //   return BoundaryRegionParIterConst(bndry_points, bndry_points.begin(), dir);
+  // }
+  BoundaryRegionParIter begin() {
+    return BoundaryRegionParIter(bndry_points, bndry_points.begin(), dir, localmesh);
+  }
+  BoundaryRegionParIter end() {
+    return BoundaryRegionParIter(bndry_points, bndry_points.end(), dir, localmesh);
+  }
+
+  const int dir;
+
+private:
+  /// Vector of points in the boundary
+  bout::parallel_boundary_region::IndicesVec bndry_points;
+  /// Current position in the boundary points
+  bout::parallel_boundary_region::IndicesIter bndry_position;
+
   static Ind3D xyz2ind(int x, int y, int z, Mesh* mesh) {
     const int ny = mesh->LocalNy;
     const int nz = mesh->LocalNz;
