@@ -87,6 +87,7 @@ constexpr auto SOLVEREULER = "euler";
 constexpr auto SOLVERRK3SSP = "rk3ssp";
 constexpr auto SOLVERPOWER = "power";
 constexpr auto SOLVERARKODE = "arkode";
+constexpr auto SOLVERARKODEMRI = "arkodemri";
 constexpr auto SOLVERIMEXBDF2 = "imexbdf2";
 constexpr auto SOLVERSNES = "snes";
 constexpr auto SOLVERRKGENERIC = "rkgeneric";
