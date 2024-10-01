@@ -615,7 +615,7 @@ void LaplaceMultigrid::generateMatrixF(int level) {
       // if easier; then check this is true in constructor)
 
       BoutReal dxd =
-          (D(i2, yindex, k2) * coords->G1()(i2, yindex)
+          (D(i2, yindex, k2) * coords->G1(i2, yindex)
            + coords->g11(i2, yindex) * ddx_C
            + coords->g13(i2, yindex)
                  * ddz_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
@@ -628,7 +628,7 @@ void LaplaceMultigrid::generateMatrixF(int level) {
       }
 
       BoutReal dzd =
-          (D(i2, yindex, k2) * coords->G3()(i2, yindex)
+          (D(i2, yindex, k2) * coords->G3(i2, yindex)
            + coords->g33(i2, yindex) * ddz_C
            + coords->g13(i2, yindex)
                  * ddx_C // (could assume zero, at least initially, if easier; then check

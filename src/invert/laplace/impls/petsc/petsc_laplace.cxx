@@ -979,8 +979,8 @@ void LaplacePetsc::Coeffs(int x, int y, int z, BoutReal& coef1, BoutReal& coef2,
   coef5 = 0.0;
   // If global flag all_terms are set (true by default)
   if (all_terms) {
-    coef4 = coords->G1()(x, y, z); // X 1st derivative
-    coef5 = coords->G3()(x, y, z); // Z 1st derivative
+    coef4 = coords->G1(x, y, z); // X 1st derivative
+    coef5 = coords->G3(x, y, z); // Z 1st derivative
 
     ASSERT3(finite(coef4));
     ASSERT3(finite(coef5));

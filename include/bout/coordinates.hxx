@@ -373,6 +373,22 @@ public:
   void setG2(const FieldMetric& G2) const { g_values().setG2(G2); }
   void setG3(const FieldMetric& G3) const { g_values().setG3(G3); }
 
+  const BoutReal& G1(int x, int y, int z) const {
+    return G1()(x, y, z); }
+  const BoutReal& G2(int x, int y, int z) const {
+    return G2()(x, y, z); }
+  const BoutReal& G3(int x, int y, int z) const {
+    return G3()(x, y, z); }
+
+#if not(BOUT_USE_METRIC_3D)
+  const BoutReal& G1(int x, int y) const {
+    return G1()(x, y); }
+  const BoutReal& G2(int x, int y) const {
+    return G2()(x, y); }
+  const BoutReal& G3(int x, int y) const {
+    return G3()(x, y); }
+#endif
+
   const FieldMetric& Grad2_par2_DDY_invSg(CELL_LOC outloc,
                                           const std::string& method) const;
 
