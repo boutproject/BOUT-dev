@@ -191,6 +191,11 @@ public:
     ASSERT3(valid() > 0);
     return f.ynext(-dir)[ind().yp(-dir)];
   }
+  void setYPrevIfValid(Field3D& f, BoutReal val) const {
+    if (valid() > 0) {
+      yprev(f) = val;
+    }
+  }
 
 #if BOUT_USE_METRIC_3D == 0
   const BoutReal& ynext(const Field2D& f) const { return f.ynext(dir)[ind().yp(dir)]; }
