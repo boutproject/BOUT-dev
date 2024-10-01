@@ -84,12 +84,17 @@ public:
   // These functions used internally (but need to be public)
   void rhs_se(BoutReal t, BoutReal* udata, BoutReal* dudata);
   void rhs_si(BoutReal t, BoutReal* udata, BoutReal* dudata);
+  void rhs_fe(BoutReal t, BoutReal* udata, BoutReal* dudata);
+  void rhs_fi(BoutReal t, BoutReal* udata, BoutReal* dudata);
   void rhs_s(BoutReal t, BoutReal* udata, BoutReal* dudata);
   void rhs_f(BoutReal t, BoutReal* udata, BoutReal* dudata);
   void rhs(BoutReal t, BoutReal* udata, BoutReal* dudata);
   void pre_s(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata, BoutReal* rvec,
            BoutReal* zvec);
-  void jac_si(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata);
+  void pre_f(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata, BoutReal* rvec,
+           BoutReal* zvec);
+  void jac_s(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata);
+  void jac_f(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata);
 
 private:
   BoutReal hcur; //< Current internal timestep
@@ -99,33 +104,27 @@ private:
   N_Vector uvec{nullptr};    //< Values
   void* arkode_mem{nullptr}; //< ARKODE internal memory block
 
-  BoutReal pre_Wtime{0.0}; //< Time in preconditioner
-  int pre_ncalls{0};       //< Number of calls to preconditioner
+  BoutReal pre_Wtime_s{0.0}; //< Time in preconditioner
+  BoutReal pre_Wtime_f{0.0}; //< Time in preconditioner
+  int pre_ncalls_s{0};       //< Number of calls to preconditioner
+  int pre_ncalls_f{0};       //< Number of calls to preconditioner
 
   /// Maximum number of steps to take between outputs
   int mxsteps;
   /// Integrator treatment enum: IMEX, Implicit or Explicit
-  Treatment treatment_s;
+  Treatment treatment;
+  Treatment inner_treatment;
   /// Use linear implicit solver (only evaluates jacobian inversion once)
   bool set_linear;
+  bool inner_set_linear;
   /// Solve explicit portion in fixed timestep mode. NOTE: This is not recommended except
   /// for code comparison
-  bool fixed_step_s;
-  bool fixed_step_f;
+  bool fixed_step;
   /// Order of the internal step
-  int order_s;
-  int order_f;
-  /// Name of the implicit Butcher table
-  std::string implicit_table_s;
-  std::string implicit_table_f;
-  /// Name of the explicit Butcher table
-  std::string explicit_table_s;
-  std::string explicit_table_f;
-  /// Fraction of the estimated explicitly stable step to use
-  BoutReal cfl_frac_s;
-  BoutReal cfl_frac_f;
+  int order;
   /// Timestep adaptivity function
   AdapMethod adap_method;
+  AdapMethod inner_adap_method;
   /// Absolute tolerance
   BoutReal abstol;
   /// Relative tolerance
@@ -133,23 +132,13 @@ private:
   /// Use separate absolute tolerance for each field
   bool use_vector_abstol;
   /// Maximum timestep (only used if greater than zero)
-  BoutReal max_timestep;
-  /// Minimum timestep (only used if greater than zero)
-  BoutReal min_timestep;
-  /// Initial timestep (only used if greater than zero)
-  BoutReal start_timestep;
-  /// Use accelerated fixed point solver instead of Newton iterative
-  bool fixed_point;
-  /// Use user-supplied preconditioner function
   bool use_precon;
+  bool inner_use_precon;
   /// Number of Krylov basis vectors to use
   int maxl;
+  int inner_maxl;
   /// Use right preconditioning instead of left preconditioning
   bool rightprec;
-  /// Use user-supplied Jacobian function
-  bool use_jacobian;
-  /// Use ARKode optimal parameters
-  bool optimize;
 
   // Diagnostics from ARKODE MRI
   int nsteps{0};
@@ -158,6 +147,12 @@ private:
   int nniters{0};
   int npevals{0};
   int nliters{0};
+  int inner_nsteps{0};
+  int inner_nfe_evals{0};
+  int inner_nfi_evals{0};
+  int inner_nniters{0};
+  int inner_npevals{0};
+  int inner_nliters{0};
 
   void set_abstol_values(BoutReal* abstolvec_data, std::vector<BoutReal>& f2dtols,
                          std::vector<BoutReal>& f3dtols);
@@ -167,14 +162,18 @@ private:
 
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};
+  SUNLinearSolver inner_sun_solver{nullptr};
   /// Solver for implicit stages
   SUNNonlinearSolver nonlinear_solver{nullptr};
+  SUNNonlinearSolver inner_nonlinear_solver{nullptr};
 #if SUNDIALS_CONTROLLER_SUPPORT
   /// Timestep controller
   SUNAdaptController controller{nullptr};
+  SUNAdaptController inner_controller{nullptr};
 #endif
   /// Context for SUNDIALS memory allocations
   sundials::Context suncontext;
+  sundials::Context inner_suncontext;
 };
 
 #endif // BOUT_HAS_ARKODE
