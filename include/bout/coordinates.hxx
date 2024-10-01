@@ -93,7 +93,15 @@ public:
   const BoutReal& dy(int x, int y) const { return dy_(x, y); }
   const BoutReal& dz(int x, int y) const { return dz_(x, y); }
 #endif
-  
+
+  const BoutReal& IntShiftTorsion(int x, int y, int z) const {
+    return IntShiftTorsion_(x, y, z); }
+
+#if not(BOUT_USE_METRIC_3D)
+  const BoutReal& IntShiftTorsion(int x, int y) const {
+    return IntShiftTorsion_(x, y); }
+#endif
+
   void setDx(FieldMetric dx) { dx_ = std::move(dx); }
   void setDy(FieldMetric dy) { dy_ = std::move(dy); }
   void setDz(FieldMetric dz) { dz_ = std::move(dz); }
@@ -120,7 +128,7 @@ public:
   const FieldMetric& d1_dy() const { return d1_dy_; }
   const FieldMetric& d1_dz() const { return d1_dz_; }
 
-  #if BOUT_USE_METRIC_3D
+#if BOUT_USE_METRIC_3D
   const BoutReal& d1_dx(int x, int y, int z) const { return d1_dx_(x, y, z); }
   const BoutReal& d1_dy(int x, int y, int z) const { return d1_dy_(x, y, z); }
   const BoutReal& d1_dz(int x, int y, int z) const { return d1_dz_(x, y, z); }

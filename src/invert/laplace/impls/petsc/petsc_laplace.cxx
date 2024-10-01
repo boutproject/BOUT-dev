@@ -998,8 +998,8 @@ void LaplacePetsc::Coeffs(int x, int y, int z, BoutReal& coef1, BoutReal& coef2,
 
   if (localmesh->IncIntShear) {
     // d2dz2 term
-    coef2 += coords->g11(x, y, z) * coords->IntShiftTorsion()(x, y, z)
-             * coords->IntShiftTorsion()(x, y, z);
+    coef2 += coords->g11(x, y, z) * coords->IntShiftTorsion(x, y, z)
+             * coords->IntShiftTorsion(x, y, z);
     // Mixed derivative
     coef3 = 0.0; // This cancels out
   }
