@@ -26,8 +26,8 @@
  *
  **************************************************************************/
 
-#ifndef BOUT_ARKODE_SOLVER_H
-#define BOUT_ARKODE_SOLVER_H
+#ifndef BOUT_ARKODE_MRI_SOLVER_H
+#define BOUT_ARKODE_MRI_SOLVER_H
 
 #include "bout/build_config.hxx"
 #include "bout/solver.hxx"
@@ -58,15 +58,15 @@ class ArkodeMRISolver;
 class Options;
 
 namespace {
-RegisterSolver<ArkodeMRISolver> registersolverarkode("arkode_mri");
+RegisterSolver<ArkodeMRISolver> registersolverarkodemri("arkode_mri");
 }
 
 // enum describing treatment of equations
 // Note: Capitalized because `explicit` is a C++ reserved keyword
-BOUT_ENUM_CLASS(Treatment, ImEx, Implicit, Explicit);
+BOUT_ENUM_CLASS(MRI_Treatment, ImEx, Implicit, Explicit);
 
 // Adaptivity method
-BOUT_ENUM_CLASS(AdapMethod, PID, PI, I, Explicit_Gustafsson, Implicit_Gustafsson,
+BOUT_ENUM_CLASS(MRI_AdapMethod, PID, PI, I, Explicit_Gustafsson, Implicit_Gustafsson,
                 ImEx_Gustafsson);
 
 class ArkodeMRISolver : public Solver {
@@ -112,8 +112,8 @@ private:
   /// Maximum number of steps to take between outputs
   int mxsteps;
   /// Integrator treatment enum: IMEX, Implicit or Explicit
-  Treatment treatment;
-  Treatment inner_treatment;
+  MRI_Treatment treatment;
+  MRI_Treatment inner_treatment;
   /// Use linear implicit solver (only evaluates jacobian inversion once)
   bool set_linear;
   bool inner_set_linear;
@@ -123,8 +123,8 @@ private:
   /// Order of the internal step
   int order;
   /// Timestep adaptivity function
-  AdapMethod adap_method;
-  AdapMethod inner_adap_method;
+  MRI_AdapMethod adap_method;
+  MRI_AdapMethod inner_adap_method;
   /// Absolute tolerance
   BoutReal abstol;
   /// Relative tolerance
@@ -177,4 +177,4 @@ private:
 };
 
 #endif // BOUT_HAS_ARKODE
-#endif // BOUT_ARKODE_SOLVER_H
+#endif // BOUT_ARKODE_MRI_SOLVER_H
