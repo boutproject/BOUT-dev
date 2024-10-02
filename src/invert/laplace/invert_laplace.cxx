@@ -607,8 +607,7 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
             avec[ix] = dcomplex(0., 0.);
             bvec[ix] =
                 dcomplex(-1., 0.) / sqrt(coords->g_11(ix, jy)) / coords->dx(ix, jy);
-            cvec[ix] =
-                dcomplex(1., 0.) / sqrt(coords->g_11(ix, jy)) / coords->dx(ix, jy);
+            cvec[ix] = dcomplex(1., 0.) / sqrt(coords->g_11(ix, jy)) / coords->dx(ix, jy);
           }
         } else if (isInnerBoundaryFlagSet(INVERT_AC_GRAD)) {
           // Zero gradient at inner boundary
@@ -622,8 +621,8 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
           for (int ix = 0; ix < inbndry; ix++) {
             avec[ix] = 0.0;
             bvec[ix] = 1.0;
-            cvec[ix] = -exp(-1.0 * sqrt(coords->g33(ix, jy) / coords->g11(ix, jy))
-                            * kwave * coords->dx(ix, jy));
+            cvec[ix] = -exp(-1.0 * sqrt(coords->g33(ix, jy) / coords->g11(ix, jy)) * kwave
+                            * coords->dx(ix, jy));
           }
         } else if (isInnerBoundaryFlagSet(INVERT_IN_CYLINDER)) {
           // Condition for inner radial boundary for cylindrical coordinates

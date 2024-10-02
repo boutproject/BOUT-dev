@@ -120,7 +120,8 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
 
   // Set up boundary conditions in operator
   const bool inner_X_neumann = isInnerBoundaryFlagSet(INVERT_AC_GRAD);
-  const auto inner_X_BC = inner_X_neumann ? -1. / coords->dx() / sqrt(coords->g_11()) : 0.5;
+  const auto inner_X_BC =
+      inner_X_neumann ? -1. / coords->dx() / sqrt(coords->g_11()) : 0.5;
   const auto inner_X_BC_plus = inner_X_neumann ? -inner_X_BC : 0.5;
 
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
@@ -129,7 +130,8 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options* opt, const CELL_LOC loc, Mesh* mes
   }
 
   const bool outer_X_neumann = isOuterBoundaryFlagSet(INVERT_AC_GRAD);
-  const auto outer_X_BC = outer_X_neumann ? 1. / coords->dx() / sqrt(coords->g_11()) : 0.5;
+  const auto outer_X_BC =
+      outer_X_neumann ? 1. / coords->dx() / sqrt(coords->g_11()) : 0.5;
   const auto outer_X_BC_minus = outer_X_neumann ? -outer_X_BC : 0.5;
 
   BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
@@ -370,7 +372,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
       C_df_dy += (coords->g12()[l] * dc_dx[l]
                   + (coords->g22()[l] - 1. / coords->g_22()[l]) * dc_dy[l]
                   + coords->g23()[l] * dc_dz[l])
-          / C1[l];
+                 / C1[l];
     }
 
     BoutReal C_d2f_dy2 = (coords->g22()[l] - 1.0 / coords->g_22()[l]);
@@ -393,8 +395,8 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     C_d2f_dy2 /= SQ(coords->dy()[l]);
     C_d2f_dxdy /=
         4 * coords->dx()[l]; // NOTE: This value is not completed here. It needs to
-                           // be divide by dx(i +/- 1, j, k) when using to set a
-                           // matrix element
+                             // be divide by dx(i +/- 1, j, k) when using to set a
+                             // matrix element
     C_d2f_dydz /= 4 * coords->dy()[l] * coords->dz()[l];
 
     // The values stored in the y-boundary are already interpolated

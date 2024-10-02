@@ -161,9 +161,9 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
       coef1 = coords->g11(ix, jy); // X 2nd derivative
       coef2 = coords->g33(ix, jy); // Z 2nd derivative
       coef3 = coords->g13(ix, jy); // X-Z mixed derivatives
-      coef4 = 0.0;                   // X 1st derivative
-      coef5 = 0.0;                   // Z 1st derivative
-      coef6 = Acoef(ix, jy);         // Constant
+      coef4 = 0.0;                 // X 1st derivative
+      coef5 = 0.0;                 // Z 1st derivative
+      coef6 = Acoef(ix, jy);       // Constant
 
       // Multiply Delp2 component by a factor
       coef1 *= Dcoef(ix, jy);
@@ -347,11 +347,11 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
 
         // Combine 4th order at 1 with 2nd order at 0
         A(1, 0) = 0.0; // Not used
-        A(1, 1) = dcomplex((14.
-                            - SQ(coords->dx(0, jy) * kwave) * coords->g33(0, jy)
-                                  / coords->g11(0, jy))
-                               * coef1,
-                           -coef3);
+        A(1, 1) = dcomplex(
+            (14.
+             - SQ(coords->dx(0, jy) * kwave) * coords->g33(0, jy) / coords->g11(0, jy))
+                * coef1,
+            -coef3);
         A(1, 2) = dcomplex(-29. * coef1 - SQ(kwave) * coef2 + coef4, 0.0);
         A(1, 3) = dcomplex(16. * coef1, coef3);
         A(1, 4) = dcomplex(-coef1, 0.0);

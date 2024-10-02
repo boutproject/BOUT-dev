@@ -58,8 +58,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
                               / (coord->dx(i, j, k) + coord->dx(i + 1, j, k));
 
         result(i, j, k) += fout / (coord->dx(i, j, k) * coord->J(i, j, k));
-        result(i + 1, j, k) -=
-            fout / (coord->dx(i + 1, j, k) * coord->J(i + 1, j, k));
+        result(i + 1, j, k) -= fout / (coord->dx(i + 1, j, k) * coord->J(i + 1, j, k));
       }
     }
   }
@@ -297,8 +296,7 @@ const Field3D D4DY4(const Field3D& d_in, const Field3D& f_in) {
                               * (coord->J(i, j, k) + coord->J(i, j + 1, k)) * d3fdy3;
 
         result(i, j, k) += flux / (coord->J(i, j, k) * coord->dz(i, j, k));
-        result(i, j + 1, k) -=
-            flux / (coord->J(i, j + 1, k) * coord->dz(i, j + 1, k));
+        result(i, j + 1, k) -= flux / (coord->J(i, j + 1, k) * coord->dz(i, j + 1, k));
       }
     }
   }
@@ -335,9 +333,9 @@ const Field3D D4DY4_Index(const Field3D& f_in, bool bndry_flux) {
 
           for (int k = 0; k < mesh->LocalNz; k++) {
             // Right boundary common factors
-            const BoutReal common_factor =
-                0.25 * (coord->dz(i, j, k) + coord->dz(i, j + 1, k))
-                * (coord->J(i, j, j) + coord->J(i, j + 1, k));
+            const BoutReal common_factor = 0.25
+                                           * (coord->dz(i, j, k) + coord->dz(i, j + 1, k))
+                                           * (coord->J(i, j, j) + coord->J(i, j + 1, k));
 
             const BoutReal factor_rc =
                 common_factor / (coord->J(i, j, k) * coord->dz(i, j, k));
@@ -359,9 +357,9 @@ const Field3D D4DY4_Index(const Field3D& f_in, bool bndry_flux) {
 
           for (int k = 0; k < mesh->LocalNz; k++) {
             // Right boundary common factors
-            const BoutReal common_factor =
-                0.25 * (coord->dz(i, j, k) + coord->dz(i, j + 1, k))
-                * (coord->J(i, j, j) + coord->J(i, j + 1, k));
+            const BoutReal common_factor = 0.25
+                                           * (coord->dz(i, j, k) + coord->dz(i, j + 1, k))
+                                           * (coord->J(i, j, j) + coord->J(i, j + 1, k));
 
             const BoutReal factor_rc =
                 common_factor / (coord->J(i, j, k) * coord->dz(i, j, k));
@@ -388,9 +386,9 @@ const Field3D D4DY4_Index(const Field3D& f_in, bool bndry_flux) {
 
         if (j != mesh->ystart || !has_lower_boundary) {
           for (int k = 0; k < mesh->LocalNz; k++) {
-            const BoutReal common_factor =
-                0.25 * (coord->dz(i, j, k) + coord->dz(i, j + 1, k))
-                * (coord->J(i, j, k) + coord->J(i, j - 1, k));
+            const BoutReal common_factor = 0.25
+                                           * (coord->dz(i, j, k) + coord->dz(i, j + 1, k))
+                                           * (coord->J(i, j, k) + coord->J(i, j - 1, k));
 
             const BoutReal factor_lc =
                 common_factor / (coord->J(i, j, k) * coord->dz(i, j, k));
@@ -407,9 +405,9 @@ const Field3D D4DY4_Index(const Field3D& f_in, bool bndry_flux) {
         } else {
           // On a domain (Y) boundary
           for (int k = 0; k < mesh->LocalNz; k++) {
-            const BoutReal common_factor =
-                0.25 * (coord->dz(i, j, k) + coord->dz(i, j + 1, k))
-                * (coord->J(i, j, k) + coord->J(i, j - 1, k));
+            const BoutReal common_factor = 0.25
+                                           * (coord->dz(i, j, k) + coord->dz(i, j + 1, k))
+                                           * (coord->J(i, j, k) + coord->J(i, j - 1, k));
 
             const BoutReal factor_lc =
                 common_factor / (coord->J(i, j, k) * coord->dz(i, j, k));

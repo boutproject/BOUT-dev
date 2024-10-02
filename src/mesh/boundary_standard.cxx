@@ -1605,12 +1605,12 @@ void BoundaryNeumann_NonOrthogonal::apply(Field2D& f) {
   // Loop over all elements and set equal to the next point in
   for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
     // Interpolate (linearly) metrics to halfway between last cell and boundary cell
-    BoutReal g11shift = 0.5
-                        * (metric->g11(bndry->x, bndry->y)
-                           + metric->g11(bndry->x - bndry->bx, bndry->y));
-    BoutReal g12shift = 0.5
-                        * (metric->g12(bndry->x, bndry->y)
-                           + metric->g12(bndry->x - bndry->bx, bndry->y));
+    BoutReal g11shift =
+        0.5
+        * (metric->g11(bndry->x, bndry->y) + metric->g11(bndry->x - bndry->bx, bndry->y));
+    BoutReal g12shift =
+        0.5
+        * (metric->g12(bndry->x, bndry->y) + metric->g12(bndry->x - bndry->bx, bndry->y));
     // Have to use derivatives at last gridpoint instead of derivatives on boundary layer
     //   because derivative values don't exist in boundary region
     // NOTE: should be fixed to interpolate to boundary line
@@ -2669,7 +2669,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
             -1.0 * sqrt(metric->g33(x, y) / metric->g11(x, y)) * metric->dx(x, y);
         for (int jz = 1; jz <= ncz / 2; jz++) {
           BoutReal kwave =
-              jz * 2.0 * PI / metric->zlength(x, y); // wavenumber in [rad^-1]
+              jz * 2.0 * PI / metric->zlength(x, y);   // wavenumber in [rad^-1]
           c0[jz] *= exp(coef * kwave);                 // The decaying solution only
         }
         // Reverse FFT
@@ -2877,8 +2877,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       do {
         // kz = 0 solution
         xpos -= metric->dx(x, y);
-        c2[0] =
-            c0[0] + k0lin * xpos + 0.5 * c1[0] * xpos * xpos / metric->g11(x - bx, y);
+        c2[0] = c0[0] + k0lin * xpos + 0.5 * c1[0] * xpos * xpos / metric->g11(x - bx, y);
         // kz != 0 solution
         BoutReal coef = -1.0 * sqrt(metric->g33(x - bx, y) / metric->g11(x - bx, y))
                         * metric->dx(x - bx, y);
@@ -2974,27 +2973,24 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
         tmp = -(metric->J(jx, jy) * metric->g12(jx, jy) * var.y(jx, jy, jz)
                 + metric->J(jx, jy) * metric->g13(jx, jy) * var.z(jx, jy, jz)
-                - metric->J(jx - 2, jy) * metric->g12(jx - 2, jy)
-                      * var.y(jx - 2, jy, jz)
-                + metric->J(jx - 2, jy) * metric->g13(jx - 2, jy)
-                      * var.z(jx - 2, jy, jz))
+                - metric->J(jx - 2, jy) * metric->g12(jx - 2, jy) * var.y(jx - 2, jy, jz)
+                + metric->J(jx - 2, jy) * metric->g13(jx - 2, jy) * var.z(jx - 2, jy, jz))
               / (metric->dx(jx - 2, jy)
                  + metric->dx(jx - 1,
-                                jy)); // First term (d/dx) using vals calculated above
-        tmp -=
-            (metric->J(jx - 1, jy + 1) * metric->g12(jx - 1, jy + 1)
-                 * var.x(jx - 1, jy + 1, jz)
-             - metric->J(jx - 1, jy - 1) * metric->g12(jx - 1, jy - 1)
-                   * var.x(jx - 1, jy - 1, jz)
-             + metric->J(jx - 1, jy + 1) * metric->g22(jx - 1, jy + 1)
-                   * var.y(jx - 1, jy + 1, jz)
-             - metric->J(jx - 1, jy - 1) * metric->g22(jx - 1, jy - 1)
-                   * var.y(jx - 1, jy - 1, jz)
-             + metric->J(jx - 1, jy + 1) * metric->g23(jx - 1, jy + 1)
-                   * var.z(jx - 1, jy + 1, jz)
-             - metric->J(jx - 1, jy - 1) * metric->g23(jx - 1, jy - 1)
-                   * var.z(jx - 1, jy - 1, jz))
-            / (metric->dy(jx - 1, jy - 1) + metric->dy(jx - 1, jy)); // second (d/dy)
+                              jy)); // First term (d/dx) using vals calculated above
+        tmp -= (metric->J(jx - 1, jy + 1) * metric->g12(jx - 1, jy + 1)
+                    * var.x(jx - 1, jy + 1, jz)
+                - metric->J(jx - 1, jy - 1) * metric->g12(jx - 1, jy - 1)
+                      * var.x(jx - 1, jy - 1, jz)
+                + metric->J(jx - 1, jy + 1) * metric->g22(jx - 1, jy + 1)
+                      * var.y(jx - 1, jy + 1, jz)
+                - metric->J(jx - 1, jy - 1) * metric->g22(jx - 1, jy - 1)
+                      * var.y(jx - 1, jy - 1, jz)
+                + metric->J(jx - 1, jy + 1) * metric->g23(jx - 1, jy + 1)
+                      * var.z(jx - 1, jy + 1, jz)
+                - metric->J(jx - 1, jy - 1) * metric->g23(jx - 1, jy - 1)
+                      * var.z(jx - 1, jy - 1, jz))
+               / (metric->dy(jx - 1, jy - 1) + metric->dy(jx - 1, jy)); // second (d/dy)
         tmp -= (metric->J(jx - 1, jy) * metric->g13(jx - 1, jy)
                     * (var.x(jx - 1, jy, jzp) - var.x(jx - 1, jy, jzm))
                 + metric->J(jx - 1, jy) * metric->g23(jx - 1, jy)

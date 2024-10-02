@@ -95,19 +95,17 @@ public:
 #endif
 
   const BoutReal& IntShiftTorsion(int x, int y, int z) const {
-    return IntShiftTorsion_(x, y, z); }
+    return IntShiftTorsion_(x, y, z);
+  }
 
 #if not(BOUT_USE_METRIC_3D)
-  const BoutReal& IntShiftTorsion(int x, int y) const {
-    return IntShiftTorsion_(x, y); }
+  const BoutReal& IntShiftTorsion(int x, int y) const { return IntShiftTorsion_(x, y); }
 #endif
 
-  const BoutReal& J(int x, int y, int z) const {
-    return J()(x, y, z); }
+  const BoutReal& J(int x, int y, int z) const { return J()(x, y, z); }
 
 #if not(BOUT_USE_METRIC_3D)
-  const BoutReal& J(int x, int y) const {
-    return J()(x, y); }
+  const BoutReal& J(int x, int y) const { return J()(x, y); }
 #endif
 
   void setDx(FieldMetric dx) { dx_ = std::move(dx); }
@@ -127,8 +125,7 @@ public:
   /// Length of the Z domain. Used for FFTs
   const Field2D& zlength() const;
 
-  const BoutReal& zlength(int x, int y) const {
-    return zlength()(x, y); }
+  const BoutReal& zlength(int x, int y) const { return zlength()(x, y); }
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
   bool non_uniform() const { return non_uniform_; }
@@ -166,12 +163,24 @@ public:
   const MetricTensor::FieldMetric& g23() const { return contravariantMetricTensor.g23(); }
 
   /// Covariant metric tensor
-  const BoutReal& g_11(int x, int y, int z) const { return covariantMetricTensor.g11(x, y, z); }
-  const BoutReal& g_22(int x, int y, int z) const { return covariantMetricTensor.g22(x, y, z); }
-  const BoutReal& g_33(int x, int y, int z) const { return covariantMetricTensor.g33(x, y, z); }
-  const BoutReal& g_12(int x, int y, int z) const { return covariantMetricTensor.g12(x, y, z); }
-  const BoutReal& g_13(int x, int y, int z) const { return covariantMetricTensor.g13(x, y, z); }
-  const BoutReal& g_23(int x, int y, int z) const { return covariantMetricTensor.g23(x, y, z); }
+  const BoutReal& g_11(int x, int y, int z) const {
+    return covariantMetricTensor.g11(x, y, z);
+  }
+  const BoutReal& g_22(int x, int y, int z) const {
+    return covariantMetricTensor.g22(x, y, z);
+  }
+  const BoutReal& g_33(int x, int y, int z) const {
+    return covariantMetricTensor.g33(x, y, z);
+  }
+  const BoutReal& g_12(int x, int y, int z) const {
+    return covariantMetricTensor.g12(x, y, z);
+  }
+  const BoutReal& g_13(int x, int y, int z) const {
+    return covariantMetricTensor.g13(x, y, z);
+  }
+  const BoutReal& g_23(int x, int y, int z) const {
+    return covariantMetricTensor.g23(x, y, z);
+  }
 
 #if not(BOUT_USE_METRIC_3D)
   const BoutReal& g_11(int x, int y) const { return covariantMetricTensor.g11(x, y); }
@@ -183,12 +192,24 @@ public:
 #endif
 
   /// Contravariant metric tensor (g^{ij})
-  const BoutReal& g11(int x, int y, int z) const { return contravariantMetricTensor.g11(x, y, z); }
-  const BoutReal& g22(int x, int y, int z) const { return contravariantMetricTensor.g22(x, y, z); }
-  const BoutReal& g33(int x, int y, int z) const { return contravariantMetricTensor.g33(x, y, z); }
-  const BoutReal& g12(int x, int y, int z) const { return contravariantMetricTensor.g12(x, y, z); }
-  const BoutReal& g13(int x, int y, int z) const { return contravariantMetricTensor.g13(x, y, z); }
-  const BoutReal& g23(int x, int y, int z) const { return contravariantMetricTensor.g23(x, y, z); }
+  const BoutReal& g11(int x, int y, int z) const {
+    return contravariantMetricTensor.g11(x, y, z);
+  }
+  const BoutReal& g22(int x, int y, int z) const {
+    return contravariantMetricTensor.g22(x, y, z);
+  }
+  const BoutReal& g33(int x, int y, int z) const {
+    return contravariantMetricTensor.g33(x, y, z);
+  }
+  const BoutReal& g12(int x, int y, int z) const {
+    return contravariantMetricTensor.g12(x, y, z);
+  }
+  const BoutReal& g13(int x, int y, int z) const {
+    return contravariantMetricTensor.g13(x, y, z);
+  }
+  const BoutReal& g23(int x, int y, int z) const {
+    return contravariantMetricTensor.g23(x, y, z);
+  }
 
 #if BOUT_USE_METRIC_3D != 1
   const BoutReal& g11(int x, int y) const { return contravariantMetricTensor.g11(x, y); }
@@ -373,20 +394,14 @@ public:
   void setG2(const FieldMetric& G2) const { g_values().setG2(G2); }
   void setG3(const FieldMetric& G3) const { g_values().setG3(G3); }
 
-  const BoutReal& G1(int x, int y, int z) const {
-    return G1()(x, y, z); }
-  const BoutReal& G2(int x, int y, int z) const {
-    return G2()(x, y, z); }
-  const BoutReal& G3(int x, int y, int z) const {
-    return G3()(x, y, z); }
+  const BoutReal& G1(int x, int y, int z) const { return G1()(x, y, z); }
+  const BoutReal& G2(int x, int y, int z) const { return G2()(x, y, z); }
+  const BoutReal& G3(int x, int y, int z) const { return G3()(x, y, z); }
 
 #if not(BOUT_USE_METRIC_3D)
-  const BoutReal& G1(int x, int y) const {
-    return G1()(x, y); }
-  const BoutReal& G2(int x, int y) const {
-    return G2()(x, y); }
-  const BoutReal& G3(int x, int y) const {
-    return G3()(x, y); }
+  const BoutReal& G1(int x, int y) const { return G1()(x, y); }
+  const BoutReal& G2(int x, int y) const { return G2()(x, y); }
+  const BoutReal& G3(int x, int y) const { return G3()(x, y); }
 #endif
 
   const FieldMetric& Grad2_par2_DDY_invSg(CELL_LOC outloc,

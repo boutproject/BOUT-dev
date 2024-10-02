@@ -128,15 +128,15 @@ Field3D Grad_parP(const Field3D& apar, const Field3D& f) {
         BoutReal fp, fm;
 
         // X differencing
-        fp = f(x + 1, y, z)
-             + (0.25 * dl / metric->dz(x, y, z)) * bz
-                   * (f(x + 1, y, zm) - f(x + 1, y, zp))
-             - 0.5 * dl * by * gys(x + 1, y, z);
+        fp =
+            f(x + 1, y, z)
+            + (0.25 * dl / metric->dz(x, y, z)) * bz * (f(x + 1, y, zm) - f(x + 1, y, zp))
+            - 0.5 * dl * by * gys(x + 1, y, z);
 
-        fm = f(x - 1, y, z)
-             + (0.25 * dl / metric->dz(x, y, z)) * bz
-                   * (f(x - 1, y, zm) - f(x - 1, y, zp))
-             - 0.5 * dl * by * gys(x - 1, y, z);
+        fm =
+            f(x - 1, y, z)
+            + (0.25 * dl / metric->dz(x, y, z)) * bz * (f(x - 1, y, zm) - f(x - 1, y, zp))
+            - 0.5 * dl * by * gys(x - 1, y, z);
 
         result(x, y, z) = bx * (fp - fm)
                           / (0.5 * metric->dx(x - 1, y, z) + metric->dx(x, y, z)
@@ -144,15 +144,15 @@ Field3D Grad_parP(const Field3D& apar, const Field3D& f) {
 
         // Z differencing
 
-        fp = f(x, y, zp)
-             + (0.25 * dl / metric->dx(x, y, z)) * bx
-                   * (f(x - 1, y, zp) - f(x + 1, y, zp))
-             - 0.5 * dl * by * gys(x, y, zp);
+        fp =
+            f(x, y, zp)
+            + (0.25 * dl / metric->dx(x, y, z)) * bx * (f(x - 1, y, zp) - f(x + 1, y, zp))
+            - 0.5 * dl * by * gys(x, y, zp);
 
-        fm = f(x, y, zm)
-             + (0.25 * dl / metric->dx(x, y, z)) * bx
-                   * (f(x - 1, y, zm) - f(x + 1, y, zm))
-             - 0.5 * dl * by * gys(x, y, zm);
+        fm =
+            f(x, y, zm)
+            + (0.25 * dl / metric->dx(x, y, z)) * bx * (f(x - 1, y, zm) - f(x + 1, y, zm))
+            - 0.5 * dl * by * gys(x, y, zm);
 
         result(x, y, z) += bz * (fp - fm)
                            / (0.5 * metric->dz(x, y, zm) + metric->dz(x, y, z)

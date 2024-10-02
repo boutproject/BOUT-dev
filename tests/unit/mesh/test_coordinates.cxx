@@ -573,5 +573,4 @@ TEST_F(CoordinatesTest, IndexedAccessors) {
 #if BOUT_USE_METRIC_3D
   EXPECT_EQ(actual_dz, expected_dz);
 #endif
-
 }
