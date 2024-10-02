@@ -209,46 +209,118 @@ int ArkodeMRISolver::init() {
 
   switch (inner_treatment) {
   case MRI_Treatment::ImEx:
-    arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs_f_explicit,
+    inner_arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs_f_explicit,
                                     arkode_rhs_f_implicit, simtime, uvec);
     break;
   case MRI_Treatment::Explicit:
-    arkode_mem =
+    inner_arkode_mem =
         callWithSUNContext(ARKStepCreate, suncontext, arkode_f_rhs, nullptr, simtime, uvec);
     break;
   case MRI_Treatment::Implicit:
-    arkode_mem =
+    inner_arkode_mem =
         callWithSUNContext(ARKStepCreate, suncontext, nullptr, arkode_f_rhs, simtime, uvec);
     break;
   default:
     throw BoutException("Invalid inner_treatment: {}\n", toString(inner_treatment));
   }
-  if (arkode_mem == nullptr) {
+  if (inner_arkode_mem == nullptr) {
     throw BoutException("ARKStepCreate failed\n");
   }
 
   switch (inner_treatment) {
   case MRI_Treatment::ImEx:
     output_info.write("\tUsing ARKode ImEx inner solver \n");
-    if (ARKStepSetImEx(arkode_mem) != ARK_SUCCESS) {
+    if (ARKStepSetImEx(inner_arkode_mem) != ARK_SUCCESS) {
       throw BoutException("ARKodeSetImEx failed\n");
     }
     break;
   case MRI_Treatment::Explicit:
     output_info.write("\tUsing ARKode Explicit inner solver \n");
-    if (ARKStepSetExplicit(arkode_mem) != ARK_SUCCESS) {
+    if (ARKStepSetExplicit(inner_arkode_mem) != ARK_SUCCESS) {
       throw BoutException("ARKodeSetExplicit failed\n");
     }
     break;
   case MRI_Treatment::Implicit:
     output_info.write("\tUsing ARKode Implicit inner solver \n");
-    if (ARKStepSetImplicit(arkode_mem) != ARK_SUCCESS) {
+    if (ARKStepSetImplicit(inner_arkode_mem) != ARK_SUCCESS) {
       throw BoutException("ARKodeSetImplicit failed\n");
     }
     break;
   default:
     throw BoutException("Invalid inner_treatment: {}\n", toString(inner_treatment));
   }
+
+  // For callbacks, need pointer to solver object
+  if (ARKodeSetUserData(inner_arkode_mem, this) != ARK_SUCCESS) {
+    throw BoutException("ARKodeSetUserData failed\n");
+  }
+
+  if (ARKodeSetLinear(inner_arkode_mem, set_linear) != ARK_SUCCESS) {
+    throw BoutException("ARKodeSetLinear failed\n");
+  }
+
+  if (fixed_step) {
+    // If not given, default to adaptive timestepping
+    const auto fixed_timestep = (*options)["timestep"].withDefault(0.0);
+    if (ARKodeSetFixedStep(inner_arkode_mem, fixed_timestep) != ARK_SUCCESS) {
+      throw BoutException("ARKodeSetFixedStep failed\n");
+    }
+  }
+
+  if (ARKodeSetOrder(inner_arkode_mem, order) != ARK_SUCCESS) {
+    throw BoutException("ARKodeSetOrder failed\n");
+  }
+
+  if (ARKStepCreateMRIStepInnerStepper(inner_arkode_mem, &inner_stepper) != ARK_SUCCESS) {
+    throw BoutException("ARKStepCreateMRIStepInnerStepper failed\n");
+  }
+
+  // Initialize the slow integrator. Specify the explicit slow right-hand side
+  // function in y'=fe(t,y)+fi(t,y)+ff(t,y), the inital time T0, the
+  // initial dependent variable vector y, and the fast integrator.
+
+  switch (treatment) {
+  case MRI_Treatment::ImEx:
+    arkode_mem = callWithSUNContext(MRIStepCreate, suncontext, arkode_rhs_f_explicit, arkode_rhs_f_implicit, 
+                                    simtime, uvec, inner_stepper);
+    break;
+  case MRI_Treatment::Explicit:
+    arkode_mem = callWithSUNContext(MRIStepCreate, suncontext, arkode_f_rhs, nullptr, 
+                                    simtime, uvec, inner_stepper);
+    break;
+  case MRI_Treatment::Implicit:
+    arkode_mem = callWithSUNContext(MRIStepCreate, suncontext, arkode_rhs_f_explicit, nullptr, 
+                                    simtime, uvec, inner_stepper);
+    break;
+  default:
+    throw BoutException("Invalid treatment: {}\n", toString(treatment));
+  }
+  if (arkode_mem == nullptr) {
+    throw BoutException("MRIStepCreate failed\n");
+  }
+
+  // switch (treatment) {
+  // case MRI_Treatment::ImEx:
+  //   output_info.write("\tUsing ARKode ImEx solver \n");
+  //   if (ARKStepSetImEx(arkode_mem) != ARK_SUCCESS) {
+  //     throw BoutException("ARKodeSetImEx failed\n");
+  //   }
+  //   break;
+  // case MRI_Treatment::Explicit:
+  //   output_info.write("\tUsing ARKode Explicit solver \n");
+  //   if (ARKStepSetExplicit(arkode_mem) != ARK_SUCCESS) {
+  //     throw BoutException("ARKodeSetExplicit failed\n");
+  //   }
+  //   break;
+  // case MRI_Treatment::Implicit:
+  //   output_info.write("\tUsing ARKode Implicit solver \n");
+  //   if (ARKStepSetImplicit(arkode_mem) != ARK_SUCCESS) {
+  //     throw BoutException("ARKodeSetImplicit failed\n");
+  //   }
+  //   break;
+  // default:
+  //   throw BoutException("Invalid treatment: {}\n", toString(treatment));
+  // }
 
   // For callbacks, need pointer to solver object
   if (ARKodeSetUserData(arkode_mem, this) != ARK_SUCCESS) {

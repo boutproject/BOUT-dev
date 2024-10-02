@@ -47,6 +47,7 @@ RegisterUnavailableSolver
 
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_config.h>
+#include <arkode/arkode_mristep.h>
 
 #if SUNDIALS_CONTROLLER_SUPPORT
 #include <sundials/sundials_adaptcontroller.h>
@@ -103,6 +104,8 @@ private:
 
   N_Vector uvec{nullptr};    //< Values
   void* arkode_mem{nullptr}; //< ARKODE internal memory block
+  void* inner_arkode_mem{nullptr}; //< ARKODE internal memory block
+  MRIStepInnerStepper inner_stepper{nullptr}; //< inner stepper
 
   BoutReal pre_Wtime_s{0.0}; //< Time in preconditioner
   BoutReal pre_Wtime_f{0.0}; //< Time in preconditioner
