@@ -36,7 +36,7 @@
 
 namespace {
 RegisterUnavailableSolver
-    registerunavailablearkode("arkode_mri", "BOUT++ was not configured with ARKODE/SUNDIALS");
+    registerunavailablearkodemri("arkode_mri", "BOUT++ was not configured with ARKODE/SUNDIALS");
 }
 
 #else
