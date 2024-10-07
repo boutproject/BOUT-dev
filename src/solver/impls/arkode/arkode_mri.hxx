@@ -49,9 +49,7 @@ RegisterUnavailableSolver
 #include <sundials/sundials_config.h>
 #include <arkode/arkode_mristep.h>
 
-#if SUNDIALS_CONTROLLER_SUPPORT
 #include <sundials/sundials_adaptcontroller.h>
-#endif
 
 #include <vector>
 
@@ -127,7 +125,6 @@ private:
   int order;
   /// Timestep adaptivity function
   MRI_AdapMethod adap_method;
-  MRI_AdapMethod inner_adap_method;
   /// Absolute tolerance
   BoutReal abstol;
   /// Relative tolerance
@@ -169,11 +166,9 @@ private:
   /// Solver for implicit stages
   SUNNonlinearSolver nonlinear_solver{nullptr};
   SUNNonlinearSolver inner_nonlinear_solver{nullptr};
-#if SUNDIALS_CONTROLLER_SUPPORT
   /// Timestep controller
   SUNAdaptController controller{nullptr};
   SUNAdaptController inner_controller{nullptr};
-#endif
   /// Context for SUNDIALS memory allocations
   sundials::Context suncontext;
 };

@@ -105,11 +105,6 @@ ArkodeMRISolver::ArkodeMRISolver(Options* opts)
               .doc("Set timestep adaptivity function: pid, pi, i, explicit_gustafsson,  "
                    "implicit_gustafsson, imex_gustafsson.")
               .withDefault(MRI_AdapMethod::PID)),
-      inner_adap_method(
-          (*options)["inner_adap_method"]
-              .doc("Set timestep adaptivity function: pid, pi, i, explicit_gustafsson,  "
-                   "implicit_gustafsson, imex_gustafsson.")
-              .withDefault(MRI_AdapMethod::PID)),
       abstol((*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12)),
       reltol((*options)["rtol"].doc("Relative tolerance").withDefault(1.0e-5)),
       use_vector_abstol((*options)["use_vector_abstol"]
@@ -160,9 +155,8 @@ ArkodeMRISolver::~ArkodeMRISolver() {
   SUNLinSolFree(sun_solver);
   SUNNonlinSolFree(nonlinear_solver);
 
-#if SUNDIALS_CONTROLLER_SUPPORT
   SUNAdaptController_Destroy(controller);
-#endif
+  SUNAdaptController_Destroy(inner_controller);
 }
 
 /**************************************************************************
@@ -203,25 +197,16 @@ int ArkodeMRISolver::init() {
     inner_arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs_f_explicit,
                                     arkode_rhs_f_implicit, simtime, uvec);
     output_info.write("\tUsing ARKode ImEx inner solver \n");
-    if (ARKStepSetImEx(inner_arkode_mem) != ARK_SUCCESS) {
-      throw BoutException("ARKodeSetImEx failed\n");
-    }
     break;
   case MRI_Treatment::Explicit:
     inner_arkode_mem =
         callWithSUNContext(ARKStepCreate, suncontext, arkode_f_rhs, nullptr, simtime, uvec);
     output_info.write("\tUsing ARKode Explicit inner solver \n");
-    if (ARKStepSetExplicit(inner_arkode_mem) != ARK_SUCCESS) {
-      throw BoutException("ARKodeSetExplicit failed\n");
-    }
     break;
   case MRI_Treatment::Implicit:
     inner_arkode_mem =
         callWithSUNContext(ARKStepCreate, suncontext, nullptr, arkode_f_rhs, simtime, uvec);
     output_info.write("\tUsing ARKode Implicit inner solver \n");
-    if (ARKStepSetImplicit(inner_arkode_mem) != ARK_SUCCESS) {
-      throw BoutException("ARKodeSetImplicit failed\n");
-    }
     break;
   default:
     throw BoutException("Invalid inner_treatment: {}\n", toString(inner_treatment));
@@ -235,14 +220,15 @@ int ArkodeMRISolver::init() {
     throw BoutException("ARKodeSetUserData failed\n");
   }
 
-  if (ARKodeSetLinear(inner_arkode_mem, set_linear) != ARK_SUCCESS) {
-    throw BoutException("ARKodeSetLinear failed\n");
-  }
+  if(inner_treatment != MRI_Treatment::Explicit)
+    if (ARKodeSetLinear(inner_arkode_mem, set_linear) != ARK_SUCCESS) {
+      throw BoutException("ARKodeSetLinear failed\n");
+    }
 
   if (fixed_step) {
     // If not given, default to adaptive timestepping
-    const auto fixed_timestep = (*options)["timestep"].withDefault(0.0);
-    if (ARKodeSetFixedStep(inner_arkode_mem, fixed_timestep) != ARK_SUCCESS) {
+    const auto inner_fixed_timestep = (*options)["inner_timestep"].withDefault(0.0);
+    if (ARKodeSetFixedStep(inner_arkode_mem, inner_fixed_timestep) != ARK_SUCCESS) {
       throw BoutException("ARKodeSetFixedStep failed\n");
     }
   }
@@ -264,25 +250,16 @@ int ArkodeMRISolver::init() {
     arkode_mem = callWithSUNContext(MRIStepCreate, suncontext, arkode_rhs_s_explicit, arkode_rhs_s_implicit, 
                                     simtime, uvec, inner_stepper);
     output_info.write("\tUsing ARKode ImEx solver \n");
-    if (ARKStepSetImEx(arkode_mem) != ARK_SUCCESS) {
-      throw BoutException("ARKodeSetImEx failed\n");
-    }
     break;
   case MRI_Treatment::Explicit:
     arkode_mem = callWithSUNContext(MRIStepCreate, suncontext, arkode_s_rhs, nullptr, 
                                     simtime, uvec, inner_stepper);
     output_info.write("\tUsing ARKode Explicit solver \n");
-    if (ARKStepSetExplicit(arkode_mem) != ARK_SUCCESS) {
-      throw BoutException("ARKodeSetExplicit failed\n");
-    }
     break;
   case MRI_Treatment::Implicit:
     arkode_mem = callWithSUNContext(MRIStepCreate, suncontext, nullptr, arkode_s_rhs,
                                     simtime, uvec, inner_stepper);
     output_info.write("\tUsing ARKode Implicit solver \n");
-    if (ARKStepSetImplicit(arkode_mem) != ARK_SUCCESS) {
-      throw BoutException("ARKodeSetImplicit failed\n");
-    }
     break;
   default:
     throw BoutException("Invalid treatment: {}\n", toString(treatment));
@@ -296,9 +273,10 @@ int ArkodeMRISolver::init() {
     throw BoutException("ARKodeSetUserData failed\n");
   }
 
-  if (ARKodeSetLinear(arkode_mem, set_linear) != ARK_SUCCESS) {
-    throw BoutException("ARKodeSetLinear failed\n");
-  }
+  if(treatment != MRI_Treatment::Explicit)
+    if (ARKodeSetLinear(arkode_mem, set_linear) != ARK_SUCCESS) {
+      throw BoutException("ARKodeSetLinear failed\n");
+    }
 
   if (fixed_step) {
     // If not given, default to adaptive timestepping
@@ -312,36 +290,45 @@ int ArkodeMRISolver::init() {
     throw BoutException("ARKodeSetOrder failed\n");
   }
 
-#if SUNDIALS_CONTROLLER_SUPPORT
   switch (adap_method) {
   case MRI_AdapMethod::PID:
     controller = SUNAdaptController_PID(suncontext);
+    inner_controller = SUNAdaptController_PID(suncontext);
     break;
   case MRI_AdapMethod::PI:
     controller = SUNAdaptController_PI(suncontext);
+    inner_controller = SUNAdaptController_PI(suncontext);
     break;
   case MRI_AdapMethod::I:
     controller = SUNAdaptController_I(suncontext);
+    inner_controller = SUNAdaptController_I(suncontext);
     break;
   case MRI_AdapMethod::Explicit_Gustafsson:
     controller = SUNAdaptController_ExpGus(suncontext);
+    inner_controller = SUNAdaptController_ExpGus(suncontext);
     break;
   case MRI_AdapMethod::Implicit_Gustafsson:
     controller = SUNAdaptController_ImpGus(suncontext);
+    inner_controller = SUNAdaptController_ImpGus(suncontext);
     break;
   case MRI_AdapMethod::ImEx_Gustafsson:
     controller = SUNAdaptController_ImExGus(suncontext);
+    inner_controller = SUNAdaptController_ImExGus(suncontext);
     break;
   default:
     throw BoutException("Invalid adap_method\n");
   }
 
-  if (ARKodeSetAdaptController(arkode_mem, controller) != ARK_SUCCESS) {
-    throw BoutException("ARKodeSetAdaptController failed\n");
-  }
+  // if (ARKodeSetAdaptController(arkode_mem, controller) != ARK_SUCCESS) {
+  //   throw BoutException("ARKodeSetAdaptController failed\n");
+  // }
 
-  if (ARKodeSetAdaptivityAdjustment(arkode_mem, 0) != ARK_SUCCESS) {
-    throw BoutException("ARKodeSetAdaptivityAdjustment failed\n");
+  // if (ARKodeSetAdaptivityAdjustment(arkode_mem, 0) != ARK_SUCCESS) {
+  //   throw BoutException("ARKodeSetAdaptivityAdjustment failed\n");
+  // }
+
+  if (ARKodeSetFixedStep(arkode_mem, 0.01) != ARK_SUCCESS) {
+    throw BoutException("ARKodeSetAdaptController failed\n");
   }
 
   if (ARKodeSetAdaptController(inner_arkode_mem, controller) != ARK_SUCCESS) {
@@ -351,43 +338,6 @@ int ArkodeMRISolver::init() {
   if (ARKodeSetAdaptivityAdjustment(inner_arkode_mem, 0) != ARK_SUCCESS) {
     throw BoutException("ARKodeSetAdaptivityAdjustment failed\n");
   }
-
-#else
-  int adap_method_int;
-  // Could cast to underlying integer, but this is more explicit
-  switch (adap_method) {
-  case MRI_AdapMethod::PID:
-    adap_method_int = 0;
-    break;
-  case MRI_AdapMethod::PI:
-    adap_method_int = 1;
-    break;
-  case MRI_AdapMethod::I:
-    adap_method_int = 2;
-    break;
-  case MRI_AdapMethod::Explicit_Gustafsson:
-    adap_method_int = 3;
-    break;
-  case MRI_AdapMethod::Implicit_Gustafsson:
-    adap_method_int = 4;
-    break;
-  case MRI_AdapMethod::ImEx_Gustafsson:
-    adap_method_int = 5;
-    break;
-  default:
-    throw BoutException("Invalid adap_method\n");
-  }
-
-  if (ARKodeSetAdaptivityMethod(arkode_mem, adap_method_int, 1, 1, nullptr)
-      != ARK_SUCCESS) {
-    throw BoutException("ARKodeSetAdaptivityMethod failed\n");
-  }
-
-  if (ARKodeSetAdaptivityMethod(inner_arkode_mem, adap_method_int, 1, 1, nullptr)
-      != ARK_SUCCESS) {
-    throw BoutException("ARKodeSetAdaptivityMethod failed\n");
-  }
-#endif
 
   if (use_vector_abstol) {
     std::vector<BoutReal> f2dtols;
@@ -447,7 +397,7 @@ int ArkodeMRISolver::init() {
       output.write("\tUsing Newton iteration\n");
 
       const auto prectype =
-          use_precon ? (rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT) : SUN_PREC_NONE;
+          inner_use_precon ? (rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT) : SUN_PREC_NONE;
       inner_sun_solver = callWithSUNContext(SUNLinSol_SPGMR, suncontext, uvec, prectype, inner_maxl);
       if (inner_sun_solver == nullptr) {
         throw BoutException("Creating SUNDIALS linear solver failed\n");
@@ -457,8 +407,8 @@ int ArkodeMRISolver::init() {
       }
 
       /// Set Preconditioner
-      if (use_precon) {
-        if (hasPreconditioner()) {
+      if (inner_use_precon) {
+        if (hasPreconditioner()) {  // change to inner_hasPreconditioner when it is available
           output.write("\tUsing user-supplied preconditioner\n");
 
           if (ARKodeSetPreconditioner(inner_arkode_mem, nullptr, arkode_f_pre)
@@ -506,7 +456,7 @@ int ArkodeMRISolver::init() {
         }
       } else {
         // Not using preconditioning
-        output.write("\tNo preconditioning\n");
+        output.write("\tNo inner preconditioning\n");
       }
     }
 
@@ -618,10 +568,10 @@ int ArkodeMRISolver::run() {
     long int temp_long_int, temp_long_int2;
     ARKodeGetNumSteps(arkode_mem, &temp_long_int);
     nsteps = int(temp_long_int);
-    ARKStepGetNumRhsEvals(arkode_mem, &temp_long_int, &temp_long_int2); //Change after the release
+    MRIStepGetNumRhsEvals(arkode_mem, &temp_long_int, &temp_long_int2); //Change after the release
     nfe_evals = int(temp_long_int);
     nfi_evals = int(temp_long_int2);
-    if (inner_treatment == MRI_Treatment::ImEx or inner_treatment == MRI_Treatment::Implicit) {
+    if (treatment == MRI_Treatment::ImEx or treatment == MRI_Treatment::Implicit) {
       ARKodeGetNumNonlinSolvIters(arkode_mem, &temp_long_int);
       nniters = int(temp_long_int);
       ARKodeGetNumPrecEvals(arkode_mem, &temp_long_int);
@@ -630,17 +580,43 @@ int ArkodeMRISolver::run() {
       nliters = int(temp_long_int);
     }
 
+    ARKodeGetNumSteps(inner_arkode_mem, &temp_long_int);
+    inner_nsteps = int(temp_long_int);
+    ARKStepGetNumRhsEvals(inner_arkode_mem, &temp_long_int, &temp_long_int2); //Change after the release
+    inner_nfe_evals = int(temp_long_int);
+    inner_nfi_evals = int(temp_long_int2);
+    if (inner_treatment == MRI_Treatment::ImEx or inner_treatment == MRI_Treatment::Implicit) {
+      ARKodeGetNumNonlinSolvIters(inner_arkode_mem, &temp_long_int);
+      inner_nniters = int(temp_long_int);
+      ARKodeGetNumPrecEvals(inner_arkode_mem, &temp_long_int);
+      inner_npevals = int(temp_long_int);
+      ARKodeGetNumLinIters(inner_arkode_mem, &temp_long_int);
+      inner_nliters = int(temp_long_int);
+    }
+
     if (diagnose) {
       output.write("\nARKODE: nsteps {:d}, nfe_evals {:d}, nfi_evals {:d}, nniters {:d}, "
                    "npevals {:d}, nliters {:d}\n",
                    nsteps, nfe_evals, nfi_evals, nniters, npevals, nliters);
-      if (inner_treatment == MRI_Treatment::ImEx or inner_treatment == MRI_Treatment::Implicit) {
+      if (treatment == MRI_Treatment::ImEx or treatment == MRI_Treatment::Implicit) {
         output.write("    -> Newton iterations per step: {:e}\n",
                      static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
         output.write("    -> Linear iterations per Newton iteration: {:e}\n",
                      static_cast<BoutReal>(nliters) / static_cast<BoutReal>(nniters));
         output.write("    -> Preconditioner evaluations per Newton: {:e}\n",
                      static_cast<BoutReal>(npevals) / static_cast<BoutReal>(nniters));
+      }
+
+      output.write("\nARKODE Inner: inner_nsteps {:d}, inner_nfe_evals {:d}, inner_nfi_evals {:d}, inner_nniters {:d}, "
+                   "inner_npevals {:d}, inner_nliters {:d}\n",
+                   inner_nsteps, inner_nfe_evals, inner_nfi_evals, inner_nniters, inner_npevals, inner_nliters);
+      if (inner_treatment == MRI_Treatment::ImEx or inner_treatment == MRI_Treatment::Implicit) {
+        output.write("    -> Inner Newton iterations per step: {:e}\n",
+                     static_cast<BoutReal>(inner_nniters) / static_cast<BoutReal>(inner_nsteps));
+        output.write("    -> Inner Linear iterations per Newton iteration: {:e}\n",
+                     static_cast<BoutReal>(inner_nliters) / static_cast<BoutReal>(inner_nniters));
+        output.write("    -> Inner Preconditioner evaluations per Newton: {:e}\n",
+                     static_cast<BoutReal>(inner_npevals) / static_cast<BoutReal>(inner_nniters));
       }
     }
 
