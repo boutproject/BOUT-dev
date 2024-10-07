@@ -176,7 +176,6 @@ private:
 #endif
   /// Context for SUNDIALS memory allocations
   sundials::Context suncontext;
-  sundials::Context inner_suncontext;
 };
 
 #endif // BOUT_HAS_ARKODE

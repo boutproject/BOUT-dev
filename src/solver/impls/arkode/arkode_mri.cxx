@@ -137,31 +137,26 @@ ArkodeMRISolver::ArkodeMRISolver(Options* opts)
 
   // Add diagnostics to output
   add_int_diagnostic(nsteps, "arkode_nsteps", "Cumulative number of internal steps");
+  add_int_diagnostic(inner_nsteps, "arkode_inner_nsteps", "Cumulative number of inner internal steps");
   add_int_diagnostic(nfe_evals, "arkode_nfe_evals",
                      "No. of calls to fe (explicit portion of the right-hand-side "
+                     "function) function");
+  add_int_diagnostic(inner_nfe_evals, "arkode_inner_nfe_evals",
+                     "No. of calls to fe (explicit portion of the inner right-hand-side "
                      "function) function");
   add_int_diagnostic(nfi_evals, "arkode_nfi_evals",
                      "No. of calls to fi (implicit portion of the right-hand-side "
                      "function) function");
+  add_int_diagnostic(inner_nfi_evals, "arkode_inner_nfi_evals",
+                     "No. of calls to fi (implicit portion of inner the right-hand-side "
+                     "function) function");
   add_int_diagnostic(nniters, "arkode_nniters", "No. of nonlinear solver iterations");
+  add_int_diagnostic(inner_nniters, "arkode_inner_nniters", "No. of inner nonlinear solver iterations");
   add_int_diagnostic(npevals, "arkode_npevals", "No. of preconditioner evaluations");
+  add_int_diagnostic(inner_npevals, "arkode_inner_npevals", "No. of inner preconditioner evaluations");
   add_int_diagnostic(nliters, "arkode_nliters", "No. of linear iterations");
+  add_int_diagnostic(inner_nliters, "arkode_inner_nliters", "No. of inner linear iterations");
 }
-//       inner_suncontext(createSUNContext(BoutComm::get())) {
-//   has_constraints = false; // This solver doesn't have constraints
-
-//   // Add diagnostics to output
-//   add_int_diagnostic(inner_nsteps, "arkode_inner_nsteps", "Cumulative number of inner internal steps");
-//   add_int_diagnostic(inner_nfe_evals, "arkode_inner_nfe_evals",
-//                      "No. of calls to fe (explicit portion of the inner right-hand-side "
-//                      "function) function");
-//   add_int_diagnostic(inner_nfi_evals, "arkode_inner_nfi_evals",
-//                      "No. of calls to fi (implicit portion of the inner right-hand-side "
-//                      "function) function");
-//   add_int_diagnostic(inner_nniters, "arkode_inner_nniters", "No. of inner nonlinear solver iterations");
-//   add_int_diagnostic(inner_npevals, "arkode_inner_npevals", "No. of inner preconditioner evaluations");
-//   add_int_diagnostic(inner_nliters, "arkode_inner_nliters", "No. of inner linear iterations");
-// }
 
 ArkodeMRISolver::~ArkodeMRISolver() {
   N_VDestroy(uvec);
