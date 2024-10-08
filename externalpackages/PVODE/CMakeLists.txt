@@ -82,7 +82,7 @@ write_basic_package_version_file(
   )
 
 install(EXPORT PVODETargets
-  FILE PVODETargets.cmake
+  FILE PVODEConfig.cmake
   NAMESPACE PVODE::
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/PVODE"
   )
