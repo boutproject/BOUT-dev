@@ -40,8 +40,8 @@ int main(int argc, char** argv) {
   std::vector<Duration> times;
 
   // Get options root
-  auto globalOptions = Options::root();
-  auto modelOpts = globalOptions["performance"];
+  auto& globalOptions = Options::root();
+  auto& modelOpts = globalOptions["performance"];
   int NUM_LOOPS;
   NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(100);
   bool profileMode, includeHeader, do2D3D, do3D3D;

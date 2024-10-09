@@ -16,10 +16,9 @@ class Monitor1dDump : public Monitor {
 public:
   Monitor1dDump(BoutReal timestep, std::string section_name)
       : Monitor(timestep),
-        output_file(getCustomOutputName(Options::root()[section_name]),
-                    Options::root()[section_name]["append"].withDefault(false)
-                        ? bout::OptionsNetCDF::FileMode::append
-                        : bout::OptionsNetCDF::FileMode::replace) {}
+        output_file(bout::OptionsIO::create(
+            {{"file", getCustomOutputName(Options::root()[section_name])},
+             {"append", Options::root()[section_name]["append"].withDefault(false)}})) {}
 
   int call(Solver*, BoutReal _time, int, int) override {
     // This method writes all the diagnostics to a unique file
@@ -31,7 +30,7 @@ public:
         output[item.name].attributes["time_dimension"] = "t";
       }
     }
-    output_file.write(output);
+    output_file->write(output);
 
     return 0;
   }
@@ -48,7 +47,7 @@ public:
 
 private:
   bout::DataFileFacade dump;
-  bout::OptionsNetCDF output_file;
+  std::unique_ptr<bout::OptionsIO> output_file;
 };
 
 /// An example of using multiple monitors on different timescales

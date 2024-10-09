@@ -432,25 +432,35 @@ public:
   /// Assign a value to the option.
   /// This will throw an exception if already has a value
   ///
-  /// Example:
+  /// Returns
+  /// -------
+  /// A reference to `this`, for method chaining
+  ///
+  /// Example
+  /// -------
   ///
   /// Options option;
   /// option["test"].assign(42, "some source");
   ///
   /// Note: Specialised versions for types stored in ValueType
   template <typename T>
-  void assign(T val, std::string source = "") {
+  Options& assign(T val, std::string source = "") {
     std::stringstream as_str;
     as_str << val;
     _set(as_str.str(), std::move(source), false);
+    return *this;
   }
 
   /// Force to a value
   /// Overwrites any existing setting
+  ///
+  /// Returns
+  /// -------
+  /// A reference to `this`, for method chaining
   template <typename T>
-  void force(T val, const std::string source = "") {
+  Options& force(T val, const std::string source = "") {
     is_section = true; // Invalidates any existing setting
-    assign(val, source);
+    return assign(val, source);
   }
 
   /// Assign a value that is expected to vary in time.
@@ -459,12 +469,13 @@ public:
   /// attribute is set. If \p save_repeat is false, doesn't set
   /// "time_dimension". This can be useful in some generic functions
   template <typename T>
-  void assignRepeat(T val, std::string time_dimension = "t", bool save_repeat = true,
-                    std::string source = "") {
+  Options& assignRepeat(T val, std::string time_dimension = "t", bool save_repeat = true,
+                        std::string source = "") {
     force(val, std::move(source));
     if (save_repeat) {
       attributes["time_dimension"] = std::move(time_dimension);
     }
+    return *this;
   }
 
   /// Test if a key is set by the user.
@@ -884,39 +895,44 @@ private:
 
 // Specialised assign methods for types stored in ValueType
 template <>
-inline void Options::assign<>(bool val, std::string source) {
+inline Options& Options::assign<>(bool val, std::string source) {
   _set(val, std::move(source), false);
+  return *this;
 }
 template <>
-inline void Options::assign<>(int val, std::string source) {
+inline Options& Options::assign<>(int val, std::string source) {
   _set(val, std::move(source), false);
+  return *this;
 }
 template <>
-inline void Options::assign<>(BoutReal val, std::string source) {
+inline Options& Options::assign<>(BoutReal val, std::string source) {
   _set(val, std::move(source), false);
+  return *this;
 }
 template <>
-inline void Options::assign<>(std::string val, std::string source) {
+inline Options& Options::assign<>(std::string val, std::string source) {
   _set(std::move(val), std::move(source), false);
+  return *this;
 }
 // Note: const char* version needed to avoid conversion to bool
 template <>
-inline void Options::assign<>(const char* val, std::string source) {
+inline Options& Options::assign<>(const char* val, std::string source) {
   _set(std::string(val), std::move(source), false);
+  return *this;
 }
 // Note: Field assignments don't check for previous assignment (always force)
 template <>
-void Options::assign<>(Field2D val, std::string source);
+Options& Options::assign<>(Field2D val, std::string source);
 template <>
-void Options::assign<>(Field3D val, std::string source);
+Options& Options::assign<>(Field3D val, std::string source);
 template <>
-void Options::assign<>(FieldPerp val, std::string source);
+Options& Options::assign<>(FieldPerp val, std::string source);
 template <>
-void Options::assign<>(Array<BoutReal> val, std::string source);
+Options& Options::assign<>(Array<BoutReal> val, std::string source);
 template <>
-void Options::assign<>(Matrix<BoutReal> val, std::string source);
+Options& Options::assign<>(Matrix<BoutReal> val, std::string source);
 template <>
-void Options::assign<>(Tensor<BoutReal> val, std::string source);
+Options& Options::assign<>(Tensor<BoutReal> val, std::string source);
 
 /// Specialised similar comparison methods
 template <>

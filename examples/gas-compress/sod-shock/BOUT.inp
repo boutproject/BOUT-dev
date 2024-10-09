@@ -16,8 +16,6 @@ MYG = 2
 
 grid = "sod.grd.nc"  # Grid file
 
-StaggerGrids = false
-
 ##################################################
 # derivative methods
 
@@ -63,4 +61,3 @@ v0_multiply = -1.0
 scale = 0.0 # default size of initial perturbations
 function = gauss(y - pi, 0.1*pi) * sin(z)
 bndry_all = neumann # Set all boundaries to Neumann
-bndry_target = neumann_2ndorder

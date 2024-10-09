@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
   Options::root()["input"] = input;
   Options::root()["solved"] = solved;
 
-  bout::writeDefaultOutputFile();
+  bout::writeDefaultOutputFile(Options::root());
 
   BoutFinalise();
   return 0;

@@ -1,1 +1,0 @@
-../tokamak-grids/d3d_119919.nc
