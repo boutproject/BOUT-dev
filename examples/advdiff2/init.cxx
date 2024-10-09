@@ -9,8 +9,8 @@ int AdvDiff::init(bool restarting) {
 
   // Read initial conditions
   mesh->get(V0, "V0");
-  mesh->get(mesh->getCoordinates()->dx, "dx");
-  mesh->get(mesh->getCoordinates()->dy, "dy");
+  mesh->getCoordinates()->setDx(mesh->get("dx"));
+  mesh->getCoordinates()->setDy(mesh->get("dy"));
 
   // read options
 

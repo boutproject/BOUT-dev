@@ -20,19 +20,24 @@ int main(int argc, char** argv) {
   auto inv = LaplaceXZ::create(bout::globals::mesh);
 
   auto coord = bout::globals::mesh->getCoordinates();
-  coord->g13 = 1.8; // test off-diagonal components with nonzero value
+  const auto g13 = 0.8; // test off-diagonal components with nonzero value
+  coord->setContravariantMetricTensor(ContravariantMetricTensor(
+      coord->g11(), coord->g22(), coord->g33(), coord->g12(), g13, coord->g23()));
 
   // create some input field
   Field3D f = FieldFactory::get()->create3D("f", Options::getRoot(), bout::globals::mesh);
 
   // Calculate the Laplacian with non-zero g13
-  Field3D g = coord->g11 * D2DX2(f) + coord->g13 * D2DXDZ(f) + coord->g33 * D2DZ2(f);
+  const Field3D g =
+      coord->g11() * D2DX2(f) + coord->g13() * D2DXDZ(f) + coord->g33() * D2DZ2(f);
 
   inv->setCoefs(Field2D(1.0), Field2D(0.0));
 
   Field3D f2 = inv->solve(g, 0.0); // Invert the Laplacian.
 
-  coord->g13 = 0.0; // reset to 0.0 for original laplacexz test
+  // reset to 0.0 for original laplacexz test
+  coord->setContravariantMetricTensor(ContravariantMetricTensor(
+      coord->g11(), coord->g22(), coord->g33(), coord->g12(), 0.0, coord->g23()));
 
   // Now the normal test.
   output.write("Setting coefficients\n");

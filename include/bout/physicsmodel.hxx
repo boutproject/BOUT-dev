@@ -78,6 +78,10 @@ public:
     add(&value, name, false);
   }
   template <class T>
+  void addOnce(const T& value, const std::string& name) {
+    add(&value, name, false);
+  }
+  template <class T>
   void add(T& value, const std::string& name, bool save_repeat = false) {
     add(&value, name, save_repeat);
   }

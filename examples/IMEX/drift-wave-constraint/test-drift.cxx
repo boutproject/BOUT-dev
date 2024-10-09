@@ -82,7 +82,7 @@ protected:
     // ddt(phi) = Delp2(phi) - Vort;
 
     // This version uses central differencing for Delp2
-    ddt(phi) = (coord->g11 * D2DX2(phi) + coord->g33 * D2DZ2(phi)) - Vort;
+    ddt(phi) = (coord->g11() * D2DX2(phi) + coord->g33() * D2DZ2(phi)) - Vort;
 
     return 0;
   }

@@ -93,7 +93,7 @@ public:
   void apply(Field3D& f, BoutReal t) override {
     f.ynext(bndry->dir).allocate(); // Ensure unique before modifying
 
-    auto dy = f.getCoordinates()->dy;
+    auto dy = f.getCoordinates()->dy();
 
     for (bndry->first(); !bndry->isDone(); bndry->next()) {
       BoutReal value = getValue(*bndry, t);

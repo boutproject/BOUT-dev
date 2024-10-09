@@ -110,7 +110,7 @@ Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in,
 
   nonuniform = (*options)["nonuniform"]
                    .doc("Use non-uniform grid corrections? Default is the mesh setting.")
-                   .withDefault(coords->non_uniform);
+                   .withDefault(coords->non_uniform());
 
   all_terms =
       (*options)["all_terms"].doc("Include first derivative terms?").withDefault(true);
@@ -269,7 +269,7 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz, dcomplex& a, dcomplex& b, dc
 
   ASSERT1(ccoef == nullptr || ccoef->getLocation() == loc);
   ASSERT1(d == nullptr || d->getLocation() == loc);
-  BoutReal kwave = jz * 2.0 * PI / coords->zlength()(jx, jy); // wave number is 1/[rad]
+  BoutReal kwave = jz * 2.0 * PI / coords->zlength(jx, jy); // wave number is 1/[rad]
 
   tridagCoefs(jx, jy, kwave, a, b, c, ccoef, d, loc);
 }
