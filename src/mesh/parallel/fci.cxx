@@ -73,7 +73,41 @@ std::string parallel_slice_field_name(std::string field, int offset) {
   const std::string slice_suffix =
     (std::abs(offset) > 1) ? "_" + std::to_string(std::abs(offset)) : "";
   return direction + "_" + field + slice_suffix;
+};
+
+void load_parallel_metric_component(std::string name, Field3D& component, int offset) {
+  Mesh* mesh = component.getMesh();
+  Field3D tmp{mesh};
+  const auto pname = parallel_slice_field_name(name, offset);
+  if (mesh->get(tmp, pname, 0.0, false) != 0) {
+    throw BoutException("Could not read {:s} from grid file!\n"
+			"  Fix it up with `zoidberg-update-parallel-metrics <grid>`", pname);
+  }
+  if (!component.hasParallelSlices()){
+    component.splitParallelSlices();
+    component.allowCalcParallelSlices = false;
+  }
+  auto& pcom = component.ynext(offset);
+  pcom.allocate();
+  BOUT_FOR(i, component.getRegion("RGN_NOBNDRY")) {
+    pcom[i.yp(offset)] = tmp[i];
+  }
 }
+
+void load_parallel_metric_components(Coordinates* coords, int offset){
+#define LOAD_PAR(var) load_parallel_metric_component(#var, coords->var, offset)
+  LOAD_PAR(g11);
+  LOAD_PAR(g22);
+  LOAD_PAR(g33);
+  LOAD_PAR(g13);
+  LOAD_PAR(g_11);
+  LOAD_PAR(g_22);
+  LOAD_PAR(g_33);
+  LOAD_PAR(g_13);
+  LOAD_PAR(J);
+#undef LOAD_PAR
+}
+  
 } // namespace
 
 FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
@@ -427,4 +461,11 @@ void FCITransform::outputVars(Options& output_options) {
   // Real-space coordinates of grid points
   output_options["R"].force(R, "FCI");
   output_options["Z"].force(Z, "FCI");
+}
+
+void FCITransform::loadParallelMetrics(Coordinates* coords) {
+  for (int i=1; i<= mesh.ystart; ++i) {
+    load_parallel_metric_components(coords, -i);
+    load_parallel_metric_components(coords, i);
+  }
 }
