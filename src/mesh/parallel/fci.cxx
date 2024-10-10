@@ -64,6 +64,18 @@
 
 using namespace std::string_view_literals;
 
+namespace {
+// Get a unique name for a field based on the sign/magnitude of the offset
+std::string parallel_slice_field_name(std::string field, int offset) {
+  const std::string direction = (offset > 0) ? "forward" : "backward";
+  // We only have a suffix for parallel slices beyond the first
+  // This is for backwards compatibility
+  const std::string slice_suffix =
+    (std::abs(offset) > 1) ? "_" + std::to_string(std::abs(offset)) : "";
+  return direction + "_" + field + slice_suffix;
+}
+} // namespace
+
 FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
                Options& options, int offset,
                const std::shared_ptr<BoundaryRegionPar>& inner_boundary,
@@ -102,39 +114,30 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
   map_mesh->get(R, "R", 0.0, false);
   map_mesh->get(Z, "Z", 0.0, false);
 
-  // Get a unique name for a field based on the sign/magnitude of the offset
-  const auto parallel_slice_field_name = [&](std::string_view field) -> std::string {
-    const auto direction = (offset_ > 0) ? "forward"sv : "backward"sv;
-    // We only have a suffix for parallel slices beyond the first
-    // This is for backwards compatibility
-    if (std::abs(offset_) == 1) {
-      return fmt::format("{}_{}", direction, field);
-    }
-    return fmt::format("{}_{}_{}", direction, field, std::abs(offset_));
-  };
 
   // If we can't read in any of these fields, things will silently not
   // work, so best throw
-  if (map_mesh->get(xt_prime, parallel_slice_field_name("xt_prime"), 0.0, false) != 0) {
+  if (map_mesh->get(xt_prime, parallel_slice_field_name("xt_prime", offset), 0.0, false) != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
-                        parallel_slice_field_name("xt_prime"));
+                        parallel_slice_field_name("xt_prime", offset));
   }
-  if (map_mesh->get(zt_prime, parallel_slice_field_name("zt_prime"), 0.0, false) != 0) {
+  if (map_mesh->get(zt_prime, parallel_slice_field_name("zt_prime", offset), 0.0, false) != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
-                        parallel_slice_field_name("zt_prime"));
+                        parallel_slice_field_name("zt_prime", offset));
   }
-  if (map_mesh->get(R_prime, parallel_slice_field_name("R"), 0.0, false) != 0) {
+  if (map_mesh->get(R_prime, parallel_slice_field_name("R", offset), 0.0, false) != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
-                        parallel_slice_field_name("R"));
+                        parallel_slice_field_name("R", offset));
   }
-  if (map_mesh->get(Z_prime, parallel_slice_field_name("Z"), 0.0, false) != 0) {
+  if (map_mesh->get(Z_prime, parallel_slice_field_name("Z", offset), 0.0, false) != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
-                        parallel_slice_field_name("Z"));
+                        parallel_slice_field_name("Z", offset));
   }
+  
 
   // Cell corners
   Field3D xt_prime_corner{emptyFrom(xt_prime)};
