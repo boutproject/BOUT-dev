@@ -1,4 +1,5 @@
 
+#include "../common.hxx"
 #include <bout/field_factory.hxx>
 #include <bout/invert/laplacexy.hxx>
 #include <bout/invert/laplacexz.hxx>
@@ -202,24 +203,7 @@ protected:
       sbp = -1.0;
     }
 
-    const auto g11 = SQ(Rxy * Bpxy);
-    const auto g22 = 1.0 / SQ(hthe);
-    const auto g33 = SQ(sinty) * g11 + SQ(coord->Bxy()) / g11;
-    const auto g12 = 0.0;
-    const auto g13 = -sinty * g11;
-    const auto g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
-
-    const auto g_11 = 1.0 / g11 + SQ(sinty * Rxy);
-    const auto g_22 = SQ(coord->Bxy() * hthe / Bpxy);
-    const auto g_33 = Rxy * Rxy;
-    const auto g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
-    const auto g_13 = sinty * Rxy * Rxy;
-    const auto g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
-
-    coord->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-                           CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
-
-    coord->setJ(hthe / Bpxy);
+    tokamak_coordinates(coord, Rxy, Bpxy, hthe, sinty, coord->Bxy(), Btxy, sbp);
   }
 };
 
