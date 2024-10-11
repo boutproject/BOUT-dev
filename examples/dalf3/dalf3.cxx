@@ -18,7 +18,7 @@
  *
  ****************************************************************/
 
-#include "../common.hxx"
+#include <bout/tokamak_coordinates.hxx>
 #include <bout/physicsmodel.hxx>
 
 #include <bout/interpolation.hxx>
