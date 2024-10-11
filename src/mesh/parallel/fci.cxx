@@ -317,6 +317,8 @@ void FCITransform::checkInputGrid() {
 void FCITransform::calcParallelSlices(Field3D& f) {
   TRACE("FCITransform::calcParallelSlices");
 
+  ASSERT1(f.allowCalcParallelSlices);
+
   ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
   // CELL_CENTRE inputs

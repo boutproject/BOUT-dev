@@ -272,27 +272,27 @@ public:
   /// Return reference to yup field
   Field3D& yup(std::vector<Field3D>::size_type index = 0) {
     ASSERT2(index < yup_fields.size());
-    ASSERT2(allow_parallel_slices);
+    ASSERT2(allowCalcParallelSlices);
     return yup_fields[index];
   }
   /// Return const reference to yup field
   const Field3D& yup(std::vector<Field3D>::size_type index = 0) const {
     ASSERT2(index < yup_fields.size());
-    ASSERT2(allow_parallel_slices);
+    ASSERT2(allowCalcParallelSlices);
     return yup_fields[index];
   }
 
   /// Return reference to ydown field
   Field3D& ydown(std::vector<Field3D>::size_type index = 0) {
     ASSERT2(index < ydown_fields.size());
-    ASSERT2(allow_parallel_slices);
+    ASSERT2(allowCalcParallelSlices);
     return ydown_fields[index];
   }
 
   /// Return const reference to ydown field
   const Field3D& ydown(std::vector<Field3D>::size_type index = 0) const {
     ASSERT2(index < ydown_fields.size());
-    ASSERT2(allow_parallel_slices);
+    ASSERT2(allowCalcParallelSlices);
     return ydown_fields[index];
   }
 
@@ -497,7 +497,7 @@ public:
   Field3D& calcParallelSlices();
   void allowParallelSlices([[maybe_unused]] bool allow){
 #if CHECK > 0
-    allow_parallel_slices = allow;
+    allowCalcParallelSlices = allow;
 #endif
   }
 
@@ -551,7 +551,7 @@ private:
   template <class T>
   Options* track(const T& change, std::string operation);
   Options* track(const BoutReal& change, std::string operation);
-  bool allow_parallel_slices{true};
+  bool allowCalcParallelSlices{true};
 
 };
 
