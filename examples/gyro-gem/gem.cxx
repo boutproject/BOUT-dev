@@ -9,8 +9,8 @@
  * This version uses global parameters for collisionality etc.
  ****************************************************************/
 
+#include <bout/tokamak_coordinates.hxx>
 #include <bout/constants.hxx>
-#include "../common.hxx"
 
 #include <bout/gyro_average.hxx>
 #include <bout/interpolation.hxx>

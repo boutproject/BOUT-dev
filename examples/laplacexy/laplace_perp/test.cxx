@@ -1,4 +1,4 @@
-#include "../../common.hxx"
+#include <bout/tokamak_coordinates.hxx>
 
 #include <bout/derivs.hxx>
 #include <bout/field_factory.hxx>

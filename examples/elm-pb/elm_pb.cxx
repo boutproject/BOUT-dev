@@ -5,7 +5,7 @@
  * Can also include the Vpar compressional term
  *******************************************************************************/
 
-#include "../common.hxx"
+#include <bout/tokamak_coordinates.hxx>
 #include <bout/constants.hxx>
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>

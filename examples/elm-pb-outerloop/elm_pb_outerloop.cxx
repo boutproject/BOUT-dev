@@ -42,6 +42,7 @@
 
 #include <math.h>
 
+#include <bout/tokamak_coordinates.hxx>
 #include <bout/derivs.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>

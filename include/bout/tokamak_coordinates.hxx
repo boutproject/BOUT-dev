@@ -1,8 +1,8 @@
 
-#ifndef BOUT_COMMON_HXX
-#define BOUT_COMMON_HXX
+#ifndef BOUT_TOKAMAK_COORDINATES_HXX
+#define BOUT_TOKAMAK_COORDINATES_HXX
 
-#include "bout/bout.hxx"
+#include "bout.hxx"
 
 inline Coordinates* tokamak_coordinates(Coordinates* coord, const FieldMetric& Rxy,
                                         const FieldMetric& Bpxy, const FieldMetric& hthe,
@@ -33,4 +33,4 @@ inline Coordinates* tokamak_coordinates(Coordinates* coord, const FieldMetric& R
 }
 
 
-#endif //BOUT_COMMON_HXX
+#endif //BOUT_TOKAMAK_COORDINATES_HXX

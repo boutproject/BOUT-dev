@@ -4,7 +4,7 @@
  * Mode discoverd by H.L. Berk et. al. 1993
  * Model version in the code created by M. Umansky and J. Myra.
  *******************************************************************************/
-#include "../common.hxx"
+#include <bout/tokamak_coordinates.hxx>
 #include <bout/physicsmodel.hxx>
 
 #include <bout/derivs.hxx>

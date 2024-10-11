@@ -6,7 +6,7 @@
  * T. Xia
  *******************************************************************************/
 
-#include "../common.hxx"
+#include "bout/tokamak_coordinates.hxx"
 #include "bout/constants.hxx"
 #include "bout/derivs.hxx"
 #include "bout/initialprofiles.hxx"
