@@ -51,7 +51,7 @@ RegisterUnavailableSolver
 #define ARKODE_CONTROLLER_SUPPORT SUNDIALS_VERSION_AT_LEAST(6, 7, 0)
 #define ARKODE_TABLE_BY_NAME_SUPPORT SUNDIALS_VERSION_AT_LEAST(6, 4, 0)
 // ARKStepSetOptimalParams is deprecated since SUNDIALS 6.1.0
-#define ARKODE_SUPPORT_OPTIMAL_PARAMS SUNDIALS_VERSION_LESS_THAN(7, 1, 0)
+#define ARKODE_OPTIMAL_PARAMS_SUPPORT SUNDIALS_VERSION_LESS_THAN(7, 1, 0)
 
 #if ARKODE_CONTROLLER_SUPPORT
 #include <sundials/sundials_adaptcontroller.h>
@@ -179,7 +179,7 @@ private:
   bool rightprec;
   /// Use user-supplied Jacobian function
   bool use_jacobian;
-#if ARKODE_SUPPORT_OPTIMAL_PARAMS
+#if ARKODE_OPTIMAL_PARAMS_SUPPORT
   /// Use ARKode optimal parameters
   bool optimize;
 #endif

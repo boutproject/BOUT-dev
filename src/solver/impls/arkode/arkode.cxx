@@ -131,7 +131,7 @@ ArkodeSolver::ArkodeSolver(Options* opts)
       use_jacobian((*options)["use_jacobian"]
                        .doc("Use user-supplied Jacobian function")
                        .withDefault(false)),
-#if ARKODE_SUPPORT_OPTIMAL_PARAMS
+#if ARKODE_OPTIMAL_PARAMS_SUPPORT
       optimize(
           (*options)["optimize"].doc("Use ARKode optimal parameters").withDefault(false)),
 #endif
@@ -467,7 +467,7 @@ int ArkodeSolver::init() {
     }
   }
 
-#if ARKODE_SUPPORT_OPTIMAL_PARAMS
+#if ARKODE_OPTIMAL_PARAMS_SUPPORT
   if (optimize) {
     output.write("\tUsing ARKode inbuilt optimization\n");
     if (ARKStepSetOptimalParams(arkode_mem) != ARK_SUCCESS) {
