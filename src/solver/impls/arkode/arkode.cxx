@@ -220,7 +220,8 @@ int ArkodeSolver::init() {
     throw BoutException("ARKodeSetUserData failed\n");
   }
 
-  if (ARKodeSetLinear(arkode_mem, set_linear) != ARK_SUCCESS) {
+  if (ARKodeSetLinear(arkode_mem, static_cast<sunbooleantype>(set_linear))
+      != ARK_SUCCESS) {
     throw BoutException("ARKodeSetLinear failed\n");
   }
 
