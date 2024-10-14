@@ -25,13 +25,15 @@
 #error "Unable to determine SUNDIALS version"
 #endif
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define SUNDIALS_VERSION_AT_LEAST(major, minor, patch) \
-  (major < SUNDIALS_VERSION_MAJOR                      \
-   || (major == SUNDIALS_VERSION_MAJOR                 \
-       && (minor < SUNDIALS_VERSION_MINOR              \
-           || (minor == SUNDIALS_VERSION_MINOR && patch <= SUNDIALS_VERSION_PATCH))))
+  ((major) < SUNDIALS_VERSION_MAJOR                      \
+   || ((major) == SUNDIALS_VERSION_MAJOR                 \
+       && ((minor) < SUNDIALS_VERSION_MINOR              \
+           || ((minor) == SUNDIALS_VERSION_MINOR && (patch) <= SUNDIALS_VERSION_PATCH))))
 #define SUNDIALS_VERSION_LESS_THAN(major, minor, patch) \
   (!SUNDIALS_VERSION_AT_LEAST(major, minor, patch))
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 #if SUNDIALS_VERSION_AT_LEAST(6, 0, 0)
 #include <sundials/sundials_context.hpp>
