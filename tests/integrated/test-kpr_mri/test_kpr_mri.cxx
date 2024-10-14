@@ -32,7 +32,6 @@ public:
     ddt(f) = -0.5*sin(t)/(2.0*f);
     ddt(g) = 0.0;
 
-    //std::cout << "rhs_se t = " << t << std::endl;
     return 0;
   }
 
@@ -45,7 +44,6 @@ public:
     ddt(f) = G * tmp1 + e * tmp2;
     ddt(g) = 0.0;
 
-    //std::cout << "rhs_si t = " << t << std::endl;
     return 0;
   }
 
@@ -54,7 +52,6 @@ public:
     ddt(f) = 0.0;
     ddt(g) = 0.0;
 
-    //std::cout << "rhs_fe t = " << t << std::endl;
     return 0;
   }
 
@@ -64,8 +61,6 @@ public:
     BoutReal tmp2 = (-2.0 + g(0,0,0) * g(0,0,0) - cos(w*t)) / (2.0 * g(0,0,0));
     ddt(f) = 0.0;
     ddt(g) = e * tmp1 - tmp2 - w * sin(w*t) / (2.0 * sqrt(2.0 + cos(w * t)));
-
-    //std::cout << "rhs_f t = " << t << std::endl;
 
     return 0;
   }
@@ -87,17 +82,25 @@ public:
     ddt(f) = 0.0;
     ddt(g) = e * tmp1 - tmp2 - w * sin(w*t) / (2.0 * sqrt(2.0 + cos(w * t)));
 
-    //std::cout << "rhs_f t = " << t << std::endl;
-
     return 0;
   }
 
   int rhs(BoutReal t) override {
 
-    ddt(f) = 0.0;
-    ddt(g) = 0.0;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << "f(0,0,0) = " << f(0,0,0) << std::endl;
+    std::cout << "g(0,0,0) = " << g(0,0,0) << std::endl;
 
-    //std::cout << "rhs t = " << t << std::endl;
+    BoutReal tmp1 = f(0,0,0);
+    BoutReal tmp2 = g(0,0,0);
+
+    tmp1 = (-1.0 + tmp1 * tmp1 - 0.5*cos(t)) / (2.0 * tmp1);
+    tmp2 = (-2.0 + tmp2 * tmp2 - cos(w*t)) / (2.0 * tmp2);
+
+    ddt(f) = G * tmp1 + e * tmp2 - 0.5*sin(t) / (2.0 * f(0,0,0));
+    ddt(g) = e * tmp1 - tmp2 - w * sin(w*t) / (2.0 * sqrt(2.0 + cos(w * t)));
+
     return 0;
   }
 

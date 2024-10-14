@@ -666,8 +666,8 @@ BoutReal ArkodeMRISolver::run(BoutReal tout) {
 
   // Copy variables
   load_vars(N_VGetArrayPointer(uvec));
-  // // Call rhs function to get extra variables at this time
-  // run_rhs(simtime);
+  // Call rhs function to get extra variables at this time
+  run_rhs(simtime);
   // run_diffusive(simtime);
   if (flag != ARK_SUCCESS) {
     output_error.write("ERROR ARKODE solve failed at t = {:e}, flag = {:d}\n", simtime,
