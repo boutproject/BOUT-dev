@@ -1360,6 +1360,150 @@ Field3D Solver::globalIndex(int localStart) {
  * Running user-supplied functions
  **************************************************************************/
 
+int Solver::run_rhs_se(BoutReal t, bool linear) {
+  int status;
+
+  Timer timer("rhs");
+
+  if (first_rhs_call) {
+    // Ensure that nonlinear terms are calculated on first call
+    linear = false;
+    first_rhs_call = false;
+  }
+
+  pre_rhs(t);
+  status = model->runRHS_se(t, linear);
+  post_rhs(t);
+
+  // If using Method of Manufactured Solutions
+  add_mms_sources(t);
+
+  rhs_ncalls++;
+  rhs_ncalls_e++;
+  rhs_ncalls_i++;
+  return status;
+}
+
+int Solver::run_rhs_si(BoutReal t, bool linear) {
+  int status;
+
+  Timer timer("rhs");
+
+  if (first_rhs_call) {
+    // Ensure that nonlinear terms are calculated on first call
+    linear = false;
+    first_rhs_call = false;
+  }
+
+  pre_rhs(t);
+  status = model->runRHS_si(t, linear);
+  post_rhs(t);
+
+  // If using Method of Manufactured Solutions
+  add_mms_sources(t);
+
+  rhs_ncalls++;
+  rhs_ncalls_e++;
+  rhs_ncalls_i++;
+  return status;
+}
+
+int Solver::run_rhs_fe(BoutReal t, bool linear) {
+  int status;
+
+  Timer timer("rhs");
+
+  if (first_rhs_call) {
+    // Ensure that nonlinear terms are calculated on first call
+    linear = false;
+    first_rhs_call = false;
+  }
+
+  pre_rhs(t);
+  status = model->runRHS_fe(t, linear);
+  post_rhs(t);
+
+  // If using Method of Manufactured Solutions
+  add_mms_sources(t);
+
+  rhs_ncalls++;
+  rhs_ncalls_e++;
+  rhs_ncalls_i++;
+  return status;
+}
+
+int Solver::run_rhs_fi(BoutReal t, bool linear) {
+  int status;
+
+  Timer timer("rhs");
+
+  if (first_rhs_call) {
+    // Ensure that nonlinear terms are calculated on first call
+    linear = false;
+    first_rhs_call = false;
+  }
+
+  pre_rhs(t);
+  status = model->runRHS_fi(t, linear);
+  post_rhs(t);
+
+  // If using Method of Manufactured Solutions
+  add_mms_sources(t);
+
+  rhs_ncalls++;
+  rhs_ncalls_e++;
+  rhs_ncalls_i++;
+  return status;
+}
+
+int Solver::run_rhs_s(BoutReal t, bool linear) {
+  int status;
+
+  Timer timer("rhs");
+
+  if (first_rhs_call) {
+    // Ensure that nonlinear terms are calculated on first call
+    linear = false;
+    first_rhs_call = false;
+  }
+
+  pre_rhs(t);
+  status = model->runRHS_s(t, linear);
+  post_rhs(t);
+
+  // If using Method of Manufactured Solutions
+  add_mms_sources(t);
+
+  rhs_ncalls++;
+  rhs_ncalls_e++;
+  rhs_ncalls_i++;
+  return status;
+}
+
+int Solver::run_rhs_f(BoutReal t, bool linear) {
+  int status;
+
+  Timer timer("rhs");
+
+  if (first_rhs_call) {
+    // Ensure that nonlinear terms are calculated on first call
+    linear = false;
+    first_rhs_call = false;
+  }
+
+  pre_rhs(t);
+  status = model->runRHS_f(t, linear);
+  post_rhs(t);
+
+  // If using Method of Manufactured Solutions
+  add_mms_sources(t);
+
+  rhs_ncalls++;
+  rhs_ncalls_e++;
+  rhs_ncalls_i++;
+  return status;
+}
+
 int Solver::run_rhs(BoutReal t, bool linear) {
   int status;
 

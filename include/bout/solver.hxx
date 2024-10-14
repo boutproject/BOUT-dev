@@ -437,6 +437,12 @@ protected:
   BoutReal simtime{0.0};
 
   /// Run the user's RHS function
+  int run_rhs_se(BoutReal t, bool linear = false);
+  int run_rhs_si(BoutReal t, bool linear = false);
+  int run_rhs_fe(BoutReal t, bool linear = false);
+  int run_rhs_fi(BoutReal t, bool linear = false);
+  int run_rhs_s(BoutReal t, bool linear = false);
+  int run_rhs_f(BoutReal t, bool linear = false);  
   int run_rhs(BoutReal t, bool linear = false);
   /// Calculate only the convective parts
   int run_convective(BoutReal t, bool linear = false);

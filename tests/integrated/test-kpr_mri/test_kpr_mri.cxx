@@ -13,27 +13,105 @@ class TestSolver : public PhysicsModel {
 public:
   Field3D f, g;
 
+  BoutReal e  = 0.5;       /* fast/slow coupling strength */
+  BoutReal G  = -100.0;    /* stiffness at slow time scale */
+  BoutReal w  = 100.0;     /* time-scale separation factor */
+
   int init(bool UNUSED(restarting)) override {
     solver->add(f, "f");
     solver->add(g, "g");
 
-    f = 1.0;
-    g = 0.0;
+    f = sqrt(3.0/2.0);
+    g = sqrt(3.0);
 
     return 0;
   }
 
-  int rhs(BoutReal UNUSED(time)) override {
-    // This should have a steady-state solution f=0, g=1
-    ddt(f) = 998 * f + 1998 * (g - 1.0);
-    ddt(g) = -999 * f - 1999 * (g - 1.0);
+  int rhs_se(BoutReal t) override {
 
+    ddt(f) = -0.5*sin(t)/(2.0*f);
+    ddt(g) = 0.0;
+
+    //std::cout << "rhs_se t = " << t << std::endl;
+    return 0;
+  }
+
+  int rhs_si(BoutReal t) override {
+    /* fill in the slow implicit RHS function:
+      [G e]*[(-1+u^2-r(t))/(2*u))]
+      [0 0] [(-2+v^2-s(t))/(2*v)]  */
+    BoutReal tmp1 = (-1.0 + f(0,0,0) * f(0,0,0) - 0.5*cos(t)) / (2.0 * f(0,0,0));
+    BoutReal tmp2 = (-2.0 + g(0,0,0) * g(0,0,0) - cos(w*t)) / (2.0 * g(0,0,0));
+    ddt(f) = G * tmp1 + e * tmp2;
+    ddt(g) = 0.0;
+
+    //std::cout << "rhs_si t = " << t << std::endl;
+    return 0;
+  }
+
+  int rhs_fe(BoutReal t) override {
+
+    ddt(f) = 0.0;
+    ddt(g) = 0.0;
+
+    //std::cout << "rhs_fe t = " << t << std::endl;
+    return 0;
+  }
+
+  int rhs_fi(BoutReal t) override {
+
+    BoutReal tmp1 = (-1.0 + f(0,0,0) * f(0,0,0) - 0.5*cos(t)) / (2.0 * f(0,0,0));
+    BoutReal tmp2 = (-2.0 + g(0,0,0) * g(0,0,0) - cos(w*t)) / (2.0 * g(0,0,0));
+    ddt(f) = 0.0;
+    ddt(g) = e * tmp1 - tmp2 - w * sin(w*t) / (2.0 * sqrt(2.0 + cos(w * t)));
+
+    //std::cout << "rhs_f t = " << t << std::endl;
+
+    return 0;
+  }
+
+  int rhs_s(BoutReal t) override {
+
+    BoutReal tmp1 = (-1.0 + f(0,0,0) * f(0,0,0) - 0.5*cos(t)) / (2.0 * f(0,0,0));
+    BoutReal tmp2 = (-2.0 + g(0,0,0) * g(0,0,0) - cos(w*t)) / (2.0 * g(0,0,0));
+    ddt(f) = G * tmp1 + e * tmp2 - 0.5*sin(t) / (2.0 * f(0,0,0));
+    ddt(g) = 0.0;
+
+    return 0;
+  }
+
+  int rhs_f(BoutReal t) override {
+
+    BoutReal tmp1 = (-1.0 + f(0,0,0) * f(0,0,0) - 0.5*cos(t)) / (2.0 * f(0,0,0));
+    BoutReal tmp2 = (-2.0 + g(0,0,0) * g(0,0,0) - cos(w*t)) / (2.0 * g(0,0,0));
+    ddt(f) = 0.0;
+    ddt(g) = e * tmp1 - tmp2 - w * sin(w*t) / (2.0 * sqrt(2.0 + cos(w * t)));
+
+    //std::cout << "rhs_f t = " << t << std::endl;
+
+    return 0;
+  }
+
+  int rhs(BoutReal t) override {
+
+    ddt(f) = 0.0;
+    ddt(g) = 0.0;
+
+    //std::cout << "rhs t = " << t << std::endl;
     return 0;
   }
 
   bool check_solution(BoutReal atol) {
     // Return true if correct solution
     return (std::abs(f(1, 1, 0)) < atol) and (std::abs(g(1, 1, 0) - 1) < atol);
+  }
+
+  BoutReal compute_error(BoutReal t)
+  {
+    // return (std::max(abs(sqrt(0.5*cos(t) + 1.0) - f(0,0,0)), abs(sqrt(  cos(w*t) + 2.0) - g(0,0,0))));
+    
+    return sqrt( pow(sqrt(0.5*cos(t) + 1.0) - f(0,0,0), 2.0) + 
+                 pow(sqrt(  cos(w*t) + 2.0) - g(0,0,0), 2.0));
   }
 
   // Don't need any restarting, or options to control data paths
@@ -68,15 +146,15 @@ int main(int argc, char** argv) {
   bout::globals::mesh->load();
 
   // Global options
-  root["nout"] = 20;
-  root["timestep"] = 1;
+  root["nout"] = 100;
+  root["timestep"] = 0.01;
 
   // Get specific options section for this solver. Can't just use default
   // "solver" section, as we run into problems when solvers use the same
   // name for an option with inconsistent defaults
   auto options = Options::getRoot()->getSection("arkode_mri");
   auto solver = std::unique_ptr<Solver>{Solver::create("arkode_mri", options)};
-
+  
   TestSolver model{};
   solver->setModel(&model);
 
@@ -84,6 +162,10 @@ int main(int argc, char** argv) {
   solver->addMonitor(&bout_monitor, Solver::BACK);
 
   solver->solve();
+
+  BoutReal error = model.compute_error(1.0);
+
+  std::cout << "error = " << error << std::endl;
 
   if (model.check_solution(tolerance)) {
     output_test << " PASSED\n";

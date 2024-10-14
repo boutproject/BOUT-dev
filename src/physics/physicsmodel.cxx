@@ -111,7 +111,13 @@ void PhysicsModel::initialise(Solver* s) {
   }
 }
 
-int PhysicsModel::runRHS(BoutReal time, bool linear) { return rhs(time, linear); }
+int PhysicsModel::runRHS_se(BoutReal time, bool linear) { return PhysicsModel::rhs_se(time, linear); }
+int PhysicsModel::runRHS_si(BoutReal time, bool linear) { return PhysicsModel::rhs_si(time, linear); }
+int PhysicsModel::runRHS_fe(BoutReal time, bool linear) { return PhysicsModel::rhs_fe(time, linear); }
+int PhysicsModel::runRHS_fi(BoutReal time, bool linear) { return PhysicsModel::rhs_fi(time, linear); }
+int PhysicsModel::runRHS_s(BoutReal time, bool linear) { return PhysicsModel::rhs_s(time, linear); }
+int PhysicsModel::runRHS_f(BoutReal time, bool linear) { return PhysicsModel::rhs_f(time, linear); }
+int PhysicsModel::runRHS(BoutReal time, bool linear) { return PhysicsModel::rhs(time, linear); }
 
 bool PhysicsModel::splitOperator() { return splitop; }
 

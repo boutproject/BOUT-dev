@@ -169,6 +169,12 @@ public:
    * 
    * Returns a flag: 0 indicates success, non-zero an error flag
    */
+  int runRHS_se(BoutReal time, bool linear = false);
+  int runRHS_si(BoutReal time, bool linear = false);
+  int runRHS_fe(BoutReal time, bool linear = false);
+  int runRHS_fi(BoutReal time, bool linear = false);
+  int runRHS_s(BoutReal time, bool linear = false);
+  int runRHS_f(BoutReal time, bool linear = false);
   int runRHS(BoutReal time, bool linear = false);
 
   /*!
@@ -267,6 +273,24 @@ protected:
    * which is set to true when the rhs() function can be
    * linearised. This is used in e.g. linear iterative solves.
    */
+  virtual int rhs_se(BoutReal UNUSED(t)) { return 1; }
+  virtual int rhs_se(BoutReal t, bool UNUSED(linear)) { return rhs_se(t); }
+
+  virtual int rhs_si(BoutReal UNUSED(t)) { return 1; }
+  virtual int rhs_si(BoutReal t, bool UNUSED(linear)) { return rhs_si(t); }
+
+  virtual int rhs_fe(BoutReal UNUSED(t)) { return 1; }
+  virtual int rhs_fe(BoutReal t, bool UNUSED(linear)) { return rhs_fe(t); }
+
+  virtual int rhs_fi(BoutReal UNUSED(t)) { return 1; }
+  virtual int rhs_fi(BoutReal t, bool UNUSED(linear)) { return rhs_fi(t); }
+
+  virtual int rhs_s(BoutReal UNUSED(t)) { return 1; }
+  virtual int rhs_s(BoutReal t, bool UNUSED(linear)) { return rhs_s(t); }
+
+  virtual int rhs_f(BoutReal UNUSED(t)) { return 1; }
+  virtual int rhs_f(BoutReal t, bool UNUSED(linear)) { return rhs_f(t); }
+
   virtual int rhs(BoutReal UNUSED(t)) { return 1; }
   virtual int rhs(BoutReal t, bool UNUSED(linear)) { return rhs(t); }
 

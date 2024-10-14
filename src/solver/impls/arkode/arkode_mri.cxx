@@ -327,7 +327,7 @@ int ArkodeMRISolver::init() {
   //   throw BoutException("ARKodeSetAdaptivityAdjustment failed\n");
   // }
 
-  if (ARKodeSetFixedStep(arkode_mem, 0.01) != ARK_SUCCESS) {
+  if (ARKodeSetFixedStep(arkode_mem, 0.0001) != ARK_SUCCESS) {
     throw BoutException("ARKodeSetAdaptController failed\n");
   }
 
@@ -666,8 +666,8 @@ BoutReal ArkodeMRISolver::run(BoutReal tout) {
 
   // Copy variables
   load_vars(N_VGetArrayPointer(uvec));
-  // Call rhs function to get extra variables at this time
-  run_rhs(simtime);
+  // // Call rhs function to get extra variables at this time
+  // run_rhs(simtime);
   // run_diffusive(simtime);
   if (flag != ARK_SUCCESS) {
     output_error.write("ERROR ARKODE solve failed at t = {:e}, flag = {:d}\n", simtime,
@@ -693,7 +693,7 @@ void ArkodeMRISolver::rhs_se(BoutReal t, BoutReal* udata, BoutReal* dudata) {
   ARKodeGetLastStep(arkode_mem, &hcur);
 
   // Call RHS function
-  run_convective(t);
+  run_rhs_se(t);
 
   // Save derivatives to dudata
   save_derivs(dudata);
@@ -709,7 +709,7 @@ void ArkodeMRISolver::rhs_si(BoutReal t, BoutReal* udata, BoutReal* dudata) {
   load_vars(udata);
   ARKodeGetLastStep(arkode_mem, &hcur);
   // Call Implicit RHS function
-  run_diffusive(t);
+  run_rhs_si(t);
   save_derivs(dudata);
 }
 
@@ -728,7 +728,7 @@ void ArkodeMRISolver::rhs_fe(BoutReal t, BoutReal* udata, BoutReal* dudata) {
   ARKodeGetLastStep(arkode_mem, &hcur);
 
   // Call RHS function
-  run_convective(t);
+  run_rhs_fe(t);
 
   // Save derivatives to dudata
   save_derivs(dudata);
@@ -744,7 +744,7 @@ void ArkodeMRISolver::rhs_fi(BoutReal t, BoutReal* udata, BoutReal* dudata) {
   load_vars(udata);
   ARKodeGetLastStep(arkode_mem, &hcur);
   // Call Implicit RHS function
-  run_diffusive(t);
+  run_rhs_fi(t);
   save_derivs(dudata);
 }
 
@@ -764,7 +764,7 @@ void ArkodeMRISolver::rhs_s(BoutReal t, BoutReal* udata, BoutReal* dudata) {
 
   // Call RHS function
   // run_rhs_s(t);
-  run_rhs(t);
+  run_rhs_s(t);
 
   // Save derivatives to dudata
   save_derivs(dudata);
@@ -786,7 +786,7 @@ void ArkodeMRISolver::rhs_f(BoutReal t, BoutReal* udata, BoutReal* dudata) {
 
   // Call RHS function
   // run_rhs_f(t);
-  run_rhs(t);
+  run_rhs_f(t);
 
   // Save derivatives to dudata
   save_derivs(dudata);
