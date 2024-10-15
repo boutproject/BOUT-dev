@@ -58,13 +58,35 @@ std::string parallel_slice_field_name(std::string field, int offset) {
   return direction + "_" + field + slice_suffix;
 };
 
-void load_parallel_metric_component(std::string name, Field3D& component, int offset) {
+bool load_parallel_metric_component(std::string name, Field3D& component, int offset,
+                                    bool doZero) {
   Mesh* mesh = component.getMesh();
   Field3D tmp{mesh};
-  const auto pname = parallel_slice_field_name(name, offset);
-  if (mesh->get(tmp, pname, 0.0, false) != 0) {
-    throw BoutException("Could not read {:s} from grid file!\n"
-			"  Fix it up with `zoidberg-update-parallel-metrics <grid>`", pname);
+  bool doload = mesh->sourceHasVar(name);
+  bool isValid{false};
+  if (doload) {
+    const auto pname = parallel_slice_field_name(name, offset);
+    isValid = mesh->get(tmp, pname, 0.0, false) == 0;
+    if (not isValid) {
+      throw BoutException("Could not read {:s} from grid file!\n"
+                          "  Fix it up with `zoidberg-update-parallel-metrics <grid>`",
+                          pname);
+    }
+  } else {
+    auto lmin = min(component, true);
+    auto lmax = max(component, true);
+    if (lmin != lmax) {
+      if (doZero) {
+        lmin = lmax = 0.0;
+      } else {
+        throw BoutException("{:s} not in grid file but not constant!\n"
+                            "  Cannot determine value for parallel slices",
+                            name);
+      }
+    } else {
+      isValid = true;
+    }
+    tmp = lmin;
   }
   if (!component.hasParallelSlices()){
     component.splitParallelSlices();
@@ -76,19 +98,45 @@ void load_parallel_metric_component(std::string name, Field3D& component, int of
   BOUT_FOR(i, component.getRegion("RGN_NOBNDRY")) {
     pcom[i.yp(offset)] = tmp[i];
   }
+  return isValid;
 }
 
 void load_parallel_metric_components(Coordinates* coords, int offset){
-#define LOAD_PAR(var) load_parallel_metric_component(#var, coords->var, offset)
-  LOAD_PAR(g11);
-  LOAD_PAR(g22);
-  LOAD_PAR(g33);
-  LOAD_PAR(g13);
-  LOAD_PAR(g_11);
-  LOAD_PAR(g_22);
-  LOAD_PAR(g_33);
-  LOAD_PAR(g_13);
-  LOAD_PAR(J);
+#define LOAD_PAR(var, doZero) \
+  load_parallel_metric_component(#var, coords->var, offset, doZero)
+  LOAD_PAR(g11, false);
+  LOAD_PAR(g22, false);
+  LOAD_PAR(g33, false);
+  LOAD_PAR(g12, false);
+  LOAD_PAR(g13, false);
+  LOAD_PAR(g23, false);
+
+  LOAD_PAR(g_11, false);
+  LOAD_PAR(g_22, false);
+  LOAD_PAR(g_33, false);
+  LOAD_PAR(g_12, false);
+  LOAD_PAR(g_13, false);
+  LOAD_PAR(g_23, false);
+
+  if (not LOAD_PAR(J, true)) {
+    auto g =
+        coords->g11.ynext(offset) * coords->g22.ynext(offset) * coords->g33.ynext(offset)
+        + 2.0 * coords->g12.ynext(offset) * coords->g13.ynext(offset)
+              * coords->g23.ynext(offset)
+        - coords->g11.ynext(offset) * coords->g23.ynext(offset)
+              * coords->g23.ynext(offset)
+        - coords->g22.ynext(offset) * coords->g13.ynext(offset)
+              * coords->g13.ynext(offset)
+        - coords->g33.ynext(offset) * coords->g12.ynext(offset)
+              * coords->g12.ynext(offset);
+
+    const auto rgn = fmt::format("RGN_YPAR_{:+d}", offset);
+    // Check that g is positive
+    bout::checkPositive(g, "The determinant of g^ij", rgn);
+    auto J = 1. / sqrt(g);
+    auto& pcom = coords->J.ynext(offset);
+    BOUT_FOR(i, J.getRegion(rgn)) { pcom[i] = J[i]; }
+  }
 #undef LOAD_PAR
 }
   
