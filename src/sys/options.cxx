@@ -541,9 +541,9 @@ Field3D Options::as<Field3D>(const Field3D& similar_to) const {
 
     // Get a reference, to try and avoid copying
     const auto& tensor =
-        is_loaded ? bout::utils::get<Tensor<BoutReal>>(value)
-                  : (*lazyLoad)(0, localmesh->LocalNx - 1, 0, localmesh->LocalNy - 1, 0,
-                                localmesh->LocalNz - 1);
+      is_loaded() ? bout::utils::get<Tensor<BoutReal>>(value)
+                  : doLazyLoad(0, localmesh->LocalNx - 1, 0, localmesh->LocalNy - 1, 0,
+			       localmesh->LocalNz - 1);
 
     // Check if the dimension sizes are the same as a Field3D
     if (tensor.shape()

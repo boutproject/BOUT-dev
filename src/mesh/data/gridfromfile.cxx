@@ -194,7 +194,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
     break;
   }
   case 3: {
-    if (not option.is_loaded) {
+    if (not option.is_loaded()) {
       size[0] = option.shape[0];
       size[1] = option.shape[1];
       size[2] = option.shape[2];
@@ -635,9 +635,9 @@ bool GridFile::readgrid_3dvar_real(const std::string& name, int yread, int ydest
     return false;
   }
 
-  if (not option.is_loaded) {
-    const auto& chunk = (*option.lazyLoad)(xread, xread + xsize - 1, yread,
-                                           yread + ysize - 1, 0, size[2] - 1);
+  if (not option.is_loaded()) {
+    const auto& chunk = option.doLazyLoad(xread, xread + xsize - 1, yread,
+                                          yread + ysize - 1, 0, size[2] - 1);
     for (int jx = 0; jx < xsize; jx++) {
       for (int jy = 0; jy < ysize; jy++) {
         for (int jz = 0; jz < size[2]; ++jz) {
