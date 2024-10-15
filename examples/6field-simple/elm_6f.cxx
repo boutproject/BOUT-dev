@@ -378,9 +378,6 @@ protected:
   int init(bool restarting) override {
     bool noshear;
 
-    // Get the metric tensor
-    Coordinates* coord = mesh->getCoordinates();
-
     output.write("Solving high-beta flute reduced equations\n");
     output.write("\tFile    : {:s}\n", __FILE__);
     output.write("\tCompiled: {:s} at {:s}\n", __DATE__, __TIME__);
@@ -701,21 +698,6 @@ protected:
     }
 
     //////////////////////////////////////////////////////////////
-    // SHIFTED RADIAL COORDINATES
-
-    if (mesh->IncIntShear) {
-      // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      coord->setIntShiftTorsion(I);
-
-    } else {
-      // Dimits style, using local coordinate system
-      if (include_curvature) {
-        b0xcv.z += I * b0xcv.x;
-      }
-      I = 0.0; // I disappears from metric
-    }
-
-    //////////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
 
     if (mesh->get(Bbar, "bmag")) { // Typical magnetic field
@@ -867,7 +849,7 @@ protected:
     Btxy /= Bbar;
     B0 /= Bbar;
     hthe /= Lbar;
-    coord->setDx(coord->dx() / (Lbar * Lbar * Bbar));
+    Field2D dx;
     I *= Lbar * Lbar * Bbar;
 
     if ((!T0_fake_prof) && n0_fake_prof) {
@@ -1051,7 +1033,24 @@ protected:
 
     /**************** CALCULATE METRICS ******************/
 
-    tokamak_coordinates(coord, Rxy, Bpxy, hthe, I, B0, Btxy);
+    auto* coord = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, B0, Btxy);
+    coord->setDx(dx / (Lbar * Lbar * Bbar));
+    
+    //////////////////////////////////////////////////////////////
+    // SHIFTED RADIAL COORDINATES
+
+    if (mesh->IncIntShear) {
+      // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
+      coord->setIntShiftTorsion(I);
+
+    } else {
+      // Dimits style, using local coordinate system
+      if (include_curvature) {
+        b0xcv.z += I * b0xcv.x;
+      }
+      I = 0.0; // I disappears from metric
+    }
+
 
     // Set B field vector
 

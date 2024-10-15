@@ -355,8 +355,6 @@ class GEM : public PhysicsModel {
     //////////////////////////////////
     // Metric tensor components
 
-    coord = mesh->getCoordinates();
-
     // Normalise
     hthe /= Lbar; // parallel derivatives normalised to Lperp
 
@@ -365,9 +363,10 @@ class GEM : public PhysicsModel {
     Bxy /= Bbar;
 
     Rxy /= rho_s; // Perpendicular derivatives normalised to rho_s
-    coord->setDx(coord->dx() / (rho_s * rho_s * Bbar));
 
-    tokamak_coordinates(coord, Rxy, Bpxy, hthe, 0.0, Bxy, Btxy);
+    coord = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, 0.0, Bxy, Btxy);
+
+    coord->setDx(coord->dx() / (rho_s * rho_s * Bbar));
 
     // Set B field vector
 

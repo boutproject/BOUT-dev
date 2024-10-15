@@ -22,9 +22,7 @@ int main(int argc, char** argv) {
     mesh->get(hthe, "hthe"); // m
     mesh->get(I, "sinty");   // m^-2 T^-1
 
-    Coordinates* coord = mesh->getCoordinates();
-
-    tokamak_coordinates(coord, Rxy, Bpxy, hthe, I, B0, Btxy);
+    tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, B0, Btxy);
   }
   ///////////////////////////////////////
 

@@ -4,10 +4,13 @@
 
 #include "bout.hxx"
 
-inline Coordinates* tokamak_coordinates(Coordinates* coord, const FieldMetric& Rxy,
+inline Coordinates* tokamak_coordinates(Mesh* mesh, const FieldMetric& Rxy,
                                         const FieldMetric& Bpxy, const FieldMetric& hthe,
                                         const FieldMetric& I, const FieldMetric& B,
-                                        const FieldMetric& Btxy) {
+                                        const FieldMetric& Btxy,
+                                        const BoutReal& sbp = 1.0) // Sign of Bp
+{
+  auto* coord = mesh->getCoordinates();
 
   const auto g11 = SQ(Rxy * Bpxy);
   const auto g22 = 1.0 / SQ(hthe);
@@ -21,7 +24,7 @@ inline Coordinates* tokamak_coordinates(Coordinates* coord, const FieldMetric& R
   const auto g_33 = Rxy * Rxy;
   const auto g_12 = sbp * Btxy * hthe * I * Rxy / Bpxy;
   const auto g_13 = I * Rxy * Rxy;
-  const auto g_23 = Btxy * hthe * Rxy / Bpxy;
+  const auto g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
 
   coord->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
                          CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
@@ -31,6 +34,5 @@ inline Coordinates* tokamak_coordinates(Coordinates* coord, const FieldMetric& R
 
   return coord;
 }
-
 
 #endif //BOUT_TOKAMAK_COORDINATES_HXX

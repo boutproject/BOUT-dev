@@ -16,13 +16,12 @@
 class WaveTest : public PhysicsModel {
 public:
   int init(bool UNUSED(restarting)) {
-    auto* coords = mesh->getCoordinates();
     Field2D Rxy, Bpxy, Btxy, hthe, I;
     GRID_LOAD(Rxy);
     GRID_LOAD(Bpxy);
     GRID_LOAD(Btxy);
     GRID_LOAD(hthe);
-    coords->setBxy(mesh->get("Bxy"));
+    const auto& Bxy = mesh->get("Bxy");
     int ShiftXderivs = 0;
     mesh->get(ShiftXderivs, "false");
     if (ShiftXderivs) {
@@ -32,7 +31,7 @@ public:
       mesh->get(I, "sinty");
     }
 
-    tokamak_coordinates(coords, Rxy, Bpxy, hthe, I, coords->Bxy(), Btxy);
+    auto* coords = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, Bxy, Btxy);
 
     solver->add(f, "f");
     solver->add(g, "g");
