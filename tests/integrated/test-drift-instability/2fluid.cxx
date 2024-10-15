@@ -88,15 +88,11 @@ protected:
     b0xcv.covariant = false;  // Read contravariant components
     mesh->get(b0xcv, "bxcv"); // b0xkappa terms
 
-    // Coordinate system
-    coord = mesh->getCoordinates();
-
     // Load metrics
     GRID_LOAD(Rxy);
     GRID_LOAD(Bpxy);
     GRID_LOAD(Btxy);
     GRID_LOAD(hthe);
-    coord->setDx(mesh->get("dpsi"));
     mesh->get(I, "sinty");
 
     // Load normalisation values
@@ -204,18 +200,22 @@ protected:
     Rxy /= rho_s;
     hthe /= rho_s;
     I *= rho_s * rho_s * (bmag / 1e4) * ShearFactor;
-    coord->setDx(coord->dx() / (rho_s * rho_s * (bmag / 1e4)));
 
     // Normalise magnetic field
     Bpxy /= (bmag / 1.e4);
     Btxy /= (bmag / 1.e4);
-    coord->setBxy(coord->Bxy() / (bmag / 1.e4));
 
     // calculate pressures
     pei0 = (Ti0 + Te0) * Ni0;
     pe0 = Te0 * Ni0;
 
-    tokamak_coordinates(coord, Rxy, Bpxy, hthe, I, coord->Bxy(), Btxy);
+    Field2D Bxy = mesh->get("Bxy");
+    Bxy /= (bmag / 1.e4);
+
+    coord = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, Bxy, Btxy);
+
+    coord->setDx(mesh->get("dpsi"));
+    coord->setDx(coord->dx() / (rho_s * rho_s * (bmag / 1e4)));
 
     /**************** SET EVOLVING VARIABLES *************/
 

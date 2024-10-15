@@ -65,8 +65,12 @@ private:
     coord = mesh->getCoordinates();
 
     // Load metrics
-    GRID_LOAD(Rxy, Zxy, Bpxy, Btxy, hthe);
-    coord->setDx(mesh->get("dpsi"));
+    mesh->get(Rxy, "Rxy");
+    mesh->get(Zxy, "Zxy");
+    mesh->get(Bpxy, "Bpxy");
+    mesh->get(Btxy, "Btxy");
+    mesh->get(hthe, "hthe");
+    Field2D dx = mesh->get("dpsi");
     mesh->get(I, "sinty");
 
     // Load normalisation values
@@ -137,17 +141,21 @@ private:
     Rxy /= rho_s;
     hthe /= rho_s;
     I *= rho_s * rho_s * (bmag / 1e4) * ShearFactor;
-    coord->setDx(coord->dx() / (rho_s * rho_s * (bmag / 1e4)));
+
+    dx /= (rho_s * rho_s * (bmag / 1e4));
 
     // Normalise magnetic field
     Bpxy /= (bmag / 1.e4);
     Btxy /= (bmag / 1.e4);
-    coord->setBxy(coord->Bxy() / (bmag / 1.e4));
+
+    Field2D Bxy = mesh->get("Bxy");
+    Bxy /= (bmag / 1.e4);
 
     // Set nu
     nu = nu_hat * Ni0 / pow(Te0, 1.5);
 
-    tokamak_coordinates(coord, Rxy, Bpxy, hthe, I, coord->Bxy(), Btxy);
+    coord = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, Bxy, Btxy);
+    coord->setDx(dx);
 
 
     /**************** SET EVOLVING VARIABLES *************/

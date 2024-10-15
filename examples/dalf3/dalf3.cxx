@@ -167,8 +167,6 @@ protected:
       return 1;
     }
 
-    Coordinates* coord = mesh->getCoordinates();
-
     // SHIFTED RADIAL COORDINATES
 
     // Check type of parallel transform
@@ -244,9 +242,9 @@ protected:
     Btxy /= Bnorm;
     B0 /= Bnorm;
 
-    coord->setDx(coord->dx() / (rho_s * rho_s * Bnorm));
+    auto* coord = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, B0, Btxy);
 
-    tokamak_coordinates(coord, Rxy, Bpxy, hthe, I, B0, Btxy);
+    coord->setDx(coord->dx() / (rho_s * rho_s * Bnorm));
 
     SOLVE_FOR3(Vort, Pe, Vpar);
     comms.add(Vort, Pe, Vpar);

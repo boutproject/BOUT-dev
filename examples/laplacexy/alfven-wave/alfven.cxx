@@ -174,7 +174,25 @@ protected:
     Field2D Rxy, Bpxy, Btxy, hthe, sinty;
     GRID_LOAD5(Rxy, Bpxy, Btxy, hthe, sinty); // Load metrics
 
-    Coordinates* coord = mesh->getCoordinates(); // Metric tensor
+    Rxy /= Lnorm;
+    hthe /= Lnorm;
+    sinty *= SQ(Lnorm) * Bnorm;
+
+    Bpxy /= Bnorm;
+    Btxy /= Bnorm;
+
+    // Calculate metric components
+    sinty = 0.0; // I disappears from metric for shifted coordinates
+
+    BoutReal sbp = 1.0; // Sign of Bp
+    if (min(Bpxy, true) < 0.0) {
+      sbp = -1.0;
+    }
+
+    Field2D Bxy = mesh->get("Bxy");
+    Bxy /= Bnorm;
+
+    auto* coord = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, sinty, Bxy, Btxy, sbp);
 
     // Checking for dpsi and qinty used in BOUT grids
     Field2D dx;
@@ -185,25 +203,7 @@ protected:
       // dx will have been read already from the grid
       output << "\tUsing dx as the x grid spacing\n";
     }
-
-    Rxy /= Lnorm;
-    hthe /= Lnorm;
-    sinty *= SQ(Lnorm) * Bnorm;
-    coord->setDx(coord->dx() / (SQ(Lnorm) * Bnorm));
-
-    Bpxy /= Bnorm;
-    Btxy /= Bnorm;
-    coord->setBxy(coord->Bxy() / Bnorm);
-
-    // Calculate metric components
-    sinty = 0.0; // I disappears from metric for shifted coordinates
-
-    BoutReal sbp = 1.0; // Sign of Bp
-    if (min(Bpxy, true) < 0.0) {
-      sbp = -1.0;
-    }
-
-    tokamak_coordinates(coord, Rxy, Bpxy, hthe, sinty, coord->Bxy(), Btxy, sbp);
+    coord->setDx(dx / (SQ(Lnorm) * Bnorm));
   }
 };
 

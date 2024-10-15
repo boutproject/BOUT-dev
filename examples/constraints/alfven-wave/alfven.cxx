@@ -163,27 +163,12 @@ protected:
     Field2D Rxy, Bpxy, Btxy, hthe, sinty;
     GRID_LOAD5(Rxy, Bpxy, Btxy, hthe, sinty); // Load metrics
 
-    // Get the coordinates object
-    Coordinates* coord = mesh->getCoordinates();
-
-    // Checking for dpsi and qinty used in BOUT grids
-    Field2D dx;
-    if (!mesh->get(dx, "dpsi")) {
-      output << "\tUsing dpsi as the x grid spacing\n";
-      coord->setDx(dx); // Only use dpsi if found
-    } else {
-      // dx will have been read already from the grid
-      output << "\tUsing dx as the x grid spacing\n";
-    }
-
     Rxy /= Lnorm;
     hthe /= Lnorm;
     sinty *= SQ(Lnorm) * Bnorm;
-    coord->setDx(coord->dx() / (SQ(Lnorm) * Bnorm));
 
     Bpxy /= Bnorm;
     Btxy /= Bnorm;
-    coord->setBxy(coord->Bxy() / Bnorm);
 
     // Check type of parallel transform
     std::string ptstr =
@@ -199,7 +184,21 @@ protected:
       sbp = -1.0;
     }
 
-    tokamak_coordinates(coord, Rxy, Bpxy, hthe, sinty, coord->Bxy(), Btxy, sbp);
+    Field2D Bxy = mesh->get("Bxy");
+    Bxy /= Bnorm;
+
+    auto* coord = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, sinty, Bxy, Btxy, sbp);
+
+    // Checking for dpsi and qinty used in BOUT grids
+    Field2D dx;
+    if (!mesh->get(dx, "dpsi")) {
+      output << "\tUsing dpsi as the x grid spacing\n";
+      coord->setDx(dx); // Only use dpsi if found
+    } else {
+      // dx will have been read already from the grid
+      output << "\tUsing dx as the x grid spacing\n";
+    }
+    coord->setDx(dx / (SQ(Lnorm) * Bnorm));
   }
 };
 

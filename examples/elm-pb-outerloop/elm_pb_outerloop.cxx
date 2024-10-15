@@ -28,7 +28,6 @@
 
 /*******************************************************************************/
 
-#include "../common.hxx"
 #include <bout/constants.hxx>
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
@@ -42,12 +41,12 @@
 
 #include <math.h>
 
-#include <bout/tokamak_coordinates.hxx>
 #include <bout/derivs.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>
 #include <bout/single_index_ops.hxx>
 #include <bout/smoothing.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 #include <bout/rajalib.hxx> // Defines BOUT_FOR_RAJA
 
@@ -360,7 +359,6 @@ public:
   // Note: The rhs() function needs to be public so that RAJA can use CUDA
 
   int init(bool restarting) override {
-    Coordinates* metric = mesh->getCoordinates();
 
     output.write("Solving high-beta flute reduced equations\n");
     output.write("\tFile    : {:s}\n", __FILE__);
@@ -822,21 +820,6 @@ public:
     }
 
     //////////////////////////////////////////////////////////////
-    // SHIFTED RADIAL COORDINATES
-
-    if (mesh->IncIntShear) {
-      // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      metric->setIntShiftTorsion(I);
-
-    } else {
-      // Dimits style, using local coordinate system
-      if (include_curvature) {
-        b0xcv.z += I * b0xcv.x;
-      }
-      I = 0.0; // I disappears from metric
-    }
-
-    //////////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
 
     if (mesh->get(Bbar, "bmag") != 0) { // Typical magnetic field
@@ -963,7 +946,7 @@ public:
     Btxy /= Bbar;
     B0 /= Bbar;
     hthe /= Lbar;
-    metric->setDx(metric->dx() / (Lbar * Lbar * Bbar));
+
     I *= Lbar * Lbar * Bbar;
 
     if (constn0) {
@@ -1090,8 +1073,6 @@ public:
     } else {
       rmp_Psi = 0.0;
     }
-
-    tokamak_coordinates(metric, Rxy, Bpxy, hthe, I, B0, Btxy);
 
     // Set B field vector
 
@@ -1229,6 +1210,25 @@ public:
       Jpar.setBoundary("J");
     }
     Jpar2.setBoundary("J");
+
+    auto* metric = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, B0, Btxy);
+
+    //////////////////////////////////////////////////////////////
+    // SHIFTED RADIAL COORDINATES
+
+    if (mesh->IncIntShear) {
+      // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
+      metric->setIntShiftTorsion(I);
+
+    } else {
+      // Dimits style, using local coordinate system
+      if (include_curvature) {
+        b0xcv.z += I * b0xcv.x;
+      }
+      I = 0.0; // I disappears from metric
+    }
+
+    metric->setDx(metric->dx() / (Lbar * Lbar * Bbar));
 
     return 0;
   }
@@ -1662,12 +1662,12 @@ public:
 #endif
     };
 
-      // Terms which are not yet single index operators
-      // Note: Terms which are included in the single index loop
-      //       may be commented out here, to allow comparison/testing
+    // Terms which are not yet single index operators
+    // Note: Terms which are included in the single index loop
+    //       may be commented out here, to allow comparison/testing
 
-      ////////////////////////////////////////////////////
-      // Parallel electric field
+    ////////////////////////////////////////////////////
+    // Parallel electric field
 
 #if not EVOLVE_JPAR
     // Vector potential

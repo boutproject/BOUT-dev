@@ -56,15 +56,11 @@ protected:
 
     b0xcv *= -1.0; // NOTE: THIS IS FOR 'OLD' GRID FILES ONLY
 
-    // Coordinate system
-    coord = mesh->getCoordinates();
-
     // Load metrics
     GRID_LOAD(Rxy);
     GRID_LOAD(Bpxy);
     GRID_LOAD(Btxy);
     GRID_LOAD(hthe);
-    coord->setDx(mesh->get("dpsi"));
     mesh->get(I, "sinty");
 
     // Load normalisation values
@@ -130,14 +126,18 @@ protected:
     Rxy /= rho_s;
     hthe /= rho_s;
     I *= rho_s * rho_s * (bmag / 1e4) * ShearFactor;
-    coord->setDx(coord->dx() / (rho_s * rho_s * (bmag / 1e4)));
 
     // Normalise magnetic field
     Bpxy /= (bmag / 1.e4);
     Btxy /= (bmag / 1.e4);
-    coord->setBxy(coord->Bxy() / (bmag / 1.e4));
 
-    tokamak_coordinates(coord, Rxy, Bpxy, hthe, I, coord->Bxy(), Btxy);
+    Field2D Bxy = mesh->get("Bxy");
+    Bxy /= (bmag / 1.e4);
+
+    coord = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, Bxy, Btxy);
+
+    coord->setDx(mesh->get("dpsi"));
+    coord->setDx(coord->dx() / (rho_s * rho_s * (bmag / 1e4)));
 
     // Tell BOUT++ which variables to evolve
     SOLVE_FOR2(rho, Ni);
