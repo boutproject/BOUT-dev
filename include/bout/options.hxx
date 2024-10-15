@@ -827,7 +827,7 @@ public:
   /// Currently only for 3D data
   using lazyLoadFunction = std::unique_ptr<std::function<Tensor<BoutReal>(
       int xstart, int xend, int ystart, int yend, int zstart, int zend)>>;
-  void setLazyLoad(lazyLoadFunction func) {lazyLoad = std::move(func); }
+  void setLazyLoad(lazyLoadFunction func) { lazyLoad = std::move(func); }
   Tensor<BoutReal> doLazyLoad(int xstart, int xend, int ystart, int yend, int zstart,
                               int zend) const {
     ASSERT1(lazyLoad != nullptr);
