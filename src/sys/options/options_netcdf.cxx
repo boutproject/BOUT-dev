@@ -9,6 +9,7 @@
 #include "bout/mesh.hxx"
 #include "bout/sys/timer.hxx"
 
+#include <climits>
 #include <exception>
 #include <iostream>
 #include <netcdf>
@@ -109,10 +110,15 @@ void readGroup(const std::string& filename, const NcGroup group, Options& result
     case 3: {
       if (var_type == ncDouble or var_type == ncFloat) {
         if (file) {
-          Tensor<double> dummy(0, 0, 0);
-          result[var_name] = dummy;
-          result[var_name].shape = {dims[0].getSize(), dims[1].getSize(),
-                                    dims[2].getSize()};
+          result[var_name] = Tensor<double>(0, 0, 0);
+          const auto s2i = [](size_t s) {
+            if (s > INT_MAX) {
+              throw BoutException("BadCast {} > {}", s, INT_MAX);
+            }
+            return static_cast<int>(s);
+          };
+          result[var_name].setLazyShape(
+              {s2i(dims[0].getSize()), s2i(dims[1].getSize()), s2i(dims[2].getSize())});
           // We need to explicitly copy file, so that there is a pointer to the file, and
           // the file does not get closed, which would prevent us from reading.
           result[var_name].setLazyLoad(std::make_unique<std::function<Tensor<double>(

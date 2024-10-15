@@ -932,6 +932,35 @@ std::vector<std::string> Options::getFlattenedKeys() const {
   return flattened_names;
 }
 
+namespace {
+/// Visitor that returns the shape of its argument
+struct GetDimensions {
+  std::vector<int> operator()([[maybe_unused]] bool value) { return {1}; }
+  std::vector<int> operator()([[maybe_unused]] int value) { return {1}; }
+  std::vector<int> operator()([[maybe_unused]] BoutReal value) { return {1}; }
+  std::vector<int> operator()([[maybe_unused]] const std::string& value) { return {1}; }
+  std::vector<int> operator()(const Array<BoutReal>& array) { return {array.size()}; }
+  std::vector<int> operator()(const Matrix<BoutReal>& array) {
+    const auto shape = array.shape();
+    return {std::get<0>(shape), std::get<1>(shape)};
+  }
+  std::vector<int> operator()(const Tensor<BoutReal>& array) {
+    const auto shape = array.shape();
+    return {std::get<0>(shape), std::get<1>(shape), std::get<2>(shape)};
+  }
+  std::vector<int> operator()(const Field& array) {
+    return {array.getNx(), array.getNy(), array.getNz()};
+  }
+};
+} // namespace
+
+std::vector<int> Options::getShape() const {
+  if (is_loaded()) {
+    return bout::utils::visit(GetDimensions{}, value);
+  }
+  return lazy_shape;
+}
+
 fmt::format_parse_context::iterator
 bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
 

@@ -131,28 +131,6 @@ bool GridFile::get(Mesh* m, Field3D& var, const std::string& name, BoutReal def,
   return getField(m, var, name, def, location);
 }
 
-namespace {
-/// Visitor that returns the shape of its argument
-struct GetDimensions {
-  std::vector<int> operator()([[maybe_unused]] bool value) { return {1}; }
-  std::vector<int> operator()([[maybe_unused]] int value) { return {1}; }
-  std::vector<int> operator()([[maybe_unused]] BoutReal value) { return {1}; }
-  std::vector<int> operator()([[maybe_unused]] const std::string& value) { return {1}; }
-  std::vector<int> operator()(const Array<BoutReal>& array) { return {array.size()}; }
-  std::vector<int> operator()(const Matrix<BoutReal>& array) {
-    const auto shape = array.shape();
-    return {std::get<0>(shape), std::get<1>(shape)};
-  }
-  std::vector<int> operator()(const Tensor<BoutReal>& array) {
-    const auto shape = array.shape();
-    return {std::get<0>(shape), std::get<1>(shape), std::get<2>(shape)};
-  }
-  std::vector<int> operator()(const Field& array) {
-    return {array.getNx(), array.getNy(), array.getNz()};
-  }
-};
-} // namespace
-
 template <typename T>
 bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
                         CELL_LOC location) {
@@ -175,7 +153,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
   Options& option = data[name];
 
   // Global (x, y, z) dimensions of field
-  std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
+  const std::vector<int> size = option.getShape();
 
   switch (size.size()) {
   case 1: {
@@ -194,11 +172,6 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
     break;
   }
   case 3: {
-    if (not option.is_loaded()) {
-      size[0] = option.shape[0];
-      size[1] = option.shape[1];
-      size[2] = option.shape[2];
-    }
     // Check size if getting Field3D
     if constexpr (bout::utils::is_Field2D_v<T> or bout::utils::is_FieldPerp_v<T>) {
       output_warn.write(
@@ -504,7 +477,7 @@ bool GridFile::get(Mesh* UNUSED(m), std::vector<BoutReal>& var, const std::strin
 bool GridFile::hasXBoundaryGuards(Mesh* m) {
   // Global (x,y) dimensions of some field
   // a grid file should always contain "dx"
-  const std::vector<int> size = bout::utils::visit(GetDimensions{}, data["dx"].value);
+  const std::vector<int> size = data["dx"].getShape();
 
   if (size.empty()) {
     // handle case where "dx" is not present - non-standard grid file
@@ -539,7 +512,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh* m, const std::string& name, int yread, i
   }
 
   /// Check the size of the data
-  const std::vector<int> size = bout::utils::visit(GetDimensions{}, data[name].value);
+  const std::vector<int> size = data[name].getShape();
 
   if (size.size() != 3) {
     output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);
@@ -628,7 +601,7 @@ bool GridFile::readgrid_3dvar_real(const std::string& name, int yread, int ydest
   Options& option = data[name];
 
   /// Check the size of the data
-  const std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
+  const std::vector<int> size = option.getShape();
 
   if (size.size() != 3) {
     output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);
@@ -682,7 +655,7 @@ bool GridFile::readgrid_perpvar_fft(Mesh* m, const std::string& name, int xread,
 
   /// Check the size of the data
   Options& option = data[name];
-  const std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
+  const std::vector<int> size = option.getShape();
 
   if (size.size() != 2) {
     output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);
@@ -765,7 +738,7 @@ bool GridFile::readgrid_perpvar_real(const std::string& name, int xread, int xde
 
   /// Check the size of the data
   Options& option = data[name];
-  const std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
+  const std::vector<int> size = option.getShape();
 
   if (size.size() != 2) {
     output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);

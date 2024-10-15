@@ -834,7 +834,8 @@ public:
     return (*lazyLoad)(xstart, xend, ystart, yend, zstart, zend);
   }
   bool is_loaded() const { return lazyLoad == nullptr; }
-  std::vector<size_t> shape;
+  std::vector<int> getShape() const;
+  void setLazyShape(std::vector<int> shape) { lazy_shape = shape; }
 
 private:
   /// The source label given to default values
@@ -848,7 +849,10 @@ private:
   std::map<std::string, Options> children; ///< If a section then has children
   mutable bool value_used = false;         ///< Record whether this value is used
 
+  // Function to load data
   lazyLoadFunction lazyLoad{nullptr};
+  // Shape of underlying data
+  std::vector<int> lazy_shape;
 
   template <typename T>
   void _set_no_check(T val, std::string source) {
