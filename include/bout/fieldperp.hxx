@@ -58,7 +58,8 @@ public:
   FieldPerp(Mesh* fieldmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
             int yindex_in = -1,
             DirectionTypes directions_in = {YDirectionType::Standard,
-                                            ZDirectionType::Standard});
+                                            ZDirectionType::Standard},
+            std::optional<size_t> regionID = {});
 
   /*!
    * Copy constructor. After this the data

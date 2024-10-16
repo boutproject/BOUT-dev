@@ -192,7 +192,8 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 template <typename T>
 inline T emptyFrom(const T& f) {
   static_assert(bout::utils::is_Field_v<T>, "emptyFrom only works on Fields");
-  return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()})
+  return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()},
+           f.getRegionID())
       .allocate();
 }
 
