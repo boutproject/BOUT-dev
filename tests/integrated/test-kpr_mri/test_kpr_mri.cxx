@@ -1,4 +1,3 @@
-#include "bout/petsclib.hxx"
 #include "bout/physicsmodel.hxx"
 #include "bout/solver.hxx"
 
@@ -32,7 +31,7 @@ public:
   /* fill in the slow explicit RHS function:
      [-0.5*sin(t)/(2*f)]
      [      0          ] */
-    ddt(f) = -0.5*sin(t)/(2.0*f(0,0,0));
+    ddt(f) = -0.5*sin(t)/(2.0*f(1,1,0));
     ddt(g) = 0.0;
 
     return 0;
@@ -42,8 +41,8 @@ public:
     /* fill in the slow implicit RHS function:
       [G e]*[(-1+f^2-0.5*cos(t))/(2*f)]
       [0 0] [(-2+g^2-cos(w*t))/(2*g)  ]  */
-    BoutReal tmp1 = (-1.0 + f(0,0,0) * f(0,0,0) - 0.5*cos(t)) / (2.0 * f(0,0,0));
-    BoutReal tmp2 = (-2.0 + g(0,0,0) * g(0,0,0) - cos(w*t)) / (2.0 * g(0,0,0));
+    BoutReal tmp1 = (-1.0 + f(1,1,0) * f(1,1,0) - 0.5*cos(t)) / (2.0 * f(1,1,0));
+    BoutReal tmp2 = (-2.0 + g(1,1,0) * g(1,1,0) - cos(w*t)) / (2.0 * g(1,1,0));
     ddt(f) = G * tmp1 + e * tmp2;
     ddt(g) = 0.0;
 
@@ -62,8 +61,8 @@ public:
   /* fill in the RHS function:
      [0  0]*[(-1+f^2-0.5*cos(t))/(2*f)] + [         0                      ]
      [e -1] [(-2+g^2-cos(w*t))/(2*g)  ]   [-w*sin(w*t)/(2*sqrt(2+cos(w*t)))] */
-    BoutReal tmp1 = (-1.0 + f(0,0,0) * f(0,0,0) - 0.5*cos(t)) / (2.0 * f(0,0,0));
-    BoutReal tmp2 = (-2.0 + g(0,0,0) * g(0,0,0) - cos(w*t)) / (2.0 * g(0,0,0));
+    BoutReal tmp1 = (-1.0 + f(1,1,0) * f(1,1,0) - 0.5*cos(t)) / (2.0 * f(1,1,0));
+    BoutReal tmp2 = (-2.0 + g(1,1,0) * g(1,1,0) - cos(w*t)) / (2.0 * g(1,1,0));
     ddt(f) = 0.0;
     ddt(g) = e * tmp1 - tmp2 - w * sin(w*t) / (2.0 * sqrt(2.0 + cos(w * t)));
 
@@ -74,9 +73,9 @@ public:
   /* fill in the RHS function:
      [G e]*[(-1+f^2-0.5*cos(t))/(2*f)] + [-0.5*sin(t)/(2*f)]
      [0 0] [(-2+g^2-cos(w*t))/(2*g)  ]   [      0          ] */
-    BoutReal tmp1 = (-1.0 + f(0,0,0) * f(0,0,0) - 0.5*cos(t)) / (2.0 * f(0,0,0));
-    BoutReal tmp2 = (-2.0 + g(0,0,0) * g(0,0,0) - cos(w*t)) / (2.0 * g(0,0,0));
-    ddt(f) = G * tmp1 + e * tmp2 - 0.5*sin(t) / (2.0 * f(0,0,0));
+    BoutReal tmp1 = (-1.0 + f(1,1,0) * f(1,1,0) - 0.5*cos(t)) / (2.0 * f(1,1,0));
+    BoutReal tmp2 = (-2.0 + g(1,1,0) * g(1,1,0) - cos(w*t)) / (2.0 * g(1,1,0));
+    ddt(f) = G * tmp1 + e * tmp2 - 0.5*sin(t) / (2.0 * f(1,1,0));
     ddt(g) = 0.0;
 
     return 0;
@@ -86,8 +85,8 @@ public:
   /* fill in the RHS function:
      [0  0]*[(-1+f^2-0.5*cos(t))/(2*f)] + [         0                      ]
      [e -1] [(-2+g^2-cos(w*t))/(2*g)  ]   [-w*sin(w*t)/(2*sqrt(2+cos(w*t)))] */
-    BoutReal tmp1 = (-1.0 + f(0,0,0) * f(0,0,0) - 0.5*cos(t)) / (2.0 * f(0,0,0));
-    BoutReal tmp2 = (-2.0 + g(0,0,0) * g(0,0,0) - cos(w*t)) / (2.0 * g(0,0,0));
+    BoutReal tmp1 = (-1.0 + f(1,1,0) * f(1,1,0) - 0.5*cos(t)) / (2.0 * f(1,1,0));
+    BoutReal tmp2 = (-2.0 + g(1,1,0) * g(1,1,0) - cos(w*t)) / (2.0 * g(1,1,0));
     ddt(f) = 0.0;
     ddt(g) = e * tmp1 - tmp2 - w * sin(w*t) / (2.0 * sqrt(2.0 + cos(w * t)));
 
@@ -98,10 +97,10 @@ public:
   /* fill in the RHS function:
      [G  e]*[(-1+f^2-0.5*cos(t))/(2*f)] + [-0.5*sin(t)/(2*f)               ]
      [e -1] [(-2+g^2-cos(w*t))/(2*g)  ]   [-w*sin(w*t)/(2*sqrt(2+cos(w*t)))] */
-    BoutReal tmp1 = (-1.0 + f(0,0,0) * f(0,0,0) - 0.5*cos(t)) / (2.0 * f(0,0,0));
-    BoutReal tmp2 = (-2.0 + g(0,0,0) * g(0,0,0) - cos(w*t)) / (2.0 * g(0,0,0));
+    BoutReal tmp1 = (-1.0 + f(1,1,0) * f(1,1,0) - 0.5*cos(t)) / (2.0 * f(1,1,0));
+    BoutReal tmp2 = (-2.0 + g(1,1,0) * g(1,1,0) - cos(w*t)) / (2.0 * g(1,1,0));
 
-    ddt(f) = G * tmp1 + e * tmp2 - 0.5*sin(t) / (2.0 * f(0,0,0));
+    ddt(f) = G * tmp1 + e * tmp2 - 0.5*sin(t) / (2.0 * f(1,1,0));
     ddt(g) = e * tmp1 - tmp2 - w * sin(w*t) / (2.0 * sqrt(2.0 + cos(w * t)));
 
     return 0;
@@ -109,18 +108,13 @@ public:
 
   bool check_solution(BoutReal atol, BoutReal t) {
     // Return true if correct solution
-    return ((std::abs(sqrt(0.5*cos(t) + 1.0) - f(0, 0, 0)) < atol) and (std::abs(sqrt(0.5*cos(w*t) + 2.0) - g(0, 0, 0)) < atol));
+    return ((std::abs(sqrt(0.5*cos(t) + 1.0) - f(1,1,0)) < atol) and (std::abs(sqrt(cos(w*t) + 2.0) - g(1,1,0)) < atol));
   }
 
   BoutReal compute_error(BoutReal t)
   {
-    // return (std::max(abs(sqrt(0.5*cos(t) + 1.0) - f(0,0,0)), abs(sqrt(  cos(w*t) + 2.0) - g(0,0,0))));
-    
-    // std::cout << "    f = " << f(0,0,0) << std::endl;
-    // std::cout << "    g = " << g(0,0,0) << std::endl;
-
-    return sqrt( pow(sqrt(0.5*cos(t) + 1.0) - f(0,0,0), 2.0) + 
-                 pow(sqrt(  cos(w*t) + 2.0) - g(0,0,0), 2.0));
+    return sqrt( pow(sqrt(0.5*cos(t) + 1.0) - f(1,1,0), 2.0) + 
+                 pow(sqrt(cos(w*t) + 2.0) - g(1,1,0), 2.0));
   }
 
   // Don't need any restarting, or options to control data paths
@@ -155,8 +149,8 @@ int main(int argc, char** argv) {
   bout::globals::mesh->load();
 
   // Global options
-  root["nout"] = 50;
-  root["timestep"] = 0.01;
+  root["nout"] = 500;
+  root["timestep"] = 0.001;
 
   // Get specific options section for this solver. Can't just use default
   // "solver" section, as we run into problems when solvers use the same
@@ -172,11 +166,11 @@ int main(int argc, char** argv) {
 
   solver->solve();
 
-  BoutReal error = model.compute_error(5.0);
+  BoutReal error = model.compute_error(0.5);
 
   std::cout << "error = " << error << std::endl;
 
-  if (model.check_solution(tolerance, 5.0)) {
+  if (model.check_solution(tolerance, 0.5)) {
     output_test << " PASSED\n";
     return 0;
   }
