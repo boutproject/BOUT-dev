@@ -34,6 +34,7 @@ class Field;
 #include <cmath>
 #include <cstdio>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "bout/field_data.hxx"
@@ -133,6 +134,12 @@ public:
     swap(first.name, second.name);
     swap(first.directions, second.directions);
   }
+
+  virtual void setRegion(size_t UNUSED(regionID)) {}
+  virtual void setRegion(std::optional<size_t> UNUSED(regionID)) {}
+  virtual void setRegion(const std::string& UNUSED(region_name)) {}
+  virtual void resetRegion() {}
+  virtual std::optional<size_t> getRegionID() const { return {}; }
 
 private:
   /// Labels for the type of coordinate system this field is defined over
