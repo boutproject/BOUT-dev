@@ -113,6 +113,9 @@ public:
 
   BoutReal compute_error(BoutReal t)
   {
+    /* Compute the error with the true solution:
+     f(t) = sqrt(0.5*cos(t) + 1.0
+     g(t) = sqrt(cos(w*t) + 2.0 */
     return sqrt( pow(sqrt(0.5*cos(t) + 1.0) - f(1,1,0), 2.0) + 
                  pow(sqrt(cos(w*t) + 2.0) - g(1,1,0), 2.0));
   }
