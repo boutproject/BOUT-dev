@@ -835,7 +835,7 @@ public:
   }
   bool is_loaded() const { return lazyLoad == nullptr; }
   std::vector<int> getShape() const;
-  void setLazyShape(std::vector<int> shape) { lazy_shape = shape; }
+  void setLazyShape(std::vector<int> shape) { lazy_shape = std::move(shape); }
 
 private:
   /// The source label given to default values
