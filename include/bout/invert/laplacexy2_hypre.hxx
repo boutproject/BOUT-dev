@@ -38,8 +38,6 @@
 #if not BOUT_HAS_HYPRE
 // If no Hypre
 
-#warning LaplaceXY requires Hypre. No LaplaceXY available
-
 #include "bout/globalindexer.hxx"
 #include <bout/boutexception.hxx>
 #include <bout/mesh.hxx>
