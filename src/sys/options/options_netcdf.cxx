@@ -57,8 +57,8 @@ T readAttribute(const NcAtt& attribute) {
   return value;
 }
 
-void readGroup(const std::string& filename, const NcGroup group, Options& result,
-               std::shared_ptr<netCDF::NcFile> file) {
+void readGroup(const std::string& filename, const NcGroup& group, Options& result,
+               const std::shared_ptr<netCDF::NcFile>& file) {
 
   // Iterate over all variables
   for (const auto& varpair : group.getVars()) {
