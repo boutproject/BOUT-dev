@@ -828,12 +828,17 @@ public:
   using lazyLoadFunction = std::unique_ptr<std::function<Tensor<BoutReal>(
       int xstart, int xend, int ystart, int yend, int zstart, int zend)>>;
   void setLazyLoad(lazyLoadFunction func) { lazyLoad = std::move(func); }
+  /// Load and get a chunk of the data
   Tensor<BoutReal> doLazyLoad(int xstart, int xend, int ystart, int yend, int zstart,
                               int zend) const {
     ASSERT1(lazyLoad != nullptr);
     return (*lazyLoad)(xstart, xend, ystart, yend, zstart, zend);
   }
+  /// Some backends support to only read the data when needed.  This
+  /// allows to check whether the data is loaded, or whether it needs
+  /// to be loaded by doLazyLoad.
   bool is_loaded() const { return lazyLoad == nullptr; }
+  /// Get the shape of the value
   std::vector<int> getShape() const;
   void setLazyShape(std::vector<int> shape) { lazy_shape = std::move(shape); }
 
