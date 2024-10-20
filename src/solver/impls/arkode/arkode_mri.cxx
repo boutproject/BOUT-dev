@@ -394,29 +394,29 @@ int ArkodeMRISolver::init() {
 
   if (inner_treatment == MRI_Treatment::ImEx or inner_treatment == MRI_Treatment::Implicit) {
     {
-      output.write("\tUsing Newton iteration\n");
+      output.write("\tUsing Newton iteration for inner solver\n");
 
       const auto prectype =
           inner_use_precon ? (rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT) : SUN_PREC_NONE;
       inner_sun_solver = callWithSUNContext(SUNLinSol_SPGMR, suncontext, uvec, prectype, inner_maxl);
       if (inner_sun_solver == nullptr) {
-        throw BoutException("Creating SUNDIALS linear solver failed\n");
+        throw BoutException("Creating SUNDIALS inner linear solver failed\n");
       }
       if (ARKodeSetLinearSolver(inner_arkode_mem, inner_sun_solver, nullptr) != ARKLS_SUCCESS) {
-        throw BoutException("ARKodeSetLinearSolver failed\n");
+        throw BoutException("ARKodeSetLinearSolver failed for inner solver\n");
       }
 
       /// Set Preconditioner
       if (inner_use_precon) {
         if (hasPreconditioner()) {  // change to inner_hasPreconditioner when it is available
-          output.write("\tUsing user-supplied preconditioner\n");
+          output.write("\tUsing user-supplied preconditioner for inner solver\n");
 
           if (ARKodeSetPreconditioner(inner_arkode_mem, nullptr, arkode_f_pre)
               != ARKLS_SUCCESS) {
-            throw BoutException("ARKodeSetPreconditioner failed\n");
+            throw BoutException("ARKodeSetPreconditioner failed for inner solver\n");
           }
         } else {
-          output.write("\tUsing BBD preconditioner\n");
+          output.write("\tUsing BBD preconditioner for inner solver\n");
 
           /// Get options
           // Compute band_width_default from actually added fields, to allow for multiple
@@ -451,7 +451,7 @@ int ArkodeMRISolver::init() {
           if (ARKBBDPrecInit(inner_arkode_mem, local_N, mudq, mldq, mukeep, mlkeep, 0,
                              arkode_f_bbd_rhs, nullptr)
               != ARKLS_SUCCESS) {
-            throw BoutException("ARKBBDPrecInit failed\n");
+            throw BoutException("ARKBBDPrecInit failed for inner solver\n");
           }
         }
       } else {
@@ -461,7 +461,7 @@ int ArkodeMRISolver::init() {
     }
 
     /// Set Jacobian-vector multiplication function
-    output.write("\tUsing difference quotient approximation for Jacobian\n");
+    output.write("\tUsing difference quotient approximation for Jacobian in the inner solver\n");
   }
 
 
