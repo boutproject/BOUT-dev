@@ -1,15 +1,23 @@
-test-beuler
+test-kpr_mri
 ===========
 
-Integrate a stiff system:
+ Multirate nonlinear Kvaerno-Prothero-Robinson ODE test problem:
 
-    ddt(f) = 998 * f + 1998 * (g - 1.0);
-    ddt(g) = -999 * f - 1999 * (g - 1.0);
+    [u]' = [ G  e ] [(-1+u^2-r)/(2u)] + [      r'(t)/(2u)        ]
+    [v]    [ e -1 ] [(-2+v^2-s)/(2v)]   [ s'(t)/(2*sqrt(2+s(t))) ]
+         = [ fs(t,u,v) ]
+           [ ff(t,u,v) ]
 
-starting with f=1, g=0. The solution has an exp(-t) term, and
-stiff exp(-1000t) term which can be challenging to integrate.
-The solution should converge to f=0, g=1.
+ where r(t) = 0.5*cos(t),  s(t) = cos(w*t),  0 < t < 5.
 
-This is an example of a problem where many time integration
-solvers will fail (including CVODE with standard settings),
-but are quite easily solved with Backward Euler.
+ This problem has analytical solution given by
+    u(t) = sqrt(1+r(t)),  v(t) = sqrt(2+s(t)).
+
+ We use the parameters:
+   e = 0.5 (fast/slow coupling strength) [default]
+   G = -100 (stiffness at slow time scale) [default]
+   w = 100  (time-scale separation factor) [default]
+
+ The stiffness of the slow time scale is essentially determined
+ by G, for |G| > 50 it is 'stiff' and ideally suited to a
+ multirate method that is implicit at the slow time scale.

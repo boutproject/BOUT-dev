@@ -6,13 +6,12 @@
 #include <string>
 #include <vector>
 
-// A simple phyics model with a stiff decay towards a steady state solution
+// A simple phyics model with a manufactured true solution
 //
 class TestSolver : public PhysicsModel {
 public:
   Field3D f, g;
 
-  BoutReal hs = 0.01;      /* slow step size */
   BoutReal e  = 0.5;       /* fast/slow coupling strength */
   BoutReal G  = -100.0;    /* stiffness at slow time scale */
   BoutReal w  = 100.0;     /* time-scale separation factor */
@@ -49,7 +48,7 @@ public:
     return 0;
   }
 
-  int rhs_fe(BoutReal t) override {
+  int rhs_fe(BoutReal UNUSED(t)) override {
 
     ddt(f) = 0.0;
     ddt(g) = 0.0;
@@ -93,18 +92,18 @@ public:
     return 0;
   }
 
-  int rhs(BoutReal t) override {
-  /* fill in the RHS function:
-     [G  e]*[(-1+f^2-0.5*cos(t))/(2*f)] + [-0.5*sin(t)/(2*f)               ]
-     [e -1] [(-2+g^2-cos(w*t))/(2*g)  ]   [-w*sin(w*t)/(2*sqrt(2+cos(w*t)))] */
-    BoutReal tmp1 = (-1.0 + f(1,1,0) * f(1,1,0) - 0.5*cos(t)) / (2.0 * f(1,1,0));
-    BoutReal tmp2 = (-2.0 + g(1,1,0) * g(1,1,0) - cos(w*t)) / (2.0 * g(1,1,0));
+  // int rhs(BoutReal t) override {
+  // /* fill in the RHS function:
+  //    [G  e]*[(-1+f^2-0.5*cos(t))/(2*f)] + [-0.5*sin(t)/(2*f)               ]
+  //    [e -1] [(-2+g^2-cos(w*t))/(2*g)  ]   [-w*sin(w*t)/(2*sqrt(2+cos(w*t)))] */
+  //   BoutReal tmp1 = (-1.0 + f(1,1,0) * f(1,1,0) - 0.5*cos(t)) / (2.0 * f(1,1,0));
+  //   BoutReal tmp2 = (-2.0 + g(1,1,0) * g(1,1,0) - cos(w*t)) / (2.0 * g(1,1,0));
 
-    ddt(f) = G * tmp1 + e * tmp2 - 0.5*sin(t) / (2.0 * f(1,1,0));
-    ddt(g) = e * tmp1 - tmp2 - w * sin(w*t) / (2.0 * sqrt(2.0 + cos(w * t)));
+  //   ddt(f) = G * tmp1 + e * tmp2 - 0.5*sin(t) / (2.0 * f(1,1,0));
+  //   ddt(g) = e * tmp1 - tmp2 - w * sin(w*t) / (2.0 * sqrt(2.0 + cos(w * t)));
 
-    return 0;
-  }
+  //   return 0;
+  // }
 
   bool check_solution(BoutReal atol, BoutReal t) {
     // Return true if correct solution
@@ -114,8 +113,8 @@ public:
   BoutReal compute_error(BoutReal t)
   {
     /* Compute the error with the true solution:
-     f(t) = sqrt(0.5*cos(t) + 1.0
-     g(t) = sqrt(cos(w*t) + 2.0 */
+     f(t) = sqrt(0.5*cos(t) + 1.0)
+     g(t) = sqrt(cos(w*t) + 2.0) */
     return sqrt( pow(sqrt(0.5*cos(t) + 1.0) - f(1,1,0), 2.0) + 
                  pow(sqrt(cos(w*t) + 2.0) - g(1,1,0), 2.0));
   }
@@ -152,8 +151,8 @@ int main(int argc, char** argv) {
   bout::globals::mesh->load();
 
   // Global options
-  root["nout"] = 500;
-  root["timestep"] = 0.001;
+  root["nout"] = 200;
+  root["timestep"] = 0.025;
 
   // Get specific options section for this solver. Can't just use default
   // "solver" section, as we run into problems when solvers use the same
@@ -169,11 +168,11 @@ int main(int argc, char** argv) {
 
   solver->solve();
 
-  BoutReal error = model.compute_error(0.5);
+  BoutReal error = model.compute_error(5.0);
 
   std::cout << "error = " << error << std::endl;
 
-  if (model.check_solution(tolerance, 0.5)) {
+  if (model.check_solution(tolerance, 5.0)) {
     output_test << " PASSED\n";
     return 0;
   }

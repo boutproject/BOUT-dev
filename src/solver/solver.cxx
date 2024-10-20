@@ -1515,7 +1515,50 @@ int Solver::run_rhs(BoutReal t, bool linear) {
     first_rhs_call = false;
   }
 
-  if (model->splitOperator()) {
+
+  // TO DO: Replace true with an appropriate boolean 
+  if (true) {
+    // Run all four parts
+
+    int nv = getLocalN();
+    // Create temporary arrays for system state
+    Array<BoutReal> tmp(nv);
+    Array<BoutReal> tmp2(nv);
+    Array<BoutReal> tmp3(nv);
+
+    save_vars(tmp.begin()); // Copy variables into tmp
+    
+    pre_rhs(t);
+    status = model->runRHS_fe(t, linear);
+    post_rhs(t); // Check variables, apply boundary conditions
+    save_derivs(tmp2.begin()); // Save time derivatives
+
+    pre_rhs(t);
+    status = model->runRHS_fi(t, linear);
+    post_rhs(t);
+    save_derivs(tmp3.begin()); // Save time derivatives
+    for (BoutReal *t3 = tmp3.begin(), *t2 = tmp2.begin(); t3 != tmp3.end(); ++t3, ++t2) {
+        *t3 += *t2;
+    }
+
+    pre_rhs(t);
+    status = model->runRHS_se(t, linear);
+    post_rhs(t);
+    save_derivs(tmp2.begin()); // Save time derivatives
+    for (BoutReal *t3 = tmp3.begin(), *t2 = tmp2.begin(); t3 != tmp3.end(); ++t3, ++t2) {
+        *t3 += *t2;
+    }
+
+    pre_rhs(t);
+    status = model->runRHS_si(t, linear);
+    post_rhs(t);
+    save_derivs(tmp2.begin()); // Save time derivatives
+    for (BoutReal *t3 = tmp3.begin(), *t2 = tmp2.begin(); t3 != tmp3.end(); ++t3, ++t2) {
+        *t3 += *t2;
+    }
+    load_derivs(tmp3.begin()); // Put back time-derivatives
+  }
+  else if (model->splitOperator()) {
     // Run both parts
 
     int nv = getLocalN();
