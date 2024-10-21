@@ -57,7 +57,6 @@ void setPetscOptions(Options& options, const std::string& prefix) {
 }
 } // namespace
 
-
 PetscLib::PetscLib(Options* opt) {
   BOUT_OMP_SAFE(critical(PetscLib))
   {
