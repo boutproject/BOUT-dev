@@ -1516,7 +1516,7 @@ int Solver::run_rhs(BoutReal t, bool linear) {
   }
 
 
-  // TO DO: Replace true with an appropriate boolean 
+  // TO DO: Replace true with an appropriate boolean and check for efficiency
   if (true) {
     // Run all four parts
 

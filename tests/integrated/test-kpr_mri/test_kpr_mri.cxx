@@ -151,8 +151,8 @@ int main(int argc, char** argv) {
   bout::globals::mesh->load();
 
   // Global options
-  root["nout"] = 200;
-  root["timestep"] = 0.025;
+  root["nout"] = 100;
+  root["timestep"] = 0.05;
 
   // Get specific options section for this solver. Can't just use default
   // "solver" section, as we run into problems when solvers use the same

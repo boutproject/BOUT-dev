@@ -327,7 +327,7 @@ int ArkodeMRISolver::init() {
   //   throw BoutException("ARKodeSetAdaptivityAdjustment failed\n");
   // }
 
-  if (ARKodeSetFixedStep(arkode_mem, 0.0001) != ARK_SUCCESS) {
+  if (ARKodeSetFixedStep(arkode_mem, 0.001) != ARK_SUCCESS) {
     throw BoutException("ARKodeSetAdaptController failed\n");
   }
 
