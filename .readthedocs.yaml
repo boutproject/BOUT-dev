@@ -34,3 +34,4 @@ build:
     - make
     - clang-format
     - fftw-dev
+    - time
