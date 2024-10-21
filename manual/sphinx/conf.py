@@ -96,7 +96,7 @@ if on_readthedocs:
     os.system("echo " + cmake)
     x = os.system("cd ../.. ; time " + cmake)
     assert x == 0
-    x = os.system("cd ../.. ; time make -j 2 -f Makefile")
+    x = os.system("cd ../.. ; time make -j 3 -f Makefile")
     assert x == 0
 
 
