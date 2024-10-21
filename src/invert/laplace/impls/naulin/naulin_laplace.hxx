@@ -157,6 +157,8 @@ private:
 
   /// Solver tolerances
   BoutReal rtol, atol;
+  /// Accept these tolerances if number of iterations exceeds maxits
+  BoutReal rtol_accept, atol_accept;
 
   /// Maximum number of iterations
   int maxits;

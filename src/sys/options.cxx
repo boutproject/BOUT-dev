@@ -18,6 +18,7 @@
 
 #include <fmt/core.h>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
 #include <algorithm>
 #include <cmath>
@@ -1000,7 +1001,7 @@ bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
 
 fmt::format_context::iterator
 bout::details::OptionsFormatterBase::format(const Options& options,
-                                            fmt::format_context& ctx) {
+                                            fmt::format_context& ctx) const {
 
   const auto conditionally_used = [](const Options& option) -> bool {
     if (not option.hasAttribute(conditionally_used_attribute)) {

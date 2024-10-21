@@ -5,9 +5,9 @@
  * NOTE: Only one solver can currently be compiled in
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2024 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -41,6 +41,7 @@ RegisterUnavailableSolver
 
 #else
 
+#include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/sundials_backports.hxx"
 
@@ -59,6 +60,14 @@ class Options;
 namespace {
 RegisterSolver<ArkodeSolver> registersolverarkode("arkode");
 }
+
+// enum describing treatment of equations
+// Note: Capitalized because `explicit` is a C++ reserved keyword
+BOUT_ENUM_CLASS(Treatment, ImEx, Implicit, Explicit);
+
+// Adaptivity method
+BOUT_ENUM_CLASS(AdapMethod, PID, PI, I, Explicit_Gustafsson, Implicit_Gustafsson,
+                ImEx_Gustafsson);
 
 class ArkodeSolver : public Solver {
 public:
@@ -93,12 +102,8 @@ private:
 
   /// Maximum number of steps to take between outputs
   int mxsteps;
-  /// Use ImEx capability
-  bool imex;
-  /// Solve only explicit part
-  bool solve_explicit;
-  /// Solve only implicit part
-  bool solve_implicit;
+  /// Integrator treatment enum: IMEX, Implicit or Explicit
+  Treatment treatment;
   /// Use linear implicit solver (only evaluates jacobian inversion once)
   bool set_linear;
   /// Solve explicit portion in fixed timestep mode. NOTE: This is not recommended except
@@ -112,14 +117,8 @@ private:
   std::string explicit_table;
   /// Fraction of the estimated explicitly stable step to use
   BoutReal cfl_frac;
-  /// Set timestep adaptivity function:
-  /// - 0: PID adaptivity (default)
-  /// - 1: PI
-  /// - 2: I
-  /// - 3: explicit Gustafsson
-  /// - 4: implicit Gustafsson
-  /// - 5: ImEx Gustafsson
-  int adap_method;
+  /// Timestep adaptivity function
+  AdapMethod adap_method;
   /// Absolute tolerance
   BoutReal abstol;
   /// Relative tolerance
