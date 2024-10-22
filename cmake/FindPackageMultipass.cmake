@@ -108,7 +108,7 @@ macro (MULTIPASS_C_SOURCE_RUNS includes libraries source runs)
 endmacro (MULTIPASS_C_SOURCE_RUNS)
 
 macro (MULTIPASS_SOURCE_COMPILES includes libraries source runs language)
-  include (Check${language}SourceRuns)
+  include (Check${language}SourceCompiles)
   # This is a ridiculous hack.  CHECK_${language}_SOURCE_* thinks that if the
   # *name* of the return variable doesn't change, then the test does
   # not need to be re-run.  We keep an internal count which we

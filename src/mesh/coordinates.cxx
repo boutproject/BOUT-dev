@@ -1502,7 +1502,7 @@ Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& m
   if (!f.hasParallelSlices() and !transform->canToFromFieldAligned()) {
     Field3D f_parallel = f;
     transform->calcParallelSlices(f_parallel);
-    f_parallel.applyParallelBoundary("parallel_neumann");
+    f_parallel.applyParallelBoundary("parallel_neumann_o2");
     return bout::derivatives::index::DDY(f_parallel, outloc, method, region);
   }
 #endif
@@ -1908,7 +1908,7 @@ Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) co
 
   // Communicate to get parallel slices
   localmesh->communicate(*invSgCache);
-  invSgCache->applyParallelBoundary("parallel_neumann");
+  invSgCache->applyParallelBoundary("parallel_neumann_o2");
 
   // cache
   auto ptr = std::make_unique<FieldMetric>();

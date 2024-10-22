@@ -190,10 +190,10 @@ endif()
 message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
 set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
 
-option(BOUT_USE_ADIOS "Enable support for ADIOS output" ON)
-option(BOUT_DOWNLOAD_ADIOS "Download and build ADIOS2" OFF)
-if (BOUT_USE_ADIOS)
-  if (BOUT_DOWNLOAD_ADIOS)
+option(BOUT_USE_ADIOS2 "Enable support for ADIOS output" ON)
+option(BOUT_DOWNLOAD_ADIOS2 "Download and build ADIOS2" OFF)
+if (BOUT_USE_ADIOS2)
+  if (BOUT_DOWNLOAD_ADIOS2)
     message(STATUS "Downloading and configuring ADIOS2")
     include(FetchContent)
     FetchContent_Declare(
@@ -220,12 +220,12 @@ if (BOUT_USE_ADIOS)
       find_package(MPI REQUIRED COMPONENTS C)
       target_link_libraries(bout++ PUBLIC adios2::cxx11_mpi MPI::MPI_C)
     else()
-      set(BOUT_USE_ADIOS OFF)
+      set(BOUT_USE_ADIOS2 OFF)
     endif()
   endif()
 endif()
-message(STATUS "ADIOS support: ${BOUT_USE_ADIOS}")
-set(BOUT_HAS_ADIOS ${BOUT_USE_ADIOS})
+message(STATUS "ADIOS2 support: ${BOUT_USE_ADIOS2}")
+set(BOUT_HAS_ADIOS2 ${BOUT_USE_ADIOS2})
 
 
 option(BOUT_USE_FFTW "Enable support for FFTW" ON)
@@ -281,8 +281,8 @@ if (BOUT_USE_SUNDIALS)
     include(FetchContent)
     FetchContent_Declare(
       sundials
-      GIT_REPOSITORY https://github.com/ZedThree/sundials
-      GIT_TAG        cmake-export-fixes
+      GIT_REPOSITORY https://github.com/LLNL/sundials
+      GIT_TAG        v7.0.0
       )
     # Note: These are settings for building SUNDIALS
     set(EXAMPLES_ENABLE_C OFF CACHE BOOL "" FORCE)
@@ -297,7 +297,11 @@ if (BOUT_USE_SUNDIALS)
     FetchContent_MakeAvailable(sundials)
     message(STATUS "SUNDIALS done configuring")
   else()
+    enable_language(C)
     find_package(SUNDIALS REQUIRED)
+    if (SUNDIALS_VERSION VERSION_LESS 4.0.0)
+      message(FATAL_ERROR "SUNDIALS_VERSION 4.0.0 or newer is required. Found version ${SUNDIALS_VERSION}.")
+    endif()
   endif()
   target_link_libraries(bout++ PUBLIC SUNDIALS::nvecparallel)
   target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
