@@ -29,6 +29,8 @@
 
 #include "shiftedmetricinterp.hxx"
 #include "bout/constants.hxx"
+//#include "bout/mask.hxx"
+//#include <bout/boundary_region.hxx>
 #include "bout/parallel_boundary_region.hxx"
 
 ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,

@@ -147,8 +147,9 @@ shifted``, see :ref:`sec-shifted-metric`), the recommended method is
 to apply boundary conditions directly to the ``yup`` and ``ydown``
 parallel slices. This can be done by setting ``bndry_par_yup`` and
 ``bndry_par_ydown``, or ``bndry_par_all`` to set both at once. The
-possible values are ``parallel_dirichlet``, ``parallel_dirichlet_O3``
-and ``parallel_neumann``. The stencils used are the same as for the
+possible values are ``parallel_dirichlet_o1``, ``parallel_dirichlet_o2``,
+``parallel_dirichlet_o3``, ``parallel_neumann_o1``, ``parallel_neumann_o2``
+and ``parallel_neumann_o3``. The stencils used are the same as for the
 standard boundary conditions without the ``parallel_`` prefix, but are
 applied directly to parallel slices. The boundary condition can only
 be applied after the parallel slices are calculated, which is usually
@@ -168,7 +169,7 @@ For example, for an evolving variable ``f``, put a section in the
     [f]
     bndry_xin = dirichlet
     bndry_xout = dirichlet
-    bndry_par_all = parallel_neumann
+    bndry_par_all = parallel_neumann_o2
     bndry_ydown = none
     bndry_yup = none
 
@@ -278,7 +279,7 @@ cells of the base variable. For example, for an evolving variable
     [f]
     bndry_xin = dirichlet
     bndry_xout = dirichlet
-    bndry_par_all = parallel_dirichlet
+    bndry_par_all = parallel_dirichlet_o2
     bndry_ydown = none
     bndry_yup = none
 
@@ -289,7 +290,7 @@ communication, while the perpendicular ones before:
 
     f.applyBoundary();
     mesh->communicate(f);
-    f.applyParallelBoundary("parallel_neumann");
+    f.applyParallelBoundary("parallel_neumann_o2");
 
 Note that during grid generation care has to be taken to ensure that there are
 no "short" connection lengths. Otherwise it can happen that for a point on a
