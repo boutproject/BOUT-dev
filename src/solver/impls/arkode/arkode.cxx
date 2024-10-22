@@ -4,9 +4,7 @@
  * NOTE: ARKode is still in beta testing so use with cautious optimism
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
- *
- * Contact: Nick Walkden, nick.walkden@ccfe.ac.uk
+ * Copyright 2010-2024 BOUT++ contributors
  *
  * This file is part of BOUT++.
  *
@@ -31,6 +29,7 @@
 
 #if BOUT_HAS_ARKODE
 
+#include "bout/bout_enum_class.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
@@ -74,11 +73,10 @@ ArkodeSolver::ArkodeSolver(Options* opts)
       mxsteps((*options)["mxstep"]
                   .doc("Maximum number of steps to take between outputs")
                   .withDefault(500)),
-      imex((*options)["imex"].doc("Use ImEx capability").withDefault(true)),
-      solve_explicit(
-          (*options)["explicit"].doc("Solve only explicit part").withDefault(true)),
-      solve_implicit(
-          (*options)["implicit"].doc("Solve only implicit part").withDefault(true)),
+      treatment((*options)["treatment"]
+                    .doc("Use default capability (imex) or provide a specific treatment: "
+                         "implicit or explicit")
+                    .withDefault(Treatment::ImEx)),
       set_linear(
           (*options)["set_linear"]
               .doc("Use linear implicit solver (only evaluates jacobian inversion once)")
@@ -99,11 +97,11 @@ ArkodeSolver::ArkodeSolver(Options* opts)
       cfl_frac((*options)["cfl_frac"]
                    .doc("Fraction of the estimated explicitly stable step to use")
                    .withDefault(-1.0)),
-      adap_method((*options)["adap_method"]
-                      .doc("Set timestep adaptivity function: 0 -> PID adaptivity "
-                           "(default); 1 -> PI; 2 -> I; 3 -> explicit Gustafsson; 4 -> "
-                           "implicit Gustafsson; 5 -> ImEx Gustafsson;")
-                      .withDefault(0)),
+      adap_method(
+          (*options)["adap_method"]
+              .doc("Set timestep adaptivity function: pid, pi, i, explicit_gustafsson,  "
+                   "implicit_gustafsson, imex_gustafsson.")
+              .withDefault(AdapMethod::PID)),
       abstol((*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12)),
       reltol((*options)["rtol"].doc("Relative tolerance").withDefault(1.0e-5)),
       use_vector_abstol((*options)["use_vector_abstol"]
@@ -195,44 +193,47 @@ int ArkodeSolver::init() {
   // Put the variables into uvec
   save_vars(N_VGetArrayPointer(uvec));
 
-  ASSERT1(solve_explicit or solve_implicit);
-
-  const auto& explicit_rhs = [this]() {
-    if (imex) {
-      return arkode_rhs_explicit;
-    } else {
-      return solve_explicit ? arkode_rhs : nullptr;
-    }
-  }();
-  const auto& implicit_rhs = [this]() {
-    if (imex) {
-      return arkode_rhs_implicit;
-    } else {
-      return solve_implicit ? arkode_rhs : nullptr;
-    }
-  }();
-
-  arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, explicit_rhs, implicit_rhs,
-                                  simtime, uvec);
+  switch (treatment) {
+  case Treatment::ImEx:
+    arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs_explicit,
+                                    arkode_rhs_implicit, simtime, uvec);
+    break;
+  case Treatment::Explicit:
+    arkode_mem =
+        callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs, nullptr, simtime, uvec);
+    break;
+  case Treatment::Implicit:
+    arkode_mem =
+        callWithSUNContext(ARKStepCreate, suncontext, nullptr, arkode_rhs, simtime, uvec);
+    break;
+  default:
+    throw BoutException("Invalid treatment: {}\n", toString(treatment));
+  }
   if (arkode_mem == nullptr) {
     throw BoutException("ARKStepCreate failed\n");
   }
 
-  if (imex and solve_explicit and solve_implicit) {
+  switch (treatment) {
+  case Treatment::ImEx:
     output_info.write("\tUsing ARKode ImEx solver \n");
     if (ARKStepSetImEx(arkode_mem) != ARK_SUCCESS) {
       throw BoutException("ARKStepSetImEx failed\n");
     }
-  } else if (solve_explicit) {
+    break;
+  case Treatment::Explicit:
     output_info.write("\tUsing ARKStep Explicit solver \n");
     if (ARKStepSetExplicit(arkode_mem) != ARK_SUCCESS) {
       throw BoutException("ARKStepSetExplicit failed\n");
     }
-  } else {
+    break;
+  case Treatment::Implicit:
     output_info.write("\tUsing ARKStep Implicit solver \n");
     if (ARKStepSetImplicit(arkode_mem) != ARK_SUCCESS) {
       throw BoutException("ARKStepSetImplicit failed\n");
     }
+    break;
+  default:
+    throw BoutException("Invalid treatment: {}\n", toString(treatment));
   }
 
   // For callbacks, need pointer to solver object
@@ -274,25 +275,24 @@ int ArkodeSolver::init() {
 
 #if SUNDIALS_CONTROLLER_SUPPORT
   switch (adap_method) {
-  case 0:
+  case AdapMethod::PID:
     controller = SUNAdaptController_PID(suncontext);
     break;
-  case 1:
+  case AdapMethod::PI:
     controller = SUNAdaptController_PI(suncontext);
     break;
-  case 2:
+  case AdapMethod::I:
     controller = SUNAdaptController_I(suncontext);
     break;
-  case 3:
+  case AdapMethod::Explicit_Gustafsson:
     controller = SUNAdaptController_ExpGus(suncontext);
     break;
-  case 4:
+  case AdapMethod::Implicit_Gustafsson:
     controller = SUNAdaptController_ImpGus(suncontext);
     break;
-  case 5:
+  case AdapMethod::ImEx_Gustafsson:
     controller = SUNAdaptController_ImExGus(suncontext);
     break;
-
   default:
     throw BoutException("Invalid adap_method\n");
   }
@@ -305,7 +305,33 @@ int ArkodeSolver::init() {
     throw BoutException("ARKStepSetAdaptivityAdjustment failed\n");
   }
 #else
-  if (ARKStepSetAdaptivityMethod(arkode_mem, adap_method, 1, 1, nullptr) != ARK_SUCCESS) {
+  int adap_method_int;
+  // Could cast to underlying integer, but this is more explicit
+  switch (adap_method) {
+  case AdapMethod::PID:
+    adap_method_int = 0;
+    break;
+  case AdapMethod::PI:
+    adap_method_int = 1;
+    break;
+  case AdapMethod::I:
+    adap_method_int = 2;
+    break;
+  case AdapMethod::Explicit_Gustafsson:
+    adap_method_int = 3;
+    break;
+  case AdapMethod::Implicit_Gustafsson:
+    adap_method_int = 4;
+    break;
+  case AdapMethod::ImEx_Gustafsson:
+    adap_method_int = 5;
+    break;
+  default:
+    throw BoutException("Invalid adap_method\n");
+  }
+
+  if (ARKStepSetAdaptivityMethod(arkode_mem, adap_method_int, 1, 1, nullptr)
+      != ARK_SUCCESS) {
     throw BoutException("ARKStepSetAdaptivityMethod failed\n");
   }
 #endif
@@ -372,91 +398,94 @@ int ArkodeSolver::init() {
     }
   }
 
-  if (fixed_point) {
-    output.write("\tUsing accelerated fixed point solver\n");
-    nonlinear_solver = callWithSUNContext(SUNNonlinSol_FixedPoint, suncontext, uvec, 3);
-    if (nonlinear_solver == nullptr) {
-      throw BoutException("Creating SUNDIALS fixed point nonlinear solver failed\n");
-    }
-    if (ARKStepSetNonlinearSolver(arkode_mem, nonlinear_solver) != ARK_SUCCESS) {
-      throw BoutException("ARKStepSetNonlinearSolver failed\n");
-    }
-  } else {
-    output.write("\tUsing Newton iteration\n");
-
-    const auto prectype =
-        use_precon ? (rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT) : SUN_PREC_NONE;
-    sun_solver = callWithSUNContext(SUNLinSol_SPGMR, suncontext, uvec, prectype, maxl);
-    if (sun_solver == nullptr) {
-      throw BoutException("Creating SUNDIALS linear solver failed\n");
-    }
-    if (ARKStepSetLinearSolver(arkode_mem, sun_solver, nullptr) != ARKLS_SUCCESS) {
-      throw BoutException("ARKStepSetLinearSolver failed\n");
-    }
-
-    /// Set Preconditioner
-    if (use_precon) {
-      if (hasPreconditioner()) {
-        output.write("\tUsing user-supplied preconditioner\n");
-
-        if (ARKStepSetPreconditioner(arkode_mem, nullptr, arkode_pre) != ARKLS_SUCCESS) {
-          throw BoutException("ARKStepSetPreconditioner failed\n");
-        }
-      } else {
-        output.write("\tUsing BBD preconditioner\n");
-
-        /// Get options
-        // Compute band_width_default from actually added fields, to allow for multiple
-        // Mesh objects
-        //
-        // Previous implementation was equivalent to:
-        //   int MXSUB = mesh->xend - mesh->xstart + 1;
-        //   int band_width_default = n3Dvars()*(MXSUB+2);
-        const int band_width_default = std::accumulate(
-            begin(f3d), end(f3d), 0, [](int acc, const VarStr<Field3D>& fvar) {
-              Mesh* localmesh = fvar.var->getMesh();
-              return acc + localmesh->xend - localmesh->xstart + 3;
-            });
-
-        const auto mudq = (*options)["mudq"]
-                              .doc("Upper half-bandwidth to be used in the difference "
-                                   "quotient Jacobian approximation")
-                              .withDefault(band_width_default);
-        const auto mldq = (*options)["mldq"]
-                              .doc("Lower half-bandwidth to be used in the difference "
-                                   "quotient Jacobian approximation")
-                              .withDefault(band_width_default);
-        const auto mukeep = (*options)["mukeep"]
-                                .doc("Upper half-bandwidth of the retained banded "
-                                     "approximate Jacobian block")
-                                .withDefault(n3Dvars() + n2Dvars());
-        const auto mlkeep = (*options)["mlkeep"]
-                                .doc("Lower half-bandwidth of the retained banded "
-                                     "approximate Jacobian block")
-                                .withDefault(n3Dvars() + n2Dvars());
-
-        if (ARKBBDPrecInit(arkode_mem, local_N, mudq, mldq, mukeep, mlkeep, 0,
-                           arkode_bbd_rhs, nullptr)
-            != ARKLS_SUCCESS) {
-          throw BoutException("ARKBBDPrecInit failed\n");
-        }
+  if (treatment == Treatment::ImEx or treatment == Treatment::Implicit) {
+    if (fixed_point) {
+      output.write("\tUsing accelerated fixed point solver\n");
+      nonlinear_solver = callWithSUNContext(SUNNonlinSol_FixedPoint, suncontext, uvec, 3);
+      if (nonlinear_solver == nullptr) {
+        throw BoutException("Creating SUNDIALS fixed point nonlinear solver failed\n");
+      }
+      if (ARKStepSetNonlinearSolver(arkode_mem, nonlinear_solver) != ARK_SUCCESS) {
+        throw BoutException("ARKStepSetNonlinearSolver failed\n");
       }
     } else {
-      // Not using preconditioning
-      output.write("\tNo preconditioning\n");
+      output.write("\tUsing Newton iteration\n");
+
+      const auto prectype =
+          use_precon ? (rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT) : SUN_PREC_NONE;
+      sun_solver = callWithSUNContext(SUNLinSol_SPGMR, suncontext, uvec, prectype, maxl);
+      if (sun_solver == nullptr) {
+        throw BoutException("Creating SUNDIALS linear solver failed\n");
+      }
+      if (ARKStepSetLinearSolver(arkode_mem, sun_solver, nullptr) != ARKLS_SUCCESS) {
+        throw BoutException("ARKStepSetLinearSolver failed\n");
+      }
+
+      /// Set Preconditioner
+      if (use_precon) {
+        if (hasPreconditioner()) {
+          output.write("\tUsing user-supplied preconditioner\n");
+
+          if (ARKStepSetPreconditioner(arkode_mem, nullptr, arkode_pre)
+              != ARKLS_SUCCESS) {
+            throw BoutException("ARKStepSetPreconditioner failed\n");
+          }
+        } else {
+          output.write("\tUsing BBD preconditioner\n");
+
+          /// Get options
+          // Compute band_width_default from actually added fields, to allow for multiple
+          // Mesh objects
+          //
+          // Previous implementation was equivalent to:
+          //   int MXSUB = mesh->xend - mesh->xstart + 1;
+          //   int band_width_default = n3Dvars()*(MXSUB+2);
+          const int band_width_default = std::accumulate(
+              begin(f3d), end(f3d), 0, [](int acc, const VarStr<Field3D>& fvar) {
+                Mesh* localmesh = fvar.var->getMesh();
+                return acc + localmesh->xend - localmesh->xstart + 3;
+              });
+
+          const auto mudq = (*options)["mudq"]
+                                .doc("Upper half-bandwidth to be used in the difference "
+                                     "quotient Jacobian approximation")
+                                .withDefault(band_width_default);
+          const auto mldq = (*options)["mldq"]
+                                .doc("Lower half-bandwidth to be used in the difference "
+                                     "quotient Jacobian approximation")
+                                .withDefault(band_width_default);
+          const auto mukeep = (*options)["mukeep"]
+                                  .doc("Upper half-bandwidth of the retained banded "
+                                       "approximate Jacobian block")
+                                  .withDefault(n3Dvars() + n2Dvars());
+          const auto mlkeep = (*options)["mlkeep"]
+                                  .doc("Lower half-bandwidth of the retained banded "
+                                       "approximate Jacobian block")
+                                  .withDefault(n3Dvars() + n2Dvars());
+
+          if (ARKBBDPrecInit(arkode_mem, local_N, mudq, mldq, mukeep, mlkeep, 0,
+                             arkode_bbd_rhs, nullptr)
+              != ARKLS_SUCCESS) {
+            throw BoutException("ARKBBDPrecInit failed\n");
+          }
+        }
+      } else {
+        // Not using preconditioning
+        output.write("\tNo preconditioning\n");
+      }
     }
-  }
 
-  /// Set Jacobian-vector multiplication function
+    /// Set Jacobian-vector multiplication function
 
-  if (use_jacobian and hasJacobian()) {
-    output.write("\tUsing user-supplied Jacobian function\n");
+    if (use_jacobian and hasJacobian()) {
+      output.write("\tUsing user-supplied Jacobian function\n");
 
-    if (ARKStepSetJacTimes(arkode_mem, nullptr, arkode_jac) != ARKLS_SUCCESS) {
-      throw BoutException("ARKStepSetJacTimes failed\n");
+      if (ARKStepSetJacTimes(arkode_mem, nullptr, arkode_jac) != ARKLS_SUCCESS) {
+        throw BoutException("ARKStepSetJacTimes failed\n");
+      }
+    } else {
+      output.write("\tUsing difference quotient approximation for Jacobian\n");
     }
-  } else {
-    output.write("\tUsing difference quotient approximation for Jacobian\n");
   }
 
   if (optimize) {
@@ -499,24 +528,27 @@ int ArkodeSolver::run() {
     ARKStepGetNumRhsEvals(arkode_mem, &temp_long_int, &temp_long_int2);
     nfe_evals = int(temp_long_int);
     nfi_evals = int(temp_long_int2);
-    ARKStepGetNumNonlinSolvIters(arkode_mem, &temp_long_int);
-    nniters = int(temp_long_int);
-    ARKStepGetNumPrecEvals(arkode_mem, &temp_long_int);
-    npevals = int(temp_long_int);
-    ARKStepGetNumLinIters(arkode_mem, &temp_long_int);
-    nliters = int(temp_long_int);
+    if (treatment == Treatment::ImEx or treatment == Treatment::Implicit) {
+      ARKStepGetNumNonlinSolvIters(arkode_mem, &temp_long_int);
+      nniters = int(temp_long_int);
+      ARKStepGetNumPrecEvals(arkode_mem, &temp_long_int);
+      npevals = int(temp_long_int);
+      ARKStepGetNumLinIters(arkode_mem, &temp_long_int);
+      nliters = int(temp_long_int);
+    }
 
     if (diagnose) {
       output.write("\nARKODE: nsteps {:d}, nfe_evals {:d}, nfi_evals {:d}, nniters {:d}, "
                    "npevals {:d}, nliters {:d}\n",
                    nsteps, nfe_evals, nfi_evals, nniters, npevals, nliters);
-
-      output.write("    -> Newton iterations per step: {:e}\n",
-                   static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
-      output.write("    -> Linear iterations per Newton iteration: {:e}\n",
-                   static_cast<BoutReal>(nliters) / static_cast<BoutReal>(nniters));
-      output.write("    -> Preconditioner evaluations per Newton: {:e}\n",
-                   static_cast<BoutReal>(npevals) / static_cast<BoutReal>(nniters));
+      if (treatment == Treatment::ImEx or treatment == Treatment::Implicit) {
+        output.write("    -> Newton iterations per step: {:e}\n",
+                     static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
+        output.write("    -> Linear iterations per Newton iteration: {:e}\n",
+                     static_cast<BoutReal>(nliters) / static_cast<BoutReal>(nniters));
+        output.write("    -> Preconditioner evaluations per Newton: {:e}\n",
+                     static_cast<BoutReal>(npevals) / static_cast<BoutReal>(nniters));
+      }
     }
 
     if (call_monitors(simtime, i, getNumberOutputSteps())) {
