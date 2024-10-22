@@ -57,6 +57,35 @@ static PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
   PetscFunctionReturn(s->precon(x, y));
 }
 
+///
+/// Input Parameters:
+///   snes - nonlinear solver object
+///   x1 - location at which to evaluate Jacobian
+///   ctx - MatFDColoring context or NULL
+///
+/// Output Parameters:
+///   J - Jacobian matrix (not altered in this routine)
+///   B - newly computed Jacobian matrix to use with preconditioner (generally the same as
+///   J)
+PetscErrorCode SNESComputeJacobianScaledColor(SNES snes, Vec x1, Mat J, Mat B,
+                                              void* ctx) {
+  PetscErrorCode err = SNESComputeJacobianDefaultColor(snes, x1, J, B, ctx);
+  CHKERRQ(err);
+
+  if ((err != 0) or (ctx == nullptr)) {
+    return err;
+  }
+
+  // Get the the SNESSolver pointer from the function call context
+  SNESSolver* fctx;
+  err = MatFDColoringGetFunction(static_cast<MatFDColoring>(ctx), nullptr,
+                                 reinterpret_cast<void**>(&fctx));
+  CHKERRQ(err);
+
+  // Call the SNESSolver function
+  return fctx->scaleJacobian(B);
+}
+
 SNESSolver::SNESSolver(Options* opts)
     : Solver(opts),
       timestep(
@@ -123,7 +152,10 @@ SNESSolver::SNESSolver(Options* opts)
                        .withDefault(50)),
       use_coloring((*options)["use_coloring"]
                        .doc("Use matrix coloring to calculate Jacobian?")
-                       .withDefault<bool>(true)) {}
+                       .withDefault<bool>(true)),
+      scale_rhs((*options)["scale_rhs"]
+                    .doc("Scale time derivatives?")
+                    .withDefault<bool>(false)) {}
 
 int SNESSolver::init() {
 
@@ -163,12 +195,26 @@ int SNESSolver::init() {
 
   if (equation_form == BoutSnesEquationForm::rearranged_backward_euler) {
     // Need an intermediate vector for rearranged Backward Euler
-    VecDuplicate(snes_x, &delta_x);
+    ierr = VecDuplicate(snes_x, &delta_x);
+    CHKERRQ(ierr);
   }
 
   if (predictor) {
     // Storage for previous solution
-    VecDuplicate(snes_x, &x1);
+    ierr = VecDuplicate(snes_x, &x1);
+    CHKERRQ(ierr);
+  }
+
+  if (scale_rhs) {
+    // Storage for rhs factors, one per evolving variable
+    ierr = VecDuplicate(snes_x, &rhs_scaling_factors);
+    CHKERRQ(ierr);
+    // Set all factors to 1 to start with
+    ierr = VecSet(rhs_scaling_factors, 1.0);
+    CHKERRQ(ierr);
+    // Array to store inverse Jacobian row norms
+    ierr = VecDuplicate(snes_x, &jac_row_inv_norms);
+    CHKERRQ(ierr);
   }
 
   // Nonlinear solver interface (SNES)
@@ -227,17 +273,16 @@ int SNESSolver::init() {
 
       output_progress.write("Setting Jacobian matrix sizes\n");
 
-      int localN = getLocalN(); // Number of rows on this processor
       int n2d = f2d.size();
       int n3d = f3d.size();
 
-      // Set size of Matrix on each processor to localN x localN
+      // Set size of Matrix on each processor to nlocal x nlocal
       MatCreate(BoutComm::get(), &Jmf);
-      MatSetSizes(Jmf, localN, localN, PETSC_DETERMINE, PETSC_DETERMINE);
+      MatSetSizes(Jmf, nlocal, nlocal, PETSC_DETERMINE, PETSC_DETERMINE);
       MatSetFromOptions(Jmf);
 
-      std::vector<PetscInt> d_nnz(localN);
-      std::vector<PetscInt> o_nnz(localN);
+      std::vector<PetscInt> d_nnz(nlocal);
+      std::vector<PetscInt> o_nnz(nlocal);
 
       // Set values for most points
       const int ncells_x = (mesh->LocalNx > 1) ? 2 : 0;
@@ -260,7 +305,7 @@ int SNESSolver::init() {
       }
 
       output_info.write("Star pattern: {} non-zero entries\n", star_pattern);
-      for (int i = 0; i < localN; i++) {
+      for (int i = 0; i < nlocal; i++) {
         // Non-zero elements on this processor
         d_nnz[i] = star_pattern;
         // Non-zero elements on neighboring processor
@@ -274,7 +319,7 @@ int SNESSolver::init() {
           for (int y = mesh->ystart; y <= mesh->yend; y++) {
             for (int z = 0; z < mesh->LocalNz; z++) {
               int localIndex = ROUND(index(mesh->xstart, y, z));
-              ASSERT2((localIndex >= 0) && (localIndex < localN));
+              ASSERT2((localIndex >= 0) && (localIndex < nlocal));
               const int num_fields = (z == 0) ? n2d + n3d : n3d;
               for (int i = 0; i < num_fields; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
@@ -286,7 +331,7 @@ int SNESSolver::init() {
           for (int y = mesh->ystart; y <= mesh->yend; y++) {
             for (int z = 0; z < mesh->LocalNz; z++) {
               int localIndex = ROUND(index(mesh->xstart, y, z));
-              ASSERT2((localIndex >= 0) && (localIndex < localN));
+              ASSERT2((localIndex >= 0) && (localIndex < nlocal));
               const int num_fields = (z == 0) ? n2d + n3d : n3d;
               for (int i = 0; i < num_fields; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
@@ -300,7 +345,7 @@ int SNESSolver::init() {
           for (int y = mesh->ystart; y <= mesh->yend; y++) {
             for (int z = 0; z < mesh->LocalNz; z++) {
               int localIndex = ROUND(index(mesh->xend, y, z));
-              ASSERT2((localIndex >= 0) && (localIndex < localN));
+              ASSERT2((localIndex >= 0) && (localIndex < nlocal));
               const int num_fields = (z == 0) ? n2d + n3d : n3d;
               for (int i = 0; i < num_fields; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
@@ -312,7 +357,7 @@ int SNESSolver::init() {
           for (int y = mesh->ystart; y <= mesh->yend; y++) {
             for (int z = 0; z < mesh->LocalNz; z++) {
               int localIndex = ROUND(index(mesh->xend, y, z));
-              ASSERT2((localIndex >= 0) && (localIndex < localN));
+              ASSERT2((localIndex >= 0) && (localIndex < nlocal));
               const int num_fields = (z == 0) ? n2d + n3d : n3d;
               for (int i = 0; i < num_fields; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
@@ -591,7 +636,7 @@ int SNESSolver::init() {
       MatFDColoringSetUp(Jmf, iscoloring, fdcoloring);
       ISColoringDestroy(&iscoloring);
 
-      SNESSetJacobian(snes, Jmf, Jmf, SNESComputeJacobianDefaultColor, fdcoloring);
+      SNESSetJacobian(snes, Jmf, Jmf, SNESComputeJacobianScaledColor, fdcoloring);
     } else {
       // Brute force calculation
 
@@ -971,6 +1016,12 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
   }
   };
 
+  if (scale_rhs) {
+    // f <- f * rhs_scaling_factors
+    ierr = VecPointwiseMult(f, f, rhs_scaling_factors);
+    CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
@@ -1012,6 +1063,74 @@ PetscErrorCode SNESSolver::precon(Vec x, Vec f) {
   CHKERRQ(ierr);
   save_derivs(fdata);
   ierr = VecRestoreArray(f, &fdata);
+  CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode SNESSolver::scaleJacobian(Mat B) {
+  if (!scale_rhs) {
+    return 0; // Not scaling the RHS values
+  }
+
+  int ierr;
+
+  // Get index of rows owned by this processor
+  int rstart, rend;
+  MatGetOwnershipRange(B, &rstart, &rend);
+
+  // Check that the vector has the same ownership range
+  int istart, iend;
+  VecGetOwnershipRange(jac_row_inv_norms, &istart, &iend);
+  if ((rstart != istart) or (rend != iend)) {
+    throw BoutException("Ownership ranges different: [{}, {}) and [{}, {})\n", rstart,
+                        rend, istart, iend);
+  }
+
+  // Calculate the norm of each row of the Jacobian
+  PetscScalar* row_inv_norm_data;
+  ierr = VecGetArray(jac_row_inv_norms, &row_inv_norm_data);
+  CHKERRQ(ierr);
+
+  PetscInt ncols;
+  const PetscScalar* vals;
+  for (int row = rstart; row < rend; row++) {
+    MatGetRow(B, row, &ncols, nullptr, &vals);
+
+    // Calculate a norm of this row of the Jacobian
+    PetscScalar norm = 0.0;
+    for (int col = 0; col < ncols; col++) {
+      PetscScalar absval = std::abs(vals[col]);
+      if (absval > norm) {
+        norm = absval;
+      }
+      // Can we identify small elements and remove them?
+      // so we don't need to calculate them next time
+    }
+
+    // Store in the vector as 1 / norm
+    row_inv_norm_data[row - rstart] = 1. / norm;
+
+    MatRestoreRow(B, row, &ncols, nullptr, &vals);
+  }
+
+  ierr = VecRestoreArray(jac_row_inv_norms, &row_inv_norm_data);
+  CHKERRQ(ierr);
+
+  // Modify the RHS scaling: factor = factor / norm
+  ierr = VecPointwiseMult(rhs_scaling_factors, rhs_scaling_factors, jac_row_inv_norms);
+  CHKERRQ(ierr);
+
+  if (diagnose) {
+    // Print maximum and minimum scaling factors
+    PetscReal max_scale, min_scale;
+    VecMax(rhs_scaling_factors, nullptr, &max_scale);
+    VecMin(rhs_scaling_factors, nullptr, &min_scale);
+    output.write("RHS scaling: {} -> {}\n", min_scale, max_scale);
+  }
+
+  // Scale the Jacobian rows by multiplying on the left by 1/norm
+  ierr = MatDiagonalScale(B, jac_row_inv_norms, nullptr);
   CHKERRQ(ierr);
 
   return 0;

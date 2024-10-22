@@ -82,6 +82,12 @@ public:
   /// @param[out] f  The result of the operation
   PetscErrorCode precon(Vec x, Vec f);
 
+  /// Scale an approximate Jacobian,
+  /// and update the internal RHS scaling factors
+  /// This is called by SNESComputeJacobianScaledColor with the
+  /// finite difference approximated Jacobian.
+  PetscErrorCode scaleJacobian(Mat B);
+
 private:
   BoutReal timestep;     ///< Internal timestep
   BoutReal dt;           ///< Current timestep used in snes_function
@@ -130,6 +136,10 @@ private:
   bool matrix_free;               ///< Use matrix free Jacobian
   int lag_jacobian;               ///< Re-use Jacobian
   bool use_coloring;              ///< Use matrix coloring
+
+  bool scale_rhs;          ///< Scale time derivatives?
+  Vec rhs_scaling_factors; ///< Factors to multiply RHS function
+  Vec jac_row_inv_norms;   ///< 1 / Norm of the rows of the Jacobian
 };
 
 #else
