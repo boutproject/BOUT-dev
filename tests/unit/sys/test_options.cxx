@@ -1097,7 +1097,8 @@ value6 = 12
 }
 
 TEST_F(OptionsTest, InvalidFormat) {
-  EXPECT_THROW(fmt::format("{:nope}", Options{}), fmt::format_error);
+  std::string unused;
+  EXPECT_THROW(unused = fmt::format("{:nope}", Options{}), fmt::format_error);
 }
 
 TEST_F(OptionsTest, FormatValue) {
