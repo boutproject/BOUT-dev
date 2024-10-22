@@ -179,7 +179,7 @@ const Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin,
   if (Kin.isFci()) {
     return ::Div_par_K_Grad_par(Kin, fin);
   }
-  
+
   ASSERT2(Kin.getLocation() == fin.getLocation());
 
   Mesh* mesh = Kin.getMesh();

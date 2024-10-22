@@ -484,7 +484,7 @@ public:
   friend class Vector2D;
 
   Field3D& calcParallelSlices();
-  void allowParallelSlices([[maybe_unused]] bool allow){
+  void allowParallelSlices([[maybe_unused]] bool allow) {
 #if CHECK > 0
     allow_parallel_slices = allow;
 #endif
@@ -533,7 +533,6 @@ private:
   std::optional<size_t> regionID;
 
   bool allow_parallel_slices{true};
-
 };
 
 // Non-member overloaded operators

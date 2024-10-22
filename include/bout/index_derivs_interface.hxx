@@ -203,11 +203,13 @@ T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "D
   if (f.isFci()) {
     ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     T f_tmp = f;
-    if (!f.hasParallelSlices()){
+    if (!f.hasParallelSlices()) {
 #if BOUT_USE_FCI_AUTOMAGIC
       f_tmp.calcParallelSlices();
 #else
-      raise BoutException("parallel slices needed for parallel derivatives. Make sure to communicate and apply parallel boundary conditions before calling derivative");
+      raise BoutException(
+          "parallel slices needed for parallel derivatives. Make sure to communicate and "
+          "apply parallel boundary conditions before calling derivative");
 #endif
     }
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::Standard>(f_tmp, outloc,
