@@ -58,7 +58,7 @@ public:
   BoutReal s_y() const { return bndry_position->intersection.s_y; }
   BoutReal s_z() const { return bndry_position->intersection.s_z; }
   BoutReal length() const { return bndry_position->length; }
-  char valid() const { return bndry_position->valid; }
+  signed char valid() const { return bndry_position->valid; }
 
   // extrapolate a given point to the boundary
   BoutReal extrapolate_sheath_o1(const Field3D& f) const { return f[ind()]; }

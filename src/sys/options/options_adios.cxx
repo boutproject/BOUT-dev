@@ -1,6 +1,6 @@
 #include "bout/build_config.hxx"
 
-#if BOUT_HAS_ADIOS
+#if BOUT_HAS_ADIOS2
 
 #include "options_adios.hxx"
 #include "bout/adios_object.hxx"
@@ -628,4 +628,4 @@ void OptionsADIOS::write(const Options& options, const std::string& time_dim) {
 
 } // namespace bout
 
-#endif // BOUT_HAS_ADIOS
+#endif // BOUT_HAS_ADIOS2

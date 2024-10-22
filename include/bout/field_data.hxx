@@ -44,6 +44,7 @@ class Coordinates;
 class Mesh;
 
 class BoundaryRegion;
+//#include "bout/boundary_region.hxx"
 class BoundaryRegionPar;
 enum class BndryLoc;
 

@@ -1,0 +1,59 @@
+###############################################################################
+# Copyright (c) 2022-23, Lawrence Livermore National Security, LLC and RADIUSS
+# project contributors. See the COPYRIGHT file for details.
+#
+# SPDX-License-Identifier: (MIT)
+###############################################################################
+
+# We require project to define their job command using a variable (JOB_CMD).
+# In customization/gitlab-ci.yml, we encourage to define this variable as
+# non-expandable, so that project can use nested variables to configure the job
+# command. The caveat is that the reproducer here cannot capture the
+# definition of these variables in a generic fashion. By overriding the
+# following section, projects can specify the variables to define in the
+# reproducer to exactly reproduce the CI build.
+.lassen_reproducer_vars:
+  script:
+    - echo -e "Running on Lassen\n"
+
+# With GitLab CI, included files cannot be empty.
+# TODO: remove when you have at least on job defined.
+variables:
+  INCLUDED_FILE_CANNOT_BE_EMPTY: "True"
+
+###############
+# Explanations:
+###############
+# RADIUSS Shared CI provides a pipeline for each machine, where a template job
+# is provided. Each of your jobs must extend this template to be added to the
+# list of jobs running on the associated machine.
+#
+# The job template then expects you to define the "JOB_CMD" variable with the
+# one line command used to trigger the build and test of your project.
+#
+# We suggest that you set your command in such a way that you can then
+# customize it per job with variables. E.g.:
+# "./path/to/my_ci_script ${A_VARIABLE}"
+
+## Adding jobs defined by the project.
+## Note: placing the extends section first allows you to override part of the
+## shared implementation if needed (and if you know what you are doing).
+#<job-name (typically build target description)>:
+#  extends: .job_on_lassen
+#  variables:
+#    <A_VARIABLE>: "<with job specific value>"
+
+.base-job:
+  extends: .job_on_lassen
+  before_script:
+    # Update BOUT-configs in the shared directory.
+    - pushd /usr/workspace/BOUT-GPU/BOUT-configs
+    - git pull
+    - popd
+    # Create the environment.
+    - source /usr/workspace/BOUT-GPU/BOUT-configs/lassen/setup-env.sh
+  after_script:
+    - rm -rf ${CI_BUILDS_DIR} ${CI_PROJECT_DIR}
+
+build-test-cuda-minimal:
+  extends: .base-job

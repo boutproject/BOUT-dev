@@ -84,19 +84,18 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
   // Initialize, allocate memory, etc.
   comms_tagbase = 385; // Some random number
 
-  int implemented_global_flags = INVERT_START_NEW;
-  if (global_flags & ~implemented_global_flags) {
+  constexpr int implemented_global_flags = INVERT_START_NEW;
+  if (isGlobalFlagSet(~implemented_global_flags)) {
     throw BoutException("Attempted to set Laplacian inversion flag that is not "
                         "implemented in LaplaceMultigrid.");
   }
-  int implemented_boundary_flags =
-      INVERT_AC_GRAD + INVERT_SET
-      + INVERT_DC_GRAD; // INVERT_DC_GRAD does not actually do anything, but harmless to set while comparing to Fourier solver with Neumann boundary conditions
-  if (inner_boundary_flags & ~implemented_boundary_flags) {
+  // INVERT_DC_GRAD does not actually do anything, but harmless to set while comparing to Fourier solver with Neumann boundary conditions
+  constexpr int implemented_boundary_flags = INVERT_AC_GRAD + INVERT_SET + INVERT_DC_GRAD;
+  if (isInnerBoundaryFlagSet(~implemented_boundary_flags)) {
     throw BoutException("Attempted to set Laplacian inner boundary inversion flag that "
                         "is not implemented in LaplaceMultigrid.");
   }
-  if (outer_boundary_flags & ~implemented_boundary_flags) {
+  if (isOuterBoundaryFlagSet(~implemented_boundary_flags)) {
     throw BoutException("Attempted to set Laplacian outer boundary inversion flag that "
                         "is not implemented in LaplaceMultigrid.");
   }
@@ -242,7 +241,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
   int lz2 = lzz + 2;
   int lxx = kMG->lnx[level];
 
-  if (global_flags & INVERT_START_NEW) {
+  if (isGlobalFlagSet(INVERT_START_NEW)) {
     // set initial guess to zero
     BOUT_OMP_PERF(parallel default(shared))
     BOUT_OMP_PERF(for collapse(2))
@@ -276,9 +275,9 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
   }
 
   if (localmesh->firstX()) {
-    if (inner_boundary_flags & INVERT_AC_GRAD) {
+    if (isInnerBoundaryFlagSet(INVERT_AC_GRAD)) {
       // Neumann boundary condition
-      if (inner_boundary_flags & INVERT_SET) {
+      if (isInnerBoundaryFlagSet(INVERT_SET)) {
         // guard cells of x0 specify gradient to set at inner boundary
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
@@ -299,7 +298,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       }
     } else {
       // Dirichlet boundary condition
-      if (inner_boundary_flags & INVERT_SET) {
+      if (isInnerBoundaryFlagSet(INVERT_SET)) {
         // guard cells of x0 specify value to set at inner boundary
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
@@ -320,9 +319,9 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
     }
   }
   if (localmesh->lastX()) {
-    if (outer_boundary_flags & INVERT_AC_GRAD) {
+    if (isOuterBoundaryFlagSet(INVERT_AC_GRAD)) {
       // Neumann boundary condition
-      if (inner_boundary_flags & INVERT_SET) {
+      if (isInnerBoundaryFlagSet(INVERT_SET)) {
         // guard cells of x0 specify gradient to set at outer boundary
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
@@ -344,7 +343,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       }
     } else {
       // Dirichlet boundary condition
-      if (outer_boundary_flags & INVERT_SET) {
+      if (isOuterBoundaryFlagSet(INVERT_SET)) {
         // guard cells of x0 specify value to set at outer boundary
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
@@ -477,9 +476,9 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
     }
   }
   if (localmesh->firstX()) {
-    if (inner_boundary_flags & INVERT_AC_GRAD) {
+    if (isInnerBoundaryFlagSet(INVERT_AC_GRAD)) {
       // Neumann boundary condition
-      if (inner_boundary_flags & INVERT_SET) {
+      if (isInnerBoundaryFlagSet(INVERT_SET)) {
         // guard cells of x0 specify gradient to set at inner boundary
         int i2 = -1 + localmesh->xstart;
         BOUT_OMP_PERF(parallel default(shared))
@@ -503,7 +502,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       }
     } else {
       // Dirichlet boundary condition
-      if (inner_boundary_flags & INVERT_SET) {
+      if (isInnerBoundaryFlagSet(INVERT_SET)) {
         // guard cells of x0 specify value to set at inner boundary
         int i2 = -1 + localmesh->xstart;
         BOUT_OMP_PERF(parallel default(shared))
@@ -525,9 +524,9 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
     }
   }
   if (localmesh->lastX()) {
-    if (outer_boundary_flags & INVERT_AC_GRAD) {
+    if (isOuterBoundaryFlagSet(INVERT_AC_GRAD)) {
       // Neumann boundary condition
-      if (inner_boundary_flags & INVERT_SET) {
+      if (isInnerBoundaryFlagSet(INVERT_SET)) {
         // guard cells of x0 specify gradient to set at outer boundary
         int i2 = lxx + localmesh->xstart;
         BOUT_OMP_PERF(parallel default(shared))
@@ -551,7 +550,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
       }
     } else {
       // Dirichlet boundary condition
-      if (outer_boundary_flags & INVERT_SET) {
+      if (isOuterBoundaryFlagSet(INVERT_SET)) {
         // guard cells of x0 specify value to set at outer boundary
         int i2 = lxx + localmesh->xstart;
         BOUT_OMP_PERF(parallel default(shared))
@@ -651,7 +650,7 @@ void LaplaceMultigrid::generateMatrixF(int level) {
   // Here put boundary conditions
 
   if (kMG->rProcI == 0) {
-    if (inner_boundary_flags & INVERT_AC_GRAD) {
+    if (isInnerBoundaryFlagSet(INVERT_AC_GRAD)) {
       // Neumann boundary condition
       BOUT_OMP_PERF(parallel default(shared))
       BOUT_OMP_PERF(for)
@@ -686,7 +685,7 @@ void LaplaceMultigrid::generateMatrixF(int level) {
     }
   }
   if (kMG->rProcI == kMG->xNP - 1) {
-    if (outer_boundary_flags & INVERT_AC_GRAD) {
+    if (isOuterBoundaryFlagSet(INVERT_AC_GRAD)) {
       // Neumann boundary condition
       BOUT_OMP_PERF(parallel default(shared))
       BOUT_OMP_PERF(for)
