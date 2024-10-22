@@ -234,14 +234,6 @@ private:
 
   /// First and last interior points xstart, xend
   int xs, xe;
-
-  bool isGlobalFlagSet(int flag) const { return (global_flags & flag) != 0; }
-  bool isInnerBoundaryFlagSet(int flag) const {
-    return (inner_boundary_flags & flag) != 0;
-  }
-  bool isOuterBoundaryFlagSet(int flag) const {
-    return (outer_boundary_flags & flag) != 0;
-  }
 };
 
 #endif // BOUT_USE_METRIC_3D

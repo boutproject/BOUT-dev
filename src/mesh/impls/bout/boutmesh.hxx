@@ -158,8 +158,10 @@ public:
 
   // Boundary regions
   std::vector<BoundaryRegion*> getBoundaries() override;
-  std::vector<BoundaryRegionPar*> getBoundariesPar() override;
-  void addBoundaryPar(BoundaryRegionPar* bndry) override;
+  std::vector<std::shared_ptr<BoundaryRegionPar>>
+  getBoundariesPar(BoundaryParType type) override;
+  void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
+                      BoundaryParType type) override;
   std::set<std::string> getPossibleBoundaries() const override;
 
   Field3D smoothSeparatrix(const Field3D& f) override;
@@ -393,8 +395,10 @@ protected:
   void addBoundaryRegions();
 
 private:
-  std::vector<BoundaryRegion*> boundary;        // Vector of boundary regions
-  std::vector<BoundaryRegionPar*> par_boundary; // Vector of parallel boundary regions
+  std::vector<BoundaryRegion*> boundary; // Vector of boundary regions
+  std::array<std::vector<std::shared_ptr<BoundaryRegionPar>>,
+             static_cast<int>(BoundaryParType::SIZE)>
+      par_boundary; // Vector of parallel boundary regions
 
   //////////////////////////////////////////////////
   // Communications

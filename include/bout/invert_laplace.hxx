@@ -238,6 +238,10 @@ public:
   virtual void setInnerBoundaryFlags(int f) { inner_boundary_flags = f; }
   virtual void setOuterBoundaryFlags(int f) { outer_boundary_flags = f; }
 
+  virtual int getGlobalFlags() const { return global_flags; }
+  virtual int getInnerBoundaryFlags() const { return inner_boundary_flags; }
+  virtual int getOuterBoundaryFlags() const { return outer_boundary_flags; }
+
   /// Does this solver use Field3D coefficients (true) or only their DC component (false)
   virtual bool uses3DCoefs() const { return false; }
 
@@ -308,9 +312,23 @@ protected:
   int extra_yguards_lower; ///< exclude some number of points at the lower boundary, useful for staggered grids or when boundary conditions make inversion redundant
   int extra_yguards_upper; ///< exclude some number of points at the upper boundary, useful for staggered grids or when boundary conditions make inversion redundant
 
-  int global_flags;         ///< Default flags
-  int inner_boundary_flags; ///< Flags to set inner boundary condition
-  int outer_boundary_flags; ///< Flags to set outer boundary condition
+  /// Return true if global/default \p flag is set
+  bool isGlobalFlagSet(int flag) const { return (global_flags & flag) != 0; }
+  /// Return true if \p flag is set for the inner boundary condition
+  bool isInnerBoundaryFlagSet(int flag) const {
+    return (inner_boundary_flags & flag) != 0;
+  }
+  /// Return true if \p flag is set for the outer boundary condition
+  bool isOuterBoundaryFlagSet(int flag) const {
+    return (outer_boundary_flags & flag) != 0;
+  }
+
+  /// Return true if \p flag is set for the inner boundary condition
+  /// and this is the first proc in X direction
+  bool isInnerBoundaryFlagSetOnFirstX(int flag) const;
+  /// Return true if \p flag is set for the outer boundary condition
+  /// and this the last proc in X direction
+  bool isOuterBoundaryFlagSetOnLastX(int flag) const;
 
   void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomplex& b, dcomplex& c,
                    const Field2D* ccoef = nullptr, const Field2D* d = nullptr,
@@ -322,15 +340,13 @@ protected:
                    CELL_LOC loc = CELL_DEFAULT);
 
   void tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dcomplex* bk, int jy,
-                    int kz, BoutReal kwave, int flags, int inner_boundary_flags,
-                    int outer_boundary_flags, const Field2D* a, const Field2D* ccoef,
+                    int kz, BoutReal kwave, const Field2D* a, const Field2D* ccoef,
                     const Field2D* d, bool includeguards = true, bool zperiodic = true) {
-    tridagMatrix(avec, bvec, cvec, bk, jy, kz, kwave, flags, inner_boundary_flags,
-                 outer_boundary_flags, a, ccoef, ccoef, d, includeguards, zperiodic);
+    tridagMatrix(avec, bvec, cvec, bk, jy, kz, kwave, a, ccoef, ccoef, d, includeguards,
+                 zperiodic);
   }
   void tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dcomplex* bk, int jy,
-                    int kz, BoutReal kwave, int flags, int inner_boundary_flags,
-                    int outer_boundary_flags, const Field2D* a, const Field2D* c1coef,
+                    int kz, BoutReal kwave, const Field2D* a, const Field2D* c1coef,
                     const Field2D* c2coef, const Field2D* d, bool includeguards = true,
                     bool zperiodic = true);
   CELL_LOC location;   ///< staggered grid location of this solver
@@ -339,6 +355,10 @@ protected:
                        ///  localmesh->getCoordinates(location) once
 
 private:
+  int global_flags;         ///< Default flags
+  int inner_boundary_flags; ///< Flags to set inner boundary condition
+  int outer_boundary_flags; ///< Flags to set outer boundary condition
+
   /// Singleton instance
   static std::unique_ptr<Laplacian> instance;
   /// Name for writing performance infomation; default taken from

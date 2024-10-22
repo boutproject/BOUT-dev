@@ -373,7 +373,7 @@ For SUNDIALS, use ``-DBOUT_DOWNLOAD_SUNDIALS=ON``. If using ``ccmake`` this opti
 may not appear initially. This automatically sets ``BOUT_USE_SUNDIALS=ON``, and
 configures SUNDIALS to use MPI.
 
-For ADIOS2, use ``-DBOUT_DOWNLOAD_ADIOS=ON``. This will download and
+For ADIOS2, use ``-DBOUT_DOWNLOAD_ADIOS2=ON``. This will download and
 configure `ADIOS2 <https://adios2.readthedocs.io/>`_, enabling BOUT++
 to read and write this high-performance parallel file format.
 
