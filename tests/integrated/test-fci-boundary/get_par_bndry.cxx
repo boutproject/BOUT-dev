@@ -17,8 +17,8 @@ int main(int argc, char** argv) {
     for (const auto& bndry_par :
          mesh->getBoundariesPar(static_cast<BoundaryParType>(i))) {
       output.write("{:s} region\n", toString(static_cast<BoundaryParType>(i)));
-      for (bndry_par->first(); !bndry_par->isDone(); bndry_par->next()) {
-        fields[i][bndry_par->ind()] += 1;
+      for (auto& pnt: *bndry_par) {
+        fields[i][pnt.ind()] += 1;
         output.write("{:s} increment\n", toString(static_cast<BoundaryParType>(i)));
       }
     }
