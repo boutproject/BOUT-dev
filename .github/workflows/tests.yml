@@ -39,7 +39,7 @@ jobs:
         is_cron:
           - ${{ github.event_name == 'cron' }}
         config:
-          - name: "CMake, PETSc unreleased, ADIOS"
+          - name: "CMake, PETSc unreleased, ADIOS2"
             os: ubuntu-20.04
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_METRIC_3D=ON

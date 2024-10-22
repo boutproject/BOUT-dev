@@ -69,7 +69,6 @@ class LaplaceSPT : public Laplacian {
 public:
   LaplaceSPT(Options* opt = nullptr, const CELL_LOC = CELL_CENTRE,
              Mesh* mesh_in = nullptr, Solver* solver = nullptr);
-  ~LaplaceSPT();
 
   using Laplacian::setCoefA;
   void setCoefA(const Field2D& val) override {
@@ -106,17 +105,15 @@ public:
   Field3D solve(const Field3D& b, const Field3D& x0) override;
 
 private:
-  enum { SPT_DATA = 1123 }; ///< 'magic' number for SPT MPI messages
+  constexpr static int SPT_DATA = 1123; ///< 'magic' number for SPT MPI messages
 
   Field2D Acoef, Ccoef, Dcoef;
 
   /// Data structure for SPT algorithm
   struct SPT_data {
-    SPT_data() : comm_tag(SPT_DATA) {}
     void allocate(int mm, int nx); // Allocates memory
-    ~SPT_data(){};                 // Free memory
 
-    int jy; ///< Y index
+    int jy = 0; ///< Y index
 
     Matrix<dcomplex> bk; ///< b vector in Fourier space
     Matrix<dcomplex> xk;
@@ -125,19 +122,19 @@ private:
 
     Matrix<dcomplex> avec, bvec, cvec; ///< Diagonal bands of matrix
 
-    int proc; // Which processor has this reached?
-    int dir;  // Which direction is it going?
+    int proc = 0; // Which processor has this reached?
+    int dir = 1;  // Which direction is it going?
 
-    comm_handle recv_handle; // Handle for receives
+    comm_handle recv_handle = nullptr; // Handle for receives
 
-    int comm_tag; // Tag for communication
+    int comm_tag = SPT_DATA; // Tag for communication
 
     Array<BoutReal> buffer;
   };
 
   int ys, ye;         // Range of Y indices
   SPT_data slicedata; // Used to solve for a single FieldPerp
-  SPT_data* alldata;  // Used to solve a Field3D
+  Array<SPT_data> alldata; // Used to solve a Field3D
 
   Array<dcomplex> dc1d; ///< 1D in Z for taking FFTs
 
