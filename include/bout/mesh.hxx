@@ -841,6 +841,17 @@ public:
     ASSERT1(RegionID.has_value());
     return region3D[RegionID.value()];
   }
+  bool isFci() const {
+    const auto coords = this->getCoordinatesConst();
+    if (coords == nullptr) {
+      return false;
+    }
+    if (not coords->hasParallelTransform()) {
+      return false;
+    }
+    return not coords->getParallelTransform().canToFromFieldAligned();
+  }
+
 
 private:
   /// Allocates default Coordinates objects
