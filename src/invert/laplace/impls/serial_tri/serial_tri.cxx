@@ -91,13 +91,13 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   int inbndry = localmesh->xstart, outbndry = localmesh->xstart;
 
   // If the flags to assign that only one guard cell should be used is set
-  if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
+  if (isGlobalFlagSet(INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
-  if (inner_boundary_flags & INVERT_BNDRY_ONE) {
+  if (isInnerBoundaryFlagSet(INVERT_BNDRY_ONE)) {
     inbndry = 1;
   }
-  if (outer_boundary_flags & INVERT_BNDRY_ONE) {
+  if (isOuterBoundaryFlagSet(INVERT_BNDRY_ONE)) {
     outbndry = 1;
   }
 
@@ -140,8 +140,8 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
      * If the INVERT_SET flag is set (meaning that x0 will be used to set the
      * bounadry values),
      */
-    if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET))
-        || ((ncx - 1 - ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
+    if (((ix < inbndry) && isInnerBoundaryFlagSet(INVERT_SET))
+        || ((ncx - 1 - ix < outbndry) && (isOuterBoundaryFlagSet(INVERT_SET)))) {
       // Use the values in x0 in the boundary
 
       // x0 is the input
@@ -185,8 +185,7 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
                  kz,
                  // wave number (different from kz only if we are taking a part
                  // of the z-domain [and not from 0 to 2*pi])
-                 kz * kwaveFactor, global_flags, inner_boundary_flags,
-                 outer_boundary_flags, &A, &C, &D);
+                 kz * kwaveFactor, &A, &C, &D);
 
     ///////// PERFORM INVERSION /////////
     if (!localmesh->periodicX) {
@@ -208,7 +207,7 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
 
     // If the global flag is set to INVERT_KX_ZERO
-    if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
+    if (isGlobalFlagSet(INVERT_KX_ZERO) && (kz == 0)) {
       dcomplex offset(0.0);
       for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
         offset += xk1d[ix];
@@ -228,7 +227,7 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   // Done inversion, transform back
   for (int ix = 0; ix < ncx; ix++) {
 
-    if (global_flags & INVERT_ZERO_DC) {
+    if (isGlobalFlagSet(INVERT_ZERO_DC)) {
       xk(ix, 0) = 0.0;
     }
 

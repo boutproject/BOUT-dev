@@ -99,7 +99,7 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
 
   // Set up boundary conditions in operator
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
-    if (inner_boundary_flags & INVERT_AC_GRAD) {
+    if (isInnerBoundaryFlagSet(INVERT_AC_GRAD)) {
       // Neumann on inner X boundary
       operator3D(i, i) = -1. / coords->dx[i] / sqrt(coords->g_11[i]);
       operator3D(i, i.xp()) = 1. / coords->dx[i] / sqrt(coords->g_11[i]);
@@ -111,7 +111,7 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
-    if (outer_boundary_flags & INVERT_AC_GRAD) {
+    if (isOuterBoundaryFlagSet(INVERT_AC_GRAD)) {
       // Neumann on outer X boundary
       operator3D(i, i) = 1. / coords->dx[i] / sqrt(coords->g_11[i]);
       operator3D(i, i.xm()) = -1. / coords->dx[i] / sqrt(coords->g_11[i]);
@@ -180,9 +180,9 @@ Field3D LaplaceHypre3d::solve(const Field3D& b_in, const Field3D& x0) {
   // Adjust vectors to represent boundary conditions and check that
   // boundary cells are finite
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
-    const BoutReal val = (inner_boundary_flags & INVERT_SET) ? x0[i] : 0.;
+    const BoutReal val = isInnerBoundaryFlagSet(INVERT_SET) ? x0[i] : 0.;
     ASSERT1(std::isfinite(val));
-    if (!(inner_boundary_flags & INVERT_RHS)) {
+    if (!(isInnerBoundaryFlagSet(INVERT_RHS))) {
       b[i] = val;
     } else {
       ASSERT1(std::isfinite(b[i]));
@@ -190,9 +190,9 @@ Field3D LaplaceHypre3d::solve(const Field3D& b_in, const Field3D& x0) {
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
-    const BoutReal val = (outer_boundary_flags & INVERT_SET) ? x0[i] : 0.;
+    const BoutReal val = (isOuterBoundaryFlagSet(INVERT_SET)) ? x0[i] : 0.;
     ASSERT1(std::isfinite(val));
-    if (!(outer_boundary_flags & INVERT_RHS)) {
+    if (!(isOuterBoundaryFlagSet(INVERT_RHS))) {
       b[i] = val;
     } else {
       ASSERT1(std::isfinite(b[i]));

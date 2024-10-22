@@ -431,6 +431,8 @@ protected:
   bool has_constraints{false};
   /// Has init been called yet?
   bool initialised{false};
+  /// If calling user RHS for the first time
+  bool first_rhs_call{true};
 
   /// Current simulation time
   BoutReal simtime{0.0};

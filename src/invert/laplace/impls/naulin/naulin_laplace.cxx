@@ -164,6 +164,11 @@ LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   // Get options
   OPTION(opt, rtol, 1.e-7);
   OPTION(opt, atol, 1.e-20);
+  rtol_accept =
+      (*opt)["rtol_accept"].doc("Accept this rtol after maxits").withDefault(rtol);
+  atol_accept =
+      (*opt)["atol_accept"].doc("Accept this atol after maxits").withDefault(atol);
+
   OPTION(opt, maxits, 100);
   OPTION(opt, initial_underrelax_factor, 1.);
   ASSERT0(initial_underrelax_factor > 0. and initial_underrelax_factor <= 1.);
@@ -174,9 +179,9 @@ LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   // invert Delp2 and we will not converge
   ASSERT0(delp2type == "cyclic" || delp2type == "spt" || delp2type == "tri");
   // Use same flags for FFT solver as for NaulinSolver
-  delp2solver->setGlobalFlags(global_flags);
-  delp2solver->setInnerBoundaryFlags(inner_boundary_flags);
-  delp2solver->setOuterBoundaryFlags(outer_boundary_flags);
+  delp2solver->setGlobalFlags(getGlobalFlags());
+  delp2solver->setInnerBoundaryFlags(getInnerBoundaryFlags());
+  delp2solver->setOuterBoundaryFlags(getOuterBoundaryFlags());
 
   static int naulinsolver_count = 1;
   setPerformanceName(fmt::format("{}{}", "naulinsolver", ++naulinsolver_count));
@@ -258,7 +263,7 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
     // Note take a copy of the 'b' argument, because we want to return a copy of it in the
     // result
 
-    if ((inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET)) {
+    if (isInnerBoundaryFlagSet(INVERT_SET) || isOuterBoundaryFlagSet(INVERT_SET)) {
       // This passes in the boundary conditions from x0's guard cells
       copy_x_boundaries(x_guess, x0, localmesh);
     }
@@ -289,6 +294,10 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
 
     ++count;
     if (count > maxits) {
+      // Perhaps accept a worse solution
+      if (error_rel < rtol_accept or error_abs < atol_accept) {
+        break;
+      }
       throw BoutException(
           "LaplaceNaulin error: Not converged within maxits={:d} iterations.", maxits);
     }
@@ -313,6 +322,9 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
       // effectively another iteration, so increment the counter
       ++count;
       if (count > maxits) {
+        if (error_rel < rtol_accept or error_abs < atol_accept) {
+          break;
+        }
         throw BoutException(
             "LaplaceNaulin error: Not converged within maxits={:d} iterations.", maxits);
       }
