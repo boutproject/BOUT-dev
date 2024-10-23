@@ -122,7 +122,7 @@ private:
   BoutReal time1{-1.0}; ///< Time of previous solution
 
   SNES snes;                ///< SNES context
-  Mat Jmf;                  ///< Matrix-free Jacobian
+  Mat Jmf;                  ///< Jacobian
   MatFDColoring fdcoloring; ///< Matrix coloring context, used for finite difference
                             ///< Jacobian evaluation
 
@@ -136,6 +136,11 @@ private:
   bool matrix_free;               ///< Use matrix free Jacobian
   int lag_jacobian;               ///< Re-use Jacobian
   bool use_coloring;              ///< Use matrix coloring
+
+  bool jacobian_recalculated; ///< Flag set when Jacobian is recalculated
+  bool prune_jacobian; ///< Remove small elements in the Jacobian?
+  BoutReal prune_abstol; ///< Prune values with absolute values smaller than this
+  BoutReal prune_fraction; ///< Prune if fraction of small elements is larger than this
 
   bool scale_rhs;          ///< Scale time derivatives?
   Vec rhs_scaling_factors; ///< Factors to multiply RHS function

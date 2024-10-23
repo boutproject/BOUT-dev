@@ -16,6 +16,8 @@
 #include <bout/output.hxx>
 
 #include "petscsnes.h"
+#include "petscmat.h"
+
 /*
  * PETSc callback function, which evaluates the nonlinear
  * function to be solved by SNES.
@@ -153,6 +155,16 @@ SNESSolver::SNESSolver(Options* opts)
       use_coloring((*options)["use_coloring"]
                        .doc("Use matrix coloring to calculate Jacobian?")
                        .withDefault<bool>(true)),
+      jacobian_recalculated(false),
+      prune_jacobian((*options)["prune_jacobian"]
+                       .doc("Remove small elements in the Jacobian?")
+                       .withDefault<bool>(false)),
+      prune_abstol((*options)["prune_abstol"]
+                       .doc("Prune values with absolute values smaller than this")
+                       .withDefault<BoutReal>(1e-16)),
+      prune_fraction((*options)["prune_fraction"]
+                       .doc("Prune if fraction of small elements is larger than this")
+                       .withDefault<BoutReal>(0.2)),
       scale_rhs((*options)["scale_rhs"]
                     .doc("Scale time derivatives (Jacobian row scaling)?")
                     .withDefault<bool>(false)),
@@ -673,6 +685,8 @@ int SNESSolver::init() {
     }
 
     // Re-use Jacobian
+    // Note: If the 'Amat' Jacobian is matrix free, SNESComputeJacobian
+    //       always updates its reference 'u' vector every nonlinear iteration
     SNESSetLagJacobian(snes, lag_jacobian);
     // Set Jacobian and preconditioner to persist across time steps
     SNESSetLagJacobianPersists(snes, PETSC_TRUE);
@@ -996,6 +1010,69 @@ int SNESSolver::run() {
         output.write("\n");
       }
 
+#if PETSC_VERSION_GE(3, 20, 0)
+      // MatFilter and MatEliminateZeros(Mat, bool) require PETSc >= 3.20
+
+      if (jacobian_recalculated and prune_jacobian) {
+        jacobian_recalculated = false; // Reset flag
+
+        // Remove small elements from the Jacobian and recompute the coloring
+        // Only do this if there are a significant number of small elements.
+        int small_elements = 0;
+        int total_elements = 0;
+
+        // Get index of rows owned by this processor
+        int rstart, rend;
+        MatGetOwnershipRange(Jmf, &rstart, &rend);
+
+        PetscInt ncols;
+        const PetscScalar* vals;
+        for (int row = rstart; row < rend; row++) {
+          MatGetRow(Jmf, row, &ncols, nullptr, &vals);
+          for (int col = 0; col < ncols; col++) {
+            if (std::abs(vals[col]) < prune_abstol) {
+              ++small_elements;
+            }
+            ++total_elements;
+          }
+          MatRestoreRow(Jmf, row, &ncols, nullptr, &vals);
+        }
+
+        if (small_elements > prune_fraction * total_elements) {
+          output.write("Pruning Jacobian elements: {} / {}\n",
+                       small_elements, total_elements);
+
+          // Prune Jacobian, keeping diagonal elements
+          //ierr = MatEliminateZeros(Jmf, PETSC_TRUE); CHKERRQ(ierr);
+          ierr = MatFilter(Jmf, prune_abstol, PETSC_TRUE, PETSC_TRUE);
+
+          // Re-calculate the coloring
+          MatColoring coloring = NULL;
+          MatColoringCreate(Jmf, &coloring);
+          MatColoringSetType(coloring, MATCOLORINGSL);
+          MatColoringSetFromOptions(coloring);
+
+          // Calculate new index sets
+          ISColoring iscoloring = NULL;
+          MatColoringApply(coloring, &iscoloring);
+          MatColoringDestroy(&coloring);
+
+          // Replace the old coloring with the new one
+          MatFDColoringDestroy(&fdcoloring);
+          MatFDColoringCreate(Jmf, iscoloring, &fdcoloring);
+          MatFDColoringSetFunction(fdcoloring,
+                                   reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring),
+                                   this);
+          MatFDColoringSetFromOptions(fdcoloring);
+          MatFDColoringSetUp(Jmf, iscoloring, fdcoloring);
+          ISColoringDestroy(&iscoloring);
+
+          // Replace the CTX pointer in SNES Jacobian
+          SNESSetJacobian(snes, Jmf, Jmf, SNESComputeJacobianScaledColor, fdcoloring);
+        }
+      }
+#endif // PETSC_VERSION_GE(3,20,0)
+
       if (looping) {
         if (nl_its <= lower_its) {
           // Increase timestep slightly
@@ -1171,6 +1248,8 @@ PetscErrorCode SNESSolver::precon(Vec x, Vec f) {
 }
 
 PetscErrorCode SNESSolver::scaleJacobian(Mat B) {
+  jacobian_recalculated = true;
+
   if (!scale_rhs) {
     return 0; // Not scaling the RHS values
   }
@@ -1196,7 +1275,7 @@ PetscErrorCode SNESSolver::scaleJacobian(Mat B) {
 
   PetscInt ncols;
   const PetscScalar* vals;
-  for (int row = rstart; row < rend; row++) {
+  for (int row = rstart; row < rend; ++row) {
     MatGetRow(B, row, &ncols, nullptr, &vals);
 
     // Calculate a norm of this row of the Jacobian
