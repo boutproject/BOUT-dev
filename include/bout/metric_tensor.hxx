@@ -16,8 +16,10 @@ class MetricTensor {
 public:
 #if BOUT_USE_METRIC_3D
   using FieldMetric = Field3D;
+  using Metric2DSlice = const BoutReal*;
 #else
   using FieldMetric = Field2D;
+  using Metric2DSlice = const BoutReal&;
 #endif
 
   MetricTensor(FieldMetric g11, FieldMetric g22, FieldMetric g33, FieldMetric g12,
@@ -43,21 +45,12 @@ public:
   const BoutReal& g13(int x, int y, int z) const { return g13_m(x, y, z); }
   const BoutReal& g23(int x, int y, int z) const { return g23_m(x, y, z); }
 
-#if BOUT_USE_METRIC_3D
-  const BoutReal* g11(int x, int y) const { return g11_m(x, y); }
-  const BoutReal* g22(int x, int y) const { return g22_m(x, y); }
-  const BoutReal* g33(int x, int y) const { return g33_m(x, y); }
-  const BoutReal* g12(int x, int y) const { return g12_m(x, y); }
-  const BoutReal* g13(int x, int y) const { return g13_m(x, y); }
-  const BoutReal* g23(int x, int y) const { return g23_m(x, y); }
-#else
-  const BoutReal& g11(int x, int y) const { return g11_m(x, y); }
-  const BoutReal& g22(int x, int y) const { return g22_m(x, y); }
-  const BoutReal& g33(int x, int y) const { return g33_m(x, y); }
-  const BoutReal& g12(int x, int y) const { return g12_m(x, y); }
-  const BoutReal& g13(int x, int y) const { return g13_m(x, y); }
-  const BoutReal& g23(int x, int y) const { return g23_m(x, y); }
-#endif
+  Metric2DSlice g11(int x, int y) const { return g11_m(x, y); }
+  Metric2DSlice g22(int x, int y) const { return g22_m(x, y); }
+  Metric2DSlice g33(int x, int y) const { return g33_m(x, y); }
+  Metric2DSlice g12(int x, int y) const { return g12_m(x, y); }
+  Metric2DSlice g13(int x, int y) const { return g13_m(x, y); }
+  Metric2DSlice g23(int x, int y) const { return g23_m(x, y); }
 
   void setMetricTensor(const MetricTensor& metric_tensor) {
 
