@@ -1,9 +1,19 @@
 #include "bout/metric_tensor.hxx"
+#include "fmt/core.h"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
 #include "bout/mesh.hxx"
 #include "bout/output.hxx"
+#include "bout/region.hxx"
+#include "bout/utils.hxx"
 
+#include <algorithm>
 #include <array>
+#include <cstdlib>
+#include <functional>
 #include <utility>
+
 
 MetricTensor::MetricTensor(FieldMetric g11, FieldMetric g22, FieldMetric g33,
                            FieldMetric g12, FieldMetric g13, FieldMetric g23)
@@ -77,9 +87,7 @@ MetricTensor MetricTensor::inverse(const std::string& region) {
   TRACE("MetricTensor::inverse");
 
   // Perform inversion of g{ij} to get g^{ij}, or vice versa
-  // NOTE: Currently this bit assumes that metric terms are Field2D objects
-
-  auto a = Matrix<BoutReal>(3, 3);
+  auto matrix = Matrix<BoutReal>(3, 3);
 
   FieldMetric g_11 = emptyFrom(g11_m);
   FieldMetric g_22 = emptyFrom(g22_m);
@@ -89,40 +97,43 @@ MetricTensor MetricTensor::inverse(const std::string& region) {
   FieldMetric g_23 = emptyFrom(g23_m);
 
   BOUT_FOR_SERIAL(i, g11_m.getRegion(region)) {
-    a(0, 0) = g11_m[i];
-    a(1, 1) = g22_m[i];
-    a(2, 2) = g33_m[i];
+    matrix(0, 0) = g11_m[i];
+    matrix(1, 1) = g22_m[i];
+    matrix(2, 2) = g33_m[i];
 
-    a(0, 1) = a(1, 0) = g12_m[i];
-    a(1, 2) = a(2, 1) = g23_m[i];
-    a(0, 2) = a(2, 0) = g13_m[i];
+    matrix(0, 1) = matrix(1, 0) = g12_m[i];
+    matrix(1, 2) = matrix(2, 1) = g23_m[i];
+    matrix(0, 2) = matrix(2, 0) = g13_m[i];
 
-    if (invert3x3(a)) {
-      const auto error_message = "\tERROR: metric tensor is singular at ({:d}, {:d})\n";
-      output_error.write(error_message, i.x(), i.y());
+    if (invert3x3(matrix) != 0) {
+      const auto error_message = fmt::format(
+          "\tERROR: metric tensor is singular at ({:d}, {:d})\n", i.x(), i.y());
+      output_error.write(error_message);
       throw BoutException(error_message);
     }
 
-    g_11[i] = a(0, 0);
-    g_22[i] = a(1, 1);
-    g_33[i] = a(2, 2);
-    g_12[i] = a(0, 1);
-    g_13[i] = a(0, 2);
-    g_23[i] = a(1, 2);
+    g_11[i] = matrix(0, 0);
+    g_22[i] = matrix(1, 1);
+    g_33[i] = matrix(2, 2);
+    g_12[i] = matrix(0, 1);
+    g_13[i] = matrix(0, 2);
+    g_23[i] = matrix(1, 2);
   }
 
-  BoutReal maxerr;
-  maxerr = BOUTMAX(max(abs((g_11 * g_11 + g_12 * g_12 + g_13 * g_13) - 1)),
-                   max(abs((g_12 * g_12 + g_22 * g_22 + g_23 * g_23) - 1)),
-                   max(abs((g_13 * g_13 + g_23 * g_23 + g_33 * g_33) - 1)));
+  const BoutReal diagonal_maxerr =
+      BOUTMAX(max(abs((g_11 * g_11 + g_12 * g_12 + g_13 * g_13) - 1)),
+              max(abs((g_12 * g_12 + g_22 * g_22 + g_23 * g_23) - 1)),
+              max(abs((g_13 * g_13 + g_23 * g_23 + g_33 * g_33) - 1)));
 
-  output_info.write("\tMaximum error in diagonal inversion is {:e}\n", maxerr);
+  output_info.write("\tMaximum error in diagonal inversion is {:e}\n", diagonal_maxerr);
 
-  maxerr = BOUTMAX(max(abs(g_11 * g_12 + g_12 * g_22 + g_13 * g_23)),
-                   max(abs(g_11 * g_13 + g_12 * g_23 + g_13 * g_33)),
-                   max(abs(g_12 * g_13 + g_22 * g_23 + g_23 * g_33)));
+  const BoutReal off_diagonal_maxerr =
+      BOUTMAX(max(abs(g_11 * g_12 + g_12 * g_22 + g_13 * g_23)),
+              max(abs(g_11 * g_13 + g_12 * g_23 + g_13 * g_33)),
+              max(abs(g_12 * g_13 + g_22 * g_23 + g_23 * g_33)));
 
-  output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
+  output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n",
+                    off_diagonal_maxerr);
 
   auto other_representation = MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23);
   const auto location = g11_m.getLocation();

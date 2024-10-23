@@ -2,10 +2,14 @@
 #ifndef BOUT_METRIC_TENSOR_HXX
 #define BOUT_METRIC_TENSOR_HXX
 
+#include "bout/build_defines.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include <bout/bout_types.hxx>
+
 #include <functional>
+#include <string>
+#include <utility>
 
 class MetricTensor {
 
