@@ -4,7 +4,7 @@
 #include "bout/mesh.hxx"
 
 GValues::GValues(FieldMetric G1, FieldMetric G2, FieldMetric G3)
-    : G1_(std::move(G1)), G2_(std::move(G2)), G3_(std::move(G3)){};
+    : G1_m(std::move(G1)), G2_m(std::move(G2)), G3_m(std::move(G3)) {};
 
 GValues::GValues(const Coordinates& coordinates) {
 
@@ -20,13 +20,13 @@ GValues::GValues(const Coordinates& coordinates) {
 
   auto tmp = J * g12;
   Coordinates::communicate(tmp);
-  setG1((coordinates.DDX(J * g11) + coordinates.DDY(tmp) + coordinates.DDZ(J * g13)) / J);
+  G1_m = (coordinates.DDX(J * g11) + coordinates.DDY(tmp) + coordinates.DDZ(J * g13)) / J;
   tmp = J * g22;
   Coordinates::communicate(tmp);
-  setG2((coordinates.DDX(J * g12) + coordinates.DDY(tmp) + coordinates.DDZ(J * g23)) / J);
+  G2_m = (coordinates.DDX(J * g12) + coordinates.DDY(tmp) + coordinates.DDZ(J * g23)) / J;
   tmp = J * g23;
   Coordinates::communicate(tmp);
-  setG3((coordinates.DDX(J * g13) + coordinates.DDY(tmp) + coordinates.DDZ(J * g33)) / J);
+  G3_m = (coordinates.DDX(J * g13) + coordinates.DDY(tmp) + coordinates.DDZ(J * g33)) / J;
 }
 
-void GValues::communicate(Mesh* mesh) { mesh->communicate(G1_, G2_, G3_); }
+void GValues::communicate(Mesh* mesh) { mesh->communicate(G1_m, G2_m, G3_m); }

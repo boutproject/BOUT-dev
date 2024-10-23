@@ -1,4 +1,3 @@
-
 #include "bout/metric_tensor.hxx"
 #include "bout/mesh.hxx"
 #include "bout/output.hxx"
@@ -6,61 +5,65 @@
 
 MetricTensor::MetricTensor(FieldMetric g11, FieldMetric g22, FieldMetric g33,
                            FieldMetric g12, FieldMetric g13, FieldMetric g23)
-    : g11_(std::move(g11)), g22_(std::move(g22)), g33_(std::move(g33)),
-      g12_(std::move(g12)), g13_(std::move(g13)), g23_(std::move(g23)) {}
+    : g11_m(std::move(g11)), g22_m(std::move(g22)), g33_m(std::move(g33)),
+      g12_m(std::move(g12)), g13_m(std::move(g13)), g23_m(std::move(g23)) {}
 
 MetricTensor::MetricTensor(const BoutReal g11, const BoutReal g22, const BoutReal g33,
                            const BoutReal g12, const BoutReal g13, const BoutReal g23,
                            Mesh* mesh)
-    : g11_(g11, mesh), g22_(g22, mesh), g33_(g33, mesh), g12_(g12, mesh), g13_(g13, mesh),
-      g23_(g23, mesh) {}
+    : g11_m(g11, mesh), g22_m(g22, mesh), g33_m(g33, mesh), g12_m(g12, mesh),
+      g13_m(g13, mesh), g23_m(g23, mesh) {}
 
 void MetricTensor::check(int ystart) {
+  const bool non_identity_parallel_transform =
+      g11_m.hasParallelSlices() && &g11_m.ynext(1) != &g11_m;
+
   // Diagonal metric components should be finite
-  bout::checkFinite(g11_, "g11", "RGN_NOCORNERS");
-  bout::checkFinite(g22_, "g22", "RGN_NOCORNERS");
-  bout::checkFinite(g33_, "g33", "RGN_NOCORNERS");
-  if (g11_.hasParallelSlices() && &g11_.ynext(1) != &g11_) {
+  bout::checkFinite(g11_m, "g11", "RGN_NOCORNERS");
+  bout::checkFinite(g22_m, "g22", "RGN_NOCORNERS");
+  bout::checkFinite(g33_m, "g33", "RGN_NOCORNERS");
+  if (non_identity_parallel_transform) {
     for (int dy = 1; dy <= ystart; ++dy) {
       for (const auto sign : {1, -1}) {
-        bout::checkFinite(g11_.ynext(sign * dy), "g11.ynext",
+        bout::checkFinite(g11_m.ynext(sign * dy), "g11.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g22_.ynext(sign * dy), "g22.ynext",
+        bout::checkFinite(g22_m.ynext(sign * dy), "g22.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g33_.ynext(sign * dy), "g33.ynext",
+        bout::checkFinite(g33_m.ynext(sign * dy), "g33.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
       }
     }
   }
+
   // Diagonal metric components should be positive
-  bout::checkPositive(g11_, "g11", "RGN_NOCORNERS");
-  bout::checkPositive(g22_, "g22", "RGN_NOCORNERS");
-  bout::checkPositive(g33_, "g33", "RGN_NOCORNERS");
-  if (g11_.hasParallelSlices() && &g11_.ynext(1) != &g11_) {
+  bout::checkPositive(g11_m, "g11", "RGN_NOCORNERS");
+  bout::checkPositive(g22_m, "g22", "RGN_NOCORNERS");
+  bout::checkPositive(g33_m, "g33", "RGN_NOCORNERS");
+  if (non_identity_parallel_transform) {
     for (int dy = 1; dy <= ystart; ++dy) {
       for (const auto sign : {1, -1}) {
-        bout::checkPositive(g11_.ynext(sign * dy), "g11.ynext",
+        bout::checkPositive(g11_m.ynext(sign * dy), "g11.ynext",
                             fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkPositive(g22_.ynext(sign * dy), "g22.ynext",
+        bout::checkPositive(g22_m.ynext(sign * dy), "g22.ynext",
                             fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkPositive(g33_.ynext(sign * dy), "g33.ynext",
+        bout::checkPositive(g33_m.ynext(sign * dy), "g33.ynext",
                             fmt::format("RGN_YPAR_{:+d}", sign * dy));
       }
     }
   }
 
   // Off-diagonal metric components should be finite
-  bout::checkFinite(g12_, "g12", "RGN_NOCORNERS");
-  bout::checkFinite(g13_, "g13", "RGN_NOCORNERS");
-  bout::checkFinite(g23_, "g23", "RGN_NOCORNERS");
-  if (g23_.hasParallelSlices() && &g23_.ynext(1) != &g23_) {
+  bout::checkFinite(g12_m, "g12", "RGN_NOCORNERS");
+  bout::checkFinite(g13_m, "g13", "RGN_NOCORNERS");
+  bout::checkFinite(g23_m, "g23", "RGN_NOCORNERS");
+  if (non_identity_parallel_transform) {
     for (int dy = 1; dy <= ystart; ++dy) {
       for (const auto sign : {1, -1}) {
-        bout::checkFinite(g12_.ynext(sign * dy), "g12.ynext",
+        bout::checkFinite(g12_m.ynext(sign * dy), "g12.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g13_.ynext(sign * dy), "g13.ynext",
+        bout::checkFinite(g13_m.ynext(sign * dy), "g13.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g23_.ynext(sign * dy), "g23.ynext",
+        bout::checkFinite(g23_m.ynext(sign * dy), "g23.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
       }
     }
@@ -76,21 +79,21 @@ MetricTensor MetricTensor::inverse(const std::string& region) {
 
   auto a = Matrix<BoutReal>(3, 3);
 
-  FieldMetric g_11 = emptyFrom(g11_);
-  FieldMetric g_22 = emptyFrom(g22_);
-  FieldMetric g_33 = emptyFrom(g33_);
-  FieldMetric g_12 = emptyFrom(g12_);
-  FieldMetric g_13 = emptyFrom(g13_);
-  FieldMetric g_23 = emptyFrom(g23_);
+  FieldMetric g_11 = emptyFrom(g11_m);
+  FieldMetric g_22 = emptyFrom(g22_m);
+  FieldMetric g_33 = emptyFrom(g33_m);
+  FieldMetric g_12 = emptyFrom(g12_m);
+  FieldMetric g_13 = emptyFrom(g13_m);
+  FieldMetric g_23 = emptyFrom(g23_m);
 
-  BOUT_FOR_SERIAL(i, g11_.getRegion(region)) {
-    a(0, 0) = g11_[i];
-    a(1, 1) = g22_[i];
-    a(2, 2) = g33_[i];
+  BOUT_FOR_SERIAL(i, g11_m.getRegion(region)) {
+    a(0, 0) = g11_m[i];
+    a(1, 1) = g22_m[i];
+    a(2, 2) = g33_m[i];
 
-    a(0, 1) = a(1, 0) = g12_[i];
-    a(1, 2) = a(2, 1) = g23_[i];
-    a(0, 2) = a(2, 0) = g13_[i];
+    a(0, 1) = a(1, 0) = g12_m[i];
+    a(1, 2) = a(2, 1) = g23_m[i];
+    a(0, 2) = a(2, 0) = g13_m[i];
 
     if (invert3x3(a)) {
       const auto error_message = "\tERROR: metric tensor is singular at ({:d}, {:d})\n";
@@ -120,7 +123,7 @@ MetricTensor MetricTensor::inverse(const std::string& region) {
   output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
 
   auto other_representation = MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23);
-  const auto location = g11_.getLocation();
+  const auto location = g11_m.getLocation();
   other_representation.setLocation(location);
   return other_representation;
 }
@@ -130,15 +133,16 @@ void MetricTensor::map(
 
   const MetricTensor updated_metric_tensor = applyToComponents(function);
 
-  setMetricTensor(MetricTensor(updated_metric_tensor.g11_, updated_metric_tensor.g22_,
-                               updated_metric_tensor.g33_, updated_metric_tensor.g12_,
-                               updated_metric_tensor.g13_, updated_metric_tensor.g23_));
+  setMetricTensor(MetricTensor(updated_metric_tensor.g11_m, updated_metric_tensor.g22_m,
+                               updated_metric_tensor.g33_m, updated_metric_tensor.g12_m,
+                               updated_metric_tensor.g13_m, updated_metric_tensor.g23_m));
 }
 
 MetricTensor MetricTensor::applyToComponents(
     const std::function<const FieldMetric(const FieldMetric)>& function) const {
 
-  const auto components_in = std::vector<FieldMetric>{g11_, g22_, g33_, g12_, g13_, g23_};
+  const auto components_in =
+      std::vector<FieldMetric>{g11_m, g22_m, g33_m, g12_m, g13_m, g23_m};
 
   FieldMetric components_out[6];
 
@@ -149,5 +153,5 @@ MetricTensor MetricTensor::applyToComponents(
 }
 
 void MetricTensor::communicate(Mesh* mesh) {
-  mesh->communicate(g11_, g22_, g33_, g12_, g13_, g23_);
+  mesh->communicate(g11_m, g22_m, g33_m, g12_m, g13_m, g23_m);
 }

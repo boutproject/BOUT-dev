@@ -26,26 +26,26 @@ public:
   //  ChristoffelSymbols(BoutReal g11, BoutReal g22, BoutReal g33, BoutReal g12, BoutReal g13,
   //                     BoutReal g23, Mesh* mesh);
 
-  const FieldMetric& G1_11() const { return G1_11_; }
-  const FieldMetric& G1_22() const { return G1_22_; }
-  const FieldMetric& G1_33() const { return G1_33_; }
-  const FieldMetric& G1_12() const { return G1_12_; }
-  const FieldMetric& G1_13() const { return G1_13_; }
-  const FieldMetric& G1_23() const { return G1_23_; }
+  const FieldMetric& G1_11() const { return G1_11_m; }
+  const FieldMetric& G1_22() const { return G1_22_m; }
+  const FieldMetric& G1_33() const { return G1_33_m; }
+  const FieldMetric& G1_12() const { return G1_12_m; }
+  const FieldMetric& G1_13() const { return G1_13_m; }
+  const FieldMetric& G1_23() const { return G1_23_m; }
 
-  const FieldMetric& G2_11() const { return G2_11_; }
-  const FieldMetric& G2_22() const { return G2_22_; }
-  const FieldMetric& G2_33() const { return G2_33_; }
-  const FieldMetric& G2_12() const { return G2_12_; }
-  const FieldMetric& G2_13() const { return G2_13_; }
-  const FieldMetric& G2_23() const { return G2_23_; }
+  const FieldMetric& G2_11() const { return G2_11_m; }
+  const FieldMetric& G2_22() const { return G2_22_m; }
+  const FieldMetric& G2_33() const { return G2_33_m; }
+  const FieldMetric& G2_12() const { return G2_12_m; }
+  const FieldMetric& G2_13() const { return G2_13_m; }
+  const FieldMetric& G2_23() const { return G2_23_m; }
 
-  const FieldMetric& G3_11() const { return G3_11_; }
-  const FieldMetric& G3_22() const { return G3_22_; }
-  const FieldMetric& G3_33() const { return G3_33_; }
-  const FieldMetric& G3_12() const { return G3_12_; }
-  const FieldMetric& G3_13() const { return G3_13_; }
-  const FieldMetric& G3_23() const { return G3_23_; }
+  const FieldMetric& G3_11() const { return G3_11_m; }
+  const FieldMetric& G3_22() const { return G3_22_m; }
+  const FieldMetric& G3_33() const { return G3_33_m; }
+  const FieldMetric& G3_12() const { return G3_12_m; }
+  const FieldMetric& G3_13() const { return G3_13_m; }
+  const FieldMetric& G3_23() const { return G3_23_m; }
 
   void setChristoffelSymbols(const FieldMetric& G1_11, const FieldMetric& G1_22,
                              const FieldMetric& G1_33, const FieldMetric& G1_12,
@@ -56,24 +56,24 @@ public:
                              const FieldMetric& G3_11, const FieldMetric& G3_22,
                              const FieldMetric& G3_33, const FieldMetric& G3_12,
                              const FieldMetric& G3_13, const FieldMetric& G3_23) {
-    G1_11_ = G1_11;
-    G1_22_ = G1_22;
-    G1_33_ = G1_33;
-    G1_12_ = G1_12;
-    G1_13_ = G1_13;
-    G1_23_ = G1_23;
-    G2_11_ = G2_11;
-    G2_22_ = G2_22;
-    G2_33_ = G2_33;
-    G2_12_ = G2_12;
-    G2_13_ = G2_13;
-    G2_23_ = G2_23;
-    G3_11_ = G3_11;
-    G3_22_ = G3_22;
-    G3_33_ = G3_33;
-    G3_12_ = G3_12;
-    G3_13_ = G3_13;
-    G3_23_ = G3_23;
+    G1_11_m = G1_11;
+    G1_22_m = G1_22;
+    G1_33_m = G1_33;
+    G1_12_m = G1_12;
+    G1_13_m = G1_13;
+    G1_23_m = G1_23;
+    G2_11_m = G2_11;
+    G2_22_m = G2_22;
+    G2_33_m = G2_33;
+    G2_12_m = G2_12;
+    G2_13_m = G2_13;
+    G2_23_m = G2_23;
+    G3_11_m = G3_11;
+    G3_22_m = G3_22;
+    G3_33_m = G3_33;
+    G3_12_m = G3_12;
+    G3_13_m = G3_13;
+    G3_23_m = G3_23;
   }
 
   //  void Allocate();
@@ -87,9 +87,9 @@ public:
   void communicate(Mesh* mesh);
 
 private:
-  FieldMetric G1_11_, G1_22_, G1_33_, G1_12_, G1_13_, G1_23_;
-  FieldMetric G2_11_, G2_22_, G2_33_, G2_12_, G2_13_, G2_23_;
-  FieldMetric G3_11_, G3_22_, G3_33_, G3_12_, G3_13_, G3_23_;
+  FieldMetric G1_11_m, G1_22_m, G1_33_m, G1_12_m, G1_13_m, G1_23_m;
+  FieldMetric G2_11_m, G2_22_m, G2_33_m, G2_12_m, G2_13_m, G2_23_m;
+  FieldMetric G3_11_m, G3_22_m, G3_33_m, G3_12_m, G3_13_m, G3_23_m;
 };
 
 #endif //BOUT_CHRISTOFFELSYMBOLS_HXX

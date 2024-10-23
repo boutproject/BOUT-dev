@@ -14,18 +14,18 @@ public:
 
   explicit GValues(const Coordinates& coordinates);
 
-  const FieldMetric& G1() const { return G1_; }
-  const FieldMetric& G2() const { return G2_; }
-  const FieldMetric& G3() const { return G3_; }
+  const FieldMetric& G1() const { return G1_m; }
+  const FieldMetric& G2() const { return G2_m; }
+  const FieldMetric& G3() const { return G3_m; }
 
-  void setG1(const FieldMetric& G1) { G1_ = G1; }
-  void setG2(const FieldMetric& G2) { G2_ = G2; }
-  void setG3(const FieldMetric& G3) { G3_ = G3; }
+  void setG1(const FieldMetric& G1) { G1_m = G1; }
+  void setG2(const FieldMetric& G2) { G2_m = G2; }
+  void setG3(const FieldMetric& G3) { G3_m = G3; }
 
   void communicate(Mesh* mesh);
 
 private:
-  FieldMetric G1_, G2_, G3_;
+  FieldMetric G1_m, G2_m, G3_m;
 };
 
 #endif //BOUT_GVALUES_HXX

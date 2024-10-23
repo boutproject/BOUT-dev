@@ -25,53 +25,53 @@ public:
   // check that tensors are positive (if expected) and finite (always)
   void check(int ystart);
 
-  const FieldMetric& g11() const { return g11_; }
-  const FieldMetric& g22() const { return g22_; }
-  const FieldMetric& g33() const { return g33_; }
-  const FieldMetric& g12() const { return g12_; }
-  const FieldMetric& g13() const { return g13_; }
-  const FieldMetric& g23() const { return g23_; }
+  const FieldMetric& g11() const { return g11_m; }
+  const FieldMetric& g22() const { return g22_m; }
+  const FieldMetric& g33() const { return g33_m; }
+  const FieldMetric& g12() const { return g12_m; }
+  const FieldMetric& g13() const { return g13_m; }
+  const FieldMetric& g23() const { return g23_m; }
 
-  const BoutReal& g11(int x, int y, int z) const { return g11_(x, y, z); }
-  const BoutReal& g22(int x, int y, int z) const { return g22_(x, y, z); }
-  const BoutReal& g33(int x, int y, int z) const { return g33_(x, y, z); }
-  const BoutReal& g12(int x, int y, int z) const { return g12_(x, y, z); }
-  const BoutReal& g13(int x, int y, int z) const { return g13_(x, y, z); }
-  const BoutReal& g23(int x, int y, int z) const { return g23_(x, y, z); }
+  const BoutReal& g11(int x, int y, int z) const { return g11_m(x, y, z); }
+  const BoutReal& g22(int x, int y, int z) const { return g22_m(x, y, z); }
+  const BoutReal& g33(int x, int y, int z) const { return g33_m(x, y, z); }
+  const BoutReal& g12(int x, int y, int z) const { return g12_m(x, y, z); }
+  const BoutReal& g13(int x, int y, int z) const { return g13_m(x, y, z); }
+  const BoutReal& g23(int x, int y, int z) const { return g23_m(x, y, z); }
 
 #if BOUT_USE_METRIC_3D
-  const BoutReal* g11(int x, int y) const { return g11_(x, y); }
-  const BoutReal* g22(int x, int y) const { return g22_(x, y); }
-  const BoutReal* g33(int x, int y) const { return g33_(x, y); }
-  const BoutReal* g12(int x, int y) const { return g12_(x, y); }
-  const BoutReal* g13(int x, int y) const { return g13_(x, y); }
-  const BoutReal* g23(int x, int y) const { return g23_(x, y); }
+  const BoutReal* g11(int x, int y) const { return g11_m(x, y); }
+  const BoutReal* g22(int x, int y) const { return g22_m(x, y); }
+  const BoutReal* g33(int x, int y) const { return g33_m(x, y); }
+  const BoutReal* g12(int x, int y) const { return g12_m(x, y); }
+  const BoutReal* g13(int x, int y) const { return g13_m(x, y); }
+  const BoutReal* g23(int x, int y) const { return g23_m(x, y); }
 #else
-  const BoutReal& g11(int x, int y) const { return g11_(x, y); }
-  const BoutReal& g22(int x, int y) const { return g22_(x, y); }
-  const BoutReal& g33(int x, int y) const { return g33_(x, y); }
-  const BoutReal& g12(int x, int y) const { return g12_(x, y); }
-  const BoutReal& g13(int x, int y) const { return g13_(x, y); }
-  const BoutReal& g23(int x, int y) const { return g23_(x, y); }
+  const BoutReal& g11(int x, int y) const { return g11_m(x, y); }
+  const BoutReal& g22(int x, int y) const { return g22_m(x, y); }
+  const BoutReal& g33(int x, int y) const { return g33_m(x, y); }
+  const BoutReal& g12(int x, int y) const { return g12_m(x, y); }
+  const BoutReal& g13(int x, int y) const { return g13_m(x, y); }
+  const BoutReal& g23(int x, int y) const { return g23_m(x, y); }
 #endif
 
   void setMetricTensor(const MetricTensor& metric_tensor) {
 
-    g11_ = metric_tensor.g11();
-    g22_ = metric_tensor.g22();
-    g33_ = metric_tensor.g33();
-    g12_ = metric_tensor.g12();
-    g13_ = metric_tensor.g13();
-    g23_ = metric_tensor.g23();
+    g11_m = metric_tensor.g11();
+    g22_m = metric_tensor.g22();
+    g33_m = metric_tensor.g33();
+    g12_m = metric_tensor.g12();
+    g13_m = metric_tensor.g13();
+    g23_m = metric_tensor.g23();
   }
 
   void setLocation(const CELL_LOC location) {
-    g11_.setLocation(location);
-    g22_.setLocation(location);
-    g33_.setLocation(location);
-    g12_.setLocation(location);
-    g13_.setLocation(location);
-    g23_.setLocation(location);
+    g11_m.setLocation(location);
+    g22_m.setLocation(location);
+    g33_m.setLocation(location);
+    g12_m.setLocation(location);
+    g13_m.setLocation(location);
+    g23_m.setLocation(location);
   }
 
   MetricTensor inverse(const std::string& region = "RGN_ALL");
@@ -84,8 +84,8 @@ public:
 
   void communicate(Mesh* mesh);
 
-protected:
-  FieldMetric g11_, g22_, g33_, g12_, g13_, g23_;
+private:
+  FieldMetric g11_m, g22_m, g33_m, g12_m, g13_m, g23_m;
 };
 
 class CovariantMetricTensor : public MetricTensor {
