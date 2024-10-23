@@ -1,6 +1,6 @@
-
 #include "bout/christoffel_symbols.hxx"
 #include "bout/coordinates.hxx"
+#include "bout/derivs.hxx"
 #include "bout/mesh.hxx"
 
 #include <utility>
@@ -42,88 +42,63 @@ ChristoffelSymbols::ChristoffelSymbols(Coordinates& coordinates) {
   const auto& g_13 = covariantMetricTensor.g13();
   const auto& g_23 = covariantMetricTensor.g23();
 
-  G1_11_m = 0.5 * g11 * coordinates.DDX(g_11)
-            + g12 * (coordinates.DDX(g_12) - 0.5 * coordinates.DDY(g_11))
-            + g13 * (coordinates.DDX(g_13) - 0.5 * coordinates.DDZ(g_11));
-  G1_22_m = g11 * (coordinates.DDY(g_12) - 0.5 * coordinates.DDX(g_22))
-            + 0.5 * g12 * coordinates.DDY(g_22)
-            + g13 * (coordinates.DDY(g_23) - 0.5 * coordinates.DDZ(g_22));
-  G1_33_m = g11 * (coordinates.DDZ(g_13) - 0.5 * coordinates.DDX(g_33))
-            + g12 * (coordinates.DDZ(g_23) - 0.5 * coordinates.DDY(g_33))
-            + 0.5 * g13 * coordinates.DDZ(g_33);
-  G1_12_m =
-      0.5 * g11 * coordinates.DDY(g_11) + 0.5 * g12 * coordinates.DDX(g_22)
-      + 0.5 * g13
-            * (coordinates.DDY(g_13) + coordinates.DDX(g_23) - coordinates.DDZ(g_12));
-  G1_13_m =
-      0.5 * g11 * coordinates.DDZ(g_11)
-      + 0.5 * g12
-            * (coordinates.DDZ(g_12) + coordinates.DDX(g_23) - coordinates.DDY(g_13))
-      + 0.5 * g13 * coordinates.DDX(g_33);
-  G1_23_m =
-      0.5 * g11 * (coordinates.DDZ(g_12) + coordinates.DDY(g_13) - coordinates.DDX(g_23))
-      + 0.5 * g12
-            * (coordinates.DDZ(g_22) + coordinates.DDY(g_23) - coordinates.DDY(g_23))
-      // + 0.5 *g13*(coordinates.DDZ(g_32) + coordinates.DDY(g_33) - coordinates.DDZ(g_23));
-      // which equals
-      + 0.5 * g13 * coordinates.DDY(g_33);
+  G1_11_m = 0.5 * g11 * DDX(g_11) + g12 * (DDX(g_12) - 0.5 * DDY(g_11))
+            + g13 * (DDX(g_13) - 0.5 * DDZ(g_11));
+  G1_22_m = g11 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g12 * DDY(g_22)
+            + g13 * (DDY(g_23) - 0.5 * DDZ(g_22));
+  G1_33_m = g11 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g12 * (DDZ(g_23) - 0.5 * DDY(g_33))
+            + 0.5 * g13 * DDZ(g_33);
+  G1_12_m = 0.5 * g11 * DDY(g_11) + 0.5 * g12 * DDX(g_22)
+            + 0.5 * g13 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+  G1_13_m = 0.5 * g11 * DDZ(g_11) + 0.5 * g12 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
+            + 0.5 * g13 * DDX(g_33);
+  G1_23_m = 0.5 * g11 * (DDZ(g_12) + DDY(g_13) - DDX(g_23))
+            + 0.5 * g12 * (DDZ(g_22) + DDY(g_23) - DDY(g_23))
+            // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
+            // which equals
+            + 0.5 * g13 * DDY(g_33);
 
-  G2_11_m = 0.5 * g12 * coordinates.DDX(g_11)
-            + g22 * (coordinates.DDX(g_12) - 0.5 * coordinates.DDY(g_11))
-            + g23 * (coordinates.DDX(g_13) - 0.5 * coordinates.DDZ(g_11));
-  G2_22_m = g12 * (coordinates.DDY(g_12) - 0.5 * coordinates.DDX(g_22))
-            + 0.5 * g22 * coordinates.DDY(g_22)
-            + g23 * (coordinates.DDY(g23) - 0.5 * coordinates.DDZ(g_22));
-  G2_33_m = g12 * (coordinates.DDZ(g_13) - 0.5 * coordinates.DDX(g_33))
-            + g22 * (coordinates.DDZ(g_23) - 0.5 * coordinates.DDY(g_33))
-            + 0.5 * g23 * coordinates.DDZ(g_33);
-  G2_12_m =
-      0.5 * g12 * coordinates.DDY(g_11) + 0.5 * g22 * coordinates.DDX(g_22)
-      + 0.5 * g23
-            * (coordinates.DDY(g_13) + coordinates.DDX(g_23) - coordinates.DDZ(g_12));
+  G2_11_m = 0.5 * g12 * DDX(g_11) + g22 * (DDX(g_12) - 0.5 * DDY(g_11))
+            + g23 * (DDX(g_13) - 0.5 * DDZ(g_11));
+  G2_22_m = g12 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g22 * DDY(g_22)
+            + g23 * (DDY(g23) - 0.5 * DDZ(g_22));
+  G2_33_m = g12 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g22 * (DDZ(g_23) - 0.5 * DDY(g_33))
+            + 0.5 * g23 * DDZ(g_33);
+  G2_12_m = 0.5 * g12 * DDY(g_11) + 0.5 * g22 * DDX(g_22)
+            + 0.5 * g23 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
   G2_13_m =
-      // 0.5 *g21*(coordinates.DDZ(g_11) + coordinates.DDX(covariantMetricTensor.Getg13()) - coordinates.DDX(g_13))
+      // 0.5 *g21*(DDZ(g_11) + DDX(g13()) - DDX(g_13))
       // which equals
-      0.5 * g12 * (coordinates.DDZ(g_11) + coordinates.DDX(g_13) - coordinates.DDX(g_13))
-      // + 0.5 *g22*(coordinates.DDZ(covariantMetricTensor.Getg21()) + coordinates.DDX(g_23) - coordinates.DDY(g_13))
+      0.5 * g12 * (DDZ(g_11) + DDX(g_13) - DDX(g_13))
+      // + 0.5 *g22*(DDZ(g21()) + DDX(g_23) - DDY(g_13))
       // which equals
-      + 0.5 * g22
-            * (coordinates.DDZ(g_12) + coordinates.DDX(g_23) - coordinates.DDY(g_13))
-      // + 0.5 *g23*(coordinates.DDZ(covariantMetricTensor.Getg31()) + coordinates.DDX(g_33) - coordinates.DDZ(g_13));
+      + 0.5 * g22 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
+      // + 0.5 *g23*(DDZ(g31()) + DDX(g_33) - DDZ(g_13));
       // which equals
-      + 0.5 * g23 * coordinates.DDX(g_33);
-  G2_23_m =
-      0.5 * g12 * (coordinates.DDZ(g_12) + coordinates.DDY(g_13) - coordinates.DDX(g_23))
-      + 0.5 * g22 * coordinates.DDZ(g_22) + 0.5 * g23 * coordinates.DDY(g_33);
+      + 0.5 * g23 * DDX(g_33);
+  G2_23_m = 0.5 * g12 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g22 * DDZ(g_22)
+            + 0.5 * g23 * DDY(g_33);
 
-  G3_11_m = 0.5 * g13 * coordinates.DDX(g_11)
-            + g23 * (coordinates.DDX(g_12) - 0.5 * coordinates.DDY(g_11))
-            + g33 * (coordinates.DDX(g_13) - 0.5 * coordinates.DDZ(g_11));
-  G3_22_m = g13 * (coordinates.DDY(g_12) - 0.5 * coordinates.DDX(g_22))
-            + 0.5 * g23 * coordinates.DDY(g_22)
-            + g33 * (coordinates.DDY(g_23) - 0.5 * coordinates.DDZ(g_22));
-  G3_33_m = g13 * (coordinates.DDZ(g_13) - 0.5 * coordinates.DDX(g_33))
-            + g23 * (coordinates.DDZ(g_23) - 0.5 * coordinates.DDY(g_33))
-            + 0.5 * g33 * coordinates.DDZ(g_33);
+  G3_11_m = 0.5 * g13 * DDX(g_11) + g23 * (DDX(g_12) - 0.5 * DDY(g_11))
+            + g33 * (DDX(g_13) - 0.5 * DDZ(g_11));
+  G3_22_m = g13 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g23 * DDY(g_22)
+            + g33 * (DDY(g_23) - 0.5 * DDZ(g_22));
+  G3_33_m = g13 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g23 * (DDZ(g_23) - 0.5 * DDY(g_33))
+            + 0.5 * g33 * DDZ(g_33);
   G3_12_m =
-      // 0.5 *g31*(coordinates.DDY(g_11) + coordinates.DDX(covariantMetricTensor.Getg12()) - coordinates.DDX(g_12))
+      // 0.5 *g31*(DDY(g_11) + DDX(g12()) - DDX(g_12))
       // which equals to
-      0.5 * g13 * coordinates.DDY(g_11)
-      // + 0.5 *g32*(coordinates.DDY(covariantMetricTensor.Getg21()) + coordinates.DDX(g_22) - coordinates.DDY(g_12))
+      0.5 * g13 * DDY(g_11)
+      // + 0.5 *g32*(DDY(g21()) + DDX(g_22) - DDY(g_12))
       // which equals to
-      + 0.5 * g23 * coordinates.DDX(g_22)
-      //+ 0.5 *g33*(coordinates.DDY(covariantMetricTensor.Getg31()) + coordinates.DDX(covariantMetricTensor.Getg32()) - coordinates.DDZ(g_12));
+      + 0.5 * g23 * DDX(g_22)
+      //+ 0.5 *g33*(DDY(g31()) + DDX(g32()) - DDZ(g_12));
       // which equals to
-      + 0.5 * g33 * (coordinates.DDY(g_13)) + coordinates.DDX(g_23)
-      - coordinates.DDZ(g_12);
-  G3_13_m =
-      0.5 * g13 * coordinates.DDZ(g_11)
-      + 0.5 * g23
-            * (coordinates.DDZ(g_12) + coordinates.DDX(g_23) - coordinates.DDY(g_13))
-      + 0.5 * g33 * coordinates.DDX(g_33);
-  G3_23_m = 0.5 * g13 * (coordinates.DDZ(g_12) + coordinates.DDY(g_13))
-            - coordinates.DDX(g_23) + 0.5 * g23 * coordinates.DDZ(g_22)
-            + 0.5 * g33 * coordinates.DDY(g_33);
+      + 0.5 * g33 * (DDY(g_13)) + DDX(g_23) - DDZ(g_12);
+  G3_13_m = 0.5 * g13 * DDZ(g_11) + 0.5 * g23 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
+            + 0.5 * g33 * DDX(g_33);
+  G3_23_m = 0.5 * g13 * (DDZ(g_12) + DDY(g_13)) - DDX(g_23) + 0.5 * g23 * DDZ(g_22)
+            + 0.5 * g33 * DDY(g_33);
 }
 
 void ChristoffelSymbols::communicate(Mesh* mesh) {
