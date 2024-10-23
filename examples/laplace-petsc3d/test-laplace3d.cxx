@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
   ///////////////////////////////////////////////////////////////////////////////////////
   // Calculate error
   ///////////////////////////////////////////////////////////////////////////////////////
-  auto& g_22 = mesh->getCoordinates()->g_22();
+  const auto& g_22 = mesh->getCoordinates()->g_22();
   Field3D rhs_check = D * this_Laplace_perp(f)
                       + (Grad(f) * Grad(C2) - DDY(C2) * DDY(f) / g_22) / C1 + A * f;
   // The usual way to do this would be
