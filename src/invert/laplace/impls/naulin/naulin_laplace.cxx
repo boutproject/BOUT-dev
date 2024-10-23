@@ -164,6 +164,11 @@ LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   // Get options
   OPTION(opt, rtol, 1.e-7);
   OPTION(opt, atol, 1.e-20);
+  rtol_accept =
+      (*opt)["rtol_accept"].doc("Accept this rtol after maxits").withDefault(rtol);
+  atol_accept =
+      (*opt)["atol_accept"].doc("Accept this atol after maxits").withDefault(atol);
+
   OPTION(opt, maxits, 100);
   OPTION(opt, initial_underrelax_factor, 1.);
   ASSERT0(initial_underrelax_factor > 0. and initial_underrelax_factor <= 1.);
@@ -289,6 +294,10 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
 
     ++count;
     if (count > maxits) {
+      // Perhaps accept a worse solution
+      if (error_rel < rtol_accept or error_abs < atol_accept) {
+        break;
+      }
       throw BoutException(
           "LaplaceNaulin error: Not converged within maxits={:d} iterations.", maxits);
     }
@@ -313,6 +322,9 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
       // effectively another iteration, so increment the counter
       ++count;
       if (count > maxits) {
+        if (error_rel < rtol_accept or error_abs < atol_accept) {
+          break;
+        }
         throw BoutException(
             "LaplaceNaulin error: Not converged within maxits={:d} iterations.", maxits);
       }
