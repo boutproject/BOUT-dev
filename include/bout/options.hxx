@@ -53,6 +53,7 @@ class Options;
 #include <fmt/core.h>
 
 #include <cmath>
+#include <functional>
 #include <map>
 #include <ostream>
 #include <set>
@@ -833,6 +834,25 @@ public:
 
   static std::string getDefaultSource();
 
+  /// API for delayed loading of data from the grid file
+  /// Currently only for 3D data
+  using lazyLoadFunction = std::unique_ptr<std::function<Tensor<BoutReal>(
+      int xstart, int xend, int ystart, int yend, int zstart, int zend)>>;
+  void setLazyLoad(lazyLoadFunction func) { lazyLoad = std::move(func); }
+  /// Load and get a chunk of the data
+  Tensor<BoutReal> doLazyLoad(int xstart, int xend, int ystart, int yend, int zstart,
+                              int zend) const {
+    ASSERT1(lazyLoad != nullptr);
+    return (*lazyLoad)(xstart, xend, ystart, yend, zstart, zend);
+  }
+  /// Some backends support to only read the data when needed.  This
+  /// allows to check whether the data is loaded, or whether it needs
+  /// to be loaded by doLazyLoad.
+  bool is_loaded() const { return lazyLoad == nullptr; }
+  /// Get the shape of the value
+  std::vector<int> getShape() const;
+  void setLazyShape(std::vector<int> shape) { lazy_shape = std::move(shape); }
+
 private:
   /// The source label given to default values
   static const std::string DEFAULT_SOURCE;
@@ -844,6 +864,11 @@ private:
   bool is_section = true;                  ///< Is this Options object a section?
   std::map<std::string, Options> children; ///< If a section then has children
   mutable bool value_used = false;         ///< Record whether this value is used
+
+  // Function to load data
+  lazyLoadFunction lazyLoad{nullptr};
+  // Shape of underlying data
+  std::vector<int> lazy_shape;
 
   template <typename T>
   void _set_no_check(T val, std::string source) {

@@ -61,7 +61,7 @@ public:
   OptionsIO& operator=(OptionsIO&&) noexcept = default;
 
   /// Read options from file
-  virtual Options read() = 0;
+  virtual Options read(bool lazy = true) = 0;
 
   /// Write options to file
   void write(const Options& options) { write(options, "t"); }

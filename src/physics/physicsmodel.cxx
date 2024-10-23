@@ -94,7 +94,7 @@ void PhysicsModel::initialise(Solver* s) {
   const bool restarting = Options::root()["restart"].withDefault(false);
 
   if (restarting) {
-    restart_options = restart_file->read();
+    restart_options = restart_file->read(false);
   }
 
   // Call user init code to specify evolving variables
