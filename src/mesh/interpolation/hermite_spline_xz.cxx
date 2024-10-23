@@ -187,6 +187,7 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
       t_x = 0.0;
     }
 
+    ASSERT_NO_Z_SPLIT();
     k_corner(x, y, z) = ((k_corner(x, y, z) % nz) + nz) % nz;
 
     // Check that t_x and t_z are in range

@@ -246,6 +246,7 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
   // - can set NXPE > nx
   // - can set NYPE > ny (if only one processor)
 
+  ASSERT_NO_Z_SPLIT();
   if (options.isSet("NXPE")) {
     NXPE = options["NXPE"]
                .doc("Decomposition in the radial direction. If not given then calculated "
@@ -282,6 +283,7 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
 }
 
 void BoutMesh::findProcessorSplit() {
+  ASSERT_NO_Z_SPLIT();
   MX = nx - 2 * MXG;
 
   NXPE = -1; // Best option
@@ -335,9 +337,8 @@ void BoutMesh::setDerivedGridSizes() {
   }
 
   GlobalNx = nx;
-  GlobalNy =
-      ny
-      + 2 * MYG; // Note: For double null this should be be 4 * MYG if boundary cells are stored
+  // Note: For double null this should be be 4 * MYG if boundary cells are stored
+  GlobalNy = ny + 2 * MYG;
   GlobalNz = nz;
 
   // If we've got a second pair of diverator legs, we need an extra
@@ -381,6 +382,7 @@ void BoutMesh::setDerivedGridSizes() {
   // Note: These don't properly include guard/boundary cells
   OffsetX = PE_XIND * MXSUB;
   OffsetY = PE_YIND * MYSUB;
+  ASSERT_NO_Z_SPLIT();
   OffsetZ = 0;
 
   // Number of grid cells on this processor is ng* = M*SUB + guard/boundary cells
@@ -472,6 +474,8 @@ int BoutMesh::load() {
     OPTION(options, MZ, 64);
     OPTION(options, nz, MZ);
     ASSERT0(nz == MZ);
+    ASSERT_NO_Z_SPLIT();
+#if BOUT_HAS_FFTW
     if (!is_pow2(nz)) {
       // Should be a power of 2 for efficient FFTs
       output_warn.write(
@@ -479,6 +483,7 @@ int BoutMesh::load() {
             "FFT performance -- consider changing MZ ({:d}) if using FFTs\n"),
           nz);
     }
+#endif
   } else {
     MZ = nz;
     output_info.write(_("\tRead nz from input grid file\n"));
@@ -500,10 +505,12 @@ int BoutMesh::load() {
   }
   ASSERT0(MYG >= 0);
 
+  ASSERT_NO_Z_SPLIT();
   // For now only support no z-guard cells
   MZG = 0;
   ASSERT0(MZG >= 0);
 
+  ASSERT_NO_Z_SPLIT();
   // For now don't parallelise z
   NZPE = 1;
 
@@ -627,6 +634,7 @@ int BoutMesh::load() {
 }
 
 void BoutMesh::createCommunicators() {
+  ASSERT_NO_Z_SPLIT();
   MPI_Group group_world{};
   MPI_Comm_group(BoutComm::get(), &group_world); // Get the entire group
 
@@ -1712,13 +1720,25 @@ int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + yproc * MYSUB -
 
 int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - yproc * MYSUB + MYG; }
 
-int BoutMesh::getGlobalZIndex(int zlocal) const { return zlocal; }
+int BoutMesh::getGlobalZIndex(int zlocal) const {
+  ASSERT_NO_Z_SPLIT();
+  return zlocal;
+}
 
-int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const { return zlocal; }
+int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const {
+  ASSERT_NO_Z_SPLIT();
+  return zlocal;
+}
 
-int BoutMesh::getLocalZIndex(int zglobal) const { return zglobal; }
+int BoutMesh::getLocalZIndex(int zglobal) const {
+  ASSERT_NO_Z_SPLIT();
+  return zglobal;
+}
 
-int BoutMesh::getLocalZIndexNoBoundaries(int zglobal) const { return zglobal; }
+int BoutMesh::getLocalZIndexNoBoundaries(int zglobal) const {
+  ASSERT_NO_Z_SPLIT();
+  return zglobal;
+}
 
 int BoutMesh::YPROC(int yind) const {
   if ((yind < 0) || (yind >= ny)) {
@@ -1740,6 +1760,7 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
       symmetricGlobalY(symmetric_Y), MXG(mxg), MYG(myg), MZG(0) {
   maxregionblocksize = MAXREGIONBLOCKSIZE;
 
+  ASSERT_NO_Z_SPLIT();
   PE_XIND = pe_xind;
   PE_YIND = pe_yind;
   NPES = nxpe * nype;
@@ -1829,9 +1850,11 @@ void BoutMesh::default_connections() {
       IDATA_DEST = PROC_NUM(NXPE - 1, PE_YIND);
     }
   }
+  ASSERT_NO_Z_SPLIT();
 }
 
 void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
+  ASSERT_NO_Z_SPLIT();
   if (xlt <= xge) {
     return;
   }
@@ -2038,7 +2061,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
 
 void BoutMesh::topology() {
   // Perform checks common to all topologies
-
+  ASSERT_NO_Z_SPLIT();
   if (NPES != NXPE * NYPE) {
     throw BoutException("\tTopology error: npes={:d} is not equal to NXPE*NYPE={:d}\n",
                         NPES, NXPE * NYPE);
@@ -2162,6 +2185,7 @@ void BoutMesh::topology() {
  ****************************************************************/
 
 BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen) {
+  ASSERT_NO_Z_SPLIT();
   if (comm_list.empty()) {
     // Allocate a new CommHandle
 
@@ -2244,6 +2268,7 @@ void BoutMesh::clear_handles() {
 /// different processors.
 void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin,
                                    BoutMesh* xout) {
+  ASSERT_NO_Z_SPLIT();
   const int xlen = LocalNy * LocalNz * MXG * 5, ylen = LocalNx * LocalNz * MYG * 5;
 
   CommHandle* ch = get_handle(xlen, ylen);
@@ -2293,6 +2318,7 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
 int BoutMesh::pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt,
                         int yge, int ylt, BoutReal* buffer) {
 
+  ASSERT_NO_Z_SPLIT();
   int len = 0;
 
   /// Loop over variables
@@ -2326,6 +2352,7 @@ int BoutMesh::pack_data(const std::vector<FieldData*>& var_list, int xge, int xl
 int BoutMesh::unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt,
                           int yge, int ylt, BoutReal* buffer) {
 
+  ASSERT_NO_Z_SPLIT();
   int len = 0;
 
   /// Loop over variables
@@ -2497,7 +2524,7 @@ void BoutMesh::addBoundaryRegions() {
       xe = LocalNx - 1;
     }
   }
-
+  ASSERT_NO_Z_SPLIT();
   addRegion3D("RGN_LOWER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart - 1, 0, LocalNz - 1,
                                                  LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_LOWER_INNER_Y",
@@ -2817,6 +2844,7 @@ void BoutMesh::addBoundaryRegions() {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
+  ASSERT_NO_Z_SPLIT();
   if (this->isFci()) {
     throw BoutException("FCI should never use this iterator");
   }
@@ -2855,6 +2883,7 @@ RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
+  ASSERT_NO_Z_SPLIT();
   if (this->isFci()) {
     throw BoutException("FCI should never use this iterator");
   }
@@ -2925,6 +2954,7 @@ RangeIterator BoutMesh::iterateBndryLowerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
+  ASSERT_NO_Z_SPLIT();
   if (this->isFci()) {
     throw BoutException("FCI should never use this iterator");
   }
@@ -2963,6 +2993,7 @@ RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
+  ASSERT_NO_Z_SPLIT();
   if (this->isFci()) {
     throw BoutException("FCI should never use this iterator");
   }
@@ -3068,6 +3099,7 @@ void BoutMesh::addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
 }
 
 Field3D BoutMesh::smoothSeparatrix(const Field3D& f) {
+  ASSERT2(!f.isFci());
   Field3D result{emptyFrom(f)};
   if ((ixseps_inner > 0) && (ixseps_inner < nx - 1)) {
     if (XPROC(ixseps_inner) == PE_XIND) {
@@ -3219,6 +3251,7 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
 
 void BoutMesh::outputVars(Options& output_options) {
   Timer time("io");
+  ASSERT_NO_Z_SPLIT();
   output_options["zperiod"].force(zperiod, "BoutMesh");
   output_options["MXSUB"].force(MXSUB, "BoutMesh");
   output_options["MYSUB"].force(MYSUB, "BoutMesh");

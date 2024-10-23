@@ -28,6 +28,7 @@ template <typename T, typename... Ts>
 // don't try to calculate parallel slices as Coordinates are not constructed yet
 void communicate(T& t, Ts&... ts) {
   FieldGroup g(t, ts...);
+  ASSERT_NO_Z_SPLIT();
   auto h = t.getMesh()->sendY(g);
   t.getMesh()->wait(h);
   h = t.getMesh()->sendX(g);
@@ -419,6 +420,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   mesh->get(dx, "dx", 1.0, false);
   mesh->get(dy, "dy", 1.0, false);
 
+  ASSERT_NO_Z_SPLIT();
   nz = mesh->LocalNz;
 
   {
@@ -1679,6 +1681,7 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
   Field3D result{emptyFrom(f).setLocation(outloc)};
 
   if (useFFT and not bout::build::use_metric_3d) {
+    ASSERT_NO_Z_SPLIT();
     int ncz = localmesh->LocalNz;
 
     // Allocate memory
@@ -1748,6 +1751,7 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
   result.setIndex(jy);
 
   if (useFFT) {
+    ASSERT_NO_Z_SPLIT();
     int ncz = localmesh->LocalNz;
 
     // Allocate memory

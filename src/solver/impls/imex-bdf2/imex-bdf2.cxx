@@ -603,6 +603,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
               }
 
               int nz = mesh->LocalNz;
+              ASSERT_NO_Z_SPLIT();
               if (nz > 1) {
                 // Multiple points in z
 

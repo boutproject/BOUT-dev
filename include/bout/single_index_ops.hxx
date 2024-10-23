@@ -20,12 +20,14 @@ using EXEC_POL = RAJA::loop_exec;
 
 // Ind3D: i.zp():
 BOUT_HOST_DEVICE inline int i_zp(const int id, const int nz) {
+  ASSERT_NO_Z_SPLIT();
   int jz = id % nz;
   int jzmax = nz - 1;
   return (jz < jzmax) ? (id + 1) : (id - jzmax);
 }
 // Ind3D: i.zm():
 BOUT_HOST_DEVICE inline int i_zm(const int id, const int nz) {
+  ASSERT_NO_Z_SPLIT();
   int jz = id % nz;
   int jzmax = nz - 1;
   return (jz > 0) ? (id - 1) : (id + jzmax);

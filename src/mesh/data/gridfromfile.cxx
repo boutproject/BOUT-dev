@@ -215,6 +215,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
   }
   };
 
+  ASSERT_NO_Z_SPLIT();
   ///Ghost region widths.
   const int mxg = (m->LocalNx - (m->xend - m->xstart + 1)) / 2;
   const int myg = (m->LocalNy - (m->yend - m->ystart + 1)) / 2;
@@ -392,6 +393,7 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd, int n
 
   var.allocate();
 
+  ASSERT_NO_Z_SPLIT();
   // Check whether "nz" is defined
   if (hasVar("nz")) {
     // Check the array is the right size
@@ -435,6 +437,7 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
 
   int yindex = var.getIndex();
 
+  ASSERT_NO_Z_SPLIT();
   if (yindex >= 0 and yindex <= m->LocalNy) {
     // Only read if yindex is on this processor
 
@@ -527,6 +530,8 @@ bool GridFile::hasXBoundaryGuards(Mesh* m) {
 bool GridFile::readgrid_3dvar_fft(Mesh* m, const std::string& name, int yread, int ydest,
                                   int ysize, int xread, int xdest, int xsize,
                                   Field3D& var) {
+  ASSERT2(!m->isFci());
+  ASSERT_NO_Z_SPLIT();
   /// Check the arguments make sense
   if ((yread < 0) || (ydest < 0) || (ysize < 0) || (xread < 0) || (xdest < 0)
       || (xsize < 0)) {
@@ -614,6 +619,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh* m, const std::string& name, int yread, i
 bool GridFile::readgrid_3dvar_real(const std::string& name, int yread, int ydest,
                                    int ysize, int xread, int xdest, int xsize,
                                    Field3D& var) {
+  ASSERT_NO_Z_SPLIT();
   /// Check the arguments make sense
   if ((yread < 0) || (ydest < 0) || (ysize < 0) || (xread < 0) || (xdest < 0)
       || (xsize < 0)) {
@@ -657,6 +663,7 @@ bool GridFile::readgrid_3dvar_real(const std::string& name, int yread, int ydest
  */
 bool GridFile::readgrid_perpvar_fft(Mesh* m, const std::string& name, int xread,
                                     int xdest, int xsize, FieldPerp& var) {
+  ASSERT_NO_Z_SPLIT();
   /// Check the arguments make sense
   if ((xread < 0) || (xdest < 0) || (xsize < 0)) {
     return false;
@@ -740,6 +747,7 @@ bool GridFile::readgrid_perpvar_fft(Mesh* m, const std::string& name, int xread,
  */
 bool GridFile::readgrid_perpvar_real(const std::string& name, int xread, int xdest,
                                      int xsize, FieldPerp& var) {
+  ASSERT_NO_Z_SPLIT();
   /// Check the arguments make sense
   if ((xread < 0) || (xdest < 0) || (xsize < 0)) {
     return false;

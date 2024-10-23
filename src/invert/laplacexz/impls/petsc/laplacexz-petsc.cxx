@@ -428,6 +428,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
 
         // ZZ component
         // Wrap around z-1 and z+1 indices
+        ASSERT_NO_Z_SPLIT();
         const int zminus = (z - 1 + (localmesh->LocalNz)) % (localmesh->LocalNz);
         const int zplus = (z + 1) % (localmesh->LocalNz);
 

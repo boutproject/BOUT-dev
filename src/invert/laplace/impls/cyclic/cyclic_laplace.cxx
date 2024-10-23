@@ -66,6 +66,7 @@ LaplaceCyclic::LaplaceCyclic(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
             .doc("Use Discrete Sine Transform in Z to enforce Dirichlet boundaries in Z")
             .withDefault<bool>(false);
 
+  ASSERT_NO_Z_SPLIT();
   if (dst) {
     nmode = localmesh->LocalNz - 2;
   } else {

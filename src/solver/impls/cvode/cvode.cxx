@@ -776,6 +776,7 @@ void CvodeSolver::loop_vector_option_values_op(Ind2D UNUSED(i2d), BoutReal* opti
     p++;
   }
 
+  ASSERT_NO_Z_SPLIT();
   for (int jz = 0; jz < bout::globals::mesh->LocalNz; jz++) {
     // Loop over 3D variables
     for (std::vector<BoutReal>::size_type i = 0; i < f3dtols.size(); i++) {

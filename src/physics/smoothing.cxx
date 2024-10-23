@@ -483,6 +483,7 @@ const Field3D nl_filter_y(const Field3D& f, BoutReal w) {
 const Field3D nl_filter_z(const Field3D& fs, BoutReal w) {
   TRACE("nl_filter_z( Field3D )");
 
+  ASSERT_NO_Z_SPLIT();
   Mesh* mesh = fs.getMesh();
   Field3D result{emptyFrom(fs)};
 

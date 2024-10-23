@@ -96,6 +96,7 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
 
   // Need to determine local size to use based on prior parallelisation
   // Coefficient values are stored only on local processors.
+  ASSERT_NO_Z_SPLIT();
   localN = (localmesh->xend - localmesh->xstart + 1) * (localmesh->LocalNz);
   if (localmesh->firstX()) {
     localN +=

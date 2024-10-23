@@ -197,6 +197,7 @@ public:
     }
 
     // Add the RGN_WITHBNDRIES region to the mesh. Requires RGN_NOBNDRY to be defined.
+    ASSERT_NO_Z_SPLIT();
     if constexpr (std::is_same_v<Field3D, T>) {
       if (not localmesh->hasRegion3D("RGN_WITHBNDRIES")) {
         // This avoids all guard cells and corners but includes boundaries

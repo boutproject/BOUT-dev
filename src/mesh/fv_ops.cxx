@@ -45,7 +45,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     if(mesh->lastX())
     xe -= 1;
   */
-
+  ASSERT_NO_Z_SPLIT();
   for (int i = xs; i <= xe; i++) {
     for (int j = mesh->ystart; j <= mesh->yend; j++) {
       for (int k = 0; k < mesh->LocalNz; k++) {
@@ -278,6 +278,7 @@ const Field3D D4DY4(const Field3D& d_in, const Field3D& f_in) {
                          : // Don't calculate flux from mesh->yend into boundary
                          mesh->yend;
 
+    ASSERT_NO_Z_SPLIT();
     for (int j = ystart; j <= yend; j++) {
       for (int k = 0; k < mesh->LocalNz; k++) {
         BoutReal dy3 = SQ(coord->dy(i, j, k)) * coord->dy(i, j, k);
@@ -325,7 +326,7 @@ const Field3D D4DY4_Index(const Field3D& f_in, bool bndry_flux) {
         // Calculate the fluxes
 
         if (j != mesh->yend || !has_upper_boundary) {
-
+          ASSERT_NO_Z_SPLIT();
           for (int k = 0; k < mesh->LocalNz; k++) {
             // Right boundary common factors
             const BoutReal common_factor = 0.25
@@ -350,6 +351,7 @@ const Field3D D4DY4_Index(const Field3D& f_in, bool bndry_flux) {
           // At a domain boundary
           // Use a one-sided difference formula
 
+          ASSERT_NO_Z_SPLIT();
           for (int k = 0; k < mesh->LocalNz; k++) {
             // Right boundary common factors
             const BoutReal common_factor = 0.25
@@ -379,6 +381,7 @@ const Field3D D4DY4_Index(const Field3D& f_in, bool bndry_flux) {
       if (bndry_flux || (j != mesh->ystart) || !has_lower_boundary) {
         // Calculate the fluxes
 
+        ASSERT_NO_Z_SPLIT();
         if (j != mesh->ystart || !has_lower_boundary) {
           for (int k = 0; k < mesh->LocalNz; k++) {
             const BoutReal common_factor = 0.25
@@ -432,7 +435,7 @@ void communicateFluxes(Field3D& f) {
 
   // Use X=0 as temporary buffer
   if (mesh->xstart != 2) {
-    throw BoutException("communicateFluxes: Sorry!");
+    throw BoutException("communicateFluxes: Not Implemented - need MXG=2!");
   }
 
   int size = mesh->LocalNy * mesh->LocalNz;
@@ -496,6 +499,7 @@ Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
   Coordinates* coords = a.getCoordinates(outloc);
   Mesh* mesh = f.getMesh();
 
+  ASSERT_NO_Z_SPLIT();
   for (int i = mesh->xstart; i <= mesh->xend; i++) {
     for (int j = mesh->ystart; j <= mesh->yend; j++) {
       for (int k = 0; k < mesh->LocalNz; k++) {

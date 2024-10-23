@@ -66,6 +66,7 @@ void ShiftedMetric::cachePhases() {
   fromAlignedPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
   toAlignedPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
 
+  ASSERT_NO_Z_SPLIT();
   // To/From field aligned phases
   BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
     int ix = i.x();
@@ -82,6 +83,7 @@ void ShiftedMetric::cachePhases() {
   // direction
   parallel_slice_phases.resize(mesh.ystart * 2);
 
+  ASSERT_NO_Z_SPLIT();
   // Careful with the indices/offsets! Offsets are 1-indexed (as 0
   // would be the original slice), and Mesh::ystart is the number of
   // guard cells. The parallel slice vector stores the offsets as
@@ -166,6 +168,7 @@ Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
 
   Field3D result{emptyFrom(f).setDirectionY(y_direction_out)};
 
+  ASSERT_NO_Z_SPLIT();
   BOUT_FOR(i, mesh.getRegion2D(toString(region))) {
     shiftZ(&f(i, 0), &phs(i.x(), i.y(), 0), &result(i, 0));
   }
@@ -187,6 +190,7 @@ FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
 
   FieldPerp result{emptyFrom(f).setDirectionY(y_direction_out)};
 
+  ASSERT_NO_Z_SPLIT();
   int y = f.getIndex();
   // Note that this loop is essentially hardcoded to be RGN_NOX
   for (int i = mesh.xstart; i <= mesh.xend; ++i) {
@@ -207,6 +211,7 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* ou
   Array<dcomplex> cmplx(nmodes);
 #endif
 
+  ASSERT_NO_Z_SPLIT();
   // Take forward FFT
   rfft(in, mesh.LocalNz, &cmplx[0]);
 
@@ -251,6 +256,7 @@ ShiftedMetric::shiftZ(const Field3D& f,
   ASSERT1(f.getLocation() == location);
   ASSERT1(f.getDirectionY() == YDirectionType::Standard);
 
+  ASSERT_NO_Z_SPLIT();
   const int nmodes = mesh.LocalNz / 2 + 1;
 
   // FFT in Z of input field at each (x, y) point
@@ -283,6 +289,7 @@ ShiftedMetric::shiftZ(const Field3D& f,
         shifted_temp[jz] *= phase.phase_shift(ix, iy, jz);
       }
 
+      ASSERT_NO_Z_SPLIT();
       irfft(shifted_temp.begin(), mesh.LocalNz, &current_result(i.yp(phase.y_offset), 0));
     }
   }

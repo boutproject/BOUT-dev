@@ -750,6 +750,7 @@ public:
   /// we would find the zplus indices. For shift = mesh->LocalNy*mesh->LocalNz,
   /// period = mesh->LocalNx*mesh->LocalNy*mesh->LocalNz we find xplus indices.
   Region<T>& periodicShift(int shift, int period) {
+    ASSERT_NO_Z_SPLIT();
     // Exit early if possible
     if (shift == 0 || period == 1) {
       return *this;

@@ -54,6 +54,7 @@
 
 InvertParDivCR::InvertParDivCR(Options* opt, CELL_LOC location, Mesh* mesh_in)
     : InvertParDiv(opt, location, mesh_in) {
+  ASSERT_NO_Z_SPLIT();
   // Number of k equations to solve for each x location
   nsys = 1 + (localmesh->LocalNz) / 2;
 }
@@ -142,6 +143,7 @@ Field3D InvertParDivCR::solve(const Field3D& f) {
     cr->setup(surf.communicator(), size);
     cr->setPeriodic(closed);
 
+    ASSERT_NO_Z_SPLIT();
     // Take Fourier transform
     for (int y = 0; y < localmesh->LocalNy - localmesh->ystart - local_ystart; y++) {
       rfft(alignedField(x, y + local_ystart), localmesh->LocalNz, &rhs(y + y0, 0));
@@ -237,6 +239,7 @@ Field3D InvertParDivCR::solve(const Field3D& f) {
       }
     }
 
+    ASSERT_NO_Z_SPLIT();
     // Inverse Fourier transform
     for (int y = 0; y < size; y++) {
       irfft(&rhs(y, 0), localmesh->LocalNz, result(x, y + local_ystart - y0));

@@ -107,6 +107,7 @@ Field3D XZBilinear::interpolate(const Field3D& f, const std::string& region) con
     // Due to lack of guard cells in z-direction, we need to ensure z-index
     // wraps around
     const int ncz = localmesh->LocalNz;
+    ASSERT_NO_Z_SPLIT();
     const int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
     const int z_mod_p1 = (z_mod + 1) % ncz;
 

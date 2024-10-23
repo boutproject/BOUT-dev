@@ -81,6 +81,7 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   int jy = b.getIndex();
 
+  ASSERT_NO_Z_SPLIT();
   int ncz = localmesh->LocalNz; // No of z pnts
   int ncx = localmesh->LocalNx; // No of x pnts
 

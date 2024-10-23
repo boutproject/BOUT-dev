@@ -91,6 +91,7 @@ LaplacePCR_THOMAS::LaplacePCR_THOMAS(Options* opt, CELL_LOC loc, Mesh* mesh_in,
   OPTION(opt, dst, false);
 
   if (dst) {
+    ASSERT_NO_Z_SPLIT();
     nmode = localmesh->LocalNz - 2;
   } else {
     nmode = maxmode + 1; // Number of Z modes. maxmode set in
@@ -156,6 +157,7 @@ FieldPerp LaplacePCR_THOMAS::solve(const FieldPerp& rhs, const FieldPerp& x0) {
   }
 
   if (dst) {
+    ASSERT_NO_Z_SPLIT();
     const BoutReal zlength = getUniform(coords->dz) * (localmesh->LocalNz - 3);
     BOUT_OMP_PERF(parallel)
     {

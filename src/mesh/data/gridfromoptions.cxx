@@ -145,6 +145,7 @@ bool GridFromOptions::get(Mesh* m, std::vector<BoutReal>& var, const std::string
     break;
   }
   case GridDataSource::Z: {
+    ASSERT_NO_Z_SPLIT();
     for (int z = 0; z < len; z++) {
       pos.set("z",
               (TWOPI * (z - m->OffsetZ + offset)) / static_cast<BoutReal>(m->LocalNz));

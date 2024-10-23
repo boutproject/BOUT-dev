@@ -1023,6 +1023,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
   // Use global mesh: FIX THIS!
   Mesh* mesh = bout::globals::mesh;
 
+  ASSERT_NO_Z_SPLIT();
   int nz = mesh->LocalNz;
 
   switch (op) {
@@ -1303,6 +1304,7 @@ Field3D Solver::globalIndex(int localStart) {
 
   int ind = localStart;
 
+  ASSERT_NO_Z_SPLIT();
   int nz = mesh->LocalNz;
 
   // Find how many boundary cells are evolving

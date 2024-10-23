@@ -65,4 +65,12 @@
 #define ASSERT3(condition)
 #endif
 
+#if BOUT_USE_SPLIT_Z
+#define ASSERT_NO_Z_SPLIT()                                                       \
+  throw BoutException("The code at {:s}:{:d} is not suitable for splitting in Z", \
+                      __FILE__, __LINE__);
+#else
+#define ASSERT_NO_Z_SPLIT()
+#endif
+
 #endif // BOUT_ASSERT_H

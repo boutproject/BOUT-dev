@@ -248,6 +248,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   jy = b.getIndex();
 
+  ASSERT_NO_Z_SPLIT();
   const int ncz = localmesh->LocalNz; // Number of local z points
 
   xs = localmesh->xstart; // First interior point

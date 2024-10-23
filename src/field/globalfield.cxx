@@ -15,6 +15,7 @@ GlobalField::GlobalField(Mesh* m, int proc, int xsize, int ysize, int zsize)
     throw BoutException("GlobalField data must have non-zero size");
   }
 
+  ASSERT_NO_Z_SPLIT();
   if (mype == proc) {
     // Allocate memory
     data.reallocate(nx * ny * nz);
@@ -22,6 +23,7 @@ GlobalField::GlobalField(Mesh* m, int proc, int xsize, int ysize, int zsize)
 }
 void GlobalField::proc_local_origin(int proc, int* x, int* y, int* z) const {
 
+  ASSERT_NO_Z_SPLIT();
   int nxpe = mesh->getNXPE();
   if (proc % nxpe == 0) {
     *x = 0;
@@ -39,6 +41,7 @@ void GlobalField::proc_local_origin(int proc, int* x, int* y, int* z) const {
 void GlobalField::proc_origin(int proc, int* x, int* y, int* z) const {
   // This is a hack, and should be improved with a better Mesh interface
 
+  ASSERT_NO_Z_SPLIT();
   // Get the number of processors in X and Y
   int nxpe = mesh->getNXPE();
 
@@ -66,6 +69,7 @@ void GlobalField::proc_size(int proc, int* lx, int* ly, int* lz) const {
   // Get the size of the processor domain.
   // Assumes every processor has the same size domain
 
+  ASSERT_NO_Z_SPLIT();
   *lx = mesh->xend - mesh->xstart + 1;
   *ly = mesh->yend - mesh->ystart + 1;
   if (lz != nullptr) {
@@ -317,6 +321,7 @@ void GlobalField3D::gather(const Field3D& f) {
 
     req[mype] = MPI_REQUEST_NULL; // Mark as not used
 
+    ASSERT_NO_Z_SPLIT();
     // Copy data from this processor
     int local_xorig, local_yorig;
     proc_local_origin(mype, &local_xorig, &local_yorig);
@@ -340,6 +345,7 @@ void GlobalField3D::gather(const Field3D& f) {
       do {
         bout::globals::mpi->MPI_Waitany(npes, req.data(), &pe, &status);
 
+        ASSERT_NO_Z_SPLIT();
         if (pe != MPI_UNDEFINED) {
           // Unpack data from processor 'pe'
           int remote_xorig, remote_yorig;
@@ -368,6 +374,7 @@ void GlobalField3D::gather(const Field3D& f) {
     proc_local_origin(mype, &local_xorig, &local_yorig);
     int xsize, ysize;
     proc_size(mype, &xsize, &ysize);
+    ASSERT_NO_Z_SPLIT();
     int zsize = mesh->LocalNz;
 
     for (int x = 0; x < xsize; x++) {
@@ -402,6 +409,7 @@ const Field3D GlobalField3D::scatter() const {
       proc_origin(p, &xorig, &yorig);
       int xsize, ysize;
       proc_size(p, &xsize, &ysize);
+      ASSERT_NO_Z_SPLIT();
       int zsize = mesh->LocalNz;
 
       // Send to processor p
@@ -462,6 +470,7 @@ const Field3D GlobalField3D::scatter() const {
 int GlobalField3D::msg_len(int proc) const {
   int xsize, ysize;
   proc_size(proc, &xsize, &ysize);
+  ASSERT_NO_Z_SPLIT();
   int zsize = mesh->LocalNz;
   return xsize * ysize * zsize;
 }

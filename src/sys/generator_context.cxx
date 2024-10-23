@@ -15,6 +15,7 @@ Context::Context(int ix, int iy, int iz, CELL_LOC loc, Mesh* msh, BoutReal t)
   parameters["y"] = (loc == CELL_YLOW) ? PI * (msh->GlobalY(iy) + msh->GlobalY(iy - 1))
                                        : TWOPI * msh->GlobalY(iy);
 
+  ASSERT_NO_Z_SPLIT();
   parameters["z"] = (loc == CELL_ZLOW)
                         ? TWOPI * (iz - 0.5) / static_cast<BoutReal>(msh->LocalNz)
                         : TWOPI * iz / static_cast<BoutReal>(msh->LocalNz);
@@ -38,6 +39,7 @@ Context::Context(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal t, 
                         ? PI * (msh->GlobalY(iy) + msh->GlobalY(iy - 1))
                         : TWOPI * msh->GlobalY(iy);
 
+  ASSERT_NO_Z_SPLIT();
   parameters["z"] = (loc == CELL_ZLOW)
                         ? TWOPI * (iz - 0.5) / static_cast<BoutReal>(msh->LocalNz)
                         : TWOPI * iz / static_cast<BoutReal>(msh->LocalNz);

@@ -60,6 +60,7 @@ LaplaceSerialBand::LaplaceSerialBand(Options* opt, const CELL_LOC loc, Mesh* mes
   // Allocate memory
 
   int ncz = localmesh->LocalNz;
+  ASSERT_NO_Z_SPLIT();
   bk.reallocate(localmesh->LocalNx, ncz / 2 + 1);
   bk1d.reallocate(localmesh->LocalNx);
 

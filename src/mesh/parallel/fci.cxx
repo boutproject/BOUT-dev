@@ -157,6 +157,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
     interp->calcWeights(xt_prime, zt_prime);
   }
 
+  ASSERT_NO_Z_SPLIT();
   const int ncz = map_mesh.LocalNz;
 
   BoutMask to_remove(map_mesh);
@@ -243,6 +244,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
   const auto region = fmt::format("RGN_YPAR_{:+d}", offset);
   if (not map_mesh.hasRegion3D(region)) {
     // The valid region for this slice
+    ASSERT_NO_Z_SPLIT();
     map_mesh.addRegion3D(
         region, Region<Ind3D>(map_mesh.xstart, map_mesh.xend, map_mesh.ystart + offset,
                               map_mesh.yend + offset, 0, map_mesh.LocalNz - 1,

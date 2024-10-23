@@ -427,6 +427,7 @@ OperatorStencil<Ind3D> LaplaceHypre3d::getStencil(Mesh* localmesh,
       localmesh->getCoordinates()->getParallelTransform().getWeightsForYDownApproximation(
           localmesh->xstart, localmesh->ystart + 1, localmesh->zstart);
   std::vector<OffsetInd3D> interpPattern;
+  ASSERT_NO_Z_SPLIT();
   std::transform(pw.begin(), pw.end(), std::back_inserter(interpPattern),
                  [localmesh](ParallelTransform::PositionsAndWeights p) -> OffsetInd3D {
                    return {localmesh->xstart - p.i, localmesh->ystart - p.j,

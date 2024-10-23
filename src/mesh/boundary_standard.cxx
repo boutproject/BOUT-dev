@@ -2627,6 +2627,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryZeroLaplace::apply(Field3D & f) {
 #if not(BOUT_USE_METRIC_3D)
+    ASSERT_NO_Z_SPLIT();
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
     int ncz = mesh->LocalNz;
@@ -2733,6 +2734,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
     const int ncz = mesh->LocalNz;
+    ASSERT_NO_Z_SPLIT();
 
     ASSERT0(ncz % 2 == 0); // Allocation assumes even number
 
@@ -2838,6 +2840,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       throw BoutException(
           "ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
     }
+    ASSERT_NO_Z_SPLIT();
 
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());

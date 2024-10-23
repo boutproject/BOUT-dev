@@ -71,6 +71,7 @@ LaplaceSPT::LaplaceSPT(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   }
 
   // Temporary array for taking FFTs
+  ASSERT_NO_Z_SPLIT();
   int ncz = localmesh->LocalNz;
   dc1d.reallocate(ncz / 2 + 1);
 }

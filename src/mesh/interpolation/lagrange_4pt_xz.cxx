@@ -104,6 +104,7 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) 
     const int ncz = localmesh->LocalNz;
 
     // Get the 4 Z points
+    ASSERT_NO_Z_SPLIT();
     const int jz = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
 
     const int jzpnew = (jz + 1) % ncz;

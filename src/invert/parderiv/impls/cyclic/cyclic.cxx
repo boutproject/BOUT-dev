@@ -66,6 +66,7 @@ const Field3D InvertParCR::solve(const Field3D& f) {
   TRACE("InvertParCR::solve(Field3D)");
   ASSERT1(localmesh == f.getMesh());
   ASSERT1(location == f.getLocation());
+  ASSERT1(f.isFci() == false);
 
   Field3D result = emptyFrom(f).setDirectionY(YDirectionType::Aligned);
 
@@ -143,6 +144,7 @@ const Field3D InvertParCR::solve(const Field3D& f) {
     cr->setPeriodic(closed);
 
     // Take Fourier transform
+    ASSERT_NO_Z_SPLIT();
     for (int y = 0; y < localmesh->LocalNy - localmesh->ystart - local_ystart; y++) {
       rfft(alignedField(x, y + local_ystart), localmesh->LocalNz, &rhs(y + y0, 0));
     }
@@ -236,6 +238,7 @@ const Field3D InvertParCR::solve(const Field3D& f) {
     }
 
     // Inverse Fourier transform
+    ASSERT_NO_Z_SPLIT();
     for (int y = 0; y < size; y++) {
       irfft(&rhs(y, 0), localmesh->LocalNz, result(x, y + local_ystart - y0));
     }

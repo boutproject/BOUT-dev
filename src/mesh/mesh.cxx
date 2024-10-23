@@ -291,6 +291,7 @@ void Mesh::communicateXZ(FieldGroup& g) {
 
   // Send data
   comm_handle h = sendX(g);
+  ASSERT_NO_Z_SPLIT();
 
   // Wait for data from other processors
   wait(h);
@@ -301,6 +302,7 @@ void Mesh::communicateYZ(FieldGroup& g) {
 
   // Send data
   comm_handle h = sendY(g);
+  ASSERT_NO_Z_SPLIT();
 
   // Wait for data from other processors
   wait(h);
@@ -317,6 +319,7 @@ void Mesh::communicate(FieldGroup& g) {
   TRACE("Mesh::communicate(FieldGroup&)");
 
   if (include_corner_cells) {
+    ASSERT_NO_Z_SPLIT();
     // Send data in y-direction
     comm_handle h = sendY(g);
 
@@ -347,6 +350,7 @@ void Mesh::communicate(FieldGroup& g) {
 /// This is a bit of a hack for now to get FieldPerp communications
 /// The FieldData class needs to be changed to accomodate FieldPerp objects
 void Mesh::communicate(FieldPerp& f) {
+  ASSERT_NO_Z_SPLIT();
   comm_handle recv[2];
 
   int nin = xstart;              // Number of x points in inner guard cell
@@ -370,6 +374,7 @@ int Mesh::msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int
                   int ylt) {
   int len = 0;
 
+  ASSERT_NO_Z_SPLIT();
   /// Loop over variables
   for (const auto& var : var_list) {
     if (var->is3D()) {
@@ -426,6 +431,7 @@ bool Mesh::hasBndryUpperY() {
 }
 
 int Mesh::localSize3D() {
+  ASSERT_NO_Z_SPLIT();
   if (localNumCells3D < 0) {
     const int xs = firstX() ? xstart - 1 : xstart;
     const int xe = lastX() ? xend + 2 : xend + 1;
@@ -485,6 +491,7 @@ int Mesh::localSize2D() {
 }
 
 int Mesh::localSizePerp() {
+  ASSERT_NO_Z_SPLIT();
   if (localNumCellsPerp < 0) {
     const int xs = firstX() ? xstart - 1 : xstart;
     const int xe = lastX() ? xend + 2 : xend + 1;
@@ -496,6 +503,7 @@ int Mesh::localSizePerp() {
 }
 
 int Mesh::globalStartIndex3D() {
+  ASSERT_NO_Z_SPLIT();
   int localSize = localSize3D();
   int cumulativeSize = 0;
   mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
@@ -510,6 +518,7 @@ int Mesh::globalStartIndex2D() {
 }
 
 int Mesh::globalStartIndexPerp() {
+  ASSERT_NO_Z_SPLIT();
   int localSize = localSizePerp();
   int cumulativeSize = 0;
   mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXcomm());

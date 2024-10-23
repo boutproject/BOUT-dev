@@ -637,6 +637,7 @@ Field3D filter(const Field3D& var, int N0, const std::string& rgn) {
 
   const Region<Ind2D>& region = var.getRegion2D(region_str);
 
+  ASSERT_NO_Z_SPLIT();
   BOUT_OMP_PERF(parallel)
   {
     Array<dcomplex> f(ncz / 2 + 1);
@@ -687,6 +688,7 @@ Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, const std::string
 
   const Region<Ind2D>& region = var.getRegion2D(region_str);
 
+  ASSERT_NO_Z_SPLIT();
   BOUT_OMP_PERF(parallel)
   {
     Array<dcomplex> f(ncz / 2 + 1);
@@ -719,6 +721,7 @@ Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, const std::string
 void shiftZ(Field3D& var, int jx, int jy, double zangle) {
   TRACE("shiftZ");
   checkData(var);
+  ASSERT_NO_Z_SPLIT();
   var.allocate(); // Ensure that var is unique
   Mesh* localmesh = var.getMesh();
 

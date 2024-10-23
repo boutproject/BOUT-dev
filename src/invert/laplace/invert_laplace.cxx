@@ -90,6 +90,7 @@ Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in,
   const BoutReal filter = (*options)["filter"]
                               .doc("Fraction of Z modes to filter out. Between 0 and 1")
                               .withDefault(0.0);
+  ASSERT_NO_Z_SPLIT();
   const int ncz = localmesh->LocalNz;
   // convert filtering into an integer number of modes
   maxmode = (*options)["maxmode"]
