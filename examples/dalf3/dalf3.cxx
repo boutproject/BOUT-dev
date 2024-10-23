@@ -25,6 +25,7 @@
 #include <bout/invert_laplace.hxx>
 #include <bout/utils.hxx>
 #include <math.h>
+#include <memory>
 
 #include <bout/constants.hxx>
 
@@ -76,7 +77,7 @@ private:
 
   std::unique_ptr<Laplacian> phiSolver{nullptr};  // Laplacian solver in X-Z
   std::unique_ptr<Laplacian> aparSolver{nullptr}; // Laplacian solver in X-Z for Apar
-  LaplaceXY* laplacexy;                           // Laplacian solver in X-Y (n=0)
+  std::unique_ptr<LaplaceXY> laplacexy{nullptr};  // Laplacian solver in X-Y (n=0)
   Field2D phi2D; // Axisymmetric potential, used when split_n0=true
 
 protected:
@@ -138,8 +139,7 @@ protected:
     parallel_lc = options["parallel_lc"].withDefault(true);
     nonlinear = options["nonlinear"].withDefault(true);
 
-    int bracket_method;
-    bracket_method = options["bracket_method"].withDefault(0);
+    const int bracket_method = options["bracket_method"].withDefault(0);
     switch (bracket_method) {
     case 0: {
       bm = BRACKET_STD;
@@ -300,7 +300,7 @@ protected:
     // LaplaceXY for n=0 solve
     if (split_n0) {
       // Create an XY solver for n=0 component
-      laplacexy = new LaplaceXY(mesh);
+      laplacexy = std::make_unique<LaplaceXY>(mesh);
       phi2D = 0.0; // Starting guess
     }
 
@@ -314,7 +314,7 @@ protected:
   }
 
   // Curvature operator
-  const Field3D Kappa(const Field3D& f) {
+  Field3D Kappa(const Field3D& f) {
     if (curv_kappa) {
       // Use the b0xcv vector from grid file
       return -2. * b0xcv * Grad(f) / B0;
@@ -323,7 +323,7 @@ protected:
     return 2. * bracket(log(B0), f, bm);
   }
 
-  const Field3D Grad_parP(const Field3D& f) {
+  Field3D Grad_parP(const Field3D& f) {
     if (nonlinear) {
       return ::Grad_parP(apar * beta_hat, f);
     }
