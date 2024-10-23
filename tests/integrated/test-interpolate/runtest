@@ -6,6 +6,7 @@
 
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata import collect
+import boutconfig
 from numpy import sqrt, max, abs, mean, array, log, polyfit
 from sys import stdout, exit
 
@@ -14,9 +15,6 @@ show_plot = False
 
 # List of NX values to use
 nxlist = [16, 32, 64, 128]
-
-# Only testing 2D (x, z) slices, so only need one processor
-nproc = 1
 
 # Variables to compare
 varlist = ["a", "b", "c"]
@@ -29,6 +27,8 @@ methods = {
     "bilinear": 2,
 }
 
+if boutconfig.has["petsc"]:
+    methods["petschermitespline"] = 3
 
 build_and_log("Interpolation test")
 
@@ -37,7 +37,7 @@ success = True
 
 for method in methods:
     print("------------------------------")
-    print("Using {} interpolation".format(method))
+    print(f"Using {method} interpolation")
 
     error_2 = {}
     error_inf = {}
@@ -48,25 +48,20 @@ for method in methods:
     for nx in nxlist:
         dx = 1.0 / (nx)
 
-        args = (
-            " mesh:nx={nx4} mesh:dx={dx} MZ={nx} xzinterpolation:type={method}".format(
-                nx4=nx + 4, dx=dx, nx=nx, method=method
-            )
-        )
-
-        cmd = "./test_interpolate" + args
+        nproc = 2 if method == "petschermitespline" else 1
+        cmd = f"./test_interpolate mesh:nx={nx + 4} mesh:dx={dx} MZ={nx} xzinterpolation:type={method} NXPE={nproc}"
 
         shell("rm data/BOUT.dmp.*.nc")
 
         s, out = launch_safe(cmd, nproc=nproc, pipe=True)
-        with open("run.log.{}.{}".format(method, nx), "w") as f:
+        with open(f"run.log.{method}.{nx}", "w") as f:
             f.write(out)
 
         # Collect output data
         for var in varlist:
-            interp = collect(var + "_interp", path="data", xguards=False, info=False)
+            interp = collect(f"{var}_interp", path="data", xguards=False, info=False)
             solution = collect(
-                var + "_solution", path="data", xguards=False, info=False
+                f"{var}_solution", path="data", xguards=False, info=False
             )
 
             E = interp - solution
