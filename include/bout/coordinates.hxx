@@ -464,15 +464,6 @@ private:
   /// `g_values` needs renaming, when we know what the name should be
   mutable std::unique_ptr<GValues> g_values_cache{nullptr};
 
-  void applyToContravariantMetricTensor(
-      const std::function<const FieldMetric(const FieldMetric)>& function);
-
-  void applyToCovariantMetricTensor(
-      const std::function<const FieldMetric(const FieldMetric)>& function);
-
-  void applyToChristoffelSymbols(
-      const std::function<const FieldMetric(const FieldMetric)>& function);
-
   mutable std::unique_ptr<FieldMetric> jacobian_cache{nullptr};
 
   FieldMetric Bxy_; ///< Magnitude of B = nabla z times nabla x

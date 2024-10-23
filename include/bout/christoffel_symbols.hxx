@@ -47,42 +47,28 @@ public:
   const FieldMetric& G3_13() const { return G3_13_m; }
   const FieldMetric& G3_23() const { return G3_23_m; }
 
-  void setChristoffelSymbols(const FieldMetric& G1_11, const FieldMetric& G1_22,
-                             const FieldMetric& G1_33, const FieldMetric& G1_12,
-                             const FieldMetric& G1_13, const FieldMetric& G1_23,
-                             const FieldMetric& G2_11, const FieldMetric& G2_22,
-                             const FieldMetric& G2_33, const FieldMetric& G2_12,
-                             const FieldMetric& G2_13, const FieldMetric& G2_23,
-                             const FieldMetric& G3_11, const FieldMetric& G3_22,
-                             const FieldMetric& G3_33, const FieldMetric& G3_12,
-                             const FieldMetric& G3_13, const FieldMetric& G3_23) {
-    G1_11_m = G1_11;
-    G1_22_m = G1_22;
-    G1_33_m = G1_33;
-    G1_12_m = G1_12;
-    G1_13_m = G1_13;
-    G1_23_m = G1_23;
-    G2_11_m = G2_11;
-    G2_22_m = G2_22;
-    G2_33_m = G2_33;
-    G2_12_m = G2_12;
-    G2_13_m = G2_13;
-    G2_23_m = G2_23;
-    G3_11_m = G3_11;
-    G3_22_m = G3_22;
-    G3_33_m = G3_33;
-    G3_12_m = G3_12;
-    G3_13_m = G3_13;
-    G3_23_m = G3_23;
-  }
-
-  //  void Allocate();
-  //
-  //  void setLocation(CELL_LOC location);
-
   // Transforms the ChristoffelSymbols by applying the given function to every element
-  void
-  applyToComponents(const std::function<const FieldMetric(const FieldMetric)>& function);
+  template <class F>
+  void map(F function) {
+    G1_11_m = function(G1_11_m);
+    G1_22_m = function(G1_22_m);
+    G1_33_m = function(G1_33_m);
+    G1_12_m = function(G1_12_m);
+    G1_13_m = function(G1_13_m);
+    G1_23_m = function(G1_23_m);
+    G2_11_m = function(G2_11_m);
+    G2_22_m = function(G2_22_m);
+    G2_33_m = function(G2_33_m);
+    G2_12_m = function(G2_12_m);
+    G2_13_m = function(G2_13_m);
+    G2_23_m = function(G2_23_m);
+    G3_11_m = function(G3_11_m);
+    G3_22_m = function(G3_22_m);
+    G3_33_m = function(G3_33_m);
+    G3_12_m = function(G3_12_m);
+    G3_13_m = function(G3_13_m);
+    G3_23_m = function(G3_23_m);
+  }
 
   void communicate(Mesh* mesh);
 

@@ -3,7 +3,6 @@
 #include "bout/coordinates.hxx"
 #include "bout/mesh.hxx"
 
-#include <array>
 #include <utility>
 
 ChristoffelSymbols::ChristoffelSymbols(
@@ -125,24 +124,6 @@ ChristoffelSymbols::ChristoffelSymbols(Coordinates& coordinates) {
   G3_23_m = 0.5 * g13 * (coordinates.DDZ(g_12) + coordinates.DDY(g_13))
             - coordinates.DDX(g_23) + 0.5 * g23 * coordinates.DDZ(g_22)
             + 0.5 * g33 * coordinates.DDY(g_33);
-}
-
-void ChristoffelSymbols::applyToComponents(
-    const std::function<const FieldMetric(const FieldMetric)>& function) {
-
-  const auto components_in = std::array<FieldMetric, 18>{
-      G1_11_m, G1_22_m, G1_33_m, G1_12_m, G1_13_m, G1_23_m, G2_11_m, G2_22_m, G2_33_m,
-      G2_12_m, G2_13_m, G2_23_m, G3_11_m, G3_22_m, G3_33_m, G3_12_m, G3_13_m, G3_23_m};
-
-  std::array<FieldMetric, 18> components_out;
-
-  std::transform(components_in.begin(), components_in.end(), components_out.begin(),
-                 function);
-  auto [G1_11, G1_22, G1_33, G1_12, G1_13, G1_23, G2_11, G2_22, G2_33, G2_12, G2_13,
-        G2_23, G3_11, G3_22, G3_33, G3_12, G3_13, G3_23] = components_out;
-
-  setChristoffelSymbols(G1_11, G1_22, G1_33, G1_12, G1_13, G1_23, G2_11, G2_22, G2_33,
-                        G2_12, G2_13, G2_23, G3_11, G3_22, G3_33, G3_12, G3_13, G3_23);
 }
 
 void ChristoffelSymbols::communicate(Mesh* mesh) {

@@ -8,10 +8,7 @@
 #include "bout/region.hxx"
 #include "bout/utils.hxx"
 
-#include <algorithm>
-#include <array>
 #include <cstdlib>
-#include <functional>
 #include <utility>
 
 
@@ -139,31 +136,6 @@ MetricTensor MetricTensor::inverse(const std::string& region) {
   const auto location = g11_m.getLocation();
   other_representation.setLocation(location);
   return other_representation;
-}
-
-void MetricTensor::map(
-    const std::function<const FieldMetric(const FieldMetric)>& function) {
-
-  const MetricTensor updated_metric_tensor = applyToComponents(function);
-
-  setMetricTensor(MetricTensor(updated_metric_tensor.g11_m, updated_metric_tensor.g22_m,
-                               updated_metric_tensor.g33_m, updated_metric_tensor.g12_m,
-                               updated_metric_tensor.g13_m, updated_metric_tensor.g23_m));
-}
-
-MetricTensor MetricTensor::applyToComponents(
-    const std::function<const FieldMetric(const FieldMetric)>& function) const {
-
-  const std::array<FieldMetric, 6> components_in{g11_m, g22_m, g33_m,
-                                                 g12_m, g13_m, g23_m};
-
-  std::array<FieldMetric, 6> components_out;
-
-  std::transform(components_in.begin(), components_in.end(), components_out.begin(),
-                 function);
-  auto [g_11, g_22, g_33, g_12, g_13, g_23] = components_out;
-
-  return MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23);
 }
 
 void MetricTensor::communicate(Mesh* mesh) {

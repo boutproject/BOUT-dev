@@ -492,9 +492,8 @@ void Coordinates::interpolateFromCoordinates(Options* mesh_options,
         return interpolateAndExtrapolate(component, location, true, true, false,
                                          transform.get());
       };
-  applyToContravariantMetricTensor(interpolateAndExtrapolate_function);
-  applyToCovariantMetricTensor(interpolateAndExtrapolate_function);
-
+  contravariantMetricTensor.map(interpolateAndExtrapolate_function);
+  covariantMetricTensor.map(interpolateAndExtrapolate_function);
   // Check input metrics
   checkContravariant();
   checkCovariant();
@@ -586,7 +585,7 @@ void Coordinates::readFromMesh(Options* mesh_options, const std::string& suffix)
             return interpolateAndExtrapolate(component, location, extrapolate_x,
                                              extrapolate_y, false, transform.get());
           };
-  applyToContravariantMetricTensor(interpolateAndExtrapolate_function);
+  contravariantMetricTensor.map(interpolateAndExtrapolate_function);
 
   // Check input metrics
   checkContravariant();
@@ -618,7 +617,7 @@ void Coordinates::readFromMesh(Options* mesh_options, const std::string& suffix)
                       "Calculating all from the contravariant tensor\n");
   }
 
-  applyToCovariantMetricTensor(interpolateAndExtrapolate_function);
+  covariantMetricTensor.map(interpolateAndExtrapolate_function);
 
   // Check covariant metrics
   checkCovariant();
@@ -900,7 +899,7 @@ void Coordinates::extrapolateChristoffelSymbols() {
                                          transform.get());
       };
 
-  applyToChristoffelSymbols(interpolateAndExtrapolate_function);
+  christoffel_symbols().map(interpolateAndExtrapolate_function);
 }
 
 void Coordinates::extrapolateGValues() {
@@ -1537,11 +1536,6 @@ void Coordinates::setBxy(FieldMetric Bxy) {
   Bxy_ = std::move(Bxy);
 }
 
-void Coordinates::applyToChristoffelSymbols(
-    const std::function<const FieldMetric(const FieldMetric)>& function) {
-  christoffel_symbols().applyToComponents(function);
-}
-
 void Coordinates::setContravariantMetricTensor(
     const ContravariantMetricTensor& metric_tensor, const std::string& region,
     bool recalculate_staggered, bool force_interpolate_from_centre) {
@@ -1564,16 +1558,6 @@ void Coordinates::setMetricTensor(
     const CovariantMetricTensor& covariant_metric_tensor) {
   contravariantMetricTensor.setMetricTensor(contravariant_metric_tensor);
   covariantMetricTensor.setMetricTensor(covariant_metric_tensor);
-}
-
-void Coordinates::applyToContravariantMetricTensor(
-    const std::function<const FieldMetric(const FieldMetric)>& function) {
-  contravariantMetricTensor.map(function);
-}
-
-void Coordinates::applyToCovariantMetricTensor(
-    const std::function<const FieldMetric(const FieldMetric)>& function) {
-  covariantMetricTensor.map(function);
 }
 
 void Coordinates::invalidateAndRecalculateCachedVariables() {

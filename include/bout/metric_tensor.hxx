@@ -7,7 +7,6 @@
 #include "bout/field3d.hxx"
 #include <bout/bout_types.hxx>
 
-#include <functional>
 #include <string>
 #include <utility>
 
@@ -74,10 +73,15 @@ public:
   MetricTensor inverse(const std::string& region = "RGN_ALL");
 
   // Transforms the MetricTensor by applying the given function to every component
-  void map(const std::function<const FieldMetric(const FieldMetric)>& function);
-
-  MetricTensor applyToComponents(
-      const std::function<const FieldMetric(const FieldMetric)>& function) const;
+  template <class F>
+  void map(F function) {
+    g11_m = function(g11_m);
+    g22_m = function(g22_m);
+    g33_m = function(g33_m);
+    g12_m = function(g12_m);
+    g13_m = function(g13_m);
+    g23_m = function(g23_m);
+  }
 
   void communicate(Mesh* mesh);
 
