@@ -23,32 +23,41 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
-
-#include "arkode.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_ARKODE
 
-#include "bout/bout_enum_class.hxx"
+#include "arkode.hxx"
+
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/mpi_wrapper.hxx"
 #include "bout/msg_stack.hxx"
 #include "bout/options.hxx"
 #include "bout/output.hxx"
+#include "bout/solver.hxx"
+#include "bout/sundials_backports.hxx"
 #include "bout/unused.hxx"
-#include "bout/utils.hxx"
 
+#include <arkode/arkode.h>
 #include <arkode/arkode_arkstep.h>
 #include <arkode/arkode_bbdpre.h>
-#include <sundials/sundials_math.h>
-#include <sundials/sundials_types.h>
+#include <arkode/arkode_ls.h>
+#if SUNDIALS_CONTROLLER_SUPPORT
+#include <sunadaptcontroller/sunadaptcontroller_imexgus.h>
+#include <sunadaptcontroller/sunadaptcontroller_soderlind.h>
+#endif
 
 #include <algorithm>
+#include <iterator>
 #include <numeric>
-
-class Field2D;
+#include <vector>
 
 // NOLINTBEGIN(readability-identifier-length)
 namespace {

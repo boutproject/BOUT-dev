@@ -29,7 +29,7 @@
 #ifndef BOUT_ARKODE_SOLVER_H
 #define BOUT_ARKODE_SOLVER_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/solver.hxx"
 
 #if not BOUT_HAS_ARKODE
@@ -43,15 +43,14 @@ RegisterUnavailableSolver
 
 #include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
 
-#include <nvector/nvector_parallel.h>
-#include <sundials/sundials_config.h>
-
 #if SUNDIALS_CONTROLLER_SUPPORT
-#include <sundials/sundials_adaptcontroller.h>
+#include <sundials/sundials_adaptcontroller.h> // IWYU pragma: export
 #endif
 
+#include <string>
 #include <vector>
 
 class ArkodeSolver;
@@ -72,7 +71,7 @@ BOUT_ENUM_CLASS(AdapMethod, PID, PI, I, Explicit_Gustafsson, Implicit_Gustafsson
 class ArkodeSolver : public Solver {
 public:
   explicit ArkodeSolver(Options* opts = nullptr);
-  ~ArkodeSolver();
+  ~ArkodeSolver() override;
 
   BoutReal getCurrentTimestep() override { return hcur; }
 

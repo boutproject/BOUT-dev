@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BOUT++ 4.2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-22 11:03+0100\n"
+"POT-Creation-Date: 2024-09-12 09:17+0100\n"
 "PO-Revision-Date: 2018-10-22 22:56+0100\n"
 "Last-Translator:  <benjamin.dudson@york.ac.uk>\n"
 "Language-Team: Chinese (simplified)\n"
@@ -17,18 +17,21 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:191
+#, c++-format
 msgid ""
 "\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must be a multiple "
 "of MYSUB ({:d})\n"
 msgstr ""
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:224
+#, c++-format
 msgid ""
 "\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must be a multiple "
 "of MYSUB ({:d})\n"
 msgstr ""
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:199
+#, c++-format
 msgid ""
 "\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must be a multiple "
 "of MYSUB ({:d})\n"
@@ -39,33 +42,39 @@ msgid "\t -> Good value\n"
 msgstr ""
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:180
+#, c++-format
 msgid ""
 "\t -> Leg region jyseps1_1+1 ({:d}) must be a multiple of MYSUB ({:d})\n"
 msgstr ""
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:215
+#, c++-format
 msgid ""
 "\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must be a "
 "multiple of MYSUB ({:d})\n"
 msgstr ""
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:232
+#, c++-format
 msgid ""
 "\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a multiple of "
 "MYSUB ({:d})\n"
 msgstr ""
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:208
+#, c++-format
 msgid ""
 "\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must be a "
 "multiple of MYSUB ({:d})\n"
 msgstr ""
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:175
+#, c++-format
 msgid "\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n"
 msgstr ""
 
-#: ../src/bout++.cxx:574
+#: ../src/bout++.cxx:575
+#, c++-format
 msgid "\tBacktrace in exceptions {}\n"
 msgstr ""
 
@@ -74,60 +83,72 @@ msgstr ""
 #. Mesh in X divides equally
 #. Mesh in Y divides equally
 #: ../src/mesh/impls/bout/boutmesh.cxx:297
+#, c++-format
 msgid "\tCandidate value: {:d}\n"
 msgstr ""
 
-#: ../src/bout++.cxx:575
+#: ../src/bout++.cxx:576
+#, c++-format
 msgid "\tColour in logs {}\n"
 msgstr ""
 
-#: ../src/bout++.cxx:593
+#: ../src/bout++.cxx:594
 msgid "\tCommand line options for this run : "
 msgstr ""
 
 #. The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
 #. which could cause problems (e.g. terminate strings).
-#: ../src/bout++.cxx:589
+#: ../src/bout++.cxx:590
+#, c++-format
 msgid "\tCompiled with flags : {:s}\n"
 msgstr ""
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:324
+#, c++-format
 msgid ""
-"\tDomain split (NXPE={:d}, NYPE={:d}) into domains (localNx={:d}, localNy={:"
-"d})\n"
+"\tDomain split (NXPE={:d}, NYPE={:d}) into domains (localNx={:d}, "
+"localNy={:d})\n"
 msgstr ""
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:364
+#, c++-format
 msgid "\tERROR: Cannot split {:d} Y points equally between {:d} processors\n"
 msgstr ""
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:372
+#, c++-format
 msgid "\tERROR: Cannot split {:d} Z points equally between {:d} processors\n"
 msgstr ""
 
 #: ../src/sys/options/options_ini.cxx:200
+#, c++-format
 msgid ""
 "\tEmpty key\n"
 "\tLine: {:s}"
 msgstr ""
 
 #: ../src/sys/optionsreader.cxx:127
+#, c++-format
 msgid "\tEmpty key or value in command line '{:s}'\n"
 msgstr ""
 
-#: ../src/bout++.cxx:581
+#: ../src/bout++.cxx:582
+#, c++-format
 msgid "\tExtra debug output {}\n"
 msgstr ""
 
-#: ../src/bout++.cxx:560
+#: ../src/bout++.cxx:561
+#, c++-format
 msgid "\tFFT support {}\n"
 msgstr ""
 
-#: ../src/bout++.cxx:584
+#: ../src/bout++.cxx:585
+#, c++-format
 msgid "\tField name tracking {}\n"
 msgstr ""
 
-#: ../src/bout++.cxx:582
+#: ../src/bout++.cxx:583
+#, c++-format
 msgid "\tFloating-point exceptions {}\n"
 msgstr ""
 
@@ -140,75 +161,88 @@ msgid "\tGuard cells (x,y,z): "
 msgstr ""
 
 #: ../src/sys/options/options_ini.cxx:204
+#, c++-format
 msgid ""
 "\tKey must not contain ':' character\n"
 "\tLine: {:s}"
 msgstr ""
 
-#: ../src/bout++.cxx:562
+#: ../src/bout++.cxx:563
+#, c++-format
 msgid "\tLAPACK support {}\n"
 msgstr ""
 
-#: ../src/bout++.cxx:585
+#: ../src/bout++.cxx:586
+#, c++-format
 msgid "\tMessage stack {}\n"
 msgstr ""
 
-#: ../src/bout++.cxx:559
+#: ../src/bout++.cxx:560
+#, c++-format
 msgid "\tMetrics mode is {}\n"
 msgstr ""
 
 #: ../src/sys/optionsreader.cxx:111
+#, c++-format
 msgid "\tMultiple '=' in command-line argument '{:s}'\n"
 msgstr ""
 
-#: ../src/bout++.cxx:561
+#: ../src/bout++.cxx:562
+#, c++-format
 msgid "\tNatural language support {}\n"
 msgstr ""
 
-#: ../src/bout++.cxx:566
+#: ../src/bout++.cxx:567
+#, c++-format
 msgid "\tNetCDF support {}{}\n"
 msgstr ""
 
-#: ../src/bout++.cxx:576
+#: ../src/bout++.cxx:577
+#, c++-format
 msgid "\tOpenMP parallelisation {}"
 msgstr ""
 
 #. Mark the option as used
 #. Option not found
-#: ../src/sys/options.cxx:310 ../src/sys/options.cxx:379
-#: ../src/sys/options.cxx:414 ../src/sys/options.cxx:456
-#: ../src/sys/options.cxx:716 ../src/sys/options.cxx:743
-#: ../src/sys/options.cxx:770 ../include/bout/options.hxx:516
+#: ../src/sys/options.cxx:311 ../src/sys/options.cxx:380
+#: ../src/sys/options.cxx:415 ../src/sys/options.cxx:457
+#: ../src/sys/options.cxx:717 ../src/sys/options.cxx:744
+#: ../src/sys/options.cxx:771 ../include/bout/options.hxx:516
 #: ../include/bout/options.hxx:549 ../include/bout/options.hxx:573
 #: ../include/bout/options.hxx:820
 msgid "\tOption "
 msgstr "\t选项 "
 
-#: ../src/sys/options.cxx:446
+#: ../src/sys/options.cxx:447
+#, c++-format
 msgid "\tOption '{:s}': Boolean expected. Got '{:s}'\n"
 msgstr ""
 
 #: ../src/sys/options/options_ini.cxx:70
+#, c++-format
 msgid "\tOptions file '{:s}' not found\n"
 msgstr ""
 
-#: ../src/bout++.cxx:567
+#: ../src/bout++.cxx:568
+#, c++-format
 msgid "\tPETSc support {}\n"
 msgstr ""
 
-#: ../src/bout++.cxx:570
+#: ../src/bout++.cxx:571
+#, c++-format
 msgid "\tPVODE support {}\n"
 msgstr ""
 
-#: ../src/bout++.cxx:556
+#: ../src/bout++.cxx:557
 msgid "\tParallel NetCDF support disabled\n"
 msgstr ""
 
-#: ../src/bout++.cxx:554
+#: ../src/bout++.cxx:555
 msgid "\tParallel NetCDF support enabled\n"
 msgstr ""
 
-#: ../src/bout++.cxx:568
+#: ../src/bout++.cxx:569
+#, c++-format
 msgid "\tPretty function name support {}\n"
 msgstr ""
 
@@ -224,28 +258,33 @@ msgstr ""
 msgid "\tReading covariant vector "
 msgstr ""
 
-#: ../src/bout++.cxx:547
+#: ../src/bout++.cxx:548
+#, c++-format
 msgid "\tRuntime error checking {}"
 msgstr ""
 
-#: ../src/bout++.cxx:572
+#: ../src/bout++.cxx:573
+#, c++-format
 msgid "\tSLEPc support {}\n"
 msgstr ""
 
-#: ../src/bout++.cxx:573
+#: ../src/bout++.cxx:574
+#, c++-format
 msgid "\tSUNDIALS support {}\n"
 msgstr ""
 
-#: ../src/bout++.cxx:571
+#: ../src/bout++.cxx:572
+#, c++-format
 msgid "\tScore-P support {}\n"
 msgstr ""
 
-#: ../src/bout++.cxx:583
-#, fuzzy
+#: ../src/bout++.cxx:584
+#, fuzzy, c++-format
 msgid "\tSignal handling support {}\n"
 msgstr "\t测试关掉\n"
 
 #: ../src/solver/impls/split-rk/split-rk.cxx:76
+#, c++-format
 msgid "\tUsing a timestep {:e}\n"
 msgstr ""
 
@@ -259,7 +298,7 @@ msgid ""
 "\tSplit Runge-Kutta-Legendre and SSP-RK3 solver\n"
 msgstr ""
 
-#: ../src/bout++.cxx:370
+#: ../src/bout++.cxx:371
 msgid ""
 "\n"
 "  -d <data directory>\t\tLook in <data directory> for input/output files\n"
@@ -271,6 +310,7 @@ msgid ""
 msgstr ""
 
 #: ../src/sys/expressionparser.cxx:302
+#, c++-format
 msgid ""
 "\n"
 "  {1: ^{2}}{0}\n"
@@ -278,7 +318,7 @@ msgid ""
 msgstr ""
 
 #: ../src/solver/solver.cxx:580
-#, fuzzy
+#, fuzzy, c++-format
 msgid ""
 "\n"
 "Run finished at  : {:s}\n"
@@ -287,7 +327,7 @@ msgstr ""
 "计算结束于 {:s}\n"
 
 #: ../src/solver/solver.cxx:532
-#, fuzzy
+#, fuzzy, c++-format
 msgid ""
 "\n"
 "Run started at  : {:s}\n"
@@ -298,7 +338,7 @@ msgstr ""
 #. Raw string to help with the formatting of the message, and a
 #. separate variable so clang-format doesn't barf on the
 #. exception
-#: ../src/sys/options.cxx:1101
+#: ../src/sys/options.cxx:1102
 msgid ""
 "\n"
 "There were unused input options:\n"
@@ -326,7 +366,8 @@ msgid ""
 "{}"
 msgstr ""
 
-#: ../src/bout++.cxx:381
+#: ../src/bout++.cxx:382
+#, c++-format
 msgid ""
 "  --print-config\t\tPrint the compile-time configuration\n"
 "  --list-solvers\t\tList the available time solvers\n"
@@ -358,7 +399,7 @@ msgid ""
 "model source (e.g. {:s}.cxx)\n"
 msgstr ""
 
-#: ../src/bout++.cxx:378
+#: ../src/bout++.cxx:379
 msgid "  -c, --color\t\t\tColor output using bout-log-color\n"
 msgstr ""
 
@@ -366,11 +407,13 @@ msgstr ""
 msgid ") overwritten with:"
 msgstr ""
 
-#: ../src/bout++.cxx:549
+#: ../src/bout++.cxx:550
+#, c++-format
 msgid ", level {}"
 msgstr ""
 
-#: ../src/bout++.cxx:578
+#: ../src/bout++.cxx:579
+#, c++-format
 msgid ", using {} threads"
 msgstr ""
 
@@ -378,11 +421,12 @@ msgstr ""
 msgid "4 of 8"
 msgstr ""
 
-#: ../src/sys/options.cxx:867
+#: ../src/sys/options.cxx:868
 msgid "All options used\n"
 msgstr ""
 
-#: ../src/bout++.cxx:527
+#: ../src/bout++.cxx:528
+#, c++-format
 msgid "BOUT++ version {:s}\n"
 msgstr ""
 
@@ -395,15 +439,16 @@ msgid "Boundary regions in this processor: "
 msgstr ""
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:355
+#, c++-format
 msgid "Cannot split {:d} X points equally between {:d} processors\n"
 msgstr ""
 
-#: ../src/bout++.cxx:817
+#: ../src/bout++.cxx:818
 msgid "Check if a file exists, and exit if it does."
 msgstr ""
 
-#: ../src/bout++.cxx:532
-#, fuzzy
+#: ../src/bout++.cxx:533
+#, fuzzy, c++-format
 msgid ""
 "Code compiled on {:s} at {:s}\n"
 "\n"
@@ -415,7 +460,7 @@ msgstr ""
 msgid "Command line"
 msgstr ""
 
-#: ../src/bout++.cxx:543 ../tests/unit/src/test_bout++.cxx:358
+#: ../src/bout++.cxx:544 ../tests/unit/src/test_bout++.cxx:358
 msgid "Compile-time options:\n"
 msgstr ""
 
@@ -427,7 +472,8 @@ msgstr ""
 msgid "Constructing default regions"
 msgstr ""
 
-#: ../src/bout++.cxx:519
+#: ../src/bout++.cxx:520
+#, c++-format
 msgid "Could not create PID file {:s}"
 msgstr ""
 
@@ -437,28 +483,33 @@ msgid ""
 msgstr ""
 
 #: ../src/sys/options/options_ini.cxx:160
+#, c++-format
 msgid "Could not open output file '{:s}'\n"
 msgstr ""
 
-#: ../src/bout++.cxx:651
+#: ../src/bout++.cxx:652
+#, c++-format
 msgid "Could not open {:s}/{:s}.{:d} for writing"
 msgstr ""
 
 #. Error reading
 #: ../src/mesh/mesh.cxx:532
+#, c++-format
 msgid "Could not read integer array '{:s}'\n"
 msgstr ""
 
 #. Failed . Probably not important enough to stop the simulation
-#: ../src/bout++.cxx:631
+#: ../src/bout++.cxx:632
 msgid "Could not run bout-log-color. Make sure it is in your PATH\n"
 msgstr ""
 
 #: ../src/solver/solver.cxx:765
+#, c++-format
 msgid "Couldn't add Monitor: {:g} is not a multiple of {:g}!"
 msgstr ""
 
 #: ../src/sys/expressionparser.cxx:273
+#, c++-format
 msgid ""
 "Couldn't find generator '{}'. BOUT++ expressions are now case-sensitive, so "
 "you\n"
@@ -467,29 +518,33 @@ msgid ""
 msgstr ""
 
 #: ../src/mesh/mesh.cxx:568
+#, c++-format
 msgid "Couldn't find region {:s} in regionMap2D"
 msgstr ""
 
 #: ../src/mesh/mesh.cxx:560
+#, c++-format
 msgid "Couldn't find region {:s} in regionMap3D"
 msgstr ""
 
 #: ../src/mesh/mesh.cxx:576
+#, c++-format
 msgid "Couldn't find region {:s} in regionMapPerp"
 msgstr ""
 
 #. Convert any exceptions to something a bit more useful
-#: ../src/sys/options.cxx:335
+#: ../src/sys/options.cxx:336
+#, c++-format
 msgid "Couldn't get {} from option {:s} = '{:s}': {}"
 msgstr ""
 
-#: ../src/bout++.cxx:507
-#, fuzzy
+#: ../src/bout++.cxx:508
+#, fuzzy, c++-format
 msgid "DataDir \"{:s}\" does not exist or is not accessible\n"
 msgstr "\"{:s}\" 不存在或不可访问\n"
 
-#: ../src/bout++.cxx:504
-#, fuzzy
+#: ../src/bout++.cxx:505
+#, fuzzy, c++-format
 msgid "DataDir \"{:s}\" is not a directory\n"
 msgstr "\"{:s}\" 不是目录\n"
 
@@ -498,15 +553,16 @@ msgid "ERROR: Solver is already initialised\n"
 msgstr ""
 
 #: ../src/bout++.cxx:209
-#, fuzzy
+#, fuzzy, c++-format
 msgid "Error encountered during initialisation: {:s}\n"
 msgstr "启动时遇到错误 : {:s}\n"
 
-#: ../src/bout++.cxx:743
+#: ../src/bout++.cxx:744
 msgid "Error whilst writing settings"
 msgstr ""
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:332
+#, c++-format
 msgid "Error: nx must be greater than 2 times MXG (2 * {:d})"
 msgstr ""
 
@@ -515,6 +571,7 @@ msgid "Failed to initialise solver-> Aborting\n"
 msgstr ""
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:290
+#, c++-format
 msgid "Finding value for NXPE (ideal = {:f})\n"
 msgstr ""
 
@@ -522,7 +579,7 @@ msgstr ""
 msgid "Initialising solver\n"
 msgstr ""
 
-#: ../src/bout++.cxx:493
+#: ../src/bout++.cxx:494
 msgid ""
 "Input and output file for settings must be different.\n"
 "Provide -o <settings file> to avoid this issue.\n"
@@ -546,18 +603,21 @@ msgstr ""
 
 #. Not found
 #: ../src/mesh/mesh.cxx:536
+#, c++-format
 msgid "Missing integer array {:s}\n"
 msgstr ""
 
 #: ../src/solver/solver.cxx:905
+#, c++-format
 msgid "Monitor signalled to quit (exception {})\n"
 msgstr ""
 
 #: ../src/solver/solver.cxx:883
+#, c++-format
 msgid "Monitor signalled to quit (return code {})"
 msgstr ""
 
-#: ../src/bout++.cxx:822
+#: ../src/bout++.cxx:823
 msgid "Name of file whose existence triggers a stop"
 msgstr ""
 
@@ -570,33 +630,39 @@ msgid "No boundary regions; domain is periodic\n"
 msgstr ""
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:254
+#, c++-format
 msgid ""
 "Number of processors ({:d}) not divisible by NPs in x direction ({:d})\n"
 msgstr ""
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:267
+#, c++-format
 msgid ""
 "Number of processors ({:d}) not divisible by NPs in y direction ({:d})\n"
 msgstr ""
 
 #. Less than 2 time-steps left
-#: ../src/bout++.cxx:895
+#: ../src/bout++.cxx:896
+#, c++-format
 msgid "Only {:e} seconds ({:.2f} steps) left. Quitting\n"
 msgstr ""
 
-#: ../src/sys/options.cxx:302 ../src/sys/options.cxx:344
-#: ../src/sys/options.cxx:392 ../src/sys/options.cxx:427
-#: ../src/sys/options.cxx:702 ../src/sys/options.cxx:729
-#: ../src/sys/options.cxx:756
+#: ../src/sys/options.cxx:303 ../src/sys/options.cxx:345
+#: ../src/sys/options.cxx:393 ../src/sys/options.cxx:428
+#: ../src/sys/options.cxx:703 ../src/sys/options.cxx:730
+#: ../src/sys/options.cxx:757
+#, c++-format
 msgid "Option {:s} has no value"
 msgstr ""
 
 #. Doesn't exist
-#: ../src/sys/options.cxx:158
+#: ../src/sys/options.cxx:159
+#, c++-format
 msgid "Option {:s}:{:s} does not exist"
 msgstr ""
 
 #: ../include/bout/options.hxx:828
+#, c++-format
 msgid ""
 "Options: Setting a value from same source ({:s}) to new value '{:s}' - old "
 "value was '{:s}'."
@@ -606,25 +672,30 @@ msgstr ""
 msgid "Possible boundary regions are: "
 msgstr ""
 
-#: ../src/bout++.cxx:537
+#: ../src/bout++.cxx:538
+#, c++-format
 msgid ""
 "Processor number: {:d} of {:d}\n"
 "\n"
 msgstr ""
 
 #: ../src/mesh/mesh.cxx:609
+#, c++-format
 msgid "Registered region 2D {:s}"
 msgstr ""
 
 #: ../src/mesh/mesh.cxx:599
+#, c++-format
 msgid "Registered region 3D {:s}"
 msgstr ""
 
 #: ../src/mesh/mesh.cxx:619
+#, c++-format
 msgid "Registered region Perp {:s}"
 msgstr ""
 
-#: ../src/bout++.cxx:528
+#: ../src/bout++.cxx:529
+#, c++-format
 msgid "Revision: {:s}\n"
 msgstr ""
 
@@ -645,13 +716,13 @@ msgstr ""
 msgid "Signal"
 msgstr ""
 
-#: ../src/bout++.cxx:864
+#: ../src/bout++.cxx:865
 msgid ""
 "Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n"
 "\n"
 msgstr ""
 
-#: ../src/bout++.cxx:867
+#: ../src/bout++.cxx:868
 msgid ""
 "Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   "
 "Comm    I/O   SOLVER\n"
@@ -659,42 +730,51 @@ msgid ""
 msgstr ""
 
 #: ../src/solver/solver.cxx:506
+#, c++-format
 msgid "Solver running for {:d} outputs with monitor timestep of {:e}\n"
 msgstr ""
 
 #: ../src/solver/solver.cxx:502
+#, c++-format
 msgid "Solver running for {:d} outputs with output timestep of {:e}\n"
 msgstr ""
 
 #: ../src/solver/solver.cxx:781
+#, c++-format
 msgid ""
 "Solver::addMonitor: Cannot reduce timestep (from {:g} to {:g}) after init is "
 "called!"
 msgstr ""
 
 #: ../src/solver/solver.cxx:1281
+#, c++-format
 msgid ""
 "Time derivative at wrong location - Field is at {:s}, derivative is at {:s} "
 "for field '{:s}'\n"
 msgstr ""
 
 #: ../src/solver/solver.cxx:1480
+#, c++-format
 msgid "Time derivative for variable '{:s}' not set"
 msgstr ""
 
 #: ../src/mesh/mesh.cxx:605
+#, c++-format
 msgid "Trying to add an already existing region {:s} to regionMap2D"
 msgstr ""
 
 #: ../src/mesh/mesh.cxx:595
+#, c++-format
 msgid "Trying to add an already existing region {:s} to regionMap3D"
 msgstr ""
 
 #: ../src/mesh/mesh.cxx:616
+#, c++-format
 msgid "Trying to add an already existing region {:s} to regionMapPerp"
 msgstr ""
 
-#: ../src/sys/options.cxx:98 ../src/sys/options.cxx:137
+#: ../src/sys/options.cxx:99 ../src/sys/options.cxx:138
+#, c++-format
 msgid ""
 "Trying to index Option '{0}' with '{1}', but '{0}' is a value, not a "
 "section.\n"
@@ -708,27 +788,32 @@ msgid ""
 "Valid choices are 'identity', 'shifted', 'fci'"
 msgstr ""
 
-#: ../src/sys/options.cxx:871
+#: ../src/sys/options.cxx:872
 msgid "Unused options:\n"
 msgstr ""
 
-#: ../src/bout++.cxx:438
+#: ../src/bout++.cxx:439
+#, c++-format
 msgid "Usage is {:s} -d <data directory>\n"
 msgstr ""
 
-#: ../src/bout++.cxx:447
+#: ../src/bout++.cxx:448
+#, c++-format
 msgid "Usage is {:s} -f <options filename>\n"
 msgstr ""
 
-#: ../src/bout++.cxx:465
+#: ../src/bout++.cxx:466
+#, c++-format
 msgid "Usage is {:s} -l <log filename>\n"
 msgstr ""
 
-#: ../src/bout++.cxx:456
+#: ../src/bout++.cxx:457
+#, c++-format
 msgid "Usage is {:s} -o <settings filename>\n"
 msgstr ""
 
-#: ../src/bout++.cxx:352
+#: ../src/bout++.cxx:353
+#, c++-format
 msgid "Usage is {} {} <name>\n"
 msgstr ""
 
@@ -738,7 +823,8 @@ msgstr ""
 
 #. Print help message -- note this will be displayed once per processor as we've not
 #. started MPI yet.
-#: ../src/bout++.cxx:366
+#: ../src/bout++.cxx:367
+#, c++-format
 msgid ""
 "Usage: {:s} [-d <data directory>] [-f <options filename>] [restart [append]] "
 "[VAR=VALUE]\n"
@@ -749,52 +835,64 @@ msgstr ""
 msgid "User signalled to quit. Returning\n"
 msgstr ""
 
-#: ../src/sys/options.cxx:372
+#: ../src/sys/options.cxx:373
+#, c++-format
 msgid "Value for option {:s} = {:e} is not an integer"
 msgstr ""
 
-#: ../src/sys/options.cxx:407
+#: ../src/sys/options.cxx:408
+#, c++-format
 msgid "Value for option {:s} cannot be converted to a BoutReal"
 msgstr ""
 
-#: ../src/sys/options.cxx:580
+#: ../src/sys/options.cxx:581
+#, c++-format
 msgid "Value for option {:s} cannot be converted to a Field2D"
 msgstr ""
 
-#: ../src/sys/options.cxx:528
+#: ../src/sys/options.cxx:529
+#, c++-format
 msgid "Value for option {:s} cannot be converted to a Field3D"
 msgstr ""
 
-#: ../src/sys/options.cxx:662
+#: ../src/sys/options.cxx:663
+#, c++-format
 msgid "Value for option {:s} cannot be converted to a FieldPerp"
 msgstr ""
 
-#: ../src/sys/options.cxx:450
+#: ../src/sys/options.cxx:451
+#, c++-format
 msgid "Value for option {:s} cannot be converted to a bool"
 msgstr ""
 
-#: ../src/sys/options.cxx:708
+#: ../src/sys/options.cxx:709
+#, c++-format
 msgid "Value for option {:s} cannot be converted to an Array<BoutReal>"
 msgstr ""
 
-#: ../src/sys/options.cxx:735
+#: ../src/sys/options.cxx:736
+#, c++-format
 msgid "Value for option {:s} cannot be converted to an Matrix<BoutReal>"
 msgstr ""
 
-#: ../src/sys/options.cxx:762
+#: ../src/sys/options.cxx:763
+#, c++-format
 msgid "Value for option {:s} cannot be converted to an Tensor<BoutReal>"
 msgstr ""
 
 #. Another type which can't be converted
-#: ../src/sys/options.cxx:364
+#: ../src/sys/options.cxx:365
+#, c++-format
 msgid "Value for option {:s} is not an integer"
 msgstr ""
 
 #: ../src/solver/solver.cxx:1232 ../src/solver/solver.cxx:1238
+#, c++-format
 msgid "Variable '{:s}' not initialised"
 msgstr ""
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:431
+#, c++-format
 msgid ""
 "WARNING: Number of toroidal points should be 2^n for efficient FFT "
 "performance -- consider changing MZ ({:d}) if using FFTs\n"
@@ -820,16 +918,17 @@ msgid ""
 "option extrapolate_y=false to disable this.\n"
 msgstr ""
 
-#: ../src/bout++.cxx:813
+#: ../src/bout++.cxx:814
 msgid "Wall time limit in hours. By default (< 0), no limit"
 msgstr ""
 
 #: ../src/sys/optionsreader.cxx:42
+#, c++-format
 msgid "Writing options to file {:s}\n"
 msgstr ""
 
 #. / The source label given to default values
-#: ../src/sys/options.cxx:14
+#: ../src/sys/options.cxx:15
 msgid "default"
 msgstr ""
 

@@ -183,7 +183,7 @@ jobs:
         with:
           submodules: true
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
@@ -193,7 +193,7 @@ jobs:
           python -m pip install -r requirements.txt
 
       - name: Cache SUNDIALS build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /home/runner/local
           key: bout-sundials-${{ matrix.config.os }}${{ matrix.config.build_petsc }}
@@ -224,7 +224,7 @@ jobs:
 
       - name: Upload coverage
         if: ${{ matrix.config.name == 'Coverage' }}
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
 
   Fedora:
     # This is its own job as it doesn't use most of the steps of the
