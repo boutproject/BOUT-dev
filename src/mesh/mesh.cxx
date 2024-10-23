@@ -1,6 +1,7 @@
 #include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
 #include <bout/globals.hxx>
+#include <bout/griddata.hxx>
 #include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/utils.hxx>

@@ -59,10 +59,9 @@ class Mesh;
 
 class BoundaryRegion;
 class BoundaryRegionPar;
+class GridDataSource;
 
 #include "bout/sys/range.hxx" // RangeIterator
-
-#include <bout/griddata.hxx>
 
 #include "bout/coordinates.hxx" // Coordinates class
 
