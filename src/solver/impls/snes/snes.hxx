@@ -140,6 +140,11 @@ private:
   bool scale_rhs;          ///< Scale time derivatives?
   Vec rhs_scaling_factors; ///< Factors to multiply RHS function
   Vec jac_row_inv_norms;   ///< 1 / Norm of the rows of the Jacobian
+
+  bool scale_vars;         ///< Scale individual variables?
+  Vec var_scaling_factors; ///< Factors to multiply variables when passing to user
+  Vec scaled_x;  ///< The values passed to the user RHS
+
 };
 
 #else
