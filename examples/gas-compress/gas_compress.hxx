@@ -3,7 +3,7 @@
 class GasCompress : public PhysicsModel {
 protected:
   int init(bool restarting) override;
-  int rhs(BoutReal t) override;
+  int rhs(BoutReal time) override;
 
 private:
   // Evolving variables
