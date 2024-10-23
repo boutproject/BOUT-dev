@@ -2,6 +2,8 @@
 #include "bout/christoffel_symbols.hxx"
 #include "bout/coordinates.hxx"
 #include "bout/mesh.hxx"
+
+#include <array>
 #include <utility>
 
 ChristoffelSymbols::ChristoffelSymbols(
@@ -132,7 +134,7 @@ void ChristoffelSymbols::applyToComponents(
       G1_11_m, G1_22_m, G1_33_m, G1_12_m, G1_13_m, G1_23_m, G2_11_m, G2_22_m, G2_33_m,
       G2_12_m, G2_13_m, G2_23_m, G3_11_m, G3_22_m, G3_33_m, G3_12_m, G3_13_m, G3_23_m};
 
-  FieldMetric components_out[18];
+  std::array<FieldMetric, 18> components_out;
 
   std::transform(components_in.begin(), components_in.end(), components_out.begin(),
                  function);

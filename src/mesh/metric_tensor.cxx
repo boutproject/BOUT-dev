@@ -1,6 +1,8 @@
 #include "bout/metric_tensor.hxx"
 #include "bout/mesh.hxx"
 #include "bout/output.hxx"
+
+#include <array>
 #include <utility>
 
 MetricTensor::MetricTensor(FieldMetric g11, FieldMetric g22, FieldMetric g33,
@@ -141,12 +143,13 @@ void MetricTensor::map(
 MetricTensor MetricTensor::applyToComponents(
     const std::function<const FieldMetric(const FieldMetric)>& function) const {
 
-  const auto components_in =
-      std::vector<FieldMetric>{g11_m, g22_m, g33_m, g12_m, g13_m, g23_m};
+  const std::array<FieldMetric, 6> components_in{g11_m, g22_m, g33_m,
+                                                 g12_m, g13_m, g23_m};
 
-  FieldMetric components_out[6];
+  std::array<FieldMetric, 6> components_out;
 
-  std::transform(components_in.begin(), components_in.end(), components_out, function);
+  std::transform(components_in.begin(), components_in.end(), components_out.begin(),
+                 function);
   auto [g_11, g_22, g_33, g_12, g_13, g_23] = components_out;
 
   return MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23);
