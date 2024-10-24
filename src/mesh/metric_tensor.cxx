@@ -33,12 +33,10 @@ void MetricTensor::check(int ystart) {
   if (non_identity_parallel_transform) {
     for (int dy = 1; dy <= ystart; ++dy) {
       for (const auto sign : {1, -1}) {
-        bout::checkFinite(g11_m.ynext(sign * dy), "g11.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g22_m.ynext(sign * dy), "g22.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g33_m.ynext(sign * dy), "g33.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        const auto region = fmt::format("RGN_YPAR_{:+d}", sign * dy);
+        bout::checkFinite(g11_m.ynext(sign * dy), "g11.ynext", region);
+        bout::checkFinite(g22_m.ynext(sign * dy), "g22.ynext", region);
+        bout::checkFinite(g33_m.ynext(sign * dy), "g33.ynext", region);
       }
     }
   }
@@ -50,12 +48,10 @@ void MetricTensor::check(int ystart) {
   if (non_identity_parallel_transform) {
     for (int dy = 1; dy <= ystart; ++dy) {
       for (const auto sign : {1, -1}) {
-        bout::checkPositive(g11_m.ynext(sign * dy), "g11.ynext",
-                            fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkPositive(g22_m.ynext(sign * dy), "g22.ynext",
-                            fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkPositive(g33_m.ynext(sign * dy), "g33.ynext",
-                            fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        const auto region = fmt::format("RGN_YPAR_{:+d}", sign * dy);
+        bout::checkPositive(g11_m.ynext(sign * dy), "g11.ynext", region);
+        bout::checkPositive(g22_m.ynext(sign * dy), "g22.ynext", region);
+        bout::checkPositive(g33_m.ynext(sign * dy), "g33.ynext", region);
       }
     }
   }
@@ -67,12 +63,10 @@ void MetricTensor::check(int ystart) {
   if (non_identity_parallel_transform) {
     for (int dy = 1; dy <= ystart; ++dy) {
       for (const auto sign : {1, -1}) {
-        bout::checkFinite(g12_m.ynext(sign * dy), "g12.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g13_m.ynext(sign * dy), "g13.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g23_m.ynext(sign * dy), "g23.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
+        const auto region = fmt::format("RGN_YPAR_{:+d}", sign * dy);
+        bout::checkFinite(g12_m.ynext(sign * dy), "g12.ynext", region);
+        bout::checkFinite(g13_m.ynext(sign * dy), "g13.ynext", region);
+        bout::checkFinite(g23_m.ynext(sign * dy), "g23.ynext", region);
       }
     }
   }
