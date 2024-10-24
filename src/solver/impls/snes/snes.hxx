@@ -125,7 +125,7 @@ private:
   Mat Jmf;                  ///< Matrix Free Jacobian
   Mat Jfd;                  ///< Finite Difference Jacobian
   MatFDColoring fdcoloring{nullptr}; ///< Matrix coloring context
-                                  ///< Jacobian evaluation
+                                     ///< Jacobian evaluation
 
   bool use_precon;                ///< Use preconditioner
   std::string ksp_type;           ///< Linear solver type
