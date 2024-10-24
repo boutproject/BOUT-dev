@@ -789,15 +789,6 @@ void Coordinates::setDz(FieldMetric dz) {
   localmesh->communicate(dz_);
 }
 
-int Coordinates::communicateAndCheckMeshSpacing() {
-  TRACE("Coordinates::communicateAndCheckMeshSpacing");
-
-  covariantMetricTensor.communicate(localmesh);
-  contravariantMetricTensor.communicate(localmesh);
-
-  return 0;
-}
-
 void Coordinates::recalculateAndReset(bool recalculate_staggered,
                                       bool force_interpolate_from_centre) {
 
