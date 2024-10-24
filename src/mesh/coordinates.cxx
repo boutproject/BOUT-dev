@@ -797,12 +797,7 @@ void Coordinates::recalculateAndReset(bool recalculate_staggered,
   checkCovariant();
 
   christoffel_symbols_cache.reset();
-  christoffel_symbols();
-  extrapolateChristoffelSymbols();
-
   g_values_cache.reset();
-  g_values();
-  extrapolateGValues();
 
   correctionForNonUniformMeshes(force_interpolate_from_centre);
 
@@ -811,7 +806,9 @@ void Coordinates::recalculateAndReset(bool recalculate_staggered,
     localmesh->recalculateStaggeredCoordinates();
   }
 
-  invalidateAndRecalculateCachedVariables();
+  zlength_cache.reset();
+  Grad2_par2_DDY_invSgCache.clear();
+  invSgCache.reset();
 }
 
 void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_centre) {
@@ -887,35 +884,6 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
 #endif
 
   localmesh->communicate(d1_dx_, d1_dy_, d1_dz_);
-}
-
-void Coordinates::extrapolateChristoffelSymbols() {
-
-  // Set boundary guard cells of Christoffel symbol terms
-  // Ideally, when location is staggered, we would set the upper/outer boundary point
-  // correctly rather than by extrapolating here: e.g. if location==CELL_YLOW and we are
-  // at the upper y-boundary the x- and z-derivatives at yend+1 at the boundary can be
-  // calculated because the guard cells are available, while the y-derivative could be
-  // calculated from the CELL_CENTRE metric components (which have guard cells available
-  // past the boundary location). This would avoid the problem that the y-boundary on the
-  // CELL_YLOW grid is at a 'guard cell' location (yend+1).
-  // However, the above would require lots of special handling, so just extrapolate for
-  // now.
-
-  std::function<const FieldMetric(const FieldMetric)> const
-      interpolateAndExtrapolate_function = [this](const FieldMetric& component) {
-        return interpolateAndExtrapolate(component, location, true, true, false,
-                                         transform.get());
-      };
-
-  christoffel_symbols().map(interpolateAndExtrapolate_function);
-}
-
-void Coordinates::extrapolateGValues() {
-  g_values().map([this](const FieldMetric& component) {
-    return interpolateAndExtrapolate(component, location, true, true, true,
-                                     transform.get());
-  });
 }
 
 MetricTensor::FieldMetric Coordinates::recalculateJacobian() const {
@@ -1451,6 +1419,21 @@ Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
 ChristoffelSymbols& Coordinates::christoffel_symbols() {
   if (christoffel_symbols_cache == nullptr) {
     christoffel_symbols_cache = std::make_unique<ChristoffelSymbols>(*this);
+    // Set boundary guard cells of Christoffel symbol terms
+    // Ideally, when location is staggered, we would set the upper/outer boundary point
+    // correctly rather than by extrapolating here: e.g. if location==CELL_YLOW and we are
+    // at the upper y-boundary the x- and z-derivatives at yend+1 at the boundary can be
+    // calculated because the guard cells are available, while the y-derivative could be
+    // calculated from the CELL_CENTRE metric components (which have guard cells available
+    // past the boundary location). This would avoid the problem that the y-boundary on the
+    // CELL_YLOW grid is at a 'guard cell' location (yend+1).
+    // However, the above would require lots of special handling, so just extrapolate for
+    // now.
+
+    christoffel_symbols_cache->map([this](const FieldMetric& component) {
+      return interpolateAndExtrapolate(component, location, true, true, false,
+                                       transform.get());
+    });
   }
   return *christoffel_symbols_cache;
 }
@@ -1458,6 +1441,10 @@ ChristoffelSymbols& Coordinates::christoffel_symbols() {
 GValues& Coordinates::g_values() const {
   if (g_values_cache == nullptr) {
     g_values_cache = std::make_unique<GValues>(*this);
+    g_values_cache->map([this](const FieldMetric& component) {
+      return interpolateAndExtrapolate(component, location, true, true, true,
+                                       transform.get());
+    });
   }
   return *g_values_cache;
 }
@@ -1541,10 +1528,4 @@ void Coordinates::setMetricTensor(
     const CovariantMetricTensor& covariant_metric_tensor) {
   contravariantMetricTensor.setMetricTensor(contravariant_metric_tensor);
   covariantMetricTensor.setMetricTensor(covariant_metric_tensor);
-}
-
-void Coordinates::invalidateAndRecalculateCachedVariables() {
-  zlength_cache.reset();
-  Grad2_par2_DDY_invSgCache.clear();
-  invSgCache.reset();
 }

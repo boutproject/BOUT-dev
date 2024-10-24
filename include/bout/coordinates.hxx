@@ -450,8 +450,6 @@ private:
 
   FieldMetric Bxy_; ///< Magnitude of B = nabla z times nabla x
 
-  void invalidateAndRecalculateCachedVariables();
-
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
@@ -467,10 +465,6 @@ private:
                                   CELL_LOC cell_location = CELL_CENTRE);
 
   FieldMetric getUnaligned(const std::string& name, BoutReal default_value);
-
-  void extrapolateChristoffelSymbols();
-
-  void extrapolateGValues();
 
   FieldMetric recalculateBxy() const;
 
