@@ -87,7 +87,6 @@ public:
   void rhs_fi(BoutReal t, BoutReal* udata, BoutReal* dudata);
   void rhs_s(BoutReal t, BoutReal* udata, BoutReal* dudata);
   void rhs_f(BoutReal t, BoutReal* udata, BoutReal* dudata);
-  void rhs(BoutReal t, BoutReal* udata, BoutReal* dudata);
   void pre_s(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata, BoutReal* rvec,
            BoutReal* zvec);
   void pre_f(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata, BoutReal* rvec,

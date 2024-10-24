@@ -58,7 +58,6 @@ int arkode_rhs_f_explicit(BoutReal t, N_Vector u, N_Vector du, void* user_data);
 int arkode_rhs_f_implicit(BoutReal t, N_Vector u, N_Vector du, void* user_data);
 int arkode_s_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
 int arkode_f_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
-int arkode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
 
 int arkode_s_bbd_rhs(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du,
                    void* user_data);
@@ -797,19 +796,6 @@ void ArkodeMRISolver::rhs_f(BoutReal t, BoutReal* udata, BoutReal* dudata) {
 }
 
 /**************************************************************************
- *   Full  RHS function du = F(t, u)
- **************************************************************************/
-void ArkodeMRISolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata) {
-  TRACE("Running RHS: ArkodeMRISolver::rhs({:e})", t);
-
-  load_vars(udata);
-  ARKodeGetLastStep(arkode_mem, &hcur);
-  // Call Implicit RHS function
-  run_rhs(t);
-  save_derivs(dudata);
-}
-
-/**************************************************************************
  * Preconditioner functions
  **************************************************************************/
 
@@ -1009,22 +995,6 @@ int arkode_f_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
   // Calculate RHS function
   try {
     s->rhs_f(t, udata, dudata);
-  } catch (BoutRhsFail& error) {
-    return 1;
-  }
-  return 0;
-}
-
-int arkode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
-
-  BoutReal* udata = N_VGetArrayPointer(u);
-  BoutReal* dudata = N_VGetArrayPointer(du);
-
-  auto* s = static_cast<ArkodeMRISolver*>(user_data);
-
-  // Calculate RHS function
-  try {
-    s->rhs(t, udata, dudata);
   } catch (BoutRhsFail& error) {
     return 1;
   }
