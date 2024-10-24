@@ -849,8 +849,12 @@ int BoutMonitor::call(Solver* solver, BoutReal t, [[maybe_unused]] int iter, int
   run_data.ncalls = solver->resetRHSCounter();
   run_data.ncalls_e = solver->resetRHSCounter_e();
   run_data.ncalls_i = solver->resetRHSCounter_i();
+  
+  run_data.ncalls_se = solver->resetRHSCounter_se();
+  run_data.ncalls_si = solver->resetRHSCounter_si();
+  run_data.ncalls_fe = solver->resetRHSCounter_fe();
+  run_data.ncalls_fi = solver->resetRHSCounter_fi();
 
-  const bool output_split = solver->splitOperator();
   run_data.wtime_rhs = Timer::resetTime("rhs");
   run_data.wtime_invert = Timer::resetTime("invert");
   // Time spent communicating (part of RHS)
@@ -872,16 +876,23 @@ int BoutMonitor::call(Solver* solver, BoutReal t, [[maybe_unused]] int iter, int
     first_time = false;
 
     // Print the column header for timing info
-    if (!output_split) {
-      output_progress.write(_("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm "
-                              "   I/O   SOLVER\n\n"));
-    } else {
+    if (solver->splitOperator()) {
       output_progress.write(_("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  "
                               "Calc    Inv   Comm    I/O   SOLVER\n\n"));
     }
+    else if (solver->splitOperatorMRI()) {
+      output_progress.write(_("Sim Time  |  RHS_se evals  | RHS_si evals  |  RHS_fe evals  |" 
+                              "RHS_fi evals  | Wall Time |  "
+                              "Calc    Inv   Comm    I/O   SOLVER\n\n"));
+    }
+    else
+    {
+      output_progress.write(_("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm "
+                              "   I/O   SOLVER\n\n"));
+    }
   }
 
-  run_data.writeProgress(simtime, output_split);
+  run_data.writeProgress(simtime, solver->splitOperator(), solver->splitOperatorMRI());
 
   // This bit only to screen, not log file
 
@@ -1010,6 +1021,10 @@ void RunMetrics::outputVars(Options& output_options) const {
   output_options["wtime"].assignRepeat(wtime, "t", true, "Output");
   output_options["ncalls"].assignRepeat(ncalls, "t", true, "Output");
   output_options["ncalls_e"].assignRepeat(ncalls_e, "t", true, "Output");
+  output_options["ncalls_se"].assignRepeat(ncalls_se, "t", true, "Output");
+  output_options["ncalls_si"].assignRepeat(ncalls_si, "t", true, "Output");
+  output_options["ncalls_fe"].assignRepeat(ncalls_fe, "t", true, "Output");
+  output_options["ncalls_fi"].assignRepeat(ncalls_fi, "t", true, "Output");
   output_options["ncalls_i"].assignRepeat(ncalls_i, "t", true, "Output");
   output_options["wtime_rhs"].assignRepeat(wtime_rhs, "t", true, "Output");
   output_options["wtime_invert"].assignRepeat(wtime_invert, "t", true, "Output");
@@ -1035,17 +1050,8 @@ void RunMetrics::calculateDerivedMetrics() {
   wtime_per_rhs_i = wtime / ncalls_i;
 }
 
-void RunMetrics::writeProgress(BoutReal simtime, bool output_split) {
-  if (!output_split) {
-    output_progress.write(
-        "{:.3e}      {:5d}       {:.2e}   {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}\n",
-        simtime, ncalls, wtime, 100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
-        100. * wtime_invert / wtime,                    // Inversions
-        100. * wtime_comms / wtime,                     // Communications
-        100. * wtime_io / wtime,                        // I/O
-        100. * (wtime - wtime_io - wtime_rhs) / wtime); // Everything else
-
-  } else {
+void RunMetrics::writeProgress(BoutReal simtime, bool output_split, bool output_splitmri) {
+  if (output_split) {
     output_progress.write("{:.3e}      {:5d}            {:5d}       {:.2e}   {:5.1f}  "
                           "{:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}\n",
                           simtime, ncalls_e, ncalls_i, wtime,
@@ -1055,5 +1061,27 @@ void RunMetrics::writeProgress(BoutReal simtime, bool output_split) {
                           100. * wtime_io / wtime,     // I/O
                           100. * (wtime - wtime_io - wtime_rhs)
                               / wtime); // Everything else
+  }
+  else if (output_splitmri) {
+    output_progress.write("{:.3e}      {:8d}      {:8d}      {:8d}            {:8d}       {:.2e}   {:5.1f}  "
+                          "{:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}\n",
+                          simtime, ncalls_se, ncalls_si, ncalls_fe, ncalls_fi, wtime,
+                          100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
+                          100. * wtime_invert / wtime, // Inversions
+                          100. * wtime_comms / wtime,  // Communications
+                          100. * wtime_io / wtime,     // I/O
+                          100. * (wtime - wtime_io - wtime_rhs)
+                              / wtime); // Everything else
+  }
+  else
+  {
+    output_progress.write(
+        "{:.3e}      {:5d}       {:.2e}   {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}\n",
+        simtime, ncalls, wtime, 100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
+        100. * wtime_invert / wtime,                    // Inversions
+        100. * wtime_comms / wtime,                     // Communications
+        100. * wtime_io / wtime,                        // I/O
+        100. * (wtime - wtime_io - wtime_rhs) / wtime); // Everything else
+
   }
 }

@@ -120,6 +120,7 @@ int PhysicsModel::runRHS_f(BoutReal time, bool linear) { return PhysicsModel::rh
 int PhysicsModel::runRHS(BoutReal time, bool linear) { return PhysicsModel::rhs(time, linear); }
 
 bool PhysicsModel::splitOperator() { return splitop; }
+bool PhysicsModel::splitOperatorMRI() { return splitopmri; }
 
 int PhysicsModel::runConvective(BoutReal time, bool linear) {
   return convective(time, linear);

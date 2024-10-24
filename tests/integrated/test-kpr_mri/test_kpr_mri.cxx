@@ -22,7 +22,9 @@ public:
 
     f = sqrt(3.0/2.0);
     g = sqrt(3.0);
-
+    
+    setSplitOperatorMRI();
+    
     return 0;
   }
 

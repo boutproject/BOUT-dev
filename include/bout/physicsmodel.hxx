@@ -183,6 +183,11 @@ public:
   bool splitOperator();
 
   /*!
+   * True if this model uses split operators
+   */
+  bool splitOperatorMRI();
+
+  /*!
    * Run the convective (usually explicit) part of the model
    *
    * @param[in] time    The simulation time
@@ -333,6 +338,10 @@ protected:
   /// Specify that this model is split into a convective and diffusive part
   void setSplitOperator(bool split = true) { splitop = split; }
 
+  /// Specify that this model is split into a convective and diffusive part
+  void setSplitOperatorMRI(bool split = true) { splitopmri = split; }
+
+
   /// Specify a preconditioner function
   void setPrecon(preconfunc pset) { userprecon = pset; }
   template <class Model>
@@ -415,6 +424,8 @@ private:
   bool restart_enabled{true};
   /// Split operator model?
   bool splitop{false};
+    /// Split operator model?
+  bool splitopmri{false};
   /// Pointer to user-supplied preconditioner function
   preconfunc userprecon{nullptr};
   /// Pointer to user-supplied Jacobian-vector multiply function

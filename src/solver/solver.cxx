@@ -944,7 +944,32 @@ int Solver::resetRHSCounter_e() {
   return t;
 }
 
+int Solver::resetRHSCounter_se() {
+  int t = rhs_ncalls_se;
+  rhs_ncalls_se = 0;
+  return t;
+}
+
+int Solver::resetRHSCounter_si() {
+  int t = rhs_ncalls_si;
+  rhs_ncalls_si = 0;
+  return t;
+}
+
+int Solver::resetRHSCounter_fe() {
+  int t = rhs_ncalls_fe;
+  rhs_ncalls_fe = 0;
+  return t;
+}
+
+int Solver::resetRHSCounter_fi() {
+  int t = rhs_ncalls_fi;
+  rhs_ncalls_fi = 0;
+  return t;
+}
+
 bool Solver::splitOperator() { return model->splitOperator(); }
+bool Solver::splitOperatorMRI() { return model->splitOperatorMRI(); }
 
 /////////////////////////////////////////////////////
 
@@ -1378,9 +1403,7 @@ int Solver::run_rhs_se(BoutReal t, bool linear) {
   // If using Method of Manufactured Solutions
   add_mms_sources(t);
 
-  rhs_ncalls++;
-  rhs_ncalls_e++;
-  rhs_ncalls_i++;
+  rhs_ncalls_se++;
   return status;
 }
 
@@ -1402,9 +1425,7 @@ int Solver::run_rhs_si(BoutReal t, bool linear) {
   // If using Method of Manufactured Solutions
   add_mms_sources(t);
 
-  rhs_ncalls++;
-  rhs_ncalls_e++;
-  rhs_ncalls_i++;
+  rhs_ncalls_si++;
   return status;
 }
 
@@ -1426,9 +1447,7 @@ int Solver::run_rhs_fe(BoutReal t, bool linear) {
   // If using Method of Manufactured Solutions
   add_mms_sources(t);
 
-  rhs_ncalls++;
-  rhs_ncalls_e++;
-  rhs_ncalls_i++;
+  rhs_ncalls_fe++;
   return status;
 }
 
@@ -1450,9 +1469,7 @@ int Solver::run_rhs_fi(BoutReal t, bool linear) {
   // If using Method of Manufactured Solutions
   add_mms_sources(t);
 
-  rhs_ncalls++;
-  rhs_ncalls_e++;
-  rhs_ncalls_i++;
+  rhs_ncalls_fi++;
   return status;
 }
 
@@ -1474,9 +1491,8 @@ int Solver::run_rhs_s(BoutReal t, bool linear) {
   // If using Method of Manufactured Solutions
   add_mms_sources(t);
 
-  rhs_ncalls++;
-  rhs_ncalls_e++;
-  rhs_ncalls_i++;
+  rhs_ncalls_se++;
+  rhs_ncalls_si++;
   return status;
 }
 
@@ -1498,9 +1514,8 @@ int Solver::run_rhs_f(BoutReal t, bool linear) {
   // If using Method of Manufactured Solutions
   add_mms_sources(t);
 
-  rhs_ncalls++;
-  rhs_ncalls_e++;
-  rhs_ncalls_i++;
+  rhs_ncalls_fe++;
+  rhs_ncalls_fi++;
   return status;
 }
 
@@ -1517,7 +1532,7 @@ int Solver::run_rhs(BoutReal t, bool linear) {
 
 
   // TO DO: Replace true with an appropriate boolean and check for efficiency
-  if (true) {
+  if (model->splitOperatorMRI()) {
     // Run all four parts
 
     int nv = getLocalN();
@@ -1581,18 +1596,21 @@ int Solver::run_rhs(BoutReal t, bool linear) {
       *t += *t2;
     }
     load_derivs(tmp.begin()); // Put back time-derivatives
+    rhs_ncalls++;
+    rhs_ncalls_e++;
+    rhs_ncalls_i++;
   } else {
     pre_rhs(t);
     status = model->runRHS(t, linear);
     post_rhs(t);
+    rhs_ncalls++;
+    rhs_ncalls_e++;
+    rhs_ncalls_i++;
   }
 
   // If using Method of Manufactured Solutions
   add_mms_sources(t);
 
-  rhs_ncalls++;
-  rhs_ncalls_e++;
-  rhs_ncalls_i++;
   return status;
 }
 
