@@ -90,9 +90,9 @@ private:
   BoutReal diffusion_p4; // xqx: parallel hyper-viscous diffusion for pressure
   BoutReal diffusion_u4; // xqx: parallel hyper-viscous diffusion for vorticity
   BoutReal diffusion_a4; // xqx: parallel hyper-viscous diffusion for vector potential
-  
-  BoutReal diffusion_perp;// Perpendicular pressure diffusion
-  Field2D D_perp;// Perpendicular pressure diffusion coefficient
+
+  BoutReal diffusion_perp; // Perpendicular pressure diffusion
+  Field2D D_perp;          // Perpendicular pressure diffusion coefficient
   bool terms_Gradperp_diffcoefs;
 
   BoutReal diffusion_par; // Parallel pressure diffusion
@@ -317,7 +317,7 @@ protected:
     // Load 2D profiles
     mesh->get(J0, "Jpar0");    // A / m^2
     mesh->get(P0, "pressure"); // Pascals
-    
+
     //mesh->get(D_perp, "D_perp"); // peperndicular diffusion coefficient
 
     // Load curvature term
@@ -596,12 +596,14 @@ protected:
     viscos_perp = options["viscos_perp"].doc("Perpendicular viscosity").withDefault(-1.0);
     hyperviscos = options["hyperviscos"].doc("Radial hyperviscosity").withDefault(-1.0);
 
-    diffusion_perp =
-        options["diffusion_perp"].doc("Perpendicular pressure diffusion").withDefault(-1.0);
-    terms_Gradperp_diffcoefs = options["terms_Gradperp_diffcoefs)"]
-	.doc("Keep the gradient of Perpendicular pressure diffusion term")
-	.withDefault(false);
-    
+    diffusion_perp = options["diffusion_perp"]
+                         .doc("Perpendicular pressure diffusion")
+                         .withDefault(-1.0);
+    terms_Gradperp_diffcoefs =
+        options["terms_Gradperp_diffcoefs)"]
+            .doc("Keep the gradient of Perpendicular pressure diffusion term")
+            .withDefault(false);
+
     diffusion_par =
         options["diffusion_par"].doc("Parallel pressure diffusion").withDefault(-1.0);
     diffusion_p4 = options["diffusion_p4"]
@@ -1727,16 +1729,15 @@ protected:
     }
 
     if (diffusion_perp > 0.0) { // Perpendicular diffusion
-      if (terms_Gradperp_diffcoefs)
-        {
-          ddt(P) += D_perp * Delp2(P);
-          Vector3D grad_perp_diff = Grad_perp(D_perp);
-          grad_perp_diff.applyBoundary();
-          mesh->communicate(grad_perp_diff);
-          ddt(P) += V_dot_Grad(grad_perp_diff, P);
-        } else {
-          ddt(P) += diffusion_perp * Delp2(P);
-        }
+      if (terms_Gradperp_diffcoefs) {
+        ddt(P) += D_perp * Delp2(P);
+        Vector3D grad_perp_diff = Grad_perp(D_perp);
+        grad_perp_diff.applyBoundary();
+        mesh->communicate(grad_perp_diff);
+        ddt(P) += V_dot_Grad(grad_perp_diff, P);
+      } else {
+        ddt(P) += diffusion_perp * Delp2(P);
+      }
     }
 
     if (heating_P > 0.0) { // heating source terms
@@ -1750,7 +1751,7 @@ protected:
     if (sink_P > 0.0) {                                                  // sink terms
       ddt(P) -= sink_P * sink_tanhxr(P0, P, sp_width, sp_length) * Tbar; // sink
     }
-    
+
     ////////////////////////////////////////////////////
     // Compressional effects
 
