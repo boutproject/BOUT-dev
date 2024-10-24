@@ -45,6 +45,7 @@
 // Implementations:
 #include "impls/adams_bashforth/adams_bashforth.hxx"
 #include "impls/arkode/arkode.hxx"
+#include "impls/arkode/arkode_mri.hxx"
 #include "impls/cvode/cvode.hxx"
 #include "impls/euler/euler.hxx"
 #include "impls/ida/ida.hxx"
@@ -941,7 +942,32 @@ int Solver::resetRHSCounter_e() {
   return t;
 }
 
+int Solver::resetRHSCounter_se() {
+  int t = rhs_ncalls_se;
+  rhs_ncalls_se = 0;
+  return t;
+}
+
+int Solver::resetRHSCounter_si() {
+  int t = rhs_ncalls_si;
+  rhs_ncalls_si = 0;
+  return t;
+}
+
+int Solver::resetRHSCounter_fe() {
+  int t = rhs_ncalls_fe;
+  rhs_ncalls_fe = 0;
+  return t;
+}
+
+int Solver::resetRHSCounter_fi() {
+  int t = rhs_ncalls_fi;
+  rhs_ncalls_fi = 0;
+  return t;
+}
+
 bool Solver::splitOperator() { return model->splitOperator(); }
+bool Solver::splitOperatorMRI() { return model->splitOperatorMRI(); }
 
 /////////////////////////////////////////////////////
 
@@ -1357,6 +1383,140 @@ Field3D Solver::globalIndex(int localStart) {
  * Running user-supplied functions
  **************************************************************************/
 
+int Solver::run_rhs_se(BoutReal t, bool linear) {
+  int status;
+
+  Timer timer("rhs");
+
+  if (first_rhs_call) {
+    // Ensure that nonlinear terms are calculated on first call
+    linear = false;
+    first_rhs_call = false;
+  }
+
+  pre_rhs(t);
+  status = model->runRHS_se(t, linear);
+  post_rhs(t);
+
+  // If using Method of Manufactured Solutions
+  add_mms_sources(t);
+
+  rhs_ncalls_se++;
+  return status;
+}
+
+int Solver::run_rhs_si(BoutReal t, bool linear) {
+  int status;
+
+  Timer timer("rhs");
+
+  if (first_rhs_call) {
+    // Ensure that nonlinear terms are calculated on first call
+    linear = false;
+    first_rhs_call = false;
+  }
+
+  pre_rhs(t);
+  status = model->runRHS_si(t, linear);
+  post_rhs(t);
+
+  // If using Method of Manufactured Solutions
+  add_mms_sources(t);
+
+  rhs_ncalls_si++;
+  return status;
+}
+
+int Solver::run_rhs_fe(BoutReal t, bool linear) {
+  int status;
+
+  Timer timer("rhs");
+
+  if (first_rhs_call) {
+    // Ensure that nonlinear terms are calculated on first call
+    linear = false;
+    first_rhs_call = false;
+  }
+
+  pre_rhs(t);
+  status = model->runRHS_fe(t, linear);
+  post_rhs(t);
+
+  // If using Method of Manufactured Solutions
+  add_mms_sources(t);
+
+  rhs_ncalls_fe++;
+  return status;
+}
+
+int Solver::run_rhs_fi(BoutReal t, bool linear) {
+  int status;
+
+  Timer timer("rhs");
+
+  if (first_rhs_call) {
+    // Ensure that nonlinear terms are calculated on first call
+    linear = false;
+    first_rhs_call = false;
+  }
+
+  pre_rhs(t);
+  status = model->runRHS_fi(t, linear);
+  post_rhs(t);
+
+  // If using Method of Manufactured Solutions
+  add_mms_sources(t);
+
+  rhs_ncalls_fi++;
+  return status;
+}
+
+int Solver::run_rhs_s(BoutReal t, bool linear) {
+  int status;
+
+  Timer timer("rhs");
+
+  if (first_rhs_call) {
+    // Ensure that nonlinear terms are calculated on first call
+    linear = false;
+    first_rhs_call = false;
+  }
+
+  pre_rhs(t);
+  status = model->runRHS_s(t, linear);
+  post_rhs(t);
+
+  // If using Method of Manufactured Solutions
+  add_mms_sources(t);
+
+  rhs_ncalls_se++;
+  rhs_ncalls_si++;
+  return status;
+}
+
+int Solver::run_rhs_f(BoutReal t, bool linear) {
+  int status;
+
+  Timer timer("rhs");
+
+  if (first_rhs_call) {
+    // Ensure that nonlinear terms are calculated on first call
+    linear = false;
+    first_rhs_call = false;
+  }
+
+  pre_rhs(t);
+  status = model->runRHS_f(t, linear);
+  post_rhs(t);
+
+  // If using Method of Manufactured Solutions
+  add_mms_sources(t);
+
+  rhs_ncalls_fe++;
+  rhs_ncalls_fi++;
+  return status;
+}
+
 int Solver::run_rhs(BoutReal t, bool linear) {
   int status;
 
@@ -1368,7 +1528,50 @@ int Solver::run_rhs(BoutReal t, bool linear) {
     first_rhs_call = false;
   }
 
-  if (model->splitOperator()) {
+
+  // TO DO: Replace true with an appropriate boolean and check for efficiency
+  if (model->splitOperatorMRI()) {
+    // Run all four parts
+
+    int nv = getLocalN();
+    // Create temporary arrays for system state
+    Array<BoutReal> tmp(nv);
+    Array<BoutReal> tmp2(nv);
+    Array<BoutReal> tmp3(nv);
+
+    save_vars(tmp.begin()); // Copy variables into tmp
+    
+    pre_rhs(t);
+    status = model->runRHS_fe(t, linear);
+    post_rhs(t); // Check variables, apply boundary conditions
+    save_derivs(tmp2.begin()); // Save time derivatives
+
+    pre_rhs(t);
+    status = model->runRHS_fi(t, linear);
+    post_rhs(t);
+    save_derivs(tmp3.begin()); // Save time derivatives
+    for (BoutReal *t3 = tmp3.begin(), *t2 = tmp2.begin(); t3 != tmp3.end(); ++t3, ++t2) {
+        *t3 += *t2;
+    }
+
+    pre_rhs(t);
+    status = model->runRHS_se(t, linear);
+    post_rhs(t);
+    save_derivs(tmp2.begin()); // Save time derivatives
+    for (BoutReal *t3 = tmp3.begin(), *t2 = tmp2.begin(); t3 != tmp3.end(); ++t3, ++t2) {
+        *t3 += *t2;
+    }
+
+    pre_rhs(t);
+    status = model->runRHS_si(t, linear);
+    post_rhs(t);
+    save_derivs(tmp2.begin()); // Save time derivatives
+    for (BoutReal *t3 = tmp3.begin(), *t2 = tmp2.begin(); t3 != tmp3.end(); ++t3, ++t2) {
+        *t3 += *t2;
+    }
+    load_derivs(tmp3.begin()); // Put back time-derivatives
+  }
+  else if (model->splitOperator()) {
     // Run both parts
 
     int nv = getLocalN();
@@ -1391,18 +1594,21 @@ int Solver::run_rhs(BoutReal t, bool linear) {
       *t += *t2;
     }
     load_derivs(tmp.begin()); // Put back time-derivatives
+    rhs_ncalls++;
+    rhs_ncalls_e++;
+    rhs_ncalls_i++;
   } else {
     pre_rhs(t);
     status = model->runRHS(t, linear);
     post_rhs(t);
+    rhs_ncalls++;
+    rhs_ncalls_e++;
+    rhs_ncalls_i++;
   }
 
   // If using Method of Manufactured Solutions
   add_mms_sources(t);
 
-  rhs_ncalls++;
-  rhs_ncalls_e++;
-  rhs_ncalls_i++;
   return status;
 }
 
