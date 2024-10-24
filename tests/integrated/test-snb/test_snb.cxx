@@ -1,6 +1,8 @@
 #include <bout/bout.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
+#include <bout/field2d.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/output.hxx>
 #include <bout/snb.hxx>
@@ -207,13 +209,19 @@ int main(int argc, char** argv) {
     // Change the mesh spacing and cell volume (Jdy)
     Coordinates* coord = Te.getCoordinates();
 
-    for (int x = mesh->xstart; x <= mesh->xend; x++) {
-      for (int y = mesh->ystart; y <= mesh->yend; y++) {
-        double yn = (double(y) + 0.5) / double(mesh->yend + 1);
+    {
+      auto dy = emptyFrom(coord->dx());
+      auto J = emptyFrom(coord->J());
+      for (int x = mesh->xstart; x <= mesh->xend; x++) {
+        for (int y = mesh->ystart; y <= mesh->yend; y++) {
+          const double y_n = (double(y) + 0.5) / double(mesh->yend + 1);
 
-        coord->setDy((1. - 0.9 * yn), x, y);
-        coord->setJ((1. + yn * yn), x, y);
+          dy(x, y) = 1. - 0.9 * y_n;
+          J(x, y) = 1. + y_n * y_n;
+        }
       }
+      coord->setDy(dy);
+      coord->setJ(J);
     }
 
     HeatFluxSNB snb;
