@@ -15,8 +15,8 @@
 
 #include <bout/output.hxx>
 
-#include "petscsnes.h"
 #include "petscmat.h"
+#include "petscsnes.h"
 
 /*
  * PETSc callback function, which evaluates the nonlinear
@@ -150,8 +150,8 @@ SNESSolver::SNESSolver(Options* opts)
                       .doc("Use matrix free Jacobian?")
                       .withDefault<bool>(false)),
       matrix_free_operator((*options)["matrix_free_operator"]
-                      .doc("Use matrix free Jacobian-vector operator?")
-                      .withDefault<bool>(true)),
+                               .doc("Use matrix free Jacobian-vector operator?")
+                               .withDefault<bool>(true)),
       lag_jacobian((*options)["lag_jacobian"]
                        .doc("Re-use the Jacobian this number of SNES iterations")
                        .withDefault(50)),
@@ -160,21 +160,20 @@ SNESSolver::SNESSolver(Options* opts)
                        .withDefault<bool>(true)),
       jacobian_recalculated(false),
       prune_jacobian((*options)["prune_jacobian"]
-                       .doc("Remove small elements in the Jacobian?")
-                       .withDefault<bool>(false)),
+                         .doc("Remove small elements in the Jacobian?")
+                         .withDefault<bool>(false)),
       prune_abstol((*options)["prune_abstol"]
                        .doc("Prune values with absolute values smaller than this")
                        .withDefault<BoutReal>(1e-16)),
       prune_fraction((*options)["prune_fraction"]
-                       .doc("Prune if fraction of small elements is larger than this")
-                       .withDefault<BoutReal>(0.2)),
+                         .doc("Prune if fraction of small elements is larger than this")
+                         .withDefault<BoutReal>(0.2)),
       scale_rhs((*options)["scale_rhs"]
                     .doc("Scale time derivatives (Jacobian row scaling)?")
                     .withDefault<bool>(false)),
       scale_vars((*options)["scale_vars"]
-                    .doc("Scale variables (Jacobian column scaling)?")
-                 .withDefault<bool>(false)) {}
-
+                     .doc("Scale variables (Jacobian column scaling)?")
+                     .withDefault<bool>(false)) {}
 
 int SNESSolver::init() {
 
@@ -656,7 +655,8 @@ int SNESSolver::init() {
       if (prune_jacobian) {
         // Will remove small elements from the Jacobian.
         // Save a copy to recover from over-pruning
-        ierr = MatDuplicate(Jfd, MAT_SHARE_NONZERO_PATTERN, &Jfd_original); CHKERRQ(ierr);
+        ierr = MatDuplicate(Jfd, MAT_SHARE_NONZERO_PATTERN, &Jfd_original);
+        CHKERRQ(ierr);
       }
     } else {
       // Brute force calculation
@@ -808,25 +808,32 @@ int SNESSolver::run() {
 
           // Take ownership of snes_x and var_scaling_factors data
           PetscScalar* snes_x_data;
-          ierr = VecGetArray(snes_x, &snes_x_data); CHKERRQ(ierr);
+          ierr = VecGetArray(snes_x, &snes_x_data);
+          CHKERRQ(ierr);
           PetscScalar* x1_data;
-          ierr = VecGetArray(x1, &x1_data); CHKERRQ(ierr);
+          ierr = VecGetArray(x1, &x1_data);
+          CHKERRQ(ierr);
           PetscScalar* var_scaling_factors_data;
-          ierr = VecGetArray(var_scaling_factors, &var_scaling_factors_data); CHKERRQ(ierr);
+          ierr = VecGetArray(var_scaling_factors, &var_scaling_factors_data);
+          CHKERRQ(ierr);
 
           // Normalise each value in the state
           // Limit normalisation so scaling factor is never smaller than rtol
           for (int i = 0; i < iend - istart; ++i) {
-            const PetscScalar norm = BOUTMAX(std::abs(snes_x_data[i]), rtol / var_scaling_factors_data[i]);
+            const PetscScalar norm =
+                BOUTMAX(std::abs(snes_x_data[i]), rtol / var_scaling_factors_data[i]);
             snes_x_data[i] /= norm;
             x1_data[i] /= norm; // Update history for predictor
             var_scaling_factors_data[i] *= norm;
           }
 
           // Restore vector underlying data
-          ierr = VecRestoreArray(var_scaling_factors, &var_scaling_factors_data); CHKERRQ(ierr);
-          ierr = VecRestoreArray(x1, &x1_data); CHKERRQ(ierr);
-          ierr = VecRestoreArray(snes_x, &snes_x_data); CHKERRQ(ierr);
+          ierr = VecRestoreArray(var_scaling_factors, &var_scaling_factors_data);
+          CHKERRQ(ierr);
+          ierr = VecRestoreArray(x1, &x1_data);
+          CHKERRQ(ierr);
+          ierr = VecRestoreArray(snes_x, &snes_x_data);
+          CHKERRQ(ierr);
 
           if (diagnose) {
             // Print maximum and minimum scaling factors
@@ -842,7 +849,7 @@ int SNESSolver::run() {
         }
       }
       ++loop_count;
-      
+
       // Copy the state (snes_x) into initial values (x0)
       VecCopy(snes_x, x0);
 
@@ -928,7 +935,8 @@ int SNESSolver::run() {
           if (diagnose) {
             output.write("\nRestoring Jacobian\n");
           }
-          ierr = MatCopy(Jfd_original, Jfd, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+          ierr = MatCopy(Jfd_original, Jfd, DIFFERENT_NONZERO_PATTERN);
+          CHKERRQ(ierr);
           // The non-zero pattern has changed, so update coloring
           updateColoring();
           jacobian_pruned = false; // Reset flag. Will be set after pruning.
@@ -1048,8 +1056,8 @@ int SNESSolver::run() {
 
         if (small_elements > prune_fraction * total_elements) {
           if (diagnose) {
-            output.write("\nPruning Jacobian elements: {} / {}\n",
-                         small_elements, total_elements);
+            output.write("\nPruning Jacobian elements: {} / {}\n", small_elements,
+                         total_elements);
           }
 
           // Prune Jacobian, keeping diagonal elements
@@ -1083,8 +1091,7 @@ int SNESSolver::run() {
     // Put the result into variables
     if (scale_vars) {
       // scaled_x <- snes_x * var_scaling_factors
-      int ierr = VecPointwiseMult(scaled_x, snes_x
-                                  , var_scaling_factors);
+      int ierr = VecPointwiseMult(scaled_x, snes_x, var_scaling_factors);
       CHKERRQ(ierr);
 
       const BoutReal* xdata = nullptr;
@@ -1324,9 +1331,8 @@ void SNESSolver::updateColoring() {
   // Replace the old coloring with the new one
   MatFDColoringDestroy(&fdcoloring);
   MatFDColoringCreate(Jfd, iscoloring, &fdcoloring);
-  MatFDColoringSetFunction(fdcoloring,
-                           reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring),
-                           this);
+  MatFDColoringSetFunction(
+      fdcoloring, reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring), this);
   MatFDColoringSetFromOptions(fdcoloring);
   MatFDColoringSetUp(Jfd, iscoloring, fdcoloring);
   ISColoringDestroy(&iscoloring);

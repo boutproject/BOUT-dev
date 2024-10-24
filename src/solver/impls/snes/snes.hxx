@@ -124,8 +124,8 @@ private:
   SNES snes;                ///< SNES context
   Mat Jmf;                  ///< Matrix Free Jacobian
   Mat Jfd;                  ///< Finite Difference Jacobian
-  MatFDColoring fdcoloring {NULL}; ///< Matrix coloring context
-                            ///< Jacobian evaluation
+  MatFDColoring fdcoloring{NULL}; ///< Matrix coloring context
+                                  ///< Jacobian evaluation
 
   bool use_precon;                ///< Use preconditioner
   std::string ksp_type;           ///< Linear solver type
@@ -134,19 +134,19 @@ private:
   std::string pc_type;            ///< Preconditioner type
   std::string pc_hypre_type;      ///< Hypre preconditioner type
   std::string line_search_type;   ///< Line search type
-  
+
   bool matrix_free;               ///< Use matrix free Jacobian
   bool matrix_free_operator;      ///< Use matrix free Jacobian in the operator?
   int lag_jacobian;               ///< Re-use Jacobian
   bool use_coloring;              ///< Use matrix coloring
 
   bool jacobian_recalculated; ///< Flag set when Jacobian is recalculated
-  bool prune_jacobian; ///< Remove small elements in the Jacobian?
-  BoutReal prune_abstol; ///< Prune values with absolute values smaller than this
-  BoutReal prune_fraction; ///< Prune if fraction of small elements is larger than this
-  bool jacobian_pruned {false}; ///< Has the Jacobian been pruned?
-  Mat Jfd_original; ///< Used to reset the Jacobian if over-pruned
-  void updateColoring(); ///< Updates the coloring using Jfd
+  bool prune_jacobian;        ///< Remove small elements in the Jacobian?
+  BoutReal prune_abstol;      ///< Prune values with absolute values smaller than this
+  BoutReal prune_fraction;    ///< Prune if fraction of small elements is larger than this
+  bool jacobian_pruned{false}; ///< Has the Jacobian been pruned?
+  Mat Jfd_original;            ///< Used to reset the Jacobian if over-pruned
+  void updateColoring();       ///< Updates the coloring using Jfd
 
   bool scale_rhs;          ///< Scale time derivatives?
   Vec rhs_scaling_factors; ///< Factors to multiply RHS function
@@ -154,7 +154,7 @@ private:
 
   bool scale_vars;         ///< Scale individual variables?
   Vec var_scaling_factors; ///< Factors to multiply variables when passing to user
-  Vec scaled_x;  ///< The values passed to the user RHS
+  Vec scaled_x;            ///< The values passed to the user RHS
 };
 
 #else
