@@ -21,3 +21,17 @@ test-kpr_mri
  The stiffness of the slow time scale is essentially determined
  by G, for |G| > 50 it is 'stiff' and ideally suited to a
  multirate method that is implicit at the slow time scale.
+
+MRI implementations of the functions are as follows:
+
+The slow explicit RHS function:
+     [-0.5 * sin(t)/(2 * f)]
+     [          0          ]
+
+The slow implicit RHS function:
+      [G e] * [(-1 + f^2 - 0.5 * cos(t))/(2 * f) ]
+      [0 0]   [(-2 + g^2 - cos(w * t))/(2 * g)   ]
+
+The fast implicit RHS function:
+     [0  0] * [(-1 + f^2 - 0.5 * cos(t))/(2 * f)] + [         0         ]
+     [e -1]   [(-2 + g^2 - cos(w * t))/(2 * g)  ]   [-w * sin(w * t)/(2 * sqrt(2 + cos(w*t)))]

@@ -57,7 +57,7 @@ public:
   }
 
   int rhs_fi(BoutReal t) override {
-  /* fill in the RHS function:
+  /* fill in the fast implicit RHS function:
      [0  0]*[(-1+f^2-0.5*cos(t))/(2*f)] + [         0                      ]
      [e -1] [(-2+g^2-cos(w*t))/(2*g)  ]   [-w*sin(w*t)/(2*sqrt(2+cos(w*t)))] */
     BoutReal tmp1 = (-1.0 + f(1,1,0) * f(1,1,0) - 0.5*cos(t)) / (2.0 * f(1,1,0));
