@@ -21,7 +21,7 @@ public:
     GRID_LOAD(Bpxy);
     GRID_LOAD(Btxy);
     GRID_LOAD(hthe);
-    mesh->get(coords->Bxy, "Bxy");
+    coords->setBxy(mesh->get("Bxy"));
     int ShiftXderivs = 0;
     mesh->get(ShiftXderivs, "false");
     if (ShiftXderivs) {
@@ -31,23 +31,24 @@ public:
       mesh->get(I, "sinty");
     }
 
-    coords->g11 = pow(Rxy * Bpxy, 2.0);
-    coords->g22 = 1.0 / pow(hthe, 2.0);
-    coords->g33 = pow(I, 2.0) * coords->g11 + pow(coords->Bxy, 2.0) / coords->g11;
-    coords->g12 = 0.0;
-    coords->g13 = -I * coords->g11;
-    coords->g23 = -Btxy / (hthe * Bpxy * Rxy);
+    const auto g11 = pow(Rxy * Bpxy, 2.0);
+    const auto g22 = 1.0 / pow(hthe, 2.0);
+    const auto g33 = pow(I, 2.0) * g11 + pow(coords->Bxy(), 2.0) / g11;
+    const auto g12 = 0.0;
+    const auto g13 = -I * g11;
+    const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
 
-    coords->J = hthe / Bpxy;
+    const auto g_11 = 1.0 / g11 + (pow(I * Rxy, 2.0));
+    const auto g_22 = pow(coords->Bxy() * hthe / Bpxy, 2.0);
+    const auto g_33 = Rxy * Rxy;
+    const auto g_12 = Btxy * hthe * I * Rxy / Bpxy;
+    const auto g_13 = I * Rxy * Rxy;
+    const auto g_23 = Btxy * hthe * Rxy / Bpxy;
 
-    coords->g_11 = 1.0 / coords->g11 + (pow(I * Rxy, 2.0));
-    coords->g_22 = pow(coords->Bxy * hthe / Bpxy, 2.0);
-    coords->g_33 = Rxy * Rxy;
-    coords->g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    coords->g_13 = I * Rxy * Rxy;
-    coords->g_23 = Btxy * hthe * Rxy / Bpxy;
+    coords->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+                            CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
-    coords->geometry();
+    coords->setJ(hthe / Bpxy);
 
     solver->add(f, "f");
     solver->add(g, "g");

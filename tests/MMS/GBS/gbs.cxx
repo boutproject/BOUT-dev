@@ -279,7 +279,7 @@ int GBS::init(bool restarting) {
     break;
   }
   case 3: { // logB, taken from mesh
-    logB = log(coords->Bxy);
+    logB = log(coords->Bxy());
     break;
   }
   default:
@@ -290,14 +290,14 @@ int GBS::init(bool restarting) {
   phiSolver = Laplacian::create(opt->getSection("phiSolver"));
   aparSolver = Laplacian::create(opt->getSection("aparSolver"));
 
-  dx4 = SQ(SQ(coords->dx));
-  dy4 = SQ(SQ(coords->dy));
-  dz4 = SQ(SQ(coords->dz));
+  dx4 = SQ(SQ(coords->dx()));
+  dy4 = SQ(SQ(coords->dy()));
+  dz4 = SQ(SQ(coords->dz()));
 
   SAVE_REPEAT(Ve);
 
-  output.write("dx = {:e}, dy = {:e}, dz = {:e}\n", coords->dx(2, 2), coords->dy(2, 2),
-               coords->dz);
+  output.write("dx = {:e}, dy = {:e}, dz = {:e}\n", (coords->dx())(2, 2),
+               (coords->dy())(2, 2), coords->dz());
   output.write("g11 = {:e}, g22 = {:e}, g33 = {:e}\n", coords->g11(2, 2),
                coords->g22(2, 2), coords->g33(2, 2));
   output.write("g12 = {:e}, g23 = {:e}\n", coords->g12(2, 2), coords->g23(2, 2));
@@ -321,7 +321,7 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   Field2D dx;
   if (!mesh->get(dx, "dpsi")) {
     output << "\tUsing dpsi as the x grid spacing\n";
-    coords->dx = dx; // Only use dpsi if found
+    coords->setDx(dx); // Only use dpsi if found
   } else {
     // dx will have been read already from the grid
     output << "\tUsing dx as the x grid spacing\n";
@@ -330,11 +330,11 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   Rxy /= Lnorm;
   hthe /= Lnorm;
   sinty *= SQ(Lnorm) * Bnorm;
-  coords->dx /= SQ(Lnorm) * Bnorm;
+  coords->setDx(coords->dx() / (SQ(Lnorm) * Bnorm));
 
   Bpxy /= Bnorm;
   Btxy /= Bnorm;
-  coords->Bxy /= Bnorm;
+  coords->setBxy(coords->Bxy() / Bnorm);
 
   // Calculate metric components
   bool ShiftXderivs;
@@ -348,23 +348,24 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
     sbp = -1.0;
   }
 
-  coords->g11 = SQ(Rxy * Bpxy);
-  coords->g22 = 1.0 / SQ(hthe);
-  coords->g33 = SQ(sinty) * coords->g11 + SQ(coords->Bxy) / coords->g11;
-  coords->g12 = 0.0;
-  coords->g13 = -sinty * coords->g11;
-  coords->g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
+  const auto g11 = SQ(Rxy * Bpxy);
+  const auto g22 = 1.0 / SQ(hthe);
+  const auto g33 = SQ(sinty) * g11 + SQ(coords->Bxy()) / g11;
+  const auto g12 = 0.0;
+  const auto g13 = -sinty * g11;
+  const auto g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
 
-  coords->J = hthe / Bpxy;
+  const auto g_11 = 1.0 / g11 + SQ(sinty * Rxy);
+  const auto g_22 = SQ(coords->Bxy() * hthe / Bpxy);
+  const auto g_33 = Rxy * Rxy;
+  const auto g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
+  const auto g_13 = sinty * Rxy * Rxy;
+  const auto g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
 
-  coords->g_11 = 1.0 / coords->g11 + SQ(sinty * Rxy);
-  coords->g_22 = SQ(coords->Bxy * hthe / Bpxy);
-  coords->g_33 = Rxy * Rxy;
-  coords->g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
-  coords->g_13 = sinty * Rxy * Rxy;
-  coords->g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
+  coords->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+                          CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
-  coords->geometry();
+  coords->setJ(hthe / Bpxy);
 }
 
 // just define a macro for V_E dot Grad
@@ -416,7 +417,7 @@ int GBS::rhs(BoutReal t) {
   Gi = 0.0;
   if (ionvis) {
     Field3D tau_i = Omega_ci * tau_i0 * pow(Ti, 1.5) / Ne;
-    Gi = -(0.96 * Ti * Ne * tau_i) * (2. * Grad_par(Vi) + C(phi) / coords->Bxy);
+    Gi = -(0.96 * Ti * Ne * tau_i) * (2. * Grad_par(Vi) + C(phi) / coords->Bxy());
     mesh->communicate(Gi);
     Gi.applyBoundary("neumann");
   } else {
@@ -429,7 +430,8 @@ int GBS::rhs(BoutReal t) {
   Ge = 0.0;
   if (elecvis) {
     Ge = -(0.73 * Te * Ne * tau_e)
-         * (2. * Grad_par(Ve) + (5. * C(Te) + 5. * Te * C(logNe) + C(phi)) / coords->Bxy);
+         * (2. * Grad_par(Ve)
+            + (5. * C(Te) + 5. * Te * C(logNe) + C(phi)) / coords->Bxy());
     mesh->communicate(Ge);
     Ge.applyBoundary("neumann");
   } else {
@@ -443,8 +445,8 @@ int GBS::rhs(BoutReal t) {
 
   if (evolve_Ne) {
     // Density
-    ddt(Ne) = -vE_Grad(Ne, phi)                            // ExB term
-              + (2. / coords->Bxy) * (C(Pe) - Ne * C(phi)) // Perpendicular compression
+    ddt(Ne) = -vE_Grad(Ne, phi)                              // ExB term
+              + (2. / coords->Bxy()) * (C(Pe) - Ne * C(phi)) // Perpendicular compression
               + D(Ne, Dn) + H(Ne, Hn);
 
     if (parallel) {
@@ -461,7 +463,7 @@ int GBS::rhs(BoutReal t) {
   if (evolve_Te) {
     // Electron temperature
     ddt(Te) = -vE_Grad(Te, phi)
-              + (4. / 3.) * (Te / coords->Bxy)
+              + (4. / 3.) * (Te / coords->Bxy())
                     * ((7. / 2.) * C(Te) + (Te / Ne) * C(Ne) - C(phi))
               + D(Te, Dte) + H(Te, Hte);
 
@@ -485,14 +487,14 @@ int GBS::rhs(BoutReal t) {
   if (evolve_Vort) {
     // Vorticity
     ddt(Vort) = -vE_Grad(Vort, phi) // ExB term
-                + 2. * coords->Bxy * C(Pe) / Ne + coords->Bxy * C(Gi) / (3. * Ne)
+                + 2. * coords->Bxy() * C(Pe) / Ne + coords->Bxy() * C(Gi) / (3. * Ne)
                 + D(Vort, Dvort) + H(Vort, Hvort);
 
     if (parallel) {
       Field3D delV = Vi - Ve;
       mesh->communicate(delV);
       ddt(Vort) -= Vpar_Grad_par(Vi, Vort); // Parallel advection
-      ddt(Vort) += SQ(coords->Bxy) * (Grad_par(delV) + (Vi - Ve) * Grad_par(logNe));
+      ddt(Vort) += SQ(coords->Bxy()) * (Grad_par(delV) + (Vi - Ve) * Grad_par(logNe));
     }
   }
 
@@ -528,7 +530,7 @@ const Field3D GBS::C(const Field3D& f) { // Curvature operator
     mesh->communicate(g);
     return bxcv * Grad(g);
   }
-  return coords->Bxy * bracket(logB, f, BRACKET_ARAKAWA);
+  return coords->Bxy() * bracket(logB, f, BRACKET_ARAKAWA);
 }
 
 const Field3D GBS::D(const Field3D& f, BoutReal d) { // Diffusion operator

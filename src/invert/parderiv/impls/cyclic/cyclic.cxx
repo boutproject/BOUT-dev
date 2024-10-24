@@ -58,7 +58,7 @@ InvertParCR::InvertParCR(Options* opt, CELL_LOC location, Mesh* mesh_in)
   // Number of k equations to solve for each x location
   nsys = 1 + (localmesh->LocalNz) / 2;
 
-  sg = sqrt(localmesh->getCoordinates(location)->g_22);
+  sg = sqrt(localmesh->getCoordinates(location)->g_22());
   sg = DDY(1. / sg) / sg;
 }
 
@@ -160,7 +160,7 @@ const Field3D InvertParCR::solve(const Field3D& f) {
         BoutReal ecoef = E(x, y + local_ystart)
                          + sg(x, y + local_ystart) * B(x, y + local_ystart); // ddy
 
-        if (coord->non_uniform) {
+        if (coord->non_uniform()) {
           ecoef += bcoef * coord->d1_dy(x, y + local_ystart);
         }
 

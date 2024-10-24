@@ -18,8 +18,8 @@ public:
 
     Coordinates* coords = mesh->getCoordinates();
 
-    dx_sq_sq = SQ(SQ(coords->dx));
-    dz_sq_sq = SQ(SQ(coords->dz));
+    dx_sq_sq = SQ(SQ(coords->dx()));
+    dz_sq_sq = SQ(SQ(coords->dz()));
 
     return 0;
   }
