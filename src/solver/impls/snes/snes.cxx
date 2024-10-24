@@ -149,6 +149,9 @@ SNESSolver::SNESSolver(Options* opts)
       matrix_free((*options)["matrix_free"]
                       .doc("Use matrix free Jacobian?")
                       .withDefault<bool>(false)),
+      matrix_free_operator((*options)["matrix_free_operator"]
+                      .doc("Use matrix free Jacobian-vector operator?")
+                      .withDefault<bool>(true)),
       lag_jacobian((*options)["lag_jacobian"]
                        .doc("Re-use the Jacobian this number of SNES iterations")
                        .withDefault(50)),
@@ -262,7 +265,7 @@ int SNESSolver::init() {
   }
 
   // Set up the Jacobian
-  if (matrix_free) {
+  if (matrix_free or matrix_free_operator) {
     /*
       PETSc SNES matrix free Jacobian, using a different
       operator for differencing.
@@ -278,12 +281,17 @@ int SNESSolver::init() {
     // Set a function to be called for differencing
     // This can be a linearised form of the SNES function
     MatMFFDSetFunction(Jmf, FormFunctionForDifferencing, this);
+  }
 
+  if (matrix_free) {
+    // Use matrix free for both operator and preconditioner
     // Calculate Jacobian matrix free using FormFunctionForDifferencing
     SNESSetJacobian(snes, Jmf, Jmf, MatMFFDComputeJacobian, this);
 
   } else {
-    // Calculate the Jacobian using finite differences
+    // Calculate the Jacobian using finite differences.
+    // The finite difference Jacobian (Jfd) may be used for both operator
+    // and preconditioner or, if matrix_free_operator, in only the preconditioner.
     if (use_coloring) {
       // Use matrix coloring
       // This greatly reduces the number of times the rhs() function needs
@@ -305,9 +313,9 @@ int SNESSolver::init() {
       int n3d = f3d.size();
 
       // Set size of Matrix on each processor to nlocal x nlocal
-      MatCreate(BoutComm::get(), &Jmf);
-      MatSetSizes(Jmf, nlocal, nlocal, PETSC_DETERMINE, PETSC_DETERMINE);
-      MatSetFromOptions(Jmf);
+      MatCreate(BoutComm::get(), &Jfd);
+      MatSetSizes(Jfd, nlocal, nlocal, PETSC_DETERMINE, PETSC_DETERMINE);
+      MatSetFromOptions(Jfd);
 
       std::vector<PetscInt> d_nnz(nlocal);
       std::vector<PetscInt> o_nnz(nlocal);
@@ -495,14 +503,14 @@ int SNESSolver::init() {
       output_progress.write("Pre-allocating Jacobian\n");
 
       // Pre-allocate
-      MatMPIAIJSetPreallocation(Jmf, 0, d_nnz.data(), 0, o_nnz.data());
-      MatSeqAIJSetPreallocation(Jmf, 0, d_nnz.data());
-      MatSetUp(Jmf);
-      MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
+      MatMPIAIJSetPreallocation(Jfd, 0, d_nnz.data(), 0, o_nnz.data());
+      MatSeqAIJSetPreallocation(Jfd, 0, d_nnz.data());
+      MatSetUp(Jfd);
+      MatSetOption(Jfd, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
 
       // Determine which row/columns of the matrix are locally owned
       int Istart, Iend;
-      MatGetOwnershipRange(Jmf, &Istart, &Iend);
+      MatGetOwnershipRange(Jfd, &Istart, &Iend);
 
       // Convert local into global indices
       // Note: Not in the boundary cells, to keep -1 values
@@ -548,7 +556,7 @@ int SNESSolver::init() {
               // Depends on all variables on this cell
               for (int j = 0; j < n2d; j++) {
                 PetscInt col = ind2 + j;
-                ierr = MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
                 CHKERRQ(ierr);
               }
             }
@@ -568,7 +576,7 @@ int SNESSolver::init() {
               // Depends on 2D fields
               for (int j = 0; j < n2d; j++) {
                 PetscInt col = ind0 + j;
-                ierr = MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
                 CHKERRQ(ierr);
               }
 
@@ -594,7 +602,7 @@ int SNESSolver::init() {
                 // 3D fields on this cell
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
-                  ierr = MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                  ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
                   if (ierr != 0) {
                     output.write("ERROR: {} : ({}, {}) -> ({}, {}) : {} -> {}\n", row, x,
                                  y, xi, yi, ind2, ind2 + n3d - 1);
@@ -615,7 +623,7 @@ int SNESSolver::init() {
                 }
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
-                  ierr = MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                  ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
                   CHKERRQ(ierr);
                 }
 
@@ -626,7 +634,7 @@ int SNESSolver::init() {
                 }
                 for (int j = 0; j < n3d; j++) {
                   PetscInt col = ind2 + j;
-                  ierr = MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                  ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
                   CHKERRQ(ierr);
                 }
               }
@@ -639,34 +647,21 @@ int SNESSolver::init() {
       output_progress.write("Assembling Jacobian matrix\n");
 
       // Assemble Matrix
-      MatAssemblyBegin(Jmf, MAT_FINAL_ASSEMBLY);
-      MatAssemblyEnd(Jmf, MAT_FINAL_ASSEMBLY);
+      MatAssemblyBegin(Jfd, MAT_FINAL_ASSEMBLY);
+      MatAssemblyEnd(Jfd, MAT_FINAL_ASSEMBLY);
 
       output_progress.write("Creating Jacobian coloring\n");
+      updateColoring();
 
-      ISColoring iscoloring;
-
-      MatColoring coloring; // This new in PETSc 3.5
-      MatColoringCreate(Jmf, &coloring);
-      MatColoringSetType(coloring, MATCOLORINGSL);
-      MatColoringSetFromOptions(coloring);
-      // Calculate index sets
-      MatColoringApply(coloring, &iscoloring);
-      MatColoringDestroy(&coloring);
-
-      // Create data structure for SNESComputeJacobianDefaultColor
-      MatFDColoringCreate(Jmf, iscoloring, &fdcoloring);
-      // Set the function to difference
-      MatFDColoringSetFunction(
-          fdcoloring, reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring),
-          this);
-      MatFDColoringSetFromOptions(fdcoloring);
-      MatFDColoringSetUp(Jmf, iscoloring, fdcoloring);
-      ISColoringDestroy(&iscoloring);
-
-      SNESSetJacobian(snes, Jmf, Jmf, SNESComputeJacobianScaledColor, fdcoloring);
+      if (prune_jacobian) {
+        // Will remove small elements from the Jacobian.
+        // Save a copy to recover from over-pruning
+        ierr = MatDuplicate(Jfd, MAT_SHARE_NONZERO_PATTERN, &Jfd_original); CHKERRQ(ierr);
+      }
     } else {
       // Brute force calculation
+      // There is usually no reason to use this, except as a check of
+      // the coloring calculation.
 
       MatCreateAIJ(
           BoutComm::get(), nlocal, nlocal,  // Local sizes
@@ -674,14 +669,15 @@ int SNESSolver::init() {
           3, // Number of nonzero entries in diagonal portion of local submatrix
           nullptr,
           0, // Number of nonzeros per row in off-diagonal portion of local submatrix
-          nullptr, &Jmf);
-#if PETSC_VERSION_GE(3, 4, 0)
-      SNESSetJacobian(snes, Jmf, Jmf, SNESComputeJacobianDefault, this);
-#else
-      // Before 3.4
-      SNESSetJacobian(snes, Jmf, Jmf, SNESDefaultComputeJacobian, this);
-#endif
-      MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+          nullptr, &Jfd);
+
+      if (matrix_free_operator) {
+        SNESSetJacobian(snes, Jmf, Jfd, SNESComputeJacobianDefault, this);
+      } else {
+        SNESSetJacobian(snes, Jfd, Jfd, SNESComputeJacobianDefault, this);
+      }
+
+      MatSetOption(Jfd, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
     }
 
     // Re-use Jacobian
@@ -888,6 +884,13 @@ int SNESSolver::run() {
       // Find out if converged
       SNESConvergedReason reason;
       SNESGetConvergedReason(snes, &reason);
+
+      // Get number of iterations
+      int nl_its;
+      SNESGetIterationNumber(snes, &nl_its);
+      int lin_its;
+      SNESGetLinearSolveIterations(snes, &lin_its);
+
       if ((ierr != 0) or (reason < 0)) {
         // Diverged or SNES failed
 
@@ -918,6 +921,18 @@ int SNESSolver::run() {
         VecCopy(x0, snes_x);
 
         // Recalculate the Jacobian
+        if (jacobian_pruned and (snes_failures > 2) and (4 * lin_its > 3 * maxl)) {
+          // Taking 3/4 of maximum linear iterations on average per linear step
+          // May indicate a preconditioner problem.
+          // Restore pruned non-zero elements
+          if (diagnose) {
+            output.write("\nRestoring Jacobian\n");
+          }
+          ierr = MatCopy(Jfd_original, Jfd, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+          // The non-zero pattern has changed, so update coloring
+          updateColoring();
+          jacobian_pruned = false; // Reset flag. Will be set after pruning.
+        }
         if (saved_jacobian_lag == 0) {
           SNESGetLagJacobian(snes, &saved_jacobian_lag);
           SNESSetLagJacobian(snes, 1);
@@ -949,9 +964,6 @@ int SNESSolver::run() {
         VecCopy(x0, x1);
         time1 = simtime;
       }
-
-      int nl_its;
-      SNESGetIterationNumber(snes, &nl_its);
 
       if (nl_its == 0) {
         // This can occur even with SNESSetForceIteration
@@ -997,9 +1009,6 @@ int SNESSolver::run() {
       if (diagnose) {
         // Gather and print diagnostic information
 
-        int lin_its;
-        SNESGetLinearSolveIterations(snes, &lin_its);
-
         output.print("\r"); // Carriage return for printing to screen
         output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}, reason: {}",
                      simtime, timestep, nl_its, lin_its, static_cast<int>(reason));
@@ -1012,7 +1021,6 @@ int SNESSolver::run() {
 
 #if PETSC_VERSION_GE(3, 20, 0)
       // MatFilter and MatEliminateZeros(Mat, bool) require PETSc >= 3.20
-
       if (jacobian_recalculated and prune_jacobian) {
         jacobian_recalculated = false; // Reset flag
 
@@ -1023,52 +1031,36 @@ int SNESSolver::run() {
 
         // Get index of rows owned by this processor
         int rstart, rend;
-        MatGetOwnershipRange(Jmf, &rstart, &rend);
+        MatGetOwnershipRange(Jfd, &rstart, &rend);
 
         PetscInt ncols;
         const PetscScalar* vals;
         for (int row = rstart; row < rend; row++) {
-          MatGetRow(Jmf, row, &ncols, nullptr, &vals);
+          MatGetRow(Jfd, row, &ncols, nullptr, &vals);
           for (int col = 0; col < ncols; col++) {
             if (std::abs(vals[col]) < prune_abstol) {
               ++small_elements;
             }
             ++total_elements;
           }
-          MatRestoreRow(Jmf, row, &ncols, nullptr, &vals);
+          MatRestoreRow(Jfd, row, &ncols, nullptr, &vals);
         }
 
         if (small_elements > prune_fraction * total_elements) {
-          output.write("Pruning Jacobian elements: {} / {}\n",
-                       small_elements, total_elements);
+          if (diagnose) {
+            output.write("\nPruning Jacobian elements: {} / {}\n",
+                         small_elements, total_elements);
+          }
 
           // Prune Jacobian, keeping diagonal elements
-          //ierr = MatEliminateZeros(Jmf, PETSC_TRUE); CHKERRQ(ierr);
-          ierr = MatFilter(Jmf, prune_abstol, PETSC_TRUE, PETSC_TRUE);
+          //ierr = MatEliminateZeros(Jfd, PETSC_TRUE); CHKERRQ(ierr);
+          ierr = MatFilter(Jfd, prune_abstol, PETSC_TRUE, PETSC_TRUE);
 
-          // Re-calculate the coloring
-          MatColoring coloring = NULL;
-          MatColoringCreate(Jmf, &coloring);
-          MatColoringSetType(coloring, MATCOLORINGSL);
-          MatColoringSetFromOptions(coloring);
+          // Update the coloring from Jfd matrix
+          updateColoring();
 
-          // Calculate new index sets
-          ISColoring iscoloring = NULL;
-          MatColoringApply(coloring, &iscoloring);
-          MatColoringDestroy(&coloring);
-
-          // Replace the old coloring with the new one
-          MatFDColoringDestroy(&fdcoloring);
-          MatFDColoringCreate(Jmf, iscoloring, &fdcoloring);
-          MatFDColoringSetFunction(fdcoloring,
-                                   reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring),
-                                   this);
-          MatFDColoringSetFromOptions(fdcoloring);
-          MatFDColoringSetUp(Jmf, iscoloring, fdcoloring);
-          ISColoringDestroy(&iscoloring);
-
-          // Replace the CTX pointer in SNES Jacobian
-          SNESSetJacobian(snes, Jmf, Jmf, SNESComputeJacobianScaledColor, fdcoloring);
+          // Mark the Jacobian as pruned. This is so that it is only restored if pruned.
+          jacobian_pruned = true;
         }
       }
 #endif // PETSC_VERSION_GE(3,20,0)
@@ -1315,6 +1307,37 @@ PetscErrorCode SNESSolver::scaleJacobian(Mat B) {
   CHKERRQ(ierr);
 
   return 0;
+}
+
+void SNESSolver::updateColoring() {
+  // Re-calculate the coloring
+  MatColoring coloring = NULL;
+  MatColoringCreate(Jfd, &coloring);
+  MatColoringSetType(coloring, MATCOLORINGSL);
+  MatColoringSetFromOptions(coloring);
+
+  // Calculate new index sets
+  ISColoring iscoloring = NULL;
+  MatColoringApply(coloring, &iscoloring);
+  MatColoringDestroy(&coloring);
+
+  // Replace the old coloring with the new one
+  MatFDColoringDestroy(&fdcoloring);
+  MatFDColoringCreate(Jfd, iscoloring, &fdcoloring);
+  MatFDColoringSetFunction(fdcoloring,
+                           reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring),
+                           this);
+  MatFDColoringSetFromOptions(fdcoloring);
+  MatFDColoringSetUp(Jfd, iscoloring, fdcoloring);
+  ISColoringDestroy(&iscoloring);
+
+  // Replace the CTX pointer in SNES Jacobian
+  if (matrix_free_operator) {
+    // Use matrix-free calculation for operator, finite difference for preconditioner
+    SNESSetJacobian(snes, Jmf, Jfd, SNESComputeJacobianScaledColor, fdcoloring);
+  } else {
+    SNESSetJacobian(snes, Jfd, Jfd, SNESComputeJacobianScaledColor, fdcoloring);
+  }
 }
 
 #endif // BOUT_HAS_PETSC
