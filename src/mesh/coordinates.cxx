@@ -1450,16 +1450,14 @@ Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
 
 ChristoffelSymbols& Coordinates::christoffel_symbols() {
   if (christoffel_symbols_cache == nullptr) {
-    auto ptr = std::make_unique<ChristoffelSymbols>(*this);
-    christoffel_symbols_cache = std::move(ptr);
+    christoffel_symbols_cache = std::make_unique<ChristoffelSymbols>(*this);
   }
   return *christoffel_symbols_cache;
 }
 
 GValues& Coordinates::g_values() const {
   if (g_values_cache == nullptr) {
-    auto ptr = std::make_unique<GValues>(*this);
-    g_values_cache = std::move(ptr);
+    g_values_cache = std::make_unique<GValues>(*this);
   }
   return *g_values_cache;
 }
@@ -1501,8 +1499,7 @@ void Coordinates::checkContravariant() {
 
 FieldMetric& Coordinates::J() const {
   if (jacobian_cache == nullptr) {
-    const auto j = recalculateJacobian();
-    jacobian_cache = std::make_unique<FieldMetric>(j);
+    jacobian_cache = std::make_unique<FieldMetric>(recalculateJacobian());
   }
   return *jacobian_cache;
 }
