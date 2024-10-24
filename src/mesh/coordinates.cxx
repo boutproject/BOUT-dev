@@ -923,24 +923,16 @@ MetricTensor::FieldMetric Coordinates::recalculateJacobian() const {
   TRACE("Coordinates::jacobian");
   try {
     // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
-    auto g = contravariantMetricTensor.g11() * contravariantMetricTensor.g22()
-                 * contravariantMetricTensor.g33()
-             + 2.0 * contravariantMetricTensor.g12() * contravariantMetricTensor.g13()
-                   * contravariantMetricTensor.g23()
-             - contravariantMetricTensor.g11() * contravariantMetricTensor.g23()
-                   * contravariantMetricTensor.g23()
-             - contravariantMetricTensor.g22() * contravariantMetricTensor.g13()
-                   * contravariantMetricTensor.g13()
-             - contravariantMetricTensor.g33() * contravariantMetricTensor.g12()
-                   * contravariantMetricTensor.g12();
+    auto g_matrix = g11() * g22() * g33() + 2.0 * g12() * g13() * g23()
+                    - g11() * g23() * g23() - g22() * g13() * g13()
+                    - g33() * g12() * g12();
 
-    // Check that g is positive
-    bout::checkPositive(g, "The determinant of g^ij", "RGN_NOBNDRY");
+    bout::checkPositive(g_matrix, "The determinant of g^ij", "RGN_NOBNDRY");
 
-    return 1. / sqrt(g);
-  } catch (BoutException&) {
+    return 1. / sqrt(g_matrix);
+  } catch (const BoutException& e) {
     output_error.write("\tError in jacobian call\n");
-    throw;
+    throw e;
   }
 }
 
