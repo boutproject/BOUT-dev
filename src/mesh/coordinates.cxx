@@ -567,6 +567,10 @@ void Coordinates::readFromMesh(Options* mesh_options, const std::string& suffix)
   dy_ = interpolateAndExtrapolate(dy_, location, extrapolate_x, extrapolate_y, false,
                                   transform.get());
 
+  setDx(dx_);
+  setDy(dy_);
+  setDz(dz_);
+
   // grid data source has staggered fields, so read instead of interpolating
   // Diagonal components of metric tensor g^{ij} (default to 1)
   const auto g11 = getAtLocOrUnaligned(localmesh, "g11", 1.0, suffix, location);
@@ -758,26 +762,38 @@ const Field2D& Coordinates::zlength() const {
   return *zlength_cache;
 }
 
-int Coordinates::communicateAndCheckMeshSpacing() {
-  TRACE("Coordinates::communicateAndCheckMeshSpacing");
-
-  localmesh->communicate(dx_, dy_, dz_, Bxy_, J());
-  covariantMetricTensor.communicate(localmesh);
-  contravariantMetricTensor.communicate(localmesh);
-
-  output_progress.write("Calculating differential geometry terms\n");
-
-  if (min(abs(dx())) < 1e-8) {
+void Coordinates::setDx(FieldMetric dx) {
+  if (min(abs(dx)) < 1e-8) {
     throw BoutException("dx magnitude less than 1e-8");
   }
 
-  if (min(abs(dy())) < 1e-8) {
+  dx_ = std::move(dx);
+  localmesh->communicate(dx_);
+}
+
+void Coordinates::setDy(FieldMetric dy) {
+  if (min(abs(dy)) < 1e-8) {
     throw BoutException("dy magnitude less than 1e-8");
   }
 
-  if (min(abs(dz())) < 1e-8) {
+  dy_ = std::move(dy);
+  localmesh->communicate(dy_);
+}
+
+void Coordinates::setDz(FieldMetric dz) {
+  if (min(abs(dz)) < 1e-8) {
     throw BoutException("dz magnitude less than 1e-8");
   }
+
+  dz_ = std::move(dz);
+  localmesh->communicate(dz_);
+}
+
+int Coordinates::communicateAndCheckMeshSpacing() {
+  TRACE("Coordinates::communicateAndCheckMeshSpacing");
+
+  covariantMetricTensor.communicate(localmesh);
+  contravariantMetricTensor.communicate(localmesh);
 
   return 0;
 }
@@ -1503,21 +1519,24 @@ void Coordinates::checkContravariant() {
 FieldMetric& Coordinates::J() const {
   if (jacobian_cache == nullptr) {
     const auto j = recalculateJacobian();
-    auto ptr = std::make_unique<FieldMetric>(j);
-    jacobian_cache = std::move(ptr);
+    jacobian_cache = std::make_unique<FieldMetric>(j);
   }
   return *jacobian_cache;
 }
 
 void Coordinates::setJ(const FieldMetric& J) {
+  bout::checkFinite(J, "J", "RGN_NOCORNERS");
+  bout::checkPositive(J, "J", "RGN_NOCORNERS");
+
   //TODO: Calculate J and check value is close
-  auto ptr = std::make_unique<FieldMetric>(J);
-  jacobian_cache = std::move(ptr);
+  jacobian_cache = std::make_unique<FieldMetric>(J);
+  localmesh->communicate(*jacobian_cache);
 }
 
 void Coordinates::setBxy(FieldMetric Bxy) {
   //TODO: Calculate Bxy and check value is close
   Bxy_ = std::move(Bxy);
+  localmesh->communicate(Bxy_);
 }
 
 void Coordinates::setContravariantMetricTensor(

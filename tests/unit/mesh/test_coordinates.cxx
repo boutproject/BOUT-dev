@@ -231,12 +231,9 @@ TEST_F(CoordinatesTest, SmallMeshSpacing) {
   static_cast<FakeMesh*>(bout::globals::mesh)
       ->setGridDataSource(new FakeGridDataSource({{"dx", 1e-9}}));
 
-  output_info.disable();
-  output_warn.disable();
-  Coordinates coords(mesh);
-  EXPECT_THROW(coords.communicateAndCheckMeshSpacing(), BoutException);
-  output_warn.enable();
-  output_info.enable();
+  WithQuietOutput quiet_info{output_info};
+  WithQuietOutput quiet_warn{output_warn};
+  EXPECT_THROW(Coordinates{mesh}, BoutException);
 }
 
 TEST_F(CoordinatesTest, ConstructWithDiagonalContravariantMetric) {

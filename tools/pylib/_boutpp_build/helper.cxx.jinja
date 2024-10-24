@@ -173,5 +173,4 @@ void c_mesh_normalise(Mesh * msh, double norm){
   coord->setDx(coord->dx() / norm);
   coord->setDy(coord->dy() / norm);
   coord->setDz(coord->dz() / norm);
-  coord->communicateAndCheckMeshSpacing();
 }
