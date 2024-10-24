@@ -252,10 +252,13 @@ int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime,
   model->output_options["t_array"].assignRepeat(simtime);
   model->output_options["iteration"].assignRepeat(iteration);
 
+  // Call user output monitor
+  // Note: This may allocate fields that are written to output
+  auto monitor_result = model->outputMonitor(simtime, iteration, nout);
+
   solver->outputVars(model->output_options, true);
   model->outputVars(model->output_options);
   model->writeOutputFile();
 
-  // Call user output monitor
-  return model->outputMonitor(simtime, iteration, nout);
+  return monitor_result;
 }
