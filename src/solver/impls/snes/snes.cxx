@@ -79,7 +79,7 @@ PetscErrorCode SNESComputeJacobianScaledColor(SNES snes, Vec x1, Mat J, Mat B,
   }
 
   // Get the the SNESSolver pointer from the function call context
-  SNESSolver* fctx;
+  SNESSolver* fctx = nullptr;
   err = MatFDColoringGetFunction(static_cast<MatFDColoring>(ctx), nullptr,
                                  reinterpret_cast<void**>(&fctx));
   CHKERRQ(err);
@@ -807,7 +807,7 @@ int SNESSolver::run() {
           VecGetOwnershipRange(snes_x, &istart, &iend);
 
           // Take ownership of snes_x and var_scaling_factors data
-          PetscScalar* snes_x_data;
+          PetscScalar* snes_x_data = nullptr;
           ierr = VecGetArray(snes_x, &snes_x_data);
           CHKERRQ(ierr);
           PetscScalar* x1_data;
@@ -1061,7 +1061,6 @@ int SNESSolver::run() {
           }
 
           // Prune Jacobian, keeping diagonal elements
-          //ierr = MatEliminateZeros(Jfd, PETSC_TRUE); CHKERRQ(ierr);
           ierr = MatFilter(Jfd, prune_abstol, PETSC_TRUE, PETSC_TRUE);
 
           // Update the coloring from Jfd matrix

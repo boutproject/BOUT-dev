@@ -124,7 +124,7 @@ private:
   SNES snes;                ///< SNES context
   Mat Jmf;                  ///< Matrix Free Jacobian
   Mat Jfd;                  ///< Finite Difference Jacobian
-  MatFDColoring fdcoloring{NULL}; ///< Matrix coloring context
+  MatFDColoring fdcoloring{nullptr}; ///< Matrix coloring context
                                   ///< Jacobian evaluation
 
   bool use_precon;                ///< Use preconditioner
