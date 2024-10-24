@@ -14,17 +14,7 @@ class Coordinates;
 class ChristoffelSymbols {
 
 public:
-  ChristoffelSymbols(FieldMetric G1_11, FieldMetric G1_22, FieldMetric G1_33,
-                     FieldMetric G1_12, FieldMetric G1_13, FieldMetric G1_23,
-                     FieldMetric G2_11, FieldMetric G2_22, FieldMetric G2_33,
-                     FieldMetric G2_12, FieldMetric G2_13, FieldMetric G2_23,
-                     FieldMetric G3_11, FieldMetric G3_22, FieldMetric G3_33,
-                     FieldMetric G3_12, FieldMetric G3_13, FieldMetric G3_23);
-
   explicit ChristoffelSymbols(Coordinates& coordinates);
-
-  //  ChristoffelSymbols(BoutReal g11, BoutReal g22, BoutReal g33, BoutReal g12, BoutReal g13,
-  //                     BoutReal g23, Mesh* mesh);
 
   const FieldMetric& G1_11() const { return G1_11_m; }
   const FieldMetric& G1_22() const { return G1_22_m; }

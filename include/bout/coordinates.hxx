@@ -390,10 +390,6 @@ public:
   const FieldMetric& G2() const { return g_values().G2(); }
   const FieldMetric& G3() const { return g_values().G3(); }
 
-  void setG1(const FieldMetric& G1) const { g_values().setG1(G1); }
-  void setG2(const FieldMetric& G2) const { g_values().setG2(G2); }
-  void setG3(const FieldMetric& G3) const { g_values().setG3(G3); }
-
   const BoutReal& G1(int x, int y, int z) const { return G1()(x, y, z); }
   const BoutReal& G2(int x, int y, int z) const { return G2()(x, y, z); }
   const BoutReal& G3(int x, int y, int z) const { return G3()(x, y, z); }

@@ -3,21 +3,6 @@
 #include "bout/derivs.hxx"
 #include "bout/mesh.hxx"
 
-#include <utility>
-
-ChristoffelSymbols::ChristoffelSymbols(
-    FieldMetric G1_11, FieldMetric G1_22, FieldMetric G1_33, FieldMetric G1_12,
-    FieldMetric G1_13, FieldMetric G1_23, FieldMetric G2_11, FieldMetric G2_22,
-    FieldMetric G2_33, FieldMetric G2_12, FieldMetric G2_13, FieldMetric G2_23,
-    FieldMetric G3_11, FieldMetric G3_22, FieldMetric G3_33, FieldMetric G3_12,
-    FieldMetric G3_13, FieldMetric G3_23)
-    : G1_11_m(std::move(G1_11)), G1_22_m(std::move(G1_22)), G1_33_m(std::move(G1_33)),
-      G1_12_m(std::move(G1_12)), G1_13_m(std::move(G1_13)), G1_23_m(std::move(G1_23)),
-      G2_11_m(std::move(G2_11)), G2_22_m(std::move(G2_22)), G2_33_m(std::move(G2_33)),
-      G2_12_m(std::move(G2_12)), G2_13_m(std::move(G2_13)), G2_23_m(std::move(G2_23)),
-      G3_11_m(std::move(G3_11)), G3_22_m(std::move(G3_22)), G3_33_m(std::move(G3_33)),
-      G3_12_m(std::move(G3_12)), G3_13_m(std::move(G3_13)), G3_23_m(std::move(G3_23)) {};
-
 ChristoffelSymbols::ChristoffelSymbols(Coordinates& coordinates) {
   // Calculate Christoffel symbol terms (18 independent values)
   // Note: This calculation is completely general: metric

@@ -3,9 +3,6 @@
 #include "bout/derivs.hxx"
 #include "bout/mesh.hxx"
 
-GValues::GValues(FieldMetric G1, FieldMetric G2, FieldMetric G3)
-    : G1_m(std::move(G1)), G2_m(std::move(G2)), G3_m(std::move(G3)) {};
-
 GValues::GValues(const Coordinates& coordinates) {
 
   const auto& contravariantMetricTensor = coordinates.getContravariantMetricTensor();

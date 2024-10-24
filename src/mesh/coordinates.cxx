@@ -903,10 +903,10 @@ void Coordinates::extrapolateChristoffelSymbols() {
 }
 
 void Coordinates::extrapolateGValues() {
-
-  setG1(interpolateAndExtrapolate(G1(), location, true, true, true, transform.get()));
-  setG2(interpolateAndExtrapolate(G2(), location, true, true, true, transform.get()));
-  setG3(interpolateAndExtrapolate(G3(), location, true, true, true, transform.get()));
+  g_values().map([this](const FieldMetric& component) {
+    return interpolateAndExtrapolate(component, location, true, true, true,
+                                     transform.get());
+  });
 }
 
 MetricTensor::FieldMetric Coordinates::recalculateJacobian() const {
