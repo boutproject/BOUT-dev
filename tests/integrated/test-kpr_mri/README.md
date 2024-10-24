@@ -8,7 +8,7 @@ test-kpr_mri
          = [ fs(t,f,g) ]
            [ ff(t,f,g) ]
 
- where r(t) = 0.5*cos(t),  s(t) = cos(w*t),  0 < t < 5.
+ where r(t) = 0.5 * cos(t),  s(t) = cos(w * t),  0 < t < 5.
 
  This problem has analytical solution given by
     f(t) = sqrt(1+r(t)),  g(t) = sqrt(2+s(t)).
@@ -33,5 +33,5 @@ The slow implicit RHS function:
       [0 0]   [(-2 + g^2 - cos(w * t))/(2 * g)   ]
 
 The fast implicit RHS function:
-     [0  0] * [(-1 + f^2 - 0.5 * cos(t))/(2 * f)] + [         0         ]
+     [0  0] * [(-1 + f^2 - 0.5 * cos(t))/(2 * f)] + [         0                              ]
      [e -1]   [(-2 + g^2 - cos(w * t))/(2 * g)  ]   [-w * sin(w * t)/(2 * sqrt(2 + cos(w*t)))]

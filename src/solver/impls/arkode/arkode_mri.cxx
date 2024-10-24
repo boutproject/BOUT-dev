@@ -152,8 +152,12 @@ ArkodeMRISolver::ArkodeMRISolver(Options* opts)
 ArkodeMRISolver::~ArkodeMRISolver() {
   N_VDestroy(uvec);
   ARKodeFree(&arkode_mem);
+  ARKodeFree(&inner_arkode_mem);
   SUNLinSolFree(sun_solver);
+  SUNLinSolFree(inner_sun_solver);
   SUNNonlinSolFree(nonlinear_solver);
+  SUNNonlinSolFree(inner_nonlinear_solver);
+  MRIStepInnerStepper_Free(&inner_stepper);
 
   SUNAdaptController_Destroy(controller);
   SUNAdaptController_Destroy(inner_controller);
@@ -221,13 +225,13 @@ int ArkodeMRISolver::init() {
   }
 
   if(inner_treatment != MRI_Treatment::Explicit)
-    if (ARKodeSetLinear(inner_arkode_mem, set_linear) != ARK_SUCCESS) {
+    if (ARKodeSetLinear(inner_arkode_mem, inner_set_linear) != ARK_SUCCESS) {
       throw BoutException("ARKodeSetLinear failed\n");
     }
 
   if (fixed_step) {
     // If not given, default to adaptive timestepping
-    const auto inner_fixed_timestep = (*options)["inner_timestep"].withDefault(0.0);
+    const BoutReal inner_fixed_timestep = (*options)["inner_timestep"];
     if (ARKodeSetFixedStep(inner_arkode_mem, inner_fixed_timestep) != ARK_SUCCESS) {
       throw BoutException("ARKodeSetFixedStep failed\n");
     }
@@ -280,7 +284,7 @@ int ArkodeMRISolver::init() {
 
   if (fixed_step) {
     // If not given, default to adaptive timestepping
-    const auto fixed_timestep = (*options)["timestep"].withDefault(0.0);
+    const BoutReal fixed_timestep = (*options)["timestep"];
     if (ARKodeSetFixedStep(arkode_mem, fixed_timestep) != ARK_SUCCESS) {
       throw BoutException("ARKodeSetFixedStep failed\n");
     }
