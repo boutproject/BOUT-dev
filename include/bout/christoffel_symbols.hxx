@@ -60,8 +60,6 @@ public:
     G3_23_m = function(G3_23_m);
   }
 
-  void communicate(Mesh* mesh);
-
 private:
   FieldMetric G1_11_m, G1_22_m, G1_33_m, G1_12_m, G1_13_m, G1_23_m;
   FieldMetric G2_11_m, G2_22_m, G2_33_m, G2_12_m, G2_13_m, G2_23_m;

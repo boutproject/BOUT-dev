@@ -4,6 +4,8 @@
  * given the contravariant metric tensor terms
  **************************************************************************/
 
+#include "bout/field2d.hxx"
+#include "bout/g_values.hxx"
 #include <bout/assert.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
@@ -788,11 +790,11 @@ void Coordinates::recalculateAndReset(bool recalculate_staggered,
   checkCovariant();
 
   christoffel_symbols_cache.reset();
-  christoffel_symbols().communicate(localmesh);
+  christoffel_symbols();
   extrapolateChristoffelSymbols();
 
   g_values_cache.reset();
-  g_values().communicate(localmesh);
+  g_values();
   extrapolateGValues();
 
   correctionForNonUniformMeshes(force_interpolate_from_centre);

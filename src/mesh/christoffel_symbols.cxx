@@ -84,13 +84,10 @@ ChristoffelSymbols::ChristoffelSymbols(Coordinates& coordinates) {
             + 0.5 * g33 * DDX(g_33);
   G3_23_m = 0.5 * g13 * (DDZ(g_12) + DDY(g_13)) - DDX(g_23) + 0.5 * g23 * DDZ(g_22)
             + 0.5 * g33 * DDY(g_33);
-}
-
-void ChristoffelSymbols::communicate(Mesh* mesh) {
 
   output_progress.write("\tCommunicating connection terms\n");
 
-  mesh->communicate(G1_11_m, G1_22_m, G1_33_m, G1_12_m, G1_13_m, G1_23_m, G2_11_m,
-                    G2_22_m, G2_33_m, G2_12_m, G2_13_m, G2_23_m, G3_11_m, G3_22_m,
-                    G3_33_m, G3_12_m, G3_13_m, G3_23_m);
+  G1_11_m.getMesh()->communicate(G1_11_m, G1_22_m, G1_33_m, G1_12_m, G1_13_m, G1_23_m,
+                                 G2_11_m, G2_22_m, G2_33_m, G2_12_m, G2_13_m, G2_23_m,
+                                 G3_11_m, G3_22_m, G3_33_m, G3_12_m, G3_13_m, G3_23_m);
 }

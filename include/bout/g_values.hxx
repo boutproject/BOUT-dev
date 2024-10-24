@@ -15,7 +15,6 @@ public:
   const FieldMetric& G2() const { return G2_m; }
   const FieldMetric& G3() const { return G3_m; }
 
-  void communicate(Mesh* mesh);
   template <class F>
   void map(F function) {
     G1_m = function(G1_m);
