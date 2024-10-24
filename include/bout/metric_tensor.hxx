@@ -61,15 +61,6 @@ public:
     g23_m = metric_tensor.g23();
   }
 
-  void setLocation(const CELL_LOC location) {
-    g11_m.setLocation(location);
-    g22_m.setLocation(location);
-    g33_m.setLocation(location);
-    g12_m.setLocation(location);
-    g13_m.setLocation(location);
-    g23_m.setLocation(location);
-  }
-
   MetricTensor inverse(const std::string& region = "RGN_ALL");
 
   // Transforms the MetricTensor by applying the given function to every component

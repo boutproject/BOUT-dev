@@ -11,7 +11,6 @@
 #include <cstdlib>
 #include <utility>
 
-
 MetricTensor::MetricTensor(FieldMetric g11, FieldMetric g22, FieldMetric g33,
                            FieldMetric g12, FieldMetric g13, FieldMetric g23)
     : g11_m(std::move(g11)), g22_m(std::move(g22)), g33_m(std::move(g33)),
@@ -132,10 +131,7 @@ MetricTensor MetricTensor::inverse(const std::string& region) {
   output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n",
                     off_diagonal_maxerr);
 
-  auto other_representation = MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23);
-  const auto location = g11_m.getLocation();
-  other_representation.setLocation(location);
-  return other_representation;
+  return MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23);
 }
 
 void MetricTensor::communicate(Mesh* mesh) {
