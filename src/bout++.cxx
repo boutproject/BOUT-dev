@@ -589,6 +589,7 @@ void printCompileTimeOptions() {
   output_info.write(_("\tSignal handling support {}\n"), is_enabled(use_signal));
   output_info.write(_("\tField name tracking {}\n"), is_enabled(use_track));
   output_info.write(_("\tMessage stack {}\n"), is_enabled(use_msgstack));
+  output_info.write(_("\tFCI Automagic {}\n"), is_enabled(use_fciautomagic));
   output_info.write(_("\tParallisation in Z {}\n"), is_enabled(use_parallelz));
 
   // The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
