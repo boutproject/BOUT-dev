@@ -24,7 +24,7 @@ public:
     g = sqrt(3.0);
     
     setSplitOperatorMRI();
-    
+
     return 0;
   }
 
@@ -155,6 +155,8 @@ int main(int argc, char** argv) {
   // Global options
   root["nout"] = 100;
   root["timestep"] = 0.05;
+  root["arkode_mri"]["treatment"] = "explicit";
+  root["arkode_mri"]["inner_treatment"] = "explicit";
 
   // Get specific options section for this solver. Can't just use default
   // "solver" section, as we run into problems when solvers use the same
