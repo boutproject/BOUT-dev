@@ -12,7 +12,6 @@
 #include "bout/boutcomm.hxx"
 #include "bout/coordinates.hxx"
 #include "bout/field3d.hxx"
-#include "bout/griddata.hxx"
 #include "bout/mesh.hxx"
 #include "bout/mpi_wrapper.hxx"
 #include "bout/operatorstencil.hxx"
