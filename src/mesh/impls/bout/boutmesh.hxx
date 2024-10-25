@@ -73,12 +73,12 @@ public:
   /////////////////////////////////////////////
   // X communications
 
-  bool
-  firstX() const override; ///< Is this processor the first in X? i.e. is there a boundary
-                           ///< to the left in X?
-  bool lastX()
-      const override; ///< Is this processor last in X? i.e. is there a boundary to the
-                      ///< right in X?
+  /// Is this processor the first in X? i.e. is there a boundary
+  /// to the left in X?
+  bool firstX() const override;
+  /// Is this processor last in X? i.e. is there a boundary to the
+  /// right in X?
+  bool lastX() const override;
 
   /// Send a buffer of data to processor at X index +1
   ///
