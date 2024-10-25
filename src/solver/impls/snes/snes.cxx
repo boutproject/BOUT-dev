@@ -1099,14 +1099,16 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
     const BoutReal* xdata = nullptr;
     ierr = VecGetArrayRead(scaled_x, &xdata);
     CHKERRQ(ierr);
-    load_vars(const_cast<BoutReal*>(xdata)); // const_cast needed due to load_vars API. Not writing to xdata.
+    load_vars(const_cast<BoutReal*>(
+        xdata)); // const_cast needed due to load_vars API. Not writing to xdata.
     ierr = VecRestoreArrayRead(scaled_x, &xdata);
     CHKERRQ(ierr);
   } else {
     const BoutReal* xdata = nullptr;
     int ierr = VecGetArrayRead(x, &xdata);
     CHKERRQ(ierr);
-    load_vars(const_cast<BoutReal*>(xdata)); // const_cast needed due to load_vars API. Not writing to xdata.
+    load_vars(const_cast<BoutReal*>(
+        xdata)); // const_cast needed due to load_vars API. Not writing to xdata.
     ierr = VecRestoreArrayRead(x, &xdata);
     CHKERRQ(ierr);
   }
