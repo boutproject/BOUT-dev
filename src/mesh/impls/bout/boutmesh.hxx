@@ -73,11 +73,11 @@ public:
   /////////////////////////////////////////////
   // X communications
 
-  /// Is this processor the first in X? i.e. is there a boundary
-  /// to the left in X?
+  /// Is this processor the first in X? With periodicX there may still not
+  /// be a boundary, even if it is the first.
   bool firstX() const override;
-  /// Is this processor last in X? i.e. is there a boundary to the
-  /// right in X?
+  /// Is this processor last in X? With periodicX there may still not                                                                                                                                                                   
+  /// be a boundary, even if it is the last.
   bool lastX() const override;
 
   /// Send a buffer of data to processor at X index +1

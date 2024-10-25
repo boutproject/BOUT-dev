@@ -375,10 +375,12 @@ public:
   virtual int getZProcIndex() = 0; ///< This processor's index in Y direction
 
   // X communications
-  virtual bool firstX()
-      const = 0; ///< Is this processor first in X? i.e. is there a boundary to the left in X?
-  virtual bool lastX()
-      const = 0; ///< Is this processor last in X? i.e. is there a boundary to the right in X?
+  /// Is this processor first in X? With periodicX there may still not
+  /// be a boundary, even if it is the first.
+  virtual bool firstX() const = 0;
+  /// Is this processor last in X? With periodicX there may still not                                                                                                                                                                       
+  /// be a boundary, even if it is the last.
+  virtual bool lastX() const = 0;
 
   /// Domain is periodic in X?
   bool periodicX{false};
