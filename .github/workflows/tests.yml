@@ -86,7 +86,9 @@ jobs:
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
-                            -DSUNDIALS_ROOT=/home/runner/local"
+                            -DSUNDIALS_ROOT=/home/runner/local
+                            -DBOUT_ENABLE_PARALLE_Z=ON
+                            -DBOUT_USE_FFTW=OFF"
             on_cron: false
 
           - name: "Shared, release, Ubuntu 20.04"
@@ -111,7 +113,9 @@ jobs:
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
                             -DBOUT_ENABLE_PYTHON=ON
-                            -DSUNDIALS_ROOT=/home/runner/local"
+                            -DSUNDIALS_ROOT=/home/runner/local
+                            -DBOUT_ENABLE_PARALLEL_Z=ON
+                            -DBOUT_USE_FFTW=OFF"
             omp_num_threads: 2
             on_cron: false
 
