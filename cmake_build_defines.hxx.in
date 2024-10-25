@@ -36,6 +36,7 @@
 #cmakedefine01 BOUT_USE_METRIC_3D
 #cmakedefine01 BOUT_USE_MSGSTACK
 #cmakedefine01 BOUT_USE_FCI_AUTOMAGIC
+#cmakedefine01 BOUT_USE_PARALLEL_Z
 
 // CMake build does not support legacy interface
 #define BOUT_HAS_LEGACY_NETCDF 0

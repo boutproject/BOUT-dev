@@ -181,15 +181,21 @@ public:
                     bool UNUSED(disable_corners) = false) override {
     return nullptr;
   }
-  comm_handle sendY(FieldGroup& UNUSED(g),
-                    comm_handle UNUSED(handle) = nullptr) override {
+  comm_handle sendY(FieldGroup& UNUSED(g), comm_handle UNUSED(handle) = nullptr,
+                    bool UNUSED(disable_corners) = false) override {
+    return nullptr;
+  }
+  comm_handle sendZ(FieldGroup& UNUSED(g), comm_handle UNUSED(handle) = nullptr,
+                    bool UNUSED(disable_corners) = false) override {
     return nullptr;
   }
   int wait(comm_handle UNUSED(handle)) override { return 0; }
   int getNXPE() override { return 1; }
   int getNYPE() override { return 1; }
+  int getNZPE() override { return 1; }
   int getXProcIndex() override { return 1; }
   int getYProcIndex() override { return 1; }
+  int getZProcIndex() override { return 1; }
   bool firstX() const override { return true; }
   bool lastX() const override { return true; }
   int sendXOut(BoutReal* UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) override {

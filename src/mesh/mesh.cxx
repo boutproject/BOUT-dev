@@ -370,15 +370,18 @@ void Mesh::communicate(FieldPerp& f) {
   wait(recv[1]);
 }
 
-int Mesh::msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                  int ylt) {
+int Mesh::msg_len(const std::vector<FieldData*>& var_list, const int xge, const int xlt,
+                  const int yge, const int ylt, const int zge, int zlt) {
   int len = 0;
 
-  ASSERT_NO_Z_SPLIT();
+  if (zlt < 0) {
+    zlt = LocalNz;
+  }
+
   /// Loop over variables
   for (const auto& var : var_list) {
     if (var->is3D()) {
-      len += (xlt - xge) * (ylt - yge) * LocalNz * var->elementSize();
+      len += (xlt - xge) * (ylt - yge) * (zlt - zge) * var->elementSize();
     } else {
       len += (xlt - xge) * (ylt - yge) * var->elementSize();
     }
@@ -810,6 +813,7 @@ std::optional<size_t> Mesh::getCommonRegion(std::optional<size_t> lhs,
    */
   const size_t pos = (high * (high - 1)) / 2 + low;
   if (region3Dintersect.size() <= pos) {
+    BOUT_OMP_SAFE(critical(mesh_intersection))
     BOUT_OMP_SAFE(critical(mesh_intersection_realloc))
     // By default this function does not need the mutex, however, if we are
     // going to allocate global memory, we need to use a mutex.

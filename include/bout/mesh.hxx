@@ -335,6 +335,14 @@ public:
     return sendY(g);
   }
 
+  /// Send guard cells from a list of FieldData objects in the z-direction
+  /// Packs arguments into a FieldGroup and passes to send(FieldGroup&).
+  template <typename... Ts>
+  comm_handle sendZ(Ts&... ts) {
+    FieldGroup g(ts...);
+    return sendZ(g);
+  }
+
   /// Perform communications without waiting for them
   /// to finish. Requires a call to wait() afterwards.
   ///
@@ -347,7 +355,12 @@ public:
                             bool disable_corners = false) = 0;
 
   /// Send only the y-guard cells
-  virtual comm_handle sendY(FieldGroup& g, comm_handle handle = nullptr) = 0;
+  virtual comm_handle sendY(FieldGroup& g, comm_handle handle = nullptr,
+                            bool disable_corners = false) = 0;
+
+  /// Send only the z-guard cells
+  virtual comm_handle sendZ(FieldGroup& g, comm_handle handle = nullptr,
+                            bool disable_corners = false) = 0;
 
   /// Wait for the handle, return error code
   virtual int wait(comm_handle handle) = 0; ///< Wait for the handle, return error code
@@ -356,8 +369,10 @@ public:
 
   virtual int getNXPE() = 0;       ///< The number of processors in the X direction
   virtual int getNYPE() = 0;       ///< The number of processors in the Y direction
+  virtual int getNZPE() = 0;       ///< The number of processors in the Z direction
   virtual int getXProcIndex() = 0; ///< This processor's index in X direction
   virtual int getYProcIndex() = 0; ///< This processor's index in Y direction
+  virtual int getZProcIndex() = 0; ///< This processor's index in Y direction
 
   // X communications
   virtual bool firstX()
@@ -812,8 +827,8 @@ protected:
   const std::vector<int> readInts(const std::string& name, int n);
 
   /// Calculates the size of a message for a given x and y range
-  int msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-              int ylt);
+  int msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge, int ylt,
+              int zge = 0, int zlt = -1);
 
   /// Initialise derivatives
   void derivs_init(Options* options);

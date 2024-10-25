@@ -46,8 +46,8 @@ class Options;
 class FakeParallelMesh : public BoutMesh {
 public:
   FakeParallelMesh(int nx, int ny, int nz, int nxpe, int nype, int pe_xind, int pe_yind)
-      : BoutMesh((nxpe * (nx - 2)) + 2, nype * ny, nz, 1, 1, nxpe, nype, pe_xind,
-                 pe_yind),
+      : BoutMesh((nxpe * (nx - 2)) + 2, nype * ny, nz, 1, 1, 1, nxpe, nype, 1, pe_xind,
+                 pe_yind, 0),
         yUpMesh(nullptr), yDownMesh(nullptr), xInMesh(nullptr), xOutMesh(nullptr),
         mpiSmart(new FakeMpiWrapper(this)) {
     StaggerGrids = false;
@@ -107,7 +107,8 @@ public:
     return parentSendX(g, handle, disable_corners);
   }
 
-  comm_handle sendY(FieldGroup& g, comm_handle handle) override {
+  comm_handle sendY(FieldGroup& g, comm_handle handle,
+                    bool UNUSED(disable_corners) = false) override {
     communicatingY = true;
     if (handle == nullptr) {
       overlapHandleMemory(yUpMesh, yDownMesh, xInMesh, xOutMesh);
@@ -128,6 +129,10 @@ public:
       yDownMesh->parentSendY(yDownGroup, nullptr);
     }
     return parentSendY(g, handle);
+  }
+
+  comm_handle sendZ(FieldGroup& g, comm_handle handle, bool) override {
+    throw BoutException("Not implemented");
   }
 
   // Need to override this functions to trick mesh into communicating for

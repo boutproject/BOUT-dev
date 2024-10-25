@@ -20,7 +20,7 @@ class BoutMeshExposer : public BoutMesh {
 public:
   BoutMeshExposer(int input_nx, int input_ny, int input_nz, int mxg, int myg,
                   int input_npes = 1)
-      : BoutMesh(input_nx, input_ny, input_nz, mxg, myg, input_npes) {}
+      : BoutMesh(input_nx, input_ny, input_nz, mxg, myg, 0, input_npes) {}
   BoutMeshExposer(int nx, int ny, int nz, int nxpe, int nype, int pe_xind, int pe_yind,
                   bool create_topology = true, bool symmetric_X = true,
                   bool symmetric_Y = true)
@@ -86,8 +86,8 @@ struct BoutMeshParameters {
 /// actually make a `BoutMeshExposer`
 BoutMeshExposer::BoutMeshExposer(const BoutMeshParameters& inputs, bool periodicX_)
     : BoutMesh(inputs.grid.total_nx, inputs.grid.total_ny, 1, inputs.grid.num_x_guards,
-               inputs.grid.num_y_guards, inputs.grid.nxpe, inputs.grid.nype,
-               inputs.grid.pe_xind, inputs.grid.pe_yind, inputs.grid.symmetric_X,
+               inputs.grid.num_y_guards, 0, inputs.grid.nxpe, inputs.grid.nype, 1,
+               inputs.grid.pe_xind, inputs.grid.pe_yind, 0, inputs.grid.symmetric_X,
                inputs.grid.symmetric_Y, periodicX_, inputs.x_indices.ixseps1,
                inputs.x_indices.ixseps2, inputs.y_indices.jyseps1_1,
                inputs.y_indices.jyseps2_1, inputs.y_indices.jyseps1_2,

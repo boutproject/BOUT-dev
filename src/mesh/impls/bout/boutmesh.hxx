@@ -49,7 +49,12 @@ public:
                     bool disable_corners = false) override;
 
   /// Send only in the y-direction
-  comm_handle sendY(FieldGroup& g, comm_handle handle = nullptr) override;
+  comm_handle sendY(FieldGroup& g, comm_handle handle = nullptr,
+                    bool disable_corners = false) override;
+
+  /// Send only in the z-direction
+  comm_handle sendZ(FieldGroup& g, comm_handle handle = nullptr,
+                    bool disable_corners = false) override;
 
   /// Wait for a send operation to complete
   /// @param[in] handle  The handle returned by send()
@@ -60,8 +65,10 @@ public:
 
   int getNXPE() override;       ///< The number of processors in the X direction
   int getNYPE() override;       ///< The number of processors in the Y direction
+  int getNZPE() override;       ///< The number of processors in the Z direction
   int getXProcIndex() override; ///< This processor's index in X direction
   int getYProcIndex() override; ///< This processor's index in Y direction
+  int getZProcIndex() override; ///< This processor's index in Z direction
 
   /////////////////////////////////////////////
   // X communications
@@ -198,22 +205,24 @@ protected:
   /// one processor, even though it's actually being run in serial.
   ///
   /// Pass \p create_topology = false to not set up topology, regions etc.
-  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
-           int pe_xind, int pe_yind, bool create_topology = true, bool symmetric_X = true,
-           bool symmetric_Y = true);
+  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int mzg, int nxpe,
+           int nype, int nzpe, int pe_xind, int pe_yind, int pe_zind,
+           bool create_topology = true, bool symmetric_X = true, bool symmetric_Y = true);
   /// Another constructor useful for testing, and used in
   /// `getPossibleBoundaries`. \p create_regions controls whether or
   /// not the various `Region`s are created on the new mesh
-  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
-           int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y, bool periodic_X,
-           int ixseps1_, int ixseps2_, int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
-           int jyseps2_2_, int ny_inner_, bool create_regions = true);
+  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int mzg, int nxpe,
+           int nype, int nzpe, int pe_xind, int pe_yind, int pe_zind, bool symmetric_X,
+           bool symmetric_Y, bool periodic_X, int ixseps1_, int ixseps2_, int jyseps1_1_,
+           int jyseps2_1_, int jyseps1_2_, int jyseps2_2_, int ny_inner_,
+           bool create_regions = true);
 
   /// Very basic initialisation, only suitable for testing
-  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int input_npes)
+  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int mzg,
+           int input_npes)
       : nx(input_nx), ny(input_ny), nz(input_nz), NPES(input_npes), ixseps1(nx),
         ixseps2(nx), jyseps1_1(-1), jyseps2_1(ny / 2), jyseps1_2(jyseps2_1),
-        jyseps2_2(ny - 1), ny_inner(jyseps2_1), MXG(mxg), MYG(myg), MZG(0) {}
+        jyseps2_2(ny - 1), ny_inner(jyseps2_1), MXG(mxg), MYG(myg), MZG(mzg) {}
 
   /// For debugging purposes (when creating fake parallel meshes), make
   /// the send and receive buffers share memory. This allows for
@@ -297,7 +306,8 @@ private:
   int PE_YIND; ///< Y index of this processor
   int NYPE;    // Number of processors in the Y direction
 
-  int NZPE;
+  int PE_ZIND;
+  int NZPE{1};
 
   /// Is this processor in the core region?
   bool MYPE_IN_CORE{false};
@@ -316,10 +326,11 @@ protected:
   // These are protected so we can make them public in the test suite
   // for testing
 
-  // Processor number, local <-> global translation
+  /// Processor number, local <-> global translation
   /// Returns the processor number, given X (\p xind) and Y (\p yind)
   /// processor indices. Returns -1 if out of range (no processor)
-  int PROC_NUM(int xind, int yind) const;
+  /// zind=-999 is a special value that means the local z-index
+  int PROC_NUM(int xind, int yind, int zind = -999) const;
   int YGLOBAL(int yloc, int yproc) const;
   int YLOCAL(int yglo, int yproc) const;
   /// Return the Y processor number given a global Y index
@@ -333,13 +344,14 @@ protected:
     int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
     int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
     int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
+    int ZDATA_UP{-1}, ZDATA_DOWN{-1};
   };
 
   /// Return the communication parameters as calculated by `topology`
   ConnectionInfo getConnectionInfo() const {
-    return {TS_up_in,      TS_up_out,     TS_down_in,   TS_down_out,
-            UDATA_INDEST,  UDATA_OUTDEST, UDATA_XSPLIT, DDATA_INDEST,
-            DDATA_OUTDEST, DDATA_XSPLIT,  IDATA_DEST,   ODATA_DEST};
+    return {TS_up_in,      TS_up_out,    TS_down_in,   TS_down_out,   UDATA_INDEST,
+            UDATA_OUTDEST, UDATA_XSPLIT, DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT,
+            IDATA_DEST,    ODATA_DEST,   ZDATA_UP,     ZDATA_DOWN};
   }
 
 private:
@@ -350,6 +362,7 @@ private:
   int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
   int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
   int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
+  int ZDATA_UP{-1}, ZDATA_DOWN{-1};
 
   // Settings
   bool TwistShift; // Use a twist-shift condition in core?
@@ -424,8 +437,11 @@ private:
     bool in_progress;
     /// Are corner cells included in x-communication?
     bool include_x_corners;
+    bool include_z_corners;
     /// Is there a y-communication
     bool has_y_communication;
+    /// Is there a z-communication
+    bool has_z_communication;
     /// List of fields being communicated
     FieldGroup var_list;
   };
@@ -461,11 +477,11 @@ private:
 
   /// Take data from objects and put into a buffer
   int pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                int ylt, BoutReal* buffer);
-  /// Copy data from a buffer back into the fields
+                int ylt, BoutReal* buffer, int zge = 0, int zlt = -1);
 
+  /// Copy data from a buffer back into the fields
   int unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                  int ylt, BoutReal* buffer);
+                  int ylt, BoutReal* buffer, int zge = 0, int zlt = -1);
 };
 
 namespace {

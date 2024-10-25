@@ -591,6 +591,14 @@ else()
 endif()
 set(BOUT_USE_METRIC_3D ${BOUT_ENABLE_METRIC_3D})
 
+option(BOUT_ENABLE_PARALLEL_Z "Enable MPI parallelisation in Z" OFF)
+set(BOUT_USE_PARALLEL_Z ${BOUT_ENABLE_PARALLEL_Z})
+if (${BOUT_ENABLE_PARALLEL_Z})
+  if (${BOUT_HAS_FFTW})
+    message(FATAL_ERROR "fftw and Z-sparallelisation is not supported")
+  endif()
+endif()
+
 option(BOUT_ENABLE_FCI_AUTOMAGIC "Enable (slow?) automatic features for FCI" ON)
 set(BOUT_USE_FCI_AUTOMAGIC ${BOUT_ENABLE_FCI_AUTOMAGIC})
 
@@ -944,6 +952,7 @@ message("
    OpenMP support           : ${BOUT_USE_OPENMP}
    Natural language support : ${BOUT_HAS_GETTEXT}
    ScoreP support           : ${BOUT_HAS_SCOREP}
+   Parallelisation in Z     : ${BOUT_USE_PARALLEL_Z}
    System UUID generator    : ${BOUT_HAS_UUID_SYSTEM_GENERATOR}
    Extra debug output       : ${BOUT_USE_OUTPUT_DEBUG}
    Runtime error check level: ${BOUT_CHECK_LEVEL}
