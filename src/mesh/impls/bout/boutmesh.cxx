@@ -1204,6 +1204,27 @@ void BoutMesh::post_receiveX(CommHandle& ch) {
   }
 }
 
+void BoutMesh::post_receiveZ(CommHandle& ch) {
+  // Post receive data from left (z-1)
+  if (ZDATA_UP != -1) {
+    mpi->MPI_Irecv(
+        std::begin(ch.zumsg_recvbuff),
+        msg_len(ch.var_list.get(), ch.include_z_corners ? 0 : MZG, ch.include_z_corners ? LocalNx : MXSUB, ch.include_z_corners ? 0 : MYG, ch.include_z_corners ? LocalNy : MYSUB,
+		0, MZG),
+        PVEC_REAL_MPI_TYPE, ZDATA_UP, Z_SENT_UP, BoutComm::get(), &ch.request[6]);
+  }
+
+  // Post receive data from right (z+1)
+
+  if (ZDATA_DOWN != -1) {
+    mpi->MPI_Irecv(
+        std::begin(ch.zdmsg_recvbuff),
+	msg_len(ch.var_list.get(), ch.include_z_corners ? 0 : MZG, ch.include_z_corners ? LocalNx : MXSUB, ch.include_z_corners ? 0 : MYG, ch.include_z_corners ? LocalNy : MYSUB,
+                0, MZG),
+	PVEC_REAL_MPI_TYPE, ZDATA_DOWN, Z_SENT_DOWN, BoutComm::get(), &ch.request[7]);
+  }
+}
+
 void BoutMesh::post_receiveY(CommHandle& ch) {
   BoutReal* inbuff;
   int len;
@@ -1251,15 +1272,17 @@ comm_handle BoutMesh::send(FieldGroup& g) {
   }
 
   /// Work out length of buffer needed
-  int xlen = msg_len(g.get(), 0, MXG, 0, MYSUB);
-  int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG);
+  const int xlen = msg_len(g.get(), 0, MXG, 0, MYSUB);
+  const int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG);
+  const int zlen = bout::build::use_parallelz ? msg_len(g.get(), 0, LocalNx, 0, MYSUB, 0, MZG) : 0;
 
   /// Get a communications handle of (at least) the needed size
-  CommHandle* ch = get_handle(xlen, ylen);
+  CommHandle* ch = get_handle(xlen, ylen, zlen);
   ch->var_list = g; // Group of fields to send
 
   sendX(g, ch, true);
   sendY(g, ch);
+  sendZ(g, ch);
 
   return static_cast<void*>(ch);
 }
@@ -1435,17 +1458,17 @@ comm_handle BoutMesh::sendZ(FieldGroup& g, comm_handle handle, bool disable_corn
   CommHandle* ch;
   if (handle == nullptr) {
     /// Work out length of buffer needed
-    const int ylen = msg_len(g.get(), mxstart, mxend, mystart, myend, 0, MZG);
+    const int zlen = msg_len(g.get(), mxstart, mxend, mystart, myend, 0, MZG);
 
     /// Get a communications handle of (at least) the needed size
-    ch = get_handle(0, ylen);
+    ch = get_handle(0, 0, zlen);
     ch->var_list = g; // Group of fields to send
   } else {
     ch = static_cast<CommHandle*>(handle);
   }
 
   /// Post receives
-  post_receiveY(*ch);
+  post_receiveZ(*ch);
 
   //////////////////////////////////////////////////
 
@@ -2347,8 +2370,7 @@ void BoutMesh::topology() {
  *                     Communication handles
  ****************************************************************/
 
-BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen) {
-  ASSERT_NO_Z_SPLIT();
+BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen, int zlen) {
   if (comm_list.empty()) {
     // Allocate a new CommHandle
 
@@ -2371,8 +2393,16 @@ BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen) {
       ch->omsg_recvbuff.reallocate(xlen);
     }
 
+    if (zlen > 0) {
+      ch->zumsg_sendbuff.reallocate(zlen);
+      ch->zdmsg_sendbuff.reallocate(zlen);
+      ch->zumsg_recvbuff.reallocate(zlen);
+      ch->zdmsg_recvbuff.reallocate(zlen);
+    }
+
     ch->xbufflen = xlen;
     ch->ybufflen = ylen;
+    ch->zbufflen = zlen;
 
     ch->in_progress = false;
 
@@ -2433,9 +2463,11 @@ void BoutMesh::clear_handles() {
 void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin,
                                    BoutMesh* xout) {
   ASSERT_NO_Z_SPLIT();
-  const int xlen = LocalNy * LocalNz * MXG * 5, ylen = LocalNx * LocalNz * MYG * 5;
+  const int xlen = LocalNy * LocalNz * MXG * 5;
+  const int ylen = LocalNx * LocalNz * MYG * 5;
+  const int zlen = LocalNx * LocalNy * MZG * 5;
 
-  CommHandle* ch = get_handle(xlen, ylen);
+  CommHandle* ch = get_handle(xlen, ylen, zlen);
   if (yup != nullptr) {
     CommHandle* other = (yup == this) ? ch : yup->get_handle(xlen, ylen);
     if (other->dmsg_sendbuff.unique()) {

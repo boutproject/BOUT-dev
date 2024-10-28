@@ -423,16 +423,16 @@ private:
   struct CommHandle {
     /// Array of receive requests. One for each possible neighbour; one each way in X, two
     /// each way in Y
-    MPI_Request request[6];
+    MPI_Request request[8];
     /// Array of send requests (for non-blocking send). One for each possible neighbour;
     /// one each way in X, two each way in Y
-    MPI_Request sendreq[6];
+    MPI_Request sendreq[8];
     /// Length of the buffers used to send/receive (in BoutReals)
-    int xbufflen, ybufflen;
+    int xbufflen, ybufflen, zbufflen;
     /// Sending buffers
-    Array<BoutReal> umsg_sendbuff, dmsg_sendbuff, imsg_sendbuff, omsg_sendbuff;
+    Array<BoutReal> umsg_sendbuff, dmsg_sendbuff, imsg_sendbuff, omsg_sendbuff, zumsg_sendbuff, zdmsg_sendbuff;
     /// Receiving buffers
-    Array<BoutReal> umsg_recvbuff, dmsg_recvbuff, imsg_recvbuff, omsg_recvbuff;
+    Array<BoutReal> umsg_recvbuff, dmsg_recvbuff, imsg_recvbuff, omsg_recvbuff, zumsg_recvbuff, zdmsg_recvbuff;
     /// Is the communication still going?
     bool in_progress;
     /// Are corner cells included in x-communication?
@@ -446,7 +446,7 @@ private:
     FieldGroup var_list;
   };
   void free_handle(CommHandle* h);
-  CommHandle* get_handle(int xlen, int ylen);
+  CommHandle* get_handle(int xlen, int ylen, int zlen=0);
   void clear_handles();
   std::list<CommHandle*> comm_list; // List of allocated communication handles
 
@@ -474,6 +474,9 @@ private:
 
   /// Create the MPI requests to receive data in the y-direction. Non-blocking call.
   void post_receiveY(CommHandle& ch);
+
+  /// Create the MPI requests to receive data in the y-direction. Non-blocking call.
+  void post_receiveZ(CommHandle& ch);
 
   /// Take data from objects and put into a buffer
   int pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
