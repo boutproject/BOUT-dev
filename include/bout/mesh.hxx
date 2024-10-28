@@ -636,6 +636,19 @@ public:
     return inserted.first->second;
   }
 
+  std::shared_ptr<Coordinates>
+  getCoordinatesConst(const CELL_LOC location = CELL_CENTRE) const {
+    ASSERT1(location != CELL_DEFAULT);
+    ASSERT1(location != CELL_VSHIFT);
+
+    auto found = coords_map.find(location);
+    if (found != coords_map.end()) {
+      // True branch most common, returns immediately
+      return found->second;
+    }
+    throw BoutException("Coordinates not yet set. Use non-const version!");
+  }
+
   /// Returns the non-CELL_CENTRE location
   /// allowed as a staggered location
   CELL_LOC getAllowedStaggerLoc(DIRECTION direction) const {
@@ -827,6 +840,16 @@ public:
   const Region<Ind3D>& getRegion(std::optional<size_t> RegionID) const {
     ASSERT1(RegionID.has_value());
     return region3D[RegionID.value()];
+  }
+  bool isFci() const {
+    const auto coords = this->getCoordinatesConst();
+    if (coords == nullptr) {
+      return false;
+    }
+    if (not coords->hasParallelTransform()) {
+      return false;
+    }
+    return not coords->getParallelTransform().canToFromFieldAligned();
   }
 
 private:
