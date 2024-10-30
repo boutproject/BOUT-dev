@@ -34,10 +34,10 @@
 ///
 /// The input \p small determines how small the determinant must be for
 /// us to throw due to the matrix being singular (ill conditioned);
-/// If small is less than zero then instead of throwing we return 1.
+/// If small is less than zero then instead of throwing we return false.
 /// This is ugly but can be used to support some use cases.
 template <typename T>
-int invert3x3(Matrix<T>& a, BoutReal small = 1.0e-15) {
+bool invert3x3(Matrix<T>& a, T small = 1.0e-15) {
   TRACE("invert3x3");
 
   // Calculate the first co-factors
@@ -51,9 +51,8 @@ int invert3x3(Matrix<T>& a, BoutReal small = 1.0e-15) {
   if (std::abs(det) < std::abs(small)) {
     if (small >= 0) {
       throw BoutException("Determinant of matrix < {:e} --> Poorly conditioned", small);
-    } else {
-      return 1;
     }
+    return false;
   }
 
   // Calculate the rest of the co-factors
@@ -77,5 +76,5 @@ int invert3x3(Matrix<T>& a, BoutReal small = 1.0e-15) {
   a(2, 1) = F * detinv;
   a(2, 2) = I * detinv;
 
-  return 0;
+  return true;
 }
