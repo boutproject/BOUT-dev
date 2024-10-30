@@ -1,17 +1,9 @@
 ---
-Checks:          'clang-diagnostic-*,clang-analyzer-*,performance-*,readability-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,mpi-*,misc-*,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers,-misc-non-private-member-variables-in-classes,-clang-analyzer-optin.mpi*,-bugprone-exception-escape,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-readability-function-cognitive-complexity,-misc-no-recursion,-bugprone-easily-swappable-parameters'
+Checks:          'clang-diagnostic-*,clang-analyzer-*,performance-*,readability-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,mpi-*,misc-*,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers,-misc-non-private-member-variables-in-classes,-clang-analyzer-optin.mpi*,-bugprone-exception-escape,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-readability-function-cognitive-complexity,-misc-no-recursion,-bugprone-easily-swappable-parameters,-readability-identifier-length'
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
 FormatStyle:     file
 CheckOptions:
-
-  # Allow some common short names
-  - key:             readability-identifier-length.IgnoredVariableNames
-    value:           '^[dn]?[xyz]$'
-  - key:             readability-identifier-length.IgnoredParameterNames
-    value:           '^[dfijknxyz][01xyz]?$'
-  - key:             readability-identifier-length.IgnoredLoopCounterNames
-    value:           '^[ijkxyz_]$'
 
   # Don't expand macros when simplifying boolean expressions,
   # otherwise this breaks `ASSERT` macros!
@@ -27,6 +19,7 @@ These are all basically unavoidable in HPC numeric code:
 -cppcoreguidelines-pro-bounds-pointer-arithmetic
 -readability-function-cognitive-complexity
 -bugprone-easily-swappable-parameters
+-readability-identifier-length
 
 This doesn't work very well:
 -clang-analyzer-optin.mpi*
