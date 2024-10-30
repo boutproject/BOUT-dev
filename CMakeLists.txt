@@ -270,6 +270,7 @@ set(BOUT_SOURCES
   ./src/mesh/interpolation/interpolation_z.cxx
   ./src/mesh/interpolation/lagrange_4pt_xz.cxx
   ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
+  ./src/mesh/invert3x3.hxx
   ./src/mesh/mesh.cxx
   ./src/mesh/parallel/fci.cxx
   ./src/mesh/parallel/fci.hxx
