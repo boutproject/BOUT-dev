@@ -69,6 +69,7 @@ set(serial_tests_source
   ./mesh/test_coordinates.cxx
   ./mesh/test_coordinates_accessor.cxx
   ./mesh/test_interpolation.cxx
+  ./mesh/test_invert3x3.cxx
   ./mesh/test_mesh.cxx
   ./mesh/test_paralleltransform.cxx
   ./solver/test_fakesolver.cxx

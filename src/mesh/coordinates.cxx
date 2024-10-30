@@ -20,6 +20,7 @@
 
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
+#include "invert3x3.hxx"
 
 // use anonymous namespace so this utility function is not available outside this file
 namespace {
