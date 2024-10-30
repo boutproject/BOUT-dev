@@ -12,6 +12,8 @@
 #include "HYPRE_IJ_mv.h"
 #include "HYPRE_parcsr_ls.h"
 
+#include "fake_mesh_fixture.hxx"
+
 namespace bout {
 namespace globals {
 extern Mesh* mesh;

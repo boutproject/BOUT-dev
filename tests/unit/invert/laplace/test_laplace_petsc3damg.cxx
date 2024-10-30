@@ -4,7 +4,7 @@
 #include <tuple>
 
 #include "../../../../src/invert/laplace/impls/petsc3damg/petsc3damg.hxx"
-#include "test_extras.hxx"
+
 #include "bout/invert_laplace.hxx"
 #include "gtest/gtest.h"
 
@@ -19,6 +19,8 @@
 #include "bout/vecops.hxx"
 
 #if BOUT_HAS_PETSC
+
+#include "fake_mesh_fixture.hxx"
 
 /// Global mesh
 namespace bout {

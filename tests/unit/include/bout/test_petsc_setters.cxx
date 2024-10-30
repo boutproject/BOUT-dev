@@ -2,13 +2,11 @@
 
 #include <vector>
 
-#include "test_extras.hxx"
+#if BOUT_HAS_PETSC
 #include "gtest/gtest.h"
 
-#include "bout/petsc_interface.hxx"
-#include "bout/region.hxx"
-
-#if BOUT_HAS_PETSC
+#include <bout/petsclib.hxx>
+#include <bout/petsc_interface.hxx>
 
 ///////////////// Test PetscMatrixElement /////////////////
 

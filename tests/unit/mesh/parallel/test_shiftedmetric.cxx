@@ -6,6 +6,8 @@
 #include "bout/fft.hxx"
 
 #if BOUT_HAS_FFTW
+#include "fake_mesh.hxx"
+
 // The unit tests use the global mesh
 using namespace bout::globals;
 

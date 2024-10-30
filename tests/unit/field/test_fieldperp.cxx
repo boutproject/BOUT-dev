@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+#include "fake_mesh_fixture.hxx"
+
 /// Global mesh
 namespace bout {
 namespace globals {

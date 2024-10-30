@@ -2,7 +2,6 @@
 
 #include <utility>
 
-#include "test_extras.hxx"
 #include "gtest/gtest.h"
 
 #include "bout/field2d.hxx"
@@ -15,6 +14,8 @@
 #if BOUT_HAS_PETSC
 
 #include <petscconf.h>
+
+#include "fake_mesh_fixture.hxx"
 
 namespace bout {
 namespace globals {

@@ -9,6 +9,8 @@
 #include "bout/unused.hxx"
 #include "bout/vector3d.hxx"
 
+#include "fake_mesh.hxx"
+
 /// Global mesh
 namespace bout {
 namespace globals {

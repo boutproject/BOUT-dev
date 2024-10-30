@@ -5,13 +5,14 @@
 #include <vector>
 
 #include "fake_parallel_mesh.hxx"
-#include "test_extras.hxx"
 #include "gtest/gtest.h"
 
 #include "bout/petsc_interface.hxx"
 #include "bout/region.hxx"
 
 #if BOUT_HAS_PETSC
+
+#include "fake_mesh_fixture.hxx"
 
 /// Global mesh
 namespace bout {

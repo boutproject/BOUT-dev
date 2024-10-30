@@ -11,6 +11,8 @@
 #include "bout/paralleltransform.hxx"
 #include "bout/traits.hxx"
 
+#include "fake_mesh_fixture.hxx"
+
 /// Global mesh
 namespace bout {
 namespace globals {

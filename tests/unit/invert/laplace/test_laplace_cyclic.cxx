@@ -6,7 +6,7 @@
 #include <tuple>
 
 #include "../../../../src/invert/laplace/impls/cyclic/cyclic_laplace.hxx"
-#include "test_extras.hxx"
+
 #include "bout/invert_laplace.hxx"
 #include "gtest/gtest.h"
 
@@ -18,6 +18,8 @@
 #include "bout/mesh.hxx"
 #include "bout/options.hxx"
 #include "bout/vecops.hxx"
+
+#include "fake_mesh_fixture.hxx"
 
 /// Global mesh
 namespace bout {

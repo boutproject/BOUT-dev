@@ -1,8 +1,9 @@
 #include "gtest/gtest.h"
 
-#include "test_extras.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/mask.hxx"
+
+#include "fake_mesh_fixture.hxx"
 
 /// Global mesh
 namespace bout {

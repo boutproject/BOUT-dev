@@ -3,7 +3,7 @@
 #include "bout/build_defines.hxx"
 #include "bout/coordinates_accessor.hxx"
 
-#include "test_extras.hxx"
+#include "fake_mesh_fixture.hxx"
 
 /// Global mesh
 namespace bout {

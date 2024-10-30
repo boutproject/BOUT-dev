@@ -16,6 +16,8 @@ using bout::OptionsIO;
 
 #include <string>
 
+#include "fake_mesh_fixture.hxx"
+
 /// Global mesh
 namespace bout {
 namespace globals {

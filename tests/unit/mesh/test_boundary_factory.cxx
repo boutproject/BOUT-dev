@@ -4,7 +4,7 @@
 #include "bout/boundary_op.hxx"
 #include "bout/boundary_region.hxx"
 
-#include "test_extras.hxx"
+#include "fake_mesh.hxx"
 
 /// Global mesh
 namespace bout {

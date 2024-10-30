@@ -7,6 +7,8 @@
 #include "bout/mesh.hxx"
 #include "bout/output.hxx"
 
+#include "fake_mesh_fixture.hxx"
+
 /// Global mesh
 namespace bout {
 namespace globals {

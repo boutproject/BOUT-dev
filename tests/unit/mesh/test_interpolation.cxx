@@ -1,7 +1,5 @@
 #include "gtest/gtest.h"
 
-#include "test_extras.hxx"
-#include "bout/boutexception.hxx"
 #include "bout/interpolation.hxx"
 #include "bout/mesh.hxx"
 #include "bout/output.hxx"
@@ -17,6 +15,8 @@
 #include <set>
 #include <vector>
 ///////
+
+#include "fake_mesh.hxx"
 
 /// Global mesh
 namespace bout {

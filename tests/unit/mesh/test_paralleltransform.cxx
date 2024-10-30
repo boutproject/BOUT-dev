@@ -3,6 +3,8 @@
 #include "test_extras.hxx"
 #include "bout/paralleltransform.hxx"
 
+#include "fake_mesh_fixture.hxx"
+
 namespace bout {
 namespace globals {
 extern Mesh* mesh;

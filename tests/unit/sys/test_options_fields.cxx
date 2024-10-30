@@ -3,10 +3,11 @@
 
 #include "gtest/gtest.h"
 
-#include "test_extras.hxx"
 #include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
 #include "bout/unused.hxx"
+
+#include "fake_mesh_fixture.hxx"
 
 /// Global mesh
 namespace bout {

@@ -3,7 +3,6 @@
 #include <memory>
 #include <utility>
 
-#include "test_extras.hxx"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -17,6 +16,8 @@
 #if BOUT_HAS_PETSC
 
 #include <petscconf.h>
+
+#include "fake_mesh_fixture.hxx"
 
 namespace bout {
 namespace globals {

@@ -11,6 +11,8 @@
 #include "bout/vector2d.hxx"
 #include "bout/vector3d.hxx"
 
+#include "fake_mesh.hxx"
+
 /// Global mesh
 namespace bout {
 namespace globals {
