@@ -52,7 +52,6 @@
 #include "bout/vecops.hxx" // Vector differential operations
 #include "bout/vector2d.hxx"
 #include "bout/vector3d.hxx"
-#include "bout/version.hxx"
 #include "bout/where.hxx"
 // IWYU pragma: end_keep, end_export
 
