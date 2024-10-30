@@ -30,6 +30,8 @@ class Field2D;
 #ifndef BOUT_FIELD2D_H
 #define BOUT_FIELD2D_H
 
+#include "bout/build_config.hxx"
+
 class Mesh;
 #include "bout/field.hxx"
 #include "bout/field_data.hxx"

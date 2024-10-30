@@ -35,7 +35,7 @@
 #define BOUT_H
 
 // IWYU pragma: begin_keep, begin_export
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "bout/boutcomm.hxx"
 #include "bout/difops.hxx" // Differential operators

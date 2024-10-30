@@ -2,7 +2,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "gtest/gtest.h"
 

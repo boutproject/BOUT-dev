@@ -29,13 +29,14 @@
 #ifndef BOUT_UTILS_H
 #define BOUT_UTILS_H
 
+#include "bout/build_config.hxx"
+
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/dcomplex.hxx"
 
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
-#include "bout/build_config.hxx"
 #include "bout/msg_stack.hxx"
 #include "bout/region.hxx"
 #include "bout/unused.hxx"

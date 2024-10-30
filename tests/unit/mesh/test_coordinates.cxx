@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/constants.hxx"
 #include "bout/coordinates.hxx"
 #include "bout/mesh.hxx"

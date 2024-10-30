@@ -29,8 +29,6 @@ class Field;
 #ifndef FIELD_H
 #define FIELD_H
 
-#include "bout/build_config.hxx"
-
 #include <cmath>
 #include <cstdio>
 #include <memory>
