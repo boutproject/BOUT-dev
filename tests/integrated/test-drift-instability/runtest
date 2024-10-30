@@ -7,8 +7,8 @@
 # Requires: not metric_3d
 
 from boututils.run_wrapper import build_and_log, shell, launch_safe
-from boututils.file_import import file_import
 from boututils.calculus import deriv
+from boututils.datafile import DataFile
 from boututils.linear_regression import linear_regression
 
 from boutdata.collect import collect
@@ -93,6 +93,9 @@ def run_zeff_case(zeff):
     nt = dims[0]
     ny = dims[2]
     nz = dims[3]
+
+    with DataFile("uedge.grd_std.cdl") as f:
+        grid = {v: f.read(v) for v in f.keys()}
 
     # Calculate geometric and physical quantities
     lZeta = 1e2 * zmax * 2 * np.pi * grid["R0"]  # toroidal range [cm]
@@ -210,9 +213,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     build_and_log("resistive drift instability test")
-
-    # Import the grid file
-    grid = file_import("uedge.grd_std.cdl")
 
     return_code = 0
     for zeff in args.Zeff_list:
