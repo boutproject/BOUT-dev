@@ -70,7 +70,7 @@ private:
     mesh->get(Bpxy, "Bpxy");
     mesh->get(Btxy, "Btxy");
     mesh->get(hthe, "hthe");
-    Field2D dx = mesh->get("dpsi");
+    FieldMetric dx = mesh->get("dpsi");
     mesh->get(I, "sinty");
 
     // Load normalisation values
@@ -148,7 +148,7 @@ private:
     Bpxy /= (bmag / 1.e4);
     Btxy /= (bmag / 1.e4);
 
-    Field2D Bxy = mesh->get("Bxy");
+    FieldMetric Bxy = mesh->get("Bxy");
     Bxy /= (bmag / 1.e4);
 
     // Set nu

@@ -184,7 +184,7 @@ protected:
       sbp = -1.0;
     }
 
-    Field2D Bxy = mesh->get("Bxy");
+    FieldMetric Bxy = mesh->get("Bxy");
     Bxy /= Bnorm;
 
     auto* coord = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, sinty, Bxy, Btxy, sbp);
