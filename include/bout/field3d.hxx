@@ -250,7 +250,7 @@ public:
 #if CHECK > 2
     if (yup_fields.size() != ydown_fields.size()) {
       throw BoutException(
-          "Field3D::splitParallelSlices: forward/backward parallel slices not in sync.\n"
+          "Field3D::hasParallelSlices: forward/backward parallel slices not in sync.\n"
           "    This is an internal library error");
     }
 #endif

@@ -29,7 +29,7 @@
 #ifndef BOUT_ARKODE_SOLVER_H
 #define BOUT_ARKODE_SOLVER_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/solver.hxx"
 
 #if not BOUT_HAS_ARKODE
@@ -43,6 +43,7 @@ RegisterUnavailableSolver
 
 #include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
 
 #include <nvector/nvector_parallel.h>
@@ -54,9 +55,10 @@ RegisterUnavailableSolver
 #define ARKODE_OPTIMAL_PARAMS_SUPPORT SUNDIALS_VERSION_LESS_THAN(7, 1, 0)
 
 #if ARKODE_CONTROLLER_SUPPORT
-#include <sundials/sundials_adaptcontroller.h>
+#include <sundials/sundials_adaptcontroller.h> // IWYU pragma: export
 #endif
 
+#include <string>
 #include <vector>
 
 class ArkodeSolver;
@@ -110,7 +112,7 @@ static constexpr auto ARKodeGetLastStep = ARKStepGetLastStep;
 class ArkodeSolver : public Solver {
 public:
   explicit ArkodeSolver(Options* opts = nullptr);
-  ~ArkodeSolver();
+  ~ArkodeSolver() override;
 
   BoutReal getCurrentTimestep() override { return hcur; }
 
