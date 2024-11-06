@@ -47,7 +47,7 @@ public:
         mesh2(2, 2, 2) {
     mesh2.createDefaultRegions();
     mesh2.setCoordinates(nullptr);
-    test_coords = std::make_shared<Coordinates>(
+    auto test_coords = std::make_shared<Coordinates>(
         bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},

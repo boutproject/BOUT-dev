@@ -882,12 +882,6 @@ private:
 
 class FieldFactoryCreateAndTransformTest : public FakeMeshFixture {
 public:
-  FieldFactoryCreateAndTransformTest() : FakeMeshFixture{} {
-    // We need Coordinates so a parallel transform is available as
-    // FieldFactory::create3D wants to un-field-align the result
-    static_cast<FakeMesh*>(mesh)->setCoordinates(test_coords);
-  }
-
   WithQuietOutput quiet_info{output_info};
   WithQuietOutput quiet_warn{output_warn};
 };

@@ -118,10 +118,10 @@ public:
   static constexpr int ny = 5;
   static constexpr int nz = 7;
 
+private:
   std::shared_ptr<Coordinates> test_coords{nullptr};
   std::shared_ptr<Coordinates> test_coords_staggered{nullptr};
 
-private:
   WithQuietOutput quiet_info{output_info};
   WithQuietOutput quiet_warn{output_warn};
   MpiWrapper mpi;
