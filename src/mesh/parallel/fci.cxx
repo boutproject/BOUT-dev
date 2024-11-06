@@ -69,7 +69,7 @@ bool load_parallel_metric_component(std::string name, Field3D& component, int of
     isValid = mesh->get(tmp, pname, 0.0, false) == 0;
     if (not isValid) {
       throw BoutException("Could not read {:s} from grid file!\n"
-                          "  Fix it up with `zoidberg-update-parallel-metrics <grid>`",
+                          "Regenerate the grid with a recent zoidberg!",
                           pname);
     }
   } else {
@@ -80,7 +80,8 @@ bool load_parallel_metric_component(std::string name, Field3D& component, int of
         lmin = lmax = 0.0;
       } else {
         throw BoutException("{:s} not in grid file but not constant!\n"
-                            "  Cannot determine value for parallel slices",
+                            "  Cannot determine value for parallel slices.\n"
+                            "  Regenerate the grid with a recent zoidberg!",
                             name);
       }
     } else {
