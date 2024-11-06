@@ -66,8 +66,6 @@ public:
 
   inline bool& operator()(int jx, int jy, int jz) { return mask(jx, jy, jz); }
   inline const bool& operator()(int jx, int jy, int jz) const { return mask(jx, jy, jz); }
-
-  inline bool& operator[](const Ind3D& i) { return mask[i]; }
   inline const bool& operator[](const Ind3D& i) const { return mask[i]; }
   inline bool& operator[](const Ind3D& i) { return mask[i]; }
 };
