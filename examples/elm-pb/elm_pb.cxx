@@ -331,8 +331,8 @@ protected:
     mesh->get(Psiaxis, "psi_axis");   // axis flux
     mesh->get(Psibndry, "psi_bndry"); // edge flux
 
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy);
-    const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates(Bpxy, hthe, I, B0, Btxy);
+    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy);
+    const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates(hthe, I, B0, Btxy);
 
     // Set locations of staggered variables
     // Note, use of staggered grids in elm-pb is untested and may not be completely
@@ -662,7 +662,7 @@ protected:
       Dphi0 *= -1;
     }
 
-    V0 = -tokamak_coordinates_factory.Rxy() * Bpxy * Dphi0 / B0;
+    V0 = -tokamak_coordinates_factory.Rxy() * tokamak_coordinates_factory.Bpxy() * Dphi0 / B0;
 
     if (simple_rmp) {
       include_rmp = true;
