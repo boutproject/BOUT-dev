@@ -134,7 +134,7 @@ protected:
     Field2D Bxy = mesh->get("Bxy");
     Bxy /= (bmag / 1.e4);
 
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(mesh);
+    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(mesh);
     coord = tokamak_coordinates_factory.make_tokamak_coordinates(Rxy, Bpxy, hthe, I, Bxy, Btxy);
 
     coord->setDx(mesh->get("dpsi"));
