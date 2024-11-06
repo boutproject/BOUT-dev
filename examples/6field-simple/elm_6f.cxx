@@ -1033,8 +1033,8 @@ protected:
 
     /**************** CALCULATE METRICS ******************/
 
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(mesh);
-    auto* coord = tokamak_coordinates_factory.make_tokamak_coordinates(Rxy, Bpxy, hthe, I, B0, Btxy);
+    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(mesh);
+    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(Rxy, Bpxy, hthe, I, B0, Btxy);
     coord->setDx(dx / (Lbar * Lbar * Bbar));
     
     //////////////////////////////////////////////////////////////
