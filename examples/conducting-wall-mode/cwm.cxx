@@ -62,8 +62,6 @@ private:
     // Load 2D profiles (set to zero if not found)
     GRID_LOAD(Ni0, Te0);
 
-    coord = mesh->getCoordinates();
-
     // Load metrics
     mesh->get(Rxy, "Rxy");
     mesh->get(Zxy, "Zxy");
