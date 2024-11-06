@@ -46,7 +46,15 @@ RegisterUnavailableSolver
 #include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
 
-#if SUNDIALS_CONTROLLER_SUPPORT
+#include <nvector/nvector_parallel.h>
+#include <sundials/sundials_config.h>
+
+#define ARKODE_CONTROLLER_SUPPORT SUNDIALS_VERSION_AT_LEAST(6, 7, 0)
+#define ARKODE_TABLE_BY_NAME_SUPPORT SUNDIALS_VERSION_AT_LEAST(6, 4, 0)
+// ARKStepSetOptimalParams is deprecated since SUNDIALS 6.1.0
+#define ARKODE_OPTIMAL_PARAMS_SUPPORT SUNDIALS_VERSION_LESS_THAN(7, 1, 0)
+
+#if ARKODE_CONTROLLER_SUPPORT
 #include <sundials/sundials_adaptcontroller.h> // IWYU pragma: export
 #endif
 
@@ -67,6 +75,39 @@ BOUT_ENUM_CLASS(Treatment, ImEx, Implicit, Explicit);
 // Adaptivity method
 BOUT_ENUM_CLASS(AdapMethod, PID, PI, I, Explicit_Gustafsson, Implicit_Gustafsson,
                 ImEx_Gustafsson);
+
+// Shim for the ARKstep -> ARKode prefix change in SUNDIALS 7.1.0
+#if SUNDIALS_VERSION_LESS_THAN(7, 1, 0)
+#include <arkode/arkode_arkstep.h>
+static constexpr auto ARKodeFree = ARKStepFree;
+static constexpr auto ARKodeSetUserData = ARKStepSetUserData;
+static constexpr auto ARKodeSetLinear = ARKStepSetLinear;
+static constexpr auto ARKodeSetFixedStep = ARKStepSetFixedStep;
+static constexpr auto ARKodeSetOrder = ARKStepSetOrder;
+static constexpr auto ARKodeSetCFLFraction = ARKStepSetCFLFraction;
+#if ARKODE_CONTROLLER_SUPPORT
+static constexpr auto ARKodeSetAdaptController = ARKStepSetAdaptController;
+static constexpr auto ARKodeSetAdaptivityAdjustment = ARKStepSetAdaptivityAdjustment;
+#endif
+static constexpr auto ARKodeSVtolerances = ARKStepSVtolerances;
+static constexpr auto ARKodeSStolerances = ARKStepSStolerances;
+static constexpr auto ARKodeSetMaxNumSteps = ARKStepSetMaxNumSteps;
+static constexpr auto ARKodeSetMaxStep = ARKStepSetMaxStep;
+static constexpr auto ARKodeSetMinStep = ARKStepSetMinStep;
+static constexpr auto ARKodeSetInitStep = ARKStepSetInitStep;
+static constexpr auto ARKodeSetNonlinearSolver = ARKStepSetNonlinearSolver;
+static constexpr auto ARKodeSetLinearSolver = ARKStepSetLinearSolver;
+static constexpr auto ARKodeSetPreconditioner = ARKStepSetPreconditioner;
+static constexpr auto ARKodeSetJacTimes = ARKStepSetJacTimes;
+static constexpr auto ARKodeGetNumSteps = ARKStepGetNumSteps;
+static constexpr auto ARKodeGetNumNonlinSolvIters = ARKStepGetNumNonlinSolvIters;
+static constexpr auto ARKodeGetNumPrecEvals = ARKStepGetNumPrecEvals;
+static constexpr auto ARKodeGetNumLinIters = ARKStepGetNumLinIters;
+static constexpr auto ARKodeEvolve = ARKStepEvolve;
+static constexpr auto ARKodeGetCurrentTime = ARKStepGetCurrentTime;
+static constexpr auto ARKodeGetDky = ARKStepGetDky;
+static constexpr auto ARKodeGetLastStep = ARKStepGetLastStep;
+#endif
 
 class ArkodeSolver : public Solver {
 public:
@@ -140,8 +181,10 @@ private:
   bool rightprec;
   /// Use user-supplied Jacobian function
   bool use_jacobian;
+#if ARKODE_OPTIMAL_PARAMS_SUPPORT
   /// Use ARKode optimal parameters
   bool optimize;
+#endif
 
   // Diagnostics from ARKODE
   int nsteps{0};
@@ -161,7 +204,7 @@ private:
   SUNLinearSolver sun_solver{nullptr};
   /// Solver for implicit stages
   SUNNonlinearSolver nonlinear_solver{nullptr};
-#if SUNDIALS_CONTROLLER_SUPPORT
+#if ARKODE_CONTROLLER_SUPPORT
   /// Timestep controller
   SUNAdaptController controller{nullptr};
 #endif
