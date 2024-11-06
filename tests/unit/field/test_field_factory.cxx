@@ -605,13 +605,15 @@ public:
 };
 
 TEST_F(FieldFactoryTest, RequireMesh) {
-  delete bout::globals::mesh;
+  auto* old_mesh = bout::globals::mesh;
   bout::globals::mesh = nullptr;
 
   FieldFactory local_factory{nullptr, nullptr};
 
   EXPECT_THROW(local_factory.create2D("x", nullptr, nullptr), BoutException);
   EXPECT_THROW(local_factory.create3D("x", nullptr, nullptr), BoutException);
+
+  bout::globals::mesh = old_mesh;
 }
 
 TEST_F(FieldFactoryTest, CreateOnMeshWithoutCoordinates) {

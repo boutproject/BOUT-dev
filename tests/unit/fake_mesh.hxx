@@ -1,15 +1,18 @@
 #pragma once
 
-#include <gtest/gtest.h>
-
 #include <bout/boundary_region.hxx>
 #include <bout/boutcomm.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/griddata.hxx>
+#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
+#include <bout/mpi_wrapper.hxx>
+#include <bout/region.hxx>
 #include <bout/unused.hxx>
 
 #include <numeric>
+#include <memory>
 
 class Options;
 
@@ -26,7 +29,7 @@ class Options;
 ///   else will likely **not** work!
 class FakeMesh : public Mesh {
 public:
-  FakeMesh(int nx, int ny, int nz) {
+  FakeMesh(int nx, int ny, int nz, MpiWrapper& mpi_in) {
     // Mesh only on one process, so global and local indices are the
     // same
     GlobalNx = nx;
@@ -58,8 +61,9 @@ public:
 
     // Need some options for parallelTransform
     options = Options::getRoot();
-    mpi = bout::globals::mpi;
+    mpi = &mpi_in;
   }
+  FakeMesh(int nx, int ny, int nz) : FakeMesh(nx, ny, nz, *bout::globals::mpi) {}
 
   void setCoordinates(std::shared_ptr<Coordinates> coords,
                       CELL_LOC location = CELL_CENTRE) {

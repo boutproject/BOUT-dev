@@ -11,7 +11,7 @@
 #include <bout/operatorstencil.hxx>
 #include <bout/unused.hxx>
 
-#include "fake_mesh.hxx"
+#include "fake_mesh.hxx" // IWYU pragma: export
 
 /// Test fixture to make sure the global mesh is our fake
 /// one. Also initialize the global mesh_staggered for use in tests with
@@ -21,15 +21,14 @@
 ///     using MyTest = FakeMeshFixture;
 class FakeMeshFixture : public ::testing::Test {
 public:
-  FakeMeshFixture() {
-    WithQuietOutput quiet_info{output_info};
-    WithQuietOutput quiet_warn{output_warn};
+  FakeMeshFixture()
+      : mesh_m(nx, ny, nz, mpi), mesh_staggered_m(nx, ny, nz, mpi),
+        mesh_staggered(&mesh_staggered_m) {
 
-    delete bout::globals::mesh;
-    bout::globals::mpi = new MpiWrapper();
-    bout::globals::mesh = new FakeMesh(nx, ny, nz);
+    bout::globals::mpi = &mpi;
+    bout::globals::mesh = &mesh_m;
     bout::globals::mesh->createDefaultRegions();
-    static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
+    mesh_m.setCoordinates(nullptr);
     test_coords = std::make_shared<Coordinates>(
         bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
         Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
@@ -51,35 +50,32 @@ public:
 #endif
 
     // No call to Coordinates::geometry() needed here
-    static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
-    static_cast<FakeMesh*>(bout::globals::mesh)
-        ->setGridDataSource(new FakeGridDataSource());
+    mesh_m.setCoordinates(test_coords);
+    mesh_m.setGridDataSource(new FakeGridDataSource());
     // May need a ParallelTransform to create fields, because create3D calls
     // fromFieldAligned
     test_coords->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
-    dynamic_cast<FakeMesh*>(bout::globals::mesh)->createBoundaryRegions();
+    mesh_m.createBoundaryRegions();
 
-    delete mesh_staggered;
-    mesh_staggered = new FakeMesh(nx, ny, nz);
-    mesh_staggered->StaggerGrids = true;
-    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr);
-    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
-    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
-    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);
-    mesh_staggered->createDefaultRegions();
+    mesh_staggered_m.StaggerGrids = true;
+    mesh_staggered_m.setCoordinates(nullptr);
+    mesh_staggered_m.setCoordinates(nullptr, CELL_XLOW);
+    mesh_staggered_m.setCoordinates(nullptr, CELL_YLOW);
+    mesh_staggered_m.setCoordinates(nullptr, CELL_ZLOW);
+    mesh_staggered_m.createDefaultRegions();
 
     test_coords_staggered = std::make_shared<Coordinates>(
-        mesh_staggered, Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
-        Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
-        Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
-        Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
-        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
-        Field2D{0.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
-        Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
-        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
-        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
-        Field2D{0.0, mesh_staggered});
+        &mesh_staggered_m, Field2D{1.0, &mesh_staggered_m},
+        Field2D{1.0, &mesh_staggered_m}, Field2D{1.0, &mesh_staggered_m},
+        Field2D{1.0, &mesh_staggered_m}, Field2D{1.0, &mesh_staggered_m},
+        Field2D{1.0, &mesh_staggered_m}, Field2D{1.0, &mesh_staggered_m},
+        Field2D{1.0, &mesh_staggered_m}, Field2D{0.0, &mesh_staggered_m},
+        Field2D{0.0, &mesh_staggered_m}, Field2D{0.0, &mesh_staggered_m},
+        Field2D{1.0, &mesh_staggered_m}, Field2D{1.0, &mesh_staggered_m},
+        Field2D{1.0, &mesh_staggered_m}, Field2D{0.0, &mesh_staggered_m},
+        Field2D{0.0, &mesh_staggered_m}, Field2D{0.0, &mesh_staggered_m},
+        Field2D{0.0, &mesh_staggered_m}, Field2D{0.0, &mesh_staggered_m});
 
     // Set some auxilliary variables
     test_coords_staggered->G1 = test_coords_staggered->G2 = test_coords_staggered->G3 =
@@ -97,16 +93,13 @@ public:
 
     // No call to Coordinates::geometry() needed here
     test_coords_staggered->setParallelTransform(
-        bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
+        bout::utils::make_unique<ParallelTransformIdentity>(mesh_staggered_m));
 
     // Set all coordinates to the same Coordinates object for now
-    dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(test_coords_staggered);
-    dynamic_cast<FakeMesh*>(mesh_staggered)
-        ->setCoordinates(test_coords_staggered, CELL_XLOW);
-    dynamic_cast<FakeMesh*>(mesh_staggered)
-        ->setCoordinates(test_coords_staggered, CELL_YLOW);
-    dynamic_cast<FakeMesh*>(mesh_staggered)
-        ->setCoordinates(test_coords_staggered, CELL_ZLOW);
+    mesh_staggered_m.setCoordinates(test_coords_staggered);
+    mesh_staggered_m.setCoordinates(test_coords_staggered, CELL_XLOW);
+    mesh_staggered_m.setCoordinates(test_coords_staggered, CELL_YLOW);
+    mesh_staggered_m.setCoordinates(test_coords_staggered, CELL_ZLOW);
   }
 
   FakeMeshFixture(const FakeMeshFixture&) = delete;
@@ -115,11 +108,7 @@ public:
   FakeMeshFixture& operator=(FakeMeshFixture&&) = delete;
 
   ~FakeMeshFixture() override {
-    delete bout::globals::mesh;
     bout::globals::mesh = nullptr;
-    delete mesh_staggered;
-    mesh_staggered = nullptr;
-    delete bout::globals::mpi;
     bout::globals::mpi = nullptr;
 
     Options::cleanup();
@@ -129,8 +118,18 @@ public:
   static constexpr int ny = 5;
   static constexpr int nz = 7;
 
-  Mesh* mesh_staggered = nullptr;
-
   std::shared_ptr<Coordinates> test_coords{nullptr};
   std::shared_ptr<Coordinates> test_coords_staggered{nullptr};
+
+private:
+  WithQuietOutput quiet_info{output_info};
+  WithQuietOutput quiet_warn{output_warn};
+  MpiWrapper mpi;
+
+  FakeMesh mesh_m;
+  FakeMesh mesh_staggered_m;
+
+public:
+  // Public pointer to our staggered mesh
+  Mesh* mesh_staggered; // NOLINT
 };

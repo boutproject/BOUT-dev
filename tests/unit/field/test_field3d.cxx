@@ -118,8 +118,8 @@ TEST_F(Field3DTest, CopyCheckFieldmesh) {
 
 #if CHECK > 0
 TEST_F(Field3DTest, CreateOnNullMesh) {
-  auto old_mesh = mesh;
-  mesh = nullptr;
+  auto* old_mesh = bout::globals::mesh;
+  bout::globals::mesh = nullptr;
 
   Field3D field;
 
@@ -127,7 +127,7 @@ TEST_F(Field3DTest, CreateOnNullMesh) {
   EXPECT_EQ(field.getNy(), -1);
   EXPECT_EQ(field.getNz(), -1);
 
-  mesh = old_mesh;
+  bout::globals::mesh = old_mesh;
 
   field.allocate();
 
@@ -148,8 +148,8 @@ TEST_F(Field3DTest, CreateCopyOnNullMesh) {
   // global mesh as we end up calling the Field constructor that forces this.
   // Hence, to test the case of copying a field without a mesh we have to
   // temporarily hide the global mesh, before restoring it later.
-  auto old_mesh = mesh;
-  mesh = nullptr;
+  auto* old_mesh = bout::globals::mesh;
+  bout::globals::mesh = nullptr;
 
   Field3D field;
   // If CHECK > 2 then the following will throw due to the data
@@ -161,7 +161,7 @@ TEST_F(Field3DTest, CreateCopyOnNullMesh) {
   EXPECT_EQ(field2.getNy(), -1);
   EXPECT_EQ(field2.getNz(), -1);
 
-  mesh = old_mesh;
+  bout::globals::mesh = old_mesh;
   field2.allocate();
 
   EXPECT_EQ(field2.getNx(), Field3DTest::nx);

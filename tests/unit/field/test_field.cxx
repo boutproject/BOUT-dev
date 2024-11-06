@@ -1,11 +1,8 @@
 #include "gtest/gtest.h"
 
-#include "test_extras.hxx"
 #include "bout/boutexception.hxx"
-#include "bout/constants.hxx"
 #include "bout/field.hxx"
 #include "bout/mesh.hxx"
-#include "bout/output.hxx"
 
 #include "fake_mesh_fixture.hxx"
 
