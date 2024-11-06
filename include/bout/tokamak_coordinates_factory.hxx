@@ -9,11 +9,11 @@ class TokamakCoordinatesFactory {
 private:
   
   Mesh& mesh_m;
-  const FieldMetric& Rxy_m;
+  const Field2D& Rxy_m;
 
 public:
 
-  TokamakCoordinatesFactory(Mesh& mesh, const FieldMetric& Rxy) : mesh_m(mesh), Rxy_m(Rxy) {}
+  TokamakCoordinatesFactory(Mesh& mesh, const Field2D& Rxy) : mesh_m(mesh), Rxy_m(Rxy) {}
 
   Coordinates* make_tokamak_coordinates(const FieldMetric& Bpxy, const FieldMetric& hthe,
                                         const FieldMetric& I, const FieldMetric& B,
@@ -45,7 +45,7 @@ public:
     return coord;
   }
 
-  const FieldMetric& Rxy() const { return Rxy_m; }
+  const Field2D& Rxy() const { return Rxy_m; }
 
 };
 
