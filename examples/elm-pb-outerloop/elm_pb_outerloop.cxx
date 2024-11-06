@@ -1211,8 +1211,8 @@ public:
     }
     Jpar2.setBoundary("J");
 
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, B0);
-    const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates(hthe, I);
+    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, B0, hthe);
+    const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates(I);
 
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES

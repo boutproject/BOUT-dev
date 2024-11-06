@@ -415,8 +415,8 @@ public:
 
     dump.add(eta, "eta", 0);
 
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, B0);
-    coords = tokamak_coordinates_factory.make_tokamak_coordinates(hthe, I);
+    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, B0, hthe);
+    coords = tokamak_coordinates_factory.make_tokamak_coordinates(I);
 
     // Set B field vector
 

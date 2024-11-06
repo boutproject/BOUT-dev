@@ -22,8 +22,8 @@ int main(int argc, char** argv) {
     mesh->get(hthe, "hthe"); // m
     mesh->get(I, "sinty");   // m^-2 T^-1
 
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, B0);
-    tokamak_coordinates_factory.make_tokamak_coordinates(hthe, I);
+    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, B0, hthe);
+    tokamak_coordinates_factory.make_tokamak_coordinates(I);
   }
   ///////////////////////////////////////
 
