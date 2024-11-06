@@ -364,7 +364,8 @@ class GEM : public PhysicsModel {
 
     Rxy /= rho_s; // Perpendicular derivatives normalised to rho_s
 
-    coord = TokamakCoordinatesFactory(mesh).make_tokamak_coordinates(Rxy, Bpxy, hthe, 0.0, Bxy, Btxy);
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(mesh);
+    coord = tokamak_coordinates_factory.make_tokamak_coordinates(Rxy, Bpxy, hthe, 0.0, Bxy, Btxy);
 
     coord->setDx(coord->dx() / (rho_s * rho_s * Bbar));
 
