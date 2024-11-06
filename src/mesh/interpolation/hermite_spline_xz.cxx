@@ -111,12 +111,6 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
   }
 }
 
-void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
-                                  const BoutMask& mask, const std::string& region) {
-  setMask(mask);
-  calcWeights(delta_x, delta_z, region);
-}
-
 /*!
  * Return position and weight of points needed to approximate the function value at the
  * point that the field line through (i,j,k) meets the (j+1)-plane. For the case where
@@ -222,17 +216,4 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
             || x > localmesh->xend);
   }
   return f_interp;
-}
-
-Field3D XZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_x,
-                                     const Field3D& delta_z, const std::string& region) {
-  calcWeights(delta_x, delta_z, region);
-  return interpolate(f, region);
-}
-
-Field3D XZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_x,
-                                     const Field3D& delta_z, const BoutMask& mask,
-                                     const std::string& region) {
-  calcWeights(delta_x, delta_z, mask, region);
-  return interpolate(f, region);
 }

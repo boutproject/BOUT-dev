@@ -1,8 +1,7 @@
 /**************************************************************************
- * Copyright 2010-2020 B.D.Dudson, S.Farley, P. Hill, J.T. Omotani, J.T. Parker,
- * M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2024 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -24,7 +23,12 @@
 #ifndef BOUT_INTERP_XZ_H
 #define BOUT_INTERP_XZ_H
 
+#include "bout/build_defines.hxx"
+#include "bout/field3d.hxx"
+#include "bout/globalindexer.hxx"
 #include "bout/mask.hxx"
+#include "bout/petsc_interface.hxx"
+#include "bout/petsclib.hxx"
 
 class Options;
 
@@ -95,20 +99,30 @@ public:
     ASSERT1(has_region);
     return getRegion();
   }
+  /// Calculate weights using given offsets in X and Z
   virtual void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                            const std::string& region = "RGN_NOBNDRY") = 0;
-  virtual void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
-                           const BoutMask& mask,
-                           const std::string& region = "RGN_NOBNDRY") = 0;
+  void calcWeights(const Field3D& delta_x, const Field3D& delta_z, const BoutMask& mask,
+                   const std::string& region = "RGN_NOBNDRY") {
+    setMask(mask);
+    calcWeights(delta_x, delta_z, region);
+  }
 
+  /// Use pre-calculated weights
   virtual Field3D interpolate(const Field3D& f,
                               const std::string& region = "RGN_NOBNDRY") const = 0;
-  virtual Field3D interpolate(const Field3D& f, const Field3D& delta_x,
-                              const Field3D& delta_z,
-                              const std::string& region = "RGN_NOBNDRY") = 0;
-  virtual Field3D interpolate(const Field3D& f, const Field3D& delta_x,
-                              const Field3D& delta_z, const BoutMask& mask,
-                              const std::string& region = "RGN_NOBNDRY") = 0;
+
+  /// Calculate weights then interpolate
+  Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
+                      const std::string& region = "RGN_NOBNDRY") {
+    calcWeights(delta_x, delta_z, region);
+    return interpolate(f, region);
+  }
+  Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
+                      const BoutMask& mask, const std::string& region = "RGN_NOBNDRY") {
+    calcWeights(delta_x, delta_z, mask, region);
+    return interpolate(f, region);
+  }
 
   // Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
   void setYOffset(int offset) { y_offset = offset; }
@@ -162,18 +176,10 @@ public:
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                    const std::string& region = "RGN_NOBNDRY") override;
-  void calcWeights(const Field3D& delta_x, const Field3D& delta_z, const BoutMask& mask,
-                   const std::string& region = "RGN_NOBNDRY") override;
 
-  // Use precalculated weights
   Field3D interpolate(const Field3D& f,
                       const std::string& region = "RGN_NOBNDRY") const override;
-  // Calculate weights and interpolate
-  Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
-                      const std::string& region = "RGN_NOBNDRY") override;
-  Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
-                      const BoutMask& mask,
-                      const std::string& region = "RGN_NOBNDRY") override;
+
   std::vector<ParallelTransform::PositionsAndWeights>
   getWeightsForYApproximation(int i, int j, int k, int yoffset) override;
 };
@@ -218,21 +224,12 @@ public:
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                    const std::string& region = "RGN_NOBNDRY") override;
-  void calcWeights(const Field3D& delta_x, const Field3D& delta_z, const BoutMask& mask,
-                   const std::string& region = "RGN_NOBNDRY") override;
+
+  using XZInterpolation::interpolate;
 
   // Use precalculated weights
   Field3D interpolate(const Field3D& f,
                       const std::string& region = "RGN_NOBNDRY") const override;
-  // Calculate weights and interpolate
-  Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
-                      const std::string& region = "RGN_NOBNDRY") override;
-  Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
-                      const BoutMask& mask,
-                      const std::string& region = "RGN_NOBNDRY") override;
-  BoutReal lagrange_4pt(BoutReal v2m, BoutReal vm, BoutReal vp, BoutReal v2p,
-                        BoutReal offset) const;
-  BoutReal lagrange_4pt(const BoutReal v[], BoutReal offset) const;
 };
 
 class XZBilinear : public XZInterpolation {
@@ -251,19 +248,68 @@ public:
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                    const std::string& region = "RGN_NOBNDRY") override;
-  void calcWeights(const Field3D& delta_x, const Field3D& delta_z, const BoutMask& mask,
+
+  using XZInterpolation::interpolate;
+
+  // Use precalculated weights
+  Field3D interpolate(const Field3D& f,
+                      const std::string& region = "RGN_NOBNDRY") const override;
+};
+
+#if BOUT_HAS_PETSC
+class PetscXZHermiteSpline : public XZInterpolation {
+  PetscLib petsclib;
+  IndexerPtr<Field3D> indexer;
+  PetscMatrix<Field3D> weights;
+
+  Tensor<Field3D::ind_type> i_corner; // x-index of bottom-left grid point
+  Tensor<int> k_corner;               // z-index of bottom-left grid point
+
+  // Basis functions for cubic Hermite spline interpolation
+  //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
+  // The h00 and h01 basis functions are applied to the function itself
+  // and the h10 and h11 basis functions are applied to its derivative
+  // along the interpolation direction.
+  Field3D h00_x;
+  Field3D h01_x;
+  Field3D h10_x;
+  Field3D h11_x;
+  Field3D h00_z;
+  Field3D h01_z;
+  Field3D h10_z;
+  Field3D h11_z;
+
+public:
+  PetscXZHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr);
+  PetscXZHermiteSpline(Mesh* mesh = nullptr) : PetscXZHermiteSpline(0, mesh) {}
+  PetscXZHermiteSpline(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
+      : PetscXZHermiteSpline(y_offset, mesh) {
+    region = regionFromMask(mask, localmesh);
+  }
+  PetscXZHermiteSpline(const PetscXZHermiteSpline& other) = delete;
+  PetscXZHermiteSpline(PetscXZHermiteSpline&& other) = default;
+  PetscXZHermiteSpline& operator=(const PetscXZHermiteSpline& other) = delete;
+  PetscXZHermiteSpline& operator=(PetscXZHermiteSpline&& other) = delete;
+  ~PetscXZHermiteSpline() override = default;
+
+  void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                    const std::string& region = "RGN_NOBNDRY") override;
+  void calcWeights(const Field3D& delta_x, const Field3D& delta_z, const BoutMask& mask,
+                   const std::string& region = "RGN_NOBNDRY");
 
   // Use precalculated weights
   Field3D interpolate(const Field3D& f,
                       const std::string& region = "RGN_NOBNDRY") const override;
   // Calculate weights and interpolate
   Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
-                      const std::string& region = "RGN_NOBNDRY") override;
+                      const std::string& region = "RGN_NOBNDRY");
   Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
-                      const BoutMask& mask,
-                      const std::string& region = "RGN_NOBNDRY") override;
+                      const BoutMask& mask, const std::string& region = "RGN_NOBNDRY");
+
+  std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYApproximation(int i, int j, int k, int yoffset) override;
 };
+#endif // BOUT_HAS_PETSC
 
 class XZInterpolationFactory
     : public Factory<XZInterpolation, XZInterpolationFactory, Mesh*> {
@@ -279,11 +325,30 @@ public:
   ReturnType create(const std::string& type, [[maybe_unused]] Options* options) const {
     return Factory::create(type, nullptr);
   }
-
-  static void ensureRegistered();
 };
 
 template <class DerivedType>
 using RegisterXZInterpolation = XZInterpolationFactory::RegisterInFactory<DerivedType>;
+
+using RegisterUnavailableXZInterpolation =
+    XZInterpolationFactory::RegisterUnavailableInFactory;
+
+namespace {
+const inline RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{
+    "hermitespline"};
+const inline RegisterXZInterpolation<XZMonotonicHermiteSpline>
+    registerinterpmonotonichermitespline{"monotonichermitespline"};
+const inline RegisterXZInterpolation<XZLagrange4pt> registerinterplagrange4pt{
+    "lagrange4pt"};
+const inline RegisterXZInterpolation<XZBilinear> registerinterpbilinear{"bilinear"};
+
+#if BOUT_HAS_PETSC
+const inline RegisterXZInterpolation<PetscXZHermiteSpline> registerpetschermitespline{
+    "petschermitespline"};
+#else
+const inline RegisterUnavailableXZInterpolation register_unavailable_petsc_hermite_spline{
+    "petschermitespline", "BOUT++ was not configured with PETSc"};
+#endif
+} // namespace
 
 #endif // BOUT_INTERP_XZ_H

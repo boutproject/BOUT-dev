@@ -17,21 +17,25 @@ using IndexerPtr = std::shared_ptr<GlobalIndexer<T>>;
 
 using InterpolationWeights = std::vector<ParallelTransform::PositionsAndWeights>;
 
-/*!
- * An object which accepts index objects produced by iterating over
- * fields and returns a global index. This index can be used when
- * constructing PETSc arrays. Guard regions used for communication
- * between processes will have the indices of the part of the interior
- * region they are mirroring. Boundaries required by the stencil will
- * have unique indices. If no stencil is provided then only the
- * interior region will be assigned global indices. By default, the
- * indexer is fully initialised so that guard cells are communicated
- * (ensuring they hold the appropriate global indices). However, by
- * passing `autoInitialise = false` this behaviour can be turned off
- * and the user can then manually call the `initialise()` method
- * later. This can be useful for mocking/faking the class when
- * testing.
- */
+/// Convert local indices on current process to consistent, unique
+/// global flat indices across all processes.
+///
+/// Note that this can only convert indices both local to *and owned by* the
+/// current process!
+///
+/// An object which accepts index objects produced by iterating over
+/// fields and returns a global index. This index can be used when
+/// constructing PETSc arrays. Guard regions used for communication
+/// between processes will have the indices of the part of the interior
+/// region they are mirroring. Boundaries required by the stencil will
+/// have unique indices. If no stencil is provided then only the
+/// interior region will be assigned global indices. By default, the
+/// indexer is fully initialised so that guard cells are communicated
+/// (ensuring they hold the appropriate global indices). However, by
+/// passing `autoInitialise = false` this behaviour can be turned off
+/// and the user can then manually call the `initialise()` method
+/// later. This can be useful for mocking/faking the class when
+/// testing.
 template <class T>
 class GlobalIndexer {
 public:
@@ -98,7 +102,7 @@ public:
     }
   }
 
-  virtual ~GlobalIndexer() {}
+  virtual ~GlobalIndexer() = default;
 
   /// Call this immediately after construction when running unit tests.
   void initialiseTest() {}
@@ -123,7 +127,7 @@ public:
 
   /// Convert the local index object to a global index which can be
   /// used in PETSc vectors and matrices.
-  int getGlobal(const ind_type& ind) const {
+  virtual int getGlobal(const ind_type& ind) const {
     return static_cast<int>(std::round(indices[ind]));
   }
 
@@ -224,7 +228,8 @@ private:
   Array<int> int_indices;
   /// The first and last global index on this processor (inclusive in
   /// both cases)
-  int globalStart, globalEnd;
+  int globalStart = 0;
+  int globalEnd = 0;
 
   /// Stencil for which this indexer has been configured
   OperatorStencil<ind_type> stencils;
@@ -236,5 +241,50 @@ private:
   mutable bool sparsityCalculated = false;
   mutable std::vector<int> numDiagonal, numOffDiagonal;
 };
+
+namespace bout {
+/// A simplified local-to-global index converter: includes all boundaries, but
+/// not guard cells, and assumes a simple rectangular division of processes.
+///
+/// The conversion indices are not precalculated or cached, so this may be less
+/// efficient than `GlobalIndexer`. However, it can convert "local" indices
+/// outside of the range owned by the current process, for example a local index
+/// with `x = -1` which would be owned by the process to the left.
+class SimpleGlobalIndexer : public GlobalIndexer<Field3D> {
+  // Stencil to ensure x-boundaries (to a depth of 2) are included in the base
+  // indexer
+  //
+  // Actually, I'm not 100% sure what this does, but this appears to the minimum
+  // necessary to get things to work
+  static auto XZstencil(const Mesh& mesh) {
+    using ind_type = Field3D::ind_type;
+    const IndexOffset<ind_type> zero;
+    OperatorStencil<ind_type> stencil;
+
+    stencil.add(
+        [&mesh](ind_type ind) -> bool {
+          return (mesh.xstart <= ind.x() and ind.x() <= mesh.xend)
+                 and (mesh.ystart <= ind.y() and ind.y() <= mesh.yend)
+                 and (mesh.zstart <= ind.z() and ind.z() <= mesh.zend);
+        },
+        {zero.xm(2), zero.xp(2), zero.zm(2), zero.zp(2)});
+
+    return stencil;
+  }
+
+public:
+  SimpleGlobalIndexer() = default;
+  explicit SimpleGlobalIndexer(Mesh* localmesh, bool autoInitialise = true)
+      : GlobalIndexer<Field3D>(localmesh, XZstencil(*localmesh), autoInitialise) {}
+
+  int getGlobal(const ind_type& ind) const override {
+    const auto& mesh = *getMesh();
+    return ((mesh.getGlobalXIndex(ind.x()) * mesh.GlobalNy)
+            + mesh.getGlobalYIndex(ind.y()))
+               * mesh.GlobalNz
+           + mesh.getGlobalZIndex(ind.z());
+  }
+};
+} // namespace bout
 
 #endif // BOUT_GLOBALINDEXER_H
