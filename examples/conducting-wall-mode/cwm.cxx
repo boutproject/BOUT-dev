@@ -154,8 +154,8 @@ private:
     // Set nu
     nu = nu_hat * Ni0 / pow(Te0, 1.5);
 
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(mesh);
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates(Rxy, Bpxy, hthe, I, Bxy, Btxy);
+    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy);
+    coord = tokamak_coordinates_factory.make_tokamak_coordinates(Bpxy, hthe, I, Bxy, Btxy);
     coord->setDx(dx);
 
 
