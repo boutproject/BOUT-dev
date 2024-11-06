@@ -242,8 +242,8 @@ protected:
     Btxy /= Bnorm;
     B0 /= Bnorm;
 
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(mesh);
-    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(Rxy, Bpxy, hthe, I, B0, Btxy);
+    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy);
+    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(Bpxy, hthe, I, B0, Btxy);
 
     coord->setDx(coord->dx() / (rho_s * rho_s * Bnorm));
 
