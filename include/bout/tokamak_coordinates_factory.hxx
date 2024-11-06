@@ -7,13 +7,19 @@
 class TokamakCoordinatesFactory {
 
 public:
-  static Coordinates* make_tokamak_coordinates(Mesh* mesh, const FieldMetric& Rxy,
+
+  Mesh* mesh_m;
+
+  TokamakCoordinatesFactory(Mesh* mesh) : mesh_m(mesh) {
+  }
+
+  Coordinates* make_tokamak_coordinates(const FieldMetric& Rxy,
                                         const FieldMetric& Bpxy, const FieldMetric& hthe,
                                         const FieldMetric& I, const FieldMetric& B,
                                         const FieldMetric& Btxy,
-                                        const BoutReal& sbp = 1.0) // Sign of Bp
+                                        const BoutReal& sbp = 1.0) const // Sign of Bp
   {
-    auto* coord = mesh->getCoordinates();
+    auto* coord = mesh_m->getCoordinates();
 
     const auto g11 = SQ(Rxy * Bpxy);
     const auto g22 = 1.0 / SQ(hthe);
