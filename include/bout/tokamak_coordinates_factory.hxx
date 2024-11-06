@@ -6,9 +6,11 @@
 
 class TokamakCoordinatesFactory {
 
-public:
-
+private:
+  
   Mesh* mesh_m;
+
+public:
 
   TokamakCoordinatesFactory(Mesh* mesh) : mesh_m(mesh) {
   }
