@@ -18,13 +18,6 @@ using bout::OptionsIO;
 
 #include "fake_mesh_fixture.hxx"
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-}
-} // namespace bout
-
 // Reuse the "standard" fixture for FakeMesh
 class OptionsNetCDFTest : public FakeMeshFixture {
 public:

@@ -9,13 +9,6 @@
 #include "test_extras.hxx"
 #include "fake_mesh_fixture.hxx"
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-}
-} // namespace bout
-
 using bout::globals::mesh;
 
 class CoordinatesTest : public FakeMeshFixture {

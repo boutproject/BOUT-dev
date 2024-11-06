@@ -5,13 +5,6 @@
 
 #include "fake_mesh_fixture.hxx"
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-}
-} // namespace bout
-
 using bout::globals::mesh;
 
 using CoordinatesAccessorTest = FakeMeshFixture;

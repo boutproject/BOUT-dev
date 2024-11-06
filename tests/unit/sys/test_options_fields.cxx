@@ -9,13 +9,6 @@
 
 #include "fake_mesh_fixture.hxx"
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-}
-} // namespace bout
-
 // Reuse the "standard" fixture for FakeMesh
 class OptionsFieldTest : public FakeMeshFixture {
   WithQuietOutput quiet_warn{output_warn};

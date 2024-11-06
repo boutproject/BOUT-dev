@@ -11,12 +11,6 @@
 // The unit tests use the global mesh
 using namespace bout::globals;
 
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
-
 class ShiftedMetricTest : public ::testing::Test {
 public:
   ShiftedMetricTest() {

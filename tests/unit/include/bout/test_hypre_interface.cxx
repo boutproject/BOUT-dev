@@ -14,12 +14,6 @@
 
 #include "fake_mesh_fixture.hxx"
 
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
-
 using bout::HypreMatrix;
 using bout::HypreVector;
 

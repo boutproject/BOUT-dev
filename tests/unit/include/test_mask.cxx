@@ -5,13 +5,6 @@
 
 #include "fake_mesh_fixture.hxx"
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
-
 using MaskTest = FakeMeshFixture;
 
 TEST_F(MaskTest, Indexing) {

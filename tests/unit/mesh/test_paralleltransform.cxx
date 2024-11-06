@@ -5,12 +5,6 @@
 
 #include "fake_mesh_fixture.hxx"
 
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-}
-} // namespace bout
-
 using ParallelTransformTest = FakeMeshFixture;
 
 TEST_F(ParallelTransformTest, IdentityCalcParallelSlices) {
