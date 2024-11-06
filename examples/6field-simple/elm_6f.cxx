@@ -1033,7 +1033,7 @@ protected:
 
     /**************** CALCULATE METRICS ******************/
 
-    auto* coord = TokamakCoordinatesFactory().make_tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, B0, Btxy);
+    auto* coord = TokamakCoordinatesFactory(mesh).make_tokamak_coordinates(Rxy, Bpxy, hthe, I, B0, Btxy);
     coord->setDx(dx / (Lbar * Lbar * Bbar));
     
     //////////////////////////////////////////////////////////////
