@@ -4,8 +4,8 @@
  * Mode discoverd by H.L. Berk et. al. 1993
  * Model version in the code created by M. Umansky and J. Myra.
  *******************************************************************************/
-#include <bout/tokamak_coordinates.hxx>
 #include <bout/physicsmodel.hxx>
+#include <bout/tokamak_coordinates_factory.hxx>
 
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
@@ -154,7 +154,7 @@ private:
     // Set nu
     nu = nu_hat * Ni0 / pow(Te0, 1.5);
 
-    coord = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, Bxy, Btxy);
+    coord = TokamakCoordinatesFactory().make_tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, Bxy, Btxy);
     coord->setDx(dx);
 
 

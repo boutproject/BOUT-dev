@@ -46,7 +46,7 @@
 #include <bout/physicsmodel.hxx>
 #include <bout/single_index_ops.hxx>
 #include <bout/smoothing.hxx>
-#include <bout/tokamak_coordinates.hxx>
+#include <bout/tokamak_coordinates_factory.hxx>
 
 #include <bout/rajalib.hxx> // Defines BOUT_FOR_RAJA
 
@@ -1211,7 +1211,7 @@ public:
     }
     Jpar2.setBoundary("J");
 
-    auto* metric = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, B0, Btxy);
+    auto* metric = TokamakCoordinatesFactory().make_tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, B0, Btxy);
 
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES

@@ -10,8 +10,8 @@
   
  */
 
-#include <bout/tokamak_coordinates.hxx>
 #include <bout/physicsmodel.hxx>
+#include <bout/tokamak_coordinates_factory.hxx>
 
 class WaveTest : public PhysicsModel {
 public:
@@ -31,7 +31,7 @@ public:
       mesh->get(I, "sinty");
     }
 
-    auto* coords = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, Bxy, Btxy);
+    auto* coords = TokamakCoordinatesFactory().make_tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, Bxy, Btxy);
 
     solver->add(f, "f");
     solver->add(g, "g");

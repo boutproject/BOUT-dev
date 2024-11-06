@@ -3,7 +3,7 @@
  * Same as Maxim's version of BOUT - simplified 2-fluid for benchmarking
  *******************************************************************************/
 
-#include <bout/tokamak_coordinates.hxx>
+#include <bout/tokamak_coordinates_factory.hxx>
 
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
@@ -134,7 +134,7 @@ protected:
     Field2D Bxy = mesh->get("Bxy");
     Bxy /= (bmag / 1.e4);
 
-    coord = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, Bxy, Btxy);
+    coord = TokamakCoordinatesFactory().make_tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, Bxy, Btxy);
 
     coord->setDx(mesh->get("dpsi"));
     coord->setDx(coord->dx() / (rho_s * rho_s * (bmag / 1e4)));

@@ -6,7 +6,6 @@
  * T. Xia
  *******************************************************************************/
 
-#include "bout/tokamak_coordinates.hxx"
 #include "bout/constants.hxx"
 #include "bout/derivs.hxx"
 #include "bout/initialprofiles.hxx"
@@ -16,6 +15,7 @@
 #include "bout/msg_stack.hxx"
 #include "bout/physicsmodel.hxx"
 #include "bout/sourcex.hxx"
+#include "bout/tokamak_coordinates_factory.hxx"
 
 #include <cmath>
 
@@ -1033,7 +1033,7 @@ protected:
 
     /**************** CALCULATE METRICS ******************/
 
-    auto* coord = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, B0, Btxy);
+    auto* coord = TokamakCoordinatesFactory().make_tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, B0, Btxy);
     coord->setDx(dx / (Lbar * Lbar * Bbar));
     
     //////////////////////////////////////////////////////////////

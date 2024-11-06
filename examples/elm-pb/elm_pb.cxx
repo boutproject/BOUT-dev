@@ -5,7 +5,6 @@
  * Can also include the Vpar compressional term
  *******************************************************************************/
 
-#include <bout/tokamak_coordinates.hxx>
 #include <bout/constants.hxx>
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
@@ -15,6 +14,7 @@
 #include <bout/invert_parderiv.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/sourcex.hxx>
+#include <bout/tokamak_coordinates_factory.hxx>
 #include <bout/utils.hxx>
 
 #include <math.h>
@@ -331,7 +331,7 @@ protected:
     mesh->get(Psiaxis, "psi_axis");   // axis flux
     mesh->get(Psibndry, "psi_bndry"); // edge flux
 
-    auto* metric = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, B0, Btxy);
+    auto* metric = TokamakCoordinatesFactory().make_tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, B0, Btxy);
 
     // Set locations of staggered variables
     // Note, use of staggered grids in elm-pb is untested and may not be completely

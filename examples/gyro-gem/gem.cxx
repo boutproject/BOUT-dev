@@ -9,8 +9,8 @@
  * This version uses global parameters for collisionality etc.
  ****************************************************************/
 
-#include <bout/tokamak_coordinates.hxx>
 #include <bout/constants.hxx>
+#include <bout/tokamak_coordinates_factory.hxx>
 
 #include <bout/gyro_average.hxx>
 #include <bout/interpolation.hxx>
@@ -364,7 +364,7 @@ class GEM : public PhysicsModel {
 
     Rxy /= rho_s; // Perpendicular derivatives normalised to rho_s
 
-    coord = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, 0.0, Bxy, Btxy);
+    coord = TokamakCoordinatesFactory().make_tokamak_coordinates(mesh, Rxy, Bpxy, hthe, 0.0, Bxy, Btxy);
 
     coord->setDx(coord->dx() / (rho_s * rho_s * Bbar));
 

@@ -415,7 +415,7 @@ public:
 
     dump.add(eta, "eta", 0);
 
-    tokamak_coordinates(coords, Rxy, Bpxy, hthe, I, B0, Btxy);
+    TokamakCoordinatesFactory().make_tokamak_coordinates(coords, Rxy, Bpxy, hthe, I, B0, Btxy);
 
     // Set B field vector
 

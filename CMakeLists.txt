@@ -360,7 +360,7 @@ set(BOUT_SOURCES
   ./src/mesh/g_values.cxx
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/revision.hxx
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
-  include/bout/tokamak_coordinates.hxx
+  ./include/bout/tokamak_coordinates_factory.hxx
 )
 
 
