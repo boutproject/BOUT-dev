@@ -45,5 +45,5 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
     sbp = -1.0;
   }
 
-  tokamak_coordinates(coords, Rxy, Bpxy, hthe, sinty, coords->Bxy(), Btxy, sbp);
+  TokamakCoordinatesFactory().make_tokamak_coordinates(coords, Rxy, Bpxy, hthe, sinty, coords->Bxy(), Btxy, sbp);
 }

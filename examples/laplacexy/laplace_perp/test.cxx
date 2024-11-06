@@ -1,4 +1,4 @@
-#include <bout/tokamak_coordinates.hxx>
+#include <bout/tokamak_coordinates_factory.hxx>
 
 #include <bout/derivs.hxx>
 #include <bout/field_factory.hxx>
@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
     mesh->get(hthe, "hthe"); // m
     mesh->get(I, "sinty");   // m^-2 T^-1
 
-    tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, B0, Btxy);
+    TokamakCoordinatesFactory().make_tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, B0, Btxy);
   }
   ///////////////////////////////////////
 

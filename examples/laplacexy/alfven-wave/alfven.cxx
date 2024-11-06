@@ -1,10 +1,10 @@
 
-#include <bout/tokamak_coordinates.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/invert/laplacexy.hxx>
 #include <bout/invert/laplacexz.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>
+#include <bout/tokamak_coordinates_factory.hxx>
 
 /// Fundamental constants
 const BoutReal PI = 3.14159265;
@@ -192,7 +192,7 @@ protected:
     FieldMetric Bxy = mesh->get("Bxy");
     Bxy /= Bnorm;
 
-    auto* coord = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, sinty, Bxy, Btxy, sbp);
+    auto* coord = TokamakCoordinatesFactory().make_tokamak_coordinates(mesh, Rxy, Bpxy, hthe, sinty, Bxy, Btxy, sbp);
 
     // Checking for dpsi and qinty used in BOUT grids
     Field2D dx;

@@ -18,8 +18,8 @@
  *
  ****************************************************************/
 
-#include <bout/tokamak_coordinates.hxx>
 #include <bout/physicsmodel.hxx>
+#include <bout/tokamak_coordinates_factory.hxx>
 
 #include <bout/interpolation.hxx>
 #include <bout/invert/laplacexy.hxx>
@@ -242,7 +242,7 @@ protected:
     Btxy /= Bnorm;
     B0 /= Bnorm;
 
-    auto* coord = tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, B0, Btxy);
+    auto* coord = TokamakCoordinatesFactory().make_tokamak_coordinates(mesh, Rxy, Bpxy, hthe, I, B0, Btxy);
 
     coord->setDx(coord->dx() / (rho_s * rho_s * Bnorm));
 
