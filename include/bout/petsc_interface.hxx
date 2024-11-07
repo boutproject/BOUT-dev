@@ -30,7 +30,7 @@
 #ifndef BOUT_PETSC_INTERFACE_H
 #define BOUT_PETSC_INTERFACE_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_PETSC
 

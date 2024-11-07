@@ -1,6 +1,6 @@
 // Test reading and writing to NetCDF
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_NETCDF && !BOUT_HAS_LEGACY_NETCDF
 
@@ -16,12 +16,7 @@ using bout::OptionsIO;
 
 #include <string>
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-}
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // Reuse the "standard" fixture for FakeMesh
 class OptionsNetCDFTest : public FakeMeshFixture {

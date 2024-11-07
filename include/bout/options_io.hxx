@@ -35,7 +35,7 @@
 #ifndef OPTIONS_IO_H
 #define OPTIONS_IO_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/generic_factory.hxx"
 #include "bout/options.hxx"
 

@@ -1,11 +1,12 @@
 #include "gtest/gtest.h"
 
-#include "test_extras.hxx"
 #include "test_fakesolver.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/output.hxx"
 #include "bout/solver.hxx"
 
 #include <algorithm>
+#include <iterator>
 
 TEST(SolverFactoryTest, GetInstance) { EXPECT_NO_THROW(SolverFactory::getInstance()); }
 

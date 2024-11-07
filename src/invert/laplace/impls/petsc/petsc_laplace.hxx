@@ -29,7 +29,7 @@
 #ifndef BOUT_PETSC_LAPLACE_H
 #define BOUT_PETSC_LAPLACE_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/invert_laplace.hxx"
 
 #if not BOUT_HAS_PETSC

@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+#include "fake_mesh_fixture.hxx"
+
 namespace {
 constexpr int nout = 100;
 constexpr BoutReal timestep = 1.;
