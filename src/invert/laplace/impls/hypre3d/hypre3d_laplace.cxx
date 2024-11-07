@@ -71,15 +71,15 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
 
   // Checking flags are set to something which is not implemented
   // This is done binary (which is possible as each flag is a power of 2)
-  if (global_flags & ~implemented_flags) {
+  if (isGlobalFlagSet(~implemented_flags)) {
     throw BoutException("Attempted to set Laplacian inversion flag that is not "
                         "implemented in LaplaceHypre3d");
   }
-  if (inner_boundary_flags & ~implemented_boundary_flags) {
+  if (isInnerBoundaryFlagSet(~implemented_boundary_flags)) {
     throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
                         "implemented in LaplaceHypre3d");
   }
-  if (outer_boundary_flags & ~implemented_boundary_flags) {
+  if (isOuterBoundaryFlagSet(~implemented_boundary_flags)) {
     throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
                         "implemented in LaplaceHypre3d");
   }
