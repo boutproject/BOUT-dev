@@ -32,11 +32,11 @@
 #include <bout/physicsmodel.hxx>
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
+#include "bout/version.hxx"
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/vector2d.hxx>
 #include <bout/vector3d.hxx>
-#include "bout/version.hxx"
 
 #include <fmt/core.h>
 
