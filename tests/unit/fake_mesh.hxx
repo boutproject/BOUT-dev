@@ -1,18 +1,26 @@
 #pragma once
 
 #include <bout/boundary_region.hxx>
-#include <bout/boutcomm.hxx>
 #include <bout/bout_types.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/coordinates.hxx>
-#include <bout/griddata.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/fieldgroup.hxx>
 #include <bout/globals.hxx>
+#include <bout/griddata.hxx>
 #include <bout/mesh.hxx>
 #include <bout/mpi_wrapper.hxx>
 #include <bout/region.hxx>
+#include <bout/sys/range.hxx>
 #include <bout/unused.hxx>
 
-#include <numeric>
+#include <iterator>
 #include <memory>
+#include <numeric>
+#include <utility>
+#include <vector>
 
 class Options;
 
@@ -321,4 +329,3 @@ public:
 private:
   Options values; ///< Store values to be returned by get()
 };
-

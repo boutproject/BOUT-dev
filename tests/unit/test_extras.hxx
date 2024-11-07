@@ -5,9 +5,16 @@
 
 #include <functional>
 #include <iostream>
+#include <sstream>
+#include <string>
 #include <vector>
 
-#include "bout/field3d.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/field.hxx"
+#include "bout/region.hxx"
+
+class Field2D;
+class Field3D;
 
 static constexpr BoutReal BoutRealTolerance{1e-15};
 // FFTs have a slightly looser tolerance than other functions

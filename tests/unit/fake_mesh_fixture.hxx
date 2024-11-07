@@ -1,15 +1,21 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <memory>
 
 #include <bout/boundary_region.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
+#include <bout/build_defines.hxx>
 #include <bout/coordinates.hxx>
+#include <bout/globals.hxx>
 #include <bout/griddata.hxx>
 #include <bout/mesh.hxx>
 #include <bout/mpi_wrapper.hxx>
 #include <bout/operatorstencil.hxx>
-#include <bout/unused.hxx>
+#include <bout/output.hxx>
+#include <bout/paralleltransform.hxx>
+#include <bout/utils.hxx>
 
 #include "fake_mesh.hxx" // IWYU pragma: export
 
