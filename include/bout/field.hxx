@@ -31,23 +31,18 @@ class Field;
 
 #include <cmath>
 #include <cstdio>
-#include <memory>
 #include <string>
-
-#include "bout/field_data.hxx"
 
 #include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/field_data.hxx"
 #include "bout/msg_stack.hxx"
 #include "bout/region.hxx"
-#include "bout/stencils.hxx"
 #include "bout/traits.hxx"
 #include "bout/utils.hxx"
 #include <bout/globals.hxx>
 #include <bout/rvec.hxx>
-
-#include "bout/unused.hxx"
 
 class Mesh;
 

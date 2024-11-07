@@ -26,22 +26,18 @@ class Field3D;
 #ifndef BOUT_FIELD3D_H
 #define BOUT_FIELD3D_H
 
-class Mesh; // #include "bout/mesh.hxx"
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/field.hxx"
 #include "bout/field2d.hxx"
 #include "bout/fieldperp.hxx"
-#include "bout/stencils.hxx"
-
-#include "bout/array.hxx"
 #include "bout/region.hxx"
-
-#include "bout/assert.hxx"
-
-#include "bout/utils.hxx"
 
 #include <optional>
 #include <vector>
+
+class Mesh;
 
 /// Class for 3D X-Y-Z scalar fields
 /*!
@@ -573,7 +569,7 @@ void checkData(const Field3D& f, const std::string& region = "RGN_NOBNDRY");
 /// Ignored with disabled CHECK; Throw an exception if \p f is not
 /// allocated or if any elements are non-finite (for CHECK > 2)
 inline void checkData(const Field3D& UNUSED(f),
-                      const std::string& UNUSED(region) = "RGN_NOBNDRY"){};
+                      const std::string& UNUSED(region) = "RGN_NOBNDRY") {};
 #endif
 
 /// Fourier filtering, removes all except one mode

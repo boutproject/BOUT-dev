@@ -31,12 +31,10 @@
 
 #include "bout/build_config.hxx"
 
-#include "bout/bout_types.hxx"
-#include "bout/boutexception.hxx"
-#include "bout/dcomplex.hxx"
-
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/msg_stack.hxx"
 #include "bout/region.hxx"
 #include "bout/unused.hxx"
@@ -48,6 +46,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <sstream>
 
 #ifdef _MSC_VER
 // finite is not actually standard C++, it's a BSD extention for C
@@ -545,7 +544,7 @@ inline void checkData(BoutReal f) {
 }
 #else
 /// Ignored with disabled CHECK; Throw an exception if \p f is not finite
-inline void checkData(BoutReal UNUSED(f)){};
+inline void checkData(BoutReal UNUSED(f)) {};
 #endif
 
 /*!
