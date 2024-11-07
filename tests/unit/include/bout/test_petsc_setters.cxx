@@ -5,8 +5,8 @@
 #if BOUT_HAS_PETSC
 #include "gtest/gtest.h"
 
-#include <bout/petsclib.hxx>
 #include <bout/petsc_interface.hxx>
+#include <bout/petsclib.hxx>
 
 ///////////////// Test PetscMatrixElement /////////////////
 

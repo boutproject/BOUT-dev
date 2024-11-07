@@ -6,8 +6,8 @@
 #include "bout/mesh.hxx"
 #include "bout/output.hxx"
 
-#include "test_extras.hxx"
 #include "fake_mesh_fixture.hxx"
+#include "test_extras.hxx"
 
 using bout::globals::mesh;
 

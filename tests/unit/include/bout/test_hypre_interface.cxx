@@ -6,8 +6,8 @@
 
 #include <cmath>
 
-#include "test_extras.hxx"
 #include "fake_mesh_fixture.hxx"
+#include "test_extras.hxx"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
