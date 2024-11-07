@@ -9,7 +9,7 @@ TEST(Invert3x3Test, Identity) {
     input(i, i) = 1.0;
   }
   auto expected = input;
-  invert3x3(input);
+  bout::invert3x3(input);
 
   for (int j = 0; j < 3; j++) {
     for (int i = 0; i < 3; i++) {
@@ -39,7 +39,7 @@ TEST(Invert3x3Test, InvertTwice) {
   }
 
   // Invert twice to check if we get back to where we started
-  invert3x3(input);
+  bout::invert3x3(input);
 
   for (int j = 0; j < 3; j++) {
     for (int i = 0; i < 3; i++) {
@@ -52,37 +52,23 @@ TEST(Invert3x3Test, InvertTwice) {
 TEST(Invert3x3Test, Singular) {
   Matrix<BoutReal> input(3, 3);
   input = 0;
-  EXPECT_THROW(invert3x3(input), BoutException);
+  auto result = bout::invert3x3(input);
+  EXPECT_TRUE(result.has_value());
 }
 
 TEST(Invert3x3Test, BadCondition) {
   Matrix<BoutReal> input(3, 3);
 
-  // Default small
   input = 0.;
   input(0, 0) = 1.0e-16;
   input(1, 1) = 1.0;
   input(2, 2) = 1.0;
-  EXPECT_THROW(invert3x3(input), BoutException);
+  EXPECT_TRUE(bout::invert3x3(input).has_value());
 
-  // Default small -- not quite bad enough condition
+  // not quite bad enough condition
   input = 0.;
   input(0, 0) = 1.0e-12;
   input(1, 1) = 1.0;
   input(2, 2) = 1.0;
-  EXPECT_NO_THROW(invert3x3(input));
-
-  // Non-default small
-  input = 0.;
-  input(0, 0) = 1.0e-12;
-  input(1, 1) = 1.0;
-  input(2, 2) = 1.0;
-  EXPECT_THROW(invert3x3(input, 1.0e-10), BoutException);
-
-  // Non-default small
-  input = 0.;
-  input(0, 0) = 1.0e-12;
-  input(1, 1) = 1.0;
-  input(2, 2) = 1.0;
-  EXPECT_NO_THROW(invert3x3(input, -1.0e-10));
+  EXPECT_FALSE(bout::invert3x3(input).has_value());
 }

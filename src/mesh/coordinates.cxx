@@ -1242,9 +1242,10 @@ int Coordinates::calcCovariant(const std::string& region) {
     a(1, 2) = a(2, 1) = g23[i];
     a(0, 2) = a(2, 0) = g13[i];
 
-    if (!invert3x3(a)) {
-      output_error.write("\tERROR: metric tensor is singular at ({:d}, {:d})\n", i.x(),
-                         i.y());
+    if (const auto det = bout::invert3x3(a); det.has_value()) {
+      output_error.write(
+          "\tERROR: metric tensor is singular at ({:d}, {:d}), determinant: {:d}\n",
+          i.x(), i.y(), det.value());
       return 1;
     }
 
@@ -1298,9 +1299,10 @@ int Coordinates::calcContravariant(const std::string& region) {
     a(1, 2) = a(2, 1) = g_23[i];
     a(0, 2) = a(2, 0) = g_13[i];
 
-    if (!invert3x3(a)) {
-      output_error.write("\tERROR: metric tensor is singular at ({:d}, {:d})\n", i.x(),
-                         i.y());
+    if (const auto det = bout::invert3x3(a); det.has_value()) {
+      output_error.write(
+          "\tERROR: metric tensor is singular at ({:d}, {:d}), determinant: {:d}\n",
+          i.x(), i.y(), det.value());
       return 1;
     }
 
