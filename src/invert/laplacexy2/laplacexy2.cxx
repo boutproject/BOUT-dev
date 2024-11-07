@@ -14,9 +14,11 @@
 
 #include <cmath>
 
+namespace {
 Ind2D index2d(Mesh* mesh, int x, int y) {
   int ny = mesh->LocalNy;
   return Ind2D(x * ny + y, ny, 1);
+}
 }
 
 LaplaceXY2::LaplaceXY2(Mesh* m, Options* opt, const CELL_LOC loc)
