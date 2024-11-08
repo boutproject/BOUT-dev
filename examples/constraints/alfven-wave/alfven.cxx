@@ -187,8 +187,8 @@ protected:
     FieldMetric Bxy = mesh->get("Bxy");
     Bxy /= Bnorm;
 
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, Bxy, hthe);
-    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(sinty, sbp);
+    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, Bxy, hthe, sinty);
+    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(sbp);
 
     // Checking for dpsi and qinty used in BOUT grids
     Field2D dx;

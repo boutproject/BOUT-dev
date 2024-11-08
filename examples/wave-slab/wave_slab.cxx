@@ -31,8 +31,8 @@ public:
       mesh->get(I, "sinty");
     }
 
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, Bxy, hthe);
-    const auto& coords = tokamak_coordinates_factory.make_tokamak_coordinates(I);
+    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, Bxy, hthe, I);
+    const auto& coords = tokamak_coordinates_factory.make_tokamak_coordinates();
 
     solver->add(f, "f");
     solver->add(g, "g");
