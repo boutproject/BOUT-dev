@@ -347,7 +347,7 @@ class GEM : public PhysicsModel {
     // Normalise
 
     // parallel derivatives normalised to Lperp
-    FieldMetric new_hthe = tokamak_coordinates_factory.get_hthe() / Lbar;
+    Field2D new_hthe = tokamak_coordinates_factory.get_hthe() / Lbar;
     tokamak_coordinates_factory.set_hthe(new_hthe);
 
     Field2D new_Bxy = tokamak_coordinates_factory.get_Bxy() / Bbar;

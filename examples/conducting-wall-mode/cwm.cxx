@@ -135,7 +135,7 @@ private:
     Field2D new_Rxy = tokamak_coordinates_factory.get_Rxy() / rho_s;
     tokamak_coordinates_factory.set_Rxy(new_Rxy);
 
-    FieldMetric new_hthe = tokamak_coordinates_factory.get_hthe() / rho_s;
+    Field2D new_hthe = tokamak_coordinates_factory.get_hthe() / rho_s;
     tokamak_coordinates_factory.set_hthe(new_hthe);
 
     FieldMetric new_ShearFactor = tokamak_coordinates_factory.get_ShearFactor() * rho_s * rho_s * (bmag / 1e4) * ShearFactor;
