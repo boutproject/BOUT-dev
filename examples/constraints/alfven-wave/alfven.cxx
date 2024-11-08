@@ -166,7 +166,7 @@ protected:
     Field2D new_Rxy = tokamak_coordinates_factory.get_Rxy() / Lnorm;;
     tokamak_coordinates_factory.set_Rxy(new_Rxy);
 
-    FieldMetric new_hthe = tokamak_coordinates_factory.get_hthe() / Lnorm;;
+    Field2D new_hthe = tokamak_coordinates_factory.get_hthe() / Lnorm;;
     tokamak_coordinates_factory.set_hthe(new_hthe);
 
     FieldMetric new_ShearFactor = tokamak_coordinates_factory.get_ShearFactor() * SQ(Lnorm) * Bnorm;

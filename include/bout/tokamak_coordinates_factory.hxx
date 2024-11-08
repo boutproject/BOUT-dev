@@ -13,9 +13,9 @@ private:
   Field2D Bpxy_m;
   Field2D Btxy_m;
   Field2D Bxy_m;
-  FieldMetric hthe_m;
+  Field2D hthe_m;
   FieldMetric ShearFactor_m;
-  FieldMetric sign_of_bp;
+  BoutReal sign_of_bp;
 
 
 public:
@@ -63,15 +63,15 @@ public:
   const Field2D& get_Bpxy() const { return Bpxy_m; }
   const Field2D& get_Btxy() const { return Btxy_m; }
   const Field2D& get_Bxy() const { return Bxy_m; }
-  const FieldMetric& get_hthe() const { return hthe_m; }
+  const Field2D& get_hthe() const { return hthe_m; }
   const FieldMetric& get_ShearFactor() const { return ShearFactor_m; }
 
   void set_Rxy(Field2D Rxy) { Rxy_m = Rxy; }
-  void set_ShearFactor(FieldMetric& shearFactor) { ShearFactor_m = shearFactor; }
-  void set_Bxy(Field2D& Bxy) { Bxy_m = Bxy; }
   void set_Bpxy(Field2D& Bpxy) { Bpxy_m = Bpxy; }
   void set_Btxy(Field2D& Btxy) { Btxy_m = Btxy; }
-  void set_hthe(FieldMetric& hthe) { hthe_m = hthe; }
+  void set_Bxy(Field2D& Bxy) { Bxy_m = Bxy; }
+  void set_hthe(Field2D& hthe) { hthe_m = hthe; }
+  void set_ShearFactor(FieldMetric& shearFactor) { ShearFactor_m = shearFactor; }
 
 };
 
