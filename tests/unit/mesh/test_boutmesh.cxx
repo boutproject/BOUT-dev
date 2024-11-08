@@ -6,7 +6,7 @@
 #include "bout/options.hxx"
 #include "bout/output.hxx"
 
-#include "test_extras.hxx"
+#include "fake_mesh.hxx"
 
 #include <array>
 #include <ostream>

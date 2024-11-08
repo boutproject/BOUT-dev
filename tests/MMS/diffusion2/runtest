@@ -27,7 +27,7 @@ build_and_log("MMS diffusion test")
 inputs = [
     ("X", ["mesh:nx"]),
     ("Y", ["mesh:ny"]),
-    ("Z", ["MZ"]),  # ,
+    ("Z", ["MZ"]),
     # ("XYZ", ["mesh:nx", "mesh:ny", "MZ"])
 ]
 

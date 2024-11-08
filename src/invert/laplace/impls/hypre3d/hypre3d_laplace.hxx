@@ -28,7 +28,7 @@
  **************************************************************************/
 class LaplaceHypre3d;
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #ifndef BOUT_LAPLACE_HYPRE3D_H
 #define BOUT_LAPLACE_HYPRE3D_H

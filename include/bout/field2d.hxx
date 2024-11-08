@@ -30,22 +30,20 @@ class Field2D;
 #ifndef BOUT_FIELD2D_H
 #define BOUT_FIELD2D_H
 
-class Mesh;
+#include "bout/array.hxx"
+#include "bout/build_config.hxx"
 #include "bout/field.hxx"
 #include "bout/field_data.hxx"
-class Field3D;
 #include "bout/fieldperp.hxx"
-#include "bout/stencils.hxx"
-
-#include "bout/array.hxx"
 #include "bout/region.hxx"
-#include "bout/utils.hxx"
-
 #include "bout/unused.hxx"
 
 #if BOUT_HAS_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib
 #endif
+
+class Field3D;
+class Mesh;
 
 /*!
  * \brief 2D X-Y scalar fields

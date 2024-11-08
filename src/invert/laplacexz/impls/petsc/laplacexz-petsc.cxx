@@ -8,7 +8,7 @@
  * http://www.mcs.anl.gov/petsc/petsc-current/src/ksp/ksp/examples/tutorials/ex6f.F.html
  */
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "laplacexz-petsc.hxx"
 

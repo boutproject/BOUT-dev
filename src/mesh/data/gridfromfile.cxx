@@ -370,6 +370,22 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd, int n
 
   var.allocate();
 
+  if (size.size() == 2) {
+    // A 2D field in the grid file
+
+    const auto full_var = data[name].as<Matrix<BoutReal>>();
+
+    for (int x = xs; x < xs + nx_to_read; ++x) {
+      for (int y = ys; y < ys + ny_to_read; ++y) {
+        BoutReal const value = full_var(x, y);
+        for (int z = 0; z < var.getNz(); z++) {
+          var(x - xs + xd, y - ys + yd, z) = value;
+        }
+      }
+    }
+    return;
+  }
+
   // Check whether "nz" is defined
   if (hasVar("nz")) {
     // Check the array is the right size

@@ -23,7 +23,8 @@
 #ifndef BOUT_LAPACK_ROUTINES_H
 #define BOUT_LAPACK_ROUTINES_H
 
-#include <bout/utils.hxx>
+#include "bout/dcomplex.hxx"
+#include "bout/utils.hxx"
 
 /* Tridiagonal inversion
  *
