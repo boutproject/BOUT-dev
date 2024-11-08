@@ -35,6 +35,7 @@
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
+#include <bout/version.hxx>
 
 #include "bout/unused.hxx"
 

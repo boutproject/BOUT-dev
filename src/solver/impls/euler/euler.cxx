@@ -6,6 +6,7 @@
 #include <bout/msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/utils.hxx>
+#include <bout/version.hxx>
 
 #include <cmath>
 

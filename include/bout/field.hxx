@@ -31,6 +31,7 @@ class Field;
 
 #include <cmath>
 #include <cstdio>
+#include <optional>
 #include <string>
 
 #include "bout/bout_types.hxx"
