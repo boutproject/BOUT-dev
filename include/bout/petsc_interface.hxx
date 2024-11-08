@@ -37,8 +37,6 @@
 #include <algorithm>
 #include <iterator>
 #include <memory>
-#include <petscsystypes.h>
-#include <petscvec.h>
 #include <type_traits>
 #include <vector>
 
@@ -51,6 +49,9 @@
 #include <bout/petsclib.hxx>
 #include <bout/region.hxx>
 #include <bout/traits.hxx>
+
+#include <petscsystypes.h>
+#include <petscvec.h>
 
 /*!
  * A class which wraps PETSc vector objects, allowing them to be
