@@ -288,10 +288,6 @@ private:
   int damp_width;        // Width of inner damped region
   BoutReal damp_t_const; // Timescale of damping
 
-  // Metric coefficients
-  Field2D Rxy, Bpxy, Btxy, B0, hthe;
-  Field2D I; // Shear factor
-
   const BoutReal MU0 = 4.0e-7 * PI;
   const BoutReal Mi = 2.0 * 1.6726e-27; // Ion mass
   const BoutReal Me = 9.1094e-31;       // Electron mass
@@ -375,17 +371,6 @@ public:
     b0xcv.covariant = false;  // Read contravariant components
     mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
 
-    // Load metrics
-    if (mesh->get(Rxy, "Rxy") != 0) { // m
-      throw BoutException("Error: Cannot read Rxy from grid\n");
-    }
-    if (mesh->get(Bpxy, "Bpxy") != 0) { // T
-      throw BoutException("Error: Cannot read Bpxy from grid\n");
-    }
-    mesh->get(Btxy, "Btxy");          // T
-    mesh->get(B0, "Bxy");             // T
-    mesh->get(hthe, "hthe");          // m
-    mesh->get(I, "sinty");            // m^-2 T^-1
     mesh->get(Psixy, "psixy");        // get Psi
     mesh->get(Psiaxis, "psi_axis");   // axis flux
     mesh->get(Psibndry, "psi_bndry"); // edge flux
@@ -1211,7 +1196,7 @@ public:
     }
     Jpar2.setBoundary("J");
 
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, B0, hthe, I);
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates();
 
     //////////////////////////////////////////////////////////////

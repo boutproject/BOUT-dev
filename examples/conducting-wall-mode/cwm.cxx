@@ -29,8 +29,7 @@ private:
   // Phi boundary conditions
   Field3D dphi_bc_ydown, dphi_bc_yup;
 
-  // Metric coefficients
-  Field2D Rxy, Bpxy, Btxy, hthe, Zxy;
+  Field2D Zxy;
 
   // parameters
   BoutReal Te_x, Ni_x, Vi_x, bmag, rho_s, fmei, AA, ZZ;
@@ -55,21 +54,13 @@ private:
   std::unique_ptr<Laplacian> phiSolver{nullptr};
 
   int init(bool UNUSED(restarting)) override {
-    Field2D I; // Shear factor
 
     /************* LOAD DATA FROM GRID FILE ****************/
 
     // Load 2D profiles (set to zero if not found)
     GRID_LOAD(Ni0, Te0);
 
-    // Load metrics
-    mesh->get(Rxy, "Rxy");
-    mesh->get(Zxy, "Zxy");
-    mesh->get(Bpxy, "Bpxy");
-    mesh->get(Btxy, "Btxy");
-    mesh->get(hthe, "hthe");
     FieldMetric dx = mesh->get("dpsi");
-    mesh->get(I, "sinty");
 
     // Load normalisation values
     GRID_LOAD(Te_x, Ni_x, bmag);
@@ -127,6 +118,10 @@ private:
           hthe0 / rho_s);
     }
 
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+    coord = tokamak_coordinates_factory.make_tokamak_coordinates();
+    coord->setDx(dx);
+
     /************** NORMALISE QUANTITIES *****************/
 
     output.write("\tNormalising to rho_s = {:e}\n", rho_s);
@@ -136,25 +131,31 @@ private:
     Te0 /= Te_x;
 
     // Normalise geometry
-    Rxy /= rho_s;
-    hthe /= rho_s;
-    I *= rho_s * rho_s * (bmag / 1e4) * ShearFactor;
+
+    Field2D new_Rxy = tokamak_coordinates_factory.get_Rxy() / rho_s;
+    tokamak_coordinates_factory.set_Rxy(new_Rxy);
+
+    FieldMetric new_hthe = tokamak_coordinates_factory.get_hthe() / rho_s;
+    tokamak_coordinates_factory.set_hthe(new_hthe);
+
+    FieldMetric new_ShearFactor = tokamak_coordinates_factory.get_ShearFactor() * rho_s * rho_s * (bmag / 1e4) * ShearFactor;
+    tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
 
     dx /= (rho_s * rho_s * (bmag / 1e4));
 
     // Normalise magnetic field
-    Bpxy /= (bmag / 1.e4);
-    Btxy /= (bmag / 1.e4);
 
-    FieldMetric Bxy = mesh->get("Bxy");
-    Bxy /= (bmag / 1.e4);
+    Field2D new_Bpxy = tokamak_coordinates_factory.get_Bpxy() / (bmag / 1.e4);
+    tokamak_coordinates_factory.set_Bpxy(new_Bpxy);
+
+    Field2D new_Btxy = tokamak_coordinates_factory.get_Btxy() / (bmag / 1.e4);
+    tokamak_coordinates_factory.set_Btxy(new_Btxy);
+
+    Field2D new_Bxy = tokamak_coordinates_factory.get_Bxy() / (bmag / 1.e4);
+    tokamak_coordinates_factory.set_Bxy(new_Bxy);
 
     // Set nu
     nu = nu_hat * Ni0 / pow(Te0, 1.5);
-
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, Bxy, hthe, I);
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates();
-    coord->setDx(dx);
 
 
     /**************** SET EVOLVING VARIABLES *************/
@@ -163,7 +164,7 @@ private:
     // add evolving variables to the communication object
     SOLVE_FOR(rho, te);
 
-    SAVE_ONCE(Rxy, Bpxy, Btxy, Zxy, hthe);
+    SAVE_ONCE(tokamak_coordinates_factory.get_Rxy(), tokamak_coordinates_factory.get_Bpxy(), tokamak_coordinates_factory.get_Btxy(), Zxy, tokamak_coordinates_factory.get_hthe());
     SAVE_ONCE(nu_hat, hthe0);
 
     // Create a solver for the Laplacian

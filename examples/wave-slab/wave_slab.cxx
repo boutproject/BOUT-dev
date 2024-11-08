@@ -16,23 +16,17 @@
 class WaveTest : public PhysicsModel {
 public:
   int init(bool UNUSED(restarting)) {
-    Field2D Rxy, Bpxy, Btxy, hthe, I;
-    GRID_LOAD(Rxy);
-    GRID_LOAD(Bpxy);
-    GRID_LOAD(Btxy);
-    GRID_LOAD(hthe);
-    const auto& Bxy = mesh->get("Bxy");
+
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+    const auto& coords = tokamak_coordinates_factory.make_tokamak_coordinates();
+
     int ShiftXderivs = 0;
     mesh->get(ShiftXderivs, "false");
     if (ShiftXderivs) {
       // No integrated shear in metric
-      I = 0.0;
-    } else {
-      mesh->get(I, "sinty");
-    }
-
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, Bxy, hthe, I);
-    const auto& coords = tokamak_coordinates_factory.make_tokamak_coordinates();
+      FieldMetric new_ShearFactor = 0.0;
+      tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
+      }
 
     solver->add(f, "f");
     solver->add(g, "g");

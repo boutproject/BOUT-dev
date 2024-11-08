@@ -26,9 +26,6 @@ class Interchange : public PhysicsModel {
   // Derived 3D variables
   Field3D phi;
 
-  // Metric coefficients
-  Field2D Rxy, Bpxy, Btxy, hthe;
-
   // Parameters
   BoutReal Te_x, Ti_x, Ni_x, bmag, rho_s, AA, ZZ, wci;
 
@@ -55,13 +52,6 @@ protected:
     mesh->get(b0xcv, "bxcv"); // b0xkappa terms
 
     b0xcv *= -1.0; // NOTE: THIS IS FOR 'OLD' GRID FILES ONLY
-
-    // Load metrics
-    GRID_LOAD(Rxy);
-    GRID_LOAD(Bpxy);
-    GRID_LOAD(Btxy);
-    GRID_LOAD(hthe);
-    mesh->get(I, "sinty");
 
     // Load normalisation values
     GRID_LOAD(Te_x);
@@ -134,8 +124,8 @@ protected:
     Field2D Bxy = mesh->get("Bxy");
     Bxy /= (bmag / 1.e4);
 
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, Bxy, hthe, I);
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates();
+    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, I);
+    coord = tokamak_coordinates_factory.make_tokamak_coordinates(Lnorm, Bnorm);
 
     coord->setDx(mesh->get("dpsi"));
     coord->setDx(coord->dx() / (rho_s * rho_s * (bmag / 1e4)));

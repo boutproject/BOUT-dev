@@ -100,23 +100,6 @@ protected:
     b0xcv.covariant = false;  // Read contravariant components
     mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
 
-    // Metric coefficients
-    Field2D Rxy, Bpxy, Btxy, hthe;
-    Field2D I; // Shear factor
-
-    if (mesh->get(Rxy, "Rxy")) { // m
-      output_error.write("Error: Cannot read Rxy from grid\n");
-      return 1;
-    }
-    if (mesh->get(Bpxy, "Bpxy")) { // T
-      output_error.write("Error: Cannot read Bpxy from grid\n");
-      return 1;
-    }
-    mesh->get(Btxy, "Btxy"); // T
-    mesh->get(B0, "Bxy");    // T
-    mesh->get(hthe, "hthe"); // m
-    mesh->get(I, "sinty");   // m^-2 T^-1
-
     //////////////////////////////////////////////////////////////
     // Options
 
@@ -242,7 +225,7 @@ protected:
     Btxy /= Bnorm;
     B0 /= Bnorm;
 
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, B0, hthe, I);
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates();
 
     coord->setDx(coord->dx() / (rho_s * rho_s * Bnorm));

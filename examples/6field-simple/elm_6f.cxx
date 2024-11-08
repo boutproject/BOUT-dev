@@ -235,9 +235,6 @@ class Elm_6f : public PhysicsModel {
   int damp_width;        // Width of inner damped region
   BoutReal damp_t_const; // Timescale of damping
 
-  // Metric coefficients
-  Field2D Rxy, Bpxy, Btxy, B0, hthe;
-  Field2D I;         // Shear factor
   BoutReal LnLambda; // ln(Lambda)
 
   /// Ion mass
@@ -367,7 +364,7 @@ class Elm_6f : public PhysicsModel {
       result = Grad_par(f, loc);
 
       if (nonlinear) {
-        result -= bracket(Psi, f, bm_mag) * B0;
+        result -= bracket(Psi, f, bm_mag) * tokamak_coordinates_factory.getBxy();
       }
     }
 
@@ -392,20 +389,6 @@ protected:
     // Load curvature term
     b0xcv.covariant = false;  // Read contravariant components
     mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
-
-    // Load metrics
-    if (mesh->get(Rxy, "Rxy")) { // m
-      output_error.write("Error: Cannot read Rxy from grid\n");
-      return 1;
-    }
-    if (mesh->get(Bpxy, "Bpxy")) { // T
-      output_error.write("Error: Cannot read Bpxy from grid\n");
-      return 1;
-    }
-    mesh->get(Btxy, "Btxy"); // T
-    mesh->get(B0, "Bxy");    // T
-    mesh->get(hthe, "hthe"); // m
-    mesh->get(I, "sinty");   // m^-2 T^-1
 
     //////////////////////////////////////////////////////////////
     // Read parameters from the options file
@@ -1033,7 +1016,7 @@ protected:
 
     /**************** CALCULATE METRICS ******************/
 
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, B0, hthe, I);
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates();
     coord->setDx(dx / (Lbar * Lbar * Bbar));
     
