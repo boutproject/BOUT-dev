@@ -216,9 +216,6 @@ public:
   };
   Hypre3dMonitor monitor;
 
-  bool use_precon; // Switch for preconditioning
-  bool rightprec;  // Right preconditioning
-
   // These are the implemented flags
   static constexpr int implemented_flags = INVERT_START_NEW;
   static constexpr int implemented_boundary_flags =
