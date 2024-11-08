@@ -170,30 +170,9 @@ protected:
   }
 
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
-    // Load metric coefficients from the mesh
-    Field2D Rxy, Bpxy, Btxy, hthe, sinty;
-    GRID_LOAD5(Rxy, Bpxy, Btxy, hthe, sinty); // Load metrics
 
-    Rxy /= Lnorm;
-    hthe /= Lnorm;
-    sinty *= SQ(Lnorm) * Bnorm;
-
-    Bpxy /= Bnorm;
-    Btxy /= Bnorm;
-
-    // Calculate metric components
-    sinty = 0.0; // I disappears from metric for shifted coordinates
-
-    BoutReal sbp = 1.0; // Sign of Bp
-    if (min(Bpxy, true) < 0.0) {
-      sbp = -1.0;
-    }
-
-    FieldMetric Bxy = mesh->get("Bxy");
-    Bxy /= Bnorm;
-
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, Bxy, hthe, sinty);
-    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(sbp);
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates();
 
     // Checking for dpsi and qinty used in BOUT grids
     Field2D dx;

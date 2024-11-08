@@ -159,16 +159,29 @@ protected:
   }
 
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
-    // Load metric coefficients from the mesh
-    Field2D Rxy, Bpxy, Btxy, hthe, sinty;
-    GRID_LOAD5(Rxy, Bpxy, Btxy, hthe, sinty); // Load metrics
 
-    Rxy /= Lnorm;
-    hthe /= Lnorm;
-    sinty *= SQ(Lnorm) * Bnorm;
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates();
 
-    Bpxy /= Bnorm;
-    Btxy /= Bnorm;
+    Field2D new_Rxy = tokamak_coordinates_factory.get_Rxy() / Lnorm;;
+    tokamak_coordinates_factory.set_Rxy(new_Rxy);
+
+    FieldMetric new_hthe = tokamak_coordinates_factory.get_hthe() / Lnorm;;
+    tokamak_coordinates_factory.set_hthe(new_hthe);
+
+    FieldMetric new_ShearFactor = tokamak_coordinates_factory.get_ShearFactor() * SQ(Lnorm) * Bnorm;
+    tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
+
+    BoutReal sbp = 1.0; // Sign of Bp
+    if (min(tokamak_coordinates_factory.get_Bpxy(), true) < 0.0) {
+      sbp = -1.0;
+    }
+
+    Field2D new_Bpxy = tokamak_coordinates_factory.get_Bpxy() / Bnorm;
+    tokamak_coordinates_factory.set_Bpxy(new_Bpxy);
+
+    Field2D new_Btxy = tokamak_coordinates_factory.get_Btxy() / Bnorm;
+    tokamak_coordinates_factory.set_Btxy(new_Btxy);
 
     // Check type of parallel transform
     std::string ptstr =
@@ -176,19 +189,12 @@ protected:
 
     if (lowercase(ptstr) == "shifted") {
       // Using shifted metric method
-      sinty = 0.0; // I disappears from metric
-    }
-
-    BoutReal sbp = 1.0; // Sign of Bp
-    if (min(Bpxy, true) < 0.0) {
-      sbp = -1.0;
+      FieldMetric new_ShearFactor = 0.0;
+      tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor); // I disappears from metric
     }
 
     FieldMetric Bxy = mesh->get("Bxy");
     Bxy /= Bnorm;
-
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, Rxy, Bpxy, Btxy, Bxy, hthe, sinty);
-    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(sbp);
 
     // Checking for dpsi and qinty used in BOUT grids
     Field2D dx;
