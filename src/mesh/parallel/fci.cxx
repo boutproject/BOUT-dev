@@ -58,7 +58,7 @@ std::string parallel_slice_field_name(std::string field, int offset) {
   return direction + "_" + field + slice_suffix;
 };
 
-#if BOUT_USE_METRIC3D
+#if BOUT_USE_METRIC_3D
 bool load_parallel_metric_component(std::string name, Field3D& component, int offset,
                                     bool doZero) {
   Mesh* mesh = component.getMesh();
@@ -105,7 +105,7 @@ bool load_parallel_metric_component(std::string name, Field3D& component, int of
 #endif
 
 void load_parallel_metric_components([[maybe_unused]] Coordinates* coords, [[maybe_unused]] int offset){
-#if BOUT_USE_METRIC3D
+#if BOUT_USE_METRIC_3D
 #define LOAD_PAR(var, doZero) \
   load_parallel_metric_component(#var, coords->var, offset, doZero)
   LOAD_PAR(g11, false);
