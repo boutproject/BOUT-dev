@@ -164,7 +164,11 @@ private:
     // add evolving variables to the communication object
     SOLVE_FOR(rho, te);
 
-    SAVE_ONCE(tokamak_coordinates_factory.get_Rxy(), tokamak_coordinates_factory.get_Bpxy(), tokamak_coordinates_factory.get_Btxy(), Zxy, tokamak_coordinates_factory.get_hthe());
+    Field2D Rxy = tokamak_coordinates_factory.get_Rxy();
+    Field2D Bpxy = tokamak_coordinates_factory.get_Bpxy();
+    Field2D Btxy = tokamak_coordinates_factory.get_Btxy();
+    Field2D hthe = tokamak_coordinates_factory.get_hthe();
+    SAVE_ONCE(Rxy, Bpxy, Btxy, Zxy, hthe);
     SAVE_ONCE(nu_hat, hthe0);
 
     // Create a solver for the Laplacian
