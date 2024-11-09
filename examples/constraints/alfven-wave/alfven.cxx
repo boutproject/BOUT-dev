@@ -163,10 +163,10 @@ protected:
     auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates();
 
-    Field2D new_Rxy = tokamak_coordinates_factory.get_Rxy() / Lnorm;;
+    Field2D new_Rxy = tokamak_coordinates_factory.get_Rxy() / Lnorm;
     tokamak_coordinates_factory.set_Rxy(new_Rxy);
 
-    Field2D new_hthe = tokamak_coordinates_factory.get_hthe() / Lnorm;;
+    Field2D new_hthe = tokamak_coordinates_factory.get_hthe() / Lnorm;
     tokamak_coordinates_factory.set_hthe(new_hthe);
 
     FieldMetric new_ShearFactor = tokamak_coordinates_factory.get_ShearFactor() * SQ(Lnorm) * Bnorm;
