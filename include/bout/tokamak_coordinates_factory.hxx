@@ -59,6 +59,15 @@ public:
     return coord;
   }
 
+  void normalise(BoutReal Bbar, BoutReal Lbar) {
+    Rxy_m /= Lbar;
+    Bpxy_m /= Bbar;
+    Btxy_m / Bbar;
+    Bxy_m / Bbar;
+    hthe_m / Lbar;
+    ShearFactor_m *= Lbar * Lbar * Bbar;
+  }
+
   const Field2D& get_Rxy() const { return Rxy_m; }
   const Field2D& get_Bpxy() const { return Bpxy_m; }
   const Field2D& get_Btxy() const { return Btxy_m; }
@@ -66,12 +75,6 @@ public:
   const Field2D& get_hthe() const { return hthe_m; }
   const FieldMetric& get_ShearFactor() const { return ShearFactor_m; }
 
-  void set_Rxy(Field2D Rxy) { Rxy_m = Rxy; }
-  void set_Bpxy(Field2D& Bpxy) { Bpxy_m = Bpxy; }
-  void set_Btxy(Field2D& Btxy) { Btxy_m = Btxy; }
-  void set_Bxy(Field2D& Bxy) { Bxy_m = Bxy; }
-  void set_hthe(Field2D& hthe) { hthe_m = hthe; }
-  void set_ShearFactor(FieldMetric& shearFactor) { ShearFactor_m = shearFactor; }
 
 };
 

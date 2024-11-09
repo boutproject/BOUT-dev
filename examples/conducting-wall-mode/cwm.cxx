@@ -131,28 +131,8 @@ private:
     Te0 /= Te_x;
 
     // Normalise geometry
-
-    Field2D new_Rxy = tokamak_coordinates_factory.get_Rxy() / rho_s;
-    tokamak_coordinates_factory.set_Rxy(new_Rxy);
-
-    Field2D new_hthe = tokamak_coordinates_factory.get_hthe() / rho_s;
-    tokamak_coordinates_factory.set_hthe(new_hthe);
-
-    FieldMetric new_ShearFactor = tokamak_coordinates_factory.get_ShearFactor() * rho_s * rho_s * (bmag / 1e4) * ShearFactor;
-    tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
-
+    tokamak_coordinates_factory.normalise(rho_s, bmag / 1e4);
     dx /= (rho_s * rho_s * (bmag / 1e4));
-
-    // Normalise magnetic field
-
-    Field2D new_Bpxy = tokamak_coordinates_factory.get_Bpxy() / (bmag / 1.e4);
-    tokamak_coordinates_factory.set_Bpxy(new_Bpxy);
-
-    Field2D new_Btxy = tokamak_coordinates_factory.get_Btxy() / (bmag / 1.e4);
-    tokamak_coordinates_factory.set_Btxy(new_Btxy);
-
-    Field2D new_Bxy = tokamak_coordinates_factory.get_Bxy() / (bmag / 1.e4);
-    tokamak_coordinates_factory.set_Bxy(new_Bxy);
 
     // Set nu
     nu = nu_hat * Ni0 / pow(Te0, 1.5);
