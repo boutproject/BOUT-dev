@@ -59,11 +59,11 @@ public:
     return coord;
   }
 
-  const Field2D& get_Rxy() const { return Rxy_m; }
-  const Field2D& get_Bpxy() const { return Bpxy_m; }
-  const Field2D& get_Btxy() const { return Btxy_m; }
-  const Field2D& get_Bxy() const { return Bxy_m; }
-  const Field2D& get_hthe() const { return hthe_m; }
+  Field2D& get_Rxy() { return Rxy_m; }
+  Field2D& get_Bpxy() { return Bpxy_m; }
+  Field2D& get_Btxy() { return Btxy_m; }
+  Field2D& get_Bxy() { return Bxy_m; }
+  Field2D& get_hthe() { return hthe_m; }
   const FieldMetric& get_ShearFactor() const { return ShearFactor_m; }
 
   void set_Rxy(Field2D Rxy) { Rxy_m = Rxy; }
