@@ -1180,10 +1180,11 @@ protected:
     Field3D result = Grad_par(f, loc);
 
     if (nonlinear) {
-      result -= bracket(interp_to(Psi, loc), f, bm_mag) * tokamak_coordinates_factory.get_Bxy();
+      const auto Bxy = tokamak_coordinates_factory.get_Bxy();
+      result -= bracket(interp_to(Psi, loc), f, bm_mag) * Bxy;
 
       if (include_rmp) {
-        result -= bracket(interp_to(rmp_Psi, loc), f, bm_mag) * tokamak_coordinates_factory.get_Bxy();
+        result -= bracket(interp_to(rmp_Psi, loc), f, bm_mag) * Bxy;
       }
     }
 
