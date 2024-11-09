@@ -704,7 +704,7 @@ public:
       Dphi0 *= -1;
     }
 
-    V0 = -Rxy * Bpxy * Dphi0 / B0;
+    V0 = -tokamak_coordinates_factory.get_Rxy() * tokamak_coordinates_factory.get_Bpxy() * Dphi0 / tokamak_coordinates_factory.get_Bxy();
 
     if (simple_rmp) {
       include_rmp = true;
@@ -799,9 +799,10 @@ public:
 
     if (noshear) {
       if (include_curvature) {
-        b0xcv.z += I * b0xcv.x;
+        b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
       }
-      I = 0.0;
+      FieldMetric new_ShearFactor = 0.0;
+      tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
     }
 
     //////////////////////////////////////////////////////////////
@@ -917,7 +918,7 @@ public:
     Field2D Te;
     Te = P0 / (2.0 * density * 1.602e-19); // Temperature in eV
 
-    J0 = -MU0 * Lbar * J0 / B0;
+    J0 = -MU0 * Lbar * J0 / tokamak_coordinates_factory.get_Bxy();
     P0 = 2.0 * MU0 * P0 / (Bbar * Bbar);
     V0 = V0 / Va;
     Dphi0 *= Tbar;
