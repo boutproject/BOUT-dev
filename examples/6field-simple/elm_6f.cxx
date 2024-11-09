@@ -1126,7 +1126,8 @@ protected:
     SAVE_ONCE(J0, P0);
     SAVE_ONCE(density, Lbar, Bbar, Tbar);
     SAVE_ONCE(Tibar, Tebar, Nbar);
-    SAVE_ONCE(Va, tokamak_coordinates_factory.get_Bxy());
+    Field2D tmp = tokamak_coordinates_factory.get_Bxy();
+    SAVE_ONCE(Va, tmp);
     SAVE_ONCE(Ti0, Te0, N0);
 
     // Create a solver for the Laplacian

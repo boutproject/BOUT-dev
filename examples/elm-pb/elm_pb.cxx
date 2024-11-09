@@ -1113,7 +1113,8 @@ protected:
     // everything needed to recover physical units
     SAVE_ONCE(J0, P0);
     SAVE_ONCE(density, Lbar, Bbar, Tbar);
-    SAVE_ONCE(Va, tokamak_coordinates_factory.get_Bxy());
+    Field2D tmp = tokamak_coordinates_factory.get_Bxy();
+    SAVE_ONCE(Va, tmp);
     SAVE_ONCE(Dphi0, U0);
     SAVE_ONCE(V0);
     if (!constn0) {
