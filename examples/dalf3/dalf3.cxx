@@ -150,6 +150,9 @@ protected:
       return 1;
     }
 
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates();
+
     // SHIFTED RADIAL COORDINATES
 
     // Check type of parallel transform
@@ -158,8 +161,9 @@ protected:
 
     if (lowercase(ptstr) == "shifted") {
       // Dimits style, using local coordinate system
-      b0xcv.z += I * b0xcv.x;
-      I = 0.0; // I disappears from metric
+      b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
+      FieldMetric new_ShearFactor = 0.0; // I disappears from metric
+      tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
     }
 
     ///////////////////////////////////////////////////
@@ -218,15 +222,24 @@ protected:
     b0xcv.z *= rho_s * rho_s;
 
     // Metrics
-    Rxy /= rho_s;
-    hthe /= rho_s;
-    I *= rho_s * rho_s * Bnorm;
-    Bpxy /= Bnorm;
-    Btxy /= Bnorm;
-    B0 /= Bnorm;
 
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates();
+    Field2D new_Rxy = tokamak_coordinates_factory.get_Rxy() / rho_s;
+    tokamak_coordinates_factory.set_Rxy(new_Rxy);
+
+    Field2D new_hthe = tokamak_coordinates_factory.get_hthe() / rho_s;
+    tokamak_coordinates_factory.set_hthe(new_hthe);
+
+    FieldMetric new_ShearFactor = tokamak_coordinates_factory.get_ShearFactor() * rho_s * rho_s * Bnorm;
+    tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
+
+    Field2D new_Bpxy = tokamak_coordinates_factory.get_Bpxy() / Bnorm;
+    tokamak_coordinates_factory.set_Bpxy(new_Bpxy);
+
+    Field2D new_Btxy = tokamak_coordinates_factory.get_Btxy() / Bnorm;
+    tokamak_coordinates_factory.set_Btxy(new_Btxy);
+
+    Field2D new_Bxy = tokamak_coordinates_factory.get_Bxy() / Bnorm;
+    tokamak_coordinates_factory.set_Bxy(new_Bxy);
 
     coord->setDx(coord->dx() / (rho_s * rho_s * Bnorm));
 
