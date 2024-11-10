@@ -106,7 +106,6 @@ protected:
 
     const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
-
     tokamak_coordinates_factory.normalise(rho_s, bmag / 1e4);
 
     // Tell BOUT++ which variables to evolve
