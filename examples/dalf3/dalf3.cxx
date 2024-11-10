@@ -217,10 +217,6 @@ protected:
     hyper_viscosity /= wci * SQ(SQ(rho_s));
     viscosity_par /= wci * SQ(rho_s);
 
-    b0xcv.x /= Bnorm;
-    b0xcv.y *= rho_s * rho_s;
-    b0xcv.z *= rho_s * rho_s;
-
     // Metrics
     tokamak_coordinates_factory.normalise(rho_s, Bnorm);
 

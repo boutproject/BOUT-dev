@@ -805,10 +805,6 @@ protected:
     J0 = SI::mu0 * Lbar * J0 / tokamak_coordinates_factory.get_Bxy();
     P0 = P0 / (SI::kb * (Tibar + Tebar) * eV_K / 2. * Nbar * density);
 
-    b0xcv.x /= Bbar;
-    b0xcv.y *= Lbar * Lbar;
-    b0xcv.z *= Lbar * Lbar;
-
     tokamak_coordinates_factory.normalise(Lbar, Bbar);
 
     Field2D dx;

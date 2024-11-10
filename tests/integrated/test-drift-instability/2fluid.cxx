@@ -168,11 +168,6 @@ protected:
     phi0 /= Te_x;
     Vi0 /= Vi_x;
 
-    // Normalise curvature term
-    b0xcv.x /= (bmag / 1e4);
-    b0xcv.y *= rho_s * rho_s;
-    b0xcv.z *= rho_s * rho_s;
-
     // calculate pressures
     pei0 = (Ti0 + Te0) * Ni0;
     pe0 = Te0 * Ni0;

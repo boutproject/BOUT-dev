@@ -380,10 +380,6 @@ public:
     J0 = -MU0 * Lbar * J0 / B0;
     P0 = 2.0 * MU0 * P0 / (Bbar * Bbar);
 
-    b0xcv.x /= Bbar;
-    b0xcv.y *= Lbar * Lbar;
-    b0xcv.z *= Lbar * Lbar;
-
     tokamak_coordinates_factory.normalise(Lbar, Bbar);
 
     BoutReal pnorm = max(P0, true); // Maximum over all processors

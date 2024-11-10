@@ -93,6 +93,11 @@ public:
     ShearFactor_m *= Lbar * Lbar * Bbar;
     dx_m /= Lbar * Lbar * Bbar;
 
+    // Normalise curvature term
+    b0xcv_m.x /= Bbar;
+    b0xcv_m.y *= Lbar * Lbar;
+    b0xcv_m.z *= Lbar * Lbar;
+
     //    bool include_curvature = options["include_curvature"].withDefault(true);
     //    const bool include_curvature = mesh_m.get("include_curvature", true);  //TODO: Create overload for mesh->get(name, default_value) to return bool or int
     bool include_curvature = 0;

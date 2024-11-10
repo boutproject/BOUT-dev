@@ -107,13 +107,8 @@ protected:
     Ti0 /= Te_x;
     Te0 /= Te_x;
 
-    // Normalise curvature term
-    b0xcv.x /= (bmag / 1e4);
-    b0xcv.y *= rho_s * rho_s;
-    b0xcv.z *= rho_s * rho_s;
-
     const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates(Lnorm, Bnorm);
+    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
 
     tokamak_coordinates_factory.normalise(rho_s, bmag / 1e4);
 
