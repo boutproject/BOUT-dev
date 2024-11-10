@@ -20,14 +20,6 @@ public:
     auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     const auto& coords = tokamak_coordinates_factory.make_tokamak_coordinates();
 
-    int ShiftXderivs = 0;
-    mesh->get(ShiftXderivs, "false");
-    if (ShiftXderivs) {
-      // No integrated shear in metric
-      FieldMetric new_ShearFactor = 0.0;
-      tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
-      }
-
     solver->add(f, "f");
     solver->add(g, "g");
 

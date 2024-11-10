@@ -34,8 +34,34 @@ public:
     mesh.get(dx_m, "dpsi");
   }
 
+  void setShearFactor() {
+//    bool ShiftXderivs = mesh_m.get("shiftXderivs", false);  TODO: Create overload for mesh->get(name, default_value) to return bool or int
+    int ShiftXderivs = 0;
+    mesh_m.get(ShiftXderivs, "false");
+//    const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
+    if (ShiftXderivs) {
+      // No integrated shear in metric
+      ShearFactor_m = 0.0;
+    }
+//    if (ShiftXderivs) {
+//      if (mesh->IncIntShear) {
+//        // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
+//        coords->setIntShiftTorsion(I);
+//
+//      } else {
+//        // Dimits style, using local coordinate system
+//        if (include_curvature) {
+//          b0xcv.z += I * b0xcv.x;
+//        }
+//        I = 0.0; // I disappears from metric
+//      }
+//    }
+  }
+
   Coordinates* make_tokamak_coordinates()
   {
+    setShearFactor();
+
     auto* coord = mesh_m.getCoordinates();
 
     const auto g11 = SQ(Rxy_m * Bpxy_m);
