@@ -160,19 +160,17 @@ protected:
 
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates();
-
-    tokamak_coordinates_factory.normalise(Lnorm, Bnorm);
-
     // Check type of parallel transform
     std::string ptstr =
         Options::root()["mesh"]["paralleltransform"]["type"].withDefault("identity");
 
-    const bool shifted_metric_method = false;
     if (lowercase(ptstr) == "shifted") {
-      shifted_metric_method = true;
+      noshear = true;
     }
+
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
+    tokamak_coordinates_factory.normalise(Lnorm, Bnorm);
 
     // Checking for dpsi and qinty used in BOUT grids
     Field2D dx;

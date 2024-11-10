@@ -3,13 +3,9 @@
 #include "loadmetric.hxx"
 
 void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
-  // Load metric coefficients from the mesh
-  Field2D Rxy, Bpxy, Btxy, hthe, sinty;
 
   auto mesh = bout::globals::mesh;
   auto coords = mesh->getCoordinates();
-
-  GRID_LOAD5(Rxy, Bpxy, Btxy, hthe, sinty); // Load metrics
 
   // Checking for dpsi and qinty used in BOUT grids
   Field2D dx;
@@ -23,7 +19,7 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   Field2D qinty;
 
   const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-  coords = tokamak_coordinates_factory.make_tokamak_coordinates();
+  coords = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature)
 
   tokamak_coordinates_factory.normalise(Lnorm, Bnorm);
 
