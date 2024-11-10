@@ -175,9 +175,6 @@ protected:
       tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor); // I disappears from metric
     }
 
-    FieldMetric Bxy = mesh->get("Bxy");
-    Bxy /= Bnorm;
-
     // Checking for dpsi and qinty used in BOUT grids
     Field2D dx;
     if (!mesh->get(dx, "dpsi")) {
