@@ -706,6 +706,9 @@ public:
       Dphi0 *= -1;
     }
 
+    if (!mesh->IncIntShear) {
+      noshear = true;
+    }
     const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature);
 
     V0 = -tokamak_coordinates_factory.get_Rxy() * tokamak_coordinates_factory.get_Bpxy() * Dphi0 / tokamak_coordinates_factory.get_Bxy();
@@ -1191,14 +1194,6 @@ public:
       // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
       metric->setIntShiftTorsion(tokamak_coordinates_factory.get_ShearFactor());
 
-    } else {
-      // Dimits style, using local coordinate system
-      if (include_curvature) {
-        b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
-      }
-      // I disappears from metric
-      FieldMetric new_ShearFactor = 0.0;
-      tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
     }
 
     return 0;

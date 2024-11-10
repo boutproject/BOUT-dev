@@ -92,7 +92,7 @@ private:
             "identity");
 
     if (lowercase(ptstr) == "shifted") {
-      ShearFactor = 0.0; // I disappears from metric
+      noshear = true;
     }
 
     /************** CALCULATE PARAMETERS *****************/
