@@ -4,6 +4,8 @@
 
 void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
+  bool noshear;
+
   auto mesh = bout::globals::mesh;
 
   // Calculate metric components
@@ -12,7 +14,7 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   // Convert to lower case for comparison
   ptstr = lowercase(ptstr);
   if (ptstr == "shifted") {
-    sinty = 0.0; // I disappears from metric
+    noshear = true;
   }
 
   const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);

@@ -297,6 +297,7 @@ private:
 
 protected:
   int init(bool restarting) override {
+
     bool noshear;
 
     output.write("Solving high-beta flute reduced equations\n");
