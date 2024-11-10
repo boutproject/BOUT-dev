@@ -132,7 +132,6 @@ private:
 
     // Normalise geometry
     tokamak_coordinates_factory.normalise(rho_s, bmag / 1e4);
-    dx /= (rho_s * rho_s * (bmag / 1e4));
 
     // Set nu
     nu = nu_hat * Ni0 / pow(Te0, 1.5);
