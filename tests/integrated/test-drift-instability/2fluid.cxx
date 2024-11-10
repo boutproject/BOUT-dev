@@ -196,15 +196,6 @@ protected:
     b0xcv.y *= rho_s * rho_s;
     b0xcv.z *= rho_s * rho_s;
 
-    // Normalise geometry
-    Rxy /= rho_s;
-    hthe /= rho_s;
-    I *= rho_s * rho_s * (bmag / 1e4) * ShearFactor;
-
-    // Normalise magnetic field
-    Bpxy /= (bmag / 1.e4);
-    Btxy /= (bmag / 1.e4);
-
     // calculate pressures
     pei0 = (Ti0 + Te0) * Ni0;
     pe0 = Te0 * Ni0;
@@ -212,11 +203,10 @@ protected:
     Field2D Bxy = mesh->get("Bxy");
     Bxy /= (bmag / 1.e4);
 
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, I);
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates(Lnorm, Bnorm);
+    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+    coord = tokamak_coordinates_factory.make_tokamak_coordinates();
 
-    coord->setDx(mesh->get("dpsi"));
-    coord->setDx(coord->dx() / (rho_s * rho_s * (bmag / 1e4)));
+    tokamak_coordinates_factory.normalise(rho_s, bmag / 1e4);
 
     /**************** SET EVOLVING VARIABLES *************/
 

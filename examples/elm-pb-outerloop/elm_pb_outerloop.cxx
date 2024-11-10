@@ -927,13 +927,7 @@ public:
     b0xcv.y *= Lbar * Lbar;
     b0xcv.z *= Lbar * Lbar;
 
-    Rxy /= Lbar;
-    Bpxy /= Bbar;
-    Btxy /= Bbar;
-    B0 /= Bbar;
-    hthe /= Lbar;
-
-    I *= Lbar * Lbar * Bbar;
+    tokamak_coordinates_factory.normalise(Lbar, Bbar);
 
     if (constn0) {
       T0_fake_prof = false;

@@ -314,9 +314,6 @@ int GBS::init(bool restarting) {
 }
 
 void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
-  // Load metric coefficients from the mesh
-  Field2D Rxy, Bpxy, Btxy, hthe, sinty;
-  GRID_LOAD5(Rxy, Bpxy, Btxy, hthe, sinty); // Load metrics
 
   // Checking for dpsi and qinty used in BOUT grids
   Field2D dx;
@@ -328,14 +325,15 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
     output << "\tUsing dx as the x grid spacing\n";
   }
 
-  Rxy /= Lnorm;
-  hthe /= Lnorm;
-  sinty *= SQ(Lnorm) * Bnorm;
-  coords->setDx(coords->dx() / (SQ(Lnorm) * Bnorm));
+  BoutReal sbp = 1.0; // Sign of Bp
+  if (min(Bpxy, true) < 0.0) {
+    sbp = -1.0;
+  }
 
-  Bpxy /= Bnorm;
-  Btxy /= Bnorm;
-  coords->setBxy(coords->Bxy() / Bnorm);
+  const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, sbp);
+  coords = tokamak_coordinates_factory.make_tokamak_coordinates();
+
+  tokamak_coordinates_factory.normalise(Lnorm, Bnorm);
 
   // Calculate metric components
   bool ShiftXderivs;
@@ -343,14 +341,6 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   if (ShiftXderivs) {
     sinty = 0.0; // I disappears from metric
   }
-
-  BoutReal sbp = 1.0; // Sign of Bp
-  if (min(Bpxy, true) < 0.0) {
-    sbp = -1.0;
-  }
-
-  const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, coords->Bxy(), hthe, sinty);
-  coords = tokamak_coordinates_factory.make_tokamak_coordinates(Lnorm, Bnorm);
 }
 
 // just define a macro for V_E dot Grad
