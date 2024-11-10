@@ -927,10 +927,6 @@ public:
     V0 = V0 / Va;
     Dphi0 *= Tbar;
 
-    b0xcv.x /= Bbar;
-    b0xcv.y *= Lbar * Lbar;
-    b0xcv.z *= Lbar * Lbar;
-
     tokamak_coordinates_factory.normalise(Lbar, Bbar);
 
     if (constn0) {
