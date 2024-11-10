@@ -288,6 +288,8 @@ private:
   int damp_width;        // Width of inner damped region
   BoutReal damp_t_const; // Timescale of damping
 
+  TokamakCoordinatesFactory tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+
   const BoutReal MU0 = 4.0e-7 * PI;
   const BoutReal Mi = 2.0 * 1.6726e-27; // Ion mass
   const BoutReal Me = 9.1094e-31;       // Electron mass
@@ -704,7 +706,6 @@ public:
       Dphi0 *= -1;
     }
 
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates();
 
     V0 = -tokamak_coordinates_factory.get_Rxy() * tokamak_coordinates_factory.get_Bpxy() * Dphi0 / tokamak_coordinates_factory.get_Bxy();
@@ -1522,7 +1523,7 @@ public:
     auto P0_acc = Field2DAccessor<>(P0);
     auto J0_acc = Field2DAccessor<>(J0);
     auto phi0_acc = Field2DAccessor<>(phi0);
-    FieldMetric Bxy = metric->Bxy();
+    Field2D Bxy = tokamak_coordinates_factory.get_Bxy();
     auto B0_acc = Field2DAccessor<>(Bxy);
 
     // Evolving fields
@@ -1992,7 +1993,7 @@ public:
     Coordinates* metric = mesh->getCoordinates();
 
     Field3D U1 = ddt(U);
-    U1 += (gamma * metric->Bxy() * metric.Bxy()) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(P);
+    U1 += (gamma * metric->Bxy() * metric->Bxy()) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(P);
 
     // Second matrix, solving Alfven wave dynamics
     static std::unique_ptr<InvertPar> invU{nullptr};
