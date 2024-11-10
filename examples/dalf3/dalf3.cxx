@@ -160,10 +160,7 @@ protected:
         Options::root()["mesh"]["paralleltransform"]["type"].withDefault("identity");
 
     if (lowercase(ptstr) == "shifted") {
-      // Dimits style, using local coordinate system
-      b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
-      FieldMetric new_ShearFactor = 0.0; // I disappears from metric
-      tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
+      noshear = true;
     }
 
     ///////////////////////////////////////////////////
