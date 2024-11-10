@@ -704,6 +704,9 @@ public:
       Dphi0 *= -1;
     }
 
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+    const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates();
+    
     V0 = -tokamak_coordinates_factory.get_Rxy() * tokamak_coordinates_factory.get_Bpxy() * Dphi0 / tokamak_coordinates_factory.get_Bxy();
 
     if (simple_rmp) {
@@ -1190,11 +1193,6 @@ public:
       Jpar.setBoundary("J");
     }
     Jpar2.setBoundary("J");
-
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates();
-
-    tokamak_coordinates_factory.normalise(Lbar, Bbar);
 
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
