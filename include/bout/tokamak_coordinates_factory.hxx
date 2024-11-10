@@ -118,8 +118,6 @@ public:
   const Field2D& get_Bxy() const { return Bxy_m; }
   const Field2D& get_hthe() const { return hthe_m; }
   const FieldMetric& get_ShearFactor() const { return ShearFactor_m; }
-
-  void set_ShearFactor(FieldMetric& shearFactor) { ShearFactor_m = shearFactor; }
 };
 
 #endif //BOUT_TOKAMAK_COORDINATES_FACTORY_HXX
