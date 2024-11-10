@@ -122,6 +122,15 @@ protected:
       (*globalOptions)["aparsolver"].setConditionallyUsed();
     }
 
+    /************* SHIFTED RADIAL COORDINATES ************/
+
+    const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
+    if (ShiftXderivs) {
+//todo: set noshear=true;
+      //ShearFactor = 0.0; // I disappears from metric
+      //b0xcv.z += I * b0xcv.x;
+    }
+
     /************** CALCULATE PARAMETERS *****************/
 
     rho_s = 1.02 * sqrt(AA * Te_x) / ZZ / bmag;

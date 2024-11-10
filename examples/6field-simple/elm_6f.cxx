@@ -139,7 +139,7 @@ class Elm_6f : public PhysicsModel {
   BoutReal const_cse;
 
   // options
-  bool include_jpar0, compress0;
+  bool include_curvature, include_jpar0, compress0;
   bool evolve_pressure, continuity, gyroviscous;
   Field3D diff_radial, ddx_ni, ddx_n0;
   BoutReal diffusion_coef_Hmode0, diffusion_coef_Hmode1;
@@ -374,6 +374,7 @@ class Elm_6f : public PhysicsModel {
 
 protected:
   int init(bool restarting) override {
+    bool noshear;
 
     output.write("Solving high-beta flute reduced equations\n");
     output.write("\tFile    : {:s}\n", __FILE__);
@@ -465,6 +466,7 @@ protected:
         options["phi_constraint"].doc("Use solver constraint for phi").withDefault(false);
 
     // Effects to include/exclude
+    include_curvature = options["include_curvature"].withDefault(true);
     include_jpar0 = options["include_jpar0"].withDefault(true);
     evolve_pressure = options["evolve_pressure"].withDefault(true);
 
@@ -541,6 +543,8 @@ protected:
     dia_fact = options["dia_fact"]
                    .doc("Scale diamagnetic effects by this factor")
                    .withDefault(1.0);
+
+    noshear = options["noshear"].withDefault(false);
 
     relax_j_vac =
         options["relax_j_vac"].doc("Relax vacuum current to zero").withDefault(false);
@@ -660,6 +664,13 @@ protected:
 
     if (!include_jpar0) {
       J0 = 0.0;
+    }
+
+    //////////////////////////////////////////////////////////////
+    // SHIFTED RADIAL COORDINATES
+
+    if (!mesh->IncIntShear) {
+      noshear = true;
     }
 
     //////////////////////////////////////////////////////////////
@@ -990,7 +1001,7 @@ protected:
 
     /**************** CALCULATE METRICS ******************/
 
-    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates();
+    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature);
     
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
@@ -998,17 +1009,7 @@ protected:
     if (mesh->IncIntShear) {
       // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
       coord->setIntShiftTorsion(tokamak_coordinates_factory.get_ShearFactor());
-
-    } else {
-      // Dimits style, using local coordinate system
-      if (include_curvature) {
-        b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
-      }
-      // I disappears from metric
-      FieldMetric new_ShearFactor = 0.0;
-      tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
     }
-
 
     // Set B field vector
 
