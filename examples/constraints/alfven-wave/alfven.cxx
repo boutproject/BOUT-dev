@@ -160,28 +160,15 @@ protected:
 
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates();
-
-    Field2D new_Rxy = tokamak_coordinates_factory.get_Rxy() / Lnorm;
-    tokamak_coordinates_factory.set_Rxy(new_Rxy);
-
-    Field2D new_hthe = tokamak_coordinates_factory.get_hthe() / Lnorm;
-    tokamak_coordinates_factory.set_hthe(new_hthe);
-
-    FieldMetric new_ShearFactor = tokamak_coordinates_factory.get_ShearFactor() * SQ(Lnorm) * Bnorm;
-    tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
-
     BoutReal sbp = 1.0; // Sign of Bp
     if (min(tokamak_coordinates_factory.get_Bpxy(), true) < 0.0) {
       sbp = -1.0;
     }
 
-    Field2D new_Bpxy = tokamak_coordinates_factory.get_Bpxy() / Bnorm;
-    tokamak_coordinates_factory.set_Bpxy(new_Bpxy);
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, sbp);
+    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates();
 
-    Field2D new_Btxy = tokamak_coordinates_factory.get_Btxy() / Bnorm;
-    tokamak_coordinates_factory.set_Btxy(new_Btxy);
+    tokamak_coordinates_factory.normalise(Lnorm, Bnorm);
 
     // Check type of parallel transform
     std::string ptstr =
