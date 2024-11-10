@@ -706,7 +706,7 @@ public:
 
     auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates();
-    
+
     V0 = -tokamak_coordinates_factory.get_Rxy() * tokamak_coordinates_factory.get_Bpxy() * Dphi0 / tokamak_coordinates_factory.get_Bxy();
 
     if (simple_rmp) {
@@ -1061,15 +1061,15 @@ public:
 
     B0vec.covariant = false;
     B0vec.x = 0.;
-    B0vec.y = Bpxy / hthe;
+    B0vec.y = tokamak_coordinates_factory.get_Bpxy() / tokamak_coordinates_factory.get_hthe();
     B0vec.z = 0.;
 
     V0net.covariant = false; // presentation for net flow
     V0net.x = 0.;
-    V0net.y = Rxy * Btxy * Bpxy / (hthe * B0 * B0) * Dphi0;
+    V0net.y = tokamak_coordinates_factory.get_Rxy() * tokamak_coordinates_factory.get_Btxy() * tokamak_coordinates_factory.get_Bpxy() / (tokamak_coordinates_factory.get_hthe() * B0 * B0) * Dphi0;
     V0net.z = -Dphi0;
 
-    U0 = B0vec * Curl(V0net) / B0; // get 0th vorticity for Kelvin-Holmholtz term
+    U0 = B0vec * Curl(V0net) / tokamak_coordinates_factory.get_B0(); // get 0th vorticity for Kelvin-Holmholtz term
 
     /**************** SET EVOLVING VARIABLES *************/
 
@@ -1092,8 +1092,8 @@ public:
       SOLVE_FOR(Vpar);
       comms.add(Vpar);
 
-      beta = B0 * B0 / (0.5 + (B0 * B0 / (g * P0)));
-      gradparB = Grad_par(B0) / B0;
+      beta = tokamak_coordinates_factory.get_B0() * tokamak_coordinates_factory.get_B0() / (0.5 + (tokamak_coordinates_factory.get_B0() * tokamak_coordinates_factory.get_B0() / (g * P0)));
+      gradparB = Grad_par(tokamak_coordinates_factory.get_B0()) / tokamak_coordinates_factory.get_B0();
 
       output.write("Beta in range {:e} -> {:e}\n", min(beta), max(beta));
     } else {
@@ -1126,10 +1126,10 @@ public:
     // Diamagnetic phi0
     if (diamag_phi0) {
       if (constn0) {
-        phi0 = -0.5 * dnorm * P0 / B0;
+        phi0 = -0.5 * dnorm * P0 / tokamak_coordinates_factory.get_B0();
       } else {
         // Stationary equilibrium plasma. ExB velocity balances diamagnetic drift
-        phi0 = -0.5 * dnorm * P0 / B0 / N0;
+        phi0 = -0.5 * dnorm * P0 / tokamak_coordinates_factory.get_B0() / N0;
       }
       SAVE_ONCE(phi0);
     } else {
@@ -1140,7 +1140,7 @@ public:
     // everything needed to recover physical units
     SAVE_ONCE(J0, P0);
     SAVE_ONCE(density, Lbar, Bbar, Tbar);
-    SAVE_ONCE(Va, B0);
+    SAVE_ONCE(Va, tokamak_coordinates_factory.get_B0());
     SAVE_ONCE(Dphi0, U0);
     SAVE_ONCE(V0);
     if (!constn0) {
@@ -1172,7 +1172,7 @@ public:
       }
 
       // if(diamag) {
-      // phi -= 0.5*dnorm * P / B0;
+      // phi -= 0.5*dnorm * P / tokamak_coordinates_factory.get_B0();
       //}
     }
 
@@ -1199,14 +1199,16 @@ public:
 
     if (mesh->IncIntShear) {
       // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      metric->setIntShiftTorsion(I);
+      metric->setIntShiftTorsion(tokamak_coordinates_factory.get_ShearFactor());
 
     } else {
       // Dimits style, using local coordinate system
       if (include_curvature) {
-        b0xcv.z += I * b0xcv.x;
+        b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
       }
-      I = 0.0; // I disappears from metric
+      // I disappears from metric
+      FieldMetric new_ShearFactor = 0.0;
+      tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
     }
 
     return 0;
