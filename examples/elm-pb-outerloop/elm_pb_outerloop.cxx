@@ -706,7 +706,7 @@ public:
       Dphi0 *= -1;
     }
 
-    const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates();
+    const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature);
 
     V0 = -tokamak_coordinates_factory.get_Rxy() * tokamak_coordinates_factory.get_Bpxy() * Dphi0 / tokamak_coordinates_factory.get_Bxy();
 
@@ -799,14 +799,6 @@ public:
 
     if (!include_jpar0) {
       J0 = 0.0;
-    }
-
-    if (noshear) {
-      if (include_curvature) {
-        b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
-      }
-      FieldMetric new_ShearFactor = 0.0;
-      tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
     }
 
     //////////////////////////////////////////////////////////////

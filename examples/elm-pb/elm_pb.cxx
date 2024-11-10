@@ -318,8 +318,6 @@ protected:
     mesh->get(Psiaxis, "psi_axis");   // axis flux
     mesh->get(Psibndry, "psi_bndry"); // edge flux
 
-    const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates();
-
     // Set locations of staggered variables
     // Note, use of staggered grids in elm-pb is untested and may not be completely
     // implemented. Parallel boundary conditions are especially likely to be wrong.
@@ -464,8 +462,6 @@ protected:
     D_min = options["D_min"].withDefault(3000.0);
 
     experiment_Er = options["experiment_Er"].withDefault(false);
-
-    noshear = options["noshear"].withDefault(false);
 
     relax_j_vac = options["relax_j_vac"]
                       .doc("Relax vacuum current to zero")
@@ -741,13 +737,12 @@ protected:
       J0 = 0.0;
     }
 
-    if (noshear) {
-      if (include_curvature) {
-        b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
-      }
-      FieldMetric new_ShearFactor = 0.0;
-      tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
+    // Dimits style, using local coordinate system
+    if (include_curvature and !mesh->IncIntShear) {
+      noshear = true;
     }
+
+    const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature);
 
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
@@ -755,14 +750,6 @@ protected:
     if (mesh->IncIntShear) {
       // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
       metric->setIntShiftTorsion(tokamak_coordinates_factory.get_ShearFactor());
-
-    } else {
-      // Dimits style, using local coordinate system
-      if (include_curvature) {
-        b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
-      }
-      FieldMetric new_ShearFactor = 0.0; // I disappears from metric
-      tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
     }
 
     //////////////////////////////////////////////////////////////

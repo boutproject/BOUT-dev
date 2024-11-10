@@ -32,19 +32,15 @@ public:
     mesh.get(hthe_m, "hthe");
     mesh.get(ShearFactor_m, "sinty");
     mesh.get(dx_m, "dpsi");
-
-    // Load magnetic curvature term
-    b0xcv_m.covariant = false;  // Read contravariant components
-    mesh.get(b0xcv_m, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
   }
 
-  void setShearFactor(const bool shifted_metric_method = false) {
-
-    if (shifted_metric_method) {
-      // No integrated shear in metric
-      ShearFactor_m = 0.0;
-    }
-  }
+  //  void setShearFactor(const bool noshear = false) {
+  //
+  //    if (shifted_metric_method) {
+  //      // No integrated shear in metric
+  //      ShearFactor_m = 0.0;
+  //    }
+  //  }
 
   BoutReal get_sign_of_bp() {
     if (min(Bpxy_m, true) < 0.0) {
@@ -53,9 +49,7 @@ public:
     return 1.0;
   }
 
-  Coordinates* make_tokamak_coordinates(const bool shifted_metric_method = false)
-  {
-    setShearFactor(shifted_metric_method);
+  Coordinates* make_tokamak_coordinates(const bool noshear, const bool include_curvature) {
 
     BoutReal sign_of_bp = get_sign_of_bp();
 
@@ -81,10 +75,29 @@ public:
     coord->setJ(hthe_m / Bpxy_m);
     coord->setBxy(Bxy_m);
 
+    if (!include_curvature) {
+      b0xcv_m = 0.0;
+    }
+
+    if (noshear) {
+      if (include_curvature) {
+        b0xcv_m.z += ShearFactor_m * b0xcv_m.x;
+      }
+      ShearFactor_m = 0.0;
+    }
+    //      if (ShiftXderivs and not!mesh->IncIntShear) {
+    //        // Dimits style, using local coordinate system
+    //        if (include_curvature) {
+    //          b0xcv.z += I * b0xcv.x;
+    //        }
+    //        I = 0.0; // I disappears from metric
+    //      }
+
     return coord;
   }
 
   void normalise(BoutReal Lbar, BoutReal Bbar) {
+
     Rxy_m /= Lbar;
     Bpxy_m /= Bbar;
     Btxy_m / Bbar;
@@ -97,41 +110,6 @@ public:
     b0xcv_m.x /= Bbar;
     b0xcv_m.y *= Lbar * Lbar;
     b0xcv_m.z *= Lbar * Lbar;
-
-    //    bool include_curvature = options["include_curvature"].withDefault(true);
-    //    const bool include_curvature = mesh_m.get("include_curvature", true);  //TODO: Create overload for mesh->get(name, default_value) to return bool or int
-    bool include_curvature = 0;
-    mesh_m.get(include_curvature, "true");
-    if (!include_curvature) {
-      b0xcv_m = 0.0;
-    }
-
-    //    const bool noshear = mesh_m.get("noshear", false);  //TODO: Create overload for mesh->get(name, default_value) to return bool or int
-    //    const bool noshear = mesh_m.get("noshear", false);
-    bool noshear = 0;
-    mesh_m.get(noshear, "false");
-    mesh_m.get("noshear", false);
-    if (noshear) {
-      if (include_curvature) {
-        b0xcv_m.z += ShearFactor_m * b0xcv_m.x;
-      }
-      ShearFactor_m = 0.0;
-    }
-
-    // TODO: Do we need to include the following logic?
-    //    if (ShiftXderivs) {
-    //      if (mesh->IncIntShear) {
-    //        // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-    //        coords->setIntShiftTorsion(I);
-    //
-    //      } else {
-    //        // Dimits style, using local coordinate system
-    //        if (include_curvature) {
-    //          b0xcv.z += I * b0xcv.x;
-    //        }
-    //        I = 0.0; // I disappears from metric
-    //      }
-    //    }
   }
 
   const Field2D& get_Rxy() const { return Rxy_m; }
@@ -142,7 +120,6 @@ public:
   const FieldMetric& get_ShearFactor() const { return ShearFactor_m; }
 
   void set_ShearFactor(FieldMetric& shearFactor) { ShearFactor_m = shearFactor; }
-
 };
 
 #endif //BOUT_TOKAMAK_COORDINATES_FACTORY_HXX

@@ -78,10 +78,10 @@ protected:
 
     /************* SHIFTED RADIAL COORDINATES ************/
 
+    bool noshear = false;
     const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
     if (ShiftXderivs) {
-      ShearFactor = 0.0; // I disappears from metric
-      b0xcv.z += I * b0xcv.x;
+      noshear = true;
     }
 
     /************** CALCULATE PARAMETERS *****************/
