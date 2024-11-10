@@ -171,16 +171,6 @@ protected:
     auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
     tokamak_coordinates_factory.normalise(Lnorm, Bnorm);
-
-    // Checking for dpsi and qinty used in BOUT grids
-    Field2D dx;
-    if (!mesh->get(dx, "dpsi")) {
-      output << "\tUsing dpsi as the x grid spacing\n";
-      coord->setDx(dx); // Only use dpsi if found
-    } else {
-      // dx will have been read already from the grid
-      output << "\tUsing dx as the x grid spacing\n";
-    }
   }
 };
 

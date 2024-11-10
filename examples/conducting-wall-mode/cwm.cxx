@@ -55,12 +55,12 @@ private:
 
   int init(bool UNUSED(restarting)) override {
 
+    bool noshear;
+
     /************* LOAD DATA FROM GRID FILE ****************/
 
     // Load 2D profiles (set to zero if not found)
     GRID_LOAD(Ni0, Te0);
-
-    FieldMetric dx = mesh->get("dpsi");
 
     // Load normalisation values
     GRID_LOAD(Te_x, Ni_x, bmag);
@@ -119,8 +119,7 @@ private:
     }
 
     auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature)
-    coord->setDx(dx);
+    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
 
     /************** NORMALISE QUANTITIES *****************/
 
