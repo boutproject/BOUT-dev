@@ -119,7 +119,7 @@ private:
     }
 
     auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates();
+    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature)
     coord->setDx(dx);
 
     /************** NORMALISE QUANTITIES *****************/

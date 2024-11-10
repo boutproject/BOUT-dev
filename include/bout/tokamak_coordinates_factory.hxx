@@ -38,14 +38,6 @@ public:
     mesh.get(b0xcv_m, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
   }
 
-  //  void setShearFactor(const bool noshear = false) {
-  //
-  //    if (shifted_metric_method) {
-  //      // No integrated shear in metric
-  //      ShearFactor_m = 0.0;
-  //    }
-  //  }
-
   BoutReal get_sign_of_bp() {
     if (min(Bpxy_m, true) < 0.0) {
       return -1.0;

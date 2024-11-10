@@ -44,9 +44,6 @@ public:
     return 0;
   }
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
-    // Load metric coefficients from the mesh
-    Field2D Rxy, Bpxy, Btxy, hthe, sinty;
-    GRID_LOAD5(Rxy, Bpxy, Btxy, hthe, sinty); // Load metrics
 
     Coordinates* coords = mesh->getCoordinates();
 
@@ -61,7 +58,7 @@ public:
     }
 
     const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    coords = tokamak_coordinates_factory.make_tokamak_coordinates();
+    coords = tokamak_coordinates_factory.make_tokamak_coordinates(true, true);
 
     tokamak_coordinates_factory.normalise(Lnorm, Bnorm);
   }

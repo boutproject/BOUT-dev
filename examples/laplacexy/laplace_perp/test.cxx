@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
   calc_metric = Options::root()["calc_metric"].withDefault(false);
   if (calc_metric) {
     auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    tokamak_coordinates_factory.make_tokamak_coordinates();
+    tokamak_coordinates_factory.make_tokamak_coordinates(true, true);
   }
 
   ///////////////////////////////////////

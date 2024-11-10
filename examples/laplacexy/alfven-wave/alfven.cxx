@@ -172,7 +172,7 @@ protected:
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
     auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates();
+    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(true, true);
 
     // Checking for dpsi and qinty used in BOUT grids
     Field2D dx;
