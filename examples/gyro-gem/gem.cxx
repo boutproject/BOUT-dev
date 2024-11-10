@@ -344,26 +344,7 @@ class GEM : public PhysicsModel {
     output << "\tNormalised rho_e = " << rho_e << endl;
     output << "\tNormalised rho_i = " << rho_i << endl;
 
-    // Normalise
-
-    // parallel derivatives normalised to Lperp
-    Field2D new_hthe = tokamak_coordinates_factory.get_hthe() / Lbar;
-    tokamak_coordinates_factory.set_hthe(new_hthe);
-
-    Field2D new_Bxy = tokamak_coordinates_factory.get_Bxy() / Bbar;
-    tokamak_coordinates_factory.set_Bxy(new_Bxy);
-
-    Field2D new_Bpxy = tokamak_coordinates_factory.get_Bpxy() / Bbar;
-    tokamak_coordinates_factory.set_Bpxy(new_Bpxy);
-
-    Field2D new_Btxy = tokamak_coordinates_factory.get_Btxy() / Bbar;
-    tokamak_coordinates_factory.set_Btxy(new_Btxy);
-
-    // Perpendicular derivatives normalised to rho_s
-    Field2D new_Rxy = tokamak_coordinates_factory.get_Rxy() / rho_s;
-    tokamak_coordinates_factory.set_Rxy(new_Rxy);
-
-    coord->setDx(coord->dx() / (rho_s * rho_s * Bbar));
+    tokamak_coordinates_factory.normalise(Lbar, Bbar);
 
     // Set B field vector
 

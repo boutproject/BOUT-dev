@@ -222,26 +222,7 @@ protected:
     b0xcv.z *= rho_s * rho_s;
 
     // Metrics
-
-    Field2D new_Rxy = tokamak_coordinates_factory.get_Rxy() / rho_s;
-    tokamak_coordinates_factory.set_Rxy(new_Rxy);
-
-    Field2D new_hthe = tokamak_coordinates_factory.get_hthe() / rho_s;
-    tokamak_coordinates_factory.set_hthe(new_hthe);
-
-    FieldMetric new_ShearFactor = tokamak_coordinates_factory.get_ShearFactor() * rho_s * rho_s * Bnorm;
-    tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
-
-    Field2D new_Bpxy = tokamak_coordinates_factory.get_Bpxy() / Bnorm;
-    tokamak_coordinates_factory.set_Bpxy(new_Bpxy);
-
-    Field2D new_Btxy = tokamak_coordinates_factory.get_Btxy() / Bnorm;
-    tokamak_coordinates_factory.set_Btxy(new_Btxy);
-
-    Field2D new_Bxy = tokamak_coordinates_factory.get_Bxy() / Bnorm;
-    tokamak_coordinates_factory.set_Bxy(new_Bxy);
-
-    coord->setDx(coord->dx() / (rho_s * rho_s * Bnorm));
+    tokamak_coordinates_factory.normalise(rho_s, Bnorm);
 
     SOLVE_FOR3(Vort, Pe, Vpar);
     comms.add(Vort, Pe, Vpar);

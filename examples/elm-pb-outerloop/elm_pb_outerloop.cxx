@@ -1194,6 +1194,8 @@ public:
     auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates();
 
+    tokamak_coordinates_factory.normalise(Lbar, Bbar);
+
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
 
@@ -1208,8 +1210,6 @@ public:
       }
       I = 0.0; // I disappears from metric
     }
-
-    metric->setDx(metric->dx() / (Lbar * Lbar * Bbar));
 
     return 0;
   }

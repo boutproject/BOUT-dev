@@ -384,13 +384,7 @@ public:
     b0xcv.y *= Lbar * Lbar;
     b0xcv.z *= Lbar * Lbar;
 
-    Rxy /= Lbar;
-    Bpxy /= Bbar;
-    Btxy /= Bbar;
-    B0 /= Bbar;
-    hthe /= Lbar;
-    coords->setDx(coords->dx() / (Lbar * Lbar * Bbar));
-    I *= Lbar * Lbar * Bbar;
+    tokamak_coordinates_factory.normalise(Lbar, Bbar);
 
     BoutReal pnorm = max(P0, true); // Maximum over all processors
 
