@@ -60,14 +60,15 @@ public:
       output << "\tUsing dx as the x grid spacing\n";
     }
 
-    Rxy /= Lnorm;
-    hthe /= Lnorm;
-    sinty *= SQ(Lnorm) * Bnorm;
-    coords->setDx(coords->dx() / (SQ(Lnorm) * Bnorm));
+    BoutReal sbp = 1.0; // Sign of Bp
+    if (min(Bpxy, true) < 0.0) {
+      sbp = -1.0;
+    }
 
-    Bpxy /= Bnorm;
-    Btxy /= Bnorm;
-    coords->setBxy(coords->Bxy() / Bnorm);
+    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, sbp);
+    coords = tokamak_coordinates_factory.make_tokamak_coordinates();
+
+    tokamak_coordinates_factory.normalise(Lnorm, Bnorm);
 
     // Calculate metric components
     bool ShiftXderivs;
@@ -75,13 +76,6 @@ public:
     if (ShiftXderivs) {
       sinty = 0.0; // I disappears from metric
     }
-
-    BoutReal sbp = 1.0; // Sign of Bp
-    if (min(Bpxy, true) < 0.0) {
-      sbp = -1.0;
-    }
-
-    tokamak_coordinates(coords, Rxy, Bpxy, hthe, sinty, coords->Bxy(), Btxy, sbp);
   }
 
 private:
