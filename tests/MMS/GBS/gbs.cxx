@@ -335,14 +335,6 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
   tokamak_coordinates_factory.normalise(Lnorm, Bnorm);
 
-  // Calculate metric components
-  bool ShiftXderivs;
-  Options::getRoot()->get("shiftXderivs", ShiftXderivs, false); // Read global flag
-  if (ShiftXderivs) {
-    sinty = 0.0; // I disappears from metric
-  }
-}
-
 // just define a macro for V_E dot Grad
 #define vE_Grad(f, p) (bracket(p, f, bm_exb))
 
