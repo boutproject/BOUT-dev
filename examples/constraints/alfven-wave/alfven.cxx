@@ -169,10 +169,9 @@ protected:
     std::string ptstr =
         Options::root()["mesh"]["paralleltransform"]["type"].withDefault("identity");
 
+    const bool shifted_metric_method = false;
     if (lowercase(ptstr) == "shifted") {
-      // Using shifted metric method
-      FieldMetric new_ShearFactor = 0.0;
-      tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor); // I disappears from metric
+      shifted_metric_method = true;
     }
 
     // Checking for dpsi and qinty used in BOUT grids
