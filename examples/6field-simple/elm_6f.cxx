@@ -995,7 +995,6 @@ protected:
     /**************** CALCULATE METRICS ******************/
 
     const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates();
-    coord->setDx(dx / (Lbar * Lbar * Bbar));
     
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES

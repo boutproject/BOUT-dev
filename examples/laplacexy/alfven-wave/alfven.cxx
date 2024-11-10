@@ -183,7 +183,6 @@ protected:
       // dx will have been read already from the grid
       output << "\tUsing dx as the x grid spacing\n";
     }
-    coord->setDx(dx / (SQ(Lnorm) * Bnorm));
   }
 };
 
