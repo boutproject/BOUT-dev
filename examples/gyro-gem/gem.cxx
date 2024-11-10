@@ -243,7 +243,7 @@ class GEM : public PhysicsModel {
     SAVE_ONCE(Tbar);                          // Timescale in seconds
 
     auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature);
+    coord = tokamak_coordinates_factory.make_tokamak_coordinates(true, true);
 
     if (mesh->get(Bbar, "Bbar")) {
       if (mesh->get(Bbar, "bmag")) {
