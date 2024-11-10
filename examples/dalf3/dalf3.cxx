@@ -84,6 +84,8 @@ private:
 protected:
   int init(bool UNUSED(restarting)) override {
 
+    bool noshear;
+
     /////////////////////////////////////////////////////
     // Load data from the grid
 
