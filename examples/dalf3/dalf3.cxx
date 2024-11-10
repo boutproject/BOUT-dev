@@ -150,9 +150,6 @@ protected:
       return 1;
     }
 
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates();
-
     // SHIFTED RADIAL COORDINATES
 
     // Check type of parallel transform
@@ -162,6 +159,9 @@ protected:
     if (lowercase(ptstr) == "shifted") {
       noshear = true;
     }
+
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
 
     ///////////////////////////////////////////////////
     // Normalisation
