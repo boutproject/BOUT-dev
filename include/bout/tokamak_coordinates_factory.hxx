@@ -16,6 +16,7 @@ private:
   Field2D hthe_m;
   FieldMetric ShearFactor_m;
   FieldMetric dx_m;
+  Vector2D b0xcv_m; // Curvature term
 
 
 public:
@@ -31,6 +32,9 @@ public:
     mesh.get(hthe_m, "hthe");
     mesh.get(ShearFactor_m, "sinty");
     mesh.get(dx_m, "dpsi");
+
+    b0xcv_m.covariant = false;  // Read contravariant components
+    mesh.get(b0xcv_m, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
   }
 
   void setShearFactor() {
@@ -42,6 +46,29 @@ public:
       // No integrated shear in metric
       ShearFactor_m = 0.0;
     }
+
+//    bool include_curvature = options["include_curvature"].withDefault(true);
+//    const bool include_curvature = mesh_m.get("include_curvature", true);  //TODO: Create overload for mesh->get(name, default_value) to return bool or int
+    bool include_curvature = 0;
+    mesh_m.get(include_curvature, "true");
+    if (!include_curvature) {
+      b0xcv_m = 0.0;
+    }
+
+//    const bool noshear = mesh_m.get("noshear", false);  //TODO: Create overload for mesh->get(name, default_value) to return bool or int
+//    const bool noshear = mesh_m.get("noshear", false);
+    bool noshear = 0;
+    mesh_m.get(noshear, "false");
+    mesh_m.get("noshear", false);
+    if (noshear) {
+      if (include_curvature) {
+        b0xcv_m.z += ShearFactor_m * b0xcv_m.x;
+      }
+      ShearFactor_m = 0.0;
+    }
+
+// TODO: Do we need to include the following logic?
+
 //    if (ShiftXderivs) {
 //      if (mesh->IncIntShear) {
 //        // BOUT-06 style, using d/dx = d/dpsi + I * d/dz

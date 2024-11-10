@@ -36,8 +36,7 @@ class Elm_6f : public PhysicsModel {
   // 2D inital profiles
   /// Current and pressure
   Field2D J0, P0;
-  /// Curvature term
-  Vector2D b0xcv;
+
   /// When diamagnetic terms used
   Field2D phi0;
 
@@ -140,7 +139,7 @@ class Elm_6f : public PhysicsModel {
   BoutReal const_cse;
 
   // options
-  bool include_curvature, include_jpar0, compress0;
+  bool include_jpar0, compress0;
   bool evolve_pressure, continuity, gyroviscous;
   Field3D diff_radial, ddx_ni, ddx_n0;
   BoutReal diffusion_coef_Hmode0, diffusion_coef_Hmode1;
@@ -375,7 +374,6 @@ class Elm_6f : public PhysicsModel {
 
 protected:
   int init(bool restarting) override {
-    bool noshear;
 
     output.write("Solving high-beta flute reduced equations\n");
     output.write("\tFile    : {:s}\n", __FILE__);
@@ -387,10 +385,6 @@ protected:
     // Load 2D profiles
     mesh->get(J0, "Jpar0");    // A / m^2
     mesh->get(P0, "pressure"); // Pascals
-
-    // Load curvature term
-    b0xcv.covariant = false;  // Read contravariant components
-    mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
 
     //////////////////////////////////////////////////////////////
     // Read parameters from the options file
@@ -471,7 +465,6 @@ protected:
         options["phi_constraint"].doc("Use solver constraint for phi").withDefault(false);
 
     // Effects to include/exclude
-    include_curvature = options["include_curvature"].withDefault(true);
     include_jpar0 = options["include_jpar0"].withDefault(true);
     evolve_pressure = options["evolve_pressure"].withDefault(true);
 
@@ -548,8 +541,6 @@ protected:
     dia_fact = options["dia_fact"]
                    .doc("Scale diamagnetic effects by this factor")
                    .withDefault(1.0);
-
-    noshear = options["noshear"].withDefault(false);
 
     relax_j_vac =
         options["relax_j_vac"].doc("Relax vacuum current to zero").withDefault(false);
@@ -667,20 +658,8 @@ protected:
     phi_curv = options["phi_curv"].doc("Compressional ExB terms").withDefault(true);
     g = options["gamma"].doc("Ratio of specific heats").withDefault(5.0 / 3.0);
 
-    if (!include_curvature) {
-      b0xcv = 0.0;
-    }
-
     if (!include_jpar0) {
       J0 = 0.0;
-    }
-
-    if (noshear) {
-      if (include_curvature) {
-        b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
-      }
-      FieldMetric new_ShearFactor = 0.0;
-      tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
     }
 
     //////////////////////////////////////////////////////////////
