@@ -1359,7 +1359,7 @@ protected:
 
       ddt(U) = -SQ(tokamak_coordinates_factory.get_Bxy()) * bracket(Psi, J0, bm_mag) * tokamak_coordinates_factory.get_Bxy(); // Grad j term
 
-      ddt(U) += 2.0 * Upara1 * b0xcv * Grad(P); // curvature term
+      ddt(U) += 2.0 * Upara1 * tokamak_coordinates_factory.get_b0xcv() * Grad(P); // curvature term
 
       ddt(U) += SQ(tokamak_coordinates_factory.get_Bxy()) * Grad_parP(Jpar); // b dot grad j
 

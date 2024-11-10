@@ -152,10 +152,6 @@ public:
     mesh->get(J0, "Jpar0");    // A / m^2
     mesh->get(P0, "pressure"); // Pascals
 
-    // Load curvature term
-    b0xcv.covariant = false;  // Read contravariant components
-    mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
-
     // Load metrics
     if (mesh->get(Rxy, "Rxy")) { // m
       output_error.write("Error: Cannot read Rxy from grid\n");
