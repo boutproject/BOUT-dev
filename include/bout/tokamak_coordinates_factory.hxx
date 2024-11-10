@@ -104,6 +104,7 @@ public:
   const Field2D& get_hthe() const { return hthe_m; }
   const FieldMetric& get_ShearFactor() const { return ShearFactor_m; }
 
+  void set_ShearFactor(FieldMetric& shearFactor) { ShearFactor_m = shearFactor; }
 
 };
 
