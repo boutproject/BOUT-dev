@@ -200,9 +200,6 @@ protected:
     pei0 = (Ti0 + Te0) * Ni0;
     pe0 = Te0 * Ni0;
 
-    Field2D Bxy = mesh->get("Bxy");
-    Bxy /= (bmag / 1.e4);
-
     const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     coord = tokamak_coordinates_factory.make_tokamak_coordinates();
 
