@@ -160,12 +160,7 @@ protected:
 
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
-    BoutReal sbp = 1.0; // Sign of Bp
-    if (min(tokamak_coordinates_factory.get_Bpxy(), true) < 0.0) {
-      sbp = -1.0;
-    }
-
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, sbp);
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates();
 
     tokamak_coordinates_factory.normalise(Lnorm, Bnorm);
