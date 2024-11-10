@@ -887,25 +887,7 @@ protected:
     b0xcv.y *= Lbar * Lbar;
     b0xcv.z *= Lbar * Lbar;
 
-    Field2D new_Rxy = tokamak_coordinates_factory.get_Rxy() / Lbar;
-    tokamak_coordinates_factory.set_Rxy(new_Rxy);
-
-    Field2D new_Bpxy = tokamak_coordinates_factory.get_Bpxy() / Bbar;
-    tokamak_coordinates_factory.set_Bpxy(new_Bpxy);
-
-    Field2D new_Btxy = tokamak_coordinates_factory.get_Btxy() / Bbar;
-    tokamak_coordinates_factory.set_Btxy(new_Btxy);
-
-    Field2D new_Bxy = tokamak_coordinates_factory.get_Bxy() / Bbar;
-    tokamak_coordinates_factory.set_Bxy(new_Bxy);
-
-    Field2D new_hthe = tokamak_coordinates_factory.get_hthe() / Lbar;
-    tokamak_coordinates_factory.set_hthe(new_hthe);
-
-    FieldMetric new_ShearFactor = tokamak_coordinates_factory.get_ShearFactor() * Lbar * Lbar * Bbar;
-    tokamak_coordinates_factory.set_ShearFactor(new_ShearFactor);
-
-    metric->setDx(metric->dx() / (Lbar * Lbar * Bbar));
+    tokamak_coordinates_factory.normalise(Lbar, Bbar);
 
     if (constn0) {
       T0_fake_prof = false;
