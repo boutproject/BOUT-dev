@@ -96,10 +96,6 @@ protected:
     Pe0 = 2. * Charge * Ni0 * Te0; // Electron pressure in Pascals
     SAVE_ONCE(Pe0);
 
-    // Load curvature term
-    b0xcv.covariant = false;  // Read contravariant components
-    mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
-
     //////////////////////////////////////////////////////////////
     // Options
 

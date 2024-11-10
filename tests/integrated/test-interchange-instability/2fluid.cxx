@@ -47,9 +47,6 @@ protected:
     GRID_LOAD(Ti0);
     GRID_LOAD(Te0);
 
-    // Load magnetic curvature term
-    b0xcv.covariant = false;  // Read contravariant components
-    mesh->get(b0xcv, "bxcv"); // b0xkappa terms
 
     b0xcv *= -1.0; // NOTE: THIS IS FOR 'OLD' GRID FILES ONLY
 
