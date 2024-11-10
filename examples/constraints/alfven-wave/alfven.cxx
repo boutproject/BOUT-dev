@@ -160,6 +160,8 @@ protected:
 
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
+    bool noshear;
+
     // Check type of parallel transform
     std::string ptstr =
         Options::root()["mesh"]["paralleltransform"]["type"].withDefault("identity");
