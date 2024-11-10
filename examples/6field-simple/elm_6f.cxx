@@ -374,6 +374,7 @@ class Elm_6f : public PhysicsModel {
 
 protected:
   int init(bool restarting) override {
+
     bool noshear;
 
     output.write("Solving high-beta flute reduced equations\n");
@@ -810,8 +811,6 @@ protected:
     P0 = P0 / (SI::kb * (Tibar + Tebar) * eV_K / 2. * Nbar * density);
 
     tokamak_coordinates_factory.normalise(Lbar, Bbar);
-
-    Field2D dx;
 
     if ((!T0_fake_prof) && n0_fake_prof) {
       N0 = N0tanh(n0_height * Nbar, n0_ave * Nbar, n0_width, n0_center, n0_bottom_x);

@@ -315,18 +315,8 @@ int GBS::init(bool restarting) {
 
 void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
-  // Checking for dpsi and qinty used in BOUT grids
-  Field2D dx;
-  if (!mesh->get(dx, "dpsi")) {
-    output << "\tUsing dpsi as the x grid spacing\n";
-    coords->setDx(dx); // Only use dpsi if found
-  } else {
-    // dx will have been read already from the grid
-    output << "\tUsing dx as the x grid spacing\n";
-  }
-
   const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-  coords = tokamak_coordinates_factory.make_tokamak_coordinates(true, true);
+  const auto& coords = tokamak_coordinates_factory.make_tokamak_coordinates(true, true);
   tokamak_coordinates_factory.normalise(Lnorm, Bnorm);
 
 // just define a macro for V_E dot Grad
