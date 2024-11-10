@@ -23,7 +23,6 @@ class TwoFluid : public PhysicsModel {
   Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, rho0, Ajpar0;
   // Staggered versions of initial profiles
   Field2D Ni0_maybe_ylow, Te0_maybe_ylow;
-  Vector2D b0xcv; // for curvature terms
 
   // 3D evolving fields
   Field3D rho, Te, Ni, Ajpar, Vi, Ti;
@@ -40,9 +39,6 @@ class TwoFluid : public PhysicsModel {
   // pressures
   Field3D pei, pe;
   Field2D pei0, pe0;
-
-  // Metric coefficients
-  Field2D Rxy, Bpxy, Btxy, hthe;
 
   // parameters
   BoutReal Te_x, Ti_x, Ni_x, Vi_x, bmag, rho_s, fmei, AA, ZZ;
@@ -84,17 +80,6 @@ protected:
     GRID_LOAD(rho0);
     GRID_LOAD(Ajpar0);
 
-    // Load magnetic curvature term
-    b0xcv.covariant = false;  // Read contravariant components
-    mesh->get(b0xcv, "bxcv"); // b0xkappa terms
-
-    // Load metrics
-    GRID_LOAD(Rxy);
-    GRID_LOAD(Bpxy);
-    GRID_LOAD(Btxy);
-    GRID_LOAD(hthe);
-    mesh->get(I, "sinty");
-
     // Load normalisation values
     GRID_LOAD(Te_x);
     GRID_LOAD(Ti_x);
@@ -135,14 +120,6 @@ protected:
       apar_solver = Laplacian::create(globalOptions->getSection("aparsolver"));
     } else {
       (*globalOptions)["aparsolver"].setConditionallyUsed();
-    }
-
-    /************* SHIFTED RADIAL COORDINATES ************/
-
-    const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
-    if (ShiftXderivs) {
-      ShearFactor = 0.0; // I disappears from metric
-      b0xcv.z += I * b0xcv.x;
     }
 
     /************** CALCULATE PARAMETERS *****************/
