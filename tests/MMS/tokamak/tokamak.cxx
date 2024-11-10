@@ -60,12 +60,7 @@ public:
       output << "\tUsing dx as the x grid spacing\n";
     }
 
-    BoutReal sbp = 1.0; // Sign of Bp
-    if (min(Bpxy, true) < 0.0) {
-      sbp = -1.0;
-    }
-
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh, sbp);
+    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     coords = tokamak_coordinates_factory.make_tokamak_coordinates();
 
     tokamak_coordinates_factory.normalise(Lnorm, Bnorm);

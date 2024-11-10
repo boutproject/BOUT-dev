@@ -16,7 +16,6 @@ private:
   Field2D hthe_m;
   FieldMetric ShearFactor_m;
   FieldMetric dx_m;
-  BoutReal sign_of_bp;
 
 
 public:
@@ -58,9 +57,18 @@ public:
 //    }
   }
 
+  BoutReal get_sign_of_bp() {
+    if (min(Bpxy_m, true) < 0.0) {
+      return -1.0;
+    }
+    return 1.0;
+  }
+
   Coordinates* make_tokamak_coordinates()
   {
     setShearFactor();
+
+    BoutReal sign_of_bp = get_sign_of_bp();
 
     auto* coord = mesh_m.getCoordinates();
 
