@@ -15,6 +15,7 @@ private:
   Field2D Bxy_m;
   Field2D hthe_m;
   FieldMetric ShearFactor_m;
+  FieldMetric dx_m;
   BoutReal sign_of_bp;
 
 
@@ -30,6 +31,7 @@ public:
     mesh.get(Bxy_m, "Bxy");
     mesh.get(hthe_m, "hthe");
     mesh.get(ShearFactor_m, "sinty");
+    mesh.get(dx_m, "dpsi");
   }
 
   Coordinates* make_tokamak_coordinates()
@@ -59,13 +61,14 @@ public:
     return coord;
   }
 
-  void normalise(BoutReal Bbar, BoutReal Lbar) {
+  void normalise(BoutReal Lbar, BoutReal Bbar) {
     Rxy_m /= Lbar;
     Bpxy_m /= Bbar;
     Btxy_m / Bbar;
     Bxy_m / Bbar;
     hthe_m / Lbar;
     ShearFactor_m *= Lbar * Lbar * Bbar;
+    dx_m /= Lbar * Lbar * Bbar;
   }
 
   const Field2D& get_Rxy() const { return Rxy_m; }
