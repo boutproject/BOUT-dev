@@ -33,6 +33,7 @@ public:
     mesh.get(ShearFactor_m, "sinty");
     mesh.get(dx_m, "dpsi");
 
+    // Load magnetic curvature term
     b0xcv_m.covariant = false;  // Read contravariant components
     mesh.get(b0xcv_m, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
   }
@@ -130,6 +131,8 @@ public:
     hthe_m / Lbar;
     ShearFactor_m *= Lbar * Lbar * Bbar;
     dx_m /= Lbar * Lbar * Bbar;
+
+    b0xcv_m.z += ShearFactor_m * b0xcv_m.x;
   }
 
   const Field2D& get_Rxy() const { return Rxy_m; }
