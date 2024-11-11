@@ -179,7 +179,7 @@ protected:
     pei0 = (Ti0 + Te0) * Ni0;
     pe0 = Te0 * Ni0;
 
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature)
 
     tokamak_coordinates_factory.normalise(rho_s, bmag / 1e4);
