@@ -370,7 +370,7 @@ public:
       noshear = true;
     }
 
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     coords = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature);
     tokamak_coordinates_factory.normalise(Lbar, Bbar);
 

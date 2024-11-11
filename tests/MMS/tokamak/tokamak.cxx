@@ -45,7 +45,7 @@ public:
   }
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
-    const auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     auto coords = tokamak_coordinates_factory.make_tokamak_coordinates(true, true);
     tokamak_coordinates_factory.normalise(Lnorm, Bnorm);
   }
