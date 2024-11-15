@@ -55,7 +55,7 @@ public:
     throw BoutException("LaplaceXY requires Hypre. No LaplaceXY available");
   }
   void setCoefs(const Field2D& UNUSED(A), const Field2D& UNUSED(B)) {}
-  Field2D solve(const Field2D& UNUSED(rhs), const Field2D& UNUSED(x0)) {
+  Coordinates::FieldMetric solve(const Field2D& UNUSED(rhs), const Field2D& UNUSED(x0)) {
     throw BoutException("LaplaceXY requires Hypre. No LaplaceXY available");
   }
 };
@@ -96,7 +96,7 @@ public:
    * The solution as a Field2D. On failure an exception will be raised
    *
    */
-  Field2D solve(Field2D& rhs, Field2D& x0);
+  Coordinates::FieldMetric solve(Field2D& rhs, Field2D& x0);
 
   /*!
    * Preconditioner function
@@ -107,11 +107,11 @@ public:
 
 private:
   Mesh* localmesh; ///< The mesh this operates on, provides metrics and communication
-  IndexerPtr<Field2D> indexConverter;
-  bout::HypreMatrix<Field2D> M;
-  bout::HypreVector<Field2D> x;
-  bout::HypreVector<Field2D> b;
-  bout::HypreSystem<Field2D> linearSystem;
+  IndexerPtr<Coordinates::FieldMetric> indexConverter;
+  bout::HypreMatrix<Coordinates::FieldMetric> M;
+  bout::HypreVector<Coordinates::FieldMetric> x;
+  bout::HypreVector<Coordinates::FieldMetric> b;
+  bout::HypreSystem<Coordinates::FieldMetric> linearSystem;
 
   // Y derivatives
   bool include_y_derivs; // Include Y derivative terms?

@@ -27,8 +27,8 @@ inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort =
 
 LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
     : localmesh(m == nullptr ? bout::globals::mesh : m),
-      indexConverter(std::make_shared<GlobalIndexer<Field2D>>(
-          localmesh, squareStencil<Field2D::ind_type>(localmesh))),
+      indexConverter(std::make_shared<GlobalIndexer<Coordinates::FieldMetric>>(
+          localmesh, squareStencil<Coordinates::FieldMetric::ind_type>(localmesh))),
       M(indexConverter), x(indexConverter), b(indexConverter),
       linearSystem(*localmesh, (opt == nullptr) ? Options::root()["laplacexy"] : *opt),
       location(loc) {
@@ -227,7 +227,7 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
   }
 }
 
-Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
+Coordinates::FieldMetric LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
   Timer timer("invert");
 
   ASSERT1(rhs.getMesh() == localmesh);
@@ -294,7 +294,7 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
 
   // Convert result into a Field2D
   start = std::chrono::system_clock::now();
-  Field2D sol = x.toField();
+  auto sol = x.toField();
 
   auto formfield = std::chrono::system_clock::now();
 
@@ -309,7 +309,15 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
   if (localmesh->firstX()) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       for (int x = localmesh->xstart - 2; x >= 0; x--) {
-        sol(x, y) = sol(localmesh->xstart - 1, y);
+#if BOUT_USE_METRIC_3D
+        for (int z = localmesh->zstart; z <= localmesh->zend; z++)
+#define Z , z
+#else
+#define Z
+#endif
+        {
+          sol(x, y Z) = sol(localmesh->xstart - 1, y Z);
+        }
       }
     }
   }
@@ -318,7 +326,12 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
   if (localmesh->lastX()) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       for (int x = localmesh->xend + 2; x < localmesh->LocalNx; x++) {
-        sol(x, y) = sol(localmesh->xend + 1, y);
+#if BOUT_USE_METRIC_3D
+        for (int z = localmesh->zstart; z <= localmesh->zend; z++)
+#endif
+        {
+          sol(x, y Z) = sol(localmesh->xend + 1, y Z);
+        }
       }
     }
   }
@@ -326,14 +339,23 @@ Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
   // Lower Y boundary
   for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
     for (int y = localmesh->ystart - 2; y >= 0; y--) {
-      sol(it.ind, y) = sol(it.ind, localmesh->ystart - 1);
+#if BOUT_USE_METRIC_3D
+      for (int z = localmesh->zstart; z <= localmesh->zend; z++)
+#endif
+        sol(it.ind, y Z) = sol(it.ind, localmesh->ystart - 1 Z);
     }
   }
 
   // Upper Y boundary
   for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
     for (int y = localmesh->yend + 2; y < localmesh->LocalNy; y++) {
-      sol(it.ind, y) = sol(it.ind, localmesh->yend + 1);
+#if BOUT_USE_METRIC_3D
+      for (int z = localmesh->zstart; z <= localmesh->zend; z++)
+#endif
+      {
+        sol(it.ind, y Z) = sol(it.ind, localmesh->yend + 1 Z);
+      }
+#undef Z
     }
   }
   return sol;
