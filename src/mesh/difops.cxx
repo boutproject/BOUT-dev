@@ -479,7 +479,8 @@ Coordinates::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
 
   // Upwind A using these velocities
   Coordinates::FieldMetric result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
-  result /= SQ(metric->J()) * metric->Bxy(); // J^2 B same sign for left & right handed coordinates
+  result /= SQ(metric->J())
+            * metric->Bxy(); // J^2 B same sign for left & right handed coordinates
 
   ASSERT1(result.getLocation() == outloc);
 
