@@ -1,17 +1,11 @@
 /**************************************************************************
  * Describes coordinate systems
  *
- * ChangeLog
- * =========
- * 
- * 2014-11-10 Ben Dudson <bd512@york.ac.uk>
- *    * Created by separating metric from Mesh
- *
  * 
  **************************************************************************
- * Copyright 2014 B.D.Dudson
+ * Copyright 2014 - 2024 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -239,6 +233,8 @@ public:
   FieldMetric& J() const;
 
   ///< Magnitude of B = nabla z times nabla x
+  ///< Note: This should always be positive
+  ///<       for both right- and left-handed coordinates.
   const FieldMetric& Bxy() const { return Bxy_; }
 
   void setJ(const FieldMetric& J);
@@ -389,6 +385,19 @@ public:
   const FieldMetric& Grad2_par2_DDY_invSg(CELL_LOC outloc,
                                           const std::string& method) const;
 
+  /// Calculate 1 / (J |B|)
+  /// This is cached as it is used frequently in parallel operators.
+  ///
+  /// In a Clebsch coordinate system
+  ///     B = (1 / J) e_y
+  /// so the unit vector along the magnetic field is:
+  ///     b = B / |B| = (1 / ( J |B| )) e_y
+  /// so e.g.
+  ///     Grad_par = b dot Grad = (1 / J |B|) d / dy.
+  ///
+  /// Note: In a right-handed Clebsch coordinate system
+  ///       this is 1 / sqrt(g_22)  i.e. positive.
+  ///       In a left-handed coordinate system it is negative.
   const FieldMetric& invSg() const;
 
   ChristoffelSymbols& christoffel_symbols();
@@ -466,6 +475,8 @@ private:
 
   FieldMetric getUnaligned(const std::string& name, BoutReal default_value);
 
+  /// Recalculate magnetic field magnitude Bxy = |B|
+  /// Note: Always positive
   FieldMetric recalculateBxy() const;
 
   /// Non-uniform meshes. Need to use DDX, DDY
