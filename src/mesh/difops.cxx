@@ -2,9 +2,9 @@
  * Various differential operators defined on BOUT grid
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2024 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -104,7 +104,9 @@ Field3D Grad_parP(const Field3D& apar, const Field3D& f) {
   for (int x = 1; x <= mesh->LocalNx - 2; x++) {
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
       for (int z = 0; z < ncz; z++) {
-        BoutReal by = 1. / sqrt(metric->g_22(x, y, z));
+
+        // Note: by is negative in a left-handed coordinate system
+        BoutReal by = 1. / (metric->J(x, y, z) * metric->Bxy(x, y, z));
         // Z indices zm and zp
         int const zm = (z - 1 + ncz) % ncz;
         int const zp = (z + 1) % ncz;
@@ -258,14 +260,13 @@ Field3D Div_par(const Field3D& f, const Field3D& v) {
         BoutReal const vR = 0.5 * (v(i, j, k) + v.yup()(i, j + 1, k));
 
         // Calculate flux at right boundary (y+1/2)
+        // Note: Magnitude of B at the midpoint used rather than J/sqrt(g_22)
         BoutReal const fluxRight =
-            fR * vR * (coord->J(i, j, k) + coord->J(i, j + 1, k))
-            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j + 1, k)));
+            fR * vR * 2 / (coord->Bxy(i, j, k) + coord->Bxy(i, j + 1, k));
 
         // Calculate at left boundary (y-1/2)
         BoutReal const fluxLeft =
-            fL * vL * (coord->J(i, j, k) + coord->J(i, j - 1, k))
-            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j - 1, k)));
+            fL * vL * 2 / (coord->Bxy(i, j, k) + coord->Bxy(i, j - 1, k));
 
         result(i, j, k) =
             (fluxRight - fluxLeft) / (coord->dy(i, j, k) * coord->J(i, j, k));
@@ -285,7 +286,7 @@ Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
   auto Bxy_floc = f.getCoordinates()->Bxy();
 
   if (!f.hasParallelSlices()) {
-    return metric->Bxy() * FDDY(v, f / Bxy_floc, outloc, method) / sqrt(metric->g_22());
+    return FDDY(v, f / Bxy_floc, outloc, method) / metric->J();
   }
 
   // Need to modify yup and ydown fields
@@ -294,7 +295,7 @@ Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
   f_B.splitParallelSlices();
   f_B.yup() = f.yup() / Bxy_floc;
   f_B.ydown() = f.ydown() / Bxy_floc;
-  return metric->Bxy() * FDDY(v, f_B, outloc, method) / sqrt(metric->g_22());
+  return FDDY(v, f_B, outloc, method) / metric->J();
 }
 
 Field3D Div_par_flux(const Field3D& v, const Field3D& f, const std::string& method,
@@ -478,7 +479,7 @@ Coordinates::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
 
   // Upwind A using these velocities
   Coordinates::FieldMetric result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
-  result /= metric->J() * sqrt(metric->g_22());
+  result /= SQ(metric->J()) * metric->Bxy(); // J^2 B same sign for left & right handed coordinates
 
   ASSERT1(result.getLocation() == outloc);
 
@@ -519,7 +520,7 @@ Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A, CELL_LOC outloc) 
 
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc) + VDDZ(vz, A, outloc);
 
-  result /= (metric->J() * sqrt(metric->g_22()));
+  result /= SQ(metric->J()) * metric->Bxy(); // J^2 B
 
 #if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad(" + phi.name + "," + A.name + ")";
@@ -554,7 +555,7 @@ Field3D b0xGrad_dot_Grad(const Field3D& p, const Field2D& A, CELL_LOC outloc) {
 
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
 
-  result /= (metric->J() * sqrt(metric->g_22()));
+  result /= SQ(metric->J()) * metric->Bxy(); // J^2 B
 
 #if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad(" + p.name + "," + A.name + ")";
@@ -595,7 +596,7 @@ Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A, CELL_LOC outloc) 
 
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc) + VDDZ(vz, A, outloc);
 
-  result /= (metric->J() * sqrt(metric->g_22()));
+  result /= SQ(metric->J()) * metric->Bxy(); // J^2 B
 
 #if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad(" + phi.name + "," + A.name + ")";
