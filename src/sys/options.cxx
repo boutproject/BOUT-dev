@@ -979,6 +979,7 @@ struct GetDimensions {
   std::vector<int> operator()([[maybe_unused]] BoutReal value) { return {1}; }
   std::vector<int> operator()([[maybe_unused]] const std::string& value) { return {1}; }
   std::vector<int> operator()(const Array<BoutReal>& array) { return {array.size()}; }
+  std::vector<int> operator()(const Array<int>& array) { return {array.size()}; }
   std::vector<int> operator()(const Matrix<BoutReal>& array) {
     const auto shape = array.shape();
     return {std::get<0>(shape), std::get<1>(shape)};
