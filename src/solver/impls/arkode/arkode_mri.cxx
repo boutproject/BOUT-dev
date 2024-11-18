@@ -99,11 +99,6 @@ ArkodeMRISolver::ArkodeMRISolver(Options* opts)
                           "not recommended except for code comparison")
                      .withDefault(false)),
       order((*options)["order"].doc("Order of internal step").withDefault(4)),
-      adap_method(
-          (*options)["adap_method"]
-              .doc("Set timestep adaptivity function: pid, pi, i, explicit_gustafsson,  "
-                   "implicit_gustafsson, imex_gustafsson.")
-              .withDefault(MRI_AdapMethod::PID)),
       abstol((*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12)),
       reltol((*options)["rtol"].doc("Relative tolerance").withDefault(1.0e-5)),
       use_vector_abstol((*options)["use_vector_abstol"]
@@ -157,9 +152,6 @@ ArkodeMRISolver::~ArkodeMRISolver() {
   SUNNonlinSolFree(nonlinear_solver);
   SUNNonlinSolFree(inner_nonlinear_solver);
   MRIStepInnerStepper_Free(&inner_stepper);
-
-  SUNAdaptController_Destroy(controller);
-  SUNAdaptController_Destroy(inner_controller);
 }
 
 /**************************************************************************
@@ -293,53 +285,8 @@ int ArkodeMRISolver::init() {
     throw BoutException("ARKodeSetOrder failed\n");
   }
 
-  switch (adap_method) {
-  case MRI_AdapMethod::PID:
-    controller = SUNAdaptController_PID(suncontext);
-    inner_controller = SUNAdaptController_PID(suncontext);
-    break;
-  case MRI_AdapMethod::PI:
-    controller = SUNAdaptController_PI(suncontext);
-    inner_controller = SUNAdaptController_PI(suncontext);
-    break;
-  case MRI_AdapMethod::I:
-    controller = SUNAdaptController_I(suncontext);
-    inner_controller = SUNAdaptController_I(suncontext);
-    break;
-  case MRI_AdapMethod::Explicit_Gustafsson:
-    controller = SUNAdaptController_ExpGus(suncontext);
-    inner_controller = SUNAdaptController_ExpGus(suncontext);
-    break;
-  case MRI_AdapMethod::Implicit_Gustafsson:
-    controller = SUNAdaptController_ImpGus(suncontext);
-    inner_controller = SUNAdaptController_ImpGus(suncontext);
-    break;
-  case MRI_AdapMethod::ImEx_Gustafsson:
-    controller = SUNAdaptController_ImExGus(suncontext);
-    inner_controller = SUNAdaptController_ImExGus(suncontext);
-    break;
-  default:
-    throw BoutException("Invalid adap_method\n");
-  }
-
-  // if (ARKodeSetAdaptController(arkode_mem, controller) != ARK_SUCCESS) {
-  //   throw BoutException("ARKodeSetAdaptController failed\n");
-  // }
-
-  // if (ARKodeSetAdaptivityAdjustment(arkode_mem, 0) != ARK_SUCCESS) {
-  //   throw BoutException("ARKodeSetAdaptivityAdjustment failed\n");
-  // }
-
   if (ARKodeSetFixedStep(arkode_mem, 0.001) != ARK_SUCCESS) {
-    throw BoutException("ARKodeSetAdaptController failed\n");
-  }
-
-  if (ARKodeSetAdaptController(inner_arkode_mem, controller) != ARK_SUCCESS) {
-    throw BoutException("ARKodeSetAdaptController failed\n");
-  }
-
-  if (ARKodeSetAdaptivityAdjustment(inner_arkode_mem, 0) != ARK_SUCCESS) {
-    throw BoutException("ARKodeSetAdaptivityAdjustment failed\n");
+    throw BoutException("ARKodeSetFixedStep failed\n");
   }
 
   if (use_vector_abstol) {

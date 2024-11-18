@@ -49,8 +49,6 @@ RegisterUnavailableSolver
 #include <sundials/sundials_config.h>
 #include <arkode/arkode_mristep.h>
 
-#include <sundials/sundials_adaptcontroller.h>
-
 #include <vector>
 
 class ArkodeMRISolver;
@@ -63,10 +61,6 @@ RegisterSolver<ArkodeMRISolver> registersolverarkodemri("arkode_mri");
 // enum describing treatment of equations
 // Note: Capitalized because `explicit` is a C++ reserved keyword
 BOUT_ENUM_CLASS(MRI_Treatment, ImEx, Implicit, Explicit);
-
-// Adaptivity method
-BOUT_ENUM_CLASS(MRI_AdapMethod, PID, PI, I, Explicit_Gustafsson, Implicit_Gustafsson,
-                ImEx_Gustafsson);
 
 class ArkodeMRISolver : public Solver {
 public:
@@ -122,8 +116,6 @@ private:
   bool fixed_step;
   /// Order of the internal step
   int order;
-  /// Timestep adaptivity function
-  MRI_AdapMethod adap_method;
   /// Absolute tolerance
   BoutReal abstol;
   /// Relative tolerance
@@ -165,9 +157,6 @@ private:
   /// Solver for implicit stages
   SUNNonlinearSolver nonlinear_solver{nullptr};
   SUNNonlinearSolver inner_nonlinear_solver{nullptr};
-  /// Timestep controller
-  SUNAdaptController controller{nullptr};
-  SUNAdaptController inner_controller{nullptr};
   /// Context for SUNDIALS memory allocations
   sundials::Context suncontext;
 };
