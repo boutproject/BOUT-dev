@@ -124,6 +124,7 @@ protected:
 
     /************* SHIFTED RADIAL COORDINATES ************/
 
+    bool noshear = false;
     const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
     if (ShiftXderivs) {
       noshear = true;
@@ -180,8 +181,7 @@ protected:
     pe0 = Te0 * Ni0;
 
     auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature)
-
+    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
     tokamak_coordinates_factory.normalise(rho_s, bmag / 1e4);
 
     /**************** SET EVOLVING VARIABLES *************/
