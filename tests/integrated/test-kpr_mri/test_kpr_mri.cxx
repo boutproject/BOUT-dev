@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-// A simple phyics model with a manufactured true solution
+// A simple phyics model with an analytical solution
 //
 class TestSolver : public PhysicsModel {
 public:
@@ -22,7 +22,7 @@ public:
 
     f = sqrt(3.0/2.0);
     g = sqrt(3.0);
-    
+
     setSplitOperatorMRI();
 
     return 0;
@@ -50,22 +50,22 @@ public:
     return 0;
   }
 
-  int rhs_fe(BoutReal UNUSED(t)) override {
-
-    ddt(f) = 0.0;
-    ddt(g) = 0.0;
-
-    return 0;
-  }
-
-  int rhs_fi(BoutReal t) override {
-  /* fill in the fast implicit RHS function:
+  int rhs_fe(BoutReal t) override {
+  /* fill in the fast explicit RHS function:
      [0  0]*[(-1+f^2-0.5*cos(t))/(2*f)] + [         0                      ]
      [e -1] [(-2+g^2-cos(w*t))/(2*g)  ]   [-w*sin(w*t)/(2*sqrt(2+cos(w*t)))] */
     BoutReal tmp1 = (-1.0 + f(1,1,0) * f(1,1,0) - 0.5*cos(t)) / (2.0 * f(1,1,0));
     BoutReal tmp2 = (-2.0 + g(1,1,0) * g(1,1,0) - cos(w*t)) / (2.0 * g(1,1,0));
     ddt(f) = 0.0;
     ddt(g) = e * tmp1 - tmp2 - w * sin(w*t) / (2.0 * sqrt(2.0 + cos(w * t)));
+
+    return 0;
+  }
+
+  int rhs_fi(BoutReal UNUSED(t)) override {
+
+    ddt(f) = 0.0;
+    ddt(g) = 0.0;
 
     return 0;
   }
@@ -94,19 +94,6 @@ public:
     return 0;
   }
 
-  // int rhs(BoutReal t) override {
-  // /* fill in the RHS function:
-  //    [G  e]*[(-1+f^2-0.5*cos(t))/(2*f)] + [-0.5*sin(t)/(2*f)               ]
-  //    [e -1] [(-2+g^2-cos(w*t))/(2*g)  ]   [-w*sin(w*t)/(2*sqrt(2+cos(w*t)))] */
-  //   BoutReal tmp1 = (-1.0 + f(1,1,0) * f(1,1,0) - 0.5*cos(t)) / (2.0 * f(1,1,0));
-  //   BoutReal tmp2 = (-2.0 + g(1,1,0) * g(1,1,0) - cos(w*t)) / (2.0 * g(1,1,0));
-
-  //   ddt(f) = G * tmp1 + e * tmp2 - 0.5*sin(t) / (2.0 * f(1,1,0));
-  //   ddt(g) = e * tmp1 - tmp2 - w * sin(w*t) / (2.0 * sqrt(2.0 + cos(w * t)));
-
-  //   return 0;
-  // }
-
   bool check_solution(BoutReal atol, BoutReal t) {
     // Return true if correct solution
     return ((std::abs(sqrt(0.5*cos(t) + 1.0) - f(1,1,0)) < atol) and (std::abs(sqrt(cos(w*t) + 2.0) - g(1,1,0)) < atol));
@@ -117,7 +104,7 @@ public:
     /* Compute the error with the true solution:
      f(t) = sqrt(0.5*cos(t) + 1.0)
      g(t) = sqrt(cos(w*t) + 2.0) */
-    return sqrt( pow(sqrt(0.5*cos(t) + 1.0) - f(1,1,0), 2.0) + 
+    return sqrt( pow(sqrt(0.5*cos(t) + 1.0) - f(1,1,0), 2.0) +
                  pow(sqrt(cos(w*t) + 2.0) - g(1,1,0), 2.0));
   }
 
@@ -163,7 +150,7 @@ int main(int argc, char** argv) {
   // name for an option with inconsistent defaults
   auto options = Options::getRoot()->getSection("arkode_mri");
   auto solver = std::unique_ptr<Solver>{Solver::create("arkode_mri", options)};
-  
+
   TestSolver model{};
   solver->setModel(&model);
 

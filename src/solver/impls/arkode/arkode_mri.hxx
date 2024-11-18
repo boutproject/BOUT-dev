@@ -1,6 +1,6 @@
 /**************************************************************************
  * Interface to ARKODE MRI solver
- * NOTE: ARKode is currently in beta testing so use with cautious optimism
+ * NOTE: ARKODE is currently in beta testing so use with cautious optimism
  *
  * NOTE: Only one solver can currently be compiled in
  *

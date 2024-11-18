@@ -1,7 +1,7 @@
 /**************************************************************************
- * Experimental interface to SUNDIALS ARKode MRI solver
+ * Experimental interface to SUNDIALS ARKODE MRI solver
  *
- * NOTE: ARKode is still in beta testing so use with cautious optimism
+ * NOTE: ARKODE is still in beta testing so use with cautious optimism
  *
  **************************************************************************
  * Copyright 2010-2024 BOUT++ contributors
@@ -62,7 +62,7 @@ int arkode_f_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
 int arkode_s_bbd_rhs(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du,
                    void* user_data);
 int arkode_f_bbd_rhs(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du,
-                   void* user_data);                   
+                   void* user_data);
 int arkode_s_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zvec,
                BoutReal gamma, BoutReal delta, int lr, void* user_data);
 int arkode_f_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zvec,
@@ -191,17 +191,17 @@ int ArkodeMRISolver::init() {
   case MRI_Treatment::ImEx:
     inner_arkode_mem = callWithSUNContext(ARKStepCreate, suncontext, arkode_rhs_f_explicit,
                                     arkode_rhs_f_implicit, simtime, uvec);
-    output_info.write("\tUsing ARKode ImEx inner solver \n");
+    output_info.write("\tUsing ARKODE ImEx inner solver \n");
     break;
   case MRI_Treatment::Explicit:
     inner_arkode_mem =
         callWithSUNContext(ARKStepCreate, suncontext, arkode_f_rhs, nullptr, simtime, uvec);
-    output_info.write("\tUsing ARKode Explicit inner solver \n");
+    output_info.write("\tUsing ARKODE Explicit inner solver \n");
     break;
   case MRI_Treatment::Implicit:
     inner_arkode_mem =
         callWithSUNContext(ARKStepCreate, suncontext, nullptr, arkode_f_rhs, simtime, uvec);
-    output_info.write("\tUsing ARKode Implicit inner solver \n");
+    output_info.write("\tUsing ARKODE Implicit inner solver \n");
     break;
   default:
     throw BoutException("Invalid inner_treatment: {}\n", toString(inner_treatment));
@@ -242,19 +242,19 @@ int ArkodeMRISolver::init() {
 
   switch (treatment) {
   case MRI_Treatment::ImEx:
-    arkode_mem = callWithSUNContext(MRIStepCreate, suncontext, arkode_rhs_s_explicit, arkode_rhs_s_implicit, 
+    arkode_mem = callWithSUNContext(MRIStepCreate, suncontext, arkode_rhs_s_explicit, arkode_rhs_s_implicit,
                                     simtime, uvec, inner_stepper);
-    output_info.write("\tUsing ARKode ImEx solver \n");
+    output_info.write("\tUsing ARKODE-MRI ImEx solver \n");
     break;
   case MRI_Treatment::Explicit:
-    arkode_mem = callWithSUNContext(MRIStepCreate, suncontext, arkode_s_rhs, nullptr, 
+    arkode_mem = callWithSUNContext(MRIStepCreate, suncontext, arkode_s_rhs, nullptr,
                                     simtime, uvec, inner_stepper);
-    output_info.write("\tUsing ARKode Explicit solver \n");
+    output_info.write("\tUsing ARKODE-MRI Explicit solver \n");
     break;
   case MRI_Treatment::Implicit:
     arkode_mem = callWithSUNContext(MRIStepCreate, suncontext, nullptr, arkode_s_rhs,
                                     simtime, uvec, inner_stepper);
-    output_info.write("\tUsing ARKode Implicit solver \n");
+    output_info.write("\tUsing ARKODE-MRI Implicit solver \n");
     break;
   default:
     throw BoutException("Invalid treatment: {}\n", toString(treatment));
@@ -381,24 +381,24 @@ int ArkodeMRISolver::init() {
                 return acc + localmesh->xend - localmesh->xstart + 3;
               });
 
-          const auto mudq = (*options)["mudq"]
+          const auto inner_mudq = (*options)["inner_mudq"]
                                 .doc("Upper half-bandwidth to be used in the difference "
                                      "quotient Jacobian approximation")
                                 .withDefault(band_width_default);
-          const auto mldq = (*options)["mldq"]
+          const auto inner_mldq = (*options)["inner_mldq"]
                                 .doc("Lower half-bandwidth to be used in the difference "
                                      "quotient Jacobian approximation")
                                 .withDefault(band_width_default);
-          const auto mukeep = (*options)["mukeep"]
+          const auto inner_mukeep = (*options)["inner_mukeep"]
                                   .doc("Upper half-bandwidth of the retained banded "
                                        "approximate Jacobian block")
                                   .withDefault(n3Dvars() + n2Dvars());
-          const auto mlkeep = (*options)["mlkeep"]
+          const auto inner_mlkeep = (*options)["mlkeep"]
                                   .doc("Lower half-bandwidth of the retained banded "
                                        "approximate Jacobian block")
                                   .withDefault(n3Dvars() + n2Dvars());
 
-          if (ARKBBDPrecInit(inner_arkode_mem, local_N, mudq, mldq, mukeep, mlkeep, 0,
+          if (ARKBBDPrecInit(inner_arkode_mem, local_N, inner_mudq, inner_mldq, inner_mukeep, inner_mlkeep, 0,
                              arkode_f_bbd_rhs, nullptr)
               != ARKLS_SUCCESS) {
             throw BoutException("ARKBBDPrecInit failed for inner solver\n");
@@ -511,7 +511,7 @@ int ArkodeMRISolver::run() {
       // Step failed
       output.write("Timestep failed. Aborting\n");
 
-      throw BoutException("ARKode timestep failed\n");
+      throw BoutException("ARKODE timestep failed\n");
     }
 
     // Get additional diagnostics
@@ -609,8 +609,7 @@ BoutReal ArkodeMRISolver::run(BoutReal tout) {
       // Call timestep monitor
       call_timestep_monitors(internal_time, internal_time - last_time);
     }
-    // Get output at the desired time
-    flag = ARKodeGetDky(arkode_mem, tout, 0, uvec);
+    // Update the current simulation time
     simtime = tout;
   }
 
@@ -713,7 +712,6 @@ void ArkodeMRISolver::rhs_s(BoutReal t, BoutReal* udata, BoutReal* dudata) {
   ARKodeGetLastStep(arkode_mem, &hcur);
 
   // Call RHS function
-  // run_rhs_s(t);
   run_rhs_s(t);
 
   // Save derivatives to dudata
@@ -735,7 +733,6 @@ void ArkodeMRISolver::rhs_f(BoutReal t, BoutReal* udata, BoutReal* dudata) {
   ARKodeGetLastStep(arkode_mem, &hcur);
 
   // Call RHS function
-  // run_rhs_f(t);
   run_rhs_f(t);
 
   // Save derivatives to dudata
@@ -748,7 +745,7 @@ void ArkodeMRISolver::rhs_f(BoutReal t, BoutReal* udata, BoutReal* dudata) {
 
 void ArkodeMRISolver::pre_s(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata,
                        BoutReal* rvec, BoutReal* zvec) {
-  TRACE("Running preconditioner: ArkodeMRISolver::pre({:e})", t);
+  TRACE("Running slow preconditioner: ArkodeMRISolver::pre_s({:e})", t);
 
   const BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
@@ -776,7 +773,7 @@ void ArkodeMRISolver::pre_s(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal
 
 void ArkodeMRISolver::pre_f(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata,
                        BoutReal* rvec, BoutReal* zvec) {
-  TRACE("Running preconditioner: ArkodeMRISolver::pre({:e})", t);
+  TRACE("Running fast preconditioner: ArkodeMRISolver::pre_f({:e})", t);
 
   const BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
@@ -800,50 +797,6 @@ void ArkodeMRISolver::pre_f(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal
 
   pre_Wtime_s += bout::globals::mpi->MPI_Wtime() - tstart;
   pre_ncalls_s++;
-}
-
-/**************************************************************************
- * Jacobian-vector multiplication functions
- **************************************************************************/
-
-void ArkodeMRISolver::jac_s(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata) {
-  TRACE("Running Jacobian: ArkodeMRISolver::jac({:e})", t);
-
-  if (not hasJacobian()) {
-    throw BoutException("No jacobian function supplied!\n");
-  }
-
-  // Load state from ydate
-  load_vars(ydata);
-
-  // Load vector to be multiplied into F_vars
-  load_derivs(vdata);
-
-  // Call function
-  runJacobian(t);
-
-  // Save Jv from vars
-  save_derivs(Jvdata);
-}
-
-void ArkodeMRISolver::jac_f(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata) {
-  TRACE("Running Jacobian: ArkodeMRISolver::jac({:e})", t);
-
-  if (not hasJacobian()) {
-    throw BoutException("No jacobian function supplied!\n");
-  }
-
-  // Load state from ydate
-  load_vars(ydata);
-
-  // Load vector to be multiplied into F_vars
-  load_derivs(vdata);
-
-  // Call function
-  runJacobian(t);
-
-  // Save Jv from vars
-  save_derivs(Jvdata);
 }
 
 /**************************************************************************
@@ -968,7 +921,7 @@ int arkode_s_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec, N_
 
   auto* s = static_cast<ArkodeMRISolver*>(user_data);
 
-  // Calculate residuals
+  // Run slow preconditioner
   s->pre_s(t, gamma, delta, udata, rdata, zdata);
 
   return 0;
@@ -982,7 +935,7 @@ int arkode_f_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec, N_
 
   auto* s = static_cast<ArkodeMRISolver*>(user_data);
 
-  // Calculate residuals
+  // Run fast preconditioner
   s->pre_f(t, gamma, delta, udata, rdata, zdata);
 
   return 0;

@@ -14,9 +14,9 @@ test-kpr_mri
     f(t) = sqrt(1+r(t)),  g(t) = sqrt(2+s(t)).
 
  We use the parameters:
-   e = 0.5 (fast/slow coupling strength) [default]
-   G = -100 (stiffness at slow time scale) [default]
-   w = 100  (time-scale separation factor) [default]
+   e = 0.5 (fast/slow coupling strength)
+   G = -100 (stiffness at slow time scale)
+   w = 100  (time-scale separation factor)
 
  The stiffness of the slow time scale is essentially determined
  by G, for |G| > 50 it is 'stiff' and ideally suited to a
