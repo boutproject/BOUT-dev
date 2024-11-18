@@ -1,11 +1,10 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include <set>
 #include <tuple>
 #include <vector>
 
 #include "fake_parallel_mesh.hxx"
-#include "test_extras.hxx"
 #include "gtest/gtest.h"
 
 #include "bout/petsc_interface.hxx"
@@ -13,12 +12,7 @@
 
 #if BOUT_HAS_PETSC
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;
@@ -46,7 +40,7 @@ public:
         mesh2(2, 2, 2) {
     mesh2.createDefaultRegions();
     mesh2.setCoordinates(nullptr);
-    test_coords = std::make_shared<Coordinates>(
+    auto test_coords = std::make_shared<Coordinates>(
         bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},

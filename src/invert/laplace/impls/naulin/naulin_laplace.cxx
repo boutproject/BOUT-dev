@@ -164,8 +164,10 @@ LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   // Get options
   OPTION(opt, rtol, 1.e-7);
   OPTION(opt, atol, 1.e-20);
-  rtol_accept = (*opt)["rtol_accept"].doc("Accept this rtol after maxits").withDefault(rtol);
-  atol_accept = (*opt)["atol_accept"].doc("Accept this atol after maxits").withDefault(atol);
+  rtol_accept =
+      (*opt)["rtol_accept"].doc("Accept this rtol after maxits").withDefault(rtol);
+  atol_accept =
+      (*opt)["atol_accept"].doc("Accept this atol after maxits").withDefault(atol);
 
   OPTION(opt, maxits, 100);
   OPTION(opt, initial_underrelax_factor, 1.);

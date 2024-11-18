@@ -4,7 +4,7 @@
 #ifndef OPTIONS_ADIOS_H
 #define OPTIONS_ADIOS_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/options.hxx"
 #include "bout/options_io.hxx"
 

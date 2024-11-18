@@ -1,14 +1,12 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include <vector>
 
-#include "test_extras.hxx"
+#if BOUT_HAS_PETSC
 #include "gtest/gtest.h"
 
-#include "bout/petsc_interface.hxx"
-#include "bout/region.hxx"
-
-#if BOUT_HAS_PETSC
+#include <bout/petsc_interface.hxx>
+#include <bout/petsclib.hxx>
 
 ///////////////// Test PetscMatrixElement /////////////////
 

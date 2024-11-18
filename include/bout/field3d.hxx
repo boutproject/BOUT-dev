@@ -26,22 +26,18 @@ class Field3D;
 #ifndef BOUT_FIELD3D_H
 #define BOUT_FIELD3D_H
 
-class Mesh; // #include "bout/mesh.hxx"
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/field.hxx"
 #include "bout/field2d.hxx"
 #include "bout/fieldperp.hxx"
-#include "bout/stencils.hxx"
-
-#include "bout/array.hxx"
 #include "bout/region.hxx"
-
-#include "bout/assert.hxx"
-
-#include "bout/utils.hxx"
 
 #include <optional>
 #include <vector>
+
+class Mesh;
 
 /// Class for 3D X-Y-Z scalar fields
 /*!
@@ -250,7 +246,7 @@ public:
 #if CHECK > 2
     if (yup_fields.size() != ydown_fields.size()) {
       throw BoutException(
-          "Field3D::splitParallelSlices: forward/backward parallel slices not in sync.\n"
+          "Field3D::hasParallelSlices: forward/backward parallel slices not in sync.\n"
           "    This is an internal library error");
     }
 #endif

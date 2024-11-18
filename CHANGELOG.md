@@ -8,6 +8,74 @@
 - The autotools `./configure` build system has been removed
 - Parsing of booleans has changed [\#2828][https://github.com/boutproject/BOUT-dev/pull/2828] ([bendudson][https://github.com/bendudson]).
   See the [manual page](https://bout-dev.readthedocs.io/en/stable/user_docs/bout_options.html#boolean-expressions) for details.
+- Previously, the `Solver` implementations passed the loop counter to
+  the `iter` argument of `call_monitors`, but since the iteration has
+  already been completed when the monitors are called, this results in
+  iter always being one less than the number of completed
+  monitor-steps at the point when the moniters are called, which is
+  confusing. Now, monitors are called with the current number of
+  completed monitor-steps.
+
+## [v5.1.1](https://github.com/boutproject/BOUT-dev/tree/v5.1.1)
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v5.1.0...v5.1.1)
+
+- Fix compilation error due to check_c_source_runs [\#2967][https://github.com/boutproject/BOUT-dev/pull/2967] ([mikekryjak][https://github.com/mikekryjak])
+- Resolve merge conflict for v5.1.1-rc [\#2964][https://github.com/boutproject/BOUT-dev/pull/2964] ([dschwoerer][https://github.com/dschwoerer])
+- Update boutdata and boututils submodules [\#2959][https://github.com/boutproject/BOUT-dev/pull/2959] ([dschwoerer][https://github.com/dschwoerer])
+- Small clang-tidy fixes for sundials solvers [\#2953][https://github.com/boutproject/BOUT-dev/pull/2953] ([ZedThree][https://github.com/ZedThree])
+- mark fmt::format() const [\#2942][https://github.com/boutproject/BOUT-dev/pull/2942] ([tchaikov][https://github.com/tchaikov])
+- CI: Ensure we do not timeout due to slow mirrors [\#2940][https://github.com/boutproject/BOUT-dev/pull/2940] ([dschwoerer][https://github.com/dschwoerer])
+- Bump externalpackages/boutdata from `cd0bc40` to `d9b8187` [\#2939][https://github.com/boutproject/BOUT-dev/pull/2939] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- SUNDIALS v7 support (backport to v5) [\#2937][https://github.com/boutproject/BOUT-dev/pull/2937] ([ZedThree][https://github.com/ZedThree])
+- Bump externalpackages/googletest from `33af80a` to `0953a17` [\#2968][https://github.com/boutproject/BOUT-dev/pull/2968] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Update netcdf4 requirement from ~=1.6.0 to ~=1.7.1 [\#2960][https://github.com/boutproject/BOUT-dev/pull/2960] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump ZedThree/clang-tidy-review from 0.18.0 to 0.19.0 [\#2913][https://github.com/boutproject/BOUT-dev/pull/2913] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/googletest from `5a37b51` to `33af80a` [\#2912][https://github.com/boutproject/BOUT-dev/pull/2912] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/boututils from `433995f` to `6c22995` [\#2911][https://github.com/boutproject/BOUT-dev/pull/2911] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/googletest from `b479e7a` to `5a37b51` [\#2906][https://github.com/boutproject/BOUT-dev/pull/2906] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Fix name of PVODE Config file [\#2903][https://github.com/boutproject/BOUT-dev/pull/2903] ([dschwoerer][https://github.com/dschwoerer])
+- Bump ZedThree/clang-tidy-review from 0.17.0 to 0.18.0 [\#2897][https://github.com/boutproject/BOUT-dev/pull/2897] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/googletest from `e4fdb87` to `b479e7a` [\#2880][https://github.com/boutproject/BOUT-dev/pull/2880] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/boutdata from `9e603a2` to `cd0bc40` [\#2879][https://github.com/boutproject/BOUT-dev/pull/2879] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/googletest from `b75ecf1` to `e4fdb87` [\#2877][https://github.com/boutproject/BOUT-dev/pull/2877] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/boutdata from `a043a2b` to `9e603a2` [\#2866][https://github.com/boutproject/BOUT-dev/pull/2866] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/googletest from `dddb219` to `b75ecf1` [\#2864][https://github.com/boutproject/BOUT-dev/pull/2864] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump codecov/codecov-action from 3 to 4 [\#2860][https://github.com/boutproject/BOUT-dev/pull/2860] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump ZedThree/clang-tidy-review from 0.14.0 to 0.17.0 [\#2846][https://github.com/boutproject/BOUT-dev/pull/2846] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump actions/cache from 3 to 4 [\#2845][https://github.com/boutproject/BOUT-dev/pull/2845] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Add warnings about SUNDIALS versions <4 [\#2840][https://github.com/boutproject/BOUT-dev/pull/2840] ([Steven-Roberts][https://github.com/Steven-Roberts])
+- Do not excessively bump googletest [\#2836][https://github.com/boutproject/BOUT-dev/pull/2836] ([dschwoerer][https://github.com/dschwoerer])
+- Remove propietary data (master) [\#2832][https://github.com/boutproject/BOUT-dev/pull/2832] ([dschwoerer][https://github.com/dschwoerer])
+- Bump externalpackages/googletest from `829c199` to `dddb219` [\#2830][https://github.com/boutproject/BOUT-dev/pull/2830] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/boutdata from `908a4c2` to `a043a2b` [\#2827][https://github.com/boutproject/BOUT-dev/pull/2827] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- CI: Bump actions/setup-python from 4 to 5 [\#2819][https://github.com/boutproject/BOUT-dev/pull/2819] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Set oversubscribe flags for openmpi 5 [\#2800][https://github.com/boutproject/BOUT-dev/pull/2800] ([dschwoerer][https://github.com/dschwoerer])
+- CI: Replace pip script with requirements.txt [\#2794][https://github.com/boutproject/BOUT-dev/pull/2794] ([ZedThree][https://github.com/ZedThree])
+- master branch will be 5.1.1 not 5.2.0 [\#2784][https://github.com/boutproject/BOUT-dev/pull/2784] ([dschwoerer][https://github.com/dschwoerer])
+- Bump externalpackages/googletest from `2dd1c13` to `829c199` [\#2782][https://github.com/boutproject/BOUT-dev/pull/2782] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Fix test-laplace-petsc3d [\#2781][https://github.com/boutproject/BOUT-dev/pull/2781] ([dschwoerer][https://github.com/dschwoerer])
+- CI: user master branch for docker actions [\#2780][https://github.com/boutproject/BOUT-dev/pull/2780] ([dschwoerer][https://github.com/dschwoerer])
+- [RTD] add os to read the docs config [\#2779][https://github.com/boutproject/BOUT-dev/pull/2779] ([dschwoerer][https://github.com/dschwoerer])
+- CI: Increase shm size in container [\#2777][https://github.com/boutproject/BOUT-dev/pull/2777] ([dschwoerer][https://github.com/dschwoerer])
+- Bump externalpackages/fmt from `f0903ad` to `2ac6c5c` [\#2776][https://github.com/boutproject/BOUT-dev/pull/2776] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump ZedThree/clang-tidy-review from 0.13.1 to 0.14.0 [\#2773][https://github.com/boutproject/BOUT-dev/pull/2773] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump stefanzweifel/git-auto-commit-action from 4 to 5 [\#2772][https://github.com/boutproject/BOUT-dev/pull/2772] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump actions/setup-python from 1 to 4 [\#2771][https://github.com/boutproject/BOUT-dev/pull/2771] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- CI: Run on PETSc developement branch [\#2765][https://github.com/boutproject/BOUT-dev/pull/2765] ([dschwoerer][https://github.com/dschwoerer])
+- Prefer dnf5 for fedora CI (master) [\#2764][https://github.com/boutproject/BOUT-dev/pull/2764] ([dschwoerer][https://github.com/dschwoerer])
+- Fix sphinx configuration [\#2762][https://github.com/boutproject/BOUT-dev/pull/2762] ([dschwoerer][https://github.com/dschwoerer])
+- Bump docker/build-push-action from f2a1d5e99d037542a71f64918e516c093c6f3fc4 to 0f847266c302569530c95bfa228489494c43b002 [\#2761][https://github.com/boutproject/BOUT-dev/pull/2761] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Ensure also lower case is accepted [\#2759][https://github.com/boutproject/BOUT-dev/pull/2759] ([dschwoerer][https://github.com/dschwoerer])
+- Bump externalpackages/googletest from `6092810` to `2dd1c13` [\#2757][https://github.com/boutproject/BOUT-dev/pull/2757] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Add fallback if the version has been bumped bot not tagged [\#2754][https://github.com/boutproject/BOUT-dev/pull/2754] ([dschwoerer][https://github.com/dschwoerer])
+
+## [v5.1.0](https://github.com/boutproject/BOUT-dev/tree/v5.1.0
+
+### Breaking changes
+
+- The autotools `./configure` build system has been removed
+- Parsing of booleans has changed [\#2828][https://github.com/boutproject/BOUT-dev/pull/2828] ([bendudson][https://github.com/bendudson]).
+  See the [manual page](https://bout-dev.readthedocs.io/en/stable/user_docs/bout_options.html#boolean-expressions) for details.
 
 
 ## [v5.1.0](https://github.com/boutproject/BOUT-dev/tree/v5.1.0)

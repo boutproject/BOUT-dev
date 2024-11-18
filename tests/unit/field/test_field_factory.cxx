@@ -11,12 +11,7 @@
 #include "bout/paralleltransform.hxx"
 #include "bout/traits.hxx"
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;
@@ -603,13 +598,15 @@ public:
 };
 
 TEST_F(FieldFactoryTest, RequireMesh) {
-  delete bout::globals::mesh;
+  auto* old_mesh = bout::globals::mesh;
   bout::globals::mesh = nullptr;
 
   FieldFactory local_factory{nullptr, nullptr};
 
   EXPECT_THROW(local_factory.create2D("x", nullptr, nullptr), BoutException);
   EXPECT_THROW(local_factory.create3D("x", nullptr, nullptr), BoutException);
+
+  bout::globals::mesh = old_mesh;
 }
 
 TEST_F(FieldFactoryTest, CreateOnMeshWithoutCoordinates) {
@@ -878,12 +875,6 @@ private:
 
 class FieldFactoryCreateAndTransformTest : public FakeMeshFixture {
 public:
-  FieldFactoryCreateAndTransformTest() : FakeMeshFixture{} {
-    // We need Coordinates so a parallel transform is available as
-    // FieldFactory::create3D wants to un-field-align the result
-    static_cast<FakeMesh*>(mesh)->setCoordinates(test_coords);
-  }
-
   WithQuietOutput quiet_info{output_info};
   WithQuietOutput quiet_warn{output_warn};
 };
