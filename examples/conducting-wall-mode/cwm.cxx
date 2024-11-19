@@ -55,7 +55,7 @@ private:
 
   int init(bool UNUSED(restarting)) override {
 
-    bool noshear;
+    bool noshear = false;
 
     /************* LOAD DATA FROM GRID FILE ****************/
 
