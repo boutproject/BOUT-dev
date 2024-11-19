@@ -3,6 +3,12 @@
 #define BOUT_TOKAMAK_COORDINATES_FACTORY_HXX
 
 #include "bout.hxx"
+#include "bout/utils.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/christoffel_symbols.hxx"
+#include "bout/vector2d.hxx"
+#include "bout/field2d.hxx"
+#include "bout/coordinates.hxx"
 
 class TokamakCoordinatesFactory {
 
