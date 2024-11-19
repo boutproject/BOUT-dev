@@ -29,7 +29,6 @@ class ELMpb : public PhysicsModel {
 private:
   // 2D inital profiles
   Field2D J0, P0;         // Current and pressure
-  Vector2D b0xcv;         // Curvature term
   Field2D beta, gradparB; // Used for Vpar terms
   Field2D phi0;           // When diamagnetic terms used
 
@@ -121,6 +120,9 @@ private:
 
   // Communication objects
   FieldGroup comms;
+
+  TokamakCoordinatesFactory tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+
 
   // Parallel gradient along perturbed field-line
   const Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) {
@@ -272,10 +274,6 @@ public:
 
     OPTION(globalOptions->getSection("solver"), mms, false);
 
-    if (!include_curvature) {
-      b0xcv = 0.0;
-    }
-
     if (!include_jpar0) {
       J0 = 0.0;
     }
@@ -370,7 +368,6 @@ public:
       noshear = true;
     }
 
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     coords = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature);
     tokamak_coordinates_factory.normalise(Lbar, Bbar);
 
@@ -565,7 +562,7 @@ public:
 
     ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi, J0, CELL_CENTRE); // Grad j term
 
-    ddt(U) += b0xcv * Grad(P); // curvature term
+    ddt(U) += tokamak_coordinates_factory.get_b0xcv() * Grad(P); // curvature term
 
     // Parallel current term
     ddt(U) -= SQ(B0) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
@@ -615,7 +612,7 @@ public:
       ddt(P) -= beta * Div_par_CtoL(Vpar);
 
       if (phi_curv) {
-        ddt(P) -= 2. * beta * b0xcv * Grad(phi);
+        ddt(P) -= 2. * beta * tokamak_coordinates_factory.get_b0xcv() * Grad(phi);
       }
 
       // Vpar equation
