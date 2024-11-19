@@ -66,7 +66,6 @@ class TwoFluid : public PhysicsModel {
 
 protected:
   int init(bool UNUSED(restarting)) override {
-    Field2D I; // Shear factor
 
     output.write("Solving 6-variable 2-fluid equations\n");
 
@@ -129,6 +128,7 @@ protected:
     bool noshear = false;
     const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
     if (ShiftXderivs) {
+      ShearFactor = 0.0; // I disappears from metric
       noshear = true;
     }
 

@@ -37,7 +37,6 @@ class Interchange : public PhysicsModel {
 
 protected:
   int init(bool UNUSED(restarting)) override {
-    Field2D I; // Shear factor
 
     output << "Solving 2-variable equations\n";
 
@@ -76,6 +75,7 @@ protected:
     bool noshear = false;
     const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
     if (ShiftXderivs) {
+      ShearFactor = 0.0; // I disappears from metric
       noshear = true;
     }
 
