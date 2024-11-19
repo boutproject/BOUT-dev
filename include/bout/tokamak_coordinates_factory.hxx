@@ -49,23 +49,7 @@ public:
 
     BoutReal sign_of_bp = get_sign_of_bp();
 
-    if (!include_curvature) {
-      b0xcv_m = 0.0;
-    }
-
-    if (noshear) {
-      if (include_curvature) {
-        b0xcv_m.z += ShearFactor_m * b0xcv_m.x;
-      }
-      ShearFactor_m = 0.0;
-    }
-    //      if (ShiftXderivs and not!mesh->IncIntShear) {
-    //        // Dimits style, using local coordinate system
-    //        if (include_curvature) {
-    //          b0xcv.z += I * b0xcv.x;
-    //        }
-    //        I = 0.0; // I disappears from metric
-    //      }
+    set_shearfactor_and_curvature_term(noshear, include_curvature);
 
     auto* coord = mesh_m.getCoordinates();
 
@@ -90,6 +74,29 @@ public:
     coord->setBxy(Bxy_m);
 
     return coord;
+  }
+
+  void set_shearfactor_and_curvature_term(const bool noshear, const bool include_curvature) {
+
+    if (!include_curvature) {
+      b0xcv_m = 0.0;
+    }
+
+    if (noshear) {
+      if (include_curvature) {
+        b0xcv_m.z += ShearFactor_m * b0xcv_m.x;
+      }
+      ShearFactor_m = 0.0;
+    }
+
+    //      if (ShiftXderivs and not!mesh->IncIntShear) {
+    //        // Dimits style, using local coordinate system
+    //        if (include_curvature) {
+    //          b0xcv.z += I * b0xcv.x;
+    //        }
+    //        I = 0.0; // I disappears from metric
+    //      }
+
   }
 
   void normalise(BoutReal Lbar, BoutReal Bbar) {
