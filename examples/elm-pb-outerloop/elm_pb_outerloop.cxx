@@ -704,6 +704,14 @@ public:
     if (!mesh->IncIntShear) {
       noshear = true;
     }
+
+    if (mesh->get(Bbar, "bmag") != 0) { // Typical magnetic field
+      Bbar = 1.0;
+    }
+    if (mesh->get(Lbar, "rmag") != 0) { // Typical length scale
+      Lbar = 1.0;
+    }
+    tokamak_coordinates_factory.normalise(Lbar, Bbar);
     const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature);
 
     V0 = -tokamak_coordinates_factory.get_Rxy() * tokamak_coordinates_factory.get_Bpxy() * Dphi0 / tokamak_coordinates_factory.get_Bxy();
@@ -797,13 +805,6 @@ public:
 
     //////////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
-
-    if (mesh->get(Bbar, "bmag") != 0) { // Typical magnetic field
-      Bbar = 1.0;
-    }
-    if (mesh->get(Lbar, "rmag") != 0) { // Typical length scale
-      Lbar = 1.0;
-    }
 
     Va = sqrt(Bbar * Bbar / (MU0 * density * Mi));
 
@@ -912,8 +913,6 @@ public:
     P0 = 2.0 * MU0 * P0 / (Bbar * Bbar);
     V0 = V0 / Va;
     Dphi0 *= Tbar;
-
-    tokamak_coordinates_factory.normalise(Lbar, Bbar);
 
     if (constn0) {
       T0_fake_prof = false;

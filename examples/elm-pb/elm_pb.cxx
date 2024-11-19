@@ -734,8 +734,6 @@ protected:
       noshear = true;
     }
 
-    const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature);
-
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
 
@@ -863,6 +861,7 @@ protected:
     Dphi0 *= Tbar;
 
     tokamak_coordinates_factory.normalise(Lbar, Bbar);
+    const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature);
 
     if (constn0) {
       T0_fake_prof = false;

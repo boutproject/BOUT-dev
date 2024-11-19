@@ -159,8 +159,6 @@ protected:
       noshear = true;
     }
 
-    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
-
     ///////////////////////////////////////////////////
     // Normalisation
 
@@ -214,6 +212,7 @@ protected:
 
     // Metrics
     tokamak_coordinates_factory.normalise(rho_s, Bnorm);
+    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
 
     SOLVE_FOR3(Vort, Pe, Vpar);
     comms.add(Vort, Pe, Vpar);

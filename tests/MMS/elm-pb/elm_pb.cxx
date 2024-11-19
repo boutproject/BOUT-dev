@@ -368,8 +368,8 @@ public:
       noshear = true;
     }
 
-    coords = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature);
     tokamak_coordinates_factory.normalise(Lbar, Bbar);
+    coords = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature);
 
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
