@@ -92,7 +92,6 @@ public:
       if (include_curvature) {
         b0xcv_m.z += ShearFactor_m * b0xcv_m.x;
       }
-      ShearFactor_m = 0.0;
     }
 
     //      if (ShiftXderivs and not!mesh->IncIntShear) {
