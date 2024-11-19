@@ -103,8 +103,8 @@ protected:
     Te0 /= Te_x;
 
 //    b0xcv *= -1.0; // NOTE: THIS IS FOR 'OLD' GRID FILES ONLY  // TODO: Check if needed
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
     tokamak_coordinates_factory.normalise(rho_s, bmag / 1e4);
+    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
 
     // Tell BOUT++ which variables to evolve
     SOLVE_FOR2(rho, Ni);
