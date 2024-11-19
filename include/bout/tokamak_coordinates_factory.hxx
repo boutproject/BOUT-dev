@@ -105,14 +105,14 @@ public:
 
   }
 
-  void normalise(BoutReal Lbar, BoutReal Bbar) {
+  void normalise(BoutReal Lbar, BoutReal Bbar, BoutReal ShearFactor=1.0) {
 
     Rxy_m /= Lbar;
     Bpxy_m /= Bbar;
     Btxy_m / Bbar;
     Bxy_m / Bbar;
     hthe_m / Lbar;
-    ShearFactor_m *= Lbar * Lbar * Bbar;
+    ShearFactor_m *= Lbar * Lbar * Bbar * ShearFactor;
     dx_m /= Lbar * Lbar * Bbar;
 
     // Normalise curvature term
