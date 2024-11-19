@@ -119,7 +119,7 @@ private:
     }
 
     auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
+    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
 
     /************** NORMALISE QUANTITIES *****************/
 
