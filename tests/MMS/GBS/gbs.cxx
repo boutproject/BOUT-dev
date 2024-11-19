@@ -316,7 +316,7 @@ int GBS::init(bool restarting) {
 void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
   auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-  const auto& coords = tokamak_coordinates_factory.make_tokamak_coordinates(true, true);
+  coords = tokamak_coordinates_factory.make_tokamak_coordinates(true, true);
   tokamak_coordinates_factory.normalise(Lnorm, Bnorm);
 
 // just define a macro for V_E dot Grad
