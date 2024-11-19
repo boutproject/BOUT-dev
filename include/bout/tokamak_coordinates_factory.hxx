@@ -53,7 +53,7 @@ public:
 
   Coordinates* make_tokamak_coordinates(const bool noshear, const bool include_curvature) {
 
-    BoutReal sign_of_bp = get_sign_of_bp();
+    const BoutReal sign_of_bp = get_sign_of_bp();
 
     set_shearfactor_and_curvature_term(noshear, include_curvature);
 
