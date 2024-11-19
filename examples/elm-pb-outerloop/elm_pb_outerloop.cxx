@@ -96,7 +96,6 @@ class ELMpb : public PhysicsModel {
 private:
   // 2D inital profiles
   Field2D J0, P0; // Current and pressure
-  Vector2D b0xcv; // Curvature term
   Field2D beta;   // Used for Vpar terms
   Coordinates::FieldMetric gradparB;
   Field2D phi0; // When diamagnetic terms used
@@ -790,10 +789,6 @@ public:
         // Multiply by factor
         rmp_Psi0 *= rmp_factor;
       }
-    }
-
-    if (!include_curvature) {
-      b0xcv = 0.0;
     }
 
     if (!include_jpar0) {
@@ -1696,7 +1691,7 @@ public:
     //   ddt(U) += SQ(tokamak_coordinates_factory.get_Bxy()) * b0xGrad_dot_Grad(rmp_Psi, J0, CELL_CENTRE);
     // }
 
-    ddt(U) += b0xcv * Grad(P); // curvature term
+    ddt(U) += tokamak_coordinates_factory.get_b0xcv() * Grad(P); // curvature term
 
     // if (!nogradparj) { // Parallel current term
     //   ddt(U) -= SQ(tokamak_coordinates_factory.get_Bxy()) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
@@ -1872,7 +1867,7 @@ public:
       ddt(P) -= beta * Div_par(Vpar, CELL_CENTRE);
 
       if (phi_curv) {
-        ddt(P) -= 2. * beta * b0xcv * Grad(phi);
+        ddt(P) -= 2. * beta * tokamak_coordinates_factory.get_b0xcv() * Grad(phi);
       }
 
       // Vpar equation
@@ -1972,7 +1967,7 @@ public:
     Coordinates* metric = mesh->getCoordinates();
 
     Field3D U1 = ddt(U);
-    U1 += (gamma * metric->Bxy() * metric->Bxy()) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(P);
+    U1 += (gamma * metric->Bxy() * metric->Bxy()) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * tokamak_coordinates_factory.get_b0xcv()) * Grad(P);
 
     // Second matrix, solving Alfven wave dynamics
     static std::unique_ptr<InvertPar> invU{nullptr};
@@ -2031,7 +2026,7 @@ public:
     JPsi.setBoundary("Psi");
     JPsi.applyBoundary();
 
-    Field3D JU = b0xcv * Grad(ddt(P)) - SQ(metric->Bxy()) * Grad_par(Jpar, CELL_CENTRE)
+    Field3D JU = tokamak_coordinates_factory.get_b0xcv() * Grad(ddt(P)) - SQ(metric->Bxy()) * Grad_par(Jpar, CELL_CENTRE)
                  + SQ(metric->Bxy()) * b0xGrad_dot_Grad(ddt(Psi), J0, CELL_CENTRE);
     JU.setBoundary("U");
     JU.applyBoundary();

@@ -18,7 +18,6 @@ class Interchange : public PhysicsModel {
 
   // 2D initial profiles
   Field2D Ni0, Ti0, Te0;
-  Vector2D b0xcv; // for curvature terms
 
   // 3D evolving fields
   Field3D rho, Ni;
@@ -34,6 +33,8 @@ class Interchange : public PhysicsModel {
 
   Coordinates* coord;
 
+  TokamakCoordinatesFactory tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+
 protected:
   int init(bool UNUSED(restarting)) override {
     Field2D I; // Shear factor
@@ -46,9 +47,6 @@ protected:
     GRID_LOAD(Ni0);
     GRID_LOAD(Ti0);
     GRID_LOAD(Te0);
-
-
-    b0xcv *= -1.0; // NOTE: THIS IS FOR 'OLD' GRID FILES ONLY
 
     // Load normalisation values
     GRID_LOAD(Te_x);
@@ -104,7 +102,7 @@ protected:
     Ti0 /= Te_x;
     Te0 /= Te_x;
 
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+//    b0xcv *= -1.0; // NOTE: THIS IS FOR 'OLD' GRID FILES ONLY  // TODO: Check if needed
     coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
     tokamak_coordinates_factory.normalise(rho_s, bmag / 1e4);
 
@@ -134,7 +132,7 @@ protected:
     ddt(Ni) = -b0xGrad_dot_Grad(phi, Ni0) / coord->Bxy();
 
     // VORTICITY
-    ddt(rho) = 2.0 * coord->Bxy() * b0xcv * Grad(pei);
+    ddt(rho) = 2.0 * coord->Bxy() * tokamak_coordinates_factory.get_b0xcv() * Grad(pei);
 
     return (0);
   }

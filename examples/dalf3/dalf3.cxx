@@ -53,7 +53,6 @@ private:
   Field3D phi, apar, jpar;
 
   Field2D B0, Pe0, Jpar0;
-  Vector2D b0xcv;
 
   Field2D eta; // Collisional damping (resistivity)
   BoutReal beta_hat, mu_hat;
@@ -80,6 +79,8 @@ private:
   std::unique_ptr<Laplacian> aparSolver{nullptr}; // Laplacian solver in X-Z for Apar
   std::unique_ptr<LaplaceXY> laplacexy{nullptr};  // Laplacian solver in X-Y (n=0)
   Field2D phi2D; // Axisymmetric potential, used when split_n0=true
+
+  TokamakCoordinatesFactory tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
 
 protected:
   int init(bool UNUSED(restarting)) override {
@@ -158,7 +159,6 @@ protected:
       noshear = true;
     }
 
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
 
     ///////////////////////////////////////////////////
@@ -265,7 +265,7 @@ protected:
   Field3D Kappa(const Field3D& f) {
     if (curv_kappa) {
       // Use the b0xcv vector from grid file
-      return -2. * b0xcv * Grad(f) / B0;
+      return -2. * tokamak_coordinates_factory.get_b0xcv() * Grad(f) / B0;
     }
 
     return 2. * bracket(log(B0), f, bm);
