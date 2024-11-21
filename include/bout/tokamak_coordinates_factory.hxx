@@ -78,6 +78,7 @@ public:
 
     coord->setJ(hthe_m / Bpxy_m);
     coord->setBxy(Bxy_m);
+    coord->setDx(dx_m);
 
     return coord;
   }
