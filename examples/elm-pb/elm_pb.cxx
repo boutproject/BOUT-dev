@@ -735,14 +735,6 @@ protected:
     }
 
     //////////////////////////////////////////////////////////////
-    // SHIFTED RADIAL COORDINATES
-
-    if (mesh->IncIntShear) {
-      // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      metric->setIntShiftTorsion(tokamak_coordinates_factory.get_ShearFactor());
-    }
-
-    //////////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
 
     if (mesh->get(Bbar, "bmag")) { // Typical magnetic field
@@ -862,6 +854,15 @@ protected:
 
     tokamak_coordinates_factory.normalise(Lbar, Bbar);
     const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature);
+
+
+    //////////////////////////////////////////////////////////////
+    // SHIFTED RADIAL COORDINATES
+
+    if (mesh->IncIntShear) {
+      // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
+      metric->setIntShiftTorsion(tokamak_coordinates_factory.get_ShearFactor());
+    }
 
     if (constn0) {
       T0_fake_prof = false;
