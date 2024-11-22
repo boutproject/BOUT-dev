@@ -109,9 +109,9 @@ public:
 
     Rxy_m /= Lbar;
     Bpxy_m /= Bbar;
-    Btxy_m / Bbar;
-    Bxy_m / Bbar;
-    hthe_m / Lbar;
+    Btxy_m /= Bbar;
+    Bxy_m /= Bbar;
+    hthe_m /= Lbar;
     ShearFactor_m *= Lbar * Lbar * Bbar * ShearFactor;
     dx_m /= Lbar * Lbar * Bbar;
 
