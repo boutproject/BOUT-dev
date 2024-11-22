@@ -96,6 +96,7 @@ class ELMpb : public PhysicsModel {
 private:
   // 2D inital profiles
   Field2D J0, P0; // Current and pressure
+  Vector2D b0xcv; // Curvature term
   Field2D beta;   // Used for Vpar terms
   Coordinates::FieldMetric gradparB;
   Field2D phi0; // When diamagnetic terms used
@@ -367,6 +368,10 @@ public:
     // Load 2D profiles
     mesh->get(J0, "Jpar0");    // A / m^2
     mesh->get(P0, "pressure"); // Pascals
+
+    // Load curvature term
+    b0xcv.covariant = false;  // Read contravariant components
+    mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
 
     mesh->get(Psixy, "psixy");        // get Psi
     mesh->get(Psiaxis, "psi_axis");   // axis flux
@@ -712,7 +717,7 @@ public:
       Lbar = 1.0;
     }
     tokamak_coordinates_factory.normalise(Lbar, Bbar);
-    const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature);
+    const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates(noshear);
 
     V0 = -tokamak_coordinates_factory.get_Rxy() * tokamak_coordinates_factory.get_Bpxy() * Dphi0 / tokamak_coordinates_factory.get_Bxy();
 
@@ -799,8 +804,28 @@ public:
       }
     }
 
+    if (!include_curvature) {
+      b0xcv = 0.0;
+    }
+
     if (!include_jpar0) {
       J0 = 0.0;
+    }
+
+    if (noshear) {
+      if (include_curvature) {
+        b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
+      }
+    }
+
+    //////////////////////////////////////////////////////////////
+    // SHIFTED RADIAL COORDINATES
+
+    if (not mesh->IncIntShear) {
+      // Dimits style, using local coordinate system
+      if (include_curvature) {
+        b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
+      }
     }
 
     //////////////////////////////////////////////////////////////
@@ -913,6 +938,11 @@ public:
     P0 = 2.0 * MU0 * P0 / (Bbar * Bbar);
     V0 = V0 / Va;
     Dphi0 *= Tbar;
+
+    b0xcv.x /= Bbar;
+    b0xcv.y *= Lbar * Lbar;
+    b0xcv.z *= Lbar * Lbar;
+
 
     if (constn0) {
       T0_fake_prof = false;
@@ -1690,7 +1720,7 @@ public:
     //   ddt(U) += SQ(tokamak_coordinates_factory.get_Bxy()) * b0xGrad_dot_Grad(rmp_Psi, J0, CELL_CENTRE);
     // }
 
-    ddt(U) += tokamak_coordinates_factory.get_b0xcv() * Grad(P); // curvature term
+    ddt(U) += b0xcv * Grad(P); // curvature term
 
     // if (!nogradparj) { // Parallel current term
     //   ddt(U) -= SQ(tokamak_coordinates_factory.get_Bxy()) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
@@ -1866,7 +1896,7 @@ public:
       ddt(P) -= beta * Div_par(Vpar, CELL_CENTRE);
 
       if (phi_curv) {
-        ddt(P) -= 2. * beta * tokamak_coordinates_factory.get_b0xcv() * Grad(phi);
+        ddt(P) -= 2. * beta * b0xcv * Grad(phi);
       }
 
       // Vpar equation
@@ -1966,7 +1996,7 @@ public:
     Coordinates* metric = mesh->getCoordinates();
 
     Field3D U1 = ddt(U);
-    U1 += (gamma * metric->Bxy() * metric->Bxy()) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * tokamak_coordinates_factory.get_b0xcv()) * Grad(P);
+    U1 += (gamma * metric->Bxy() * metric->Bxy()) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(P);
 
     // Second matrix, solving Alfven wave dynamics
     static std::unique_ptr<InvertPar> invU{nullptr};
@@ -2025,7 +2055,7 @@ public:
     JPsi.setBoundary("Psi");
     JPsi.applyBoundary();
 
-    Field3D JU = tokamak_coordinates_factory.get_b0xcv() * Grad(ddt(P)) - SQ(metric->Bxy()) * Grad_par(Jpar, CELL_CENTRE)
+    Field3D JU = b0xcv * Grad(ddt(P)) - SQ(metric->Bxy()) * Grad_par(Jpar, CELL_CENTRE)
                  + SQ(metric->Bxy()) * b0xGrad_dot_Grad(ddt(Psi), J0, CELL_CENTRE);
     JU.setBoundary("U");
     JU.applyBoundary();

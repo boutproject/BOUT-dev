@@ -29,6 +29,7 @@ class ELMpb : public PhysicsModel {
 private:
   // 2D inital profiles
   Field2D J0, P0;         // Current and pressure
+  Vector2D b0xcv;         // Curvature term
   Field2D beta, gradparB; // Used for Vpar terms
   Field2D phi0;           // When diamagnetic terms used
 
@@ -274,6 +275,10 @@ public:
 
     OPTION(globalOptions->getSection("solver"), mms, false);
 
+    if (!include_curvature) {
+      b0xcv = 0.0;
+    }
+
     if (!include_jpar0) {
       J0 = 0.0;
     }
@@ -283,6 +288,19 @@ public:
 
     phi_solver = Laplacian::create();
 
+    //////////////////////////////////////////////////////////////
+    // SHIFTED RADIAL COORDINATES
+
+    bool ShiftXderivs;
+    globalOptions->get("shiftXderivs", ShiftXderivs, false); // Read global flag
+    if (ShiftXderivs) {
+      if (not mesh->IncIntShear) {
+        // Dimits style, using local coordinate system
+        if (include_curvature) {
+          b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
+        }
+      }
+    }
 
     //////////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
@@ -339,6 +357,10 @@ public:
     J0 = -MU0 * Lbar * J0 / B0;
     P0 = 2.0 * MU0 * P0 / (Bbar * Bbar);
 
+    b0xcv.x /= Bbar;
+    b0xcv.y *= Lbar * Lbar;
+    b0xcv.z *= Lbar * Lbar;
+
     BoutReal pnorm = max(P0, true); // Maximum over all processors
 
     vacuum_pressure *= pnorm; // Get pressure from fraction
@@ -369,7 +391,7 @@ public:
     }
 
     tokamak_coordinates_factory.normalise(Lbar, Bbar);
-    coords = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature);
+    coords = tokamak_coordinates_factory.make_tokamak_coordinates(noshear);
 
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
@@ -562,7 +584,7 @@ public:
 
     ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi, J0, CELL_CENTRE); // Grad j term
 
-    ddt(U) += tokamak_coordinates_factory.get_b0xcv() * Grad(P); // curvature term
+    ddt(U) += b0xcv * Grad(P); // curvature term
 
     // Parallel current term
     ddt(U) -= SQ(B0) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
@@ -612,7 +634,7 @@ public:
       ddt(P) -= beta * Div_par_CtoL(Vpar);
 
       if (phi_curv) {
-        ddt(P) -= 2. * beta * tokamak_coordinates_factory.get_b0xcv() * Grad(phi);
+        ddt(P) -= 2. * beta * b0xcv * Grad(phi);
       }
 
       // Vpar equation

@@ -47,7 +47,7 @@ public:
 
     auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
     tokamak_coordinates_factory.normalise(Lnorm, Bnorm);
-    auto coords = tokamak_coordinates_factory.make_tokamak_coordinates(true, true);
+    auto coords = tokamak_coordinates_factory.make_tokamak_coordinates(true);
   }
 
 private:

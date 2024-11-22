@@ -36,7 +36,8 @@ class Elm_6f : public PhysicsModel {
   // 2D inital profiles
   /// Current and pressure
   Field2D J0, P0;
-
+  /// Curvature term
+  Vector2D b0xcv;
   /// When diamagnetic terms used
   Field2D phi0;
 
@@ -388,6 +389,10 @@ protected:
     mesh->get(J0, "Jpar0");    // A / m^2
     mesh->get(P0, "pressure"); // Pascals
 
+    // Load curvature term
+    b0xcv.covariant = false;  // Read contravariant components
+    mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
+
     //////////////////////////////////////////////////////////////
     // Read parameters from the options file
     //
@@ -663,8 +668,28 @@ protected:
     phi_curv = options["phi_curv"].doc("Compressional ExB terms").withDefault(true);
     g = options["gamma"].doc("Ratio of specific heats").withDefault(5.0 / 3.0);
 
+    if (!include_curvature) {
+      b0xcv = 0.0;
+    }
+
     if (!include_jpar0) {
       J0 = 0.0;
+    }
+
+    if (noshear) {
+      if (include_curvature) {
+        b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
+      }
+    }
+
+    //////////////////////////////////////////////////////////////
+    // SHIFTED RADIAL COORDINATES
+
+    if (not mesh->IncIntShear) {
+      // Dimits style, using local coordinate system
+      if (include_curvature) {
+        b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
+      }
     }
 
     //////////////////////////////////////////////////////////////
@@ -811,6 +836,10 @@ protected:
     P0 = P0 / (SI::kb * (Tibar + Tebar) * eV_K / 2. * Nbar * density);
 
     tokamak_coordinates_factory.normalise(Lbar, Bbar);
+
+    b0xcv.x /= Bbar;
+    b0xcv.y *= Lbar * Lbar;
+    b0xcv.z *= Lbar * Lbar;
 
     if ((!T0_fake_prof) && n0_fake_prof) {
       N0 = N0tanh(n0_height * Nbar, n0_ave * Nbar, n0_width, n0_center, n0_bottom_x);
@@ -999,7 +1028,7 @@ protected:
     }
 
     /**************** CALCULATE METRICS ******************/
-    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, include_curvature);
+    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear);
     
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
@@ -1358,7 +1387,7 @@ protected:
 
       ddt(U) = -SQ(tokamak_coordinates_factory.get_Bxy()) * bracket(Psi, J0, bm_mag) * tokamak_coordinates_factory.get_Bxy(); // Grad j term
 
-      ddt(U) += 2.0 * Upara1 * tokamak_coordinates_factory.get_b0xcv() * Grad(P); // curvature term
+      ddt(U) += 2.0 * Upara1 * b0xcv * Grad(P); // curvature term
 
       ddt(U) += SQ(tokamak_coordinates_factory.get_Bxy()) * Grad_parP(Jpar); // b dot grad j
 

@@ -53,6 +53,7 @@ private:
   Field3D phi, apar, jpar;
 
   Field2D B0, Pe0, Jpar0;
+  Vector2D b0xcv;
 
   Field2D eta; // Collisional damping (resistivity)
   BoutReal beta_hat, mu_hat;
@@ -98,6 +99,10 @@ protected:
     Ni0 *= 1e20;                   // To m^-3
     Pe0 = 2. * Charge * Ni0 * Te0; // Electron pressure in Pascals
     SAVE_ONCE(Pe0);
+
+    // Load curvature term
+    b0xcv.covariant = false;  // Read contravariant components
+    mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
 
     //////////////////////////////////////////////////////////////
     // Options
@@ -156,6 +161,8 @@ protected:
         Options::root()["mesh"]["paralleltransform"]["type"].withDefault("identity");
 
     if (lowercase(ptstr) == "shifted") {
+      // Dimits style, using local coordinate system
+      b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
       noshear = true;
     }
 
@@ -210,9 +217,13 @@ protected:
     hyper_viscosity /= wci * SQ(SQ(rho_s));
     viscosity_par /= wci * SQ(rho_s);
 
+    b0xcv.x /= Bnorm;
+    b0xcv.y *= rho_s * rho_s;
+    b0xcv.z *= rho_s * rho_s;
+
     // Metrics
     tokamak_coordinates_factory.normalise(rho_s, Bnorm);
-    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
+    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear);
 
     SOLVE_FOR3(Vort, Pe, Vpar);
     comms.add(Vort, Pe, Vpar);
@@ -264,7 +275,7 @@ protected:
   Field3D Kappa(const Field3D& f) {
     if (curv_kappa) {
       // Use the b0xcv vector from grid file
-      return -2. * tokamak_coordinates_factory.get_b0xcv() * Grad(f) / B0;
+      return -2. * b0xcv * Grad(f) / B0;
     }
 
     return 2. * bracket(log(B0), f, bm);
