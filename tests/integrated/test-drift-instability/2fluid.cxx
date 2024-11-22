@@ -23,6 +23,7 @@ class TwoFluid : public PhysicsModel {
   Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, rho0, Ajpar0;
   // Staggered versions of initial profiles
   Field2D Ni0_maybe_ylow, Te0_maybe_ylow;
+  Vector2D b0xcv; // for curvature terms
 
   // 3D evolving fields
   Field3D rho, Te, Ni, Ajpar, Vi, Ti;
@@ -81,6 +82,10 @@ protected:
     GRID_LOAD(rho0);
     GRID_LOAD(Ajpar0);
 
+    // Load magnetic curvature term
+    b0xcv.covariant = false;  // Read contravariant components
+    mesh->get(b0xcv, "bxcv"); // b0xkappa terms
+
     // Load normalisation values
     GRID_LOAD(Te_x);
     GRID_LOAD(Ti_x);
@@ -129,6 +134,7 @@ protected:
     const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
     if (ShiftXderivs) {
       ShearFactor = 0.0; // I disappears from metric
+      b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
       noshear = true;
     }
 
@@ -178,12 +184,17 @@ protected:
     phi0 /= Te_x;
     Vi0 /= Vi_x;
 
+    // Normalise curvature term
+    b0xcv.x /= (bmag / 1e4);
+    b0xcv.y *= rho_s * rho_s;
+    b0xcv.z *= rho_s * rho_s;
+
     // calculate pressures
     pei0 = (Ti0 + Te0) * Ni0;
     pe0 = Te0 * Ni0;
 
     tokamak_coordinates_factory.normalise(rho_s, bmag / 1e4, ShearFactor);
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
+    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear);
 
     /**************** SET EVOLVING VARIABLES *************/
 
@@ -338,8 +349,8 @@ protected:
     if (evolve_te) {
       ddt(Te) -= vE_Grad(Te0, phi) + vE_Grad(Te, phi0) + vE_Grad(Te, phi);
       ddt(Te) -= Vpar_Grad_par(Ve, Te0) + Vpar_Grad_par(Ve0, Te) + Vpar_Grad_par(Ve, Te);
-      ddt(Te) += 1.333 * Te0 * (V_dot_Grad(tokamak_coordinates_factory.get_b0xcv(), pe) / Ni0 - V_dot_Grad(tokamak_coordinates_factory.get_b0xcv(), phi));
-      ddt(Te) += 3.333 * Te0 * V_dot_Grad(tokamak_coordinates_factory.get_b0xcv(), Te);
+      ddt(Te) += 1.333 * Te0 * (V_dot_Grad(b0xcv, pe) / Ni0 - V_dot_Grad(b0xcv, phi));
+      ddt(Te) += 3.333 * Te0 * V_dot_Grad(b0xcv, Te);
       ddt(Te) += (0.6666667 / Ni0) * Div_par_K_Grad_par(kapa_Te, Te);
     }
 
@@ -350,8 +361,8 @@ protected:
       ddt(Ti) -= vE_Grad(Ti0, phi) + vE_Grad(Ti, phi0) + vE_Grad(Ti, phi);
       ddt(Ti) -= Vpar_Grad_par(Vi, Ti0) + Vpar_Grad_par(Vi0, Ti) + Vpar_Grad_par(Vi, Ti);
       ddt(Ti) +=
-          1.333 * (Ti0 * V_dot_Grad(tokamak_coordinates_factory.get_b0xcv(), pe) / Ni0 - Ti * V_dot_Grad(tokamak_coordinates_factory.get_b0xcv(), phi));
-      ddt(Ti) -= 3.333 * Ti0 * V_dot_Grad(tokamak_coordinates_factory.get_b0xcv(), Ti);
+          1.333 * (Ti0 * V_dot_Grad(b0xcv, pe) / Ni0 - Ti * V_dot_Grad(b0xcv, phi));
+      ddt(Ti) -= 3.333 * Ti0 * V_dot_Grad(b0xcv, Ti);
       ddt(Ti) += (0.6666667 / Ni0) * Div_par_K_Grad_par(kapa_Ti, Ti);
     }
 

@@ -18,6 +18,7 @@ class Interchange : public PhysicsModel {
 
   // 2D initial profiles
   Field2D Ni0, Ti0, Te0;
+  Vector2D b0xcv; // for curvature terms
 
   // 3D evolving fields
   Field3D rho, Ni;
@@ -46,6 +47,12 @@ protected:
     GRID_LOAD(Ni0);
     GRID_LOAD(Ti0);
     GRID_LOAD(Te0);
+
+    // Load magnetic curvature term
+    b0xcv.covariant = false;  // Read contravariant components
+    mesh->get(b0xcv, "bxcv"); // b0xkappa terms
+
+    b0xcv *= -1.0; // NOTE: THIS IS FOR 'OLD' GRID FILES ONLY
 
     // Load normalisation values
     GRID_LOAD(Te_x);
@@ -93,6 +100,13 @@ protected:
           hthe0 / rho_s);
     }
 
+    tokamak_coordinates_factory.normalise(rho_s, bmag / 1e4, ShearFactor);
+    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear);
+
+    if (ShiftXderivs) {
+      b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
+    }
+
     /************** NORMALISE QUANTITIES *****************/
 
     output.write("\tNormalising to rho_s = {:e}\n", rho_s);
@@ -102,9 +116,10 @@ protected:
     Ti0 /= Te_x;
     Te0 /= Te_x;
 
-//    b0xcv *= -1.0; // NOTE: THIS IS FOR 'OLD' GRID FILES ONLY  // TODO: Check if needed
-    tokamak_coordinates_factory.normalise(rho_s, bmag / 1e4, ShearFactor);
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, true);
+    // Normalise curvature term
+    b0xcv.x /= (bmag / 1e4);
+    b0xcv.y *= rho_s * rho_s;
+    b0xcv.z *= rho_s * rho_s;
 
     // Tell BOUT++ which variables to evolve
     SOLVE_FOR2(rho, Ni);
@@ -132,7 +147,7 @@ protected:
     ddt(Ni) = -b0xGrad_dot_Grad(phi, Ni0) / coord->Bxy();
 
     // VORTICITY
-    ddt(rho) = 2.0 * coord->Bxy() * tokamak_coordinates_factory.get_b0xcv() * Grad(pei);
+    ddt(rho) = 2.0 * coord->Bxy() * b0xcv * Grad(pei);
 
     return (0);
   }

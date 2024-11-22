@@ -79,7 +79,15 @@ ny = 64
 
 estatic = True
 
-tokamak_coordinates_factory.normalise(rho_s0, Bnorm);
+# Normalise
+
+Rxy /= rho_s0
+Bpxy /= Bnorm
+Btxy /= Bnorm
+Bxy /= Bnorm
+hthe /= rho_s0
+
+dx /= rho_s0**2 * Bnorm
 
 bxcvz *= rho_s0**2
 

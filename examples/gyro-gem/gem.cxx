@@ -253,7 +253,7 @@ class GEM : public PhysicsModel {
     SAVE_ONCE(Bbar);
 
     tokamak_coordinates_factory.normalise(Lbar, Bbar);
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates(true, true);
+    coord = tokamak_coordinates_factory.make_tokamak_coordinates(true);
 
     beta_e = 4.e-7 * PI * max(p_e, true) / (Bbar * Bbar);
     SAVE_ONCE(beta_e);

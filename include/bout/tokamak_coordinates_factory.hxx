@@ -22,7 +22,6 @@ private:
   Field2D hthe_m;
   FieldMetric ShearFactor_m;
   FieldMetric dx_m;
-  Vector2D b0xcv_m; // Curvature term
 
 
 public:
@@ -38,10 +37,6 @@ public:
     mesh.get(hthe_m, "hthe");
     mesh.get(ShearFactor_m, "sinty");
     mesh.get(dx_m, "dpsi");
-
-    // Load magnetic curvature term
-    b0xcv_m.covariant = false;  // Read contravariant components
-    mesh.get(b0xcv_m, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
   }
 
   BoutReal get_sign_of_bp() {
@@ -51,11 +46,13 @@ public:
     return 1.0;
   }
 
-  Coordinates* make_tokamak_coordinates(const bool noshear, const bool include_curvature) {
+  Coordinates* make_tokamak_coordinates(const bool noshear) {
 
     const BoutReal sign_of_bp = get_sign_of_bp();
 
-    set_shearfactor_and_curvature_term(noshear, include_curvature);
+    if (noshear) {
+      ShearFactor_m = 0.0;
+    }
 
     auto* coord = mesh_m.getCoordinates();
 
@@ -83,28 +80,6 @@ public:
     return coord;
   }
 
-  void set_shearfactor_and_curvature_term(const bool noshear, const bool include_curvature) {
-
-    if (!include_curvature) {
-      b0xcv_m = 0.0;
-    }
-
-    if (noshear) {
-      if (include_curvature) {
-        b0xcv_m.z += ShearFactor_m * b0xcv_m.x;
-      }
-    }
-
-    //      if (ShiftXderivs and not!mesh->IncIntShear) {
-    //        // Dimits style, using local coordinate system
-    //        if (include_curvature) {
-    //          b0xcv.z += I * b0xcv.x;
-    //        }
-    //        I = 0.0; // I disappears from metric
-    //      }
-
-  }
-
   void normalise(BoutReal Lbar, BoutReal Bbar, BoutReal ShearFactor=1.0) {
 
     Rxy_m /= Lbar;
@@ -114,18 +89,12 @@ public:
     hthe_m /= Lbar;
     ShearFactor_m *= Lbar * Lbar * Bbar * ShearFactor;
     dx_m /= Lbar * Lbar * Bbar;
-
-    // Normalise curvature term
-    b0xcv_m.x /= Bbar;
-    b0xcv_m.y *= Lbar * Lbar;
-    b0xcv_m.z *= Lbar * Lbar;
   }
 
   const Field2D& get_Rxy() const { return Rxy_m; }
   const Field2D& get_Bpxy() const { return Bpxy_m; }
   const Field2D& get_Btxy() const { return Btxy_m; }
   const Field2D& get_Bxy() const { return Bxy_m; }
-  const Vector2D& get_b0xcv() const { return b0xcv_m; }
   const Field2D& get_hthe() const { return hthe_m; }
   const FieldMetric& get_ShearFactor() const { return ShearFactor_m; }
 };
