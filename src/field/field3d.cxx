@@ -504,13 +504,15 @@ void Field3D::setBoundaryTo(const Field3D& f3d) {
         pnt.dirichlet_o2(*this, val);
       }
     }
-    return;
   }
 
   // Non-FCI.
   // Transform to field-aligned coordinates?
   // Loop over boundary regions
   for (const auto& reg : fieldmesh->getBoundaries()) {
+    if (isFci() && reg->by != 0) {
+      continue;
+    }
     /// Loop within each region
     for (reg->first(); !reg->isDone(); reg->next()) {
       for (int z = 0; z < nz; z++) {
