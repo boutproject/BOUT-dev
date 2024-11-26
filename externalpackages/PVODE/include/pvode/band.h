@@ -168,7 +168,7 @@ typedef struct bandmat_type {
  *                                                                *
  ******************************************************************/
 
-#define PVODE_BAND_COL_ELEM(col_j,i,j) (col_j[i-j])
+#define PVODE_BAND_COL_ELEM(col_j, i, j) (col_j[i - j])
 
 /* Functions that use the BandMat representation for a band matrix */
 
