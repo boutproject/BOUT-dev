@@ -79,7 +79,7 @@ jobs:
 
           - name: "Debug, shared"
             os: ubuntu-latest
-            cmake_options: "-DCHECK=3
+            cmake_options: "-DCHECK=4
                             -DCMAKE_BUILD_TYPE=Debug
                             -DBOUT_ENABLE_SIGNAL=ON
                             -DBOUT_ENABLE_TRACK=ON
