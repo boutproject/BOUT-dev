@@ -48,7 +48,7 @@ inline std::optional<BoutReal> invert3x3(Matrix<BoutReal>& a) {
   const BoutReal det = a(0, 0) * A + a(0, 1) * B + a(0, 2) * C;
   constexpr BoutReal small = 1.0e-15;
   if (std::abs(det) < std::abs(small)) {
-    return std::optional<BoutReal>{det};
+    return det;
   }
 
   // Calculate the rest of the co-factors
