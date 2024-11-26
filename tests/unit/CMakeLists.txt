@@ -92,6 +92,8 @@ set(serial_tests_source
   ./sys/test_raja.cxx
   ./test_extras.cxx
   ./test_extras.hxx
+  ./fake_mesh.hxx
+  ./fake_mesh_fixture.hxx
   ./src/test_bout++.cxx)
 
 if(BOUT_HAS_HYPRE)

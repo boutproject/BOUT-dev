@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include "test_extras.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/output.hxx"
 #include "bout/sys/expressionparser.hxx"
 #include "bout/unused.hxx"
 

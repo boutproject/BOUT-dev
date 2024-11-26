@@ -20,7 +20,7 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "bout/array.hxx"
 #include "bout/assert.hxx"

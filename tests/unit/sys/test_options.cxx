@@ -9,6 +9,8 @@
 
 #include <fmt/format.h>
 
+#include "fake_mesh_fixture.hxx"
+
 class OptionsTest : public FakeMeshFixture {
 public:
   virtual ~OptionsTest() = default;
