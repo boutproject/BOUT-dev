@@ -15,6 +15,7 @@
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
 #include <bout/interpolation.hxx>
+#include <bout/output_bout_types.hxx>
 
 #include <bout/globals.hxx>
 
