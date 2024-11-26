@@ -40,9 +40,9 @@ inline std::optional<BoutReal> invert3x3(Matrix<BoutReal>& a) {
   TRACE("invert3x3");
 
   // Calculate the first co-factors
-  BoutReal A = a(1, 1) * a(2, 2) - a(1, 2) * a(2, 1);
-  BoutReal B = a(1, 2) * a(2, 0) - a(1, 0) * a(2, 2);
-  BoutReal C = a(1, 0) * a(2, 1) - a(1, 1) * a(2, 0);
+  const BoutReal A = a(1, 1) * a(2, 2) - a(1, 2) * a(2, 1);
+  const BoutReal B = a(1, 2) * a(2, 0) - a(1, 0) * a(2, 2);
+  const BoutReal C = a(1, 0) * a(2, 1) - a(1, 1) * a(2, 0);
 
   // Calculate the determinant
   const BoutReal det = a(0, 0) * A + a(0, 1) * B + a(0, 2) * C;
@@ -52,15 +52,15 @@ inline std::optional<BoutReal> invert3x3(Matrix<BoutReal>& a) {
   }
 
   // Calculate the rest of the co-factors
-  BoutReal D = a(0, 2) * a(2, 1) - a(0, 1) * a(2, 2);
-  BoutReal E = a(0, 0) * a(2, 2) - a(0, 2) * a(2, 0);
-  BoutReal F = a(0, 1) * a(2, 0) - a(0, 0) * a(2, 1);
-  BoutReal G = a(0, 1) * a(1, 2) - a(0, 2) * a(1, 1);
-  BoutReal H = a(0, 2) * a(1, 0) - a(0, 0) * a(1, 2);
-  BoutReal I = a(0, 0) * a(1, 1) - a(0, 1) * a(1, 0);
+  const BoutReal D = a(0, 2) * a(2, 1) - a(0, 1) * a(2, 2);
+  const BoutReal E = a(0, 0) * a(2, 2) - a(0, 2) * a(2, 0);
+  const BoutReal F = a(0, 1) * a(2, 0) - a(0, 0) * a(2, 1);
+  const BoutReal G = a(0, 1) * a(1, 2) - a(0, 2) * a(1, 1);
+  const BoutReal H = a(0, 2) * a(1, 0) - a(0, 0) * a(1, 2);
+  const BoutReal I = a(0, 0) * a(1, 1) - a(0, 1) * a(1, 0);
 
   // Now construct the output, overwrites input
-  BoutReal detinv = 1.0 / det;
+  const BoutReal detinv = 1.0 / det;
 
   a(0, 0) = A * detinv;
   a(0, 1) = D * detinv;
