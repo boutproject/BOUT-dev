@@ -12,7 +12,8 @@ class IndexOffsetStructTests : public ::testing::Test {
 public:
   IndexOffsetStructTests() {
     zero = T(0, std::is_same_v<T, IndPerp> ? 1 : 5, std::is_same_v<T, Ind2D> ? 1 : 7);
-    finite = T(239, std::is_same_v<T, IndPerp> ? 1 : 5, std::is_same_v<T, Ind2D> ? 1 : 12);
+    finite =
+        T(239, std::is_same_v<T, IndPerp> ? 1 : 5, std::is_same_v<T, Ind2D> ? 1 : 12);
   }
 
   IndexOffset<T> noOffset;
