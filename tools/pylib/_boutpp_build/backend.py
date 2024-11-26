@@ -198,7 +198,7 @@ def build_sdist(sdist_directory, config_settings=None):
             if k == "nightly":
                 useLocalVersion = False
                 pkgname = "boutpp-nightly"
-    prefix = f"{pkgname}-{getversion()}"
+    prefix = f"{pkgname.replace('-', '_')}-{getversion()}"
     fname = f"{prefix}.tar"
     run(f"git archive HEAD --prefix {prefix}/ -o {sdist_directory}/{fname}")
     _, tmp = tempfile.mkstemp(suffix=".tar")
