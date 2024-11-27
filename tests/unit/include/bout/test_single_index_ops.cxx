@@ -276,6 +276,9 @@ TEST_F(SingleIndexOpsTest, Div_par) {
 
   // Need parallel derivatives of input
   input.calcParallelSlices();
+  // and of coordinates
+  input.getMesh()->getCoordinates()->J.calcParallelSlices();
+  input.getMesh()->getCoordinates()->g_22.calcParallelSlices();
 
   // Differentiate whole field
   Field3D difops = Div_par(input);
