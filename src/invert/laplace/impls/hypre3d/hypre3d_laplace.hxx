@@ -209,20 +209,17 @@ public:
   public:
     Hypre3dMonitor(LaplaceHypre3d& laplace_in) : laplace(laplace_in) {}
 
-    int call(Solver*, BoutReal, int, int) override;
+    int call(Solver* /*solver*/, BoutReal /*time*/, int /*iter*/, int /*nout*/) override;
 
   private:
     LaplaceHypre3d& laplace;
   };
   Hypre3dMonitor monitor;
 
-  bool use_precon; // Switch for preconditioning
-  bool rightprec;  // Right preconditioning
-
   // These are the implemented flags
-  static constexpr int implemented_flags = INVERT_START_NEW,
-                       implemented_boundary_flags =
-                           INVERT_AC_GRAD + INVERT_SET + INVERT_RHS;
+  static constexpr int implemented_flags = INVERT_START_NEW;
+  static constexpr int implemented_boundary_flags =
+      INVERT_AC_GRAD + INVERT_SET + INVERT_RHS;
 };
 
 #endif // BOUT_HAS_HYPRE
