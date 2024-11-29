@@ -83,10 +83,17 @@ Field3D D4DY4_index(const Field3D& f_in, bool bndry_flux = true);
    */
 struct Stencil1D {
   // Cell centre values
+#if CHECK > 0
   BoutReal c = BoutNaN, m = BoutNaN, p = BoutNaN, mm = BoutNaN, pp = BoutNaN;
 
   // Left and right cell face values
   BoutReal L = BoutNaN, R = BoutNaN;
+#else
+  BoutReal c, m, p, mm, pp;
+
+  // Left and right cell face values
+  BoutReal L, R;
+#endif
 };
 
 /*!
