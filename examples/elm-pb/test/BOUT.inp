@@ -1,11 +1,3 @@
-# settings file for BOUT++
-# High-Beta reduced MHD case
-
-##################################################
-# Global settings used by the core code
-
-nout = 5          # number of time-steps
-timestep = 0.1       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 wall_limit = 0.85  # wall time limit (in hours)
 
@@ -22,8 +14,6 @@ MXG = 2
 MYG = 2
 
 NXPE = 16            # Number of processor in X
-
-grid = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
 restart_format = "nc"   # Restart file format
 
 StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
@@ -54,6 +44,10 @@ nonuniform = true
 [fft]
 
 fft_measurement_flag = measure  # If using FFTW, perform tests to determine fastest method
+
+[mesh]
+
+file = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
 
 ##################################################
 # derivative methods
@@ -91,6 +85,14 @@ use_jacobian = false  # Use user-supplied Jacobian
 mxstep = 5000   # Number of internal steps between outputs
 adams_moulton = false # Use Adams-Moulton method (default is BDF)
 func_iter = false     # Functional iteration (default is Newton)
+output_step = 0.1       # time between outputs
+# settings file for BOUT++
+# High-Beta reduced MHD case
+
+##################################################
+# Global settings used by the core code
+
+nout = 5          # number of time-steps
 
 ##################################################
 # settings for high-beta reduced MHD

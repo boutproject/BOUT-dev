@@ -1,5 +1,3 @@
-nout = 100
-timestep = 0.1
 
 twistshift = true
 
@@ -41,6 +39,8 @@ G = 1
 [solver]
 
 mms = true
+output_step = 0.1
+nout = 100
 
 [f]
 

@@ -1,5 +1,3 @@
-timestep = 2.0
-nout = 5
 
 MZ = 1
 
@@ -22,3 +20,7 @@ function = 0
 
 [probes]
 file = "PROBES.dmp"
+
+[solver]
+output_step = 2.0
+nout = 5

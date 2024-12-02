@@ -1,5 +1,4 @@
 restart = true
-timestep = 1
 
 [mesh]
 nx = 12
@@ -13,6 +12,7 @@ ixseps2 = -1
 [solver]
 type = euler
 timestep = 0.5
+output_step = 1
 
 [all]
 bndry_all = none

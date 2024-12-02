@@ -1,9 +1,3 @@
-#
-# Hasegawa-Wakatani test case
-#
-
-timestep = 1.0   # Output timestep
-nout = 200      # Number of output steps
 
 MYG = 0  # No need for Y communications
 
@@ -39,3 +33,11 @@ bndry_all = dirichlet_o2
 
 scale = 0.1  # Fluctuation amplitude
 function = mixmode(2*pi*x) * mixmode(z) # Fluctuation function
+
+[solver]
+#
+# Hasegawa-Wakatani test case
+#
+
+output_step = 1.0   # Output timestep
+nout = 200      # Number of output steps

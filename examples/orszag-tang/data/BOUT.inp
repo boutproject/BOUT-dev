@@ -1,11 +1,3 @@
-# settings file for BOUT++
-# MHD Orszag-Tang vortex problem
-
-##################################################
-# settings used by the core code
-
-nout = 30       # number of time-steps
-timestep = 0.02   # time between outputs
 
 twistshift = false  # use twist-shift condition?
 
@@ -13,7 +5,9 @@ MZ = 1     # number of points in z direction (2^n + 1)
 
 periodicX = true  # periodic in X
 
-grid = "data/otv.grd.nc"
+[mesh]
+
+file = "data/otv.grd.nc"
 
 ##################################################
 # derivative methods
@@ -45,6 +39,14 @@ upwind = U1
 atol = 1e-10 # absolute tolerance
 rtol = 1e-05  # relative tolerance
 mxstep = 5000  # Maximum number of internal steps
+output_step = 0.02   # time between outputs
+# settings file for BOUT++
+# MHD Orszag-Tang vortex problem
+
+##################################################
+# settings used by the core code
+
+nout = 30       # number of time-steps
 
 ##################################################
 # settings for mhd code

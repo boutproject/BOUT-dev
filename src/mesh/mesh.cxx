@@ -29,6 +29,9 @@ MeshFactory::ReturnType MeshFactory::create(const std::string& type, Options* op
 
   if (options->isSet("file") or Options::root().isSet("grid")) {
     // Specified mesh file
+    if (Options::root().isSet("grid")) {
+      output_warn.write("Setting `grid` is deprecated. Please set `mesh:file` instead.");
+    }
     const auto grid_name1 = Options::root()["grid"].withDefault("");
     const auto grid_name = (*options)["file"].withDefault(grid_name1);
     if (options->isSet("file") and Options::root().isSet("grid")) {
