@@ -1,3 +1,8 @@
+#
+# Input file for conduction case
+#
+nout = 1      # Number of output timesteps
+timestep = 10 #Time between outputs
 
 # Number of points in z
 MZ = 1
@@ -57,11 +62,6 @@ mms_initialise = false
 atol = 1e-15 # absolute tolerance
 rtol = 1e-08  # relative tolerance
 mxstep = 100000000
-output_step = 10 #Time between outputs
-#
-# Input file for conduction case
-#
-nout = 1      # Number of output timesteps
 
 [cyto]
 Dx = 1

@@ -1,6 +1,6 @@
 
-solver:nout = 100
-solver:output_step = 0.02
+nout = 100
+timestep = 0.02
 
 MZ = 1
 

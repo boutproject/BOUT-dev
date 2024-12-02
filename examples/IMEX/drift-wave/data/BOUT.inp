@@ -1,8 +1,8 @@
 # Drift wave test
 # All variables in normalised units
 
-solver:output_step = 100
-solver:nout = 100
+timestep = 100
+nout = 100
 
 [mesh]
 

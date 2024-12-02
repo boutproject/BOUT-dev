@@ -4,6 +4,6 @@
 
 MZ = 5    # Z size
 
-mesh:file = "test_io.grd.nc"
+grid = "test_io.grd.nc"
 
 twistshift = false

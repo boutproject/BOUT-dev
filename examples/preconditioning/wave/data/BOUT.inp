@@ -1,3 +1,15 @@
+# Simple preconditioning test
+#
+# Wave equation of two variables. Demonstrates "physics-based"
+# preconditioning method of Schur factorisation
+#
+# CFL timestep = 1
+#
+#
+
+nout = 10
+
+timestep = 10
 
 MZ = 5    # Z size
 
@@ -17,18 +29,6 @@ use_jacobian = false  # Use user-supplied preconditioner?
 rightprec = false     # Use Right preconditioner (default left)
 diagnose = true       # Print additional diagnostics
 start_timestep = 10
-
-output_step = 10
-# Simple preconditioning test
-#
-# Wave equation of two variables. Demonstrates "physics-based"
-# preconditioning method of Schur factorisation
-#
-# CFL timestep = 1
-#
-#
-
-nout = 10
 
 [all]
 # Boundary options

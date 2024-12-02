@@ -1,5 +1,5 @@
-solver:output_step = 2.0
-solver:nout = 5
+timestep = 2.0
+nout = 5
 
 MZ = 1
 

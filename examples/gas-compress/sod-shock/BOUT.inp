@@ -1,12 +1,20 @@
+# settings file for BOUT++
+#
+# Sod shock problem in 1D
+#
+
+##################################################
+# settings used by the core code
+
+nout = 20       # number of time-steps
+timestep = 0.01   # time between outputs
 
 MZ = 1
 
 MXG = 2
 MYG = 2
 
-[mesh]
-
-file = "sod.grd.nc"  # Grid file
+grid = "sod.grd.nc"  # Grid file
 
 ##################################################
 # derivative methods
@@ -38,16 +46,6 @@ upwind = U1
 # mudq, mldq, mukeep, mlkeep preconditioner options
 atol = 1e-10 # absolute tolerance
 rtol = 1e-05  # relative tolerance
-output_step = 0.01   # time between outputs
-# settings file for BOUT++
-#
-# Sod shock problem in 1D
-#
-
-##################################################
-# settings used by the core code
-
-nout = 20       # number of time-steps
 
 ##################################################
 # settings for gas_compress

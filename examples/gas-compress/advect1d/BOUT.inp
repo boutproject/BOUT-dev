@@ -1,3 +1,13 @@
+# settings file for BOUT++
+#
+# Simple 1D advection test case
+#
+
+##################################################
+# settings used by the core code
+
+nout = 20       # number of time-steps
+timestep = 0.05   # time between outputs
 
 MXG = 0   # Guard cells in X
 MYG = 2   # Guard cells in Y
@@ -51,16 +61,6 @@ upwind = U1
 # mudq, mldq, mukeep, mlkeep preconditioner options
 atol = 1e-10 # absolute tolerance
 rtol = 1e-05  # relative tolerance
-output_step = 0.05   # time between outputs
-# settings file for BOUT++
-#
-# Simple 1D advection test case
-#
-
-##################################################
-# settings used by the core code
-
-nout = 20       # number of time-steps
 
 ##################################################
 # settings for gas_compress

@@ -3,8 +3,8 @@
 # This uses 2nd order central differencing with the "free" boundary
 # condition on the downstream boundary
 
-solver:nout = 20
-solver:output_step = 0.05
+nout = 20
+timestep = 0.05
 
 MXG = 0
 

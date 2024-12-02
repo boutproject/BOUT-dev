@@ -1,3 +1,11 @@
+# settings file for BOUT++
+# High-Beta reduced MHD case
+
+##################################################
+# Global settings used by the core code
+
+nout = 1          # number of time-steps
+timestep = 0.1       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 
 ShiftXderivs = true # use shifted radial derivatives?
@@ -7,6 +15,8 @@ TwistOrder = 0      # order of twist-shift interpolation
 
 MZ = 17             # number of points in z direction (2^n + 1)
 zperiod = 15        # Fraction of a torus to simulate
+
+grid = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
 restart_format = "nc"   # Restart file format
 
 StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
@@ -28,10 +38,6 @@ group_nonblock = false  # Use non-blocking group operations?
 [fft]
 
 fft_measurement_flag = measure  # If using FFTW, perform tests to determine fastest method
-
-[mesh]
-
-file = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
 
 ##################################################
 # derivative methods
@@ -69,14 +75,6 @@ maxit = 10000
 tol = 0.0001
 
 selfSolve = false
-output_step = 0.1       # time between outputs
-# settings file for BOUT++
-# High-Beta reduced MHD case
-
-##################################################
-# Global settings used by the core code
-
-nout = 1          # number of time-steps
 
 [solver:advance]
 type = splitrk
