@@ -1,13 +1,10 @@
-#
-#
-
-nout = 100
-timestep = 0.1
-
-grid = "tokamak.fci.nc"
 
 MYG = 1
 NXPE = 1
+
+[mesh]
+
+file = "tokamak.fci.nc"
 
 [mesh:paralleltransform]
 
@@ -42,3 +39,10 @@ bndry_par_ydown = parallel_neumann_o2
 [nv]
 
 bndry_par_all = parallel_dirichlet
+
+[solver]
+output_step = 0.1
+#
+#
+
+nout = 100
