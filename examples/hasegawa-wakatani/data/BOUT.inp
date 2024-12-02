@@ -2,8 +2,8 @@
 # Hasegawa-Wakatani test case
 #
 
-timestep = 1.0   # Output timestep
-nout = 200      # Number of output steps
+solver:output_step = 1.0   # Output timestep
+solver:nout = 200      # Number of output steps
 
 MYG = 0  # No need for Y communications
 

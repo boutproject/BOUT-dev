@@ -2,8 +2,8 @@
 # Input file for conduction case
 #
 
-nout = 100       # Number of output timesteps
-timestep = 0.1  # Time between outputs
+solver:nout = 100       # Number of output timesteps
+solver:output_step = 0.1  # Time between outputs
 
 MXG = 0 # No X communications
 

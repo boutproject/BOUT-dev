@@ -5,8 +5,8 @@
 # Delp2 and Laplacian inversion.
 #
 
-nout = 0  # No timesteps
+solver:nout = 0  # No timesteps
 
 MZ = 1    # Z size
 
-grid = "test_delp2.grd.nc"
+mesh:file = "test_delp2.grd.nc"

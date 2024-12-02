@@ -1,10 +1,9 @@
 
-nout = 2000
-timestep = 2
-
-grid = "d3d_119919.nc"
-
 MZ = 1
+
+[mesh]
+
+file = "d3d_119919.nc"
 
 [mesh:paralleltransform]
 type = shifted
@@ -14,6 +13,9 @@ type = shifted
 mxstep = 10000
 atol = 1e-09
 rtol = 1e-07
+output_step = 2
+
+nout = 2000
 
 [laplacexy]  # 2D solver in X-Y
 pctype = shell    # Preconditioner

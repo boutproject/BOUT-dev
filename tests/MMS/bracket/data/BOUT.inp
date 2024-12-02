@@ -1,5 +1,5 @@
-nout = 1
-timestep = 1
+solver:nout = 1
+solver:output_step = 1
 periodicY = true
 
 [mesh]

@@ -1,6 +1,6 @@
 # Performance test for Laplace inversion
 
-nout = 0  # No timesteps
+solver:nout = 0  # No timesteps
 
 MZ = 32    # Z size
 

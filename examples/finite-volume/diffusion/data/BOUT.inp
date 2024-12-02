@@ -1,6 +1,6 @@
 
-nout = 10
-timestep = 1
+solver:nout = 10
+solver:output_step = 1
 
 MXG = 0
 

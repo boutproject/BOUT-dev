@@ -4,8 +4,8 @@
 # Dirichlet boundary condition on all boundaries
 #
 
-nout = 20
-timestep = 0.05
+solver:nout = 20
+solver:output_step = 0.05
 
 MXG = 0
 

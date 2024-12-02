@@ -1,8 +1,6 @@
 
-nout = 50
-timestep = 0.2
-
-grid = "slab.grd.nc"
+solver:nout = 50
+solver:output_step = 0.2
 
 MZ = 64
 
@@ -10,6 +8,8 @@ twistshift = true
 
 [mesh]
 symmetricGlobalX = true
+
+file = "slab.grd.nc"
 
 [f]
 scale = 1

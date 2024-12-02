@@ -1,4 +1,4 @@
-nout = 0
+solver:nout = 0
 
 [mesh]
 nx = 20
