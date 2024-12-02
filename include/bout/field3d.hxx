@@ -291,6 +291,17 @@ public:
   /// cuts on closed field lines?
   bool requiresTwistShift(bool twist_shift_enabled);
 
+  /// Enable a special tracking mode for debugging
+  /// Save all changes that, are done to the field, to tracking
+  Field3D& enableTracking(const std::string& name, Options& tracking);
+
+  /// Disable tracking
+  Field3D& disableTracking() {
+    tracking = nullptr;
+    tracking_state = 0;
+    return *this;
+  }
+
   /////////////////////////////////////////////////////////
   // Data access
 
@@ -495,6 +506,8 @@ public:
 
   int size() const override { return nx * ny * nz; };
 
+  Options* getTracking() { return tracking; };
+
 private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1}, nz{-1};
@@ -510,6 +523,13 @@ private:
 
   /// RegionID over which the field is valid
   std::optional<size_t> regionID;
+
+  int tracking_state{0};
+  Options* tracking{nullptr};
+  std::string selfname;
+  template <class T>
+  Options* track(const T& change, std::string operation);
+  Options* track(const BoutReal& change, std::string operation);
 };
 
 // Non-member overloaded operators

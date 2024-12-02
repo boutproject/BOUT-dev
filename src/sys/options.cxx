@@ -343,6 +343,23 @@ Options& Options::assign<>(Tensor<BoutReal> val, std::string source) {
   return *this;
 }
 
+void saveParallel(Options& opt, const std::string name, const Field3D& tosave) {
+  opt[name] = tosave;
+  const size_t numberParallelSlices =
+      tosave.hasParallelSlices() ? 0 : tosave.getMesh()->ystart;
+  for (size_t i0 = 1; i0 <= numberParallelSlices; ++i0) {
+    for (int i : {i0, -i0}) {
+      Field3D tmp;
+      tmp.allocate();
+      const auto& fpar = tosave.ynext(i);
+      for (auto j : fpar.getValidRegionWithDefault("RGN_NO_BOUNDARY")) {
+        tmp[j.yp(-i)] = fpar[j];
+      }
+      opt[fmt::format("{}_y{:+d}", name, i)] = tmp;
+    }
+  }
+}
+
 namespace {
 /// Use FieldFactory to evaluate expression
 double parseExpression(const Options::ValueType& value, const Options* options,
