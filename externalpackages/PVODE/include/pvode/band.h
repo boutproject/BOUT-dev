@@ -57,7 +57,6 @@
 
 namespace pvode {
 
- 
 /******************************************************************
  *                                                                *
  * Type: BandMat                                                  *
@@ -118,7 +117,6 @@ namespace pvode {
  *                                                                *
  ******************************************************************/
 
-
 typedef struct bandmat_type {
   integer size;
   integer mu, ml, smu;
@@ -128,7 +126,6 @@ typedef struct bandmat_type {
 
 /* BandMat accessor macros */
 
- 
 /******************************************************************
  *                                                                *
  * Macro : PVODE_BAND_ELEM                                              *
@@ -141,8 +138,7 @@ typedef struct bandmat_type {
  *                                                                *
  ******************************************************************/
 
-#define PVODE_BAND_ELEM(A,i,j) ((A->data)[j][i-j+(A->smu)])
-
+#define PVODE_BAND_ELEM(A, i, j) ((A->data)[j][i - j + (A->smu)])
 
 /******************************************************************
  *                                                                *
@@ -157,8 +153,7 @@ typedef struct bandmat_type {
  *                                                                *
  ******************************************************************/
 
-#define PVODE_BAND_COL(A,j) (((A->data)[j])+(A->smu))
-
+#define PVODE_BAND_COL(A, j) (((A->data)[j]) + (A->smu))
 
 /******************************************************************
  *                                                                *
@@ -173,8 +168,7 @@ typedef struct bandmat_type {
  *                                                                *
  ******************************************************************/
 
-#define PVODE_BAND_COL_ELEM(col_j,i,j) (col_j[i-j])
- 
+#define PVODE_BAND_COL_ELEM(col_j, i, j) (col_j[i - j])
 
 /* Functions that use the BandMat representation for a band matrix */
 
