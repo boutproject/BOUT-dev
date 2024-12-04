@@ -104,7 +104,7 @@ protected:
                                                                  bmag / 1e4, ShearFactor);
 
     if (ShiftXderivs) {
-      b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
+      b0xcv.z += tokamak_coordinates_factory.ShearFactor() * b0xcv.x;
     }
 
     /************** NORMALISE QUANTITIES *****************/
