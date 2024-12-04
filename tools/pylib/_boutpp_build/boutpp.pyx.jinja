@@ -854,7 +854,13 @@ Compute the Laplacian inversion of objects.
 Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\perp x + ex\\nabla_x x + ez\\nabla_z x + a x = b
 """, uniquePtr=True) }}
 
-    def __init__(self, section=None):
+    Compute the Laplacian inversion of objects.
+
+    Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\perp x + ex\\nabla_x x + ez\\nabla_z x + a x = b
+    """
+    cdef unique_ptr[c.Laplacian] cobj
+    cdef c.bool isSelfOwned
+    def __init__(self, section=None, loc="CELL_CENTRE", mesh=None):
         """
         Initialiase a Laplacian solver
 
@@ -864,10 +870,20 @@ Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\p
             The section from the Option tree to take the options from
         """
         checkInit()
+        cdef c.Options* copt = NULL
         if section:
-           self.cobj = c.Laplacian.create((<Options?>section).cobj)
-        else:
-           self.cobj = c.Laplacian.create(NULL)
+            if isinstance(section, str):
+                section = Options.root(section)
+            copt = (<Options?>section).cobj
+        cdef benum.CELL_LOC cloc = benum.resolve_cell_loc(loc)
+        cdef c.Mesh* cmesh = NULL
+        if mesh:
+            cmesh = (<Mesh?>mesh).cobj
+        # Solver is not exposed yet
+        # cdef c.Solver* csolver = NULL
+        # if solver:
+        #     csolver = (<Solver?>solver).cobj
+        self.cobj = c.Laplacian.create(copt, cloc, cmesh, NULL)
         self.isSelfOwned = True
 
     def solve(self, Field3D x, Field3D guess):
