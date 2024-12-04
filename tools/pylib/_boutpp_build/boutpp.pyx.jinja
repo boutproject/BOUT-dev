@@ -949,6 +949,13 @@ cdef class Laplacian:
         deref(self.cobj).setCoef{{ coeff }}({{ coeff }}.cobj[0])
 {% endfor %}
 
+    def __dealloc__(self):
+        self._boutpp_dealloc()
+
+    def _boutpp_dealloc(self):
+        if self.cobj and self.isSelfOwned:
+            self.cobj.release()
+
 cdef class FieldFactory:
     cdef c.FieldFactory * cobj
     def __init__(self):
