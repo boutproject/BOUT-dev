@@ -754,6 +754,25 @@ cdef options
         msh.isSelfOwned = False
         return msh
 
+    def get(self, name):
+        """
+        Read a variable from the input source
+
+        Currently only supports reading a Field3D
+        """
+        checkInit()
+        cdef Field3D f3d = Field3D.fromMesh(self)
+        self.cobj.get(f3d.cobj[0], name.encode())
+        return f3d
+
+    def __dealloc__(self):
+        self._boutpp_dealloc()
+
+    def _boutpp_dealloc(self):
+        if self.cobj and self.isSelfOwned:
+            del self.cobj
+            self.cobj = NULL
+
     cdef getFactory(self):
         """
         Get the FieldFactory of the mesh
