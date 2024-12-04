@@ -63,6 +63,7 @@ cdef extern from "bout/mesh.hxx":
         int LocalNx
         int LocalNy
         Coordinates * getCoordinates()
+        int get(Field3D, const string)
 
 cdef extern from "bout/coordinates.hxx":
     cppclass Coordinates:
