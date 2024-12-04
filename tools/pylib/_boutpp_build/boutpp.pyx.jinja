@@ -304,6 +304,7 @@ cdef {{ field.field_type }} {{ field.fdd }}FromPtr(c.{{ field.field_type }}* i):
         dims_in = self._checkDims(dims, data.shape)
         cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(data)
         c_set_all(self.cobj,&data_[{{ zeros }}])
+        return self
 
     def get(self):
         """
