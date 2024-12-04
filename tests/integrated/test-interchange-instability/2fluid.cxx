@@ -100,8 +100,8 @@ protected:
           hthe0 / rho_s);
     }
 
-    tokamak_coordinates_factory.normalise(rho_s, bmag / 1e4, ShearFactor);
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear);
+    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, rho_s,
+                                                                 bmag / 1e4, ShearFactor);
 
     if (ShiftXderivs) {
       b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;

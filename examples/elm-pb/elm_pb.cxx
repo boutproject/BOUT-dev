@@ -876,8 +876,7 @@ protected:
     b0xcv.y *= Lbar * Lbar;
     b0xcv.z *= Lbar * Lbar;
 
-    tokamak_coordinates_factory.normalise(Lbar, Bbar);
-    const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates(noshear);
+    const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, Lbar, Bbar);
 
 
     //////////////////////////////////////////////////////////////

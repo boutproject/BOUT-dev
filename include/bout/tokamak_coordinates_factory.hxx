@@ -3,17 +3,16 @@
 #define BOUT_TOKAMAK_COORDINATES_FACTORY_HXX
 
 #include "bout.hxx"
-#include "bout/utils.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/christoffel_symbols.hxx"
-#include "bout/vector2d.hxx"
-#include "bout/field2d.hxx"
 #include "bout/coordinates.hxx"
+#include "bout/field2d.hxx"
+#include "bout/utils.hxx"
+#include "bout/vector2d.hxx"
 
 class TokamakCoordinatesFactory {
 
 private:
-  
   Mesh& mesh_m;
   Field2D Rxy_m;
   Field2D Bpxy_m;
@@ -23,11 +22,19 @@ private:
   FieldMetric ShearFactor_m;
   FieldMetric dx_m;
 
+  void normalise(BoutReal Lbar, BoutReal Bbar, BoutReal ShearFactor) {
+
+    Rxy_m /= Lbar;
+    Bpxy_m /= Bbar;
+    Btxy_m /= Bbar;
+    Bxy_m /= Bbar;
+    hthe_m /= Lbar;
+    ShearFactor_m *= Lbar * Lbar * Bbar * ShearFactor;
+    dx_m /= Lbar * Lbar * Bbar;
+  }
 
 public:
-
-  TokamakCoordinatesFactory(Mesh& mesh)
-      : mesh_m(mesh) {
+  TokamakCoordinatesFactory(Mesh& mesh) : mesh_m(mesh) {
 
     mesh.get(Rxy_m, "Rxy");
     //    mesh->get(Zxy, "Zxy");
@@ -46,7 +53,10 @@ public:
     return 1.0;
   }
 
-  Coordinates* make_tokamak_coordinates(const bool noshear) {
+  Coordinates* make_tokamak_coordinates(const bool noshear, BoutReal Lbar, BoutReal Bbar,
+                                        BoutReal ShearFactor = 1.0) {
+
+    normalise(Lbar, Bbar, ShearFactor);
 
     const BoutReal sign_of_bp = get_sign_of_bp();
 
@@ -78,17 +88,6 @@ public:
     coord->setDx(dx_m);
 
     return coord;
-  }
-
-  void normalise(BoutReal Lbar, BoutReal Bbar, BoutReal ShearFactor=1.0) {
-
-    Rxy_m /= Lbar;
-    Bpxy_m /= Bbar;
-    Btxy_m /= Bbar;
-    Bxy_m /= Bbar;
-    hthe_m /= Lbar;
-    ShearFactor_m *= Lbar * Lbar * Bbar * ShearFactor;
-    dx_m /= Lbar * Lbar * Bbar;
   }
 
   const Field2D& get_Rxy() const { return Rxy_m; }
