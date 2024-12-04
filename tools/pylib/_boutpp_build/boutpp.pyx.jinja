@@ -924,19 +924,20 @@ cdef class Laplacian:
         """
         return f3dFromObj(deref(self.cobj).solve(x.cobj[0],guess.cobj[0]))
 
-    def setCoefs(self, **kwargs):
+{% set coeffs="A C C1 C2 D Ex Ez".split() %}
+    def setCoefs(self, *{% for coeff in coeffs %}, {{coeff}}=None{% endfor %}):
         """
         Set the coefficients for the Laplacian solver.
         The coefficients A, C, C1, C2, D, Ex and Ez can be passed as keyword arguments
         """
 {% set coeffs="A C C1 C2 D Ex Ez".split() %}
 {% for coeff in coeffs %}
-        if "{{ coeff }}" in kwargs:
-            self.setCoef{{ coeff}}(kwargs["{{ coeff }}"])
+        if {{ coeff }} is not None:
+            self.setCoef{{ coeff}}({{ coeff }})
 {% endfor %}
 {% for coeff in coeffs %}
 
-    def setCoef{{ coeff }}(self,Field3D {{ coeff }}):
+    def setCoef{{ coeff }}(self, Field3D {{ coeff }}):
         """
         Set the "{{ coeff }}" coefficient of the Laplacian solver
 
