@@ -129,8 +129,8 @@ private:
     Te0 /= Te_x;
 
     // Normalise geometry
-    tokamak_coordinates_factory.normalise(rho_s, bmag / 1e4, ShearFactor);
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear);
+    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, rho_s,
+                                                                 bmag / 1e4, ShearFactor);
 
     // Set nu
     nu = nu_hat * Ni0 / pow(Te0, 1.5);

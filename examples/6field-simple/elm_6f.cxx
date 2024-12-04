@@ -835,8 +835,6 @@ protected:
     J0 = SI::mu0 * Lbar * J0 / tokamak_coordinates_factory.get_Bxy();
     P0 = P0 / (SI::kb * (Tibar + Tebar) * eV_K / 2. * Nbar * density);
 
-    tokamak_coordinates_factory.normalise(Lbar, Bbar);
-
     b0xcv.x /= Bbar;
     b0xcv.y *= Lbar * Lbar;
     b0xcv.z *= Lbar * Lbar;
@@ -906,7 +904,10 @@ protected:
         q95 = q95_input; // use a constant for test
       } else {
         if (local_q) {
-          q95 = abs(tokamak_coordinates_factory.get_hthe() * tokamak_coordinates_factory.get_Btxy() / tokamak_coordinates_factory.get_Bpxy()) * q_alpha;
+          q95 = abs(tokamak_coordinates_factory.get_hthe()
+                    * tokamak_coordinates_factory.get_Btxy()
+                    / tokamak_coordinates_factory.get_Bpxy())
+                * q_alpha;
         } else {
           output.write("\tUsing q profile from grid.\n");
           if (mesh->get(q95, "q")) {
@@ -1028,8 +1029,9 @@ protected:
     }
 
     /**************** CALCULATE METRICS ******************/
-    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear);
-    
+    const auto& coord =
+        tokamak_coordinates_factory.make_tokamak_coordinates(noshear, Lbar, Bbar);
+
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
 
@@ -1191,6 +1193,7 @@ protected:
 
     return 0;
   }
+
   int rhs(BoutReal UNUSED(t)) override {
 
     Coordinates* coord = mesh->getCoordinates();
