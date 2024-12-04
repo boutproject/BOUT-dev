@@ -718,7 +718,7 @@ public:
     }
     const auto& metric = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, Lbar, Bbar);
 
-    V0 = -tokamak_coordinates_factory.get_Rxy() * tokamak_coordinates_factory.get_Bpxy() * Dphi0 / tokamak_coordinates_factory.get_Bxy();
+    V0 = -tokamak_coordinates_factory.Rxy() * tokamak_coordinates_factory.Bpxy() * Dphi0 / tokamak_coordinates_factory.Bxy();
 
     if (simple_rmp) {
       include_rmp = true;
@@ -813,7 +813,7 @@ public:
 
     if (noshear) {
       if (include_curvature) {
-        b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
+        b0xcv.z += tokamak_coordinates_factory.ShearFactor() * b0xcv.x;
       }
     }
 
@@ -823,7 +823,7 @@ public:
     if (not mesh->IncIntShear) {
       // Dimits style, using local coordinate system
       if (include_curvature) {
-        b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
+        b0xcv.z += tokamak_coordinates_factory.ShearFactor() * b0xcv.x;
       }
     }
 
@@ -933,7 +933,7 @@ public:
     Field2D Te;
     Te = P0 / (2.0 * density * 1.602e-19); // Temperature in eV
 
-    J0 = -MU0 * Lbar * J0 / tokamak_coordinates_factory.get_Bxy();
+    J0 = -MU0 * Lbar * J0 / tokamak_coordinates_factory.Bxy();
     P0 = 2.0 * MU0 * P0 / (Bbar * Bbar);
     V0 = V0 / Va;
     Dphi0 *= Tbar;
@@ -1072,15 +1072,17 @@ public:
 
     B0vec.covariant = false;
     B0vec.x = 0.;
-    B0vec.y = tokamak_coordinates_factory.get_Bpxy() / tokamak_coordinates_factory.get_hthe();
+    B0vec.y = tokamak_coordinates_factory.Bpxy() / tokamak_coordinates_factory.hthe();
     B0vec.z = 0.;
 
     V0net.covariant = false; // presentation for net flow
     V0net.x = 0.;
-    V0net.y = tokamak_coordinates_factory.get_Rxy() * tokamak_coordinates_factory.get_Btxy() * tokamak_coordinates_factory.get_Bpxy() / (tokamak_coordinates_factory.get_hthe() * tokamak_coordinates_factory.get_Bxy() * tokamak_coordinates_factory.get_Bxy()) * Dphi0;
+    V0net.y =
+        tokamak_coordinates_factory.Rxy() * tokamak_coordinates_factory.Btxy() * tokamak_coordinates_factory.Bpxy() / (tokamak_coordinates_factory.hthe() * tokamak_coordinates_factory.Bxy() * tokamak_coordinates_factory.Bxy()) * Dphi0;
     V0net.z = -Dphi0;
 
-    U0 = B0vec * Curl(V0net) / tokamak_coordinates_factory.get_Bxy(); // get 0th vorticity for Kelvin-Holmholtz term
+    U0 = B0vec * Curl(V0net) / tokamak_coordinates_factory
+               .Bxy(); // get 0th vorticity for Kelvin-Holmholtz term
 
     /**************** SET EVOLVING VARIABLES *************/
 
@@ -1103,8 +1105,8 @@ public:
       SOLVE_FOR(Vpar);
       comms.add(Vpar);
 
-      beta = tokamak_coordinates_factory.get_Bxy() * tokamak_coordinates_factory.get_Bxy() / (0.5 + (tokamak_coordinates_factory.get_Bxy() * tokamak_coordinates_factory.get_Bxy() / (g * P0)));
-      gradparB = Grad_par(tokamak_coordinates_factory.get_Bxy()) / tokamak_coordinates_factory.get_Bxy();
+      beta = tokamak_coordinates_factory.Bxy() * tokamak_coordinates_factory.Bxy() / (0.5 + (tokamak_coordinates_factory.Bxy() * tokamak_coordinates_factory.Bxy() / (g * P0)));
+      gradparB = Grad_par(tokamak_coordinates_factory.Bxy()) / tokamak_coordinates_factory.Bxy();
 
       output.write("Beta in range {:e} -> {:e}\n", min(beta), max(beta));
     } else {
@@ -1137,10 +1139,10 @@ public:
     // Diamagnetic phi0
     if (diamag_phi0) {
       if (constn0) {
-        phi0 = -0.5 * dnorm * P0 / tokamak_coordinates_factory.get_Bxy();
+        phi0 = -0.5 * dnorm * P0 / tokamak_coordinates_factory.Bxy();
       } else {
         // Stationary equilibrium plasma. ExB velocity balances diamagnetic drift
-        phi0 = -0.5 * dnorm * P0 / tokamak_coordinates_factory.get_Bxy() / N0;
+        phi0 = -0.5 * dnorm * P0 / tokamak_coordinates_factory.Bxy() / N0;
       }
       SAVE_ONCE(phi0);
     } else {
@@ -1151,7 +1153,7 @@ public:
     // everything needed to recover physical units
     SAVE_ONCE(J0, P0);
     SAVE_ONCE(density, Lbar, Bbar, Tbar);
-    Field2D Bxy = tokamak_coordinates_factory.get_Bxy();
+    Field2D Bxy = tokamak_coordinates_factory.Bxy();
     SAVE_ONCE(Va, Bxy);
     SAVE_ONCE(Dphi0, U0);
     SAVE_ONCE(V0);
@@ -1211,7 +1213,7 @@ public:
 
     if (mesh->IncIntShear) {
       // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      metric->setIntShiftTorsion(tokamak_coordinates_factory.get_ShearFactor());
+      metric->setIntShiftTorsion(tokamak_coordinates_factory.ShearFactor());
 
     }
 
@@ -1525,7 +1527,7 @@ public:
     auto P0_acc = Field2DAccessor<>(P0);
     auto J0_acc = Field2DAccessor<>(J0);
     auto phi0_acc = Field2DAccessor<>(phi0);
-    Field2D Bxy = tokamak_coordinates_factory.get_Bxy();
+    Field2D Bxy = tokamak_coordinates_factory.Bxy();
     auto B0_acc = Field2DAccessor<>(Bxy);
 
     // Evolving fields
@@ -1713,16 +1715,16 @@ public:
     // Vorticity equation
 
     // Grad j term
-    // ddt(U) = SQ(tokamak_coordinates_factory.get_Bxy()) * b0xGrad_dot_Grad(Psi, J0, CELL_CENTRE);
+    // ddt(U) = SQ(tokamak_coordinates_factory.Bxy()) * b0xGrad_dot_Grad(Psi, J0, CELL_CENTRE);
 
     // if (include_rmp) {
-    //   ddt(U) += SQ(tokamak_coordinates_factory.get_Bxy()) * b0xGrad_dot_Grad(rmp_Psi, J0, CELL_CENTRE);
+    //   ddt(U) += SQ(tokamak_coordinates_factory.Bxy()) * b0xGrad_dot_Grad(rmp_Psi, J0, CELL_CENTRE);
     // }
 
     ddt(U) += b0xcv * Grad(P); // curvature term
 
     // if (!nogradparj) { // Parallel current term
-    //   ddt(U) -= SQ(tokamak_coordinates_factory.get_Bxy()) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
+    //   ddt(U) -= SQ(tokamak_coordinates_factory.Bxy()) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
     // }
 
     if (withflow && K_H_term) { // K_H_term

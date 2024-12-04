@@ -90,12 +90,12 @@ public:
     return coord;
   }
 
-  const Field2D& get_Rxy() const { return Rxy_m; }
-  const Field2D& get_Bpxy() const { return Bpxy_m; }
-  const Field2D& get_Btxy() const { return Btxy_m; }
-  const Field2D& get_Bxy() const { return Bxy_m; }
-  const Field2D& get_hthe() const { return hthe_m; }
-  const FieldMetric& get_ShearFactor() const { return ShearFactor_m; }
+  const Field2D& Rxy() const { return Rxy_m; }
+  const Field2D& Bpxy() const { return Bpxy_m; }
+  const Field2D& Btxy() const { return Btxy_m; }
+  const Field2D& Bxy() const { return Bxy_m; }
+  const Field2D& hthe() const { return hthe_m; }
+  const FieldMetric& ShearFactor() const { return ShearFactor_m; }
 };
 
 #endif //BOUT_TOKAMAK_COORDINATES_FACTORY_HXX
