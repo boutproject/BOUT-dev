@@ -949,6 +949,20 @@ Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\p
         deref(self.cobj).setCoef{{ coeff }}({{ coeff }}.cobj[0])
 {% endfor %}
 
+    def __dealloc__(self):
+        self._boutpp_dealloc()
+
+    def _boutpp_dealloc(self):
+        if self.cobj and self.isSelfOwned:
+            self.cobj.release()
+
+cdef class FieldFactory:
+    cdef c.FieldFactory * cobj
+    def __init__(self):
+        checkInit()
+        cobj=< c.FieldFactory*>0
+    def __dealloc__(self):
+        self._boutpp_dealloc()
 
 {{ class("FieldFactory", defaultSO=False) }}
 
