@@ -183,14 +183,12 @@ public:
     return std::end(getRegion("RGN_ALL"));
   };
 
-  BoutReal& BOUT_HOST_DEVICE operator[](const Ind2D& d) { return data[d.ind]; }
-  const BoutReal& BOUT_HOST_DEVICE operator[](const Ind2D& d) const {
-    return data[d.ind];
-  }
-  BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D& d);
+  BoutReal& operator[](const Ind2D& d) { return data[d.ind]; }
+  const BoutReal& operator[](const Ind2D& d) const { return data[d.ind]; }
+  BoutReal& operator[](const Ind3D& d);
   // const BoutReal&  operator[](const Ind3D &d) const;
 
-  const BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D& d) const;
+  const BoutReal& operator[](const Ind3D& d) const;
   /*!
    * Access to the underlying data array.
    *
@@ -199,7 +197,7 @@ public:
    * If CHECK > 2 then both \p jx and \p jy are bounds checked. This will
    * significantly reduce performance.
    */
-  BOUT_HOST_DEVICE inline BoutReal& operator()(int jx, int jy) {
+  inline BoutReal& operator()(int jx, int jy) {
 #if CHECK > 2 && !BOUT_HAS_CUDA
     if (!isAllocated()) {
       throw BoutException("Field2D: () operator on empty data");
@@ -213,7 +211,7 @@ public:
 
     return data[jx * ny + jy];
   }
-  BOUT_HOST_DEVICE inline const BoutReal& operator()(int jx, int jy) const {
+  inline const BoutReal& operator()(int jx, int jy) const {
 #if CHECK > 2 && !BOUT_HAS_CUDA
     if (!isAllocated()) {
       throw BoutException("Field2D: () operator on empty data");
@@ -232,10 +230,8 @@ public:
    * DIrect access to underlying array. This version is for compatibility
    * with Field3D objects
    */
-  BOUT_HOST_DEVICE BoutReal& operator()(int jx, int jy, int UNUSED(jz)) {
-    return operator()(jx, jy);
-  }
-  BOUT_HOST_DEVICE const BoutReal& operator()(int jx, int jy, int UNUSED(jz)) const {
+  BoutReal& operator()(int jx, int jy, int UNUSED(jz)) { return operator()(jx, jy); }
+  const BoutReal& operator()(int jx, int jy, int UNUSED(jz)) const {
     return operator()(jx, jy);
   }
 
@@ -357,7 +353,7 @@ inline Field2D DC(const Field2D& f) { return f; }
 /// Returns a reference to the time-derivative of a field \p f
 ///
 /// Wrapper around member function f.timeDeriv()
-BOUT_HOST_DEVICE inline Field2D& ddt(Field2D& f) { return *(f.timeDeriv()); }
+inline Field2D& ddt(Field2D& f) { return *(f.timeDeriv()); }
 
 /// toString template specialisation
 /// Defined in utils.hxx

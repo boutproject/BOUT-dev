@@ -233,7 +233,7 @@ CELL_LOC FieldData::getLocation() const {
   return location;
 }
 
-BOUT_HOST_DEVICE Coordinates* FieldData::getCoordinates() const {
+Coordinates* FieldData::getCoordinates() const {
   auto fieldCoordinates_shared = fieldCoordinates.lock();
   if (fieldCoordinates_shared) {
     return fieldCoordinates_shared.get();
@@ -242,7 +242,7 @@ BOUT_HOST_DEVICE Coordinates* FieldData::getCoordinates() const {
   return fieldCoordinates.lock().get();
 }
 
-BOUT_HOST_DEVICE Coordinates* FieldData::getCoordinates(CELL_LOC loc) const {
+Coordinates* FieldData::getCoordinates(CELL_LOC loc) const {
   if (loc == CELL_DEFAULT) {
     return getCoordinates();
   }

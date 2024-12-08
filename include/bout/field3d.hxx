@@ -205,7 +205,7 @@ public:
    * The first time this is called, a new field will be
    * allocated. Subsequent calls return the same field
    */
-  BOUT_HOST_DEVICE Field3D* timeDeriv();
+  Field3D* timeDeriv();
 
   /*!
    * Return the number of nx points
@@ -330,16 +330,14 @@ public:
     return std::end(getRegion("RGN_ALL"));
   };
 
-  BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D& d) { return data[d.ind]; }
-  const BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D& d) const {
-    return data[d.ind];
-  }
+  BoutReal& operator[](const Ind3D& d) { return data[d.ind]; }
+  const BoutReal& operator[](const Ind3D& d) const { return data[d.ind]; }
 
-  BoutReal& BOUT_HOST_DEVICE operator()(const IndPerp& d, int jy);
-  const BoutReal& BOUT_HOST_DEVICE operator()(const IndPerp& d, int jy) const;
+  BoutReal& operator()(const IndPerp& d, int jy);
+  const BoutReal& operator()(const IndPerp& d, int jy) const;
 
-  BoutReal& BOUT_HOST_DEVICE operator()(const Ind2D& d, int jz);
-  const BoutReal& BOUT_HOST_DEVICE operator()(const Ind2D& d, int jz) const;
+  BoutReal& operator()(const Ind2D& d, int jz);
+  const BoutReal& operator()(const Ind2D& d, int jz) const;
 
   /*!
    * Direct access to the underlying data array
@@ -636,7 +634,7 @@ inline void invalidateGuards(Field3D& UNUSED(var)) {}
 /// Returns a reference to the time-derivative of a field \p f
 ///
 /// Wrapper around member function f.timeDeriv()
-BOUT_HOST_DEVICE inline Field3D& ddt(Field3D& f) { return *(f.timeDeriv()); }
+inline Field3D& ddt(Field3D& f) { return *(f.timeDeriv()); }
 
 /// toString template specialisation
 /// Defined in utils.hxx
