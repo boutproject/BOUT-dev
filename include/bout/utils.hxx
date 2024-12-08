@@ -426,7 +426,7 @@ inline T SQ(const T& t) {
   return t * t;
 }
 
-template<>
+template <>
 BOUT_HOST_DEVICE inline BoutReal SQ(const BoutReal& t) {
   return t * t;
 }

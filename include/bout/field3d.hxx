@@ -331,9 +331,7 @@ public:
   };
 
   BoutReal& operator[](const Ind3D& d) { return data[d.ind]; }
-  const BoutReal& operator[](const Ind3D& d) const {
-    return data[d.ind];
-  }
+  const BoutReal& operator[](const Ind3D& d) const { return data[d.ind]; }
 
   BoutReal& operator()(const IndPerp& d, int jy);
   const BoutReal& operator()(const IndPerp& d, int jy) const;
