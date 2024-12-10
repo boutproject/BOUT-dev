@@ -259,12 +259,11 @@ cdef class {{ field.field_type }}(BOUTppBase):
         f.setAll(data, ignoreDataType=ignoreDataType)
         return f
 
-    def __cinit__(self,{{ field.field_type }} obj=None):
+    def __cinit__(self, {{ field.field_type }} obj=None):
         self.cobj = NULL
         if obj:
             self.cobj = obj.cobj
-        self.isSelfOwned=True
-        super().__cinit__()
+        self.isSelfOwned = True
 
     def set(self, data, ignoreDataType=False):
         """
