@@ -28,10 +28,8 @@ cdef class BOUTppBase:
     Base class that provides some mechanism for deallocation
     """
     cdef c.bool _is_freed
-    cdef c.bool _is_init
-    def __cinit__(self, c.bool init=True):
+    def __cinit__(self, *args, **kwargs):
         self._is_freed = False
-        self._is_init = init
 
     def _boutpp_dealloc(self):
         self._is_freed = True
