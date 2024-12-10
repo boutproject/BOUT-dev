@@ -16,11 +16,49 @@ from cython.operator import dereference as deref
 import numbers
 import sys
 import gc
+from time import sleep
 
 size_t = np.uint
 
 cdef extern from "boutexception_helper.hxx":
-     cdef void raise_bout_py_error()
+    cdef void raise_bout_py_error()
+
+cdef class BOUTppBase:
+    """
+    Base class that provides some mechanism for deallocation
+    """
+    cdef c.bool _is_freed
+    cdef c.bool _is_init
+    def __cinit__(self, c.bool init=True):
+        self._is_freed = False
+        self._is_init = init
+
+    def _boutpp_dealloc(self):
+        self._is_freed = True
+
+    def _boutpp_wait_freed(self):
+        while not self._is_freed:
+            sleep(0.001)
+
+{% macro dealloc(self=False, uniquePtr=False) %}
+    def __dealloc__(self):
+        self._boutpp_dealloc()
+
+    def _boutpp_dealloc(self):
+{% if self %}
+        if self.isSelfOwned and self.cobj != NULL:
+{% else %}
+        if self.cobj != NULL:
+{% endif %}
+{% if uniquePtr %}
+            self.cobj.release()
+{% else %}
+            del self.cobj
+            self.cobj = NULL
+{% endif %}
+        super()._boutpp_dealloc()
+{% endmacro %}
+
 {% for field in fields %}
 
 cdef extern from "helper.h":
@@ -60,7 +98,7 @@ cdef {{ field.field_type }} {{ field.fdd }}FromPtr(c.{{ field.field_type }}* i):
     f.isSelfOwned = False
     return f
 
-cdef class {{ field.field_type }}:
+cdef class {{ field.field_type }}(BOUTppBase):
     """
     The {{ field.field_type }} class
     """
@@ -228,6 +266,7 @@ cdef class {{ field.field_type }}:
         if obj:
             self.cobj = obj.cobj
         self.isSelfOwned=True
+        super().__cinit__()
 
     def set(self, data, ignoreDataType=False):
         """
@@ -582,23 +621,18 @@ cdef class {{ field.field_type }}:
             self.cobj.{{ boundaryMethod }}()
 
 {% endfor %}
-    def __dealloc__(self):
-        self._boutpp_dealloc()
-
-    def _boutpp_dealloc(self):
-        if self.isSelfOwned and self.cobj != NULL:
-            del self.cobj
-            self.cobj = NULL
+{{ dealloc(True) }}
 
     @property
     def shape(self):
         return {{ field.makelist("self.cobj.getN$d()") }}
 {% endfor %}
+
 {% for vec in vecs %}
 cdef extern from "helper.h":
     c.{{ vec.field }} c_mul_{{ vec }}_{{ vec }}(c.{{ vec }} *, c.{{ vec }} *) except +
 
-cdef class {{ vec }}:
+cdef class {{ vec }}(BOUTppBase):
     """
     {{ vec }} class
 
@@ -642,16 +676,7 @@ cdef class {{ vec }}:
 {% endfor %}
         return data_
 
-
-
-    def __dealloc__(self):
-        self._boutpp_dealloc()
-
-    def _boutpp_dealloc(self):
-        if self.isSelfOwned and self.cobj != NULL:
-            del self.cobj
-            self.cobj=NULL
-
+{{ dealloc(True) }}
 
 cdef {{ vec }} {{ vec.vdd }}FromObj(c.{{ vec }} i):
     v={{ vec }}()
@@ -667,7 +692,7 @@ cdef extern from "helper.h":
     c.Field3D c_Grad_perp_dot_Grad_perp(c.Field3D,c.Field3D);
     void c_mesh_normalise(c.Mesh* , double)
 
-cdef class Mesh:
+cdef class Mesh(BOUTppBase):
     """
     Mesh class
 
@@ -741,13 +766,7 @@ cdef class Mesh:
         msh.isSelfOwned = False
         return msh
 
-    def __dealloc__(self):
-        self._boutpp_dealloc()
-
-    def _boutpp_dealloc(self):
-        if self.cobj and self.isSelfOwned:
-            del self.cobj
-            self.cobj = NULL
+{{ dealloc(True) }}
 
     cdef getFactory(self):
         """
@@ -822,7 +841,7 @@ cdef Coordinates coordsFromPtr(c.Coordinates * obj):
     coords.isSelfOwned = False
     return coords
 
-cdef class Coordinates:
+cdef class Coordinates(BOUTppBase):
     """
     Contains information about geometry, such as metric tensors
     """
@@ -849,15 +868,9 @@ cdef class Coordinates:
         self.{{f}} = {{ metric_field.fdd }}FromPtr(&self.cobj.{{f}})
 {% endfor %}
 
-    def __dealloc__(self):
-        self._boutpp_dealloc()
+{{ dealloc(True) }}
 
-    def _boutpp_dealloc(self):
-        if self.cobj and self.isSelfOwned:
-            del self.cobj
-            self.cobj = NULL
-
-cdef class Laplacian:
+cdef class Laplacian(BOUTppBase):
     """
     Laplacian inversion solver
 
@@ -867,7 +880,7 @@ cdef class Laplacian:
     """
     cdef unique_ptr[c.Laplacian] cobj
     cdef c.bool isSelfOwned
-    def __init__(self,section=None):
+    def __init__(self, section=None):
         """
         Initialiase a Laplacian solver
 
@@ -882,7 +895,8 @@ cdef class Laplacian:
         else:
            self.cobj = c.Laplacian.create(NULL)
         self.isSelfOwned = True
-    def solve(self,Field3D x, Field3D guess):
+
+    def solve(self, Field3D x, Field3D guess):
         """
         Calculate the Laplacian inversion
 
@@ -925,18 +939,15 @@ cdef class Laplacian:
         deref(self.cobj).setCoef{{ coeff }}({{ coeff }}.cobj[0])
 {% endfor %}
 
-cdef class FieldFactory:
+{{ dealloc(True, uniquePtr=True) }}
+
+cdef class FieldFactory(BOUTppBase):
     cdef c.FieldFactory * cobj
     def __init__(self):
         checkInit()
         cobj=< c.FieldFactory*>0
-    def __dealloc__(self):
-        self._boutpp_dealloc()
 
-    def _boutpp_dealloc(self):
-        if self.cobj != NULL:
-            del self.cobj
-            self.cobj = NULL
+{{ dealloc() }}
 
 cdef void callback(void * parameter, void * method) with gil:
     cdef double time = (<double*>parameter)[0]
@@ -953,7 +964,7 @@ cdef void callback(void * parameter, void * method) with gil:
 
 ctypedef void (*Method)(void *param)
 
-cdef class PythonModelCallback:
+cdef class PythonModelCallback(BOUTppBase):
     """Needed for callbacks from C++ to python"""
     cdef c.PythonModelCallback * cobj
 
@@ -963,21 +974,16 @@ cdef class PythonModelCallback:
         # "method"   :: The effective method passed by the Python user
         checkInit()
         self.cobj = new c.PythonModelCallback(callback, <void*>method)
+        self.__cinit__()
 
-    def __dealloc__(self):
-        self._boutpp_dealloc()
-
-    def _boutpp_dealloc(self):
-        if self.cobj:
-            del self.cobj
-            self.cobj = NULL
+{{ dealloc() }}
 
     cpdef void execute(self, parameter):
         # "parameter" :: The parameter to be passed to the "method"
         self.cobj.cy_execute(<void*>parameter)
 
 
-cdef class PhysicsModelBase(object):
+cdef class PhysicsModelBase(BOUTppBase):
     """The PhysicsModelBase in python - better use the PhysicsModel class"""
     cdef c.PythonModel * cmodel
     cdef c.PythonModelCallback * callback
@@ -1049,6 +1055,7 @@ cdef class PhysicsModelBase(object):
             del self.callback
             del self.callbackinit
             self.cmodel = <c.PythonModel *> 0
+        super()._boutpp_dealloc()
 
 class PhysicsModel(PhysicsModelBase):
     """
@@ -1121,10 +1128,10 @@ class PhysicsModel(PhysicsModelBase):
         pass
 
     def __dealloc__(self):
-        super(PhysicsModel,self).__dealloc__()
+        super().__dealloc__()
 
     def _boutpp_dealloc(self):
-        super(PhysicsModel,self)._boutpp_dealloc()
+        super()._boutpp_dealloc()
 
 cdef extern from "bout/bout.hxx":
     int BoutInitialise(int&, char **&) except +raise_bout_py_error
@@ -1199,9 +1206,11 @@ def finalise():
     wasInit = _isInit
     _isInit = False
     objects = gc.get_objects()
-    ourClasses = (Coordinates, Field2D, Field3D, Mesh, Options,
-                  PhysicsModel, PhysicsModelBase, Vector2D, Vector3D,
-                  PythonModelCallback)
+    ourClasses = (
+        Field2D, Field3D, Vector2D, Vector3D, Mesh, Coordinates,
+        Laplacian, FieldFactory, PythonModelCallback, PhysicsModel,
+        PhysicsModelBase, PythonModelCallback, Options, BOUTppBase,
+    )
     for obj in objects:
         if isinstance(obj, ourClasses):
             if hasattr(obj, "_boutpp_dealloc"):
@@ -1211,6 +1220,16 @@ def finalise():
                     if isinstance(obj, ourClass):
                         if hasattr(ourClass, "_boutpp_dealloc"):
                             ourClass._boutpp_dealloc(obj)
+                            break
+    for obj in objects:
+        if isinstance(obj, ourClasses):
+            if hasattr(obj, "_boutpp_wait_dealloc"):
+                obj._boutpp_wait_dealloc()
+            else:
+                for ourClass in ourClasses:
+                    if isinstance(obj, ourClass):
+                        if hasattr(ourClass, "_boutpp_wait_dealloc"):
+                            ourClass._boutpp_wait_dealloc(obj)
                             break
     del objects
     # Actually finalise
@@ -1522,7 +1541,7 @@ def setOption(name, value, source="PyInterface", force=False):
     root = Options.root()
     root.set(name, value, source, force)
 
-cdef class Options:
+cdef class Options(BOUTppBase):
     """
     The Options class
     """
@@ -1725,13 +1744,7 @@ cdef class Options:
         cdef c.Options* opt = self.cobj
         opt.setConditionallyUsed()
 
-    def __dealloc__(self):
-        self._boutpp_dealloc()
-
-    def _boutpp_dealloc(self):
-        if self.isSelfOwned and self.cobj != NULL:
-            del self.cobj
-            self.cobj = NULL
+{{ dealloc(True) }}
 
 def writeDefaultOutputFile(options: Options):
     c.writeDefaultOutputFile(deref(options.cobj))
