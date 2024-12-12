@@ -1,3 +1,5 @@
+#!/bin/python3
+
 import os  # corelib
 import glob  # corelib
 import hashlib  # corelib
