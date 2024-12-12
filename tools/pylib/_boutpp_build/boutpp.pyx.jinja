@@ -15,19 +15,15 @@ from libcpp.memory cimport unique_ptr
 from cython.operator import dereference as deref
 import numbers
 import sys
-import gc
 from time import sleep
+import weakref
+
+_allobjects = []
 
 size_t = np.uint
 
 cdef extern from "boutexception_helper.hxx":
     cdef void raise_bout_py_error()
-
-{% macro wait() %}
-    def _boutpp_wait_freed(self):
-        while not self._is_freed:
-            sleep(0.001)
-{% endmacro %}
 
 {% macro dealloc(extra_dealloc='', uniquePtr=False) %}
     def __dealloc__(self):
@@ -43,7 +39,6 @@ cdef extern from "boutexception_helper.hxx":
             self.cobj = NULL
 {% endif %}
 
-{{ wait() }}
 {% endmacro %}
 
 {% macro class(name, init="", extra_dealloc="", defaultSO=True, data="", uniquePtr=False, init_args="*args, **kwargs",
@@ -58,10 +53,11 @@ cdef class {{ name }}{{ "(" ~ base ~ ")" if base else "" }}:
     """
     cdef {{ "unique_ptr[c." ~ name ~ "]" if uniquePtr else "c." ~ name ~ "* " }} cobj
     cdef c.bool isSelfOwned
-    cdef c.bool _is_freed
+    cdef object __weakref__
     {{ data | indent }}
     def __cinit__(self, {{ init_args}}):
-        self._is_freed = False
+        global _allobjects
+        _allobjects.append(weakref.ref(self))
 {% if not uniquePtr and cobj %}
         self.isSelfOwned = {{ defaultSO }}
         self.cobj = NULL
@@ -939,14 +935,15 @@ cdef class PythonModelCallback:
     Needed for callbacks from C++ to python
     """
     cdef c.PythonModelCallback * cobj
-    cdef c.bool _is_freed
     cdef c.bool isSelfOwned
+    cdef object __weakref__
 
     def __cinit__(self, method):
         # "callback" :: The pattern/converter method to fire a Python
         #               object method from C typed infos
         # "method"   :: The effective method passed by the Python user
-        self._is_freed = False
+        global _allobjects
+        _allobjects.append(weakref.ref(self))
         self.isSelfOwned = True
         checkInit()
         self.cobj = new c.PythonModelCallback(callback, <void*>method)
@@ -965,16 +962,17 @@ cdef class PhysicsModelBase:
     cdef c.PythonModelCallback * callback
     cdef c.PythonModelCallback * callbackinit
     cdef c.bool _done_pyinit
-    cdef c.bool _is_freed
     cdef c.bool isSelfOwned
+    cdef object __weakref__
 
     def __cinit__(self):
         checkInit()
+        global _allobjects
+        _allobjects.append(weakref.ref(self))
         self.cmodel = new c.PythonModel()
         self.callback = NULL
         self.callbackinit = NULL
         self._done_pyinit = False
-        self._is_freed = False
         self.isSelfOwned = True
 
     def solve(self):
@@ -1037,9 +1035,6 @@ cdef class PhysicsModelBase:
             del self.callback
             del self.callbackinit
             self.cmodel = <c.PythonModel *> 0
-        self._is_freed = True
-
-{{ wait() }}
 
 
 class PhysicsModel(PhysicsModelBase):
@@ -1181,34 +1176,25 @@ def finalise():
     global _isInit
     wasInit = _isInit
     _isInit = False
-    objects = gc.get_objects()
+    objects = _allobjects #gc.get_objects()
     ourClasses = (
         Field2D, Field3D, Vector2D, Vector3D, Mesh, Coordinates,
         Laplacian, FieldFactory, PythonModelCallback, PhysicsModel,
         PhysicsModelBase, PythonModelCallback, Options,
     )
-    for obj in objects:
-        if isinstance(obj, ourClasses):
-            if hasattr(obj, "_boutpp_dealloc"):
-                obj._boutpp_dealloc()
-            else:
-                for ourClass in ourClasses:
-                    if isinstance(obj, ourClass):
-                        if hasattr(ourClass, "_boutpp_dealloc"):
-                            ourClass._boutpp_dealloc(obj)
-                            break
-    for obj in objects:
-        if isinstance(obj, ourClasses):
-            if hasattr(obj, "_boutpp_wait_freed"):
-                obj._boutpp_wait_freed()
-            else:
-                for ourClass in ourClasses:
-                    if isinstance(obj, ourClass):
-                        if hasattr(ourClass, "_boutpp_wait_freed"):
-                            ourClass._boutpp_wait_freed(obj)
-                            break
-                        else:
-                            print(f"{obj} of type {ourClass} cannot wait!")
+    for objr in objects:
+        obj = objr()
+        if obj is None:
+            continue
+        if hasattr(obj, "_boutpp_dealloc"):
+            obj._boutpp_dealloc()
+        else:
+            for ourClass in ourClasses:
+                if isinstance(obj, ourClass):
+                    if hasattr(ourClass, "_boutpp_dealloc"):
+                        ourClass._boutpp_dealloc(obj)
+                        break
+
     del objects
     # Actually finalise
     if wasInit:
