@@ -370,4 +370,7 @@ if __name__ == "__main__":
     import sys
 
     for todo in sys.argv[1:]:
+        if todo not in todos:
+            help()
+            sys.exit(1)
         todos[todo]()
