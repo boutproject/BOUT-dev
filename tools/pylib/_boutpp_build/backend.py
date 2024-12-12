@@ -350,12 +350,19 @@ def help():
         print(fmt % row)
 
 
+def printVersion():
+    """
+    print the version
+    """
+    print(getversion())
+
+
 todos = dict(
     nightly=nightly,
     sdist=sdist,
     wheel=wheel,
     dist=dist,
-    version=lambda: print(getversion()),
+    version=printVersion,
     help=help,
 )
 todos.update(
