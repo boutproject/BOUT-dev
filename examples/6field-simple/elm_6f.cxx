@@ -904,8 +904,7 @@ protected:
         q95 = q95_input; // use a constant for test
       } else {
         if (local_q) {
-          q95 = abs(tokamak_coordinates.hthe()
-                    * tokamak_coordinates.Btxy()
+          q95 = abs(tokamak_coordinates.hthe() * tokamak_coordinates.Btxy()
                     / tokamak_coordinates.Bpxy())
                 * q_alpha;
         } else {
@@ -1021,7 +1020,6 @@ protected:
       dump.add(eta, "eta", 0);
     }
 
-
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
     if (!mesh->IncIntShear) {
@@ -1057,8 +1055,14 @@ protected:
 
     V0eff.covariant = false;
     V0eff.x = 0.;
-    V0eff.y = -(tokamak_coordinates.Btxy() / (tokamak_coordinates.Bxy() * tokamak_coordinates.Bxy())) * (Vp0 * tokamak_coordinates.Btxy() - Vt0 * tokamak_coordinates.Bpxy()) / tokamak_coordinates.hthe();
-    V0eff.z = (tokamak_coordinates.Bpxy() / (tokamak_coordinates.Bxy() * tokamak_coordinates.Bxy())) * (Vp0 * tokamak_coordinates.Btxy() - Vt0 * tokamak_coordinates.Bpxy()) / tokamak_coordinates.Rxy();
+    V0eff.y = -(tokamak_coordinates.Btxy()
+                / (tokamak_coordinates.Bxy() * tokamak_coordinates.Bxy()))
+              * (Vp0 * tokamak_coordinates.Btxy() - Vt0 * tokamak_coordinates.Bpxy())
+              / tokamak_coordinates.hthe();
+    V0eff.z = (tokamak_coordinates.Bpxy()
+               / (tokamak_coordinates.Bxy() * tokamak_coordinates.Bxy()))
+              * (Vp0 * tokamak_coordinates.Btxy() - Vt0 * tokamak_coordinates.Bpxy())
+              / tokamak_coordinates.Rxy();
 
     Pe.setBoundary("P");
     Pi.setBoundary("P");
@@ -1364,13 +1368,16 @@ protected:
       ddt(Psi) = 0.0;
 
       if (spitzer_resist) {
-        ddt(Psi) = -Grad_parP(tokamak_coordinates.Bxy() * phi) / tokamak_coordinates.Bxy() - eta_spitzer * Jpar;
+        ddt(Psi) = -Grad_parP(tokamak_coordinates.Bxy() * phi) / tokamak_coordinates.Bxy()
+                   - eta_spitzer * Jpar;
       } else {
-        ddt(Psi) = -Grad_parP(tokamak_coordinates.Bxy() * phi) / tokamak_coordinates.Bxy() - eta * Jpar;
+        ddt(Psi) = -Grad_parP(tokamak_coordinates.Bxy() * phi) / tokamak_coordinates.Bxy()
+                   - eta * Jpar;
       }
 
       if (diamag) {
-        ddt(Psi) -= bracket(tokamak_coordinates.Bxy() * phi0, Psi, bm_exb); // Equilibrium flow
+        ddt(Psi) -=
+            bracket(tokamak_coordinates.Bxy() * phi0, Psi, bm_exb); // Equilibrium flow
       }
 
       // Hyper-resistivity
@@ -1387,14 +1394,16 @@ protected:
 
       ddt(U) = 0.0;
 
-      ddt(U) = -SQ(tokamak_coordinates.Bxy()) * bracket(Psi, J0, bm_mag) * tokamak_coordinates.Bxy(); // Grad j term
+      ddt(U) = -SQ(tokamak_coordinates.Bxy()) * bracket(Psi, J0, bm_mag)
+               * tokamak_coordinates.Bxy(); // Grad j term
 
       ddt(U) += 2.0 * Upara1 * b0xcv * Grad(P); // curvature term
 
       ddt(U) += SQ(tokamak_coordinates.Bxy()) * Grad_parP(Jpar); // b dot grad j
 
       if (diamag) {
-        ddt(U) -= bracket(tokamak_coordinates.Bxy() * phi0, U, bm_exb); // Equilibrium flow
+        ddt(U) -=
+            bracket(tokamak_coordinates.Bxy() * phi0, U, bm_exb); // Equilibrium flow
       }
 
       if (nonlinear) {
@@ -1453,7 +1462,8 @@ protected:
       ddt(Ni) -= bracket(tokamak_coordinates.Bxy() * phi, N0, bm_exb);
 
       if (diamag) {
-        ddt(Ni) -= bracket(tokamak_coordinates.Bxy() * phi0, Ni, bm_exb); // Equilibrium flow
+        ddt(Ni) -=
+            bracket(tokamak_coordinates.Bxy() * phi0, Ni, bm_exb); // Equilibrium flow
       }
 
       if (nonlinear) {
@@ -1461,7 +1471,8 @@ protected:
       }
 
       if (compress0) {
-        ddt(Ni) -= N0 * tokamak_coordinates.Bxy() * Grad_parP(Vipar / tokamak_coordinates.Bxy());
+        ddt(Ni) -=
+            N0 * tokamak_coordinates.Bxy() * Grad_parP(Vipar / tokamak_coordinates.Bxy());
       }
 
       // 4th order Parallel diffusion terms
@@ -1483,7 +1494,8 @@ protected:
       ddt(Ti) -= bracket(tokamak_coordinates.Bxy() * phi, Ti0, bm_exb);
 
       if (diamag) {
-        ddt(Ti) -= bracket(phi0 * tokamak_coordinates.Bxy(), Ti, bm_exb); // Equilibrium flow
+        ddt(Ti) -=
+            bracket(phi0 * tokamak_coordinates.Bxy(), Ti, bm_exb); // Equilibrium flow
       }
 
       if (nonlinear) {
@@ -1491,7 +1503,8 @@ protected:
       }
 
       if (compress0) {
-        ddt(Ti) -= 2.0 / 3.0 * Ti0 * tokamak_coordinates.Bxy() * Grad_parP(Vipar / tokamak_coordinates.Bxy());
+        ddt(Ti) -= 2.0 / 3.0 * Ti0 * tokamak_coordinates.Bxy()
+                   * Grad_parP(Vipar / tokamak_coordinates.Bxy());
       }
 
       if (diffusion_par > 0.0) {
@@ -1519,7 +1532,8 @@ protected:
       ddt(Te) -= bracket(tokamak_coordinates.Bxy() * phi, Te0, bm_exb);
 
       if (diamag) {
-        ddt(Te) -= bracket(tokamak_coordinates.Bxy() * phi0, Te, bm_exb); // Equilibrium flow
+        ddt(Te) -=
+            bracket(tokamak_coordinates.Bxy() * phi0, Te, bm_exb); // Equilibrium flow
       }
 
       if (nonlinear) {
@@ -1527,7 +1541,8 @@ protected:
       }
 
       if (compress0) {
-        ddt(Te) -= 2.0 / 3.0 * Te0 * tokamak_coordinates.Bxy() * Grad_parP(Vepar / tokamak_coordinates.Bxy());
+        ddt(Te) -= 2.0 / 3.0 * Te0 * tokamak_coordinates.Bxy()
+                   * Grad_parP(Vepar / tokamak_coordinates.Bxy());
       }
 
       if (diffusion_par > 0.0) {

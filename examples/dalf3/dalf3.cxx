@@ -222,8 +222,7 @@ protected:
     b0xcv.z *= rho_s * rho_s;
 
     // Metrics
-    const auto& coord =
-        tokamak_coordinates.make_coordinates(noshear, rho_s, Bnorm);
+    const auto& coord = tokamak_coordinates.make_coordinates(noshear, rho_s, Bnorm);
 
     SOLVE_FOR3(Vort, Pe, Vpar);
     comms.add(Vort, Pe, Vpar);

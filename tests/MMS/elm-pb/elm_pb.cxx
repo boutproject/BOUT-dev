@@ -9,7 +9,6 @@
  *
  *******************************************************************************/
 
-#include <bout/tokamak_coordinates.hxx>
 #include <bout/constants.hxx>
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
@@ -19,6 +18,7 @@
 #include <bout/msg_stack.hxx>
 #include <bout/physicsmodel.hxx>
 #include <bout/sourcex.hxx>
+#include <bout/tokamak_coordinates.hxx>
 #include <bout/utils.hxx>
 
 #include <bout/field_factory.hxx>
@@ -123,7 +123,6 @@ private:
   FieldGroup comms;
 
   TokamakCoordinates tokamak_coordinates = TokamakCoordinates(*mesh);
-
 
   // Parallel gradient along perturbed field-line
   const Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) {

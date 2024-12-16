@@ -8,8 +8,8 @@
 
 #include <bout/derivs.hxx>
 #include <bout/field_factory.hxx>
-#include <bout/tokamak_coordinates.hxx>
 #include <bout/physicsmodel.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 class TokamakMMS : public PhysicsModel {
 public:
@@ -46,8 +46,7 @@ public:
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
     auto tokamak_coordinates = TokamakCoordinates(*mesh);
-    auto coords =
-        tokamak_coordinates.make_coordinates(true, Lnorm, Bnorm);
+    auto coords = tokamak_coordinates.make_coordinates(true, Lnorm, Bnorm);
   }
 
 private:

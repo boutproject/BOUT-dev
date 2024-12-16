@@ -171,8 +171,7 @@ protected:
     }
 
     auto tokamak_coordinates = TokamakCoordinates(*mesh);
-    const auto& coord =
-        tokamak_coordinates.make_coordinates(noshear, Lnorm, Bnorm);
+    const auto& coord = tokamak_coordinates.make_coordinates(noshear, Lnorm, Bnorm);
   }
 };
 

@@ -171,7 +171,6 @@ protected:
 
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
-
     auto tokamak_coordinates = TokamakCoordinates(*mesh);
     const auto& coord = tokamak_coordinates.make_coordinates(true, Lnorm, Bnorm);
   }

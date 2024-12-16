@@ -100,8 +100,7 @@ protected:
           hthe0 / rho_s);
     }
 
-    coord = tokamak_coordinates.make_coordinates(noshear, rho_s, bmag / 1e4,
-                                                         ShearFactor);
+    coord = tokamak_coordinates.make_coordinates(noshear, rho_s, bmag / 1e4, ShearFactor);
 
     if (ShiftXderivs) {
       b0xcv.z += tokamak_coordinates.ShearFactor() * b0xcv.x;

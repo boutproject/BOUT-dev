@@ -716,10 +716,10 @@ public:
     if (mesh->get(Lbar, "rmag") != 0) { // Typical length scale
       Lbar = 1.0;
     }
-    const auto& metric =
-        tokamak_coordinates.make_coordinates(noshear, Lbar, Bbar);
+    const auto& metric = tokamak_coordinates.make_coordinates(noshear, Lbar, Bbar);
 
-    V0 = -tokamak_coordinates.Rxy() * tokamak_coordinates.Bpxy() * Dphi0 / tokamak_coordinates.Bxy();
+    V0 = -tokamak_coordinates.Rxy() * tokamak_coordinates.Bpxy() * Dphi0
+         / tokamak_coordinates.Bxy();
 
     if (simple_rmp) {
       include_rmp = true;
@@ -943,7 +943,6 @@ public:
     b0xcv.y *= Lbar * Lbar;
     b0xcv.z *= Lbar * Lbar;
 
-
     if (constn0) {
       T0_fake_prof = false;
       n0_fake_prof = false;
@@ -1078,12 +1077,15 @@ public:
 
     V0net.covariant = false; // presentation for net flow
     V0net.x = 0.;
-    V0net.y =
-        tokamak_coordinates.Rxy() * tokamak_coordinates.Btxy() * tokamak_coordinates.Bpxy() / (tokamak_coordinates.hthe() * tokamak_coordinates.Bxy() * tokamak_coordinates.Bxy()) * Dphi0;
+    V0net.y = tokamak_coordinates.Rxy() * tokamak_coordinates.Btxy()
+              * tokamak_coordinates.Bpxy()
+              / (tokamak_coordinates.hthe() * tokamak_coordinates.Bxy()
+                 * tokamak_coordinates.Bxy())
+              * Dphi0;
     V0net.z = -Dphi0;
 
-    U0 = B0vec * Curl(V0net) / tokamak_coordinates
-               .Bxy(); // get 0th vorticity for Kelvin-Holmholtz term
+    U0 = B0vec * Curl(V0net)
+         / tokamak_coordinates.Bxy(); // get 0th vorticity for Kelvin-Holmholtz term
 
     /**************** SET EVOLVING VARIABLES *************/
 
@@ -1106,7 +1108,8 @@ public:
       SOLVE_FOR(Vpar);
       comms.add(Vpar);
 
-      beta = tokamak_coordinates.Bxy() * tokamak_coordinates.Bxy() / (0.5 + (tokamak_coordinates.Bxy() * tokamak_coordinates.Bxy() / (g * P0)));
+      beta = tokamak_coordinates.Bxy() * tokamak_coordinates.Bxy()
+             / (0.5 + (tokamak_coordinates.Bxy() * tokamak_coordinates.Bxy() / (g * P0)));
       gradparB = Grad_par(tokamak_coordinates.Bxy()) / tokamak_coordinates.Bxy();
 
       output.write("Beta in range {:e} -> {:e}\n", min(beta), max(beta));
@@ -1215,7 +1218,6 @@ public:
     if (mesh->IncIntShear) {
       // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
       metric->setIntShiftTorsion(tokamak_coordinates.ShearFactor());
-
     }
 
     return 0;
@@ -1653,12 +1655,12 @@ public:
 #endif
     };
 
-    // Terms which are not yet single index operators
-    // Note: Terms which are included in the single index loop
-    //       may be commented out here, to allow comparison/testing
+      // Terms which are not yet single index operators
+      // Note: Terms which are included in the single index loop
+      //       may be commented out here, to allow comparison/testing
 
-    ////////////////////////////////////////////////////
-    // Parallel electric field
+      ////////////////////////////////////////////////////
+      // Parallel electric field
 
 #if not EVOLVE_JPAR
     // Vector potential
@@ -1906,7 +1908,8 @@ public:
       ddt(Vpar) = -0.5 * (Grad_par(P, loc) + Grad_par(P0, loc));
 
       if (nonlinear) {
-        ddt(Vpar) -= bracket(interp_to(phi, loc), Vpar, bm_exb) * metric->Bxy(); // Advection
+        ddt(Vpar) -=
+            bracket(interp_to(phi, loc), Vpar, bm_exb) * metric->Bxy(); // Advection
       }
     }
 
@@ -1994,11 +1997,12 @@ public:
     }
 
     mesh->communicate(Jrhs, ddt(P));
-    
+
     Coordinates* metric = mesh->getCoordinates();
 
     Field3D U1 = ddt(U);
-    U1 += (gamma * metric->Bxy() * metric->Bxy()) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(P);
+    U1 += (gamma * metric->Bxy() * metric->Bxy()) * Grad_par(Jrhs, CELL_CENTRE)
+          + (gamma * b0xcv) * Grad(P);
 
     // Second matrix, solving Alfven wave dynamics
     static std::unique_ptr<InvertPar> invU{nullptr};

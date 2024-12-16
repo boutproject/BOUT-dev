@@ -10,11 +10,9 @@
 #include "bout/utils.hxx"
 #include "bout/vector2d.hxx"
 
-
 class TokamakCoordinates {
 
 private:
-
   Mesh& mesh_m;
   Field2D Rxy_m;
   Field2D Bpxy_m;
@@ -28,13 +26,11 @@ private:
 
   BoutReal get_sign_of_bp();
 
-
 public:
-
   TokamakCoordinates(Mesh& mesh);
 
   Coordinates* make_coordinates(const bool noshear, BoutReal Lbar, BoutReal Bbar,
-                                        BoutReal ShearFactor = 1.0);
+                                BoutReal ShearFactor = 1.0);
 
   const Field2D& Rxy() const { return Rxy_m; }
   const Field2D& Bpxy() const { return Bpxy_m; }
