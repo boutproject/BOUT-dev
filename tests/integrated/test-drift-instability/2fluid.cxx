@@ -4,7 +4,7 @@
  *******************************************************************************/
 
 #include <bout/physicsmodel.hxx>
-#include <bout/tokamak_coordinates_factory.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
@@ -59,7 +59,7 @@ class TwoFluid : public PhysicsModel {
 
   FieldGroup comms; // Group of variables for communications
 
-  TokamakCoordinatesFactory tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+  TokamakCoordinates tokamak_coordinates = TokamakCoordinates(*mesh);
 
   Coordinates* coord; // Coordinate system
 
@@ -134,7 +134,7 @@ protected:
     const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
     if (ShiftXderivs) {
       ShearFactor = 0.0; // I disappears from metric
-      b0xcv.z += tokamak_coordinates_factory.ShearFactor() * b0xcv.x;
+      b0xcv.z += tokamak_coordinates.ShearFactor() * b0xcv.x;
       noshear = true;
     }
 
@@ -193,8 +193,7 @@ protected:
     pei0 = (Ti0 + Te0) * Ni0;
     pe0 = Te0 * Ni0;
 
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, rho_s,
-                                                                 bmag / 1e4, ShearFactor);
+    coord = tokamak_coordinates.make_coordinates(noshear, rho_s, bmag / 1e4, ShearFactor);
 
     /**************** SET EVOLVING VARIABLES *************/
 

@@ -19,7 +19,7 @@
  ****************************************************************/
 
 #include <bout/physicsmodel.hxx>
-#include <bout/tokamak_coordinates_factory.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 #include <bout/interpolation.hxx>
 #include <bout/invert/laplacexy.hxx>
@@ -81,7 +81,7 @@ private:
   std::unique_ptr<LaplaceXY> laplacexy{nullptr};  // Laplacian solver in X-Y (n=0)
   Field2D phi2D; // Axisymmetric potential, used when split_n0=true
 
-  TokamakCoordinatesFactory tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+  TokamakCoordinates tokamak_coordinates = TokamakCoordinates(*mesh);
 
 protected:
   int init(bool UNUSED(restarting)) override {
@@ -162,7 +162,7 @@ protected:
 
     if (lowercase(ptstr) == "shifted") {
       // Dimits style, using local coordinate system
-      b0xcv.z += tokamak_coordinates_factory.ShearFactor() * b0xcv.x;
+      b0xcv.z += tokamak_coordinates.ShearFactor() * b0xcv.x;
       noshear = true;
     }
 
@@ -223,7 +223,7 @@ protected:
 
     // Metrics
     const auto& coord =
-        tokamak_coordinates_factory.make_tokamak_coordinates(noshear, rho_s, Bnorm);
+        tokamak_coordinates.make_coordinates(noshear, rho_s, Bnorm);
 
     SOLVE_FOR3(Vort, Pe, Vpar);
     comms.add(Vort, Pe, Vpar);

@@ -122,7 +122,7 @@ private:
   // Communication objects
   FieldGroup comms;
 
-  TokamakCoordinatesFactory tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+  TokamakCoordinates tokamak_coordinates = TokamakCoordinates(*mesh);
 
 
   // Parallel gradient along perturbed field-line
@@ -297,7 +297,7 @@ public:
       if (not mesh->IncIntShear) {
         // Dimits style, using local coordinate system
         if (include_curvature) {
-          b0xcv.z += tokamak_coordinates_factory.get_ShearFactor() * b0xcv.x;
+          b0xcv.z += tokamak_coordinates.get_ShearFactor() * b0xcv.x;
         }
       }
     }
@@ -390,7 +390,7 @@ public:
       noshear = true;
     }
 
-    coords = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, Lbar, Bbar);
+    coords = tokamak_coordinates.make_coordinates(noshear, Lbar, Bbar);
 
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
@@ -400,7 +400,7 @@ public:
     if (ShiftXderivs) {
       if (mesh->IncIntShear) {
         // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-        coord->setIntShiftTorsion(tokamak_coordinates_factory.get_ShearFactor());
+        coord->setIntShiftTorsion(tokamak_coordinates.get_ShearFactor());
       }
     }
 

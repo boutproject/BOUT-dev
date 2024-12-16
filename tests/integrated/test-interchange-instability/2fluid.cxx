@@ -3,7 +3,7 @@
  * Same as Maxim's version of BOUT - simplified 2-fluid for benchmarking
  *******************************************************************************/
 
-#include <bout/tokamak_coordinates_factory.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
@@ -34,7 +34,7 @@ class Interchange : public PhysicsModel {
 
   Coordinates* coord;
 
-  TokamakCoordinatesFactory tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+  TokamakCoordinates tokamak_coordinates = TokamakCoordinates(*mesh);
 
 protected:
   int init(bool UNUSED(restarting)) override {
@@ -100,11 +100,11 @@ protected:
           hthe0 / rho_s);
     }
 
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, rho_s,
-                                                                 bmag / 1e4, ShearFactor);
+    coord = tokamak_coordinates.make_coordinates(noshear, rho_s, bmag / 1e4,
+                                                         ShearFactor);
 
     if (ShiftXderivs) {
-      b0xcv.z += tokamak_coordinates_factory.ShearFactor() * b0xcv.x;
+      b0xcv.z += tokamak_coordinates.ShearFactor() * b0xcv.x;
     }
 
     /************** NORMALISE QUANTITIES *****************/

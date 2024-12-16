@@ -4,7 +4,7 @@
 #include <bout/invert/laplacexz.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>
-#include <bout/tokamak_coordinates_factory.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 /// Fundamental constants
 const BoutReal PI = 3.14159265;
@@ -172,9 +172,8 @@ protected:
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
 
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    const auto& coord =
-        tokamak_coordinates_factory.make_tokamak_coordinates(true, Lnorm, Bnorm);
+    auto tokamak_coordinates = TokamakCoordinates(*mesh);
+    const auto& coord = tokamak_coordinates.make_coordinates(true, Lnorm, Bnorm);
   }
 };
 
