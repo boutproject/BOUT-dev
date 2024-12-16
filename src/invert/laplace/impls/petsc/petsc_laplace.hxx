@@ -202,7 +202,7 @@ private:
   void Element(int i, int x, int z, int xshift, int zshift, PetscScalar ele, Mat& MatA);
   void Coeffs(int x, int y, int z, BoutReal& A1, BoutReal& A2, BoutReal& A3, BoutReal& A4,
               BoutReal& A5);
-
+  int getIndex(int x, int z);
   /* Ex and Ez
    * Additional 1st derivative terms to allow for solution field to be
    * components of a vector

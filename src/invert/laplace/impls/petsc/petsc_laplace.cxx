@@ -347,7 +347,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   checkFlags();
 #endif
 
-  int y = b.getIndex(); // Get the Y index
+  const int y = b.getIndex(); // Get the Y index
   sol.setIndex(y);      // Initialize the solution field.
   sol = 0.;
 
@@ -455,6 +455,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
           val = x0[x][z];
           VecSetValues(xs, 1, &i, &val, INSERT_VALUES);
 
+          ASSERT3(i == getIndex(x, z));
           i++; // Increment row in Petsc matrix
         }
       }
@@ -472,11 +473,11 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
         // Set the matrix coefficients
         Coeffs(x, y, z, A1, A2, A3, A4, A5);
 
-        BoutReal dx = coords->dx(x, y, z);
-        BoutReal dx2 = SQ(dx);
-        BoutReal dz = coords->dz(x, y, z);
-        BoutReal dz2 = SQ(dz);
-        BoutReal dxdz = dx * dz;
+        const BoutReal dx = coords->dx(x, y, z);
+        const BoutReal dx2 = SQ(dx);
+        const BoutReal dz = coords->dz(x, y, z);
+        const BoutReal dz2 = SQ(dz);
+        const BoutReal dxdz = dx * dz;
 
         ASSERT3(finite(A1));
         ASSERT3(finite(A2));
@@ -632,6 +633,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
         // Set Components of Trial Solution Vector
         val = x0[x][z];
         VecSetValues(xs, 1, &i, &val, INSERT_VALUES);
+        ASSERT3(i == getIndex(x, z));
         i++;
       }
     }
@@ -715,7 +717,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
           // INSERT_VALUES replaces existing entries with new values
           val = x0[x][z];
           VecSetValues(xs, 1, &i, &val, INSERT_VALUES);
-
+          ASSERT3(i == getIndex(x, z));
           i++; // Increment row in Petsc matrix
         }
       }
@@ -871,6 +873,33 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   return sol;
 }
 
+int LaplacePetsc::getIndex(const int x, const int z) {
+  // Need to convert LOCAL x to GLOBAL x in order to correctly calculate
+  // PETSC Matrix Index.
+  int xoffset = Istart / meshz;
+  if (Istart % meshz != 0) {
+    throw BoutException("Petsc index sanity check 3 failed");
+  }
+
+  // Calculate the row to be set
+  int row_new = x; // should never be out of range.
+  if (!localmesh->firstX()) {
+    row_new += (xoffset - localmesh->xstart);
+  }
+
+  // Calculate the column to be set
+  int col_new = z;
+  if (col_new < 0) {
+    col_new += meshz;
+  } else if (col_new > meshz - 1) {
+    col_new -= meshz;
+  }
+  ASSERT3(0 <= col_new and col_new < meshz);
+
+  // Convert to global indices
+  return (row_new * meshz) + col_new;
+}
+
 /*!
  * Sets the elements of the matrix A, which is used to solve the problem Ax=b.
  *
@@ -886,33 +915,10 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
  *
  * \param[out] MatA     The matrix A used in the inversion
  */
-void LaplacePetsc::Element(int i, int x, int z, int xshift, int zshift, PetscScalar ele,
-                           Mat& MatA) {
+void LaplacePetsc::Element(const int i, const int x, const int z, const int xshift,
+                           const int zshift, const PetscScalar ele, Mat& MatA) {
 
-  // Need to convert LOCAL x to GLOBAL x in order to correctly calculate
-  // PETSC Matrix Index.
-  int xoffset = Istart / meshz;
-  if (Istart % meshz != 0) {
-    throw BoutException("Petsc index sanity check 3 failed");
-  }
-
-  // Calculate the row to be set
-  int row_new = x + xshift; // should never be out of range.
-  if (!localmesh->firstX()) {
-    row_new += (xoffset - localmesh->xstart);
-  }
-
-  // Calculate the column to be set
-  int col_new = z + zshift;
-  if (col_new < 0) {
-    col_new += meshz;
-  } else if (col_new > meshz - 1) {
-    col_new -= meshz;
-  }
-
-  // Convert to global indices
-  int index = (row_new * meshz) + col_new;
-
+  const int index = getIndex(x + xshift, z + zshift);
 #if CHECK > 2
   if (!finite(ele)) {
     throw BoutException("Non-finite element at x={:d}, z={:d}, row={:d}, col={:d}\n", x,
