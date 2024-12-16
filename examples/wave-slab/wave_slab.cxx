@@ -11,14 +11,14 @@
  */
 
 #include <bout/physicsmodel.hxx>
-#include <bout/tokamak_coordinates_factory.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 class WaveTest : public PhysicsModel {
 public:
   int init(bool UNUSED(restarting)) {
 
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    const auto& coords = tokamak_coordinates_factory.make_tokamak_coordinates(true);
+    auto tokamak_coordinates = TokamakCoordinates(*mesh);
+    const auto& coords = tokamak_coordinates.make_coordinates(true);
 
     solver->add(f, "f");
     solver->add(g, "g");

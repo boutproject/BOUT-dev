@@ -1,6 +1,6 @@
 
-#ifndef BOUT_TOKAMAK_COORDINATES_FACTORY_HXX
-#define BOUT_TOKAMAK_COORDINATES_FACTORY_HXX
+#ifndef BOUT_TOKAMAK_COORDINATES_HXX
+#define BOUT_TOKAMAK_COORDINATES_HXX
 
 #include "bout.hxx"
 #include "bout/bout_types.hxx"
@@ -10,7 +10,7 @@
 #include "bout/utils.hxx"
 #include "bout/vector2d.hxx"
 
-class TokamakCoordinatesFactory {
+class TokamakCoordinates {
 
 private:
   Mesh& mesh_m;
@@ -34,7 +34,7 @@ private:
   }
 
 public:
-  TokamakCoordinatesFactory(Mesh& mesh) : mesh_m(mesh) {
+  TokamakCoordinates(Mesh& mesh) : mesh_m(mesh) {
 
     mesh.get(Rxy_m, "Rxy");
     //    mesh->get(Zxy, "Zxy");
@@ -53,7 +53,7 @@ public:
     return 1.0;
   }
 
-  Coordinates* make_tokamak_coordinates(const bool noshear, BoutReal Lbar, BoutReal Bbar,
+  Coordinates* make_coordinates(const bool noshear, BoutReal Lbar, BoutReal Bbar,
                                         BoutReal ShearFactor = 1.0) {
 
     normalise(Lbar, Bbar, ShearFactor);
@@ -98,4 +98,4 @@ public:
   const FieldMetric& ShearFactor() const { return ShearFactor_m; }
 };
 
-#endif //BOUT_TOKAMAK_COORDINATES_FACTORY_HXX
+#endif //BOUT_TOKAMAK_COORDINATES_HXX

@@ -5,7 +5,7 @@
  * Model version in the code created by M. Umansky and J. Myra.
  *******************************************************************************/
 #include <bout/physicsmodel.hxx>
-#include <bout/tokamak_coordinates_factory.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
@@ -118,7 +118,7 @@ private:
           hthe0 / rho_s);
     }
 
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+    auto tokamak_coordinates = TokamakCoordinates(*mesh);
 
     /************** NORMALISE QUANTITIES *****************/
 
@@ -129,8 +129,8 @@ private:
     Te0 /= Te_x;
 
     // Normalise geometry
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates(noshear, rho_s,
-                                                                 bmag / 1e4, ShearFactor);
+    coord = tokamak_coordinates.make_coordinates(noshear, rho_s, bmag / 1e4,
+                                                         ShearFactor);
 
     // Set nu
     nu = nu_hat * Ni0 / pow(Te0, 1.5);
@@ -141,10 +141,10 @@ private:
     // add evolving variables to the communication object
     SOLVE_FOR(rho, te);
 
-    Field2D Rxy = tokamak_coordinates_factory.Rxy();
-    Field2D Bpxy = tokamak_coordinates_factory.Bpxy();
-    Field2D Btxy = tokamak_coordinates_factory.Btxy();
-    Field2D hthe = tokamak_coordinates_factory.hthe();
+    Field2D Rxy = tokamak_coordinates.Rxy();
+    Field2D Bpxy = tokamak_coordinates.Bpxy();
+    Field2D Btxy = tokamak_coordinates.Btxy();
+    Field2D hthe = tokamak_coordinates.hthe();
     SAVE_ONCE(Rxy, Bpxy, Btxy, Zxy, hthe);
     SAVE_ONCE(nu_hat, hthe0);
 

@@ -2,7 +2,7 @@
 #include <bout/field_factory.hxx>
 #include <bout/invert/laplacexz.hxx>
 #include <bout/invert_laplace.hxx>
-#include <bout/tokamak_coordinates_factory.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 /// Fundamental constants
 const BoutReal PI = 3.14159265;
@@ -170,9 +170,9 @@ protected:
       noshear = true;
     }
 
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+    auto tokamak_coordinates = TokamakCoordinates(*mesh);
     const auto& coord =
-        tokamak_coordinates_factory.make_tokamak_coordinates(noshear, Lnorm, Bnorm);
+        tokamak_coordinates.make_coordinates(noshear, Lnorm, Bnorm);
   }
 };
 

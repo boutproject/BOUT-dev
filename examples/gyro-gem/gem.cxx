@@ -10,7 +10,7 @@
  ****************************************************************/
 
 #include <bout/constants.hxx>
-#include <bout/tokamak_coordinates_factory.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 #include <bout/gyro_average.hxx>
 #include <bout/interpolation.hxx>
@@ -242,17 +242,17 @@ class GEM : public PhysicsModel {
     Tbar = options["Tbar"].withDefault(Tbar); // Override in options file
     SAVE_ONCE(Tbar);                          // Timescale in seconds
 
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
+    auto tokamak_coordinates = TokamakCoordinates(*mesh);
 
     if (mesh->get(Bbar, "Bbar")) {
       if (mesh->get(Bbar, "bmag")) {
-        Bbar = max(tokamak_coordinates_factory.Bxy(), true);
+        Bbar = max(tokamak_coordinates.Bxy(), true);
       }
     }
     Bbar = options["Bbar"].withDefault(Bbar); // Override in options file
     SAVE_ONCE(Bbar);
 
-    coord = tokamak_coordinates_factory.make_tokamak_coordinates(true, Lbar, Bbar);
+    coord = tokamak_coordinates.make_coordinates(true, Lbar, Bbar);
 
     beta_e = 4.e-7 * PI * max(p_e, true) / (Bbar * Bbar);
     SAVE_ONCE(beta_e);
@@ -349,7 +349,7 @@ class GEM : public PhysicsModel {
 
     B0vec.covariant = false;
     B0vec.x = 0.;
-    B0vec.y = tokamak_coordinates_factory.Bpxy() / tokamak_coordinates_factory.hthe();
+    B0vec.y = tokamak_coordinates.Bpxy() / tokamak_coordinates.hthe();
     B0vec.z = 0.;
 
     // Precompute this for use in RHS

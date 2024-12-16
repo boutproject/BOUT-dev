@@ -1,4 +1,4 @@
-#include <bout/tokamak_coordinates_factory.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 #include <bout/derivs.hxx>
 #include <bout/field_factory.hxx>
@@ -14,8 +14,8 @@ int main(int argc, char** argv) {
   bool calc_metric;
   calc_metric = Options::root()["calc_metric"].withDefault(false);
   if (calc_metric) {
-    auto tokamak_coordinates_factory = TokamakCoordinatesFactory(*mesh);
-    const auto& coord = tokamak_coordinates_factory.make_tokamak_coordinates(true);
+    auto tokamak_coordinates = TokamakCoordinates(*mesh);
+    const auto& coord = tokamak_coordinates.make_coordinates(true);
   }
 
   ///////////////////////////////////////
