@@ -336,7 +336,8 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b) { return solve(b, b); }
  *
  * \returns sol     The solution x of the problem Ax=b.
  */
-FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
+FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
+                              const bool forward) {
   TRACE("LaplacePetsc::solve");
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
@@ -355,12 +356,12 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   MatGetOwnershipRange(MatA, &Istart, &Iend);
 
   int i = Istart; // The row in the PETSc matrix
-  {
-    Timer timer("petscsetup");
 
-    //     if ((fourth_order) && !(lastflag&INVERT_4TH_ORDER)) throw BoutException("Should not change INVERT_4TH_ORDER flag in LaplacePetsc: 2nd order and 4th order require different pre-allocation to optimize PETSc solver");
+  auto timer = std::make_unique<Timer>("petscsetup");
 
-    /* Set Matrix Elements
+  //     if ((fourth_order) && !(lastflag&INVERT_4TH_ORDER)) throw BoutException("Should not change INVERT_4TH_ORDER flag in LaplacePetsc: 2nd order and 4th order require different pre-allocation to optimize PETSc solver");
+
+  /* Set Matrix Elements
    *
    * Loop over locally owned rows of matrix A
    * i labels NODE POINT from
@@ -742,6 +743,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
     VecAssemblyBegin(xs);
     VecAssemblyEnd(xs);
 
+    if (not forward) {
     // Configure Linear Solver
 #if PETSC_VERSION_GE(3, 5, 0)
     KSPSetOperators(ksp, MatA, MatA);
@@ -808,7 +810,8 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       lib.setOptionsFromInputFile(ksp);
     }
-  }
+    timer.reset();
+    
 
   // Call the actual solver
   {
@@ -826,8 +829,15 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
         "petsc_laplace: inversion failed to converge. KSPConvergedReason: {} ({})",
         KSPConvergedReasons[reason], static_cast<int>(reason));
   }
+    } else {
+      timer.reset();
+      PetscErrorCode err = MatMult(MatA, bs, xs);
+      if (err != PETSC_SUCCESS) {
+	throw BoutException("MatMult failed with {:d}", static_cast<int>(err));
+      }
+    }
 
-  // Add data to FieldPerp Object
+    // Add data to FieldPerp Object
   i = Istart;
   // Set the inner boundary values
   if (localmesh->firstX()) {

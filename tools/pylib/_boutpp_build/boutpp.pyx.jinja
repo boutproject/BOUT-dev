@@ -905,7 +905,7 @@ cdef class Laplacian:
         self.cobj = c.Laplacian.create(copt, cloc, cmesh, NULL)
         self.isSelfOwned = True
 
-    def solve(self,Field3D x, Field3D guess):
+    def solve(self, Field3D x, Field3D guess):
         """
         Calculate the Laplacian inversion
 
@@ -923,6 +923,24 @@ cdef class Laplacian:
             the inversion of x, where guess is a guess to start with
         """
         return f3dFromObj(deref(self.cobj).solve(x.cobj[0],guess.cobj[0]))
+
+    def forward(self, Field3D x):
+        """
+        Calculate the Laplacian
+
+        Parameters
+        ----------
+        x : Field3D
+            Field to take the derivative
+
+
+        Returns
+        -------
+        Field3D
+            the inversion of x, where guess is a guess to start with
+        """
+        return f3dFromObj(deref(self.cobj).forward(x.cobj[0]))
+
 
 {% set coeffs="A C C1 C2 D Ex Ez".split() %}
     def setCoefs(self, *{% for coeff in coeffs %}, {{coeff}}=None{% endfor %}):

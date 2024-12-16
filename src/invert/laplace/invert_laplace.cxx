@@ -256,6 +256,36 @@ Field2D Laplacian::solve(const Field2D& b, const Field2D& x0) {
   return DC(f);
 }
 
+Field3D Laplacian::forward(const Field3D& b) {
+  TRACE("Laplacian::solve(Field3D, Field3D)");
+
+  ASSERT1(b.getLocation() == location);
+  ASSERT1(localmesh == b.getMesh());
+
+  // Setting the start and end range of the y-slices
+  int ys = localmesh->ystart, ye = localmesh->yend;
+  if (include_yguards && localmesh->hasBndryLowerY()) {
+    ys = 0; // Mesh contains a lower boundary
+  }
+  if (include_yguards && localmesh->hasBndryUpperY()) {
+    ye = localmesh->LocalNy - 1; // Contains upper boundary
+  }
+
+  Field3D x{emptyFrom(b)};
+
+  for (int jy = ys; jy <= ye; jy++) {
+    // 1. Slice b and x (i.e. take a X-Z plane out of the field)
+    // 2. Send them to the solver of the implementation (determined during creation)
+    x = forward(sliceXZ(b, jy));
+  }
+
+  return x;
+}
+
+FieldPerp Laplacian::forward([[maybe_unused]] const FieldPerp& b) {
+  throw BoutException("Not implemented for this inversion");
+}
+
 /**********************************************************************************
  *                              MATRIX ELEMENTS
  **********************************************************************************/

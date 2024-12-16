@@ -92,7 +92,8 @@ cdef extern from "bout/invert_laplace.hxx":
     cppclass Laplacian:
         @staticmethod
         unique_ptr[Laplacian] create(Options*, benum.CELL_LOC, Mesh*, Solver*)
-        Field3D solve(Field3D,Field3D)
+        Field3D solve(Field3D, Field3D)
+        Field3D forward(Field3D)
         void setCoefA(Field3D)
         void setCoefC(Field3D)
         void setCoefC1(Field3D)
