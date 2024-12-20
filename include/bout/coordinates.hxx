@@ -108,9 +108,9 @@ public:
   const BoutReal& J(int x, int y) const { return J()(x, y); }
 #endif
 
-  void setDx(FieldMetric dx);
-  void setDy(FieldMetric dy);
-  void setDz(FieldMetric dz);
+  void setDx(FieldMetric dx, const bool communicate = true);
+  void setDy(FieldMetric dy, const bool communicate = true);
+  void setDz(FieldMetric dz, const bool communicate = true);
 
   void setD1_dx(FieldMetric d1_dx) { d1_dx_ = std::move(d1_dx); }
   void setD1_dy(FieldMetric d1_dy) { d1_dy_ = std::move(d1_dy); }
@@ -235,15 +235,17 @@ public:
   void setMetricTensor(const ContravariantMetricTensor& contravariant_metric_tensor,
                        const CovariantMetricTensor& covariant_metric_tensor);
 
+  void communicateMetricTensor();
+
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
   FieldMetric& J() const;
 
   ///< Magnitude of B = nabla z times nabla x
   const FieldMetric& Bxy() const { return Bxy_; }
 
-  void setJ(const FieldMetric& J);
+  void setJ(const FieldMetric& J, const bool communicate = true);
 
-  void setBxy(FieldMetric Bxy);
+  void setBxy(FieldMetric Bxy, const bool communicate = true);
 
   /// d pitch angle / dx. Needed for vector differentials (Curl)
   const FieldMetric& ShiftTorsion() const { return ShiftTorsion_; }
