@@ -76,7 +76,7 @@ function(bout_update_submodules)
     execute_process(COMMAND ${GIT_EXECUTABLE} -c submodule.recurse=false submodule update --init --recursive
       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
       RESULT_VARIABLE GIT_SUBMOD_RESULT)
-    if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+    if(NOT GIT_SUBMOD_RESULT EQUAL "0") 
       message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
     endif()
   endif()
@@ -108,7 +108,7 @@ set(BOUT_SOURCES
   ./include/bout/expr.hxx
   ./include/bout/fft.hxx
   ./include/bout/field.hxx
-  ./include/bout/field2d.hxx
+  ./include/bout/field2d.hxx 
   ./include/bout/field3d.hxx
   ./include/bout/field_accessor.hxx
   ./include/bout/field_data.hxx
@@ -168,6 +168,7 @@ set(BOUT_SOURCES
   ./include/bout/solver.hxx
   ./include/bout/solverfactory.hxx
   ./include/bout/sourcex.hxx
+  ./include/bout/neutral.hxx
   ./include/bout/stencils.hxx
   ./include/bout/sundials_backports.hxx
   ./include/bout/surfaceiter.hxx
@@ -286,6 +287,7 @@ set(BOUT_SOURCES
   ./src/physics/smoothing.cxx
   ./src/physics/snb.cxx
   ./src/physics/sourcex.cxx
+  ./src/physics/neutral.cxx
   ./src/solver/impls/adams_bashforth/adams_bashforth.cxx
   ./src/solver/impls/adams_bashforth/adams_bashforth.hxx
   ./src/solver/impls/arkode/arkode.cxx
