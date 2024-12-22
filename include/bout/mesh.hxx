@@ -654,6 +654,7 @@ public:
                                                 force_interpolate_from_centre);
 
     inserted.first->second->communicateMetricTensor();
+    inserted.first->second->communicateDz();
 
     return inserted.first->second;
   }

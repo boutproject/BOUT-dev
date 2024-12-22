@@ -237,6 +237,8 @@ public:
 
   void communicateMetricTensor();
 
+  void communicateDz();
+
   ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
   FieldMetric& J() const;
 

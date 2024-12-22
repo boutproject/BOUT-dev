@@ -1541,3 +1541,7 @@ void Coordinates::communicateMetricTensor() {
   contravariantMetricTensor.communicate();
   covariantMetricTensor.communicate();
 }
+
+void Coordinates::communicateDz() {
+  localmesh->communicate(dz_);
+}
