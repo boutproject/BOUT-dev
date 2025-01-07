@@ -74,6 +74,16 @@ for nslice in nslices:
         # Create the grid
         grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=yperiodic)
         # Make and write maps
+        from scipy.interpolate import RectBivariateSpline as RBS
+
+        def myRBS(a, b, c):
+            mx, my = c.shape
+            kx = max(mx - 1, 1)
+            kx = min(kx, 3)
+            print(c.shape, kx)
+            return RBS(a, b, c, kx=kx)
+
+        zb.poloidal_grid.RectBivariateSpline = myRBS
         maps = zb.make_maps(grid, field, nslice=nslice, quiet=True)
         zb.write_maps(
             grid, field, maps, new_names=False, metric2d=conf.isMetric2D(), quiet=True
