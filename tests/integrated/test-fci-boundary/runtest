@@ -29,15 +29,19 @@ mthread = 2
 directory = "data"
 
 with DataFile("grid.fci.nc") as grid:
-    xfwd = grid.read("forward_xt_prime")[2:-2]
-    xbwd = grid.read("backward_xt_prime")[2:-2]
+    try:
+        MXG = grid.read("MXG")
+    except:
+        MXG = 1
+    xfwd = grid.read("forward_xt_prime")[MXG:-MXG]
+    xbwd = grid.read("backward_xt_prime")[MXG:-MXG]
 
 nx = xfwd.shape[0]
 
 regions = {
-    "xin_fwd": xfwd < 1,
+    "xin_fwd": xfwd < MXG,
     "xout_fwd": xfwd > nx,
-    "xin_bwd": xbwd < 1,
+    "xin_bwd": xbwd < MXG,
     "xout_bwd": xbwd > nx,
 }
 regions = {k: v.astype(int) for k, v in regions.items()}
