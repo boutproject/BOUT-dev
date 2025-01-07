@@ -40,9 +40,9 @@ nx = xfwd.shape[0]
 
 regions = {
     "xin_fwd": xfwd < MXG,
-    "xout_fwd": xfwd > nx,
+    "xout_fwd": xfwd > nx + MXG - 1,
     "xin_bwd": xbwd < MXG,
-    "xout_bwd": xbwd > nx,
+    "xout_bwd": xbwd > nx + MXG - 1,
 }
 regions = {k: v.astype(int) for k, v in regions.items()}
 
