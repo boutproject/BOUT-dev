@@ -29,8 +29,8 @@ mthread = 2
 directory = "data"
 
 with DataFile("grid.fci.nc") as grid:
-    xfwd = grid.read("forward_xt_prime")[1:-1]
-    xbwd = grid.read("backward_xt_prime")[1:-1]
+    xfwd = grid.read("forward_xt_prime")[2:-2]
+    xbwd = grid.read("backward_xt_prime")[2:-2]
 
 nx = xfwd.shape[0]
 
