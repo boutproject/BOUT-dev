@@ -61,7 +61,7 @@ for nproc in nprocs:
 
     for k, v in regions.items():
         # Collect data
-        data = collect(f"field_{k}")
+        data = collect(f"field_{k}")[1:-1]
         assert np.allclose(data, v), (
             k + " does not match",
             np.sum(data),
