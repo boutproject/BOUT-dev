@@ -29,10 +29,7 @@ mthread = 2
 directory = "data"
 
 with DataFile("grid.fci.nc") as grid:
-    try:
-        MXG = grid.read("MXG")
-    except:
-        MXG = 1
+    MXG = grid.get("MXG", default=1)
     xfwd = grid.read("forward_xt_prime")[MXG:-MXG]
     xbwd = grid.read("backward_xt_prime")[MXG:-MXG]
 
