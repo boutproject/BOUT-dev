@@ -84,7 +84,7 @@ for nslice in nslices:
             return RBS(a, b, c, kx=kx)
 
         zb.poloidal_grid.RectBivariateSpline = myRBS
-        maps = zb.make_maps(grid, field, nslice=nslice, quiet=True)
+        maps = zb.make_maps(grid, field, nslice=nslice, quiet=True, MXG=1)
         try:
             zb.write_maps(
                 grid,
