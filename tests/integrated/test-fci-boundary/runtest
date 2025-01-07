@@ -29,8 +29,8 @@ mthread = 2
 directory = "data"
 
 with DataFile("grid.fci.nc") as grid:
-    xfwd = grid.read("forward_xt_prime")[1:-1]
-    xbwd = grid.read("backward_xt_prime")[1:-1]
+    xfwd = grid.read("forward_xt_prime")[2:-2]
+    xbwd = grid.read("backward_xt_prime")[2:-2]
 
 nx = xfwd.shape[0]
 
@@ -61,7 +61,7 @@ for nproc in nprocs:
 
     for k, v in regions.items():
         # Collect data
-        data = collect(f"field_{k}")[1:-1]
+        data = collect(f"field_{k}")
         assert np.allclose(data, v), (
             k + " does not match",
             np.sum(data),
