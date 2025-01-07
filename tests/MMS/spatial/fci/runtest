@@ -80,7 +80,6 @@ for nslice in nslices:
             mx, my = c.shape
             kx = max(mx - 1, 1)
             kx = min(kx, 3)
-            print(c.shape, kx)
             return RBS(a, b, c, kx=kx)
 
         zb.poloidal_grid.RectBivariateSpline = myRBS
