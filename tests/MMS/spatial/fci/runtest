@@ -61,7 +61,7 @@ for nslice in nslices:
         # Note that the Bz and Bzprime parameters here must be the same as in mms.py
         field = zb.field.Slab(Bz=0.05, Bzprime=0.1)
         # Create rectangular poloidal grids
-        poloidal_grid = zb.poloidal_grid.RectangularPoloidalGrid(nx, n, 0.1, 1.0)
+        poloidal_grid = zb.poloidal_grid.RectangularPoloidalGrid(nx, n, 0.1, 1.0, MXG=1)
         # Set the ylength and y locations
         ylength = 10.0
 
