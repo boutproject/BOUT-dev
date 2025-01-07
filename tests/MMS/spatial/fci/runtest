@@ -75,9 +75,20 @@ for nslice in nslices:
         grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=yperiodic)
         # Make and write maps
         maps = zb.make_maps(grid, field, nslice=nslice, quiet=True)
-        zb.write_maps(
-            grid, field, maps, new_names=False, metric2d=conf.isMetric2D(), quiet=True
-        )
+        try:
+            zb.write_maps(
+                grid,
+                field,
+                maps,
+                new_names=False,
+                metric2d=conf.isMetric2D(),
+                quiet=True,
+            )
+        except:
+            print(poloidal_grid.R.shape)
+            print(poloidal_grid.R)
+            print(poloidal_grid.Z)
+            raise
 
         args = " MZ={} MYG={} mesh:paralleltransform:y_periodic={} mesh:ddy:first={}".format(
             n, nslice, yperiodic, method_orders[nslice]["name"]
