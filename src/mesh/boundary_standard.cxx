@@ -2222,7 +2222,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryNeumann_O4::apply(Field2D & f) { BoundaryNeumann_O4::apply(f, 0.); }
 
-  void BoundaryNeumann_O4::apply([[maybe_unused]] Field2D & f, [[maybe_unused]] BoutReal t) {
+  void BoundaryNeumann_O4::apply([[maybe_unused]] Field2D & f,
+                                 [[maybe_unused]] BoutReal t) {
 #if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
