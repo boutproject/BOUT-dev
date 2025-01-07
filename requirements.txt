@@ -6,4 +6,4 @@ matplotlib>=3.7.0
 Cython>=3.0.0
 boututils>=0.2.1
 boutdata>=0.2.1
-zoidberg>=0.2.1
+zoidberg>=0.2.2
