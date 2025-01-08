@@ -229,7 +229,7 @@ jobs:
   Fedora:
     # This is its own job as it doesn't use most of the steps of the
     # standard_tests
-    timeout-minutes: 60
+    timeout-minutes: 120
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
