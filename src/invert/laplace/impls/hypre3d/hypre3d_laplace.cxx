@@ -42,8 +42,7 @@
 
 #include <cmath>
 
-LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
-                               Solver*)
+LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in, Solver*)
     : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
       opts(opt == nullptr ? Options::getRoot()->getSection("laplace") : opt),
       lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
@@ -539,27 +538,27 @@ void LaplaceHypre3d::outputVars(Options& output_options,
 
   if (n_solves > 0) {
     // Calculate average
-    mean_iterations = static_cast<BoutReal>(cumulative_iterations)
-      / static_cast<BoutReal>(n_solves);
+    mean_iterations =
+        static_cast<BoutReal>(cumulative_iterations) / static_cast<BoutReal>(n_solves);
 
     mean_amg_iterations = static_cast<BoutReal>(cumulative_amg_iterations)
-      / static_cast<BoutReal>(n_solves);
+                          / static_cast<BoutReal>(n_solves);
   }
 
   std::string name = getPerformanceName();
 
-  output_options[fmt::format("{}_mean_its", name)].assignRepeat(mean_iterations, time_dimension).setAttributes({
-      {"source", "hypre3d_laplace"},
-      {"description", "Mean number of solver iterations"}
-    });
-  output_options[fmt::format("{}_mean_amg_its", name)].assignRepeat(mean_amg_iterations, time_dimension).setAttributes({
-      {"source", "hypre3d_laplace"},
-      {"description", "Mean number of BoomerAMG iterations"}
-    });
-  output_options[fmt::format("{}_rel_res_norm", name)].assignRepeat(rel_res_norm, time_dimension).setAttributes({
-      {"source", "hypre3d_laplace"},
-      {"description", "Final relative residual norm"}
-    });
+  output_options[fmt::format("{}_mean_its", name)]
+      .assignRepeat(mean_iterations, time_dimension)
+      .setAttributes({{"source", "hypre3d_laplace"},
+                      {"description", "Mean number of solver iterations"}});
+  output_options[fmt::format("{}_mean_amg_its", name)]
+      .assignRepeat(mean_amg_iterations, time_dimension)
+      .setAttributes({{"source", "hypre3d_laplace"},
+                      {"description", "Mean number of BoomerAMG iterations"}});
+  output_options[fmt::format("{}_rel_res_norm", name)]
+      .assignRepeat(rel_res_norm, time_dimension)
+      .setAttributes({{"source", "hypre3d_laplace"},
+                      {"description", "Final relative residual norm"}});
 }
 
 #endif // BOUT_HAS_HYPRE
