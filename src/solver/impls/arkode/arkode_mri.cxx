@@ -95,12 +95,15 @@ ArkodeMRISolver::ArkodeMRISolver(Options* opts)
               .doc("Use linear implicit solver (only evaluates jacobian inversion once)")
               .withDefault(false)),
       fixed_step((*options)["fixed_step"]
-                     .doc("Solve explicit portion in fixed timestep mode. NOTE: This is "
+                     .doc("Solve both fast and slow time scales using fixed time step sizes. NOTE: This is "
                           "not recommended except for code comparison")
                      .withDefault(false)),
-      order((*options)["order"].doc("Order of internal step").withDefault(4)),
+      inner_timestep((*options)["inner_timestep"]
+                     .doc("Fixed step size to use for inner solver when running in fixed time step mode.")
+                     .withDefault(1.0e-4)),
+      order((*options)["order"].doc("Order of internal step").withDefault(3)),
       abstol((*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12)),
-      reltol((*options)["rtol"].doc("Relative tolerance").withDefault(1.0e-5)),
+      reltol((*options)["rtol"].doc("Relative tolerance").withDefault(1.0e-10)),
       use_vector_abstol((*options)["use_vector_abstol"]
                             .doc("Use separate absolute tolerance for each field")
                             .withDefault(false)),
@@ -232,8 +235,8 @@ int ArkodeMRISolver::init() {
     throw BoutException("ARKodeSetOrder failed\n");
   }
 
-  if (ARKStepCreateMRIStepInnerStepper(inner_arkode_mem, &inner_stepper) != ARK_SUCCESS) {
-    throw BoutException("ARKStepCreateMRIStepInnerStepper failed\n");
+  if (ARKodeCreateMRIStepInnerStepper(inner_arkode_mem, &inner_stepper) != ARK_SUCCESS) {
+    throw BoutException("ARKodeCreateMRIStepInnerStepper failed\n");
   }
 
   // Initialize the slow integrator. Specify the explicit slow right-hand side
@@ -283,10 +286,6 @@ int ArkodeMRISolver::init() {
 
   if (ARKodeSetOrder(arkode_mem, order) != ARK_SUCCESS) {
     throw BoutException("ARKodeSetOrder failed\n");
-  }
-
-  if (ARKodeSetFixedStep(arkode_mem, 0.001) != ARK_SUCCESS) {
-    throw BoutException("ARKodeSetFixedStep failed\n");
   }
 
   if (use_vector_abstol) {
@@ -518,7 +517,8 @@ int ArkodeMRISolver::run() {
     long int temp_long_int, temp_long_int2;
     ARKodeGetNumSteps(arkode_mem, &temp_long_int);
     nsteps = int(temp_long_int);
-    MRIStepGetNumRhsEvals(arkode_mem, &temp_long_int, &temp_long_int2); //Change after the release
+    ARKodeGetNumRhsEvals(arkode_mem, 0, &temp_long_int);
+    ARKodeGetNumRhsEvals(arkode_mem, 1, &temp_long_int2);
     nfe_evals = int(temp_long_int);
     nfi_evals = int(temp_long_int2);
     if (treatment == MRI_Treatment::ImEx or treatment == MRI_Treatment::Implicit) {
@@ -532,7 +532,8 @@ int ArkodeMRISolver::run() {
 
     ARKodeGetNumSteps(inner_arkode_mem, &temp_long_int);
     inner_nsteps = int(temp_long_int);
-    ARKStepGetNumRhsEvals(inner_arkode_mem, &temp_long_int, &temp_long_int2); //Change after the release
+    ARKodeGetNumRhsEvals(inner_arkode_mem, 0, &temp_long_int);
+    ARKodeGetNumRhsEvals(inner_arkode_mem, 1, &temp_long_int2);
     inner_nfe_evals = int(temp_long_int);
     inner_nfi_evals = int(temp_long_int2);
     if (inner_treatment == MRI_Treatment::ImEx or inner_treatment == MRI_Treatment::Implicit) {
