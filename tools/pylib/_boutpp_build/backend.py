@@ -1,3 +1,5 @@
+#!/bin/python3
+
 import os  # corelib
 import glob  # corelib
 import hashlib  # corelib
@@ -348,12 +350,19 @@ def help():
         print(fmt % row)
 
 
+def printVersion():
+    """
+    print the version
+    """
+    print(getversion())
+
+
 todos = dict(
     nightly=nightly,
     sdist=sdist,
     wheel=wheel,
     dist=dist,
-    version=lambda: print(getversion()),
+    version=printVersion,
     help=help,
 )
 todos.update(
@@ -368,4 +377,7 @@ if __name__ == "__main__":
     import sys
 
     for todo in sys.argv[1:]:
+        if todo not in todos:
+            help()
+            sys.exit(1)
         todos[todo]()
