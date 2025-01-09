@@ -894,20 +894,30 @@ public:
 
   void setMaxIter(int max_iter) { checkHypreError(solverSetMaxIter(solver, max_iter)); }
 
-  double getFinalRelResNorm() {
+  double getFinalRelResNorm() const {
     HYPRE_Real resnorm{};
     checkHypreError(solverGetFinalRelativeResidualNorm(solver, &resnorm));
     return resnorm;
   }
 
-  int getNumItersTaken() {
+  /// Return the number of solver iterations taken
+  int getNumItersTaken() const {
     HYPRE_Int iters{};
     checkHypreError(solverGetNumIterations(solver, &iters));
     return iters;
   }
 
+  /// Return the number of BoomerAMG preconditioner iterations taken
+  int getNumItersTakenAMG() const {
+    HYPRE_Int iters{};
+    checkHypreError(HYPRE_BoomerAMGGetNumIterations(precon, &iters));
+    return iters;
+  }
+
+  /// Set the HypreMatrix to be used in the solver
   void setMatrix(HypreMatrix<T>* A_) { A = A_; }
 
+  /// Enable BoomerAMG preconditioner with the given HypreMatrix
   int setupAMG(HypreMatrix<T>* P_) {
     CALI_CXX_MARK_FUNCTION;
 

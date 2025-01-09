@@ -3,9 +3,9 @@
  *                           Using Hypre Solvers
  *
  **************************************************************************
- * Copyright 2021 J.Omotani, C.MacMackin
+ * Copyright 2021 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -43,14 +43,14 @@
 #include <cmath>
 
 LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
-                               Solver* solver)
+                               Solver*)
     : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
       opts(opt == nullptr ? Options::getRoot()->getSection("laplace") : opt),
       lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
       indexer(std::make_shared<GlobalIndexer<Field3D>>(
           localmesh, getStencil(localmesh, lowerY, upperY))),
       operator3D(indexer), solution(indexer), rhs(indexer),
-      linearSystem(*localmesh, *opts), monitor(*this) {
+      linearSystem(*localmesh, *opts) {
   // Provide basic initialisation of field coefficients, etc.
   // Get relevent options from user input
   A.setLocation(location);
@@ -61,6 +61,7 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   Ez.setLocation(location);
 
   // Initialise Hypre objects
+  // Note: linearSystem is a bout::HypreSystem<Field3D> object
   linearSystem.setMatrix(&operator3D);
   linearSystem.setRHSVector(&rhs);
   linearSystem.setSolutionVector(&solution);
@@ -71,15 +72,15 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
 
   // Checking flags are set to something which is not implemented
   // This is done binary (which is possible as each flag is a power of 2)
-  if (global_flags & ~implemented_flags) {
+  if (getGlobalFlags() & ~implemented_flags) {
     throw BoutException("Attempted to set Laplacian inversion flag that is not "
                         "implemented in LaplaceHypre3d");
   }
-  if (inner_boundary_flags & ~implemented_boundary_flags) {
+  if (getInnerBoundaryFlags() & ~implemented_boundary_flags) {
     throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
                         "implemented in LaplaceHypre3d");
   }
-  if (outer_boundary_flags & ~implemented_boundary_flags) {
+  if (getOuterBoundaryFlags() & ~implemented_boundary_flags) {
     throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
                         "implemented in LaplaceHypre3d");
   }
@@ -144,15 +145,6 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
       operator3D(i, i) = 0.5;
       operator3D(i, i.ym()) = 0.5;
     }
-  }
-
-  // FIXME: This needs to be converted to outputVars
-  if (solver == nullptr) {
-    output_warn << "Warning: Need to pass a Solver to "
-                   "Laplacian::create() to get iteration counts in the output."
-                << endl;
-  } else {
-    solver->addMonitor(&monitor);
   }
 }
 
@@ -239,6 +231,7 @@ Field3D LaplaceHypre3d::solve(const Field3D& b_in, const Field3D& x0) {
   // Increment counters
   n_solves++;
   cumulative_iterations += linearSystem.getNumItersTaken();
+  cumulative_amg_iterations += linearSystem.getNumItersTakenAMG();
 
   CALI_MARK_END("LaplaceHypre3d_solve:solve");
 
@@ -246,6 +239,8 @@ Field3D LaplaceHypre3d::solve(const Field3D& b_in, const Field3D& x0) {
 
   // Create field from solution
   Field3D result = solution.toField();
+
+  // Fill guard and boundary cells
   localmesh->communicate(result);
   if (result.hasParallelSlices()) {
     BOUT_FOR(i, indexer->getRegionLowerY()) { result.ydown()[i] = result[i]; }
@@ -536,19 +531,35 @@ OperatorStencil<Ind3D> LaplaceHypre3d::getStencil(Mesh* localmesh,
   return stencil;
 }
 
-int LaplaceHypre3d::Hypre3dMonitor::call(Solver*, BoutReal, int, int) {
-  if (laplace.n_solves == 0) {
-    laplace.average_iterations = 0.0;
-    return 0;
+void LaplaceHypre3d::outputVars(Options& output_options,
+                                const std::string& time_dimension) const {
+  BoutReal mean_iterations = 0.0;
+  BoutReal mean_amg_iterations = 0.0;
+  BoutReal rel_res_norm = linearSystem.getFinalRelResNorm();
+
+  if (n_solves > 0) {
+    // Calculate average
+    mean_iterations = static_cast<BoutReal>(cumulative_iterations)
+      / static_cast<BoutReal>(n_solves);
+
+    mean_amg_iterations = static_cast<BoutReal>(cumulative_amg_iterations)
+      / static_cast<BoutReal>(n_solves);
   }
 
-  // Calculate average and reset counters
-  laplace.average_iterations = static_cast<BoutReal>(laplace.cumulative_iterations)
-                               / static_cast<BoutReal>(laplace.n_solves);
+  std::string name = getPerformanceName();
 
-  output_info.write("\nHypre3d average iterations: {}\n", laplace.average_iterations);
-
-  return 0;
+  output_options[fmt::format("{}_mean_its", name)].assignRepeat(mean_iterations, time_dimension).setAttributes({
+      {"source", "hypre3d_laplace"},
+      {"description", "Mean number of solver iterations"}
+    });
+  output_options[fmt::format("{}_mean_amg_its", name)].assignRepeat(mean_amg_iterations, time_dimension).setAttributes({
+      {"source", "hypre3d_laplace"},
+      {"description", "Mean number of BoomerAMG iterations"}
+    });
+  output_options[fmt::format("{}_rel_res_norm", name)].assignRepeat(rel_res_norm, time_dimension).setAttributes({
+      {"source", "hypre3d_laplace"},
+      {"description", "Final relative residual norm"}
+    });
 }
 
 #endif // BOUT_HAS_HYPRE
