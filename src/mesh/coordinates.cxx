@@ -501,9 +501,11 @@ void Coordinates::interpolateFromCoordinates(Options* mesh_options,
   checkCovariant();
 
   setJ(interpolateAndExtrapolate(coords_in->J(), location, true, true, false,
-                                 transform.get()), false);
+                                 transform.get()),
+       false);
   setBxy(interpolateAndExtrapolate(coords_in->Bxy(), location, true, true, false,
-                                   transform.get()), false);
+                                   transform.get()),
+         false);
 
   bout::checkFinite(J(), "The Jacobian", "RGN_NOCORNERS");
   bout::checkPositive(J(), "The Jacobian", "RGN_NOCORNERS");
@@ -618,7 +620,8 @@ void Coordinates::readFromMesh(Options* mesh_options, const std::string& suffix)
     output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                       "Contravariant components NOT recalculated\n");
   } else {
-    covariantMetricTensor.setMetricTensor(contravariantMetricTensor.inverse("RGN_ALL", false));
+    covariantMetricTensor.setMetricTensor(
+        contravariantMetricTensor.inverse("RGN_ALL", false));
     output_warn.write("Not all covariant components of metric tensor found. "
                       "Calculating all from the contravariant tensor\n");
   }
@@ -647,7 +650,8 @@ void Coordinates::readFromMesh(Options* mesh_options, const std::string& suffix)
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
   setJ(interpolateAndExtrapolate(J(), location, extrapolate_x, extrapolate_y, false,
-                                 transform.get()), false);
+                                 transform.get()),
+       false);
 
   // Check jacobian
   bout::checkFinite(J(), "J" + suffix, "RGN_NOCORNERS");
@@ -670,7 +674,8 @@ void Coordinates::readFromMesh(Options* mesh_options, const std::string& suffix)
   }
 
   setBxy(interpolateAndExtrapolate(Bxy(), location, extrapolate_x, extrapolate_y, false,
-                                   transform.get()), false);
+                                   transform.get()),
+         false);
 
   // Check Bxy
   bout::checkFinite(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
@@ -1542,6 +1547,4 @@ void Coordinates::communicateMetricTensor() {
   covariantMetricTensor.communicate();
 }
 
-void Coordinates::communicateDz() {
-  localmesh->communicate(dz_);
-}
+void Coordinates::communicateDz() { localmesh->communicate(dz_); }
