@@ -64,6 +64,8 @@ public:
   signed char offset() const { return bndry_position->offset; }
   unsigned char abs_offset() const { return bndry_position->abs_offset; }
 
+  // setter
+  void setValid(signed char valid) { bndry_position->valid = valid; }
 
   // extrapolate a given point to the boundary
   BoutReal extrapolate_sheath_o1(const Field3D& f) const { return f[ind()]; }
