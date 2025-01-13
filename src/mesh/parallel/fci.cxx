@@ -159,7 +159,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
       region_no_boundary(map_mesh.getRegion("RGN_NOBNDRY")),
       corner_boundary_mask(map_mesh) {
 
-  TRACE("Creating FCIMAP for direction {:d}", offset);
+  TRACE("Creating FCIMap for direction {:d}", offset);
 
   if (offset == 0) {
     throw BoutException(
