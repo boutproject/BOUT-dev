@@ -136,17 +136,20 @@ public:
     return bndry_position != rhs.bndry_position;
   }
 
+#define ITER() for (int i = 0; i < localmesh->ystart - abs_offset(); ++i)
   // dirichlet boundary code
   void dirichlet_o1(Field3D& f, BoutReal value) const {
-    f.ynext(dir)[ind().yp(dir)] = value;
+    ITER() { getAt(f, i) = value; }
   }
 
   void dirichlet_o2(Field3D& f, BoutReal value) const {
     if (length() < small_value) {
       return dirichlet_o1(f, value);
     }
-    ynext(f) = parallel_stencil::dirichlet_o2(1, f[ind()], 1 - length(), value);
-    // ynext(f) = f[ind()] * (1 + 1/length()) + value / length();
+    ITER() {
+      getAt(f, i) =
+          parallel_stencil::dirichlet_o2(i + 1, ythis(f), i + 1 - length(), value);
+    }
   }
 
   void dirichlet_o3(Field3D& f, BoutReal value) const {
@@ -155,17 +158,24 @@ public:
       return dirichlet_o2(f, value);
     }
     if (length() < small_value) {
-      ynext(f) = parallel_stencil::dirichlet_o2(2, yprev(f), 1 - length(), value);
+      ITER() {
+        getAt(f, i) =
+            parallel_stencil::dirichlet_o2(i + 2, yprev(f), i + 1 - length(), value);
+      }
     } else {
-      ynext(f) =
-          parallel_stencil::dirichlet_o3(2, yprev(f), 1, f[ind()], 1 - length(), value);
+      ITER() {
+        getAt(f, i) = parallel_stencil::dirichlet_o3(i + 2, yprev(f), i + 1, ythis(f),
+                                                     i + 1 - length(), value);
+      }
     }
   }
 
   // NB: value needs to be scaled by dy
   // neumann_o1 is actually o2 if we would use an appropriate one-sided stencil.
   // But in general we do not, and thus for normal C2 stencils, this is 1st order.
-  void neumann_o1(Field3D& f, BoutReal value) const { ynext(f) = f[ind()] + value; }
+  void neumann_o1(Field3D& f, BoutReal value) const {
+    ITER() { getAt(f, i) = ythis(f) + value; }
+  }
 
   // NB: value needs to be scaled by dy
   void neumann_o2(Field3D& f, BoutReal value) const {
@@ -173,7 +183,7 @@ public:
     if (valid() < 1) {
       return neumann_o1(f, value);
     }
-    ynext(f) = yprev(f) + 2 * value;
+    ITER() { getAt(f, i) = yprev(f) + 2 * value; }
   }
 
   // NB: value needs to be scaled by dy
@@ -182,8 +192,10 @@ public:
     if (valid() < 1) {
       return neumann_o1(f, value);
     }
-    ynext(f) =
-        parallel_stencil::neumann_o3(1 - length(), value, 1, f[ind()], 2, yprev(f));
+    ITER() {
+      getAt(f, i) = parallel_stencil::neumann_o3(i + 1 - length(), value, i + 1, ythis(f),
+                                                 2, yprev(f));
+    }
   }
 
   template <bool check = true>
