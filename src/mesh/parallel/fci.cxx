@@ -181,8 +181,10 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
   const int ncz = map_mesh->LocalNz;
 
   BoutMask to_remove(map_mesh);
-  const int xend = map_mesh->xstart
-                   + ((map_mesh->xend - map_mesh->xstart + 1) * map_mesh->getNXPE()) - 1;
+  const int xend =
+      map_mesh->xstart + (map_mesh->xend - map_mesh->xstart + 1) * map_mesh->getNXPE() - 1;
+  // Default to the maximum number of points
+  const int defValid{map_mesh->ystart - 1 + std::abs(offset)};
   // Serial loop because call to BoundaryRegionPar::addPoint
   // (probably?) can't be done in parallel
   BOUT_FOR_SERIAL(i, xt_prime.getRegion("RGN_NOBNDRY")) {
@@ -252,11 +254,12 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
     // need at least 2 points in the domain.
     ASSERT2(map_mesh->xend - map_mesh->xstart >= 2);
     auto boundary = (xt_prime[i] < map_mesh->xstart) ? inner_boundary : outer_boundary;
-    boundary->add_point(x, y, z, x + dx, y + (0.5 * offset_),
-                        z + dz, // Intersection point in local index space
-                        0.5,    // Distance to intersection
-                        1       // Default to that there is a point in the other direction
-    );
+    if (!boundary->contains(x, y, z)) {
+      boundary->add_point(x, y, z, x + dx, y + offset - sgn(offset) * 0.5,
+                          z + dz, // Intersection point in local index space
+                          std::abs(offset) - 0.5, // Distance to intersection
+                          defValid, offset);
+    }
   }
   region_no_boundary = region_no_boundary.mask(to_remove);
 

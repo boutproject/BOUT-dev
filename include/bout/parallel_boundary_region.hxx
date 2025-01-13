@@ -35,6 +35,8 @@ class BoundaryRegionPar : public BoundaryRegionBase {
     // BoutReal angle;
     // How many points we can go in the opposite direction
     signed char valid;
+    signed char offset;
+    unsigned char abs_offset;
   };
 
   using IndicesVec = std::vector<Indices>;
@@ -79,6 +81,9 @@ public:
   BoutReal s_z() const { return bndry_position->intersection.s_z; }
   BoutReal length() const { return bndry_position->length; }
   signed char valid() const { return bndry_position->valid; }
+  signed char offset() const { return bndry_position->offset; }
+  unsigned char abs_offset() const { return bndry_position->abs_offset; }
+
 
   // setter
   void setValid(signed char val) { bndry_position->valid = val; }
@@ -281,12 +286,17 @@ public:
 
   /// Add a point to the boundary
   void add_point(Ind3D ind, BoutReal x, BoutReal y, BoutReal z, BoutReal length,
-                 char valid) {
-    bndry_points.push_back({ind, {x, y, z}, length, valid});
+                 char valid, signed char offset) {
+    bndry_points.push_back({ind,
+                            {x, y, z},
+                            length,
+                            valid,
+                            offset,
+                            static_cast<unsigned char>(std::abs(offset))});
   }
   void add_point(int ix, int iy, int iz, BoutReal x, BoutReal y, BoutReal z,
-                 BoutReal length, char valid) {
-    bndry_points.push_back({xyz2ind(ix, iy, iz, localmesh), {x, y, z}, length, valid});
+                 BoutReal length, char valid, signed char offset) {
+    add_point(xyz2ind(ix, iy, iz, localmesh), x, y, z, length, valid, offset);
   }
 
   // final, so they can be inlined
