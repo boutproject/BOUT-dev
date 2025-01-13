@@ -297,6 +297,9 @@ public:
   /// Add a point to the boundary
   void add_point(Ind3D ind, BoutReal x, BoutReal y, BoutReal z, BoutReal length,
                  char valid, signed char offset) {
+    if (!bndry_points.empty() && bndry_points.back().index > ind) {
+      is_sorted = false;
+    }
     bndry_points.push_back({ind,
                             {x, y, z},
                             length,
@@ -315,6 +318,7 @@ public:
   bool isDone() final { return (bndry_position == std::end(bndry_points)); }
 
   bool contains(const BoundaryRegionPar& bndry) const {
+    ASSERT2(is_sorted);
     return std::binary_search(std::begin(bndry_points), std::end(bndry_points),
                               *bndry.bndry_position,
                               [](const bout::parallel_boundary_region::Indices& i1,
@@ -362,6 +366,7 @@ private:
     const int nz = mesh->LocalNz;
     return Ind3D{(x * ny + y) * nz + z, ny, nz};
   }
+  bool is_sorted{true};
 };
 
 #endif //  BOUT_PAR_BNDRY_H
