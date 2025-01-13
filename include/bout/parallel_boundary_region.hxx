@@ -84,6 +84,8 @@ public:
   signed char offset() const { return bndry_position->offset; }
   unsigned char abs_offset() const { return bndry_position->abs_offset; }
 
+  // setter
+  void setValid(signed char valid) { bndry_position->valid = valid; }
 
   // setter
   void setValid(signed char val) { bndry_position->valid = val; }
