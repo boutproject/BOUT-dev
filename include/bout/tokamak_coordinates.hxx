@@ -29,7 +29,7 @@ private:
 public:
   TokamakCoordinates(Mesh& mesh);
 
-  Coordinates* make_coordinates(const bool noshear, BoutReal Lbar, BoutReal Bbar,
+  Coordinates* make_coordinates(bool noshear, BoutReal Lbar, BoutReal Bbar,
                                 BoutReal ShearFactor = 1.0);
 
   const Field2D& Rxy() const { return Rxy_m; }
