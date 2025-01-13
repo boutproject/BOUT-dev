@@ -186,18 +186,49 @@ public:
         parallel_stencil::neumann_o3(1 - length(), value, 1, f[ind()], 2, yprev(f));
   }
 
-  // BoutReal get(const Field3D& f, int off)
-  const BoutReal& ynext(const Field3D& f) const { return f.ynext(dir)[ind().yp(dir)]; }
-  BoutReal& ynext(Field3D& f) const { return f.ynext(dir)[ind().yp(dir)]; }
+  template <bool check = true>
+  BoutReal& getAt(Field3D& f, int off) const {
+    if constexpr (check) {
+      ASSERT3(valid() > -off - 2);
+    }
+    auto _off = offset() + off * dir;
+    return f.ynext(_off)[ind().yp(_off)];
+  }
+  template <bool check = true>
+  const BoutReal& getAt(const Field3D& f, int off) const {
+    if constexpr (check) {
+      ASSERT3(valid() > -off - 2);
+    }
+    auto _off = offset() + off * dir;
+    return f.ynext(_off)[ind().yp(_off)];
+  }
 
-  const BoutReal& yprev(const Field3D& f) const {
-    ASSERT3(valid() > 0);
-    return f.ynext(-dir)[ind().yp(-dir)];
+  const BoutReal& ynext(const Field3D& f) const { return getAt(f, 0); }
+  BoutReal& ynext(Field3D& f) const { return getAt(f, 0); }
+  const BoutReal& ythis(const Field3D& f) const { return getAt(f, -1); }
+  BoutReal& ythis(Field3D& f) const { return getAt(f, -1); }
+  const BoutReal& yprev(const Field3D& f) const { return getAt(f, -2); }
+  BoutReal& yprev(Field3D& f) const { return getAt(f, -2); }
+
+  template <bool check = true>
+  BoutReal getAt(const std::function<BoutReal(int yoffset, Ind3D ind)>& f,
+                 int off) const {
+    if constexpr (check) {
+      ASSERT3(valid() > -off - 2);
+    }
+    auto _off = offset() + off * dir;
+    return f(_off, ind().yp(_off));
   }
-  BoutReal& yprev(Field3D& f) const {
-    ASSERT3(valid() > 0);
-    return f.ynext(-dir)[ind().yp(-dir)];
+  BoutReal ynext(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+    return getAt(f, 0);
   }
+  BoutReal ythis(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+    return getAt(f, -1);
+  }
+  BoutReal yprev(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+    return getAt(f, -2);
+  }
+
   void setYPrevIfValid(Field3D& f, BoutReal val) const {
     if (valid() > 0) {
       yprev(f) = val;
