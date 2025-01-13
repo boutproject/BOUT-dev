@@ -84,7 +84,7 @@ public:
   unsigned char abs_offset() const { return bndry_position->abs_offset; }
 
   // setter
-  void setValid(signed char val) { bndry_position->valid = val; }
+  void setValid(signed char valid) { bndry_position->valid = valid; }
 
   bool contains(const BoundaryRegionPar& bndry) const {
     return std::binary_search(
