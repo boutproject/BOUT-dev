@@ -18,7 +18,7 @@ public:
   int init(bool UNUSED(restarting)) {
 
     auto tokamak_coordinates = TokamakCoordinates(*mesh);
-    const auto& coords = tokamak_coordinates.make_coordinates(true);
+    const auto& coords = tokamak_coordinates.make_coordinates(true, 1.0, 1.0);
 
     solver->add(f, "f");
     solver->add(g, "g");
