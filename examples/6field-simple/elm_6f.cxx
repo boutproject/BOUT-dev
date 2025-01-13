@@ -1041,28 +1041,29 @@ protected:
 
     B0vec.covariant = false;
     B0vec.x = 0.;
-    B0vec.y = tokamak_coordinates.Bpxy() / tokamak_coordinates.hthe();
+
+    auto Bpxy = tokamak_coordinates.Bpxy();
+    auto hthe = tokamak_coordinates.hthe();
+    auto Rxy = tokamak_coordinates.Rxy();
+    auto Btxy = tokamak_coordinates.Btxy();
+    auto B0 = tokamak_coordinates.Bxy();
+
+    B0vec.y = Bpxy / hthe;
     B0vec.z = 0.;
 
     // Set V0vec field vector
 
     V0vec.covariant = false;
     V0vec.x = 0.;
-    V0vec.y = Vp0 / tokamak_coordinates.hthe();
-    V0vec.z = Vt0 / tokamak_coordinates.Rxy();
+    V0vec.y = Vp0 / hthe;
+    V0vec.z = Vt0 / Rxy;
 
     // Set V0eff field vector
 
     V0eff.covariant = false;
     V0eff.x = 0.;
-    V0eff.y = -(tokamak_coordinates.Btxy()
-                / (tokamak_coordinates.Bxy() * tokamak_coordinates.Bxy()))
-              * (Vp0 * tokamak_coordinates.Btxy() - Vt0 * tokamak_coordinates.Bpxy())
-              / tokamak_coordinates.hthe();
-    V0eff.z = (tokamak_coordinates.Bpxy()
-               / (tokamak_coordinates.Bxy() * tokamak_coordinates.Bxy()))
-              * (Vp0 * tokamak_coordinates.Btxy() - Vt0 * tokamak_coordinates.Bpxy())
-              / tokamak_coordinates.Rxy();
+    V0eff.y = -(Btxy / (B0 * B0)) * (Vp0 * Btxy - Vt0 * Bpxy) / hthe;
+    V0eff.z = (Bpxy / (B0 * B0)) * (Vp0 * Btxy - Vt0 * Bpxy) / Rxy;
 
     Pe.setBoundary("P");
     Pi.setBoundary("P");
@@ -1222,9 +1223,12 @@ protected:
 
     //  Field2D lap_temp=0.0;
     Field2D logn0 = laplace_alpha * N0;
-    ubyn = U * tokamak_coordinates.Bxy() / N0;
+
+    auto B0 = tokamak_coordinates.Bxy();
+
+    ubyn = U * B0 / N0;
     if (diamag) {
-      ubyn -= Upara0 / N0 * Delp2(Pi) / tokamak_coordinates.Bxy();
+      ubyn -= Upara0 / N0 * Delp2(Pi) / B0;
       mesh->communicate(ubyn);
       ubyn.applyBoundary();
     }
@@ -1232,7 +1236,7 @@ protected:
     if (laplace_alpha > 0.0) {
       phiSolver->setCoefC(logn0);
     }
-    phi = phiSolver->solve(ubyn) / tokamak_coordinates.Bxy();
+    phi = phiSolver->solve(ubyn) / B0;
 
     mesh->communicate(phi);
 
@@ -1328,9 +1332,9 @@ protected:
 
     if (compress0) {
       if (nonlinear) {
-        Vepar = Vipar - tokamak_coordinates.Bxy() * (Jpar) / N_tmp * Vepara;
+        Vepar = Vipar - B0 * (Jpar) / N_tmp * Vepara;
       } else {
-        Vepar = Vipar - tokamak_coordinates.Bxy() * (Jpar) / N0 * Vepara;
+        Vepar = Vipar - B0 * (Jpar) / N0 * Vepara;
         Vepar.applyBoundary();
         mesh->communicate(Vepar);
       }
@@ -1368,16 +1372,13 @@ protected:
       ddt(Psi) = 0.0;
 
       if (spitzer_resist) {
-        ddt(Psi) = -Grad_parP(tokamak_coordinates.Bxy() * phi) / tokamak_coordinates.Bxy()
-                   - eta_spitzer * Jpar;
+        ddt(Psi) = -Grad_parP(B0 * phi) / B0 - eta_spitzer * Jpar;
       } else {
-        ddt(Psi) = -Grad_parP(tokamak_coordinates.Bxy() * phi) / tokamak_coordinates.Bxy()
-                   - eta * Jpar;
+        ddt(Psi) = -Grad_parP(B0 * phi) / B0 - eta * Jpar;
       }
 
       if (diamag) {
-        ddt(Psi) -=
-            bracket(tokamak_coordinates.Bxy() * phi0, Psi, bm_exb); // Equilibrium flow
+        ddt(Psi) -= bracket(B0 * phi0, Psi, bm_exb); // Equilibrium flow
       }
 
       // Hyper-resistivity
@@ -1394,20 +1395,18 @@ protected:
 
       ddt(U) = 0.0;
 
-      ddt(U) = -SQ(tokamak_coordinates.Bxy()) * bracket(Psi, J0, bm_mag)
-               * tokamak_coordinates.Bxy(); // Grad j term
+      ddt(U) = -SQ(B0) * bracket(Psi, J0, bm_mag) * B0; // Grad j term
 
       ddt(U) += 2.0 * Upara1 * b0xcv * Grad(P); // curvature term
 
-      ddt(U) += SQ(tokamak_coordinates.Bxy()) * Grad_parP(Jpar); // b dot grad j
+      ddt(U) += SQ(B0) * Grad_parP(Jpar); // b dot grad j
 
       if (diamag) {
-        ddt(U) -=
-            bracket(tokamak_coordinates.Bxy() * phi0, U, bm_exb); // Equilibrium flow
+        ddt(U) -= bracket(B0 * phi0, U, bm_exb); // Equilibrium flow
       }
 
       if (nonlinear) {
-        ddt(U) -= bracket(tokamak_coordinates.Bxy() * phi, U, bm_exb); // Advection
+        ddt(U) -= bracket(B0 * phi, U, bm_exb); // Advection
       }
 
       // parallel hyper-viscous diffusion for vector potential
@@ -1459,20 +1458,18 @@ protected:
 
       ddt(Ni) = 0.0;
 
-      ddt(Ni) -= bracket(tokamak_coordinates.Bxy() * phi, N0, bm_exb);
+      ddt(Ni) -= bracket(B0 * phi, N0, bm_exb);
 
       if (diamag) {
-        ddt(Ni) -=
-            bracket(tokamak_coordinates.Bxy() * phi0, Ni, bm_exb); // Equilibrium flow
+        ddt(Ni) -= bracket(B0 * phi0, Ni, bm_exb); // Equilibrium flow
       }
 
       if (nonlinear) {
-        ddt(Ni) -= bracket(tokamak_coordinates.Bxy() * phi, Ni, bm_exb); // Advection
+        ddt(Ni) -= bracket(B0 * phi, Ni, bm_exb); // Advection
       }
 
       if (compress0) {
-        ddt(Ni) -=
-            N0 * tokamak_coordinates.Bxy() * Grad_parP(Vipar / tokamak_coordinates.Bxy());
+        ddt(Ni) -= N0 * B0 * Grad_parP(Vipar / B0);
       }
 
       // 4th order Parallel diffusion terms
@@ -1491,20 +1488,18 @@ protected:
 
       ddt(Ti) = 0.0;
 
-      ddt(Ti) -= bracket(tokamak_coordinates.Bxy() * phi, Ti0, bm_exb);
+      ddt(Ti) -= bracket(B0 * phi, Ti0, bm_exb);
 
       if (diamag) {
-        ddt(Ti) -=
-            bracket(phi0 * tokamak_coordinates.Bxy(), Ti, bm_exb); // Equilibrium flow
+        ddt(Ti) -= bracket(phi0 * B0, Ti, bm_exb); // Equilibrium flow
       }
 
       if (nonlinear) {
-        ddt(Ti) -= bracket(phi * tokamak_coordinates.Bxy(), Ti, bm_exb); // Advection
+        ddt(Ti) -= bracket(phi * B0, Ti, bm_exb); // Advection
       }
 
       if (compress0) {
-        ddt(Ti) -= 2.0 / 3.0 * Ti0 * tokamak_coordinates.Bxy()
-                   * Grad_parP(Vipar / tokamak_coordinates.Bxy());
+        ddt(Ti) -= 2.0 / 3.0 * Ti0 * B0 * Grad_parP(Vipar / B0);
       }
 
       if (diffusion_par > 0.0) {
@@ -1529,20 +1524,18 @@ protected:
 
       ddt(Te) = 0.0;
 
-      ddt(Te) -= bracket(tokamak_coordinates.Bxy() * phi, Te0, bm_exb);
+      ddt(Te) -= bracket(B0 * phi, Te0, bm_exb);
 
       if (diamag) {
-        ddt(Te) -=
-            bracket(tokamak_coordinates.Bxy() * phi0, Te, bm_exb); // Equilibrium flow
+        ddt(Te) -= bracket(B0 * phi0, Te, bm_exb); // Equilibrium flow
       }
 
       if (nonlinear) {
-        ddt(Te) -= bracket(tokamak_coordinates.Bxy() * phi, Te, bm_exb); // Advection
+        ddt(Te) -= bracket(B0 * phi, Te, bm_exb); // Advection
       }
 
       if (compress0) {
-        ddt(Te) -= 2.0 / 3.0 * Te0 * tokamak_coordinates.Bxy()
-                   * Grad_parP(Vepar / tokamak_coordinates.Bxy());
+        ddt(Te) -= 2.0 / 3.0 * Te0 * B0 * Grad_parP(Vepar / B0);
       }
 
       if (diffusion_par > 0.0) {
@@ -1565,14 +1558,14 @@ protected:
       ddt(Vipar) = 0.0;
 
       ddt(Vipar) -= Vipara * Grad_parP(P) / N0;
-      ddt(Vipar) += Vipara * bracket(Psi, P0, bm_mag) * tokamak_coordinates.Bxy() / N0;
+      ddt(Vipar) += Vipara * bracket(Psi, P0, bm_mag) * B0 / N0;
 
       if (diamag) {
-        ddt(Vipar) -= bracket(tokamak_coordinates.Bxy() * phi0, Vipar, bm_exb);
+        ddt(Vipar) -= bracket(B0 * phi0, Vipar, bm_exb);
       }
 
       if (nonlinear) {
-        ddt(Vipar) -= bracket(tokamak_coordinates.Bxy() * phi, Vipar, bm_exb);
+        ddt(Vipar) -= bracket(B0 * phi, Vipar, bm_exb);
       }
 
       // parallel hyper-viscous diffusion for vector potential
