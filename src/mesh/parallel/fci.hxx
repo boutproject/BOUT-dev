@@ -100,7 +100,6 @@ public:
       field_line_maps.emplace_back(mesh, dy, options, -offset, backward_boundary_xin,
                                    backward_boundary_xout, zperiodic);
     }
-    ASSERT0(mesh.ystart == 1);
     std::shared_ptr<BoundaryRegionPar> bndries[]{
         forward_boundary_xin, forward_boundary_xout, backward_boundary_xin,
         backward_boundary_xout};
@@ -109,9 +108,13 @@ public:
         if (bndry->dir == bndry2->dir) {
           continue;
         }
-        for (bndry->first(); !bndry->isDone(); bndry->next()) {
-          if (bndry2->contains(*bndry)) {
-            bndry->setValid(0);
+        for (auto pnt : *bndry) {
+          for (auto pnt2 : *bndry2) {
+#warning this could likely be done faster
+            if (pnt.ind() == pnt2.ind()) {
+              pnt.setValid(
+                  static_cast<signed char>(std::abs((pnt2.offset() - pnt.offset())) - 2));
+            }
           }
         }
       }
