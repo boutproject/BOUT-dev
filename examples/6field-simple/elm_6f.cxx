@@ -832,7 +832,13 @@ protected:
       dump.add(sp_length, "sp_length", 1);
     }
 
-    J0 = SI::mu0 * Lbar * J0 / tokamak_coordinates.Bxy();
+    auto Bpxy = tokamak_coordinates.Bpxy();
+    auto hthe = tokamak_coordinates.hthe();
+    auto Rxy = tokamak_coordinates.Rxy();
+    auto Btxy = tokamak_coordinates.Btxy();
+    auto B0 = tokamak_coordinates.Bxy();
+
+    J0 = SI::mu0 * Lbar * J0 / B0;
     P0 = P0 / (SI::kb * (Tibar + Tebar) * eV_K / 2. * Nbar * density);
 
     b0xcv.x /= Bbar;
@@ -904,9 +910,7 @@ protected:
         q95 = q95_input; // use a constant for test
       } else {
         if (local_q) {
-          q95 = abs(tokamak_coordinates.hthe() * tokamak_coordinates.Btxy()
-                    / tokamak_coordinates.Bpxy())
-                * q_alpha;
+          q95 = abs(hthe * Btxy / (Bpxy)) * q_alpha;
         } else {
           output.write("\tUsing q profile from grid.\n");
           if (mesh->get(q95, "q")) {
@@ -1042,12 +1046,6 @@ protected:
     B0vec.covariant = false;
     B0vec.x = 0.;
 
-    auto Bpxy = tokamak_coordinates.Bpxy();
-    auto hthe = tokamak_coordinates.hthe();
-    auto Rxy = tokamak_coordinates.Rxy();
-    auto Btxy = tokamak_coordinates.Btxy();
-    auto B0 = tokamak_coordinates.Bxy();
-
     B0vec.y = Bpxy / hthe;
     B0vec.z = 0.;
 
@@ -1105,10 +1103,10 @@ protected:
     if (diamag && diamag_phi0) {
       if (experiment_Er) { // get phi0 from grid file
         mesh->get(phi0, "Phi_0");
-        phi0 /= tokamak_coordinates.Bxy() * Lbar * Va;
+        phi0 /= B0 * Lbar * Va;
       } else {
         // Stationary equilibrium plasma. ExB velocity balances diamagnetic drift
-        phi0 = -Upara0 * Pi0 / tokamak_coordinates.Bxy() / N0;
+        phi0 = -Upara0 * Pi0 / B0 / N0;
       }
       SAVE_ONCE(phi0);
     }
@@ -1118,8 +1116,7 @@ protected:
     SAVE_ONCE(J0, P0);
     SAVE_ONCE(density, Lbar, Bbar, Tbar);
     SAVE_ONCE(Tibar, Tebar, Nbar);
-    Field2D tmp = tokamak_coordinates.Bxy();
-    SAVE_ONCE(Va, tmp);
+    SAVE_ONCE(Va, B0);
     SAVE_ONCE(Ti0, Te0, N0);
 
     // Create a solver for the Laplacian
@@ -1142,13 +1139,13 @@ protected:
       Field2D logn0 = laplace_alpha * N0;
       Field3D Ntemp;
       Ntemp = N0;
-      ubyn = U * tokamak_coordinates.Bxy() / Ntemp;
+      ubyn = U * B0 / Ntemp;
       // Phi should be consistent with U
       if (laplace_alpha <= 0.0) {
-        phi = phiSolver->solve(ubyn) / tokamak_coordinates.Bxy();
+        phi = phiSolver->solve(ubyn) / B0;
       } else {
         phiSolver->setCoefC(logn0);
-        phi = phiSolver->solve(ubyn) / tokamak_coordinates.Bxy();
+        phi = phiSolver->solve(ubyn) / B0;
       }
     }
 

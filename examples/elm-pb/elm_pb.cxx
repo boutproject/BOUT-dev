@@ -645,8 +645,13 @@ protected:
       Dphi0 *= -1;
     }
 
-    V0 = -tokamak_coordinates.Rxy() * tokamak_coordinates.Bpxy() * Dphi0
-         / tokamak_coordinates.Bxy();
+    auto Bpxy = tokamak_coordinates.Bpxy();
+    auto hthe = tokamak_coordinates.hthe();
+    auto Rxy = tokamak_coordinates.Rxy();
+    auto Btxy = tokamak_coordinates.Btxy();
+    auto B0 = tokamak_coordinates.Bxy();
+
+    V0 = -Rxy * Bpxy * Dphi0 / B0;
 
     if (simple_rmp) {
       include_rmp = true;
@@ -868,7 +873,7 @@ protected:
     Field2D Te;
     Te = P0 / (2.0 * density * 1.602e-19); // Temperature in eV
 
-    J0 = -MU0 * Lbar * J0 / tokamak_coordinates.Bxy();
+    J0 = -MU0 * Lbar * J0 / B0;
     P0 = 2.0 * MU0 * P0 / (Bbar * Bbar);
     V0 = V0 / Va;
     Dphi0 *= Tbar;
@@ -1016,12 +1021,6 @@ protected:
 
     B0vec.covariant = false;
     B0vec.x = 0.;
-
-    auto Bpxy = tokamak_coordinates.Bpxy();
-    auto hthe = tokamak_coordinates.hthe();
-    auto Rxy = tokamak_coordinates.Rxy();
-    auto Btxy = tokamak_coordinates.Btxy();
-    auto B0 = tokamak_coordinates.Bxy();
 
     B0vec.y = Bpxy / hthe;
     B0vec.z = 0.;
