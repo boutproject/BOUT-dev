@@ -246,7 +246,7 @@ class GEM : public PhysicsModel {
 
     if (mesh->get(Bbar, "Bbar")) {
       if (mesh->get(Bbar, "bmag")) {
-        Bbar = max(tokamak_coordinates.Bxy(), true);
+        Bbar = max(tokamak_coordinates.Bxy, true);
       }
     }
     Bbar = options["Bbar"].withDefault(Bbar); // Override in options file
@@ -349,7 +349,7 @@ class GEM : public PhysicsModel {
 
     B0vec.covariant = false;
     B0vec.x = 0.;
-    B0vec.y = tokamak_coordinates.Bpxy() / tokamak_coordinates.hthe();
+    B0vec.y = tokamak_coordinates.Bpxy / tokamak_coordinates.hthe;
     B0vec.z = 0.;
 
     // Precompute this for use in RHS

@@ -134,7 +134,7 @@ protected:
     const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
     if (ShiftXderivs) {
       ShearFactor = 0.0; // I disappears from metric
-      b0xcv.z += tokamak_coordinates.ShearFactor() * b0xcv.x;
+      b0xcv.z += tokamak_coordinates.ShearFactor * b0xcv.x;
       noshear = true;
     }
 

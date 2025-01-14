@@ -718,11 +718,11 @@ public:
     }
     const auto& metric = tokamak_coordinates.make_coordinates(noshear, Lbar, Bbar);
 
-    auto Bpxy = tokamak_coordinates.Bpxy();
-    auto hthe = tokamak_coordinates.hthe();
-    auto Rxy = tokamak_coordinates.Rxy();
-    auto Btxy = tokamak_coordinates.Btxy();
-    auto B0 = tokamak_coordinates.Bxy();
+    auto Bpxy = tokamak_coordinates.Bpxy;
+    auto hthe = tokamak_coordinates.hthe;
+    auto Rxy = tokamak_coordinates.Rxy;
+    auto Btxy = tokamak_coordinates.Btxy;
+    auto B0 = tokamak_coordinates.Bxy;
 
     V0 = -Rxy * Bpxy * Dphi0 / B0;
 
@@ -819,7 +819,7 @@ public:
 
     if (noshear) {
       if (include_curvature) {
-        b0xcv.z += tokamak_coordinates.ShearFactor() * b0xcv.x;
+        b0xcv.z += tokamak_coordinates.ShearFactor * b0xcv.x;
       }
     }
 
@@ -829,7 +829,7 @@ public:
     if (not mesh->IncIntShear) {
       // Dimits style, using local coordinate system
       if (include_curvature) {
-        b0xcv.z += tokamak_coordinates.ShearFactor() * b0xcv.x;
+        b0xcv.z += tokamak_coordinates.ShearFactor * b0xcv.x;
       }
     }
 
@@ -1215,7 +1215,7 @@ public:
 
     if (mesh->IncIntShear) {
       // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      metric->setIntShiftTorsion(tokamak_coordinates.ShearFactor());
+      metric->setIntShiftTorsion(tokamak_coordinates.ShearFactor);
     }
 
     return 0;
@@ -1230,7 +1230,7 @@ public:
 
     Field3D result = Grad_par(f, loc);
 
-    auto B0 = tokamak_coordinates.Bxy();
+    auto B0 = tokamak_coordinates.Bxy;
 
     if (nonlinear) {
       result -= bracket(interp_to(Psi, loc), f, bm_mag) * B0;
@@ -1251,7 +1251,7 @@ public:
 
     Coordinates* metric = mesh->getCoordinates();
 
-    auto B0 = tokamak_coordinates.Bxy();
+    auto B0 = tokamak_coordinates.Bxy;
 
     ////////////////////////////////////////////
     // Transitions from 0 in core to 1 in vacuum
@@ -1998,7 +1998,7 @@ public:
 
     Field3D U1 = ddt(U);
 
-    auto B0 = tokamak_coordinates.Bxy();
+    auto B0 = tokamak_coordinates.Bxy;
 
     U1 += (gamma * B0 * B0) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(P);
 
@@ -2052,7 +2052,7 @@ public:
     JP.setBoundary("P");
     JP.applyBoundary();
 
-    auto B0 = tokamak_coordinates.Bxy();
+    auto B0 = tokamak_coordinates.Bxy;
 
     Field3D B0phi = B0 * phi;
     mesh->communicate(B0phi);

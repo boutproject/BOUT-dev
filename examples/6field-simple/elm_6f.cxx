@@ -366,7 +366,7 @@ class Elm_6f : public PhysicsModel {
       result = Grad_par(f, loc);
 
       if (nonlinear) {
-        result -= bracket(Psi, f, bm_mag) * tokamak_coordinates.Bxy();
+        result -= bracket(Psi, f, bm_mag) * tokamak_coordinates.Bxy;
       }
     }
 
@@ -678,7 +678,7 @@ protected:
 
     if (noshear) {
       if (include_curvature) {
-        b0xcv.z += tokamak_coordinates.ShearFactor() * b0xcv.x;
+        b0xcv.z += tokamak_coordinates.ShearFactor * b0xcv.x;
       }
     }
 
@@ -688,7 +688,7 @@ protected:
     if (not mesh->IncIntShear) {
       // Dimits style, using local coordinate system
       if (include_curvature) {
-        b0xcv.z += tokamak_coordinates.ShearFactor() * b0xcv.x;
+        b0xcv.z += tokamak_coordinates.ShearFactor * b0xcv.x;
       }
     }
 
@@ -832,11 +832,11 @@ protected:
       dump.add(sp_length, "sp_length", 1);
     }
 
-    auto Bpxy = tokamak_coordinates.Bpxy();
-    auto hthe = tokamak_coordinates.hthe();
-    auto Rxy = tokamak_coordinates.Rxy();
-    auto Btxy = tokamak_coordinates.Btxy();
-    auto B0 = tokamak_coordinates.Bxy();
+    auto Bpxy = tokamak_coordinates.Bpxy;
+    auto hthe = tokamak_coordinates.hthe;
+    auto Rxy = tokamak_coordinates.Rxy;
+    auto Btxy = tokamak_coordinates.Btxy;
+    auto B0 = tokamak_coordinates.Bxy;
 
     J0 = SI::mu0 * Lbar * J0 / B0;
     P0 = P0 / (SI::kb * (Tibar + Tebar) * eV_K / 2. * Nbar * density);
@@ -1038,7 +1038,7 @@ protected:
 
     if (mesh->IncIntShear) {
       // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      coord->setIntShiftTorsion(tokamak_coordinates.ShearFactor());
+      coord->setIntShiftTorsion(tokamak_coordinates.ShearFactor);
     }
 
     // Set B field vector
@@ -1221,7 +1221,7 @@ protected:
     //  Field2D lap_temp=0.0;
     Field2D logn0 = laplace_alpha * N0;
 
-    auto B0 = tokamak_coordinates.Bxy();
+    auto B0 = tokamak_coordinates.Bxy;
 
     ubyn = U * B0 / N0;
     if (diamag) {

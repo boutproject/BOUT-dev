@@ -140,10 +140,10 @@ private:
     // add evolving variables to the communication object
     SOLVE_FOR(rho, te);
 
-    Field2D Rxy = tokamak_coordinates.Rxy();
-    Field2D Bpxy = tokamak_coordinates.Bpxy();
-    Field2D Btxy = tokamak_coordinates.Btxy();
-    Field2D hthe = tokamak_coordinates.hthe();
+    Field2D Rxy = tokamak_coordinates.Rxy;
+    Field2D Bpxy = tokamak_coordinates.Bpxy;
+    Field2D Btxy = tokamak_coordinates.Btxy;
+    Field2D hthe = tokamak_coordinates.hthe;
     SAVE_ONCE(Rxy, Bpxy, Btxy, Zxy, hthe);
     SAVE_ONCE(nu_hat, hthe0);
 

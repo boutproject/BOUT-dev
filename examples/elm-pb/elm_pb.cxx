@@ -506,655 +506,655 @@ protected:
       laplacexy->setCoefs(1.0, 0.0);
       phi2D = 0.0; // Starting guess
       phi2D.setBoundary("phi");
-    }
+        }
 
-    // Radial smoothing
-    smooth_j_x = options["smooth_j_x"].doc("Smooth Jpar in x").withDefault(false);
+        // Radial smoothing
+        smooth_j_x = options["smooth_j_x"].doc("Smooth Jpar in x").withDefault(false);
 
-    // Jpar boundary region
-    jpar_bndry_width = options["jpar_bndry_width"]
-                           .doc("Number of cells near the boundary where jpar = 0")
-                           .withDefault(-1);
+        // Jpar boundary region
+        jpar_bndry_width = options["jpar_bndry_width"]
+                .doc("Number of cells near the boundary where jpar = 0")
+                .withDefault(-1);
 
-    sheath_boundaries = options["sheath_boundaries"]
-                            .doc("Apply sheath boundaries in Y?")
-                            .withDefault(false);
+        sheath_boundaries = options["sheath_boundaries"]
+                .doc("Apply sheath boundaries in Y?")
+                .withDefault(false);
 
-    // Parallel differencing
-    parallel_lr_diff =
-        options["parallel_lr_diff"]
-            .doc("Use left and right shifted stencils for parallel differences?")
-            .withDefault<bool>(false);
+        // Parallel differencing
+        parallel_lr_diff =
+                options["parallel_lr_diff"]
+                        .doc("Use left and right shifted stencils for parallel differences?")
+                        .withDefault<bool>(false);
 
-    // RMP-related options
-    include_rmp = options["include_rmp"]
-                      .doc("Read RMP field rmp_A from grid?")
-                      .withDefault<bool>(false);
+        // RMP-related options
+        include_rmp = options["include_rmp"]
+                .doc("Read RMP field rmp_A from grid?")
+                .withDefault<bool>(false);
 
-    simple_rmp =
-        options["simple_rmp"].doc("Include a simple RMP model?").withDefault<bool>(false);
-    rmp_factor = options["rmp_factor"].withDefault(1.0);
-    rmp_ramp = options["rmp_ramp"].withDefault(-1.0);
-    rmp_freq = options["rmp_freq"].withDefault(-1.0);
-    rmp_rotate = options["rmp_rotate"].withDefault(0.0);
+        simple_rmp =
+                options["simple_rmp"].doc("Include a simple RMP model?").withDefault<bool>(false);
+        rmp_factor = options["rmp_factor"].withDefault(1.0);
+        rmp_ramp = options["rmp_ramp"].withDefault(-1.0);
+        rmp_freq = options["rmp_freq"].withDefault(-1.0);
+        rmp_rotate = options["rmp_rotate"].withDefault(0.0);
 
-    // Vacuum region control
-    vacuum_pressure =
-        options["vacuum_pressure"]
-            .doc("Fraction of peak pressure, below which is considered vacuum.")
-            .withDefault(0.02);
-    vacuum_trans =
-        options["vacuum_trans"]
-            .doc("Vacuum boundary transition width, as fraction of peak pressure.")
-            .withDefault(0.005);
+        // Vacuum region control
+        vacuum_pressure =
+                options["vacuum_pressure"]
+                        .doc("Fraction of peak pressure, below which is considered vacuum.")
+                        .withDefault(0.02);
+        vacuum_trans =
+                options["vacuum_trans"]
+                        .doc("Vacuum boundary transition width, as fraction of peak pressure.")
+                        .withDefault(0.005);
 
-    // Resistivity and hyper-resistivity options
-    vac_lund =
-        options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
-    core_lund =
-        options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
-    hyperresist = options["hyperresist"].withDefault(-1.0);
-    ehyperviscos = options["ehyperviscos"].withDefault(-1.0);
-    spitzer_resist = options["spitzer_resist"]
-                         .doc("Use Spitzer resistivity?")
-                         .withDefault<bool>(false);
-    Zeff = options["Zeff"].withDefault(2.0); // Z effective
+        // Resistivity and hyper-resistivity options
+        vac_lund =
+                options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
+        core_lund =
+                options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
+        hyperresist = options["hyperresist"].withDefault(-1.0);
+        ehyperviscos = options["ehyperviscos"].withDefault(-1.0);
+        spitzer_resist = options["spitzer_resist"]
+                .doc("Use Spitzer resistivity?")
+                .withDefault<bool>(false);
+        Zeff = options["Zeff"].withDefault(2.0); // Z effective
 
-    // Inner boundary damping
-    damp_width = options["damp_width"]
-                     .doc("Width of the radial damping regions, in grid cells")
-                     .withDefault(0);
-    damp_t_const =
-        options["damp_t_const"]
-            .doc("Time constant for damping in radial regions. Normalised time units.")
-            .withDefault(0.1);
+        // Inner boundary damping
+        damp_width = options["damp_width"]
+                .doc("Width of the radial damping regions, in grid cells")
+                .withDefault(0);
+        damp_t_const =
+                options["damp_t_const"]
+                        .doc("Time constant for damping in radial regions. Normalised time units.")
+                        .withDefault(0.1);
 
-    // Viscosity and hyper-viscosity
-    viscos_par = options["viscos_par"].doc("Parallel viscosity").withDefault(-1.0);
-    viscos_perp = options["viscos_perp"].doc("Perpendicular viscosity").withDefault(-1.0);
-    hyperviscos = options["hyperviscos"].doc("Radial hyperviscosity").withDefault(-1.0);
+        // Viscosity and hyper-viscosity
+        viscos_par = options["viscos_par"].doc("Parallel viscosity").withDefault(-1.0);
+        viscos_perp = options["viscos_perp"].doc("Perpendicular viscosity").withDefault(-1.0);
+        hyperviscos = options["hyperviscos"].doc("Radial hyperviscosity").withDefault(-1.0);
 
-    diffusion_par =
-        options["diffusion_par"].doc("Parallel pressure diffusion").withDefault(-1.0);
-    diffusion_p4 = options["diffusion_p4"]
-                       .doc("parallel hyper-viscous diffusion for pressure")
-                       .withDefault(-1.0);
-    diffusion_u4 = options["diffusion_u4"]
-                       .doc("parallel hyper-viscous diffusion for vorticity")
-                       .withDefault(-1.0);
-    diffusion_a4 = options["diffusion_a4"]
-                       .doc("parallel hyper-viscous diffusion for vector potential")
-                       .withDefault(-1.0);
+        diffusion_par =
+                options["diffusion_par"].doc("Parallel pressure diffusion").withDefault(-1.0);
+        diffusion_p4 = options["diffusion_p4"]
+                .doc("parallel hyper-viscous diffusion for pressure")
+                .withDefault(-1.0);
+        diffusion_u4 = options["diffusion_u4"]
+                .doc("parallel hyper-viscous diffusion for vorticity")
+                .withDefault(-1.0);
+        diffusion_a4 = options["diffusion_a4"]
+                .doc("parallel hyper-viscous diffusion for vector potential")
+                .withDefault(-1.0);
 
-    // heating factor in pressure
-    // heating power in pressure
-    heating_P = options["heating_P"].withDefault(-1.0);
-    // the percentage of radial grid points for heating profile radial
-    // width in pressure
-    hp_width = options["hp_width"].withDefault(0.1);
-    // the percentage of radial grid points for heating profile radial
-    // domain in pressure
-    hp_length = options["hp_length"].withDefault(0.04);
+        // heating factor in pressure
+        // heating power in pressure
+        heating_P = options["heating_P"].withDefault(-1.0);
+        // the percentage of radial grid points for heating profile radial
+        // width in pressure
+        hp_width = options["hp_width"].withDefault(0.1);
+        // the percentage of radial grid points for heating profile radial
+        // domain in pressure
+        hp_length = options["hp_length"].withDefault(0.04);
 
-    // sink factor in pressure
-    // sink in pressure
-    sink_P = options["sink_P"].withDefault(-1.0);
-    // the percentage of radial grid points for sink profile radial
-    // width in pressure
-    sp_width = options["sp_width"].withDefault(0.05);
-    // the percentage of radial grid points for sink profile radial
-    // domain in pressure
-    sp_length = options["sp_length"].withDefault(0.04);
+        // sink factor in pressure
+        // sink in pressure
+        sink_P = options["sink_P"].withDefault(-1.0);
+        // the percentage of radial grid points for sink profile radial
+        // width in pressure
+        sp_width = options["sp_width"].withDefault(0.05);
+        // the percentage of radial grid points for sink profile radial
+        // domain in pressure
+        sp_length = options["sp_length"].withDefault(0.04);
 
-    // left edge sink factor in vorticity
-    // left edge sink in vorticity
-    sink_Ul = options["sink_Ul"].withDefault(-1.0);
-    // the percentage of left edge radial grid points for sink profile
-    // radial width in vorticity
-    su_widthl = options["su_widthl"].withDefault(0.06);
-    // the percentage of left edge radial grid points for sink profile
-    // radial domain in vorticity
-    su_lengthl = options["su_lengthl"].withDefault(0.15);
+        // left edge sink factor in vorticity
+        // left edge sink in vorticity
+        sink_Ul = options["sink_Ul"].withDefault(-1.0);
+        // the percentage of left edge radial grid points for sink profile
+        // radial width in vorticity
+        su_widthl = options["su_widthl"].withDefault(0.06);
+        // the percentage of left edge radial grid points for sink profile
+        // radial domain in vorticity
+        su_lengthl = options["su_lengthl"].withDefault(0.15);
 
-    // right edge sink factor in vorticity
-    // right edge sink in vorticity
-    sink_Ur = options["sink_Ur"].withDefault(-1.0);
-    // the percentage of right edge radial grid points for sink profile
-    // radial width in vorticity
-    su_widthr = options["su_widthr"].withDefault(0.06);
-    // the percentage of right edge radial grid points for sink profile
-    // radial domain in vorticity
-    su_lengthr = options["su_lengthr"].withDefault(0.15);
+        // right edge sink factor in vorticity
+        // right edge sink in vorticity
+        sink_Ur = options["sink_Ur"].withDefault(-1.0);
+        // the percentage of right edge radial grid points for sink profile
+        // radial width in vorticity
+        su_widthr = options["su_widthr"].withDefault(0.06);
+        // the percentage of right edge radial grid points for sink profile
+        // radial domain in vorticity
+        su_lengthr = options["su_lengthr"].withDefault(0.15);
 
-    // Compressional terms
-    phi_curv =
-        options["phi_curv"].doc("ExB compression in P equation?").withDefault<bool>(true);
-    g = options["gamma"].doc("Ratio of specific heats").withDefault(5.0 / 3.0);
+        // Compressional terms
+        phi_curv =
+                options["phi_curv"].doc("ExB compression in P equation?").withDefault<bool>(true);
+        g = options["gamma"].doc("Ratio of specific heats").withDefault(5.0 / 3.0);
 
-    x = (Psixy - Psiaxis) / (Psibndry - Psiaxis);
+        x = (Psixy - Psiaxis) / (Psibndry - Psiaxis);
 
-    if (experiment_Er) { // get er from experiment
-      mesh->get(Dphi0, "Epsi");
-      diamag_phi0 = false;
-      K_H_term = false;
-    } else {
-      Dphi0 = -D_min - 0.5 * D_0 * (1.0 - tanh(D_s * (x - x0)));
-    }
-
-    if (sign < 0) { // change flow direction
-      Dphi0 *= -1;
-    }
-
-    auto Bpxy = tokamak_coordinates.Bpxy();
-    auto hthe = tokamak_coordinates.hthe();
-    auto Rxy = tokamak_coordinates.Rxy();
-    auto Btxy = tokamak_coordinates.Btxy();
-    auto B0 = tokamak_coordinates.Bxy();
-
-    V0 = -Rxy * Bpxy * Dphi0 / B0;
-
-    if (simple_rmp) {
-      include_rmp = true;
-    }
-
-    // toroidal and poloidal mode numbers
-    const int rmp_n =
-        options["rmp_n"].doc("Simple RMP toroidal mode number").withDefault(3);
-    const int rmp_m =
-        options["rmp_m"].doc("Simple RMP poloidal mode number").withDefault(9);
-    const int rmp_polwid = options["rmp_polwid"]
-                               .doc("Poloidal width (-ve -> full, fraction of 2pi)")
-                               .withDefault(-1.0);
-    const int rmp_polpeak = options["rmp_polpeak"]
-                                .doc("Peak poloidal location (fraction of 2pi)")
-                                .withDefault(0.5);
-    rmp_vac_mask =
-        options["rmp_vac_mask"].doc("Should a vacuum mask be applied?").withDefault(true);
-    // Divide n by the size of the domain
-    const int zperiod = globalOptions["zperiod"].withDefault(1);
-
-    if (include_rmp) {
-      // Including external field coils.
-      if (simple_rmp) {
-        // Use a fairly simple form for the perturbation
-        Field2D pol_angle;
-        if (mesh->get(pol_angle, "pol_angle")) {
-          output_warn.write("     ***WARNING: need poloidal angle for simple RMP\n");
-          include_rmp = false;
+        if (experiment_Er) { // get er from experiment
+            mesh->get(Dphi0, "Epsi");
+            diamag_phi0 = false;
+            K_H_term = false;
         } else {
-          if ((rmp_n % zperiod) != 0) {
-            output_warn.write(
-                "     ***WARNING: rmp_n ({:d}) not a multiple of zperiod ({:d})\n", rmp_n,
-                zperiod);
-          }
+            Dphi0 = -D_min - 0.5 * D_0 * (1.0 - tanh(D_s * (x - x0)));
+        }
 
-          output.write("\tMagnetic perturbation: n = {:d}, m = {:d}, magnitude {:e} Tm\n",
-                       rmp_n, rmp_m, rmp_factor);
+        if (sign < 0) { // change flow direction
+            Dphi0 *= -1;
+        }
 
-          rmp_Psi0 = 0.0;
-          if (mesh->lastX()) {
-            // Set the outer boundary
-            for (int jx = mesh->LocalNx - 4; jx < mesh->LocalNx; jx++) {
-              for (int jy = 0; jy < mesh->LocalNy; jy++) {
-                for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        auto Bpxy = tokamak_coordinates.Bpxy;
+        auto hthe = tokamak_coordinates.hthe;
+        auto Rxy = tokamak_coordinates.Rxy;
+        auto Btxy = tokamak_coordinates.Btxy;
+        auto B0 = tokamak_coordinates.Bxy;
 
-                  BoutReal angle =
-                      rmp_m * pol_angle(jx, jy)
-                      + rmp_n * ((BoutReal)jz) * mesh->getCoordinates()->dz(jx, jy, jz);
-                  rmp_Psi0(jx, jy, jz) =
-                      (((BoutReal)(jx - 4)) / ((BoutReal)(mesh->LocalNx - 5)))
-                      * rmp_factor * cos(angle);
-                  if (rmp_polwid > 0.0) {
-                    // Multiply by a Gaussian in poloidal angle
-                    BoutReal gx =
-                        ((pol_angle(jx, jy) / (2. * PI)) - rmp_polpeak) / rmp_polwid;
-                    rmp_Psi0(jx, jy, jz) *= exp(-gx * gx);
-                  }
+        V0 = -Rxy * Bpxy * Dphi0 / B0;
+
+        if (simple_rmp) {
+            include_rmp = true;
+        }
+
+        // toroidal and poloidal mode numbers
+        const int rmp_n =
+                options["rmp_n"].doc("Simple RMP toroidal mode number").withDefault(3);
+        const int rmp_m =
+                options["rmp_m"].doc("Simple RMP poloidal mode number").withDefault(9);
+        const int rmp_polwid = options["rmp_polwid"]
+                .doc("Poloidal width (-ve -> full, fraction of 2pi)")
+                .withDefault(-1.0);
+        const int rmp_polpeak = options["rmp_polpeak"]
+                .doc("Peak poloidal location (fraction of 2pi)")
+                .withDefault(0.5);
+        rmp_vac_mask =
+                options["rmp_vac_mask"].doc("Should a vacuum mask be applied?").withDefault(true);
+        // Divide n by the size of the domain
+        const int zperiod = globalOptions["zperiod"].withDefault(1);
+
+        if (include_rmp) {
+            // Including external field coils.
+            if (simple_rmp) {
+                // Use a fairly simple form for the perturbation
+                Field2D pol_angle;
+                if (mesh->get(pol_angle, "pol_angle")) {
+                    output_warn.write("     ***WARNING: need poloidal angle for simple RMP\n");
+                    include_rmp = false;
+                } else {
+                    if ((rmp_n % zperiod) != 0) {
+                        output_warn.write(
+                                "     ***WARNING: rmp_n ({:d}) not a multiple of zperiod ({:d})\n", rmp_n,
+                                zperiod);
+                    }
+
+                    output.write("\tMagnetic perturbation: n = {:d}, m = {:d}, magnitude {:e} Tm\n",
+                                 rmp_n, rmp_m, rmp_factor);
+
+                    rmp_Psi0 = 0.0;
+                    if (mesh->lastX()) {
+                        // Set the outer boundary
+                        for (int jx = mesh->LocalNx - 4; jx < mesh->LocalNx; jx++) {
+                            for (int jy = 0; jy < mesh->LocalNy; jy++) {
+                                for (int jz = 0; jz < mesh->LocalNz; jz++) {
+
+                                    BoutReal angle =
+                                            rmp_m * pol_angle(jx, jy)
+                                            + rmp_n * ((BoutReal) jz) * mesh->getCoordinates()->dz(jx, jy, jz);
+                                    rmp_Psi0(jx, jy, jz) =
+                                            (((BoutReal) (jx - 4)) / ((BoutReal) (mesh->LocalNx - 5)))
+                                            * rmp_factor * cos(angle);
+                                    if (rmp_polwid > 0.0) {
+                                        // Multiply by a Gaussian in poloidal angle
+                                        BoutReal gx =
+                                                ((pol_angle(jx, jy) / (2. * PI)) - rmp_polpeak) / rmp_polwid;
+                                        rmp_Psi0(jx, jy, jz) *= exp(-gx * gx);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Now have a simple model for Psi due to coils at the outer boundary
+                    // Need to calculate Psi inside the domain, enforcing j = 0
+
+                    Jpar = 0.0;
+                    auto psiLap = std::unique_ptr<Laplacian>{Laplacian::create(nullptr, loc)};
+                    psiLap->setInnerBoundaryFlags(INVERT_AC_GRAD); // Zero gradient inner BC
+                    psiLap->setOuterBoundaryFlags(INVERT_SET); // Set to rmp_Psi0 on outer boundary
+                    rmp_Psi0 = psiLap->solve(Jpar, rmp_Psi0);
+                    mesh->communicate(rmp_Psi0);
                 }
-              }
+            } else {
+                // Load perturbation from grid file.
+                include_rmp = !mesh->get(rmp_Psi0, "rmp_A"); // Only include if found
+                if (!include_rmp) {
+                    output_warn.write("WARNING: Couldn't read 'rmp_A' from grid file\n");
+                }
+                // Multiply by factor
+                rmp_Psi0 *= rmp_factor;
             }
-          }
-
-          // Now have a simple model for Psi due to coils at the outer boundary
-          // Need to calculate Psi inside the domain, enforcing j = 0
-
-          Jpar = 0.0;
-          auto psiLap = std::unique_ptr<Laplacian>{Laplacian::create(nullptr, loc)};
-          psiLap->setInnerBoundaryFlags(INVERT_AC_GRAD); // Zero gradient inner BC
-          psiLap->setOuterBoundaryFlags(INVERT_SET); // Set to rmp_Psi0 on outer boundary
-          rmp_Psi0 = psiLap->solve(Jpar, rmp_Psi0);
-          mesh->communicate(rmp_Psi0);
-        }
-      } else {
-        // Load perturbation from grid file.
-        include_rmp = !mesh->get(rmp_Psi0, "rmp_A"); // Only include if found
-        if (!include_rmp) {
-          output_warn.write("WARNING: Couldn't read 'rmp_A' from grid file\n");
-        }
-        // Multiply by factor
-        rmp_Psi0 *= rmp_factor;
-      }
-    }
-
-    if (!include_curvature) {
-      b0xcv = 0.0;
-    }
-
-    if (!include_jpar0) {
-      J0 = 0.0;
-    }
-
-    if (noshear) {
-      if (include_curvature) {
-        b0xcv.z += tokamak_coordinates.ShearFactor() * b0xcv.x;
-      }
-    }
-
-    //////////////////////////////////////////////////////////////
-    // SHIFTED RADIAL COORDINATES
-
-    if (not mesh->IncIntShear) {
-      // Dimits style, using local coordinate system
-      if (include_curvature) {
-        b0xcv.z += tokamak_coordinates.ShearFactor() * b0xcv.x;
-      }
-    }
-
-    //////////////////////////////////////////////////////////////
-    // NORMALISE QUANTITIES
-
-    if (mesh->get(Bbar, "bmag")) { // Typical magnetic field
-      Bbar = 1.0;
-    }
-    if (mesh->get(Lbar, "rmag")) { // Typical length scale
-      Lbar = 1.0;
-    }
-
-    Va = sqrt(Bbar * Bbar / (MU0 * density * Mi));
-
-    Tbar = Lbar / Va;
-
-    dnorm = dia_fact * Mi / (2. * 1.602e-19 * Bbar * Tbar);
-
-    delta_i = AA * 60.67 * 5.31e5 / sqrt(density / 1e6) / (Lbar * 100.0);
-
-    output.write("Normalisations: Bbar = {:e} T   Lbar = {:e} m\n", Bbar, Lbar);
-    output.write("                Va = {:e} m/s   Tbar = {:e} s\n", Va, Tbar);
-    output.write("                dnorm = {:e}\n", dnorm);
-    output.write("    Resistivity\n");
-
-    if (gyroviscous) {
-      omega_i = 9.58e7 * Zeff * Bbar;
-      Upara2 = 0.5 / (Tbar * omega_i);
-      output.write("Upara2 = {:e}     Omega_i = {:e}\n", Upara2, omega_i);
-    }
-
-    if (eHall) {
-      output.write("                delta_i = {:e}   AA = {:e} \n", delta_i, AA);
-    }
-
-    if (vac_lund > 0.0) {
-      output.write("        Vacuum  Tau_R = {:e} s   eta = {:e} Ohm m\n", vac_lund * Tbar,
-                   MU0 * Lbar * Lbar / (vac_lund * Tbar));
-      vac_resist = 1. / vac_lund;
-    } else {
-      output.write("        Vacuum  - Zero resistivity -\n");
-      vac_resist = 0.0;
-    }
-    if (core_lund > 0.0) {
-      output.write("        Core    Tau_R = {:e} s   eta = {:e} Ohm m\n",
-                   core_lund * Tbar, MU0 * Lbar * Lbar / (core_lund * Tbar));
-      core_resist = 1. / core_lund;
-    } else {
-      output.write("        Core    - Zero resistivity -\n");
-      core_resist = 0.0;
-    }
-
-    if (hyperresist > 0.0) {
-      output.write("    Hyper-resistivity coefficient: {:e}\n", hyperresist);
-    }
-
-    if (ehyperviscos > 0.0) {
-      output.write("    electron Hyper-viscosity coefficient: {:e}\n", ehyperviscos);
-    }
-
-    if (hyperviscos > 0.0) {
-      output.write("    Hyper-viscosity coefficient: {:e}\n", hyperviscos);
-      SAVE_ONCE(hyper_mu_x);
-    }
-
-    if (diffusion_par > 0.0) {
-      output.write("    diffusion_par: {:e}\n", diffusion_par);
-      SAVE_ONCE(diffusion_par);
-    }
-
-    // xqx: parallel hyper-viscous diffusion for pressure
-    if (diffusion_p4 > 0.0) {
-      output.write("    diffusion_p4: {:e}\n", diffusion_p4);
-      SAVE_ONCE(diffusion_p4);
-    }
-
-    // xqx: parallel hyper-viscous diffusion for vorticity
-    if (diffusion_u4 > 0.0) {
-      output.write("    diffusion_u4: {:e}\n", diffusion_u4);
-      SAVE_ONCE(diffusion_u4)
-    }
-
-    // xqx: parallel hyper-viscous diffusion for vector potential
-    if (diffusion_a4 > 0.0) {
-      output.write("    diffusion_a4: {:e}\n", diffusion_a4);
-      SAVE_ONCE(diffusion_a4);
-    }
-
-    if (heating_P > 0.0) {
-      output.write("    heating_P(watts): {:e}\n", heating_P);
-
-      output.write("    hp_width(%%): {:e}\n", hp_width);
-
-      output.write("    hp_length(%%): {:e}\n", hp_length);
-
-      SAVE_ONCE(heating_P, hp_width, hp_length);
-    }
-
-    if (sink_P > 0.0) {
-      output.write("    sink_P(rate): {:e}\n", sink_P);
-      output.write("    sp_width(%%): {:e}\n", sp_width);
-      output.write("    sp_length(%%): {:e}\n", sp_length);
-
-      SAVE_ONCE(sink_P, sp_width, sp_length);
-    }
-
-    if (K_H_term) {
-      output.write("    keep K-H term\n");
-    } else {
-      output.write("   drop K-H term\n");
-    }
-
-    Field2D Te;
-    Te = P0 / (2.0 * density * 1.602e-19); // Temperature in eV
-
-    J0 = -MU0 * Lbar * J0 / B0;
-    P0 = 2.0 * MU0 * P0 / (Bbar * Bbar);
-    V0 = V0 / Va;
-    Dphi0 *= Tbar;
-
-    b0xcv.x /= Bbar;
-    b0xcv.y *= Lbar * Lbar;
-    b0xcv.z *= Lbar * Lbar;
-
-    const auto& metric = tokamak_coordinates.make_coordinates(noshear, Lbar, Bbar);
-
-    //////////////////////////////////////////////////////////////
-    // SHIFTED RADIAL COORDINATES
-
-    if (mesh->IncIntShear) {
-      // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      metric->setIntShiftTorsion(tokamak_coordinates.ShearFactor());
-    }
-
-    if (constn0) {
-      T0_fake_prof = false;
-      n0_fake_prof = false;
-    } else {
-      Nbar = 1.0;
-      Tibar = 1000.0;
-      Tebar = 1000.0;
-
-      if ((!T0_fake_prof) && n0_fake_prof) {
-        N0 = N0tanh(n0_height * Nbar, n0_ave * Nbar, n0_width, n0_center, n0_bottom_x);
-
-        Ti0 = P0 / N0 / 2.0;
-        Te0 = Ti0;
-      } else if (T0_fake_prof) {
-        Ti0 = Tconst;
-        Te0 = Ti0;
-        N0 = P0 / (Ti0 + Te0);
-      } else {
-        if (mesh->get(N0, "Niexp")) { // N_i0
-          throw BoutException("Error: Cannot read Ni0 from grid\n");
         }
 
-        if (mesh->get(Ti0, "Tiexp")) { // T_i0
-          throw BoutException("Error: Cannot read Ti0 from grid\n");
+        if (!include_curvature) {
+            b0xcv = 0.0;
         }
 
-        if (mesh->get(Te0, "Teexp")) { // T_e0
-          throw BoutException("Error: Cannot read Te0 from grid\n");
+        if (!include_jpar0) {
+            J0 = 0.0;
         }
-        N0 /= Nbar;
-        Ti0 /= Tibar;
-        Te0 /= Tebar;
-      }
+
+        if (noshear) {
+            if (include_curvature) {
+                b0xcv.z += tokamak_coordinates.ShearFactor * b0xcv.x;
+            }
+        }
+
+        //////////////////////////////////////////////////////////////
+        // SHIFTED RADIAL COORDINATES
+
+        if (not mesh->IncIntShear) {
+            // Dimits style, using local coordinate system
+            if (include_curvature) {
+                b0xcv.z += tokamak_coordinates.ShearFactor * b0xcv.x;
+            }
+        }
+
+        //////////////////////////////////////////////////////////////
+        // NORMALISE QUANTITIES
+
+        if (mesh->get(Bbar, "bmag")) { // Typical magnetic field
+            Bbar = 1.0;
+        }
+        if (mesh->get(Lbar, "rmag")) { // Typical length scale
+            Lbar = 1.0;
+        }
+
+        Va = sqrt(Bbar * Bbar / (MU0 * density * Mi));
+
+        Tbar = Lbar / Va;
+
+        dnorm = dia_fact * Mi / (2. * 1.602e-19 * Bbar * Tbar);
+
+        delta_i = AA * 60.67 * 5.31e5 / sqrt(density / 1e6) / (Lbar * 100.0);
+
+        output.write("Normalisations: Bbar = {:e} T   Lbar = {:e} m\n", Bbar, Lbar);
+        output.write("                Va = {:e} m/s   Tbar = {:e} s\n", Va, Tbar);
+        output.write("                dnorm = {:e}\n", dnorm);
+        output.write("    Resistivity\n");
+
+        if (gyroviscous) {
+            omega_i = 9.58e7 * Zeff * Bbar;
+            Upara2 = 0.5 / (Tbar * omega_i);
+            output.write("Upara2 = {:e}     Omega_i = {:e}\n", Upara2, omega_i);
+        }
+
+        if (eHall) {
+            output.write("                delta_i = {:e}   AA = {:e} \n", delta_i, AA);
+        }
+
+        if (vac_lund > 0.0) {
+            output.write("        Vacuum  Tau_R = {:e} s   eta = {:e} Ohm m\n", vac_lund * Tbar,
+                         MU0 * Lbar * Lbar / (vac_lund * Tbar));
+            vac_resist = 1. / vac_lund;
+        } else {
+            output.write("        Vacuum  - Zero resistivity -\n");
+            vac_resist = 0.0;
+        }
+        if (core_lund > 0.0) {
+            output.write("        Core    Tau_R = {:e} s   eta = {:e} Ohm m\n",
+                         core_lund * Tbar, MU0 * Lbar * Lbar / (core_lund * Tbar));
+            core_resist = 1. / core_lund;
+        } else {
+            output.write("        Core    - Zero resistivity -\n");
+            core_resist = 0.0;
+        }
+
+        if (hyperresist > 0.0) {
+            output.write("    Hyper-resistivity coefficient: {:e}\n", hyperresist);
+        }
+
+        if (ehyperviscos > 0.0) {
+            output.write("    electron Hyper-viscosity coefficient: {:e}\n", ehyperviscos);
+        }
+
+        if (hyperviscos > 0.0) {
+            output.write("    Hyper-viscosity coefficient: {:e}\n", hyperviscos);
+            SAVE_ONCE(hyper_mu_x);
+        }
+
+        if (diffusion_par > 0.0) {
+            output.write("    diffusion_par: {:e}\n", diffusion_par);
+            SAVE_ONCE(diffusion_par);
+        }
+
+        // xqx: parallel hyper-viscous diffusion for pressure
+        if (diffusion_p4 > 0.0) {
+            output.write("    diffusion_p4: {:e}\n", diffusion_p4);
+            SAVE_ONCE(diffusion_p4);
+        }
+
+        // xqx: parallel hyper-viscous diffusion for vorticity
+        if (diffusion_u4 > 0.0) {
+            output.write("    diffusion_u4: {:e}\n", diffusion_u4);
+            SAVE_ONCE(diffusion_u4)
+        }
+
+        // xqx: parallel hyper-viscous diffusion for vector potential
+        if (diffusion_a4 > 0.0) {
+            output.write("    diffusion_a4: {:e}\n", diffusion_a4);
+            SAVE_ONCE(diffusion_a4);
+        }
+
+        if (heating_P > 0.0) {
+            output.write("    heating_P(watts): {:e}\n", heating_P);
+
+            output.write("    hp_width(%%): {:e}\n", hp_width);
+
+            output.write("    hp_length(%%): {:e}\n", hp_length);
+
+            SAVE_ONCE(heating_P, hp_width, hp_length);
+        }
+
+        if (sink_P > 0.0) {
+            output.write("    sink_P(rate): {:e}\n", sink_P);
+            output.write("    sp_width(%%): {:e}\n", sp_width);
+            output.write("    sp_length(%%): {:e}\n", sp_length);
+
+            SAVE_ONCE(sink_P, sp_width, sp_length);
+        }
+
+        if (K_H_term) {
+            output.write("    keep K-H term\n");
+        } else {
+            output.write("   drop K-H term\n");
+        }
+
+        Field2D Te;
+        Te = P0 / (2.0 * density * 1.602e-19); // Temperature in eV
+
+        J0 = -MU0 * Lbar * J0 / B0;
+        P0 = 2.0 * MU0 * P0 / (Bbar * Bbar);
+        V0 = V0 / Va;
+        Dphi0 *= Tbar;
+
+        b0xcv.x /= Bbar;
+        b0xcv.y *= Lbar * Lbar;
+        b0xcv.z *= Lbar * Lbar;
+
+        set_tokamak_coordinates_on_mesh(tokamak_coordinates, *mesh, true, Lbar, Bbar);
+
+        //////////////////////////////////////////////////////////////
+        // SHIFTED RADIAL COORDINATES
+
+        if (mesh->IncIntShear) {
+            // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
+            metric->setIntShiftTorsion(tokamak_coordinates.ShearFactor);
+        }
+
+        if (constn0) {
+            T0_fake_prof = false;
+            n0_fake_prof = false;
+        } else {
+            Nbar = 1.0;
+            Tibar = 1000.0;
+            Tebar = 1000.0;
+
+            if ((!T0_fake_prof) && n0_fake_prof) {
+                N0 = N0tanh(n0_height * Nbar, n0_ave * Nbar, n0_width, n0_center, n0_bottom_x);
+
+                Ti0 = P0 / N0 / 2.0;
+                Te0 = Ti0;
+            } else if (T0_fake_prof) {
+                Ti0 = Tconst;
+                Te0 = Ti0;
+                N0 = P0 / (Ti0 + Te0);
+            } else {
+                if (mesh->get(N0, "Niexp")) { // N_i0
+                    throw BoutException("Error: Cannot read Ni0 from grid\n");
+                }
+
+                if (mesh->get(Ti0, "Tiexp")) { // T_i0
+                    throw BoutException("Error: Cannot read Ti0 from grid\n");
+                }
+
+                if (mesh->get(Te0, "Teexp")) { // T_e0
+                    throw BoutException("Error: Cannot read Te0 from grid\n");
+                }
+                N0 /= Nbar;
+                Ti0 /= Tibar;
+                Te0 /= Tebar;
+            }
+        }
+
+        if (gyroviscous) {
+            Dperp2Phi0.setLocation(CELL_CENTRE);
+            Dperp2Phi0.setBoundary("phi");
+            Dperp2Phi.setLocation(CELL_CENTRE);
+            Dperp2Phi.setBoundary("phi");
+            GradPhi02.setLocation(CELL_CENTRE);
+            GradPhi02.setBoundary("phi");
+            GradcPhi.setLocation(CELL_CENTRE);
+            GradcPhi.setBoundary("phi");
+            Dperp2Pi0.setLocation(CELL_CENTRE);
+            Dperp2Pi0.setBoundary("P");
+            Dperp2Pi.setLocation(CELL_CENTRE);
+            Dperp2Pi.setBoundary("P");
+            bracketPhi0P.setLocation(CELL_CENTRE);
+            bracketPhi0P.setBoundary("P");
+            bracketPhiP0.setLocation(CELL_CENTRE);
+            bracketPhiP0.setBoundary("P");
+            if (nonlinear) {
+                GradPhi2.setLocation(CELL_CENTRE);
+                GradPhi2.setBoundary("phi");
+                bracketPhiP.setLocation(CELL_CENTRE);
+                bracketPhiP.setBoundary("P");
+            }
+        }
+
+        BoutReal pnorm = max(P0, true); // Maximum over all processors
+
+        vacuum_pressure *= pnorm; // Get pressure from fraction
+        vacuum_trans *= pnorm;
+
+        // Transitions from 0 in core to 1 in vacuum
+        vac_mask = (1.0 - tanh((P0 - vacuum_pressure) / vacuum_trans)) / 2.0;
+
+        if (spitzer_resist) {
+            // Use Spitzer resistivity
+            output.write("\tTemperature: {:e} -> {:e} [eV]\n", min(Te), max(Te));
+            eta = 0.51 * 1.03e-4 * Zeff * 20.
+                  * pow(Te, -1.5); // eta in Ohm-m. NOTE: ln(Lambda) = 20
+            output.write("\tSpitzer resistivity: {:e} -> {:e} [Ohm m]\n", min(eta), max(eta));
+            eta /= MU0 * Va * Lbar;
+            output.write("\t -> Lundquist {:e} -> {:e}\n", 1.0 / max(eta), 1.0 / min(eta));
+        } else {
+            // transition from 0 for large P0 to resistivity for small P0
+            eta = core_resist + (vac_resist - core_resist) * vac_mask;
+        }
+
+        eta = interp_to(eta, loc);
+
+        SAVE_ONCE(eta);
+
+        if (include_rmp) {
+            // Normalise RMP quantities
+
+            rmp_Psi0 /= Bbar * Lbar;
+
+            rmp_ramp /= Tbar;
+            rmp_freq *= Tbar;
+            rmp_rotate *= Tbar;
+
+            rmp_Psi = rmp_Psi0;
+            rmp_dApdt = 0.0;
+
+            bool apar_changing = false;
+
+            output.write("Including magnetic perturbation\n");
+            if (rmp_ramp > 0.0) {
+                output.write("\tRamping up over period t = {:e} ({:e} ms)\n", rmp_ramp,
+                             rmp_ramp * Tbar * 1000.);
+                apar_changing = true;
+            }
+            if (rmp_freq > 0.0) {
+                output.write("\tOscillating with frequency f = {:e} ({:e} kHz)\n", rmp_freq,
+                             rmp_freq / Tbar / 1000.);
+                apar_changing = true;
+            }
+            if (rmp_rotate != 0.0) {
+                output.write("\tRotating with a frequency f = {:e} ({:e} kHz)\n", rmp_rotate,
+                             rmp_rotate / Tbar / 1000.);
+                apar_changing = true;
+            }
+
+            if (apar_changing) {
+                SAVE_REPEAT(rmp_Psi, rmp_dApdt);
+            } else {
+                SAVE_ONCE(rmp_Psi);
+            }
+        } else {
+            rmp_Psi = 0.0;
+        }
+
+        // Set B field vector
+
+        B0vec.covariant = false;
+        B0vec.x = 0.;
+
+        B0vec.y = Bpxy / hthe;
+        B0vec.z = 0.;
+
+        V0net.covariant = false; // presentation for net flow
+        V0net.x = 0.;
+        V0net.y = Rxy * Btxy * Bpxy / (hthe * B0 * B0) * Dphi0;
+        V0net.z = -Dphi0;
+
+        U0 = B0vec * Curl(V0net) / B0; // get 0th vorticity for Kelvin-Holmholtz term
+
+        /**************** SET EVOLVING VARIABLES *************/
+
+        // Tell BOUT which variables to evolve
+        SOLVE_FOR(U, P);
+
+        if (evolve_jpar) {
+            output.write("Solving for jpar: Inverting to get Psi\n");
+            SOLVE_FOR(Jpar);
+            SAVE_REPEAT(Psi);
+        } else {
+            output.write("Solving for Psi, Differentiating to get jpar\n");
+            SOLVE_FOR(Psi);
+            SAVE_REPEAT(Jpar);
+        }
+
+        if (compress) {
+            output.write("Including compression (Vpar) effects\n");
+
+            SOLVE_FOR(Vpar);
+            comms.add(Vpar);
+
+            beta = B0 * B0 / (0.5 + (B0 * B0 / (g * P0)));
+            gradparB = Grad_par(B0) / B0;
+
+            output.write("Beta in range {:e} -> {:e}\n", min(beta), max(beta));
+        } else {
+            Vpar = 0.0;
+        }
+
+        if (phi_constraint) {
+            // Implicit Phi solve using IDA
+
+            if (!solver->constraints()) {
+                throw BoutException("Cannot constrain. Run again with phi_constraint=false.\n");
+            }
+
+            solver->constraint(phi, C_phi, "phi");
+
+            // Set preconditioner
+            setPrecon(&ELMpb::precon_phi);
+
+        } else {
+            // Phi solved in RHS (explicitly)
+            SAVE_REPEAT(phi);
+
+            // Set preconditioner
+            setPrecon(&ELMpb::precon);
+
+            // Set Jacobian
+            setJacobian((jacobianfunc) & ELMpb::jacobian);
+        }
+
+        // Diamagnetic phi0
+        if (diamag_phi0) {
+            if (constn0) {
+                phi0 = -0.5 * dnorm * P0 / B0;
+            } else {
+                // Stationary equilibrium plasma. ExB velocity balances diamagnetic drift
+                phi0 = -0.5 * dnorm * P0 / B0 / N0;
+            }
+            SAVE_ONCE(phi0);
+        }
+
+        // Add some equilibrium quantities and normalisations
+        // everything needed to recover physical units
+        SAVE_ONCE(J0, P0);
+        SAVE_ONCE(density, Lbar, Bbar, Tbar);
+        SAVE_ONCE(Va, B0);
+        SAVE_ONCE(Dphi0, U0);
+        SAVE_ONCE(V0);
+        if (!constn0) {
+            SAVE_ONCE(Ti0, Te0, N0);
+        }
+
+        // Create a solver for the Laplacian
+        phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
+
+        aparSolver = Laplacian::create(&globalOptions["aparSolver"], loc);
+
+        /////////////// CHECK VACUUM ///////////////////////
+        // In vacuum region, initial vorticity should equal zero
+
+        if (!restarting) {
+            // Only if not restarting: Check initial perturbation
+
+            // Set U to zero where P0 < vacuum_pressure
+            U = where(P0 - vacuum_pressure, U, 0.0);
+
+            if (constn0) {
+                ubyn = U;
+                // Phi should be consistent with U
+                phi = phiSolver->solve(ubyn);
+            } else {
+                ubyn = U / N0;
+                phiSolver->setCoefC(N0);
+                phi = phiSolver->solve(ubyn);
+            }
+
+            // if(diamag) {
+            // phi -= 0.5*dnorm * P / B0;
+            //}
+        }
+
+        /************** SETUP COMMUNICATIONS **************/
+
+        comms.add(U, P);
+
+        phi.setBoundary("phi"); // Set boundary conditions
+        tmpU2.setBoundary("U");
+        tmpP2.setBoundary("P");
+        tmpA2.setBoundary("J");
+
+        if (evolve_jpar) {
+            comms.add(Jpar);
+        } else {
+            comms.add(Psi);
+            // otherwise Need to communicate Jpar separately
+            Jpar.setBoundary("J");
+        }
+        Jpar2.setBoundary("J");
+
+        return 0;
     }
-
-    if (gyroviscous) {
-      Dperp2Phi0.setLocation(CELL_CENTRE);
-      Dperp2Phi0.setBoundary("phi");
-      Dperp2Phi.setLocation(CELL_CENTRE);
-      Dperp2Phi.setBoundary("phi");
-      GradPhi02.setLocation(CELL_CENTRE);
-      GradPhi02.setBoundary("phi");
-      GradcPhi.setLocation(CELL_CENTRE);
-      GradcPhi.setBoundary("phi");
-      Dperp2Pi0.setLocation(CELL_CENTRE);
-      Dperp2Pi0.setBoundary("P");
-      Dperp2Pi.setLocation(CELL_CENTRE);
-      Dperp2Pi.setBoundary("P");
-      bracketPhi0P.setLocation(CELL_CENTRE);
-      bracketPhi0P.setBoundary("P");
-      bracketPhiP0.setLocation(CELL_CENTRE);
-      bracketPhiP0.setBoundary("P");
-      if (nonlinear) {
-        GradPhi2.setLocation(CELL_CENTRE);
-        GradPhi2.setBoundary("phi");
-        bracketPhiP.setLocation(CELL_CENTRE);
-        bracketPhiP.setBoundary("P");
-      }
-    }
-
-    BoutReal pnorm = max(P0, true); // Maximum over all processors
-
-    vacuum_pressure *= pnorm; // Get pressure from fraction
-    vacuum_trans *= pnorm;
-
-    // Transitions from 0 in core to 1 in vacuum
-    vac_mask = (1.0 - tanh((P0 - vacuum_pressure) / vacuum_trans)) / 2.0;
-
-    if (spitzer_resist) {
-      // Use Spitzer resistivity
-      output.write("\tTemperature: {:e} -> {:e} [eV]\n", min(Te), max(Te));
-      eta = 0.51 * 1.03e-4 * Zeff * 20.
-            * pow(Te, -1.5); // eta in Ohm-m. NOTE: ln(Lambda) = 20
-      output.write("\tSpitzer resistivity: {:e} -> {:e} [Ohm m]\n", min(eta), max(eta));
-      eta /= MU0 * Va * Lbar;
-      output.write("\t -> Lundquist {:e} -> {:e}\n", 1.0 / max(eta), 1.0 / min(eta));
-    } else {
-      // transition from 0 for large P0 to resistivity for small P0
-      eta = core_resist + (vac_resist - core_resist) * vac_mask;
-    }
-
-    eta = interp_to(eta, loc);
-
-    SAVE_ONCE(eta);
-
-    if (include_rmp) {
-      // Normalise RMP quantities
-
-      rmp_Psi0 /= Bbar * Lbar;
-
-      rmp_ramp /= Tbar;
-      rmp_freq *= Tbar;
-      rmp_rotate *= Tbar;
-
-      rmp_Psi = rmp_Psi0;
-      rmp_dApdt = 0.0;
-
-      bool apar_changing = false;
-
-      output.write("Including magnetic perturbation\n");
-      if (rmp_ramp > 0.0) {
-        output.write("\tRamping up over period t = {:e} ({:e} ms)\n", rmp_ramp,
-                     rmp_ramp * Tbar * 1000.);
-        apar_changing = true;
-      }
-      if (rmp_freq > 0.0) {
-        output.write("\tOscillating with frequency f = {:e} ({:e} kHz)\n", rmp_freq,
-                     rmp_freq / Tbar / 1000.);
-        apar_changing = true;
-      }
-      if (rmp_rotate != 0.0) {
-        output.write("\tRotating with a frequency f = {:e} ({:e} kHz)\n", rmp_rotate,
-                     rmp_rotate / Tbar / 1000.);
-        apar_changing = true;
-      }
-
-      if (apar_changing) {
-        SAVE_REPEAT(rmp_Psi, rmp_dApdt);
-      } else {
-        SAVE_ONCE(rmp_Psi);
-      }
-    } else {
-      rmp_Psi = 0.0;
-    }
-
-    // Set B field vector
-
-    B0vec.covariant = false;
-    B0vec.x = 0.;
-
-    B0vec.y = Bpxy / hthe;
-    B0vec.z = 0.;
-
-    V0net.covariant = false; // presentation for net flow
-    V0net.x = 0.;
-    V0net.y = Rxy * Btxy * Bpxy / (hthe * B0 * B0) * Dphi0;
-    V0net.z = -Dphi0;
-
-    U0 = B0vec * Curl(V0net) / B0; // get 0th vorticity for Kelvin-Holmholtz term
-
-    /**************** SET EVOLVING VARIABLES *************/
-
-    // Tell BOUT which variables to evolve
-    SOLVE_FOR(U, P);
-
-    if (evolve_jpar) {
-      output.write("Solving for jpar: Inverting to get Psi\n");
-      SOLVE_FOR(Jpar);
-      SAVE_REPEAT(Psi);
-    } else {
-      output.write("Solving for Psi, Differentiating to get jpar\n");
-      SOLVE_FOR(Psi);
-      SAVE_REPEAT(Jpar);
-    }
-
-    if (compress) {
-      output.write("Including compression (Vpar) effects\n");
-
-      SOLVE_FOR(Vpar);
-      comms.add(Vpar);
-
-      beta = B0 * B0 / (0.5 + (B0 * B0 / (g * P0)));
-      gradparB = Grad_par(B0) / B0;
-
-      output.write("Beta in range {:e} -> {:e}\n", min(beta), max(beta));
-    } else {
-      Vpar = 0.0;
-    }
-
-    if (phi_constraint) {
-      // Implicit Phi solve using IDA
-
-      if (!solver->constraints()) {
-        throw BoutException("Cannot constrain. Run again with phi_constraint=false.\n");
-      }
-
-      solver->constraint(phi, C_phi, "phi");
-
-      // Set preconditioner
-      setPrecon(&ELMpb::precon_phi);
-
-    } else {
-      // Phi solved in RHS (explicitly)
-      SAVE_REPEAT(phi);
-
-      // Set preconditioner
-      setPrecon(&ELMpb::precon);
-
-      // Set Jacobian
-      setJacobian((jacobianfunc)&ELMpb::jacobian);
-    }
-
-    // Diamagnetic phi0
-    if (diamag_phi0) {
-      if (constn0) {
-        phi0 = -0.5 * dnorm * P0 / B0;
-      } else {
-        // Stationary equilibrium plasma. ExB velocity balances diamagnetic drift
-        phi0 = -0.5 * dnorm * P0 / B0 / N0;
-      }
-      SAVE_ONCE(phi0);
-    }
-
-    // Add some equilibrium quantities and normalisations
-    // everything needed to recover physical units
-    SAVE_ONCE(J0, P0);
-    SAVE_ONCE(density, Lbar, Bbar, Tbar);
-    SAVE_ONCE(Va, B0);
-    SAVE_ONCE(Dphi0, U0);
-    SAVE_ONCE(V0);
-    if (!constn0) {
-      SAVE_ONCE(Ti0, Te0, N0);
-    }
-
-    // Create a solver for the Laplacian
-    phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
-
-    aparSolver = Laplacian::create(&globalOptions["aparSolver"], loc);
-
-    /////////////// CHECK VACUUM ///////////////////////
-    // In vacuum region, initial vorticity should equal zero
-
-    if (!restarting) {
-      // Only if not restarting: Check initial perturbation
-
-      // Set U to zero where P0 < vacuum_pressure
-      U = where(P0 - vacuum_pressure, U, 0.0);
-
-      if (constn0) {
-        ubyn = U;
-        // Phi should be consistent with U
-        phi = phiSolver->solve(ubyn);
-      } else {
-        ubyn = U / N0;
-        phiSolver->setCoefC(N0);
-        phi = phiSolver->solve(ubyn);
-      }
-
-      // if(diamag) {
-      // phi -= 0.5*dnorm * P / B0;
-      //}
-    }
-
-    /************** SETUP COMMUNICATIONS **************/
-
-    comms.add(U, P);
-
-    phi.setBoundary("phi"); // Set boundary conditions
-    tmpU2.setBoundary("U");
-    tmpP2.setBoundary("P");
-    tmpA2.setBoundary("J");
-
-    if (evolve_jpar) {
-      comms.add(Jpar);
-    } else {
-      comms.add(Psi);
-      // otherwise Need to communicate Jpar separately
-      Jpar.setBoundary("J");
-    }
-    Jpar2.setBoundary("J");
-
-    return 0;
-  }
 
   // Parallel gradient along perturbed field-line
   Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) const {
@@ -1165,7 +1165,7 @@ protected:
 
     Field3D result = Grad_par(f, loc);
 
-    auto B0 = tokamak_coordinates.Bxy();
+    auto B0 = tokamak_coordinates.Bxy;
 
     if (nonlinear) {
       result -= bracket(interp_to(Psi, loc), f, bm_mag) * B0;
@@ -1186,7 +1186,7 @@ protected:
 
     Coordinates* metric = mesh->getCoordinates();
 
-    auto B0 = tokamak_coordinates.Bxy();
+    auto B0 = tokamak_coordinates.Bxy;
 
     ////////////////////////////////////////////
     // Transitions from 0 in core to 1 in vacuum
@@ -1804,7 +1804,7 @@ protected:
 
     Field3D U1 = ddt(U);
 
-    auto B0 = tokamak_coordinates.Bxy();
+    auto B0 = tokamak_coordinates.Bxy;
 
     U1 += (gamma * B0 * B0) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(P);
 
@@ -1858,7 +1858,7 @@ protected:
     JP.setBoundary("P");
     JP.applyBoundary();
 
-    auto B0 = tokamak_coordinates.Bxy();
+    auto B0 = tokamak_coordinates.Bxy;
 
     Field3D B0phi = B0 * phi;
     mesh->communicate(B0phi);
