@@ -716,7 +716,7 @@ public:
     if (mesh->get(Lbar, "rmag") != 0) { // Typical length scale
       Lbar = 1.0;
     }
-    const auto& metric = tokamak_coordinates.make_coordinates(noshear, Lbar, Bbar);
+    set_tokamak_coordinates_on_mesh(tokamak_coordinates, *mesh, true, Lbar, Bbar);
 
     auto Bpxy = tokamak_coordinates.Bpxy;
     auto hthe = tokamak_coordinates.hthe;

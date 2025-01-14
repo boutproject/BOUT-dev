@@ -1031,7 +1031,7 @@ protected:
     }
 
     /**************** CALCULATE METRICS ******************/
-    const auto& coord = tokamak_coordinates.make_coordinates(noshear, Lbar, Bbar);
+    set_tokamak_coordinates_on_mesh(tokamak_coordinates, *mesh, noshear, Lbar, Bbar);
 
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES

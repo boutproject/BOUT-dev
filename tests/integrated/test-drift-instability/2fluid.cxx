@@ -193,7 +193,7 @@ protected:
     pei0 = (Ti0 + Te0) * Ni0;
     pe0 = Te0 * Ni0;
 
-    coord = tokamak_coordinates.make_coordinates(noshear, rho_s, bmag / 1e4, ShearFactor);
+    set_tokamak_coordinates_on_mesh(tokamak_coordinates, *mesh, noshear, rho_s, bmag / 1e4, ShearFactor);
 
     /**************** SET EVOLVING VARIABLES *************/
 

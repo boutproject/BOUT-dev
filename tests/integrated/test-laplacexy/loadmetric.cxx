@@ -18,5 +18,5 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   }
 
   auto tokamak_coordinates = TokamakCoordinates(*mesh);
-  auto coords = tokamak_coordinates.make_coordinates(noshear, Lnorm, Bnorm);
+  set_tokamak_coordinates_on_mesh(tokamak_coordinates, *mesh, true, Lnorm, Bnorm);
 }

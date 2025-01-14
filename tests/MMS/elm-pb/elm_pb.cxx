@@ -389,7 +389,7 @@ public:
       noshear = true;
     }
 
-    coords = tokamak_coordinates.make_coordinates(noshear, Lbar, Bbar);
+    set_tokamak_coordinates_on_mesh(tokamak_coordinates, *mesh, true, Lbar, Bbar);
 
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
