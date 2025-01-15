@@ -36,6 +36,7 @@
 #endif
 
 class Options;
+class GlobalField3DAccess;
 
 /// Interpolate a field onto a perturbed set of points
 const Field3D interpolate(const Field3D& f, const Field3D& delta_x,
@@ -133,13 +134,17 @@ public:
   }
 };
 
-class XZHermiteSpline : public XZInterpolation {
+template <bool monotonic>
+class XZHermiteSplineBase : public XZInterpolation {
 protected:
   /// This is protected rather than private so that it can be
   /// extended and used by HermiteSplineMonotonic
 
   Tensor<SpecificInd<IND_TYPE::IND_3D>> i_corner; // index of bottom-left grid point
   Tensor<int> k_corner;                           // z-index of bottom-left grid point
+
+  std::unique_ptr<GlobalField3DAccess> gf3daccess;
+  Tensor<std::array<int, 4>> g3dinds;
 
   // Basis functions for cubic Hermite spline interpolation
   //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
@@ -166,13 +171,13 @@ protected:
 #endif
 
 public:
-  XZHermiteSpline(Mesh* mesh = nullptr) : XZHermiteSpline(0, mesh) {}
-  XZHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr);
-  XZHermiteSpline(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
-      : XZHermiteSpline(y_offset, mesh) {
+  XZHermiteSplineBase(Mesh* mesh = nullptr) : XZHermiteSplineBase(0, mesh) {}
+  XZHermiteSplineBase(int y_offset = 0, Mesh* mesh = nullptr);
+  XZHermiteSplineBase(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
+      : XZHermiteSplineBase(y_offset, mesh) {
     setRegion(regionFromMask(mask, localmesh));
   }
-  ~XZHermiteSpline() {
+  ~XZHermiteSplineBase() {
 #if HS_USE_PETSC
     if (isInit) {
       MatDestroy(&petscWeights);
@@ -210,33 +215,8 @@ public:
 /// but also degrades accuracy near maxima and minima.
 /// Perhaps should only impose near boundaries, since that is where
 /// problems most obviously occur.
-class XZMonotonicHermiteSpline : public XZHermiteSpline {
-public:
-  XZMonotonicHermiteSpline(Mesh* mesh = nullptr) : XZHermiteSpline(0, mesh) {
-    if (localmesh->getNXPE() > 1) {
-      throw BoutException("Do not support MPI splitting in X");
-    }
-  }
-  XZMonotonicHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr)
-      : XZHermiteSpline(y_offset, mesh) {
-    if (localmesh->getNXPE() > 1) {
-      throw BoutException("Do not support MPI splitting in X");
-    }
-  }
-  XZMonotonicHermiteSpline(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
-      : XZHermiteSpline(mask, y_offset, mesh) {
-    if (localmesh->getNXPE() > 1) {
-      throw BoutException("Do not support MPI splitting in X");
-    }
-  }
-
-  using XZHermiteSpline::interpolate;
-  /// Interpolate using precalculated weights.
-  /// This function is called by the other interpolate functions
-  /// in the base class XZHermiteSpline.
-  Field3D interpolate(const Field3D& f,
-                      const std::string& region = "RGN_NOBNDRY") const override;
-};
+using XZMonotonicHermiteSpline = XZHermiteSplineBase<true>;
+using XZHermiteSpline = XZHermiteSplineBase<false>;
 
 class XZLagrange4pt : public XZInterpolation {
   Tensor<int> i_corner; // x-index of bottom-left grid point

@@ -23,6 +23,7 @@
  *
  **************************************************************************/
 
+#include "parallel/fci_comm.hxx"
 #include <bout/globals.hxx>
 #include <bout/interpolation_xz.hxx>
 #include <bout/msg_stack.hxx>
