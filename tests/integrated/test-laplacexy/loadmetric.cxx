@@ -7,6 +7,7 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   bool noshear;
 
   auto mesh = bout::globals::mesh;
+  auto coords = mesh->getCoordinates();
 
   // Calculate metric components
   std::string ptstr;

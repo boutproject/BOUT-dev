@@ -300,7 +300,7 @@ protected:
 
         bool noshear;
 
-        Coordinates *metric = mesh->getCoordinates();
+        Coordinates* metric = mesh->getCoordinates();
 
         output.write("Solving high-beta flute reduced equations\n");
         output.write("\tFile    : {:s}\n", __FILE__);

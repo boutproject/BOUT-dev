@@ -18,6 +18,7 @@ int main(int argc, char** argv) {
     set_tokamak_coordinates_on_mesh(tokamak_coordinates, *mesh, true, 1.0, 1.0);
   }
 
+    Coordinates* coord = mesh->getCoordinates();
   ///////////////////////////////////////
 
   // Read an analytic input

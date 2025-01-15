@@ -86,6 +86,7 @@ protected:
     b0xcv.covariant = false;  // Read contravariant components
     mesh->get(b0xcv, "bxcv"); // b0xkappa terms
 
+    coord = mesh->getCoordinates();
     // Load normalisation values
     GRID_LOAD(Te_x);
     GRID_LOAD(Ti_x);

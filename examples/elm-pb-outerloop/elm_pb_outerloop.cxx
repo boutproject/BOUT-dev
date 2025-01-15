@@ -357,6 +357,7 @@ public:
   // Note: The rhs() function needs to be public so that RAJA can use CUDA
 
   int init(bool restarting) override {
+    Coordinates* metric = mesh->getCoordinates();
 
     output.write("Solving high-beta flute reduced equations\n");
     output.write("\tFile    : {:s}\n", __FILE__);

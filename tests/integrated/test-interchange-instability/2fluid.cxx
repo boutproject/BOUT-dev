@@ -54,6 +54,7 @@ protected:
 
     b0xcv *= -1.0; // NOTE: THIS IS FOR 'OLD' GRID FILES ONLY
 
+    coord = mesh->getCoordinates();
     // Load normalisation values
     GRID_LOAD(Te_x);
     GRID_LOAD(Ti_x);

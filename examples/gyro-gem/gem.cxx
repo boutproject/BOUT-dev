@@ -345,6 +345,7 @@ class GEM : public PhysicsModel {
     output << "\tNormalised rho_e = " << rho_e << endl;
     output << "\tNormalised rho_i = " << rho_i << endl;
 
+    coord = mesh->getCoordinates();
     // Set B field vector
 
     B0vec.covariant = false;

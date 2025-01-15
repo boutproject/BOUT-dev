@@ -62,6 +62,9 @@ private:
     // Load 2D profiles (set to zero if not found)
     GRID_LOAD(Ni0, Te0);
 
+    coord = mesh->getCoordinates();
+
+
     // Load normalisation values
     GRID_LOAD(Te_x, Ni_x, bmag);
 

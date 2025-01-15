@@ -378,6 +378,9 @@ protected:
 
     bool noshear;
 
+    // Get the metric tensor
+    Coordinates* coord = mesh->getCoordinates();
+
     output.write("Solving high-beta flute reduced equations\n");
     output.write("\tFile    : {:s}\n", __FILE__);
     output.write("\tCompiled: {:s} at {:s}\n", __DATE__, __TIME__);

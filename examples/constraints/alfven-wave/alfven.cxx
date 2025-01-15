@@ -160,6 +160,9 @@ protected:
 
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
+    // Get the coordinates object
+    Coordinates* coord = mesh->getCoordinates();
+
     bool noshear;
 
     // Check type of parallel transform

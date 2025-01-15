@@ -154,6 +154,8 @@ protected:
       return 1;
     }
 
+    Coordinates* coord = mesh->getCoordinates();
+
     // SHIFTED RADIAL COORDINATES
 
     // Check type of parallel transform
