@@ -6,9 +6,6 @@
 # Cores: 2
 # requires: zoidberg
 
-from __future__ import division
-from __future__ import print_function
-
 from boututils.run_wrapper import build_and_log, launch_safe
 from boutdata.collect import collect
 import boutconfig as conf
@@ -82,6 +79,16 @@ for nslice in nslices:
             # Create the grid
             grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=yperiodic)
             # Make and write maps
+            from scipy.interpolate import RectBivariateSpline as RBS
+
+            def myRBS(a, b, c):
+                mx, my = c.shape
+                kx = max(mx - 1, 1)
+                kx = min(kx, 3)
+                return RBS(a, b, c, kx=kx)
+
+            zb.poloidal_grid.RectBivariateSpline = myRBS
+
             maps = zb.make_maps(grid, field, nslice=nslice, quiet=True, MXG=1)
             zb.write_maps(
                 grid,

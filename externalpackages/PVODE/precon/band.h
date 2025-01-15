@@ -138,7 +138,7 @@ typedef struct bandmat_type {
  *                                                                *
  ******************************************************************/
 
-#define PVODE_BAND_ELEM(A, i, j) ((A->data)[j][i - j + (A->smu)])
+#define PVODE_BAND_ELEM(A,i,j) ((A->data)[j][i-j+(A->smu)])
 
 /******************************************************************
  *                                                                *
