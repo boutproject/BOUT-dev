@@ -122,7 +122,7 @@ private:
   // Communication objects
   FieldGroup comms;
 
-  TokamakCoordinates tokamak_coordinates = TokamakCoordinates(*mesh);
+  TokamakOptions tokamak_options = TokamakOptions(*mesh);
 
   // Parallel gradient along perturbed field-line
   const Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) {
@@ -296,7 +296,7 @@ public:
       if (not mesh->IncIntShear) {
         // Dimits style, using local coordinate system
         if (include_curvature) {
-          b0xcv.z += tokamak_coordinates.get_ShearFactor() * b0xcv.x;
+          b0xcv.z += tokamak_options.ShearFactor * b0xcv.x;
         }
       }
     }
@@ -389,7 +389,7 @@ public:
       noshear = true;
     }
 
-    set_tokamak_coordinates_on_mesh(tokamak_coordinates, *mesh, true, Lbar, Bbar);
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, true, Lbar, Bbar);
 
     //////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES

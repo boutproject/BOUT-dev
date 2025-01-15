@@ -81,7 +81,7 @@ private:
   std::unique_ptr<LaplaceXY> laplacexy{nullptr};  // Laplacian solver in X-Y (n=0)
   Field2D phi2D; // Axisymmetric potential, used when split_n0=true
 
-  TokamakCoordinates tokamak_coordinates = TokamakCoordinates(*mesh);
+  TokamakOptions tokamak_options = TokamakOptions(*mesh);
 
 protected:
   int init(bool UNUSED(restarting)) override {
@@ -164,7 +164,7 @@ protected:
 
     if (lowercase(ptstr) == "shifted") {
       // Dimits style, using local coordinate system
-      b0xcv.z += tokamak_coordinates.ShearFactor * b0xcv.x;
+      b0xcv.z += tokamak_options.ShearFactor * b0xcv.x;
       noshear = true;
     }
 
@@ -224,7 +224,7 @@ protected:
     b0xcv.z *= rho_s * rho_s;
 
     // Metrics
-    set_tokamak_coordinates_on_mesh(tokamak_coordinates, *mesh, noshear, rho_s, Bnorm);
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, noshear, rho_s, Bnorm);
 
     SOLVE_FOR3(Vort, Pe, Vpar);
     comms.add(Vort, Pe, Vpar);

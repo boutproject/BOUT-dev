@@ -34,7 +34,7 @@ class Interchange : public PhysicsModel {
 
   Coordinates* coord;
 
-  TokamakCoordinates tokamak_coordinates = TokamakCoordinates(*mesh);
+  TokamakOptions tokamak_options = TokamakOptions(*mesh);
 
 protected:
   int init(bool UNUSED(restarting)) override {
@@ -101,10 +101,10 @@ protected:
           hthe0 / rho_s);
     }
 
-    set_tokamak_coordinates_on_mesh(tokamak_coordinates, *mesh, noshear, rho_s, bmag / 1e4, ShearFactor);
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, noshear, rho_s, bmag / 1e4, ShearFactor);
 
     if (ShiftXderivs) {
-      b0xcv.z += tokamak_coordinates.ShearFactor * b0xcv.x;
+      b0xcv.z += tokamak_options.ShearFactor * b0xcv.x;
     }
 
     /************** NORMALISE QUANTITIES *****************/

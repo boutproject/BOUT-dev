@@ -173,8 +173,8 @@ protected:
       noshear = true;
     }
 
-    auto tokamak_coordinates = TokamakCoordinates(*mesh);
-    set_tokamak_coordinates_on_mesh(tokamak_coordinates, *mesh, noshear, Lnorm, Bnorm);
+    auto tokamak_options = TokamakOptions(*mesh);
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, noshear, Lnorm, Bnorm);
   }
 };
 

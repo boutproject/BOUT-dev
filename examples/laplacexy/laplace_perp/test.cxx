@@ -14,8 +14,8 @@ int main(int argc, char** argv) {
   bool calc_metric;
   calc_metric = Options::root()["calc_metric"].withDefault(false);
   if (calc_metric) {
-    auto tokamak_coordinates = TokamakCoordinates(*mesh);
-    set_tokamak_coordinates_on_mesh(tokamak_coordinates, *mesh, true, 1.0, 1.0);
+    auto tokamak_options = TokamakOptions(*mesh);
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, true, 1.0, 1.0);
   }
 
     Coordinates* coord = mesh->getCoordinates();

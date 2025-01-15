@@ -230,7 +230,7 @@ private:
     int damp_width;        // Width of inner damped region
     BoutReal damp_t_const; // Timescale of damping
 
-    TokamakCoordinates tokamak_coordinates = TokamakCoordinates(*mesh);
+    TokamakOptions tokamak_options = TokamakOptions(*mesh);
 
     const BoutReal MU0 = 4.0e-7 * PI;
     const BoutReal Mi = 2.0 * 1.6726e-27; // Ion mass
@@ -336,8 +336,8 @@ protected:
         Psi_loc.setBoundary("Psi_loc");
 
         //////////////////////////////////////////////////////////////
-        auto &globalOptions = Options::root();
-        auto &options = globalOptions["highbeta"];
+        auto& globalOptions = Options::root();
+        auto& options = globalOptions["highbeta"];
 
         constn0 = options["constn0"].withDefault(true);
         // use the hyperbolic profile of n0. If both  n0_fake_prof and
@@ -647,11 +647,11 @@ protected:
             Dphi0 *= -1;
         }
 
-        auto Bpxy = tokamak_coordinates.Bpxy;
-        auto hthe = tokamak_coordinates.hthe;
-        auto Rxy = tokamak_coordinates.Rxy;
-        auto Btxy = tokamak_coordinates.Btxy;
-        auto B0 = tokamak_coordinates.Bxy;
+        auto Bpxy = tokamak_options.Bpxy;
+        auto hthe = tokamak_options.hthe;
+        auto Rxy = tokamak_options.Rxy;
+        auto Btxy = tokamak_options.Btxy;
+        auto B0 = tokamak_options.Bxy;
 
         V0 = -Rxy * Bpxy * Dphi0 / B0;
 
@@ -748,7 +748,7 @@ protected:
 
         if (noshear) {
             if (include_curvature) {
-                b0xcv.z += tokamak_coordinates.ShearFactor * b0xcv.x;
+                b0xcv.z += tokamak_options.ShearFactor * b0xcv.x;
             }
         }
 
@@ -758,7 +758,7 @@ protected:
         if (not mesh->IncIntShear) {
             // Dimits style, using local coordinate system
             if (include_curvature) {
-                b0xcv.z += tokamak_coordinates.ShearFactor * b0xcv.x;
+                b0xcv.z += tokamak_options.ShearFactor * b0xcv.x;
             }
         }
 
@@ -884,14 +884,14 @@ protected:
         b0xcv.y *= Lbar * Lbar;
         b0xcv.z *= Lbar * Lbar;
 
-        set_tokamak_coordinates_on_mesh(tokamak_coordinates, *mesh, true, Lbar, Bbar);
+        set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, true, Lbar, Bbar);
 
         //////////////////////////////////////////////////////////////
         // SHIFTED RADIAL COORDINATES
 
         if (mesh->IncIntShear) {
             // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-            metric->setIntShiftTorsion(tokamak_coordinates.ShearFactor);
+            metric->setIntShiftTorsion(tokamak_options.ShearFactor);
         }
 
         if (constn0) {
@@ -1158,76 +1158,76 @@ protected:
         return 0;
     }
 
-  // Parallel gradient along perturbed field-line
-  Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) const {
+    // Parallel gradient along perturbed field-line
+    Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) const {
 
-    if (loc == CELL_DEFAULT) {
-      loc = f.getLocation();
+        if (loc == CELL_DEFAULT) {
+            loc = f.getLocation();
+        }
+
+        Field3D result = Grad_par(f, loc);
+
+        auto B0 = tokamak_options.Bxy;
+
+        if (nonlinear) {
+            result -= bracket(interp_to(Psi, loc), f, bm_mag) * B0;
+
+            if (include_rmp) {
+                result -= bracket(interp_to(rmp_Psi, loc), f, bm_mag) * B0;
+            }
+        }
+
+        return result;
     }
 
-    Field3D result = Grad_par(f, loc);
+    bool first_run = true; // For printing out some diagnostics first time around
 
-    auto B0 = tokamak_coordinates.Bxy;
+    int rhs(BoutReal t) override {
+        // Perform communications
+        mesh->communicate(comms);
 
-    if (nonlinear) {
-      result -= bracket(interp_to(Psi, loc), f, bm_mag) * B0;
+        Coordinates *metric = mesh->getCoordinates();
 
-      if (include_rmp) {
-        result -= bracket(interp_to(rmp_Psi, loc), f, bm_mag) * B0;
-      }
-    }
+        auto B0 = tokamak_options.Bxy;
 
-    return result;
-  }
+        ////////////////////////////////////////////
+        // Transitions from 0 in core to 1 in vacuum
+        if (nonlinear) {
+            vac_mask = (1.0 - tanh(((P0 + P) - vacuum_pressure) / vacuum_trans)) / 2.0;
 
-  bool first_run = true; // For printing out some diagnostics first time around
+            // Update resistivity
+            if (spitzer_resist) {
+                // Use Spitzer formula
+                Field3D Te;
+                Te = (P0 + P) * Bbar * Bbar / (4. * MU0) / (density * 1.602e-19); // eV
 
-  int rhs(BoutReal t) override {
-    // Perform communications
-    mesh->communicate(comms);
+                // eta in Ohm-m. ln(Lambda) = 20
+                eta = interp_to(0.51 * 1.03e-4 * Zeff * 20. * pow(Te, -1.5), loc);
 
-    Coordinates* metric = mesh->getCoordinates();
-
-    auto B0 = tokamak_coordinates.Bxy;
-
-    ////////////////////////////////////////////
-    // Transitions from 0 in core to 1 in vacuum
-    if (nonlinear) {
-      vac_mask = (1.0 - tanh(((P0 + P) - vacuum_pressure) / vacuum_trans)) / 2.0;
-
-      // Update resistivity
-      if (spitzer_resist) {
-        // Use Spitzer formula
-        Field3D Te;
-        Te = (P0 + P) * Bbar * Bbar / (4. * MU0) / (density * 1.602e-19); // eV
-
-        // eta in Ohm-m. ln(Lambda) = 20
-        eta = interp_to(0.51 * 1.03e-4 * Zeff * 20. * pow(Te, -1.5), loc);
-
-        // Normalised eta
-        eta /= MU0 * Va * Lbar;
-      } else {
-        // Use specified core and vacuum Lundquist numbers
-        eta = core_resist + (vac_resist - core_resist) * vac_mask;
-      }
-      eta = interp_to(eta, loc);
-    }
-
-    ////////////////////////////////////////////
-    // Resonant Magnetic Perturbation code
-
-    if (include_rmp) {
-
-      if ((rmp_ramp > 0.0) || (rmp_freq > 0.0) || (rmp_rotate != 0.0)) {
-        // Need to update the RMP terms
-
-        if ((rmp_ramp > 0.0) && (t < rmp_ramp)) {
-          // Still in ramp phase
-
-          rmp_Psi = (t / rmp_ramp) * rmp_Psi0; // Linear ramp
-
-          rmp_dApdt = rmp_Psi0 / rmp_ramp;
+                // Normalised eta
+                eta /= MU0 * Va * Lbar;
             } else {
+                // Use specified core and vacuum Lundquist numbers
+                eta = core_resist + (vac_resist - core_resist) * vac_mask;
+            }
+            eta = interp_to(eta, loc);
+        }
+
+        ////////////////////////////////////////////
+        // Resonant Magnetic Perturbation code
+
+        if (include_rmp) {
+
+            if ((rmp_ramp > 0.0) || (rmp_freq > 0.0) || (rmp_rotate != 0.0)) {
+                // Need to update the RMP terms
+
+                if ((rmp_ramp > 0.0) && (t < rmp_ramp)) {
+                    // Still in ramp phase
+
+                    rmp_Psi = (t / rmp_ramp) * rmp_Psi0; // Linear ramp
+
+                    rmp_dApdt = rmp_Psi0 / rmp_ramp;
+                } else {
                     rmp_Psi = rmp_Psi0;
                     rmp_dApdt = 0.0;
                 }
@@ -1806,7 +1806,7 @@ protected:
 
         Field3D U1 = ddt(U);
 
-        auto B0 = tokamak_coordinates.Bxy;
+        auto B0 = tokamak_options.Bxy;
 
         U1 += (gamma * B0 * B0) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(P);
 
@@ -1860,7 +1860,7 @@ protected:
         JP.setBoundary("P");
         JP.applyBoundary();
 
-        auto B0 = tokamak_coordinates.Bxy;
+        auto B0 = tokamak_options.Bxy;
 
         Field3D B0phi = B0 * phi;
         mesh->communicate(B0phi);

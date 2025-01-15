@@ -242,17 +242,17 @@ class GEM : public PhysicsModel {
     Tbar = options["Tbar"].withDefault(Tbar); // Override in options file
     SAVE_ONCE(Tbar);                          // Timescale in seconds
 
-    auto tokamak_coordinates = TokamakCoordinates(*mesh);
+    auto tokamak_options = TokamakOptions(*mesh);
 
     if (mesh->get(Bbar, "Bbar")) {
       if (mesh->get(Bbar, "bmag")) {
-        Bbar = max(tokamak_coordinates.Bxy, true);
+        Bbar = max(tokamak_options.Bxy, true);
       }
     }
     Bbar = options["Bbar"].withDefault(Bbar); // Override in options file
     SAVE_ONCE(Bbar);
 
-    set_tokamak_coordinates_on_mesh(tokamak_coordinates, *mesh, true, Lbar, Bbar);
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, true, Lbar, Bbar);
 
     beta_e = 4.e-7 * PI * max(p_e, true) / (Bbar * Bbar);
     SAVE_ONCE(beta_e);
@@ -350,7 +350,7 @@ class GEM : public PhysicsModel {
 
     B0vec.covariant = false;
     B0vec.x = 0.;
-    B0vec.y = tokamak_coordinates.Bpxy / tokamak_coordinates.hthe;
+    B0vec.y = tokamak_options.Bpxy / tokamak_options.hthe;
     B0vec.z = 0.;
 
     // Precompute this for use in RHS

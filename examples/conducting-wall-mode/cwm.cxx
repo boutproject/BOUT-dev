@@ -121,7 +121,7 @@ private:
           hthe0 / rho_s);
     }
 
-    auto tokamak_coordinates = TokamakCoordinates(*mesh);
+    auto tokamak_options = TokamakOptions(*mesh);
 
     /************** NORMALISE QUANTITIES *****************/
 
@@ -132,7 +132,7 @@ private:
     Te0 /= Te_x;
 
     // Normalise geometry
-    set_tokamak_coordinates_on_mesh(tokamak_coordinates, *mesh, noshear, rho_s, bmag / 1e4, ShearFactor);
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, noshear, rho_s, bmag / 1e4, ShearFactor);
 
     // Set nu
     nu = nu_hat * Ni0 / pow(Te0, 1.5);
@@ -143,10 +143,10 @@ private:
     // add evolving variables to the communication object
     SOLVE_FOR(rho, te);
 
-    Field2D Rxy = tokamak_coordinates.Rxy;
-    Field2D Bpxy = tokamak_coordinates.Bpxy;
-    Field2D Btxy = tokamak_coordinates.Btxy;
-    Field2D hthe = tokamak_coordinates.hthe;
+    Field2D Rxy = tokamak_options.Rxy;
+    Field2D Bpxy = tokamak_options.Bpxy;
+    Field2D Btxy = tokamak_options.Btxy;
+    Field2D hthe = tokamak_options.hthe;
     SAVE_ONCE(Rxy, Bpxy, Btxy, Zxy, hthe);
     SAVE_ONCE(nu_hat, hthe0);
 
