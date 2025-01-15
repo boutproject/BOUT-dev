@@ -274,6 +274,8 @@ set(BOUT_SOURCES
   ./src/mesh/mesh.cxx
   ./src/mesh/parallel/fci.cxx
   ./src/mesh/parallel/fci.hxx
+  ./src/mesh/parallel/fci_comm.cxx
+  ./src/mesh/parallel/fci_comm.hxx
   ./src/mesh/parallel/identity.cxx
   ./src/mesh/parallel/shiftedmetric.cxx
   ./src/mesh/parallel/shiftedmetricinterp.cxx
