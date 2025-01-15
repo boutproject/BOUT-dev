@@ -29,6 +29,7 @@
 #if BOUT_HAS_PETSC
 
 #include "petsc_laplace.hxx"
+#include "petscsys.h"
 
 #include <bout/assert.hxx>
 #include <bout/boutcomm.hxx>
