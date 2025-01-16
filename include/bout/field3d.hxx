@@ -293,11 +293,11 @@ public:
 
   /// Enable a special tracking mode for debugging
   /// Save all changes that, are done to the field, to tracking
-  Field3D& enableTracking(const std::string& name, Options& tracking);
+  Field3D& enableTracking(const std::string& name, std::weak_ptr<Options> tracking);
 
   /// Disable tracking
   Field3D& disableTracking() {
-    tracking = nullptr;
+    tracking.reset();
     tracking_state = 0;
     return *this;
   }
@@ -506,7 +506,7 @@ public:
 
   int size() const override { return nx * ny * nz; };
 
-  Options* getTracking() { return tracking; };
+  std::weak_ptr<Options> getTracking() { return tracking; };
 
 private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
@@ -525,11 +525,17 @@ private:
   std::optional<size_t> regionID;
 
   int tracking_state{0};
-  Options* tracking{nullptr};
+  std::weak_ptr<Options> tracking;
   std::string selfname;
-  template <class T>
-  Options* track(const T& change, std::string operation);
-  Options* track(const BoutReal& change, std::string operation);
+  template <typename T>
+  inline void track(const T& change, const std::string& operation) {
+    if (tracking_state != 0) {
+      _track(change, operation);
+    }
+  }
+  template <typename T, typename = bout::utils::EnableIfField<T>>
+  void _track(const T& change, std::string operation);
+  void _track(const BoutReal& change, std::string operation);
 };
 
 // Non-member overloaded operators

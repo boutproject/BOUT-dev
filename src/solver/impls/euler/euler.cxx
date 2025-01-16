@@ -147,12 +147,12 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& star
   load_vars(std::begin(start));
   const bool dump_now =
       (dump_at_time >= 0 && std::abs(dump_at_time - curtime) < dt) || dump_at_time < -3;
-  std::unique_ptr<Options> debug_ptr;
+  std::shared_ptr<Options> debug_ptr;
   if (dump_now) {
-    debug_ptr = std::make_unique<Options>();
+    debug_ptr = std::make_shared<Options>();
     Options& debug = *debug_ptr;
     for (auto& f : f3d) {
-      f.F_var->enableTracking(fmt::format("ddt_{:s}", f.name), debug);
+      f.F_var->enableTracking(fmt::format("ddt_{:s}", f.name), debug_ptr);
       setName(*f.var, f.name);
       debug[fmt::format("pre_{:s}", f.name)] = *f.var;
       f.var->allocate();

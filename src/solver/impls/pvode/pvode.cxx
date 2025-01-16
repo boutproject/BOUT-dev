@@ -360,56 +360,53 @@ BoutReal PvodeSolver::run(BoutReal tout) {
     output_error.write("ERROR CVODE step failed, flag = {:d}\n", flag);
     if (debug_on_failure) {
       CVodeMemRec* cv_mem = (CVodeMem)cvode_mem;
-      if (f2d.empty() and v2d.empty() and v3d.empty()) {
-        Options debug{};
-        using namespace std::string_literals;
-        Mesh* mesh{};
-        for (const auto& prefix : {"pre_"s, "residuum_"s}) {
-          std::vector<Field3D> list_of_fields{};
-          std::vector<bool> evolve_bndrys{};
-          for (const auto& f : f3d) {
-            mesh = f.var->getMesh();
-            Field3D to_load{0., mesh};
-            to_load.allocate();
-            to_load.setLocation(f.location);
-            debug[fmt::format("{:s}{:s}", prefix, f.name)] = to_load;
-            list_of_fields.push_back(to_load);
-            evolve_bndrys.push_back(f.evolve_bndry);
-          }
-          pvode_load_data_f3d(evolve_bndrys, list_of_fields,
-                              prefix == "pre_"s ? udata : N_VDATA(cv_mem->cv_acor));
-        }
-
-        for (auto& f : f3d) {
-          f.F_var->enableTracking(fmt::format("ddt_{:s}", f.name), debug);
-          setName(*f.var, f.name);
-        }
-        run_rhs(simtime);
-
-        for (auto& f : f3d) {
-          debug[f.name] = *f.var;
-          if (f.var->hasParallelSlices()) {
-            saveParallel(debug, f.name, *f.var);
-          }
-        }
-
-        if (mesh != nullptr) {
-          mesh->outputVars(debug);
-          debug["BOUT_VERSION"].force(bout::version::as_double);
-        }
-
-        const std::string outname =
-            fmt::format("{}/BOUT.debug.{}.nc",
-                        Options::root()["datadir"].withDefault<std::string>("data"),
-                        BoutComm::rank());
-
-        bout::OptionsIO::create(outname)->write(debug);
-        MPI_Barrier(BoutComm::get());
-      } else {
+      if (!(f2d.empty() and v2d.empty() and v3d.empty())) {
         output_warn.write("debug_on_failure is currently only supported for Field3Ds");
+        return -1.0;
       }
+      auto debug_ptr = std::make_shared<Options>();
+      Options& debug = *debug_ptr;
+      using namespace std::string_literals;
+      Mesh* mesh{};
+      for (const auto& prefix : {"pre_"s, "residuum_"s}) {
+        std::vector<Field3D> list_of_fields{};
+        std::vector<bool> evolve_bndrys{};
+        for (const auto& f : f3d) {
+          mesh = f.var->getMesh();
+          Field3D to_load{0., mesh};
+          to_load.allocate();
+          to_load.setLocation(f.location);
+          debug[fmt::format("{:s}{:s}", prefix, f.name)] = to_load;
+          list_of_fields.push_back(to_load);
+          evolve_bndrys.push_back(f.evolve_bndry);
+        }
+        pvode_load_data_f3d(evolve_bndrys, list_of_fields,
+                            prefix == "pre_"s ? udata : N_VDATA(cv_mem->cv_acor));
+      }
+
+      for (auto& f : f3d) {
+        f.F_var->enableTracking(fmt::format("ddt_{:s}", f.name), debug_ptr);
+        setName(*f.var, f.name);
+      }
+      run_rhs(simtime);
+
+      for (auto& f : f3d) {
+        saveParallel(debug, f.name, *f.var);
+      }
+
+      if (mesh != nullptr) {
+        mesh->outputVars(debug);
+        debug["BOUT_VERSION"].force(bout::version::as_double);
+      }
+
+      const std::string outname = fmt::format(
+          "{}/BOUT.debug.{}.nc",
+          Options::root()["datadir"].withDefault<std::string>("data"), BoutComm::rank());
+
+      bout::OptionsIO::create(outname)->write(debug);
+      MPI_Barrier(BoutComm::get());
     }
-    return (-1.0);
+    return -1.0;
   }
 
   return simtime;
