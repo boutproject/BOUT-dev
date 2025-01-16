@@ -524,8 +524,11 @@ private:
   /// RegionID over which the field is valid
   std::optional<size_t> regionID;
 
+  /// counter for tracking, to assign unique names to the variable names
   int tracking_state{0};
   std::weak_ptr<Options> tracking;
+  // name is changed if we assign to the variable, while selfname is a
+  // non-changing copy that is used for the variable names in the dump files
   std::string selfname;
   template <typename T>
   inline void track(const T& change, const std::string& operation) {
