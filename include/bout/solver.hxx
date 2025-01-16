@@ -36,7 +36,7 @@
 #ifndef SOLVER_H
 #define SOLVER_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"

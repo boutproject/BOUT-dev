@@ -23,32 +23,41 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
-
-#include "arkode.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_ARKODE
 
-#include "bout/bout_enum_class.hxx"
+#include "arkode.hxx"
+
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/mpi_wrapper.hxx"
 #include "bout/msg_stack.hxx"
 #include "bout/options.hxx"
 #include "bout/output.hxx"
+#include "bout/solver.hxx"
+#include "bout/sundials_backports.hxx"
 #include "bout/unused.hxx"
-#include "bout/utils.hxx"
 
+#include <arkode/arkode.h>
 #include <arkode/arkode_arkstep.h>
 #include <arkode/arkode_bbdpre.h>
-#include <sundials/sundials_math.h>
-#include <sundials/sundials_types.h>
+#include <arkode/arkode_ls.h>
+#if SUNDIALS_CONTROLLER_SUPPORT
+#include <sunadaptcontroller/sunadaptcontroller_imexgus.h>
+#include <sunadaptcontroller/sunadaptcontroller_soderlind.h>
+#endif
 
 #include <algorithm>
+#include <iterator>
 #include <numeric>
-
-class Field2D;
+#include <vector>
 
 // NOLINTBEGIN(readability-identifier-length)
 namespace {
@@ -86,7 +95,7 @@ ArkodeSolver::ArkodeSolver(Options* opts)
                           "not recommended except for code comparison")
                      .withDefault(false)),
       order((*options)["order"].doc("Order of internal step").withDefault(4)),
-#if SUNDIALS_TABLE_BY_NAME_SUPPORT
+#if ARKODE_TABLE_BY_NAME_SUPPORT
       implicit_table((*options)["implicit_table"]
                          .doc("Name of the implicit Butcher table")
                          .withDefault("")),
@@ -131,8 +140,10 @@ ArkodeSolver::ArkodeSolver(Options* opts)
       use_jacobian((*options)["use_jacobian"]
                        .doc("Use user-supplied Jacobian function")
                        .withDefault(false)),
+#if ARKODE_OPTIMAL_PARAMS_SUPPORT
       optimize(
           (*options)["optimize"].doc("Use ARKode optimal parameters").withDefault(false)),
+#endif
       suncontext(createSUNContext(BoutComm::get())) {
   has_constraints = false; // This solver doesn't have constraints
 
@@ -155,7 +166,7 @@ ArkodeSolver::~ArkodeSolver() {
   SUNLinSolFree(sun_solver);
   SUNNonlinSolFree(nonlinear_solver);
 
-#if SUNDIALS_CONTROLLER_SUPPORT
+#if ARKODE_CONTROLLER_SUPPORT
   SUNAdaptController_Destroy(controller);
 #endif
 }
@@ -213,35 +224,13 @@ int ArkodeSolver::init() {
     throw BoutException("ARKStepCreate failed\n");
   }
 
-  switch (treatment) {
-  case Treatment::ImEx:
-    output_info.write("\tUsing ARKode ImEx solver \n");
-    if (ARKStepSetImEx(arkode_mem) != ARK_SUCCESS) {
-      throw BoutException("ARKStepSetImEx failed\n");
-    }
-    break;
-  case Treatment::Explicit:
-    output_info.write("\tUsing ARKode Explicit solver \n");
-    if (ARKStepSetExplicit(arkode_mem) != ARK_SUCCESS) {
-      throw BoutException("ARKStepSetExplicit failed\n");
-    }
-    break;
-  case Treatment::Implicit:
-    output_info.write("\tUsing ARKode Implicit solver \n");
-    if (ARKStepSetImplicit(arkode_mem) != ARK_SUCCESS) {
-      throw BoutException("ARKStepSetImplicit failed\n");
-    }
-    break;
-  default:
-    throw BoutException("Invalid treatment: {}\n", toString(treatment));
-  }
-
   // For callbacks, need pointer to solver object
   if (ARKodeSetUserData(arkode_mem, this) != ARK_SUCCESS) {
     throw BoutException("ARKodeSetUserData failed\n");
   }
 
-  if (ARKodeSetLinear(arkode_mem, set_linear) != ARK_SUCCESS) {
+  if (ARKodeSetLinear(arkode_mem, static_cast<int>(set_linear))
+      != ARK_SUCCESS) {
     throw BoutException("ARKodeSetLinear failed\n");
   }
 
@@ -257,7 +246,7 @@ int ArkodeSolver::init() {
     throw BoutException("ARKodeSetOrder failed\n");
   }
 
-#if SUNDIALS_TABLE_BY_NAME_SUPPORT
+#if ARKODE_TABLE_BY_NAME_SUPPORT
   if (!implicit_table.empty() || !explicit_table.empty()) {
     if (ARKStepSetTableName(
             arkode_mem,
@@ -273,7 +262,7 @@ int ArkodeSolver::init() {
     throw BoutException("ARKodeSetCFLFraction failed\n");
   }
 
-#if SUNDIALS_CONTROLLER_SUPPORT
+#if ARKODE_CONTROLLER_SUPPORT
   switch (adap_method) {
   case AdapMethod::PID:
     controller = SUNAdaptController_PID(suncontext);
@@ -488,12 +477,15 @@ int ArkodeSolver::init() {
     }
   }
 
+#if ARKODE_OPTIMAL_PARAMS_SUPPORT
   if (optimize) {
     output.write("\tUsing ARKode inbuilt optimization\n");
     if (ARKStepSetOptimalParams(arkode_mem) != ARK_SUCCESS) {
       throw BoutException("ARKStepSetOptimalParams failed");
     }
   }
+#endif
+
   return 0;
 }
 

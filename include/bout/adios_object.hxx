@@ -12,7 +12,7 @@
 #ifndef ADIOS_OBJECT_HXX
 #define ADIOS_OBJECT_HXX
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_ADIOS2
 

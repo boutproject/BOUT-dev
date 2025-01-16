@@ -25,7 +25,7 @@ endif()
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
 # We try to use git to get a full description, inspired by setuptools_scm
-set(_bout_previous_version "5.1.0")
+set(_bout_previous_version "5.1.1")
 set(_bout_next_version "5.2.0")
 execute_process(
   COMMAND "git" describe --tags --match=v${_bout_previous_version}
@@ -270,6 +270,7 @@ set(BOUT_SOURCES
   ./src/mesh/interpolation/interpolation_z.cxx
   ./src/mesh/interpolation/lagrange_4pt_xz.cxx
   ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
+  ./src/mesh/invert3x3.hxx
   ./src/mesh/mesh.cxx
   ./src/mesh/parallel/fci.cxx
   ./src/mesh/parallel/fci.hxx

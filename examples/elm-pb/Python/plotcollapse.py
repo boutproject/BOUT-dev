@@ -5,9 +5,10 @@ from past.utils import old_div
 import matplotlib.pyplot as plt
 import numpy as np
 from boututils.moment_xyzt import moment_xyzt
-from boututils.file_import import file_import
+from boututils.datafile import DataFile
 from boutdata.collect import collect
 import os
+from pathlib import Path
 
 #Dynamic matplotlib settings
 from matplotlib import rcParams
@@ -17,8 +18,10 @@ rcParams['lines.linewidth'] = 2
 
 if not os.path.exists('image'):
    os.makedirs('image')
+filename = Path(__file__).with_name("cbm18_dens8.grid_nx68ny64.nc")
+with DataFile(str(filename)) as f:
+    g = {v: f.read(v) for v in f.keys()}
 
-g = file_import(os.path.dirname(os.path.realpath(__file__))+'/../cbm18_dens8.grid_nx68ny64.nc')
 psi = old_div((g['psixy'][:, 32] - g['psi_axis']), (g['psi_bndry'] - g['psi_axis']))
 
 path = './data'

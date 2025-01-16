@@ -1,9 +1,8 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include <memory>
 #include <utility>
 
-#include "test_extras.hxx"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -18,11 +17,7 @@
 
 #include <petscconf.h>
 
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;

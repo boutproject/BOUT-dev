@@ -34,7 +34,7 @@ class Laplacian;
 #ifndef BOUT_LAPLACE_H
 #define BOUT_LAPLACE_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_PETSC
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE

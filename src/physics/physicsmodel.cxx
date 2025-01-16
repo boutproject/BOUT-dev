@@ -32,6 +32,7 @@
 #include <bout/physicsmodel.hxx>
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
+#include "bout/version.hxx"
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/vector2d.hxx>
@@ -94,7 +95,7 @@ void PhysicsModel::initialise(Solver* s) {
   const bool restarting = Options::root()["restart"].withDefault(false);
 
   if (restarting) {
-    restart_options = restart_file->read();
+    restart_options = restart_file->read(false);
   }
 
   // Call user init code to specify evolving variables

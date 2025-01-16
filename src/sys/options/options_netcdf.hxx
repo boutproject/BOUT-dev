@@ -4,7 +4,7 @@
 #ifndef OPTIONS_NETCDF_H
 #define OPTIONS_NETCDF_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "bout/options.hxx"
 #include "bout/options_io.hxx"
@@ -47,7 +47,7 @@ public:
   OptionsNetCDF& operator=(OptionsNetCDF&&) noexcept = default;
 
   /// Read options from file
-  Options read();
+  Options read(bool lazy = true) override;
 
   /// Write options to file
   void write(const Options& options) { write(options, "t"); }
