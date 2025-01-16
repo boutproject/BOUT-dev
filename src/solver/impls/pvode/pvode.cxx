@@ -61,8 +61,8 @@ void pvode_load_data_f3d(const std::vector<bool>& evolve_bndrys,
     for (const auto& i2d : mesh->getRegion2D(bndry ? "RGN_BNDRY" : "RGN_NOBNDRY")) {
       for (int jz = 0; jz < nz; jz++) {
         // Loop over 3D variables
-        std::vector<bool>::const_iterator evolve_bndry = evolve_bndrys.begin();
-        for (std::vector<Field3D>::iterator ff = ffs.begin(); ff != ffs.end(); ++ff) {
+        auto evolve_bndry = evolve_bndrys.cbegin();
+        for (auto ff = ffs.begin(); ff != ffs.end(); ++ff) {
           if (bndry && !*evolve_bndry) {
             continue;
           }
