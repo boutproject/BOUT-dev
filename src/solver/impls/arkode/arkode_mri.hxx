@@ -31,9 +31,9 @@
 
 #include "bout/build_config.hxx"
 #include "bout/solver.hxx"
-#include <sundials/sundials_config.h>
+#include "bout/sundials_backports.hxx"
 
-#if ((SUNDIALS_VERSION_MAJOR == 7 && SUNDIALS_VERSION_MINOR >= 2) || SUNDIALS_VERSION_MAJOR > 8)
+#if SUNDIALS_VERSION_AT_LEAST(7, 2, 0)
 #if not BOUT_HAS_ARKODE
 
 namespace {
@@ -45,11 +45,10 @@ RegisterUnavailableSolver
 
 #include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
-#include "bout/sundials_backports.hxx"
 
 #include <nvector/nvector_parallel.h>
 #include <arkode/arkode_mristep.h>
-
+#include <sundials/sundials_config.h>
 #include <vector>
 
 class ArkodeMRISolver;
@@ -169,3 +168,4 @@ private:
 #else
 #endif // SUNDIALS_VERSION CHECK
 #endif // BOUT_ARKODE_MRI_SOLVER_H
+
