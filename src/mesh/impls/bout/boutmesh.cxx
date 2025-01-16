@@ -42,6 +42,7 @@
 #include <bout/dcomplex.hxx>
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
+#include <bout/griddata.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
@@ -2296,7 +2297,9 @@ int BoutMesh::pack_data(const std::vector<FieldData*>& var_list, int xge, int xl
   for (const auto& var : var_list) {
     if (var->is3D()) {
       // 3D variable
-      auto& var3d_ref = *dynamic_cast<Field3D*>(var);
+      auto* var3d_ref_ptr = dynamic_cast<Field3D*>(var);
+      ASSERT0(var3d_ref_ptr != nullptr);
+      auto& var3d_ref = *var3d_ref_ptr;
       ASSERT2(var3d_ref.isAllocated());
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
@@ -2307,7 +2310,9 @@ int BoutMesh::pack_data(const std::vector<FieldData*>& var_list, int xge, int xl
       }
     } else {
       // 2D variable
-      auto& var2d_ref = *dynamic_cast<Field2D*>(var);
+      auto* var2d_ref_ptr = dynamic_cast<Field2D*>(var);
+      ASSERT0(var2d_ref_ptr != nullptr);
+      auto& var2d_ref = *var2d_ref_ptr;
       ASSERT2(var2d_ref.isAllocated());
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++, len++) {

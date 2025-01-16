@@ -1,14 +1,14 @@
+#include <bout/boutcomm.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
 #include <bout/globals.hxx>
+#include <bout/griddata.hxx>
 #include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 #include <bout/utils.hxx>
 
 #include <cmath>
-
-#include <bout/boutcomm.hxx>
-#include <bout/output.hxx>
 
 #include "impls/bout/boutmesh.hxx"
 
@@ -29,8 +29,16 @@ MeshFactory::ReturnType MeshFactory::create(const std::string& type, Options* op
 
   if (options->isSet("file") or Options::root().isSet("grid")) {
     // Specified mesh file
-    const auto grid_name =
-        (*options)["file"].withDefault(Options::root()["grid"].withDefault(""));
+    const auto grid_name1 = Options::root()["grid"].withDefault("");
+    const auto grid_name = (*options)["file"].withDefault(grid_name1);
+    if (options->isSet("file") and Options::root().isSet("grid")) {
+      if (grid_name1 != grid_name) {
+        throw BoutException(
+            "Mismatch in grid names - specified `{:s}` in grid and `{:s} in "
+            "mesh:file!\nPlease specify only one name or ensure they are the same!",
+            grid_name1, grid_name);
+      }
+    }
     output << "\nGetting grid data from file " << grid_name << "\n";
 
     // Create a grid file, using specified format if given

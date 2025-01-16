@@ -64,7 +64,8 @@ Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes direction
 /// Doesn't copy any data, just create a new reference to the same data (copy on change
 /// later)
 Field3D::Field3D(const Field3D& f)
-    : Field(f), data(f.data), yup_fields(f.yup_fields), ydown_fields(f.ydown_fields) {
+    : Field(f), data(f.data), yup_fields(f.yup_fields), ydown_fields(f.ydown_fields),
+      regionID(f.regionID) {
 
   TRACE("Field3D(Field3D&)");
 
@@ -253,6 +254,7 @@ Field3D& Field3D::operator=(const Field3D& rhs) {
   // Copy parallel slices or delete existing ones.
   yup_fields = rhs.yup_fields;
   ydown_fields = rhs.ydown_fields;
+  regionID = rhs.regionID;
 
   // Copy the data and data sizes
   nx = rhs.nx;
@@ -276,6 +278,7 @@ Field3D& Field3D::operator=(Field3D&& rhs) {
   nx = rhs.nx;
   ny = rhs.ny;
   nz = rhs.nz;
+  regionID = rhs.regionID;
 
   data = std::move(rhs.data);
 
@@ -295,6 +298,7 @@ Field3D& Field3D::operator=(const Field2D& rhs) {
   // Delete existing parallel slices. We don't copy parallel slices, so any
   // that currently exist will be incorrect.
   clearParallelSlices();
+  resetRegion();
 
   setLocation(rhs.getLocation());
 
@@ -322,6 +326,7 @@ void Field3D::operator=(const FieldPerp& rhs) {
   // Delete existing parallel slices. We don't copy parallel slices, so any
   // that currently exist will be incorrect.
   clearParallelSlices();
+  resetRegion();
 
   /// Make sure there's a unique array to copy data into
   allocate();
@@ -337,6 +342,7 @@ Field3D& Field3D::operator=(const BoutReal val) {
   // Delete existing parallel slices. We don't copy parallel slices, so any
   // that currently exist will be incorrect.
   clearParallelSlices();
+  resetRegion();
 
   allocate();
 

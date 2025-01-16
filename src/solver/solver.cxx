@@ -20,7 +20,7 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
@@ -563,13 +563,11 @@ int Solver::solve(int nout, BoutReal timestep) {
     /// Write initial state as time-point 0
 
     // Call monitors so initial values are written to output dump files
-    if (call_monitors(simtime, -1, nout)) {
+    if (call_monitors(simtime, 0, nout)) {
       throw BoutException("Initial monitor call failed!");
     }
-
-    // Reset iteration counter to undo the increment from the initial call_monitors().
-    // That call was either at t=0, or a repeat of the last output before restarting.
-    resetIterationCounter(getIterationCounter() - 1);
+  } else {
+    incrementIterationCounter();
   }
 
   int status;
@@ -726,6 +724,7 @@ void Solver::readEvolvingVariablesFromOptions(Options& options) {
   run_id = options["run_id"].withDefault(default_run_id);
   simtime = options["tt"].as<BoutReal>();
   iteration = options["hist_hi"].withDefault<int>(0);
+  iteration_offset = iteration;
 
   for (auto& f : f2d) {
     if (options.isSet(f.name)) {
@@ -864,7 +863,6 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     calculate_mms_error(simtime);
   }
 
-  ++iter;
   try {
     // We need to write each time dimension a maximum of once per
     // timestep. The set of unique time dimensions may be the same
@@ -877,7 +875,7 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
       if ((iter % monitor.monitor->period) == 0) {
         // Call each monitor one by one
         const int ret =
-            monitor.monitor->call(this, simtime, iter / monitor.monitor->period - 1,
+            monitor.monitor->call(this, simtime, iter / monitor.monitor->period,
                                   NOUT / monitor.monitor->period);
         if (ret != 0) {
           throw BoutException(_("Monitor signalled to quit (return code {})"), ret);

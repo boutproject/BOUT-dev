@@ -40,7 +40,7 @@ jobs:
           - ${{ github.event_name == 'cron' }}
         config:
           - name: "CMake, PETSc unreleased, ADIOS2"
-            os: ubuntu-20.04
+            os: ubuntu-24.04
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_METRIC_3D=ON
                             -DBOUT_ENABLE_OPENMP=ON
@@ -58,13 +58,13 @@ jobs:
             build_adios2: true
             on_cron: true
 
-          - name: "Default options, Ubuntu 20.04"
-            os: ubuntu-20.04
+          - name: "Default options, Ubuntu 22.04"
+            os: ubuntu-22.04
             cmake_options: ""
             on_cron: false
 
           - name: "Optimised, static"
-            os: ubuntu-20.04
+            os: ubuntu-latest
             cmake_options: "-DCHECK=0
                             -DBUILD_SHARED_LIBS=OFF
                             -DCMAKE_CXX_FLAGS=-Ofast
@@ -78,8 +78,8 @@ jobs:
             on_cron: false
 
           - name: "Debug, shared"
-            os: ubuntu-20.04
-            cmake_options: "-DCHECK=3
+            os: ubuntu-latest
+            cmake_options: "-DCHECK=4
                             -DCMAKE_BUILD_TYPE=Debug
                             -DBOUT_ENABLE_SIGNAL=ON
                             -DBOUT_ENABLE_TRACK=ON
@@ -89,8 +89,8 @@ jobs:
                             -DSUNDIALS_ROOT=/home/runner/local"
             on_cron: false
 
-          - name: "Shared, release, Ubuntu 20.04"
-            os: ubuntu-20.04
+          - name: "Shared, release"
+            os: ubuntu-latest
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_OPENMP=ON
                             -DCMAKE_BUILD_TYPE=Release
@@ -116,7 +116,7 @@ jobs:
             on_cron: false
 
           - name: "CMake, new PETSc"
-            os: ubuntu-20.04
+            os: ubuntu-latest
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_METRIC_3D=ON
                             -DBOUT_ENABLE_OPENMP=ON
@@ -131,7 +131,7 @@ jobs:
             on_cron: false
 
           - name: "Coverage"
-            os: ubuntu-20.04
+            os: ubuntu-latest
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DCMAKE_BUILD_TYPE=Debug
                             -DCHECK=3
@@ -183,7 +183,7 @@ jobs:
         with:
           submodules: true
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
@@ -193,7 +193,7 @@ jobs:
           python -m pip install -r requirements.txt
 
       - name: Cache SUNDIALS build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /home/runner/local
           key: bout-sundials-${{ matrix.config.os }}${{ matrix.config.build_petsc }}
@@ -224,12 +224,12 @@ jobs:
 
       - name: Upload coverage
         if: ${{ matrix.config.name == 'Coverage' }}
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
 
   Fedora:
     # This is its own job as it doesn't use most of the steps of the
     # standard_tests
-    timeout-minutes: 60
+    timeout-minutes: 120
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

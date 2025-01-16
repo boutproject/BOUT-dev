@@ -24,7 +24,7 @@
 #ifndef BOUT_UUID_H
 #define BOUT_UUID_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include <array>
 #include <atomic>

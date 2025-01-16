@@ -24,35 +24,37 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "cvode.hxx"
 
 #if BOUT_HAS_CVODE
 
 #include "bout/bout_enum_class.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/mpi_wrapper.hxx"
 #include "bout/msg_stack.hxx"
 #include "bout/options.hxx"
 #include "bout/output.hxx"
+#include "bout/sundials_backports.hxx"
 #include "bout/unused.hxx"
-#include "bout/utils.hxx"
 
 #include "fmt/core.h"
 
 #include <cvode/cvode.h>
 #include <cvode/cvode_bbdpre.h>
-#include <sundials/sundials_types.h>
-#include <sunlinsol/sunlinsol_spgmr.h>
+#include <cvode/cvode_ls.h>
 
 #include <algorithm>
+#include <iterator>
 #include <numeric>
 #include <string>
-
-class Field2D;
 
 BOUT_ENUM_CLASS(positivity_constraint, none, positive, non_negative, negative,
                 non_positive);

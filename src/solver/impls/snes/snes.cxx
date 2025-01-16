@@ -1,4 +1,4 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_PETSC
 
@@ -15,7 +15,9 @@
 
 #include <bout/output.hxx>
 
+#include "petscmat.h"
 #include "petscsnes.h"
+
 /*
  * PETSc callback function, which evaluates the nonlinear
  * function to be solved by SNES.
@@ -118,12 +120,31 @@ SNESSolver::SNESSolver(Options* opts)
       matrix_free((*options)["matrix_free"]
                       .doc("Use matrix free Jacobian?")
                       .withDefault<bool>(false)),
+      matrix_free_operator((*options)["matrix_free_operator"]
+                               .doc("Use matrix free Jacobian-vector operator?")
+                               .withDefault<bool>(true)),
       lag_jacobian((*options)["lag_jacobian"]
                        .doc("Re-use the Jacobian this number of SNES iterations")
                        .withDefault(50)),
       use_coloring((*options)["use_coloring"]
                        .doc("Use matrix coloring to calculate Jacobian?")
-                       .withDefault<bool>(true)) {}
+                       .withDefault<bool>(true)),
+      jacobian_recalculated(false),
+      prune_jacobian((*options)["prune_jacobian"]
+                         .doc("Remove small elements in the Jacobian?")
+                         .withDefault<bool>(false)),
+      prune_abstol((*options)["prune_abstol"]
+                       .doc("Prune values with absolute values smaller than this")
+                       .withDefault<BoutReal>(1e-16)),
+      prune_fraction((*options)["prune_fraction"]
+                         .doc("Prune if fraction of small elements is larger than this")
+                         .withDefault<BoutReal>(0.2)),
+      scale_rhs((*options)["scale_rhs"]
+                    .doc("Scale time derivatives (Jacobian row scaling)?")
+                    .withDefault<bool>(false)),
+      scale_vars((*options)["scale_vars"]
+                     .doc("Scale variables (Jacobian column scaling)?")
+                     .withDefault<bool>(false)) {}
 
 int SNESSolver::init() {
 
@@ -163,12 +184,38 @@ int SNESSolver::init() {
 
   if (equation_form == BoutSnesEquationForm::rearranged_backward_euler) {
     // Need an intermediate vector for rearranged Backward Euler
-    VecDuplicate(snes_x, &delta_x);
+    ierr = VecDuplicate(snes_x, &delta_x);
+    CHKERRQ(ierr);
   }
 
   if (predictor) {
     // Storage for previous solution
-    VecDuplicate(snes_x, &x1);
+    ierr = VecDuplicate(snes_x, &x1);
+    CHKERRQ(ierr);
+  }
+
+  if (scale_rhs) {
+    // Storage for rhs factors, one per evolving variable
+    ierr = VecDuplicate(snes_x, &rhs_scaling_factors);
+    CHKERRQ(ierr);
+    // Set all factors to 1 to start with
+    ierr = VecSet(rhs_scaling_factors, 1.0);
+    CHKERRQ(ierr);
+    // Array to store inverse Jacobian row norms
+    ierr = VecDuplicate(snes_x, &jac_row_inv_norms);
+    CHKERRQ(ierr);
+  }
+
+  if (scale_vars) {
+    // Storage for var factors, one per evolving variable
+    ierr = VecDuplicate(snes_x, &var_scaling_factors);
+    CHKERRQ(ierr);
+    // Set all factors to 1 to start with
+    ierr = VecSet(var_scaling_factors, 1.0);
+    CHKERRQ(ierr);
+    // Storage for scaled 'x' state vectors
+    ierr = VecDuplicate(snes_x, &scaled_x);
+    CHKERRQ(ierr);
   }
 
   // Nonlinear solver interface (SNES)
@@ -188,7 +235,7 @@ int SNESSolver::init() {
   }
 
   // Set up the Jacobian
-  if (matrix_free) {
+  if (matrix_free or matrix_free_operator) {
     /*
       PETSc SNES matrix free Jacobian, using a different
       operator for differencing.
@@ -204,12 +251,17 @@ int SNESSolver::init() {
     // Set a function to be called for differencing
     // This can be a linearised form of the SNES function
     MatMFFDSetFunction(Jmf, FormFunctionForDifferencing, this);
+  }
 
+  if (matrix_free) {
+    // Use matrix free for both operator and preconditioner
     // Calculate Jacobian matrix free using FormFunctionForDifferencing
     SNESSetJacobian(snes, Jmf, Jmf, MatMFFDComputeJacobian, this);
 
   } else {
-    // Calculate the Jacobian using finite differences
+    // Calculate the Jacobian using finite differences.
+    // The finite difference Jacobian (Jfd) may be used for both operator
+    // and preconditioner or, if matrix_free_operator, in only the preconditioner.
     if (use_coloring) {
       // Use matrix coloring
       // This greatly reduces the number of times the rhs() function needs
@@ -227,17 +279,16 @@ int SNESSolver::init() {
 
       output_progress.write("Setting Jacobian matrix sizes\n");
 
-      int localN = getLocalN(); // Number of rows on this processor
       int n2d = f2d.size();
       int n3d = f3d.size();
 
-      // Set size of Matrix on each processor to localN x localN
-      MatCreate(BoutComm::get(), &Jmf);
-      MatSetSizes(Jmf, localN, localN, PETSC_DETERMINE, PETSC_DETERMINE);
-      MatSetFromOptions(Jmf);
+      // Set size of Matrix on each processor to nlocal x nlocal
+      MatCreate(BoutComm::get(), &Jfd);
+      MatSetSizes(Jfd, nlocal, nlocal, PETSC_DETERMINE, PETSC_DETERMINE);
+      MatSetFromOptions(Jfd);
 
-      std::vector<PetscInt> d_nnz(localN);
-      std::vector<PetscInt> o_nnz(localN);
+      std::vector<PetscInt> d_nnz(nlocal);
+      std::vector<PetscInt> o_nnz(nlocal);
 
       // Set values for most points
       const int ncells_x = (mesh->LocalNx > 1) ? 2 : 0;
@@ -260,7 +311,7 @@ int SNESSolver::init() {
       }
 
       output_info.write("Star pattern: {} non-zero entries\n", star_pattern);
-      for (int i = 0; i < localN; i++) {
+      for (int i = 0; i < nlocal; i++) {
         // Non-zero elements on this processor
         d_nnz[i] = star_pattern;
         // Non-zero elements on neighboring processor
@@ -273,8 +324,8 @@ int SNESSolver::init() {
           // Lower X boundary
           for (int y = mesh->ystart; y <= mesh->yend; y++) {
             for (int z = 0; z < mesh->LocalNz; z++) {
-              int localIndex = ROUND(index(mesh->xstart, y, z));
-              ASSERT2((localIndex >= 0) && (localIndex < localN));
+              const int localIndex = ROUND(index(mesh->xstart, y, z));
+              ASSERT2((localIndex >= 0) && (localIndex < nlocal));
               const int num_fields = (z == 0) ? n2d + n3d : n3d;
               for (int i = 0; i < num_fields; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
@@ -285,8 +336,8 @@ int SNESSolver::init() {
           // On another processor
           for (int y = mesh->ystart; y <= mesh->yend; y++) {
             for (int z = 0; z < mesh->LocalNz; z++) {
-              int localIndex = ROUND(index(mesh->xstart, y, z));
-              ASSERT2((localIndex >= 0) && (localIndex < localN));
+              const int localIndex = ROUND(index(mesh->xstart, y, z));
+              ASSERT2((localIndex >= 0) && (localIndex < nlocal));
               const int num_fields = (z == 0) ? n2d + n3d : n3d;
               for (int i = 0; i < num_fields; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
@@ -299,8 +350,8 @@ int SNESSolver::init() {
           // Upper X boundary
           for (int y = mesh->ystart; y <= mesh->yend; y++) {
             for (int z = 0; z < mesh->LocalNz; z++) {
-              int localIndex = ROUND(index(mesh->xend, y, z));
-              ASSERT2((localIndex >= 0) && (localIndex < localN));
+              const int localIndex = ROUND(index(mesh->xend, y, z));
+              ASSERT2((localIndex >= 0) && (localIndex < nlocal));
               const int num_fields = (z == 0) ? n2d + n3d : n3d;
               for (int i = 0; i < num_fields; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
@@ -311,8 +362,8 @@ int SNESSolver::init() {
           // On another processor
           for (int y = mesh->ystart; y <= mesh->yend; y++) {
             for (int z = 0; z < mesh->LocalNz; z++) {
-              int localIndex = ROUND(index(mesh->xend, y, z));
-              ASSERT2((localIndex >= 0) && (localIndex < localN));
+              const int localIndex = ROUND(index(mesh->xend, y, z));
+              ASSERT2((localIndex >= 0) && (localIndex < nlocal));
               const int num_fields = (z == 0) ? n2d + n3d : n3d;
               for (int i = 0; i < num_fields; i++) {
                 d_nnz[localIndex + i] -= (n3d + n2d);
@@ -398,7 +449,7 @@ int SNESSolver::init() {
           // A boundary, so no communication
 
           // z = 0 case
-          int localIndex = ROUND(index(it.ind, mesh->yend, 0));
+          const int localIndex = ROUND(index(it.ind, mesh->yend, 0));
           if (localIndex < 0) {
             continue; // Out of domain
           }
@@ -409,7 +460,7 @@ int SNESSolver::init() {
           }
 
           for (int z = 1; z < mesh->LocalNz; z++) {
-            int localIndex = ROUND(index(it.ind, mesh->yend, z));
+            const int localIndex = ROUND(index(it.ind, mesh->yend, z));
 
             // Only 3D fields
             for (int i = 0; i < n3d; i++) {
@@ -422,14 +473,14 @@ int SNESSolver::init() {
       output_progress.write("Pre-allocating Jacobian\n");
 
       // Pre-allocate
-      MatMPIAIJSetPreallocation(Jmf, 0, d_nnz.data(), 0, o_nnz.data());
-      MatSeqAIJSetPreallocation(Jmf, 0, d_nnz.data());
-      MatSetUp(Jmf);
-      MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
+      MatMPIAIJSetPreallocation(Jfd, 0, d_nnz.data(), 0, o_nnz.data());
+      MatSeqAIJSetPreallocation(Jfd, 0, d_nnz.data());
+      MatSetUp(Jfd);
+      MatSetOption(Jfd, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
 
       // Determine which row/columns of the matrix are locally owned
       int Istart, Iend;
-      MatGetOwnershipRange(Jmf, &Istart, &Iend);
+      MatGetOwnershipRange(Jfd, &Istart, &Iend);
 
       // Convert local into global indices
       // Note: Not in the boundary cells, to keep -1 values
@@ -445,28 +496,28 @@ int SNESSolver::init() {
 
       output_progress.write("Marking non-zero Jacobian entries\n");
 
-      PetscScalar val = 1.0;
+      const PetscScalar val = 1.0;
 
       for (int x = mesh->xstart; x <= mesh->xend; x++) {
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
 
-          int ind0 = ROUND(index(x, y, 0));
+          const int ind0 = ROUND(index(x, y, 0));
 
           // 2D fields
           for (int i = 0; i < n2d; i++) {
-            PetscInt row = ind0 + i;
+            const PetscInt row = ind0 + i;
 
             // Loop through each point in the 5-point stencil
             for (const auto& xyoffset : xyoffsets) {
-              int xi = x + xyoffset.first;
-              int yi = y + xyoffset.second;
+              const int xi = x + xyoffset.first;
+              const int yi = y + xyoffset.second;
 
               if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
                   || (yi >= mesh->LocalNy)) {
                 continue;
               }
 
-              int ind2 = ROUND(index(xi, yi, 0));
+              const int ind2 = ROUND(index(xi, yi, 0));
 
               if (ind2 < 0) {
                 continue; // A boundary point
@@ -474,8 +525,8 @@ int SNESSolver::init() {
 
               // Depends on all variables on this cell
               for (int j = 0; j < n2d; j++) {
-                PetscInt col = ind2 + j;
-                ierr = MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                const PetscInt col = ind2 + j;
+                ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
                 CHKERRQ(ierr);
               }
             }
@@ -484,7 +535,7 @@ int SNESSolver::init() {
           // 3D fields
           for (int z = 0; z < mesh->LocalNz; z++) {
 
-            int ind = ROUND(index(x, y, z));
+            const int ind = ROUND(index(x, y, z));
 
             for (int i = 0; i < n3d; i++) {
               PetscInt row = ind + i;
@@ -494,15 +545,15 @@ int SNESSolver::init() {
 
               // Depends on 2D fields
               for (int j = 0; j < n2d; j++) {
-                PetscInt col = ind0 + j;
-                ierr = MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                const PetscInt col = ind0 + j;
+                ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
                 CHKERRQ(ierr);
               }
 
               // Star pattern
               for (const auto& xyoffset : xyoffsets) {
-                int xi = x + xyoffset.first;
-                int yi = y + xyoffset.second;
+                const int xi = x + xyoffset.first;
+                const int yi = y + xyoffset.second;
 
                 if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
                     || (yi >= mesh->LocalNy)) {
@@ -520,8 +571,8 @@ int SNESSolver::init() {
 
                 // 3D fields on this cell
                 for (int j = 0; j < n3d; j++) {
-                  PetscInt col = ind2 + j;
-                  ierr = MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                  const PetscInt col = ind2 + j;
+                  ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
                   if (ierr != 0) {
                     output.write("ERROR: {} : ({}, {}) -> ({}, {}) : {} -> {}\n", row, x,
                                  y, xi, yi, ind2, ind2 + n3d - 1);
@@ -541,8 +592,8 @@ int SNESSolver::init() {
                   ind2 += n2d;
                 }
                 for (int j = 0; j < n3d; j++) {
-                  PetscInt col = ind2 + j;
-                  ierr = MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                  const PetscInt col = ind2 + j;
+                  ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
                   CHKERRQ(ierr);
                 }
 
@@ -552,8 +603,8 @@ int SNESSolver::init() {
                   ind2 += n2d;
                 }
                 for (int j = 0; j < n3d; j++) {
-                  PetscInt col = ind2 + j;
-                  ierr = MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
+                  const PetscInt col = ind2 + j;
+                  ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
                   CHKERRQ(ierr);
                 }
               }
@@ -566,34 +617,22 @@ int SNESSolver::init() {
       output_progress.write("Assembling Jacobian matrix\n");
 
       // Assemble Matrix
-      MatAssemblyBegin(Jmf, MAT_FINAL_ASSEMBLY);
-      MatAssemblyEnd(Jmf, MAT_FINAL_ASSEMBLY);
+      MatAssemblyBegin(Jfd, MAT_FINAL_ASSEMBLY);
+      MatAssemblyEnd(Jfd, MAT_FINAL_ASSEMBLY);
 
       output_progress.write("Creating Jacobian coloring\n");
+      updateColoring();
 
-      ISColoring iscoloring;
-
-      MatColoring coloring; // This new in PETSc 3.5
-      MatColoringCreate(Jmf, &coloring);
-      MatColoringSetType(coloring, MATCOLORINGSL);
-      MatColoringSetFromOptions(coloring);
-      // Calculate index sets
-      MatColoringApply(coloring, &iscoloring);
-      MatColoringDestroy(&coloring);
-
-      // Create data structure for SNESComputeJacobianDefaultColor
-      MatFDColoringCreate(Jmf, iscoloring, &fdcoloring);
-      // Set the function to difference
-      MatFDColoringSetFunction(
-          fdcoloring, reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring),
-          this);
-      MatFDColoringSetFromOptions(fdcoloring);
-      MatFDColoringSetUp(Jmf, iscoloring, fdcoloring);
-      ISColoringDestroy(&iscoloring);
-
-      SNESSetJacobian(snes, Jmf, Jmf, SNESComputeJacobianDefaultColor, fdcoloring);
+      if (prune_jacobian) {
+        // Will remove small elements from the Jacobian.
+        // Save a copy to recover from over-pruning
+        ierr = MatDuplicate(Jfd, MAT_SHARE_NONZERO_PATTERN, &Jfd_original);
+        CHKERRQ(ierr);
+      }
     } else {
       // Brute force calculation
+      // There is usually no reason to use this, except as a check of
+      // the coloring calculation.
 
       MatCreateAIJ(
           BoutComm::get(), nlocal, nlocal,  // Local sizes
@@ -601,17 +640,20 @@ int SNESSolver::init() {
           3, // Number of nonzero entries in diagonal portion of local submatrix
           nullptr,
           0, // Number of nonzeros per row in off-diagonal portion of local submatrix
-          nullptr, &Jmf);
-#if PETSC_VERSION_GE(3, 4, 0)
-      SNESSetJacobian(snes, Jmf, Jmf, SNESComputeJacobianDefault, this);
-#else
-      // Before 3.4
-      SNESSetJacobian(snes, Jmf, Jmf, SNESDefaultComputeJacobian, this);
-#endif
-      MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+          nullptr, &Jfd);
+
+      if (matrix_free_operator) {
+        SNESSetJacobian(snes, Jmf, Jfd, SNESComputeJacobianDefault, this);
+      } else {
+        SNESSetJacobian(snes, Jfd, Jfd, SNESComputeJacobianDefault, this);
+      }
+
+      MatSetOption(Jfd, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
     }
 
     // Re-use Jacobian
+    // Note: If the 'Amat' Jacobian is matrix free, SNESComputeJacobian
+    //       always updates its reference 'u' vector every nonlinear iteration
     SNESSetLagJacobian(snes, lag_jacobian);
     // Set Jacobian and preconditioner to persist across time steps
     SNESSetLagJacobianPersists(snes, PETSC_TRUE);
@@ -705,6 +747,7 @@ int SNESSolver::init() {
 
 int SNESSolver::run() {
   TRACE("SNESSolver::run()");
+  int ierr;
   // Set initial guess at the solution from variables
   {
     BoutReal* xdata = nullptr;
@@ -721,7 +764,63 @@ int SNESSolver::run() {
     bool looping = true;
     int snes_failures = 0; // Count SNES convergence failures
     int saved_jacobian_lag = 0;
+    int loop_count = 0;
     do {
+      if (scale_vars) {
+        // Individual variable scaling
+        // Note: If variables are rescaled then the Jacobian columns
+        //       need to be scaled or recalculated
+
+        if (loop_count % 100 == 0) {
+          // Rescale state (snes_x) so that all quantities are around 1
+          // If quantities are near zero then RTOL is used
+          int istart, iend;
+          VecGetOwnershipRange(snes_x, &istart, &iend);
+
+          // Take ownership of snes_x and var_scaling_factors data
+          PetscScalar* snes_x_data = nullptr;
+          ierr = VecGetArray(snes_x, &snes_x_data);
+          CHKERRQ(ierr);
+          PetscScalar* x1_data;
+          ierr = VecGetArray(x1, &x1_data);
+          CHKERRQ(ierr);
+          PetscScalar* var_scaling_factors_data;
+          ierr = VecGetArray(var_scaling_factors, &var_scaling_factors_data);
+          CHKERRQ(ierr);
+
+          // Normalise each value in the state
+          // Limit normalisation so scaling factor is never smaller than rtol
+          for (int i = 0; i < iend - istart; ++i) {
+            const PetscScalar norm =
+                BOUTMAX(std::abs(snes_x_data[i]), rtol / var_scaling_factors_data[i]);
+            snes_x_data[i] /= norm;
+            x1_data[i] /= norm; // Update history for predictor
+            var_scaling_factors_data[i] *= norm;
+          }
+
+          // Restore vector underlying data
+          ierr = VecRestoreArray(var_scaling_factors, &var_scaling_factors_data);
+          CHKERRQ(ierr);
+          ierr = VecRestoreArray(x1, &x1_data);
+          CHKERRQ(ierr);
+          ierr = VecRestoreArray(snes_x, &snes_x_data);
+          CHKERRQ(ierr);
+
+          if (diagnose) {
+            // Print maximum and minimum scaling factors
+            PetscReal max_scale, min_scale;
+            VecMax(var_scaling_factors, nullptr, &max_scale);
+            VecMin(var_scaling_factors, nullptr, &min_scale);
+            output.write("Var scaling: {} -> {}\n", min_scale, max_scale);
+          }
+
+          // Force recalculation of the Jacobian
+          SNESGetLagJacobian(snes, &saved_jacobian_lag);
+          SNESSetLagJacobian(snes, 1);
+        }
+      }
+      ++loop_count;
+
       // Copy the state (snes_x) into initial values (x0)
       VecCopy(snes_x, x0);
 
@@ -763,6 +862,13 @@ int SNESSolver::run() {
       // Find out if converged
       SNESConvergedReason reason;
       SNESGetConvergedReason(snes, &reason);
+
+      // Get number of iterations
+      int nl_its;
+      SNESGetIterationNumber(snes, &nl_its);
+      int lin_its;
+      SNESGetLinearSolveIterations(snes, &lin_its);
+
       if ((ierr != 0) or (reason < 0)) {
         // Diverged or SNES failed
 
@@ -793,6 +899,19 @@ int SNESSolver::run() {
         VecCopy(x0, snes_x);
 
         // Recalculate the Jacobian
+        if (jacobian_pruned and (snes_failures > 2) and (4 * lin_its > 3 * maxl)) {
+          // Taking 3/4 of maximum linear iterations on average per linear step
+          // May indicate a preconditioner problem.
+          // Restore pruned non-zero elements
+          if (diagnose) {
+            output.write("\nRestoring Jacobian\n");
+          }
+          ierr = MatCopy(Jfd_original, Jfd, DIFFERENT_NONZERO_PATTERN);
+          CHKERRQ(ierr);
+          // The non-zero pattern has changed, so update coloring
+          updateColoring();
+          jacobian_pruned = false; // Reset flag. Will be set after pruning.
+        }
         if (saved_jacobian_lag == 0) {
           SNESGetLagJacobian(snes, &saved_jacobian_lag);
           SNESSetLagJacobian(snes, 1);
@@ -825,16 +944,24 @@ int SNESSolver::run() {
         time1 = simtime;
       }
 
-      int nl_its;
-      SNESGetIterationNumber(snes, &nl_its);
-
       if (nl_its == 0) {
         // This can occur even with SNESSetForceIteration
         // Results in simulation state freezing and rapidly going to the end
 
-        {
+        if (scale_vars) {
+          // scaled_x <- snes_x * var_scaling_factors
+          ierr = VecPointwiseMult(scaled_x, snes_x, var_scaling_factors);
+          CHKERRQ(ierr);
+
           const BoutReal* xdata = nullptr;
-          int ierr = VecGetArrayRead(snes_x, &xdata);
+          ierr = VecGetArrayRead(scaled_x, &xdata);
+          CHKERRQ(ierr);
+          load_vars(const_cast<BoutReal*>(xdata));
+          ierr = VecRestoreArrayRead(scaled_x, &xdata);
+          CHKERRQ(ierr);
+        } else {
+          const BoutReal* xdata = nullptr;
+          ierr = VecGetArrayRead(snes_x, &xdata);
           CHKERRQ(ierr);
           load_vars(const_cast<BoutReal*>(xdata));
           ierr = VecRestoreArrayRead(snes_x, &xdata);
@@ -861,9 +988,6 @@ int SNESSolver::run() {
       if (diagnose) {
         // Gather and print diagnostic information
 
-        int lin_its;
-        SNESGetLinearSolveIterations(snes, &lin_its);
-
         output.print("\r"); // Carriage return for printing to screen
         output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}, reason: {}",
                      simtime, timestep, nl_its, lin_its, static_cast<int>(reason));
@@ -873,6 +997,51 @@ int SNESSolver::run() {
         }
         output.write("\n");
       }
+
+#if PETSC_VERSION_GE(3, 20, 0)
+      // MatFilter and MatEliminateZeros(Mat, bool) require PETSc >= 3.20
+      if (jacobian_recalculated and prune_jacobian) {
+        jacobian_recalculated = false; // Reset flag
+
+        // Remove small elements from the Jacobian and recompute the coloring
+        // Only do this if there are a significant number of small elements.
+        int small_elements = 0;
+        int total_elements = 0;
+
+        // Get index of rows owned by this processor
+        int rstart, rend;
+        MatGetOwnershipRange(Jfd, &rstart, &rend);
+
+        PetscInt ncols;
+        const PetscScalar* vals;
+        for (int row = rstart; row < rend; row++) {
+          MatGetRow(Jfd, row, &ncols, nullptr, &vals);
+          for (int col = 0; col < ncols; col++) {
+            if (std::abs(vals[col]) < prune_abstol) {
+              ++small_elements;
+            }
+            ++total_elements;
+          }
+          MatRestoreRow(Jfd, row, &ncols, nullptr, &vals);
+        }
+
+        if (small_elements > prune_fraction * total_elements) {
+          if (diagnose) {
+            output.write("\nPruning Jacobian elements: {} / {}\n", small_elements,
+                         total_elements);
+          }
+
+          // Prune Jacobian, keeping diagonal elements
+          ierr = MatFilter(Jfd, prune_abstol, PETSC_TRUE, PETSC_TRUE);
+
+          // Update the coloring from Jfd matrix
+          updateColoring();
+
+          // Mark the Jacobian as pruned. This is so that it is only restored if pruned.
+          jacobian_pruned = true;
+        }
+      }
+#endif // PETSC_VERSION_GE(3,20,0)
 
       if (looping) {
         if (nl_its <= lower_its) {
@@ -890,7 +1059,18 @@ int SNESSolver::run() {
     } while (looping);
 
     // Put the result into variables
-    {
+    if (scale_vars) {
+      // scaled_x <- snes_x * var_scaling_factors
+      int ierr = VecPointwiseMult(scaled_x, snes_x, var_scaling_factors);
+      CHKERRQ(ierr);
+
+      const BoutReal* xdata = nullptr;
+      ierr = VecGetArrayRead(scaled_x, &xdata);
+      CHKERRQ(ierr);
+      load_vars(const_cast<BoutReal*>(xdata));
+      ierr = VecRestoreArrayRead(scaled_x, &xdata);
+      CHKERRQ(ierr);
+    } else {
       const BoutReal* xdata = nullptr;
       int ierr = VecGetArrayRead(snes_x, &xdata);
       CHKERRQ(ierr);
@@ -911,12 +1091,27 @@ int SNESSolver::run() {
 // f = rhs
 PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
   // Get data from PETSc into BOUT++ fields
-  const BoutReal* xdata = nullptr;
-  int ierr = VecGetArrayRead(x, &xdata);
-  CHKERRQ(ierr);
-  load_vars(const_cast<BoutReal*>(xdata));
-  ierr = VecRestoreArrayRead(x, &xdata);
-  CHKERRQ(ierr);
+  if (scale_vars) {
+    // scaled_x <- x * var_scaling_factors
+    int ierr = VecPointwiseMult(scaled_x, x, var_scaling_factors);
+    CHKERRQ(ierr);
+
+    const BoutReal* xdata = nullptr;
+    ierr = VecGetArrayRead(scaled_x, &xdata);
+    CHKERRQ(ierr);
+    load_vars(const_cast<BoutReal*>(
+        xdata)); // const_cast needed due to load_vars API. Not writing to xdata.
+    ierr = VecRestoreArrayRead(scaled_x, &xdata);
+    CHKERRQ(ierr);
+  } else {
+    const BoutReal* xdata = nullptr;
+    int ierr = VecGetArrayRead(x, &xdata);
+    CHKERRQ(ierr);
+    load_vars(const_cast<BoutReal*>(
+        xdata)); // const_cast needed due to load_vars API. Not writing to xdata.
+    ierr = VecRestoreArrayRead(x, &xdata);
+    CHKERRQ(ierr);
+  }
 
   try {
     // Call RHS function
@@ -934,7 +1129,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
 
   // Copy derivatives back
   BoutReal* fdata = nullptr;
-  ierr = VecGetArray(f, &fdata);
+  int ierr = VecGetArray(f, &fdata);
   CHKERRQ(ierr);
   save_derivs(fdata);
   ierr = VecRestoreArray(f, &fdata);
@@ -970,6 +1165,12 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
     throw BoutException("Invalid choice of equation_form. Try 0-3");
   }
   };
+
+  if (scale_rhs) {
+    // f <- f * rhs_scaling_factors
+    ierr = VecPointwiseMult(f, f, rhs_scaling_factors);
+    CHKERRQ(ierr);
+  }
 
   return 0;
 }
@@ -1015,6 +1216,135 @@ PetscErrorCode SNESSolver::precon(Vec x, Vec f) {
   CHKERRQ(ierr);
 
   return 0;
+}
+
+PetscErrorCode SNESSolver::scaleJacobian(Mat Jac_new) {
+  jacobian_recalculated = true;
+
+  if (!scale_rhs) {
+    return 0; // Not scaling the RHS values
+  }
+
+  int ierr;
+
+  // Get index of rows owned by this processor
+  int rstart, rend;
+  MatGetOwnershipRange(Jac_new, &rstart, &rend);
+
+  // Check that the vector has the same ownership range
+  int istart, iend;
+  VecGetOwnershipRange(jac_row_inv_norms, &istart, &iend);
+  if ((rstart != istart) or (rend != iend)) {
+    throw BoutException("Ownership ranges different: [{}, {}) and [{}, {})\n", rstart,
+                        rend, istart, iend);
+  }
+
+  // Calculate the norm of each row of the Jacobian
+  PetscScalar* row_inv_norm_data;
+  ierr = VecGetArray(jac_row_inv_norms, &row_inv_norm_data);
+  CHKERRQ(ierr);
+
+  PetscInt ncols;
+  const PetscScalar* vals;
+  for (int row = rstart; row < rend; ++row) {
+    MatGetRow(Jac_new, row, &ncols, nullptr, &vals);
+
+    // Calculate a norm of this row of the Jacobian
+    PetscScalar norm = 0.0;
+    for (int col = 0; col < ncols; col++) {
+      PetscScalar absval = std::abs(vals[col]);
+      if (absval > norm) {
+        norm = absval;
+      }
+      // Can we identify small elements and remove them?
+      // so we don't need to calculate them next time
+    }
+
+    // Store in the vector as 1 / norm
+    row_inv_norm_data[row - rstart] = 1. / norm;
+
+    MatRestoreRow(Jac_new, row, &ncols, nullptr, &vals);
+  }
+
+  ierr = VecRestoreArray(jac_row_inv_norms, &row_inv_norm_data);
+  CHKERRQ(ierr);
+
+  // Modify the RHS scaling: factor = factor / norm
+  ierr = VecPointwiseMult(rhs_scaling_factors, rhs_scaling_factors, jac_row_inv_norms);
+  CHKERRQ(ierr);
+
+  if (diagnose) {
+    // Print maximum and minimum scaling factors
+    PetscReal max_scale, min_scale;
+    VecMax(rhs_scaling_factors, nullptr, &max_scale);
+    VecMin(rhs_scaling_factors, nullptr, &min_scale);
+    output.write("RHS scaling: {} -> {}\n", min_scale, max_scale);
+  }
+
+  // Scale the Jacobian rows by multiplying on the left by 1/norm
+  ierr = MatDiagonalScale(Jac_new, jac_row_inv_norms, nullptr);
+  CHKERRQ(ierr);
+
+  return 0;
+}
+
+///
+/// Input Parameters:
+///   snes - nonlinear solver object
+///   x1 - location at which to evaluate Jacobian
+///   ctx - MatFDColoring context or NULL
+///
+/// Output Parameters:
+///   Jac - Jacobian matrix (not altered in this routine)
+///   Jac_new - newly computed Jacobian matrix to use with preconditioner (generally the same as
+///   Jac)
+static PetscErrorCode ComputeJacobianScaledColor(SNES snes, Vec x1, Mat Jac, Mat Jac_new,
+                                                 void* ctx) {
+  PetscErrorCode err = SNESComputeJacobianDefaultColor(snes, x1, Jac, Jac_new, ctx);
+  CHKERRQ(err);
+
+  if ((err != 0) or (ctx == nullptr)) {
+    return err;
+  }
+
+  // Get the the SNESSolver pointer from the function call context
+  SNESSolver* fctx = nullptr;
+  err = MatFDColoringGetFunction(static_cast<MatFDColoring>(ctx), nullptr,
+                                 reinterpret_cast<void**>(&fctx));
+  CHKERRQ(err);
+
+  // Call the SNESSolver function
+  return fctx->scaleJacobian(Jac_new);
+}
+
+void SNESSolver::updateColoring() {
+  // Re-calculate the coloring
+  MatColoring coloring = NULL;
+  MatColoringCreate(Jfd, &coloring);
+  MatColoringSetType(coloring, MATCOLORINGSL);
+  MatColoringSetFromOptions(coloring);
+
+  // Calculate new index sets
+  ISColoring iscoloring = NULL;
+  MatColoringApply(coloring, &iscoloring);
+  MatColoringDestroy(&coloring);
+
+  // Replace the old coloring with the new one
+  MatFDColoringDestroy(&fdcoloring);
+  MatFDColoringCreate(Jfd, iscoloring, &fdcoloring);
+  MatFDColoringSetFunction(
+      fdcoloring, reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring), this);
+  MatFDColoringSetFromOptions(fdcoloring);
+  MatFDColoringSetUp(Jfd, iscoloring, fdcoloring);
+  ISColoringDestroy(&iscoloring);
+
+  // Replace the CTX pointer in SNES Jacobian
+  if (matrix_free_operator) {
+    // Use matrix-free calculation for operator, finite difference for preconditioner
+    SNESSetJacobian(snes, Jmf, Jfd, ComputeJacobianScaledColor, fdcoloring);
+  } else {
+    SNESSetJacobian(snes, Jfd, Jfd, ComputeJacobianScaledColor, fdcoloring);
+  }
 }
 
 #endif // BOUT_HAS_PETSC
