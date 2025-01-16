@@ -31,7 +31,7 @@ jobs:
       PRTE_MCA_rmaps_default_mapping_policy: ":oversubscribe"
       MPIRUN: mpiexec -np
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         # Need this to be able to exclude the coverage job
         is_master_or_next:
