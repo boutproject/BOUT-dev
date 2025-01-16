@@ -343,7 +343,7 @@ Options& Options::assign<>(Tensor<BoutReal> val, std::string source) {
   return *this;
 }
 
-void saveParallel(Options& opt, const std::string name, const Field3D& tosave) {
+void saveParallel(Options& opt, const std::string& name, const Field3D& tosave) {
   opt[name] = tosave;
   const size_t numberParallelSlices =
       tosave.hasParallelSlices() ? 0 : tosave.getMesh()->ystart;

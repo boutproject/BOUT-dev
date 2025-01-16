@@ -991,7 +991,7 @@ Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_t
 std::string toString(const Options& value);
 
 /// Save the parallel fields
-void saveParallel(Options& opt, const std::string name, const Field3D& tosave);
+void saveParallel(Options& opt, const std::string& name, const Field3D& tosave);
 
 /// Output a stringified \p value to a stream
 ///
