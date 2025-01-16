@@ -32,6 +32,8 @@
 #include "bout/build_config.hxx"
 #include "bout/solver.hxx"
 
+#if ((SUNDIALS_VERSION_MAJOR == 7 && SUNDIALS_VERSION_MINOR >= 2) || SUNDIALS_VERSION_MAJOR > 8)
+#else
 #if not BOUT_HAS_ARKODE
 
 namespace {
@@ -165,4 +167,5 @@ private:
 };
 
 #endif // BOUT_HAS_ARKODE
+#endif // SUNDIALS_VERSION CHECK
 #endif // BOUT_ARKODE_MRI_SOLVER_H

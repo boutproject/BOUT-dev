@@ -2,7 +2,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -1388,12 +1388,6 @@ int Solver::run_rhs_se(BoutReal t, bool linear) {
 
   Timer timer("rhs");
 
-  if (first_rhs_call) {
-    // Ensure that nonlinear terms are calculated on first call
-    linear = false;
-    first_rhs_call = false;
-  }
-
   pre_rhs(t);
   status = model->runRHS_se(t, linear);
   post_rhs(t);
@@ -1431,12 +1425,6 @@ int Solver::run_rhs_fe(BoutReal t, bool linear) {
   int status;
 
   Timer timer("rhs");
-
-  if (first_rhs_call) {
-    // Ensure that nonlinear terms are calculated on first call
-    linear = false;
-    first_rhs_call = false;
-  }
 
   pre_rhs(t);
   status = model->runRHS_fe(t, linear);
@@ -1540,7 +1528,7 @@ int Solver::run_rhs(BoutReal t, bool linear) {
     Array<BoutReal> tmp3(nv);
 
     save_vars(tmp.begin()); // Copy variables into tmp
-    
+
     pre_rhs(t);
     status = model->runRHS_fe(t, linear);
     post_rhs(t); // Check variables, apply boundary conditions
