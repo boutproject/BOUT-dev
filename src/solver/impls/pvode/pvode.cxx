@@ -35,8 +35,8 @@
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
-
-#include "bout/unused.hxx"
+#include <bout/unused.hxx>
+#include <bout/version.hxx>
 
 #include <pvode/cvspgmr.h>  // use CVSPGMR linear solver each internal step
 #include <pvode/iterativ.h> // contains the enum for types of preconditioning
