@@ -319,9 +319,9 @@ int ArkodeSolver::init() {
     throw BoutException("Invalid adap_method\n");
   }
 
-  if (ARKodeSetAdaptivityMethod(arkode_mem, adap_method_int, 1, 1, nullptr)
+  if (ARKStepSetAdaptivityMethod(arkode_mem, adap_method_int, 1, 1, nullptr)
       != ARK_SUCCESS) {
-    throw BoutException("ARKodeSetAdaptivityMethod failed\n");
+    throw BoutException("ARKStepSetAdaptivityMethod failed\n");
   }
 #endif
 
