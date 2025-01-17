@@ -171,28 +171,35 @@ LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
       options["atol_accept"].doc("Accept this atol after maxits").withDefault(atol);
 
   maxits = options["maxits"].doc("maximum number of iterations").withDefault(100);
-  initial_underrelax_factor = options["initial_underrelax_factor"]
-    .doc("Initial underrelaxation factor for the fixed point iteration.")
-    .withDefault(1.0);
+  initial_underrelax_factor =
+      options["initial_underrelax_factor"]
+          .doc("Initial underrelaxation factor for the fixed point iteration.")
+          .withDefault(1.0);
   ASSERT0(initial_underrelax_factor > 0. and initial_underrelax_factor <= 1.);
   underrelax_threshold = options["underrelax_threshold"]
-    .doc("Threshold for relative increase of error in a step that triggers decrease of "
-         "the underrelaxation factor.")
-    .withDefault(1.5);
+                             .doc("Threshold for relative increase of error in a step "
+                                  "that triggers decrease of "
+                                  "the underrelaxation factor.")
+                             .withDefault(1.5);
   ASSERT0(underrelax_threshold >= 1.);
-  underrelax_decrease_factor = options["underrelax_decrease_factor"]
-    .doc("Factor to decrease underrelax_factor at each stage of the sub-loop if "
-         "underrelax_threshold was crossed.")
-    .withDefault(0.9);
+  underrelax_decrease_factor =
+      options["underrelax_decrease_factor"]
+          .doc("Factor to decrease underrelax_factor at each stage of the sub-loop if "
+               "underrelax_threshold was crossed.")
+          .withDefault(0.9);
   ASSERT0(underrelax_decrease_factor < 1. && underrelax_decrease_factor > 0.);
-  underrelax_decrease_maxits = options["underrelax_decrease_maxits"]
-    .doc("Maximum number of iterations in the decreasing-underrelax_factor subcycle "
-         "before trying to continue the main iteration loop.")
-    .withDefault(10);
-  underrelax_recovery = options["underrelax_recovery"]
-    .doc("Factor to increase underrelax_factor by at the end of a successful iteration "
-         "if it has been decreased below initial_underrelax_factor.")
-    .withDefault(1.1);
+  underrelax_decrease_maxits =
+      options["underrelax_decrease_maxits"]
+          .doc(
+              "Maximum number of iterations in the decreasing-underrelax_factor subcycle "
+              "before trying to continue the main iteration loop.")
+          .withDefault(10);
+  underrelax_recovery =
+      options["underrelax_recovery"]
+          .doc("Factor to increase underrelax_factor by at the end of a successful "
+               "iteration "
+               "if it has been decreased below initial_underrelax_factor.")
+          .withDefault(1.1);
   ASSERT0(underrelax_recovery >= 1.);
   delp2solver = create(opt->getSection("delp2solver"), location, localmesh);
   std::string delp2type;
