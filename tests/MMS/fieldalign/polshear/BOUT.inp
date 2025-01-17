@@ -1,5 +1,3 @@
-nout = 100
-timestep = 0.1
 
 twistshift = true
 
@@ -43,6 +41,8 @@ G = -(-0.05*x + 0.025)*cos(y + (-0.05*x + 0.025)*sin(mesh:theta)) + 1
 [solver]
 
 mms = true
+output_step = 0.1
+nout = 100
 
 [f]
 

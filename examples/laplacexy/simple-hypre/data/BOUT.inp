@@ -1,8 +1,8 @@
-# 
-# Simple test of the LaplaceXY solver. 
+#
+# Simple test of the LaplaceXY solver.
 #
 # Inverts a given function (rhs), writing "rhs" and solution "x" to file
-# 
+#
 
 [mesh]
 
@@ -19,8 +19,8 @@ dz = 1.0
 [laplacexy]
 
 ksptype = gmres   # Iterative solver type  - not used with Hypre interface
-pctype  = jacobi  # Preconditioner. "jacobi", "bjacobi" and "sor" usually good
-                  # On one processor"lu" uses direct solver
+pctype = jacobi  # Preconditioner. "jacobi", "bjacobi" and "sor" usually good
+# On one processor"lu" uses direct solver
 
 atol = 1e-12		# type: BoutReal, doc: Relative tolerance for Hypre solver
 core_bndry_dirichlet = false		# type: bool
@@ -35,4 +35,3 @@ y_bndry_dirichlet = false		# type: bool
 
 # Function to be inverted
 rhs = sin(2*pi*x)*sin(y)
-

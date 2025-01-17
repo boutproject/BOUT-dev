@@ -94,12 +94,12 @@ if not os.path.exists(bout_squashoutput):
     bout_squashoutput = "bout-squashoutput"
 
 print("Run once to get normal data")
-timed_shell_safe("./squash -q -q -q nout=2")
+timed_shell_safe("./squash -q -q -q solver:nout=2")
 timed_shell_safe("mv data/BOUT.dmp.0.nc f1.nc")
 
 print("Parallel test")
 timed_shell_safe("rm -f f2.nc")
-timed_launch_safe("./squash -q -q -q nout=2", nproc=4, mthread=1)
+timed_launch_safe("./squash -q -q -q solver:nout=2", nproc=4, mthread=1)
 timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
 
 verify("f1.nc", "f2.nc")
@@ -124,7 +124,7 @@ verify("f1.nc", "f2.nc")
 
 print("Sequential test")
 timed_shell_safe("rm -f f2.nc")
-timed_shell_safe("./squash -q -q -q nout=2")
+timed_shell_safe("./squash -q -q -q solver:nout=2")
 timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
 
 verify("f1.nc", "f2.nc")

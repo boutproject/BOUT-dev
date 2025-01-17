@@ -1,8 +1,5 @@
 MZ = 5
 
-nout = 1
-timestep = 1
-
 [mesh]
 nx = 68
 ny = 64
@@ -12,3 +9,8 @@ ixseps2 = -1
 
 [all]
 bndry_all = dirichlet(3)
+
+[solver]
+output_step = 1
+
+nout = 1
