@@ -42,10 +42,12 @@
 
 class SlepcLib;
 
-#ifndef __SLEPCLIB_H__
-#define __SLEPCLIB_H__
+#ifndef BOUT_SLEPCLIB_H
+#define BOUT_SLEPCLIB_H
 
-#ifdef BOUT_HAS_SLEPC
+#include "bout/build_defines.hxx"
+
+#if BOUT_HAS_SLEPC
 
 #include <slepc.h>
 
@@ -53,36 +55,38 @@ class SlepcLib {
 public:
   SlepcLib();
   ~SlepcLib();
-  
-  static void setArgs(int &c, char** &v) { pargc = &c; pargv = &v;}
-  
+
+  static void setArgs(int& c, char**& v) {
+    pargc = &c;
+    pargv = &v;
+  }
+
   static void cleanup(); // Force cleanup
 private:
-  static int count; // How many instances?
+  static int count;   // How many instances?
   static char help[]; // Help string
-  
+
   // Command-line arguments
   static int* pargc;
   static char*** pargv;
-  
+
   static PetscLogEvent USER_EVENT;
 };
 
 #else // BOUT_HAS_SLEPC
 
-#include "unused.hxx"
+#include "bout/unused.hxx"
 
 class SlepcLib {
 public:
   SlepcLib() {}
   ~SlepcLib() {}
-  
-  static void setArgs(int &UNUSED(c), char** &UNUSED(v)) {}
-  
+
+  static void setArgs(int& UNUSED(c), char**& UNUSED(v)) {}
+
   static void cleanup() {}
 };
 
 #endif // BOUT_HAS_SLEPC
 
-
-#endif //  __SLEPCLIB_H__
+#endif //  BOUT_SLEPCLIB_H

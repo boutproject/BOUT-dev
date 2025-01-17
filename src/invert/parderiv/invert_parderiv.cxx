@@ -27,17 +27,15 @@
  *
  ************************************************************************/
 
-#include <invert_parderiv.hxx>
+#include "impls/cyclic/cyclic.hxx"
+#include <bout/invert_parderiv.hxx>
 
-InvertPar* InvertPar::Create(Mesh* mesh_in) {
-  return ParDerivFactory::getInstance()->createInvertPar(CELL_CENTRE, mesh_in);
-}
-
-const Field2D InvertPar::solve(const Field2D &f) {
+const Field2D InvertPar::solve(const Field2D& f) {
   Field3D var(f);
-  
+
   var = solve(var);
   return DC(var);
 }
 
-  
+// DO NOT REMOVE: ensures linker keeps all symbols in this TU
+void InvertParFactory::ensureRegistered() {}

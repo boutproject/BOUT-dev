@@ -1,3 +1,1 @@
-#!/bin/sh
-
-./runtest.py staggered
+../test-drift-instability/runtest

@@ -1,8 +1,9 @@
+#include "test_tmpfiles.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/output.hxx"
+#include "bout/output_bout_types.hxx"
 #include "gtest/gtest.h"
-#include "boutexception.hxx"
-#include "output.hxx"
 
-#include <cstdio>
 #include <string>
 
 // stdout redirection code from https://stackoverflow.com/a/4043813/2043465
@@ -18,16 +19,14 @@ public:
     buffer.str("");
     // When done redirect cout to its old self
     std::cout.rdbuf(sbuf);
-
-    std::remove(filename.c_str());
   }
 
   // Write cout to buffer instead of stdout
   std::stringstream buffer;
   // Save cout's buffer here
-  std::streambuf *sbuf;
+  std::streambuf* sbuf;
   // A temporary filename
-  std::string filename{std::tmpnam(nullptr)};
+  bout::testing::TempFile filename;
 };
 
 TEST_F(OutputTest, JustStdOutCpp) {
@@ -39,7 +38,7 @@ TEST_F(OutputTest, JustStdOutCpp) {
 
 TEST_F(OutputTest, JustStdOutPrintf) {
   Output local_output;
-  local_output.write("%s%d\n", "Hello, world!", 2);
+  local_output.write("{:s}{:d}\n", "Hello, world!", 2);
 
   EXPECT_EQ(buffer.str(), "Hello, world!2\n");
 }
@@ -55,7 +54,7 @@ TEST_F(OutputTest, OpenFile) {
 
   std::string test_output = "To stdout and file\n";
 
-  local_output.open("%s", filename.c_str());
+  local_output.open(filename.string());
   local_output << test_output;
 
   std::ifstream test_file(filename);
@@ -63,8 +62,8 @@ TEST_F(OutputTest, OpenFile) {
   test_buffer << test_file.rdbuf();
   test_file.close();
 
-  EXPECT_EQ(test_output, test_buffer.str());
   EXPECT_EQ(test_output, buffer.str());
+  EXPECT_EQ(test_output, test_buffer.str());
 }
 
 TEST_F(OutputTest, JustPrint) {
@@ -72,8 +71,8 @@ TEST_F(OutputTest, JustPrint) {
 
   std::string test_output = "To stdout only\n";
 
-  local_output.open("%s", filename.c_str());
-  local_output.print("%s",test_output.c_str());
+  local_output.open(filename.string());
+  local_output.print(test_output);
 
   std::ifstream test_file(filename);
   std::stringstream test_buffer;
@@ -87,41 +86,45 @@ TEST_F(OutputTest, JustPrint) {
 TEST_F(OutputTest, DisableEnableStdout) {
   Output local_output;
 
- std::string file_only = "To file only\n";
+  std::string file_only = "To file only\n";
   std::string file_and_stdout = "To stdout and file\n";
 
   // Open temporary file and close stdout
-  local_output.open("%s", filename.c_str());
+  local_output.open(filename.string());
   local_output.disable();
 
   local_output << file_only;
 
-  std::ifstream test_file(filename);
-  std::stringstream test_buffer;
-  test_buffer << test_file.rdbuf();
+  {
+    std::ifstream test_file(filename);
+    std::stringstream test_buffer;
+    test_buffer << test_file.rdbuf();
 
-  EXPECT_EQ(file_only, test_buffer.str());
-  EXPECT_EQ("", buffer.str());
+    EXPECT_EQ(file_only, test_buffer.str());
+    EXPECT_EQ("", buffer.str());
+  }
 
   // Enable stdout again
   local_output.enable();
   local_output << file_and_stdout;
 
-  test_buffer << test_file.rdbuf();
+  {
+    std::ifstream test_file(filename);
+    std::stringstream test_buffer;
+    test_buffer << test_file.rdbuf();
 
-  // File should contain both outputs, stdout only latter
-  EXPECT_EQ(file_only + file_and_stdout, test_buffer.str());
-  EXPECT_EQ(file_and_stdout, buffer.str());
-
-  test_file.close();
+    // File should contain both outputs, stdout only latter
+    EXPECT_EQ(file_only + file_and_stdout, test_buffer.str());
+    EXPECT_EQ(file_and_stdout, buffer.str());
+  }
 }
 
 TEST_F(OutputTest, GetInstance) {
-  Output *local_output = Output::getInstance();
+  Output* local_output = Output::getInstance();
 
   EXPECT_NE(local_output, nullptr);
 
-  Output *new_output = Output::getInstance();
+  Output* new_output = Output::getInstance();
 
   EXPECT_EQ(local_output, new_output);
 }
@@ -161,7 +164,7 @@ TEST_F(OutputTest, ConditionalJustStdOutPrintf) {
   Output local_output_base;
   ConditionalOutput local_output(&local_output_base);
 
-  local_output.write("%s%d\n", "Hello, world!", 5);
+  local_output.write("{:s}{:d}\n", "Hello, world!", 5);
 
   EXPECT_EQ(buffer.str(), "Hello, world!5\n");
 }
@@ -201,7 +204,7 @@ TEST_F(OutputTest, ConditionalJustStdOutGlobalInstances) {
   buffer.str("");
   output_debug.enable();
   output_debug << "debug output\n";
-#ifdef DEBUG_ENABLED
+#ifdef BOUT_USE_OUTPUT_DEBUG
   EXPECT_EQ(buffer.str(), "debug output\n");
 #else
   EXPECT_EQ(buffer.str(), "");
@@ -214,8 +217,8 @@ TEST_F(OutputTest, ConditionalJustPrint) {
 
   std::string test_output = "To stdout only\n";
 
-  local_output.open("%s", filename.c_str());
-  local_output.print("%s", test_output.c_str());
+  local_output.open(filename.string());
+  local_output.print(test_output);
 
   std::ifstream test_file(filename);
   std::stringstream test_buffer;
@@ -251,7 +254,7 @@ TEST_F(OutputTest, ConditionalMultipleLayersJustStdOutPrintf) {
   ConditionalOutput local_output_first(&local_output_base);
   ConditionalOutput local_output_second(&local_output_first);
 
-  local_output_second.write("%s%d\n", "Hello, world!", 8);
+  local_output_second.write("{:s}{:d}\n", "Hello, world!", 8);
 
   EXPECT_EQ(buffer.str(), "Hello, world!8\n");
 }
@@ -283,8 +286,8 @@ TEST_F(OutputTest, DummyJustPrint) {
 
   std::string test_output = "To stdout only\n";
 
-  dummy.open("%s", filename.c_str());
-  dummy.print("%s", test_output.c_str());
+  dummy.open(filename.string());
+  dummy.print(test_output);
 
   std::ifstream test_file(filename);
   std::stringstream test_buffer;
@@ -293,4 +296,92 @@ TEST_F(OutputTest, DummyJustPrint) {
 
   EXPECT_EQ("", test_buffer.str());
   EXPECT_EQ("", buffer.str());
+}
+
+TEST_F(OutputTest, FormatInd3Ddefault) {
+  Ind3D ind(11, 2, 3);
+
+  Output local_output;
+  local_output.write("{}", ind);
+
+  EXPECT_EQ(buffer.str(), "(1, 1, 2)");
+}
+
+TEST_F(OutputTest, FormatInd3Dc) {
+  Ind3D ind(11, 2, 3);
+
+  Output local_output;
+  local_output.write("{:c}", ind);
+
+  EXPECT_EQ(buffer.str(), "(1, 1, 2)");
+}
+
+TEST_F(OutputTest, FormatInd3Di) {
+  Ind3D ind(11, 2, 3);
+
+  Output local_output;
+  local_output.write("{:i}", ind);
+
+  EXPECT_EQ(buffer.str(), "(11)");
+}
+
+TEST_F(OutputTest, FormatInd3DInvalid) {
+  Ind3D ind(11, 2, 3);
+
+  Output local_output;
+  EXPECT_THROW(local_output.write("{:b}", ind), fmt::format_error);
+}
+
+TEST_F(OutputTest, FormatInd2Ddefault) {
+  Ind2D ind(13, 3, 1);
+
+  Output local_output;
+  local_output.write("{}", ind);
+
+  EXPECT_EQ(buffer.str(), "(4, 1)");
+}
+
+TEST_F(OutputTest, FormatInd2Dc) {
+  Ind2D ind(13, 3, 1);
+
+  Output local_output;
+  local_output.write("{:c}", ind);
+
+  EXPECT_EQ(buffer.str(), "(4, 1)");
+}
+
+TEST_F(OutputTest, FormatInd2Di) {
+  Ind2D ind(13, 3, 1);
+
+  Output local_output;
+  local_output.write("{:i}", ind);
+
+  EXPECT_EQ(buffer.str(), "(13)");
+}
+
+TEST_F(OutputTest, FormatIndPerpdefault) {
+  IndPerp ind(15, 1, 4);
+
+  Output local_output;
+  local_output.write("{}", ind);
+
+  EXPECT_EQ(buffer.str(), "(3, 3)");
+}
+
+TEST_F(OutputTest, FormatIndPerpc) {
+  IndPerp ind(15, 1, 4);
+
+  Output local_output;
+  local_output.write("{:c}", ind);
+
+  EXPECT_EQ(buffer.str(), "(3, 3)");
+}
+
+TEST_F(OutputTest, FormatIndPerpi) {
+  IndPerp ind(15, 1, 4);
+
+  Output local_output;
+  local_output.write("{:i}", ind);
+
+  EXPECT_EQ(buffer.str(), "(15)");
 }

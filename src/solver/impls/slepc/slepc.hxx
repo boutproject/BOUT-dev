@@ -24,25 +24,33 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_SLEPC
+#ifndef BOUT_SLEPC_SOLVER_H
+#define BOUT_SLEPC_SOLVER_H
+
+#include "bout/build_defines.hxx"
+#include "bout/solver.hxx"
+
+#if not BOUT_HAS_SLEPC
+
+namespace {
+RegisterUnavailableSolver
+    registerunavailableslepc("slepc", "BOUT++ was not configured with SLEPc");
+}
+
+#else
 
 class SlepcSolver;
 
-#ifndef __SLEPC_SOLVER_H__
-#define __SLEPC_SOLVER_H__
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/petsclib.hxx>
+#include <bout/slepclib.hxx>
+#include <bout/utils.hxx>
+#include <bout/vector2d.hxx>
+#include <bout/vector3d.hxx>
 
 #include <slepc.h>
 
-#include "bout/solverfactory.hxx"
-#include <bout/solver.hxx>
-#include <field2d.hxx>
-#include <field3d.hxx>
-#include <utils.hxx>
-#include <vector2d.hxx>
-#include <vector3d.hxx>
-
-#include <bout/petsclib.hxx>
-#include <bout/slepclib.hxx>
 #include <vector>
 
 #define OPT_SIZE 40
@@ -57,16 +65,16 @@ RegisterSolver<SlepcSolver> registersolverslepc("slepc");
 
 class SlepcSolver : public Solver {
 public:
-  SlepcSolver(Options *options);
+  SlepcSolver(Options* options);
   ~SlepcSolver();
 
-  int advanceStep(Mat &matOperator, Vec &inData, Vec &outData);
+  int advanceStep(Mat& matOperator, Vec& inData, Vec& outData);
   int compareEigs(PetscScalar ar, PetscScalar ai, PetscScalar br, PetscScalar bi);
   void monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[], PetscScalar eigi[],
                PetscReal errest[], PetscInt nest);
 
   // These contain slepc specific code and call the advanceSolver code
-  int init(int NOUT, BoutReal TIMESTEP) override;
+  int init() override;
   int run() override;
 
   ////////////////////////////////////////
@@ -79,17 +87,10 @@ public:
   ///      use of additional solver
   ////////////////////////////////////////
 
-  void setModel(PhysicsModel *model) override { // New API
+  void setModel(PhysicsModel* model) override { // New API
     Solver::setModel(model);
     if (!selfSolve) {
       advanceSolver->setModel(model);
-    }
-  }
-
-  void setRHS(rhsfunc f) override { // Old API
-    Solver::setRHS(f);
-    if (!selfSolve) {
-      advanceSolver->setRHS(f);
     }
   }
 
@@ -122,20 +123,6 @@ public:
     Solver::add(v, name, description);
     if (!selfSolve) {
       advanceSolver->add(v, name, description);
-    }
-  }
-
-  // Set operations
-  void setJacobian(Jacobian j) override {
-    if (!selfSolve) {
-      advanceSolver->setJacobian(j);
-    }
-  }
-  void setSplitOperator(rhsfunc fC, rhsfunc fD) override {
-    if (selfSolve) {
-      Solver::setSplitOperator(fC, fD);
-    } else {
-      advanceSolver->setSplitOperator(fC, fD);
     }
   }
 
@@ -183,25 +170,22 @@ public:
       return advanceSolver->n3Dvars();
     }
   }
-  // Time steps
   void setMaxTimestep(BoutReal dt) override {
-    if (selfSolve) {
-      Solver::setMaxTimestep(dt);
-    } else {
+    if (not selfSolve) {
       advanceSolver->setMaxTimestep(dt);
     }
   }
   BoutReal getCurrentTimestep() override {
     if (selfSolve) {
-      return Solver::max_dt;
+      return Solver::getCurrentTimestep();
     }
-    { return advanceSolver->getCurrentTimestep(); }
+    return advanceSolver->getCurrentTimestep();
   }
 
   int compareState;
 
-  void slepcToBout(PetscScalar &reEigIn, PetscScalar &imEigIn, BoutReal &reEigOut,
-                   BoutReal &imEigOut, bool force = false);
+  void slepcToBout(PetscScalar& reEigIn, PetscScalar& imEigIn, BoutReal& reEigOut,
+                   BoutReal& imEigOut, bool force = false);
 
   Mat shellMat; //"Shell" matrix operator
 private:
@@ -211,17 +195,18 @@ private:
   ST st;               // Spectral transform object
   PetscBool stIsShell; // Is the ST a shell object?
 
-  Solver *advanceSolver; // Pointer to actual solver used to advance fields
+  std::unique_ptr<Solver> advanceSolver{
+      nullptr}; // Pointer to actual solver used to advance fields
 
-  void vecToFields(Vec &inVec);
-  void fieldsToVec(Vec &outVec);
+  void vecToFields(Vec& inVec);
+  void fieldsToVec(Vec& outVec);
 
   void createShellMat();
   void createEPS();
 
   void analyseResults();
-  void boutToSlepc(BoutReal &reEigIn, BoutReal &imEigIn, PetscScalar &reEigOut,
-                   PetscScalar &imEigOut, bool force = false);
+  void boutToSlepc(BoutReal& reEigIn, BoutReal& imEigIn, PetscScalar& reEigOut,
+                   PetscScalar& imEigOut, bool force = false);
 
   SlepcLib slib;  // Handles initialize / finalize
   bool ddtMode;   // If true then slepc deals with the ddt operator
@@ -230,10 +215,6 @@ private:
 
   // For selfSolve=true
   Array<BoutReal> f0, f1;
-
-  // Timestep details
-  int nout;
-  BoutReal tstep;
 
   // Used for SLEPc options
   int nEig, maxIt;
@@ -251,6 +232,6 @@ private:
   PetscInt localSize;
 };
 
-#endif // __SLEPC_SOLVER_H__
+#endif // BOUT_HAS_SLEPC
 
-#endif
+#endif // BOUT_SLEPC_SOLVER_H

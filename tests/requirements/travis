@@ -1,11 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env sh
 
 # Tests if script is running under Travis
 
-import os
-from sys import exit
-
-if 'TRAVIS' in os.environ:
-   exit(0)  # True
-   
-exit(1) # False
+test ${TRAVIS+hello}

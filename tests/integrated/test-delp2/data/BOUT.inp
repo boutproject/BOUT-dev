@@ -1,12 +1,12 @@
-timestep = 1.
+timestep = 1.0
 nout = 10
 
 MZ = 32
-zmin = 0
-zmax = 8
+ZMIN = 0
+ZMAX = 8
 
-mxg = 2
-myg = 1  # No need for Y communications
+MXG = 2
+MYG = 1  # No need for Y communications
 
 [mesh]
 
@@ -14,20 +14,11 @@ nx = 36
 ny = 1
 
 dx = 0.2
-dy = 1.
-
-[solver]
-#type=karniadakis
-timestep = 0.001
+dy = 1.0
 
 [diffusion]
 
-D = 1.e-1
-
-[All]
-scale = 0.
-
-bndry_all = dirichlet
+D = 0.1
 
 [n]
 

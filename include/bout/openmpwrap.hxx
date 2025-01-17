@@ -1,4 +1,4 @@
-/************************************************************************//**
+/************************************************************************/ /**
  * \brief Openmp utilitiy wrappers
  * 
  * 
@@ -24,9 +24,16 @@
  *
  **************************************************************************/
 
-#ifndef __OPENMPWRAP_H__
-#define __OPENMPWRAP_H__
+#ifndef BOUT_OPENMPWRAP_H
+#define BOUT_OPENMPWRAP_H
 
+#include "bout/build_defines.hxx"
+
+#if BOUT_USE_OPENMP || defined(_OPENMP)
+#include "omp.h"
+#endif
+
+#ifdef _OPENMP
 //Some helpers for indirection -- required so that the _Pragma gets "omp <x>"
 //where <x> is any number of valid omp options/environments (e.g. atomic, critical etc.)
 #define INDIRECT0(a) #a
@@ -35,10 +42,28 @@
 
 //Define a macro wrapper to the use of `#pragma omp` to avoid unknown pragma
 //warnings when compiling without openmp support.
-#ifdef _OPENMP
+#define BOUT_OMP_SAFE(...) _Pragma(INDIRECT2(__VA_ARGS__))
 #define BOUT_OMP(...) _Pragma(INDIRECT2(__VA_ARGS__))
 #else
+#define BOUT_OMP_SAFE(...)
 #define BOUT_OMP(...)
+#endif
+
+#if BOUT_USE_OPENMP
+
+#ifndef INDIRECT2
+#error expected macro INDIRECT2 to be available
+#endif
+
+#define BOUT_OMP_PERF(...) _Pragma(INDIRECT2(__VA_ARGS__))
+#else
+#define BOUT_OMP_PERF(...)
+#endif
+
+#ifndef _OPENMP
+inline int constexpr omp_get_max_threads() { return 1; }
+inline int constexpr omp_get_num_threads() { return 1; }
+inline int constexpr omp_get_thread_num() { return 0; }
 #endif
 
 //Perhaps want to cleanup local helpers with below, but DON'T!
@@ -47,4 +72,3 @@
 // #undef INDIRECT1
 // #undef INDIRECT2
 #endif
-

@@ -10,15 +10,16 @@
 #include <random>
 #include <string>
 
-#include "bout.hxx"
+#include "bout/bout.hxx"
 #include "bout/constants.hxx"
-#include "field_factory.hxx"
-#include "interpolation_factory.hxx"
+#include "bout/field_factory.hxx"
+#include "bout/interpolation_xz.hxx"
+#include "bout/sys/generator_context.hxx"
 
 /// Get a FieldGenerator from the options for a variable
 std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string& varname,
                                                         std::string& func) {
-  Options *options = Options::getRoot()->getSection(varname);
+  Options* options = Options::getRoot()->getSection(varname);
   options->get("solution", func, "0.0");
 
   if (func.empty()) {
@@ -27,13 +28,15 @@ std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string& varna
   return FieldFactory::get()->parse(func);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
   // Random number generator
   std::default_random_engine generator;
   // Uniform distribution of BoutReals from 0 to 1
   std::uniform_real_distribution<BoutReal> distribution{0.0, 1.0};
+
+  using bout::globals::mesh;
 
   FieldFactory f(mesh);
 
@@ -63,7 +66,7 @@ int main(int argc, char **argv) {
   // Bind the random number generator and distribution into a single function
   auto dice = std::bind(distribution, generator);
 
-  for (const auto &index : deltax) {
+  for (const auto& index : deltax) {
     // Get some random displacements
     BoutReal dx = index.x() + dice();
     BoutReal dz = index.z() + dice();
@@ -75,29 +78,40 @@ int main(int argc, char **argv) {
     deltax[index] = dx;
     deltaz[index] = dz;
     // Get the global indices
-    BoutReal x = mesh->GlobalX(dx);
-    BoutReal y = TWOPI * mesh->GlobalY(index.y());
-    BoutReal z = TWOPI * static_cast<BoutReal>(dz) / static_cast<BoutReal>(mesh->LocalNz);
+    bout::generator::Context pos{index, CELL_CENTRE, deltax.getMesh(), 0.0};
+    pos.set("x", mesh->GlobalX(dx), "z",
+            TWOPI * static_cast<BoutReal>(dz) / static_cast<BoutReal>(mesh->LocalNz));
     // Generate the analytic solution at the displacements
-    a_solution[index] = a_gen->generate(x, y, z, 0.0);
-    b_solution[index] = b_gen->generate(x, y, z, 0.0);
-    c_solution[index] = c_gen->generate(x, y, z, 0.0);
+    a_solution[index] = a_gen->generate(pos);
+    b_solution[index] = b_gen->generate(pos);
+    c_solution[index] = c_gen->generate(pos);
   }
 
   // Create the interpolation object from the input options
-  Interpolation *interp = InterpolationFactory::getInstance()->create();
+  auto interp = XZInterpolationFactory::getInstance().create();
 
   // Interpolate the analytic functions at the displacements
   a_interp = interp->interpolate(a, deltax, deltaz);
   b_interp = interp->interpolate(b, deltax, deltaz);
   c_interp = interp->interpolate(c, deltax, deltaz);
 
-  SAVE_ONCE3(a, a_interp, a_solution);
-  SAVE_ONCE3(b, b_interp, b_solution);
-  SAVE_ONCE3(c, c_interp, c_solution);
+  Options dump;
 
-  dump.write();
+  dump["a"] = a;
+  dump["a_interp"] = a_interp;
+  dump["a_solution"] = a_solution;
 
+  dump["b"] = b;
+  dump["b_interp"] = b_interp;
+  dump["b_solution"] = b_solution;
+
+  dump["c"] = c;
+  dump["c_interp"] = c_interp;
+  dump["c_solution"] = c_solution;
+
+  bout::writeDefaultOutputFile(dump);
+
+  bout::checkForUnusedOptions();
   BoutFinalise();
 
   return 0;

@@ -10,24 +10,22 @@ function(enable_sanitizers target_name)
 
     if(ENABLE_COVERAGE)
       target_compile_options(${target_name} PUBLIC --coverage -O0 -g)
-      target_link_libraries(${target_name} PUBLIC --coverage)
+      target_link_libraries(${target_name} PUBLIC --coverage -lgcov)
 
-      find_program(fastcov_FOUND fastcov)
-      message(STATUS "Looking for fastcov: ${fastcov_FOUND}")
+      find_program(lcov_FOUND lcov)
+      message(STATUS "Looking for lcov: ${lcov_FOUND}")
       find_program(genhtml_FOUND genhtml)
-      message(STATUS "Looking for genhtml: ${fastcov_FOUND}")
+      message(STATUS "Looking for genhtml: ${genhtml_FOUND}")
 
-      if (fastcov_FOUND AND genhtml_FOUND)
+      if (lcov_FOUND AND genhtml_FOUND)
         set(COVERAGE_NAME coverage CACHE STRING "Name of coverage output file")
         set(COVERAGE_FILE "${COVERAGE_NAME}.info")
         set(COVERAGE_MSG "Open file://${PROJECT_SOURCE_DIR}/${COVERAGE_NAME}/index.html in your browser to view coverage HTML output")
 
         add_custom_target(code-coverage-capture
           COMMAND
-            fastcov --include "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/include"
-            --exclude "${CMAKE_CURRENT_SOURCE_DIR}/externalpackages"
-            --lcov --process-gcno
-            --output "${COVERAGE_FILE}"
+            lcov -c --directory  "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/bout++.dir/src"
+              --output-file "${COVERAGE_FILE}"
           COMMAND
             genhtml --output-directory "${COVERAGE_NAME}" --demangle-cpp --legend --show-details "${COVERAGE_FILE}"
           COMMAND
@@ -41,11 +39,11 @@ function(enable_sanitizers target_name)
 
         add_custom_target(code-coverage-clean
           COMMAND
-          fastcov --zerocounters
+          lcov --zerocounters
           COMMENT "Cleaning coverage information"
           )
       else()
-        message(STATUS "Coverage enabled, but coverage-capture not available. Please install fastcov and lcov")
+        message(FATAL_ERROR "Coverage enabled, but coverage-capture not available. Please install lcov")
       endif()
 
     endif()
@@ -95,12 +93,15 @@ function(enable_sanitizers target_name)
 
   endif()
 
+  # Default value gets overridden below
+  set(BOUT_USE_SANITIZERS "None" PARENT_SCOPE)
+
   if(LIST_OF_SANITIZERS)
     if(NOT
        "${LIST_OF_SANITIZERS}"
        STREQUAL
        "")
-      message(STATUS "Sanitizers enabled: ${LIST_OF_SANITIZERS}")
+      set(BOUT_USE_SANITIZERS ${LIST_OF_SANITIZERS} PARENT_SCOPE)
       target_compile_options(${target_name} PUBLIC -fsanitize=${LIST_OF_SANITIZERS} -fno-omit-frame-pointer)
       target_link_options(${target_name} PUBLIC -fsanitize=${LIST_OF_SANITIZERS})
     endif()

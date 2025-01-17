@@ -1,5 +1,5 @@
-#include <invert_laplace.hxx>
-#include <msg_stack.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/msg_stack.hxx>
 
 #include <bout/invertable_operator.hxx>
 #include <bout/physicsmodel.hxx>
@@ -29,7 +29,7 @@ private:
   myLaplacian mm;
   bout::inversion::InvertableOperator<Field3D> mySolver;
 
-  class Laplacian* laplacianSolver;
+  std::unique_ptr<Laplacian> laplacianSolver{nullptr};
 
 protected:
   int init(bool) override {

@@ -1,11 +1,11 @@
 /**************************************************************************
  * Generic Runge Kutta explicit method with adaptive timestepping
- * 
+ *
  * Always available, since doesn't depend on external library
- * 
+ *
  **************************************************************************
  * Written by D Dickinson 2015
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -25,61 +25,56 @@
 
 class RKGenericSolver;
 
-#ifndef __RKGENERIC_SOLVER_H__
-#define __RKGENERIC_SOLVER_H__
+#ifndef BOUT_RKGENERIC_SOLVER_H
+#define BOUT_RKGENERIC_SOLVER_H
 
 #include "mpi.h"
 
-#include <bout_types.hxx>
-#include <bout/solver.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/rkscheme.hxx>
+#include <bout/solver.hxx>
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<RKGenericSolver> registersolverrkgeneric("rkgeneric");
 }
 
 class RKGenericSolver : public Solver {
- public:
-  RKGenericSolver(Options *options);
-  ~RKGenericSolver();
-  
+public:
+  explicit RKGenericSolver(Options* opts = nullptr);
+  ~RKGenericSolver() = default;
+
   void resetInternalFields() override;
-  
-  //Utilities only used by the CTU bracket approach
+
+  // Utilities only used by the CTU bracket approach
   void setMaxTimestep(BoutReal dt) override;
-  BoutReal getCurrentTimestep() override {return timestep; }
+  BoutReal getCurrentTimestep() override { return timestep; }
 
-  //Setup solver and scheme
-  int init(int nout, BoutReal tstep) override;
+  // Setup solver and scheme
+  int init() override;
 
-  //Actually evolve
+  // Actually evolve
   int run() override;
 
- private:
-  //Take a step using the scheme
-  BoutReal take_step(BoutReal timeIn,BoutReal dt, const Array<BoutReal> &start, 
-		     Array<BoutReal> &resultFollow);
+private:
+  // Take a step using the scheme
+  BoutReal take_step(BoutReal timeIn, BoutReal dt, const Array<BoutReal>& start,
+                     Array<BoutReal>& resultFollow);
 
-  //Used for storing current state and next step
+  // Used for storing current state and next step
   Array<BoutReal> f0, f2, tmpState;
 
-  //Inputs
-  BoutReal atol, rtol;   // Tolerances for adaptive timestepping
-  BoutReal max_timestep; // Maximum timestep
-  int mxstep; // Maximum number of internal steps between outputs
-  bool adaptive;   // Adapt timestep?
+  // Inputs
+  BoutReal atol, rtol;   //< Tolerances for adaptive timestepping
+  BoutReal max_timestep; //< Maximum timestep
+  BoutReal timestep;     //< The internal timestep
+  int mxstep;            //< Maximum number of internal steps between outputs
+  bool adaptive;         //< Adapt timestep?
 
-  //Internal vars
-  BoutReal out_timestep; // The output timestep
-  int nsteps; // Number of output steps
-  BoutReal timestep; // The internal timestep
-  int nlocal, neq; // Number of variables on local processor and in total
-  
-  //Pointer to the actual scheme used
-  RKScheme *scheme;
+  // Internal vars
+  int nlocal, neq; //< Number of variables on local processor and in total
 
+  /// Pointer to the actual scheme used
+  std::unique_ptr<RKScheme> scheme{nullptr};
 };
 
-#endif // __RKGENERIC_SOLVER_H__
-
+#endif // BOUT_RKGENERIC_SOLVER_H

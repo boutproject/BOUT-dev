@@ -1,15 +1,16 @@
-#include "gtest/gtest.h"
 #include "test_extras.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/region.hxx"
+#include "gtest/gtest.h"
 
 #include <cmath>
+#include <string>
+#include <vector>
 
-// Need to provide a redundant declaration because C++
-constexpr int FakeMeshFixture::nx;
-constexpr int FakeMeshFixture::ny;
-constexpr int FakeMeshFixture::nz;
-
-::testing::AssertionResult IsSubString(const std::string &str,
-                                       const std::string &substring) {
+::testing::AssertionResult IsSubString(const std::string& str,
+                                       const std::string& substring) {
   if (str.find(substring) != std::string::npos) {
     return ::testing::AssertionSuccess();
   } else {

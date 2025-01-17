@@ -1,0 +1,1 @@
+exec grep ID=fedora /etc/os-release -q

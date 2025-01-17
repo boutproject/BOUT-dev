@@ -1,10 +1,11 @@
 
-nout     = 10
+nout = 10
 timestep = 1
 
 alpha = 2.5  # Diffusion exponent: D = f ^ alpha
 
 MXG = 0
+
 [mesh]
 
 nx = 1

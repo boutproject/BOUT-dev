@@ -12,31 +12,14 @@ data, which is then used in communication and file I/O code. This
 interface is in ``src/field/field_data.hxx``. The mandatory (pure
 virtual) functions are::
 
-    bool isReal(); // Returns true if field consists of real values
     bool is3D() const;   // True if variable is 3D
-      
-    int byteSize() const; // Number of bytes for a single point
-    int realSize() const; // Number of reals (not implemented if not real)
 
-To support file I/O there are also some additional functions which may
-be implemented. A code can check if they are implemented by calling
-``ioSupport``. If one of them is implemented then they all should be.
+with an optional function::
 
-::
+    int elementSize() const; // Number of BoutReals in one element
 
-    bool  ioSupport();  // Return true if these functions are implemented
-    const string getSuffix(int component) const; // For vectors e.g. "_x"
-    void* getMark() const; // Store current settings (e.g. co/contra-variant)
-    void  setMark(void *setting); // Return to the stored settings
-    BoutReal* getData(int component); 
-    void  zeroComponent(int component); // Set a component to zero
-
-For twist-shift conditions, the optional function ``shiftZ`` is called
-in the communication routines.
-
-::
-
-    void shiftZ(int jx, int jy, double zangle);
+This is only overridden for the `Vector2D` and `Vector3D` classes
+which essentially have a tuple of ``(x, y, z)`` for a single element.
 
 ``Field``
 ---------
@@ -72,6 +55,7 @@ A `Field` has meta-data members, which give:
       - ``directions.z`` is ``ZDirectionType::Standard`` by default, but can be
         ``ZDirectionType::Average`` if the `Field` represents a quantity that
         is averaged or constant in the z-direction (i.e. is a `Field2D`).
+
 The meta-data members are written to the output files as attributes of the variables.
 
 To create a new `Field` with meta-data, plus ``Mesh`` and ``Coordinates``
@@ -316,7 +300,7 @@ verion of the macro::
 For loops inside parallel regions, there is ``BOUT_FOR_INNER``::
 
     Field3D f(0.0);
-    BOUT_OMP(parallel) {
+    BOUT_OMP_PERF(parallel) {
       BOUT_FOR_INNER(i, f.getMesh()->getRegion3D("RGN_ALL")) {
          f[i] = a[i] + b[i];
       }
@@ -363,7 +347,7 @@ offsets there is a function ``offset(x,y,z)`` so that
 Note that by default no bounds checking is performed. If the checking
 level is increased to 3 or above then bounds checks will be
 performed. This will have a significant (bad) impact on performance, so is
-just for debugging purposes. Configure with ``--enable-checks=3``
+just for debugging purposes. Configure with ``-DCHECK=3``
 option to do this.
 
 
@@ -373,7 +357,7 @@ Tuning BOUT_FOR loops
 The ``BOUT_FOR`` macros use two nested loops: The outer loop is OpenMP
 parallelised, and iterates over contiguous blocks::
 
-  BOUT_OMP(parallel for schedule(guided))
+  BOUT_OMP_PERF(parallel for schedule(guided))
   for (auto block = region.getBlocks().cbegin();
        block < region.getBlocks().cend();
        ++block)
@@ -386,8 +370,8 @@ In order to OpenMP parallelise, there must be enough blocks to
 keep all threads busy. In order to vectorise, each of these blocks
 must be larger than the processor vector width, preferably several
 times larger. This can be tuned by setting the maximum block size,
-set at runtime using the `mesh:maxregionblocksize` option on the
-command line or in the `BOUT.inp` input file::
+set at runtime using the ``mesh:maxregionblocksize`` option on the
+command line or in the ``BOUT.inp`` input file::
 
   [mesh]
   maxregionblocksize = 64

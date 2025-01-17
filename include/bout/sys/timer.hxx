@@ -1,14 +1,13 @@
-#ifndef __TIMER_H__
-#define __TIMER_H__
+#ifndef BOUT_TIMER_H
+#define BOUT_TIMER_H
 
 #include <chrono>
 #include <map>
 #include <string>
 #include <type_traits>
-#include <iomanip>
 
-#include "output.hxx"
-#include "msg_stack.hxx"
+#include "bout/msg_stack.hxx"
+#include "bout/output.hxx"
 
 /*!
  * Timing class for performance benchmarking and diagnosis
@@ -78,7 +77,9 @@ public:
   static double getTime(const std::string& label) { return getTime(getInfo(label)); }
 
   /// Total time elapsed since the very first initialisation
-  static double getTotalTime(const std::string& label) { return getTotalTime(getInfo(label)); }
+  static double getTotalTime(const std::string& label) {
+    return getTotalTime(getInfo(label));
+  }
 
   /*!
    * The total time in seconds, resets the timer to zero
@@ -132,5 +133,5 @@ public:
   static void printTimeReport();
 };
 
-#define AUTO_TIME() Timer CONCATENATE(time_,__LINE__)(__thefunc__)
-#endif // __TIMER_H__
+#define AUTO_TIME() Timer CONCATENATE(time_, __LINE__)(__thefunc__)
+#endif // BOUT_TIMER_H

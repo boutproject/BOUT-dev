@@ -1,11 +1,12 @@
-#include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
+#include "bout/boutexception.hxx"
 #include "bout/mesh.hxx"
+#include "bout/output.hxx"
 #include "bout/region.hxx"
-#include "boutexception.hxx"
-#include "output.hxx"
 
+#include "fake_mesh.hxx"
 #include "test_extras.hxx"
 
 /// Test fixture to make sure the global mesh is our fake one
@@ -53,6 +54,27 @@ TEST_F(MeshTest, GetRegionPerpFromMesh) {
   EXPECT_NO_THROW(localmesh.getRegionPerp("RGN_ALL"));
   EXPECT_NO_THROW(localmesh.getRegionPerp("RGN_NOBNDRY"));
   EXPECT_THROW(localmesh.getRegionPerp("SOME_MADE_UP_REGION_NAME"), BoutException);
+}
+
+TEST_F(MeshTest, HasRegion3D) {
+  localmesh.createDefaultRegions();
+  EXPECT_TRUE(localmesh.hasRegion3D("RGN_ALL"));
+  EXPECT_TRUE(localmesh.hasRegion3D("RGN_NOBNDRY"));
+  EXPECT_FALSE(localmesh.hasRegion3D("SOME_MADE_UP_REGION_NAME"));
+}
+
+TEST_F(MeshTest, HasRegion2D) {
+  localmesh.createDefaultRegions();
+  EXPECT_TRUE(localmesh.hasRegion2D("RGN_ALL"));
+  EXPECT_TRUE(localmesh.hasRegion2D("RGN_NOBNDRY"));
+  EXPECT_FALSE(localmesh.hasRegion2D("SOME_MADE_UP_REGION_NAME"));
+}
+
+TEST_F(MeshTest, HasRegionPerp) {
+  localmesh.createDefaultRegions();
+  EXPECT_TRUE(localmesh.hasRegionPerp("RGN_ALL"));
+  EXPECT_TRUE(localmesh.hasRegionPerp("RGN_NOBNDRY"));
+  EXPECT_FALSE(localmesh.hasRegionPerp("SOME_MADE_UP_REGION_NAME"));
 }
 
 TEST_F(MeshTest, GetRegionTemplatedFromMesh) {
@@ -138,7 +160,7 @@ TEST_F(MeshTest, MapInd3DTo2D) {
 TEST_F(MeshTest, IndPerpTo3D) {
   std::vector<int> globalInds = {0, 1, 49, 50, 98, 99};
 
-  for (const auto &i : globalInds) {
+  for (const auto& i : globalInds) {
     const auto tmp3D = Ind3D(i, ny, nz);
     const auto tmpPerp = IndPerp(tmp3D.x() * nz + tmp3D.z(), 1, nz);
 
@@ -156,8 +178,8 @@ TEST_F(MeshTest, Ind3DToPerp) {
                             11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
   std::vector<int> jyVals{0, 1, 2, 3, 4};
 
-  for (const auto &jy : jyVals) {
-    for (const auto &i : perpInds) {
+  for (const auto& jy : jyVals) {
+    for (const auto& i : perpInds) {
       const auto tmpPerp = IndPerp(i, 1, nz);
       const auto tmp3D = Ind3D(tmpPerp.z() + nz * (jy + ny * tmpPerp.x()), ny, nz);
 
@@ -255,4 +277,20 @@ TEST_F(MeshTest, GetField3DNoSourceWithDefault) {
   constexpr BoutReal default_value = 4.2;
   EXPECT_NE(localmesh.get(field3d_value, "no_source", default_value), 0);
   EXPECT_TRUE(IsFieldEqual(field3d_value, default_value));
+}
+
+TEST_F(MeshTest, MsgLen) {
+  localmesh.createDefaultRegions();
+  localmesh.setCoordinates(nullptr);
+
+  Field3D f3D_1(0., &localmesh);
+  Field3D f3D_2(0., &localmesh);
+  Field2D f2D_1(0., &localmesh);
+  Field2D f2D_2(0., &localmesh);
+
+  std::vector<FieldData*> var_list{&f3D_1, &f2D_1, &f3D_2, &f2D_2};
+
+  const int len = localmesh.msg_len(var_list, 0, nx, 0, ny);
+
+  EXPECT_EQ(len, 2 * (nx * ny * nz) + 2 * (nx * ny));
 }

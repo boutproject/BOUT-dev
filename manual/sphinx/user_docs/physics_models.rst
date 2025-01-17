@@ -23,6 +23,70 @@ either physics models (e.g. ``test-delp2`` and
 ``test-drift-instability``), or define their own ``main`` function
 (e.g. ``test-io`` and ``test-cyclic``).
 
+.. _sec-build-examples:
+
+Building Physics Models
+-----------------------
+
+After building the library (see :ref:`sec-cmake`), you can build a
+physics model in several different ways.
+
+For the bundled examples, perhaps the easiest is to build it directly
+in the build directory. For example, to build the ``conduction``
+example::
+
+  $ cmake --build build --target conduction
+
+(assuming that your build directory is called ``build``!) which will
+build the executable in ``build/examples/conduction``.
+
+You can also ``cd`` into that directory and build it there::
+
+  $ cd build/examples/conduction
+  $ make
+
+(Note for advanced users that this won't work if you've used the
+``Ninja`` CMake generator).
+
+Either of these two methods will actually build the entire BOUT++
+library if necessary, which can be especially useful when developing.
+
+.. _sec-cmake-physics-model:
+
+Using CMake with your physics model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can write a CMake configuration file (``CMakeLists.txt``) for your
+physics model in only four lines:
+
+.. code-block:: cmake
+
+    project(blob2d LANGUAGES CXX)
+    find_package(bout++ REQUIRED)
+    add_executable(blob2d blob2d.cxx)
+    target_link_libraries(blob2d PRIVATE bout++::bout++)
+
+You just need to give CMake the location where you built or installed
+BOUT++ via the ``bout++_DIR`` variable::
+
+  $ cmake . -B build -Dbout++_DIR=/path/to/built/BOUT++
+
+If you want to modify BOUT++ along with developing your model, you may
+instead wish to place the BOUT++ as a subdirectory of your model and
+use ``add_subdirectory`` instead of ``find_package`` above:
+
+.. code-block:: cmake
+
+    project(blob2d LANGUAGES CXX)
+    add_subdirectory(BOUT++/source)
+    add_executable(blob2d blob2d.cxx)
+    target_link_libraries(blob2d PRIVATE bout++::bout++)
+
+where ``BOUT++/source`` is the subdirectory containing the BOUT++
+source. Doing this has the advantage that any changes you make to
+BOUT++ source files will trigger a rebuild of both the BOUT++ library
+and your model when you next build your code.
+
 .. _sec-heat-conduction-model:
 
 Heat conduction
@@ -97,7 +161,7 @@ During initialisation (the ``init`` function), the conduction example
 first reads an option (lines 21 and 24) from the input settings file
 (``data/BOUT.inp`` by default)::
 
-    auto options = Options::root()["conduction"];
+    auto& options = Options::root()["conduction"];
 
     OPTION(options, chi, 1.0);
 
@@ -436,8 +500,8 @@ object in the initialisation function::
       BoutReal gamma;
 
       int init(bool restarting) override {
-        auto globalOptions = Options::root();
-        auto options = globalOptions["mhd"];
+        auto& globalOptions = Options::root();
+        auto& options = globalOptions["mhd"];
 
         OPTION(options, g, 5.0 / 3.0);
         ...
@@ -572,43 +636,30 @@ Finding where bugs have occurred in a (fairly large) parallel code is
 a difficult problem. This is more of a concern for developers of
 BOUT++ (see the developers manual), but it is still useful for the
 user to be able to hunt down bug in their own code, or help narrow
-down where a bug could be occurring.
+down where a bug could be occurring. BOUT++ comes with a `TRACE` macro
+that can be used to easily identify specific regions in a model when
+an error occurs.
 
-If you have a bug which is easily reproduceable i.e. it occurs almost
-immediately every time you run the code, then the easiest way to hunt
-down the bug is to insert lots of ``output.write`` statements (see
-:ref:`sec-logging`). Things get harder when a bug only occurs after a
-long time of running, and/or only occasionally. For this type of
-problem, a useful tool can be the message stack. An easy way to use
-this message stack is to use the `TRACE` macro::
-
-    {
-          TRACE("Some message here"); // message pushed
-
-    } // Scope ends, message popped
-
-This will push the message, then pop the message when the current
-scope ends (except when an exception occurs).  The error message will
-also have the file name and line number appended, to help find where
-an error occurred. The run-time overhead of this should be small, but
-can be removed entirely if the compile-time flag ``-DCHECK`` is not
-defined or set to ``0``. This turns off checking, and ``TRACE``
-becomes an empty macro.  It is possible to use standard ``printf``
-like formatting with the trace macro, for example::
-
-    {
-          TRACE("The value of i is %d and this is an arbitrary %s", i, "string"); // message pushed
-    } // Scope ends, message popped
-
-In the ``mhd.cxx`` example each part of the ``rhs`` function is
-trace'd. If an error occurs then at least the equation where it
-happened will be printed::
+In the ``mhd.cxx`` example each part of the ``rhs`` function has a
+separate ``TRACE`` macro::
 
     {
       TRACE("ddt(rho)");
       ddt(rho) = -V_dot_Grad(v, rho) - rho*Div(v);
     }
 
+If there's a problem here that causes the model to crash, BOUT++ will
+print something like:
+
+.. code:: text
+
+    ====== Back trace ======
+    -> ddt(rho) on line 83 of 'examples/orszag-tang/mhd.cxx'
+
+For more details on what you can do with ``TRACE`` macros, see
+:ref:`sec-debugging`.
+
+.. _sec-physicsmodel-boundary-conditions:
 
 Boundary conditions
 ~~~~~~~~~~~~~~~~~~~
@@ -819,6 +870,9 @@ which is equivalent to::
 Output variables
 ~~~~~~~~~~~~~~~~
 
+.. warning:: File IO has changed significantly in BOUT++ v5. See
+             :ref:`sec-file-io-v5` for more details
+
 BOUT++ always writes the evolving variables to file, but often it’s
 useful to add other variables to the output. For convenience you might
 want to write the normalised starting profiles or other non-evolving
@@ -869,9 +923,7 @@ in ``init``, you then:
    name; actual opening of the file happens later when the data is
    written. If you are not using parallel I/O, the processor number is
    also inserted into the file name before the last “.”, so mydata.nc”
-   becomes “mydata.0.nc”, “mydata.1.nc” etc. The file format used
-   depends on the extension, so “.nc” will open NetCDF, and “.hdf5” or
-   “.h5” an HDF5 file.
+   becomes “mydata.0.nc”, “mydata.1.nc” etc.
 
    (see e.g. src/fileio/datafile.cxx line 139, which calls
    src/fileio/dataformat.cxx line 23, which then calls the file format
@@ -998,11 +1050,17 @@ Logging output
 Logging should be used to report simulation progress, record
 information, and warn about potential problems. BOUT++ includes a
 simple logging facility which supports both C printf and C++ iostream
-styles. For example::
+styles.  For example::
 
-   output.write("This is an integer: %d, and this a real: %e\n", 5, 2.0)
+   output.write("This is an integer: {}, and this a real: {}\n", 5, 2.0)
 
-   output << "This is an integer: " << 5 << ", and this a real: " << 2.0 << endl;
+   output << "This is an integer: " << 5 << ", and this a real: " << 2.0 << '\n';
+
+
+Formatting in the ``output.write`` function is done using the `{fmt}
+library <https://fmt.dev>`_. By default this cannot format BOUT++
+types, but by including ``output_bout_types.hxx`` some BOUT++ types
+can be formatted.
 
 Messages sent to ``output`` on processor 0 will be printed to console
 and saved to ``BOUT.log.0``. Messages from all other processors will
@@ -1023,7 +1081,7 @@ For finer control over which messages are printed, several outputs are
 available, listed in the table below.
 
 ===================   =================================================================
-Name                  Useage
+Name                  Usage
 ===================   =================================================================
 ``output_debug``      For highly verbose output messages, that are normally not needed.
                       Needs to be enabled with a compile switch
@@ -1037,20 +1095,20 @@ Name                  Useage
 Controlling logging level
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By default all of the outputs except ``output_debug`` are saved to log
-and printed to console (processor 0 only).
+By default all of the outputs (except ``output_debug``) are saved to
+log and printed to console (processor 0 only).
 
-To reduce the volume of outputs the command line argument ``-q``
-(quiet) reduces the output level by one, and ``-v`` (verbose)
-increases it by one. Running with ``-q`` in the command line arguments
-suppresses the ``output_info`` messages, so that they will not appear
-in the console or log file. Running with ``-q -q`` suppresses
-everything except ``output_warn`` and ``output_error``.
+To reduce the volume of outputs the command line argument ``--quiet``
+(``-q`` for short) reduces the output level by one, and ``--verbose``
+(``-v`` for short) increases it by one. Running with ``-q`` in the
+command line arguments suppresses the ``output_info`` messages, so
+that they will not appear in the console or log file. Running with
+``-q -q`` suppresses everything except ``output_warn`` and
+``output_error``.
 
 To enable the ``output_debug`` messages, configure BOUT++ with a
 ``CHECK`` level ``>= 3``. To enable it at lower check levels,
-configure BOUT++ with ``--enable-debug-output`` (for ``./configure``)
-or ``-DBOUT_ENABLE_OUTPUT_DEBUG`` (for ``CMake``). When running BOUT++
+configure BOUT++ with ``-DBOUT_ENABLE_OUTPUT_DEBUG=ON``. When running BOUT++
 add a ``-v -v`` flag to see ``output_debug`` messages.
 
 .. _sec-3to4:

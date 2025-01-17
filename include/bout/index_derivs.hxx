@@ -40,12 +40,12 @@
 #include <bout/scorepwrapper.hxx>
 #include <bout/template_combinations.hxx>
 
-#include <bout_types.hxx>
-#include <fft.hxx>
-#include <interpolation.hxx>
-#include <msg_stack.hxx>
-#include <stencils.hxx>
-#include <unused.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/fft.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/stencils.hxx>
+#include <bout/unused.hxx>
 
 class Field3D;
 class Field2D;
@@ -96,7 +96,8 @@ public:
   }
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void upwindOrFlux(const T& vel, const T& var, T& result, const std::string& region) const {
+  void upwindOrFlux(const T& vel, const T& var, T& result,
+                    const std::string& region) const {
     AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::Upwind || meta.derivType == DERIV::Flux)
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
@@ -115,12 +116,12 @@ public:
     return;
   }
 
+  static constexpr FF func{};
+  static constexpr metaData meta{FF::meta};
+
   BoutReal apply(const stencil& f) const { return func(f); }
   BoutReal apply(BoutReal v, const stencil& f) const { return func(v, f); }
   BoutReal apply(const stencil& v, const stencil& f) const { return func(v, f); }
-
-  const FF func{};
-  const metaData meta = func.meta;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -179,23 +180,23 @@ struct registerMethod {
         const std::function<void(const FieldType&, const FieldType&, FieldType&,
                                  const std::string&)>
             theFunc = std::bind(
-            // Method to store in function
-            &Method::template upwindOrFlux<Direction::value, Stagger::value, 1,
-                                           FieldType>,
-            // Arguments -- first is hidden this of type-bound, others are placeholders
-            // for input field, output field, region
-            method, _1, _2, _3, _4);
+                // Method to store in function
+                &Method::template upwindOrFlux<Direction::value, Stagger::value, 1,
+                                               FieldType>,
+                // Arguments -- first is hidden this of type-bound, others are placeholders
+                // for input field, output field, region
+                method, _1, _2, _3, _4);
         derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, method);
       } else {
         const std::function<void(const FieldType&, const FieldType&, FieldType&,
                                  const std::string&)>
             theFunc = std::bind(
-            // Method to store in function
-            &Method::template upwindOrFlux<Direction::value, Stagger::value, 2,
-                                           FieldType>,
-            // Arguments -- first is hidden this of type-bound, others are placeholders
-            // for input field, output field, region
-            method, _1, _2, _3, _4);
+                // Method to store in function
+                &Method::template upwindOrFlux<Direction::value, Stagger::value, 2,
+                                               FieldType>,
+                // Arguments -- first is hidden this of type-bound, others are placeholders
+                // for input field, output field, region
+                method, _1, _2, _3, _4);
         derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, method);
       }
       break;
@@ -209,13 +210,13 @@ struct registerMethod {
 #define DEFINE_STANDARD_DERIV_CORE(name, key, nGuards, type)                        \
   struct name {                                                                     \
     BoutReal operator()(const stencil& f) const;                                    \
-    const metaData meta = {key, nGuards, type};                                     \
     BoutReal operator()(BoutReal UNUSED(vc), const stencil& UNUSED(f)) const {      \
       return BoutNaN;                                                               \
     };                                                                              \
     BoutReal operator()(const stencil& UNUSED(v), const stencil& UNUSED(f)) const { \
       return BoutNaN;                                                               \
     };                                                                              \
+    static constexpr metaData meta = {key, nGuards, type};                          \
   };
 #define DEFINE_STANDARD_DERIV(name, key, nGuards, type) \
   DEFINE_STANDARD_DERIV_CORE(name, key, nGuards, type)  \
@@ -228,7 +229,7 @@ struct registerMethod {
     BoutReal operator()(const stencil& UNUSED(v), const stencil& UNUSED(f)) const { \
       return BoutNaN;                                                               \
     };                                                                              \
-    const metaData meta = {key, nGuards, type};                                     \
+    static constexpr metaData meta = {key, nGuards, type};                          \
   };
 #define DEFINE_UPWIND_DERIV(name, key, nGuards, type) \
   DEFINE_UPWIND_DERIV_CORE(name, key, nGuards, type)  \
@@ -241,7 +242,7 @@ struct registerMethod {
       return BoutNaN;                                                          \
     };                                                                         \
     BoutReal operator()(const stencil& v, const stencil& f) const;             \
-    const metaData meta = {key, nGuards, type};                                \
+    static constexpr metaData meta = {key, nGuards, type};                     \
   };
 #define DEFINE_FLUX_DERIV(name, key, nGuards, type) \
   DEFINE_FLUX_DERIV_CORE(name, key, nGuards, type)  \

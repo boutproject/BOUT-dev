@@ -32,8 +32,13 @@
 include(FindPackageHandleStandardArgs)
 
 find_package(SUNDIALS CONFIG QUIET)
+
 if (SUNDIALS_FOUND)
-  return()
+  if (TARGET SUNDIALS::nvecparallel)
+    return()
+  else()
+    message(STATUS "SUNDIALS found but not SUNDIALS::nvecparallel")
+  endif()
 endif()
 
 find_path(SUNDIALS_INCLUDE_DIR
@@ -99,16 +104,8 @@ endforeach()
 
 if (SUNDIALS_INCLUDE_DIR)
   file(READ "${SUNDIALS_INCLUDE_DIR}/sundials_config.h" SUNDIALS_CONFIG_FILE)
-  string(FIND "${SUNDIALS_CONFIG_FILE}" "SUNDIALS_PACKAGE_VERSION" index)
-  if("${index}" LESS 0)
-    # Version >3
-    set(SUNDIALS_VERSION_REGEX_PATTERN
-      ".*#define SUNDIALS_VERSION \"([0-9]+)\\.([0-9]+)\\.([0-9]+)\".*")
-  else()
-    # Version <3
-    set(SUNDIALS_VERSION_REGEX_PATTERN
-      ".*#define SUNDIALS_PACKAGE_VERSION \"([0-9]+)\\.([0-9]+)\\.([0-9]+)\".*")
-  endif()
+  set(SUNDIALS_VERSION_REGEX_PATTERN
+    ".*#define SUNDIALS_VERSION \"([0-9]+)\\.([0-9]+)\\.([0-9]+)\".*")
   string(REGEX MATCH ${SUNDIALS_VERSION_REGEX_PATTERN} _ "${SUNDIALS_CONFIG_FILE}")
   set(SUNDIALS_VERSION_MAJOR ${CMAKE_MATCH_1} CACHE STRING "")
   set(SUNDIALS_VERSION_MINOR ${CMAKE_MATCH_2} CACHE STRING "")

@@ -21,21 +21,6 @@ USEAGE:
 
 pdb2bout, "intermediate_file.pdb", output="grid.pdb" [ ,/smooth ]
 
-Grid generation
-===============
-
-Takes a tokamak equilibria from EFIT in EQDSK (A and G) format
-and generate a grid (mesh) which can be used as input to BOUT++
-
-gridgen/      Grid generation codes
-gridgen/doc   Manual for grid generation
-
-The Hypnotoad is a graphical interface in IDL to these routines:
-
-IDL> hypnotoad
-
-See the manual in gridgen/doc
-
 Equilibrium generation
 ======================
 

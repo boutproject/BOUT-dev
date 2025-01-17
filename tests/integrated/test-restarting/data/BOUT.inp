@@ -1,8 +1,8 @@
 nout = 10
 timestep = 0.1
 
-mxg = 0
-myg = 0
+MXG = 0
+MYG = 0
 
 [mesh]
 nx = 1
@@ -18,4 +18,3 @@ function = 1
 
 [f2d]
 function = 1
-

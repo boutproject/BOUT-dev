@@ -2,11 +2,8 @@
 TARGET=drift_instability
 
 $(TARGET).pdf: $(TARGET).tex $(TARGET).bib
-	pdflatex $(TARGET)
-	bibtex $(TARGET)
-	pdflatex $(TARGET)
-	pdflatex $(TARGET)
+	latexmk -pdf $(TARGET) -interaction=batchmode
 
 .PHONY: clean
 clean:
-	rm $(TARGET).pdf
+	latexmk -C

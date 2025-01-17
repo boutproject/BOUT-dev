@@ -24,6 +24,8 @@
 #ifndef BOUT_UUID_H
 #define BOUT_UUID_H
 
+#include "bout/build_defines.hxx"
+
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -46,7 +48,7 @@
 #define NOMINMAX
 #endif
 
-#ifdef BOUT_HAS_UUID_SYSTEM_GENERATOR
+#if BOUT_HAS_UUID_SYSTEM_GENERATOR
 #include <objbase.h>
 #endif
 
@@ -57,13 +59,13 @@
 
 #elif defined(__linux__) || defined(__unix__)
 
-#ifdef BOUT_HAS_UUID_SYSTEM_GENERATOR
+#if BOUT_HAS_UUID_SYSTEM_GENERATOR
 #include <uuid/uuid.h>
 #endif
 
 #elif defined(__APPLE__)
 
-#ifdef BOUT_HAS_UUID_SYSTEM_GENERATOR
+#if BOUT_HAS_UUID_SYSTEM_GENERATOR
 #include <CoreFoundation/CFUUID.h>
 #endif
 
@@ -600,7 +602,7 @@ static uuid uuid_namespace_x500{{0x6b, 0xa7, 0xb8, 0x14, 0x9d, 0xad, 0x11, 0xd1,
 // uuid generators
 // --------------------------------------------------------------------------------------------------------------------------
 
-#ifdef BOUT_HAS_UUID_SYSTEM_GENERATOR
+#if BOUT_HAS_UUID_SYSTEM_GENERATOR
 class uuid_system_generator {
 public:
   using result_type = uuid;

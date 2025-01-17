@@ -1,25 +1,21 @@
 #include "gtest/gtest.h"
 
-#include "boutexception.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "field_factory.hxx"
-#include "output.hxx"
 #include "test_extras.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/field_factory.hxx"
 #include "bout/mesh.hxx"
-#include "bout/traits.hxx"
+#include "bout/output.hxx"
 #include "bout/paralleltransform.hxx"
+#include "bout/traits.hxx"
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;
+using bout::generator::Context;
 
 // Reuse the "standard" fixture for FakeMesh
 template <typename T>
@@ -36,32 +32,15 @@ public:
 
   FieldFactory factory;
 
-  // We can't just decide which FieldFactory::create?D function to
-  // call with
-  //
-  //     if (bout::utils::is_Field3D<T>::value) {
-  //       return factory.create3D(...);
-  //     } else {
-  //       return factory.create2D(...);
-  //     }
-  //
-  // as this is *runtime* so the compiler still needs to evaluate both
-  // branches -- until C++17 when we can use `if constexpr ...`
-  template <class... Args>
-  T createDispatch(std::true_type, Args&&... args) {
-    return factory.create3D(std::forward<Args>(args)...);
-  }
-
-  template <class... Args>
-  T createDispatch(std::false_type, Args&&... args) {
-    return factory.create2D(std::forward<Args>(args)...);
-  }
-
   // Generic way of calling either FieldFactory::create2D or
   // FieldFactory::create3D
   template <class... Args>
   T create(Args&&... args) {
-    return createDispatch(bout::utils::is_Field3D<T>{}, std::forward<Args>(args)...);
+    if constexpr (bout::utils::is_Field3D_v<T>) {
+      return factory.create3D(std::forward<Args>(args)...);
+    } else {
+      return factory.create2D(std::forward<Args>(args)...);
+    }
   }
 };
 
@@ -225,9 +204,8 @@ TYPED_TEST(FieldFactoryCreationTest, CreateZStaggered) {
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
-
         auto offset = BoutReal{0.0};
-        if (bout::utils::is_Field3D<TypeParam>::value) {
+        if constexpr (bout::utils::is_Field3D_v<TypeParam>) {
           offset = 0.5;
         }
 
@@ -429,7 +407,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateSqrtX) {
 }
 
 TYPED_TEST(FieldFactoryCreationTest, CreateHeavisideXPi) {
-  auto output = this->create("h(x - pi)");
+  auto output = this->create("H(x - pi)");
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
@@ -476,6 +454,23 @@ TYPED_TEST(FieldFactoryCreationTest, CreateMaxX) {
   auto output = this->create("max(2, 3, 1, 4)");
 
   EXPECT_TRUE(IsFieldEqual(output, 4.));
+}
+
+TYPED_TEST(FieldFactoryCreationTest, CreateClampX) {
+  // Check that the first argument is within low and high limits
+  // Also check that each input can be an expression
+
+  auto output = this->create("clamp(1 + 1, 1, 3)");
+
+  EXPECT_TRUE(IsFieldEqual(output, 2.));
+
+  output = this->create("clamp(-1, 2 - 1, 3)");
+
+  EXPECT_TRUE(IsFieldEqual(output, 1.));
+
+  output = this->create("clamp(5, 1, 6 / 2)");
+
+  EXPECT_TRUE(IsFieldEqual(output, 3.));
 }
 
 TYPED_TEST(FieldFactoryCreationTest, CreatePowX) {
@@ -557,9 +552,10 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
   localmesh.createDefaultRegions();
   localmesh.setCoordinates(std::make_shared<Coordinates>(
       &localmesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
-      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{0.0}, Field2D{0.0}));
+  // No call to Coordinates::geometry() needed here
 
   localmesh.getCoordinates()->setParallelTransform(
       bout::utils::make_unique<ParallelTransformIdentity>(localmesh));
@@ -576,6 +572,16 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
   EXPECT_EQ(output.getNz(), nz);
 }
 
+// Subclass FieldFactory in order to expose the protected methods for
+// testing
+class FieldFactoryExposer : public FieldFactory {
+public:
+  explicit FieldFactoryExposer(Mesh* mesh, Options* opt = nullptr)
+      : FieldFactory(mesh, opt) {}
+  using FieldFactory::fuzzyFind;
+  using FieldFactory::resolve;
+};
+
 // The following tests still use the FieldFactory, but don't need to
 // be typed and make take longer as they check that exceptions get
 // thrown. Doing these twice will slow down the test unnecessarily
@@ -588,22 +594,24 @@ public:
   WithQuietOutput quiet_info{output_info}, quiet{output}, quiet_error{output_error};
   WithQuietOutput quiet_warn{output_warn};
 
-  FieldFactory factory;
+  FieldFactoryExposer factory;
 };
 
 TEST_F(FieldFactoryTest, RequireMesh) {
-  delete bout::globals::mesh;
+  auto* old_mesh = bout::globals::mesh;
   bout::globals::mesh = nullptr;
 
   FieldFactory local_factory{nullptr, nullptr};
 
   EXPECT_THROW(local_factory.create2D("x", nullptr, nullptr), BoutException);
   EXPECT_THROW(local_factory.create3D("x", nullptr, nullptr), BoutException);
+
+  bout::globals::mesh = old_mesh;
 }
 
 TEST_F(FieldFactoryTest, CreateOnMeshWithoutCoordinates) {
   static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
-  EXPECT_THROW(factory.create3D("x"), BoutException);
+  EXPECT_NO_THROW(factory.create3D("x"));
 }
 
 TEST_F(FieldFactoryTest, CleanCache) {
@@ -719,6 +727,12 @@ TEST_F(FieldFactoryTest, MaxArgs) {
   EXPECT_THROW(factory.parse("max()"), ParseException);
 }
 
+TEST_F(FieldFactoryTest, ClampArgs) {
+  EXPECT_THROW(factory.parse("clamp()"), ParseException);
+  EXPECT_THROW(factory.parse("clamp(1)"), ParseException);
+  EXPECT_THROW(factory.parse("clamp(1,2)"), ParseException);
+}
+
 TEST_F(FieldFactoryTest, PowerArgs) {
   EXPECT_THROW(factory.parse("power()"), ParseException);
   EXPECT_THROW(factory.parse("power(x)"), ParseException);
@@ -745,6 +759,69 @@ TEST_F(FieldFactoryTest, TanhhatArgs) {
   EXPECT_THROW(factory.parse("tanhhat(x, x, x, x, x)"), ParseException);
 }
 
+TEST_F(FieldFactoryTest, Where) {
+  auto fieldgen = factory.parse("where({val}, 3, 5)");
+
+  EXPECT_DOUBLE_EQ(fieldgen->generate(Context().set("val", 1.0)), 3);
+  EXPECT_DOUBLE_EQ(fieldgen->generate(Context().set("val", -1.0)), 5);
+}
+
+TEST_F(FieldFactoryTest, Recursion) {
+  // Need to enable recursion
+  Options opt;
+  opt["input"]["max_recursion_depth"] = 4; // Should be sufficient for n=6
+
+  // Create a factory with a max_recursion_depth != 0
+  FieldFactory factory_rec(nullptr, &opt);
+
+  // Fibonacci sequence: 1 1 2 3 5 8
+  opt["fib"] = "where({n} - 2.5, [n={n}-1](fib) + [n={n}-2](fib), 1)";
+
+  auto gen = factory_rec.parse("fib", &opt);
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("n", 3)), 2);
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("n", 4)), 3);
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("n", 5)), 5);
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("n", 6)), 8);
+  EXPECT_THROW(gen->generate(Context().set("n", 7)),
+               BoutException); // Max recursion exceeded
+}
+
+TEST_F(FieldFactoryTest, ResolveGlobalOptions) {
+  Options::root()["f"] = "1 + 1";
+  Options::root()["g"] = "f + f";
+
+  auto g = factory.resolve("g");
+
+  EXPECT_EQ(g->generate({}), 4);
+}
+
+TEST_F(FieldFactoryTest, ResolveLocalOptions) {
+  // Some global options to check we don't pick up these
+  Options::root()["f"] = "1 + 1";
+  Options::root()["g"] = "f + f";
+
+  Options options;
+  options["f"] = "2 + 2";
+  options["g"] = "f * f";
+
+  FieldFactoryExposer factory_local(mesh, &options);
+  auto g = factory_local.resolve("g");
+
+  EXPECT_EQ(g->generate({}), 16);
+}
+
+TEST_F(FieldFactoryTest, FuzzyFind) {
+  Options::root()["moxmide"] = "f + f";
+
+  // Find a default generator and something from the options
+  auto matches = factory.fuzzyFind("mixmide");
+  EXPECT_EQ(matches.size(), 2);
+
+  // Check case difference from the options
+  auto CAPS_matches = factory.fuzzyFind("MOXMIDE");
+  EXPECT_EQ(CAPS_matches.size(), 1);
+}
+
 // A mock ParallelTransform to test transform_from_field_aligned
 // property of FieldFactory. For now, the transform just returns the
 // negative of the input. Ideally, this will get moved to GoogleMock
@@ -759,33 +836,33 @@ public:
 
   void calcParallelSlices(Field3D&) override {}
 
-  bool canToFromFieldAligned() override { return allow_transform; }
+  bool canToFromFieldAligned() const override { return allow_transform; }
 
   bool requiresTwistShift(bool, YDirectionType) override { return false; }
 
   void checkInputGrid() override {}
 
-  const Field3D fromFieldAligned(const Field3D& f, const std::string&) override {
+  Field3D fromFieldAligned(const Field3D& f, const std::string&) override {
     if (f.getDirectionY() != YDirectionType::Aligned) {
       throw BoutException("Unaligned field passed to fromFieldAligned");
     }
     return -f;
   }
 
-  const FieldPerp fromFieldAligned(const FieldPerp& f, const std::string&) override {
+  FieldPerp fromFieldAligned(const FieldPerp& f, const std::string&) override {
     if (f.getDirectionY() != YDirectionType::Aligned) {
       throw BoutException("Unaligned field passed to fromFieldAligned");
     }
     return -f;
   }
 
-  const Field3D toFieldAligned(const Field3D& f, const std::string&) override {
+  Field3D toFieldAligned(const Field3D& f, const std::string&) override {
     if (f.getDirectionY() != YDirectionType::Standard) {
       throw BoutException("Aligned field passed to toFieldAligned");
     }
     return -f;
   }
-  const FieldPerp toFieldAligned(const FieldPerp& f, const std::string&) override {
+  FieldPerp toFieldAligned(const FieldPerp& f, const std::string&) override {
     if (f.getDirectionY() != YDirectionType::Standard) {
       throw BoutException("Aligned field passed to toFieldAligned");
     }
@@ -798,19 +875,13 @@ private:
 
 class FieldFactoryCreateAndTransformTest : public FakeMeshFixture {
 public:
-  FieldFactoryCreateAndTransformTest() : FakeMeshFixture{} {
-    // We need Coordinates so a parallel transform is available as
-    // FieldFactory::create3D wants to un-field-align the result
-    static_cast<FakeMesh*>(mesh)->setCoordinates(test_coords);
-  }
-
   WithQuietOutput quiet_info{output_info};
   WithQuietOutput quiet_warn{output_warn};
 };
 
 TEST_F(FieldFactoryCreateAndTransformTest, Create2D) {
   mesh->getCoordinates()->setParallelTransform(
-    bout::utils::make_unique<MockParallelTransform>(*mesh, true));
+      bout::utils::make_unique<MockParallelTransform>(*mesh, true));
 
   FieldFactory factory;
 
@@ -825,7 +896,7 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create2D) {
 
 TEST_F(FieldFactoryCreateAndTransformTest, Create3D) {
   mesh->getCoordinates()->setParallelTransform(
-    bout::utils::make_unique<MockParallelTransform>(*mesh, true));
+      bout::utils::make_unique<MockParallelTransform>(*mesh, true));
 
   FieldFactory factory;
 
@@ -839,7 +910,7 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create3D) {
 
 TEST_F(FieldFactoryCreateAndTransformTest, Create2DNoTransform) {
   mesh->getCoordinates()->setParallelTransform(
-    bout::utils::make_unique<MockParallelTransform>(*mesh, true));
+      bout::utils::make_unique<MockParallelTransform>(*mesh, true));
 
   Options options;
   options["input"]["transform_from_field_aligned"] = false;
@@ -856,7 +927,7 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create2DNoTransform) {
 
 TEST_F(FieldFactoryCreateAndTransformTest, Create3DNoTransform) {
   mesh->getCoordinates()->setParallelTransform(
-    bout::utils::make_unique<MockParallelTransform>(*mesh, true));
+      bout::utils::make_unique<MockParallelTransform>(*mesh, true));
 
   Options options;
   options["input"]["transform_from_field_aligned"] = false;
@@ -872,7 +943,7 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create3DNoTransform) {
 
 TEST_F(FieldFactoryCreateAndTransformTest, Create2DCantTransform) {
   mesh->getCoordinates()->setParallelTransform(
-    bout::utils::make_unique<MockParallelTransform>(*mesh, false));
+      bout::utils::make_unique<MockParallelTransform>(*mesh, false));
 
   FieldFactory factory{mesh};
 
@@ -887,7 +958,7 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create2DCantTransform) {
 
 TEST_F(FieldFactoryCreateAndTransformTest, Create3DCantTransform) {
   mesh->getCoordinates()->setParallelTransform(
-    bout::utils::make_unique<MockParallelTransform>(*mesh, false));
+      bout::utils::make_unique<MockParallelTransform>(*mesh, false));
 
   FieldFactory factory{mesh};
 

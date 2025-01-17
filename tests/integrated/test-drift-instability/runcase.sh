@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 NO_ARGS=0 
 OPTERROR=65

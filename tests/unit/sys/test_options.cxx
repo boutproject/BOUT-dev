@@ -1,11 +1,15 @@
-#include "gtest/gtest.h"
 #include "test_extras.hxx"
+#include "gtest/gtest.h"
 
-#include "options.hxx"
-#include "output.hxx"
-#include <boutexception.hxx>
+#include "bout/options.hxx"
+#include "bout/output.hxx"
+#include <bout/boutexception.hxx>
 
 #include <string>
+
+#include <fmt/format.h>
+
+#include "fake_mesh_fixture.hxx"
 
 class OptionsTest : public FakeMeshFixture {
 public:
@@ -19,7 +23,7 @@ TEST_F(OptionsTest, IsSet) {
   Options options;
 
   ASSERT_FALSE(options.isSet("int_key"));
-  
+
   options.set("int_key", 42, "code");
 
   ASSERT_TRUE(options.isSet("int_key"));
@@ -33,7 +37,7 @@ TEST_F(OptionsTest, IsSetDefault) {
   ASSERT_FALSE(options.isSet("default_value"));
 }
 
-TEST_F(OptionsTest, IsSection) {
+TEST_F(OptionsTest, IsSectionIsValue) {
   Options options;
 
   // make sure options is initialized as a section
@@ -44,25 +48,21 @@ TEST_F(OptionsTest, IsSection) {
   ASSERT_TRUE(options.isSection(""));
   ASSERT_FALSE(options.isSection("subsection"));
 
+  ASSERT_FALSE(options.isValue());
+  ASSERT_TRUE(options["testkey"].isValue());
+  ASSERT_FALSE(options["subsection"].isValue());
+
+  EXPECT_NO_THROW(options["testkey"].as<int>());
+
+  // Can't index a value
+  EXPECT_THROW(options["testkey"]["subvalue"], BoutException);
+
+  // Can't assign a value to a non-empty section
+  EXPECT_THROW(options = 2., BoutException);
+
   options["subsection"]["testkey"] = 1.;
 
   ASSERT_TRUE(options.isSection("subsection"));
-}
-
-TEST_F(OptionsTest, IsSectionNotCaseSensitive) {
-  Options options;
-
-  // make sure options is initialized as a section
-  options["Testkey"] = 1.;
-
-  ASSERT_TRUE(options.isSection());
-  ASSERT_FALSE(options["testKey"].isSection());
-  ASSERT_TRUE(options.isSection(""));
-  ASSERT_FALSE(options.isSection("Subsection"));
-
-  options["subSection"]["testkey"] = 1.;
-
-  ASSERT_TRUE(options.isSection("Subsection"));
 }
 
 TEST_F(OptionsTest, CompoundName) {
@@ -99,18 +99,6 @@ TEST_F(OptionsTest, SetGetInt) {
   EXPECT_EQ(value, 42);
 }
 
-TEST_F(OptionsTest, SetGetIntNotCaseSensitive) {
-  Options options;
-  options.set("Int_key", 42, "code");
-
-  ASSERT_TRUE(options.isSet("int_Key"));
-
-  int value;
-  options.get("iNt_key", value, 99, false);
-
-  EXPECT_EQ(value, 42);
-}
-
 TEST_F(OptionsTest, SetGetIntFromReal) {
   Options options;
   options.set("int_key", 42.00001, "code");
@@ -124,7 +112,7 @@ TEST_F(OptionsTest, SetGetIntFromReal) {
 
   options.set("int_key2", 12.5, "code");
   EXPECT_THROW(options.get("int_key2", value, 99, false), BoutException);
-  
+
   // value is not changed
   EXPECT_EQ(value, 42);
 }
@@ -148,16 +136,6 @@ TEST_F(OptionsTest, InconsistentDefaultValueInt) {
   EXPECT_EQ(value, 99);
 }
 
-TEST_F(OptionsTest, InconsistentDefaultValueIntNotCaseSensitive) {
-  Options options;
-
-  int value;
-  options.get("Int_key", value, 99, false);
-  EXPECT_THROW(options.get("int_Key", value, 98, false), BoutException);
-
-  EXPECT_EQ(value, 99);
-}
-
 TEST_F(OptionsTest, SetGetReal) {
   Options options;
   options.set("real_key", 6.7e8, "code");
@@ -166,18 +144,6 @@ TEST_F(OptionsTest, SetGetReal) {
 
   BoutReal value;
   options.get("real_key", value, -78.0, false);
-
-  EXPECT_DOUBLE_EQ(value, 6.7e8);
-}
-
-TEST_F(OptionsTest, SetGetRealNotCaseSensitive) {
-  Options options;
-  options.set("Real_key", 6.7e8, "code");
-
-  ASSERT_TRUE(options.isSet("real_Key"));
-
-  BoutReal value;
-  options.get("Real_Key", value, -78.0, false);
 
   EXPECT_DOUBLE_EQ(value, 6.7e8);
 }
@@ -244,18 +210,6 @@ TEST_F(OptionsTest, SetGetBool) {
   EXPECT_EQ(value, true);
 }
 
-TEST_F(OptionsTest, SetGetBoolNotCaseSensitive) {
-  Options options;
-  options.set("Bool_key", true, "code");
-
-  ASSERT_TRUE(options.isSet("bool_Key"));
-
-  bool value;
-  options.get("Bool_Key", value, false, false);
-
-  EXPECT_EQ(value, true);
-}
-
 TEST_F(OptionsTest, SetGetBoolFalse) {
   Options options;
   options.set("bool_key", false, "code");
@@ -280,20 +234,9 @@ TEST_F(OptionsTest, GetBoolFromString) {
 
   EXPECT_EQ(value, true);
 
+  // "yes" is not an acceptable bool
   bool value2;
-  options.get("bool_key2", value2, false, false);
-
-  EXPECT_EQ(value2, true);
-
-  bool value3;
-  // Note we only test the first character so "not_a_bool" is treated as
-  // a bool that is false.
-  options.set("bool_key3", "A_bool_starts_with_T_or_N_or_Y_or_F_or_1_or_0", "code");
-  EXPECT_THROW(options.get("bool_key3", value3, false, false), BoutException);
-  // Surprise true
-  options.set("bool_key3", "yes_this_is_a_bool", "code2");
-  EXPECT_NO_THROW(options.get("bool_key3", value3, false, false));
-  EXPECT_EQ(value3, true);
+  EXPECT_THROW(options.get("bool_key2", value2, false, false), BoutException);
 }
 
 TEST_F(OptionsTest, DefaultValueBool) {
@@ -317,20 +260,6 @@ TEST_F(OptionsTest, SetGetString) {
   EXPECT_EQ(value, "abcdef");
 }
 
-TEST_F(OptionsTest, SetGetStringNotCaseSensitive) {
-  Options options;
-  // Note, string values are case sensitive
-  options.set("String_key", "AbCdEf", "code");
-
-  ASSERT_TRUE(options.isSet("string_Key"));
-
-  std::string value;
-  options.get("String_Key", value, "GhIjKl", false);
-
-  EXPECT_EQ(value, "AbCdEf");
-  EXPECT_NE(value, "abcdef");
-}
-
 TEST_F(OptionsTest, DefaultValueString) {
   Options options;
 
@@ -338,17 +267,6 @@ TEST_F(OptionsTest, DefaultValueString) {
   options.get("string_key", value, "ghijkl", false);
 
   EXPECT_EQ(value, "ghijkl");
-}
-
-TEST_F(OptionsTest, DefaultValueStringNotCaseSensitive) {
-  Options options;
-
-  std::string value;
-  // Note, string values are case sensitive
-  options.get("String_key", value, "GhIjKl", false);
-
-  EXPECT_EQ(value, "GhIjKl");
-  EXPECT_NE(value, "ghijkl");
 }
 
 TEST_F(OptionsTest, InconsistentDefaultValueString) {
@@ -382,9 +300,9 @@ TEST_F(OptionsTest, InconsistentDefaultValueOptions) {
   EXPECT_EQ(options["int_key"].withDefault(42), 42);
 
   int value = 0;
-  EXPECT_THROW(
-      value = options["int_key"].withDefault(default_options["int_key"]).as<int>(),
-      BoutException);
+  EXPECT_THROW(value =
+                   options["int_key"].withDefault(default_options["int_key"]).as<int>(),
+               BoutException);
 
   EXPECT_EQ(value, 0);
 }
@@ -400,10 +318,18 @@ TEST_F(OptionsTest, OverrideDefaultValueOptions) {
 }
 
 TEST_F(OptionsTest, SingletonTest) {
-  Options *root = Options::getRoot();
-  Options *second = Options::getRoot();
+  Options* root = Options::getRoot();
+  Options* second = Options::getRoot();
 
   EXPECT_EQ(root, second);
+}
+
+TEST_F(OptionsTest, ValueUsed) {
+  Options options;
+  options["key1"] = 1;
+  EXPECT_FALSE(options["key1"].valueUsed());
+  [[maybe_unused]] const int value = options["key1"];
+  EXPECT_TRUE(options["key1"].valueUsed());
 }
 
 TEST_F(OptionsTest, CheckUsed) {
@@ -414,12 +340,12 @@ TEST_F(OptionsTest, CheckUsed) {
 
   std::stringstream buffer;
   // Save cout's buffer here
-  std::streambuf *sbuf = std::cout.rdbuf();
+  std::streambuf* sbuf = std::cout.rdbuf();
   // Redirect cout to our stringstream buffer or any other ostream
   std::cout.rdbuf(buffer.rdbuf());
 
   Options options;
-  Options *section1 = options.getSection("section1");
+  Options* section1 = options.getSection("section1");
   options.set("key1", "a", "code");
   section1->set("key2", "b", "code");
   options.set("key3", "c", "code");
@@ -446,9 +372,9 @@ TEST_F(OptionsTest, CheckUsed) {
 
   // Check only key3, key4 are in buffer
   EXPECT_FALSE(IsSubString(buffer.str(), "key1"));
-  EXPECT_FALSE(IsSubString(buffer.str(), "section1:key2"));
+  EXPECT_FALSE(IsSubString(buffer.str(), "key2"));
   EXPECT_TRUE(IsSubString(buffer.str(), "key3"));
-  EXPECT_TRUE(IsSubString(buffer.str(), "section1:key4"));
+  EXPECT_TRUE(IsSubString(buffer.str(), "key4"));
 
   // Clear buffer
   buffer.str("");
@@ -466,14 +392,14 @@ TEST_F(OptionsTest, CheckUsed) {
 
 TEST_F(OptionsTest, GetEmptySection) {
   Options options;
-  Options *new_section = options.getSection("");
+  Options* new_section = options.getSection("");
 
   EXPECT_EQ(new_section, &options);
 }
 
 TEST_F(OptionsTest, MakeNewSection) {
   Options options;
-  Options *new_section = options.getSection("section1");
+  Options* new_section = options.getSection("section1");
 
   EXPECT_NE(new_section, &options);
   EXPECT_EQ(new_section->getParent(), &options);
@@ -482,34 +408,26 @@ TEST_F(OptionsTest, MakeNewSection) {
 
 TEST_F(OptionsTest, GetExistingSection) {
   Options options;
-  Options *new_section = options.getSection("section1");
-  Options *old_section = options.getSection("section1");
-
-  EXPECT_EQ(new_section, old_section);
-}
-
-TEST_F(OptionsTest, CheckCaseSensitivity) {
-  Options options;
-  Options *new_section = options.getSection("section1");
-  Options *old_section = options.getSection("SECTION1");
+  Options* new_section = options.getSection("section1");
+  Options* old_section = options.getSection("section1");
 
   EXPECT_EQ(new_section, old_section);
 }
 
 TEST_F(OptionsTest, GetCorrectSection) {
   Options options;
-  Options *section1 = options.getSection("section1");
+  Options* section1 = options.getSection("section1");
   options.getSection("section2");
 
-  Options *old_section = options.getSection("section1");
+  Options* old_section = options.getSection("section1");
 
   EXPECT_EQ(section1, old_section);
 }
 
 TEST_F(OptionsTest, MakeNestedSection) {
   Options options;
-  Options *section1 = options.getSection("section1");
-  Options *section2 = section1->getSection("section2");
+  Options* section1 = options.getSection("section1");
+  Options* section2 = section1->getSection("section2");
 
   EXPECT_NE(section2, section1);
   EXPECT_EQ(section2->getParent(), section1);
@@ -519,27 +437,41 @@ TEST_F(OptionsTest, MakeNestedSection) {
 TEST_F(OptionsTest, SetSameOptionTwice) {
   Options options;
   options.set("key", "value", "code");
-  EXPECT_THROW(options.set("key", "new value", "code"),BoutException);
+  EXPECT_THROW(options.set("key", "new value", "code"), BoutException);
 
   options.set("key", "value", "code");
   EXPECT_NO_THROW(options.forceSet("key", "new value", "code"));
-  EXPECT_NO_THROW(options.set("key", "value", "code",true));
-}
-
-TEST_F(OptionsTest, SetSameOptionTwiceNotCaseSensitive) {
-  Options options;
-  // Note string values are case sensitive
-  options.set("Key", "Value", "code");
-  EXPECT_THROW(options.set("keY", "New Value", "code"),BoutException);
-
-  options.set("kEy", "Value", "code");
-  EXPECT_THROW(options.set("keY", "vAlue", "code"),BoutException);
-  EXPECT_NO_THROW(options.forceSet("KeY", "nEw valUe", "code"));
-  EXPECT_NO_THROW(options.set("KEY", "valuE", "code",true));
+  EXPECT_NO_THROW(options.set("key", "value", "code", true));
 }
 
 /// New interface
 
+TEST_F(OptionsTest, NewGetEmptySection) {
+  Options options;
+  Options& new_section = options[""];
+
+  EXPECT_EQ(&new_section, &options);
+  EXPECT_TRUE(new_section.isSection());
+}
+
+TEST_F(OptionsTest, NewMakeNewSection) {
+  Options options;
+  Options& new_section = options["section1"];
+
+  EXPECT_NE(&new_section, &options);
+  EXPECT_EQ(&new_section.parent(), &options);
+  EXPECT_EQ(new_section.str(), "section1");
+  EXPECT_TRUE(new_section.isSection());
+}
+
+TEST_F(OptionsTest, NewGetExistingSection) {
+  Options options;
+  Options& new_section = options["section1"];
+  Options& old_section = options["section1"];
+
+  EXPECT_EQ(&new_section, &old_section);
+  EXPECT_TRUE(new_section.isSection());
+}
 
 TEST_F(OptionsTest, NewIsSet) {
   Options options;
@@ -551,37 +483,15 @@ TEST_F(OptionsTest, NewIsSet) {
   ASSERT_TRUE(options["int_key"].isSet());
 }
 
-TEST_F(OptionsTest, NewIsSetNotCaseSensitive) {
-  Options options;
-
-  ASSERT_FALSE(options["Int_key"].isSet());
-
-  options["int_Key"].assign(42, "code");
-
-  ASSERT_TRUE(options["Int_key"].isSet());
-}
-
 TEST_F(OptionsTest, NewSubSection) {
   Options options;
-  
+
   options["sub-section"]["int_key"].assign(42, "code");
-  
+
   ASSERT_FALSE(options["int_key"].isSet());
   ASSERT_TRUE(options["sub-section"]["int_key"].isSet());
-  
+
   int value = options["sub-section"]["int_key"].withDefault(99);
-  EXPECT_EQ(value, 42);
-}
-
-TEST_F(OptionsTest, NewSubSectionNotCaseSensitive) {
-  Options options;
-
-  options["Sub-section"]["Int_key"].assign(42, "code");
-
-  ASSERT_FALSE(options["int_key"].isSet());
-  ASSERT_TRUE(options["sub-Section"]["int_Key"].isSet());
-
-  int value = options["sub-secTion"]["inT_key"].withDefault(99);
   EXPECT_EQ(value, 42);
 }
 
@@ -618,20 +528,6 @@ TEST_F(OptionsTest, NewSetGetIntFromReal) {
   EXPECT_THROW(options["key2"].as<int>(), BoutException);
 }
 
-TEST_F(OptionsTest, NewSetGetIntFromRealNotCaseSensitive) {
-  Options options;
-  options["Key1"] = 42.00001;
-
-  ASSERT_TRUE(options["kEy1"].isSet());
-
-  int value = options["keY1"].withDefault(99);
-
-  EXPECT_EQ(value, 42);
-
-  options["Key2"] = 12.5;
-  EXPECT_THROW(options["kEy2"].as<int>(), BoutException);
-}
-
 TEST_F(OptionsTest, NewDefaultValueInt) {
   Options options;
 
@@ -651,6 +547,21 @@ TEST_F(OptionsTest, WithDefaultStringCaseSensitive) {
 
   std::string value = options.withDefault("Hello");
   EXPECT_NE(value, "hello");
+}
+
+TEST_F(OptionsTest, AssignRepeat) {
+  Options options;
+
+  options["int"].assignRepeat(67);
+  ASSERT_TRUE(options["int"].hasAttribute("time_dimension"));
+  EXPECT_EQ(options["int"].attributes["time_dimension"].as<std::string>(), "t");
+
+  options["double"].assignRepeat(76.0, "t2");
+  ASSERT_TRUE(options["double"].hasAttribute("time_dimension"));
+  EXPECT_EQ(options["double"].attributes["time_dimension"].as<std::string>(), "t2");
+
+  options["string"].assignRepeat("67", "t3", false);
+  ASSERT_FALSE(options["string"].hasAttribute("time_dimension"));
 }
 
 TEST_F(OptionsTest, OptionsMacroPointer) {
@@ -693,26 +604,26 @@ TEST_F(OptionsTest, OptionsMacroConstReference) {
   EXPECT_EQ(val, 42);
 }
 
-/// Copy constructor copies value
+/// Copy method copies value
 TEST_F(OptionsTest, CopyOption) {
   Options option1;
 
   option1 = 42;
 
-  Options option2(option1);
+  Options option2(option1.copy());
 
   EXPECT_EQ(option2.as<int>(), 42);
 }
 
-/// Copy constructor makes independent copy
+/// Copy method makes independent copy
 TEST_F(OptionsTest, CopyOptionDistinct) {
   Options option1;
   option1 = 42;
 
-  Options option2(option1);
+  Options option2(option1.copy());
 
   option1.force(23);
-  
+
   EXPECT_EQ(option1.as<int>(), 23);
   EXPECT_EQ(option2.as<int>(), 42);
 }
@@ -721,9 +632,9 @@ TEST_F(OptionsTest, CopyOptionDistinct) {
 TEST_F(OptionsTest, CopySection) {
   Options option1;
 
-  option1["key"] = 42;   // option1 now a section
+  option1["key"] = 42; // option1 now a section
 
-  Options option2(option1);
+  Options option2(option1.copy());
 
   EXPECT_EQ(option2["key"].as<int>(), 42);
 }
@@ -734,17 +645,17 @@ TEST_F(OptionsTest, CopySectionParent) {
 
   option1["key"] = 42;
 
-  Options option2(option1);
-  
-  EXPECT_TRUE( &option2["key"].parent() == &option2 );
+  Options option2(option1.copy());
+
+  EXPECT_TRUE(&option2["key"].parent() == &option2);
 }
 
 TEST_F(OptionsTest, AssignOption) {
   Options option1, option2;
 
   option1 = 42;
-  
-  option2 = option1;
+
+  option2 = option1.copy();
 
   EXPECT_EQ(option2.as<int>(), 42);
 }
@@ -753,10 +664,11 @@ TEST_F(OptionsTest, AssignSection) {
   Options option1, option2;
 
   option1["key"] = 42;
-  
-  option2 = option1;
+
+  option2 = option1.copy();
 
   EXPECT_EQ(option2["key"].as<int>(), 42);
+  EXPECT_TRUE(option2["key"].isValue());
 }
 
 TEST_F(OptionsTest, AssignSectionReplace) {
@@ -764,39 +676,28 @@ TEST_F(OptionsTest, AssignSectionReplace) {
 
   option1["key"] = 42;
   option2["key"] = 23;
-  
-  option2 = option1;
+
+  option2 = option1.copy();
 
   EXPECT_EQ(option2["key"].as<int>(), 42);
-}
-
-TEST_F(OptionsTest, AssignSectionReplaceNotCaseSensitive) {
-  Options option1, option2;
-
-  option1["Key"] = 42;
-  option2["kEy"] = 23;
-
-  option2 = option1;
-
-  EXPECT_EQ(option2["keY"].as<int>(), 42);
 }
 
 TEST_F(OptionsTest, AssignSectionParent) {
   Options option1, option2;
 
   option1["key"] = 42;
-  
-  option2 = option1;
-  
-  EXPECT_TRUE( &option2["key"].parent() == &option2 );
+
+  option2 = option1.copy();
+
+  EXPECT_TRUE(&option2["key"].parent() == &option2);
 }
 
 TEST_F(OptionsTest, AssignSubSection) {
   Options option1, option2;
 
   option1["key1"] = 42;
-  
-  option2["key2"] = option1;
+
+  option2["key2"] = option1.copy();
 
   EXPECT_EQ(option2["key2"]["key1"].as<int>(), 42);
 }
@@ -805,8 +706,8 @@ TEST_F(OptionsTest, AssignSubSectionParent) {
   Options option1, option2;
 
   option1["key1"] = 42;
-  
-  option2["key2"] = option1;
+
+  option2["key2"] = option1.copy();
 
   EXPECT_EQ(&option2["key2"].parent(), &option2);
   EXPECT_EQ(&option2["key2"]["key1"].parent(), &option2["key2"]);
@@ -920,12 +821,51 @@ TEST_F(OptionsTest, AttributeTimeDimension) {
 
   option = 3;
   EXPECT_EQ(option.as<int>(), 3);
-  
+
   option.attributes["time_dimension"] = "t";
 
   option = 4;
 
   EXPECT_EQ(option.as<int>(), 4);
+}
+
+TEST_F(OptionsTest, AttributeSetOne) {
+  Options option;
+
+  option.setAttributes({{"answer", 42}});
+
+  EXPECT_TRUE(option.hasAttribute("answer"));
+  EXPECT_EQ(option.attributes["answer"].as<int>(), 42);
+}
+
+TEST_F(OptionsTest, AttributeSetTwo) {
+  Options option;
+
+  option.setAttributes({{"one", 1}, {"two", 2}});
+
+  EXPECT_TRUE(option.hasAttribute("one"));
+  EXPECT_EQ(option.attributes["one"].as<int>(), 1);
+
+  EXPECT_TRUE(option.hasAttribute("two"));
+  EXPECT_EQ(option.attributes["two"].as<int>(), 2);
+}
+
+TEST_F(OptionsTest, AttributeSetReplace) {
+  Options option;
+
+  option.attributes["one"] = 1;
+  EXPECT_TRUE(option.hasAttribute("one"));
+  EXPECT_EQ(option.attributes["one"].as<int>(), 1);
+
+  option.setAttributes({{"one", 2}, {"two", 2}});
+
+  // Has changed previously set attribute
+  EXPECT_TRUE(option.hasAttribute("one"));
+  EXPECT_EQ(option.attributes["one"].as<int>(), 2);
+
+  // Has inserted new attribute
+  EXPECT_TRUE(option.hasAttribute("two"));
+  EXPECT_EQ(option.attributes["two"].as<int>(), 2);
 }
 
 TEST_F(OptionsTest, EqualityBool) {
@@ -993,7 +933,7 @@ TEST_F(OptionsTest, WithDefaultIntThrow) {
 
   Options option;
   option = "4.32";
-  
+
   EXPECT_THROW(option.withDefault(0), BoutException);
 }
 
@@ -1037,7 +977,7 @@ TEST_F(OptionsTest, TypeAttributeField2D) {
   // Casting to Field2D should modify the "type" attribute
   Field2D value = option.withDefault<Field2D>(Field2D(-1, bout::globals::mesh));
 
-  EXPECT_EQ(value(0,0), 42);
+  EXPECT_EQ(value(0, 0), 42);
   EXPECT_EQ(option.attributes["type"].as<std::string>(), "Field2D");
 }
 
@@ -1048,7 +988,7 @@ TEST_F(OptionsTest, TypeAttributeField3D) {
   // Casting to Field3D should modify the "type" attribute
   Field3D value = option.withDefault<Field3D>(Field3D(-1, bout::globals::mesh));
 
-  EXPECT_EQ(value(0,0,0), 42);
+  EXPECT_EQ(value(0, 0, 0), 42);
   EXPECT_EQ(option.attributes["type"].as<std::string>(), "Field3D");
 }
 
@@ -1059,7 +999,7 @@ TEST_F(OptionsTest, TypeAttributeFieldPerp) {
   // Casting to FieldPerp should modify the "type" attribute
   FieldPerp value = option.withDefault<FieldPerp>(FieldPerp(-1, bout::globals::mesh));
 
-  EXPECT_EQ(value(0,0,0), 36);
+  EXPECT_EQ(value(0, 0, 0), 36);
   EXPECT_EQ(option.attributes["type"].as<std::string>(), "FieldPerp");
 }
 
@@ -1073,7 +1013,7 @@ TEST_F(OptionsTest, DocString) {
 
 TEST_F(OptionsTest, DocStringAssignTo) {
   Options option;
-  
+
   option.doc("test string") = 42;
 
   EXPECT_EQ(option.attributes["doc"].as<std::string>(), "test string");
@@ -1083,7 +1023,7 @@ TEST_F(OptionsTest, DocStringAssignTo) {
 TEST_F(OptionsTest, DocStringAssignFrom) {
   Options option;
   option = 42;
-  
+
   int value = option.doc("test string");
 
   EXPECT_EQ(option.attributes["doc"].as<std::string>(), "test string");
@@ -1097,18 +1037,405 @@ TEST_F(OptionsTest, DocStringWithDefault) {
   int value = option.doc("some value").withDefault(2);
 
   EXPECT_EQ(value, 42);
-  EXPECT_EQ(option.attributes["doc"].as<std::string>(), "some value"); 
+  EXPECT_EQ(option.attributes["doc"].as<std::string>(), "some value");
 }
 
 TEST_F(OptionsTest, DocStringNotCopied) {
   Options option;
   option = 32;
 
-  Options option2 = option;
+  Options option2 = option.copy();
 
   int value = option2.doc("test value");
-  
+
   EXPECT_EQ(value, 32);
   EXPECT_EQ(option2.attributes["doc"].as<std::string>(), "test value");
   EXPECT_EQ(option.attributes.count("doc"), 0);
+}
+
+TEST_F(OptionsTest, InitializeInt) {
+  Options option{3};
+  EXPECT_EQ(option.as<int>(), 3);
+}
+
+TEST_F(OptionsTest, InitialiseTree) {
+  Options option{{"section1", {{"value1", 42}, {"value2", "hello"}}},
+                 {"section2",
+                  {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}}};
+
+  EXPECT_EQ(option["section1"]["value1"].as<int>(), 42);
+  EXPECT_EQ(option["section1"]["value2"].as<std::string>(), "hello");
+  EXPECT_EQ(option["section2"]["subsection1"]["value3"].as<bool>(), true);
+  EXPECT_DOUBLE_EQ(option["section2"]["subsection1"]["value4"].as<BoutReal>(), 3.2);
+  EXPECT_EQ(option["section2"]["value5"].as<int>(), 3);
+}
+
+TEST_F(OptionsTest, ToString) {
+  Options option{
+      {"section1", {{"value1", 42}, {"value2", "hello"}}},
+      {"section2", {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}},
+      {"section3", {{"subsection2", {{"value6", 12}}}}}};
+
+  // It's plausible this test is fragile if the internal storage
+  // changes the order -- at time of writing (Jan 2020) it's
+  // lexographical rather than insertion order
+  std::string expected = R"(
+[section1]
+value1 = 42
+value2 = hello
+
+[section2]
+value5 = 3
+
+[section2:subsection1]
+value3 = true
+value4 = 3.2
+
+[section3:subsection2]
+value6 = 12
+)";
+
+  EXPECT_EQ(toString(option), expected);
+}
+
+TEST_F(OptionsTest, InvalidFormat) {
+  EXPECT_THROW(fmt::format("{:nope}", Options{}), fmt::format_error);
+}
+
+TEST_F(OptionsTest, FormatValue) {
+  Options options;
+  options["value1"].doc("This is a value").assign(4, "some test");
+  options["value1"].attributes["type"] = "int";
+
+  const std::string expected =
+      "value1 = 4		# type: int, doc: This is a value, source: some test";
+
+  EXPECT_EQ(expected, fmt::format("{:ds}", options["value1"]));
+}
+
+TEST_F(OptionsTest, FormatDefault) {
+  Options option{
+      {"section1", {{"value1", 42}, {"value2", "hello"}}},
+      {"section2", {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}},
+      {"section3", {{"subsection2", {{"value6", 12}}}}}};
+
+  // It's plausible this test is fragile if the internal storage
+  // changes the order -- at time of writing (Jan 2020) it's
+  // lexographical rather than insertion order
+  std::string expected = R"(
+[section1]
+value1 = 42
+value2 = hello
+
+[section2]
+value5 = 3
+
+[section2:subsection1]
+value3 = true
+value4 = 3.2
+
+[section3:subsection2]
+value6 = 12
+)";
+
+  EXPECT_EQ(fmt::format("{}", option), expected);
+}
+
+TEST_F(OptionsTest, FormatDocstrings) {
+  Options option{
+      {"section1", {{"value1", 42}, {"value2", "hello"}}},
+      {"section2", {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}},
+      {"section3", {{"subsection2", {{"value6", 12}}}}}};
+
+  option["section1:value2"].doc("This says hello");
+  option["section2:subsection1:value3"].doc("This is a bool");
+
+  // It's plausible this test is fragile if the internal storage
+  // changes the order -- at time of writing (Jan 2020) it's
+  // lexographical rather than insertion order
+  std::string expected = R"(
+[section1]
+value1 = 42
+value2 = hello		# doc: This says hello
+
+[section2]
+value5 = 3
+
+[section2:subsection1]
+value3 = true		# doc: This is a bool
+value4 = 3.2
+
+[section3:subsection2]
+value6 = 12
+)";
+
+  EXPECT_EQ(fmt::format("{:d}", option), expected);
+}
+
+TEST_F(OptionsTest, FormatDocstringsAndInline) {
+  Options option{
+      {"section1", {{"value1", 42}, {"value2", "hello"}}},
+      {"section2", {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}},
+      {"section3", {{"subsection2", {{"value6", 12}}}}}};
+
+  option["section1:value2"].doc("This says hello");
+  option["section2:subsection1:value3"].doc("This is a bool").withDefault(true);
+
+  // It's plausible this test is fragile if the internal storage
+  // changes the order -- at time of writing (Jan 2020) it's
+  // lexographical rather than insertion order
+  std::string expected = R"(section1:value1 = 42
+section1:value2 = hello		# doc: This says hello
+section2:value5 = 3
+section2:subsection1:value3 = true		# type: bool, doc: This is a bool
+section2:subsection1:value4 = 3.2
+section3:subsection2:value6 = 12
+)";
+
+  EXPECT_EQ(fmt::format("{:di}", option), expected);
+  // Order of format spec shouldn't matter
+  EXPECT_EQ(fmt::format("{:id}", option), expected);
+}
+
+TEST_F(OptionsTest, FormatDocstringsAndInlineKeysOnly) {
+  Options option{
+      {"section1", {{"value1", 42}, {"value2", "hello"}}},
+      {"section2", {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}},
+      {"section3", {{"subsection2", {{"value6", 12}}}}}};
+
+  option["section1:value2"].doc("This says hello");
+  option["section2:subsection1:value3"].doc("This is a bool").withDefault(true);
+  option["section2:subsection1:value3"].attributes["source"] = "a test";
+  option["section3:subsection2:value6"].attributes["source"] = "a test";
+
+  // It's plausible this test is fragile if the internal storage
+  // changes the order -- at time of writing (Jan 2020) it's
+  // lexographical rather than insertion order
+  std::string expected = R"(section1:value1
+section1:value2		# doc: This says hello
+section2:value5
+section2:subsection1:value3		# type: bool, doc: This is a bool, source: a test
+section2:subsection1:value4
+section3:subsection2:value6		# source: a test
+)";
+
+  EXPECT_EQ(fmt::format("{:ksdi}", option), expected);
+  // Order of format spec shouldn't matter
+  EXPECT_EQ(fmt::format("{:idsk}", option), expected);
+}
+
+TEST_F(OptionsTest, FormatUnused) {
+  Options option{{"section1", {{"value1", 42}}}};
+  std::string expected =
+      "section1:value1\t\t# unused value (NOT marked conditionally used)\n";
+  EXPECT_EQ(fmt::format("{:iku}", option), expected);
+}
+
+TEST_F(OptionsTest, FormatConditionallyUsed) {
+  Options option{{"section1", {{"value1", 42}}}};
+  option.setConditionallyUsed();
+  std::string expected =
+      "section1:value1\t\t# unused value (marked conditionally used)\n";
+  EXPECT_EQ(fmt::format("{:iku}", option), expected);
+}
+
+TEST_F(OptionsTest, GetUnused) {
+  Options option{{"section1", {{"value1", 42}, {"value2", "hello"}}},
+                 {"section2",
+                  {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}}};
+
+  // This shouldn't count as unused
+  option["section2"]["value5"].attributes["source"] = "Output";
+
+  [[maybe_unused]] auto value1 = option["section1"]["value1"].as<int>();
+  [[maybe_unused]] auto value3 = option["section2"]["subsection1"]["value3"].as<bool>();
+
+  Options expected_unused{{"section1", {{"value2", "hello"}}},
+                          {"section2", {{"subsection1", {{"value4", 3.2}}}}}};
+
+  EXPECT_EQ(option.getUnused(), expected_unused);
+
+  [[maybe_unused]] auto value2 = option["section1"]["value2"].as<std::string>();
+  [[maybe_unused]] auto value4 = option["section2"]["subsection1"]["value4"].as<double>();
+  [[maybe_unused]] auto value5 = option["section2"]["value5"].as<int>();
+
+  Options expected_empty{};
+
+  EXPECT_EQ(option.getUnused(), expected_empty);
+}
+
+TEST_F(OptionsTest, SetConditionallyUsed) {
+  Options option{{"section1", {{"value1", 42}, {"value2", "hello"}}},
+                 {"section2",
+                  {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}}};
+
+  option.setConditionallyUsed();
+
+  Options expected_empty{};
+
+  EXPECT_EQ(option.getUnused(), expected_empty);
+}
+
+TEST_F(OptionsTest, FuzzyFind) {
+  Options option{
+      {"value1", 21},
+      {"section1", {{"value1", 42}, {"value2", "hello"}, {"not this", 1}}},
+      {"section2",
+       {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value_5", 3}}}};
+
+  auto fuzzy_matches = option.fuzzyFind("value1");
+  EXPECT_EQ(fuzzy_matches.size(), 6);
+  auto first_match = fuzzy_matches.begin();
+  EXPECT_EQ(first_match->match.str(), "value1");
+  EXPECT_EQ(first_match->distance, 0);
+  auto second_match = ++first_match;
+  EXPECT_EQ(second_match->match.str(), "section1:value1");
+  EXPECT_EQ(second_match->distance, 1);
+
+  auto fuzzy_section_matches = option.fuzzyFind("section1:subsection2:value__3");
+  EXPECT_EQ(fuzzy_section_matches.size(), 1);
+  auto first_section_match = fuzzy_section_matches.begin();
+  EXPECT_EQ(first_section_match->match.str(), "section2:subsection1:value3");
+  EXPECT_EQ(first_section_match->distance, 4);
+
+  auto fuzzy_CAPS_matches = option.fuzzyFind("section2:VALUE_5");
+  EXPECT_EQ(fuzzy_CAPS_matches.size(), 1);
+  auto first_CAPS_match = fuzzy_CAPS_matches.begin();
+  EXPECT_EQ(first_CAPS_match->match.str(), "section2:value_5");
+  EXPECT_EQ(first_CAPS_match->distance, 1);
+}
+
+TEST_F(OptionsTest, GetFlattenedKeys) {
+  Options option{
+      {"value1", 21},
+      {"section1", {{"value1", 42}, {"value2", "hello"}}},
+      {"section2",
+       {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value_5", 3}}}};
+
+  auto flat_keys = option.getFlattenedKeys();
+
+  std::vector<std::string> expected_keys{"value1",
+                                         "section1:value1",
+                                         "section1:value2",
+                                         "section2:subsection1:value3",
+                                         "section2:subsection1:value4",
+                                         "section2:value_5"};
+
+  std::sort(flat_keys.begin(), flat_keys.end());
+  std::sort(expected_keys.begin(), expected_keys.end());
+
+  EXPECT_EQ(flat_keys, expected_keys);
+}
+
+TEST_F(OptionsTest, CheckForUnusedOptions) {
+  Options option{{"section1", {{"value1", 42}, {"value2", "hello"}}},
+                 {"section2",
+                  {{"subsection1", {{"value3", true}, {"value4", 3.2}}}, {"value5", 3}}}};
+
+  // This shouldn't count as unused
+  option["section2"]["value5"].attributes["source"] = "Output";
+
+  [[maybe_unused]] auto value1 = option["section1"]["value1"].as<int>();
+  [[maybe_unused]] auto value3 = option["section2"]["subsection1"]["value3"].as<bool>();
+
+  EXPECT_THROW(bout::checkForUnusedOptions(option, "data", "BOUT.inp"), BoutException);
+}
+
+TEST_F(OptionsTest, CheckForUnusedOptionsGlobalRoot) {
+  Options::root()["unused"] = 42;
+
+  EXPECT_THROW(bout::checkForUnusedOptions(), BoutException);
+
+  Options::root()["input"]["error_on_unused_options"] = false;
+  EXPECT_NO_THROW(bout::checkForUnusedOptions());
+}
+
+class BoolTrueTestParametrized : public OptionsTest,
+                                 public ::testing::WithParamInterface<std::string> {};
+
+TEST_P(BoolTrueTestParametrized, BoolTrueFromString) {
+  std::string testval = GetParam();
+  Options options;
+  options["bool_key"] = testval;
+  ASSERT_TRUE(options.isSet("bool_key"));
+  ASSERT_TRUE(options["bool_key"].as<bool>());
+}
+
+INSTANTIATE_TEST_CASE_P(BoolTrueTests, BoolTrueTestParametrized,
+                        ::testing::Values("true", "True", "1"));
+
+class BoolFalseTestParametrized : public OptionsTest,
+                                  public ::testing::WithParamInterface<std::string> {};
+
+TEST_P(BoolFalseTestParametrized, BoolFalseFromString) {
+  std::string testval = GetParam();
+  Options options;
+  options["bool_key"] = testval;
+  ASSERT_TRUE(options.isSet("bool_key"));
+  ASSERT_FALSE(options["bool_key"].as<bool>());
+}
+
+INSTANTIATE_TEST_CASE_P(BoolFalseTests, BoolFalseTestParametrized,
+                        ::testing::Values("false", "False", "0"));
+
+class BoolInvalidTestParametrized : public OptionsTest,
+                                    public ::testing::WithParamInterface<std::string> {};
+
+TEST_P(BoolInvalidTestParametrized, BoolInvalidFromString) {
+  std::string testval = GetParam();
+  Options options;
+  options["bool_key"] = testval;
+  ASSERT_TRUE(options.isSet("bool_key"));
+  EXPECT_THROW(options["bool_key"].as<bool>(), BoutException);
+}
+
+INSTANTIATE_TEST_CASE_P(BoolInvalidTests, BoolInvalidTestParametrized,
+                        ::testing::Values("yes", "no", "y", "n", "a", "B", "yellow",
+                                          "Yogi", "test", "truelong", "Tim", "2", "not",
+                                          "No bool", "nOno", "falsebuttoolong", "-1",
+                                          "1.1"));
+
+TEST_F(OptionsTest, BoolLogicalOR) {
+  ASSERT_TRUE(Options("true | false").as<bool>());
+  ASSERT_TRUE(Options("false | true").as<bool>());
+  ASSERT_TRUE(Options("true | true").as<bool>());
+  ASSERT_FALSE(Options("false | false").as<bool>());
+  ASSERT_TRUE(Options("true | false | true").as<bool>());
+}
+
+TEST_F(OptionsTest, BoolLogicalAND) {
+  ASSERT_FALSE(Options("true & false").as<bool>());
+  ASSERT_FALSE(Options("false & true").as<bool>());
+  ASSERT_TRUE(Options("true & true").as<bool>());
+  ASSERT_FALSE(Options("false & false").as<bool>());
+  ASSERT_FALSE(Options("true & false & true").as<bool>());
+
+  EXPECT_THROW(Options("true & 1.3").as<bool>(), BoutException);
+  EXPECT_THROW(Options("2 & false").as<bool>(), BoutException);
+}
+
+TEST_F(OptionsTest, BoolLogicalNOT) {
+  ASSERT_FALSE(Options("!true").as<bool>());
+  ASSERT_TRUE(Options("!false").as<bool>());
+  ASSERT_FALSE(Options("!true & false").as<bool>());
+  ASSERT_TRUE(Options("!(true & false)").as<bool>());
+  ASSERT_TRUE(Options("true & !false").as<bool>());
+
+  EXPECT_THROW(Options("!2").as<bool>(), BoutException);
+  EXPECT_THROW(Options("!1.2").as<bool>(), BoutException);
+}
+
+TEST_F(OptionsTest, BoolComparisonGT) {
+  ASSERT_TRUE(Options("2 > 1").as<bool>());
+  ASSERT_FALSE(Options("2 > 3").as<bool>());
+}
+
+TEST_F(OptionsTest, BoolComparisonLT) {
+  ASSERT_FALSE(Options("2 < 1").as<bool>());
+  ASSERT_TRUE(Options("2 < 3").as<bool>());
+}
+
+TEST_F(OptionsTest, BoolCompound) {
+  ASSERT_TRUE(Options("true & !false").as<bool>());
+  ASSERT_TRUE(Options("2 > 1 & 2 < 3").as<bool>());
 }

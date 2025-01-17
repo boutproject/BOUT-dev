@@ -1,5 +1,5 @@
 # Makefile for the reference and user manuals
-.PHONY:all clean sphinx html pdf doxygen breathe-autogen
+.PHONY:all clean sphinx html pdf doxygen breathe-autogen maybe-doxygen
 
 BOUT_TOP?=..
 
@@ -14,25 +14,29 @@ manual: all
 pdf: sphinx-pdf
 html: sphinx-html
 man: sphinx-man
-sphinx: sphinx-pdf
+sphinx: sphinx-html
 
-sphinx-pdf: doxygen
+sphinx-pdf: maybe-doxygen
 	PYTHONPATH=$(BOUT_TOP)/tools/pylib:$$PYTHONPATH $(sphinx-build) -b latex sphinx/ build/
-	cd build && latexmk -pdf BOUT
+	cd build && latexmk -pdf BOUT -interaction=batchmode
 	test -e BOUT.pdf || ln -s build/BOUT.pdf .
-	@echo "Documentation is available in `pwd`/BOUT.pdf"
+	@echo "Documentation is available in $$(pwd)/BOUT.pdf"
 
-sphinx-html: doxygen
+sphinx-html: maybe-doxygen
 	PYTHONPATH=$(BOUT_TOP)/tools/pylib:$$PYTHONPATH $(sphinx-build) -b html sphinx/ html/
-	@echo "Documentation available in file://`pwd`/html/index.html"
+	@echo "Documentation available in file://$$(pwd)/html/index.html"
 
-sphinx-man: doxygen
+sphinx-man: maybe-doxygen
 	PYTHONPATH=$(BOUT_TOP)/tools/pylib:$$PYTHONPATH $(sphinx-build) -b man sphinx/ man/
-	@echo "Documentation available in `pwd`/man/bout.1"
+	@echo "Documentation available in $$(pwd)/man/bout.1"
 
 # Run doxygen, ignore if it fails (leading '-')
-doxygen:
+maybe-doxygen:
 	-cd doxygen && doxygen Doxyfile
+
+
+doxygen:
+	cd doxygen && doxygen Doxyfile
 
 # Run breathe-apidoc, ignore if it fails (leading '-')
 breathe-autogen: doxygen

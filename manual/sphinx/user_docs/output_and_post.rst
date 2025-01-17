@@ -3,7 +3,13 @@
 Post-processing
 ===============
 
-The majority of the existing analysis and post-processing code is
+The recommended tool for analysing BOUT++ output is xBOUT, a Python
+library that provides analysis, plotting and animation with
+human-readable syntax (no magic numbers!) using `xarray
+<http://xarray.pydata.org/en/stable/>`_. See the xBOUT documentation
+`xbout.readthedocs.io <https://xbout.readthedocs.io/en/latest/>`_.
+
+There is also older analysis and post-processing code, the majority
 written in Python. Routines to read BOUT++ output data, usually called
 "collect" because it collects data from multiple files, are also
 available in IDL, Matlab, Mathematica and Octave. All these
@@ -24,7 +30,7 @@ Requirements
 
 The Python tools provided with BOUT++ make heavy use of numpy_ and
 scipy_, as well as matplotlib_ for the plotting routines. In order
-to read BOUT++ output in Python, you will need either netcdf4_ or h5py_.
+to read BOUT++ output in Python, you will need either netcdf4_.
 
 While we try to ensure that the Python tools are compatible with both
 Python 2 and 3, we officially only support Python 3.
@@ -49,7 +55,6 @@ supported versions of numpy, scipy, netcdf4, matplotlib and jinja2.
 .. _scipy: http://www.scipy.org/
 .. _matplotlib: https://www.matplotlib.org
 .. _netcdf4: http://unidata.github.io/netcdf4-python/
-.. _h5py: http://www.h5py.org
 .. _Jinja2: http://jinja.pocoo.org/
 .. _installation instructions: https://www.scipy.org/install.html
 
@@ -177,9 +182,8 @@ There are several modules available for reading NetCDF files, so to
 provide a consistent interface, file access is wrapped into a class
 DataFile. This provides a simple interface for reading and writing files
 from any of the following modules: ``netCDF4``;
-``Scientific.IO.NetCDF``; and ``scipy.io.netcdf``. The DataFile class
-also provides allows access to HDF5 files through the same interface,
-using the ``h5py`` module. To open a file using DataFile:
+``Scientific.IO.NetCDF``; and ``scipy.io.netcdf``. To open a file
+using DataFile:
 
 .. code-block:: python
 
@@ -189,16 +193,6 @@ using the ``h5py`` module. To open a file using DataFile:
     var = f.read("variable") # Read a variable from the file
     f.close()                # Close the file
 
-or similarly for an HDF5 file
-
-.. code-block:: python
-
-    from boututils.datafile import DataFile
-
-    f = DataFile("file.hdf5")  # Open the file
-    var = f.read("variable")   # Read a variable from the file
-    f.close()                  # Close the file
-
 A more robust way to read from DataFiles is to use the context manager
 syntax:
 
@@ -206,7 +200,7 @@ syntax:
 
     from boututils.datafile import DataFile
 
-    with DataFile("file.hdf5") as f: # Open the file
+    with DataFile("file.nc") as f: # Open the file
         var = f.read("variable")     # Read a variable from the file
 
 This way the DataFile is automatically closed at the end of the ``with``
@@ -397,8 +391,7 @@ several optional keywords with ``[min,max]`` ranges:
 Summary of IDL file routines
 ----------------------------
 
-Functions file\_ can currently only read/write NetCDF files. HDF5 is not
-supported yet.
+Functions file\_ can currently only read/write NetCDF files.
 
 Open a NetCDF file:
 
@@ -635,10 +628,6 @@ Reproducibility and provenance tracking
 To help with reproducibility of simulations and provenance tracking of
 data, BOUT++ saves some metadata into output files.
 
-.. note:: Most of this is only saved when using NetCDF for output;
-          HDF5 output has a known bug writing string variables and
-          will be removed in v5.
-
 .. table:: Provenance tracking metadata attributes
 
    +---------------------------------------------------------------------------+
@@ -657,9 +646,9 @@ data, BOUT++ saves some metadata into output files.
    +-----------------------------+---------------------------------------------+
    | `run_restart_from`          | If the run was restarted, the `run_id` of   |
    |                             | the run it was restarted from.              |
-   |                             | `"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"` if |
-   |                             | the run was not restarted, or the previous  |
-   |                             | run had no `run_id`                         |
+   |                             | ``"zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"``  |
+   |                             | if the run was not restarted, or the        |
+   |                             | previous run had no `run_id`                |
    +-----------------------------+---------------------------------------------+
 
 .. table:: Provenance tracking grid metadata variables

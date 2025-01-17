@@ -4,7 +4,7 @@ BOUT++ options
 ==============
 
 The inputs to BOUT++ are a text file containing options, command-line options,
-and for complex grids a binary grid file in NetCDF or HDF5 format. Generating input
+and for complex grids a binary grid file in NetCDF format. Generating input
 grids for tokamaks is described in :ref:`sec-gridgen`. The grid file
 describes the size and topology of the X-Y domain, metric tensor
 components and usually some initial profiles. The option file specifies
@@ -46,10 +46,12 @@ name in square brackets.
     工作的 = true            # a boolean
     इनपुट = "some text"      # a string
 
-Option names can contain almost any character except ’=’ and ’:’, including unicode.
-If they start with a number or ``.``, contain arithmetic symbols
-(``+-*/^``), brackets (``(){}[]``), whitespace or comma ``,``, then these will need
-to be escaped in expressions. See below for how this is done. 
+Option names can contain almost any character except ’=’ and ’:’,
+including unicode.  If they start with a number or ``.``, contain
+arithmetic/boolean operator symbols (``+-*/^&|!<>``), brackets
+(``(){}[]``), equality (``=``), whitespace or comma ``,``, then these
+will need to be escaped in expressions. See below for how this is
+done.
 
 Subsections can also be used, separated by colons ’:’, e.g.
 
@@ -73,7 +75,7 @@ Variables can even reference other variables:
    density = 3
 
 Note that variables can be used before their definition; all variables
-are first read, and then processed afterwards.
+are first read, and then processed afterwards on demand.
 The value ``pi`` is already defined, as is ``π``, and can be used in expressions.
 
 Uses for expressions include initialising variables
@@ -84,20 +86,42 @@ Expressions can include addition (``+``), subtraction (``-``),
 multiplication (``*``), division (``/``) and exponentiation (``^``)
 operators, with the usual precedence rules. In addition to ``π``,
 expressions can use predefined variables ``x``, ``y``, ``z`` and ``t``
-to refer to the spatial and time coordinates.
+to refer to the spatial and time coordinates (for definitions of the values
+these variables take see :ref:`sec-expressions`).
+
+.. note:: The variables ``x``, ``y``, ``z`` should only be defined
+   when reading a 3D field; ``t`` should only be defined when reading
+   a time-dependent value. Earlier BOUT++ versions (v5.1.0 and earler)
+   defined all of these to be 0 by default e.g. when reading scalar
+   inputs.
+
 A number of functions are defined, listed in table
-:numref:`tab-initexprfunc`. One slightly unusual feature is that if a
-number comes before a symbol or an opening bracket (``(``)
+:numref:`tab-initexprfunc`. One slightly unusual feature (borrowed from `Julia <https://julialang.org/>`_)
+is that if a number comes before a symbol or an opening bracket (``(``)
 then a multiplication is assumed: ``2x+3y^2`` is the same as
 ``2*x + 3*y^2``, which with the usual precedence rules is the same as
 ``(2*x) + (3*(y^2))``. 
 
+Expressions can span more than one line, which can make long expressions
+easier to read:
+
+.. code-block:: cfg
+
+   pressure = temperature * ( density0 +
+                              density1 )
+   temperature = 12
+   density0 = 3
+   density1 = 1
+
+The convention is the same as in `Python <https://www.python.org/>`_:
+If brackets are not balanced (closed) then the expression continues on the next line.
+
 All expressions are calculated in floating point and then converted to
-an integer when read inside BOUT++. The conversion is done by rounding
-to the nearest integer, but throws an error if the floating point
-value is not within :math:`1e-3` of an integer. This is to minimise
-unexpected behaviour. If you want to round any result to an integer,
-use the ``round`` function:
+an integer (or boolean) if needed when read inside BOUT++. The
+conversion is done by rounding to the nearest integer, but throws an
+error if the floating point value is not within :math:`1e-3` of an
+integer. This is to minimise unexpected behaviour. If you want to
+round any result to an integer, use the ``round`` function:
 
 .. code-block:: cfg
 
@@ -108,6 +132,43 @@ Note that it is still possible to read ``bad_integer`` as a real
 number, since the type is determined by how it is used.
 
 Have a look through the examples to see how the options are used.
+
+Boolean expressions
+~~~~~~~~~~~~~~~~~~~
+
+Boolean values must be "true", "false", "True", "False", "1" or
+"0". All lowercase ("true"/"false") is preferred, but the uppercase
+versions are allowed to support Python string conversions. Booleans
+can be combined into expressions using binary operators `&` (logical
+AND), `|` (logical OR), and unary operator `!` (logical NOT). For
+example "true & false" evaluates to `false`; "!false" evaluates to
+`true`.  Like real values and integers, boolean expressions can refer
+to other variables:
+
+.. code-block:: cfg
+
+   switch = true
+   other_switch = !switch
+
+Boolean expressions can be formed by comparing real values using
+`>` and `<` comparison operators:
+
+.. code-block:: cfg
+
+   value = 3.2
+   is_true = value > 3
+   is_false = value < 2
+
+.. note::
+   Previous BOUT++ versions (v5.1.0 and earlier) were case
+   insensitive when reading boolean values, so would read "True" or
+   "yEs" as `true`, and "False" or "No" as `false`. These earlier
+   versions did not allow boolean expressions.
+
+Internally, booleans are evaluated as real values, with `true` being 1
+and `false` being 0. Logical operators (`&`, `|`, `!`) check that
+their left and right arguments are either close to 0 or close to 1
+(like integers, "close to" is within 1e-3).
 
 Special symbols in Option names
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -136,6 +197,75 @@ To escape multiple characters, ` (backquote) can be used:
 
 The character ``:`` cannot be part of an option or section name, and cannot be escaped,
 as it is always used to separate sections.
+
+Printing Options
+~~~~~~~~~~~~~~~~
+
+`Options` have an ``fmt::formatter`` which means they can be printed directly with
+`Output::write`, or converted to a ``std::string`` with ``fmt::format``::
+
+  // Print a value or section
+  output.write("{}", options["section"]);
+
+  // Convert to a string
+  std::string = fmt::format("{}", options["section"]);
+
+
+The format can be controlled through the following four format codes:
+
+* ``d``: includes the ``doc`` and/or ``type`` attribute, if they are present
+
+* ``i``: format the section name(s) inline, rather than as a ``[section]`` header
+
+* ``k``: only include the key, and not the value
+
+* ``s``: include the ``source`` attribute, if it's present
+
+* ``u``: if the option is unused add a comment, including whether it is conditionally used
+
+Here are some examples of formatting the same `Options` object using different
+combinations of the format codes::
+
+  // Default format with no format codes
+  output.write("{}", options);
+
+  // Output is:
+
+  // [section1]
+  // value1 = 42
+  // value2 = hello
+  //
+  // [section2]
+  // value5 = 3
+  //
+  // [section2:subsection1]
+  // value3 = true
+  // value4 = 3.2
+
+  // Include the 'doc' and 'type' attributes
+  output.write("{:d}", options);
+
+  // [section1]
+  // value1 = 42
+  // value2 = hello		# doc: This says hello
+  //
+  // [section2]
+  // value5 = 3
+  //
+  // [section2:subsection1]
+  // value3 = true		# type: bool, doc: This is a bool
+  // value4 = 3.2
+
+  // Only keys, inline sections, and 'doc', 'type', and 'source' attributes.
+  // Note that order doesn't matter!
+  output.write("{:kids}", options);
+
+  // section1:value1
+  // section1:value2		# doc: This says hello
+  // section2:value5
+  // section2:subsection1:value3		# type: bool, doc: This is a bool, source: a test
+  // section2:subsection1:value4
+
 
 Command line options
 --------------------
@@ -180,6 +310,8 @@ Sections are separated by colons ’:’, so to set the solver type
 or put ``solver:type=rk4`` on the command line. This capability is used
 in many test suite cases to change the parameters for each run.
 
+.. _sec-options-general:
+
 General options
 ---------------
 
@@ -189,8 +321,8 @@ models, and the most useful of them are:
 
 .. code-block:: cfg
 
-    NOUT = 100       # number of time-points output
-    TIMESTEP = 1.0   # time between outputs
+    nout = 100       # number of time-points output
+    timestep = 1.0   # time between outputs
 
 which set the number of outputs, and the time step between them. Note
 that this has nothing to do with the internal timestep used to advance
@@ -274,10 +406,10 @@ multiples or fractions of :math:`2\pi`. To specify a fraction of
 
 .. code-block:: cfg
 
-    ZPERIOD = 10
+    zperiod = 10
 
 This specifies a Z range from :math:`0` to
-:math:`2\pi / {\texttt{ZPERIOD}}`, and is useful for simulation of
+:math:`2\pi / {\texttt{zperiod}}`, and is useful for simulation of
 tokamaks to make sure that the domain is an integer fraction of a torus.
 If instead you want to specify the Z range directly (for example if Z is
 not an angle), there are the options
@@ -422,20 +554,10 @@ may be useful anyway. See :ref:`sec-output` for more details.
 Input and Output
 ----------------
 
-The format of the output (dump) files can be controlled, if support for
-more than one output format has been configured, by setting the
-top-level option **dump\_format** to one of the recognised file
-extensions: ‘nc’ for NetCDF; ‘hdf5’, ‘hdf’ or ‘h5’ for HDF5. For example
-to select HDF5 instead of the default NetCDF format put
-
-.. code-block:: cfg
-
-    dump_format = hdf5
-
-before any section headers. The output (dump) files with time-history
-are controlled by settings in a section called “output”. Restart files
-contain a single time-slice, and are controlled by a section called
-“restart”. The options available are listed in table :numref:`tab-outputopts`.
+The output (dump) files with time-history are controlled by settings
+in a section called “output”. Restart files contain a single
+time-slice, and are controlled by a section called “restart”. The
+options available are listed in table :numref:`tab-outputopts`.
 
 .. _tab-outputopts:
 .. table:: Output file options
@@ -446,6 +568,12 @@ contain a single time-slice, and are controlled by a section called
    +-------------+----------------------------------------------------+--------------+
    | enabled     | Writing is enabled                                 | true         |
    +-------------+----------------------------------------------------+--------------+
+   | type        | File type e.g. "netcdf" or "adios"                 | "netcdf"     |
+   +-------------+----------------------------------------------------+--------------+
+   | prefix      | File name prefix                                   | "BOUT.dmp"   |
+   +-------------+----------------------------------------------------+--------------+
+   | path        | Directory to write the file into                   | ``datadir``  |
+   +-------------+----------------------------------------------------+--------------+
    | floats      | Write floats rather than doubles                   | false        |
    +-------------+----------------------------------------------------+--------------+
    | flush       | Flush the file to disk after each write            | true         |
@@ -453,8 +581,6 @@ contain a single time-slice, and are controlled by a section called
    | guards      | Output guard cells                                 | true         |
    +-------------+----------------------------------------------------+--------------+
    | openclose   | Re-open the file for each write, and close after   | true         |
-   +-------------+----------------------------------------------------+--------------+
-   | parallel    | Use parallel I/O                                   | false        |
    +-------------+----------------------------------------------------+--------------+
 
 |
@@ -464,20 +590,6 @@ want to exclude I/O from the timings. **floats** can be used to reduce the size
 of the output files: files are stored as double by default, but setting
 **floats = true** changes the output to single-precision floats.
 
-To enable parallel I/O for either output or restart files, set
-
-.. code-block:: cfg
-
-    parallel = true
-
-in the output or restart section. If you have compiled BOUT++ with a
-parallel I/O library such as pnetcdf (see
-:ref:`sec-advancedinstall`), then rather than outputting one file per
-processor, all processors will output to the same file. For restart
-files this is particularly useful, as it means that you can restart a
-job with a different number of processors. Note that this feature is
-still experimental, and incomplete: output dump files are not yet
-supported by the collect routines.
 
 Implementation
 --------------
@@ -530,6 +642,7 @@ or just::
 
 Names including sections, subsections, etc. can be specified using ``":"`` as a
 separator, e.g.::
+
     options["mysection:mysubsection:myswitch"] = true;
 
 To get options, they can be assigned to a variable::
@@ -608,6 +721,47 @@ with ``withDefault`` or ``as`` functions, or as part of an assignment::
 This string is stored in the attributes of the option::
 
   std::string docstring = options["value"].attributes["doc"];
+
+Creating Options
+~~~~~~~~~~~~~~~~
+
+Options and subsections can be created by setting values, creating subsections as needed::
+
+  Options options;
+  options["value1"] = 42;
+  options["subsection1"]["value2"] = "some string";
+  options["subsection1"]["value3"] = 3.1415;
+
+or using an initializer list::
+
+  Options options {{"value1", 42},
+                   {"subsection1", {{"value2", "some string"},
+                                    {"value3", 3.1415}}}};
+
+These are equivalent, but the initializer list method makes the tree structure clearer.
+Note that the list can contain many of the types which ``Options`` can hold, including
+``Field2D`` and ``Field3D`` objects.
+
+Setting option attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Options can have attributes attached to them, that can be ``bool``,
+``int``, ``BoutReal`` or ``std::string`` type. These are stored in an
+``attributes`` map that can be assigned to::
+
+  Options options;
+  options["value"].attributes["property"] = "something";
+
+An arbitrary number of attributes can be attached to an option. If
+assigning multiple attributes, an ``initializer_list`` can be more
+readable::
+
+  Options options;
+  options["value"].setAttributes({
+      {"units", "m/s"},
+      {"conversion", 10.2},
+      {"long_name", "important value"}
+    });
 
 Overriding library defaults
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -712,34 +866,32 @@ has a method::
 
 This is currently quite rudimentary and needs improving.
 
-Reading and writing to NetCDF
------------------------------
+.. _sec-options-netcdf:
 
-If NetCDF4 support is enabled, then the ``OptionsNetCDF`` class
-provides an experimental way to read and write options. To use this class::
+Reading and writing to binary formats
+-------------------------------------
 
-  #include "options_netcdf.hxx"
-  using bout::experimental::OptionsNetCDF;
+The `bout::OptionsIO` class provides an interface to read and
+write options to binary files. Examples are in integrated test
+``tests/integrated/test-options-netcdf/``
 
-Examples are in integrated test ``tests/integrated/test-options-netcdf/``
-
-To write the current ``Options`` tree (e.g. from ``BOUT.inp``) to a
+To write the current `Options` tree (e.g. from ``BOUT.inp``) to a
 NetCDF file::
 
-  OptionsNetCDF("settings.nc").write(Options::root());
+  bout::OptionsIO::create("settings.nc")->write(Options::root());
 
 and to read it in again::
 
-  Options data = OptionsNetCDF("settings.nc").read();
+  Options data = bout::OptionsIO::create("settings.nc")->read();
 
 Fields can also be stored and written::
 
   Options fields;
   fields["f2d"] = Field2D(1.0);
   fields["f3d"] = Field3D(2.0);
-  OptionsNetCDF("fields.nc").write(fields);
+  bout::OptionsIO::create("fields.nc").write(fields);
 
-This should allow the input settings and evolving variables to be
+This allows the input settings and evolving variables to be
 combined into a single tree (see above on joining trees) and written
 to the output dump or restart files.
 
@@ -748,7 +900,7 @@ an ``Array<BoutReal>``, 2D as ``Matrix<BoutReal>`` and 3D as
 ``Tensor<BoutReal>``. These can be extracted directly from the
 ``Options`` tree, or converted to a Field::
 
-  Options fields_in = OptionsNetCDF("fields.nc").read();
+  Options fields_in = bout::OptionsIO::create("fields.nc")->read();
   Field2D f2d = fields_in["f2d"].as<Field2D>();
   Field3D f3d = fields_in["f3d"].as<Field3D>();
 
@@ -773,22 +925,24 @@ quantities from the grid file are accessed through Mesh::get.
 Time dependence
 ~~~~~~~~~~~~~~~
 
-When writing NetCDF files, some variables should have a time
-dimension added, and then be added to each time they are written. This
-has been implemented using an attribute: If variables in the ``Options``
-tree have an attribute "time_dimension" then that is used as the name
+When writing NetCDF files, some variables should have a time dimension
+added, and then be added to each time they are written. This has been
+implemented using an attribute: If variables in the ``Options`` tree
+have an attribute ``"time_dimension"`` then that is used as the name
 of the time dimension in the output file. This allows multiple time
 dimensions e.g. high frequency diagnostics and low frequency outputs,
-to exist in the same file::
+to exist in the same file. `Options::assignRepeat` can be used to
+automatically set the ``"time_dimension"`` attribute::
 
   Options data;
   data["scalar"] = 1.0;
+  // You can set the attribute manually like so:
   data["scalar"].attributes["time_dimension"] = "t";
   
-  data["field"] = Field3D(2.0);
-  data["field"].attributes["time_dimension"] = "t";
+  // Or use `assignRepeat` to do it automatically:
+  data["field"].assignRepeat(Field3D(2.0));
   
-  OptionsNetCDF("time.nc").write(data);
+  bout::OptionsIO::create("time.nc")->write(data);
   
   // Update time-dependent values. This can be done without `force` if the time_dimension
   // attribute is set
@@ -796,39 +950,37 @@ to exist in the same file::
   data["field"] = Field3D(3.0);
   
   // Append data to file
-  OptionsNetCDF("time.nc", OptionsNetCDF::FileMode::append).write(data);
+  bout::OptionsIO({{"file", "time.nc"}, {"append", true}})->write(data);
 
-Some issues:
-
-* Currently all variables in the Options tree are written when passed
-  to ``OptionsNetCDF::write``. This means that the variables with
-  different time dimensions should be stored in different Options
-  trees, so they can be written at different times. One possibility is
-  to have an optional argument to write, so that only variables with
-  one specified time dimension are updated.
+.. note:: By default, `bout::OptionsIO::write` will only write variables
+          with a ``"time_dimension"`` of ``"t"``. You can write
+          variables with a different time dimension by passing it as
+          the second argument:
+          ``OptionsIO::create(filename)->write(options, "t2")`` for example.
 
 
 FFT
 ---
 
-There is one global option for Fourier transforms, ``fft_measure``
-(default: ``false``). Setting this to true enables the
-``FFTW_MEASURE`` mode when performing FFTs, otherwise
-``FFTW_ESTIMATE`` is used:
+There is one option for Fourier transforms, ``fft_measurement_flag`` (default:
+``estimate``). This can be used to control FFTW's measurement mode:
+``estimate`` for ``FFTW_ESTIMATE``, ``measure`` for ``FFTW_MEASURE`` or
+``exhaustive`` for ``FFTW_EXHAUSTIVE``:
 
 .. code-block:: cfg
 
     [fft]
-    fft_measure = true
+    fft_measurement_flag = measure
 
-In ``FFTW_MEASURE`` mode, FFTW runs and measures how long several
-FFTs take, and tries to find the optimal method.
+In ``FFTW_MEASURE`` mode, FFTW runs and measures how long several FFTs take,
+and tries to find the optimal method; ``FFTW_EXHAUSTIVE`` tests even more
+algorithms.
 
-.. note:: Technically, ``FFTW_MEASURE`` is non-deterministic and
-          enabling ``fft_measure`` may result in slightly different
-          answers from run to run, or be dependent on the number of
-          MPI processes. This may be important if you are trying to
-          benchmark or measure performance of your code.
+.. note:: Technically, ``FFTW_MEASURE`` and ``FFTW_EXHAUSTIVE`` are
+          non-deterministic and enabling ``fft_measure`` may result in slightly
+          different answers from run to run, or be dependent on the number of
+          MPI processes. This may be important if you are trying to benchmark
+          or measure performance of your code.
 
           See the `FFTW FAQ`_ for more information.
 

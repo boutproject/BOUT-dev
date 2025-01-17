@@ -13,6 +13,7 @@ protected:
     ddt(field) = field * exp(time);
     return 0;
   }
+
 private:
   Field3D field;
 };

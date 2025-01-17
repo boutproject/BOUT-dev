@@ -1,11 +1,15 @@
 #include "adams_bashforth.hxx"
 
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
-#include <utils.hxx>
+#include <array>
 
-#include <output.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/utils.hxx>
+
+#include <bout/output.hxx>
+
+#include <array>
 
 namespace {
 BoutReal lagrange_at_position_denominator(const std::deque<BoutReal>& grid,
@@ -197,7 +201,7 @@ void AB_integrate_update(Array<BoutReal>& update, BoutReal timestep,
 
   for (std::size_t j = 0; j < static_cast<std::size_t>(order); ++j) {
     const BoutReal factor = AB_coefficients[j];
-    BOUT_OMP(parallel for)
+    BOUT_OMP_PERF(parallel for)
     for (std::size_t i = 0; i < static_cast<std::size_t>(update.size()); ++i) {
       update[i] += history[j][i] * factor;
     }
@@ -255,7 +259,34 @@ BoutReal get_error(const Array<BoutReal>& stateApprox,
 }
 } // namespace
 
-AdamsBashforthSolver::AdamsBashforthSolver(Options* options) : Solver(options) {
+AdamsBashforthSolver::AdamsBashforthSolver(Options* options)
+    : Solver(options),
+      atol((*options)["atol"].doc("Absolute tolerance").withDefault(1.e-5)),
+      rtol((*options)["rtol"].doc("Relative tolerance").withDefault(1.e-5)),
+      mxstep((*options)["mxstep"]
+                 .doc("Maximum number of steps taken between outputs")
+                 .withDefault(50000)),
+      adaptive((*options)["adaptive"]
+                   .doc("Adapt internal timestep using rtol.")
+                   .withDefault(true)),
+      adaptive_order((*options)["adaptive_order"]
+                         .doc("Adapt algorithm order using rtol.")
+                         .withDefault(true)),
+      followHighOrder(
+          (*options)["followHighOrder"]
+              .doc("If true and adaptive then use the more accurate solution as result.")
+              .withDefault(true)),
+      dtFac((*options)["dtFac"]
+                .doc("Factor by which we scale timestep estimate when adapating")
+                .withDefault(0.75)),
+      maximum_order((*options)["order"]
+                        .doc("The requested maximum order of the scheme")
+                        .withDefault(5)),
+      max_timestep((*options)["max_timestep"]
+                       .doc("Maximum timestep (defaults to output timestep)")
+                       .withDefault(getOutputTimestep())),
+      timestep(
+          (*options)["timestep"].doc("Starting timestep").withDefault(max_timestep)) {
   AUTO_TRACE();
   canReset = true;
 }
@@ -273,20 +304,12 @@ void AdamsBashforthSolver::setMaxTimestep(BoutReal dt) {
   }
 }
 
-int AdamsBashforthSolver::init(int nout, BoutReal tstep) {
+int AdamsBashforthSolver::init() {
 
   TRACE("Initialising AdamsBashforth solver");
 
-  // Call the generic initialisation first
-  if (Solver::init(nout, tstep) != 0) {
-    return 1;
-  }
-
+  Solver::init();
   output << "\n\tAdams-Bashforth (explicit) multistep solver\n";
-
-  nsteps = nout; // Save number of output steps
-  out_timestep = tstep;
-  max_dt = tstep;
 
   // Calculate number of variables
   nlocal = getLocalN();
@@ -298,40 +321,14 @@ int AdamsBashforthSolver::init(int nout, BoutReal tstep) {
   }
   neq = ntmp;
 
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n", n3Dvars(),
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3Dvars(),
                n2Dvars(), neq, nlocal);
-
-  // Get options
-  atol = (*options)["atol"]
-             .doc("Absolute tolerance")
-             .withDefault(1.e-5); // Not used, just here for parity
-  rtol = (*options)["rtol"].doc("Relative tolerance").withDefault(1.e-5);
-  dtFac = (*options)["dtFac"]
-              .doc("Factor by which we scale timestep estimate when adapating")
-              .withDefault(0.75);
-  max_timestep = (*options)["max_timestep"].doc("Maximum timestep").withDefault(tstep);
-  timestep = (*options)["timestep"].doc("Starting timestep").withDefault(max_timestep);
-  mxstep = (*options)["mxstep"]
-               .doc("Maximum number of steps taken between outputs")
-               .withDefault(50000);
-  adaptive =
-      (*options)["adaptive"].doc("Adapt internal timestep using rtol.").withDefault(true);
-  adaptive_order = (*options)["adaptive_order"]
-                       .doc("Adapt algorithm order using rtol.")
-                       .withDefault(true);
-
-  maximum_order =
-      (*options)["order"].doc("The requested maximum order of the scheme").withDefault(5);
-  followHighOrder =
-      (*options)["followHighOrder"]
-          .doc("If true and adaptive then use the more accurate solution as result.")
-          .withDefault(true);
 
   // Check if the requested timestep in the non-adaptive case would lead to us
   // effectively violating the MXSTEP specified.
-  if (not adaptive and (out_timestep / timestep > mxstep)) {
+  if (not adaptive and (getOutputTimestep() / timestep > mxstep)) {
     throw BoutException("ERROR: Requested timestep would lead to MXSTEP being exceeded. "
-                        "timestep = %e, MXSTEP=%i\n",
+                        "timestep = {:e}, MXSTEP={:d}\n",
                         timestep, mxstep);
   }
 
@@ -369,8 +366,8 @@ int AdamsBashforthSolver::run() {
   int nwasted = 0;
   int nwasted_following_fail = 0;
 
-  for (int s = 0; s < nsteps; s++) {
-    BoutReal target = simtime + out_timestep;
+  for (int s = 0; s < getNumberOutputSteps(); s++) {
+    BoutReal target = simtime + getOutputTimestep();
 
     bool running = true;
     int internal_steps = 0;
@@ -430,7 +427,7 @@ int AdamsBashforthSolver::run() {
         // to do any solves so we check during init instead.
         ++internal_steps;
         if (internal_steps > mxstep) {
-          throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n",
+          throw BoutException("ERROR: MXSTEP exceeded. timestep = {:e}, err={:e}\n",
                               timestep, err);
         }
 
@@ -548,15 +545,14 @@ int AdamsBashforthSolver::run() {
     run_rhs(simtime);
 
     // Call the output step monitor function
-    if (call_monitors(simtime, s, nsteps) != 0) {
+    if (call_monitors(simtime, s, getNumberOutputSteps()) != 0) {
       break; // Stop simulation
     }
   }
 
 #if CHECK > 4
-  output << "\nNumber of wasted steps = " << nwasted << " and following a fail "
-         << nwasted_following_fail << "\n\n"
-         << endl;
+  output.write("\nNumber of wasted steps = {} and following a fail {}\n\n", nwasted,
+               nwasted_following_fail);
 #endif
   return 0;
 }
@@ -580,7 +576,7 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
   // std::transform(std::begin(current), std::end(current), std::begin(full_update),
   //                std::begin(result), std::plus<BoutReal>{});
   if (not(adaptive and followHighOrder)) {
-    BOUT_OMP(parallel for)
+    BOUT_OMP_PERF(parallel for)
     for (int i = 0; i < nlocal; i++) {
       result[i] = current[i] + full_update[i];
     }
@@ -618,7 +614,7 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
     // use this to calculate the derivatives at this point.
     // std::transform(std::begin(current), std::end(current), std::begin(half_update),
     //                std::begin(result2), std::plus<BoutReal>{});
-    BOUT_OMP(parallel for)
+    BOUT_OMP_PERF(parallel for)
     for (int i = 0; i < nlocal; i++) {
       result2[i] = current[i] + half_update[i];
     }
@@ -643,7 +639,7 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
   // "full" two half step half_update. Rather than using result2 we just replace
   // result here as we want to use this smaller step result
   if (followHighOrder) {
-    BOUT_OMP(parallel for)
+    BOUT_OMP_PERF(parallel for)
     for (int i = 0; i < nlocal; i++) {
       result[i] = current[i] + half_update[i];
     }

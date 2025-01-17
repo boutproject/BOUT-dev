@@ -14,49 +14,49 @@ SUNDIALS and PETSc.
 Optimisation and run-time checking
 ----------------------------------
 
-Configure with ``--enable-checks=3`` enables a lot of checks of
+Configure with ``-DCHECK=3`` enables a lot of checks of
 operations performed by the field objects. This is very useful for
 debugging a code, and can be omitted once bugs have been removed.
-``--enable=checks=2`` enables less checking, especially the
-computationally rather expensive ones, while ``--enable-checks=0``
+``-DCHECK=2`` enables less checking, especially the
+computationally rather expensive ones, while ``-DCHECK=0``
 disables most checks.
 
-To get most checking, both from BOUT++ and from the compiler
-``--enable-debug`` can be used. That enables checks of level 3, as
-well as debug flags, e.g. ``-g`` for gcc.
-
 For (sometimes) more useful error messages, there is the
-``--enable-track`` option. This keeps track of the names of variables
-and includes these in error messages.
+``-DBOUT_ENABLE_TRACK=ON`` option. This keeps track of the names of
+variables and includes these in error messages.
 
-To enable optimization, configure with ``--enable-optimize=3``.
-This will try to set appropriate flags, but may not set the best ones.
-This should work well for gcc. Similar to checks, different levels can
-be specified, where 3 is high, and 0 means disabling all
-optimization. ``--enable-optimize=fast`` will set the ``-Ofast`` flag
-for gcc which enables optimizations that are not standard conforming, so
-proceed at own risk.
+To get a backtrace, you can set the environment variable
+``BOUT_SHOW_BACKTRACE`` in order for the exception to include the
+backtrace.
 
-Manually set compilation flags
-------------------------------
+To enable optimization, configure with appropriate flags for your
+compiler, e.g. with ``-DCMAKE_CXX_FLAGS=" -O3 "`` for a gnu compiler.
 
-You can set the following environment variables if you need more
-control over how BOUT++ is built:
 
-- ``LDFLAGS``: extra flags for linking, e.g. ``-L<library dir>``
+Install dependencies:
+---------------------
 
-- ``LIBS``: extra libraries for linking, e.g. ``-l<library>``
+BOUT++ provides a way to install some (optional) dependencies that are
+not always found on HPC systems. To do this, run from your BOUT++
+source directory:
 
-- ``CPPFLAGS``: preprocessor flags, e.g. ``-I<include dir>``
+.. code-block:: bash
 
-- ``CXXFLAGS``: compiler flags, e.g. ``-Wall``
+    bin/bout-build-deps.sh
+    # or without any checks:
+    CHECK=no bin/bout-build-deps.sh
+    # or with openmp - not tested, maybe not good to add it to FFTW
+    PETSCFLAGS=--with-openmp=1 FFTWFLAGS="--enable-avx512 --enable-avx-128-fma --with-openmp --enable-threads" bin/bout-build-deps.sh
+    # and add "-DBOUT_ENABLE_OPENMP=ON" to cmake configure line
 
-- ``SUNDIALS_EXTRA_LIBS`` specifies additional libraries for linking
-  to SUNDIALS, which are put at the end of the link command.
+Infos about options and further info can be obtained by running:
 
-It is possible to change flags for BOUT++ after running configure, by
-editing the ``make.config`` file. Note that this is not recommended,
-as e.g. PVODE will not be built with these flags.
+.. code-block:: bash
+
+    bin/bout-build-deps.sh --help
+
+If the script fails, it might be fixed by removing the folders that
+are used for compiling and installing, and start again.
 
 .. _sec-machine-specific:
 
@@ -84,223 +84,109 @@ When using CMake on Cray systems like Archer, you need to pass
 ``-DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment`` so that the Cray compiler
 wrappers are detected properly.
 
-KNL @ Archer
-~~~~~~~~~~~~
+Cori
+~~~~
 
-To use the KNL system, configure BOUT++ as follows:
-
-.. code-block:: bash
-
-    ./configure MPICXX=CC --host=knl --with-netcdf --with-pnetcdf=no --with-hypre=no CXXFLAGS="-xMIC-AVX512 -D_GLIBCXX_USE_CXX11_ABI=0"
-
-Atlas
-~~~~~
+First set up the environment by loading the correct modules. For Bash shell use:
 
 .. code-block:: bash
 
-   ./configure --with-netcdf=/usr/local/tools/hdf5-gnu-serial-1.8.1/lib --with-fftw=/usr/local --with-pdb=/usr/gapps/pact/new/lnx-2.5-ib/gnu
+   source config/cori/setup-env-cgpu.sh
 
-Cab
-~~~
+and for C shell:
 
-.. code-block:: bash
+.. code-block:: csh
 
-   ./configure --with-netcdf=/usr/local/tools/hdf5-gnu-serial-1.8.1/lib --with-fftw=/usr/local/tools/fftw3-3.2 --with-pdb=/usr/gapps/pact/new/lnx-2.5-ib/gnu
+   source config/cori/setup-env-cgpu.sh
 
-Edison
-~~~~~~
+Then configure BOUT++ by running a script which calls CMake. Under bash:
 
 .. code-block:: bash
 
-   module swap PrgEnv-intel PrgEnv-gnu
-   module load fftw
-   ./configure MPICC=cc MPICXX=CC --with-netcdf=/global/u2/c/chma/PUBLIC/netcdf_edison/netcdf --with-fftw=/opt/fftw/3.3.0.1/x86_64
+   ./config/cori/config-bout-cgpu.sh
 
-Hoffman2
-~~~~~~~~
+and C shell:
 
-.. code-block:: bash
+.. code-block:: csh
 
-   ./configure --with-netcdf=/u/local/apps/netcdf/current --with-fftw=/u/local/apps/fftw3/current --with-cvode=/u/local/apps/sundials/2.4.0 --with-lapack=/u/local/apps/lapack/current
+   ./config/cori/config-bout-cgpu.csh
 
-Hopper
-~~~~~~
+At the time of writing, Hypre linking is not working with CUDA. If you come across
+errors with the above configuration, try turning off Hypre support:
 
 .. code-block:: bash
 
-    module swap PrgEnv-pgi PrgEnv-gnu
-    module load netcdf
-    module swap netcdf netcdf/4.1.3
-    module swap gcc gcc/4.6.3
-    ./configure MPICC=cc MPICXX=CC --with-fftw=/opt/fftw/3.2.2.1 --with-pdb=/global/homes/u/umansky/PUBLIC/PACT_HOPP2/pact
+   ./config/cori/config-bout-cgpu-nohypre.sh
 
-Hyperion
-~~~~~~~~
+or
 
-With the bash shell use
+.. code-block:: csh
 
-.. code-block:: bash
+   ./config/cori/config-bout-cgpu-nohypre.csh
 
-   export PETSC_DIR=~farley9/projects/petsc/petsc-3.2-p1
-   export PETSC_ARCH=arch-c
-   ./configure --with-netcdf=/usr/local/tools/netcdf-gnu-4.1 --with-fftw=/usr/local MPICXX=mpiCC EXTRA_LIBS=-lcurl --with-petsc --with-cvode=~farley9/local --with-ida=~farley9/local
+See section :ref:`sec-gpusupport` for details of compiling and running
+on GPU machines, including Cori. Note that in order to access GPU
+nodes a request must be made through `NERSC services
+<https://nersc.servicenowservices.com/>`_.
 
-With the tcsh shell use
+MacOS / Apple Darwin
+~~~~~~~~~~~~~~~~~~~~
+
+Compiling with Apple Clang 12, the following configuration has been known to work
 
 .. code-block:: tcsh
 
-   setenv PETSC_DIR ~farley9/projects/petsc/petsc-3.2-p1
-   setenv PETSC_ARCH arch-c
-   ./configure --with-netcdf=/usr/local/tools/netcdf-gnu-4.1 --with-fftw=/usr/local MPICXX=mpiCC EXTRA_LIBS=-lcurl --with-petsc --with-cvode=~farley9/local --with-ida=~farley9/local
+   cmake . -B <build-directory> -DBOUT_ENABLE_BACKTRACE=Off -DBUILD_SHARED_LIBS=Off -DBOUT_USE_NLS=Off -DBOUT_USE_UUID_SYSTEM_GENERATOR=Off
+   cd <build-directory>
+   cmake --build <build-directory>
 
-Marconi
-~~~~~~~
+where ``<build-directory>`` is the path to the build directory
+
+
+MPCDF HPC Systems
+~~~~~~~~~~~~~~~~~
+After cloning BOUT-dev and checking out the branch you want (e.g. db-outer), run:
+.. code-block:: bash
+
+    module purge # or at least onload intel
+    module load gcc/13 anaconda/3/2021.11 impi/2021.9 hdf5-serial/1.12.2 mkl/2022.0 netcdf-serial/4.8.1 fftw-mpi/3.3.10
+    BUILD=/ptmp/$USER/bout-deps NO_HDF5=1 NO_NETCDF=1 NO_FFTW=1 bin/bout-build-deps.sh
+
+and follow the instructions for configuring BOUT++. To enable openMP
+for a production run use:
 
 .. code-block:: bash
 
-   module load intel intelmpi fftw lapack
-   module load szip zlib/1.2.8--gnu--6.1.0
-   module load hdf5/1.8.17--intel--pe-xe-2017--binary
-   module load netcdf-cxx4
-   module load python
-
-To compile for the SKL partition, configure with
-
-.. code-block:: bash
-
-   ./configure --enable-checks=0 CPPFLAGS="-Ofast -funroll-loops -xCORE-AVX512 -mtune=skylake" --host skl
-
-to enable AVX512 vectorization.
-
-.. note:: As of 20/04/2018, an issue with the netcdf and netcdf-cxx4
-          modules means that you will need to remove ``-lnetcdf`` from
-          ``EXTRA_LIBS`` in ``make.config`` after running
-          ``./configure`` and before running ``make``. ``-lnetcdf``
-          needs also to be removed from ``bin/bout-config`` to allow a
-          successful build of the python interface. Recreation of
-          ``boutcore.pyx`` needs to be manually triggered, if
-          ``boutcore.pyx`` has already been created.
-
-Marconi with gnu compilers
-**************************
-
-It is also possible to configure on Marconi using gnu compilers, which may give better performance. A set of modules which work as of 30/9/2020 is
-
-.. code-block:: bash
-
-    module load env-skl
-    module load profile/advanced
-    module load intel/pe-xe-2018--binary  # note need to keep the 'intel' module loaded in order for shared libraries needed by numpy/scipy to be available
-    module load gnu/7.3.0
-    module load openmpi/4.0.1--gnu--7.3.0
-    module load mkl/2017--binary
-    module load python/3.6.4
-    module load szip/2.1--gnu--6.1.0 zlib/1.2.8--gnu--6.1.0
-
-Then download source code for hdf5-1.12.0 (hdf5 is available in a module on
-Marconi, but has issues linking OpenMPI), netCDF-c-4.7.4, netCDF-cxx4-4.3.1,
-and FFTW-3.3.8. Optionally also SUNDIALS-5.1.0 or PETSc-3.13.0. Configure and
-compile all of the downloaded packages. Make sure to install netCDF and
-netCDF-cxx4 into the same directory (this is assumed by netCDF's linking
-strategy, and makes netCDF configuration simpler).
-
-The following configuration commands have been used successfully:
-
-* hdf5-1.12.0::
-
-    ./configure --prefix /directory/to/install/hdf5 --enable-build-mode=production
-    make
-    make install
-
-* netCDF-4.7.4::
-
-    mkdir build
-    cd build
-    cmake -DCMAKE_INSTALL_PREFIX=/directory/to/install/netcdf -DCMAKE_BUILD_TYPE=Release ..
-    make
-    make install
-
-* netCDF-cxx4-4.3.1::
-
-    mkdir build
-    cd build
-    cmake -DCMAKE_INSTALL_PREFIX=/directory/to/install/netcdf -DCMAKE_BUILD_TYPE=Release ..
-    make
-    make install
-
-* FFTW-3.3.8::
-
-    ./configure --prefix /directory/to/install/fftw --enable-shared --enable-sse2 --enable-avx --enable-avx2 --enable-avx512 --enable-avx-128-fma
-    make
-    make install
-
-* SUNDIALS-5.1.0::
-
-    mkdir build
-    cd build
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/directory/to/install/sundials -DMPI_ENABLE=ON ..
-    make
-    make install
-
-* PETSc-3.13.0::
-
-    unset PETSC_DIR
-    ./configure COPTFLAGS="-O3" CXXOPTFLAGS="-O3" FOPTFLAGS="-O3" --with-batch --known-mpi-shared-libraries=1 --with-mpi-dir=$OPENMPI_HOME --download-fblaslapack --known-64-bit-blas-indices=0 --download-hypre --with-debugging=0 --prefix=/directory/to/install/petsc
-
-  then follow the instructions printed by PETSc at the end of each step to make, install and check the build.
-
-Finally example configurations for BOUT++, where you should replace <...> by appropriate directories that you used to install the libraries:
-
-* for an optimized build (some experimentation with optimisation flags would be welcome, please share the results if you do!)::
-
-    ./configure --enable-optimize=3 --enable-checks=no --without-hdf5 --enable-static --with-netcdf=<...> --with-sundials=<...> --with-fftw=<...> --with-petsc=<...>
-
-* for a debugging build::
-
-    ./configure --enable-debug --without-hdf5 --enable-static --with-netcdf=<...> --with-sundials=<...> --with-fftw=<...> --with-petsc=<...>
-
-Ubgl
-~~~~
-
-.. code-block:: bash
-
-   ./configure --with-netcdf CXXFLAGS=-DMPICH_IGNORE_CXX_SEEK CFLAGS=-DMPICH_IGNORE_CXX_SEEK --with-pdb=/usr/gapps/pact/new_s/lnx-2.5-ib --with-netcdf=/usr/local/tools/netcdf/netcdf-4.1_c++
+    module load bout-dep
+    cmake .. -DBOUT_USE_NETCDF=ON -DnetCDFCxx_ROOT=$BOUT_DEP \
+      -DBOUT_USE_PETSC=ON -DPETSC_DIR=$BOUT_DEP \
+      -DBOUT_USE_FFTW=ON \
+      -DBOUT_USE_SUNDIALS=ON -DSUNDIALS_ROOT=$BOUT_DEP \
+      -DBOUT_ENABLE_OPENMP=OFF \
+      -DCMAKE_BUILD_TYPE=Release
 
 
 File formats
 ------------
 
-BOUT++ can currently use two different file formats: NetCDF-4_, and
-HDF5_ and experimental support for parallel flavours of both. NetCDF
-is a widely used format and so has many more tools for viewing and
-manipulating files. HDF5 is another widely used format. If you have
-multiple libraries installed then BOUT++ can use them simultaneously,
-for example reading in grid files in NetCDF format, but writing output
-data in HDF5 format.
+BOUT++ can currently use the NetCDF-4_ file format and the ADIOS2 library
+for high-performance parallel output.
+
+NetCDF is a widely used format and
+has many tools for viewing and manipulating files.
 
 .. _NetCDF-4: https://www.unidata.ucar.edu/software/netcdf/
-.. _HDF5: https://www.hdfgroup.org/HDF5/
 
-BOUT++ will try to use NetCDF by default. It will look for
-``ncxx4-config`` or ``nc-config`` in your ``$PATH``. If it cannot find
-the libraries, or finds a different version than the one you want, you
-can point it at the correct version using::
+BOUT++ will look for ``ncxx4-config`` or ``nc-config`` in your
+``$PATH``. If it cannot find the libraries, or finds a different
+version than the one you want, you can point it at the correct version
+using::
 
-   ./configure --with-netcdf=/path/to/ncxx4-config
+   cmake -S .. -B . -DBOUT_USE_NETCDF=ON -DnetCDFCxx_ROOT=/path/to/ncxx4-config
 
 where ``/path/to/ncxx4-config`` is the location of the
 ``ncxx4-config`` tool (``nc-config`` will also work, but
 ``ncxx4-config`` is preferred).
-
-To use HDF5, you will need to explicitly enable it::
-
-   ./configure --with-hdf5
-
-BOUT++ will look for ``h5cc`` in your ``$PATH``. Similar to NetCDF,
-you can pass the location of the particular version you wish to use
-with::
-
-   ./configure --with-hdf5=/path/to/h5cc
 
 
 .. _sec-netcdf-from-source:
@@ -353,9 +239,9 @@ OpenMP
 ------
 
 BOUT++ can make use of OpenMP parallelism. To enable OpenMP, use the
-``--enable-openmp`` flag to configure::
+``-DBOUT_ENABLE_OPENMP=ON`` flag to configure::
 
-    ./configure --enable-openmp
+    cmake -S .. -B . -DBOUT_ENABLE_OPENMP=ON
 
 OpenMP can be used to parallelise in more directions than can be
 achieved with MPI alone. For example, it is currently difficult to
@@ -378,7 +264,7 @@ some problem sizes on some machines) is setting the OpenMP schedule
 used in some of the OpenMP loops (specifically those using
 `BOUT_FOR`). This can be set using::
 
-    ./configure --enable-openmp --with-openmp-schedule=<schedule>
+    cmake . -DBOUT_ENABLE_OPENMP=ON -DBOUT_OPENMP_SCHEDULE=<schedule>
 
 with ``<schedule>`` being one of: ``static`` (the default),
 ``dynamic``, ``guided``, ``auto`` or ``runtime``.
@@ -419,9 +305,10 @@ solver. Currently, BOUT++ also supports the SUNDIALS solvers CVODE, IDA
 and ARKODE which are available from
 https://computation.llnl.gov/casc/sundials/main.html.
 
-.. note:: BOUT++ currently supports SUNDIALS > 2.6, up to 5.4.0 as of
-          September 2020. It is advisable to use the highest possible
-          version
+.. note:: BOUT++ currently supports SUNDIALS > 2.6, up to 6.7.0 as of
+          January 2024. It is advisable to use the highest possible
+          version. Support for SUNDIALS versions < 4 will be removed
+          in the next release.
 
 The full installation guide is found in the downloaded ``.tar.gz``,
 but we will provide a step-by-step guide to install it and make it
@@ -448,9 +335,9 @@ solver, which evolves a system of the form
 :math:`\mathbf{f}(\mathbf{u},\dot{\mathbf{u}},t) = 0`. This allows
 algebraic constraints on variables to be specified.
 
-Use the ``--with-sundials`` option to configure BOUT++ with SUNDIALS::
+Use the ``-DBOUT_USE_SUNDIALS=ON -DSUNDIALS_ROOT=`` option to configure BOUT++ with SUNDIALS::
 
-    $ ./configure --with-sundials=/path/to/sundials/install
+    $ cmake . -DBOUT_USE_SUNDIALS=ON -DSUNDIALS_ROOT=/path/to/sundials/install
 
 SUNDIALS will allow you to select at run-time which solver to use. See
 :ref:`sec-timeoptions` for more details on how to do this.
@@ -458,8 +345,6 @@ SUNDIALS will allow you to select at run-time which solver to use. See
 Notes:
 
 * If compiling SUNDIALS, make sure that it is configured with MPI (``MPI_ENABLE=ON``)
-* If you install SUNDIALS to a non-standard (system) directory, you will probably have
-  to add the ``lib`` directory to the ``LD_LIBRARY_PATH`` environment variable.
 
 .. _sec-PETSc-install:
 
@@ -470,104 +355,81 @@ BOUT++ can use PETSc https://www.mcs.anl.gov/petsc/ for time-integration
 and for solving elliptic problems, such as inverting Poisson and
 Helmholtz equations.
 
-Currently, BOUT++ supports PETSc versions 3.7 - 3.14. More recent versions may
+Currently, BOUT++ supports PETSc versions 3.7 - 3.19. More recent versions may
 well work, but the PETSc API does sometimes change in backward-incompatible
-ways, so this is not guaranteed. To install PETSc version 3.13, use the
+ways, so this is not guaranteed. To install PETSc version 3.19, use the
 following steps::
 
     $ cd ~
-    $ wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.13.4.tar.gz
-    $ tar -xzvf petsc-3.13.4.tar.gz
-    $ cd petsc-3.13.4
+    $ wget https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.19.1.tar.gz
+    $ tar -xzvf petsc-3.19.1.tar.gz
+    $ cd petsc-3.19.1
 
 Use the following configure options to ensure PETSc is compatible with BOUT++::
 
     $ ./configure \
-      --with-clanguage=cxx \
       --with-mpi=yes \
       --with-precision=double \
       --with-scalar-type=real \
-      --with-shared-libraries=0
+      --with-shared-libraries=1 \
+      --with-debugging=0 \
+      {C,CXX,F}OPTFLAGS="-O3 -march=native" \
+      --prefix=$HOME/local/petsc-version-options
 
-You may also wish to add ``--with-debugging=yes`` to ``./configure``
-in order to allow debugging.
+You may also wish to change to ``--with-debugging=yes`` in the
+arguments to ``./configure``, in order to allow debugging of PETSc.
+The optimisation flags need changing for cross compiling or non gcc 
+compilers. Set a different prefix to change the place PETSc will be
+installed to.
 
 .. note:: If you build BOUT++ using a standalone version of SUNDIALS,
           it is advisable to not also build PETSc with SUNDIALS.
 
 .. note:: It is also possible to get PETSc to download and install
-          MUMPS (see :ref:`sec-MUMPS`), by adding::
+          MUMPS, by adding::
 
               --download-mumps \
               --download-scalapack \
               --download-blacs \
-              --download-fblas-lapack=1 \
+              --download-fblaslapack=1 \
               --download-parmetis \
               --download-ptscotch \
               --download-metis
 
           to ``./configure``.
 
-To make PETSc, type::
+To make PETSc, type what is shown in the terminal output after the configure
+step, something like::
 
-    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug all
+    $ make PETSC_DIR=$HOME/petsc-3.19.1 PETSC_ARCH=arch-linux2-cxx-debug all
 
 Should BLAS, LAPACK, or any other packages be missing, you will get an
 error, and a suggestion that you can append
-``--download-name-of-package`` to the ``./configure`` line. You may want
-to test that everything is configured properly. To do this, type::
+``--download-name-of-package`` to the ``./configure`` line.
 
-    $ make PETSC_DIR=$HOME/petsc-3.13.4 PETSC_ARCH=arch-linux2-cxx-debug test
+You may want to test that everything is configured properly. To do this replace
+``all`` with ``test`` in the make command. It should be something like::
 
-To use PETSc, you have to define the ``PETSC_DIR`` and ``PETSC_ARCH``
-environment variables to match how PETSc was built::
+    $ make PETSC_DIR=$HOME/petsc-3.19.1 PETSC_ARCH=arch-linux2-cxx-debug test
 
-    $ export PETSC_DIR=$HOME/petsc-3.13.4
-    $ export PETSC_ARCH=arch-linux2-cxx-debug
+To install PETSc, replace ``test``/``all`` with ``install`` and run
+something like::
 
-and add to your startup file ``$HOME/.bashrc``::
+    $ make PETSC_DIR=$HOME/petsc-3.19.1 PETSC_ARCH=arch-linux2-cxx-debug install
 
-    export PETSC_DIR=$HOME/petsc-3.13.4
-    export PETSC_ARCH=arch-linux2-cxx-debug
+To configure BOUT++ with PETSc, add to the cmake configure command::
 
-To configure BOUT++ with PETSc, go to the BOUT++ root directory, and
-type::
+    -DBOUT_USE_PETSC=ON -DPETSC_DIR=$HOME/local/petsc-version-options
 
-    $ ./configure --with-petsc
+For example like this::
 
-You can configure BOUT++ against different PETSc installations either
-through the ``PETSC_DIR/ARCH`` variables as above, or by specifying
-them on the command line::
+    $ cmake -S . -B <build-directory> -DBOUT_USE_PETSC=ON -DPETSC_DIR=$HOME/local/petsc-version-options
 
-  $ ./configure --with-petsc PETSC_DIR=/path/to/other/petsc PETSC_ARCH=other-arch
+BOUT++ can also work with PETSc if it has not been installed. In this
+case ensure that ``PETSC_DIR`` and ``PETSC_ARCH`` are set, for example
+like this::
 
-.. note:: Unfortunately, there are a variety of ways PETSc can be
-          installed on a system, and it is hard to automatically work
-          out how to compile against a particular installation. In
-          particular, there are two PETSc-supported ways of installing
-          PETSc that are subtly different.
-
-          The first way is as above, using ``PETSC_DIR`` and
-          ``PETSC_ARCH``. A second way is to use the ``--prefix``
-          argument to ``configure`` (much like the traditional GNU
-          ``configure`` scripts) when building PETSc. In this case,
-          ``PETSC_DIR`` will be the path passed to ``--prefix`` and
-          ``PETSC_ARCH`` will be empty. When configuring BOUT++, one
-          can use ``--with-petsc=$PETSC_DIR`` as a shortcut in this
-          case. This will NOT work if PETSc was installed with a
-          ``PETSC_ARCH``.
-
-          However, there are at least some Linux distributions that
-          install PETSc in yet another way and you may need to set
-          ``PETSC_DIR/ARCH`` differently. For example, for Fedora, as
-          of May 2018, you will need to configure and build BOUT++
-          like so::
-
-            $ ./configure --with-petsc=/usr/lib64/openmpi
-            $ PETSC_DIR=/usr make
-
-          Replace `openmpi` with the correct MPI implementation that
-          you have installed.
+    $ PETSC_DIR=/path/to/petsc PETSC_ARCH=arch-linux2-cxx-debug cmake -DBOUT_USE_PETSC=ON
 
 .. _sec-lapack:
 
@@ -581,97 +443,25 @@ serial performance. This does not add new features, but may be faster
 in some cases. LAPACK is however written in FORTRAN 77, which can
 cause linking headaches. To enable these routines use::
 
-    $ ./configure --with-lapack
+    $ cmake -S . -B <build-directory> -DBOUT_USE_LAPACK=ON
 
 and to specify a non-standard path::
 
-    $ ./configure --with-lapack=/path/to/lapack
+    $ cmake -S . -B <build-directory> -DBOUT_USE_LAPACK=ON -DLAPACK_ROOT=/path/to/lapack
 
-.. _sec-mumps:
-
-MUMPS
------
-
-This is still experimental, but does work on at least some systems at
-York. The PETSc library can be used to call MUMPS for directly solving
-matrices (e.g. for Laplacian inversions), or MUMPS can be used directly.
-To enable MUMPS, configure with::
-
-    $ ./configure --with-mumps
-
-MUMPS has many dependencies, including ScaLapack and
-ParMetis. Unfortunately, the exact dependencies and configuration of
-MUMPS varies a lot from system to system. The easiest way to get MUMPS
-installed is to install PETSc with MUMPS, or supply the ``CPPFLAGS``,
-``LDFLAGS`` and ``LIBS`` environment variables to ``configure``::
-
-   $ ./configure --with-mumps CPPFLAGS=-I/path/to/mumps/includes \
-       LDFLAGS=-L/path/to/mumps/libs \
-       LIBS="-ldmumps -lmumps_common -lother_libs_needed_for_mumps"
 
 MPI compilers
 -------------
 
 These are usually called something like mpicc and mpiCC (or mpicxx), and
 the configure script will look for several common names. If your
-compilers aren’t recognised then set them using::
-
-    $ ./configure MPICC=<your C compiler> MPICXX=<your C++ compiler>
+compilers aren’t recognised then check the `cmake documentation for MPI <https://cmake.org/cmake/help/latest/module/FindMPI.html#variables-for-locating-mpi>`_
 
 NOTES:
 
 -  On LLNL’s Grendel, mpicxx is broken. Use mpiCC instead by passing
    “MPICXX=mpiCC” to configure. Also need to specify this to NetCDF
    library by passing “CXX=mpiCC” to NetCDF configure.
-
-.. _sec-mpi-from-source:
-
-Installing MPICH from source
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-In your home directory, create
-two subdirectories: One called “install” where we’ll put the source
-code, and one called “local” where we’ll install the MPI compiler::
-
-    $ cd
-    $ mkdir install
-    $ mkdir local
-
-Download the latest stable version of MPICH from https://www.mpich.org/ and put the
-file in the “install” subdirectory created above. At the time of writing
-(January 2018), the file was called ``mpich-3.2.1.tar.gz``. Untar the file::
-
-    $ tar -xzvf mpich-3.2.1.tar.gz
-
-which will create a directory containing the source code. ’cd’ into this
-directory and run::
-
-    $ ./configure --prefix=$HOME/local
-    $ make
-    $ make install
-
-Each of which might take a while. This is the standard way of installing
-software from source, and will also be used for installing libraries
-later. The ``–prefix=`` option specifies where the software should be
-installed. Since we don’t have permission to write in the system
-directories (e.g. ``/usr/bin``), we just use a subdirectory of our home
-directory. The ``configure`` command configures the install, finding the
-libraries and commands it needs. ``make`` compiles everything using the
-options found by ``configure``. The final ``make install`` step copies
-the compiled code into the correct places under ``$HOME/local``.
-
-To be able to use the MPI compiler, you need to modify the ``PATH``
-environment variable. To do this, run::
-
-    $ export PATH=$PATH:$HOME/local/bin
-
-and add this to the end of your startup file ``$HOME/.bashrc``. If
-you’re using CSH rather than BASH, the command is::
-
-    % setenv PATH ${PATH}:${HOME}/local/bin
-
-and the startup file is ``$HOME/.cshrc``. You should now be able to run
-``mpicc`` and so have a working MPI compiler.
 
 .. _sec-fftw-from-source:
 
@@ -942,15 +732,11 @@ to ``next``, with an error like the following::
    make: *** [src] Error 2
 
 it's possible something has gone wrong with the submodules. To fix,
-just run ``make submodules``::
+just run::
 
-  $ make submodules
-  Downloading mpark.variant
-  git submodule update --init --recursive /home/peter/Codes/BOUT-dev/externalpackages/mpark.variant
-  Submodule path 'externalpackages/mpark.variant': checked out '0b488da9bebac980e7ba0e158a959c956a449676'
+  $ git submodule update --init --recursive  ./externalpackages/*
 
-If you regularly work on two different branches and need to run ``make
-submodules`` a lot, you may consider telling git to automatically
+If you regularly work on two different branches and need to run the above command a lot, you may consider telling git to automatically
 update the submodules::
 
   git config submodule.recurse=true

@@ -3,9 +3,9 @@
  *
  * Parses strings containing expressions, returning a tree of generators
  *
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2024 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -24,19 +24,23 @@
  *
  **************************************************************************/
 
-#ifndef __EXPRESSION_PARSER_H__
-#define __EXPRESSION_PARSER_H__
+#ifndef EXPRESSION_PARSER_H
+#define EXPRESSION_PARSER_H
 
-#include "bout/format.hxx"
-#include "unused.hxx"
+#include "bout/unused.hxx"
+
+#include "fmt/core.h"
 
 #include <exception>
 #include <list>
 #include <map>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <string>
 #include <utility>
+
+#include "generator_context.hxx"
 
 class FieldGenerator;
 using FieldGeneratorPtr = std::shared_ptr<FieldGenerator>;
@@ -60,9 +64,21 @@ public:
     return nullptr;
   }
 
+  [[deprecated("This will be removed in a future version. Implementations should "
+               "override the Context version of this function.")]] virtual double
+  generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
+    return generate(bout::generator::Context().set("x", x, "y", y, "z", z, "t", t));
+  }
+
   /// Generate a value at the given coordinates (x,y,z,t)
   /// This should be deterministic, always returning the same value given the same inputs
-  virtual double generate(double x, double y, double z, double t) = 0;
+  ///
+  /// Note: The default implementations of generate call each other;
+  /// the implementor of a FieldGenerator type must implement one of
+  /// them or an infinite recursion results.  This is for backward
+  /// compatibility for users and implementors.  In a future version
+  /// this function will be made pure virtual.
+  virtual double generate(const bout::generator::Context& ctx);
 
   /// Create a string representation of the generator, for debugging output
   virtual std::string str() const { return std::string("?"); }
@@ -108,15 +124,40 @@ public:
 
 protected:
   /// This will be called to resolve any unknown symbols
-  virtual FieldGeneratorPtr resolve(std::string& UNUSED(name)) const { return nullptr; }
+  virtual FieldGeneratorPtr resolve(const std::string& UNUSED(name)) const {
+    return nullptr;
+  }
+
+  /// A result that's almost what we were looking for. Return type of
+  /// `ExpressionParser::fuzzyFind`
+  struct FuzzyMatch {
+    /// Name of the match
+    std::string name;
+    /// Edit distance from original search term
+    std::string::size_type distance;
+    /// Comparison operator so this works in a std::multiset
+    friend bool operator<(const FuzzyMatch& lhs, const FuzzyMatch& rhs) {
+      return (lhs.distance < rhs.distance) and (lhs.name < rhs.name);
+    }
+  };
+
+  /// Find approximate matches for \p name in the known generators. \p
+  /// max_distance controls the similarity of results.
+  ///
+  /// Returns a set of possible matches ordered by similarity to \p
+  /// name. A \p distance of 1 means: a single insertion, deletion,
+  /// substitution, or transposition; that the case differs, for
+  /// example, "key" and "KEY" match with distance 1
+  virtual std::multiset<FuzzyMatch>
+  fuzzyFind(const std::string& name, std::string::size_type max_distance = 2) const;
 
   /// Parses a given string into a tree of FieldGenerator objects
   FieldGeneratorPtr parseString(const std::string& input) const;
 
-  /// Characters which cannot be used in symbols; all other allowed
-  /// In addition, whitespace cannot be used
+  /// Characters which cannot be used in symbols without escaping;
+  /// all other allowed. In addition, whitespace cannot be used.
   /// Adding a binary operator adds its symbol to this string
-  std::string reserved_chars = "+-*/^[](){},";
+  std::string reserved_chars = "+-*/^[](){},=!";
 
 private:
   std::map<std::string, FieldGeneratorPtr> gen; ///< Generators, addressed by name
@@ -127,9 +168,9 @@ private:
 
     LexInfo(const std::string& input, std::string reserved_chars = "");
 
-    /// Current token. -1 for number, -2 for string, 0 for "end of input"
+    /// Current token. -1 for number, -2 for symbol, -3 for {string}, 0 for "end of input"
     signed char curtok = 0;
-    double curval; ///< Value if a number
+    double curval;              ///< Value if a number
     std::string curident;       ///< Identifier, variable or function name
     signed char LastChar;       ///< The last character read from the string
     std::stringstream ss;       ///< Used to read values from the input string
@@ -140,11 +181,19 @@ private:
   FieldGeneratorPtr parseIdentifierExpr(LexInfo& lex) const;
   FieldGeneratorPtr parseParenExpr(LexInfo& lex) const;
 
+  /// Context definition
+  ///
+  /// Returns a pointer to a FieldContext object.
+  ///
+  /// Matches
+  /// [ symbol = expression , symbol = expression ... ] ( expression )
+  FieldGeneratorPtr parseContextExpr(LexInfo& lex) const;
+
   /// Parse a primary expression, one of:
   ///   - number
   ///   - identifier
-  ///   - ( ... )
-  ///   - [ ... ]
+  ///   - ( ... )    parenexpr
+  ///   - [ ... ]()  context
   ///   - a unary '-', which is converted to '0 -'
   ///   A ParseException is thrown if none of these is found
   FieldGeneratorPtr parsePrimary(LexInfo& lex) const;
@@ -160,7 +209,7 @@ public:
   FieldBinary(FieldGeneratorPtr l, FieldGeneratorPtr r, char o)
       : lhs(std::move(l)), rhs(std::move(r)), op(o) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  double generate(double x, double y, double z, double t) override;
+  double generate(const bout::generator::Context& context) override;
 
   std::string str() const override {
     return std::string("(") + lhs->str() + std::string(1, op) + rhs->str()
@@ -181,10 +230,7 @@ public:
     return std::make_shared<FieldValue>(value);
   }
 
-  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z),
-                  double UNUSED(t)) override {
-    return value;
-  }
+  double generate(const bout::generator::Context&) override { return value; }
   std::string str() const override {
     std::stringstream ss;
     ss << value;
@@ -199,13 +245,18 @@ private:
 
 class ParseException : public std::exception {
 public:
-  ParseException(const char*, ...) BOUT_FORMAT_ARGS(2, 3);
+  ParseException(const std::string& message_) : message(message_) {}
+
+  template <class S, class... Args>
+  ParseException(const S& format, const Args&... args)
+      : message(fmt::format(format, args...)) {}
+
   ~ParseException() override = default;
 
-  const char* what() const noexcept override;
+  const char* what() const noexcept override { return message.c_str(); }
 
-protected:
+private:
   std::string message;
 };
 
-#endif // __EXPRESSION_PARSER_H__
+#endif // EXPRESSION_PARSER_H

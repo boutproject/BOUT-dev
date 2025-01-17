@@ -24,27 +24,33 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_PETSC
+#ifndef BOUT_PETSC_SOLVER_H
+#define BOUT_PETSC_SOLVER_H
+
+#include "bout/build_defines.hxx"
+#include "bout/solver.hxx"
+
+#if not BOUT_HAS_PETSC
+
+namespace {
+RegisterUnavailableSolver
+    registerunavailablepetsc("petsc", "BOUT++ was not configured with PETSc");
+}
+
+#else
 
 class PetscSolver;
 
-#ifndef __PETSC_SOLVER_H__
-#define __PETSC_SOLVER_H__
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/petsclib.hxx>
+#include <bout/vector2d.hxx>
+#include <bout/vector3d.hxx>
 
 #include <petsc.h>
 
-#include <field2d.hxx>
-#include <field3d.hxx>
-#include <vector2d.hxx>
-#include <vector3d.hxx>
-
-#include <bout/solver.hxx>
-
-#include <bout/petsclib.hxx>
-
 #include <vector>
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<PetscSolver> registersolverpetsc("petsc");
 }
@@ -57,17 +63,17 @@ using rhsfunc = int (*)(BoutReal);
 extern BoutReal simtime;
 
 /// Monitor function called on every internal timestep
-extern PetscErrorCode PetscMonitor(TS, PetscInt, PetscReal, Vec, void *ctx);
+extern PetscErrorCode PetscMonitor(TS, PetscInt, PetscReal, Vec, void* ctx);
 /// Monitor function for SNES
-extern PetscErrorCode PetscSNESMonitor(SNES, PetscInt, PetscReal, void *ctx);
+extern PetscErrorCode PetscSNESMonitor(SNES, PetscInt, PetscReal, void* ctx);
 
 /// Compute IJacobian = dF/dU + a dF/dUdot  - a dummy matrix used for pc=none
 #if PETSC_VERSION_GE(3, 5, 0)
 extern PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat, Mat,
-                                       void *);
+                                       void*);
 #else
-extern PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat *, Mat *,
-                                       MatStructure *, void *);
+extern PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat*, Mat*,
+                                       MatStructure*, void*);
 #endif
 
 /// Data for SNES
@@ -80,11 +86,10 @@ struct snes_info {
 
 class PetscSolver : public Solver {
 public:
-  PetscSolver(Options *opts = nullptr);
+  PetscSolver(Options* opts = nullptr);
   ~PetscSolver();
 
-  int init(int NOUT, BoutReal TIMESTEP) override;
-
+  int init() override;
   int run() override;
 
   // These functions used internally (but need to be public)
@@ -97,14 +102,14 @@ public:
   PetscErrorCode jac(Vec x, Vec y);
 
   // Call back functions that need to access internal state
-  friend PetscErrorCode PetscMonitor(TS, PetscInt, PetscReal, Vec, void *ctx);
-  friend PetscErrorCode PetscSNESMonitor(SNES, PetscInt, PetscReal, void *ctx);
+  friend PetscErrorCode PetscMonitor(TS, PetscInt, PetscReal, Vec, void* ctx);
+  friend PetscErrorCode PetscSNESMonitor(SNES, PetscInt, PetscReal, void* ctx);
 #if PETSC_VERSION_GE(3, 5, 0)
   friend PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat, Mat,
-                                         void *);
+                                         void*);
 #else
-  friend PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat *, Mat *,
-                                         MatStructure *, void *);
+  friend PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat*, Mat*,
+                                         MatStructure*, void*);
 #endif
 
   PetscLogEvent solver_event, loop_event, init_event;
@@ -116,29 +121,32 @@ private:
 
   PetscLib lib; ///< Handles initialising, finalising PETSc
 
-  Vec u;      ///< PETSc solution vector
-  TS ts;      ///< PETSc timestepper object
-  Mat J, Jmf; ///< RHS Jacobian
-  MatFDColoring matfdcoloring;
-
-  int nout;       ///< The number of outputs
-  BoutReal tstep; ///< Time between outputs
+  Vec u{nullptr}; ///< PETSc solution vector
+  TS ts{nullptr}; ///< PETSc timestepper object
+  Mat J{nullptr}; ///< RHS Jacobian
+  Mat Jmf{nullptr};
+  MatFDColoring matfdcoloring{nullptr};
 
   bool diagnose; ///< If true, print some information about current stage
 
   BoutReal next_output; ///< When the monitor should be called next
 
-  PetscBool interpolate; ///< Whether to interpolate or not
+  PetscBool interpolate{PETSC_TRUE}; ///< Whether to interpolate or not
 
   char output_name[PETSC_MAX_PATH_LEN];
-  PetscBool output_flag;
+  PetscBool output_flag{PETSC_FALSE};
   PetscInt prev_linear_its;
-  BoutReal bout_snes_time;
+  BoutReal bout_snes_time{0.0};
   std::vector<snes_info> snes_list;
 
   bool adaptive; ///< Use adaptive timestepping
+  bool use_precon, use_jacobian;
+  BoutReal abstol, reltol;
+  bool adams_moulton;
+  BoutReal start_timestep;
+  int mxstep;
 };
 
-#endif // __PETSC_SOLVER_H__
-
 #endif // BOUT_HAS_PETSC
+
+#endif // BOUT_PETSC_SOLVER_H

@@ -38,13 +38,14 @@
 
 class LaplaceSPT;
 
-#ifndef __SPT_H__
-#define __SPT_H__
+#ifndef BOUT_SPT_H
+#define BOUT_SPT_H
 
-#include <invert_laplace.hxx>
-#include <dcomplex.hxx>
-#include <options.hxx>
-#include <utils.hxx>
+#include <bout/dcomplex.hxx>
+#include <bout/invert_laplace.hxx>
+#include <bout/mesh.hxx>
+#include <bout/options.hxx>
+#include <bout/utils.hxx>
 
 /// Simple parallelisation of the Thomas tridiagonal solver algorithm (serial code)
 /*!
@@ -66,91 +67,93 @@ class LaplaceSPT;
  */
 class LaplaceSPT : public Laplacian {
 public:
-  LaplaceSPT(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE, Mesh *mesh_in = nullptr);
-  ~LaplaceSPT();
-  
+  LaplaceSPT(Options* opt = nullptr, const CELL_LOC = CELL_CENTRE,
+             Mesh* mesh_in = nullptr, Solver* solver = nullptr);
+
   using Laplacian::setCoefA;
-  void setCoefA(const Field2D &val) override {
+  void setCoefA(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Acoef = val;
   }
   using Laplacian::setCoefC;
-  void setCoefC(const Field2D &val) override {
+  void setCoefC(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ccoef = val;
   }
   using Laplacian::setCoefD;
-  void setCoefD(const Field2D &val) override {
+  void setCoefD(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Dcoef = val;
   }
   using Laplacian::setCoefEx;
-  void setCoefEx(const Field2D &UNUSED(val)) override {
+  void setCoefEx(const Field2D& UNUSED(val)) override {
     throw BoutException("LaplaceSPT does not have Ex coefficient");
   }
   using Laplacian::setCoefEz;
-  void setCoefEz(const Field2D &UNUSED(val)) override {
+  void setCoefEz(const Field2D& UNUSED(val)) override {
     throw BoutException("LaplaceSPT does not have Ez coefficient");
   }
 
   using Laplacian::solve;
-  FieldPerp solve(const FieldPerp &b) override;
-  FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
-  
-  Field3D solve(const Field3D &b) override;
-  Field3D solve(const Field3D &b, const Field3D &x0) override;
+  FieldPerp solve(const FieldPerp& b) override;
+  FieldPerp solve(const FieldPerp& b, const FieldPerp& x0) override;
+
+  Field3D solve(const Field3D& b) override;
+  Field3D solve(const Field3D& b, const Field3D& x0) override;
+
 private:
-  enum { SPT_DATA = 1123 }; ///< 'magic' number for SPT MPI messages
-  
+  constexpr static int SPT_DATA = 1123; ///< 'magic' number for SPT MPI messages
+
   Field2D Acoef, Ccoef, Dcoef;
 
   /// Data structure for SPT algorithm
   struct SPT_data {
-    SPT_data() : comm_tag(SPT_DATA) {}
     void allocate(int mm, int nx); // Allocates memory
-    ~SPT_data(){}; // Free memory
-    
-    int jy; ///< Y index
-    
-    Matrix<dcomplex> bk;  ///< b vector in Fourier space
+
+    int jy = 0; ///< Y index
+
+    Matrix<dcomplex> bk; ///< b vector in Fourier space
     Matrix<dcomplex> xk;
 
     Matrix<dcomplex> gam;
-  
+
     Matrix<dcomplex> avec, bvec, cvec; ///< Diagonal bands of matrix
 
-    int proc; // Which processor has this reached?
-    int dir;  // Which direction is it going?
-  
-    comm_handle recv_handle; // Handle for receives
-  
-    int comm_tag; // Tag for communication
-  
+    int proc = 0; // Which processor has this reached?
+    int dir = 1;  // Which direction is it going?
+
+    comm_handle recv_handle = nullptr; // Handle for receives
+
+    int comm_tag = SPT_DATA; // Tag for communication
+
     Array<BoutReal> buffer;
   };
-  
+
   int ys, ye;         // Range of Y indices
   SPT_data slicedata; // Used to solve for a single FieldPerp
-  SPT_data* alldata;  // Used to solve a Field3D
+  Array<SPT_data> alldata; // Used to solve a Field3D
 
   Array<dcomplex> dc1d; ///< 1D in Z for taking FFTs
 
-  void tridagForward(dcomplex *a, dcomplex *b, dcomplex *c,
-                      dcomplex *r, dcomplex *u, int n,
-                      dcomplex *gam,
-                      dcomplex &bet, dcomplex &um, bool start=false);
-  void tridagBack(dcomplex *u, int n,
-                   dcomplex *gam, dcomplex &gp, dcomplex &up);
-  
-  int start(const FieldPerp &b, SPT_data &data);
-  
-  int next(SPT_data &data);
-  
-  void finish(SPT_data &data, FieldPerp &x);
+  void tridagForward(dcomplex* a, dcomplex* b, dcomplex* c, dcomplex* r, dcomplex* u,
+                     int n, dcomplex* gam, dcomplex& bet, dcomplex& um,
+                     bool start = false);
+  void tridagBack(dcomplex* u, int n, dcomplex* gam, dcomplex& gp, dcomplex& up);
 
+  int start(const FieldPerp& b, SPT_data& data);
+
+  int next(SPT_data& data);
+
+  void finish(SPT_data& data, FieldPerp& x);
 };
 
-#endif // __SPT_H__
+namespace {
+// Note: After class definition so compiler knows that
+//       registered class is derived from Laplacian
+RegisterLaplace<LaplaceSPT> registerlaplacespt(LAPLACE_SPT);
+} // namespace
+
+#endif // BOUT_SPT_H

@@ -1,20 +1,18 @@
-#include <bout.hxx>
+#include <bout/bout.hxx>
 #include <mpi.h>
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
-  Datafile df(Options::getRoot()->getSection("output"));
-
   Field2D test;
-  mesh->get(test, "test");
+  bout::globals::mesh->get(test, "test");
 
-  dump.add(test, "test");
-
-  dump.write();
+  Options dump;
+  dump["test"] = test;
+  bout::writeDefaultOutputFile(dump);
 
   MPI_Barrier(BoutComm::get());
-  
+
   BoutFinalise();
   return 0;
 }

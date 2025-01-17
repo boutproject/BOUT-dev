@@ -6,9 +6,9 @@
  *        NR Walkden, B Dudson  20 January 2012
  *******************************************************************/
 
-#include <bout/physicsmodel.hxx> // Commonly used BOUT++ components
-#include <derivs.hxx>            // To use DDZ()
-#include <invert_laplace.hxx>    // Laplacian inversion
+#include <bout/derivs.hxx>         // To use DDZ()
+#include <bout/invert_laplace.hxx> // Laplacian inversion
+#include <bout/physicsmodel.hxx>   // Commonly used BOUT++ components
 
 /// 2D drift-reduced model, mainly used for blob studies
 ///
@@ -25,7 +25,6 @@ private:
   BoutReal rho_s;   ///< Bohm gyro radius
   BoutReal Omega_i; ///< Ion cyclotron frequency
   BoutReal c_s;     ///< Bohm sound speed
-  BoutReal n0;      ///< Reference density
 
   // Constants to calculate the parameters
   BoutReal Te0; ///< Isothermal temperature [eV]
@@ -43,10 +42,11 @@ private:
   bool compressible; ///< If allow inclusion of n grad phi term in density evolution
   bool sheath;       ///< Sheath connected?
 
-  Laplacian *phiSolver; ///< Performs Laplacian inversions to calculate phi
+  std::unique_ptr<Laplacian> phiSolver{
+      nullptr}; ///< Performs Laplacian inversions to calculate phi
 
 protected:
-  int init(bool UNUSED(restarting)) {
+  int init(bool UNUSED(restarting)) override {
 
     /******************Reading options *****************/
 
@@ -55,12 +55,11 @@ protected:
 
     // Load system parameters
     Te0 = options["Te0"].doc("Temperature in eV").withDefault(30.0);
-    
+
     e = options["e"].withDefault(1.602e-19);
     m_i = options["m_i"].withDefault(2 * 1.667e-27);
     m_e = options["m_e"].withDefault(9.11e-31);
 
-    n0 = options["n0"].doc("Background density in cubic m").withDefault(1e19);
     D_vort = options["D_vort"].doc("Viscous diffusion coefficient").withDefault(0.0);
     D_n = options["D_n"].doc("Density diffusion coefficient").withDefault(0.0);
 
@@ -85,37 +84,72 @@ protected:
     c_s = sqrt(e * Te0 / m_i); // Bohm sound speed
     rho_s = c_s / Omega_i;     // Bohm gyro-radius
 
-    output.write("\n\n\t----------Parameters: ------------ \n\tOmega_i = %e /s,\n\tc_s = "
-                 "%e m/s,\n\trho_s = %e m\n",
-                 Omega_i, c_s, rho_s);
+    output.write(
+        "\n\n\t----------Parameters: ------------ \n\tOmega_i = {:e} /s,\n\tc_s = "
+        "{:e} m/s,\n\trho_s = {:e} m\n",
+        Omega_i, c_s, rho_s);
 
     // Calculate delta_*, blob size scaling
-    output.write("\tdelta_* = rho_s * (dn/n) * %e ",
+    output.write("\tdelta_* = rho_s * (dn/n) * {:e} ",
                  pow(L_par * L_par / (R_c * rho_s), 1. / 5));
 
     /************ Create a solver for potential ********/
 
+    Options& boussinesq_options = Options::root()["phiBoussinesq"];
+    Options& non_boussinesq_options = Options::root()["phiSolver"];
+
     if (boussinesq) {
-       // BOUT.inp section "phiBoussinesq"
-      phiSolver = Laplacian::create(Options::getRoot()->getSection("phiBoussinesq"));
+      // BOUT.inp section "phiBoussinesq"
+      phiSolver = Laplacian::create(&boussinesq_options);
+      // Mark other section as conditionally used so we don't get errors from unused
+      // options
+      non_boussinesq_options.setConditionallyUsed();
     } else {
       // BOUT.inp section "phiSolver"
-      phiSolver = Laplacian::create(Options::getRoot()->getSection("phiSolver")); 
+      phiSolver = Laplacian::create(&non_boussinesq_options);
+      // Mark other section as conditionally used so we don't get errors from unused
+      // options
+      boussinesq_options.setConditionallyUsed();
     }
     phi = 0.0; // Starting guess for first solve (if iterative)
 
     /************ Tell BOUT++ what to solve ************/
-
     SOLVE_FOR(n, omega);
-
-    // Output phi
-    SAVE_REPEAT(phi);
-    SAVE_ONCE(rho_s, c_s, Omega_i);
 
     return 0;
   }
 
-  int rhs(BoutReal UNUSED(t)) {
+  /// Add variables to the output. This can be used to calculate
+  /// diagnostics
+  ///
+  /// @param[inout] state  A nested dictionary that can be added to
+  void outputVars(Options& state) override {
+    // Set time-varying quantity (assignRepeat)
+    state["phi"].assignRepeat(phi).setAttributes({{"units", "V"},
+                                                  {"conversion", Te0},
+                                                  {"standard_name", "potential"},
+                                                  {"long_name", "Plasma potential"}});
+
+    // Force updates to non-varying quantities
+    state["rho_s"].force(rho_s).setAttributes(
+        {{"units", "m"},
+         {"conversion", 1},
+         {"standard_name", "length normalisation"},
+         {"long_name", "Gyro-radius length normalisation"}});
+
+    state["c_s"].force(c_s).setAttributes({{"units", "m/s"},
+                                           {"conversion", 1},
+                                           {"standard_name", "velocity normalisation"},
+                                           {"long_name", "Sound speed normalisation"}});
+
+    state["Omega_i"].force(Omega_i).setAttributes(
+        {{"units", "s^-1"},
+         {"conversion", 1},
+         {"standard_name", "frequency normalisation"},
+         {"long_name", "Cyclotron frequency normalisation"}});
+  }
+
+  int rhs(BoutReal UNUSED(t)) override {
 
     // Run communications
     ////////////////////////////////////////////////////////////////////////////
@@ -138,9 +172,9 @@ protected:
     // Density Evolution
     /////////////////////////////////////////////////////////////////////////////
 
-    ddt(n) = -bracket(phi, n, BRACKET_SIMPLE) // ExB term
-             + 2 * DDZ(n) * (rho_s / R_c)     // Curvature term
-             + D_n * Delp2(n);                // Diffusion term
+    ddt(n) = -bracket(phi, n, BRACKET_ARAKAWA) // ExB term
+             + 2 * DDZ(n) * (rho_s / R_c)      // Curvature term
+             + D_n * Delp2(n);                 // Diffusion term
     if (compressible) {
       ddt(n) -= 2 * n * DDZ(phi) * (rho_s / R_c); // ExB Compression term
     }
@@ -153,9 +187,9 @@ protected:
     // Vorticity evolution
     /////////////////////////////////////////////////////////////////////////////
 
-    ddt(omega) = -bracket(phi, omega, BRACKET_SIMPLE) // ExB term
-                 + 2 * DDZ(n) * (rho_s / R_c) / n     // Curvature term
-                 + D_vort * Delp2(omega) / n          // Viscous diffusion term
+    ddt(omega) = -bracket(phi, omega, BRACKET_ARAKAWA) // ExB term
+                 + 2 * DDZ(n) * (rho_s / R_c) / n      // Curvature term
+                 + D_vort * Delp2(omega) / n           // Viscous diffusion term
         ;
 
     if (sheath) {

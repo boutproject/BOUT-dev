@@ -1,14 +1,11 @@
 #include "cashkarp.hxx"
 
-CASHKARPScheme::CASHKARPScheme(Options *options):RKScheme(options){
+CASHKARPScheme::CASHKARPScheme(Options* options) : RKScheme(options) {
   //Set characteristics of scheme
   numStages = 6;
   numOrders = 2;
   order = 4;
   label = "cashkarp";
-  followHighOrder = false;
-
-  OPTION(options, followHighOrder, followHighOrder);
 
   //Allocate coefficient arrays
   stageCoeffs.reallocate(numStages, numStages);
@@ -16,12 +13,12 @@ CASHKARPScheme::CASHKARPScheme(Options *options):RKScheme(options){
   timeCoeffs.reallocate(numStages);
 
   //Zero out arrays (shouldn't be needed, but do for testing)
-  for(int i=0;i<numStages;i++){
-    timeCoeffs[i]=0.;
-    for(int j=0;j<numStages;j++){
+  for (int i = 0; i < numStages; i++) {
+    timeCoeffs[i] = 0.;
+    for (int j = 0; j < numStages; j++) {
       stageCoeffs(i, j) = 0.;
     }
-    for(int j=0;j<numOrders;j++){
+    for (int j = 0; j < numOrders; j++) {
       resultCoeffs(i, j) = 0.;
     }
   }
@@ -80,14 +77,13 @@ CASHKARPScheme::CASHKARPScheme(Options *options):RKScheme(options){
   //Level 0
   timeCoeffs[0] = 0.0;
   //Level 1
-  timeCoeffs[1] = 1.0/5.0;
+  timeCoeffs[1] = 1.0 / 5.0;
   //Level 2
-  timeCoeffs[2] = 3.0/10.0;
+  timeCoeffs[2] = 3.0 / 10.0;
   //Level 3
-  timeCoeffs[3] = 3.0/5.0;
+  timeCoeffs[3] = 3.0 / 5.0;
   //Level 4
   timeCoeffs[4] = 1.0;
   //Level 5
-  timeCoeffs[5] = 7.0/8.0;
-
+  timeCoeffs[5] = 7.0 / 8.0;
 }

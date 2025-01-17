@@ -1,6 +1,7 @@
+#include "bout/utils.hxx"
 #include "gtest/gtest.h"
-#include "utils.hxx"
 
+#include <set>
 #include <string>
 
 TEST(MatrixTest, DefaultShape) {
@@ -169,7 +170,8 @@ TEST(MatrixTest, GetData) {
 
   auto data = matrix.getData();
 
-  EXPECT_TRUE(std::all_of(std::begin(data), std::end(data), [](int a) { return a == 3; }));
+  EXPECT_TRUE(
+      std::all_of(std::begin(data), std::end(data), [](int a) { return a == 3; }));
 
   data[0] = 4;
 
@@ -182,8 +184,10 @@ TEST(MatrixTest, ConstGetData) {
 
   const auto data = matrix.getData();
 
-  EXPECT_TRUE(std::all_of(std::begin(data), std::end(data), [](int a) { return a == 3; }));
-  EXPECT_TRUE(std::all_of(std::begin(matrix), std::end(matrix), [](int a) { return a == 3; }));
+  EXPECT_TRUE(
+      std::all_of(std::begin(data), std::end(data), [](int a) { return a == 3; }));
+  EXPECT_TRUE(
+      std::all_of(std::begin(matrix), std::end(matrix), [](int a) { return a == 3; }));
 }
 
 TEST(TensorTest, DefaultShape) {
@@ -362,7 +366,8 @@ TEST(TensorTest, GetData) {
 
   auto data = tensor.getData();
 
-  EXPECT_TRUE(std::all_of(std::begin(data), std::end(data), [](int a) { return a == 3; }));
+  EXPECT_TRUE(
+      std::all_of(std::begin(data), std::end(data), [](int a) { return a == 3; }));
 
   data[0] = 4;
 
@@ -375,92 +380,10 @@ TEST(TensorTest, ConstGetData) {
 
   const auto data = tensor.getData();
 
-  EXPECT_TRUE(std::all_of(std::begin(data), std::end(data), [](int a) { return a == 3; }));
-  EXPECT_TRUE(std::all_of(std::begin(tensor), std::end(tensor), [](int a) { return a == 3; }));
-}
-
-TEST(Invert3x3Test, Identity) {
-  Matrix<BoutReal> input(3, 3);
-  input = 0;
-  for (int i = 0; i < 3; i++) {
-    input(i, i) = 1.0;
-  }
-  auto expected = input;
-  invert3x3(input);
-
-  for (int j = 0; j < 3; j++) {
-    for (int i = 0; i < 3; i++) {
-      EXPECT_EQ(input(i, j), expected(i, j));
-    }
-  }
-}
-
-TEST(Invert3x3Test, InvertTwice) {
-  std::vector<BoutReal> rawDataMat = {0.05567105, 0.92458227, 0.19954631,
-                                      0.28581972, 0.54009039, 0.13234403,
-                                      0.8841194,  0.161224,   0.74853209};
-  std::vector<BoutReal> rawDataInv = {-2.48021781, 4.27410022,  -0.09449605,
-                                      0.6278449,   0.87275842,  -0.32168092,
-                                      2.79424897,  -5.23628123, 1.51684677};
-
-  Matrix<BoutReal> input(3, 3);
-  Matrix<BoutReal> expected(3, 3);
-
-  int counter = 0;
-  for (int j = 0; j < 3; j++) {
-    for (int i = 0; i < 3; i++) {
-      input(i, j) = rawDataMat[counter];
-      expected(i, j) = rawDataInv[counter];
-      counter++;
-    }
-  }
-
-  // Invert twice to check if we get back to where we started
-  invert3x3(input);
-
-  for (int j = 0; j < 3; j++) {
-    for (int i = 0; i < 3; i++) {
-      // Note we only check to single tolerance here
-      EXPECT_FLOAT_EQ(input(i, j), expected(i, j));
-    }
-  }
-}
-
-TEST(Invert3x3Test, Singular) {
-  Matrix<BoutReal> input(3, 3);
-  input = 0;
-  EXPECT_THROW(invert3x3(input), BoutException);
-}
-
-TEST(Invert3x3Test, BadCondition) {
-  Matrix<BoutReal> input(3, 3);
-
-  // Default small
-  input = 0.;
-  input(0, 0) = 1.0e-16;
-  input(1, 1) = 1.0;
-  input(2, 2) = 1.0;
-  EXPECT_THROW(invert3x3(input), BoutException);
-
-  // Default small -- not quite bad enough condition
-  input = 0.;
-  input(0, 0) = 1.0e-12;
-  input(1, 1) = 1.0;
-  input(2, 2) = 1.0;
-  EXPECT_NO_THROW(invert3x3(input));
-
-  // Non-default small
-  input = 0.;
-  input(0, 0) = 1.0e-12;
-  input(1, 1) = 1.0;
-  input(2, 2) = 1.0;
-  EXPECT_THROW(invert3x3(input, 1.0e-10), BoutException);
-
-  // Non-default small
-  input = 0.;
-  input(0, 0) = 1.0e-12;
-  input(1, 1) = 1.0; input(2, 2) = 1.0;
-  EXPECT_NO_THROW(invert3x3(input, -1.0e-10));
+  EXPECT_TRUE(
+      std::all_of(std::begin(data), std::end(data), [](int a) { return a == 3; }));
+  EXPECT_TRUE(
+      std::all_of(std::begin(tensor), std::end(tensor), [](int a) { return a == 3; }));
 }
 
 TEST(NumberUtilitiesTest, SquareInt) {
@@ -533,21 +456,15 @@ TEST(NumberUtilitiesTest, MinModInt) {
 }
 
 #if CHECK > 0
-TEST(NumberUtilitiesTest, CheckDataGood) {
-  EXPECT_NO_THROW(checkData(5.0));
-}
+TEST(NumberUtilitiesTest, CheckDataGood) { EXPECT_NO_THROW(checkData(5.0)); }
 
 TEST(NumberUtilitiesTest, CheckDataBad) {
   EXPECT_THROW(checkData(nan("")), BoutException);
 }
 #else
-TEST(NumberUtilitiesTest, CheckDataGoodDisabled) {
-  EXPECT_NO_THROW(checkData(5.0));
-}
+TEST(NumberUtilitiesTest, CheckDataGoodDisabled) { EXPECT_NO_THROW(checkData(5.0)); }
 
-TEST(NumberUtilitiesTest, CheckDataBadDisabled) {
-  EXPECT_NO_THROW(checkData(nan("")));
-}
+TEST(NumberUtilitiesTest, CheckDataBadDisabled) { EXPECT_NO_THROW(checkData(nan(""))); }
 #endif
 
 TEST(StringUtilitiesTest, CopyString) {
@@ -621,7 +538,7 @@ TEST(StringUtilitiesTest, ConstCharToString) {
 TEST(StringUtilitiesTest, StringToString) {
   std::string test_string = "dlkjl872kj";
 
-  EXPECT_EQ( test_string, toString(test_string) );
+  EXPECT_EQ(test_string, toString(test_string));
 }
 
 TEST(StringUtilitiesTest, IntToString) {
@@ -669,19 +586,32 @@ TEST(StringUtilitiesTest, StringTrimComments) {
   EXPECT_EQ("space  ", trimComments(input, "#"));
 }
 
+TEST(StringUtilitiesTest, EditDistance) {
+  EXPECT_EQ(editDistance("hello", "hllo"), 1);              // deletion
+  EXPECT_EQ(editDistance("hello", "helloo"), 1);            // insertion
+  EXPECT_EQ(editDistance("hello", "hullo"), 1);             // substitution
+  EXPECT_EQ(editDistance("hello", "hlelo"), 1);             // transposition
+  EXPECT_EQ(editDistance("hello", "hluoo"), 3);             // multiple edits
+  EXPECT_EQ(editDistance("hello_world", "helloworld"), 1);  // insertion non-letter
+  EXPECT_EQ(editDistance("Hello World", "hello world"), 2); // two substitutions
+  EXPECT_EQ(editDistance("hello world", "Hello World"), 2); // transitive
+  // Following might be affected by encoding, so should be at least two
+  EXPECT_GE(editDistance("très tôt", "tres tot"), 2); // non-ASCII
+}
+
 namespace {
-using function_typedef = int(*)(char, int, double);
-int function_pointer(double, char) {return 0;};
+using function_typedef = int (*)(char, int, double);
+int function_pointer(double, char) { return 0; };
 template <typename T>
 void function_template(T) {}
 } // namespace
 
 TEST(FunctionTraitsTest, ResultType) {
   using bout::utils::function_traits;
-  static_assert(std::is_same<function_traits<function_typedef>::result_type, int>::value,
+  static_assert(std::is_same_v<function_traits<function_typedef>::result_type, int>,
                 "Wrong result_type for function_traits of a typedef");
   static_assert(
-      std::is_same<function_traits<decltype(&function_pointer)>::result_type, int>::value,
+      std::is_same_v<function_traits<decltype(&function_pointer)>::result_type, int>,
       "Wrong result_type for function_traits of a function pointer");
   static_assert(
       std::is_same<function_traits<decltype(&function_template<int>)>::result_type,
@@ -704,9 +634,8 @@ TEST(FunctionTraitsTest, NumberOfArgs) {
 
 TEST(FunctionTraitsTest, FirstArg) {
   using bout::utils::function_traits;
-  static_assert(
-      std::is_same<function_traits<function_typedef>::arg<0>::type, char>::value,
-      "Wrong first argument type for function_traits of a typedef");
+  static_assert(std::is_same_v<function_traits<function_typedef>::arg<0>::type, char>,
+                "Wrong first argument type for function_traits of a typedef");
   static_assert(std::is_same<function_traits<decltype(&function_pointer)>::arg<0>::type,
                              double>::value,
                 "Wrong first argument type for function_traits of a function pointer");
@@ -715,10 +644,10 @@ TEST(FunctionTraitsTest, FirstArg) {
                    int>::value,
       "Wrong first argument type for function_traits of a template function");
 
-  static_assert(std::is_same<function_traits<function_typedef>::arg_t<0>, char>::value,
+  static_assert(std::is_same_v<function_traits<function_typedef>::arg_t<0>, char>,
                 "Wrong first argument type for function_traits of a typedef using arg_t");
   static_assert(
-      std::is_same<function_traits<decltype(&function_pointer)>::arg_t<0>, double>::value,
+      std::is_same_v<function_traits<decltype(&function_pointer)>::arg_t<0>, double>,
       "Wrong first argument type for function_traits of a function pointer using arg_t");
   static_assert(
       std::is_same<function_traits<decltype(&function_template<int>)>::arg_t<0>,
@@ -728,9 +657,51 @@ TEST(FunctionTraitsTest, FirstArg) {
 
 TEST(FunctionTraitsTest, SecondArg) {
   using bout::utils::function_traits;
-  static_assert(std::is_same<function_traits<function_typedef>::arg<1>::type, int>::value,
+  static_assert(std::is_same_v<function_traits<function_typedef>::arg<1>::type, int>,
                 "Wrong second argument type for function_traits of a typedef");
   static_assert(
-      std::is_same<function_traits<function_typedef>::arg_t<1>, int>::value,
+      std::is_same_v<function_traits<function_typedef>::arg_t<1>, int>,
       "Wrong second argument type for function_traits of a typedef using arg_t");
 }
+
+#ifndef __cpp_lib_erase_if
+TEST(StdLibBackPorts, EraseIfMultiset) {
+  std::multiset<int> data{3, 3, 4, 5, 5, 6, 6, 7, 2, 1, 0};
+  auto divisible_by_3 = [](auto const& x) { return (x % 3) == 0; };
+
+  bout::utils::erase_if(data, divisible_by_3);
+
+  std::multiset<int> expected{1, 2, 4, 5, 5, 7};
+
+  EXPECT_EQ(data, expected);
+}
+
+TEST(StdLibBackPorts, EraseIfSet) {
+  std::set<int> data{3, 4, 5, 6, 7, 2, 1, 0};
+  auto divisible_by_3 = [](auto const& x) { return (x % 3) == 0; };
+
+  bout::utils::erase_if(data, divisible_by_3);
+
+  std::set<int> expected{1, 2, 4, 5, 7};
+
+  EXPECT_EQ(data, expected);
+}
+
+TEST(StdLibBackPorts, EraseVector) {
+  std::vector<int> data{1, 2, 3, 3, 3, 3, 4, 5, 6};
+  bout::utils::erase(data, 3);
+  std::vector<int> expected{1, 2, 4, 5, 6};
+  EXPECT_EQ(data, expected);
+}
+
+TEST(StdLibBackPorts, EraseIfVector) {
+  std::vector<int> data{3, 3, 4, 5, 5, 6, 6, 7, 2, 1, 0};
+  auto divisible_by_3 = [](auto const& x) { return (x % 3) == 0; };
+
+  bout::utils::erase_if(data, divisible_by_3);
+
+  std::vector<int> expected{4, 5, 5, 7, 2, 1};
+
+  EXPECT_EQ(data, expected);
+}
+#endif

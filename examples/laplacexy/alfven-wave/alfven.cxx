@@ -1,9 +1,9 @@
 
+#include <bout/field_factory.hxx>
 #include <bout/invert/laplacexy.hxx>
 #include <bout/invert/laplacexz.hxx>
+#include <bout/invert_laplace.hxx>
 #include <bout/physicsmodel.hxx>
-#include <field_factory.hxx>
-#include <invert_laplace.hxx>
 
 /// Fundamental constants
 const BoutReal PI = 3.14159265;
@@ -32,22 +32,22 @@ private:
 
   bool laplace_perp;    // Use Laplace_perp or Delp2?
   bool split_n0;        // Split solve into n=0 and n~=0?
-  LaplaceXY *laplacexy; // Laplacian solver in X-Y (n=0)
+  LaplaceXY* laplacexy; // Laplacian solver in X-Y (n=0)
 
   bool newXZsolver;
-  Laplacian *phiSolver; // Old Laplacian in X-Z
-  LaplaceXZ *newSolver; // New Laplacian in X-Z
+  std::unique_ptr<Laplacian> phiSolver;          // Old Laplacian in X-Z
+  std::unique_ptr<LaplaceXZ> newSolver{nullptr}; // New Laplacian in X-Z
 protected:
   int init(bool UNUSED(restarting)) {
 
     // Normalisation
-    auto opt = Options::root()["alfven"];
+    auto& opt = Options::root()["alfven"];
     Tnorm = opt["Tnorm"].withDefault(100);  // Reference temperature [eV]
     Nnorm = opt["Nnorm"].withDefault(1e19); // Reference density [m^-3]
     Bnorm = opt["Bnorm"].withDefault(1.0);  // Reference magnetic field [T]
     AA = opt["AA"].withDefault(2.0);        // Ion mass
 
-    output.write("Normalisation Te=%e, Ne=%e, B=%e\n", Tnorm, Nnorm, Bnorm);
+    output.write("Normalisation Te={:e}, Ne={:e}, B={:e}\n", Tnorm, Nnorm, Bnorm);
     SAVE_ONCE4(Tnorm, Nnorm, Bnorm, AA); // Save
 
     Cs0 = sqrt(qe * Tnorm / (AA * Mp)); // Reference sound speed [m/s]
@@ -57,10 +57,10 @@ protected:
     mi_me = AA * Mp / Me;
     beta_e = qe * Tnorm * Nnorm / (SQ(Bnorm) / mu0);
 
-    output.write("\tmi_me=%e, beta_e=%e\n", mi_me, beta_e);
+    output.write("\tmi_me={:e}, beta_e={:e}\n", mi_me, beta_e);
     SAVE_ONCE2(mi_me, beta_e);
 
-    output.write("\t Cs=%e, rho_s=%e, Omega_ci=%e\n", Cs0, rho_s0, Omega_ci);
+    output.write("\t Cs={:e}, rho_s={:e}, Omega_ci={:e}\n", Cs0, rho_s0, Omega_ci);
     SAVE_ONCE3(Cs0, rho_s0, Omega_ci);
 
     mu_epar = opt["mu_epar"].withDefault(-1e7);    // Electron parallel viscosity [m^2/s]
@@ -122,7 +122,7 @@ protected:
     // Field2D Vort2D = DC(Vort); // n=0 component
     // phi2D = laplacexy->solve(Vort2D, phi2D);
 
-    // Calculate phi from potential
+    // Calculate phi from vorticity
     if (split_n0) {
       // Split into axisymmetric and non-axisymmetric components
       Field2D Vort2D = DC(Vort); // n=0 component
@@ -173,7 +173,7 @@ protected:
     Field2D Rxy, Bpxy, Btxy, hthe, sinty;
     GRID_LOAD5(Rxy, Bpxy, Btxy, hthe, sinty); // Load metrics
 
-    Coordinates *coord = mesh->getCoordinates(); // Metric tensor
+    Coordinates* coord = mesh->getCoordinates(); // Metric tensor
 
     // Checking for dpsi and qinty used in BOUT grids
     Field2D dx;
@@ -198,8 +198,9 @@ protected:
     sinty = 0.0; // I disappears from metric for shifted coordinates
 
     BoutReal sbp = 1.0; // Sign of Bp
-    if (min(Bpxy, true) < 0.0)
+    if (min(Bpxy, true) < 0.0) {
       sbp = -1.0;
+    }
 
     coord->g11 = SQ(Rxy * Bpxy);
     coord->g22 = 1.0 / SQ(hthe);

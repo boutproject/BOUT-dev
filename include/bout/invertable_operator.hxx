@@ -28,22 +28,24 @@ namespace inversion {
 template <typename T>
 class InvertableOperator;
 };
-};
+}; // namespace bout
 
-#ifndef __INVERTABLE_OPERATOR_H__
-#define __INVERTABLE_OPERATOR_H__
+#ifndef BOUT_INVERTABLE_OPERATOR_H
+#define BOUT_INVERTABLE_OPERATOR_H
 
-#ifdef BOUT_HAS_PETSC
+#include "bout/build_defines.hxx"
+
+#if BOUT_HAS_PETSC
 
 #include "bout/traits.hxx"
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
+#include <bout/msg_stack.hxx>
+#include <bout/options.hxx>
+#include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <globals.hxx>
-#include <msg_stack.hxx>
-#include <options.hxx>
-#include <output.hxx>
 
 #include <petscksp.h>
 
@@ -54,7 +56,7 @@ class InvertableOperator;
 namespace bout {
 namespace inversion {
 
-#ifdef BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC
 
 /// No-op function to use as a default -- may wish to remove once testing phase complete
 template <typename T>
@@ -118,7 +120,7 @@ PetscErrorCode petscVecToField(Vec in, T& out) {
 template <typename T>
 class InvertableOperator {
   static_assert(
-      bout::utils::is_Field<T>::value,
+      bout::utils::is_Field_v<T>,
       "InvertableOperator must be templated with one of FieldPerp, Field2D or Field3D");
 
 public:
@@ -134,8 +136,7 @@ public:
       : operatorFunction(func), preconditionerFunction(func),
         opt(optIn == nullptr ? Options::getRoot()->getSection("invertableOperator")
                              : optIn),
-        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn),
-        lib(opt) {
+        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn), lib(opt) {
     AUTO_TRACE();
   };
 
@@ -196,7 +197,7 @@ public:
     }
 
     // Add the RGN_WITHBNDRIES region to the mesh. Requires RGN_NOBNDRY to be defined.
-    if (std::is_same<Field3D, T>::value) {
+    if constexpr (std::is_same_v<Field3D, T>) {
       if (not localmesh->hasRegion3D("RGN_WITHBNDRIES")) {
         // This avoids all guard cells and corners but includes boundaries
         // Note we probably don't want to include periodic boundaries as these
@@ -205,30 +206,34 @@ public:
         // to only include unique points
         Region<Ind3D> nocorner3D = localmesh->getRegion3D("RGN_NOBNDRY");
         if (!localmesh->periodicX) {
-          if (localmesh->firstX())
+          if (localmesh->firstX()) {
             nocorner3D += Region<Ind3D>(0, localmesh->xstart - 1, localmesh->ystart,
                                         localmesh->yend, 0, localmesh->LocalNz - 1,
                                         localmesh->LocalNy, localmesh->LocalNz,
                                         localmesh->maxregionblocksize);
-          if (localmesh->lastX())
+          }
+          if (localmesh->lastX()) {
             nocorner3D += Region<Ind3D>(
                 localmesh->LocalNx - localmesh->xstart, localmesh->LocalNx - 1,
                 localmesh->ystart, localmesh->yend, 0, localmesh->LocalNz - 1,
                 localmesh->LocalNy, localmesh->LocalNz, localmesh->maxregionblocksize);
+          }
         }
         if (localmesh->firstY() or localmesh->lastY()) {
           for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
             if (not localmesh->periodicY(ix)) {
-              if (localmesh->firstY())
+              if (localmesh->firstY()) {
                 nocorner3D +=
                     Region<Ind3D>(ix, ix, 0, localmesh->ystart - 1, 0,
                                   localmesh->LocalNz - 1, localmesh->LocalNy,
                                   localmesh->LocalNz, localmesh->maxregionblocksize);
-              if (localmesh->lastY())
+              }
+              if (localmesh->lastY()) {
                 nocorner3D += Region<Ind3D>(
                     ix, ix, localmesh->LocalNy - localmesh->ystart,
                     localmesh->LocalNy - 1, 0, localmesh->LocalNz - 1, localmesh->LocalNy,
                     localmesh->LocalNz, localmesh->maxregionblocksize);
+              }
             }
           }
         }
@@ -237,33 +242,37 @@ public:
         localmesh->addRegion3D("RGN_WITHBNDRIES", nocorner3D);
       }
 
-    } else if (std::is_same<Field2D, T>::value) {
+    } else if constexpr (std::is_same_v<Field2D, T>) {
       if (not localmesh->hasRegion2D("RGN_WITHBNDRIES")) {
         // This avoids all guard cells and corners but includes boundaries
         Region<Ind2D> nocorner2D = localmesh->getRegion2D("RGN_NOBNDRY");
         if (!localmesh->periodicX) {
-          if (localmesh->firstX())
+          if (localmesh->firstX()) {
             nocorner2D += Region<Ind2D>(0, localmesh->xstart - 1, localmesh->ystart,
                                         localmesh->yend, 0, 0, localmesh->LocalNy, 1,
                                         localmesh->maxregionblocksize);
-          if (localmesh->lastX())
+          }
+          if (localmesh->lastX()) {
             nocorner2D +=
                 Region<Ind2D>(localmesh->LocalNx - localmesh->xstart,
                               localmesh->LocalNx - 1, localmesh->ystart, localmesh->yend,
                               0, 0, localmesh->LocalNy, 1, localmesh->maxregionblocksize);
+          }
         }
         if (localmesh->firstY() or localmesh->lastY()) {
           for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
             if (not localmesh->periodicY(ix)) {
-              if (localmesh->firstY())
+              if (localmesh->firstY()) {
                 nocorner2D +=
                     Region<Ind2D>(ix, ix, 0, localmesh->ystart - 1, 0, 0,
                                   localmesh->LocalNy, 1, localmesh->maxregionblocksize);
-              if (localmesh->lastY())
+              }
+              if (localmesh->lastY()) {
                 nocorner2D +=
                     Region<Ind2D>(ix, ix, localmesh->LocalNy - localmesh->ystart,
                                   localmesh->LocalNy - 1, 0, 0, localmesh->LocalNy, 1,
                                   localmesh->maxregionblocksize);
+              }
             }
           }
         }
@@ -271,20 +280,22 @@ public:
         localmesh->addRegion2D("RGN_WITHBNDRIES", nocorner2D);
       }
 
-    } else if (std::is_same<FieldPerp, T>::value) {
+    } else if constexpr (std::is_same_v<FieldPerp, T>) {
       if (not localmesh->hasRegionPerp("RGN_WITHBNDRIES")) {
         // This avoids all guard cells and corners but includes boundaries
         Region<IndPerp> nocornerPerp = localmesh->getRegionPerp("RGN_NOBNDRY");
         if (!localmesh->periodicX) {
-          if (localmesh->firstX())
+          if (localmesh->firstX()) {
             nocornerPerp +=
                 Region<IndPerp>(0, localmesh->xstart - 1, 0, 0, 0, localmesh->LocalNz - 1,
                                 1, localmesh->LocalNz, localmesh->maxregionblocksize);
-          if (localmesh->lastX())
+          }
+          if (localmesh->lastX()) {
             nocornerPerp +=
                 Region<IndPerp>(localmesh->LocalNx - localmesh->xstart,
                                 localmesh->LocalNx - 1, 0, 0, 0, localmesh->LocalNz - 1,
                                 1, localmesh->LocalNz, localmesh->maxregionblocksize);
+          }
         }
         nocornerPerp.unique();
         localmesh->addRegionPerp("RGN_WITHBNDRIES", nocornerPerp);
@@ -419,7 +430,8 @@ public:
     KSPConvergedReason reason;
     ierr = KSPGetConvergedReason(ksp, &reason);
     if (reason <= 0) {
-      throw BoutException("KSPSolve failed with reason %d.", reason);
+      throw BoutException("KSPSolve failed. Reason {} ({:d})",
+                          KSPConvergedReasons[reason], static_cast<int>(reason));
     }
 
     // Probably want to remove the following in the long run
@@ -563,7 +575,7 @@ public:
 };
 
 #endif // PETSC
-};
-};
+};     // namespace inversion
+};     // namespace bout
 
 #endif // HEADER GUARD
