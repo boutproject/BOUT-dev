@@ -209,20 +209,18 @@ int main(int argc, char** argv) {
     // Change the mesh spacing and cell volume (Jdy)
     Coordinates* coord = Te.getCoordinates();
 
-    {
-      auto dy = emptyFrom(coord->dx());
-      auto J = emptyFrom(coord->J());
-      for (int x = mesh->xstart; x <= mesh->xend; x++) {
-        for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          const double y_n = (double(y) + 0.5) / double(mesh->yend + 1);
+    auto dy_copy = coord->dy();
+    auto J_copy = coord->J();
+    for (int x = mesh->xstart; x <= mesh->xend; x++) {
+      for (int y = mesh->ystart; y <= mesh->yend; y++) {
+        const double y_n = (double(y) + 0.5) / double(mesh->yend + 1);
 
-          dy(x, y) = 1. - 0.9 * y_n;
-          J(x, y) = 1. + y_n * y_n;
-        }
+        dy_copy(x, y) = 1. - 0.9 * y_n;
+        J_copy(x, y) = 1. + y_n * y_n;
       }
-      coord->setDy(dy);
-      coord->setJ(J);
     }
+    coord->setDy(dy_copy);
+    coord->setJ(J_copy);
 
     HeatFluxSNB snb;
 

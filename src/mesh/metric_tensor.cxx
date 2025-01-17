@@ -72,7 +72,7 @@ void MetricTensor::check(int ystart) {
   }
 }
 
-MetricTensor MetricTensor::inverse(const std::string& region) {
+MetricTensor MetricTensor::inverse(const std::string& region, const bool communicate) {
 
   TRACE("MetricTensor::inverse");
 
@@ -124,7 +124,19 @@ MetricTensor MetricTensor::inverse(const std::string& region) {
 
   output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n",
                     off_diagonal_maxerr);
-
-  g_11.getMesh()->communicate(g_11, g_22, g_33, g_12, g_13, g_23);
+  if (communicate) {
+    MetricTensor::communicate();
+  }
   return MetricTensor(g_11, g_22, g_33, g_12, g_13, g_23);
+}
+
+void MetricTensor::communicate() const {
+  // copy to non-const variables (because communicate() cannot take const references)
+  auto tmp = g11_m;
+  auto tmp2 = g22_m;
+  auto tmp3 = g33_m;
+  auto tmp4 = g12_m;
+  auto tmp5 = g13_m;
+  auto tmp6 = g23_m;
+  g11_m.getMesh()->communicate(tmp, tmp2, tmp3, tmp4, tmp5, tmp6);
 }

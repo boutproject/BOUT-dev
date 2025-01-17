@@ -501,9 +501,11 @@ void Coordinates::interpolateFromCoordinates(Options* mesh_options,
   checkCovariant();
 
   setJ(interpolateAndExtrapolate(coords_in->J(), location, true, true, false,
-                                 transform.get()));
+                                 transform.get()),
+       false);
   setBxy(interpolateAndExtrapolate(coords_in->Bxy(), location, true, true, false,
-                                   transform.get()));
+                                   transform.get()),
+         false);
 
   bout::checkFinite(J(), "The Jacobian", "RGN_NOCORNERS");
   bout::checkPositive(J(), "The Jacobian", "RGN_NOCORNERS");
@@ -567,9 +569,9 @@ void Coordinates::readFromMesh(Options* mesh_options, const std::string& suffix)
   dy_ = interpolateAndExtrapolate(dy_, location, extrapolate_x, extrapolate_y, false,
                                   transform.get());
 
-  setDx(dx_);
-  setDy(dy_);
-  setDz(dz_);
+  setDx(dx_, false);
+  setDy(dy_, false);
+  setDz(dz_, false);
 
   // grid data source has staggered fields, so read instead of interpolating
   // Diagonal components of metric tensor g^{ij} (default to 1)
@@ -618,7 +620,8 @@ void Coordinates::readFromMesh(Options* mesh_options, const std::string& suffix)
     output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                       "Contravariant components NOT recalculated\n");
   } else {
-    covariantMetricTensor.setMetricTensor(contravariantMetricTensor.inverse());
+    covariantMetricTensor.setMetricTensor(
+        contravariantMetricTensor.inverse("RGN_ALL", false));
     output_warn.write("Not all covariant components of metric tensor found. "
                       "Calculating all from the contravariant tensor\n");
   }
@@ -639,7 +642,7 @@ void Coordinates::readFromMesh(Options* mesh_options, const std::string& suffix)
     const auto J_from_file = getAtLoc(localmesh, "J", suffix, location);
     // Compare calculated and loaded values
     output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J() - J_from_file)));
-    setJ(J_from_file);
+    setJ(J_from_file, false);
 
     communicate(J());
   }
@@ -647,7 +650,8 @@ void Coordinates::readFromMesh(Options* mesh_options, const std::string& suffix)
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
   setJ(interpolateAndExtrapolate(J(), location, extrapolate_x, extrapolate_y, false,
-                                 transform.get()));
+                                 transform.get()),
+       false);
 
   // Check jacobian
   bout::checkFinite(J(), "J" + suffix, "RGN_NOCORNERS");
@@ -662,15 +666,16 @@ void Coordinates::readFromMesh(Options* mesh_options, const std::string& suffix)
                       "Calculating from metric tensor\n",
                       suffix);
     // Re-evaluate Bxy using new J
-    setBxy(recalculateBxy());
+    setBxy(recalculateBxy(), false);
   } else {
     const auto Bcalc = getAtLoc(localmesh, "Bxy", suffix, location);
-    setBxy(Bcalc);
+    setBxy(Bcalc, false);
     output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy() - Bcalc)));
   }
 
   setBxy(interpolateAndExtrapolate(Bxy(), location, extrapolate_x, extrapolate_y, false,
-                                   transform.get()));
+                                   transform.get()),
+         false);
 
   // Check Bxy
   bout::checkFinite(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
@@ -762,31 +767,34 @@ const Field2D& Coordinates::zlength() const {
   return *zlength_cache;
 }
 
-void Coordinates::setDx(FieldMetric dx) {
+void Coordinates::setDx(FieldMetric dx, const bool communicate) {
   if (min(abs(dx)) < 1e-8) {
     throw BoutException("dx magnitude less than 1e-8");
   }
-
   dx_ = std::move(dx);
-  localmesh->communicate(dx_);
+  if (communicate) {
+    localmesh->communicate(dx_);
+  }
 }
 
-void Coordinates::setDy(FieldMetric dy) {
+void Coordinates::setDy(FieldMetric dy, const bool communicate) {
   if (min(abs(dy)) < 1e-8) {
     throw BoutException("dy magnitude less than 1e-8");
   }
-
   dy_ = std::move(dy);
-  localmesh->communicate(dy_);
+  if (communicate) {
+    localmesh->communicate(dy_);
+  }
 }
 
-void Coordinates::setDz(FieldMetric dz) {
+void Coordinates::setDz(FieldMetric dz, const bool communicate) {
   if (min(abs(dz)) < 1e-8) {
     throw BoutException("dz magnitude less than 1e-8");
   }
-
   dz_ = std::move(dz);
-  localmesh->communicate(dz_);
+  if (communicate) {
+    localmesh->communicate(dz_);
+  }
 }
 
 void Coordinates::recalculateAndReset(bool recalculate_staggered,
@@ -1491,19 +1499,23 @@ FieldMetric& Coordinates::J() const {
   return *jacobian_cache;
 }
 
-void Coordinates::setJ(const FieldMetric& J) {
+void Coordinates::setJ(const FieldMetric& J, const bool communicate) {
   bout::checkFinite(J, "J", "RGN_NOCORNERS");
   bout::checkPositive(J, "J", "RGN_NOCORNERS");
 
   //TODO: Calculate J and check value is close
   jacobian_cache = std::make_unique<FieldMetric>(J);
-  localmesh->communicate(*jacobian_cache);
+  if (communicate) {
+    localmesh->communicate(*jacobian_cache);
+  }
 }
 
-void Coordinates::setBxy(FieldMetric Bxy) {
+void Coordinates::setBxy(FieldMetric Bxy, const bool communicate) {
   //TODO: Calculate Bxy and check value is close
   Bxy_ = std::move(Bxy);
-  localmesh->communicate(Bxy_);
+  if (communicate) {
+    localmesh->communicate(Bxy_);
+  }
 }
 
 void Coordinates::setContravariantMetricTensor(
@@ -1529,3 +1541,10 @@ void Coordinates::setMetricTensor(
   contravariantMetricTensor.setMetricTensor(contravariant_metric_tensor);
   covariantMetricTensor.setMetricTensor(covariant_metric_tensor);
 }
+
+void Coordinates::communicateMetricTensor() {
+  contravariantMetricTensor.communicate();
+  covariantMetricTensor.communicate();
+}
+
+void Coordinates::communicateDz() { localmesh->communicate(dz_); }

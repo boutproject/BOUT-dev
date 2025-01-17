@@ -61,7 +61,8 @@ public:
     g23_m = metric_tensor.g23();
   }
 
-  MetricTensor inverse(const std::string& region = "RGN_ALL");
+  MetricTensor inverse(const std::string& region = "RGN_ALL",
+                       const bool communicate = true);
 
   // Transforms the MetricTensor by applying the given function to every component
   template <class F>
@@ -73,6 +74,8 @@ public:
     g13_m = function(g13_m);
     g23_m = function(g23_m);
   }
+
+  void communicate() const;
 
 private:
   FieldMetric g11_m, g22_m, g33_m, g12_m, g13_m, g23_m;

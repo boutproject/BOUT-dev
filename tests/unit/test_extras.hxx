@@ -440,6 +440,7 @@ public:
         Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0});
+    static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
 
     // Set nonuniform corrections
     test_coords->setNon_uniform(true);
@@ -488,6 +489,7 @@ public:
         Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
         Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
         Field2D{0.0, mesh_staggered});
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(test_coords_staggered);
 
     // Set nonuniform corrections
     test_coords_staggered->setNon_uniform(true);
