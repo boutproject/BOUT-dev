@@ -5,7 +5,7 @@
  **************************************************************************
  * Copyright 2020 Joseph Parker
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *

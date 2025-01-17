@@ -15,9 +15,9 @@
  * possible to just swap in the FCI approach for the standard BOUT++
  * Grad_par operator.
  **************************************************************************
- * Copyright 2014 B.D.Dudson, P. Hill
+ * Copyright 2014 - 2025 BOUT++ developers
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
