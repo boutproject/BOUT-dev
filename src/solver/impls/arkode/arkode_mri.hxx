@@ -46,7 +46,7 @@ RegisterUnavailableSolver
 #include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
 
-#if SUNDIALS_VERSION_AT_LEAST(7, 2, 0)
+#if ((SUNDIALS_VERSION_MAJOR == 7 && SUNDIALS_VERSION_MINOR >= 2) || SUNDIALS_VERSION_MAJOR > 8)
 
 #include <nvector/nvector_parallel.h>
 #include <arkode/arkode_mristep.h>
