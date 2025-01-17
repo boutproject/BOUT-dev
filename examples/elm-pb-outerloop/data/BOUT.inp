@@ -130,8 +130,8 @@ include_rmp = false # Read RMP data from grid file
 simple_rmp = false  # Enable/disable a simple model of RMP
 rmp_n = 3           # Toroidal mode number
 rmp_m = 6           # Poloidal mode number
-rmp_factor = 0.0001  # Amplitude of Apar [Tm]
-rmp_ramp = 0.0001    # Timescale [s] of ramp
+rmp_factor = 1e-4   # Amplitude of Apar [Tm]
+rmp_ramp = 1e-4     # Timescale [s] of ramp
 rmp_polwid = -1.0   # Width of Gaussian factor (< 0 = No Gaussian)
 rmp_polpeak = 0.5   # Y location of maximum (fraction)
 
