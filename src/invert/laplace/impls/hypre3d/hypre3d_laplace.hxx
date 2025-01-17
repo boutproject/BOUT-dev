@@ -231,6 +231,8 @@ public:
   static constexpr int implemented_flags = INVERT_START_NEW,
                        implemented_boundary_flags =
                            INVERT_AC_GRAD + INVERT_SET + INVERT_RHS;
+
+  bool print_matrix; ///< Print matrix coefficients
 };
 
 #endif // BOUT_HAS_HYPRE

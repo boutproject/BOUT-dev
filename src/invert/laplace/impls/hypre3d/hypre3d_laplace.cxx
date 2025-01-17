@@ -59,6 +59,9 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in, 
   Ex.setLocation(location);
   Ez.setLocation(location);
 
+  // Print matrix coefficients?
+  print_matrix = (*opts)["print_matrix"].doc("Print matrix coefficients when the operator is updated?").withDefault<bool>(false);
+
   // Initialise Hypre objects
   // Note: linearSystem is a bout::HypreSystem<Field3D> object
   linearSystem.setMatrix(&operator3D);
@@ -405,6 +408,11 @@ void LaplaceHypre3d::updateMatrix3D() {
     operator3D.ydown(ydown)(l, l.ym().zm()) += C_d2f_dydz;
   }
   operator3D.assemble();
+
+  if (print_matrix) {
+    operator3D.print();
+  }
+
   linearSystem.setupAMG(&operator3D);
 
   updateRequired = false;

@@ -710,6 +710,15 @@ public:
 
   bool isAssembled() const { return assembled; }
 
+  /// Call HYPRE_IJMatrixPrint
+  void print() const {
+    if (!assembled) {
+      output_warn.write("<HypreMatrix not assembled>");
+      return;
+    }
+    HYPRE_IJMatrixPrint(*hypre_matrix, "hypreIJ.matrix");
+  }
+
   HypreMatrix<T> yup(int index = 0) { return ynext(index + 1); }
   HypreMatrix<T> ydown(int index = 0) { return ynext(-index - 1); }
   HypreMatrix<T> ynext(int dir) {
