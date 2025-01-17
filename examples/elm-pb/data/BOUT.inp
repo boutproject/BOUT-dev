@@ -94,7 +94,7 @@ diamag_phi0 = true    # Balance ExB against Vd for stationary equilibrium
 bm_exb_flag = 0
 bm_mag_flag = 0
 ##################################################################
-withflow = false     # With flow or not
+withflow = false    # With flow or not
 D_0 = 130000        # differential potential
 D_s = 20            # shear parameter
 K_H_term = false    # Contain K-H term
@@ -104,7 +104,7 @@ D_min = 3000        # constant
 ##################################################################
 
 eHall = false         # Include electron pressure effects in Ohm's law?
-AA = 2.0          # ion mass in units of proton mass
+AA = 2.0              # ion mass in units of proton mass
 
 noshear = false        # zero all shear
 
@@ -152,14 +152,14 @@ damp_t_const = 1e-2  # Damping time constant
 
 ## Parallel pressure diffusion
 
-diffusion_par = -1.0   # Parallel pressure diffusion (< 0 = none)
+diffusion_par = -1.0    # Parallel pressure diffusion (< 0 = none)
 diffusion_p4 = -1e-05   # parallel hyper-viscous diffusion for pressure (< 0 = none)
-diffusion_u4 = -1e-05    # parallel hyper-viscous diffusion for vorticity (< 0 = none)
+diffusion_u4 = -1e-05   # parallel hyper-viscous diffusion for vorticity (< 0 = none)
 diffusion_a4 = -1e-05   # parallel hyper-viscous diffusion for vector potential (< 0 = none)
 
 ## heat source in pressure in watts
 
-heating_P = -1   #   heat power in watts (< 0 = none)
+heating_P = -1     #   heat power in watts (< 0 = none)
 hp_width = 0.1     #   heat width, in percentage of nx (< 0 = none)
 hp_length = 0.3    #   heat length in percentage of nx (< 0 = none)
 

@@ -6,9 +6,9 @@
  *ex\nabla_x x + ez\nabla_z x + a x = b\f$
  *
  **************************************************************************
- * Copyright 2021 J. Omotani, C. MacMackin
+ * Copyright 2021 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -201,28 +201,36 @@ public:
   bout::HypreVector<Field3D> rhs;
   bout::HypreSystem<Field3D> linearSystem;
 
-  // used to save some statistics
+  // used to save Hypre solver statistics
   int n_solves = 0;
   int cumulative_iterations = 0;
-  BoutReal average_iterations = 0.0;
-  class Hypre3dMonitor : public Monitor {
-  public:
-    Hypre3dMonitor(LaplaceHypre3d& laplace_in) : laplace(laplace_in) {}
 
-    int call(Solver*, BoutReal, int, int) override;
+  int cumulative_amg_iterations = 0;
 
-  private:
-    LaplaceHypre3d& laplace;
-  };
-  Hypre3dMonitor monitor;
-
-  bool use_precon; // Switch for preconditioning
-  bool rightprec;  // Right preconditioning
+  /// Save performance metrics
+  /// This is called by LaplacianMonitor, that is enabled
+  /// if Laplacian::savePerformance(Solver&, string&) is called.
+  ///
+  /// # Example
+  ///
+  ///     // Create a Laplacian solver using "phiSolver" options
+  ///     phiSolver = Laplacian::create(&Options::root()["phiSolver"]);
+  ///     // Enable output diagnostics with "phiSolver" prefix
+  ///     phiSolver->savePerformance(solver, "phiSolver");
+  ///
+  /// Saves the following variables to the output:
+  /// - phiSolver_mean_its      Mean number of solver iterations taken
+  /// - phiSolver_mean_amg_its  Mean number of BoomerAMG preconditioner iterations
+  /// - phiSolver_rel_res_norm  The final solver relative residual norm
+  void outputVars(Options& output_options,
+                  const std::string& time_dimension) const override;
 
   // These are the implemented flags
-  static constexpr int implemented_flags = INVERT_START_NEW,
-                       implemented_boundary_flags =
-                           INVERT_AC_GRAD + INVERT_SET + INVERT_RHS;
+  static constexpr int implemented_flags = INVERT_START_NEW;
+  static constexpr int implemented_boundary_flags =
+      INVERT_AC_GRAD + INVERT_SET + INVERT_RHS;
+
+  bool print_matrix; ///< Print matrix coefficients
 };
 
 #endif // BOUT_HAS_HYPRE

@@ -216,7 +216,7 @@ public:
   std::vector<PositionsAndWeights>
   getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
                               int UNUSED(yoffset)) override {
-    throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented"
+    throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented "
                         "for `type = shifted`. Try `type = shiftedinterp`");
   }
 

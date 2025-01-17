@@ -51,12 +51,12 @@ public:
 
   /// Write options to file
   void write(const Options& options) { write(options, "t"); }
-  void write(const Options& options, const std::string& time_dim);
+  void write(const Options& options, const std::string& time_dim) override;
 
   /// Check that all variables with the same time dimension have the
   /// same size in that dimension. Throws BoutException if there are
   /// any differences, otherwise is silent
-  void verifyTimesteps() const;
+  void verifyTimesteps() const override;
 
 private:
   enum class FileMode {

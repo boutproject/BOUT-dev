@@ -3,9 +3,9 @@
  *                           Using Hypre Solvers
  *
  **************************************************************************
- * Copyright 2021 J.Omotani, C.MacMackin
+ * Copyright 2021 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -42,15 +42,14 @@
 
 #include <cmath>
 
-LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
-                               Solver* solver)
+LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in, Solver*)
     : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
       opts(opt == nullptr ? Options::getRoot()->getSection("laplace") : opt),
       lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
       indexer(std::make_shared<GlobalIndexer<Field3D>>(
           localmesh, getStencil(localmesh, lowerY, upperY))),
       operator3D(indexer), solution(indexer), rhs(indexer),
-      linearSystem(*localmesh, *opts), monitor(*this) {
+      linearSystem(*localmesh, *opts) {
   // Provide basic initialisation of field coefficients, etc.
   // Get relevent options from user input
   A.setLocation(location);
@@ -60,7 +59,13 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   Ex.setLocation(location);
   Ez.setLocation(location);
 
+  // Print matrix coefficients?
+  print_matrix = (*opts)["print_matrix"]
+                     .doc("Print matrix coefficients when the operator is updated?")
+                     .withDefault<bool>(false);
+
   // Initialise Hypre objects
+  // Note: linearSystem is a bout::HypreSystem<Field3D> object
   linearSystem.setMatrix(&operator3D);
   linearSystem.setRHSVector(&rhs);
   linearSystem.setSolutionVector(&solution);
@@ -71,23 +76,23 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
 
   // Checking flags are set to something which is not implemented
   // This is done binary (which is possible as each flag is a power of 2)
-  if (global_flags & ~implemented_flags) {
+  if (isGlobalFlagSet(~implemented_flags)) {
     throw BoutException("Attempted to set Laplacian inversion flag that is not "
                         "implemented in LaplaceHypre3d");
   }
-  if (inner_boundary_flags & ~implemented_boundary_flags) {
+  if (isInnerBoundaryFlagSet(~implemented_boundary_flags)) {
     throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
                         "implemented in LaplaceHypre3d");
   }
-  if (outer_boundary_flags & ~implemented_boundary_flags) {
+  if (isOuterBoundaryFlagSet(~implemented_boundary_flags)) {
     throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
                         "implemented in LaplaceHypre3d");
   }
-  if (lower_boundary_flags & ~implemented_boundary_flags) {
+  if ((lower_boundary_flags & ~implemented_boundary_flags) != 0) {
     throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
                         "implemented in LaplaceHypre3d");
   }
-  if (upper_boundary_flags & ~implemented_boundary_flags) {
+  if ((upper_boundary_flags & ~implemented_boundary_flags) != 0) {
     throw BoutException("Attempted to set Laplacian inversion boundary flag that is not "
                         "implemented in LaplaceHypre3d");
   }
@@ -123,7 +128,7 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
-    if (lower_boundary_flags & INVERT_AC_GRAD) {
+    if ((lower_boundary_flags & INVERT_AC_GRAD) != 0) {
       // Neumann on lower Y boundary
       operator3D(i, i) = -1. / coords->dy[i] / sqrt(coords->g_22[i]);
       operator3D(i, i.yp()) = 1. / coords->dy[i] / sqrt(coords->g_22[i]);
@@ -135,7 +140,7 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
-    if (upper_boundary_flags & INVERT_AC_GRAD) {
+    if ((upper_boundary_flags & INVERT_AC_GRAD) != 0) {
       // Neumann on upper Y boundary
       operator3D(i, i) = 1. / coords->dy[i] / sqrt(coords->g_22[i]);
       operator3D(i, i.ym()) = -1. / coords->dy[i] / sqrt(coords->g_22[i]);
@@ -144,15 +149,6 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
       operator3D(i, i) = 0.5;
       operator3D(i, i.ym()) = 0.5;
     }
-  }
-
-  // FIXME: This needs to be converted to outputVars
-  if (solver == nullptr) {
-    output_warn << "Warning: Need to pass a Solver to "
-                   "Laplacian::create() to get iteration counts in the output."
-                << endl;
-  } else {
-    solver->addMonitor(&monitor);
   }
 }
 
@@ -200,9 +196,9 @@ Field3D LaplaceHypre3d::solve(const Field3D& b_in, const Field3D& x0) {
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
-    const BoutReal val = (lower_boundary_flags & INVERT_SET) ? x0[i] : 0.;
+    const BoutReal val = ((lower_boundary_flags & INVERT_SET) != 0) ? x0[i] : 0.;
     ASSERT1(std::isfinite(val));
-    if (!(lower_boundary_flags & INVERT_RHS)) {
+    if ((lower_boundary_flags & INVERT_RHS) == 0) {
       b[i] = val;
     } else {
       ASSERT1(std::isfinite(b[i]));
@@ -210,9 +206,9 @@ Field3D LaplaceHypre3d::solve(const Field3D& b_in, const Field3D& x0) {
   }
 
   BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
-    const BoutReal val = (upper_boundary_flags & INVERT_SET) ? x0[i] : 0.;
+    const BoutReal val = ((upper_boundary_flags & INVERT_SET) != 0) ? x0[i] : 0.;
     ASSERT1(std::isfinite(val));
-    if (!(upper_boundary_flags & INVERT_RHS)) {
+    if ((upper_boundary_flags & INVERT_RHS) == 0) {
       b[i] = val;
     } else {
       ASSERT1(std::isfinite(b[i]));
@@ -239,6 +235,7 @@ Field3D LaplaceHypre3d::solve(const Field3D& b_in, const Field3D& x0) {
   // Increment counters
   n_solves++;
   cumulative_iterations += linearSystem.getNumItersTaken();
+  cumulative_amg_iterations += linearSystem.getNumItersTakenAMG();
 
   CALI_MARK_END("LaplaceHypre3d_solve:solve");
 
@@ -246,6 +243,8 @@ Field3D LaplaceHypre3d::solve(const Field3D& b_in, const Field3D& x0) {
 
   // Create field from solution
   Field3D result = solution.toField();
+
+  // Fill guard and boundary cells
   localmesh->communicate(result);
   if (result.hasParallelSlices()) {
     BOUT_FOR(i, indexer->getRegionLowerY()) { result.ydown()[i] = result[i]; }
@@ -277,7 +276,7 @@ void LaplaceHypre3d::updateMatrix3D() {
   const Field3D dc_dx = issetC ? DDX(C2) : Field3D();
   const Field3D dc_dy = issetC ? DDY(C2) : Field3D();
   const Field3D dc_dz = issetC ? DDZ(C2) : Field3D();
-  const Field2D dJ_dy = DDY(coords->J / coords->g_22);
+  const auto dJ_dy = DDY(coords->J / coords->g_22);
 
   // Set up the matrix for the internal points on the grid.
   // Boundary conditions were set in the constructor.
@@ -286,7 +285,8 @@ void LaplaceHypre3d::updateMatrix3D() {
     // avoid confusing it with the x-index.
 
     // Calculate coefficients for the terms in the differential operator
-    BoutReal C_df_dx = coords->G1[l], C_df_dz = coords->G3[l];
+    BoutReal C_df_dx = coords->G1[l];
+    BoutReal C_df_dz = coords->G3[l];
     if (issetD) {
       C_df_dx *= D[l];
       C_df_dz *= D[l];
@@ -304,9 +304,9 @@ void LaplaceHypre3d::updateMatrix3D() {
       C_df_dz += Ez[l];
     }
 
-    BoutReal C_d2f_dx2 = coords->g11[l],
-             C_d2f_dy2 = (coords->g22[l] - 1.0 / coords->g_22[l]),
-             C_d2f_dz2 = coords->g33[l];
+    BoutReal C_d2f_dx2 = coords->g11[l];
+    BoutReal C_d2f_dy2 = (coords->g22[l] - 1.0 / coords->g_22[l]);
+    BoutReal C_d2f_dz2 = coords->g33[l];
     if (issetD) {
       C_d2f_dx2 *= D[l];
       C_d2f_dy2 *= D[l];
@@ -343,8 +343,8 @@ void LaplaceHypre3d::updateMatrix3D() {
     // The values stored in the y-boundary are already interpolated
     // up/down, so we don't want the matrix to do any such
     // interpolation there.
-    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0,
-              ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
+    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0;
+    const int ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
     operator3D.yup(yup)(l, l.yp()) = 0.0;
     operator3D.ydown(ydown)(l, l.ym()) = 0.0;
     operator3D.yup(yup)(l, l.xp().yp()) = 0.0;
@@ -376,7 +376,8 @@ void LaplaceHypre3d::updateMatrix3D() {
       C_d2f_dy2 *= D[l];
     }
 
-    BoutReal C_d2f_dxdy = 2 * coords->g12[l], C_d2f_dydz = 2 * coords->g23[l];
+    BoutReal C_d2f_dxdy = 2 * coords->g12[l];
+    BoutReal C_d2f_dydz = 2 * coords->g23[l];
     if (issetD) {
       C_d2f_dxdy *= D[l];
       C_d2f_dydz *= D[l];
@@ -396,8 +397,8 @@ void LaplaceHypre3d::updateMatrix3D() {
     // The values stored in the y-boundary are already interpolated
     // up/down, so we don't want the matrix to do any such
     // interpolation there.
-    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0,
-              ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
+    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0;
+    const int ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
 
     operator3D.yup(yup)(l, l.yp()) += C_df_dy + C_d2f_dy2;
     operator3D.ydown(ydown)(l, l.ym()) += -C_df_dy + C_d2f_dy2;
@@ -411,6 +412,11 @@ void LaplaceHypre3d::updateMatrix3D() {
     operator3D.ydown(ydown)(l, l.ym().zm()) += C_d2f_dydz;
   }
   operator3D.assemble();
+
+  if (print_matrix) {
+    operator3D.print();
+  }
+
   linearSystem.setupAMG(&operator3D);
 
   updateRequired = false;
@@ -437,19 +443,15 @@ OperatorStencil<Ind3D> LaplaceHypre3d::getStencil(Mesh* localmesh,
   OffsetInd3D zero;
 
   // Add interior cells
-  const std::vector<OffsetInd3D> interpolatedUpElements = {zero.yp(), zero.xp().yp(),
-                                                           zero.xm().yp(), zero.yp().zp(),
-                                                           zero.yp().zm()},
-                                 interpolatedDownElements = {
-                                     zero.ym(), zero.xp().ym(), zero.xm().ym(),
-                                     zero.ym().zp(), zero.ym().zm()};
-  std::set<OffsetInd3D> interiorStencil = {zero,           zero.xp(),
-                                           zero.xm(),      zero.zp(),
-                                           zero.zm(),      zero.xp().zp(),
-                                           zero.xp().zm(), zero.xm().zp(),
-                                           zero.xm().zm()},
-                        lowerEdgeStencil = interiorStencil,
-                        upperEdgeStencil = interiorStencil;
+  const std::vector<OffsetInd3D> interpolatedUpElements = {
+      zero.yp(), zero.xp().yp(), zero.xm().yp(), zero.yp().zp(), zero.yp().zm()};
+  const std::vector<OffsetInd3D> interpolatedDownElements = {
+      zero.ym(), zero.xp().ym(), zero.xm().ym(), zero.ym().zp(), zero.ym().zm()};
+  std::set<OffsetInd3D> interiorStencil = {
+      zero,           zero.xp(),      zero.xm(),      zero.zp(),     zero.zm(),
+      zero.xp().zp(), zero.xp().zm(), zero.xm().zp(), zero.xm().zm()};
+  std::set<OffsetInd3D> lowerEdgeStencil = interiorStencil;
+  std::set<OffsetInd3D> upperEdgeStencil = interiorStencil;
 
   for (const auto& i : interpolatedDownElements) {
     for (auto& j : interpPattern) {
@@ -466,9 +468,11 @@ OperatorStencil<Ind3D> LaplaceHypre3d::getStencil(Mesh* localmesh,
     upperEdgeStencil.insert(i);
   }
   const std::vector<OffsetInd3D> interiorStencilVector(interiorStencil.begin(),
-                                                       interiorStencil.end()),
-      lowerEdgeStencilVector(lowerEdgeStencil.begin(), lowerEdgeStencil.end()),
-      upperEdgeStencilVector(upperEdgeStencil.begin(), upperEdgeStencil.end());
+                                                       interiorStencil.end());
+  const std::vector<OffsetInd3D> lowerEdgeStencilVector(lowerEdgeStencil.begin(),
+                                                        lowerEdgeStencil.end());
+  const std::vector<OffsetInd3D> upperEdgeStencilVector(upperEdgeStencil.begin(),
+                                                        upperEdgeStencil.end());
 
   // If there is a lower y-boundary then create a part of the stencil
   // for cells immediately adjacent to it.
@@ -536,19 +540,35 @@ OperatorStencil<Ind3D> LaplaceHypre3d::getStencil(Mesh* localmesh,
   return stencil;
 }
 
-int LaplaceHypre3d::Hypre3dMonitor::call(Solver*, BoutReal, int, int) {
-  if (laplace.n_solves == 0) {
-    laplace.average_iterations = 0.0;
-    return 0;
+void LaplaceHypre3d::outputVars(Options& output_options,
+                                const std::string& time_dimension) const {
+  BoutReal mean_iterations = 0.0;
+  BoutReal mean_amg_iterations = 0.0;
+  BoutReal rel_res_norm = linearSystem.getFinalRelResNorm();
+
+  if (n_solves > 0) {
+    // Calculate average
+    mean_iterations =
+        static_cast<BoutReal>(cumulative_iterations) / static_cast<BoutReal>(n_solves);
+
+    mean_amg_iterations = static_cast<BoutReal>(cumulative_amg_iterations)
+                          / static_cast<BoutReal>(n_solves);
   }
 
-  // Calculate average and reset counters
-  laplace.average_iterations = static_cast<BoutReal>(laplace.cumulative_iterations)
-                               / static_cast<BoutReal>(laplace.n_solves);
+  std::string name = getPerformanceName();
 
-  output_info.write("\nHypre3d average iterations: {}\n", laplace.average_iterations);
-
-  return 0;
+  output_options[fmt::format("{}_mean_its", name)]
+      .assignRepeat(mean_iterations, time_dimension)
+      .setAttributes({{"source", "hypre3d_laplace"},
+                      {"description", "Mean number of solver iterations"}});
+  output_options[fmt::format("{}_mean_amg_its", name)]
+      .assignRepeat(mean_amg_iterations, time_dimension)
+      .setAttributes({{"source", "hypre3d_laplace"},
+                      {"description", "Mean number of BoomerAMG iterations"}});
+  output_options[fmt::format("{}_rel_res_norm", name)]
+      .assignRepeat(rel_res_norm, time_dimension)
+      .setAttributes({{"source", "hypre3d_laplace"},
+                      {"description", "Final relative residual norm"}});
 }
 
 #endif // BOUT_HAS_HYPRE
