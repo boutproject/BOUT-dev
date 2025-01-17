@@ -29,11 +29,9 @@
 #ifndef BOUT_ARKODE_MRI_SOLVER_H
 #define BOUT_ARKODE_MRI_SOLVER_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/solver.hxx"
-#include "bout/sundials_backports.hxx"
 
-#if SUNDIALS_VERSION_AT_LEAST(7, 2, 0)
 #if not BOUT_HAS_ARKODE
 
 namespace {
@@ -45,6 +43,10 @@ RegisterUnavailableSolver
 
 #include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/region.hxx"
+#include "bout/sundials_backports.hxx"
+
+#if SUNDIALS_VERSION_AT_LEAST(7, 2, 0)
 
 #include <nvector/nvector_parallel.h>
 #include <arkode/arkode_mristep.h>
@@ -164,8 +166,8 @@ private:
   sundials::Context suncontext;
 };
 
-#endif // BOUT_HAS_ARKODE
 #else
 #endif // SUNDIALS_VERSION CHECK
+#endif // BOUT_HAS_ARKODE
 #endif // BOUT_ARKODE_MRI_SOLVER_H
 
