@@ -97,7 +97,7 @@ bm_exb_flag = 2
 bm_mag_flag = 2
 ##################################################################
 withflow = false     # With flow or not
-D_0 = 130000        # differential potential
+D_0 = 1.3e5         # differential potential
 D_s = 20            # shear parameter
 K_H_term = false    # Contain K-H term
 sign = -1           # flow direction
@@ -143,9 +143,9 @@ vacuum_trans = 0.01   # transition width (fraction of P)
 
 ## Resistivity and Hyper-resistivity
 
-vac_lund = 100000000.0    # Lundquist number in vacuum  (negative -> infinity)
-core_lund = 100000000.0  # Lundquist number in core (negative -> infinity)
-hyperresist = 0.0001 # Hyper-resistivity coefficient (like 1 / Lundquist number)
+vac_lund = 1e8     # Lundquist number in vacuum  (negative -> infinity)
+core_lund = 1e8    # Lundquist number in core (negative -> infinity)
+hyperresist = 1e-4 # Hyper-resistivity coefficient (like 1 / Lundquist number)
 
 ## Inner boundary damping
 
