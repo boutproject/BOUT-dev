@@ -95,7 +95,7 @@ bm_exb_flag = 0
 bm_mag_flag = 0
 ##################################################################
 withflow = false     # With flow or not
-D_0 = 130000        # differential potential
+D_0 = 1.3e5         # differential potential
 D_s = 20            # shear parameter
 K_H_term = false    # Contain K-H term
 sign = -1           # flow direction
@@ -128,8 +128,8 @@ include_rmp = false # Read RMP data from grid file
 simple_rmp = false  # Enable/disable a simple model of RMP
 rmp_n = 3           # Toroidal mode number
 rmp_m = 6           # Poloidal mode number
-rmp_factor = 0.0001  # Amplitude of Apar [Tm]
-rmp_ramp = 0.0001    # Timescale [s] of ramp
+rmp_factor = 1.e-4  # Amplitude of Apar [Tm]
+rmp_ramp = 1.e-4    # Timescale [s] of ramp
 rmp_polwid = -1.0   # Width of Gaussian factor (< 0 = No Gaussian)
 rmp_polpeak = 0.5   # Y location of maximum (fraction)
 
@@ -141,9 +141,9 @@ vacuum_trans = 0.01   # transition width (fraction of P)
 
 ## Resistivity and Hyper-resistivity
 
-vac_lund = 100000000.0    # Lundquist number in vacuum  (negative -> infinity)
-core_lund = 100000000.0  # Lundquist number in core (negative -> infinity)
-hyperresist = 0.0001 # Hyper-resistivity coefficient (like 1 / Lundquist number)
+vac_lund = 1.e8     # Lundquist number in vacuum  (negative -> infinity)
+core_lund = 1.e8    # Lundquist number in core (negative -> infinity)
+hyperresist = 1.e-4 # Hyper-resistivity coefficient (like 1 / Lundquist number)
 
 ## Inner boundary damping
 
