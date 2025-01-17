@@ -913,7 +913,8 @@ MetricTensor::FieldMetric Coordinates::recalculateJacobian() const {
 }
 
 MetricTensor::FieldMetric Coordinates::recalculateBxy() const {
-  return sqrt(g_22()) / J();
+  // Note: J may be negative, by return is always positive
+  return sqrt(g_22()) / abs(J());
 }
 
 void Coordinates::setParallelTransform(Options* mesh_options) {
@@ -1460,7 +1461,7 @@ GValues& Coordinates::g_values() const {
 const Coordinates::FieldMetric& Coordinates::invSg() const {
   if (invSgCache == nullptr) {
     auto ptr = std::make_unique<FieldMetric>();
-    (*ptr) = 1.0 / sqrt(g_22());
+    (*ptr) = 1.0 / (J() * Bxy());
     invSgCache = std::move(ptr);
   }
   return *invSgCache;
@@ -1512,6 +1513,7 @@ void Coordinates::setJ(const FieldMetric& J, const bool communicate) {
 
 void Coordinates::setBxy(FieldMetric Bxy, const bool communicate) {
   //TODO: Calculate Bxy and check value is close
+  //      Also check that Bxy is positive
   Bxy_ = std::move(Bxy);
   if (communicate) {
     localmesh->communicate(Bxy_);
