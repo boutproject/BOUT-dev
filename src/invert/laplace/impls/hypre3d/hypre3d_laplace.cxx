@@ -60,7 +60,9 @@ LaplaceHypre3d::LaplaceHypre3d(Options* opt, const CELL_LOC loc, Mesh* mesh_in, 
   Ez.setLocation(location);
 
   // Print matrix coefficients?
-  print_matrix = (*opts)["print_matrix"].doc("Print matrix coefficients when the operator is updated?").withDefault<bool>(false);
+  print_matrix = (*opts)["print_matrix"]
+                     .doc("Print matrix coefficients when the operator is updated?")
+                     .withDefault<bool>(false);
 
   // Initialise Hypre objects
   // Note: linearSystem is a bout::HypreSystem<Field3D> object
