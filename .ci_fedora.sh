@@ -59,7 +59,11 @@ else
     export OMPI_MCA_rmaps_base_oversubscribe=yes
     export PRTE_MCA_rmaps_default_mapping_policy=:oversubscribe
     export TRAVIS=true
+    # Try limiting openmp threads
     export FLEXIBLAS=NETLIB
+    export MKL_NUM_THREADS=1
+    export NUMEXPR_NUM_THREADS=1
+    export OMP_NUM_THREADS=1
     cd
     cd BOUT-dev
     echo "starting configure"

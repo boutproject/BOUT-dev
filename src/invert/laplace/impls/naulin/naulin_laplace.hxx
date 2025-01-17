@@ -167,6 +167,23 @@ private:
   /// less than or equal to 1. Value of 1 means no underrelaxation
   BoutReal initial_underrelax_factor{1.};
 
+  /// Factor by which the error may increase since the previous iteration before
+  /// triggering a sub-cycle with decreasing underrelax_factor to try and prevent
+  /// divergence.
+  BoutReal underrelax_threshold{1.5};
+
+  /// Factor by which to decrease underrelax_factor at each stage of the sub-loop
+  /// triggered if underrelax_threshold is crossed.
+  BoutReal underrelax_decrease_factor{0.9};
+
+  /// Maximum number of iterations in the decreasing-underrelax_factor subcycle before
+  /// trying to continue the main iteration loop.
+  int underrelax_decrease_maxits{10};
+
+  /// If underrelax_factor has been decreased, increase it again by this factor at the end
+  /// of a successful iteration to try and speed up subsequent convergence.
+  BoutReal underrelax_recovery{1.1};
+
   /// Mean number of iterations taken by the solver
   BoutReal naulinsolver_mean_its;
 
