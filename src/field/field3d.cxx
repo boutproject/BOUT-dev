@@ -751,7 +751,7 @@ namespace {
 void checkDataIsFiniteOnRegion(const Field3D& f, const std::string& region) {
   // Do full checks
   BOUT_FOR_SERIAL(i, f.getValidRegionWithDefault(region)) {
-    if (!finite(f[i])) {
+    if (!std::isfinite(f[i])) {
       throw BoutException("Field3D: Operation on non-finite data at [{:d}][{:d}][{:d}]\n",
                           i.x(), i.y(), i.z());
     }
