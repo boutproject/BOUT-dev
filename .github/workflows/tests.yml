@@ -128,7 +128,7 @@ jobs:
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
-                            -DBOUT_USE_HYPRE=ON
+                            -DBOUT_USE_HYPRE=OFF
                             -DBOUT_ENABLE_PYTHON=ON
                             -DSUNDIALS_ROOT=/home/runner/local
                             -DPETSC_DIR=/home/runner/local/petsc
