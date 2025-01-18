@@ -3,9 +3,9 @@
  *                           Using PETSc Solvers
  *
  **************************************************************************
- * Copyright 2013 J. Buchanan, J.Omotani
+ * Copyright 2013 - 2025 BOUT++ developers
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -466,7 +466,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
         BoutReal A0, A1, A2, A3, A4, A5;
         A0 = A(x, y, z);
 
-        ASSERT3(finite(A0));
+        ASSERT3(std::isfinite(A0));
 
         // Set the matrix coefficients
         Coeffs(x, y, z, A1, A2, A3, A4, A5);
@@ -477,11 +477,11 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
         BoutReal dz2 = SQ(dz);
         BoutReal dxdz = dx * dz;
 
-        ASSERT3(finite(A1));
-        ASSERT3(finite(A2));
-        ASSERT3(finite(A3));
-        ASSERT3(finite(A4));
-        ASSERT3(finite(A5));
+        ASSERT3(std::isfinite(A1));
+        ASSERT3(std::isfinite(A2));
+        ASSERT3(std::isfinite(A3));
+        ASSERT3(std::isfinite(A4));
+        ASSERT3(std::isfinite(A5));
 
         // Set Matrix Elements
         PetscScalar val = 0.;
@@ -913,7 +913,7 @@ void LaplacePetsc::Element(int i, int x, int z, int xshift, int zshift, PetscSca
   int index = (row_new * meshz) + col_new;
 
 #if CHECK > 2
-  if (!finite(ele)) {
+  if (!std::isfinite(ele)) {
     throw BoutException("Non-finite element at x={:d}, z={:d}, row={:d}, col={:d}\n", x,
                         z, i, index);
   }
@@ -978,8 +978,8 @@ void LaplacePetsc::Coeffs(int x, int y, int z, BoutReal& coef1, BoutReal& coef2,
     coef4 = coords->G1(x, y, z); // X 1st derivative
     coef5 = coords->G3(x, y, z); // Z 1st derivative
 
-    ASSERT3(finite(coef4));
-    ASSERT3(finite(coef5));
+    ASSERT3(std::isfinite(coef4));
+    ASSERT3(std::isfinite(coef5));
   }
 
   if (nonuniform) {

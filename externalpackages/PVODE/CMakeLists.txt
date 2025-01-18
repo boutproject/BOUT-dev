@@ -58,7 +58,7 @@ target_include_directories(pvpre PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
   )
-target_link_libraries(pvpre PUBLIC MPI::MPI_CXX)
+target_link_libraries(pvpre PUBLIC pvode MPI::MPI_CXX)
 
 
 set_target_properties(pvpre PROPERTIES

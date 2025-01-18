@@ -5,7 +5,7 @@
  **************************************************************************
  * Copyright 2020 Joseph Parker
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -575,8 +575,8 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 #if CHECK > 2
   for (int ix = 0; ix < 4; ix++) {
     for (int kz = 0; kz < nmode; kz++) {
-      if (!finite(levels[0].xloc(ix, kz).real())
-          or !finite(levels[0].xloc(ix, kz).imag())) {
+      if (!std::isfinite(levels[0].xloc(ix, kz).real())
+          or !std::isfinite(levels[0].xloc(ix, kz).imag())) {
         throw BoutException("Non-finite xloc at {:d}, {:d}, {:d}", ix, jy, kz);
       }
     }
@@ -595,7 +595,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 #if CHECK > 2
   for (int ix = 0; ix < ncx; ix++) {
     for (int kz = 0; kz < nmode; kz++) {
-      if (!finite(xk1d(kz, ix).real()) or !finite(xk1d(kz, ix).imag())) {
+      if (!std::isfinite(xk1d(kz, ix).real()) or !std::isfinite(xk1d(kz, ix).imag())) {
         throw BoutException("Non-finite xloc at {:d}, {:d}, {:d}", ix, jy, kz);
       }
     }
@@ -636,7 +636,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 #if CHECK > 2
     for (int kz = 0; kz < ncz; kz++) {
-      if (!finite(x(ix, kz))) {
+      if (!std::isfinite(x(ix, kz))) {
         throw BoutException("Non-finite at {:d}, {:d}, {:d}", ix, jy, kz);
       }
     }
