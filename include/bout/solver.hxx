@@ -87,7 +87,7 @@ constexpr auto SOLVEREULER = "euler";
 constexpr auto SOLVERRK3SSP = "rk3ssp";
 constexpr auto SOLVERPOWER = "power";
 constexpr auto SOLVERARKODE = "arkode";
-constexpr auto SOLVERARKODEMRI = "arkodemri";
+constexpr auto SOLVERARKODEMRI = "arkode_mri";
 constexpr auto SOLVERIMEXBDF2 = "imexbdf2";
 constexpr auto SOLVERSNES = "snes";
 constexpr auto SOLVERRKGENERIC = "rkgeneric";
@@ -456,7 +456,7 @@ protected:
   int run_rhs_fe(BoutReal t, bool linear = false);
   int run_rhs_fi(BoutReal t, bool linear = false);
   int run_rhs_s(BoutReal t, bool linear = false);
-  int run_rhs_f(BoutReal t, bool linear = false);  
+  int run_rhs_f(BoutReal t, bool linear = false);
   int run_rhs(BoutReal t, bool linear = false);
   /// Calculate only the convective parts
   int run_convective(BoutReal t, bool linear = false);
