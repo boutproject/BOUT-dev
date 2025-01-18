@@ -23,32 +23,41 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
-
-#include "arkode_mri.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_ARKODE
 
-#include "bout/bout_enum_class.hxx"
+#include "arkode_mri.hxx"
+
+#if ((SUNDIALS_VERSION_MAJOR == 7 && SUNDIALS_VERSION_MINOR >= 2) || SUNDIALS_VERSION_MAJOR > 8)
+
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/mpi_wrapper.hxx"
 #include "bout/msg_stack.hxx"
 #include "bout/options.hxx"
 #include "bout/output.hxx"
+#include "bout/solver.hxx"
+#include "bout/sundials_backports.hxx"
 #include "bout/unused.hxx"
-#include "bout/utils.hxx"
 
+#include <arkode/arkode.h>
 #include <arkode/arkode_arkstep.h>
 #include <arkode/arkode_bbdpre.h>
+#include <arkode/arkode_ls.h>
+
 #include <sundials/sundials_math.h>
-#include <sundials/sundials_types.h>
 
 #include <algorithm>
+#include <iterator>
 #include <numeric>
-
-class Field2D;
+#include <vector>
 
 // NOLINTBEGIN(readability-identifier-length)
 namespace {
@@ -988,4 +997,5 @@ void ArkodeMRISolver::loop_abstol_values_op(Ind2D UNUSED(i2d), BoutReal* abstolv
   }
 }
 
-#endif
+#endif // SUNDIALS_VERSION CHECK
+#endif // BOUT_HAS_ARKODE
