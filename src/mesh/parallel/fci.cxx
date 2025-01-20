@@ -97,6 +97,7 @@ bool load_parallel_metric_component(std::string name, Field3D& component, int of
   auto& pcom = component.ynext(offset);
   pcom.allocate();
   pcom.setRegion(fmt::format("RGN_YPAR_{:+d}", offset));
+  pcom.name = name;
   BOUT_FOR(i, component.getRegion("RGN_NOBNDRY")) {
     pcom[i.yp(offset)] = tmp[i];
   }
