@@ -160,7 +160,7 @@ void Field3D::splitParallelSlices() {
     ydown_fields.emplace_back(fieldmesh);
     if (isFci()) {
       yup_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", i + 1));
-      yup_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", -i - 1));
+      ydown_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", -i - 1));
     }
   }
 }
