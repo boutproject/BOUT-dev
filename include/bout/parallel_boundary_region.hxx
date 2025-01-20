@@ -223,6 +223,12 @@ public:
     }
   }
 
+  void setAll(Field3D& f, const BoutReal val) const {
+    for (int i = -localmesh->ystart; i <= localmesh->ystart; ++i) {
+      f.ynext(i)[ind().yp(i)] = val;
+    }
+  }
+
   template <bool check = true>
   BoutReal& getAt(Field3D& f, int off) const {
     if constexpr (check) {
