@@ -164,6 +164,14 @@ void Field3D::splitParallelSlices() {
     }
   }
 }
+void Field3D::splitParallelSlicesAndAllocate() {
+  splitParallelSlices();
+  allocate();
+  for (int i = 0; i < fieldmesh->ystart; ++i) {
+    yup_fields[i].allocate();
+    ydown_fields[i].allocate();
+  }
+}
 
 void Field3D::clearParallelSlices() {
   TRACE("Field3D::clearParallelSlices");
