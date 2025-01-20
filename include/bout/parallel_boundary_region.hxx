@@ -44,7 +44,21 @@ using IndicesVec = std::vector<Indices>;
 using IndicesIter = IndicesVec::iterator;
 using IndicesIterConst = IndicesVec::const_iterator;
 
-//}
+inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc) {
+  if (fm < fc) {
+    return 1; // Neumann rather than increasing into boundary
+  }
+  if (fm < 1e-10) {
+    return 1; // Low / no density condition
+  }
+  BoutReal fp = fc / fm;
+#if CHECKLEVEL >= 2
+  if (!std::isfinite(fp)) {
+    throw BoutException("SheathBoundaryParallel limitFree: {}, {} -> {}", fm, fc, fp);
+  }
+#endif
+  return fp;
+}
 
 template <class IndicesVec, class IndicesIter>
 class BoundaryRegionParIterBase {
@@ -195,6 +209,17 @@ public:
     ITER() {
       getAt(f, i) = parallel_stencil::neumann_o3(i + 1 - length(), value, i + 1, ythis(f),
                                                  2, yprev(f));
+    }
+  }
+
+  // extrapolate into the boundary using only monotonic decreasing values.
+  // f needs to be positive
+  void limitFree(Field3D& f) const {
+    const auto fac = valid() > 0 ? limitFreeScale(yprev(f), ythis(f)) : 1;
+    auto val = ythis(f);
+    ITER() {
+      val *= fac;
+      getAt(f, i) = val;
     }
   }
 
