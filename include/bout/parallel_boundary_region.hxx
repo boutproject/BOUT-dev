@@ -174,7 +174,7 @@ public:
   // neumann_o1 is actually o2 if we would use an appropriate one-sided stencil.
   // But in general we do not, and thus for normal C2 stencils, this is 1st order.
   void neumann_o1(Field3D& f, BoutReal value) const {
-    ITER() { getAt(f, i) = ythis(f) + value; }
+    ITER() { getAt(f, i) = ythis(f) + value * (i + 1); }
   }
 
   // NB: value needs to be scaled by dy
@@ -183,14 +183,14 @@ public:
     if (valid() < 1) {
       return neumann_o1(f, value);
     }
-    ITER() { getAt(f, i) = yprev(f) + 2 * value; }
+    ITER() { getAt(f, i) = yprev(f) + (2 + i) * value; }
   }
 
   // NB: value needs to be scaled by dy
   void neumann_o3(Field3D& f, BoutReal value) const {
     ASSERT3(valid() >= 0);
     if (valid() < 1) {
-      return neumann_o1(f, value);
+      return neumann_o2(f, value);
     }
     ITER() {
       getAt(f, i) = parallel_stencil::neumann_o3(i + 1 - length(), value, i + 1, ythis(f),
