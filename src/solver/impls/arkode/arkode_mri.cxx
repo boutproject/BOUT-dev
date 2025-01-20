@@ -29,7 +29,7 @@
 
 #include "arkode_mri.hxx"
 
-#if ((SUNDIALS_VERSION_MAJOR == 7 && SUNDIALS_VERSION_MINOR >= 2) || SUNDIALS_VERSION_MAJOR > 8)
+SUNDIALS_VERSION_AT_LEAST(7, 2, 0)
 
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
