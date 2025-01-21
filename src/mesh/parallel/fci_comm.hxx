@@ -176,13 +176,14 @@ private:
       auto ret = MPI_Waitany(reqs.size(), &reqs[0], &ind, MPI_STATUS_IGNORE);
       ASSERT0(ret == MPI_SUCCESS);
       ASSERT3(ind != MPI_UNDEFINED);
+      ASSERT2(static_cast<size_t>(ind) < toSend.size());
       toSend[ind].resize(toSendSizes[ind]);
-      ret = MPI_Irecv(static_cast<void*>(&toSend[ind]), toSend[ind].size(), MPI_INT, ind,
-                      666 * 666 + ind, comm, &reqs[ind]);
+      ret = MPI_Irecv(static_cast<void*>(&toSend[ind][0]), toSend[ind].size(), MPI_INT,
+                      ind, 666 * 666 + ind, comm, &reqs[ind]);
       ASSERT0(ret == MPI_SUCCESS);
     }
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
-      const auto ret = MPI_Send(static_cast<void*>(&toGet[proc]), toGet[proc].size(),
+      const auto ret = MPI_Send(static_cast<void*>(&toGet[proc][0]), toGet[proc].size(),
                                 MPI_INT, proc, 666 * 666 + proc, comm);
       ASSERT0(ret == MPI_SUCCESS);
     }
