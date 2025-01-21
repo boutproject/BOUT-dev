@@ -35,7 +35,7 @@ public:
         xstart(mesh->xstart), ystart(mesh->ystart), zstart(0),
         lnx(mesh->LocalNx - 2 * xstart), lny(mesh->LocalNy - 2 * ystart),
         lnz(mesh->LocalNz - 2 * zstart) {}
-  // ix and iy are global indices
+  // ix and iz are global indices
   // iy is local
   int fromMeshToGlobal(int ix, int iy, int iz) {
     const int xstart = mesh->xstart;
@@ -382,6 +382,19 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
   VecGetArrayRead(result, &cptr);
   BOUT_FOR(i, f.getRegion(region2)) {
     f_interp[i] = cptr[int(i)];
+    if constexpr (monotonic) {
+      const auto corners = {gf[g3dinds[i][0]], gf[g3dinds[i][1]], gf[g3dinds[i][2]],
+                            gf[g3dinds[i][3]]};
+      const auto minmax = std::minmax(corners);
+      if (f_interp[iyp] < minmax.first) {
+        f_interp[iyp] = minmax.first;
+      } else {
+        if (f_interp[iyp] > minmax.second) {
+          f_interp[iyp] = minmax.second;
+        }
+      }
+    }
+
     ASSERT2(std::isfinite(cptr[int(i)]));
   }
   VecRestoreArrayRead(result, &cptr);
@@ -396,6 +409,18 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
       f_interp[iyp] += newWeights[w * 4 + 1][i] * f[ic.xp(w - 1)];
       f_interp[iyp] += newWeights[w * 4 + 2][i] * f[ic.zp().xp(w - 1)];
       f_interp[iyp] += newWeights[w * 4 + 3][i] * f[ic.zp(2).xp(w - 1)];
+    }
+    if constexpr (monotonic) {
+      const auto corners = {gf[g3dinds[i][0]], gf[g3dinds[i][1]], gf[g3dinds[i][2]],
+                            gf[g3dinds[i][3]]};
+      const auto minmax = std::minmax(corners);
+      if (f_interp[iyp] < minmax.first) {
+        f_interp[iyp] = minmax.first;
+      } else {
+        if (f_interp[iyp] > minmax.second) {
+          f_interp[iyp] = minmax.second;
+        }
+      }
     }
   }
 #endif
