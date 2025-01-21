@@ -161,14 +161,14 @@ private:
     std::vector<MPI_Request> reqs(toSend.size());
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
       auto ret = MPI_Irecv(static_cast<void*>(&toSendSizes[proc]), 1, MPI_INT, proc,
-                           666 + proc, comm, &reqs[proc]);
+                           666, comm, &reqs[proc]);
       ASSERT0(ret == MPI_SUCCESS);
     }
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
       toGetSizes[proc] = toGet[proc].size();
       sendBufferSize += toGetSizes[proc];
       auto ret = MPI_Send(static_cast<void*>(&toGetSizes[proc]), 1, MPI_INT, proc,
-                          666 + proc, comm);
+                          666, comm);
       ASSERT0(ret == MPI_SUCCESS);
     }
     for ([[maybe_unused]] auto dummy : reqs) {
@@ -179,12 +179,12 @@ private:
       ASSERT2(static_cast<size_t>(ind) < toSend.size());
       toSend[ind].resize(toSendSizes[ind]);
       ret = MPI_Irecv(static_cast<void*>(&toSend[ind][0]), toSend[ind].size(), MPI_INT,
-                      ind, 666 * 666 + ind, comm, &reqs[ind]);
+                      ind, 666 * 666, comm, &reqs[ind]);
       ASSERT0(ret == MPI_SUCCESS);
     }
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
       const auto ret = MPI_Send(static_cast<void*>(&toGet[proc][0]), toGet[proc].size(),
-                                MPI_INT, proc, 666 * 666 + proc, comm);
+                                MPI_INT, proc, 666 * 666, comm);
       ASSERT0(ret == MPI_SUCCESS);
     }
     for ([[maybe_unused]] auto dummy : reqs) {
@@ -220,7 +220,7 @@ private:
     std::vector<MPI_Request> reqs(toSend.size());
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
       auto ret = MPI_Irecv(static_cast<void*>(&data[proc]), toGet[proc].size(),
-                           MPI_DOUBLE, proc, 666 + proc, comm, &reqs[proc]);
+                           MPI_DOUBLE, proc, 666, comm, &reqs[proc]);
       ASSERT0(ret == MPI_SUCCESS);
     }
     int cnt = 0;
@@ -229,7 +229,7 @@ private:
       for (auto i : toSend[proc]) {
         sendBuffer[cnt++] = f[Ind3D(i)];
       }
-      auto ret = MPI_Send(start, toSend[proc].size(), MPI_DOUBLE, proc, 666 + proc, comm);
+      auto ret = MPI_Send(start, toSend[proc].size(), MPI_DOUBLE, proc, 666, comm);
       ASSERT0(ret == MPI_SUCCESS);
     }
     for ([[maybe_unused]] auto dummy : reqs) {
