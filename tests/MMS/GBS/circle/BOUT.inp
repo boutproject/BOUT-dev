@@ -1,14 +1,3 @@
-# settings file for BOUT++
-#
-# Flux-tube turbulence simulation in a cirular cross-section
-# large aspect-ratio tokamak
-#
-# In this case parallel dynamics are disabled
-
-# settings used by the core code
-
-nout = 100    # number of time-steps
-timestep = 50.0 # time between outputs
 MXG = 2
 MYG = 2      # No y derivatives, so no guard cells needed in y
 
@@ -17,7 +6,9 @@ nperiod = 1  # Poloidal angle
 
 twistshift = true
 
-grid = "circle.nc"
+[mesh]
+
+file = "circle.nc"
 
 
 ##################################################
@@ -53,6 +44,17 @@ timestep = 1
 atol = 1e-10  # absolute tolerance
 rtol = 1e-05   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
+output_step = 50.0 # time between outputs
+# settings file for BOUT++
+#
+# Flux-tube turbulence simulation in a cirular cross-section
+# large aspect-ratio tokamak
+#
+# In this case parallel dynamics are disabled
+
+# settings used by the core code
+
+nout = 100    # number of time-steps
 
 
 ##################################################

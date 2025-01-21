@@ -1,5 +1,3 @@
-nout = 10
-timestep = 0.1
 
 [mesh]
 staggergrids = true
@@ -14,6 +12,8 @@ dy = 1/ny
 [solver]
 rtol = 1e-14
 atol = 1e-18
+output_step = 0.1
+nout = 10
 
 
 [meshz]
