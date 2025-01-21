@@ -129,7 +129,6 @@ public:
       }
       offsets.push_back(offset);
     }
-    std::map<int, int> mapping;
     for (const auto id : ids) {
       IndG3D gind{id, g2ly.globalwith, g2lz.globalwith};
       const auto pix = g2lx.convert(gind.x());
