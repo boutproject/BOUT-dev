@@ -212,6 +212,7 @@ private:
   int sendBufferSize{0};
   MPI_Comm comm;
   std::vector<BoutReal> communicate_data(const Field3D& f) {
+    ASSERT2(is_setup);
     ASSERT2(f.getMesh() == mesh);
     std::vector<BoutReal> data(offsets.back());
     std::vector<BoutReal> sendBuffer(sendBufferSize);
