@@ -138,10 +138,11 @@ public:
       ASSERT3(piz.proc == 0);
       const auto proc = piy.proc * g2lx.npe + pix.proc;
       const auto& vec = toGet[proc];
-      auto it =
-          std::find(vec.begin(), vec.end(), xyzl.convert(pix.ind, piy.ind, piz.ind).ind);
+      const auto tofind = xyzl.convert(pix.ind, piy.ind, piz.ind).ind;
+      auto it = std::lower_bound(vec.begin(), vec.end(), tofind);
       ASSERT3(it != vec.end());
-      mapping[id] = it - vec.begin() + offsets[proc];
+      ASSERT3(*it == tofind);
+      mapping[id] = std::distance(vec.begin(), it) + offsets[proc];
     }
     is_setup = true;
   }
