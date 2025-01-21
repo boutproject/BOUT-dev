@@ -216,7 +216,8 @@ private:
     ASSERT2(is_setup);
     ASSERT2(f.getMesh() == mesh);
     std::vector<BoutReal> data(offsets.back());
-    std::vector<BoutReal> sendBuffer(sendBufferSize);
+    //std::vector<BoutReal> sendBuffer(sendBufferSize);
+    BoutReal* sendBuffer = new BoutReal[sendBufferSize];
     std::vector<MPI_Request> reqs(toSend.size());
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
       auto ret = MPI_Irecv(static_cast<void*>(&data[proc]), toGet[proc].size(),
@@ -238,6 +239,7 @@ private:
       ASSERT0(ret == MPI_SUCCESS);
       ASSERT3(ind != MPI_UNDEFINED);
     }
+    delete[] sendBuffer;
     return data;
   }
 };
