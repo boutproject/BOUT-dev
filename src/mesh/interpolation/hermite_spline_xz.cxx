@@ -311,6 +311,9 @@ void XZHermiteSplineBase<monotonic>::calcWeights(const Field3D& delta_x,
       g3dinds[i] = {gind.ind, gind.xp(1).ind, gind.zp(1).ind, gind.xp(1).zp(1).ind};
     }
   }
+  if constexpr (monotonic) {
+    gf3daccess->setup();
+  }
 #ifdef HS_USE_PETSC
   MatAssemblyBegin(petscWeights, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(petscWeights, MAT_FINAL_ASSEMBLY);
