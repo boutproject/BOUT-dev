@@ -4,9 +4,9 @@
  * Class for 3D X-Y-Z scalar fields
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ developers
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -129,7 +129,7 @@ Field3D& Field3D::allocate() {
   return *this;
 }
 
-BOUT_HOST_DEVICE Field3D* Field3D::timeDeriv() {
+Field3D* Field3D::timeDeriv() {
   if (deriv == nullptr) {
     deriv = new Field3D{emptyFrom(*this)};
   }
@@ -751,7 +751,7 @@ namespace {
 void checkDataIsFiniteOnRegion(const Field3D& f, const std::string& region) {
   // Do full checks
   BOUT_FOR_SERIAL(i, f.getValidRegionWithDefault(region)) {
-    if (!finite(f[i])) {
+    if (!std::isfinite(f[i])) {
       throw BoutException("Field3D: Operation on non-finite data at [{:d}][{:d}][{:d}]\n",
                           i.x(), i.y(), i.z());
     }
