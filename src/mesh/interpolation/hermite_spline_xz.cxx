@@ -374,8 +374,12 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
 
   const auto region2 = y_offset != 0 ? fmt::format("RGN_YPAR_{:+d}", y_offset) : region;
 
-#if USE_NEW_WEIGHTS
-#ifdef HS_USE_PETSC
+  std::unique_ptr<GlobalField3DAccessInstance> gf;
+  if constexpr (monotonic) {
+    gf = gf3daccess->communicate_asPtr(f);
+  }
+
+#if USE_NEW_WEIGHTS and defined(HS_USE_PETSC)
   BoutReal* ptr;
   const BoutReal* cptr;
   VecGetArray(rhs, &ptr);
@@ -386,22 +390,9 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
   BOUT_FOR(i, f.getRegion(region2)) {
     f_interp[i] = cptr[int(i)];
     if constexpr (monotonic) {
-      const auto corners = {gf[g3dinds[i][0]], gf[g3dinds[i][1]], gf[g3dinds[i][2]],
-                            gf[g3dinds[i][3]]};
-      const auto minmax = std::minmax(corners);
-      if (f_interp[iyp] < minmax.first) {
-        f_interp[iyp] = minmax.first;
-      } else {
-        if (f_interp[iyp] > minmax.second) {
-          f_interp[iyp] = minmax.second;
-        }
-      }
-    }
-
-    ASSERT2(std::isfinite(cptr[int(i)]));
-  }
-  VecRestoreArrayRead(result, &cptr);
-#else
+      const auto iyp = i;
+      const auto i = iyp.ym(y_offset);
+#elif USE_NEW_WEIGHTS // No Petsc
   BOUT_FOR(i, getRegion(region)) {
     auto ic = i_corner[i];
     auto iyp = i.yp(y_offset);
@@ -414,20 +405,7 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
       f_interp[iyp] += newWeights[w * 4 + 3][i] * f[ic.zp(2).xp(w - 1)];
     }
     if constexpr (monotonic) {
-      const auto corners = {gf[g3dinds[i][0]], gf[g3dinds[i][1]], gf[g3dinds[i][2]],
-                            gf[g3dinds[i][3]]};
-      const auto minmax = std::minmax(corners);
-      if (f_interp[iyp] < minmax.first) {
-        f_interp[iyp] = minmax.first;
-      } else {
-        if (f_interp[iyp] > minmax.second) {
-          f_interp[iyp] = minmax.second;
-        }
-      }
-    }
-  }
-#endif
-#else
+#else                 // Legacy interpolation
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
 
@@ -437,11 +415,6 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
   Field3D fx = bout::derivatives::index::DDX(f, CELL_DEFAULT, "DEFAULT", region2);
   Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", region2);
   Field3D fxz = bout::derivatives::index::DDZ(fx, CELL_DEFAULT, "DEFAULT", region2);
-
-  std::unique_ptr<GlobalField3DAccessInstance> g3d;
-  if constexpr (monotonic) {
-    gf = gf3daccess.communicate_asPtr(f);
-  }
 
   BOUT_FOR(i, getRegion(region)) {
     const auto iyp = i.yp(y_offset);
@@ -472,8 +445,9 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
         +f_z * h00_z[i] + f_zp1 * h01_z[i] + fz_z * h10_z[i] + fz_zp1 * h11_z[i];
 
     if constexpr (monotonic) {
-      const auto corners = {gf[g3dinds[i][0]], gf[g3dinds[i][1]], gf[g3dinds[i][2]],
-                            gf[g3dinds[i][3]]};
+#endif
+      const auto corners = {(*gf)[IndG3D(g3dinds[i][0])], (*gf)[IndG3D(g3dinds[i][1])],
+                            (*gf)[IndG3D(g3dinds[i][2])], (*gf)[IndG3D(g3dinds[i][3])]};
       const auto minmax = std::minmax(corners);
       if (f_interp[iyp] < minmax.first) {
         f_interp[iyp] = minmax.first;
@@ -483,7 +457,14 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
         }
       }
     }
-
+#if USE_NEW_WEIGHTS and defined(HS_USE_PETSC)
+    ASSERT2(std::isfinite(cptr[int(i)]));
+  }
+  VecRestoreArrayRead(result, &cptr);
+#elif USE_NEW_WEIGHTS
+    ASSERT2(std::isfinite(f_interp[iyp]));
+  }
+#else
     ASSERT2(std::isfinite(f_interp[iyp]) || i.x() < localmesh->xstart
             || i.x() > localmesh->xend);
   }
