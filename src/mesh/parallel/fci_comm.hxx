@@ -171,6 +171,7 @@ private:
                           666, comm);
       ASSERT0(ret == MPI_SUCCESS);
     }
+    std::vector<MPI_Request> reqs2(toSend.size());
     for ([[maybe_unused]] auto dummy : reqs) {
       int ind{0};
       auto ret = MPI_Waitany(reqs.size(), &reqs[0], &ind, MPI_STATUS_IGNORE);
@@ -179,7 +180,7 @@ private:
       ASSERT2(static_cast<size_t>(ind) < toSend.size());
       toSend[ind].resize(toSendSizes[ind]);
       ret = MPI_Irecv(static_cast<void*>(&toSend[ind][0]), toSend[ind].size(), MPI_INT,
-                      ind, 666 * 666, comm, &reqs[ind]);
+                      ind, 666 * 666, comm, &reqs2[ind]);
       ASSERT0(ret == MPI_SUCCESS);
     }
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
@@ -189,7 +190,7 @@ private:
     }
     for ([[maybe_unused]] auto dummy : reqs) {
       int ind{0};
-      const auto ret = MPI_Waitany(reqs.size(), &reqs[0], &ind, MPI_STATUS_IGNORE);
+      const auto ret = MPI_Waitany(reqs.size(), &reqs2[0], &ind, MPI_STATUS_IGNORE);
       ASSERT0(ret == MPI_SUCCESS);
       ASSERT3(ind != MPI_UNDEFINED);
     }
