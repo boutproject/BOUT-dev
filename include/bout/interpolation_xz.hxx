@@ -134,6 +134,7 @@ public:
   }
 };
 
+
 template <bool monotonic>
 class XZHermiteSplineBase : public XZInterpolation {
 protected:
@@ -280,6 +281,19 @@ public:
                       const BoutMask& mask,
                       const std::string& region = "RGN_NOBNDRY") override;
 };
+
+
+class XZMonotonicHermiteSplineLegacy: public XZHermiteSplineBase<false> {
+public:
+  using XZHermiteSplineBase<false>::interpolate;
+  virtual Field3D interpolate(const Field3D& f,
+                              const std::string& region = "RGN_NOBNDRY") const override;
+  template<class... Ts>
+  XZMonotonicHermiteSplineLegacy(Ts... args) :
+    XZHermiteSplineBase<false>(args...)
+  {}
+};
+
 
 class XZInterpolationFactory
     : public Factory<XZInterpolation, XZInterpolationFactory, Mesh*> {
