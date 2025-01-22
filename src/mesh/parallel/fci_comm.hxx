@@ -161,7 +161,7 @@ private:
     {
       int thisproc;
       MPI_Comm_rank(comm, thisproc);
-      assert(thisproc == mesh->getYProcIndex() * g2lx.npe + mesh->getXProcIndex());
+      ASSERT0(thisproc == mesh->getYProcIndex() * g2lx.npe + mesh->getXProcIndex());
     }
 #endif
     std::vector<MPI_Request> reqs(toSend.size());
