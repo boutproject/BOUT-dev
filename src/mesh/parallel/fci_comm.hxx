@@ -124,12 +124,11 @@ public:
     {
       int offset = 0;
       for (auto get : toGet) {
-        offsets.push_back(offset);
+        getOffsets.push_back(offset);
         offset += get.size();
       }
-      offsets.push_back(offset);
+      getOffsets.push_back(offset);
     }
-    std::map<int, int> mapping;
     for (const auto id : ids) {
       IndG3D gind{id, g2ly.globalwith, g2lz.globalwith};
       const auto pix = g2lx.convert(gind.x());
@@ -138,10 +137,11 @@ public:
       ASSERT3(piz.proc == 0);
       const auto proc = piy.proc * g2lx.npe + pix.proc;
       const auto& vec = toGet[proc];
-      auto it =
-          std::find(vec.begin(), vec.end(), xyzl.convert(pix.ind, piy.ind, piz.ind).ind);
+      const auto tofind = xyzl.convert(pix.ind, piy.ind, piz.ind).ind;
+      auto it = std::lower_bound(vec.begin(), vec.end(), tofind);
       ASSERT3(it != vec.end());
-      mapping[id] = it - vec.begin() + offsets[proc];
+      ASSERT3(*it == tofind);
+      mapping[id] = std::distance(vec.begin(), it) + getOffsets[proc];
     }
     is_setup = true;
   }
@@ -155,40 +155,49 @@ public:
 private:
   void commCommLists() {
     toSend.resize(toGet.size());
-    std::vector<int> toGetSizes(toGet.size());
-    std::vector<int> toSendSizes(toSend.size());
-    //const int thisproc = mesh->getYProcIndex() * g2lx.npe + mesh->getXProcIndex();
+    std::vector<int> toGetSizes(toGet.size(), -1);
+    std::vector<int> toSendSizes(toSend.size(), -1);
+#if CHECK > 3
+    {
+      int thisproc;
+      MPI_Comm_rank(comm, &thisproc);
+      ASSERT0(thisproc == mesh->getYProcIndex() * g2lx.npe + mesh->getXProcIndex());
+    }
+#endif
     std::vector<MPI_Request> reqs(toSend.size());
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
-      auto ret = MPI_Irecv(static_cast<void*>(&toSendSizes[proc]), 1, MPI_INT, proc,
-                           666 + proc, comm, &reqs[proc]);
+      auto ret = MPI_Irecv(static_cast<void*>(&toSendSizes[proc]), 1, MPI_INT, proc, 666,
+                           comm, &reqs[proc]);
       ASSERT0(ret == MPI_SUCCESS);
     }
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
       toGetSizes[proc] = toGet[proc].size();
-      sendBufferSize += toGetSizes[proc];
-      auto ret = MPI_Send(static_cast<void*>(&toGetSizes[proc]), 1, MPI_INT, proc,
-                          666 + proc, comm);
+      auto ret =
+          MPI_Send(static_cast<void*>(&toGetSizes[proc]), 1, MPI_INT, proc, 666, comm);
       ASSERT0(ret == MPI_SUCCESS);
     }
+    std::vector<MPI_Request> reqs2(toSend.size());
     for ([[maybe_unused]] auto dummy : reqs) {
       int ind{0};
       auto ret = MPI_Waitany(reqs.size(), &reqs[0], &ind, MPI_STATUS_IGNORE);
       ASSERT0(ret == MPI_SUCCESS);
       ASSERT3(ind != MPI_UNDEFINED);
+      ASSERT2(static_cast<size_t>(ind) < toSend.size());
+      ASSERT3(toSendSizes[ind] >= 0);
+      sendBufferSize += toSendSizes[ind];
       toSend[ind].resize(toSendSizes[ind]);
-      ret = MPI_Irecv(static_cast<void*>(&toSend[ind]), toSend[ind].size(), MPI_INT, ind,
-                      666 * 666 + ind, comm, &reqs[ind]);
+      ret = MPI_Irecv(static_cast<void*>(&toSend[ind][0]), toSend[ind].size(), MPI_INT,
+                      ind, 666 * 666, comm, &reqs2[ind]);
       ASSERT0(ret == MPI_SUCCESS);
     }
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
-      const auto ret = MPI_Send(static_cast<void*>(&toGet[proc]), toGet[proc].size(),
-                                MPI_INT, proc, 666 * 666 + proc, comm);
+      const auto ret = MPI_Send(static_cast<void*>(&toGet[proc][0]), toGet[proc].size(),
+                                MPI_INT, proc, 666 * 666, comm);
       ASSERT0(ret == MPI_SUCCESS);
     }
     for ([[maybe_unused]] auto dummy : reqs) {
       int ind{0};
-      const auto ret = MPI_Waitany(reqs.size(), &reqs[0], &ind, MPI_STATUS_IGNORE);
+      const auto ret = MPI_Waitany(reqs.size(), &reqs2[0], &ind, MPI_STATUS_IGNORE);
       ASSERT0(ret == MPI_SUCCESS);
       ASSERT3(ind != MPI_UNDEFINED);
     }
@@ -208,17 +217,18 @@ public:
 private:
   std::vector<std::vector<int>> toGet;
   std::vector<std::vector<int>> toSend;
-  std::vector<int> offsets;
+  std::vector<int> getOffsets;
   int sendBufferSize{0};
   MPI_Comm comm;
   std::vector<BoutReal> communicate_data(const Field3D& f) {
+    ASSERT2(is_setup);
     ASSERT2(f.getMesh() == mesh);
-    std::vector<BoutReal> data(offsets.back());
+    std::vector<BoutReal> data(getOffsets.back());
     std::vector<BoutReal> sendBuffer(sendBufferSize);
     std::vector<MPI_Request> reqs(toSend.size());
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
-      auto ret = MPI_Irecv(static_cast<void*>(&data[proc]), toGet[proc].size(),
-                           MPI_DOUBLE, proc, 666 + proc, comm, &reqs[proc]);
+      auto ret = MPI_Irecv(static_cast<void*>(&data[getOffsets[proc]]),
+                           toGet[proc].size(), MPI_DOUBLE, proc, 666, comm, &reqs[proc]);
       ASSERT0(ret == MPI_SUCCESS);
     }
     int cnt = 0;
@@ -227,7 +237,7 @@ private:
       for (auto i : toSend[proc]) {
         sendBuffer[cnt++] = f[Ind3D(i)];
       }
-      auto ret = MPI_Send(start, toSend[proc].size(), MPI_DOUBLE, proc, 666 + proc, comm);
+      auto ret = MPI_Send(start, toSend[proc].size(), MPI_DOUBLE, proc, 666, comm);
       ASSERT0(ret == MPI_SUCCESS);
     }
     for ([[maybe_unused]] auto dummy : reqs) {

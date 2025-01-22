@@ -44,7 +44,21 @@ using IndicesVec = std::vector<Indices>;
 using IndicesIter = IndicesVec::iterator;
 using IndicesIterConst = IndicesVec::const_iterator;
 
-//}
+inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc) {
+  if (fm < fc) {
+    return 1; // Neumann rather than increasing into boundary
+  }
+  if (fm < 1e-10) {
+    return 1; // Low / no density condition
+  }
+  BoutReal fp = fc / fm;
+#if CHECKLEVEL >= 2
+  if (!std::isfinite(fp)) {
+    throw BoutException("SheathBoundaryParallel limitFree: {}, {} -> {}", fm, fc, fp);
+  }
+#endif
+  return fp;
+}
 
 template <class IndicesVec, class IndicesIter>
 class BoundaryRegionParIterBase {
@@ -174,7 +188,7 @@ public:
   // neumann_o1 is actually o2 if we would use an appropriate one-sided stencil.
   // But in general we do not, and thus for normal C2 stencils, this is 1st order.
   void neumann_o1(Field3D& f, BoutReal value) const {
-    ITER() { getAt(f, i) = ythis(f) + value; }
+    ITER() { getAt(f, i) = ythis(f) + value * (i + 1); }
   }
 
   // NB: value needs to be scaled by dy
@@ -183,18 +197,35 @@ public:
     if (valid() < 1) {
       return neumann_o1(f, value);
     }
-    ITER() { getAt(f, i) = yprev(f) + 2 * value; }
+    ITER() { getAt(f, i) = yprev(f) + (2 + i) * value; }
   }
 
   // NB: value needs to be scaled by dy
   void neumann_o3(Field3D& f, BoutReal value) const {
     ASSERT3(valid() >= 0);
     if (valid() < 1) {
-      return neumann_o1(f, value);
+      return neumann_o2(f, value);
     }
     ITER() {
       getAt(f, i) = parallel_stencil::neumann_o3(i + 1 - length(), value, i + 1, ythis(f),
                                                  2, yprev(f));
+    }
+  }
+
+  // extrapolate into the boundary using only monotonic decreasing values.
+  // f needs to be positive
+  void limitFree(Field3D& f) const {
+    const auto fac = valid() > 0 ? limitFreeScale(yprev(f), ythis(f)) : 1;
+    auto val = ythis(f);
+    ITER() {
+      val *= fac;
+      getAt(f, i) = val;
+    }
+  }
+
+  void setAll(Field3D& f, const BoutReal val) const {
+    for (int i = -localmesh->ystart; i <= localmesh->ystart; ++i) {
+      f.ynext(i)[ind().yp(i)] = val;
     }
   }
 

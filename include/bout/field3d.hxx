@@ -237,6 +237,8 @@ public:
    */
   void splitParallelSlices();
 
+  void splitParallelSlicesAndAllocate();
+
   /*!
    * Clear the parallel slices, yup and ydown
    */
