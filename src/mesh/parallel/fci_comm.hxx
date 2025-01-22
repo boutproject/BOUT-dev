@@ -157,6 +157,13 @@ private:
     toSend.resize(toGet.size());
     std::vector<int> toGetSizes(toGet.size(), -1);
     std::vector<int> toSendSizes(toSend.size(), -1);
+#if CHECK > 3
+    {
+      int thisproc;
+      MPI_Comm_rank(comm, thisproc);
+      assert(thisproc == mesh->getYProcIndex() * g2lx.npe + mesh->getXProcIndex());
+    }
+#endif
     std::vector<MPI_Request> reqs(toSend.size());
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
       auto ret = MPI_Irecv(static_cast<void*>(&toSendSizes[proc]), 1, MPI_INT, proc,
