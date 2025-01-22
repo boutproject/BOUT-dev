@@ -165,7 +165,6 @@ private:
     }
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
       toGetSizes[proc] = toGet[proc].size();
-      sendBufferSize += toGetSizes[proc];
       auto ret = MPI_Send(static_cast<void*>(&toGetSizes[proc]), 1, MPI_INT, proc,
                           666, comm);
       ASSERT0(ret == MPI_SUCCESS);
@@ -177,6 +176,8 @@ private:
       ASSERT0(ret == MPI_SUCCESS);
       ASSERT3(ind != MPI_UNDEFINED);
       ASSERT2(static_cast<size_t>(ind) < toSend.size());
+      ASSERT3(toSendSizes[ind] >= 0);
+      sendBufferSize += toSendSizes[ind];
       toSend[ind].resize(toSendSizes[ind]);
       ret = MPI_Irecv(static_cast<void*>(&toSend[ind][0]), toSend[ind].size(), MPI_INT,
                       ind, 666 * 666, comm, &reqs2[ind]);
@@ -215,9 +216,8 @@ private:
   std::vector<BoutReal> communicate_data(const Field3D& f) {
     ASSERT2(is_setup);
     ASSERT2(f.getMesh() == mesh);
-    //std::vector<BoutReal> sendBuffer(sendBufferSize);
-    BoutReal* sendBuffer = new BoutReal[sendBufferSize];
     std::vector<BoutReal> data(getOffsets.back());
+    std::vector<BoutReal> sendBuffer(sendBufferSize);
     std::vector<MPI_Request> reqs(toSend.size());
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
       auto ret = MPI_Irecv(static_cast<void*>(&data[proc]), toGet[proc].size(),
@@ -239,7 +239,6 @@ private:
       ASSERT0(ret == MPI_SUCCESS);
       ASSERT3(ind != MPI_UNDEFINED);
     }
-    delete[] sendBuffer;
     return data;
   }
 };
