@@ -166,14 +166,14 @@ private:
 #endif
     std::vector<MPI_Request> reqs(toSend.size());
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
-      auto ret = MPI_Irecv(static_cast<void*>(&toSendSizes[proc]), 1, MPI_INT, proc,
-                           666, comm, &reqs[proc]);
+      auto ret = MPI_Irecv(static_cast<void*>(&toSendSizes[proc]), 1, MPI_INT, proc, 666,
+                           comm, &reqs[proc]);
       ASSERT0(ret == MPI_SUCCESS);
     }
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
       toGetSizes[proc] = toGet[proc].size();
-      auto ret = MPI_Send(static_cast<void*>(&toGetSizes[proc]), 1, MPI_INT, proc,
-                          666, comm);
+      auto ret =
+          MPI_Send(static_cast<void*>(&toGetSizes[proc]), 1, MPI_INT, proc, 666, comm);
       ASSERT0(ret == MPI_SUCCESS);
     }
     std::vector<MPI_Request> reqs2(toSend.size());
