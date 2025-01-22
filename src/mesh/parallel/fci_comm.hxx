@@ -220,8 +220,8 @@ private:
     std::vector<BoutReal> sendBuffer(sendBufferSize);
     std::vector<MPI_Request> reqs(toSend.size());
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
-      auto ret = MPI_Irecv(static_cast<void*>(&data[proc]), toGet[proc].size(),
-                           MPI_DOUBLE, proc, 666, comm, &reqs[proc]);
+      auto ret = MPI_Irecv(static_cast<void*>(&data[getOffsets[proc]]),
+                           toGet[proc].size(), MPI_DOUBLE, proc, 666, comm, &reqs[proc]);
       ASSERT0(ret == MPI_SUCCESS);
     }
     int cnt = 0;
