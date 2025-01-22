@@ -124,10 +124,10 @@ public:
     {
       int offset = 0;
       for (auto get : toGet) {
-        offsets.push_back(offset);
+        getOffsets.push_back(offset);
         offset += get.size();
       }
-      offsets.push_back(offset);
+      getOffsets.push_back(offset);
     }
     for (const auto id : ids) {
       IndG3D gind{id, g2ly.globalwith, g2lz.globalwith};
@@ -141,7 +141,7 @@ public:
       auto it = std::lower_bound(vec.begin(), vec.end(), tofind);
       ASSERT3(it != vec.end());
       ASSERT3(*it == tofind);
-      mapping[id] = std::distance(vec.begin(), it) + offsets[proc];
+      mapping[id] = std::distance(vec.begin(), it) + getOffsets[proc];
     }
     is_setup = true;
   }
@@ -155,9 +155,8 @@ public:
 private:
   void commCommLists() {
     toSend.resize(toGet.size());
-    std::vector<int> toGetSizes(toGet.size());
-    std::vector<int> toSendSizes(toSend.size());
-    //const int thisproc = mesh->getYProcIndex() * g2lx.npe + mesh->getXProcIndex();
+    std::vector<int> toGetSizes(toGet.size(), -1);
+    std::vector<int> toSendSizes(toSend.size(), -1);
     std::vector<MPI_Request> reqs(toSend.size());
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
       auto ret = MPI_Irecv(static_cast<void*>(&toSendSizes[proc]), 1, MPI_INT, proc,
@@ -210,15 +209,15 @@ public:
 private:
   std::vector<std::vector<int>> toGet;
   std::vector<std::vector<int>> toSend;
-  std::vector<int> offsets;
+  std::vector<int> getOffsets;
   int sendBufferSize{0};
   MPI_Comm comm;
   std::vector<BoutReal> communicate_data(const Field3D& f) {
     ASSERT2(is_setup);
     ASSERT2(f.getMesh() == mesh);
-    std::vector<BoutReal> data(offsets.back());
     //std::vector<BoutReal> sendBuffer(sendBufferSize);
     BoutReal* sendBuffer = new BoutReal[sendBufferSize];
+    std::vector<BoutReal> data(getOffsets.back());
     std::vector<MPI_Request> reqs(toSend.size());
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
       auto ret = MPI_Irecv(static_cast<void*>(&data[proc]), toGet[proc].size(),
