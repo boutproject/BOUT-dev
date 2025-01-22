@@ -160,7 +160,7 @@ private:
 #if CHECK > 3
     {
       int thisproc;
-      MPI_Comm_rank(comm, thisproc);
+      MPI_Comm_rank(comm, &thisproc);
       ASSERT0(thisproc == mesh->getYProcIndex() * g2lx.npe + mesh->getXProcIndex());
     }
 #endif
