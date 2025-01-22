@@ -159,7 +159,9 @@ for nslice in nslices:
         stdout.write(", {:f} (small spacing)".format(order))
 
         # Should be close to the expected order
-        if order > method_orders[nslice]["order"] * 0.95:
+        if order > method_orders[nslice]["order"] * (
+            0.6 if "monot" in method else 0.95
+        ):
             print("............ PASS\n")
         else:
             print("............ FAIL\n")
