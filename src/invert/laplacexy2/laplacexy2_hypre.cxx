@@ -8,7 +8,6 @@
 #include "bout/mesh.hxx"
 #include "bout/output.hxx"
 #include "bout/sys/timer.hxx"
-#include "bout/utils.hxx"
 
 #include <cmath>
 
