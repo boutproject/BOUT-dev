@@ -4,9 +4,9 @@
  * Class for 2D X-Y profiles
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ developers
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -355,7 +355,7 @@ namespace {
 void checkDataIsFiniteOnRegion(const Field2D& f, const std::string& region) {
   // Do full checks
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
-    if (!::finite(f[i])) {
+    if (!std::isfinite(f[i])) {
       throw BoutException("Field2D: Operation on non-finite data at [{:d}][{:d}]\n",
                           i.x(), i.y());
     }

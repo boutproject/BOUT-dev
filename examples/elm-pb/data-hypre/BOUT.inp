@@ -1,20 +1,10 @@
-# settings file for BOUT++
-# High-Beta reduced MHD case
-
-##################################################
-# Global settings used by the core code
-
-nout = 40          # number of time-steps
-timestep = 1       # time between outputs
-
 zperiod = 15        # Fraction of a torus to simulate
 MZ = 16             # Number of points in Z
 
-grid = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
-
 [mesh]
-
 staggergrids = false    # Use staggered grids
+
+file = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
 
 [mesh:paralleltransform]
 type = shiftedinterp
@@ -63,8 +53,8 @@ mxstep = 5000   # Number of internal steps between outputs
 
 [highbeta]
 
-density = 1.0e19       # number density of deuterium [m^-3]
-                       # used to produce output normalisations
+density = 1e+19       # number density of deuterium [m^-3]
+# used to produce output normalisations
 
 evolve_jpar = false     # If true, evolve J raher than Psi
 
@@ -94,7 +84,7 @@ bm_exb_flag = 0
 bm_mag_flag = 0
 ##################################################################
 withflow = false    # With flow or not
-D_0 = 130000        # differential potential
+D_0 = 1.3e5         # differential potential
 D_s = 20            # shear parameter
 K_H_term = false    # Contain K-H term
 sign = -1           # flow direction
@@ -108,7 +98,7 @@ AA = 2.0              # ion mass in units of proton mass
 noshear = false        # zero all shear
 
 relax_j_vac = false    # Relax to zero-current in the vacuum
-relax_j_tconst = 1e-2  # Time constant for vacuum relaxation
+relax_j_tconst = 0.01  # Time constant for vacuum relaxation
 
 ## Toroidal filtering
 filter_z = true   # remove all except one mode
@@ -135,19 +125,19 @@ rmp_polpeak = 0.5   # Y location of maximum (fraction)
 ## Vacuum region control
 
 vacuum_pressure = 0.02 # the pressure below which it is considered vacuum
-                       # fraction of peak pressure
+# fraction of peak pressure
 vacuum_trans = 0.01   # transition width (fraction of P)
 
 ## Resistivity and Hyper-resistivity
 
-vac_lund = 1.0e8    # Lundquist number in vacuum  (negative -> infinity)
-core_lund = 1.0e8  # Lundquist number in core (negative -> infinity)
+vac_lund = 1.e8     # Lundquist number in vacuum  (negative -> infinity)
+core_lund = 1.e8    # Lundquist number in core (negative -> infinity)
 hyperresist = 1.e-4 # Hyper-resistivity coefficient (like 1 / Lundquist number)
 
 ## Inner boundary damping
 
 damp_width = -1       # Width of damping region (grid cells)
-damp_t_const = 1e-2  # Damping time constant
+damp_t_const = 0.01  # Damping time constant
 
 ## Parallel pressure diffusion
 
