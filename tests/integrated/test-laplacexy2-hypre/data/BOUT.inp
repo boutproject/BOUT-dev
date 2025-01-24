@@ -29,6 +29,7 @@ rtol = 1e-14
 core_bndry_dirichlet = true
 pf_bndry_dirichlet = true
 y_bndry = dirichlet
+hypre_solver_type = gmres
 
 [f]
 # make an input:
