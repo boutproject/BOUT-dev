@@ -167,7 +167,6 @@ private:
 };
 
 #else
-#endif // SUNDIALS_VERSION CHECK
 #endif // BOUT_HAS_ARKODE
 #endif // BOUT_ARKODE_MRI_SOLVER_H
 

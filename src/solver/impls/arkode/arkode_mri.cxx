@@ -997,5 +997,4 @@ void ArkodeMRISolver::loop_abstol_values_op(Ind2D UNUSED(i2d), BoutReal* abstolv
   }
 }
 
-#endif // SUNDIALS_VERSION CHECK
 #endif // BOUT_HAS_ARKODE
