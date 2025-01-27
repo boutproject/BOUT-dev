@@ -46,7 +46,7 @@ RegisterUnavailableSolver
 #include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
 
-SUNDIALS_VERSION_AT_LEAST(7, 2, 0)
+#if SUNDIALS_VERSION_AT_LEAST(7, 2, 0)
 
 #include <nvector/nvector_parallel.h>
 #include <arkode/arkode_mristep.h>
@@ -167,6 +167,7 @@ private:
 };
 
 #else
+#endif // SUNDIALS_VERSION CHECK
 #endif // BOUT_HAS_ARKODE
 #endif // BOUT_ARKODE_MRI_SOLVER_H
 

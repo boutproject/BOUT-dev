@@ -29,7 +29,7 @@
 
 #include "arkode_mri.hxx"
 
-SUNDIALS_VERSION_AT_LEAST(7, 2, 0)
+#if SUNDIALS_VERSION_AT_LEAST(7, 2, 0)
 
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
@@ -997,4 +997,6 @@ void ArkodeMRISolver::loop_abstol_values_op(Ind2D UNUSED(i2d), BoutReal* abstolv
   }
 }
 
+#else
+#endif // SUNDIALS_VERSION CHECK
 #endif // BOUT_HAS_ARKODE
