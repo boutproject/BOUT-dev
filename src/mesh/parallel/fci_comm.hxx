@@ -52,19 +52,35 @@ struct globalToLocal1D {
   const int local;
   const int global;
   const int globalwith;
-  globalToLocal1D(int mg, int npe, int localwith)
+  const bool periodic;
+  globalToLocal1D(int mg, int npe, int localwith, bool periodic)
       : mg(mg), npe(npe), localwith(localwith), local(localwith - 2 * mg),
-        global(local * npe), globalwith(global + 2 * mg) {};
+        global(local * npe), globalwith(global + 2 * mg), periodic(periodic) {};
   ProcLocal convert(int id) const {
+    if (periodic) {
+      while (id < mg) {
+        id += global;
+      }
+      while (id >= global + mg) {
+        id -= global;
+      }
+    }
     int idwo = id - mg;
     int proc = idwo / local;
-    if (proc >= npe) {
-      proc = npe - 1;
+    if (not periodic) {
+      if (proc >= npe) {
+        proc = npe - 1;
+      }
     }
-    ASSERT2(proc >= 0);
     int loc = id - local * proc;
-    ASSERT2(0 <= loc);
-    ASSERT2(loc < (local + 2 * mg));
+#if CHECK > 1
+    if ((loc < 0 or loc > localwith or proc < 0 or proc > npe)
+        or (periodic and (loc < mg or loc >= local + mg))) {
+      printf("globalToLocal1D failure: %d %d, %d %d, %d %d %s\n", id, idwo, globalwith,
+             npe, proc, loc, periodic ? "periodic" : "non-periodic");
+      ASSERT0(false);
+    }
+#endif
     return {proc, loc};
   }
 };
@@ -98,9 +114,9 @@ class GlobalField3DAccess {
 public:
   friend class GlobalField3DAccessInstance;
   GlobalField3DAccess(Mesh* mesh)
-      : mesh(mesh), g2lx(mesh->xstart, mesh->getNXPE(), mesh->LocalNx),
-        g2ly(mesh->ystart, mesh->getNYPE(), mesh->LocalNy),
-        g2lz(mesh->zstart, 1, mesh->LocalNz),
+      : mesh(mesh), g2lx(mesh->xstart, mesh->getNXPE(), mesh->LocalNx, false),
+        g2ly(mesh->ystart, mesh->getNYPE(), mesh->LocalNy, true),
+        g2lz(mesh->zstart, 1, mesh->LocalNz, true),
         xyzl(g2lx.localwith, g2ly.localwith, g2lz.localwith),
         xyzg(g2lx.globalwith, g2ly.globalwith, g2lz.globalwith), comm(BoutComm::get()) {};
   void get(IndG3D ind) { ids.emplace(ind.ind); }
