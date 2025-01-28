@@ -52,19 +52,35 @@ struct globalToLocal1D {
   const int local;
   const int global;
   const int globalwith;
-  globalToLocal1D(int mg, int npe, int localwith)
+  const bool periodic;
+  globalToLocal1D(int mg, int npe, int localwith, bool periodic)
       : mg(mg), npe(npe), localwith(localwith), local(localwith - 2 * mg),
-        global(local * npe), globalwith(global + 2 * mg) {};
+        global(local * npe), globalwith(global + 2 * mg), periodic(periodic) {};
   ProcLocal convert(int id) const {
+    if (periodic) {
+      while (id < mg) {
+        id += global;
+      }
+      while (id >= global + mg) {
+        id -= global;
+      }
+    }
     int idwo = id - mg;
     int proc = idwo / local;
-    if (proc >= npe) {
-      proc = npe - 1;
+    if (not periodic) {
+      if (proc >= npe) {
+        proc = npe - 1;
+      }
     }
-    ASSERT2(proc >= 0);
     int loc = id - local * proc;
-    ASSERT2(0 <= loc);
-    ASSERT2(loc < (local + 2 * mg));
+#if CHECK > 1
+    if ((loc < 0 or loc > localwith or proc < 0 or proc > npe)
+        or (periodic and (loc < mg or loc >= local + mg))) {
+      printf("globalToLocal1D failure: %d %d, %d %d, %d %d %s\n", id, idwo, globalwith,
+             npe, proc, loc, periodic ? "periodic" : "non-periodic");
+      ASSERT0(false);
+    }
+#endif
     return {proc, loc};
   }
 };
@@ -98,9 +114,9 @@ class GlobalField3DAccess {
 public:
   friend class GlobalField3DAccessInstance;
   GlobalField3DAccess(Mesh* mesh)
-      : mesh(mesh), g2lx(mesh->xstart, mesh->getNXPE(), mesh->LocalNx),
-        g2ly(mesh->ystart, mesh->getNYPE(), mesh->LocalNy),
-        g2lz(mesh->zstart, 1, mesh->LocalNz),
+      : mesh(mesh), g2lx(mesh->xstart, mesh->getNXPE(), mesh->LocalNx, false),
+        g2ly(mesh->ystart, mesh->getNYPE(), mesh->LocalNy, true),
+        g2lz(mesh->zstart, 1, mesh->LocalNz, true),
         xyzl(g2lx.localwith, g2ly.localwith, g2lz.localwith),
         xyzg(g2lx.globalwith, g2ly.globalwith, g2lz.globalwith), comm(BoutComm::get()) {};
   void get(IndG3D ind) { ids.emplace(ind.ind); }
@@ -117,10 +133,16 @@ public:
       toGet[piy.proc * g2lx.npe + pix.proc].push_back(
           xyzl.convert(pix.ind, piy.ind, piz.ind).ind);
     }
-    for (auto v : toGet) {
+    for (auto& v : toGet) {
       std::sort(v.begin(), v.end());
     }
+    for (auto v : toGet) {
+      ASSERT3(std::is_sorted(v.begin(), v.end()));
+    }
     commCommLists();
+    for (auto v : toGet) {
+      ASSERT3(std::is_sorted(v.begin(), v.end()));
+    }
     {
       int offset = 0;
       for (auto get : toGet) {
@@ -140,6 +162,12 @@ public:
       const auto tofind = xyzl.convert(pix.ind, piy.ind, piz.ind).ind;
       auto it = std::lower_bound(vec.begin(), vec.end(), tofind);
       ASSERT3(it != vec.end());
+#if CHECK > 2
+      if (*it != tofind) {
+        printf("*it = %d ; tofind = %d ; proc = %d\n", *it, tofind, proc);
+        ASSERT0(false);
+      }
+#endif
       ASSERT3(*it == tofind);
       mapping[id] = std::distance(vec.begin(), it) + getOffsets[proc];
     }
@@ -157,12 +185,12 @@ private:
     toSend.resize(toGet.size());
     std::vector<int> toGetSizes(toGet.size(), -1);
     std::vector<int> toSendSizes(toSend.size(), -1);
-#if CHECK > 3
-    {
-      int thisproc;
-      MPI_Comm_rank(comm, &thisproc);
-      ASSERT0(thisproc == mesh->getYProcIndex() * g2lx.npe + mesh->getXProcIndex());
-    }
+#if CHECK > 0
+
+    int thisproc;
+    MPI_Comm_rank(comm, &thisproc);
+    ASSERT0(thisproc == mesh->getYProcIndex() * g2lx.npe + mesh->getXProcIndex());
+    printf("we are starting %d\n", thisproc);
 #endif
     std::vector<MPI_Request> reqs(toSend.size());
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
@@ -175,8 +203,10 @@ private:
       auto ret =
           MPI_Send(static_cast<void*>(&toGetSizes[proc]), 1, MPI_INT, proc, 666, comm);
       ASSERT0(ret == MPI_SUCCESS);
+      printf("this is %d toGet[%ld] = %d\n", thisproc, proc, toGetSizes[proc]);
     }
     std::vector<MPI_Request> reqs2(toSend.size());
+    int cnt = 0;
     for ([[maybe_unused]] auto dummy : reqs) {
       int ind{0};
       auto ret = MPI_Waitany(reqs.size(), &reqs[0], &ind, MPI_STATUS_IGNORE);
@@ -184,20 +214,28 @@ private:
       ASSERT3(ind != MPI_UNDEFINED);
       ASSERT2(static_cast<size_t>(ind) < toSend.size());
       ASSERT3(toSendSizes[ind] >= 0);
+      printf("this is %d and we do get %d from %d\n", thisproc, toSendSizes[ind], ind);
+      if (toSendSizes[ind] == 0) {
+        continue;
+      }
       sendBufferSize += toSendSizes[ind];
-      toSend[ind].resize(toSendSizes[ind]);
-      ret = MPI_Irecv(static_cast<void*>(&toSend[ind][0]), toSend[ind].size(), MPI_INT,
-                      ind, 666 * 666, comm, &reqs2[ind]);
+      toSend[ind].resize(toSendSizes[ind], -1);
+
+      ret = MPI_Irecv(static_cast<void*>(toSend[ind].data()), toSend[ind].size(), MPI_INT,
+                      ind, 666 * 666, comm, reqs2.data() + cnt++);
       ASSERT0(ret == MPI_SUCCESS);
     }
+    printf("this is %d and cnt is %d\n", thisproc, cnt);
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
-      const auto ret = MPI_Send(static_cast<void*>(&toGet[proc][0]), toGet[proc].size(),
-                                MPI_INT, proc, 666 * 666, comm);
-      ASSERT0(ret == MPI_SUCCESS);
+      if (toGet.size() != 0) {
+        const auto ret = MPI_Send(static_cast<void*>(toGet[proc].data()),
+                                  toGet[proc].size(), MPI_INT, proc, 666 * 666, comm);
+        ASSERT0(ret == MPI_SUCCESS);
+      }
     }
-    for ([[maybe_unused]] auto dummy : reqs) {
+    for (int c = 0; c < cnt; c++) {
       int ind{0};
-      const auto ret = MPI_Waitany(reqs.size(), &reqs2[0], &ind, MPI_STATUS_IGNORE);
+      const auto ret = MPI_Waitany(cnt, reqs2.data(), &ind, MPI_STATUS_IGNORE);
       ASSERT0(ret == MPI_SUCCESS);
       ASSERT3(ind != MPI_UNDEFINED);
     }
@@ -223,28 +261,46 @@ private:
   std::vector<BoutReal> communicate_data(const Field3D& f) {
     ASSERT2(is_setup);
     ASSERT2(f.getMesh() == mesh);
-    std::vector<BoutReal> data(getOffsets.back());
-    std::vector<BoutReal> sendBuffer(sendBufferSize);
+    int thisproc;
+    MPI_Comm_rank(comm, &thisproc);
+    ASSERT0(thisproc == mesh->getYProcIndex() * g2lx.npe + mesh->getXProcIndex());
+    std::vector<BoutReal> data(getOffsets.back(), BoutNaN);
+    std::vector<BoutReal> sendBuffer(sendBufferSize, BoutNaN);
     std::vector<MPI_Request> reqs(toSend.size());
+    int cnt1 = 0;
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
-      auto ret = MPI_Irecv(static_cast<void*>(&data[getOffsets[proc]]),
-                           toGet[proc].size(), MPI_DOUBLE, proc, 666, comm, &reqs[proc]);
+      if (toGet[proc].size() == 0) {
+        continue;
+      }
+      printf("this is %d and we are getting %ld from %ld\n", thisproc, toGet[proc].size(),
+             proc);
+      auto ret =
+          MPI_Irecv(static_cast<void*>(data.data() + getOffsets[proc]),
+                    toGet[proc].size(), MPI_DOUBLE, proc, 666, comm, reqs.data() + cnt1);
       ASSERT0(ret == MPI_SUCCESS);
+      cnt1++;
     }
     int cnt = 0;
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
-      void* start = static_cast<void*>(&sendBuffer[cnt]);
+      if (toSend[proc].size() == 0) {
+        continue;
+      }
+      const void* start = static_cast<void*>(sendBuffer.data() + cnt);
       for (auto i : toSend[proc]) {
         sendBuffer[cnt++] = f[Ind3D(i)];
       }
+      printf("this is %d and we are sending %ld to %ld\n", thisproc, toSend[proc].size(),
+             proc);
       auto ret = MPI_Send(start, toSend[proc].size(), MPI_DOUBLE, proc, 666, comm);
       ASSERT0(ret == MPI_SUCCESS);
     }
-    for ([[maybe_unused]] auto dummy : reqs) {
+    for (int j = 0; j < cnt1; ++j) {
       int ind{0};
-      auto ret = MPI_Waitany(reqs.size(), &reqs[0], &ind, MPI_STATUS_IGNORE);
+      auto ret = MPI_Waitany(cnt1, reqs.data(), &ind, MPI_STATUS_IGNORE);
       ASSERT0(ret == MPI_SUCCESS);
       ASSERT3(ind != MPI_UNDEFINED);
+      ASSERT3(ind >= 0);
+      ASSERT3(ind < cnt1);
     }
     return data;
   }

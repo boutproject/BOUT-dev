@@ -51,6 +51,7 @@ for nslice in nslices:
         "lagrange4pt",
         "bilinear",
         "monotonichermitespline",
+        "monotonichermitesplinelegacy",
     ]:
         error_2[nslice] = []
         error_inf[nslice] = []
@@ -104,7 +105,11 @@ for nslice in nslices:
                 nslice,
                 yperiodic,
                 method_orders[nslice]["name"],
-                2 if conf.has["petsc"] and "hermitespline" in method else 1,
+                (
+                    1
+                    if "legacy" in method
+                    else 2 if conf.has["petsc"] and "hermitespline" in method else 1
+                ),
             )
             args += f" mesh:paralleltransform:xzinterpolation:type={method}"
 
