@@ -193,6 +193,7 @@ private:
       ASSERT0(ret == MPI_SUCCESS);
     }
     std::vector<MPI_Request> reqs2(toSend.size());
+    int cnt = 0;
     for ([[maybe_unused]] auto dummy : reqs) {
       int ind{0};
       auto ret = MPI_Waitany(reqs.size(), &reqs[0], &ind, MPI_STATUS_IGNORE);
@@ -200,20 +201,26 @@ private:
       ASSERT3(ind != MPI_UNDEFINED);
       ASSERT2(static_cast<size_t>(ind) < toSend.size());
       ASSERT3(toSendSizes[ind] >= 0);
+      if (toSendSizes[ind] == 0) {
+        continue;
+      }
       sendBufferSize += toSendSizes[ind];
-      toSend[ind].resize(toSendSizes[ind]);
-      ret = MPI_Irecv(static_cast<void*>(&toSend[ind][0]), toSend[ind].size(), MPI_INT,
-                      ind, 666 * 666, comm, &reqs2[ind]);
+      toSend[ind].resize(toSendSizes[ind], -1);
+
+      ret = MPI_Irecv(static_cast<void*>(toSend[ind].data()), toSend[ind].size(), MPI_INT,
+                      ind, 666 * 666, comm, reqs2.data() + cnt++);
       ASSERT0(ret == MPI_SUCCESS);
     }
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
-      const auto ret = MPI_Send(static_cast<void*>(&toGet[proc][0]), toGet[proc].size(),
-                                MPI_INT, proc, 666 * 666, comm);
-      ASSERT0(ret == MPI_SUCCESS);
+      if (toGet.size() != 0) {
+        const auto ret = MPI_Send(static_cast<void*>(toGet[proc].data()),
+                                  toGet[proc].size(), MPI_INT, proc, 666 * 666, comm);
+        ASSERT0(ret == MPI_SUCCESS);
+      }
     }
-    for ([[maybe_unused]] auto dummy : reqs) {
+    for (int c = 0; c < cnt; c++) {
       int ind{0};
-      const auto ret = MPI_Waitany(reqs.size(), &reqs2[0], &ind, MPI_STATUS_IGNORE);
+      const auto ret = MPI_Waitany(cnt, reqs2.data(), &ind, MPI_STATUS_IGNORE);
       ASSERT0(ret == MPI_SUCCESS);
       ASSERT3(ind != MPI_UNDEFINED);
     }
@@ -242,25 +249,36 @@ private:
     std::vector<BoutReal> data(getOffsets.back());
     std::vector<BoutReal> sendBuffer(sendBufferSize);
     std::vector<MPI_Request> reqs(toSend.size());
+    int cnt1 = 0;
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
-      auto ret = MPI_Irecv(static_cast<void*>(&data[getOffsets[proc]]),
-                           toGet[proc].size(), MPI_DOUBLE, proc, 666, comm, &reqs[proc]);
+      if (toGet[proc].size() == 0) {
+        continue;
+      }
+      auto ret =
+          MPI_Irecv(static_cast<void*>(data.data() + getOffsets[proc]),
+                    toGet[proc].size(), MPI_DOUBLE, proc, 666, comm, reqs.data() + cnt1);
       ASSERT0(ret == MPI_SUCCESS);
+      cnt1++;
     }
     int cnt = 0;
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
-      void* start = static_cast<void*>(&sendBuffer[cnt]);
+      if (toSend[proc].size() == 0) {
+        continue;
+      }
+      const void* start = static_cast<void*>(sendBuffer.data() + cnt);
       for (auto i : toSend[proc]) {
         sendBuffer[cnt++] = f[Ind3D(i)];
       }
       auto ret = MPI_Send(start, toSend[proc].size(), MPI_DOUBLE, proc, 666, comm);
       ASSERT0(ret == MPI_SUCCESS);
     }
-    for ([[maybe_unused]] auto dummy : reqs) {
+    for (int j = 0; j < cnt1; ++j) {
       int ind{0};
-      auto ret = MPI_Waitany(reqs.size(), &reqs[0], &ind, MPI_STATUS_IGNORE);
+      auto ret = MPI_Waitany(cnt1, reqs.data(), &ind, MPI_STATUS_IGNORE);
       ASSERT0(ret == MPI_SUCCESS);
       ASSERT3(ind != MPI_UNDEFINED);
+      ASSERT3(ind >= 0);
+      ASSERT3(ind < cnt1);
     }
     return data;
   }
