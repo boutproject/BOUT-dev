@@ -1143,6 +1143,9 @@ protected:
 
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
+    // Save performance metrics to output, using the
+    // given name as the prefix.
+    phiSolver->savePerformance(*solver, "phiSolver");
 
     aparSolver = Laplacian::create(&globalOptions["aparSolver"], loc);
 

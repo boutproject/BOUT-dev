@@ -1,4 +1,4 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_NETCDF && !BOUT_HAS_LEGACY_NETCDF
 
@@ -9,6 +9,7 @@
 #include "bout/mesh.hxx"
 #include "bout/sys/timer.hxx"
 
+#include <climits>
 #include <exception>
 #include <iostream>
 #include <netcdf>
@@ -56,7 +57,8 @@ T readAttribute(const NcAtt& attribute) {
   return value;
 }
 
-void readGroup(const std::string& filename, const NcGroup& group, Options& result) {
+void readGroup(const std::string& filename, const NcGroup& group, Options& result,
+               const std::shared_ptr<netCDF::NcFile>& file) {
 
   // Iterate over all variables
   for (const auto& varpair : group.getVars()) {
@@ -107,11 +109,44 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
     }
     case 3: {
       if (var_type == ncDouble or var_type == ncFloat) {
-        Tensor<double> value(static_cast<int>(dims[0].getSize()),
-                             static_cast<int>(dims[1].getSize()),
-                             static_cast<int>(dims[2].getSize()));
-        var.getVar(value.begin());
-        result[var_name] = value;
+        if (file) {
+          result[var_name] = Tensor<double>(0, 0, 0);
+          const auto s2i = [](size_t s) {
+            if (s > INT_MAX) {
+              throw BoutException("BadCast {} > {}", s, INT_MAX);
+            }
+            return static_cast<int>(s);
+          };
+          result[var_name].setLazyShape(
+              {s2i(dims[0].getSize()), s2i(dims[1].getSize()), s2i(dims[2].getSize())});
+          // We need to explicitly copy file, so that there is a pointer to the file, and
+          // the file does not get closed, which would prevent us from reading.
+          result[var_name].setLazyLoad(std::make_unique<std::function<Tensor<double>(
+                                           int, int, int, int, int, int)>>(
+              [file, var](int xstart, int xend, int ystart, int yend, int zstart,
+                          int zend) {
+                const auto i2s = [](int i) {
+                  if (i < 0) {
+                    throw BoutException("BadCast {} < 0", i);
+                  }
+                  return static_cast<size_t>(i);
+                };
+                Tensor<double> value(xend - xstart + 1, yend - ystart + 1,
+                                     zend - zstart + 1);
+                const std::vector<size_t> index{i2s(xstart), i2s(ystart), i2s(zstart)};
+                const std::vector<size_t> count{i2s(xend - xstart + 1),
+                                                i2s(yend - ystart + 1),
+                                                i2s(zend - zstart + 1)};
+                var.getVar(index, count, value.begin());
+                return value;
+              }));
+        } else {
+          Tensor<double> value(static_cast<int>(dims[0].getSize()),
+                               static_cast<int>(dims[1].getSize()),
+                               static_cast<int>(dims[2].getSize()));
+          var.getVar(value.begin());
+          result[var_name] = value;
+        }
       }
     }
     }
@@ -144,25 +179,25 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
     const auto& name = grouppair.first;
     const auto& subgroup = grouppair.second;
 
-    readGroup(filename, subgroup, result[name]);
+    readGroup(filename, subgroup, result[name], file);
   }
 }
 } // namespace
 
 namespace bout {
 
-Options OptionsNetCDF::read() {
+Options OptionsNetCDF::read(bool lazy) {
   Timer timer("io");
 
   // Open file
-  const NcFile read_file(filename, NcFile::read);
+  auto read_file = std::make_shared<netCDF::NcFile>(filename, NcFile::read);
 
-  if (read_file.isNull()) {
+  if (read_file->isNull()) {
     throw BoutException("Could not open NetCDF file '{:s}' for reading", filename);
   }
 
   Options result;
-  readGroup(filename, read_file, result);
+  readGroup(filename, *read_file, result, lazy ? read_file : nullptr);
 
   return result;
 }

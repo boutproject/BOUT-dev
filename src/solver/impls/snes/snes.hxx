@@ -4,9 +4,9 @@
  * using PETSc for the SNES interface
  *
  **************************************************************************
- * Copyright 2015, 2021 B.D.Dudson
+ * Copyright 2015-2024 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -28,7 +28,7 @@
 #ifndef BOUT_SNES_SOLVER_H
 #define BOUT_SNES_SOLVER_H
 
-#include <bout/build_config.hxx>
+#include <bout/build_defines.hxx>
 #include <bout/solver.hxx>
 
 #if BOUT_HAS_PETSC
@@ -82,6 +82,12 @@ public:
   /// @param[out] f  The result of the operation
   PetscErrorCode precon(Vec x, Vec f);
 
+  /// Scale an approximate Jacobian,
+  /// and update the internal RHS scaling factors
+  /// This is called by SNESComputeJacobianScaledColor with the
+  /// finite difference approximated Jacobian.
+  PetscErrorCode scaleJacobian(Mat B);
+
 private:
   BoutReal timestep;     ///< Internal timestep
   BoutReal dt;           ///< Current timestep used in snes_function
@@ -116,9 +122,10 @@ private:
   BoutReal time1{-1.0}; ///< Time of previous solution
 
   SNES snes;                ///< SNES context
-  Mat Jmf;                  ///< Matrix-free Jacobian
-  MatFDColoring fdcoloring; ///< Matrix coloring context, used for finite difference
-                            ///< Jacobian evaluation
+  Mat Jmf;                  ///< Matrix Free Jacobian
+  Mat Jfd;                  ///< Finite Difference Jacobian
+  MatFDColoring fdcoloring{nullptr}; ///< Matrix coloring context
+                                     ///< Jacobian evaluation
 
   bool use_precon;                ///< Use preconditioner
   std::string ksp_type;           ///< Linear solver type
@@ -127,9 +134,27 @@ private:
   std::string pc_type;            ///< Preconditioner type
   std::string pc_hypre_type;      ///< Hypre preconditioner type
   std::string line_search_type;   ///< Line search type
+
   bool matrix_free;               ///< Use matrix free Jacobian
+  bool matrix_free_operator;      ///< Use matrix free Jacobian in the operator?
   int lag_jacobian;               ///< Re-use Jacobian
   bool use_coloring;              ///< Use matrix coloring
+
+  bool jacobian_recalculated; ///< Flag set when Jacobian is recalculated
+  bool prune_jacobian;        ///< Remove small elements in the Jacobian?
+  BoutReal prune_abstol;      ///< Prune values with absolute values smaller than this
+  BoutReal prune_fraction;    ///< Prune if fraction of small elements is larger than this
+  bool jacobian_pruned{false}; ///< Has the Jacobian been pruned?
+  Mat Jfd_original;            ///< Used to reset the Jacobian if over-pruned
+  void updateColoring();       ///< Updates the coloring using Jfd
+
+  bool scale_rhs;          ///< Scale time derivatives?
+  Vec rhs_scaling_factors; ///< Factors to multiply RHS function
+  Vec jac_row_inv_norms;   ///< 1 / Norm of the rows of the Jacobian
+
+  bool scale_vars;         ///< Scale individual variables?
+  Vec var_scaling_factors; ///< Factors to multiply variables when passing to user
+  Vec scaled_x;            ///< The values passed to the user RHS
 };
 
 #else

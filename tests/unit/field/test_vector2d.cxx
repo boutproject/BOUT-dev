@@ -3,20 +3,13 @@
 #include "bout/boutexception.hxx"
 #if not(BOUT_USE_METRIC_3D)
 #include "test_extras.hxx"
-#include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 #include "bout/mpi_wrapper.hxx"
 #include "bout/output.hxx"
-#include "bout/unused.hxx"
 #include "bout/vector2d.hxx"
 #include "bout/vector3d.hxx"
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;

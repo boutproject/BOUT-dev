@@ -20,7 +20,7 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
@@ -99,7 +99,15 @@ Solver::Solver(Options* opts)
               .doc("Output time step size. Overrides global 'timestep' setting.")
               .withDefault(Options::root()["timestep"]
                                .doc("Output time step size")
-                               .withDefault(1.0))) {}
+                               .withDefault(1.0))) {
+  if (Options::root().isSet("nout")) {
+    output_warn.write("Setting `nout` is deprecated. Please set `solver:nout` instead.");
+  }
+  if (Options::root().isSet("timestep")) {
+    output_warn.write(
+        "Setting `timestep` is deprecated. Please set `solver:output_step` instead.");
+  }
+}
 
 /**************************************************************************
  * Add physics models

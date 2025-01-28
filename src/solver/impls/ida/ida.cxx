@@ -27,25 +27,34 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "ida.hxx"
 
 #if BOUT_HAS_IDA
 
+#include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/field3d.hxx"
+#include "bout/globals.hxx"
+#include "bout/mesh.hxx"
+#include "bout/mpi_wrapper.hxx"
 #include "bout/msg_stack.hxx"
+#include "bout/options.hxx"
 #include "bout/output.hxx"
+#include "bout/solver.hxx"
+#include "bout/sundials_backports.hxx"
 #include "bout/unused.hxx"
 
 #include <ida/ida.h>
 #include <ida/ida_bbdpre.h>
-#include <nvector/nvector_parallel.h>
-#include <sundials/sundials_types.h>
-#include <sunlinsol/sunlinsol_spgmr.h>
+#include <ida/ida_ls.h>
 
+#include <algorithm>
+#include <iterator>
 #include <numeric>
+#include <vector>
 
 // NOLINTBEGIN(readability-identifier-length)
 namespace {

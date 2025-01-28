@@ -1,10 +1,3 @@
-# DALF3 model settings
-
-##################################################
-# Global settings used by the core code
-
-nout = 100          # number of time-steps
-timestep = 10.0       # time between outputs
 
 ShiftXderivs = true # use shifted radial derivatives?
 twistshift = true   # use twist-shift condition?
@@ -16,13 +9,13 @@ zperiod = 10        # Fraction of a torus to simulate
 
 MXG = 2
 MYG = 2
-
-grid = "cbm18_8_y064_x516_090309.nc"  # Grid file
 restart_format = "nc"   # Restart file format
 
 [mesh]
 
 staggergrids = false    # Use staggered grids (EXPERIMENTAL)
+
+file = "cbm18_8_y064_x516_090309.nc"  # Grid file
 
 ##################################################
 # derivative methods
@@ -71,6 +64,13 @@ use_jacobian = false  # Use user-supplied Jacobian
 mxstep = 5000   # Number of internal steps between outputs
 adams_moulton = false # Use Adams-Moulton method (default is BDF)
 func_iter = false     # Functional iteration (default is Newton)
+output_step = 10.0       # time between outputs
+# DALF3 model settings
+
+##################################################
+# Global settings used by the core code
+
+nout = 100          # number of time-steps
 
 ##################################################
 

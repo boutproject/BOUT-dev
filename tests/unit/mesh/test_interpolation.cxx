@@ -1,7 +1,5 @@
 #include "gtest/gtest.h"
 
-#include "test_extras.hxx"
-#include "bout/boutexception.hxx"
 #include "bout/interpolation.hxx"
 #include "bout/mesh.hxx"
 #include "bout/output.hxx"
@@ -18,12 +16,7 @@
 #include <vector>
 ///////
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;

@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "fake_mesh.hxx"
+
 // The unit tests use the global mesh
 using namespace bout::globals;
 

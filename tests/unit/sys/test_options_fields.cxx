@@ -3,17 +3,11 @@
 
 #include "gtest/gtest.h"
 
-#include "test_extras.hxx"
 #include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
 #include "bout/unused.hxx"
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-}
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // Reuse the "standard" fixture for FakeMesh
 class OptionsFieldTest : public FakeMeshFixture {

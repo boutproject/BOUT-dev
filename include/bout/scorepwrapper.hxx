@@ -1,7 +1,7 @@
 #ifndef BOUT_SCOREP_H
 #define BOUT_SCOREP_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "bout/msg_stack.hxx"
 #include <bout/bout_types.hxx>
