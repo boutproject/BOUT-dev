@@ -56,6 +56,7 @@ class Mesh;
 #include "bout/options.hxx"
 #include "bout/region.hxx"
 #include "bout/sys/range.hxx" // RangeIterator
+#include <bout/griddata.hxx>
 #include "bout/unused.hxx"
 
 #include "mpi.h"

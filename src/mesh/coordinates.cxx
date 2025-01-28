@@ -16,7 +16,6 @@
 #include <bout/fft.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/output_bout_types.hxx>
-#include "invert3x3.hxx"
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
 #include "bout/derivs.hxx"
