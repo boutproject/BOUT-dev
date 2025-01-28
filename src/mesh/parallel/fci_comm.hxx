@@ -133,7 +133,7 @@ public:
       toGet[piy.proc * g2lx.npe + pix.proc].push_back(
           xyzl.convert(pix.ind, piy.ind, piz.ind).ind);
     }
-    for (auto v : toGet) {
+    for (auto& v : toGet) {
       std::sort(v.begin(), v.end());
     }
     commCommLists();
