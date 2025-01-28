@@ -186,7 +186,6 @@ private:
     std::vector<int> toGetSizes(toGet.size(), -1);
     std::vector<int> toSendSizes(toSend.size(), -1);
 #if CHECK > 0
-
     int thisproc;
     MPI_Comm_rank(comm, &thisproc);
     ASSERT0(thisproc == mesh->getYProcIndex() * g2lx.npe + mesh->getXProcIndex());
@@ -203,7 +202,9 @@ private:
       auto ret =
           MPI_Send(static_cast<void*>(&toGetSizes[proc]), 1, MPI_INT, proc, 666, comm);
       ASSERT0(ret == MPI_SUCCESS);
+#if CHECK > 0
       printf("this is %d toGet[%ld] = %d\n", thisproc, proc, toGetSizes[proc]);
+#endif
     }
     std::vector<MPI_Request> reqs2(toSend.size());
     int cnt = 0;
@@ -214,7 +215,9 @@ private:
       ASSERT3(ind != MPI_UNDEFINED);
       ASSERT2(static_cast<size_t>(ind) < toSend.size());
       ASSERT3(toSendSizes[ind] >= 0);
+#if CHECK > 0
       printf("this is %d and we do get %d from %d\n", thisproc, toSendSizes[ind], ind);
+#endif
       if (toSendSizes[ind] == 0) {
         continue;
       }
@@ -225,7 +228,9 @@ private:
                       ind, 666 * 666, comm, reqs2.data() + cnt++);
       ASSERT0(ret == MPI_SUCCESS);
     }
+#if CHECK > 0
     printf("this is %d and cnt is %d\n", thisproc, cnt);
+#endif
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
       if (toGet.size() != 0) {
         const auto ret = MPI_Send(static_cast<void*>(toGet[proc].data()),
