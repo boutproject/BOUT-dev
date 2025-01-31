@@ -245,7 +245,7 @@ bool readAttribute(adios2::IO& io, const std::string& name, const std::string& t
   return false;
 }
 
-Options OptionsADIOS::read() {
+Options OptionsADIOS::read([[maybe_unused]] bool lazy) {
   Timer timer("io");
 
   // Open file
