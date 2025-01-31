@@ -74,7 +74,7 @@ struct globalToLocal1D {
     }
     int loc = id - local * proc;
 #if CHECK > 1
-    if ((loc < 0 or loc > localwith or proc < 0 or proc > npe)
+    if ((loc < 0 or loc > localwith or proc < 0 or proc >= npe)
         or (periodic and (loc < mg or loc >= local + mg))) {
       printf("globalToLocal1D failure: %d %d, %d %d, %d %d %s\n", id, idwo, globalwith,
              npe, proc, loc, periodic ? "periodic" : "non-periodic");
