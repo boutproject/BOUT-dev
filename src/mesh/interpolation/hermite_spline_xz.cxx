@@ -170,7 +170,8 @@ void XZHermiteSplineBase<monotonic>::calcWeights(const Field3D& delta_x,
 #ifdef HS_USE_PETSC
   IndConverter conv{localmesh};
 #endif
-  [[maybe_unused]] const int y_global_offset = localmesh->getYProcIndex() * (localmesh->yend - localmesh->ystart + 1);
+  [[maybe_unused]] const int y_global_offset =
+      localmesh->getYProcIndex() * (localmesh->yend - localmesh->ystart + 1);
   BOUT_FOR(i, getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
@@ -304,7 +305,8 @@ void XZHermiteSplineBase<monotonic>::calcWeights(const Field3D& delta_x,
 #endif
 #endif
     if constexpr (monotonic) {
-      const auto gind = gf3daccess->xyzg(i_corn, y + y_offset + y_global_offset, k_corner(x, y, z));
+      const auto gind =
+          gf3daccess->xyzg(i_corn, y + y_offset + y_global_offset, k_corner(x, y, z));
       gf3daccess->get(gind);
       gf3daccess->get(gind.xp(1));
       gf3daccess->get(gind.zp(1));
