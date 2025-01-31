@@ -118,11 +118,30 @@ public:
         g2ly(mesh->ystart, mesh->getNYPE(), mesh->LocalNy, true),
         g2lz(mesh->zstart, 1, mesh->LocalNz, true),
         xyzl(g2lx.localwith, g2ly.localwith, g2lz.localwith),
-        xyzg(g2lx.globalwith, g2ly.globalwith, g2lz.globalwith), comm(BoutComm::get()) {};
-  void get(IndG3D ind) { ids.emplace(ind.ind); }
+        xyzg(g2lx.globalwith, g2ly.globalwith, g2lz.globalwith), comm(BoutComm::get()) {
+#ifdef _OPENMP
+    o_ids.resize(omp_get_max_threads());
+#endif
+  };
+  void get(IndG3D ind) {
+    ASSERT2(is_setup == false);
+#ifdef _OPENMP
+    ASSERT2(o_ids.size() > static_cast<size_t>(omp_get_thread_num()));
+    o_ids[omp_get_thread_num()].emplace(ind.ind);
+#else
+    ids.emplace(ind.ind);
+#endif
+  }
+
   void operator[](IndG3D ind) { return get(ind); }
   void setup() {
     ASSERT2(is_setup == false);
+#ifdef _OPENMP
+    for (auto& o_id : o_ids) {
+      ids.merge(o_id);
+    }
+    o_ids.clear();
+#endif
     toGet.resize(g2lx.npe * g2ly.npe * g2lz.npe);
     for (const auto id : ids) {
       IndG3D gind{id, g2ly.globalwith, g2lz.globalwith};
@@ -246,6 +265,9 @@ private:
     }
   }
   Mesh* mesh;
+#ifdef _OPENMP
+  std::vector<std::set<int>> o_ids;
+#endif
   std::set<int> ids;
   std::map<int, int> mapping;
   bool is_setup{false};
