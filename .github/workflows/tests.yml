@@ -47,9 +47,10 @@ jobs:
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
+                            -DBOUT_USE_HYPRE=OFF
                             -DBOUT_USE_ADIOS2=ON
                             -DBOUT_ENABLE_PYTHON=ON
-                            -DADIOS2_ROOT=/home/runner/local/adios2
+                            -DADIOS2_ROOT=/home/runner/local
                             -DSUNDIALS_ROOT=/home/runner/local
                             -DPETSC_DIR=/home/runner/local/petsc
                             -DSLEPC_DIR=/home/runner/local/slepc"
@@ -74,6 +75,7 @@ jobs:
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
+                            -DBOUT_USE_HYPRE=ON
                             -DSUNDIALS_ROOT=/home/runner/local"
             on_cron: false
 
@@ -86,6 +88,7 @@ jobs:
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
+                            -DBOUT_USE_HYPRE=ON
                             -DSUNDIALS_ROOT=/home/runner/local"
             on_cron: false
 
@@ -97,6 +100,7 @@ jobs:
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
+                            -DBOUT_USE_HYPRE=ON
                             -DBOUT_BUILD_DOCS=OFF
                             -DSUNDIALS_ROOT=/home/runner/local"
             omp_num_threads: 2
@@ -110,6 +114,7 @@ jobs:
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
+                            -DBOUT_USE_HYPRE=OFF
                             -DBOUT_ENABLE_PYTHON=ON
                             -DSUNDIALS_ROOT=/home/runner/local"
             omp_num_threads: 2
@@ -123,6 +128,7 @@ jobs:
                             -DBOUT_USE_PETSC=ON
                             -DBOUT_USE_SLEPC=ON
                             -DBOUT_USE_SUNDIALS=ON
+                            -DBOUT_USE_HYPRE=OFF
                             -DBOUT_ENABLE_PYTHON=ON
                             -DSUNDIALS_ROOT=/home/runner/local
                             -DPETSC_DIR=/home/runner/local/petsc
@@ -130,25 +136,7 @@ jobs:
             build_petsc: -petsc
             on_cron: false
 
-          - name: "Coverage"
-            os: ubuntu-latest
-            cmake_options: "-DBUILD_SHARED_LIBS=ON
-                            -DCMAKE_BUILD_TYPE=Debug
-                            -DCHECK=3
-                            -DENABLE_COVERAGE=ON
-                            -DBOUT_USE_PETSC=ON
-                            -DBOUT_USE_SLEPC=ON
-                            -DBOUT_USE_HDF5=ON
-                            -DBOUT_USE_SUNDIALS=ON
-                            -DBOUT_ENABLE_PYTHON=ON
-                            -DSUNDIALS_ROOT=/home/runner/local"
-            unit_only: YES
-            on_cron: false
         exclude:
-          # Don't run the coverage tests if the branch isn't master or next
-          - is_master_or_next: false
-            config:
-              name: "Coverage"
           - is_cron: true
             config:
               on_cron: false
@@ -178,6 +166,7 @@ jobs:
                  slepc-dev
                  liblapack-dev
                  libparpack2-dev
+                 libhypre-dev
 
       - uses: actions/checkout@v4
         with:
@@ -209,22 +198,6 @@ jobs:
 
       - name: Build BOUT++
         run: UNIT_ONLY=${{ matrix.config.unit_only }} ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}
-
-      - name: Capture coverage
-        if: ${{ matrix.config.name == 'Coverage' }}
-        # Explicitly run the coverage capture target, because
-        # ci_script.sh also does the upload, and we're going to do
-        # that ourselves in the next step
-        run: |
-          # Ensure that there is a corresponding .gcda file for every .gcno file
-          # This is to try and make the coverage report slightly more accurate
-          # It still won't include, e.g. any solvers we don't build with though
-          find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
-          make -C build code-coverage-capture
-
-      - name: Upload coverage
-        if: ${{ matrix.config.name == 'Coverage' }}
-        uses: codecov/codecov-action@v4
 
   Fedora:
     # This is its own job as it doesn't use most of the steps of the

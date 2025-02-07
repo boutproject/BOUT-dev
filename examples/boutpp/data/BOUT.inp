@@ -1,9 +1,11 @@
-nout=10
-timestep=10
 
 [mesh]
-nx=160
-ny=1
-nz=n/n
+nx = 160
+ny = 1
+nz = n/n
 
-MYG=0
+MYG = 0
+
+[solver]
+output_step = 10
+nout = 10

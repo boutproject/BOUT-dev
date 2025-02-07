@@ -8,7 +8,6 @@
 #include "bout/mesh.hxx"
 #include "bout/output.hxx"
 #include "bout/sys/timer.hxx"
-#include "bout/utils.hxx"
 
 #include <cmath>
 
@@ -24,11 +23,6 @@ inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort =
   }
 }
 #endif
-
-Ind2D index2d(Mesh* mesh, int x, int y) {
-  int ny = mesh->LocalNy;
-  return Ind2D(x * ny + y, ny, 1);
-}
 
 LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
     : localmesh(m == nullptr ? bout::globals::mesh : m),

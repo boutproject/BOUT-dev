@@ -1,16 +1,3 @@
-# settings file for BOUT++
-#
-# Blob simulation in a 2D slab
-#
-# This case has blob size
-#
-# delta = 0.3*256 ~ 10 * delta_*
-
-
-# settings used by the core code
-
-nout = 100      # number of time-steps
-timestep = 100.0  # time between outputs [1/wci]
 
 
 MXG = 2      # Number of X guard cells
@@ -54,6 +41,19 @@ upwind = W3
 atol = 1e-10  # absolute tolerance
 rtol = 1e-05   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
+output_step = 100.0  # time between outputs [1/wci]
+# settings file for BOUT++
+#
+# Blob simulation in a 2D slab
+#
+# This case has blob size
+#
+# delta = 0.3*256 ~ 10 * delta_*
+
+
+# settings used by the core code
+
+nout = 100      # number of time-steps
 
 ###################################################
 # Electrostatic potential solver
@@ -76,8 +76,6 @@ flags = 49152  # set_rhs i.e. identity matrix in boundaries
 
 ###################################################
 # Electrostatic potential solver (Boussinesq)
-
-[phiBoussinesq]
 # By default type is tri (serial) or spt (parallel)
 
 ##################################################

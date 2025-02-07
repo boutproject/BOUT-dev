@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bout/mesh.hxx"
+#include "bout/parallel_boundary_region.hxx"
 #include "bout/sys/parallel_stencils.hxx"
 #include "bout/sys/range.hxx"
 
@@ -42,14 +43,62 @@ public:
     return 2 * f(0, ind()) - f(0, ind().yp(-by).xp(-bx));
   }
 
-  BoutReal interpolate_sheath(const Field3D& f) const {
+  BoutReal interpolate_sheath_o1(const Field3D& f) const {
     return (f[ind()] + ynext(f)) * 0.5;
+  }
+  BoutReal
+  extrapolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+    return 0.5 * (3 * f(0, ind()) - f(0, ind().yp(-by).xp(-bx)));
+  }
+
+  void limitFree(Field3D& f) const {
+    const BoutReal fac =
+        bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f));
+    BoutReal val = ythis(f);
+    for (int i = 1; i <= localmesh->ystart; ++i) {
+      val *= fac;
+      f[ind().yp(by * i).xp(bx * i)] = val;
+    }
+  }
+
+  void neumann_o1(Field3D& f, BoutReal grad) const {
+    BoutReal val = ythis(f);
+    for (int i = 1; i <= localmesh->ystart; ++i) {
+      val += grad;
+      f[ind().yp(by * i).xp(bx * i)] = val;
+    }
+  }
+
+  void neumann_o2(Field3D& f, BoutReal grad) const {
+    BoutReal val = yprev(f) + grad;
+    for (int i = 1; i <= localmesh->ystart; ++i) {
+      val += grad;
+      f[ind().yp(by * i).xp(bx * i)] = val;
+    }
   }
 
   BoutReal& ynext(Field3D& f) const { return f[ind().yp(by).xp(bx)]; }
   const BoutReal& ynext(const Field3D& f) const { return f[ind().yp(by).xp(bx)]; }
   BoutReal& yprev(Field3D& f) const { return f[ind().yp(-by).xp(-bx)]; }
   const BoutReal& yprev(const Field3D& f) const { return f[ind().yp(-by).xp(-bx)]; }
+  BoutReal& ythis(Field3D& f) const { return f[ind()]; }
+  const BoutReal& ythis(const Field3D& f) const { return f[ind()]; }
+
+  void setYPrevIfValid(Field3D& f, BoutReal val) const { yprev(f) = val; }
+  void setAll(Field3D& f, const BoutReal val) const {
+    for (int i = -localmesh->ystart; i <= localmesh->ystart; ++i) {
+      f[ind().yp(by * i).xp(bx * i)] = val;
+    }
+  }
+
+  int abs_offset() const { return 1; }
+
+#if BOUT_USE_METRIC_3D == 0
+  BoutReal& ynext(Field2D& f) const { return f[ind().yp(by).xp(bx)]; }
+  const BoutReal& ynext(const Field2D& f) const { return f[ind().yp(by).xp(bx)]; }
+  BoutReal& yprev(Field2D& f) const { return f[ind().yp(-by).xp(-bx)]; }
+  const BoutReal& yprev(const Field2D& f) const { return f[ind().yp(-by).xp(-bx)]; }
+#endif
 
   const int dir;
 

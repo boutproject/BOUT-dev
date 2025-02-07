@@ -7,6 +7,7 @@ include(FindPackageHandleStandardArgs)
 
 find_package(HYPRE CONFIG QUIET)
 if (HYPRE_FOUND)
+  message(STATUS "Found HYPRE: ${HYPRE_VERSION}")
   return()
 endif()
 
@@ -14,7 +15,7 @@ find_path(HYPRE_INCLUDE_DIR
   NAMES HYPRE.h
   DOC "HYPRE include directories"
   REQUIRED
-  PATH_SUFFIXES include
+  PATH_SUFFIXES include include/hypre
 )
 
 find_library(HYPRE_LIBRARY

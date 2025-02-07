@@ -190,9 +190,12 @@ endif()
 message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
 set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
 
-option(BOUT_USE_ADIOS2 "Enable support for ADIOS output" ON)
+option(BOUT_USE_ADIOS2 "Enable support for ADIOS output" OFF)
 option(BOUT_DOWNLOAD_ADIOS2 "Download and build ADIOS2" OFF)
 if (BOUT_USE_ADIOS2)
+  enable_language(C)
+  find_package(MPI REQUIRED COMPONENTS C)
+
   if (BOUT_DOWNLOAD_ADIOS2)
     message(STATUS "Downloading and configuring ADIOS2")
     include(FetchContent)
@@ -211,18 +214,11 @@ if (BOUT_USE_ADIOS2)
     # Note: SST requires <rdma/fabric.h> but doesn't check at configure time
     set(ADIOS2_USE_SST OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(adios2)
-    target_link_libraries(bout++ PUBLIC adios2::cxx11_mpi)
     message(STATUS "ADIOS2 done configuring")
   else()
-    find_package(ADIOS2)
-    if (ADIOS2_FOUND)
-      ENABLE_LANGUAGE(C)
-      find_package(MPI REQUIRED COMPONENTS C)
-      target_link_libraries(bout++ PUBLIC adios2::cxx11_mpi MPI::MPI_C)
-    else()
-      set(BOUT_USE_ADIOS2 OFF)
-    endif()
+    find_package(ADIOS2 REQUIRED)
   endif()
+  target_link_libraries(bout++ PUBLIC adios2::cxx11_mpi MPI::MPI_C)
 endif()
 message(STATUS "ADIOS2 support: ${BOUT_USE_ADIOS2}")
 set(BOUT_HAS_ADIOS2 ${BOUT_USE_ADIOS2})
@@ -282,7 +278,7 @@ if (BOUT_USE_SUNDIALS)
     FetchContent_Declare(
       sundials
       GIT_REPOSITORY https://github.com/LLNL/sundials
-      GIT_TAG        v7.0.0
+      GIT_TAG        v7.2.1
       )
     # Note: These are settings for building SUNDIALS
     set(EXAMPLES_ENABLE_C OFF CACHE BOOL "" FORCE)

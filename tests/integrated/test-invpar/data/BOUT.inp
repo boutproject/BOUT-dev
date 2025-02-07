@@ -1,7 +1,3 @@
-# Test of parallel tridiagonal solver
-#
-
-nout = 0  # No timesteps
 
 MZ = 5    # Z size
 
@@ -25,3 +21,9 @@ g22 = 1 / g_22
 [mesh:ddz]
 first = fft
 second = fft
+
+[solver]
+# Test of parallel tridiagonal solver
+#
+
+nout = 0  # No timesteps

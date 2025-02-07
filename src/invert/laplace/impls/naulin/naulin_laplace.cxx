@@ -155,6 +155,7 @@ LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
 
   ASSERT1(opt
           != nullptr); // An Options pointer should always be passed in by LaplaceFactory
+  Options& options = *opt;
 
   Acoef.setLocation(location);
   C1coef.setLocation(location);
@@ -162,16 +163,44 @@ LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   Dcoef.setLocation(location);
 
   // Get options
-  OPTION(opt, rtol, 1.e-7);
-  OPTION(opt, atol, 1.e-20);
+  rtol = options["rtol"].doc("relative tolerance").withDefault(1.e-7);
+  atol = options["atol"].doc("absolute tolerance").withDefault(1.e-20);
   rtol_accept =
-      (*opt)["rtol_accept"].doc("Accept this rtol after maxits").withDefault(rtol);
+      options["rtol_accept"].doc("Accept this rtol after maxits").withDefault(rtol);
   atol_accept =
-      (*opt)["atol_accept"].doc("Accept this atol after maxits").withDefault(atol);
+      options["atol_accept"].doc("Accept this atol after maxits").withDefault(atol);
 
-  OPTION(opt, maxits, 100);
-  OPTION(opt, initial_underrelax_factor, 1.);
+  maxits = options["maxits"].doc("maximum number of iterations").withDefault(100);
+  initial_underrelax_factor =
+      options["initial_underrelax_factor"]
+          .doc("Initial underrelaxation factor for the fixed point iteration.")
+          .withDefault(1.0);
   ASSERT0(initial_underrelax_factor > 0. and initial_underrelax_factor <= 1.);
+  underrelax_threshold = options["underrelax_threshold"]
+                             .doc("Threshold for relative increase of error in a step "
+                                  "that triggers decrease of "
+                                  "the underrelaxation factor.")
+                             .withDefault(1.5);
+  ASSERT0(underrelax_threshold >= 1.);
+  underrelax_decrease_factor =
+      options["underrelax_decrease_factor"]
+          .doc("Factor to decrease underrelax_factor at each stage of the sub-loop if "
+               "underrelax_threshold was crossed.")
+          .withDefault(0.9);
+  ASSERT0(underrelax_decrease_factor < 1. && underrelax_decrease_factor > 0.);
+  underrelax_decrease_maxits =
+      options["underrelax_decrease_maxits"]
+          .doc(
+              "Maximum number of iterations in the decreasing-underrelax_factor subcycle "
+              "before trying to continue the main iteration loop.")
+          .withDefault(10);
+  underrelax_recovery =
+      options["underrelax_recovery"]
+          .doc("Factor to increase underrelax_factor by at the end of a successful "
+               "iteration "
+               "if it has been decreased below initial_underrelax_factor.")
+          .withDefault(1.1);
+  ASSERT0(underrelax_recovery >= 1.);
   delp2solver = create(opt->getSection("delp2solver"), location, localmesh);
   std::string delp2type;
   opt->getSection("delp2solver")->get("type", delp2type, "cyclic");
@@ -302,9 +331,10 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
           "LaplaceNaulin error: Not converged within maxits={:d} iterations.", maxits);
     }
 
-    while (error_abs > last_error) {
+    int local_count = 0;
+    while (error_abs > last_error * underrelax_threshold) {
       // Iteration seems to be diverging... try underrelaxing and restart
-      underrelax_factor *= .9;
+      underrelax_factor *= underrelax_decrease_factor;
       ++underrelax_count;
 
       // Restart from b_x_pair_old - that was our best guess
@@ -318,6 +348,12 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
       error3D = b_x_pair.first - bnew;
       error_abs = max(abs(error3D, "RGN_NOBNDRY"), true, "RGN_NOBNDRY");
       error_rel = error_abs / RMS_rhsOverD;
+
+      ++local_count;
+      if (local_count > underrelax_decrease_maxits) {
+        // Give up on trying to underrelax. Attempt to continue iteration anyway...
+        break;
+      }
 
       // effectively another iteration, so increment the counter
       ++count;
@@ -333,6 +369,13 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
     // Might have met convergence criterion while in underrelaxation loop
     if (error_rel < rtol or error_abs < atol) {
       break;
+    }
+
+    if (underrelax_factor < initial_underrelax_factor) {
+      underrelax_factor *= underrelax_recovery;
+      if (underrelax_factor > initial_underrelax_factor) {
+        underrelax_factor = initial_underrelax_factor;
+      }
     }
 
     last_error = error_abs;
