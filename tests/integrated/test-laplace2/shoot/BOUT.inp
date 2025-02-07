@@ -1,9 +1,3 @@
-# Test of Laplacian inversion code
-#
-# Comparing shooting method against cyclic
-#
-
-nout = 0  # No timesteps
 
 MZ = 32    # Z size
 
@@ -40,3 +34,11 @@ all_terms = true
 nonuniform = true
 filter = 0.0     # Must not filter solution
 flags = 49152  # set_rhs i.e. identity matrix in boundaries
+
+[solver]
+# Test of Laplacian inversion code
+#
+# Comparing shooting method against cyclic
+#
+
+nout = 0  # No timesteps

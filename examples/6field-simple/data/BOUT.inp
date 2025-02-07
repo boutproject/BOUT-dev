@@ -1,11 +1,3 @@
-# settings file for BOUT++
-# High-Beta reduced MHD case
-
-##################################################
-# Global settings used by the core code
-
-nout = 100          # number of time-steps
-timestep = 1.0       # time between outputs
 wall_limit = 0.45  # wall time limit (in hours)
 
 twistshift = true   # use twist-shift condition?
@@ -17,7 +9,9 @@ zperiod = 15        # Fraction of a torus to simulate
 MXG = 2
 MYG = 2
 
-grid = "cbm18_dens8.grid_nx68ny64.nc"
+[mesh]
+
+file = "cbm18_dens8.grid_nx68ny64.nc"
 
 [mesh:paralleltransform]
 type = shifted # Use shifted metric method
@@ -70,6 +64,14 @@ rtol = 1e-05  # relative tolerance
 use_precon = false    # Use preconditioner: User-supplied or BBD
 
 mxstep = 10000   # Number of internal steps between outputs
+output_step = 1.0       # time between outputs
+# settings file for BOUT++
+# High-Beta reduced MHD case
+
+##################################################
+# Global settings used by the core code
+
+nout = 100          # number of time-steps
 
 ##################################################
 # settings for high-beta reduced MHD

@@ -118,7 +118,6 @@ private:
 
   // Boundary conditions
   bool x_inner_dirichlet; // Dirichlet on inner X boundary?
-  bool x_outer_dirichlet; // Dirichlet on outer X boundary?
   bool y_bndry_dirichlet; // Dirichlet on Y boundary?
 
   bool print_timing;
