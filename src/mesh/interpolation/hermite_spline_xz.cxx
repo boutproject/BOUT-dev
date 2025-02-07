@@ -356,6 +356,9 @@ template <bool monotonic>
 std::vector<ParallelTransform::PositionsAndWeights>
 XZHermiteSplineBase<monotonic>::getWeightsForYApproximation(int i, int j, int k,
                                                             int yoffset) {
+  if (localmesh->getNXPE() > 1){
+    throw BoutException("It is likely that the function calling this is not handling the result correctly.");
+  }
   const int nz = localmesh->LocalNz;
   const int k_mod = k_corner(i, j, k);
   const int k_mod_m1 = (k_mod > 0) ? (k_mod - 1) : (nz - 1);
