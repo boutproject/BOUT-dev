@@ -446,6 +446,8 @@ protected:
   bool initialised{false};
   /// If calling user RHS for the first time
   bool first_rhs_call{true};
+  bool first_rhs_s_call{false};
+  bool first_rhs_f_call{false};
 
   /// Current simulation time
   BoutReal simtime{0.0};

@@ -1,3 +1,5 @@
+#if SUNDIALS_VERSION_AT_LEAST(7, 2, 0)
+
 #include "bout/physicsmodel.hxx"
 #include "bout/solver.hxx"
 
@@ -170,3 +172,11 @@ int main(int argc, char** argv) {
   output_test << " FAILED\n";
   return 1;
 }
+#else
+// ARKODE-MRI option for BOUT++
+// is not available with this configuration
+// do nothing for this test
+int main(int argc, char** argv) {
+  return 0;
+}
+#endif

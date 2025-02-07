@@ -1404,10 +1404,10 @@ int Solver::run_rhs_si(BoutReal t, bool linear) {
 
   Timer timer("rhs");
 
-  if (first_rhs_call) {
+  if (first_rhs_s_call) {
     // Ensure that nonlinear terms are calculated on first call
     linear = false;
-    first_rhs_call = false;
+    first_rhs_s_call = false;
   }
 
   pre_rhs(t);
@@ -1442,10 +1442,10 @@ int Solver::run_rhs_fi(BoutReal t, bool linear) {
 
   Timer timer("rhs");
 
-  if (first_rhs_call) {
+  if (first_rhs_f_call) {
     // Ensure that nonlinear terms are calculated on first call
     linear = false;
-    first_rhs_call = false;
+    first_rhs_f_call = false;
   }
 
   pre_rhs(t);
