@@ -231,7 +231,7 @@ private:
       ASSERT0(ret == MPI_SUCCESS);
     }
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
-      if (toGet.size() != 0) {
+      if (toGet[proc].size() != 0) {
         const auto ret = MPI_Send(static_cast<void*>(toGet[proc].data()),
                                   toGet[proc].size(), MPI_INT, proc, 666 * 666, comm);
         ASSERT0(ret == MPI_SUCCESS);
