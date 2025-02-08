@@ -5,7 +5,7 @@
  * NOTE: Only one solver can currently be compiled in
  *
  **************************************************************************
- * Copyright 2010-2024 BOUT++ contributors
+ * Copyright 2010-2025 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -41,13 +41,20 @@ RegisterUnavailableSolver
 
 #else
 
+#include "bout/sundials_backports.hxx"
+
+#if SUNDIALS_VERSION_LESS_THAN(7, 2, 0)
+
+namespace {
+RegisterUnavailableSolver
+    registerunavailablearkodemri("arkode_mri", "BOUT++ configured with ARKODE/SUNDIALS version less than 7.2.0");
+}
+
+#else // SUNDIALS_VERSION check
+
 #include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/region.hxx"
-#include "bout/sundials_backports.hxx"
-
-#if SUNDIALS_VERSION_AT_LEAST(7, 2, 0)
-
 #include <nvector/nvector_parallel.h>
 #include <arkode/arkode_mristep.h>
 #include <sundials/sundials_config.h>
@@ -166,7 +173,6 @@ private:
   sundials::Context suncontext;
 };
 
-#else
 #endif // SUNDIALS_VERSION CHECK
 #endif // BOUT_HAS_ARKODE
 #endif // BOUT_ARKODE_MRI_SOLVER_H
