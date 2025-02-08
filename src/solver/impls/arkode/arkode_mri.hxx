@@ -76,7 +76,8 @@ public:
   explicit ArkodeMRISolver(Options* opts = nullptr);
   ~ArkodeMRISolver();
 
-  BoutReal getCurrentTimestep() override { return hcur; }
+  // Get the current timestep
+  BoutReal getCurrentTimestep() override;
 
   int init() override;
 
@@ -98,8 +99,6 @@ public:
   void jac_f(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata);
 
 private:
-  BoutReal hcur; //< Current internal timestep
-
   bool diagnose{false}; //< Output additional diagnostics
 
   N_Vector uvec{nullptr};    //< Values
