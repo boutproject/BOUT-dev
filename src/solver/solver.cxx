@@ -1,7 +1,7 @@
 /**************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -1734,19 +1734,30 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
 #endif
 }
 
+bool Solver::hasPreconditioner() { return model->hasPrecon(); }
+bool Solver::hasPreconditionerFast() { return model->hasPreconFast(); }
+bool Solver::hasPreconditionerSlow() { return model->hasPreconSlow(); }
+
+int Solver::runPreconditioner(BoutReal time, BoutReal gamma, BoutReal delta) {
+  return model->runPrecon(time, gamma, delta);
+}
+
+int Solver::runPreconditionerFast(BoutReal time, BoutReal gamma, BoutReal delta) {
+  return model->runPreconFast(time, gamma, delta);
+}
+
+int Solver::runPreconditionerSlow(BoutReal time, BoutReal gamma, BoutReal delta) {
+  return model->runPreconSlow(time, gamma, delta);
+}
+
+bool Solver::hasJacobian() { return model->hasJacobian(); }
+
+int Solver::runJacobian(BoutReal time) { return model->runJacobian(time); }
+
 bool Solver::varAdded(const std::string& name) {
   return contains(f2d, name) || contains(f3d, name) || contains(v2d, name)
          || contains(v3d, name);
 }
-
-bool Solver::hasPreconditioner() { return model->hasPrecon(); }
-
-int Solver::runPreconditioner(BoutReal t, BoutReal gamma, BoutReal delta) {
-  return model->runPrecon(t, gamma, delta);
-}
-
-bool Solver::hasJacobian() { return model->hasJacobian(); }
-int Solver::runJacobian(BoutReal time) { return model->runJacobian(time); }
 
 // Add source terms to time derivatives
 void Solver::add_mms_sources(BoutReal t) {

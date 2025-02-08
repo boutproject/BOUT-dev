@@ -4,7 +4,7 @@
  * NOTE: ARKODE is still in beta testing so use with cautious optimism
  *
  **************************************************************************
- * Copyright 2010-2024 BOUT++ contributors
+ * Copyright 2010-2025 BOUT++ contributors
  *
  * This file is part of BOUT++.
  *
@@ -366,15 +366,15 @@ int ArkodeMRISolver::init() {
 
       /// Set Preconditioner
       if (inner_use_precon) {
-        if (hasPreconditioner()) {  // change to inner_hasPreconditioner when it is available
-          output.write("\tUsing user-supplied preconditioner for inner solver\n");
+        if (hasPreconditionerFast()) {
+          output.write("\tUsing user-supplied preconditioner for inner (fast) solver\n");
 
           if (ARKodeSetPreconditioner(inner_arkode_mem, nullptr, arkode_f_pre)
               != ARKLS_SUCCESS) {
             throw BoutException("ARKodeSetPreconditioner failed for inner solver\n");
           }
         } else {
-          output.write("\tUsing BBD preconditioner for inner solver\n");
+          output.write("\tUsing BBD preconditioner for inner (fast) solver\n");
 
           /// Get options
           // Compute band_width_default from actually added fields, to allow for multiple
@@ -422,7 +422,6 @@ int ArkodeMRISolver::init() {
     output.write("\tUsing difference quotient approximation for Jacobian in the inner solver\n");
   }
 
-
   if (treatment == MRI_Treatment::ImEx or treatment == MRI_Treatment::Implicit) {
     {
       output.write("\tUsing Newton iteration\n");
@@ -439,7 +438,7 @@ int ArkodeMRISolver::init() {
 
       /// Set Preconditioner
       if (use_precon) {
-        if (hasPreconditioner()) {
+        if (hasPreconditionerSlow()) {
           output.write("\tUsing user-supplied preconditioner\n");
 
           if (ARKodeSetPreconditioner(arkode_mem, nullptr, arkode_s_pre)
@@ -761,7 +760,7 @@ void ArkodeMRISolver::pre_s(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal
 
   const BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
-  if (!hasPreconditioner()) {
+  if (!hasPreconditionerSlow()) {
     // Identity (but should never happen)
     const auto length = N_VGetLocalLength_Parallel(uvec);
     std::copy(rvec, rvec + length, zvec);
@@ -774,7 +773,7 @@ void ArkodeMRISolver::pre_s(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal
   // Load vector to be inverted into F_vars
   load_derivs(rvec);
 
-  runPreconditioner(t, gamma, delta);
+  runPreconditionerSlow(t, gamma, delta);
 
   // Save the solution from F_vars
   save_derivs(zvec);
@@ -789,7 +788,7 @@ void ArkodeMRISolver::pre_f(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal
 
   const BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
-  if (!hasPreconditioner()) {
+  if (!hasPreconditionerFast()) {
     // Identity (but should never happen)
     const auto length = N_VGetLocalLength_Parallel(uvec);
     std::copy(rvec, rvec + length, zvec);
@@ -802,7 +801,7 @@ void ArkodeMRISolver::pre_f(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal
   // Load vector to be inverted into F_vars
   load_derivs(rvec);
 
-  runPreconditioner(t, gamma, delta);
+  runPreconditionerFast(t, gamma, delta);
 
   // Save the solution from F_vars
   save_derivs(zvec);

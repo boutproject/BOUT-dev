@@ -493,8 +493,13 @@ protected:
 
   /// Do we have a user preconditioner?
   bool hasPreconditioner();
+  bool hasPreconditionerFast();
+  bool hasPreconditionerSlow();
+
   /// Run the user preconditioner
   int runPreconditioner(BoutReal time, BoutReal gamma, BoutReal delta);
+  int runPreconditionerFast(BoutReal time, BoutReal gamma, BoutReal delta);
+  int runPreconditionerSlow(BoutReal time, BoutReal gamma, BoutReal delta);
 
   /// Do we have a user Jacobian?
   bool hasJacobian();

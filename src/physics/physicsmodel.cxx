@@ -131,13 +131,26 @@ int PhysicsModel::runDiffusive(BoutReal time, bool linear) {
   return diffusive(time, linear);
 }
 
-bool PhysicsModel::hasPrecon() { return (userprecon != nullptr); }
 
 int PhysicsModel::runPrecon(BoutReal t, BoutReal gamma, BoutReal delta) {
   if (!userprecon) {
     return 1;
   }
   return (*this.*userprecon)(t, gamma, delta);
+}
+
+int PhysicsModel::runPreconFast(BoutReal t, BoutReal gamma, BoutReal delta) {
+  if (!userprecon_f) {
+    return 1;
+  }
+  return (*this.*userprecon_f)(t, gamma, delta);
+}
+
+int PhysicsModel::runPreconSlow(BoutReal t, BoutReal gamma, BoutReal delta) {
+  if (!userprecon_s) {
+    return 1;
+  }
+  return (*this.*userprecon_s)(t, gamma, delta);
 }
 
 bool PhysicsModel::hasJacobian() { return (userjacobian != nullptr); }
