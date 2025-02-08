@@ -1,3 +1,5 @@
+#include "bout/sundials_backports.hxx"
+
 #if SUNDIALS_VERSION_AT_LEAST(7, 2, 0)
 
 #include "bout/physicsmodel.hxx"
