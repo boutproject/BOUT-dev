@@ -781,13 +781,13 @@ cdef options
         norm : float
             The length with which to rescale
         """
-        if self.isNormalised>0:
-            t=norm
-            norm=norm/self.isNormalised
-            self.isNormalised=t
-        c_mesh_normalise(self.cobj,norm)
+        if self.isNormalised > 0:
+            t = norm
+            norm = norm/self.isNormalised
+            self.isNormalised = t
+        c_mesh_normalise(self.cobj, norm)
 
-    def communicate(self,*args):
+    def communicate(self, *args):
         """
         Communicate (MPI) the boundaries of the Field3Ds with neighbours
 
@@ -1542,8 +1542,8 @@ def create3D(string, Mesh msh=None,outloc="CELL_DEFAULT",time=0):
     cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
     if msh is None:
         msh=Mesh.getGlobal()
-    cdef FieldFactory fact=msh.getFactory()
-    cdef c.string str_=string.encode()
+    cdef FieldFactory fact = msh.getFactory()
+    cdef c.string str_ = string.encode()
     return f3dFromObj(
         (<FieldFactory>fact).cobj.create3D(str_,<c.Options*>0,<c.Mesh*>0
                                            ,outloc_,time))
