@@ -943,6 +943,64 @@ Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\p
 {% endfor %}
 
 
+{{ class("LaplaceXZ", comment="""
+LaplaceXZ inversion solver
+
+Compute the Laplacian inversion of objects.
+
+Equation solved is:  \\nabla\\cdot\\left( A \\nabla_\\perp f \\right) + Bf = b
+""", uniquePtr=True) }}
+
+    def __init__(self, section=None, loc="CELL_CENTRE", mesh=None):
+        """
+        Initialiase a Laplacian solver
+
+        Parameters
+        ----------
+        section : Options, optional
+            The section from the Option tree to take the options from
+        """
+        checkInit()
+        cdef c.Options* copt = NULL
+        if section:
+            if isinstance(section, str):
+                section = Options.root(section)
+            copt = (<Options?>section).cobj
+        cdef benum.CELL_LOC cloc = benum.resolve_cell_loc(loc)
+        cdef c.Mesh* cmesh = NULL
+        if mesh:
+            cmesh = (<Mesh?>mesh).cobj
+        self.cobj = c.LaplaceXZ.create(cmesh, copt, cloc)
+        self.isSelfOwned = True
+
+    def solve(self, Field3D x, Field3D guess):
+        """
+        Calculate the Laplacian inversion
+
+        Parameters
+        ----------
+        x : Field3D
+            Field to be inverted
+        guess : Field3D
+            initial guess for the inversion
+
+
+        Returns
+        -------
+        Field3D
+            the inversion of x, where guess is a guess to start with
+        """
+        return f3dFromObj(deref(self.cobj).solve(x.cobj[0],guess.cobj[0]))
+
+    def setCoefs(self, *, Field3D A, Field3D B):
+        """
+        Set the coefficients for the Laplacian solver.
+        The coefficients A and B have both to be passed.
+        A and B have to be Field3D.
+        """
+        deref(self.cobj).setCoefs(A.cobj[0], B.cobj[0])
+
+
 {{ class("FieldFactory", defaultSO=False) }}
 
 cdef void callback(void * parameter, void * method) with gil:

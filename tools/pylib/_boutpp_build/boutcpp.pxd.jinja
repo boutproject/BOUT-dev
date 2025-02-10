@@ -103,6 +103,14 @@ cdef extern from "bout/invert_laplace.hxx":
         void setCoefEy(Field3D)
         void setCoefEz(Field3D)
 
+cdef extern from "bout/invert/laplacexz.hxx":
+    cppclass LaplaceXZ:
+        LaplaceXZ(Mesh*, Options*, benum.CELL_LOC)
+        void setCoefs(const Field3D& A, const Field3D& B) except +raise_bout_py_error
+        Field3D solve(const Field3D& b, const Field3D& x0) except +raise_bout_py_error
+        @staticmethod
+        unique_ptr[LaplaceXZ] create(Mesh* m, Options* opt, benum.CELL_LOC loc)
+
 cdef extern from "bout/difops.hxx":
     Field3D Div_par(Field3D, benum.CELL_LOC, string) except +raise_bout_py_error
     Field3D Grad_par(Field3D, benum.CELL_LOC, string) except +raise_bout_py_error
