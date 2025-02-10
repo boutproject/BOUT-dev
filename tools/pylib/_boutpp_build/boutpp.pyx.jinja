@@ -812,6 +812,20 @@ cdef options
             self._coords = coordsFromPtr(self.cobj.getCoordinates())
         return self._coords
 
+    def get(self, name, default=None):
+        """
+        Load a variable from the grid source
+
+        If no default is given, and the variable is not found, an error is raised.
+        """
+        cdef c.string cstr = name.encode()
+        cdef Field3D defaultfield = default if isinstance(default, Field3D) else Field3D.fromMesh(self)
+        if deref(self.cobj).get(deref(defaultfield.cobj), cstr):
+            if default is None:
+                raise ValueError(f"No default value for {name} given and not set for this mesh")
+            return default
+        return defaultfield
+
 
 cdef Mesh meshFromPtr(c.Mesh * obj):
     mesh = Mesh()
