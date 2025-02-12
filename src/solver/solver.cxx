@@ -1566,8 +1566,13 @@ int Solver::run_rhs(BoutReal t, bool linear) {
         *t3 += *t2;
     }
     load_derivs(tmp3.begin()); // Put back time-derivatives
-  }
-  else if (model->splitOperator()) {
+
+    rhs_ncalls_fe++;
+    rhs_ncalls_fi++;
+    rhs_ncalls_se++;
+    rhs_ncalls_si++;
+
+  } else if (model->splitOperator()) {
     // Run both parts
 
     int nv = getLocalN();
