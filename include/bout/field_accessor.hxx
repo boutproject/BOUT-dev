@@ -1,7 +1,8 @@
+/// \file
+///
 /// FieldAccessor
 ///
 /// Provides quick but unsafe access to field and coordinate system data
-///
 
 #pragma once
 #ifndef FIELD_ACCESSOR_H__
@@ -119,9 +120,9 @@ using Field2DAccessor = FieldAccessor<location, Field2D>;
 ///
 /// Usage:
 ///
-///   ddt(fa)[i] =
+///     ddt(fa)[i] = /* expression */
 ///
-///  where fa is a FieldAccessor, and i is an int
+/// where ``fa`` is a FieldAccessor, and ``i`` is an int
 ///
 template <CELL_LOC location, class FieldType>
 BOUT_HOST_DEVICE inline BoutRealArray& ddt(const FieldAccessor<location, FieldType>& fa) {

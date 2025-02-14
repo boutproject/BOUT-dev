@@ -28,7 +28,7 @@ either physics models (e.g. ``test-delp2`` and
 Building Physics Models
 -----------------------
 
-After building the library (see :ref:`sec-cmake`), you can build a
+After building the library (see :ref:`sec-config-bout`), you can build a
 physics model in several different ways.
 
 For the bundled examples, perhaps the easiest is to build it directly

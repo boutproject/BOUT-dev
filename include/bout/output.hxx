@@ -1,7 +1,7 @@
+/// \file
+/// Logging, for printing messages/errors etc.
+
 /**************************************************************************
- * Output, for printing messages/errors etc.
- *
- **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
@@ -45,19 +45,18 @@ class Output;
 using std::endl;
 
 /// Class for text output to stdout and/or log file
-/*!
-  This class can be used to output either in fmt format:
-
-    output.write("A string {:s} and number {:d}\n", str, i);
-
-  or as a C++ stream buffer:
-
-    output << "A string " << str << " and number " << i << endl;
-
-  If a file has been opened (i.e. the processor's log file) then the string
-  will be written to the file. In addition, output to stdout can be enabled
-  and disabled.
-*/
+///
+/// This class can be used to output either in ``fmt`` format:
+///
+///     output.write("A string {:s} and number {:d}\n", str, i);
+///
+/// or as a C++ stream buffer:
+///
+///     output << "A string " << str << " and number " << i << endl;
+///
+/// If a file has been opened (i.e. the processor's log file) then the string
+/// will be written to the file. In addition, output to stdout can be enabled
+/// and disabled.
 class Output : private multioutbuf_init<char, std::char_traits<char>>,
                public std::basic_ostream<char, std::char_traits<char>> {
 

@@ -1,3 +1,4 @@
+/// \file
 /// Parent class for IO to binary files and streams
 ///
 ///
@@ -5,8 +6,8 @@
 ///
 /// 1. Dump files, containing time history:
 ///
-///       auto dump = OptionsIOFactory::getInstance().createOutput();
-///       dump->write(data);
+///        auto dump = OptionsIOFactory::getInstance().createOutput();
+///        dump->write(data);
 ///
 ///    where data is an Options tree. By default dump files are configured
 ///    with the root `output` section, or an Option tree can be passed to
@@ -14,19 +15,19 @@
 ///
 /// 2. Restart files:
 ///
-///       auto restart = OptionsIOFactory::getInstance().createOutput();
-///       restart->write(data);
+///        auto restart = OptionsIOFactory::getInstance().createOutput();
+///        restart->write(data);
 ///
 ///    where data is an Options tree. By default restart files are configured
 ///    with the root `restart_files` section, or an Option tree can be passed to
 ///    `createRestart`.
 ///
 /// 3. Ad-hoc single files
-///   Note: The caller should consider how multiple processors interact with the file.
+///    Note: The caller should consider how multiple processors interact with the file.
 ///
-///       auto file = OptionsIOFactory::getInstance().createFile("some_file.nc");
-///   or
-///       auto file = OptionsIO::create("some_file.nc");
+///        auto file = OptionsIOFactory::getInstance().createFile("some_file.nc");
+///        // or
+///        auto file = OptionsIO::create("some_file.nc");
 ///
 ///
 
