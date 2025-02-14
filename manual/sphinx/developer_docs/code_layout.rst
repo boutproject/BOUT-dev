@@ -74,8 +74,9 @@ inversions, ``mesh``, and ``solver``.
 
 The layout of the ``src/`` directory is as follows:
 
-- :doc:`src/bout++.cxx<../_breathe_autogen/file/bout_09_09_8cxx>`: Main
-  file which initialises, runs and finalises BOUT++.
+- ``src/bout++.cxx``: Main file which initialises, runs and finalises
+  BOUT++. The two most important public functions are `BoutInitialise`
+  and `BoutFinalise` for starting/stopping the library.
 
 - ``src/field``
 
