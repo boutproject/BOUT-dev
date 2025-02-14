@@ -15,9 +15,9 @@
 namespace FV {
 /// Vorticity:
 /// \f[
-///   \nabla_\perp (a \cdot \nabla_\perp(f))
+///   \nabla (a \cdot \nabla_\perp(f))
 /// \f]
-Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& x);
+Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f);
 
 [[deprecated("Please use Div_a_Grad_perp instead")]] inline Field3D
 Div_a_Laplace_perp(const Field3D& a, const Field3D& x) {
