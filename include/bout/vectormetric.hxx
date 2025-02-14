@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_USE_METRIC_3D
 #include "bout/vector3d.hxx"

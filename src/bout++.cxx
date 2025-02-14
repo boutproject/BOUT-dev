@@ -59,7 +59,7 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/bout.hxx"
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
-#if BOUT_HAS_ADIOS
+#if BOUT_HAS_ADIOS2
 #include "bout/adios_object.hxx"
 #endif
 
@@ -147,7 +147,7 @@ int BoutInitialise(int& argc, char**& argv) {
 
     savePIDtoFile(args.data_dir, MYPE);
 
-#if BOUT_HAS_ADIOS
+#if BOUT_HAS_ADIOS2
     bout::ADIOSInit(BoutComm::get());
 #endif
 
@@ -554,7 +554,7 @@ void printCompileTimeOptions() {
   constexpr auto netcdf_flavour =
       has_netcdf ? (has_legacy_netcdf ? " (Legacy)" : " (NetCDF4)") : "";
   output_info.write(_("\tNetCDF support {}{}\n"), is_enabled(has_netcdf), netcdf_flavour);
-  output_info.write(_("\tADIOS support {}\n"), is_enabled(has_adios));
+  output_info.write(_("\tADIOS2 support {}\n"), is_enabled(has_adios2));
   output_info.write(_("\tPETSc support {}\n"), is_enabled(has_petsc));
   output_info.write(_("\tPretty function name support {}\n"),
                     is_enabled(has_pretty_function));
@@ -680,7 +680,7 @@ void addBuildFlagsToOptions(Options& options) {
   options["has_gettext"].force(bout::build::has_gettext);
   options["has_lapack"].force(bout::build::has_lapack);
   options["has_netcdf"].force(bout::build::has_netcdf);
-  options["has_adios"].force(bout::build::has_adios);
+  options["has_adios2"].force(bout::build::has_adios2);
   options["has_petsc"].force(bout::build::has_petsc);
   options["has_hypre"].force(bout::build::has_hypre);
   options["has_umpire"].force(bout::build::has_umpire);
@@ -777,7 +777,7 @@ int BoutFinalise(bool write_settings) {
   // Call HYPER_Finalize if not already called
   bout::HypreLib::cleanup();
 
-#if BOUT_HAS_ADIOS
+#if BOUT_HAS_ADIOS2
   bout::ADIOSFinalize();
 #endif
 
@@ -844,8 +844,8 @@ int BoutMonitor::call(Solver* solver, BoutReal t, [[maybe_unused]] int iter, int
 
   output_progress.print("\r"); // Only goes to screen
 
+  const int iteration_offset = solver->getIterationOffset();
   // First time the monitor has been called
-  static bool first_time = true;
   if (first_time) {
 
     // Record the starting time
@@ -870,10 +870,11 @@ int BoutMonitor::call(Solver* solver, BoutReal t, [[maybe_unused]] int iter, int
   run_data.t_elapsed = bout::globals::mpi->MPI_Wtime() - mpi_start_time;
 
   output_progress.print("{:c}  Step {:d} of {:d}. Elapsed {:s}", get_spin(), iteration,
-                        NOUT, time_to_hms(run_data.t_elapsed));
+                        NOUT + iteration_offset, time_to_hms(run_data.t_elapsed));
   output_progress.print(
       " ETA {:s}",
-      time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 2)));
+      time_to_hms(run_data.wtime
+                  * static_cast<BoutReal>(NOUT + iteration_offset - iteration)));
 
   // Write dump file
   Options run_data_output;

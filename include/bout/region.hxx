@@ -116,16 +116,16 @@ class BoutMask;
 ///     }
 //
 
-#define BOUT_FOR_SERIAL(index, region)                                            \
-  for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend(); \
-       block < end; ++block)                                                      \
+#define BOUT_FOR_SERIAL(index, region)                                                \
+  for (auto block = (region).getBlocks().cbegin(), end = (region).getBlocks().cend(); \
+       block < end; ++block)                                                          \
     for (auto index = block->first; index < block->second; ++index)
 
 #if BOUT_USE_OPENMP
-#define BOUT_FOR_OMP(index, region, omp_pragmas)                                    \
-  BOUT_OMP_PERF(omp_pragmas)                                                        \
-  for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend(); \
-       ++block)                                                                     \
+#define BOUT_FOR_OMP(index, region, omp_pragmas)                                        \
+  BOUT_OMP_PERF(omp_pragmas)                                                            \
+  for (auto block = (region).getBlocks().cbegin(); block < (region).getBlocks().cend(); \
+       ++block)                                                                         \
     for (auto index = block->first; index < block->second; ++index)
 #else
 // No OpenMP, so fall back to slightly more efficient serial form
@@ -133,10 +133,10 @@ class BoutMask;
 #endif
 
 #define BOUT_FOR(index, region) \
-  BOUT_FOR_OMP(index, region, parallel for schedule(BOUT_OPENMP_SCHEDULE))
+  BOUT_FOR_OMP(index, (region), parallel for schedule(BOUT_OPENMP_SCHEDULE))
 
 #define BOUT_FOR_INNER(index, region) \
-  BOUT_FOR_OMP(index, region, for schedule(BOUT_OPENMP_SCHEDULE) nowait)
+  BOUT_FOR_OMP(index, (region), for schedule(BOUT_OPENMP_SCHEDULE) nowait)
 // NOLINTEND(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 
 enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };
@@ -308,6 +308,8 @@ struct SpecificInd {
     ASSERT3(dz >= 0);
     return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
   }
+  /// Automatically select zm or zp depending on sign
+  inline SpecificInd zpm(int dz) const { return dz > 0 ? zp(dz) : zm(-dz); }
 
   // and for 2 cells
   inline SpecificInd xpp() const { return xp(2); }
@@ -319,8 +321,7 @@ struct SpecificInd {
 
   /// Generic offset of \p index in multiple directions simultaneously
   inline SpecificInd offset(int dx, int dy, int dz) const {
-    auto temp = (dz > 0) ? zp(dz) : zm(-dz);
-    return temp.yp(dy).xp(dx);
+    return zpm(dz).yp(dy).xp(dx);
   }
 };
 

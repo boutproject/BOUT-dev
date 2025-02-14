@@ -12,10 +12,13 @@ class IndexOffsetStructTests : public ::testing::Test {
 public:
   IndexOffsetStructTests() {
     zero = T(0, std::is_same_v<T, IndPerp> ? 1 : 5, std::is_same_v<T, Ind2D> ? 1 : 7);
+    finite =
+        T(239, std::is_same_v<T, IndPerp> ? 1 : 5, std::is_same_v<T, Ind2D> ? 1 : 12);
   }
 
   IndexOffset<T> noOffset;
   T zero;
+  T finite;
 };
 
 template <class T>
@@ -144,15 +147,15 @@ TYPED_TEST(IndexOffsetStructTests, AddToIndex) {
 TYPED_TEST(IndexOffsetStructTests, SubtractFromIndex) {
   IndexOffset<TypeParam> offset1 = {1, 0, 0}, offset2 = {0, 2, 0}, offset3 = {0, 0, 11},
                          offset4 = {2, 3, -2};
-  EXPECT_EQ(this->zero - offset1, this->zero.xm());
+  EXPECT_EQ(this->finite - offset1, this->finite.xm());
   if constexpr (!std::is_same_v<TypeParam, IndPerp>) {
-    EXPECT_EQ(this->zero - offset2, this->zero.ym(2));
+    EXPECT_EQ(this->finite - offset2, this->finite.ym(2));
   }
   if constexpr (!std::is_same_v<TypeParam, Ind2D>) {
-    EXPECT_EQ(this->zero - offset3, this->zero.zm(11));
+    EXPECT_EQ(this->finite - offset3, this->finite.zm(11));
   }
   if constexpr (std::is_same_v<TypeParam, Ind3D>) {
-    EXPECT_EQ(this->zero - offset4, this->zero.zp(2).xm(2).ym(3));
+    EXPECT_EQ(this->finite - offset4, this->finite.zp(2).xm(2).ym(3));
   }
 }
 

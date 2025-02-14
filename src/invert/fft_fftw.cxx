@@ -25,7 +25,7 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>

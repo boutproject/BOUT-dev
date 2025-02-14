@@ -1,22 +1,19 @@
-#include "test_extras.hxx"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include <cmath>
-
-#include "bout/field3d.hxx"
-#include "bout/hypre_interface.hxx"
-
 #if BOUT_HAS_HYPRE
 
 #include "HYPRE.h"
 #include "HYPRE_IJ_mv.h"
 #include "HYPRE_parcsr_ls.h"
 
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include <cmath>
+
+#include "fake_mesh_fixture.hxx"
+#include "test_extras.hxx"
+
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
+#include "bout/field3d.hxx"
+#include "bout/hypre_interface.hxx"
 
 using bout::HypreMatrix;
 using bout::HypreVector;

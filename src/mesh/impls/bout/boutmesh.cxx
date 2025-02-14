@@ -35,15 +35,18 @@
 
 #include "boutmesh.hxx"
 
+#include <bout/boundary_region.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/dcomplex.hxx>
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
+#include <bout/griddata.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
+#include <bout/parallel_boundary_region.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
@@ -78,9 +81,6 @@ BoutMesh::~BoutMesh() {
 
   // Delete the boundary regions
   for (const auto& bndry : boundary) {
-    delete bndry;
-  }
-  for (const auto& bndry : par_boundary) {
     delete bndry;
   }
 
@@ -2297,7 +2297,9 @@ int BoutMesh::pack_data(const std::vector<FieldData*>& var_list, int xge, int xl
   for (const auto& var : var_list) {
     if (var->is3D()) {
       // 3D variable
-      auto& var3d_ref = *dynamic_cast<Field3D*>(var);
+      auto* var3d_ref_ptr = dynamic_cast<Field3D*>(var);
+      ASSERT0(var3d_ref_ptr != nullptr);
+      auto& var3d_ref = *var3d_ref_ptr;
       ASSERT2(var3d_ref.isAllocated());
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
@@ -2308,7 +2310,9 @@ int BoutMesh::pack_data(const std::vector<FieldData*>& var_list, int xge, int xl
       }
     } else {
       // 2D variable
-      auto& var2d_ref = *dynamic_cast<Field2D*>(var);
+      auto* var2d_ref_ptr = dynamic_cast<Field2D*>(var);
+      ASSERT0(var2d_ref_ptr != nullptr);
+      auto& var2d_ref = *var2d_ref_ptr;
       ASSERT2(var2d_ref.isAllocated());
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++, len++) {
@@ -3011,11 +3015,36 @@ RangeIterator BoutMesh::iterateBndryUpperY() const {
 
 std::vector<BoundaryRegion*> BoutMesh::getBoundaries() { return boundary; }
 
-std::vector<BoundaryRegionPar*> BoutMesh::getBoundariesPar() { return par_boundary; }
+std::vector<std::shared_ptr<BoundaryRegionPar>>
+BoutMesh::getBoundariesPar(BoundaryParType type) {
+  return par_boundary[static_cast<int>(type)];
+}
 
-void BoutMesh::addBoundaryPar(BoundaryRegionPar* bndry) {
+void BoutMesh::addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
+                              BoundaryParType type) {
   output_info << "Adding new parallel boundary: " << bndry->label << endl;
-  par_boundary.push_back(bndry);
+  switch (type) {
+  case BoundaryParType::xin_fwd:
+    par_boundary[static_cast<int>(BoundaryParType::xin)].push_back(bndry);
+    par_boundary[static_cast<int>(BoundaryParType::fwd)].push_back(bndry);
+    break;
+  case BoundaryParType::xin_bwd:
+    par_boundary[static_cast<int>(BoundaryParType::xin)].push_back(bndry);
+    par_boundary[static_cast<int>(BoundaryParType::bwd)].push_back(bndry);
+    break;
+  case BoundaryParType::xout_fwd:
+    par_boundary[static_cast<int>(BoundaryParType::xout)].push_back(bndry);
+    par_boundary[static_cast<int>(BoundaryParType::fwd)].push_back(bndry);
+    break;
+  case BoundaryParType::xout_bwd:
+    par_boundary[static_cast<int>(BoundaryParType::xout)].push_back(bndry);
+    par_boundary[static_cast<int>(BoundaryParType::bwd)].push_back(bndry);
+    break;
+  default:
+    throw BoutException("Unexpected type of boundary {}", toString(type));
+  }
+  par_boundary[static_cast<int>(type)].push_back(bndry);
+  par_boundary[static_cast<int>(BoundaryParType::all)].push_back(bndry);
 }
 
 Field3D BoutMesh::smoothSeparatrix(const Field3D& f) {

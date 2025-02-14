@@ -34,8 +34,8 @@
 #ifndef BOUT_H
 #define BOUT_H
 
-//NOLINTBEGIN(unused-includes)
-#include "bout/build_config.hxx"
+// IWYU pragma: begin_keep, begin_export
+#include "bout/build_defines.hxx"
 
 #include "bout/boutcomm.hxx"
 #include "bout/difops.hxx" // Differential operators
@@ -52,9 +52,8 @@
 #include "bout/vecops.hxx" // Vector differential operations
 #include "bout/vector2d.hxx"
 #include "bout/vector3d.hxx"
-#include "bout/version.hxx"
 #include "bout/where.hxx"
-//NOLINTEND(unused-includes)
+// IWYU pragma: end_keep, end_export
 
 // BOUT++ main functions
 
@@ -194,6 +193,8 @@ private:
   BoutReal mpi_start_time;
   /// Stop if file `stop_check_name` exists
   bool stop_check;
+  /// Check if this is the first time the monitor is called
+  bool first_time{true};
   /// Filename for `stop_check`
   std::string stop_check_name;
 };

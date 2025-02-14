@@ -15,9 +15,11 @@
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
 #include <bout/interpolation.hxx>
+#include <bout/output_bout_types.hxx>
 
 #include <bout/globals.hxx>
 
+#include "invert3x3.hxx"
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
 
@@ -1241,9 +1243,9 @@ int Coordinates::calcCovariant(const std::string& region) {
     a(1, 2) = a(2, 1) = g23[i];
     a(0, 2) = a(2, 0) = g13[i];
 
-    if (invert3x3(a)) {
-      output_error.write("\tERROR: metric tensor is singular at ({:d}, {:d})\n", i.x(),
-                         i.y());
+    if (const auto det = bout::invert3x3(a); det.has_value()) {
+      output_error.write("\tERROR: metric tensor is singular at {}, determinant: {:d}\n",
+                         i, det.value());
       return 1;
     }
 
@@ -1297,9 +1299,9 @@ int Coordinates::calcContravariant(const std::string& region) {
     a(1, 2) = a(2, 1) = g_23[i];
     a(0, 2) = a(2, 0) = g_13[i];
 
-    if (invert3x3(a)) {
-      output_error.write("\tERROR: metric tensor is singular at ({:d}, {:d})\n", i.x(),
-                         i.y());
+    if (const auto det = bout::invert3x3(a); det.has_value()) {
+      output_error.write("\tERROR: metric tensor is singular at {}, determinant: {:d}\n",
+                         i, det.value());
       return 1;
     }
 
@@ -1502,7 +1504,7 @@ Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& m
   if (!f.hasParallelSlices() and !transform->canToFromFieldAligned()) {
     Field3D f_parallel = f;
     transform->calcParallelSlices(f_parallel);
-    f_parallel.applyParallelBoundary("parallel_neumann");
+    f_parallel.applyParallelBoundary("parallel_neumann_o2");
     return bout::derivatives::index::DDY(f_parallel, outloc, method, region);
   }
 #endif
@@ -1908,7 +1910,7 @@ Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) co
 
   // Communicate to get parallel slices
   localmesh->communicate(*invSgCache);
-  invSgCache->applyParallelBoundary("parallel_neumann");
+  invSgCache->applyParallelBoundary("parallel_neumann_o2");
 
   // cache
   auto ptr = std::make_unique<FieldMetric>();

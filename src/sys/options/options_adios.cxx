@@ -1,6 +1,6 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
-#if BOUT_HAS_ADIOS
+#if BOUT_HAS_ADIOS2
 
 #include "options_adios.hxx"
 #include "bout/adios_object.hxx"
@@ -245,7 +245,7 @@ bool readAttribute(adios2::IO& io, const std::string& name, const std::string& t
   return false;
 }
 
-Options OptionsADIOS::read() {
+Options OptionsADIOS::read([[maybe_unused]] bool lazy) {
   Timer timer("io");
 
   // Open file
@@ -628,4 +628,4 @@ void OptionsADIOS::write(const Options& options, const std::string& time_dim) {
 
 } // namespace bout
 
-#endif // BOUT_HAS_ADIOS
+#endif // BOUT_HAS_ADIOS2

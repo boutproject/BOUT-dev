@@ -18,6 +18,7 @@
 
 #include <fmt/core.h>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
 #include <algorithm>
 #include <cmath>
@@ -221,6 +222,36 @@ Options::fuzzyFind(const std::string& name, std::string::size_type distance) con
   return matches;
 }
 
+Options::Options(const Options& other) { (*this) = other.copy(); }
+
+Options& Options::operator=(const Options& other) {
+  if (this == &other) {
+    return *this;
+  }
+
+  // Note: Here can't do copy-and-swap because pointers to parents are stored
+
+  value = other.value;
+
+  // Assigning the attributes.
+  // The simple assignment operator fails to compile with Apple Clang 12
+  //   attributes = other.attributes;
+  attributes.clear();
+  attributes.insert(other.attributes.begin(), other.attributes.end());
+
+  full_name = other.full_name;
+  is_section = other.is_section;
+  children = other.children;
+  value_used = other.value_used;
+
+  // Ensure that this is the parent of all children,
+  // otherwise will point to the original Options instance
+  for (auto& child : children) {
+    child.second.parent_instance = this;
+  }
+  return *this;
+}
+
 Options& Options::operator=(Options&& other) noexcept {
   if (this == &other) {
     return *this;
@@ -272,38 +303,44 @@ bool Options::isSection(const std::string& name) const {
 }
 
 template <>
-void Options::assign<>(Field2D val, std::string source) {
+Options& Options::assign<>(Field2D val, std::string source) {
   attributes["cell_location"] = toString(val.getLocation());
   attributes["direction_y"] = toString(val.getDirectionY());
   attributes["direction_z"] = toString(val.getDirectionZ());
   _set_no_check(std::move(val), std::move(source));
+  return *this;
 }
 template <>
-void Options::assign<>(Field3D val, std::string source) {
+Options& Options::assign<>(Field3D val, std::string source) {
   attributes["cell_location"] = toString(val.getLocation());
   attributes["direction_y"] = toString(val.getDirectionY());
   attributes["direction_z"] = toString(val.getDirectionZ());
   _set_no_check(std::move(val), std::move(source));
+  return *this;
 }
 template <>
-void Options::assign<>(FieldPerp val, std::string source) {
+Options& Options::assign<>(FieldPerp val, std::string source) {
   attributes["cell_location"] = toString(val.getLocation());
   attributes["direction_y"] = toString(val.getDirectionY());
   attributes["direction_z"] = toString(val.getDirectionZ());
   attributes["yindex_global"] = val.getGlobalIndex();
   _set_no_check(std::move(val), std::move(source));
+  return *this;
 }
 template <>
-void Options::assign<>(Array<BoutReal> val, std::string source) {
+Options& Options::assign<>(Array<BoutReal> val, std::string source) {
   _set_no_check(std::move(val), std::move(source));
+  return *this;
 }
 template <>
-void Options::assign<>(Matrix<BoutReal> val, std::string source) {
+Options& Options::assign<>(Matrix<BoutReal> val, std::string source) {
   _set_no_check(std::move(val), std::move(source));
+  return *this;
 }
 template <>
-void Options::assign<>(Tensor<BoutReal> val, std::string source) {
+Options& Options::assign<>(Tensor<BoutReal> val, std::string source) {
   _set_no_check(std::move(val), std::move(source));
+  return *this;
 }
 
 namespace {
@@ -510,7 +547,10 @@ Field3D Options::as<Field3D>(const Field3D& similar_to) const {
     }
 
     // Get a reference, to try and avoid copying
-    const auto& tensor = bout::utils::get<Tensor<BoutReal>>(value);
+    const auto& tensor =
+        is_loaded() ? bout::utils::get<Tensor<BoutReal>>(value)
+                    : doLazyLoad(0, localmesh->LocalNx - 1, 0, localmesh->LocalNy - 1, 0,
+                                 localmesh->LocalNz - 1);
 
     // Check if the dimension sizes are the same as a Field3D
     if (tensor.shape()
@@ -899,6 +939,35 @@ std::vector<std::string> Options::getFlattenedKeys() const {
   return flattened_names;
 }
 
+namespace {
+/// Visitor that returns the shape of its argument
+struct GetDimensions {
+  std::vector<int> operator()([[maybe_unused]] bool value) { return {1}; }
+  std::vector<int> operator()([[maybe_unused]] int value) { return {1}; }
+  std::vector<int> operator()([[maybe_unused]] BoutReal value) { return {1}; }
+  std::vector<int> operator()([[maybe_unused]] const std::string& value) { return {1}; }
+  std::vector<int> operator()(const Array<BoutReal>& array) { return {array.size()}; }
+  std::vector<int> operator()(const Matrix<BoutReal>& array) {
+    const auto shape = array.shape();
+    return {std::get<0>(shape), std::get<1>(shape)};
+  }
+  std::vector<int> operator()(const Tensor<BoutReal>& array) {
+    const auto shape = array.shape();
+    return {std::get<0>(shape), std::get<1>(shape), std::get<2>(shape)};
+  }
+  std::vector<int> operator()(const Field& array) {
+    return {array.getNx(), array.getNy(), array.getNz()};
+  }
+};
+} // namespace
+
+std::vector<int> Options::getShape() const {
+  if (is_loaded()) {
+    return bout::utils::visit(GetDimensions{}, value);
+  }
+  return lazy_shape;
+}
+
 fmt::format_parse_context::iterator
 bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
 
@@ -938,7 +1007,7 @@ bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
 
 fmt::format_context::iterator
 bout::details::OptionsFormatterBase::format(const Options& options,
-                                            fmt::format_context& ctx) {
+                                            fmt::format_context& ctx) const {
 
   const auto conditionally_used = [](const Options& option) -> bool {
     if (not option.hasAttribute(conditionally_used_attribute)) {

@@ -25,7 +25,7 @@ endif()
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
 # We try to use git to get a full description, inspired by setuptools_scm
-set(_bout_previous_version "5.1.0")
+set(_bout_previous_version "5.1.1")
 set(_bout_next_version "5.2.0")
 execute_process(
   COMMAND "git" describe --tags --match=v${_bout_previous_version}
@@ -270,6 +270,7 @@ set(BOUT_SOURCES
   ./src/mesh/interpolation/interpolation_z.cxx
   ./src/mesh/interpolation/lagrange_4pt_xz.cxx
   ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
+  ./src/mesh/invert3x3.hxx
   ./src/mesh/mesh.cxx
   ./src/mesh/parallel/fci.cxx
   ./src/mesh/parallel/fci.hxx
@@ -794,8 +795,15 @@ foreach (flag ${CONFIG_LDFLAGS_LIST})
       # message("${flag} is a file")
       set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} ${flag}")
     else()
-      message("Fixing ${flag} to -l${flag}")
-      set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} -l${flag}")
+      string(FIND "${flag}" "::" hascolcol)
+      if (${hascolcol} EQUAL -1)
+	message("Fixing ${flag} to -l${flag}")
+	set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} -l${flag}")
+      else()
+	string(REGEX MATCH "[^:]*$" flag2 "${flag}")
+	message("Fixing ${flag} to -l${flag2}")
+	set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} -l${flag2}")
+      endif()
     endif()
   endif()
 endforeach()
@@ -935,7 +943,7 @@ message("
    SUNDIALS support         : ${BOUT_HAS_SUNDIALS}
    HYPRE support            : ${BOUT_HAS_HYPRE}
    NetCDF support           : ${BOUT_HAS_NETCDF}
-   ADIOS support            : ${BOUT_HAS_ADIOS}
+   ADIOS2 support           : ${BOUT_HAS_ADIOS2}
    FFTW support             : ${BOUT_HAS_FFTW}
    LAPACK support           : ${BOUT_HAS_LAPACK}
    OpenMP support           : ${BOUT_USE_OPENMP}

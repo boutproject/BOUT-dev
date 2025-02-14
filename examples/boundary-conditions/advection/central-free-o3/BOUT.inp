@@ -1,11 +1,3 @@
-# 1D demonstration of boundary conditions for advection equation
-#
-# This uses 2nd order central differencing, and the "Free_o3"
-# condition on the downstream boundary
-#
-
-nout = 20
-timestep = 0.05
 
 MXG = 0
 
@@ -32,3 +24,13 @@ upwind = c2   # Use 2nd-order central differencing
 function = exp(-((y-pi)/0.2)^2)
 
 bndry_yup = free_o3
+
+[solver]
+output_step = 0.05
+# 1D demonstration of boundary conditions for advection equation
+#
+# This uses 2nd order central differencing, and the "Free_o3"
+# condition on the downstream boundary
+#
+
+nout = 20

@@ -30,7 +30,7 @@
 #ifndef BOUT_PETSC_LAPLACE_H
 #define BOUT_PETSC_LAPLACE_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/invert_laplace.hxx"
 
 #if not BOUT_HAS_PETSC
@@ -255,10 +255,11 @@ private:
   void vecToField(Vec x, FieldPerp& f);       // Copy a vector into a fieldperp
   void fieldToVec(const FieldPerp& f, Vec x); // Copy a fieldperp into a vector
 
-#if CHECK > 0
-  int implemented_flags;
-  int implemented_boundary_flags;
-#endif
+  static constexpr int implemented_flags = INVERT_START_NEW;
+  static constexpr int implemented_boundary_flags =
+      INVERT_AC_GRAD | INVERT_SET | INVERT_RHS;
+
+  void checkFlags();
 };
 
 #endif //BOUT_HAS_PETSC

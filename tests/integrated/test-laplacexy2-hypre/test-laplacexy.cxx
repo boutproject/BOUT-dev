@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
   Field2D absolute_error = abs(f - sol);
   BoutReal max_error = max(absolute_error, true);
 
-  output << "Magnitude of maximum absolute error is " << max_error << endl;
+  output.write("Magnitude of maximum absolute error is {}\n", max_error);
 
   sol.getMesh()->communicate(sol);
   Field2D rhs_check = Laplace_perpXY(a, sol);
