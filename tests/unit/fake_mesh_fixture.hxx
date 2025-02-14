@@ -51,13 +51,13 @@ public:
 #if BOUT_USE_METRIC_3D
 
         FieldMetric mutable_Bxy = test_coords->Bxy();
-mutable_Bxy.splitParallelSlices();
-test_coords->setBxy(mutable_Bxy);
+        mutable_Bxy.splitParallelSlices();
+        test_coords->setBxy(mutable_Bxy);
 
-mutable_Bxy = test_coords->Bxy();
-mutable_Bxy.yup() = test_coords->Bxy();
-mutable_Bxy.ydown() = test_coords->Bxy();
-test_coords->setBxy(mutable_Bxy);
+        mutable_Bxy = test_coords->Bxy();
+        mutable_Bxy.yup() = test_coords->Bxy();
+        mutable_Bxy.ydown() = test_coords->Bxy();
+        test_coords->setBxy(mutable_Bxy);
 
 #endif
 
@@ -100,13 +100,13 @@ test_coords->setBxy(mutable_Bxy);
 #if BOUT_USE_METRIC_3D
 
         mutable_Bxy = test_coords_staggered->Bxy();
-mutable_Bxy.splitParallelSlices();
-test_coords_staggered->setBxy(mutable_Bxy);
+        mutable_Bxy.splitParallelSlices();
+        test_coords_staggered->setBxy(mutable_Bxy);
 
-mutable_Bxy = test_coords_staggered->Bxy();
-mutable_Bxy.yup() = test_coords_staggered->Bxy();
-mutable_Bxy.ydown() = test_coords_staggered->Bxy();
-test_coords_staggered->setBxy(mutable_Bxy);
+        mutable_Bxy = test_coords_staggered->Bxy();
+        mutable_Bxy.yup() = test_coords_staggered->Bxy();
+        mutable_Bxy.ydown() = test_coords_staggered->Bxy();
+        test_coords_staggered->setBxy(mutable_Bxy);
 
 #endif
 
