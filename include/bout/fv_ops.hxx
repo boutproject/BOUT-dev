@@ -83,10 +83,17 @@ Field3D D4DY4_index(const Field3D& f_in, bool bndry_flux = true);
    */
 struct Stencil1D {
   // Cell centre values
+#if CHECK > 0
   BoutReal c = BoutNaN, m = BoutNaN, p = BoutNaN, mm = BoutNaN, pp = BoutNaN;
 
   // Left and right cell face values
   BoutReal L = BoutNaN, R = BoutNaN;
+#else
+  BoutReal c, m, p, mm, pp;
+
+  // Left and right cell face values
+  BoutReal L, R;
+#endif
 };
 
 /*!
@@ -436,14 +443,12 @@ Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
     if ((i.x() == mesh->xend) && (mesh->lastX())) {
       // At right boundary in X
       if (bndry_flux) {
-        BoutReal flux = BoutNaN;
-        if (v_R > 0.0) {
-          // Flux to boundary
-          flux = v_R * stencil.R;
-        } else {
-          // Flux in from boundary
-          flux = v_R * 0.5 * (n_in[i.xp()] + n_in[i]);
-        }
+        const BoutReal flux = v_R > 0.0 ?
+                                        // Flux to boundary
+                                  v_R * stencil.R
+                                        :
+                                        // Flux in from boundary
+                                  v_R * 0.5 * (n_in[i.xp()] + n_in[i]);
         result[i] += flux / (coord->dx[i] * coord->J[i]);
         result[i.xp()] -= flux / (coord->dx[i.xp()] * coord->J[i.xp()]);
       }
@@ -463,14 +468,12 @@ Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
       // At left boundary in X
 
       if (bndry_flux) {
-        BoutReal flux = BoutNaN;
-        if (v_L < 0.0) {
-          // Flux to boundary
-          flux = v_L * stencil.L;
-        } else {
-          // Flux in from boundary
-          flux = v_L * 0.5 * (n_in[i.xm()] + n_in[i]);
-        }
+        const BoutReal flux = (v_L < 0.0) ?
+                                          // Flux to boundary
+                                  v_L * stencil.L
+                                          :
+                                          // Flux in from boundary
+                                  v_L * 0.5 * (n_in[i.xm()] + n_in[i]);
         result[i] -= flux / (coord->dx[i] * coord->J[i]);
         result[i.xm()] += flux / (coord->dx[i.xm()] * coord->J[i.xm()]);
       }
