@@ -16,9 +16,8 @@ struct TokamakOptions {
     Field2D Btxy;
     Field2D Bxy;
     Field2D hthe;
-    FieldMetric ShearFactor;
+    FieldMetric I;
     FieldMetric dx;
-
     TokamakOptions(Mesh& mesh) {
         mesh.get(Rxy, "Rxy");
         //    mesh->get(Zxy, "Zxy");
@@ -26,17 +25,16 @@ struct TokamakOptions {
         mesh.get(Btxy, "Btxy");
         mesh.get(Bxy, "Bxy");
         mesh.get(hthe, "hthe");
-        mesh.get(ShearFactor, "sinty");
+        mesh.get(I, "sinty");
         mesh.get(dx, "dpsi");
     }
-
     void normalise(BoutReal Lbar, BoutReal Bbar, BoutReal ShearFactor) {
         Rxy /= Lbar;
         Bpxy /= Bbar;
         Btxy /= Bbar;
         Bxy /= Bbar;
         hthe /= Lbar;
-        ShearFactor *= Lbar * Lbar * Bbar * ShearFactor;
+        I *= Lbar * Lbar * Bbar * ShearFactor;
         dx /= Lbar * Lbar * Bbar;
     }
 };

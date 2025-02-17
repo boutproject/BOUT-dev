@@ -164,7 +164,7 @@ protected:
 
     if (lowercase(ptstr) == "shifted") {
       // Dimits style, using local coordinate system
-      b0xcv.z += tokamak_options.ShearFactor * b0xcv.x;
+      b0xcv.z += tokamak_options.I * b0xcv.x;
       noshear = true;
     }
 

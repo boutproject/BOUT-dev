@@ -296,7 +296,7 @@ public:
       if (not mesh->IncIntShear) {
         // Dimits style, using local coordinate system
         if (include_curvature) {
-          b0xcv.z += tokamak_options.ShearFactor * b0xcv.x;
+          b0xcv.z += tokamak_options.I * b0xcv.x;
         }
       }
     }

@@ -565,57 +565,57 @@ public:
       laplacexy->setCoefs(1.0, 0.0);
       phi2D = 0.0; // Starting guess
       phi2D.setBoundary("phi");
-    }
+        }
 
-    // Radial smoothing
-    smooth_j_x = options["smooth_j_x"].doc("Smooth Jpar in x").withDefault(false);
+        // Radial smoothing
+        smooth_j_x = options["smooth_j_x"].doc("Smooth Jpar in x").withDefault(false);
 
-    // Jpar boundary region
-    jpar_bndry_width = options["jpar_bndry_width"]
-                           .doc("Number of cells near the boundary where jpar = 0")
-                           .withDefault(-1);
+        // Jpar boundary region
+        jpar_bndry_width = options["jpar_bndry_width"]
+                .doc("Number of cells near the boundary where jpar = 0")
+                .withDefault(-1);
 
-    sheath_boundaries = options["sheath_boundaries"]
-                            .doc("Apply sheath boundaries in Y?")
-                            .withDefault(false);
+        sheath_boundaries = options["sheath_boundaries"]
+                .doc("Apply sheath boundaries in Y?")
+                .withDefault(false);
 
-    // Parallel differencing
-    parallel_lr_diff =
-        options["parallel_lr_diff"]
-            .doc("Use left and right shifted stencils for parallel differences?")
-            .withDefault<bool>(false);
+        // Parallel differencing
+        parallel_lr_diff =
+                options["parallel_lr_diff"]
+                        .doc("Use left and right shifted stencils for parallel differences?")
+                        .withDefault<bool>(false);
 
-    // RMP-related options
-    include_rmp = options["include_rmp"]
-                      .doc("Read RMP field rmp_A from grid?")
-                      .withDefault<bool>(false);
+        // RMP-related options
+        include_rmp = options["include_rmp"]
+                .doc("Read RMP field rmp_A from grid?")
+                .withDefault<bool>(false);
 
-    simple_rmp =
-        options["simple_rmp"].doc("Include a simple RMP model?").withDefault<bool>(false);
-    rmp_factor = options["rmp_factor"].withDefault(1.0);
-    rmp_ramp = options["rmp_ramp"].withDefault(-1.0);
-    rmp_freq = options["rmp_freq"].withDefault(-1.0);
-    rmp_rotate = options["rmp_rotate"].withDefault(0.0);
+        simple_rmp =
+                options["simple_rmp"].doc("Include a simple RMP model?").withDefault<bool>(false);
+        rmp_factor = options["rmp_factor"].withDefault(1.0);
+        rmp_ramp = options["rmp_ramp"].withDefault(-1.0);
+        rmp_freq = options["rmp_freq"].withDefault(-1.0);
+        rmp_rotate = options["rmp_rotate"].withDefault(0.0);
 
-    // Vacuum region control
-    vacuum_pressure =
-        options["vacuum_pressure"]
-            .doc("Fraction of peak pressure, below which is considered vacuum.")
-            .withDefault(0.02);
-    vacuum_trans =
-        options["vacuum_trans"]
-            .doc("Vacuum boundary transition width, as fraction of peak pressure.")
-            .withDefault(0.005);
+        // Vacuum region control
+        vacuum_pressure =
+                options["vacuum_pressure"]
+                        .doc("Fraction of peak pressure, below which is considered vacuum.")
+                        .withDefault(0.02);
+        vacuum_trans =
+                options["vacuum_trans"]
+                        .doc("Vacuum boundary transition width, as fraction of peak pressure.")
+                        .withDefault(0.005);
 
-    // Resistivity and hyper-resistivity options
-    vac_lund =
-        options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
-    core_lund =
-        options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
-    hyperresist =
-        options["hyperresist"].doc("Hyper-resistivity coefficient").withDefault(-1.0);
-    ehyperviscos = options["ehyperviscos"]
-                       .doc("electron Hyper-viscosity coefficient")
+        // Resistivity and hyper-resistivity options
+        vac_lund =
+                options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
+        core_lund =
+                options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
+        hyperresist =
+                options["hyperresist"].doc("Hyper-resistivity coefficient").withDefault(-1.0);
+        ehyperviscos = options["ehyperviscos"]
+                .doc("electron Hyper-viscosity coefficient")
                        .withDefault(-1.0);
     spitzer_resist = options["spitzer_resist"]
                          .doc("Use Spitzer resistivity?")
@@ -1216,7 +1216,7 @@ public:
 
     if (mesh->IncIntShear) {
       // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      metric->setIntShiftTorsion(tokamak_options.ShearFactor);
+      metric->setIntShiftTorsion(tokamak_options.I);
     }
 
     return 0;
