@@ -46,9 +46,17 @@ public:
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
     auto tokamak_options = TokamakOptions(*mesh);
-    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, true, Lnorm, Bnorm);
 
     Coordinates* coords = mesh->getCoordinates();
+
+    bool ShiftXderivs;
+    BoutReal shearFactor = 1.0;
+    Options::getRoot()->get("shiftXderivs", ShiftXderivs, false); // Read global flag
+    if (ShiftXderivs) {
+      shearFactor = 0.0; // I disappears from metric
+    }
+
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, Lnorm, Bnorm, shearFactor);
   }
 
 private:

@@ -163,18 +163,18 @@ protected:
     // Get the coordinates object
     Coordinates* coord = mesh->getCoordinates();
 
-    bool noshear;
-
     // Check type of parallel transform
     std::string ptstr =
         Options::root()["mesh"]["paralleltransform"]["type"].withDefault("identity");
 
+    BoutReal shearFactor = 1.0;
     if (lowercase(ptstr) == "shifted") {
-      noshear = true;
+      // Using shifted metric method
+      shearFactor = 0.0; // I disappears from metric
     }
 
     auto tokamak_options = TokamakOptions(*mesh);
-    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, noshear, Lnorm, Bnorm);
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, Lnorm, Bnorm, shearFactor);
   }
 };
 

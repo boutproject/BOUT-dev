@@ -46,16 +46,12 @@ BoutReal get_sign_of_bp(Field2D Bpxy) {
     return 1.0;
 }
 
-void set_tokamak_coordinates_on_mesh(TokamakOptions& tokamak_options, Mesh& mesh, const bool noshear, BoutReal Lbar,
-                                     BoutReal Bbar, BoutReal ShearFactor = 1.0) {
+void set_tokamak_coordinates_on_mesh(TokamakOptions& tokamak_options, Mesh& mesh, BoutReal Lbar,
+                                     BoutReal Bbar, BoutReal ShearFactor = 0.0) {
 
     tokamak_options.normalise(Lbar, Bbar, ShearFactor);
 
     const BoutReal sign_of_bp = get_sign_of_bp(tokamak_options.Bpxy);
-
-    if (noshear) {
-        ShearFactor = 0.0;
-    }
 
     auto *coord = mesh.getCoordinates();
 

@@ -252,7 +252,7 @@ class GEM : public PhysicsModel {
     Bbar = options["Bbar"].withDefault(Bbar); // Override in options file
     SAVE_ONCE(Bbar);
 
-    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, true, Lbar, Bbar);
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, Lbar, Bbar);
 
     beta_e = 4.e-7 * PI * max(p_e, true) / (Bbar * Bbar);
     SAVE_ONCE(beta_e);

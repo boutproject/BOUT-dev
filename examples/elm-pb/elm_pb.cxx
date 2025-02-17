@@ -300,7 +300,7 @@ protected:
 
         bool noshear;
 
-        Coordinates* metric = mesh->getCoordinates();
+        Coordinates *metric = mesh->getCoordinates();
 
         output.write("Solving high-beta flute reduced equations\n");
         output.write("\tFile    : {:s}\n", __FILE__);
@@ -336,8 +336,8 @@ protected:
         Psi_loc.setBoundary("Psi_loc");
 
         //////////////////////////////////////////////////////////////
-        auto& globalOptions = Options::root();
-        auto& options = globalOptions["highbeta"];
+        auto &globalOptions = Options::root();
+        auto &options = globalOptions["highbeta"];
 
         constn0 = options["constn0"].withDefault(true);
         // use the hyperbolic profile of n0. If both  n0_fake_prof and
@@ -465,6 +465,8 @@ protected:
         D_min = options["D_min"].withDefault(3000.0);
 
         experiment_Er = options["experiment_Er"].withDefault(false);
+
+        noshear = options["noshear"].withDefault(false);
 
         relax_j_vac = options["relax_j_vac"]
                 .doc("Relax vacuum current to zero")
@@ -746,21 +748,23 @@ protected:
             J0 = 0.0;
         }
 
-        if (noshear) {
-            if (include_curvature) {
-                b0xcv.z += tokamak_options.ShearFactor * b0xcv.x;
-            }
-        }
-
         //////////////////////////////////////////////////////////////
         // SHIFTED RADIAL COORDINATES
 
-        if (not mesh->IncIntShear) {
+        BoutReal shearFactor = 1.0;
+        if (!noshear && mesh->IncIntShear) {
+            // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
+            metric->setIntShiftTorsion(tokamak_options.I);
+
+        } else {
             // Dimits style, using local coordinate system
             if (include_curvature) {
                 b0xcv.z += tokamak_options.I * b0xcv.x;
             }
+            shearFactor = 0.0; // I disappears from metric
         }
+
+        set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, Lbar, Bbar, shearFactor);
 
         //////////////////////////////////////////////////////////////
         // NORMALISE QUANTITIES
@@ -883,16 +887,6 @@ protected:
         b0xcv.x /= Bbar;
         b0xcv.y *= Lbar * Lbar;
         b0xcv.z *= Lbar * Lbar;
-
-        set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, true, Lbar, Bbar);
-
-        //////////////////////////////////////////////////////////////
-        // SHIFTED RADIAL COORDINATES
-
-        if (mesh->IncIntShear) {
-            // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-            metric->setIntShiftTorsion(tokamak_options.I);
-        }
 
         if (constn0) {
             T0_fake_prof = false;
@@ -1159,7 +1153,7 @@ protected:
     }
 
     // Parallel gradient along perturbed field-line
-    Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) const {
+    Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) const {
 
         if (loc == CELL_DEFAULT) {
             loc = f.getLocation();

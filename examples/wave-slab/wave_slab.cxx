@@ -18,7 +18,15 @@ public:
   int init(bool UNUSED(restarting)) {
 
     auto tokamak_options = TokamakOptions(*mesh);
-    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, true, 1.0, 1.0);
+
+    int ShiftXderivs = 0;
+    mesh->get(ShiftXderivs, "false");
+    BoutReal shearFactor = 1.0;
+    if (ShiftXderivs) {
+      // No integrated shear in metric
+      shearFactor = 0.0;
+    }
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, 1.0, 1.0, shearFactor);
     
     auto* coords = mesh->getCoordinates();
 

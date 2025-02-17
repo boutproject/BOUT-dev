@@ -114,6 +114,8 @@ private:
   BoutReal hyperresist;  // Hyper-resistivity coefficient (in core only)
   BoutReal ehyperviscos; // electron Hyper-viscosity coefficient
 
+  TokamakOptions tokamak_options = TokamakOptions(*mesh);
+  
   bool mms; // True if testing with Method of Manufactured Solutions
 
   const BoutReal MU0 = 4.0e-7 * PI;
@@ -121,8 +123,6 @@ private:
 
   // Communication objects
   FieldGroup comms;
-
-  TokamakOptions tokamak_options = TokamakOptions(*mesh);
 
   // Parallel gradient along perturbed field-line
   const Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) {
@@ -139,9 +139,6 @@ private:
 
 public:
   int init(bool restarting) {
-
-    bool noshear;
-
     output.write("Solving high-beta flute reduced equations\n");
     output.write("\tFile    : {:s}\n", __FILE__);
     output.write("\tCompiled: {:s} at {:s}\n", __DATE__, __TIME__);
@@ -152,6 +149,8 @@ public:
     // Load 2D profiles
     mesh->get(J0, "Jpar0");    // A / m^2
     mesh->get(P0, "pressure"); // Pascals
+
+    Coordinates* coords = mesh->getCoordinates();
 
     //////////////////////////////////////////////////////////////
     // Read parameters from the options file
@@ -292,14 +291,22 @@ public:
 
     bool ShiftXderivs;
     globalOptions->get("shiftXderivs", ShiftXderivs, false); // Read global flag
+    BoutReal shearFactor = 1.0;
     if (ShiftXderivs) {
-      if (not mesh->IncIntShear) {
+      if (mesh->IncIntShear) {
+        // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
+        coords->setIntShiftTorsion(tokamak_options.I);
+
+      } else {
         // Dimits style, using local coordinate system
         if (include_curvature) {
           b0xcv.z += tokamak_options.I * b0xcv.x;
         }
+        shearFactor = 0.0; // I disappears from metric
       }
     }
+
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, Lbar, Bbar, shearFactor);
 
     //////////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
@@ -382,26 +389,6 @@ public:
     }
 
     dump.add(eta, "eta", 0);
-
-    //////////////////////////////////////////////////////////////
-    // SHIFTED RADIAL COORDINATES
-    if (!mesh->IncIntShear) {
-      noshear = true;
-    }
-
-    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, true, Lbar, Bbar);
-
-    //////////////////////////////////////////////////////////////
-    // SHIFTED RADIAL COORDINATES
-
-    bool ShiftXderivs;
-    globalOptions->get("shiftXderivs", ShiftXderivs, false); // Read global flag
-    if (ShiftXderivs) {
-      if (mesh->IncIntShear) {
-        // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-        coord->setIntShiftTorsion(tokamak_coordinates.get_ShearFactor());
-      }
-    }
 
     // Set B field vector
 

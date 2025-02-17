@@ -131,12 +131,10 @@ protected:
 
     /************* SHIFTED RADIAL COORDINATES ************/
 
-    bool noshear = false;
     const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
     if (ShiftXderivs) {
       ShearFactor = 0.0; // I disappears from metric
       b0xcv.z += tokamak_options.I * b0xcv.x;
-      noshear = true;
     }
 
     /************** CALCULATE PARAMETERS *****************/
@@ -194,7 +192,7 @@ protected:
     pei0 = (Ti0 + Te0) * Ni0;
     pe0 = Te0 * Ni0;
 
-    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, noshear, rho_s, bmag / 1e4, ShearFactor);
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, rho_s, bmag / 1e4, ShearFactor);
 
     /**************** SET EVOLVING VARIABLES *************/
 

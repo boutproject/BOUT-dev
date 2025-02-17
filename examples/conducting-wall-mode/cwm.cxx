@@ -55,8 +55,6 @@ private:
 
   int init(bool UNUSED(restarting)) override {
 
-    bool noshear = false;
-
     /************* LOAD DATA FROM GRID FILE ****************/
 
     // Load 2D profiles (set to zero if not found)
@@ -95,7 +93,7 @@ private:
             "identity");
 
     if (lowercase(ptstr) == "shifted") {
-      noshear = true;
+      ShearFactor = 0.0; // I disappears from metric
     }
 
     /************** CALCULATE PARAMETERS *****************/
@@ -132,7 +130,7 @@ private:
     Te0 /= Te_x;
 
     // Normalise geometry
-    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, noshear, rho_s, bmag / 1e4, ShearFactor);
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, rho_s, bmag / 1e4, ShearFactor);
 
     // Set nu
     nu = nu_hat * Ni0 / pow(Te0, 1.5);

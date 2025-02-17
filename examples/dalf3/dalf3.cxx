@@ -86,8 +86,6 @@ private:
 protected:
   int init(bool UNUSED(restarting)) override {
 
-    bool noshear;
-
     /////////////////////////////////////////////////////
     // Load data from the grid
 
@@ -162,10 +160,11 @@ protected:
     std::string ptstr =
         Options::root()["mesh"]["paralleltransform"]["type"].withDefault("identity");
 
+    BoutReal shearFactor = 1.0;
     if (lowercase(ptstr) == "shifted") {
       // Dimits style, using local coordinate system
       b0xcv.z += tokamak_options.I * b0xcv.x;
-      noshear = true;
+      shearFactor = 0.0; // I disappears from metric
     }
 
     ///////////////////////////////////////////////////
@@ -224,7 +223,7 @@ protected:
     b0xcv.z *= rho_s * rho_s;
 
     // Metrics
-    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, noshear, rho_s, Bnorm);
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, rho_s, Bnorm, shearFactor);
 
     SOLVE_FOR3(Vort, Pe, Vpar);
     comms.add(Vort, Pe, Vpar);

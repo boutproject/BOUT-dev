@@ -80,11 +80,10 @@ protected:
 
     /************* SHIFTED RADIAL COORDINATES ************/
 
-    bool noshear = false;
     const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
     if (ShiftXderivs) {
       ShearFactor = 0.0; // I disappears from metric
-      noshear = true;
+      b0xcv.z += tokamak_options.I * b0xcv.x;
     }
 
     /************** CALCULATE PARAMETERS *****************/
@@ -101,11 +100,7 @@ protected:
           hthe0 / rho_s);
     }
 
-    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, noshear, rho_s, bmag / 1e4, ShearFactor);
-
-    if (ShiftXderivs) {
-      b0xcv.z += tokamak_options.ShearFactor * b0xcv.x;
-    }
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, rho_s, bmag / 1e4, ShearFactor);
 
     /************** NORMALISE QUANTITIES *****************/
 
