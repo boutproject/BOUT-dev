@@ -41,6 +41,7 @@ then
     # Ignore weak depencies
     echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
     echo "minrate=10M" >> /etc/dnf/dnf.conf
+    export FORCE_COLUMNS=200
     time dnf -y install dnf5
     time dnf5 -y install dnf5-plugins cmake python3-zoidberg python3-natsort
     # Allow to override packages - see #2073
