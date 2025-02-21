@@ -18,7 +18,8 @@ struct TokamakOptions {
     Field2D hthe;
     FieldMetric I;
     FieldMetric dx;
-    TokamakOptions(Mesh& mesh) {
+
+    TokamakOptions(Mesh &mesh) {
         mesh.get(Rxy, "Rxy");
         //    mesh->get(Zxy, "Zxy");
         mesh.get(Bpxy, "Bpxy");
@@ -26,8 +27,11 @@ struct TokamakOptions {
         mesh.get(Bxy, "Bxy");
         mesh.get(hthe, "hthe");
         mesh.get(I, "sinty");
-        mesh.get(dx, "dpsi");
+        if (mesh.get(dx, "dpsi")) {
+            dx = mesh.getCoordinates()->dx();
+        }
     }
+
     void normalise(BoutReal Lbar, BoutReal Bbar, BoutReal ShearFactor) {
         Rxy /= Lbar;
         Bpxy /= Bbar;
@@ -46,7 +50,7 @@ BoutReal get_sign_of_bp(Field2D Bpxy) {
     return 1.0;
 }
 
-void set_tokamak_coordinates_on_mesh(TokamakOptions& tokamak_options, Mesh& mesh, BoutReal Lbar,
+void set_tokamak_coordinates_on_mesh(TokamakOptions &tokamak_options, Mesh &mesh, BoutReal Lbar,
                                      BoutReal Bbar, BoutReal ShearFactor = 0.0) {
 
     tokamak_options.normalise(Lbar, Bbar, ShearFactor);
