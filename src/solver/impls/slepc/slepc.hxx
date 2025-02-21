@@ -27,7 +27,7 @@
 #ifndef BOUT_SLEPC_SOLVER_H
 #define BOUT_SLEPC_SOLVER_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/solver.hxx"
 
 #if not BOUT_HAS_SLEPC

@@ -20,7 +20,7 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "bout/traits.hxx"
 #include <bout/index_derivs.hxx>

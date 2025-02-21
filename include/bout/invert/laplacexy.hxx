@@ -33,7 +33,7 @@
 #ifndef BOUT_LAPLACE_XY_H
 #define BOUT_LAPLACE_XY_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if !BOUT_HAS_PETSC
 // If no PETSc

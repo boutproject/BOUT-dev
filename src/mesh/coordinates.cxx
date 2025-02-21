@@ -15,7 +15,7 @@
 
 #include <bout/fft.hxx>
 #include <bout/interpolation.hxx>
-
+#include <bout/output_bout_types.hxx>
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
 #include "bout/derivs.hxx"
@@ -857,7 +857,7 @@ void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_cent
   if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location) != 0) {
     output_warn.write("\tWARNING: differencing quantity 'd2y' not found. "
                       "Calculating from dy\n");
-    d1_dy_ = bout::derivatives::index::DDY(1. / dy()); // d/di(1/dy)
+    d1_dy_ = DDY(1. / dy()); // d/di(1/dy)
 
     communicate(d1_dy_);
     d1_dy_ =

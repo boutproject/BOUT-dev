@@ -1,4 +1,3 @@
-grid = grid.fci.nc
 
 MXG = 1
 NXPE = 1
@@ -6,6 +5,7 @@ MYG = 1
 
 [mesh]
 symmetricglobalx = true
+file = grid.fci.nc
 
 [mesh:ddy]
 first = C2

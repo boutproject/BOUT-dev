@@ -1,6 +1,7 @@
 #include "bout/metric_tensor.hxx"
 #include "fmt/core.h"
 #include "bout/bout_types.hxx"
+#include "invert3x3.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field2d.hxx"
 #include "bout/mesh.hxx"
@@ -95,9 +96,10 @@ MetricTensor MetricTensor::inverse(const std::string& region, const bool communi
     matrix(1, 2) = matrix(2, 1) = g23_m[i];
     matrix(0, 2) = matrix(2, 0) = g13_m[i];
 
-    if (invert3x3(matrix) != 0) {
+    if (const auto det = bout::invert3x3(matrix); det.has_value()) {
       const auto error_message = fmt::format(
-          "\tERROR: metric tensor is singular at ({:d}, {:d})\n", i.x(), i.y());
+          "\tERROR: metric tensor is singular at ({:d}, {:d}), determinant: {:d}\n",
+          i.x(), i.y(), det.value());
       output_error.write(error_message);
       throw BoutException(error_message);
     }

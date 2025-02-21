@@ -40,6 +40,7 @@ then
     cat /etc/os-release
     # Ignore weak depencies
     echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
+    echo "minrate=10M" >> /etc/dnf/dnf.conf
     time dnf -y install dnf5
     time dnf5 -y install dnf5-plugins cmake python3-zoidberg python3-natsort
     # Allow to override packages - see #2073
@@ -58,7 +59,11 @@ else
     export OMPI_MCA_rmaps_base_oversubscribe=yes
     export PRTE_MCA_rmaps_default_mapping_policy=:oversubscribe
     export TRAVIS=true
+    # Try limiting openmp threads
     export FLEXIBLAS=NETLIB
+    export MKL_NUM_THREADS=1
+    export NUMEXPR_NUM_THREADS=1
+    export OMP_NUM_THREADS=1
     cd
     cd BOUT-dev
     echo "starting configure"

@@ -1,4 +1,4 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "gtest/gtest.h"
 
@@ -6,14 +6,10 @@
 #include "bout/fft.hxx"
 
 #if BOUT_HAS_FFTW
+#include "fake_mesh.hxx"
+
 // The unit tests use the global mesh
 using namespace bout::globals;
-
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
 
 class ShiftedMetricTest : public ::testing::Test {
 public:
