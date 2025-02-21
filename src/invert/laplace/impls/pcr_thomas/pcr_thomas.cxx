@@ -156,7 +156,7 @@ FieldPerp LaplacePCR_THOMAS::solve(const FieldPerp& rhs, const FieldPerp& x0) {
   }
 
   if (dst) {
-    const BoutReal zlength = getUniform(coords->dz) * (localmesh->LocalNz - 3);
+    const BoutReal zlength = getUniform(coords->dz()) * (localmesh->LocalNz - 3);
     BOUT_OMP_PERF(parallel)
     {
       /// Create a local thread-scope working array
@@ -362,7 +362,7 @@ Field3D LaplacePCR_THOMAS::solve(const Field3D& rhs, const Field3D& x0) {
   auto bcmplx3D = Matrix<dcomplex>(nsys, nx);
 
   if (dst) {
-    const BoutReal zlength = getUniform(coords->dz) * (localmesh->LocalNz - 3);
+    const BoutReal zlength = getUniform(coords->dz()) * (localmesh->LocalNz - 3);
     BOUT_OMP_PERF(parallel)
     {
       /// Create a local thread-scope working array
