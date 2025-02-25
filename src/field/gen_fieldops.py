@@ -195,7 +195,6 @@ class Field(object):
         else:
             return "{self.name}_acc[{self.mixed_base_ind_var}]".format(self=self)
 
-
     def __eq__(self, other):
         try:
             return self.field_type == other.field_type
