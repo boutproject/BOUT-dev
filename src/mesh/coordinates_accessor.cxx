@@ -40,8 +40,9 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
 
   // Copy data from Coordinates variable into data array
   // Uses the symbol to look up the corresponding Offset
-#define COPY_STRIPE1(symbol) \
-  data[stripe_size * ind.ind + static_cast<int>(Offset::symbol)] = coords->symbol[ind];
+#define COPY_STRIPE1(symbol)        \
+  if (coords->symbol.isAllocated()) \
+    data[stripe_size * ind.ind + static_cast<int>(Offset::symbol)] = coords->symbol[ind];
 
   // Implement copy for each argument
 #define COPY_STRIPE(...) \
@@ -54,10 +55,15 @@ CoordinatesAccessor::CoordinatesAccessor(const Coordinates* coords) {
     COPY_STRIPE(d1_dx, d1_dy, d1_dz);
     COPY_STRIPE(J);
 
-    data[stripe_size * ind.ind + static_cast<int>(Offset::B)] = coords->Bxy[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::Byup)] = coords->Bxy.yup()[ind];
-    data[stripe_size * ind.ind + static_cast<int>(Offset::Bydown)] =
-        coords->Bxy.ydown()[ind];
+    if (coords->Bxy.isAllocated()) {
+      data[stripe_size * ind.ind + static_cast<int>(Offset::B)] = coords->Bxy[ind];
+      if (coords->Bxy.yup().isAllocated())
+        data[stripe_size * ind.ind + static_cast<int>(Offset::Byup)] =
+            coords->Bxy.yup()[ind];
+      if (coords->Bxy.ydown().isAllocated())
+        data[stripe_size * ind.ind + static_cast<int>(Offset::Bydown)] =
+            coords->Bxy.ydown()[ind];
+    }
 
     COPY_STRIPE(G1, G3);
     COPY_STRIPE(g11, g12, g13, g22, g23, g33);

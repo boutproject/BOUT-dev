@@ -57,9 +57,16 @@ struct FieldAccessor {
   /// Constructor from Field3D
   ///
   /// @param[in] f    The field to access. Must already be allocated
-  explicit FieldAccessor(FieldType& f) : coords(f.getCoordinates()) {
+  explicit FieldAccessor(FieldType& f) {
     ASSERT0(f.getLocation() == location);
     ASSERT0(f.isAllocated());
+
+    if (auto* Coords = f.getCoordinates()) {
+      coords = CoordinatesAccessor{Coords};
+    }
+    else {
+      coords = CoordinatesAccessor{};
+    }
 
     data = BoutRealArray{&f(0, 0, 0)};
 
@@ -81,15 +88,19 @@ struct FieldAccessor {
     ddt = BoutRealArray{&(f.timeDeriv()->operator()(0, 0, 0))};
   }
 
+  explicit FieldAccessor(const FieldType& f) : FieldAccessor(const_cast<FieldType&>(f)) {}
+
   /// Provide shorthand for access to field data.
   /// Does not convert between 3D and 2D indices,
   /// so fa[i] is equivalent to fa.data[i].
   ///
   BOUT_HOST_DEVICE inline const BoutReal& operator[](int ind) const { return data[ind]; }
+  BOUT_HOST_DEVICE inline BoutReal& operator[](int ind) { return data[ind]; }
 
   BOUT_HOST_DEVICE inline const BoutReal& operator[](const Ind3D& ind) const {
     return data[ind.ind];
   }
+  BOUT_HOST_DEVICE inline BoutReal& operator[](const Ind3D& ind) { return data[ind.ind]; }
 
   // Pointers to the field data arrays
   // These are wrapped in BoutRealArray types so they can be indexed with Ind3D or int
@@ -115,6 +126,9 @@ struct FieldAccessor {
 template <CELL_LOC location = CELL_CENTRE>
 using Field2DAccessor = FieldAccessor<location, Field2D>;
 
+template <CELL_LOC location = CELL_CENTRE>
+using Field3DAccessor = FieldAccessor<location, Field3D>;
+
 /// Syntactic sugar for time derivative of a field
 ///
 /// Usage:
@@ -129,5 +143,29 @@ BOUT_HOST_DEVICE inline BoutRealArray& ddt(const FieldAccessor<location, FieldTy
   //       Need to cast to non-const so that ddt() data can be assigned to
   return const_cast<BoutRealArray&>(fa.ddt);
 }
+
+struct FieldPerpAccessor {
+  FieldPerpAccessor() = delete;
+
+  int nx, nz;
+  int yindex;
+  BoutReal* data;
+
+  explicit FieldPerpAccessor(const FieldPerp& f) {
+    ASSERT0(f.isAllocated());
+
+    data = BoutRealArray{const_cast<BoutReal*>(&f(0, 0, 0))};
+
+    // Field size
+    nx = f.getNx();
+    nz = f.getNz();
+
+    yindex = f.getIndex();
+  }
+
+  BOUT_HOST_DEVICE int getIndex() const { return yindex; }
+  BOUT_HOST_DEVICE inline const BoutReal& operator[](int ind) const { return data[ind]; }
+  BOUT_HOST_DEVICE inline BoutReal& operator[](int ind) { return data[ind]; }
+};
 
 #endif
