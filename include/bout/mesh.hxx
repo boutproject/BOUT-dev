@@ -762,6 +762,11 @@ public:
     return {(indPerp.ind - jz) * LocalNy + LocalNz * jy + jz, LocalNy, LocalNz};
   }
 
+  BOUT_HOST_DEVICE int flatIndPerpto3D(const int& flatIndPerp, const int nz, int jy = 0) const {
+    int jz = flatIndPerp % nz;
+    return (flatIndPerp - jz) * LocalNy + LocalNz * jy + jz;
+  }
+
   /// Converts an Ind3D to an Ind2D representing a 2D index using a lookup -- to be used with care
   Ind2D map3Dto2D(const Ind3D& ind3D) {
     return {indexLookup3Dto2D[ind3D.ind], LocalNy, 1};
