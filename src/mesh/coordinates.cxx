@@ -977,129 +977,119 @@ int Coordinates::geometry(bool recalculate_staggered,
   checkContravariant();
   checkCovariant();
 
-  if (g_11.isFci()) {
-    // for FCI the y derivatives of metric components is meaningless.
-    G1_11 = G1_22 = G1_33 = G1_12 = G1_13 = G1_23 =
+  // Calculate Christoffel symbol terms (18 independent values)
+  // Note: This calculation is completely general: metric
+  // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
 
-        G2_11 = G2_22 = G2_33 = G2_12 = G2_13 = G2_23 =
+  G1_11 = 0.5 * g11 * DDX(g_11) + g12 * (DDX(g_12) - 0.5 * DDY(g_11))
+          + g13 * (DDX(g_13) - 0.5 * DDZ(g_11));
+  G1_22 = g11 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g12 * DDY(g_22)
+          + g13 * (DDY(g_23) - 0.5 * DDZ(g_22));
+  G1_33 = g11 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g12 * (DDZ(g_23) - 0.5 * DDY(g_33))
+          + 0.5 * g13 * DDZ(g_33);
+  G1_12 = 0.5 * g11 * DDY(g_11) + 0.5 * g12 * DDX(g_22)
+          + 0.5 * g13 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+  G1_13 = 0.5 * g11 * DDZ(g_11) + 0.5 * g12 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
+          + 0.5 * g13 * DDX(g_33);
+  G1_23 = 0.5 * g11 * (DDZ(g_12) + DDY(g_13) - DDX(g_23))
+          + 0.5 * g12 * (DDZ(g_22) + DDY(g_23) - DDY(g_23))
+          // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
+          // which equals
+          + 0.5 * g13 * DDY(g_33);
 
-            G3_11 = G3_22 = G3_33 = G3_12 = G3_13 = G3_23 =
+  G2_11 = 0.5 * g12 * DDX(g_11) + g22 * (DDX(g_12) - 0.5 * DDY(g_11))
+          + g23 * (DDX(g_13) - 0.5 * DDZ(g_11));
+  G2_22 = g12 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g22 * DDY(g_22)
+          + g23 * (DDY(g23) - 0.5 * DDZ(g_22));
+  G2_33 = g12 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g22 * (DDZ(g_23) - 0.5 * DDY(g_33))
+          + 0.5 * g23 * DDZ(g_33);
+  G2_12 = 0.5 * g12 * DDY(g_11) + 0.5 * g22 * DDX(g_22)
+          + 0.5 * g23 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+  G2_13 =
+      // 0.5 *g21*(DDZ(g_11) + DDX(g_13) - DDX(g_13))
+      // which equals
+      0.5 * g12 * (DDZ(g_11) + DDX(g_13) - DDX(g_13))
+      // + 0.5 *g22*(DDZ(g_21) + DDX(g_23) - DDY(g_13))
+      // which equals
+      + 0.5 * g22 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
+      // + 0.5 *g23*(DDZ(g_31) + DDX(g_33) - DDZ(g_13));
+      // which equals
+      + 0.5 * g23 * DDX(g_33);
+  G2_23 = 0.5 * g12 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g22 * DDZ(g_22)
+          + 0.5 * g23 * DDY(g_33);
 
-                G1 = G2 = G3 = BoutNaN;
-  } else {
-    // Calculate Christoffel symbol terms (18 independent values)
-    // Note: This calculation is completely general: metric
-    // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
+  G3_11 = 0.5 * g13 * DDX(g_11) + g23 * (DDX(g_12) - 0.5 * DDY(g_11))
+          + g33 * (DDX(g_13) - 0.5 * DDZ(g_11));
+  G3_22 = g13 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g23 * DDY(g_22)
+          + g33 * (DDY(g_23) - 0.5 * DDZ(g_22));
+  G3_33 = g13 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g23 * (DDZ(g_23) - 0.5 * DDY(g_33))
+          + 0.5 * g33 * DDZ(g_33);
+  G3_12 =
+      // 0.5 *g31*(DDY(g_11) + DDX(g_12) - DDX(g_12))
+      // which equals to
+      0.5 * g13 * DDY(g_11)
+      // + 0.5 *g32*(DDY(g_21) + DDX(g_22) - DDY(g_12))
+      // which equals to
+      + 0.5 * g23 * DDX(g_22)
+      //+ 0.5 *g33*(DDY(g_31) + DDX(g_32) - DDZ(g_12));
+      // which equals to
+      + 0.5 * g33 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
+  G3_13 = 0.5 * g13 * DDZ(g_11) + 0.5 * g23 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
+          + 0.5 * g33 * DDX(g_33);
+  G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22)
+          + 0.5 * g33 * DDY(g_33);
 
-    G1_11 = 0.5 * g11 * DDX(g_11) + g12 * (DDX(g_12) - 0.5 * DDY(g_11))
-            + g13 * (DDX(g_13) - 0.5 * DDZ(g_11));
-    G1_22 = g11 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g12 * DDY(g_22)
-            + g13 * (DDY(g_23) - 0.5 * DDZ(g_22));
-    G1_33 = g11 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g12 * (DDZ(g_23) - 0.5 * DDY(g_33))
-            + 0.5 * g13 * DDZ(g_33);
-    G1_12 = 0.5 * g11 * DDY(g_11) + 0.5 * g12 * DDX(g_22)
-            + 0.5 * g13 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-    G1_13 = 0.5 * g11 * DDZ(g_11) + 0.5 * g12 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
-            + 0.5 * g13 * DDX(g_33);
-    G1_23 = 0.5 * g11 * (DDZ(g_12) + DDY(g_13) - DDX(g_23))
-            + 0.5 * g12 * (DDZ(g_22) + DDY(g_23) - DDY(g_23))
-            // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
-            // which equals
-            + 0.5 * g13 * DDY(g_33);
+  auto tmp = J * g12;
+  communicate(tmp);
+  G1 = (DDX(J * g11) + DDY(tmp) + DDZ(J * g13)) / J;
+  tmp = J * g22;
+  communicate(tmp);
+  G2 = (DDX(J * g12) + DDY(tmp) + DDZ(J * g23)) / J;
+  tmp = J * g23;
+  communicate(tmp);
+  G3 = (DDX(J * g13) + DDY(tmp) + DDZ(J * g33)) / J;
 
-    G2_11 = 0.5 * g12 * DDX(g_11) + g22 * (DDX(g_12) - 0.5 * DDY(g_11))
-            + g23 * (DDX(g_13) - 0.5 * DDZ(g_11));
-    G2_22 = g12 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g22 * DDY(g_22)
-            + g23 * (DDY(g23) - 0.5 * DDZ(g_22));
-    G2_33 = g12 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g22 * (DDZ(g_23) - 0.5 * DDY(g_33))
-            + 0.5 * g23 * DDZ(g_33);
-    G2_12 = 0.5 * g12 * DDY(g_11) + 0.5 * g22 * DDX(g_22)
-            + 0.5 * g23 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-    G2_13 =
-        // 0.5 *g21*(DDZ(g_11) + DDX(g_13) - DDX(g_13))
-        // which equals
-        0.5 * g12 * (DDZ(g_11) + DDX(g_13) - DDX(g_13))
-        // + 0.5 *g22*(DDZ(g_21) + DDX(g_23) - DDY(g_13))
-        // which equals
-        + 0.5 * g22 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
-        // + 0.5 *g23*(DDZ(g_31) + DDX(g_33) - DDZ(g_13));
-        // which equals
-        + 0.5 * g23 * DDX(g_33);
-    G2_23 = 0.5 * g12 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g22 * DDZ(g_22)
-            + 0.5 * g23 * DDY(g_33);
+  // Communicate christoffel symbol terms
+  output_progress.write("\tCommunicating connection terms\n");
 
-    G3_11 = 0.5 * g13 * DDX(g_11) + g23 * (DDX(g_12) - 0.5 * DDY(g_11))
-            + g33 * (DDX(g_13) - 0.5 * DDZ(g_11));
-    G3_22 = g13 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g23 * DDY(g_22)
-            + g33 * (DDY(g_23) - 0.5 * DDZ(g_22));
-    G3_33 = g13 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g23 * (DDZ(g_23) - 0.5 * DDY(g_33))
-            + 0.5 * g33 * DDZ(g_33);
-    G3_12 =
-        // 0.5 *g31*(DDY(g_11) + DDX(g_12) - DDX(g_12))
-        // which equals to
-        0.5 * g13 * DDY(g_11)
-        // + 0.5 *g32*(DDY(g_21) + DDX(g_22) - DDY(g_12))
-        // which equals to
-        + 0.5 * g23 * DDX(g_22)
-        //+ 0.5 *g33*(DDY(g_31) + DDX(g_32) - DDZ(g_12));
-        // which equals to
-        + 0.5 * g33 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-    G3_13 = 0.5 * g13 * DDZ(g_11) + 0.5 * g23 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
-            + 0.5 * g33 * DDX(g_33);
-    G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22)
-            + 0.5 * g33 * DDY(g_33);
+  communicate(G1_11, G1_22, G1_33, G1_12, G1_13, G1_23, G2_11, G2_22, G2_33, G2_12, G2_13,
+              G2_23, G3_11, G3_22, G3_33, G3_12, G3_13, G3_23, G1, G2, G3);
 
-    auto tmp = J * g12;
-    communicate(tmp);
-    G1 = (DDX(J * g11) + DDY(tmp) + DDZ(J * g13)) / J;
-    tmp = J * g22;
-    communicate(tmp);
-    G2 = (DDX(J * g12) + DDY(tmp) + DDZ(J * g23)) / J;
-    tmp = J * g23;
-    communicate(tmp);
-    G3 = (DDX(J * g13) + DDY(tmp) + DDZ(J * g33)) / J;
+  // Set boundary guard cells of Christoffel symbol terms
+  // Ideally, when location is staggered, we would set the upper/outer boundary point
+  // correctly rather than by extrapolating here: e.g. if location==CELL_YLOW and we are
+  // at the upper y-boundary the x- and z-derivatives at yend+1 at the boundary can be
+  // calculated because the guard cells are available, while the y-derivative could be
+  // calculated from the CELL_CENTRE metric components (which have guard cells available
+  // past the boundary location). This would avoid the problem that the y-boundary on the
+  // CELL_YLOW grid is at a 'guard cell' location (yend+1).
+  // However, the above would require lots of special handling, so just extrapolate for
+  // now.
+  G1_11 = interpolateAndExtrapolate(G1_11, location, true, true, true, transform.get());
+  G1_22 = interpolateAndExtrapolate(G1_22, location, true, true, true, transform.get());
+  G1_33 = interpolateAndExtrapolate(G1_33, location, true, true, true, transform.get());
+  G1_12 = interpolateAndExtrapolate(G1_12, location, true, true, true, transform.get());
+  G1_13 = interpolateAndExtrapolate(G1_13, location, true, true, true, transform.get());
+  G1_23 = interpolateAndExtrapolate(G1_23, location, true, true, true, transform.get());
 
-    // Communicate christoffel symbol terms
-    output_progress.write("\tCommunicating connection terms\n");
+  G2_11 = interpolateAndExtrapolate(G2_11, location, true, true, true, transform.get());
+  G2_22 = interpolateAndExtrapolate(G2_22, location, true, true, true, transform.get());
+  G2_33 = interpolateAndExtrapolate(G2_33, location, true, true, true, transform.get());
+  G2_12 = interpolateAndExtrapolate(G2_12, location, true, true, true, transform.get());
+  G2_13 = interpolateAndExtrapolate(G2_13, location, true, true, true, transform.get());
+  G2_23 = interpolateAndExtrapolate(G2_23, location, true, true, true, transform.get());
 
-    communicate(G1_11, G1_22, G1_33, G1_12, G1_13, G1_23, G2_11, G2_22, G2_33, G2_12,
-                G2_13, G2_23, G3_11, G3_22, G3_33, G3_12, G3_13, G3_23, G1, G2, G3);
+  G3_11 = interpolateAndExtrapolate(G3_11, location, true, true, true, transform.get());
+  G3_22 = interpolateAndExtrapolate(G3_22, location, true, true, true, transform.get());
+  G3_33 = interpolateAndExtrapolate(G3_33, location, true, true, true, transform.get());
+  G3_12 = interpolateAndExtrapolate(G3_12, location, true, true, true, transform.get());
+  G3_13 = interpolateAndExtrapolate(G3_13, location, true, true, true, transform.get());
+  G3_23 = interpolateAndExtrapolate(G3_23, location, true, true, true, transform.get());
 
-    // Set boundary guard cells of Christoffel symbol terms
-    // Ideally, when location is staggered, we would set the upper/outer boundary point
-    // correctly rather than by extrapolating here: e.g. if location==CELL_YLOW and we are
-    // at the upper y-boundary the x- and z-derivatives at yend+1 at the boundary can be
-    // calculated because the guard cells are available, while the y-derivative could be
-    // calculated from the CELL_CENTRE metric components (which have guard cells available
-    // past the boundary location). This would avoid the problem that the y-boundary on the
-    // CELL_YLOW grid is at a 'guard cell' location (yend+1).
-    // However, the above would require lots of special handling, so just extrapolate for
-    // now.
-    G1_11 = interpolateAndExtrapolate(G1_11, location, true, true, true, transform.get());
-    G1_22 = interpolateAndExtrapolate(G1_22, location, true, true, true, transform.get());
-    G1_33 = interpolateAndExtrapolate(G1_33, location, true, true, true, transform.get());
-    G1_12 = interpolateAndExtrapolate(G1_12, location, true, true, true, transform.get());
-    G1_13 = interpolateAndExtrapolate(G1_13, location, true, true, true, transform.get());
-    G1_23 = interpolateAndExtrapolate(G1_23, location, true, true, true, transform.get());
+  G1 = interpolateAndExtrapolate(G1, location, true, true, true, transform.get());
+  G2 = interpolateAndExtrapolate(G2, location, true, true, true, transform.get());
+  G3 = interpolateAndExtrapolate(G3, location, true, true, true, transform.get());
 
-    G2_11 = interpolateAndExtrapolate(G2_11, location, true, true, true, transform.get());
-    G2_22 = interpolateAndExtrapolate(G2_22, location, true, true, true, transform.get());
-    G2_33 = interpolateAndExtrapolate(G2_33, location, true, true, true, transform.get());
-    G2_12 = interpolateAndExtrapolate(G2_12, location, true, true, true, transform.get());
-    G2_13 = interpolateAndExtrapolate(G2_13, location, true, true, true, transform.get());
-    G2_23 = interpolateAndExtrapolate(G2_23, location, true, true, true, transform.get());
-
-    G3_11 = interpolateAndExtrapolate(G3_11, location, true, true, true, transform.get());
-    G3_22 = interpolateAndExtrapolate(G3_22, location, true, true, true, transform.get());
-    G3_33 = interpolateAndExtrapolate(G3_33, location, true, true, true, transform.get());
-    G3_12 = interpolateAndExtrapolate(G3_12, location, true, true, true, transform.get());
-    G3_13 = interpolateAndExtrapolate(G3_13, location, true, true, true, transform.get());
-    G3_23 = interpolateAndExtrapolate(G3_23, location, true, true, true, transform.get());
-
-    G1 = interpolateAndExtrapolate(G1, location, true, true, true, transform.get());
-    G2 = interpolateAndExtrapolate(G2, location, true, true, true, transform.get());
-    G3 = interpolateAndExtrapolate(G3, location, true, true, true, transform.get());
-  }
   //////////////////////////////////////////////////////
   /// Non-uniform meshes. Need to use DDX, DDY
 
