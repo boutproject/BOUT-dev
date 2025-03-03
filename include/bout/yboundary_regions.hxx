@@ -5,14 +5,22 @@
 
 class YBoundary {
 public:
-  template <class T>
-  void iter_regions(const T& f) {
+  template <class F>
+  void iter_regions(const F& f) {
     ASSERT1(is_init);
     for (auto& region : boundary_regions) {
       f(*region);
     }
     for (auto& region : boundary_regions_par) {
       f(*region);
+    }
+  }
+  template <class F>
+  void iter_pnts(const F& f) {
+    iter_regions([&](auto& region) {
+      for (auto& pnt : region) {
+	f(pnt);
+      }
     }
   }
 
