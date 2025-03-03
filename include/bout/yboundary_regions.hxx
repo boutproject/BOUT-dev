@@ -2,6 +2,19 @@
 
 #include "./boundary_iterator.hxx"
 #include "bout/parallel_boundary_region.hxx"
+/*!
+ * This class allows to simplify iterating over y-boundaries.
+ *
+ * It makes it easier to write code for FieldAligned boundaries, but if a bit
+ * care is taken the code also works with FluxCoordinateIndependent code.
+ *
+ * An example how to replace old code is given here:
+ *
+ * \example example_yboundary_regions.hxx
+ * This is an example how to use the YBoundary class to replace RangeIterator
+ * boundaries.
+ */
+
 
 class YBoundary {
 public:
