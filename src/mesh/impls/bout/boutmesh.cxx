@@ -500,7 +500,9 @@ int BoutMesh::load() {
   } else {
     meshMyg = MYG;
   }
-  MYG = options["MYG"].doc("Number of guard cells on each side in Y").withDefault(MYG);
+  if (options.isSet("MYG") or (!meshHasMyg)) {
+    MYG = options["MYG"].doc("Number of guard cells on each side in Y").withDefault(MYG);
+  }
   if (meshHasMyg && MYG != meshMyg) {
     output_warn.write(_("Options changed the number of y-guard cells. Grid has {} but "
                            "option specified {}! Continuing with {}"),
