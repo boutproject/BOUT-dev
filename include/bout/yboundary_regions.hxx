@@ -29,7 +29,7 @@ public:
       for (auto& pnt : region) {
         f(pnt);
       }
-    }
+    });
   }
 
   template <class F>
@@ -78,5 +78,3 @@ private:
 
   bool is_init{false};
 };
-
-extern YBoundary yboundary;
