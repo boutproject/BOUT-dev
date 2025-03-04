@@ -514,6 +514,51 @@ geometries, as flux coordinate independent (FCI) method::
     
 
 
+There are several member functions of ``pnt``. ``pnt`` is of type
+`BoundaryRegionParIterBase` and `BoundaryRegionIter`, and both should provide
+the same interface. If they don't that is a bug, as the above code is a
+template, that gets instantiated for both types, and thus requires both
+classes to provide the same interface, one for FCI-like boundaries and one for
+field aligned boundaries.
+
+Here is a short summary of some members of ``pnt``, where ``f`` is a :
+
+.. list-table:: Members for boundary operation
+   :widths: 15 70
+   :header-rows: 1
+
+   * - Function
+     - Description
+   * - ``pnt.ythis(f)``
+     - Returns the value at the last point in the domain
+   * - ``pnt.ynext(f)``
+     - Returns the value at the first point in the domain
+   * - ``pnt.yprev(f)``
+     - Returns the value at the second to last point in the domain, if it is
+       valid. NB: this point may not be valid.
+   * - ``pnt.interpolate_sheath_o1(f)``
+     - Returns the value at the boundary, assuming the bounday value has been set
+   * - ``pnt.extrapolate_sheath_o1(f)``
+     - Returns the value at the boundary, extrapolating from the bulk, first order
+   * - ``pnt.extrapolate_sheath_o2(f)``
+     - Returns the value at the boundary, extrapolating from the bulk, second order
+   * - ``pnt.extrapolate_next_o{1,2}(f)``
+     - Extrapolate into the boundary from the bulk, first or second order
+   * - ``pnt.extrapolate_grad_o{1,2}(f)``
+     - Extrapolate the gradient into the boundary, first or second order
+   * - ``pnt.dirichlet_o{1,2,3}(f, v)``
+     - Apply dirichlet boundary conditions with value ``v`` and given order
+   * - ``pnt.neumann_o{1,2,3}(f, v)``
+     - Applies a gradient of ``v / dy`` boundary condition.
+   * - ``pnt.limitFree(f)``
+     - Extrapolate into the boundary using only monotonic decreasing values.
+       ``f`` needs to be positive.
+   * - ``pnt.dir``
+     - The direction of the boundary.
+
+
+
+
 Boundary regions
 ----------------
 
