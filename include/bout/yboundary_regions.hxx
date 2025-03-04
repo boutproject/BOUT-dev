@@ -11,8 +11,6 @@
 /// An example how to replace old code is given here:
 /// ../../manual/sphinx/user_docs/boundary_options.rst
 
-
-
 class YBoundary {
 public:
   template <class F>
@@ -29,9 +27,9 @@ public:
   void iter_pnts(const F& f) {
     iter_regions([&](auto& region) {
       for (auto& pnt : region) {
-	f(pnt);
+        f(pnt);
       }
-    }
+    });
   }
 
   template <class F>
@@ -80,5 +78,3 @@ private:
 
   bool is_init{false};
 };
-
-extern YBoundary yboundary;
