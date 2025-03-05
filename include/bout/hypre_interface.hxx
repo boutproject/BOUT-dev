@@ -98,6 +98,82 @@ int checkHypreError(int error) {
 // TODO: set sizes
 // TODO: set contiguous blocks at once
 
+/// Wrapper around HYPRE_Complex, that calls HypreFree when destroyed.
+struct HypreComplexArray {
+  HYPRE_Complex *data;
+
+  ~HypreComplexArray() {
+    HypreFree(data);
+  }
+};
+
+/// Shared pointter to a HypreComplexArray. When the last copy is destroyed
+/// the HYPRE_Complex array inside will be free'd.
+using BCValuesPtr = std::shared_ptr<HypreComplexArray>;
+
+/// Contains information needed to eliminate boundary equations from
+/// RHS vectors, and restore boundary values in solution vectors.
+struct BCMatrixEquations {
+  HYPRE_Int      nb;
+  HYPRE_Int     *binum_array;
+  HYPRE_Int     *bjnum_array;
+  HYPRE_Complex *bii_array;
+  HYPRE_Complex *bij_array;
+  HYPRE_Int      na;
+  HYPRE_Int     *aknum_array;
+  HYPRE_Complex *aki_array;
+
+  BCMatrixEquations() = delete;
+
+  BCMatrixEquations(HYPRE_Int       nrows,
+                    HYPRE_Int      *ncols,
+                    HYPRE_BigInt   *rows,
+                    HYPRE_Int     **row_indexes_ptr,
+                    HYPRE_BigInt   *cols,
+                    HYPRE_Complex  *values,
+                    HYPRE_Int       nb,             // number of boundary equations
+                    HYPRE_Int      *bi_array)       // row i for each boundary equation
+    : nb(nb) {
+    AdjustBCMatrixEquations(nrows, ncols, rows, row_indexes_ptr, cols, values,
+                            nb, bi_array,
+                            // Outputs
+                            &binum_array, &bjnum_array, &bii_array, &bij_array,
+                            &na, &aknum_array, &aki_array);
+  }
+
+  ~BCMatrixEquations() {
+    // Free arrays
+    HypreFree(binum_array);
+    HypreFree(bjnum_array);
+    HypreFree(bii_array);
+    HypreFree(bij_array);
+    HypreFree(aknum_array);
+    HypreFree(aki_array);
+  }
+
+  /// Applies in-place modification of the rhs array.
+  ///
+  /// Returns an array of boundary values that can be used to apply
+  /// boundary conditions to a solution vector.
+  BCValuesPtr adjustBCRightHandSideEquations(HYPRE_Complex *rhs) {
+    BCValuesPtr brhs = std::make_shared<HypreComplexArray>();
+    AdjustBCRightHandSideEquations(rhs, nb, binum_array, bii_array, bij_array, &brhs->data,
+                                   na, aknum_array, aki_array);
+    return brhs;
+  }
+
+  /// Apply boundary conditions to the solution.
+  /// Uses the BCValuesPtr returned from adjustBCRightHandSideEquations()
+  void adjustBCSolutionEquations(BCValuesPtr brhs, HYPRE_Complex *solution) {
+    AdjustBCSolutionEquations(solution, nb,
+                              binum_array, bjnum_array, bii_array, bij_array, brhs->data);
+  }
+};
+
+/// A shared pointer to a BCMatrixEquations object
+using BCMatrixPtr = std::shared_ptr<BCMatrixEquations>;
+
+
 template <class T>
 class HypreVector {
   MPI_Comm comm;
@@ -126,9 +202,6 @@ public:
     checkHypreError(HYPRE_IJVectorDestroy(hypre_vector));
     HypreFree(I);
     HypreFree(V);
-    if (elimBErhs) {
-      HypreFree(brhs_array);
-    }
   }
 
   // Disable copy, at least for now: not clear that HYPRE_IJVector is
@@ -217,22 +290,14 @@ public:
     HypreMalloc(V, vsize * sizeof(HYPRE_Complex));
   }
 
-  // Data for eliminating boundary equations (TODO: convert this to a structure)
+  // Data for eliminating boundary equation
   bool elimBErhs = false;
   bool elimBEsol = false;
-  HYPRE_Complex *rhs;
-  HYPRE_Int      nb;
-  HYPRE_Int     *binum_array;
-  HYPRE_Int     *bjnum_array;
-  HYPRE_Complex *bii_array;
-  HYPRE_Complex *bij_array;
-  HYPRE_Complex *brhs_array; // This is not created from the HypreMatrix class
-  HYPRE_Int      na;
-  HYPRE_Int     *aknum_array;
-  HYPRE_Complex *aki_array;
+  BCMatrixPtr bcmatrix;
+  BCValuesPtr bcvalues;  /// Stores rhs values of BC rows
 
   void syncElimBErhs(HypreVector<T>& rhs) {
-    brhs_array = rhs.brhs_array;
+    bcvalues = rhs.bcvalues;
   }
 
   void assemble() {
@@ -245,8 +310,7 @@ public:
 
   void writeCacheToHypre() {
     if (elimBErhs) {
-      AdjustBCRightHandSideEquations(V, nb, binum_array, bii_array, bij_array, &brhs_array,
-                                     na, aknum_array, aki_array);
+      bcvalues = bcmatrix->adjustBCRightHandSideEquations(V);
     }
     checkHypreError(HYPRE_IJVectorSetValues(hypre_vector, vsize, I, V));
   }
@@ -254,7 +318,7 @@ public:
   void readCacheFromHypre() {
     checkHypreError(HYPRE_IJVectorGetValues(hypre_vector, vsize, I, V));
     if (elimBEsol) {
-      AdjustBCSolutionEquations(V, nb, binum_array, bjnum_array, bii_array, bij_array, brhs_array);
+      bcmatrix->adjustBCSolutionEquations(bcvalues, V);
     }
   }
 
@@ -410,19 +474,6 @@ public:
   using ind_type = typename T::ind_type;
 
   HypreMatrix() = default;
-//  The 'if' block below needs to be called when the HypreMatrix is destroyed,
-//  but I don't know where to put it.  The HypreMatrix class is handled
-//  differently from HypreVector.
-//  ~HypreVector() {
-//    if (elimBE) {
-//      HypreFree(binum_array);
-//      HypreFree(bjnum_array);
-//      HypreFree(bii_array);
-//      HypreFree(bij_array);
-//      HypreFree(aknum_array);
-//      HypreFree(aki_array);
-//    }
-//  }
   HypreMatrix(const HypreMatrix<T>&) = delete;
   HypreMatrix(HypreMatrix<T>&& other)
       : comm(other.comm), ilower(other.ilower), iupper(other.iupper),
@@ -748,16 +799,9 @@ public:
     return Element(*this, global_row, global_column, positions, weights);
   }
 
-  // Data for eliminating boundary equations (TODO: convert this to a structure)
+  // Data for eliminating boundary equations
   bool elimBE = false;
-  HYPRE_Int      nb;
-  HYPRE_Int     *binum_array;
-  HYPRE_Int     *bjnum_array;
-  HYPRE_Complex *bii_array;
-  HYPRE_Complex *bij_array;
-  HYPRE_Int      na;
-  HYPRE_Int     *aknum_array;
-  HYPRE_Complex *aki_array;
+  BCMatrixPtr bcmatrix; // Shared pointer
 
   void setElimBE() {
     elimBE = true;
@@ -765,24 +809,10 @@ public:
 
   void setElimBEVectors(HypreVector<T>& sol, HypreVector<T>& rhs) {
     sol.elimBEsol = elimBE;
-    sol.nb          = nb;
-    sol.binum_array = binum_array;
-    sol.bjnum_array = bjnum_array;
-    sol.bii_array   = bii_array;
-    sol.bij_array   = bij_array;
-    sol.na          = na;
-    sol.aknum_array = aknum_array;
-    sol.aki_array   = aki_array;
+    sol.bcmatrix = bcmatrix;
 
     rhs.elimBErhs = elimBE;
-    rhs.nb          = nb;
-    rhs.binum_array = binum_array;
-    rhs.bjnum_array = bjnum_array;
-    rhs.bii_array   = bii_array;
-    rhs.bij_array   = bij_array;
-    rhs.na          = na;
-    rhs.aknum_array = aknum_array;
-    rhs.aki_array   = aki_array;
+    rhs.bcmatrix = bcmatrix;
   }
 
   void assemble() {
@@ -819,7 +849,7 @@ public:
       HYPRE_Int *bi_array;
       HYPRE_Int *row_indexes;
       // There must be an easier way to get nb
-      nb = 0;
+      int nb = 0;
       BOUT_FOR_SERIAL(i, index_converter->getRegionBndry()) {
          nb++;
       }
@@ -829,59 +859,13 @@ public:
          bi_array[nb] = index_converter->getGlobal(i);
          nb++;
       }
-      AdjustBCMatrixEquations(num_rows, num_cols, rawI, &row_indexes, cols, vals,
-                              nb, bi_array,
-                              &binum_array, &bjnum_array, &bii_array, &bij_array,
-                              &na, &aknum_array, &aki_array);
+
+      bcmatrix = std::make_shared<BCMatrixEquations>(num_rows, num_cols,
+                                                     rawI, &row_indexes,
+                                                     cols, vals,
+                                                     nb, bi_array);
       HypreFree(bi_array);
-//    {
-//       FILE  *file;
-//       int    i;
-//       file = fopen("zbout.setvalues.out2", "w");
-//       fprintf(file, "nrows %d\n", num_rows);
-//       for (i = 0; i < num_rows; i++)
-//       {
-//          fprintf(file, "ncols %d: %d\n", i, num_cols[i]);
-//       }
-//       for (i = 0; i < num_rows; i++)
-//       {
-//          fprintf(file, "rows %d: %d\n", i, rawI[i]);
-//       }
-//       for (i = 0; i < num_entries; i++)
-//       {
-//          fprintf(file, "cols %d: %d\n", i, cols[i]);
-//       }
-//       for (i = 0; i < num_entries; i++)
-//       {
-//          fprintf(file, "vals %d: %f\n", i, vals[i]);
-//       }
-//       fclose(file);
-//
-//       file = fopen("zbout.setvalues.out3", "w");
-//       for (i = 0; i < num_rows; i++)
-//       {
-//          fprintf(file, "row_indexes %d: %d\n", i, row_indexes[i]);
-//       }
-//       fprintf(file, "nb %d\n", nb);
-//       for (i = 0; i < nb; i++)
-//       {
-//          fprintf(file, "bijnum_array %d: %d %d\n", i, binum_array[i], bjnum_array[i]);
-//       }
-//       for (i = 0; i < nb; i++)
-//       {
-//          fprintf(file, "biiij_array %d: %f %f\n", i, bii_array[i], bij_array[i]);
-//       }
-//       fprintf(file, "na %d\n", na);
-//       for (i = 0; i < na; i++)
-//       {
-//          fprintf(file, "aknum_array %d: %d\n", i, aknum_array[i]);
-//       }
-//       for (i = 0; i < na; i++)
-//       {
-//          fprintf(file, "bki_array %d: %f\n", i, aki_array[i]);
-//       }
-//       fclose(file);
-//    }
+
       checkHypreError(
         HYPRE_IJMatrixSetValues2(*hypre_matrix, num_rows, num_cols, rawI, row_indexes, cols, vals));
       HypreFree(row_indexes);
