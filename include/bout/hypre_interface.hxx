@@ -1067,6 +1067,22 @@ public:
     setMaxIter(
         options["maxits"].doc("Maximum iterations for Hypre solver").withDefault(10000));
 
+    switch (solver_type) {
+    case HYPRE_SOLVER_TYPE::gmres: {
+       HYPRE_ParCSRGMRESSetKDim(solver, 30);  // TODO: Make this an input file parameter
+      break;
+    }
+    case HYPRE_SOLVER_TYPE::bicgstab: {
+      break;
+    }
+    case HYPRE_SOLVER_TYPE::pcg: {
+      break;
+    }
+    default: {
+      throw BoutException("Unsupported hypre_solver_type {}", toString(solver_type));
+    }
+    }
+
     HYPRE_BoomerAMGCreate(&precon);
     HYPRE_BoomerAMGSetOldDefault(precon);
 #if BOUT_HAS_CUDA
