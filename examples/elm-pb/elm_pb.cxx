@@ -1410,11 +1410,14 @@ protected:
           if (mesh->lastX()) {
             for (int j = mesh->ystart; j <= mesh->yend; j++) {
               BoutReal phivalue = 0.0;
-              BoutReal oldvalue = 0.0;
               for (int k = 0; k < mesh->LocalNz; k++) {
-                phivalue = phi(mesh->xend, j, k);
-                oldvalue = 0.5 * (phi(mesh->xend + 1, j, k) + phi(mesh->xend, j, k));
+                phivalue += phi(mesh->xend, j, k);
               }
+              phivalue /= mesh->LocalNz; // Average in Z of point next to boundary
+
+              // Old value of phi at boundary. Note: this is constant in Z
+              BoutReal oldvalue =
+                  0.5 * (phi(mesh->xend + 1, j, 0) + phi(mesh->xend, j, 0));
 
               // New value of phi at boundary, relaxing towards phivalue
               BoutReal newvalue = weight * oldvalue + (1. - weight) * phivalue;
