@@ -44,7 +44,6 @@ AdjustBCRightHandSideEquations(
    HYPRE_Int       nb,
    HYPRE_Int      *binum_array,
    HYPRE_Complex  *bii_array,
-   HYPRE_Complex  *bij_array,
    HYPRE_Complex **brhs_array_ptr,
    HYPRE_Int       na,
    HYPRE_Int      *aknum_array,
@@ -157,7 +156,7 @@ struct BCMatrixEquations {
   /// boundary conditions to a solution vector.
   BCValuesPtr adjustBCRightHandSideEquations(HYPRE_Complex *rhs) {
     BCValuesPtr brhs = std::make_shared<HypreComplexArray>();
-    AdjustBCRightHandSideEquations(rhs, nb, binum_array, bii_array, bij_array, &brhs->data,
+    AdjustBCRightHandSideEquations(rhs, nb, binum_array, bii_array, &brhs->data,
                                    na, aknum_array, aki_array);
     return brhs;
   }

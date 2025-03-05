@@ -174,7 +174,6 @@ AdjustBCRightHandSideEquations(
    HYPRE_Int       nb,
    HYPRE_Int      *binum_array,
    HYPRE_Complex  *bii_array,
-   HYPRE_Complex  *bij_array,
    HYPRE_Complex **brhs_array_ptr,
    HYPRE_Int       na,
    HYPRE_Int      *aknum_array,
@@ -195,7 +194,7 @@ AdjustBCRightHandSideEquations(
    {
       bnum  = anum;   // Assume only one interior equation per boundary equation
       aknum = aknum_array[anum];
-      rhs[aknum] -= aki_array[anum] * bij_array[bnum] / bii_array[bnum];
+      rhs[aknum] -= aki_array[anum] * brhs_array[bnum] / bii_array[bnum];
    }
 
    *brhs_array_ptr = brhs_array;
