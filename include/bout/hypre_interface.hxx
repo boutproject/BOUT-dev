@@ -20,6 +20,56 @@
 #include "HYPRE_utilities.h"
 #include "_hypre_utilities.h"
 
+HYPRE_Int
+AdjustBCMatrixEquations(
+   HYPRE_Int       nrows,
+   HYPRE_Int      *ncols,
+   HYPRE_BigInt   *rows,
+   HYPRE_Int     **row_indexes_ptr,
+   HYPRE_BigInt   *cols,
+   HYPRE_Complex  *values,
+   HYPRE_Int       nb,              // number of boundary equations
+   HYPRE_Int      *bi_array,        // row i for each boundary equation
+   HYPRE_Int     **binum_array_ptr, // data index for row i (for each boundary equation)
+   HYPRE_Int     **bjnum_array_ptr, // data index for col j (for each boundary equation)
+   HYPRE_Complex **bii_array_ptr,   // coefficient b_ii (for each boundary equation)
+   HYPRE_Complex **bij_array_ptr,   // coefficient b_ij (for each boundary equation)
+   HYPRE_Int      *na_ptr,          // number of interior equations to adjust
+   HYPRE_Int     **aknum_array_ptr, // data index for row k (for each interior equation)
+   HYPRE_Complex **aki_array_ptr);  // coefficient a_ki (for each interior equation)
+
+HYPRE_Int
+AdjustBCRightHandSideEquations(
+   HYPRE_Complex  *rhs,
+   HYPRE_Int       nb,
+   HYPRE_Int      *binum_array,
+   HYPRE_Complex  *bii_array,
+   HYPRE_Complex  *bij_array,
+   HYPRE_Complex **brhs_array_ptr,
+   HYPRE_Int       na,
+   HYPRE_Int      *aknum_array,
+   HYPRE_Complex  *aki_array);
+
+HYPRE_Int
+AdjustBCSolutionEquations(
+   HYPRE_Complex  *solution,
+   HYPRE_Int       nb,
+   HYPRE_Int      *binum_array,
+   HYPRE_Int      *bjnum_array,
+   HYPRE_Complex  *bii_array,
+   HYPRE_Complex  *bij_array,
+   HYPRE_Complex  *brhs_array);
+
+HYPRE_Int
+AdjustBCEquationsFree(
+   HYPRE_Int     *binum_array,
+   HYPRE_Int     *bjnum_array,
+   HYPRE_Complex *bii_array,
+   HYPRE_Complex *bij_array,
+   HYPRE_Complex *brhs_array,
+   HYPRE_Int     *aknum_array,
+   HYPRE_Complex *aki_array);
+
 #include <memory>
 
 // BOUT_ENUM_CLASS does not work inside namespaces
@@ -174,6 +224,24 @@ public:
     HypreMalloc(V, vsize * sizeof(HYPRE_Complex));
   }
 
+  // Data for eliminating boundary equations (TODO: convert this to a structure)
+  bool elimBErhs = false;
+  bool elimBEsol = false;
+  HYPRE_Complex *rhs;
+  HYPRE_Int      nb;
+  HYPRE_Int     *binum_array;
+  HYPRE_Int     *bjnum_array;
+  HYPRE_Complex *bii_array;
+  HYPRE_Complex *bij_array;
+  HYPRE_Complex *brhs_array; // This is not created from the HypreMatrix class
+  HYPRE_Int      na;
+  HYPRE_Int     *aknum_array;
+  HYPRE_Complex *aki_array;
+
+  void syncElimBErhs(HypreVector<T>& rhs) {
+    brhs_array = rhs.brhs_array;
+  }
+
   void assemble() {
     CALI_CXX_MARK_FUNCTION;
     writeCacheToHypre();
@@ -183,11 +251,20 @@ public:
   }
 
   void writeCacheToHypre() {
+    if (elimBErhs)
+    {
+      AdjustBCRightHandSideEquations(V, nb, binum_array, bii_array, bij_array, &brhs_array,
+                                     na, aknum_array, aki_array);
+    }
     checkHypreError(HYPRE_IJVectorSetValues(hypre_vector, vsize, I, V));
   }
 
   void readCacheFromHypre() {
     checkHypreError(HYPRE_IJVectorGetValues(hypre_vector, vsize, I, V));
+    if (elimBEsol)
+    {
+      AdjustBCSolutionEquations(V, nb, binum_array, bjnum_array, bii_array, bij_array, brhs_array);
+    }
   }
 
   T toField() {
@@ -667,6 +744,43 @@ public:
     return Element(*this, global_row, global_column, positions, weights);
   }
 
+  // Data for eliminating boundary equations (TODO: convert this to a structure)
+  bool elimBE = false;
+  HYPRE_Int      nb;
+  HYPRE_Int     *binum_array;
+  HYPRE_Int     *bjnum_array;
+  HYPRE_Complex *bii_array;
+  HYPRE_Complex *bij_array;
+  HYPRE_Int      na;
+  HYPRE_Int     *aknum_array;
+  HYPRE_Complex *aki_array;
+
+  void setElimBE() {
+    elimBE = true;
+  }
+
+  void setElimBEVectors(HypreVector<T>& sol, HypreVector<T>& rhs) {
+    sol.elimBEsol = elimBE;
+    sol.nb          = nb;
+    sol.binum_array = binum_array;
+    sol.bjnum_array = bjnum_array;
+    sol.bii_array   = bii_array;
+    sol.bij_array   = bij_array;
+    sol.na          = na;
+    sol.aknum_array = aknum_array;
+    sol.aki_array   = aki_array;
+
+    rhs.elimBErhs = elimBE;
+    rhs.nb          = nb;
+    rhs.binum_array = binum_array;
+    rhs.bjnum_array = bjnum_array;
+    rhs.bii_array   = bii_array;
+    rhs.bij_array   = bij_array;
+    rhs.na          = na;
+    rhs.aknum_array = aknum_array;
+    rhs.aki_array   = aki_array;
+  }
+
   void assemble() {
     CALI_CXX_MARK_FUNCTION;
 
@@ -695,8 +809,85 @@ public:
         entry++;
       }
     }
-    checkHypreError(
+
+    // Eliminate boundary condition equations in hypre SetValues input arguments
+    if (elimBE)
+    {
+      HYPRE_Int *bi_array;
+      HYPRE_Int *row_indexes;
+      // There must be an easier way to get nb
+      nb = 0;
+      BOUT_FOR_SERIAL(i, index_converter->getRegionBndry()) {
+         nb++;
+      }
+      HypreMalloc(bi_array, nb * sizeof(HYPRE_Int));
+      nb = 0;
+      BOUT_FOR_SERIAL(i, index_converter->getRegionBndry()) {
+         bi_array[nb] = index_converter->getGlobal(i);
+         nb++;
+      }
+      AdjustBCMatrixEquations(num_rows, num_cols, rawI, &row_indexes, cols, vals,
+                              nb, bi_array,
+                              &binum_array, &bjnum_array, &bii_array, &bij_array,
+                              &na, &aknum_array, &aki_array);
+      HypreFree(bi_array);
+//    {
+//       FILE  *file;
+//       int    i;
+//       file = fopen("zbout.setvalues.out2", "w");
+//       fprintf(file, "nrows %d\n", num_rows);
+//       for (i = 0; i < num_rows; i++)
+//       {
+//          fprintf(file, "ncols %d: %d\n", i, num_cols[i]);
+//       }
+//       for (i = 0; i < num_rows; i++)
+//       {
+//          fprintf(file, "rows %d: %d\n", i, rawI[i]);
+//       }
+//       for (i = 0; i < num_entries; i++)
+//       {
+//          fprintf(file, "cols %d: %d\n", i, cols[i]);
+//       }
+//       for (i = 0; i < num_entries; i++)
+//       {
+//          fprintf(file, "vals %d: %f\n", i, vals[i]);
+//       }
+//       fclose(file);
+//
+//       file = fopen("zbout.setvalues.out3", "w");
+//       for (i = 0; i < num_rows; i++)
+//       {
+//          fprintf(file, "row_indexes %d: %d\n", i, row_indexes[i]);
+//       }
+//       fprintf(file, "nb %d\n", nb);
+//       for (i = 0; i < nb; i++)
+//       {
+//          fprintf(file, "bijnum_array %d: %d %d\n", i, binum_array[i], bjnum_array[i]);
+//       }
+//       for (i = 0; i < nb; i++)
+//       {
+//          fprintf(file, "biiij_array %d: %f %f\n", i, bii_array[i], bij_array[i]);
+//       }
+//       fprintf(file, "na %d\n", na);
+//       for (i = 0; i < na; i++)
+//       {
+//          fprintf(file, "aknum_array %d: %d\n", i, aknum_array[i]);
+//       }
+//       for (i = 0; i < na; i++)
+//       {
+//          fprintf(file, "bki_array %d: %f\n", i, aki_array[i]);
+//       }
+//       fclose(file);
+//    }
+      checkHypreError(
+        HYPRE_IJMatrixSetValues2(*hypre_matrix, num_rows, num_cols, rawI, row_indexes, cols, vals));
+      HypreFree(row_indexes);
+    }
+    else
+    {
+      checkHypreError(
         HYPRE_IJMatrixSetValues(*hypre_matrix, num_rows, num_cols, rawI, cols, vals));
+    }
     checkHypreError(HYPRE_IJMatrixAssemble(*hypre_matrix));
     checkHypreError(HYPRE_IJMatrixGetObject(*hypre_matrix,
                                             reinterpret_cast<void**>(&parallel_matrix)));
