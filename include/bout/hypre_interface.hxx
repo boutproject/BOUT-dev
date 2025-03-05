@@ -20,7 +20,7 @@
 #include "HYPRE_utilities.h"
 #include "_hypre_utilities.h"
 
-HYPRE_Int
+void
 AdjustBCMatrixEquations(
    HYPRE_Int       nrows,
    HYPRE_Int      *ncols,
@@ -38,7 +38,7 @@ AdjustBCMatrixEquations(
    HYPRE_Int     **aknum_array_ptr, // data index for row k (for each interior equation)
    HYPRE_Complex **aki_array_ptr);  // coefficient a_ki (for each interior equation)
 
-HYPRE_Int
+void
 AdjustBCRightHandSideEquations(
    HYPRE_Complex  *rhs,
    HYPRE_Int       nb,
@@ -50,7 +50,7 @@ AdjustBCRightHandSideEquations(
    HYPRE_Int      *aknum_array,
    HYPRE_Complex  *aki_array);
 
-HYPRE_Int
+void
 AdjustBCSolutionEquations(
    HYPRE_Complex  *solution,
    HYPRE_Int       nb,
@@ -59,16 +59,6 @@ AdjustBCSolutionEquations(
    HYPRE_Complex  *bii_array,
    HYPRE_Complex  *bij_array,
    HYPRE_Complex  *brhs_array);
-
-HYPRE_Int
-AdjustBCEquationsFree(
-   HYPRE_Int     *binum_array,
-   HYPRE_Int     *bjnum_array,
-   HYPRE_Complex *bii_array,
-   HYPRE_Complex *bij_array,
-   HYPRE_Complex *brhs_array,
-   HYPRE_Int     *aknum_array,
-   HYPRE_Complex *aki_array);
 
 #include <memory>
 
@@ -136,6 +126,9 @@ public:
     checkHypreError(HYPRE_IJVectorDestroy(hypre_vector));
     HypreFree(I);
     HypreFree(V);
+    if (elimBErhs) {
+      HypreFree(brhs_array);
+    }
   }
 
   // Disable copy, at least for now: not clear that HYPRE_IJVector is
@@ -251,8 +244,7 @@ public:
   }
 
   void writeCacheToHypre() {
-    if (elimBErhs)
-    {
+    if (elimBErhs) {
       AdjustBCRightHandSideEquations(V, nb, binum_array, bii_array, bij_array, &brhs_array,
                                      na, aknum_array, aki_array);
     }
@@ -261,8 +253,7 @@ public:
 
   void readCacheFromHypre() {
     checkHypreError(HYPRE_IJVectorGetValues(hypre_vector, vsize, I, V));
-    if (elimBEsol)
-    {
+    if (elimBEsol) {
       AdjustBCSolutionEquations(V, nb, binum_array, bjnum_array, bii_array, bij_array, brhs_array);
     }
   }
@@ -419,6 +410,19 @@ public:
   using ind_type = typename T::ind_type;
 
   HypreMatrix() = default;
+//  The 'if' block below needs to be called when the HypreMatrix is destroyed,
+//  but I don't know where to put it.  The HypreMatrix class is handled
+//  differently from HypreVector.
+//  ~HypreVector() {
+//    if (elimBE) {
+//      HypreFree(binum_array);
+//      HypreFree(bjnum_array);
+//      HypreFree(bii_array);
+//      HypreFree(bij_array);
+//      HypreFree(aknum_array);
+//      HypreFree(aki_array);
+//    }
+//  }
   HypreMatrix(const HypreMatrix<T>&) = delete;
   HypreMatrix(HypreMatrix<T>&& other)
       : comm(other.comm), ilower(other.ilower), iupper(other.iupper),
@@ -811,8 +815,7 @@ public:
     }
 
     // Eliminate boundary condition equations in hypre SetValues input arguments
-    if (elimBE)
-    {
+    if (elimBE) {
       HYPRE_Int *bi_array;
       HYPRE_Int *row_indexes;
       // There must be an easier way to get nb

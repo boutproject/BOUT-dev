@@ -10,8 +10,6 @@
  * returns info needed to adjust the right-hand-side and solution vector through
  * the functions AdjustRightHandSideEquations and AdjustSolutionEquations.
  *
- * Returned info arrays can be freed with the function AdjustEquationsFree().
- *
  * NOTE: It may make sense from an organizational standpoint to collect many of
  * these arguments in a structure of some sort.
  *
@@ -49,7 +47,7 @@
  *   the coefficient for b_ij.
  */
 
-HYPRE_Int
+void
 AdjustBCMatrixEquations(
    HYPRE_Int       nrows,
    HYPRE_Int      *ncols,
@@ -168,11 +166,9 @@ AdjustBCMatrixEquations(
    *na_ptr          = na;
    *aknum_array_ptr = aknum_array;
    *aki_array_ptr   = aki_array;
-
-   return 0;
 }
 
-HYPRE_Int
+void
 AdjustBCRightHandSideEquations(
    HYPRE_Complex  *rhs,
    HYPRE_Int       nb,
@@ -203,11 +199,9 @@ AdjustBCRightHandSideEquations(
    }
 
    *brhs_array_ptr = brhs_array;
-
-   return 0;
 }
 
-HYPRE_Int
+void
 AdjustBCSolutionEquations(
    HYPRE_Complex  *solution,
    HYPRE_Int       nb,
@@ -225,28 +219,5 @@ AdjustBCSolutionEquations(
       bjnum = bjnum_array[bnum];
       solution[binum] = (brhs_array[bnum] - bij_array[bnum] * solution[bjnum]) / bii_array[bnum];
    }
-
-   return 0;
-}
-
-HYPRE_Int
-AdjustBCEquationsFree(
-   HYPRE_Int     *binum_array,
-   HYPRE_Int     *bjnum_array,
-   HYPRE_Complex *bii_array,
-   HYPRE_Complex *bij_array,
-   HYPRE_Complex *brhs_array,
-   HYPRE_Int     *aknum_array,
-   HYPRE_Complex *aki_array)
-{
-   HypreFree(binum_array);
-   HypreFree(bjnum_array);
-   HypreFree(bii_array);
-   HypreFree(bij_array);
-   HypreFree(brhs_array);
-   HypreFree(aknum_array);
-   HypreFree(aki_array);
-
-   return 0;
 }
 
