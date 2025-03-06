@@ -28,7 +28,6 @@
 #if BOUT_HAS_HYPRE
 
 #include "hypre3d_laplace.hxx"
-#include "hypre_boundary.c"
 
 #include <bout/assert.hxx>
 #include <bout/boutcomm.hxx>
