@@ -1364,7 +1364,7 @@ protected:
           // Only update if simulation time has advanced
           // Uses an exponential decay of the weighting of the value in the boundary
           // so that the solution is well behaved for arbitrary steps
-          BoutReal weight = exp(-(t - phi_boundary_last_update) / phi_boundary_timescale);
+          BoutReal const weight = exp(-(t - phi_boundary_last_update) / phi_boundary_timescale);
           phi_boundary_last_update = t;
 
           if (mesh->firstX()) {
@@ -1378,7 +1378,7 @@ protected:
                 }
               }
               MPI_Comm comm_inner = mesh->getYcomm(0);
-              int np;
+              int np = 0;
               MPI_Comm_size(comm_inner, &np);
               MPI_Allreduce(&philocal, &phivalue, 1, MPI_DOUBLE, MPI_SUM, comm_inner);
               phivalue /= (np * mesh->LocalNz * mesh->LocalNy);
@@ -1393,11 +1393,11 @@ protected:
               }
 
               // Old value of phi at boundary. Note: this is constant in Z
-              BoutReal oldvalue =
+              BoutReal const oldvalue =
                   0.5 * (phi(mesh->xstart - 1, j, 0) + phi(mesh->xstart, j, 0));
 
               // New value of phi at boundary, relaxing towards phivalue
-              BoutReal newvalue = weight * oldvalue + (1. - weight) * phivalue;
+              BoutReal const newvalue = weight * oldvalue + (1. - weight) * phivalue;
 
               // Set phi at the boundary to this value
               for (int k = 0; k < mesh->LocalNz; k++) {
@@ -1420,7 +1420,7 @@ protected:
                   0.5 * (phi(mesh->xend + 1, j, 0) + phi(mesh->xend, j, 0));
 
               // New value of phi at boundary, relaxing towards phivalue
-              BoutReal newvalue = weight * oldvalue + (1. - weight) * phivalue;
+              BoutReal const newvalue = weight * oldvalue + (1. - weight) * phivalue;
 
               // Set phi at the boundary to this value
               for (int k = 0; k < mesh->LocalNz; k++) {
