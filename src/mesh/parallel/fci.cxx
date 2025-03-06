@@ -346,3 +346,9 @@ void FCITransform::integrateParallelSlices(Field3D& f) {
     f.ynext(map.offset) = map.integrate(f);
   }
 }
+
+void FCITransform::outputVars(Options& output_options) {
+  // Real-space coordinates of grid points
+  output_options["R"].force(R, "FCI");
+  output_options["Z"].force(Z, "FCI");
+}
