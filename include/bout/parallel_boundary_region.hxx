@@ -262,6 +262,7 @@ public:
 
   template <bool check = true>
   BoutReal& getAt(Field3D& f, int off) const {
+    ASSERT4(f.hasParallelSlices());
     if constexpr (check) {
       ASSERT3(valid() > -off - 2);
     }
@@ -270,6 +271,7 @@ public:
   }
   template <bool check = true>
   const BoutReal& getAt(const Field3D& f, int off) const {
+    ASSERT4(f.hasParallelSlices());
     if constexpr (check) {
       ASSERT3(valid() > -off - 2);
     }
