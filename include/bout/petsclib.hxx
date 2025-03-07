@@ -156,6 +156,10 @@ private:
 
 #endif // PETSC_VERSION_GE
 
+#if ! PETSC_VERSION_GE(3, 19, 0)
+#define PETSC_SUCCESS ((PetscErrorCode)0)
+#endif
+
 #else // BOUT_HAS_PETSC
 
 #include "bout/unused.hxx"

@@ -603,6 +603,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
     IntShiftTorsion = 0.;
   }
+
+  // Allow transform to fix things up
+  transform->loadParallelMetrics(this);
 }
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
@@ -891,6 +894,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                                                   true, true, false, transform.get());
     }
   }
+  // Allow transform to fix things up
+  transform->loadParallelMetrics(this);
 }
 
 void Coordinates::outputVars(Options& output_options) {
@@ -944,6 +949,13 @@ const Field2D& Coordinates::zlength() const {
 int Coordinates::geometry(bool recalculate_staggered,
                           bool force_interpolate_from_centre) {
   TRACE("Coordinates::geometry");
+  {
+    std::vector<Field3D> fields{dx, dy, dz, g11, g22, g33, g12, g13, g23, g_11, g_22, g_33, g_12, g_13,
+				g_23, J};
+    for (auto& f: fields) {
+      f.allowParallelSlices(false);
+    }
+  }
   communicate(dx, dy, dz, g11, g22, g33, g12, g13, g23, g_11, g_22, g_33, g_12, g_13,
               g_23, J, Bxy);
 
@@ -1544,7 +1556,7 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
   TRACE("Coordinates::Grad_par( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  return ::DDY(var, outloc, method) * invSg();
+  return setName(::DDY(var, outloc, method) * invSg(), "Grad_par({:s})", var.name);
 }
 
 /////////////////////////////////////////////////////////
@@ -1596,14 +1608,15 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
     return Bxy * Grad_par(f / Bxy_floc, outloc, method);
   }
 
+  auto coords = f.getCoordinates();
   // Need to modify yup and ydown fields
-  Field3D f_B = f / Bxy_floc;
+  Field3D f_B = f / coords->J * sqrt(coords->g_22);
   f_B.splitParallelSlices();
   for (int i = 0; i < f.getMesh()->ystart; ++i) {
-    f_B.yup(i) = f.yup(i) / Bxy_floc.yup(i);
-    f_B.ydown(i) = f.ydown(i) / Bxy_floc.ydown(i);
+    f_B.yup(i) = f.yup(i) / coords->J.yup(i) * sqrt(coords->g_22.yup(i));
+    f_B.ydown(i) = f.ydown(i) / coords->J.ydown(i) * sqrt(coords->g_22.ydown(i));
   }
-  return Bxy * Grad_par(f_B, outloc, method);
+  return setName(coords->J / sqrt(coords->g_22) * Grad_par(f_B, outloc, method), "Div_par({:s})", f.name);
 }
 
 /////////////////////////////////////////////////////////

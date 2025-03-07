@@ -31,6 +31,7 @@ class Field;
 
 #include <cmath>
 #include <cstdio>
+#include <optional>
 #include <string>
 
 #include "bout/bout_types.hxx"
@@ -79,6 +80,8 @@ public:
 
   std::string name;
 
+  bool isFci() const;
+
 #if CHECK > 0
   // Routines to test guard/boundary cells set
 
@@ -124,6 +127,12 @@ public:
     swap(first.name, second.name);
     swap(first.directions, second.directions);
   }
+
+  virtual void setRegion(size_t UNUSED(regionID)) {}
+  virtual void setRegion(std::optional<size_t> UNUSED(regionID)) {}
+  virtual void setRegion(const std::string& UNUSED(region_name)) {}
+  virtual void resetRegion() {}
+  virtual std::optional<size_t> getRegionID() const { return {}; }
 
 private:
   /// Labels for the type of coordinate system this field is defined over
@@ -176,7 +185,8 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 template <typename T>
 inline T emptyFrom(const T& f) {
   static_assert(bout::utils::is_Field_v<T>, "emptyFrom only works on Fields");
-  return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()})
+  return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()},
+           f.getRegionID())
       .allocate();
 }
 
@@ -283,6 +293,7 @@ inline void checkPositive(const T& f, const std::string& name = "field",
 template <typename T>
 inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   static_assert(bout::utils::is_Field_v<T>, "toFieldAligned only works on Fields");
+  ASSERT3(f.getCoordinates() != nullptr);
   return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
 }
 
@@ -290,6 +301,7 @@ inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
 template <typename T>
 inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   static_assert(bout::utils::is_Field_v<T>, "fromFieldAligned only works on Fields");
+  ASSERT3(f.getCoordinates() != nullptr);
   return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
 }
 
@@ -519,15 +531,16 @@ T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
 #ifdef FIELD_FUNC
 #error This macro has already been defined
 #else
-#define FIELD_FUNC(name, func)                                     \
+#define FIELD_FUNC(_name, func)                                     \
   template <typename T, typename = bout::utils::EnableIfField<T>>  \
-  inline T name(const T& f, const std::string& rgn = "RGN_ALL") {  \
+  inline T _name(const T& f, const std::string& rgn = "RGN_ALL") {  \
     AUTO_TRACE();                                                  \
     /* Check if the input is allocated */                          \
     checkData(f);                                                  \
     /* Define and allocate the output result */                    \
     T result{emptyFrom(f)};                                        \
     BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); } \
+    result.name = std::string(#_name  "(") + f.name + std::string(")");	\
     checkData(result);                                             \
     return result;                                                 \
   }
@@ -670,10 +683,43 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
       result[d] = f;
     }
   }
-
+#if BOUT_USE_FCI_AUTOMAGIC
+  if (var.isFci()) {
+    for (size_t i=0; i < result.numberParallelSlices(); ++i) {
+      BOUT_FOR(d, result.yup(i).getRegion(rgn)) {
+ 	if (result.yup(i)[d] < f) {
+ 	  result.yup(i)[d] = f;
+ 	}
+      }
+      BOUT_FOR(d, result.ydown(i).getRegion(rgn)) {
+	if (result.ydown(i)[d] < f) {
+	  result.ydown(i)[d] = f;
+	}
+      }
+    }
+  } else
+#endif
+  {
+    result.clearParallelSlices();
+  }
   return result;
 }
 
 #undef FIELD_FUNC
+
+template <typename T, typename = bout::utils::EnableIfField<T>, class... Types>
+inline void setName(T& f, const std::string& name, Types... args) {
+#if BOUT_USE_TRACK
+  f.name = fmt::format(name, args...);
+#endif
+}
+
+template <typename T, typename = bout::utils::EnableIfField<T>, class... Types>
+inline T setName(T&& f, const std::string& name, Types... args) {
+#if BOUT_USE_TRACK
+  f.name = fmt::format(name, args...);
+#endif
+  return f;
+}
 
 #endif /* FIELD_H */
