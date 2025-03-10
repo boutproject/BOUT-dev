@@ -2,19 +2,10 @@
  * Implementation of the Mesh class, handling input files compatible with
  * BOUT / BOUT-06.
  *
- * Changelog
- * ---------
- *
- * 2015-01 Ben Dudson <benjamin.dudson@york.ac.uk>
- *      *
- *
- * 2010-05 Ben Dudson <bd512@york.ac.uk>
- *      * Initial version, adapted from grid.cpp and topology.cpp
- *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
