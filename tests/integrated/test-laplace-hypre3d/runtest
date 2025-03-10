@@ -19,20 +19,24 @@ build_and_log("Laplace 3D with Hypre")
 
 success = True
 for directory, nproc in test_directories:
-    command = "test-laplace3d -d " + directory
+    command = "./test-laplace3d -d " + directory
     print("running on", nproc, "processors:", command)
-    launch_safe(command, nproc=nproc)
+    s, out = launch_safe(command, nproc=nproc, pipe=True)
+    # Save output to log file
+    with open("run.log." + directory, "w") as f:
+        f.write(out)
 
     error_max = collect("error_max", path=directory, info=False)
 
     if error_max > tolerance:
-        print(directory + " failed with maximum error {}".format(error_max))
+        print(" => " + directory + " failed with maximum error {}".format(error_max))
         success = False
     else:
-        print(directory + " passed with maximum error {}".format(error_max))
+        print(" => " + directory + " passed with maximum error {}".format(error_max))
 
 if success:
-    print("All passed")
+    print("=> All passed")
     exit(0)
 else:
+    print("=> Some tests failed")
     exit(1)
