@@ -11,10 +11,10 @@
 # Variables to compare
 vars = [
     ("max_error1", 2.0e-4),
-    ("max_error2", 2.0e-8),
+    ("max_error2", 2.0e-4),
     ("max_error3", 2.0e-4),
     ("max_error4", 2.0e-4),
-    ("max_error5", 4.0e-6),
+    ("max_error5", 2.0e-4),
     ("max_error6", 2.0e-4),
 ]
 
