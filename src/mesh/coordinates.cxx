@@ -1512,14 +1512,6 @@ Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
 
 Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) const {
-#if BOUT_USE_METRIC_3D
-  if (!f.hasParallelSlices() and !transform->canToFromFieldAligned()) {
-    Field3D f_parallel = f;
-    transform->calcParallelSlices(f_parallel);
-    f_parallel.applyParallelBoundary("parallel_neumann_o2");
-    return bout::derivatives::index::DDY(f_parallel, outloc, method, region);
-  }
-#endif
   return bout::derivatives::index::DDY(f, outloc, method, region) / dy;
 };
 
