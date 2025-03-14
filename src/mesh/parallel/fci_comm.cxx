@@ -1,11 +1,11 @@
 /**************************************************************************
- * Base class for fields
+ * Communication for Flux-coordinate Independent interpolation
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ * Contact: Ben Dudson, dudson2@llnl.gov
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -23,30 +23,12 @@
  *
  **************************************************************************/
 
-#include <bout/boutexception.hxx>
-#include <bout/coordinates.hxx>
-#include <bout/field.hxx>
-#include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
-#include <bout/output.hxx>
-#include <bout/utils.hxx>
+#include "fci_comm.hxx"
 
-Field::Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
-    : FieldData(localmesh, location_in), directions(directions_in) {}
+#include <vector>
 
-int Field::getNx() const { return getMesh()->LocalNx; }
-
-int Field::getNy() const { return getMesh()->LocalNy; }
-
-int Field::getNz() const { return getMesh()->LocalNz; }
-
-bool Field::isFci() const {
-  const auto coords = this->getCoordinates();
-  if (coords == nullptr) {
-    return false;
-  }
-  if (not coords->hasParallelTransform()) {
-    return false;
-  }
-  return not coords->getParallelTransform().canToFromFieldAligned();
+const BoutReal& GlobalField3DAccessInstance::operator[](IndG3D ind) const {
+  auto it = gfa.mapping.find(ind.ind);
+  ASSERT2(it != gfa.mapping.end());
+  return data[it->second];
 }

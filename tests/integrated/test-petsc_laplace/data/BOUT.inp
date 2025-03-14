@@ -26,20 +26,9 @@ nonuniform = true
 rtol = 1e-08
 atol = 1e-06
 include_yguards = false
-maxits = 1000
+maxits = 100000
 
-gmres_max_steps = 300
-
-pctype = shell    # Supply a second solver as a preconditioner
-rightprec = true   # Right precondition
-
-[petsc2nd:precon] # Options for the preconditioning solver
-# Leave default type (tri or spt)
-all_terms = true
-nonuniform = true
-filter = 0.0    # Must not filter
-inner_boundary_flags = 32 # Identity in boundary
-outer_boundary_flags = 32 # Identity in boundary
+gmres_max_steps = 3000
 
 #############################################
 
@@ -50,32 +39,7 @@ nonuniform = true
 rtol = 1e-08
 atol = 1e-06
 include_yguards = false
-maxits = 1000
+maxits = 100000
 fourth_order = true
 
-gmres_max_steps = 30
-
-pctype = shell
-rightprec = true
-
-[petsc4th:precon]
-all_terms = true
-nonuniform = true
-filter = 0.0
-inner_boundary_flags = 32 # Identity in boundary
-outer_boundary_flags = 32 # Identity in boundary
-
-#############################################
-
-[SPT]
-#type=spt
-all_terms = true
-nonuniform = true
-#flags=15
-include_yguards = false
-
-#maxits=10000
-
-[laplace]
-all_terms = true
-nonuniform = true
+gmres_max_steps = 300
