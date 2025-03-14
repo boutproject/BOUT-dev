@@ -492,7 +492,7 @@ void Field3D::applyTDerivBoundary() {
   }
 }
 
-void Field3D::setBoundaryTo(const Field3D& f3d) {
+void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices) {
   TRACE("Field3D::setBoundary(const Field3D&)");
 
   checkData(f3d);
@@ -500,16 +500,24 @@ void Field3D::setBoundaryTo(const Field3D& f3d) {
   allocate(); // Make sure data allocated
 
   if (isFci()) {
-    // Set yup/ydown using midpoint values from f3d
     ASSERT1(f3d.hasParallelSlices());
-    ASSERT1(hasParallelSlices());
+    if (copyParallelSlices) {
+      splitParallelSlices();
+      for (int i = 0; i < fieldmesh->ystart; ++i) {
+        yup(i) = f3d.yup(i);
+        ydown(i) = f3d.ydown(i);
+      }
+    } else {
+      // Set yup/ydown using midpoint values from f3d
+      ASSERT1(hasParallelSlices());
 
-    for (auto& region : fieldmesh->getBoundariesPar()) {
-      for (const auto& pnt : *region) {
-        // Interpolate midpoint value in f3d
-        const BoutReal val = pnt.interpolate_sheath_o1(f3d);
-        // Set the same boundary value in this field
-        pnt.dirichlet_o1(*this, val);
+      for (auto& region : fieldmesh->getBoundariesPar()) {
+        for (const auto& pnt : *region) {
+          // Interpolate midpoint value in f3d
+          const BoutReal val = pnt.interpolate_sheath_o1(f3d);
+          // Set the same boundary value in this field
+          pnt.dirichlet_o1(*this, val);
+        }
       }
     }
   }

@@ -505,7 +505,8 @@ public:
   /// This uses 2nd order central differences to set the value
   /// on the boundary to the value on the boundary in field \p f3d.
   /// Note: does not just copy values in boundary region.
-  void setBoundaryTo(const Field3D& f3d);
+  void setBoundaryTo(const Field3D& f3d) { setBoundaryTo(f3d, true); }
+  void setBoundaryTo(const Field3D& f3d, bool copyParallelSlices);
 
   using FieldData::applyParallelBoundary;
   void applyParallelBoundary() override;
