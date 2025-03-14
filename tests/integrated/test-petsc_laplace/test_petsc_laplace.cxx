@@ -34,6 +34,7 @@
 #include "bout/options.hxx"
 #include "bout/options_io.hxx"
 #include "bout/output.hxx"
+#include "bout/sys/timer.hxx"
 #include "bout/traits.hxx"
 
 #include "fmt/core.h"
@@ -194,6 +195,9 @@ int main(int argc, char** argv) {
 
     MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
   }
+
+  output.write("Used {}s for setup and {}s for solving\n",
+               Timer::getTotalTime("petscsetup"), Timer::getTotalTime("petscsolve"));
 
   bout::checkForUnusedOptions();
 
