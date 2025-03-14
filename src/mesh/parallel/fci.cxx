@@ -457,6 +457,7 @@ void FCITransform::loadParallelMetrics(Coordinates* coords) {
     load_parallel_metric_components(coords, -i);
     load_parallel_metric_components(coords, i);
   }
+}
 
 void FCITransform::outputVars(Options& output_options) {
   // Real-space coordinates of grid points
