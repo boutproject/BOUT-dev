@@ -488,7 +488,7 @@ public:
   friend class Vector2D;
 
   Field3D& calcParallelSlices();
-  void allowParallelSlices([[maybe_unused]] bool allow){
+  void allowParallelSlices([[maybe_unused]] bool allow) {
 #if CHECK > 0
     allowCalcParallelSlices = allow;
 #endif

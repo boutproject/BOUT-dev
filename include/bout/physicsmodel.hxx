@@ -275,6 +275,7 @@ protected:
 public:
   /// Output additional variables other than the evolving variables
   virtual void outputVars(Options& options);
+
 protected:
   /// Add additional variables other than the evolving variables to the restart files
   virtual void restartVars(Options& options);

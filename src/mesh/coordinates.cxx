@@ -950,9 +950,9 @@ int Coordinates::geometry(bool recalculate_staggered,
                           bool force_interpolate_from_centre) {
   TRACE("Coordinates::geometry");
   {
-    std::vector<Field3D> fields{dx, dy, dz, g11, g22, g33, g12, g13, g23, g_11, g_22, g_33, g_12, g_13,
-				g_23, J};
-    for (auto& f: fields) {
+    std::vector<Field3D> fields{dx,  dy,   dz,   g11,  g22,  g33,  g12,  g13,
+                                g23, g_11, g_22, g_33, g_12, g_13, g_23, J};
+    for (auto& f : fields) {
       f.allowParallelSlices(false);
     }
   }
@@ -1608,7 +1608,8 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
     f_B.yup(i) = f.yup(i) / coords->J.yup(i) * sqrt(coords->g_22.yup(i));
     f_B.ydown(i) = f.ydown(i) / coords->J.ydown(i) * sqrt(coords->g_22.ydown(i));
   }
-  return setName(coords->J / sqrt(coords->g_22) * Grad_par(f_B, outloc, method), "Div_par({:s})", f.name);
+  return setName(coords->J / sqrt(coords->g_22) * Grad_par(f_B, outloc, method),
+                 "Div_par({:s})", f.name);
 }
 
 /////////////////////////////////////////////////////////

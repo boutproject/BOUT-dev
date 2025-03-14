@@ -356,8 +356,9 @@ template <bool monotonic>
 std::vector<ParallelTransform::PositionsAndWeights>
 XZHermiteSplineBase<monotonic>::getWeightsForYApproximation(int i, int j, int k,
                                                             int yoffset) {
-  if (localmesh->getNXPE() > 1){
-    throw BoutException("It is likely that the function calling this is not handling the result correctly.");
+  if (localmesh->getNXPE() > 1) {
+    throw BoutException("It is likely that the function calling this is not handling the "
+                        "result correctly.");
   }
   const int nz = localmesh->LocalNz;
   const int k_mod = k_corner(i, j, k);
@@ -503,7 +504,7 @@ template class XZHermiteSplineBase<true>;
 template class XZHermiteSplineBase<false>;
 
 Field3D XZMonotonicHermiteSplineLegacy::interpolate(const Field3D& f,
-                                              const std::string& region) const {
+                                                    const std::string& region) const {
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp(f.getMesh());
   f_interp.allocate();

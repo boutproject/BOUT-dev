@@ -96,7 +96,7 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
 #if BOUT_USE_FCI_AUTOMAGIC
   if (this->isFci()) {
     splitParallelSlices();
-    for (size_t i=0; i<numberParallelSlices(); ++i){
+    for (size_t i = 0; i < numberParallelSlices(); ++i) {
       yup(i) = val;
       ydown(i) = val;
     }
@@ -363,7 +363,7 @@ Field3D& Field3D::operator=(const BoutReal val) {
 
 #if BOUT_USE_FCI_AUTOMAGIC
   if (isFci() && hasParallelSlices()) {
-    for (size_t i=0; i<numberParallelSlices(); ++i){
+    for (size_t i = 0; i < numberParallelSlices(); ++i) {
       yup(i) = val;
       ydown(i) = val;
     }
@@ -902,15 +902,9 @@ void Field3D::setRegion(const std::string& region_name) {
   regionID = fieldmesh->getRegionID(region_name);
 }
 
-void Field3D::resetRegion() {
-  regionID.reset();
-};
-void Field3D::setRegion(size_t id) {
-  regionID = id;
-};
-void Field3D::setRegion(std::optional<size_t> id) {
-  regionID = id;
-};
+void Field3D::resetRegion() { regionID.reset(); };
+void Field3D::setRegion(size_t id) { regionID = id; };
+void Field3D::setRegion(std::optional<size_t> id) { regionID = id; };
 
 Field3D& Field3D::enableTracking(const std::string& name, Options& _tracking) {
   tracking = &_tracking;
@@ -929,9 +923,9 @@ Options* Field3D::track(const T& change, std::string operation) {
     const std::string changename = change.name;
 #endif
     (*tracking)[outname].setAttributes({
-      {"operation", operation},
+        {"operation", operation},
 #if BOUT_USE_TRACK
-          {"rhs.name", changename},
+        {"rhs.name", changename},
 #endif
     });
     return &(*tracking)[outname];

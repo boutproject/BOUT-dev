@@ -10,8 +10,8 @@
 #include "bout/vector2d.hxx"
 
 #include "bout/utils.hxx"
-#include <bout/mesh.hxx>
 #include <bout/difops.hxx>
+#include <bout/mesh.hxx>
 
 namespace FV {
 /*!

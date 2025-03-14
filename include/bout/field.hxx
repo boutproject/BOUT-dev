@@ -531,18 +531,18 @@ T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
 #ifdef FIELD_FUNC
 #error This macro has already been defined
 #else
-#define FIELD_FUNC(_name, func)                                     \
-  template <typename T, typename = bout::utils::EnableIfField<T>>  \
-  inline T _name(const T& f, const std::string& rgn = "RGN_ALL") {  \
-    AUTO_TRACE();                                                  \
-    /* Check if the input is allocated */                          \
-    checkData(f);                                                  \
-    /* Define and allocate the output result */                    \
-    T result{emptyFrom(f)};                                        \
-    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); } \
-    result.name = std::string(#_name  "(") + f.name + std::string(")");	\
-    checkData(result);                                             \
-    return result;                                                 \
+#define FIELD_FUNC(_name, func)                                        \
+  template <typename T, typename = bout::utils::EnableIfField<T>>      \
+  inline T _name(const T& f, const std::string& rgn = "RGN_ALL") {     \
+    AUTO_TRACE();                                                      \
+    /* Check if the input is allocated */                              \
+    checkData(f);                                                      \
+    /* Define and allocate the output result */                        \
+    T result{emptyFrom(f)};                                            \
+    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }     \
+    result.name = std::string(#_name "(") + f.name + std::string(")"); \
+    checkData(result);                                                 \
+    return result;                                                     \
   }
 #endif
 
@@ -685,16 +685,16 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
   }
 #if BOUT_USE_FCI_AUTOMAGIC
   if (var.isFci()) {
-    for (size_t i=0; i < result.numberParallelSlices(); ++i) {
+    for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
       BOUT_FOR(d, result.yup(i).getRegion(rgn)) {
- 	if (result.yup(i)[d] < f) {
- 	  result.yup(i)[d] = f;
- 	}
+        if (result.yup(i)[d] < f) {
+          result.yup(i)[d] = f;
+        }
       }
       BOUT_FOR(d, result.ydown(i).getRegion(rgn)) {
-	if (result.ydown(i)[d] < f) {
-	  result.ydown(i)[d] = f;
-	}
+        if (result.ydown(i)[d] < f) {
+          result.ydown(i)[d] = f;
+        }
       }
     }
   } else

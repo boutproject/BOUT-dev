@@ -375,92 +375,92 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
    * In other word the indexing is done in a row-major order, but starting at
    * bottom left rather than top left
    */
-    // X=0 to localmesh->xstart-1 defines the boundary region of the domain.
-    // Set the values for the inner boundary region
-    if (localmesh->firstX()) {
-      for (int x = 0; x < localmesh->xstart; x++) {
-        for (int z = 0; z < localmesh->LocalNz; z++) {
-          PetscScalar val; // Value of element to be set in the matrix
-          // If Neumann Boundary Conditions are set.
-          if (isInnerBoundaryFlagSet(INVERT_AC_GRAD)) {
-            // Set values corresponding to nodes adjacent in x
-            if (fourth_order) {
-              // Fourth Order Accuracy on Boundary
-              Element(i, x, z, 0, 0,
-                      -25.0 / (12.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
-                      MatA);
-              Element(i, x, z, 1, 0,
-                      4.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
-              Element(i, x, z, 2, 0,
-                      -3.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
-              Element(i, x, z, 3, 0,
-                      4.0 / (3.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
-                      MatA);
-              Element(i, x, z, 4, 0,
-                      -1.0 / (4.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
-                      MatA);
-            } else {
-              // Second Order Accuracy on Boundary
-              //   Element(i,x,z, 0, 0, -3.0 / (2.0*coords->dx(x,y)), MatA );
-              //   Element(i,x,z, 1, 0,  2.0 / coords->dx(x,y), MatA );
-              //   Element(i,x,z, 2, 0, -1.0 / (2.0*coords->dx(x,y)), MatA );
-              //   Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0
-              //   in case 4th order flag was used previously: not allowed now
-              //   Element(i,x,z, 4, 0, 0.0, MatA );
-              // Second Order Accuracy on Boundary, set half-way between grid points
-              Element(i, x, z, 0, 0,
-                      -1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
-              Element(i, x, z, 1, 0,
-                      1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
-              Element(i, x, z, 2, 0, 0.0, MatA);
-              //                      Element(i,x,z, 3, 0, 0.0, MatA );  // Reset
-              //                      these elements to 0 in case 4th order flag was
-              //                      used previously: not allowed now
-              //                      Element(i,x,z, 4, 0, 0.0, MatA );
-            }
+  // X=0 to localmesh->xstart-1 defines the boundary region of the domain.
+  // Set the values for the inner boundary region
+  if (localmesh->firstX()) {
+    for (int x = 0; x < localmesh->xstart; x++) {
+      for (int z = 0; z < localmesh->LocalNz; z++) {
+        PetscScalar val; // Value of element to be set in the matrix
+        // If Neumann Boundary Conditions are set.
+        if (isInnerBoundaryFlagSet(INVERT_AC_GRAD)) {
+          // Set values corresponding to nodes adjacent in x
+          if (fourth_order) {
+            // Fourth Order Accuracy on Boundary
+            Element(i, x, z, 0, 0,
+                    -25.0 / (12.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
+                    MatA);
+            Element(i, x, z, 1, 0,
+                    4.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
+            Element(i, x, z, 2, 0,
+                    -3.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
+            Element(i, x, z, 3, 0,
+                    4.0 / (3.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
+                    MatA);
+            Element(i, x, z, 4, 0,
+                    -1.0 / (4.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
+                    MatA);
           } else {
-            if (fourth_order) {
-              // Set Diagonal Values to 1
-              Element(i, x, z, 0, 0, 1., MatA);
-
-              // Set off diagonal elements to zero
-              Element(i, x, z, 1, 0, 0.0, MatA);
-              Element(i, x, z, 2, 0, 0.0, MatA);
-              Element(i, x, z, 3, 0, 0.0, MatA);
-              Element(i, x, z, 4, 0, 0.0, MatA);
-            } else {
-              Element(i, x, z, 0, 0, 0.5, MatA);
-              Element(i, x, z, 1, 0, 0.5, MatA);
-              Element(i, x, z, 2, 0, 0., MatA);
-            }
+            // Second Order Accuracy on Boundary
+            //   Element(i,x,z, 0, 0, -3.0 / (2.0*coords->dx(x,y)), MatA );
+            //   Element(i,x,z, 1, 0,  2.0 / coords->dx(x,y), MatA );
+            //   Element(i,x,z, 2, 0, -1.0 / (2.0*coords->dx(x,y)), MatA );
+            //   Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0
+            //   in case 4th order flag was used previously: not allowed now
+            //   Element(i,x,z, 4, 0, 0.0, MatA );
+            // Second Order Accuracy on Boundary, set half-way between grid points
+            Element(i, x, z, 0, 0,
+                    -1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
+            Element(i, x, z, 1, 0,
+                    1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
+            Element(i, x, z, 2, 0, 0.0, MatA);
+            //                      Element(i,x,z, 3, 0, 0.0, MatA );  // Reset
+            //                      these elements to 0 in case 4th order flag was
+            //                      used previously: not allowed now
+            //                      Element(i,x,z, 4, 0, 0.0, MatA );
           }
+        } else {
+          if (fourth_order) {
+            // Set Diagonal Values to 1
+            Element(i, x, z, 0, 0, 1., MatA);
 
-          val = 0; // Initialize val
-
-          // Set Components of RHS
-          // If the inner boundary value should be set by b or x0
-          if (isInnerBoundaryFlagSet(INVERT_RHS)) {
-            val = b[x][z];
-          } else if (isInnerBoundaryFlagSet(INVERT_SET)) {
-            val = x0[x][z];
+            // Set off diagonal elements to zero
+            Element(i, x, z, 1, 0, 0.0, MatA);
+            Element(i, x, z, 2, 0, 0.0, MatA);
+            Element(i, x, z, 3, 0, 0.0, MatA);
+            Element(i, x, z, 4, 0, 0.0, MatA);
+          } else {
+            Element(i, x, z, 0, 0, 0.5, MatA);
+            Element(i, x, z, 1, 0, 0.5, MatA);
+            Element(i, x, z, 2, 0, 0., MatA);
           }
-
-          // Set components of the RHS (the PETSc vector bs)
-          // 1 element is being set in row i to val
-          // INSERT_VALUES replaces existing entries with new values
-          VecSetValues(bs, 1, &i, &val, INSERT_VALUES);
-
-          // Set components of the and trial solution (the PETSc vector xs)
-          // 1 element is being set in row i to val
-          // INSERT_VALUES replaces existing entries with new values
-          val = x0[x][z];
-          VecSetValues(xs, 1, &i, &val, INSERT_VALUES);
-
-          ASSERT3(i == getIndex(x, z));
-          i++; // Increment row in Petsc matrix
         }
+
+        val = 0; // Initialize val
+
+        // Set Components of RHS
+        // If the inner boundary value should be set by b or x0
+        if (isInnerBoundaryFlagSet(INVERT_RHS)) {
+          val = b[x][z];
+        } else if (isInnerBoundaryFlagSet(INVERT_SET)) {
+          val = x0[x][z];
+        }
+
+        // Set components of the RHS (the PETSc vector bs)
+        // 1 element is being set in row i to val
+        // INSERT_VALUES replaces existing entries with new values
+        VecSetValues(bs, 1, &i, &val, INSERT_VALUES);
+
+        // Set components of the and trial solution (the PETSc vector xs)
+        // 1 element is being set in row i to val
+        // INSERT_VALUES replaces existing entries with new values
+        val = x0[x][z];
+        VecSetValues(xs, 1, &i, &val, INSERT_VALUES);
+
+        ASSERT3(i == getIndex(x, z));
+        i++; // Increment row in Petsc matrix
       }
     }
+  }
 
     // Set the values for the main domain
     for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
@@ -744,7 +744,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
     VecAssemblyEnd(xs);
 
     if (not forward) {
-    // Configure Linear Solver
+      // Configure Linear Solver
 #if PETSC_VERSION_GE(3, 5, 0)
     KSPSetOperators(ksp, MatA, MatA);
 #else
@@ -811,13 +811,12 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
       lib.setOptionsFromInputFile(ksp);
     }
     timer.reset();
-    
 
-  // Call the actual solver
-  {
-    Timer timer("petscsolve");
-    KSPSolve(ksp, bs, xs); // Call the solver to solve the system
-  }
+    // Call the actual solver
+    {
+      Timer timer("petscsolve");
+      KSPSolve(ksp, bs, xs); // Call the solver to solve the system
+    }
 
   KSPConvergedReason reason;
   KSPGetConvergedReason(ksp, &reason);
@@ -833,23 +832,23 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
       timer.reset();
       PetscErrorCode err = MatMult(MatA, bs, xs);
       if (err != PETSC_SUCCESS) {
-	throw BoutException("MatMult failed with {:d}", static_cast<int>(err));
+        throw BoutException("MatMult failed with {:d}", static_cast<int>(err));
       }
     }
 
     // Add data to FieldPerp Object
-  i = Istart;
-  // Set the inner boundary values
-  if (localmesh->firstX()) {
-    for (int x = 0; x < localmesh->xstart; x++) {
-      for (int z = 0; z < localmesh->LocalNz; z++) {
-        PetscScalar val = 0;
-        VecGetValues(xs, 1, &i, &val);
-        sol[x][z] = val;
-        i++; // Increment row in Petsc matrix
+    i = Istart;
+    // Set the inner boundary values
+    if (localmesh->firstX()) {
+      for (int x = 0; x < localmesh->xstart; x++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
+          PetscScalar val = 0;
+          VecGetValues(xs, 1, &i, &val);
+          sol[x][z] = val;
+          i++; // Increment row in Petsc matrix
+        }
       }
     }
-  }
 
   // Set the main domain values
   for (int x = localmesh->xstart; x <= localmesh->xend; x++) {

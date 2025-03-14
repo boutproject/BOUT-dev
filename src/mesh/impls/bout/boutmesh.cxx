@@ -496,8 +496,8 @@ int BoutMesh::load() {
   }
   if (meshHasMyg && MYG != meshMyg) {
     output_warn.write(_("Options changed the number of y-guard cells. Grid has {} but "
-                           "option specified {}! Continuing with {}"),
-                         meshMyg, MYG, MYG);
+                        "option specified {}! Continuing with {}"),
+                      meshMyg, MYG, MYG);
   }
   ASSERT0(MYG >= 0);
 

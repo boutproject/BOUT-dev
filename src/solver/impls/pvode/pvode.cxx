@@ -390,9 +390,9 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
         for (auto& f : f3d) {
           debug[f.name] = *f.var;
-	  if (f.var->hasParallelSlices()) {
-	    saveParallel(debug, f.name, *f.var);
-	  }
+          if (f.var->hasParallelSlices()) {
+            saveParallel(debug, f.name, *f.var);
+          }
         }
 
         if (mesh != nullptr) {

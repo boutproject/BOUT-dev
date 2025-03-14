@@ -162,6 +162,7 @@ public:
   }
 
   void loadParallelMetrics(Coordinates* coords) override;
+
 protected:
   void checkInputGrid() override;
 

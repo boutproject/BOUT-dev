@@ -133,7 +133,6 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) 
     // Then in X
     f_interp(x, y_next, z) = lagrange_4pt(xvals, t_x(x, y, z));
     ASSERT2(std::isfinite(f_interp(x, y_next, z)));
-
   }
   const auto region2 = y_offset != 0 ? fmt::format("RGN_YPAR_{:+d}", y_offset) : region;
   f_interp.setRegion(region2);

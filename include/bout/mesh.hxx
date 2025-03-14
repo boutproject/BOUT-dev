@@ -842,7 +842,6 @@ public:
     return not coords->getParallelTransform().canToFromFieldAligned();
   }
 
-
 private:
   /// Allocates default Coordinates objects
   /// By default attempts to read staggered Coordinates from grid data source,
