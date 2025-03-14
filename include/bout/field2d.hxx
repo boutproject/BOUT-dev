@@ -137,8 +137,9 @@ public:
   /// Dummy functions to increase portability
   bool hasParallelSlices() const { return true; }
   void calcParallelSlices() const {}
-  void clearParallelSlices() {}
-  int numberParallelSlices() { return 0; }
+  void splitParallelSlices() const {}
+  void clearParallelSlices() const {}
+  int numberParallelSlices() const { return 0; }
 
   Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) { return *this; }
   const Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
