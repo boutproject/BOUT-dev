@@ -1600,15 +1600,14 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
     return Bxy * Grad_par(f / Bxy_floc, outloc, method);
   }
 
-  auto coords = f.getCoordinates();
   // Need to modify yup and ydown fields
-  Field3D f_B = f / coords->J * sqrt(coords->g_22);
+  Field3D f_B = f / Bxy_floc;
   f_B.splitParallelSlices();
   for (int i = 0; i < f.getMesh()->ystart; ++i) {
-    f_B.yup(i) = f.yup(i) / coords->J.yup(i) * sqrt(coords->g_22.yup(i));
-    f_B.ydown(i) = f.ydown(i) / coords->J.ydown(i) * sqrt(coords->g_22.ydown(i));
+    f_B.yup(i) = f.yup(i) / Bxy_floc.yup(i);
+    f_B.ydown(i) = f.ydown(i) / Bxy_floc.ydown(i);
   }
-  return setName(coords->J / sqrt(coords->g_22) * Grad_par(f_B, outloc, method),
+  return setName(Bxy * Grad_par(f_B, outloc, method),
                  "Div_par({:s})", f.name);
 }
 
