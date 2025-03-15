@@ -234,57 +234,50 @@ Field3D Div_par(const Field3D& f, const std::string& method, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Div_par(f, outloc, method);
 }
 
-Field3D Div_par(const Field3D& f_in, const Field3D& v_in) {
-#if BOUT_USE_FCI_AUTOMAGIC
-  auto f{f_in};
-  auto v{v_in};
-  if (!f.hasParallelSlices()) {
-    f.calcParallelSlices();
-  }
-  if (!v.hasParallelSlices()) {
-    v.calcParallelSlices();
-  }
-#else
-  const auto& f{f_in};
-  const auto& v{v_in};
-#endif
-
+Field3D Div_par(const Field3D& f, const Field3D& v) {
+  AUTO_TRACE();
   ASSERT1_FIELDS_COMPATIBLE(f, v);
+
+  // Either both have parallel slices or neither
+  if (!f.hasParallelSlices()) {
+    // No parallel slices
+    ASSERT1(!v.hasParallelSlices());
+
+    return Div_par(f * v);
+  }
+
+  // Using parallel slices
   ASSERT1(f.hasParallelSlices());
   ASSERT1(v.hasParallelSlices());
 
-  // Parallel divergence, using velocities at cell boundaries
-  // Note: Not guaranteed to be flux conservative
-  Mesh* mesh = f.getMesh();
-
-  Field3D result{emptyFrom(f)};
-
   Coordinates* coord = f.getCoordinates();
 
-  for (int i = mesh->xstart; i <= mesh->xend; i++) {
-    for (int j = mesh->ystart; j <= mesh->yend; j++) {
-      for (int k = mesh->zstart; k <= mesh->zend; k++) {
-        // Value of f and v at left cell face
-        BoutReal fL = 0.5 * (f(i, j, k) + f.ydown()(i, j - 1, k));
-        BoutReal vL = 0.5 * (v(i, j, k) + v.ydown()(i, j - 1, k));
+  auto B = coord->Bxy;
+  auto B_up = coord->Bxy.yup();
+  auto B_down = coord->Bxy.ydown();
 
-        BoutReal fR = 0.5 * (f(i, j, k) + f.yup()(i, j + 1, k));
-        BoutReal vR = 0.5 * (v(i, j, k) + v.yup()(i, j + 1, k));
+  auto f_up = f.yup();
+  auto f_down = f.ydown();
 
-        // Calculate flux at right boundary (y+1/2)
-        BoutReal fluxRight =
-            fR * vR * (coord->J(i, j, k) + coord->J(i, j + 1, k))
-            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j + 1, k)));
+  auto v_up = v.yup();
+  auto v_down = v.ydown();
 
-        // Calculate at left boundary (y-1/2)
-        BoutReal fluxLeft =
-            fL * vL * (coord->J(i, j, k) + coord->J(i, j - 1, k))
-            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j - 1, k)));
+  auto g_22 = coord->g_22;
+  auto dy = coord->dy;
 
-        result(i, j, k) =
-            (fluxRight - fluxLeft) / (coord->dy(i, j, k) * coord->J(i, j, k));
-      }
+  Field3D result{emptyFrom(f)};
+  BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
+    result[i] = B[i] * ((f_up[i] * v_up[i] / B_up[i])
+                        - (f_down[i] * v_down[i] / B_down[i]))
+      / (dy[i] * sqrt(g_22[i]));
+
+#if CHECK > 0
+    if(!std::isfinite(result[i])) {
+      output.write("{} {} {} {}\n", f_up[i], v_up[i], f_down[i], v_down[i]);
+      output.write("{} {} {} {} {}\n", B[i], B_up[i], B_down[i], dy[i], sqrt(g_22[i]));
+      throw BoutException("Non-finite value in Div_");
     }
+#endif
   }
 
   return result;
