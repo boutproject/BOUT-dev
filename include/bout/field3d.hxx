@@ -249,8 +249,7 @@ public:
 
   /// Returns a shallow copy without parallel slices
   Field3D withoutParallelSlices() const {
-    Field3D result{getMesh(), getLocation(),
-                   getDirections(), getRegionID()};
+    Field3D result{getMesh(), getLocation(), getDirections(), getRegionID()};
     result.data = data;
     return result;
   }

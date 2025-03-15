@@ -535,32 +535,28 @@ T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
 #ifdef FIELD_FUNC
 #error This macro has already been defined
 #else
-#define FIELD_FUNC(_name, func)                                        \
-  template <typename T, typename = bout::utils::EnableIfField<T>>      \
-  inline T _name(const T& f, const std::string& rgn = "RGN_ALL") {     \
-    AUTO_TRACE();                                                      \
-    /* Check if the input is allocated */                              \
-    checkData(f);                                                      \
-    /* Define and allocate the output result */                        \
-    T result{emptyFrom(f)};                                            \
-    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }     \
-    if (f.hasParallelSlices()) {                                       \
-      /* Operate on parallel slices */                                 \
-      result.splitParallelSlicesAndAllocate();                         \
-      for (size_t i{0}; i != f.numberParallelSlices(); ++i) {          \
-        BOUT_FOR(d, result.getRegion(rgn)) {                           \
-          result.yup(i)[d] = func(f.yup(i)[d]);                        \
-        }                                                              \
-        checkData(result.yup(i));                                      \
-        BOUT_FOR(d, result.getRegion(rgn)) {                           \
-          result.ydown(i)[d] = func(f.ydown(i)[d]);                    \
-        }                                                              \
-        checkData(result.ydown(i));                                    \
-      }                                                                \
-    }                                                                  \
-    result.name = std::string(#_name "(") + f.name + std::string(")"); \
-    checkData(result);                                                 \
-    return result;                                                     \
+#define FIELD_FUNC(_name, func)                                                          \
+  template <typename T, typename = bout::utils::EnableIfField<T>>                        \
+  inline T _name(const T& f, const std::string& rgn = "RGN_ALL") {                       \
+    AUTO_TRACE();                                                                        \
+    /* Check if the input is allocated */                                                \
+    checkData(f);                                                                        \
+    /* Define and allocate the output result */                                          \
+    T result{emptyFrom(f)};                                                              \
+    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }                       \
+    if (f.hasParallelSlices()) {                                                         \
+      /* Operate on parallel slices */                                                   \
+      result.splitParallelSlicesAndAllocate();                                           \
+      for (size_t i{0}; i != f.numberParallelSlices(); ++i) {                            \
+        BOUT_FOR(d, result.getRegion(rgn)) { result.yup(i)[d] = func(f.yup(i)[d]); }     \
+        checkData(result.yup(i));                                                        \
+        BOUT_FOR(d, result.getRegion(rgn)) { result.ydown(i)[d] = func(f.ydown(i)[d]); } \
+        checkData(result.ydown(i));                                                      \
+      }                                                                                  \
+    }                                                                                    \
+    result.name = std::string(#_name "(") + f.name + std::string(")");                   \
+    checkData(result);                                                                   \
+    return result;                                                                       \
   }
 #endif
 
