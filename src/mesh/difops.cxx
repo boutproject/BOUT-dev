@@ -267,12 +267,12 @@ Field3D Div_par(const Field3D& f, const Field3D& v) {
 
   Field3D result{emptyFrom(f)};
   BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
-    result[i] = B[i] * ((f_up[i] * v_up[i] / B_up[i])
-                        - (f_down[i] * v_down[i] / B_down[i]))
-      / (dy[i] * sqrt(g_22[i]));
+    result[i] = B[i]
+                * ((f_up[i] * v_up[i] / B_up[i]) - (f_down[i] * v_down[i] / B_down[i]))
+                / (dy[i] * sqrt(g_22[i]));
 
 #if CHECK > 0
-    if(!std::isfinite(result[i])) {
+    if (!std::isfinite(result[i])) {
       output.write("{} {} {} {}\n", f_up[i], v_up[i], f_down[i], v_down[i]);
       output.write("{} {} {} {} {}\n", B[i], B_up[i], B_down[i], dy[i], sqrt(g_22[i]));
       throw BoutException("Non-finite value in Div_");
