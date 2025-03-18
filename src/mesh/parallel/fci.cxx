@@ -99,6 +99,7 @@ bool load_parallel_metric_component(std::string name, Field3D& component, int of
   pcom.setRegion(fmt::format("RGN_YPAR_{:+d}", offset));
   pcom.name = name;
   BOUT_FOR(i, component.getRegion("RGN_NOBNDRY")) { pcom[i.yp(offset)] = tmp[i]; }
+  ASSERT2(pcom.yoffset == offset);
   return isValid;
 }
 #endif
@@ -430,8 +431,8 @@ void FCITransform::calcParallelSlices(Field3D& f) {
   // Interpolate f onto yup and ydown fields
   for (const auto& map : field_line_maps) {
     f.ynext(map.offset) = map.interpolate(f);
-    f.ynext(map.offset).setRegion(fmt::format("RGN_YPAR_{:+d}", map.offset));
   }
+  f.setParallelRegions();
 }
 
 void FCITransform::integrateParallelSlices(Field3D& f) {
@@ -449,6 +450,7 @@ void FCITransform::integrateParallelSlices(Field3D& f) {
   for (const auto& map : field_line_maps) {
     f.ynext(map.offset) = map.integrate(f);
   }
+  f.setParallelRegions();
 }
 
 void FCITransform::loadParallelMetrics(Coordinates* coords) {

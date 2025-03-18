@@ -547,6 +547,9 @@ private:
   template <class T>
   Options* track(const T& change, std::string operation);
   Options* track(const BoutReal& change, std::string operation);
+public:
+  int yoffset{0};
+  void setParallelRegions();
 };
 
 // Non-member overloaded operators

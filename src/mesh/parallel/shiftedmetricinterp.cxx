@@ -220,6 +220,7 @@ void ShiftedMetricInterp::calcParallelSlices(Field3D& f) {
   for (const auto& interp : parallel_slice_interpolators) {
     f.ynext(interp->y_offset) = interp->interpolate(f);
   }
+  f.setParallelRegions();
 }
 
 /*!
