@@ -271,23 +271,27 @@ public:
   /// Return reference to yup field
   Field3D& yup(std::vector<Field3D>::size_type index = 0) {
     ASSERT2(index < yup_fields.size());
+    ASSERT2(yup_fields[index].yoffset == static_cast<int>(index) + 1);
     return yup_fields[index];
   }
   /// Return const reference to yup field
   const Field3D& yup(std::vector<Field3D>::size_type index = 0) const {
     ASSERT2(index < yup_fields.size());
+    ASSERT2(yup_fields[index].yoffset == static_cast<int>(index) + 1);
     return yup_fields[index];
   }
 
   /// Return reference to ydown field
   Field3D& ydown(std::vector<Field3D>::size_type index = 0) {
     ASSERT2(index < ydown_fields.size());
+    ASSERT2(ydown_fields[index].yoffset == -1 - static_cast<int>(index));
     return ydown_fields[index];
   }
 
   /// Return const reference to ydown field
   const Field3D& ydown(std::vector<Field3D>::size_type index = 0) const {
     ASSERT2(index < ydown_fields.size());
+    ASSERT2(ydown_fields[index].yoffset == -1 - static_cast<int>(index));
     return ydown_fields[index];
   }
 
