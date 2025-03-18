@@ -109,28 +109,45 @@ void load_parallel_metric_components([[maybe_unused]] Coordinates* coords,
 #define LOAD_PAR(var, doZero) \
   load_parallel_metric_component(#var, coords->var, offset, doZero)
 
-  // Only some components can be compared between planes
-  // because each poloidal X-Z plane has a separate coordinate system
-  LOAD_PAR(dy, false);
+  // Parallel slices of metric components must NOT be calculated by
+  // interpolation. The X and Z coordinates are defined independently on
+  // on each poloidal plane. Instead, these yup/ydown fields are calculated
+  // by mapping coordinate points, and calculating metrics on the mapped points.
+  LOAD_PAR(g11, false);
+  LOAD_PAR(g22, false);
+  LOAD_PAR(g33, false);
+  LOAD_PAR(g12, false);
+  LOAD_PAR(g13, false);
+  LOAD_PAR(g23, false);
+
+  // LOAD_PAR(Bxy, false);  // Not yet written to mesh file
+
+  LOAD_PAR(g_11, false);
   LOAD_PAR(g_22, false);
-  // LOAD_PAR(Bxy, false);
+  LOAD_PAR(g_33, false);
+  LOAD_PAR(g_12, false);
+  LOAD_PAR(g_13, false);
+  LOAD_PAR(g_23, false);
 
-  // Other components can't have parallel slices
-  coords->g11.allowParallelSlices(false);
-  coords->g22.allowParallelSlices(false);
-  coords->g33.allowParallelSlices(false);
-  coords->g12.allowParallelSlices(false);
-  coords->g13.allowParallelSlices(false);
-  coords->g23.allowParallelSlices(false);
+  if (not LOAD_PAR(J, true)) {
+    auto g =
+        coords->g11.ynext(offset) * coords->g22.ynext(offset) * coords->g33.ynext(offset)
+        + 2.0 * coords->g12.ynext(offset) * coords->g13.ynext(offset)
+              * coords->g23.ynext(offset)
+        - coords->g11.ynext(offset) * coords->g23.ynext(offset)
+              * coords->g23.ynext(offset)
+        - coords->g22.ynext(offset) * coords->g13.ynext(offset)
+              * coords->g13.ynext(offset)
+        - coords->g33.ynext(offset) * coords->g12.ynext(offset)
+              * coords->g12.ynext(offset);
 
-  coords->g_11.allowParallelSlices(false);
-  coords->g_33.allowParallelSlices(false);
-  coords->g_12.allowParallelSlices(false);
-  coords->g_13.allowParallelSlices(false);
-  coords->g_23.allowParallelSlices(false);
-
-  coords->J.allowParallelSlices(false);
-
+    const auto rgn = fmt::format("RGN_YPAR_{:+d}", offset);
+    // Check that g is positive
+    bout::checkPositive(g, "The determinant of g^ij", rgn);
+    auto J = 1. / sqrt(g);
+    auto& pcom = coords->J.ynext(offset);
+    BOUT_FOR(i, J.getRegion(rgn)) { pcom[i] = J[i]; }
+  }
 #undef LOAD_PAR
 #endif
 }
@@ -420,6 +437,7 @@ void FCITransform::calcParallelSlices(Field3D& f) {
   // Interpolate f onto yup and ydown fields
   for (const auto& map : field_line_maps) {
     f.ynext(map.offset) = map.interpolate(f);
+    //f.ynext(map.offset) = map.integrate(f);
     f.ynext(map.offset).setRegion(fmt::format("RGN_YPAR_{:+d}", map.offset));
   }
 }
