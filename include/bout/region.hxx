@@ -172,7 +172,8 @@ struct SpecificInd {
 
   SpecificInd() = default;
   SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz){};
-  SpecificInd(int i, int ny, int nz, int yoffset) : ind(i), ny(ny), nz(nz), yoffset(yoffset) {};
+  SpecificInd(int i, int ny, int nz, int yoffset)
+      : ind(i), ny(ny), nz(nz), yoffset(yoffset){};
   explicit SpecificInd(int i) : ind(i){};
 
   /// Allow explicit conversion to an int

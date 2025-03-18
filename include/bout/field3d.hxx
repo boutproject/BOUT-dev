@@ -358,20 +358,24 @@ public:
   BoutReal& operator[](const Ind3D& d) {
     if (d.yoffset) {
       if (yoffset == 0) {
-	if (hasParallelSlices()) {
-	  return ynext(d.yoffset)[d];
-	}
+        if (hasParallelSlices()) {
+          return ynext(d.yoffset)[d];
+        }
 #if CHECK >= 2
-	else if (isFci()) { // We probably should assert here that this is field aligned
-	  throw BoutException("Tried to access parallel slices, but they are not calculated!");
-	}
+        else if (isFci()) { // We probably should assert here that this is field aligned
+          throw BoutException(
+              "Tried to access parallel slices, but they are not calculated!");
+        }
 #endif
       } else {
-	ASSERT2(d.yoffset == yoffset);
+        ASSERT2(d.yoffset == yoffset);
       }
     }
-    return data[d.ind]; }
-  const BoutReal& operator[](const Ind3D& d) const { return (*const_cast<Field3D*>(this))[d]; }
+    return data[d.ind];
+  }
+  const BoutReal& operator[](const Ind3D& d) const {
+    return (*const_cast<Field3D*>(this))[d];
+  }
 
   BoutReal& operator()(const IndPerp& d, int jy);
   const BoutReal& operator()(const IndPerp& d, int jy) const;
@@ -566,6 +570,7 @@ private:
   template <class T>
   Options* track(const T& change, std::string operation);
   Options* track(const BoutReal& change, std::string operation);
+
 public:
   int yoffset{0};
   void setParallelRegions();

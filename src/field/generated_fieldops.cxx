@@ -338,9 +338,7 @@ Field3D& Field3D::operator*=(const Field2D& rhs) {
 
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
-    {
-      clearParallelSlices();
-    }
+    { clearParallelSlices(); }
 
     checkData(*this);
     checkData(rhs);
@@ -403,9 +401,7 @@ Field3D& Field3D::operator/=(const Field2D& rhs) {
 
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
-    {
-      clearParallelSlices();
-    }
+    { clearParallelSlices(); }
 
     checkData(*this);
     checkData(rhs);
@@ -468,9 +464,7 @@ Field3D& Field3D::operator+=(const Field2D& rhs) {
 
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
-    {
-      clearParallelSlices();
-    }
+    { clearParallelSlices(); }
 
     checkData(*this);
     checkData(rhs);
@@ -532,9 +526,7 @@ Field3D& Field3D::operator-=(const Field2D& rhs) {
 
     // Delete existing parallel slices. We don't copy parallel slices, so any
     // that currently exist will be incorrect.
-    {
-      clearParallelSlices();
-    }
+    { clearParallelSlices(); }
 
     checkData(*this);
     checkData(rhs);

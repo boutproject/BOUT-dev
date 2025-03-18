@@ -227,14 +227,13 @@ bool Field3D::requiresTwistShift(bool twist_shift_enabled) {
 }
 
 void Field3D::setParallelRegions() {
-  for (int i = 0; i < fieldmesh->ystart; ++i ) {
+  for (int i = 0; i < fieldmesh->ystart; ++i) {
     yup_fields[i].yoffset = i + 1;
     yup_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", i + 1));
     ydown_fields[i].yoffset = -1 - i;
     ydown_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", -1 - i));
   }
 }
-
 
 // Not in header because we need to access fieldmesh
 BoutReal& Field3D::operator()(const IndPerp& d, int jy) {
