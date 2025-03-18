@@ -81,7 +81,7 @@ private:
   std::unique_ptr<LaplaceXY> laplacexy{nullptr};  // Laplacian solver in X-Y (n=0)
   Field2D phi2D; // Axisymmetric potential, used when split_n0=true
 
-  TokamakOptions tokamak_options = TokamakOptions(*mesh);
+  bout::TokamakOptions tokamak_options = bout::TokamakOptions(*mesh);
 
 protected:
   int init(bool UNUSED(restarting)) override {

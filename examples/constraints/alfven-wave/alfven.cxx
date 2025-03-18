@@ -173,7 +173,7 @@ protected:
       shearFactor = 0.0; // I disappears from metric
     }
 
-    auto tokamak_options = TokamakOptions(*mesh);
+    auto tokamak_options = bout::TokamakOptions(*mesh);
     set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, Lnorm, Bnorm, shearFactor);
   }
 };

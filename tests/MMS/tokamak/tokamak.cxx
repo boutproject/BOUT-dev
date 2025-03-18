@@ -45,7 +45,7 @@ public:
   }
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
-    auto tokamak_options = TokamakOptions(*mesh);
+    auto tokamak_options = bout::TokamakOptions(*mesh);
 
     Coordinates* coords = mesh->getCoordinates();
 

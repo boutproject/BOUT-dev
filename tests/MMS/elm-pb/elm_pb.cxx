@@ -114,7 +114,7 @@ private:
   BoutReal hyperresist;  // Hyper-resistivity coefficient (in core only)
   BoutReal ehyperviscos; // electron Hyper-viscosity coefficient
 
-  TokamakOptions tokamak_options = TokamakOptions(*mesh);
+  bout::TokamakOptions tokamak_options = bout::TokamakOptions(*mesh);
   
   bool mms; // True if testing with Method of Manufactured Solutions
 

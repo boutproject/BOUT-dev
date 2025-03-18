@@ -34,7 +34,7 @@ class Interchange : public PhysicsModel {
 
   Coordinates* coord;
 
-  TokamakOptions tokamak_options = TokamakOptions(*mesh);
+  bout::TokamakOptions tokamak_options = bout::TokamakOptions(*mesh);
 
 protected:
   int init(bool UNUSED(restarting)) override {

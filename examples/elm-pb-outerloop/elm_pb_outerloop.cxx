@@ -288,7 +288,7 @@ private:
     int damp_width;        // Width of inner damped region
     BoutReal damp_t_const; // Timescale of damping
 
-    TokamakOptions tokamak_options = TokamakOptions(*mesh);
+    bout::TokamakOptions tokamak_options = bout::TokamakOptions(*mesh);
 
     const BoutReal MU0 = 4.0e-7 * PI;
     const BoutReal Mi = 2.0 * 1.6726e-27; // Ion mass

@@ -17,7 +17,7 @@ class WaveTest : public PhysicsModel {
 public:
   int init(bool UNUSED(restarting)) {
 
-    auto tokamak_options = TokamakOptions(*mesh);
+    auto tokamak_options = bout::TokamakOptions(*mesh);
 
     int ShiftXderivs = 0;
     mesh->get(ShiftXderivs, "false");

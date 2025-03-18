@@ -119,7 +119,7 @@ private:
           hthe0 / rho_s);
     }
 
-    auto tokamak_options = TokamakOptions(*mesh);
+    auto tokamak_options = bout::TokamakOptions(*mesh);
 
     /************** NORMALISE QUANTITIES *****************/
 

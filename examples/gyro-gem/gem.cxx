@@ -242,7 +242,7 @@ class GEM : public PhysicsModel {
     Tbar = options["Tbar"].withDefault(Tbar); // Override in options file
     SAVE_ONCE(Tbar);                          // Timescale in seconds
 
-    auto tokamak_options = TokamakOptions(*mesh);
+    auto tokamak_options = bout::TokamakOptions(*mesh);
 
     if (mesh->get(Bbar, "Bbar")) {
       if (mesh->get(Bbar, "bmag")) {

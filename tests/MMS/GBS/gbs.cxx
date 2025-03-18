@@ -315,7 +315,7 @@ int GBS::init(bool restarting) {
 
 void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
-    auto tokamak_options = TokamakOptions(*mesh);
+    auto tokamak_options = bout::TokamakOptions(*mesh);
 
     bool ShiftXderivs;
     BoutReal shearFactor = 1.0;

@@ -171,7 +171,7 @@ protected:
 
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
-    auto tokamak_options = TokamakOptions(*mesh);
+    auto tokamak_options = bout::TokamakOptions(*mesh);
     set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, Lnorm, Bnorm);
     Coordinates* coord = mesh->getCoordinates(); // Metric tensor
   }

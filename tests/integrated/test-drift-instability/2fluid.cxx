@@ -59,7 +59,7 @@ class TwoFluid : public PhysicsModel {
 
   FieldGroup comms; // Group of variables for communications
 
-  TokamakOptions tokamak_options = TokamakOptions(*mesh);
+  bout::TokamakOptions tokamak_options = bout::TokamakOptions(*mesh);
 
   Coordinates* coord; // Coordinate system
 

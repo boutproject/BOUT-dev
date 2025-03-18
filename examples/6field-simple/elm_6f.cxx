@@ -235,7 +235,7 @@ class Elm_6f : public PhysicsModel {
     int damp_width;        // Width of inner damped region
     BoutReal damp_t_const; // Timescale of damping
 
-    TokamakOptions tokamak_options = TokamakOptions(*mesh);
+    bout::TokamakOptions tokamak_options = bout::TokamakOptions(*mesh);
 
     BoutReal LnLambda; // ln(Lambda)
 
