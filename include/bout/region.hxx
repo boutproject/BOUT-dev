@@ -168,9 +168,11 @@ template <IND_TYPE N>
 struct SpecificInd {
   int ind = -1;         ///< 1D index into Field
   int ny = -1, nz = -1; ///< Sizes of y and z dimensions
+  int yoffset = 0;
 
   SpecificInd() = default;
   SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz){};
+  SpecificInd(int i, int ny, int nz, int yoffset) : ind(i), ny(ny), nz(nz), yoffset(yoffset) {};
   explicit SpecificInd(int i) : ind(i){};
 
   /// Allow explicit conversion to an int
@@ -286,7 +288,7 @@ struct SpecificInd {
     }
 #endif
     ASSERT3(std::abs(dy) < ny);
-    return {ind + (dy * nz), ny, nz};
+    return {ind + (dy * nz), ny, nz, yoffset + dy};
   }
   /// The index one point -1 in y
   inline SpecificInd ym(int dy = 1) const { return yp(-dy); }
