@@ -28,6 +28,16 @@ namespace bout {
         }
     }
 
+    void TokamakOptions::normalise(BoutReal Lbar, BoutReal Bbar, BoutReal ShearFactor) {
+        Rxy /= Lbar;
+        Bpxy /= Bbar;
+        Btxy /= Bbar;
+        Bxy /= Bbar;
+        hthe /= Lbar;
+        I *= Lbar * Lbar * Bbar * ShearFactor;
+        dx /= Lbar * Lbar * Bbar;
+    }
+
     void set_tokamak_coordinates_on_mesh(TokamakOptions &tokamak_options, Mesh &mesh, BoutReal Lbar,
                                          BoutReal
                                          Bbar, BoutReal

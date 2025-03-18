@@ -22,15 +22,7 @@ namespace bout {
 
         TokamakOptions(Mesh &mesh);
 
-        void normalise(BoutReal Lbar, BoutReal Bbar, BoutReal ShearFactor) {
-            Rxy /= Lbar;
-            Bpxy /= Bbar;
-            Btxy /= Bbar;
-            Bxy /= Bbar;
-            hthe /= Lbar;
-            I *= Lbar * Lbar * Bbar * ShearFactor;
-            dx /= Lbar * Lbar * Bbar;
-        }
+        void normalise(BoutReal Lbar, BoutReal Bbar, BoutReal ShearFactor);
     };
 
     BoutReal get_sign_of_bp(const Field2D &Bpxy);
