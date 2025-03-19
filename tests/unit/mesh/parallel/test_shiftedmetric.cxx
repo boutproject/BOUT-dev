@@ -284,25 +284,6 @@ TEST_F(ShiftedMetricTest, ToFromFieldAlignedFieldPerp) {
 }
 
 TEST_F(ShiftedMetricTest, CalcParallelSlices) {
-  // We don't shift in the guard cells, and the parallel slices are
-  // stored offset in y, therefore we need to make new regions that we
-  // can compare the expected and actual outputs over
-  output_info.disable();
-  mesh->addRegion3D("RGN_YUP",
-                    Region<Ind3D>(0, mesh->LocalNx - 1, mesh->ystart + 1, mesh->yend + 1,
-                                  0, mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
-  mesh->addRegion3D("RGN_YUP2",
-                    Region<Ind3D>(0, mesh->LocalNx - 1, mesh->ystart + 2, mesh->yend + 2,
-                                  0, mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
-
-  mesh->addRegion3D("RGN_YDOWN",
-                    Region<Ind3D>(0, mesh->LocalNx - 1, mesh->ystart - 1, mesh->yend - 1,
-                                  0, mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
-  mesh->addRegion3D("RGN_YDOWN2",
-                    Region<Ind3D>(0, mesh->LocalNx - 1, mesh->ystart - 2, mesh->yend - 2,
-                                  0, mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
-  output_info.enable();
-
   // Actual interesting bit here!
   input.getCoordinates()->getParallelTransform().calcParallelSlices(input);
   // Expected output values
@@ -412,9 +393,10 @@ TEST_F(ShiftedMetricTest, CalcParallelSlices) {
                               {0., 0., 0., 0., 0.},
                               {0., 0., 0., 0., 0.}}});
 
-  EXPECT_TRUE(IsFieldEqual(input.ynext(1), expected_up_1, "RGN_YUP", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(input.ynext(2), expected_up_2, "RGN_YUP2", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(input.ynext(-1), expected_down_1, "RGN_YDOWN", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(input.ynext(-2), expected_down2, "RGN_YDOWN2", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(input.ynext(1), expected_up_1, "RGN_YPAR_+1", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(input.ynext(2), expected_up_2, "RGN_YPAR_+2", FFTTolerance));
+  EXPECT_TRUE(
+      IsFieldEqual(input.ynext(-1), expected_down_1, "RGN_YPAR_-1", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(input.ynext(-2), expected_down2, "RGN_YPAR_-2", FFTTolerance));
 }
 #endif
