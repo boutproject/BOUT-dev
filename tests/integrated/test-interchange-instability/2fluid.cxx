@@ -3,7 +3,7 @@
  * Same as Maxim's version of BOUT - simplified 2-fluid for benchmarking
  *******************************************************************************/
 
-#include <bout/bout.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
@@ -26,9 +26,6 @@ class Interchange : public PhysicsModel {
   // Derived 3D variables
   Field3D phi;
 
-  // Metric coefficients
-  Field2D Rxy, Bpxy, Btxy, hthe;
-
   // Parameters
   BoutReal Te_x, Ti_x, Ni_x, bmag, rho_s, AA, ZZ, wci;
 
@@ -37,9 +34,10 @@ class Interchange : public PhysicsModel {
 
   Coordinates* coord;
 
+  bout::TokamakOptions tokamak_options = bout::TokamakOptions(*mesh);
+
 protected:
   int init(bool UNUSED(restarting)) override {
-    Field2D I; // Shear factor
 
     output << "Solving 2-variable equations\n";
 
@@ -56,17 +54,7 @@ protected:
 
     b0xcv *= -1.0; // NOTE: THIS IS FOR 'OLD' GRID FILES ONLY
 
-    // Coordinate system
     coord = mesh->getCoordinates();
-
-    // Load metrics
-    GRID_LOAD(Rxy);
-    GRID_LOAD(Bpxy);
-    GRID_LOAD(Btxy);
-    GRID_LOAD(hthe);
-    coord->setDx(mesh->get("dpsi"));
-    mesh->get(I, "sinty");
-
     // Load normalisation values
     GRID_LOAD(Te_x);
     GRID_LOAD(Ti_x);
@@ -95,7 +83,7 @@ protected:
     const bool ShiftXderivs = (*globalOptions)["ShiftXderivs"].withDefault(false);
     if (ShiftXderivs) {
       ShearFactor = 0.0; // I disappears from metric
-      b0xcv.z += I * b0xcv.x;
+      b0xcv.z += tokamak_options.I * b0xcv.x;
     }
 
     /************** CALCULATE PARAMETERS *****************/
@@ -112,6 +100,8 @@ protected:
           hthe0 / rho_s);
     }
 
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, rho_s, bmag / 1e4, ShearFactor);
+
     /************** NORMALISE QUANTITIES *****************/
 
     output.write("\tNormalising to rho_s = {:e}\n", rho_s);
@@ -125,38 +115,6 @@ protected:
     b0xcv.x /= (bmag / 1e4);
     b0xcv.y *= rho_s * rho_s;
     b0xcv.z *= rho_s * rho_s;
-
-    // Normalise geometry
-    Rxy /= rho_s;
-    hthe /= rho_s;
-    I *= rho_s * rho_s * (bmag / 1e4) * ShearFactor;
-    coord->setDx(coord->dx() / (rho_s * rho_s * (bmag / 1e4)));
-
-    // Normalise magnetic field
-    Bpxy /= (bmag / 1.e4);
-    Btxy /= (bmag / 1.e4);
-    coord->setBxy(coord->Bxy() / (bmag / 1.e4));
-
-    /**************** CALCULATE METRICS ******************/
-
-    const auto g11 = SQ(Rxy * Bpxy);
-    const auto g22 = 1.0 / SQ(hthe);
-    const auto g33 = SQ(I) * g11 + SQ(coord->Bxy()) / g11;
-    const auto g12 = 0.0;
-    const auto g13 = -I * g11;
-    const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
-
-    const auto g_11 = 1.0 / g11 + SQ(I * Rxy);
-    const auto g_22 = SQ(coord->Bxy() * hthe / Bpxy);
-    const auto g_33 = Rxy * Rxy;
-    const auto g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    const auto g_13 = I * Rxy * Rxy;
-    const auto g_23 = Btxy * hthe * Rxy / Bpxy;
-
-    coord->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-                           CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
-
-    coord->setJ(hthe / Bpxy);
 
     // Tell BOUT++ which variables to evolve
     SOLVE_FOR2(rho, Ni);

@@ -9,7 +9,6 @@
  *
  *******************************************************************************/
 
-#include <bout/bout.hxx>
 #include <bout/constants.hxx>
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
@@ -19,6 +18,7 @@
 #include <bout/msg_stack.hxx>
 #include <bout/physicsmodel.hxx>
 #include <bout/sourcex.hxx>
+#include <bout/tokamak_coordinates.hxx>
 #include <bout/utils.hxx>
 
 #include <bout/field_factory.hxx>
@@ -114,10 +114,8 @@ private:
   BoutReal hyperresist;  // Hyper-resistivity coefficient (in core only)
   BoutReal ehyperviscos; // electron Hyper-viscosity coefficient
 
-  // Metric coefficients
-  Field2D Rxy, Bpxy, Btxy, B0, hthe;
-  Field2D I; // Shear factor
-
+  bout::TokamakOptions tokamak_options = bout::TokamakOptions(*mesh);
+  
   bool mms; // True if testing with Method of Manufactured Solutions
 
   const BoutReal MU0 = 4.0e-7 * PI;
@@ -151,24 +149,6 @@ public:
     // Load 2D profiles
     mesh->get(J0, "Jpar0");    // A / m^2
     mesh->get(P0, "pressure"); // Pascals
-
-    // Load curvature term
-    b0xcv.covariant = false;  // Read contravariant components
-    mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
-
-    // Load metrics
-    if (mesh->get(Rxy, "Rxy")) { // m
-      output_error.write("Error: Cannot read Rxy from grid\n");
-      return 1;
-    }
-    if (mesh->get(Bpxy, "Bpxy")) { // T
-      output_error.write("Error: Cannot read Bpxy from grid\n");
-      return 1;
-    }
-    mesh->get(Btxy, "Btxy"); // T
-    mesh->get(B0, "Bxy");    // T
-    mesh->get(hthe, "hthe"); // m
-    mesh->get(I, "sinty");   // m^-2 T^-1
 
     Coordinates* coords = mesh->getCoordinates();
 
@@ -311,19 +291,22 @@ public:
 
     bool ShiftXderivs;
     globalOptions->get("shiftXderivs", ShiftXderivs, false); // Read global flag
+    BoutReal shearFactor = 1.0;
     if (ShiftXderivs) {
       if (mesh->IncIntShear) {
         // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-        coords->setIntShiftTorsion(I);
+        coords->setIntShiftTorsion(tokamak_options.I);
 
       } else {
         // Dimits style, using local coordinate system
         if (include_curvature) {
-          b0xcv.z += I * b0xcv.x;
+          b0xcv.z += tokamak_options.I * b0xcv.x;
         }
-        I = 0.0; // I disappears from metric
+        shearFactor = 0.0; // I disappears from metric
       }
     }
+
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, Lbar, Bbar, shearFactor);
 
     //////////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
@@ -384,14 +367,6 @@ public:
     b0xcv.y *= Lbar * Lbar;
     b0xcv.z *= Lbar * Lbar;
 
-    Rxy /= Lbar;
-    Bpxy /= Bbar;
-    Btxy /= Bbar;
-    B0 /= Bbar;
-    hthe /= Lbar;
-    coords->setDx(coords->dx() / (Lbar * Lbar * Bbar));
-    I *= Lbar * Lbar * Bbar;
-
     BoutReal pnorm = max(P0, true); // Maximum over all processors
 
     vacuum_pressure *= pnorm; // Get pressure from fraction
@@ -414,28 +389,6 @@ public:
     }
 
     dump.add(eta, "eta", 0);
-
-    /**************** CALCULATE METRICS ******************/
-
-    const auto g11 = SQ(Rxy * Bpxy);
-    const auto g22 = 1.0 / SQ(hthe);
-    const auto g33 = SQ(I) * g11 + SQ(B0) / g11;
-    const auto g12 = 0.0;
-    const auto g13 = -I * g11;
-    const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
-
-    const auto g_11 = 1.0 / g11 + (SQ(I * Rxy));
-    const auto g_22 = SQ(B0 * hthe / Bpxy);
-    const auto g_33 = Rxy * Rxy;
-    const auto g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    const auto g_13 = I * Rxy * Rxy;
-    const auto g_23 = Btxy * hthe * Rxy / Bpxy;
-
-    coords->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-                            CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
-
-    coords->setJ(hthe / Bpxy);
-    coords->setBxy(B0);
 
     // Set B field vector
 

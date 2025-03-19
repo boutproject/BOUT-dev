@@ -500,9 +500,9 @@ private:
 
 /*
 /// Standard coordinate system for tokamak simulations
-class TokamakCoordinates : public Coordinates {
+class TokamakOptions : public Coordinates {
 public:
-  TokamakCoordinates(Mesh *mesh) : Coordinates(mesh) {
+  TokamakOptions(Mesh *mesh) : Coordinates(mesh) {
     
   }
 private:

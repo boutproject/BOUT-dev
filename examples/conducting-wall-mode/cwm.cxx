@@ -5,6 +5,7 @@
  * Model version in the code created by M. Umansky and J. Myra.
  *******************************************************************************/
 #include <bout/physicsmodel.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 #include <bout/derivs.hxx>
 #include <bout/initialprofiles.hxx>
@@ -28,8 +29,7 @@ private:
   // Phi boundary conditions
   Field3D dphi_bc_ydown, dphi_bc_yup;
 
-  // Metric coefficients
-  Field2D Rxy, Bpxy, Btxy, hthe, Zxy;
+  Field2D Zxy;
 
   // parameters
   BoutReal Te_x, Ni_x, Vi_x, bmag, rho_s, fmei, AA, ZZ;
@@ -54,7 +54,6 @@ private:
   std::unique_ptr<Laplacian> phiSolver{nullptr};
 
   int init(bool UNUSED(restarting)) override {
-    Field2D I; // Shear factor
 
     /************* LOAD DATA FROM GRID FILE ****************/
 
@@ -63,10 +62,6 @@ private:
 
     coord = mesh->getCoordinates();
 
-    // Load metrics
-    GRID_LOAD(Rxy, Zxy, Bpxy, Btxy, hthe);
-    coord->setDx(mesh->get("dpsi"));
-    mesh->get(I, "sinty");
 
     // Load normalisation values
     GRID_LOAD(Te_x, Ni_x, bmag);
@@ -124,6 +119,8 @@ private:
           hthe0 / rho_s);
     }
 
+    auto tokamak_options = bout::TokamakOptions(*mesh);
+
     /************** NORMALISE QUANTITIES *****************/
 
     output.write("\tNormalising to rho_s = {:e}\n", rho_s);
@@ -133,39 +130,10 @@ private:
     Te0 /= Te_x;
 
     // Normalise geometry
-    Rxy /= rho_s;
-    hthe /= rho_s;
-    I *= rho_s * rho_s * (bmag / 1e4) * ShearFactor;
-    coord->setDx(coord->dx() / (rho_s * rho_s * (bmag / 1e4)));
-
-    // Normalise magnetic field
-    Bpxy /= (bmag / 1.e4);
-    Btxy /= (bmag / 1.e4);
-    coord->setBxy(coord->Bxy() / (bmag / 1.e4));
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, rho_s, bmag / 1e4, ShearFactor);
 
     // Set nu
     nu = nu_hat * Ni0 / pow(Te0, 1.5);
-
-    /**************** CALCULATE METRICS ******************/
-
-    const auto g11 = SQ(Rxy * Bpxy);
-    const auto g22 = 1.0 / SQ(hthe);
-    const auto g33 = SQ(I) * g11 + SQ(coord->Bxy()) / g11;
-    const auto g12 = 0.0;
-    const auto g13 = -I * g11;
-    const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
-
-    const auto g_11 = 1.0 / g11 + SQ(I * Rxy);
-    const auto g_22 = SQ(coord->Bxy() * hthe / Bpxy);
-    const auto g_33 = Rxy * Rxy;
-    const auto g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    const auto g_13 = I * Rxy * Rxy;
-    const auto g_23 = Btxy * hthe * Rxy / Bpxy;
-
-    coord->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-                           CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
-
-    coord->setJ(hthe / Bpxy);
 
     /**************** SET EVOLVING VARIABLES *************/
 
@@ -173,6 +141,10 @@ private:
     // add evolving variables to the communication object
     SOLVE_FOR(rho, te);
 
+    Field2D Rxy = tokamak_options.Rxy;
+    Field2D Bpxy = tokamak_options.Bpxy;
+    Field2D Btxy = tokamak_options.Btxy;
+    Field2D hthe = tokamak_options.hthe;
     SAVE_ONCE(Rxy, Bpxy, Btxy, Zxy, hthe);
     SAVE_ONCE(nu_hat, hthe0);
 

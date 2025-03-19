@@ -10,7 +10,7 @@
  ****************************************************************/
 
 #include <bout/constants.hxx>
-#include <bout/physicsmodel.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 #include <bout/gyro_average.hxx>
 #include <bout/interpolation.hxx>
@@ -182,17 +182,6 @@ class GEM : public PhysicsModel {
     flat_temp = options["flat_temp"].withDefault(-1.0);
     flat_dens = options["flat_dens"].withDefault(-1.0);
 
-    //////////////////////////////////
-    // Read profiles
-
-    // Mesh
-    Field2D Rxy, Bpxy, Btxy, Bxy, hthe;
-    GRID_LOAD(Rxy);  // Major radius [m]
-    GRID_LOAD(Bpxy); // Poloidal B field [T]
-    GRID_LOAD(Btxy); // Toroidal B field [T]
-    GRID_LOAD(Bxy);  // Total B field [T]
-    GRID_LOAD(hthe); // Poloidal arc length [m / radian]
-
     GRID_LOAD(Te0); // Electron temperature in eV
     GRID_LOAD(Ni0); // Ion number density in 10^20 m^-3
 
@@ -253,13 +242,17 @@ class GEM : public PhysicsModel {
     Tbar = options["Tbar"].withDefault(Tbar); // Override in options file
     SAVE_ONCE(Tbar);                          // Timescale in seconds
 
+    auto tokamak_options = bout::TokamakOptions(*mesh);
+
     if (mesh->get(Bbar, "Bbar")) {
       if (mesh->get(Bbar, "bmag")) {
-        Bbar = max(Bxy, true);
+        Bbar = max(tokamak_options.Bxy, true);
       }
     }
     Bbar = options["Bbar"].withDefault(Bbar); // Override in options file
     SAVE_ONCE(Bbar);
+
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, Lbar, Bbar);
 
     beta_e = 4.e-7 * PI * max(p_e, true) / (Bbar * Bbar);
     SAVE_ONCE(beta_e);
@@ -352,48 +345,12 @@ class GEM : public PhysicsModel {
     output << "\tNormalised rho_e = " << rho_e << endl;
     output << "\tNormalised rho_i = " << rho_i << endl;
 
-    //////////////////////////////////
-    // Metric tensor components
-
     coord = mesh->getCoordinates();
-
-    // Normalise
-    hthe /= Lbar; // parallel derivatives normalised to Lperp
-
-    Bpxy /= Bbar;
-    Btxy /= Bbar;
-    Bxy /= Bbar;
-
-    Rxy /= rho_s; // Perpendicular derivatives normalised to rho_s
-    coord->setDx(coord->dx() / (rho_s * rho_s * Bbar));
-
-    // Metric components
-
-    const auto g11 = SQ(Rxy * Bpxy);
-    const auto g22 = 1.0 / SQ(hthe);
-    const auto g33 = SQ(Bxy) / g11;
-    const auto g12 = 0.0;
-    const auto g13 = 0.;
-    const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
-
-    const auto g_11 = 1.0 / g11;
-    const auto g_22 = SQ(Bxy * hthe / Bpxy);
-    const auto g_33 = Rxy * Rxy;
-    const auto g_12 = 0.;
-    const auto g_13 = 0.;
-    const auto g_23 = Btxy * hthe * Rxy / Bpxy;
-
-    coord->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-                           CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
-
-    coord->setJ(hthe / Bpxy);
-    coord->setBxy(Bxy);
-
     // Set B field vector
 
     B0vec.covariant = false;
     B0vec.x = 0.;
-    B0vec.y = Bpxy / hthe;
+    B0vec.y = tokamak_options.Bpxy / tokamak_options.hthe;
     B0vec.z = 0.;
 
     // Precompute this for use in RHS

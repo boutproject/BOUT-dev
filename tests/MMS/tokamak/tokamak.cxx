@@ -9,6 +9,7 @@
 #include <bout/derivs.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/physicsmodel.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 class TokamakMMS : public PhysicsModel {
 public:
@@ -43,61 +44,19 @@ public:
     return 0;
   }
   void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
-    // Load metric coefficients from the mesh
-    Field2D Rxy, Bpxy, Btxy, hthe, sinty;
-    GRID_LOAD5(Rxy, Bpxy, Btxy, hthe, sinty); // Load metrics
+
+    auto tokamak_options = bout::TokamakOptions(*mesh);
 
     Coordinates* coords = mesh->getCoordinates();
 
-    // Checking for dpsi used in BOUT grids
-    Field2D dx;
-    if (!mesh->get(dx, "dpsi")) {
-      output << "\tUsing dpsi as the x grid spacing\n";
-      coords->setDx(dx); // Only use dpsi if found
-    } else {
-      // dx will have been read already from the grid
-      output << "\tUsing dx as the x grid spacing\n";
-    }
-
-    Rxy /= Lnorm;
-    hthe /= Lnorm;
-    sinty *= SQ(Lnorm) * Bnorm;
-    coords->setDx(coords->dx() / (SQ(Lnorm) * Bnorm));
-
-    Bpxy /= Bnorm;
-    Btxy /= Bnorm;
-    coords->setBxy(coords->Bxy() / Bnorm);
-
-    // Calculate metric components
     bool ShiftXderivs;
+    BoutReal shearFactor = 1.0;
     Options::getRoot()->get("shiftXderivs", ShiftXderivs, false); // Read global flag
     if (ShiftXderivs) {
-      sinty = 0.0; // I disappears from metric
+      shearFactor = 0.0; // I disappears from metric
     }
 
-    BoutReal sbp = 1.0; // Sign of Bp
-    if (min(Bpxy, true) < 0.0) {
-      sbp = -1.0;
-    }
-
-    const auto g11 = SQ(Rxy * Bpxy);
-    const auto g22 = 1.0 / SQ(hthe);
-    const auto g33 = SQ(sinty) * g11 + SQ(coords->Bxy()) / g11;
-    const auto g12 = 0.0;
-    const auto g13 = -sinty * g11;
-    const auto g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
-
-    const auto g_11 = 1.0 / g11 + SQ(sinty * Rxy);
-    const auto g_22 = SQ(coords->Bxy() * hthe / Bpxy);
-    const auto g_33 = Rxy * Rxy;
-    const auto g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
-    const auto g_13 = sinty * Rxy * Rxy;
-    const auto g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
-
-    coords->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-                            CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
-
-    coords->setJ(hthe / Bpxy);
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, Lnorm, Bnorm, shearFactor);
   }
 
 private:

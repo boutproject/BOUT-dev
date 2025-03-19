@@ -19,6 +19,7 @@
  ****************************************************************/
 
 #include <bout/physicsmodel.hxx>
+#include <bout/tokamak_coordinates.hxx>
 
 #include <bout/interpolation.hxx>
 #include <bout/invert/laplacexy.hxx>
@@ -80,6 +81,8 @@ private:
   std::unique_ptr<LaplaceXY> laplacexy{nullptr};  // Laplacian solver in X-Y (n=0)
   Field2D phi2D; // Axisymmetric potential, used when split_n0=true
 
+  bout::TokamakOptions tokamak_options = bout::TokamakOptions(*mesh);
+
 protected:
   int init(bool UNUSED(restarting)) override {
 
@@ -98,23 +101,6 @@ protected:
     // Load curvature term
     b0xcv.covariant = false;  // Read contravariant components
     mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
-
-    // Metric coefficients
-    Field2D Rxy, Bpxy, Btxy, hthe;
-    Field2D I; // Shear factor
-
-    if (mesh->get(Rxy, "Rxy")) { // m
-      output_error.write("Error: Cannot read Rxy from grid\n");
-      return 1;
-    }
-    if (mesh->get(Bpxy, "Bpxy")) { // T
-      output_error.write("Error: Cannot read Bpxy from grid\n");
-      return 1;
-    }
-    mesh->get(Btxy, "Btxy"); // T
-    mesh->get(B0, "Bxy");    // T
-    mesh->get(hthe, "hthe"); // m
-    mesh->get(I, "sinty");   // m^-2 T^-1
 
     //////////////////////////////////////////////////////////////
     // Options
@@ -174,10 +160,11 @@ protected:
     std::string ptstr =
         Options::root()["mesh"]["paralleltransform"]["type"].withDefault("identity");
 
+    BoutReal shearFactor = 1.0;
     if (lowercase(ptstr) == "shifted") {
       // Dimits style, using local coordinate system
-      b0xcv.z += I * b0xcv.x;
-      I = 0.0; // I disappears from metric
+      b0xcv.z += tokamak_options.I * b0xcv.x;
+      shearFactor = 0.0; // I disappears from metric
     }
 
     ///////////////////////////////////////////////////
@@ -236,37 +223,7 @@ protected:
     b0xcv.z *= rho_s * rho_s;
 
     // Metrics
-    Rxy /= rho_s;
-    hthe /= rho_s;
-    I *= rho_s * rho_s * Bnorm;
-    Bpxy /= Bnorm;
-    Btxy /= Bnorm;
-    B0 /= Bnorm;
-
-    coord->setDx(coord->dx() / (rho_s * rho_s * Bnorm));
-
-    ///////////////////////////////////////////////////
-    // CALCULATE METRICS
-
-    const auto g11 = SQ(Rxy * Bpxy);
-    const auto g22 = 1.0 / SQ(hthe);
-    const auto g33 = SQ(I) * g11 + SQ(B0) / g11;
-    const auto g12 = 0.0;
-    const auto g13 = -I * g11;
-    const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
-
-    const auto g_11 = 1.0 / g11 + SQ(I * Rxy);
-    const auto g_22 = SQ(B0 * hthe / Bpxy);
-    const auto g_33 = Rxy * Rxy;
-    const auto g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    const auto g_13 = I * Rxy * Rxy;
-    const auto g_23 = Btxy * hthe * Rxy / Bpxy;
-
-    coord->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
-                           CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
-
-    coord->setJ(hthe / Bpxy);
-    coord->setBxy(B0);
+    set_tokamak_coordinates_on_mesh(tokamak_options, *mesh, rho_s, Bnorm, shearFactor);
 
     SOLVE_FOR3(Vort, Pe, Vpar);
     comms.add(Vort, Pe, Vpar);
