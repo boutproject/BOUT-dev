@@ -1034,7 +1034,8 @@ public:
 
     switch (solver_type) {
     case HYPRE_SOLVER_TYPE::gmres: {
-      HYPRE_ParCSRGMRESSetKDim(solver, 30); // TODO: Make this an input file parameter
+      HYPRE_ParCSRGMRESSetKDim(solver, 30);           // TODO: Make this an input file parameter
+      HYPRE_GMRESSetSkipRealResidualCheck(solver, 1); // TODO: Make this an input file parameter
       break;
     }
     case HYPRE_SOLVER_TYPE::bicgstab: {
