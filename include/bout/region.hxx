@@ -278,7 +278,9 @@ struct SpecificInd {
     }
   }
 
-  inline SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }
+  inline SpecificInd xp(int dx = 1) const {
+    return {ind + (dx * ny * nz), ny, nz, yoffset};
+  }
   /// The index one point -1 in x
   inline SpecificInd xm(int dx = 1) const { return xp(-dx); }
   /// The index one point +1 in y
@@ -300,7 +302,7 @@ struct SpecificInd {
   inline SpecificInd zp(int dz = 1) const {
     ASSERT3(dz >= 0);
     dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
-    return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz};
+    return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz, yoffset};
   }
   /// The index one point -1 in z. Wraps around zstart to zend
   /// An alternative, non-branching calculation is :
@@ -309,7 +311,7 @@ struct SpecificInd {
   inline SpecificInd zm(int dz = 1) const {
     dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
     ASSERT3(dz >= 0);
-    return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
+    return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz, yoffset};
   }
   /// Automatically select zm or zp depending on sign
   inline SpecificInd zpm(int dz) const { return dz > 0 ? zp(dz) : zm(-dz); }
