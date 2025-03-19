@@ -395,7 +395,8 @@ TEST_F(ShiftedMetricTest, CalcParallelSlices) {
 
   EXPECT_TRUE(IsFieldEqual(input.ynext(1), expected_up_1, "RGN_YPAR_+1", FFTTolerance));
   EXPECT_TRUE(IsFieldEqual(input.ynext(2), expected_up_2, "RGN_YPAR_+2", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(input.ynext(-1), expected_down_1, "RGN_YPAR_-1", FFTTolerance));
+  EXPECT_TRUE(
+      IsFieldEqual(input.ynext(-1), expected_down_1, "RGN_YPAR_-1", FFTTolerance));
   EXPECT_TRUE(IsFieldEqual(input.ynext(-2), expected_down2, "RGN_YPAR_-2", FFTTolerance));
 }
 #endif
