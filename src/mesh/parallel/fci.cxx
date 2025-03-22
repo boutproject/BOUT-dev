@@ -113,6 +113,8 @@ void load_parallel_metric_components([[maybe_unused]] Coordinates* coords,
   // interpolation. The X and Z coordinates are defined independently on
   // on each poloidal plane. Instead, these yup/ydown fields are calculated
   // by mapping coordinate points, and calculating metrics on the mapped points.
+  LOAD_PAR(dy, false);
+
   LOAD_PAR(g11, false);
   LOAD_PAR(g22, false);
   LOAD_PAR(g33, false);

@@ -31,6 +31,7 @@
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/output_bout_types.hxx>
 #include <bout/solver.hxx>
 #include <bout/utils.hxx>
 #include <bout/vecops.hxx>
@@ -267,15 +268,22 @@ Field3D Div_par(const Field3D& f, const Field3D& v) {
 
   Field3D result{emptyFrom(f)};
   BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
-    result[i] = B[i]
-                * ((f_up[i] * v_up[i] / B_up[i]) - (f_down[i] * v_down[i] / B_down[i]))
-                / (dy[i] * sqrt(g_22[i]));
+    result[i] = B[i] * ((f_up[i] * v_up[i] / B_up[i])
+                        - (f_down[i] * v_down[i] / B_down[i]))
+      / (2 * dy[i] * sqrt(g_22[i]));
 
-#if CHECK > 0
+#if CHECK > 2
     if (!std::isfinite(result[i])) {
-      output.write("{} {} {} {}\n", f_up[i], v_up[i], f_down[i], v_down[i]);
-      output.write("{} {} {} {} {}\n", B[i], B_up[i], B_down[i], dy[i], sqrt(g_22[i]));
-      throw BoutException("Non-finite value in Div_");
+      throw BoutException("Non-finite value in Div_par(f, v) at {}\n"
+                          "  f down {} up {}\n"
+                          "  v down {} up {}\n"
+                          "  B down {} central {} up {}\n"
+                          "  dy {} sqrt(g_22) {}\n",
+                          i,
+                          f_down[i], f_up[i],
+                          v_down[i], v_up[i],
+                          B_down[i], B[i], B_up[i],
+                          dy[i], sqrt(g_22[i]));
     }
 #endif
   }
