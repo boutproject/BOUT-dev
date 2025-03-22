@@ -268,9 +268,9 @@ Field3D Div_par(const Field3D& f, const Field3D& v) {
 
   Field3D result{emptyFrom(f)};
   BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
-    result[i] = B[i] * ((f_up[i] * v_up[i] / B_up[i])
-                        - (f_down[i] * v_down[i] / B_down[i]))
-      / (2 * dy[i] * sqrt(g_22[i]));
+    result[i] = B[i]
+                * ((f_up[i] * v_up[i] / B_up[i]) - (f_down[i] * v_down[i] / B_down[i]))
+                / (2 * dy[i] * sqrt(g_22[i]));
 
 #if CHECK > 2
     if (!std::isfinite(result[i])) {
@@ -279,11 +279,8 @@ Field3D Div_par(const Field3D& f, const Field3D& v) {
                           "  v down {} up {}\n"
                           "  B down {} central {} up {}\n"
                           "  dy {} sqrt(g_22) {}\n",
-                          i,
-                          f_down[i], f_up[i],
-                          v_down[i], v_up[i],
-                          B_down[i], B[i], B_up[i],
-                          dy[i], sqrt(g_22[i]));
+                          i, f_down[i], f_up[i], v_down[i], v_up[i], B_down[i], B[i],
+                          B_up[i], dy[i], sqrt(g_22[i]));
     }
 #endif
   }
