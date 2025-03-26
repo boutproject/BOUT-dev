@@ -93,7 +93,7 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
   TRACE("Field3D: Copy constructor from value");
 
   *this = val;
-#if BOUT_USE_FCI_AUTOMAGIC
+
   if (this->isFci()) {
     splitParallelSlices();
     for (size_t i = 0; i < numberParallelSlices(); ++i) {
@@ -101,7 +101,6 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
       ydown(i) = val;
     }
   }
-#endif
 }
 
 Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation,
@@ -361,14 +360,12 @@ Field3D& Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
   track(val, "operator=");
 
-#if BOUT_USE_FCI_AUTOMAGIC
   if (isFci() && hasParallelSlices()) {
     for (size_t i = 0; i < numberParallelSlices(); ++i) {
       yup(i) = val;
       ydown(i) = val;
     }
   }
-#else
   // Delete existing parallel slices. We don't copy parallel slices, so any
   // that currently exist will be incorrect.
   clearParallelSlices();
@@ -386,11 +383,13 @@ Field3D& Field3D::operator=(const BoutReal val) {
 Field3D& Field3D::calcParallelSlices() {
   ASSERT2(allowCalcParallelSlices);
   getCoordinates()->getParallelTransform().calcParallelSlices(*this);
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (this->isFci()) {
-    this->applyParallelBoundary("parallel_neumann_o2");
-  }
-#endif
+
+  // This seems like it could work but give wrong results.
+  // Better to insert NaNs into boundary cells
+  // if (this->isFci()) {
+  //   this->applyParallelBoundary("parallel_neumann_o2");
+  // }
+
   return *this;
 }
 

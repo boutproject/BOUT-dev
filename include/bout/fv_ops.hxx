@@ -188,16 +188,13 @@ void communicateFluxes(Field3D& f);
 /// @param[in] fixflux     Fix the flux at the boundary to be the value at the
 ///                        midpoint (for boundary conditions)
 ///
-/// NB: Uses to/from FieldAligned coordinates
+/// Handles FCI by calling ::Div_par(f_in, v_in)
 template <typename CellEdges = MC>
 const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
                       const Field3D& wave_speed_in, bool fixflux = true) {
-
-#if BOUT_USE_FCI_AUTOMAGIC
   if (f_in.isFci()) {
     return ::Div_par(f_in, v_in);
   }
-#endif
 
   ASSERT1_FIELDS_COMPATIBLE(f_in, v_in);
   ASSERT1_FIELDS_COMPATIBLE(f_in, wave_speed_in);

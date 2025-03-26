@@ -684,6 +684,8 @@ T copy(const T& f) {
 /// Apply a floor value \p f to a field \p var. Any value lower than
 /// the floor is set to the floor.
 ///
+/// If the field has parallel slices then they will also be floored.
+///
 /// @param[in] var  Variable to apply floor to
 /// @param[in] f    The floor value
 /// @param[in] rgn  The region to calculate the result over
@@ -697,8 +699,8 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
       result[d] = f;
     }
   }
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (var.isFci()) {
+
+  if (var.hasParallelSlices()) {
     for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
       BOUT_FOR(d, result.yup(i).getRegion(rgn)) {
         if (result.yup(i)[d] < f) {
@@ -711,10 +713,6 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
         }
       }
     }
-  } else
-#endif
-  {
-    result.clearParallelSlices();
   }
   return result;
 }
