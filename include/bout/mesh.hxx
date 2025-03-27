@@ -626,9 +626,22 @@ public:
     return inserted.first->second;
   }
 
+  std::shared_ptr<Coordinates>
+  getCoordinatesConst(const CELL_LOC location = CELL_CENTRE) const {
+    ASSERT1(location != CELL_DEFAULT);
+    ASSERT1(location != CELL_VSHIFT);
+
+    auto found = coords_map.find(location);
+    if (found != coords_map.end()) {
+      // True branch most common, returns immediately
+      return found->second;
+    }
+    throw BoutException("Coordinates not yet set. Use non-const version!");
+  }
+
   /// Returns the non-CELL_CENTRE location
   /// allowed as a staggered location
-  CELL_LOC getAllowedStaggerLoc(DIRECTION direction) const {
+  static CELL_LOC getAllowedStaggerLoc(DIRECTION direction) {
     AUTO_TRACE();
     switch (direction) {
     case (DIRECTION::X):
@@ -818,6 +831,16 @@ public:
     ASSERT1(RegionID.has_value());
     return region3D[RegionID.value()];
   }
+  bool isFci() const {
+    const auto coords = this->getCoordinatesConst();
+    if (coords == nullptr) {
+      return false;
+    }
+    if (not coords->hasParallelTransform()) {
+      return false;
+    }
+    return not coords->getParallelTransform().canToFromFieldAligned();
+  }
 
 private:
   /// Allocates default Coordinates objects
@@ -827,8 +850,7 @@ private:
   /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
   /// would not be correct).
   std::shared_ptr<Coordinates>
-  createDefaultCoordinates(const CELL_LOC location,
-                           bool force_interpolate_from_centre = false);
+  createDefaultCoordinates(CELL_LOC location, bool force_interpolate_from_centre = false);
 
   //Internal region related information
   std::map<std::string, size_t> regionMap3D;
