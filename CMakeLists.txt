@@ -593,9 +593,6 @@ else()
 endif()
 set(BOUT_USE_METRIC_3D ${BOUT_ENABLE_METRIC_3D})
 
-option(BOUT_ENABLE_FCI_AUTOMAGIC "Enable (slow?) automatic features for FCI" ON)
-set(BOUT_USE_FCI_AUTOMAGIC ${BOUT_ENABLE_FCI_AUTOMAGIC})
-
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("int main() { const char* name = __PRETTY_FUNCTION__; }"
   HAS_PRETTY_FUNCTION)

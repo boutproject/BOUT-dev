@@ -134,12 +134,14 @@ public:
     return *this;
   }
 
-  /// Dummy functions to increase portability
+  /// Dummy functions to replicate Field3D interface
   bool hasParallelSlices() const { return true; }
   void calcParallelSlices() const {}
   void splitParallelSlices() const {}
+  void splitParallelSlicesAndAllocate() const {}
   void clearParallelSlices() const {}
-  int numberParallelSlices() const { return 0; }
+  Field2D withoutParallelSlices() const { return *this; }
+  size_t numberParallelSlices() const { return 0; }
 
   Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) { return *this; }
   const Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
