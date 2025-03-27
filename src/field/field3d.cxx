@@ -360,15 +360,12 @@ Field3D& Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
   track(val, "operator=");
 
-  if (isFci() && hasParallelSlices()) {
+  if (hasParallelSlices()) {
     for (size_t i = 0; i < numberParallelSlices(); ++i) {
       yup(i) = val;
       ydown(i) = val;
     }
   }
-  // Delete existing parallel slices. We don't copy parallel slices, so any
-  // that currently exist will be incorrect.
-  clearParallelSlices();
 
   resetRegion();
 
