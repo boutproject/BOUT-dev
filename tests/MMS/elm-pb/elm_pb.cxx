@@ -314,7 +314,7 @@ public:
     if (ShiftXderivs) {
       if (mesh->IncIntShear) {
         // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-        coords->IntShiftTorsion = I;
+        coords->setIntShiftTorsion(I);
 
       } else {
         // Dimits style, using local coordinate system
@@ -389,7 +389,7 @@ public:
     Btxy /= Bbar;
     B0 /= Bbar;
     hthe /= Lbar;
-    coords->dx /= Lbar * Lbar * Bbar;
+    coords->setDx(coords->dx() / (Lbar * Lbar * Bbar));
     I *= Lbar * Lbar * Bbar;
 
     BoutReal pnorm = max(P0, true); // Maximum over all processors
@@ -417,24 +417,25 @@ public:
 
     /**************** CALCULATE METRICS ******************/
 
-    coords->g11 = SQ(Rxy * Bpxy);
-    coords->g22 = 1.0 / SQ(hthe);
-    coords->g33 = SQ(I) * coords->g11 + SQ(B0) / coords->g11;
-    coords->g12 = 0.0;
-    coords->g13 = -I * coords->g11;
-    coords->g23 = -Btxy / (hthe * Bpxy * Rxy);
+    const auto g11 = SQ(Rxy * Bpxy);
+    const auto g22 = 1.0 / SQ(hthe);
+    const auto g33 = SQ(I) * g11 + SQ(B0) / g11;
+    const auto g12 = 0.0;
+    const auto g13 = -I * g11;
+    const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
 
-    coords->J = hthe / Bpxy;
-    coords->Bxy = B0;
+    const auto g_11 = 1.0 / g11 + (SQ(I * Rxy));
+    const auto g_22 = SQ(B0 * hthe / Bpxy);
+    const auto g_33 = Rxy * Rxy;
+    const auto g_12 = Btxy * hthe * I * Rxy / Bpxy;
+    const auto g_13 = I * Rxy * Rxy;
+    const auto g_23 = Btxy * hthe * Rxy / Bpxy;
 
-    coords->g_11 = 1.0 / coords->g11 + (SQ(I * Rxy));
-    coords->g_22 = SQ(B0 * hthe / Bpxy);
-    coords->g_33 = Rxy * Rxy;
-    coords->g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    coords->g_13 = I * Rxy * Rxy;
-    coords->g_23 = Btxy * hthe * Rxy / Bpxy;
+    coords->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+                            CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
-    coords->geometry(); // Calculate quantities from metric tensor
+    coords->setJ(hthe / Bpxy);
+    coords->setBxy(B0);
 
     // Set B field vector
 
@@ -634,7 +635,7 @@ public:
       ddt(U) += viscos_perp * Delp2(U); // Perpendicular viscosity
     }
 
-    ddt(U) -= 10 * (SQ(SQ(coords->dx)) * D4DX4(U) + SQ(SQ(coords->dz)) * D4DZ4(U));
+    ddt(U) -= 10 * (SQ(SQ(coords->dx())) * D4DX4(U) + SQ(SQ(coords->dz())) * D4DZ4(U));
 
     ////////////////////////////////////////////////////
     // Pressure equation
@@ -654,7 +655,7 @@ public:
       ddt(P) += diffusion_par * Grad2_par2(P); // Parallel diffusion
     }
 
-    ddt(P) -= 10 * (SQ(SQ(coords->dx)) * D4DX4(P) + SQ(SQ(coords->dz)) * D4DZ4(P));
+    ddt(P) -= 10 * (SQ(SQ(coords->dx())) * D4DX4(P) + SQ(SQ(coords->dz())) * D4DZ4(P));
 
     ////////////////////////////////////////////////////
     // Compressional effects

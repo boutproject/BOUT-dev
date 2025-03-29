@@ -286,8 +286,8 @@ the Laplace operator defined in :ref:`sec-operator-stencil`.
 ::
    
     PetscMatrix<Field2D> matrix(indexer);
-    Field2D &dx = localmesh->getCoordinates()->dx,
-            &dy = localmesh->getCoordinates()->dy;
+    Field2D &dx = localmesh->getCoordinates()->dx(),
+            &dy = localmesh->getCoordinates()->dy();
 
     // Set up x-derivatives
     BOUT_FOR(i, indexer->getRegionNobndry()) {

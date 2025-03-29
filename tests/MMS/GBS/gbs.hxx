@@ -88,8 +88,9 @@ private:
   const Field3D D(const Field3D& f, BoutReal d); // Diffusion operator
   const Field3D H(const Field3D& f, BoutReal h); // Hyper-diffusion
   // Powers of the mesh spacing for H operator
-  Field2D dx4, dy4;
-  BoutReal dz4;
+  Field2D dx4;
+  Field2D dy4;
+  Field2D dz4;
 
   // Laplacian solver
   std::unique_ptr<Laplacian> phiSolver{nullptr};

@@ -76,13 +76,21 @@ TEST_F(CoordinatesAccessorTest, ClearBoth) {
                      FieldMetric{0.0},  // g_23
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
-  // Need to set geometry information
-  coords.G1 = coords.G2 = coords.G3 = 0.2;
-  coords.non_uniform = true;
-  coords.d1_dx = coords.d1_dy = coords.d1_dz = 0.1;
+  coords.setNon_uniform(true);
+  coords.setD1_dx(0.1);
+  coords.setD1_dy(0.1);
+  coords.setD1_dz(0.1);
 #if BOUT_USE_METRIC_3D
-  coords.Bxy.splitParallelSlices();
-  coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
+
+  FieldMetric mutable_Bxy = coords.Bxy();
+  mutable_Bxy.splitParallelSlices();
+  coords.setBxy(mutable_Bxy);
+
+  mutable_Bxy = coords.Bxy();
+  mutable_Bxy.yup() = coords.Bxy();
+  mutable_Bxy.ydown() = coords.Bxy();
+  coords.setBxy(mutable_Bxy);
+
 #endif
 
   CoordinatesAccessor acc(mesh->getCoordinates());
@@ -116,13 +124,21 @@ TEST_F(CoordinatesAccessorTest, ClearOneTwo) {
                      FieldMetric{0.0},  // g_23
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
-  // Need to set geometry information
-  coords.G1 = coords.G2 = coords.G3 = 0.2;
-  coords.non_uniform = true;
-  coords.d1_dx = coords.d1_dy = coords.d1_dz = 0.1;
+  coords.setNon_uniform(true);
+  coords.setD1_dx(0.1);
+  coords.setD1_dy(0.1);
+  coords.setD1_dz(0.1);
 #if BOUT_USE_METRIC_3D
-  coords.Bxy.splitParallelSlices();
-  coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
+
+  FieldMetric mutable_Bxy = coords.Bxy();
+  mutable_Bxy.splitParallelSlices();
+  coords.setBxy(mutable_Bxy);
+
+  mutable_Bxy = coords.Bxy();
+  mutable_Bxy.yup() = coords.Bxy();
+  mutable_Bxy.ydown() = coords.Bxy();
+  coords.setBxy(mutable_Bxy);
+
 #endif
 
   CoordinatesAccessor acc(mesh->getCoordinates());
@@ -158,13 +174,21 @@ TEST_F(CoordinatesAccessorTest, ClearTwoOneNone) {
                      FieldMetric{0.0},  // g_23
                      FieldMetric{0.0},  // ShiftTorsion
                      FieldMetric{0.0}}; // IntShiftTorsion
-  // Need to set geometry information
-  coords.G1 = coords.G2 = coords.G3 = 0.2;
-  coords.non_uniform = true;
-  coords.d1_dx = coords.d1_dy = coords.d1_dz = 0.1;
+  coords.setNon_uniform(true);
+  coords.setD1_dx(0.1);
+  coords.setD1_dy(0.1);
+  coords.setD1_dz(0.1);
 #if BOUT_USE_METRIC_3D
-  coords.Bxy.splitParallelSlices();
-  coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
+
+  FieldMetric mutable_Bxy = coords.Bxy();
+  mutable_Bxy.splitParallelSlices();
+  coords.setBxy(mutable_Bxy);
+
+  mutable_Bxy = coords.Bxy();
+  mutable_Bxy.yup() = coords.Bxy();
+  mutable_Bxy.ydown() = coords.Bxy();
+  coords.setBxy(mutable_Bxy);
+
 #endif
 
   CoordinatesAccessor acc(mesh->getCoordinates());

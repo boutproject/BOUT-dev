@@ -773,7 +773,7 @@ cdef options
         Usefull if the Options are in SI units, but the simulation is written in Bohm units.
         Calling it multiple times will not change the mesh, if the normalisation is always the same.
 
-        It calls mesh->dx/=norm etc. followed by a call to geometry().
+        It calls mesh->dx()/=norm etc. followed by a call to geometry().
 
         Parameters
         ----------
@@ -822,6 +822,7 @@ cdef Mesh meshFromPtr(c.Mesh * obj):
 cdef Coordinates coordsFromPtr(c.Coordinates * obj):
     coords = Coordinates()
     coords.cobj = obj
+
     coords._setmembers()
     return coords
 
@@ -840,10 +841,6 @@ cdef public {{ metric_field }} IntShiftTorsion
 {% endset %}
 {{ class("Coordinates", comment="Contains information about geometry, such as metric tensors", data=data, defaultSO=False) }}
 
-    def _setmembers(self):
-{% for f in "dx", "dy", "dz", "J", "Bxy", "g11", "g22", "g33", "g12", "g13", "g23", "g_11", "g_22", "g_33", "g_12", "g_13", "g_23", "G1_11", "G1_22", "G1_33", "G1_12", "G1_13", "G1_23", "G2_11", "G2_22", "G2_33", "G2_12", "G2_13", "G2_23", "G3_11", "G3_22", "G3_33", "G3_12", "G3_13", "G3_23", "G1", "G2", "G3", "ShiftTorsion", "IntShiftTorsion" %}
-        self.{{f}} = {{ metric_field.fdd }}FromPtr(&self.cobj.{{f}})
-{% endfor %}
 
 {{ class("Laplacian", comment="""
 Laplacian inversion solver

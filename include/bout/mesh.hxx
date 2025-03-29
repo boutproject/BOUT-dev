@@ -56,6 +56,7 @@ class Mesh;
 #include "bout/options.hxx"
 #include "bout/region.hxx"
 #include "bout/sys/range.hxx" // RangeIterator
+#include <bout/griddata.hxx>
 #include "bout/unused.hxx"
 
 #include "mpi.h"
@@ -181,6 +182,20 @@ public:
   /// @returns zero if successful, non-zero on failure
   int get(Field2D& var, const std::string& name, BoutReal def = 0.0,
           bool communicate = true, CELL_LOC location = CELL_DEFAULT);
+
+  /// Get a Field2D from the input source
+  /// including communicating guard cells.
+  /// This is a new version of the `get` function, that returns the value
+  /// avoiding the use of an out parameter.
+  /// Also returns a new Field2D rather than a reference to one
+  ///
+  /// @param[in] name   Name of the variable to read
+  /// @param[in] def    The default value if not found
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
+  ///
+  /// @returns the value. Will be allocated if needed
+  Coordinates::FieldMetric get(const std::string& name, BoutReal def = 0.0,
+                               bool communicate = true, CELL_LOC location = CELL_DEFAULT);
 
   /// Get a Field3D from the input source
   ///
@@ -621,8 +636,17 @@ public:
     // Note that this can't be allocated here due to incomplete type
     // (circular dependency between Mesh and Coordinates)
     auto inserted = coords_map.emplace(location, nullptr);
-    inserted.first->second = createDefaultCoordinates(location);
-    inserted.first->second->geometry(false);
+    auto force_interpolate_from_centre = false;
+    inserted.first->second =
+        createDefaultCoordinates(location, force_interpolate_from_centre);
+
+    auto recalculate_staggered = false;
+    inserted.first->second->recalculateAndReset(recalculate_staggered,
+                                                force_interpolate_from_centre);
+
+    inserted.first->second->communicateMetricTensor();
+    inserted.first->second->communicateDz();
+
     return inserted.first->second;
   }
 
@@ -708,8 +732,7 @@ public:
   /// Determines the resultant output stagger location in derivatives
   /// given the input and output location. Also checks that the
   /// combination of locations is allowed
-  STAGGER getStagger(const CELL_LOC inloc, const CELL_LOC outloc,
-                     const CELL_LOC allowedloc) const;
+  STAGGER getStagger(CELL_LOC inloc, CELL_LOC outloc, CELL_LOC allowedloc) const;
 
   /// Determines the resultant output stagger location in derivatives
   /// given the input and output location. Also checks that the

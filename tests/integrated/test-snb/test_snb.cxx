@@ -1,6 +1,8 @@
 #include <bout/bout.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
+#include <bout/field2d.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/output.hxx>
 #include <bout/snb.hxx>
@@ -96,8 +98,8 @@ int main(int argc, char** argv) {
     Field3D Div_q = snb.divHeatFlux(Te, Ne, &Div_q_SH);
 
     // Check that flux is not zero
-    EXPECT_FALSE(IsFieldEqual(Div_q_SH, 0.0, "RGN_NOBNDRY"));
-    EXPECT_FALSE(IsFieldEqual(Div_q, 0.0, "RGN_NOBNDRY"));
+    EXPECT_FALSE(IsFieldEqual(Div_q_SH, 0.0, "RGN_NOBNDRY"))
+    EXPECT_FALSE(IsFieldEqual(Div_q, 0.0, "RGN_NOBNDRY"))
   }
 
   ///////////////////////////////////////////////////////////
@@ -116,8 +118,8 @@ int main(int argc, char** argv) {
     Field3D Div_q = snb.divHeatFlux(Te, Ne, &Div_q_SH);
 
     // Check that flux is zero
-    EXPECT_TRUE(IsFieldEqual(Div_q_SH, 0.0, "RGN_NOBNDRY"));
-    EXPECT_TRUE(IsFieldEqual(Div_q, 0.0, "RGN_NOBNDRY"));
+    EXPECT_TRUE(IsFieldEqual(Div_q_SH, 0.0, "RGN_NOBNDRY"))
+    EXPECT_TRUE(IsFieldEqual(Div_q, 0.0, "RGN_NOBNDRY"))
   }
 
   ///////////////////////////////////////////////////////////
@@ -135,7 +137,7 @@ int main(int argc, char** argv) {
     Field3D Div_q = snb.divHeatFlux(Te, Ne, &Div_q_SH);
 
     // Check that flux is zero
-    EXPECT_TRUE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"));
+    EXPECT_TRUE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"))
   }
 
   ///////////////////////////////////////////////////////////
@@ -153,7 +155,7 @@ int main(int argc, char** argv) {
     Field3D Div_q = snb.divHeatFlux(Te, Ne, &Div_q_SH);
 
     // Check that fluxes are not equal
-    EXPECT_FALSE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"));
+    EXPECT_FALSE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"))
   }
 
   ///////////////////////////////////////////////////////////
@@ -207,14 +209,18 @@ int main(int argc, char** argv) {
     // Change the mesh spacing and cell volume (Jdy)
     Coordinates* coord = Te.getCoordinates();
 
+    auto dy_copy = coord->dy();
+    auto J_copy = coord->J();
     for (int x = mesh->xstart; x <= mesh->xend; x++) {
       for (int y = mesh->ystart; y <= mesh->yend; y++) {
-        double yn = (double(y) + 0.5) / double(mesh->yend + 1);
+        const double y_n = (double(y) + 0.5) / double(mesh->yend + 1);
 
-        coord->dy(x, y) = 1. - 0.9 * yn;
-        coord->J(x, y) = (1. + yn * yn);
+        dy_copy(x, y) = 1. - 0.9 * y_n;
+        J_copy(x, y) = 1. + y_n * y_n;
       }
     }
+    coord->setDy(dy_copy);
+    coord->setJ(J_copy);
 
     HeatFluxSNB snb;
 
@@ -226,10 +232,10 @@ int main(int argc, char** argv) {
     Div_q *= SI::qe;
 
     // Check that fluxes are not equal
-    EXPECT_FALSE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"));
+    EXPECT_FALSE(IsFieldClose(Div_q, Div_q_SH, "RGN_NOBNDRY"))
 
-    const Field2D dy = coord->dy;
-    const Field2D J = coord->J;
+    const Field2D dy = coord->dy();
+    const Field2D J = coord->J();
 
     // Integrate Div(q) over domain
     BoutReal q_sh = 0.0;
@@ -242,7 +248,7 @@ int main(int argc, char** argv) {
       q_maxabs = BOUTMAX(q_maxabs, fabs(q_sh), fabs(q_snb));
     }
     // Expect integrals to be the same
-    EXPECT_LT(fabs(q_sh - q_snb), 1e-8 * q_maxabs);
+    EXPECT_LT(fabs(q_sh - q_snb), 1e-8 * q_maxabs)
   }
 
   bout::checkForUnusedOptions();
