@@ -148,9 +148,9 @@ inline Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
 }
 
 /*!
- * second parallel derivative
+ * Second parallel derivative:
  * \f[
- *    (\mathbf{b} dot \nabla)(\mathbf{b} dot \nabla)
+ *    (\mathbf{b} \cdot \nabla)(\mathbf{b} \cdot \nabla)
  * \f]
  *
  * Note: For parallel Laplacian use LaplacePar
