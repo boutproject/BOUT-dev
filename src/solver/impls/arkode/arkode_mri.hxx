@@ -122,9 +122,6 @@ private:
   /// Solve both fast and slow portion in fixed timestep mode.
   /// NOTE: This is not recommended except for code comparison
   bool fixed_step;
-  /// Fixed step size to use for inner solver when running in fixed
-  /// time step mode.
-  BoutReal inner_timestep;
   /// Order of the internal step
   int order;
   /// Absolute tolerance

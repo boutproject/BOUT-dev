@@ -1479,8 +1479,29 @@ int Solver::run_rhs_s(BoutReal t, bool linear) {
   }
 
   pre_rhs(t);
-  status = model->runRHS_s(t, linear);
+
+  // Run both parts
+
+  int nv = getLocalN();
+  // Create two temporary arrays for system state
+  Array<BoutReal> tmp(nv);
+  Array<BoutReal> tmp2(nv);
+
+  save_vars(tmp.begin()); // Copy variables into tmp
+  pre_rhs(t);
+  status = model->runRHS_se(t, linear);
+  post_rhs(t); // Check variables, apply boundary conditions
+
+  load_vars(tmp.begin());   // Reset variables
+  save_derivs(tmp.begin()); // Save time derivatives
+  pre_rhs(t);
+  status = model->runRHS_si(t, linear);
   post_rhs(t);
+  save_derivs(tmp2.begin()); // Save time derivatives
+  for (BoutReal *t = tmp.begin(), *t2 = tmp2.begin(); t != tmp.end(); ++t, ++t2) {
+    *t += *t2;
+  }
+  load_derivs(tmp.begin()); // Put back time-derivatives
 
   // If using Method of Manufactured Solutions
   add_mms_sources(t);
@@ -1502,8 +1523,29 @@ int Solver::run_rhs_f(BoutReal t, bool linear) {
   }
 
   pre_rhs(t);
-  status = model->runRHS_f(t, linear);
+
+  // Run both parts
+
+  int nv = getLocalN();
+  // Create two temporary arrays for system state
+  Array<BoutReal> tmp(nv);
+  Array<BoutReal> tmp2(nv);
+
+  save_vars(tmp.begin()); // Copy variables into tmp
+  pre_rhs(t);
+  status = model->runRHS_fe(t, linear);
+  post_rhs(t); // Check variables, apply boundary conditions
+
+  load_vars(tmp.begin());   // Reset variables
+  save_derivs(tmp.begin()); // Save time derivatives
+  pre_rhs(t);
+  status = model->runRHS_fi(t, linear);
   post_rhs(t);
+  save_derivs(tmp2.begin()); // Save time derivatives
+  for (BoutReal *t = tmp.begin(), *t2 = tmp2.begin(); t != tmp.end(); ++t, ++t2) {
+    *t += *t2;
+  }
+  load_derivs(tmp.begin()); // Put back time-derivatives
 
   // If using Method of Manufactured Solutions
   add_mms_sources(t);

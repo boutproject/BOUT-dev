@@ -107,9 +107,6 @@ ArkodeMRISolver::ArkodeMRISolver(Options* opts)
                      .doc("Solve both fast and slow time scales using fixed time step sizes. NOTE: This is "
                           "not recommended except for code comparison")
                      .withDefault(false)),
-      inner_timestep((*options)["inner_timestep"]
-                     .doc("Fixed step size to use for inner solver when running in fixed time step mode.")
-                     .withDefault(1.0e-4)),
       order((*options)["order"].doc("Order of internal step").withDefault(3)),
       abstol((*options)["atol"].doc("Absolute tolerance").withDefault(1.0e-12)),
       reltol((*options)["rtol"].doc("Relative tolerance").withDefault(1.0e-10)),
@@ -240,7 +237,7 @@ int ArkodeMRISolver::init() {
 
   if (fixed_step) {
     // If not given, default to adaptive timestepping
-    const BoutReal inner_fixed_timestep = (*options)["inner_timestep"];
+    const BoutReal inner_fixed_timestep = (*options)["inner_timestep"].withDefault(1.0e-5);
     if (ARKodeSetFixedStep(inner_arkode_mem, inner_fixed_timestep) != ARK_SUCCESS) {
       throw BoutException("ARKodeSetFixedStep failed\n");
     }
@@ -293,7 +290,7 @@ int ArkodeMRISolver::init() {
 
   if (fixed_step) {
     // If not given, default to adaptive timestepping
-    const BoutReal fixed_timestep = (*options)["timestep"];
+    const BoutReal fixed_timestep = (*options)["timestep"].withDefault(1.0e-4);
     if (ARKodeSetFixedStep(arkode_mem, fixed_timestep) != ARK_SUCCESS) {
       throw BoutException("ARKodeSetFixedStep failed\n");
     }
