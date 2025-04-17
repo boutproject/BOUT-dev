@@ -51,7 +51,7 @@ message(STATUS "Configuring BOUT++ version ${BOUT_FULL_VERSION}")
 project(BOUT++
   DESCRIPTION "Fluid PDE solver framework"
   VERSION ${BOUT_CMAKE_ACCEPTABLE_VERSION}
-  LANGUAGES CXX)
+  LANGUAGES C CXX)
 
 include(CMakeDependentOption)
 
