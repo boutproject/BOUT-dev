@@ -307,6 +307,12 @@ void OptionsADIOS::verifyTimesteps() const {
   return;
 }
 
+const std::vector<std::string> DIMS_NONE;
+const std::vector<std::string> DIMS_X = {"x"};
+const std::vector<std::string> DIMS_XY = {"x", "y"};
+const std::vector<std::string> DIMS_XZ = {"x", "z"};
+const std::vector<std::string> DIMS_XYZ = {"x", "y", "z"};
+
 /// Visit a variant type, and put the data into a NcVar
 struct ADIOSPutVarVisitor {
   ADIOSPutVarVisitor(const std::string& name, ADIOSStream& stream)
@@ -388,7 +394,8 @@ void ADIOSPutVarVisitor::operator()<Field2D>(const Field2D& value) {
   adios2::Dims memCount = {static_cast<size_t>(value.getNx()),
                            static_cast<size_t>(value.getNy())};
 
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  adios2::Variable<BoutReal> var =
+      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_XY, BoutComm::rank());
   var.SetSelection({start, count});
   var.SetMemorySelection({memStart, memCount});
   stream.engine.Put<BoutReal>(var, &value(0, 0));
@@ -425,7 +432,8 @@ void ADIOSPutVarVisitor::operator()<Field3D>(const Field3D& value) {
                            static_cast<size_t>(value.getNy()),
                            static_cast<size_t>(value.getNz())};
 
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  adios2::Variable<BoutReal> var =
+      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_XYZ, BoutComm::rank());
   var.SetSelection({start, count});
   var.SetMemorySelection({memStart, memCount});
   stream.engine.Put<BoutReal>(var, &value(0, 0, 0));
@@ -457,7 +465,8 @@ void ADIOSPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
   adios2::Dims memCount = {static_cast<size_t>(value.getNx()),
                            static_cast<size_t>(value.getNz())};
 
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  adios2::Variable<BoutReal> var =
+      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_XZ, BoutComm::rank());
   var.SetSelection({start, count});
   var.SetMemorySelection({memStart, memCount});
   stream.engine.Put<BoutReal>(var, &value(0, 0));
@@ -469,7 +478,8 @@ void ADIOSPutVarVisitor::operator()<Array<BoutReal>>(const Array<BoutReal>& valu
   adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)value.size()};
   adios2::Dims start = {(size_t)BoutComm::rank(), 0};
   adios2::Dims count = {1, shape[1]};
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  adios2::Variable<BoutReal> var =
+      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_NONE, BoutComm::rank());
   var.SetSelection({start, count});
   stream.engine.Put<BoutReal>(var, value.begin());
 }
@@ -482,7 +492,8 @@ void ADIOSPutVarVisitor::operator()<Matrix<BoutReal>>(const Matrix<BoutReal>& va
                         (size_t)std::get<1>(s)};
   adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0};
   adios2::Dims count = {1, shape[1], shape[2]};
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  adios2::Variable<BoutReal> var =
+      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_NONE, BoutComm::rank());
   var.SetSelection({start, count});
   stream.engine.Put<BoutReal>(var, value.begin());
 }
@@ -495,7 +506,8 @@ void ADIOSPutVarVisitor::operator()<Tensor<BoutReal>>(const Tensor<BoutReal>& va
                         (size_t)std::get<1>(s), (size_t)std::get<2>(s)};
   adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0, 0};
   adios2::Dims count = {1, shape[1], shape[2], shape[3]};
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  adios2::Variable<BoutReal> var =
+      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_NONE, BoutComm::rank());
   var.SetSelection({start, count});
   stream.engine.Put<BoutReal>(var, value.begin());
 }
