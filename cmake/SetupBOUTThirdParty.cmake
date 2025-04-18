@@ -233,6 +233,7 @@ option(BOUT_DOWNLOAD_SUNDIALS "Download and build SUNDIALS" OFF)
 cmake_dependent_option(BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF
   "NOT BOUT_DOWNLOAD_SUNDIALS" ON)
 if (BOUT_USE_SUNDIALS)
+  enable_language(C)
   if (BOUT_DOWNLOAD_SUNDIALS)
     message(STATUS "Downloading and configuring SUNDIALS")
     include(FetchContent)
