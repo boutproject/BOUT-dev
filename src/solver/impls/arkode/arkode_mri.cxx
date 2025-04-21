@@ -87,6 +87,12 @@ ArkodeMRISolver::ArkodeMRISolver(Options* opts)
       mxsteps((*options)["mxstep"]
                   .doc("Maximum number of steps to take between outputs")
                   .withDefault(500)),
+      // mxstepsize((*options)["mxstepsize"]
+      //             .doc("Maximum step size")
+      //             .withDefault(0.1)),
+      // inner_mxstepsize((*options)["inner_mxstepsize"]
+      //             .doc("Maximum step size")
+      //             .withDefault(0.1)),
       treatment((*options)["treatment"]
                     .doc("Use default capability (imex) or provide a specific treatment: "
                          "implicit or explicit")
@@ -353,6 +359,13 @@ int ArkodeMRISolver::init() {
     throw BoutException("ARKodeSetMaxNumSteps failed\n");
   }
 
+  // if (ARKodeSetMaxStep(arkode_mem, mxstepsize) != ARK_SUCCESS) {
+  //   throw BoutException("ARKodeSetMaxStep failed\n");
+  // }
+  // if (ARKodeSetMaxStep(inner_arkode_mem, inner_mxstepsize) != ARK_SUCCESS) {
+  //   throw BoutException("ARKodeSetMaxStep failed\n");
+  // }
+
   if (inner_treatment == MRI_Treatment::ImEx or inner_treatment == MRI_Treatment::Implicit) {
     {
       output.write("\tUsing Newton iteration for inner solver\n");
@@ -599,7 +612,20 @@ BoutReal ArkodeMRISolver::run(BoutReal tout) {
   pre_Wtime_s = 0.0;
   pre_ncalls_s = 0;
 
-  int flag;
+  int flag = ARKodeSetStopTime(arkode_mem, 1.0001*tout);
+  if (flag != ARK_SUCCESS) {
+    output_error.write("ERROR ARKodeSetStopTime failed at t = {:e}, flag = {:d}\n",
+      simtime, flag);
+    return -1.0;
+  }
+
+  flag = ARKodeSetStopTime(inner_arkode_mem, 1.0001*tout);
+  if (flag != ARK_SUCCESS) {
+    output_error.write("ERROR ARKodeSetStopTime failed at t = {:e}, flag = {:d}\n",
+      simtime, flag);
+    return -1.0;
+  }
+
   if (!monitor_timestep) {
     // Run in normal mode
     flag = ARKodeEvolve(arkode_mem, tout, uvec, &simtime, ARK_NORMAL);

@@ -113,6 +113,11 @@ private:
 
   /// Maximum number of steps to take between outputs
   int mxsteps;
+
+  // /// Maximum step sizes
+  // double mxstepsize;
+  // double inner_mxstepsize;
+
   /// Integrator treatment enum: IMEX, Implicit or Explicit
   MRI_Treatment treatment;
   MRI_Treatment inner_treatment;
