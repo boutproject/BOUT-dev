@@ -298,9 +298,9 @@ int SNESSolver::init() {
                          .doc("Extent of stencil (cross)")
                          .withDefault<int>(0);
       //Set n_taxi 2 if nothing else is set
-      //TODO: Probably a better way to do this
+      //Probably a better way to do this
       if (n_square == 0 && n_taxi == 0 && n_cross == 0) {
-        output_info.write("Setting beuler:stencil:taxi = 2\n");
+        output_info.write("Setting solver:stencil:taxi = 2\n");
         n_taxi = 2;
       }
 
