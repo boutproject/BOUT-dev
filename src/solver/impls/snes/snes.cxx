@@ -18,10 +18,10 @@
 
 class ColoringStencil {
 private:
-  bool static in_compact(int const i, int const j, int const n_compact) {
-    return std::abs(i) <= n_compact && std::abs(j) <= n_compact;
+  bool static isInSquare(int const i, int const j, int const n_square) {
+    return std::abs(i) <= n_square && std::abs(j) <= n_square;
   }
-  bool static in_cross(int const i, int const j, int const n_cross) {
+  bool static isInCross(int const i, int const j, int const n_cross) {
     if (i == 0) {
       return std::abs(j) <= n_cross;
     }
@@ -30,28 +30,28 @@ private:
     }
     return false;
   }
-  bool static in_taxi(int const i, int const j, int const n_taxi) {
+  bool static isInTaxi(int const i, int const j, int const n_taxi) {
     return std::abs(i) + std::abs(j) <= n_taxi;
   }
 
 public:
-  auto static get_offsets(int n_compact, int n_taxi, int n_cross) {
-    ASSERT2(n_compact >= 0 && n_cross >= 0 && n_taxi >= 0
-            && n_compact + n_cross + n_taxi > 0);
+  auto static getOffsets(int n_square, int n_taxi, int n_cross) {
+    ASSERT2(n_square >= 0 && n_cross >= 0 && n_taxi >= 0
+            && n_square + n_cross + n_taxi > 0);
     auto inside = [&](int i, int j) {
-      return in_compact(i, j, n_compact) || in_taxi(i, j, n_taxi)
-             || in_cross(i, j, n_cross);
+      return isInSquare(i, j, n_square) || isInTaxi(i, j, n_taxi)
+             || isInCross(i, j, n_cross);
     };
-    std::vector<std::pair<int, int>> xyoffset;
-    auto loop_bound = std::max({n_compact, n_taxi, n_cross});
+    std::vector<std::pair<int, int>> xy_offsets;
+    auto loop_bound = std::max({n_square, n_taxi, n_cross});
     for (int i = -loop_bound; i <= loop_bound; ++i) {
       for (int j = -loop_bound; j <= loop_bound; ++j) {
         if (inside(i, j)) {
-          xyoffset.emplace_back(i, j);
+          xy_offsets.emplace_back(i, j);
         }
       }
     }
-    return xyoffset;
+    return xy_offsets;
   }
 };
 
@@ -304,10 +304,11 @@ int SNESSolver::init() {
         n_taxi = 2;
       }
 
-      auto const xyoffsets = ColoringStencil::get_offsets(n_square, n_taxi, n_cross);
+      auto const xy_offsets = ColoringStencil::getOffsets(n_square, n_taxi, n_cross);
       {
-        //This is nasty but can't think of a better and robust way to
+        //This is ugly but can't think of a better and robust way to
         //count the non-zeros for some arbitery stencil
+        //effectivly the same loop as the one that sets the non-zeros below
         std::vector<std::set<int>> d_nnz_map2d(localN);
         std::vector<std::set<int>> o_nnz_map2d(localN);
         std::vector<std::set<int>> d_nnz_map3d(localN);
@@ -323,7 +324,7 @@ int SNESSolver::init() {
               PetscInt row = ind0 + i;
               //if (row < Istart || row >= Iend) continue;
               // Loop through each point in the stencil
-              for (const auto& [x_off, y_off] : xyoffsets) {
+              for (const auto& [x_off, y_off] : xy_offsets) {
                 int xi = x + x_off;
                 int yi = y + y_off;
                 if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
@@ -369,7 +370,7 @@ int SNESSolver::init() {
                 }
 
                 // Star pattern
-                for (const auto& [x_off, y_off] : xyoffsets) {
+                for (const auto& [x_off, y_off] : xy_offsets) {
                   int xi = x + x_off;
                   int yi = y + y_off;
 
@@ -440,7 +441,7 @@ int SNESSolver::init() {
             PetscInt row = ind0 + i;
 
             // Loop through each point in the stencil
-            for (const auto& [x_off, y_off] : xyoffsets) {
+            for (const auto& [x_off, y_off] : xy_offsets) {
               int xi = x + x_off;
               int yi = y + y_off;
               if ((xi < 0) || (yi < 0) || (xi > mesh->LocalNx) || (yi > mesh->LocalNy)) {
@@ -478,7 +479,7 @@ int SNESSolver::init() {
               }
 
               // Star pattern
-              for (const auto& [x_off, y_off] : xyoffsets) {
+              for (const auto& [x_off, y_off] : xy_offsets) {
                 int xi = x + x_off;
                 int yi = y + y_off;
 
