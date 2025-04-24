@@ -6,6 +6,7 @@
 
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/globals.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/utils.hxx>
 
@@ -44,8 +45,11 @@ public:
     };
     std::vector<std::pair<int, int>> xy_offsets;
     auto loop_bound = std::max({n_square, n_taxi, n_cross});
-    for (int i = -loop_bound; i <= loop_bound; ++i) {
-      for (int j = -loop_bound; j <= loop_bound; ++j) {
+    // Ensure that stencil does not go beyond guard cells
+    auto loop_bound_x = std::min({loop_bound, bout::globals::mesh->xstart});
+    auto loop_bound_y = std::min({loop_bound, bout::globals::mesh->ystart});
+    for (int i = -loop_bound_x; i <= loop_bound_x; ++i) {
+      for (int j = -loop_bound_y; j <= loop_bound_y; ++j) {
         if (inside(i, j)) {
           xy_offsets.emplace_back(i, j);
         }
