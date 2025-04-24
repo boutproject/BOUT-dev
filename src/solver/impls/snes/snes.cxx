@@ -488,7 +488,8 @@ int SNESSolver::init() {
             for (const auto& [x_off, y_off] : xy_offsets) {
               const int xi = x + x_off;
               const int yi = y + y_off;
-              if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx) || (yi >= mesh->LocalNy)) {
+              if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
+                  || (yi >= mesh->LocalNy)) {
                 continue;
               }
 
