@@ -159,7 +159,7 @@ SNESSolver::SNESSolver(Options* opts)
                       .withDefault<bool>(false)),
       matrix_free_operator((*options)["matrix_free_operator"]
                                .doc("Use matrix free Jacobian-vector operator?")
-                               .withDefault<bool>(true)),
+                               .withDefault<bool>(false)),
       lag_jacobian((*options)["lag_jacobian"]
                        .doc("Re-use the Jacobian this number of SNES iterations")
                        .withDefault(50)),
