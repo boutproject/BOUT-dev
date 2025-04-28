@@ -17,7 +17,7 @@ namespace bout {
 
     TokamakOptions::TokamakOptions(Mesh &mesh) {
         mesh.get(Rxy, "Rxy");
-        //    mesh->get(Zxy, "Zxy");
+        mesh.get(Zxy, "Zxy");
         mesh.get(Bpxy, "Bpxy");
         mesh.get(Btxy, "Btxy");
         mesh.get(Bxy, "Bxy");
@@ -26,6 +26,13 @@ namespace bout {
         if (mesh.get(dx, "dpsi")) {
             dx = mesh.getCoordinates()->dx();
         }
+    }
+
+    Coordinates3D TokamakOptions::CylindricalCoordinatesToCartesian() {
+        Field3D x = Rxy * cos(Zxy);
+        Field3D y = Rxy * sin(Zxy);
+        Field3D z = Rxy * sin(Zxy);
+        return Coordinates3D(x, y, z);
     }
 
     void TokamakOptions::normalise(BoutReal Lbar, BoutReal Bbar, BoutReal ShearFactor) {
