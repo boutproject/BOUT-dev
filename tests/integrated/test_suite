@@ -188,7 +188,7 @@ class Test(threading.Thread):
                 self.output += "\n(It is likely that a timeout occured)"
             else:
                 # ❌ Failed
-                print("\u274C", end="")  # No newline
+                print("\u274c", end="")  # No newline
             print(" %7.3f s" % (time.time() - self.local.start_time), flush=True)
 
     def _cost(self):
