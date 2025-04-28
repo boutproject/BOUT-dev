@@ -8,6 +8,26 @@
   checkData({{lhs.name}});
   checkData({{rhs.name}});
 
+  {% if (region_loop == "BOUT_FOR_RAJA") %}
+    {% if out.field_type == "FieldPerp" %}
+      auto {{out.name}}_acc = FieldPerpAccessor{ {{out.name}} };
+    {% else %}
+      auto {{out.name}}_acc = FieldAccessor({{out.name}});
+    {% endif %}
+    {% if lhs.field_type == "FieldPerp" %}
+      auto {{lhs.name}}_acc = FieldPerpAccessor{ {{lhs.name}} };
+    {% elif lhs.field_type == "BoutReal" %}
+    {% else %}
+      auto {{lhs.name}}_acc = FieldAccessor({{lhs.name}});
+    {% endif %}
+    {% if rhs.field_type == "FieldPerp" %}
+      auto {{rhs.name}}_acc = FieldPerpAccessor{ {{rhs.name}} };
+    {% elif rhs.field_type == "BoutReal" %}
+    {% else %}
+      auto {{rhs.name}}_acc = FieldAccessor({{rhs.name}});
+    {% endif %}
+  {% endif %}
+
   {% if out == "Field3D" %}
     {% if lhs == rhs == "Field3D" %}
       {{out.name}}.setRegion({{lhs.name}}.getMesh()->getCommonRegion({{lhs.name}}.getRegionID(),
@@ -20,45 +40,98 @@
   {% endif %}
 
   {% if (out == "Field3D") and ((lhs == "Field2D") or (rhs =="Field2D")) %}
+    {% if (region_loop == "BOUT_FOR_RAJA") %}
+    int mesh_nz = {{lhs.name if lhs.field_type != "BoutReal" else rhs.name}}_acc.mesh_nz;
+    {% else %}
     Mesh *localmesh = {{lhs.name if lhs.field_type != "BoutReal" else rhs.name}}.getMesh();
+    {% endif %}
 
     {% if (lhs == "Field2D") %}
     {{region_loop}}({{index_var}}, {{lhs.name}}.getRegion({{region_name}})) {
     {% else %}
     {{region_loop}}({{index_var}}, {{rhs.name}}.getRegion({{region_name}})) {
     {% endif %}
-	const auto {{mixed_base_ind}} = localmesh->ind2Dto3D({{index_var}});
-	{% if (operator == "/") and (rhs == "Field2D") %}
-           const auto tmp = 1.0 / {{rhs.mixed_index}};
-	   for (int {{jz_var}} = 0; {{jz_var}} < localmesh->LocalNz; ++{{jz_var}}){
-         	   {{out.mixed_index}} = {{lhs.mixed_index}} * tmp;
+      {% if (region_loop == "BOUT_FOR_RAJA") %}
+        const auto {{mixed_base_ind}} = {{index_var}} * mesh_nz;
+      {% else %}
+        const auto {{mixed_base_ind}} = localmesh->ind2Dto3D({{index_var}});
+      {% endif %}
+	    {% if (operator == "/") and (rhs == "Field2D") %}
+        {% if (region_loop == "BOUT_FOR_RAJA") %}
+          const auto tmp = 1.0 / {{rhs.mixed_index_acc}};
         {% else %}
-	   for (int {{jz_var}} = 0; {{jz_var}} < localmesh->LocalNz; ++{{jz_var}}){
-	           {{out.mixed_index}} = {{lhs.mixed_index}} {{operator}} {{rhs.mixed_index}};
+          const auto tmp = 1.0 / {{rhs.mixed_index}};
         {% endif %}
+        {% if (region_loop == "BOUT_FOR_RAJA") %}
+	      for (int {{jz_var}} = 0; {{jz_var}} < mesh_nz; ++{{jz_var}}){
+        {% else %}
+	      for (int {{jz_var}} = 0; {{jz_var}} < localmesh->LocalNz; ++{{jz_var}}){
+        {% endif %}
+          {% if (region_loop == "BOUT_FOR_RAJA") %}
+            {{out.mixed_index_acc}} = {{lhs.mixed_index_acc}} * tmp;
+          {% else %}
+            {{out.mixed_index}} = {{lhs.mixed_index}} * tmp;
+          {% endif %}
+      {% else %}
+        {% if (region_loop == "BOUT_FOR_RAJA") %}
+	      for (int {{jz_var}} = 0; {{jz_var}} < mesh_nz; ++{{jz_var}}){
+        {% else %}
+	      for (int {{jz_var}} = 0; {{jz_var}} < localmesh->LocalNz; ++{{jz_var}}){
+        {% endif %}
+          {% if (region_loop == "BOUT_FOR_RAJA") %}
+            {{out.mixed_index_acc}} = {{lhs.mixed_index_acc}} {{operator}} {{rhs.mixed_index_acc}};
+          {% else %}
+            {{out.mixed_index}} = {{lhs.mixed_index}} {{operator}} {{rhs.mixed_index}};
+          {% endif %}
+      {% endif %}
 	}
-	}
+	}{% if (region_loop == "BOUT_FOR_RAJA") %};{% endif %}
   {% elif out == "FieldPerp" and (lhs == "Field2D" or lhs == "Field3D" or rhs == "Field2D" or rhs == "Field3D")%}
     Mesh *localmesh = {{lhs.name if lhs.field_type != "BoutReal" else rhs.name}}.getMesh();
 
     {{region_loop}}({{index_var}}, {{out.name}}.getRegion({{region_name}})) {
-            int yind = {{lhs.name if lhs == "FieldPerp" else rhs.name}}.getIndex();
-            const auto {{mixed_base_ind}} = localmesh->indPerpto3D({{index_var}}, yind);
-            {% if lhs != "FieldPerp" %}
-	    {{out.index}} = {{lhs.base_index}} {{operator}} {{rhs.index}};
+            {% if (region_loop == "BOUT_FOR_RAJA") %}
+              int yind = {{lhs.name if lhs == "FieldPerp" else rhs.name}}_acc.getIndex();
             {% else %}
-	    {{out.index}} = {{lhs.index}} {{operator}} {{rhs.base_index}};
+              int yind = {{lhs.name if lhs == "FieldPerp" else rhs.name}}.getIndex();
             {% endif %}
-	}
+            {% if (region_loop == "BOUT_FOR_RAJA") %}
+              ; // DONE2
+              const auto {{mixed_base_ind}} = localmesh->flatIndPerpto3D({{index_var}}, result_acc.nz, yind);
+            {% else %}
+              const auto {{mixed_base_ind}} = localmesh->indPerpto3D({{index_var}}, yind);
+            {% endif %}
+            {% if lhs != "FieldPerp" %}
+              {% if (region_loop == "BOUT_FOR_RAJA") %}
+                {{out.index_acc}} = {{lhs.base_index_acc}} {{operator}} {{rhs.index_acc}};
+              {% else %}
+                {{out.index}} = {{lhs.base_index}} {{operator}} {{rhs.index}};
+              {% endif %}
+            {% else %}
+              {% if (region_loop == "BOUT_FOR_RAJA") %}
+                {{out.index_acc}} = {{lhs.index_acc}} {{operator}} {{rhs.base_index_acc}};
+              {% else %}
+                {{out.index}} = {{lhs.index}} {{operator}} {{rhs.base_index}};
+              {% endif %}
+            {% endif %}
+	}{% if (region_loop == "BOUT_FOR_RAJA") %};{% endif %}
   {% elif (operator == "/") and (rhs == "BoutReal") %}
       const auto tmp = 1.0 / {{rhs.index}};
       {{region_loop}}({{index_var}}, {{out.name}}.getValidRegionWithDefault({{region_name}})) {
-         {{out.index}} = {{lhs.index}} * tmp;
-      }
+        {% if (region_loop == "BOUT_FOR_RAJA") %}
+          {{out.index_acc}} = {{lhs.index_acc}} * tmp;
+        {% else %}
+          {{out.index}} = {{lhs.index}} * tmp;
+        {% endif %}
+      }{% if (region_loop == "BOUT_FOR_RAJA") %};{% endif %}
   {% else %}
     {{region_loop}}({{index_var}}, {{out.name}}.getValidRegionWithDefault({{region_name}})) {
-	    {{out.index}} = {{lhs.index}} {{operator}} {{rhs.index}};
-	}
+    {% if (region_loop == "BOUT_FOR_RAJA") %}
+      {{out.index_acc}} = {{lhs.index_acc}} {{operator}} {{rhs.index_acc}};
+    {% else %}
+        {{out.index}} = {{lhs.index}} {{operator}} {{rhs.index}};
+    {% endif %}
+	}{% if (region_loop == "BOUT_FOR_RAJA") %};{% endif %}
   {% endif %}
 
   checkData({{out.name}});
@@ -84,49 +157,102 @@
     checkData(*this);
     checkData({{rhs.name}});
 
+    {% if (region_loop == "BOUT_FOR_RAJA") %}
+      {% if lhs.field_type == "FieldPerp" %}
+        auto this_acc = FieldPerpAccessor{(*this)};
+      {% else %}
+        auto this_acc = FieldAccessor(*this);
+      {% endif %}
+      {% if rhs.field_type == "FieldPerp" %}
+        auto {{rhs.name}}_acc = FieldPerpAccessor{ {{rhs.name}} };
+      {% elif rhs.field_type == "BoutReal" %}
+      {% else %}
+        auto {{rhs.name}}_acc = FieldAccessor({{rhs.name}});
+      {% endif %}
+    {% endif %}
+
     {% if lhs == rhs == "Field3D" %}
       regionID = fieldmesh->getCommonRegion(regionID, {{rhs.name}}.regionID);
     {% endif %}
 
-
   {% if (lhs == "Field3D") and (rhs =="Field2D") %}
+    {% if (region_loop == "BOUT_FOR_RAJA") %}
+    int mesh_nz = fieldmesh->LocalNz;
+    {% endif %}
     {{region_loop}}({{index_var}}, {{rhs.name}}.getRegion({{region_name}})) {
-	const auto {{mixed_base_ind}} = fieldmesh->ind2Dto3D({{index_var}});
-	{% if (operator == "/") and (rhs == "Field2D") %}
-           const auto tmp = 1.0 / {{rhs.mixed_index}};
-	   for (int {{jz_var}} = 0; {{jz_var}} < fieldmesh->LocalNz; ++{{jz_var}}){
-		   (*this)[{{mixed_base_ind}} + {{jz_var}}] *= tmp;
+      {% if (region_loop == "BOUT_FOR_RAJA") %}
+        const auto {{mixed_base_ind}} = {{index_var}} * mesh_nz;
+      {% else %}
+        const auto {{mixed_base_ind}} = fieldmesh->ind2Dto3D({{index_var}});
+      {% endif %}
+      {% if (operator == "/") and (rhs == "Field2D") %}
+        {% if (region_loop == "BOUT_FOR_RAJA") %}
+          const auto tmp = 1.0 / {{rhs.mixed_index_acc}};
+          for (int {{jz_var}} = 0; {{jz_var}} < mesh_nz; ++{{jz_var}}){
+            this_acc[{{mixed_base_ind}} + {{jz_var}}] *= tmp;
         {% else %}
-           for (int {{jz_var}} = 0; {{jz_var}} < fieldmesh->LocalNz; ++{{jz_var}}){
-	           (*this)[{{mixed_base_ind}} + {{jz_var}}] {{operator}}= {{rhs.index}};
+          const auto tmp = 1.0 / {{rhs.mixed_index}};
+          for (int {{jz_var}} = 0; {{jz_var}} < fieldmesh->LocalNz; ++{{jz_var}}){
+            (*this)[{{mixed_base_ind}} + {{jz_var}}] *= tmp;
         {% endif %}
+      {% else %}
+        {% if (region_loop == "BOUT_FOR_RAJA") %}
+          for (int {{jz_var}} = 0; {{jz_var}} < mesh_nz; ++{{jz_var}}){
+            this_acc[{{mixed_base_ind}} + {{jz_var}}] {{operator}}= {{rhs.index_acc}};
+        {% else %}
+          for (int {{jz_var}} = 0; {{jz_var}} < fieldmesh->LocalNz; ++{{jz_var}}){
+            (*this)[{{mixed_base_ind}} + {{jz_var}}] {{operator}}= {{rhs.index}};
+        {% endif %}
+      {% endif %}
 	}
-	}
+  }{% if (region_loop == "BOUT_FOR_RAJA") %};{% endif %}
   {% elif lhs == "FieldPerp" and (rhs == "Field3D" or rhs == "Field2D")%}
     Mesh *localmesh = this->getMesh();
+    {% if (region_loop == "BOUT_FOR_RAJA") %}
+    int yind = this->getIndex();
+  {% endif %}
 
     {{region_loop}}({{index_var}}, this->getRegion({{region_name}})) {
-            int yind = this->getIndex();
-            const auto {{mixed_base_ind}} = localmesh->indPerpto3D({{index_var}}, yind);
-            (*this)[{{index_var}}] {{operator}}= {{rhs.base_index}};
-	}
+            {% if (region_loop == "BOUT_FOR_RAJA") %}
+              const auto {{mixed_base_ind}} = localmesh->flatIndPerpto3D({{index_var}}, yind);
+              this_acc[{{index_var}}] {{operator}}= {{rhs.base_index_acc}};
+            {% else %}
+              int yind = this->getIndex();
+              const auto {{mixed_base_ind}} = localmesh->indPerpto3D({{index_var}}, yind);
+              (*this)[{{index_var}}] {{operator}}= {{rhs.base_index}};
+            {% endif %}
+	}{% if (region_loop == "BOUT_FOR_RAJA") %};{% endif %}
   {% elif rhs == "FieldPerp" and (lhs == "Field3D" or lhs == "Field2D")%}
     Mesh *localmesh = this->getMesh();
 
     {{region_loop}}({{index_var}}, {{rhs.name}}.getRegion({{region_name}})) {
-            int yind = {{rhs.name}}.getIndex();
-            const auto {{mixed_base_ind}} = localmesh->indPerpto3D({{index_var}}, yind);
-            (*this)[{{base_ind_var}}] {{operator}}= {{rhs.index}};
-	}
+            {% if (region_loop == "BOUT_FOR_RAJA") %}
+              int yind = {{rhs.name}}.getIndex();
+              const auto {{mixed_base_ind}} = localmesh->indPerpto3D({{index_var}}, yind);
+              this_acc[{{base_ind_var}}] {{operator}}= {{rhs.index}};
+            {% else %}
+              int yind = {{rhs.name}}.getIndex();
+              const auto {{mixed_base_ind}} = localmesh->indPerpto3D({{index_var}}, yind);
+              (*this)[{{base_ind_var}}] {{operator}}= {{rhs.index}};
+            {% endif %}
+	}{% if (region_loop == "BOUT_FOR_RAJA") %};{% endif %}
   {% elif (operator == "/") and (lhs == "Field3D" or lhs == "Field2D") and (rhs =="BoutReal") %}
     const auto tmp = 1.0 / {{rhs.index}};
     {{region_loop}}({{index_var}}, this->getRegion({{region_name}})) {
+      {% if (region_loop == "BOUT_FOR_RAJA") %}
+        this_acc[{{index_var}}] *= tmp;
+      {% else %}
         (*this)[{{index_var}}] *= tmp;
-    }
+      {% endif %}
+    }{% if (region_loop == "BOUT_FOR_RAJA") %};{% endif %}
   {% else %}
     {{region_loop}}({{index_var}}, this->getRegion({{region_name}})) {
-      (*this)[{{index_var}}] {{operator}}= {{rhs.index}};
-    }
+      {% if (region_loop == "BOUT_FOR_RAJA") %}
+        this_acc[{{index_var}}] {{operator}}= {{rhs.index_acc}};
+      {% else %}
+        (*this)[{{index_var}}] {{operator}}= {{rhs.index}};
+      {% endif %}
+    }{% if (region_loop == "BOUT_FOR_RAJA") %};{% endif %}
   {% endif %}
 
     checkData(*this);
