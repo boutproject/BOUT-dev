@@ -4,6 +4,7 @@
 #include "bout/bout_types.hxx"
 #include "bout/field2d.hxx"
 #include "bout/utils.hxx"
+#include "bout/constants.hxx"
 
 
 namespace bout {
@@ -26,7 +27,8 @@ namespace bout {
         if (mesh.get(dx, "dpsi")) {
             dx = mesh.getCoordinates()->dx();
         }
-        mesh.get(toroidal_angle, "z");
+//        mesh.get(toroidal_angle, "z");
+        toroidal_angle = 2 * PI / Rxy.size();
     }
 
     Coordinates3D TokamakOptions::CylindricalCoordinatesToCartesian() {
