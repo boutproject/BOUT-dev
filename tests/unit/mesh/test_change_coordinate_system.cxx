@@ -20,7 +20,7 @@ TEST_F(CoordinateTransformTest, CylindricalToCartesian) {
 
     for (int i = 0; i < tokamak_options.Rxy.getNx(); i++) {
         for (int j = 0; j < tokamak_options.Rxy.getNy(); j++) {
-            tokamak_options.Rxy(i, j) = ((float) i + 1) / 1000 * ((float) j + 1) / 1000;
+            tokamak_options.Rxy(i, j) = sqrt(SQ(i) + SQ(j));
         }
     }
 
