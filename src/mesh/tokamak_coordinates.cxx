@@ -26,12 +26,22 @@ namespace bout {
         if (mesh.get(dx, "dpsi")) {
             dx = mesh.getCoordinates()->dx();
         }
+        mesh.get(toroidal_angle, "z");
     }
 
     Coordinates3D TokamakOptions::CylindricalCoordinatesToCartesian() {
-        Field3D x = Rxy * cos(Zxy);
-        Field3D y = Rxy * sin(Zxy);
-        Field3D z = Rxy * sin(Zxy);
+        Field3D x = emptyFrom(Rxy);
+        Field3D y = emptyFrom(Rxy);
+        Field3D z = emptyFrom(Zxy);
+        for (int i = 0; i < toroidal_angle.getNx(); i++) {
+            for (int j = 0; j < toroidal_angle.getNy(); j++) {
+                for (int k = 0; k < toroidal_angle.getNz(); k++) {
+                    x(i, j, k) = Rxy(i, j) * cos(toroidal_angle(i, j, k));
+                    y(i, j, k) = Rxy(i, j) * sin(toroidal_angle(i, j, k));
+                    z(i, j, k) = Zxy(i, j);
+                }
+            }
+        }
         return Coordinates3D(x, y, z);
     }
 

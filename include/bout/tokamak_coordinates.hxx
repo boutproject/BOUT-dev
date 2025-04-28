@@ -29,6 +29,7 @@ namespace bout {
         Field2D hthe;
         FieldMetric I;
         FieldMetric dx;
+        FieldMetric toroidal_angle;
 
         TokamakOptions(Mesh &mesh);
 
