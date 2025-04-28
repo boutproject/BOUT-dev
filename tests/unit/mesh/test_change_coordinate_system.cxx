@@ -26,8 +26,8 @@ TEST_F(CoordinateTransformTest, CylindricalToCartesian) {
 
     bout::Coordinates3D cartesian_coords = tokamak_options.CylindricalCoordinatesToCartesian();
 
-    for (int jx = 0; jx < mesh->xstart; jx++) {
-        for (int jy = 0; jy < mesh->ystart; jy++) {
+    for (int jx = 0; jx < mesh->xend; jx++) {
+        for (int jy = 0; jy < mesh->yend; jy++) {
             for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
                 auto actual_x = cartesian_coords.x(jx, jy, jz);
