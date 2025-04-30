@@ -3,7 +3,7 @@
  *
  *
  **************************************************************************
- * Copyright 2010-2024 BOUT++ contributors
+ * Copyright 2010-2025 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -71,6 +71,13 @@ int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zvec
 
 int cvode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
               void* user_data, N_Vector tmp);
+
+#if BOUT_HAS_PETSC
+int cvode_petsc_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zvec,
+                    BoutReal gamma, BoutReal delta, int lr, void* user_data);
+int cvode_petsc_setup(BoutReal t, N_Vector yy, N_Vector yp, sunbooleantype recompute_jac,
+                      sunbooleantype* recomputed_jac, BoutReal gamma, void* user_data);
+#endif
 } // namespace
 // NOLINTEND(readability-identifier-length)
 
@@ -120,6 +127,8 @@ CvodeSolver::CvodeSolver(Options* opts)
               .withDefault(false)),
       maxl((*options)["maxl"].doc("Maximum number of linear iterations").withDefault(5)),
       use_precon((*options)["use_precon"].doc("Use preconditioner?").withDefault(false)),
+      petsc_precon(
+          (*options)["petsc_precon"].doc("Use PETSc preconditioner?").withDefault(false)),
       rightprec((*options)["rightprec"]
                     .doc("Use right preconditioner? Otherwise use left.")
                     .withDefault(false)),
@@ -353,7 +362,17 @@ int CvodeSolver::init() {
     }
 
     if (use_precon) {
-      if (hasPreconditioner()) {
+      if (petsc_precon) {
+#if BOUT_HAS_PETSC
+        output_info.write("\tUsing PETSc preconditioner\n");
+        if (CVodeSetPreconditioner(cvode_mem, cvode_petsc_setup, cvode_petsc_pre)
+            != CVLS_SUCCESS) {
+          throw BoutException("CVodeSetPreconditioner failed\n");
+        }
+#else
+        throw BoutException("BOUT++ not configured with PETSc");
+#endif
+      } else if (hasPreconditioner()) {
         output_info.write("\tUsing user-supplied preconditioner\n");
 
         if (CVodeSetPreconditioner(cvode_mem, nullptr, cvode_pre) != CVLS_SUCCESS) {

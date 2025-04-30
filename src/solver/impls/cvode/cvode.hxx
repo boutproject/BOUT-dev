@@ -119,6 +119,7 @@ private:
   int maxl;
   /// Use preconditioner?
   bool use_precon;
+  bool petsc_precon; ///< Use PETSc preconditioner?
   /// Use right preconditioner? Otherwise use left.
   bool rightprec;
   bool use_jacobian;
