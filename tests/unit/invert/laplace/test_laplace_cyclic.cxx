@@ -35,8 +35,8 @@ public:
 
   const Field3D operator()(Field3D& f) {
     auto result = d * Delp2(f)
-                  + (coords->g11 * DDX(f) + coords->g13 * DDZ(f)) * DDX(c2) / c1 + a * f
-                  + ex * DDX(f) + ez * DDZ(f);
+                  + (coords->g11() * DDX(f) + coords->g13() * DDZ(f)) * DDX(c2) / c1
+                  + a * f + ex * DDX(f) + ez * DDZ(f);
     applyBoundaries(result, f);
     return result;
   }
@@ -48,7 +48,7 @@ private:
   void applyBoundaries(Field3D& newF, const Field3D& f) {
     BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_INNER_X")) {
       if (inner_x_neumann) {
-        newF[i] = (f[i.xp()] - f[i]) / coords->dx[i] / sqrt(coords->g_11[i]);
+        newF[i] = (f[i.xp()] - f[i]) / coords->dx()[i] / sqrt(coords->g_11()[i]);
       } else {
         newF[i] = 0.5 * (f[i] + f[i.xp()]);
       }
@@ -56,7 +56,7 @@ private:
 
     BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_OUTER_X")) {
       if (outer_x_neumann) {
-        newF[i] = (f[i] - f[i.xm()]) / coords->dx[i] / sqrt(coords->g_11[i]);
+        newF[i] = (f[i] - f[i.xm()]) / coords->dx()[i] / sqrt(coords->g_11()[i]);
       } else {
         newF[i] = 0.5 * (f[i.xm()] + f[i]);
       }
@@ -80,7 +80,6 @@ public:
 
     static_cast<FakeMesh*>(bout::globals::mesh)
         ->setGridDataSource(new GridFromOptions(Options::getRoot()));
-    bout::globals::mesh->getCoordinates()->geometry();
     f3.allocate();
     coef2.allocate();
     coef3.allocate();

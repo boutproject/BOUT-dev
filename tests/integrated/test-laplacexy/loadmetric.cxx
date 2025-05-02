@@ -19,7 +19,7 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   Field2D dx;
   if (!mesh->get(dx, "dpsi")) {
     output << "\tUsing dpsi as the x grid spacing\n";
-    coords->dx = dx; // Only use dpsi if found
+    coords->setDx(dx); // Only use dpsi if found
   } else {
     // dx will have been read already from the grid
     output << "\tUsing dx as the x grid spacing\n";
@@ -29,11 +29,11 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
   Rxy /= Lnorm;
   hthe /= Lnorm;
   sinty *= SQ(Lnorm) * Bnorm;
-  coords->dx /= SQ(Lnorm) * Bnorm;
+  coords->setDx(coords->dx() / (SQ(Lnorm) * Bnorm));
 
   Bpxy /= Bnorm;
   Btxy /= Bnorm;
-  coords->Bxy /= Bnorm;
+  coords->setBxy(coords->Bxy() / Bnorm);
 
   // Calculate metric components
   std::string ptstr;
@@ -49,21 +49,22 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
     sbp = -1.0;
   }
 
-  coords->g11 = pow(Rxy * Bpxy, 2);
-  coords->g22 = 1.0 / pow(hthe, 2);
-  coords->g33 = pow(sinty, 2) * coords->g11 + pow(coords->Bxy, 2) / coords->g11;
-  coords->g12 = 0.0;
-  coords->g13 = -sinty * coords->g11;
-  coords->g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
+  const auto g11 = pow(Rxy * Bpxy, 2);
+  const auto g22 = 1.0 / pow(hthe, 2);
+  const auto g33 = pow(sinty, 2) * g11 + pow(coords->Bxy(), 2) / g11;
+  const auto g12 = 0.0;
+  const auto g13 = -sinty * g11;
+  const auto g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
 
-  coords->J = hthe / Bpxy;
+  const auto g_11 = 1.0 / g11 + pow(sinty * Rxy, 2);
+  const auto g_22 = pow(coords->Bxy() * hthe / Bpxy, 2);
+  const auto g_33 = Rxy * Rxy;
+  const auto g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
+  const auto g_13 = sinty * Rxy * Rxy;
+  const auto g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
 
-  coords->g_11 = 1.0 / coords->g11 + pow(sinty * Rxy, 2);
-  coords->g_22 = pow(coords->Bxy * hthe / Bpxy, 2);
-  coords->g_33 = Rxy * Rxy;
-  coords->g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
-  coords->g_13 = sinty * Rxy * Rxy;
-  coords->g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
+  coords->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+                          CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
-  coords->geometry();
+  coords->setJ(hthe / Bpxy);
 }

@@ -179,7 +179,7 @@ protected:
     Field2D dx;
     if (!mesh->get(dx, "dpsi")) {
       output << "\tUsing dpsi as the x grid spacing\n";
-      coord->dx = dx; // Only use dpsi if found
+      coord->setDx(dx); // Only use dpsi if found
     } else {
       // dx will have been read already from the grid
       output << "\tUsing dx as the x grid spacing\n";
@@ -188,11 +188,11 @@ protected:
     Rxy /= Lnorm;
     hthe /= Lnorm;
     sinty *= SQ(Lnorm) * Bnorm;
-    coord->dx /= SQ(Lnorm) * Bnorm;
+    coord->setDx(coord->dx() / (SQ(Lnorm) * Bnorm));
 
     Bpxy /= Bnorm;
     Btxy /= Bnorm;
-    coord->Bxy /= Bnorm;
+    coord->setBxy(coord->Bxy() / Bnorm);
 
     // Calculate metric components
     sinty = 0.0; // I disappears from metric for shifted coordinates
@@ -202,23 +202,24 @@ protected:
       sbp = -1.0;
     }
 
-    coord->g11 = SQ(Rxy * Bpxy);
-    coord->g22 = 1.0 / SQ(hthe);
-    coord->g33 = SQ(sinty) * coord->g11 + SQ(coord->Bxy) / coord->g11;
-    coord->g12 = 0.0;
-    coord->g13 = -sinty * coord->g11;
-    coord->g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
+    const auto g11 = SQ(Rxy * Bpxy);
+    const auto g22 = 1.0 / SQ(hthe);
+    const auto g33 = SQ(sinty) * g11 + SQ(coord->Bxy()) / g11;
+    const auto g12 = 0.0;
+    const auto g13 = -sinty * g11;
+    const auto g23 = -sbp * Btxy / (hthe * Bpxy * Rxy);
 
-    coord->J = hthe / Bpxy;
+    const auto g_11 = 1.0 / g11 + SQ(sinty * Rxy);
+    const auto g_22 = SQ(coord->Bxy() * hthe / Bpxy);
+    const auto g_33 = Rxy * Rxy;
+    const auto g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
+    const auto g_13 = sinty * Rxy * Rxy;
+    const auto g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
 
-    coord->g_11 = 1.0 / coord->g11 + SQ(sinty * Rxy);
-    coord->g_22 = SQ(coord->Bxy * hthe / Bpxy);
-    coord->g_33 = Rxy * Rxy;
-    coord->g_12 = sbp * Btxy * hthe * sinty * Rxy / Bpxy;
-    coord->g_13 = sinty * Rxy * Rxy;
-    coord->g_23 = sbp * Btxy * hthe * Rxy / Bpxy;
+    coord->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+                           CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
-    coord->geometry();
+    coord->setJ(hthe / Bpxy);
   }
 };
 

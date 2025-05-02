@@ -778,7 +778,7 @@ protected:
 
     if (mesh->IncIntShear) {
       // BOUT-06 style, using d/dx = d/dpsi + I * d/dz
-      metric->IntShiftTorsion = I;
+      metric->setIntShiftTorsion(I);
 
     } else {
       // Dimits style, using local coordinate system
@@ -915,7 +915,7 @@ protected:
     Btxy /= Bbar;
     B0 /= Bbar;
     hthe /= Lbar;
-    metric->dx /= Lbar * Lbar * Bbar;
+    metric->setDx(metric->dx() / (Lbar * Lbar * Bbar));
     I *= Lbar * Lbar * Bbar;
 
     if (constn0) {
@@ -1045,24 +1045,25 @@ protected:
 
     /**************** CALCULATE METRICS ******************/
 
-    metric->g11 = SQ(Rxy * Bpxy);
-    metric->g22 = 1.0 / SQ(hthe);
-    metric->g33 = SQ(I) * metric->g11 + SQ(B0) / metric->g11;
-    metric->g12 = 0.0;
-    metric->g13 = -I * metric->g11;
-    metric->g23 = -Btxy / (hthe * Bpxy * Rxy);
+    const auto g11 = SQ(Rxy * Bpxy);
+    const auto g22 = 1.0 / SQ(hthe);
+    const auto g33 = SQ(I) * g11 + SQ(B0) / g11;
+    const auto g12 = 0.0;
+    const auto g13 = -I * g11;
+    const auto g23 = -Btxy / (hthe * Bpxy * Rxy);
 
-    metric->J = hthe / Bpxy;
-    metric->Bxy = B0;
+    const auto g_11 = 1.0 / g11 + SQ(I * Rxy);
+    const auto g_22 = SQ(B0 * hthe / Bpxy);
+    const auto g_33 = Rxy * Rxy;
+    const auto g_12 = Btxy * hthe * I * Rxy / Bpxy;
+    const auto g_13 = I * Rxy * Rxy;
+    const auto g_23 = Btxy * hthe * Rxy / Bpxy;
 
-    metric->g_11 = 1.0 / metric->g11 + SQ(I * Rxy);
-    metric->g_22 = SQ(B0 * hthe / Bpxy);
-    metric->g_33 = Rxy * Rxy;
-    metric->g_12 = Btxy * hthe * I * Rxy / Bpxy;
-    metric->g_13 = I * Rxy * Rxy;
-    metric->g_23 = Btxy * hthe * Rxy / Bpxy;
+    metric->setMetricTensor(ContravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+                            CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
 
-    metric->geometry(); // Calculate quantities from metric tensor
+    metric->setJ(hthe / Bpxy);
+    metric->setBxy(B0);
 
     // Set B field vector
 
@@ -1812,11 +1813,11 @@ protected:
     if (hyperviscos > 0.0) {
       // Calculate coefficient.
 
-      hyper_mu_x = hyperviscos * metric->g_11 * SQ(metric->dx)
-                   * abs(metric->g11 * D2DX2(U)) / (abs(U) + 1e-3);
+      hyper_mu_x = hyperviscos * metric->g_11() * SQ(metric->dx())
+                   * abs(metric->g11() * D2DX2(U)) / (abs(U) + 1e-3);
       hyper_mu_x.applyBoundary("dirichlet"); // Set to zero on all boundaries
 
-      ddt(U) += hyper_mu_x * metric->g11 * D2DX2(U);
+      ddt(U) += hyper_mu_x * metric->g11() * D2DX2(U);
 
       if (first_run) { // Print out maximum values of viscosity used on this processor
         output.write("   Hyper-viscosity values:\n");
@@ -1954,7 +1955,7 @@ protected:
       BoutReal pnorm = P0(0, 0);
       ddt(P) += heating_P * source_expx2(P0, 2. * hp_width, 0.5 * hp_length)
                 * (Tbar / pnorm); // heat source
-      ddt(P) += (100. * source_tanhx(P0, hp_width, hp_length) + 0.01) * metric->g11
+      ddt(P) += (100. * source_tanhx(P0, hp_width, hp_length) + 0.01) * metric->g11()
                 * D2DX2(P) * (Tbar / Lbar / Lbar); // radial diffusion
     }
 

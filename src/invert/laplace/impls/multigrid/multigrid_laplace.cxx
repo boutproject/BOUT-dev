@@ -619,7 +619,8 @@ void LaplaceMultigrid::generateMatrixF(int level) {
            + coords->g13(i2, yindex)
                  * ddz_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
            )
-          / coords->dx(i2, yindex); // coefficient of 1st derivative stencil (x-direction)
+          / coords->dx(i2,
+                       yindex); // coefficient of 1st derivative stencil (x-direction)
       if (nonuniform) {
         // add correction for non-uniform dx
         dxd += D(i2, yindex, k2) * coords->d1_dx(i2, yindex);

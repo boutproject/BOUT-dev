@@ -2171,9 +2171,9 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
           BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
                            + bndry->by * metric->dy(bndry->x, bndry->y, zk);
 #else
-      BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
-                       + bndry->by * metric->dy(bndry->x, bndry->y);
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
+        BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
+                         + bndry->by * metric->dy(bndry->x, bndry->y);
+        for (int zk = 0; zk < mesh->LocalNz; zk++) {
 #endif
           if (fg) {
             val = fg->generate(Context(bndry, zk, loc, t, mesh));
@@ -2670,7 +2670,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
             -1.0 * sqrt(metric->g33(x, y) / metric->g11(x, y)) * metric->dx(x, y);
         for (int jz = 1; jz <= ncz / 2; jz++) {
           BoutReal kwave =
-              jz * 2.0 * PI / metric->zlength()(x, y); // wavenumber in [rad^-1]
+              jz * 2.0 * PI / metric->zlength(x, y);   // wavenumber in [rad^-1]
           c0[jz] *= exp(coef * kwave);                 // The decaying solution only
         }
         // Reverse FFT
@@ -2972,13 +2972,13 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
         // d/dx( Jmetric->g11 B_x ) = - d/dx( Jmetric->g12 B_y + Jmetric->g13 B_z)
         //                    - d/dy( JB^y ) - d/dz( JB^z )
 
-        tmp =
-            -(metric->J(jx, jy) * metric->g12(jx, jy) * var.y(jx, jy, jz)
-              + metric->J(jx, jy) * metric->g13(jx, jy) * var.z(jx, jy, jz)
-              - metric->J(jx - 2, jy) * metric->g12(jx - 2, jy) * var.y(jx - 2, jy, jz)
-              + metric->J(jx - 2, jy) * metric->g13(jx - 2, jy) * var.z(jx - 2, jy, jz))
-            / (metric->dx(jx - 2, jy)
-               + metric->dx(jx - 1, jy)); // First term (d/dx) using vals calculated above
+        tmp = -(metric->J(jx, jy) * metric->g12(jx, jy) * var.y(jx, jy, jz)
+                + metric->J(jx, jy) * metric->g13(jx, jy) * var.z(jx, jy, jz)
+                - metric->J(jx - 2, jy) * metric->g12(jx - 2, jy) * var.y(jx - 2, jy, jz)
+                + metric->J(jx - 2, jy) * metric->g13(jx - 2, jy) * var.z(jx - 2, jy, jz))
+              / (metric->dx(jx - 2, jy)
+                 + metric->dx(jx - 1,
+                              jy)); // First term (d/dx) using vals calculated above
         tmp -= (metric->J(jx - 1, jy + 1) * metric->g12(jx - 1, jy + 1)
                     * var.x(jx - 1, jy + 1, jz)
                 - metric->J(jx - 1, jy - 1) * metric->g12(jx - 1, jy - 1)

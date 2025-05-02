@@ -4,49 +4,100 @@
  * given the contravariant metric tensor terms
  **************************************************************************/
 
+#include "bout/field2d.hxx"
+#include "bout/g_values.hxx"
 #include <bout/assert.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/msg_stack.hxx>
-#include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
-#include <bout/derivs.hxx>
 #include <bout/fft.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/output_bout_types.hxx>
-
-#include <bout/globals.hxx>
-
-#include "invert3x3.hxx"
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
+#include "bout/derivs.hxx"
+
+#include <bout/bout_types.hxx>
 
 // use anonymous namespace so this utility function is not available outside this file
 namespace {
-template <typename T, typename... Ts>
+
+// If the CELL_CENTRE variable was read, the staggered version is required to
+// also exist for consistency
+void checkStaggeredGet(Mesh* mesh, const std::string& name, const std::string& suffix) {
+  if (mesh->sourceHasVar(name) != mesh->sourceHasVar(name + suffix)) {
+    throw BoutException("Attempting to read staggered fields from grid, but " + name
+                        + " is not present in both CELL_CENTRE and staggered versions.");
+  }
+}
+
+// convenience function for repeated code
+auto getAtLoc(Mesh* mesh, const std::string& name, const std::string& suffix,
+              CELL_LOC location, BoutReal default_value = 0.) {
+
+  checkStaggeredGet(mesh, name, suffix);
+  return mesh->get(name + suffix, default_value, false, location);
+}
+
+std::string getLocationSuffix(CELL_LOC location) {
+  switch (location) {
+  case CELL_CENTRE: {
+    return "";
+  }
+  case CELL_XLOW: {
+    return "_xlow";
+  }
+  case CELL_YLOW: {
+    return "_ylow";
+  }
+  case CELL_ZLOW: {
+    // in 2D metric, same as CELL_CENTRE
+    return bout::build::use_metric_3d ? "_zlow" : "";
+  }
+  default: {
+    throw BoutException(
+        "Incorrect location passed to "
+        "Coordinates(Mesh*,const CELL_LOC,const Coordinates*) constructor.");
+  }
+  }
+}
+
+} // anonymous namespace
+
 // Use sendY()/sendX() and wait() instead of Mesh::communicate() to ensure we
 // don't try to calculate parallel slices as Coordinates are not constructed yet
-void communicate(T& t, Ts&... ts) {
-  FieldGroup g(t, ts...);
-  auto h = t.getMesh()->sendY(g);
-  t.getMesh()->wait(h);
-  h = t.getMesh()->sendX(g);
-  t.getMesh()->wait(h);
+void Coordinates::communicate(Field2D& f) {
+  FieldGroup g(f);
+  auto* h = f.getMesh()->sendY(g);
+  f.getMesh()->wait(h);
+  h = f.getMesh()->sendX(g);
+  f.getMesh()->wait(h);
 }
+#if BOUT_USE_METRIC_3D
+void Coordinates::communicate(Field3D& f) {
+  FieldGroup g(f);
+  auto* h = f.getMesh()->sendY(g);
+  f.getMesh()->wait(h);
+  h = f.getMesh()->sendX(g);
+  f.getMesh()->wait(h);
+}
+#endif
 
 /// Interpolate a Field2D to a new CELL_LOC with interp_to.
 /// Communicates to set internal guard cells.
 /// Boundary guard cells are set by extrapolating from the grid, like
 /// 'free_o3' boundary conditions
 /// Corner guard cells are set to BoutNaN
-Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extrapolate_x,
-                                  bool extrapolate_y, bool no_extra_interpolate,
-                                  ParallelTransform* UNUSED(pt) = nullptr) {
+Field2D Coordinates::interpolateAndExtrapolate(
+    const Field2D& f, CELL_LOC location, bool extrapolate_x, bool extrapolate_y,
+    bool no_extra_interpolate, ParallelTransform* UNUSED(pt) = nullptr,
+    const std::string& region = "RGN_NOBNDRY") {
 
   Mesh* localmesh = f.getMesh();
-  Field2D result = interp_to(f, location, "RGN_NOBNDRY");
+  Field2D result = interp_to(f, location, region);
   // Ensure result's data is unique. Otherwise result might be a duplicate of
   // f (if no interpolation is needed, e.g. if interpolation is in the
   // z-direction); then f would be communicated. Since this function is used
@@ -159,9 +210,10 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
 }
 
 #if BOUT_USE_METRIC_3D
-Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
-                                  bool extrapolate_x, bool extrapolate_y,
-                                  bool no_extra_interpolate, ParallelTransform* pt_) {
+Field3D Coordinates::interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
+                                               bool extrapolate_x, bool extrapolate_y,
+                                               bool no_extra_interpolate,
+                                               ParallelTransform* pt_) {
 
   Mesh* localmesh = f_.getMesh();
   Field3D result;
@@ -186,7 +238,7 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
   if (location == CELL_YLOW and f.getLocation() != CELL_YLOW) {
     auto f_aligned = pt_f->toFieldAligned(f, "RGN_NOX");
     result = interp_to(f_aligned, location, "RGN_NOBNDRY");
-    ParallelTransform* pt_result;
+    ParallelTransform* pt_result = nullptr;
     if (result.getCoordinates() == nullptr) {
       pt_result = pt_;
     } else {
@@ -314,1051 +366,9 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
 }
 #endif // BOUT_USE_METRIC_3D
 
-// If the CELL_CENTRE variable was read, the staggered version is required to
-// also exist for consistency
-void checkStaggeredGet(Mesh* mesh, const std::string& name, const std::string& suffix) {
-  if (mesh->sourceHasVar(name) != mesh->sourceHasVar(name + suffix)) {
-    throw BoutException("Attempting to read staggered fields from grid, but " + name
-                        + " is not present in both CELL_CENTRE and staggered versions.");
-  }
-}
-
-// convenience function for repeated code
-int getAtLoc(Mesh* mesh, Coordinates::FieldMetric& var, const std::string& name,
-             const std::string& suffix, CELL_LOC location, BoutReal default_value = 0.) {
-
-  checkStaggeredGet(mesh, name, suffix);
-  int result = mesh->get(var, name + suffix, default_value, false, location);
-
-  return result;
-}
-
-int getAtLocAndFillGuards(Mesh* mesh, Coordinates::FieldMetric& var,
-                          const std::string& name, const std::string& suffix,
-                          CELL_LOC location, BoutReal default_value, bool extrapolate_x,
-                          bool extrapolate_y, bool no_extra_interpolate,
-                          ParallelTransform* pt) {
-  auto ret = getAtLoc(mesh, var, name, suffix, location, default_value);
-  var = interpolateAndExtrapolate(var, location, extrapolate_x, extrapolate_y,
-                                  no_extra_interpolate, pt);
-  return ret;
-}
-
-std::string getLocationSuffix(CELL_LOC location) {
-  switch (location) {
-  case CELL_CENTRE: {
-    return "";
-  }
-  case CELL_XLOW: {
-    return "_xlow";
-  }
-  case CELL_YLOW: {
-    return "_ylow";
-  }
-  case CELL_ZLOW: {
-    // in 2D metric, same as CELL_CENTRE
-    return bout::build::use_metric_3d ? "_zlow" : "";
-  }
-  default: {
-    throw BoutException(
-        "Incorrect location passed to "
-        "Coordinates(Mesh*,const CELL_LOC,const Coordinates*) constructor.");
-  }
-  }
-}
-} // anonymous namespace
-
-Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric dz,
-                         FieldMetric J, FieldMetric Bxy, FieldMetric g11, FieldMetric g22,
-                         FieldMetric g33, FieldMetric g12, FieldMetric g13,
-                         FieldMetric g23, FieldMetric g_11, FieldMetric g_22,
-                         FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
-                         FieldMetric g_23, FieldMetric ShiftTorsion,
-                         FieldMetric IntShiftTorsion)
-    : dx(std::move(dx)), dy(std::move(dy)), dz(dz), J(std::move(J)), Bxy(std::move(Bxy)),
-      g11(std::move(g11)), g22(std::move(g22)), g33(std::move(g33)), g12(std::move(g12)),
-      g13(std::move(g13)), g23(std::move(g23)), g_11(std::move(g_11)),
-      g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
-      g_13(std::move(g_13)), g_23(std::move(g_23)), ShiftTorsion(std::move(ShiftTorsion)),
-      IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE) {}
-
-Coordinates::Coordinates(Mesh* mesh, Options* options)
-    : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
-      J(1., mesh), Bxy(1., mesh),
-      // Identity metric tensor
-      g11(1., mesh), g22(1., mesh), g33(1., mesh), g12(0, mesh), g13(0, mesh),
-      g23(0, mesh), g_11(1., mesh), g_22(1., mesh), g_33(1., mesh), g_12(0, mesh),
-      g_13(0, mesh), g_23(0, mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh),
-      G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh),
-      G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh),
-      G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
-
-  if (options == nullptr) {
-    options = Options::getRoot()->getSection("mesh");
-  }
-
-  // Note: If boundary cells were not loaded from the grid file, use
-  // 'interpolateAndExtrapolate' to set them. Ensures that derivatives are
-  // smooth at all the boundaries.
-
-  const bool extrapolate_x =
-      (*options)["extrapolate_x"].withDefault(not mesh->sourceHasXBoundaryGuards());
-  const bool extrapolate_y =
-      (*options)["extrapolate_y"].withDefault(not mesh->sourceHasYBoundaryGuards());
-
-  if (extrapolate_x) {
-    output_warn.write(_("WARNING: extrapolating input mesh quantities into x-boundary "
-                        "cells. Set option extrapolate_x=false to disable this.\n"));
-  }
-
-  if (extrapolate_y) {
-    output_warn.write(_("WARNING: extrapolating input mesh quantities into y-boundary "
-                        "cells. Set option extrapolate_y=false to disable this.\n"));
-  }
-
-  mesh->get(dx, "dx", 1.0, false);
-  mesh->get(dy, "dy", 1.0, false);
-
-  nz = mesh->LocalNz;
-
-  {
-    auto& options = Options::root();
-    const bool has_zperiod = options.isSet("zperiod");
-    const auto zmin = has_zperiod ? 0.0 : options["ZMIN"].withDefault(0.0);
-    const auto zmax = has_zperiod ? 1.0 / options["zperiod"].withDefault(1.0)
-                                  : options["ZMAX"].withDefault(1.0);
-
-    const auto default_dz = (zmax - zmin) * TWOPI / nz;
-
-    mesh->get(dz, "dz", default_dz, false);
-  }
-
-  // required early for differentiation.
-  setParallelTransform(options);
-
-  dz = interpolateAndExtrapolate(dz, location, extrapolate_x, extrapolate_y, false,
-                                 transform.get());
-  dx = interpolateAndExtrapolate(dx, location, extrapolate_x, extrapolate_y, false,
-                                 transform.get());
-
-  if (mesh->periodicX) {
-    communicate(dx);
-  }
-
-  dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y, false,
-                                 transform.get());
-
-  auto getUnaligned = [this](auto& field, const std::string& name,
-                             BoutReal default_value) {
-    localmesh->get(field, name, default_value, false);
-    if (field.getDirectionY() == YDirectionType::Aligned
-        and transform->canToFromFieldAligned()) {
-      return transform->fromFieldAligned(field);
-    } else {
-      return field.setDirectionY(YDirectionType::Standard);
-    }
-  };
-
-  auto getUnalignedAtLocation = [this, extrapolate_x, extrapolate_y,
-                                 getUnaligned](auto& field, const std::string& name,
-                                               BoutReal default_value) {
-    field = getUnaligned(field, name, default_value);
-    return interpolateAndExtrapolate(field, location, extrapolate_x, extrapolate_y, false,
-                                     transform.get());
-  };
-
-  // Diagonal components of metric tensor g^{ij} (default to 1)
-  g11 = getUnalignedAtLocation(g11, "g11", 1.0);
-  g22 = getUnalignedAtLocation(g22, "g22", 1.0);
-  g33 = getUnalignedAtLocation(g33, "g33", 1.0);
-
-  // Off-diagonal elements. Default to 0
-  g12 = getUnalignedAtLocation(g12, "g12", 0.0);
-  g13 = getUnalignedAtLocation(g13, "g13", 0.0);
-  g23 = getUnalignedAtLocation(g23, "g23", 0.0);
-
-  // Check input metrics
-  checkContravariant();
-
-  /// Find covariant metric components
-  auto covariant_component_names = {"g_11", "g_22", "g_33", "g_12", "g_13", "g_23"};
-  auto source_has_component = [&mesh](const std::string& name) {
-    return mesh->sourceHasVar(name);
-  };
-  // Check if any of the components are present
-  if (std::any_of(begin(covariant_component_names), end(covariant_component_names),
-                  source_has_component)) {
-    // Check that all components are present
-    if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
-                    source_has_component)) {
-      g_11 = getUnaligned(g_11, "g_11", 1.0);
-      g_22 = getUnaligned(g_22, "g_22", 1.0);
-      g_33 = getUnaligned(g_33, "g_33", 1.0);
-      g_12 = getUnaligned(g_12, "g_12", 0.0);
-      g_13 = getUnaligned(g_13, "g_13", 0.0);
-      g_23 = getUnaligned(g_23, "g_23", 0.0);
-
-      output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
-                        "Contravariant components NOT recalculated\n");
-
-    } else {
-      output_warn.write("Not all covariant components of metric tensor found. "
-                        "Calculating all from the contravariant tensor\n");
-      /// Calculate contravariant metric components if not found
-      if (calcCovariant("RGN_NOCORNERS")) {
-        throw BoutException("Error in calcCovariant call");
-      }
-    }
-  } else {
-    /// Calculate contravariant metric components if not found
-    if (calcCovariant("RGN_NOCORNERS")) {
-      throw BoutException("Error in calcCovariant call");
-    }
-  }
-  // More robust to extrapolate derived quantities directly, rather than
-  // deriving from extrapolated covariant metric components
-  g_11 = interpolateAndExtrapolate(g_11, location, extrapolate_x, extrapolate_y, false,
-                                   transform.get());
-  g_22 = interpolateAndExtrapolate(g_22, location, extrapolate_x, extrapolate_y, false,
-                                   transform.get());
-  g_33 = interpolateAndExtrapolate(g_33, location, extrapolate_x, extrapolate_y, false,
-                                   transform.get());
-  g_12 = interpolateAndExtrapolate(g_12, location, extrapolate_x, extrapolate_y, false,
-                                   transform.get());
-  g_13 = interpolateAndExtrapolate(g_13, location, extrapolate_x, extrapolate_y, false,
-                                   transform.get());
-  g_23 = interpolateAndExtrapolate(g_23, location, extrapolate_x, extrapolate_y, false,
-                                   transform.get());
-
-  // Check covariant metrics
-  checkCovariant();
-
-  /// Calculate Jacobian and Bxy
-  if (jacobian()) {
-    throw BoutException("Error in jacobian call");
-  }
-
-  // Attempt to read J from the grid file
-  auto Jcalc = J;
-  if (mesh->get(J, "J", 0.0, false)) {
-    output_warn.write(
-        "\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
-    J = Jcalc;
-  } else {
-    J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false,
-                                  transform.get());
-
-    // Compare calculated and loaded values
-    output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J - Jcalc)));
-
-    communicate(J);
-
-    // Re-evaluate Bxy using new J
-    Bxy = sqrt(g_22) / J;
-  }
-
-  // Check jacobian
-  bout::checkFinite(J, "J", "RGN_NOCORNERS");
-  bout::checkPositive(J, "J", "RGN_NOCORNERS");
-  if (min(abs(J)) < 1.0e-10) {
-    throw BoutException("\tERROR: Jacobian becomes very small\n");
-  }
-
-  // Attempt to read Bxy from the grid file
-  auto Bcalc = Bxy;
-  if (mesh->get(Bxy, "Bxy", 0.0, false)) {
-    output_warn.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from "
-                      "metric tensor\n");
-    Bxy = Bcalc;
-  } else {
-
-    Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
-                                    transform.get());
-    output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy - Bcalc)));
-  }
-
-  // Check Bxy
-  bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
-  bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
-
-  if (mesh->get(ShiftTorsion, "ShiftTorsion", 0.0, false)) {
-    output_warn.write(
-        "\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
-    ShiftTorsion = 0.0;
-  }
-  ShiftTorsion = interpolateAndExtrapolate(ShiftTorsion, location, extrapolate_x,
-                                           extrapolate_y, false, transform.get());
-
-  //////////////////////////////////////////////////////
-
-  if (mesh->IncIntShear) {
-    if (mesh->get(IntShiftTorsion, "IntShiftTorsion", 0.0, false)) {
-      output_warn.write("\tWARNING: No Integrated torsion specified\n");
-    }
-    IntShiftTorsion = interpolateAndExtrapolate(IntShiftTorsion, location, extrapolate_x,
-                                                extrapolate_y, false, transform.get());
-  } else {
-    // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
-    IntShiftTorsion = 0.;
-  }
-}
-
-Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
-                         const Coordinates* coords_in, bool force_interpolate_from_centre)
-    : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
-      J(1., mesh), Bxy(1., mesh),
-      // Identity metric tensor
-      g11(1., mesh), g22(1., mesh), g33(1., mesh), g12(0, mesh), g13(0, mesh),
-      g23(0, mesh), g_11(1., mesh), g_22(1., mesh), g_33(1., mesh), g_12(0, mesh),
-      g_13(0, mesh), g_23(0, mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh),
-      G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh),
-      G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh),
-      G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
-      IntShiftTorsion(mesh), localmesh(mesh), location(loc) {
-
-  std::string suffix = getLocationSuffix(location);
-
-  nz = mesh->LocalNz;
-
-  // Default to true in case staggered quantities are not read from file
-  bool extrapolate_x = true;
-  bool extrapolate_y = true;
-
-  if (!force_interpolate_from_centre && mesh->sourceHasVar("dx" + suffix)) {
-
-    extrapolate_x = not mesh->sourceHasXBoundaryGuards();
-    extrapolate_y = not mesh->sourceHasYBoundaryGuards();
-
-    if (extrapolate_x) {
-      output_warn.write(_("WARNING: extrapolating input mesh quantities into x-boundary "
-                          "cells\n"));
-    }
-
-    if (extrapolate_y) {
-      output_warn.write(_("WARNING: extrapolating input mesh quantities into y-boundary "
-                          "cells\n"));
-    }
-
-    {
-      auto& options = Options::root();
-      const bool has_zperiod = options.isSet("zperiod");
-      const auto zmin = has_zperiod ? 0.0 : options["ZMIN"].withDefault(0.0);
-      const auto zmax = has_zperiod ? 1.0 / options["zperiod"].withDefault(1.0)
-                                    : options["ZMAX"].withDefault(1.0);
-
-      const auto default_dz = (zmax - zmin) * TWOPI / nz;
-      getAtLoc(mesh, dz, "dz", suffix, location, default_dz);
-    }
-    setParallelTransform(options);
-
-    dz = interpolateAndExtrapolate(dz, location, extrapolate_x, extrapolate_y, false,
-                                   transform.get());
-
-    getAtLocAndFillGuards(mesh, dx, "dx", suffix, location, 1.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-
-    if (mesh->periodicX) {
-      communicate(dx);
-    }
-
-    getAtLocAndFillGuards(mesh, dy, "dy", suffix, location, 1.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-
-    // grid data source has staggered fields, so read instead of interpolating
-    // Diagonal components of metric tensor g^{ij} (default to 1)
-    getAtLocAndFillGuards(mesh, g11, "g11", suffix, location, 1.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, g22, "g22", suffix, location, 1.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, g33, "g33", suffix, location, 1.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, g12, "g12", suffix, location, 0.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, g13, "g13", suffix, location, 0.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-    getAtLocAndFillGuards(mesh, g23, "g23", suffix, location, 0.0, extrapolate_x,
-                          extrapolate_y, false, transform.get());
-
-    // Check input metrics
-    checkContravariant();
-
-    /// Find covariant metric components
-    auto covariant_component_names = {"g_11", "g_22", "g_33", "g_12", "g_13", "g_23"};
-    auto source_has_component = [&suffix, &mesh](const std::string& name) {
-      return mesh->sourceHasVar(name + suffix);
-    };
-    // Check if any of the components are present
-    if (std::any_of(begin(covariant_component_names), end(covariant_component_names),
-                    source_has_component)) {
-      // Check that all components are present
-      if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
-                      source_has_component)) {
-
-        getAtLoc(mesh, g_11, "g_11", suffix, location);
-        getAtLoc(mesh, g_22, "g_22", suffix, location);
-        getAtLoc(mesh, g_33, "g_33", suffix, location);
-        getAtLoc(mesh, g_12, "g_12", suffix, location);
-        getAtLoc(mesh, g_13, "g_13", suffix, location);
-        getAtLoc(mesh, g_23, "g_23", suffix, location);
-
-        output_warn.write(
-            "\tWARNING! Staggered covariant components of metric tensor set manually. "
-            "Contravariant components NOT recalculated\n");
-
-      } else {
-        output_warn.write(
-            "Not all staggered covariant components of metric tensor found. "
-            "Calculating all from the contravariant tensor\n");
-        /// Calculate contravariant metric components if not found
-        if (calcCovariant("RGN_NOCORNERS")) {
-          throw BoutException("Error in staggered calcCovariant call");
-        }
-      }
-    } else {
-      /// Calculate contravariant metric components if not found
-      if (calcCovariant("RGN_NOCORNERS")) {
-        throw BoutException("Error in staggered calcCovariant call");
-      }
-    }
-    // More robust to extrapolate derived quantities directly, rather than
-    // deriving from extrapolated covariant metric components
-    g_11 = interpolateAndExtrapolate(g_11, location, extrapolate_x, extrapolate_y, false,
-                                     transform.get());
-    g_22 = interpolateAndExtrapolate(g_22, location, extrapolate_x, extrapolate_y, false,
-                                     transform.get());
-    g_33 = interpolateAndExtrapolate(g_33, location, extrapolate_x, extrapolate_y, false,
-                                     transform.get());
-    g_12 = interpolateAndExtrapolate(g_12, location, extrapolate_x, extrapolate_y, false,
-                                     transform.get());
-    g_13 = interpolateAndExtrapolate(g_13, location, extrapolate_x, extrapolate_y, false,
-                                     transform.get());
-    g_23 = interpolateAndExtrapolate(g_23, location, extrapolate_x, extrapolate_y, false,
-                                     transform.get());
-
-    // Check covariant metrics
-    checkCovariant();
-
-    /// Calculate Jacobian and Bxy
-    if (jacobian()) {
-      throw BoutException("Error in jacobian call while constructing staggered "
-                          "Coordinates");
-    }
-
-    // Attempt to read J from the grid file
-    auto Jcalc = J;
-    if (getAtLoc(mesh, J, "J", suffix, location)) {
-      output_warn.write(
-          "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
-          suffix);
-      J = Jcalc;
-    } else {
-      J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false,
-                                    transform.get());
-
-      // Compare calculated and loaded values
-      output_warn.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
-
-      // Re-evaluate Bxy using new J
-      Bxy = sqrt(g_22) / J;
-    }
-
-    // Check jacobian
-    bout::checkFinite(J, "J" + suffix, "RGN_NOCORNERS");
-    bout::checkPositive(J, "J" + suffix, "RGN_NOCORNERS");
-    if (min(abs(J)) < 1.0e-10) {
-      throw BoutException("\tERROR: Jacobian{:s} becomes very small\n", suffix);
-    }
-
-    // Attempt to read Bxy from the grid file
-    auto Bcalc = Bxy;
-    if (getAtLoc(mesh, Bxy, "Bxy", suffix, location)) {
-      output_warn.write(
-          "\tWARNING: Magnitude of B field 'Bxy_{:s}' not found. Calculating "
-          " from metric tensor\n",
-          suffix);
-      Bxy = Bcalc;
-    } else {
-      Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
-                                      transform.get());
-
-      output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
-    }
-
-    // Check Bxy
-    bout::checkFinite(Bxy, "Bxy" + suffix, "RGN_NOCORNERS");
-    bout::checkPositive(Bxy, "Bxy" + suffix, "RGN_NOCORNERS");
-
-    checkStaggeredGet(mesh, "ShiftTorsion", suffix);
-    if (mesh->get(ShiftTorsion, "ShiftTorsion" + suffix, 0.0, false)) {
-      output_warn.write(
-          "\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
-      ShiftTorsion = 0.0;
-    }
-    ShiftTorsion.setLocation(location);
-    ShiftTorsion = interpolateAndExtrapolate(ShiftTorsion, location, extrapolate_x,
-                                             extrapolate_y, false, transform.get());
-
-    //////////////////////////////////////////////////////
-
-    if (mesh->IncIntShear) {
-      checkStaggeredGet(mesh, "IntShiftTorsion", suffix);
-      if (mesh->get(IntShiftTorsion, "IntShiftTorsion" + suffix, 0.0, false)) {
-        output_warn.write("\tWARNING: No Integrated torsion specified\n");
-        IntShiftTorsion = 0.0;
-      }
-      IntShiftTorsion.setLocation(location);
-      IntShiftTorsion =
-          interpolateAndExtrapolate(IntShiftTorsion, location, extrapolate_x,
-                                    extrapolate_y, false, transform.get());
-    } else {
-      // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
-      IntShiftTorsion = 0.;
-    }
-  } else {
-    // Interpolate fields from coords_in
-
-    if (isUniform(coords_in->dz)) {
-      dz = coords_in->dz;
-      dz.setLocation(location);
-    } else {
-      throw BoutException(
-          "We are asked to transform dz to get dz before we have a transform, which "
-          "might require dz!\nPlease provide a dz for the staggered quantity!");
-    }
-    setParallelTransform(options);
-    dx = interpolateAndExtrapolate(coords_in->dx, location, true, true, false,
-                                   transform.get());
-    dy = interpolateAndExtrapolate(coords_in->dy, location, true, true, false,
-                                   transform.get());
-    // not really needed - we have used dz already ...
-    dz = interpolateAndExtrapolate(coords_in->dz, location, true, true, false,
-                                   transform.get());
-
-    // Diagonal components of metric tensor g^{ij}
-    g11 = interpolateAndExtrapolate(coords_in->g11, location, true, true, false,
-                                    transform.get());
-    g22 = interpolateAndExtrapolate(coords_in->g22, location, true, true, false,
-                                    transform.get());
-    g33 = interpolateAndExtrapolate(coords_in->g33, location, true, true, false,
-                                    transform.get());
-
-    // Off-diagonal elements.
-    g12 = interpolateAndExtrapolate(coords_in->g12, location, true, true, false,
-                                    transform.get());
-    g13 = interpolateAndExtrapolate(coords_in->g13, location, true, true, false,
-                                    transform.get());
-    g23 = interpolateAndExtrapolate(coords_in->g23, location, true, true, false,
-                                    transform.get());
-
-    // 3x3 matrix inversion can exaggerate small interpolation errors, so it is
-    // more robust to interpolate and extrapolate derived quantities directly,
-    // rather than deriving from interpolated/extrapolated covariant metric
-    // components
-    g_11 = interpolateAndExtrapolate(coords_in->g_11, location, true, true, false,
-                                     transform.get());
-    g_22 = interpolateAndExtrapolate(coords_in->g_22, location, true, true, false,
-                                     transform.get());
-    g_33 = interpolateAndExtrapolate(coords_in->g_33, location, true, true, false,
-                                     transform.get());
-    g_12 = interpolateAndExtrapolate(coords_in->g_12, location, true, true, false,
-                                     transform.get());
-    g_13 = interpolateAndExtrapolate(coords_in->g_13, location, true, true, false,
-                                     transform.get());
-    g_23 = interpolateAndExtrapolate(coords_in->g_23, location, true, true, false,
-                                     transform.get());
-
-    // Check input metrics
-    checkContravariant();
-    checkCovariant();
-
-    J = interpolateAndExtrapolate(coords_in->J, location, true, true, false,
-                                  transform.get());
-    Bxy = interpolateAndExtrapolate(coords_in->Bxy, location, true, true, false,
-                                    transform.get());
-
-    bout::checkFinite(J, "The Jacobian", "RGN_NOCORNERS");
-    bout::checkPositive(J, "The Jacobian", "RGN_NOCORNERS");
-    bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
-    bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
-
-    ShiftTorsion = interpolateAndExtrapolate(coords_in->ShiftTorsion, location, true,
-                                             true, false, transform.get());
-
-    if (mesh->IncIntShear) {
-      IntShiftTorsion = interpolateAndExtrapolate(coords_in->IntShiftTorsion, location,
-                                                  true, true, false, transform.get());
-    }
-  }
-}
-
-void Coordinates::outputVars(Options& output_options) {
-  Timer time("io");
-  const std::string loc_string =
-      (location == CELL_CENTRE) ? "" : "_" + toString(location);
-
-  output_options["dx" + loc_string].force(dx, "Coordinates");
-  output_options["dy" + loc_string].force(dy, "Coordinates");
-  output_options["dz" + loc_string].force(dz, "Coordinates");
-
-  output_options["g11" + loc_string].force(g11, "Coordinates");
-  output_options["g22" + loc_string].force(g22, "Coordinates");
-  output_options["g33" + loc_string].force(g33, "Coordinates");
-  output_options["g12" + loc_string].force(g12, "Coordinates");
-  output_options["g13" + loc_string].force(g13, "Coordinates");
-  output_options["g23" + loc_string].force(g23, "Coordinates");
-
-  output_options["g_11" + loc_string].force(g_11, "Coordinates");
-  output_options["g_22" + loc_string].force(g_22, "Coordinates");
-  output_options["g_33" + loc_string].force(g_33, "Coordinates");
-  output_options["g_12" + loc_string].force(g_12, "Coordinates");
-  output_options["g_13" + loc_string].force(g_13, "Coordinates");
-  output_options["g_23" + loc_string].force(g_23, "Coordinates");
-
-  output_options["J" + loc_string].force(J, "Coordinates");
-  output_options["Bxy" + loc_string].force(Bxy, "Coordinates");
-
-  output_options["G1" + loc_string].force(G1, "Coordinates");
-  output_options["G2" + loc_string].force(G2, "Coordinates");
-  output_options["G3" + loc_string].force(G3, "Coordinates");
-
-  getParallelTransform().outputVars(output_options);
-}
-
-const Field2D& Coordinates::zlength() const {
-  BOUT_OMP_SAFE(critical)
-  if (not zlength_cache) {
-    zlength_cache = std::make_unique<Field2D>(0., localmesh);
-
-#if BOUT_USE_METRIC_3D
-    BOUT_FOR_SERIAL(i, dz.getRegion("RGN_ALL")) { (*zlength_cache)[i] += dz[i]; }
-#else
-    (*zlength_cache) = dz * nz;
-#endif
-  }
-
-  return *zlength_cache;
-}
-
-int Coordinates::geometry(bool recalculate_staggered,
-                          bool force_interpolate_from_centre) {
-  TRACE("Coordinates::geometry");
-  communicate(dx, dy, dz, g11, g22, g33, g12, g13, g23, g_11, g_22, g_33, g_12, g_13,
-              g_23, J, Bxy);
-
-  output_progress.write("Calculating differential geometry terms\n");
-
-  if (min(abs(dx)) < 1e-8) {
-    throw BoutException("dx magnitude less than 1e-8");
-  }
-
-  if (min(abs(dy)) < 1e-8) {
-    throw BoutException("dy magnitude less than 1e-8");
-  }
-
-  if (min(abs(dz)) < 1e-8) {
-    throw BoutException("dz magnitude less than 1e-8");
-  }
-
-  // Check input metrics
-  checkContravariant();
-  checkCovariant();
-
-  // Calculate Christoffel symbol terms (18 independent values)
-  // Note: This calculation is completely general: metric
-  // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
-
-  G1_11 = 0.5 * g11 * DDX(g_11) + g12 * (DDX(g_12) - 0.5 * DDY(g_11))
-          + g13 * (DDX(g_13) - 0.5 * DDZ(g_11));
-  G1_22 = g11 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g12 * DDY(g_22)
-          + g13 * (DDY(g_23) - 0.5 * DDZ(g_22));
-  G1_33 = g11 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g12 * (DDZ(g_23) - 0.5 * DDY(g_33))
-          + 0.5 * g13 * DDZ(g_33);
-  G1_12 = 0.5 * g11 * DDY(g_11) + 0.5 * g12 * DDX(g_22)
-          + 0.5 * g13 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-  G1_13 = 0.5 * g11 * DDZ(g_11) + 0.5 * g12 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
-          + 0.5 * g13 * DDX(g_33);
-  G1_23 = 0.5 * g11 * (DDZ(g_12) + DDY(g_13) - DDX(g_23))
-          + 0.5 * g12 * (DDZ(g_22) + DDY(g_23) - DDY(g_23))
-          // + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
-          // which equals
-          + 0.5 * g13 * DDY(g_33);
-
-  G2_11 = 0.5 * g12 * DDX(g_11) + g22 * (DDX(g_12) - 0.5 * DDY(g_11))
-          + g23 * (DDX(g_13) - 0.5 * DDZ(g_11));
-  G2_22 = g12 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g22 * DDY(g_22)
-          + g23 * (DDY(g23) - 0.5 * DDZ(g_22));
-  G2_33 = g12 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g22 * (DDZ(g_23) - 0.5 * DDY(g_33))
-          + 0.5 * g23 * DDZ(g_33);
-  G2_12 = 0.5 * g12 * DDY(g_11) + 0.5 * g22 * DDX(g_22)
-          + 0.5 * g23 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-  G2_13 =
-      // 0.5 *g21*(DDZ(g_11) + DDX(g_13) - DDX(g_13))
-      // which equals
-      0.5 * g12 * (DDZ(g_11) + DDX(g_13) - DDX(g_13))
-      // + 0.5 *g22*(DDZ(g_21) + DDX(g_23) - DDY(g_13))
-      // which equals
-      + 0.5 * g22 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
-      // + 0.5 *g23*(DDZ(g_31) + DDX(g_33) - DDZ(g_13));
-      // which equals
-      + 0.5 * g23 * DDX(g_33);
-  G2_23 = 0.5 * g12 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g22 * DDZ(g_22)
-          + 0.5 * g23 * DDY(g_33);
-
-  G3_11 = 0.5 * g13 * DDX(g_11) + g23 * (DDX(g_12) - 0.5 * DDY(g_11))
-          + g33 * (DDX(g_13) - 0.5 * DDZ(g_11));
-  G3_22 = g13 * (DDY(g_12) - 0.5 * DDX(g_22)) + 0.5 * g23 * DDY(g_22)
-          + g33 * (DDY(g_23) - 0.5 * DDZ(g_22));
-  G3_33 = g13 * (DDZ(g_13) - 0.5 * DDX(g_33)) + g23 * (DDZ(g_23) - 0.5 * DDY(g_33))
-          + 0.5 * g33 * DDZ(g_33);
-  G3_12 =
-      // 0.5 *g31*(DDY(g_11) + DDX(g_12) - DDX(g_12))
-      // which equals to
-      0.5 * g13 * DDY(g_11)
-      // + 0.5 *g32*(DDY(g_21) + DDX(g_22) - DDY(g_12))
-      // which equals to
-      + 0.5 * g23 * DDX(g_22)
-      //+ 0.5 *g33*(DDY(g_31) + DDX(g_32) - DDZ(g_12));
-      // which equals to
-      + 0.5 * g33 * (DDY(g_13) + DDX(g_23) - DDZ(g_12));
-  G3_13 = 0.5 * g13 * DDZ(g_11) + 0.5 * g23 * (DDZ(g_12) + DDX(g_23) - DDY(g_13))
-          + 0.5 * g33 * DDX(g_33);
-  G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22)
-          + 0.5 * g33 * DDY(g_33);
-
-  auto tmp = J * g12;
-  communicate(tmp);
-  G1 = (DDX(J * g11) + DDY(tmp) + DDZ(J * g13)) / J;
-  tmp = J * g22;
-  communicate(tmp);
-  G2 = (DDX(J * g12) + DDY(tmp) + DDZ(J * g23)) / J;
-  tmp = J * g23;
-  communicate(tmp);
-  G3 = (DDX(J * g13) + DDY(tmp) + DDZ(J * g33)) / J;
-
-  // Communicate christoffel symbol terms
-  output_progress.write("\tCommunicating connection terms\n");
-
-  communicate(G1_11, G1_22, G1_33, G1_12, G1_13, G1_23, G2_11, G2_22, G2_33, G2_12, G2_13,
-              G2_23, G3_11, G3_22, G3_33, G3_12, G3_13, G3_23, G1, G2, G3);
-
-  // Set boundary guard cells of Christoffel symbol terms
-  // Ideally, when location is staggered, we would set the upper/outer boundary point
-  // correctly rather than by extrapolating here: e.g. if location==CELL_YLOW and we are
-  // at the upper y-boundary the x- and z-derivatives at yend+1 at the boundary can be
-  // calculated because the guard cells are available, while the y-derivative could be
-  // calculated from the CELL_CENTRE metric components (which have guard cells available
-  // past the boundary location). This would avoid the problem that the y-boundary on the
-  // CELL_YLOW grid is at a 'guard cell' location (yend+1).
-  // However, the above would require lots of special handling, so just extrapolate for
-  // now.
-  G1_11 = interpolateAndExtrapolate(G1_11, location, true, true, true, transform.get());
-  G1_22 = interpolateAndExtrapolate(G1_22, location, true, true, true, transform.get());
-  G1_33 = interpolateAndExtrapolate(G1_33, location, true, true, true, transform.get());
-  G1_12 = interpolateAndExtrapolate(G1_12, location, true, true, true, transform.get());
-  G1_13 = interpolateAndExtrapolate(G1_13, location, true, true, true, transform.get());
-  G1_23 = interpolateAndExtrapolate(G1_23, location, true, true, true, transform.get());
-
-  G2_11 = interpolateAndExtrapolate(G2_11, location, true, true, true, transform.get());
-  G2_22 = interpolateAndExtrapolate(G2_22, location, true, true, true, transform.get());
-  G2_33 = interpolateAndExtrapolate(G2_33, location, true, true, true, transform.get());
-  G2_12 = interpolateAndExtrapolate(G2_12, location, true, true, true, transform.get());
-  G2_13 = interpolateAndExtrapolate(G2_13, location, true, true, true, transform.get());
-  G2_23 = interpolateAndExtrapolate(G2_23, location, true, true, true, transform.get());
-
-  G3_11 = interpolateAndExtrapolate(G3_11, location, true, true, true, transform.get());
-  G3_22 = interpolateAndExtrapolate(G3_22, location, true, true, true, transform.get());
-  G3_33 = interpolateAndExtrapolate(G3_33, location, true, true, true, transform.get());
-  G3_12 = interpolateAndExtrapolate(G3_12, location, true, true, true, transform.get());
-  G3_13 = interpolateAndExtrapolate(G3_13, location, true, true, true, transform.get());
-  G3_23 = interpolateAndExtrapolate(G3_23, location, true, true, true, transform.get());
-
-  G1 = interpolateAndExtrapolate(G1, location, true, true, true, transform.get());
-  G2 = interpolateAndExtrapolate(G2, location, true, true, true, transform.get());
-  G3 = interpolateAndExtrapolate(G3, location, true, true, true, transform.get());
-
-  //////////////////////////////////////////////////////
-  /// Non-uniform meshes. Need to use DDX, DDY
-
-  OPTION(Options::getRoot(), non_uniform, true);
-
-  Coordinates::FieldMetric d2x(localmesh), d2y(localmesh),
-      d2z(localmesh); // d^2 x / d i^2
-
-  // Read correction for non-uniform meshes
-  std::string suffix = getLocationSuffix(location);
-  if (location == CELL_CENTRE
-      or (!force_interpolate_from_centre and localmesh->sourceHasVar("dx" + suffix))) {
-    bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
-    bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
-
-    if (localmesh->get(d2x, "d2x" + suffix, 0.0, false, location)) {
-      output_warn.write(
-          "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
-      d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
-
-      communicate(d1_dx);
-      d1_dx =
-          interpolateAndExtrapolate(d1_dx, location, true, true, true, transform.get());
-    } else {
-      d2x.setLocation(location);
-      // set boundary cells if necessary
-      d2x = interpolateAndExtrapolate(d2x, location, extrapolate_x, extrapolate_y, false,
-                                      transform.get());
-
-      d1_dx = -d2x / (dx * dx);
-    }
-
-    if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location)) {
-      output_warn.write(
-          "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-      d1_dy = DDY(1. / dy); // d/di(1/dy)
-
-      communicate(d1_dy);
-      d1_dy =
-          interpolateAndExtrapolate(d1_dy, location, true, true, true, transform.get());
-    } else {
-      d2y.setLocation(location);
-      // set boundary cells if necessary
-      d2y = interpolateAndExtrapolate(d2y, location, extrapolate_x, extrapolate_y, false,
-                                      transform.get());
-
-      d1_dy = -d2y / (dy * dy);
-    }
-
-#if BOUT_USE_METRIC_3D
-    if (localmesh->get(d2z, "d2z" + suffix, 0.0, false)) {
-      output_warn.write(
-          "\tWARNING: differencing quantity 'd2z' not found. Calculating from dz\n");
-      d1_dz = bout::derivatives::index::DDZ(1. / dz);
-      communicate(d1_dz);
-      d1_dz =
-          interpolateAndExtrapolate(d1_dz, location, true, true, true, transform.get());
-    } else {
-      d2z.setLocation(location);
-      // set boundary cells if necessary
-      d2z = interpolateAndExtrapolate(d2z, location, extrapolate_x, extrapolate_y, false,
-                                      transform.get());
-
-      d1_dz = -d2z / (dz * dz);
-    }
-#else
-    d1_dz = 0;
-#endif
-  } else {
-    if (localmesh->get(d2x, "d2x", 0.0, false)) {
-      output_warn.write(
-          "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
-      d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
-
-      communicate(d1_dx);
-      d1_dx =
-          interpolateAndExtrapolate(d1_dx, location, true, true, true, transform.get());
-    } else {
-      // Shift d2x to our location
-      d2x = interpolateAndExtrapolate(d2x, location, true, true, false, transform.get());
-
-      d1_dx = -d2x / (dx * dx);
-    }
-
-    if (localmesh->get(d2y, "d2y", 0.0, false)) {
-      output_warn.write(
-          "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-      d1_dy = DDY(1. / dy); // d/di(1/dy)
-
-      communicate(d1_dy);
-      d1_dy =
-          interpolateAndExtrapolate(d1_dy, location, true, true, true, transform.get());
-    } else {
-      // Shift d2y to our location
-      d2y = interpolateAndExtrapolate(d2y, location, true, true, false, transform.get());
-
-      d1_dy = -d2y / (dy * dy);
-    }
-
-#if BOUT_USE_METRIC_3D
-    if (localmesh->get(d2z, "d2z", 0.0, false)) {
-      output_warn.write(
-          "\tWARNING: differencing quantity 'd2z' not found. Calculating from dz\n");
-      d1_dz = bout::derivatives::index::DDZ(1. / dz);
-
-      communicate(d1_dz);
-      d1_dz =
-          interpolateAndExtrapolate(d1_dz, location, true, true, true, transform.get());
-    } else {
-      // Shift d2z to our location
-      d2z = interpolateAndExtrapolate(d2z, location, true, true, false, transform.get());
-
-      d1_dz = -d2z / (dz * dz);
-    }
-#else
-    d1_dz = 0;
-#endif
-  }
-  communicate(d1_dx, d1_dy, d1_dz);
-
-  if (location == CELL_CENTRE && recalculate_staggered) {
-    // Re-calculate interpolated Coordinates at staggered locations
-    localmesh->recalculateStaggeredCoordinates();
-  }
-
-  // Invalidate and recalculate cached variables
-  zlength_cache.reset();
-  Grad2_par2_DDY_invSgCache.clear();
-  invSgCache.reset();
-
-  return 0;
-}
-
-int Coordinates::calcCovariant(const std::string& region) {
-  TRACE("Coordinates::calcCovariant");
-
-  // Make sure metric elements are allocated
-  g_11.allocate();
-  g_22.allocate();
-  g_33.allocate();
-  g_12.allocate();
-  g_13.allocate();
-  g_23.allocate();
-
-  g_11.setLocation(location);
-  g_22.setLocation(location);
-  g_33.setLocation(location);
-  g_12.setLocation(location);
-  g_13.setLocation(location);
-  g_23.setLocation(location);
-
-  // Perform inversion of g^{ij} to get g_{ij}
-  // NOTE: Currently this bit assumes that metric terms are Field2D objects
-
-  auto a = Matrix<BoutReal>(3, 3);
-
-  BOUT_FOR_SERIAL(i, g11.getRegion(region)) {
-    a(0, 0) = g11[i];
-    a(1, 1) = g22[i];
-    a(2, 2) = g33[i];
-
-    a(0, 1) = a(1, 0) = g12[i];
-    a(1, 2) = a(2, 1) = g23[i];
-    a(0, 2) = a(2, 0) = g13[i];
-
-    if (const auto det = bout::invert3x3(a); det.has_value()) {
-      output_error.write("\tERROR: metric tensor is singular at {}, determinant: {:d}\n",
-                         i, det.value());
-      return 1;
-    }
-
-    g_11[i] = a(0, 0);
-    g_22[i] = a(1, 1);
-    g_33[i] = a(2, 2);
-
-    g_12[i] = a(0, 1);
-    g_13[i] = a(0, 2);
-    g_23[i] = a(1, 2);
-  }
-
-  BoutReal maxerr;
-  maxerr = BOUTMAX(max(abs((g_11 * g11 + g_12 * g12 + g_13 * g13) - 1)),
-                   max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
-                   max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
-
-  output_info.write("\tLocal maximum error in diagonal inversion is {:e}\n", maxerr);
-
-  maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
-                   max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
-                   max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
-
-  output_info.write("\tLocal maximum error in off-diagonal inversion is {:e}\n", maxerr);
-
-  return 0;
-}
-
-int Coordinates::calcContravariant(const std::string& region) {
-  TRACE("Coordinates::calcContravariant");
-
-  // Make sure metric elements are allocated
-  g11.allocate();
-  g22.allocate();
-  g33.allocate();
-  g12.allocate();
-  g13.allocate();
-  g23.allocate();
-
-  // Perform inversion of g_{ij} to get g^{ij}
-  // NOTE: Currently this bit assumes that metric terms are Field2D objects
-
-  auto a = Matrix<BoutReal>(3, 3);
-
-  BOUT_FOR_SERIAL(i, g_11.getRegion(region)) {
-    a(0, 0) = g_11[i];
-    a(1, 1) = g_22[i];
-    a(2, 2) = g_33[i];
-
-    a(0, 1) = a(1, 0) = g_12[i];
-    a(1, 2) = a(2, 1) = g_23[i];
-    a(0, 2) = a(2, 0) = g_13[i];
-
-    if (const auto det = bout::invert3x3(a); det.has_value()) {
-      output_error.write("\tERROR: metric tensor is singular at {}, determinant: {:d}\n",
-                         i, det.value());
-      return 1;
-    }
-
-    g11[i] = a(0, 0);
-    g22[i] = a(1, 1);
-    g33[i] = a(2, 2);
-
-    g12[i] = a(0, 1);
-    g13[i] = a(0, 2);
-    g23[i] = a(1, 2);
-  }
-
-  BoutReal maxerr;
-  maxerr = BOUTMAX(max(abs((g_11 * g11 + g_12 * g12 + g_13 * g13) - 1)),
-                   max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
-                   max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
-
-  output_info.write("\tMaximum error in diagonal inversion is {:e}\n", maxerr);
-
-  maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
-                   max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
-                   max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
-
-  output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
-  return 0;
-}
-
-int Coordinates::jacobian() {
-  TRACE("Coordinates::jacobian");
-  // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
-
-  const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
-  const bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
-
-  auto g = g11 * g22 * g33 + 2.0 * g12 * g13 * g23 - g11 * g23 * g23 - g22 * g13 * g13
-           - g33 * g12 * g12;
-
-  // Check that g is positive
-  bout::checkPositive(g, "The determinant of g^ij", "RGN_NOBNDRY");
-
-  J = 1. / sqrt(g);
-  // More robust to extrapolate derived quantities directly, rather than
-  // deriving from extrapolated covariant metric components
-  J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false,
-                                transform.get());
-
-  Bxy = sqrt(g_22) / J;
-  Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
-                                  transform.get());
-
-  return 0;
-}
-
-namespace {
 // Utility function for fixing up guard cells of zShift
-void fixZShiftGuards(Field2D& zShift) {
-  auto localmesh = zShift.getMesh();
+void Coordinates::fixZShiftGuards(Field2D& zShift) const {
+  auto* localmesh = zShift.getMesh();
 
   // extrapolate into boundary guard cells if necessary
   zShift = interpolateAndExtrapolate(zShift, zShift.getLocation(),
@@ -1384,11 +394,531 @@ void fixZShiftGuards(Field2D& zShift) {
     }
   }
 }
-} // namespace
 
-void Coordinates::setParallelTransform(Options* options) {
+Coordinates::FieldMetric Coordinates::getAtLocOrUnaligned(Mesh* mesh,
+                                                          const std::string& name,
+                                                          BoutReal default_value,
+                                                          const std::string& suffix,
+                                                          CELL_LOC cell_location) {
+  if (cell_location == CELL_CENTRE) {
+    return getUnaligned(name, default_value);
+  }
+  // grid data source has staggered fields, so read instead of interpolating
+  // Diagonal components of metric tensor g^{ij} (default to 1)
+  return getAtLoc(mesh, name, suffix, cell_location, default_value);
+}
 
-  auto ptoptions = options->getSection("paralleltransform");
+Coordinates::FieldMetric Coordinates::getUnaligned(const std::string& name,
+                                                   BoutReal default_value) {
+
+  auto field = localmesh->get(name, default_value, false);
+  if (field.getDirectionY() == YDirectionType::Aligned
+      and transform->canToFromFieldAligned()) {
+    return transform->fromFieldAligned(field);
+  }
+  field.setDirectionY(YDirectionType::Standard);
+  return field;
+}
+
+Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric dz,
+                         [[maybe_unused]] const FieldMetric& J, FieldMetric Bxy,
+                         const FieldMetric& g11, const FieldMetric& g22,
+                         const FieldMetric& g33, const FieldMetric& g12,
+                         const FieldMetric& g13, const FieldMetric& g23,
+                         const FieldMetric& g_11, const FieldMetric& g_22,
+                         const FieldMetric& g_33, const FieldMetric& g_12,
+                         const FieldMetric& g_13, const FieldMetric& g_23,
+                         FieldMetric ShiftTorsion, FieldMetric IntShiftTorsion)
+    : nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE), dx_(std::move(dx)),
+      dy_(std::move(dy)), dz_(std::move(dz)), ShiftTorsion_(std::move(ShiftTorsion)),
+      IntShiftTorsion_(std::move(IntShiftTorsion)),
+      contravariantMetricTensor(g11, g22, g33, g12, g13, g23),
+      covariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23), Bxy_(std::move(Bxy)) {
+
+  // required early for differentiation.
+  // Identity method i.e. no transform needed
+  transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh);
+};
+
+Coordinates::Coordinates(Mesh* mesh, Options* mesh_options, const CELL_LOC loc,
+                         const Coordinates* coords_in, bool force_interpolate_from_centre)
+    : localmesh(mesh), location(loc), dx_(1., mesh), dy_(1., mesh), dz_(1., mesh),
+      d1_dx_(mesh), d1_dy_(mesh), d1_dz_(mesh), ShiftTorsion_(mesh),
+      IntShiftTorsion_(mesh), contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
+      // Identity metric tensor
+      covariantMetricTensor(1., 1., 1., 0, 0, 0, mesh), Bxy_(1., mesh) {
+
+  if (mesh_options == nullptr) {
+    mesh_options = Options::getRoot()->getSection("mesh");
+  }
+
+  nz = mesh->LocalNz;
+
+  const std::string suffix = getLocationSuffix(location);
+
+  if (coords_in == nullptr || location == CELL_CENTRE
+      || (!force_interpolate_from_centre && mesh->sourceHasVar("dx" + suffix))) {
+
+    if (coords_in == nullptr) {
+      mesh->get(dx_, "dx", 1.0, false);
+      mesh->get(dy_, "dy", 1.0, false);
+    }
+
+    readFromMesh(mesh_options, suffix);
+
+  } else {
+    interpolateFromCoordinates(mesh_options, coords_in);
+  }
+}
+
+void Coordinates::interpolateFromCoordinates(Options* mesh_options,
+                                             const Coordinates* coords_in) {
+
+  // Need to ensure parallel transform is set before differential operators are used,
+  // but setParallelTransform() requires that dz is already set!
+  if (isUniform(coords_in->dz())) {
+    dz_ = coords_in->dz();
+  } else {
+    throw BoutException(
+        "We are asked to transform dz to get dz before we have a transform, which might "
+        "require dz! \nPlease provide a dz for the staggered quantity!");
+  }
+
+  setParallelTransform(mesh_options);
+
+  setMetricTensor(coords_in->getContravariantMetricTensor(),
+                  coords_in->getCovariantMetricTensor());
+
+  std::function<const FieldMetric(const FieldMetric)> const
+      interpolateAndExtrapolate_function = [this](const FieldMetric& component) {
+        return interpolateAndExtrapolate(component, location, true, true, false,
+                                         transform.get());
+      };
+  contravariantMetricTensor.map(interpolateAndExtrapolate_function);
+  covariantMetricTensor.map(interpolateAndExtrapolate_function);
+  // Check input metrics
+  checkContravariant();
+  checkCovariant();
+
+  setJ(interpolateAndExtrapolate(coords_in->J(), location, true, true, false,
+                                 transform.get()),
+       false);
+  setBxy(interpolateAndExtrapolate(coords_in->Bxy(), location, true, true, false,
+                                   transform.get()),
+         false);
+
+  bout::checkFinite(J(), "The Jacobian", "RGN_NOCORNERS");
+  bout::checkPositive(J(), "The Jacobian", "RGN_NOCORNERS");
+  bout::checkFinite(Bxy(), "Bxy", "RGN_NOCORNERS");
+  bout::checkPositive(Bxy(), "Bxy", "RGN_NOCORNERS");
+
+  ShiftTorsion_ = interpolateAndExtrapolate(coords_in->ShiftTorsion(), location, true,
+                                            true, false, transform.get());
+
+  if (localmesh->IncIntShear) {
+    IntShiftTorsion_ = interpolateAndExtrapolate(coords_in->IntShiftTorsion(), location,
+                                                 true, true, false, transform.get());
+  }
+
+  dx_ = interpolateAndExtrapolate(coords_in->dx(), location, true, true, false,
+                                  transform.get());
+  dy_ = interpolateAndExtrapolate(coords_in->dy(), location, true, true, false,
+                                  transform.get());
+  // not really needed - we have used dz already ...
+  dz_ = interpolateAndExtrapolate(coords_in->dz(), location, true, true, false,
+                                  transform.get());
+}
+
+// Note: If boundary cells were not loaded from the grid file, use
+// 'interpolateAndExtrapolate' to set them. Ensures that derivatives are
+// smooth at all the boundaries.
+void Coordinates::readFromMesh(Options* mesh_options, const std::string& suffix) {
+
+  const bool extrapolate_x = (*mesh_options)["extrapolate_x"].withDefault(
+      not localmesh->sourceHasXBoundaryGuards());
+  const bool extrapolate_y = (*mesh_options)["extrapolate_y"].withDefault(
+      not localmesh->sourceHasYBoundaryGuards());
+
+  if (extrapolate_x) {
+    output_warn.write(_("WARNING: extrapolating input mesh quantities into x-boundary "
+                        "cells. Set option extrapolate_x=false to disable this.\n"));
+  }
+
+  if (extrapolate_y) {
+    output_warn.write(_("WARNING: extrapolating input mesh quantities into y-boundary "
+                        "cells. Set option extrapolate_y=false to disable this.\n"));
+  }
+
+  dz_ = getDzFromOptionsFile(localmesh, suffix);
+
+  // required early for differentiation.
+  setParallelTransform(mesh_options);
+
+  dz_ = interpolateAndExtrapolate(dz_, location, extrapolate_x, extrapolate_y, false,
+                                  transform.get());
+
+  dx_ = getAtLocOrUnaligned(localmesh, "dx", 1.0, suffix, location);
+  dx_ = interpolateAndExtrapolate(dx_, location, extrapolate_x, extrapolate_y, false,
+                                  transform.get());
+
+  if (localmesh->periodicX) {
+    communicate(dx_);
+  }
+
+  dy_ = getAtLocOrUnaligned(localmesh, "dy", 1.0, suffix, location);
+  dy_ = interpolateAndExtrapolate(dy_, location, extrapolate_x, extrapolate_y, false,
+                                  transform.get());
+
+  setDx(dx_, false);
+  setDy(dy_, false);
+  setDz(dz_, false);
+
+  // grid data source has staggered fields, so read instead of interpolating
+  // Diagonal components of metric tensor g^{ij} (default to 1)
+  const auto g11 = getAtLocOrUnaligned(localmesh, "g11", 1.0, suffix, location);
+  const auto g22 = getAtLocOrUnaligned(localmesh, "g22", 1.0, suffix, location);
+  const auto g33 = getAtLocOrUnaligned(localmesh, "g33", 1.0, suffix, location);
+  const auto g12 = getAtLocOrUnaligned(localmesh, "g12", 0.0, suffix, location);
+  const auto g13 = getAtLocOrUnaligned(localmesh, "g13", 0.0, suffix, location);
+  const auto g23 = getAtLocOrUnaligned(localmesh, "g23", 0.0, suffix, location);
+  contravariantMetricTensor.setMetricTensor(
+      ContravariantMetricTensor(g11, g22, g33, g12, g13, g23));
+
+  // More robust to extrapolate derived quantities directly, rather than
+  // deriving from extrapolated covariant metric components
+
+  std::function<const FieldMetric(const FieldMetric)> const
+      interpolateAndExtrapolate_function =
+          [this, extrapolate_y, extrapolate_x](const FieldMetric& component) {
+            return interpolateAndExtrapolate(component, location, extrapolate_x,
+                                             extrapolate_y, false, transform.get());
+          };
+  contravariantMetricTensor.map(interpolateAndExtrapolate_function);
+
+  // Check input metrics
+  checkContravariant();
+
+  /// Find covariant metric components
+  auto covariant_component_names = {"g_11", "g_22", "g_33", "g_12", "g_13", "g_23"};
+  auto source_has_component = [&suffix, this](const std::string& name) {
+    return localmesh->sourceHasVar(name + suffix);
+  };
+
+  // Check that all components are present
+  if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
+                  source_has_component)) {
+
+    const auto g_11 = getAtLocOrUnaligned(localmesh, "g_11", 1.0, suffix, location);
+    const auto g_22 = getAtLocOrUnaligned(localmesh, "g_22", 1.0, suffix, location);
+    const auto g_33 = getAtLocOrUnaligned(localmesh, "g_33", 1.0, suffix, location);
+    const auto g_12 = getAtLocOrUnaligned(localmesh, "g_12", 0.0, suffix, location);
+    const auto g_13 = getAtLocOrUnaligned(localmesh, "g_13", 0.0, suffix, location);
+    const auto g_23 = getAtLocOrUnaligned(localmesh, "g_23", 0.0, suffix, location);
+    covariantMetricTensor.setMetricTensor(
+        CovariantMetricTensor(g_11, g_22, g_33, g_12, g_13, g_23));
+
+    output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
+                      "Contravariant components NOT recalculated\n");
+  } else {
+    covariantMetricTensor.setMetricTensor(
+        contravariantMetricTensor.inverse("RGN_ALL", false));
+    output_warn.write("Not all covariant components of metric tensor found. "
+                      "Calculating all from the contravariant tensor\n");
+  }
+
+  covariantMetricTensor.map(interpolateAndExtrapolate_function);
+
+  // Check covariant metrics
+  checkCovariant();
+
+  // Attempt to read J from the grid file
+  if (!localmesh->sourceHasVar("J" + suffix)) {
+
+    output_warn.write(
+        "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
+        suffix);
+
+  } else {
+    const auto J_from_file = getAtLoc(localmesh, "J", suffix, location);
+    // Compare calculated and loaded values
+    output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J() - J_from_file)));
+    setJ(J_from_file, false);
+
+    communicate(J());
+  }
+
+  // More robust to extrapolate derived quantities directly, rather than
+  // deriving from extrapolated covariant metric components
+  setJ(interpolateAndExtrapolate(J(), location, extrapolate_x, extrapolate_y, false,
+                                 transform.get()),
+       false);
+
+  // Check jacobian
+  bout::checkFinite(J(), "J" + suffix, "RGN_NOCORNERS");
+  bout::checkPositive(J(), "J" + suffix, "RGN_NOCORNERS");
+  if (min(abs(J())) < 1.0e-10) {
+    throw BoutException("\tERROR: Jacobian{:s} becomes very small\n", suffix);
+  }
+
+  // Attempt to read Bxy from the grid file
+  if (!localmesh->sourceHasVar("Bxy" + suffix)) {
+    output_warn.write("\tWARNING: Magnitude of B field 'Bxy_{:s}' not found. "
+                      "Calculating from metric tensor\n",
+                      suffix);
+    // Re-evaluate Bxy using new J
+    setBxy(recalculateBxy(), false);
+  } else {
+    const auto Bcalc = getAtLoc(localmesh, "Bxy", suffix, location);
+    setBxy(Bcalc, false);
+    output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy() - Bcalc)));
+  }
+
+  setBxy(interpolateAndExtrapolate(Bxy(), location, extrapolate_x, extrapolate_y, false,
+                                   transform.get()),
+         false);
+
+  // Check Bxy
+  bout::checkFinite(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
+  bout::checkPositive(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
+
+  if (!localmesh->sourceHasVar("ShiftTorsion" + suffix)) {
+    output_warn.write("\tWARNING: No Torsion specified for zShift. "
+                      "Derivatives may not be correct\n");
+    ShiftTorsion_ = (0.0);
+  } else {
+    const auto shift_torsion = getAtLoc(localmesh, "ShiftTorsion", suffix, location, 0.0);
+  }
+  ShiftTorsion_ = (interpolateAndExtrapolate(ShiftTorsion(), location, extrapolate_x,
+                                             extrapolate_y, false, transform.get()));
+
+  if (!localmesh->IncIntShear) {
+    return;
+  }
+  if (!localmesh->sourceHasVar("IntShiftTorsion" + suffix)) {
+    output_warn.write("\tWARNING: No Integrated torsion specified\n");
+    IntShiftTorsion_ = 0.0;
+  } else {
+    const auto shift_torsion =
+        getAtLoc(localmesh, "IntShiftTorsion", suffix, location, 0.0);
+  }
+  setIntShiftTorsion(interpolateAndExtrapolate(IntShiftTorsion(), location, extrapolate_x,
+                                               extrapolate_y, false, transform.get()));
+}
+
+FieldMetric Coordinates::getDzFromOptionsFile(Mesh* mesh,
+                                              const std::string& suffix) const {
+
+  auto& options_root = Options::root();
+  const bool has_zperiod = options_root.isSet("zperiod");
+  const auto zmin = has_zperiod ? 0.0 : options_root["ZMIN"].withDefault(0.0);
+  const auto zmax = has_zperiod ? 1.0 / options_root["zperiod"].withDefault(1.0)
+                                : options_root["ZMAX"].withDefault(1.0);
+
+  const auto default_dz = (zmax - zmin) * TWOPI / nz;
+  FieldMetric dz = getAtLoc(mesh, "dz", suffix, location, default_dz);
+  return dz;
+}
+
+void Coordinates::outputVars(Options& output_options) {
+  Timer const time("io");
+  const std::string loc_string =
+      (location == CELL_CENTRE) ? "" : "_" + toString(location);
+
+  output_options["dx" + loc_string].force(dx(), "Coordinates");
+  output_options["dy" + loc_string].force(dy(), "Coordinates");
+  output_options["dz" + loc_string].force(dz(), "Coordinates");
+
+  output_options["g11" + loc_string].force(g11(), "Coordinates");
+  output_options["g22" + loc_string].force(g22(), "Coordinates");
+  output_options["g33" + loc_string].force(g33(), "Coordinates");
+  output_options["g12" + loc_string].force(g12(), "Coordinates");
+  output_options["g13" + loc_string].force(g13(), "Coordinates");
+  output_options["g23" + loc_string].force(g23(), "Coordinates");
+
+  output_options["g_11" + loc_string].force(g_11(), "Coordinates");
+  output_options["g_22" + loc_string].force(g_22(), "Coordinates");
+  output_options["g_33" + loc_string].force(g_33(), "Coordinates");
+  output_options["g_12" + loc_string].force(g_12(), "Coordinates");
+  output_options["g_13" + loc_string].force(g_13(), "Coordinates");
+  output_options["g_23" + loc_string].force(g_23(), "Coordinates");
+
+  output_options["J" + loc_string].force(J(), "Coordinates");
+  output_options["Bxy" + loc_string].force(Bxy(), "Coordinates");
+
+  output_options["G1" + loc_string].force(G1(), "Coordinates");
+  output_options["G2" + loc_string].force(G2(), "Coordinates");
+  output_options["G3" + loc_string].force(G3(), "Coordinates");
+
+  getParallelTransform().outputVars(output_options);
+}
+
+const Field2D& Coordinates::zlength() const {
+  BOUT_OMP(critical)
+  if (not zlength_cache) {
+    zlength_cache = std::make_unique<Field2D>(0., localmesh);
+
+#if BOUT_USE_METRIC_3D
+    BOUT_FOR_SERIAL(i, dz().getRegion("RGN_ALL")) { (*zlength_cache)[i] += dz()[i]; }
+#else
+    (*zlength_cache) = dz_ * nz;
+#endif
+  }
+
+  return *zlength_cache;
+}
+
+void Coordinates::setDx(FieldMetric dx, const bool communicate) {
+  if (min(abs(dx)) < 1e-8) {
+    throw BoutException("dx magnitude less than 1e-8");
+  }
+  dx_ = std::move(dx);
+  if (communicate) {
+    localmesh->communicate(dx_);
+  }
+}
+
+void Coordinates::setDy(FieldMetric dy, const bool communicate) {
+  if (min(abs(dy)) < 1e-8) {
+    throw BoutException("dy magnitude less than 1e-8");
+  }
+  dy_ = std::move(dy);
+  if (communicate) {
+    localmesh->communicate(dy_);
+  }
+}
+
+void Coordinates::setDz(FieldMetric dz, const bool communicate) {
+  if (min(abs(dz)) < 1e-8) {
+    throw BoutException("dz magnitude less than 1e-8");
+  }
+  dz_ = std::move(dz);
+  if (communicate) {
+    localmesh->communicate(dz_);
+  }
+}
+
+void Coordinates::recalculateAndReset(bool recalculate_staggered,
+                                      bool force_interpolate_from_centre) {
+
+  // Check input metrics
+  checkContravariant();
+  checkCovariant();
+
+  christoffel_symbols_cache.reset();
+  g_values_cache.reset();
+
+  correctionForNonUniformMeshes(force_interpolate_from_centre);
+
+  if (location == CELL_CENTRE && recalculate_staggered) {
+    // Re-calculate interpolated Coordinates at staggered locations
+    localmesh->recalculateStaggeredCoordinates();
+  }
+
+  zlength_cache.reset();
+  Grad2_par2_DDY_invSgCache.clear();
+  invSgCache.reset();
+}
+
+void Coordinates::correctionForNonUniformMeshes(bool force_interpolate_from_centre) {
+  OPTION(Options::getRoot(), non_uniform_, true);
+
+  FieldMetric d2x(localmesh);
+  FieldMetric d2y(localmesh);
+  FieldMetric d2z(localmesh); // d^2 x / d i^2
+
+  // Read correction for non-uniform meshes
+  std::string const suffix = getLocationSuffix(location);
+
+  auto extrapolate_x = true;
+  auto extrapolate_y = true;
+  if (location == CELL_CENTRE
+      or (!force_interpolate_from_centre and localmesh->sourceHasVar("dx" + suffix))) {
+    extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
+    extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
+  }
+
+  if (localmesh->get(d2x, "d2x" + suffix, 0.0, false, location) != 0) {
+    output_warn.write("\tWARNING: differencing quantity 'd2x' not found. "
+                      "Calculating from dx\n");
+    d1_dx_ = bout::derivatives::index::DDX(1. / dx()); // d/di(1/dx)
+
+    communicate(d1_dx_);
+    d1_dx_ =
+        interpolateAndExtrapolate(d1_dx_, location, true, true, true, transform.get());
+  } else {
+    d2x.setLocation(location);
+    // set boundary cells if necessary
+    d2x = interpolateAndExtrapolate(d2x, location, extrapolate_x, extrapolate_y, false,
+                                    transform.get());
+
+    d1_dx_ = -d2x / (dx() * dx());
+  }
+
+  if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location) != 0) {
+    output_warn.write("\tWARNING: differencing quantity 'd2y' not found. "
+                      "Calculating from dy\n");
+    d1_dy_ = DDY(1. / dy()); // d/di(1/dy)
+
+    communicate(d1_dy_);
+    d1_dy_ =
+        interpolateAndExtrapolate(d1_dy_, location, true, true, true, transform.get());
+  } else {
+    d2y.setLocation(location);
+    // set boundary cells if necessary
+    d2y = interpolateAndExtrapolate(d2y, location, extrapolate_x, extrapolate_y, false,
+                                    transform.get());
+
+    d1_dy_ = -d2y / (dy() * dy());
+  }
+
+#if BOUT_USE_METRIC_3D
+  if (localmesh->get(d2z, "d2z" + suffix, 0.0, false, location)) {
+    output_warn.write("\tWARNING: differencing quantity 'd2z' not found. "
+                      "Calculating from dz\n");
+    d1_dz_ = bout::derivatives::index::DDZ(1. / dz());
+    communicate(d1_dz_);
+    d1_dz_ =
+        interpolateAndExtrapolate(d1_dz_, location, true, true, true, transform.get());
+  } else {
+    d2z.setLocation(location);
+    // set boundary cells if necessary
+    d2z = interpolateAndExtrapolate(d2z, location, extrapolate_x, extrapolate_y, false,
+                                    transform.get());
+
+    d1_dz_ = -d2z / (dz() * dz());
+  }
+#else
+  d1_dz_ = 0;
+#endif
+
+  localmesh->communicate(d1_dx_, d1_dy_, d1_dz_);
+}
+
+MetricTensor::FieldMetric Coordinates::recalculateJacobian() const {
+
+  TRACE("Coordinates::jacobian");
+  try {
+    // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
+    auto g_matrix = g11() * g22() * g33() + 2.0 * g12() * g13() * g23()
+                    - g11() * g23() * g23() - g22() * g13() * g13()
+                    - g33() * g12() * g12();
+
+    bout::checkPositive(g_matrix, "The determinant of g^ij", "RGN_NOBNDRY");
+
+    return 1. / sqrt(g_matrix);
+  } catch (const BoutException& e) {
+    output_error.write("\tError in jacobian call\n");
+    throw e;
+  }
+}
+
+MetricTensor::FieldMetric Coordinates::recalculateBxy() const {
+  return sqrt(g_22()) / J();
+}
+
+void Coordinates::setParallelTransform(Options* mesh_options) {
+
+  auto* ptoptions = mesh_options->getSection("paralleltransform");
 
   std::string ptstr;
   ptoptions->get("type", ptstr, "identity");
@@ -1400,20 +930,22 @@ void Coordinates::setParallelTransform(Options* options) {
     // Identity method i.e. no transform needed
     transform =
         bout::utils::make_unique<ParallelTransformIdentity>(*localmesh, ptoptions);
+    return;
+  }
 
-  } else if (ptstr == "shifted" or ptstr == "shiftedinterp") {
+  if (ptstr == "shifted" or ptstr == "shiftedinterp") {
     // Shifted metric method
 
     Field2D zShift{localmesh};
 
     // Read the zShift angle from the mesh
-    std::string suffix = getLocationSuffix(location);
+    std::string const suffix = getLocationSuffix(location);
     if (localmesh->sourceHasVar("dx" + suffix)) {
       // Grid file has variables at this location, so should be able to read
       checkStaggeredGet(localmesh, "zShift", suffix);
-      if (localmesh->get(zShift, "zShift" + suffix, 0.0, false, location)) {
+      if (localmesh->get(zShift, "zShift" + suffix, 0.0, false, location) != 0) {
         // No zShift variable. Try qinty in BOUT grid files
-        if (localmesh->get(zShift, "qinty" + suffix, 0.0, false, location)) {
+        if (localmesh->get(zShift, "qinty" + suffix, 0.0, false, location) != 0) {
           // Failed to find either variable, cannot use ShiftedMetric
           throw BoutException("Could not read zShift" + suffix + " from grid file");
         }
@@ -1425,9 +957,9 @@ void Coordinates::setParallelTransform(Options* options) {
                             "file.");
       }
       Field2D zShift_centre;
-      if (localmesh->get(zShift_centre, "zShift", 0.0, false)) {
+      if (localmesh->get(zShift_centre, "zShift", 0.0, false) != 0) {
         // No zShift variable. Try qinty in BOUT grid files
-        if (localmesh->get(zShift_centre, "qinty", 0.0, false)) {
+        if (localmesh->get(zShift_centre, "qinty", 0.0, false) != 0) {
           // Failed to find either variable, cannot use ShiftedMetric
           throw BoutException("Could not read zShift from grid file");
         }
@@ -1444,12 +976,17 @@ void Coordinates::setParallelTransform(Options* options) {
     if (ptstr == "shifted") {
       transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
                                                           getUniform(zlength()));
-    } else if (ptstr == "shiftedinterp") {
+    }
+
+    if (ptstr == "shiftedinterp") {
       transform = bout::utils::make_unique<ShiftedMetricInterp>(
           *localmesh, location, zShift, getUniform(zlength()));
     }
 
-  } else if (ptstr == "fci") {
+    return;
+  }
+
+  if (ptstr == "fci") {
 
     if (location != CELL_CENTRE) {
       throw BoutException("FCITransform is not available on staggered grids.");
@@ -1457,13 +994,13 @@ void Coordinates::setParallelTransform(Options* options) {
 
     // Flux Coordinate Independent method
     const bool fci_zperiodic = (*ptoptions)["z_periodic"].withDefault(true);
-    transform =
-        bout::utils::make_unique<FCITransform>(*localmesh, dy, fci_zperiodic, ptoptions);
-
-  } else {
-    throw BoutException(_("Unrecognised paralleltransform option.\n"
-                          "Valid choices are 'identity', 'shifted', 'fci'"));
+    transform = bout::utils::make_unique<FCITransform>(*localmesh, dy(), fci_zperiodic,
+                                                       ptoptions);
+    return;
   }
+
+  throw BoutException(_("Unrecognised paralleltransform option.\n"
+                        "Valid choices are 'identity', 'shifted', 'fci'"));
 }
 
 /*******************************************************************************
@@ -1473,19 +1010,19 @@ void Coordinates::setParallelTransform(Options* options) {
 
 Coordinates::FieldMetric Coordinates::DDX(const Field2D& f, CELL_LOC loc,
                                           const std::string& method,
-                                          const std::string& region) {
+                                          const std::string& region) const {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
-  return bout::derivatives::index::DDX(f, loc, method, region) / dx;
+  return bout::derivatives::index::DDX(f, loc, method, region) / dx();
 }
 Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc, const std::string& method,
-                         const std::string& region) {
+                         const std::string& region) const {
 
   auto result = bout::derivatives::index::DDX(f, outloc, method, region);
-  result /= dx;
+  result /= dx();
 
   if (f.getMesh()->IncIntShear) {
     // Using BOUT-06 style shifting
-    result += IntShiftTorsion * DDZ(f, outloc, method, region);
+    result += IntShiftTorsion() * DDZ(f, outloc, method, region);
   }
 
   return result;
@@ -1495,12 +1032,13 @@ Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
                                           const std::string& method,
                                           const std::string& region) const {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
-  return bout::derivatives::index::DDY(f, loc, method, region) / dy;
+  return bout::derivatives::index::DDY(f, loc, method, region) / dy();
 }
 
 Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
                          const std::string& region) const {
 #if BOUT_USE_METRIC_3D
+  ASSERT0(transform != nullptr);
   if (!f.hasParallelSlices() and !transform->canToFromFieldAligned()) {
     Field3D f_parallel = f;
     transform->calcParallelSlices(f_parallel);
@@ -1508,12 +1046,12 @@ Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& m
     return bout::derivatives::index::DDY(f_parallel, outloc, method, region);
   }
 #endif
-  return bout::derivatives::index::DDY(f, outloc, method, region) / dy;
+  return bout::derivatives::index::DDY(f, outloc, method, region) / dy();
 };
 
 Coordinates::FieldMetric Coordinates::DDZ(const Field2D& f, CELL_LOC loc,
                                           const std::string& UNUSED(method),
-                                          const std::string& UNUSED(region)) {
+                                          const std::string& UNUSED(region)) const {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
   ASSERT1(f.getMesh() == localmesh);
   if (loc == CELL_DEFAULT) {
@@ -1522,16 +1060,15 @@ Coordinates::FieldMetric Coordinates::DDZ(const Field2D& f, CELL_LOC loc,
   return zeroFrom(f).setLocation(loc);
 }
 Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
-                         const std::string& region) {
-  return bout::derivatives::index::DDZ(f, outloc, method, region) / dz;
+                         const std::string& region) const {
+  return bout::derivatives::index::DDZ(f, outloc, method, region) / dz();
 };
 
 /////////////////////////////////////////////////////////
 // Parallel gradient
 
-Coordinates::FieldMetric Coordinates::Grad_par(const Field2D& var,
-                                               [[maybe_unused]] CELL_LOC outloc,
-                                               const std::string& UNUSED(method)) {
+FieldMetric Coordinates::Grad_par(const Field2D& var, [[maybe_unused]] CELL_LOC outloc,
+                                  const std::string& UNUSED(method)) {
   TRACE("Coordinates::Grad_par( Field2D )");
   ASSERT1(location == outloc
           || (outloc == CELL_DEFAULT && location == var.getLocation()));
@@ -1551,9 +1088,9 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
 // Vpar_Grad_par
 // vparallel times the parallel derivative along unperturbed B-field
 
-Coordinates::FieldMetric Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
-                                                    [[maybe_unused]] CELL_LOC outloc,
-                                                    const std::string& UNUSED(method)) {
+FieldMetric Coordinates::Vpar_Grad_par(const Field2D& v, const Field2D& f,
+                                       [[maybe_unused]] CELL_LOC outloc,
+                                       const std::string& UNUSED(method)) {
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
   return VDDY(v, f) * invSg();
@@ -1576,9 +1113,9 @@ Coordinates::FieldMetric Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
 
   // Need Bxy at location of f, which might be different from location of this
   // Coordinates object
-  auto Bxy_floc = f.getCoordinates()->Bxy;
+  auto Bxy_floc = f.getCoordinates()->Bxy();
 
-  return Bxy * Grad_par(f / Bxy_floc, outloc, method);
+  return Bxy() * Grad_par(f / Bxy_floc, outloc, method);
 }
 
 Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
@@ -1588,12 +1125,12 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
 
   // Need Bxy at location of f, which might be different from location of this
   // Coordinates object
-  auto Bxy_floc = f.getCoordinates()->Bxy;
+  auto Bxy_floc = f.getCoordinates()->Bxy();
 
   if (!f.hasParallelSlices()) {
     // No yup/ydown fields. The Grad_par operator will
     // shift to field aligned coordinates
-    return Bxy * Grad_par(f / Bxy_floc, outloc, method);
+    return Bxy() * Grad_par(f / Bxy_floc, outloc, method);
   }
 
   // Need to modify yup and ydown fields
@@ -1603,7 +1140,7 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
     f_B.yup(i) = f.yup(i) / Bxy_floc.yup(i);
     f_B.ydown(i) = f.ydown(i) / Bxy_floc.ydown(i);
   }
-  return Bxy * Grad_par(f_B, outloc, method);
+  return Bxy() * Grad_par(f_B, outloc, method);
 }
 
 /////////////////////////////////////////////////////////
@@ -1616,7 +1153,7 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
   auto result = Grad2_par2_DDY_invSg(outloc, method) * DDY(f, outloc, method)
-                + D2DY2(f, outloc, method) / g_22;
+                + D2DY2(f, outloc, method) / g_22();
 
   return result;
 }
@@ -1631,7 +1168,7 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
 
   Field3D result = ::DDY(f, outloc, method);
 
-  Field3D r2 = D2DY2(f, outloc, method) / g_22;
+  Field3D r2 = D2DY2(f, outloc, method) / g_22();
 
   result = Grad2_par2_DDY_invSg(outloc, method) * result + r2;
 
@@ -1650,9 +1187,7 @@ Coordinates::FieldMetric Coordinates::Delp2(const Field2D& f, CELL_LOC outloc,
   TRACE("Coordinates::Delp2( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  auto result = G1 * DDX(f, outloc) + g11 * D2DX2(f, outloc);
-
-  return result;
+  return G1() * DDX(f, outloc) + g11() * D2DX2(f, outloc);
 }
 
 Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
@@ -1669,7 +1204,7 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
     // copy mesh, location, etc
     return f * 0;
   }
-  ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
+  ASSERT2(localmesh->xstart > 0); // Need at least one guard cell;
 
   Field3D result{emptyFrom(f).setLocation(outloc)};
 
@@ -1712,9 +1247,10 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
       }
     }
   } else {
-    result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * ::D2DX2(f, outloc)
-             + g33 * ::D2DZ2(f, outloc) + 2 * g13 * ::D2DXDZ(f, outloc);
-  };
+    result = G1() * ::DDX(f, outloc) + G3() * ::DDZ(f, outloc)
+             + g11() * ::D2DX2(f, outloc) + g33() * ::D2DZ2(f, outloc)
+             + 2 * g13() * ::D2DXDZ(f, outloc);
+  }
 
   ASSERT2(result.getLocation() == outloc);
 
@@ -1739,11 +1275,11 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
 
   FieldPerp result{emptyFrom(f).setLocation(outloc)};
 
-  int jy = f.getIndex();
+  int const jy = f.getIndex();
   result.setIndex(jy);
 
   if (useFFT) {
-    int ncz = localmesh->LocalNz;
+    int const ncz = localmesh->LocalNz;
 
     // Allocate memory
     auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
@@ -1786,12 +1322,13 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
 
 Coordinates::FieldMetric Coordinates::Laplace_par(const Field2D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
-  return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * DDY(f, outloc) / J;
+
+  return D2DY2(f, outloc) / g_22() + DDY(J() / g_22(), outloc) * DDY(f, outloc) / J();
 }
 
 Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
-  return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * ::DDY(f, outloc) / J;
+  return D2DY2(f, outloc) / g_22() + ::DDY(J() / g_22(), outloc) * ::DDY(f, outloc) / J();
 }
 
 // Full Laplacian operator on scalar field
@@ -1802,13 +1339,11 @@ Coordinates::FieldMetric Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
   TRACE("Coordinates::Laplace( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  auto result = G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc)
-                + g22 * D2DY2(f, outloc)
-                + 2.0 * g12
-                      * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
-                               dfdy_boundary_conditions, dfdy_dy_region);
-
-  return result;
+  return G1() * DDX(f, outloc) + G2() * DDY(f, outloc) + g11() * D2DX2(f, outloc)
+         + g22() * D2DY2(f, outloc)
+         + 2.0 * g12()
+               * ::D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY", dfdy_boundary_conditions,
+                          dfdy_dy_region);
 }
 
 Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
@@ -1817,22 +1352,20 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
   TRACE("Coordinates::Laplace( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc)
-                   + g11 * D2DX2(f, outloc) + g22 * D2DY2(f, outloc)
-                   + g33 * D2DZ2(f, outloc)
-                   + 2.0
-                         * (g12
-                                * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
-                                         dfdy_boundary_conditions, dfdy_dy_region)
-                            + g13 * D2DXDZ(f, outloc) + g23 * D2DYDZ(f, outloc));
-
-  return result;
+  return G1() * ::DDX(f, outloc) + G2() * ::DDY(f, outloc) + G3() * ::DDZ(f, outloc)
+         + g11() * ::D2DX2(f, outloc) + g22() * ::D2DY2(f, outloc)
+         + g33() * ::D2DZ2(f, outloc)
+         + 2.0
+               * (g12()
+                      * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
+                               dfdy_boundary_conditions, dfdy_dy_region)
+                  + g13() * ::D2DXDZ(f, outloc) + g23() * ::D2DYDZ(f, outloc));
 }
 
 // Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY
 // solver
 Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
-                                    [[maybe_unused]] const Field2D& f) {
+                                    [[maybe_unused]] const Field2D& f) const {
   TRACE("Coordinates::Laplace_perpXY( Field2D )");
 #if not(BOUT_USE_METRIC_3D)
   Field2D result;
@@ -1843,45 +1376,45 @@ Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
     // outer x boundary
     const auto outer_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xp()]); };
     const BoutReal outer_x_A = outer_x_avg(A);
-    const BoutReal outer_x_J = outer_x_avg(J);
-    const BoutReal outer_x_g11 = outer_x_avg(g11);
-    const BoutReal outer_x_dx = outer_x_avg(dx);
+    const BoutReal outer_x_J = outer_x_avg(J());
+    const BoutReal outer_x_g11 = outer_x_avg(g11());
+    const BoutReal outer_x_dx = outer_x_avg(dx());
     const BoutReal outer_x_value =
-        outer_x_A * outer_x_J * outer_x_g11 / (J[i] * outer_x_dx * dx[i]);
+        outer_x_A * outer_x_J * outer_x_g11 / (J()[i] * outer_x_dx * dx()[i]);
     result[i] += outer_x_value * (f[i.xp()] - f[i]);
 
     // inner x boundary
     const auto inner_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xm()]); };
     const BoutReal inner_x_A = inner_x_avg(A);
-    const BoutReal inner_x_J = inner_x_avg(J);
-    const BoutReal inner_x_g11 = inner_x_avg(g11);
-    const BoutReal inner_x_dx = inner_x_avg(dx);
+    const BoutReal inner_x_J = inner_x_avg(J());
+    const BoutReal inner_x_g11 = inner_x_avg(g11());
+    const BoutReal inner_x_dx = inner_x_avg(dx());
     const BoutReal inner_x_value =
-        inner_x_A * inner_x_J * inner_x_g11 / (J[i] * inner_x_dx * dx[i]);
+        inner_x_A * inner_x_J * inner_x_g11 / (J()[i] * inner_x_dx * dx()[i]);
     result[i] += inner_x_value * (f[i.xm()] - f[i]);
 
     // upper y boundary
     const auto upper_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.yp()]); };
     const BoutReal upper_y_A = upper_y_avg(A);
-    const BoutReal upper_y_J = upper_y_avg(J);
-    const BoutReal upper_y_g_22 = upper_y_avg(g_22);
-    const BoutReal upper_y_g23 = upper_y_avg(g23);
-    const BoutReal upper_y_g_23 = upper_y_avg(g_23);
-    const BoutReal upper_y_dy = upper_y_avg(dy);
+    const BoutReal upper_y_J = upper_y_avg(J());
+    const BoutReal upper_y_g_22 = upper_y_avg(g_22());
+    const BoutReal upper_y_g23 = upper_y_avg(g23());
+    const BoutReal upper_y_g_23 = upper_y_avg(g_23());
+    const BoutReal upper_y_dy = upper_y_avg(dy());
     const BoutReal upper_y_value = -upper_y_A * upper_y_J * upper_y_g23 * upper_y_g_23
-                                   / (upper_y_g_22 * J[i] * upper_y_dy * dy[i]);
+                                   / (upper_y_g_22 * J()[i] * upper_y_dy * dy()[i]);
     result[i] += upper_y_value * (f[i.yp()] - f[i]);
 
     // lower y boundary
     const auto lower_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.ym()]); };
     const BoutReal lower_y_A = lower_y_avg(A);
-    const BoutReal lower_y_J = lower_y_avg(J);
-    const BoutReal lower_y_g_22 = lower_y_avg(g_22);
-    const BoutReal lower_y_g23 = lower_y_avg(g23);
-    const BoutReal lower_y_g_23 = lower_y_avg(g_23);
-    const BoutReal lower_y_dy = lower_y_avg(dy);
+    const BoutReal lower_y_J = lower_y_avg(J());
+    const BoutReal lower_y_g_22 = lower_y_avg(g_22());
+    const BoutReal lower_y_g23 = lower_y_avg(g23());
+    const BoutReal lower_y_g_23 = lower_y_avg(g_23());
+    const BoutReal lower_y_dy = lower_y_avg(dy());
     const BoutReal lower_y_value = -lower_y_A * lower_y_J * lower_y_g23 * lower_y_g_23
-                                   / (lower_y_g_22 * J[i] * lower_y_dy * dy[i]);
+                                   / (lower_y_g_22 * J()[i] * lower_y_dy * dy()[i]);
     result[i] += lower_y_value * (f[i.ym()] - f[i]);
   }
 
@@ -1891,10 +1424,43 @@ Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
 #endif
 }
 
+ChristoffelSymbols& Coordinates::christoffel_symbols() {
+  if (christoffel_symbols_cache == nullptr) {
+    christoffel_symbols_cache = std::make_unique<ChristoffelSymbols>(*this);
+    // Set boundary guard cells of Christoffel symbol terms
+    // Ideally, when location is staggered, we would set the upper/outer boundary point
+    // correctly rather than by extrapolating here: e.g. if location==CELL_YLOW and we are
+    // at the upper y-boundary the x- and z-derivatives at yend+1 at the boundary can be
+    // calculated because the guard cells are available, while the y-derivative could be
+    // calculated from the CELL_CENTRE metric components (which have guard cells available
+    // past the boundary location). This would avoid the problem that the y-boundary on the
+    // CELL_YLOW grid is at a 'guard cell' location (yend+1).
+    // However, the above would require lots of special handling, so just extrapolate for
+    // now.
+
+    christoffel_symbols_cache->map([this](const FieldMetric& component) {
+      return interpolateAndExtrapolate(component, location, true, true, false,
+                                       transform.get());
+    });
+  }
+  return *christoffel_symbols_cache;
+}
+
+GValues& Coordinates::g_values() const {
+  if (g_values_cache == nullptr) {
+    g_values_cache = std::make_unique<GValues>(*this);
+    g_values_cache->map([this](const FieldMetric& component) {
+      return interpolateAndExtrapolate(component, location, true, true, true,
+                                       transform.get());
+    });
+  }
+  return *g_values_cache;
+}
+
 const Coordinates::FieldMetric& Coordinates::invSg() const {
   if (invSgCache == nullptr) {
     auto ptr = std::make_unique<FieldMetric>();
-    (*ptr) = 1.0 / sqrt(g_22);
+    (*ptr) = 1.0 / sqrt(g_22());
     invSgCache = std::move(ptr);
   }
   return *invSgCache;
@@ -1902,6 +1468,7 @@ const Coordinates::FieldMetric& Coordinates::invSg() const {
 
 const Coordinates::FieldMetric&
 Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) const {
+
   if (auto search = Grad2_par2_DDY_invSgCache.find(method);
       search != Grad2_par2_DDY_invSgCache.end()) {
     return *search->second;
@@ -1919,106 +1486,65 @@ Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) co
   return *Grad2_par2_DDY_invSgCache[method];
 }
 
-void Coordinates::checkCovariant() {
-  // Diagonal metric components should be finite
-  bout::checkFinite(g_11, "g_11", "RGN_NOCORNERS");
-  bout::checkFinite(g_22, "g_22", "RGN_NOCORNERS");
-  bout::checkFinite(g_33, "g_33", "RGN_NOCORNERS");
-  if (g_11.hasParallelSlices() && &g_11.ynext(1) != &g_11) {
-    for (int dy = 1; dy <= localmesh->ystart; ++dy) {
-      for (const auto sign : {1, -1}) {
-        bout::checkFinite(g_11.ynext(sign * dy), "g_11.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g_22.ynext(sign * dy), "g_22.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g_33.ynext(sign * dy), "g_33.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
-      }
-    }
-  }
-  // Diagonal metric components should be positive
-  bout::checkPositive(g_11, "g_11", "RGN_NOCORNERS");
-  bout::checkPositive(g_22, "g_22", "RGN_NOCORNERS");
-  bout::checkPositive(g_33, "g_33", "RGN_NOCORNERS");
-  if (g_11.hasParallelSlices() && &g_11.ynext(1) != &g_11) {
-    for (int dy = 1; dy <= localmesh->ystart; ++dy) {
-      for (const auto sign : {1, -1}) {
-        bout::checkPositive(g_11.ynext(sign * dy), "g_11.ynext",
-                            fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkPositive(g_22.ynext(sign * dy), "g_22.ynext",
-                            fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkPositive(g_33.ynext(sign * dy), "g_33.ynext",
-                            fmt::format("RGN_YPAR_{:+d}", sign * dy));
-      }
-    }
-  }
-
-  // Off-diagonal metric components should be finite
-  bout::checkFinite(g_12, "g_12", "RGN_NOCORNERS");
-  bout::checkFinite(g_13, "g_13", "RGN_NOCORNERS");
-  bout::checkFinite(g_23, "g_23", "RGN_NOCORNERS");
-  if (g_23.hasParallelSlices() && &g_23.ynext(1) != &g_23) {
-    for (int dy = 1; dy <= localmesh->ystart; ++dy) {
-      for (const auto sign : {1, -1}) {
-        bout::checkFinite(g_12.ynext(sign * dy), "g_12.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g_13.ynext(sign * dy), "g_13.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g_23.ynext(sign * dy), "g_23.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
-      }
-    }
-  }
-}
+void Coordinates::checkCovariant() { covariantMetricTensor.check(localmesh->ystart); }
 
 void Coordinates::checkContravariant() {
-  // Diagonal metric components should be finite
-  bout::checkFinite(g11, "g11", "RGN_NOCORNERS");
-  bout::checkFinite(g22, "g22", "RGN_NOCORNERS");
-  bout::checkFinite(g33, "g33", "RGN_NOCORNERS");
-  if (g11.hasParallelSlices() && &g11.ynext(1) != &g11) {
-    for (int dy = 1; dy <= localmesh->ystart; ++dy) {
-      for (const auto sign : {1, -1}) {
-        bout::checkFinite(g11.ynext(sign * dy), "g11.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g22.ynext(sign * dy), "g22.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g33.ynext(sign * dy), "g33.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
-      }
-    }
-  }
-  // Diagonal metric components should be positive
-  bout::checkPositive(g11, "g11", "RGN_NOCORNERS");
-  bout::checkPositive(g22, "g22", "RGN_NOCORNERS");
-  bout::checkPositive(g33, "g33", "RGN_NOCORNERS");
-  if (g11.hasParallelSlices() && &g11.ynext(1) != &g11) {
-    for (int dy = 1; dy <= localmesh->ystart; ++dy) {
-      for (const auto sign : {1, -1}) {
-        bout::checkPositive(g11.ynext(sign * dy), "g11.ynext",
-                            fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkPositive(g22.ynext(sign * dy), "g22.ynext",
-                            fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkPositive(g33.ynext(sign * dy), "g33.ynext",
-                            fmt::format("RGN_YPAR_{:+d}", sign * dy));
-      }
-    }
-  }
+  contravariantMetricTensor.check(localmesh->ystart);
+}
 
-  // Off-diagonal metric components should be finite
-  bout::checkFinite(g12, "g12", "RGN_NOCORNERS");
-  bout::checkFinite(g13, "g13", "RGN_NOCORNERS");
-  bout::checkFinite(g23, "g23", "RGN_NOCORNERS");
-  if (g23.hasParallelSlices() && &g23.ynext(1) != &g23) {
-    for (int dy = 1; dy <= localmesh->ystart; ++dy) {
-      for (const auto sign : {1, -1}) {
-        bout::checkFinite(g12.ynext(sign * dy), "g12.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g13.ynext(sign * dy), "g13.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
-        bout::checkFinite(g23.ynext(sign * dy), "g23.ynext",
-                          fmt::format("RGN_YPAR_{:+d}", sign * dy));
-      }
-    }
+FieldMetric& Coordinates::J() const {
+  if (jacobian_cache == nullptr) {
+    jacobian_cache = std::make_unique<FieldMetric>(recalculateJacobian());
+  }
+  return *jacobian_cache;
+}
+
+void Coordinates::setJ(const FieldMetric& J, const bool communicate) {
+  bout::checkFinite(J, "J", "RGN_NOCORNERS");
+  bout::checkPositive(J, "J", "RGN_NOCORNERS");
+
+  //TODO: Calculate J and check value is close
+  jacobian_cache = std::make_unique<FieldMetric>(J);
+  if (communicate) {
+    localmesh->communicate(*jacobian_cache);
   }
 }
+
+void Coordinates::setBxy(FieldMetric Bxy, const bool communicate) {
+  //TODO: Calculate Bxy and check value is close
+  Bxy_ = std::move(Bxy);
+  if (communicate) {
+    localmesh->communicate(Bxy_);
+  }
+}
+
+void Coordinates::setContravariantMetricTensor(
+    const ContravariantMetricTensor& metric_tensor, const std::string& region,
+    bool recalculate_staggered, bool force_interpolate_from_centre) {
+  contravariantMetricTensor.setMetricTensor(metric_tensor);
+  covariantMetricTensor.setMetricTensor(contravariantMetricTensor.inverse(region));
+  recalculateAndReset(recalculate_staggered, force_interpolate_from_centre);
+}
+
+void Coordinates::setCovariantMetricTensor(const CovariantMetricTensor& metric_tensor,
+                                           const std::string& region,
+                                           bool recalculate_staggered,
+                                           bool force_interpolate_from_centre) {
+  covariantMetricTensor.setMetricTensor(metric_tensor);
+  contravariantMetricTensor.setMetricTensor(covariantMetricTensor.inverse(region));
+  recalculateAndReset(recalculate_staggered, force_interpolate_from_centre);
+}
+
+void Coordinates::setMetricTensor(
+    const ContravariantMetricTensor& contravariant_metric_tensor,
+    const CovariantMetricTensor& covariant_metric_tensor) {
+  contravariantMetricTensor.setMetricTensor(contravariant_metric_tensor);
+  covariantMetricTensor.setMetricTensor(covariant_metric_tensor);
+}
+
+void Coordinates::communicateMetricTensor() {
+  contravariantMetricTensor.communicate();
+  covariantMetricTensor.communicate();
+}
+
+void Coordinates::communicateDz() { localmesh->communicate(dz_); }

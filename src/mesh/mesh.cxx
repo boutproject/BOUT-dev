@@ -1,8 +1,6 @@
 #include <bout/boutcomm.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
-#include <bout/globals.hxx>
-#include <bout/griddata.hxx>
 #include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
@@ -186,6 +184,32 @@ int Mesh::get(Field2D& var, const std::string& name, BoutReal def, bool communic
   return 0;
 }
 
+FieldMetric Mesh::get(const std::string& name, BoutReal def, bool communicate,
+                      CELL_LOC location) {
+  TRACE("Loading field: Mesh::get(FieldMetric, {:s})", name);
+
+  auto var = FieldMetric(this, location);
+
+  const bool failed_to_get_from_GridDataSource =
+      !source->get(this, var, name, def, location);
+  if (source == nullptr or failed_to_get_from_GridDataSource) {
+    // set val to default in source==nullptr too:
+    var = def;
+    var.setLocation(location);
+    return var;
+  }
+
+  // Communicate to get guard cell data
+  if (communicate) {
+    Mesh::communicate(var);
+  }
+
+  // Check that the data is valid
+  checkData(var);
+
+  return var;
+}
+
 int Mesh::get(Field3D& var, const std::string& name, BoutReal def, bool communicate,
               CELL_LOC location) {
   TRACE("Loading 3D field: Mesh::get(Field3D, {:s})", name);
@@ -288,10 +312,20 @@ bool Mesh::sourceHasVar(const std::string& name) {
 }
 
 /// Wrapper for GridDataSource::hasXBoundaryGuards
-bool Mesh::sourceHasXBoundaryGuards() { return source->hasXBoundaryGuards(this); }
+bool Mesh::sourceHasXBoundaryGuards() {
+  if (!source) {
+    throw BoutException("Mesh has no source. ");
+  }
+  return source->hasXBoundaryGuards(this);
+}
 
 /// Wrapper for GridDataSource::hasYBoundaryGuards
-bool Mesh::sourceHasYBoundaryGuards() { return source->hasYBoundaryGuards(); }
+bool Mesh::sourceHasYBoundaryGuards() {
+  if (!source) {
+    throw BoutException("Mesh has no source. ");
+  }
+  return source->hasYBoundaryGuards();
+}
 
 /**************************************************************************
  * Communications
@@ -557,12 +591,11 @@ Mesh::createDefaultCoordinates(const CELL_LOC location,
   if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
     return std::make_shared<Coordinates>(this, options);
-  } else {
-    // Interpolate coordinates from CELL_CENTRE version
-    return std::make_shared<Coordinates>(this, options, location,
-                                         getCoordinates(CELL_CENTRE),
-                                         force_interpolate_from_centre);
   }
+  // Interpolate coordinates from CELL_CENTRE version
+  return std::make_shared<Coordinates>(this, options, location,
+                                       getCoordinates(CELL_CENTRE),
+                                       force_interpolate_from_centre);
 }
 
 const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
@@ -762,8 +795,14 @@ void Mesh::recalculateStaggeredCoordinates() {
       continue;
     }
 
-    *coords_map[location] = std::move(*createDefaultCoordinates(location, true));
-    coords_map[location]->geometry(false, true);
+    auto force_interpolate_from_centre = true;
+    Coordinates& new_coordinates =
+        *createDefaultCoordinates(location, force_interpolate_from_centre);
+    *coords_map[location] = std::move(new_coordinates);
+
+    auto recalculate_staggered = false;
+    new_coordinates.recalculateAndReset(recalculate_staggered,
+                                        force_interpolate_from_centre);
   }
 }
 
@@ -853,3 +892,8 @@ std::optional<size_t> Mesh::getCommonRegion(std::optional<size_t> lhs,
   }
   return region3Dintersect[pos];
 }
+
+constexpr decltype(MeshFactory::type_name) MeshFactory::type_name;
+constexpr decltype(MeshFactory::section_name) MeshFactory::section_name;
+constexpr decltype(MeshFactory::option_name) MeshFactory::option_name;
+constexpr decltype(MeshFactory::default_type) MeshFactory::default_type;

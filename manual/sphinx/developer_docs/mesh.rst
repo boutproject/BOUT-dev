@@ -278,9 +278,6 @@ metric tensor components are public members of `Coordinates`::
     // Covariant metric tensor
     FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
-    int calcCovariant();     // Invert contravatiant metric to get covariant
-    int calcContravariant(); // Invert covariant metric to get contravariant
-
 If only one of these sets is modified by an external code, then
 `Coordinates::calcCovariant()` and `Coordinates::calcContravariant()`
 can be used to calculate the other (uses Gauss-Jordan currently).
@@ -292,8 +289,6 @@ other useful quantities::
     FieldMetric J; // Jacobian
     FieldMetric Bxy; // Magnitude of B = nabla z times nabla x
 
-    /// Calculate differential geometry quantities from the metric tensor
-    int geometry();
 
     // Christoffel symbol of the second kind (connection coefficients)
     FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13;

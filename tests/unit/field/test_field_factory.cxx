@@ -555,7 +555,6 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
       Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
       Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
       Field2D{0.0}, Field2D{0.0}));
-  // No call to Coordinates::geometry() needed here
 
   localmesh.getCoordinates()->setParallelTransform(
       bout::utils::make_unique<ParallelTransformIdentity>(localmesh));
