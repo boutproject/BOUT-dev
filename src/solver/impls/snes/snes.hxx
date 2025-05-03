@@ -102,6 +102,10 @@ private:
   int maxits;               ///< Maximum nonlinear iterations
   int lower_its, upper_its; ///< Limits on iterations for timestep adjustment
 
+  BoutReal timestep_factor_on_failure;
+  BoutReal timestep_factor_on_upper_its;
+  BoutReal timestep_factor_on_lower_its;
+
   bool diagnose;          ///< Output additional diagnostics
   bool diagnose_failures; ///< Print diagnostics on SNES failures
 

@@ -123,6 +123,15 @@ SNESSolver::SNESSolver(Options* opts)
       upper_its((*options)["upper_its"]
                     .doc("Iterations above which the next timestep is reduced")
                     .withDefault(static_cast<int>(maxits * 0.8))),
+      timestep_factor_on_failure((*options)["timestep_factor_on_failure"]
+                                 .doc("Multiply timestep on convergence failure")
+                                 .withDefault(0.5)),
+      timestep_factor_on_upper_its((*options)["timestep_factor_on_upper_its"]
+                                   .doc("Multiply timestep if iterations exceed upper_its")
+                                   .withDefault(0.9)),
+      timestep_factor_on_lower_its((*options)["timestep_factor_on_lower_its"]
+                                   .doc("Multiply timestep if iterations are below lower_its")
+                                   .withDefault(1.4)),
       diagnose(
           (*options)["diagnose"].doc("Print additional diagnostics").withDefault(false)),
       diagnose_failures((*options)["diagnose_failures"]
@@ -731,6 +740,7 @@ int SNESSolver::run() {
 
     bool looping = true;
     int snes_failures = 0; // Count SNES convergence failures
+    int steps_since_snes_failure = 0;
     int saved_jacobian_lag = 0;
     int loop_count = 0;
     do {
@@ -868,9 +878,10 @@ int SNESSolver::run() {
         }
 
         ++snes_failures;
+        steps_since_snes_failure = 0;
 
         // Try a smaller timestep
-        timestep /= 2.0;
+        timestep *= timestep_factor_on_failure;
         // Restore state
         VecCopy(x0, snes_x);
 
@@ -961,6 +972,7 @@ int SNESSolver::run() {
       }
 
       simtime += dt;
+      ++steps_since_snes_failure;
 
       if (diagnose) {
         // Gather and print diagnostic information
@@ -970,7 +982,6 @@ int SNESSolver::run() {
                      simtime, timestep, nl_its, lin_its, static_cast<int>(reason));
         if (snes_failures > 0) {
           output.write(", SNES failures: {}", snes_failures);
-          snes_failures = 0;
         }
         output.write("\n");
       }
@@ -1025,9 +1036,10 @@ int SNESSolver::run() {
         // Note: The preconditioner depends on the timestep,
         // so if it is not recalculated the it will be less
         // effective.
-        if ((nl_its <= lower_its) && (timestep < max_timestep)) {
+        if ((nl_its <= lower_its) && (timestep < max_timestep)
+            && (steps_since_snes_failure > 2)) {
           // Increase timestep slightly
-          timestep *= 1.1;
+          timestep *= timestep_factor_on_lower_its;
 
           if (timestep > max_timestep) {
             timestep = max_timestep;
@@ -1041,15 +1053,17 @@ int SNESSolver::run() {
           // Depends on equation_form
           // -> Probably call SNESSetJacobian(snes, Jfd, Jfd, NULL, fdcoloring);
 
-          // Recompute Jacobian (for now)
-          if (saved_jacobian_lag == 0) {
-            SNESGetLagJacobian(snes, &saved_jacobian_lag);
-            SNESSetLagJacobian(snes, 1);
+          if (static_cast<BoutReal>(lin_its) / nl_its > 4) {
+            // Recompute Jacobian (for now)
+            if (saved_jacobian_lag == 0) {
+              SNESGetLagJacobian(snes, &saved_jacobian_lag);
+              SNESSetLagJacobian(snes, 1);
+            }
           }
 
         } else if (nl_its >= upper_its) {
           // Reduce timestep slightly
-          timestep *= 0.9;
+          timestep *= timestep_factor_on_upper_its;
 
           // Recompute Jacobian
           if (saved_jacobian_lag == 0) {
@@ -1058,6 +1072,7 @@ int SNESSolver::run() {
           }
         }
       }
+      snes_failures = 0;
     } while (looping);
 
     if (!matrix_free) {
