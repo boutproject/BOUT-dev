@@ -297,13 +297,21 @@ int SNESSolver::init() {
     SNESSetJacobian(snes, Jmf, Jmf, MatMFFDComputeJacobian, this);
 
   } else {
-    // Calculate the Jacobian using finite differences.
-    // The finite difference Jacobian (Jfd) may be used for both operator
-    // and preconditioner or, if matrix_free_operator, in only the preconditioner.
+    // Calculate the Jacobian using finite differences.  The finite
+    // difference Jacobian (Jfd) may be used for both operator and
+    // preconditioner or, if matrix_free_operator, in only the
+    // preconditioner.
+
+    // Create a vector to store interpolated output solution
+    // Used so that the timestep does not have to be adjusted,
+    // because that would require updating the preconditioner.
+    ierr = VecDuplicate(snes_x, &output_x);
+    CHKERRQ(ierr);
+
     if (use_coloring) {
-      // Use matrix coloring
-      // This greatly reduces the number of times the rhs() function needs
-      // to be evaluated when calculating the Jacobian.
+      // Use matrix coloring.
+      // This greatly reduces the number of times the rhs() function
+      // needs to be evaluated when calculating the Jacobian.
 
       // Use global mesh for now
       Mesh* mesh = bout::globals::mesh;
@@ -717,14 +725,17 @@ int SNESSolver::run() {
     CHKERRQ(ierr);
   }
 
+  BoutReal target = simtime;
   for (int s = 0; s < getNumberOutputSteps(); s++) {
-    BoutReal target = simtime + getOutputTimestep();
+    target += getOutputTimestep();
 
     bool looping = true;
     int snes_failures = 0; // Count SNES convergence failures
     int saved_jacobian_lag = 0;
     int loop_count = 0;
     do {
+      if (simtime >= target)
+        break; // Could happen if step over multiple outputs
       if (scale_vars) {
         // Individual variable scaling
         // Note: If variables are rescaled then the Jacobian columns
@@ -802,9 +813,15 @@ int SNESSolver::run() {
       dt = timestep;
       looping = true;
       if (simtime + dt >= target) {
-        // Ensure that the timestep goes to the next output time and then stops
+        // Note: When the timestep is changed the preconditioner needs to be updated
+        // => Step over the output time and interpolate if not matrix free
+
+        if (matrix_free) {
+          // Ensure that the timestep goes to the next output time and then stops.
+          // This avoids the need to interpolate
+          dt = target - simtime;
+        }
         looping = false;
-        dt = target - simtime;
       }
 
       if (predictor and (time1 > 0.0)) {
@@ -872,6 +889,7 @@ int SNESSolver::run() {
           jacobian_pruned = false; // Reset flag. Will be set after pruning.
         }
         if (saved_jacobian_lag == 0) {
+          // This triggers a Jacobian recalculation
           SNESGetLagJacobian(snes, &saved_jacobian_lag);
           SNESSetLagJacobian(snes, 1);
         }
@@ -1003,24 +1021,70 @@ int SNESSolver::run() {
 #endif // PETSC_VERSION_GE(3,20,0)
 
       if (looping) {
-        if (nl_its <= lower_its) {
+        // Consider changing the timestep.
+        // Note: The preconditioner depends on the timestep,
+        // so if it is not recalculated the it will be less
+        // effective.
+        if ((nl_its <= lower_its) && (timestep < max_timestep)) {
           // Increase timestep slightly
           timestep *= 1.1;
 
           if (timestep > max_timestep) {
             timestep = max_timestep;
           }
+
+          // Note: Setting the SNESJacobianFn to NULL retains
+          // previously set evaluation function.
+          //
+          // The SNES Jacobian is a combination of the RHS Jacobian
+          // and a factor involving the timestep.
+          // Depends on equation_form
+          // -> Probably call SNESSetJacobian(snes, Jfd, Jfd, NULL, fdcoloring);
+
+          // Recompute Jacobian (for now)
+          if (saved_jacobian_lag == 0) {
+            SNESGetLagJacobian(snes, &saved_jacobian_lag);
+            SNESSetLagJacobian(snes, 1);
+          }
+
         } else if (nl_its >= upper_its) {
           // Reduce timestep slightly
           timestep *= 0.9;
+
+          // Recompute Jacobian
+          if (saved_jacobian_lag == 0) {
+            SNESGetLagJacobian(snes, &saved_jacobian_lag);
+            SNESSetLagJacobian(snes, 1);
+          }
         }
       }
     } while (looping);
 
+    if (!matrix_free) {
+      ASSERT2(simtime >= target);
+      ASSERT2(simtime - dt < target);
+      // Stepped over output timestep => Interpolate
+      // snes_x is the solution at t = simtime
+      // x0 is the solution at t = simtime - dt
+      // Calculate output_x at t = target
+      VecCopy(snes_x, output_x);
+
+      // Note: If simtime = target then alpha = 0
+      //       and output_x = snes_x
+      BoutReal alpha = (simtime - target) / dt;
+
+      // output_x <- alpha * x0 + (1 - alpha) * output_x
+      VecAXPBY(output_x, alpha, 1. - alpha, x0);
+
+    } else {
+      // Timestep was adjusted to hit target output time
+      output_x = snes_x;
+    }
+
     // Put the result into variables
     if (scale_vars) {
-      // scaled_x <- snes_x * var_scaling_factors
-      int ierr = VecPointwiseMult(scaled_x, snes_x, var_scaling_factors);
+      // scaled_x <- output_x * var_scaling_factors
+      int ierr = VecPointwiseMult(scaled_x, output_x, var_scaling_factors);
       CHKERRQ(ierr);
 
       const BoutReal* xdata = nullptr;
@@ -1031,15 +1095,15 @@ int SNESSolver::run() {
       CHKERRQ(ierr);
     } else {
       const BoutReal* xdata = nullptr;
-      int ierr = VecGetArrayRead(snes_x, &xdata);
+      int ierr = VecGetArrayRead(output_x, &xdata);
       CHKERRQ(ierr);
       load_vars(const_cast<BoutReal*>(xdata));
-      ierr = VecRestoreArrayRead(snes_x, &xdata);
+      ierr = VecRestoreArrayRead(output_x, &xdata);
       CHKERRQ(ierr);
     }
-    run_rhs(simtime); // Run RHS to calculate auxilliary variables
+    run_rhs(target); // Run RHS to calculate auxilliary variables
 
-    if (call_monitors(simtime, s, getNumberOutputSteps()) != 0) {
+    if (call_monitors(target, s, getNumberOutputSteps()) != 0) {
       break; // User signalled to quit
     }
   }
