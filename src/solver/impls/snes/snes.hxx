@@ -39,6 +39,7 @@ class SNESSolver;
 
 #include <bout/bout_enum_class.hxx>
 #include <bout/bout_types.hxx>
+#include <bout/petsc_coloring.hxx>
 #include <bout/petsclib.hxx>
 
 #include <petsc.h>
@@ -121,13 +122,11 @@ private:
   Vec x1;               ///< Previous solution
   BoutReal time1{-1.0}; ///< Time of previous solution
 
-  SNES snes;                ///< SNES context
-  Mat Jmf;                  ///< Matrix Free Jacobian
-  Mat Jfd;                  ///< Finite Difference Jacobian
-  MatFDColoring fdcoloring{nullptr}; ///< Matrix coloring context
-                                     ///< Jacobian evaluation
+  SNES snes; ///< SNES context
+  Mat Jmf;   ///< Matrix Free Jacobian
+  std::unique_ptr<PetscPreconditioner> petsc_precon{nullptr};
 
-  bool use_precon;                ///< Use preconditioner
+  bool use_precon;                ///< Use preconditioner?
   std::string ksp_type;           ///< Linear solver type
   bool kspsetinitialguessnonzero; ///< Set initial guess to non-zero
   int maxl;                       ///< Maximum linear iterations
@@ -135,10 +134,9 @@ private:
   std::string pc_hypre_type;      ///< Hypre preconditioner type
   std::string line_search_type;   ///< Line search type
 
-  bool matrix_free;               ///< Use matrix free Jacobian
-  bool matrix_free_operator;      ///< Use matrix free Jacobian in the operator?
-  int lag_jacobian;               ///< Re-use Jacobian
-  bool use_coloring;              ///< Use matrix coloring
+  bool matrix_free;          ///< Use matrix free Jacobian
+  bool matrix_free_operator; ///< Use matrix free Jacobian in the operator?
+  int lag_jacobian;          ///< Re-use Jacobian
 
   bool jacobian_recalculated; ///< Flag set when Jacobian is recalculated
   bool prune_jacobian;        ///< Remove small elements in the Jacobian?
@@ -146,7 +144,6 @@ private:
   BoutReal prune_fraction;    ///< Prune if fraction of small elements is larger than this
   bool jacobian_pruned{false}; ///< Has the Jacobian been pruned?
   Mat Jfd_original;            ///< Used to reset the Jacobian if over-pruned
-  void updateColoring();       ///< Updates the coloring using Jfd
 
   bool scale_rhs;          ///< Scale time derivatives?
   Vec rhs_scaling_factors; ///< Factors to multiply RHS function

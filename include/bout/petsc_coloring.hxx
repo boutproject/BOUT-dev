@@ -1,10 +1,15 @@
 #include "bout/build_config.hxx"
 
+#ifndef PETSC_COLORING_H
+#define PETSC_COLORING_H
+
 #if BOUT_HAS_PETSC
 
 #include <cmath>
+#include <functional>
 #include <vector>
 
+#include <petsc.h>
 
 class ColoringStencil {
 private:
@@ -45,6 +50,36 @@ public:
   }
 };
 
+struct PetscPreconditioner {
+  /// Represents a RHS function f(x): (Vec x, Vec f) -> PetscErrorCode
+  using FormFunction = std::function<PetscErrorCode(Vec, Vec)>;
 
+  /// @param[in] local_index  Local indices, starting from 0 on each processor
+  /// @param[in] form_function   The operator to precondition.
+  ///                   This can be a linearised and simplified form.
+  PetscPreconditioner(Options& options, int nlocal, Field3D local_index,
+                      FormFunction form_function);
+
+  /// This is public because it is called from C callback functions
+  FormFunction form_function;
+
+  /// Return the finite difference Jacobian
+  Mat jacobian() { return Jfd; }
+
+private:
+  Mesh* mesh;
+
+  Mat Jfd; ///< Finite Difference Jacobian
+
+  bool use_coloring;
+  MatFDColoring fdcoloring{nullptr}; ///< Matrix coloring context
+                                     ///< Jacobian evaluation
+
+  void updateColoring(); ///< Updates the coloring using Jfd
+};
+
+#else // BOUT_HAS_PETSC
 
 #endif // BOUT_HAS_PETSC
+
+#endif // PETSC_COLORING_H

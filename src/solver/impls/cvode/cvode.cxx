@@ -762,6 +762,26 @@ int cvode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector UNUSED(f
 
   return 0;
 }
+
+#if BOUT_HAS_PETSC
+// Preconditioner using PETSc to evaluate the Jacobian e.g. using coloring
+int cvode_petsc_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zvec,
+                    BoutReal gamma, BoutReal delta, int lr, void* user_data) {
+  // Apply preconditioner
+}
+
+int cvode_petsc_setup(BoutReal t, N_Vector yy, N_Vector yp, sunbooleantype recompute_jac,
+                      sunbooleantype* recomputed_jac, BoutReal gamma, void* user_data) {
+  if (recompute_jac) {
+    // Recompute the Jacobian
+
+    *recomputed_jac = 1;
+  }
+
+  // Compute preconditioner using given gamma. Invert (I - gamma * J)
+}
+#endif
+
 } // namespace
 // NOLINTEND(readability-identifier-length)
 
