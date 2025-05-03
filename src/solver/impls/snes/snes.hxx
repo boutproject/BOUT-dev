@@ -4,7 +4,7 @@
  * using PETSc for the SNES interface
  *
  **************************************************************************
- * Copyright 2015-2024 BOUT++ contributors
+ * Copyright 2015-2025 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -102,6 +102,10 @@ private:
   int maxits;               ///< Maximum nonlinear iterations
   int lower_its, upper_its; ///< Limits on iterations for timestep adjustment
 
+  BoutReal timestep_factor_on_failure;
+  BoutReal timestep_factor_on_upper_its;
+  BoutReal timestep_factor_on_lower_its;
+
   bool diagnose;          ///< Output additional diagnostics
   bool diagnose_failures; ///< Print diagnostics on SNES failures
 
@@ -116,14 +120,15 @@ private:
   Vec snes_x;   ///< Result of SNES
   Vec x0;       ///< Solution at start of current timestep
   Vec delta_x;  ///< Change in solution
+  Vec output_x; ///< Solution to output. Used if interpolating.
 
   bool predictor;       ///< Use linear predictor?
   Vec x1;               ///< Previous solution
   BoutReal time1{-1.0}; ///< Time of previous solution
 
-  SNES snes;                ///< SNES context
-  Mat Jmf;                  ///< Matrix Free Jacobian
-  Mat Jfd;                  ///< Finite Difference Jacobian
+  SNES snes;                         ///< SNES context
+  Mat Jmf;                           ///< Matrix Free Jacobian
+  Mat Jfd;                           ///< Finite Difference Jacobian
   MatFDColoring fdcoloring{nullptr}; ///< Matrix coloring context
                                      ///< Jacobian evaluation
 
@@ -135,10 +140,10 @@ private:
   std::string pc_hypre_type;      ///< Hypre preconditioner type
   std::string line_search_type;   ///< Line search type
 
-  bool matrix_free;               ///< Use matrix free Jacobian
-  bool matrix_free_operator;      ///< Use matrix free Jacobian in the operator?
-  int lag_jacobian;               ///< Re-use Jacobian
-  bool use_coloring;              ///< Use matrix coloring
+  bool matrix_free;          ///< Use matrix free Jacobian
+  bool matrix_free_operator; ///< Use matrix free Jacobian in the operator?
+  int lag_jacobian;          ///< Re-use Jacobian
+  bool use_coloring;         ///< Use matrix coloring
 
   bool jacobian_recalculated; ///< Flag set when Jacobian is recalculated
   bool prune_jacobian;        ///< Remove small elements in the Jacobian?
