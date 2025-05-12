@@ -17,6 +17,9 @@
 #include <bout/sourcex.hxx>
 #include <bout/utils.hxx>
 
+#include <bout/difops.hxx>
+#include <bout/fv_ops.hxx>
+
 #include <math.h>
 
 #if BOUT_HAS_HYPRE
@@ -46,6 +49,7 @@ private:
   Coordinates::FieldMetric U0; // 0th vorticity of equilibrium flow,
   // radial flux coordinate, normalized radial flux coordinate
 
+  bool laplace_perp; // Use Laplace_perp or Delp2?
   bool constn0;
   // the total height, average width and center of profile of N0
   BoutReal n0_height, n0_ave, n0_width, n0_center, n0_bottom_x, Nbar, Tibar, Tebar;
@@ -203,7 +207,11 @@ private:
 
   bool parallel_lr_diff; // Use left and right shifted stencils for parallel differences
 
-  bool phi_constraint; // Solver for phi using a solver constraint
+  bool phi_constraint;               // Solver for phi using a solver constraint
+  bool phi_boundary_relax;           // Relax x boundaries of phi towards Neumann?
+  bool phi_core_averagey;            // Average phi core boundary in Y?
+  BoutReal phi_boundary_timescale;   // Relaxation timescale
+  BoutReal phi_boundary_last_update; // Time when last updated
 
   bool include_rmp; // Include RMP coil perturbation
   bool simple_rmp;  // Just use a simple form for the perturbation
@@ -350,7 +358,8 @@ protected:
     //////////////////////////////////////////////////////////////
     auto& globalOptions = Options::root();
     auto& options = globalOptions["highbeta"];
-
+    laplace_perp = options["laplace_perp"].withDefault(false);
+    // Use Laplace_perp rather than Delp2
     constn0 = options["constn0"].withDefault(true);
     // use the hyperbolic profile of n0. If both  n0_fake_prof and
     // T0_fake_prof are false, use the profiles from grid file
@@ -377,6 +386,9 @@ protected:
     phi_constraint = options["phi_constraint"]
                          .doc("Use solver constraint for phi?")
                          .withDefault(false);
+    phi_boundary_relax = options["phi_boundary_relax"]
+                             .doc("Relax x boundaries of phi towards Neumann?")
+                             .withDefault<bool>(false);
 
     // Effects to include/exclude
     include_curvature = options["include_curvature"].withDefault(true);
@@ -1142,8 +1154,29 @@ protected:
 
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
+    // Save performance metrics to output, using the
+    // given name as the prefix.
+    phiSolver->savePerformance(*solver, "phiSolver");
 
     aparSolver = Laplacian::create(&globalOptions["aparSolver"], loc);
+
+    if (phi_boundary_relax) {
+      // Set the last update time to -1, so it will reset
+      // the first time RHS function is called
+      phi_boundary_last_update = -1.;
+      phi_core_averagey = options["phi_core_averagey"]
+                              .doc("Average phi core boundary in Y?")
+                              .withDefault<bool>(false)
+                          and mesh->periodicY(mesh->xstart);
+
+      phi_boundary_timescale = options["phi_boundary_timescale"]
+                                   .doc("Timescale for phi boundary relaxation [seconds]")
+                                   .withDefault(1e-7)
+                               / Tbar; // Normalise time units to Tbar
+
+      phiSolver->setInnerBoundaryFlags(INVERT_SET);
+      phiSolver->setOuterBoundaryFlags(INVERT_SET);
+    }
 
     /////////////// CHECK VACUUM ///////////////////////
     // In vacuum region, initial vorticity should equal zero
@@ -1312,10 +1345,127 @@ protected:
       Ctmp.applyBoundary();
       Ctmp -= phi; // Now contains error in the boundary
 
-      C_phi = Delp2(phi) - U; // Error in the bulk
+      if (laplace_perp) {
+        C_phi = Laplace_perp(phi) - U; // Error in the bulk
+      } else {
+        C_phi = Delp2(phi) - U; // Error in the bulk
+      }
       C_phi.setBoundaryTo(Ctmp);
 
     } else {
+      if (phi_boundary_relax) {
+        // Update the boundary regions by relaxing towards zero gradient
+        // on a given timescale.
+
+        if (phi_boundary_last_update < 0.0) {
+          // First time this has been called.
+          phi_boundary_last_update = t;
+        } else if (t > phi_boundary_last_update) {
+          // Only update if simulation time has advanced
+          // Uses an exponential decay of the weighting of the value in the boundary
+          // so that the solution is well behaved for arbitrary steps
+          BoutReal const weight = exp(-(t - phi_boundary_last_update) / phi_boundary_timescale);
+          phi_boundary_last_update = t;
+
+          if (mesh->firstX()) {
+            BoutReal phivalue = 0.0;
+            if (phi_core_averagey) {
+              // Calculate a single phi boundary value for all Y slices
+              BoutReal philocal = 0.0;
+              for (int j = mesh->ystart; j <= mesh->yend; j++) {
+                for (int k = 0; k < mesh->LocalNz; k++) {
+                  philocal += phi(mesh->xstart, j, k);
+                }
+              }
+              MPI_Comm comm_inner = mesh->getYcomm(0);
+              int np = 0;
+              MPI_Comm_size(comm_inner, &np);
+              MPI_Allreduce(&philocal, &phivalue, 1, MPI_DOUBLE, MPI_SUM, comm_inner);
+              phivalue /= (np * mesh->LocalNz * mesh->LocalNy);
+            }
+            for (int j = mesh->ystart; j <= mesh->yend; j++) {
+              if (!phi_core_averagey) {
+                phivalue = 0.0; // Calculate phi boundary for each Y index separately
+                for (int k = 0; k < mesh->LocalNz; k++) {
+                  phivalue += phi(mesh->xstart, j, k);
+                }
+                phivalue /= mesh->LocalNz; // Average in Z of point next to boundary
+              }
+
+              // Old value of phi at boundary. Note: this is constant in Z
+              BoutReal const oldvalue =
+                  0.5 * (phi(mesh->xstart - 1, j, 0) + phi(mesh->xstart, j, 0));
+
+              // New value of phi at boundary, relaxing towards phivalue
+              BoutReal const newvalue = weight * oldvalue + (1. - weight) * phivalue;
+
+              // Set phi at the boundary to this value
+              for (int k = 0; k < mesh->LocalNz; k++) {
+                phi(mesh->xstart - 1, j, k) = 2. * newvalue - phi(mesh->xstart, j, k);
+                phi(mesh->xstart - 2, j, k) = phi(mesh->xstart - 1, j, k);
+              }
+            }
+          }
+
+          if (mesh->lastX()) {
+            for (int j = mesh->ystart; j <= mesh->yend; j++) {
+              BoutReal phivalue = 0.0;
+              for (int k = 0; k < mesh->LocalNz; k++) {
+                phivalue += phi(mesh->xend, j, k);
+              }
+              phivalue /= mesh->LocalNz; // Average in Z of point next to boundary
+
+              // Old value of phi at boundary. Note: this is constant in Z
+              BoutReal oldvalue =
+                  0.5 * (phi(mesh->xend + 1, j, 0) + phi(mesh->xend, j, 0));
+
+              // New value of phi at boundary, relaxing towards phivalue
+              BoutReal const newvalue = weight * oldvalue + (1. - weight) * phivalue;
+
+              // Set phi at the boundary to this value
+              for (int k = 0; k < mesh->LocalNz; k++) {
+                phi(mesh->xend + 1, j, k) = 2. * newvalue - phi(mesh->xend, j, k);
+                phi(mesh->xend + 2, j, k) = phi(mesh->xend + 1, j, k);
+              }
+            }
+          }
+        }
+      }
+
+      Field3D phi_shift = phi;
+      if (constn0 and diamag) {
+        // Solving for phi + ion pressure term
+        phi_shift += 0.5 * dnorm * P / B0;
+      } else {
+        // Ensure that memory is not shared between phi and phi_shift
+        phi_shift.allocate();
+      }
+
+      // Update boundary conditions.
+      //  The INVERT_SET flag takes the value in the guard (boundary) cell
+      //    and sets the boundary between cells to this value.
+      //    This shift by 1/2 grid cell is important.
+
+      if (mesh->firstX()) {
+        for (int j = mesh->ystart; j <= mesh->yend; j++) {
+          for (int k = 0; k < mesh->LocalNz; k++) {
+            // Average phi + Pi at the boundary, and set the boundary cell
+            // to this value. The phi solver will then put the value back
+            // onto the cell mid-point
+            phi_shift(mesh->xstart - 1, j, k) =
+                0.5 * (phi_shift(mesh->xstart - 1, j, k) + phi_shift(mesh->xstart, j, k));
+          }
+        }
+      }
+
+      if (mesh->lastX()) {
+        for (int j = mesh->ystart; j <= mesh->yend; j++) {
+          for (int k = 0; k < mesh->LocalNz; k++) {
+            phi_shift(mesh->xend + 1, j, k) =
+                0.5 * (phi_shift(mesh->xend + 1, j, k) + phi_shift(mesh->xend, j, k));
+          }
+        }
+      }
 
       if (constn0) {
         if (split_n0) {
@@ -1323,44 +1473,84 @@ protected:
           // Boussinesq, split
           // Split into axisymmetric and non-axisymmetric components
           Field2D Vort2D = DC(U); // n=0 component
+          Field2D phi_shift_2d = phi2D;
+
+          if (phi_boundary_relax) {
+            phi_shift_2d = DC(phi_shift);
+          }
+          phi_shift -= phi_shift_2d;
 
           // Applies boundary condition for "phi".
           phi2D.applyBoundary(t);
 
           // Solve axisymmetric (n=0) part
-          phi2D = laplacexy->solve(Vort2D, phi2D);
+          phi2D = laplacexy->solve(Vort2D, phi_shift_2d);
 
           // Solve non-axisymmetric part
-          phi = phiSolver->solve(U - Vort2D);
+          phi = phiSolver->solve(U - Vort2D, phi_shift);
 
           phi += phi2D; // Add axisymmetric part
         } else {
-          phi = phiSolver->solve(U);
+          if (phi_boundary_relax) {
+            phi = phiSolver->solve(U, phi_shift);
+          } else {
+            phi = phiSolver->solve(U);
+          }
         }
-
         if (diamag) {
           phi -= 0.5 * dnorm * P / B0;
         }
       } else {
         ubyn = U / N0;
         if (diamag) {
-          ubyn -= 0.5 * dnorm / (N0 * B0) * Delp2(P);
+          if (laplace_perp) {
+            ubyn -= 0.5 * dnorm / (N0 * B0) * Laplace_perp(P);
+          } else {
+            ubyn -= 0.5 * dnorm / (N0 * B0) * Delp2(P);
+          }
           mesh->communicate(ubyn);
         }
         // Invert laplacian for phi
         phiSolver->setCoefC(N0);
         phi = phiSolver->solve(ubyn);
       }
-      // Apply a boundary condition on phi for target plates
-      phi.applyBoundary();
       mesh->communicate(phi);
+    }
+
+    if (mesh->firstX()) {
+      for (int i = mesh->xstart - 2; i >= 0; --i) {
+        for (int j = mesh->ystart; j <= mesh->yend; ++j) {
+          for (int k = 0; k < mesh->LocalNz; ++k) {
+            phi(i, j, k) = phi(i + 1, j, k);
+          }
+        }
+      }
+    }
+
+    if (mesh->lastX()) {
+      for (int i = mesh->xend + 2; i < mesh->LocalNx; ++i) {
+        for (int j = mesh->ystart; j <= mesh->yend; ++j) {
+          for (int k = 0; k < mesh->LocalNz; ++k) {
+            phi(i, j, k) = phi(i - 1, j, k);
+          }
+        }
+      }
     }
 
     if (!evolve_jpar) {
       // Get J from Psi
-      Jpar = Delp2(Psi);
+      if (laplace_perp) {
+        Jpar = Laplace_perp(Psi);
+      } else {
+        Jpar = Delp2(Psi);
+      }
+
       if (include_rmp) {
-        Jpar += Delp2(rmp_Psi);
+        if (laplace_perp) {
+          Jpar += Laplace_perp(rmp_Psi);
+        } else {
+          Jpar += Delp2(rmp_Psi);
+        }
       }
 
       Jpar.applyBoundary();
@@ -1394,8 +1584,11 @@ protected:
       }
 
       // Get Delp2(J) from J
-      Jpar2 = Delp2(Jpar);
-
+      if (laplace_perp) {
+        Jpar2 = Laplace_perp(Jpar);
+      } else {
+        Jpar2 = Delp2(Jpar);
+      }
       Jpar2.applyBoundary();
       mesh->communicate(Jpar2);
 
@@ -1491,7 +1684,11 @@ protected:
       // Jpar
       Field3D B0U = B0 * U;
       mesh->communicate(B0U);
-      ddt(Jpar) = -Grad_parP(B0U, loc) / B0 + eta * Delp2(Jpar);
+      if (laplace_perp) {
+        ddt(Jpar) = -Grad_parP(B0U, loc) / B0 + eta * Laplace_perp(Jpar);
+      } else {
+        ddt(Jpar) = -Grad_parP(B0U, loc) / B0 + eta * Delp2(Jpar);
+      }
 
       if (relax_j_vac) {
         // Make ddt(Jpar) relax to zero.
@@ -1521,11 +1718,19 @@ protected:
       }
 
       if (hyperresist > 0.0) { // Hyper-resistivity
-        ddt(Psi) -= eta * hyperresist * Delp2(Jpar);
+        if (laplace_perp) {
+          ddt(Psi) -= eta * hyperresist * Laplace_perp(Jpar);
+        } else {
+          ddt(Psi) -= eta * hyperresist * Delp2(Jpar);
+        }
       }
 
       if (ehyperviscos > 0.0) { // electron Hyper-viscosity coefficient
-        ddt(Psi) -= eta * ehyperviscos * Delp2(Jpar2);
+        if (laplace_perp) {
+          ddt(Psi) -= eta * ehyperviscos * Laplace_perp(Jpar2);
+        } else {
+          ddt(Psi) -= eta * ehyperviscos * Delp2(Jpar2);
+        }
       }
 
       // Parallel hyper-viscous diffusion for vector potential
@@ -1596,7 +1801,11 @@ protected:
     }
 
     if (viscos_perp > 0.0) {
-      ddt(U) += viscos_perp * Delp2(U); // Perpendicular viscosity
+      if (laplace_perp) {
+        ddt(U) += viscos_perp * Laplace_perp(U); // Perpendicular viscosity
+      } else {
+        ddt(U) += viscos_perp * Delp2(U); // Perpendicular viscosity
+      }
     }
 
     // Hyper-viscosity
@@ -1623,21 +1832,39 @@ protected:
       Pi = 0.5 * P;
       Pi0 = 0.5 * P0;
 
-      Dperp2Phi0 = Field3D(Delp2(B0 * phi0));
-      Dperp2Phi0.applyBoundary();
-      mesh->communicate(Dperp2Phi0);
+      if (laplace_perp) {
+        Dperp2Phi0 = Field3D(Laplace_perp(B0 * phi0));
+        Dperp2Phi0.applyBoundary();
+        mesh->communicate(Dperp2Phi0);
 
-      Dperp2Phi = Delp2(B0 * phi);
-      Dperp2Phi.applyBoundary();
-      mesh->communicate(Dperp2Phi);
+        Dperp2Phi = Laplace_perp(B0 * phi);
+        Dperp2Phi.applyBoundary();
+        mesh->communicate(Dperp2Phi);
 
-      Dperp2Pi0 = Field3D(Delp2(Pi0));
-      Dperp2Pi0.applyBoundary();
-      mesh->communicate(Dperp2Pi0);
+        Dperp2Pi0 = Field3D(Laplace_perp(Pi0));
+        Dperp2Pi0.applyBoundary();
+        mesh->communicate(Dperp2Pi0);
 
-      Dperp2Pi = Delp2(Pi);
-      Dperp2Pi.applyBoundary();
-      mesh->communicate(Dperp2Pi);
+        Dperp2Pi = Laplace_perp(Pi);
+        Dperp2Pi.applyBoundary();
+        mesh->communicate(Dperp2Pi);
+      } else {
+        Dperp2Phi0 = Field3D(Delp2(B0 * phi0));
+        Dperp2Phi0.applyBoundary();
+        mesh->communicate(Dperp2Phi0);
+
+        Dperp2Phi = Delp2(B0 * phi);
+        Dperp2Phi.applyBoundary();
+        mesh->communicate(Dperp2Phi);
+
+        Dperp2Pi0 = Field3D(Delp2(Pi0));
+        Dperp2Pi0.applyBoundary();
+        mesh->communicate(Dperp2Pi0);
+
+        Dperp2Pi = Delp2(Pi);
+        Dperp2Pi.applyBoundary();
+        mesh->communicate(Dperp2Pi);
+      }
 
       bracketPhi0P = bracket(B0 * phi0, Pi, bm_exb);
       bracketPhi0P.applyBoundary();
@@ -1655,8 +1882,13 @@ protected:
       mesh->communicate(B0phi0);
       ddt(U) += 0.5 * Upara2 * bracket(B0phi, Dperp2Pi0, bm_exb) / B0;
       ddt(U) += 0.5 * Upara2 * bracket(B0phi0, Dperp2Pi, bm_exb) / B0;
-      ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhi0P) / B0;
-      ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhiP0) / B0;
+      if (laplace_perp) {
+        ddt(U) -= 0.5 * Upara2 * Laplace_perp(bracketPhi0P) / B0;
+        ddt(U) -= 0.5 * Upara2 * Laplace_perp(bracketPhiP0) / B0;
+      } else {
+        ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhi0P) / B0;
+        ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhiP0) / B0;
+      }
 
       if (nonlinear) {
         Field3D B0phi = B0 * phi;
@@ -1667,7 +1899,11 @@ protected:
 
         ddt(U) -= 0.5 * Upara2 * bracket(Pi, Dperp2Phi, bm_exb) / B0;
         ddt(U) += 0.5 * Upara2 * bracket(B0phi, Dperp2Pi, bm_exb) / B0;
-        ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhiP) / B0;
+        if (laplace_perp) {
+          ddt(U) -= 0.5 * Upara2 * Laplace_perp(bracketPhiP) / B0;
+        } else {
+          ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhiP) / B0;
+        }
       }
     }
 
@@ -1805,7 +2041,12 @@ protected:
   int precon(BoutReal UNUSED(t), BoutReal gamma, BoutReal UNUSED(delta)) {
     // First matrix, applying L
     mesh->communicate(ddt(Psi));
-    Field3D Jrhs = Delp2(ddt(Psi));
+    Field3D Jrhs;
+    if (laplace_perp) {
+      Jrhs = Laplace_perp(ddt(Psi));
+    } else {
+      Jrhs = Delp2(ddt(Psi));
+    }
     Jrhs.applyBoundary("neumann");
 
     if (jpar_bndry_width > 0) {
@@ -1877,8 +2118,11 @@ protected:
 
     phi = phiSolver->solve(ddt(U));
 
-    Jpar = Delp2(ddt(Psi));
-
+    if (laplace_perp) {
+      Jpar = Laplace_perp(ddt(Psi));
+    } else {
+      Jpar = Delp2(ddt(Psi));
+    }
     mesh->communicate(phi, Jpar);
 
     Field3D JP = -b0xGrad_dot_Grad(phi, P0);

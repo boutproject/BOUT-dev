@@ -9,9 +9,9 @@
  *
  * 
  **************************************************************************
- * Copyright 2014 B.D.Dudson
+ * Copyright 2014-2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -132,9 +132,10 @@ public:
     transform = std::move(pt);
   }
 
+  bool hasParallelTransform() const { return transform != nullptr; }
   /// Return the parallel transform
-  ParallelTransform& getParallelTransform() {
-    ASSERT1(transform != nullptr);
+  ParallelTransform& getParallelTransform() const {
+    ASSERT1(hasParallelTransform());
     return *transform;
   }
 

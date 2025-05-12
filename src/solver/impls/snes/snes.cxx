@@ -1,4 +1,4 @@
-#include "bout/build_defines.hxx"
+#include "bout/build_config.hxx"
 
 #if BOUT_HAS_PETSC
 
@@ -6,17 +6,55 @@
 
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/globals.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/utils.hxx>
 
-#include <array>
 #include <cmath>
 #include <vector>
 
 #include <bout/output.hxx>
 
-#include "petscmat.h"
 #include "petscsnes.h"
+
+class ColoringStencil {
+private:
+  bool static isInSquare(int const i, int const j, int const n_square) {
+    return std::abs(i) <= n_square && std::abs(j) <= n_square;
+  }
+  bool static isInCross(int const i, int const j, int const n_cross) {
+    if (i == 0) {
+      return std::abs(j) <= n_cross;
+    }
+    if (j == 0) {
+      return std::abs(i) <= n_cross;
+    }
+    return false;
+  }
+  bool static isInTaxi(int const i, int const j, int const n_taxi) {
+    return std::abs(i) + std::abs(j) <= n_taxi;
+  }
+
+public:
+  auto static getOffsets(int n_square, int n_taxi, int n_cross) {
+    ASSERT2(n_square >= 0 && n_cross >= 0 && n_taxi >= 0
+            && n_square + n_cross + n_taxi > 0);
+    auto inside = [&](int i, int j) {
+      return isInSquare(i, j, n_square) || isInTaxi(i, j, n_taxi)
+             || isInCross(i, j, n_cross);
+    };
+    std::vector<std::pair<int, int>> xy_offsets;
+    auto loop_bound = std::max({n_square, n_taxi, n_cross});
+    for (int i = -loop_bound; i <= loop_bound; ++i) {
+      for (int j = -loop_bound; j <= loop_bound; ++j) {
+        if (inside(i, j)) {
+          xy_offsets.emplace_back(i, j);
+        }
+      }
+    }
+    return xy_offsets;
+  }
+};
 
 /*
  * PETSc callback function, which evaluates the nonlinear
@@ -122,7 +160,7 @@ SNESSolver::SNESSolver(Options* opts)
                       .withDefault<bool>(false)),
       matrix_free_operator((*options)["matrix_free_operator"]
                                .doc("Use matrix free Jacobian-vector operator?")
-                               .withDefault<bool>(true)),
+                               .withDefault<bool>(false)),
       lag_jacobian((*options)["lag_jacobian"]
                        .doc("Re-use the Jacobian this number of SNES iterations")
                        .withDefault(50)),
@@ -279,225 +317,164 @@ int SNESSolver::init() {
 
       output_progress.write("Setting Jacobian matrix sizes\n");
 
-      int n2d = f2d.size();
-      int n3d = f3d.size();
+      const int n2d = f2d.size();
+      const int n3d = f3d.size();
 
       // Set size of Matrix on each processor to nlocal x nlocal
       MatCreate(BoutComm::get(), &Jfd);
       MatSetSizes(Jfd, nlocal, nlocal, PETSC_DETERMINE, PETSC_DETERMINE);
       MatSetFromOptions(Jfd);
-
-      std::vector<PetscInt> d_nnz(nlocal);
-      std::vector<PetscInt> o_nnz(nlocal);
-
-      // Set values for most points
-      const int ncells_x = (mesh->LocalNx > 1) ? 2 : 0;
-      const int ncells_y = (mesh->LocalNy > 1) ? 2 : 0;
-      const int ncells_z = (mesh->LocalNz > 1) ? 2 : 0;
-
-      const auto star_pattern = (1 + ncells_x + ncells_y) * (n3d + n2d) + ncells_z * n3d;
-
-      // Offsets. Start with the central cell
-      std::vector<std::pair<int, int>> xyoffsets{{0, 0}};
-      if (ncells_x != 0) {
-        // Stencil includes points in X
-        xyoffsets.push_back({-1, 0});
-        xyoffsets.push_back({1, 0});
+      // Determine which row/columns of the matrix are locally owned
+      int Istart, Iend;
+      MatGetOwnershipRange(Jfd, &Istart, &Iend);
+      // Convert local into global indices
+      // Note: Not in the boundary cells, to keep -1 values
+      for (const auto& i : mesh->getRegion3D("RGN_NOBNDRY")) {
+        index[i] += Istart;
       }
-      if (ncells_y != 0) {
-        // Stencil includes points in Y
-        xyoffsets.push_back({0, -1});
-        xyoffsets.push_back({0, 1});
-      }
+      // Now communicate to fill guard cells
+      mesh->communicate(index);
 
-      output_info.write("Star pattern: {} non-zero entries\n", star_pattern);
-      for (int i = 0; i < nlocal; i++) {
-        // Non-zero elements on this processor
-        d_nnz[i] = star_pattern;
-        // Non-zero elements on neighboring processor
-        o_nnz[i] = 0;
+      // Non-zero elements on this processor
+      std::vector<PetscInt> d_nnz;
+      std::vector<PetscInt> o_nnz;
+      auto n_square = (*options)["stencil:square"]
+                          .doc("Extent of stencil (square)")
+                          .withDefault<int>(0);
+      auto n_taxi = (*options)["stencil:taxi"]
+                        .doc("Extent of stencil (taxi-cab norm)")
+                        .withDefault<int>(0);
+      auto n_cross = (*options)["stencil:cross"]
+                         .doc("Extent of stencil (cross)")
+                         .withDefault<int>(0);
+      //Set n_taxi 2 if nothing else is set
+      //Probably a better way to do this
+      if (n_square == 0 && n_taxi == 0 && n_cross == 0) {
+        output_info.write("Setting solver:stencil:taxi = 2\n");
+        n_taxi = 2;
       }
 
-      // X boundaries
-      if (ncells_x != 0) {
-        if (mesh->firstX()) {
-          // Lower X boundary
-          for (int y = mesh->ystart; y <= mesh->yend; y++) {
-            for (int z = 0; z < mesh->LocalNz; z++) {
-              const int localIndex = ROUND(index(mesh->xstart, y, z));
-              ASSERT2((localIndex >= 0) && (localIndex < nlocal));
-              const int num_fields = (z == 0) ? n2d + n3d : n3d;
-              for (int i = 0; i < num_fields; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-              }
-            }
-          }
-        } else {
-          // On another processor
-          for (int y = mesh->ystart; y <= mesh->yend; y++) {
-            for (int z = 0; z < mesh->LocalNz; z++) {
-              const int localIndex = ROUND(index(mesh->xstart, y, z));
-              ASSERT2((localIndex >= 0) && (localIndex < nlocal));
-              const int num_fields = (z == 0) ? n2d + n3d : n3d;
-              for (int i = 0; i < num_fields; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-                o_nnz[localIndex + i] += (n3d + n2d);
-              }
-            }
-          }
-        }
-        if (mesh->lastX()) {
-          // Upper X boundary
-          for (int y = mesh->ystart; y <= mesh->yend; y++) {
-            for (int z = 0; z < mesh->LocalNz; z++) {
-              const int localIndex = ROUND(index(mesh->xend, y, z));
-              ASSERT2((localIndex >= 0) && (localIndex < nlocal));
-              const int num_fields = (z == 0) ? n2d + n3d : n3d;
-              for (int i = 0; i < num_fields; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-              }
-            }
-          }
-        } else {
-          // On another processor
-          for (int y = mesh->ystart; y <= mesh->yend; y++) {
-            for (int z = 0; z < mesh->LocalNz; z++) {
-              const int localIndex = ROUND(index(mesh->xend, y, z));
-              ASSERT2((localIndex >= 0) && (localIndex < nlocal));
-              const int num_fields = (z == 0) ? n2d + n3d : n3d;
-              for (int i = 0; i < num_fields; i++) {
-                d_nnz[localIndex + i] -= (n3d + n2d);
-                o_nnz[localIndex + i] += (n3d + n2d);
-              }
-            }
-          }
-        }
-      }
-
-      // Y boundaries
-      if (ncells_y != 0) {
+      auto const xy_offsets = ColoringStencil::getOffsets(n_square, n_taxi, n_cross);
+      {
+        // This is ugly but can't think of a better and robust way to
+        // count the non-zeros for some arbitrary stencil
+        // effectively the same loop as the one that sets the non-zeros below
+        std::vector<std::set<int>> d_nnz_map2d(nlocal);
+        std::vector<std::set<int>> o_nnz_map2d(nlocal);
+        std::vector<std::set<int>> d_nnz_map3d(nlocal);
+        std::vector<std::set<int>> o_nnz_map3d(nlocal);
+        // Loop over every element in 2D to count the *unique* non-zeros
         for (int x = mesh->xstart; x <= mesh->xend; x++) {
-          // Default to no boundary
-          // NOTE: This assumes that communications in Y are to other
-          //   processors. If Y is communicated with this processor (e.g. NYPE=1)
-          //   then this will result in PETSc warnings about out of range allocations
+          for (int y = mesh->ystart; y <= mesh->yend; y++) {
 
-          // z = 0 case
-          int localIndex = ROUND(index(x, mesh->ystart, 0));
-          ASSERT2(localIndex >= 0);
+            const int ind0 = ROUND(index(x, y, 0)) - Istart;
 
-          // All 2D and 3D fields
-          for (int i = 0; i < n2d + n3d; i++) {
-            o_nnz[localIndex + i] += (n3d + n2d);
-            d_nnz[localIndex + i] -= (n3d + n2d);
-          }
+            // 2D fields
+            for (int i = 0; i < n2d; i++) {
+              const PetscInt row = ind0 + i;
+              // Loop through each point in the stencil
+              for (const auto& [x_off, y_off] : xy_offsets) {
+                const int xi = x + x_off;
+                const int yi = y + y_off;
+                if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
+                    || (yi >= mesh->LocalNy)) {
+                  continue;
+                }
 
-          for (int z = 1; z < mesh->LocalNz; z++) {
-            localIndex = ROUND(index(x, mesh->ystart, z));
+                const int ind2 = ROUND(index(xi, yi, 0));
+                if (ind2 < 0) {
+                  continue; // A boundary point
+                }
 
-            // Only 3D fields
-            for (int i = 0; i < n3d; i++) {
-              o_nnz[localIndex + i] += (n3d + n2d);
-              d_nnz[localIndex + i] -= (n3d + n2d);
+                // Depends on all variables on this cell
+                for (int j = 0; j < n2d; j++) {
+                  const PetscInt col = ind2 + j;
+                  if (col >= Istart && col < Iend) {
+                    d_nnz_map2d[row].insert(col);
+                  } else {
+                    o_nnz_map2d[row].insert(col);
+                  }
+                }
+              }
             }
-          }
+            // 3D fields
+            for (int z = 0; z < mesh->LocalNz; z++) {
+              const int ind = ROUND(index(x, y, z)) - Istart;
 
-          // z = 0 case
-          localIndex = ROUND(index(x, mesh->yend, 0));
-          // All 2D and 3D fields
-          for (int i = 0; i < n2d + n3d; i++) {
-            o_nnz[localIndex + i] += (n3d + n2d);
-            d_nnz[localIndex + i] -= (n3d + n2d);
-          }
+              for (int i = 0; i < n3d; i++) {
+                PetscInt row = ind + i;
+                if (z == 0) {
+                  row += n2d;
+                }
 
-          for (int z = 1; z < mesh->LocalNz; z++) {
-            localIndex = ROUND(index(x, mesh->yend, z));
+                // Depends on 2D fields
+                for (int j = 0; j < n2d; j++) {
+                  const PetscInt col = ind0 + j;
+                  if (col >= Istart && col < Iend) {
+                    d_nnz_map2d[row].insert(col);
+                  } else {
+                    o_nnz_map2d[row].insert(col);
+                  }
+                }
 
-            // Only 3D fields
-            for (int i = 0; i < n3d; i++) {
-              o_nnz[localIndex + i] += (n3d + n2d);
-              d_nnz[localIndex + i] -= (n3d + n2d);
+                // Star pattern
+                for (const auto& [x_off, y_off] : xy_offsets) {
+                  const int xi = x + x_off;
+                  const int yi = y + y_off;
+
+                  if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
+                      || (yi >= mesh->LocalNy)) {
+                    continue;
+                  }
+
+                  int ind2 = ROUND(index(xi, yi, 0));
+                  if (ind2 < 0) {
+                    continue; // Boundary point
+                  }
+
+                  if (z == 0) {
+                    ind2 += n2d;
+                  }
+
+                  // 3D fields on this cell
+                  for (int j = 0; j < n3d; j++) {
+                    const PetscInt col = ind2 + j;
+                    if (col >= Istart && col < Iend) {
+                      d_nnz_map3d[row].insert(col);
+                    } else {
+                      o_nnz_map3d[row].insert(col);
+                    }
+                  }
+                }
+              }
             }
           }
         }
 
-        for (RangeIterator it = mesh->iterateBndryLowerY(); !it.isDone(); it++) {
-          // A boundary, so no communication
+        d_nnz.reserve(nlocal);
+        d_nnz.reserve(nlocal);
 
-          // z = 0 case
-          int localIndex = ROUND(index(it.ind, mesh->ystart, 0));
-          if (localIndex < 0) {
-            // This can occur because it.ind includes values in x boundary e.g. x=0
-            continue;
-          }
-          // All 2D and 3D fields
-          for (int i = 0; i < n2d + n3d; i++) {
-            o_nnz[localIndex + i] -= (n3d + n2d);
-          }
-
-          for (int z = 1; z < mesh->LocalNz; z++) {
-            int localIndex = ROUND(index(it.ind, mesh->ystart, z));
-
-            // Only 3D fields
-            for (int i = 0; i < n3d; i++) {
-              o_nnz[localIndex + i] -= (n3d + n2d);
-            }
-          }
-        }
-
-        for (RangeIterator it = mesh->iterateBndryUpperY(); !it.isDone(); it++) {
-          // A boundary, so no communication
-
-          // z = 0 case
-          const int localIndex = ROUND(index(it.ind, mesh->yend, 0));
-          if (localIndex < 0) {
-            continue; // Out of domain
-          }
-
-          // All 2D and 3D fields
-          for (int i = 0; i < n2d + n3d; i++) {
-            o_nnz[localIndex + i] -= (n3d + n2d);
-          }
-
-          for (int z = 1; z < mesh->LocalNz; z++) {
-            const int localIndex = ROUND(index(it.ind, mesh->yend, z));
-
-            // Only 3D fields
-            for (int i = 0; i < n3d; i++) {
-              o_nnz[localIndex + i] -= (n3d + n2d);
-            }
-          }
+        for (int i = 0; i < nlocal; ++i) {
+          //Assume all elements in the z direction are potentially coupled
+          d_nnz.emplace_back(d_nnz_map3d[i].size() * mesh->LocalNz
+                             + d_nnz_map2d[i].size());
+          o_nnz.emplace_back(o_nnz_map3d[i].size() * mesh->LocalNz
+                             + o_nnz_map2d[i].size());
         }
       }
 
       output_progress.write("Pre-allocating Jacobian\n");
-
       // Pre-allocate
       MatMPIAIJSetPreallocation(Jfd, 0, d_nnz.data(), 0, o_nnz.data());
       MatSeqAIJSetPreallocation(Jfd, 0, d_nnz.data());
       MatSetUp(Jfd);
       MatSetOption(Jfd, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
 
-      // Determine which row/columns of the matrix are locally owned
-      int Istart, Iend;
-      MatGetOwnershipRange(Jfd, &Istart, &Iend);
-
-      // Convert local into global indices
-      // Note: Not in the boundary cells, to keep -1 values
-      for (const auto& i : mesh->getRegion3D("RGN_NOBNDRY")) {
-        index[i] += Istart;
-      }
-
-      // Now communicate to fill guard cells
-      mesh->communicate(index);
-
       //////////////////////////////////////////////////
       // Mark non-zero entries
 
       output_progress.write("Marking non-zero Jacobian entries\n");
-
-      const PetscScalar val = 1.0;
-
+      PetscScalar val = 1.0;
       for (int x = mesh->xstart; x <= mesh->xend; x++) {
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
 
@@ -507,35 +484,31 @@ int SNESSolver::init() {
           for (int i = 0; i < n2d; i++) {
             const PetscInt row = ind0 + i;
 
-            // Loop through each point in the 5-point stencil
-            for (const auto& xyoffset : xyoffsets) {
-              const int xi = x + xyoffset.first;
-              const int yi = y + xyoffset.second;
-
+            // Loop through each point in the stencil
+            for (const auto& [x_off, y_off] : xy_offsets) {
+              const int xi = x + x_off;
+              const int yi = y + y_off;
               if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
                   || (yi >= mesh->LocalNy)) {
                 continue;
               }
 
-              const int ind2 = ROUND(index(xi, yi, 0));
-
+              int ind2 = ROUND(index(xi, yi, 0));
               if (ind2 < 0) {
                 continue; // A boundary point
               }
 
               // Depends on all variables on this cell
               for (int j = 0; j < n2d; j++) {
-                const PetscInt col = ind2 + j;
+                PetscInt col = ind2 + j;
                 ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
                 CHKERRQ(ierr);
               }
             }
           }
-
           // 3D fields
           for (int z = 0; z < mesh->LocalNz; z++) {
-
-            const int ind = ROUND(index(x, y, z));
+            int ind = ROUND(index(x, y, z));
 
             for (int i = 0; i < n3d; i++) {
               PetscInt row = ind + i;
@@ -545,73 +518,48 @@ int SNESSolver::init() {
 
               // Depends on 2D fields
               for (int j = 0; j < n2d; j++) {
-                const PetscInt col = ind0 + j;
+                PetscInt col = ind0 + j;
                 ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
                 CHKERRQ(ierr);
               }
 
               // Star pattern
-              for (const auto& xyoffset : xyoffsets) {
-                const int xi = x + xyoffset.first;
-                const int yi = y + xyoffset.second;
+              for (const auto& [x_off, y_off] : xy_offsets) {
+                int xi = x + x_off;
+                int yi = y + y_off;
 
                 if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
                     || (yi >= mesh->LocalNy)) {
                   continue;
                 }
-
-                int ind2 = ROUND(index(xi, yi, z));
-                if (ind2 < 0) {
-                  continue; // Boundary point
-                }
-
-                if (z == 0) {
-                  ind2 += n2d;
-                }
-
-                // 3D fields on this cell
-                for (int j = 0; j < n3d; j++) {
-                  const PetscInt col = ind2 + j;
-                  ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
-                  if (ierr != 0) {
-                    output.write("ERROR: {} : ({}, {}) -> ({}, {}) : {} -> {}\n", row, x,
-                                 y, xi, yi, ind2, ind2 + n3d - 1);
+                for (int zi = 0; zi < mesh->LocalNz; ++zi) {
+                  int ind2 = ROUND(index(xi, yi, zi));
+                  if (ind2 < 0) {
+                    continue; // Boundary point
                   }
-                  CHKERRQ(ierr);
-                }
-              }
 
-              int nz = mesh->LocalNz;
-              if (nz > 1) {
-                // Multiple points in z
+                  if (z == 0) {
+                    ind2 += n2d;
+                  }
 
-                int zp = (z + 1) % nz;
+                  // 3D fields on this cell
+                  for (int j = 0; j < n3d; j++) {
+                    PetscInt col = ind2 + j;
+                    ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
 
-                int ind2 = ROUND(index(x, y, zp));
-                if (zp == 0) {
-                  ind2 += n2d;
-                }
-                for (int j = 0; j < n3d; j++) {
-                  const PetscInt col = ind2 + j;
-                  ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
-                  CHKERRQ(ierr);
-                }
-
-                int zm = (z - 1 + nz) % nz;
-                ind2 = ROUND(index(x, y, zm));
-                if (zm == 0) {
-                  ind2 += n2d;
-                }
-                for (int j = 0; j < n3d; j++) {
-                  const PetscInt col = ind2 + j;
-                  ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
-                  CHKERRQ(ierr);
+                    if (ierr != 0) {
+                      output.write("ERROR: {} {} : ({}, {}) -> ({}, {}) : {} -> {}\n",
+                                   row, x, y, xi, yi, ind2, ind2 + n3d - 1);
+                    }
+                    CHKERRQ(ierr);
+                  }
                 }
               }
             }
           }
         }
       }
+
       // Finished marking non-zero entries
 
       output_progress.write("Assembling Jacobian matrix\n");
@@ -619,6 +567,17 @@ int SNESSolver::init() {
       // Assemble Matrix
       MatAssemblyBegin(Jfd, MAT_FINAL_ASSEMBLY);
       MatAssemblyEnd(Jfd, MAT_FINAL_ASSEMBLY);
+
+      //The above will probably miss some non-zero entries at process boundaries
+      //Making sure the colouring matrix is symmetric will in some/all(?)
+      //of the missing non-zeros
+      if ((*options)["force_symmetric_coloring"]
+              .doc("Modifies coloring matrix to force it to be symmetric")
+              .withDefault<bool>(false)) {
+        Mat Jfd_T;
+        MatCreateTranspose(Jfd, &Jfd_T);
+        MatAXPY(Jfd, 1, Jfd_T, DIFFERENT_NONZERO_PATTERN);
+      }
 
       output_progress.write("Creating Jacobian coloring\n");
       updateColoring();

@@ -393,7 +393,9 @@ iterations within a given range.
 +---------------------------+---------------+----------------------------------------------------+
 | predictor                 | true          | Use linear predictor?                              |
 +---------------------------+---------------+----------------------------------------------------+
-| matrix_free               | false         | Use matrix free Jacobian-vector product?           |
+| matrix_free               | false         | Matrix-free preconditioning?                       |
++---------------------------+---------------+----------------------------------------------------+
+| matrix_free_operator      | false         | Use matrix free Jacobian-vector product?           |
 +---------------------------+---------------+----------------------------------------------------+
 | use_coloring              | true          | If ``matrix_free=false``, use coloring to speed up |
 |                           |               | calculation of the Jacobian elements.              |
@@ -402,10 +404,17 @@ iterations within a given range.
 +---------------------------+---------------+----------------------------------------------------+
 | kspsetinitialguessnonzero | false         | If true, Use previous solution as KSP initial      |
 +---------------------------+---------------+----------------------------------------------------+
-| use_precon                | false         | Use user-supplied preconditioner?                  |
+| use_precon                | false         | If ``matrix_free=true``, use user-supplied         |
+|                           |               | preconditioner?                                    |
 |                           |               | If false, the default PETSc preconditioner is used |
 +---------------------------+---------------+----------------------------------------------------+
 | diagnose                  | false         | Print diagnostic information every iteration       |
++---------------------------+---------------+----------------------------------------------------+
+| stencil:cross             | 0             | If ``matrix_free=false`` and ``use_coloring=true`` |
+| stencil:square            | 0             | Set the size and shape of the Jacobian coloring    |
+| stencil:taxi              | 2             | stencil.                                           |
++---------------------------+---------------+----------------------------------------------------+
+| force_symmetric_coloring  | false         | Ensure that the Jacobian coloring is symmetric     |
 +---------------------------+---------------+----------------------------------------------------+
 
 The predictor is linear extrapolation from the last two timesteps. It seems to be
@@ -443,6 +452,51 @@ Preconditioner types:
    options available in Hypre is the Euler parallel ILU solver.
    Enable with command-line args ``-pc_type hypre -pc_hypre_type euclid -pc_hypre_euclid_levels k``
    where ``k`` is the level (1-8 typically).
+
+Jacobian coloring stencil
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The stencil used to create the Jacobian colouring can be varied,
+depending on which numerical operators are in use.
+
+
+``solver:stencil:cross = N``
+e.g. for N == 2
+
+.. code-block:: bash
+
+        *
+        *
+    * * x * *
+        *
+        *
+
+
+``solver:stencil:square = N``
+e.g. for N == 2
+
+.. code-block:: bash
+
+    * * * * *
+    * * * * *
+    * * x * *
+    * * * * *
+    * * * * *
+
+``solver:stencil:taxi = N``
+e.g. for N == 2
+
+.. code-block:: bash
+
+        *
+      * * *
+    * * x * *
+      * * *
+        *
+
+Setting ``solver:force_symmetric_coloring = true``, will make sure
+that the jacobian colouring matrix is symmetric.  This will often
+include a few extra non-zeros that the stencil will miss otherwise
 
 ODE integration
 ---------------
