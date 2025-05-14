@@ -2,6 +2,7 @@
 #include "bout/coordinates.hxx"
 #include "bout/mesh.hxx"
 #include "fake_mesh_fixture.hxx"
+#include "bout/constants.hxx"
 #include <bout/tokamak_coordinates.hxx>
 
 
@@ -16,11 +17,16 @@ public:
 
 TEST_F(CoordinateTransformTest, CylindricalToCartesian) {
 
+    double R0 = 2.0;  // major radius
+    double r[9] = {0.10, 0.15, 0.20, 0.25, 0.30};  // minor radius
+    double theta[3] = {1.07712, 3.17151, 5.26591};  // poloidal angle
+
     auto tokamak_options = bout::TokamakOptions(*mesh);
 
     for (int i = 0; i < tokamak_options.Rxy.getNx(); i++) {
-        for (int j = 0; j < tokamak_options.Rxy.getNy(); j++) {
-            tokamak_options.Rxy(i, j) = sqrt(SQ(i) + SQ(j));
+        for (int j = 0; j < tokamak_options.Zxy.getNy(); j++) {
+            tokamak_options.Rxy(i, j) = R0 + r[i] * cos(theta[j]);
+            tokamak_options.Zxy(i, j) = r[i] * sin(theta[j]);
         }
     }
 
