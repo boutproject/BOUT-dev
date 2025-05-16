@@ -28,18 +28,23 @@ namespace bout {
             dx = mesh.getCoordinates()->dx();
         }
 //        mesh.get(toroidal_angle, "z");
-        toroidal_angle = 2 * PI / Rxy.size();
+        const auto d_phi = TWOPI / mesh.LocalNz;
+        auto current_phi = 0.0;
+        for (int k = 0; k < mesh.LocalNz; k++) {
+            toroidal_angles.push_back(current_phi);
+            current_phi += d_phi;
+        }
     }
 
     Coordinates3D TokamakOptions::CylindricalCoordinatesToCartesian() {
         Field3D x = emptyFrom(Rxy);
         Field3D y = emptyFrom(Rxy);
         Field3D z = emptyFrom(Zxy);
-        for (int i = 0; i < toroidal_angle.getNx(); i++) {
-            for (int j = 0; j < toroidal_angle.getNy(); j++) {
-                for (int k = 0; k < toroidal_angle.getNz(); k++) {
-                    x(i, j, k) = Rxy(i, j) * std::cos(toroidal_angle(i, j, k));
-                    y(i, j, k) = Rxy(i, j) * std::sin(toroidal_angle(i, j, k));
+        for (int i = 0; i < Rxy.getNx(); i++) {
+            for (int j = 0; j < Rxy.getNy(); j++) {
+                for (uint k = 0; k < toroidal_angles.size(); k++) {
+                    x(i, j, k) = Rxy(i, j) * cos(toroidal_angles[k]);
+                    y(i, j, k) = Rxy(i, j) * sin(toroidal_angles[k]);
                     z(i, j, k) = Zxy(i, j);
                 }
             }
@@ -66,7 +71,7 @@ namespace bout {
 
         const BoutReal sign_of_bp = get_sign_of_bp(tokamak_options.Bpxy);
 
-        auto *coord = mesh.getCoordinates();
+        auto* coord = mesh.getCoordinates();
 
         const auto g11 = SQ(tokamak_options.Rxy * tokamak_options.Bpxy);
         const auto g22 = 1.0 / SQ(tokamak_options.hthe);
