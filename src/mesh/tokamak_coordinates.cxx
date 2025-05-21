@@ -43,7 +43,7 @@ namespace bout {
         for (int i = 0; i < Rxy.getNx(); i++) {
             for (int j = 0; j < Rxy.getNy(); j++) {
                 int k = 0;
-                for (int angle : toroidal_angles) {
+                for (auto angle : toroidal_angles) {
                     x(i, j, k) = Rxy(i, j) * std::cos(angle);
                     y(i, j, k) = Rxy(i, j) * std::sin(angle);
                     z(i, j, k) = Zxy(i, j);
