@@ -17,7 +17,7 @@ namespace bout {
         Field3D y;
         Field3D z;
 
-        Coordinates3D(Field3D x, Field3D y, Field3D z) : x(x), y(y), z(z) {}
+        Coordinates3D(Field3D& x, Field3D& y, Field3D& z) : x(x), y(y), z(z) {}
     };
 
     struct TokamakOptions {
@@ -31,7 +31,7 @@ namespace bout {
         FieldMetric dx;
         std::vector<double> toroidal_angles;
 
-        TokamakOptions(Mesh &mesh);
+        TokamakOptions(Mesh& mesh);
 
         void normalise(BoutReal Lbar, BoutReal Bbar, BoutReal ShearFactor);
 
