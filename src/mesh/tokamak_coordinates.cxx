@@ -38,8 +38,8 @@ namespace bout {
         for (int i = 0; i < toroidal_angle.getNx(); i++) {
             for (int j = 0; j < toroidal_angle.getNy(); j++) {
                 for (int k = 0; k < toroidal_angle.getNz(); k++) {
-                    x(i, j, k) = Rxy(i, j) * cos(toroidal_angle(i, j, k));
-                    y(i, j, k) = Rxy(i, j) * sin(toroidal_angle(i, j, k));
+                    x(i, j, k) = Rxy(i, j) * std::cos(toroidal_angle(i, j, k));
+                    y(i, j, k) = Rxy(i, j) * std::sin(toroidal_angle(i, j, k));
                     z(i, j, k) = Zxy(i, j);
                 }
             }

@@ -25,8 +25,8 @@ TEST_F(CoordinateTransformTest, CylindricalToCartesian) {
 
     for (int i = 0; i < tokamak_options.Rxy.getNx(); i++) {
         for (int j = 0; j < tokamak_options.Zxy.getNy(); j++) {
-            tokamak_options.Rxy(i, j) = R0 + r[i] * cos(theta[j]);
-            tokamak_options.Zxy(i, j) = r[i] * sin(theta[j]);
+            tokamak_options.Rxy(i, j) = R0 + r[i] * std::cos(theta[j]);
+            tokamak_options.Zxy(i, j) = r[i] * std::sin(theta[j]);
         }
     }
 
@@ -40,8 +40,8 @@ TEST_F(CoordinateTransformTest, CylindricalToCartesian) {
                 auto actual_y = cartesian_coords.y(jx, jy, jz);
                 auto actual_z = cartesian_coords.z(jx, jy, jz);
 
-                auto expected_x = tokamak_options.Rxy(jx, jy) * cos(tokamak_options.toroidal_angle(jx, jy, jz));
-                auto expected_y = tokamak_options.Rxy(jx, jy) * sin(tokamak_options.toroidal_angle(jx, jy, jz));
+                auto expected_x = tokamak_options.Rxy(jx, jy) * std::cos(tokamak_options.toroidal_angle(jx, jy, jz));
+                auto expected_y = tokamak_options.Rxy(jx, jy) * std::sin(tokamak_options.toroidal_angle(jx, jy, jz));
                 auto expected_z = tokamak_options.Zxy(jx, jy);
 
                 EXPECT_EQ(actual_x, expected_x);
