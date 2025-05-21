@@ -18,16 +18,20 @@ public:
 TEST_F(CoordinateTransformTest, CylindricalToCartesian) {
 
     const double R0 = 2.0;  // major radius
-    const std::array<double, 5> r = {0.10, 0.15, 0.20, 0.25, 0.30};  // minor radius
-    const std::array<double, 4> theta = {0.0, 1.07712, 3.17151, 5.26591};  // poloidal angle
+    const std::array<double, 5> r_values = {0.10, 0.15, 0.20, 0.25, 0.30};  // minor radius
+    const std::array<double, 4> theta_values = {0.0, 1.07712, 3.17151, 5.26591};  // poloidal angle
 
     auto tokamak_options = bout::TokamakOptions(*mesh);
 
-    for (int i = 0; i < r.size(); i++) {
-        for (int j = 0; j < theta.size(); j++) {
-            tokamak_options.Rxy(i, j) = R0 + r[i] * cos(theta[j]);
-            tokamak_options.Zxy(i, j) = r[i] * sin(theta[j]);
+    int i = 0;
+    for (auto r: r_values) {
+        int j = 0;
+        for (auto theta: theta_values) {
+            tokamak_options.Rxy(i, j) = R0 + r * std::cos(theta);
+            tokamak_options.Zxy(i, j) = r * std::sin(theta);
+            j++;
         }
+        i++;
     }
 
     bout::Coordinates3D cartesian_coords = tokamak_options.CylindricalCoordinatesToCartesian();

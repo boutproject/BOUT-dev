@@ -42,10 +42,12 @@ namespace bout {
         Field3D z = emptyFrom(Zxy);
         for (int i = 0; i < Rxy.getNx(); i++) {
             for (int j = 0; j < Rxy.getNy(); j++) {
-                for (uint k = 0; k < toroidal_angles.size(); k++) {
-                    x(i, j, k) = Rxy(i, j) * cos(toroidal_angles[k]);
-                    y(i, j, k) = Rxy(i, j) * sin(toroidal_angles[k]);
+                int k = 0;
+                for (int angle : toroidal_angles) {
+                    x(i, j, k) = Rxy(i, j) * std::cos(angle);
+                    y(i, j, k) = Rxy(i, j) * std::sin(angle);
                     z(i, j, k) = Zxy(i, j);
+                    k++;
                 }
             }
         }
