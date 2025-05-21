@@ -18,8 +18,8 @@ public:
 TEST_F(CoordinateTransformTest, CylindricalToCartesian) {
 
     const double R0 = 2.0;  // major radius
-    const std::array<double, 5> r_values = {0.10, 0.15, 0.20, 0.25, 0.30};  // minor radius
-    const std::array<double, 4> theta_values = {0.0, 1.07712, 3.17151, 5.26591};  // poloidal angle
+    const std::array<double, 3> r_values = {0.1, 0.2, 0.3};  // minor radius
+    const std::array<double, 5> theta_values = {0.0, 1.25663, 2.51327, 3.76991, 5.02654};  // poloidal angle
 
     auto tokamak_options = bout::TokamakOptions(*mesh);
 
