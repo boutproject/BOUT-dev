@@ -22,7 +22,8 @@ jobs:
 
       - name: Run clang-format
         id: format
-        run: git clang-format origin/${{ github.base_ref }} || :
+        run:
+          while ! git clang-format origin/${{ github.base_ref }} ; do git add . ; done
 
       - name: Commit to the PR branch
         uses: stefanzweifel/git-auto-commit-action@v5
