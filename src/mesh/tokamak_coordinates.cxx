@@ -37,9 +37,12 @@ namespace bout {
     }
 
     Coordinates3D TokamakOptions::CylindricalCoordinatesToCartesian() {
-        Field3D x = emptyFrom(Rxy);
-        Field3D y = emptyFrom(Rxy);
-        Field3D z = emptyFrom(Zxy);
+
+        auto* mesh = Rxy.getMesh();
+        Field3D x = Field3D(0.0, mesh);
+        Field3D y = Field3D(0.0, mesh);
+        Field3D z = Field3D(0.0, mesh);
+
         for (int i = 0; i < Rxy.getNx(); i++) {
             for (int j = 0; j < Rxy.getNy(); j++) {
                 int k = 0;
