@@ -17,6 +17,12 @@ public:
 
 TEST_F(CoordinateTransformTest, CylindricalToCartesian) {
 
+    // arrange
+
+    // Set up test values
+    // Calculate cylindrical coordinates (Rxy, Zxy)
+    // from (2D) orthogonal poloidal coordinates (r, theta)
+
     const double R0 = 2.0;  // major radius
     const std::array<double, nx> r_values = {0.1, 0.2, 0.3};  // minor radius
     const std::array<double, ny> theta_values = {0.0, 1.25663, 2.51327, 3.76991, 5.02654};  // poloidal angle
@@ -34,8 +40,10 @@ TEST_F(CoordinateTransformTest, CylindricalToCartesian) {
         i++;
     }
 
+    // act
     bout::Coordinates3D cartesian_coords = tokamak_options.CylindricalCoordinatesToCartesian();
 
+    // assert
     for (int jx = 0; jx < mesh->xend; jx++) {
         for (int jy = 0; jy < mesh->yend; jy++) {
             for (int jz = 0; jz < mesh->LocalNz; jz++) {
