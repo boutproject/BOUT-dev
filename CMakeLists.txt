@@ -731,11 +731,6 @@ endif()
 ##################################################
 # Documentation
 
-option(BOUT_BUILD_DOCS "Build the documentation" OFF)
-if (BOUT_BUILD_DOCS)
-  add_subdirectory(manual EXCLUDE_FROM_ALL)
-endif()
-
 
 add_custom_target(dist
   COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/pylib/_boutpp_build/backend.py dist
@@ -898,7 +893,6 @@ install(
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindScoreP.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindSLEPc.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindSUNDIALS.cmake"
-      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindSphinx.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ResolveCompilerPaths.cmake"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bout++"
   )
