@@ -25,7 +25,12 @@ TEST_F(CoordinateTransformTest, CylindricalToCartesian) {
 
     const double R0 = 2.0;  // major radius
     const std::array<double, nx> r_values = {0.1, 0.2, 0.3};  // minor radius
-    const std::array<double, ny> theta_values = {0.0, 1.25663, 2.51327, 3.76991, 5.02654};  // poloidal angle
+    const std::array<double, ny> theta_values = {  // poloidal angle
+            0.0,
+            PI / 2,
+            PI,
+            3 * PI / 2,
+            2 * PI};
 
     auto tokamak_options = bout::TokamakOptions(*mesh);
 
@@ -44,22 +49,28 @@ TEST_F(CoordinateTransformTest, CylindricalToCartesian) {
     bout::Coordinates3D cartesian_coords = tokamak_options.CylindricalCoordinatesToCartesian();
 
     // assert
-    for (int jx = 0; jx < mesh->xend; jx++) {
-        for (int jy = 0; jy < mesh->yend; jy++) {
-            for (int jz = 0; jz < mesh->LocalNz; jz++) {
+    const auto max_r = *std::max_element(begin(r_values), end(r_values));
+    const auto expected_max_x = R0 + max_r;
+    // With nz=7, there is no toroidal coordinate point at exactly pi/2; the nearest point is at 2/7 * 2pi
+    const auto expected_max_y = (R0 + max_r) * std::sin(TWOPI * 2 / 7);
+    const auto expected_max_z = max_r;
 
-                auto actual_x = cartesian_coords.x(jx, jy, jz);
-                auto actual_y = cartesian_coords.y(jx, jy, jz);
-                auto actual_z = cartesian_coords.z(jx, jy, jz);
+    // With nz=7, there is no toroidal coordinate point at exactly pi; the nearest point is at 3/7 * 2pi
+    const auto expected_min_x = -1 * (R0 + max_r) * std::cos(TWOPI / 7 / 2);
+    const auto expected_min_y = -1 * (R0 + max_r) * std::sin(TWOPI * 2 / 7);
+    const auto expected_min_z = -1 * expected_max_z;
 
-                auto expected_x = tokamak_options.Rxy(jx, jy) * std::cos(tokamak_options.toroidal_angles[jz]);
-                auto expected_y = tokamak_options.Rxy(jx, jy) * std::sin(tokamak_options.toroidal_angles[jz]);
-                auto expected_z = tokamak_options.Zxy(jx, jy);
+    const auto actual_max_x = max(cartesian_coords.x, false, "RGN_ALL");
+    const auto actual_max_y = max(cartesian_coords.y, false, "RGN_ALL");
+    const auto actual_max_z = max(cartesian_coords.z, false, "RGN_ALL");
+    const auto actual_min_x = min(cartesian_coords.x, false, "RGN_ALL");
+    const auto actual_min_y = min(cartesian_coords.y, false, "RGN_ALL");
+    const auto actual_min_z = min(cartesian_coords.z, false, "RGN_ALL");
 
-                EXPECT_EQ(actual_x, expected_x);
-                EXPECT_EQ(actual_y, expected_y);
-                EXPECT_EQ(actual_z, expected_z);
-            }
-        }
-    }
+    EXPECT_EQ(expected_max_x, actual_max_x);
+    EXPECT_EQ(expected_max_y, actual_max_y);
+    EXPECT_EQ(expected_max_z, actual_max_z);
+    EXPECT_EQ(expected_min_x, actual_min_x);
+    EXPECT_EQ(expected_min_y, actual_min_y);
+    EXPECT_EQ(expected_min_z, actual_min_z);
 }
