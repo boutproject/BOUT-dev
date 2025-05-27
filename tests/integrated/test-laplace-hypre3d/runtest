@@ -29,10 +29,10 @@ for directory, nproc in test_directories:
     error_max = collect("error_max", path=directory, info=False)
 
     if error_max > tolerance:
-        print(" => " + directory + " failed with maximum error {}".format(error_max))
+        print(f" => {directory} failed with maximum error {error_max}")
         success = False
     else:
-        print(" => " + directory + " passed with maximum error {}".format(error_max))
+        print(f" => {directory} passed with maximum error {error_max}")
 
 if success:
     print("=> All passed")
