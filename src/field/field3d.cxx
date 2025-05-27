@@ -805,7 +805,8 @@ bool operator==(const Field3D& a, const Field3D& b) {
   if (!a.isAllocated() || !b.isAllocated()) {
     return false;
   }
-  return min(abs(a - b)) < 1e-10;
+  Field3D Sub = a - b;
+  return min(Sub) < 1e-10;
 }
 
 std::ostream& operator<<(std::ostream& out, const Field3D& value) {

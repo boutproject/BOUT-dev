@@ -38,6 +38,7 @@ class Field3D;
 #include <vector>
 
 class Mesh;
+class BinaryExpr;
 
 /// Class for 3D X-Y-Z scalar fields
 /*!
@@ -183,6 +184,7 @@ public:
   Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
           DirectionTypes directions_in = {YDirectionType::Standard,
                                           ZDirectionType::Standard});
+  Field3D(const BinaryExpr& expr);
   /// Destructor
   ~Field3D() override;
 
@@ -424,6 +426,7 @@ public:
   /// return void, as only part initialised
   void operator=(const FieldPerp& rhs);
   Field3D& operator=(BoutReal val);
+  Field3D& operator=(BinaryExpr expr);
   ///@}
 
   /// Addition operators
@@ -518,7 +521,7 @@ FieldPerp operator-(const Field3D& lhs, const FieldPerp& rhs);
 FieldPerp operator*(const Field3D& lhs, const FieldPerp& rhs);
 FieldPerp operator/(const Field3D& lhs, const FieldPerp& rhs);
 
-Field3D operator+(const Field3D& lhs, const Field3D& rhs);
+BinaryExpr operator+(const Field3D& lhs, const Field3D& rhs);
 Field3D operator-(const Field3D& lhs, const Field3D& rhs);
 Field3D operator*(const Field3D& lhs, const Field3D& rhs);
 Field3D operator/(const Field3D& lhs, const Field3D& rhs);
