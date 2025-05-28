@@ -40,7 +40,6 @@ __global__ static void evaluatorExpr(BoutReal* out, const Expr& expr) {
 
 template <typename L, typename R, typename Func>
 struct BinaryExpr {
-  enum class Op { ADD, SUB, MUL, DIV };
   L lhs;
   R rhs;
   Array<int> indices;
@@ -95,16 +94,7 @@ struct BinaryExpr {
   std::optional<size_t> getRegionID() const { return regionID; };
 };
 
-//template <typename T>
-//struct Expr {
-//  using type = T;
-//};
-//
-//template <>
-//struct Expr<Field3D> {
-//  using type = Field3D::View;
-//};
-
+#if 0
 // 1) detect our BinaryExpr<T,U> template
 template <typename>
 struct is_binary_expr : std::false_type {};
@@ -114,10 +104,15 @@ struct is_binary_expr<BinaryExpr<A, B, F>> : std::true_type {};
 // 2) detect “any subclass of Field”
 //    assuming Field is your common base class
 template <typename T>
-constexpr bool is_field_v = std::is_base_of<Field3D, std::decay_t<T>>::value;
+constexpr bool is_field3d_v = std::is_base_of<Field3D, std::decay_t<T>>::value;
 
 // 3) combine into “is one of our expression types”
 template <typename T>
-constexpr bool is_expr_v = is_field_v<T> || is_binary_expr<std::decay_t<T>>::value;
+constexpr bool is_expr_field3d_v =
+    is_field3d_v<T> || is_binary_expr<std::decay_t<T>>::value;
+#endif
 
+#if 1
+
+#endif
 #endif // BOUT_EXPRESSION_HXX

@@ -40,6 +40,13 @@ class Field3D;
 class Mesh;
 
 #include "bout/fieldops.hxx"
+// Base template: nothing is an expression by default
+template <typename T>
+struct is_expr_field3d : std::false_type {};
+
+// Helper variable template
+template <typename T>
+inline constexpr bool is_expr_field3d_v = is_expr_field3d<std::decay_t<T>>::value;
 
 /// Class for 3D X-Y-Z scalar fields
 /*!
@@ -453,7 +460,7 @@ public:
   /// Addition operators
   ///@{
   //Field3D& operator+=(const Field3D& rhs);
-  template <typename R, typename = std::enable_if_t<is_expr_v<R>>>
+  template <typename R, typename = std::enable_if_t<is_expr_field3d_v<R>>>
   Field3D& operator+=(const R& rhs) {
     printf("Running operator+= with CUDA\n");
     data.ensureUnique();
@@ -467,7 +474,7 @@ public:
   /// Subtraction operators
   ///@{
   //Field3D& operator-=(const Field3D& rhs);
-  template <typename R, typename = std::enable_if_t<is_expr_v<R>>>
+  template <typename R, typename = std::enable_if_t<is_expr_field3d_v<R>>>
   Field3D& operator-=(const R& rhs) {
     printf("Running operator-= with CUDA\n");
     data.ensureUnique();
@@ -481,7 +488,7 @@ public:
   /// Multiplication operators
   ///@{
   //Field3D& operator*=(const Field3D& rhs);
-    template <typename R, typename = std::enable_if_t<is_expr_v<R>>>
+  template <typename R, typename = std::enable_if_t<is_expr_field3d_v<R>>>
   Field3D& operator*=(const R& rhs) {
     printf("Running operator*= with CUDA\n");
     data.ensureUnique();
@@ -494,7 +501,7 @@ public:
 
   /// Division operators
   ///@{
-      template <typename R, typename = std::enable_if_t<is_expr_v<R>>>
+  template <typename R, typename = std::enable_if_t<is_expr_field3d_v<R>>>
   Field3D& operator/=(const R& rhs) {
     printf("Running operator/= with CUDA\n");
     data.ensureUnique();
@@ -575,8 +582,9 @@ FieldPerp operator*(const Field3D& lhs, const FieldPerp& rhs);
 FieldPerp operator/(const Field3D& lhs, const FieldPerp& rhs);
 
 template <typename L, typename R,
-          typename = std::enable_if_t<is_expr_v<L> && is_expr_v<R>>>
-BinaryExpr<typename L::View, typename R::View, bout::op::Add> operator+(const L& lhs, const R& rhs) {
+          typename = std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>>>
+BinaryExpr<typename L::View, typename R::View, bout::op::Add> operator+(const L& lhs,
+                                                                        const R& rhs) {
   auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
 
   std::cout << "RUNNING operator+ using BinaryExpr with CUDA" << "\n";
@@ -592,8 +600,9 @@ BinaryExpr<typename L::View, typename R::View, bout::op::Add> operator+(const L&
 }
 
 template <typename L, typename R,
-          typename = std::enable_if_t<is_expr_v<L> && is_expr_v<R>>>
-BinaryExpr<typename L::View, typename R::View, bout::op::Sub> operator-(const L& lhs, const R& rhs) {
+          typename = std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>>>
+BinaryExpr<typename L::View, typename R::View, bout::op::Sub> operator-(const L& lhs,
+                                                                        const R& rhs) {
   auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
 
   std::cout << "RUNNING operator- using BinaryExpr with CUDA" << "\n";
@@ -609,8 +618,9 @@ BinaryExpr<typename L::View, typename R::View, bout::op::Sub> operator-(const L&
 }
 
 template <typename L, typename R,
-          typename = std::enable_if_t<is_expr_v<L> && is_expr_v<R>>>
-BinaryExpr<typename L::View, typename R::View, bout::op::Mul> operator*(const L& lhs, const R& rhs) {
+          typename = std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>>>
+BinaryExpr<typename L::View, typename R::View, bout::op::Mul> operator*(const L& lhs,
+                                                                        const R& rhs) {
   auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
 
   std::cout << "RUNNING operator* using BinaryExpr with CUDA" << "\n";
@@ -626,8 +636,9 @@ BinaryExpr<typename L::View, typename R::View, bout::op::Mul> operator*(const L&
 }
 
 template <typename L, typename R,
-          typename = std::enable_if_t<is_expr_v<L> && is_expr_v<R>>>
-BinaryExpr<typename L::View, typename R::View, bout::op::Div> operator/(const L& lhs, const R& rhs) {
+          typename = std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>>>
+BinaryExpr<typename L::View, typename R::View, bout::op::Div> operator/(const L& lhs,
+                                                                        const R& rhs) {
   auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
 
   std::cout << "RUNNING operator/ using BinaryExpr with CUDA" << "\n";
@@ -643,6 +654,22 @@ BinaryExpr<typename L::View, typename R::View, bout::op::Div> operator/(const L&
 }
 
 Field3D operator+(const Field3D& lhs, const Field2D& rhs);
+// template <typename L, typename R,
+// typename = std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>>>
+// BinaryExpr<typename L::View, typename R::View, bout::op::Add> operator+(const L& lhs, const R& rhs) {
+// auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
+//
+// std::cout << "RUNNING operator+ using BinaryExpr with CUDA" << "\n";
+// return BinaryExpr{static_cast<typename L::View>(lhs),
+// static_cast<typename R::View>(rhs),
+// bout::op::Add{},
+// lhs.getMesh(),
+// lhs.getLocation(),
+// lhs.getDirections(),
+// regionID,
+// (regionID.has_value() ? lhs.getMesh()->getRegion(regionID.value())
+// : lhs.getMesh()->getRegion("RGN_ALL"))};
+// }
 Field3D operator-(const Field3D& lhs, const Field2D& rhs);
 Field3D operator*(const Field3D& lhs, const Field2D& rhs);
 Field3D operator/(const Field3D& lhs, const Field2D& rhs);
@@ -768,5 +795,21 @@ bool operator==(const Field3D& a, const Field3D& b);
 
 /// Output a string describing a Field3D to a stream
 std::ostream& operator<<(std::ostream& out, const Field3D& value);
+
+// A raw Field3D is an expression leaf
+template <>
+struct is_expr_field3d<Field3D> : std::true_type {};
+template <>
+struct is_expr_field3d<Field3D::View> : std::true_type {};
+
+// Any nested BinaryExpr<L,R,Fun> is an expression iff L is
+template <typename L, typename R, typename Fun>
+struct is_expr_field3d<BinaryExpr<L, R, Fun>>
+    : std::true_type {};
+
+//template<typename L,typename R,typename Fun>
+//struct is_expr_field3d< typename BinaryExpr<L,R,Fun>::View >
+//  : std::integral_constant<bool, is_expr_field3d<std::decay_t<L>>::value> {};
+//  //: is_expr_field3d<std::decay_t<L>> {};
 
 #endif /* BOUT_FIELD3D_H */
