@@ -165,6 +165,9 @@ nonlinear solvers:
   `CVodeSetEpsLin
   <https://sundials.readthedocs.io/en/latest/cvodes/Usage/SIM.html#c.CVodeSetEpsLin>`_.
 
+The linear solver type can be set using the ``linear_solver`` option.
+Valid choices include ``gmres`` (the default), ``fgmres``, ``tfqmr``, ``bcgs``.
+
 IMEX-BDF2
 ---------
 
