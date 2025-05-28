@@ -38,7 +38,10 @@ class Field3D;
 #include <vector>
 
 class Mesh;
-class BinaryExpr;
+
+//template <typename L, typename R>
+//class BinaryExpr;
+#include "bout/fieldops.hxx"
 
 /// Class for 3D X-Y-Z scalar fields
 /*!
@@ -184,7 +187,15 @@ public:
   Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
           DirectionTypes directions_in = {YDirectionType::Standard,
                                           ZDirectionType::Standard});
-  Field3D(const BinaryExpr& expr);
+  template <typename L, typename R>
+  Field3D(const BinaryExpr<L, R>& expr) {
+    Array<BoutReal> data{expr.getSize()};
+    constexpr int THREADS = 256;
+    int blocks = (expr.getSize() + THREADS - 1) / THREADS;
+    evaluatorExpr<<<blocks, THREADS>>>(&data[0], expr);
+    cudaDeviceSynchronize();
+    *this = Field3D{data, expr.getMesh(), expr.getLocation(), expr.getDirections()};
+  }
   /// Destructor
   ~Field3D() override;
 
@@ -415,6 +426,15 @@ public:
     return &data[(jx * ny + jy) * nz];
   }
 
+  struct View {
+    BoutReal* data;
+    __device__ inline BoutReal operator()(int idx) const { return data[idx]; }
+  };
+  operator View() { return View{&data[0]}; }
+
+  __device__ inline BoutReal operator()(int i) { return View()(i); }
+  __device__ inline BoutReal operator()(int i) const { return View()(i); }
+
   /////////////////////////////////////////////////////////
   // Operators
 
@@ -426,7 +446,15 @@ public:
   /// return void, as only part initialised
   void operator=(const FieldPerp& rhs);
   Field3D& operator=(BoutReal val);
-  Field3D& operator=(BinaryExpr expr);
+  template <typename L, typename R>
+  Field3D& operator=(BinaryExpr<L, R> expr) {
+    constexpr int THREADS = 256;
+    int blocks = (expr.getSize() + THREADS - 1) / THREADS;
+    evaluatorExpr<<<blocks, THREADS>>>(&data[0], expr);
+    cudaDeviceSynchronize();
+    return *this;
+  }
+
   ///@}
 
   /// Addition operators
@@ -521,7 +549,23 @@ FieldPerp operator-(const Field3D& lhs, const FieldPerp& rhs);
 FieldPerp operator*(const Field3D& lhs, const FieldPerp& rhs);
 FieldPerp operator/(const Field3D& lhs, const FieldPerp& rhs);
 
-BinaryExpr operator+(const Field3D& lhs, const Field3D& rhs);
+template <typename L, typename R,
+          typename = std::enable_if_t<is_expr_v<L> && is_expr_v<R>>>
+BinaryExpr<L, R> operator+(const L& lhs, const R& rhs) {
+  auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
+
+  std::cout << "RUNNING operator+ using BinaryExpr with CUDA" << "\n";
+  return BinaryExpr{lhs,
+                    rhs,
+                    BinaryExpr<L, R>::Op::ADD,
+                    lhs.getMesh(),
+                    lhs.getLocation(),
+                    lhs.getDirections(),
+                    regionID,
+                    (regionID.has_value() ? lhs.getMesh()->getRegion(regionID.value())
+                                          : lhs.getMesh()->getRegion("RGN_ALL"))};
+}
+
 Field3D operator-(const Field3D& lhs, const Field3D& rhs);
 Field3D operator*(const Field3D& lhs, const Field3D& rhs);
 Field3D operator/(const Field3D& lhs, const Field3D& rhs);

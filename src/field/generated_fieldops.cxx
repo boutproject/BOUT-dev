@@ -10,45 +10,9 @@
 #include <bout/mesh.hxx>
 #include <bout/region.hxx>
 
-template <typename T>
-struct ExprFor {
-  using type = T;
-};
-
-template <>
-struct ExprFor<Field3D> {
-  using type = FieldAccessor<CELL_CENTRE, Field3D>;
-};
-
-template <typename T>
-using ExprFor_t = typename ExprFor<std::decay_t<T>>::type;
-
-//template<typename Op>
-//class ExpressionExpr : public ExprBase {
-//private:
-//  const Expression& lhs;
-//  const Expression& rhs;
-//  Op op;
-//
-//public:
-//  ExpressionExpr(const Expression& lhs, const Expression& rhs, Op op)
-//      : lhs(lhs), rhs(rhs), op(op),
-//        ExprBase(lhs.getMesh(), lhs.getLocation(), lhs.getDirections()) {}
-//
-//  __device__ BoutReal operator()(int idx) const override {
-//    return op(lhs(idx), rhs(idx));
-//  }
-//
-//  __host__ __device__ int getSize() const override {
-//    return lhs.getSize(); // Assume same size
-//  }
-//
-//  __device__ int regionIdx(int idx) const override {
-//    return lhs.regionIdx(idx); // Use lhs indexing
-//  }
-//};
-
-Field3D& Field3D::operator=(BinaryExpr expr) {
+#if 0
+template <typename L, typename R>
+Field3D& Field3D::operator=(BinaryExpr<L, R> expr) {
   constexpr int THREADS = 256;
   int blocks = (size() + THREADS - 1) / THREADS;
 
@@ -57,8 +21,12 @@ Field3D& Field3D::operator=(BinaryExpr expr) {
   cudaDeviceSynchronize();
   return *this;
 }
-//
-Field3D::Field3D(const BinaryExpr& expr) {
+template Field3D&
+    Field3D::operator= <Field3D, Field3D>(BinaryExpr<Field3D, Field3D> expr);
+#endif
+
+#if 0
+Field3D::Field3D(const BinaryExpr<Field3D, Field3D>& expr) {
   Array<BoutReal> data{expr.getSize()};
 
   constexpr int THREADS = 256;
@@ -67,6 +35,7 @@ Field3D::Field3D(const BinaryExpr& expr) {
   cudaDeviceSynchronize();
   *this = Field3D{data, expr.getMesh(), expr.getLocation(), expr.getDirections()};
 }
+#endif
 
 // Provide the C++ wrapper for multiplication of Field3D and Field3D
 Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
@@ -83,8 +52,6 @@ Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
   }
 
   checkData(result);
-  std::cout << "operator*\n";
-  getchar();
   return result;
 }
 
@@ -129,8 +96,6 @@ Field3D operator/(const Field3D& lhs, const Field3D& rhs) {
   }
 
   checkData(result);
-  std::cout << "operator/\n";
-  getchar();
   return result;
 }
 
@@ -160,29 +125,32 @@ Field3D& Field3D::operator/=(const Field3D& rhs) {
   return *this;
 }
 
+#if 0
 // Provide the C++ wrapper for addition of Field3D and Field3D
-BinaryExpr operator+(const Field3D& lhs, const Field3D& rhs) {
+template <typename L, typename R, typename>
+BinaryExpr<L, R> operator+(const L& lhs, const R& rhs) {
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
 
   std::cout << "RUNNING operator+ using BinaryExpr with CUDA" << "\n";
-  return BinaryExpr{static_cast<ExprFor_t<Field3D>>(lhs),
-                    static_cast<ExprFor_t<Field3D>>(rhs),
+  return BinaryExpr{lhs,
+                    rhs,
+                    BinaryExpr<L, R>::Op::ADD,
                     lhs.getMesh(),
                     lhs.getLocation(),
                     lhs.getDirections(),
-                    result.getValidRegionWithDefault("RGN_ALL")};
-
-  //constexpr int THREADS = 256;
-  //int blocks = (BE.getSize() + THREADS - 1) / THREADS;
-  //evaluator<<<blocks, THREADS>>>(&result(0, 0, 0), BE);
-  //return result;
+                    regionID,
+                    (regionID.has_value() ? lhs.getMesh()->getRegion(regionID.value())
+                                          : lhs.getMesh()->getRegion("RGN_ALL"))};
 }
+template BinaryExpr<Field3D, Field3D> operator+ <Field3D, Field3D>(const Field3D& lhs,
+                                                                   const Field3D& rhs);
+#endif
 
 // Provide the C++ operator to update Field3D by addition with Field3D
 Field3D& Field3D::operator+=(const Field3D& rhs) {
@@ -224,8 +192,6 @@ Field3D operator-(const Field3D& lhs, const Field3D& rhs) {
     result[index] = lhs[index] - rhs[index];
   }
 
-  std::cout << "operator-\n";
-  getchar();
   checkData(result);
   return result;
 }
