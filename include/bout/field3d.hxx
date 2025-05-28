@@ -190,11 +190,7 @@ public:
   template <typename L, typename R>
   Field3D(const BinaryExpr<L, R>& expr) {
     Array<BoutReal> data{expr.getSize()};
-    constexpr int THREADS = 256;
-    int blocks = (expr.getSize() + THREADS - 1) / THREADS;
-    evaluatorExpr<<<blocks, THREADS>>>(
-        &data[0], static_cast<typename BinaryExpr<L, R>::View>(expr));
-    cudaDeviceSynchronize();
+    expr.evaluate(&data[0]);
     *this = Field3D{data, expr.getMesh(), expr.getLocation(), expr.getDirections()};
   }
   /// Destructor
@@ -450,11 +446,7 @@ public:
   Field3D& operator=(BoutReal val);
   template <typename L, typename R>
   Field3D& operator=(BinaryExpr<L, R> expr) {
-    constexpr int THREADS = 256;
-    int blocks = (expr.getSize() + THREADS - 1) / THREADS;
-    evaluatorExpr<<<blocks, THREADS>>>(
-        &data[0], static_cast<typename BinaryExpr<L, R>::View>(expr));
-    cudaDeviceSynchronize();
+    expr.evaluate(&data[0]);
     return *this;
   }
 
@@ -462,28 +454,56 @@ public:
 
   /// Addition operators
   ///@{
-  Field3D& operator+=(const Field3D& rhs);
+  //Field3D& operator+=(const Field3D& rhs);
+  template <typename R, typename = std::enable_if_t<is_expr_v<R>>>
+  Field3D& operator+=(const R& rhs) {
+    printf("Running operator+= with CUDA\n");
+    data.ensureUnique();
+    (*this) = (*this) + rhs;
+    return *this;
+  }
   Field3D& operator+=(const Field2D& rhs);
   Field3D& operator+=(BoutReal rhs);
   ///@}
 
   /// Subtraction operators
   ///@{
-  Field3D& operator-=(const Field3D& rhs);
+  //Field3D& operator-=(const Field3D& rhs);
+  template <typename R, typename = std::enable_if_t<is_expr_v<R>>>
+  Field3D& operator-=(const R& rhs) {
+    printf("Running operator-= with CUDA\n");
+    data.ensureUnique();
+    (*this) = (*this) - rhs;
+    return *this;
+  }
   Field3D& operator-=(const Field2D& rhs);
   Field3D& operator-=(BoutReal rhs);
   ///@}
 
   /// Multiplication operators
   ///@{
-  Field3D& operator*=(const Field3D& rhs);
+  //Field3D& operator*=(const Field3D& rhs);
+    template <typename R, typename = std::enable_if_t<is_expr_v<R>>>
+  Field3D& operator*=(const R& rhs) {
+    printf("Running operator*= with CUDA\n");
+    data.ensureUnique();
+    (*this) = (*this) * rhs;
+    return *this;
+  }
   Field3D& operator*=(const Field2D& rhs);
   Field3D& operator*=(BoutReal rhs);
   ///@}
 
   /// Division operators
   ///@{
-  Field3D& operator/=(const Field3D& rhs);
+      template <typename R, typename = std::enable_if_t<is_expr_v<R>>>
+  Field3D& operator/=(const R& rhs) {
+    printf("Running operator/= with CUDA\n");
+    data.ensureUnique();
+    (*this) = (*this) * rhs;
+    return *this;
+  }
+  //Field3D& operator/=(const Field3D& rhs);
   Field3D& operator/=(const Field2D& rhs);
   Field3D& operator/=(BoutReal rhs);
   ///@}
@@ -546,6 +566,10 @@ private:
 
 // Non-member overloaded operators
 
+template<typename T>
+constexpr bool always_false = false;
+
+
 // Binary operators
 FieldPerp operator+(const Field3D& lhs, const FieldPerp& rhs);
 FieldPerp operator-(const Field3D& lhs, const FieldPerp& rhs);
@@ -569,9 +593,56 @@ BinaryExpr<typename L::View, typename R::View> operator+(const L& lhs, const R& 
                                           : lhs.getMesh()->getRegion("RGN_ALL"))};
 }
 
-Field3D operator-(const Field3D& lhs, const Field3D& rhs);
-Field3D operator*(const Field3D& lhs, const Field3D& rhs);
-Field3D operator/(const Field3D& lhs, const Field3D& rhs);
+template <typename L, typename R,
+          typename = std::enable_if_t<is_expr_v<L> && is_expr_v<R>>>
+BinaryExpr<typename L::View, typename R::View> operator-(const L& lhs, const R& rhs) {
+  auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
+
+  std::cout << "RUNNING operator- using BinaryExpr with CUDA" << "\n";
+  return BinaryExpr{static_cast<typename L::View>(lhs),
+                    static_cast<typename R::View>(rhs),
+                    BinaryExpr<typename L::View, typename R::View>::Op::SUB,
+                    lhs.getMesh(),
+                    lhs.getLocation(),
+                    lhs.getDirections(),
+                    regionID,
+                    (regionID.has_value() ? lhs.getMesh()->getRegion(regionID.value())
+                                          : lhs.getMesh()->getRegion("RGN_ALL"))};
+}
+
+template <typename L, typename R,
+          typename = std::enable_if_t<is_expr_v<L> && is_expr_v<R>>>
+BinaryExpr<typename L::View, typename R::View> operator*(const L& lhs, const R& rhs) {
+  auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
+
+  std::cout << "RUNNING operator* using BinaryExpr with CUDA" << "\n";
+  return BinaryExpr{static_cast<typename L::View>(lhs),
+                    static_cast<typename R::View>(rhs),
+                    BinaryExpr<typename L::View, typename R::View>::Op::MUL,
+                    lhs.getMesh(),
+                    lhs.getLocation(),
+                    lhs.getDirections(),
+                    regionID,
+                    (regionID.has_value() ? lhs.getMesh()->getRegion(regionID.value())
+                                          : lhs.getMesh()->getRegion("RGN_ALL"))};
+}
+
+template <typename L, typename R,
+          typename = std::enable_if_t<is_expr_v<L> && is_expr_v<R>>>
+BinaryExpr<typename L::View, typename R::View> operator/(const L& lhs, const R& rhs) {
+  auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
+
+  std::cout << "RUNNING operator/ using BinaryExpr with CUDA" << "\n";
+  return BinaryExpr{static_cast<typename L::View>(lhs),
+                    static_cast<typename R::View>(rhs),
+                    BinaryExpr<typename L::View, typename R::View>::Op::DIV,
+                    lhs.getMesh(),
+                    lhs.getLocation(),
+                    lhs.getDirections(),
+                    regionID,
+                    (regionID.has_value() ? lhs.getMesh()->getRegion(regionID.value())
+                                          : lhs.getMesh()->getRegion("RGN_ALL"))};
+}
 
 Field3D operator+(const Field3D& lhs, const Field2D& rhs);
 Field3D operator-(const Field3D& lhs, const Field2D& rhs);

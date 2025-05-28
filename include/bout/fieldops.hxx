@@ -101,7 +101,12 @@ struct BinaryExpr {
   operator View() { return View{lhs, rhs, indices.data, indices.size, op}; }
   operator View() const { return View{lhs, rhs, indices.data, indices.size, op}; }
 
-  void evaluate(BoutReal* data) const {}
+  void evaluate(BoutReal* data) const {
+    constexpr int THREADS = 256;
+    int blocks = (getSize() + THREADS - 1) / THREADS;
+    evaluatorExpr<<<blocks, THREADS>>>(&data[0], static_cast<View>(*this));
+    cudaDeviceSynchronize();
+  }
 
   Mesh* getMesh() const { return mesh; }
   CELL_LOC getLocation() const { return location; }
