@@ -39,8 +39,6 @@ class Field3D;
 
 class Mesh;
 
-//template <typename L, typename R>
-//class BinaryExpr;
 #include "bout/fieldops.hxx"
 
 /// Class for 3D X-Y-Z scalar fields
@@ -187,8 +185,8 @@ public:
   Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
           DirectionTypes directions_in = {YDirectionType::Standard,
                                           ZDirectionType::Standard});
-  template <typename L, typename R>
-  Field3D(const BinaryExpr<L, R>& expr) {
+  template <typename L, typename R, typename Func>
+  Field3D(const BinaryExpr<L, R, Func>& expr) {
     Array<BoutReal> data{expr.getSize()};
     expr.evaluate(&data[0]);
     *this = Field3D{data, expr.getMesh(), expr.getLocation(), expr.getDirections()};
@@ -444,8 +442,8 @@ public:
   /// return void, as only part initialised
   void operator=(const FieldPerp& rhs);
   Field3D& operator=(BoutReal val);
-  template <typename L, typename R>
-  Field3D& operator=(BinaryExpr<L, R> expr) {
+  template <typename L, typename R, typename Func>
+  Field3D& operator=(BinaryExpr<L, R, Func> expr) {
     expr.evaluate(&data[0]);
     return *this;
   }
@@ -578,13 +576,13 @@ FieldPerp operator/(const Field3D& lhs, const FieldPerp& rhs);
 
 template <typename L, typename R,
           typename = std::enable_if_t<is_expr_v<L> && is_expr_v<R>>>
-BinaryExpr<typename L::View, typename R::View> operator+(const L& lhs, const R& rhs) {
+BinaryExpr<typename L::View, typename R::View, bout::op::Add> operator+(const L& lhs, const R& rhs) {
   auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
 
   std::cout << "RUNNING operator+ using BinaryExpr with CUDA" << "\n";
   return BinaryExpr{static_cast<typename L::View>(lhs),
                     static_cast<typename R::View>(rhs),
-                    BinaryExpr<typename L::View, typename R::View>::Op::ADD,
+                    bout::op::Add{},
                     lhs.getMesh(),
                     lhs.getLocation(),
                     lhs.getDirections(),
@@ -595,13 +593,13 @@ BinaryExpr<typename L::View, typename R::View> operator+(const L& lhs, const R& 
 
 template <typename L, typename R,
           typename = std::enable_if_t<is_expr_v<L> && is_expr_v<R>>>
-BinaryExpr<typename L::View, typename R::View> operator-(const L& lhs, const R& rhs) {
+BinaryExpr<typename L::View, typename R::View, bout::op::Sub> operator-(const L& lhs, const R& rhs) {
   auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
 
   std::cout << "RUNNING operator- using BinaryExpr with CUDA" << "\n";
   return BinaryExpr{static_cast<typename L::View>(lhs),
                     static_cast<typename R::View>(rhs),
-                    BinaryExpr<typename L::View, typename R::View>::Op::SUB,
+                    bout::op::Sub{},
                     lhs.getMesh(),
                     lhs.getLocation(),
                     lhs.getDirections(),
@@ -612,13 +610,13 @@ BinaryExpr<typename L::View, typename R::View> operator-(const L& lhs, const R& 
 
 template <typename L, typename R,
           typename = std::enable_if_t<is_expr_v<L> && is_expr_v<R>>>
-BinaryExpr<typename L::View, typename R::View> operator*(const L& lhs, const R& rhs) {
+BinaryExpr<typename L::View, typename R::View, bout::op::Mul> operator*(const L& lhs, const R& rhs) {
   auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
 
   std::cout << "RUNNING operator* using BinaryExpr with CUDA" << "\n";
   return BinaryExpr{static_cast<typename L::View>(lhs),
                     static_cast<typename R::View>(rhs),
-                    BinaryExpr<typename L::View, typename R::View>::Op::MUL,
+                    bout::op::Mul{},
                     lhs.getMesh(),
                     lhs.getLocation(),
                     lhs.getDirections(),
@@ -629,13 +627,13 @@ BinaryExpr<typename L::View, typename R::View> operator*(const L& lhs, const R& 
 
 template <typename L, typename R,
           typename = std::enable_if_t<is_expr_v<L> && is_expr_v<R>>>
-BinaryExpr<typename L::View, typename R::View> operator/(const L& lhs, const R& rhs) {
+BinaryExpr<typename L::View, typename R::View, bout::op::Div> operator/(const L& lhs, const R& rhs) {
   auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
 
   std::cout << "RUNNING operator/ using BinaryExpr with CUDA" << "\n";
   return BinaryExpr{static_cast<typename L::View>(lhs),
                     static_cast<typename R::View>(rhs),
-                    BinaryExpr<typename L::View, typename R::View>::Op::DIV,
+                    bout::op::Div{},
                     lhs.getMesh(),
                     lhs.getLocation(),
                     lhs.getDirections(),

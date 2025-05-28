@@ -12,17 +12,21 @@ class Field3D;
 
 #include <type_traits>
 
-struct Add {
-  __device__ inline BoutReal operator()(BoutReal a, BoutReal b) const { return a + b; }
+namespace bout {
+namespace op {
+  struct Add {
+    __device__ inline BoutReal operator()(BoutReal a, BoutReal b) const { return a + b; }
+  };
+  struct Sub {
+    __device__ inline BoutReal operator()(BoutReal a, BoutReal b) const { return a - b; }
+  };
+  struct Mul {
+    __device__ inline BoutReal operator()(BoutReal a, BoutReal b) const { return a * b; }
+  };
+  struct Div {
+    __device__ inline BoutReal operator()(BoutReal a, BoutReal b) const { return a / b; }
+  };
 };
-struct Sub {
-  __device__ inline BoutReal operator()(BoutReal a, BoutReal b) const { return a - b; }
-};
-struct Mul {
-  __device__ inline BoutReal operator()(BoutReal a, BoutReal b) const { return a * b; }
-};
-struct Div {
-  __device__ inline BoutReal operator()(BoutReal a, BoutReal b) const { return a / b; }
 };
 
 template <typename Expr>
@@ -34,7 +38,7 @@ __global__ static void evaluatorExpr(BoutReal* out, const Expr& expr) {
   }
 }
 
-template <typename L, typename R>
+template <typename L, typename R, typename Func>
 struct BinaryExpr {
   enum class Op { ADD, SUB, MUL, DIV };
   struct RegionIndices {
@@ -54,7 +58,7 @@ struct BinaryExpr {
   L lhs;
   R rhs;
   RegionIndices indices;
-  Op op;
+  Func f;
 
   Mesh* mesh;
   CELL_LOC location = CELL_CENTRE;
@@ -62,10 +66,10 @@ struct BinaryExpr {
   std::optional<size_t> regionID;
 
   template <typename IndType>
-  BinaryExpr(L lhs, R rhs, Op op, Mesh* mesh, CELL_LOC location,
+  BinaryExpr(L lhs, R rhs, Func f, Mesh* mesh, CELL_LOC location,
              DirectionTypes directions, std::optional<size_t> regionID,
              const Region<IndType>& region)
-      : lhs(lhs), rhs(rhs), op(op), mesh(mesh), location(location),
+      : lhs(lhs), rhs(rhs), f(f), mesh(mesh), location(location),
         directions(directions), regionID(regionID), indices(region.getIndices().size()) {
     // Copy the region indices into the managed array
     for (int i = 0; i < indices.size; ++i) {
@@ -80,26 +84,17 @@ struct BinaryExpr {
     R rhs;
     int* indices;
     int size;
-    Op op;
+    Func f;
 
     __host__ __device__ inline int getSize() const { return size; }
     __device__ inline int regionIdx(int idx) const { return indices[idx]; }
     __device__ inline BoutReal operator()(int idx) const {
-      switch (op) {
-      case Op::ADD:
-        return Add{}(lhs(idx), rhs(idx));
-      case Op::SUB:
-        return Sub{}(lhs(idx), rhs(idx));
-      case Op::MUL:
-        return Mul{}(lhs(idx), rhs(idx));
-      case Op::DIV:
-        return Div{}(lhs(idx), rhs(idx));
-      }
+      f(lhs(idx), rhs(idx)); // single‐pass fusion
     }
   };
 
-  operator View() { return View{lhs, rhs, indices.data, indices.size, op}; }
-  operator View() const { return View{lhs, rhs, indices.data, indices.size, op}; }
+  operator View() { return View{lhs, rhs, indices.data, indices.size, f}; }
+  operator View() const { return View{lhs, rhs, indices.data, indices.size, f}; }
 
   void evaluate(BoutReal* data) const {
     constexpr int THREADS = 256;
@@ -127,8 +122,8 @@ struct BinaryExpr {
 // 1) detect our BinaryExpr<T,U> template
 template <typename>
 struct is_binary_expr : std::false_type {};
-template <typename A, typename B>
-struct is_binary_expr<BinaryExpr<A, B>> : std::true_type {};
+template <typename A, typename B, typename F>
+struct is_binary_expr<BinaryExpr<A, B, F>> : std::true_type {};
 
 // 2) detect “any subclass of Field”
 //    assuming Field is your common base class
