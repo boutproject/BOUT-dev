@@ -41,23 +41,9 @@ __global__ static void evaluatorExpr(BoutReal* out, const Expr& expr) {
 template <typename L, typename R, typename Func>
 struct BinaryExpr {
   enum class Op { ADD, SUB, MUL, DIV };
-  struct RegionIndices {
-    int* data;
-    int size;
-
-    RegionIndices(int n) : size(n) {
-      cudaMallocManaged(&data, n * sizeof(int));
-      for (int i = 0; i < n; ++i)
-        data[i] = 0;
-    }
-    ~RegionIndices() { cudaFree(data); }
-
-    __device__ inline int operator()(int idx) const { return data[idx]; }
-  };
-
   L lhs;
   R rhs;
-  RegionIndices indices;
+  Array<int> indices;
   Func f;
 
   Mesh* mesh;
@@ -72,17 +58,17 @@ struct BinaryExpr {
       : lhs(lhs), rhs(rhs), f(f), mesh(mesh), location(location),
         directions(directions), regionID(regionID), indices(region.getIndices().size()) {
     // Copy the region indices into the managed array
-    for (int i = 0; i < indices.size; ++i) {
-      indices.data[i] = region.getIndices()[i].ind;
+    for (int i = 0; i < indices.size(); ++i) {
+      indices[i] = region.getIndices()[i].ind;
     }
   }
 
-  __host__ inline int getSize() const { return indices.size; }
+  __host__ inline int getSize() const { return indices.size(); }
 
   struct View {
     L lhs;
     R rhs;
-    int* indices;
+    const int* indices;
     int size;
     Func f;
 
@@ -93,8 +79,8 @@ struct BinaryExpr {
     }
   };
 
-  operator View() { return View{lhs, rhs, indices.data, indices.size, f}; }
-  operator View() const { return View{lhs, rhs, indices.data, indices.size, f}; }
+  operator View() { return View{lhs, rhs, &indices[0], indices.size(), f}; }
+  operator View() const { return View{lhs, rhs, &indices[0], indices.size(), f}; }
 
   void evaluate(BoutReal* data) const {
     constexpr int THREADS = 256;
