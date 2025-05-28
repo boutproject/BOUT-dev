@@ -26,7 +26,7 @@ struct Div {
 };
 
 template <typename Expr>
-__global__ static void evaluatorExpr(BoutReal* out, Expr& expr) {
+__global__ static void evaluatorExpr(BoutReal* out, const Expr& expr) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   int stride = blockDim.x * gridDim.x;
   for (int i = tid; i < expr.getSize(); i += stride) {
@@ -73,20 +73,33 @@ struct BinaryExpr {
     }
   }
 
-  __host__ __device__ inline int getSize() const { return indices.size; }
-  __device__ inline int regionIdx(int idx) const { return indices(idx); }
-  __device__ inline BoutReal operator()(int idx) const {
-    switch (op) {
-    case Op::ADD:
-      return Add{}(lhs(idx), rhs(idx));
-    case Op::SUB:
-      return Sub{}(lhs(idx), rhs(idx));
-    case Op::MUL:
-      return Mul{}(lhs(idx), rhs(idx));
-    case Op::DIV:
-      return Div{}(lhs(idx), rhs(idx));
+  __host__ inline int getSize() const { return indices.size; }
+
+  struct View {
+    L lhs;
+    R rhs;
+    int* indices;
+    int size;
+    Op op;
+
+    __host__ __device__ inline int getSize() const { return size; }
+    __device__ inline int regionIdx(int idx) const { return indices[idx]; }
+    __device__ inline BoutReal operator()(int idx) const {
+      switch (op) {
+      case Op::ADD:
+        return Add{}(lhs(idx), rhs(idx));
+      case Op::SUB:
+        return Sub{}(lhs(idx), rhs(idx));
+      case Op::MUL:
+        return Mul{}(lhs(idx), rhs(idx));
+      case Op::DIV:
+        return Div{}(lhs(idx), rhs(idx));
+      }
     }
-  }
+  };
+
+  operator View() { return View{lhs, rhs, indices.data, indices.size, op}; }
+  operator View() const { return View{lhs, rhs, indices.data, indices.size, op}; }
 
   void evaluate(BoutReal* data) const {}
 

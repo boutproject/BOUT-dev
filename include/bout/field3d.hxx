@@ -192,7 +192,8 @@ public:
     Array<BoutReal> data{expr.getSize()};
     constexpr int THREADS = 256;
     int blocks = (expr.getSize() + THREADS - 1) / THREADS;
-    evaluatorExpr<<<blocks, THREADS>>>(&data[0], expr);
+    evaluatorExpr<<<blocks, THREADS>>>(
+        &data[0], static_cast<typename BinaryExpr<L, R>::View>(expr));
     cudaDeviceSynchronize();
     *this = Field3D{data, expr.getMesh(), expr.getLocation(), expr.getDirections()};
   }
@@ -427,10 +428,11 @@ public:
   }
 
   struct View {
-    BoutReal* data;
+    const BoutReal* data;
     __device__ inline BoutReal operator()(int idx) const { return data[idx]; }
   };
   operator View() { return View{&data[0]}; }
+  operator View() const { return View{&data[0]}; }
 
   __device__ inline BoutReal operator()(int i) { return View()(i); }
   __device__ inline BoutReal operator()(int i) const { return View()(i); }
@@ -450,7 +452,8 @@ public:
   Field3D& operator=(BinaryExpr<L, R> expr) {
     constexpr int THREADS = 256;
     int blocks = (expr.getSize() + THREADS - 1) / THREADS;
-    evaluatorExpr<<<blocks, THREADS>>>(&data[0], expr);
+    evaluatorExpr<<<blocks, THREADS>>>(
+        &data[0], static_cast<typename BinaryExpr<L, R>::View>(expr));
     cudaDeviceSynchronize();
     return *this;
   }
@@ -551,13 +554,13 @@ FieldPerp operator/(const Field3D& lhs, const FieldPerp& rhs);
 
 template <typename L, typename R,
           typename = std::enable_if_t<is_expr_v<L> && is_expr_v<R>>>
-BinaryExpr<L, R> operator+(const L& lhs, const R& rhs) {
+BinaryExpr<typename L::View, typename R::View> operator+(const L& lhs, const R& rhs) {
   auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
 
   std::cout << "RUNNING operator+ using BinaryExpr with CUDA" << "\n";
-  return BinaryExpr{lhs,
-                    rhs,
-                    BinaryExpr<L, R>::Op::ADD,
+  return BinaryExpr{static_cast<typename L::View>(lhs),
+                    static_cast<typename R::View>(rhs),
+                    BinaryExpr<typename L::View, typename R::View>::Op::ADD,
                     lhs.getMesh(),
                     lhs.getLocation(),
                     lhs.getDirections(),
