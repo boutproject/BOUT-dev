@@ -142,7 +142,6 @@
 #include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
 #include <bout/difops.hxx>
-#include <bout/fieldops.hxx>
 #include <bout/globals.hxx>
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>

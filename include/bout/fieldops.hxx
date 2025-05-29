@@ -15,16 +15,26 @@ class Field3D;
 namespace bout {
 namespace op {
   struct Add {
-    __device__ inline BoutReal operator()(BoutReal a, BoutReal b) const { return a + b; }
+    template<typename LView, typename RView>
+    __host__ __device__ inline BoutReal operator()(int idx, const LView &L, const RView &R) const {
+      return L(idx) + R(idx);
+    }
+    __host__ __device__ inline BoutReal operator()(BoutReal a, BoutReal b) const { return a + b; }
   };
   struct Sub {
-    __device__ inline BoutReal operator()(BoutReal a, BoutReal b) const { return a - b; }
-  };
-  struct Mul {
-    __device__ inline BoutReal operator()(BoutReal a, BoutReal b) const { return a * b; }
-  };
-  struct Div {
-    __device__ inline BoutReal operator()(BoutReal a, BoutReal b) const { return a / b; }
+    template<typename LView, typename RView>
+    __host__ __device__ inline BoutReal operator()(int idx, const LView &L, const RView &R) const { return L(idx) - R(idx); }
+    __host__ __device__ inline BoutReal operator()(BoutReal a, BoutReal b) const { return a - b; }
+  };                                                                                                
+  struct Mul {                                                                                      
+    template<typename LView, typename RView>
+    __host__ __device__ inline BoutReal operator()(int idx, const LView &L, const RView &R) const { return L(idx) * R(idx); }
+    __host__ __device__ inline BoutReal operator()(BoutReal a, BoutReal b) const { return a * b; }
+  };                                                                                                
+  struct Div {                                                                                      
+    template<typename LView, typename RView>
+    __host__ __device__ inline BoutReal operator()(int idx, const LView &L, const RView &R) const { return L(idx) / R(idx); }
+    __host__ __device__ inline BoutReal operator()(BoutReal a, BoutReal b) const { return a / b; }
   };
 };
 };
@@ -33,15 +43,17 @@ template <typename Expr>
 __global__ static void evaluatorExpr(BoutReal* out, const Expr& expr) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   int stride = blockDim.x * gridDim.x;
-  for (int i = tid; i < expr.getSize(); i += stride) {
+  for (int i = tid; i < expr.size(); i += stride) {
     out[expr.regionIdx(i)] = expr(expr.regionIdx(i)); // single‐pass fusion
   }
 }
 
 template <typename L, typename R, typename Func>
 struct BinaryExpr {
-  L lhs;
-  R rhs;
+  const L &LHS;
+  const R &RHS;
+  typename L::View lhs;
+  typename R::View rhs;
   Array<int> indices;
   Func f;
 
@@ -51,30 +63,36 @@ struct BinaryExpr {
   std::optional<size_t> regionID;
 
   template <typename IndType>
-  BinaryExpr(L lhs, R rhs, Func f, Mesh* mesh, CELL_LOC location,
+  BinaryExpr(const L &lhs, const R &rhs, Func f, Mesh* mesh, CELL_LOC location,
              DirectionTypes directions, std::optional<size_t> regionID,
              const Region<IndType>& region)
-      : lhs(lhs), rhs(rhs), f(f), mesh(mesh), location(location),
-        directions(directions), regionID(regionID), indices(region.getIndices().size()) {
+      : LHS(lhs), RHS(rhs), lhs(static_cast<typename L::View>(lhs)), rhs(static_cast<typename R::View>(rhs)),
+        f(f), mesh(mesh), location(location), directions(directions), regionID(regionID),
+        indices(region.getIndices().size()) {
     // Copy the region indices into the managed array
     for (int i = 0; i < indices.size(); ++i) {
       indices[i] = region.getIndices()[i].ind;
     }
   }
 
-  __host__ inline int getSize() const { return indices.size(); }
+  inline int size() const { return indices.size(); }
+  inline BoutReal operator()(int idx) const {
+    return f(idx, lhs, rhs); // single‐pass fusion
+  }
+  inline int regionIdx(int idx) const { return indices[idx]; }
 
   struct View {
-    L lhs;
-    R rhs;
+    typename L::View lhs;
+    typename R::View rhs;
     const int* indices;
-    int size;
+    int num_indices;
     Func f;
 
-    __host__ __device__ inline int getSize() const { return size; }
+    __device__ inline int size() const { return num_indices; }
     __device__ inline int regionIdx(int idx) const { return indices[idx]; }
     __device__ inline BoutReal operator()(int idx) const {
-      f(lhs(idx), rhs(idx)); // single‐pass fusion
+      return f(idx, lhs, rhs); // single‐pass fusion
+      //return f(lhs(idx), rhs(idx)); // single‐pass fusion
     }
   };
 
@@ -83,9 +101,12 @@ struct BinaryExpr {
 
   void evaluate(BoutReal* data) const {
     constexpr int THREADS = 256;
-    int blocks = (getSize() + THREADS - 1) / THREADS;
+    int blocks = (size() + THREADS - 1) / THREADS;
     evaluatorExpr<<<blocks, THREADS>>>(&data[0], static_cast<View>(*this));
     cudaDeviceSynchronize();
+    //for(int i=0; i<size(); ++i) {
+    //  data[regionIdx(i)] = f(i, lhs, rhs); // single‐pass fusion
+    //}
   }
 
   Mesh* getMesh() const { return mesh; }
@@ -94,25 +115,4 @@ struct BinaryExpr {
   std::optional<size_t> getRegionID() const { return regionID; };
 };
 
-#if 0
-// 1) detect our BinaryExpr<T,U> template
-template <typename>
-struct is_binary_expr : std::false_type {};
-template <typename A, typename B, typename F>
-struct is_binary_expr<BinaryExpr<A, B, F>> : std::true_type {};
-
-// 2) detect “any subclass of Field”
-//    assuming Field is your common base class
-template <typename T>
-constexpr bool is_field3d_v = std::is_base_of<Field3D, std::decay_t<T>>::value;
-
-// 3) combine into “is one of our expression types”
-template <typename T>
-constexpr bool is_expr_field3d_v =
-    is_field3d_v<T> || is_binary_expr<std::decay_t<T>>::value;
-#endif
-
-#if 1
-
-#endif
 #endif // BOUT_EXPRESSION_HXX

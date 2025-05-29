@@ -145,7 +145,7 @@ template <typename Expr>
 __global__ void evaluator(BoutReal *out, Expr &expr) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   int stride = blockDim.x * gridDim.x;
-  for (int i = tid; i < expr.getSize(); i += stride) {
+  for (int i = tid; i < expr.size(); i += stride) {
     out[expr.regionIdx(i)] = expr(expr.regionIdx(i)); // single‐pass fusion
   }
 }

@@ -276,6 +276,16 @@ public:
 
   int size() const override { return nx * ny; };
 
+  struct View {
+    const BoutReal* data;
+    __device__ inline BoutReal operator()(int idx) const { return data[idx]; }
+  };
+  operator View() { return View{&data[0]}; }
+  operator View() const { return View{&data[0]}; }
+
+  __device__ inline BoutReal operator()(int i) { return View()(i); }
+  __device__ inline BoutReal operator()(int i) const { return View()(i); }
+
 private:
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;

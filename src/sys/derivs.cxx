@@ -49,7 +49,6 @@
 
 #include <cmath>
 
-#include <bout/fieldops.hxx>
 #include <bout/output.hxx>
 #include <bout/unused.hxx>
 

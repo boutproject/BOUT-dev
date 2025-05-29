@@ -36,7 +36,6 @@ class Vector3D;
 class Field2D;
 class Vector2D;
 #include "bout/field3d.hxx"
-#include "bout/fieldops.hxx"
 
 /*!
  * Represents a 3D vector, with x,y,z components

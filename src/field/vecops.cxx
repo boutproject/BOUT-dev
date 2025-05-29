@@ -28,7 +28,6 @@
 #include <bout/scorepwrapper.hxx>
 
 #include <bout/derivs.hxx>
-#include <bout/fieldops.hxx>
 #include <bout/globals.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/unused.hxx>
