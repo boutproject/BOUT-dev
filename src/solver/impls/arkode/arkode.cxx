@@ -229,9 +229,11 @@ int ArkodeSolver::init() {
     throw BoutException("ARKodeSetUserData failed\n");
   }
 
-  if (ARKodeSetLinear(arkode_mem, static_cast<int>(set_linear))
-      != ARK_SUCCESS) {
-    throw BoutException("ARKodeSetLinear failed\n");
+  if (set_linear) {
+    constexpr bool is_time_dep = false;
+    if (ARKodeSetLinear(arkode_mem, is_time_dep) != ARK_SUCCESS) {
+      throw BoutException("ARKodeSetLinear failed\n");
+    }
   }
 
   if (fixed_step) {
