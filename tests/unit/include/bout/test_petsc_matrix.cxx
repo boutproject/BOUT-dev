@@ -1,9 +1,8 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include <memory>
 #include <utility>
 
-#include "test_extras.hxx"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -18,11 +17,7 @@
 
 #include <petscconf.h>
 
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;
@@ -57,7 +52,7 @@ public:
         stencil(squareStencil<ind_type>(bout::globals::mesh)),
         indexer(std::make_shared<GlobalIndexer<F>>(bout::globals::mesh, stencil)) {
     indexA = ind_type(field.getNy() * field.getNz() + 1, field.getNy(), field.getNz());
-    if (std::is_same<F, FieldPerp>::value) {
+    if constexpr (std::is_same_v<F, FieldPerp>) {
       indexB = indexA.zp();
     } else {
       indexB = indexA.yp();
@@ -65,7 +60,7 @@ public:
     iWU0 = indexB.xm();
     iWU1 = indexB;
     iWU2 = indexB.xp();
-    if (std::is_same<F, FieldPerp>::value) {
+    if constexpr (std::is_same_v<F, FieldPerp>) {
       iWD0 = indexB.zm();
       iWD1 = indexB;
       iWD2 = indexB.zp();
@@ -177,7 +172,7 @@ TYPED_TEST(PetscMatrixTest, TestGetElements) {
       int i_ind = this->indexer->getGlobal(i);
       int j_ind = this->indexer->getGlobal(j);
       PetscScalar matContents;
-      BOUT_OMP(critical)
+      BOUT_OMP_SAFE(critical)
       MatGetValues(*rawmat, 1, &i_ind, 1, &j_ind, &matContents);
       if (i == j) {
         EXPECT_EQ(matContents, static_cast<BoutReal>(i.ind));
@@ -269,13 +264,13 @@ TYPED_TEST(PetscMatrixTest, TestYUp) {
   PetscMatrix<TypeParam> expected(this->indexer, false);
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YUp");
-  if (std::is_same<TypeParam, FieldPerp>::value) {
+  if constexpr (std::is_same_v<TypeParam, FieldPerp>) {
     EXPECT_THROW(matrix.yup(), BoutException);
   } else {
     const BoutReal val = 3.141592;
-    if (std::is_same<TypeParam, Field2D>::value) {
+    if constexpr (std::is_same_v<TypeParam, Field2D>) {
       expected(this->indexA, this->indexB) = val;
-    } else if (std::is_same<TypeParam, Field3D>::value) {
+    } else if constexpr (std::is_same_v<TypeParam, Field3D>) {
       EXPECT_CALL(*transform,
                   getWeightsForYApproximation(this->indexB.x(), this->indexA.y(),
                                               this->indexB.z(), 1))
@@ -302,12 +297,12 @@ TYPED_TEST(PetscMatrixTest, TestYDown) {
   const BoutReal val = 3.141592;
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YDown");
-  if (std::is_same<TypeParam, FieldPerp>::value) {
+  if constexpr (std::is_same_v<TypeParam, FieldPerp>) {
     EXPECT_THROW(matrix.ydown(), BoutException);
   } else {
-    if (std::is_same<TypeParam, Field2D>::value) {
+    if constexpr (std::is_same_v<TypeParam, Field2D>) {
       expected(this->indexB, this->indexA) = val;
-    } else if (std::is_same<TypeParam, Field3D>::value) {
+    } else if constexpr (std::is_same_v<TypeParam, Field3D>) {
       EXPECT_CALL(*transform,
                   getWeightsForYApproximation(this->indexA.x(), this->indexB.y(),
                                               this->indexA.z(), -1))
@@ -351,10 +346,10 @@ TYPED_TEST(PetscMatrixTest, TestYNextPos) {
   const BoutReal val = 3.141592;
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YNextPos");
-  if (std::is_same<TypeParam, FieldPerp>::value) {
+  if constexpr (std::is_same_v<TypeParam, FieldPerp>) {
     EXPECT_THROW(matrix.ynext(1), BoutException);
   } else {
-    if (std::is_same<TypeParam, Field3D>::value) {
+    if constexpr (std::is_same_v<TypeParam, Field3D>) {
       EXPECT_CALL(*transform,
                   getWeightsForYApproximation(this->indexB.x(), this->indexA.y(),
                                               this->indexB.z(), 1))
@@ -380,10 +375,10 @@ TYPED_TEST(PetscMatrixTest, TestYNextNeg) {
   const BoutReal val = 3.141592;
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YNextNeg");
-  if (std::is_same<TypeParam, FieldPerp>::value) {
+  if constexpr (std::is_same_v<TypeParam, FieldPerp>) {
     EXPECT_THROW(matrix.ynext(-1), BoutException);
   } else {
-    if (std::is_same<TypeParam, Field3D>::value) {
+    if constexpr (std::is_same_v<TypeParam, Field3D>) {
       EXPECT_CALL(*transform,
                   getWeightsForYApproximation(this->indexA.x(), this->indexB.y(),
                                               this->indexA.z(), -1))

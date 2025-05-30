@@ -2,19 +2,10 @@
  * Implementation of the Mesh class, handling input files compatible with
  * BOUT / BOUT-06.
  *
- * Changelog
- * ---------
- *
- * 2015-01 Ben Dudson <benjamin.dudson@york.ac.uk>
- *      *
- *
- * 2010-05 Ben Dudson <bd512@york.ac.uk>
- *      * Initial version, adapted from grid.cpp and topology.cpp
- *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -35,15 +26,18 @@
 
 #include "boutmesh.hxx"
 
+#include <bout/boundary_region.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/dcomplex.hxx>
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
+#include <bout/griddata.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
+#include <bout/parallel_boundary_region.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
@@ -78,9 +72,6 @@ BoutMesh::~BoutMesh() {
 
   // Delete the boundary regions
   for (const auto& bndry : boundary) {
-    delete bndry;
-  }
-  for (const auto& bndry : par_boundary) {
     delete bndry;
   }
 
@@ -1535,42 +1526,66 @@ bool BoutMesh::firstX() const { return PE_XIND == 0; }
 bool BoutMesh::lastX() const { return PE_XIND == NXPE - 1; }
 
 int BoutMesh::sendXOut(BoutReal* buffer, int size, int tag) {
-  if (PE_XIND == NXPE - 1) {
-    return 1;
-  }
-
   Timer timer("comms");
 
-  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND + 1, PE_YIND), tag,
+  int proc {-1};
+  if (PE_XIND == NXPE - 1) {
+    if (periodicX) {
+      // Wrap around to first processor in X
+      proc = PROC_NUM(0, PE_YIND);
+    } else {
+      return 1;
+    }
+  } else {
+    proc = PROC_NUM(PE_XIND + 1, PE_YIND);
+  }
+
+  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
                 BoutComm::get());
 
   return 0;
 }
 
 int BoutMesh::sendXIn(BoutReal* buffer, int size, int tag) {
-  if (PE_XIND == 0) {
-    return 1;
-  }
-
   Timer timer("comms");
 
-  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND - 1, PE_YIND), tag,
+  int proc {-1};
+  if (PE_XIND == 0) {
+    if (periodicX) {
+      // Wrap around to last processor in X
+      proc = PROC_NUM(NXPE - 1, PE_YIND);
+    } else {
+      return 1;
+    }
+  } else {
+    proc = PROC_NUM(PE_XIND - 1, PE_YIND);
+  }
+
+  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
                 BoutComm::get());
 
   return 0;
 }
 
 comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
-  if (PE_XIND == NXPE - 1) {
-    return nullptr;
-  }
-
   Timer timer("comms");
+
+  int proc {-1};
+  if (PE_XIND == NXPE - 1) {
+    if (periodicX) {
+      // Wrap around to first processor in X
+      proc = PROC_NUM(0, PE_YIND);
+    } else {
+      return nullptr;
+    }
+  } else {
+    proc = PROC_NUM(PE_XIND + 1, PE_YIND);
+  }
 
   // Get a communications handle. Not fussy about size of arrays
   CommHandle* ch = get_handle(0, 0);
 
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND + 1, PE_YIND), tag,
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
                  BoutComm::get(), ch->request);
 
   ch->in_progress = true;
@@ -1579,16 +1594,24 @@ comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
 }
 
 comm_handle BoutMesh::irecvXIn(BoutReal* buffer, int size, int tag) {
-  if (PE_XIND == 0) {
-    return nullptr;
-  }
-
   Timer timer("comms");
+
+  int proc {-1};
+  if (PE_XIND == 0) {
+    if (periodicX) {
+      // Wrap around to last processor in X
+      proc = PROC_NUM(NXPE - 1, PE_YIND);
+    } else {
+      return nullptr;
+    }
+  } else {
+    proc = PROC_NUM(PE_XIND - 1, PE_YIND);
+  }
 
   // Get a communications handle. Not fussy about size of arrays
   CommHandle* ch = get_handle(0, 0);
 
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND - 1, PE_YIND), tag,
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
                  BoutComm::get(), ch->request);
 
   ch->in_progress = true;
@@ -2326,7 +2349,9 @@ int BoutMesh::pack_data(const std::vector<FieldData*>& var_list, int xge, int xl
   for (const auto& var : var_list) {
     if (var->is3D()) {
       // 3D variable
-      auto& var3d_ref = *dynamic_cast<Field3D*>(var);
+      auto* var3d_ref_ptr = dynamic_cast<Field3D*>(var);
+      ASSERT0(var3d_ref_ptr != nullptr);
+      auto& var3d_ref = *var3d_ref_ptr;
       ASSERT2(var3d_ref.isAllocated());
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
@@ -2337,7 +2362,9 @@ int BoutMesh::pack_data(const std::vector<FieldData*>& var_list, int xge, int xl
       }
     } else {
       // 2D variable
-      auto& var2d_ref = *dynamic_cast<Field2D*>(var);
+      auto* var2d_ref_ptr = dynamic_cast<Field2D*>(var);
+      ASSERT0(var2d_ref_ptr != nullptr);
+      auto& var2d_ref = *var2d_ref_ptr;
       ASSERT2(var2d_ref.isAllocated());
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++, len++) {
@@ -3040,11 +3067,36 @@ RangeIterator BoutMesh::iterateBndryUpperY() const {
 
 std::vector<BoundaryRegion*> BoutMesh::getBoundaries() { return boundary; }
 
-std::vector<BoundaryRegionPar*> BoutMesh::getBoundariesPar() { return par_boundary; }
+std::vector<std::shared_ptr<BoundaryRegionPar>>
+BoutMesh::getBoundariesPar(BoundaryParType type) {
+  return par_boundary[static_cast<int>(type)];
+}
 
-void BoutMesh::addBoundaryPar(BoundaryRegionPar* bndry) {
+void BoutMesh::addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
+                              BoundaryParType type) {
   output_info << "Adding new parallel boundary: " << bndry->label << endl;
-  par_boundary.push_back(bndry);
+  switch (type) {
+  case BoundaryParType::xin_fwd:
+    par_boundary[static_cast<int>(BoundaryParType::xin)].push_back(bndry);
+    par_boundary[static_cast<int>(BoundaryParType::fwd)].push_back(bndry);
+    break;
+  case BoundaryParType::xin_bwd:
+    par_boundary[static_cast<int>(BoundaryParType::xin)].push_back(bndry);
+    par_boundary[static_cast<int>(BoundaryParType::bwd)].push_back(bndry);
+    break;
+  case BoundaryParType::xout_fwd:
+    par_boundary[static_cast<int>(BoundaryParType::xout)].push_back(bndry);
+    par_boundary[static_cast<int>(BoundaryParType::fwd)].push_back(bndry);
+    break;
+  case BoundaryParType::xout_bwd:
+    par_boundary[static_cast<int>(BoundaryParType::xout)].push_back(bndry);
+    par_boundary[static_cast<int>(BoundaryParType::bwd)].push_back(bndry);
+    break;
+  default:
+    throw BoutException("Unexpected type of boundary {}", toString(type));
+  }
+  par_boundary[static_cast<int>(type)].push_back(bndry);
+  par_boundary[static_cast<int>(BoundaryParType::all)].push_back(bndry);
 }
 
 Field3D BoutMesh::smoothSeparatrix(const Field3D& f) {

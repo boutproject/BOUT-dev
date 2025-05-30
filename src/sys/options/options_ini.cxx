@@ -189,7 +189,7 @@ void OptionINI::parse(const string& buffer, string& key, string& value) {
     // Just set a flag to true
     // e.g. "restart" or "append" on command line
     key = buffer;
-    value = string("TRUE");
+    value = string("true");
     return;
   }
 

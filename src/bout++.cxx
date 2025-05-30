@@ -59,7 +59,7 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/bout.hxx"
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
-#if BOUT_HAS_ADIOS
+#if BOUT_HAS_ADIOS2
 #include "bout/adios_object.hxx"
 #endif
 
@@ -165,7 +165,7 @@ int BoutInitialise(int& argc, char**& argv) {
 
     savePIDtoFile(args.data_dir, MYPE);
 
-#if BOUT_HAS_ADIOS
+#if BOUT_HAS_ADIOS2
     bout::ADIOSInit(BoutComm::get());
 #endif
 
@@ -190,8 +190,7 @@ int BoutInitialise(int& argc, char**& argv) {
     // but it's possible that only happens in BoutFinalise, which is
     // too late for that check.
     const auto datadir = Options::root()["datadir"].withDefault<std::string>(DEFAULT_DIR);
-    MAYBE_UNUSED()
-    const auto optionfile =
+    [[maybe_unused]] const auto optionfile =
         Options::root()["optionfile"].withDefault<std::string>(args.opt_file);
     const auto settingsfile =
         Options::root()["settingsfile"].withDefault<std::string>(args.set_file);
@@ -573,7 +572,7 @@ void printCompileTimeOptions() {
   constexpr auto netcdf_flavour =
       has_netcdf ? (has_legacy_netcdf ? " (Legacy)" : " (NetCDF4)") : "";
   output_info.write(_("\tNetCDF support {}{}\n"), is_enabled(has_netcdf), netcdf_flavour);
-  output_info.write(_("\tADIOS support {}\n"), is_enabled(has_adios));
+  output_info.write(_("\tADIOS2 support {}\n"), is_enabled(has_adios2));
   output_info.write(_("\tPETSc support {}\n"), is_enabled(has_petsc));
   output_info.write(_("\tPretty function name support {}\n"),
                     is_enabled(has_pretty_function));
@@ -583,11 +582,8 @@ void printCompileTimeOptions() {
   output_info.write(_("\tSUNDIALS support {}\n"), is_enabled(has_sundials));
   output_info.write(_("\tBacktrace in exceptions {}\n"), is_enabled(use_backtrace));
   output_info.write(_("\tColour in logs {}\n"), is_enabled(use_color));
-  output_info.write(_("\tOpenMP parallelisation {}"), is_enabled(use_openmp));
-#ifdef _OPENMP
-  output_info.write(_(", using {} threads"), omp_get_max_threads());
-#endif
-  output_info.write("\n");
+  output_info.write(_("\tOpenMP parallelisation {}, using {} threads\n"),
+                    is_enabled(use_openmp), omp_get_max_threads());
   output_info.write(_("\tExtra debug output {}\n"), is_enabled(use_output_debug));
   output_info.write(_("\tFloating-point exceptions {}\n"), is_enabled(use_sigfpe));
   output_info.write(_("\tSignal handling support {}\n"), is_enabled(use_signal));
@@ -702,7 +698,7 @@ void addBuildFlagsToOptions(Options& options) {
   options["has_gettext"].force(bout::build::has_gettext);
   options["has_lapack"].force(bout::build::has_lapack);
   options["has_netcdf"].force(bout::build::has_netcdf);
-  options["has_adios"].force(bout::build::has_adios);
+  options["has_adios2"].force(bout::build::has_adios2);
   options["has_petsc"].force(bout::build::has_petsc);
   options["has_hypre"].force(bout::build::has_hypre);
   options["has_umpire"].force(bout::build::has_umpire);
@@ -716,6 +712,7 @@ void addBuildFlagsToOptions(Options& options) {
   options["use_backtrace"].force(bout::build::use_backtrace);
   options["use_color"].force(bout::build::use_color);
   options["use_openmp"].force(bout::build::use_openmp);
+  options["openmp_threads"].force(omp_get_max_threads());
   options["use_output_debug"].force(bout::build::use_output_debug);
   options["use_sigfpe"].force(bout::build::use_sigfpe);
   options["use_signal"].force(bout::build::use_signal);
@@ -798,7 +795,7 @@ int BoutFinalise(bool write_settings) {
   // Call HYPER_Finalize if not already called
   bout::HypreLib::cleanup();
 
-#if BOUT_HAS_ADIOS
+#if BOUT_HAS_ADIOS2
   bout::ADIOSFinalize();
 #endif
 
@@ -837,7 +834,7 @@ BoutMonitor::BoutMonitor(BoutReal timestep, Options& options)
                           .doc(_("Name of file whose existence triggers a stop"))
                           .withDefault("BOUT.stop"))) {}
 
-int BoutMonitor::call(Solver* solver, BoutReal t, MAYBE_UNUSED(int iter), int NOUT) {
+int BoutMonitor::call(Solver* solver, BoutReal t, [[maybe_unused]] int iter, int NOUT) {
   TRACE("BoutMonitor::call({:e}, {:d}, {:d})", t, iter, NOUT);
 
   // Increment Solver's iteration counter, and set the global `iteration`
@@ -865,8 +862,8 @@ int BoutMonitor::call(Solver* solver, BoutReal t, MAYBE_UNUSED(int iter), int NO
 
   output_progress.print("\r"); // Only goes to screen
 
+  const int iteration_offset = solver->getIterationOffset();
   // First time the monitor has been called
-  static bool first_time = true;
   if (first_time) {
 
     // Record the starting time
@@ -891,10 +888,11 @@ int BoutMonitor::call(Solver* solver, BoutReal t, MAYBE_UNUSED(int iter), int NO
   run_data.t_elapsed = bout::globals::mpi->MPI_Wtime() - mpi_start_time;
 
   output_progress.print("{:c}  Step {:d} of {:d}. Elapsed {:s}", get_spin(), iteration,
-                        NOUT, time_to_hms(run_data.t_elapsed));
+                        NOUT + iteration_offset, time_to_hms(run_data.t_elapsed));
   output_progress.print(
       " ETA {:s}",
-      time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 2)));
+      time_to_hms(run_data.wtime
+                  * static_cast<BoutReal>(NOUT + iteration_offset - iteration)));
 
   // Write dump file
   Options run_data_output;

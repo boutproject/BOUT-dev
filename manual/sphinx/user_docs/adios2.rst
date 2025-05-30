@@ -11,14 +11,14 @@ Installation
 The easiest way to configure BOUT++ with ADIOS2 is to tell CMake to download and build it
 with this flag::
 
-  -DBOUT_DOWNLOAD_ADIOS=ON
+  -DBOUT_DOWNLOAD_ADIOS2=ON
 
 The ``master`` branch will be downloaded from `Github <https://github.com/ornladios/ADIOS2>`_,
 configured and built with BOUT++.
 
-Alternatively, if ADIOS is already installed then the following flags can be used::
+Alternatively, if ADIOS2 is already installed then the following flags can be used::
 
-  -DBOUT_USE_ADIOS=ON -DADIOS2_ROOT=/path/to/adios2
+  -DBOUT_USE_ADIOS2=ON -DADIOS2_ROOT=/path/to/adios2
 
 Output files
 ------------

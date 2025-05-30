@@ -35,7 +35,7 @@
 #ifndef OPTIONS_IO_H
 #define OPTIONS_IO_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/generic_factory.hxx"
 #include "bout/options.hxx"
 
@@ -61,7 +61,7 @@ public:
   OptionsIO& operator=(OptionsIO&&) noexcept = default;
 
   /// Read options from file
-  virtual Options read() = 0;
+  virtual Options read(bool lazy = true) = 0;
 
   /// Write options to file
   void write(const Options& options) { write(options, "t"); }
@@ -97,8 +97,7 @@ public:
   ///         {"type", "netcdf"},
   ///         {"append", false}
   ///     });
-  static std::unique_ptr<OptionsIO>
-  create(std::initializer_list<std::pair<std::string, Options>> config_list) {
+  static std::unique_ptr<OptionsIO> create(Options::InitializerList config_list) {
     Options config(config_list); // Construct an Options to pass by reference
     return create(config);
   }
@@ -112,7 +111,7 @@ public:
   static constexpr auto default_type =
 #if BOUT_HAS_NETCDF
       "netcdf";
-#elif BOUT_HAS_ADIOS
+#elif BOUT_HAS_ADIOS2
       "adios";
 #else
       "invalid";

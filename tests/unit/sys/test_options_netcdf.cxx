@@ -1,35 +1,28 @@
 // Test reading and writing to NetCDF
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_NETCDF && !BOUT_HAS_LEGACY_NETCDF
 
 #include "gtest/gtest.h"
 
 #include "test_extras.hxx"
+#include "test_tmpfiles.hxx"
 #include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
 #include "bout/options_io.hxx"
 
 using bout::OptionsIO;
 
-#include <cstdio>
+#include <string>
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-}
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // Reuse the "standard" fixture for FakeMesh
 class OptionsNetCDFTest : public FakeMeshFixture {
 public:
-  OptionsNetCDFTest() : FakeMeshFixture() {}
-  ~OptionsNetCDFTest() override { std::remove(filename.c_str()); }
-
   // A temporary filename
-  std::string filename{std::tmpnam(nullptr)};
+  bout::testing::TempFile filename;
   WithQuietOutput quiet{output_info};
 };
 
@@ -265,7 +258,7 @@ TEST_F(OptionsNetCDFTest, VerifyTimesteps) {
     options["thing2"] = 3.0;
     options["thing2"].attributes["time_dimension"] = "t";
 
-    OptionsIO::create({{"type", "netcdf"}, {"file", filename}, {"append", true}})
+    OptionsIO::create({{"type", "netcdf"}, {"file", filename.string()}, {"append", true}})
         ->write(options);
   }
 

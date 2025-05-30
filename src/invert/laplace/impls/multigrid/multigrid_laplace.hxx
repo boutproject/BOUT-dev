@@ -28,10 +28,10 @@
  *
  **************************************************************************/
 
-#ifndef __MULTIGRID_LAPLACE_H__
-#define __MULTIGRID_LAPLACE_H__
+#ifndef BOUT_MULTIGRID_LAPLACE_H
+#define BOUT_MULTIGRID_LAPLACE_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/invert_laplace.hxx"
 
 #if BOUT_USE_METRIC_3D
@@ -246,4 +246,4 @@ RegisterLaplace<LaplaceMultigrid> registerlaplacemultigrid(LAPLACE_MULTIGRID);
 
 #endif // BOUT_USE_METRIC_3D
 
-#endif // __MULTIGRID_LAPLACE_H__
+#endif // BOUT_MULTIGRID_LAPLACE_H

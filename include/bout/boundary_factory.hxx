@@ -1,13 +1,16 @@
 
 class BoundaryFactory;
 
-#ifndef __BNDRY_FACTORY_H__
-#define __BNDRY_FACTORY_H__
+#ifndef BOUT_BNDRY_FACTORY_H
+#define BOUT_BNDRY_FACTORY_H
 
-#include "bout/boundary_op.hxx"
-#include "bout/boundary_region.hxx"
-#include "bout/parallel_boundary_op.hxx"
-#include "bout/parallel_boundary_region.hxx"
+class BoundaryOpBase;
+class BoundaryOpPar;
+class BoundaryOp;
+class BoundaryRegionBase;
+class BoundaryRegionPar;
+class BoundaryRegion;
+class BoundaryModifier;
 
 #include <map>
 #include <string>
@@ -126,4 +129,4 @@ private:
   // BoundaryModifier* findBoundaryMod(const string &s);
 };
 
-#endif // __BNDRY_FACTORY_H__
+#endif // BOUT_BNDRY_FACTORY_H

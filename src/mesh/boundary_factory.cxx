@@ -1,3 +1,5 @@
+#include "bout/parallel_boundary_op.hxx"
+#include "bout/parallel_boundary_region.hxx"
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_standard.hxx>
 #include <bout/globals.hxx>
@@ -41,10 +43,12 @@ BoundaryFactory::BoundaryFactory() {
   addMod(new BoundaryFromFieldAligned(), "fromFieldAligned");
 
   // Parallel boundaries
-  add(new BoundaryOpPar_dirichlet(), "parallel_dirichlet");
-  add(new BoundaryOpPar_dirichlet_O3(), "parallel_dirichlet_O3");
-  add(new BoundaryOpPar_dirichlet_interp(), "parallel_dirichlet_interp");
-  add(new BoundaryOpPar_neumann(), "parallel_neumann");
+  add(new BoundaryOpPar_dirichlet_o1(), "parallel_dirichlet_o1");
+  add(new BoundaryOpPar_dirichlet_o2(), "parallel_dirichlet_o2");
+  add(new BoundaryOpPar_dirichlet_o3(), "parallel_dirichlet_o3");
+  add(new BoundaryOpPar_neumann_o1(), "parallel_neumann_o1");
+  add(new BoundaryOpPar_neumann_o2(), "parallel_neumann_o2");
+  add(new BoundaryOpPar_neumann_o3(), "parallel_neumann_o3");
 }
 
 BoundaryFactory::~BoundaryFactory() {
@@ -314,7 +318,7 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string& varname,
   /// Then (all, all)
   if (region->isParallel) {
     // Different default for parallel boundary regions
-    varOpts->get(prefix + "par_all", set, "parallel_dirichlet");
+    varOpts->get(prefix + "par_all", set, "parallel_dirichlet_o2");
   } else {
     varOpts->get(prefix + "all", set, "dirichlet");
   }

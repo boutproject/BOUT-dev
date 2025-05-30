@@ -27,10 +27,10 @@
 
 class BoutComm;
 
-#ifndef __BOUTCOMM_H__
-#define __BOUTCOMM_H__
+#ifndef BOUT_BOUTCOMM_H
+#define BOUT_BOUTCOMM_H
 
-#include <mpi.h>
+#include <mpi.h> // IWYU pragma: export
 
 /// Class to represent the 'global' communicator
 class BoutComm {
@@ -68,4 +68,4 @@ private:
   static BoutComm* instance; ///< The only instance of this class (Singleton)
 };
 
-#endif // __BOUTCOMM_H__
+#endif // BOUT_BOUTCOMM_H

@@ -93,11 +93,3 @@ RegisterXZInterpolation<XZMonotonicHermiteSpline> registerinterpmonotonichermite
 RegisterXZInterpolation<XZLagrange4pt> registerinterplagrange4pt{"lagrange4pt"};
 RegisterXZInterpolation<XZBilinear> registerinterpbilinear{"bilinear"};
 } // namespace
-
-constexpr decltype(XZInterpolationFactory::type_name) XZInterpolationFactory::type_name;
-constexpr decltype(XZInterpolationFactory::section_name)
-    XZInterpolationFactory::section_name;
-constexpr decltype(XZInterpolationFactory::option_name)
-    XZInterpolationFactory::option_name;
-constexpr decltype(XZInterpolationFactory::default_type)
-    XZInterpolationFactory::default_type;

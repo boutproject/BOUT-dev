@@ -27,10 +27,10 @@
  *
  **************************************************************************/
 
-#ifndef __IDA_SOLVER_H__
-#define __IDA_SOLVER_H__
+#ifndef BOUT_IDA_SOLVER_H
+#define BOUT_IDA_SOLVER_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/solver.hxx"
 
 #if not BOUT_HAS_IDA
@@ -45,9 +45,7 @@ RegisterUnavailableSolver
 #include "bout/bout_types.hxx"
 #include "bout/sundials_backports.hxx"
 
-#include <sundials/sundials_config.h>
-
-#include <nvector/nvector_parallel.h>
+#include <string>
 
 class IdaSolver;
 class Options;
@@ -59,7 +57,7 @@ RegisterSolver<IdaSolver> registersolverida("ida");
 class IdaSolver : public Solver {
 public:
   explicit IdaSolver(Options* opts = nullptr);
-  ~IdaSolver();
+  ~IdaSolver() override;
 
   int init() override;
   int run() override;
@@ -97,4 +95,4 @@ private:
 };
 
 #endif // BOUT_HAS_IDA
-#endif // __IDA_SOLVER_H__
+#endif // BOUT_IDA_SOLVER_H

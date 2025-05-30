@@ -3,7 +3,7 @@ version: 2
 updates:
   - package-ecosystem: "gitsubmodule"
     schedule:
-        interval: "daily"
+        interval: "weekly"
     directory: "/"
 
   - package-ecosystem: "pip"

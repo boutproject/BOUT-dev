@@ -20,10 +20,11 @@
  *
  **************************************************************************/
 
-#ifndef __LAPACK_ROUTINES_H__
-#define __LAPACK_ROUTINES_H__
+#ifndef BOUT_LAPACK_ROUTINES_H
+#define BOUT_LAPACK_ROUTINES_H
 
-#include <bout/utils.hxx>
+#include "bout/dcomplex.hxx"
+#include "bout/utils.hxx"
 
 /* Tridiagonal inversion
  *
@@ -56,4 +57,4 @@ void cyclic_tridag(dcomplex* a, dcomplex* b, dcomplex* c, dcomplex* r, dcomplex*
 /// Complex band matrix solver
 void cband_solve(Matrix<dcomplex>& a, int n, int m1, int m2, Array<dcomplex>& b);
 
-#endif // __LAPACK_ROUTINES_H__
+#endif // BOUT_LAPACK_ROUTINES_H

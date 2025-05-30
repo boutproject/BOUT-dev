@@ -4,8 +4,8 @@
  * These classes are used by FieldFactory
  */
 
-#ifndef __FIELDGENERATORS_H__
-#define __FIELDGENERATORS_H__
+#ifndef BOUT_FIELDGENERATORS_H
+#define BOUT_FIELDGENERATORS_H
 
 #include <bout/boutexception.hxx>
 #include <bout/field_factory.hxx>
@@ -352,4 +352,4 @@ private:
   FieldGeneratorPtr test, gt0, lt0;
 };
 
-#endif // __FIELDGENERATORS_H__
+#endif // BOUT_FIELDGENERATORS_H

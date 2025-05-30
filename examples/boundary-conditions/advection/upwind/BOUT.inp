@@ -1,12 +1,3 @@
-# 1D demonstration of boundary conditions for advection equation
-#
-# This uses 1st-order upwinding for the advection term,
-# with the default Dirichlet boundary condition on both boundaries.
-# Due to the choice of method, the downstream boundary is never used.
-#
-
-nout = 20
-timestep = 0.05
 
 MXG = 0
 
@@ -31,3 +22,14 @@ upwind = u1   # Use 1st-order upwinding
 [f]
 
 function = exp(-((y-pi)/0.2)^2)
+
+[solver]
+output_step = 0.05
+# 1D demonstration of boundary conditions for advection equation
+#
+# This uses 1st-order upwinding for the advection term,
+# with the default Dirichlet boundary condition on both boundaries.
+# Due to the choice of method, the downstream boundary is never used.
+#
+
+nout = 20

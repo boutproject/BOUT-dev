@@ -1,8 +1,8 @@
 
 class RK4SIMPLEScheme;
 
-#ifndef __RK4SIMPLE_SCHEME_H__
-#define __RK4SIMPLE_SCHEME_H__
+#ifndef BOUT_RK4SIMPLE_SCHEME_H
+#define BOUT_RK4SIMPLE_SCHEME_H
 
 #include <bout/rkscheme.hxx>
 #include <bout/utils.hxx>
@@ -19,4 +19,4 @@ namespace {
 RegisterRKScheme<RK4SIMPLEScheme> registerrkscheme4simple(RKSCHEME_RK4);
 }
 
-#endif // __RK4SIMPLE_SCHEME_H__
+#endif // BOUT_RK4SIMPLE_SCHEME_H

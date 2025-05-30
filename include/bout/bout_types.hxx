@@ -19,8 +19,8 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  **************************************************************************/
 
-#ifndef __BOUT_TYPES_H__
-#define __BOUT_TYPES_H__
+#ifndef BOUT_TYPES_H
+#define BOUT_TYPES_H
 
 #include <limits>
 #include <string>
@@ -140,4 +140,4 @@ struct enumWrapper {
 /// Boundary condition function
 using FuncPtr = BoutReal (*)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
 
-#endif // __BOUT_TYPES_H__
+#endif // BOUT_TYPES_H

@@ -1,11 +1,9 @@
-nout = 10
-timestep = 0.1
 
 MXG = 2
 MYG = 2
 
 [mesh]
-staggergrids = True
+staggergrids = true
 n = 1
 nx = n+2*MXG
 ny = n
@@ -17,6 +15,8 @@ dy = 1/n/2/pi
 [solver]
 rtol = 1e-14
 atol = 1e-18
+output_step = 0.1
+nout = 10
 
 [f3d]
 function = 1

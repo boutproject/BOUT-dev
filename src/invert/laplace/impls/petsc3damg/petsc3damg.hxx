@@ -27,10 +27,10 @@
  **************************************************************************/
 class LaplacePetsc3dAmg;
 
-#ifndef __PETSC_LAPLACE_3DAMG_H__
-#define __PETSC_LAPLACE_3DAMG_H__
+#ifndef BOUT_PETSC_LAPLACE_3DAMG_H
+#define BOUT_PETSC_LAPLACE_3DAMG_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/invert_laplace.hxx"
 
 #if not BOUT_HAS_PETSC
@@ -228,4 +228,4 @@ private:
 
 #endif //BOUT_HAS_PETSC
 
-#endif //__PETSC_LAPLACE_3DAMG_H__
+#endif //BOUT_PETSC_LAPLACE_3DAMG_H

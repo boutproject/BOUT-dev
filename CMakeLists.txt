@@ -25,7 +25,7 @@ endif()
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
 # We try to use git to get a full description, inspired by setuptools_scm
-set(_bout_previous_version "5.1.0")
+set(_bout_previous_version "5.1.1")
 set(_bout_next_version "5.2.0")
 execute_process(
   COMMAND "git" describe --tags --match=v${_bout_previous_version}
@@ -115,7 +115,6 @@ set(BOUT_SOURCES
   ./include/bout/field_factory.hxx
   ./include/bout/fieldgroup.hxx
   ./include/bout/fieldperp.hxx
-  ./include/bout/format.hxx
   ./include/bout/fv_ops.hxx
   ./include/bout/generic_factory.hxx
   ./include/bout/globalfield.hxx
@@ -271,6 +270,7 @@ set(BOUT_SOURCES
   ./src/mesh/interpolation/interpolation_z.cxx
   ./src/mesh/interpolation/lagrange_4pt_xz.cxx
   ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
+  ./src/mesh/invert3x3.hxx
   ./src/mesh/mesh.cxx
   ./src/mesh/parallel/fci.cxx
   ./src/mesh/parallel/fci.hxx
@@ -367,7 +367,7 @@ else()
   set(BOUT_GENERATE_FIELDOPS_DEFAULT OFF)
 endif()
 
-execute_process(COMMAND ${Python3_EXECUTABLE} -c "import zoidberg"
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import importlib.util ; import sys; sys.exit(importlib.util.find_spec(\"zoidberg\") is None)"
   RESULT_VARIABLE zoidberg_FOUND)
 if (zoidberg_FOUND EQUAL 0)
   set(zoidberg_FOUND ON)
@@ -468,7 +468,7 @@ set_target_properties(bout++ PROPERTIES
 # Set some variables for the bout-config script
 set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -L\$BOUT_LIB_PATH -lbout++")
 set(BOUT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CXX_FLAGS}")
+set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CXX_FLAGS} -std=c++17")
 
 target_compile_features(bout++ PUBLIC cxx_std_17)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
@@ -775,7 +775,7 @@ set(BOUT_HAS_PNETCDF OFF)
 # while for static builds we need the dependencies too
 if (BUILD_SHARED_LIBS)
   # Include rpath linker flag so user doesn't need to set LD_LIBRARY_PATH
-  set(CONFIG_LDFLAGS "${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}\$BOUT_LIB_PATH -L\$BOUT_LIB_PATH -lbout++ -lfmt")
+  set(CONFIG_LDFLAGS "${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}\$BOUT_LIB_PATH -L\$BOUT_LIB_PATH -lbout++ -lfmt ${CONFIG_LDFLAGS_SHARED}")
 else()
   set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS}")
 endif()
@@ -795,8 +795,15 @@ foreach (flag ${CONFIG_LDFLAGS_LIST})
       # message("${flag} is a file")
       set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} ${flag}")
     else()
-      message("Fixing ${flag} to -l${flag}")
-      set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} -l${flag}")
+      string(FIND "${flag}" "::" hascolcol)
+      if (${hascolcol} EQUAL -1)
+	message("Fixing ${flag} to -l${flag}")
+	set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} -l${flag}")
+      else()
+	string(REGEX MATCH "[^:]*$" flag2 "${flag}")
+	message("Fixing ${flag} to -l${flag2}")
+	set(_CONFIG_LDFLAGS "${_CONFIG_LDFLAGS} -l${flag2}")
+      endif()
     endif()
   endif()
 endforeach()
@@ -936,7 +943,7 @@ message("
    SUNDIALS support         : ${BOUT_HAS_SUNDIALS}
    HYPRE support            : ${BOUT_HAS_HYPRE}
    NetCDF support           : ${BOUT_HAS_NETCDF}
-   ADIOS support            : ${BOUT_HAS_ADIOS}
+   ADIOS2 support           : ${BOUT_HAS_ADIOS2}
    FFTW support             : ${BOUT_HAS_FFTW}
    LAPACK support           : ${BOUT_HAS_LAPACK}
    OpenMP support           : ${BOUT_USE_OPENMP}

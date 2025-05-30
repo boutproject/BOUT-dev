@@ -1,6 +1,6 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
-#if BOUT_HAS_ADIOS
+#if BOUT_HAS_ADIOS2
 
 #include "options_adios.hxx"
 #include "bout/adios_object.hxx"
@@ -41,6 +41,8 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
                      const std::string& type) {
   std::vector<T> data;
   adios2::Variable<T> variable = io.InquireVariable<T>(name);
+
+  using bout::globals::mesh;
 
   if (variable.ShapeID() == adios2::ShapeID::GlobalValue) {
     T value;
@@ -87,12 +89,110 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
     return Options(value);
   }
   case 2: {
+    // This could be a Field2D (XY) or FieldPerp (XZ)
+    // Here we look for array sizes, but if Y and Z dimensions are the same size
+    // then it's ambiguous. This method also depends on the global Mesh object.
+    // Some possibilities:
+    // - Add an attribute to specify field type or dimension labels
+    // - Load all the data, and select a region when converting to a Field in Options
+    // - Add a lazy loading type to Options, and load data when needed
+    if ((static_cast<int>(dims[0]) == mesh->GlobalNx)
+        and (static_cast<int>(dims[1]) == mesh->GlobalNy)) {
+      // Probably a Field2D
+
+      // Read just the local piece of the array
+      Matrix<BoutReal> value(mesh->LocalNx, mesh->LocalNy);
+
+      // Offset of this processor's data into the global array
+      adios2::Dims start = {static_cast<size_t>(mesh->MapGlobalX),
+                            static_cast<size_t>(mesh->MapGlobalY)};
+
+      // The size of the mapped region
+      adios2::Dims count = {static_cast<size_t>(mesh->MapCountX),
+                            static_cast<size_t>(mesh->MapCountY)};
+
+      // Where the actual data starts in data pointer (to exclude ghost cells)
+      adios2::Dims memStart = {static_cast<size_t>(mesh->MapLocalX),
+                               static_cast<size_t>(mesh->MapLocalY)};
+
+      // The actual size of data pointer in memory (including ghost cells)
+      adios2::Dims memCount = {static_cast<size_t>(mesh->LocalNx),
+                               static_cast<size_t>(mesh->LocalNy)};
+      variableD.SetSelection({start, count});
+      variableD.SetMemorySelection({memStart, memCount});
+      BoutReal* data = value.begin();
+      reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
+      return Options(value);
+    }
+    if ((static_cast<int>(dims[0]) == mesh->GlobalNx)
+        and (static_cast<int>(dims[2]) == mesh->GlobalNz)) {
+      // Probably a FieldPerp
+
+      // Read just the local piece of the array
+      Matrix<BoutReal> value(mesh->LocalNx, mesh->LocalNz);
+
+      // Offset of this processor's data into the global array
+      adios2::Dims start = {static_cast<size_t>(mesh->MapGlobalX),
+                            static_cast<size_t>(mesh->MapGlobalZ)};
+
+      // The size of the mapped region
+      adios2::Dims count = {static_cast<size_t>(mesh->MapCountX),
+                            static_cast<size_t>(mesh->MapCountZ)};
+
+      // Where the actual data starts in data pointer (to exclude ghost cells)
+      adios2::Dims memStart = {static_cast<size_t>(mesh->MapLocalX),
+                               static_cast<size_t>(mesh->MapLocalZ)};
+
+      // The actual size of data pointer in memory (including ghost cells)
+      adios2::Dims memCount = {static_cast<size_t>(mesh->LocalNx),
+                               static_cast<size_t>(mesh->LocalNz)};
+      variableD.SetSelection({start, count});
+      variableD.SetMemorySelection({memStart, memCount});
+      BoutReal* data = value.begin();
+      reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
+      return Options(value);
+    }
     Matrix<BoutReal> value(static_cast<int>(dims[0]), static_cast<int>(dims[1]));
     BoutReal* data = value.begin();
     reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
     return Options(value);
   }
   case 3: {
+    if ((static_cast<int>(dims[0]) == mesh->GlobalNx)
+        and (static_cast<int>(dims[1]) == mesh->GlobalNy)
+        and (static_cast<int>(dims[2]) == mesh->GlobalNz)) {
+      // Global array. Read just this processor's part of it
+
+      Tensor<BoutReal> value(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
+
+      // Offset of this processor's data into the global array
+      adios2::Dims start = {static_cast<size_t>(mesh->MapGlobalX),
+                            static_cast<size_t>(mesh->MapGlobalY),
+                            static_cast<size_t>(mesh->MapGlobalZ)};
+
+      // The size of the mapped region
+      adios2::Dims count = {static_cast<size_t>(mesh->MapCountX),
+                            static_cast<size_t>(mesh->MapCountY),
+                            static_cast<size_t>(mesh->MapCountZ)};
+
+      // Where the actual data starts in data pointer (to exclude ghost cells)
+      adios2::Dims memStart = {static_cast<size_t>(mesh->MapLocalX),
+                               static_cast<size_t>(mesh->MapLocalY),
+                               static_cast<size_t>(mesh->MapLocalZ)};
+
+      // The actual size of data pointer in memory (including ghost cells)
+      adios2::Dims memCount = {static_cast<size_t>(mesh->LocalNx),
+                               static_cast<size_t>(mesh->LocalNy),
+                               static_cast<size_t>(mesh->LocalNz)};
+
+      variableD.SetSelection({start, count});
+      variableD.SetMemorySelection({memStart, memCount});
+      BoutReal* data = value.begin();
+      reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
+      return Options(value);
+    }
+    // Doesn't match global array size.
+    // Read the entire array, in case it can be handled later
     Tensor<BoutReal> value(static_cast<int>(dims[0]), static_cast<int>(dims[1]),
                            static_cast<int>(dims[2]));
     BoutReal* data = value.begin();
@@ -145,7 +245,7 @@ bool readAttribute(adios2::IO& io, const std::string& name, const std::string& t
   return false;
 }
 
-Options OptionsADIOS::read() {
+Options OptionsADIOS::read([[maybe_unused]] bool lazy) {
   Timer timer("io");
 
   // Open file
@@ -206,6 +306,12 @@ void OptionsADIOS::verifyTimesteps() const {
   stream.isInStep = false;
   return;
 }
+
+const std::vector<std::string> DIMS_NONE;
+const std::vector<std::string> DIMS_X = {"x"};
+const std::vector<std::string> DIMS_XY = {"x", "y"};
+const std::vector<std::string> DIMS_XZ = {"x", "z"};
+const std::vector<std::string> DIMS_XYZ = {"x", "y", "z"};
 
 /// Visit a variant type, and put the data into a NcVar
 struct ADIOSPutVarVisitor {
@@ -288,12 +394,8 @@ void ADIOSPutVarVisitor::operator()<Field2D>(const Field2D& value) {
   adios2::Dims memCount = {static_cast<size_t>(value.getNx()),
                            static_cast<size_t>(value.getNy())};
 
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
-  /* std::cout << "PutVar Field2D rank " << BoutComm::rank() << " var = " << varname
-            << " shape = " << shape[0] << "x" << shape[1] << " count = " << count[0]
-            << "x" << count[1] << " Nx*Ny = " << value.getNx() << "x" << value.getNy()
-            << " memStart = " << memStart[0] << "x" << memStart[1]
-            << " memCount = " << memCount[0] << "x" << memCount[1] << std::endl;*/
+  adios2::Variable<BoutReal> var =
+      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_XY, BoutComm::rank());
   var.SetSelection({start, count});
   var.SetMemorySelection({memStart, memCount});
   stream.engine.Put<BoutReal>(var, &value(0, 0));
@@ -330,14 +432,8 @@ void ADIOSPutVarVisitor::operator()<Field3D>(const Field3D& value) {
                            static_cast<size_t>(value.getNy()),
                            static_cast<size_t>(value.getNz())};
 
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
-  /*std::cout << "PutVar Field3D rank " << BoutComm::rank() << " var = " << varname
-            << " shape = " << shape[0] << "x" << shape[1] << "x" << shape[2]
-            << " count = " << count[0] << "x" << count[1] << "x" << count[2]
-            << " Nx*Ny = " << value.getNx() << "x" << value.getNy() << "x"
-            << value.getNz() << " memStart = " << memStart[0] << "x" << memStart[1] << "x"
-            << memStart[2] << " memCount = " << memCount[0] << "x" << memCount[1] << "x"
-            << memCount[2] << std::endl;*/
+  adios2::Variable<BoutReal> var =
+      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_XYZ, BoutComm::rank());
   var.SetSelection({start, count});
   var.SetMemorySelection({memStart, memCount});
   stream.engine.Put<BoutReal>(var, &value(0, 0, 0));
@@ -369,12 +465,8 @@ void ADIOSPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
   adios2::Dims memCount = {static_cast<size_t>(value.getNx()),
                            static_cast<size_t>(value.getNz())};
 
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
-  /* std::cout << "PutVar FieldPerp rank " << BoutComm::rank() << " var = " << varname
-            << " shape = " << shape[0] << "x" << shape[1] << " count = " << count[0]
-            << "x" << count[1] << " Nx*Ny = " << value.getNx() << "x" << value.getNy()
-            << " memStart = " << memStart[0] << "x" << memStart[1]
-            << " memCount = " << memCount[0] << "x" << memCount[1] << std::endl; */
+  adios2::Variable<BoutReal> var =
+      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_XZ, BoutComm::rank());
   var.SetSelection({start, count});
   var.SetMemorySelection({memStart, memCount});
   stream.engine.Put<BoutReal>(var, &value(0, 0));
@@ -386,7 +478,8 @@ void ADIOSPutVarVisitor::operator()<Array<BoutReal>>(const Array<BoutReal>& valu
   adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)value.size()};
   adios2::Dims start = {(size_t)BoutComm::rank(), 0};
   adios2::Dims count = {1, shape[1]};
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  adios2::Variable<BoutReal> var =
+      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_NONE, BoutComm::rank());
   var.SetSelection({start, count});
   stream.engine.Put<BoutReal>(var, value.begin());
 }
@@ -399,7 +492,8 @@ void ADIOSPutVarVisitor::operator()<Matrix<BoutReal>>(const Matrix<BoutReal>& va
                         (size_t)std::get<1>(s)};
   adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0};
   adios2::Dims count = {1, shape[1], shape[2]};
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  adios2::Variable<BoutReal> var =
+      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_NONE, BoutComm::rank());
   var.SetSelection({start, count});
   stream.engine.Put<BoutReal>(var, value.begin());
 }
@@ -412,7 +506,8 @@ void ADIOSPutVarVisitor::operator()<Tensor<BoutReal>>(const Tensor<BoutReal>& va
                         (size_t)std::get<1>(s), (size_t)std::get<2>(s)};
   adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0, 0};
   adios2::Dims count = {1, shape[1], shape[2], shape[3]};
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  adios2::Variable<BoutReal> var =
+      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_NONE, BoutComm::rank());
   var.SetSelection({start, count});
   stream.engine.Put<BoutReal>(var, value.begin());
 }
@@ -545,4 +640,4 @@ void OptionsADIOS::write(const Options& options, const std::string& time_dim) {
 
 } // namespace bout
 
-#endif // BOUT_HAS_ADIOS
+#endif // BOUT_HAS_ADIOS2

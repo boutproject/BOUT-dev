@@ -5,9 +5,9 @@
  * NOTE: Only one solver can currently be compiled in
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2024 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -26,10 +26,10 @@
  *
  **************************************************************************/
 
-#ifndef __ARKODE_SOLVER_H__
-#define __ARKODE_SOLVER_H__
+#ifndef BOUT_ARKODE_SOLVER_H
+#define BOUT_ARKODE_SOLVER_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/solver.hxx"
 
 #if not BOUT_HAS_ARKODE
@@ -41,12 +41,24 @@ RegisterUnavailableSolver
 
 #else
 
+#include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
 
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_config.h>
 
+#define ARKODE_CONTROLLER_SUPPORT SUNDIALS_VERSION_AT_LEAST(6, 7, 0)
+#define ARKODE_TABLE_BY_NAME_SUPPORT SUNDIALS_VERSION_AT_LEAST(6, 4, 0)
+// ARKStepSetOptimalParams is deprecated since SUNDIALS 6.1.0
+#define ARKODE_OPTIMAL_PARAMS_SUPPORT SUNDIALS_VERSION_LESS_THAN(7, 1, 0)
+
+#if ARKODE_CONTROLLER_SUPPORT
+#include <sundials/sundials_adaptcontroller.h> // IWYU pragma: export
+#endif
+
+#include <string>
 #include <vector>
 
 class ArkodeSolver;
@@ -56,10 +68,51 @@ namespace {
 RegisterSolver<ArkodeSolver> registersolverarkode("arkode");
 }
 
+// enum describing treatment of equations
+// Note: Capitalized because `explicit` is a C++ reserved keyword
+BOUT_ENUM_CLASS(Treatment, ImEx, Implicit, Explicit);
+
+// Adaptivity method
+BOUT_ENUM_CLASS(AdapMethod, PID, PI, I, Explicit_Gustafsson, Implicit_Gustafsson,
+                ImEx_Gustafsson);
+
+// Shim for the ARKstep -> ARKode prefix change in SUNDIALS 7.1.0
+#if SUNDIALS_VERSION_LESS_THAN(7, 1, 0)
+#include <arkode/arkode_arkstep.h>
+static constexpr auto ARKodeFree = ARKStepFree;
+static constexpr auto ARKodeSetUserData = ARKStepSetUserData;
+static constexpr auto ARKodeSetLinear = ARKStepSetLinear;
+static constexpr auto ARKodeSetFixedStep = ARKStepSetFixedStep;
+static constexpr auto ARKodeSetOrder = ARKStepSetOrder;
+static constexpr auto ARKodeSetCFLFraction = ARKStepSetCFLFraction;
+#if ARKODE_CONTROLLER_SUPPORT
+static constexpr auto ARKodeSetAdaptController = ARKStepSetAdaptController;
+static constexpr auto ARKodeSetAdaptivityAdjustment = ARKStepSetAdaptivityAdjustment;
+#endif
+static constexpr auto ARKodeSVtolerances = ARKStepSVtolerances;
+static constexpr auto ARKodeSStolerances = ARKStepSStolerances;
+static constexpr auto ARKodeSetMaxNumSteps = ARKStepSetMaxNumSteps;
+static constexpr auto ARKodeSetMaxStep = ARKStepSetMaxStep;
+static constexpr auto ARKodeSetMinStep = ARKStepSetMinStep;
+static constexpr auto ARKodeSetInitStep = ARKStepSetInitStep;
+static constexpr auto ARKodeSetNonlinearSolver = ARKStepSetNonlinearSolver;
+static constexpr auto ARKodeSetLinearSolver = ARKStepSetLinearSolver;
+static constexpr auto ARKodeSetPreconditioner = ARKStepSetPreconditioner;
+static constexpr auto ARKodeSetJacTimes = ARKStepSetJacTimes;
+static constexpr auto ARKodeGetNumSteps = ARKStepGetNumSteps;
+static constexpr auto ARKodeGetNumNonlinSolvIters = ARKStepGetNumNonlinSolvIters;
+static constexpr auto ARKodeGetNumPrecEvals = ARKStepGetNumPrecEvals;
+static constexpr auto ARKodeGetNumLinIters = ARKStepGetNumLinIters;
+static constexpr auto ARKodeEvolve = ARKStepEvolve;
+static constexpr auto ARKodeGetCurrentTime = ARKStepGetCurrentTime;
+static constexpr auto ARKodeGetDky = ARKStepGetDky;
+static constexpr auto ARKodeGetLastStep = ARKStepGetLastStep;
+#endif
+
 class ArkodeSolver : public Solver {
 public:
   explicit ArkodeSolver(Options* opts = nullptr);
-  ~ArkodeSolver();
+  ~ArkodeSolver() override;
 
   BoutReal getCurrentTimestep() override { return hcur; }
 
@@ -89,12 +142,8 @@ private:
 
   /// Maximum number of steps to take between outputs
   int mxsteps;
-  /// Use ImEx capability
-  bool imex;
-  /// Solve only explicit part
-  bool solve_explicit;
-  /// Solve only implicit part
-  bool solve_implicit;
+  /// Integrator treatment enum: IMEX, Implicit or Explicit
+  Treatment treatment;
   /// Use linear implicit solver (only evaluates jacobian inversion once)
   bool set_linear;
   /// Solve explicit portion in fixed timestep mode. NOTE: This is not recommended except
@@ -102,16 +151,14 @@ private:
   bool fixed_step;
   /// Order of internal step
   int order;
+  /// Name of the implicit Butcher table
+  std::string implicit_table;
+  /// Name of the explicit Butcher table
+  std::string explicit_table;
   /// Fraction of the estimated explicitly stable step to use
   BoutReal cfl_frac;
-  /// Set timestep adaptivity function:
-  /// - 0: PID adaptivity (default)
-  /// - 1: PI
-  /// - 2: I
-  /// - 3: explicit Gustafsson
-  /// - 4: implicit Gustafsson
-  /// - 5: ImEx Gustafsson
-  int adap_method;
+  /// Timestep adaptivity function
+  AdapMethod adap_method;
   /// Absolute tolerance
   BoutReal abstol;
   /// Relative tolerance
@@ -134,8 +181,10 @@ private:
   bool rightprec;
   /// Use user-supplied Jacobian function
   bool use_jacobian;
+#if ARKODE_OPTIMAL_PARAMS_SUPPORT
   /// Use ARKode optimal parameters
   bool optimize;
+#endif
 
   // Diagnostics from ARKODE
   int nsteps{0};
@@ -153,11 +202,15 @@ private:
 
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};
-  /// Solver for functional iterations for Adams-Moulton
+  /// Solver for implicit stages
   SUNNonlinearSolver nonlinear_solver{nullptr};
+#if ARKODE_CONTROLLER_SUPPORT
+  /// Timestep controller
+  SUNAdaptController controller{nullptr};
+#endif
   /// Context for SUNDIALS memory allocations
   sundials::Context suncontext;
 };
 
 #endif // BOUT_HAS_ARKODE
-#endif // __ARKODE_SOLVER_H__
+#endif // BOUT_ARKODE_SOLVER_H

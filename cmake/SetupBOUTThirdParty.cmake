@@ -8,6 +8,9 @@ endif ()
 # determined in SetupCompilers.cmake
 if (BOUT_USE_OPENMP)
   target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
+  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -fopenmp")
+  set(CONFIG_LDFLAGS_SHARED "${CONFIG_LDFLAGS_SHARED} -fopenmp")
+  set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -fopenmp")
 endif()
 
 # determined in SetupCompilers.cmake
@@ -19,9 +22,10 @@ if (BOUT_HAS_CUDA)
   set(BOUT_SOURCES_CXX ${BOUT_SOURCES})
   list(FILTER BOUT_SOURCES_CXX INCLUDE REGEX ".*\.cxx")
 
-  set_source_files_properties(${BOUT_SOURCES_CXX} PROPERTIES LANGUAGE CUDA )
+  # NOTE: CUDA inherits the CXX standard setting from the top-level
+  # compile features, set for the bout++ target.
+  set_source_files_properties(${BOUT_SOURCES_CXX} PROPERTIES LANGUAGE CUDA)
   find_package(CUDAToolkit)
-  set_target_properties(bout++ PROPERTIES CUDA_STANDARD 14)
   set_target_properties(bout++ PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
   set_target_properties(bout++ PROPERTIES POSITION_INDEPENDENT_CODE ON)
   set_target_properties(bout++ PROPERTIES LINKER_LANGUAGE CUDA)
@@ -186,10 +190,13 @@ endif()
 message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
 set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
 
-option(BOUT_USE_ADIOS "Enable support for ADIOS output" ON)
-option(BOUT_DOWNLOAD_ADIOS "Download and build ADIOS2" OFF)
-if (BOUT_USE_ADIOS)
-  if (BOUT_DOWNLOAD_ADIOS)
+option(BOUT_USE_ADIOS2 "Enable support for ADIOS output" OFF)
+option(BOUT_DOWNLOAD_ADIOS2 "Download and build ADIOS2" OFF)
+if (BOUT_USE_ADIOS2)
+  enable_language(C)
+  find_package(MPI REQUIRED COMPONENTS C)
+
+  if (BOUT_DOWNLOAD_ADIOS2)
     message(STATUS "Downloading and configuring ADIOS2")
     include(FetchContent)
     FetchContent_Declare(
@@ -207,21 +214,14 @@ if (BOUT_USE_ADIOS)
     # Note: SST requires <rdma/fabric.h> but doesn't check at configure time
     set(ADIOS2_USE_SST OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(adios2)
-    target_link_libraries(bout++ PUBLIC adios2::cxx11_mpi)
     message(STATUS "ADIOS2 done configuring")
   else()
-    find_package(ADIOS2)
-    if (ADIOS2_FOUND)
-      ENABLE_LANGUAGE(C)
-      find_package(MPI REQUIRED COMPONENTS C)
-      target_link_libraries(bout++ PUBLIC adios2::cxx11_mpi MPI::MPI_C)
-    else()
-      set(BOUT_USE_ADIOS OFF)
-    endif()
+    find_package(ADIOS2 REQUIRED)
   endif()
+  target_link_libraries(bout++ PUBLIC adios2::cxx11_mpi MPI::MPI_C)
 endif()
-message(STATUS "ADIOS support: ${BOUT_USE_ADIOS}")
-set(BOUT_HAS_ADIOS ${BOUT_USE_ADIOS})
+message(STATUS "ADIOS2 support: ${BOUT_USE_ADIOS2}")
+set(BOUT_HAS_ADIOS2 ${BOUT_USE_ADIOS2})
 
 
 option(BOUT_USE_FFTW "Enable support for FFTW" ON)
@@ -277,8 +277,8 @@ if (BOUT_USE_SUNDIALS)
     include(FetchContent)
     FetchContent_Declare(
       sundials
-      GIT_REPOSITORY https://github.com/ZedThree/sundials
-      GIT_TAG        cmake-export-fixes
+      GIT_REPOSITORY https://github.com/LLNL/sundials
+      GIT_TAG        v7.2.1
       )
     # Note: These are settings for building SUNDIALS
     set(EXAMPLES_ENABLE_C OFF CACHE BOOL "" FORCE)
@@ -293,7 +293,11 @@ if (BOUT_USE_SUNDIALS)
     FetchContent_MakeAvailable(sundials)
     message(STATUS "SUNDIALS done configuring")
   else()
+    enable_language(C)
     find_package(SUNDIALS REQUIRED)
+    if (SUNDIALS_VERSION VERSION_LESS 4.0.0)
+      message(FATAL_ERROR "SUNDIALS_VERSION 4.0.0 or newer is required. Found version ${SUNDIALS_VERSION}.")
+    endif()
   endif()
   target_link_libraries(bout++ PUBLIC SUNDIALS::nvecparallel)
   target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
