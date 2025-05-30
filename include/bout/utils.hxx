@@ -5,9 +5,9 @@
  * simple but common calculations
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -523,13 +523,13 @@ inline std::string toString(const Array<T>& UNUSED(val)) {
   return "<Array>";
 }
 
-template <>
-inline std::string toString<>(const Matrix<BoutReal>& UNUSED(val)) {
+template <typename T>
+inline std::string toString(const Matrix<T>& UNUSED(val)) {
   return "<Matrix>";
 }
 
-template <>
-inline std::string toString<>(const Tensor<BoutReal>& UNUSED(val)) {
+template <typename T>
+inline std::string toString(const Tensor<T>& UNUSED(val)) {
   return "<Tensor>";
 }
 

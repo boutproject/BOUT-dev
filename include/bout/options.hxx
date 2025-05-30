@@ -12,7 +12,7 @@
 * options and allows access to all sub-sections
 *
 **************************************************************************
-* Copyright 2010-2024 BOUT++ contributors
+* Copyright 2010-2025 BOUT++ contributors
 *
 * Contact: Ben Dudson, dudson2@llnl.gov
 *
@@ -201,9 +201,9 @@ public:
   }
 
   /// The type used to store values
-  using ValueType =
-      bout::utils::variant<bool, int, BoutReal, std::string, Field2D, Field3D, FieldPerp,
-                           Array<BoutReal>, Matrix<BoutReal>, Tensor<BoutReal>>;
+  using ValueType = bout::utils::variant<bool, int, BoutReal, std::string, Field2D,
+                                         Field3D, FieldPerp, Array<BoutReal>, Array<int>,
+                                         Matrix<BoutReal>, Matrix<int>, Tensor<BoutReal>, Tensor<int>>;
 
   /// A tree representation with leaves containing ValueType.
   /// Used to construct Options from initializer lists.
@@ -270,11 +270,6 @@ public:
 
   /// Free all memory
   static void cleanup();
-
-  /// The type used to store values
-  using ValueType = bout::utils::variant<bool, int, BoutReal, std::string, Field2D,
-                                         Field3D, FieldPerp, Array<BoutReal>, Array<int>,
-                                         Matrix<BoutReal>, Tensor<BoutReal>>;
 
   /// The type used to store attributes
   /// Extends the variant class so that cast operator can be implemented
@@ -964,7 +959,11 @@ Options& Options::assign<>(Array<int> val, std::string source);
 template <>
 Options& Options::assign<>(Matrix<BoutReal> val, std::string source);
 template <>
+Options& Options::assign<>(Matrix<int> val, std::string source);
+template <>
 Options& Options::assign<>(Tensor<BoutReal> val, std::string source);
+template <>
+Options& Options::assign<>(Tensor<int> val, std::string source);
 
 /// Specialised similar comparison methods
 template <>
@@ -994,7 +993,11 @@ Array<int> Options::as<Array<int>>(const Array<int>& similar_to) const;
 template <>
 Matrix<BoutReal> Options::as<Matrix<BoutReal>>(const Matrix<BoutReal>& similar_to) const;
 template <>
+Matrix<int> Options::as<Matrix<int>>(const Matrix<int>& similar_to) const;
+template <>
 Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_to) const;
+template <>
+Tensor<int> Options::as<Tensor<int>>(const Tensor<int>& similar_to) const;
 
 /// Convert \p value to string
 std::string toString(const Options& value);

@@ -343,7 +343,17 @@ Options& Options::assign<>(Matrix<BoutReal> val, std::string source) {
   return *this;
 }
 template <>
+Options& Options::assign<>(Matrix<int> val, std::string source) {
+  _set_no_check(std::move(val), std::move(source));
+  return *this;
+}
+template <>
 Options& Options::assign<>(Tensor<BoutReal> val, std::string source) {
+  _set_no_check(std::move(val), std::move(source));
+  return *this;
+}
+template <>
+Options& Options::assign<>(Tensor<int> val, std::string source) {
   _set_no_check(std::move(val), std::move(source));
   return *this;
 }
@@ -815,6 +825,28 @@ Matrix<BoutReal> Options::as<Matrix<BoutReal>>(const Matrix<BoutReal>& similar_t
 }
 
 template <>
+Matrix<int> Options::as<Matrix<int>>(const Matrix<int>& similar_to) const {
+  if (is_section) {
+    throw BoutException(_("Option {:s} has no value"), full_name);
+  }
+
+  auto result = bout::utils::visit(
+      ConvertContainer<Matrix<int>>{
+          fmt::format(
+              _("Value for option {:s} cannot be converted to an Matrix<int>"),
+              full_name),
+          similar_to},
+      value);
+
+  // Mark this option as used
+  value_used = true;
+
+  printNameValueSourceLine(*this, "Matrix<int>");
+
+  return result;
+}
+
+template <>
 Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_to) const {
   if (is_section) {
     throw BoutException(_("Option {:s} has no value"), full_name);
@@ -832,6 +864,28 @@ Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_t
   value_used = true;
 
   printNameValueSourceLine(*this, "Tensor<BoutReal>");
+
+  return result;
+}
+
+template <>
+Tensor<int> Options::as<Tensor<int>>(const Tensor<int>& similar_to) const {
+  if (is_section) {
+    throw BoutException(_("Option {:s} has no value"), full_name);
+  }
+
+  auto result = bout::utils::visit(
+      ConvertContainer<Tensor<int>>{
+          fmt::format(
+              _("Value for option {:s} cannot be converted to an Tensor<int>"),
+              full_name),
+          similar_to},
+      value);
+
+  // Mark this option as used
+  value_used = true;
+
+  printNameValueSourceLine(*this, "Tensor<int>");
 
   return result;
 }
@@ -977,12 +1031,15 @@ struct GetDimensions {
   std::vector<int> operator()([[maybe_unused]] int value) { return {1}; }
   std::vector<int> operator()([[maybe_unused]] BoutReal value) { return {1}; }
   std::vector<int> operator()([[maybe_unused]] const std::string& value) { return {1}; }
-  std::vector<int> operator()(const Array<BoutReal>& array) { return {array.size()}; }
-  std::vector<int> operator()(const Matrix<BoutReal>& array) {
+  template <typename T>
+  std::vector<int> operator()(const Array<T>& array) { return {array.size()}; }
+  template <typename T>
+  std::vector<int> operator()(const Matrix<T>& array) {
     const auto shape = array.shape();
     return {std::get<0>(shape), std::get<1>(shape)};
   }
-  std::vector<int> operator()(const Tensor<BoutReal>& array) {
+  template <typename T>
+  std::vector<int> operator()(const Tensor<T>& array) {
     const auto shape = array.shape();
     return {std::get<0>(shape), std::get<1>(shape), std::get<2>(shape)};
   }
