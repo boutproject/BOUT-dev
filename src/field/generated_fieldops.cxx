@@ -6,195 +6,10 @@
 #include <bout/mesh.hxx>
 #include <bout/region.hxx>
 
-// Provide the C++ wrapper for multiplication of Field3D and Field3D
-Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
-  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
-
-  Field3D result{emptyFrom(lhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs[index] * rhs[index];
-  }
-
-  checkData(result);
-  return result;
-}
-
-// Provide the C++ operator to update Field3D by multiplication with Field3D
-#if 0
-Field3D& Field3D::operator*=(const Field3D& rhs) {
-  // only if data is unique we update the field
-  // otherwise just call the non-inplace version
-  if (data.unique()) {
-    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
-
-    // Delete existing parallel slices. We don't copy parallel slices, so any
-    // that currently exist will be incorrect.
-    clearParallelSlices();
-
-    checkData(*this);
-    checkData(rhs);
-
-    regionID = fieldmesh->getCommonRegion(regionID, rhs.regionID);
-
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
-
-    checkData(*this);
-
-  } else {
-    (*this) = (*this) * rhs;
-  }
-  return *this;
-}
-#endif
-
-// Provide the C++ wrapper for division of Field3D and Field3D
-Field3D operator/(const Field3D& lhs, const Field3D& rhs) {
-  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
-
-  Field3D result{emptyFrom(lhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs[index] / rhs[index];
-  }
-
-  checkData(result);
-  return result;
-}
-
-// Provide the C++ operator to update Field3D by division with Field3D
-#if 0
-Field3D& Field3D::operator/=(const Field3D& rhs) {
-  // only if data is unique we update the field
-  // otherwise just call the non-inplace version
-  if (data.unique()) {
-    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
-
-    // Delete existing parallel slices. We don't copy parallel slices, so any
-    // that currently exist will be incorrect.
-    clearParallelSlices();
-
-    checkData(*this);
-    checkData(rhs);
-
-    regionID = fieldmesh->getCommonRegion(regionID, rhs.regionID);
-
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
-
-    checkData(*this);
-
-  } else {
-    (*this) = (*this) / rhs;
-  }
-  return *this;
-}
-#endif
-
-// Provide the C++ wrapper for addition of Field3D and Field3D
-Field3D operator+(const Field3D& lhs, const Field3D& rhs) {
-  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
-
-  Field3D result{emptyFrom(lhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs[index] + rhs[index];
-  }
-
-  checkData(result);
-  return result;
-}
-
-#if 0
-// Provide the C++ operator to update Field3D by addition with Field3D
-Field3D& Field3D::operator+=(const Field3D& rhs) {
-  // only if data is unique we update the field
-  // otherwise just call the non-inplace version
-  if (data.unique()) {
-    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
-
-    // Delete existing parallel slices. We don't copy parallel slices, so any
-    // that currently exist will be incorrect.
-    clearParallelSlices();
-
-    checkData(*this);
-    checkData(rhs);
-
-    regionID = fieldmesh->getCommonRegion(regionID, rhs.regionID);
-
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
-
-    checkData(*this);
-
-  } else {
-    (*this) = (*this) + rhs;
-  }
-  return *this;
-}
-#endif
-
-// Provide the C++ wrapper for subtraction of Field3D and Field3D
-Field3D operator-(const Field3D& lhs, const Field3D& rhs) {
-  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
-
-  Field3D result{emptyFrom(lhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs[index] - rhs[index];
-  }
-
-  checkData(result);
-  return result;
-}
-
-// Provide the C++ operator to update Field3D by subtraction with Field3D
-#if 0
-Field3D& Field3D::operator-=(const Field3D& rhs) {
-  // only if data is unique we update the field
-  // otherwise just call the non-inplace version
-  if (data.unique()) {
-    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
-
-    // Delete existing parallel slices. We don't copy parallel slices, so any
-    // that currently exist will be incorrect.
-    clearParallelSlices();
-
-    checkData(*this);
-    checkData(rhs);
-
-    regionID = fieldmesh->getCommonRegion(regionID, rhs.regionID);
-
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { 
-      (*this)[index] -= rhs[index]; 
-      printf("[golden] val[%d] %lf\n", index, (*this)[index]);
-    }
-
-    checkData(*this);
-
-  } else {
-    (*this) = (*this) - rhs;
-  }
-  return *this;
-}
-#endif
-
 // Provide the C++ wrapper for multiplication of Field3D and Field2D
+#if 0
 Field3D operator*(const Field3D& lhs, const Field2D& rhs) {
+  std::cout << "RUNNING operator "<< __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(lhs)};
@@ -215,9 +30,11 @@ Field3D operator*(const Field3D& lhs, const Field2D& rhs) {
   checkData(result);
   return result;
 }
+#endif
 
 // Provide the C++ operator to update Field3D by multiplication with Field2D
 Field3D& Field3D::operator*=(const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -245,8 +62,10 @@ Field3D& Field3D::operator*=(const Field2D& rhs) {
   return *this;
 }
 
+#if 1
 // Provide the C++ wrapper for division of Field3D and Field2D
 Field3D operator/(const Field3D& lhs, const Field2D& rhs) {
+  std::cout << "RUNNING operator "<< __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(lhs)};
@@ -268,9 +87,12 @@ Field3D operator/(const Field3D& lhs, const Field2D& rhs) {
   checkData(result);
   return result;
 }
+#endif
 
+#if 0
 // Provide the C++ operator to update Field3D by division with Field2D
 Field3D& Field3D::operator/=(const Field2D& rhs) {
+  std::cout << "RUNNING operator "<< __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -298,9 +120,11 @@ Field3D& Field3D::operator/=(const Field2D& rhs) {
   }
   return *this;
 }
+#endif
 
 // Provide the C++ wrapper for addition of Field3D and Field2D
 Field3D operator+(const Field3D& lhs, const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(lhs)};
@@ -324,6 +148,7 @@ Field3D operator+(const Field3D& lhs, const Field2D& rhs) {
 
 // Provide the C++ operator to update Field3D by addition with Field2D
 Field3D& Field3D::operator+=(const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -353,6 +178,7 @@ Field3D& Field3D::operator+=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for subtraction of Field3D and Field2D
 Field3D operator-(const Field3D& lhs, const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(lhs)};
@@ -376,6 +202,7 @@ Field3D operator-(const Field3D& lhs, const Field2D& rhs) {
 
 // Provide the C++ operator to update Field3D by subtraction with Field2D
 Field3D& Field3D::operator-=(const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -405,6 +232,7 @@ Field3D& Field3D::operator-=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for multiplication of Field3D and FieldPerp
 FieldPerp operator*(const Field3D& lhs, const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
@@ -425,6 +253,7 @@ FieldPerp operator*(const Field3D& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for division of Field3D and FieldPerp
 FieldPerp operator/(const Field3D& lhs, const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
@@ -445,6 +274,7 @@ FieldPerp operator/(const Field3D& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for addition of Field3D and FieldPerp
 FieldPerp operator+(const Field3D& lhs, const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
@@ -465,6 +295,7 @@ FieldPerp operator+(const Field3D& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for subtraction of Field3D and FieldPerp
 FieldPerp operator-(const Field3D& lhs, const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
@@ -485,6 +316,7 @@ FieldPerp operator-(const Field3D& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for multiplication of Field3D and BoutReal
 Field3D operator*(const Field3D& lhs, const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -502,6 +334,7 @@ Field3D operator*(const Field3D& lhs, const BoutReal rhs) {
 
 // Provide the C++ operator to update Field3D by multiplication with BoutReal
 Field3D& Field3D::operator*=(const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -525,6 +358,7 @@ Field3D& Field3D::operator*=(const BoutReal rhs) {
 
 // Provide the C++ wrapper for division of Field3D and BoutReal
 Field3D operator/(const Field3D& lhs, const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -543,6 +377,7 @@ Field3D operator/(const Field3D& lhs, const BoutReal rhs) {
 
 // Provide the C++ operator to update Field3D by division with BoutReal
 Field3D& Field3D::operator/=(const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -567,6 +402,7 @@ Field3D& Field3D::operator/=(const BoutReal rhs) {
 
 // Provide the C++ wrapper for addition of Field3D and BoutReal
 Field3D operator+(const Field3D& lhs, const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -584,6 +420,7 @@ Field3D operator+(const Field3D& lhs, const BoutReal rhs) {
 
 // Provide the C++ operator to update Field3D by addition with BoutReal
 Field3D& Field3D::operator+=(const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -607,6 +444,7 @@ Field3D& Field3D::operator+=(const BoutReal rhs) {
 
 // Provide the C++ wrapper for subtraction of Field3D and BoutReal
 Field3D operator-(const Field3D& lhs, const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -624,6 +462,7 @@ Field3D operator-(const Field3D& lhs, const BoutReal rhs) {
 
 // Provide the C++ operator to update Field3D by subtraction with BoutReal
 Field3D& Field3D::operator-=(const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -647,6 +486,7 @@ Field3D& Field3D::operator-=(const BoutReal rhs) {
 
 // Provide the C++ wrapper for multiplication of Field2D and Field3D
 Field3D operator*(const Field2D& lhs, const Field3D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(rhs)};
@@ -670,6 +510,7 @@ Field3D operator*(const Field2D& lhs, const Field3D& rhs) {
 
 // Provide the C++ wrapper for division of Field2D and Field3D
 Field3D operator/(const Field2D& lhs, const Field3D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(rhs)};
@@ -693,6 +534,7 @@ Field3D operator/(const Field2D& lhs, const Field3D& rhs) {
 
 // Provide the C++ wrapper for addition of Field2D and Field3D
 Field3D operator+(const Field2D& lhs, const Field3D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(rhs)};
@@ -716,6 +558,7 @@ Field3D operator+(const Field2D& lhs, const Field3D& rhs) {
 
 // Provide the C++ wrapper for subtraction of Field2D and Field3D
 Field3D operator-(const Field2D& lhs, const Field3D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field3D result{emptyFrom(rhs)};
@@ -739,6 +582,7 @@ Field3D operator-(const Field2D& lhs, const Field3D& rhs) {
 
 // Provide the C++ wrapper for multiplication of Field2D and Field2D
 Field2D operator*(const Field2D& lhs, const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field2D result{emptyFrom(lhs)};
@@ -755,6 +599,7 @@ Field2D operator*(const Field2D& lhs, const Field2D& rhs) {
 
 // Provide the C++ operator to update Field2D by multiplication with Field2D
 Field2D& Field2D::operator*=(const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -775,6 +620,7 @@ Field2D& Field2D::operator*=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for division of Field2D and Field2D
 Field2D operator/(const Field2D& lhs, const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field2D result{emptyFrom(lhs)};
@@ -791,6 +637,7 @@ Field2D operator/(const Field2D& lhs, const Field2D& rhs) {
 
 // Provide the C++ operator to update Field2D by division with Field2D
 Field2D& Field2D::operator/=(const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -811,6 +658,7 @@ Field2D& Field2D::operator/=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for addition of Field2D and Field2D
 Field2D operator+(const Field2D& lhs, const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field2D result{emptyFrom(lhs)};
@@ -827,6 +675,7 @@ Field2D operator+(const Field2D& lhs, const Field2D& rhs) {
 
 // Provide the C++ operator to update Field2D by addition with Field2D
 Field2D& Field2D::operator+=(const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -847,6 +696,7 @@ Field2D& Field2D::operator+=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for subtraction of Field2D and Field2D
 Field2D operator-(const Field2D& lhs, const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   Field2D result{emptyFrom(lhs)};
@@ -863,6 +713,7 @@ Field2D operator-(const Field2D& lhs, const Field2D& rhs) {
 
 // Provide the C++ operator to update Field2D by subtraction with Field2D
 Field2D& Field2D::operator-=(const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -883,6 +734,7 @@ Field2D& Field2D::operator-=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for multiplication of Field2D and FieldPerp
 FieldPerp operator*(const Field2D& lhs, const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
@@ -903,6 +755,7 @@ FieldPerp operator*(const Field2D& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for division of Field2D and FieldPerp
 FieldPerp operator/(const Field2D& lhs, const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
@@ -923,6 +776,7 @@ FieldPerp operator/(const Field2D& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for addition of Field2D and FieldPerp
 FieldPerp operator+(const Field2D& lhs, const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
@@ -943,6 +797,7 @@ FieldPerp operator+(const Field2D& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for subtraction of Field2D and FieldPerp
 FieldPerp operator-(const Field2D& lhs, const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(rhs)};
@@ -963,6 +818,7 @@ FieldPerp operator-(const Field2D& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for multiplication of Field2D and BoutReal
 Field2D operator*(const Field2D& lhs, const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   Field2D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -978,6 +834,7 @@ Field2D operator*(const Field2D& lhs, const BoutReal rhs) {
 
 // Provide the C++ operator to update Field2D by multiplication with BoutReal
 Field2D& Field2D::operator*=(const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -997,6 +854,7 @@ Field2D& Field2D::operator*=(const BoutReal rhs) {
 
 // Provide the C++ wrapper for division of Field2D and BoutReal
 Field2D operator/(const Field2D& lhs, const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   Field2D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1013,6 +871,7 @@ Field2D operator/(const Field2D& lhs, const BoutReal rhs) {
 
 // Provide the C++ operator to update Field2D by division with BoutReal
 Field2D& Field2D::operator/=(const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1033,6 +892,7 @@ Field2D& Field2D::operator/=(const BoutReal rhs) {
 
 // Provide the C++ wrapper for addition of Field2D and BoutReal
 Field2D operator+(const Field2D& lhs, const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   Field2D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1048,6 +908,7 @@ Field2D operator+(const Field2D& lhs, const BoutReal rhs) {
 
 // Provide the C++ operator to update Field2D by addition with BoutReal
 Field2D& Field2D::operator+=(const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1067,6 +928,7 @@ Field2D& Field2D::operator+=(const BoutReal rhs) {
 
 // Provide the C++ wrapper for subtraction of Field2D and BoutReal
 Field2D operator-(const Field2D& lhs, const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   Field2D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1082,6 +944,7 @@ Field2D operator-(const Field2D& lhs, const BoutReal rhs) {
 
 // Provide the C++ operator to update Field2D by subtraction with BoutReal
 Field2D& Field2D::operator-=(const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1101,6 +964,7 @@ Field2D& Field2D::operator-=(const BoutReal rhs) {
 
 // Provide the C++ wrapper for multiplication of FieldPerp and Field3D
 FieldPerp operator*(const FieldPerp& lhs, const Field3D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
@@ -1121,6 +985,7 @@ FieldPerp operator*(const FieldPerp& lhs, const Field3D& rhs) {
 
 // Provide the C++ operator to update FieldPerp by multiplication with Field3D
 FieldPerp& FieldPerp::operator*=(const Field3D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1147,6 +1012,7 @@ FieldPerp& FieldPerp::operator*=(const Field3D& rhs) {
 
 // Provide the C++ wrapper for division of FieldPerp and Field3D
 FieldPerp operator/(const FieldPerp& lhs, const Field3D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
@@ -1167,6 +1033,7 @@ FieldPerp operator/(const FieldPerp& lhs, const Field3D& rhs) {
 
 // Provide the C++ operator to update FieldPerp by division with Field3D
 FieldPerp& FieldPerp::operator/=(const Field3D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1193,6 +1060,7 @@ FieldPerp& FieldPerp::operator/=(const Field3D& rhs) {
 
 // Provide the C++ wrapper for addition of FieldPerp and Field3D
 FieldPerp operator+(const FieldPerp& lhs, const Field3D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
@@ -1213,6 +1081,7 @@ FieldPerp operator+(const FieldPerp& lhs, const Field3D& rhs) {
 
 // Provide the C++ operator to update FieldPerp by addition with Field3D
 FieldPerp& FieldPerp::operator+=(const Field3D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1239,6 +1108,7 @@ FieldPerp& FieldPerp::operator+=(const Field3D& rhs) {
 
 // Provide the C++ wrapper for subtraction of FieldPerp and Field3D
 FieldPerp operator-(const FieldPerp& lhs, const Field3D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
@@ -1259,6 +1129,7 @@ FieldPerp operator-(const FieldPerp& lhs, const Field3D& rhs) {
 
 // Provide the C++ operator to update FieldPerp by subtraction with Field3D
 FieldPerp& FieldPerp::operator-=(const Field3D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1285,6 +1156,7 @@ FieldPerp& FieldPerp::operator-=(const Field3D& rhs) {
 
 // Provide the C++ wrapper for multiplication of FieldPerp and Field2D
 FieldPerp operator*(const FieldPerp& lhs, const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
@@ -1305,6 +1177,7 @@ FieldPerp operator*(const FieldPerp& lhs, const Field2D& rhs) {
 
 // Provide the C++ operator to update FieldPerp by multiplication with Field2D
 FieldPerp& FieldPerp::operator*=(const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1331,6 +1204,7 @@ FieldPerp& FieldPerp::operator*=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for division of FieldPerp and Field2D
 FieldPerp operator/(const FieldPerp& lhs, const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
@@ -1351,6 +1225,7 @@ FieldPerp operator/(const FieldPerp& lhs, const Field2D& rhs) {
 
 // Provide the C++ operator to update FieldPerp by division with Field2D
 FieldPerp& FieldPerp::operator/=(const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1377,6 +1252,7 @@ FieldPerp& FieldPerp::operator/=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for addition of FieldPerp and Field2D
 FieldPerp operator+(const FieldPerp& lhs, const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
@@ -1397,6 +1273,7 @@ FieldPerp operator+(const FieldPerp& lhs, const Field2D& rhs) {
 
 // Provide the C++ operator to update FieldPerp by addition with Field2D
 FieldPerp& FieldPerp::operator+=(const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1423,6 +1300,7 @@ FieldPerp& FieldPerp::operator+=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for subtraction of FieldPerp and Field2D
 FieldPerp operator-(const FieldPerp& lhs, const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
@@ -1443,6 +1321,7 @@ FieldPerp operator-(const FieldPerp& lhs, const Field2D& rhs) {
 
 // Provide the C++ operator to update FieldPerp by subtraction with Field2D
 FieldPerp& FieldPerp::operator-=(const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1469,6 +1348,7 @@ FieldPerp& FieldPerp::operator-=(const Field2D& rhs) {
 
 // Provide the C++ wrapper for multiplication of FieldPerp and FieldPerp
 FieldPerp operator*(const FieldPerp& lhs, const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
@@ -1485,6 +1365,7 @@ FieldPerp operator*(const FieldPerp& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ operator to update FieldPerp by multiplication with FieldPerp
 FieldPerp& FieldPerp::operator*=(const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1505,6 +1386,7 @@ FieldPerp& FieldPerp::operator*=(const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for division of FieldPerp and FieldPerp
 FieldPerp operator/(const FieldPerp& lhs, const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
@@ -1521,6 +1403,7 @@ FieldPerp operator/(const FieldPerp& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ operator to update FieldPerp by division with FieldPerp
 FieldPerp& FieldPerp::operator/=(const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1541,6 +1424,7 @@ FieldPerp& FieldPerp::operator/=(const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for addition of FieldPerp and FieldPerp
 FieldPerp operator+(const FieldPerp& lhs, const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
@@ -1557,6 +1441,7 @@ FieldPerp operator+(const FieldPerp& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ operator to update FieldPerp by addition with FieldPerp
 FieldPerp& FieldPerp::operator+=(const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1577,6 +1462,7 @@ FieldPerp& FieldPerp::operator+=(const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for subtraction of FieldPerp and FieldPerp
 FieldPerp operator-(const FieldPerp& lhs, const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
 
   FieldPerp result{emptyFrom(lhs)};
@@ -1593,6 +1479,7 @@ FieldPerp operator-(const FieldPerp& lhs, const FieldPerp& rhs) {
 
 // Provide the C++ operator to update FieldPerp by subtraction with FieldPerp
 FieldPerp& FieldPerp::operator-=(const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1613,6 +1500,7 @@ FieldPerp& FieldPerp::operator-=(const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for multiplication of FieldPerp and BoutReal
 FieldPerp operator*(const FieldPerp& lhs, const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1628,6 +1516,7 @@ FieldPerp operator*(const FieldPerp& lhs, const BoutReal rhs) {
 
 // Provide the C++ operator to update FieldPerp by multiplication with BoutReal
 FieldPerp& FieldPerp::operator*=(const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1647,6 +1536,7 @@ FieldPerp& FieldPerp::operator*=(const BoutReal rhs) {
 
 // Provide the C++ wrapper for division of FieldPerp and BoutReal
 FieldPerp operator/(const FieldPerp& lhs, const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1663,6 +1553,7 @@ FieldPerp operator/(const FieldPerp& lhs, const BoutReal rhs) {
 
 // Provide the C++ operator to update FieldPerp by division with BoutReal
 FieldPerp& FieldPerp::operator/=(const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1682,6 +1573,7 @@ FieldPerp& FieldPerp::operator/=(const BoutReal rhs) {
 
 // Provide the C++ wrapper for addition of FieldPerp and BoutReal
 FieldPerp operator+(const FieldPerp& lhs, const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1697,6 +1589,7 @@ FieldPerp operator+(const FieldPerp& lhs, const BoutReal rhs) {
 
 // Provide the C++ operator to update FieldPerp by addition with BoutReal
 FieldPerp& FieldPerp::operator+=(const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1716,6 +1609,7 @@ FieldPerp& FieldPerp::operator+=(const BoutReal rhs) {
 
 // Provide the C++ wrapper for subtraction of FieldPerp and BoutReal
 FieldPerp operator-(const FieldPerp& lhs, const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1731,6 +1625,7 @@ FieldPerp operator-(const FieldPerp& lhs, const BoutReal rhs) {
 
 // Provide the C++ operator to update FieldPerp by subtraction with BoutReal
 FieldPerp& FieldPerp::operator-=(const BoutReal rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1750,6 +1645,7 @@ FieldPerp& FieldPerp::operator-=(const BoutReal rhs) {
 
 // Provide the C++ wrapper for multiplication of BoutReal and Field3D
 Field3D operator*(const BoutReal lhs, const Field3D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   Field3D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1767,6 +1663,7 @@ Field3D operator*(const BoutReal lhs, const Field3D& rhs) {
 
 // Provide the C++ wrapper for division of BoutReal and Field3D
 Field3D operator/(const BoutReal lhs, const Field3D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   Field3D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1784,6 +1681,7 @@ Field3D operator/(const BoutReal lhs, const Field3D& rhs) {
 
 // Provide the C++ wrapper for addition of BoutReal and Field3D
 Field3D operator+(const BoutReal lhs, const Field3D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   Field3D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1801,6 +1699,7 @@ Field3D operator+(const BoutReal lhs, const Field3D& rhs) {
 
 // Provide the C++ wrapper for subtraction of BoutReal and Field3D
 Field3D operator-(const BoutReal lhs, const Field3D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   Field3D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1818,6 +1717,7 @@ Field3D operator-(const BoutReal lhs, const Field3D& rhs) {
 
 // Provide the C++ wrapper for multiplication of BoutReal and Field2D
 Field2D operator*(const BoutReal lhs, const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   Field2D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1833,6 +1733,7 @@ Field2D operator*(const BoutReal lhs, const Field2D& rhs) {
 
 // Provide the C++ wrapper for division of BoutReal and Field2D
 Field2D operator/(const BoutReal lhs, const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   Field2D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1848,6 +1749,7 @@ Field2D operator/(const BoutReal lhs, const Field2D& rhs) {
 
 // Provide the C++ wrapper for addition of BoutReal and Field2D
 Field2D operator+(const BoutReal lhs, const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   Field2D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1863,6 +1765,7 @@ Field2D operator+(const BoutReal lhs, const Field2D& rhs) {
 
 // Provide the C++ wrapper for subtraction of BoutReal and Field2D
 Field2D operator-(const BoutReal lhs, const Field2D& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   Field2D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1878,6 +1781,7 @@ Field2D operator-(const BoutReal lhs, const Field2D& rhs) {
 
 // Provide the C++ wrapper for multiplication of BoutReal and FieldPerp
 FieldPerp operator*(const BoutReal lhs, const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1893,6 +1797,7 @@ FieldPerp operator*(const BoutReal lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for division of BoutReal and FieldPerp
 FieldPerp operator/(const BoutReal lhs, const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1908,6 +1813,7 @@ FieldPerp operator/(const BoutReal lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for addition of BoutReal and FieldPerp
 FieldPerp operator+(const BoutReal lhs, const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1923,6 +1829,7 @@ FieldPerp operator+(const BoutReal lhs, const FieldPerp& rhs) {
 
 // Provide the C++ wrapper for subtraction of BoutReal and FieldPerp
 FieldPerp operator-(const BoutReal lhs, const FieldPerp& rhs) {
+  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
 
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);

@@ -277,11 +277,22 @@ public:
   int size() const override { return nx * ny; };
 
   struct View {
-    const BoutReal* data;
-    __device__ inline BoutReal operator()(int idx) const { return data[idx]; }
+    BoutReal* data;
+    int mul = 1;
+    int div = 1;
+    __device__ inline BoutReal operator()(int idx) const { return data[(idx*mul/div)]; }
+    __device__ inline BoutReal& operator[](int idx) const {
+      return data[(idx * mul)/div];
+    }
+
+    View& setScale(int mul, int div) {
+      this->mul = mul;
+      this->div = div;
+      return *this;
+    }
   };
   operator View() { return View{&data[0]}; }
-  operator View() const { return View{&data[0]}; }
+  operator View() const { return View{const_cast<BoutReal*>(&data[0])}; }
 
   __device__ inline BoutReal operator()(int i) { return View()(i); }
   __device__ inline BoutReal operator()(int i) const { return View()(i); }
@@ -302,6 +313,22 @@ private:
 Field2D operator+(const Field2D& lhs, const Field2D& rhs);
 Field2D operator-(const Field2D& lhs, const Field2D& rhs);
 Field2D operator*(const Field2D& lhs, const Field2D& rhs);
+#if 0
+template <typename L, typename R,
+          typename = std::enable_if_t<is_expr_field2d_v<L> && is_expr_field2d_v<R>>>
+BinaryExpr<L, R, bout::op::Mul> operator*(const L& lhs, const R& rhs) {
+  return BinaryExpr<L, R, bout::op::Mul>{static_cast<typename L::View>(lhs),
+                                         static_cast<typename R::View>(rhs),
+                                         bout::op::Mul{},
+                                         lhs.getMesh(),
+                                         lhs.getLocation(),
+                                         lhs.getDirections(),
+                                         lhs.getRegionID(),
+                                         (regionID.has_value()
+                                              ? lhs.getMesh()->getRegion(regionID.value())
+                                              : lhs.getMesh()->getRegion("RGN_ALL"))};
+}
+#endif
 Field2D operator/(const Field2D& lhs, const Field2D& rhs);
 
 Field3D operator+(const Field2D& lhs, const Field3D& rhs);
