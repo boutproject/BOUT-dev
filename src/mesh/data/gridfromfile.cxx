@@ -471,7 +471,26 @@ bool GridFile::get([[maybe_unused]] Mesh* m, [[maybe_unused]] std::vector<int>& 
                    [[maybe_unused]] GridDataSource::Direction dir) {
   TRACE("GridFile::get(vector<int>)");
 
-  return false;
+  if (not data.isSet(name)) {
+    return false;
+  }
+
+  const auto full_var = data[name].as<Array<int>>();
+
+  // Check size
+  if (full_var.size() < len + offset) {
+    throw BoutException("{} has length {}. Expected {} elements + {} offset", name,
+                        full_var.size(), len, offset);
+  }
+
+  // Ensure that output variable has the correct size
+  var.resize(len);
+
+  const auto* it = std::begin(full_var);
+  std::advance(it, offset);
+  std::copy_n(it, len, std::begin(var));
+
+  return true;
 }
 
 bool GridFile::get(Mesh* UNUSED(m), std::vector<BoutReal>& var, const std::string& name,
