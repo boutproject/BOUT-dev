@@ -29,18 +29,20 @@ template <typename T>
 inline constexpr bool is_expr_field3d_v = is_expr_field3d<std::decay_t<T>>::value;
 
 template <typename T>
-struct is_expr_boutreal : std::false_type {};
+struct is_expr_constant : std::bool_constant<std::is_arithmetic_v<T>> {};
 
 template <typename T>
-inline constexpr bool is_expr_boutreal_v = is_expr_boutreal<std::decay_t<T>>::value;
-
-template <>
-struct is_expr_boutreal<BoutReal> : std::true_type {};
+inline constexpr bool is_expr_constant_v = is_expr_constant<std::decay_t<T>>::value;
 
 template <typename T>
-struct is_expr_boutreal<Constant<T>>
-    : std::integral_constant<bool, is_expr_boutreal_v<std::decay_t<T>>> {};
+struct is_expr_constant<Constant<T>>
+    : std::integral_constant<bool, is_expr_constant_v<std::decay_t<T>>> {};
 
+// After the specialization…
+static_assert(is_expr_constant_v<Constant<int>> == true,
+              "Constant<int> should be recognized as an expr_constant!");
+static_assert(is_expr_constant_v<Constant<float>> == true,
+              "Constant<float> should be recognized as an expr_constant!");
 
 namespace bout {
 namespace op {
@@ -101,28 +103,10 @@ __global__ __launch_bounds__(256) static void evaluatorExpr(BoutReal* out,
                                                             const Expr expr) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   if (tid >= expr.size()) {
-    return; // Out of bounds
+    return;
   }
   int idx = expr.regionIdx(tid);
   out[idx] = expr(idx); // single‐pass fusion
-  //int stride = blockDim.x * gridDim.x;
-  //for (int i = tid, e = expr.size(); i < e; i += stride) {
-  //  int idx = expr.regionIdx(i);
-  //  out[idx] = expr(idx); // single‐pass fusion
-  //}
-}
-
-template <typename Result, typename Expr>
-__global__ __launch_bounds__(256) static void evaluatorExprWithResult(Result res,
-                                                                      const Expr expr) {
-  int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  if (tid >= expr.size()) {
-    return; // Out of bounds
-  }
-  int idx = expr.regionIdx(tid);
-  res[idx] = expr(idx); // single‐pass fusion
-  //res(idx, expr(idx)); // single‐pass fusion
-  //res(idx) = expr(idx); // single‐pass fusion
   //int stride = blockDim.x * gridDim.x;
   //for (int i = tid, e = expr.size(); i < e; i += stride) {
   //  int idx = expr.regionIdx(i);
@@ -222,21 +206,10 @@ struct BinaryExpr {
     //}
   }
 
-  template <typename Result>
-  void evaluateWithResult(const Result& res) const {
-    constexpr int THREADS = 256;
-    int blocks = (size() + THREADS - 1) / THREADS;
-    evaluatorExprWithResult<<<blocks, THREADS>>>(res, static_cast<View>(*this));
-    cudaDeviceSynchronize();
-    //for(int i=0; i<size(); ++i) {
-    //  data[regionIdx(i)] = f(i, lhs, rhs); // single‐pass fusion
-    //}
-  }
-
   Mesh* getMesh() const { return mesh; }
   CELL_LOC getLocation() const { return location; }
   DirectionTypes getDirections() const { return directions; }
   std::optional<size_t> getRegionID() const { return regionID; };
 };
 
-#endif // BOUT_EXPRESSION_HXX
+#endif // BOUT_EXPRESSION_HX

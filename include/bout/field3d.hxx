@@ -467,8 +467,12 @@ public:
   operator=(BinaryExpr<L, R, Func>& expr) {
     std::cout << "RUNNING operator= with CUDA\n";
     regionID = expr.getRegionID();
-    //expr.evaluate(&data[0]);
-    expr.evaluateWithResult(static_cast<View>(*this));
+    if(isAllocated()) {
+      expr.evaluate(&data[0]);
+    }
+    else {
+      *this = Field3D{expr};
+    }
     return *this;
   }
 
@@ -481,15 +485,15 @@ public:
   Field3D& operator+=(const R& rhs) {
     //printf("RUNNING operator+= with CUDA\n");
     if (data.unique()) {
-      printf("RUNNING operator+= with CUDA with evaluateWithResult\n");
+      //std::cout << "RUNNING Field3D operator+=  w/ CUDA" << __FILE__ << " "
+      //          << std::to_string(__LINE__) << "\n";
       // Delete existing parallel slices. We don't copy parallel slices, so any
       // that currently exist will be incorrect.
       clearParallelSlices();
 
       auto BE = (*this) + rhs;
       regionID = BE.getRegionID();
-      //BE.evaluate(&data[0]);
-      BE.evaluateWithResult(static_cast<View>(*this));
+      BE.evaluate(&data[0]);
     } else {
       (*this) = (*this) + rhs;
     }
@@ -802,7 +806,7 @@ Field3D operator+(BoutReal lhs, const Field3D& rhs);
 Field3D operator-(BoutReal lhs, const Field3D& rhs);
 //Field3D operator*(BoutReal lhs, const Field3D& rhs);
 template <typename L, typename R>
-std::enable_if_t<is_expr_boutreal_v<L> && is_expr_field3d_v<R>,
+std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
                  BinaryExpr<Constant<L>, R, bout::op::Mul>>
 operator*(const L& lhs, const R& rhs) {
   //static_assert(always_false<L> || always_false<R>, "Hello");

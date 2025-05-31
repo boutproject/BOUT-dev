@@ -38,9 +38,9 @@
 #if CHECKLEVEL >= 1
 #define ASSERT1(condition)                                                               \
   if (!(condition)) {                                                                    \
-    abort();                                                                             \
     throw BoutException("Assertion failed in {:s}, line {:d}: {:s}", __FILE__, __LINE__, \
                         #condition);                                                     \
+    abort();                                                                             \
   }
 #else // CHECKLEVEL >= 1
 #define ASSERT1(condition)

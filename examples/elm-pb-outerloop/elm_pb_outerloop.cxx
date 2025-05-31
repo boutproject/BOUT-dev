@@ -713,7 +713,7 @@ public:
       diamag_phi0 = false;
       K_H_term = false;
     } else {
-      Dphi0 = -D_min - 0.5 * D_0 * (1.0 - tanh(D_s * (x - x0)));
+      Dphi0 = -D_min - 0.5 * D_0 * (1.0 - tanh(Field2D{D_s * (x - x0)}));
     }
 
     if (sign < 0) { // change flow direction
@@ -1213,7 +1213,7 @@ public:
       // Only if not restarting: Check initial perturbation
 
       // Set U to zero where P0 < vacuum_pressure
-      U = where(P0 - vacuum_pressure, U, 0.0);
+      U = where(Field2D{P0 - vacuum_pressure}, U, 0.0);
 
       if (constn0) {
         ubyn = U;

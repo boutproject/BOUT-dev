@@ -47,15 +47,14 @@ class Field2D;
 class Field3D;
 class Mesh;
 
-//template <typename T>
-//struct is_expr_field2d : std::false_type {};
-
-//template <typename T>
-//inline constexpr bool is_expr_field2d_v = is_expr_field2d<std::decay_t<T>>::value;
-
 template <typename L, typename R, typename Fun>
 struct is_expr_field2d<BinaryExpr<L, R, Fun>>
-    : std::integral_constant<bool, is_expr_field2d<std::decay_t<L>>::value && is_expr_field2d_v<std::decay_t<R>>> {};
+    : std::integral_constant<bool, (is_expr_field2d_v<std::decay_t<L>>
+                                    && is_expr_field2d_v<std::decay_t<R>>)
+                                       || (is_expr_constant_v<std::decay_t<L>>
+                                           && is_expr_field2d_v<std::decay_t<R>>)
+                                       || (is_expr_field2d_v<std::decay_t<L>>
+                                           && is_expr_constant_v<std::decay_t<R>>)> {};
 
 /*!
  * \brief 2D X-Y scalar fields
@@ -103,8 +102,11 @@ public:
           DirectionTypes directions_in = {YDirectionType::Standard,
                                           ZDirectionType::Average});
 
-  template <typename L, typename R, typename Func,
-            typename = std::enable_if_t<is_expr_field2d_v<L> && is_expr_field2d_v<R>>>
+  template <
+      typename L, typename R, typename Func,
+      typename = std::enable_if_t<(is_expr_field2d_v<L> && is_expr_field2d_v<R>)
+                                  || (is_expr_constant_v<L> && is_expr_field2d_v<R>)
+                                  || (is_expr_field2d_v<L> && is_expr_constant_v<R>)>>
   Field2D(const BinaryExpr<L, R, Func>& expr) {
     Array<BoutReal> data{expr.size()};
     expr.evaluate(&data[0]);
@@ -188,9 +190,13 @@ public:
 
   template <typename L, typename R, typename Func>
   std::enable_if_t<is_expr_field2d_v<L>, Field2D&>
-  operator=(BinaryExpr<L, R, Func>& expr) {
+  operator=(const BinaryExpr<L, R, Func>& expr) {
     std::cout << "RUNNING Field2D operator= with CUDA\n";
-    expr.evaluate(&data[0]);
+    if (isAllocated()) {
+      expr.evaluate(&data[0]);
+    } else {
+      *this = Field2D{expr};
+    }
     return *this;
   }
 
@@ -278,7 +284,19 @@ public:
   /// In-place division. Copy-on-write used if data is shared
   Field2D& operator/=(const Field2D& rhs);
   /// In-place division. Copy-on-write used if data is shared
-  Field2D& operator/=(BoutReal rhs);
+  //Field2D& operator/=(BoutReal rhs);
+    template <typename R, typename = std::enable_if_t<is_expr_constant_v<R>>>
+  Field2D& operator/=(R rhs) {
+    //printf("RUNNING operator+= with CUDA\n");
+    if (data.unique()) {
+      auto BE = (*this) / rhs;
+      BE.evaluate(&data[0]);
+    } else {
+      (*this) = (*this) / rhs;
+    }
+
+    return *this;
+  }
 
   // FieldData virtual functions
 
@@ -425,13 +443,47 @@ operator*(const L& lhs, const R& rhs) {
 Field3D operator/(const Field2D& lhs, const Field3D& rhs);
 
 Field2D operator+(const Field2D& lhs, BoutReal rhs);
-Field2D operator-(const Field2D& lhs, BoutReal rhs);
+//Field2D operator-(const Field2D& lhs, BoutReal rhs);
+#if 1
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<L, Constant<R>, bout::op::Sub>>
+operator-(const L& lhs, R rhs) {
+  return BinaryExpr<L, Constant<R>, bout::op::Sub>{
+      static_cast<typename L::View>(lhs),
+      static_cast<typename Constant<R>::View>(rhs),
+      bout::op::Sub{},
+      lhs.getMesh(),
+      lhs.getLocation(),
+      lhs.getDirections(),
+      std::nullopt,
+      lhs.getMesh()->getRegion2D("RGN_ALL")};
+}
+#endif
 Field2D operator*(const Field2D& lhs, BoutReal rhs);
 Field2D operator/(const Field2D& lhs, BoutReal rhs);
 
 Field2D operator+(BoutReal lhs, const Field2D& rhs);
 Field2D operator-(BoutReal lhs, const Field2D& rhs);
-Field2D operator*(BoutReal lhs, const Field2D& rhs);
+//Field2D operator*(BoutReal lhs, const Field2D& rhs);
+#if 1
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Constant<L>, R, bout::op::Mul>>
+operator*(L lhs, const R& rhs) {
+  //static_assert(always_false<L> || always_false<R>, "Hello");
+
+  return BinaryExpr<Constant<L>, R, bout::op::Mul>{
+      static_cast<typename Constant<L>::View>(lhs),
+      static_cast<typename R::View>(rhs),
+      bout::op::Mul{},
+      rhs.getMesh(),
+      rhs.getLocation(),
+      rhs.getDirections(),
+      std::nullopt,
+      rhs.getMesh()->getRegion2D("RGN_ALL")};
+}
+#endif
 Field2D operator/(BoutReal lhs, const Field2D& rhs);
 
 /*!
