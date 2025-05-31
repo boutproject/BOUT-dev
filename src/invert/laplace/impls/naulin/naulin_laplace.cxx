@@ -269,8 +269,9 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
   delp2solver->setCoefC2(C2coef_DC);
 
   // Use this below to normalize error for relative error estimate
+  Field3D SQField = SQ(rhsOverD);
   BoutReal RMS_rhsOverD = sqrt(mean(
-      SQ(rhsOverD), true,
+      SQField, true,
       "RGN_NOBNDRY")); // use sqrt(mean(SQ)) to make sure we do not divide by zero at a point
 
   BoutReal error_rel = 1e20, error_abs = 1e20, last_error = error_abs;

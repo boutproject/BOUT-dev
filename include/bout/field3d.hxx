@@ -40,19 +40,6 @@ class Field3D;
 class Mesh;
 
 #include "bout/fieldops.hxx"
-// Base template: nothing is an expression by default
-template <typename T>
-struct is_expr_field3d : std::false_type {};
-
-template <typename T>
-struct is_expr_field2d : std::false_type {};
-
-// Helper variable template
-template <typename T>
-inline constexpr bool is_expr_field3d_v = is_expr_field3d<std::decay_t<T>>::value;
-
-template <typename T>
-inline constexpr bool is_expr_field2d_v = is_expr_field2d<std::decay_t<T>>::value;
 
 /// Class for 3D X-Y-Z scalar fields
 /*!
@@ -198,7 +185,8 @@ public:
   Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
           DirectionTypes directions_in = {YDirectionType::Standard,
                                           ZDirectionType::Standard});
-  template <typename L, typename R, typename Func>
+  template <typename L, typename R, typename Func,
+            typename = std::enable_if_t<is_expr_field3d_v<L> || is_expr_field3d_v<R>>>
   Field3D(const BinaryExpr<L, R, Func>& expr) {
     //std::cout << "RUNNING constructor from BinaryExpr\n";
     Array<BoutReal> data{expr.size()};
@@ -475,7 +463,8 @@ public:
   void operator=(const FieldPerp& rhs);
   Field3D& operator=(BoutReal val);
   template <typename L, typename R, typename Func>
-  Field3D& operator=(BinaryExpr<L, R, Func>& expr) {
+  std::enable_if_t<is_expr_field3d_v<L>, Field3D&>
+  operator=(BinaryExpr<L, R, Func>& expr) {
     std::cout << "RUNNING operator= with CUDA\n";
     regionID = expr.getRegionID();
     //expr.evaluate(&data[0]);
@@ -811,7 +800,25 @@ Field3D operator/(const Field3D& lhs, BoutReal rhs);
 
 Field3D operator+(BoutReal lhs, const Field3D& rhs);
 Field3D operator-(BoutReal lhs, const Field3D& rhs);
-Field3D operator*(BoutReal lhs, const Field3D& rhs);
+//Field3D operator*(BoutReal lhs, const Field3D& rhs);
+template <typename L, typename R>
+std::enable_if_t<is_expr_boutreal_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Constant<L>, R, bout::op::Mul>>
+operator*(const L& lhs, const R& rhs) {
+  //static_assert(always_false<L> || always_false<R>, "Hello");
+  auto regionID = rhs.getRegionID();
+
+  return BinaryExpr<Constant<L>, R, bout::op::Mul>{
+      static_cast<typename Constant<L>::View>(lhs),
+      static_cast<typename R::View>(rhs),
+      bout::op::Mul{},
+      rhs.getMesh(),
+      rhs.getLocation(),
+      rhs.getDirections(),
+      regionID,
+      rhs.getMesh()->getRegion("RGN_ALL")};
+}
+
 Field3D operator/(BoutReal lhs, const Field3D& rhs);
 
 /*!
@@ -935,18 +942,6 @@ struct is_expr_field2d<Field2D> : std::true_type {};
 
 template <typename L, typename R, typename Fun>
 struct is_expr_field3d<BinaryExpr<L, R, Fun>>
-    : std::integral_constant<bool, is_expr_field3d<std::decay_t<L>>::value> {};
-
-template <typename L, typename R, typename Fun>
-struct is_expr_field2d<BinaryExpr<L, R, Fun>>
-    : std::integral_constant<bool, is_expr_field2d<std::decay_t<L>>::value> {};
-
-//template <typename L, typename R, typename Fun>
-//struct is_expr_field3d<typename BinaryExpr<L, R, Fun>::View> : is_expr_field3d<L> {};
-
-//template<typename L,typename R,typename Fun>
-//struct is_expr_field3d< typename BinaryExpr<L,R,Fun>::View >
-//  : std::integral_constant<bool, is_expr_field3d<std::decay_t<L>>::value> {};
-//  //: is_expr_field3d<std::decay_t<L>> {};
+    : std::integral_constant<bool, is_expr_field3d<std::decay_t<L>>::value || is_expr_field3d_v<std::decay_t<R>>> {};
 
 #endif /* BOUT_FIELD3D_H */

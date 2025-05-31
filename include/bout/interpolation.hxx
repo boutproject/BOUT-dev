@@ -55,7 +55,8 @@ inline BoutReal interp(const stencil& s) {
   @param[in]   region  Region where output will be calculated
 */
 template <typename T>
-const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_ALL") {
+std::enable_if_t<bout::utils::is_Field2D_v<T> || bout::utils::is_Field3D_v<T>, const T>
+interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_ALL") {
   AUTO_TRACE();
   static_assert(bout::utils::is_Field2D_v<T> || bout::utils::is_Field3D_v<T>,
                 "interp_to must be templated with one of Field2D or Field3D.");
@@ -201,6 +202,19 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
     result = interp_to(interp_to(var, CELL_CENTRE), loc, region);
   }
   return result;
+}
+
+
+template<typename E>
+std::enable_if_t<is_expr_field3d_v<E> && !bout::utils::is_Field3D_v<E>, const Field3D> 
+interp_to(const E &expr, CELL_LOC loc, const std::string rgn = "RGN_ALL") {
+  return interp_to( Field3D{expr}, loc, std::move(rgn) );
+}
+
+template<typename E>
+std::enable_if_t<is_expr_field2d_v<E> && !bout::utils::is_Field2D_v<E>, const Field2D> 
+interp_to(const E &expr, CELL_LOC loc, const std::string rgn = "RGN_ALL") {
+  return interp_to( Field2D{expr}, loc, std::move(rgn) );
 }
 
 #endif // BOUT_INTERP_H

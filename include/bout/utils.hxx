@@ -422,12 +422,12 @@ inline BoutReal randomu() {
  * i.e. t * t
  */
 template <typename T>
-inline T SQ(const T& t) {
+inline auto SQ(const T& t) {
   return t * t;
 }
 
 template <>
-BOUT_HOST_DEVICE inline BoutReal SQ(const BoutReal& t) {
+BOUT_HOST_DEVICE inline auto SQ(const BoutReal& t) {
   return t * t;
 }
 

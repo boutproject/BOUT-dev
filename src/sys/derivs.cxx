@@ -173,7 +173,7 @@ Coordinates::FieldMetric D2DX2(const Field2D& f, CELL_LOC outloc,
                                const std::string& method, const std::string& region) {
   Coordinates* coords = f.getCoordinates(outloc);
 
-  auto result =
+  Field2D result =
       bout::derivatives::index::D2DX2(f, outloc, method, region) / SQ(coords->dx);
 
   if (coords->non_uniform) {
@@ -210,7 +210,7 @@ Coordinates::FieldMetric D2DY2(const Field2D& f, CELL_LOC outloc,
                                const std::string& method, const std::string& region) {
   Coordinates* coords = f.getCoordinates(outloc);
 
-  auto result =
+  Field2D result =
       bout::derivatives::index::D2DY2(f, outloc, method, region) / SQ(coords->dy);
   if (coords->non_uniform) {
     // Correction for non-uniform f.getMesh()

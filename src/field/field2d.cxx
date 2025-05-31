@@ -389,7 +389,8 @@ bool operator==(const Field2D& a, const Field2D& b) {
   if (!a.isAllocated() || !b.isAllocated()) {
     return false;
   }
-  return min(abs(a - b)) < 1e-10;
+  Field2D diff = a - b;
+  return min(abs(diff)) < 1e-10;
 }
 
 std::ostream& operator<<(std::ostream& out, const Field2D& value) {

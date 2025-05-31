@@ -553,7 +553,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
                                   transform.get());
 
     // Compare calculated and loaded values
-    output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J - Jcalc)));
+    Field2D diff = J - Jcalc;
+    output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(diff)));
 
     communicate(J);
 
@@ -578,7 +579,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
     Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
                                     transform.get());
-    output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy - Bcalc)));
+    FieldMetric diff = Bxy - Bcalc;
+    output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(diff)));
   }
 
   // Check Bxy
@@ -759,8 +761,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false,
                                     transform.get());
 
+      FieldMetric diff = J - Jcalc;
       // Compare calculated and loaded values
-      output_warn.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
+      output_warn.write("\tMaximum difference in J is %e\n", max(abs(diff)));
 
       // Re-evaluate Bxy using new J
       Bxy = sqrt(g_22) / J;
@@ -785,7 +788,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,
                                       transform.get());
 
-      output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
+      FieldMetric diff = Bxy - Bcalc;
+      output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(diff)));
     }
 
     // Check Bxy
@@ -1029,7 +1033,7 @@ int Coordinates::geometry(bool recalculate_staggered,
   G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22)
           + 0.5 * g33 * DDY(g_33);
 
-  auto tmp = J * g12;
+  FieldMetric tmp = J * g12;
   communicate(tmp);
   G1 = (DDX(J * g11) + DDY(tmp) + DDZ(J * g13)) / J;
   tmp = J * g22;
@@ -1268,9 +1272,9 @@ int Coordinates::calcCovariant(const std::string& region) {
 
   output_info.write("\tLocal maximum error in diagonal inversion is {:e}\n", maxerr);
 
-  maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
-                   max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
-                   max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
+  maxerr = BOUTMAX(max(abs(FieldMetric{g_11 * g12 + g_12 * g22 + g_13 * g23})),
+                   max(abs(FieldMetric{g_11 * g13 + g_12 * g23 + g_13 * g33})),
+                   max(abs(FieldMetric{g_12 * g13 + g_22 * g23 + g_23 * g33})));
 
   output_info.write("\tLocal maximum error in off-diagonal inversion is {:e}\n", maxerr);
 
@@ -1324,9 +1328,9 @@ int Coordinates::calcContravariant(const std::string& region) {
 
   output_info.write("\tMaximum error in diagonal inversion is {:e}\n", maxerr);
 
-  maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
-                   max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
-                   max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
+  maxerr = BOUTMAX(max(abs(FieldMetric{g_11 * g12 + g_12 * g22 + g_13 * g23})),
+                   max(abs(FieldMetric{g_11 * g13 + g_12 * g23 + g_13 * g33})),
+                   max(abs(FieldMetric{g_12 * g13 + g_22 * g23 + g_23 * g33})));
 
   output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
   return 0;
@@ -1339,13 +1343,13 @@ int Coordinates::jacobian() {
   const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
   const bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
 
-  auto g = g11 * g22 * g33 + 2.0 * g12 * g13 * g23 - g11 * g23 * g23 - g22 * g13 * g13
-           - g33 * g12 * g12;
+  auto g = FieldMetric{g11 * g22 * g33 + 2.0 * g12 * g13 * g23 - g11 * g23 * g23
+                       - g22 * g13 * g13 - g33 * g12 * g12};
 
   // Check that g is positive
   bout::checkPositive(g, "The determinant of g^ij", "RGN_NOBNDRY");
 
-  J = 1. / sqrt(g);
+  J = 1. / sqrt(Field2D{g});
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
   J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false,

@@ -62,7 +62,7 @@ Field3D& Field3D::operator*=(const Field2D& rhs) {
   return *this;
 }
 
-#if 1
+#if 0
 // Provide the C++ wrapper for division of Field3D and Field2D
 Field3D operator/(const Field3D& lhs, const Field2D& rhs) {
   std::cout << "RUNNING operator "<< __FILE__ << " " << std::to_string(__LINE__) << "\n";
@@ -485,6 +485,7 @@ Field3D& Field3D::operator-=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for multiplication of Field2D and Field3D
+#if 0
 Field3D operator*(const Field2D& lhs, const Field3D& rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
@@ -507,6 +508,7 @@ Field3D operator*(const Field2D& lhs, const Field3D& rhs) {
   checkData(result);
   return result;
 }
+#endif
 
 // Provide the C++ wrapper for division of Field2D and Field3D
 Field3D operator/(const Field2D& lhs, const Field3D& rhs) {
@@ -581,6 +583,7 @@ Field3D operator-(const Field2D& lhs, const Field3D& rhs) {
 }
 
 // Provide the C++ wrapper for multiplication of Field2D and Field2D
+#if 0
 Field2D operator*(const Field2D& lhs, const Field2D& rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
@@ -596,6 +599,7 @@ Field2D operator*(const Field2D& lhs, const Field2D& rhs) {
   checkData(result);
   return result;
 }
+#endif
 
 // Provide the C++ operator to update Field2D by multiplication with Field2D
 Field2D& Field2D::operator*=(const Field2D& rhs) {
@@ -618,6 +622,7 @@ Field2D& Field2D::operator*=(const Field2D& rhs) {
   return *this;
 }
 
+#if 0
 // Provide the C++ wrapper for division of Field2D and Field2D
 Field2D operator/(const Field2D& lhs, const Field2D& rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
@@ -634,6 +639,7 @@ Field2D operator/(const Field2D& lhs, const Field2D& rhs) {
   checkData(result);
   return result;
 }
+#endif
 
 // Provide the C++ operator to update Field2D by division with Field2D
 Field2D& Field2D::operator/=(const Field2D& rhs) {
@@ -657,6 +663,7 @@ Field2D& Field2D::operator/=(const Field2D& rhs) {
 }
 
 // Provide the C++ wrapper for addition of Field2D and Field2D
+#if 0
 Field2D operator+(const Field2D& lhs, const Field2D& rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
@@ -672,6 +679,7 @@ Field2D operator+(const Field2D& lhs, const Field2D& rhs) {
   checkData(result);
   return result;
 }
+#endif
 
 // Provide the C++ operator to update Field2D by addition with Field2D
 Field2D& Field2D::operator+=(const Field2D& rhs) {
@@ -695,6 +703,7 @@ Field2D& Field2D::operator+=(const Field2D& rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of Field2D and Field2D
+#if 0
 Field2D operator-(const Field2D& lhs, const Field2D& rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
   ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
@@ -710,6 +719,7 @@ Field2D operator-(const Field2D& lhs, const Field2D& rhs) {
   checkData(result);
   return result;
 }
+#endif
 
 // Provide the C++ operator to update Field2D by subtraction with Field2D
 Field2D& Field2D::operator-=(const Field2D& rhs) {
@@ -1643,6 +1653,7 @@ FieldPerp& FieldPerp::operator-=(const BoutReal rhs) {
   return *this;
 }
 
+#if 0
 // Provide the C++ wrapper for multiplication of BoutReal and Field3D
 Field3D operator*(const BoutReal lhs, const Field3D& rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
@@ -1660,6 +1671,7 @@ Field3D operator*(const BoutReal lhs, const Field3D& rhs) {
   checkData(result);
   return result;
 }
+#endif
 
 // Provide the C++ wrapper for division of BoutReal and Field3D
 Field3D operator/(const BoutReal lhs, const Field3D& rhs) {

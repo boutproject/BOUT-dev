@@ -1793,7 +1793,7 @@ public:
       // Calculate coefficient.
 
       hyper_mu_x = hyperviscos * metric->g_11 * SQ(metric->dx)
-                   * abs(metric->g11 * D2DX2(U)) / (abs(U) + 1e-3);
+                   * abs(Field3D{metric->g11 * D2DX2(U)}) / (abs(U) + 1e-3);
       hyper_mu_x.applyBoundary("dirichlet"); // Set to zero on all boundaries
 
       ddt(U) += hyper_mu_x * metric->g11 * D2DX2(U);
@@ -1840,7 +1840,8 @@ public:
       ddt(U) -= 0.5 * Upara2 * bracket(Pi0, Dperp2Phi, bm_exb) / B0;
       Field3D B0phi = B0 * phi;
       mesh->communicate(B0phi);
-      Field3D B0phi0 = B0 * phi0;
+      Field2D res = B0 * phi0;
+      Field3D B0phi0 = res;
       mesh->communicate(B0phi0);
       ddt(U) += 0.5 * Upara2 * bracket(B0phi, Dperp2Pi0, bm_exb) / B0;
       ddt(U) += 0.5 * Upara2 * bracket(B0phi0, Dperp2Pi, bm_exb) / B0;

@@ -1,18 +1,46 @@
 #pragma once
-#include "bout/array.hxx"
-#include <unordered_map>
 #ifndef BOUT_FIELDOPS_HXX
 #define BOUT_FIELDOPS_HXX
 
+#include "bout/array.hxx"
 #include "bout/bout_types.hxx"
 
 #include <cuda_runtime.h>
 #include <optional>
+#include <type_traits>
+#include <unordered_map>
 
 class Mesh;
 class Field3D;
+class Field2D;
 
-#include <type_traits>
+template <typename T>
+struct is_expr_field2d : std::false_type {};
+
+template <typename T>
+inline constexpr bool is_expr_field2d_v = is_expr_field2d<std::decay_t<T>>::value;
+
+// Base template: nothing is an expression by default
+template <typename T>
+struct is_expr_field3d : std::false_type {};
+
+// Helper variable template
+template <typename T>
+inline constexpr bool is_expr_field3d_v = is_expr_field3d<std::decay_t<T>>::value;
+
+template <typename T>
+struct is_expr_boutreal : std::false_type {};
+
+template <typename T>
+inline constexpr bool is_expr_boutreal_v = is_expr_boutreal<std::decay_t<T>>::value;
+
+template <>
+struct is_expr_boutreal<BoutReal> : std::true_type {};
+
+template <typename T>
+struct is_expr_boutreal<Constant<T>>
+    : std::integral_constant<bool, is_expr_boutreal_v<std::decay_t<T>>> {};
+
 
 namespace bout {
 namespace op {
@@ -144,6 +172,9 @@ struct BinaryExpr {
     //}
   }
 
+  BinaryExpr& operator=(BinaryExpr const&) = delete;
+  BinaryExpr& operator=(BinaryExpr&&) = delete;
+
   inline int size() const { return indices.size(); }
   inline BoutReal operator()(int idx) const {
     return f(idx, lhs, rhs); // single‐pass fusion
@@ -156,11 +187,13 @@ struct BinaryExpr {
     const int* indices;
     int num_indices;
     Func f;
-    int scale = 1;
+    int mul = 1;
+    int div = 1;
     int offset = 0;
 
-    View& setScale(int s) {
-      scale = s;
+    View& setScale(int mul, int div) {
+      this->mul = mul;
+      this->div = div;
       return *this;
     }
     View& setOffset(int o) {
@@ -171,7 +204,7 @@ struct BinaryExpr {
     __device__ __forceinline__ int size() const { return num_indices; }
     __device__ __forceinline__ int regionIdx(int idx) const { return indices[idx]; }
     __device__ __forceinline__ BoutReal operator()(int idx) const {
-      return f(idx, lhs, rhs); // single‐pass fusion
+      return f((idx * mul) / div, lhs, rhs); // single‐pass fusion
       //return f(lhs(idx), rhs(idx)); // single‐pass fusion
     }
   };

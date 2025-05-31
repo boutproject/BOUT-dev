@@ -140,4 +140,15 @@ struct enumWrapper {
 /// Boundary condition function
 using FuncPtr = BoutReal (*)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
 
+template<typename T>
+struct Constant {
+  T val;
+  struct View {
+    T v;
+   View(T v) : v(v) {}
+    __device__ T operator()(int) const { return v; }
+  };
+  operator View() const { return {val}; }
+};
+
 #endif // BOUT_TYPES_H
