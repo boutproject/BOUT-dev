@@ -90,29 +90,6 @@ FieldPerp operator-(const Field3D& lhs, const FieldPerp& rhs) {
   return result;
 }
 
-#if 0
-// Provide the C++ operator to update Field2D by division with Field2D
-Field2D& Field2D::operator/=(const Field2D& rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  // only if data is unique we update the field
-  // otherwise just call the non-inplace version
-  if (data.unique()) {
-    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
-
-    checkData(*this);
-    checkData(rhs);
-
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
-
-    checkData(*this);
-
-  } else {
-    (*this) = (*this) / rhs;
-  }
-  return *this;
-}
-#endif
-
 // Provide the C++ wrapper for multiplication of Field2D and FieldPerp
 FieldPerp operator*(const Field2D& lhs, const FieldPerp& rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
@@ -196,50 +173,6 @@ FieldPerp operator-(const Field2D& lhs, const FieldPerp& rhs) {
   checkData(result);
   return result;
 }
-
-#if 0
-// Provide the C++ operator to update Field2D by addition with BoutReal
-Field2D& Field2D::operator+=(const BoutReal rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  // only if data is unique we update the field
-  // otherwise just call the non-inplace version
-  if (data.unique()) {
-
-    checkData(*this);
-    checkData(rhs);
-
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
-
-    checkData(*this);
-
-  } else {
-    (*this) = (*this) + rhs;
-  }
-  return *this;
-}
-#endif
-
-#if 0
-// Provide the C++ operator to update Field2D by subtraction with BoutReal
-Field2D& Field2D::operator-=(const BoutReal rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  // only if data is unique we update the field
-  // otherwise just call the non-inplace version
-  if (data.unique()) {
-
-    checkData(*this);
-    checkData(rhs);
-
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
-
-    checkData(*this);
-
-  } else {
-    (*this) = (*this) - rhs;
-  }
-  return *this;
-}
-#endif
 
 // Provide the C++ wrapper for multiplication of FieldPerp and Field3D
 FieldPerp operator*(const FieldPerp& lhs, const Field3D& rhs) {
