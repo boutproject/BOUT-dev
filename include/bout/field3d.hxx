@@ -676,148 +676,33 @@ FieldPerp operator-(const Field3D& lhs, const FieldPerp& rhs);
 FieldPerp operator*(const Field3D& lhs, const FieldPerp& rhs);
 FieldPerp operator/(const Field3D& lhs, const FieldPerp& rhs);
 
-template <typename L, typename R,
-          typename = std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>>>
-BinaryExpr<L, R, bout::op::Add> operator+(const L& lhs, const R& rhs) {
-  auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
+#define FIELD3D_FIELD3D_FIELD3D_OP(OP_SYM, OP_TYPE)                                    \
+  template <typename L, typename R,                                                    \
+            typename = std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>>> \
+  BinaryExpr<L, R, bout::op::OP_TYPE> operator OP_SYM(const L & lhs, const R & rhs) {  \
+    auto regionID =                                                                    \
+        lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());          \
+    return BinaryExpr<L, R, bout::op::OP_TYPE>{                                        \
+        static_cast<typename L::View>(lhs),                                            \
+        static_cast<typename R::View>(rhs),                                            \
+        bout::op::OP_TYPE{},                                                           \
+        lhs.getMesh(),                                                                 \
+        lhs.getLocation(),                                                             \
+        lhs.getDirections(),                                                           \
+        regionID,                                                                      \
+        (regionID.has_value() ? lhs.getMesh()->getRegion(regionID.value())             \
+                              : lhs.getMesh()->getRegion("RGN_ALL"))};                 \
+  }
 
-  //std::cout << "RUNNING operator+ using BinaryExpr with CUDA" << "\n";
-  return BinaryExpr<L, R, bout::op::Add>{static_cast<typename L::View>(lhs),
-                                         static_cast<typename R::View>(rhs),
-                                         bout::op::Add{},
-                                         lhs.getMesh(),
-                                         lhs.getLocation(),
-                                         lhs.getDirections(),
-                                         regionID,
-                                         (regionID.has_value()
-                                              ? lhs.getMesh()->getRegion(regionID.value())
-                                              : lhs.getMesh()->getRegion("RGN_ALL"))};
-}
-
-template <typename L, typename R,
-          typename = std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>>>
-BinaryExpr<L, R, bout::op::Sub> operator-(const L& lhs, const R& rhs) {
-  auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
-
-  //std::cout << "RUNNING operator- using BinaryExpr with CUDA" << "\n";
-  return BinaryExpr<L, R, bout::op::Sub>{static_cast<typename L::View>(lhs),
-                                         static_cast<typename R::View>(rhs),
-                                         bout::op::Sub{},
-                                         lhs.getMesh(),
-                                         lhs.getLocation(),
-                                         lhs.getDirections(),
-                                         regionID,
-                                         (regionID.has_value()
-                                              ? lhs.getMesh()->getRegion(regionID.value())
-                                              : lhs.getMesh()->getRegion("RGN_ALL"))};
-}
-
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<L, R, bout::op::Mul>>
-operator*(const L& lhs, const R& rhs) {
-  auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
-
-  //std::cout << "RUNNING operator* using BinaryExpr with CUDA" << "\n";
-  return BinaryExpr<L, R, bout::op::Mul>{static_cast<typename L::View>(lhs),
-                                         static_cast<typename R::View>(rhs),
-                                         bout::op::Mul{},
-                                         lhs.getMesh(),
-                                         lhs.getLocation(),
-                                         lhs.getDirections(),
-                                         regionID,
-                                         (regionID.has_value()
-                                              ? lhs.getMesh()->getRegion(regionID.value())
-                                              : lhs.getMesh()->getRegion("RGN_ALL"))};
-}
-
-template <typename L, typename R,
-          typename = std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>>>
-BinaryExpr<L, R, bout::op::Div> operator/(const L& lhs, const R& rhs) {
-  auto regionID = lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());
-
-  //std::cout << "RUNNING operator/ using BinaryExpr with CUDA" << "\n";
-  return BinaryExpr<L, R, bout::op::Div>{static_cast<typename L::View>(lhs),
-                                         static_cast<typename R::View>(rhs),
-                                         bout::op::Div{},
-                                         lhs.getMesh(),
-                                         lhs.getLocation(),
-                                         lhs.getDirections(),
-                                         regionID,
-                                         (regionID.has_value()
-                                              ? lhs.getMesh()->getRegion(regionID.value())
-                                              : lhs.getMesh()->getRegion("RGN_ALL"))};
-}
+FIELD3D_FIELD3D_FIELD3D_OP(+, Add)
+FIELD3D_FIELD3D_FIELD3D_OP(-, Sub)
+FIELD3D_FIELD3D_FIELD3D_OP(*, Mul)
+FIELD3D_FIELD3D_FIELD3D_OP(/, Div)
 
 //Field3D operator+(const Field3D& lhs, const Field2D& rhs);
-#if 0
-template <typename L, typename R,
-          std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
-                           BinaryExpr<L, R, bout::op::Add>>>
-BinaryExpr<L, R, bout::op::Add> operator+(const L& lhs, const R& rhs) {
-  //static_assert(always_false<L> || always_false<R>, "Hello");
-  auto regionID = lhs.getRegionID();
-
-  std::cout << "RUNNING Field3D + Field2D using BinaryExpr with CUDA" << "\n";
-  int mesh_nz = lhs.getMesh()->LocalNz;
-
-  return BinaryExpr{static_cast<typename L::View>(lhs),
-                    static_cast<typename R::View>(rhs).setScale(1, mesh_nz),
-                    bout::op::Add{},
-                    lhs.getMesh(),
-                    lhs.getLocation(),
-                    lhs.getDirections(),
-                    regionID,
-                    rhs.getRegion("RGN_ALL")};
-}
-#endif
 //Field3D operator-(const Field3D& lhs, const Field2D& rhs);
 //Field3D operator*(const Field3D& lhs, const Field2D& rhs);
-#if 0
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<L, R, bout::op::Mul>>
-operator*(const L& lhs, const R& rhs) {
-  //static_assert(always_false<L> || always_false<R>, "Hello");
-  auto regionID = lhs.getRegionID();
-
-  //std::cout << "RUNNING Field3D * Field2D using BinaryExpr with CUDA" << "\n";
-  int mesh_nz = lhs.getMesh()->LocalNz;
-
-  return BinaryExpr<L, R, bout::op::Mul>{
-      static_cast<typename L::View>(lhs),
-      static_cast<typename R::View>(rhs).setScale(1, mesh_nz),
-      bout::op::Mul{},
-      lhs.getMesh(),
-      lhs.getLocation(),
-      lhs.getDirections(),
-      regionID,
-      lhs.getMesh()->getRegion("RGN_ALL")};
-}
-#endif
 //Field3D operator/(const Field3D& lhs, const Field2D& rhs);
-#if 0
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
-                 BinaryExpr<L, R, bout::op::Div>>
-operator/(const L& lhs, const R& rhs) {
-  //static_assert(always_false<L> || always_false<R>, "Hello");
-  auto regionID = lhs.getRegionID();
-
-  //std::cout << "RUNNING Field3D * Field2D using BinaryExpr with CUDA" << "\n";
-  int mesh_nz = lhs.getMesh()->LocalNz;
-
-  return BinaryExpr<L, R, bout::op::Div>{
-      static_cast<typename L::View>(lhs),
-      static_cast<typename R::View>(rhs).setScale(1, mesh_nz),
-      bout::op::Div{},
-      lhs.getMesh(),
-      lhs.getLocation(),
-      lhs.getDirections(),
-      regionID,
-      lhs.getMesh()->getRegion("RGN_ALL")};
-}
-#endif
 
 #define FIELD3D_FIELD3D_FIELD2D_OP(OP_SYM, OP_TYPE)                                      \
   template <typename L, typename R>                                                      \

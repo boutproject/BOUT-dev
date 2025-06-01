@@ -1280,6 +1280,7 @@ FieldPerp& FieldPerp::operator-=(const BoutReal rhs) {
   return *this;
 }
 
+#if 0
 // Provide the C++ wrapper for addition of BoutReal and Field2D
 Field2D operator+(const BoutReal lhs, const Field2D& rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
@@ -1295,6 +1296,7 @@ Field2D operator+(const BoutReal lhs, const Field2D& rhs) {
   checkData(result);
   return result;
 }
+#endif
 
 // Provide the C++ wrapper for multiplication of BoutReal and FieldPerp
 FieldPerp operator*(const BoutReal lhs, const FieldPerp& rhs) {

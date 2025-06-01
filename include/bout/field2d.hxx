@@ -538,7 +538,8 @@ operator/(const L& lhs, R rhs) {
       lhs.getMesh()->getRegion2D("RGN_ALL")};
 }
 
-Field2D operator+(BoutReal lhs, const Field2D& rhs);
+#if 0
+//Field2D operator+(BoutReal lhs, const Field2D& rhs);
 //Field2D operator-(BoutReal lhs, const Field2D& rhs);
 template <typename L, typename R>
 std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,
@@ -588,6 +589,28 @@ operator/(L lhs, const R& rhs) {
       std::nullopt,
       rhs.getMesh()->getRegion2D("RGN_ALL")};
 }
+#endif
+
+#define FIELD2D_BOUTREAL_FIELD2D_OP(OP_SYM, OP_TYPE)              \
+  template <typename L, typename R>                               \
+  std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>, \
+                   BinaryExpr<Constant<L>, R, bout::op::OP_TYPE>> \
+  operator OP_SYM(L lhs, const R & rhs) {                         \
+    return BinaryExpr<Constant<L>, R, bout::op::OP_TYPE>{         \
+        static_cast<typename Constant<L>::View>(lhs),             \
+        static_cast<typename R::View>(rhs),                       \
+        bout::op::OP_TYPE{},                                      \
+        rhs.getMesh(),                                            \
+        rhs.getLocation(),                                        \
+        rhs.getDirections(),                                      \
+        std::nullopt,                                             \
+        rhs.getMesh()->getRegion2D("RGN_ALL")};                   \
+  }
+
+FIELD2D_BOUTREAL_FIELD2D_OP(+, Add)
+FIELD2D_BOUTREAL_FIELD2D_OP(-, Sub)
+FIELD2D_BOUTREAL_FIELD2D_OP(*, Mul)
+FIELD2D_BOUTREAL_FIELD2D_OP(/, Div)
 
 /*!
  * Unary minus. Returns the negative of given field,
