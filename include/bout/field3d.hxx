@@ -548,7 +548,25 @@ public:
     return *this;
   }
   Field3D& operator*=(const Field2D& rhs);
-  Field3D& operator*=(BoutReal rhs);
+  //Field3D& operator*=(BoutReal rhs);
+  // here1
+  template <typename R, typename = std::enable_if_t<is_expr_constant_v<R>>>
+  Field3D& operator*=(R rhs) {
+    //printf("RUNNING operator*= with CUDA\n");
+    if (data.unique()) {
+      // Delete existing parallel slices. We don't copy parallel slices, so any
+      // that currently exist will be incorrect.
+      clearParallelSlices();
+
+      auto BE = (*this) * rhs;
+      regionID = BE.getRegionID();
+      BE.evaluate(&data[0]);
+    } else {
+      (*this) = (*this) * rhs;
+    }
+
+    return *this;
+  }
   ///@}
 
   /// Division operators
@@ -799,17 +817,51 @@ operator/(const L& lhs, const R& rhs) {
 
 Field3D operator+(const Field3D& lhs, BoutReal rhs);
 Field3D operator-(const Field3D& lhs, BoutReal rhs);
-Field3D operator*(const Field3D& lhs, BoutReal rhs);
+//Field3D operator*(const Field3D& lhs, BoutReal rhs);
+//here2
+template <typename L, typename R>
+std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<L, Constant<R>, bout::op::Mul>>
+operator*(const L& lhs, R rhs) {
+  //static_assert(always_false<L> || always_false<R>, "Hello");
+  auto regionID = lhs.getRegionID();
+
+  return BinaryExpr<L, Constant<R>, bout::op::Mul>{
+      static_cast<typename L::View>(lhs),
+      static_cast<typename Constant<R>::View>(rhs),
+      bout::op::Mul{},
+      lhs.getMesh(),
+      lhs.getLocation(),
+      lhs.getDirections(),
+      regionID,
+      lhs.getMesh()->getRegion("RGN_ALL")};
+}
 Field3D operator/(const Field3D& lhs, BoutReal rhs);
 
-Field3D operator+(BoutReal lhs, const Field3D& rhs);
+//Field3D operator+(BoutReal lhs, const Field3D& rhs);
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
+                 BinaryExpr<Constant<L>, R, bout::op::Add>>
+operator+(const L& lhs, const R& rhs) {
+  auto regionID = rhs.getRegionID();
+
+  return BinaryExpr<Constant<L>, R, bout::op::Add>{
+      static_cast<typename Constant<L>::View>(lhs),
+      static_cast<typename R::View>(rhs),
+      bout::op::Add{},
+      rhs.getMesh(),
+      rhs.getLocation(),
+      rhs.getDirections(),
+      regionID,
+      rhs.getMesh()->getRegion("RGN_ALL")};
+}
 Field3D operator-(BoutReal lhs, const Field3D& rhs);
+#if 0
 //Field3D operator*(BoutReal lhs, const Field3D& rhs);
 template <typename L, typename R>
 std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
                  BinaryExpr<Constant<L>, R, bout::op::Mul>>
 operator*(const L& lhs, const R& rhs) {
-  //static_assert(always_false<L> || always_false<R>, "Hello");
   auto regionID = rhs.getRegionID();
 
   return BinaryExpr<Constant<L>, R, bout::op::Mul>{
@@ -822,8 +874,28 @@ operator*(const L& lhs, const R& rhs) {
       regionID,
       rhs.getMesh()->getRegion("RGN_ALL")};
 }
+#endif
 
 Field3D operator/(BoutReal lhs, const Field3D& rhs);
+
+#define FIELD3D_BOUTREAL_OP(OP_SYM, OP_KIND)                      \
+  template <typename L, typename R>                               \
+  std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>, \
+                   BinaryExpr<Constant<L>, R, bout::op::OP_KIND>> \
+  operator OP_SYM(const L & lhs, const R & rhs) {                \
+    auto regionID = rhs.getRegionID();                            \
+    return BinaryExpr<Constant<L>, R, bout::op::OP_KIND>{         \
+        static_cast<typename Constant<L>::View>(lhs),             \
+        static_cast<typename R::View>(rhs),                       \
+        bout::op::OP_KIND{},                                      \
+        rhs.getMesh(),                                            \
+        rhs.getLocation(),                                        \
+        rhs.getDirections(),                                      \
+        regionID,                                                 \
+        rhs.getMesh()->getRegion("RGN_ALL")};                     \
+  }
+
+FIELD3D_BOUTREAL_OP(*, Mul)
 
 /*!
  * Unary minus. Returns the negative of given field,

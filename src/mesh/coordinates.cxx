@@ -1102,7 +1102,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     if (localmesh->get(d2x, "d2x" + suffix, 0.0, false, location)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
-      d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
+      d1_dx = bout::derivatives::index::DDX(FieldMetric{1. / dx}); // d/di(1/dx)
 
       communicate(d1_dx);
       d1_dx =
@@ -1156,7 +1156,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     if (localmesh->get(d2x, "d2x", 0.0, false)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
-      d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
+      d1_dx = bout::derivatives::index::DDX(FieldMetric{1. / dx}); // d/di(1/dx)
 
       communicate(d1_dx);
       d1_dx =

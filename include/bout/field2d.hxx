@@ -270,17 +270,66 @@ public:
   }
 
   /// In-place addition. Copy-on-write used if data is shared
-  Field2D& operator+=(const Field2D& rhs);
+  //Field2D& operator+=(const Field2D& rhs);
+  template <typename R, typename = std::enable_if_t<is_expr_field2d_v<R>>>
+  Field2D& operator+=(const R& rhs) {
+    //printf("RUNNING operator+= with CUDA\n");
+    if (data.unique()) {
+      auto BE = (*this) + rhs;
+      BE.evaluate(&data[0]);
+    } else {
+      (*this) = (*this) * rhs;
+    }
+
+    return *this;
+  }
   /// In-place addition. Copy-on-write used if data is shared
   Field2D& operator+=(BoutReal rhs);
   /// In-place subtraction. Copy-on-write used if data is shared
-  Field2D& operator-=(const Field2D& rhs);
+  //Field2D& operator-=(const Field2D& rhs);
+  //here1
+  template <typename R, typename = std::enable_if_t<is_expr_field2d_v<R>>>
+  Field2D& operator-=(const R& rhs) {
+    //printf("RUNNING operator+= with CUDA\n");
+    if (data.unique()) {
+      auto BE = (*this) - rhs;
+      BE.evaluate(&data[0]);
+    } else {
+      (*this) = (*this) * rhs;
+    }
+
+    return *this;
+  }
   /// In-place subtraction. Copy-on-write used if data is shared
   Field2D& operator-=(BoutReal rhs);
   /// In-place multiplication. Copy-on-write used if data is shared
-  Field2D& operator*=(const Field2D& rhs);
+  //Field2D& operator*=(const Field2D& rhs);
+  template <typename R, typename = std::enable_if_t<is_expr_field2d_v<R>>>
+  Field2D& operator*=(const R& rhs) {
+    //printf("RUNNING operator+= with CUDA\n");
+    if (data.unique()) {
+      auto BE = (*this) * rhs;
+      BE.evaluate(&data[0]);
+    } else {
+      (*this) = (*this) * rhs;
+    }
+
+    return *this;
+  }
   /// In-place multiplication. Copy-on-write used if data is shared
-  Field2D& operator*=(BoutReal rhs);
+  //Field2D& operator*=(BoutReal rhs);
+  template <typename R, typename = std::enable_if_t<is_expr_constant_v<R>>>
+  Field2D& operator*=(R rhs) {
+    //printf("RUNNING operator+= with CUDA\n");
+    if (data.unique()) {
+      auto BE = (*this) * rhs;
+      BE.evaluate(&data[0]);
+    } else {
+      (*this) = (*this) * rhs;
+    }
+
+    return *this;
+  }
   /// In-place division. Copy-on-write used if data is shared
   Field2D& operator/=(const Field2D& rhs);
   /// In-place division. Copy-on-write used if data is shared
@@ -444,7 +493,6 @@ Field3D operator/(const Field2D& lhs, const Field3D& rhs);
 
 Field2D operator+(const Field2D& lhs, BoutReal rhs);
 //Field2D operator-(const Field2D& lhs, BoutReal rhs);
-#if 1
 template <typename L, typename R>
 std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>,
                  BinaryExpr<L, Constant<R>, bout::op::Sub>>
@@ -459,14 +507,56 @@ operator-(const L& lhs, R rhs) {
       std::nullopt,
       lhs.getMesh()->getRegion2D("RGN_ALL")};
 }
-#endif
-Field2D operator*(const Field2D& lhs, BoutReal rhs);
-Field2D operator/(const Field2D& lhs, BoutReal rhs);
+//Field2D operator*(const Field2D& lhs, BoutReal rhs);
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<L, Constant<R>, bout::op::Mul>>
+operator*(const L& lhs, R rhs) {
+  return BinaryExpr<L, Constant<R>, bout::op::Mul>{
+      static_cast<typename L::View>(lhs),
+      static_cast<typename Constant<R>::View>(rhs),
+      bout::op::Mul{},
+      lhs.getMesh(),
+      lhs.getLocation(),
+      lhs.getDirections(),
+      std::nullopt,
+      lhs.getMesh()->getRegion2D("RGN_ALL")};
+}
+//Field2D operator/(const Field2D& lhs, BoutReal rhs);
+template <typename L, typename R>
+std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>,
+                 BinaryExpr<L, Constant<R>, bout::op::Div>>
+operator/(const L& lhs, R rhs) {
+  return BinaryExpr<L, Constant<R>, bout::op::Div>{
+      static_cast<typename L::View>(lhs),
+      static_cast<typename Constant<R>::View>(rhs),
+      bout::op::Div{},
+      lhs.getMesh(),
+      lhs.getLocation(),
+      lhs.getDirections(),
+      std::nullopt,
+      lhs.getMesh()->getRegion2D("RGN_ALL")};
+}
 
 Field2D operator+(BoutReal lhs, const Field2D& rhs);
-Field2D operator-(BoutReal lhs, const Field2D& rhs);
+//Field2D operator-(BoutReal lhs, const Field2D& rhs);
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Constant<L>, R, bout::op::Sub>>
+operator-(L lhs, const R& rhs) {
+  //static_assert(always_false<L> || always_false<R>, "Hello");
+
+  return BinaryExpr<Constant<L>, R, bout::op::Sub>{
+      static_cast<typename Constant<L>::View>(lhs),
+      static_cast<typename R::View>(rhs),
+      bout::op::Sub{},
+      rhs.getMesh(),
+      rhs.getLocation(),
+      rhs.getDirections(),
+      std::nullopt,
+      rhs.getMesh()->getRegion2D("RGN_ALL")};
+}
 //Field2D operator*(BoutReal lhs, const Field2D& rhs);
-#if 1
 template <typename L, typename R>
 std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,
                  BinaryExpr<Constant<L>, R, bout::op::Mul>>
@@ -483,8 +573,21 @@ operator*(L lhs, const R& rhs) {
       std::nullopt,
       rhs.getMesh()->getRegion2D("RGN_ALL")};
 }
-#endif
-Field2D operator/(BoutReal lhs, const Field2D& rhs);
+//Field2D operator/(BoutReal lhs, const Field2D& rhs);
+template <typename L, typename R>
+std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,
+                 BinaryExpr<Constant<L>, R, bout::op::Div>>
+operator/(L lhs, const R& rhs) {
+  return BinaryExpr<Constant<L>, R, bout::op::Div>{
+      static_cast<typename Constant<L>::View>(lhs),
+      static_cast<typename R::View>(rhs),
+      bout::op::Div{},
+      rhs.getMesh(),
+      rhs.getLocation(),
+      rhs.getDirections(),
+      std::nullopt,
+      rhs.getMesh()->getRegion2D("RGN_ALL")};
+}
 
 /*!
  * Unary minus. Returns the negative of given field,

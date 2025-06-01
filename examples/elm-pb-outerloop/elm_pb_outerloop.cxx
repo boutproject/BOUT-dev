@@ -1031,7 +1031,8 @@ public:
     vacuum_trans *= pnorm;
 
     // Transitions from 0 in core to 1 in vacuum
-    vac_mask = (1.0 - tanh((P0 - vacuum_pressure) / vacuum_trans)) / 2.0;
+    Field2D tanh_res = tanh(Field2D{(P0 - vacuum_pressure) / vacuum_trans});
+    vac_mask = (1.0 - tanh_res) / 2.0;
 
     if (spitzer_resist) {
       // Use Spitzer resistivity

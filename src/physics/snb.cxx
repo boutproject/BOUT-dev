@@ -14,7 +14,7 @@ Field3D HeatFluxSNB::divHeatFlux(const Field3D& Te, const Field3D& Ne,
   Field3D thermal_speed = sqrt(2. * SI::qe * Te / SI::Me);
 
   BoutReal Y = SQ(SQ(SI::qe) / (SI::e0 * SI::Me)) / (4 * PI);
-  Field3D coulomb_log = 6.6 - 0.5 * log(Ne * 1e-20) + 1.5 * log(Te);
+  Field3D coulomb_log = 6.6 - 0.5 * log(Field3D{Ne * 1e-20}) + 1.5 * log(Te);
 
   // Thermal electron-electron mean free path [m]
   Field3D lambda_ee_T = pow(thermal_speed, 4) / (Y * Ne * coulomb_log);

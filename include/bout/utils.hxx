@@ -426,10 +426,7 @@ inline auto SQ(const T& t) {
   return t * t;
 }
 
-template <>
-BOUT_HOST_DEVICE inline auto SQ(const BoutReal& t) {
-  return t * t;
-}
+BOUT_HOST_DEVICE inline BoutReal SQ(const BoutReal& t) { return t * t; }
 
 /*!
  * Round \p x to the nearest integer
