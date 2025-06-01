@@ -1283,7 +1283,7 @@ public:
     ////////////////////////////////////////////
     // Transitions from 0 in core to 1 in vacuum
     if (nonlinear) {
-      vac_mask = (1.0 - tanh(((P0 + P) - vacuum_pressure) / vacuum_trans)) / 2.0;
+      vac_mask = (1.0 - tanh(Field3D{((P0 + P) - vacuum_pressure) / vacuum_trans})) / 2.0;
 
       // Update resistivity
       if (spitzer_resist) {

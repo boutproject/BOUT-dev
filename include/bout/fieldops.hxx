@@ -38,12 +38,7 @@ template <typename T>
 struct is_expr_constant<Constant<T>>
     : std::integral_constant<bool, is_expr_constant_v<std::decay_t<T>>> {};
 
-// After the specialization…
-static_assert(is_expr_constant_v<Constant<int>> == true,
-              "Constant<int> should be recognized as an expr_constant!");
-static_assert(is_expr_constant_v<Constant<float>> == true,
-              "Constant<float> should be recognized as an expr_constant!");
-
+constexpr int THREADS = 256;
 namespace bout {
 namespace op {
 struct Assign {
@@ -99,8 +94,7 @@ struct Add {
 };
 
 template <typename Expr>
-__global__ __launch_bounds__(256) static void evaluatorExpr(BoutReal* out,
-                                                            const Expr expr) {
+__global__ void __launch_bounds__(THREADS) evaluatorExpr(BoutReal* out, const Expr expr) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
   if (tid >= expr.size()) {
     return;
@@ -197,13 +191,9 @@ struct BinaryExpr {
   operator View() const { return View{lhs, rhs, &indices[0], indices.size(), f}; }
 
   void evaluate(BoutReal* data) const {
-    constexpr int THREADS = 256;
     int blocks = (size() + THREADS - 1) / THREADS;
     evaluatorExpr<<<blocks, THREADS>>>(&data[0], static_cast<View>(*this));
     cudaDeviceSynchronize();
-    //for(int i=0; i<size(); ++i) {
-    //  data[regionIdx(i)] = f(i, lhs, rhs); // single‐pass fusion
-    //}
   }
 
   Mesh* getMesh() const { return mesh; }

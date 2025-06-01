@@ -749,7 +749,7 @@ BinaryExpr<L, R, bout::op::Div> operator/(const L& lhs, const R& rhs) {
                                               : lhs.getMesh()->getRegion("RGN_ALL"))};
 }
 
-Field3D operator+(const Field3D& lhs, const Field2D& rhs);
+//Field3D operator+(const Field3D& lhs, const Field2D& rhs);
 #if 0
 template <typename L, typename R,
           std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
@@ -771,8 +771,9 @@ BinaryExpr<L, R, bout::op::Add> operator+(const L& lhs, const R& rhs) {
                     rhs.getRegion("RGN_ALL")};
 }
 #endif
-Field3D operator-(const Field3D& lhs, const Field2D& rhs);
+//Field3D operator-(const Field3D& lhs, const Field2D& rhs);
 //Field3D operator*(const Field3D& lhs, const Field2D& rhs);
+#if 0
 template <typename L, typename R>
 std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
                  BinaryExpr<L, R, bout::op::Mul>>
@@ -793,7 +794,9 @@ operator*(const L& lhs, const R& rhs) {
       regionID,
       lhs.getMesh()->getRegion("RGN_ALL")};
 }
+#endif
 //Field3D operator/(const Field3D& lhs, const Field2D& rhs);
+#if 0
 template <typename L, typename R>
 std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,
                  BinaryExpr<L, R, bout::op::Div>>
@@ -814,80 +817,73 @@ operator/(const L& lhs, const R& rhs) {
       regionID,
       lhs.getMesh()->getRegion("RGN_ALL")};
 }
-
-Field3D operator+(const Field3D& lhs, BoutReal rhs);
-Field3D operator-(const Field3D& lhs, BoutReal rhs);
-//Field3D operator*(const Field3D& lhs, BoutReal rhs);
-//here2
-template <typename L, typename R>
-std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>,
-                 BinaryExpr<L, Constant<R>, bout::op::Mul>>
-operator*(const L& lhs, R rhs) {
-  //static_assert(always_false<L> || always_false<R>, "Hello");
-  auto regionID = lhs.getRegionID();
-
-  return BinaryExpr<L, Constant<R>, bout::op::Mul>{
-      static_cast<typename L::View>(lhs),
-      static_cast<typename Constant<R>::View>(rhs),
-      bout::op::Mul{},
-      lhs.getMesh(),
-      lhs.getLocation(),
-      lhs.getDirections(),
-      regionID,
-      lhs.getMesh()->getRegion("RGN_ALL")};
-}
-Field3D operator/(const Field3D& lhs, BoutReal rhs);
-
-//Field3D operator+(BoutReal lhs, const Field3D& rhs);
-template <typename L, typename R>
-std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<Constant<L>, R, bout::op::Add>>
-operator+(const L& lhs, const R& rhs) {
-  auto regionID = rhs.getRegionID();
-
-  return BinaryExpr<Constant<L>, R, bout::op::Add>{
-      static_cast<typename Constant<L>::View>(lhs),
-      static_cast<typename R::View>(rhs),
-      bout::op::Add{},
-      rhs.getMesh(),
-      rhs.getLocation(),
-      rhs.getDirections(),
-      regionID,
-      rhs.getMesh()->getRegion("RGN_ALL")};
-}
-Field3D operator-(BoutReal lhs, const Field3D& rhs);
-#if 0
-//Field3D operator*(BoutReal lhs, const Field3D& rhs);
-template <typename L, typename R>
-std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,
-                 BinaryExpr<Constant<L>, R, bout::op::Mul>>
-operator*(const L& lhs, const R& rhs) {
-  auto regionID = rhs.getRegionID();
-
-  return BinaryExpr<Constant<L>, R, bout::op::Mul>{
-      static_cast<typename Constant<L>::View>(lhs),
-      static_cast<typename R::View>(rhs),
-      bout::op::Mul{},
-      rhs.getMesh(),
-      rhs.getLocation(),
-      rhs.getDirections(),
-      regionID,
-      rhs.getMesh()->getRegion("RGN_ALL")};
-}
 #endif
 
-Field3D operator/(BoutReal lhs, const Field3D& rhs);
+#define FIELD3D_FIELD3D_FIELD2D_OP(OP_SYM, OP_TYPE)                                      \
+  template <typename L, typename R>                                                      \
+  std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,                         \
+                   BinaryExpr<L, R, bout::op::OP_TYPE>> operator OP_SYM(const L & lhs,   \
+                                                                        const R & rhs) { \
+    auto regionID = lhs.getRegionID();                                                   \
+    int mesh_nz = lhs.getMesh()->LocalNz;                                                \
+    return BinaryExpr<L, R, bout::op::OP_TYPE>{                                          \
+        static_cast<typename L::View>(lhs),                                              \
+        static_cast<typename R::View>(rhs).setScale(1, mesh_nz),                         \
+        bout::op::OP_TYPE{},                                                             \
+        lhs.getMesh(),                                                                   \
+        lhs.getLocation(),                                                               \
+        lhs.getDirections(),                                                             \
+        regionID,                                                                        \
+        lhs.getMesh()->getRegion("RGN_ALL")};                                            \
+  }
 
-#define FIELD3D_BOUTREAL_OP(OP_SYM, OP_KIND)                      \
+FIELD3D_FIELD3D_FIELD2D_OP(+, Add)
+FIELD3D_FIELD3D_FIELD2D_OP(-, Sub)
+FIELD3D_FIELD3D_FIELD2D_OP(*, Mul)
+FIELD3D_FIELD3D_FIELD2D_OP(/, Div)
+
+//Field3D operator+(const Field3D& lhs, BoutReal rhs);
+//Field3D operator-(const Field3D& lhs, BoutReal rhs);
+//Field3D operator*(const Field3D& lhs, BoutReal rhs);
+//Field3D operator/(const Field3D& lhs, BoutReal rhs);
+
+#define FIELD3D_FIELD3D_BOUTREAL_OP(OP_SYM, OP_TYPE)              \
+  template <typename L, typename R>                               \
+  std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>, \
+                   BinaryExpr<L, Constant<R>, bout::op::OP_TYPE>> \
+  operator OP_SYM(const L & lhs, R rhs) {                         \
+    auto regionID = lhs.getRegionID();                            \
+    return BinaryExpr<L, Constant<R>, bout::op::OP_TYPE>{         \
+        static_cast<typename L::View>(lhs),                       \
+        static_cast<typename Constant<R>::View>(rhs),             \
+        bout::op::OP_TYPE{},                                      \
+        lhs.getMesh(),                                            \
+        lhs.getLocation(),                                        \
+        lhs.getDirections(),                                      \
+        regionID,                                                 \
+        lhs.getMesh()->getRegion("RGN_ALL")};                     \
+  }
+
+FIELD3D_FIELD3D_BOUTREAL_OP(+, Add)
+FIELD3D_FIELD3D_BOUTREAL_OP(-, Sub)
+FIELD3D_FIELD3D_BOUTREAL_OP(*, Mul)
+FIELD3D_FIELD3D_BOUTREAL_OP(/, Div)
+
+//Field3D operator+(BoutReal lhs, const Field3D& rhs);
+//Field3D operator-(BoutReal lhs, const Field3D& rhs);
+//Field3D operator*(BoutReal lhs, const Field3D& rhs);
+//Field3D operator/(BoutReal lhs, const Field3D& rhs);
+
+#define FIELD3D_BOUTREAL_FIELD3D_OP(OP_SYM, OP_TYPE)              \
   template <typename L, typename R>                               \
   std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>, \
-                   BinaryExpr<Constant<L>, R, bout::op::OP_KIND>> \
-  operator OP_SYM(const L & lhs, const R & rhs) {                \
+                   BinaryExpr<Constant<L>, R, bout::op::OP_TYPE>> \
+  operator OP_SYM(const L & lhs, const R & rhs) {                 \
     auto regionID = rhs.getRegionID();                            \
-    return BinaryExpr<Constant<L>, R, bout::op::OP_KIND>{         \
+    return BinaryExpr<Constant<L>, R, bout::op::OP_TYPE>{         \
         static_cast<typename Constant<L>::View>(lhs),             \
         static_cast<typename R::View>(rhs),                       \
-        bout::op::OP_KIND{},                                      \
+        bout::op::OP_TYPE{},                                      \
         rhs.getMesh(),                                            \
         rhs.getLocation(),                                        \
         rhs.getDirections(),                                      \
@@ -895,7 +891,10 @@ Field3D operator/(BoutReal lhs, const Field3D& rhs);
         rhs.getMesh()->getRegion("RGN_ALL")};                     \
   }
 
-FIELD3D_BOUTREAL_OP(*, Mul)
+FIELD3D_BOUTREAL_FIELD3D_OP(+, Add)
+FIELD3D_BOUTREAL_FIELD3D_OP(-, Sub)
+FIELD3D_BOUTREAL_FIELD3D_OP(*, Mul)
+FIELD3D_BOUTREAL_FIELD3D_OP(/, Div)
 
 /*!
  * Unary minus. Returns the negative of given field,

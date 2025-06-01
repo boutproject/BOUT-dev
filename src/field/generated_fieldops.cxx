@@ -6,32 +6,6 @@
 #include <bout/mesh.hxx>
 #include <bout/region.hxx>
 
-// Provide the C++ wrapper for multiplication of Field3D and Field2D
-#if 0
-Field3D operator*(const Field3D& lhs, const Field2D& rhs) {
-  std::cout << "RUNNING operator "<< __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
-
-  Field3D result{emptyFrom(lhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  result.setRegion(lhs.getRegionID());
-
-  Mesh* localmesh = lhs.getMesh();
-
-  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
-    const auto base_ind = localmesh->ind2Dto3D(index);
-    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
-      result[base_ind + jz] = lhs[base_ind + jz] * rhs[index];
-    }
-  }
-
-  checkData(result);
-  return result;
-}
-#endif
-
 // Provide the C++ operator to update Field3D by multiplication with Field2D
 Field3D& Field3D::operator*=(const Field2D& rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
@@ -63,65 +37,6 @@ Field3D& Field3D::operator*=(const Field2D& rhs) {
 }
 
 #if 0
-// Provide the C++ wrapper for division of Field3D and Field2D
-Field3D operator/(const Field3D& lhs, const Field2D& rhs) {
-  std::cout << "RUNNING operator "<< __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
-
-  Field3D result{emptyFrom(lhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  result.setRegion(lhs.getRegionID());
-
-  Mesh* localmesh = lhs.getMesh();
-
-  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
-    const auto base_ind = localmesh->ind2Dto3D(index);
-    const auto tmp = 1.0 / rhs[index];
-    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
-      result[base_ind + jz] = lhs[base_ind + jz] * tmp;
-    }
-  }
-
-  checkData(result);
-  return result;
-}
-#endif
-
-#if 0
-// Provide the C++ operator to update Field3D by division with Field2D
-Field3D& Field3D::operator/=(const Field2D& rhs) {
-  std::cout << "RUNNING operator "<< __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  // only if data is unique we update the field
-  // otherwise just call the non-inplace version
-  if (data.unique()) {
-    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
-
-    // Delete existing parallel slices. We don't copy parallel slices, so any
-    // that currently exist will be incorrect.
-    clearParallelSlices();
-
-    checkData(*this);
-    checkData(rhs);
-
-    BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
-      const auto base_ind = fieldmesh->ind2Dto3D(index);
-      const auto tmp = 1.0 / rhs[index];
-      for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
-        (*this)[base_ind + jz] *= tmp;
-      }
-    }
-
-    checkData(*this);
-
-  } else {
-    (*this) = (*this) / rhs;
-  }
-  return *this;
-}
-#endif
-
 // Provide the C++ wrapper for addition of Field3D and Field2D
 Field3D operator+(const Field3D& lhs, const Field2D& rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
@@ -145,6 +60,7 @@ Field3D operator+(const Field3D& lhs, const Field2D& rhs) {
   checkData(result);
   return result;
 }
+#endif
 
 // Provide the C++ operator to update Field3D by addition with Field2D
 Field3D& Field3D::operator+=(const Field2D& rhs) {
@@ -176,6 +92,7 @@ Field3D& Field3D::operator+=(const Field2D& rhs) {
   return *this;
 }
 
+#if 0
 // Provide the C++ wrapper for subtraction of Field3D and Field2D
 Field3D operator-(const Field3D& lhs, const Field2D& rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
@@ -199,6 +116,7 @@ Field3D operator-(const Field3D& lhs, const Field2D& rhs) {
   checkData(result);
   return result;
 }
+#endif
 
 // Provide the C++ operator to update Field3D by subtraction with Field2D
 Field3D& Field3D::operator-=(const Field2D& rhs) {
@@ -314,54 +232,7 @@ FieldPerp operator-(const Field3D& lhs, const FieldPerp& rhs) {
   return result;
 }
 
-// Provide the C++ wrapper for multiplication of Field3D and BoutReal
-// here2
 #if 0
-Field3D operator*(const Field3D& lhs, const BoutReal rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-
-  Field3D result{emptyFrom(lhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  result.setRegion(lhs.getRegionID());
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs[index] * rhs;
-  }
-
-  checkData(result);
-  return result;
-}
-#endif
-
-// Provide the C++ operator to update Field3D by multiplication with BoutReal
-// here1
-#if 0
-Field3D& Field3D::operator*=(const BoutReal rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  // only if data is unique we update the field
-  // otherwise just call the non-inplace version
-  if (data.unique()) {
-
-    // Delete existing parallel slices. We don't copy parallel slices, so any
-    // that currently exist will be incorrect.
-    clearParallelSlices();
-
-    checkData(*this);
-    checkData(rhs);
-
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
-
-    checkData(*this);
-
-  } else {
-    (*this) = (*this) * rhs;
-  }
-  return *this;
-}
-#endif
-
 // Provide the C++ wrapper for division of Field3D and BoutReal
 Field3D operator/(const Field3D& lhs, const BoutReal rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
@@ -380,6 +251,7 @@ Field3D operator/(const Field3D& lhs, const BoutReal rhs) {
   checkData(result);
   return result;
 }
+#endif
 
 // Provide the C++ operator to update Field3D by division with BoutReal
 Field3D& Field3D::operator/=(const BoutReal rhs) {
@@ -406,6 +278,7 @@ Field3D& Field3D::operator/=(const BoutReal rhs) {
   return *this;
 }
 
+#if 0
 // Provide the C++ wrapper for addition of Field3D and BoutReal
 Field3D operator+(const Field3D& lhs, const BoutReal rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
@@ -423,6 +296,7 @@ Field3D operator+(const Field3D& lhs, const BoutReal rhs) {
   checkData(result);
   return result;
 }
+#endif
 
 // Provide the C++ operator to update Field3D by addition with BoutReal
 Field3D& Field3D::operator+=(const BoutReal rhs) {
@@ -448,6 +322,7 @@ Field3D& Field3D::operator+=(const BoutReal rhs) {
   return *this;
 }
 
+#if 0
 // Provide the C++ wrapper for subtraction of Field3D and BoutReal
 Field3D operator-(const Field3D& lhs, const BoutReal rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
@@ -465,6 +340,7 @@ Field3D operator-(const Field3D& lhs, const BoutReal rhs) {
   checkData(result);
   return result;
 }
+#endif
 
 // Provide the C++ operator to update Field3D by subtraction with BoutReal
 Field3D& Field3D::operator-=(const BoutReal rhs) {
@@ -489,32 +365,6 @@ Field3D& Field3D::operator-=(const BoutReal rhs) {
   }
   return *this;
 }
-
-// Provide the C++ wrapper for multiplication of Field2D and Field3D
-#if 0
-Field3D operator*(const Field2D& lhs, const Field3D& rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
-
-  Field3D result{emptyFrom(rhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  result.setRegion(rhs.getRegionID());
-
-  Mesh* localmesh = lhs.getMesh();
-
-  BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
-    const auto base_ind = localmesh->ind2Dto3D(index);
-    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
-      result[base_ind + jz] = lhs[index] * rhs[base_ind + jz];
-    }
-  }
-
-  checkData(result);
-  return result;
-}
-#endif
 
 // Provide the C++ wrapper for division of Field2D and Field3D
 Field3D operator/(const Field2D& lhs, const Field3D& rhs) {
@@ -588,67 +438,6 @@ Field3D operator-(const Field2D& lhs, const Field3D& rhs) {
   return result;
 }
 
-// Provide the C++ wrapper for multiplication of Field2D and Field2D
-#if 0
-Field2D operator*(const Field2D& lhs, const Field2D& rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
-
-  Field2D result{emptyFrom(lhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs[index] * rhs[index];
-  }
-
-  checkData(result);
-  return result;
-}
-#endif
-
-#if 0
-// Provide the C++ operator to update Field2D by multiplication with Field2D
-Field2D& Field2D::operator*=(const Field2D& rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  // only if data is unique we update the field
-  // otherwise just call the non-inplace version
-  if (data.unique()) {
-    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
-
-    checkData(*this);
-    checkData(rhs);
-
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
-
-    checkData(*this);
-
-  } else {
-    (*this) = (*this) * rhs;
-  }
-  return *this;
-}
-#endif
-
-#if 0
-// Provide the C++ wrapper for division of Field2D and Field2D
-Field2D operator/(const Field2D& lhs, const Field2D& rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
-
-  Field2D result{emptyFrom(lhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs[index] / rhs[index];
-  }
-
-  checkData(result);
-  return result;
-}
-#endif
-
 // Provide the C++ operator to update Field2D by division with Field2D
 Field2D& Field2D::operator/=(const Field2D& rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
@@ -669,90 +458,6 @@ Field2D& Field2D::operator/=(const Field2D& rhs) {
   }
   return *this;
 }
-
-// Provide the C++ wrapper for addition of Field2D and Field2D
-#if 0
-Field2D operator+(const Field2D& lhs, const Field2D& rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
-
-  Field2D result{emptyFrom(lhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs[index] + rhs[index];
-  }
-
-  checkData(result);
-  return result;
-}
-#endif
-
-#if 0
-// Provide the C++ operator to update Field2D by addition with Field2D
-Field2D& Field2D::operator+=(const Field2D& rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  // only if data is unique we update the field
-  // otherwise just call the non-inplace version
-  if (data.unique()) {
-    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
-
-    checkData(*this);
-    checkData(rhs);
-
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
-
-    checkData(*this);
-
-  } else {
-    (*this) = (*this) + rhs;
-  }
-  return *this;
-}
-#endif
-
-// Provide the C++ wrapper for subtraction of Field2D and Field2D
-#if 0
-Field2D operator-(const Field2D& lhs, const Field2D& rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
-
-  Field2D result{emptyFrom(lhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs[index] - rhs[index];
-  }
-
-  checkData(result);
-  return result;
-}
-#endif
-
-#if 0
-// Provide the C++ operator to update Field2D by subtraction with Field2D
-Field2D& Field2D::operator-=(const Field2D& rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  // only if data is unique we update the field
-  // otherwise just call the non-inplace version
-  if (data.unique()) {
-    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
-
-    checkData(*this);
-    checkData(rhs);
-
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
-
-    checkData(*this);
-
-  } else {
-    (*this) = (*this) - rhs;
-  }
-  return *this;
-}
-#endif
 
 // Provide the C++ wrapper for multiplication of Field2D and FieldPerp
 FieldPerp operator*(const Field2D& lhs, const FieldPerp& rhs) {
@@ -838,88 +543,6 @@ FieldPerp operator-(const Field2D& lhs, const FieldPerp& rhs) {
   return result;
 }
 
-#if 0
-// Provide the C++ wrapper for multiplication of Field2D and BoutReal
-Field2D operator*(const Field2D& lhs, const BoutReal rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-
-  Field2D result{emptyFrom(lhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs[index] * rhs;
-  }
-
-  checkData(result);
-  return result;
-}
-#endif
-
-#if 0
-// Provide the C++ operator to update Field2D by multiplication with BoutReal
-Field2D& Field2D::operator*=(const BoutReal rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  // only if data is unique we update the field
-  // otherwise just call the non-inplace version
-  if (data.unique()) {
-
-    checkData(*this);
-    checkData(rhs);
-
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
-
-    checkData(*this);
-
-  } else {
-    (*this) = (*this) * rhs;
-  }
-  return *this;
-}
-#endif
-
-#if 0
-// Provide the C++ wrapper for division of Field2D and BoutReal
-Field2D operator/(const Field2D& lhs, const BoutReal rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-
-  Field2D result{emptyFrom(lhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  const auto tmp = 1.0 / rhs;
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs[index] * tmp;
-  }
-
-  checkData(result);
-  return result;
-}
-#endif
-
-#if 0
-// Provide the C++ operator to update Field2D by division with BoutReal
-Field2D& Field2D::operator/=(const BoutReal rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-  // only if data is unique we update the field
-  // otherwise just call the non-inplace version
-  if (data.unique()) {
-
-    checkData(*this);
-    checkData(rhs);
-
-    const auto tmp = 1.0 / rhs;
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= tmp; }
-
-    checkData(*this);
-
-  } else {
-    (*this) = (*this) / rhs;
-  }
-  return *this;
-}
-#endif
-
 // Provide the C++ wrapper for addition of Field2D and BoutReal
 Field2D operator+(const Field2D& lhs, const BoutReal rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
@@ -955,24 +578,6 @@ Field2D& Field2D::operator+=(const BoutReal rhs) {
   }
   return *this;
 }
-
-// Provide the C++ wrapper for subtraction of Field2D and BoutReal
-#if 0
-Field2D operator-(const Field2D& lhs, const BoutReal rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-
-  Field2D result{emptyFrom(lhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs[index] - rhs;
-  }
-
-  checkData(result);
-  return result;
-}
-#endif
 
 // Provide the C++ operator to update Field2D by subtraction with BoutReal
 Field2D& Field2D::operator-=(const BoutReal rhs) {
@@ -1675,118 +1280,6 @@ FieldPerp& FieldPerp::operator-=(const BoutReal rhs) {
   return *this;
 }
 
-#if 0
-// Provide the C++ wrapper for multiplication of BoutReal and Field3D
-Field3D operator*(const BoutReal lhs, const Field3D& rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-
-  Field3D result{emptyFrom(rhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  result.setRegion(rhs.getRegionID());
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs * rhs[index];
-  }
-
-  checkData(result);
-  return result;
-}
-#endif
-
-// Provide the C++ wrapper for division of BoutReal and Field3D
-Field3D operator/(const BoutReal lhs, const Field3D& rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-
-  Field3D result{emptyFrom(rhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  result.setRegion(rhs.getRegionID());
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs / rhs[index];
-  }
-
-  checkData(result);
-  return result;
-}
-
-#if 0
-// Provide the C++ wrapper for addition of BoutReal and Field3D
-Field3D operator+(const BoutReal lhs, const Field3D& rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-
-  Field3D result{emptyFrom(rhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  result.setRegion(rhs.getRegionID());
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs + rhs[index];
-  }
-
-  checkData(result);
-  return result;
-}
-#endif
-
-// Provide the C++ wrapper for subtraction of BoutReal and Field3D
-Field3D operator-(const BoutReal lhs, const Field3D& rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-
-  Field3D result{emptyFrom(rhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  result.setRegion(rhs.getRegionID());
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs - rhs[index];
-  }
-
-  checkData(result);
-  return result;
-}
-
-#if 0
-// Provide the C++ wrapper for multiplication of BoutReal and Field2D
-Field2D operator*(const BoutReal lhs, const Field2D& rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-
-  Field2D result{emptyFrom(rhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs * rhs[index];
-  }
-
-  checkData(result);
-  return result;
-}
-#endif
-
-#if 0
-// Provide the C++ wrapper for division of BoutReal and Field2D
-Field2D operator/(const BoutReal lhs, const Field2D& rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-
-  Field2D result{emptyFrom(rhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs / rhs[index];
-  }
-
-  checkData(result);
-  return result;
-}
-#endif
-
 // Provide the C++ wrapper for addition of BoutReal and Field2D
 Field2D operator+(const BoutReal lhs, const Field2D& rhs) {
   std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
@@ -1802,24 +1295,6 @@ Field2D operator+(const BoutReal lhs, const Field2D& rhs) {
   checkData(result);
   return result;
 }
-
-#if 0
-// Provide the C++ wrapper for subtraction of BoutReal and Field2D
-Field2D operator-(const BoutReal lhs, const Field2D& rhs) {
-  std::cout << "RUNNING operator " << __FILE__ << " " << std::to_string(__LINE__) << "\n";
-
-  Field2D result{emptyFrom(rhs)};
-  checkData(lhs);
-  checkData(rhs);
-
-  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
-    result[index] = lhs - rhs[index];
-  }
-
-  checkData(result);
-  return result;
-}
-#endif
 
 // Provide the C++ wrapper for multiplication of BoutReal and FieldPerp
 FieldPerp operator*(const BoutReal lhs, const FieldPerp& rhs) {
