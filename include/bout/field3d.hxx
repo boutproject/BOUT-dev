@@ -478,135 +478,26 @@ public:
 
   ///@}
 
-  /// Addition operators
-  ///@{
-  //Field3D& operator+=(const Field3D& rhs);
-  template <typename R, typename = std::enable_if_t<is_expr_field3d_v<R>>>
-  Field3D& operator+=(const R& rhs) {
-    //printf("RUNNING operator+= with CUDA\n");
-    if (data.unique()) {
-      //std::cout << "RUNNING Field3D operator+=  w/ CUDA" << __FILE__ << " "
-      //          << std::to_string(__LINE__) << "\n";
-      // Delete existing parallel slices. We don't copy parallel slices, so any
-      // that currently exist will be incorrect.
-      clearParallelSlices();
-
-      auto BE = (*this) + rhs;
-      regionID = BE.getRegionID();
-      BE.evaluate(&data[0]);
-    } else {
-      (*this) = (*this) + rhs;
-    }
-
-    return *this;
+#define FIELD3D_OP_EQUALS(OP_SYM)                                \
+  template <typename R>                                          \
+  std::enable_if_t<is_expr_field3d_v<R> || is_expr_field2d_v<R>  \
+                       || is_expr_constant_v<R>,                 \
+                   Field3D&> operator OP_SYM##=(const R & rhs) { \
+    if (data.unique()) {                                         \
+      clearParallelSlices();                                     \
+      auto Expr = (*this)OP_SYM rhs;                             \
+      Expr.evaluate(&data[0]);                                   \
+    } else {                                                     \
+      (*this) = (*this)OP_SYM rhs;                               \
+    }                                                            \
+    return *this;                                                \
   }
-  Field3D& operator+=(const Field2D& rhs);
-  Field3D& operator+=(BoutReal rhs);
-  ///@}
 
-  /// Subtraction operators
-  ///@{
-  //Field3D& operator-=(const Field3D& rhs);
-  template <typename R, typename = std::enable_if_t<is_expr_field3d_v<R>>>
-  Field3D& operator-=(const R& rhs) {
-    if (data.unique()) {
-      //printf("RUNNING operator-= with CUDA with BE\n");
-      // Delete existing parallel slices. We don't copy parallel slices, so any
-      // that currently exist will be incorrect.
-      clearParallelSlices();
-      auto BE = (*this) - rhs;
-      BE.evaluate(&data[0]);
-    } else {
-      //printf("RUNNING operator-= with CUDA with operation\n");
-      (*this) = (*this) - rhs;
-    }
+  FIELD3D_OP_EQUALS(+)
+  FIELD3D_OP_EQUALS(-)
+  FIELD3D_OP_EQUALS(*)
+  FIELD3D_OP_EQUALS(/)
 
-    return *this;
-  }
-  Field3D& operator-=(const Field2D& rhs);
-  Field3D& operator-=(BoutReal rhs);
-  ///@}
-
-  /// Multiplication operators
-  ///@{
-  //Field3D& operator*=(const Field3D& rhs);
-  template <typename R, typename = std::enable_if_t<is_expr_field3d_v<R>>>
-  Field3D& operator*=(const R& rhs) {
-    //printf("RUNNING operator*= with CUDA\n");
-    if (data.unique()) {
-      // Delete existing parallel slices. We don't copy parallel slices, so any
-      // that currently exist will be incorrect.
-      clearParallelSlices();
-
-      auto BE = (*this) * rhs;
-      regionID = BE.getRegionID();
-      BE.evaluate(&data[0]);
-    } else {
-      (*this) = (*this) * rhs;
-    }
-
-    return *this;
-  }
-  Field3D& operator*=(const Field2D& rhs);
-  //Field3D& operator*=(BoutReal rhs);
-  // here1
-  template <typename R, typename = std::enable_if_t<is_expr_constant_v<R>>>
-  Field3D& operator*=(R rhs) {
-    //printf("RUNNING operator*= with CUDA\n");
-    if (data.unique()) {
-      // Delete existing parallel slices. We don't copy parallel slices, so any
-      // that currently exist will be incorrect.
-      clearParallelSlices();
-
-      auto BE = (*this) * rhs;
-      regionID = BE.getRegionID();
-      BE.evaluate(&data[0]);
-    } else {
-      (*this) = (*this) * rhs;
-    }
-
-    return *this;
-  }
-  ///@}
-
-  /// Division operators
-  ///@{
-  //Field3D& operator/=(const Field3D& rhs);
-  template <typename R>
- std::enable_if_t<is_expr_field3d_v<R>,Field3D&> operator/=(const R& rhs) {
-    //printf("RUNNING operator/= with CUDA\n");
-    if (data.unique()) {
-      // Delete existing parallel slices. We don't copy parallel slices, so any
-      // that currently exist will be incorrect.
-      clearParallelSlices();
-
-      auto BE = (*this) / rhs;
-      regionID = BE.getRegionID();
-      BE.evaluate(&data[0]);
-    } else {
-      (*this) = (*this) / rhs;
-    }
-
-    return *this;
-  }
-  //Field3D& operator/=(const Field2D& rhs);
-  template <typename R>
-std::enable_if_t<is_expr_field2d_v<R>, Field3D&> operator/=(const R& rhs) {
-    //printf("RUNNING operator/= with CUDA\n");
-    if (data.unique()) {
-      // Delete existing parallel slices. We don't copy parallel slices, so any
-      // that currently exist will be incorrect.
-      clearParallelSlices();
-
-      auto BE = (*this) / rhs;
-      BE.evaluate(&data[0]);
-    } else {
-      (*this) = (*this) / rhs;
-    }
-
-    return *this;
-  }
-  Field3D& operator/=(BoutReal rhs);
   ///@}
 
   // FieldData virtual functions
@@ -699,11 +590,6 @@ FIELD3D_FIELD3D_FIELD3D_OP(-, Sub)
 FIELD3D_FIELD3D_FIELD3D_OP(*, Mul)
 FIELD3D_FIELD3D_FIELD3D_OP(/, Div)
 
-//Field3D operator+(const Field3D& lhs, const Field2D& rhs);
-//Field3D operator-(const Field3D& lhs, const Field2D& rhs);
-//Field3D operator*(const Field3D& lhs, const Field2D& rhs);
-//Field3D operator/(const Field3D& lhs, const Field2D& rhs);
-
 #define FIELD3D_FIELD3D_FIELD2D_OP(OP_SYM, OP_TYPE)                                      \
   template <typename L, typename R>                                                      \
   std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>,                         \
@@ -727,11 +613,6 @@ FIELD3D_FIELD3D_FIELD2D_OP(-, Sub)
 FIELD3D_FIELD3D_FIELD2D_OP(*, Mul)
 FIELD3D_FIELD3D_FIELD2D_OP(/, Div)
 
-//Field3D operator+(const Field3D& lhs, BoutReal rhs);
-//Field3D operator-(const Field3D& lhs, BoutReal rhs);
-//Field3D operator*(const Field3D& lhs, BoutReal rhs);
-//Field3D operator/(const Field3D& lhs, BoutReal rhs);
-
 #define FIELD3D_FIELD3D_BOUTREAL_OP(OP_SYM, OP_TYPE)              \
   template <typename L, typename R>                               \
   std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>, \
@@ -753,11 +634,6 @@ FIELD3D_FIELD3D_BOUTREAL_OP(+, Add)
 FIELD3D_FIELD3D_BOUTREAL_OP(-, Sub)
 FIELD3D_FIELD3D_BOUTREAL_OP(*, Mul)
 FIELD3D_FIELD3D_BOUTREAL_OP(/, Div)
-
-//Field3D operator+(BoutReal lhs, const Field3D& rhs);
-//Field3D operator-(BoutReal lhs, const Field3D& rhs);
-//Field3D operator*(BoutReal lhs, const Field3D& rhs);
-//Field3D operator/(BoutReal lhs, const Field3D& rhs);
 
 #define FIELD3D_BOUTREAL_FIELD3D_OP(OP_SYM, OP_TYPE)              \
   template <typename L, typename R>                               \
