@@ -15,6 +15,8 @@ Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  ASSERT2(lhs.yoffset == rhs.yoffset);
+  result.yoffset = lhs.yoffset;
 #if BOUT_USE_FCI_AUTOMAGIC
   if (lhs.isFci() and lhs.hasParallelSlices() and rhs.hasParallelSlices()) {
     result.splitParallelSlices();
@@ -87,6 +89,8 @@ Field3D operator/(const Field3D& lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  ASSERT2(lhs.yoffset == rhs.yoffset);
+  result.yoffset = lhs.yoffset;
 #if BOUT_USE_FCI_AUTOMAGIC
   if (lhs.isFci() and lhs.hasParallelSlices() and rhs.hasParallelSlices()) {
     result.splitParallelSlices();
@@ -159,6 +163,8 @@ Field3D operator+(const Field3D& lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  ASSERT2(lhs.yoffset == rhs.yoffset);
+  result.yoffset = lhs.yoffset;
 #if BOUT_USE_FCI_AUTOMAGIC
   if (lhs.isFci() and lhs.hasParallelSlices() and rhs.hasParallelSlices()) {
     result.splitParallelSlices();
@@ -231,6 +237,8 @@ Field3D operator-(const Field3D& lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  ASSERT2(lhs.yoffset == rhs.yoffset);
+  result.yoffset = lhs.yoffset;
 #if BOUT_USE_FCI_AUTOMAGIC
   if (lhs.isFci() and lhs.hasParallelSlices() and rhs.hasParallelSlices()) {
     result.splitParallelSlices();
@@ -303,6 +311,7 @@ Field3D operator*(const Field3D& lhs, const Field2D& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getRegionID());
+  result.yoffset = lhs.yoffset;
 
   Mesh* localmesh = lhs.getMesh();
 
@@ -364,6 +373,7 @@ Field3D operator/(const Field3D& lhs, const Field2D& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getRegionID());
+  result.yoffset = lhs.yoffset;
 
   Mesh* localmesh = lhs.getMesh();
 
@@ -427,6 +437,7 @@ Field3D operator+(const Field3D& lhs, const Field2D& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getRegionID());
+  result.yoffset = lhs.yoffset;
 
   Mesh* localmesh = lhs.getMesh();
 
@@ -488,6 +499,7 @@ Field3D operator-(const Field3D& lhs, const Field2D& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getRegionID());
+  result.yoffset = lhs.yoffset;
 
   Mesh* localmesh = lhs.getMesh();
 
@@ -640,6 +652,7 @@ Field3D operator*(const Field3D& lhs, const BoutReal rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getRegionID());
+  result.yoffset = lhs.yoffset;
 #if BOUT_USE_FCI_AUTOMAGIC
   if (lhs.isFci() and lhs.hasParallelSlices()) {
     result.splitParallelSlices();
@@ -708,6 +721,7 @@ Field3D operator/(const Field3D& lhs, const BoutReal rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getRegionID());
+  result.yoffset = lhs.yoffset;
 #if BOUT_USE_FCI_AUTOMAGIC
   if (lhs.isFci() and lhs.hasParallelSlices()) {
     result.splitParallelSlices();
@@ -778,6 +792,7 @@ Field3D operator+(const Field3D& lhs, const BoutReal rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getRegionID());
+  result.yoffset = lhs.yoffset;
 #if BOUT_USE_FCI_AUTOMAGIC
   if (lhs.isFci() and lhs.hasParallelSlices()) {
     result.splitParallelSlices();
@@ -846,6 +861,7 @@ Field3D operator-(const Field3D& lhs, const BoutReal rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getRegionID());
+  result.yoffset = lhs.yoffset;
 #if BOUT_USE_FCI_AUTOMAGIC
   if (lhs.isFci() and lhs.hasParallelSlices()) {
     result.splitParallelSlices();
@@ -915,6 +931,7 @@ Field3D operator*(const Field2D& lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(rhs.getRegionID());
+  result.yoffset = rhs.yoffset;
 
   Mesh* localmesh = lhs.getMesh();
 
@@ -941,6 +958,7 @@ Field3D operator/(const Field2D& lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(rhs.getRegionID());
+  result.yoffset = rhs.yoffset;
 
   Mesh* localmesh = lhs.getMesh();
 
@@ -967,6 +985,7 @@ Field3D operator+(const Field2D& lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(rhs.getRegionID());
+  result.yoffset = rhs.yoffset;
 
   Mesh* localmesh = lhs.getMesh();
 
@@ -993,6 +1012,7 @@ Field3D operator-(const Field2D& lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(rhs.getRegionID());
+  result.yoffset = rhs.yoffset;
 
   Mesh* localmesh = lhs.getMesh();
 
@@ -2209,6 +2229,7 @@ Field3D operator*(const BoutReal lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(rhs.getRegionID());
+  result.yoffset = rhs.yoffset;
 #if BOUT_USE_FCI_AUTOMAGIC
   if (rhs.isFci() and rhs.hasParallelSlices()) {
     result.splitParallelSlices();
@@ -2238,6 +2259,7 @@ Field3D operator/(const BoutReal lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(rhs.getRegionID());
+  result.yoffset = rhs.yoffset;
 #if BOUT_USE_FCI_AUTOMAGIC
   if (rhs.isFci() and rhs.hasParallelSlices()) {
     result.splitParallelSlices();
@@ -2267,6 +2289,7 @@ Field3D operator+(const BoutReal lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(rhs.getRegionID());
+  result.yoffset = rhs.yoffset;
 #if BOUT_USE_FCI_AUTOMAGIC
   if (rhs.isFci() and rhs.hasParallelSlices()) {
     result.splitParallelSlices();
@@ -2296,6 +2319,7 @@ Field3D operator-(const BoutReal lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(rhs.getRegionID());
+  result.yoffset = rhs.yoffset;
 #if BOUT_USE_FCI_AUTOMAGIC
   if (rhs.isFci() and rhs.hasParallelSlices()) {
     result.splitParallelSlices();

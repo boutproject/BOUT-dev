@@ -12,6 +12,8 @@
     {% if lhs == rhs == "Field3D" %}
       {{out.name}}.setRegion({{lhs.name}}.getMesh()->getCommonRegion({{lhs.name}}.getRegionID(),
                                                                      {{rhs.name}}.getRegionID()));
+      ASSERT2({{lhs.name}}.yoffset == {{rhs.name}}.yoffset);
+      {{out.name}}.yoffset = {{lhs.name}}.yoffset;
 #if BOUT_USE_FCI_AUTOMAGIC
       if ({{lhs.name}}.isFci() and {{lhs.name}}.hasParallelSlices() and {{rhs.name}}.hasParallelSlices()) {
         {{out.name}}.splitParallelSlices();
@@ -23,6 +25,7 @@
 #endif
     {% elif lhs == "Field3D" %}
       {{out.name}}.setRegion({{lhs.name}}.getRegionID());
+      {{out.name}}.yoffset = {{lhs.name}}.yoffset;
       {% if rhs == "BoutReal" %}
 #if BOUT_USE_FCI_AUTOMAGIC
       if ({{lhs.name}}.isFci() and {{lhs.name}}.hasParallelSlices()) {
@@ -36,6 +39,7 @@
       {% endif %}
     {% elif rhs == "Field3D" %}
       {{out.name}}.setRegion({{rhs.name}}.getRegionID());
+      {{out.name}}.yoffset = {{rhs.name}}.yoffset;
       {% if lhs == "BoutReal" %}
 #if BOUT_USE_FCI_AUTOMAGIC
       if ({{rhs.name}}.isFci() and {{rhs.name}}.hasParallelSlices()) {

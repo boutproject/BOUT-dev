@@ -151,6 +151,7 @@ Field3D ZHermiteSpline::interpolate(const Field3D& f,
 
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
+  f_interp.yoffset = y_offset;
 
   std::string local_fz_region;
   if (region_str == "DEFAULT") {
@@ -168,7 +169,7 @@ Field3D ZHermiteSpline::interpolate(const Field3D& f,
   Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", local_fz_region);
 
   BOUT_FOR(i, local_region) {
-    const auto corner = k_corner[i.ind].yp(y_offset);
+    const auto corner = k_corner[i.ind].yp_no_parallel_shift(y_offset);
     const auto corner_zp1 = corner.zp();
 
     // Interpolate in Z
