@@ -55,7 +55,7 @@ public:
     if constexpr (std::is_same_v<F, FieldPerp>) {
       indexB = indexA.zp();
     } else {
-      indexB = indexA.yp();
+      indexB = indexA.yp_no_parallel_shift();
     }
     iWU0 = indexB.xm();
     iWU1 = indexB;
@@ -65,9 +65,9 @@ public:
       iWD1 = indexB;
       iWD2 = indexB.zp();
     } else {
-      iWD0 = indexB.ym();
+      iWD0 = indexB.yp_no_parallel_shift(-1);
       iWD1 = indexB;
-      iWD2 = indexB.yp();
+      iWD2 = indexB.yp_no_parallel_shift();
     }
     std::unique_ptr<MockTransform> transform =
         bout::utils::make_unique<MockTransform>(*bout::globals::mesh);
