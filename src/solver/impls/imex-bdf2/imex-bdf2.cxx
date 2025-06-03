@@ -95,7 +95,7 @@ IMEXBDF2::~IMEXBDF2() {
  * This function assumes the context void pointer is a pointer
  * to an IMEXBDF2 object.
  */
-static PetscErrorCode FormFunction(void* UNUSED(snes), Vec x, Vec f, void* ctx) {
+static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void* ctx) {
   return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, false);
 }
 
