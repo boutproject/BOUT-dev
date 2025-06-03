@@ -95,7 +95,7 @@ IMEXBDF2::~IMEXBDF2() {
  * This function assumes the context void pointer is a pointer
  * to an IMEXBDF2 object.
  */
-static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void* ctx) {
+static PetscErrorCode FormFunction(void* UNUSED(snes), Vec x, Vec f, void* ctx) {
   return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, false);
 }
 
@@ -113,7 +113,7 @@ static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  *
  * This can be a linearised and simplified form of FormFunction
  */
-static PetscErrorCode FormFunctionForColoring(SNES UNUSED(snes), Vec x, Vec f,
+static PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f,
                                               void* ctx) {
   return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, true);
 }
@@ -655,7 +655,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
           fdcoloring,
 #if PETSC_VERSION_GE(3,24,0) || \
    (PETSC_VERSION_GE(3,23,0) && PETSC_VERSION_RELEASE == 0)
-          reinterpret_cast<MatFDColoringFn>(FormFunctionForColoring),
+          FormFunctionForColoring,
 #else
           reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring),
 #endif
