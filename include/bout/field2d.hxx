@@ -108,6 +108,7 @@ public:
                                   || (is_expr_constant_v<L> && is_expr_field2d_v<R>)
                                   || (is_expr_field2d_v<L> && is_expr_constant_v<R>)>>
   Field2D(const BinaryExpr<L, R, Func>& expr) {
+    std::cout << "RUNNING Field2D constructor with CUDA\n";
     Array<BoutReal> data{expr.size()};
     expr.evaluate(&data[0]);
     *this = std::move(Field2D{std::move(data), expr.getMesh(), expr.getLocation(),
@@ -315,8 +316,10 @@ public:
     BoutReal* data;
     int mul = 1;
     int div = 1;
-    __device__ inline BoutReal operator()(int idx) const { return data[(idx*mul/div)]; }
-    __device__ inline BoutReal& operator[](int idx) const {
+    __host__ __device__ inline BoutReal operator()(int idx) const {
+      return data[(idx * mul / div)];
+    }
+    __host__ __device__ inline BoutReal& operator[](int idx) const {
       return data[(idx * mul)/div];
     }
 

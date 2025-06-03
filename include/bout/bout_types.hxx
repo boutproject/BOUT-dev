@@ -146,7 +146,7 @@ struct Constant {
   struct View {
     T v;
    View(T v) : v(v) {}
-    __device__ T operator()(int) const { return v; }
+   __host__ __device__ T operator()(int) const { return v; }
   };
   operator View() const { return {val}; }
 };

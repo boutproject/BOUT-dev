@@ -429,21 +429,16 @@ public:
     BoutReal* data;
     int mul = 1;
     int div = 1;
-    int offset = 0;
     __host__ __device__ inline BoutReal operator()(int idx) const {
-      return data[(idx * mul) / div + offset];
+      return data[(idx * mul) / div];
     }
-    __device__ inline BoutReal& operator[](int idx) const {
-      return data[(idx * mul) / div + offset];
+    __host__ __device__ inline BoutReal& operator[](int idx) const {
+      return data[(idx * mul) / div];
     }
 
     View& setScale(int mul, int div) {
       this->mul = mul;
       this->div = div;
-      return *this;
-    }
-    View& setOffset(int o) {
-      offset = o;
       return *this;
     }
   };
