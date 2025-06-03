@@ -652,7 +652,13 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       MatFDColoringCreate(Jmf, iscoloring, &fdcoloring);
       // Set the function to difference
       MatFDColoringSetFunction(
-          fdcoloring, reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring),
+          fdcoloring,
+#if (PETSC_VERSION_GE(3,24,0) || \
+   (PETSC_VERSION_GE(3,23,0) && PETSC_VERSION_RELEASE == 0)
+          reinterpret_cast<MatFDColoringFn>(FormFunctionForColoring),
+#else
+          reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring),
+#endif
           this);
       MatFDColoringSetFromOptions(fdcoloring);
       MatFDColoringSetUp(Jmf, iscoloring, fdcoloring);
