@@ -2161,9 +2161,9 @@ void BoutMesh::topology() {
     }
 
     for (int i = 0; i < limiter_count; ++i) {
-      int yind = limiter_yinds[i];
-      int xstart = limiter_xstarts[i];
-      int xend = limiter_xends[i];
+      int const yind = limiter_yinds[i];
+      int const xstart = limiter_xstarts[i];
+      int const xend = limiter_xends[i];
       output_info.write("Adding a limiter between y={} and {}. X indices {} to {}\n",
                         yind, yind + 1, xstart, xend);
       add_target(yind, xstart, xend);
