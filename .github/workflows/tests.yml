@@ -199,6 +199,22 @@ jobs:
       - name: Build BOUT++
         run: UNIT_ONLY=${{ matrix.config.unit_only }} ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}
 
+      - name: Capture coverage
+        if: ${{ matrix.config.name == 'Coverage' }}
+        # Explicitly run the coverage capture target, because
+        # ci_script.sh also does the upload, and we're going to do
+        # that ourselves in the next step
+        run: |
+          # Ensure that there is a corresponding .gcda file for every .gcno file
+          # This is to try and make the coverage report slightly more accurate
+          # It still won't include, e.g. any solvers we don't build with though
+          find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
+          make -C build code-coverage-capture
+
+      - name: Upload coverage
+        if: ${{ matrix.config.name == 'Coverage' }}
+        uses: codecov/codecov-action@v5
+
   Fedora:
     # This is its own job as it doesn't use most of the steps of the
     # standard_tests
