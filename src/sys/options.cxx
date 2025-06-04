@@ -832,9 +832,8 @@ Matrix<int> Options::as<Matrix<int>>(const Matrix<int>& similar_to) const {
 
   auto result = bout::utils::visit(
       ConvertContainer<Matrix<int>>{
-          fmt::format(
-              _("Value for option {:s} cannot be converted to an Matrix<int>"),
-              full_name),
+          fmt::format(_("Value for option {:s} cannot be converted to an Matrix<int>"),
+                      full_name),
           similar_to},
       value);
 
@@ -876,9 +875,8 @@ Tensor<int> Options::as<Tensor<int>>(const Tensor<int>& similar_to) const {
 
   auto result = bout::utils::visit(
       ConvertContainer<Tensor<int>>{
-          fmt::format(
-              _("Value for option {:s} cannot be converted to an Tensor<int>"),
-              full_name),
+          fmt::format(_("Value for option {:s} cannot be converted to an Tensor<int>"),
+                      full_name),
           similar_to},
       value);
 
@@ -1032,7 +1030,9 @@ struct GetDimensions {
   std::vector<int> operator()([[maybe_unused]] BoutReal value) { return {1}; }
   std::vector<int> operator()([[maybe_unused]] const std::string& value) { return {1}; }
   template <typename T>
-  std::vector<int> operator()(const Array<T>& array) { return {array.size()}; }
+  std::vector<int> operator()(const Array<T>& array) {
+    return {array.size()};
+  }
   template <typename T>
   std::vector<int> operator()(const Matrix<T>& array) {
     const auto shape = array.shape();
