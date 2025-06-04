@@ -523,10 +523,8 @@ if (BOUT_ENABLE_WARNINGS)
    )
 
  include(EnableCXXWarningIfSupport)
- # Note we explicitly turn off -Wcast-function-type as PETSc *requires*
- # we cast a function to the wrong type in MatFDColoringSetFunction
  target_enable_cxx_warning_if_supported(bout++
-   FLAGS -Wnull-dereference -Wno-cast-function-type
+   FLAGS -Wnull-dereference
    )
 endif()
 
