@@ -92,15 +92,15 @@ static void* snes_ctx = nullptr;
 #if PETSC_VERSION_GE(3, 24, 0) || PETSC_VERSION_RELEASE == 0
 // Wrapper for PETSc 3.24 and later (signature: PetscErrorCode (*)(void*, Vec, Vec, void*))
 static PetscErrorCode FormFunctionForColoringWrapper(void*, Vec x, Vec y, void* ctx) {
-    SNES dummy_snes = nullptr;
-    return FormFunctionForColoring(dummy_snes, x, y, ctx);
+  SNES dummy_snes = nullptr;
+  return FormFunctionForColoring(dummy_snes, x, y, ctx);
 }
 #else
 // Wrapper for PETSc < 3.20 (signature: PetscErrorCode (*)(void))
 static PetscErrorCode FormFunctionForColoringWrapper() {
-    SNES dummy_snes = nullptr;
-    Vec dummy_vec = nullptr;
-    return FormFunctionForColoring(dummy_snes, dummy_vec, dummy_vec, snes_ctx);
+  SNES dummy_snes = nullptr;
+  Vec dummy_vec = nullptr;
+  return FormFunctionForColoring(dummy_snes, dummy_vec, dummy_vec, snes_ctx);
 }
 #endif
 
