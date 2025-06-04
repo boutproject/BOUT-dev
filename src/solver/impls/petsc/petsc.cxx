@@ -61,6 +61,26 @@ extern PetscErrorCode PhysicsPCApply(PC, Vec x, Vec y);
 extern PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y);
 extern PetscErrorCode PhysicsSNESApply(SNES, Vec);
 
+// Global context to store PetscSolver instance
+static void* petsc_ctx = nullptr;
+
+#if PETSC_VERSION_GE(3, 24, 0) || PETSC_VERSION_RELEASE == 0
+// Wrapper for PETSc 3.24 and later (signature: PetscErrorCode (*)(void*, Vec, Vec, void*))
+static PetscErrorCode FormFunctionForColoringWrapper(void*, Vec x, Vec y, void* ctx) {
+    TS dummy_ts = nullptr;
+    BoutReal dummy_time = 0.0;
+    return solver_f(dummy_ts, dummy_time, x, y, ctx);
+}
+#else
+// Wrapper for PETSc < 3.20 (signature: PetscErrorCode (*)(void))
+static PetscErrorCode FormFunctionForColoringWrapper() {
+    TS dummy_ts = nullptr;
+    BoutReal dummy_time = 0.0;
+    Vec dummy_vec = nullptr;
+    return solver_f(dummy_ts, dummy_time, dummy_vec, dummy_vec, petsc_ctx);
+}
+#endif
+
 PetscSolver::PetscSolver(Options* opts)
     : Solver(opts),
       diagnose(
@@ -514,8 +534,8 @@ int PetscSolver::init() {
   CHKERRQ(ierr);
   ierr = ISColoringDestroy(&iscoloring);
   CHKERRQ(ierr);
-  ierr = MatFDColoringSetFunction(matfdcoloring,
-                                  reinterpret_cast<PetscErrorCode (*)()>(solver_f), this);
+  petsc_ctx = this;
+  ierr = MatFDColoringSetFunction(matfdcoloring, FormFunctionForColoringWrapper, this);
   CHKERRQ(ierr);
   ierr = SNESSetJacobian(snes, J, J, SNESComputeJacobianDefaultColor, matfdcoloring);
   CHKERRQ(ierr);
