@@ -86,6 +86,17 @@ public:
             DirectionTypes directions_in = {YDirectionType::Standard,
                                             ZDirectionType::Standard});
 
+  template <
+      typename ResT, typename L, typename R, typename Func,
+      typename = std::enable_if_t<(is_expr_fieldperp_v<L> && is_expr_fieldperp_v<R>)>>
+  FieldPerp(const BinaryExpr<ResT, L, R, Func>& expr) {
+    std::cout << "RUNNING FieldPerp constructor with CUDA\n";
+    Array<BoutReal> data{expr.size()};
+    expr.evaluate(&data[0]);
+    *this = std::move(FieldPerp{std::move(data), expr.getMesh(), expr.getLocation(),
+                                /* yindex */ -1, expr.getDirections()});
+  }
+
   ~FieldPerp() override = default;
 
   /*!
@@ -292,6 +303,26 @@ public:
 
   int size() const override { return nx * nz; };
 
+  struct View {
+    BoutReal* data;
+    int mul = 1;
+    int div = 1;
+    __host__ __device__ inline BoutReal operator()(int idx) const {
+      return data[(idx * mul) / div];
+    }
+    __host__ __device__ inline BoutReal& operator[](int idx) const {
+      return data[(idx * mul) / div];
+    }
+
+    View& setScale(int mul, int div) {
+      this->mul = mul;
+      this->div = div;
+      return *this;
+    }
+  };
+  operator View() { return View{&data[0]}; }
+  operator View() const { return View{const_cast<BoutReal*>(&data[0])}; }
+
 private:
   /// The Y index at which this FieldPerp is defined
   int yindex{-1};
@@ -378,5 +409,13 @@ bool operator==(const FieldPerp& a, const FieldPerp& b);
 
 /// Output a string describing a FieldPerp to a stream
 std::ostream& operator<<(std::ostream& out, const FieldPerp& value);
+
+template <>
+struct is_expr_fieldperp<FieldPerp> : std::true_type {};
+
+template <typename ResT, typename L, typename R, typename Fun>
+struct is_expr_fieldperp<BinaryExpr<ResT, L, R, Fun>>
+    : std::integral_constant<bool, is_expr_fieldperp_v<std::decay_t<L>>
+                                       && is_expr_fieldperp_v<std::decay_t<R>>> {};
 
 #endif

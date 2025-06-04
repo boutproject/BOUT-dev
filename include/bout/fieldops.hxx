@@ -24,6 +24,12 @@ inline constexpr bool is_expr_field2d_v = is_expr_field2d<std::decay_t<T>>::valu
 template <typename T>
 struct is_expr_field3d : std::false_type {};
 
+template <typename T>
+struct is_expr_fieldperp : std::false_type {};
+
+template <typename T>
+inline constexpr bool is_expr_fieldperp_v = is_expr_fieldperp<std::decay_t<T>>::value;
+
 // Helper variable template
 template <typename T>
 inline constexpr bool is_expr_field3d_v = is_expr_field3d<std::decay_t<T>>::value;
@@ -124,7 +130,7 @@ __global__ void __launch_bounds__(THREADS) evaluatorExpr(BoutReal* out, const Ex
 
 inline std::unordered_map<void*, Array<int>> regionIndicesCache;
 
-template <typename L, typename R, typename Func>
+template <typename ResT, typename L, typename R, typename Func>
 struct BinaryExpr {
   typename L::View lhs;
   typename R::View rhs;
@@ -185,6 +191,7 @@ struct BinaryExpr {
   }
   inline int regionIdx(int idx) const { return indices[idx]; }
 
+  //operator ResT() { return ResT{*this}; }
   struct View {
     typename L::View lhs;
     typename R::View rhs;
@@ -204,8 +211,8 @@ struct BinaryExpr {
       return indices[idx];
     }
     __host__ __device__ __forceinline__ BoutReal operator()(int idx) const {
-      //return f((idx * mul) / div, lhs, rhs); // single‐pass fusion
-      return f(lhs((idx * mul) / div), rhs((idx * mul) / div)); // single‐pass fusion
+      return f((idx * mul) / div, lhs, rhs); // single‐pass fusion
+      //return f(lhs((idx * mul) / div), rhs((idx * mul) / div)); // single‐pass fusion
     }
   };
 

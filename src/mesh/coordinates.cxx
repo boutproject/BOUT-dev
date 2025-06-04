@@ -1349,7 +1349,7 @@ int Coordinates::jacobian() {
   // Check that g is positive
   bout::checkPositive(g, "The determinant of g^ij", "RGN_NOBNDRY");
 
-  J = 1. / sqrt(Field2D{g});
+  J = 1. / sqrt(g);
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
   J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false,

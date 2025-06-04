@@ -44,6 +44,8 @@ class Field;
 #include <bout/globals.hxx>
 #include <bout/rvec.hxx>
 
+#include "bout/fieldops.hxx"
+
 class Mesh;
 
 /// Base class for scalar fields
@@ -327,6 +329,12 @@ inline BoutReal min(const T& f, bool allpe = false,
   return result;
 }
 
+template <typename ResT, typename L, typename R, typename Func>
+inline BoutReal min(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
+                    const std::string& rgn = "RGN_NOBNDRY") {
+  return min(ResT{f}, allpe, rgn);
+}
+
 /// Returns true if all elements of \p f over \p region are equal. By
 /// default only checks the local processor, use \p allpe to check
 /// globally
@@ -410,6 +418,12 @@ inline BoutReal max(const T& f, bool allpe = false,
   }
 
   return result;
+}
+
+template <typename ResT, typename L, typename R, typename Func>
+inline BoutReal max(const BinaryExpr<ResT, L, R, Func>& f, bool allpe = false,
+                    const std::string& rgn = "RGN_NOBNDRY") {
+  return max(ResT{f}, allpe, rgn);
 }
 
 /// Mean of \p f, excluding the boundary/guard cells by default (can
@@ -519,17 +533,33 @@ T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
 #ifdef FIELD_FUNC
 #error This macro has already been defined
 #else
-#define FIELD_FUNC(name, func)                                     \
-  template <typename T, typename = bout::utils::EnableIfField<T>>  \
-  inline T name(const T& f, const std::string& rgn = "RGN_ALL") {  \
-    AUTO_TRACE();                                                  \
-    /* Check if the input is allocated */                          \
-    checkData(f);                                                  \
-    /* Define and allocate the output result */                    \
-    T result{emptyFrom(f)};                                        \
-    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); } \
-    checkData(result);                                             \
-    return result;                                                 \
+#define FIELD_FUNC(name, func)                                                          \
+  namespace bout::op {                                                                  \
+  struct name {                                                                         \
+    template <typename LView, typename RView>                                           \
+    __host__ __device__ BoutReal operator()(int idx, const LView& L,                    \
+                                            const RView& R) const {                     \
+      return func(L(idx));                                                              \
+    }                                                                                   \
+  };                                                                                    \
+  };                                                                                    \
+  template <typename T, typename = bout::utils::EnableIfField<T>>                       \
+  inline BinaryExpr<T, T, T, bout::op::name> name(const T& f,                           \
+                                                  const std::string& rgn = "RGN_ALL") { \
+    std::cout << "RUNNING " #name " with CUDA\n";                                       \
+    return BinaryExpr<T, T, T, bout::op::name>{static_cast<typename T::View>(f),        \
+                                               static_cast<typename T::View>(f),        \
+                                               bout::op::name{},                        \
+                                               f.getMesh(),                             \
+                                               f.getLocation(),                         \
+                                               f.getDirections(),                       \
+                                               std::nullopt,                            \
+                                               f.getRegion(rgn)};                       \
+  }                                                                                     \
+  template <typename ResT, typename L, typename R, typename Func>                       \
+  inline BinaryExpr<ResT, ResT, ResT, bout::op::name> name(                             \
+      const BinaryExpr<ResT, L, R, Func>& f, const std::string& rgn = "RGN_ALL") {      \
+    return name(ResT{f}, rgn);                                                          \
   }
 #endif
 

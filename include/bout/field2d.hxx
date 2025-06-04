@@ -47,8 +47,8 @@ class Field2D;
 class Field3D;
 class Mesh;
 
-template <typename L, typename R, typename Fun>
-struct is_expr_field2d<BinaryExpr<L, R, Fun>>
+template <typename ResT, typename L, typename R, typename Fun>
+struct is_expr_field2d<BinaryExpr<ResT, L, R, Fun>>
     : std::integral_constant<bool, (is_expr_field2d_v<std::decay_t<L>>
                                     && is_expr_field2d_v<std::decay_t<R>>)
                                        || (is_expr_constant_v<std::decay_t<L>>
@@ -103,11 +103,11 @@ public:
                                           ZDirectionType::Average});
 
   template <
-      typename L, typename R, typename Func,
+      typename ResT, typename L, typename R, typename Func,
       typename = std::enable_if_t<(is_expr_field2d_v<L> && is_expr_field2d_v<R>)
                                   || (is_expr_constant_v<L> && is_expr_field2d_v<R>)
                                   || (is_expr_field2d_v<L> && is_expr_constant_v<R>)>>
-  Field2D(const BinaryExpr<L, R, Func>& expr) {
+  Field2D(const BinaryExpr<ResT, L, R, Func>& expr) {
     std::cout << "RUNNING Field2D constructor with CUDA\n";
     Array<BoutReal> data{expr.size()};
     expr.evaluate(&data[0]);
@@ -189,9 +189,9 @@ public:
    */
   Field2D& operator=(BoutReal rhs);
 
-  template <typename L, typename R, typename Func>
+  template <typename ResT, typename L, typename R, typename Func>
   std::enable_if_t<is_expr_field2d_v<L>, Field2D&>
-  operator=(const BinaryExpr<L, R, Func>& expr) {
+  operator=(const BinaryExpr<ResT, L, R, Func>& expr) {
     std::cout << "RUNNING Field2D operator= with CUDA\n";
     if (isAllocated()) {
       expr.evaluate(&data[0]);
@@ -348,19 +348,20 @@ private:
 
 // Non-member overloaded operators
 
-#define FIELD2D_FIELD2D_FIELD2D_OP(OP_SYM, OP_TYPE)                                      \
-  template <typename L, typename R>                                                      \
-  std::enable_if_t<is_expr_field2d_v<L> && is_expr_field2d_v<R>,                         \
-                   BinaryExpr<L, R, bout::op::OP_TYPE>> operator OP_SYM(const L & lhs,   \
-                                                                        const R & rhs) { \
-    return BinaryExpr<L, R, bout::op::OP_TYPE>{static_cast<typename L::View>(lhs),       \
-                                               static_cast<typename R::View>(rhs),       \
-                                               bout::op::OP_TYPE{},                      \
-                                               lhs.getMesh(),                            \
-                                               lhs.getLocation(),                        \
-                                               lhs.getDirections(),                      \
-                                               std::nullopt,                             \
-                                               lhs.getMesh()->getRegion2D("RGN_ALL")};   \
+#define FIELD2D_FIELD2D_FIELD2D_OP(OP_SYM, OP_TYPE)              \
+  template <typename L, typename R>                              \
+  std::enable_if_t<is_expr_field2d_v<L> && is_expr_field2d_v<R>, \
+                   BinaryExpr<Field2D, L, R, bout::op::OP_TYPE>> \
+  operator OP_SYM(const L & lhs, const R & rhs) {                \
+    return BinaryExpr<Field2D, L, R, bout::op::OP_TYPE>{         \
+        static_cast<typename L::View>(lhs),                      \
+        static_cast<typename R::View>(rhs),                      \
+        bout::op::OP_TYPE{},                                     \
+        lhs.getMesh(),                                           \
+        lhs.getLocation(),                                       \
+        lhs.getDirections(),                                     \
+        std::nullopt,                                            \
+        lhs.getMesh()->getRegion2D("RGN_ALL")};                  \
   }
 
 FIELD2D_FIELD2D_FIELD2D_OP(+, Add)
@@ -368,22 +369,22 @@ FIELD2D_FIELD2D_FIELD2D_OP(-, Sub)
 FIELD2D_FIELD2D_FIELD2D_OP(*, Mul)
 FIELD2D_FIELD2D_FIELD2D_OP(/, Div)
 
-#define FIELD3D_FIELD2D_FIELD3D_OP(OP_SYM, OP_TYPE)                                      \
-  template <typename L, typename R>                                                      \
-  std::enable_if_t<is_expr_field2d_v<L> && is_expr_field3d_v<R>,                         \
-                   BinaryExpr<L, R, bout::op::OP_TYPE>> operator OP_SYM(const L & lhs,   \
-                                                                        const R & rhs) { \
-    auto regionID = rhs.getRegionID();                                                   \
-    int mesh_nz = rhs.getMesh()->LocalNz;                                                \
-    return BinaryExpr<L, R, bout::op::OP_TYPE>{                                          \
-        static_cast<typename L::View>(lhs).setScale(1, mesh_nz),                         \
-        static_cast<typename R::View>(rhs),                                              \
-        bout::op::OP_TYPE{},                                                             \
-        rhs.getMesh(),                                                                   \
-        rhs.getLocation(),                                                               \
-        rhs.getDirections(),                                                             \
-        regionID,                                                                        \
-        rhs.getMesh()->getRegion("RGN_ALL")};                                            \
+#define FIELD3D_FIELD2D_FIELD3D_OP(OP_SYM, OP_TYPE)              \
+  template <typename L, typename R>                              \
+  std::enable_if_t<is_expr_field2d_v<L> && is_expr_field3d_v<R>, \
+                   BinaryExpr<Field3D, L, R, bout::op::OP_TYPE>> \
+  operator OP_SYM(const L & lhs, const R & rhs) {                \
+    auto regionID = rhs.getRegionID();                           \
+    int mesh_nz = rhs.getMesh()->LocalNz;                        \
+    return BinaryExpr<Field3D, L, R, bout::op::OP_TYPE>{         \
+        static_cast<typename L::View>(lhs).setScale(1, mesh_nz), \
+        static_cast<typename R::View>(rhs),                      \
+        bout::op::OP_TYPE{},                                     \
+        rhs.getMesh(),                                           \
+        rhs.getLocation(),                                       \
+        rhs.getDirections(),                                     \
+        regionID,                                                \
+        rhs.getMesh()->getRegion("RGN_ALL")};                    \
   }
 
 FIELD3D_FIELD2D_FIELD3D_OP(+, Add)
@@ -391,20 +392,20 @@ FIELD3D_FIELD2D_FIELD3D_OP(-, Sub)
 FIELD3D_FIELD2D_FIELD3D_OP(*, Mul)
 FIELD3D_FIELD2D_FIELD3D_OP(/, Div)
 
-#define FIELD2D_FIELD2D_BOUTREAL_OP(OP_SYM, OP_TYPE)              \
-  template <typename L, typename R>                               \
-  std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>, \
-                   BinaryExpr<L, Constant<R>, bout::op::OP_TYPE>> \
-  operator OP_SYM(const L & lhs, R rhs) {                         \
-    return BinaryExpr<L, Constant<R>, bout::op::OP_TYPE>{         \
-        static_cast<typename L::View>(lhs),                       \
-        static_cast<typename Constant<R>::View>(rhs),             \
-        bout::op::OP_TYPE{},                                      \
-        lhs.getMesh(),                                            \
-        lhs.getLocation(),                                        \
-        lhs.getDirections(),                                      \
-        std::nullopt,                                             \
-        lhs.getMesh()->getRegion2D("RGN_ALL")};                   \
+#define FIELD2D_FIELD2D_BOUTREAL_OP(OP_SYM, OP_TYPE)                       \
+  template <typename L, typename R>                                        \
+  std::enable_if_t<is_expr_field2d_v<L> && is_expr_constant_v<R>,          \
+                   BinaryExpr<Field2D, L, Constant<R>, bout::op::OP_TYPE>> \
+  operator OP_SYM(const L & lhs, R rhs) {                                  \
+    return BinaryExpr<Field2D, L, Constant<R>, bout::op::OP_TYPE>{         \
+        static_cast<typename L::View>(lhs),                                \
+        static_cast<typename Constant<R>::View>(rhs),                      \
+        bout::op::OP_TYPE{},                                               \
+        lhs.getMesh(),                                                     \
+        lhs.getLocation(),                                                 \
+        lhs.getDirections(),                                               \
+        std::nullopt,                                                      \
+        lhs.getMesh()->getRegion2D("RGN_ALL")};                            \
   }
 
 FIELD2D_FIELD2D_BOUTREAL_OP(+, Add)
@@ -412,20 +413,20 @@ FIELD2D_FIELD2D_BOUTREAL_OP(-, Sub)
 FIELD2D_FIELD2D_BOUTREAL_OP(*, Mul)
 FIELD2D_FIELD2D_BOUTREAL_OP(/, Div)
 
-#define FIELD2D_BOUTREAL_FIELD2D_OP(OP_SYM, OP_TYPE)              \
-  template <typename L, typename R>                               \
-  std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>, \
-                   BinaryExpr<Constant<L>, R, bout::op::OP_TYPE>> \
-  operator OP_SYM(L lhs, const R & rhs) {                         \
-    return BinaryExpr<Constant<L>, R, bout::op::OP_TYPE>{         \
-        static_cast<typename Constant<L>::View>(lhs),             \
-        static_cast<typename R::View>(rhs),                       \
-        bout::op::OP_TYPE{},                                      \
-        rhs.getMesh(),                                            \
-        rhs.getLocation(),                                        \
-        rhs.getDirections(),                                      \
-        std::nullopt,                                             \
-        rhs.getMesh()->getRegion2D("RGN_ALL")};                   \
+#define FIELD2D_BOUTREAL_FIELD2D_OP(OP_SYM, OP_TYPE)                       \
+  template <typename L, typename R>                                        \
+  std::enable_if_t<is_expr_constant_v<L> && is_expr_field2d_v<R>,          \
+                   BinaryExpr<Field2D, Constant<L>, R, bout::op::OP_TYPE>> \
+  operator OP_SYM(L lhs, const R & rhs) {                                  \
+    return BinaryExpr<Field2D, Constant<L>, R, bout::op::OP_TYPE>{         \
+        static_cast<typename Constant<L>::View>(lhs),                      \
+        static_cast<typename R::View>(rhs),                                \
+        bout::op::OP_TYPE{},                                               \
+        rhs.getMesh(),                                                     \
+        rhs.getLocation(),                                                 \
+        rhs.getDirections(),                                               \
+        std::nullopt,                                                      \
+        rhs.getMesh()->getRegion2D("RGN_ALL")};                            \
   }
 
 FIELD2D_BOUTREAL_FIELD2D_OP(+, Add)

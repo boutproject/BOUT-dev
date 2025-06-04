@@ -209,7 +209,7 @@ bool operator==(const FieldPerp& a, const FieldPerp& b) {
   if (!a.isAllocated() || !b.isAllocated()) {
     return false;
   }
-  return (a.getIndex() == b.getIndex()) and (min(abs(a - b)) < 1e-10);
+  return (a.getIndex() == b.getIndex()) and (min(FieldPerp{abs(a - b)}) < 1e-10);
 }
 
 std::ostream& operator<<(std::ostream& out, const FieldPerp& value) {

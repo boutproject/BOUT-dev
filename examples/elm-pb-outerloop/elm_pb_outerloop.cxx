@@ -713,7 +713,7 @@ public:
       diamag_phi0 = false;
       K_H_term = false;
     } else {
-      Dphi0 = -D_min - 0.5 * D_0 * (1.0 - tanh(Field2D{D_s * (x - x0)}));
+      Dphi0 = -D_min - 0.5 * D_0 * (1.0 - tanh(D_s * (x - x0)));
     }
 
     if (sign < 0) { // change flow direction
@@ -1031,7 +1031,7 @@ public:
     vacuum_trans *= pnorm;
 
     // Transitions from 0 in core to 1 in vacuum
-    Field2D tanh_res = tanh(Field2D{(P0 - vacuum_pressure) / vacuum_trans});
+    Field2D tanh_res = tanh((P0 - vacuum_pressure) / vacuum_trans);
     vac_mask = (1.0 - tanh_res) / 2.0;
 
     if (spitzer_resist) {
@@ -1283,7 +1283,7 @@ public:
     ////////////////////////////////////////////
     // Transitions from 0 in core to 1 in vacuum
     if (nonlinear) {
-      vac_mask = (1.0 - tanh(Field3D{((P0 + P) - vacuum_pressure) / vacuum_trans})) / 2.0;
+      vac_mask = (1.0 - tanh(((P0 + P) - vacuum_pressure) / vacuum_trans)) / 2.0;
 
       // Update resistivity
       if (spitzer_resist) {
@@ -1794,7 +1794,7 @@ public:
       // Calculate coefficient.
 
       hyper_mu_x = hyperviscos * metric->g_11 * SQ(metric->dx)
-                   * abs(Field3D{metric->g11 * D2DX2(U)}) / (abs(U) + 1e-3);
+                   * abs(metric->g11 * D2DX2(U)) / (abs(U) + 1e-3);
       hyper_mu_x.applyBoundary("dirichlet"); // Set to zero on all boundaries
 
       ddt(U) += hyper_mu_x * metric->g11 * D2DX2(U);
