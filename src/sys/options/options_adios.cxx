@@ -473,6 +473,18 @@ void ADIOSPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
 }
 
 template <>
+void ADIOSPutVarVisitor::operator()<Array<int>>(const Array<int>& value) {
+  // Pointer to data. Assumed to be contiguous array
+  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)value.size()};
+  adios2::Dims start = {(size_t)BoutComm::rank(), 0};
+  adios2::Dims count = {1, shape[1]};
+  adios2::Variable<int> var =
+      stream.GetArrayVariable<int>(varname, shape, DIMS_NONE, BoutComm::rank());
+  var.SetSelection({start, count});
+  stream.engine.Put<int>(var, value.begin());
+}
+
+template <>
 void ADIOSPutVarVisitor::operator()<Array<BoutReal>>(const Array<BoutReal>& value) {
   // Pointer to data. Assumed to be contiguous array
   adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)value.size()};
@@ -482,6 +494,20 @@ void ADIOSPutVarVisitor::operator()<Array<BoutReal>>(const Array<BoutReal>& valu
       stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_NONE, BoutComm::rank());
   var.SetSelection({start, count});
   stream.engine.Put<BoutReal>(var, value.begin());
+}
+
+template <>
+void ADIOSPutVarVisitor::operator()<Matrix<int>>(const Matrix<int>& value) {
+  // Pointer to data. Assumed to be contiguous array
+  auto s = value.shape();
+  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)std::get<0>(s),
+                        (size_t)std::get<1>(s)};
+  adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0};
+  adios2::Dims count = {1, shape[1], shape[2]};
+  adios2::Variable<int> var =
+      stream.GetArrayVariable<int>(varname, shape, DIMS_NONE, BoutComm::rank());
+  var.SetSelection({start, count});
+  stream.engine.Put<int>(var, value.begin());
 }
 
 template <>
@@ -496,6 +522,20 @@ void ADIOSPutVarVisitor::operator()<Matrix<BoutReal>>(const Matrix<BoutReal>& va
       stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_NONE, BoutComm::rank());
   var.SetSelection({start, count});
   stream.engine.Put<BoutReal>(var, value.begin());
+}
+
+template <>
+void ADIOSPutVarVisitor::operator()<Tensor<int>>(const Tensor<int>& value) {
+  // Pointer to data. Assumed to be contiguous array
+  auto s = value.shape();
+  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)std::get<0>(s),
+                        (size_t)std::get<1>(s), (size_t)std::get<2>(s)};
+  adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0, 0};
+  adios2::Dims count = {1, shape[1], shape[2], shape[3]};
+  adios2::Variable<int> var =
+      stream.GetArrayVariable<int>(varname, shape, DIMS_NONE, BoutComm::rank());
+  var.SetSelection({start, count});
+  stream.engine.Put<int>(var, value.begin());
 }
 
 template <>
