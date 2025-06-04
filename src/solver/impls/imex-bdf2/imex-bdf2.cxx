@@ -124,7 +124,6 @@ static void* imexbdf2_ctx = nullptr;
 // Wrapper for PETSc 3.24 and later (signature: PetscErrorCode (*)(void*, Vec, Vec, void*))
 static PetscErrorCode FormFunctionForColoringWrapper(void*, Vec x, Vec y, void* ctx) {
     SNES dummy_snes = nullptr;
-    imexbdf2_ctx = ctx;  // Update context
     return FormFunctionForColoring(dummy_snes, x, y, ctx);
 }
 #else
