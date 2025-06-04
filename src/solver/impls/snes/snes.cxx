@@ -86,6 +86,24 @@ static PetscErrorCode FormFunctionForColoring(SNES UNUSED(snes), Vec x, Vec f,
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f, true);
 }
 
+// Global context to store SNESSolver instance
+static void* snes_ctx = nullptr;
+
+#if PETSC_VERSION_GE(3, 24, 0) || PETSC_VERSION_RELEASE == 0
+// Wrapper for PETSc 3.24 and later (signature: PetscErrorCode (*)(void*, Vec, Vec, void*))
+static PetscErrorCode FormFunctionForColoringWrapper(void*, Vec x, Vec y, void* ctx) {
+    SNES dummy_snes = nullptr;
+    return FormFunctionForColoring(dummy_snes, x, y, ctx);
+}
+#else
+// Wrapper for PETSc < 3.20 (signature: PetscErrorCode (*)(void))
+static PetscErrorCode FormFunctionForColoringWrapper() {
+    SNES dummy_snes = nullptr;
+    Vec dummy_vec = nullptr;
+    return FormFunctionForColoring(dummy_snes, dummy_vec, dummy_vec, snes_ctx);
+}
+#endif
+
 static PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
   int ierr;
 
@@ -1291,8 +1309,8 @@ void SNESSolver::updateColoring() {
   // Replace the old coloring with the new one
   MatFDColoringDestroy(&fdcoloring);
   MatFDColoringCreate(Jfd, iscoloring, &fdcoloring);
-  MatFDColoringSetFunction(
-      fdcoloring, reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring), this);
+  snes_ctx = this;
+  MatFDColoringSetFunction(fdcoloring, FormFunctionForColoringWrapper, this);
   MatFDColoringSetFromOptions(fdcoloring);
   MatFDColoringSetUp(Jfd, iscoloring, fdcoloring);
   ISColoringDestroy(&iscoloring);
