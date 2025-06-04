@@ -113,12 +113,30 @@ static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  *
  * This can be a linearised and simplified form of FormFunction
  */
-static PetscErrorCode FormFunctionForColoring(SNES UNUSED(snes), Vec x, Vec f,
-                                              void* ctx) {
-  return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, true);
+static PetscErrorCode FormFunctionForColoring(SNES UNUSED(snes), Vec x, Vec f, void* ctx) {
+    return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, true);
 }
 
-static PetscErrorCode imexbdf2PCapply(PC pc, Vec x, Vec y) {
+// Global context to store IMEXBDF2 instance
+static void* imexbdf2_ctx = nullptr;
+
+#if PETSC_VERSION_GE(3, 24, 0) || PETSC_VERSION_RELEASE == 0
+// Wrapper for PETSc 3.24 and later (signature: PetscErrorCode (*)(void*, Vec, Vec, void*))
+static PetscErrorCode FormFunctionForColoringWrapper(void*, Vec x, Vec y, void* ctx) {
+    SNES dummy_snes = nullptr;
+    imexbdf2_ctx = ctx;  // Update context
+    return FormFunctionForColoring(dummy_snes, x, y, ctx);
+}
+#else
+// Wrapper for PETSc < 3.20 (signature: PetscErrorCode (*)(void))
+static PetscErrorCode FormFunctionForColoringWrapper() {
+    SNES dummy_snes = nullptr;
+    Vec dummy_vec = nullptr;
+    return FormFunctionForColoring(dummy_snes, dummy_vec, dummy_vec, imexbdf2_ctx);
+}
+#endif
+
+PetscErrorCode imexbdf2PCapply(PC pc, Vec x, Vec y) {
   int ierr;
 
   // Get the context
@@ -651,9 +669,8 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       // Create data structure for SNESComputeJacobianDefaultColor
       MatFDColoringCreate(Jmf, iscoloring, &fdcoloring);
       // Set the function to difference
-      MatFDColoringSetFunction(
-          fdcoloring, reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring),
-          this);
+      imexbdf2_ctx = this;
+      MatFDColoringSetFunction(fdcoloring, FormFunctionForColoringWrapper, this);
       MatFDColoringSetFromOptions(fdcoloring);
       MatFDColoringSetUp(Jmf, iscoloring, fdcoloring);
       ISColoringDestroy(&iscoloring);
