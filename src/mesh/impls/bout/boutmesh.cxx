@@ -2148,13 +2148,16 @@ void BoutMesh::topology() {
   if (limiter_count > 0) {
     std::vector<int> limiter_yinds, limiter_xstarts, limiter_xends;
     if (!source->get(this, limiter_yinds, "limiter_yinds", limiter_count)) {
-      throw BoutException("Couldn't read limiter_yinds vector of length {} from mesh", limiter_count);
+      throw BoutException("Couldn't read limiter_yinds vector of length {} from mesh",
+                          limiter_count);
     }
     if (!source->get(this, limiter_xstarts, "limiter_xstarts", limiter_count)) {
-      throw BoutException("Couldn't read limiter_xstarts vector of length {} from mesh", limiter_count);
+      throw BoutException("Couldn't read limiter_xstarts vector of length {} from mesh",
+                          limiter_count);
     }
     if (!source->get(this, limiter_xends, "limiter_xends", limiter_count)) {
-      throw BoutException("Couldn't read limiter_xend vector of length {} from mesh", limiter_count);
+      throw BoutException("Couldn't read limiter_xend vector of length {} from mesh",
+                          limiter_count);
     }
 
     for (int i = 0; i < limiter_count; ++i) {
@@ -2162,7 +2165,7 @@ void BoutMesh::topology() {
       int xstart = limiter_xstarts[i];
       int xend = limiter_xends[i];
       output_info.write("Adding a limiter between y={} and {}. X indices {} to {}\n",
-                        yind, yind+1, xstart, xend);
+                        yind, yind + 1, xstart, xend);
       add_target(yind, xstart, xend);
     }
   }

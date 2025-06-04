@@ -479,8 +479,8 @@ bool GridFile::get([[maybe_unused]] Mesh* m, [[maybe_unused]] std::vector<int>& 
 
   // Check size
   if (full_var.size() < len + offset) {
-    throw BoutException("{} has length {}. Expected {} elements + {} offset",
-                        name, full_var.size(), len, offset);
+    throw BoutException("{} has length {}. Expected {} elements + {} offset", name,
+                        full_var.size(), len, offset);
   }
 
   // Ensure that output variable has the correct size
