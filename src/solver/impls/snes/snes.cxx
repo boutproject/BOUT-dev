@@ -1294,7 +1294,8 @@ void SNESSolver::updateColoring() {
   MatFDColoringSetFunction(fdcoloring,
 #if PETSC_VERSION_GE(3, 24, 0) \
     || (PETSC_VERSION_GE(3, 23, 0) && PETSC_VERSION_RELEASE == 0)
-                           FormFunctionForColoring,
+                           reinterpret_cast<PetscErrorCode (*)(void*, Vec, Vec, void*)>(
+                               FormFunctionForColoring),
 #else
                            reinterpret_cast<PetscErrorCode (*)()>(
                                FormFunctionForColoring),
