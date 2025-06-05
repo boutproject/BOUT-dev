@@ -9,6 +9,7 @@
 #include <bout/boutexception.hxx>
 #include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/petsc_interface.hxx>
 #include <bout/utils.hxx>
 
 #include <cmath>
@@ -116,7 +117,7 @@ static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  *
  * This can be a linearised and simplified form of FormFunction
  */
-static PetscErrorCode FormFunctionForColoring(SNES UNUSED(snes), Vec x, Vec f,
+static PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f,
                                               void* ctx) {
   return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, true);
 }
@@ -654,9 +655,15 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       // Create data structure for SNESComputeJacobianDefaultColor
       MatFDColoringCreate(Jmf, iscoloring, &fdcoloring);
       // Set the function to difference
-      MatFDColoringSetFunction(
-          fdcoloring, reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring),
-          this);
+#if PETSC_VERSION_GE(3, 24, 0) \
+    || (PETSC_VERSION_GE(3, 23, 0) && PETSC_VERSION_RELEASE == 0)
+#define FUNC_MAYBE_CAST(func) func
+#else
+#define FUNC_MAYBE_CAST(func) reinterpret_cast<MatFDColoringFn>(func)
+#endif
+      MatFDColoringSetFunction(fdcoloring, FUNC_MAYBE_CAST(FormFunctionForColoring),
+                               this);
+#undef FUNC_MAYBE_CAST
       MatFDColoringSetFromOptions(fdcoloring);
       MatFDColoringSetUp(Jmf, iscoloring, fdcoloring);
       ISColoringDestroy(&iscoloring);
@@ -680,12 +687,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
           0, // Number of nonzeros per row in off-diagonal portion of local submatrix
           nullptr, &Jmf);
 
-#if PETSC_VERSION_GE(3, 4, 0)
       SNESSetJacobian(*snesIn, Jmf, Jmf, SNESComputeJacobianDefault, this);
-#else
-      // Before 3.4
-      SNESSetJacobian(*snesIn, Jmf, Jmf, SNESDefaultComputeJacobian, this);
-#endif
 
       MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
     }
