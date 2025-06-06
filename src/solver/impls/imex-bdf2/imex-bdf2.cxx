@@ -683,12 +683,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
           0, // Number of nonzeros per row in off-diagonal portion of local submatrix
           nullptr, &Jmf);
 
-#if PETSC_VERSION_GE(3, 4, 0)
       SNESSetJacobian(*snesIn, Jmf, Jmf, SNESComputeJacobianDefault, this);
-#else
-      // Before 3.4
-      SNESSetJacobian(*snesIn, Jmf, Jmf, SNESDefaultComputeJacobian, this);
-#endif
 
       MatSetOption(Jmf, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
     }
