@@ -1291,16 +1291,8 @@ void SNESSolver::updateColoring() {
   // Replace the old coloring with the new one
   MatFDColoringDestroy(&fdcoloring);
   MatFDColoringCreate(Jfd, iscoloring, &fdcoloring);
-  MatFDColoringSetFunction(fdcoloring,
-#if PETSC_VERSION_GE(3, 24, 0) \
-    || (PETSC_VERSION_GE(3, 23, 0) && PETSC_VERSION_RELEASE == 0)
-                           reinterpret_cast<PetscErrorCode (*)(void*, Vec, Vec, void*)>(
-                               FormFunctionForColoring),
-#else
-                           reinterpret_cast<PetscErrorCode (*)()>(
-                               FormFunctionForColoring),
-#endif
-                           this);
+  MatFDColoringSetFunction(
+      fdcoloring, reinterpret_cast<MatFDColoringFn>(FormFunctionForColoring), this);
   MatFDColoringSetFromOptions(fdcoloring);
   MatFDColoringSetUp(Jfd, iscoloring, fdcoloring);
   ISColoringDestroy(&iscoloring);
