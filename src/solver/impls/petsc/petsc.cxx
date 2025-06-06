@@ -514,9 +514,7 @@ int PetscSolver::init() {
   CHKERRQ(ierr);
   ierr = ISColoringDestroy(&iscoloring);
   CHKERRQ(ierr);
-  ierr = MatFDColoringSetFunction(matfdcoloring,
-                                  reinterpret_cast<PetscErrorCode (*)()>(solver_f), this);
-  CHKERRQ(ierr);
+  throw BoutException("Coloring is not working");
   ierr = SNESSetJacobian(snes, J, J, SNESComputeJacobianDefaultColor, matfdcoloring);
   CHKERRQ(ierr);
 

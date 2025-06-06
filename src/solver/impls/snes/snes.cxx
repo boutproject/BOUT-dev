@@ -1292,7 +1292,7 @@ void SNESSolver::updateColoring() {
   MatFDColoringDestroy(&fdcoloring);
   MatFDColoringCreate(Jfd, iscoloring, &fdcoloring);
   MatFDColoringSetFunction(
-      fdcoloring, reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring), this);
+      fdcoloring, reinterpret_cast<MatFDColoringFn>(FormFunctionForColoring), this);
   MatFDColoringSetFromOptions(fdcoloring);
   MatFDColoringSetUp(Jfd, iscoloring, fdcoloring);
   ISColoringDestroy(&iscoloring);
