@@ -27,8 +27,8 @@
 ///     using MyTest = FakeMeshFixture;
 class FakeMeshFixture : public ::testing::Test {
 public:
-  FakeMeshFixture()
-      : mesh_m(nx, ny, nz, mpi), mesh_staggered_m(nx, ny, nz, mpi),
+  FakeMeshFixture(int nx_ = nx, int ny_ = ny, int nz_ = nz)
+      : mesh_m(nx_, ny_, nz_, mpi), mesh_staggered_m(nx_, ny_, nz_, mpi),
         mesh_staggered(&mesh_staggered_m) {
 
     bout::globals::mpi = &mpi;
