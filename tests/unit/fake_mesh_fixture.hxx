@@ -27,13 +27,13 @@
 ///     using MyTest = FakeMeshFixture;
 class FakeMeshFixture : public ::testing::Test {
 public:
-    FakeMeshFixture() {
+    FakeMeshFixture(int nx_ = nx, int ny_ = ny, int nz_ = nz) {
         WithQuietOutput quiet_info{output_info};
         WithQuietOutput quiet_warn{output_warn};
 
         delete bout::globals::mesh;
         bout::globals::mpi = new MpiWrapper();
-        bout::globals::mesh = new FakeMesh(nx, ny, nz);
+        bout::globals::mesh = new FakeMesh(nx_, ny_, nz_);
         bout::globals::mesh->createDefaultRegions();
         static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
         test_coords = std::make_shared<Coordinates>(
@@ -71,7 +71,7 @@ public:
         dynamic_cast<FakeMesh*>(bout::globals::mesh)->createBoundaryRegions();
 
         delete mesh_staggered;
-        mesh_staggered = new FakeMesh(nx, ny, nz);
+        mesh_staggered = new FakeMesh(nx_, ny_, nz_);
         mesh_staggered->StaggerGrids = true;
         dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr);
         dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
