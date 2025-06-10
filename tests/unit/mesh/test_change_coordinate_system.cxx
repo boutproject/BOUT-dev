@@ -5,6 +5,9 @@
 #include "bout/constants.hxx"
 #include <bout/tokamak_coordinates.hxx>
 
+static constexpr int NX = 3;
+static constexpr int NY = 5;
+static constexpr int NZ = 8;
 
 using bout::globals::mesh;
 
@@ -12,7 +15,7 @@ class CoordinateTransformTest : public FakeMeshFixture {
 public:
     using FieldMetric = Coordinates::FieldMetric;
 
-    CoordinateTransformTest() : FakeMeshFixture() {}
+    CoordinateTransformTest() : FakeMeshFixture(NX, NY, NZ) {}
 };
 
 TEST_F(CoordinateTransformTest, CylindricalToCartesian) {
@@ -24,8 +27,8 @@ TEST_F(CoordinateTransformTest, CylindricalToCartesian) {
     // from (2D) orthogonal poloidal coordinates (r, theta)
 
     const double R0 = 2.0;  // major radius
-    const std::array<double, nx> r_values = {0.1, 0.2, 0.3};  // minor radius
-    const std::array<double, ny> theta_values = {  // poloidal angle
+    const std::array<double, NX> r_values = {0.1, 0.2, 0.3};  // minor radius
+    const std::array<double, NY> theta_values = {  // poloidal angle
             0.0,
             PI / 2,
             PI,
@@ -51,13 +54,11 @@ TEST_F(CoordinateTransformTest, CylindricalToCartesian) {
     // assert
     const auto max_r = *std::max_element(begin(r_values), end(r_values));
     const auto expected_max_x = R0 + max_r;
-    // With nz=7, there is no toroidal coordinate point at exactly pi/2; the nearest point is at 2/7 * 2pi
-    const auto expected_max_y = (R0 + max_r) * std::sin(TWOPI * 2 / 7);
+    const auto expected_max_y = (R0 + max_r);
     const auto expected_max_z = max_r;
 
-    // With nz=7, there is no toroidal coordinate point at exactly pi; the nearest point is at 3/7 * 2pi
-    const auto expected_min_x = -1 * (R0 + max_r) * std::cos(TWOPI / 7 / 2);
-    const auto expected_min_y = -1 * (R0 + max_r) * std::sin(TWOPI * 2 / 7);
+    const auto expected_min_x = -1 * (R0 + max_r);
+    const auto expected_min_y = -1 * (R0 + max_r);
     const auto expected_min_z = -1 * expected_max_z;
 
     const auto actual_max_x = max(cartesian_coords.x, false, "RGN_ALL");
