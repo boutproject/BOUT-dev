@@ -8,6 +8,7 @@
 #include <bout/boutexception.hxx>
 #include <bout/globals.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/petsc_interface.hxx>
 #include <bout/utils.hxx>
 
 #include <cmath>
