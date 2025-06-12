@@ -693,10 +693,15 @@ if(BOUT_TESTS)
 
 endif()
 
-option(BOUT_BUILD_EXAMPLES "Build the examples" OFF)
+option(BOUT_BUILD_EXAMPLES "Build the examples" ON)
 if(BOUT_BUILD_EXAMPLES)
   add_custom_target(build-all-examples)
-  add_subdirectory(examples)
+  option(BOUT_BUILD_EXAMPLES_ALWAYS "Build the examples with all target" OFF)
+  if (BOUT_BUILD_EXAMPLES_ALWAYS)
+    add_subdirectory(examples)
+  else()
+    add_subdirectory(examples EXCLUDE_FROM_ALL)
+  endif()
 endif()
 
 
