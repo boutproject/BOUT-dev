@@ -51,6 +51,7 @@ Before merging PR:
     - [ ]  [`manual/doxygen/Doxyfile_readthedocs`][Doxyfile_readthedocs]: `PROJECT_NUMBER`
     - [ ]  [`manual/doxygen/Doxyfile`][Doxyfile]: `PROJECT_NUMBER`
     - [ ]  [`CMakeLists.txt`][CMakeLists]: `_bout_previous_version`, `_bout_next_version`
+- [ ] Update what version of PETSc and SUNDIALS we support (upper bound)
 
 
 After PR is merged:
