@@ -736,7 +736,7 @@ endif()
 ##################################################
 # Documentation
 
-option(BOUT_BUILD_DOCS "Build the documentation" ON)
+option(BOUT_BUILD_DOCS "Build the documentation" OFF)
 if (BOUT_BUILD_DOCS)
   option(BOUT_BUILD_DOCS_ALWAYS "Build the documentation with the main target" OFF)
   if (BOUT_BUILD_DOCS_ALWAYS)
