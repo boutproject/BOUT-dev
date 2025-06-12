@@ -140,6 +140,7 @@ set(BOUT_SOURCES
   ./include/bout/macro_for_each.hxx
   ./include/bout/mask.hxx
   ./include/bout/mesh.hxx
+  ./include/bout/mesh_facefield_comm.hxx
   ./include/bout/monitor.hxx
   ./include/bout/mpi_wrapper.hxx
   ./include/bout/msg_stack.hxx
@@ -274,6 +275,7 @@ set(BOUT_SOURCES
   ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
   ./src/mesh/invert3x3.hxx
   ./src/mesh/mesh.cxx
+  ./src/mesh/mesh_facefield_comm.cxx
   ./src/mesh/parallel/fci.cxx
   ./src/mesh/parallel/fci.hxx
   ./src/mesh/parallel/identity.cxx
