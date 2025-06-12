@@ -33,6 +33,7 @@ set(serial_tests_source
   ./field/test_field.cxx
   ./field/test_field2d.cxx
   ./field/test_field3d.cxx
+  ./field/test_facefield3d.cxx
   ./field/test_field_factory.cxx
   ./field/test_fieldgroup.cxx
   ./field/test_fieldperp.cxx

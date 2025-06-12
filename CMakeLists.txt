@@ -115,6 +115,7 @@ set(BOUT_SOURCES
   ./include/bout/field_factory.hxx
   ./include/bout/fieldgroup.hxx
   ./include/bout/fieldperp.hxx
+  ./include/bout/facefield3d.hxx
   ./include/bout/fv_ops.hxx
   ./include/bout/generic_factory.hxx
   ./include/bout/globalfield.hxx
@@ -199,6 +200,7 @@ set(BOUT_SOURCES
   ./src/field/fieldgenerators.hxx
   ./src/field/fieldgroup.cxx
   ./src/field/fieldperp.cxx
+  ./src/field/facefield3d.cxx
   ./src/field/generated_fieldops.cxx
   ./src/field/globalfield.cxx
   ./src/field/initialprofiles.cxx
