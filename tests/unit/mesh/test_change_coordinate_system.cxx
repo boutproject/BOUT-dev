@@ -11,11 +11,11 @@ static constexpr int NZ = 8;
 
 using bout::globals::mesh;
 
-class CoordinateTransformTest : public FakeMeshFixture {
+class CoordinateTransformTest : public FakeMeshFixture_tmpl<NX, NY, NZ> {
 public:
     using FieldMetric = Coordinates::FieldMetric;
 
-    CoordinateTransformTest() : FakeMeshFixture(NX, NY, NZ) {}
+    CoordinateTransformTest() : FakeMeshFixture_tmpl() {}
 };
 
 TEST_F(CoordinateTransformTest, CylindricalToCartesian) {
