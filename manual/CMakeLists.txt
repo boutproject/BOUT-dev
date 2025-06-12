@@ -27,6 +27,11 @@ set_target_properties(sphinx-html sphinx-pdf PROPERTIES
 add_custom_target(docs ALL)
 add_dependencies(docs sphinx-html)
 
+if (BOUT_ENABLE_PYTHON)
+  add_dependencies(sphinx-html boutpp)
+  add_dependencies(sphinx-pdf boutpp)
+endif()
+
 install(DIRECTORY ${BOUT_SPHINX_BUILD}/
   DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/bout++/
   PATTERN .* EXCLUDE

@@ -693,10 +693,10 @@ if(BOUT_TESTS)
 
 endif()
 
-option(BOUT_BUILD_EXAMPLES "Build the examples" ON)
+option(BOUT_BUILD_EXAMPLES "Build the examples" OFF)
 if(BOUT_BUILD_EXAMPLES)
   add_custom_target(build-all-examples)
-  add_subdirectory(examples EXCLUDE_FROM_ALL)
+  add_subdirectory(examples)
 endif()
 
 
@@ -731,9 +731,14 @@ endif()
 ##################################################
 # Documentation
 
-option(BOUT_BUILD_DOCS "Build the documentation" OFF)
+option(BOUT_BUILD_DOCS "Build the documentation" ON)
 if (BOUT_BUILD_DOCS)
-  add_subdirectory(manual EXCLUDE_FROM_ALL)
+  option(BOUT_BUILD_DOCS_ALWAYS "Build the documentation with the main target" OFF)
+  if (BOUT_BUILD_DOCS_ALWAYS)
+    add_subdirectory(manual)
+  else()
+    add_subdirectory(manual EXCLUDE_FROM_ALL)
+  endif()
 endif()
 
 
