@@ -185,32 +185,33 @@ public:
   /*!
    * \brief Apply parallel boundary conditions to all components
    */
-  void applyParallelBoundary(bool init = false) override;
+  void applyParallelBoundary(bool init = false);
 
   /*!
    * \brief Apply parallel boundary conditions to all components
    */
-  void applyParallelBoundary(const std::string& condition);
+  void applyParallelBoundary(const std::string& condition) override;
 
   /*!
    * \brief Apply parallel boundary conditions to all components
    */
-  void applyParallelBoundary(const std::string& region, const std::string& condition);
+  void applyParallelBoundary(const std::string& region, const std::string& condition) override;
 
   // Virtual methods from FieldData
-  bool isReal() const override { return true; }
+  bool isReal() const { return true; }
   bool is3D() const override { return true; }
-  int byteSize() const override { return 3 * sizeof(T); }
-  int BoutRealSize() const override { return (is_real<T>::value) ? 3 : 0; }
+  int byteSize() const { return 3 * sizeof(T); }
+  int BoutRealSize() const { return std::is_same<T, BoutReal>::value ? 3 : 0; }
   
 #if BOUT_USE_TRACK
   std::string name;
 #endif
 
   // MetaData interface
-  void setLocation(CELL_LOC loc) override {
+  FieldData& setLocation(CELL_LOC UNUSED(loc)) override {
     // For FaceField3D, location is inherently face-based
     // This is a no-op as each component has its own location
+    return *this;
   }
   
   CELL_LOC getLocation() const override {
@@ -221,15 +222,15 @@ public:
   // Make FieldData::setBoundary visible
   using FieldData::setBoundary;
   
-  void setBoundary(const std::string& name) override {
+  void setBoundary(const std::string& name) {
     fx_.setBoundary(name);
     fy_.setBoundary(name);
     fz_.setBoundary(name);
   }
 
-  FieldData* timeDeriv() override;
+  FieldData* timeDeriv();
 
-  void setDirectionY(YDirectionType y) override {
+  void setDirectionY(YDirectionType y) {
     fx_.setDirectionY(y);
     fy_.setDirectionY(y);
     fz_.setDirectionY(y);

@@ -3,6 +3,7 @@
 #include "test_extras.hxx"
 #include "bout/facefield3d.hxx"
 #include "bout/mesh_facefield_comm.hxx"
+#include "../fake_mesh.hxx"
 
 /// Global variables for testing
 static FakeMesh* test_mesh = nullptr;

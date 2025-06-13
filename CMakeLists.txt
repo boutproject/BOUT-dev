@@ -259,6 +259,7 @@ set(BOUT_SOURCES
   ./src/mesh/boundary_standard.cxx
   ./src/mesh/coordinates.cxx
   ./src/mesh/coordinates_accessor.cxx
+  ./src/mesh/conservative_flux_div.cxx
   ./src/mesh/data/gridfromfile.cxx
   ./src/mesh/data/gridfromoptions.cxx
   ./src/mesh/difops.cxx

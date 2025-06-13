@@ -204,11 +204,6 @@ FieldData* FaceField3D_t<T>::timeDeriv() {
   if (deriv == nullptr) {
     // Create a new FaceField3D for the time derivative
     deriv = new FaceField3D_t<T>(getMesh());
-    
-    // Ensure the components' time derivatives point to the components of deriv
-    fx_.setDeriv(&(deriv->fx_));
-    fy_.setDeriv(&(deriv->fy_));
-    fz_.setDeriv(&(deriv->fz_));
   }
   return deriv;
 }

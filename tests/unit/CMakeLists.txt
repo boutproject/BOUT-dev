@@ -67,6 +67,8 @@ set(serial_tests_source
   ./mesh/parallel/test_shiftedmetric.cxx
   ./mesh/test_boundary_factory.cxx
   ./mesh/test_boutmesh.cxx
+  ./mesh/test_conservative_flux_div.cxx
+  ./mesh/test_conservative_flux_div_compile.cxx
   ./mesh/test_coordinates.cxx
   ./mesh/test_coordinates_accessor.cxx
   ./mesh/test_interpolation.cxx
