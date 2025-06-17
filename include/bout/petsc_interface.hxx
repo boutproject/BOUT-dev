@@ -618,7 +618,7 @@ PetscVector<T> operator*(const PetscMatrix<T>& mat, const PetscVector<T>& vec) {
 // Compatibility wrappers
 // For < 3.24
 #if PETSC_VERSION_GE(3, 24, 0) \
-    || (PETSC_VERSION_GE(3, 23, 0) && PETSC_VERSION_RELEASE != 0)
+    || (PETSC_VERSION_GE(3, 23, 0) && PETSC_VERSION_RELEASE == 0)
 // Nothing to do
 #else
 using MatFDColoringFn = PetscErrorCode (*)();
