@@ -570,10 +570,18 @@ PetscVector<T> operator*(const PetscMatrix<T>& mat, const PetscVector<T>& vec) {
 // For < 3.24
 #if PETSC_VERSION_GE(3, 24, 0) \
     || (PETSC_VERSION_GE(3, 23, 0) && PETSC_VERSION_RELEASE == 0)
-#define BOUT_CAST_MATFDCOLORINGFN(func) func
+namespace bout {
+template<class T>
+constexpr auto cast_MatFDColoringFn(T func) { return func; }
+}
 #else
 using MatFDColoringFn = PetscErrorCode (*)();
-#define BOUT_CAST_MATFDCOLORINGFN(func) reinterpret_cast<MatFDColoringFn>(func)
+namespace bout {
+template<class T>
+constexpr auto cast_MatFDColoringFn(T func) {
+  return reinterpret_cast<MatFDColoringFn>(func); // NOLINT(*-reinterpret-cast)
+}
+}
 #endif
 
 #endif // BOUT_HAS_PETSC

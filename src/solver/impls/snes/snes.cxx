@@ -1292,7 +1292,7 @@ void SNESSolver::updateColoring() {
   // Replace the old coloring with the new one
   MatFDColoringDestroy(&fdcoloring);
   MatFDColoringCreate(Jfd, iscoloring, &fdcoloring);
-  MatFDColoringSetFunction(fdcoloring, BOUT_CAST_MATFDCOLORINGFN(FormFunctionForColoring),
+  MatFDColoringSetFunction(fdcoloring, bout::cast_MatFDColoringFn(FormFunctionForColoring),
                            this);
   MatFDColoringSetFromOptions(fdcoloring);
   MatFDColoringSetUp(Jfd, iscoloring, fdcoloring);
