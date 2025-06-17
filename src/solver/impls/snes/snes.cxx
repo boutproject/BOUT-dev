@@ -42,7 +42,7 @@ static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  *
  * This can be a linearised and simplified form of FormFunction
  */
-static PetscErrorCode FormFunctionForColoring(SNES UNUSED(snes), Vec x, Vec f,
+static PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f,
                                               void* ctx) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f, true);
 }

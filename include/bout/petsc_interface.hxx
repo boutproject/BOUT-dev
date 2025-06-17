@@ -619,9 +619,10 @@ PetscVector<T> operator*(const PetscMatrix<T>& mat, const PetscVector<T>& vec) {
 // For < 3.24
 #if PETSC_VERSION_GE(3, 24, 0) \
     || (PETSC_VERSION_GE(3, 23, 0) && PETSC_VERSION_RELEASE == 0)
-// Nothing to do
+#define BOUT_CAST_MATFDCOLORINGFN(func) func
 #else
 using MatFDColoringFn = PetscErrorCode (*)();
+#define BOUT_CAST_MATFDCOLORINGFN(func) reinterpret_cast<MatFDColoringFn>(func)
 #endif
 
 #endif // BOUT_HAS_PETSC
