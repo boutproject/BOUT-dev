@@ -879,4 +879,14 @@ Mesh::getRegion<FieldPerp>(const std::string& region_name) const {
   return getRegionPerp(region_name);
 }
 
+/// Define for reading a variable from a mesh
+#define GRID_LOAD1(var) mesh->get(var, #var)
+
+/// Read fields from a mesh
+/// The name of the variable will be used as the name
+/// in the input.
+/// This should accept up to 10 arguments
+#define GRID_LOAD(...)                             \
+  { MACRO_FOR_EACH_FN(GRID_LOAD1, __VA_ARGS__) }
+
 #endif // BOUT_MESH_H

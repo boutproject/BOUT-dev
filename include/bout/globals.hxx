@@ -3,9 +3,9 @@
  * 
  * 
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -29,7 +29,6 @@
 
 #include "bout/macro_for_each.hxx"
 
-class Mesh;
 class MpiWrapper;
 
 namespace bout {
@@ -42,53 +41,7 @@ namespace globals {
 #define SETTING(name, val) name = val
 #endif
 
-SETTING(Mesh* mesh, nullptr);      ///< The mesh object
 SETTING(MpiWrapper* mpi, nullptr); ///< The MPI wrapper object
-
-/// Define for reading a variable from the grid
-#define GRID_LOAD1(var) mesh->get(var, #var)
-#define GRID_LOAD2(var1, var2) \
-  {                            \
-    mesh->get(var1, #var1);    \
-    mesh->get(var2, #var2);    \
-  }
-#define GRID_LOAD3(var1, var2, var3) \
-  {                                  \
-    mesh->get(var1, #var1);          \
-    mesh->get(var2, #var2);          \
-    mesh->get(var3, #var3);          \
-  }
-#define GRID_LOAD4(var1, var2, var3, var4) \
-  {                                        \
-    mesh->get(var1, #var1);                \
-    mesh->get(var2, #var2);                \
-    mesh->get(var3, #var3);                \
-    mesh->get(var4, #var4);                \
-  }
-#define GRID_LOAD5(var1, var2, var3, var4, var5) \
-  {                                              \
-    mesh->get(var1, #var1);                      \
-    mesh->get(var2, #var2);                      \
-    mesh->get(var3, #var3);                      \
-    mesh->get(var4, #var4);                      \
-    mesh->get(var5, #var5);                      \
-  }
-#define GRID_LOAD6(var1, var2, var3, var4, var5, var6) \
-  {                                                    \
-    mesh->get(var1, #var1);                            \
-    mesh->get(var2, #var2);                            \
-    mesh->get(var3, #var3);                            \
-    mesh->get(var4, #var4);                            \
-    mesh->get(var5, #var5);                            \
-    mesh->get(var6, #var6);                            \
-  }
-
-/// Read fields from the global mesh
-/// The name of the variable will be used as the name
-/// in the input.
-/// This should accept up to 10 arguments
-#define GRID_LOAD(...) \
-  { MACRO_FOR_EACH_FN(GRID_LOAD1, __VA_ARGS__) }
 
 ///////////////////////////////////////////////////////////////
 
