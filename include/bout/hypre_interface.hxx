@@ -1036,12 +1036,12 @@ public:
     case HYPRE_SOLVER_TYPE::gmres: {
       HYPRE_ParCSRGMRESSetKDim(solver,
                                options["kdim"]
-                                 .doc("Set the maximum size of the Krylov space")
-                                 .withDefault(30));
+                                   .doc("Set the maximum size of the Krylov space")
+                                   .withDefault(30));
 
       if (options["skip_real_residual_check"]
-          .doc("Skip the evaluation and the check of the actual residual?")
-          .withDefault<bool>(false)) {
+              .doc("Skip the evaluation and the check of the actual residual?")
+              .withDefault<bool>(false)) {
         HYPRE_GMRESSetSkipRealResidualCheck(solver, 1);
       }
       break;
