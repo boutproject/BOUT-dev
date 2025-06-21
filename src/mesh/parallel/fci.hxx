@@ -73,10 +73,14 @@ public:
   FCITransform() = delete;
   FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool zperiodic = true,
                Options* opt = nullptr)
-      : ParallelTransform(mesh, opt) {
+    : ParallelTransform(mesh, opt), R{&mesh}, Z{&mesh} {
 
     // check the coordinate system used for the grid data source
     FCITransform::checkInputGrid();
+
+    // Real-space coordinates of grid cells
+    mesh.get(R, "R", 0.0, false);
+    mesh.get(Z, "Z", 0.0, false);
 
     auto forward_boundary_xin =
         std::make_shared<BoundaryRegionPar>("FCI_forward", BNDRY_PAR_FWD_XIN, +1, &mesh);
@@ -142,6 +146,10 @@ public:
 
   bool canToFromFieldAligned() const override { return false; }
 
+  /// Save mesh variables to output
+  /// If R and Z(x,y,z) coordinates are in the input then these are saved to output.
+  void outputVars(Options& output_options) override;
+
   bool requiresTwistShift(bool UNUSED(twist_shift_enabled),
                           [[maybe_unused]] YDirectionType ytype) override {
     // No Field3Ds require twist-shift, because they cannot be field-aligned
@@ -156,6 +164,9 @@ protected:
 private:
   /// FCI maps for each of the parallel slices
   std::vector<FCIMap> field_line_maps;
+
+  /// Real-space coordinates of grid points
+  Field3D R, Z;
 };
 
 #endif // BOUT_FCITRANSFORM_H
