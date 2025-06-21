@@ -1044,28 +1044,33 @@ This may in some cases be less efficient.
 Implementation internals
 ------------------------
 
+.. todo:: Update these docs for modern API
+
 The solver is the interface between BOUT++ and the time-integration
-code such as SUNDIALS. All solvers implement the `Solver`
-class interface (see ``src/solver/generic_solver.hxx``).
+code such as SUNDIALS. All solvers implement the `Solver` class
+interface.
 
 First all the fields which are to be evolved need to be added to the
-solver. These are always done in pairs, the first specifying the field,
-and the second the time-derivative::
+solver with `Solver::add`::
 
-    void add(Field2D &v, Field2D &F_v, const char* name);
+    virtual void add(Field2D &v, const std::string& name);
 
-This is normally called in the `PhysicsModel::init` initialisation routine.
-Some solvers (e.g. IDA) can support constraints, which need to be added
-in the same way as evolving fields::
+This is normally called in the `PhysicsModel::init` initialisation
+routine. This is a virtual function so that individual solver
+implementations can keep track of additional information if required.
 
-    bool constraints();
-    void constraint(Field2D &v, Field2D &C_v, const char* name);
+Some solvers (e.g. IDA) can support constraints, which need
+to be added in the same way as evolving fields::
 
-The ``constraints()`` function tests whether or not the current solver
-supports constraints. The format of ``constraint(...)`` is the same as
-``add``, except that now the solver will attempt to make ``C_v`` zero.
-If ``constraint`` is called when the solver doesn’t support them then an
-error should occur.
+    virtual bool constraints();
+    virtual void constraint(Field2D &v, Field2D &C_v, std::string name);
+
+The `Solver::constraints` function tests whether or not the current
+solver supports constraints. The format of `Solver::constraint`
+similar to `Solver::add`, except that it takes a second argument,
+``C_v``, which the solver will attempt to make zero. If ``constraint``
+is called when the solver doesn’t support them then an error will
+occur.
 
 If the physics model implements a preconditioner or Jacobian-vector
 multiplication routine, these can be passed to the solver during
@@ -1082,23 +1087,16 @@ be ignored.
 Once the problem to be solved has been specified, the solver can be
 initialised using::
 
-    int init();
+    virtual int init();
 
-which returns an error code (0 on success). This is currently called in
-:doc:`bout++.cxx<../_breathe_autogen/file/bout_09_09_8cxx>`::
+which returns an error code (0 on success). This is function is
+essential for implementations that must allocate memory based on the
+total number of fields being evolved, as this won't be known until
+after all calls to `Solver::add` and `Solver::constraint` have been
+handled. One of the very first things overrides for ``init`` should do
+is to call the base implementation `Solver::init` to handle the
+generic initialisation.
 
-    if (solver.init()) {
-      output.write("Failed to initialise solver. Aborting\n");
-      return(1);
-    }
-
-which passes the (physics module) RHS function `PhysicsModel::rhs` to the
-solver along with the number and size of the output steps.
-
-::
-
-    typedef int (*MonitorFunc)(BoutReal simtime, int iter, int NOUT);
-    int run(MonitorFunc f);
 
 .. [1]
    Taken from a talk by L.Chacon available here

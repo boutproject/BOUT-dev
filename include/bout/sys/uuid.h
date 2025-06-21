@@ -1,14 +1,15 @@
-// Based on stduuid by Marius Bancila: https://github.com/mariusbancila/stduuid
-// Originially copied from version at commit 5890c94bfac2f00f22a1c1481e5839c51d6a6f3f
-// This version hacked by J. Omotani to make it C++14 compatible:
-//   - remove uses of span
-//   - brace-initialise std::atomic_short clock_sequence to avoid deleted
-//     move-constructor error
-//   - remove use of std::optional. Throw exceptions instead.
-//   - replace std::bytes with char
-//   - replace 'if constexpr' with plain 'if'
-//   - replace 'is_same_v<>' with 'is_same<>::value'
-//   - replace std::copy with strncpy in uuid_name_generator::reset()
+/// Based on stduuid by Marius Bancila: https://github.com/mariusbancila/stduuid
+///
+/// Originially copied from version at commit 5890c94bfac2f00f22a1c1481e5839c51d6a6f3f
+/// This version hacked by J. Omotani to make it C++14 compatible:
+///   - remove uses of span
+///   - brace-initialise std::atomic_short clock_sequence to avoid deleted
+///     move-constructor error
+///   - remove use of std::optional. Throw exceptions instead.
+///   - replace std::bytes with char
+///   - replace 'if constexpr' with plain 'if'
+///   - replace 'is_same_v<>' with 'is_same<>::value'
+///   - replace std::copy with strncpy in uuid_name_generator::reset()
 //
 // Copyright (c) 2017
 //
@@ -261,7 +262,7 @@ private:
   size_t m_byteCount;
 };
 
-static std::mt19937 clock_gen(std::random_device{}());
+static std::mt19937 clock_gen{std::random_device{}()};
 static std::uniform_int_distribution<short> clock_dis{-32768, 32767};
 static std::atomic_short clock_sequence{clock_dis(clock_gen)};
 } // namespace detail

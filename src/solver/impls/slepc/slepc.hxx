@@ -53,8 +53,6 @@ class SlepcSolver;
 
 #include <vector>
 
-#define OPT_SIZE 40
-
 // Define a name to use with SolverType to indicate SlepcSolver
 // is in charge of advancing fields
 #define SOLVERSLEPCSELF "self"

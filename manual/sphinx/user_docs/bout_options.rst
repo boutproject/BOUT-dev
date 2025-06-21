@@ -139,10 +139,10 @@ Boolean expressions
 Boolean values must be "true", "false", "True", "False", "1" or
 "0". All lowercase ("true"/"false") is preferred, but the uppercase
 versions are allowed to support Python string conversions. Booleans
-can be combined into expressions using binary operators `&` (logical
-AND), `|` (logical OR), and unary operator `!` (logical NOT). For
-example "true & false" evaluates to `false`; "!false" evaluates to
-`true`.  Like real values and integers, boolean expressions can refer
+can be combined into expressions using binary operators ``&`` (logical
+AND), ``|`` (logical OR), and unary operator ``!`` (logical NOT). For
+example "true & false" evaluates to ``false``; "!false" evaluates to
+``true``. Like real values and integers, boolean expressions can refer
 to other variables:
 
 .. code-block:: cfg
@@ -150,8 +150,8 @@ to other variables:
    switch = true
    other_switch = !switch
 
-Boolean expressions can be formed by comparing real values using
-`>` and `<` comparison operators:
+Boolean expressions can be formed by comparing real values using ``>``
+and ``<`` comparison operators:
 
 .. code-block:: cfg
 
@@ -160,15 +160,15 @@ Boolean expressions can be formed by comparing real values using
    is_false = value < 2
 
 .. note::
-   Previous BOUT++ versions (v5.1.0 and earlier) were case
-   insensitive when reading boolean values, so would read "True" or
-   "yEs" as `true`, and "False" or "No" as `false`. These earlier
-   versions did not allow boolean expressions.
+   Previous BOUT++ versions (v5.1.0 and earlier) were case insensitive
+   when reading boolean values, so would read "True" or "yEs" as
+   ``true``, and "False" or "No" as ``false``. These earlier versions
+   did not allow boolean expressions.
 
-Internally, booleans are evaluated as real values, with `true` being 1
-and `false` being 0. Logical operators (`&`, `|`, `!`) check that
-their left and right arguments are either close to 0 or close to 1
-(like integers, "close to" is within 1e-3).
+Internally, booleans are evaluated as real values, with ``true`` being
+1 and ``false`` being 0. Logical operators (``&``, ``|``, ``!``) check
+that their left and right arguments are either close to 0 or close to
+1 (like integers, "close to" is within 1e-3).
 
 Special symbols in Option names
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
