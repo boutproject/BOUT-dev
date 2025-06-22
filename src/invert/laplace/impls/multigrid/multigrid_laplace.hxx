@@ -137,8 +137,8 @@ private:
 
 class LaplaceMultigrid : public Laplacian {
 public:
-  LaplaceMultigrid(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-                   Mesh* mesh_in = nullptr, Solver* solver = nullptr);
+  LaplaceMultigrid(Mesh* mesh_in, Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+                   Solver* solver = nullptr);
   ~LaplaceMultigrid(){};
 
   using Laplacian::setCoefA;

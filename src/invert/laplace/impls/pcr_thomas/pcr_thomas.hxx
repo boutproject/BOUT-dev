@@ -3,9 +3,9 @@
  * and tridiagonal solver.
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -40,8 +40,8 @@ RegisterLaplace<LaplacePCR_THOMAS> registerlaplacepcrthomas(LAPLACE_PCR_THOMAS);
 
 class LaplacePCR_THOMAS : public Laplacian {
 public:
-  LaplacePCR_THOMAS(Options* opt = nullptr, CELL_LOC loc = CELL_CENTRE,
-                    Mesh* mesh_in = nullptr, Solver* solver = nullptr);
+  LaplacePCR_THOMAS(Mesh* mesh_in, Options* opt = nullptr, CELL_LOC loc = CELL_CENTRE,
+                    Solver* solver = nullptr);
   ~LaplacePCR_THOMAS() = default;
 
   using Laplacian::setCoefA;

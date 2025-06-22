@@ -11,9 +11,9 @@
  *    * Initial version
  * 
  **************************************************************************
- * Copyright 2013 B.D.Dudson
+ * Copyright 2013 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -134,13 +134,14 @@ public:
             typename = std::enable_if_t<std::is_base_of_v<PhysicsModel, Model>>>
   using ModelJacobianFunc = int (Model::*)(BoutReal t);
 
-  PhysicsModel();
+  /// A PhysicsModel requires at least a Mesh
+  PhysicsModel(Mesh* mesh_);
   PhysicsModel(Mesh* mesh_, bool output_enabled_, bool restart_enabled_)
       : mesh(mesh_), output_enabled(output_enabled_), restart_enabled(restart_enabled_) {}
 
   virtual ~PhysicsModel() = default;
 
-  Mesh* mesh{nullptr};
+  Mesh* mesh;
   bout::DataFileFacade dump{};
   bout::DataFileFacade restart{};
 
@@ -426,6 +427,8 @@ private:
       return init_err;                                             \
     }                                                              \
     try {                                                          \
+      auto mesh = Mesh::create();                                  \
+      mesh->load();                                                \
       auto model = bout::utils::make_unique<ModelClass>();         \
       auto solver = Solver::create();                              \
       solver->setModel(model.get());                               \

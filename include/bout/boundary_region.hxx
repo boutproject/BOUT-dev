@@ -8,11 +8,6 @@ class BoundaryRegion;
 #include <utility>
 
 class Mesh;
-namespace bout {
-namespace globals {
-extern Mesh* mesh; ///< Global mesh
-} // namespace globals
-} // namespace bout
 
 /// Location of boundary
 enum class BndryLoc {
@@ -40,9 +35,9 @@ class BoundaryRegionBase {
 public:
   BoundaryRegionBase() = delete;
   BoundaryRegionBase(std::string name, Mesh* passmesh = nullptr)
-      : localmesh(passmesh ? passmesh : bout::globals::mesh), label(std::move(name)) {}
+      : localmesh(passmesh), label(std::move(name)) {}
   BoundaryRegionBase(std::string name, BndryLoc loc, Mesh* passmesh = nullptr)
-      : localmesh(passmesh ? passmesh : bout::globals::mesh), label(std::move(name)),
+      : localmesh(passmesh), label(std::move(name)),
         location(loc) {}
 
   virtual ~BoundaryRegionBase() = default;

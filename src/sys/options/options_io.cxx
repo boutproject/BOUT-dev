@@ -1,6 +1,5 @@
 #include "bout/options_io.hxx"
 #include "bout/bout.hxx"
-#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 
 #include "options_adios.hxx"
@@ -46,11 +45,11 @@ OptionsIOFactory::ReturnType OptionsIOFactory::createFile(const std::string& fil
   return create(getDefaultType(), options);
 }
 
-void writeDefaultOutputFile(Options& data) {
+void writeDefaultOutputFile(Options& data, Mesh *mesh) {
   // Add BOUT++ version and flags
   bout::experimental::addBuildFlagsToOptions(data);
   // Add mesh information
-  bout::globals::mesh->outputVars(data);
+  mesh->outputVars(data);
   // Write to the default output file
   OptionsIOFactory::getInstance().createOutput()->write(data);
 }

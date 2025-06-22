@@ -63,11 +63,11 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
 
   auto& interpolation_options = options["xzinterpolation"];
   interp =
-      XZInterpolationFactory::getInstance().create(&interpolation_options, &map_mesh);
+    XZInterpolationFactory::getInstance().create(&map_mesh, &interpolation_options);
   interp->setYOffset(offset);
 
   interp_corner =
-      XZInterpolationFactory::getInstance().create(&interpolation_options, &map_mesh);
+    XZInterpolationFactory::getInstance().create(&map_mesh, &interpolation_options);
   interp_corner->setYOffset(offset);
 
   // Index-space coordinates of forward/backward points

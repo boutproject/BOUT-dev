@@ -30,8 +30,6 @@
 #include <bout/boutcomm.hxx>
 #include <bout/rvec.hxx>
 
-#include <bout/globals.hxx> // for mesh
-
 #include <bout/field2d.hxx>
 
 #include <bout/utils.hxx>
@@ -94,13 +92,8 @@ Field2D::~Field2D() { delete deriv; }
 
 Field2D& Field2D::allocate() {
   if (data.empty()) {
-    if (!fieldmesh) {
-      // fieldmesh was not initialized when this field was initialized, so use
-      // the global mesh and set some members to default values
-      fieldmesh = bout::globals::mesh;
-      nx = fieldmesh->LocalNx;
-      ny = fieldmesh->LocalNy;
-    }
+    // Must have a mesh
+    ASSERT0(fieldmesh);
     data.reallocate(nx * ny);
 #if CHECK > 2
     invalidateGuards(*this);

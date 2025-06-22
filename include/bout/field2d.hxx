@@ -4,9 +4,9 @@
  * \brief Definition of 2D scalar field class
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -55,16 +55,12 @@ class Field2D : public Field {
 public:
   using ind_type = Ind2D;
   /*!
-   * Constructor, taking an optional mesh pointer
-   * This mesh pointer is not used until the data is allocated,
-   * since Field2D objects can be globals, created before a mesh
-   * has been created.
+   * Constructor
    *
    * @param[in] localmesh  The mesh which defines the field size.
    *
-   * By default the global Mesh pointer (mesh) is used.
    */
-  Field2D(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
+  Field2D(Mesh* localmesh, CELL_LOC location_in = CELL_CENTRE,
           DirectionTypes directions_in = {YDirectionType::Standard,
                                           ZDirectionType::Average});
 
@@ -84,7 +80,7 @@ public:
    * allocates data, and assigns the value \p val to all points including
    * boundary cells.
    */
-  Field2D(BoutReal val, Mesh* localmesh = nullptr);
+  Field2D(BoutReal val, Mesh* localmesh);
 
   /// Constructor from Array and Mesh
   Field2D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,

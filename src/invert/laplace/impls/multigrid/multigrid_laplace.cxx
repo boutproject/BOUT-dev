@@ -8,7 +8,7 @@
  **************************************************************************
  * Copyright 2016 K.S. Kang
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -42,9 +42,9 @@
 
 BoutReal soltime = 0.0, settime = 0.0;
 
-LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
+LaplaceMultigrid::LaplaceMultigrid(Mesh* mesh_in, Options* opt, const CELL_LOC loc,
                                    Solver* UNUSED(solver))
-    : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0) {
+  : Laplacian(mesh_in, opt, loc), A(0.0, localmesh), C1(1.0, localmesh), C2(1.0, localmesh), D(1.0, localmesh) {
 
   TRACE("LaplaceMultigrid::LaplaceMultigrid(Options *opt)");
 
@@ -391,7 +391,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
   if ((pcheck == 3) && (mgcount == 0)) {
     FILE* outf;
     char outfile[256];
-    sprintf(outfile, "test_matF_%d.mat", kMG->rProcI);
+    snprintf(outfile, 256, "test_matF_%d.mat", kMG->rProcI);
     output << "Out file= " << outfile << endl;
     outf = fopen(outfile, "w");
     int dim = (lxx + 2) * (lzz + 2);
@@ -418,7 +418,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
 
       FILE* outf;
       char outfile[256];
-      sprintf(outfile, "test_matC%1d_%d.mat", i, kMG->rProcI);
+      snprintf(outfile, 256, "test_matC%1d_%d.mat", i, kMG->rProcI);
       output << "Out file= " << outfile << endl;
       outf = fopen(outfile, "w");
       int dim = (kMG->lnx[i - 1] + 2) * (kMG->lnz[i - 1] + 2);

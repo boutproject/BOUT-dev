@@ -52,8 +52,8 @@ RegisterLaplace<LaplaceHypre3d> registerlaplacehypre3d(LAPLACE_HYPRE3D);
 
 class LaplaceHypre3d : public Laplacian {
 public:
-  LaplaceHypre3d(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-                 Mesh* mesh_in = nullptr, Solver* solver = nullptr);
+  LaplaceHypre3d(Mesh* mesh_in, Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+                 Solver* solver = nullptr);
   ~LaplaceHypre3d() override;
 
   void setCoefA(const Field2D& val) override {

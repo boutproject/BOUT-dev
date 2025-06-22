@@ -1,8 +1,7 @@
 /**************************************************************************
- * Copyright 2010-2020 B.D.Dudson, S.Farley, P. Hill, J.T. Omotani, J.T. Parker,
- * M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -49,7 +48,7 @@ protected:
 public:
   XZInterpolation(int y_offset = 0, Mesh* localmeshIn = nullptr)
       : y_offset(y_offset),
-        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn) {}
+        localmesh(localmeshIn) {}
   XZInterpolation(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZInterpolation(y_offset, mesh) {
     region = regionFromMask(mask, localmesh);
@@ -273,11 +272,11 @@ public:
   static constexpr auto option_name = "type";
   static constexpr auto default_type = "hermitespline";
 
-  ReturnType create(Options* options = nullptr, Mesh* mesh = nullptr) const {
+  ReturnType create(Mesh* mesh, Options* options = nullptr) const {
     return Factory::create(getType(options), mesh);
   }
-  ReturnType create(const std::string& type, [[maybe_unused]] Options* options) const {
-    return Factory::create(type, nullptr);
+  ReturnType create(const std::string& type, Mesh* mesh, [[maybe_unused]] Options* options) const {
+    return Factory::create(type, mesh);
   }
 
   static void ensureRegistered();

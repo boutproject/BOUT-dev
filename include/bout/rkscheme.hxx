@@ -53,6 +53,10 @@ public:
   static constexpr auto section_name = "solver";
   static constexpr auto option_name = "scheme";
   static constexpr auto default_type = RKSCHEME_RKF45;
+
+  ReturnType create(const std::string& type, Mesh*, Options* options) const {
+    return Factory::create(type, options);
+  }
 };
 
 /// Simpler name for Factory registration helper class

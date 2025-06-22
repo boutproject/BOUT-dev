@@ -105,7 +105,6 @@ set(BOUT_SOURCES
   ./include/bout/deriv_store.hxx
   ./include/bout/derivs.hxx
   ./include/bout/difops.hxx
-  ./include/bout/expr.hxx
   ./include/bout/fft.hxx
   ./include/bout/field.hxx
   ./include/bout/field2d.hxx

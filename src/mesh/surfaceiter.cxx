@@ -2,6 +2,7 @@
 #include <bout/surfaceiter.hxx>
 
 #include <bout/boutexception.hxx>
+#include <bout/globals.hxx>
 #include <bout/unused.hxx>
 
 int SurfaceIter::ySize() { return m->ySize(xpos); }

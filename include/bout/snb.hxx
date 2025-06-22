@@ -3,6 +3,8 @@
 
 #include <memory>
 
+class Mesh;
+
 namespace bout {
 
 /// Calculate heat flux using the Shurtz-Nicolai-Busquet (SNB) model
@@ -20,11 +22,11 @@ namespace bout {
 class HeatFluxSNB {
 public:
   /// Construct using the options in the "snb" section.
-  HeatFluxSNB() : HeatFluxSNB(Options::root()["snb"]) {}
+  HeatFluxSNB(Mesh* mesh) : HeatFluxSNB(mesh, Options::root()["snb"]) {}
 
   /// Construct using options in given section.
-  explicit HeatFluxSNB(Options& options) {
-    invertpardiv = std::unique_ptr<InvertParDiv>{InvertParDiv::create()};
+  explicit HeatFluxSNB(Mesh* mesh, Options& options) {
+    invertpardiv = std::unique_ptr<InvertParDiv>{InvertParDiv::create(mesh)};
 
     // Read options. Note that the defaults are initialised already
     r = options["r"]

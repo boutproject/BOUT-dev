@@ -61,8 +61,8 @@
 
 using namespace std;
 
-LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED(solver))
-    : Laplacian(opt, loc, mesh_in), Acoef(0.0, localmesh), C1coef(1.0, localmesh),
+LaplacePCR::LaplacePCR(Mesh* mesh_in, Options* opt, CELL_LOC loc, Solver* UNUSED(solver))
+  : Laplacian(mesh_in, opt, loc), Acoef(0.0, localmesh), C1coef(1.0, localmesh),
       C2coef(1.0, localmesh), Dcoef(1.0, localmesh), nmode(maxmode + 1),
       ncx(localmesh->LocalNx), ny(localmesh->LocalNy), avec(ny, nmode, ncx),
       bvec(ny, nmode, ncx), cvec(ny, nmode, ncx) {
@@ -818,7 +818,6 @@ void LaplacePCR ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& 
   const int nlevel = log2(nprocs);
   const int nhprocs = nprocs / 2;
   int dist_rank = 1;
-  int dist2_rank = 2;
 
   /// Parallel cyclic reduction continues until 2x2 matrix are made between a pair of
   /// rank, (myrank, myrank+nhprocs).
@@ -936,7 +935,6 @@ void LaplacePCR ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& 
     }
 
     dist_rank *= 2;
-    dist2_rank *= 2;
   }
 
   /// Solving 2x2 matrix. All pair of ranks, myrank and myrank+nhprocs, solves it

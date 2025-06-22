@@ -7,7 +7,6 @@
 
 #include "bout/bout.hxx"
 #include "bout/boutexception.hxx"
-#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 #include "bout/sys/timer.hxx"
 
@@ -41,8 +40,6 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
                      const std::string& type) {
   std::vector<T> data;
   adios2::Variable<T> variable = io.InquireVariable<T>(name);
-
-  using bout::globals::mesh;
 
   if (variable.ShapeID() == adios2::ShapeID::GlobalValue) {
     T value;
@@ -245,7 +242,7 @@ bool readAttribute(adios2::IO& io, const std::string& name, const std::string& t
   return false;
 }
 
-Options OptionsADIOS::read([[maybe_unused]] bool lazy) {
+Options OptionsADIOS::read(Mesh *mesh, [[maybe_unused]] bool lazy) {
   Timer timer("io");
 
   // Open file

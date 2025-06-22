@@ -7,9 +7,9 @@
  *
  *
  **************************************************************************
- * Copyright 2015 B.D.Dudson
+ * Copyright 2015 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -47,12 +47,12 @@ public:
   static constexpr auto option_name = "type";
   static constexpr auto default_type = "cyclic";
 
-  ReturnType create(Mesh* mesh = nullptr, Options* options = nullptr,
+  ReturnType create(Mesh* mesh, Options* options = nullptr,
                     CELL_LOC loc = CELL_CENTRE) const {
     return Factory::create(getType(options), mesh, optionsOrDefaultSection(options), loc);
   }
-  ReturnType create(const std::string& type, Options* options) const {
-    return Factory::create(type, nullptr, options, CELL_CENTRE);
+  ReturnType create(const std::string& type, Mesh* mesh, Options* options) const {
+    return Factory::create(type, mesh, options, CELL_CENTRE);
   }
 
   static void ensureRegistered();
@@ -65,9 +65,9 @@ using RegisterUnavailableLaplaceXZ = LaplaceXZFactory::RegisterUnavailableInFact
 
 class LaplaceXZ {
 public:
-  LaplaceXZ(Mesh* m = nullptr, Options* UNUSED(options) = nullptr,
+  LaplaceXZ(Mesh* m, Options* UNUSED(options) = nullptr,
             const CELL_LOC loc = CELL_CENTRE)
-      : localmesh(m == nullptr ? bout::globals::mesh : m), location(loc) {}
+      : localmesh(m), location(loc) {}
   virtual ~LaplaceXZ() = default;
 
   virtual void setCoefs(const Field2D& A, const Field2D& B) = 0;

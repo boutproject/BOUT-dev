@@ -12,9 +12,9 @@
  *         * Added DST option
  *
  **************************************************************************
- * Copyright 2013 B.D.Dudson
+ * Copyright 2013 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, benjamin.dudson@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -51,9 +51,11 @@
 
 #include <vector>
 
-LaplaceCyclic::LaplaceCyclic(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
+LaplaceCyclic::LaplaceCyclic(Mesh* mesh_in, Options* opt, const CELL_LOC loc,
                              Solver* UNUSED(solver))
-    : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(1.0), Dcoef(1.0) {
+  : Laplacian(mesh_in, opt, loc), Acoef(0.0, localmesh),
+    C1coef(1.0, localmesh), C2coef(1.0, localmesh),
+    Dcoef(1.0, localmesh) {
 
   Acoef.setLocation(location);
   C1coef.setLocation(location);

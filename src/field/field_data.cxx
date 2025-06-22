@@ -5,7 +5,6 @@
 #include <bout/boundary_factory.hxx>
 #include <bout/field_data.hxx>
 #include <bout/field_factory.hxx>
-#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
 #include <bout/output.hxx>
 
@@ -49,11 +48,11 @@ CELL_LOC normaliseLocation(CELL_LOC location, Mesh* mesh) {
 } // namespace bout
 
 FieldData::FieldData(Mesh* localmesh, CELL_LOC location_in)
-    : fieldmesh(localmesh == nullptr ? bout::globals::mesh : localmesh),
+    : fieldmesh(localmesh),
       location(bout::normaliseLocation(
           location_in, fieldmesh)) { // Need to check for nullptr again, because the
                                      // fieldmesh might still be
-  // nullptr if the global mesh hasn't been initialized yet
+  // nullptr if the mesh hasn't been initialized yet
   if (fieldmesh != nullptr) {
     // sets fieldCoordinates by getting Coordinates for our location from
     // fieldmesh
@@ -204,15 +203,11 @@ FieldGeneratorPtr FieldData::getBndryGenerator(BndryLoc location) {
 }
 
 Mesh* FieldData::getMesh() const {
-  if (fieldmesh != nullptr) {
-    return fieldmesh;
-  }
-  // Don't set fieldmesh=mesh here, so that fieldmesh==nullptr until
-  // allocate() is called in one of the derived classes. fieldmesh==nullptr
-  // indicates that some initialization that would be done in the
-  // constructor if fieldmesh was a valid Mesh object still needs to be
-  // done.
-  return bout::globals::mesh;
+  // fieldmesh==nullptr indicates that some initialization that would
+  // be done in the constructor if fieldmesh was a valid Mesh object
+  // still needs to be done.
+  ASSERT0(fieldmesh);
+  return fieldmesh;
 }
 
 FieldData& FieldData::setLocation(CELL_LOC new_location) {

@@ -7,9 +7,9 @@
  * A + B * Grad2_par2 + C*D2DYDZ + D*D2DZ2 + E*DDY
  * 
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -43,19 +43,18 @@ constexpr auto PARDERIVCYCLIC = "cyclic";
 class InvertPar;
 
 class InvertParFactory
-    : public Factory<InvertPar, InvertParFactory, Options*, CELL_LOC, Mesh*> {
+  : public Factory<InvertPar, InvertParFactory, Mesh*, Options*, CELL_LOC> {
 public:
   static constexpr auto type_name = "InvertPar";
   static constexpr auto section_name = "parderiv";
   static constexpr auto option_name = "type";
   static constexpr auto default_type = PARDERIVCYCLIC;
 
-  ReturnType create(Options* options = nullptr, CELL_LOC location = CELL_CENTRE,
-                    Mesh* mesh = nullptr) const {
-    return Factory::create(getType(options), options, location, mesh);
+  ReturnType create(Mesh* mesh, Options* options = nullptr, CELL_LOC location = CELL_CENTRE) const {
+    return Factory::create(getType(options), mesh, options, location);
   }
-  ReturnType create(const std::string& type, Options* options) const {
-    return Factory::create(type, options, CELL_CENTRE, nullptr);
+  ReturnType create(const std::string& type, Mesh* mesh, Options* options) const {
+    return Factory::create(type, mesh, options, CELL_CENTRE);
   }
   static void ensureRegistered();
 };
@@ -88,18 +87,18 @@ public:
    * with pure virtual members, so can't be created directly.
    * To create an InvertPar object call the create() static function.
    */
-  InvertPar(Options* UNUSED(opt), CELL_LOC location_in, Mesh* mesh_in = nullptr)
+  InvertPar(Mesh* mesh_in, Options* UNUSED(opt), CELL_LOC location_in)
       : location(location_in),
-        localmesh(mesh_in == nullptr ? bout::globals::mesh : mesh_in) {}
+        localmesh(mesh_in) {}
   virtual ~InvertPar() = default;
 
   /*!
    * Create an instance of InvertPar
    */
-  static std::unique_ptr<InvertPar> create(Options* opt_in = nullptr,
-                                           CELL_LOC location_in = CELL_CENTRE,
-                                           Mesh* mesh_in = nullptr) {
-    return InvertParFactory::getInstance().create(opt_in, location_in, mesh_in);
+  static std::unique_ptr<InvertPar> create(Mesh* mesh_in,
+                                           Options* opt_in = nullptr,
+                                           CELL_LOC location_in = CELL_CENTRE) {
+    return InvertParFactory::getInstance().create(mesh_in, opt_in, location_in);
   }
 
   /*!

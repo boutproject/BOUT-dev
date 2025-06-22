@@ -3,9 +3,9 @@
  * and tridiagonal solver.
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -51,8 +51,8 @@ RegisterLaplace<LaplaceIPT> registerlaplaceipt(LAPLACE_IPT);
 
 class LaplaceIPT : public Laplacian {
 public:
-  LaplaceIPT(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-             Mesh* mesh_in = nullptr, Solver* solver = nullptr);
+  LaplaceIPT(Mesh* mesh_in, Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+             Solver* solver = nullptr);
   ~LaplaceIPT() = default;
 
   friend class Level;

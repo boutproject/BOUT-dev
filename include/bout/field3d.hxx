@@ -1,7 +1,7 @@
 /**************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -161,10 +161,8 @@ public:
   /*!
    * Constructor
    *
-   * Note: the global "mesh" can't be passed here because
-   * fields may be created before the mesh is.
    */
-  Field3D(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
+  Field3D(Mesh* localmesh, CELL_LOC location_in = CELL_CENTRE,
           DirectionTypes directions_in = {YDirectionType::Standard,
                                           ZDirectionType::Standard});
 
@@ -178,7 +176,7 @@ public:
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
-  Field3D(BoutReal val, Mesh* localmesh = nullptr);
+  Field3D(BoutReal val, Mesh* localmesh);
   /// Constructor from Array and Mesh
   Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
           DirectionTypes directions_in = {YDirectionType::Standard,

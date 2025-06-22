@@ -4,7 +4,6 @@
 
 #include <bout/assert.hxx>
 #include <bout/boutcomm.hxx>
-#include <bout/globals.hxx>
 #include <bout/invert/laplacexy2.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
@@ -22,7 +21,7 @@ Ind2D index2d(Mesh* mesh, int x, int y) {
 } // namespace
 
 LaplaceXY2::LaplaceXY2(Mesh* m, Options* opt, const CELL_LOC loc)
-    : localmesh(m == nullptr ? bout::globals::mesh : m),
+    : localmesh(m),
       indexConverter(std::make_shared<GlobalIndexer<Field2D>>(
           localmesh, squareStencil<Field2D::ind_type>(localmesh))),
       matrix(PetscMatrix<Field2D>(indexConverter)), location(loc) {

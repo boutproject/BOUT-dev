@@ -10,9 +10,9 @@
  * Flags control the boundary conditions (see header file)
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -34,7 +34,6 @@
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
-#include <bout/globals.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
@@ -65,9 +64,9 @@
  **********************************************************************************/
 
 /// Laplacian inversion initialisation. Called once at the start to get settings
-Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in,
+Laplacian::Laplacian(Mesh* mesh_in, Options* options, const CELL_LOC loc,
                      Solver* UNUSED(solver))
-    : location(loc), localmesh(mesh_in == nullptr ? bout::globals::mesh : mesh_in) {
+    : location(loc), localmesh(mesh_in) {
 
   if (options == nullptr) {
     // Use the default options
@@ -138,17 +137,6 @@ Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in,
                "staggered grids or when boundary conditions make inversion redundant")
           .withDefault(0);
 }
-
-std::unique_ptr<Laplacian> Laplacian::instance = nullptr;
-
-Laplacian* Laplacian::defaultInstance() {
-  if (instance == nullptr) {
-    instance = create();
-  }
-  return instance.get();
-}
-
-void Laplacian::cleanup() { instance.reset(); }
 
 /**********************************************************************************
  *                                 Solve routines
@@ -260,29 +248,24 @@ Field2D Laplacian::solve(const Field2D& b, const Field2D& x0) {
  *                              MATRIX ELEMENTS
  **********************************************************************************/
 
-void Laplacian::tridagCoefs(int jx, int jy, int jz, dcomplex& a, dcomplex& b, dcomplex& c,
+void Laplacian::tridagCoefs(Mesh* mesh, int jx, int jy, int jz, dcomplex& a, dcomplex& b, dcomplex& c,
                             const Field2D* ccoef, const Field2D* d, CELL_LOC loc) {
-
-  if (loc == CELL_DEFAULT) {
-    loc = location;
-  }
-
   ASSERT1(ccoef == nullptr || ccoef->getLocation() == loc);
   ASSERT1(d == nullptr || d->getLocation() == loc);
-  BoutReal kwave = jz * 2.0 * PI / coords->zlength()(jx, jy); // wave number is 1/[rad]
+  BoutReal kwave = jz * 2.0 * PI / mesh->getCoordinates()->zlength()(jx, jy); // wave number is 1/[rad]
 
-  tridagCoefs(jx, jy, kwave, a, b, c, ccoef, d, loc);
+  tridagCoefs(mesh, jx, jy, kwave, a, b, c, ccoef, d, loc);
 }
 
 #if BOUT_USE_METRIC_3D
-void Laplacian::tridagCoefs(int /* jx */, int /* jy */, BoutReal /* kwave */,
+void Laplacian::tridagCoefs(Mesh* /* mesh */, int /* jx */, int /* jy */, BoutReal /* kwave */,
                             dcomplex& /* a */, dcomplex& /* b */, dcomplex& /* c */,
                             const Field2D* /* c1coef */, const Field2D* /* c2coef */,
                             const Field2D* /* d */, CELL_LOC /* loc */) {
   throw BoutException("Laplacian::tridagCoefs() does not support 3d metrics.");
 }
 #else
-void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomplex& b,
+void Laplacian::tridagCoefs(Mesh* mesh, int jx, int jy, BoutReal kwave, dcomplex& a, dcomplex& b,
                             dcomplex& c, const Field2D* c1coef, const Field2D* c2coef,
                             const Field2D* d, CELL_LOC loc) {
   /* Function: Laplacian::tridagCoef
@@ -314,13 +297,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomple
    *             here)
    */
 
-  Coordinates* localcoords;
-  if (loc == CELL_DEFAULT) {
-    loc = location;
-    localcoords = coords;
-  } else {
-    localcoords = localmesh->getCoordinates(loc);
-  }
+  Coordinates* localcoords = mesh->getCoordinates(loc);
 
   BoutReal coef1, coef2, coef3, coef4, coef5;
 
@@ -330,11 +307,8 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomple
 
   coef4 = 0.0;
   coef5 = 0.0;
-  // If global flag all_terms are set (true by default)
-  if (all_terms) {
-    coef4 = localcoords->G1(jx, jy); // X 1st derivative
-    coef5 = localcoords->G3(jx, jy); // Z 1st derivative
-  }
+  coef4 = localcoords->G1(jx, jy); // X 1st derivative
+  coef5 = localcoords->G3(jx, jy); // Z 1st derivative
 
   if (d != nullptr) {
     // Multiply Delp2 component by a factor
@@ -345,19 +319,17 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomple
     coef5 *= (*d)(jx, jy);
   }
 
-  if (nonuniform) {
-    // non-uniform mesh correction
-    if ((jx != 0) && (jx != (localmesh->LocalNx - 1))) {
-      coef4 -= 0.5
-               * ((localcoords->dx(jx + 1, jy) - localcoords->dx(jx - 1, jy))
-                  / SQ(localcoords->dx(jx, jy)))
-               * coef1;
-    }
+  // non-uniform mesh correction
+  if ((jx != 0) && (jx != (mesh->LocalNx - 1))) {
+    coef4 -= 0.5
+      * ((localcoords->dx(jx + 1, jy) - localcoords->dx(jx - 1, jy))
+         / SQ(localcoords->dx(jx, jy)))
+      * coef1;
   }
 
   if (c1coef != nullptr) {
     // First derivative terms
-    if ((jx > 0) && (jx < (localmesh->LocalNx - 1))) {
+    if ((jx > 0) && (jx < (mesh->LocalNx - 1))) {
       BoutReal dc2dx_over_c1 = ((*c2coef)(jx + 1, jy) - (*c2coef)(jx - 1, jy))
                                / (2. * localcoords->dx(jx, jy) * ((*c1coef)(jx, jy)));
       coef4 += localcoords->g11(jx, jy) * dc2dx_over_c1;
@@ -365,7 +337,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex& a, dcomple
     }
   }
 
-  if (localmesh->IncIntShear) {
+  if (mesh->IncIntShear) {
     // d2dz2 term
     coef2 += localcoords->g11(jx, jy) * localcoords->IntShiftTorsion(jx, jy)
              * localcoords->IntShiftTorsion(jx, jy);
@@ -479,7 +451,7 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
   // The boundaries will be set according to the if-statements below.
   for (int ix = 0; ix <= ncx; ix++) {
     // Actually set the metric coefficients
-    tridagCoefs(xs + ix, jy, kwave, avec[ix], bvec[ix], cvec[ix], c1coef, c2coef, d);
+    tridagCoefs(localmesh, xs + ix, jy, kwave, avec[ix], bvec[ix], cvec[ix], c1coef, c2coef, d);
     if (a != nullptr) {
       // Add A to bvec (the main diagonal in the matrix)
       bvec[ix] += (*a)(xs + ix, jy);
@@ -800,16 +772,4 @@ bool Laplacian::isInnerBoundaryFlagSetOnFirstX(int flag) const {
 }
 bool Laplacian::isOuterBoundaryFlagSetOnLastX(int flag) const {
   return isOuterBoundaryFlagSet(flag) and localmesh->lastX();
-}
-
-/**********************************************************************************
- *                              LEGACY INTERFACE
- *
- * These functions are depreciated, and will be removed in future
- **********************************************************************************/
-
-/// Returns the coefficients for a tridiagonal matrix for laplace. Used by Delp2 too
-void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex& a, dcomplex& b, dcomplex& c,
-                          const Field2D* ccoef, const Field2D* d, CELL_LOC loc) {
-  Laplacian::defaultInstance()->tridagCoefs(jx, jy, jz, a, b, c, ccoef, d, loc);
 }

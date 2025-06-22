@@ -7,7 +7,7 @@
  * A + Div_par( B * Grad_par )
  *
  **************************************************************************
- * Copyright 2010-2022 BOUT++ contributors
+ * Copyright 2010-2025 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -43,19 +43,18 @@ constexpr auto PARDIVCYCLIC = "cyclic";
 class InvertParDiv;
 
 class InvertParDivFactory
-    : public Factory<InvertParDiv, InvertParDivFactory, Options*, CELL_LOC, Mesh*> {
+  : public Factory<InvertParDiv, InvertParDivFactory, Mesh*, Options*, CELL_LOC> {
 public:
   static constexpr auto type_name = "InvertParDiv";
   static constexpr auto section_name = "pardiv";
   static constexpr auto option_name = "type";
   static constexpr auto default_type = PARDIVCYCLIC;
 
-  ReturnType create(Options* options = nullptr, CELL_LOC location = CELL_CENTRE,
-                    Mesh* mesh = nullptr) const {
-    return Factory::create(getType(options), options, location, mesh);
+  ReturnType create(Mesh* mesh, Options* options = nullptr, CELL_LOC location = CELL_CENTRE) const {
+    return Factory::create(getType(options), mesh, options, location);
   }
-  ReturnType create(const std::string& type, Options* options) const {
-    return Factory::create(type, options, CELL_CENTRE, nullptr);
+  ReturnType create(const std::string& type, Mesh* mesh, Options* options) const {
+    return Factory::create(type, mesh, options, CELL_CENTRE);
   }
   static void ensureRegistered();
 };
@@ -88,18 +87,17 @@ public:
    * with pure virtual members, so can't be created directly.
    * To create an InvertParDiv object call the create() static function.
    */
-  InvertParDiv(Options* UNUSED(opt), CELL_LOC location_in, Mesh* mesh_in = nullptr)
+  InvertParDiv(Mesh* mesh_in, Options* UNUSED(opt), CELL_LOC location_in)
       : location(location_in),
-        localmesh(mesh_in == nullptr ? bout::globals::mesh : mesh_in) {}
+        localmesh(mesh_in) {}
   virtual ~InvertParDiv() = default;
 
   /*!
    * Create an instance of InvertParDiv
    */
-  static std::unique_ptr<InvertParDiv> create(Options* opt_in = nullptr,
-                                              CELL_LOC location_in = CELL_CENTRE,
-                                              Mesh* mesh_in = nullptr) {
-    return InvertParDivFactory::getInstance().create(opt_in, location_in, mesh_in);
+  static std::unique_ptr<InvertParDiv> create(Mesh* mesh_in, Options* opt_in = nullptr,
+                                              CELL_LOC location_in = CELL_CENTRE) {
+    return InvertParDivFactory::getInstance().create(mesh_in, opt_in, location_in);
   }
 
   /*!

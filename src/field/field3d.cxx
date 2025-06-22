@@ -28,7 +28,6 @@
 #include "bout/build_config.hxx"
 
 #include <bout/boutcomm.hxx>
-#include <bout/globals.hxx>
 
 #include <cmath>
 
@@ -110,14 +109,8 @@ Field3D::~Field3D() { delete deriv; }
 
 Field3D& Field3D::allocate() {
   if (data.empty()) {
-    if (!fieldmesh) {
-      // fieldmesh was not initialized when this field was initialized, so use
-      // the global mesh and set some members to default values
-      fieldmesh = bout::globals::mesh;
-      nx = fieldmesh->LocalNx;
-      ny = fieldmesh->LocalNy;
-      nz = fieldmesh->LocalNz;
-    }
+    // Must have a mesh
+    ASSERT0(fieldmesh);
     data.reallocate(nx * ny * nz);
 #if CHECK > 2
     invalidateGuards(*this);

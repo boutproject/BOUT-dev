@@ -1026,10 +1026,9 @@ std::unique_ptr<Solver> Solver::create(const SolverType& type, Options* opts) {
 /// Perform an operation at a given Ind2D (jx,jy) location, moving data between BOUT++ and CVODE
 void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
                           bool bndry) {
-  // Use global mesh: FIX THIS!
-  Mesh* mesh = bout::globals::mesh;
 
-  int nz = mesh->LocalNz;
+  // This assumes that all fields have the same nz
+  int nz = f3d.front().var->getMesh()->LocalNz;
 
   switch (op) {
   case SOLVER_VAR_OP::LOAD_VARS: {

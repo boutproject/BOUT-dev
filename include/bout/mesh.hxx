@@ -80,6 +80,10 @@ public:
   ReturnType create(const std::string& type, Options* options = nullptr,
                     GridDataSource* source = nullptr) const;
   ReturnType create(Options* options = nullptr, GridDataSource* source = nullptr) const;
+
+  ReturnType create(const std::string& type, Mesh*, Options* options) const {
+    return create(type, options);
+  }
 };
 
 BOUT_ENUM_CLASS(BoundaryParType, all, xin, xout, fwd, bwd, xin_fwd, xout_fwd, xin_bwd,
@@ -878,5 +882,15 @@ inline const Region<IndPerp>&
 Mesh::getRegion<FieldPerp>(const std::string& region_name) const {
   return getRegionPerp(region_name);
 }
+
+/// Define for reading a variable from a mesh
+#define GRID_LOAD1(var) mesh->get(var, #var)
+
+/// Read fields from a mesh
+/// The name of the variable will be used as the name
+/// in the input.
+/// This should accept up to 10 arguments
+#define GRID_LOAD(...)                             \
+  { MACRO_FOR_EACH_FN(GRID_LOAD1, __VA_ARGS__) }
 
 #endif // BOUT_MESH_H

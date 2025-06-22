@@ -502,7 +502,7 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
   n = toFieldAligned(n_in, "RGN_NOX");
   Field3D vy = toFieldAligned(v.y, "RGN_NOX");
 
-  Field3D yresult = 0.0;
+  Field3D yresult{0.0, mesh};
   yresult.setDirectionY(YDirectionType::Aligned);
 
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {

@@ -47,8 +47,8 @@
 
 #include <bout/scorepwrapper.hxx>
 
-LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED(solver))
-    : Laplacian(opt, loc, mesh_in),
+LaplaceIPT::LaplaceIPT(Mesh* mesh_in, Options* opt, CELL_LOC loc, Solver* UNUSED(solver))
+  : Laplacian(mesh_in, opt, loc),
       rtol((*opt)["rtol"].doc("Relative tolerance").withDefault(1.e-7)),
       atol((*opt)["atol"].doc("Absolute tolerance").withDefault(1.e-20)),
       maxits((*opt)["maxits"].doc("Maximum number of iterations").withDefault(100)),

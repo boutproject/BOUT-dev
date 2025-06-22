@@ -18,9 +18,9 @@
  * =========
  *
  **************************************************************************
- * Copyright 2018 B.D.Dudson, M. Loiten, J. Omotani
+ * Copyright 2018 - 2025 BOUT++ contributoris
  *
- * Contact: Ben Dudson, benjamin.dudson@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -148,10 +148,11 @@
 
 #include "naulin_laplace.hxx"
 
-LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
+LaplaceNaulin::LaplaceNaulin(Mesh* mesh_in, Options* opt, const CELL_LOC loc,
                              Solver* UNUSED(solver))
-    : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(0.0), Dcoef(1.0),
-      delp2solver(nullptr), naulinsolver_mean_its(0.), ncalls(0) {
+  : Laplacian(mesh_in, opt, loc), Acoef(0.0, localmesh), C1coef(1.0, localmesh),
+    C2coef(0.0, localmesh), Dcoef(1.0, localmesh),
+    delp2solver(nullptr), naulinsolver_mean_its(0.), ncalls(0) {
 
   ASSERT1(opt
           != nullptr); // An Options pointer should always be passed in by LaplaceFactory
@@ -201,7 +202,7 @@ LaplaceNaulin::LaplaceNaulin(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
                "if it has been decreased below initial_underrelax_factor.")
           .withDefault(1.1);
   ASSERT0(underrelax_recovery >= 1.);
-  delp2solver = create(opt->getSection("delp2solver"), location, localmesh);
+  delp2solver = create(localmesh, opt->getSection("delp2solver"), location);
   std::string delp2type;
   opt->getSection("delp2solver")->get("type", delp2type, "cyclic");
   // Check delp2solver is using an FFT scheme, otherwise it will not exactly

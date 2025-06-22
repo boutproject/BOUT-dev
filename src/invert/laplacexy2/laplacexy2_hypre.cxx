@@ -4,7 +4,6 @@
 
 #include "bout/assert.hxx"
 #include "bout/boutcomm.hxx"
-#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 #include "bout/output.hxx"
 #include "bout/sys/timer.hxx"
@@ -25,7 +24,7 @@ inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort =
 #endif
 
 LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
-    : localmesh(m == nullptr ? bout::globals::mesh : m),
+    : localmesh(m),
       indexConverter(std::make_shared<GlobalIndexer<Field2D>>(
           localmesh, squareStencil<Field2D::ind_type>(localmesh))),
       M(indexConverter), x(indexConverter), b(indexConverter),

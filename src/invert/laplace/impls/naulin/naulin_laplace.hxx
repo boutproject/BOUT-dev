@@ -2,9 +2,9 @@
  * Iterative solver to handle non-constant-in-z coefficients
  * 
  **************************************************************************
- * Copyright 2018 B.D.Dudson, M. Loiten, J. Omotani
+ * Copyright 2018 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -41,8 +41,8 @@ RegisterLaplace<LaplaceNaulin> registerlaplacenaulin(LAPLACE_NAULIN);
  */
 class LaplaceNaulin : public Laplacian {
 public:
-  LaplaceNaulin(Options* opt = NULL, const CELL_LOC loc = CELL_CENTRE,
-                Mesh* mesh_in = nullptr, Solver* solver = nullptr);
+  LaplaceNaulin(Mesh* mesh_in, Options* opt = NULL, const CELL_LOC loc = CELL_CENTRE,
+                Solver* solver = nullptr);
   ~LaplaceNaulin() = default;
 
   using Laplacian::setCoefA;

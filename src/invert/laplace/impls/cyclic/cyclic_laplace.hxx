@@ -5,9 +5,9 @@
  * the cyclic reduction class to solve tridiagonal systems.
  *
  **************************************************************************
- * Copyright 2013 B.D.Dudson
+ * Copyright 2013 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -59,8 +59,8 @@ RegisterLaplace<LaplaceCyclic> registerlaplacecycle(LAPLACE_CYCLIC);
  */
 class LaplaceCyclic : public Laplacian {
 public:
-  LaplaceCyclic(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-                Mesh* mesh_in = nullptr, Solver* solver = nullptr);
+  LaplaceCyclic(Mesh* mesh_in, Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+                Solver* solver = nullptr);
   ~LaplaceCyclic();
 
   using Laplacian::setCoefA;

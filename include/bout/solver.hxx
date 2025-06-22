@@ -109,6 +109,10 @@ public:
 #else
       SOLVERPVODE;
 #endif
+
+  ReturnType create(const std::string& type, Mesh*, Options* options) const {
+    return Factory::create(type, options);
+  }
 };
 
 /// Simpler name for Factory registration helper class
