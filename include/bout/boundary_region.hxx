@@ -37,8 +37,7 @@ public:
   BoundaryRegionBase(std::string name, Mesh* passmesh = nullptr)
       : localmesh(passmesh), label(std::move(name)) {}
   BoundaryRegionBase(std::string name, BndryLoc loc, Mesh* passmesh = nullptr)
-      : localmesh(passmesh), label(std::move(name)),
-        location(loc) {}
+      : localmesh(passmesh), label(std::move(name)), location(loc) {}
 
   virtual ~BoundaryRegionBase() = default;
 

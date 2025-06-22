@@ -43,7 +43,7 @@
 #include <cmath>
 
 LaplaceHypre3d::LaplaceHypre3d(Mesh* mesh_in, Options* opt, const CELL_LOC loc, Solver*)
-  : Laplacian(mesh_in, opt, loc), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
+    : Laplacian(mesh_in, opt, loc), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
       opts(opt == nullptr ? Options::getRoot()->getSection("laplace") : opt),
       lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
       indexer(std::make_shared<GlobalIndexer<Field3D>>(

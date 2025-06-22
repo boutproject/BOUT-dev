@@ -248,26 +248,29 @@ Field2D Laplacian::solve(const Field2D& b, const Field2D& x0) {
  *                              MATRIX ELEMENTS
  **********************************************************************************/
 
-void Laplacian::tridagCoefs(Mesh* mesh, int jx, int jy, int jz, dcomplex& a, dcomplex& b, dcomplex& c,
-                            const Field2D* ccoef, const Field2D* d, CELL_LOC loc) {
+void Laplacian::tridagCoefs(Mesh* mesh, int jx, int jy, int jz, dcomplex& a, dcomplex& b,
+                            dcomplex& c, const Field2D* ccoef, const Field2D* d,
+                            CELL_LOC loc) {
   ASSERT1(ccoef == nullptr || ccoef->getLocation() == loc);
   ASSERT1(d == nullptr || d->getLocation() == loc);
-  BoutReal kwave = jz * 2.0 * PI / mesh->getCoordinates()->zlength()(jx, jy); // wave number is 1/[rad]
+  BoutReal kwave =
+      jz * 2.0 * PI / mesh->getCoordinates()->zlength()(jx, jy); // wave number is 1/[rad]
 
   tridagCoefs(mesh, jx, jy, kwave, a, b, c, ccoef, d, loc);
 }
 
 #if BOUT_USE_METRIC_3D
-void Laplacian::tridagCoefs(Mesh* /* mesh */, int /* jx */, int /* jy */, BoutReal /* kwave */,
-                            dcomplex& /* a */, dcomplex& /* b */, dcomplex& /* c */,
-                            const Field2D* /* c1coef */, const Field2D* /* c2coef */,
-                            const Field2D* /* d */, CELL_LOC /* loc */) {
+void Laplacian::tridagCoefs(Mesh* /* mesh */, int /* jx */, int /* jy */,
+                            BoutReal /* kwave */, dcomplex& /* a */, dcomplex& /* b */,
+                            dcomplex& /* c */, const Field2D* /* c1coef */,
+                            const Field2D* /* c2coef */, const Field2D* /* d */,
+                            CELL_LOC /* loc */) {
   throw BoutException("Laplacian::tridagCoefs() does not support 3d metrics.");
 }
 #else
-void Laplacian::tridagCoefs(Mesh* mesh, int jx, int jy, BoutReal kwave, dcomplex& a, dcomplex& b,
-                            dcomplex& c, const Field2D* c1coef, const Field2D* c2coef,
-                            const Field2D* d, CELL_LOC loc) {
+void Laplacian::tridagCoefs(Mesh* mesh, int jx, int jy, BoutReal kwave, dcomplex& a,
+                            dcomplex& b, dcomplex& c, const Field2D* c1coef,
+                            const Field2D* c2coef, const Field2D* d, CELL_LOC loc) {
   /* Function: Laplacian::tridagCoef
    * Purpose:  - Set the matrix components of A in Ax=b, solving
    *
@@ -322,9 +325,9 @@ void Laplacian::tridagCoefs(Mesh* mesh, int jx, int jy, BoutReal kwave, dcomplex
   // non-uniform mesh correction
   if ((jx != 0) && (jx != (mesh->LocalNx - 1))) {
     coef4 -= 0.5
-      * ((localcoords->dx(jx + 1, jy) - localcoords->dx(jx - 1, jy))
-         / SQ(localcoords->dx(jx, jy)))
-      * coef1;
+             * ((localcoords->dx(jx + 1, jy) - localcoords->dx(jx - 1, jy))
+                / SQ(localcoords->dx(jx, jy)))
+             * coef1;
   }
 
   if (c1coef != nullptr) {
@@ -451,7 +454,8 @@ void Laplacian::tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dco
   // The boundaries will be set according to the if-statements below.
   for (int ix = 0; ix <= ncx; ix++) {
     // Actually set the metric coefficients
-    tridagCoefs(localmesh, xs + ix, jy, kwave, avec[ix], bvec[ix], cvec[ix], c1coef, c2coef, d);
+    tridagCoefs(localmesh, xs + ix, jy, kwave, avec[ix], bvec[ix], cvec[ix], c1coef,
+                c2coef, d);
     if (a != nullptr) {
       // Add A to bvec (the main diagonal in the matrix)
       bvec[ix] += (*a)(xs + ix, jy);

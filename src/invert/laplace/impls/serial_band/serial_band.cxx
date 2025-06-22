@@ -44,7 +44,8 @@
 
 LaplaceSerialBand::LaplaceSerialBand(Mesh* mesh_in, Options* opt, const CELL_LOC loc,
                                      Solver* UNUSED(solver))
-  : Laplacian(mesh_in, opt, loc), Acoef(0.0, localmesh), Ccoef(1.0, localmesh), Dcoef(1.0, localmesh) {
+    : Laplacian(mesh_in, opt, loc), Acoef(0.0, localmesh), Ccoef(1.0, localmesh),
+      Dcoef(1.0, localmesh) {
   Acoef.setLocation(location);
   Ccoef.setLocation(location);
   Dcoef.setLocation(location);

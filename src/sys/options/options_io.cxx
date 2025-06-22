@@ -45,7 +45,7 @@ OptionsIOFactory::ReturnType OptionsIOFactory::createFile(const std::string& fil
   return create(getDefaultType(), options);
 }
 
-void writeDefaultOutputFile(Options& data, Mesh *mesh) {
+void writeDefaultOutputFile(Options& data, Mesh* mesh) {
   // Add BOUT++ version and flags
   bout::experimental::addBuildFlagsToOptions(data);
   // Add mesh information

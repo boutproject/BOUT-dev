@@ -78,11 +78,11 @@ public:
                     Region<Ind3D> region_in = {}) const {
     return Factory::create(options, y_offset, mesh, region_in);
   }
-  ReturnType create(Mesh* mesh, int y_offset = 0,
-                    Region<Ind3D> region_in = {}) const {
+  ReturnType create(Mesh* mesh, int y_offset = 0, Region<Ind3D> region_in = {}) const {
     return Factory::create(getType(nullptr), y_offset, mesh, region_in);
   }
-  ReturnType create(const std::string& type, Mesh* mesh, [[maybe_unused]] Options* options) const {
+  ReturnType create(const std::string& type, Mesh* mesh,
+                    [[maybe_unused]] Options* options) const {
     return Factory::create(type, 0, mesh, Region<Ind3D>{});
   }
 

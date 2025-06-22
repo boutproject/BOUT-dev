@@ -39,8 +39,8 @@ RegisterLaplace<LaplaceSerialTri> registerlaplaceserialtri(LAPLACE_TRI);
 
 class LaplaceSerialTri : public Laplacian {
 public:
-  LaplaceSerialTri(Mesh* mesh_in, Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
-                   Solver* solver = nullptr);
+  LaplaceSerialTri(Mesh* mesh_in, Options* opt = nullptr,
+                   const CELL_LOC loc = CELL_CENTRE, Solver* solver = nullptr);
   ~LaplaceSerialTri(){};
 
   using Laplacian::setCoefA;

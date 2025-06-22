@@ -60,7 +60,7 @@ using namespace std;
 
 LaplacePCR_THOMAS::LaplacePCR_THOMAS(Mesh* mesh_in, Options* opt, CELL_LOC loc,
                                      Solver* UNUSED(solver))
-  : Laplacian(mesh_in, opt, loc), Acoef(0.0, localmesh), C1coef(1.0, localmesh),
+    : Laplacian(mesh_in, opt, loc), Acoef(0.0, localmesh), C1coef(1.0, localmesh),
       C2coef(1.0, localmesh), Dcoef(1.0, localmesh), nmode(maxmode + 1),
       ncx(localmesh->LocalNx), ny(localmesh->LocalNy), avec(ny, nmode, ncx),
       bvec(ny, nmode, ncx), cvec(ny, nmode, ncx) {

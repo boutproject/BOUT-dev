@@ -63,7 +63,7 @@ static PetscErrorCode laplacePCapply(PC pc, Vec x, Vec y) {
 
 LaplacePetsc::LaplacePetsc(Mesh* mesh_in, Options* opt, const CELL_LOC loc,
                            Solver* UNUSED(solver))
-  : Laplacian(mesh_in, opt, loc), A(0.0, localmesh), C1(1.0, localmesh),
+    : Laplacian(mesh_in, opt, loc), A(0.0, localmesh), C1(1.0, localmesh),
       C2(1.0, localmesh), D(1.0, localmesh), Ex(0.0, localmesh), Ez(0.0, localmesh),
       issetD(false), issetC(false), issetE(false),
       lib(opt == nullptr ? &(Options::root()["laplace"]) : opt) {

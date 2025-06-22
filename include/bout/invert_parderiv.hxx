@@ -43,14 +43,15 @@ constexpr auto PARDERIVCYCLIC = "cyclic";
 class InvertPar;
 
 class InvertParFactory
-  : public Factory<InvertPar, InvertParFactory, Mesh*, Options*, CELL_LOC> {
+    : public Factory<InvertPar, InvertParFactory, Mesh*, Options*, CELL_LOC> {
 public:
   static constexpr auto type_name = "InvertPar";
   static constexpr auto section_name = "parderiv";
   static constexpr auto option_name = "type";
   static constexpr auto default_type = PARDERIVCYCLIC;
 
-  ReturnType create(Mesh* mesh, Options* options = nullptr, CELL_LOC location = CELL_CENTRE) const {
+  ReturnType create(Mesh* mesh, Options* options = nullptr,
+                    CELL_LOC location = CELL_CENTRE) const {
     return Factory::create(getType(options), mesh, options, location);
   }
   ReturnType create(const std::string& type, Mesh* mesh, Options* options) const {
@@ -88,15 +89,13 @@ public:
    * To create an InvertPar object call the create() static function.
    */
   InvertPar(Mesh* mesh_in, Options* UNUSED(opt), CELL_LOC location_in)
-      : location(location_in),
-        localmesh(mesh_in) {}
+      : location(location_in), localmesh(mesh_in) {}
   virtual ~InvertPar() = default;
 
   /*!
    * Create an instance of InvertPar
    */
-  static std::unique_ptr<InvertPar> create(Mesh* mesh_in,
-                                           Options* opt_in = nullptr,
+  static std::unique_ptr<InvertPar> create(Mesh* mesh_in, Options* opt_in = nullptr,
                                            CELL_LOC location_in = CELL_CENTRE) {
     return InvertParFactory::getInstance().create(mesh_in, opt_in, location_in);
   }

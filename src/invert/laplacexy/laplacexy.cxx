@@ -27,8 +27,8 @@ static PetscErrorCode laplacePCapply(PC pc, Vec x, Vec y) {
 }
 
 LaplaceXY::LaplaceXY(Mesh* m, Options* opt, const CELL_LOC loc)
-    : lib(opt == nullptr ? &(Options::root()["laplacexy"]) : opt),
-      localmesh(m), location(loc), indexXY(m), monitor(*this) {
+    : lib(opt == nullptr ? &(Options::root()["laplacexy"]) : opt), localmesh(m),
+      location(loc), indexXY(m), monitor(*this) {
   Timer timer("invert");
 
   if (opt == nullptr) {

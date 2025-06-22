@@ -63,8 +63,8 @@ void DataFileFacade::add(Vector3D* value, const std::string& name, bool save_rep
 
 PhysicsModel::PhysicsModel(Mesh* mesh_)
     : mesh(mesh_), output_enabled(Options::root()["output"]["enabled"]
-                                                    .doc("Write output files")
-                                                    .withDefault(true)),
+                                      .doc("Write output files")
+                                      .withDefault(true)),
       restart_enabled(Options::root()["restart_files"]["enabled"]
                           .doc("Write restart files")
                           .withDefault(true))

@@ -53,9 +53,8 @@
 
 LaplaceCyclic::LaplaceCyclic(Mesh* mesh_in, Options* opt, const CELL_LOC loc,
                              Solver* UNUSED(solver))
-  : Laplacian(mesh_in, opt, loc), Acoef(0.0, localmesh),
-    C1coef(1.0, localmesh), C2coef(1.0, localmesh),
-    Dcoef(1.0, localmesh) {
+    : Laplacian(mesh_in, opt, loc), Acoef(0.0, localmesh), C1coef(1.0, localmesh),
+      C2coef(1.0, localmesh), Dcoef(1.0, localmesh) {
 
   Acoef.setLocation(location);
   C1coef.setLocation(location);

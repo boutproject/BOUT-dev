@@ -53,9 +53,10 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
   // offset, so we don't need to faff about after this
   for (int y_offset = 0; y_offset < mesh.ystart; ++y_offset) {
     parallel_slice_interpolators[yup_index + y_offset] =
-      ZInterpolationFactory::getInstance().create(&mesh, &interp_options, y_offset + 1);
+        ZInterpolationFactory::getInstance().create(&mesh, &interp_options, y_offset + 1);
     parallel_slice_interpolators[ydown_index + y_offset] =
-      ZInterpolationFactory::getInstance().create(&mesh, &interp_options, -y_offset - 1);
+        ZInterpolationFactory::getInstance().create(&mesh, &interp_options,
+                                                    -y_offset - 1);
 
     // Find the index positions where the magnetic field line intersects the x-z plane
     // y_offset points up
@@ -86,9 +87,9 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
 
   // Set up interpolation to/from field-aligned coordinates
   interp_to_aligned =
-    ZInterpolationFactory::getInstance().create(&mesh, &interp_options, 0);
+      ZInterpolationFactory::getInstance().create(&mesh, &interp_options, 0);
   interp_from_aligned =
-    ZInterpolationFactory::getInstance().create(&mesh, &interp_options, 0);
+      ZInterpolationFactory::getInstance().create(&mesh, &interp_options, 0);
 
   Field3D zt_prime_to(&mesh), zt_prime_from(&mesh);
   zt_prime_to.allocate();

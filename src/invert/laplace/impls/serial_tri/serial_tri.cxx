@@ -40,7 +40,8 @@
 
 LaplaceSerialTri::LaplaceSerialTri(Mesh* mesh_in, Options* opt, CELL_LOC loc,
                                    Solver* UNUSED(solver))
-  : Laplacian(mesh_in, opt, loc), A(0.0, localmesh), C(1.0, localmesh), D(1.0, localmesh) {
+    : Laplacian(mesh_in, opt, loc), A(0.0, localmesh), C(1.0, localmesh),
+      D(1.0, localmesh) {
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);

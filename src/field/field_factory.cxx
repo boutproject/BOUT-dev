@@ -84,8 +84,7 @@ private:
 // FieldFactory public functions
 
 FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
-    : fieldmesh(localmesh),
-      options(opt == nullptr ? Options::getRoot() : opt) {
+    : fieldmesh(localmesh), options(opt == nullptr ? Options::getRoot() : opt) {
 
   // Set options
   // Note: don't use 'options' here because 'options' is a 'const Options*'

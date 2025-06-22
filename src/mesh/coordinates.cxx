@@ -376,14 +376,14 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric g_23, FieldMetric ShiftTorsion,
                          FieldMetric IntShiftTorsion)
     : dx(std::move(dx)), dy(std::move(dy)), dz(dz), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
-      J(std::move(J)), Bxy(std::move(Bxy)),
-      g11(std::move(g11)), g22(std::move(g22)), g33(std::move(g33)), g12(std::move(g12)),
-      g13(std::move(g13)), g23(std::move(g23)), g_11(std::move(g_11)),
-      g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
-      g_13(std::move(g_13)), g_23(std::move(g_23)), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh),
-      G1_13(mesh), G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh),
-      G2_13(mesh), G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh),
-      G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(std::move(ShiftTorsion)),
+      J(std::move(J)), Bxy(std::move(Bxy)), g11(std::move(g11)), g22(std::move(g22)),
+      g33(std::move(g33)), g12(std::move(g12)), g13(std::move(g13)), g23(std::move(g23)),
+      g_11(std::move(g_11)), g_22(std::move(g_22)), g_33(std::move(g_33)),
+      g_12(std::move(g_12)), g_13(std::move(g_13)), g_23(std::move(g_23)), G1_11(mesh),
+      G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh), G1_23(mesh), G2_11(mesh),
+      G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh), G2_23(mesh), G3_11(mesh),
+      G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh), G3_23(mesh), G1(mesh), G2(mesh),
+      G3(mesh), ShiftTorsion(std::move(ShiftTorsion)),
       IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
       location(CELL_CENTRE) {}
 
@@ -1703,7 +1703,8 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
           // Perform x derivative
 
           dcomplex a, b, c;
-          Laplacian::tridagCoefs(localmesh, jx, jy, jz, a, b, c, nullptr, nullptr, outloc);
+          Laplacian::tridagCoefs(localmesh, jx, jy, jz, a, b, c, nullptr, nullptr,
+                                 outloc);
 
           delft(jx, jz) = a * ft(jx - 1, jz) + b * ft(jx, jz) + c * ft(jx + 1, jz);
         }

@@ -133,7 +133,7 @@ constexpr int INVERT_KX_ZERO = 16;
  */
 
 class LaplaceFactory
-  : public Factory<Laplacian, LaplaceFactory, Mesh*, Options*, CELL_LOC, Solver*> {
+    : public Factory<Laplacian, LaplaceFactory, Mesh*, Options*, CELL_LOC, Solver*> {
 public:
   static constexpr auto type_name = "Laplacian";
   static constexpr auto section_name = "laplace";
@@ -257,18 +257,16 @@ public:
 
   /// Coefficients in tridiagonal inversion
   /// This function is static so it can be called by BoundaryZeroLaplace2, BoundaryConstLaplace
-  static void tridagCoefs(Mesh* mesh,
-                          int jx, int jy, int jz, dcomplex& a, dcomplex& b, dcomplex& c,
-                          const Field2D* ccoef = nullptr, const Field2D* d = nullptr,
-                          CELL_LOC loc = CELL_DEFAULT);
+  static void tridagCoefs(Mesh* mesh, int jx, int jy, int jz, dcomplex& a, dcomplex& b,
+                          dcomplex& c, const Field2D* ccoef = nullptr,
+                          const Field2D* d = nullptr, CELL_LOC loc = CELL_DEFAULT);
 
   /*!
    * Create a new Laplacian solver
    *
    * @param[in] opt  The options section to use. By default "laplace" will be used
    */
-  static std::unique_ptr<Laplacian> create(Mesh* mesh_in,
-                                           Options* opts = nullptr,
+  static std::unique_ptr<Laplacian> create(Mesh* mesh_in, Options* opts = nullptr,
                                            const CELL_LOC location = CELL_CENTRE,
                                            Solver* solver = nullptr) {
     return LaplaceFactory::getInstance().create(mesh_in, opts, location, solver);
@@ -329,13 +327,14 @@ protected:
   /// and this the last proc in X direction
   bool isOuterBoundaryFlagSetOnLastX(int flag) const;
 
-  static void tridagCoefs(Mesh* mesh, int jx, int jy, BoutReal kwave, dcomplex& a, dcomplex& b, dcomplex& c,
-                   const Field2D* ccoef = nullptr, const Field2D* d = nullptr,
-                   CELL_LOC loc = CELL_DEFAULT) {
+  static void tridagCoefs(Mesh* mesh, int jx, int jy, BoutReal kwave, dcomplex& a,
+                          dcomplex& b, dcomplex& c, const Field2D* ccoef = nullptr,
+                          const Field2D* d = nullptr, CELL_LOC loc = CELL_DEFAULT) {
     tridagCoefs(mesh, jx, jy, kwave, a, b, c, ccoef, ccoef, d, loc);
   }
-  static void tridagCoefs(Mesh* mesh, int jx, int jy, BoutReal kwave, dcomplex& a, dcomplex& b, dcomplex& c,
-                          const Field2D* c1coef, const Field2D* c2coef, const Field2D* d,
+  static void tridagCoefs(Mesh* mesh, int jx, int jy, BoutReal kwave, dcomplex& a,
+                          dcomplex& b, dcomplex& c, const Field2D* c1coef,
+                          const Field2D* c2coef, const Field2D* d,
                           CELL_LOC loc = CELL_DEFAULT);
 
   void tridagMatrix(dcomplex* avec, dcomplex* bvec, dcomplex* cvec, dcomplex* bk, int jy,

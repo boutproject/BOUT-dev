@@ -150,9 +150,9 @@
 
 LaplaceNaulin::LaplaceNaulin(Mesh* mesh_in, Options* opt, const CELL_LOC loc,
                              Solver* UNUSED(solver))
-  : Laplacian(mesh_in, opt, loc), Acoef(0.0, localmesh), C1coef(1.0, localmesh),
-    C2coef(0.0, localmesh), Dcoef(1.0, localmesh),
-    delp2solver(nullptr), naulinsolver_mean_its(0.), ncalls(0) {
+    : Laplacian(mesh_in, opt, loc), Acoef(0.0, localmesh), C1coef(1.0, localmesh),
+      C2coef(0.0, localmesh), Dcoef(1.0, localmesh), delp2solver(nullptr),
+      naulinsolver_mean_its(0.), ncalls(0) {
 
   ASSERT1(opt
           != nullptr); // An Options pointer should always be passed in by LaplaceFactory

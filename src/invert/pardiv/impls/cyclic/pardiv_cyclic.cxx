@@ -53,7 +53,7 @@
 #include <cmath>
 
 InvertParDivCR::InvertParDivCR(Mesh* mesh_in, Options* opt, CELL_LOC location)
-  : InvertParDiv(mesh_in, opt, location), A(1.0, localmesh), B(0.0, localmesh) {
+    : InvertParDiv(mesh_in, opt, location), A(1.0, localmesh), B(0.0, localmesh) {
   // Number of k equations to solve for each x location
   nsys = 1 + (localmesh->LocalNz) / 2;
 }

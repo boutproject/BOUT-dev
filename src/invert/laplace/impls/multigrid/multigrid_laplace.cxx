@@ -44,7 +44,8 @@ BoutReal soltime = 0.0, settime = 0.0;
 
 LaplaceMultigrid::LaplaceMultigrid(Mesh* mesh_in, Options* opt, const CELL_LOC loc,
                                    Solver* UNUSED(solver))
-  : Laplacian(mesh_in, opt, loc), A(0.0, localmesh), C1(1.0, localmesh), C2(1.0, localmesh), D(1.0, localmesh) {
+    : Laplacian(mesh_in, opt, loc), A(0.0, localmesh), C1(1.0, localmesh),
+      C2(1.0, localmesh), D(1.0, localmesh) {
 
   TRACE("LaplaceMultigrid::LaplaceMultigrid(Options *opt)");
 

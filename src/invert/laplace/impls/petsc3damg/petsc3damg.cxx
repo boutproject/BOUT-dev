@@ -50,8 +50,8 @@ static constexpr auto DEFAULT_PC_TYPE = PCGAMG;
 
 LaplacePetsc3dAmg::LaplacePetsc3dAmg(Mesh* mesh_in, Options* opt, const CELL_LOC loc,
                                      Solver* UNUSED(solver))
-  : Laplacian(mesh_in, opt, loc), A(0.0, localmesh), C1(1.0, localmesh), C2(1.0, localmesh),
-      D(1.0, localmesh), Ex(0.0, localmesh), Ez(0.0, localmesh),
+    : Laplacian(mesh_in, opt, loc), A(0.0, localmesh), C1(1.0, localmesh),
+      C2(1.0, localmesh), D(1.0, localmesh), Ex(0.0, localmesh), Ez(0.0, localmesh),
       opts(opt == nullptr ? &(Options::root()["laplace"]) : opt),
       lower_boundary_flags((*opts)["lower_boundary_flags"].withDefault(0)),
       upper_boundary_flags((*opts)["upper_boundary_flags"].withDefault(0)),
@@ -121,8 +121,10 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Mesh* mesh_in, Options* opt, const CELL_LOC
 
   // Set up boundary conditions in operator
   const bool inner_X_neumann = isInnerBoundaryFlagSet(INVERT_AC_GRAD);
-  const auto inner_X_BC = inner_X_neumann ? -1. / coords->dx / sqrt(coords->g_11) : Coordinates::FieldMetric(0.5, localmesh);
-  const auto inner_X_BC_plus = inner_X_neumann ? -inner_X_BC : Coordinates::FieldMetric(0.5, localmesh);
+  const auto inner_X_BC = inner_X_neumann ? -1. / coords->dx / sqrt(coords->g_11)
+                                          : Coordinates::FieldMetric(0.5, localmesh);
+  const auto inner_X_BC_plus =
+      inner_X_neumann ? -inner_X_BC : Coordinates::FieldMetric(0.5, localmesh);
 
   BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
     operator3D(i, i) = inner_X_BC[i];
@@ -130,8 +132,10 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Mesh* mesh_in, Options* opt, const CELL_LOC
   }
 
   const bool outer_X_neumann = isOuterBoundaryFlagSet(INVERT_AC_GRAD);
-  const auto outer_X_BC = outer_X_neumann ? 1. / coords->dx / sqrt(coords->g_11) : Coordinates::FieldMetric(0.5, localmesh);
-  const auto outer_X_BC_minus = outer_X_neumann ? -outer_X_BC : Coordinates::FieldMetric(0.5, localmesh);
+  const auto outer_X_BC = outer_X_neumann ? 1. / coords->dx / sqrt(coords->g_11)
+                                          : Coordinates::FieldMetric(0.5, localmesh);
+  const auto outer_X_BC_minus =
+      outer_X_neumann ? -outer_X_BC : Coordinates::FieldMetric(0.5, localmesh);
 
   BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
     operator3D(i, i) = outer_X_BC[i];
@@ -139,8 +143,10 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Mesh* mesh_in, Options* opt, const CELL_LOC
   }
 
   const bool lower_Y_neumann = flagSet(lower_boundary_flags, INVERT_AC_GRAD);
-  const auto lower_Y_BC = lower_Y_neumann ? -1. / coords->dy / sqrt(coords->g_22) : Coordinates::FieldMetric(0.5, localmesh);
-  const auto lower_Y_BC_plus = lower_Y_neumann ? -lower_Y_BC : Coordinates::FieldMetric(0.5, localmesh);
+  const auto lower_Y_BC = lower_Y_neumann ? -1. / coords->dy / sqrt(coords->g_22)
+                                          : Coordinates::FieldMetric(0.5, localmesh);
+  const auto lower_Y_BC_plus =
+      lower_Y_neumann ? -lower_Y_BC : Coordinates::FieldMetric(0.5, localmesh);
 
   BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
     operator3D(i, i) = lower_Y_BC[i];
@@ -148,8 +154,10 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Mesh* mesh_in, Options* opt, const CELL_LOC
   }
 
   const bool upper_Y_neumann = flagSet(upper_boundary_flags, INVERT_AC_GRAD);
-  const auto upper_Y_BC = upper_Y_neumann ? 1. / coords->dy / sqrt(coords->g_22) : Coordinates::FieldMetric(0.5, localmesh);
-  const auto upper_Y_BC_minus = upper_Y_neumann ? -upper_Y_BC : Coordinates::FieldMetric(0.5, localmesh);
+  const auto upper_Y_BC = upper_Y_neumann ? 1. / coords->dy / sqrt(coords->g_22)
+                                          : Coordinates::FieldMetric(0.5, localmesh);
+  const auto upper_Y_BC_minus =
+      upper_Y_neumann ? -upper_Y_BC : Coordinates::FieldMetric(0.5, localmesh);
 
   BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
     operator3D(i, i) = upper_Y_BC[i];
@@ -169,7 +177,9 @@ void setBC(PetscVector<Field3D>& rhs, const Field3D& b_in,
   if (flagSet(boundary_flags, INVERT_RHS)) {
     BOUT_FOR(index, region) { ASSERT1(std::isfinite(b_in[index])); }
   } else {
-    const auto& outer_X_BC = (flagSet(boundary_flags, INVERT_SET)) ? x0 : Coordinates::FieldMetric(0.0, b_in.getMesh());
+    const auto& outer_X_BC = (flagSet(boundary_flags, INVERT_SET))
+                                 ? x0
+                                 : Coordinates::FieldMetric(0.0, b_in.getMesh());
     BOUT_FOR_SERIAL(index, region) { rhs(index) = outer_X_BC[index]; }
   }
 }

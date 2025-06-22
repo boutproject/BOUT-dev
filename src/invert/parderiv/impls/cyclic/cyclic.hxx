@@ -58,9 +58,7 @@ RegisterUnavailableInvertPar registerinvertparcyclic{
 
 class InvertParCR : public InvertPar {
 public:
-  explicit InvertParCR(Mesh* mesh_in,
-                       Options* opt,
-                       CELL_LOC location = CELL_CENTRE);
+  explicit InvertParCR(Mesh* mesh_in, Options* opt, CELL_LOC location = CELL_CENTRE);
 
   using InvertPar::solve;
   const Field3D solve(const Field3D& f) override;

@@ -24,8 +24,7 @@
 #include <bout/mesh.hxx>
 
 ZInterpolation::ZInterpolation(int y_offset, Mesh* mesh, Region<Ind3D> region_in)
-    : localmesh(mesh), region(region_in),
-      y_offset(y_offset) {
+    : localmesh(mesh), region(region_in), y_offset(y_offset) {
   if (region.size() == 0) {
     // Construct region that skips calculating interpolation in y-boundary regions that
     // should be filled by boundary conditions

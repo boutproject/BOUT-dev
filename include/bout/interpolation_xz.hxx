@@ -47,8 +47,7 @@ protected:
 
 public:
   XZInterpolation(int y_offset = 0, Mesh* localmeshIn = nullptr)
-      : y_offset(y_offset),
-        localmesh(localmeshIn) {}
+      : y_offset(y_offset), localmesh(localmeshIn) {}
   XZInterpolation(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZInterpolation(y_offset, mesh) {
     region = regionFromMask(mask, localmesh);
@@ -275,7 +274,8 @@ public:
   ReturnType create(Mesh* mesh, Options* options = nullptr) const {
     return Factory::create(getType(options), mesh);
   }
-  ReturnType create(const std::string& type, Mesh* mesh, [[maybe_unused]] Options* options) const {
+  ReturnType create(const std::string& type, Mesh* mesh,
+                    [[maybe_unused]] Options* options) const {
     return Factory::create(type, mesh);
   }
 

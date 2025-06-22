@@ -43,14 +43,15 @@ constexpr auto PARDIVCYCLIC = "cyclic";
 class InvertParDiv;
 
 class InvertParDivFactory
-  : public Factory<InvertParDiv, InvertParDivFactory, Mesh*, Options*, CELL_LOC> {
+    : public Factory<InvertParDiv, InvertParDivFactory, Mesh*, Options*, CELL_LOC> {
 public:
   static constexpr auto type_name = "InvertParDiv";
   static constexpr auto section_name = "pardiv";
   static constexpr auto option_name = "type";
   static constexpr auto default_type = PARDIVCYCLIC;
 
-  ReturnType create(Mesh* mesh, Options* options = nullptr, CELL_LOC location = CELL_CENTRE) const {
+  ReturnType create(Mesh* mesh, Options* options = nullptr,
+                    CELL_LOC location = CELL_CENTRE) const {
     return Factory::create(getType(options), mesh, options, location);
   }
   ReturnType create(const std::string& type, Mesh* mesh, Options* options) const {
@@ -88,8 +89,7 @@ public:
    * To create an InvertParDiv object call the create() static function.
    */
   InvertParDiv(Mesh* mesh_in, Options* UNUSED(opt), CELL_LOC location_in)
-      : location(location_in),
-        localmesh(mesh_in) {}
+      : location(location_in), localmesh(mesh_in) {}
   virtual ~InvertParDiv() = default;
 
   /*!

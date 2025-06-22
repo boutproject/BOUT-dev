@@ -2798,7 +2798,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     return new BoundaryConstLaplace(region);
   }
 
-  void BoundaryConstLaplace::apply(Field2D& f) {
+  void BoundaryConstLaplace::apply(Field2D & f) {
     if ((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
       // Can't apply this boundary condition to non-X boundaries
       throw BoutException(
@@ -2818,7 +2818,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       dcomplex val =
           la * f(x - bx - 1, y) + lb * f(x - 2 * bx, y) + lc * f(x - 2 * bx + 1, y);
       // Loop in X towards edge of domain
-      Mesh *mesh = f.getMesh();
+      Mesh* mesh = f.getMesh();
       do {
         Laplacian::tridagCoefs(mesh, x - bx, y, 0, la, lb, lc);
         if (bx < 0) { // Lower X

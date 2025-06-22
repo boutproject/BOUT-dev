@@ -65,8 +65,7 @@ using RegisterUnavailableLaplaceXZ = LaplaceXZFactory::RegisterUnavailableInFact
 
 class LaplaceXZ {
 public:
-  LaplaceXZ(Mesh* m, Options* UNUSED(options) = nullptr,
-            const CELL_LOC loc = CELL_CENTRE)
+  LaplaceXZ(Mesh* m, Options* UNUSED(options) = nullptr, const CELL_LOC loc = CELL_CENTRE)
       : localmesh(m), location(loc) {}
   virtual ~LaplaceXZ() = default;
 
