@@ -7,16 +7,10 @@
  * 
  * Parallel algorithm, using Cyclic Reduction
  *
- * Author: Ben Dudson, University of York, Oct 2011
- * 
- * Known issues:
- * ------------
- *
- *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -53,8 +47,10 @@
 
 #include <cmath>
 
-InvertParCR::InvertParCR(Options* opt, CELL_LOC location, Mesh* mesh_in)
-    : InvertPar(opt, location, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
+InvertParCR::InvertParCR(Mesh* mesh_in, Options* opt, CELL_LOC location)
+  : InvertPar(mesh_in, opt, location),
+    A(1.0, localmesh), B(0.0, localmesh), C(0.0, localmesh),
+    D(0.0, localmesh), E(0.0, localmesh), sg(localmesh) {
   // Number of k equations to solve for each x location
   nsys = 1 + (localmesh->LocalNz) / 2;
 

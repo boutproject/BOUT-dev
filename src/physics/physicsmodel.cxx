@@ -7,10 +7,10 @@
  *    * Initial version
  * 
  **************************************************************************
- * Copyright 2013 B.D.Dudson
+ * Copyright 2013 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ * Contact: Ben Dudson, dudson2@llnl.gov
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -61,8 +61,8 @@ void DataFileFacade::add(Vector3D* value, const std::string& name, bool save_rep
 }
 } // namespace bout
 
-PhysicsModel::PhysicsModel()
-    : mesh(bout::globals::mesh), output_enabled(Options::root()["output"]["enabled"]
+PhysicsModel::PhysicsModel(Mesh* mesh_)
+    : mesh(mesh_), output_enabled(Options::root()["output"]["enabled"]
                                                     .doc("Write output files")
                                                     .withDefault(true)),
       restart_enabled(Options::root()["restart_files"]["enabled"]
@@ -173,7 +173,7 @@ int PhysicsModel::postInit(bool restarting) {
   if (restart_enabled) {
     restartVars(restart_options);
     solver->outputVars(restart_options, false);
-    bout::globals::mesh->outputVars(restart_options);
+    mesh->outputVars(restart_options);
 
     restart_options["BOUT_VERSION"].force(bout::version::as_double, "PhysicsModel");
 

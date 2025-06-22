@@ -38,9 +38,9 @@
 
 #include <bout/output.hxx>
 
-LaplaceSerialTri::LaplaceSerialTri(Options* opt, CELL_LOC loc, Mesh* mesh_in,
+LaplaceSerialTri::LaplaceSerialTri(Mesh* mesh_in, Options* opt, CELL_LOC loc,
                                    Solver* UNUSED(solver))
-    : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0) {
+  : Laplacian(mesh_in, opt, loc), A(0.0, localmesh), C(1.0, localmesh), D(1.0, localmesh) {
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);

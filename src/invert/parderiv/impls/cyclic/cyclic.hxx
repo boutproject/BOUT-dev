@@ -7,8 +7,6 @@
  * 
  * Parallel algorithm, using Cyclic Reduction
  *
- * Author: Ben Dudson, University of York, Oct 2011
- * 
  * Known issues:
  * ------------
  *
@@ -18,9 +16,9 @@
  *   staggered mesh requires one-sided derivative as boundary condition.
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -60,8 +58,9 @@ RegisterUnavailableInvertPar registerinvertparcyclic{
 
 class InvertParCR : public InvertPar {
 public:
-  explicit InvertParCR(Options* opt, CELL_LOC location = CELL_CENTRE,
-                       Mesh* mesh_in = bout::globals::mesh);
+  explicit InvertParCR(Mesh* mesh_in,
+                       Options* opt,
+                       CELL_LOC location = CELL_CENTRE);
 
   using InvertPar::solve;
   const Field3D solve(const Field3D& f) override;
@@ -98,7 +97,7 @@ public:
   }
 
 private:
-  Field2D A{0.0}, B{0.0}, C{0.0}, D{0.0}, E{0.0};
+  Field2D A, B, C, D, E;
   Field2D sg; // Coefficient of DDY contribution to Grad2_par2
 
   int nsys;

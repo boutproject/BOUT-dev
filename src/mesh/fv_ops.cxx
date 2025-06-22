@@ -481,7 +481,7 @@ void communicateFluxes(Field3D& f) {
 
 Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
 
-  Field3D result = 0.0;
+  Field3D result{zeroFrom(f)};
 
   //////////////////////////////////////////
   // X-Z diffusion

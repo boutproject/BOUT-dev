@@ -24,7 +24,6 @@
  **************************************************************************/
 
 #include <bout/boutcomm.hxx>
-#include <bout/globals.hxx>
 
 #include <cmath>
 
@@ -58,13 +57,8 @@ FieldPerp::FieldPerp(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC location
 
 FieldPerp& FieldPerp::allocate() {
   if (data.empty()) {
-    if (!fieldmesh) {
-      // fieldmesh was not initialized when this field was initialized, so use
-      // the global mesh and set some members to default values
-      fieldmesh = bout::globals::mesh;
-      nx = fieldmesh->LocalNx;
-      nz = fieldmesh->LocalNz;
-    }
+    // Needs to have a mesh
+    ASSERT0(fieldmesh);
     data.reallocate(nx * nz);
 #if CHECK > 2
     invalidateGuards(*this);

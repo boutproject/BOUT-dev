@@ -1,7 +1,7 @@
 /**************************************************************************
- * Copyright 2020 B.D.Dudson, P. Hill, J. Omotani, J. Parker
+ * Copyright 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -24,7 +24,7 @@
 #include <bout/mesh.hxx>
 
 ZInterpolation::ZInterpolation(int y_offset, Mesh* mesh, Region<Ind3D> region_in)
-    : localmesh(mesh == nullptr ? bout::globals::mesh : mesh), region(region_in),
+    : localmesh(mesh), region(region_in),
       y_offset(y_offset) {
   if (region.size() == 0) {
     // Construct region that skips calculating interpolation in y-boundary regions that

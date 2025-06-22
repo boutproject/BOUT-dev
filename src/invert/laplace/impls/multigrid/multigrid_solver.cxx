@@ -197,7 +197,7 @@ void Multigrid1DP::setMultigridC(int UNUSED(plag)) {
       for (int i = level; i >= 0; i--) {
         FILE* outf;
         char outfile[256];
-        sprintf(outfile, "2DP_matC%1d_%d.mat", i, rMG->rProcI);
+        snprintf(outfile, 256, "2DP_matC%1d_%d.mat", i, rMG->rProcI);
         output << "Out file= " << outfile << endl;
         outf = fopen(outfile, "w");
         int dim = (rMG->lnx[i] + 2) * (rMG->lnz[i] + 2);
@@ -224,7 +224,7 @@ void Multigrid1DP::setMultigridC(int UNUSED(plag)) {
       for (int i = level; i >= 0; i--) {
         FILE* outf;
         char outfile[256];
-        sprintf(outfile, "S1D_matC%1d_%d.mat", i, sMG->rProcI);
+        snprintf(outfile, 256, "S1D_matC%1d_%d.mat", i, sMG->rProcI);
         output << "Out file= " << outfile << endl;
         outf = fopen(outfile, "w");
         int dim = (sMG->lnx[i] + 2) * (sMG->lnz[i] + 2);
@@ -458,7 +458,7 @@ void Multigrid1DP::convertMatrixF2D(int level) {
   if (pcheck == 3) {
     FILE* outf;
     char outfile[256];
-    sprintf(outfile, "2DP_CP_%d.mat", rProcI);
+    snprintf(outfile, 256, "2DP_CP_%d.mat", rProcI);
     output << "Out file= " << outfile << endl;
     outf = fopen(outfile, "w");
     fprintf(outf, "dim = (%d, %d)\n", ggx, gnz[0]);
@@ -478,7 +478,7 @@ void Multigrid1DP::convertMatrixF2D(int level) {
   if (pcheck == 3) {
     FILE* outf;
     char outfile[256];
-    sprintf(outfile, "2DP_Conv_%d.mat", rProcI);
+    snprintf(outfile, 256, "2DP_Conv_%d.mat", rProcI);
     output << "Out file= " << outfile << endl;
     outf = fopen(outfile, "w");
     fprintf(outf, "dim = (%d, %d)\n", ggx, gnz[0]);
@@ -627,7 +627,7 @@ void Multigrid2DPf1D::setMultigridC(int UNUSED(plag)) {
       for (int i = level; i >= 0; i--) {
         FILE* outf;
         char outfile[256];
-        sprintf(outfile, "S2D_matC%1d_%d.mat", i, sMG->rProcI);
+        snprintf(outfile, 256, "S2D_matC%1d_%d.mat", i, sMG->rProcI);
         outf = fopen(outfile, "w");
         output << "Out file= " << outfile << endl;
         int dim = (sMG->lnx[i] + 2) * (sMG->lnz[i] + 2);

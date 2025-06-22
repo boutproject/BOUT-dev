@@ -80,6 +80,10 @@ public:
   ReturnType create(const std::string& type, Options* options = nullptr,
                     GridDataSource* source = nullptr) const;
   ReturnType create(Options* options = nullptr, GridDataSource* source = nullptr) const;
+
+  ReturnType create(const std::string& type, Mesh*, Options* options) const {
+    return create(type, options);
+  }
 };
 
 BOUT_ENUM_CLASS(BoundaryParType, all, xin, xout, fwd, bwd, xin_fwd, xout_fwd, xin_bwd,

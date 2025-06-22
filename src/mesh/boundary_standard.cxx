@@ -2763,7 +2763,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       do {
         for (int jz = 0; jz <= ncz / 2; jz++) {
           dcomplex la, lb, lc;
-          laplace_tridag_coefs(x - bx, y, jz, la, lb, lc);
+          Laplacian::tridagCoefs(mesh, x - bx, y, jz, la, lb, lc);
           if (bx > 0) {
             // Outer boundary
             swap(la, lc);
@@ -2798,7 +2798,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     return new BoundaryConstLaplace(region);
   }
 
-  void BoundaryConstLaplace::apply(Field2D & f) {
+  void BoundaryConstLaplace::apply(Field2D& f) {
     if ((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
       // Can't apply this boundary condition to non-X boundaries
       throw BoutException(
@@ -2808,17 +2808,19 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     // Constant X second derivative
     int bx = bndry->bx;
     // Loop over the Y dimension
+    Mesh* mesh = f.getMesh();
     for (bndry->first(); !bndry->isDone(); bndry->nextY()) {
       int x = bndry->x;
       int y = bndry->y;
       // Calculate the Laplacian on the last point
       dcomplex la, lb, lc;
-      laplace_tridag_coefs(x - 2 * bx, y, 0, la, lb, lc);
+      Laplacian::tridagCoefs(mesh, x - 2 * bx, y, 0, la, lb, lc);
       dcomplex val =
           la * f(x - bx - 1, y) + lb * f(x - 2 * bx, y) + lc * f(x - 2 * bx + 1, y);
       // Loop in X towards edge of domain
+      Mesh *mesh = f.getMesh();
       do {
-        laplace_tridag_coefs(x - bx, y, 0, la, lb, lc);
+        Laplacian::tridagCoefs(mesh, x - bx, y, 0, la, lb, lc);
         if (bx < 0) { // Lower X
           f(x, y) = ((val - lb * f(x - bx, y) + lc * f(x - 2 * bx, y)) / la).real();
         } else { // Upper X
@@ -2864,7 +2866,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       // Calculate Delp2 on point MXG+1 (and put into c1)
       for (int jz = 0; jz <= ncz / 2; jz++) {
         dcomplex la, lb, lc;
-        laplace_tridag_coefs(x - 2 * bx, y, jz, la, lb, lc);
+        Laplacian::tridagCoefs(mesh, x - 2 * bx, y, jz, la, lb, lc);
         if (bx < 0) { // Inner X
           c1[jz] = la * c0[jz] + lb * c1[jz] + lc * c2[jz];
         } else { // Outer X

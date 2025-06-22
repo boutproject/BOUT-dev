@@ -7,7 +7,6 @@
 #include <bout/assert.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/derivs.hxx>
-#include <bout/globals.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
@@ -29,7 +28,7 @@ static PetscErrorCode laplacePCapply(PC pc, Vec x, Vec y) {
 
 LaplaceXY::LaplaceXY(Mesh* m, Options* opt, const CELL_LOC loc)
     : lib(opt == nullptr ? &(Options::root()["laplacexy"]) : opt),
-      localmesh(m == nullptr ? bout::globals::mesh : m), location(loc), monitor(*this) {
+      localmesh(m), location(loc), indexXY(m), monitor(*this) {
   Timer timer("invert");
 
   if (opt == nullptr) {
@@ -1217,7 +1216,7 @@ const Field2D LaplaceXY::solve(const Field2D& rhs, const Field2D& x0) {
   //////////////////////////
   // Copy data into result
 
-  Field2D result;
+  Field2D result(localmesh);
   result.allocate();
   result.setLocation(location);
 

@@ -16,7 +16,7 @@
  *   staggered mesh requires one-sided derivative as boundary condition.
  *
  **************************************************************************
- * Copyright 2010 - 2022 BOUT++ contributors
+ * Copyright 2010 - 2025 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -58,8 +58,7 @@ RegisterUnavailableInvertParDiv registerinvertpardivcyclic{
 
 class InvertParDivCR : public InvertParDiv {
 public:
-  explicit InvertParDivCR(Options* opt, CELL_LOC location = CELL_CENTRE,
-                          Mesh* mesh_in = bout::globals::mesh);
+  explicit InvertParDivCR(Mesh* mesh_in, Options* opt, CELL_LOC location = CELL_CENTRE);
 
   using InvertParDiv::solve;
   Field3D solve(const Field3D& f) override;
@@ -78,7 +77,7 @@ public:
   }
 
 private:
-  Field2D A{1.0}, B{0.0};
+  Field2D A, B;
 
   int nsys;
 };

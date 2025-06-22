@@ -4,7 +4,7 @@
  * Adapted from the BOUT code by B.Dudson, University of York, Oct 2007
  *
  **************************************************************************
- * Copyright 2010-2023 BOUT++ contributors
+ * Copyright 2010-2025 BOUT++ contributors
  *
  * Contact Ben Dudson, dudson2@llnl.gov
  *
@@ -42,6 +42,7 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/invert/laplacexz.hxx"
 #include "bout/invert_laplace.hxx"
 #include "bout/invert_parderiv.hxx"
+#include "bout/mesh.hxx"
 #include "bout/mpi_wrapper.hxx"
 #include "bout/msg_stack.hxx"
 #include "bout/openmpwrap.hxx"
@@ -203,11 +204,6 @@ int BoutInitialise(int& argc, char**& argv) {
 
     bout::globals::mpi = new MpiWrapper();
 
-    // Create the mesh
-    bout::globals::mesh = Mesh::create();
-    // Load from sources. Required for Field initialisation
-    bout::globals::mesh->load();
-
     // time_report options are used in BoutFinalise, i.e. after we
     // check for unused options
     Options::root()["time_report"].setConditionallyUsed();
@@ -316,10 +312,10 @@ template <class Factory>
   mesh_options["ny"] = 4;
   mesh_options["nz"] = 4;
 
-  // We might need a global mesh for some types, so best make one
+  // We might need a mesh for some types, so best make one
   bout::globals::mpi = new MpiWrapper();
-  bout::globals::mesh = Mesh::create();
-  bout::globals::mesh->load();
+  auto mesh = Mesh::create();
+  mesh->load();
 
   // An empty Options that we'll later check for used values
   Options help_options;
@@ -327,7 +323,7 @@ template <class Factory>
   // Most likely failure is typo in type name, so we definitely want
   // to print that
   try {
-    factory.create(type, &help_options[Factory::section_name]);
+    factory.create(type, mesh, &help_options[Factory::section_name]);
   } catch (const BoutException& error) {
     std::cout << error.what() << std::endl;
     std::exit(EXIT_FAILURE);
@@ -758,14 +754,8 @@ int BoutFinalise(bool write_settings) {
     output.write("\n");
   }
 
-  // Delete the mesh
-  delete bout::globals::mesh;
-
   // Make sure all processes have finished writing before exit
   bout::globals::mpi->MPI_Barrier(BoutComm::get());
-
-  // Laplacian inversion
-  Laplacian::cleanup();
 
   // Delete field memory
   Array<BoutReal>::cleanup();

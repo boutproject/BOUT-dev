@@ -6,7 +6,7 @@
  * (A + Div_par( B * Grad_par ) x = r
  *
  **************************************************************************
- * Copyright 2010-2022 BOUT++ contributors
+ * Copyright 2010-2025 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *

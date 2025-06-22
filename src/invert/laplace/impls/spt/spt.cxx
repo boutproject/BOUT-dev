@@ -10,9 +10,9 @@
  *     * Removed static variables in functions, changing to class members.
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -42,9 +42,9 @@
 
 #include "spt.hxx"
 
-LaplaceSPT::LaplaceSPT(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
+LaplaceSPT::LaplaceSPT(Mesh* mesh_in, Options* opt, const CELL_LOC loc,
                        Solver* UNUSED(solver))
-    : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
+  : Laplacian(mesh_in, opt, loc), Acoef(0.0, localmesh), Ccoef(1.0, localmesh), Dcoef(1.0, localmesh) {
   Acoef.setLocation(location);
   Ccoef.setLocation(location);
   Dcoef.setLocation(location);

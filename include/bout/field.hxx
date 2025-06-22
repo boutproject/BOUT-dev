@@ -3,10 +3,10 @@
  * \brief field base class definition for differencing methods
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ * Contact: Ben Dudson, dudson2@llnl.gov
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -41,7 +41,6 @@ class Field;
 #include "bout/region.hxx"
 #include "bout/traits.hxx"
 #include "bout/utils.hxx"
-#include <bout/globals.hxx>
 #include <bout/rvec.hxx>
 
 class Mesh;

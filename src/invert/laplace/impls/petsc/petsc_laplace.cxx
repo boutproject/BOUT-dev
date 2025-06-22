@@ -61,9 +61,10 @@ static PetscErrorCode laplacePCapply(PC pc, Vec x, Vec y) {
   PetscFunctionReturn(laplace->precon(x, y)); // NOLINT
 }
 
-LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
+LaplacePetsc::LaplacePetsc(Mesh* mesh_in, Options* opt, const CELL_LOC loc,
                            Solver* UNUSED(solver))
-    : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
+  : Laplacian(mesh_in, opt, loc), A(0.0, localmesh), C1(1.0, localmesh),
+      C2(1.0, localmesh), D(1.0, localmesh), Ex(0.0, localmesh), Ez(0.0, localmesh),
       issetD(false), issetC(false), issetE(false),
       lib(opt == nullptr ? &(Options::root()["laplace"]) : opt) {
   A.setLocation(location);
@@ -308,7 +309,7 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
     rightprec = (*opts)["rightprec"].doc("Right preconditioning?").withDefault(true);
 
     // Options for preconditioner are in a subsection
-    pcsolve = Laplacian::create(opts->getSection("precon"));
+    pcsolve = Laplacian::create(localmesh, opts->getSection("precon"));
   }
 
   // Ensure that the matrix is constructed first time

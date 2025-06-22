@@ -1,7 +1,7 @@
 /**************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -19,8 +19,6 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-#include <bout/globals.hxx>
-
 #include <bout/field_factory.hxx>
 
 #include <cmath>
@@ -86,7 +84,7 @@ private:
 // FieldFactory public functions
 
 FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
-    : fieldmesh(localmesh == nullptr ? bout::globals::mesh : localmesh),
+    : fieldmesh(localmesh),
       options(opt == nullptr ? Options::getRoot() : opt) {
 
   // Set options
