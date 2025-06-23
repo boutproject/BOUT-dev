@@ -24,10 +24,12 @@ set_target_properties(sphinx-html sphinx-pdf PROPERTIES
   ENVIRONMENT PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}
 )
 
-add_custom_target(docs ALL)
+add_custom_target(docs)
 add_dependencies(docs sphinx-html)
 
 install(DIRECTORY ${BOUT_SPHINX_BUILD}/
   DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/bout++/
+  EXCLUDE_FROM_ALL
+  COMPONENT docs
   PATTERN .* EXCLUDE
 )
