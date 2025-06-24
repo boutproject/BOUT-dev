@@ -218,14 +218,10 @@ Field3D LaplaceHypre3d::solve(const Field3D& b_in, const Field3D& x0) {
 
   CALI_MARK_BEGIN("LaplaceHypre3d_solve:vectorAssemble");
 
-  operator3D.setElimBEVectors(solution, rhs);
-
   rhs.importValuesFromField(b);
   solution.importValuesFromField(x0);
   rhs.assemble();
   solution.assemble();
-
-  solution.syncElimBErhs(rhs);
 
   CALI_MARK_END("LaplaceHypre3d_solve:vectorAssemble");
 
@@ -415,7 +411,6 @@ void LaplaceHypre3d::updateMatrix3D() {
     operator3D.ydown(ydown)(l, l.ym().zp()) += -C_d2f_dydz;
     operator3D.ydown(ydown)(l, l.ym().zm()) += C_d2f_dydz;
   }
-  operator3D.setElimBE();
   operator3D.assemble();
 
   if (print_matrix) {
