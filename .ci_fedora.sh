@@ -43,7 +43,7 @@ then
     echo "minrate=10M" >> /etc/dnf/dnf.conf
     export FORCE_COLUMNS=200
     time dnf -y install dnf5
-    time dnf5 -y install dnf5-plugins cmake python3-zoidberg python3-natsort
+    time dnf5 -y install dnf5-plugins cmake python3-zoidberg python3-natsort python3-boututils
     # Allow to override packages - see #2073
     time dnf5 copr enable -y davidsch/fixes4bout || :
     time dnf5 -y upgrade
