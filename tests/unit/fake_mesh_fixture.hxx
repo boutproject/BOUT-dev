@@ -25,15 +25,19 @@
 /// alias to make a new test:
 ///
 ///     using MyTest = FakeMeshFixture;
-class FakeMeshFixture : public ::testing::Test {
+///
+///     Type alias FakeMeshFixture = FakeMeshFixture_tmpl<3, 5, 7>;
+///     is used as a shim to allow FakeMeshFixture to be used with default values for nx, ny, nz
+template<int NX, int NY, int NZ>
+class FakeMeshFixture_tmpl : public ::testing::Test {
 public:
-    FakeMeshFixture() {
+    FakeMeshFixture_tmpl() {
         WithQuietOutput quiet_info{output_info};
         WithQuietOutput quiet_warn{output_warn};
 
         delete bout::globals::mesh;
         bout::globals::mpi = new MpiWrapper();
-        bout::globals::mesh = new FakeMesh(nx, ny, nz);
+        bout::globals::mesh = new FakeMesh(NX, NY, NZ);
         bout::globals::mesh->createDefaultRegions();
         static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
         test_coords = std::make_shared<Coordinates>(
@@ -71,7 +75,7 @@ public:
         dynamic_cast<FakeMesh*>(bout::globals::mesh)->createBoundaryRegions();
 
         delete mesh_staggered;
-        mesh_staggered = new FakeMesh(nx, ny, nz);
+        mesh_staggered = new FakeMesh(NX, NY, NZ);
         mesh_staggered->StaggerGrids = true;
         dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr);
         dynamic_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
@@ -123,7 +127,7 @@ public:
                 ->setCoordinates(test_coords_staggered, CELL_ZLOW);
     }
 
-    ~FakeMeshFixture() override {
+    ~FakeMeshFixture_tmpl() override {
         delete bout::globals::mesh;
         bout::globals::mesh = nullptr;
         delete mesh_staggered;
@@ -134,12 +138,14 @@ public:
         Options::cleanup();
     }
 
-    static constexpr int nx = 3;
-    static constexpr int ny = 5;
-    static constexpr int nz = 7;
+    static constexpr int nx = NX;
+    static constexpr int ny = NY;
+    static constexpr int nz = NZ;
 
     Mesh* mesh_staggered = nullptr;
 
     std::shared_ptr<Coordinates> test_coords{nullptr};
     std::shared_ptr<Coordinates> test_coords_staggered{nullptr};
 };
+
+using FakeMeshFixture = FakeMeshFixture_tmpl<3, 5, 7>;

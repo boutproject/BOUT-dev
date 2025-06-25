@@ -4,6 +4,7 @@
 #include "bout/bout_types.hxx"
 #include "bout/field2d.hxx"
 #include "bout/utils.hxx"
+#include "bout/constants.hxx"
 
 
 namespace bout {
@@ -17,7 +18,7 @@ namespace bout {
 
     TokamakOptions::TokamakOptions(Mesh &mesh) {
         mesh.get(Rxy, "Rxy");
-        //    mesh->get(Zxy, "Zxy");
+        mesh.get(Zxy, "Zxy");
         mesh.get(Bpxy, "Bpxy");
         mesh.get(Btxy, "Btxy");
         mesh.get(Bxy, "Bxy");
@@ -26,6 +27,34 @@ namespace bout {
         if (mesh.get(dx, "dpsi")) {
             dx = mesh.getCoordinates()->dx();
         }
+//        mesh.get(toroidal_angle, "z");
+        const auto d_phi = TWOPI / mesh.LocalNz;
+        auto current_phi = 0.0;
+        for (int k = 0; k < mesh.LocalNz; k++) {
+            toroidal_angles.push_back(current_phi);
+            current_phi += d_phi;
+        }
+    }
+
+    Coordinates3D TokamakOptions::CylindricalCoordinatesToCartesian() {
+
+        auto* mesh = Rxy.getMesh();
+        Field3D x = Field3D(0.0, mesh);
+        Field3D y = Field3D(0.0, mesh);
+        Field3D z = Field3D(0.0, mesh);
+
+        for (int i = 0; i < Rxy.getNx(); i++) {
+            for (int j = 0; j < Rxy.getNy(); j++) {
+                int k = 0;
+                for (auto angle : toroidal_angles) {
+                    x(i, j, k) = Rxy(i, j) * std::cos(angle);
+                    y(i, j, k) = Rxy(i, j) * std::sin(angle);
+                    z(i, j, k) = Zxy(i, j);
+                    k++;
+                }
+            }
+        }
+        return Coordinates3D(x, y, z);
     }
 
     void TokamakOptions::normalise(BoutReal Lbar, BoutReal Bbar, BoutReal ShearFactor) {
@@ -47,7 +76,7 @@ namespace bout {
 
         const BoutReal sign_of_bp = get_sign_of_bp(tokamak_options.Bpxy);
 
-        auto *coord = mesh.getCoordinates();
+        auto* coord = mesh.getCoordinates();
 
         const auto g11 = SQ(tokamak_options.Rxy * tokamak_options.Bpxy);
         const auto g22 = 1.0 / SQ(tokamak_options.hthe);
