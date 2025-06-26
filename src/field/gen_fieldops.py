@@ -219,7 +219,6 @@ if __name__ == "__main__":
         region_loop = "BOUT_FOR"
 
     # Declare what fields we currently support:
-    # Field perp is currently missing
     field3D = Field(
         "Field3D",
         ["x", "y", "z"],
