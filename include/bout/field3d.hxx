@@ -525,7 +525,7 @@ public:
 
   bool allowCalcParallelSlices{true};
 
-private:
+protected:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1}, nz{-1};
 
@@ -698,5 +698,50 @@ inline Field3D copy(const Field3D& f) {
   }
   return result;
 }
+
+class Field3DParallel: public Field3D
+{
+ public:
+  template<class... Types>
+  Field3DParallel(Types... args): Field3D(&args ...) {
+    ensureFieldAligned();
+  }
+  Field3DParallel(Field3D&& f3d): Field3D(std::move(f3d)) {
+    ensureFieldAligned();
+  }
+  Field3DParallel(const Field3D& f3d): Field3D(f3d) {
+    ensureFieldAligned();
+  }
+  // Explicitly needed, as DirectionTypes is sometimes constructed from a
+  // brace enclosed list
+  Field3DParallel(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
+		  DirectionTypes directions_in = {YDirectionType::Standard,
+						  ZDirectionType::Standard},
+		  std::optional<size_t> regionID = {}) :
+    Field3D(localmesh, location_in, directions_in, regionID) {
+    ensureFieldAligned();
+  }
+  Field3DParallel(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
+		  DirectionTypes directions_in = {YDirectionType::Standard,
+						  ZDirectionType::Standard}) :
+    Field3D(std::move(data), localmesh, location, directions_in) {
+    ensureFieldAligned();
+  }
+
+  Field3DParallel& operator*=(const Field3D&);
+  Field3DParallel& operator/=(const Field3D&);
+  Field3DParallel& operator+=(const Field3D&);
+  Field3DParallel& operator-=(const Field3D&);
+  Field3DParallel& operator*=(const Field3DParallel&);
+  Field3DParallel& operator/=(const Field3DParallel&);
+  Field3DParallel& operator+=(const Field3DParallel&);
+  Field3DParallel& operator-=(const Field3DParallel&);
+  Field3DParallel& operator*=(BoutReal);
+  Field3DParallel& operator/=(BoutReal);
+  Field3DParallel& operator+=(BoutReal);
+  Field3DParallel& operator-=(BoutReal);
+private:
+  void ensureFieldAligned();
+};
 
 #endif /* BOUT_FIELD3D_H */

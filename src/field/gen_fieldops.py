@@ -104,7 +104,7 @@ class Field(object):
         self.mixed_base_ind_var = mixed_base_ind_var
         # Note region_type isn't actually used currently but
         # may be useful in future.
-        if self.field_type == "Field3D":
+        if "Field3D" in self.field_type:
             self.region_type = "3D"
         elif self.field_type == "Field2D":
             self.region_type = "2D"
@@ -184,6 +184,8 @@ def returnType(f1, f2):
         return copy(f1)
     elif f1 == "FieldPerp" or f2 == "FieldPerp":
         return copy(fieldPerp)
+    elif f1 == "Field3DParallel" or f2 == "Field3DParallel":
+        return copy(field3DPar)
     else:
         return copy(field3D)
 
@@ -227,6 +229,13 @@ if __name__ == "__main__":
         jz_var=jz_var,
         mixed_base_ind_var=mixed_base_ind_var,
     )
+    field3DPar = Field(
+        "Field3DParallel",
+        ["x", "y", "z"],
+        index_var=index_var,
+        jz_var=jz_var,
+        mixed_base_ind_var=mixed_base_ind_var,
+    )
     field2D = Field(
         "Field2D",
         ["x", "y"],
@@ -249,7 +258,8 @@ if __name__ == "__main__":
         mixed_base_ind_var=mixed_base_ind_var,
     )
 
-    fields = [field3D, field2D, fieldPerp, boutreal]
+    fields = (field3D, field2D, fieldPerp, boutreal)
+    fields2 = (field3D, field3DPar, boutreal)
 
     with smart_open(args.filename, "w") as f:
         f.write(header)
@@ -259,10 +269,16 @@ if __name__ == "__main__":
 
     template = env.get_template("gen_fieldops.jinja")
 
-    for lhs, rhs in itertools.product(fields, fields):
-        # We don't have to define BoutReal BoutReal operations
-        if lhs == rhs == "BoutReal":
+    # We don't have to define BoutReal BoutReal operations
+    done = [(boutreal, boutreal)]
+    for lhs, rhs in itertools.chain(
+        itertools.product(fields, fields),
+        itertools.product((field3D, field3DPar, boutreal), (field3D, field3DPar)),
+    ):
+        if (lhs, rhs) in done:
             continue
+        done.append((lhs, rhs))
+
         rhs = copy(rhs)
         lhs = copy(lhs)
 
