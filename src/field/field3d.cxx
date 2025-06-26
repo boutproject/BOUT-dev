@@ -92,6 +92,19 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
   *this = val;
 }
 
+Field3DParallel::Field3DParallel(const BoutReal val, Mesh* localmesh)
+    : Field3D(localmesh) {
+
+  *this = val;
+  if (this->isFci()) {
+    splitParallelSlices();
+    for (size_t i = 0; i < numberParallelSlices(); ++i) {
+      yup(i) = val;
+      ydown(i) = val;
+    }
+  }
+}
+
 Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation,
                  DirectionTypes directions_in)
     : Field(localmesh, datalocation, directions_in), data(std::move(data_in)) {
@@ -333,6 +346,27 @@ Field3D& Field3D::operator=(const BoutReal val) {
   // Delete existing parallel slices. We don't copy parallel slices, so any
   // that currently exist will be incorrect.
   clearParallelSlices();
+  resetRegion();
+
+  allocate();
+
+  BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = val; }
+  this->name = "BR";
+
+  return *this;
+}
+
+Field3DParallel& Field3DParallel::operator=(const BoutReal val) {
+  TRACE("Field3DParallel = BoutReal");
+  track(val, "operator=");
+
+  if (isFci()) {
+    ASSERT2(hasParallelSlices());
+    for (size_t i = 0; i < numberParallelSlices(); ++i) {
+      yup(i) = val;
+      ydown(i) = val;
+    }
+  }
   resetRegion();
 
   allocate();
@@ -890,6 +924,7 @@ void Field3D::_track(const T& change, std::string operation) {
 template void
 Field3D::_track<Field3D, bout::utils::EnableIfField<Field3D>>(const Field3D&,
                                                               std::string);
+template void Field3D::_track<Field3DParallel>(const Field3DParallel&, std::string);
 template void Field3D::_track<Field2D>(const Field2D&, std::string);
 template void Field3D::_track<>(const FieldPerp&, std::string);
 
