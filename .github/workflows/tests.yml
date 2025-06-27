@@ -40,7 +40,7 @@ jobs:
           - ${{ github.event_name == 'cron' }}
         config:
           - name: "CMake, PETSc unreleased"
-            os: ubuntu-20.04
+            os: ubuntu-24.04
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_METRIC_3D=ON
                             -DBOUT_ENABLE_OPENMP=ON
@@ -55,13 +55,13 @@ jobs:
             build_petsc_branch: main
             on_cron: true
 
-          - name: "Default options, Ubuntu 20.04"
-            os: ubuntu-20.04
+          - name: "Default options, Ubuntu 22.04"
+            os: ubuntu-22.04
             cmake_options: ""
             on_cron: false
 
           - name: "Optimised, static"
-            os: ubuntu-20.04
+            os: ubuntu-latest
             cmake_options: "-DCHECK=0
                             -DBUILD_SHARED_LIBS=OFF
                             -DCMAKE_CXX_FLAGS=-Ofast
@@ -75,7 +75,7 @@ jobs:
             on_cron: false
 
           - name: "Debug, shared"
-            os: ubuntu-20.04
+            os: ubuntu-latest
             cmake_options: "-DCHECK=3
                             -DCMAKE_BUILD_TYPE=Debug
                             -DBOUT_ENABLE_SIGNAL=ON
@@ -86,8 +86,8 @@ jobs:
                             -DSUNDIALS_ROOT=/home/runner/local"
             on_cron: false
 
-          - name: "Shared, release, Ubuntu 20.04"
-            os: ubuntu-20.04
+          - name: "Shared, release"
+            os: ubuntu-latest
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_OPENMP=ON
                             -DCMAKE_BUILD_TYPE=Release
@@ -113,7 +113,7 @@ jobs:
             on_cron: false
 
           - name: "CMake, new PETSc"
-            os: ubuntu-20.04
+            os: ubuntu-latest
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_METRIC_3D=ON
                             -DBOUT_ENABLE_OPENMP=ON
@@ -127,25 +127,7 @@ jobs:
             build_petsc: -petsc
             on_cron: false
 
-          - name: "Coverage"
-            os: ubuntu-20.04
-            cmake_options: "-DBUILD_SHARED_LIBS=ON
-                            -DCMAKE_BUILD_TYPE=Debug
-                            -DCHECK=3
-                            -DENABLE_COVERAGE=ON
-                            -DBOUT_USE_PETSC=ON
-                            -DBOUT_USE_SLEPC=ON
-                            -DBOUT_USE_HDF5=ON
-                            -DBOUT_USE_SUNDIALS=ON
-                            -DBOUT_ENABLE_PYTHON=ON
-                            -DSUNDIALS_ROOT=/home/runner/local"
-            unit_only: YES
-            on_cron: false
         exclude:
-          # Don't run the coverage tests if the branch isn't master or next
-          - is_master_or_next: false
-            config:
-              name: "Coverage"
           - is_cron: true
             config:
               on_cron: false
@@ -204,22 +186,6 @@ jobs:
       - name: Build BOUT++
         run: UNIT_ONLY=${{ matrix.config.unit_only }} ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}
 
-      - name: Capture coverage
-        if: ${{ matrix.config.name == 'Coverage' }}
-        # Explicitly run the coverage capture target, because
-        # ci_script.sh also does the upload, and we're going to do
-        # that ourselves in the next step
-        run: |
-          # Ensure that there is a corresponding .gcda file for every .gcno file
-          # This is to try and make the coverage report slightly more accurate
-          # It still won't include, e.g. any solvers we don't build with though
-          find . -name "*.gcno" -exec sh -c 'touch -a "${1%.gcno}.gcda"' _ {} \;
-          make -C build code-coverage-capture
-
-      - name: Upload coverage
-        if: ${{ matrix.config.name == 'Coverage' }}
-        uses: codecov/codecov-action@v5
-
   Fedora:
     # This is its own job as it doesn't use most of the steps of the
     # standard_tests
@@ -229,8 +195,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Build Fedora rawhide
-        run: ./.ci_fedora.sh setup openmpi rawhide
+      - name: Build Fedora
+        run: ./.ci_fedora.sh setup openmpi latest
         shell: bash
         env:
           TRAVIS_BUILD_DIR: ${{ github.workspace }}
