@@ -733,7 +733,7 @@ endif()
 
 option(BOUT_BUILD_DOCS "Build the documentation" OFF)
 if (BOUT_BUILD_DOCS)
-  add_subdirectory(manual EXCLUDE_FROM_ALL)
+  add_subdirectory(manual)
 endif()
 
 
