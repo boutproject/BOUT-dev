@@ -5,6 +5,7 @@
 #include <bout/invert_laplace.hxx>
 
 using bout::globals::mesh;
+using namespace std::string_literals;
 
 int main(int argc, char** argv) {
   int init_err = BoutInitialise(argc, argv);
@@ -31,10 +32,11 @@ int main(int argc, char** argv) {
 
   FieldFactory fact(mesh);
 
-  std::shared_ptr<FieldGenerator> gen = fact.parse("input");
+  const auto input_name = "input_field"s;
+  std::shared_ptr<FieldGenerator> gen = fact.parse(input_name);
   output << "GEN = " << gen->str() << endl;
 
-  Field3D input = fact.create3D("input");
+  Field3D input = fact.create3D(input_name);
 
   Field3D result = lap->solve(input);
 

@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
   ///////////////////////////////////////
 
   // Read an analytic input
-  Field2D input = FieldFactory::get()->create2D("input", Options::getRoot(), mesh);
+  Field2D input = FieldFactory::get()->create2D("input_field", Options::getRoot(), mesh);
 
   // Create a LaplaceXY solver
   LaplaceXY* laplacexy = new LaplaceXY(mesh);
