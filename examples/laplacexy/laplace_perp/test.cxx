@@ -10,11 +10,15 @@ int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
   ///////////////////////////////////////
-  bool calc_metric;
-  calc_metric = Options::root()["calc_metric"].withDefault(false);
+  const bool calc_metric = Options::root()["calc_metric"].withDefault(false);
   if (calc_metric) {
     // Read metric tensor
-    Field2D Rxy, Btxy, Bpxy, B0, hthe, I;
+    Field2D Rxy;
+    Field2D Btxy;
+    Field2D Bpxy;
+    Field2D B0;
+    Field2D hthe;
+    Field2D I;
     mesh->get(Rxy, "Rxy");   // m
     mesh->get(Btxy, "Btxy"); // T
     mesh->get(Bpxy, "Bpxy"); // T
@@ -50,10 +54,10 @@ int main(int argc, char** argv) {
   Field2D input = FieldFactory::get()->create2D("input_field", Options::getRoot(), mesh);
 
   // Create a LaplaceXY solver
-  LaplaceXY* laplacexy = new LaplaceXY(mesh);
+  LaplaceXY laplacexy{mesh};
 
   // Solve, using 0.0 as starting guess
-  Field2D solved = laplacexy->solve(input, 0.0);
+  Field2D solved = laplacexy.solve(input, 0.0);
 
   // Need to communicate guard cells
   mesh->communicate(solved);
