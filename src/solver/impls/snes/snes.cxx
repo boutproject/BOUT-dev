@@ -118,6 +118,9 @@ SNESSolver::SNESSolver(Options* opts)
       maxits((*options)["max_nonlinear_iterations"]
                  .doc("Maximum number of nonlinear iterations per SNES solve")
                  .withDefault(50)),
+      maxf((*options)["maxf"]
+                 .doc("Maximum number of function evaluations per SNES solve")
+                 .withDefault(10000)),                 
       lower_its((*options)["lower_its"]
                     .doc("Iterations below which the next timestep is increased")
                     .withDefault(static_cast<int>(maxits * 0.5))),
@@ -133,6 +136,17 @@ SNESSolver::SNESSolver(Options* opts)
       timestep_factor_on_lower_its((*options)["timestep_factor_on_lower_its"]
                                    .doc("Multiply timestep if iterations are below lower_its")
                                    .withDefault(1.4)),
+      pidController(
+          (*options)["pidController"].doc("Use PID controller?").withDefault(false)),
+      target_its((*options)["target_its"]
+                    .doc("Target snes iterations")
+                    .withDefault(static_cast<int>(7))),
+      kP((*options)["kP"].doc("Proportional PID parameter")
+                         .withDefault(0.7)),
+      kI((*options)["kI"].doc("Integral PID parameter")
+                         .withDefault(0.3)),
+      kD((*options)["kD"].doc("Derivative PID parameter")
+                         .withDefault(0.2)),   
       diagnose(
           (*options)["diagnose"].doc("Print additional diagnostics").withDefault(false)),
       diagnose_failures((*options)["diagnose_failures"]
@@ -632,14 +646,21 @@ int SNESSolver::init() {
     // Note: If the 'Amat' Jacobian is matrix free, SNESComputeJacobian
     //       always updates its reference 'u' vector every nonlinear iteration
     SNESSetLagJacobian(snes, lag_jacobian);
-    // Set Jacobian and preconditioner to persist across time steps
-    SNESSetLagJacobianPersists(snes, PETSC_TRUE);
-    SNESSetLagPreconditionerPersists(snes, PETSC_TRUE);
+    if (pidController){
+      nl_its_prev = target_its;
+      nl_its_prev2 = target_its;
+      SNESSetLagJacobianPersists(snes, PETSC_FALSE);
+      SNESSetLagPreconditionerPersists(snes, PETSC_FALSE);
+    } else {
+      // Set Jacobian and preconditioner to persist across time steps
+      SNESSetLagJacobianPersists(snes, PETSC_TRUE);
+      SNESSetLagPreconditionerPersists(snes, PETSC_TRUE);
+    }
     SNESSetLagPreconditioner(snes, 1); // Rebuild when Jacobian is rebuilt
   }
 
   // Set tolerances
-  SNESSetTolerances(snes, atol, rtol, stol, maxits, PETSC_DEFAULT);
+  SNESSetTolerances(snes, atol, rtol, stol, maxits, maxf);
 
   // Force SNES to take at least one nonlinear iteration.
   // This may prevent the solver from getting stuck in false steady state conditions
@@ -843,6 +864,11 @@ int SNESSolver::run() {
         VecAXPBY(snes_x, -beta, (1. + beta), x1);
       }
 
+
+      if (pidController){
+        SNESSetLagJacobian(snes, lag_jacobian);
+      }
+
       // Run the solver
       PetscErrorCode ierr = SNESSolve(snes, nullptr, snes_x);
 
@@ -900,6 +926,7 @@ int SNESSolver::run() {
           updateColoring();
           jacobian_pruned = false; // Reset flag. Will be set after pruning.
         }
+
         if (saved_jacobian_lag == 0) {
           // This triggers a Jacobian recalculation
           SNESGetLagJacobian(snes, &saved_jacobian_lag);
@@ -1033,45 +1060,67 @@ int SNESSolver::run() {
 #endif // PETSC_VERSION_GE(3,20,0)
 
       if (looping) {
-        // Consider changing the timestep.
-        // Note: The preconditioner depends on the timestep,
-        // so if it is not recalculated the it will be less
-        // effective.
-        if ((nl_its <= lower_its) && (timestep < max_timestep)
-            && (steps_since_snes_failure > 2)) {
-          // Increase timestep slightly
-          timestep *= timestep_factor_on_lower_its;
 
-          if (timestep > max_timestep) {
-            timestep = max_timestep;
+        if (pidController){
+          // Changing the timestep.
+          // Note: The preconditioner depends on the timestep,
+          // so we recalculate the jacobian and the preconditioner
+          //  every time the timestep changes
+
+          timestep = pid(timestep, nl_its);
+
+          // NOTE(malamast): Do we really need this?
+          // Recompute Jacobian (for now)
+          if (saved_jacobian_lag == 0) {
+            SNESGetLagJacobian(snes, &saved_jacobian_lag);
+            SNESSetLagJacobian(snes, 1);
           }
 
-          // Note: Setting the SNESJacobianFn to NULL retains
-          // previously set evaluation function.
-          //
-          // The SNES Jacobian is a combination of the RHS Jacobian
-          // and a factor involving the timestep.
-          // Depends on equation_form
-          // -> Probably call SNESSetJacobian(snes, Jfd, Jfd, NULL, fdcoloring);
 
-          if (static_cast<BoutReal>(lin_its) / nl_its > 4) {
-            // Recompute Jacobian (for now)
+        } else {
+          
+          // Consider changing the timestep.
+          // Note: The preconditioner depends on the timestep,
+          // so if it is not recalculated the it will be less
+          // effective.
+          if ((nl_its <= lower_its) && (timestep < max_timestep)
+              && (steps_since_snes_failure > 2)) {
+            // Increase timestep slightly
+            timestep *= timestep_factor_on_lower_its;
+
+            if (timestep > max_timestep) {
+              timestep = max_timestep;
+            }
+
+            // Note: Setting the SNESJacobianFn to NULL retains
+            // previously set evaluation function.
+            //
+            // The SNES Jacobian is a combination of the RHS Jacobian
+            // and a factor involving the timestep.
+            // Depends on equation_form
+            // -> Probably call SNESSetJacobian(snes, Jfd, Jfd, NULL, fdcoloring);
+
+            if (static_cast<BoutReal>(lin_its) / nl_its > 4) {
+              // Recompute Jacobian (for now)
+              if (saved_jacobian_lag == 0) {
+                SNESGetLagJacobian(snes, &saved_jacobian_lag);
+                SNESSetLagJacobian(snes, 1);
+              }
+            }
+
+          } else if (nl_its >= upper_its) {
+            // Reduce timestep slightly
+            timestep *= timestep_factor_on_upper_its;
+
+            // Recompute Jacobian
             if (saved_jacobian_lag == 0) {
               SNESGetLagJacobian(snes, &saved_jacobian_lag);
               SNESSetLagJacobian(snes, 1);
             }
           }
 
-        } else if (nl_its >= upper_its) {
-          // Reduce timestep slightly
-          timestep *= timestep_factor_on_upper_its;
-
-          // Recompute Jacobian
-          if (saved_jacobian_lag == 0) {
-            SNESGetLagJacobian(snes, &saved_jacobian_lag);
-            SNESSetLagJacobian(snes, 1);
-          }
         }
+
       }
       snes_failures = 0;
     } while (looping);
@@ -1385,5 +1434,34 @@ void SNESSolver::updateColoring() {
     SNESSetJacobian(snes, Jfd, Jfd, ComputeJacobianScaledColor, fdcoloring);
   }
 }
+
+
+BoutReal SNESSolver::pid(BoutReal timestep, int nl_its) {
+
+  /* ---------- multiplicative PID factors ---------- */
+  BoutReal facP = std::pow(double(target_its) / double(nl_its),  kP);
+  BoutReal facI = std::pow(double(nl_its_prev) / double(nl_its), kI);
+  BoutReal facD = std::pow(double(nl_its_prev) * double(nl_its_prev)  / double(nl_its) / double(nl_its_prev2),  kD);
+
+  // clamp groth factor to avoid huge changes
+  BoutReal fac = facP * facI * facD;
+  if (fac < 0.2)
+    fac = 0.2;
+  else if (fac > 5.0)
+    fac = 5.0;
+
+  /* ---------- update timestep and history ---------- */
+  BoutReal dt_new = timestep * fac;
+
+  if (dt_new > max_timestep) {
+    dt_new = max_timestep;
+  }
+
+  nl_its_prev2 = nl_its_prev;
+  nl_its_prev  = static_cast<int>(nl_its);
+
+  return dt_new;
+}
+
 
 #endif // BOUT_HAS_PETSC
