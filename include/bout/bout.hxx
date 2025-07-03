@@ -34,6 +34,8 @@
 #ifndef BOUT_H
 #define BOUT_H
 
+#include <filesystem> // std::filesystem (C++17)
+
 // IWYU pragma: begin_keep, begin_export
 #include "bout/build_defines.hxx"
 
@@ -106,10 +108,10 @@ void setupGetText();
 struct CommandLineArgs {
   int verbosity{4};
   bool color_output{false};
-  std::string data_dir{"data"};          ///< Directory for data input/output
-  std::string opt_file{"BOUT.inp"};      ///< Filename for the options file
-  std::string set_file{"BOUT.settings"}; ///< Filename for the options file
-  std::string log_file{"BOUT.log"};      ///< File name for the log file
+  std::filesystem::path data_dir{"data"};          ///< Directory for data input/output
+  std::filesystem::path opt_file{"BOUT.inp"};      ///< Filename for the options file
+  std::filesystem::path set_file{"BOUT.settings"}; ///< Filename for the options file
+  std::filesystem::path log_file{"BOUT.log"};      ///< File name for the log file
   /// The original set of command line arguments
   std::vector<std::string> original_argv;
   /// The "canonicalised" command line arguments, with single-letter
