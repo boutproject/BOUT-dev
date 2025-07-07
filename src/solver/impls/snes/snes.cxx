@@ -140,9 +140,7 @@ SNESSolver::SNESSolver(Options* opts)
               .withDefault(1.4)),
       pidController(
           (*options)["pidController"].doc("Use PID controller?").withDefault(false)),
-      target_its((*options)["target_its"]
-                     .doc("Target snes iterations")
-                     .withDefault(7)),
+      target_its((*options)["target_its"].doc("Target snes iterations").withDefault(7)),
       kP((*options)["kP"].doc("Proportional PID parameter").withDefault(0.7)),
       kI((*options)["kI"].doc("Integral PID parameter").withDefault(0.3)),
       kD((*options)["kD"].doc("Derivative PID parameter").withDefault(0.2)),
