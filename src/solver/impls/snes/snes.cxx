@@ -1431,9 +1431,9 @@ void SNESSolver::updateColoring() {
 BoutReal SNESSolver::pid(BoutReal timestep, int nl_its) {
 
   /* ---------- multiplicative PID factors ---------- */
-  BoutReal facP = std::pow(double(target_its) / double(nl_its), kP);
-  BoutReal facI = std::pow(double(nl_its_prev) / double(nl_its), kI);
-  BoutReal facD = std::pow(double(nl_its_prev) * double(nl_its_prev) / double(nl_its)
+  const BoutReal facP = std::pow(double(target_its) / double(nl_its), kP);
+  const BoutReal facI = std::pow(double(nl_its_prev) / double(nl_its), kI);
+  const BoutReal facD = std::pow(double(nl_its_prev) * double(nl_its_prev) / double(nl_its)
                                / double(nl_its_prev2),
                            kD);
 
