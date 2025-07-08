@@ -1437,12 +1437,8 @@ BoutReal SNESSolver::pid(BoutReal timestep, int nl_its) {
                                / double(nl_its_prev2),
                            kD);
 
-  // clamp groth factor to avoid huge changes
-  BoutReal fac = facP * facI * facD;
-  if (fac < 0.2)
-    fac = 0.2;
-  else if (fac > 5.0)
-    fac = 5.0;
+  // clamp growth factor to avoid huge changes
+  const BoutReal fac = std::clamp(facP * facI * facD, 0.2, 5.0);
 
   /* ---------- update timestep and history ---------- */
   BoutReal dt_new = timestep * fac;
