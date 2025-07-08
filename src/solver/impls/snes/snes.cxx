@@ -1083,9 +1083,7 @@ int SNESSolver::run() {
             // Increase timestep slightly
             timestep *= timestep_factor_on_lower_its;
 
-            if (timestep > max_timestep) {
-              timestep = max_timestep;
-            }
+            timestep = std::min(timestep, max_timestep);
 
             // Note: Setting the SNESJacobianFn to NULL retains
             // previously set evaluation function.
