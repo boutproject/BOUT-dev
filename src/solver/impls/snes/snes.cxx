@@ -1444,7 +1444,7 @@ BoutReal SNESSolver::pid(BoutReal timestep, int nl_its) {
   const BoutReal dt_new = std::min(timestep * fac, max_timestep);
 
   nl_its_prev2 = nl_its_prev;
-  nl_its_prev = static_cast<int>(nl_its);
+  nl_its_prev = nl_its;
 
   return dt_new;
 }
