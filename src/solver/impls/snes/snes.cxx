@@ -1431,9 +1431,9 @@ BoutReal SNESSolver::pid(BoutReal timestep, int nl_its) {
   /* ---------- multiplicative PID factors ---------- */
   const BoutReal facP = std::pow(double(target_its) / double(nl_its), kP);
   const BoutReal facI = std::pow(double(nl_its_prev) / double(nl_its), kI);
-  const BoutReal facD = std::pow(double(nl_its_prev) * double(nl_its_prev) / double(nl_its)
-                               / double(nl_its_prev2),
-                           kD);
+  const BoutReal facD = std::pow(double(nl_its_prev) * double(nl_its_prev)
+                                     / double(nl_its) / double(nl_its_prev2),
+                                 kD);
 
   // clamp growth factor to avoid huge changes
   const BoutReal fac = std::clamp(facP * facI * facD, 0.2, 5.0);
