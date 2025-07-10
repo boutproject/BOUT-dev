@@ -38,6 +38,7 @@ class Field3D;
 #include <vector>
 
 class Mesh;
+class Field3DParallel;
 
 /// Class for 3D X-Y-Z scalar fields
 /*!
@@ -525,6 +526,8 @@ public:
 
   bool allowCalcParallelSlices{true};
 
+  inline Field3DParallel asF3dwy();
+
 protected:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1}, nz{-1};
@@ -703,15 +706,12 @@ class Field3DParallel: public Field3D
 {
  public:
   template<class... Types>
-  Field3DParallel(Types... args): Field3D(&args ...) {
+  Field3DParallel(Types... args): Field3D(args ...) {
     ensureFieldAligned();
   }
-  Field3DParallel(Field3D&& f3d): Field3D(std::move(f3d)) {
-    ensureFieldAligned();
-  }
-  Field3DParallel(const Field3D& f3d): Field3D(f3d) {
-    ensureFieldAligned();
-  }
+  // Field3DParallel(const Field2D& f) : Field3D(f) {
+  //   ensureFieldAligned();
+  // }
   // Explicitly needed, as DirectionTypes is sometimes constructed from a
   // brace enclosed list
   Field3DParallel(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
@@ -727,6 +727,13 @@ class Field3DParallel: public Field3D
     Field3D(std::move(data), localmesh, location, directions_in) {
     ensureFieldAligned();
   }
+  Field3DParallel(BoutReal, Mesh*);
+  Field3D& asF3d() {
+    return *this;
+  }
+  const Field3D& asF3d() const {
+    return *this;
+  }
 
   Field3DParallel& operator*=(const Field3D&);
   Field3DParallel& operator/=(const Field3D&);
@@ -740,8 +747,22 @@ class Field3DParallel: public Field3D
   Field3DParallel& operator/=(BoutReal);
   Field3DParallel& operator+=(BoutReal);
   Field3DParallel& operator-=(BoutReal);
+  Field3DParallel& operator=(const Field3D& rhs) {
+    Field3D::operator=(rhs);
+    ensureFieldAligned(); 
+    return *this;
+  }
+  Field3DParallel& operator=(Field3D&& rhs) {
+    Field3D::operator=(std::move(rhs));
+    ensureFieldAligned();
+    return *this;
+  }
+  Field3DParallel& operator=(BoutReal);
 private:
   void ensureFieldAligned();
 };
 
+Field3DParallel Field3D::asF3dwy() {
+  return Field3DParallel(*this);
+}
 #endif /* BOUT_FIELD3D_H */
