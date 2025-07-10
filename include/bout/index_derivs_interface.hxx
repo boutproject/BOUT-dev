@@ -198,8 +198,13 @@ template <typename T>
 T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
       const std::string& region = "RGN_NOBNDRY") {
 
-  if (f.hasParallelSlices()) {
+  if (f.isFci()) {
     ASSERT1(f.getDirectionY() == YDirectionType::Standard);
+    if (!f.hasParallelSlices()) {
+      throw BoutException(
+          "parallel slices needed for parallel derivatives. Make sure to communicate and "
+          "apply parallel boundary conditions before calling derivative");
+    }
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::Standard>(f, outloc,
                                                                           method, region);
   } else {
@@ -356,6 +361,11 @@ T VDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
     return are_unaligned ? fromFieldAligned(result, region) : result;
   }
 }
+inline Field3D VDDY(const Field3D& v, const Field3DParallel& f,
+                    CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
+                    const std::string& region = "RGN_NOBNDRY") {
+  return VDDY(v, f.asF3d(), outloc, method, region);
+}
 
 template <typename T>
 T FDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
@@ -379,6 +389,11 @@ T FDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
                                                             outloc, method, region);
     return are_unaligned ? fromFieldAligned(result, region) : result;
   }
+}
+inline Field3D FDDY(const Field3D& v, const Field3DParallel& f,
+                    CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
+                    const std::string& region = "RGN_NOBNDRY") {
+  return FDDY(v, f.asF3d(), outloc, method, region);
 }
 
 ////////////// Z DERIVATIVE /////////////////
