@@ -36,7 +36,7 @@
 #ifndef SOLVER_H
 #define SOLVER_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
@@ -350,10 +350,12 @@ public:
 
   /// Add one to the iteration count, used by BoutMonitor, but could be called by a
   // user-defined monitor (if `bout_run()` is not used)
-  int incrementIterationCounter() { return ++iteration; }
+  int incrementIterationCounter() { return iteration++; }
 
   /// Write \p options to the model's output file
   void writeToModelOutputFile(const Options& options);
+
+  int getIterationOffset() const { return iteration_offset; }
 
 protected:
   /// Number of command-line arguments
@@ -532,6 +534,7 @@ private:
 
   /// Current iteration (output time-step) number
   int iteration{0};
+  int iteration_offset{0};
 
   /// Number of calls to the RHS function
   int rhs_ncalls{0};
@@ -579,7 +582,10 @@ private:
   BoutReal adjustMonitorPeriods(Monitor* monitor);
 
   /// Fix all the monitor periods based on \p output_timestep, as well
-  /// as adjusting \p NOUT and \p output_timestep to be consistent
+  /// as adjusting \p NOUT and \p output_timestep to be consistent. On
+  /// output, \p NOUT and \p output_timestep will be the internal
+  /// total steps and timestep respectively; that is, they will be the
+  /// total steps and timestep of the fastest monitor.
   void finaliseMonitorPeriods(int& NOUT, BoutReal& output_timestep);
 
   /// Number of requested output steps

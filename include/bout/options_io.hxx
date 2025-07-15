@@ -35,7 +35,7 @@
 #ifndef OPTIONS_IO_H
 #define OPTIONS_IO_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/generic_factory.hxx"
 #include "bout/options.hxx"
 
@@ -61,7 +61,7 @@ public:
   OptionsIO& operator=(OptionsIO&&) noexcept = default;
 
   /// Read options from file
-  virtual Options read() = 0;
+  virtual Options read(bool lazy = true) = 0;
 
   /// Write options to file
   void write(const Options& options) { write(options, "t"); }

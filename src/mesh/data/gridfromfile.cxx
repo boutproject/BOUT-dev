@@ -131,28 +131,6 @@ bool GridFile::get(Mesh* m, Field3D& var, const std::string& name, BoutReal def,
   return getField(m, var, name, def, location);
 }
 
-namespace {
-/// Visitor that returns the shape of its argument
-struct GetDimensions {
-  std::vector<int> operator()([[maybe_unused]] bool value) { return {1}; }
-  std::vector<int> operator()([[maybe_unused]] int value) { return {1}; }
-  std::vector<int> operator()([[maybe_unused]] BoutReal value) { return {1}; }
-  std::vector<int> operator()([[maybe_unused]] const std::string& value) { return {1}; }
-  std::vector<int> operator()(const Array<BoutReal>& array) { return {array.size()}; }
-  std::vector<int> operator()(const Matrix<BoutReal>& array) {
-    const auto shape = array.shape();
-    return {std::get<0>(shape), std::get<1>(shape)};
-  }
-  std::vector<int> operator()(const Tensor<BoutReal>& array) {
-    const auto shape = array.shape();
-    return {std::get<0>(shape), std::get<1>(shape), std::get<2>(shape)};
-  }
-  std::vector<int> operator()(const Field& array) {
-    return {array.getNx(), array.getNy(), array.getNz()};
-  }
-};
-} // namespace
-
 template <typename T>
 bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
                         CELL_LOC location) {
@@ -175,7 +153,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
   Options& option = data[name];
 
   // Global (x, y, z) dimensions of field
-  const std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
+  const std::vector<int> size = option.getShape();
 
   switch (size.size()) {
   case 1: {
@@ -392,6 +370,22 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd, int n
 
   var.allocate();
 
+  if (size.size() == 2) {
+    // A 2D field in the grid file
+
+    const auto full_var = data[name].as<Matrix<BoutReal>>();
+
+    for (int x = xs; x < xs + nx_to_read; ++x) {
+      for (int y = ys; y < ys + ny_to_read; ++y) {
+        BoutReal const value = full_var(x, y);
+        for (int z = 0; z < var.getNz(); z++) {
+          var(x - xs + xd, y - ys + yd, z) = value;
+        }
+      }
+    }
+    return;
+  }
+
   // Check whether "nz" is defined
   if (hasVar("nz")) {
     // Check the array is the right size
@@ -499,7 +493,7 @@ bool GridFile::get(Mesh* UNUSED(m), std::vector<BoutReal>& var, const std::strin
 bool GridFile::hasXBoundaryGuards(Mesh* m) {
   // Global (x,y) dimensions of some field
   // a grid file should always contain "dx"
-  const std::vector<int> size = bout::utils::visit(GetDimensions{}, data["dx"].value);
+  const std::vector<int> size = data["dx"].getShape();
 
   if (size.empty()) {
     // handle case where "dx" is not present - non-standard grid file
@@ -534,7 +528,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh* m, const std::string& name, int yread, i
   }
 
   /// Check the size of the data
-  const std::vector<int> size = bout::utils::visit(GetDimensions{}, data[name].value);
+  const std::vector<int> size = data[name].getShape();
 
   if (size.size() != 3) {
     output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);
@@ -623,21 +617,34 @@ bool GridFile::readgrid_3dvar_real(const std::string& name, int yread, int ydest
   Options& option = data[name];
 
   /// Check the size of the data
-  const std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
+  const std::vector<int> size = option.getShape();
 
   if (size.size() != 3) {
     output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);
     return false;
   }
 
-  const auto full_var = option.as<Tensor<BoutReal>>();
+  if (not option.is_loaded()) {
+    const auto& chunk = option.doLazyLoad(xread, xread + xsize - 1, yread,
+                                          yread + ysize - 1, 0, size[2] - 1);
+    for (int jx = 0; jx < xsize; jx++) {
+      for (int jy = 0; jy < ysize; jy++) {
+        for (int jz = 0; jz < size[2]; ++jz) {
+          var(jx + xdest, jy + ydest, jz) = chunk(jx, jy, jz);
+        }
+      }
+    }
 
-  for (int jx = xread; jx < xread + xsize; jx++) {
-    // jx is global x-index to start from
-    for (int jy = yread; jy < yread + ysize; jy++) {
-      // jy is global y-index to start from
-      for (int jz = 0; jz < size[2]; ++jz) {
-        var(jx - xread + xdest, jy - yread + ydest, jz) = full_var(jx, jy, jz);
+  } else {
+    const auto full_var = option.as<Tensor<BoutReal>>();
+
+    for (int jx = xread; jx < xread + xsize; jx++) {
+      // jx is global x-index to start from
+      for (int jy = yread; jy < yread + ysize; jy++) {
+        // jy is global y-index to start from
+        for (int jz = 0; jz < size[2]; ++jz) {
+          var(jx - xread + xdest, jy - yread + ydest, jz) = full_var(jx, jy, jz);
+        }
       }
     }
   }
@@ -664,7 +671,7 @@ bool GridFile::readgrid_perpvar_fft(Mesh* m, const std::string& name, int xread,
 
   /// Check the size of the data
   Options& option = data[name];
-  const std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
+  const std::vector<int> size = option.getShape();
 
   if (size.size() != 2) {
     output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);
@@ -747,7 +754,7 @@ bool GridFile::readgrid_perpvar_real(const std::string& name, int xread, int xde
 
   /// Check the size of the data
   Options& option = data[name];
-  const std::vector<int> size = bout::utils::visit(GetDimensions{}, option.value);
+  const std::vector<int> size = option.getShape();
 
   if (size.size() != 2) {
     output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);

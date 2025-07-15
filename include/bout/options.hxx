@@ -53,6 +53,7 @@ class Options;
 #include <fmt/core.h>
 
 #include <cmath>
+#include <functional>
 #include <map>
 #include <ostream>
 #include <set>
@@ -432,25 +433,35 @@ public:
   /// Assign a value to the option.
   /// This will throw an exception if already has a value
   ///
-  /// Example:
+  /// Returns
+  /// -------
+  /// A reference to `this`, for method chaining
+  ///
+  /// Example
+  /// -------
   ///
   /// Options option;
   /// option["test"].assign(42, "some source");
   ///
   /// Note: Specialised versions for types stored in ValueType
   template <typename T>
-  void assign(T val, std::string source = "") {
+  Options& assign(T val, std::string source = "") {
     std::stringstream as_str;
     as_str << val;
     _set(as_str.str(), std::move(source), false);
+    return *this;
   }
 
   /// Force to a value
   /// Overwrites any existing setting
+  ///
+  /// Returns
+  /// -------
+  /// A reference to `this`, for method chaining
   template <typename T>
-  void force(T val, const std::string source = "") {
+  Options& force(T val, const std::string source = "") {
     is_section = true; // Invalidates any existing setting
-    assign(val, source);
+    return assign(val, source);
   }
 
   /// Assign a value that is expected to vary in time.
@@ -459,12 +470,13 @@ public:
   /// attribute is set. If \p save_repeat is false, doesn't set
   /// "time_dimension". This can be useful in some generic functions
   template <typename T>
-  void assignRepeat(T val, std::string time_dimension = "t", bool save_repeat = true,
-                    std::string source = "") {
+  Options& assignRepeat(T val, std::string time_dimension = "t", bool save_repeat = true,
+                        std::string source = "") {
     force(val, std::move(source));
     if (save_repeat) {
       attributes["time_dimension"] = std::move(time_dimension);
     }
+    return *this;
   }
 
   /// Test if a key is set by the user.
@@ -822,6 +834,25 @@ public:
 
   static std::string getDefaultSource();
 
+  /// API for delayed loading of data from the grid file
+  /// Currently only for 3D data
+  using lazyLoadFunction = std::unique_ptr<std::function<Tensor<BoutReal>(
+      int xstart, int xend, int ystart, int yend, int zstart, int zend)>>;
+  void setLazyLoad(lazyLoadFunction func) { lazyLoad = std::move(func); }
+  /// Load and get a chunk of the data
+  Tensor<BoutReal> doLazyLoad(int xstart, int xend, int ystart, int yend, int zstart,
+                              int zend) const {
+    ASSERT1(lazyLoad != nullptr);
+    return (*lazyLoad)(xstart, xend, ystart, yend, zstart, zend);
+  }
+  /// Some backends support to only read the data when needed.  This
+  /// allows to check whether the data is loaded, or whether it needs
+  /// to be loaded by doLazyLoad.
+  bool is_loaded() const { return lazyLoad == nullptr; }
+  /// Get the shape of the value
+  std::vector<int> getShape() const;
+  void setLazyShape(std::vector<int> shape) { lazy_shape = std::move(shape); }
+
 private:
   /// The source label given to default values
   static const std::string DEFAULT_SOURCE;
@@ -833,6 +864,11 @@ private:
   bool is_section = true;                  ///< Is this Options object a section?
   std::map<std::string, Options> children; ///< If a section then has children
   mutable bool value_used = false;         ///< Record whether this value is used
+
+  // Function to load data
+  lazyLoadFunction lazyLoad{nullptr};
+  // Shape of underlying data
+  std::vector<int> lazy_shape;
 
   template <typename T>
   void _set_no_check(T val, std::string source) {
@@ -884,39 +920,44 @@ private:
 
 // Specialised assign methods for types stored in ValueType
 template <>
-inline void Options::assign<>(bool val, std::string source) {
+inline Options& Options::assign<>(bool val, std::string source) {
   _set(val, std::move(source), false);
+  return *this;
 }
 template <>
-inline void Options::assign<>(int val, std::string source) {
+inline Options& Options::assign<>(int val, std::string source) {
   _set(val, std::move(source), false);
+  return *this;
 }
 template <>
-inline void Options::assign<>(BoutReal val, std::string source) {
+inline Options& Options::assign<>(BoutReal val, std::string source) {
   _set(val, std::move(source), false);
+  return *this;
 }
 template <>
-inline void Options::assign<>(std::string val, std::string source) {
+inline Options& Options::assign<>(std::string val, std::string source) {
   _set(std::move(val), std::move(source), false);
+  return *this;
 }
 // Note: const char* version needed to avoid conversion to bool
 template <>
-inline void Options::assign<>(const char* val, std::string source) {
+inline Options& Options::assign<>(const char* val, std::string source) {
   _set(std::string(val), std::move(source), false);
+  return *this;
 }
 // Note: Field assignments don't check for previous assignment (always force)
 template <>
-void Options::assign<>(Field2D val, std::string source);
+Options& Options::assign<>(Field2D val, std::string source);
 template <>
-void Options::assign<>(Field3D val, std::string source);
+Options& Options::assign<>(Field3D val, std::string source);
 template <>
-void Options::assign<>(FieldPerp val, std::string source);
+Options& Options::assign<>(FieldPerp val, std::string source);
 template <>
-void Options::assign<>(Array<BoutReal> val, std::string source);
+Options& Options::assign<>(Array<BoutReal> val, std::string source);
 template <>
-void Options::assign<>(Matrix<BoutReal> val, std::string source);
+Options& Options::assign<>(Matrix<BoutReal> val, std::string source);
 template <>
-void Options::assign<>(Tensor<BoutReal> val, std::string source);
+Options& Options::assign<>(Tensor<BoutReal> val, std::string source);
 
 /// Specialised similar comparison methods
 template <>

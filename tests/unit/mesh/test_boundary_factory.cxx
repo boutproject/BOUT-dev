@@ -4,14 +4,7 @@
 #include "bout/boundary_op.hxx"
 #include "bout/boundary_region.hxx"
 
-#include "test_extras.hxx"
-
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;

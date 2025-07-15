@@ -4,7 +4,7 @@
 #ifndef OPTIONS_NETCDF_H
 #define OPTIONS_NETCDF_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "bout/options.hxx"
 #include "bout/options_io.hxx"
@@ -47,16 +47,16 @@ public:
   OptionsNetCDF& operator=(OptionsNetCDF&&) noexcept = default;
 
   /// Read options from file
-  Options read();
+  Options read(bool lazy = true) override;
 
   /// Write options to file
   void write(const Options& options) { write(options, "t"); }
-  void write(const Options& options, const std::string& time_dim);
+  void write(const Options& options, const std::string& time_dim) override;
 
   /// Check that all variables with the same time dimension have the
   /// same size in that dimension. Throws BoutException if there are
   /// any differences, otherwise is silent
-  void verifyTimesteps() const;
+  void verifyTimesteps() const override;
 
 private:
   enum class FileMode {

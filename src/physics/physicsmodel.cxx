@@ -32,6 +32,7 @@
 #include <bout/physicsmodel.hxx>
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
+#include "bout/version.hxx"
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/vector2d.hxx>
@@ -94,7 +95,7 @@ void PhysicsModel::initialise(Solver* s) {
   const bool restarting = Options::root()["restart"].withDefault(false);
 
   if (restarting) {
-    restart_options = restart_file->read();
+    restart_options = restart_file->read(false);
   }
 
   // Call user init code to specify evolving variables
@@ -246,10 +247,13 @@ int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime,
   model->output_options["t_array"].assignRepeat(simtime);
   model->output_options["iteration"].assignRepeat(iteration);
 
+  // Call user output monitor
+  // Note: This may allocate fields that are written to output
+  auto monitor_result = model->outputMonitor(simtime, iteration, nout);
+
   solver->outputVars(model->output_options, true);
   model->outputVars(model->output_options);
   model->writeOutputFile();
 
-  // Call user output monitor
-  return model->outputMonitor(simtime, iteration, nout);
+  return monitor_result;
 }

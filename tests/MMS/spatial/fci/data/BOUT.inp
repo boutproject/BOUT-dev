@@ -1,4 +1,3 @@
-grid = fci.grid.nc
 
 input_field = sin(y - 2*z) + sin(y - z)
 
@@ -10,6 +9,7 @@ NXPE = 1
 
 [mesh]
 symmetricglobalx = true
+file = fci.grid.nc
 
 [mesh:ddy]
 first = C2

@@ -188,11 +188,20 @@ authors:
   - family-names: Chapman
     given-names: Tom
 
-version: 5.1.0
+  - family-names: Chai
+    given-names: Kefu
+  - family-names: Roberts
+    given-names: Steven
+  - family-names: Georgakoudis
+    given-names: Giorgis
+  - family-names: Kryjak
+    given-names: Mike
+
+version: 5.1.1
 date-released: 2023-04-10
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/
-doi: 10.5281/zenodo.8369888
+doi: 10.5281/zenodo.13753882
 license: 'LGPL-3.0-or-later'
 references:
   - type: article
