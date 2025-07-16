@@ -980,9 +980,9 @@ Options* Field3D::track(const BoutReal& change, std::string operation) {
 void Field3DParallel::ensureFieldAligned() {
   if (isFci()) {
     ASSERT2(hasParallelSlices());
-  } else {
-    if (getDirectionY() != YDirectionType::Aligned) {
-      *this = toFieldAligned(*this);
-    }
-  }
+  } // else {
+  //   if (getDirectionY() != YDirectionType::Aligned) {
+  //     *this = toFieldAligned(*this);
+  //   }
+  // }
 }
