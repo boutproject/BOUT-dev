@@ -702,11 +702,10 @@ inline Field3D copy(const Field3D& f) {
   return result;
 }
 
-class Field3DParallel: public Field3D
-{
- public:
-  template<class... Types>
-  Field3DParallel(Types... args): Field3D(args ...) {
+class Field3DParallel : public Field3D {
+public:
+  template <class... Types>
+  Field3DParallel(Types... args) : Field3D(args...) {
     ensureFieldAligned();
   }
   // Field3DParallel(const Field2D& f) : Field3D(f) {
@@ -715,25 +714,21 @@ class Field3DParallel: public Field3D
   // Explicitly needed, as DirectionTypes is sometimes constructed from a
   // brace enclosed list
   Field3DParallel(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
-		  DirectionTypes directions_in = {YDirectionType::Standard,
-						  ZDirectionType::Standard},
-		  std::optional<size_t> regionID = {}) :
-    Field3D(localmesh, location_in, directions_in, regionID) {
+                  DirectionTypes directions_in = {YDirectionType::Standard,
+                                                  ZDirectionType::Standard},
+                  std::optional<size_t> regionID = {})
+      : Field3D(localmesh, location_in, directions_in, regionID) {
     ensureFieldAligned();
   }
   Field3DParallel(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
-		  DirectionTypes directions_in = {YDirectionType::Standard,
-						  ZDirectionType::Standard}) :
-    Field3D(std::move(data), localmesh, location, directions_in) {
+                  DirectionTypes directions_in = {YDirectionType::Standard,
+                                                  ZDirectionType::Standard})
+      : Field3D(std::move(data), localmesh, location, directions_in) {
     ensureFieldAligned();
   }
   Field3DParallel(BoutReal, Mesh*);
-  Field3D& asF3d() {
-    return *this;
-  }
-  const Field3D& asF3d() const {
-    return *this;
-  }
+  Field3D& asF3d() { return *this; }
+  const Field3D& asF3d() const { return *this; }
 
   Field3DParallel& operator*=(const Field3D&);
   Field3DParallel& operator/=(const Field3D&);
@@ -749,7 +744,7 @@ class Field3DParallel: public Field3D
   Field3DParallel& operator-=(BoutReal);
   Field3DParallel& operator=(const Field3D& rhs) {
     Field3D::operator=(rhs);
-    ensureFieldAligned(); 
+    ensureFieldAligned();
     return *this;
   }
   Field3DParallel& operator=(Field3D&& rhs) {
@@ -758,11 +753,10 @@ class Field3DParallel: public Field3D
     return *this;
   }
   Field3DParallel& operator=(BoutReal);
+
 private:
   void ensureFieldAligned();
 };
 
-Field3DParallel Field3D::asF3dwy() {
-  return Field3DParallel(*this);
-}
+Field3DParallel Field3D::asF3dwy() { return Field3DParallel(*this); }
 #endif /* BOUT_FIELD3D_H */

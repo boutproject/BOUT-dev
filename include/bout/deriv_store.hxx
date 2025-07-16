@@ -535,7 +535,7 @@ private:
 
 template <typename T>
 auto& getStore() {
-  if constexpr(std::is_same<T, Field3DParallel>::value) {
+  if constexpr (std::is_same<T, Field3DParallel>::value) {
     return DerivativeStore<Field3D>::getInstance();
   } else {
     return DerivativeStore<T>::getInstance();

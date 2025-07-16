@@ -95,7 +95,8 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
   *this = val;
 }
 
-Field3DParallel::Field3DParallel(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
+Field3DParallel::Field3DParallel(const BoutReal val, Mesh* localmesh)
+    : Field3D(localmesh) {
 
   TRACE("Field3DParallel: Copy constructor from value");
 
@@ -108,7 +109,6 @@ Field3DParallel::Field3DParallel(const BoutReal val, Mesh* localmesh) : Field3D(
     }
   }
 }
-
 
 Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation,
                  DirectionTypes directions_in)
