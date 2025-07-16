@@ -149,7 +149,7 @@ struct registerMethod {
     // removed and we can use nGuard directly in the template statement.
     const int nGuards = method.meta.nGuards;
 
-    auto& derivativeRegister = DerivativeStore<FieldType>::getInstance();
+    auto& derivativeRegister = getStore<FieldType>();
 
     switch (method.meta.derivType) {
     case (DERIV::Standard):

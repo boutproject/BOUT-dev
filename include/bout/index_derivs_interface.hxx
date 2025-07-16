@@ -150,7 +150,7 @@ T standardDerivative(const T& f, CELL_LOC outloc, const std::string& method,
   }
 
   // Lookup the method
-  auto derivativeMethod = DerivativeStore<T>::getInstance().getStandardDerivative(
+  auto derivativeMethod = getStore<T>().getStandardDerivative(
       method, direction, stagger, derivType);
 
   // Create the result field
