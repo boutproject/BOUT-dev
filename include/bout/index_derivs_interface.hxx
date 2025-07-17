@@ -177,8 +177,9 @@ T DDX(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "D
   AUTO_TRACE();
   return standardDerivative<T, DIRECTION::X, DERIV::Standard>(f, outloc, method, region);
 }
-inline Field3D DDX(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
-            const std::string& region = "RGN_NOBNDRY") {
+inline Field3D DDX(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT",
+                   const std::string& region = "RGN_NOBNDRY") {
   return DDX(f.asF3d(), outloc, method, region);
 }
 
@@ -221,8 +222,9 @@ T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "D
     return is_unaligned ? fromFieldAligned(result, region) : result;
   }
 }
-inline Field3D DDY(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
-            const std::string& region = "RGN_NOBNDRY") {
+inline Field3D DDY(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT",
+                   const std::string& region = "RGN_NOBNDRY") {
   return DDY(f.asF3d(), outloc, method, region);
 }
 
@@ -267,8 +269,9 @@ T DDZ(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "D
   AUTO_TRACE();
   return standardDerivative<T, DIRECTION::Z, DERIV::Standard>(f, outloc, method, region);
 }
-inline Field3D DDZ(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
-            const std::string& region = "RGN_NOBNDRY") {
+inline Field3D DDZ(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT",
+                   const std::string& region = "RGN_NOBNDRY") {
   return DDZ(f.asF3d(), outloc, method, region);
 }
 
