@@ -1039,15 +1039,9 @@ int Coordinates::geometry(bool recalculate_staggered,
   G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22)
           + 0.5 * g33 * DDY(g_33);
 
-  auto tmp = J * g12;
-  communicate(tmp);
-  G1 = (DDX(J * g11) + DDY(tmp) + DDZ(J * g13)) / J;
-  tmp = J * g22;
-  communicate(tmp);
-  G2 = (DDX(J * g12) + DDY(tmp) + DDZ(J * g23)) / J;
-  tmp = J * g23;
-  communicate(tmp);
-  G3 = (DDX(J * g13) + DDY(tmp) + DDZ(J * g33)) / J;
+  G1 = (DDX(J * g11) + DDY(J.asF3dwy() * g12) + DDZ(J * g13)) / J;
+  G2 = (DDX(J * g12) + DDY(J.asF3dwy() * g22) + DDZ(J * g23)) / J;
+  G3 = (DDX(J * g13) + DDY(J.asF3dwy() * g23) + DDZ(J * g33)) / J;
 
   // Communicate christoffel symbol terms
   output_progress.write("\tCommunicating connection terms\n");
