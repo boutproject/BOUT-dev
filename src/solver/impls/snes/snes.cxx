@@ -119,8 +119,8 @@ SNESSolver::SNESSolver(Options* opts)
                  .doc("Maximum number of nonlinear iterations per SNES solve")
                  .withDefault(50)),
       maxf((*options)["maxf"]
-               .doc("Maximum number of function evaluations per SNES solve")
-               .withDefault(10000)),
+                 .doc("Maximum number of function evaluations per SNES solve")
+                 .withDefault(10000)),                 
       lower_its((*options)["lower_its"]
                     .doc("Iterations below which the next timestep is increased")
                     .withDefault(static_cast<int>(maxits * 0.5))),
@@ -128,22 +128,25 @@ SNESSolver::SNESSolver(Options* opts)
                     .doc("Iterations above which the next timestep is reduced")
                     .withDefault(static_cast<int>(maxits * 0.8))),
       timestep_factor_on_failure((*options)["timestep_factor_on_failure"]
-                                     .doc("Multiply timestep on convergence failure")
-                                     .withDefault(0.5)),
-      timestep_factor_on_upper_its(
-          (*options)["timestep_factor_on_upper_its"]
-              .doc("Multiply timestep if iterations exceed upper_its")
-              .withDefault(0.9)),
-      timestep_factor_on_lower_its(
-          (*options)["timestep_factor_on_lower_its"]
-              .doc("Multiply timestep if iterations are below lower_its")
-              .withDefault(1.4)),
+                                 .doc("Multiply timestep on convergence failure")
+                                 .withDefault(0.5)),
+      timestep_factor_on_upper_its((*options)["timestep_factor_on_upper_its"]
+                                   .doc("Multiply timestep if iterations exceed upper_its")
+                                   .withDefault(0.9)),
+      timestep_factor_on_lower_its((*options)["timestep_factor_on_lower_its"]
+                                   .doc("Multiply timestep if iterations are below lower_its")
+                                   .withDefault(1.4)),
       pidController(
           (*options)["pidController"].doc("Use PID controller?").withDefault(false)),
-      target_its((*options)["target_its"].doc("Target snes iterations").withDefault(7)),
-      kP((*options)["kP"].doc("Proportional PID parameter").withDefault(0.7)),
-      kI((*options)["kI"].doc("Integral PID parameter").withDefault(0.3)),
-      kD((*options)["kD"].doc("Derivative PID parameter").withDefault(0.2)),
+      target_its((*options)["target_its"]
+                    .doc("Target snes iterations")
+                    .withDefault(static_cast<int>(7))),
+      kP((*options)["kP"].doc("Proportional PID parameter")
+                         .withDefault(0.7)),
+      kI((*options)["kI"].doc("Integral PID parameter")
+                         .withDefault(0.3)),
+      kD((*options)["kD"].doc("Derivative PID parameter")
+                         .withDefault(0.2)),   
       diagnose(
           (*options)["diagnose"].doc("Print additional diagnostics").withDefault(false)),
       diagnose_failures((*options)["diagnose_failures"]
@@ -351,6 +354,7 @@ int SNESSolver::init() {
 
       // Set size of Matrix on each processor to nlocal x nlocal
       MatCreate(BoutComm::get(), &Jfd);
+      MatSetOption(Jfd,MAT_KEEP_NONZERO_PATTERN,PETSC_TRUE);
       MatSetSizes(Jfd, nlocal, nlocal, PETSC_DETERMINE, PETSC_DETERMINE);
       MatSetFromOptions(Jfd);
       // Determine which row/columns of the matrix are locally owned
@@ -643,7 +647,7 @@ int SNESSolver::init() {
     // Note: If the 'Amat' Jacobian is matrix free, SNESComputeJacobian
     //       always updates its reference 'u' vector every nonlinear iteration
     SNESSetLagJacobian(snes, lag_jacobian);
-    if (pidController) {
+    if (pidController){
       nl_its_prev = target_its;
       nl_its_prev2 = target_its;
       SNESSetLagJacobianPersists(snes, PETSC_FALSE);
@@ -861,7 +865,8 @@ int SNESSolver::run() {
         VecAXPBY(snes_x, -beta, (1. + beta), x1);
       }
 
-      if (pidController) {
+
+      if (pidController){
         SNESSetLagJacobian(snes, lag_jacobian);
       }
 
@@ -1057,7 +1062,7 @@ int SNESSolver::run() {
 
       if (looping) {
 
-        if (pidController) {
+        if (pidController){
           // Changing the timestep.
           // Note: The preconditioner depends on the timestep,
           // so we recalculate the jacobian and the preconditioner
@@ -1072,8 +1077,9 @@ int SNESSolver::run() {
             SNESSetLagJacobian(snes, 1);
           }
 
-        } else {
 
+        } else {
+          
           // Consider changing the timestep.
           // Note: The preconditioner depends on the timestep,
           // so if it is not recalculated the it will be less
@@ -1083,7 +1089,9 @@ int SNESSolver::run() {
             // Increase timestep slightly
             timestep *= timestep_factor_on_lower_its;
 
-            timestep = std::min(timestep, max_timestep);
+            if (timestep > max_timestep) {
+              timestep = max_timestep;
+            }
 
             // Note: Setting the SNESJacobianFn to NULL retains
             // previously set evaluation function.
@@ -1111,7 +1119,9 @@ int SNESSolver::run() {
               SNESSetLagJacobian(snes, 1);
             }
           }
+
         }
+
       }
       snes_failures = 0;
     } while (looping);
@@ -1400,7 +1410,9 @@ void SNESSolver::updateColoring() {
   // Re-calculate the coloring
   MatColoring coloring = NULL;
   MatColoringCreate(Jfd, &coloring);
-  MatColoringSetType(coloring, MATCOLORINGSL);
+  // MatColoringSetType(coloring, MATCOLORINGSL);  // Serial algorithm. Better for smale-to-medium size problems.
+  MatColoringSetType(coloring, MATCOLORINGGREEDY); // Parallel algorith. Better for large parallel runs
+  // MatColoringSetType(coloring, MATCOLORINGJP);  // This didn't work
   MatColoringSetFromOptions(coloring);
 
   // Calculate new index sets
@@ -1426,25 +1438,33 @@ void SNESSolver::updateColoring() {
   }
 }
 
+
 BoutReal SNESSolver::pid(BoutReal timestep, int nl_its) {
 
   /* ---------- multiplicative PID factors ---------- */
-  const BoutReal facP = std::pow(double(target_its) / double(nl_its), kP);
-  const BoutReal facI = std::pow(double(nl_its_prev) / double(nl_its), kI);
-  const BoutReal facD = std::pow(double(nl_its_prev) * double(nl_its_prev)
-                                     / double(nl_its) / double(nl_its_prev2),
-                                 kD);
+  BoutReal facP = std::pow(double(target_its) / double(nl_its),  kP);
+  BoutReal facI = std::pow(double(nl_its_prev) / double(nl_its), kI);
+  BoutReal facD = std::pow(double(nl_its_prev) * double(nl_its_prev)  / double(nl_its) / double(nl_its_prev2),  kD);
 
-  // clamp growth factor to avoid huge changes
-  const BoutReal fac = std::clamp(facP * facI * facD, 0.2, 5.0);
+  // clamp groth factor to avoid huge changes
+  BoutReal fac = facP * facI * facD;
+  if (fac < 0.2)
+    fac = 0.2;
+  else if (fac > 5.0)
+    fac = 5.0;
 
   /* ---------- update timestep and history ---------- */
-  const BoutReal dt_new = std::min(timestep * fac, max_timestep);
+  BoutReal dt_new = timestep * fac;
+
+  if (dt_new > max_timestep) {
+    dt_new = max_timestep;
+  }
 
   nl_its_prev2 = nl_its_prev;
-  nl_its_prev = nl_its;
+  nl_its_prev  = static_cast<int>(nl_its);
 
   return dt_new;
 }
+
 
 #endif // BOUT_HAS_PETSC
