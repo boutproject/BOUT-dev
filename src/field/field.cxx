@@ -41,7 +41,7 @@ int Field::getNy() const { return getMesh()->LocalNy; }
 int Field::getNz() const { return getMesh()->LocalNz; }
 
 bool Field::isFci() const {
-  const auto coords = this->getCoordinates();
+  const auto* coords = this->getCoordinates();
   if (coords == nullptr) {
     return false;
   }
