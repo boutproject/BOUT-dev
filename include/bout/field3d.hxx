@@ -729,10 +729,11 @@ class Field3DParallel: public Field3D
   // Explicitly needed, as DirectionTypes is sometimes constructed from a
   // brace enclosed list
   Field3DParallel(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
-		  DirectionTypes directions_in = {YDirectionType::Standard,
-						  ZDirectionType::Standard},
-		  std::optional<size_t> regionID = {}) :
-    Field3D(localmesh, location_in, directions_in, regionID) {
+                  DirectionTypes directions_in = {YDirectionType::Standard,
+                                                  ZDirectionType::Standard},
+                  std::optional<size_t> regionID = {})
+      : Field3D(localmesh, location_in, directions_in, regionID) {
+    splitParallelSlices();
     ensureFieldAligned();
   }
   Field3DParallel(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
