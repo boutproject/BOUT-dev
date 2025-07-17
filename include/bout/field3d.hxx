@@ -580,6 +580,26 @@ Field3D operator-(BoutReal lhs, const Field3D& rhs);
 Field3D operator*(BoutReal lhs, const Field3D& rhs);
 Field3D operator/(BoutReal lhs, const Field3D& rhs);
 
+Field3DParallel operator+(const Field3D& lhs, const Field3DParallel& rhs);
+Field3DParallel operator-(const Field3D& lhs, const Field3DParallel& rhs);
+Field3DParallel operator*(const Field3D& lhs, const Field3DParallel& rhs);
+Field3DParallel operator/(const Field3D& lhs, const Field3DParallel& rhs);
+
+Field3DParallel operator+(const Field3DParallel& lhs, const Field3D& rhs);
+Field3DParallel operator-(const Field3DParallel& lhs, const Field3D& rhs);
+Field3DParallel operator*(const Field3DParallel& lhs, const Field3D& rhs);
+Field3DParallel operator/(const Field3DParallel& lhs, const Field3D& rhs);
+
+Field3DParallel operator+(const Field3DParallel& lhs, const Field3DParallel& rhs);
+Field3DParallel operator-(const Field3DParallel& lhs, const Field3DParallel& rhs);
+Field3DParallel operator*(const Field3DParallel& lhs, const Field3DParallel& rhs);
+Field3DParallel operator/(const Field3DParallel& lhs, const Field3DParallel& rhs);
+
+Field3DParallel operator+(const BoutReal lhs, const Field3DParallel& rhs);
+Field3DParallel operator-(const BoutReal lhs, const Field3DParallel& rhs);
+Field3DParallel operator*(const BoutReal lhs, const Field3DParallel& rhs);
+Field3DParallel operator/(const BoutReal lhs, const Field3DParallel& rhs);
+
 /*!
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.
