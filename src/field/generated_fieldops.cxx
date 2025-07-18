@@ -5,6 +5,7 @@
 #include <bout/interpolation.hxx>
 #include <bout/mesh.hxx>
 #include <bout/region.hxx>
+#include <cstddef>
 
 // Provide the C++ wrapper for multiplication of Field3D and Field3D
 Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
