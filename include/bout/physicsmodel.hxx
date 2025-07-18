@@ -47,6 +47,8 @@ class PhysicsModel;
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
 
+#include <chrono>
+#include <thread>
 #include <type_traits>
 #include <vector>
 
@@ -270,8 +272,11 @@ protected:
   virtual int rhs(BoutReal UNUSED(t)) { return 1; }
   virtual int rhs(BoutReal t, bool UNUSED(linear)) { return rhs(t); }
 
+public:
   /// Output additional variables other than the evolving variables
   virtual void outputVars(Options& options);
+
+protected:
   /// Add additional variables other than the evolving variables to the restart files
   virtual void restartVars(Options& options);
 
@@ -435,6 +440,7 @@ private:
     } catch (const BoutException& e) {                             \
       output << "Error encountered: " << e.what();                 \
       output << e.getBacktrace() << endl;                          \
+      std::this_thread::sleep_for(std::chrono::milliseconds(100)); \
       MPI_Abort(BoutComm::get(), 1);                               \
     }                                                              \
     BoutFinalise();                                                \
