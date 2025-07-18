@@ -281,6 +281,10 @@ public:
 
   int size() const override { return nx * ny; }
 
+  Field2D& asF3dwy() {
+    return *this;
+  }
+
 private:
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
