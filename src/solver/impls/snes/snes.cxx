@@ -136,8 +136,8 @@ SNESSolver::SNESSolver(Options* opts)
       timestep_factor_on_lower_its((*options)["timestep_factor_on_lower_its"]
                                    .doc("Multiply timestep if iterations are below lower_its")
                                    .withDefault(1.4)),
-      pidController(
-          (*options)["pidController"].doc("Use PID controller?").withDefault(false)),
+      pid_controller(
+          (*options)["pid_controller"].doc("Use PID controller?").withDefault(false)),
       target_its((*options)["target_its"]
                     .doc("Target snes iterations")
                     .withDefault(static_cast<int>(7))),
@@ -647,7 +647,7 @@ int SNESSolver::init() {
     // Note: If the 'Amat' Jacobian is matrix free, SNESComputeJacobian
     //       always updates its reference 'u' vector every nonlinear iteration
     SNESSetLagJacobian(snes, lag_jacobian);
-    if (pidController){
+    if (pid_controller){
       nl_its_prev = target_its;
       nl_its_prev2 = target_its;
       SNESSetLagJacobianPersists(snes, PETSC_FALSE);
@@ -866,7 +866,7 @@ int SNESSolver::run() {
       }
 
 
-      if (pidController){
+      if (pid_controller){
         SNESSetLagJacobian(snes, lag_jacobian);
       }
 
@@ -1062,7 +1062,7 @@ int SNESSolver::run() {
 
       if (looping) {
 
-        if (pidController){
+        if (pid_controller){
           // Changing the timestep.
           // Note: The preconditioner depends on the timestep,
           // so we recalculate the jacobian and the preconditioner

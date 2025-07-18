@@ -108,7 +108,7 @@ private:
   BoutReal timestep_factor_on_lower_its;
 
   ///< PID controller parameters
-  bool pidController; ///< Use PID controller?
+  bool pid_controller; ///< Use PID controller?
   int target_its;     ///< Target number of nonlinear iterations for the PID controller.
   ///< Use with caution! Not tested values.
   BoutReal kP; ///< (0.6 - 0.8) Proportional parameter (main response to current step)
