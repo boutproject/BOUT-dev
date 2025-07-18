@@ -38,6 +38,7 @@ class Field3D;
 #include <vector>
 
 class Mesh;
+class Field3DParallel;
 
 /// Class for 3D X-Y-Z scalar fields
 /*!
@@ -525,7 +526,9 @@ public:
 
   bool allowCalcParallelSlices{true};
 
-private:
+  inline Field3DParallel asField3DParallel();
+
+protected:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1}, nz{-1};
 
@@ -576,6 +579,26 @@ Field3D operator+(BoutReal lhs, const Field3D& rhs);
 Field3D operator-(BoutReal lhs, const Field3D& rhs);
 Field3D operator*(BoutReal lhs, const Field3D& rhs);
 Field3D operator/(BoutReal lhs, const Field3D& rhs);
+
+Field3DParallel operator+(const Field3D& lhs, const Field3DParallel& rhs);
+Field3DParallel operator-(const Field3D& lhs, const Field3DParallel& rhs);
+Field3DParallel operator*(const Field3D& lhs, const Field3DParallel& rhs);
+Field3DParallel operator/(const Field3D& lhs, const Field3DParallel& rhs);
+
+Field3DParallel operator+(const Field3DParallel& lhs, const Field3D& rhs);
+Field3DParallel operator-(const Field3DParallel& lhs, const Field3D& rhs);
+Field3DParallel operator*(const Field3DParallel& lhs, const Field3D& rhs);
+Field3DParallel operator/(const Field3DParallel& lhs, const Field3D& rhs);
+
+Field3DParallel operator+(const Field3DParallel& lhs, const Field3DParallel& rhs);
+Field3DParallel operator-(const Field3DParallel& lhs, const Field3DParallel& rhs);
+Field3DParallel operator*(const Field3DParallel& lhs, const Field3DParallel& rhs);
+Field3DParallel operator/(const Field3DParallel& lhs, const Field3DParallel& rhs);
+
+Field3DParallel operator+(const BoutReal lhs, const Field3DParallel& rhs);
+Field3DParallel operator-(const BoutReal lhs, const Field3DParallel& rhs);
+Field3DParallel operator*(const BoutReal lhs, const Field3DParallel& rhs);
+Field3DParallel operator/(const BoutReal lhs, const Field3DParallel& rhs);
 
 /*!
  * Unary minus. Returns the negative of given field,
@@ -699,4 +722,63 @@ inline Field3D copy(const Field3D& f) {
   return result;
 }
 
+/// Field3DParallel is intended to behave like Field3D, but preserve parallel
+/// Fields.
+/// Operations on Field3D, like multiplication, exp and floor only work on the
+/// "main" field, Field3DParallel will retain the parallel slices.
+class Field3DParallel : public Field3D {
+public:
+  template <class... Types>
+  Field3DParallel(Types... args) : Field3D(args...) {
+    ensureFieldAligned();
+  }
+  // Explicitly needed, as DirectionTypes is sometimes constructed from a
+  // brace enclosed list
+  Field3DParallel(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
+                  DirectionTypes directions_in = {YDirectionType::Standard,
+                                                  ZDirectionType::Standard},
+                  std::optional<size_t> regionID = {})
+      : Field3D(localmesh, location_in, directions_in, regionID) {
+    splitParallelSlices();
+    ensureFieldAligned();
+  }
+  Field3DParallel(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
+                  DirectionTypes directions_in = {YDirectionType::Standard,
+                                                  ZDirectionType::Standard})
+      : Field3D(std::move(data), localmesh, location, directions_in) {
+    ensureFieldAligned();
+  }
+  Field3DParallel(BoutReal, Mesh*);
+  Field3D& asField3D() { return *this; }
+  const Field3D& asField3D() const { return *this; }
+
+  Field3DParallel& operator*=(const Field3D&);
+  Field3DParallel& operator/=(const Field3D&);
+  Field3DParallel& operator+=(const Field3D&);
+  Field3DParallel& operator-=(const Field3D&);
+  Field3DParallel& operator*=(const Field3DParallel&);
+  Field3DParallel& operator/=(const Field3DParallel&);
+  Field3DParallel& operator+=(const Field3DParallel&);
+  Field3DParallel& operator-=(const Field3DParallel&);
+  Field3DParallel& operator*=(BoutReal);
+  Field3DParallel& operator/=(BoutReal);
+  Field3DParallel& operator+=(BoutReal);
+  Field3DParallel& operator-=(BoutReal);
+  Field3DParallel& operator=(const Field3D& rhs) {
+    Field3D::operator=(rhs);
+    ensureFieldAligned();
+    return *this;
+  }
+  Field3DParallel& operator=(Field3D&& rhs) {
+    Field3D::operator=(std::move(rhs));
+    ensureFieldAligned();
+    return *this;
+  }
+  Field3DParallel& operator=(BoutReal);
+
+private:
+  void ensureFieldAligned();
+};
+
+Field3DParallel Field3D::asField3DParallel() { return Field3DParallel(*this); }
 #endif /* BOUT_FIELD3D_H */

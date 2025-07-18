@@ -122,6 +122,8 @@ void load_parallel_metric_components([[maybe_unused]] Coordinates* coords,
   LOAD_PAR(g_13, false);
   LOAD_PAR(g_23, false);
 
+  LOAD_PAR(dy, false);
+
   if (not LOAD_PAR(J, true)) {
     auto g =
         coords->g11.ynext(offset) * coords->g22.ynext(offset) * coords->g33.ynext(offset)
