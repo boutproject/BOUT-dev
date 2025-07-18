@@ -1,8 +1,11 @@
 #include <bout/bout.hxx>
-
 #include <bout/constants.hxx>
+#include <bout/field3d.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/invert_laplace.hxx>
+#include <bout/output.hxx>
+
+#include <string>
 
 using bout::globals::mesh;
 using namespace std::string_literals;
@@ -34,16 +37,13 @@ int main(int argc, char** argv) {
   FieldFactory fact(mesh);
 
   const auto input_name = "input_field"s;
-  std::shared_ptr<FieldGenerator> gen = fact.parse(input_name);
+  const auto gen = fact.parse(input_name);
   output.write("GEN = {}\n", gen->str());
 
-  Field3D input = fact.create3D(input_name);
-
-  Field3D result = lap->solve(input);
-
-  Field3D solution = fact.create3D("solution");
-
-  Field3D error = result - solution;
+  const Field3D input = fact.create3D(input_name);
+  const Field3D result = lap->solve(input);
+  const Field3D solution = fact.create3D("solution");
+  const Field3D error = result - solution;
 
   Options dump;
   dump["input"] = input;

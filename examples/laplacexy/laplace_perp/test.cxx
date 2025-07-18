@@ -1,4 +1,5 @@
 #include <bout/bout.hxx>
+#include <bout/field2d.hxx>
 
 #include <bout/derivs.hxx>
 #include <bout/field_factory.hxx>
@@ -51,7 +52,8 @@ int main(int argc, char** argv) {
   ///////////////////////////////////////
 
   // Read an analytic input
-  Field2D input = FieldFactory::get()->create2D("input_field", Options::getRoot(), mesh);
+  const Field2D input =
+      FieldFactory::get()->create2D("input_field", Options::getRoot(), mesh);
 
   // Create a LaplaceXY solver
   LaplaceXY laplacexy{mesh};
