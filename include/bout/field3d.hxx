@@ -722,15 +722,16 @@ inline Field3D copy(const Field3D& f) {
   return result;
 }
 
+/// Field3DParallel is intended to behave like Field3D, but preserve parallel
+/// Fields.
+/// Operations on Field3D, like multiplication, exp and floor only work on the
+/// "main" field, Field3DParallel will retain the parallel slices.
 class Field3DParallel : public Field3D {
 public:
   template <class... Types>
   Field3DParallel(Types... args) : Field3D(args...) {
     ensureFieldAligned();
   }
-  // Field3DParallel(const Field2D& f) : Field3D(f) {
-  //   ensureFieldAligned();
-  // }
   // Explicitly needed, as DirectionTypes is sometimes constructed from a
   // brace enclosed list
   Field3DParallel(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
