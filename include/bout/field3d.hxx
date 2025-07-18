@@ -526,7 +526,7 @@ public:
 
   bool allowCalcParallelSlices{true};
 
-  inline Field3DParallel asF3dwy();
+  inline Field3DParallel asField3DParallel();
 
 protected:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
@@ -749,8 +749,8 @@ public:
     ensureFieldAligned();
   }
   Field3DParallel(BoutReal, Mesh*);
-  Field3D& asF3d() { return *this; }
-  const Field3D& asF3d() const { return *this; }
+  Field3D& asField3D() { return *this; }
+  const Field3D& asField3D() const { return *this; }
 
   Field3DParallel& operator*=(const Field3D&);
   Field3DParallel& operator/=(const Field3D&);
@@ -780,5 +780,5 @@ private:
   void ensureFieldAligned();
 };
 
-Field3DParallel Field3D::asF3dwy() { return Field3DParallel(*this); }
+Field3DParallel Field3D::asField3DParallel() { return Field3DParallel(*this); }
 #endif /* BOUT_FIELD3D_H */

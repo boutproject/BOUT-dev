@@ -1039,9 +1039,9 @@ int Coordinates::geometry(bool recalculate_staggered,
   G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22)
           + 0.5 * g33 * DDY(g_33);
 
-  G1 = (DDX(J * g11) + DDY(J.asF3dwy() * g12) + DDZ(J * g13)) / J;
-  G2 = (DDX(J * g12) + DDY(J.asF3dwy() * g22) + DDZ(J * g23)) / J;
-  G3 = (DDX(J * g13) + DDY(J.asF3dwy() * g23) + DDZ(J * g33)) / J;
+  G1 = (DDX(J * g11) + DDY(J.asField3DParallel() * g12) + DDZ(J * g13)) / J;
+  G2 = (DDX(J * g12) + DDY(J.asField3DParallel() * g22) + DDZ(J * g23)) / J;
+  G3 = (DDX(J * g13) + DDY(J.asField3DParallel() * g23) + DDZ(J * g33)) / J;
 
   // Communicate christoffel symbol terms
   output_progress.write("\tCommunicating connection terms\n");
@@ -1119,7 +1119,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-      d1_dy = DDY(1. / dy.asF3dwy()); // d/di(1/dy)
+      d1_dy = DDY(1. / dy.asField3DParallel()); // d/di(1/dy)
 
       communicate(d1_dy);
       d1_dy =
