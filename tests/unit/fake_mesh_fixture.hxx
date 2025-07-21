@@ -58,8 +58,13 @@ public:
     test_coords->d1_dx = test_coords->d1_dy = 0.2;
     test_coords->d1_dz = 0.0;
 #if BOUT_USE_METRIC_3D
+    auto Bup = test_coords->Bxy;
+    Bup.yoffset = 1;
+    auto Bdown = test_coords->Bxy;
+    Bdown.yoffset = -1;
     test_coords->Bxy.splitParallelSlices();
-    test_coords->Bxy.yup() = test_coords->Bxy.ydown() = test_coords->Bxy;
+    test_coords->Bxy.yup() = Bup;
+    test_coords->Bxy.ydown() = Bdown;
 #endif
 
     // No call to Coordinates::geometry() needed here

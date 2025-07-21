@@ -378,6 +378,7 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
 
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
+  f_interp.yoffset = y_offset;
 
   const auto region2 = y_offset != 0 ? fmt::format("RGN_YPAR_{:+d}", y_offset) : region;
 
@@ -395,6 +396,7 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
   MatMult(petscWeights, rhs, result);
   VecGetArrayRead(result, &cptr);
   BOUT_FOR(i, f.getRegion(region2)) {
+    i.yoffset = y_offset;
     f_interp[i] = cptr[int(i)];
     if constexpr (monotonic) {
       const auto iyp = i;
@@ -508,6 +510,7 @@ Field3D XZMonotonicHermiteSplineLegacy::interpolate(const Field3D& f,
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp(f.getMesh());
   f_interp.allocate();
+  f_interp.yoffset = y_offset;
 
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates

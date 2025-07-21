@@ -49,8 +49,8 @@
 
 /// Constructor
 Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in,
-                 std::optional<size_t> regionID)
-    : Field(localmesh, location_in, directions_in), regionID{regionID} {
+                 std::optional<size_t> regionID, const int yoffset)
+    : Field(localmesh, location_in, directions_in), regionID{regionID}, yoffset{yoffset} {
 #if BOUT_USE_TRACK
   name = "<F3D>";
 #endif
@@ -66,7 +66,7 @@ Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes direction
 /// later)
 Field3D::Field3D(const Field3D& f)
     : Field(f), data(f.data), yup_fields(f.yup_fields), ydown_fields(f.ydown_fields),
-      regionID(f.regionID) {
+      regionID(f.regionID), yoffset(f.yoffset) {
 
   TRACE("Field3D(Field3D&)");
 
@@ -157,7 +157,9 @@ void Field3D::splitParallelSlices() {
     // Note the fields constructed here will be fully overwritten by the
     // ParallelTransform, so we don't need a full constructor
     yup_fields.emplace_back(fieldmesh);
+    yup_fields[i].yoffset = i + 1;
     ydown_fields.emplace_back(fieldmesh);
+    ydown_fields[i].yoffset = -1 - i;
     if (isFci()) {
       yup_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", i + 1));
       ydown_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", -i - 1));
@@ -224,6 +226,15 @@ bool Field3D::requiresTwistShift(bool twist_shift_enabled) {
                                                                      getDirectionY());
 }
 
+void Field3D::setParallelRegions() {
+  for (int i = 0; i < fieldmesh->ystart; ++i) {
+    yup_fields[i].yoffset = i + 1;
+    yup_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", i + 1));
+    ydown_fields[i].yoffset = -1 - i;
+    ydown_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", -1 - i));
+  }
+}
+
 // Not in header because we need to access fieldmesh
 BoutReal& Field3D::operator()(const IndPerp& d, int jy) {
   return operator[](fieldmesh->indPerpto3D(d, jy));
@@ -277,6 +288,7 @@ Field3D& Field3D::operator=(const Field3D& rhs) {
   yup_fields = rhs.yup_fields;
   ydown_fields = rhs.ydown_fields;
   regionID = rhs.regionID;
+  yoffset = rhs.yoffset;
 
   // Copy the data and data sizes
   nx = rhs.nx;
@@ -295,12 +307,13 @@ Field3D& Field3D::operator=(Field3D&& rhs) {
   // Move parallel slices or delete existing ones.
   yup_fields = std::move(rhs.yup_fields);
   ydown_fields = std::move(rhs.ydown_fields);
+  regionID = rhs.regionID;
+  yoffset = rhs.yoffset;
 
   // Move the data and data sizes
   nx = rhs.nx;
   ny = rhs.ny;
   nz = rhs.nz;
-  regionID = rhs.regionID;
 
   data = std::move(rhs.data);
 
@@ -896,6 +909,7 @@ void swap(Field3D& first, Field3D& second) noexcept {
   swap(first.deriv, second.deriv);
   swap(first.yup_fields, second.yup_fields);
   swap(first.ydown_fields, second.ydown_fields);
+  swap(first.yoffset, second.yoffset);
 }
 
 const Region<Ind3D>&

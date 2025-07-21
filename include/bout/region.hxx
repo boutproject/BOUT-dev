@@ -168,9 +168,12 @@ template <IND_TYPE N>
 struct SpecificInd {
   int ind = -1;         ///< 1D index into Field
   int ny = -1, nz = -1; ///< Sizes of y and z dimensions
+  int yoffset = 0;
 
   SpecificInd() = default;
   SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz){};
+  SpecificInd(int i, int ny, int nz, int yoffset)
+      : ind(i), ny(ny), nz(nz), yoffset(yoffset){};
   explicit SpecificInd(int i) : ind(i){};
 
   /// Allow explicit conversion to an int
@@ -275,7 +278,9 @@ struct SpecificInd {
     }
   }
 
-  inline SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }
+  inline SpecificInd xp(int dx = 1) const {
+    return {ind + (dx * ny * nz), ny, nz, yoffset};
+  }
   /// The index one point -1 in x
   inline SpecificInd xm(int dx = 1) const { return xp(-dx); }
   /// The index one point +1 in y
@@ -286,8 +291,18 @@ struct SpecificInd {
     }
 #endif
     ASSERT3(std::abs(dy) < ny);
-    return {ind + (dy * nz), ny, nz};
+    return {ind + (dy * nz), ny, nz, yoffset + dy};
   }
+  inline SpecificInd yp_no_parallel_shift(int dy = 1) const {
+#if CHECK >= 4
+    if (y() + dy < 0 or y() + dy >= ny) {
+      throw BoutException("Offset in y ({:d}) would go out of bounds at {:d}", dy, ind);
+    }
+#endif
+    ASSERT3(std::abs(dy) < ny);
+    return {ind + (dy * nz), ny, nz, yoffset};
+  }
+
   /// The index one point -1 in y
   inline SpecificInd ym(int dy = 1) const { return yp(-dy); }
   /// The index one point +1 in z. Wraps around zend to zstart
@@ -297,7 +312,7 @@ struct SpecificInd {
   inline SpecificInd zp(int dz = 1) const {
     ASSERT3(dz >= 0);
     dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
-    return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz};
+    return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz, yoffset};
   }
   /// The index one point -1 in z. Wraps around zstart to zend
   /// An alternative, non-branching calculation is :
@@ -306,7 +321,7 @@ struct SpecificInd {
   inline SpecificInd zm(int dz = 1) const {
     dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
     ASSERT3(dz >= 0);
-    return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
+    return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz, yoffset};
   }
   /// Automatically select zm or zp depending on sign
   inline SpecificInd zpm(int dz) const { return dz > 0 ? zp(dz) : zm(-dz); }

@@ -99,6 +99,7 @@ bool load_parallel_metric_component(std::string name, Field3D& component, int of
   pcom.setRegion(fmt::format("RGN_YPAR_{:+d}", offset));
   pcom.name = name;
   BOUT_FOR(i, component.getRegion("RGN_NOBNDRY")) { pcom[i.yp(offset)] = tmp[i]; }
+  ASSERT2(pcom.yoffset == offset);
   return isValid;
 }
 #endif
@@ -339,15 +340,6 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
   region_no_boundary = region_no_boundary.mask(to_remove);
 
   interp->setRegion(region_no_boundary);
-
-  const auto region = fmt::format("RGN_YPAR_{:+d}", offset);
-  if (not map_mesh.hasRegion3D(region)) {
-    // The valid region for this slice
-    map_mesh.addRegion3D(
-        region, Region<Ind3D>(map_mesh.xstart, map_mesh.xend, map_mesh.ystart + offset,
-                              map_mesh.yend + offset, 0, map_mesh.LocalNz - 1,
-                              map_mesh.LocalNy, map_mesh.LocalNz));
-  }
 }
 
 Field3D FCIMap::integrate(Field3D& f) const {
@@ -430,8 +422,8 @@ void FCITransform::calcParallelSlices(Field3D& f) {
   // Interpolate f onto yup and ydown fields
   for (const auto& map : field_line_maps) {
     f.ynext(map.offset) = map.interpolate(f);
-    f.ynext(map.offset).setRegion(fmt::format("RGN_YPAR_{:+d}", map.offset));
   }
+  f.setParallelRegions();
 }
 
 void FCITransform::integrateParallelSlices(Field3D& f) {
@@ -449,6 +441,7 @@ void FCITransform::integrateParallelSlices(Field3D& f) {
   for (const auto& map : field_line_maps) {
     f.ynext(map.offset) = map.integrate(f);
   }
+  f.setParallelRegions();
 }
 
 void FCITransform::loadParallelMetrics(Coordinates* coords) {

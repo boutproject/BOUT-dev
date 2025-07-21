@@ -49,7 +49,7 @@
 #include <bout/assert.hxx>
 
 Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in,
-                 std::optional<size_t> UNUSED(regionID))
+                 std::optional<size_t> UNUSED(regionID), int UNUSED(yoffset))
     : Field(localmesh, location_in, directions_in) {
 
   if (fieldmesh) {

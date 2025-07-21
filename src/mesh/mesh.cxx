@@ -685,6 +685,15 @@ void Mesh::createDefaultRegions() {
                                 + getRegion3D("RGN_YGUARDS") + getRegion3D("RGN_ZGUARDS"))
                                    .unique());
 
+  // Add region for parallel slices
+  for (int i = 1; i <= ystart; ++i) {
+    for (const int offset : {-i, i}) {
+      const auto region = fmt::format("RGN_YPAR_{:+d}", offset);
+      addRegion3D(region, Region<Ind3D>(xstart, xend, ystart + offset, yend + offset, 0,
+                                        LocalNz - 1, LocalNy, LocalNz));
+    }
+  }
+
   //2D regions
   addRegion2D("RGN_ALL", Region<Ind2D>(0, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1,
                                        maxregionblocksize));

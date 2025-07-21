@@ -23,7 +23,9 @@ void ParallelTransformIdentity::calcParallelSlices(Field3D& f) {
   f.splitParallelSlices();
 
   for (int i = 0; i < f.getMesh()->ystart; ++i) {
+    f_copy.yoffset = i + 1;
     f.yup(i) = f_copy;
+    f_copy.yoffset = -1 - i;
     f.ydown(i) = f_copy;
   }
 }

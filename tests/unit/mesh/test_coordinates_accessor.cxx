@@ -81,8 +81,13 @@ TEST_F(CoordinatesAccessorTest, ClearBoth) {
   coords.non_uniform = true;
   coords.d1_dx = coords.d1_dy = coords.d1_dz = 0.1;
 #if BOUT_USE_METRIC_3D
+  auto Bup = coords.Bxy;
+  Bup.yoffset = 1;
+  auto Bdown = coords.Bxy;
+  Bdown.yoffset = -1;
   coords.Bxy.splitParallelSlices();
-  coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
+  coords.Bxy.yup() = Bup;
+  coords.Bxy.ydown() = Bdown;
 #endif
 
   CoordinatesAccessor acc(mesh->getCoordinates());
@@ -121,8 +126,13 @@ TEST_F(CoordinatesAccessorTest, ClearOneTwo) {
   coords.non_uniform = true;
   coords.d1_dx = coords.d1_dy = coords.d1_dz = 0.1;
 #if BOUT_USE_METRIC_3D
+  auto Bup = coords.Bxy;
+  Bup.yoffset = 1;
+  auto Bdown = coords.Bxy;
+  Bdown.yoffset = -1;
   coords.Bxy.splitParallelSlices();
-  coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
+  coords.Bxy.yup() = Bup;
+  coords.Bxy.ydown() = Bdown;
 #endif
 
   CoordinatesAccessor acc(mesh->getCoordinates());
@@ -163,8 +173,13 @@ TEST_F(CoordinatesAccessorTest, ClearTwoOneNone) {
   coords.non_uniform = true;
   coords.d1_dx = coords.d1_dy = coords.d1_dz = 0.1;
 #if BOUT_USE_METRIC_3D
+  auto Bup = coords.Bxy;
+  Bup.yoffset = 1;
+  auto Bdown = coords.Bxy;
+  Bdown.yoffset = -1;
   coords.Bxy.splitParallelSlices();
-  coords.Bxy.yup() = coords.Bxy.ydown() = coords.Bxy;
+  coords.Bxy.yup() = Bup;
+  coords.Bxy.ydown() = Bdown;
 #endif
 
   CoordinatesAccessor acc(mesh->getCoordinates());
