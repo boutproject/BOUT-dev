@@ -295,6 +295,10 @@ private:
 };
 
 // Non-member overloaded operators
+FieldPerp operator+(const Field2D& lhs, const FieldPerp& rhs);
+FieldPerp operator-(const Field2D& lhs, const FieldPerp& rhs);
+FieldPerp operator*(const Field2D& lhs, const FieldPerp& rhs);
+FieldPerp operator/(const Field2D& lhs, const FieldPerp& rhs);
 
 Field2D operator+(const Field2D& lhs, const Field2D& rhs);
 Field2D operator-(const Field2D& lhs, const Field2D& rhs);
