@@ -363,13 +363,11 @@ public:
           return ynext(d.yoffset)[d];
         }
 #if CHECK >= 2
-        else if (isFci()) { // We probably should assert here that this is field aligned
+        if (isFci()) { // We probably should assert here that this is field aligned
           throw BoutException(
-	if (isFci()) { // We probably should assert here that this is field aligned
-            throw BoutException(
-                "Tried to access parallel slices, but they are not calculated!");
-	}
+              "Tried to access parallel slices, but they are not calculated!");
         }
+      }
 #endif
       } else {
         ASSERT2(d.yoffset == yoffset);
