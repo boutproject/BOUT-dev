@@ -518,6 +518,7 @@ public:
                              const std::string& condition) override;
   void applyParallelBoundary(const std::string& region, const std::string& condition,
                              Field3D* f);
+  void applyParallelBoundaryWithDefault(const std::string& condition);
 
   friend void swap(Field3D& first, Field3D& second) noexcept;
 

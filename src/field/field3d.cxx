@@ -404,11 +404,9 @@ Field3DParallel& Field3DParallel::operator=(const BoutReal val) {
 Field3D& Field3D::calcParallelSlices() {
   ASSERT2(allowCalcParallelSlices);
   getCoordinates()->getParallelTransform().calcParallelSlices(*this);
-#if BOUT_USE_FCI_AUTOMAGIC
   if (this->isFci()) {
-    this->applyParallelBoundary("parallel_neumann_o2");
+    this->applyParallelBoundaryWithDefault("parallel_neumann_o2");
   }
-#endif
   return *this;
 }
 
@@ -571,6 +569,21 @@ void Field3D::applyParallelBoundary() {
   // Apply boundary to this field
   for (const auto& bndry : getBoundaryOpPars()) {
     bndry->apply(*this);
+  }
+}
+
+void Field3D::applyParallelBoundaryWithDefault(const std::string& condition) {
+
+  checkData(*this);
+  ASSERT1(hasParallelSlices());
+
+  // Apply boundary to this field
+  if (getBoundaryOpPars().empty()) {
+    applyParallelBoundary(condition);
+  } else {
+    for (const auto& bndry : getBoundaryOpPars()) {
+      bndry->apply(*this);
+    }
   }
 }
 
