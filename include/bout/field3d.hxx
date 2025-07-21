@@ -367,7 +367,6 @@ public:
           throw BoutException(
               "Tried to access parallel slices, but they are not calculated!");
         }
-      }
 #endif
     } else {
       ASSERT2(d.yoffset == yoffset);
