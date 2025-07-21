@@ -667,6 +667,8 @@ T copy(const T& f) {
   return result;
 }
 
+class Field3DParallel;
+
 /// Apply a floor value \p f to a field \p var. Any value lower than
 /// the floor is set to the floor.
 ///
