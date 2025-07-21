@@ -29,6 +29,7 @@ class Field3D;
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/field.hxx"
 #include "bout/field2d.hxx"
 #include "bout/fieldperp.hxx"
