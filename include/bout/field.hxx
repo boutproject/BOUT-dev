@@ -683,23 +683,22 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
       result[d] = f;
     }
   }
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (var.isFci()) {
-    for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
-      BOUT_FOR(d, result.yup(i).getRegion(rgn)) {
-        if (result.yup(i)[d] < f) {
-          result.yup(i)[d] = f;
-        }
-      }
-      BOUT_FOR(d, result.ydown(i).getRegion(rgn)) {
-        if (result.ydown(i)[d] < f) {
-          result.ydown(i)[d] = f;
-        }
+  if constexpr (std::is_same_v<T, Field3DParallel>) {
+    if (var.hasParallelSlices()) {
+      for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
+	BOUT_FOR(d, result.yup(i).getRegion(rgn)) {
+	  if (result.yup(i)[d] < f) {
+	    result.yup(i)[d] = f;
+	  }
+	}
+	BOUT_FOR(d, result.ydown(i).getRegion(rgn)) {
+	  if (result.ydown(i)[d] < f) {
+	    result.ydown(i)[d] = f;
+	  }
+	}
       }
     }
-  } else
-#endif
-  {
+  } else {
     result.clearParallelSlices();
   }
   return result;
