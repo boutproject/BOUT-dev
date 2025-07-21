@@ -208,8 +208,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Build Fedora rawhide
-        run: ./.ci_fedora.sh setup openmpi rawhide
+      - name: Build Fedora
+        run: ./.ci_fedora.sh setup openmpi latest
         shell: bash
         env:
           TRAVIS_BUILD_DIR: ${{ github.workspace }}

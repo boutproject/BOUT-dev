@@ -25,10 +25,17 @@
 /// alias to make a new test:
 ///
 ///     using MyTest = FakeMeshFixture;
-class FakeMeshFixture : public ::testing::Test {
+///
+/// Type alias `FakeMeshFixture = FakeMeshFixture_tmpl<3, 5, 7>`
+/// is used as a shim to allow FakeMeshFixture to be used with default values for nx, ny, nz.
+/// Use this template class directly to use different sized grid:
+///
+///     using MyTest = FakeMeshFixture_tmpl<7, 9, 11>;
+template <int NX, int NY, int NZ>
+class FakeMeshFixture_tmpl : public ::testing::Test {
 public:
-  FakeMeshFixture()
-      : mesh_m(nx, ny, nz, mpi), mesh_staggered_m(nx, ny, nz, mpi),
+  FakeMeshFixture_tmpl()
+      : mesh_m(NX, NY, NZ, mpi), mesh_staggered_m(NX, NY, NZ, mpi),
         mesh_staggered(&mesh_staggered_m) {
 
     bout::globals::mpi = &mpi;
@@ -108,21 +115,21 @@ public:
     mesh_staggered_m.setCoordinates(test_coords_staggered, CELL_ZLOW);
   }
 
-  FakeMeshFixture(const FakeMeshFixture&) = delete;
-  FakeMeshFixture& operator=(const FakeMeshFixture&) = delete;
-  FakeMeshFixture(FakeMeshFixture&&) = delete;
-  FakeMeshFixture& operator=(FakeMeshFixture&&) = delete;
+  FakeMeshFixture_tmpl(const FakeMeshFixture_tmpl&) = delete;
+  FakeMeshFixture_tmpl& operator=(const FakeMeshFixture_tmpl&) = delete;
+  FakeMeshFixture_tmpl(FakeMeshFixture_tmpl&&) = delete;
+  FakeMeshFixture_tmpl& operator=(FakeMeshFixture_tmpl&&) = delete;
 
-  ~FakeMeshFixture() override {
+  ~FakeMeshFixture_tmpl() override {
     bout::globals::mesh = nullptr;
     bout::globals::mpi = nullptr;
 
     Options::cleanup();
   }
 
-  static constexpr int nx = 3;
-  static constexpr int ny = 5;
-  static constexpr int nz = 7;
+  static constexpr int nx = NX;
+  static constexpr int ny = NY;
+  static constexpr int nz = NZ;
 
 private:
   std::shared_ptr<Coordinates> test_coords{nullptr};
@@ -139,3 +146,5 @@ public:
   // Public pointer to our staggered mesh
   Mesh* mesh_staggered; // NOLINT
 };
+
+using FakeMeshFixture = FakeMeshFixture_tmpl<3, 5, 7>;

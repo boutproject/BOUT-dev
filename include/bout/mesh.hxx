@@ -641,7 +641,7 @@ public:
 
   /// Returns the non-CELL_CENTRE location
   /// allowed as a staggered location
-  CELL_LOC getAllowedStaggerLoc(DIRECTION direction) const {
+  static CELL_LOC getAllowedStaggerLoc(DIRECTION direction) {
     AUTO_TRACE();
     switch (direction) {
     case (DIRECTION::X):
@@ -850,8 +850,7 @@ private:
   /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
   /// would not be correct).
   std::shared_ptr<Coordinates>
-  createDefaultCoordinates(const CELL_LOC location,
-                           bool force_interpolate_from_centre = false);
+  createDefaultCoordinates(CELL_LOC location, bool force_interpolate_from_centre = false);
 
   //Internal region related information
   std::map<std::string, size_t> regionMap3D;
