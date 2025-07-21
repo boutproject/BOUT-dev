@@ -356,7 +356,7 @@ public:
   };
 
   BoutReal& operator[](const Ind3D& d) {
-    if (d.yoffset) {
+    if (d.yoffset != 0) {
       if (yoffset == 0) {
         if (hasParallelSlices()) {
           return ynext(d.yoffset)[d];
@@ -364,7 +364,9 @@ public:
 #if CHECK >= 2
         else if (isFci()) { // We probably should assert here that this is field aligned
           throw BoutException(
-              "Tried to access parallel slices, but they are not calculated!");
+	if (isFci()) { // We probably should assert here that this is field aligned
+	  throw BoutException("Tried to access parallel slices, but they are not calculated!");
+	}
         }
 #endif
       } else {
