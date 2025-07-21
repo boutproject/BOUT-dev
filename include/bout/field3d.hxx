@@ -783,7 +783,6 @@ private:
 
 Field3DParallel Field3D::asField3DParallel() { return Field3DParallel(*this); }
 
-
 inline Field3D operator+(const Field2D& lhs, const Field3DParallel& rhs) {
   return lhs + rhs.asField3D();
 }
