@@ -595,10 +595,10 @@ Field3DParallel operator-(const Field3DParallel& lhs, const Field3DParallel& rhs
 Field3DParallel operator*(const Field3DParallel& lhs, const Field3DParallel& rhs);
 Field3DParallel operator/(const Field3DParallel& lhs, const Field3DParallel& rhs);
 
-Field3DParallel operator+(const BoutReal lhs, const Field3DParallel& rhs);
-Field3DParallel operator-(const BoutReal lhs, const Field3DParallel& rhs);
-Field3DParallel operator*(const BoutReal lhs, const Field3DParallel& rhs);
-Field3DParallel operator/(const BoutReal lhs, const Field3DParallel& rhs);
+Field3DParallel operator+(BoutReal lhs, const Field3DParallel& rhs);
+Field3DParallel operator-(BoutReal lhs, const Field3DParallel& rhs);
+Field3DParallel operator*(BoutReal lhs, const Field3DParallel& rhs);
+Field3DParallel operator/(BoutReal lhs, const Field3DParallel& rhs);
 
 /*!
  * Unary minus. Returns the negative of given field,
