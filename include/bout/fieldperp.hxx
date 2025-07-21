@@ -59,7 +59,7 @@ public:
             int yindex_in = -1,
             DirectionTypes directions_in = {YDirectionType::Standard,
                                             ZDirectionType::Standard},
-            std::optional<size_t> regionID = {});
+            std::optional<size_t> regionID = {}, int yoffset = 0);
 
   /*!
    * Copy constructor. After this the data

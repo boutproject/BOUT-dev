@@ -168,7 +168,7 @@ public:
   Field3D(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
           DirectionTypes directions_in = {YDirectionType::Standard,
                                           ZDirectionType::Standard},
-          std::optional<size_t> regionID = {});
+          std::optional<size_t> regionID = {}, int yoffset = 0);
 
   /*!
    * Copy constructor
@@ -343,6 +343,8 @@ public:
   void setRegion(size_t id) override;
   void setRegion(std::optional<size_t> id) override;
   std::optional<size_t> getRegionID() const override { return regionID; };
+
+  int getYoffset() const override { return yoffset; };
 
   /// Return a Region<Ind2D> reference to use to iterate over the x- and
   /// y-indices of this field

@@ -49,8 +49,8 @@
 
 /// Constructor
 Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in,
-                 std::optional<size_t> regionID)
-    : Field(localmesh, location_in, directions_in), regionID{regionID} {
+                 std::optional<size_t> regionID, const int yoffset)
+  : Field(localmesh, location_in, directions_in), regionID{regionID}, yoffset{yoffset} {
 #if BOUT_USE_TRACK
   name = "<F3D>";
 #endif

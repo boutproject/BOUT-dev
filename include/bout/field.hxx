@@ -133,6 +133,7 @@ public:
   virtual void setRegion(const std::string& UNUSED(region_name)) {}
   virtual void resetRegion() {}
   virtual std::optional<size_t> getRegionID() const { return {}; }
+  virtual int getYoffset() const { return 0; }
 
 private:
   /// Labels for the type of coordinate system this field is defined over
@@ -186,7 +187,7 @@ template <typename T>
 inline T emptyFrom(const T& f) {
   static_assert(bout::utils::is_Field_v<T>, "emptyFrom only works on Fields");
   return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()},
-           f.getRegionID())
+           f.getRegionID(), f.getYoffset())
       .allocate();
 }
 
