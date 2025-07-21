@@ -365,7 +365,8 @@ public:
         else if (isFci()) { // We probably should assert here that this is field aligned
           throw BoutException(
 	if (isFci()) { // We probably should assert here that this is field aligned
-	  throw BoutException("Tried to access parallel slices, but they are not calculated!");
+            throw BoutException(
+                "Tried to access parallel slices, but they are not calculated!");
 	}
         }
 #endif
