@@ -368,14 +368,15 @@ public:
               "Tried to access parallel slices, but they are not calculated!");
         }
 #endif
-    } else {
-      ASSERT2(d.yoffset == yoffset);
+      } else {
+        ASSERT2(d.yoffset == yoffset);
+      }
     }
+    return data[d.ind];
   }
-  return data[d.ind];
-} const BoutReal& operator[](const Ind3D& d) const {
-  return (*const_cast<Field3D*>(this))[d];
-}
+  const BoutReal& operator[](const Ind3D& d) const {
+    return (*const_cast<Field3D*>(this))[d];
+  }
 
   BoutReal& operator()(const IndPerp& d, int jy);
   const BoutReal& operator()(const IndPerp& d, int jy) const;
