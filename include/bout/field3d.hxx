@@ -40,6 +40,7 @@ class Field3D;
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 class Mesh;
@@ -732,7 +733,7 @@ inline Field3D copy(const Field3D& f) {
 class Field3DParallel : public Field3D {
 public:
   template <class... Types>
-  Field3DParallel(Types... args) : Field3D(args...) {
+  Field3DParallel(Types... args) : Field3D(std::move(args)...) {
     ensureFieldAligned();
   }
   // Explicitly needed, as DirectionTypes is sometimes constructed from a
