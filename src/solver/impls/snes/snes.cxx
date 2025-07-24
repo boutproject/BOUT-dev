@@ -862,7 +862,6 @@ int SNESSolver::run() {
         VecAXPBY(snes_x, -beta, (1. + beta), x1);
       }
 
-
       if (pid_controller) {
         SNESSetLagJacobian(snes, lag_jacobian);
       }
@@ -1403,7 +1402,8 @@ void SNESSolver::updateColoring() {
   MatColoring coloring = NULL;
   MatColoringCreate(Jfd, &coloring);
   // MatColoringSetType(coloring, MATCOLORINGSL);  // Serial algorithm. Better for smale-to-medium size problems.
-  MatColoringSetType(coloring, MATCOLORINGGREEDY); // Parallel algorith. Better for large parallel runs
+  MatColoringSetType(
+      coloring, MATCOLORINGGREEDY); // Parallel algorith. Better for large parallel runs
   // MatColoringSetType(coloring, MATCOLORINGJP);  // This didn't work
   MatColoringSetFromOptions(coloring);
 
@@ -1435,9 +1435,9 @@ BoutReal SNESSolver::pid(BoutReal timestep, int nl_its) {
   /* ---------- multiplicative PID factors ---------- */
   const BoutReal facP = std::pow(double(target_its) / double(nl_its), kP);
   const BoutReal facI = std::pow(double(nl_its_prev) / double(nl_its), kI);
-  const BoutReal facD = std::pow(double(nl_its_prev) * double(nl_its_prev) / double(nl_its)
-                               / double(nl_its_prev2),
-                           kD);
+  const BoutReal facD = std::pow(double(nl_its_prev) * double(nl_its_prev)
+                                     / double(nl_its) / double(nl_its_prev2),
+                                 kD);
 
   // clamp groth factor to avoid huge changes
   const BoutReal fac = std::clamp(facP * facI * facD, 0.2, 5.0);
