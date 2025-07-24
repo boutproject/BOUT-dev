@@ -109,7 +109,7 @@ private:
 
   ///< PID controller parameters
   bool pid_controller; ///< Use PID controller?
-  int target_its;     ///< Target number of nonlinear iterations for the PID controller.
+  int target_its;      ///< Target number of nonlinear iterations for the PID controller.
   ///< Use with caution! Not tested values.
   BoutReal kP; ///< (0.6 - 0.8) Proportional parameter (main response to current step)
   BoutReal kI; ///< (0.2 - 0.4) Integral parameter (smooths history of changes)

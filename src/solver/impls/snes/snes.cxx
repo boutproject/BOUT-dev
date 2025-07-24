@@ -140,9 +140,7 @@ SNESSolver::SNESSolver(Options* opts)
               .withDefault(1.4)),
       pid_controller(
           (*options)["pid_controller"].doc("Use PID controller?").withDefault(false)),
-      target_its((*options)["target_its"]
-                     .doc("Target snes iterations")
-                     .withDefault(static_cast<int>(7))),
+      target_its((*options)["target_its"].doc("Target snes iterations").withDefault(7)),
       kP((*options)["kP"].doc("Proportional PID parameter").withDefault(0.7)),
       kI((*options)["kI"].doc("Integral PID parameter").withDefault(0.3)),
       kD((*options)["kD"].doc("Derivative PID parameter").withDefault(0.2)),
@@ -646,7 +644,7 @@ int SNESSolver::init() {
     // Note: If the 'Amat' Jacobian is matrix free, SNESComputeJacobian
     //       always updates its reference 'u' vector every nonlinear iteration
     SNESSetLagJacobian(snes, lag_jacobian);
-    if (pid_controller){
+    if (pid_controller) {
       nl_its_prev = target_its;
       nl_its_prev2 = target_its;
       SNESSetLagJacobianPersists(snes, PETSC_FALSE);
@@ -865,7 +863,7 @@ int SNESSolver::run() {
       }
 
 
-      if (pid_controller){
+      if (pid_controller) {
         SNESSetLagJacobian(snes, lag_jacobian);
       }
 
@@ -1061,7 +1059,7 @@ int SNESSolver::run() {
 
       if (looping) {
 
-        if (pid_controller){
+        if (pid_controller) {
           // Changing the timestep.
           // Note: The preconditioner depends on the timestep,
           // so we recalculate the jacobian and the preconditioner
@@ -1087,9 +1085,7 @@ int SNESSolver::run() {
             // Increase timestep slightly
             timestep *= timestep_factor_on_lower_its;
 
-            if (timestep > max_timestep) {
-              timestep = max_timestep;
-            }
+            timestep = std::min(timestep, max_timestep);
 
             // Note: Setting the SNESJacobianFn to NULL retains
             // previously set evaluation function.
@@ -1407,8 +1403,7 @@ void SNESSolver::updateColoring() {
   MatColoring coloring = NULL;
   MatColoringCreate(Jfd, &coloring);
   // MatColoringSetType(coloring, MATCOLORINGSL);  // Serial algorithm. Better for smale-to-medium size problems.
-  MatColoringSetType(
-      coloring, MATCOLORINGGREEDY); // Parallel algorith. Better for large parallel runs
+  MatColoringSetType(coloring, MATCOLORINGGREEDY); // Parallel algorith. Better for large parallel runs
   // MatColoringSetType(coloring, MATCOLORINGJP);  // This didn't work
   MatColoringSetFromOptions(coloring);
 
@@ -1438,28 +1433,20 @@ void SNESSolver::updateColoring() {
 BoutReal SNESSolver::pid(BoutReal timestep, int nl_its) {
 
   /* ---------- multiplicative PID factors ---------- */
-  BoutReal facP = std::pow(double(target_its) / double(nl_its), kP);
-  BoutReal facI = std::pow(double(nl_its_prev) / double(nl_its), kI);
-  BoutReal facD = std::pow(double(nl_its_prev) * double(nl_its_prev) / double(nl_its)
+  const BoutReal facP = std::pow(double(target_its) / double(nl_its), kP);
+  const BoutReal facI = std::pow(double(nl_its_prev) / double(nl_its), kI);
+  const BoutReal facD = std::pow(double(nl_its_prev) * double(nl_its_prev) / double(nl_its)
                                / double(nl_its_prev2),
                            kD);
 
   // clamp groth factor to avoid huge changes
-  BoutReal fac = facP * facI * facD;
-  if (fac < 0.2)
-    fac = 0.2;
-  else if (fac > 5.0)
-    fac = 5.0;
+  const BoutReal fac = std::clamp(facP * facI * facD, 0.2, 5.0);
 
   /* ---------- update timestep and history ---------- */
-  BoutReal dt_new = timestep * fac;
-
-  if (dt_new > max_timestep) {
-    dt_new = max_timestep;
-  }
+  const BoutReal dt_new = std::min(timestep * fac, max_timestep);
 
   nl_its_prev2 = nl_its_prev;
-  nl_its_prev = static_cast<int>(nl_its);
+  nl_its_prev = nl_its;
 
   return dt_new;
 }
