@@ -602,7 +602,8 @@ int SNESSolver::init() {
         // Test if the matrix is symmetric
         // Values are 0 or 1 so tolerance (1e-5) shouldn't matter
         PetscBool symmetric;
-        ierr = MatIsSymmetric(Jfd, 1e-5, &symmetric); CHKERRQ(ierr);
+        ierr = MatIsSymmetric(Jfd, 1e-5, &symmetric);
+        CHKERRQ(ierr);
         if (!symmetric) {
           output_warn.write("Jacobian pattern is not symmetric\n");
         }
