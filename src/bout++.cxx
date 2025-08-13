@@ -4,7 +4,7 @@
  * Adapted from the BOUT code by B.Dudson, University of York, Oct 2007
  *
  **************************************************************************
- * Copyright 2010-2023 BOUT++ contributors
+ * Copyright 2010-2025 BOUT++ contributors
  *
  * Contact Ben Dudson, dudson2@llnl.gov
  *
@@ -84,7 +84,7 @@ const char DEFAULT_DIR[] = "data";
 // Define S_ISDIR if not defined by system headers (that is, MSVC)
 // Taken from https://github.com/curl/curl/blob/e59540139a398dc70fde6aec487b19c5085105af/lib/curl_setup.h#L748-L751
 #if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
-#define S_ISDIR(m) (((m)&S_IFMT) == S_IFDIR)
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 #endif
 
 #ifdef _MSC_VER
@@ -180,7 +180,7 @@ int BoutInitialise(int& argc, char**& argv) {
     // `optionfile` here, but we'd need to call parseCommandLine
     // _first_ in order to do that and set the source, etc., but we
     // need to call that _second_ in order to override the input file
-    reader->read(Options::getRoot(), "{}/{}", args.data_dir, args.opt_file);
+    reader->read(Options::getRoot(), "{}", (args.data_dir / args.opt_file).string());
 
     // Get options override from command-line
     reader->parseCommandLine(Options::getRoot(), args.argv);

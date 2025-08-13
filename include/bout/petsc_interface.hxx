@@ -566,6 +566,26 @@ PetscVector<T> operator*(const PetscMatrix<T>& mat, const PetscVector<T>& vec) {
   return PetscVector<T>(vec, result);
 }
 
+// Compatibility wrappers
+// For < 3.24
+#if PETSC_VERSION_GE(3, 24, 0) \
+    || (PETSC_VERSION_GE(3, 23, 0) && PETSC_VERSION_RELEASE == 0)
+namespace bout {
+template <class T>
+constexpr auto cast_MatFDColoringFn(T func) {
+  return func;
+}
+} // namespace bout
+#else
+using MatFDColoringFn = PetscErrorCode (*)();
+namespace bout {
+template <class T>
+constexpr auto cast_MatFDColoringFn(T func) {
+  return reinterpret_cast<MatFDColoringFn>(func); // NOLINT(*-reinterpret-cast)
+}
+} // namespace bout
+#endif
+
 #endif // BOUT_HAS_PETSC
 
 #endif // BOUT_PETSC_INTERFACE_H
