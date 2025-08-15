@@ -283,48 +283,35 @@ int PetscSolver::init() {
 
   // Create a vector to contain the state
   PetscCall(VecCreate(BoutComm::get(), &u));
-  ierr = VecSetSizes(u, nlocal, PETSC_DECIDE);
-  CHKERRQ(ierr);
-  ierr = VecSetFromOptions(u);
-  CHKERRQ(ierr);
+  PetscCall(VecSetSizes(u, nlocal, PETSC_DECIDE));
+  PetscCall(VecSetFromOptions(u));
 
   // Save initial state to PETSc Vec
   BoutReal* udata; // Pointer to data array in vector u.
-  ierr = VecGetArray(u, &udata);
-  CHKERRQ(ierr);
+  PetscCall(VecGetArray(u, &udata));
   save_vars(udata);
-  ierr = VecRestoreArray(u, &udata);
-  CHKERRQ(ierr);
+  PetscCall(VecRestoreArray(u, &udata));
 
   // Create timestepper
-  ierr = TSCreate(BoutComm::get(), &ts);
-  CHKERRQ(ierr);
-  ierr = TSSetProblemType(ts, TS_NONLINEAR);
-  CHKERRQ(ierr);
-  ierr = TSSetType(ts, ts_type.c_str());
-  CHKERRQ(ierr);
-  ierr = TSSetApplicationContext(ts, this);
-  CHKERRQ(ierr);
+  PetscCall(TSCreate(BoutComm::get(), &ts));
+  PetscCall(TSSetProblemType(ts, TS_NONLINEAR));
+  PetscCall(TSSetType(ts, ts_type.c_str()));
+  PetscCall(TSSetApplicationContext(ts, this));
 
   // Set user provided RHSFunction
   // Need to duplicate the solution vector for the residual
   Vec rhs_vec;
-  ierr = VecDuplicate(u, &rhs_vec);
-  CHKERRQ(ierr);
-  ierr = TSSetRHSFunction(ts, rhs_vec, solver_rhs, this);
-  CHKERRQ(ierr);
+  PetscCall(VecDuplicate(u, &rhs_vec));
+  PetscCall(TSSetRHSFunction(ts, rhs_vec, solver_rhs, this));
 
   // Set up adaptive time-stepping
   TSAdapt adapt;
-  ierr = TSGetAdapt(ts, &adapt);
-  CHKERRQ(ierr);
-  ierr = TSAdaptSetType(adapt, adapt_type.c_str());
-  CHKERRQ(ierr);
+  PetscCall(TSGetAdapt(ts, &adapt));
+  PetscCall(TSAdaptSetType(adapt, adapt_type.c_str()));
 
   // Set default absolute/relative tolerances
   // Note: Vector atol and rtol not given
-  ierr = TSSetTolerances(ts, atol, nullptr, rtol, nullptr);
-  CHKERRQ(ierr);
+  PetscCall(TSSetTolerances(ts, atol, nullptr, rtol, nullptr));
   if (ts_type == TSSUNDIALS) {
 #if PETSC_HAS_SUNDIALS
     // The PETSc interface to SUNDIALS' CVODE
@@ -337,12 +324,10 @@ int PetscSolver::init() {
   }
 
   // Initial time of the simulation state
-  ierr = TSSetTime(ts, simtime);
-  CHKERRQ(ierr);
+  PetscCall(TSSetTime(ts, simtime));
   next_output = simtime;
 
-  ierr = TSSetTimeStep(ts, start_timestep);
-  CHKERRQ(ierr);
+  PetscCall(TSSetTimeStep(ts, start_timestep));
 
   // Total number of steps
   PetscInt total_steps = mxstep * getNumberOutputSteps();
@@ -352,21 +337,17 @@ int PetscSolver::init() {
                simtime);
 
 #if PETSC_VERSION_GE(3, 8, 0)
-  ierr = TSSetMaxSteps(ts, total_steps);
-  CHKERRQ(ierr);
-  ierr = TSSetMaxTime(ts, tfinal);
-  CHKERRQ(ierr);
+  PetscCall(TSSetMaxSteps(ts, total_steps));
+  PetscCall(TSSetMaxTime(ts, tfinal));
 #else
-  ierr = TSSetDuration(ts, total_steps, tfinal);
-  CHKERRQ(ierr);
+  PetscCall(TSSetDuration(ts, total_steps, tfinal));
 #endif
 
   // Allow TS to recover from SNES failures
   PetscCall(TSSetMaxSNESFailures(ts, PETSC_UNLIMITED));
 
   // Set the current solution
-  ierr = TSSetSolution(ts, u);
-  CHKERRQ(ierr);
+  PetscCall(TSSetSolution(ts, u));
   // Allow TS to step over the final time
   // Note: This does not affect intermediate outputs, that
   //       are always interpolated (in PetscMonitor)
@@ -376,7 +357,7 @@ int PetscSolver::init() {
     ierr = TSSetExactFinalTime(ts, TS_EXACTFINALTIME_MATCHSTEP);
   }
   CHKERRQ(ierr);
-  ierr = TSMonitorSet(ts, PetscMonitor, this, nullptr);
+  PetscCall(TSMonitorSet(ts, PetscMonitor, this, nullptr));
 
   if (ts_type != TSSUNDIALS) {
     // Get and configure the SNES nonlinear solver
