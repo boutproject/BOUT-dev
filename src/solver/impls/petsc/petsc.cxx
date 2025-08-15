@@ -94,8 +94,9 @@ public:
   }
 };
 
+namespace {
 // PETSc callback function for matrix-free preconditioner
-static PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
+PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
   // Get the context
   void* ctx = nullptr;
   PetscCall(PCShellGetContext(pc, &ctx));
@@ -105,13 +106,24 @@ static PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
 
 // PETSc callback function, that evaluates the nonlinear
 // function being integrated by TS.
-static PetscErrorCode solver_rhs(TS UNUSED(ts), BoutReal t, Vec globalin, Vec globalout,
-                                 void* f_data) {
+PetscErrorCode solver_rhs(TS UNUSED(ts), BoutReal t, Vec globalin, Vec globalout,
+                          void* f_data) {
   PetscFunctionBegin;
   auto* s = static_cast<PetscSolver*>(f_data);
   s->rhs(t, globalin, globalout, false);
   PetscFunctionReturn(0);
 }
+
+// Form function for use with SUNDIALS.
+// This is needed because SNESTSFormFunction is not available
+// PETSc error: No method snesfunction for TS of type sundials
+PetscErrorCode solver_form_function(void* UNUSED(dummy), Vec U, Vec F, void* f_data) {
+  PetscFunctionBegin;
+  auto* s = static_cast<PetscSolver*>(f_data);
+  s->formFunction(U, F);
+  PetscFunctionReturn(0);
+}
+} // namespace
 
 // Compute IJacobian = dF/dU + a dF/dUdot
 // This is a dummy matrix that saves the shift.
@@ -129,6 +141,14 @@ PetscErrorCode solver_ijacobian(TS, BoutReal, Vec, Vec, PetscReal shift, Mat J, 
   }
 
   PetscFunctionReturn(0);
+}
+
+PetscErrorCode solver_ijacobian_color(TS ts, PetscReal t, Vec U, Vec Udot,
+                                      PetscReal shift, Mat J, Mat B, void* ctx) {
+  auto* solver = static_cast<PetscSolver*>(ctx);
+  solver->shift = shift;
+
+  return TSComputeIJacobianDefaultColor(ts, t, U, Udot, shift, J, B, NULL);
 }
 
 // This function is called by the TS object every internal timestep
@@ -887,6 +907,15 @@ PetscErrorCode PetscSolver::rhs(BoutReal t, Vec udata, Vec dudata, bool linear) 
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode PetscSolver::formFunction(Vec U, Vec F) {
+  PetscFunctionBegin;
+  PetscCall(rhs(simtime, U, F, true)); // Can be linearised for coloring
+
+  // shift * U - dU/dt
+  PetscCall(VecAXPBY(F, shift, -1.0, U));
+  PetscFunctionReturn(0);
+}
+
 // Matrix-free preconditioner function
 PetscErrorCode PetscSolver::pre(Vec x, Vec y) {
   TRACE("PetscSolver::pre()");
@@ -934,11 +963,17 @@ void PetscSolver::updateColoring() {
   // Replace the old coloring with the new one
   MatFDColoringDestroy(&fdcoloring);
   MatFDColoringCreate(Jfd, iscoloring, &fdcoloring);
-  // Use the SNES function that is defined by the TS method
-  // SNESTSFormFunction is defined in PETSc ts.c
-  // The ctx pointer should be the TS object
-  MatFDColoringSetFunction(fdcoloring,
-                           reinterpret_cast<MatFDColoringFn>(SNESTSFormFunction), ts);
+  if (ts_type != TSSUNDIALS) {
+    // Use the SNES function that is defined by the TS method
+    // SNESTSFormFunction is defined in PETSc ts.c
+    // The ctx pointer should be the TS object
+    MatFDColoringSetFunction(fdcoloring,
+                             reinterpret_cast<MatFDColoringFn>(SNESTSFormFunction), ts);
+  } else {
+    // SNESTSFormFunction is not available for SUNDIALS
+    MatFDColoringSetFunction(
+        fdcoloring, reinterpret_cast<MatFDColoringFn>(solver_form_function), this);
+  }
   MatFDColoringSetFromOptions(fdcoloring);
   MatFDColoringSetUp(Jfd, iscoloring, fdcoloring);
   ISColoringDestroy(&iscoloring);
@@ -948,7 +983,10 @@ void PetscSolver::updateColoring() {
 #if PETSC_HAVE_SUNDIALS2
     // The SUNDIALS interface calls TSGetIJacobian
     // https://www.mcs.anl.gov/petsc/petsc-3.14/src/ts/impls/implicit/sundials/sundials.c
-    TSSetIJacobian(ts, Jfd, Jfd, solver_ijacobian, this);
+    // This sets the "TSMatFDColoring" property on the Jacobian, that is used in TSComputeIJacobianDefaultColor
+    PetscObjectCompose((PetscObject)Jfd, "TSMatFDColoring", (PetscObject)fdcoloring);
+    // Call a wrapper function that stores the shift in the PetscSolver
+    TSSetIJacobian(ts, Jfd, Jfd, solver_ijacobian_color, this);
 #endif
   } else {
     if (matrix_free_operator) {

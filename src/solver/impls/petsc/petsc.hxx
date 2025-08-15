@@ -67,6 +67,8 @@ public:
 
   /// Wrapper for the RHS function
   PetscErrorCode rhs(PetscReal t, Vec globalin, Vec globalout, bool linear);
+  /// Residual calculation.
+  PetscErrorCode formFunction(Vec U, Vec F);
   /// Wrapper for the preconditioner
   PetscErrorCode pre(Vec x, Vec y);
 
@@ -75,6 +77,11 @@ public:
 
   friend PetscErrorCode solver_ijacobian(TS, BoutReal, Vec, Vec, PetscReal shift, Mat J,
                                          Mat Jpre, void* ctx);
+
+  // Wrapper around TSComputeIJacobianDefaultColor that saves the shift
+  // This is used to compute the Jacobian using coloring with SUNDIALS TS method.
+  friend PetscErrorCode solver_ijacobian_color(TS ts, PetscReal t, Vec U, Vec Udot,
+                                               PetscReal shift, Mat J, Mat B, void* ctx);
 
 private:
   BoutReal shift; ///< Shift (alpha) parameter from TS
