@@ -22,9 +22,9 @@
  * so it *must* be included before *any* PETSc header.
  * 
  **************************************************************************
- * Copyright 2012 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2012 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -112,6 +112,9 @@ public:
   /// set in the [petsc] section, or [petsc] subsection of the options, if non-null 'opt'
   /// was passed to the constructor.
   void setOptionsFromInputFile(SNES& snes);
+
+  /// Set options for a TS time integrator
+  void setOptionsFromInputFile(TS& ts);
 
   /*!
    * Force cleanup. This will call PetscFinalize, printing a warning

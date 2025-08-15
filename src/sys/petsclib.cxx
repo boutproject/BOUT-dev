@@ -119,6 +119,12 @@ void PetscLib::setOptionsFromInputFile(SNES& snes) {
   BOUT_DO_PETSC(SNESSetFromOptions(snes));
 }
 
+void PetscLib::setOptionsFromInputFile(TS& ts) {
+  BOUT_DO_PETSC(TSSetOptionsPrefix(ts, options_prefix.c_str()));
+
+  BOUT_DO_PETSC(TSSetFromOptions(ts));
+}
+
 void PetscLib::cleanup() {
   BOUT_OMP_SAFE(critical(PetscLib))
   {
