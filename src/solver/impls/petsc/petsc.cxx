@@ -104,25 +104,6 @@ static PetscErrorCode solver_rhs(TS UNUSED(ts), BoutReal t, Vec globalin, Vec gl
   PetscFunctionReturn(0);
 }
 
-// PETSc callback function for finite differencing.
-// May use a linearised form of the RHS function.
-static PetscErrorCode solver_rhs_differencing(void* ctx, Vec globalin, Vec globalout) {
-  PetscFunctionBegin;
-  auto* s = static_cast<PetscSolver*>(ctx);
-  s->rhs_differencing(globalin, globalout);
-  PetscFunctionReturn(0);
-}
-
-// PETSc callback function for coloring.
-// May use a linearised form of the RHS function.
-static PetscErrorCode solver_rhs_coloring(void* UNUSED(snes), Vec globalin, Vec globalout,
-                                          void* ctx) {
-  PetscFunctionBegin;
-  auto* s = static_cast<PetscSolver*>(ctx);
-  s->rhs_differencing(globalin, globalout);
-  PetscFunctionReturn(0);
-}
-
 // Compute IJacobian = dF/dU + a dF/dUdot
 // This is a dummy matrix that saves the shift.
 // The shift is later used in the matrix-free preconditioner
@@ -172,9 +153,14 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
 
   // The internal timestepper may have stepped over multiple output times
   while (s->next_output <= t && s->next_output <= tfinal) {
+    BoutReal output_time = t;
     if (s->interpolate) {
       ierr = TSInterpolate(ts, s->next_output, interpolatedX);
-      CHKERRQ(ierr);
+      if (ierr != PETSC_SUCCESS) {
+        throw BoutException("This PETSc TS does not support interpolation. Use a "
+                            "different method or set solver:interpolate=false");
+      }
+      output_time = s->next_output;
     }
 
     // Place the interpolated values into the global variables
@@ -185,11 +171,11 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
     ierr = VecRestoreArrayRead(interpolatedX, &x);
     CHKERRQ(ierr);
 
-    if (s->call_monitors(s->next_output, i++, s->getNumberOutputSteps())) {
+    if (s->call_monitors(output_time, i++, s->getNumberOutputSteps())) {
       PetscFunctionReturn(1);
     }
 
-    s->next_output += s->getOutputTimestep();
+    s->next_output = output_time + s->getOutputTimestep();
   }
 
   // Done with vector, so destroy it
@@ -200,7 +186,9 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
 }
 
 PetscSolver::PetscSolver(Options* opts)
-    : Solver(opts),
+    : Solver(opts), interpolate((*options)["interpolate"]
+                                    .doc("Interpolate to regular output times?")
+                                    .withDefault(true)),
       diagnose(
           (*options)["diagnose"].doc("Enable some diagnostic output").withDefault(false)),
       user_precon((*options)["user_precon"]
@@ -379,7 +367,11 @@ int PetscSolver::init() {
   // Allow TS to step over the final time
   // Note: This does not affect intermediate outputs, that
   //       are always interpolated (in PetscMonitor)
-  ierr = TSSetExactFinalTime(ts, TS_EXACTFINALTIME_INTERPOLATE);
+  if (interpolate) {
+    ierr = TSSetExactFinalTime(ts, TS_EXACTFINALTIME_INTERPOLATE);
+  } else {
+    ierr = TSSetExactFinalTime(ts, TS_EXACTFINALTIME_MATCHSTEP);
+  }
   CHKERRQ(ierr);
   ierr = TSMonitorSet(ts, PetscMonitor, this, nullptr);
 
@@ -892,7 +884,7 @@ PetscErrorCode PetscSolver::run() {
 PetscErrorCode PetscSolver::rhs(BoutReal t, Vec udata, Vec dudata, bool linear) {
   TRACE("Running RHS: PetscSolver::rhs({:e})", t);
 
-  simtime = t; // This will be used in rhs_differencing
+  simtime = t;
 
   PetscFunctionBegin;
 
@@ -912,11 +904,6 @@ PetscErrorCode PetscSolver::rhs(BoutReal t, Vec udata, Vec dudata, bool linear) 
   VecRestoreArray(dudata, &dudata_array);
 
   PetscFunctionReturn(0);
-}
-
-// This is used for Jacobian-vector product and Jacobian coloring
-PetscErrorCode PetscSolver::rhs_differencing(Vec globalin, Vec globalout) {
-  return rhs(simtime, globalin, globalout, true);
 }
 
 // Matrix-free preconditioner function
@@ -967,14 +954,16 @@ void PetscSolver::updateColoring() {
   // Replace the old coloring with the new one
   MatFDColoringDestroy(&fdcoloring);
   MatFDColoringCreate(Jfd, iscoloring, &fdcoloring);
-  MatFDColoringSetFunction(fdcoloring, bout::cast_MatFDColoringFn(solver_rhs_coloring),
-                           this);
+  // Use the SNES function that is defined by the TS method
+  // SNESTSFormFunction is defined in PETSc ts.c
+  // The ctx pointer should be the TS object
+  MatFDColoringSetFunction(fdcoloring, bout::cast_MatFDColoringFn(SNESTSFormFunction),
+                           ts);
   MatFDColoringSetFromOptions(fdcoloring);
   MatFDColoringSetUp(Jfd, iscoloring, fdcoloring);
   ISColoringDestroy(&iscoloring);
 
   // Replace the CTX pointer in SNES Jacobian
-  // Note: TSComputeIJacobianDefaultColor
   if (matrix_free_operator) {
     // Use matrix-free calculation for operator, finite difference for preconditioner
     SNESSetJacobian(snes, Jmf, Jfd, SNESComputeJacobianDefaultColor, fdcoloring);

@@ -66,8 +66,6 @@ public:
 
   /// Wrapper for the RHS function
   PetscErrorCode rhs(PetscReal t, Vec globalin, Vec globalout, bool linear);
-  /// RHS function for differencing
-  PetscErrorCode rhs_differencing(Vec globalin, Vec globalout);
   /// Wrapper for the preconditioner
   PetscErrorCode pre(Vec x, Vec y);
 
@@ -94,7 +92,7 @@ private:
 
   BoutReal next_output; ///< When the monitor should be called next
 
-  PetscBool interpolate{PETSC_TRUE}; ///< Whether to interpolate or not
+  bool interpolate; ///< Interpolate to regular times?
 
   bool diagnose;    ///< If true, print some information about current stage
   bool user_precon; ///< Use user-supplied preconditioning function?
