@@ -980,13 +980,12 @@ void PetscSolver::updateColoring() {
     //       varies between PETSc versions in ways that break
     //       reinterpret_cast and a C cast to MatFDColoringFn.
     //       This is the cast that PETSc examples use.
-    MatFDColoringSetFunction(fdcoloring, (PetscErrorCode (*)(void))SNESTSFormFunction,
-                             ts);
+    MatFDColoringSetFunction(fdcoloring, (PetscErrorCode(*)(void))SNESTSFormFunction, ts);
   } else {
     // SNESTSFormFunction is not available for SUNDIALS.
     // This solver_form_function needs to know the shift
     // (SUNDIALS' gamma) that we capture in solver_ijacobian_color.
-    MatFDColoringSetFunction(fdcoloring, (PetscErrorCode (*)(void))solver_form_function,
+    MatFDColoringSetFunction(fdcoloring, (PetscErrorCode(*)(void))solver_form_function,
                              this);
   }
   MatFDColoringSetFromOptions(fdcoloring);
