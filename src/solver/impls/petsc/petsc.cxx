@@ -25,27 +25,30 @@
 
 #include "bout/build_defines.hxx"
 
-#include "petsc.hxx"
-
 #if BOUT_HAS_PETSC
 
-#include <petsc.h>
+#include "petsc.hxx"
 
+#include <algorithm>
+#include <cmath>
+#include <utility>
+#include <vector>
+
+#include <bout/assert.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/globals.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 #include <bout/petsc_interface.hxx>
 #include <bout/utils.hxx>
 
-#include <cmath>
-#include <vector>
-
-#include <bout/output.hxx>
-
-#include "petscsnes.h"
-#include "petscsys.h"
-#include "petscts.h"
+#include <petsc.h>
+#include <petscpctypes.h>
+#include <petscsnes.h>
+#include <petscsys.h>
+#include <petscts.h>
+#include <petscvec.h>
 
 #ifndef PETSC_UNLIMITED
 // Introduced in PETSc 3.22
@@ -95,8 +98,7 @@ public:
 static PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
   // Get the context
   void* ctx = nullptr;
-  int ierr = PCShellGetContext(pc, &ctx);
-  CHKERRQ(ierr);
+  PetscCall(PCShellGetContext(pc, &ctx));
   // Run the preconditioner
   PetscFunctionReturn(static_cast<PetscSolver*>(ctx)->pre(x, y));
 }
@@ -141,28 +143,24 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode ierr;
   PetscReal tfinal;
   static int i = 0;
 
 #if PETSC_VERSION_GE(3, 8, 0)
-  ierr = TSGetMaxTime(ts, &tfinal);
-  CHKERRQ(ierr);
+  PetscCall(TSGetMaxTime(ts, &tfinal));
 #else
-  ierr = TSGetDuration(ts, nullptr, &tfinal);
-  CHKERRQ(ierr);
+  PetscCall(TSGetDuration(ts, nullptr, &tfinal));
 #endif
 
   // Duplicate the solution vector X into a work vector
   Vec interpolatedX;
-  ierr = VecDuplicate(X, &interpolatedX);
-  CHKERRQ(ierr);
+  PetscCall(VecDuplicate(X, &interpolatedX));
 
   // The internal timestepper may have stepped over multiple output times
   while (s->next_output <= t && s->next_output <= tfinal) {
     BoutReal output_time = t;
     if (s->interpolate) {
-      ierr = TSInterpolate(ts, s->next_output, interpolatedX);
+      int ierr = TSInterpolate(ts, s->next_output, interpolatedX);
       if (ierr != PETSC_SUCCESS) {
         throw BoutException("This PETSc TS does not support interpolation. Use a "
                             "different method or set solver:interpolate=false");
@@ -172,11 +170,9 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
 
     // Place the interpolated values into the global variables
     const PetscScalar* x;
-    ierr = VecGetArrayRead(interpolatedX, &x);
-    CHKERRQ(ierr);
+    PetscCall(VecGetArrayRead(interpolatedX, &x));
     s->load_vars(const_cast<BoutReal*>(x));
-    ierr = VecRestoreArrayRead(interpolatedX, &x);
-    CHKERRQ(ierr);
+    PetscCall(VecRestoreArrayRead(interpolatedX, &x));
 
     if (s->call_monitors(output_time, i++, s->getNumberOutputSteps()) != 0) {
       PetscFunctionReturn(1);
@@ -186,8 +182,7 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
   }
 
   // Done with vector, so destroy it
-  ierr = VecDestroy(&interpolatedX);
-  CHKERRQ(ierr);
+  PetscCall(VecDestroy(&interpolatedX));
 
   PetscFunctionReturn(0);
 }
@@ -214,8 +209,7 @@ PetscSolver::PetscSolver(Options* opts)
                .doc("Maximum number of function evaluations per SNES solve")
                .withDefault(10000)),
       maxl((*options)["maxl"].doc("Maximum number of linear iterations").withDefault(20)),
-      ts_type(
-          (*options)["ts_type"].doc("PETSc time integrator type").withDefault("beuler")),
+      ts_type((*options)["ts_type"].doc("PETSc time integrator type").withDefault("bdf")),
       adapt_type((*options)["adapt_type"]
                      .doc("PETSc TSAdaptType timestep adaptation method")
                      .withDefault("basic")),
@@ -270,7 +264,6 @@ PetscSolver::~PetscSolver() {
  **************************************************************************/
 
 int PetscSolver::init() {
-  PetscErrorCode ierr;
 
   TRACE("Initialising PETSc-dev solver");
 
@@ -320,7 +313,7 @@ int PetscSolver::init() {
   // Note: Vector atol and rtol not given
   PetscCall(TSSetTolerances(ts, atol, nullptr, rtol, nullptr));
   if (ts_type == TSSUNDIALS) {
-#if PETSC_HAS_SUNDIALS
+#if PETSC_HAVE_SUNDIALS2
     // The PETSc interface to SUNDIALS' CVODE
     TSSundialsSetType(ts, SUNDIALS_BDF);
     TSSundialsSetTolerance(ts, atol, rtol);
@@ -362,11 +355,10 @@ int PetscSolver::init() {
   // Note: This does not affect intermediate outputs, that
   //       are always interpolated (in PetscMonitor)
   if (interpolate) {
-    ierr = TSSetExactFinalTime(ts, TS_EXACTFINALTIME_INTERPOLATE);
+    PetscCall(TSSetExactFinalTime(ts, TS_EXACTFINALTIME_INTERPOLATE));
   } else {
-    ierr = TSSetExactFinalTime(ts, TS_EXACTFINALTIME_MATCHSTEP);
+    PetscCall(TSSetExactFinalTime(ts, TS_EXACTFINALTIME_MATCHSTEP));
   }
-  CHKERRQ(ierr);
   PetscCall(TSMonitorSet(ts, PetscMonitor, this, nullptr));
 
   if (ts_type != TSSUNDIALS) {
@@ -374,11 +366,8 @@ int PetscSolver::init() {
     // Note: SUNDIALS does not use PETSc SNES or KSP
     // https://petsc.org/release/manual/ts/#using-sundials-from-petsc
 
-    ierr = TSGetSNES(ts, &snes);
-    CHKERRQ(ierr);
-
-    ierr = SNESSetType(snes, snes_type.c_str());
-    CHKERRQ(ierr);
+    PetscCall(TSGetSNES(ts, &snes));
+    PetscCall(SNESSetType(snes, snes_type.c_str()));
 
     // Line search
     if (line_search_type != "default") {
@@ -455,7 +444,7 @@ int PetscSolver::init() {
   // Configure preconditioner
   PC pc;
   if (ts_type == TSSUNDIALS) {
-#if PETSC_HAS_SUNDIALS
+#if PETSC_HAVE_SUNDIALS2
     TSSundialsGetPC(ts, &pc);
 #endif
   } else {
@@ -480,8 +469,7 @@ int PetscSolver::init() {
       PCShellSetContext(pc, this);
 
       // Set name of preconditioner
-      ierr = PCShellSetName(pc, "PhysicsPreconditioner");
-      CHKERRQ(ierr);
+      PetscCall(PCShellSetName(pc, "PhysicsPreconditioner"));
     } else {
       // Can't use preconditioner because no Jacobian matrix available
       PCSetType(pc, PCNONE);
@@ -714,8 +702,7 @@ int PetscSolver::init() {
               // Depends on all variables on this cell
               for (int j = 0; j < n2d; j++) {
                 PetscInt const col = ind2 + j;
-                ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
-                CHKERRQ(ierr);
+                PetscCall(MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES));
               }
             }
           }
@@ -732,8 +719,7 @@ int PetscSolver::init() {
               // Depends on 2D fields
               for (int j = 0; j < n2d; j++) {
                 PetscInt const col = ind0 + j;
-                ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
-                CHKERRQ(ierr);
+                PetscCall(MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES));
               }
 
               // Star pattern
@@ -758,7 +744,7 @@ int PetscSolver::init() {
                   // 3D fields on this cell
                   for (int j = 0; j < n3d; j++) {
                     PetscInt col = ind2 + j;
-                    ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
+                    int ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
 
                     if (ierr != 0) {
                       output.write("ERROR: {} {} : ({}, {}) -> ({}, {}) : {} -> {}\n",
@@ -785,8 +771,7 @@ int PetscSolver::init() {
         // Test if the matrix is symmetric
         // Values are 0 or 1 so tolerance (1e-5) shouldn't matter
         PetscBool symmetric;
-        ierr = MatIsSymmetric(Jfd, 1e-5, &symmetric);
-        CHKERRQ(ierr);
+        PetscCall(MatIsSymmetric(Jfd, 1e-5, &symmetric));
         if (!symmetric) {
           output_warn.write("Jacobian pattern is not symmetric\n");
         }
@@ -842,13 +827,15 @@ int PetscSolver::init() {
     TSAdaptType adapttype;
     TSAdaptGetType(adapt, &adapttype);
     output_info.write("TS Adapt Type : {}\n", adapttype);
-    SNESType snestype;
-    SNESGetType(snes, &snestype);
-    output_info.write("SNES Type : {}\n", snestype);
-    KSPType ksptype;
-    KSPGetType(ksp, &ksptype);
-    if (ksptype) {
-      output_info.write("KSP Type  : {}\n", ksptype);
+    if (ts_type != TSSUNDIALS) {
+      SNESType snestype;
+      SNESGetType(snes, &snestype);
+      output_info.write("SNES Type : {}\n", snestype);
+      KSPType ksptype;
+      KSPGetType(ksp, &ksptype);
+      if (ksptype) {
+        output_info.write("KSP Type  : {}\n", ksptype);
+      }
     }
     PCType pctype;
     PCGetType(pc, &pctype);
@@ -927,8 +914,7 @@ PetscErrorCode PetscSolver::pre(Vec x, Vec y) {
   // Petsc's definition of Jacobian differs by a factor from SUNDIALS'
   // PETSc solves (scale + J)^-1
   // SUNDIALS solves (I + gamma J)^-1
-  PetscErrorCode ierr = VecScale(y, shift);
-  CHKERRQ(ierr);
+  PetscCall(VecScale(y, shift));
 
   return 0;
 }
@@ -951,18 +937,26 @@ void PetscSolver::updateColoring() {
   // Use the SNES function that is defined by the TS method
   // SNESTSFormFunction is defined in PETSc ts.c
   // The ctx pointer should be the TS object
-  MatFDColoringSetFunction(fdcoloring, bout::cast_MatFDColoringFn(SNESTSFormFunction),
-                           ts);
+  MatFDColoringSetFunction(fdcoloring,
+                           reinterpret_cast<MatFDColoringFn>(SNESTSFormFunction), ts);
   MatFDColoringSetFromOptions(fdcoloring);
   MatFDColoringSetUp(Jfd, iscoloring, fdcoloring);
   ISColoringDestroy(&iscoloring);
 
   // Replace the CTX pointer in SNES Jacobian
-  if (matrix_free_operator) {
-    // Use matrix-free calculation for operator, finite difference for preconditioner
-    SNESSetJacobian(snes, Jmf, Jfd, SNESComputeJacobianDefaultColor, fdcoloring);
+  if (ts_type == TSSUNDIALS) {
+#if PETSC_HAVE_SUNDIALS2
+    // The SUNDIALS interface calls TSGetIJacobian
+    // https://www.mcs.anl.gov/petsc/petsc-3.14/src/ts/impls/implicit/sundials/sundials.c
+    TSSetIJacobian(ts, Jfd, Jfd, solver_ijacobian, this);
+#endif
   } else {
-    SNESSetJacobian(snes, Jfd, Jfd, SNESComputeJacobianDefaultColor, fdcoloring);
+    if (matrix_free_operator) {
+      // Use matrix-free calculation for operator, finite difference for preconditioner
+      SNESSetJacobian(snes, Jmf, Jfd, SNESComputeJacobianDefaultColor, fdcoloring);
+    } else {
+      SNESSetJacobian(snes, Jfd, Jfd, SNESComputeJacobianDefaultColor, fdcoloring);
+    }
   }
 }
 
