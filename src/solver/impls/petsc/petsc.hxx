@@ -1,11 +1,10 @@
 /**************************************************************************
  * Interface to PETSc solver
- * NOTE: This class needs tidying, generalising to use FieldData interface
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -55,35 +54,6 @@ namespace {
 RegisterSolver<PetscSolver> registersolverpetsc("petsc");
 }
 
-using BoutReal = PetscScalar;
-#define OPT_SIZE 40
-
-using rhsfunc = int (*)(BoutReal);
-
-extern BoutReal simtime;
-
-/// Monitor function called on every internal timestep
-extern PetscErrorCode PetscMonitor(TS, PetscInt, PetscReal, Vec, void* ctx);
-/// Monitor function for SNES
-extern PetscErrorCode PetscSNESMonitor(SNES, PetscInt, PetscReal, void* ctx);
-
-/// Compute IJacobian = dF/dU + a dF/dUdot  - a dummy matrix used for pc=none
-#if PETSC_VERSION_GE(3, 5, 0)
-extern PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat, Mat,
-                                       void*);
-#else
-extern PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat*, Mat*,
-                                       MatStructure*, void*);
-#endif
-
-/// Data for SNES
-struct snes_info {
-  PetscInt it;
-  PetscInt linear_its;
-  PetscReal time;
-  PetscReal norm;
-};
-
 class PetscSolver : public Solver {
 public:
   PetscSolver(Options* opts = nullptr);
@@ -95,24 +65,17 @@ public:
   // These functions used internally (but need to be public)
 
   /// Wrapper for the RHS function
-  PetscErrorCode rhs(TS ts, PetscReal t, Vec globalin, Vec globalout);
+  PetscErrorCode rhs(PetscReal t, Vec globalin, Vec globalout, bool linear);
+  /// RHS function for differencing
+  PetscErrorCode rhs_differencing(Vec globalin, Vec globalout);
   /// Wrapper for the preconditioner
-  PetscErrorCode pre(PC pc, Vec x, Vec y);
-  /// Wrapper for the Jacobian function
-  PetscErrorCode jac(Vec x, Vec y);
+  PetscErrorCode pre(Vec x, Vec y);
 
   // Call back functions that need to access internal state
   friend PetscErrorCode PetscMonitor(TS, PetscInt, PetscReal, Vec, void* ctx);
-  friend PetscErrorCode PetscSNESMonitor(SNES, PetscInt, PetscReal, void* ctx);
-#if PETSC_VERSION_GE(3, 5, 0)
-  friend PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat, Mat,
-                                         void*);
-#else
-  friend PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat*, Mat*,
-                                         MatStructure*, void*);
-#endif
 
-  PetscLogEvent solver_event, loop_event, init_event;
+  friend PetscErrorCode solver_ijacobian(TS, BoutReal, Vec, Vec, PetscReal shift, Mat J,
+                                         Mat Jpre, void* ctx);
 
 private:
   BoutReal shift; ///< Shift (alpha) parameter from TS
@@ -121,28 +84,45 @@ private:
 
   PetscLib lib; ///< Handles initialising, finalising PETSc
 
-  Vec u{nullptr}; ///< PETSc solution vector
-  TS ts{nullptr}; ///< PETSc timestepper object
-  Mat J{nullptr}; ///< RHS Jacobian
-  Mat Jmf{nullptr};
-  MatFDColoring matfdcoloring{nullptr};
-
-  bool diagnose; ///< If true, print some information about current stage
+  Vec u{nullptr};                    ///< PETSc solution vector
+  TS ts{nullptr};                    ///< PETSc timestepper object
+  SNES snes{nullptr};                ///< PETSc nonlinear solver object
+  KSP ksp{nullptr};                  ///< PETSc linear solver
+  Mat Jmf{nullptr};                  ///< Matrix Free Jacobian
+  Mat Jfd{nullptr};                  ///< Finite Difference Jacobian
+  MatFDColoring fdcoloring{nullptr}; ///< Matrix coloring context
 
   BoutReal next_output; ///< When the monitor should be called next
 
   PetscBool interpolate{PETSC_TRUE}; ///< Whether to interpolate or not
 
-  char output_name[PETSC_MAX_PATH_LEN];
-  PetscBool output_flag{PETSC_FALSE};
-  PetscInt prev_linear_its;
-  BoutReal bout_snes_time{0.0};
-  std::vector<snes_info> snes_list;
+  bool diagnose;    ///< If true, print some information about current stage
+  bool user_precon; ///< Use user-supplied preconditioning function?
 
-  bool adaptive; ///< Use adaptive timestepping
-  bool use_precon, use_jacobian;
-  BoutReal abstol, reltol;
-  bool adams_moulton;
+  BoutReal atol; ///< Absolute tolerance
+  BoutReal rtol; ///< Relative tolerance
+  BoutReal stol; ///< Convergence tolerance
+
+  int maxnl; ///< Maximum nonlinear iterations per SNES solve
+  int maxf; ///< Maximum number of function evaluations allowed in the solver (default: 10000)
+  int maxl; ///< Maximum linear iterations
+
+  std::string ts_type;          ///< PETSc TS time solver type
+  std::string adapt_type;       ///< TSAdaptType timestep adaptation
+  std::string snes_type;        ///< PETSc SNES nonlinear solver type
+  std::string ksp_type;         ///< PETSc KSP linear solver type
+  std::string pc_type;          ///< Preconditioner type
+  std::string pc_hypre_type;    ///< Hypre preconditioner type
+  std::string line_search_type; ///< Line search type
+
+  bool matrix_free;          ///< Use matrix free Jacobian
+  bool matrix_free_operator; ///< Use matrix free Jacobian in the operator?
+  int lag_jacobian;          ///< Re-use Jacobian
+  bool use_coloring;         ///< Use matrix coloring
+  void updateColoring();     ///< Updates the coloring using Jfd
+
+  bool kspsetinitialguessnonzero; ///< Set initial guess to non-zero
+
   BoutReal start_timestep;
   int mxstep;
 };
