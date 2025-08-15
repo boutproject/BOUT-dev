@@ -35,19 +35,25 @@
 #include <vector>
 
 #include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/globals.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/petsc_interface.hxx>
+#include <bout/solver.hxx>
+#include <bout/unused.hxx>
 #include <bout/utils.hxx>
 
 #include <petsc.h>
+#include <petscerror.h>
+#include <petscistypes.h>
 #include <petscmat.h>
-#include <petscpctypes.h>
+#include <petscpc.h>
 #include <petscsnes.h>
 #include <petscsys.h>
+#include <petscsystypes.h>
 #include <petscts.h>
 #include <petscvec.h>
 
@@ -149,7 +155,7 @@ PetscErrorCode solver_ijacobian_color(TS ts, PetscReal t, Vec U, Vec Udot,
   auto* solver = static_cast<PetscSolver*>(ctx);
   solver->shift = shift;
 
-  return TSComputeIJacobianDefaultColor(ts, t, U, Udot, shift, J, B, NULL);
+  return TSComputeIJacobianDefaultColor(ts, t, U, Udot, shift, J, B, nullptr);
 }
 
 // This function is called by the TS object every internal timestep
@@ -765,7 +771,7 @@ int PetscSolver::init() {
 
                   // 3D fields on this cell
                   for (int j = 0; j < n3d; j++) {
-                    PetscInt col = ind2 + j;
+                    PetscInt const col = ind2 + j;
                     int ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
 
                     if (ierr != 0) {
@@ -952,13 +958,13 @@ PetscErrorCode PetscSolver::pre(Vec x, Vec y) {
 
 void PetscSolver::updateColoring() {
   // Re-calculate the coloring
-  MatColoring coloring = NULL;
+  MatColoring coloring{nullptr};
   MatColoringCreate(Jfd, &coloring);
   MatColoringSetType(coloring, MATCOLORINGGREEDY);
   MatColoringSetFromOptions(coloring);
 
   // Calculate new index sets
-  ISColoring iscoloring = NULL;
+  ISColoring iscoloring{nullptr};
   MatColoringApply(coloring, &iscoloring);
   MatColoringDestroy(&coloring);
 
@@ -972,13 +978,16 @@ void PetscSolver::updateColoring() {
     //
     // Note: The cast is horrible but the function signature
     //       varies between PETSc versions in ways that break
-    //       reinterpret_cast.
-    MatFDColoringSetFunction(fdcoloring, (MatFDColoringFn)SNESTSFormFunction, ts);
+    //       reinterpret_cast and a C cast to MatFDColoringFn.
+    //       This is the cast that PETSc examples use.
+    MatFDColoringSetFunction(fdcoloring, (PetscErrorCode (*)(void))SNESTSFormFunction,
+                             ts);
   } else {
     // SNESTSFormFunction is not available for SUNDIALS.
     // This solver_form_function needs to know the shift
     // (SUNDIALS' gamma) that we capture in solver_ijacobian_color.
-    MatFDColoringSetFunction(fdcoloring, (MatFDColoringFn)solver_form_function, this);
+    MatFDColoringSetFunction(fdcoloring, (PetscErrorCode (*)(void))solver_form_function,
+                             this);
   }
   MatFDColoringSetFromOptions(fdcoloring);
   MatFDColoringSetUp(Jfd, iscoloring, fdcoloring);

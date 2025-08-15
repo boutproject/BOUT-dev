@@ -60,6 +60,7 @@ class Options;
 #define PETSC_HAVE_BROKEN_RECURSIVE_MACRO
 
 #include <petsc.h> // IWYU pragma: export
+#include <petscts.h>
 #include <petscversion.h>
 
 #include "bout/boutexception.hxx"

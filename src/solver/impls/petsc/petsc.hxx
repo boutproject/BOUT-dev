@@ -48,7 +48,7 @@ class PetscSolver;
 
 #include <petsc.h>
 #include <petscksp.h>
-#include <petscpctypes.h>
+#include <petscmat.h>
 #include <petscsnes.h>
 #include <petscts.h>
 
@@ -69,7 +69,7 @@ public:
   // These functions used internally (but need to be public)
 
   /// Wrapper for the RHS function
-  PetscErrorCode rhs(PetscReal t, Vec globalin, Vec globalout, bool linear);
+  PetscErrorCode rhs(BoutReal t, Vec udata, Vec dudata, bool linear);
   /// Residual calculation.
   PetscErrorCode formFunction(Vec U, Vec F);
   /// Wrapper for the preconditioner
