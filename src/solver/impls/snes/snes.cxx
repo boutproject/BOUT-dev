@@ -377,8 +377,8 @@ int SNESSolver::init() {
       auto n_cross = (*options)["stencil:cross"]
                          .doc("Extent of stencil (cross)")
                          .withDefault<int>(0);
-      //Set n_taxi 2 if nothing else is set
-      //Probably a better way to do this
+      // Set n_taxi 2 if nothing else is set
+      // Probably a better way to do this
       if (n_square == 0 && n_taxi == 0 && n_cross == 0) {
         output_info.write("Setting solver:stencil:taxi = 2\n");
         n_taxi = 2;
@@ -485,7 +485,7 @@ int SNESSolver::init() {
         d_nnz.reserve(nlocal);
 
         for (int i = 0; i < nlocal; ++i) {
-          //Assume all elements in the z direction are potentially coupled
+          // Assume all elements in the z direction are potentially coupled
           d_nnz.emplace_back(d_nnz_map3d[i].size() * mesh->LocalNz
                              + d_nnz_map2d[i].size());
           o_nnz.emplace_back(o_nnz_map3d[i].size() * mesh->LocalNz
@@ -598,9 +598,22 @@ int SNESSolver::init() {
       MatAssemblyBegin(Jfd, MAT_FINAL_ASSEMBLY);
       MatAssemblyEnd(Jfd, MAT_FINAL_ASSEMBLY);
 
-      //The above will probably miss some non-zero entries at process boundaries
-      //Making sure the colouring matrix is symmetric will in some/all(?)
-      //of the missing non-zeros
+      {
+        // Test if the matrix is symmetric
+        // Values are 0 or 1 so tolerance (1e-5) shouldn't matter
+        PetscBool symmetric;
+        ierr = MatIsSymmetric(Jfd, 1e-5, &symmetric);
+        CHKERRQ(ierr);
+        if (!symmetric) {
+          output_warn.write("Jacobian pattern is not symmetric\n");
+        }
+      }
+
+      // The above can miss entries around the X-point branch cut:
+      // The diagonal terms are complicated because moving in X then Y
+      // is different from moving in Y then X at the X-point.
+      // Making sure the colouring matrix is symmetric does not
+      // necessarily give the correct stencil but may help.
       if ((*options)["force_symmetric_coloring"]
               .doc("Modifies coloring matrix to force it to be symmetric")
               .withDefault<bool>(false)) {
