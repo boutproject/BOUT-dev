@@ -361,6 +361,9 @@ int PetscSolver::init() {
   CHKERRQ(ierr);
 #endif
 
+  // Allow TS to recover from SNES failures
+  PetscCall(TSSetMaxSNESFailures(ts, PETSC_UNLIMITED));
+
   // Set the current solution
   ierr = TSSetSolution(ts, u);
   CHKERRQ(ierr);
