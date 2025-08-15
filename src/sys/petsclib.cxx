@@ -15,6 +15,7 @@
 #include <petscoptions.h>
 #include <petscsnes.h>
 #include <petscsys.h>
+#include <petscts.h>
 #include <petscversion.h>
 
 #include <string>

@@ -47,6 +47,9 @@ class PetscSolver;
 #include <bout/vector3d.hxx>
 
 #include <petsc.h>
+#include <petscksp.h>
+#include <petscpctypes.h>
+#include <petscsnes.h>
 #include <petscts.h>
 
 #include <vector>

@@ -44,6 +44,7 @@
 #include <bout/utils.hxx>
 
 #include <petsc.h>
+#include <petscmat.h>
 #include <petscpctypes.h>
 #include <petscsnes.h>
 #include <petscsys.h>
@@ -294,7 +295,8 @@ int PetscSolver::init() {
   // Get total problem size
   int neq;
   if (bout::globals::mpi->MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM,
-                                        BoutComm::get())) {
+                                        BoutComm::get())
+      != 0) {
     throw BoutException("MPI_Allreduce failed!");
   }
 
@@ -967,12 +969,16 @@ void PetscSolver::updateColoring() {
     // Use the SNES function that is defined by the TS method
     // SNESTSFormFunction is defined in PETSc ts.c
     // The ctx pointer should be the TS object
-    MatFDColoringSetFunction(fdcoloring,
-                             reinterpret_cast<MatFDColoringFn>(SNESTSFormFunction), ts);
+    //
+    // Note: The cast is horrible but the function signature
+    //       varies between PETSc versions in ways that break
+    //       reinterpret_cast.
+    MatFDColoringSetFunction(fdcoloring, (MatFDColoringFn)SNESTSFormFunction, ts);
   } else {
-    // SNESTSFormFunction is not available for SUNDIALS
-    MatFDColoringSetFunction(
-        fdcoloring, reinterpret_cast<MatFDColoringFn>(solver_form_function), this);
+    // SNESTSFormFunction is not available for SUNDIALS.
+    // This solver_form_function needs to know the shift
+    // (SUNDIALS' gamma) that we capture in solver_ijacobian_color.
+    MatFDColoringSetFunction(fdcoloring, (MatFDColoringFn)solver_form_function, this);
   }
   MatFDColoringSetFromOptions(fdcoloring);
   MatFDColoringSetUp(Jfd, iscoloring, fdcoloring);
