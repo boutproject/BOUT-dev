@@ -43,7 +43,14 @@
 
 #include <bout/output.hxx>
 
+#include "petscsys.h"
+#include "petscts.h"
 #include "petscsnes.h"
+
+#ifndef PETSC_UNLIMITED
+// Introduced in PETSc 3.22
+#define PETSC_UNLIMITED -3
+#endif
 
 class ColoringStencil {
 private:
