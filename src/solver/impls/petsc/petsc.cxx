@@ -43,9 +43,9 @@
 
 #include <bout/output.hxx>
 
+#include "petscsnes.h"
 #include "petscsys.h"
 #include "petscts.h"
-#include "petscsnes.h"
 
 #ifndef PETSC_UNLIMITED
 // Introduced in PETSc 3.22
