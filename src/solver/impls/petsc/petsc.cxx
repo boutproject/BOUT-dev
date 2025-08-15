@@ -49,7 +49,7 @@
 
 #ifndef PETSC_UNLIMITED
 // Introduced in PETSc 3.22
-#define PETSC_UNLIMITED -3
+#define PETSC_UNLIMITED (-3)
 #endif
 
 class ColoringStencil {
@@ -94,7 +94,7 @@ public:
 // PETSc callback function for matrix-free preconditioner
 static PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
   // Get the context
-  void* ctx;
+  void* ctx = nullptr;
   int ierr = PCShellGetContext(pc, &ctx);
   CHKERRQ(ierr);
   // Run the preconditioner
@@ -178,7 +178,7 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
     ierr = VecRestoreArrayRead(interpolatedX, &x);
     CHKERRQ(ierr);
 
-    if (s->call_monitors(output_time, i++, s->getNumberOutputSteps())) {
+    if (s->call_monitors(output_time, i++, s->getNumberOutputSteps()) != 0) {
       PetscFunctionReturn(1);
     }
 
@@ -669,9 +669,9 @@ int PetscSolver::init() {
 
         for (int i = 0; i < nlocal; ++i) {
           // Assume all elements in the z direction are potentially coupled
-          d_nnz.emplace_back(d_nnz_map3d[i].size() * mesh->LocalNz
+          d_nnz.emplace_back((d_nnz_map3d[i].size() * mesh->LocalNz)
                              + d_nnz_map2d[i].size());
-          o_nnz.emplace_back(o_nnz_map3d[i].size() * mesh->LocalNz
+          o_nnz.emplace_back((o_nnz_map3d[i].size() * mesh->LocalNz)
                              + o_nnz_map2d[i].size());
         }
       }
@@ -687,7 +687,7 @@ int PetscSolver::init() {
       // Mark non-zero entries
 
       output_progress.write("Marking non-zero Jacobian entries\n");
-      PetscScalar val = 1.0;
+      PetscScalar const val = 1.0;
       for (int x = mesh->xstart; x <= mesh->xend; x++) {
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
 
@@ -706,14 +706,14 @@ int PetscSolver::init() {
                 continue;
               }
 
-              int ind2 = ROUND(index(xi, yi, 0));
+              int const ind2 = ROUND(index(xi, yi, 0));
               if (ind2 < 0) {
                 continue; // A boundary point
               }
 
               // Depends on all variables on this cell
               for (int j = 0; j < n2d; j++) {
-                PetscInt col = ind2 + j;
+                PetscInt const col = ind2 + j;
                 ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
                 CHKERRQ(ierr);
               }
@@ -721,7 +721,7 @@ int PetscSolver::init() {
           }
           // 3D fields
           for (int z = 0; z < mesh->LocalNz; z++) {
-            int ind = ROUND(index(x, y, z));
+            int const ind = ROUND(index(x, y, z));
 
             for (int i = 0; i < n3d; i++) {
               PetscInt row = ind + i;
@@ -731,7 +731,7 @@ int PetscSolver::init() {
 
               // Depends on 2D fields
               for (int j = 0; j < n2d; j++) {
-                PetscInt col = ind0 + j;
+                PetscInt const col = ind0 + j;
                 ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
                 CHKERRQ(ierr);
               }
