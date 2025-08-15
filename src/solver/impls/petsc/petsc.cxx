@@ -346,6 +346,9 @@ int PetscSolver::init() {
   // Allow TS to recover from SNES failures
   PetscCall(TSSetMaxSNESFailures(ts, PETSC_UNLIMITED));
 
+  // Recover from step rejections
+  PetscCall(TSSetMaxStepRejections(ts, PETSC_UNLIMITED));
+
   // Set the current solution
   PetscCall(TSSetSolution(ts, u));
   // Allow TS to step over the final time
@@ -395,9 +398,9 @@ int PetscSolver::init() {
     // Note: If the 'Amat' Jacobian is matrix free, SNESComputeJacobian
     //       always updates its reference 'u' vector every nonlinear iteration
     SNESSetLagJacobian(snes, lag_jacobian);
-    SNESSetLagJacobianPersists(snes, PETSC_FALSE);
+    SNESSetLagJacobianPersists(snes, PETSC_TRUE);
 
-    SNESSetLagPreconditionerPersists(snes, PETSC_FALSE);
+    SNESSetLagPreconditionerPersists(snes, PETSC_TRUE);
     SNESSetLagPreconditioner(snes, 1); // Rebuild when Jacobian is rebuilt
 
     // Get and configure the KSP linear solver
