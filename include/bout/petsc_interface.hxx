@@ -573,7 +573,7 @@ PetscVector<T> operator*(const PetscMatrix<T>& mat, const PetscVector<T>& vec) {
 namespace bout {
 template <class T>
 constexpr auto cast_MatFDColoringFn(T func) {
-  return func;
+  return reinterpret_cast<MatFDColoringFn>(func); // NOLINT(*-reinterpret-cast)
 }
 } // namespace bout
 #else
