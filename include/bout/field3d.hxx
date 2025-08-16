@@ -237,12 +237,22 @@ public:
    */
   void splitParallelSlices();
 
+  /// Separate fields for yup and ydown, with memory allocated. Note:
+  /// After this the parallel slices will be allocated and unique, but
+  /// may contain uninitialised values.
   void splitParallelSlicesAndAllocate();
 
   /*!
    * Clear the parallel slices, yup and ydown
    */
   void clearParallelSlices();
+
+  /// Returns a shallow copy without parallel slices
+  Field3D withoutParallelSlices() const {
+    Field3D result{getMesh(), getLocation(), getDirections(), getRegionID()};
+    result.data = data;
+    return result;
+  }
 
   /// Check if this field has yup and ydown fields
   bool hasParallelSlices() const {
@@ -488,10 +498,11 @@ public:
   friend class Vector2D;
 
   Field3D& calcParallelSlices();
-  void allowParallelSlices([[maybe_unused]] bool allow) {
+  Field3D& allowParallelSlices([[maybe_unused]] bool allow) {
 #if CHECK > 0
     allowCalcParallelSlices = allow;
 #endif
+    return *this;
   }
 
   void applyBoundary(bool init = false) override;

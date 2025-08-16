@@ -108,12 +108,21 @@ void load_parallel_metric_components([[maybe_unused]] Coordinates* coords,
 #if BOUT_USE_METRIC_3D
 #define LOAD_PAR(var, doZero) \
   load_parallel_metric_component(#var, coords->var, offset, doZero)
+
+  // Parallel slices of metric components must NOT be calculated by
+  // interpolation. The X and Z coordinates are defined independently on
+  // on each poloidal plane. Instead, these yup/ydown fields are calculated
+  // by mapping coordinate points, and calculating metrics on the mapped points.
+  LOAD_PAR(dy, false);
+
   LOAD_PAR(g11, false);
   LOAD_PAR(g22, false);
   LOAD_PAR(g33, false);
   LOAD_PAR(g12, false);
   LOAD_PAR(g13, false);
   LOAD_PAR(g23, false);
+
+  // LOAD_PAR(Bxy, false);  // Not yet written to mesh file
 
   LOAD_PAR(g_11, false);
   LOAD_PAR(g_22, false);
@@ -430,6 +439,7 @@ void FCITransform::calcParallelSlices(Field3D& f) {
   // Interpolate f onto yup and ydown fields
   for (const auto& map : field_line_maps) {
     f.ynext(map.offset) = map.interpolate(f);
+    //f.ynext(map.offset) = map.integrate(f);
     f.ynext(map.offset).setRegion(fmt::format("RGN_YPAR_{:+d}", map.offset));
   }
 }

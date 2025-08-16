@@ -150,7 +150,7 @@ public:
     return bndry_position != rhs.bndry_position;
   }
 
-#define ITER() for (int i = 0; i < localmesh->ystart - abs_offset(); ++i)
+#define ITER() for (int i = 0; i <= localmesh->ystart - abs_offset(); ++i)
   // dirichlet boundary code
   void dirichlet_o1(Field3D& f, BoutReal value) const {
     ITER() { getAt(f, i) = value; }
