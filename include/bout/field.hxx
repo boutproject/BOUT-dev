@@ -560,7 +560,7 @@ FIELD_FUNC(exp, ::exp)
 /// Natural logarithm of \p f over region \p rgn, inverse of
 /// exponential
 ///
-///     \f$\ln(\exp(f)) = f\f$
+/// \f[\ln(\exp(f)) = f\f]
 ///
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the rgn argument)

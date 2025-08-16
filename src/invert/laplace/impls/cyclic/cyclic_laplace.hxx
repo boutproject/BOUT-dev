@@ -1,10 +1,10 @@
-/**************************************************************************
+/*!\file
  * Perpendicular Laplacian inversion in serial or parallel
  * 
  * Simplified version of serial_tri and spt algorithms. Uses FFTs and
  * the cyclic reduction class to solve tridiagonal systems.
- *
- **************************************************************************
+ */
+/**************************************************************************
  * Copyright 2013 B.D.Dudson
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
@@ -54,9 +54,6 @@ RegisterLaplace<LaplaceCyclic> registerlaplacecycle(LAPLACE_CYCLIC);
 }
 
 /// Solves the 2D Laplacian equation using the CyclicReduce class
-/*!
- * 
- */
 class LaplaceCyclic : public Laplacian {
 public:
   LaplaceCyclic(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,

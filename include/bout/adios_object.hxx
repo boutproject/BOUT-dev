@@ -1,4 +1,4 @@
-/*!************************************************************************
+/*!\file*******************************************************************
  * Provides access to the ADIOS library, handling initialisation and
  * finalisation.
  *

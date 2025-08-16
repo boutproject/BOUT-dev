@@ -1,8 +1,6 @@
-/************************************************************************/ /**
- * \brief Openmp utilitiy wrappers
- * 
- * 
- **************************************************************************
+/// \file
+///  Openmp utilitiy wrappers
+/**************************************************************************
  * Copyright 2017
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
@@ -40,8 +38,8 @@
 #define INDIRECT1(a) INDIRECT0(omp a)
 #define INDIRECT2(b) INDIRECT1(b)
 
-//Define a macro wrapper to the use of `#pragma omp` to avoid unknown pragma
-//warnings when compiling without openmp support.
+/// Wrapper to use `#pragma omp` while avoiding unknown pragma
+/// warnings when compiling without openmp support.
 #define BOUT_OMP_SAFE(...) _Pragma(INDIRECT2(__VA_ARGS__))
 #define BOUT_OMP(...) _Pragma(INDIRECT2(__VA_ARGS__))
 #else

@@ -1,3 +1,5 @@
+.. _sec-variable-init:
+
 Variable initialisation
 =======================
 

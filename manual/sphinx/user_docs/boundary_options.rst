@@ -108,7 +108,7 @@ Boundary conditions for non-orthogonal grids
 
 If non-orthogonal grids are used (meaning that the x- and y-directions are not orthogonal,
 so ``g12 != 0.``), then corner cells may be required. The boundary conditions are applied
-in corner cells[#disablecorners]_ by applying the y-boundary condition using x-boundary
+in corner cells [#disablecorners]_ by applying the y-boundary condition using x-boundary
 values. This requires that x-boundary conditions are applied before y-boundary conditions.
 The ordering is taken care of by the methods described in this section, but also needs to
 be respected by any custom boundary conditions in user code (e.g. sheath boundary
