@@ -63,8 +63,9 @@ static PetscErrorCode laplacePCapply(PC pc, Vec x, Vec y) {
 
 LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
                            Solver* UNUSED(solver))
-    : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
-      issetD(false), issetC(false), issetE(false),
+    : Laplacian(opt, loc, mesh_in), A(0.0, mesh_in), C1(1.0, mesh_in), C2(1.0, mesh_in),
+      D(1.0, mesh_in), Ex(0.0, mesh_in), Ez(0.0, mesh_in), issetD(false), issetC(false),
+      issetE(false), sol(mesh_in),
       lib(opt == nullptr ? &(Options::root()["laplace"]) : opt) {
   A.setLocation(location);
   C1.setLocation(location);
@@ -335,7 +336,8 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b) { return solve(b, b); }
  *
  * \returns sol     The solution x of the problem Ax=b.
  */
-FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
+FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
+                              const bool forward) {
   TRACE("LaplacePetsc::solve");
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
@@ -346,7 +348,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   checkFlags();
 #endif
 
-  int y = b.getIndex(); // Get the Y index
+  const int y = b.getIndex(); // Get the Y index
   sol.setIndex(y);      // Initialize the solution field.
   sol = 0.;
 
@@ -354,12 +356,12 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   MatGetOwnershipRange(MatA, &Istart, &Iend);
 
   int i = Istart; // The row in the PETSc matrix
-  {
-    Timer timer("petscsetup");
 
-    //     if ((fourth_order) && !(lastflag&INVERT_4TH_ORDER)) throw BoutException("Should not change INVERT_4TH_ORDER flag in LaplacePetsc: 2nd order and 4th order require different pre-allocation to optimize PETSc solver");
+  auto timer = std::make_unique<Timer>("petscsetup");
 
-    /* Set Matrix Elements
+  //     if ((fourth_order) && !(lastflag&INVERT_4TH_ORDER)) throw BoutException("Should not change INVERT_4TH_ORDER flag in LaplacePetsc: 2nd order and 4th order require different pre-allocation to optimize PETSc solver");
+
+  /* Set Matrix Elements
    *
    * Loop over locally owned rows of matrix A
    * i labels NODE POINT from
@@ -373,91 +375,92 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
    * In other word the indexing is done in a row-major order, but starting at
    * bottom left rather than top left
    */
-    // X=0 to localmesh->xstart-1 defines the boundary region of the domain.
-    // Set the values for the inner boundary region
-    if (localmesh->firstX()) {
-      for (int x = 0; x < localmesh->xstart; x++) {
-        for (int z = 0; z < localmesh->LocalNz; z++) {
-          PetscScalar val; // Value of element to be set in the matrix
-          // If Neumann Boundary Conditions are set.
-          if (isInnerBoundaryFlagSet(INVERT_AC_GRAD)) {
-            // Set values corresponding to nodes adjacent in x
-            if (fourth_order) {
-              // Fourth Order Accuracy on Boundary
-              Element(i, x, z, 0, 0,
-                      -25.0 / (12.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
-                      MatA);
-              Element(i, x, z, 1, 0,
-                      4.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
-              Element(i, x, z, 2, 0,
-                      -3.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
-              Element(i, x, z, 3, 0,
-                      4.0 / (3.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
-                      MatA);
-              Element(i, x, z, 4, 0,
-                      -1.0 / (4.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
-                      MatA);
-            } else {
-              // Second Order Accuracy on Boundary
-              //   Element(i,x,z, 0, 0, -3.0 / (2.0*coords->dx(x,y)), MatA );
-              //   Element(i,x,z, 1, 0,  2.0 / coords->dx(x,y), MatA );
-              //   Element(i,x,z, 2, 0, -1.0 / (2.0*coords->dx(x,y)), MatA );
-              //   Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0
-              //   in case 4th order flag was used previously: not allowed now
-              //   Element(i,x,z, 4, 0, 0.0, MatA );
-              // Second Order Accuracy on Boundary, set half-way between grid points
-              Element(i, x, z, 0, 0,
-                      -1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
-              Element(i, x, z, 1, 0,
-                      1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
-              Element(i, x, z, 2, 0, 0.0, MatA);
-              //                      Element(i,x,z, 3, 0, 0.0, MatA );  // Reset
-              //                      these elements to 0 in case 4th order flag was
-              //                      used previously: not allowed now
-              //                      Element(i,x,z, 4, 0, 0.0, MatA );
-            }
+  // X=0 to localmesh->xstart-1 defines the boundary region of the domain.
+  // Set the values for the inner boundary region
+  if (localmesh->firstX()) {
+    for (int x = 0; x < localmesh->xstart; x++) {
+      for (int z = 0; z < localmesh->LocalNz; z++) {
+        PetscScalar val; // Value of element to be set in the matrix
+        // If Neumann Boundary Conditions are set.
+        if (isInnerBoundaryFlagSet(INVERT_AC_GRAD)) {
+          // Set values corresponding to nodes adjacent in x
+          if (fourth_order) {
+            // Fourth Order Accuracy on Boundary
+            Element(i, x, z, 0, 0,
+                    -25.0 / (12.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
+                    MatA);
+            Element(i, x, z, 1, 0,
+                    4.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
+            Element(i, x, z, 2, 0,
+                    -3.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
+            Element(i, x, z, 3, 0,
+                    4.0 / (3.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
+                    MatA);
+            Element(i, x, z, 4, 0,
+                    -1.0 / (4.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
+                    MatA);
           } else {
-            if (fourth_order) {
-              // Set Diagonal Values to 1
-              Element(i, x, z, 0, 0, 1., MatA);
-
-              // Set off diagonal elements to zero
-              Element(i, x, z, 1, 0, 0.0, MatA);
-              Element(i, x, z, 2, 0, 0.0, MatA);
-              Element(i, x, z, 3, 0, 0.0, MatA);
-              Element(i, x, z, 4, 0, 0.0, MatA);
-            } else {
-              Element(i, x, z, 0, 0, 0.5, MatA);
-              Element(i, x, z, 1, 0, 0.5, MatA);
-              Element(i, x, z, 2, 0, 0., MatA);
-            }
+            // Second Order Accuracy on Boundary
+            //   Element(i,x,z, 0, 0, -3.0 / (2.0*coords->dx(x,y)), MatA );
+            //   Element(i,x,z, 1, 0,  2.0 / coords->dx(x,y), MatA );
+            //   Element(i,x,z, 2, 0, -1.0 / (2.0*coords->dx(x,y)), MatA );
+            //   Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0
+            //   in case 4th order flag was used previously: not allowed now
+            //   Element(i,x,z, 4, 0, 0.0, MatA );
+            // Second Order Accuracy on Boundary, set half-way between grid points
+            Element(i, x, z, 0, 0,
+                    -1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
+            Element(i, x, z, 1, 0,
+                    1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
+            Element(i, x, z, 2, 0, 0.0, MatA);
+            //                      Element(i,x,z, 3, 0, 0.0, MatA );  // Reset
+            //                      these elements to 0 in case 4th order flag was
+            //                      used previously: not allowed now
+            //                      Element(i,x,z, 4, 0, 0.0, MatA );
           }
+        } else {
+          if (fourth_order) {
+            // Set Diagonal Values to 1
+            Element(i, x, z, 0, 0, 1., MatA);
 
-          val = 0; // Initialize val
-
-          // Set Components of RHS
-          // If the inner boundary value should be set by b or x0
-          if (isInnerBoundaryFlagSet(INVERT_RHS)) {
-            val = b[x][z];
-          } else if (isInnerBoundaryFlagSet(INVERT_SET)) {
-            val = x0[x][z];
+            // Set off diagonal elements to zero
+            Element(i, x, z, 1, 0, 0.0, MatA);
+            Element(i, x, z, 2, 0, 0.0, MatA);
+            Element(i, x, z, 3, 0, 0.0, MatA);
+            Element(i, x, z, 4, 0, 0.0, MatA);
+          } else {
+            Element(i, x, z, 0, 0, 0.5, MatA);
+            Element(i, x, z, 1, 0, 0.5, MatA);
+            Element(i, x, z, 2, 0, 0., MatA);
           }
-
-          // Set components of the RHS (the PETSc vector bs)
-          // 1 element is being set in row i to val
-          // INSERT_VALUES replaces existing entries with new values
-          VecSetValues(bs, 1, &i, &val, INSERT_VALUES);
-
-          // Set components of the and trial solution (the PETSc vector xs)
-          // 1 element is being set in row i to val
-          // INSERT_VALUES replaces existing entries with new values
-          val = x0[x][z];
-          VecSetValues(xs, 1, &i, &val, INSERT_VALUES);
-
-          i++; // Increment row in Petsc matrix
         }
+
+        val = 0; // Initialize val
+
+        // Set Components of RHS
+        // If the inner boundary value should be set by b or x0
+        if (isInnerBoundaryFlagSet(INVERT_RHS)) {
+          val = b[x][z];
+        } else if (isInnerBoundaryFlagSet(INVERT_SET)) {
+          val = x0[x][z];
+        }
+
+        // Set components of the RHS (the PETSc vector bs)
+        // 1 element is being set in row i to val
+        // INSERT_VALUES replaces existing entries with new values
+        VecSetValues(bs, 1, &i, &val, INSERT_VALUES);
+
+        // Set components of the and trial solution (the PETSc vector xs)
+        // 1 element is being set in row i to val
+        // INSERT_VALUES replaces existing entries with new values
+        val = x0[x][z];
+        VecSetValues(xs, 1, &i, &val, INSERT_VALUES);
+
+        ASSERT3(i == getIndex(x, z));
+        i++; // Increment row in Petsc matrix
       }
     }
+  }
 
     // Set the values for the main domain
     for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
@@ -471,11 +474,11 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
         // Set the matrix coefficients
         Coeffs(x, y, z, A1, A2, A3, A4, A5);
 
-        BoutReal dx = coords->dx(x, y, z);
-        BoutReal dx2 = SQ(dx);
-        BoutReal dz = coords->dz(x, y, z);
-        BoutReal dz2 = SQ(dz);
-        BoutReal dxdz = dx * dz;
+        const BoutReal dx = coords->dx(x, y, z);
+        const BoutReal dx2 = SQ(dx);
+        const BoutReal dz = coords->dz(x, y, z);
+        const BoutReal dz2 = SQ(dz);
+        const BoutReal dxdz = dx * dz;
 
         ASSERT3(std::isfinite(A1));
         ASSERT3(std::isfinite(A2));
@@ -631,6 +634,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
         // Set Components of Trial Solution Vector
         val = x0[x][z];
         VecSetValues(xs, 1, &i, &val, INSERT_VALUES);
+        ASSERT3(i == getIndex(x, z));
         i++;
       }
     }
@@ -714,7 +718,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
           // INSERT_VALUES replaces existing entries with new values
           val = x0[x][z];
           VecSetValues(xs, 1, &i, &val, INSERT_VALUES);
-
+          ASSERT3(i == getIndex(x, z));
           i++; // Increment row in Petsc matrix
         }
       }
@@ -739,7 +743,8 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
     VecAssemblyBegin(xs);
     VecAssemblyEnd(xs);
 
-    // Configure Linear Solver
+    if (not forward) {
+      // Configure Linear Solver
 #if PETSC_VERSION_GE(3, 5, 0)
     KSPSetOperators(ksp, MatA, MatA);
 #else
@@ -805,13 +810,13 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       lib.setOptionsFromInputFile(ksp);
     }
-  }
+    timer.reset();
 
-  // Call the actual solver
-  {
-    Timer timer("petscsolve");
-    KSPSolve(ksp, bs, xs); // Call the solver to solve the system
-  }
+    // Call the actual solver
+    {
+      Timer timer("petscsolve");
+      KSPSolve(ksp, bs, xs); // Call the solver to solve the system
+    }
 
   KSPConvergedReason reason;
   KSPGetConvergedReason(ksp, &reason);
@@ -823,20 +828,27 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
         "petsc_laplace: inversion failed to converge. KSPConvergedReason: {} ({})",
         KSPConvergedReasons[reason], static_cast<int>(reason));
   }
-
-  // Add data to FieldPerp Object
-  i = Istart;
-  // Set the inner boundary values
-  if (localmesh->firstX()) {
-    for (int x = 0; x < localmesh->xstart; x++) {
-      for (int z = 0; z < localmesh->LocalNz; z++) {
-        PetscScalar val = 0;
-        VecGetValues(xs, 1, &i, &val);
-        sol[x][z] = val;
-        i++; // Increment row in Petsc matrix
+    } else {
+      timer.reset();
+      PetscErrorCode err = MatMult(MatA, bs, xs);
+      if (err != PETSC_SUCCESS) {
+        throw BoutException("MatMult failed with {:d}", static_cast<int>(err));
       }
     }
-  }
+
+    // Add data to FieldPerp Object
+    i = Istart;
+    // Set the inner boundary values
+    if (localmesh->firstX()) {
+      for (int x = 0; x < localmesh->xstart; x++) {
+        for (int z = 0; z < localmesh->LocalNz; z++) {
+          PetscScalar val = 0;
+          VecGetValues(xs, 1, &i, &val);
+          sol[x][z] = val;
+          i++; // Increment row in Petsc matrix
+        }
+      }
+    }
 
   // Set the main domain values
   for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
@@ -870,6 +882,33 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   return sol;
 }
 
+int LaplacePetsc::getIndex(const int x, const int z) {
+  // Need to convert LOCAL x to GLOBAL x in order to correctly calculate
+  // PETSC Matrix Index.
+  int xoffset = Istart / meshz;
+  if (Istart % meshz != 0) {
+    throw BoutException("Petsc index sanity check 3 failed");
+  }
+
+  // Calculate the row to be set
+  int row_new = x; // should never be out of range.
+  if (!localmesh->firstX()) {
+    row_new += (xoffset - localmesh->xstart);
+  }
+
+  // Calculate the column to be set
+  int col_new = z;
+  if (col_new < 0) {
+    col_new += meshz;
+  } else if (col_new > meshz - 1) {
+    col_new -= meshz;
+  }
+  ASSERT3(0 <= col_new and col_new < meshz);
+
+  // Convert to global indices
+  return (row_new * meshz) + col_new;
+}
+
 /*!
  * Sets the elements of the matrix A, which is used to solve the problem Ax=b.
  *
@@ -885,33 +924,10 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
  *
  * \param[out] MatA     The matrix A used in the inversion
  */
-void LaplacePetsc::Element(int i, int x, int z, int xshift, int zshift, PetscScalar ele,
-                           Mat& MatA) {
+void LaplacePetsc::Element(const int i, const int x, const int z, const int xshift,
+                           const int zshift, const PetscScalar ele, Mat& MatA) {
 
-  // Need to convert LOCAL x to GLOBAL x in order to correctly calculate
-  // PETSC Matrix Index.
-  int xoffset = Istart / meshz;
-  if (Istart % meshz != 0) {
-    throw BoutException("Petsc index sanity check 3 failed");
-  }
-
-  // Calculate the row to be set
-  int row_new = x + xshift; // should never be out of range.
-  if (!localmesh->firstX()) {
-    row_new += (xoffset - localmesh->xstart);
-  }
-
-  // Calculate the column to be set
-  int col_new = z + zshift;
-  if (col_new < 0) {
-    col_new += meshz;
-  } else if (col_new > meshz - 1) {
-    col_new -= meshz;
-  }
-
-  // Convert to global indices
-  int index = (row_new * meshz) + col_new;
-
+  const int index = getIndex(x + xshift, z + zshift);
 #if CHECK > 2
   if (!std::isfinite(ele)) {
     throw BoutException("Non-finite element at x={:d}, z={:d}, row={:d}, col={:d}\n", x,

@@ -30,5 +30,5 @@ def FCI_ddy(f):
 ############################################
 # Equations solved
 
-print("input = " + exprToStr(f))
+print("input_field = " + exprToStr(f))
 print("solution = " + exprToStr(FCI_ddy(f)))

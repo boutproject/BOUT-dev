@@ -147,8 +147,9 @@ shifted``, see :ref:`sec-shifted-metric`), the recommended method is
 to apply boundary conditions directly to the ``yup`` and ``ydown``
 parallel slices. This can be done by setting ``bndry_par_yup`` and
 ``bndry_par_ydown``, or ``bndry_par_all`` to set both at once. The
-possible values are ``parallel_dirichlet``, ``parallel_dirichlet_O3``
-and ``parallel_neumann``. The stencils used are the same as for the
+possible values are ``parallel_dirichlet_o1``, ``parallel_dirichlet_o2``,
+``parallel_dirichlet_o3``, ``parallel_neumann_o1``, ``parallel_neumann_o2``
+and ``parallel_neumann_o3``. The stencils used are the same as for the
 standard boundary conditions without the ``parallel_`` prefix, but are
 applied directly to parallel slices. The boundary condition can only
 be applied after the parallel slices are calculated, which is usually
@@ -168,7 +169,7 @@ For example, for an evolving variable ``f``, put a section in the
     [f]
     bndry_xin = dirichlet
     bndry_xout = dirichlet
-    bndry_par_all = parallel_neumann
+    bndry_par_all = parallel_neumann_o2
     bndry_ydown = none
     bndry_yup = none
 
@@ -278,7 +279,7 @@ cells of the base variable. For example, for an evolving variable
     [f]
     bndry_xin = dirichlet
     bndry_xout = dirichlet
-    bndry_par_all = parallel_dirichlet
+    bndry_par_all = parallel_dirichlet_o2
     bndry_ydown = none
     bndry_yup = none
 
@@ -289,7 +290,7 @@ communication, while the perpendicular ones before:
 
     f.applyBoundary();
     mesh->communicate(f);
-    f.applyParallelBoundary("parallel_neumann");
+    f.applyParallelBoundary("parallel_neumann_o2");
 
 Note that during grid generation care has to be taken to ensure that there are
 no "short" connection lengths. Otherwise it can happen that for a point on a
@@ -433,6 +434,130 @@ the upper Y boundary of a 2D variable ``var``::
 
 The `BoundaryRegion` class is defined in
 ``include/boundary_region.hxx``
+
+Y-Boundaries
+------------
+
+The sheath boundaries are often implemented in the physics model.
+Previously of they where implemented using a `RangeIterator`::
+
+    class yboundary_example_legacy {
+    public:
+      yboundary_example_legacy(Options* opt, const Field3D& N, const Field3D& V)
+          : N(N), V(V) {
+        Options& options = *opt;
+        lower_y = options["lower_y"].doc("Boundary on lower y?").withDefault<bool>(lower_y);
+        upper_y = options["upper_y"].doc("Boundary on upper y?").withDefault<bool>(upper_y);
+      }
+    
+      void rhs() {
+        BoutReal totalFlux = 0;
+        if (lower_y) {
+          for (RangeIterator r = mesh->iterateBndryLowerY(); !r.isDone(); r++) {
+            for (int jz = 0; jz < mesh->LocalNz; jz++) {
+              // Calculate flux through surface [normalised m^-2 s^-1],
+              // should be positive since V < 0.0
+              BoutReal flux =
+                  -0.5 * (N(r.ind, mesh->ystart, jz) + N(r.ind, mesh->ystart - 1, jz)) * 0.5
+                  * (V(r.ind, mesh->ystart, jz) + V(r.ind, mesh->ystart - 1, jz));
+              totalFlux += flux;
+            }
+          }
+        }
+        if (upper_y) {
+          for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
+            for (int jz = 0; jz < mesh->LocalNz; jz++) {
+              // Calculate flux through surface [normalised m^-2 s^-1],
+              // should be positive since V < 0.0
+              BoutReal flux = -0.5 * (N(r.ind, mesh->yend, jz) + N(r.ind, mesh->yend + 1, jz))
+                              * 0.5
+                              * (V(r.ind, mesh->yend, jz) + V(r.ind, mesh->yend + 1, jz));
+              totalFlux += flux;
+            }
+          }
+        }
+      }
+    
+    private:
+      bool lower_y{true};
+      bool upper_y{true};
+      const Field3D& N;
+      const Field3D& V;
+    }
+    
+
+This can be replaced using the `YBoundary` class, which not only simplifies the
+code, but also allows to have the same code working with non-field-aligned
+geometries, as flux coordinate independent (FCI) method::
+
+    #include <bout/yboundary_regions.hxx>
+
+    class yboundary_example {
+    public:
+      yboundary_example(Options* opt, const Field3D& N, const Field3D& V) : N(N), V(V) {
+        // Set what kind of yboundaries you want to include
+        yboundary.init(opt);
+      }
+    
+      void rhs() {
+        BoutReal totalFlux = 0;
+        yboundary.iter_pnts([&](auto& pnt) {
+          BoutReal flux = pnt.interpolate_sheath_o1(N) * pnt.interpolate_sheath_o1(V);
+        });
+      }
+    
+    private:
+      YBoundary ybounday;
+      const Field3D& N;
+      const Field3D& V;
+    };
+    
+
+
+There are several member functions of ``pnt``. ``pnt`` is of type
+`BoundaryRegionParIterBase` and `BoundaryRegionIter`, and both should provide
+the same interface. If they don't that is a bug, as the above code is a
+template, that gets instantiated for both types, and thus requires both
+classes to provide the same interface, one for FCI-like boundaries and one for
+field aligned boundaries.
+
+Here is a short summary of some members of ``pnt``, where ``f`` is a :
+
+.. list-table:: Members for boundary operation
+   :widths: 15 70
+   :header-rows: 1
+
+   * - Function
+     - Description
+   * - ``pnt.ythis(f)``
+     - Returns the value at the last point in the domain
+   * - ``pnt.ynext(f)``
+     - Returns the value at the first point in the domain
+   * - ``pnt.yprev(f)``
+     - Returns the value at the second to last point in the domain, if it is
+       valid. NB: this point may not be valid.
+   * - ``pnt.interpolate_sheath_o1(f)``
+     - Returns the value at the boundary, assuming the bounday value has been set
+   * - ``pnt.extrapolate_sheath_o1(f)``
+     - Returns the value at the boundary, extrapolating from the bulk, first order
+   * - ``pnt.extrapolate_sheath_o2(f)``
+     - Returns the value at the boundary, extrapolating from the bulk, second order
+   * - ``pnt.extrapolate_next_o{1,2}(f)``
+     - Extrapolate into the boundary from the bulk, first or second order
+   * - ``pnt.extrapolate_grad_o{1,2}(f)``
+     - Extrapolate the gradient into the boundary, first or second order
+   * - ``pnt.dirichlet_o{1,2,3}(f, v)``
+     - Apply dirichlet boundary conditions with value ``v`` and given order
+   * - ``pnt.neumann_o{1,2,3}(f, v)``
+     - Applies a gradient of ``v / dy`` boundary condition.
+   * - ``pnt.limitFree(f)``
+     - Extrapolate into the boundary using only monotonic decreasing values.
+       ``f`` needs to be positive.
+   * - ``pnt.dir``
+     - The direction of the boundary.
+
+
+
 
 Boundary regions
 ----------------
