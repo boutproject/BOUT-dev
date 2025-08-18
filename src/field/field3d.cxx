@@ -404,9 +404,6 @@ Field3DParallel& Field3DParallel::operator=(const BoutReal val) {
 Field3D& Field3D::calcParallelSlices() {
   ASSERT2(allowCalcParallelSlices);
   getCoordinates()->getParallelTransform().calcParallelSlices(*this);
-  if (this->isFci()) {
-    this->applyParallelBoundaryWithDefault("parallel_neumann_o2");
-  }
   return *this;
 }
 
