@@ -15,6 +15,38 @@
  *
  */
 
+namespace bout {
+namespace parallel_boundary_region {
+
+struct RealPoint {
+  BoutReal s_x;
+  BoutReal s_y;
+  BoutReal s_z;
+};
+
+struct Indices {
+  // Indices of the boundary point
+  Ind3D index;
+  // Intersection with boundary in index space
+  RealPoint intersection;
+  // Distance to intersection
+  BoutReal length;
+  // Angle between field line and boundary
+  // BoutReal angle;
+  // How many points we can go in the opposite direction
+  signed char valid;
+  signed char offset;
+  unsigned char abs_offset;
+  Indices(Ind3D index, RealPoint&& intersection, BoutReal length, signed char valid,
+          signed char offset, unsigned char abs_offset)
+      : index(index), intersection(std::move(intersection)), length(length), valid(valid),
+        offset(offset), abs_offset(abs_offset) {};
+};
+
+using IndicesVec = std::vector<Indices>;
+using IndicesIter = IndicesVec::iterator;
+using IndicesIterConst = IndicesVec::const_iterator;
+
 inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc) {
   if (fm < fc) {
     return 1; // Neumann rather than increasing into boundary
@@ -32,28 +64,7 @@ inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc) {
 }
 
 class BoundaryRegionPar : public BoundaryRegionBase {
-
-  struct RealPoint {
-    BoutReal s_x;
-    BoutReal s_y;
-    BoutReal s_z;
-  };
-
-  struct Indices {
-    // Indices of the boundary point
-    Ind3D index;
-    // Intersection with boundary in index space
-    RealPoint intersection;
-    // Distance to intersection
-    BoutReal length;
-    // Angle between field line and boundary
-    // BoutReal angle;
-    // How many points we can go in the opposite direction
-    signed char valid;
-    signed char offset;
-    unsigned char abs_offset;
-  };
-
+  
   using IndicesVec = std::vector<Indices>;
   using IndicesIter = IndicesVec::iterator;
 
@@ -77,11 +88,11 @@ public:
   /// Add a point to the boundary
   void add_point(Ind3D ind, BoutReal x, BoutReal y, BoutReal z, BoutReal length,
                  signed char valid) {
-    bndry_points.push_back({ind, {x, y, z}, length, valid});
+    bndry_points.emplace_back({ind, {x, y, z}, length, valid});
   }
   void add_point(int ix, int iy, int iz, BoutReal x, BoutReal y, BoutReal z,
                  BoutReal length, signed char valid) {
-    bndry_points.push_back({xyz2ind(ix, iy, iz, localmesh), {x, y, z}, length, valid});
+    bndry_points.emplace_back({xyz2ind(ix, iy, iz, localmesh), {x, y, z}, length, valid});
   }
 
   // final, so they can be inlined
@@ -364,12 +375,9 @@ public:
     if (!bndry_points.empty() && bndry_points.back().index > ind) {
       is_sorted = false;
     }
-    bndry_points.push_back({ind,
-                            {x, y, z},
-                            length,
-                            valid,
-                            offset,
-                            static_cast<unsigned char>(std::abs(offset))});
+    bndry_points.emplace_back(ind, bout::parallel_boundary_region::RealPoint{x, y, z},
+                              length, valid, offset,
+                              static_cast<unsigned char>(std::abs(offset)));
   }
   void add_point(int ix, int iy, int iz, BoutReal x, BoutReal y, BoutReal z,
                  BoutReal length, char valid, signed char offset) {
