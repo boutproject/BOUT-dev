@@ -385,7 +385,9 @@ Field3DParallel& Field3DParallel::operator=(const BoutReal val) {
   track(val, "operator=");
 
   if (isFci()) {
-    ASSERT2(hasParallelSlices());
+    if (!hasParallelSlices()) {
+      splitParallelSlices();
+    }
     for (size_t i = 0; i < numberParallelSlices(); ++i) {
       yup(i) = val;
       ydown(i) = val;
