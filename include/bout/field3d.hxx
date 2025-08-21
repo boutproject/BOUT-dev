@@ -750,7 +750,7 @@ public:
       : Field3D(std::move(data), localmesh, location, directions_in) {
     ensureFieldAligned();
   }
-  Field3DParallel(BoutReal, Mesh*);
+  Field3DParallel(BoutReal, Mesh* mesh = nullptr);
   Field3D& asField3D() { return *this; }
   const Field3D& asField3D() const { return *this; }
 
