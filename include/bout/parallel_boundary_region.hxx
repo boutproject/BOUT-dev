@@ -41,7 +41,7 @@ struct Indices {
   Indices(Ind3D index, RealPoint&& intersection, BoutReal length, signed char valid,
           signed char offset, unsigned char abs_offset)
       : index(index), intersection(std::move(intersection)), length(length), valid(valid),
-        offset(offset), abs_offset(abs_offset) {};
+        offset(offset), abs_offset(abs_offset){};
 };
 
 using IndicesVec = std::vector<Indices>;
