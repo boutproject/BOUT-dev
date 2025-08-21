@@ -270,7 +270,7 @@ if __name__ == "__main__":
     done = [(boutreal, boutreal)]
     for lhs, rhs in itertools.chain(
         itertools.product(fields, fields),
-        itertools.product((field3D, field3DPar, boutreal), (field3D, field3DPar)),
+        itertools.product(fields2, fields2),
     ):
         if (lhs, rhs) in done:
             continue

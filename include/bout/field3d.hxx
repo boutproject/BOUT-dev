@@ -602,6 +602,11 @@ Field3DParallel operator-(BoutReal lhs, const Field3DParallel& rhs);
 Field3DParallel operator*(BoutReal lhs, const Field3DParallel& rhs);
 Field3DParallel operator/(BoutReal lhs, const Field3DParallel& rhs);
 
+Field3DParallel operator+(const Field3DParallel& lhs, BoutReal rhs);
+Field3DParallel operator-(const Field3DParallel& lhs, BoutReal rhs);
+Field3DParallel operator*(const Field3DParallel& lhs, BoutReal rhs);
+Field3DParallel operator/(const Field3DParallel& lhs, BoutReal rhs);
+
 /*!
  * Unary minus. Returns the negative of given field,
  * iterates over whole domain including guard/boundary cells.

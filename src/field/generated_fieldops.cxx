@@ -2886,6 +2886,247 @@ Field3DParallel& Field3DParallel::operator-=(const Field3DParallel& rhs) {
   return *this;
 }
 
+// Provide the C++ wrapper for multiplication of Field3DParallel and BoutReal
+Field3DParallel operator*(const Field3DParallel& lhs, const BoutReal rhs) {
+
+  Field3DParallel result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getRegionID());
+  if (lhs.isFci()) {
+    result.splitParallelSlices();
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) * rhs;
+      result.ydown(i) = lhs.ydown(i) * rhs;
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] * rhs;
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, "BR");
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update Field3DParallel by multiplication with BoutReal
+Field3DParallel& Field3DParallel::operator*=(const BoutReal rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+
+    if (this->isFci()) {
+      for (size_t i{0}; i < yup_fields.size(); ++i) {
+        yup(i) *= rhs;
+        ydown(i) *= rhs;
+      }
+    } else {
+      clearParallelSlices();
+    }
+    checkData(*this);
+    checkData(rhs);
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
+
+    track(rhs, "operator*=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} *= {:s}", this->name, "BR");
+#endif
+
+    checkData(*this);
+
+  } else {
+    track(rhs, "operator*=");
+    (*this) = (*this) * rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for division of Field3DParallel and BoutReal
+Field3DParallel operator/(const Field3DParallel& lhs, const BoutReal rhs) {
+
+  Field3DParallel result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getRegionID());
+  if (lhs.isFci()) {
+    result.splitParallelSlices();
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) / rhs;
+      result.ydown(i) = lhs.ydown(i) / rhs;
+    }
+  }
+
+  const auto tmp = 1.0 / rhs;
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] * tmp;
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, "BR");
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update Field3DParallel by division with BoutReal
+Field3DParallel& Field3DParallel::operator/=(const BoutReal rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+
+    if (this->isFci()) {
+      for (size_t i{0}; i < yup_fields.size(); ++i) {
+        yup(i) /= rhs;
+        ydown(i) /= rhs;
+      }
+    } else {
+      clearParallelSlices();
+    }
+    checkData(*this);
+    checkData(rhs);
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs; }
+
+    track(rhs, "operator/=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} /= {:s}", this->name, "BR");
+#endif
+
+    checkData(*this);
+
+  } else {
+    track(rhs, "operator/=");
+    (*this) = (*this) / rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for addition of Field3DParallel and BoutReal
+Field3DParallel operator+(const Field3DParallel& lhs, const BoutReal rhs) {
+
+  Field3DParallel result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getRegionID());
+  if (lhs.isFci()) {
+    result.splitParallelSlices();
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) + rhs;
+      result.ydown(i) = lhs.ydown(i) + rhs;
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] + rhs;
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, "BR");
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update Field3DParallel by addition with BoutReal
+Field3DParallel& Field3DParallel::operator+=(const BoutReal rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+
+    if (this->isFci()) {
+      for (size_t i{0}; i < yup_fields.size(); ++i) {
+        yup(i) += rhs;
+        ydown(i) += rhs;
+      }
+    } else {
+      clearParallelSlices();
+    }
+    checkData(*this);
+    checkData(rhs);
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
+
+    track(rhs, "operator+=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} += {:s}", this->name, "BR");
+#endif
+
+    checkData(*this);
+
+  } else {
+    track(rhs, "operator+=");
+    (*this) = (*this) + rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for subtraction of Field3DParallel and BoutReal
+Field3DParallel operator-(const Field3DParallel& lhs, const BoutReal rhs) {
+
+  Field3DParallel result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getRegionID());
+  if (lhs.isFci()) {
+    result.splitParallelSlices();
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) - rhs;
+      result.ydown(i) = lhs.ydown(i) - rhs;
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] - rhs;
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, "BR");
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update Field3DParallel by subtraction with BoutReal
+Field3DParallel& Field3DParallel::operator-=(const BoutReal rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+
+    if (this->isFci()) {
+      for (size_t i{0}; i < yup_fields.size(); ++i) {
+        yup(i) -= rhs;
+        ydown(i) -= rhs;
+      }
+    } else {
+      clearParallelSlices();
+    }
+    checkData(*this);
+    checkData(rhs);
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
+
+    track(rhs, "operator-=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} -= {:s}", this->name, "BR");
+#endif
+
+    checkData(*this);
+
+  } else {
+    track(rhs, "operator-=");
+    (*this) = (*this) - rhs;
+  }
+  return *this;
+}
+
 // Provide the C++ wrapper for multiplication of BoutReal and Field3DParallel
 Field3DParallel operator*(const BoutReal lhs, const Field3DParallel& rhs) {
 
