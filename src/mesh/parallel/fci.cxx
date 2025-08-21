@@ -59,6 +59,19 @@ std::string parallel_slice_field_name(std::string field, int offset) {
 };
 
 #if BOUT_USE_METRIC_3D
+void set_parallel_metric_component(std::string name, Field3D& component, int offset,
+                                   Field3D& data) {
+  if (!component.hasParallelSlices()) {
+    component.splitParallelSlices();
+    component.allowCalcParallelSlices = false;
+  }
+  auto& pcom = component.ynext(offset);
+  pcom.allocate();
+  pcom.setRegion(fmt::format("RGN_YPAR_{:+d}", offset));
+  pcom.name = name;
+  BOUT_FOR(i, component.getRegion("RGN_NOBNDRY")) { pcom[i.yp(offset)] = data[i]; }
+}
+
 bool load_parallel_metric_component(std::string name, Field3D& component, int offset,
                                     bool doZero) {
   Mesh* mesh = component.getMesh();
@@ -90,15 +103,7 @@ bool load_parallel_metric_component(std::string name, Field3D& component, int of
     }
     tmp = lmin;
   }
-  if (!component.hasParallelSlices()) {
-    component.splitParallelSlices();
-    component.allowCalcParallelSlices = false;
-  }
-  auto& pcom = component.ynext(offset);
-  pcom.allocate();
-  pcom.setRegion(fmt::format("RGN_YPAR_{:+d}", offset));
-  pcom.name = name;
-  BOUT_FOR(i, component.getRegion("RGN_NOBNDRY")) { pcom[i.yp(offset)] = tmp[i]; }
+  set_parallel_metric_component(name, component, offset, tmp);
   return isValid;
 }
 #endif
@@ -142,6 +147,18 @@ void load_parallel_metric_components([[maybe_unused]] Coordinates* coords,
     auto J = 1. / sqrt(g);
     auto& pcom = coords->J.ynext(offset);
     BOUT_FOR(i, J.getRegion(rgn)) { pcom[i] = J[i]; }
+  }
+  if (coords->Bxy.getMesh()->sourceHasVar(parallel_slice_field_name("Bxy", 1))) {
+    LOAD_PAR(Bxy, true);
+  } else {
+    Field3D tmp{coords->Bxy.getMesh()};
+    tmp.allocate();
+    BOUT_FOR(iyp, coords->Bxy.getRegion("RGN_NOBNDRY")) {
+      const auto i = iyp.ym(offset);
+      tmp[i] = coords->Bxy[i] * coords->g_22[i] / coords->J[i]
+               * coords->J.ynext(offset)[iyp] / coords->g_22.ynext(offset)[iyp];
+    }
+    set_parallel_metric_component("Bxy", coords->Bxy, offset, tmp);
   }
 #undef LOAD_PAR
 #endif
