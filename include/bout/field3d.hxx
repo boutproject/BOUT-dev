@@ -824,9 +824,11 @@ filledFrom(const Field3DParallel& f,
     BOUT_FOR(i, result.getRegion("RGN_NOY")) { result[i] = func(0, i); }
 
     for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
+      result.yup(i).allocate();
       BOUT_FOR(d, result.yup(i).getValidRegionWithDefault("RGN_INVALID")) {
         result.yup(i)[d] = func(i + 1, d);
       }
+      result.ydown(i).allocate();
       BOUT_FOR(d, result.ydown(i).getValidRegionWithDefault("RGN_INVALID")) {
         result.ydown(i)[d] = func(-i - 1, d);
       }
