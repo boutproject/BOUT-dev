@@ -150,8 +150,8 @@ T standardDerivative(const T& f, CELL_LOC outloc, const std::string& method,
   }
 
   // Lookup the method
-  auto derivativeMethod = DerivativeStore<T>::getInstance().getStandardDerivative(
-      method, direction, stagger, derivType);
+  auto derivativeMethod =
+      getStore<T>().getStandardDerivative(method, direction, stagger, derivType);
 
   // Create the result field
   T result{emptyFrom(f).setLocation(outloc)};
@@ -176,6 +176,11 @@ T DDX(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "D
       const std::string& region = "RGN_NOBNDRY") {
   AUTO_TRACE();
   return standardDerivative<T, DIRECTION::X, DERIV::Standard>(f, outloc, method, region);
+}
+inline Field3D DDX(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT",
+                   const std::string& region = "RGN_NOBNDRY") {
+  return DDX(f.asField3D(), outloc, method, region);
 }
 
 template <typename T>
@@ -202,17 +207,12 @@ T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "D
   AUTO_TRACE();
   if (f.isFci()) {
     ASSERT1(f.getDirectionY() == YDirectionType::Standard);
-    T f_tmp = f;
     if (!f.hasParallelSlices()) {
-#if BOUT_USE_FCI_AUTOMAGIC
-      f_tmp.calcParallelSlices();
-#else
       throw BoutException(
           "parallel slices needed for parallel derivatives. Make sure to communicate and "
           "apply parallel boundary conditions before calling derivative");
-#endif
     }
-    return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::Standard>(f_tmp, outloc,
+    return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::Standard>(f, outloc,
                                                                           method, region);
   } else {
     const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
@@ -221,6 +221,11 @@ T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "D
                                                                     method, region);
     return is_unaligned ? fromFieldAligned(result, region) : result;
   }
+}
+inline Field3D DDY(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT",
+                   const std::string& region = "RGN_NOBNDRY") {
+  return DDY(f.asField3D(), outloc, method, region);
 }
 
 template <typename T>
@@ -263,6 +268,11 @@ T DDZ(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "D
       const std::string& region = "RGN_NOBNDRY") {
   AUTO_TRACE();
   return standardDerivative<T, DIRECTION::Z, DERIV::Standard>(f, outloc, method, region);
+}
+inline Field3D DDZ(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
+                   const std::string& method = "DEFAULT",
+                   const std::string& region = "RGN_NOBNDRY") {
+  return DDZ(f.asField3D(), outloc, method, region);
 }
 
 template <typename T>
@@ -369,6 +379,11 @@ T VDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
     return are_unaligned ? fromFieldAligned(result, region) : result;
   }
 }
+inline Field3D VDDY(const Field3D& v, const Field3DParallel& f,
+                    CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
+                    const std::string& region = "RGN_NOBNDRY") {
+  return VDDY(v, f.asField3D(), outloc, method, region);
+}
 
 template <typename T>
 T FDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
@@ -392,6 +407,11 @@ T FDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
                                                             outloc, method, region);
     return are_unaligned ? fromFieldAligned(result, region) : result;
   }
+}
+inline Field3D FDDY(const Field3D& v, const Field3DParallel& f,
+                    CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
+                    const std::string& region = "RGN_NOBNDRY") {
+  return FDDY(v, f.asField3D(), outloc, method, region);
 }
 
 ////////////// Z DERIVATIVE /////////////////

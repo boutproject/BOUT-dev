@@ -93,7 +93,14 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
   TRACE("Field3D: Copy constructor from value");
 
   *this = val;
-#if BOUT_USE_FCI_AUTOMAGIC
+}
+
+Field3DParallel::Field3DParallel(const BoutReal val, Mesh* localmesh)
+    : Field3D(localmesh) {
+
+  TRACE("Field3DParallel: Copy constructor from value");
+
+  *this = val;
   if (this->isFci()) {
     splitParallelSlices();
     for (size_t i = 0; i < numberParallelSlices(); ++i) {
@@ -101,7 +108,6 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
       ydown(i) = val;
     }
   }
-#endif
 }
 
 Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation,
@@ -361,18 +367,32 @@ Field3D& Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
   track(val, "operator=");
 
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (isFci() && hasParallelSlices()) {
+  // Delete existing parallel slices. We don't copy parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+  resetRegion();
+
+  allocate();
+
+  BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = val; }
+  this->name = "BR";
+
+  return *this;
+}
+
+Field3DParallel& Field3DParallel::operator=(const BoutReal val) {
+  TRACE("Field3DParallel = BoutReal");
+  track(val, "operator=");
+
+  if (isFci()) {
+    if (!hasParallelSlices()) {
+      splitParallelSlices();
+    }
     for (size_t i = 0; i < numberParallelSlices(); ++i) {
       yup(i) = val;
       ydown(i) = val;
     }
   }
-#else
-  // Delete existing parallel slices. We don't copy parallel slices, so any
-  // that currently exist will be incorrect.
-  clearParallelSlices();
-#endif
   resetRegion();
 
   allocate();
@@ -386,11 +406,6 @@ Field3D& Field3D::operator=(const BoutReal val) {
 Field3D& Field3D::calcParallelSlices() {
   ASSERT2(allowCalcParallelSlices);
   getCoordinates()->getParallelTransform().calcParallelSlices(*this);
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (this->isFci()) {
-    this->applyParallelBoundary("parallel_neumann_o2");
-  }
-#endif
   return *this;
 }
 
@@ -553,6 +568,21 @@ void Field3D::applyParallelBoundary() {
   // Apply boundary to this field
   for (const auto& bndry : getBoundaryOpPars()) {
     bndry->apply(*this);
+  }
+}
+
+void Field3D::applyParallelBoundaryWithDefault(const std::string& condition) {
+
+  checkData(*this);
+  ASSERT1(hasParallelSlices());
+
+  // Apply boundary to this field
+  if (getBoundaryOpPars().empty()) {
+    applyParallelBoundary(condition);
+  } else {
+    for (const auto& bndry : getBoundaryOpPars()) {
+      bndry->apply(*this);
+    }
   }
 }
 
@@ -941,6 +971,7 @@ Options* Field3D::track(const T& change, std::string operation) {
   return nullptr;
 }
 
+template Options* Field3D::track<Field3DParallel>(const Field3DParallel&, std::string);
 template Options* Field3D::track<Field3D>(const Field3D&, std::string);
 template Options* Field3D::track<Field2D>(const Field2D&, std::string);
 template Options* Field3D::track<FieldPerp>(const FieldPerp&, std::string);
@@ -956,4 +987,14 @@ Options* Field3D::track(const BoutReal& change, std::string operation) {
     return &(*tracking)[outname];
   }
   return nullptr;
+}
+
+void Field3DParallel::ensureFieldAligned() {
+  if (isFci()) {
+    ASSERT2(hasParallelSlices());
+  } // else {
+  //   if (getDirectionY() != YDirectionType::Aligned) {
+  //     *this = toFieldAligned(*this);
+  //   }
+  // }
 }

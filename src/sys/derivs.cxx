@@ -70,7 +70,7 @@ Coordinates::FieldMetric DDX(const Field2D& f, CELL_LOC outloc, const std::strin
 
 ////////////// Y DERIVATIVE /////////////////
 
-Field3D DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
+Field3D DDY(const Field3DParallel& f, CELL_LOC outloc, const std::string& method,
             const std::string& region) {
   return bout::derivatives::index::DDY(f, outloc, method, region)
          / f.getCoordinates(outloc)->dy;
@@ -410,7 +410,7 @@ Coordinates::FieldMetric VDDY(const Field2D& v, const Field2D& f, CELL_LOC outlo
 }
 
 // general case
-Field3D VDDY(const Field3D& v, const Field3D& f, CELL_LOC outloc,
+Field3D VDDY(const Field3D& v, const Field3DParallel& f, CELL_LOC outloc,
              const std::string& method, const std::string& region) {
   return bout::derivatives::index::VDDY(v, f, outloc, method, region)
          / f.getCoordinates(outloc)->dy;
@@ -471,7 +471,7 @@ Coordinates::FieldMetric FDDY(const Field2D& v, const Field2D& f, CELL_LOC outlo
          / f.getCoordinates(outloc)->dy;
 }
 
-Field3D FDDY(const Field3D& v, const Field3D& f, CELL_LOC outloc,
+Field3D FDDY(const Field3D& v, const Field3DParallel& f, CELL_LOC outloc,
              const std::string& method, const std::string& region) {
   return bout::derivatives::index::FDDY(v, f, outloc, method, region)
          / f.getCoordinates(outloc)->dy;
