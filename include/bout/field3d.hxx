@@ -34,6 +34,7 @@ class Field3D;
 #include "bout/fieldperp.hxx"
 #include "bout/region.hxx"
 
+#include <functional>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -813,6 +814,28 @@ inline Field3D operator*(const Field3DParallel& lhs, const Field2D& rhs) {
 }
 inline Field3D operator/(const Field3DParallel& lhs, const Field2D& rhs) {
   return lhs.asField3D() / rhs;
+}
+
+inline Field3DParallel
+filledFrom(const Field3DParallel& f,
+           std::function<BoutReal(int yoffset, Ind3D index)> func) {
+  auto result{emptyFrom(f)};
+  if (f.hasParallelSlices()) {
+    BOUT_FOR(i, result.getRegion("RGN_NOY")) { result[i] = func(0, i); }
+
+    for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
+      BOUT_FOR(d, result.yup(i).getValidRegionWithDefault("RGN_INVALID")) {
+        result.yup(i)[d] = func(i + 1, d);
+      }
+      BOUT_FOR(d, result.ydown(i).getValidRegionWithDefault("RGN_INVALID")) {
+        result.ydown(i)[d] = func(-i - 1, d);
+      }
+    }
+  } else {
+    BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = func(0, i); }
+  }
+
+  return result;
 }
 
 #endif /* BOUT_FIELD3D_H */
