@@ -188,6 +188,14 @@ public:
     }
   }
 
+  void limit_at_least(Field3D& f, BoutReal value) const {
+    ITER() {
+      if (getAt(f, i) < value) {
+        getAt(f, i) = value;
+      }
+    }
+  }
+
   // NB: value needs to be scaled by dy
   // neumann_o1 is actually o2 if we would use an appropriate one-sided stencil.
   // But in general we do not, and thus for normal C2 stencils, this is 1st order.
