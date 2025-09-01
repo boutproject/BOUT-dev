@@ -77,6 +77,12 @@ public:
     }
   }
 
+  void limit_at_least(Field3D& f, BoutReal value) const {
+    if (ynext(f) < value) {
+      ynext(f) = value;
+    }
+  }
+
   BoutReal& ynext(Field3D& f) const { return f[ind().yp(by).xp(bx)]; }
   const BoutReal& ynext(const Field3D& f) const { return f[ind().yp(by).xp(bx)]; }
   BoutReal& yprev(Field3D& f) const { return f[ind().yp(-by).xp(-bx)]; }
