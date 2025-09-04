@@ -223,7 +223,7 @@ Version: {getversion()}
             for l in src:
                 f.write(f"{pre}{l}")
                 pre = "         "
-        f.write("\nDescription-Content-Type: text/markdown\n\n")
+        f.write("Description-Content-Type: text/markdown\n\n")
         with open("README.md") as src:
             f.write(src.read())
     run(
