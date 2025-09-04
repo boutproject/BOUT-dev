@@ -216,9 +216,16 @@ def build_sdist(sdist_directory, config_settings=None):
             f"""Metadata-Version: 2.1
 Name: {pkgname}
 Version: {getversion()}
-License-File: COPYING
 """
         )
+        with open("LICENSE") as src:
+            pre = "License:"
+            for l in src:
+                f.write(f"{pre}{l}\n")
+                pre = "        "
+        f.write("\n\n")
+        with open("README.md") as src:
+            f.write(src.read())
     run(
         f"tar --append -f {sdist_directory}/{fname} _version.txt --xform='s\\_version.txt\\{prefix}/_version.txt\\'"
     )
