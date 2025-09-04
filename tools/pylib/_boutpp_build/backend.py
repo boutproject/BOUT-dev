@@ -219,10 +219,10 @@ Version: {getversion()}
 """
         )
         with open("LICENSE") as src:
-            pre = "License:"
+            pre = "License: "
             for l in src:
-                f.write(f"{pre}{l}\n")
-                pre = "        "
+                f.write(f"{pre}{l}")
+                pre = "         "
         f.write("\n\n")
         with open("README.md") as src:
             f.write(src.read())
