@@ -182,7 +182,7 @@ class TestCommandLineArgs(unittest.TestCase):
         launch_safe(
             self.command + " " + " ".join(extra_options), pipe=True, nproc=1, mthread=1
         )
-        
+
         with open(OUTPUT_FILE) as f:
             contents = f.read()
 
