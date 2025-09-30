@@ -108,6 +108,7 @@ Field3DParallel::Field3DParallel(const BoutReal val, Mesh* localmesh)
       yup(i) = val;
       ydown(i) = val;
     }
+    resetRegionParallel();
   }
 }
 
@@ -165,11 +166,8 @@ void Field3D::splitParallelSlices() {
     // ParallelTransform, so we don't need a full constructor
     yup_fields.emplace_back(fieldmesh);
     ydown_fields.emplace_back(fieldmesh);
-    if (isFci()) {
-      yup_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", i + 1));
-      ydown_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", -i - 1));
-    }
   }
+  resetRegionParallel();
 }
 void Field3D::splitParallelSlicesAndAllocate() {
   splitParallelSlices();
@@ -395,6 +393,7 @@ Field3DParallel& Field3DParallel::operator=(const BoutReal val) {
     }
   }
   resetRegion();
+  resetRegionParallel();
 
   allocate();
 
