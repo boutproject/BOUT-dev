@@ -338,6 +338,7 @@ public:
   const Region<Ind3D>& getValidRegionWithDefault(const std::string& region_name) const;
   void setRegion(const std::string& region_name) override;
   void resetRegion() override;
+  void resetRegionParallel();
   void setRegion(size_t id) override;
   void setRegion(std::optional<size_t> id) override;
   std::optional<size_t> getRegionID() const override { return regionID; };
