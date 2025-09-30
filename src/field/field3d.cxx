@@ -1010,9 +1010,5 @@ void Field3DParallel::ensureFieldAligned() {
         ASSERT2(ydown_fields[i].getRegionID().has_value());
       }
     }
-  } // else {
-  //   if (getDirectionY() != YDirectionType::Aligned) {
-  //     *this = toFieldAligned(*this);
-  //   }
-  // }
+  }
 }
