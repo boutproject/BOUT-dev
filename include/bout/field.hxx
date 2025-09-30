@@ -185,8 +185,8 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 template <typename T>
 inline T emptyFrom(const T& f) {
   static_assert(bout::utils::is_Field_v<T>, "emptyFrom only works on Fields");
-  return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()},
-           f.getRegionID())
+  return T(f.getMesh(), f.getLocation(),
+           DirectionTypes{f.getDirectionY(), f.getDirectionZ()}, f.getRegionID())
       .allocate();
 }
 
@@ -667,6 +667,8 @@ T copy(const T& f) {
   return result;
 }
 
+class Field3DParallel;
+
 /// Apply a floor value \p f to a field \p var. Any value lower than
 /// the floor is set to the floor.
 ///
@@ -683,23 +685,22 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
       result[d] = f;
     }
   }
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (var.isFci()) {
-    for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
-      BOUT_FOR(d, result.yup(i).getRegion(rgn)) {
-        if (result.yup(i)[d] < f) {
-          result.yup(i)[d] = f;
+  if constexpr (std::is_same_v<T, Field3DParallel>) {
+    if (var.hasParallelSlices()) {
+      for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
+        BOUT_FOR(d, result.yup(i).getRegion(rgn)) {
+          if (result.yup(i)[d] < f) {
+            result.yup(i)[d] = f;
+          }
         }
-      }
-      BOUT_FOR(d, result.ydown(i).getRegion(rgn)) {
-        if (result.ydown(i)[d] < f) {
-          result.ydown(i)[d] = f;
+        BOUT_FOR(d, result.ydown(i).getRegion(rgn)) {
+          if (result.ydown(i)[d] < f) {
+            result.ydown(i)[d] = f;
+          }
         }
       }
     }
-  } else
-#endif
-  {
+  } else {
     result.clearParallelSlices();
   }
   return result;

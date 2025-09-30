@@ -1,5 +1,5 @@
 
-input = sin(pi*x - y)
+input_field = sin(pi*x - y)
 
 non_uniform = true  # Include corrections to second derivatives
 

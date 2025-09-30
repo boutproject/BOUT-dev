@@ -38,6 +38,10 @@ struct Indices {
   signed char valid;
   signed char offset;
   unsigned char abs_offset;
+  Indices(Ind3D index, RealPoint&& intersection, BoutReal length, signed char valid,
+          signed char offset, unsigned char abs_offset)
+      : index(index), intersection(intersection), length(length), valid(valid),
+        offset(offset), abs_offset(abs_offset){};
 };
 
 using IndicesVec = std::vector<Indices>;
@@ -180,6 +184,14 @@ public:
       ITER() {
         getAt(f, i) = parallel_stencil::dirichlet_o3(i + 2, yprev(f), i + 1, ythis(f),
                                                      i + 1 - length(), value);
+      }
+    }
+  }
+
+  void limit_at_least(Field3D& f, BoutReal value) const {
+    ITER() {
+      if (getAt(f, i) < value) {
+        getAt(f, i) = value;
       }
     }
   }
@@ -333,12 +345,9 @@ public:
     if (!bndry_points.empty() && bndry_points.back().index > ind) {
       is_sorted = false;
     }
-    bndry_points.push_back({ind,
-                            {x, y, z},
-                            length,
-                            valid,
-                            offset,
-                            static_cast<unsigned char>(std::abs(offset))});
+    bndry_points.emplace_back(ind, bout::parallel_boundary_region::RealPoint{x, y, z},
+                              length, valid, offset,
+                              static_cast<unsigned char>(std::abs(offset)));
   }
   void add_point(int ix, int iy, int iz, BoutReal x, BoutReal y, BoutReal z,
                  BoutReal length, char valid, signed char offset) {
