@@ -951,9 +951,11 @@ void Field3D::_track(const BoutReal& change, std::string operation) {
 void Field3DParallel::ensureFieldAligned() {
   if (isFci()) {
     ASSERT2(hasParallelSlices());
-  } // else {
-  //   if (getDirectionY() != YDirectionType::Aligned) {
-  //     *this = toFieldAligned(*this);
-  //   }
-  // }
+    if (fieldmesh != nullptr) {
+      for (int i = 0; i < fieldmesh->ystart; ++i) {
+        ASSERT2(yup_fields[i].getRegionID().has_value());
+        ASSERT2(ydown_fields[i].getRegionID().has_value());
+      }
+    }
+  }
 }
