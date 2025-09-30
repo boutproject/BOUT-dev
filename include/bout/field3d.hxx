@@ -327,11 +327,12 @@ public:
   const Region<Ind3D>& getRegion(const std::string& region_name) const;
   /// Use region provided by the default, and if none is set, use the provided one
   const Region<Ind3D>& getValidRegionWithDefault(const std::string& region_name) const;
-  void setRegion(const std::string& region_name);
-  void resetRegion() { regionID.reset(); };
-  void setRegion(size_t id) { regionID = id; };
-  void setRegion(std::optional<size_t> id) { regionID = id; };
-  std::optional<size_t> getRegionID() const { return regionID; };
+  void setRegion(const std::string& region_name) override;
+  void resetRegion() override { regionID.reset(); };
+  void resetRegionParallel();
+  void setRegion(size_t id) override { regionID = id; };
+  void setRegion(std::optional<size_t> id) override { regionID = id; };
+  std::optional<size_t> getRegionID() const override { return regionID; };
 
   /// Return a Region<Ind2D> reference to use to iterate over the x- and
   /// y-indices of this field
