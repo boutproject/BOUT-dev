@@ -66,7 +66,8 @@ Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes direction
 /// later)
 Field3D::Field3D(const Field3D& f)
     : Field(f), data(f.data), yup_fields(f.yup_fields), ydown_fields(f.ydown_fields),
-      regionID(f.regionID) {
+      regionID(f.regionID), tracking_state(f.tracking_state), tracking(f.tracking),
+      selfname(f.selfname) {
 
   TRACE("Field3D(Field3D&)");
 
@@ -926,6 +927,10 @@ void swap(Field3D& first, Field3D& second) noexcept {
   swap(first.deriv, second.deriv);
   swap(first.yup_fields, second.yup_fields);
   swap(first.ydown_fields, second.ydown_fields);
+  swap(first.regionID, second.regionID);
+  swap(first.tracking_state, second.tracking_state);
+  swap(first.tracking, second.tracking);
+  swap(first.selfname, second.selfname);
 }
 
 const Region<Ind3D>&
