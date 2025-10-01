@@ -67,10 +67,9 @@ const char DEFAULT_DIR[] = "data";
 
 #include <csignal>
 #include <ctime>
+#include <filesystem>
 #include <string>
 #include <vector>
-
-#include <sys/stat.h>
 
 // Value passed at compile time
 // Used for MD5SUM, BOUT_LOCALE_PATH, and REVISION
@@ -80,12 +79,6 @@ const char DEFAULT_DIR[] = "data";
 #define INDIRECT1_BOUTMAIN(a) #a
 #define INDIRECT0_BOUTMAIN(...) INDIRECT1_BOUTMAIN(#__VA_ARGS__)
 #define STRINGIFY(a) INDIRECT0_BOUTMAIN(a)
-
-// Define S_ISDIR if not defined by system headers (that is, MSVC)
-// Taken from https://github.com/curl/curl/blob/e59540139a398dc70fde6aec487b19c5085105af/lib/curl_setup.h#L748-L751
-#if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
-#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
-#endif
 
 #ifdef _MSC_VER
 #include <windows.h>
@@ -506,9 +499,8 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
 }
 
 void checkDataDirectoryIsAccessible(const std::string& data_dir) {
-  struct stat test;
-  if (stat(data_dir.c_str(), &test) == 0) {
-    if (!S_ISDIR(test.st_mode)) {
+  if (std::filesystem::exists(data_dir)) {
+    if (!std::filesystem::is_directory(data_dir)) {
       throw BoutException(_("DataDir \"{:s}\" is not a directory\n"), data_dir);
     }
   } else {
