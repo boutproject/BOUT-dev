@@ -68,10 +68,9 @@ PetscLib::PetscLib(Options* opt) {
       //       can modify initialization e.g. -log_view.
       setPetscOptions(Options::root()["petsc"], "");
 
-      setenv("PETSC_OPTIONS", "-options_left 0", 1);
-
       output << "Initialising PETSc\n";
       PETSC_COMM_WORLD = BoutComm::getInstance()->getComm();
+      PetscOptionsSetValue(nullptr, "-options_left", "0");
       PetscInitialize(pargc, pargv, nullptr, PetscLibHelp);
       PetscPopSignalHandler();
 
