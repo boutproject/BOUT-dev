@@ -1,4 +1,4 @@
-/*!
+/*!A
  * \file fieldgenerators.hxx
  *
  * These classes are used by FieldFactory
@@ -307,7 +307,7 @@ public:
   // Constructor
   FieldTanhHat(FieldGeneratorPtr xin, FieldGeneratorPtr widthin,
                FieldGeneratorPtr centerin, FieldGeneratorPtr steepnessin)
-      : X(xin), width(widthin), center(centerin), steepness(steepnessin){};
+      : X(xin), width(widthin), center(centerin), steepness(steepnessin) {};
   // Clone containing the list of arguments
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
   BoutReal generate(const bout::generator::Context& pos) override;
@@ -322,7 +322,7 @@ private:
 class FieldWhere : public FieldGenerator {
 public:
   FieldWhere(FieldGeneratorPtr test, FieldGeneratorPtr gt0, FieldGeneratorPtr lt0)
-      : test(test), gt0(gt0), lt0(lt0){};
+      : test(test), gt0(gt0), lt0(lt0) {};
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 3) {
@@ -350,6 +350,36 @@ public:
 
 private:
   FieldGeneratorPtr test, gt0, lt0;
+};
+
+/// Function that evaluates to 1 when Y is periodic (i.e. in the core), 0 otherwise
+class FieldPeriodicY : public FieldGenerator {
+public:
+  FieldPeriodicY(Mesh* mesh) : mesh(mesh) {
+    // Note: Assumes symmetricGlobalX
+    local_inner_boundary =
+        0.5 * (mesh->GlobalX(mesh->xstart - 1) + mesh->GlobalX(mesh->xstart));
+    local_outer_boundary =
+        0.5 * (mesh->GlobalX(mesh->xend + 1) + mesh->GlobalX(mesh->xend));
+  }
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
+    return std::make_shared<FieldPeriodicY>(ctx.getMesh());
+  }
+  BoutReal generate(const bout::generator::Context& ctx) override {
+    int local_index = mesh->xstart
+                      + int(((ctx.x() - local_inner_boundary)
+                             / (local_outer_boundary - local_inner_boundary))
+                            * (mesh->xend - mesh->xstart + 1));
+    if (mesh->periodicY(local_index)) {
+      return 1.0;
+    }
+    return 0.0;
+  }
+
+private:
+  Mesh* mesh;
+  BoutReal local_inner_boundary;
+  BoutReal local_outer_boundary;
 };
 
 #endif // BOUT_FIELDGENERATORS_H
