@@ -112,9 +112,16 @@ void PhysicsModel::initialise(Solver* s) {
   }
 }
 
-int PhysicsModel::runRHS(BoutReal time, bool linear) { return rhs(time, linear); }
+int PhysicsModel::runRHS_se(BoutReal time, bool linear) { return PhysicsModel::rhs_se(time, linear); }
+int PhysicsModel::runRHS_si(BoutReal time, bool linear) { return PhysicsModel::rhs_si(time, linear); }
+int PhysicsModel::runRHS_fe(BoutReal time, bool linear) { return PhysicsModel::rhs_fe(time, linear); }
+int PhysicsModel::runRHS_fi(BoutReal time, bool linear) { return PhysicsModel::rhs_fi(time, linear); }
+int PhysicsModel::runRHS_s(BoutReal time, bool linear) { return PhysicsModel::rhs_s(time, linear); }
+int PhysicsModel::runRHS_f(BoutReal time, bool linear) { return PhysicsModel::rhs_f(time, linear); }
+int PhysicsModel::runRHS(BoutReal time, bool linear) { return PhysicsModel::rhs(time, linear); }
 
 bool PhysicsModel::splitOperator() { return splitop; }
+bool PhysicsModel::splitOperatorMRI() { return splitopmri; }
 
 int PhysicsModel::runConvective(BoutReal time, bool linear) {
   return convective(time, linear);
@@ -124,13 +131,26 @@ int PhysicsModel::runDiffusive(BoutReal time, bool linear) {
   return diffusive(time, linear);
 }
 
-bool PhysicsModel::hasPrecon() { return (userprecon != nullptr); }
 
 int PhysicsModel::runPrecon(BoutReal t, BoutReal gamma, BoutReal delta) {
   if (!userprecon) {
     return 1;
   }
   return (*this.*userprecon)(t, gamma, delta);
+}
+
+int PhysicsModel::runPreconFast(BoutReal t, BoutReal gamma, BoutReal delta) {
+  if (!userprecon_f) {
+    return 1;
+  }
+  return (*this.*userprecon_f)(t, gamma, delta);
+}
+
+int PhysicsModel::runPreconSlow(BoutReal t, BoutReal gamma, BoutReal delta) {
+  if (!userprecon_s) {
+    return 1;
+  }
+  return (*this.*userprecon_s)(t, gamma, delta);
 }
 
 bool PhysicsModel::hasJacobian() { return (userjacobian != nullptr); }

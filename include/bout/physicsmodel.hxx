@@ -4,16 +4,10 @@
  * @brief Base class for Physics Models
  * 
  * 
- *
- * Changelog:
- * 
- * 2013-08 Ben Dudson <benjamin.dudson@york.ac.uk>
- *    * Initial version
- * 
  **************************************************************************
- * Copyright 2013 B.D.Dudson
+ * Copyright 2013-2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -169,12 +163,25 @@ public:
    * 
    * Returns a flag: 0 indicates success, non-zero an error flag
    */
+  int runRHS_se(BoutReal time, bool linear = false);
+  int runRHS_si(BoutReal time, bool linear = false);
+  int runRHS_fe(BoutReal time, bool linear = false);
+  int runRHS_fi(BoutReal time, bool linear = false);
+  int runRHS_s(BoutReal time, bool linear = false);
+  int runRHS_f(BoutReal time, bool linear = false);
   int runRHS(BoutReal time, bool linear = false);
 
   /*!
    * True if this model uses split operators
+   * RHS = convective + diffusive
    */
   bool splitOperator();
+
+  /*!
+   * True if this model uses Multi-Rate Integrator (MRI) split operators
+   * RHS =  rhs_se + rhs_si + rhs_fe + rhs_fi
+   */
+  bool splitOperatorMRI();
 
   /*!
    * Run the convective (usually explicit) part of the model
@@ -197,7 +204,9 @@ public:
   /*!
    * True if a preconditioner has been defined
    */
-  bool hasPrecon();
+  bool hasPrecon() const { return (userprecon != nullptr); }
+  bool hasPreconFast() const { return (userprecon_f != nullptr); }
+  bool hasPreconSlow() const { return (userprecon_s != nullptr); }
 
   /*!
    * Run the preconditioner. The system state should be in the 
@@ -208,7 +217,9 @@ public:
    *
    */
   int runPrecon(BoutReal t, BoutReal gamma, BoutReal delta);
-
+  int runPreconFast(BoutReal t, BoutReal gamma, BoutReal delta);
+  int runPreconSlow(BoutReal t, BoutReal gamma, BoutReal delta);
+  
   /*!
    * True if a Jacobian function has been defined
    */
@@ -267,6 +278,24 @@ protected:
    * which is set to true when the rhs() function can be
    * linearised. This is used in e.g. linear iterative solves.
    */
+  virtual int rhs_se(BoutReal UNUSED(t)) { return 1; }
+  virtual int rhs_se(BoutReal t, bool UNUSED(linear)) { return rhs_se(t); }
+
+  virtual int rhs_si(BoutReal UNUSED(t)) { return 1; }
+  virtual int rhs_si(BoutReal t, bool UNUSED(linear)) { return rhs_si(t); }
+
+  virtual int rhs_fe(BoutReal UNUSED(t)) { return 1; }
+  virtual int rhs_fe(BoutReal t, bool UNUSED(linear)) { return rhs_fe(t); }
+
+  virtual int rhs_fi(BoutReal UNUSED(t)) { return 1; }
+  virtual int rhs_fi(BoutReal t, bool UNUSED(linear)) { return rhs_fi(t); }
+
+  virtual int rhs_s(BoutReal UNUSED(t)) { return 1; }
+  virtual int rhs_s(BoutReal t, bool UNUSED(linear)) { return rhs_s(t); }
+
+  virtual int rhs_f(BoutReal UNUSED(t)) { return 1; }
+  virtual int rhs_f(BoutReal t, bool UNUSED(linear)) { return rhs_f(t); }
+
   virtual int rhs(BoutReal UNUSED(t)) { return 1; }
   virtual int rhs(BoutReal t, bool UNUSED(linear)) { return rhs(t); }
 
@@ -309,11 +338,27 @@ protected:
   /// Specify that this model is split into a convective and diffusive part
   void setSplitOperator(bool split = true) { splitop = split; }
 
+  /// Specify that this model is split into fast and slow parts
+  void setSplitOperatorMRI(bool split = true) { splitopmri = split; }
+
   /// Specify a preconditioner function
   void setPrecon(preconfunc pset) { userprecon = pset; }
   template <class Model>
   void setPrecon(ModelPreconFunc<Model> preconditioner) {
     userprecon = static_cast<preconfunc>(preconditioner);
+  }
+
+  /// Preconditioner for fast implicit RHS
+  void setPreconFast(preconfunc pset) { userprecon_f = pset; }
+  template <class Model>
+  void setPreconFast(ModelPreconFunc<Model> preconditioner) {
+    userprecon_f = static_cast<preconfunc>(preconditioner);
+  }
+  /// Preconditioner for slow implicit RHS
+  void setPreconSlow(preconfunc pset) { userprecon_s = pset; }
+  template <class Model>
+  void setPreconSlow(ModelPreconFunc<Model> preconditioner) {
+    userprecon_s = static_cast<preconfunc>(preconditioner);
   }
 
   /// Specify a Jacobian-vector multiply function
@@ -391,8 +436,12 @@ private:
   bool restart_enabled{true};
   /// Split operator model?
   bool splitop{false};
+  /// MPI fast/slow split operator model?
+  bool splitopmri{false};
   /// Pointer to user-supplied preconditioner function
   preconfunc userprecon{nullptr};
+  preconfunc userprecon_f{nullptr};
+  preconfunc userprecon_s{nullptr};
   /// Pointer to user-supplied Jacobian-vector multiply function
   jacobianfunc userjacobian{nullptr};
   /// True if model already initialised

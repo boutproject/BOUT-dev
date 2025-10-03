@@ -290,6 +290,8 @@ set(BOUT_SOURCES
   ./src/solver/impls/adams_bashforth/adams_bashforth.hxx
   ./src/solver/impls/arkode/arkode.cxx
   ./src/solver/impls/arkode/arkode.hxx
+  ./src/solver/impls/arkode/arkode_mri.cxx
+  ./src/solver/impls/arkode/arkode_mri.hxx
   ./src/solver/impls/cvode/cvode.cxx
   ./src/solver/impls/cvode/cvode.hxx
   ./src/solver/impls/euler/euler.cxx

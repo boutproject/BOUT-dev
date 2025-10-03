@@ -1,0 +1,2 @@
+bout_add_integrated_test(test_kpr_mri SOURCES test_kpr_mri.cxx
+REQUIRES BOUT_HAS_SUNDIALS)

@@ -519,7 +519,13 @@ int ArkodeSolver::run() {
     long int temp_long_int, temp_long_int2;
     ARKodeGetNumSteps(arkode_mem, &temp_long_int);
     nsteps = int(temp_long_int);
+#if SUNDIALS_VERSION_AT_LEAST(7, 2, 0)
+    ARKodeGetNumRhsEvals(arkode_mem, 0, &temp_long_int); // Explicit
+    ARKodeGetNumRhsEvals(arkode_mem, 1, &temp_long_int2); // Implicit
+#else
+    // This function was deprecated in 7.2.0
     ARKStepGetNumRhsEvals(arkode_mem, &temp_long_int, &temp_long_int2);
+#endif
     nfe_evals = int(temp_long_int);
     nfi_evals = int(temp_long_int2);
     if (treatment == Treatment::ImEx or treatment == Treatment::Implicit) {
