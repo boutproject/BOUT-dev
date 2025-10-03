@@ -178,7 +178,7 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   addGenerator("where", std::make_shared<FieldWhere>(nullptr, nullptr, nullptr));
 
   // Periodic in the Y direction?
-  addGenerator("periodicY", std::make_shared<FieldPeriodicY>(nullptr));
+  addGenerator("periodicY", std::make_shared<FieldPeriodicY>());
 }
 
 Field2D FieldFactory::create2D(const std::string& value, const Options* opt,

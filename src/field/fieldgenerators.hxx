@@ -1,4 +1,4 @@
-/*!A
+/*!
  * \file fieldgenerators.hxx
  *
  * These classes are used by FieldFactory
@@ -353,33 +353,28 @@ private:
 };
 
 /// Function that evaluates to 1 when Y is periodic (i.e. in the core), 0 otherwise
+/// Note: Assumes symmetricGlobalX
 class FieldPeriodicY : public FieldGenerator {
 public:
-  FieldPeriodicY(Mesh* mesh) : mesh(mesh) {
-    // Note: Assumes symmetricGlobalX
-    local_inner_boundary =
-        0.5 * (mesh->GlobalX(mesh->xstart - 1) + mesh->GlobalX(mesh->xstart));
-    local_outer_boundary =
-        0.5 * (mesh->GlobalX(mesh->xend + 1) + mesh->GlobalX(mesh->xend));
-  }
+  FieldPeriodicY() = default;
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
-    return std::make_shared<FieldPeriodicY>(ctx.getMesh());
+    return std::make_shared<FieldPeriodicY>();
   }
   BoutReal generate(const bout::generator::Context& ctx) override {
-    int local_index = mesh->xstart
-                      + int(((ctx.x() - local_inner_boundary)
-                             / (local_outer_boundary - local_inner_boundary))
-                            * (mesh->xend - mesh->xstart + 1));
+    const Mesh* mesh = ctx.getMesh();
+    const BoutReal local_inner_boundary =
+        0.5 * (mesh->GlobalX(mesh->xstart - 1) + mesh->GlobalX(mesh->xstart));
+    const BoutReal local_outer_boundary =
+        0.5 * (mesh->GlobalX(mesh->xend + 1) + mesh->GlobalX(mesh->xend));
+    const int local_index = mesh->xstart
+                            + int(((ctx.x() - local_inner_boundary)
+                                   / (local_outer_boundary - local_inner_boundary))
+                                  * (mesh->xend - mesh->xstart + 1));
     if (mesh->periodicY(local_index)) {
       return 1.0;
     }
     return 0.0;
   }
-
-private:
-  Mesh* mesh;
-  BoutReal local_inner_boundary;
-  BoutReal local_outer_boundary;
 };
 
 #endif // BOUT_FIELDGENERATORS_H
