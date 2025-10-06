@@ -213,7 +213,7 @@ authors:
     given-names: Tom
   - family-names: Tsagkaridis
     given-names: Malamas
-version: 5.1.1
+version: 5.2.0
 date-released: 2023-04-10
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/

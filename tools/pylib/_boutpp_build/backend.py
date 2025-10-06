@@ -35,8 +35,8 @@ def getversion():
             version = os.environ["BOUT_PRETEND_VERSION"]
             return version
 
-        _bout_previous_version = "v5.1.1"
-        _bout_next_version = "v5.2.0"
+        _bout_previous_version = "v5.2.0"
+        _bout_next_version = "v5.2.1"
 
         try:
             try:
