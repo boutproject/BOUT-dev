@@ -115,12 +115,12 @@ SNESSolver::SNESSolver(Options* opts)
                .doc("Convergence tolerance in terms of the norm of the change in "
                     "the solution between steps")
                .withDefault(1e-8)),
-      maxits((*options)["max_nonlinear_iterations"]
-                 .doc("Maximum number of nonlinear iterations per SNES solve")
-                 .withDefault(50)),
       maxf((*options)["maxf"]
                .doc("Maximum number of function evaluations per SNES solve")
                .withDefault(10000)),
+      maxits((*options)["max_nonlinear_iterations"]
+                 .doc("Maximum number of nonlinear iterations per SNES solve")
+                 .withDefault(50)),
       lower_its((*options)["lower_its"]
                     .doc("Iterations below which the next timestep is increased")
                     .withDefault(static_cast<int>(maxits * 0.5))),
