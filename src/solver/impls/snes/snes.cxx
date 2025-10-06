@@ -57,6 +57,7 @@ public:
   }
 };
 
+namespace {
 /*
  * PETSc callback function, which evaluates the nonlinear
  * function to be solved by SNES.
@@ -64,7 +65,7 @@ public:
  * This function assumes the context void pointer is a pointer
  * to an SNESSolver object.
  */
-static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void* ctx) {
+PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void* ctx) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f, false);
 }
 
@@ -73,7 +74,7 @@ static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void* ctx) {
  *
  * This function can be a linearised form of FormFunction
  */
-static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
+PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f, true);
 }
 
@@ -82,20 +83,19 @@ static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  *
  * This can be a linearised and simplified form of FormFunction
  */
-static PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f,
+PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f,
                                               void* ctx) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f, true);
 }
 
-static PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
-  int ierr;
-
+PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
   // Get the context
   SNESSolver* s;
-  ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s));
+  int ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s));
   CHKERRQ(ierr);
 
   PetscFunctionReturn(s->precon(x, y));
+}
 }
 
 SNESSolver::SNESSolver(Options* opts)
