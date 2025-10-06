@@ -8,6 +8,8 @@ on:
 
 jobs:
   clang-format:
+    # Release candidate branches tend to have big PRs which causes all sorts of problems
+    if: ${{ !endsWith(github.head_ref, '-rc') }}
     runs-on: ubuntu-latest
     steps:
       # Checkout the pull request branch, also include all history
