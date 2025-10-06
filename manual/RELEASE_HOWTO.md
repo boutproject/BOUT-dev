@@ -31,9 +31,8 @@ Before merging PR:
 - [ ] Update [`CHANGELOG.md`][changelog]:
     - Run [bout-changelog-generator.py LAST_RELEASE NEXT_RELEASE][bin/bout-changelog-generator.py]
         - See the docs for how to get the token
-- [ ] Get list of authors:
-    - [ ] `git log --format='%aN' | sort | uniq`
-    - [ ] Compare to list in [`CITATION.cff`][citation], add new authors
+- [ ] Run [`update_citations.py`][bin/update_citations.py] to add new
+      authors to [`CITATION.cff`](CITATION.cff)
 - [ ] Prep a new Zenodo release:
     - https://doi.org/10.5281/zenodo.1423212
     - "New Version"
