@@ -29,7 +29,7 @@
 
 #include "shiftedmetricinterp.hxx"
 #include "bout/constants.hxx"
-#include "bout/parallel_boundary_region.hxx"
+#include <bout/parallel_boundary_region.hxx>
 
 ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
                                          Field2D zShift_in, BoutReal zlength_in,
@@ -135,7 +135,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           0.25
               * (1                                                     // dy/2
                  + dy(it.ind, mesh.yend + 1) / dy(it.ind, mesh.yend)), // length
-          yvalid);
+          yvalid, 1);
     }
   }
   auto backward_boundary_xin = std::make_shared<BoundaryRegionPar>(
@@ -151,7 +151,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           0.25
               * (1 // dy/2
                  + dy(it.ind, mesh.ystart - 1) / dy(it.ind, mesh.ystart)),
-          yvalid);
+          yvalid, -1);
     }
   }
   // Create regions for parallel boundary conditions
@@ -168,7 +168,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           0.25
               * (1 // dy/2
                  + dy(it.ind, mesh.yend + 1) / dy(it.ind, mesh.yend)),
-          yvalid);
+          yvalid, 1);
     }
   }
   auto backward_boundary_xout = std::make_shared<BoundaryRegionPar>(
@@ -184,7 +184,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
           0.25
               * (dy(it.ind, mesh.ystart - 1) / dy(it.ind, mesh.ystart) // dy/2
                  + 1),
-          yvalid);
+          yvalid, -1);
     }
   }
 

@@ -304,6 +304,7 @@ cdef {{ field.field_type }} {{ field.fdd }}FromPtr(c.{{ field.field_type }}* i):
         dims_in = self._checkDims(dims, data.shape)
         cdef np.ndarray[double, mode="c", ndim={{ field.ndims }}] data_ = np.ascontiguousarray(data)
         c_set_all(self.cobj,&data_[{{ zeros }}])
+        return self
 
     def get(self):
         """
@@ -780,13 +781,13 @@ cdef options
         norm : float
             The length with which to rescale
         """
-        if self.isNormalised>0:
-            t=norm
-            norm=norm/self.isNormalised
-            self.isNormalised=t
-        c_mesh_normalise(self.cobj,norm)
+        if self.isNormalised > 0:
+            t = norm
+            norm = norm/self.isNormalised
+            self.isNormalised = t
+        c_mesh_normalise(self.cobj, norm)
 
-    def communicate(self,*args):
+    def communicate(self, *args):
         """
         Communicate (MPI) the boundaries of the Field3Ds with neighbours
 
@@ -810,6 +811,20 @@ cdef options
         if self._coords is None:
             self._coords = coordsFromPtr(self.cobj.getCoordinates())
         return self._coords
+
+    def get(self, name, default=None):
+        """
+        Load a variable from the grid source
+
+        If no default is given, and the variable is not found, an error is raised.
+        """
+        cdef c.string cstr = name.encode()
+        cdef Field3D defaultfield = default if isinstance(default, Field3D) else Field3D.fromMesh(self)
+        if deref(self.cobj).get(deref(defaultfield.cobj), cstr):
+            if default is None:
+                raise ValueError(f"No default value for {name} given and not set for this mesh")
+            return default
+        return defaultfield
 
 
 cdef Mesh meshFromPtr(c.Mesh * obj):
@@ -853,7 +868,7 @@ Compute the Laplacian inversion of objects.
 Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\perp x + ex\\nabla_x x + ez\\nabla_z x + a x = b
 """, uniquePtr=True) }}
 
-    def __init__(self, section=None):
+    def __init__(self, section=None, loc="CELL_CENTRE", mesh=None):
         """
         Initialiase a Laplacian solver
 
@@ -863,10 +878,20 @@ Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\p
             The section from the Option tree to take the options from
         """
         checkInit()
+        cdef c.Options* copt = NULL
         if section:
-           self.cobj = c.Laplacian.create((<Options?>section).cobj)
-        else:
-           self.cobj = c.Laplacian.create(NULL)
+            if isinstance(section, str):
+                section = Options.root(section)
+            copt = (<Options?>section).cobj
+        cdef benum.CELL_LOC cloc = benum.resolve_cell_loc(loc)
+        cdef c.Mesh* cmesh = NULL
+        if mesh:
+            cmesh = (<Mesh?>mesh).cobj
+        # Solver is not exposed yet
+        # cdef c.Solver* csolver = NULL
+        # if solver:
+        #     csolver = (<Solver?>solver).cobj
+        self.cobj = c.Laplacian.create(copt, cloc, cmesh, NULL)
         self.isSelfOwned = True
 
     def solve(self, Field3D x, Field3D guess):
@@ -888,19 +913,38 @@ Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\p
         """
         return f3dFromObj(deref(self.cobj).solve(x.cobj[0],guess.cobj[0]))
 
-    def setCoefs(self, **kwargs):
+    def forward(self, Field3D x):
+        """
+        Calculate the Laplacian
+
+        Parameters
+        ----------
+        x : Field3D
+            Field to take the derivative
+
+
+        Returns
+        -------
+        Field3D
+            the inversion of x, where guess is a guess to start with
+        """
+        return f3dFromObj(deref(self.cobj).forward(x.cobj[0]))
+
+
+{% set coeffs="A C C1 C2 D Ex Ez".split() %}
+    def setCoefs(self, *{% for coeff in coeffs %}, {{coeff}}=None{% endfor %}):
         """
         Set the coefficients for the Laplacian solver.
         The coefficients A, C, C1, C2, D, Ex and Ez can be passed as keyword arguments
         """
 {% set coeffs="A C C1 C2 D Ex Ez".split() %}
 {% for coeff in coeffs %}
-        if "{{ coeff }}" in kwargs:
-            self.setCoef{{ coeff}}(kwargs["{{ coeff }}"])
+        if {{ coeff }} is not None:
+            self.setCoef{{ coeff}}({{ coeff }})
 {% endfor %}
 {% for coeff in coeffs %}
 
-    def setCoef{{ coeff }}(self,Field3D {{ coeff }}):
+    def setCoef{{ coeff }}(self, Field3D {{ coeff }}):
         """
         Set the "{{ coeff }}" coefficient of the Laplacian solver
 
@@ -911,6 +955,64 @@ Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\p
         """
         deref(self.cobj).setCoef{{ coeff }}({{ coeff }}.cobj[0])
 {% endfor %}
+
+
+{{ class("LaplaceXZ", comment="""
+LaplaceXZ inversion solver
+
+Compute the Laplacian inversion of objects.
+
+Equation solved is:  \\nabla\\cdot\\left( A \\nabla_\\perp f \\right) + Bf = b
+""", uniquePtr=True) }}
+
+    def __init__(self, section=None, loc="CELL_CENTRE", mesh=None):
+        """
+        Initialiase a Laplacian solver
+
+        Parameters
+        ----------
+        section : Options, optional
+            The section from the Option tree to take the options from
+        """
+        checkInit()
+        cdef c.Options* copt = NULL
+        if section:
+            if isinstance(section, str):
+                section = Options.root(section)
+            copt = (<Options?>section).cobj
+        cdef benum.CELL_LOC cloc = benum.resolve_cell_loc(loc)
+        cdef c.Mesh* cmesh = NULL
+        if mesh:
+            cmesh = (<Mesh?>mesh).cobj
+        self.cobj = c.LaplaceXZ.create(cmesh, copt, cloc)
+        self.isSelfOwned = True
+
+    def solve(self, Field3D x, Field3D guess):
+        """
+        Calculate the Laplacian inversion
+
+        Parameters
+        ----------
+        x : Field3D
+            Field to be inverted
+        guess : Field3D
+            initial guess for the inversion
+
+
+        Returns
+        -------
+        Field3D
+            the inversion of x, where guess is a guess to start with
+        """
+        return f3dFromObj(deref(self.cobj).solve(x.cobj[0],guess.cobj[0]))
+
+    def setCoefs(self, *, Field3D A, Field3D B):
+        """
+        Set the coefficients for the Laplacian solver.
+        The coefficients A and B have both to be passed.
+        A and B have to be Field3D.
+        """
+        deref(self.cobj).setCoefs(A.cobj[0], B.cobj[0])
 
 
 {{ class("FieldFactory", defaultSO=False) }}
@@ -1454,8 +1556,8 @@ def create3D(string, Mesh msh=None,outloc="CELL_DEFAULT",time=0):
     cdef benum.CELL_LOC outloc_=benum.resolve_cell_loc(outloc)
     if msh is None:
         msh=Mesh.getGlobal()
-    cdef FieldFactory fact=msh.getFactory()
-    cdef c.string str_=string.encode()
+    cdef FieldFactory fact = msh.getFactory()
+    cdef c.string str_ = string.encode()
     return f3dFromObj(
         (<FieldFactory>fact).cobj.create3D(str_,<c.Options*>0,<c.Mesh*>0
                                            ,outloc_,time))

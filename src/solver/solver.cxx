@@ -679,6 +679,10 @@ int Solver::init() {
   return 0;
 }
 
+void Solver::modelOutputVars(Options& output_options) {
+  model->outputVars(output_options);
+}
+
 void Solver::outputVars(Options& output_options, bool save_repeat) {
   Timer time("io");
   output_options["tt"].force(simtime, "Solver");

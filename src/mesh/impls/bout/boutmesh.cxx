@@ -484,8 +484,20 @@ int BoutMesh::load() {
   }
   ASSERT0(MXG >= 0);
 
-  if (Mesh::get(MYG, "MYG") != 0) {
-    MYG = options["MYG"].doc("Number of guard cells on each side in Y").withDefault(2);
+  bool meshHasMyg = Mesh::get(MYG, "MYG") == 0;
+  int meshMyg;
+  if (!meshHasMyg) {
+    MYG = 2;
+  } else {
+    meshMyg = MYG;
+  }
+  if (options.isSet("MYG") or (!meshHasMyg)) {
+    MYG = options["MYG"].doc("Number of guard cells on each side in Y").withDefault(MYG);
+  }
+  if (meshHasMyg && MYG != meshMyg) {
+    output_warn.write(_("Options changed the number of y-guard cells. Grid has {} but "
+                        "option specified {}! Continuing with {}"),
+                      meshMyg, MYG, MYG);
   }
   ASSERT0(MYG >= 0);
 
@@ -2355,8 +2367,8 @@ int BoutMesh::pack_data(const std::vector<FieldData*>& var_list, int xge, int xl
       ASSERT2(var3d_ref.isAllocated());
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
-          for (int jz = 0; jz < LocalNz; jz++, len++) {
-            buffer[len] = var3d_ref(jx, jy, jz);
+          for (int jz = 0; jz < LocalNz; jz++) {
+            buffer[len++] = var3d_ref(jx, jy, jz);
           }
         }
       }
@@ -2367,8 +2379,8 @@ int BoutMesh::pack_data(const std::vector<FieldData*>& var_list, int xge, int xl
       auto& var2d_ref = *var2d_ref_ptr;
       ASSERT2(var2d_ref.isAllocated());
       for (int jx = xge; jx != xlt; jx++) {
-        for (int jy = yge; jy < ylt; jy++, len++) {
-          buffer[len] = var2d_ref(jx, jy);
+        for (int jy = yge; jy < ylt; jy++) {
+          buffer[len++] = var2d_ref(jx, jy);
         }
       }
     }
@@ -2389,8 +2401,8 @@ int BoutMesh::unpack_data(const std::vector<FieldData*>& var_list, int xge, int 
       auto& var3d_ref = *dynamic_cast<Field3D*>(var);
       for (int jx = xge; jx != xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
-          for (int jz = 0; jz < LocalNz; jz++, len++) {
-            var3d_ref(jx, jy, jz) = buffer[len];
+          for (int jz = 0; jz < LocalNz; jz++) {
+            var3d_ref(jx, jy, jz) = buffer[len++];
           }
         }
       }
@@ -2398,8 +2410,8 @@ int BoutMesh::unpack_data(const std::vector<FieldData*>& var_list, int xge, int 
       // 2D variable
       auto& var2d_ref = *dynamic_cast<Field2D*>(var);
       for (int jx = xge; jx != xlt; jx++) {
-        for (int jy = yge; jy < ylt; jy++, len++) {
-          var2d_ref(jx, jy) = buffer[len];
+        for (int jy = yge; jy < ylt; jy++) {
+          var2d_ref(jx, jy) = buffer[len++];
         }
       }
     }
@@ -2871,6 +2883,9 @@ void BoutMesh::addBoundaryRegions() {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
 
   int xs = 0;
   int xe = LocalNx - 1;
@@ -2906,6 +2921,9 @@ RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
 
   int xs = 0;
   int xe = LocalNx - 1;
@@ -2940,6 +2958,10 @@ RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+
   int xs = 0;
   int xe = LocalNx - 1;
   if ((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart)) {
@@ -2969,6 +2991,10 @@ RangeIterator BoutMesh::iterateBndryLowerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+
   int xs = 0;
   int xe = LocalNx - 1;
 
@@ -3003,6 +3029,10 @@ RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+
   int xs = 0;
   int xe = LocalNx - 1;
 
@@ -3037,6 +3067,10 @@ RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+
   int xs = 0;
   int xe = LocalNx - 1;
   if ((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart)) {

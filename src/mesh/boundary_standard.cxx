@@ -1728,7 +1728,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryNeumann::apply(Field2D & f) { BoundaryNeumann::apply(f, 0.); }
 
-  void BoundaryNeumann::apply(Field2D & f, BoutReal t) {
+  void BoundaryNeumann::apply([[maybe_unused]] Field2D & f, BoutReal t) {
     // Set (at 2nd order / 3rd order) the value at the mid-point between
     // the guard cell and the grid cell to be val
     // N.B. First guard cells (closest to the grid) is 2nd order, while
@@ -2164,7 +2164,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
       } else {
         throw BoutException("Unrecognized location");
       }
-    } else {
+    } else { // loc == CELL_CENTRE
       for (; !bndry->isDone(); bndry->next1d()) {
 #if BOUT_USE_METRIC_3D
         for (int zk = 0; zk < mesh->LocalNz; zk++) {

@@ -26,7 +26,17 @@
 
 #include "bout/mask.hxx"
 
+#define USE_NEW_WEIGHTS 1
+#if BOUT_HAS_PETSC
+#define HS_USE_PETSC 1
+#endif
+
+#ifdef HS_USE_PETSC
+#include "bout/petsclib.hxx"
+#endif
+
 class Options;
+class GlobalField3DAccess;
 
 /// Interpolate a field onto a perturbed set of points
 const Field3D interpolate(const Field3D& f, const Field3D& delta_x,
@@ -43,8 +53,7 @@ public:
 protected:
   Mesh* localmesh{nullptr};
 
-  std::string region_name;
-  std::shared_ptr<Region<Ind3D>> region{nullptr};
+  int region_id{-1};
 
 public:
   XZInterpolation(int y_offset = 0, Mesh* localmeshIn = nullptr)
@@ -52,48 +61,44 @@ public:
         localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn) {}
   XZInterpolation(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZInterpolation(y_offset, mesh) {
-    region = regionFromMask(mask, localmesh);
+    setMask(mask);
   }
   XZInterpolation(const std::string& region_name, int y_offset = 0, Mesh* mesh = nullptr)
-      : y_offset(y_offset), localmesh(mesh), region_name(region_name) {}
-  XZInterpolation(std::shared_ptr<Region<Ind3D>> region, int y_offset = 0,
-                  Mesh* mesh = nullptr)
-      : y_offset(y_offset), localmesh(mesh), region(std::move(region)) {}
+      : y_offset(y_offset), localmesh(mesh),
+        region_id(localmesh->getRegionID(region_name)) {}
+  XZInterpolation(const Region<Ind3D>& region, int y_offset = 0, Mesh* mesh = nullptr)
+      : y_offset(y_offset), localmesh(mesh) {
+    setRegion(region);
+  }
   virtual ~XZInterpolation() = default;
 
-  void setMask(const BoutMask& mask) {
-    region = regionFromMask(mask, localmesh);
-    region_name = "";
-  }
+  void setMask(const BoutMask& mask) { setRegion(regionFromMask(mask, localmesh)); }
   void setRegion(const std::string& region_name) {
-    this->region_name = region_name;
-    this->region = nullptr;
+    this->region_id = localmesh->getRegionID(region_name);
   }
-  void setRegion(const std::shared_ptr<Region<Ind3D>>& region) {
-    this->region_name = "";
-    this->region = region;
-  }
+  void setRegion(const std::unique_ptr<Region<Ind3D>> region) { setRegion(*region); }
   void setRegion(const Region<Ind3D>& region) {
-    this->region_name = "";
-    this->region = std::make_shared<Region<Ind3D>>(region);
+    std::string name;
+    int i = 0;
+    do {
+      name = fmt::format("unsec_reg_xz_interp_{:d}", i++);
+    } while (localmesh->hasRegion3D(name));
+    localmesh->addRegion(name, region);
+    this->region_id = localmesh->getRegionID(name);
   }
-  Region<Ind3D> getRegion() const {
-    if (!region_name.empty()) {
-      return localmesh->getRegion(region_name);
-    }
-    ASSERT1(region != nullptr);
-    return *region;
+  const Region<Ind3D>& getRegion() const {
+    ASSERT2(region_id != -1);
+    return localmesh->getRegion(region_id);
   }
-  Region<Ind3D> getRegion(const std::string& region) const {
-    const bool has_region = !region_name.empty() or this->region != nullptr;
-    if (!region.empty() and region != "RGN_ALL") {
-      if (has_region) {
-        return intersection(localmesh->getRegion(region), getRegion());
-      }
+  const Region<Ind3D>& getRegion(const std::string& region) const {
+    if (region_id == -1) {
       return localmesh->getRegion(region);
     }
-    ASSERT1(has_region);
-    return getRegion();
+    if (region == "" or region == "RGN_ALL") {
+      return getRegion();
+    }
+    return localmesh->getRegion(
+        localmesh->getCommonRegion(localmesh->getRegionID(region), region_id));
   }
   virtual void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                            const std::string& region = "RGN_NOBNDRY") = 0;
@@ -129,13 +134,17 @@ public:
   }
 };
 
-class XZHermiteSpline : public XZInterpolation {
+template <bool monotonic>
+class XZHermiteSplineBase : public XZInterpolation {
 protected:
   /// This is protected rather than private so that it can be
   /// extended and used by HermiteSplineMonotonic
 
-  Tensor<int> i_corner; // x-index of bottom-left grid point
-  Tensor<int> k_corner; // z-index of bottom-left grid point
+  Tensor<SpecificInd<IND_TYPE::IND_3D>> i_corner; // index of bottom-left grid point
+  Tensor<int> k_corner;                           // z-index of bottom-left grid point
+
+  std::unique_ptr<GlobalField3DAccess> gf3daccess;
+  Tensor<std::array<int, 4>> g3dinds;
 
   // Basis functions for cubic Hermite spline interpolation
   //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
@@ -152,12 +161,32 @@ protected:
   Field3D h10_z;
   Field3D h11_z;
 
+  std::vector<Field3D> newWeights;
+
+#if HS_USE_PETSC
+  PetscLib* petsclib;
+  bool isInit{false};
+  Mat petscWeights;
+  Vec rhs, result;
+#endif
+
 public:
-  XZHermiteSpline(Mesh* mesh = nullptr) : XZHermiteSpline(0, mesh) {}
-  XZHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr);
-  XZHermiteSpline(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
-      : XZHermiteSpline(y_offset, mesh) {
-    region = regionFromMask(mask, localmesh);
+  XZHermiteSplineBase(Mesh* mesh = nullptr) : XZHermiteSplineBase(0, mesh) {}
+  XZHermiteSplineBase(int y_offset = 0, Mesh* mesh = nullptr);
+  XZHermiteSplineBase(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
+      : XZHermiteSplineBase(y_offset, mesh) {
+    setRegion(regionFromMask(mask, localmesh));
+  }
+  ~XZHermiteSplineBase() {
+#if HS_USE_PETSC
+    if (isInit) {
+      MatDestroy(&petscWeights);
+      VecDestroy(&rhs);
+      VecDestroy(&result);
+      isInit = false;
+      delete petsclib;
+    }
+#endif
   }
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
@@ -186,21 +215,8 @@ public:
 /// but also degrades accuracy near maxima and minima.
 /// Perhaps should only impose near boundaries, since that is where
 /// problems most obviously occur.
-class XZMonotonicHermiteSpline : public XZHermiteSpline {
-public:
-  XZMonotonicHermiteSpline(Mesh* mesh = nullptr) : XZHermiteSpline(0, mesh) {}
-  XZMonotonicHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr)
-      : XZHermiteSpline(y_offset, mesh) {}
-  XZMonotonicHermiteSpline(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
-      : XZHermiteSpline(mask, y_offset, mesh) {}
-
-  using XZHermiteSpline::interpolate;
-  /// Interpolate using precalculated weights.
-  /// This function is called by the other interpolate functions
-  /// in the base class XZHermiteSpline.
-  Field3D interpolate(const Field3D& f,
-                      const std::string& region = "RGN_NOBNDRY") const override;
-};
+using XZMonotonicHermiteSpline = XZHermiteSplineBase<true>;
+using XZHermiteSpline = XZHermiteSplineBase<false>;
 
 class XZLagrange4pt : public XZInterpolation {
   Tensor<int> i_corner; // x-index of bottom-left grid point
@@ -213,7 +229,7 @@ public:
   XZLagrange4pt(int y_offset = 0, Mesh* mesh = nullptr);
   XZLagrange4pt(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZLagrange4pt(y_offset, mesh) {
-    region = regionFromMask(mask, localmesh);
+    setRegion(regionFromMask(mask, localmesh));
   }
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
@@ -246,7 +262,7 @@ public:
   XZBilinear(int y_offset = 0, Mesh* mesh = nullptr);
   XZBilinear(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZBilinear(y_offset, mesh) {
-    region = regionFromMask(mask, localmesh);
+    setRegion(regionFromMask(mask, localmesh));
   }
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
@@ -263,6 +279,15 @@ public:
   Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
                       const BoutMask& mask,
                       const std::string& region = "RGN_NOBNDRY") override;
+};
+
+class XZMonotonicHermiteSplineLegacy : public XZHermiteSplineBase<false> {
+public:
+  using XZHermiteSplineBase<false>::interpolate;
+  virtual Field3D interpolate(const Field3D& f,
+                              const std::string& region = "RGN_NOBNDRY") const override;
+  template <class... Ts>
+  XZMonotonicHermiteSplineLegacy(Ts... args) : XZHermiteSplineBase<false>(args...) {}
 };
 
 class XZInterpolationFactory

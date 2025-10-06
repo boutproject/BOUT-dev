@@ -29,6 +29,10 @@
 XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh* mesh)
     : XZInterpolation(y_offset, mesh), t_x(localmesh), t_z(localmesh) {
 
+  if (localmesh->getNXPE() > 1) {
+    throw BoutException("Do not support MPI splitting in X");
+  }
+
   // Index arrays contain guard cells in order to get subscripts right
   i_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
   k_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
@@ -128,7 +132,10 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) 
 
     // Then in X
     f_interp(x, y_next, z) = lagrange_4pt(xvals, t_x(x, y, z));
+    ASSERT2(std::isfinite(f_interp(x, y_next, z)));
   }
+  const auto region2 = y_offset != 0 ? fmt::format("RGN_YPAR_{:+d}", y_offset) : region;
+  f_interp.setRegion(region2);
   return f_interp;
 }
 

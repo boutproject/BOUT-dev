@@ -16,12 +16,12 @@ cdef extern from "bout/{{ field.header }}.hxx":
     cppclass {{ field.field_type }}:
         {{ field.field_type }}(Mesh * mesh);
         {{ field.field_type }}(const {{ field.field_type }} &)
-        double & operator()(int, int, int)
+        double & operator()(int, int, int) except +raise_bout_py_error
         int getNx()
         int getNy()
         int getNz()
         bool isAllocated()
-        void setLocation(benum.CELL_LOC)
+        void setLocation(benum.CELL_LOC) except +raise_bout_py_error
         benum.CELL_LOC getLocation()
         Mesh* getMesh()
 {% for boundaryMethod in field.boundaries %}
@@ -30,12 +30,12 @@ cdef extern from "bout/{{ field.header }}.hxx":
         void {{ boundaryMethod }}(double t)
 {% endfor %}
 {% for fun in "sqrt", "exp", "log", "sin", "cos", "abs" %}
-    {{ field.field_type }} {{ fun }}({{ field.field_type }})
+    {{ field.field_type }} {{ fun }}({{ field.field_type }}) except +raise_bout_py_error
 {% endfor %}
     double max({{ field.field_type }})
     double min({{ field.field_type }})
-    {{ field.field_type }} pow({{ field.field_type }},double)
-    {{ field.field_type }} & ddt({{ field.field_type }})
+    {{ field.field_type }} pow({{ field.field_type }}, double) except +raise_bout_py_error
+    {{ field.field_type }} & ddt({{ field.field_type }}) except +raise_bout_py_error
 {% endfor %}
 {% for vec in vecs %}
 cdef extern from "bout/{{ vec.header }}.hxx":
@@ -51,9 +51,9 @@ cdef extern from "bout/mesh.hxx":
     cppclass Mesh:
         Mesh()
         @staticmethod
-        Mesh * create(Options * option)
-        void load()
-        void communicate(FieldGroup&)
+        Mesh * create(Options * option) except +raise_bout_py_error
+        void load() except +raise_bout_py_error
+        void communicate(FieldGroup&) except +raise_bout_py_error
         int getNXPE()
         int getNYPE()
         int getXProcIndex()
@@ -62,7 +62,8 @@ cdef extern from "bout/mesh.hxx":
         int ystart
         int LocalNx
         int LocalNy
-        Coordinates * getCoordinates()
+        Coordinates * getCoordinates() except +raise_bout_py_error
+        int get(Field3D, const string) except +raise_bout_py_error
 
 cdef extern from "bout/coordinates.hxx":
     cppclass Coordinates:
@@ -78,10 +79,10 @@ cdef extern from "bout/coordinates.hxx":
         {{ metric_field }} G1, G2, G3
         {{ metric_field }} ShiftTorsion
         {{ metric_field }} IntShiftTorsion
-        int geometry()
-        int calcCovariant()
-        int calcContravariant()
-        int jacobian()
+        int geometry() except +raise_bout_py_error
+        int calcCovariant() except +raise_bout_py_error
+        int calcContravariant() except +raise_bout_py_error
+        int jacobian() except +raise_bout_py_error
 
 cdef extern from "bout/fieldgroup.hxx":
     cppclass FieldGroup:
@@ -90,10 +91,9 @@ cdef extern from "bout/fieldgroup.hxx":
 cdef extern from "bout/invert_laplace.hxx":
     cppclass Laplacian:
         @staticmethod
-        unique_ptr[Laplacian] create()
-        @staticmethod
-        unique_ptr[Laplacian] create(Options *)
-        Field3D solve(Field3D,Field3D)
+        unique_ptr[Laplacian] create(Options*, benum.CELL_LOC, Mesh*, Solver*) except +raise_bout_py_error
+        Field3D solve(Field3D, Field3D) except +raise_bout_py_error
+        Field3D forward(Field3D)
         void setCoefA(Field3D)
         void setCoefC(Field3D)
         void setCoefC1(Field3D)
@@ -103,13 +103,21 @@ cdef extern from "bout/invert_laplace.hxx":
         void setCoefEy(Field3D)
         void setCoefEz(Field3D)
 
+cdef extern from "bout/invert/laplacexz.hxx":
+    cppclass LaplaceXZ:
+        LaplaceXZ(Mesh*, Options*, benum.CELL_LOC)
+        void setCoefs(const Field3D& A, const Field3D& B) except +raise_bout_py_error
+        Field3D solve(const Field3D& b, const Field3D& x0) except +raise_bout_py_error
+        @staticmethod
+        unique_ptr[LaplaceXZ] create(Mesh* m, Options* opt, benum.CELL_LOC loc)
+
 cdef extern from "bout/difops.hxx":
-    Field3D Div_par(Field3D, benum.CELL_LOC, string)
-    Field3D Grad_par(Field3D, benum.CELL_LOC, string)
-    Field3D Laplace(Field3D)
-    Field3D Vpar_Grad_par(Field3D, Field3D, benum.CELL_LOC, string)
-    Field3D bracket(Field3D,Field3D, benum.BRACKET_METHOD, benum.CELL_LOC)
-    Field3D Delp2(Field3D)
+    Field3D Div_par(Field3D, benum.CELL_LOC, string) except +raise_bout_py_error
+    Field3D Grad_par(Field3D, benum.CELL_LOC, string) except +raise_bout_py_error
+    Field3D Laplace(Field3D) except +raise_bout_py_error
+    Field3D Vpar_Grad_par(Field3D, Field3D, benum.CELL_LOC, string) except +raise_bout_py_error
+    Field3D bracket(Field3D,Field3D, benum.BRACKET_METHOD, benum.CELL_LOC) except +raise_bout_py_error
+    Field3D Delp2(Field3D) except +raise_bout_py_error
 
 cdef extern from "bout/derivs.hxx":
 {% for d in "XYZ" %}
@@ -131,16 +139,16 @@ cdef extern from "bout/interpolation.hxx":
 
 cdef extern from "bout/field_factory.hxx":
     cppclass FieldFactory:
-        FieldFactory(Mesh*,Options*)
-        Field3D create3D(string bla, Options * o, Mesh * m,benum.CELL_LOC loc, double t)
+        FieldFactory(Mesh*,Options*) except +raise_bout_py_error
+        Field3D create3D(string bla, Options * o, Mesh * m,benum.CELL_LOC loc, double t) except +raise_bout_py_error
 
 cdef extern from "bout/solver.hxx":
     cppclass Solver:
         @staticmethod
-        Solver * create()
-        void setModel(PhysicsModel *)
-        void add(Field3D, char * name)
-        void solve()
+        Solver * create() except +raise_bout_py_error
+        void setModel(PhysicsModel *) except +raise_bout_py_error
+        void add(Field3D, char * name) except +raise_bout_py_error
+        void solve() except +raise_bout_py_error
 
 cdef extern from "bout/physicsmodel.hxx":
     cppclass PhysicsModel:
@@ -166,8 +174,8 @@ cdef extern from "bout/output.hxx":
     ConditionalOutput output_info
 
 cdef extern from "bout/vecops.hxx":
-    Vector3D Grad(const Field3D& f, benum.CELL_LOC, string)
-    Vector3D Grad_perp(const Field3D& f, benum.CELL_LOC, string)
+    Vector3D Grad(const Field3D& f, benum.CELL_LOC, string) except +raise_bout_py_error
+    Vector3D Grad_perp(const Field3D& f, benum.CELL_LOC, string) except +raise_bout_py_error
 
 cdef extern from "bout/vector3d.hxx":
-    Vector3D cross(Vector3D, Vector3D)
+    Vector3D cross(Vector3D, Vector3D) except +raise_bout_py_error

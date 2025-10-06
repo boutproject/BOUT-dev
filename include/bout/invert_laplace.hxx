@@ -255,6 +255,11 @@ public:
   virtual Field3D solve(const Field3D& b, const Field3D& x0);
   virtual Field2D solve(const Field2D& b, const Field2D& x0);
 
+  /// Some implementations can also implement the forward operator for testing
+  /// and debugging
+  virtual FieldPerp forward(const FieldPerp& f);
+  virtual Field3D forward(const Field3D& f);
+
   /// Coefficients in tridiagonal inversion
   void tridagCoefs(int jx, int jy, int jz, dcomplex& a, dcomplex& b, dcomplex& c,
                    const Field2D* ccoef = nullptr, const Field2D* d = nullptr,

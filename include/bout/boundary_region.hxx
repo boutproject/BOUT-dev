@@ -4,6 +4,9 @@ class BoundaryRegion;
 #ifndef BOUT_BNDRY_REGION_H
 #define BOUT_BNDRY_REGION_H
 
+#include "bout/mesh.hxx"
+#include "bout/region.hxx"
+#include "bout/sys/parallel_stencils.hxx"
 #include <string>
 #include <utility>
 

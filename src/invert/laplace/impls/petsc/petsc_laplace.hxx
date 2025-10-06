@@ -194,7 +194,13 @@ public:
 
   using Laplacian::solve;
   FieldPerp solve(const FieldPerp& b) override;
-  FieldPerp solve(const FieldPerp& b, const FieldPerp& x0) override;
+  FieldPerp solve(const FieldPerp& b, const FieldPerp& x0) override {
+    return solve(b, x0, false);
+  }
+  FieldPerp solve(const FieldPerp& b, const FieldPerp& x0, bool forward);
+
+  using Laplacian::forward;
+  FieldPerp forward(const FieldPerp& b) override { return solve(b, b, true); }
 
   int precon(Vec x, Vec y); ///< Preconditioner function
 
@@ -202,7 +208,7 @@ private:
   void Element(int i, int x, int z, int xshift, int zshift, PetscScalar ele, Mat& MatA);
   void Coeffs(int x, int y, int z, BoutReal& A1, BoutReal& A2, BoutReal& A3, BoutReal& A4,
               BoutReal& A5);
-
+  int getIndex(int x, int z);
   /* Ex and Ez
    * Additional 1st derivative terms to allow for solution field to be
    * components of a vector

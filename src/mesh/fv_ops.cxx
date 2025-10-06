@@ -63,17 +63,8 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     }
   }
 
-  const bool fci = f.hasParallelSlices() && a.hasParallelSlices();
-
-  if (bout::build::use_metric_3d and fci) {
-    // 3D Metric, need yup/ydown fields.
-    // Requires previous communication of metrics
-    // -- should insert communication here?
-    if (!coord->g23.hasParallelSlices() || !coord->g_23.hasParallelSlices()
-        || !coord->dy.hasParallelSlices() || !coord->dz.hasParallelSlices()
-        || !coord->Bxy.hasParallelSlices() || !coord->J.hasParallelSlices()) {
-      throw BoutException("metrics have no yup/down: Maybe communicate in init?");
-    }
+  if (a.isFci()) {
+    throw BoutException("FCI does not work with FV methods in y direction");
   }
 
   // Y and Z fluxes require Y derivatives
@@ -82,11 +73,11 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
   // Values on this y slice (centre).
   // This is needed because toFieldAligned may modify the field
-  const auto f_slice = makeslices(fci, f);
-  const auto a_slice = makeslices(fci, a);
+  const auto f_slice = makeslices(false, f);
+  const auto a_slice = makeslices(false, a);
 
   // Only in 3D case with FCI do the metrics have parallel slices
-  const bool metric_fci = fci and bout::build::use_metric_3d;
+  const bool metric_fci = false;
   const auto g23 = makeslices(metric_fci, coord->g23);
   const auto g_23 = makeslices(metric_fci, coord->g_23);
   const auto J = makeslices(metric_fci, coord->J);
@@ -96,9 +87,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
   // Result of the Y and Z fluxes
   Field3D yzresult(0.0, mesh);
-  if (!fci) {
-    yzresult.setDirectionY(YDirectionType::Aligned);
-  }
+  yzresult.setDirectionY(YDirectionType::Aligned);
 
   // Y flux
 
@@ -169,12 +158,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
     }
   }
 
-  // Check if we need to transform back
-  if (fci) {
-    result += yzresult;
-  } else {
-    result += fromFieldAligned(yzresult);
-  }
+  result += fromFieldAligned(yzresult);
 
   return result;
 }
@@ -182,6 +166,10 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 const Field3D Div_par_K_Grad_par(const Field3D& Kin, const Field3D& fin,
                                  bool bndry_flux) {
   TRACE("FV::Div_par_K_Grad_par");
+
+  if (Kin.isFci()) {
+    return ::Div_par_K_Grad_par(Kin, fin);
+  }
 
   ASSERT2(Kin.getLocation() == fin.getLocation());
 

@@ -10,6 +10,7 @@
 #include "bout/vector2d.hxx"
 
 #include "bout/utils.hxx"
+#include <bout/difops.hxx>
 #include <bout/mesh.hxx>
 
 namespace FV {
@@ -191,6 +192,10 @@ void communicateFluxes(Field3D& f);
 template <typename CellEdges = MC>
 const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
                       const Field3D& wave_speed_in, bool fixflux = true) {
+
+  if (f_in.isFci()) {
+    return ::Div_par(f_in, v_in);
+  }
 
   ASSERT1_FIELDS_COMPATIBLE(f_in, v_in);
   ASSERT1_FIELDS_COMPATIBLE(f_in, wave_speed_in);
