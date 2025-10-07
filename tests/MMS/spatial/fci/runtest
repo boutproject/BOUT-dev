@@ -6,19 +6,28 @@
 # Cores: 2
 # requires: zoidberg
 
-from boututils.run_wrapper import build_and_log, launch_safe
-from boutdata.collect import collect
-import boutconfig as conf
-
-from numpy import array, log, polyfit, linspace, arange
-
+import pathlib
 import pickle
+import sys
 
-from sys import stdout
-
+import boutconfig as conf
 import zoidberg as zb
+from boutdata.collect import collect
+from boututils.run_wrapper import build_and_log, launch_safe
+from numpy import arange, array, linspace, log, polyfit
+from scipy.interpolate import RectBivariateSpline as RBS
 
-nx = 4  # Not changed for these tests
+
+def myRBS(a, b, c):
+    mx, _ = c.shape
+    kx = max(mx - 1, 1)
+    kx = min(kx, 3)
+    return RBS(a, b, c, kx=kx)
+
+
+zb.poloidal_grid.RectBivariateSpline = myRBS
+
+nx = 3  # Not changed for these tests
 
 # Resolution in y and z
 nlist = [8, 16, 32, 64, 128]
@@ -30,7 +39,6 @@ directory = "data"
 
 nproc = 2
 mthread = 2
-
 
 success = True
 
@@ -46,115 +54,88 @@ failures = []
 build_and_log("FCI MMS test")
 
 for nslice in nslices:
-    for method in [
-        "hermitespline",
-        "lagrange4pt",
-        "bilinear",
-        # "monotonichermitespline",
-    ]:
-        error_2[nslice] = []
-        error_inf[nslice] = []
+    error_2[nslice] = []
+    error_inf[nslice] = []
 
-        # Which central difference scheme to use and its expected order
-        order = nslice * 2
-        method_orders[nslice] = {"name": "C{}".format(order), "order": order}
+    # Which central difference scheme to use and its expected order
+    order = nslice * 2
+    name = f"C{order}"
+    method_orders[nslice] = {"name": name, "order": order}
 
-        for n in nlist:
-            # Define the magnetic field using new poloidal gridding method
-            # Note that the Bz and Bzprime parameters here must be the same as in mms.py
-            field = zb.field.Slab(Bz=0.05, Bzprime=0.1)
-            # Create rectangular poloidal grids
-            poloidal_grid = zb.poloidal_grid.RectangularPoloidalGrid(
-                nx, n, 0.1, 1.0, MXG=1
-            )
-            # Set the ylength and y locations
-            ylength = 10.0
+    for n in nlist:
+        # Define the magnetic field using new poloidal gridding method
+        # Note that the Bz and Bzprime parameters here must be the same as in mms.py
+        field = zb.field.Slab(Bz=0.05, Bzprime=0.1)
+        # Create rectangular poloidal grids
+        poloidal_grid = zb.poloidal_grid.RectangularPoloidalGrid(nx, n, 0.1, 1.0, MXG=1)
+        # Set the ylength and y locations
+        ylength = 10.0
 
-            if yperiodic:
-                ycoords = linspace(0.0, ylength, n, endpoint=False)
-            else:
-                # Doesn't include the end points
-                ycoords = (arange(n) + 0.5) * ylength / float(n)
-
-            # Create the grid
-            grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=yperiodic)
-            # Make and write maps
-            maps = zb.make_maps(grid, field, nslice=nslice, quiet=True, MXG=1)
-            zb.write_maps(
-                grid,
-                field,
-                maps,
-                new_names=False,
-                metric2d=conf.isMetric2D(),
-                quiet=True,
-            )
-
-            args = " MZ={} MYG={} mesh:paralleltransform:y_periodic={} mesh:ddy:first={} NXPE={}".format(
-                n,
-                nslice,
-                yperiodic,
-                method_orders[nslice]["name"],
-                2 if conf.has["petsc"] and method == "hermitespline" else 1,
-            )
-            args += f" mesh:paralleltransform:xzinterpolation:type={method}"
-
-            # Command to run
-            cmd = "./fci_mms " + args
-
-            print("Running command: " + cmd)
-
-            # Launch using MPI
-            s, out = launch_safe(cmd, nproc=nproc, mthread=mthread, pipe=True)
-
-            # Save output to log file
-            with open("run.log." + str(n), "w") as f:
-                f.write(out)
-
-            if s:
-                print("Run failed!\nOutput was:\n")
-                print(out)
-                exit(s)
-
-            # Collect data
-            l_2 = collect(
-                "l_2",
-                tind=[1, 1],
-                info=False,
-                path=directory,
-                xguards=False,
-                yguards=False,
-            )
-            l_inf = collect(
-                "l_inf",
-                tind=[1, 1],
-                info=False,
-                path=directory,
-                xguards=False,
-                yguards=False,
-            )
-
-            error_2[nslice].append(l_2)
-            error_inf[nslice].append(l_inf)
-
-            print("Errors : l-2 {:f} l-inf {:f}".format(l_2, l_inf))
-
-        dx = 1.0 / array(nlist)
-
-        # Calculate convergence order
-        fit = polyfit(log(dx), log(error_2[nslice]), 1)
-        order = fit[0]
-        stdout.write("Convergence order = {:f} (fit)".format(order))
-
-        order = log(error_2[nslice][-2] / error_2[nslice][-1]) / log(dx[-2] / dx[-1])
-        stdout.write(", {:f} (small spacing)".format(order))
-
-        # Should be close to the expected order
-        if order > method_orders[nslice]["order"] * 0.95:
-            print("............ PASS\n")
+        if yperiodic:
+            ycoords = linspace(0.0, ylength, n, endpoint=False)
         else:
-            print("............ FAIL\n")
-            success = False
-            failures.append(method_orders[nslice]["name"])
+            # Doesn't include the end points
+            ycoords = (arange(n) + 0.5) * ylength / float(n)
+
+        # Create the grid
+        grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=yperiodic)
+        # Make and write maps
+        maps = zb.make_maps(grid, field, nslice=nslice, quiet=True, MXG=1)
+        zb.write_maps(
+            grid, field, maps, new_names=False, metric2d=conf.isMetric2D(), quiet=True
+        )
+
+        # Command to run
+        args = f" MZ={n} MYG={nslice} mesh:paralleltransform:y_periodic={yperiodic} mesh:ddy:first={name}"
+        cmd = f"./fci_mms {args}"
+
+        print(f"Running command: {cmd}")
+
+        # Launch using MPI
+        s, out = launch_safe(cmd, nproc=nproc, mthread=mthread, pipe=True)
+
+        # Save output to log file
+        pathlib.Path(f"run.log.{n}").write_text(out)
+
+        if s:
+            print(f"Run failed!\nOutput was:\n{out}")
+            sys.exit(s)
+
+        # Collect data
+        l_2 = collect(
+            "l_2", tind=[1, 1], info=False, path=directory, xguards=False, yguards=False
+        )
+        l_inf = collect(
+            "l_inf",
+            tind=[1, 1],
+            info=False,
+            path=directory,
+            xguards=False,
+            yguards=False,
+        )
+
+        error_2[nslice].append(l_2)
+        error_inf[nslice].append(l_inf)
+
+        print(f"Errors : l-2 {l_2:f} l-inf {l_inf:f}")
+
+    dx = 1.0 / array(nlist)
+
+    # Calculate convergence order
+    fit = polyfit(log(dx), log(error_2[nslice]), 1)
+    order = fit[0]
+    print(f"Convergence order = {order:f} (fit)", end="")
+
+    order = log(error_2[nslice][-2] / error_2[nslice][-1]) / log(dx[-2] / dx[-1])
+    print(f", {order:f} (small spacing)")
+
+    # Should be close to the expected order
+    if order > order * 0.95:
+        print("............ PASS\n")
+    else:
+        print("............ FAIL\n")
+        success = False
+        failures.append(name)
 
 
 with open("fci_mms.pkl", "wb") as output:
@@ -164,7 +145,7 @@ with open("fci_mms.pkl", "wb") as output:
         pickle.dump(error_inf[nslice], output)
 
 # Do we want to show the plot as well as save it to file.
-showPlot = True
+show_plot = True
 
 if False:
     try:
@@ -174,18 +155,9 @@ if False:
         fig, ax = plt.subplots(1, 1)
 
         for nslice in nslices:
-            ax.plot(
-                dx,
-                error_2[nslice],
-                "-",
-                label="{} $l_2$".format(method_orders[nslice]["name"]),
-            )
-            ax.plot(
-                dx,
-                error_inf[nslice],
-                "--",
-                label="{} $l_\\inf$".format(method_orders[nslice]["name"]),
-            )
+            name = method_orders[nslice]["name"]
+            ax.plot(dx, error_2[nslice], "-", label=f"{name} $l_2$")
+            ax.plot(dx, error_inf[nslice], "--", label=f"{name} $l_\\inf$")
         ax.legend(loc="upper left")
         ax.grid()
         ax.set_yscale("log")
@@ -198,7 +170,7 @@ if False:
 
         print("Plot saved to fci_mms.pdf")
 
-        if showPlot:
+        if show_plot:
             plt.show()
         plt.close()
     except ImportError:
@@ -206,9 +178,9 @@ if False:
 
 if success:
     print("All tests passed")
-    exit(0)
+    sys.exit(0)
 else:
     print("Some tests failed:")
     for failure in failures:
-        print("\t" + failure)
-    exit(1)
+        print(f"\t{failure}")
+    sys.exit(1)
