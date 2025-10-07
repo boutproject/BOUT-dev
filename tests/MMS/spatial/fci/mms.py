@@ -26,6 +26,9 @@ B = sqrt(Bpx**2 + Bt**2)
 def FCI_ddy(f):
     return (Bt * diff(f, y) * 2.0 * pi / Ly + Bpx * diff(f, z) * 2.0 * pi / Lz) / B
 
+def FCI_div_par(f):
+    return Bpx * FCI_ddy(f / Bpx)
+
 
 ############################################
 # Equations solved
@@ -33,3 +36,4 @@ def FCI_ddy(f):
 print(f"input_field = {exprToStr(f)}")
 print(f"grad_par_solution = {exprToStr(FCI_ddy(f))}")
 print(f"grad2_par2_solution = {exprToStr(FCI_ddy(FCI_ddy(f)))}")
+print(f"div_par_solution = {exprToStr(FCI_div_par(f))}")
