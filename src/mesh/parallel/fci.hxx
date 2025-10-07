@@ -26,6 +26,11 @@
 #ifndef BOUT_FCITRANSFORM_H
 #define BOUT_FCITRANSFORM_H
 
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/region.hxx"
 #include <bout/interpolation_xz.hxx>
 #include <bout/mask.hxx>
 #include <bout/parallel_boundary_region.hxx>
@@ -33,7 +38,14 @@
 #include <bout/unused.hxx>
 
 #include <memory>
+#include <string>
 #include <vector>
+
+class BoundaryRegionPar;
+class FieldPerp;
+class Field2D;
+class Field3D;
+class Options;
 
 /// Field line map - contains the coefficients for interpolation
 class FCIMap {
@@ -41,17 +53,11 @@ class FCIMap {
   std::unique_ptr<XZInterpolation> interp;        // Cell centre
   std::unique_ptr<XZInterpolation> interp_corner; // Cell corner at (x+1, z+1)
 
-public:
-  FCIMap() = delete;
-  FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options, int offset,
-         const std::shared_ptr<BoundaryRegionPar>& inner_boundary,
-         const std::shared_ptr<BoundaryRegionPar>& outer_boundary, bool zperiodic);
-
   // The mesh this map was created on
-  Mesh& map_mesh;
+  Mesh* map_mesh;
 
   /// Direction of map
-  const int offset;
+  int offset_;
 
   /// region containing all points where the field line has not left the
   /// domain
@@ -59,8 +65,17 @@ public:
   /// If any of the integration area has left the domain
   BoutMask corner_boundary_mask;
 
+public:
+  FCIMap() = delete;
+  FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options, int offset,
+         const std::shared_ptr<BoundaryRegionPar>& inner_boundary,
+         const std::shared_ptr<BoundaryRegionPar>& outer_boundary, bool zperiodic);
+
+  /// Direction of map
+  int offset() const { return offset_; }
+
   Field3D interpolate(Field3D& f) const {
-    ASSERT1(&map_mesh == f.getMesh());
+    ASSERT1(map_mesh == f.getMesh());
     return interp->interpolate(f);
   }
 
@@ -72,55 +87,7 @@ class FCITransform : public ParallelTransform {
 public:
   FCITransform() = delete;
   FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool zperiodic = true,
-               Options* opt = nullptr)
-    : ParallelTransform(mesh, opt), R{&mesh}, Z{&mesh} {
-
-    // check the coordinate system used for the grid data source
-    FCITransform::checkInputGrid();
-
-    // Real-space coordinates of grid cells
-    mesh.get(R, "R", 0.0, false);
-    mesh.get(Z, "Z", 0.0, false);
-
-    auto forward_boundary_xin =
-        std::make_shared<BoundaryRegionPar>("FCI_forward", BNDRY_PAR_FWD_XIN, +1, &mesh);
-    auto backward_boundary_xin = std::make_shared<BoundaryRegionPar>(
-        "FCI_backward", BNDRY_PAR_BKWD_XIN, -1, &mesh);
-    auto forward_boundary_xout =
-        std::make_shared<BoundaryRegionPar>("FCI_forward", BNDRY_PAR_FWD_XOUT, +1, &mesh);
-    auto backward_boundary_xout = std::make_shared<BoundaryRegionPar>(
-        "FCI_backward", BNDRY_PAR_BKWD_XOUT, -1, &mesh);
-
-    // Add the boundary region to the mesh's vector of parallel boundaries
-    mesh.addBoundaryPar(forward_boundary_xin, BoundaryParType::xin_fwd);
-    mesh.addBoundaryPar(backward_boundary_xin, BoundaryParType::xin_bwd);
-    mesh.addBoundaryPar(forward_boundary_xout, BoundaryParType::xout_fwd);
-    mesh.addBoundaryPar(backward_boundary_xout, BoundaryParType::xout_bwd);
-
-    field_line_maps.reserve(mesh.ystart * 2);
-    for (int offset = 1; offset < mesh.ystart + 1; ++offset) {
-      field_line_maps.emplace_back(mesh, dy, options, offset, forward_boundary_xin,
-                                   forward_boundary_xout, zperiodic);
-      field_line_maps.emplace_back(mesh, dy, options, -offset, backward_boundary_xin,
-                                   backward_boundary_xout, zperiodic);
-    }
-    ASSERT0(mesh.ystart == 1);
-    std::shared_ptr<BoundaryRegionPar> bndries[]{
-        forward_boundary_xin, forward_boundary_xout, backward_boundary_xin,
-        backward_boundary_xout};
-    for (auto& bndry : bndries) {
-      for (const auto& bndry2 : bndries) {
-        if (bndry->dir == bndry2->dir) {
-          continue;
-        }
-        for (bndry->first(); !bndry->isDone(); bndry->next()) {
-          if (bndry2->contains(*bndry)) {
-            bndry->setValid(0);
-          }
-        }
-      }
-    }
-  }
+               Options* opt = nullptr);
 
   void calcParallelSlices(Field3D& f) override;
 
