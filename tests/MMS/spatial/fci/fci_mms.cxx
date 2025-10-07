@@ -2,6 +2,7 @@
 #include "bout/difops.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
+#include "bout/options.hxx"
 
 #include <string>
 
@@ -34,9 +35,10 @@ int main(int argc, char** argv) {
   using bout::globals::mesh;
 
   Field3D input{FieldFactory::get()->create3D("input_field", Options::getRoot(), mesh)};
+  Field3D K{FieldFactory::get()->create3D("K", Options::getRoot(), mesh)};
 
   // Communicate to calculate parallel transform
-  mesh->communicate(input);
+  mesh->communicate(input, K);
 
   Options dump;
   // Add mesh geometry variables
@@ -45,6 +47,7 @@ int main(int argc, char** argv) {
   fci_op_test("grad_par", dump, input, Grad_par(input));
   fci_op_test("grad2_par2", dump, input, Grad2_par2(input));
   fci_op_test("div_par", dump, input, Div_par(input));
+  fci_op_test("div_par_K_grad_par", dump, input, Div_par_K_Grad_par(K, input));
 
   bout::writeDefaultOutputFile(dump);
 
