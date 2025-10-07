@@ -1,5 +1,4 @@
 #include "bout/bout.hxx"
-#include "bout/derivs.hxx"
 #include "bout/field_factory.hxx"
 
 int main(int argc, char** argv) {
@@ -8,29 +7,50 @@ int main(int argc, char** argv) {
   using bout::globals::mesh;
 
   Field3D input{FieldFactory::get()->create3D("input_field", Options::getRoot(), mesh)};
-  Field3D solution{FieldFactory::get()->create3D("solution", Options::getRoot(), mesh)};
 
   // Communicate to calculate parallel transform
   mesh->communicate(input);
-
-  Field3D result{Grad_par(input)};
-  Field3D error{result - solution};
 
   Options dump;
   // Add mesh geometry variables
   mesh->outputVars(dump);
 
-  dump["l_2"] = sqrt(mean(SQ(error), true, "RGN_NOBNDRY"));
-  dump["l_inf"] = max(abs(error), true, "RGN_NOBNDRY");
+  auto* factory = FieldFactory::get();
+  {
+    Field3D solution{factory->create3D("grad_par_solution", Options::getRoot(), mesh)};
+    Field3D result{Grad_par(input)};
+    Field3D error{result - solution};
 
-  dump["result"] = result;
-  dump["error"] = error;
-  dump["input"] = input;
-  dump["solution"] = solution;
+    dump["grad_par_l_2"] = sqrt(mean(SQ(error), true, "RGN_NOBNDRY"));
+    dump["grad_par_l_inf"] = max(abs(error), true, "RGN_NOBNDRY");
 
-  for (int slice = 1; slice < mesh->ystart; ++slice) {
-    dump[fmt::format("input.ynext(-{})", slice)] = input.ynext(-slice);
-    dump[fmt::format("input.ynext({})", slice)] = input.ynext(slice);
+    dump["grad_par_result"] = result;
+    dump["grad_par_error"] = error;
+    dump["grad_par_input"] = input;
+    dump["grad_par_solution"] = solution;
+
+    for (int slice = 1; slice < mesh->ystart; ++slice) {
+      dump[fmt::format("grad_par_input.ynext(-{})", slice)] = input.ynext(-slice);
+      dump[fmt::format("grad_par_input.ynext({})", slice)] = input.ynext(slice);
+    }
+  }
+  {
+    Field3D solution{factory->create3D("grad2_par2_solution", Options::getRoot(), mesh)};
+    Field3D result{Grad2_par2(input)};
+    Field3D error{result - solution};
+
+    dump["grad2_par2_l_2"] = sqrt(mean(SQ(error), true, "RGN_NOBNDRY"));
+    dump["grad2_par2_l_inf"] = max(abs(error), true, "RGN_NOBNDRY");
+
+    dump["grad2_par2_result"] = result;
+    dump["grad2_par2_error"] = error;
+    dump["grad2_par2_input"] = input;
+    dump["grad2_par2_solution"] = solution;
+
+    for (int slice = 1; slice < mesh->ystart; ++slice) {
+      dump[fmt::format("grad2_par2_input.ynext(-{})", slice)] = input.ynext(-slice);
+      dump[fmt::format("grad2_par2_input.ynext({})", slice)] = input.ynext(slice);
+    }
   }
 
   bout::writeDefaultOutputFile(dump);

@@ -9,6 +9,7 @@
 import pathlib
 import pickle
 import sys
+from collections import defaultdict
 
 import boutconfig as conf
 import zoidberg as zb
@@ -19,6 +20,7 @@ from scipy.interpolate import RectBivariateSpline as RBS
 
 
 def myRBS(a, b, c):
+    """RectBivariateSpline, but automatically tune spline degree for small arrays"""
     mx, _ = c.shape
     kx = max(mx - 1, 1)
     kx = min(kx, 3)
@@ -26,6 +28,13 @@ def myRBS(a, b, c):
 
 
 zb.poloidal_grid.RectBivariateSpline = myRBS
+
+
+def quiet_collect(name: str):
+    return collect(
+        name, tind=[1, 1], info=False, path=directory, xguards=False, yguards=False,
+    )
+
 
 nx = 3  # Not changed for these tests
 
@@ -50,12 +59,29 @@ method_orders = {}
 yperiodic = True
 
 failures = []
+operators = ("grad_par", "grad2_par2")
 
 build_and_log("FCI MMS test")
 
+
+def assert_convergence(error, dx, name, order) -> bool:
+    fit = polyfit(log(dx), log(error), 1)
+    order = fit[0]
+    print(f"{name} convergence order = {order:f} (fit)", end="")
+
+    order = log(error[-2] / error[-1]) / log(dx[-2] / dx[-1])
+    print(f", {order:f} (small spacing)", end="")
+
+    # Should be close to the expected order
+    success = order > order * 0.95
+    print(f" ............ {'PASS' if success else 'FAIL'}")
+
+    return success
+
+
 for nslice in nslices:
-    error_2[nslice] = []
-    error_inf[nslice] = []
+    error_2[nslice] = defaultdict(list)
+    error_inf[nslice] = defaultdict(list)
 
     # Which central difference scheme to use and its expected order
     order = nslice * 2
@@ -79,70 +105,48 @@ for nslice in nslices:
 
         # Create the grid
         grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=yperiodic)
-        # Make and write maps
         maps = zb.make_maps(grid, field, nslice=nslice, quiet=True, MXG=1)
         zb.write_maps(
-            grid, field, maps, new_names=False, metric2d=conf.isMetric2D(), quiet=True
+            grid, field, maps, new_names=False, metric2d=conf.isMetric2D(), quiet=True,
         )
 
         # Command to run
         args = f" MZ={n} MYG={nslice} mesh:paralleltransform:y_periodic={yperiodic} mesh:ddy:first={name}"
         cmd = f"./fci_mms {args}"
-
         print(f"Running command: {cmd}")
 
         # Launch using MPI
-        s, out = launch_safe(cmd, nproc=nproc, mthread=mthread, pipe=True)
+        status, out = launch_safe(cmd, nproc=nproc, mthread=mthread, pipe=True)
 
         # Save output to log file
         pathlib.Path(f"run.log.{n}").write_text(out)
 
-        if s:
+        if status:
             print(f"Run failed!\nOutput was:\n{out}")
-            sys.exit(s)
+            sys.exit(status)
 
         # Collect data
-        l_2 = collect(
-            "l_2", tind=[1, 1], info=False, path=directory, xguards=False, yguards=False
-        )
-        l_inf = collect(
-            "l_inf",
-            tind=[1, 1],
-            info=False,
-            path=directory,
-            xguards=False,
-            yguards=False,
-        )
+        for operator in operators:
+            l_2 = quiet_collect(f"{operator}_l_2")
+            l_inf = quiet_collect(f"{operator}_l_inf")
 
-        error_2[nslice].append(l_2)
-        error_inf[nslice].append(l_inf)
+            error_2[nslice][operator].append(l_2)
+            error_inf[nslice][operator].append(l_inf)
 
-        print(f"Errors : l-2 {l_2:f} l-inf {l_inf:f}")
+            print(f"{operator} errors: l-2 {l_2:f} l-inf {l_inf:f}")
 
     dx = 1.0 / array(nlist)
-
-    # Calculate convergence order
-    fit = polyfit(log(dx), log(error_2[nslice]), 1)
-    order = fit[0]
-    print(f"Convergence order = {order:f} (fit)", end="")
-
-    order = log(error_2[nslice][-2] / error_2[nslice][-1]) / log(dx[-2] / dx[-1])
-    print(f", {order:f} (small spacing)")
-
-    # Should be close to the expected order
-    if order > order * 0.95:
-        print("............ PASS\n")
-    else:
-        print("............ FAIL\n")
-        success = False
-        failures.append(name)
+    for operator in operators:
+        test_name = f"{operator} {name}"
+        success &= assert_convergence(error_2[nslice][operator], dx, test_name, order)
+        if not success:
+            failures.append(test_name)
 
 
-with open("fci_mms.pkl", "wb") as output:
+with pathlib.Path("fci_mms.pkl").open("wb") as output:
     pickle.dump(nlist, output)
-    for nslice in nslices:
-        pickle.dump(error_2[nslice], output)
-        pickle.dump(error_inf[nslice], output)
+    pickle.dump(error_2, output)
+    pickle.dump(error_inf, output)
 
 # Do we want to show the plot as well as save it to file.
 show_plot = True
@@ -177,10 +181,10 @@ if False:
         print("No matplotlib")
 
 if success:
-    print("All tests passed")
-    sys.exit(0)
+    print("\nAll tests passed")
 else:
-    print("Some tests failed:")
+    print("\nSome tests failed:")
     for failure in failures:
         print(f"\t{failure}")
-    sys.exit(1)
+
+sys.exit(0 if success else 1)

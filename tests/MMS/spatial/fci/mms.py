@@ -30,5 +30,6 @@ def FCI_ddy(f):
 ############################################
 # Equations solved
 
-print("input = " + exprToStr(f))
-print("solution = " + exprToStr(FCI_ddy(f)))
+print(f"input_field = {exprToStr(f)}")
+print(f"grad_par_solution = {exprToStr(FCI_ddy(f))}")
+print(f"grad2_par2_solution = {exprToStr(FCI_ddy(FCI_ddy(f)))}")
