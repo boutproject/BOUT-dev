@@ -55,6 +55,7 @@ int main(int argc, char** argv) {
   fci_op_test("grad2_par2", dump, input, Grad2_par2(input));
   fci_op_test("div_par", dump, input, Div_par(input));
   fci_op_test("div_par_K_grad_par", dump, input, Div_par_K_Grad_par(K, input));
+  fci_op_test("laplace_par", dump, input, Laplace_par(input));
 
   bout::writeDefaultOutputFile(dump);
 

@@ -24,7 +24,7 @@ from scipy.interpolate import RectBivariateSpline as RBS
 DIRECTORY = "data"
 NPROC = 2
 MTHREAD = 2
-OPERATORS = ("grad_par", "grad2_par2", "div_par", "div_par_K_grad_par")
+OPERATORS = ("grad_par", "grad2_par2", "div_par", "div_par_K_grad_par", "laplace_par")
 NX = 3
 # Resolution in y and z
 NLIST = [8, 16, 32, 64, 128]
