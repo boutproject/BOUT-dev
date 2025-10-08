@@ -2,6 +2,7 @@
  * High-Beta Flute-Reduced MHD with 6-field of (N_i, T_e, T_i, U, Psi, Vipar)
  * Basically the same as Hazeltine-Meiss but different normalisations.
  * diffusion_par can turn on the parallel thermal conductivity
+ * T.Y. Xia, Ben Zhu, Nami Li, Malamas Tsagkaridis
  *******************************************************************************/
 
 /* merging 6f module from bout-v3 to bout_v5 by NamiLi Dec 2023
@@ -49,6 +50,16 @@ BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xout", "none");
 
 class Elm_6f : public PhysicsModel {
 private:
+
+
+  /********** Physical constants ************************/
+  const BoutReal MU0 = 4.0e-7 * PI;              // [m kg s-2 A-2] permeability of free space
+  const BoutReal Mp = 1.6726e-27;                // [kg] proton mass  
+  const BoutReal KB = 1.38065e-23;               // Boltamann constant
+  const BoutReal ee = 1.602e-19;                 
+  const BoutReal ratio_pe = 1836.2;              // proton/electron mass ratio
+  const BoutReal eV_K = 11605.0;                 // 1eV = 11605K
+
   /********** Magnetic configuration *******************************************/
   int mag_config;                                // magnetic geometry: 1-circular, 2-circular with limiter, 3-single null, 4-double null
   Field2D Rxy, Bpxy, Btxy, B0, hthe, I;          // I: shear factor
@@ -57,11 +68,13 @@ private:
   Vector2D B0vec;                                // B0 field vector
 
   /********** Primary variables ************************************************/
-  BoutReal AA, Zi;                               // main ion info (atomic mass, charge and  mass)
+  BoutReal AA, Zi, Mi;                           // main ion info (atomic mass, charge and  mass)
+
   Field2D J0, P0;                                // Current and pressure
   BoutReal J0_factor, P0_factor;
   Vector2D b0xcv;                                // Curvature term
   Field2D phi0;                                  // When diamagnetic terms used
+
   Field2D N0, Ti0, Te0, Ne0, N_imp0, T_imp0;     // number density and temperature
   Field2D Pi0, Pe0, P_imp0, density_tmp;
   Field2D q95;
@@ -85,13 +98,20 @@ private:
   Vector2D Er0_dia;
   Vector2D Er0_net;                              // Er0 = Er0_net + Er0_dia
   
+  // Equilibrium/background profiles for Vipar, Vepar, and U.
+  // NOTE(malamast): Only the perturbed part of Vipar, Vepar, and U was considered in the 6-field model. 
+  //                 See (Xia T.Y. et al, 2013)
+  Field2D Vipar0, Vepar0, U0; 
+
   // 3D evolving variables
   Field3D Ni, Te, Ti, P, Pi, Pe;
   Field3D U, Vipar, Vepar, Apar, Psi;
   // derived variables
   Field3D Jpar, phi;                             // Parallel current, electric potential
   Field2D phiDC,VortDC;
+
   Field3D ubyn;
+
   Field3D Jpar2;                                 // Delp2 of Parallel current
   Field3D tmpU2, tmpA2;                          // Grad2_par2new of Parallel vector potential
   Field3D tmpN2, tmpTi2, tmpTe2, tmpVp2;         // Grad2_par2new of Parallel density
@@ -136,10 +156,12 @@ private:
   bool evolve_jpar;
   BoutReal g;                                    // Only if compressible
   bool phi_curv;
+
   bool include_curvature, include_jpar0, compress0;
-  bool include_vipar;
+  bool include_vipar, include_vpar0, include_U0;
   bool evolve_pressure, continuity;
   bool parallel_viscous;
+  
   Field3D eta_i0, pi_ci;
   
   bool gyroviscous;
@@ -171,6 +193,7 @@ private:
   BoutReal vac_resist, core_resist;              // The resistivities (just 1 / S)
   Field3D eta;                                   // Resistivity profile (1 / S)
   BoutReal FZ;                                   // correction coefficient in Spitzer model
+  
   BoutReal vacuum_pressure;
   BoutReal vacuum_trans;                         // Transition width
   Field3D vac_mask;
@@ -179,6 +202,16 @@ private:
   // case1: flux limited expression
   bool fluxlimit;                                // flux limited condition
   BoutReal q_alpha;                              // flux limiting coefficient
+
+  // // case2: Landau damping closure
+  // bool Landau;           // Use Gyro Landau Fluid closure instead of thermal conductivity
+  // bool Landau_coll;      // collisional Landau Damping
+  // BoutReal Landau_coeff; // Coefficient for Landau Damping
+  // int nLorentzian;       // number of Lorentzians, collisional: [3, 7, 12], collisionless: >=7
+  // BoutReal kappa_0;      // collisionless Landau damping coefficient
+  // Field3D kappa_i;       // ion collisional Landau damping coefficient (0.5*nu_i/vth_i)
+  // Field3D kappa_e;       // electron collisional Landau damping coefficient (0.5*nu_e/vthe_e)  
+
   Field3D SBC_value_i, SBC_value_e;
   bool full_sbc;                                 // full-f version of sheath BC for ion parallel velocity
 
@@ -187,6 +220,7 @@ private:
   BoutReal Z_imp, A_imp;                         // impurity ion info
   Field3D Dperp2Pimp0, bracketPhiPimp0;
   Field2D Upara_imp;
+
   /// source
   bool source;
   Field3D NiSource, TeSource, TiSource;          // Axisymmetric 2D/3D sources
@@ -211,9 +245,12 @@ private:
   Field3D Gamma_nn;
   BoutReal Rcyc_Nn, Rcyc_Vn;                     // recycle coefficients
   bool Nn_recyc_BC, Vn_recyc_BC;
+
   // Fixed-fraction model for impurity radiation
   bool fix_fraction_imp, Limp_carbon, Limp_carbon_adas, Limp_nitro, Limp_nitro_adas, Limp_Neon, Limp_Neon_adas, Limp_Argon, Limp_Argon_adas;
   Field3D Limp, Srad, Wrad;
+  Field2D N_tmp0, Ne_tmp0, Te_tmp0, Limp0, Srad0, Wrad0; // Used for the linearization of the fixed-fraction radiation model
+
   BoutReal Wiz, Wrc;                              // ionization and recombination energy in eV
   BoutReal frac_imp;
   
@@ -251,9 +288,13 @@ private:
   bool filter_z, filter_z_nonlinear;
   int filter_z_mode;
   int low_pass_z;
-  bool zonal_flow;
-  bool zonal_field;
-  bool zonal_bkgd;
+  bool zonal_flow;  //NOTE(malamast): This used to be int instead of bool. CHECK
+  bool zonal_field; //NOTE(malamast): This used to be int instead of bool. CHECK
+  bool zonal_bkgd;  //NOTE(malamast): This used to be int instead of bool. CHECK
+
+  // Load background/equilibrium profiles from 2D transport similation data
+  bool load_2d_bkgd;
+
   /********** Normalization coefficients ***************************************/
   BoutReal density;                              // density normalization factor [m^-3]
   BoutReal density_unit;                         // density unit for grid [m^-3]
@@ -388,9 +429,6 @@ private:
   int damp_width;                                // Width of inner damped region
   BoutReal damp_t_const;                         // Timescale of damping
 
-  /// Ion mass
-  BoutReal Mi;
-
   /// Communication objects
   FieldGroup comms;
 
@@ -399,14 +437,6 @@ private:
 #else
   std::unique_ptr<LaplaceXY> laplacexy{nullptr};       // Laplacian solver in X-Y (n=0)
 #endif
-
-  /// Physical constants 
-  const BoutReal MU0 = 4.0e-7 * PI;
-  const BoutReal Mp = 1.6726e-27;                // [kg] proton mass  
-  const BoutReal KB = 1.38065e-23;               // Boltamann constant
-  const BoutReal ee = 1.602e-19;                 
-  const BoutReal ratio_pe = 1836.2;              // proton/electron mass ratio
-  const BoutReal eV_K = 11605.0;                 // 1eV = 11605K
 
   /// Solver for inverting Laplacian
   std::unique_ptr<Laplacian> phiSolver{nullptr};
@@ -418,14 +448,14 @@ private:
     for (int jx = 0; jx < mesh->LocalNx; jx++) {
       int x_glb = mesh->getGlobalXIndex(jx);
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
-	int y_glb = mesh->getGlobalYIndex(jy);
+	      int y_glb = mesh->getGlobalYIndex(jy);
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
           if(x_glb >= CF_BC_x0 && y_glb >= CF_BC_y0 && y_glb <= CF_BC_y1) {
-	    result(jx,jy,jz) = value;
-	  } else {
-	      result(jx,jy,jz) = var(jx,jy,jz);
-	  }
-	}	  
+	          result(jx,jy,jz) = value;
+	        } else {
+	          result(jx,jy,jz) = var(jx,jy,jz);
+	        }
+	      }	  
       }
     }
     mesh->communicate(result);
@@ -643,6 +673,31 @@ private:
         if ((dindx < PF_limit_range) && ((indy <= int(jysep1) - 2) || ((indy > int(jysep2_1)) && (indy <= int(jysep1_2))) || (indy > int(jysep2) + 2))) {
           for (int jz = 0; jz < mesh->LocalNz; jz++)
             result(jx,jy,jz) = 0.;
+        } else {
+          for (int jz = 0; jz < mesh->LocalNz; jz++)
+            result(jx,jy,jz) = input(jx,jy,jz);
+        }
+      }
+    }
+
+    mesh->communicate(result);
+    return result;
+  }
+
+  const Field3D PF_filter_2(const Field3D &input, const BoutReal PF_limit_range) {
+    Field3D result;
+    result.allocate();
+    Field2D prof2d = DC(input);
+
+    for (int jx = 0; jx < mesh->LocalNx; jx++) {
+      indx = mesh->getGlobalXIndex(jx);
+      dindx = indx / ixsep;
+      for (int jy = 0; jy < mesh->LocalNy; jy++) {
+        indy = mesh->getGlobalYIndex(jy);
+        if ((dindx < PF_limit_range) && ((indy <= int(jysep1) - 2) || ((indy > int(jysep2_1)) && (indy <= int(jysep1_2))) || (indy > int(jysep2) + 2))) {
+          BoutReal value_dc = prof2d(jx,jy);
+          for (int jz = 0; jz < mesh->LocalNz; jz++)
+            result(jx,jy,jz) = value_dc;
         } else {
           for (int jz = 0; jz < mesh->LocalNz; jz++)
             result(jx,jy,jz) = input(jx,jy,jz);
@@ -890,7 +945,9 @@ private:
   }
 
 protected:
+
   int init(bool restarting) override {
+
     bool noshear;
 
     // Get the metric tensor
@@ -910,6 +967,7 @@ protected:
 
     mesh->get(Grid_NX, "nx");
     mesh->get(Grid_NY, "ny");
+
     if (ixsep==Grid_NX) {
       output.write("Cicular geometry without limiter!\n");
       mag_config = 1;
@@ -928,12 +986,13 @@ protected:
 
     // Load 2D profiles
     mesh->get(J0, "Jpar0");                      // A / m^2
-    if (mesh->get(P0, "pressure_s"))             // Pascals
-      {
-        mesh->get(P0, "pressure");
-        output.write("Using pressure as P0.\n");
-      } else
-        output.write("Using pressure_s as P0.\n");
+
+    if (mesh->get(P0, "pressure_s")) {           // Pascals
+      mesh->get(P0, "pressure");
+      output.write("Using pressure as P0.\n");
+    } else {
+      output.write("Using pressure_s as P0.\n");
+    }
 
     // Load curvature term
     b0xcv.covariant = false;                     // Read contravariant components
@@ -993,7 +1052,12 @@ protected:
     Tconst = options["Tconst"]
                    .doc("the amplitude of constant temperature, in percentage")
                    .withDefault(-1.0);
-    
+
+                   
+    load_2d_bkgd = options["load_2d_bkgd"]
+	           .doc("Load background/equilibrium profiles from 2D transport similation data.")
+		   .withDefault(false);
+
     impurity_prof = options["impurity_prof"]
 	           .doc("Include the profile of impurity in the equilibrium")
 		   .withDefault(false);
@@ -1064,15 +1128,20 @@ protected:
 
     continuity = options["continuity"].doc("use continuity equation").withDefault(false);
     compress0 = options["compress0"].withDefault(false);
-    include_vipar = options["include_vipar"].withDefault(compress0);
     gyroviscous = options["gyroviscous"].withDefault(false);
     parallel_viscous = options["parallel_viscous"].withDefault(false);
 
+    include_vipar = options["include_vipar"].withDefault(false);
+    include_vpar0 = options["include_vpar0"].withDefault(false);    // include Vpar0 terms. Vpar0  is the ecuilibrium 2D backgraound from 2D trasnport simulations
+    include_U0 = options["include_U0"].withDefault(false);          // include U0 terms. U0 is the ecuilibrium 2D vorticity backgraound from 2D trasnport simulations
+
     BScurrent = options["BScurrent"].withDefault(false);
     Aratio = options["Aratio"].withDefault(0.35);
+
     radial_diffusion = options["radial_diffusion"].withDefault(false);
     diffusion_coef_Hmode0 = options["diffusion_coef_Hmode0"].withDefault(1.0);    // default value of radial diffusion coefficient
     diffusion_coef_Hmode1 = options["diffusion_coef_Hmode1"].withDefault(10.0);   // upper limit of radial diffusion coefficient
+
     //path = options["path"].withDefault("./");                                   // The path of the original Vexb data
     pos_filter = options["pos_filter"].withDefault(false);                        // switch to turn on the filter of the negative value of zonal background
     pos_filter2 = options["pos_filter2"].withDefault(false);                      // switch to turn on the filter inside certain position
@@ -1093,13 +1162,13 @@ protected:
       }
       if (filter_position_ti <= 0) {
         filter_position_ti = ixsep;
-	output << "\tWarning: filter_position_ti has a negtive value!\n";
-	output << "\tfilter_position_ti is forced to be isxeps1=" << ixsep << ".\n";	
+	      output << "\tWarning: filter_position_ti has a negtive value!\n";
+	      output << "\tfilter_position_ti is forced to be isxeps1=" << ixsep << ".\n";	
       }
       if (filter_position_te <= 0) {
         filter_position_te = ixsep;
-	output << "\tWarning: filter_position_te has a negtive value!\n";
-	output << "\tfilter_position_te is forced to be isxeps1=" << ixsep << ".\n";
+	      output << "\tWarning: filter_position_te has a negtive value!\n";
+	      output << "\tfilter_position_te is forced to be isxeps1=" << ixsep << ".\n";
       }
       position_tmpi = std::min(filter_position_ni, filter_position_ti);
       position_tmpe = std::min(filter_position_ni, filter_position_te);
@@ -1483,7 +1552,7 @@ protected:
       }
       if (output_vradial) {
         output_vradial = false;
-        output.write("Linear simulation! Set output_flux_par to false.\n");
+        output.write("Linear simulation! Set output_vradial to false.\n");
       }
     }
 
@@ -1500,6 +1569,21 @@ protected:
         b0xcv.z += I * b0xcv.x;
       }
       I = 0.0;
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // Initialize variables
+    U0 = 0.0, Vipar0 = 0.0, Vepar0 = 0.0;
+
+    U = 0.0, Ni = 0.0, Ti = 0.0, Te = 0.0;
+    if (emass) {
+      Ajpar = 0.0;
+    } else {
+      if (evolve_psi) {
+        Psi = 0.0;
+      } else {
+        Apar = 0.0;
+      }
     }
 
     /////////////////////////////////////////////////////////////////
@@ -1547,12 +1631,12 @@ protected:
     Tbar = Lbar / Va;
 
     output.write("Normalisations: Bbar = {:e} T   Lbar = {:e} m\n", Bbar, Lbar);
-    output.write("Va = {:e} m/s   Tbar = {:e} s\n", Va, Tbar);
-    output.write("Nbar = {:e} * {:e} m^-3\n", Nbar, density);
-    output.write("\tPibar = {:e} Pa   Pebar = {:e} Pa\n", ee * Tibar * Nbar * density, ee * Tebar * Nbar * density);
-    output.write("Tibar = {:e} eV   Tebar = {:e} eV    Ti/Te = {:e}\n", Tibar, Tebar, Tau_ie);
+    output.write("\t Va = {:e} m/s   Tbar = {:e} s\n", Va, Tbar);
+    output.write("\t Nbar = {:e} * {:e} m^-3\n", Nbar, density);
+    output.write("\t Pibar = {:e} Pa   Pebar = {:e} Pa\n", ee * Tibar * Nbar * density, ee * Tebar * Nbar * density);
+    output.write("\t Tibar = {:e} eV   Tebar = {:e} eV    Ti/Te = {:e}\n", Tibar, Tebar, Tau_ie);
     output.write("Resistivity\n");
-    output.write("\tetabar = {:e} [Ohm m]\n", MU0 * Va * Lbar);
+    output.write("\t etabar = {:e} [Ohm m]\n", MU0 * Va * Lbar);
     output.write("\t mi = {:e} \n", Mi);
 
     if (emass) {
@@ -1562,7 +1646,7 @@ protected:
       output.write("delta_e = {:e}    wci*T_A = {:e}\n", delta_e, gyroAlv);
     }
 
-     if (thermal_force || eHall) {
+    if (thermal_force || eHall) {
       Psipara1 = KB * Tebar * eV_K / ee / Bbar / Lbar / Va;
       output.write("Psipara1 = {:e}   AA = {:e}\n", Psipara1, AA);
     }
@@ -1595,7 +1679,8 @@ protected:
     if (compress0) {
       output.write("Including compression (Vipar) effects\n");
       Vipara = MU0 * KB * Nbar * density * Tebar * eV_K / (Bbar * Bbar);
-      Vepara = Bbar / (MU0 * Zi * ee * Nbar * density * Lbar * Va);
+      // Vepara = Bbar / (MU0 * Zi * ee * Nbar * density * Lbar * Va);
+      Vepara = Bbar / (MU0 * ee * Nbar * density * Lbar * Va);
       output.write("Normalized constant for Vipar :   Vipara = {:e}\n", Vipara);
       output.write("Normalized constant for Vepar :   Vepara = {:e}\n", Vepara);
     } else {
@@ -1751,19 +1836,19 @@ protected:
 
     if ((!T0_fake_prof) && n0_fake_prof) {
       if (n0_p0_0p3) {
-	output.write("N0 ~ P0^0.3 used!\n");
-	// n0 = n0_height*(P0/P00)^0.3*density
-	// this relation is used in the bootstrap current calculation
-	// when generating the cbm18_dens_ne* serial grids
-	// P00: P0 at magnetic axis, for cbm18_dens6, it's 23072.3
-	// densn: P00 = 23072.3*n/6.
-	BoutReal P00; // P0 at magnetic axis
-	P00 = options["P00"].withDefault(23072.3);
-	output.write("n0=n0_height*(P0/P00)^0.3*density is used, P00 is required!\n");
-	P00 = P00 / (ee * Tebar * Nbar * density);
-	N0 = n0_height * (pow(P0 / P00, 0.3));
+        output.write("N0 ~ P0^0.3 used!\n");
+        // n0 = n0_height*(P0/P00)^0.3*density
+        // this relation is used in the bootstrap current calculation
+        // when generating the cbm18_dens_ne* serial grids
+        // P00: P0 at magnetic axis, for cbm18_dens6, it's 23072.3
+        // densn: P00 = 23072.3*n/6.
+        BoutReal P00; // P0 at magnetic axis
+        P00 = options["P00"].withDefault(23072.3);
+        output.write("n0=n0_height*(P0/P00)^0.3*density is used, P00 is required!\n");
+        P00 = P00 / (ee * Tebar * Nbar * density);
+        N0 = n0_height * (pow(P0 / P00, 0.3));
       } else {
-	N0 = N0tanh(n0_height * Nbar, n0_ave * Nbar, n0_width, n0_center, n0_bottom_x);
+	      N0 = N0tanh(n0_height * Nbar, n0_ave * Nbar, n0_width, n0_center, n0_bottom_x);
       }
       Ti0 = P0 / N0 / (1.0 + Zi);
       Te0 = Ti0;
@@ -1775,6 +1860,86 @@ protected:
       N0 = P0 / (Ti0 * Tau_ie + Te0);
       N_imp0 = 0;
       Ne0 = Zi * N0;
+
+  } else if (load_2d_bkgd) {
+
+    if (mesh->get(P0, "P_2D")) { // [Pa]
+      output.write("Error: Cannot read P_2D from grid\n");
+      return 1;
+    }
+
+    if (mesh->get(N0, "Nd+_2D")) { // [1e20 #/m^3]
+      output.write("Error: Cannot read Nd+_2D from grid\n");
+      return 1;
+    }
+
+    if (mesh->get(Ti0, "Td+_2D")) { // [eV]]
+      output.write("Error: Cannot read Td+_2D from grid\n");
+      return 1;
+    }
+
+    if (mesh->get(Ne0, "Ne_2D")) { // [1e20 #/m^3]
+      output.write("Error: Cannot read Ne_2D from grid\n");
+      return 1;
+    }
+
+    if (mesh->get(Te0, "Te_2D")) { // [eV]
+      output.write("Error: Cannot read Te_2D from grid\n");
+      return 1;
+    }
+
+    if (mesh->get(Vipar0, "Vd+_2D")) { // [m/s]
+      output.write("Error: Cannot read Vd+_2D from grid\n");
+      return 1;
+    }
+
+    if (mesh->get(Vepar0, "Ve_2D")) { // [m/s]
+      output.write("Error: Cannot read Ve_2D from grid\n");
+      return 1;
+    }
+
+    // if (mesh->get(phi0, "phi_2D")) { // [V]
+    //   output.write("Error: Cannot read phi_2D from grid\n");
+    //   return 1;
+    // }
+
+    // if (mesh->get(U0, "Vort_2D")) { // [C m^-3] //NOTE(malamast): The units of vorticity used in Hermes-3 and 6-field are different. Be carefull!
+    //   output.write("Error: Cannot read Vort_2D from grid\n");
+    //   return 1;
+    // }
+
+    // if (load_impurity) {
+
+    //   if (mesh->get(N_imp0, "Nd_2D")) { // [1e20 #/m^3]
+    //     output.write("Error: Cannot read Nd_2D from grid\n");
+    //     return 1;
+    //   }
+
+    //   if (mesh->get(T_imp0, "Td_2D")) { // [1e20 #/m^3]
+    //     output.write("Error: Cannot read Nd_2D from grid\n");
+    //     return 1;
+    //   }
+
+    // }
+
+    MPI_Barrier(BoutComm::get());
+
+    P0 = P0 / (KB * (Tebar)*eV_K * Nbar * density);
+
+    N0 /= Nbar;
+    Ti0 /= Tibar;
+    Ne0 /= Nbar;
+    Te0 /= Tebar;
+
+    Vipar0 /= Va;
+    Vepar0 /= Va;
+
+    // Ne0 = Zi * N0; // quasi-neutral condition
+    N_imp0 = 0;
+    // N_imp0 /= Nbar;
+    // T_imp0 /= Tibar;
+    // P_imp0 = N_imp0 * T_imp0;      
+
     } else {
       if (mesh->get(N0, "Niexp")) { // N_i0
         output_error.write("Error: Cannot read Ni0 from grid\n");
@@ -1790,41 +1955,44 @@ protected:
         output_error.write("Error: Cannot read Te0 from grid\n");
         return 1;
       }
+
       N0 /= Nbar;
       Ti0 /= Tibar;
       Te0 /= Tebar;
 
       if (impurity_prof) {
-	if (mesh->get(Ne0, "Neexp")) { // N_e0
-	  output.write("Error: Cannot read Ne0 from grid\n");
-	  return 1;
-	}
-	Ne0 /= Nbar;
-	if (load_impurity) {
-	  if (mesh->get(N_imp0, "N_imp")) {
-	    output.write("Error: Cannot read N_imp from grid\n");
-	    return 1;
-          }
-	  N_imp0 /= Nbar;
-	} else
-	  N_imp0 = (Ne0 - Zi * N0) / Z_imp;
-	if (min(N_imp0, true) <= 0.) {
-          output.write("Error: Impurity density has negative value.\n");
-	  if (Nimp_lowlimit) {
-            BoutReal min_Nimp = max(N_imp0, true) * 0.01;
-	    output.write("Use Nimp_lowlimit of {:d} to modify the smallest value.\n", min_Nimp);
-	    for (jx = 0; jx < mesh->LocalNx; jx++)
-	      for (jy = 0; jy < mesh->LocalNy; jy++)
-                if (N_imp0(jx,jy) <= min_Nimp)
-                  N_imp0(jx,jy) = min_Nimp;
-          } else
-            return 1;
+        if (mesh->get(Ne0, "Neexp")) { // N_e0
+          output.write("Error: Cannot read Ne0 from grid\n");
+          return 1;
         }
-	T_imp0 = Ti0;
-	P_imp0 = N_imp0 * T_imp0;
-	// P_imp0 = P0 - N0*Ti0*Tau_ie - Ne0*Te0;
-        // T_imp0 = P_imp0/N_imp0;
-	if (min(T_imp0, true) <= 0.) {
+        Ne0 /= Nbar;
+        if (load_impurity) {
+          if (mesh->get(N_imp0, "N_imp")) {
+            output.write("Error: Cannot read N_imp from grid\n");
+            return 1;
+          }
+          N_imp0 /= Nbar;
+        } else{
+          N_imp0 = (Ne0 - Zi * N0) / Z_imp;
+        }
+        if (min(N_imp0, true) <= 0.) {
+          output.write("Error: Impurity density has negative value.\n");
+          if (Nimp_lowlimit) {
+            BoutReal min_Nimp = max(N_imp0, true) * 0.01;
+            output.write("Use Nimp_lowlimit of {:d} to modify the smallest value.\n", min_Nimp);
+            for (jx = 0; jx < mesh->LocalNx; jx++)
+              for (jy = 0; jy < mesh->LocalNy; jy++)
+                if (N_imp0(jx,jy) <= min_Nimp) 
+                  N_imp0(jx,jy) = min_Nimp;
+          } else {
+            return 1;
+          }
+        }
+        T_imp0 = Ti0;
+        P_imp0 = N_imp0 * T_imp0;
+        // P_imp0 = P0 - N0*Ti0*Tau_ie - Ne0*Te0;
+              // T_imp0 = P_imp0/N_imp0;
+        if (min(T_imp0, true) <= 0.) {
           output.write("Error: Impurity temperature has negative value.\n");
           if (Nimp_lowlimit) {
             BoutReal min_Timp = max(T_imp0, true) * 0.01;
@@ -1872,11 +2040,33 @@ protected:
       kappa_perp_i.setBoundary("kappa");
       kappa_perp_e.setBoundary("kappa");
       if (diff_par_flutter) {
-      bracket1i.setBoundary("Ti");
-      gradpar_ti.setBoundary("Ti");
-      bracket1e.setBoundary("Te");
-      gradpar_te.setBoundary("Te");
+        bracket1i.setBoundary("Ti");
+        gradpar_ti.setBoundary("Ti");
+        bracket1e.setBoundary("Te");
+        gradpar_te.setBoundary("Te");
       }
+
+      // if (Landau) {
+      //   q_par_e.setBoundary("q_par_e");
+      //   q_par_i.setBoundary("q_par_i");
+      //   q_par_e = 0.;
+      //   q_par_i = 0.;
+      //   dump.add(q_par_e, "q_par_e", 1);
+      //   dump.add(q_par_i, "q_par_i", 1);
+      //   if (output_qparcompare) {
+      //     q_par_fl.setBoundary("q_par_e");
+      //     dump.add(q_par_fl, "q_par_fl", 1);
+      //     q_par_landau.setBoundary("q_par_e");
+      //     dump.add(q_par_landau, "q_par_landau", 1);
+      //   }
+      //   if (Landau_coll) {
+      //     kappa_i.setBoundary("kappa");
+      //     kappa_e.setBoundary("kappa");
+      //   }
+      //   SBC_value_i.setBoundary("kappa");
+      //   SBC_value_e.setBoundary("kappa");
+      // }      
+
     }
 
     if (neoclassic_i || neoclassic_e) {
@@ -1896,36 +2086,36 @@ protected:
     }
 
     if (gyroviscous) {
-      //Dperp2Phi0.setLocation(CELL_CENTRE);
+      Dperp2Phi0.setLocation(CELL_CENTRE);
       Dperp2Phi0.setBoundary("phi");
       dump.add(Dperp2Phi0, "Dperp2Phi0", 1);
-      //Dperp2Phi.setLocation(CELL_CENTRE);
+      Dperp2Phi.setLocation(CELL_CENTRE);
       Dperp2Phi.setBoundary("phi");
-      //GradPhi02.setLocation(CELL_CENTRE);
+      GradPhi02.setLocation(CELL_CENTRE);
       GradPhi02.setBoundary("phi");
-      //GradcPhi.setLocation(CELL_CENTRE);
+      GradcPhi.setLocation(CELL_CENTRE);
       GradcPhi.setBoundary("phi");
-      //Dperp2Pi0.setLocation(CELL_CENTRE);
+      Dperp2Pi0.setLocation(CELL_CENTRE);
       Dperp2Pi0.setBoundary("P");
-      //Dperp2Pi.setLocation(CELL_CENTRE);
+      Dperp2Pi.setLocation(CELL_CENTRE);
       Dperp2Pi.setBoundary("P");
-      //bracketPhi0P.setLocation(CELL_CENTRE);
+      bracketPhi0P.setLocation(CELL_CENTRE);
       bracketPhi0P.setBoundary("P");
-      //bracketPhiP0.setLocation(CELL_CENTRE);
+      bracketPhiP0.setLocation(CELL_CENTRE);
       bracketPhiP0.setBoundary("P");
       if (impurity_prof && impurity_gyro) {
         Upara_imp = (A_imp * N_imp0) / (AA * N0);
-	output.write("Max Upara_imp = {:e}, Min Upara_imp = {:e}\n", max(Upara_imp, true), min(Upara_imp, true));
-	
-	Dperp2Pimp0.setLocation(CELL_CENTRE);
-	Dperp2Pimp0.setBoundary("P");
-	bracketPhiPimp0.setLocation(CELL_CENTRE);
-	bracketPhiPimp0.setBoundary("P");
+        output.write("Max Upara_imp = {:e}, Min Upara_imp = {:e}\n", max(Upara_imp, true), min(Upara_imp, true));
+        
+        Dperp2Pimp0.setLocation(CELL_CENTRE);
+        Dperp2Pimp0.setBoundary("P");
+        bracketPhiPimp0.setLocation(CELL_CENTRE);
+        bracketPhiPimp0.setBoundary("P");
       }
       if (nonlinear) {
         GradPhi2.setLocation(CELL_CENTRE);
         GradPhi2.setBoundary("phi");
-	bracketPhiP.setLocation(CELL_CENTRE);
+	      bracketPhiP.setLocation(CELL_CENTRE);
         bracketPhiP.setBoundary("P");
       }
     }
@@ -2006,16 +2196,19 @@ protected:
       dump.add(nu_diss, "nu_diss", 1);
       dump.add(Sgas, "Sgas", 1);
       dump.add(sigma_cx, "sigma_cx", 1);
-      dump.add(Limp, "Limp", 1);
-      dump.add(Srad, "Srad", 1);
-      dump.add(Wrad, "Wrad", 1);
       if (with_vipar) {
         dump.add(term1, "term1", 1);
       }
       dump.add(term2, "term2", 1);
       dump.add(term3, "term3", 1);
     }
-   
+
+    if (fix_fraction_imp) {
+      dump.add(Limp, "Limp", 1);
+      dump.add(Srad, "Srad", 1);
+      dump.add(Wrad, "Wrad", 1);
+    }
+    
     if (mask_j_x) {
       mask_jx1d = mask_x_1d(false, mask_flag_j, mask_width, mask_length);
       // dump.add(mask_jx1d, "mask_jx1d", 0);
@@ -2050,10 +2243,10 @@ protected:
       // transition from 0 for large P0 to resistivity for small P0
       if (vac_lund > 0.0) {
         output.write("Vacuum  Tau_R = {:e} s   eta = {:e} Ohm m\n", vac_lund * Tbar, MU0 * Lbar * Lbar / (vac_lund * Tbar));
-	vac_resist = 1. / vac_lund;
+	      vac_resist = 1. / vac_lund;
       } else {
         output.write("Vacuum  - Zero resistivity -\n");
-	vac_resist = 0.0;
+	      vac_resist = 0.0;
       }
       if (core_lund > 0.0) {
         output.write("Core    Tau_R = {:e} s   eta = {:e} Ohm m\n", core_lund * Tbar, MU0 * Lbar * Lbar / (core_lund * Tbar));
@@ -2075,8 +2268,7 @@ protected:
         } else {
           output.write("\tUsing q profile from grid.\n");
           if (mesh->get(q95, "q")) {
-            output.write(
-                "Cannot get q profile from grid!\nPlease run addqprofile.pro first\n");
+            output.write("Cannot get q profile from grid!\nPlease run addqprofile.pro first\n");
             return 1;
           }
         }
@@ -2137,6 +2329,7 @@ protected:
         kappa_par_i *= kappa_par_i_fl / (kappa_par_i + kappa_par_i_fl);
         kappa_par_e *= kappa_par_e_fl / (kappa_par_e + kappa_par_e_fl);
       }
+
       kappa_par_i *= Tipara1 * N0;
       output.write("\tUsed normalized ion thermal conductivity: {:e} -> {:e} \n",
                    min(kappa_par_i), max(kappa_par_i));
@@ -2155,10 +2348,24 @@ protected:
       kappa_par_i_lin = 1.0;
       kappa_par_e_lin = 1.0;
       for (jx = 0; jx < mesh->LocalNx; jx++)
-	for (jy = 0; jy < mesh->LocalNy; jy++) {
-	  kappa_par_i_lin(jx,jy) = kappa_par_i(jx,jy,0);
-	  kappa_par_e_lin(jx,jy) = kappa_par_e(jx,jy,0);
-	}
+        for (jy = 0; jy < mesh->LocalNy; jy++) {
+          kappa_par_i_lin(jx,jy) = kappa_par_i(jx,jy,0);
+          kappa_par_e_lin(jx,jy) = kappa_par_e(jx,jy,0);
+        }
+
+      // if (Landau) {
+      //   if (Landau_coll) {
+      //     output.write("Collisional Landau damping closure used!\n");
+      //     kappa_i = 0.5 * nu_i / vth_i;
+      //     kappa_i *= Lbar; // normalization
+      //     kappa_e = 0.5 * nu_e / vth_e;
+      //     kappa_e *= Lbar; // normalization
+      //   } else {
+      //     output.write("Collisionless Landau damping closure used!\n");
+      //     kappa_0 = 2. / (20. * (2 * PI * q95_input));
+      //     output.write("\tkappa_0 = %e\n", kappa_0);
+      //   }
+      // }
     }
 
     if (diffusion_perp > 0.0) {
@@ -2224,6 +2431,11 @@ protected:
 
     /**************** CALCULATE METRICS ***************************************/
 
+    // BoutReal sbp = 1.0; // Sign of Bp
+    // if (min(Bpxy, true) < 0.0) {
+    //   sbp = -1.0;
+    // }    
+
     coord->g11 = SQ(Rxy * Bpxy);
     coord->g22 = 1.0 / SQ(hthe);
     coord->g33 = SQ(I) * coord->g11 + SQ(B0) / coord->g11;
@@ -2273,19 +2485,19 @@ protected:
         for (jy = 0; jy < mesh->LocalNy; jy++) {
           indy = mesh->getGlobalYIndex(jy);
           for (jx = 0; jx < mesh->LocalNx; jx++) {
-	    indx = mesh->getGlobalXIndex(jx);
+	          indx = mesh->getGlobalXIndex(jx);
             if (mag_config == 1 || mag_config == 2)
               NiSource(jx,jy,jz) = NiAmp * exp( - ((indx - NiLoc) * (indx - NiLoc) / (2. * NiSig * NiSig)));
             if (mag_config == 3) {
               if ( (indy > jysep1 - 2) && (indy <= jysep2 + 2) )
                 NiSource(jx,jy,jz) = NiAmp * exp( - ((indx - NiLoc) * (indx - NiLoc) / (2. * NiSig * NiSig)));
-          }
+            }
             if (mag_config == 4) {
                if ( ((indy > jysep1 - 2) && (indy <= jysep2_1)) || ((indy > jysep1_2) && (indy <= jysep2 + 2)) )
                  NiSource(jx,jy,jz) = NiAmp * exp( - ((indx - NiLoc) * (indx - NiLoc) / (2. * NiSig * NiSig)));
-	    }
-	  }
-	}
+	          }
+	        }
+	      }
       }
     }
     NiSource.applyBoundary();
@@ -2303,19 +2515,19 @@ protected:
         for (jy = 0; jy < mesh->LocalNy; jy++) {
           indy = mesh->getGlobalYIndex(jy);
           for (jx = 0; jx < mesh->LocalNx; jx++) {
-	    indx = mesh->getGlobalXIndex(jx);
+	          indx = mesh->getGlobalXIndex(jx);
             if (mag_config == 1 || mag_config == 2)
               TeSource(jx,jy,jz) = TeAmp * exp( - ((indx - TeLoc) * (indx - TeLoc) / (2. * TeSig * TeSig)));
             if (mag_config == 3) {
               if ( (indy > jysep1 - 2) && (indy <= jysep2 + 2) )
                 TeSource(jx,jy,jz) = TeAmp * exp( - ((indx - TeLoc) * (indx - TeLoc) / (2. * TeSig * TeSig)));
-	    }
+	          }
             if (mag_config == 4) {
                if ( ((indy > jysep1 - 2) && (indy <= jysep2_1)) || ((indy > jysep1_2) && (indy <= jysep2 + 2)) )
                  TeSource(jx,jy,jz) = TeAmp * exp( - ((indx - TeLoc) * (indx - TeLoc) / (2. * TeSig * TeSig)));
-	    }
-	  }
-	}
+	          }
+	        }
+	      }
       }
     }
     TeSource.applyBoundary();
@@ -2332,7 +2544,7 @@ protected:
         for (jy = 0;jy < mesh->LocalNy; jy++) {
           indy = mesh->getGlobalYIndex(jy);
           for (jx = 0; jx < mesh->LocalNx; jx++) {
-	    indx = mesh->getGlobalXIndex(jx);
+	          indx = mesh->getGlobalXIndex(jx);
             if (mag_config == 1 || mag_config == 2)
               TiSource(jx,jy,jz) = TiAmp * exp( - ((indx - TiLoc) * (indx - TiLoc) / (2. * TiSig * TiSig)));
             if (mag_config == 3) {
@@ -2342,9 +2554,9 @@ protected:
             if (mag_config == 4) {
                if ( ((indy > jysep1 - 2) && (indy <= jysep2_1)) || ((indy > jysep1_2) && (indy <= jysep2 + 2)))
                  TiSource(jx,jy,jz) = TiAmp * exp( - ((indx - TiLoc) * (indx - TiLoc)/(2. * TiSig * TiSig)));
-             }
-	  }
-	}
+            }
+	        }
+	      }
       }
     }
     TiSource.applyBoundary();
@@ -2366,12 +2578,12 @@ protected:
       }
 
       if (with_fueling) {
-         SOLVE_FOR(Nm);
-         SOLVE_FOR(Vm);
-         if (!restarting) {
-           Nm = 1.0e-10;
-           Vm = 0.0;
-	 }
+        SOLVE_FOR(Nm);
+        SOLVE_FOR(Vm);
+        if (!restarting) {
+          Nm = 1.0e-10;
+          Vm = 0.0;
+	      }
       }
       
       if (with_fueling) {
@@ -2381,29 +2593,29 @@ protected:
         //Vmx=ret_const_flux_BC(Vmx, Vm0);
         if (initial_Nm) {
           for (jz = 0; jz < mesh->LocalNz; jz++) {
-           for (jy = 0; jy< mesh->LocalNy; jy++) {
-            indy = mesh->getGlobalYIndex(jy);
-            for (jx = 0;jx < mesh->LocalNx; jx++) {
-	      indx = mesh->getGlobalXIndex(jx);
-              if (mag_config == 1 || mag_config == 2) {
-                Vmx(jx,jy,jz) = Vm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-                Nm(jx,jy,jz) = Nm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-	      }
-              if (mag_config == 3) {
-                Vmx(jx,jy,jz) = Vm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-                Nm(jx,jy,jz) = Nm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-	      }
-              if (mag_config == 4) {
-                Vmx(jx,jy,jz) = Vm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-                Nm(jx,jy,jz) = Nm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-	      }
-	    }
-	   }
-	  }
-	} else {
+            for (jy = 0; jy< mesh->LocalNy; jy++) {
+              indy = mesh->getGlobalYIndex(jy);
+              for (jx = 0;jx < mesh->LocalNx; jx++) {
+	              indx = mesh->getGlobalXIndex(jx);
+                if (mag_config == 1 || mag_config == 2) {
+                  Vmx(jx,jy,jz) = Vm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
+                  Nm(jx,jy,jz) = Nm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
+	              }
+                if (mag_config == 3) {
+                  Vmx(jx,jy,jz) = Vm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
+                  Nm(jx,jy,jz) = Nm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
+	              }
+                if (mag_config == 4) {
+                  Vmx(jx,jy,jz) = Vm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
+                  Nm(jx,jy,jz) = Nm0*(1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
+	              }
+	            }
+	          }
+	        }
+	      } else {
           Vmx = 0.0;
           Nm = 1.0e-10;
-	}
+	      }
         Vm.x = Vmx;
         Vm.y = 0.0;
         Vm.z = 0.0;
@@ -2415,26 +2627,26 @@ protected:
         Nm.applyBoundary();
         Vm.applyBoundary();
         
-	Sgas = 0.;
+	      Sgas = 0.;
         if (gas_puffing) {
           for (jz = 0; jz < mesh->LocalNz; jz++) {
             for (jy = 0; jy < mesh->LocalNy; jy++) {
               indy = mesh->getGlobalYIndex(jy);
               for (jx = 0; jx < mesh->LocalNx; jx++) {
-	        indx = mesh->getGlobalXIndex(jx);
+	              indx = mesh->getGlobalXIndex(jx);
                 if (mag_config == 1 || mag_config == 2) {
                   Sgas(jx,jy,jz) = Nm0 * (1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
-		}
-		if (mag_config == 3) {
+		            }
+		            if (mag_config == 3) {
                   Sgas(jx,jy,jz) = Nm0 * (1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
                 }
                 if (mag_config == 4) {
                   Sgas(jx,jy,jz) = Nm0 * (1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
                 }
+	            }
+	          }
+	        }
 	      }
-	    }
-	  }
-	}
         Sgas.setBoundary("Nm");
         Sgas.applyBoundary();
         mesh->communicate(Sgas);
@@ -2450,17 +2662,17 @@ protected:
         for (jy = 0; jy < mesh->LocalNy; jy++) {
           indy = mesh->getGlobalYIndex(jy);
           for (jx = 0; jx < mesh->LocalNx; jx++) {
-	    indx = mesh->getGlobalXIndex(jx);
+	          indx = mesh->getGlobalXIndex(jx);
             if (mag_config == 1 || mag_config == 2) {
               Nn(jx,jy,jz) = NnAmp * (1 - fac_A * (tanh( - (indx - NnLoc) / NnSig) + 1.)) * (exp((indy - NnLoc_y) / NnSig_y) + exp( - (indy - NnLoc_y) / NnSig_y)) / 2. + 1.0e-10;
-	    }
-	    if (mag_config == 3) {
+	          }
+	          if (mag_config == 3) {
               Nn(jx,jy,jz) = NnAmp * (1 - fac_A * (tanh( - (indx - NnLoc) / NnSig) + 1.)) * (exp((indy - NnLoc_y) / NnSig_y) + exp( - (indy - NnLoc_y) / NnSig_y)) / 2. + 1.0e-10;
             }
             if (mag_config == 4) {
               Nn(jx,jy,jz) = NnAmp * (1 - fac_A * (tanh( - (indx - NnLoc) / NnSig) + 1.)) * (exp((indy - NnLoc_y) / NnSig_y) + exp( - (indy - NnLoc_y) / NnSig_y)) / 2. + 1.0e-10;
             }
-	  }
+	        }
         }
        }
       } else {
@@ -2483,7 +2695,7 @@ protected:
           for (jy = 0; jy < mesh->LocalNy; jy++) {
             indy = mesh->getGlobalYIndex(jy);
             for (jx = 0; jx < mesh->LocalNx; jx++) {
-	      indx = mesh->getGlobalXIndex(jx);
+	            indx = mesh->getGlobalXIndex(jx);
               if (mag_config == 1 || mag_config == 2)
                 Sn_ext(jx,jy,jz) = SnAmp * (1 - fac_A * (tanh( - (indx - SnLoc) / SnSig) + 1.)) * exp( - (indy - SnLoc_y) * (indy - SnLoc_y) / (2 * SnSig_y * SnSig_y));
               if (mag_config == 3) {
@@ -2505,7 +2717,221 @@ protected:
     output.write("Neutral initialization finished\n");
   #endif
     }
+
     
+
+    // Background Impurity radiation source term. Calculated based on the background/equilibrium profiles.
+    // To be substracted from the total source term  in the equation for the perturbed Te. 
+    if (fix_fraction_imp) {
+      N_tmp0 = field_larger(N0, Low_limit);
+      Te_tmp0 = field_larger(Te0, Low_limit);
+      if (impurity_prof)
+        Ne_tmp0 = field_larger(Ne0, Low_limit);
+      else
+        Ne_tmp0 = Zi * N_tmp0;
+      
+      Limp0 = 0.0;
+
+      if (Limp_carbon) {
+        /// Carbon in coronal equilibrium
+        /// From I.H.Hutchinson Nucl. Fusion 34 (10) 1337 - 1348 (1994)
+	      Limp0 = 2.0e-31 * (pow(Te_tmp0 * Tebar /10., 3.0)) / ((pow(Te_tmp0 * Tebar / 10., 4.5)) + 1.); // in unit Wm^3 
+      }
+
+      if (Limp_carbon_adas) { //NOTE(malamast): I changed the order of iteration to optimize it. C++ data are stored is row-major order!!! 
+        Field2D Te_tmp_real = Te_tmp0*Tebar;   //eV 
+	      for (jx = 0; jx < mesh->LocalNx; jx++) {
+	        for (jy = 0; jy < mesh->LocalNy; jy++) {
+            BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy);
+            BoutReal logT = log(Te_tmp_loc);
+            BoutReal log_out =0;
+            if (Te_tmp_loc >= 1.0 && Te_tmp_loc <= 500.) {
+              log_out = - 7.87837896e+01 * pow(logT, 0)
+                        + 1.55326376e+00 * pow(logT, 1)
+                        + 1.65898194e+01 * pow(logT, 2)
+                        - 3.23804546e+01 * pow(logT, 3)
+                        + 3.12784663e+01 * pow(logT, 4)
+                        - 1.74826039e+01 * pow(logT, 5)
+                        + 5.91393245e+00 * pow(logT, 6)
+                        - 1.22974105e+00 * pow(logT, 7)                 
+                        + 1.54004499e-01 * pow(logT, 8)
+                        - 1.06797106e-02 * pow(logT, 9)                                                   
+                        + 3.15657594e-04 * pow(logT, 10);
+              Limp0(jx,jy) = exp(log_out);
+            } else if (Te_tmp_loc < 1.0) {
+              Limp0(jx,jy) = 6.00623928e-35;
+            } else {
+              Limp0(jx,jy) = 4.53057707e-33;
+            }
+          }
+        }
+      }
+
+      if (Limp_nitro) {
+        Field2D Te_tmp_real = Te_tmp0*Tebar;   //eV 
+        /// Nitrogen based cooling curve used in Lipschultz 2016
+	      for (jx = 0; jx < mesh->LocalNx; jx++) { //NOTE(malamast): I changed the order of iteration to optimize it. C++ data are stored is row-major order!!! 
+	        for (jy = 0; jy < mesh->LocalNy; jy++) {
+            BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy);
+              if (Te_tmp_loc > 1.0 && Te_tmp_loc < 80.) {
+	              Limp0(jx,jy) = 5.9e-34 * (sqrt(Te_tmp_loc-1.)) * (80. - Te_tmp_loc) / (3.1e-3 * ((Te_tmp_loc - 1.) * (Te_tmp_loc - 1.)) + 1.0);     //Wm^3
+              } // else {
+              //  Limp0(jx,jy) = 0.0;
+              // }
+          }
+        }
+      }
+
+      if (Limp_nitro_adas) {
+        Field2D Te_tmp_real = Te_tmp0*Tebar;   //eV 
+	      for (jx = 0;jx < mesh->LocalNx; jx++) {
+	        for (jy = 0;jy < mesh->LocalNy; jy++) {
+            BoutReal log_out =0;
+	          BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy,jz);
+            BoutReal logT = log(Te_tmp_loc);
+            if (Te_tmp_loc >= 2.0 && Te_tmp_loc <= 500.) {
+              log_out = - 5.01649969e+01 * pow(logT, 0)
+                        - 1.35749724e+02 * pow(logT, 1)
+                        + 2.73509608e+02 * pow(logT, 2)
+                        - 2.92109992e+02 * pow(logT, 3)
+                        + 1.90120639e+02 * pow(logT, 4)
+                        - 7.95164871e+01 * pow(logT, 5)
+                        + 2.17762218e+01 * pow(logT, 6)
+                        - 3.88334992e+00 * pow(logT, 7)                 
+                        + 4.34730098e-01 * pow(logT, 8)
+                        - 2.77683605e-02 * pow(logT, 9)                                                   
+                        + 7.72720422e-04 * pow(logT, 10);
+              Limp0(jx,jy) = exp(log_out);
+            } else if (Te_tmp_loc < 2.0) {
+              Limp0(jx,jy) = 4.34835380e-34;
+            } else {
+              Limp0(jx,jy) = 8.11096182e-33;
+            }
+          }
+        }
+      }
+
+      if (Limp_Neon) {
+        /// Neon based cooling curve produced by Matlab polynominal curve
+        /// fitting "polyval" (Ryoko 2020 Nov)
+        Field2D Te_tmp_real = Te_tmp0*Tebar;   //eV 
+	      for (jx = 0; jx < mesh->LocalNx; jx++) {
+	        for (jy = 0; jy < mesh->LocalNy; jy++) {
+            BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy);
+            if (Te_tmp_loc >= 3 and Te_tmp_loc <= 100) {
+              Limp0(jx,jy) =  - 2.0385e-40 * pow(Te_tmp_loc, 5)
+                              + 5.4824e-38 * pow(Te_tmp_loc, 4)
+                              - 5.1190e-36 * pow(Te_tmp_loc, 3)
+                              + 1.7347e-34 * SQ(Te_tmp_loc)
+                              - 3.4151e-34 * Te_tmp_loc
+                              - 3.2798e-34;
+            } else if (Te_tmp_loc >=2 and Te_tmp_loc < 3) {
+                Limp0(jx,jy) = 7e-35 * (Te_tmp_loc - 2.) + 1e-35;
+            } else if (Te_tmp_loc >=1 and Te_tmp_loc < 2) {
+                Limp0(jx,jy) = 1e-35 * (Te_tmp_loc - 1.);
+            } else {
+                Limp0(jx,jy) = 0.0;
+            }
+          }
+        }
+      }
+
+      if (Limp_Neon_adas) {
+        Field2D Te_tmp_real = Te_tmp0*Tebar;   //eV 
+	      for (jx = 0;jx < mesh->LocalNx; jx++) {
+	        for (jy = 0;jy < mesh->LocalNy; jy++) {
+            BoutReal log_out =0;
+            BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy);
+            BoutReal logT = log(Te_tmp_loc);
+            if (Te_tmp_loc >= 2.0 && Te_tmp_loc <= 1000.) {
+              log_out = - 8.21475117e+01 * pow(logT, 0)
+                        + 1.28929854e+01 * pow(logT, 1)
+                        - 4.74266289e+01 * pow(logT, 2)
+                        + 7.45222324e+01 * pow(logT, 3)
+                        - 5.75710722e+01 * pow(logT, 4)
+                        + 2.57375965e+01 * pow(logT, 5)
+                        - 7.12758563e+00 * pow(logT, 6)
+                        + 1.24287546e+00 * pow(logT, 7)
+                        - 1.32943407e-01 * pow(logT, 8)
+                        + 7.97368445e-03 * pow(logT, 9)
+                        - 2.05487897e-04 * pow(logT, 10); 
+              Limp0(jx,jy) = exp(log_out);
+            } else if (Te_tmp_loc < 2.0) {
+              Limp0(jx,jy) = 6.35304113e-36;
+            } else {
+              Limp0(jx,jy) = 1.17894628e-32;
+            }
+          }
+        }
+      }
+
+      if (Limp_Argon) {
+        /// Argon based cooling curve produced by Matlab polynominal curve
+        /// fitting "polyval" (Ryoko 2020 Nov)
+        Field2D Te_tmp_real = Te_tmp0*Tebar;   //eV 
+        for (jx=0;jx<mesh->LocalNx;jx++) {
+          for (jy=0;jy<mesh->LocalNy;jy++) {
+            BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy);
+            if (Te_tmp_loc >= 1.5 and Te_tmp_loc <= 100) {
+              Limp0(jx,jy) = - 4.9692e-48 * pow(Te_tmp_loc, 10)
+                             + 2.8025e-45 * pow(Te_tmp_loc, 9)
+                             - 6.7148e-43 * pow(Te_tmp_loc, 8)
+                             + 8.8636e-41 * pow(Te_tmp_loc, 7)
+                             - 6.9642e-39 * pow(Te_tmp_loc, 6)
+                             + 3.2559e-37 * pow(Te_tmp_loc, 5)
+                             - 8.3410e-36 * pow(Te_tmp_loc, 4)
+                             + 8.6011e-35 * pow(Te_tmp_loc, 3)
+                             + 1.9958e-34 * pow(Te_tmp_loc, 2)
+                             + 4.9864e-34 * Te_tmp_loc
+                             - 9.9412e-34;
+            } else if (Te_tmp_loc >= 1.0 and Te_tmp_loc < 1.5) {
+              Limp0(jx,jy) = 5e-35 * (Te_tmp_loc - 1.0);
+            } else {
+              Limp0(jx,jy) = 0.0;
+            }
+          }
+        }
+      } 
+
+      if (Limp_Argon_adas) {
+        Field2D Te_tmp_real = Te_tmp0*Tebar;   //eV 
+        for (jx=0;jx<mesh->LocalNx;jx++) {
+          for (jy=0;jy<mesh->LocalNy;jy++) {
+            BoutReal log_out =0;
+            BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy);
+            BoutReal logT = log(Te_tmp_loc);
+            if (Te_tmp_loc >= 1.5 && Te_tmp_loc <= 1500.) {
+              log_out = - 8.45410692e+01 * pow(logT, 0)
+                        + 1.57727040e+01 * pow(logT, 1)
+                        - 1.54264860e+01 * pow(logT, 2)
+                        + 1.49409902e+01 * pow(logT, 3)
+                        - 1.04815113e+01 * pow(logT, 4)
+                        + 5.00924595e+00 * pow(logT, 5)
+                        - 1.60029106e+00 * pow(logT, 6)
+                        + 3.29455609e-01 * pow(logT, 7)
+                        - 4.14036827e-02 * pow(logT, 8)
+                        + 2.87063206e-03 * pow(logT, 9)
+                        - 8.38888002e-05 * pow(logT, 10);
+              Limp0(jx,jy) = exp(log_out);
+            } else if (Te_tmp_loc < 1.5) {
+              Limp0(jx,jy)= 1.95353412e-35;
+            } else {
+              Limp0(jx,jy) = 1.22649600e-32;
+            }
+          }
+        }
+      }
+
+      Srad0 = -Limp0 * frac_imp * Ne_tmp0 * Ne_tmp0 * Nbar * density / (1.602e-19 * Tebar / Tbar);  //Normalized //NOTE(malamast): Should we multiply with Nbar * density?
+      mesh->communicate(Srad0);
+      Srad0.applyBoundary("neumann");
+      Wrad0 = Srad0 / Ne_tmp0;
+      mesh->communicate(Wrad0);
+      Wrad0.applyBoundary("neumann");
+      dump.add(Wrad0, "Wrad0", 0);
+    }
+
+
     /**************** SET EVOLVING VARIABLES ***********************************/
 
     // Tell BOUT which variables to evolve
@@ -2518,12 +2944,12 @@ protected:
     } else {
       if (evolve_psi) {
         output.write("Solving for Psi, Differentiating to get jpar\n");
-	SOLVE_FOR(Psi);
+	      SOLVE_FOR(Psi);
       } else {
         output.write("Solving for Apar, Differentiating to get jpar\n");
-	SOLVE_FOR(Apar);
-	Psi = Apar / B0;
-	SAVE_REPEAT(Psi);
+	      SOLVE_FOR(Apar);
+	      Psi = Apar / B0;
+	      SAVE_REPEAT(Psi);
       }
     }
 
@@ -2563,18 +2989,18 @@ protected:
     if (diamag && diamag_phi0) {
       if (n0_p0_0p3) {
         // n0 ~ p0^0.3
-	phi0 = -1 / 0.7 * Upara0 * Pi0 / N0;
+	      phi0 = -1 / 0.7 * Upara0 * Pi0 / N0;
       } else {
-	// const density
+	      // const density
         phi0 = -Upara0 * Pi0 / N0;
       }
       mesh->communicate(phi0);
 
       if (experiment_Er) { 
-	if (diamag_er) {
-	  // get phi0 from grid file
-	  Field2D Er_tmp;
-	  mesh->get(Er_tmp, "E_r");
+	      if (diamag_er) {
+	        // get phi0 from grid file
+	        Field2D Er_tmp;
+	        mesh->get(Er_tmp, "E_r");
           Er0.x = Er0_factor * Er_tmp / (Bbar * Va * Rxy * Bpxy);
           Er0.y = 0.;
           Er0.z = 0.;
@@ -2591,38 +3017,38 @@ protected:
           Er0.z.applyBoundary();
  
           Er0_net = Er0 - Er0_dia;
-	} else {
-	  // WARNING: deprecated
-	  // get phi0 from grid file
-	  // TODO: U0_net in the end??
-	  mesh->get(phi0, "Phi_0");
-	  phi0 /= Bbar * Lbar * Va;
-	  // BoutReal N0tmp = max(N0,true);
+	      } else {
+          // WARNING: deprecated
+          // get phi0 from grid file
+          // TODO: U0_net in the end??
+          mesh->get(phi0, "Phi_0");
+          phi0 /= Bbar * Lbar * Va;
+          // BoutReal N0tmp = max(N0,true);
           // phi0_net =  phi0 + Upara0*Pi0/N0tmp;
           // U0_net = Delp2(phi0_net) * N0tmp/B0;
-          U0_net = N0 / B0 * (Delp2(phi0) + Upara0 * Delp2(Pi0) / N0);
+          U0_net = N0 / B0 * (Delp2(phi0) + Upara0 * Delp2(Pi0) / N0); // NOTE(malamast): WARNING: deprecated. We overwrite U0_net below.
           mesh->communicate(U0_net);
           U0_net.applyBoundary("dirichlet");
-	}
+        }
       } else {
         if (diamag_er) {
-	  // phi0 = -Upara0*Pi0/max(N0,true);
-	  Er0_dia = Upara0 * Grad(Pi0) / N0;
-	  mesh->communicate(Er0_dia);
+	        // phi0 = -Upara0*Pi0/max(N0,true);
+          Er0_dia = Upara0 * Grad(Pi0) / N0;
+          mesh->communicate(Er0_dia);
           Er0_dia.x.applyBoundary();
           Er0_dia.y.applyBoundary();
           Er0_dia.z.applyBoundary();
 
-	  Er0 = Er0_dia;
-	  mesh->communicate(Er0);
+	        Er0 = Er0_dia;
+	        mesh->communicate(Er0);
           Er0.x.applyBoundary();
           Er0.y.applyBoundary();
           Er0.z.applyBoundary();
 
           Er0_net = 0;
-	} else {
-	  Er0_dia = -Grad(phi0);
-	  mesh->communicate(Er0_dia);
+	      } else {
+	        Er0_dia = -Grad(phi0);
+	        mesh->communicate(Er0_dia);
           Er0_dia.x.applyBoundary();
           Er0_dia.y.applyBoundary();
           Er0_dia.z.applyBoundary();
@@ -2634,7 +3060,7 @@ protected:
           (Er0.z).applyBoundary();
 
           Er0_net = 0;
-	}
+	      }
       }
     } else {
       phi0 = 0.;
@@ -2696,6 +3122,14 @@ protected:
       }
     }
 
+    if (include_vpar0) {
+      SAVE_ONCE2(Vipar0, Vepar0); 
+    }
+
+    if (include_U0) {
+      SAVE_ONCE(U0); 
+    }
+
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
 
@@ -2718,17 +3152,17 @@ protected:
       // TODO: diamag in U?
       if (impurity_prof) {
         Field2D logn0 = laplace_alpha * density_tmp;
-	ubyn = U * B0 / density_tmp;
-	// Phi should be consistent with U
-	if (laplace_alpha <= 0.0) {
-	  phi = phiSolver->solve(ubyn);
-	} else {
-	  phiSolver->setCoefC(logn0);
-	  phi = phiSolver->solve(ubyn);
-	}
+        ubyn = U * B0 / density_tmp;
+        // Phi should be consistent with U
+        if (laplace_alpha <= 0.0) {
+          phi = phiSolver->solve(ubyn);
+        } else {
+          phiSolver->setCoefC(logn0);
+          phi = phiSolver->solve(ubyn);
+        }
       } else {
         Field2D logn0 = laplace_alpha * N0;
-	ubyn = U * B0 / N0;
+	      ubyn = U * B0 / N0;
         // Phi should be consistent with U
         if (laplace_alpha <= 0.0) {
           phi = phiSolver->solve(ubyn);
@@ -2750,6 +3184,10 @@ protected:
       c_se0 = sqrt(abs(Tau_ie * Ti0 + Te0));
       c_se0 *= const_cse;
       vth_e0 = 4.19e5 * sqrt(Te0 * Tebar);
+
+      c_se0 /= Va; // NOTE(malamast): Just a test. 
+      dump.add(c_se0, "c_se0", 0);
+      c_se0 *=Va;
 
       // output << max(c_se0, true) << "\t" << max(vth_e0, true) << endl;
       dump.add(Jpar_sh, "Jpar_sh", 1);
@@ -2877,6 +3315,10 @@ protected:
   /// For printing out some diagnostics first time around
   bool first_run = true;
 
+  /*
+  --------RHS Function
+  */
+
   int rhs(BoutReal UNUSED(t)) override {
 
     Coordinates* coord = mesh->getCoordinates();
@@ -2911,16 +3353,19 @@ protected:
       Pe = lowPass_pos2(Pe, Pe);
       P = lowPass_pos2(P, P);
     }
+
     if (nonlinear && pos_filter2) {
       Pi = lowPass_pos(Pi, position_tmpi);
       Pe = lowPass_pos(Pe, position_tmpe);
       P = lowPass_pos(P, position_tmp);
     }
+
     if (nonlinear && (pos_filter_zf || (pos_sink_zf > 0.))) {
       Pi = sink_zonal_core(Pi, position_tmpi);
       Pe = sink_zonal_core(Pe, position_tmpe);
       P = sink_zonal_core(P, position_tmp);
     }
+
     if (low_pass_z > 0.) {
       Pi = lowPass(Pi, low_pass_z, zonal_bkgd);
       Pe = lowPass(Pe, low_pass_z, zonal_bkgd);
@@ -2962,7 +3407,8 @@ protected:
         phi = phiSolver->solve(ubyn);
       } else {
         phiSolver->setCoefC(N0);
-        phi = phiSolver->solve(ubyn);
+        phi = phiSolver->solve(ubyn); // NOTE(malamast): a) Should this be N0 + Ni  instead of just N0
+                                      //                 b) Should we subtract the term 1/N0 Grad_perp(phi0) * Grad_perp(Ni) like we did above with  Upara0 / N0 * Delp2(Pi)?
       }
     }
 
@@ -2981,15 +3427,18 @@ protected:
       if (laplace_alpha <= 0.0) {
         laplacexy->setCoefs(1.0, 0.0);
       } else {
-	if (impurity_prof)
+	      if (impurity_prof)
           laplacexy->setCoefs(density_tmp, 0.0);
         else
-	  laplacexy->setCoefs(N0, 0.0);
+	        laplacexy->setCoefs(N0, 0.0);
       }
       // Solve axisymmetric (n=0) part
       phiDC = laplacexy->solve(VortDC, phiDC);
       phi += phiDC;
     }
+
+    // Apply a boundary condition on phi for target plates
+    // phi.applyBoundary();
 
     if (emass) {
       Field2D acoeff = -delta_e_inv * N0 * N0;
@@ -3034,7 +3483,7 @@ protected:
       if (spitzer_resist) {
         // Use Spitzer formula
         eta = FZ * 1.03e-4 * Zi * LnLambda * (pow(Te_tmp * Tebar, -1.5)); // eta in Ohm-m. ln(Lambda) = 20
-	eta /= MU0 * Va * Lbar;
+	      eta /= MU0 * Va * Lbar;
       } else {
         eta = core_resist + (vac_resist - core_resist) * vac_mask;
       }
@@ -3042,7 +3491,7 @@ protected:
       if (impurity_prof)
         nu_e = 2.91e-6 * LnLambda * (N_tmp * Nbar * density / 1.e6) * (pow(Te_tmp * Tebar, -1.5)); // nu_e in 1/S.
       else 
-	nu_e = 2.91e-6 * LnLambda * (N_tmp * Nbar * density / 1.e6) * (pow(Te_tmp * Tebar, -1.5)); // nu_e in 1/S.
+	      nu_e = 2.91e-6 * LnLambda * (N_tmp * Nbar * density / 1.e6) * (pow(Te_tmp * Tebar, -1.5)); // nu_e in 1/S.
       
       if (diffusion_par > 0.0 || diffusion_perp > 0.0 || parallel_viscous || neoclassic_i || neoclassic_e) {
         // Use Spitzer thermal conductivities
@@ -3066,11 +3515,12 @@ protected:
 
         kappa_par_i_fl = q_alpha * vth_i * (q95 * Lbar); // * 1.e2;
         kappa_par_e_fl = q_alpha * vth_e * (q95 * Lbar); // * 1.e2;
-	if (fluxlimit) {
+
+	      if (fluxlimit) {
           kappa_par_i *= kappa_par_i_fl / (kappa_par_i + kappa_par_i_fl);
-	  kappa_par_e *= kappa_par_e_fl / (kappa_par_e + kappa_par_e_fl);
-	}
-	kappa_par_i *= Tipara1 * N_tmp;
+	        kappa_par_e *= kappa_par_e_fl / (kappa_par_e + kappa_par_e_fl);
+	      }
+	      kappa_par_i *= Tipara1 * N_tmp;
         kappa_par_e *= Tepara1 * Ne_tmp;
       }
 
@@ -3080,12 +3530,12 @@ protected:
         kappa_perp_i_fl = q_alpha * vth_i * q95 * Lbar; // * 1.e4;
         kappa_perp_e_fl = q_alpha * vth_e * q95 * Lbar; // * 1.e4;
 
-	if (fluxlimit) {
+	      if (fluxlimit) {
           kappa_perp_i *= kappa_perp_i_fl / (kappa_perp_i + kappa_perp_i_fl);
           kappa_perp_e *= kappa_perp_e_fl / (kappa_perp_e + kappa_perp_e_fl);
-	}
-	kappa_perp_i *= Tipara1 * N_tmp;
-	kappa_perp_e *= Tepara1 * Ne_tmp;
+	      }
+	      kappa_perp_i *= Tipara1 * N_tmp;
+	      kappa_perp_e *= Tepara1 * Ne_tmp;
       }
 
       if (neoclassic_i) {
@@ -3104,6 +3554,24 @@ protected:
       }
     }
 
+    // update Landau parallel heat flux
+    /*  if (diffusion_par && Landau) {
+          SBC_value_i = gamma_i_BC * Pi * c_set / (1.6 * N0  * vth_i);
+          SBC_value_e = gamma_e_BC * Pe * c_set / (1.6 * Ne0 * vth_e);
+          if (Landau_coll) {
+            q_par_i = -Landau_coeff * (2. / 3.) * N0 * 2. * sqrt(2. / PI) * vth_i / Va *eiSign_kpar_wcoll(Ti, kappa_i, 2, nLorentzian, SBC_value_i);
+            q_par_e = -Landau_coeff * (2. / 3.) * Ne0 * 2. * sqrt(2. / PI) * vth_e / Va * iSign_kpar_wcoll(Te, kappa_e, 2, nLorentzian, SBC_value_e);
+          } else {
+            q_par_i = -Landau_coeff * (2. / 3.) * N0 * 2. * sqrt(2. / PI) * vth_i / Va * iSign_kpar(Ti, kappa_0, 2, nLorentzian, SBC_value_i);
+            q_par_e = -Landau_coeff * (2. / 3.) * Ne0 * 2. * sqrt(2. / PI) * vth_e / Va * iSign_kpar(Te, kappa_0, 2, nLorentzian, SBC_value_e);
+          }
+          mesh->communicate(q_par_i);
+          mesh->communicate(q_par_e);
+          q_par_i.applyBoundary();
+          q_par_e.applyBoundary();
+        } 
+    */
+
     if (radial_diffusion && nonlinear) {
       ddx_ni = DDX(N_tmp);
       mesh->communicate(ddx_ni);
@@ -3111,25 +3579,28 @@ protected:
 
       for (jx = 0; jx < mesh->LocalNx; jx++) {
         for (jy = 0; jy < mesh->LocalNy; jy++) {
-	  for (jz = 0; jz < mesh->LocalNz; jz++) {
-	    if (ddx_ni(jx,jy,jz) > -Low_limit && ddx_ni(jx,jy,jz) < 0.) {
-	      ddx_ni(jx,jy,jz) = -Low_limit;
-	    } else if (ddx_ni(jx,jy,jz) < Low_limit && ddx_ni(jx,jy,jz) >= 0.) {
-	      ddx_ni(jx,jy,jz) = Low_limit;
-	    }
-	  }
-	}
+	        for (jz = 0; jz < mesh->LocalNz; jz++) {
+	          if (ddx_ni(jx,jy,jz) > -Low_limit && ddx_ni(jx,jy,jz) < 0.) {
+	            ddx_ni(jx,jy,jz) = -Low_limit;
+	          } else if (ddx_ni(jx,jy,jz) < Low_limit && ddx_ni(jx,jy,jz) >= 0.) {
+	            ddx_ni(jx,jy,jz) = Low_limit;
+	          }
+	        }
+	      }
       }
+
       diff_radial = diffusion_coef_Hmode0 * ddx_n0 / ddx_ni;
+
       for (jx = 0; jx < mesh->LocalNx; jx++) {
         for (jy = 0; jy < mesh->LocalNy; jy++) {
-	  for (jz = 0; jz < mesh->LocalNz; jz++) {
-	    if (diff_radial(jx,jy,jz) > diffusion_coef_Hmode1) {
-	      diff_radial(jx,jy,jz) = diffusion_coef_Hmode1;
-	    }
-	  }
-	}
+	        for (jz = 0; jz < mesh->LocalNz; jz++) {
+	          if (diff_radial(jx,jy,jz) > diffusion_coef_Hmode1) {
+	            diff_radial(jx,jy,jz) = diffusion_coef_Hmode1;
+	          }
+	        }
+	      }
       }
+
       diff_radial = nl_filter(diff_radial, 1);
     }
 
@@ -3201,21 +3672,22 @@ protected:
         if (eHall) {
           phi_sh += Psipara1 * Grad_parP(Pe) / B0 / Ne0;
           phi_sh -= Psipara1 * bracket(Psi, Pe0, bm_mag) / Ne0;
-	}
-	if (thermal_force) {
+	      }
+        if (thermal_force) {
           phi_sh += 0.71 * Psipara1 * Grad_parP(Te) / B0;
           phi_sh -= 0.71 * Psipara1 * bracket(Psi, Te0, bm_mag);
-	}
+        }
       } else {
         phi_sh = -eta * Jpar;
-	if (eHall) {
-	  phi_sh += Psipara1 * Grad_parP(Pe) / Ne0;
-	  phi_sh -= Psipara1 * bracket(Apar, Pe0, bm_mag) / Ne0;
-	}
-	if (thermal_force) {
+
+        if (eHall) {
+          phi_sh += Psipara1 * Grad_parP(Pe) / Ne0;
+          phi_sh -= Psipara1 * bracket(Apar, Pe0, bm_mag) / Ne0;  // NOTE(malamast): Why do we need that?
+        }
+        if (thermal_force) {
           phi_sh += 0.71 * Psipara1 * Grad_parP(Te);
           phi_sh -= 0.71 * Psipara1 * bracket(Apar, Te0, bm_mag);
-	}
+        }
       }
       mesh->communicate(phi_sh);
       phi_sh.applyBoundary();
@@ -3227,13 +3699,14 @@ protected:
         Jpar_sh -= Jpar_sh0;
         Jpar_sh *= MU0 * Lbar / Bbar;
         SBC_Dirichlet(Jpar, Jpar_sh, PF_limit, PF_limit_range);
-	  /* phi_sh = -Te_tmp*Tebar;
-           if (impurity_prof)
-             phi_sh *= log( 2.0*sqrt(PI)*(c_set-(J0+Jpar)*B0*Bbar/(MU0*Lbar)/(Ne_tmp*Nbar*density*ee))/vth_et );
-           else
-             phi_sh *= log( 2.0*sqrt(PI)*(c_set-(J0+Jpar)*B0*Bbar/(MU0*Lbar)/(N_tmp*Nbar*density*ee*Zi))/vth_et );
-           phi_sh -= phi_sh0;
-           phi_sh /= Bbar*Va*Lbar;*/
+
+        /* phi_sh = -Te_tmp*Tebar;
+              if (impurity_prof)
+                phi_sh *= log( 2.0*sqrt(PI)*(c_set-(J0+Jpar)*B0*Bbar/(MU0*Lbar)/(Ne_tmp*Nbar*density*ee))/vth_et );
+              else
+                phi_sh *= log( 2.0*sqrt(PI)*(c_set-(J0+Jpar)*B0*Bbar/(MU0*Lbar)/(N_tmp*Nbar*density*ee*Zi))/vth_et );
+              phi_sh -= phi_sh0;
+              phi_sh /= Bbar*Va*Lbar;*/
       } else {
         Jpar_sh = Ne0 * Nbar * density * ee;
         Jpar_sh *= vth_et / (2.0 * sqrt(PI)) * (ee * ((phi)*Va * Lbar * Bbar) / (KB * Te0 * Tebar * eV_K));
@@ -3245,10 +3718,10 @@ protected:
         if (full_sbc) {
           q_se = -2. / 3. * gamma_e_BC * (Pe + Pe0) * c_set / Va / kappa_par_e; // * (Nbar*density*KB);
           q_si = -2. / 3. * gamma_i_BC * (Pi + Pi0) * c_set / Va / kappa_par_i; // * (Nbar*density*KB);
-	} else {
+	      } else {
           q_se = -2. / 3. * gamma_e_BC * Pe * c_se / kappa_par_e; // * (Nbar*density*KB);
           q_si = -2. / 3. * gamma_i_BC * Pi * c_se / kappa_par_i; // * (Nbar*density*KB);
-	}
+	      }
       } else {
         q_se = 0.;
         q_si = 0.;
@@ -3263,9 +3736,44 @@ protected:
 
       // SBC_Gradpar(U, 0.0, PF_limit, PF_limit_range);
       SBC_Gradpar(Ni, 0.0, PF_limit, PF_limit_range);
-      SBC_Gradpar(Ti, q_si, PF_limit, PF_limit_range);
-      SBC_Gradpar(Te, q_se, PF_limit, PF_limit_range);
+      // if (!Landau) {
+        SBC_Gradpar(Ti, q_si, PF_limit, PF_limit_range);
+        SBC_Gradpar(Te, q_se, PF_limit, PF_limit_range);
+      // } else {
+      //   SBC_Gradpar(Ti, 0., PF_limit, PF_limit_range);
+      //   SBC_Gradpar(Te, 0., PF_limit, PF_limit_range);
+      // }     
     }
+
+  //   // update Landau parallel heat flux
+  //   if (diffusion_par && Landau) {
+  //     if (full_sbc) {
+  //       SBC_value_i = gamma_i_BC * (Pi + Pi0) * c_set / (1.6 * N0  * vth_i);
+  //       SBC_value_e = gamma_e_BC * (Pe + Pe0) * c_set / (1.6 * Ne0 * vth_e);
+  //     } else {
+  //       SBC_value_i = gamma_i_BC * Pi * c_set / (1.6 * N0  * vth_i);
+  //       SBC_value_e = gamma_e_BC * Pe * c_set / (1.6 * Ne0 * vth_e);
+  //     }
+  //     if (Landau_coll) {
+  //       q_par_i = -Landau_coeff * (2. / 3.) * N0 * 2. * sqrt(2. / PI) * vth_i / Va * iSign_kpar_wcoll(Ti, kappa_i, 2, nLorentzian, SBC_value_i);
+  //       q_par_e = -Landau_coeff * (2. / 3.) * Ne0 * 2. * sqrt(2. / PI) * vth_e / Va * iSign_kpar_wcoll(Te, kappa_e, 2, nLorentzian, SBC_value_e);
+  //     } else {
+  //       q_par_i = -Landau_coeff * (2. / 3.) * N0 * 2. * sqrt(2. / PI) * vth_i / Va * iSign_kpar(Ti, kappa_0, 2, nLorentzian, SBC_value_i);
+  //       q_par_e = -Landau_coeff * (2. / 3.) * Ne0 * 2. * sqrt(2. / PI) * vth_e / Va * iSign_kpar(Te, kappa_0, 2, nLorentzian, SBC_value_e);
+  //     }
+  //     mesh->communicate(q_par_i);
+  //     mesh->communicate(q_par_e);
+  //     q_par_i.applyBoundary();
+  //     q_par_e.applyBoundary();
+
+  // /*    SBC_value_i = gamma_i_BC * (Pi + Pi0) * c_set / Va;
+  //     SBC_value_e = gamma_e_BC * (Pe + Pe0) * c_set / Va;
+  //     SBC_Dirichlet(q_par_i, SBC_value_i, PF_limit, PF_limit_range);
+  //     SBC_Dirichlet(q_par_e, SBC_value_e, PF_limit, PF_limit_range);
+  // */
+  //     SBC_Gradpar(q_par_i, 0., PF_limit, PF_limit_range);
+  //     SBC_Gradpar(q_par_e, 0., PF_limit, PF_limit_range);
+  //   }
 
     if (neutral) {
       N_tmp = field_larger(N0 + Ni, Low_limit);
@@ -3291,7 +3799,7 @@ protected:
         mesh->communicate(nu_iz);
         mesh->communicate(nu_cx);
         mesh->communicate(nu_rc);
-	mesh->communicate(sigma_cx);
+	      mesh->communicate(sigma_cx);
       }
       vth_i = 9.79e3 * sqrt((Ti_tmp) * Tibar / AA); // vth_i in m/S.
       // diffusion and viscosity coefficients
@@ -3362,19 +3870,21 @@ protected:
       Limp = 0.0;
       if (Limp_carbon) {
         /// Carbon in coronal equilibrium
-	// From I.H.Hutchinson Nucl. Fusion 34 (10) 1337 - 1348 (1994)
-	Limp = 2.0e-31 * (pow(Te_tmp * Tebar /10., 3.0)) / ((pow(Te_tmp * Tebar / 10., 4.5)) + 1.);
+	      // From I.H.Hutchinson Nucl. Fusion 34 (10) 1337 - 1348 (1994)
+	      Limp = 2.0e-31 * (pow(Te_tmp * Tebar /10., 3.0)) / ((pow(Te_tmp * Tebar / 10., 4.5)) + 1.);
       }
+
+      //NOTE(malamast): I changed the order of iteration to optimize it. C++ data are stored is row-major order!!! 
       if (Limp_carbon_adas) {
-        for (jz = 0; jz < mesh->LocalNz; jz++) {
-	  for (jy = 0; jy < mesh->LocalNy; jy++) {
-	    for (jx = 0; jx < mesh->LocalNx; jx++) {
-	      Field3D Te_tmp_real = Te_tmp * Tebar;   //eV
-	      BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy,jz);
-	      BoutReal logT = log(Te_tmp_loc);
-	      BoutReal log_out =0;
-	      if (Te_tmp_loc >= 1.0 && Te_tmp_loc <= 500.) {
-	        log_out = - 7.87837896e+01 * pow(logT, 0)
+	      for (jx = 0; jx < mesh->LocalNx; jx++) {
+	        for (jy = 0; jy < mesh->LocalNy; jy++) {
+            for (jz = 0; jz < mesh->LocalNz; jz++) {
+              Field3D Te_tmp_real = Te_tmp * Tebar;   //eV
+              BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy,jz);
+              BoutReal logT = log(Te_tmp_loc);
+              BoutReal log_out =0;
+              if (Te_tmp_loc >= 1.0 && Te_tmp_loc <= 500.) {
+                log_out = - 7.87837896e+01 * pow(logT, 0)
                           + 1.55326376e+00 * pow(logT, 1)
                           + 1.65898194e+01 * pow(logT, 2)
                           - 3.23804546e+01 * pow(logT, 3)
@@ -3384,44 +3894,45 @@ protected:
                           - 1.22974105e+00 * pow(logT, 7)        
                           + 1.54004499e-01 * pow(logT, 8)
                           - 1.06797106e-02 * pow(logT, 9)
-			  + 3.15657594e-04 * pow(logT, 10);
-		Limp(jx,jy,jz) = exp(log_out);
-	      } else if (Te_tmp_loc < 1.0) {
-	        Limp(jx,jy,jz) = 6.00623928e-35;
-	      } else {
-	        Limp(jx,jy,jz) = 4.53057707e-33;
+                          + 3.15657594e-04 * pow(logT, 10);
+                Limp(jx,jy,jz) = exp(log_out);
+              } else if (Te_tmp_loc < 1.0) {
+                Limp(jx,jy,jz) = 6.00623928e-35;
+              } else {
+                Limp(jx,jy,jz) = 4.53057707e-33;
+              }
+	          }
+	        }
 	      }
-	    }
-	  }
-	}
       }
 
       if (Limp_nitro) {
         /// Nitrogen based cooling curve used in Lipschultz 2016
-	for (jz = 0; jz < mesh->LocalNz; jz++) {
-	  for (jy = 0; jy < mesh->LocalNy; jy++) {
-	    for (jx = 0; jx < mesh->LocalNx; jx++) {
-	      Field3D Te_tmp_real = Te_tmp * Tebar;
-	      BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy,jz);
-	      if (Te_tmp_loc > 1.0 && Te_tmp_loc < 80.) {
-	        Limp(jx,jy,jz) = 5.9e-34 * (sqrt(Te_tmp_loc-1.)) * (80. - Te_tmp_loc) / (3.1e-3 * ((Te_tmp_loc - 1.) * (Te_tmp_loc - 1.)) + 1.0);     //Wm^3
-	      } else {
-	        Limp(jx,jy,jz) = 0.0;
-	      }
-	    }
-	  }
-	}
+        for (jx = 0; jx < mesh->LocalNx; jx++) {
+          for (jy = 0; jy < mesh->LocalNy; jy++) {
+            for (jz = 0; jz < mesh->LocalNz; jz++) {
+              Field3D Te_tmp_real = Te_tmp * Tebar;
+              BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy,jz);
+              if (Te_tmp_loc > 1.0 && Te_tmp_loc < 80.) {
+                Limp(jx,jy,jz) = 5.9e-34 * (sqrt(Te_tmp_loc-1.)) * (80. - Te_tmp_loc) / (3.1e-3 * ((Te_tmp_loc - 1.) * (Te_tmp_loc - 1.)) + 1.0);     //Wm^3
+              } else {
+                Limp(jx,jy,jz) = 0.0;
+              }
+            }
+          }
+        }
       }
+
       if (Limp_nitro_adas) {
-        for (jz = 0;jz < mesh->LocalNz; jz++) {
-	  for (jy = 0;jy < mesh->LocalNy; jy++) {
-	    for (jx = 0;jx < mesh->LocalNx; jx++) {
-	      Field3D Te_tmp_real = Te_tmp * Tebar;
-	      BoutReal log_out =0;
-	      BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy,jz);
-	      BoutReal logT = log(Te_tmp_loc);
-	      if (Te_tmp_loc >= 2.0 && Te_tmp_loc <= 500.) {
-	        log_out = - 5.01649969e+01 * pow(logT, 0)
+	      for (jx = 0; jx < mesh->LocalNx; jx++) {
+	        for (jy = 0; jy < mesh->LocalNy; jy++) {
+            for (jz = 0; jz < mesh->LocalNz; jz++) {
+              Field3D Te_tmp_real = Te_tmp * Tebar;
+              BoutReal log_out =0;
+              BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy,jz);
+              BoutReal logT = log(Te_tmp_loc);
+              if (Te_tmp_loc >= 2.0 && Te_tmp_loc <= 500.) {
+                log_out = - 5.01649969e+01 * pow(logT, 0)
                           - 1.35749724e+02 * pow(logT, 1)
                           + 2.73509608e+02 * pow(logT, 2)
                           - 2.92109992e+02 * pow(logT, 3)
@@ -3431,54 +3942,55 @@ protected:
                           - 3.88334992e+00 * pow(logT, 7)        
                           + 4.34730098e-01 * pow(logT, 8)
                           - 2.77683605e-02 * pow(logT, 9)                                                   
-			  + 7.72720422e-04 * pow(logT, 10);
+                          + 7.72720422e-04 * pow(logT, 10);
                 Limp(jx,jy,jz) = exp(log_out);
-	      } else if (Te_tmp_loc < 2.0) {
-	        Limp(jx,jy,jz) = 4.34835380e-34;
-	      } else {
-	        Limp(jx,jy,jz) = 8.11096182e-33;
-	      }
-	    }
-	  }
-	}
+              } else if (Te_tmp_loc < 2.0) {
+                Limp(jx,jy,jz) = 4.34835380e-34;
+              } else {
+                Limp(jx,jy,jz) = 8.11096182e-33;
+              }
+            }
+          }
+        }
       }
 
       if (Limp_Neon) {
         /// Neon based cooling curve produced by Matlab polynominal curve
-	// fitting "polyval" (Ryoko 2020 Nov)
-	for (jz = 0; jz < mesh->LocalNz; jz++) {
-	  for (jy = 0; jy < mesh->LocalNy; jy++) {
-	    for (jx = 0; jx < mesh->LocalNx; jx++) {
-	      Field3D Te_tmp_real = Te_tmp * Tebar;   //eV
+	      // fitting "polyval" (Ryoko 2020 Nov)
+	      for (jx = 0; jx < mesh->LocalNx; jx++) {
+	        for (jy = 0; jy < mesh->LocalNy; jy++) {
+            for (jz = 0; jz < mesh->LocalNz; jz++) {
+	            Field3D Te_tmp_real = Te_tmp * Tebar;   //eV
               BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy,jz);
-	      if (Te_tmp_loc >= 3 and Te_tmp_loc <= 100) {
-	        Limp(jx,jy,jz) = - 2.0385e-40 * pow(Te_tmp_loc, 5)
+	            if (Te_tmp_loc >= 3 and Te_tmp_loc <= 100) {
+	              Limp(jx,jy,jz) = - 2.0385e-40 * pow(Te_tmp_loc, 5)
                                  + 5.4824e-38 * pow(Te_tmp_loc, 4)
                                  - 5.1190e-36 * pow(Te_tmp_loc, 3)
                                  + 1.7347e-34 * SQ(Te_tmp_loc)
                                  - 3.4151e-34 * Te_tmp_loc
                                  - 3.2798e-34;
-	      } else if (Te_tmp_loc >=2 and Te_tmp_loc < 3) {
-	        Limp(jx,jy,jz) = 7e-35 * (Te_tmp_loc - 2.) + 1e-35;
-	      } else if (Te_tmp_loc >=1 and Te_tmp_loc < 2) {
-	        Limp(jx,jy,jz) = 1e-35 * (Te_tmp_loc - 1.);
-	      } else {
-	        Limp(jx,jy,jz) = 0.0;
+              } else if (Te_tmp_loc >=2 and Te_tmp_loc < 3) {
+                Limp(jx,jy,jz) = 7e-35 * (Te_tmp_loc - 2.) + 1e-35;
+              } else if (Te_tmp_loc >=1 and Te_tmp_loc < 2) {
+                Limp(jx,jy,jz) = 1e-35 * (Te_tmp_loc - 1.);
+              } else {
+                Limp(jx,jy,jz) = 0.0;
+              }
+	          }
+	        }
 	      }
-	    }
-	  }
-	}
       }
+
       if (Limp_Neon_adas) {
-        for (jz = 0;jz < mesh->LocalNz; jz++) {
-	  for (jy = 0;jy < mesh->LocalNy; jy++) {
-	    for (jx = 0;jx < mesh->LocalNx; jx++) {
-	      Field3D Te_tmp_real = Te_tmp * Tebar;   //eV 
+	      for (jx = 0; jx < mesh->LocalNx; jx++) {
+	        for (jy = 0; jy < mesh->LocalNy; jy++) {
+            for (jz = 0; jz < mesh->LocalNz; jz++) {
+              Field3D Te_tmp_real = Te_tmp * Tebar;   //eV 
               BoutReal log_out = 0;
-	      BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy,jz);
+              BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy,jz);
               BoutReal logT = log(Te_tmp_loc);
-	      if (Te_tmp_loc >= 2.0 && Te_tmp_loc <= 1000.) {
-	        log_out = - 8.21475117e+01 * pow(logT, 0)
+              if (Te_tmp_loc >= 2.0 && Te_tmp_loc <= 1000.) {
+                log_out = - 8.21475117e+01 * pow(logT, 0)
                           + 1.28929854e+01 * pow(logT, 1)
                           - 4.74266289e+01 * pow(logT, 2)
                           + 7.45222324e+01 * pow(logT, 3)
@@ -3490,49 +4002,50 @@ protected:
                           + 7.97368445e-03 * pow(logT, 9)
                           - 2.05487897e-04 * pow(logT, 10);
                 Limp(jx,jy,jz) = exp(log_out);
-	      } else if (Te_tmp_loc < 2.0) {
-	        Limp(jx,jy,jz) = 6.35304113e-36;
-	      } else {
-	        Limp(jx,jy,jz) = 1.17894628e-32;
-	      }
-	    }
-	  }
-	}
+              } else if (Te_tmp_loc < 2.0) {
+                Limp(jx,jy,jz) = 6.35304113e-36;
+              } else {
+                Limp(jx,jy,jz) = 1.17894628e-32;
+              }
+            }
+          }
+        }
       }
 
       if (Limp_Argon) {
         /// Argon based cooling curve produced by Matlab polynominal curve
-	// fitting "polyval" (Ryoko 2020 Nov)
-	for (jz = 0; jz < mesh->LocalNz; jz++) {
-	  for (jy = 0; jy < mesh->LocalNy; jy++) {
-	    for (jx = 0; jx < mesh->LocalNx; jx++) {
-	      Field3D Te_tmp_real = Te_tmp * Tebar;
-	      BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy,jz);
-	      if (Te_tmp_loc >= 1.5 and Te_tmp_loc <= 100) {
-	        Limp(jx,jy,jz) = - 4.9692e-48 * pow(Te_tmp_loc, 10)
-                                 + 2.8025e-45 * pow(Te_tmp_loc, 9)
-                                 - 6.7148e-43 * pow(Te_tmp_loc, 8)
-                                 + 8.8636e-41 * pow(Te_tmp_loc, 7)
-                                 - 6.9642e-39 * pow(Te_tmp_loc, 6)
-                                 + 3.2559e-37 * pow(Te_tmp_loc, 5)
-                                 - 8.3410e-36 * pow(Te_tmp_loc, 4)
-                                 + 8.6011e-35 * pow(Te_tmp_loc, 3)
-                                 + 1.9958e-34 * pow(Te_tmp_loc, 2)
-                                 + 4.9864e-34 * Te_tmp_loc
-                                 - 9.9412e-34;
-	      } else if (Te_tmp_loc >= 1.0 and Te_tmp_loc < 1.5) {
-	        Limp(jx,jy,jz) = 5e-35 * (Te_tmp_loc - 1.0);
-	      } else {
-	        Limp(jx,jy,jz) = 0.0;
-	      }
-	    }
-	  }
-	}
+	      // fitting "polyval" (Ryoko 2020 Nov)
+	      for (jx = 0; jx < mesh->LocalNx; jx++) {
+	        for (jy = 0; jy < mesh->LocalNy; jy++) {
+            for (jz = 0; jz < mesh->LocalNz; jz++) {
+              Field3D Te_tmp_real = Te_tmp * Tebar;
+              BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy,jz);
+              if (Te_tmp_loc >= 1.5 and Te_tmp_loc <= 100) {
+                Limp(jx,jy,jz) = - 4.9692e-48 * pow(Te_tmp_loc, 10)
+                                      + 2.8025e-45 * pow(Te_tmp_loc, 9)
+                                      - 6.7148e-43 * pow(Te_tmp_loc, 8)
+                                      + 8.8636e-41 * pow(Te_tmp_loc, 7)
+                                      - 6.9642e-39 * pow(Te_tmp_loc, 6)
+                                      + 3.2559e-37 * pow(Te_tmp_loc, 5)
+                                      - 8.3410e-36 * pow(Te_tmp_loc, 4)
+                                      + 8.6011e-35 * pow(Te_tmp_loc, 3)
+                                      + 1.9958e-34 * pow(Te_tmp_loc, 2)
+                                      + 4.9864e-34 * Te_tmp_loc
+                                      - 9.9412e-34;
+              } else if (Te_tmp_loc >= 1.0 and Te_tmp_loc < 1.5) {
+                Limp(jx,jy,jz) = 5e-35 * (Te_tmp_loc - 1.0);
+              } else {
+                Limp(jx,jy,jz) = 0.0;
+              }
+            }
+          }
+        }
       }
+
       if (Limp_Argon_adas) {
-        for (jz = 0; jz < mesh->LocalNz; jz++) {
-          for (jy = 0; jy < mesh->LocalNy; jy++) {
-            for (jx = 0; jx < mesh->LocalNx; jx++) {
+	      for (jx = 0; jx < mesh->LocalNx; jx++) {
+	        for (jy = 0; jy < mesh->LocalNy; jy++) {
+            for (jz = 0; jz < mesh->LocalNz; jz++) {
               Field3D Te_tmp_real = Te_tmp * Tebar;   //eV
               BoutReal log_out = 0;
               BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy,jz);
@@ -3550,17 +4063,17 @@ protected:
                           + 2.87063206e-03 * pow(logT, 9)
                           - 8.38888002e-05 * pow(logT, 10);
                 Limp(jx,jy,jz) = exp(log_out);
-	      } else if (Te_tmp_loc < 1.5) {
-                Limp(jx,jy,jz) = 1.95353412e-35;
-	      } else {
-                Limp(jx,jy,jz) = 1.22649600e-32;
-	      }
-	    }
-	  }
-	}
+              } else if (Te_tmp_loc < 1.5) {
+                      Limp(jx,jy,jz) = 1.95353412e-35;
+              } else {
+                      Limp(jx,jy,jz) = 1.22649600e-32;
+              }
+            }
+          }
+        }
       }
       
-      Srad = -Limp * frac_imp * Ne_tmp * Ne_tmp * Nbar * density / (1.602e-19 * Tebar / Tbar);        //Normalized
+      Srad = -Limp * frac_imp * Ne_tmp * Ne_tmp * Nbar * density / (1.602e-19 * Tebar / Tbar);        //Normalized //NOTE(malamast): Should we multiply with Nbar * density?
       mesh->communicate(Srad);
       Srad.applyBoundary("neumann");
       Wrad = Srad / Ne_tmp;
@@ -3578,7 +4091,7 @@ protected:
               Jpar(jx,jy,jz) = 0.0;
             if (mesh->lastX())
               Jpar(mesh->LocalNx - 1 - jx,jy,jz) = 0.0;
-	  }
+	        }
     }
 
     if (smooth_j_x && (gamma_i_BC > 0.0) && (gamma_e_BC > 0.0)) {
@@ -3603,16 +4116,22 @@ protected:
     
     if (compress0) {
       if (nonlinear) {
-        Vepar = Vipar - B0 * (Jpar) / N_tmp * Vepara;
+        if (include_vpar0) {
+          Vepar = - Jpar / Ne_tmp * Vepara + N_tmp / Ne_tmp * Vipar + Ni / Ne_tmp * Vipar0 -Zi * Ni / Ne_tmp * Vepar0 ; 
+        } else {
+          // Vepar = Vipar - B0 * (Jpar) / N_tmp * Vepara;
+          Vepar = Vipar - Jpar / Ne_tmp * Vepara; //NOTE(malamast): That's weird. Why was it like that???
+        }
       } else {
-        Vepar = Vipar - B0 * (Jpar) / N0 * Vepara;
-        Vepar.applyBoundary();
-        mesh->communicate(Vepar);
+        // Vepar = Vipar - B0 * (Jpar) / N0 * Vepara; //NOTE(malamast): That's weird. Why was it like that???
+        Vepar = Vipar - Jpar / Ne0 * Vepara;  
       }
+      Vepar.applyBoundary();
+      mesh->communicate(Vepar);
     }
 
     // Get Delp2(J) from J
-    Jpar2 = -Delp2(Jpar);
+    Jpar2 = -Delp2(Jpar); // NOTE(malamast): Do we actually use that?
 
     Jpar2.applyBoundary();
     mesh->communicate(Jpar2);
@@ -3638,69 +4157,69 @@ protected:
   #if DEBUG_6F>0
     output.write("I see you 1!\n");
   #endif
+
     /////////////////////////////////////////////////////////////////
     // Parallel electric field
     {
-      //TRACE("ddt(Psi)");
-
       if (!emass) {
         if (evolve_psi) {
           TRACE("ddt(Psi)");
 	  
-	  ddt(Psi) = 0.0;
+	        ddt(Psi) = 0.0;
           ddt(Psi) = -Grad_parP(phi) / B0 - eta * Jpar / B0;
 
-	  if (diamag && diamag_phi0) {
-	    if (diamag_er)
-	      ddt(Psi) -= V_dot_Grad(Ve0, Psi);
-	    else
-	      ddt(Psi) -= bracket(phi0, Psi, bm_exb); // Equilibrium flow
-	  }
+          if (diamag && diamag_phi0) {
+            if (diamag_er)
+              ddt(Psi) -= V_dot_Grad(Ve0, Psi);
+            else
+              ddt(Psi) -= bracket(phi0, Psi, bm_exb); // Equilibrium flow  //NOTE(malamast): We will need to add this term when taken from 2D and diamag_phi0 is false. 
+          }
 	  
-	  if (thermal_force) {
-	    // grad_par(T_e) correction
-	    ddt(Psi) += 0.71 * Psipara1 * Grad_parP(Te) / B0;
+          if (thermal_force) {
+            // grad_par(T_e) correction
+            ddt(Psi) += 0.71 * Psipara1 * Grad_parP(Te) / B0;
             ddt(Psi) -= 0.71 * Psipara1 * bracket(Psi, Te0, bm_mag);
-	  }
+          }
 
-	  if (eHall) {
+          if (eHall) {
             ddt(Psi) += Psipara1 * Grad_parP(Pe) / B0 / Ne0;
-	    ddt(Psi) -= Psipara1 * bracket(Psi, Pe0, bm_mag) / Ne0;
-    	  }
+            ddt(Psi) -= Psipara1 * bracket(Psi, Pe0, bm_mag) / Ne0;
+          }
 
-	  if (hyperdiff_par_apar4 > 0.0) {
+          if (hyperdiff_par_apar4 > 0.0) {
             tmpA2 = Grad2_par2new(Psi);
             mesh->communicate(tmpA2);
             tmpA2.applyBoundary();
             ddt(Psi) -= hyperdiff_par_apar4 * Grad2_par2new(tmpA2);
-	  }
+          }
 
-	  // Hyper-resistivity
+	        // Hyper-resistivity
           if (hyperresist > 0.0) {
             ddt(Psi) += hyperresist * Delp2(Jpar / B0);
-	  }
-	} else {
-          TRACE("ddt(Apar)");
-	  ddt(Apar) = 0.0;
+	        }
 
+	      } else {
+          TRACE("ddt(Apar)");
+
+	        ddt(Apar) = 0.0;
           ddt(Apar) = -Grad_parP(phi) - eta * Jpar;
 
-	  if (diamag && diamag_phi0) {
+          if (diamag && diamag_phi0) {
             if (diamag_er)
               ddt(Apar) -= V_dot_Grad(Ve0, Apar);
             else
-              ddt(Apar) -= bracket(phi0, Apar, bm_exb);
-	  }
+              ddt(Apar) -= bracket(phi0, Apar, bm_exb); // Equilibrium flow //NOTE(malamast): We will need to add this term when taken from 2D and diamag_phi0 is false. 
+          }
 
-	  if (thermal_force) {
+          if (thermal_force) {
             // grad_par(T_e) correction
             ddt(Apar) += 0.71 * Psipara1 * Grad_parP(Te);
             ddt(Apar) -= 0.71 * Psipara1 * bracket(Apar, Te0, bm_mag);
-	  }
+          }
 
           if (eHall) {
-            ddt(Apar) += Psipara1 * Grad_parP(Pe) / Ne0;
-            ddt(Apar) -= Psipara1 * bracket(Apar, Pe0, bm_mag) / Ne0;
+            ddt(Apar) += Psipara1 * Grad_parP(Pe) / Ne0; // NOTE(malamast): Why is Ne0 and not the total?
+            ddt(Apar) -= Psipara1 * bracket(Apar, Pe0, bm_mag) / Ne0;  
           }
 
           if (hyperdiff_par_apar4 > 0.0) {
@@ -3708,20 +4227,19 @@ protected:
             mesh->communicate(tmpA2);
             tmpA2.applyBoundary();
             ddt(Apar) -= hyperdiff_par_apar4 * Grad2_par2new(tmpA2);
-	  }
+	        }
 
-	  // Hyper-resistivity
+	        // Hyper-resistivity
           if (hyperresist > 0.0) {
             ddt(Apar) += hyperresist * Delp2(Jpar);
-	  }
-	}
-      } else {
-        // emass
-	ddt(Ajpar) = 0.0;
-	
+	        }
+	      }
+      } else { // emass
+
+	      ddt(Ajpar) = 0.0;
       	ddt(Ajpar) = -Grad_parP(phi) / B0 - eta * Jpar / B0;
 
-	if (diamag && diamag_phi0) {
+	      if (diamag && diamag_phi0) {
           if (diamag_er)
             ddt(Ajpar) -= V_dot_Grad(Ve0, Psi);
           else
@@ -3732,14 +4250,14 @@ protected:
           // grad_par(T_e) correction
           ddt(Ajpar) += 0.71 * Psipara1 * Grad_parP(Te) / B0;
           ddt(Ajpar) -= 0.71 * Psipara1 * bracket(Psi, Te0, bm_mag);
-	}
+	      }
 
         if (eHall) {
           ddt(Ajpar) += Psipara1 * Grad_parP(Pe) / B0 / Ne0;
           ddt(Ajpar) -= Psipara1 * bracket(Psi, Pe0, bm_mag) / Ne0;
         }
 
-	// Hyper-resistivity
+	      // Hyper-resistivity
         if (hyperresist > 0.0) {
           ddt(Ajpar) += hyperresist * Delp2(Jpar / B0);
         }
@@ -3761,6 +4279,7 @@ protected:
   #if DEBUG_6F>0
     output.write("I see you 2!\n");
   #endif
+
     //////////////////////////////////////////////////////////////////
     // Vorticity equation
 
@@ -3772,12 +4291,12 @@ protected:
       if (BScurrent) {
         if (evolve_psi)
           ddt(U) = -SQ(B0) * bracket(Psi, Jpar_BS0 / B0, bm_mag) * B0;
-	else  
+	          else  
           ddt(U) = -SQ(B0) * bracket(Apar, Jpar_BS0 / B0, bm_mag);
       } else {
         if (evolve_psi)
-	  ddt(U) = -SQ(B0) * bracket(Psi, J0 / B0, bm_mag) * B0; // Grad j term
-	else
+	        ddt(U) = -SQ(B0) * bracket(Psi, J0 / B0, bm_mag) * B0; // Grad j term
+	      else
           ddt(U) = -SQ(B0) * bracket(Apar, J0 / B0, bm_mag);     // Grad j term
       }
 
@@ -3786,22 +4305,50 @@ protected:
       ddt(U) += SQ(B0) * Grad_parP(Jpar / B0);   // b dot grad j
 
       if (diamag && diamag_phi0) {
-	if (diamag_er)
+	      if (diamag_er)
           ddt(U) -= V_dot_Grad(Ve0, U);
-	else
+	      else
           ddt(U) -= bracket(phi0, U, bm_exb);    // Equilibrium flow
       }
 
       if (experiment_Er && KH_term)
-        ddt(U) -= bracket(phi, U0_net, bm_exb);
+        ddt(U) -= bracket(phi, U0_net, bm_exb); //NOTE(malamast): U0_net is zero in our case.
 
-      if (compress0 && include_vipar)
-        ddt(U) -= Vipar * Grad_parP(U0_net);      
+      if (include_U0) {
+        ddt(U) -= bracket(phi, U0, bm_exb); // Advection // Added by malamast
+      }
+
+      if (compress0 && include_vipar) {
+
+        ddt(U) -= Vipar * Grad_parP(U0_net);  //NOTE(malamast): U0_net is zero in our case.
+
+        if (include_U0) {
+          ddt(U) -= Vipar * Grad_parP(U0); // Added by malamast
+        }
+
+        if (include_vpar0) {
+          ddt(U) -= Vipar0 * Grad_parP(U);  //NOTE(malamast): U0_net is zero in our case.
+        }
+
+        if (include_U0 && include_vpar0) {
+          if (evolve_psi)
+            ddt(U) += Vipar0 * bracket(Psi, U0, bm_mag) * B0; // Added by malamast
+          else
+            ddt(U) += Vipar0 * bracket(Apar, U0, bm_mag); // Added by malamast
+        }
+
+      }
       
       if (nonlinear) {
         ddt(U) -= bracket(phi, U, bm_exb);       // Advection
-	if (compress0 && include_vipar)
-	  ddt(U) -= Vpar_Grad_par(Vipar, U);
+
+	      if (compress0 && include_vipar) {
+	        ddt(U) -= Vpar_Grad_par(Vipar, U);
+          if (evolve_psi)
+            ddt(U) += Vipar * bracket(Psi, U, bm_mag) * B0; // Added by malamast
+          else
+            ddt(U) += Vipar * bracket(Apar, U, bm_mag); //  Added by malamast
+        }
       }
 
       // parallel hyper-viscous diffusion for vector potential
@@ -3820,7 +4367,7 @@ protected:
       }
 
       if (parallel_viscous && compress0) {
-        ddt(U) -= 0.666667 * Upara1 * b0xcv * Grad(pi_ci);
+        ddt(U) -= 0.666667 * Upara1 * b0xcv * Grad(pi_ci); //NOTE(malamast): Should we exclude the background?
       }
 
       if (gyroviscous) {
@@ -3828,31 +4375,31 @@ protected:
           Dperp2Phi0 = Div(cross(Ve0, B0vec));
         else
           Dperp2Phi0 = Field3D(Delp2(phi0));
-	Dperp2Phi0.applyBoundary();
-	mesh->communicate(Dperp2Phi0);
+        Dperp2Phi0.applyBoundary();
+        mesh->communicate(Dperp2Phi0);
 
-	Dperp2Phi = Delp2(phi);
-    	Dperp2Phi.applyBoundary();
+	      Dperp2Phi = Delp2(phi);
+    	  Dperp2Phi.applyBoundary();
         mesh->communicate(Dperp2Phi);
         
-	if (diamag_er && diamag_phi0) {
+	      if (diamag_er && diamag_phi0) {
           // GradPhi02 = Er0*Er0; // test
           GradPhi02 = (cross(Ve0, B0vec)) * (cross(Ve0, B0vec)) / (B0 * B0);
-	} else {
+	      } else {
           GradPhi02 = Field3D(Grad_perp(phi0) * Grad_perp(phi0) / (B0 * B0));
-	}
-	GradPhi02.applyBoundary();
+	      }
+	      GradPhi02.applyBoundary();
         mesh->communicate(GradPhi02);
 
-	if (diamag_er && diamag_phi0) {
-	  GradcPhi = (cross(Ve0, B0vec)) * Grad_perp(phi) / (B0 * B0);
-	} else {
-	  GradcPhi = Grad_perp(phi0) * Grad_perp(phi) / (B0 * B0);
-	}
-	GradcPhi.applyBoundary();
-	mesh->communicate(GradcPhi);
+        if (diamag_er && diamag_phi0) {
+          GradcPhi = (cross(Ve0, B0vec)) * Grad_perp(phi) / (B0 * B0);
+        } else {
+          GradcPhi = Grad_perp(phi0) * Grad_perp(phi) / (B0 * B0);
+        }
+        GradcPhi.applyBoundary();
+        mesh->communicate(GradcPhi);
 
-	Dperp2Pi0 = Field3D(Delp2(Pi0));
+	      Dperp2Pi0 = Field3D(Delp2(Pi0));
         Dperp2Pi0.applyBoundary();
         mesh->communicate(Dperp2Pi0);
 
@@ -3860,19 +4407,19 @@ protected:
         Dperp2Pi.applyBoundary();
         mesh->communicate(Dperp2Pi);
 
-	if (diamag_er && diamag_phi0)
-	  bracketPhi0P = V_dot_Grad(Ve0, Pi);
+	      if (diamag_er && diamag_phi0)
+	        bracketPhi0P = V_dot_Grad(Ve0, Pi);
         else
           bracketPhi0P = bracket(phi0, Pi, bm_exb);
         bracketPhi0P.applyBoundary();
         mesh->communicate(bracketPhi0P);
     
-	bracketPhiP0 = bracket(phi, Pi0, bm_exb);
-    	bracketPhiP0.applyBoundary();
-	mesh->communicate(bracketPhiP0);
+	      bracketPhiP0 = bracket(phi, Pi0, bm_exb);
+    	  bracketPhiP0.applyBoundary();
+	      mesh->communicate(bracketPhiP0);
 
-	ddt(U) -= 0.5 * Upara2 * bracket(Pi, Dperp2Phi0, bm_exb) / B0;
-    	ddt(U) -= 0.5 * Upara2 * bracket(Pi0, Dperp2Phi, bm_exb) / B0;
+	      ddt(U) -= 0.5 * Upara2 * bracket(Pi, Dperp2Phi0, bm_exb) / B0;
+    	  ddt(U) -= 0.5 * Upara2 * bracket(Pi0, Dperp2Phi, bm_exb) / B0;
         ddt(U) += Upara3 * B0 * bracket(N0, GradcPhi, bm_exb);
         ddt(U) += 0.5 * Upara3 * B0 * bracket(Ni, GradPhi02, bm_exb);
         ddt(U) += 0.5 * Upara2 * bracket(phi, Dperp2Pi0, bm_exb) / B0;
@@ -3883,9 +4430,9 @@ protected:
         ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhi0P) / B0;
         ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhiP0) / B0;
 
-	if (impurity_prof && impurity_gyro) {
-	  Dperp2Pimp0 = Field3D(Delp2(P_imp0));
-    	  Dperp2Pimp0.applyBoundary();
+	      if (impurity_prof && impurity_gyro) {
+	        Dperp2Pimp0 = Field3D(Delp2(P_imp0));
+    	    Dperp2Pimp0.applyBoundary();
           mesh->communicate(Dperp2Pimp0);
 
           bracketPhiPimp0 = bracket(phi, P_imp0, bm_exb);
@@ -3896,15 +4443,15 @@ protected:
           ddt(U) += Upara_imp * Upara3 * B0 * bracket(N_imp0, GradcPhi, bm_exb);
           ddt(U) += 0.5 * Upara_imp * Upara2 * bracket(phi, Dperp2Pimp0, bm_exb) / B0;
           ddt(U) -= 0.5 * Upara_imp * Upara2 * Delp2(bracketPhiPimp0) / B0;
-	}
+	      }
 
-	if (nonlinear) {
-	  GradPhi2 = Grad_perp(phi) * Grad_perp(phi) / (B0 * B0);
-	  GradPhi2.applyBoundary();
-	  mesh->communicate(GradPhi2);
+	      if (nonlinear) {
+          GradPhi2 = Grad_perp(phi) * Grad_perp(phi) / (B0 * B0);
+          GradPhi2.applyBoundary();
+          mesh->communicate(GradPhi2);
 
-	  bracketPhiP = bracket(phi, Pi, bm_exb);
-    	  bracketPhiP.applyBoundary();
+          bracketPhiP = bracket(phi, Pi, bm_exb);
+          bracketPhiP.applyBoundary();
           mesh->communicate(bracketPhiP);
 
           ddt(U) -= 0.5 * Upara2 * bracket(Pi, Dperp2Phi, bm_exb) / B0;
@@ -3912,10 +4459,11 @@ protected:
           ddt(U) += Upara3 * B0 * bracket(Ni, GradcPhi, bm_exb);
           ddt(U) += 0.5 * Upara2 * bracket(phi, Dperp2Pi, bm_exb) / B0;
           ddt(U) -= 0.5 * Upara2 * Delp2(bracketPhiP) / B0;
-	  if (impurity_prof && impurity_gyro) {
+
+	        if (impurity_prof && impurity_gyro) {
             ddt(U) += 0.5 * Upara_imp * Upara3 * B0 * bracket(N_imp0, GradPhi2, bm_exb);
-	  }
-	}
+	        }
+	      }
       }
 
       if (output_transfer) {
@@ -3989,21 +4537,25 @@ protected:
       ddt(Ni) -= bracket(phi, N0, bm_exb);
 
       if (continuity) {
+        // NOTE(malamast):  Grad(phi) decomposed into parallel and perpendicular parts. 
+        // NOTE(malamast):  The contribution of the parallel part is zero here since we multiply with b0xcv. 
         ddt(Ni) -= 2.0 * N0 / B0 * b0xcv * Grad(phi);
-	ddt(Ni) -= 2.0 * Ni / B0 * b0xcv * cross(Ve0_net, B0vec); // net flow
-	if (diamag) {
+        ddt(Ni) -= 2.0 * Ni / B0 * b0xcv * Grad(phi0); //NOTE(malamast): This was commented out for some reason.
+        // ddt(Ni) -= 2.0 * Nipara1 * b0xcv * Grad(Pi0) / N0 / B0;    // balanced by above
+        // ddt(Ni) -= 2.0 * Ni / B0 * b0xcv * cross(Ve0_net, B0vec); // net flow //NOTE(malamast): Ve0_net is 0 so I have commented it out.
+        if (diamag) {
           ddt(Ni) -= 2.0 * Nipara1 * b0xcv * Grad(Pi) / B0;
-	}
-	if (nonlinear) {
+        }
+        if (nonlinear) {
           ddt(Ni) -= 2.0 * Ni / B0 * b0xcv * Grad(phi);
-	}
+        }
       }
 
       if (diamag && diamag_phi0) {
-	if (diamag_er)
-	  ddt(Ni) -= V_dot_Grad(Ve0, Ni);
-	else 
-	  ddt(Ni) -= bracket(phi0, Ni, bm_exb); // Equilibrium flow
+	      if (diamag_er)
+	        ddt(Ni) -= V_dot_Grad(Ve0, Ni);
+	      else 
+	        ddt(Ni) -= bracket(phi0, Ni, bm_exb); // Equilibrium flow
       }
 
       if (nonlinear) {
@@ -4011,21 +4563,55 @@ protected:
       }
 
       if (compress0) {
-	if (include_vipar)
-	  ddt(Ni) -= Vipar * Grad_parP(N0);
-	if (continuity) {
-	  ddt(Ni) -= N0 * B0 * Grad_parP(Vipar / B0);
-	}
-	if (nonlinear) {
-	  if (include_vipar)
-            ddt(Ni) -= Vpar_Grad_par(Vipar, Ni);
-	  if (continuity)
-	  ddt(Ni) -= Ni * B0 * Grad_par(Vipar / B0);
-	}
+        // ddt(Ni) -= Vipar * Grad_parP(N0, CELL_YLOW);
+        // ddt(Ni) -= Vpar_Grad_par(Vipar, N0);        
+        if (include_vipar) {
+          ddt(Ni) -= Vipar * Grad_parP(N0);
+
+          if (include_vpar0) {
+            ddt(Ni) -= Vipar0 * Grad_parP(Ni);
+            if (evolve_psi)
+              ddt(Ni) += Vipar0 * bracket(Psi, N0, bm_mag) * B0; 
+            else
+              ddt(Ni) += Vipar0 * bracket(Apar, N0, bm_mag); 
+          }
+        }
+
+        if (continuity) {
+          ddt(Ni) -= N0 * B0 * Grad_parP(Vipar / B0);
+
+          if (include_vpar0) {
+            ddt(Ni) -= Ni * B0 * Grad_parP(Vipar0 / B0);
+            if (evolve_psi)
+              ddt(Ni) += N0 * B0 * bracket(Psi, Vipar0, bm_mag) * B0; 
+            else
+              ddt(Ni) += N0 * B0 * bracket(Apar, Vipar0, bm_mag); 
+          }
+        }
+
+        if (nonlinear) {
+          // ddt(Ni) -= Vipar * Grad_par(Ni, CELL_YLOW);
+
+          // ddt(Ni) -= Vpar_Grad_par(Vipar, Ni);
+          // ddt(Ni) += Vipar * bracket(Psi, N0, bm_mag)*B0;      
+
+          if (include_vipar) {
+            ddt(Ni) -= Vpar_Grad_par(Vipar, Ni); //NOTE(malamast): do we include correction for the perturbed magnetic field like we do in Grad_parP?
+
+            if (evolve_psi)
+              ddt(Ni) += Vipar * bracket(Psi, Ni, bm_mag) * B0; //NOTE(malamast): Added by malamast
+            else
+              ddt(Ni) += Vipar * bracket(Apar, Ni, bm_mag); //NOTE(malamast): Added by malamast
+          }
+
+          if (continuity)
+            // ddt(Ni) -= Ni * B0 * Grad_par(Vipar / B0); //NOTE(malamast): why not Grad_parP?
+            ddt(Ni) -= Ni * B0 * Grad_parP(Vipar / B0);
+        }
       }
 
       if (radial_diffusion)
-	ddt(Ni) += diff_radial * Delp2(Ni);
+	      ddt(Ni) += diff_radial * Delp2(Ni);
 
       /*if (neoclassic_i) {
         tmpddx2 = D2DX2(DC(Ni));
@@ -4070,14 +4656,20 @@ protected:
 
       if (continuity) {
         ddt(Ti) -= 4.0 / 3.0 * Ti0 / B0 * b0xcv * Grad(phi);
-	ddt(Ti) -= 4.0 / 3.0 * Ti / B0 * b0xcv * cross(Ve0_net, B0vec); // net flow
-	if (diamag)
-	  ddt(Ti) -= 4.0 / 3.0 * Tipara2 * Ti0 / N0 * b0xcv * Grad(Pi) / B0;
-	if (nonlinear) {
-	  ddt(Ti) -= 4.0 / 3.0 * Ti / B0 * b0xcv * Grad(phi);
-	  if (diamag)
-	    ddt(Ti) -= 4.0 / 3.0 * Tipara2 * Ti / N0 * b0xcv * Grad(Pi) / B0;
-	}
+        // ddt(Ti) -= 4.0/3.0 * Ti * b0xcv*Grad(phi0*B0) / B0; // ---> ?
+        // ddt(Ti) -= 4.0/3.0 * Tipara2 * Ti/N0 * b0xcv*Grad(Pi0) / (N0*B0);   // balanced by above ---> ?        
+	      // ddt(Ti) -= 4.0 / 3.0 * Ti / B0 * b0xcv * cross(Ve0_net, B0vec); // net flow // NOTE(malamast): Ve0_net is 0 ---> I have commented it out.
+
+        ddt(Ti) -= 4.0 / 3.0 * Ti / B0 * b0xcv * Grad(phi0); // Added by malamast.
+        ddt(Ti) -= 4.0 / 3.0 * Tipara2 * Ti / N0 * b0xcv * Grad(Pi0) / B0;  // Added by malamast.
+
+        if (diamag)
+          ddt(Ti) -= 4.0 / 3.0 * Tipara2 * Ti0 / N0 * b0xcv * Grad(Pi) / B0;
+        if (nonlinear) {
+          ddt(Ti) -= 4.0 / 3.0 * Ti / B0 * b0xcv * Grad(phi);
+          if (diamag)
+            ddt(Ti) -= 4.0 / 3.0 * Tipara2 * Ti / N0 * b0xcv * Grad(Pi) / B0;
+        }
       }
 
       if (energy_flux) {
@@ -4089,8 +4681,8 @@ protected:
 
       if (diamag && diamag_phi0) {
         if (diamag_er)
-  	  ddt(Ti) -= V_dot_Grad(Ve0, Ti);
-	else
+  	      ddt(Ti) -= V_dot_Grad(Ve0, Ti);
+	      else
           ddt(Ti) -= bracket(phi0, Ti, bm_exb); // Equilibrium flow
       }
 
@@ -4099,17 +4691,50 @@ protected:
       }
 
       if (compress0) {
-	if (include_vipar)
-	  ddt(Ti) -= Vipar * Grad_parP(Ti0);
-	if (continuity) {
-	  ddt(Ti) -= 2.0 / 3.0 * Ti0 * B0 * Grad_parP(Vipar / B0);
-	}
-	if (nonlinear) {
-	  if (include_vipar)
-	    ddt(Ti) -= Vpar_Grad_par(Vipar, Ti);
-	  if (continuity)
-	    ddt(Ti) -= 2.0 / 3.0 * Ti * B0 * Grad_par(Vipar / B0);
-	}
+        // ddt(Ti) -= Vipar * Grad_parP(Ti0);
+        // ddt(Ti) -= Vpar_Grad_par(Vipar, Ti0);        
+        if (include_vipar) {
+          ddt(Ti) -= Vipar * Grad_parP(Ti0);
+
+          if (include_vpar0) {
+            ddt(Ti) -= Vipar0 * Grad_parP(Ti);
+            if (evolve_psi)
+              ddt(Ti) += Vipar0 * bracket(Psi, Ti0, bm_mag) * B0; 
+            else
+              ddt(Ti) += Vipar0 * bracket(Apar, Ti0, bm_mag); 
+          }          
+        }
+
+        if (continuity) {
+          ddt(Ti) -= 2.0 / 3.0 * Ti0 * B0 * Grad_parP(Vipar / B0);
+
+          if (include_vpar0) {
+            ddt(Ti) -= 2.0 / 3.0 * Ti * B0 * Grad_parP(Vipar0 / B0);
+            if (evolve_psi)
+              ddt(Ti) += 2.0 / 3.0 * Ti0 * B0 * bracket(Psi, Vipar0 / B0, bm_mag) * B0; 
+            else
+              ddt(Ti) += 2.0 / 3.0 * Ti0 * B0 * bracket(Apar, Vipar0 / B0, bm_mag); 
+          }
+        }
+
+        if (nonlinear) {
+          // ddt(Ti) -= Vipar * Grad_par(Ti, CELL_YLOW);
+
+          // ddt(Ti) -= Vpar_Grad_par(Vipar, Ti);
+          // ddt(Ti) += Vipar * bracket(Psi, Ti0, bm_mag)*B0;
+
+          if (include_vipar) {
+            ddt(Ti) -= Vpar_Grad_par(Vipar, Ti);
+            if (evolve_psi)
+              ddt(Ti) += Vipar * bracket(Psi, Ti, bm_mag) * B0; // Added by malamast
+            else
+              ddt(Ti) += Vipar * bracket(Apar, Ti, bm_mag); // Added by malamast            
+          }
+
+          if (continuity)
+            ddt(Ti) -= 2.0 / 3.0 * Ti * B0 * Grad_parP(Vipar / B0);
+        }
+
       }
 
       if (energy_exch) {
@@ -4117,51 +4742,61 @@ protected:
       }
 
       if (diffusion_par > 0.0) {
-        ddt(Ti) += kappa_par_i * Grad2_par2(Ti) / N0; // Parallel diffusion
-        ddt(Ti) += Grad_par(kappa_par_i) * Grad_par(Ti) / N0;
-  	if (diff_par_flutter) {
-  	  if (nonlinear) {
-	    if (evolve_psi)
-	      bracket1i = -bracket(Psi, Ti + Ti0, bm_mag) * B0;
-	    else
-	      bracket1i = -bracket(Apar, Ti + Ti0, bm_mag);
-	  } else {
-	    if (evolve_psi)
-	      bracket1i = -bracket(Psi, Ti0, bm_mag) * B0;
-	    else
-	      bracket1i = -bracket(Apar, Ti0, bm_mag);
-	  }
-	  mesh->communicate(bracket1i);
-	  bracket1i.applyBoundary();
-  	  gradpar_ti = Grad_par(Ti);
-          mesh->communicate(gradpar_ti);
-          gradpar_ti.applyBoundary();
 
-          ddt(Ti) += Grad_par(kappa_par_i) * bracket1i / N0;
-          ddt(Ti) += kappa_par_i * Grad_par(bracket1i) / N0;
-	  if (nonlinear) {
-	    if (evolve_psi) {
-	      ddt(Ti) -= bracket(Psi, kappa_par_i, bm_mag) * B0 * gradpar_ti / N0;
-              ddt(Ti) -= kappa_par_i * bracket(Psi, gradpar_ti, bm_mag) * B0 / N0;
-              ddt(Ti) -= bracket(Psi, kappa_par_i, bm_mag) * B0 * bracket1i / N0;
-              ddt(Ti) -= kappa_par_i * bracket(Psi, bracket1i, bm_mag) * B0 / N0;
-	    } else {
-	      ddt(Ti) -= bracket(Apar, kappa_par_i, bm_mag) * gradpar_ti / N0;
-  	      ddt(Ti) -= kappa_par_i * bracket(Apar, gradpar_ti, bm_mag) / N0;
-              ddt(Ti) -= bracket(Apar, kappa_par_i, bm_mag) * bracket1i / N0;
-              ddt(Ti) -= kappa_par_i * bracket(Apar, bracket1i, bm_mag) / N0;
-	    }
-	  }
+        // if (Landau) {
+        //   if (diff_par_flutter)
+        //     ddt(Ti) -= Grad_parP(q_par_i) / N0;
+        //   else
+        //     ddt(Ti) -= Grad_par(q_par_i) / N0;
+        // } else {
 
-	  if (output_flux_par) {
-	    heatf_par_flutter_i = -kappa_par_i * bracket1i;
-	  }
-	}
+          ddt(Ti) += kappa_par_i * Grad2_par2(Ti) / N0; // Parallel diffusion
+          ddt(Ti) += Grad_par(kappa_par_i) * Grad_par(Ti) / N0;
+
+          if (diff_par_flutter) {
+            if (nonlinear) {
+              if (evolve_psi)
+                bracket1i = -bracket(Psi, Ti + Ti0, bm_mag) * B0;
+              else
+                bracket1i = -bracket(Apar, Ti + Ti0, bm_mag);
+            } else {
+              if (evolve_psi)
+                bracket1i = -bracket(Psi, Ti0, bm_mag) * B0;
+              else
+                bracket1i = -bracket(Apar, Ti0, bm_mag);
+            }
+            mesh->communicate(bracket1i);
+            bracket1i.applyBoundary();
+            gradpar_ti = Grad_par(Ti); //NOTE(malamast): Do I need to add Ti0 here?
+            mesh->communicate(gradpar_ti);
+            gradpar_ti.applyBoundary();
+
+            ddt(Ti) += Grad_par(kappa_par_i) * bracket1i / N0;
+            ddt(Ti) += kappa_par_i * Grad_par(bracket1i) / N0;
+            if (nonlinear) {
+              if (evolve_psi) {
+                ddt(Ti) -= bracket(Psi, kappa_par_i, bm_mag) * B0 * gradpar_ti / N0;
+                ddt(Ti) -= kappa_par_i * bracket(Psi, gradpar_ti, bm_mag) * B0 / N0;
+                ddt(Ti) -= bracket(Psi, kappa_par_i, bm_mag) * B0 * bracket1i / N0;
+                ddt(Ti) -= kappa_par_i * bracket(Psi, bracket1i, bm_mag) * B0 / N0;
+              } else {
+                ddt(Ti) -= bracket(Apar, kappa_par_i, bm_mag) * gradpar_ti / N0;
+                ddt(Ti) -= kappa_par_i * bracket(Apar, gradpar_ti, bm_mag) / N0;
+                ddt(Ti) -= bracket(Apar, kappa_par_i, bm_mag) * bracket1i / N0;
+                ddt(Ti) -= kappa_par_i * bracket(Apar, bracket1i, bm_mag) / N0;
+              }
+            }
+
+            if (output_flux_par) {
+              heatf_par_flutter_i = -kappa_par_i * bracket1i;
+            }
+          }
+        // }
       }
 
       if (diffusion_perp > 0.0) {
-        ddt(Ti) += kappa_perp_i * Delp2(Ti) / N0; // Parallel diffusion
-        ddt(Ti) += Grad_perp(kappa_perp_i) * Grad_perp(Ti) / N0;
+        ddt(Ti) += kappa_perp_i * Delp2(Ti) / N0; // Perpendicular diffusion
+        ddt(Ti) += Grad_perp(kappa_perp_i) * Grad_perp(Ti) / N0; //NOTE(malamast): We have not included the time variation of kappa_perp_i when we substratced the equilibrium term. 
       }
 
       if (gyroviscous && compress0 & nonlinear) {
@@ -4170,11 +4805,14 @@ protected:
 
       if (parallel_viscous) {
         if (compress0) {
-	  ddt(Ti) -= 0.444444 * pi_ci / Tau_ie / N0 / sqrt(B0) * Grad_parP(Vipar * sqrt(B0));
-	}
-	if (nonlinear) {
-	  ddt(Ti) += 0.222222 * pi_ci / Tau_ie / N0 / N0 / B0 * bracket(N0+Ni, Ti0+Ti, bm_exb);
-	}
+	        ddt(Ti) -= 0.444444 * pi_ci / Tau_ie / N0 / sqrt(B0) * Grad_parP(Vipar * sqrt(B0)); //NOTE(malamast): What happended to kB?
+	      }
+	      if (nonlinear) {
+	        ddt(Ti) += 0.222222 * pi_ci / Tau_ie / N0 / N0 / B0 * bracket(N0+Ni, Ti0+Ti, bm_exb); // NOTE(malamast): 
+                                                                                                // 1) What happended to kB?  
+                                                                                                // 2) Should we remove the background term here to make it consistent with the rest of the analysis?
+                                                                                                // 3) Why do we devide by B0? I think it is already included in the bracket operator?
+	      }
       }
       
       if (neoclassic_i) {
@@ -4198,7 +4836,7 @@ protected:
 
       if (hyperdiff_perp_ti4 > 0.0) {
         tmpTi2 = Delp2(Ti);
-    	mesh->communicate(tmpTi2);
+    	  mesh->communicate(tmpTi2);
         tmpTi2.applyBoundary();
         ddt(Ti) -= hyperdiff_perp_ti4 * Delp2(tmpTi2);
       }
@@ -4209,7 +4847,6 @@ protected:
   #endif
     //////////////////////////////////////////////////////////////////
     // electron temperature equation
-
     {
       TRACE("ddt(Te)");
 
@@ -4221,50 +4858,59 @@ protected:
 
       if (continuity) {
         ddt(Te) -= 4.0 / 3.0 * Te0 / B0 * b0xcv * Grad(phi);
-        ddt(Te) -= 4.0 / 3.0 * Te / B0 * b0xcv * cross(Ve0, B0vec);
-	ddt(Te) += 4.0 / 3.0 * Tepara2 * Te / Ne0 * b0xcv * Grad(Pe0) / B0;
+
+        // ddt(Te) -= 4.0 / 3.0 * Te / B0 * b0xcv * cross(Ve0, B0vec); //NOTE(malamast): What is this? I have commented it out.
+        ddt(Te) -= 4.0 / 3.0 * Te / B0 * b0xcv * Grad(phi0); // Added by malamast.
+
+	      ddt(Te) += 4.0 / 3.0 * Tepara2 * Te / Ne0 * b0xcv * Grad(Pe0) / B0;
+
         if (diamag)
           ddt(Te) += 4.0 / 3.0 * Tepara2 * Te0 / Ne0 * b0xcv * Grad(Pe) / B0;
         if (nonlinear) {
           ddt(Te) -= 4.0 / 3.0 * Te / B0 * b0xcv * Grad(phi);
           if (diamag)
             ddt(Te) += 4.0 / 3.0 * Tepara2 * Te / Ne0 * b0xcv * Grad(Pe) / B0;
-	}
+	      }
       }
 
       if (energy_flux) {
+        // ddt(Te) += 10.0/3.0 * Tepara2 * Te0/B0 * b0xcv*Grad(Te);
         ddt(Te) -= 10.0 / 3.0 * Tepara2 / B0 * V_dot_Grad(-Te0 * b0xcv, Te);
-	ddt(Te) += 10.0 / 3.0 * Tepara2 * Te / B0 * b0xcv * Grad(Te0);
-	if (thermal_force) {
-	  ddt(Te) += 0.71 * 2.0 / 3.0 * Tepara3 * Te0 * B0 / Ne0 * Grad_parP(Jpar / B0);
-	  if (BScurrent) {
-	    if (evolve_psi) {
-	      ddt(Te) -= 0.71 * 2.0 / 3.0 * Tepara3 * Te0 * B0 / Ne0 * bracket(Psi, Jpar_BS0 / B0, bm_mag) * B0;
-	    } else {
-	      ddt(Te) -= 0.71 * 2.0 / 3.0 * Tepara3 * Te0 * B0 / Ne0 * bracket(Apar, Jpar_BS0 / B0, bm_mag);
-	    }
-	    ddt(Te) += 0.71 * 2.0 / 3.0 * Tepara3 * Te * B0 / Ne0 * Grad_parP(Jpar_BS0 / B0);
-	  } else {
-	    if (evolve_psi) {
-	      ddt(Te) -= 0.71 * 2.0 / 3.0 * Tepara3 * Te0 * B0 / Ne0 * bracket(Psi, J0 / B0, bm_mag) * B0;
-	    } else {
-	      ddt(Te) -= 0.71 * 2.0 / 3.0 * Tepara3 * Te0 * B0 / Ne0 * bracket(Apar, J0 / B0, bm_mag);
-	    }
-	    ddt(Te) += 0.71 * 2.0 / 3.0 * Tepara3 * Te * B0 / Ne0 * Grad_parP(J0 / B0);
-	  }
-	}
-	if (nonlinear) {
-	  ddt(Te) -= 10.0 / 3.0 * Tepara2 / B0 * V_dot_Grad(-Te * b0xcv, Te);
-	  if (thermal_force)
-	    ddt(Te) += 0.71 * 2.0 / 3.0 * Tepara3 * Te * B0 / Ne0 * Grad_par(Jpar / B0);
-	}
+	      ddt(Te) += 10.0 / 3.0 * Tepara2 * Te / B0 * b0xcv * Grad(Te0);
+
+	      if (thermal_force) {
+          ddt(Te) += 0.71 * 2.0 / 3.0 * Tepara3 * Te0 * B0 / Ne0 * Grad_parP(Jpar / B0);
+
+          if (BScurrent) {
+            if (evolve_psi) {
+              ddt(Te) -= 0.71 * 2.0 / 3.0 * Tepara3 * Te0 * B0 / Ne0 * bracket(Psi, Jpar_BS0 / B0, bm_mag) * B0;
+            } else {
+              ddt(Te) -= 0.71 * 2.0 / 3.0 * Tepara3 * Te0 * B0 / Ne0 * bracket(Apar, Jpar_BS0 / B0, bm_mag);
+            }
+            ddt(Te) += 0.71 * 2.0 / 3.0 * Tepara3 * Te * B0 / Ne0 * Grad_parP(Jpar_BS0 / B0);
+          } else {
+            if (evolve_psi) {
+              ddt(Te) -= 0.71 * 2.0 / 3.0 * Tepara3 * Te0 * B0 / Ne0 * bracket(Psi, J0 / B0, bm_mag) * B0;
+            } else {
+              ddt(Te) -= 0.71 * 2.0 / 3.0 * Tepara3 * Te0 * B0 / Ne0 * bracket(Apar, J0 / B0, bm_mag);
+            }
+            ddt(Te) += 0.71 * 2.0 / 3.0 * Tepara3 * Te * B0 / Ne0 * Grad_parP(J0 / B0);
+          }
+        }
+
+        if (nonlinear) {
+          // ddt(Te) += 10.0 / 3.0 * Tepara2 * Te/B0 * b0xcv*Grad(Te);
+          ddt(Te) -= 10.0 / 3.0 * Tepara2 / B0 * V_dot_Grad(-Te * b0xcv, Te);
+          if (thermal_force)
+            ddt(Te) += 0.71 * 2.0 / 3.0 * Tepara3 * Te * B0 / Ne0 * Grad_parP(Jpar / B0);
+        }
       }
 
       if (diamag && diamag_phi0) {
-	if (diamag_er)
+        if (diamag_er)
           ddt(Te) -= V_dot_Grad(Ve0, Te);
-	else
-        ddt(Te) -= bracket(phi0, Te, bm_exb); // Equilibrium flow
+        else
+          ddt(Te) -= bracket(phi0, Te, bm_exb); // Equilibrium flow
       }
 
       if (nonlinear) {
@@ -4272,17 +4918,51 @@ protected:
       }
 
       if (compress0) {
-	if (include_vipar)
-	  ddt(Te) -= Vepar * Grad_parP(Te0);
-	if (continuity) {
-	  ddt(Te) -= 2.0 / 3.0 * Te0 * B0 * Grad_parP(Vepar / B0);
-	}
-	if (nonlinear) {
-	  if (include_vipar)
-	    ddt(Te) -= Vpar_Grad_par(Vepar, Te);
-	  if (continuity)
-	    ddt(Te) -= 2.0 / 3.0 * Te * B0 * Grad_par(Vepar / B0);
-	}
+        // ddt(Te) -= Vepar * Grad_parP(Te0);
+        // ddt(Te) -= Vpar_Grad_par(Vepar, Te0);
+
+	      if (include_vipar) {
+	        ddt(Te) -= Vepar * Grad_parP(Te0);
+
+          if (include_vpar0) {
+            ddt(Te) -= Vepar0 * Grad_parP(Te);
+            if (evolve_psi)
+              ddt(Te) += Vepar0 * bracket(Psi, Te0, bm_mag) * B0; 
+            else
+              ddt(Te) += Vepar0 * bracket(Apar, Te0, bm_mag); 
+          }                  
+        }
+
+        if (continuity) {
+          ddt(Te) -= 2.0 / 3.0 * Te0 * B0 * Grad_parP(Vepar / B0);
+
+          if (include_vpar0) {
+            ddt(Te) -= 2.0 / 3.0 * Te * B0 * Grad_parP(Vepar0 / B0);
+            if (evolve_psi)
+              ddt(Te) += 2.0 / 3.0 * Te0 * B0 * bracket(Psi, Vepar0 / B0, bm_mag) * B0; 
+            else
+              ddt(Te) += 2.0 / 3.0 * Te0 * B0 * bracket(Apar, Vepar0 / B0, bm_mag); 
+          }          
+        }
+
+        if (nonlinear) {
+          // ddt(Te) -= Vepar * Grad_par(Te);
+
+          // ddt(Te) -= Vpar_Grad_par(Vepar, Te);
+          // ddt(Te) += Vepar * bracket(Psi, Te0, bm_mag)*B0;   
+
+          if (include_vipar) {
+            ddt(Te) -= Vpar_Grad_par(Vepar, Te);
+            if (evolve_psi)
+              ddt(Te) += Vepar * bracket(Psi, Te, bm_mag) * B0; // Added by malamast
+            else
+              ddt(Te) += Vepar * bracket(Apar, Te, bm_mag); // Added by malamast
+          }
+
+          if (continuity) {
+            ddt(Te) -= 2.0 / 3.0 * Te * B0 * Grad_parP(Vepar / B0);
+          }
+        }
       }
 
       if (energy_exch) {
@@ -4297,63 +4977,84 @@ protected:
       }
 
       if (diffusion_par > 0.0) {
-	ddt(Te) += kappa_par_e * Grad2_par2(Te) / Ne0; // Parallel diffusion 
-        ddt(Te) += Grad_par(kappa_par_e) * Grad_par(Te) / Ne0;
-	if (diff_par_flutter) {
-	  if (nonlinear) {
-	    if (evolve_psi)
-              bracket1e = -bracket(Psi, Te + Te0, bm_mag) * B0;
-            else
-              bracket1e = -bracket(Apar, Te + Te0, bm_mag);
-	  } else {
-	    if (evolve_psi)
-              bracket1e = -bracket(Psi, Te0, bm_mag) * B0;
-            else
-              bracket1e = -bracket(Apar, Te0, bm_mag);
-	  }
-	  mesh->communicate(bracket1e);
-    	  bracket1e.applyBoundary();
-          gradpar_te = Grad_par(Te);
-          mesh->communicate(gradpar_te);
-          gradpar_te.applyBoundary();
+        // if (Landau) {
+        //   if (diff_par_flutter)
+        //     ddt(Te) -= Grad_parP(q_par_e) / Ne0;
+        //   else
+        //     ddt(Te) -= Grad_par(q_par_e) / Ne0;
 
-          ddt(Te) += Grad_par(kappa_par_e) * bracket1e / Ne0;
-          ddt(Te) += kappa_par_e * Grad_par(bracket1e) / Ne0;
+        //   if (output_qparcompare) {
+        //     q_par_fl = kappa_par_e * Grad_par(Te);
+        //     q_par_landau = q_par_e;
+        //   }
+        // } else {
 
-	  if (nonlinear) {
-	    if (evolve_psi) {
-	      ddt(Te) -= bracket(Psi, kappa_par_e, bm_mag) * B0 * gradpar_te / Ne0;
-	      ddt(Te) -= kappa_par_e * bracket(Psi, gradpar_te, bm_mag) * B0 / Ne0;
-              ddt(Te) -= bracket(Psi, kappa_par_e, bm_mag) * B0 * bracket1e / Ne0;
-              ddt(Te) -= kappa_par_e * bracket(Psi, bracket1e, bm_mag) * B0 / Ne0;
-	    } else {
-	      ddt(Te) -= bracket(Apar, kappa_par_e, bm_mag) * gradpar_te / Ne0;
-              ddt(Te) -= kappa_par_e * bracket(Apar, gradpar_te, bm_mag) / Ne0;
-              ddt(Te) -= bracket(Apar, kappa_par_e, bm_mag) * bracket1e / Ne0;
-              ddt(Te) -= kappa_par_e * bracket(Apar, bracket1e, bm_mag) / Ne0;
-	    }
-	  }
-	  if (output_flux_par) {
-	    heatf_par_flutter_e = -kappa_par_e * bracket1e;
-	  }
-	}
+          ddt(Te) += kappa_par_e * Grad2_par2(Te) / Ne0; // Parallel diffusion 
+          ddt(Te) += Grad_par(kappa_par_e) * Grad_par(Te) / Ne0;
+
+          if (diff_par_flutter) {
+            if (nonlinear) {
+              if (evolve_psi)
+                bracket1e = -bracket(Psi, Te + Te0, bm_mag) * B0;
+              else
+                bracket1e = -bracket(Apar, Te + Te0, bm_mag);
+            } else {
+              if (evolve_psi)
+                bracket1e = -bracket(Psi, Te0, bm_mag) * B0;
+              else
+                bracket1e = -bracket(Apar, Te0, bm_mag);
+            }
+            mesh->communicate(bracket1e);
+            bracket1e.applyBoundary();
+            gradpar_te = Grad_par(Te); //NOTE(malamast): Should we add Te0 here?
+            mesh->communicate(gradpar_te);
+            gradpar_te.applyBoundary();
+
+            ddt(Te) += Grad_par(kappa_par_e) * bracket1e / Ne0;
+            ddt(Te) += kappa_par_e * Grad_par(bracket1e) / Ne0;
+
+            if (nonlinear) {
+              if (evolve_psi) {
+                ddt(Te) -= bracket(Psi, kappa_par_e, bm_mag) * B0 * gradpar_te / Ne0;
+                ddt(Te) -= kappa_par_e * bracket(Psi, gradpar_te, bm_mag) * B0 / Ne0;
+                ddt(Te) -= bracket(Psi, kappa_par_e, bm_mag) * B0 * bracket1e / Ne0;
+                ddt(Te) -= kappa_par_e * bracket(Psi, bracket1e, bm_mag) * B0 / Ne0;
+              } else {
+                ddt(Te) -= bracket(Apar, kappa_par_e, bm_mag) * gradpar_te / Ne0;
+                ddt(Te) -= kappa_par_e * bracket(Apar, gradpar_te, bm_mag) / Ne0;
+                ddt(Te) -= bracket(Apar, kappa_par_e, bm_mag) * bracket1e / Ne0;
+                ddt(Te) -= kappa_par_e * bracket(Apar, bracket1e, bm_mag) / Ne0;
+              }
+            }
+
+            if (output_flux_par) {
+              heatf_par_flutter_e = -kappa_par_e * bracket1e;
+            }
+          }
+        // }
       }
 
       if (diffusion_perp > 0.0) {
-        ddt(Te) += kappa_perp_e * Delp2(Te) / Ne0; // Parallel diffusion
+        ddt(Te) += kappa_perp_e * Delp2(Te) / Ne0; // Perpendicular diffusion
         ddt(Te) += Grad_perp(kappa_perp_e) * Grad_perp(Te) / Ne0;
       }
 
-       if (neoclassic_e) {
+      if (neoclassic_e) {
         tmpddx2 = D2DX2(DC(Te));
-	mesh->communicate(tmpddx2);
+        mesh->communicate(tmpddx2);
         tmpddx2.applyBoundary();
         ddt(Te) += coord->g11 * DC(xie_neo * tmpddx2);
 
         heatf_neo_e = -xie_neo * sqrt(coord->g11) * DDX(Te);
         mesh->communicate(heatf_neo_e);
         heatf_neo_e.applyBoundary();
-       }
+      }
+
+      if (fix_fraction_imp) {
+        ddt(Te) += 2./3. * (Wrad - Wrad0) ;    //impurity radiation 
+        // Here, we substracted Wrad0 to make it consistent with the gradiemt driven analysis. 
+        // We solve for the perturbed part of Te and we have subtracted the equilibrium terms from the equation. 
+      }
 
       if (hyperdiff_par_te4 > 0.0) {
         tmpTe2 = Grad2_par2new(Te);
@@ -4406,6 +5107,7 @@ protected:
   #if DEBUG_6F>0
     output.write("I see you 6!\n");
   #endif
+
     //////////////////////////////////////////////////////////////////
     if (compress0) { // parallel velocity equation
       TRACE("ddt(Vipar)");
@@ -4416,19 +5118,49 @@ protected:
       if (evolve_psi)
         ddt(Vipar) += Vipara * bracket(Psi, P0, bm_mag) * B0 / N0;
       else
-	ddt(Vipar) += Vipara * bracket(Apar, P0, bm_mag) / N0;
+	      ddt(Vipar) += Vipara * bracket(Apar, P0, bm_mag) / N0;
 
       if (diamag && diamag_phi0) {
-	if (diamag_er)
+	      if (diamag_er)
           ddt(Vipar) -= V_dot_Grad(Ve0, Vipar);
-	else
-	  ddt(Vipar) -= bracket(phi0, Vipar, bm_exb);
+	      else
+	        ddt(Vipar) -= bracket(phi0, Vipar, bm_exb);
+      }
+
+      if (include_vipar && include_vpar0) {
+
+        ddt(Vipar) -= Vpar_Grad_par(Vipar0, Vipar); 
+        if (evolve_psi)
+          ddt(Vipar) += Vipar0 * bracket(Psi, Vipar, bm_mag) * B0; 
+        else
+          ddt(Vipar) += Vipar0 * bracket(Apar, Vipar, bm_mag);
+
+        ddt(Vipar) -= Vpar_Grad_par(Vipar, Vipar0); 
+        if (evolve_psi)
+          ddt(Vipar) += Vipar * bracket(Psi, Vipar0, bm_mag) * B0; 
+        else
+          ddt(Vipar) += Vipar * bracket(Apar, Vipar0, bm_mag);        
+
+        if (evolve_psi)
+          ddt(Vipar) += Vipar0 * bracket(Psi, Vipar0, bm_mag) * B0; 
+        else
+          ddt(Vipar) += Vipar0 * bracket(Apar, Vipar0, bm_mag);        
+
       }
 
       if (nonlinear) {
         ddt(Vipar) -= bracket(phi, Vipar, bm_exb);
-	if (include_vipar)
-	  ddt(Vipar) -= Vpar_Grad_par(Vipar, Vipar);
+
+        // ddt(Vipar) -= Vipar * Grad_par(Vipar);
+        // ddt(Vipar) -= Vpar_Grad_par(Vipar, Vipar);
+
+        if (include_vipar) {
+          ddt(Vipar) -= Vpar_Grad_par(Vipar, Vipar); 
+          if (evolve_psi)
+            ddt(Vipar) += Vipar * bracket(Psi, Vipar, bm_mag) * B0; //NOTE(malamast): Added by malamast
+          else
+            ddt(Vipar) += Vipar * bracket(Apar, Vipar, bm_mag); //NOTE(malamast): Added by malamast
+        }
       }
 
       if (parallel_viscous && compress0) {
@@ -4438,7 +5170,9 @@ protected:
       }
       
       if (gyroviscous) {
-        ddt(Vipar) -= Upara0 * bracket(Pi0, Vipar, bm_exb) / N0;
+        ddt(Vipar) -= Upara0 * bracket(Pi0, Vipar, bm_exb) / N0; // NOTE(malamast): Should we use bm_exb or bm_mag here?
+        if (include_vpar0)
+          ddt(Vipar) -= Upara0 * bracket(Pi, Vipar0, bm_exb) / N0;
         if (nonlinear)
           ddt(Vipar) -= Upara0 * bracket(Pi, Vipar, bm_exb) / N0;
       }
@@ -4459,8 +5193,12 @@ protected:
       }
 
       if (sink_vp > 0.0) {
-        //Field2D V0tmp = 0.;
-        ddt(Vipar) -= sink_vp * sink_tanhxl(F2D_tmp, Vipar, sp_width, sp_length); // sink
+        if (include_vpar0){
+          ddt(Vipar) -= sink_vp * sink_tanhxl(Vipar0, Vipar, sp_width, sp_length); // sink
+        } else {
+          //Field2D V0tmp = 0.;
+          ddt(Vipar) -= sink_vp * sink_tanhxl(F2D_tmp, Vipar, sp_width, sp_length); // sink
+        }
       }
     }
   #if DEBUG_6F>0
@@ -4468,8 +5206,8 @@ protected:
   #endif
 
     //////////////////////////////////////////////////////////////////
-    if (neutral) // neutral model
-    {
+    if (neutral) { // neutral model
+    
       N_tmp = field_larger(N0 + Ni, Low_limit);
       Te_tmp = field_larger(Te0 + Te, Low_limit);
       Ti_tmp = field_larger(Ti0 + Ti, Low_limit);
@@ -4483,29 +5221,27 @@ protected:
       //**************************************************************
       if (with_fueling) {
         ddt(Nm) = 0.0;
-	ddt(Vm) = 0.0;
+	      ddt(Vm) = 0.0;
 	
-	//******---Nm---******
-	Nm_tmp = Nm;
-	nu_diss = 3.e4 * Nm_tmp * Nbar * Te_tmp * Te_tmp * Tebar * Tebar/(3.+0.01 * Te_tmp * Te_tmp * Tebar * Tebar);
-	S_diss = N_tmp * nu_diss * Tbar;
-        mesh->communicate(S_diss);
-        S_diss.applyBoundary("neumann");
-        
-	ddt(Nm) -= V_dot_Grad(Vm, Nm)-Nm * Div(Vm) + S_diss;
-        
-	if (gas_puffing) {
-          ddt(Nm) += Sgas;
-	}
+        //******---Nm---******
+        Nm_tmp = Nm;
+        nu_diss = 3.e4 * Nm_tmp * Nbar * Te_tmp * Te_tmp * Tebar * Tebar/(3.+0.01 * Te_tmp * Te_tmp * Tebar * Tebar);
+        S_diss = N_tmp * nu_diss * Tbar;
+              mesh->communicate(S_diss);
+              S_diss.applyBoundary("neumann");
+              
+        ddt(Nm) -= V_dot_Grad(Vm, Nm)-Nm * Div(Vm) + S_diss;
+              
+        if (gas_puffing) {
+                ddt(Nm) += Sgas;
+        }
 
-	//******---Vmx---******
-	pm = Nm * Tm_x / Tebar;
-	//Vm.x=Vmx;
+        //******---Vmx---******
+        pm = Nm * Tm_x / Tebar;
+        //Vm.x=Vmx;
         //Vm.y=0.;
         //Vm.z=0.;
-        ddt(Vm) -= V_dot_Grad(Vm,Vm)
-                   + Grad(pm) / Nm_tmp / Mm
-                   ;
+        ddt(Vm) -= V_dot_Grad(Vm,Vm) + Grad(pm) / Nm_tmp / Mm;
       }
       
       //**************************************************************
@@ -4520,51 +5256,51 @@ protected:
 	
       // neutral density equations
       if (Solving_Eq_Nn) {
-	ddt(Nn) += Dn * Delp2(Nn);
-	term2 = Dn * Delp2(Nn);
+        ddt(Nn) += Dn * Delp2(Nn);
+        term2 = Dn * Delp2(Nn);
 
-	if (Gradperp_Dn) {
-	  ddt(Nn) += Grad_perp(Dn) * Grad_perp(Nn);
-	  term2 += Grad_perp(Dn) * Grad_perp(Nn);
-	}
-	mesh->communicate(term2);
-	term2.applyBoundary("neumann");
+        if (Gradperp_Dn) {
+          ddt(Nn) += Grad_perp(Dn) * Grad_perp(Nn);
+          term2 += Grad_perp(Dn) * Grad_perp(Nn);
+        }
+        mesh->communicate(term2);
+        term2.applyBoundary("neumann");
 
-	if (with_vipar) {
-	  Field3D N_eff = Nn * (nu_cx + nu_rc)/(nu_cx + nu_iz);
-	  ddt(Nn) -= Grad_par(Vipar) * N_eff + Vpar_Grad_par(Vipar, N_eff);
-	  term1 = -Grad_par(Vipar) * N_eff - Vpar_Grad_par(Vipar, N_eff);
-	  mesh->communicate(term1);
-	  term1.applyBoundary("neumann");
-	}
+        if (with_vipar) {
+          Field3D N_eff = Nn * (nu_cx + nu_rc)/(nu_cx + nu_iz);
+          ddt(Nn) -= Grad_par(Vipar) * N_eff + Vpar_Grad_par(Vipar, N_eff); //NOTE(malamast): Inconsistency: Vipar is the perturbed part. Not the total. 
+          term1 = -Grad_par(Vipar) * N_eff - Vpar_Grad_par(Vipar, N_eff);
+          mesh->communicate(term1);
+          term1.applyBoundary("neumann");
+        }
 	  
-	if (!Solving_Eq_Vn){
-	  ddt(Nn) += Dn * Grad2_par2(Nn);
-	  term3 = Dn * Grad2_par2(Nn);
-	  if (Gradpar_Dn) {
-	    ddt(Nn) += Grad_par(Dn) * Grad_par(Nn);
-	    term3 += Grad_par(Dn) * Grad_par(Nn);
-	  }
-	  mesh->communicate(term3);
-	  term3.applyBoundary("neumann");
-	} else {
-	  ddt(Nn) -= Grad_par(Vn) * Nn + Vpar_Grad_par(Vn, Nn);
-	}
+        if (!Solving_Eq_Vn){
+          ddt(Nn) += Dn * Grad2_par2(Nn);
+          term3 = Dn * Grad2_par2(Nn);
+          if (Gradpar_Dn) {
+            ddt(Nn) += Grad_par(Dn) * Grad_par(Nn);
+            term3 += Grad_par(Dn) * Grad_par(Nn);
+          }
+          mesh->communicate(term3);
+          term3.applyBoundary("neumann");
+        } else {
+          ddt(Nn) -= Grad_par(Vn) * Nn + Vpar_Grad_par(Vn, Nn);
+        }
 
-	// source/sink terms
-	if (external_source) {
-          ddt(Nn) += Sn_ext;
-	}
+        // source/sink terms
+        if (external_source) {
+                ddt(Nn) += Sn_ext;
+        }
 	  
-	if (with_fueling) {
-          ddt(Nn) += 2.0 * S_diss;
-	}
-	
-	Sn = nu_rc * Ne_tmp * N_tmp - nu_iz * Nn * N_tmp;
-	mesh->communicate(Sn);
+        if (with_fueling) {
+                ddt(Nn) += 2.0 * S_diss;
+        }
+        
+        Sn = nu_rc * Ne_tmp * N_tmp - nu_iz * Nn * N_tmp;
+        mesh->communicate(Sn);
         Sn.applyBoundary("neumann");
         ddt(Nn) += Sn;
-	ddt(Ni) -= Sn;
+        ddt(Ni) -= Sn;
       }
 
       // neutral parallel velcocity equations
@@ -4581,7 +5317,7 @@ protected:
         if (Gradperp_etan) {
           ddt(Vn) += etan_perp * Delp2(Vn);
           ddt(Vn) += Grad_perp(etan_perp) * Grad_perp(Vn);
-	}
+	      }
 	
       	if (compress0) {
           Field3D Nn_tmp = Nn;
@@ -4590,8 +5326,10 @@ protected:
           mesh->communicate(Sv);
           Sv.applyBoundary("neumann");
           ddt(Vn) += Sv;
-	}
+	      }
       }
+
+      // NOTE(malamast): The below are all wrong/inconsistent. Te, Ti, U, Vipar are all the perturbed parts. You cannot mix up terms.  
       ddt(Te) -= nu_iz * Nn * (Te0 + Te + 2./3.* Wiz /Tebar); // ionization effect
       ddt(Te) += nu_rc * Nn * Wrc / Tebar; // recombanation effect
       ddt(Ti) -= (nu_iz-nu_rc) * Nn * (Ti0 + Ti);
@@ -4599,16 +5337,13 @@ protected:
       ddt(Vipar) -= Nn * (nu_iz + nu_cx) * (Vipar - Vn);
     }
     
-    if (fix_fraction_imp) {
-      ddt(Te) += 2./3.* Wrad; //impurity radiation
-    }
-
   #if DEBUG_6F>0
     output.write("I see you 8!\n");
   #endif
     //////////////////////////////////////////////////////////////////
     
     if (PF_limit) {
+      phi = PF_filter(phi, PF_limit_range);
       Jpar = PF_filter(Jpar, PF_limit_range);
       if (evolve_psi)
         Psi = PF_filter(Psi, PF_limit_range);
@@ -4622,6 +5357,22 @@ protected:
       if (compress0) {
         Vipar = PF_filter(Vipar, PF_limit_range);
       }
+
+      // phi = PF_filter_2(phi, PF_limit_range);
+      // Jpar = PF_filter_2(Jpar, PF_limit_range);
+      // if (evolve_psi)
+      //   Psi = PF_filter_2(Psi, PF_limit_range);
+      // else
+      //   Apar = PF_filter_2(Apar, PF_limit_range);
+      // Ni = PF_filter_2(Ni, PF_limit_range);
+      // Ti = PF_filter_2(Ti, PF_limit_range);
+      // Te = PF_filter_2(Te, PF_limit_range);
+      // U = PF_filter_2(U, PF_limit_range);
+      // P = PF_filter_2(P, PF_limit_range);
+      // if (compress0) {
+      //   Vipar = PF_filter_2(Vipar, PF_limit_range);
+      // }      
+
     }
     
     if (filter_z) {
@@ -4629,10 +5380,10 @@ protected:
       TRACE("filter_z");
 
       if (!emass) {
-	if (evolve_psi)
+	      if (evolve_psi)
           ddt(Psi) = filter(ddt(Psi), filter_z_mode);
         else
-	  ddt(Apar) = filter(ddt(Apar), filter_z_mode);
+	        ddt(Apar) = filter(ddt(Apar), filter_z_mode);
       } else {
         ddt(Ajpar) = filter(ddt(Ajpar), filter_z_mode);
       }
@@ -4651,12 +5402,13 @@ protected:
     } else if (filter_z_nonlinear) {
       if (!emass) {
         if (evolve_psi)
-	  ddt(Psi) = filter_z_non(ddt(Psi), 0, filter_z_mode);
-	else 
-	  ddt(Apar) = filter_z_non(ddt(Apar), 0, filter_z_mode);
+	        ddt(Psi) = filter_z_non(ddt(Psi), 0, filter_z_mode);
+	      else 
+	        ddt(Apar) = filter_z_non(ddt(Apar), 0, filter_z_mode);
       } else {
         ddt(Ajpar) = filter_z_non(ddt(Ajpar), 0, filter_z_mode);
       }
+
       ddt(U) = filter_z_non(ddt(U), 0, filter_z_mode);
   
       ddt(Ni) = filter_z_non(ddt(Ni), 0, filter_z_mode);
@@ -4695,9 +5447,9 @@ protected:
 
       if (!emass) {
         if (evolve_psi)
-     	  ddt(Psi) = lowPass(ddt(Psi), low_pass_z, zonal_field);
-	else 
-	  ddt(Apar) = lowPass(ddt(Apar), low_pass_z, zonal_field);
+     	    ddt(Psi) = lowPass(ddt(Psi), low_pass_z, zonal_field);
+	      else 
+	        ddt(Apar) = lowPass(ddt(Apar), low_pass_z, zonal_field);
       } else {
         ddt(Ajpar) = lowPass(ddt(Ajpar), low_pass_z, zonal_field);
       }
