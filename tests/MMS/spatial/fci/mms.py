@@ -51,27 +51,19 @@ def FCI_Laplace_par(f: Expr) -> Expr:
 ############################################
 # Equations solved
 
-input_field = exprToStr(f)
-grad_par_solution = exprToStr(FCI_grad_par(f))
-grad2_par2_solution = exprToStr(FCI_grad2_par2(f))
-div_par_solution = exprToStr(FCI_div_par(f))
-div_par_K_grad_par_solution = exprToStr(FCI_div_par_K_grad_par(f, K))
-Laplace_par_solution = exprToStr(FCI_Laplace_par(f))
-
-print(f"input_field = {input_field}")
-print(f"K = {K}")
-print(f"grad_par_solution = {grad_par_solution}")
-print(f"grad2_par2_solution = {grad2_par2_solution}")
-print(f"div_par_solution = {div_par_solution}")
-print(f"div_par_K_grad_par_solution = {div_par_K_grad_par_solution}")
-print(f"laplace_par_solution = {Laplace_par_solution}")
-
 options = BoutOptionsFile("data/BOUT.inp")
-options["input_field"] = input_field
-options["K"] = K
-options["grad_par_solution"] = grad_par_solution
-options["grad2_par2_solution"] = grad2_par2_solution
-options["div_par_solution"] = div_par_solution
-options["div_par_K_grad_par_solution"] = div_par_K_grad_par_solution
-options["laplace_par_solution"] = Laplace_par_solution
+
+for name, expr in (
+    ("input_field", f),
+    ("K", K),
+    ("grad_par_solution", FCI_grad_par(f)),
+    ("grad2_par2_solution", FCI_grad2_par2(f)),
+    ("div_par_solution", FCI_div_par(f)),
+    ("div_par_K_grad_par_solution", FCI_div_par_K_grad_par(f, K)),
+    ("laplace_par_solution", FCI_Laplace_par(f)),
+):
+    expr_str = exprToStr(expr)
+    print(f"{name} = {expr_str}")
+    options[name] = expr_str
+
 options.write("data/BOUT.inp", overwrite=True)
