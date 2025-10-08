@@ -1,4 +1,5 @@
 #include "bout/bout.hxx"
+#include "bout/build_config.hxx"
 #include "bout/difops.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
@@ -37,7 +38,13 @@ int main(int argc, char** argv) {
   Field3D input{FieldFactory::get()->create3D("input_field", Options::getRoot(), mesh)};
   Field3D K{FieldFactory::get()->create3D("K", Options::getRoot(), mesh)};
 
-  // Communicate to calculate parallel transform
+  // Communicate to calculate parallel transform.
+  if constexpr (bout::build::use_metric_3d) {
+    // Div_par operators require B parallel slices:
+    // Coordinates::geometry doesn't ensure this (yet)
+    auto& Bxy = mesh->getCoordinates()->Bxy;
+    mesh->communicate(Bxy);
+  }
   mesh->communicate(input, K);
 
   Options dump;
