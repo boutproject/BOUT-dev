@@ -99,7 +99,7 @@ def run_fci_operators(
     )
 
     # Command to run
-    args = f"MZ={nz} MYG={nslice} mesh:paralleltransform:y_periodic={yperiodic} mesh:ddy:first={name}"
+    args = f"MZ={nz} MYG={nslice} mesh:paralleltransform:y_periodic={yperiodic} {name}"
     cmd = f"./fci_mms {args}"
     print(f"Running command: {cmd}", end="")
 
@@ -138,18 +138,18 @@ def transpose(
     return result
 
 
-def check_fci_operators(case: dict) -> bool:
+def check_fci_operators(name: str, case: dict) -> bool:
     failures = []
 
     nslice = case["nslice"]
     yperiodic = case["yperiodic"]
-    name = case["name"]
     order = case["order"]
+    args = case["args"]
 
     all_errors = []
 
     for n in NLIST:
-        errors = run_fci_operators(nslice, n, yperiodic, name)
+        errors = run_fci_operators(nslice, n, yperiodic, args)
         all_errors.append(errors)
 
         for operator in OPERATORS:
@@ -170,7 +170,7 @@ def check_fci_operators(case: dict) -> bool:
     return final_errors, failures
 
 
-def make_plots(cases):
+def make_plots(cases: dict[str, dict]):
     try:
         import matplotlib.pyplot as plt
     except ImportError:
@@ -199,23 +199,6 @@ def make_plots(cases):
     plt.close()
 
 
-def make_case(nslice: int, yperiodic: bool) -> dict[str, Any]:
-    """
-    nslice:
-        Number of parallel slices (in each direction)
-    yperiodic:
-        Run with periodic Y
-    """
-    order = nslice * 2
-    return {
-        "nslice": nslice,
-        # Which central difference scheme to use and its expected order
-        "order": order,
-        "name": f"C{order}",
-        "yperiodic": yperiodic,
-    }
-
-
 if __name__ == "__main__":
     build_and_log("FCI MMS test")
 
@@ -240,11 +223,22 @@ if __name__ == "__main__":
     success = True
     failures = []
     cases = {
-        "nslice=1": make_case(nslice=1, yperiodic=True),
+        "nslice=1 hermitespline": {
+            "nslice": 1,
+            "order": 2,
+            "yperiodic": True,
+            "args": "mesh:ddy:first=C2 mesh:paralleltransform:xzinterpolation:type=hermitespline",
+        },
+        "nslice=1 lagrange4pt": {
+            "nslice": 1,
+            "order": 2,
+            "yperiodic": True,
+            "args": "mesh:ddy:first=C2 mesh:paralleltransform:xzinterpolation:type=lagrange4pt",
+        },
     }
 
-    for case in cases.values():
-        error2, failures_ = check_fci_operators(case)
+    for name, case in cases.items():
+        error2, failures_ = check_fci_operators(name, case)
         case.update(error2)
         failures.extend(failures_)
         success &= len(failures) == 0
