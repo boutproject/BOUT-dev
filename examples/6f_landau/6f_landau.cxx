@@ -882,9 +882,9 @@ private:
 
       if (nonlinear) {
         if (evolve_psi)
-	  result -= bracket(Psi, f, bm_mag) * B0;
-	else
-	  result -= bracket(Apar, f, bm_mag);
+	        result -= bracket(Psi, f, bm_mag) * B0;
+	      else
+	        result -= bracket(Apar, f, bm_mag);
       }
     }
 
@@ -1864,37 +1864,37 @@ protected:
   } else if (load_2d_bkgd) {
 
     if (mesh->get(P0, "P_2D")) { // [Pa]
-      output.write("Error: Cannot read P_2D from grid\n");
+      output_error.write("Error: Cannot read P_2D from grid\n");
       return 1;
     }
 
     if (mesh->get(N0, "Nd+_2D")) { // [1e20 #/m^3]
-      output.write("Error: Cannot read Nd+_2D from grid\n");
+      output_error.write("Error: Cannot read Nd+_2D from grid\n");
       return 1;
     }
 
     if (mesh->get(Ti0, "Td+_2D")) { // [eV]]
-      output.write("Error: Cannot read Td+_2D from grid\n");
+      output_error.write("Error: Cannot read Td+_2D from grid\n");
       return 1;
     }
 
     if (mesh->get(Ne0, "Ne_2D")) { // [1e20 #/m^3]
-      output.write("Error: Cannot read Ne_2D from grid\n");
+      output_error.write("Error: Cannot read Ne_2D from grid\n");
       return 1;
     }
 
     if (mesh->get(Te0, "Te_2D")) { // [eV]
-      output.write("Error: Cannot read Te_2D from grid\n");
+      output_error.write("Error: Cannot read Te_2D from grid\n");
       return 1;
     }
 
     if (mesh->get(Vipar0, "Vd+_2D")) { // [m/s]
-      output.write("Error: Cannot read Vd+_2D from grid\n");
+      output_error.write("Error: Cannot read Vd+_2D from grid\n");
       return 1;
     }
 
     if (mesh->get(Vepar0, "Ve_2D")) { // [m/s]
-      output.write("Error: Cannot read Ve_2D from grid\n");
+      output_error.write("Error: Cannot read Ve_2D from grid\n");
       return 1;
     }
 
@@ -3667,10 +3667,10 @@ protected:
       }
 
       if (evolve_psi) {
-        phi_sh = -eta * Jpar / B0;
+        phi_sh = -eta * Jpar / B0; // NOTE(malamast): why do we devide by B0 here?
 
         if (eHall) {
-          phi_sh += Psipara1 * Grad_parP(Pe) / B0 / Ne0;
+          phi_sh += Psipara1 * Grad_parP(Pe) / B0 / Ne0; // NOTE(malamast): why do we devide by B0 here?
           phi_sh -= Psipara1 * bracket(Psi, Pe0, bm_mag) / Ne0;
 	      }
         if (thermal_force) {
@@ -3691,7 +3691,8 @@ protected:
       }
       mesh->communicate(phi_sh);
       phi_sh.applyBoundary();
-      SBC_Gradpar(phi, phi_sh, PF_limit, PF_limit_range);
+      // SBC_Gradpar(phi, phi_sh, PF_limit, PF_limit_range);
+      SBC_Gradpar(phi, 0.0, PF_limit, PF_limit_range);
 
       if (nonlinear) {
         Jpar_sh = Ne_tmp * Nbar * density * ee;
@@ -3708,7 +3709,7 @@ protected:
               phi_sh -= phi_sh0;
               phi_sh /= Bbar*Va*Lbar;*/
       } else {
-        Jpar_sh = Ne0 * Nbar * density * ee;
+        Jpar_sh = Ne0 * Nbar * density * ee; // NOTE(malamast): why is this not linearized?
         Jpar_sh *= vth_et / (2.0 * sqrt(PI)) * (ee * ((phi)*Va * Lbar * Bbar) / (KB * Te0 * Tebar * eV_K));
         Jpar_sh *= MU0 * Lbar / (Bbar);
         SBC_Dirichlet(Jpar, Jpar_sh, PF_limit, PF_limit_range);
@@ -3737,9 +3738,11 @@ protected:
       // SBC_Gradpar(U, 0.0, PF_limit, PF_limit_range);
       SBC_Gradpar(Ni, 0.0, PF_limit, PF_limit_range);
       // if (!Landau) {
-        SBC_Gradpar(Ti, q_si, PF_limit, PF_limit_range);
-        SBC_Gradpar(Te, q_se, PF_limit, PF_limit_range);
-      // } else {
+        // SBC_Gradpar(Ti, q_si, PF_limit, PF_limit_range);
+        // SBC_Gradpar(Te, q_se, PF_limit, PF_limit_range);
+        SBC_Gradpar(Ti, 0.0, PF_limit, PF_limit_range);
+        SBC_Gradpar(Te, 0.0, PF_limit, PF_limit_range);
+        // } else {
       //   SBC_Gradpar(Ti, 0., PF_limit, PF_limit_range);
       //   SBC_Gradpar(Te, 0., PF_limit, PF_limit_range);
       // }     
@@ -3844,16 +3847,17 @@ protected:
       mesh->communicate(Gamma_nn);
       Gamma_nn.applyBoundary("neumann");
       if (Nn_recyc_BC) {
-      SBC_Gradpar(Nn, Gamma_nn, PF_limit, PF_limit_range);
+        SBC_Gradpar(Nn, Gamma_nn, PF_limit, PF_limit_range);
       } else {
-        SBC_yup_eq(Nn, Rcyc_Nn * N_tmp, PF_limit, PF_limit_range);
-        SBC_ydown_eq(Nn, Rcyc_Nn * N_tmp, PF_limit, PF_limit_range);
+        SBC_Dirichlet(Nn, Rcyc_Nn * N_tmp, PF_limit, PF_limit_range); //NOTE(malamast): TODO:CHECK. I changed added that instead of the below. Check the -value.
+        // SBC_yup_eq(Nn, Rcyc_Nn * N_tmp, PF_limit, PF_limit_range);
+        // SBC_ydown_eq(Nn, Rcyc_Nn * N_tmp, PF_limit, PF_limit_range);
       }
       if (Vn_recyc_BC) {
         if (full_sbc_Vn) {
           SBC_Dirichlet(Vn, -Rcyc_Vn * c_set / Va, PF_limit, PF_limit_range);
         } else {
-        SBC_Dirichlet(Vn, -Rcyc_Vn * c_se, PF_limit, PF_limit_range);
+          SBC_Dirichlet(Vn, -Rcyc_Vn * c_se, PF_limit, PF_limit_range);
         }
       } else {
         SBC_Gradpar(Vn, 0.0, PF_limit, PF_limit_range);
@@ -5545,127 +5549,212 @@ protected:
   //****************BOUNDARY FUNCTIONS******************************************
   // Sheath Boundary Conditions on Phi
   // Linearized
+
+
   void SBC_Dirichlet(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-    // let the boundary equall to the value next to the boundary
-    SBC_yup_eq(var, value, PF_limit, PF_limit_range);
-    SBC_ydown_eq(var, -value, PF_limit, PF_limit_range);
+    // set the boundary equall to the value next to the boundary
+
+      auto var_fa = toFieldAligned(var);
+      auto value_fa = toFieldAligned(value);
+
+      // At y = ystart (lower boundary)
+
+      for (RangeIterator r = mesh->iterateBndryLowerY(); !r.isDone(); r++) {
+        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+
+          // Apply boundary condition half-way between cells
+          for (int jy = mesh->ystart - 1; jy >= 0; jy--) {
+
+            // Dirichlet condition on Jpar
+            var_fa(r.ind, jy, jz) = - 2. * value_fa(r.ind, jy, jz) - var_fa(r.ind, mesh->ystart, jz);
+          }
+        }
+      }
+
+      // At y = yend (upper boundary)
+
+      for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
+        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+
+          // Apply boundary condition half-way between cells
+          for (int jy = mesh->yend + 1; jy < mesh->LocalNy; jy++) {
+
+            // Dirichlet condition on Jpar
+            // WARNING: this is not correct if staggered grids are used
+            ASSERT3(not mesh->StaggerGrids);
+            var_fa(r.ind, jy, jz) = 2. * value_fa(r.ind, jy, jz)  - var_fa(r.ind, mesh->yend, jz);
+          }
+        }
+      }
+
+      var = fromFieldAligned(var_fa);
+
   } 
 
+
   void SBC_Gradpar(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-    SBC_yup_Grad_par(var, value, PF_limit, PF_limit_range);
-    SBC_ydown_Grad_par(var, -value, PF_limit, PF_limit_range);
-  }
+    // set the boundary equall to the value next to the boundary
 
-  // Boundary to specified Field3D object
-  void SBC_yup_eq(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-    RangeIterator xrup = mesh->iterateBndryUpperY();
+      auto var_fa = toFieldAligned(var);
+
+      // At y = ystart (lower boundary)
+
+      for (RangeIterator r = mesh->iterateBndryLowerY(); !r.isDone(); r++) {
+        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+
+          // Apply boundary condition half-way between cells
+          for (int jy = mesh->ystart - 1; jy >= 0; jy--) {
+            // Neumann conditions
+            var_fa(r.ind, jy, jz) = var_fa(r.ind, mesh->ystart, jz);
+
+          }
+        }
+      }
+
+      // At y = yend (upper boundary)
+
+      for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
+        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+
+          // Apply boundary condition half-way between cells
+          for (int jy = mesh->yend + 1; jy < mesh->LocalNy; jy++) {
+            // Neumann conditions
+            var_fa(r.ind, jy, jz) = var_fa(r.ind, mesh->yend, jz);
+
+          }
+        }
+      }
+
+      var = fromFieldAligned(var_fa);
+
+  } 
+
+
+
+
+
+
+  // void SBC_Dirichlet(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
+  //   // let the boundary equall to the value next to the boundary
+  //   SBC_yup_eq(var, value, PF_limit, PF_limit_range);
+  //   SBC_ydown_eq(var, -value, PF_limit, PF_limit_range);
+  // } 
+
+  // void SBC_Gradpar(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
+  //   SBC_yup_Grad_par(var, value, PF_limit, PF_limit_range);
+  //   SBC_ydown_Grad_par(var, -value, PF_limit, PF_limit_range);
+  // }
+
+  // // Boundary to specified Field3D object
+  // void SBC_yup_eq(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
+  //   RangeIterator xrup = mesh->iterateBndryUpperY();
     
-    // for(xrup->first(); !xrup->isDone(); xrup->next())
-    for (; !xrup.isDone(); xrup++) {
-      xind = xrup.ind;
-      indx = mesh->getGlobalXIndex(xind);
-      if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
-        for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++)
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var(xind,jy,jz) = value(xind,jy,jz);
-	  }
-      } else if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
-        for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++)
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var(xind,jy,jz) = 0.;
-          }
-      } else if (!PF_limit) {
-        for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var(xind,jy,jz) = value(xind,jy,jz);
-	  }
-	}
-      }
-    }
-  }
+  //   // for(xrup->first(); !xrup->isDone(); xrup->next())
+  //   for (; !xrup.isDone(); xrup++) {
+  //     xind = xrup.ind;
+  //     indx = mesh->getGlobalXIndex(xind);
+  //     if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
+  //       for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++)
+  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
+  //           var(xind,jy,jz) = value(xind,jy,jz);
+	//   }
+  //     } else if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
+  //       for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++)
+  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
+  //           var(xind,jy,jz) = 0.;
+  //         }
+  //     } else if (!PF_limit) {
+  //       for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
+  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
+  //           var(xind,jy,jz) = value(xind,jy,jz);
+	//   }
+	// }
+  //     }
+  //   }
+  // }
 
-  void SBC_ydown_eq(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-    RangeIterator xrdn = mesh->iterateBndryLowerY();
+  // void SBC_ydown_eq(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
+  //   RangeIterator xrdn = mesh->iterateBndryLowerY();
 
-    // for(xrdn->first(); !xrdn->isDone(); xrdn->next())
-    for (; !xrdn.isDone(); xrdn++) {
-      xind = xrdn.ind;
-      indx = mesh->getGlobalXIndex(xind);
-      if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
-        for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--)
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var(xind,jy,jz) = value(xind,jy,jz);
-          }
-      } else if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
-        for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--)
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var(xind,jy,jz) = 0.;
-          }
-      } else if (!PF_limit) {
-        for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var(xind,jy,jz) = value(xind,jy,jz);
-          }
-	}
-      }
-    }
-  }
+  //   // for(xrdn->first(); !xrdn->isDone(); xrdn->next())
+  //   for (; !xrdn.isDone(); xrdn++) {
+  //     xind = xrdn.ind;
+  //     indx = mesh->getGlobalXIndex(xind);
+  //     if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
+  //       for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--)
+  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
+  //           var(xind,jy,jz) = value(xind,jy,jz);
+  //         }
+  //     } else if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
+  //       for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--)
+  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
+  //           var(xind,jy,jz) = 0.;
+  //         }
+  //     } else if (!PF_limit) {
+  //       for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
+  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
+  //           var(xind,jy,jz) = value(xind,jy,jz);
+  //         }
+	// }
+  //     }
+  //   }
+  // }
 
-  // Boundary gradient to specified Field3D object
-  void SBC_yup_Grad_par(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-    RangeIterator xrup = mesh->iterateBndryUpperY();
+  // // Boundary gradient to specified Field3D object
+  // void SBC_yup_Grad_par(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
+  //   RangeIterator xrup = mesh->iterateBndryUpperY();
 
-    Coordinates* coord = mesh->getCoordinates();
+  //   Coordinates* coord = mesh->getCoordinates();
     
-    // for(xrup->first(); !xrup->isDone(); xrup->next())
-    for (; !xrup.isDone(); xrup++) {
-      xind = xrup.ind;
-      indx = mesh->getGlobalXIndex(xind);
-      if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
-        for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++)
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var(xind,jy,jz) = var(xind,jy - 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value(xind,jy,jz);
-          }
-      } else if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
-        for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++)
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var(xind,jy,jz) = var(xind,jy - 1,jz);
-	  }
-      } else if (!PF_limit) {
-        for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++)
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var(xind,jy,jz) = var(xind,jy - 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value(xind,jy,jz);
-          }
-      }
-    }
-  }
+  //   // for(xrup->first(); !xrup->isDone(); xrup->next())
+  //   for (; !xrup.isDone(); xrup++) {
+  //     xind = xrup.ind;
+  //     indx = mesh->getGlobalXIndex(xind);
+  //     if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
+  //       for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++)
+  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
+  //           var(xind,jy,jz) = var(xind,jy - 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value(xind,jy,jz);
+  //         }
+  //     } else if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
+  //       for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++)
+  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
+  //           var(xind,jy,jz) = var(xind,jy - 1,jz);
+	//   }
+  //     } else if (!PF_limit) {
+  //       for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++)
+  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
+  //           var(xind,jy,jz) = var(xind,jy - 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value(xind,jy,jz);
+  //         }
+  //     }
+  //   }
+  // }
 
-  void SBC_ydown_Grad_par(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-    RangeIterator xrdn = mesh->iterateBndryLowerY();
-    Coordinates* coord = mesh->getCoordinates();
+  // void SBC_ydown_Grad_par(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
+  //   RangeIterator xrdn = mesh->iterateBndryLowerY();
+  //   Coordinates* coord = mesh->getCoordinates();
 
-    for (; !xrdn.isDone(); xrdn++) {
-      xind = xrdn.ind;
-      indx = mesh->getGlobalXIndex(xind);
-        if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
-          for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--)
-            for (int jz = 0; jz < mesh->LocalNz; jz++) {
-              var(xind,jy,jz) = var(xind,jy + 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value(xind,jy,jz);
-	    }
-      }
-      if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
-        for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--)
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var(xind,jy,jz) = var(xind,jy + 1,jz);
-	  }
-      } else if (!PF_limit) {
-        for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--)
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var(xind,jy,jz) = var(xind,jy + 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value(xind,jy,jz);
-	  }
-      }
-    }
-  }
+  //   for (; !xrdn.isDone(); xrdn++) {
+  //     xind = xrdn.ind;
+  //     indx = mesh->getGlobalXIndex(xind);
+  //       if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
+  //         for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--)
+  //           for (int jz = 0; jz < mesh->LocalNz; jz++) {
+  //             var(xind,jy,jz) = var(xind,jy + 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value(xind,jy,jz);
+	//     }
+  //     }
+  //     if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
+  //       for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--)
+  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
+  //           var(xind,jy,jz) = var(xind,jy + 1,jz);
+	//   }
+  //     } else if (!PF_limit) {
+  //       for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--)
+  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
+  //           var(xind,jy,jz) = var(xind,jy + 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value(xind,jy,jz);
+	//   }
+  //     }
+  //   }
+  // }
 
   /*****************************************************************************
    * Preconditioner
