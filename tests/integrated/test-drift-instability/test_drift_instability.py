@@ -6,15 +6,14 @@
 
 # Requires: not metric_3d
 
+import pytest
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boututils.calculus import deriv
 from boututils.datafile import DataFile
 from boututils.linear_regression import linear_regression
 
 from boutdata.collect import collect
-import argparse
 import numpy as np
-from sys import exit
 from math import isnan
 
 nthreads = 1
@@ -52,11 +51,17 @@ gamma_orig = {
 }  # 0.130220286897} Changed 25th April 2014
 
 
-def run_zeff_case(zeff):
-    """Run a single Zeff case"""
+@pytest.fixture(scope="module")
+def build_project():
+    """Build the project once per test module."""
+    build_and_log("resistive drift instability test")
+
+
+def run_zeff_case(zeff, build_project):
+    """Run a single Zeff case and return success flag and details."""
 
     if zeff not in omega_orig:
-        raise ValueError(
+        pytest.fail(
             f"Zeff value ({zeff}) not in benchmark values. Available values: {list(omega_orig.keys())}"
         )
 
@@ -192,32 +197,15 @@ def run_zeff_case(zeff):
     )
 
     if isnan(omegadiff) or (omegadiff > omega_tol) or (gammadiff > gamma_tol):
-        print("  => FAILED")
-        return False
+        return False, omegadiff, gammadiff
 
-    print("  => PASSED")
-    return True
+    return True, omegadiff, gammadiff
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser("Run drift-instability test")
-    parser.add_argument(
-        "-Z",
-        "--Zeff-list",
-        help=f"List of Zeff values to test, valid values are {list(gamma_orig.keys())}",
-        type=int,
-        nargs="+",
-        default=zlist,
-    )
+@pytest.mark.parametrize("zeff", zlist)
+def test_zeff_case(zeff, build_project):
+    """Pytest wrapper for running a single Zeff case."""
+    success, omegadiff, gammadiff = run_zeff_case(zeff, build_project)
+    
+    assert success, f"Test failed for Zeff={zeff}: omega diff={omegadiff:.2%}, gamma diff={gammadiff:.2%}"
 
-    args = parser.parse_args()
-
-    build_and_log("resistive drift instability test")
-
-    return_code = 0
-    for zeff in args.Zeff_list:
-        success = run_zeff_case(zeff)
-        if not success:
-            return_code = 1
-
-    exit(return_code)
