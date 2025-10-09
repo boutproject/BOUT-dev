@@ -11,7 +11,6 @@ import json
 import pathlib
 import sys
 from time import time
-from typing import Any
 
 import boutconfig as conf
 import zoidberg as zb
@@ -29,7 +28,7 @@ OPERATORS = ("grad_par", "grad2_par2", "div_par", "div_par_K_grad_par", "laplace
 # interpolation due to an awkwardness with the boundaries
 NX = 4
 # Resolution in y and z
-NLIST = [8, 16, 32, 64, 128]
+NLIST = [8, 16, 32, 64]
 dx = 1.0 / array(NLIST)
 
 
@@ -236,6 +235,12 @@ if __name__ == "__main__":
             "order": 2,
             "yperiodic": True,
             "args": "mesh:ddy:first=C2 mesh:paralleltransform:xzinterpolation:type=lagrange4pt",
+        },
+        "nslice=1 monotonichermitespline": {
+            "nslice": 1,
+            "order": 2,
+            "yperiodic": True,
+            "args": "mesh:ddy:first=C2 mesh:paralleltransform:xzinterpolation:type=monotonichermitespline",
         },
     }
 
