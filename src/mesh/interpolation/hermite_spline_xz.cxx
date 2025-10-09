@@ -418,12 +418,14 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
     }
     if constexpr (monotonic) {
 #else                 // Legacy interpolation
+  // TODO(peter): Should we apply dirichlet BCs to derivatives?
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
 
   // f has been communcated, and thus we can assume that the x-boundaries are
   // also valid in the y-boundary.  Thus the differentiated field needs no
   // extra comms.
+  // TODO(dave) Add assert that we do not use z-splitting or z-guards.
   Field3D fx = bout::derivatives::index::DDX(f, CELL_DEFAULT, "DEFAULT", region2);
   Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", region2);
   Field3D fxz = bout::derivatives::index::DDZ(fx, CELL_DEFAULT, "DEFAULT", region2);
