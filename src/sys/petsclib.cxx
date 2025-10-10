@@ -70,6 +70,7 @@ PetscLib::PetscLib(Options* opt) {
 
       output << "Initialising PETSc\n";
       PETSC_COMM_WORLD = BoutComm::getInstance()->getComm();
+      PetscOptionsSetValue(nullptr, "-options_left", "0");
       PetscInitialize(pargc, pargv, nullptr, PetscLibHelp);
       PetscPopSignalHandler();
 
