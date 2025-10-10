@@ -27,6 +27,7 @@
 #define BOUT_INTERP_H
 
 #include "bout/mesh.hxx"
+#include "bout/stencils.hxx"
 
 /// Perform interpolation between centre -> shifted or vice-versa
 /*!

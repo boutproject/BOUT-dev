@@ -1,12 +1,14 @@
-# Test of the FieldFactory class
-#
-# Generates a set of fields and writes them to output file
-#
-
-nout = 0  # No timesteps
 
 MZ = 16    # Z size
 
 [mesh]
 nx = 52
 ny = 32
+
+[solver]
+# Test of the FieldFactory class
+#
+# Generates a set of fields and writes them to output file
+#
+
+nout = 0  # No timesteps

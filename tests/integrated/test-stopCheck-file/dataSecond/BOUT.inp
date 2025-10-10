@@ -1,3 +1,11 @@
+
+MZ = 8    # Z size
+
+[mesh]
+nx = 10
+ny = 3
+
+[solver]
 # Test of smoothing operators
 #
 # Creates some variables, smooths them, then compares
@@ -5,9 +13,3 @@
 #
 
 nout = 10  # No timesteps
-
-MZ = 8    # Z size
-
-[mesh]
-nx = 10
-ny = 3

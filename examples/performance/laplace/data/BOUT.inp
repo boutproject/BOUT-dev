@@ -1,6 +1,3 @@
-# Performance test for Laplace inversion
-
-nout = 0  # No timesteps
 
 MZ = 32    # Z size
 
@@ -19,3 +16,8 @@ ny = 16
 [laplace]
 all_terms = false
 include_yguards = false
+
+[solver]
+# Performance test for Laplace inversion
+
+nout = 0  # No timesteps

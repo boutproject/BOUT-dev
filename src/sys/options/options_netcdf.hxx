@@ -47,7 +47,7 @@ public:
   OptionsNetCDF& operator=(OptionsNetCDF&&) noexcept = default;
 
   /// Read options from file
-  Options read() override;
+  Options read(bool lazy = true) override;
 
   /// Write options to file
   void write(const Options& options, const std::string& time_dim) override;

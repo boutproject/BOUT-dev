@@ -5,7 +5,7 @@
 from __future__ import division
 from past.utils import old_div
 import numpy as np
-from boututils.file_import import file_import
+from boututils.datafile import DataFile
 from boutdata.collect import collect
 from pylab import plot, show, figure, xlabel, ylabel, annotate, xlim, ylim
 from boututils.moment_xyzt import moment_xyzt
@@ -23,7 +23,8 @@ period=15
 gfile='./cbm18_dens8.grid_nx68ny64.nc'
 
 
-g = file_import(gfile)
+with DataFile(gfile) as f:
+    g = {v: f.read(v) for v in f.keys()}
 
 
 Dphi0 = collect("Dphi0", path=path0)

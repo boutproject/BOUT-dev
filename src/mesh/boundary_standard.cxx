@@ -1593,7 +1593,7 @@ BoundaryOp* BoundaryNeumann_NonOrthogonal::clone(BoundaryRegion* region,
   return new BoundaryNeumann_NonOrthogonal(region);
 }
 
-void BoundaryNeumann_NonOrthogonal::apply(Field2D& f) {
+void BoundaryNeumann_NonOrthogonal::apply([[maybe_unused]] Field2D& f) {
 #if not(BOUT_USE_METRIC_3D)
   Mesh* mesh = bndry->localmesh;
   ASSERT1(mesh == f.getMesh());
@@ -2222,7 +2222,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
   void BoundaryNeumann_O4::apply(Field2D & f) { BoundaryNeumann_O4::apply(f, 0.); }
 
-  void BoundaryNeumann_O4::apply(Field2D & f, BoutReal t) {
+  void BoundaryNeumann_O4::apply([[maybe_unused]] Field2D & f,
+                                 [[maybe_unused]] BoutReal t) {
 #if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
@@ -2354,7 +2355,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     return new BoundaryNeumann_4thOrder(region);
   }
 
-  void BoundaryNeumann_4thOrder::apply(Field2D & f) {
+  void BoundaryNeumann_4thOrder::apply([[maybe_unused]] Field2D & f) {
 #if not(BOUT_USE_METRIC_3D)
     Coordinates* metric = f.getCoordinates();
     // Set (at 4th order) the gradient at the mid-point between the guard cell and the
@@ -2444,7 +2445,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     return new BoundaryNeumannPar(region);
   }
 
-  void BoundaryNeumannPar::apply(Field2D & f) {
+  void BoundaryNeumannPar::apply([[maybe_unused]] Field2D & f) {
 #if not(BOUT_USE_METRIC_3D)
     Coordinates* metric = f.getCoordinates();
     // Loop over all elements and set equal to the next point in
@@ -2596,7 +2597,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     return new BoundaryZeroLaplace(region);
   }
 
-  void BoundaryZeroLaplace::apply(Field2D & f) {
+  void BoundaryZeroLaplace::apply([[maybe_unused]] Field2D & f) {
 #if not(BOUT_USE_METRIC_3D)
     Coordinates* metric = f.getCoordinates();
     if ((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
@@ -2625,7 +2626,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 #endif
   }
 
-  void BoundaryZeroLaplace::apply(Field3D & f) {
+  void BoundaryZeroLaplace::apply([[maybe_unused]] Field3D & f) {
 #if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
@@ -2697,7 +2698,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     return new BoundaryZeroLaplace2(region);
   }
 
-  void BoundaryZeroLaplace2::apply(Field2D & f) {
+  void BoundaryZeroLaplace2::apply([[maybe_unused]] Field2D & f) {
 #if not(BOUT_USE_METRIC_3D)
     if ((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
       // Can't apply this boundary condition to non-X boundaries
@@ -2728,7 +2729,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 #endif
   }
 
-  void BoundaryZeroLaplace2::apply(Field3D & f) {
+  void BoundaryZeroLaplace2::apply([[maybe_unused]] Field3D & f) {
 #if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
@@ -2831,7 +2832,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     }
   }
 
-  void BoundaryConstLaplace::apply(Field3D & f) {
+  void BoundaryConstLaplace::apply([[maybe_unused]] Field3D & f) {
 #if not(BOUT_USE_METRIC_3D)
     if ((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
       // Can't apply this boundary condition to non-X boundaries
@@ -2916,7 +2917,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     throw BoutException("ERROR: DivCurl boundary not yet implemented for 2D vectors\n");
   }
 
-  void BoundaryDivCurl::apply(Vector3D & var) {
+  void BoundaryDivCurl::apply([[maybe_unused]] Vector3D & var) {
 #if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == var.getMesh());

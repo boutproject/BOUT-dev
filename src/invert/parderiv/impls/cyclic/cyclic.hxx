@@ -42,7 +42,7 @@
 #ifndef BOUT_INV_PAR_CR_H
 #define BOUT_INV_PAR_CR_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/invert_parderiv.hxx"
 
 #if BOUT_USE_METRIC_3D

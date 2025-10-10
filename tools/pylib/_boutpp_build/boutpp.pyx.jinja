@@ -15,12 +15,58 @@ from libcpp.memory cimport unique_ptr
 from cython.operator import dereference as deref
 import numbers
 import sys
-import gc
+from time import sleep
+import weakref
+
+_allobjects = []
 
 size_t = np.uint
 
 cdef extern from "boutexception_helper.hxx":
-     cdef void raise_bout_py_error()
+    cdef void raise_bout_py_error()
+
+{% macro dealloc(extra_dealloc='', uniquePtr=False) %}
+    def __dealloc__(self):
+        self._boutpp_dealloc()
+
+    def _boutpp_dealloc(self):
+{{ extra_dealloc | indent(width=8) }}
+        if self.isSelfOwned and self.cobj != NULL:
+{% if uniquePtr %}
+            self.cobj.release()
+{% else %}
+            del self.cobj
+            self.cobj = NULL
+{% endif %}
+
+{% endmacro %}
+
+{% macro class(name, init="", extra_dealloc="", defaultSO=True, data="", uniquePtr=False, init_args="*args, **kwargs",
+               comment="") %}
+cdef class {{ name }}{{ "(" ~ base ~ ")" if base else "" }}:
+    """
+{% if comment %}
+{{ comment | indent }}
+{% else %}
+    The {{ name }} class
+{% endif %}
+    """
+    cdef {{ "unique_ptr[c." ~ name ~ "]" if uniquePtr else "c." ~ name ~ "* " }} cobj
+    cdef c.bool isSelfOwned
+    cdef object __weakref__
+    {{ data | indent }}
+    def __cinit__(self, {{ init_args}}):
+        global _allobjects
+        _allobjects.append(weakref.ref(self))
+{% if not uniquePtr and cobj %}
+        self.isSelfOwned = {{ defaultSO }}
+        self.cobj = NULL
+{% endif %}
+{{ init | indent(width=8) }}
+
+{{ dealloc(extra_dealloc=extra_dealloc, uniquePtr=uniquePtr) }}
+{% endmacro %}
+
 {% for field in fields %}
 
 cdef extern from "helper.h":
@@ -60,12 +106,8 @@ cdef {{ field.field_type }} {{ field.fdd }}FromPtr(c.{{ field.field_type }}* i):
     f.isSelfOwned = False
     return f
 
-cdef class {{ field.field_type }}:
-    """
-    The {{ field.field_type }} class
-    """
-    cdef c.{{ field.field_type }} * cobj
-    cdef c.bool isSelfOwned
+
+{{ class(field.field_type) }}
 
     @classmethod
     def fromMesh(cls, mesh=None):
@@ -223,12 +265,6 @@ cdef class {{ field.field_type }}:
         f.setAll(data, ignoreDataType=ignoreDataType)
         return f
 
-    def __cinit__(self,{{ field.field_type }} obj=None):
-        self.cobj = NULL
-        if obj:
-            self.cobj = obj.cobj
-        self.isSelfOwned=True
-
     def set(self, data, ignoreDataType=False):
         """
         Set all data of the {{ field.field_type }}
@@ -364,7 +400,7 @@ cdef class {{ field.field_type }}:
 
         Returns
         -------
-	{{ field.field_type }}
+        {{ field.field_type }}
             exponential of the field to the power of the exponential
         """
         if other is not None:
@@ -582,30 +618,18 @@ cdef class {{ field.field_type }}:
             self.cobj.{{ boundaryMethod }}()
 
 {% endfor %}
-    def __dealloc__(self):
-        self._boutpp_dealloc()
-
-    def _boutpp_dealloc(self):
-        if self.isSelfOwned and self.cobj != NULL:
-            del self.cobj
-            self.cobj = NULL
 
     @property
     def shape(self):
         return {{ field.makelist("self.cobj.getN$d()") }}
 {% endfor %}
+
 {% for vec in vecs %}
 cdef extern from "helper.h":
     c.{{ vec.field }} c_mul_{{ vec }}_{{ vec }}(c.{{ vec }} *, c.{{ vec }} *) except +
 
-cdef class {{ vec }}:
-    """
-    {{ vec }} class
+{{ class(vec) }}
 
-    A vector of {{ vec.field }}
-    """
-    cdef c.{{ vec }} * cobj
-    cdef c.bool isSelfOwned
 {% for d in "xyz" %}
     @property
     def {{ d }}(self):
@@ -642,17 +666,6 @@ cdef class {{ vec }}:
 {% endfor %}
         return data_
 
-
-
-    def __dealloc__(self):
-        self._boutpp_dealloc()
-
-    def _boutpp_dealloc(self):
-        if self.isSelfOwned and self.cobj != NULL:
-            del self.cobj
-            self.cobj=NULL
-
-
 cdef {{ vec }} {{ vec.vdd }}FromObj(c.{{ vec }} i):
     v={{ vec }}()
     v.cobj = new c.{{ vec }}(<const c.{{ vec }} & ?> i)
@@ -667,19 +680,18 @@ cdef extern from "helper.h":
     c.Field3D c_Grad_perp_dot_Grad_perp(c.Field3D,c.Field3D);
     void c_mesh_normalise(c.Mesh* , double)
 
-cdef class Mesh:
-    """
-    Mesh class
 
-    Contains information about geometry.
-    It contains also the coordinates and is responsible for taking deriavtives.
-    """
-    cdef c.Mesh * cobj;
-    cdef c.bool isSelfOwned
-    cdef double isNormalised
-    cdef FieldFactory factory
-    cdef Coordinates _coords
-    cdef options
+{{ class("Mesh", comment="""
+Mesh class
+
+Contains information about geometry.
+It contains also the coordinates and is responsible for taking deriavtives.
+""", data="""
+cdef double isNormalised
+cdef FieldFactory factory
+cdef Coordinates _coords
+cdef options
+""") }}
 
     def __init__(self, create=True, section=None, options=None):
         """
@@ -701,7 +713,7 @@ cdef class Mesh:
             global Options object is used.
         """
         checkInit()
-        self.cobj=<c.Mesh*>0
+        self.cobj = <c.Mesh*>0
         cdef c.string tmp
         cdef c.Options * opt = NULL
         self.isSelfOwned = False
@@ -740,14 +752,6 @@ cdef class Mesh:
         msh.cobj = c_get_global_mesh();
         msh.isSelfOwned = False
         return msh
-
-    def __dealloc__(self):
-        self._boutpp_dealloc()
-
-    def _boutpp_dealloc(self):
-        if self.cobj and self.isSelfOwned:
-            del self.cobj
-            self.cobj = NULL
 
     cdef getFactory(self):
         """
@@ -819,55 +823,37 @@ cdef Coordinates coordsFromPtr(c.Coordinates * obj):
     coords = Coordinates()
     coords.cobj = obj
     coords._setmembers()
-    coords.isSelfOwned = False
     return coords
 
-cdef class Coordinates:
-    """
-    Contains information about geometry, such as metric tensors
-    """
-    cdef c.Coordinates * cobj
-    cdef c.bool isSelfOwned
-    cdef public {{ metric_field }} dx, dy, dz
-    cdef public {{ metric_field }} J
-    cdef public {{ metric_field }} Bxy
-    cdef public {{ metric_field }} g11, g22, g33, g12, g13, g23
-    cdef public {{ metric_field }} g_11, g_22, g_33, g_12, g_13, g_23
-    cdef public {{ metric_field }} G1_11, G1_22, G1_33, G1_12, G1_13, G1_23
-    cdef public {{ metric_field }} G2_11, G2_22, G2_33, G2_12, G2_13, G2_23
-    cdef public {{ metric_field }} G3_11, G3_22, G3_33, G3_12, G3_13, G3_23
-    cdef public {{ metric_field }} G1, G2, G3
-    cdef public {{ metric_field }} ShiftTorsion
-    cdef public {{ metric_field }} IntShiftTorsion
-
-    def __init__(self):
-        self.cobj = NULL
-        self.isSelfOwned = False
+{% set data %}
+cdef public {{ metric_field }} dx, dy, dz
+cdef public {{ metric_field }} J
+cdef public {{ metric_field }} Bxy
+cdef public {{ metric_field }} g11, g22, g33, g12, g13, g23
+cdef public {{ metric_field }} g_11, g_22, g_33, g_12, g_13, g_23
+cdef public {{ metric_field }} G1_11, G1_22, G1_33, G1_12, G1_13, G1_23
+cdef public {{ metric_field }} G2_11, G2_22, G2_33, G2_12, G2_13, G2_23
+cdef public {{ metric_field }} G3_11, G3_22, G3_33, G3_12, G3_13, G3_23
+cdef public {{ metric_field }} G1, G2, G3
+cdef public {{ metric_field }} ShiftTorsion
+cdef public {{ metric_field }} IntShiftTorsion
+{% endset %}
+{{ class("Coordinates", comment="Contains information about geometry, such as metric tensors", data=data, defaultSO=False) }}
 
     def _setmembers(self):
 {% for f in "dx", "dy", "dz", "J", "Bxy", "g11", "g22", "g33", "g12", "g13", "g23", "g_11", "g_22", "g_33", "g_12", "g_13", "g_23", "G1_11", "G1_22", "G1_33", "G1_12", "G1_13", "G1_23", "G2_11", "G2_22", "G2_33", "G2_12", "G2_13", "G2_23", "G3_11", "G3_22", "G3_33", "G3_12", "G3_13", "G3_23", "G1", "G2", "G3", "ShiftTorsion", "IntShiftTorsion" %}
         self.{{f}} = {{ metric_field.fdd }}FromPtr(&self.cobj.{{f}})
 {% endfor %}
 
-    def __dealloc__(self):
-        self._boutpp_dealloc()
+{{ class("Laplacian", comment="""
+Laplacian inversion solver
 
-    def _boutpp_dealloc(self):
-        if self.cobj and self.isSelfOwned:
-            del self.cobj
-            self.cobj = NULL
+Compute the Laplacian inversion of objects.
 
-cdef class Laplacian:
-    """
-    Laplacian inversion solver
+Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\perp x + ex\\nabla_x x + ez\\nabla_z x + a x = b
+""", uniquePtr=True) }}
 
-    Compute the Laplacian inversion of objects.
-
-    Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\perp x + ex\\nabla_x x + ez\\nabla_z x + a x = b
-    """
-    cdef unique_ptr[c.Laplacian] cobj
-    cdef c.bool isSelfOwned
-    def __init__(self,section=None):
+    def __init__(self, section=None):
         """
         Initialiase a Laplacian solver
 
@@ -882,7 +868,8 @@ cdef class Laplacian:
         else:
            self.cobj = c.Laplacian.create(NULL)
         self.isSelfOwned = True
-    def solve(self,Field3D x, Field3D guess):
+
+    def solve(self, Field3D x, Field3D guess):
         """
         Calculate the Laplacian inversion
 
@@ -925,18 +912,8 @@ cdef class Laplacian:
         deref(self.cobj).setCoef{{ coeff }}({{ coeff }}.cobj[0])
 {% endfor %}
 
-cdef class FieldFactory:
-    cdef c.FieldFactory * cobj
-    def __init__(self):
-        checkInit()
-        cobj=< c.FieldFactory*>0
-    def __dealloc__(self):
-        self._boutpp_dealloc()
 
-    def _boutpp_dealloc(self):
-        if self.cobj != NULL:
-            del self.cobj
-            self.cobj = NULL
+{{ class("FieldFactory", defaultSO=False) }}
 
 cdef void callback(void * parameter, void * method) with gil:
     cdef double time = (<double*>parameter)[0]
@@ -954,41 +931,50 @@ cdef void callback(void * parameter, void * method) with gil:
 ctypedef void (*Method)(void *param)
 
 cdef class PythonModelCallback:
-    """Needed for callbacks from C++ to python"""
+    """
+    Needed for callbacks from C++ to python
+    """
     cdef c.PythonModelCallback * cobj
+    cdef c.bool isSelfOwned
+    cdef object __weakref__
 
     def __cinit__(self, method):
         # "callback" :: The pattern/converter method to fire a Python
         #               object method from C typed infos
         # "method"   :: The effective method passed by the Python user
+        global _allobjects
+        _allobjects.append(weakref.ref(self))
+        self.isSelfOwned = True
         checkInit()
         self.cobj = new c.PythonModelCallback(callback, <void*>method)
+        self.__cinit__()
 
-    def __dealloc__(self):
-        self._boutpp_dealloc()
-
-    def _boutpp_dealloc(self):
-        if self.cobj:
-            del self.cobj
-            self.cobj = NULL
+{{ dealloc() }}
 
     cpdef void execute(self, parameter):
         # "parameter" :: The parameter to be passed to the "method"
         self.cobj.cy_execute(<void*>parameter)
 
 
-cdef class PhysicsModelBase(object):
+cdef class PhysicsModelBase:
     """The PhysicsModelBase in python - better use the PhysicsModel class"""
     cdef c.PythonModel * cmodel
     cdef c.PythonModelCallback * callback
     cdef c.PythonModelCallback * callbackinit
     cdef c.bool _done_pyinit
-    def __init__(self):
+    cdef c.bool isSelfOwned
+    cdef object __weakref__
+
+    def __cinit__(self):
         checkInit()
-        self.cmodel  = new c.PythonModel()
-        self.callback= <c.PythonModelCallback*> 0
-        self.callbackinit= <c.PythonModelCallback*> 0
+        global _allobjects
+        _allobjects.append(weakref.ref(self))
+        self.cmodel = new c.PythonModel()
+        self.callback = NULL
+        self.callbackinit = NULL
         self._done_pyinit = False
+        self.isSelfOwned = True
+
     def solve(self):
         if self._done_pyinit == False:
             self._done_pyinit = True
@@ -1008,7 +994,7 @@ cdef class PhysicsModelBase(object):
             f3d = (<Field3D?>kwargs[key]).cobj
             self.cmodel.getSolver().add(f3d[0],tmp)
 
-    def setRhs(self,rhs):
+    def setRhs(self, rhs):
         """
         set the rhs function to be called
 
@@ -1017,7 +1003,7 @@ cdef class PhysicsModelBase(object):
         rhs : function
             Must not be a method, and must accept an double (time) as argument
         """
-        if self.callback != <c.PythonModelCallback*>0:
+        if self.callback != NULL:
             del self.callback
         self.callback = new c.PythonModelCallback(callback, <void*> rhs)
         self.cmodel.set_rhs_func(self.callback)
@@ -1043,12 +1029,13 @@ cdef class PhysicsModelBase(object):
             PhysicsModelBase._boutpp_dealloc(self)
 
     def _boutpp_dealloc(self):
-        if self.cmodel != <c.PythonModel *> 0:
+        if self.cmodel != NULL:
             self.cmodel.free()
             del self.cmodel
             del self.callback
             del self.callbackinit
             self.cmodel = <c.PythonModel *> 0
+
 
 class PhysicsModel(PhysicsModelBase):
     """
@@ -1077,18 +1064,11 @@ class PhysicsModel(PhysicsModelBase):
     model.solve()
     """
 
-    def __init__(self):
-        super(PhysicsModel,self).__init__()
-        self._super_is_initialised=True
     def solve(self):
         """
         Call the solver.
         This makes sure that self.init(restart) and self.rhs(time) are called from the solver.
         """
-        try:
-            self._super_is_initialised
-        except:
-            raise RuntimeError("PhysicsModel is not initialized")
         def _rhs(time):
            self.rhs(time)
         self.myrhs=_rhs
@@ -1098,6 +1078,7 @@ class PhysicsModel(PhysicsModelBase):
         self.myinit=_init
         self.setInit(self.myinit)
         super(PhysicsModel,self).solve()
+
     def solve_for(self,*args,**kwargs):
         """
         Add Field3D's to be solved for.
@@ -1109,11 +1090,8 @@ class PhysicsModel(PhysicsModelBase):
         kwargs : dictionary of Field2D or Field3D
             Keys must be strings, and value of dict must be the Field3D which should be evolved.
         """
-        try:
-            self._super_is_initialised
-        except:
-            raise RuntimeError("PhysicsModel is not initialized")
         super(PhysicsModel,self).solve_for(*args,**kwargs)
+
     def init(self,restart):
         """
         This can be overwritten to do model specific initialization
@@ -1121,10 +1099,10 @@ class PhysicsModel(PhysicsModelBase):
         pass
 
     def __dealloc__(self):
-        super(PhysicsModel,self).__dealloc__()
+        super().__dealloc__()
 
     def _boutpp_dealloc(self):
-        super(PhysicsModel,self)._boutpp_dealloc()
+        super()._boutpp_dealloc()
 
 cdef extern from "bout/bout.hxx":
     int BoutInitialise(int&, char **&) except +raise_bout_py_error
@@ -1198,20 +1176,25 @@ def finalise():
     global _isInit
     wasInit = _isInit
     _isInit = False
-    objects = gc.get_objects()
-    ourClasses = (Coordinates, Field2D, Field3D, Mesh, Options,
-                  PhysicsModel, PhysicsModelBase, Vector2D, Vector3D,
-                  PythonModelCallback)
-    for obj in objects:
-        if isinstance(obj, ourClasses):
-            if hasattr(obj, "_boutpp_dealloc"):
-                obj._boutpp_dealloc()
-            else:
-                for ourClass in ourClasses:
-                    if isinstance(obj, ourClass):
-                        if hasattr(ourClass, "_boutpp_dealloc"):
-                            ourClass._boutpp_dealloc(obj)
-                            break
+    objects = _allobjects #gc.get_objects()
+    ourClasses = (
+        Field2D, Field3D, Vector2D, Vector3D, Mesh, Coordinates,
+        Laplacian, FieldFactory, PythonModelCallback, PhysicsModel,
+        PhysicsModelBase, PythonModelCallback, Options,
+    )
+    for objr in objects:
+        obj = objr()
+        if obj is None:
+            continue
+        if hasattr(obj, "_boutpp_dealloc"):
+            obj._boutpp_dealloc()
+        else:
+            for ourClass in ourClasses:
+                if isinstance(obj, ourClass):
+                    if hasattr(ourClass, "_boutpp_dealloc"):
+                        ourClass._boutpp_dealloc(obj)
+                        break
+
     del objects
     # Actually finalise
     if wasInit:
@@ -1522,12 +1505,7 @@ def setOption(name, value, source="PyInterface", force=False):
     root = Options.root()
     root.set(name, value, source, force)
 
-cdef class Options:
-    """
-    The Options class
-    """
-    cdef c.Options * cobj
-    cdef c.bool isSelfOwned
+{{ class("Options") }}
 
     def __init__(self, **kwargs):
         """Construct an Options from keywords or dict"""
@@ -1579,13 +1557,11 @@ cdef class Options:
             The Options object
         """
         checkInit()
-        opt = Options("")
-        opt.cobj = new c.Options()
-        opt.isSelfOwned = True
+        opt = Options()
         cdef char * file_
         file__ = file.encode()
         file_ = file__
-        c.OptionsReader.getInstance().read(opt.cobj, "%s", file_)
+        c.OptionsReader.getInstance().read(opt.cobj, file_)
         return opt
 
     @staticmethod
@@ -1724,14 +1700,6 @@ cdef class Options:
         """
         cdef c.Options* opt = self.cobj
         opt.setConditionallyUsed()
-
-    def __dealloc__(self):
-        self._boutpp_dealloc()
-
-    def _boutpp_dealloc(self):
-        if self.isSelfOwned and self.cobj != NULL:
-            del self.cobj
-            self.cobj = NULL
 
 def writeDefaultOutputFile(options: Options):
     c.writeDefaultOutputFile(deref(options.cobj))

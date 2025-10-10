@@ -1,34 +1,18 @@
-# settings file for BOUT++
-# High-Beta reduced MHD case
-
-##################################################
-# Global settings used by the core code
-
-nout = 40          # number of time-steps
-timestep = 1       # time between outputs
-wall_limit = 1.55  # wall time limit (in hours)
-
 zperiod = 15        # Fraction of a torus to simulate
 MZ = 16             # Number of points in Z
 
-grid = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
-
-dump_format = "nc"      # Dump file format. "nc" = NetCDF, "pdb" = PDB
-restart_format = "nc"   # Restart file format
-
 [mesh]
-
 staggergrids = false    # Use staggered grids
 
-[mesh:paralleltransform]
+file = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
 
-type = shifted # Use shifted metric method
+[mesh:paralleltransform]
+type = shiftedinterp
 
 ##################################################
 # derivative methods
 
 [mesh:ddx]
-
 first = C4  # order of first x derivatives
 second = C4 # order of second x derivatives
 upwind = W3 # order of upwinding method W3 = Weno3
@@ -44,20 +28,6 @@ first = C4  # Z derivatives can be done using FFT
 second = C4
 upwind = W3
 
-[output]
-shiftoutput = true  # Put the output into field-aligned coordinates
-
-##################################################
-# Laplacian inversion routines
-
-[laplace]
-type=hypre3d
-
-flags = 0   # Flags for Laplacian inversion
-
-rtol = 1.e-9
-atol = 1.e-14
-
 ##################################################
 # FFTs
 
@@ -71,23 +41,20 @@ fft_measurement_flag = measure  # If using FFTW, perform tests to determine fast
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-atol = 1e-08 # absolute tolerance
-rtol = 1e-05  # relative tolerance
+atol = 1.0e-8 # absolute tolerance
+rtol = 1.0e-5  # relative tolerance
 
 use_precon = false    # Use preconditioner: User-supplied or BBD
-use_jacobian = false  # Use user-supplied Jacobian
 
 mxstep = 5000   # Number of internal steps between outputs
-adams_moulton = false # Use Adams-Moulton method (default is BDF)
-func_iter = false     # Functional iteration (default is Newton)
 
 ##################################################
 # settings for high-beta reduced MHD
 
 [highbeta]
 
-density = 1.0e19       # number density of deuterium [m^-3]
-                       # used to produce output normalisations
+density = 1e+19       # number density of deuterium [m^-3]
+# used to produce output normalisations
 
 evolve_jpar = false     # If true, evolve J raher than Psi
 
@@ -116,8 +83,8 @@ diamag_phi0 = true    # Balance ExB against Vd for stationary equilibrium
 bm_exb_flag = 0
 bm_mag_flag = 0
 ##################################################################
-withflow = false     # With flow or not
-D_0 = 130000        # differential potential
+withflow = false    # With flow or not
+D_0 = 1.3e5         # differential potential
 D_s = 20            # shear parameter
 K_H_term = false    # Contain K-H term
 sign = -1           # flow direction
@@ -125,13 +92,13 @@ x0 = 0.855          # peak location
 D_min = 3000        # constant
 ##################################################################
 
-eHall = false         # Include electron pressue effects in Ohm's law?
-AA = 2.0          # ion mass in units of proton mass
+eHall = false         # Include electron pressure effects in Ohm's law?
+AA = 2.0              # ion mass in units of proton mass
 
 noshear = false        # zero all shear
 
 relax_j_vac = false    # Relax to zero-current in the vacuum
-relax_j_tconst = 1e-2  # Time constant for vacuum relaxation
+relax_j_tconst = 0.01  # Time constant for vacuum relaxation
 
 ## Toroidal filtering
 filter_z = true   # remove all except one mode
@@ -158,30 +125,30 @@ rmp_polpeak = 0.5   # Y location of maximum (fraction)
 ## Vacuum region control
 
 vacuum_pressure = 0.02 # the pressure below which it is considered vacuum
-                       # fraction of peak pressure
+# fraction of peak pressure
 vacuum_trans = 0.01   # transition width (fraction of P)
 
 ## Resistivity and Hyper-resistivity
 
-vac_lund = 1.0e8    # Lundquist number in vacuum  (negative -> infinity)
-core_lund = 1.0e8  # Lundquist number in core (negative -> infinity)
+vac_lund = 1.e8     # Lundquist number in vacuum  (negative -> infinity)
+core_lund = 1.e8    # Lundquist number in core (negative -> infinity)
 hyperresist = 1.e-4 # Hyper-resistivity coefficient (like 1 / Lundquist number)
 
 ## Inner boundary damping
 
 damp_width = -1       # Width of damping region (grid cells)
-damp_t_const = 1e-2  # Damping time constant
+damp_t_const = 0.01  # Damping time constant
 
 ## Parallel pressure diffusion
 
-diffusion_par = -1.0   # Parallel pressure diffusion (< 0 = none)
+diffusion_par = -1.0    # Parallel pressure diffusion (< 0 = none)
 diffusion_p4 = -1e-05   # parallel hyper-viscous diffusion for pressure (< 0 = none)
-diffusion_u4 = 1e-05    # parallel hyper-viscous diffusion for vorticity (< 0 = none)
+diffusion_u4 = -1e-05   # parallel hyper-viscous diffusion for vorticity (< 0 = none)
 diffusion_a4 = -1e-05   # parallel hyper-viscous diffusion for vector potential (< 0 = none)
 
 ## heat source in pressure in watts
 
-heating_P = -1   #   heat power in watts (< 0 = none)
+heating_P = -1     #   heat power in watts (< 0 = none)
 hp_width = 0.1     #   heat width, in percentage of nx (< 0 = none)
 hp_length = 0.3    #   heat length in percentage of nx (< 0 = none)
 
@@ -205,7 +172,7 @@ su_lengthr = 0.1     #   right edge sink length in percentage of nx (< 0 = none)
 ## Viscosity and Hyper-viscosity
 
 viscos_par = -0.1   # Parallel viscosity (< 0 = none)
-viscos_perp = -1.0  # Perpendicular
+viscos_perp = -1.0  # Perpendicular viscosity (< 0 = none)
 hyperviscos = -1.0  # Radial hyper viscosity
 
 ## Compressional terms (only when compress = true)
@@ -213,14 +180,11 @@ phi_curv = true    # Include curvature*Grad(phi) in P equation
 # gamma = 1.6666
 
 [phiSolver]
-#inner_boundary_flags = 1 + 2 + 128 # INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_BNDRY_ONE
-#outer_boundary_flags = 1 + 2 + 128 # INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_BNDRY_ONE
-inner_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
-outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
+type = hypre3d
+inner_boundary_flags = 0 # Dirichlet
+outer_boundary_flags = 0 # Dirichlet
 
 [aparSolver]
-#inner_boundary_flags = 1 + 2 + 128 # INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_BNDRY_ONE
-#outer_boundary_flags = 1 + 2 + 128 # INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_BNDRY_ONE
 inner_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 
@@ -271,12 +235,9 @@ bndry_ydown = free_o3
 # Zero gradient in the core
 bndry_core = neumann
 
-[Vpar]
-
-bndry_core = neumann
-
 [phi]
 
 bndry_xin = none
 bndry_xout = none
-bndry_target = neumann
+#bndry_target = neumann
+

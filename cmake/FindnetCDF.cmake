@@ -32,6 +32,7 @@ if (NOT netCDF_ROOT AND EXISTS "${BOUT_USE_NETCDF}")
   set(netCDF_ROOT "${BOUT_USE_NETCDF}")
 endif()
 
+enable_language(C)
 find_package(netCDF QUIET CONFIG)
 
 if (netCDF_FOUND)

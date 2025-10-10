@@ -17,12 +17,6 @@ ctest --output-on-failure --timeout 300
 
 export LD_LIBRARY_PATH=/home/runner/local/lib:$LD_LIBRARY_PATH
 
-# Test bout-config basic functionallity
-cd ../examples/make-script
-PATH=../../build/bin:$PATH bout-config --all
-PATH=../../build/bin:$PATH make
-./test --help
-cd -
 # Test bout++Config.cmake
 cd ../examples/conduction
 cmake . -B build -DCMAKE_PREFIX_PATH=../../build
@@ -32,13 +26,6 @@ cd -
 
 make install -j 2
 rm -rf build
-# Test installation with plain `make`
-cd ../examples/make-script
-rm test
-PATH=../../installed/bin:$PATH bout-config --all
-PATH=../../installed/bin:$PATH make
-./test --help
-cd -
 # Test installation with CMake
 cd ../examples/conduction
 cmake . -B build -DCMAKE_PREFIX_PATH=../../installed

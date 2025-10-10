@@ -3,10 +3,11 @@ from builtins import range
 from past.utils import old_div
 import numpy as np
 import matplotlib.pyplot as plt
-from boututils.file_import import file_import
+from boututils.datafile import DataFile
 from matplotlib.ticker import FixedFormatter, FormatStrFormatter, AutoLocator, AutoMinorLocator
 
-g = file_import("./cbm18_dens8.grid_nx68ny64.nc")
+with DataFile("./cbm18_dens8.grid_nx68ny64.nc") as f:
+    g = {v: f.read(v) for v in f.keys()}
 
 majorLocator   = AutoLocator()
 majorFormatter = FormatStrFormatter('%3.0e')

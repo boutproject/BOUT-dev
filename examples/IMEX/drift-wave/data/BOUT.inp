@@ -1,8 +1,3 @@
-# Drift wave test
-# All variables in normalised units
-
-timestep = 100
-nout = 100
 
 [mesh]
 
@@ -31,3 +26,10 @@ function = sin(y-z)
 [Ne]
 scale = 0
 function = 0
+
+[solver]
+# Drift wave test
+# All variables in normalised units
+
+output_step = 100
+nout = 100

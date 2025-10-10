@@ -4,9 +4,9 @@
  * Class for 2D X-Y profiles
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ developers
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -112,7 +112,7 @@ Field2D& Field2D::allocate() {
   return *this;
 }
 
-BOUT_HOST_DEVICE Field2D* Field2D::timeDeriv() {
+Field2D* Field2D::timeDeriv() {
   if (deriv == nullptr) {
     deriv = new Field2D{emptyFrom(*this)};
   }
@@ -129,11 +129,11 @@ const Region<Ind2D>& Field2D::getRegion(const std::string& region_name) const {
 }
 
 // Not in header because we need to access fieldmesh
-BOUT_HOST_DEVICE BoutReal& Field2D::operator[](const Ind3D& d) {
+BoutReal& Field2D::operator[](const Ind3D& d) {
   return operator[](fieldmesh->map3Dto2D(d));
 }
 
-BOUT_HOST_DEVICE const BoutReal& Field2D::operator[](const Ind3D& d) const {
+const BoutReal& Field2D::operator[](const Ind3D& d) const {
   return operator[](fieldmesh->map3Dto2D(d));
 }
 
@@ -355,7 +355,7 @@ namespace {
 void checkDataIsFiniteOnRegion(const Field2D& f, const std::string& region) {
   // Do full checks
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
-    if (!::finite(f[i])) {
+    if (!std::isfinite(f[i])) {
       throw BoutException("Field2D: Operation on non-finite data at [{:d}][{:d}]\n",
                           i.x(), i.y());
     }

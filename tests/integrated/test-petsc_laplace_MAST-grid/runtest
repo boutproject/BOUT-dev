@@ -43,10 +43,8 @@ for nproc in [1, 2, 4]:
     #  if nproc > 2:
     #    nxpe = 2
     for jy in [2, 34, 65, 81, 113]:
-        cmd = (
-            "./test_petsc_laplace_MAST_grid grid=grids/grid_MAST_SOL_jyis{}.nc".format(
-                jy
-            )
+        cmd = "./test_petsc_laplace_MAST_grid mesh:file=grids/grid_MAST_SOL_jyis{}.nc".format(
+            jy
         )
 
         shell("rm data/BOUT.dmp.*.nc")

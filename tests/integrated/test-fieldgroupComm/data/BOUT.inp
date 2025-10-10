@@ -1,9 +1,13 @@
-nout = 1  # No timesteps
 MZ = 9    # Z size
 zperiod = 10
 
 twistshift = true
-grid = "cyclone_68x32.nc"
 
 [all]
 scale = 1.0
+
+[solver]
+nout = 1  # No timesteps
+
+[mesh]
+file = "cyclone_68x32.nc"

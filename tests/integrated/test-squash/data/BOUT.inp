@@ -1,5 +1,3 @@
-timestep = 1.0
-nout = 1
 
 MZ = 1
 
@@ -18,3 +16,7 @@ function = 0.0
 
 [f3]
 function = 0.0
+
+[solver]
+output_step = 1.0
+nout = 1

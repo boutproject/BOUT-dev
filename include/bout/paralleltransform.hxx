@@ -7,6 +7,7 @@
 #define BOUT_PARALLELTRANSFORM_H
 
 #include "bout/bout_types.hxx"
+#include "bout/dcomplex.hxx"
 #include "bout/field3d.hxx"
 #include "bout/options.hxx"
 #include "bout/unused.hxx"
@@ -215,7 +216,7 @@ public:
   std::vector<PositionsAndWeights>
   getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
                               int UNUSED(yoffset)) override {
-    throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented"
+    throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented "
                         "for `type = shifted`. Try `type = shiftedinterp`");
   }
 

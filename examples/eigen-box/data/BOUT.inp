@@ -1,7 +1,3 @@
-# Eigenvalue test case
-
-nout = 1
-timestep = 0.2
 
 MXG = 1
 MYG = 0
@@ -35,6 +31,10 @@ targIm = 0
 
 selfSolve = false
 timestep = 0.01
+output_step = 0.2
+# Eigenvalue test case
+
+nout = 1
 
 [solver:advance]
 type = splitrk

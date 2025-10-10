@@ -1,16 +1,9 @@
 #include "gtest/gtest.h"
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/coordinates_accessor.hxx"
 
-#include "test_extras.hxx"
-
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-}
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 using bout::globals::mesh;
 

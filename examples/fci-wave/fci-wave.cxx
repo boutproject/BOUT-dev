@@ -1,4 +1,5 @@
 
+#include "bout/parallel_boundary_region.hxx"
 #include "bout/physicsmodel.hxx"
 
 class FCIwave : public PhysicsModel {
@@ -31,9 +32,9 @@ private:
       const Field3D& B_next = Bxyz.ynext(reg->dir);
 
       for (reg->first(); !reg->isDone(); reg->next()) {
-        f_B_next(reg->x, reg->y + reg->dir, reg->z) =
-            f_next(reg->x, reg->y + reg->dir, reg->z)
-            / B_next(reg->x, reg->y + reg->dir, reg->z);
+        f_B_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z()) =
+            f_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z())
+            / B_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z());
       }
     }
 
@@ -131,16 +132,21 @@ protected:
         // Note: If evolving density, this should interpolate logn
         // but neumann boundaries are used here anyway.
         BoutReal n_b =
-            0.5 * (n_next(reg->x, reg->y + reg->dir, reg->z) + n(reg->x, reg->y, reg->z));
+            0.5
+            * (n_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z())
+               + n(reg->ind().x(), reg->ind().y(), reg->ind().z()));
         // Velocity at the boundary
         BoutReal v_b =
-            0.5 * (v_next(reg->x, reg->y + reg->dir, reg->z) + v(reg->x, reg->y, reg->z));
+            0.5
+            * (v_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z())
+               + v(reg->ind().x(), reg->ind().y(), reg->ind().z()));
 
-        nv_next(reg->x, reg->y + reg->dir, reg->z) =
-            2. * n_b * v_b - nv(reg->x, reg->y, reg->z);
+        nv_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z()) =
+            2. * n_b * v_b - nv(reg->ind().x(), reg->ind().y(), reg->ind().z());
 
-        momflux_next(reg->x, reg->y + reg->dir, reg->z) =
-            2. * n_b * v_b * v_b - momflux(reg->x, reg->y, reg->z);
+        momflux_next(reg->ind().x(), reg->ind().y() + reg->dir, reg->ind().z()) =
+            2. * n_b * v_b * v_b
+            - momflux(reg->ind().x(), reg->ind().y(), reg->ind().z());
       }
     }
 

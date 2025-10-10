@@ -1,7 +1,13 @@
 #include "test_extras.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/region.hxx"
 #include "gtest/gtest.h"
 
 #include <cmath>
+#include <string>
+#include <vector>
 
 ::testing::AssertionResult IsSubString(const std::string& str,
                                        const std::string& substring) {

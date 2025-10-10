@@ -9,6 +9,8 @@
 
 #include <fmt/format.h>
 
+#include "fake_mesh_fixture.hxx"
+
 class OptionsTest : public FakeMeshFixture {
 public:
   virtual ~OptionsTest() = default;
@@ -1097,7 +1099,7 @@ value6 = 12
 }
 
 TEST_F(OptionsTest, InvalidFormat) {
-  EXPECT_THROW(fmt::format("{:nope}", Options{}), fmt::format_error);
+  EXPECT_THROW([[maybe_unused]] auto none = fmt::format("{:nope}", Options{}), fmt::format_error);
 }
 
 TEST_F(OptionsTest, FormatValue) {

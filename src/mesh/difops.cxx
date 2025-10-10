@@ -23,7 +23,7 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include <bout/assert.hxx>
 #include <bout/derivs.hxx>

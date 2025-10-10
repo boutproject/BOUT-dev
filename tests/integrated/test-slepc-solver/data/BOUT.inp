@@ -1,5 +1,3 @@
-nout = 1
-timestep = 1
 
 MXG = 1
 MYG = 0
@@ -16,3 +14,5 @@ dy = 1
 [solver]
 type = "slepc"
 nEig = 1
+output_step = 1
+nout = 1

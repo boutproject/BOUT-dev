@@ -6,6 +6,7 @@
 #include "bout/output.hxx"
 #include "bout/region.hxx"
 
+#include "fake_mesh.hxx"
 #include "test_extras.hxx"
 
 /// Test fixture to make sure the global mesh is our fake one

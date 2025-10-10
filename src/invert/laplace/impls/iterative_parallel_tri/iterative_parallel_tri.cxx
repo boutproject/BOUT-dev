@@ -5,7 +5,7 @@
  **************************************************************************
  * Copyright 2020 Joseph Parker
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -25,7 +25,7 @@
  **************************************************************************/
 
 #include "iterative_parallel_tri.hxx"
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if not BOUT_USE_METRIC_3D
 
@@ -293,10 +293,8 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
    */
   auto bcmplx = Matrix<dcomplex>(nmode, ncx);
 
-  const bool invert_inner_boundary =
-      isInnerBoundaryFlagSet(INVERT_SET) and localmesh->firstX();
-  const bool invert_outer_boundary =
-      isOuterBoundaryFlagSet(INVERT_SET) and localmesh->lastX();
+  const bool invert_inner_boundary = isInnerBoundaryFlagSetOnFirstX(INVERT_SET);
+  const bool invert_outer_boundary = isOuterBoundaryFlagSetOnLastX(INVERT_SET);
 
   BOUT_OMP_PERF(parallel for)
   for (int ix = 0; ix < ncx; ix++) {
@@ -345,8 +343,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
                  kz,
                  // wave number (different from kz only if we are taking a part
                  // of the z-domain [and not from 0 to 2*pi])
-                 kz * kwaveFactor, global_flags, inner_boundary_flags,
-                 outer_boundary_flags, &A, &C, &D);
+                 kz * kwaveFactor, &A, &C, &D);
 
     // Patch up internal boundaries
     if (not localmesh->lastX()) {
@@ -578,8 +575,8 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 #if CHECK > 2
   for (int ix = 0; ix < 4; ix++) {
     for (int kz = 0; kz < nmode; kz++) {
-      if (!finite(levels[0].xloc(ix, kz).real())
-          or !finite(levels[0].xloc(ix, kz).imag())) {
+      if (!std::isfinite(levels[0].xloc(ix, kz).real())
+          or !std::isfinite(levels[0].xloc(ix, kz).imag())) {
         throw BoutException("Non-finite xloc at {:d}, {:d}, {:d}", ix, jy, kz);
       }
     }
@@ -598,7 +595,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 #if CHECK > 2
   for (int ix = 0; ix < ncx; ix++) {
     for (int kz = 0; kz < nmode; kz++) {
-      if (!finite(xk1d(kz, ix).real()) or !finite(xk1d(kz, ix).imag())) {
+      if (!std::isfinite(xk1d(kz, ix).real()) or !std::isfinite(xk1d(kz, ix).imag())) {
         throw BoutException("Non-finite xloc at {:d}, {:d}, {:d}", ix, jy, kz);
       }
     }
@@ -639,7 +636,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 #if CHECK > 2
     for (int kz = 0; kz < ncz; kz++) {
-      if (!finite(x(ix, kz))) {
+      if (!std::isfinite(x(ix, kz))) {
         throw BoutException("Non-finite at {:d}, {:d}, {:d}", ix, jy, kz);
       }
     }

@@ -318,7 +318,7 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string& varname,
   /// Then (all, all)
   if (region->isParallel) {
     // Different default for parallel boundary regions
-    varOpts->get(prefix + "par_all", set, "parallel_dirichlet");
+    varOpts->get(prefix + "par_all", set, "parallel_dirichlet_o2");
   } else {
     varOpts->get(prefix + "all", set, "dirichlet");
   }

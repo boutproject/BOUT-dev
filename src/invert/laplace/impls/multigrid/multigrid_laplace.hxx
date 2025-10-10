@@ -31,7 +31,7 @@
 #ifndef BOUT_MULTIGRID_LAPLACE_H
 #define BOUT_MULTIGRID_LAPLACE_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/invert_laplace.hxx"
 
 #if BOUT_USE_METRIC_3D

@@ -95,11 +95,11 @@ public:
 
   /// Add a point to the boundary
   void add_point(Ind3D ind, BoutReal x, BoutReal y, BoutReal z, BoutReal length,
-                 char valid) {
+                 signed char valid) {
     bndry_points.push_back({ind, {x, y, z}, length, valid});
   }
   void add_point(int ix, int iy, int iz, BoutReal x, BoutReal y, BoutReal z,
-                 BoutReal length, char valid) {
+                 BoutReal length, signed char valid) {
     bndry_points.push_back({xyz2ind(ix, iy, iz, localmesh), {x, y, z}, length, valid});
   }
 
@@ -114,10 +114,10 @@ public:
   BoutReal s_y() const { return bndry_position->intersection.s_y; }
   BoutReal s_z() const { return bndry_position->intersection.s_z; }
   BoutReal length() const { return bndry_position->length; }
-  char valid() const { return bndry_position->valid; }
+  signed char valid() const { return bndry_position->valid; }
 
   // setter
-  void setValid(char val) { bndry_position->valid = val; }
+  void setValid(signed char val) { bndry_position->valid = val; }
 
   bool contains(const BoundaryRegionPar& bndry) const {
     return std::binary_search(

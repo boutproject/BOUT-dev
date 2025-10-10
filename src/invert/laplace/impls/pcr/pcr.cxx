@@ -149,13 +149,13 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
   // If the flags to assign that only one guard cell should be used is set
   inbndry = localmesh->xstart;
   outbndry = localmesh->xstart;
-  if (((global_flags & INVERT_BOTH_BNDRY_ONE) != 0) || (localmesh->xstart < 2)) {
+  if (isGlobalFlagSet(INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
-  if ((inner_boundary_flags & INVERT_BNDRY_ONE) != 0) {
+  if (isInnerBoundaryFlagSet(INVERT_BNDRY_ONE)) {
     inbndry = 1;
   }
-  if ((outer_boundary_flags & INVERT_BNDRY_ONE) != 0) {
+  if (isOuterBoundaryFlagSet(INVERT_BNDRY_ONE)) {
     outbndry = 1;
   }
 
@@ -173,10 +173,9 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       for (int ix = xs; ix <= xe; ix++) {
         // Take DST in Z direction and put result in k1d
 
-        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
-             && localmesh->firstX())
+        if (((ix < inbndry) && isInnerBoundaryFlagSetOnFirstX(INVERT_SET))
             || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
+                && isOuterBoundaryFlagSetOnLastX(INVERT_SET))) {
           // Use the values in x0 in the boundary
           DST(x0[ix] + 1, localmesh->LocalNz - 2, std::begin(k1d));
         } else {
@@ -199,8 +198,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
         tridagMatrix(&a(kz, 0), &b(kz, 0), &c(kz, 0), &bcmplx(kz, 0), jy,
                      kz,    // wave number index
                      kwave, // kwave (inverse wave length)
-                     global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
-                     &C1coef, &C2coef, &Dcoef,
+                     &Acoef, &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
       }
     } // BOUT_OMP_PERF(parallel)
@@ -245,10 +243,9 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       for (int ix = xs; ix <= xe; ix++) {
         // Take FFT in Z direction, apply shift, and put result in k1d
 
-        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
-             && localmesh->firstX())
+        if (((ix < inbndry) && isInnerBoundaryFlagSetOnFirstX(INVERT_SET))
             || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
+                && isOuterBoundaryFlagSetOnLastX(INVERT_SET))) {
           // Use the values in x0 in the boundary
           rfft(x0[ix], localmesh->LocalNz, std::begin(k1d));
         } else {
@@ -269,8 +266,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
         tridagMatrix(&a(kz, 0), &b(kz, 0), &c(kz, 0), &bcmplx(kz, 0), jy,
                      kz,    // True for the component constant (DC) in Z
                      kwave, // Z wave number
-                     global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
-                     &C1coef, &C2coef, &Dcoef,
+                     &Acoef, &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
       }
     } // BOUT_OMP_PERF(parallel)
@@ -285,7 +281,7 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
                                  + 1); // ZFFT routine expects input of this length
 
-      const bool zero_DC = (global_flags & INVERT_ZERO_DC) != 0;
+      const bool zero_DC = isGlobalFlagSet(INVERT_ZERO_DC);
 
       BOUT_OMP_PERF(for nowait)
       for (int ix = xs; ix <= xe; ix++) {
@@ -327,13 +323,13 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
   // If the flags to assign that only one guard cell should be used is set
   inbndry = localmesh->xstart;
   outbndry = localmesh->xstart;
-  if (((global_flags & INVERT_BOTH_BNDRY_ONE) != 0) || (localmesh->xstart < 2)) {
+  if (isGlobalFlagSet(INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
-  if ((inner_boundary_flags & INVERT_BNDRY_ONE) != 0) {
+  if (isInnerBoundaryFlagSet(INVERT_BNDRY_ONE)) {
     inbndry = 1;
   }
-  if ((outer_boundary_flags & INVERT_BNDRY_ONE) != 0) {
+  if (isOuterBoundaryFlagSet(INVERT_BNDRY_ONE)) {
     outbndry = 1;
   }
 
@@ -387,10 +383,9 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
 
         // Take DST in Z direction and put result in k1d
 
-        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
-             && localmesh->firstX())
+        if (((ix < inbndry) && isInnerBoundaryFlagSetOnFirstX(INVERT_SET))
             || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
+                && isOuterBoundaryFlagSetOnLastX(INVERT_SET))) {
           // Use the values in x0 in the boundary
           DST(x0(ix, iy) + 1, localmesh->LocalNz - 2, std::begin(k1d));
         } else {
@@ -417,8 +412,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
         tridagMatrix(&a3D(ind, 0), &b3D(ind, 0), &c3D(ind, 0), &bcmplx3D(ind, 0), iy,
                      kz,    // wave number index
                      kwave, // kwave (inverse wave length)
-                     global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
-                     &C1coef, &C2coef, &Dcoef,
+                     &Acoef, &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
       }
     } // BOUT_OMP_PERF(parallel)
@@ -472,10 +466,9 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
 
         // Take FFT in Z direction, apply shift, and put result in k1d
 
-        if (((ix < inbndry) && ((inner_boundary_flags & INVERT_SET) != 0)
-             && localmesh->firstX())
+        if (((ix < inbndry) && isInnerBoundaryFlagSetOnFirstX(INVERT_SET))
             || ((localmesh->LocalNx - ix - 1 < outbndry)
-                && ((outer_boundary_flags & INVERT_SET) != 0) && localmesh->lastX())) {
+                && isOuterBoundaryFlagSetOnLastX(INVERT_SET))) {
           // Use the values in x0 in the boundary
           rfft(x0(ix, iy), localmesh->LocalNz, std::begin(k1d));
         } else {
@@ -500,8 +493,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
         tridagMatrix(&a3D(ind, 0), &b3D(ind, 0), &c3D(ind, 0), &bcmplx3D(ind, 0), iy,
                      kz,    // True for the component constant (DC) in Z
                      kwave, // Z wave number
-                     global_flags, inner_boundary_flags, outer_boundary_flags, &Acoef,
-                     &C1coef, &C2coef, &Dcoef,
+                     &Acoef, &C1coef, &C2coef, &Dcoef,
                      false); // Don't include guard cells in arrays
       }
     } // BOUT_OMP_PERF(parallel)
@@ -516,7 +508,7 @@ Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2
                                  + 1); // ZFFT routine expects input of this length
 
-      const bool zero_DC = (global_flags & INVERT_ZERO_DC) != 0;
+      const bool zero_DC = isGlobalFlagSet(INVERT_ZERO_DC);
 
       BOUT_OMP_PERF(for nowait)
       for (int ind = 0; ind < nxny; ++ind) { // Loop over X and Y

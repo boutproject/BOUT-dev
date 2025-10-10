@@ -1,4 +1,3 @@
-grid = data/grid.nc
 mz = 128
 
 [f]
@@ -26,6 +25,9 @@ bndry_par_all = parallel_neumann_o2
 
 [A]
 function = 0.0
+
+[mesh]
+file = data/grid.nc
 
 #################################################################################
 [mesh:paralleltransform]

@@ -1,15 +1,9 @@
 #include "gtest/gtest.h"
 
-#include "test_extras.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/mask.hxx"
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 using MaskTest = FakeMeshFixture;
 

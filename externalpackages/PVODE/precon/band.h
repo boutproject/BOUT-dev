@@ -57,7 +57,6 @@
 
 namespace pvode {
 
- 
 /******************************************************************
  *                                                                *
  * Type: BandMat                                                  *
@@ -107,17 +106,16 @@ namespace pvode {
  * references and without knowing too much about the underlying   *
  * element storage. The only storage assumption needed is that    *
  * elements are stored columnwise and that a pointer into the jth *
- * column of elements can be obtained via the BAND_COL macro. The *
- * BAND_COL_ELEM macro selects an element from a column which has *
- * already been isolated via BAND_COL. BAND_COL_ELEM allows the   *
+ * column of elements can be obtained via the PVODE_BAND_COL macro. The *
+ * PVODE_BAND_COL_ELEM macro selects an element from a column which has *
+ * already been isolated via PVODE_BAND_COL. PVODE_BAND_COL_ELEM allows the   *
  * user to avoid the translation from the matrix location (i,j)   *
- * to the index in the array returned by BAND_COL at which the    *
- * (i,j)th element is stored. See the documentation for BAND_COL  *
- * and BAND_COL_ELEM for usage details. Users should use these    *
+ * to the index in the array returned by PVODE_BAND_COL at which the    *
+ * (i,j)th element is stored. See the documentation for PVODE_BAND_COL  *
+ * and PVODE_BAND_COL_ELEM for usage details. Users should use these    *
  * macros whenever possible.                                      *
  *                                                                *
  ******************************************************************/
-
 
 typedef struct bandmat_type {
   integer size;
@@ -128,53 +126,49 @@ typedef struct bandmat_type {
 
 /* BandMat accessor macros */
 
- 
 /******************************************************************
  *                                                                *
- * Macro : BAND_ELEM                                              *
- * Usage : BAND_ELEM(A,i,j) = a_ij;  OR                           *
- *         a_ij = BAND_ELEM(A,i,j);                               *
+ * Macro : PVODE_BAND_ELEM                                              *
+ * Usage : PVODE_BAND_ELEM(A,i,j) = a_ij;  OR                           *
+ *         a_ij = PVODE_BAND_ELEM(A,i,j);                               *
  *----------------------------------------------------------------*
- * BAND_ELEM(A,i,j) references the (i,j)th element of the         *
+ * PVODE_BAND_ELEM(A,i,j) references the (i,j)th element of the         *
  * N by N band matrix A, where 0 <= i,j <= N-1. The location      *
  * (i,j) should further satisfy j-(A->mu) <= i <= j+(A->ml).      *
  *                                                                *
  ******************************************************************/
 
-#define BAND_ELEM(A,i,j) ((A->data)[j][i-j+(A->smu)])
-
+#define PVODE_BAND_ELEM(A,i,j) ((A->data)[j][i-j+(A->smu)])
 
 /******************************************************************
  *                                                                *
- * Macro : BAND_COL                                               *
- * Usage : col_j = BAND_COL(A,j);                                 *
+ * Macro : PVODE_BAND_COL                                               *
+ * Usage : col_j = PVODE_BAND_COL(A,j);                                 *
  *----------------------------------------------------------------*
- * BAND_COL(A,j) references the diagonal element of the jth       *
+ * PVODE_BAND_COL(A,j) references the diagonal element of the jth       *
  * column of the N by N band matrix A, 0 <= j <= N-1. The type of *
- * the expression BAND_COL(A,j) is real *. The pointer returned   *
- * by the call BAND_COL(A,j) can be treated as an array which is  *
+ * the expression PVODE_BAND_COL(A,j) is real *. The pointer returned   *
+ * by the call PVODE_BAND_COL(A,j) can be treated as an array which is  *
  * indexed from -(A->mu) to (A->ml).                              *
  *                                                                *
  ******************************************************************/
 
-#define BAND_COL(A,j) (((A->data)[j])+(A->smu))
-
+#define BAND_COL(A, j) (((A->data)[j]) + (A->smu))
 
 /******************************************************************
  *                                                                *
- * Macro : BAND_COL_ELEM                                          *
- * Usage : col_j = BAND_COL(A,j);                                 *
- *         BAND_COL_ELEM(col_j,i,j) = a_ij;  OR                   *
- *         a_ij = BAND_COL_ELEM(col_j,i,j);                       *
+ * Macro : PVODE_BAND_COL_ELEM                                          *
+ * Usage : col_j = PVODE_BAND_COL(A,j);                                 *
+ *         PVODE_BAND_COL_ELEM(col_j,i,j) = a_ij;  OR                   *
+ *         a_ij = PVODE_BAND_COL_ELEM(col_j,i,j);                       *
  *----------------------------------------------------------------*
  * This macro references the (i,j)th entry of the band matrix A   *
- * when used in conjunction with BAND_COL as shown above. The     *
+ * when used in conjunction with PVODE_BAND_COL as shown above. The     *
  * index (i,j) should satisfy j-(A->mu) <= i <= j+(A->ml).        *
  *                                                                *
  ******************************************************************/
 
-#define BAND_COL_ELEM(col_j,i,j) (col_j[i-j])
- 
+#define PVODE_BAND_COL_ELEM(col_j, i, j) (col_j[i - j])
 
 /* Functions that use the BandMat representation for a band matrix */
 

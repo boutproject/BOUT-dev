@@ -1,10 +1,10 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include <math.h>
 #include <tuple>
 
 #include "../../../../src/invert/laplace/impls/hypre3d/hypre3d_laplace.hxx"
-#include "test_extras.hxx"
+
 #include "bout/invert_laplace.hxx"
 #include "gtest/gtest.h"
 
@@ -20,12 +20,7 @@
 
 #if BOUT_HAS_HYPRE
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;

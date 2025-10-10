@@ -30,15 +30,13 @@
 #ifndef BOUT_PETSC_INTERFACE_H
 #define BOUT_PETSC_INTERFACE_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_PETSC
 
 #include <algorithm>
 #include <iterator>
 #include <memory>
-#include <petscsystypes.h>
-#include <petscvec.h>
 #include <type_traits>
 #include <vector>
 
@@ -51,6 +49,9 @@
 #include <bout/petsclib.hxx>
 #include <bout/region.hxx>
 #include <bout/traits.hxx>
+
+#include <petscsystypes.h>
+#include <petscvec.h>
 
 /*!
  * A class which wraps PETSc vector objects, allowing them to be
@@ -564,6 +565,26 @@ PetscVector<T> operator*(const PetscMatrix<T>& mat, const PetscVector<T>& vec) {
   ASSERT2(err == 0);
   return PetscVector<T>(vec, result);
 }
+
+// Compatibility wrappers
+// For < 3.24
+#if PETSC_VERSION_GE(3, 24, 0) \
+    || (PETSC_VERSION_GE(3, 23, 0) && PETSC_VERSION_RELEASE == 0)
+namespace bout {
+template <class T>
+constexpr auto cast_MatFDColoringFn(T func) {
+  return func;
+}
+} // namespace bout
+#else
+using MatFDColoringFn = PetscErrorCode (*)();
+namespace bout {
+template <class T>
+constexpr auto cast_MatFDColoringFn(T func) {
+  return reinterpret_cast<MatFDColoringFn>(func); // NOLINT(*-reinterpret-cast)
+}
+} // namespace bout
+#endif
 
 #endif // BOUT_HAS_PETSC
 

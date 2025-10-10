@@ -43,7 +43,7 @@
 #ifndef BOUT_HYPRELIB_H
 #define BOUT_HYPRELIB_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 namespace bout {
 #if BOUT_HAS_HYPRE

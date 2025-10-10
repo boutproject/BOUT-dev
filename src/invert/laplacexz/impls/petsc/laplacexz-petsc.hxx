@@ -9,7 +9,7 @@ class LaplaceXZpetsc;
 #ifndef BOUT_LAPLACEXZ_PETSC_H
 #define BOUT_LAPLACEXZ_PETSC_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/invert/laplacexz.hxx"
 
 #if not BOUT_HAS_PETSC

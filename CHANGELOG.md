@@ -1,7 +1,137 @@
 # Changelog
 
-## [v6.0.0](https://github.com/boutproject/BOUT-dev/tree/next)
-[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v5.1.0...next)
+## [v5.2.0](https://github.com/boutproject/BOUT-dev/tree/v5.2.0
+
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v5.1.1...v5.2.0)
+
+### Breaking changes
+
+- The autotools `./configure` build system has been removed
+- Parsing of booleans has changed [\#2828][https://github.com/boutproject/BOUT-dev/pull/2828] ([bendudson][https://github.com/bendudson]).
+  See the [manual page](https://bout-dev.readthedocs.io/en/stable/user_docs/bout_options.html#boolean-expressions) for details.
+- Previously, the `Solver` implementations passed the loop counter to
+  the `iter` argument of `call_monitors`, but since the iteration has
+  already been completed when the monitors are called, this results in
+  iter always being one less than the number of completed
+  monitor-steps at the point when the moniters are called, which is
+  confusing. Now, monitors are called with the current number of
+  completed monitor-steps.
+
+## Changes
+
+- Fixes for FreeBSD [\#3172][https://github.com/boutproject/BOUT-dev/pull/3172] ([tomc271][https://github.com/tomc271])
+- snes: Print a warning if the coloring is non-symmetric. [\#3159][https://github.com/boutproject/BOUT-dev/pull/3159] ([bendudson][https://github.com/bendudson])
+- Cmake fix from master [\#3152][https://github.com/boutproject/BOUT-dev/pull/3152] ([oparry-ukaea][https://github.com/oparry-ukaea])
+- Bump ZedThree/clang-tidy-review from 0.20.1 to 0.21.0 [\#3150][https://github.com/boutproject/BOUT-dev/pull/3150] ([ZedThree][https://github.com/ZedThree])
+- SNES solver: Added a PID controller to update the timestep  [\#3146][https://github.com/boutproject/BOUT-dev/pull/3146] ([malamast][https://github.com/malamast])
+- Fix name clash in some examples and MMS tests  [\#3145][https://github.com/boutproject/BOUT-dev/pull/3145] ([ZedThree][https://github.com/ZedThree])
+- Handle absolute paths to options file [\#3142][https://github.com/boutproject/BOUT-dev/pull/3142] ([bendudson][https://github.com/bendudson])
+- Revert eliminate hypre boundary equations [\#3136][https://github.com/boutproject/BOUT-dev/pull/3136] ([ZedThree][https://github.com/ZedThree])
+- CI: Switch to released fedora [\#3134][https://github.com/boutproject/BOUT-dev/pull/3134] ([dschwoerer][https://github.com/dschwoerer])
+- Generalise FakeMeshFixture to allow configurable grid spacing via templating [\#3132][https://github.com/boutproject/BOUT-dev/pull/3132] ([tomc271][https://github.com/tomc271])
+- Fixes for ELM-PB preconditioner [\#3128][https://github.com/boutproject/BOUT-dev/pull/3128] ([Steven-Roberts][https://github.com/Steven-Roberts])
+- Fix cast for new petsc [\#3117][https://github.com/boutproject/BOUT-dev/pull/3117] ([dschwoerer][https://github.com/dschwoerer])
+- Fix bug where ARKODE considered all problems linear [\#3114][https://github.com/boutproject/BOUT-dev/pull/3114] ([Steven-Roberts][https://github.com/Steven-Roberts])
+- cvode: Add linear_solver option [\#3112][https://github.com/boutproject/BOUT-dev/pull/3112] ([bendudson][https://github.com/bendudson])
+- periodicX communication fixes [\#3109][https://github.com/boutproject/BOUT-dev/pull/3109] ([bendudson][https://github.com/bendudson])
+- beuler solver timestep and Jacobian calculation [\#3107][https://github.com/boutproject/BOUT-dev/pull/3107] ([bendudson][https://github.com/bendudson])
+- Feature/snes stencil [\#3104][https://github.com/boutproject/BOUT-dev/pull/3104] ([seimtpow][https://github.com/seimtpow])
+- Add attributes to ADIOS2 output to "define" dimensions as names. We n… [\#3098][https://github.com/boutproject/BOUT-dev/pull/3098] ([pnorbert][https://github.com/pnorbert])
+- CI: Avoid issues with special characters [\#3090][https://github.com/boutproject/BOUT-dev/pull/3090] ([dschwoerer][https://github.com/dschwoerer])
+- CI: Fix clang format [\#3086][https://github.com/boutproject/BOUT-dev/pull/3086] ([dschwoerer][https://github.com/dschwoerer])
+- Small updates for FCI output [\#3085][https://github.com/boutproject/BOUT-dev/pull/3085] ([bendudson][https://github.com/bendudson])
+- Eliminate boundary equations to improve HYPRE solves [\#3082][https://github.com/boutproject/BOUT-dev/pull/3082] ([rfalgout][https://github.com/rfalgout])
+- Elm-pb example with relaxing phi [\#3081][https://github.com/boutproject/BOUT-dev/pull/3081] ([bendudson][https://github.com/bendudson])
+- CI: Show more output of dnf5 to help debugging [\#3071][https://github.com/boutproject/BOUT-dev/pull/3071] ([dschwoerer][https://github.com/dschwoerer])
+- Fix clang tidy review [\#3070][https://github.com/boutproject/BOUT-dev/pull/3070] ([ZedThree][https://github.com/ZedThree])
+- CMake: Bump downloaded SUNDIALS version [\#3067][https://github.com/boutproject/BOUT-dev/pull/3067] ([ZedThree][https://github.com/ZedThree])
+- Use isfinite, fix pvode linking [\#3063][https://github.com/boutproject/BOUT-dev/pull/3063] ([bendudson][https://github.com/bendudson])
+- Make iteration more robust and give more options in LaplaceNaulin [\#3061][https://github.com/boutproject/BOUT-dev/pull/3061] ([johnomotani][https://github.com/johnomotani])
+- Fixes zoidberg [\#3054][https://github.com/boutproject/BOUT-dev/pull/3054] ([dschwoerer][https://github.com/dschwoerer])
+- Fix finalise in boutpp  [\#3053][https://github.com/boutproject/BOUT-dev/pull/3053] ([dschwoerer][https://github.com/dschwoerer])
+- Avoid some warnings for 3D Metrics [\#3052][https://github.com/boutproject/BOUT-dev/pull/3052] ([dschwoerer][https://github.com/dschwoerer])
+- Minor fixes for the python backend [\#3051][https://github.com/boutproject/BOUT-dev/pull/3051] ([dschwoerer][https://github.com/dschwoerer])
+- Cleanup BOUT_HOST_DEVICE qualifiers [\#3040][https://github.com/boutproject/BOUT-dev/pull/3040] ([ggeorgakoudis][https://github.com/ggeorgakoudis])
+- Deprecate options that are only used as default for other options [\#3038][https://github.com/boutproject/BOUT-dev/pull/3038] ([dschwoerer][https://github.com/dschwoerer])
+- Avoid using the wrong grid by accident [\#3036][https://github.com/boutproject/BOUT-dev/pull/3036] ([dschwoerer][https://github.com/dschwoerer])
+- Use PEP 625 compatible archive name (next) [\#3035][https://github.com/boutproject/BOUT-dev/pull/3035] ([dschwoerer][https://github.com/dschwoerer])
+- CI: Increase check level for debug run + unit test fixes [\#3033][https://github.com/boutproject/BOUT-dev/pull/3033] ([dschwoerer][https://github.com/dschwoerer])
+- Avoid `#define` conflict with sundials [\#3031][https://github.com/boutproject/BOUT-dev/pull/3031] ([dschwoerer][https://github.com/dschwoerer])
+- Ensure PETSc headers are included after `bout/petsclib.hxx` [\#3024][https://github.com/boutproject/BOUT-dev/pull/3024] ([ZedThree][https://github.com/ZedThree])
+- Fix minor HYPRE and ADIOS2 compilation issues [\#3022][https://github.com/boutproject/BOUT-dev/pull/3022] ([ZedThree][https://github.com/ZedThree])
+- Fix recompilation cascade [\#3021][https://github.com/boutproject/BOUT-dev/pull/3021] ([ZedThree][https://github.com/ZedThree])
+- Move `invert3x3` out of general purpose `utils.hxx` header [\#3018][https://github.com/boutproject/BOUT-dev/pull/3018] ([ZedThree][https://github.com/ZedThree])
+- Replace deprecated `boututils.file_import` [\#3017][https://github.com/boutproject/BOUT-dev/pull/3017] ([ZedThree][https://github.com/ZedThree])
+- CI: clang-tidy-review tweaks [\#3016][https://github.com/boutproject/BOUT-dev/pull/3016] ([ZedThree][https://github.com/ZedThree])
+- Backward Euler solver improvements [\#3009][https://github.com/boutproject/BOUT-dev/pull/3009] ([bendudson][https://github.com/bendudson])
+- Fix circular header dependency: mesh.hxx <-> griddata.hxx [\#3008][https://github.com/boutproject/BOUT-dev/pull/3008] ([ZedThree][https://github.com/ZedThree])
+- Fix exception message [\#3003][https://github.com/boutproject/BOUT-dev/pull/3003] ([dschwoerer][https://github.com/dschwoerer])
+- Ensure pointer is checked before dereferencing [\#3002][https://github.com/boutproject/BOUT-dev/pull/3002] ([dschwoerer][https://github.com/dschwoerer])
+- Fix: preserve regionID [\#3000][https://github.com/boutproject/BOUT-dev/pull/3000] ([dschwoerer][https://github.com/dschwoerer])
+- Lazy grid loading [\#2991][https://github.com/boutproject/BOUT-dev/pull/2991] ([dschwoerer][https://github.com/dschwoerer])
+- Fix compilation warnings with SUNDIALS 7.1.0 [\#2990][https://github.com/boutproject/BOUT-dev/pull/2990] ([Steven-Roberts][https://github.com/Steven-Roberts])
+- Add LC gitlab CI for GPU build/run tests [\#2989][https://github.com/boutproject/BOUT-dev/pull/2989] ([ggeorgakoudis][https://github.com/ggeorgakoudis])
+- BoutMask non-const operator[](Ind3D) [\#2988][https://github.com/boutproject/BOUT-dev/pull/2988] ([bendudson][https://github.com/bendudson])
+- Use consistently signed char [\#2987][https://github.com/boutproject/BOUT-dev/pull/2987] ([dschwoerer][https://github.com/dschwoerer])
+- naulin laplace: Acceptance tolerances after maxits [\#2983][https://github.com/boutproject/BOUT-dev/pull/2983] ([bendudson][https://github.com/bendudson])
+- Merge v5.1.1 into `next` [\#2978][https://github.com/boutproject/BOUT-dev/pull/2978] ([ZedThree][https://github.com/ZedThree])
+- CI: Bump all ubuntu images [\#2977][https://github.com/boutproject/BOUT-dev/pull/2977] ([ZedThree][https://github.com/ZedThree])
+- Read 2D variables into Field3D [\#2975][https://github.com/boutproject/BOUT-dev/pull/2975] ([bendudson][https://github.com/bendudson])
+
+## [v5.1.1](https://github.com/boutproject/BOUT-dev/tree/v5.1.1)
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v5.1.0...v5.1.1)
+
+- Fix compilation error due to check_c_source_runs [\#2967][https://github.com/boutproject/BOUT-dev/pull/2967] ([mikekryjak][https://github.com/mikekryjak])
+- Resolve merge conflict for v5.1.1-rc [\#2964][https://github.com/boutproject/BOUT-dev/pull/2964] ([dschwoerer][https://github.com/dschwoerer])
+- Update boutdata and boututils submodules [\#2959][https://github.com/boutproject/BOUT-dev/pull/2959] ([dschwoerer][https://github.com/dschwoerer])
+- Small clang-tidy fixes for sundials solvers [\#2953][https://github.com/boutproject/BOUT-dev/pull/2953] ([ZedThree][https://github.com/ZedThree])
+- mark fmt::format() const [\#2942][https://github.com/boutproject/BOUT-dev/pull/2942] ([tchaikov][https://github.com/tchaikov])
+- CI: Ensure we do not timeout due to slow mirrors [\#2940][https://github.com/boutproject/BOUT-dev/pull/2940] ([dschwoerer][https://github.com/dschwoerer])
+- Bump externalpackages/boutdata from `cd0bc40` to `d9b8187` [\#2939][https://github.com/boutproject/BOUT-dev/pull/2939] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- SUNDIALS v7 support (backport to v5) [\#2937][https://github.com/boutproject/BOUT-dev/pull/2937] ([ZedThree][https://github.com/ZedThree])
+- Bump externalpackages/googletest from `33af80a` to `0953a17` [\#2968][https://github.com/boutproject/BOUT-dev/pull/2968] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Update netcdf4 requirement from ~=1.6.0 to ~=1.7.1 [\#2960][https://github.com/boutproject/BOUT-dev/pull/2960] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump ZedThree/clang-tidy-review from 0.18.0 to 0.19.0 [\#2913][https://github.com/boutproject/BOUT-dev/pull/2913] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/googletest from `5a37b51` to `33af80a` [\#2912][https://github.com/boutproject/BOUT-dev/pull/2912] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/boututils from `433995f` to `6c22995` [\#2911][https://github.com/boutproject/BOUT-dev/pull/2911] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/googletest from `b479e7a` to `5a37b51` [\#2906][https://github.com/boutproject/BOUT-dev/pull/2906] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Fix name of PVODE Config file [\#2903][https://github.com/boutproject/BOUT-dev/pull/2903] ([dschwoerer][https://github.com/dschwoerer])
+- Bump ZedThree/clang-tidy-review from 0.17.0 to 0.18.0 [\#2897][https://github.com/boutproject/BOUT-dev/pull/2897] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/googletest from `e4fdb87` to `b479e7a` [\#2880][https://github.com/boutproject/BOUT-dev/pull/2880] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/boutdata from `9e603a2` to `cd0bc40` [\#2879][https://github.com/boutproject/BOUT-dev/pull/2879] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/googletest from `b75ecf1` to `e4fdb87` [\#2877][https://github.com/boutproject/BOUT-dev/pull/2877] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/boutdata from `a043a2b` to `9e603a2` [\#2866][https://github.com/boutproject/BOUT-dev/pull/2866] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/googletest from `dddb219` to `b75ecf1` [\#2864][https://github.com/boutproject/BOUT-dev/pull/2864] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump codecov/codecov-action from 3 to 4 [\#2860][https://github.com/boutproject/BOUT-dev/pull/2860] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump ZedThree/clang-tidy-review from 0.14.0 to 0.17.0 [\#2846][https://github.com/boutproject/BOUT-dev/pull/2846] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump actions/cache from 3 to 4 [\#2845][https://github.com/boutproject/BOUT-dev/pull/2845] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Add warnings about SUNDIALS versions <4 [\#2840][https://github.com/boutproject/BOUT-dev/pull/2840] ([Steven-Roberts][https://github.com/Steven-Roberts])
+- Do not excessively bump googletest [\#2836][https://github.com/boutproject/BOUT-dev/pull/2836] ([dschwoerer][https://github.com/dschwoerer])
+- Remove propietary data (master) [\#2832][https://github.com/boutproject/BOUT-dev/pull/2832] ([dschwoerer][https://github.com/dschwoerer])
+- Bump externalpackages/googletest from `829c199` to `dddb219` [\#2830][https://github.com/boutproject/BOUT-dev/pull/2830] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump externalpackages/boutdata from `908a4c2` to `a043a2b` [\#2827][https://github.com/boutproject/BOUT-dev/pull/2827] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- CI: Bump actions/setup-python from 4 to 5 [\#2819][https://github.com/boutproject/BOUT-dev/pull/2819] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Set oversubscribe flags for openmpi 5 [\#2800][https://github.com/boutproject/BOUT-dev/pull/2800] ([dschwoerer][https://github.com/dschwoerer])
+- CI: Replace pip script with requirements.txt [\#2794][https://github.com/boutproject/BOUT-dev/pull/2794] ([ZedThree][https://github.com/ZedThree])
+- master branch will be 5.1.1 not 5.2.0 [\#2784][https://github.com/boutproject/BOUT-dev/pull/2784] ([dschwoerer][https://github.com/dschwoerer])
+- Bump externalpackages/googletest from `2dd1c13` to `829c199` [\#2782][https://github.com/boutproject/BOUT-dev/pull/2782] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Fix test-laplace-petsc3d [\#2781][https://github.com/boutproject/BOUT-dev/pull/2781] ([dschwoerer][https://github.com/dschwoerer])
+- CI: user master branch for docker actions [\#2780][https://github.com/boutproject/BOUT-dev/pull/2780] ([dschwoerer][https://github.com/dschwoerer])
+- [RTD] add os to read the docs config [\#2779][https://github.com/boutproject/BOUT-dev/pull/2779] ([dschwoerer][https://github.com/dschwoerer])
+- CI: Increase shm size in container [\#2777][https://github.com/boutproject/BOUT-dev/pull/2777] ([dschwoerer][https://github.com/dschwoerer])
+- Bump externalpackages/fmt from `f0903ad` to `2ac6c5c` [\#2776][https://github.com/boutproject/BOUT-dev/pull/2776] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump ZedThree/clang-tidy-review from 0.13.1 to 0.14.0 [\#2773][https://github.com/boutproject/BOUT-dev/pull/2773] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump stefanzweifel/git-auto-commit-action from 4 to 5 [\#2772][https://github.com/boutproject/BOUT-dev/pull/2772] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Bump actions/setup-python from 1 to 4 [\#2771][https://github.com/boutproject/BOUT-dev/pull/2771] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- CI: Run on PETSc developement branch [\#2765][https://github.com/boutproject/BOUT-dev/pull/2765] ([dschwoerer][https://github.com/dschwoerer])
+- Prefer dnf5 for fedora CI (master) [\#2764][https://github.com/boutproject/BOUT-dev/pull/2764] ([dschwoerer][https://github.com/dschwoerer])
+- Fix sphinx configuration [\#2762][https://github.com/boutproject/BOUT-dev/pull/2762] ([dschwoerer][https://github.com/dschwoerer])
+- Bump docker/build-push-action from f2a1d5e99d037542a71f64918e516c093c6f3fc4 to 0f847266c302569530c95bfa228489494c43b002 [\#2761][https://github.com/boutproject/BOUT-dev/pull/2761] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Ensure also lower case is accepted [\#2759][https://github.com/boutproject/BOUT-dev/pull/2759] ([dschwoerer][https://github.com/dschwoerer])
+- Bump externalpackages/googletest from `6092810` to `2dd1c13` [\#2757][https://github.com/boutproject/BOUT-dev/pull/2757] ([dependabot[bot]][https://github.com/dependabot%5Bbot%5D])
+- Add fallback if the version has been bumped bot not tagged [\#2754][https://github.com/boutproject/BOUT-dev/pull/2754] ([dschwoerer][https://github.com/dschwoerer])
+
+## [v5.1.0](https://github.com/boutproject/BOUT-dev/tree/v5.1.0
 
 ### Breaking changes
 

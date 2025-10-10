@@ -29,7 +29,7 @@ class MsgStack;
 #ifndef BOUT_MSG_STACK_H
 #define BOUT_MSG_STACK_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "bout/unused.hxx"
 

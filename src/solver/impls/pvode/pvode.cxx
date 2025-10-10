@@ -23,7 +23,7 @@
  * 
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "pvode.hxx"
 

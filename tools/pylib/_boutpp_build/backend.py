@@ -1,3 +1,5 @@
+#!/bin/python3
+
 import os  # corelib
 import glob  # corelib
 import hashlib  # corelib
@@ -33,8 +35,8 @@ def getversion():
             version = os.environ["BOUT_PRETEND_VERSION"]
             return version
 
-        _bout_previous_version = "v5.1.0"
-        _bout_next_version = "v5.2.0"
+        _bout_previous_version = "v5.2.0"
+        _bout_next_version = "v5.2.1"
 
         try:
             try:
@@ -198,7 +200,7 @@ def build_sdist(sdist_directory, config_settings=None):
             if k == "nightly":
                 useLocalVersion = False
                 pkgname = "boutpp-nightly"
-    prefix = f"{pkgname}-{getversion()}"
+    prefix = f"{pkgname.replace('-', '_')}-{getversion()}"
     fname = f"{prefix}.tar"
     run(f"git archive HEAD --prefix {prefix}/ -o {sdist_directory}/{fname}")
     _, tmp = tempfile.mkstemp(suffix=".tar")
@@ -214,9 +216,16 @@ def build_sdist(sdist_directory, config_settings=None):
             f"""Metadata-Version: 2.1
 Name: {pkgname}
 Version: {getversion()}
-License-File: COPYING
 """
         )
+        with open("LICENSE") as src:
+            pre = "License: "
+            for l in src:
+                f.write(f"{pre}{l}")
+                pre = "         "
+        f.write("Description-Content-Type: text/markdown\n\n")
+        with open("README.md") as src:
+            f.write(src.read())
     run(
         f"tar --append -f {sdist_directory}/{fname} _version.txt --xform='s\\_version.txt\\{prefix}/_version.txt\\'"
     )
@@ -348,12 +357,19 @@ def help():
         print(fmt % row)
 
 
+def printVersion():
+    """
+    print the version
+    """
+    print(getversion())
+
+
 todos = dict(
     nightly=nightly,
     sdist=sdist,
     wheel=wheel,
     dist=dist,
-    version=lambda: print(getversion()),
+    version=printVersion,
     help=help,
 )
 todos.update(
@@ -368,4 +384,7 @@ if __name__ == "__main__":
     import sys
 
     for todo in sys.argv[1:]:
+        if todo not in todos:
+            help()
+            sys.exit(1)
         todos[todo]()

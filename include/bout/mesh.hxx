@@ -17,9 +17,9 @@
  *     * Incorporates code from topology.cpp and Communicator
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -43,42 +43,32 @@ class Mesh;
 #ifndef BOUT_MESH_H
 #define BOUT_MESH_H
 
-#include "mpi.h"
-
-#include <bout/deriv_store.hxx>
-#include <bout/index_derivs_interface.hxx>
-#include <bout/mpi_wrapper.hxx>
-
+#include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/coordinates.hxx" // Coordinates class
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_data.hxx"
-#include "bout/options.hxx"
-
 #include "bout/fieldgroup.hxx"
-
-class BoundaryRegion;
-class BoundaryRegionPar;
-
+#include "bout/generic_factory.hxx"
+#include "bout/index_derivs_interface.hxx"
+#include "bout/mpi_wrapper.hxx"
+#include "bout/options.hxx"
+#include "bout/region.hxx"
 #include "bout/sys/range.hxx" // RangeIterator
-
-#include <bout/griddata.hxx>
-
-#include "bout/coordinates.hxx" // Coordinates class
-
 #include "bout/unused.hxx"
 
-#include "bout/generic_factory.hxx"
-#include <bout/region.hxx>
+#include "mpi.h"
 
-#include <bout/bout_enum_class.hxx>
-
-#include <list>
 #include <map>
 #include <memory>
 #include <optional>
 #include <set>
 #include <string>
+
+class BoundaryRegion;
+class BoundaryRegionPar;
+class GridDataSource;
 
 class MeshFactory : public Factory<Mesh, MeshFactory, GridDataSource*, Options*> {
 public:
@@ -636,9 +626,22 @@ public:
     return inserted.first->second;
   }
 
+  std::shared_ptr<Coordinates>
+  getCoordinatesConst(const CELL_LOC location = CELL_CENTRE) const {
+    ASSERT1(location != CELL_DEFAULT);
+    ASSERT1(location != CELL_VSHIFT);
+
+    auto found = coords_map.find(location);
+    if (found != coords_map.end()) {
+      // True branch most common, returns immediately
+      return found->second;
+    }
+    throw BoutException("Coordinates not yet set. Use non-const version!");
+  }
+
   /// Returns the non-CELL_CENTRE location
   /// allowed as a staggered location
-  CELL_LOC getAllowedStaggerLoc(DIRECTION direction) const {
+  static CELL_LOC getAllowedStaggerLoc(DIRECTION direction) {
     AUTO_TRACE();
     switch (direction) {
     case (DIRECTION::X):
@@ -773,7 +776,7 @@ public:
   }
 
   /// Converts an Ind3D to an Ind2D representing a 2D index using a lookup -- to be used with care
-  BOUT_HOST_DEVICE Ind2D map3Dto2D(const Ind3D& ind3D) {
+  Ind2D map3Dto2D(const Ind3D& ind3D) {
     return {indexLookup3Dto2D[ind3D.ind], LocalNy, 1};
   }
 
@@ -828,6 +831,16 @@ public:
     ASSERT1(RegionID.has_value());
     return region3D[RegionID.value()];
   }
+  bool isFci() const {
+    const auto coords = this->getCoordinatesConst();
+    if (coords == nullptr) {
+      return false;
+    }
+    if (not coords->hasParallelTransform()) {
+      return false;
+    }
+    return not coords->getParallelTransform().canToFromFieldAligned();
+  }
 
 private:
   /// Allocates default Coordinates objects
@@ -837,8 +850,7 @@ private:
   /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
   /// would not be correct).
   std::shared_ptr<Coordinates>
-  createDefaultCoordinates(const CELL_LOC location,
-                           bool force_interpolate_from_centre = false);
+  createDefaultCoordinates(CELL_LOC location, bool force_interpolate_from_centre = false);
 
   //Internal region related information
   std::map<std::string, size_t> regionMap3D;

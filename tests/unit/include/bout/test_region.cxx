@@ -1,26 +1,23 @@
 #include "gtest/gtest.h"
 
-#include "test_extras.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
-#include "bout/constants.hxx"
+#include "bout/field3d.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/openmpwrap.hxx"
 #include "bout/output.hxx"
 #include "bout/region.hxx"
-#include "bout/unused.hxx"
 
 #include <algorithm>
 #include <list>
 #include <random>
 #include <sstream>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;

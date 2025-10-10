@@ -1,6 +1,6 @@
 from boutdata.collect import collect
 from boututils.moment_xyzt import moment_xyzt
-from boututils.file_import import file_import
+from boututils.datafile import DataFile
 from pylab import save, figure, plot, title, xlabel, ylabel, show, tight_layout
 from elm_size import elm_size
 
@@ -19,7 +19,8 @@ save('p0.dat', p0)
 # te0=collect('te0', path=path)
 # save('te0.idl.dat', te0)
 
-gfile=file_import('./cbm18_dens8.grid_nx68ny64.nc')
+with DataFile("./cbm18_dens8.grid_nx68ny64.nc") as f:
+    gfile = {v: f.read(v) for v in f.keys()}
 
 p=collect('P', path=path)
 save('p.dat', p)

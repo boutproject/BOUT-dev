@@ -46,7 +46,7 @@ private:
       nullptr}; ///< Performs Laplacian inversions to calculate phi
 
 protected:
-  int init(bool UNUSED(restarting)) {
+  int init(bool UNUSED(restarting)) override {
 
     /******************Reading options *****************/
 
@@ -114,17 +114,42 @@ protected:
     phi = 0.0; // Starting guess for first solve (if iterative)
 
     /************ Tell BOUT++ what to solve ************/
-
     SOLVE_FOR(n, omega);
-
-    // Output phi
-    SAVE_REPEAT(phi);
-    SAVE_ONCE(rho_s, c_s, Omega_i);
 
     return 0;
   }
 
-  int rhs(BoutReal UNUSED(t)) {
+  /// Add variables to the output. This can be used to calculate
+  /// diagnostics
+  ///
+  /// @param[inout] state  A nested dictionary that can be added to
+  void outputVars(Options& state) override {
+    // Set time-varying quantity (assignRepeat)
+    state["phi"].assignRepeat(phi).setAttributes({{"units", "V"},
+                                                  {"conversion", Te0},
+                                                  {"standard_name", "potential"},
+                                                  {"long_name", "Plasma potential"}});
+
+    // Force updates to non-varying quantities
+    state["rho_s"].force(rho_s).setAttributes(
+        {{"units", "m"},
+         {"conversion", 1},
+         {"standard_name", "length normalisation"},
+         {"long_name", "Gyro-radius length normalisation"}});
+
+    state["c_s"].force(c_s).setAttributes({{"units", "m/s"},
+                                           {"conversion", 1},
+                                           {"standard_name", "velocity normalisation"},
+                                           {"long_name", "Sound speed normalisation"}});
+
+    state["Omega_i"].force(Omega_i).setAttributes(
+        {{"units", "s^-1"},
+         {"conversion", 1},
+         {"standard_name", "frequency normalisation"},
+         {"long_name", "Cyclotron frequency normalisation"}});
+  }
+
+  int rhs(BoutReal UNUSED(t)) override {
 
     // Run communications
     ////////////////////////////////////////////////////////////////////////////

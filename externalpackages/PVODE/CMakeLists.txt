@@ -58,7 +58,7 @@ target_include_directories(pvpre PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
   )
-target_link_libraries(pvpre PUBLIC MPI::MPI_CXX)
+target_link_libraries(pvpre PUBLIC pvode MPI::MPI_CXX)
 
 
 set_target_properties(pvpre PROPERTIES
@@ -82,7 +82,7 @@ write_basic_package_version_file(
   )
 
 install(EXPORT PVODETargets
-  FILE PVODETargets.cmake
+  FILE PVODEConfig.cmake
   NAMESPACE PVODE::
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/PVODE"
   )

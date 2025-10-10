@@ -12,7 +12,7 @@
 #ifndef ADIOS_OBJECT_HXX
 #define ADIOS_OBJECT_HXX
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_ADIOS2
 
@@ -57,11 +57,17 @@ public:
   }
 
   template <class T>
-  adios2::Variable<T> GetArrayVariable(const std::string& varname, adios2::Dims& shape) {
+  adios2::Variable<T> GetArrayVariable(const std::string& varname, adios2::Dims& shape,
+                                       const std::vector<std::string>& dimNames,
+                                       int rank) {
     adios2::Variable<T> v = io.InquireVariable<T>(varname);
     if (!v) {
       adios2::Dims start(shape.size());
       v = io.DefineVariable<T>(varname, shape, start, shape);
+      if (!rank && dimNames.size()) {
+        io.DefineAttribute<std::string>("__xarray_dimensions__", dimNames.data(),
+                                        dimNames.size(), varname, "/", true);
+      }
     } else {
       v.SetShape(shape);
     }

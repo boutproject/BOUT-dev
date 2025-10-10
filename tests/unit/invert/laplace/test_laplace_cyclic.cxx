@@ -1,4 +1,4 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if not BOUT_USE_METRIC_3D
 
@@ -6,7 +6,7 @@
 #include <tuple>
 
 #include "../../../../src/invert/laplace/impls/cyclic/cyclic_laplace.hxx"
-#include "test_extras.hxx"
+
 #include "bout/invert_laplace.hxx"
 #include "gtest/gtest.h"
 
@@ -19,12 +19,7 @@
 #include "bout/options.hxx"
 #include "bout/vecops.hxx"
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;

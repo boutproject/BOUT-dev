@@ -145,13 +145,12 @@ where ``<build-directory>`` is the path to the build directory
 
 MPCDF HPC Systems
 ~~~~~~~~~~~~~~~~~
+After cloning BOUT-dev and checking out the branch you want (e.g. db-outer), run:
 .. code-block:: bash
 
-    module purge # or at least onload intel and impi and mkl
-    module load gcc/10 cmake/3.18 openmpi/4
-    # ensure python3 is >= python3.6 - skip if you have a newer python3 loaded
-    mkdir -p $HOME/bin ; test -e $HOME/bin/python3 || ln -s $(which python3.6) $HOME/bin/python3
-    BUILD=/ptmp/$USER/bout-deps bin/bout-build-deps.sh
+    module purge # or at least onload intel
+    module load gcc/13 anaconda/3/2021.11 impi/2021.9 hdf5-serial/1.12.2 mkl/2022.0 netcdf-serial/4.8.1 fftw-mpi/3.3.10
+    BUILD=/ptmp/$USER/bout-deps NO_HDF5=1 NO_NETCDF=1 NO_FFTW=1 bin/bout-build-deps.sh
 
 and follow the instructions for configuring BOUT++. To enable openMP
 for a production run use:
@@ -159,11 +158,11 @@ for a production run use:
 .. code-block:: bash
 
     module load bout-dep
-    cmake .. -DBOUT_USE_NETCDF=ON -DnetCDF_ROOT=$BOUT_DEP -DnetCDFCxx_ROOT=$BOUT_DEP \
+    cmake .. -DBOUT_USE_NETCDF=ON -DnetCDFCxx_ROOT=$BOUT_DEP \
       -DBOUT_USE_PETSC=ON -DPETSC_DIR=$BOUT_DEP \
-      -DBOUT_USE_FFTW=ON -DFFTW_ROOT=$BOUT_DEP \
+      -DBOUT_USE_FFTW=ON \
       -DBOUT_USE_SUNDIALS=ON -DSUNDIALS_ROOT=$BOUT_DEP \
-      -DBOUT_ENABLE_OPENMP=ON \
+      -DBOUT_ENABLE_OPENMP=OFF \
       -DCMAKE_BUILD_TYPE=Release
 
 
@@ -356,7 +355,7 @@ BOUT++ can use PETSc https://www.mcs.anl.gov/petsc/ for time-integration
 and for solving elliptic problems, such as inverting Poisson and
 Helmholtz equations.
 
-Currently, BOUT++ supports PETSc versions 3.7 - 3.19. More recent versions may
+Currently, BOUT++ supports PETSc versions 3.7 - 3.23. More recent versions may
 well work, but the PETSc API does sometimes change in backward-incompatible
 ways, so this is not guaranteed. To install PETSc version 3.19, use the
 following steps::

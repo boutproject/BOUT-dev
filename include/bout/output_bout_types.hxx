@@ -34,7 +34,7 @@ struct fmt::formatter<SpecificInd<N>> {
   // Formats the point p using the parsed format specification (presentation)
   // stored in this formatter.
   template <typename FormatContext>
-  auto format(const SpecificInd<N>& ind, FormatContext& ctx) {
+  auto format(const SpecificInd<N>& ind, FormatContext& ctx) const {
     // ctx.out() is an output iterator to write to.
     if (presentation == 'c') {
       switch (N) {

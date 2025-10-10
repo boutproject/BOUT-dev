@@ -28,7 +28,7 @@
 #ifndef BOUT_SUNDIAL_SOLVER_H
 #define BOUT_SUNDIAL_SOLVER_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/solver.hxx"
 
 #if not BOUT_HAS_CVODE
@@ -41,11 +41,10 @@ RegisterUnavailableSolver
 #else
 
 #include "bout/bout_types.hxx"
+#include "bout/region.hxx"
 #include "bout/sundials_backports.hxx"
 
-#include <nvector/nvector_parallel.h>
-#include <sundials/sundials_config.h>
-
+#include <string>
 #include <vector>
 
 class CvodeSolver;
@@ -58,7 +57,7 @@ RegisterSolver<CvodeSolver> registersolvercvode("cvode");
 class CvodeSolver : public Solver {
 public:
   explicit CvodeSolver(Options* opts = nullptr);
-  ~CvodeSolver();
+  ~CvodeSolver() override;
 
   BoutReal getCurrentTimestep() override { return hcur; }
 
@@ -68,8 +67,8 @@ public:
 
   void resetInternalFields() override;
 
-  // These functions used internally (but need to be public)
-  void rhs(BoutReal t, BoutReal* udata, BoutReal* dudata);
+  // These functions are used internally (but need to be public)
+  void rhs(BoutReal t, BoutReal* udata, BoutReal* dudata, bool linear);
   void pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata, BoutReal* rvec,
            BoutReal* zvec);
   void jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata);
@@ -138,7 +137,7 @@ private:
   int nonlin_fails{0};
   int stab_lims{0};
 
-  bool cvode_initialised = false;
+  bool cvode_initialised{false};
 
   void set_vector_option_values(BoutReal* option_data, std::vector<BoutReal>& f2dtols,
                                 std::vector<BoutReal>& f3dtols);

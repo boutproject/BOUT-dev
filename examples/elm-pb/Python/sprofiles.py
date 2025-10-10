@@ -3,17 +3,18 @@ from builtins import zip
 from builtins import range
 from past.utils import old_div
 import numpy as np
-from boututils.file_import import file_import
+from boututils.datafile import DataFile
 from boututils.surface_average import surface_average
 from boutdata.collect import collect
 from pylab import plot, show, xlabel, ylabel, figure, legend, gca
 
 
-path='./data'
+path = "./data"
 
-gfile='../cbm18_dens8.grid_nx68ny64.nc'
+gfile = "../cbm18_dens8.grid_nx68ny64.nc"
 
-g = file_import(gfile)
+with DataFile(gfile) as f:
+    g = {v: f.read(v) for v in f.keys()}
 
 var=collect("P", path=path)
 
