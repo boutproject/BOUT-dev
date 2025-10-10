@@ -1,3 +1,17 @@
+#pragma once
+
+#ifndef OPTIONS_IO_H
+#define OPTIONS_IO_H
+
+#include "bout/build_defines.hxx"
+#include "bout/generic_factory.hxx"
+#include "bout/options.hxx"
+
+#include <memory>
+#include <string>
+
+namespace bout {
+
 /// Parent class for IO to binary files and streams
 ///
 ///
@@ -29,21 +43,6 @@
 ///       auto file = OptionsIO::create("some_file.nc");
 ///
 ///
-
-#pragma once
-
-#ifndef OPTIONS_IO_H
-#define OPTIONS_IO_H
-
-#include "bout/build_defines.hxx"
-#include "bout/generic_factory.hxx"
-#include "bout/options.hxx"
-
-#include <memory>
-#include <string>
-
-namespace bout {
-
 class OptionsIO {
 public:
   /// No default constructor, as settings are required
@@ -51,7 +50,7 @@ public:
 
   /// Constructor specifies the kind of file, and options to control
   /// the name of file, mode of operation etc.
-  OptionsIO(Options&) {}
+  OptionsIO(Options& /*unused*/) {}
 
   virtual ~OptionsIO() = default;
 
@@ -72,6 +71,9 @@ public:
   /// any differences, otherwise is silent.
   /// ADIOS: Indicate completion of an output step.
   virtual void verifyTimesteps() const = 0;
+
+  /// NetCDF: Flush file to disk
+  virtual void flush() {}
 
   /// Create an OptionsIO for I/O to the given file.
   /// This uses the default file type and default options.
