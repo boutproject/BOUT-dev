@@ -76,7 +76,7 @@ private:
 };
 
 namespace {
-const RegisterOptionsIO<OptionsNetCDF> registeroptionsnetcdf("netcdf");
+const inline RegisterOptionsIO<OptionsNetCDF> registeroptionsnetcdf("netcdf");
 }
 
 } // namespace bout
