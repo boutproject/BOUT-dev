@@ -191,7 +191,7 @@ int PhysicsModel::postInit(bool restarting) {
 }
 
 void PhysicsModel::outputVars(Options& options) {
-  Timer time("io");
+  const Timer time("io");
   for (const auto& item : dump.getData()) {
     bout::utils::visit(bout::OptionsConversionVisitor{options, item.name}, item.value);
     if (item.repeat) {
@@ -201,7 +201,7 @@ void PhysicsModel::outputVars(Options& options) {
 }
 
 void PhysicsModel::restartVars(Options& options) {
-  Timer time("io");
+  const Timer time("io");
   for (const auto& item : restart.getData()) {
     bout::utils::visit(bout::OptionsConversionVisitor{options, item.name}, item.value);
     if (item.repeat) {
@@ -230,7 +230,7 @@ void PhysicsModel::writeOutputFile(const Options& options,
 }
 
 void PhysicsModel::finishOutputTimestep() const {
-  Timer timer("io");
+  const Timer timer("io");
 
   if (output_enabled and (flush_counter % flush_frequency == 0)) {
     output_file->flush();
