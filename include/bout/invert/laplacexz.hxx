@@ -28,8 +28,8 @@
  *
  **************************************************************************/
 
-#ifndef __LAPLACEXZ_H__
-#define __LAPLACEXZ_H__
+#ifndef BOUT_LAPLACEXZ_H
+#define BOUT_LAPLACEXZ_H
 
 #include <bout/field3d.hxx>
 #include <bout/generic_factory.hxx>
@@ -91,4 +91,4 @@ protected:
 private:
 };
 
-#endif // __LAPLACEXZ_H__
+#endif // BOUT_LAPLACEXZ_H

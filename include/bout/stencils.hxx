@@ -25,8 +25,8 @@
  *
  **************************************************************************/
 
-#ifndef __STENCILS_H__
-#define __STENCILS_H__
+#ifndef BOUT_STENCILS_H
+#define BOUT_STENCILS_H
 
 #include "bout/bout_types.hxx"
 
@@ -125,4 +125,4 @@ stencil inline populateStencil(const FieldType& f, const typename FieldType::ind
   populateStencil<direction, stagger, nGuard, FieldType>(s, f, i);
   return s;
 }
-#endif /* __STENCILS_H__ */
+#endif /* BOUT_STENCILS_H */

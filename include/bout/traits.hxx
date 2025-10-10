@@ -12,65 +12,50 @@ class Options;
 namespace bout {
 namespace utils {
 
-namespace details {
-/// Helper class for fold expressions pre-C++17
-///
-/// Taken from "C++ Templates: The Complete Guide, Second Edition"
-///  Addison-Wesley, 2017
-///  ISBN-13:  978-0-321-71412-1
-///  ISBN-10:      0-321-71412-1
-/// Copyright © 2017 by Addison-Wesley, David Vandevoorde, Nicolai
-/// M. Josuttis, and Douglas Gregor.
-constexpr bool and_all() { return true; }
 template <class T>
-constexpr bool and_all(T cond) {
-  return cond;
-}
-template <class T, class... Ts>
-constexpr bool and_all(T cond, Ts... conds) {
-  return cond and and_all(conds...);
-}
-} // namespace details
+using is_Field = std::is_base_of<Field, T>;
 
-/// If `T` is derived from `Field`, provides the member constant
-/// `value` equal to `true`. Otherwise `value is `false`.
-///
-/// The following is C++14, but simplifies the use of `is_field`:
-///
-///     template <class T>
-///     constexpr bool is_field_v = is_field<T>::value;
+/// True if `T` is derived from `Field`, otherwise false
 ///
 /// Examples
 /// --------
 ///
 ///     template <class T>
 ///     void print_field(const T& field) {
-///       static_assert(bout::utils::is_field<T>::value,
+///       static_assert(bout::utils::is_Field_v<T>,
 ///           "print_field only works with Field2Ds, Field3Ds or FieldPerps")
 ///       // implementation
 ///     }
 template <class T>
-using is_Field = std::is_base_of<Field, T>;
+inline constexpr bool is_Field_v = std::is_base_of_v<Field, T>;
 
-/// If `T` is derived from `Field2D`, provides the member constant
-/// `value` equal to `true`. Otherwise `value is `false`.
 template <class T>
 using is_Field2D = std::is_base_of<Field2D, T>;
 
-/// If `T` is derived from `Field3D`, provides the member constant
-/// `value` equal to `true`. Otherwise `value is `false`.
+/// True if `T` is derived from `Field2D`, otherwise false
+template <class T>
+inline constexpr bool is_Field2D_v = std::is_base_of_v<Field2D, T>;
+
 template <class T>
 using is_Field3D = std::is_base_of<Field3D, T>;
 
-/// If `T` is derived from `FieldPerp`, provides the member constant
-/// `value` equal to `true`. Otherwise `value is `false`.
+/// True if `T` is derived from `Field3D`, otherwise false
+template <class T>
+inline constexpr bool is_Field3D_v = std::is_base_of_v<Field3D, T>;
+
 template <class T>
 using is_FieldPerp = std::is_base_of<FieldPerp, T>;
 
-/// If `T` is derived from `Options`, provides the member constant
-/// `value` equal to `true`. Otherwise `value is `false`.
+/// True if `T` is derived from `FieldPerp`, otherwise false
+template <class T>
+inline constexpr bool is_FieldPerp_v = std::is_base_of_v<FieldPerp, T>;
+
 template <class T>
 using is_Options = std::is_base_of<Options, T>;
+
+/// True if `T` is derived from `Options`, otherwise false
+template <class T>
+inline constexpr bool is_Options_v = std::is_base_of_v<Options, T>;
 
 /// Enable a function if all the Ts are subclasses of `Field`, and
 /// returns the common type: i.e. `Field3D` if at least one argument
@@ -104,33 +89,29 @@ using is_Options = std::is_base_of<Options, T>;
 /// `Field2D` if `V` is `Field2D`, and `Field3D` if `V` is `Field3D`.
 template <class... Ts>
 using EnableIfField =
-    typename std::enable_if<details::and_all(is_Field<Ts>::value...),
-                            typename std::common_type<Ts...>::type>::type;
+    std::enable_if_t<(is_Field_v<Ts> and ...), std::common_type_t<Ts...>>;
 
 /// Enable a function if all the Ts are subclasses of `Field2D`, and
 /// returns the common type
 template <class... Ts>
 using EnableIfField2D =
-    typename std::enable_if<details::and_all(is_Field2D<Ts>::value...),
-                            typename std::common_type<Ts...>::type>::type;
+    std::enable_if_t<(is_Field2D_v<Ts> and ...), std::common_type_t<Ts...>>;
 
 /// Enable a function if all the Ts are subclasses of `Field3D`, and
 /// returns the common type
 template <class... Ts>
 using EnableIfField3D =
-    typename std::enable_if<details::and_all(is_Field3D<Ts>::value...),
-                            typename std::common_type<Ts...>::type>::type;
+    std::enable_if_t<(is_Field3D_v<Ts> and ...), std::common_type_t<Ts...>>;
 
 /// Enable a function if all the Ts are subclasses of `FieldPerp`, and
 /// returns the common type
 template <class... Ts>
 using EnableIfFieldPerp =
-    typename std::enable_if<details::and_all(is_FieldPerp<Ts>::value...),
-                            typename std::common_type<Ts...>::type>::type;
+    std::enable_if_t<(is_FieldPerp_v<Ts> and ...), std::common_type_t<Ts...>>;
 
 /// Enable a function if T is a subclass of Options
 template <class T>
-using EnableIfOptions = std::enable_if_t<std::is_base_of<Options, T>::value>;
+using EnableIfOptions = std::enable_if_t<std::is_base_of_v<Options, T>>;
 } // namespace utils
 } // namespace bout
 

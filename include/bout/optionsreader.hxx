@@ -31,10 +31,9 @@
 
 class OptionsReader;
 
-#ifndef __OPTIONSREADER_H__
-#define __OPTIONSREADER_H__
+#ifndef BOUT_OPTIONSREADER_H
+#define BOUT_OPTIONSREADER_H
 
-#include "bout/format.hxx"
 #include "bout/options.hxx"
 
 #include "fmt/core.h"
@@ -109,4 +108,4 @@ private:
   static OptionsReader* instance;
 };
 
-#endif // __OPTIONSREADER_H__
+#endif // BOUT_OPTIONSREADER_H

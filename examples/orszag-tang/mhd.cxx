@@ -11,8 +11,6 @@ private:
   Field3D rho, p; // density, pressure
   Vector3D v, B;  // velocity, magnetic field
 
-  Field3D divB; // Divergence of B (for monitoring)
-
   // parameters
   BoutReal g;
   bool include_viscos;
@@ -50,10 +48,6 @@ private:
     output.write("dx(0,0,0) = {:e}, dy(0,0,0) = {:e}, dz(0,0,0) = {:e}\n",
                  coord->dx(0, 0, 0), coord->dy(0, 0, 0), coord->dz(0, 0, 0));
 
-    SAVE_REPEAT(divB);
-
-    divB.setBoundary("DivB"); // Set boundary conditions from options
-
     if (!restarting) {
       // Set variables to these values (+ the initial perturbation)
       // NOTE: This must be after the calls to bout_solve
@@ -71,18 +65,12 @@ private:
     return 0;
   }
 
-  /// This function is called every output, before
-  /// the data is written to file. It can therefore be used
-  /// to calculate diagnostics
+  /// Add variables to the output. This can be used to calculate
+  /// diagnostics
   ///
-  /// @param[in] simtime   Simulation time
-  /// @param[in] iter      Output step
-  /// @param[in] NOUT      Total number of outputs requested
-  int outputMonitor(BoutReal UNUSED(simtime), int UNUSED(iter),
-                    int UNUSED(NOUT)) override {
-    // Calculate divergence of magnetic field
-    divB = Div(B);
-    return 0;
+  /// @param[inout] state  A nested dictionary that can be added to
+  void outputVars(Options& state) override {
+    state["divB"].assignRepeat(Div(B)).setAttributes({{"long_name", "Divergence of B"}});
   }
 
   int rhs(BoutReal UNUSED(time)) override {

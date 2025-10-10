@@ -29,11 +29,10 @@ Before merging PR:
     - Be aware that this *will* update the timestamps and *possibly*
       reorder file paths in the .po and .pot files
 - [ ] Update [`CHANGELOG.md`][changelog]:
-    - Run [bout-changelog-generator.py LAST_RELEASE NEXT_RELEASE][bin/bout-changelog-generator.py]
+    - Run [`bout-changelog-generator.py LAST_RELEASE NEXT_RELEASE`][bin/bout-changelog-generator.py]
         - See the docs for how to get the token
-- [ ] Get list of authors:
-    - [ ] `git log --format='%aN' | sort | uniq`
-    - [ ] Compare to list in [`CITATION.cff`][citation], add new authors
+- [ ] Run [`update_citations.py`][bin/update_citations.py] to add new
+      authors to [`CITATION.cff`](CITATION.cff)
 - [ ] Prep a new Zenodo release:
     - https://doi.org/10.5281/zenodo.1423212
     - "New Version"
@@ -44,13 +43,7 @@ Before merging PR:
 - [ ] Change DOI in [`README.md`][README] to new DOI
 - [ ] Change date-released in [`CITATION.cff`][citation]
 - [ ] Check `abidiff` to see if `soname` needs bumping in `makefile`:
-- [ ] Change version number, removing prerelease tag in:
-    - [ ]  [`configure.ac`][configure]: `AC_INIT`
-    - [ ]  [`CITATION.cff`][citation]: `version`
-    - [ ]  [`manual/sphinx/conf.py`][sphinx_conf]: `version` and `release`
-    - [ ]  [`manual/doxygen/Doxyfile_readthedocs`][Doxyfile_readthedocs]: `PROJECT_NUMBER`
-    - [ ]  [`manual/doxygen/Doxyfile`][Doxyfile]: `PROJECT_NUMBER`
-    - [ ]  [`CMakeLists.txt`][CMakeLists]: `_bout_previous_version`, `_bout_next_version`
+- [ ] Run [`update_version_number.py LAST_RELEASE NEXT_RELEASE`][bin/update_version_number.py]
 - [ ] Update what version of PETSc and SUNDIALS we support (upper bound)
 
 

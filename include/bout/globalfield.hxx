@@ -6,8 +6,8 @@
 class GlobalField;
 class GlobalField2D;
 
-#ifndef __GLOBALFIELD_H__
-#define __GLOBALFIELD_H__
+#ifndef BOUT_GLOBALFIELD_H
+#define BOUT_GLOBALFIELD_H
 
 #include "mesh.hxx"
 
@@ -257,4 +257,4 @@ private:
   bool data_valid;
 };
 
-#endif // __GLOBALFIELD_H__
+#endif // BOUT_GLOBALFIELD_H

@@ -4,8 +4,8 @@
 
 class SurfaceIter;
 
-#ifndef __SURFACEITER_H__
-#define __SURFACEITER_H__
+#ifndef BOUT_SURFACEITER_H
+#define BOUT_SURFACEITER_H
 
 #include "mesh.hxx"
 
@@ -63,4 +63,4 @@ private:
   const int lastpos;
 };
 
-#endif // __SURFACEITER_H__
+#endif // BOUT_SURFACEITER_H

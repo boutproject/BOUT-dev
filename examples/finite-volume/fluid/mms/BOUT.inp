@@ -1,9 +1,3 @@
-#
-# MMS test of fluid model
-#
-
-nout = 100
-timestep = 0.1
 
 MXG = 0
 
@@ -23,6 +17,12 @@ ixseps2 = 2
 [solver]
 
 mms = true  # Run with MMS sources and output diagnostics
+output_step = 0.1
+#
+# MMS test of fluid model
+#
+
+nout = 100
 
 [fluid]
 

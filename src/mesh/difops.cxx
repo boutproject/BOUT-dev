@@ -23,7 +23,7 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include <bout/assert.hxx>
 #include <bout/derivs.hxx>
@@ -645,7 +645,7 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
   }
   ASSERT1(outloc == g.getLocation());
 
-  MAYBE_UNUSED(Mesh * mesh) = f.getMesh();
+  [[maybe_unused]] Mesh* mesh = f.getMesh();
 
   Field3D result{emptyFrom(f).setLocation(outloc)};
 
@@ -774,7 +774,7 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
   case BRACKET_ARAKAWA_OLD: {
 #if not(BOUT_USE_METRIC_3D)
     const int ncz = mesh->LocalNz;
-    BOUT_OMP(parallel for)
+    BOUT_OMP_PERF(parallel for)
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = mesh->ystart; jy <= mesh->yend; jy++) {
         const BoutReal partialFactor = 1.0 / (12 * metric->dz(jx, jy));
@@ -862,7 +862,7 @@ Field3D bracket(const Field2D& f, const Field3D& g, BRACKET_METHOD method,
 }
 
 Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
-                CELL_LOC outloc, MAYBE_UNUSED(Solver* solver)) {
+                CELL_LOC outloc, [[maybe_unused]] Solver* solver) {
   TRACE("Field3D, Field3D");
 
   ASSERT1_FIELDS_COMPATIBLE(f, g);
@@ -1100,7 +1100,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
     Field3D f_temp = f;
     Field3D g_temp = g;
 
-    BOUT_OMP(parallel for)
+    BOUT_OMP_PERF(parallel for)
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = mesh->ystart; jy <= mesh->yend; jy++) {
 #if not(BOUT_USE_METRIC_3D)

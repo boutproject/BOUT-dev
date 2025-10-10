@@ -17,6 +17,8 @@ int main(int argc, char** argv) {
   Field3D error{result - solution};
 
   Options dump;
+  // Add mesh geometry variables
+  mesh->outputVars(dump);
 
   dump["l_2"] = sqrt(mean(SQ(error), true, "RGN_NOBNDRY"));
   dump["l_inf"] = max(abs(error), true, "RGN_NOBNDRY");

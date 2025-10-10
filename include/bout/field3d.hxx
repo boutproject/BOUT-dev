@@ -23,24 +23,21 @@
 class Field3D;
 
 #pragma once
-#ifndef __FIELD3D_H__
-#define __FIELD3D_H__
+#ifndef BOUT_FIELD3D_H
+#define BOUT_FIELD3D_H
 
-class Mesh; // #include "bout/mesh.hxx"
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/field.hxx"
 #include "bout/field2d.hxx"
 #include "bout/fieldperp.hxx"
-#include "bout/stencils.hxx"
-
-#include "bout/array.hxx"
 #include "bout/region.hxx"
 
-#include "bout/assert.hxx"
-
-#include "bout/utils.hxx"
-
+#include <optional>
 #include <vector>
+
+class Mesh;
 
 /// Class for 3D X-Y-Z scalar fields
 /*!
@@ -208,7 +205,7 @@ public:
    * The first time this is called, a new field will be
    * allocated. Subsequent calls return the same field
    */
-  BOUT_HOST_DEVICE Field3D* timeDeriv();
+  Field3D* timeDeriv();
 
   /*!
    * Return the number of nx points
@@ -249,7 +246,7 @@ public:
 #if CHECK > 2
     if (yup_fields.size() != ydown_fields.size()) {
       throw BoutException(
-          "Field3D::splitParallelSlices: forward/backward parallel slices not in sync.\n"
+          "Field3D::hasParallelSlices: forward/backward parallel slices not in sync.\n"
           "    This is an internal library error");
     }
 #endif
@@ -313,6 +310,13 @@ public:
   ///
   const Region<Ind3D>& getRegion(REGION region) const;
   const Region<Ind3D>& getRegion(const std::string& region_name) const;
+  /// Use region provided by the default, and if none is set, use the provided one
+  const Region<Ind3D>& getValidRegionWithDefault(const std::string& region_name) const;
+  void setRegion(const std::string& region_name);
+  void resetRegion() { regionID.reset(); };
+  void setRegion(size_t id) { regionID = id; };
+  void setRegion(std::optional<size_t> id) { regionID = id; };
+  std::optional<size_t> getRegionID() const { return regionID; };
 
   /// Return a Region<Ind2D> reference to use to iterate over the x- and
   /// y-indices of this field
@@ -326,16 +330,14 @@ public:
     return std::end(getRegion("RGN_ALL"));
   };
 
-  BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D& d) { return data[d.ind]; }
-  const BoutReal& BOUT_HOST_DEVICE operator[](const Ind3D& d) const {
-    return data[d.ind];
-  }
+  BoutReal& operator[](const Ind3D& d) { return data[d.ind]; }
+  const BoutReal& operator[](const Ind3D& d) const { return data[d.ind]; }
 
-  BoutReal& BOUT_HOST_DEVICE operator()(const IndPerp& d, int jy);
-  const BoutReal& BOUT_HOST_DEVICE operator()(const IndPerp& d, int jy) const;
+  BoutReal& operator()(const IndPerp& d, int jy);
+  const BoutReal& operator()(const IndPerp& d, int jy) const;
 
-  BoutReal& BOUT_HOST_DEVICE operator()(const Ind2D& d, int jz);
-  const BoutReal& BOUT_HOST_DEVICE operator()(const Ind2D& d, int jz) const;
+  BoutReal& operator()(const Ind2D& d, int jz);
+  const BoutReal& operator()(const Ind2D& d, int jz) const;
 
   /*!
    * Direct access to the underlying data array
@@ -489,6 +491,8 @@ public:
 
   friend void swap(Field3D& first, Field3D& second) noexcept;
 
+  int size() const override { return nx * ny * nz; };
+
 private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1}, nz{-1};
@@ -501,6 +505,9 @@ private:
 
   /// Fields containing values along Y
   std::vector<Field3D> yup_fields{}, ydown_fields{};
+
+  /// RegionID over which the field is valid
+  std::optional<size_t> regionID;
 };
 
 // Non-member overloaded operators
@@ -627,7 +634,7 @@ inline void invalidateGuards(Field3D& UNUSED(var)) {}
 /// Returns a reference to the time-derivative of a field \p f
 ///
 /// Wrapper around member function f.timeDeriv()
-BOUT_HOST_DEVICE inline Field3D& ddt(Field3D& f) { return *(f.timeDeriv()); }
+inline Field3D& ddt(Field3D& f) { return *(f.timeDeriv()); }
 
 /// toString template specialisation
 /// Defined in utils.hxx
@@ -643,4 +650,4 @@ bool operator==(const Field3D& a, const Field3D& b);
 /// Output a string describing a Field3D to a stream
 std::ostream& operator<<(std::ostream& out, const Field3D& value);
 
-#endif /* __FIELD3D_H__ */
+#endif /* BOUT_FIELD3D_H */

@@ -124,13 +124,6 @@ public:
   BoutReal apply(const stencil& v, const stencil& f) const { return func(v, f); }
 };
 
-// Redundant definitions because C++
-// Not necessary in C++17
-template <class FF>
-constexpr FF DerivativeType<FF>::func;
-template <class FF>
-constexpr metaData DerivativeType<FF>::meta;
-
 /////////////////////////////////////////////////////////////////////////////////
 /// Following code is for dealing with registering a method/methods for all
 /// template combinations, in conjunction with the template_combinations code.

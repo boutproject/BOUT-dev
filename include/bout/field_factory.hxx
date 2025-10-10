@@ -26,8 +26,8 @@
 
 class FieldFactory;
 
-#ifndef __FIELD_FACTORY_H__
-#define __FIELD_FACTORY_H__
+#ifndef BOUT_FIELD_FACTORY_H
+#define BOUT_FIELD_FACTORY_H
 
 #include "bout/mesh.hxx"
 
@@ -165,4 +165,4 @@ public:
   }
 };
 
-#endif // __FIELD_FACTORY_H__
+#endif // BOUT_FIELD_FACTORY_H

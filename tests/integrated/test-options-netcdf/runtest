@@ -5,7 +5,7 @@
 # requires: not legacy_netcdf
 
 from boututils.datafile import DataFile
-from boututils.run_wrapper import build_and_log, shell, launch
+from boututils.run_wrapper import build_and_log, shell, launch_safe as launch
 from boutdata.data import BoutOptionsFile
 
 import math

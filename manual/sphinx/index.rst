@@ -42,6 +42,7 @@ The documentation is divided into the following sections:
    user_docs/boundary_options
    user_docs/testing
    user_docs/gpu_support
+   user_docs/adios2
    
 .. toctree::
    :maxdepth: 2
@@ -96,6 +97,7 @@ The documentation is divided into the following sections:
    developer_docs/petsc_interface
    developer_docs/mesh
    developer_docs/file_io
+   developer_docs/debugging
    developer_docs/natural_language
    developer_docs/performance_profiling
 

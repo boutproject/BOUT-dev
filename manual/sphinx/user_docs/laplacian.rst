@@ -536,7 +536,6 @@ Fourth order approximation
            &+ c_{i-2,j} f_{i-2,j} + c_{i-2,j+1} f_{i-2,j+1} \\
            &+ c_{i-2,j+2} f_{i-2,j+2} + c_{i-1,j-2} f_{i-1,j-2} \\
            &+ c_{i-1,j-1} f_{i-1,j-1} + c_{i-1,j} f_{i-1,j} \\
-           &+ c_{i-1,j-1} f_{i-1,j-1} + c_{i-1,j} f_{i-1,j} \\
            &+ c_{i-1,j+1} f_{i-1,j+1} + c_{i-1,j+2} f_{i-1,j+2} \\
            &+ c_{i,j-2} f_{i,j-2} + c_{i,j-1} f_{i,j-1} \\
            &+ c_{i,j+1} f_{i,j+1} + c_{i,j+2} f_{i,j+2} \\
@@ -573,9 +572,9 @@ Fourth order approximation (9-point stencil)
 .. math::
 
        \texttt{ddx\_c} = \frac{-\texttt{c2}_{x+2} + 8\texttt{c2}_{x+1} -
-       8\texttt{c2}_{x-1} + \texttt{c2}_{x-1} }{ 12\texttt{c1}\text{d}x} \\
+       8\texttt{c2}_{x-1} + \texttt{c2}_{x-2} }{ 12\texttt{c1}\text{d}x} \\
        \texttt{ddz\_c} = \frac{-\texttt{c2}_{z+2} + 8\texttt{c2}_{z+1} -
-       8\texttt{c2}_{z-1} + \texttt{c2}_{z-1} }{ 12\texttt{c1}\text{d}z}
+       8\texttt{c2}_{z-1} + \texttt{c2}_{z-2} }{ 12\texttt{c1}\text{d}z}
 
 
 This gives

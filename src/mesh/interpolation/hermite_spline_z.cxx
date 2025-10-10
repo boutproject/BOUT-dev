@@ -192,10 +192,3 @@ void ZInterpolationFactory::ensureRegistered() {}
 namespace {
 RegisterZInterpolation<ZHermiteSpline> registerzinterphermitespline{"hermitespline"};
 } // namespace
-
-constexpr decltype(ZInterpolationFactory::type_name) ZInterpolationFactory::type_name;
-constexpr decltype(ZInterpolationFactory::section_name)
-    ZInterpolationFactory::section_name;
-constexpr decltype(ZInterpolationFactory::option_name) ZInterpolationFactory::option_name;
-constexpr decltype(ZInterpolationFactory::default_type)
-    ZInterpolationFactory::default_type;

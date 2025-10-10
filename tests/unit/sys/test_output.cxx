@@ -1,9 +1,9 @@
+#include "test_tmpfiles.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/output.hxx"
 #include "bout/output_bout_types.hxx"
 #include "gtest/gtest.h"
 
-#include <cstdio>
 #include <string>
 
 // stdout redirection code from https://stackoverflow.com/a/4043813/2043465
@@ -19,8 +19,6 @@ public:
     buffer.str("");
     // When done redirect cout to its old self
     std::cout.rdbuf(sbuf);
-
-    std::remove(filename.c_str());
   }
 
   // Write cout to buffer instead of stdout
@@ -28,7 +26,7 @@ public:
   // Save cout's buffer here
   std::streambuf* sbuf;
   // A temporary filename
-  std::string filename{std::tmpnam(nullptr)};
+  bout::testing::TempFile filename;
 };
 
 TEST_F(OutputTest, JustStdOutCpp) {
@@ -56,7 +54,7 @@ TEST_F(OutputTest, OpenFile) {
 
   std::string test_output = "To stdout and file\n";
 
-  local_output.open(filename);
+  local_output.open(filename.string());
   local_output << test_output;
 
   std::ifstream test_file(filename);
@@ -73,7 +71,7 @@ TEST_F(OutputTest, JustPrint) {
 
   std::string test_output = "To stdout only\n";
 
-  local_output.open(filename);
+  local_output.open(filename.string());
   local_output.print(test_output);
 
   std::ifstream test_file(filename);
@@ -92,7 +90,7 @@ TEST_F(OutputTest, DisableEnableStdout) {
   std::string file_and_stdout = "To stdout and file\n";
 
   // Open temporary file and close stdout
-  local_output.open(filename);
+  local_output.open(filename.string());
   local_output.disable();
 
   local_output << file_only;
@@ -219,7 +217,7 @@ TEST_F(OutputTest, ConditionalJustPrint) {
 
   std::string test_output = "To stdout only\n";
 
-  local_output.open(filename);
+  local_output.open(filename.string());
   local_output.print(test_output);
 
   std::ifstream test_file(filename);
@@ -288,7 +286,7 @@ TEST_F(OutputTest, DummyJustPrint) {
 
   std::string test_output = "To stdout only\n";
 
-  dummy.open(filename);
+  dummy.open(filename.string());
   dummy.print(test_output);
 
   std::ifstream test_file(filename);

@@ -42,8 +42,8 @@ int main(int argc, char** argv) {
   std::vector<Duration> times;
 
   //Get options root
-  auto globalOptions = Options::root();
-  auto modelOpts = globalOptions["performanceIterator"];
+  auto& globalOptions = Options::root();
+  auto& modelOpts = globalOptions["performanceIterator"];
   int NUM_LOOPS;
   NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(100);
   bool profileMode, includeHeader;
@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
 #if BOUT_USE_OPENMP
   ITERATOR_TEST_BLOCK(
     "Nested loop (omp)",
-    BOUT_OMP(parallel for)
+    BOUT_OMP_PERF(parallel for)
     for(int i=0;i<mesh->LocalNx;++i) {
     for (int j = mesh->ystart; j < mesh->yend; ++j) {
       for (int k = 0; k < mesh->LocalNz; ++k) {
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
                       deriv(a, result, "RGN_NOY"););
 
   ITERATOR_TEST_BLOCK(
-      "Region with stencil", BOUT_OMP(parallel) {
+      "Region with stencil", BOUT_OMP_PERF(parallel) {
         stencil s;
         BOUT_FOR_INNER(i, mesh->getRegion3D("RGN_NOY")) {
           s.m = a[i.ym()];
@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
       });
 
   ITERATOR_TEST_BLOCK(
-      "Region with stencil and function pointer", BOUT_OMP(parallel) {
+      "Region with stencil and function pointer", BOUT_OMP_PERF(parallel) {
         stencil s;
         BOUT_FOR_INNER(i, mesh->getRegion3D("RGN_NOY")) {
           s.m = a[i.ym()];

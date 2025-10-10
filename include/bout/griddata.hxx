@@ -25,8 +25,8 @@
 
 class GridDataSource;
 
-#ifndef __GRIDDATA_H__
-#define __GRIDDATA_H__
+#ifndef BOUT_GRIDDATA_H
+#define BOUT_GRIDDATA_H
 
 #include "mesh.hxx"
 #include "bout/bout_types.hxx"
@@ -299,4 +299,4 @@ private:
   Options* options;
 };
 
-#endif // __GRIDDATA_H__
+#endif // BOUT_GRIDDATA_H

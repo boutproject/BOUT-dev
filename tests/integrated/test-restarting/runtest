@@ -9,7 +9,7 @@ from sys import stdout, exit
 build_and_log("restart test")
 
 # Run once for 10 timesteps
-s, out = launch_safe("./test_restarting nout=10", nproc=1, pipe=True)
+s, out = launch_safe("./test_restarting solver:nout=10", nproc=1, pipe=True)
 
 # Read reference data
 f3d_0 = collect("f3d", path="data", info=False)
@@ -21,8 +21,10 @@ f2d_0 = collect("f2d", path="data", info=False)
 print("-> Testing restart append")
 
 shell("rm -f data/BOUT.dmp.0.nc")
-s, out = launch_safe("./test_restarting nout=5", nproc=1, pipe=True)
-s, out = launch_safe("./test_restarting nout=5 restart append", nproc=1, pipe=True)
+s, out = launch_safe("./test_restarting solver:nout=5", nproc=1, pipe=True)
+s, out = launch_safe(
+    "./test_restarting solver:nout=5 restart append", nproc=1, pipe=True
+)
 
 f3d_1 = collect("f3d", path="data", info=False)
 f2d_1 = collect("f2d", path="data", info=False)
@@ -51,8 +53,8 @@ if not np.allclose(f2d_1, f2d_0, atol=tolerance):
 print("-> Testing restart")
 
 shell("rm -f data/BOUT.dmp.0.nc")
-s, out = launch_safe("./test_restarting nout=5", nproc=1, pipe=True)
-s, out = launch_safe("./test_restarting nout=5 restart", nproc=1, pipe=True)
+s, out = launch_safe("./test_restarting solver:nout=5", nproc=1, pipe=True)
+s, out = launch_safe("./test_restarting solver:nout=5 restart", nproc=1, pipe=True)
 
 f3d_1 = collect("f3d", path="data", info=False)
 f2d_1 = collect("f2d", path="data", info=False)

@@ -1,8 +1,8 @@
-#ifndef __LOADMETRIC_H__
-#define __LOADMETRIC_H__
+#ifndef BOUT_LOADMETRIC_H
+#define BOUT_LOADMETRIC_H
 
 #include <bout/bout_types.hxx>
 
 void LoadMetric(BoutReal Lnorm, BoutReal Bnorm);
 
-#endif // __LOADMETRIC_H__
+#endif // BOUT_LOADMETRIC_H

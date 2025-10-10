@@ -1,5 +1,5 @@
-#ifndef __MULTIOSTREAM_H__
-#define __MULTIOSTREAM_H__
+#ifndef BOUT_MULTIOSTREAM_H
+#define BOUT_MULTIOSTREAM_H
 
 #include <algorithm>
 #include <streambuf>
@@ -89,4 +89,4 @@ public:
 using cmultiostream = multiostream<char>;
 using wmultiostream = multiostream<wchar_t>;
 
-#endif // __MULTIOSTREAM_H__
+#endif // BOUT_MULTIOSTREAM_H

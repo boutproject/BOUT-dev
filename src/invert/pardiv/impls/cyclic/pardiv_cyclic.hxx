@@ -40,7 +40,7 @@
 #ifndef INV_PARDIV_CR_H
 #define INV_PARDIV_CR_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/invert_pardiv.hxx"
 
 #if BOUT_USE_METRIC_3D

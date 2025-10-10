@@ -17,9 +17,9 @@
  *     * Incorporates code from topology.cpp and Communicator
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -40,42 +40,35 @@
 
 class Mesh;
 
-#ifndef __MESH_H__
-#define __MESH_H__
+#ifndef BOUT_MESH_H
+#define BOUT_MESH_H
 
-#include "mpi.h"
-
-#include <bout/deriv_store.hxx>
-#include <bout/index_derivs_interface.hxx>
-#include <bout/mpi_wrapper.hxx>
-
+#include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/coordinates.hxx" // Coordinates class
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_data.hxx"
+#include "bout/fieldgroup.hxx"
+#include "bout/generic_factory.hxx"
+#include "bout/index_derivs_interface.hxx"
+#include "bout/mpi_wrapper.hxx"
 #include "bout/options.hxx"
-
-#include "fieldgroup.hxx"
-
-#include "bout/boundary_region.hxx"
-#include "bout/parallel_boundary_region.hxx"
-
-#include "sys/range.hxx" // RangeIterator
-
-#include <bout/griddata.hxx>
-
-#include "coordinates.hxx" // Coordinates class
-
+#include "bout/region.hxx"
+#include "bout/sys/range.hxx" // RangeIterator
 #include "bout/unused.hxx"
 
-#include "bout/generic_factory.hxx"
-#include <bout/region.hxx>
+#include "mpi.h"
 
-#include <list>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
+
+class BoundaryRegion;
+class BoundaryRegionPar;
+class GridDataSource;
 
 class MeshFactory : public Factory<Mesh, MeshFactory, GridDataSource*, Options*> {
 public:
@@ -88,6 +81,9 @@ public:
                     GridDataSource* source = nullptr) const;
   ReturnType create(Options* options = nullptr, GridDataSource* source = nullptr) const;
 };
+
+BOUT_ENUM_CLASS(BoundaryParType, all, xin, xout, fwd, bwd, xin_fwd, xout_fwd, xin_bwd,
+                xout_bwd, SIZE);
 
 template <class DerivedType>
 using RegisterMesh = MeshFactory::RegisterInFactory<DerivedType>;
@@ -134,7 +130,7 @@ public:
 
   /// Add output variables to \p output_options
   /// These are used for post-processing
-  virtual void outputVars(MAYBE_UNUSED(Options& output_options)) {}
+  virtual void outputVars([[maybe_unused]] Options& output_options) {}
 
   // Get routines to request data from mesh file
 
@@ -484,11 +480,20 @@ public:
   /// Add a boundary region to this processor
   virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
 
-  /// Get all the parallel (Y) boundaries on this processor
-  virtual std::vector<BoundaryRegionPar*> getBoundariesPar() = 0;
+  /// Get the list of parallel boundary regions. The option specifies with
+  /// region to get. Default is to get all regions. All possible options are
+  /// listed at the top of this file, see BoundaryParType.
+  /// For example:
+  /// get all regions:
+  /// mesh->getBoundariesPar(Mesh::BoundaryParType::all)
+  /// get only xout:
+  /// mesh->getBoundariesPar(Mesh::BoundaryParType::xout)
+  virtual std::vector<std::shared_ptr<BoundaryRegionPar>>
+  getBoundariesPar(BoundaryParType type = BoundaryParType::all) = 0;
 
   /// Add a parallel(Y) boundary to this processor
-  virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry)) {}
+  virtual void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> UNUSED(bndry),
+                              BoundaryParType UNUSED(type)) {}
 
   /// Branch-cut special handling (experimental)
   virtual Field3D smoothSeparatrix(const Field3D& f) { return f; }
@@ -503,8 +508,19 @@ public:
   int GlobalNx, GlobalNy, GlobalNz; ///< Size of the global arrays. Note: can have holes
   /// Size of the global arrays excluding boundary points.
   int GlobalNxNoBoundaries, GlobalNyNoBoundaries, GlobalNzNoBoundaries;
+
+  /// Note: These offsets only correct if Y guards are not included in the global array
+  ///       and are corrected in gridfromfile.cxx
   int OffsetX, OffsetY, OffsetZ; ///< Offset of this mesh within the global array
                                  ///< so startx on this processor is OffsetX in global
+
+  /// Map between local and global indices
+  /// (MapGlobalX, MapGlobalY, MapGlobalZ) in the global index space maps to (MapLocalX, MapLocalY, MapLocalZ) locally.
+  /// Note that boundary cells are included in the global index space, but communication
+  /// guard cells are not.
+  int MapGlobalX, MapGlobalY, MapGlobalZ; ///< Start global indices
+  int MapLocalX, MapLocalY, MapLocalZ;    ///< Start local indices
+  int MapCountX, MapCountY, MapCountZ;    ///< Size of the mapped region
 
   /// Returns the number of unique cells (i.e., ones not used for
   /// communication) on this processor for 3D fields. Boundaries
@@ -610,9 +626,22 @@ public:
     return inserted.first->second;
   }
 
+  std::shared_ptr<Coordinates>
+  getCoordinatesConst(const CELL_LOC location = CELL_CENTRE) const {
+    ASSERT1(location != CELL_DEFAULT);
+    ASSERT1(location != CELL_VSHIFT);
+
+    auto found = coords_map.find(location);
+    if (found != coords_map.end()) {
+      // True branch most common, returns immediately
+      return found->second;
+    }
+    throw BoutException("Coordinates not yet set. Use non-const version!");
+  }
+
   /// Returns the non-CELL_CENTRE location
   /// allowed as a staggered location
-  CELL_LOC getAllowedStaggerLoc(DIRECTION direction) const {
+  static CELL_LOC getAllowedStaggerLoc(DIRECTION direction) {
     AUTO_TRACE();
     switch (direction) {
     case (DIRECTION::X):
@@ -747,7 +776,7 @@ public:
   }
 
   /// Converts an Ind3D to an Ind2D representing a 2D index using a lookup -- to be used with care
-  BOUT_HOST_DEVICE Ind2D map3Dto2D(const Ind3D& ind3D) {
+  Ind2D map3Dto2D(const Ind3D& ind3D) {
     return {indexLookup3Dto2D[ind3D.ind], LocalNy, 1};
   }
 
@@ -795,6 +824,24 @@ public:
   // Switch for communication of corner guard and boundary cells
   const bool include_corner_cells;
 
+  std::optional<size_t> getCommonRegion(std::optional<size_t>, std::optional<size_t>);
+  size_t getRegionID(const std::string& region) const;
+  const Region<Ind3D>& getRegion(size_t RegionID) const { return region3D[RegionID]; }
+  const Region<Ind3D>& getRegion(std::optional<size_t> RegionID) const {
+    ASSERT1(RegionID.has_value());
+    return region3D[RegionID.value()];
+  }
+  bool isFci() const {
+    const auto coords = this->getCoordinatesConst();
+    if (coords == nullptr) {
+      return false;
+    }
+    if (not coords->hasParallelTransform()) {
+      return false;
+    }
+    return not coords->getParallelTransform().canToFromFieldAligned();
+  }
+
 private:
   /// Allocates default Coordinates objects
   /// By default attempts to read staggered Coordinates from grid data source,
@@ -803,11 +850,12 @@ private:
   /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
   /// would not be correct).
   std::shared_ptr<Coordinates>
-  createDefaultCoordinates(const CELL_LOC location,
-                           bool force_interpolate_from_centre = false);
+  createDefaultCoordinates(CELL_LOC location, bool force_interpolate_from_centre = false);
 
   //Internal region related information
-  std::map<std::string, Region<Ind3D>> regionMap3D;
+  std::map<std::string, size_t> regionMap3D;
+  std::vector<Region<Ind3D>> region3D;
+  std::vector<std::optional<size_t>> region3Dintersect;
   std::map<std::string, Region<Ind2D>> regionMap2D;
   std::map<std::string, Region<IndPerp>> regionMapPerp;
   Array<int> indexLookup3Dto2D;
@@ -831,4 +879,4 @@ Mesh::getRegion<FieldPerp>(const std::string& region_name) const {
   return getRegionPerp(region_name);
 }
 
-#endif // __MESH_H__
+#endif // BOUT_MESH_H

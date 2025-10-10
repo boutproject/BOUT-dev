@@ -98,7 +98,7 @@ netcdf() {
 
 nccxx() {
     cd $BUILD
-    wget -c ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-cxx4-$NCCXXVER.tar.gz || :
+    wget -c https://downloads.unidata.ucar.edu/netcdf-cxx/$NCCXXVER/netcdf-cxx4-$NCCXXVER.tar.gz || :
     tar -xf netcdf-cxx4-$NCCXXVER.tar.gz
     cd netcdf-cxx4-$NCCXXVER
     CPPFLAGS="-I$PREFIX/include" LDFLAGS="-L$PREFIX/lib/" ./configure --prefix=$PREFIX $NCCXXFLAGS
@@ -286,17 +286,17 @@ set -x
 ## Setup folders and links
 setup
 ## Build and install hdf5
-hdf5
+test $NO_HDF5 || hdf5
 ## Build and install netcdf
-netcdf
+test $NO_NETCDF || netcdf
 ## Build and install C++ interface for netcdf
-nccxx
+test $NO_NCXX || nccxx
 ## Build and install FFTW
-fftw
+test $NO_FFTW || fftw
 ## Build and install Sundials
-sundials
+test $NO_SUNDIALS || sundials
 ## Build and install PETSc
-petsc
+test $NO_PETSC || petsc
 ## Download BOUT++ submodules
 submod
 # Install python packages

@@ -25,8 +25,8 @@
 
 class FieldPerp;
 
-#ifndef __FIELDPERP_H__
-#define __FIELDPERP_H__
+#ifndef BOUT_FIELDPERP_H
+#define BOUT_FIELDPERP_H
 
 #include "bout/field.hxx"
 
@@ -98,6 +98,9 @@ public:
   /// Return a Region<IndPerp> reference to use to iterate over this field
   const Region<IndPerp>& getRegion(REGION region) const;
   const Region<IndPerp>& getRegion(const std::string& region_name) const;
+  const Region<IndPerp>& getValidRegionWithDefault(const std::string& region_name) const {
+    return getRegion(region_name);
+  }
 
   Region<IndPerp>::RegionIndices::const_iterator begin() const {
     return std::begin(getRegion("RGN_ALL"));
@@ -286,6 +289,8 @@ public:
   bool is3D() const override { return false; }
 
   friend void swap(FieldPerp& first, FieldPerp& second) noexcept;
+
+  int size() const override { return nx * nz; };
 
 private:
   /// The Y index at which this FieldPerp is defined

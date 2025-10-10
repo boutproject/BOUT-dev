@@ -20,7 +20,7 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
@@ -99,7 +99,15 @@ Solver::Solver(Options* opts)
               .doc("Output time step size. Overrides global 'timestep' setting.")
               .withDefault(Options::root()["timestep"]
                                .doc("Output time step size")
-                               .withDefault(1.0))) {}
+                               .withDefault(1.0))) {
+  if (Options::root().isSet("nout")) {
+    output_warn.write("Setting `nout` is deprecated. Please set `solver:nout` instead.");
+  }
+  if (Options::root().isSet("timestep")) {
+    output_warn.write(
+        "Setting `timestep` is deprecated. Please set `solver:output_step` instead.");
+  }
+}
 
 /**************************************************************************
  * Add physics models
@@ -563,13 +571,11 @@ int Solver::solve(int nout, BoutReal timestep) {
     /// Write initial state as time-point 0
 
     // Call monitors so initial values are written to output dump files
-    if (call_monitors(simtime, -1, nout)) {
+    if (call_monitors(simtime, 0, nout)) {
       throw BoutException("Initial monitor call failed!");
     }
-
-    // Reset iteration counter to undo the increment from the initial call_monitors().
-    // That call was either at t=0, or a repeat of the last output before restarting.
-    resetIterationCounter(getIterationCounter() - 1);
+  } else {
+    incrementIterationCounter();
   }
 
   int status;
@@ -726,6 +732,7 @@ void Solver::readEvolvingVariablesFromOptions(Options& options) {
   run_id = options["run_id"].withDefault(default_run_id);
   simtime = options["tt"].as<BoutReal>();
   iteration = options["hist_hi"].withDefault<int>(0);
+  iteration_offset = iteration;
 
   for (auto& f : f2d) {
     if (options.isSet(f.name)) {
@@ -864,7 +871,6 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     calculate_mms_error(simtime);
   }
 
-  ++iter;
   try {
     // We need to write each time dimension a maximum of once per
     // timestep. The set of unique time dimensions may be the same
@@ -877,7 +883,7 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
       if ((iter % monitor.monitor->period) == 0) {
         // Call each monitor one by one
         const int ret =
-            monitor.monitor->call(this, simtime, iter / monitor.monitor->period - 1,
+            monitor.monitor->call(this, simtime, iter / monitor.monitor->period,
                                   NOUT / monitor.monitor->period);
         if (ret != 0) {
           throw BoutException(_("Monitor signalled to quit (return code {})"), ret);
@@ -973,12 +979,6 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
  * Useful routines (protected)
  **************************************************************************/
 
-template <class T>
-int local_N_sum(int value, const Solver::VarStr<T>& f) {
-  const auto boundary_size = f.evolve_bndry ? size(f.var->getRegion("RGN_BNDRY")) : 0;
-  return value + boundary_size + size(f.var->getRegion("RGN_NOBNDRY"));
-}
-
 int Solver::getLocalN() {
 
   // Cache the value, so this is not repeatedly called.
@@ -991,8 +991,16 @@ int Solver::getLocalN() {
   // Must be initialised
   ASSERT0(initialised);
 
-  const auto local_N_2D = std::accumulate(begin(f2d), end(f2d), 0, local_N_sum<Field2D>);
-  const auto local_N_3D = std::accumulate(begin(f3d), end(f3d), 0, local_N_sum<Field3D>);
+  // Return the number of points to evolve in f, plus the accumulator value.
+  // If f.evolve_bndry, includes the boundary (NB: not guard!) points
+  auto local_N_sum = [](int value, const auto& field) -> int {
+    const auto boundary_size =
+        field.evolve_bndry ? size(field.var->getRegion("RGN_BNDRY")) : 0;
+    return value + boundary_size + size(field.var->getRegion("RGN_NOBNDRY"));
+  };
+
+  const auto local_N_2D = std::accumulate(begin(f2d), end(f2d), 0, local_N_sum);
+  const auto local_N_3D = std::accumulate(begin(f3d), end(f3d), 0, local_N_sum);
   const auto local_N = local_N_2D + local_N_3D;
 
   cacheLocalN = local_N;
@@ -1362,6 +1370,12 @@ int Solver::run_rhs(BoutReal t, bool linear) {
 
   Timer timer("rhs");
 
+  if (first_rhs_call) {
+    // Ensure that nonlinear terms are calculated on first call
+    linear = false;
+    first_rhs_call = false;
+  }
+
   if (model->splitOperator()) {
     // Run both parts
 
@@ -1498,7 +1512,7 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
   }
 
   // Make sure 3D fields are at the correct cell location, etc.
-  for (MAYBE_UNUSED(const auto& f) : f3d) {
+  for ([[maybe_unused]] const auto& f : f3d) {
     ASSERT1_FIELDS_COMPATIBLE(*f.var, *f.F_var);
   }
 
@@ -1571,8 +1585,3 @@ void Solver::calculate_mms_error(BoutReal t) {
     *(f.MMS_err) = *(f.var) - solution;
   }
 }
-
-constexpr decltype(SolverFactory::type_name) SolverFactory::type_name;
-constexpr decltype(SolverFactory::section_name) SolverFactory::section_name;
-constexpr decltype(SolverFactory::option_name) SolverFactory::option_name;
-constexpr decltype(SolverFactory::default_type) SolverFactory::default_type;

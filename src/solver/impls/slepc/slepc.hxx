@@ -24,10 +24,10 @@
  *
  **************************************************************************/
 
-#ifndef __SLEPC_SOLVER_H__
-#define __SLEPC_SOLVER_H__
+#ifndef BOUT_SLEPC_SOLVER_H
+#define BOUT_SLEPC_SOLVER_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/solver.hxx"
 
 #if not BOUT_HAS_SLEPC
@@ -234,4 +234,4 @@ private:
 
 #endif // BOUT_HAS_SLEPC
 
-#endif // __SLEPC_SOLVER_H__
+#endif // BOUT_SLEPC_SOLVER_H

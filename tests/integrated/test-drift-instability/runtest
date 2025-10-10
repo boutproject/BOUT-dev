@@ -73,7 +73,7 @@ def run_zeff_case(zeff):
 
     # Run the case
     s, out = launch_safe(
-        "./2fluid 2fluid:Zeff={} timestep={}".format(zeff, timestep),
+        "./2fluid 2fluid:Zeff={} solver:output_step={}".format(zeff, timestep),
         nproc=nproc,
         mthread=nthreads,
         pipe=True,

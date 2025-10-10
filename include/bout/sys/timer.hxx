@@ -1,5 +1,5 @@
-#ifndef __TIMER_H__
-#define __TIMER_H__
+#ifndef BOUT_TIMER_H
+#define BOUT_TIMER_H
 
 #include <chrono>
 #include <map>
@@ -134,4 +134,4 @@ public:
 };
 
 #define AUTO_TIME() Timer CONCATENATE(time_, __LINE__)(__thefunc__)
-#endif // __TIMER_H__
+#endif // BOUT_TIMER_H

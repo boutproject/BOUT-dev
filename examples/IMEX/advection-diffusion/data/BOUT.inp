@@ -1,10 +1,3 @@
-# Settings for ImEx example case
-
-##################################################
-# settings used by the core code
-
-nout = 50     # number of time-steps
-timestep = 0.01  # time between outputs
 
 periodicX = true   # Make domain periodic in X
 
@@ -52,6 +45,13 @@ type = splitrk
 timestep = 0.0001   # Internal timestep
 nstages = 9       # Stages in RKL steps for diffusive component
 adapt_period = 5  # Internal steps between accuracy checks
+output_step = 0.01  # time between outputs
+# Settings for ImEx example case
+
+##################################################
+# settings used by the core code
+
+nout = 50     # number of time-steps
 
 ##################################################
 # settings for split operator model

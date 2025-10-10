@@ -48,7 +48,7 @@ T flowDerivative(const T& vel, const T& f, CELL_LOC outloc, const std::string& m
   AUTO_TRACE();
 
   // Checks
-  static_assert(bout::utils::is_Field2D<T>::value || bout::utils::is_Field3D<T>::value,
+  static_assert(bout::utils::is_Field2D_v<T> || bout::utils::is_Field3D_v<T>,
                 "flowDerivative only works on Field2D or Field3D input");
 
   static_assert(derivType == DERIV::Upwind || derivType == DERIV::Flux,
@@ -113,7 +113,7 @@ T standardDerivative(const T& f, CELL_LOC outloc, const std::string& method,
   AUTO_TRACE();
 
   // Checks
-  static_assert(bout::utils::is_Field2D<T>::value || bout::utils::is_Field3D<T>::value,
+  static_assert(bout::utils::is_Field2D_v<T> || bout::utils::is_Field3D_v<T>,
                 "standardDerivative only works on Field2D or Field3D input");
 
   static_assert(derivType == DERIV::Standard || derivType == DERIV::StandardSecond

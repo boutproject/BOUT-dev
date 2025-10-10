@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
 
   Options::root()["ddy"] = ddy;
   Options::root()["ddy2"] = ddy2;
-  bout::writeDefaultOutputFile();
+  bout::writeDefaultOutputFile(Options::root());
 
   BoutFinalise();
 

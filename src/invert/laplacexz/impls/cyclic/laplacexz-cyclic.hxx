@@ -1,7 +1,7 @@
 #ifndef LAPLACEXZ_CYCLIC_HXX
 #define LAPLACEXZ_CYCLIC_HXX
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/invert/laplacexz.hxx"
 
 #if BOUT_USE_METRIC_3D

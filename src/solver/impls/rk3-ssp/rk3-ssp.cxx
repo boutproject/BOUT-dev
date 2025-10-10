@@ -108,7 +108,7 @@ void RK3SSP::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
   run_rhs(curtime);
   save_derivs(std::begin(L));
 
-  BOUT_OMP(parallel for)
+  BOUT_OMP_PERF(parallel for)
   for (int i = 0; i < nlocal; i++) {
     u1[i] = start[i] + dt * L[i];
   }
@@ -117,7 +117,7 @@ void RK3SSP::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
   run_rhs(curtime + dt);
   save_derivs(std::begin(L));
 
-  BOUT_OMP(parallel for )
+  BOUT_OMP_PERF(parallel for )
   for (int i = 0; i < nlocal; i++) {
     u2[i] = 0.75 * start[i] + 0.25 * u1[i] + 0.25 * dt * L[i];
   }
@@ -126,7 +126,7 @@ void RK3SSP::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
   run_rhs(curtime + 0.5 * dt);
   save_derivs(std::begin(L));
 
-  BOUT_OMP(parallel for)
+  BOUT_OMP_PERF(parallel for)
   for (int i = 0; i < nlocal; i++) {
     result[i] = (1. / 3) * start[i] + (2. / 3.) * (u2[i] + dt * L[i]);
   }

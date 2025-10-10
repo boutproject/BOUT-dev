@@ -37,8 +37,8 @@ int main(int argc, char** argv) {
   std::vector<Duration> times;
 
   //Get options root
-  auto globalOptions = Options::root();
-  auto modelOpts = globalOptions["performanceIterator"];
+  auto& globalOptions = Options::root();
+  auto& modelOpts = globalOptions["performanceIterator"];
   int NUM_LOOPS;
   NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(100);
   bool profileMode, includeHeader;
@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
       "C loop", for (int j = 0; j < len; ++j) { rd[j] = ad[j] + bd[j]; };);
 #if BOUT_USE_OPENMP
   ITERATOR_TEST_BLOCK("C loop (omp)",
-		      BOUT_OMP(parallel for)
+		      BOUT_OMP_PERF(parallel for)
 		      for(int j=0;j<len;++j) {
     rd[j] = ad[j] + bd[j];
 		      };
@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
 
 #if BOUT_USE_OPENMP
   ITERATOR_TEST_BLOCK("Nested loop (omp)",
-		      BOUT_OMP(parallel for)
+		      BOUT_OMP_PERF(parallel for)
 		      for(int i=0;i<mesh->LocalNx;++i) {
     for (int j = 0; j < mesh->LocalNy; ++j) {
       for (int k = 0; k < mesh->LocalNz; ++k) {

@@ -1,26 +1,23 @@
 #include "gtest/gtest.h"
 
-#include "test_extras.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
-#include "bout/constants.hxx"
+#include "bout/field3d.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/openmpwrap.hxx"
 #include "bout/output.hxx"
 #include "bout/region.hxx"
-#include "bout/unused.hxx"
 
 #include <algorithm>
 #include <list>
 #include <random>
 #include <sstream>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;
@@ -262,7 +259,7 @@ TEST_F(RegionTest, regionLoopAllSection) {
   const auto& region = mesh->getRegion3D("RGN_ALL");
 
   int count = 0;
-  BOUT_OMP(parallel)
+  BOUT_OMP_PERF(parallel)
   {
     BOUT_FOR_OMP(i, region, for reduction(+:count)) {
       ++count;
@@ -274,11 +271,29 @@ TEST_F(RegionTest, regionLoopAllSection) {
   EXPECT_EQ(count, nmesh);
 }
 
+TEST_F(RegionTest, regionIntersection) {
+  auto& region1 = mesh->getRegion3D("RGN_ALL");
+
+  auto& region2 = mesh->getRegion3D("RGN_NOBNDRY");
+
+  const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
+
+  EXPECT_EQ(region1.size(), nmesh);
+  EXPECT_GT(region1.size(), region2.size());
+
+  const auto& region3 = intersection(region1, region2);
+
+  EXPECT_EQ(region2.size(), region3.size());
+  // Ensure this did not change
+  EXPECT_EQ(region1.size(), nmesh);
+  EXPECT_EQ(mesh->getRegion3D("RGN_ALL").size(), nmesh);
+}
+
 TEST_F(RegionTest, regionLoopNoBndrySection) {
   const auto& region = mesh->getRegion3D("RGN_NOBNDRY");
 
   int count = 0;
-  BOUT_OMP(parallel)
+  BOUT_OMP_PERF(parallel)
   {
     BOUT_FOR_OMP(i, region, for reduction(+:count)) {
       ++count;
@@ -295,7 +310,7 @@ TEST_F(RegionTest, regionLoopAllInner) {
   const auto& region = mesh->getRegion3D("RGN_ALL");
 
   Field3D a{0.};
-  BOUT_OMP(parallel)
+  BOUT_OMP_PERF(parallel)
   {
     BOUT_FOR_INNER(i, region) { a[i] = 1.0; }
   }
@@ -313,7 +328,7 @@ TEST_F(RegionTest, regionLoopNoBndryInner) {
   const auto& region = mesh->getRegion3D("RGN_NOBNDRY");
 
   Field3D a{0.};
-  BOUT_OMP(parallel)
+  BOUT_OMP_PERF(parallel)
   {
     BOUT_FOR_INNER(i, region) { a[i] = 1.0; }
   }
@@ -1101,36 +1116,27 @@ TEST_F(RegionTest, regionGetStatsEmpty) {
 }
 
 TEST(RegionIndexConversionTest, Ind3DtoInd2D) {
-  // This could just be:
-  //     EXPECT_FALSE(std::is_convertible<Ind3D, Ind2D>::value());
-  // but requires C++14
-  bool convert = std::is_convertible<Ind3D, Ind2D>::value;
-  EXPECT_FALSE(convert);
+  EXPECT_FALSE((std::is_convertible_v<Ind3D, Ind2D>));
 }
 
 TEST(RegionIndexConversionTest, Ind2DtoInd3D) {
-  bool convert = std::is_convertible<Ind2D, Ind3D>::value;
-  EXPECT_FALSE(convert);
+  EXPECT_FALSE((std::is_convertible_v<Ind2D, Ind3D>));
 }
 
 TEST(RegionIndexConversionTest, Ind2Dtoint) {
-  bool convert = std::is_convertible<Ind2D, int>::value;
-  EXPECT_FALSE(convert);
+  EXPECT_FALSE((std::is_convertible_v<Ind2D, int>));
 }
 
 TEST(RegionIndexConversionTest, Ind3Dtoint) {
-  bool convert = std::is_convertible<Ind3D, int>::value;
-  EXPECT_FALSE(convert);
+  EXPECT_FALSE((std::is_convertible_v<Ind3D, int>));
 }
 
 TEST(RegionIndexConversionTest, inttoInd2D) {
-  bool convert = std::is_convertible<int, Ind2D>::value;
-  EXPECT_FALSE(convert);
+  EXPECT_FALSE((std::is_convertible_v<int, Ind2D>));
 }
 
 TEST(RegionIndexConversionTest, inttoInd3D) {
-  bool convert = std::is_convertible<int, Ind3D>::value;
-  EXPECT_FALSE(convert);
+  EXPECT_FALSE((std::is_convertible_v<int, Ind3D>));
 }
 
 TEST(RegionIndex2DTest, MemberSize) {

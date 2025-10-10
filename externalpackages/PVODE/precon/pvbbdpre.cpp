@@ -364,13 +364,13 @@ static void PVBBDDQJac(integer Nlocal, integer mudq, integer mldq,
     /* Restore ytemp, then form and load difference quotients */
     for (j=group-1; j < Nlocal; j+=width) {
       ytemp_data[j] = y_data[j];
-      col_j = BAND_COL(J,j);
+      col_j = PVODE_BAND_COL(J,j);
       inc = MAX(rely*ABS(y_data[j]), minInc/ewt_data[j]);
       inc_inv = ONE/inc;
       i1 = MAX(0, j-mukeep);
       i2 = MIN(j+mlkeep, Nlocal-1);
       for (i=i1; i <= i2; i++)
-	BAND_COL_ELEM(col_j,i,j) =
+	PVODE_BAND_COL_ELEM(col_j,i,j) =
 	  inc_inv * (gtemp_data[i] - gy_data[i]);
     }
   }

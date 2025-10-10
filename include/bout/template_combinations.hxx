@@ -27,8 +27,8 @@
  *
  **************************************************************************/
 
-#ifndef __TEMPLATE_COMBINATIONS_H__
-#define __TEMPLATE_COMBINATIONS_H__
+#ifndef BOUT_TEMPLATE_COMBINATIONS_H
+#define BOUT_TEMPLATE_COMBINATIONS_H
 
 #include <bout/unused.hxx>
 

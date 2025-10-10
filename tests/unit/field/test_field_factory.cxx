@@ -11,12 +11,7 @@
 #include "bout/paralleltransform.hxx"
 #include "bout/traits.hxx"
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;
@@ -37,32 +32,15 @@ public:
 
   FieldFactory factory;
 
-  // We can't just decide which FieldFactory::create?D function to
-  // call with
-  //
-  //     if (bout::utils::is_Field3D<T>::value) {
-  //       return factory.create3D(...);
-  //     } else {
-  //       return factory.create2D(...);
-  //     }
-  //
-  // as this is *runtime* so the compiler still needs to evaluate both
-  // branches -- until C++17 when we can use `if constexpr ...`
-  template <class... Args>
-  T createDispatch(std::true_type, Args&&... args) {
-    return factory.create3D(std::forward<Args>(args)...);
-  }
-
-  template <class... Args>
-  T createDispatch(std::false_type, Args&&... args) {
-    return factory.create2D(std::forward<Args>(args)...);
-  }
-
   // Generic way of calling either FieldFactory::create2D or
   // FieldFactory::create3D
   template <class... Args>
   T create(Args&&... args) {
-    return createDispatch(bout::utils::is_Field3D<T>{}, std::forward<Args>(args)...);
+    if constexpr (bout::utils::is_Field3D_v<T>) {
+      return factory.create3D(std::forward<Args>(args)...);
+    } else {
+      return factory.create2D(std::forward<Args>(args)...);
+    }
   }
 };
 
@@ -227,7 +205,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateZStaggered) {
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
         auto offset = BoutReal{0.0};
-        if (bout::utils::is_Field3D<TypeParam>::value) {
+        if constexpr (bout::utils::is_Field3D_v<TypeParam>) {
           offset = 0.5;
         }
 
@@ -620,13 +598,15 @@ public:
 };
 
 TEST_F(FieldFactoryTest, RequireMesh) {
-  delete bout::globals::mesh;
+  auto* old_mesh = bout::globals::mesh;
   bout::globals::mesh = nullptr;
 
   FieldFactory local_factory{nullptr, nullptr};
 
   EXPECT_THROW(local_factory.create2D("x", nullptr, nullptr), BoutException);
   EXPECT_THROW(local_factory.create3D("x", nullptr, nullptr), BoutException);
+
+  bout::globals::mesh = old_mesh;
 }
 
 TEST_F(FieldFactoryTest, CreateOnMeshWithoutCoordinates) {
@@ -895,12 +875,6 @@ private:
 
 class FieldFactoryCreateAndTransformTest : public FakeMeshFixture {
 public:
-  FieldFactoryCreateAndTransformTest() : FakeMeshFixture{} {
-    // We need Coordinates so a parallel transform is available as
-    // FieldFactory::create3D wants to un-field-align the result
-    static_cast<FakeMesh*>(mesh)->setCoordinates(test_coords);
-  }
-
   WithQuietOutput quiet_info{output_info};
   WithQuietOutput quiet_warn{output_warn};
 };

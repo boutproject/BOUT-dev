@@ -8,6 +8,8 @@
 #include <memory>
 
 #include "../../src/mesh/impls/bout/boutmesh.hxx"
+#include "bout/boundary_op.hxx"
+#include "bout/boundary_region.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/coordinates.hxx"
 #include "bout/field2d.hxx"

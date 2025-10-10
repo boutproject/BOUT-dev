@@ -2,8 +2,8 @@
  * Radial mask operators
  **************************************************************/
 
-#ifndef __MASKX_H__
-#define __MASKX_H__
+#ifndef BOUT_MASKX_H
+#define BOUT_MASKX_H
 
 #include "bout/field3d.hxx"
 
@@ -21,4 +21,4 @@ const Field3D sink_tanhxr(const Field2D& f0, const Field3D& f, BoutReal swidth,
 
 const Field3D buff_x(const Field3D& f, bool BoutRealspace = true);
 
-#endif // __MASKX_H__
+#endif // BOUT_MASKX_H

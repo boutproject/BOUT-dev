@@ -1,18 +1,13 @@
-# Settings for split operator test case
-
-##################################################
-# settings used by the core code
-
-nout = 100     # number of time-steps
-timestep = 0.01   # time between outputs
 
 MZ = 64     # number of points in z direction (2^n)
-
-grid = "simple_xz.nc"
 
 NXPE = 1
 
 periodicX = true   # Make domain periodic in X
+
+[mesh]
+
+file = "simple_xz.nc"
 
 ##################################################
 # derivative methods
@@ -45,6 +40,13 @@ flux = U1
 
 type = splitrk
 timestep = 0.0001
+output_step = 0.01   # time between outputs
+# Settings for split operator test case
+
+##################################################
+# settings used by the core code
+
+nout = 100     # number of time-steps
 
 ##################################################
 # settings for split operator model

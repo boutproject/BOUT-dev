@@ -21,8 +21,8 @@
 
 */
 
-#ifndef __RANGE_H__
-#define __RANGE_H__
+#ifndef BOUT_RANGE_H
+#define BOUT_RANGE_H
 
 class RangeIterator {
 public:
@@ -74,4 +74,4 @@ private:
   bool delete_next = false;    // Flag to delete this->n if we created it
 };
 
-#endif // __RANGE_H__
+#endif // BOUT_RANGE_H

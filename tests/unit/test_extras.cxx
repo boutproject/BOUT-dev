@@ -1,12 +1,13 @@
 #include "test_extras.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/region.hxx"
 #include "gtest/gtest.h"
 
 #include <cmath>
-
-// Need to provide a redundant declaration because C++
-constexpr int FakeMeshFixture::nx;
-constexpr int FakeMeshFixture::ny;
-constexpr int FakeMeshFixture::nz;
+#include <string>
+#include <vector>
 
 ::testing::AssertionResult IsSubString(const std::string& str,
                                        const std::string& substring) {

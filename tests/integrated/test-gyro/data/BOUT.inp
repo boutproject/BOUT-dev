@@ -6,13 +6,13 @@
 
 MZ = 8    # Z size
 
-grid = "cyclone_68x32.nc"
-
 twistshift = true
 
 [mesh]
 symmetricGlobalX = false
 symmetricGlobalY = false
+
+file = "cyclone_68x32.nc"
 
 [laplace]
 all_terms = false

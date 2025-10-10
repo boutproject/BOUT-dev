@@ -1,14 +1,11 @@
 
-nout = 10
-timestep = 1.0
-
 MZ = 1
-
-grid = "test-staggered.nc"
 
 [mesh]
 
 staggergrids = true
+
+file = "test-staggered.nc"
 
 [mesh:ddy]
 
@@ -25,3 +22,8 @@ function = gauss(y - pi)
 
 [v]
 function = 0.0
+
+[solver]
+output_step = 1.0
+
+nout = 10

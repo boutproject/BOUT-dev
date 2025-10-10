@@ -1,17 +1,12 @@
+#ifndef BOUT_EXCEPTION_H
+#define BOUT_EXCEPTION_H
 
-class BoutException;
-
-#ifndef __BOUT_EXCEPTION_H__
-#define __BOUT_EXCEPTION_H__
-
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include <array>
 #include <exception>
 #include <string>
 #include <utility>
-
-#include "bout/format.hxx"
 
 #include "fmt/core.h"
 
@@ -35,9 +30,7 @@ public:
   /// backtrace (if available)
   std::string getBacktrace() const;
 
-  const std::string header{"====== Exception thrown ======\n"};
-
-protected:
+private:
   std::string message;
 #if BOUT_USE_BACKTRACE
   static constexpr unsigned int TRACE_MAX = 128;

@@ -1,10 +1,9 @@
 
-nout = 500
-timestep = 10
-
-grid = "cbm18_dens8.grid_nx68ny64.nc"
-
 MZ = 1
+
+[mesh]
+
+file = "cbm18_dens8.grid_nx68ny64.nc"
 
 [mesh:paralleltransform]
 type = shifted
@@ -15,6 +14,9 @@ type = imexbdf2
 timestep = 1 # Fixed internal timestep
 use_precon = true # Use user supplied preconditioner
 mxstep = 10000
+output_step = 10
+
+nout = 500
 
 [laplace]    # 2D solver in X-Z
 

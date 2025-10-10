@@ -1,4 +1,4 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_HYPRE
 
@@ -27,7 +27,7 @@ static constexpr auto BOUT_HYPRE_MEMORY = HYPRE_MEMORY_HOST;
 #endif
 
 HypreLib::HypreLib() {
-  BOUT_OMP(critical(HypreLib))
+  BOUT_OMP_SAFE(critical(HypreLib))
   {
     if (count == 0) { // Initialise once
       output_progress.write("Initialising Hypre\n");
@@ -39,16 +39,16 @@ HypreLib::HypreLib() {
   }
 }
 
-HypreLib::HypreLib(MAYBE_UNUSED() const HypreLib& other) noexcept {
-  BOUT_OMP(critical(HypreLib))
+HypreLib::HypreLib([[maybe_unused]] const HypreLib& other) noexcept {
+  BOUT_OMP_SAFE(critical(HypreLib))
   {
     // No need to initialise Hypre, because it must already be initialised
     count++; // Copying, so increase count
   }
 }
 
-HypreLib::HypreLib(MAYBE_UNUSED() HypreLib&& other) noexcept {
-  BOUT_OMP(critical(HypreLib))
+HypreLib::HypreLib([[maybe_unused]] HypreLib&& other) noexcept {
+  BOUT_OMP_SAFE(critical(HypreLib))
   {
     // No need to initialise Hypre, because it must already be initialised
     count++; // Creating a new Hyprelib object; other will be deleted
@@ -56,7 +56,7 @@ HypreLib::HypreLib(MAYBE_UNUSED() HypreLib&& other) noexcept {
 }
 
 HypreLib::~HypreLib() {
-  BOUT_OMP(critical(HypreLib))
+  BOUT_OMP_SAFE(critical(HypreLib))
   {
     count--;
     if (count == 0) {
@@ -67,7 +67,7 @@ HypreLib::~HypreLib() {
 }
 
 void HypreLib::cleanup() {
-  BOUT_OMP(critical(HypreLib))
+  BOUT_OMP_SAFE(critical(HypreLib))
   {
     if (count > 0) {
       output << "Finalising Hypre. Warning: Instances of HypreLib still exist.\n";

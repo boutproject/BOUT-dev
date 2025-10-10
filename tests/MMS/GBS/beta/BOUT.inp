@@ -1,39 +1,3 @@
-# settings file for BOUT++
-#
-# Simulation of BETA simple toroidal device
-#
-# The geometry is set up as a curved slab:
-# X   -- Radial coordinate, increasing in major radius
-# Y   -- Parallel coordinate, increasing in toroidal direction
-# Z   -- Vertical coordinate
-#
-# The domain is periodic in both Y (toroidal) and Z (vertical) directions
-# Sinks of particles and energy are placed at either side in X (radial)
-# and a source is localised in X, constant in Z.
-#
-# A small vertical magnetic field is imposed by introducing a
-# Z shift between one end of Y and the other. The angle of this shift
-# is ShiftAngle, currently set to 0.1* 2*pi. This shifts a magnetic
-# field-line 1/10th of the way along Z for each toroidal transit.
-#
-# Radial boundary conditions are potential phi = 0
-# and zero gradient (Neumann) on all other fields
-#
-# Quantities are normalised as follows, using variables stored
-# in the output BOUT.dmp.*.nc files. These can be read using collect()
-#
-# Time        -  1/Omega_ci  [s]
-# Length      -  rho_s       [m]
-# B field     -  Bnorm       [T]
-# Density     -  Nnorm       [m^-3]
-# Temperature -  Tnorm       [eV]
-#
-#
-
-# settings used by the core code
-
-nout = 100          # number of time-steps
-timestep = 1.0     # time between outputs, normalised to 1/Omega_ci
 
 zperiod = 1
 
@@ -106,6 +70,42 @@ upwind = W3
 atol = 1e-10  # absolute tolerance
 rtol = 1e-05   # relative tolerance
 mxstep = 1000000  # Maximum internal steps per output
+output_step = 1.0     # time between outputs, normalised to 1/Omega_ci
+# settings file for BOUT++
+#
+# Simulation of BETA simple toroidal device
+#
+# The geometry is set up as a curved slab:
+# X   -- Radial coordinate, increasing in major radius
+# Y   -- Parallel coordinate, increasing in toroidal direction
+# Z   -- Vertical coordinate
+#
+# The domain is periodic in both Y (toroidal) and Z (vertical) directions
+# Sinks of particles and energy are placed at either side in X (radial)
+# and a source is localised in X, constant in Z.
+#
+# A small vertical magnetic field is imposed by introducing a
+# Z shift between one end of Y and the other. The angle of this shift
+# is ShiftAngle, currently set to 0.1* 2*pi. This shifts a magnetic
+# field-line 1/10th of the way along Z for each toroidal transit.
+#
+# Radial boundary conditions are potential phi = 0
+# and zero gradient (Neumann) on all other fields
+#
+# Quantities are normalised as follows, using variables stored
+# in the output BOUT.dmp.*.nc files. These can be read using collect()
+#
+# Time        -  1/Omega_ci  [s]
+# Length      -  rho_s       [m]
+# B field     -  Bnorm       [T]
+# Density     -  Nnorm       [m^-3]
+# Temperature -  Tnorm       [eV]
+#
+#
+
+# settings used by the core code
+
+nout = 100          # number of time-steps
 
 
 ##################################################

@@ -26,8 +26,8 @@
 
 class PowerSolver;
 
-#ifndef __POWER_SOLVER_H__
-#define __POWER_SOLVER_H__
+#ifndef BOUT_POWER_SOLVER_H
+#define BOUT_POWER_SOLVER_H
 
 #include <bout/bout_types.hxx>
 #include <bout/solver.hxx>
@@ -60,4 +60,4 @@ private:
   void divide(Array<BoutReal>& in, BoutReal value);
 };
 
-#endif // __KARNIADAKIS_SOLVER_H__
+#endif // BOUT_KARNIADAKIS_SOLVER_H

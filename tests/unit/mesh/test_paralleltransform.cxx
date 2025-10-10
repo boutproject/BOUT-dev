@@ -3,11 +3,7 @@
 #include "test_extras.hxx"
 #include "bout/paralleltransform.hxx"
 
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-}
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 using ParallelTransformTest = FakeMeshFixture;
 

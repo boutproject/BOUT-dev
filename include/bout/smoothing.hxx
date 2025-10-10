@@ -25,8 +25,8 @@
  *
  **************************************************************/
 
-#ifndef __SMOOTHING_H__
-#define __SMOOTHING_H__
+#ifndef BOUT_SMOOTHING_H
+#define BOUT_SMOOTHING_H
 
 #include "bout/field3d.hxx"
 
@@ -135,4 +135,4 @@ const Field3D nl_filter_z(const Field3D& f, BoutReal w = 1.0);
  */
 const Field3D nl_filter(const Field3D& f, BoutReal w = 1.0);
 
-#endif // __SMOOTHING_H__
+#endif // BOUT_SMOOTHING_H

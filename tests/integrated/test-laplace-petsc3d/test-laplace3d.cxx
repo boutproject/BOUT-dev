@@ -126,6 +126,7 @@ int main(int argc, char** argv) {
   Field3D rhs_check = D * Laplace_perp(f) + Grad_perp(C2) * Grad_perp(f) / C1 + A * f;
   Field3D error = rhs_check - rhs;
   BoutReal error_max = max(abs(error), true);
+  output.write("error_max = {}\n", error_max);
 
   Options dump;
   dump["f"] = f;

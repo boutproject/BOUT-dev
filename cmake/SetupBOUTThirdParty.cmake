@@ -8,6 +8,9 @@ endif ()
 # determined in SetupCompilers.cmake
 if (BOUT_USE_OPENMP)
   target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
+  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -fopenmp")
+  set(CONFIG_LDFLAGS_SHARED "${CONFIG_LDFLAGS_SHARED} -fopenmp")
+  set(CONFIG_CFLAGS "${CONFIG_CFLAGS} -fopenmp")
 endif()
 
 # determined in SetupCompilers.cmake
@@ -19,9 +22,10 @@ if (BOUT_HAS_CUDA)
   set(BOUT_SOURCES_CXX ${BOUT_SOURCES})
   list(FILTER BOUT_SOURCES_CXX INCLUDE REGEX ".*\.cxx")
 
-  set_source_files_properties(${BOUT_SOURCES_CXX} PROPERTIES LANGUAGE CUDA )
+  # NOTE: CUDA inherits the CXX standard setting from the top-level
+  # compile features, set for the bout++ target.
+  set_source_files_properties(${BOUT_SOURCES_CXX} PROPERTIES LANGUAGE CUDA)
   find_package(CUDAToolkit)
-  set_target_properties(bout++ PROPERTIES CUDA_STANDARD 14)
   set_target_properties(bout++ PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
   set_target_properties(bout++ PROPERTIES POSITION_INDEPENDENT_CODE ON)
   set_target_properties(bout++ PROPERTIES LINKER_LANGUAGE CUDA)
@@ -156,6 +160,7 @@ option(BOUT_USE_NETCDF "Enable support for NetCDF output" ON)
 option(BOUT_DOWNLOAD_NETCDF_CXX4 "Download and build netCDF-cxx4" OFF)
 if (BOUT_USE_NETCDF)
   if (BOUT_DOWNLOAD_NETCDF_CXX4)
+    message(STATUS "Downloading and configuring NetCDF-cxx4")
     include(FetchContent)
     FetchContent_Declare(
       netcdf-cxx4
@@ -184,6 +189,40 @@ if (BOUT_USE_NETCDF)
 endif()
 message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
 set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
+
+option(BOUT_USE_ADIOS2 "Enable support for ADIOS output" OFF)
+option(BOUT_DOWNLOAD_ADIOS2 "Download and build ADIOS2" OFF)
+if (BOUT_USE_ADIOS2)
+  enable_language(C)
+  find_package(MPI REQUIRED COMPONENTS C)
+
+  if (BOUT_DOWNLOAD_ADIOS2)
+    message(STATUS "Downloading and configuring ADIOS2")
+    include(FetchContent)
+    FetchContent_Declare(
+      adios2
+      GIT_REPOSITORY https://github.com/ornladios/ADIOS2.git
+      GIT_TAG origin/master
+      GIT_SHALLOW 1
+      )
+    set(ADIOS2_USE_MPI ON CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_Fortran OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_USE_Python OFF CACHE BOOL "" FORCE)
+    set(ADIOS2_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    # Disable testing, or ADIOS will try to find or install GTEST
+    set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+    # Note: SST requires <rdma/fabric.h> but doesn't check at configure time
+    set(ADIOS2_USE_SST OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(adios2)
+    message(STATUS "ADIOS2 done configuring")
+  else()
+    find_package(ADIOS2 REQUIRED)
+  endif()
+  target_link_libraries(bout++ PUBLIC adios2::cxx11_mpi MPI::MPI_C)
+endif()
+message(STATUS "ADIOS2 support: ${BOUT_USE_ADIOS2}")
+set(BOUT_HAS_ADIOS2 ${BOUT_USE_ADIOS2})
+
 
 option(BOUT_USE_FFTW "Enable support for FFTW" ON)
 if (BOUT_USE_FFTW)
@@ -240,7 +279,7 @@ if (BOUT_USE_SUNDIALS)
     FetchContent_Declare(
       sundials
       GIT_REPOSITORY https://github.com/LLNL/sundials
-      GIT_TAG        v7.0.0
+      GIT_TAG        v7.2.1
       )
     # Note: These are settings for building SUNDIALS
     set(EXAMPLES_ENABLE_C OFF CACHE BOOL "" FORCE)

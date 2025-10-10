@@ -27,8 +27,8 @@
 
 class EulerSolver;
 
-#ifndef __EULER_SOLVER_H__
-#define __EULER_SOLVER_H__
+#ifndef BOUT_EULER_SOLVER_H
+#define BOUT_EULER_SOLVER_H
 
 #include "mpi.h"
 
@@ -66,4 +66,4 @@ private:
                  Array<BoutReal>& result);
 };
 
-#endif // __KARNIADAKIS_SOLVER_H__
+#endif // BOUT_KARNIADAKIS_SOLVER_H

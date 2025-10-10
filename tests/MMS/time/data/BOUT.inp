@@ -1,7 +1,4 @@
 
-nout = 1
-timestep = 1
-
 # No guard cells in X or Y
 MXG = 0
 MYG = 1
@@ -17,6 +14,9 @@ ny = 1
 [solver]
 adaptive = false
 mms = true
+output_step = 1
+
+nout = 1
 
 [f]
 

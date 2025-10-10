@@ -25,8 +25,6 @@ int GasCompress::init(bool restarting) {
 
   sub_initial = options["sub_initial"].withDefault(false);
 
-  V.y.setLocation(CELL_YLOW); // Stagger
-
   // Set evolving variables
 
   solver->add(N, "density", "description");
@@ -55,9 +53,9 @@ int GasCompress::rhs(BoutReal UNUSED(time)) {
 
   if (sub_initial) {
     // Subtract force balance of initial profiles
-    ddt(V) = -V_dot_Grad(V, V) - Grad(P - P0, CELL_VSHIFT) / N;
+    ddt(V) = -V_dot_Grad(V, V) - Grad(P - P0) / N;
   } else {
-    ddt(V) = -V_dot_Grad(V, V) - Grad(P, CELL_VSHIFT) / N + g;
+    ddt(V) = -V_dot_Grad(V, V) - Grad(P) / N + g;
   }
 
   if (include_viscosity) {

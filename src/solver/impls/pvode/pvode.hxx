@@ -24,14 +24,14 @@
  * 
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_PVODE
 
 class PvodeSolver;
 
-#ifndef __PVODE_SOLVER_H__
-#define __PVODE_SOLVER_H__
+#ifndef BOUT_PVODE_SOLVER_H
+#define BOUT_PVODE_SOLVER_H
 
 #include <bout/bout_types.hxx>
 #include <bout/solver.hxx>
@@ -81,6 +81,6 @@ private:
   bool pvode_initialised = false;
 };
 
-#endif // __PVODE_SOLVER_H__
+#endif // BOUT_PVODE_SOLVER_H
 
 #endif

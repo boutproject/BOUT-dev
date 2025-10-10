@@ -19,8 +19,8 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  **************************************************************************/
 
-#ifndef __BOUT_ENUM_CLASS_H__
-#define __BOUT_ENUM_CLASS_H__
+#ifndef BOUT_ENUM_CLASS_H
+#define BOUT_ENUM_CLASS_H
 
 #include "bout/boutexception.hxx"
 #include "bout/macro_for_each.hxx"
@@ -86,7 +86,11 @@
         BOUT_ENUM_CLASS_MAP_ARGS(BOUT_STR_ENUM_CLASS, enumname, __VA_ARGS__)}; \
     auto found = fromString_map.find(s);                                       \
     if (found == fromString_map.end()) {                                       \
-      throw BoutException("Did not find enum {:s}", s);                        \
+      std::string valid_values {};                                             \
+      for (auto const& entry : fromString_map) {                               \
+        valid_values += std::string(" ") + entry.first;                        \
+      }                                                                        \
+      throw BoutException("Did not find enum {:s}. Valid values: {:s}", s, valid_values); \
     }                                                                          \
     return found->second;                                                      \
   }                                                                            \
@@ -100,4 +104,4 @@
     return out << toString(e);                                                 \
   }
 
-#endif // __BOUT_ENUM_CLASS_H__
+#endif // BOUT_ENUM_CLASS_H

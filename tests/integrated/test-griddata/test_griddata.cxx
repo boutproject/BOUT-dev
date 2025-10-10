@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
   dump["Bpxy"] = Bpxy;
   bout::experimental::addBuildFlagsToOptions(dump);
   bout::globals::mesh->outputVars(dump);
-  bout::OptionsNetCDF("data.nc").write(dump);
+  bout::OptionsIO::create("data.nc")->write(dump);
 
   BoutFinalise();
   return 0;

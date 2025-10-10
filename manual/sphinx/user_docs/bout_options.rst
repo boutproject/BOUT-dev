@@ -48,9 +48,10 @@ name in square brackets.
 
 Option names can contain almost any character except ’=’ and ’:’,
 including unicode.  If they start with a number or ``.``, contain
-arithmetic symbols (``+-*/^``), brackets (``(){}[]``), equality
-(``=``), whitespace or comma ``,``, then these will need to be escaped
-in expressions. See below for how this is done.
+arithmetic/boolean operator symbols (``+-*/^&|!<>``), brackets
+(``(){}[]``), equality (``=``), whitespace or comma ``,``, then these
+will need to be escaped in expressions. See below for how this is
+done.
 
 Subsections can also be used, separated by colons ’:’, e.g.
 
@@ -87,6 +88,13 @@ operators, with the usual precedence rules. In addition to ``π``,
 expressions can use predefined variables ``x``, ``y``, ``z`` and ``t``
 to refer to the spatial and time coordinates (for definitions of the values
 these variables take see :ref:`sec-expressions`).
+
+.. note:: The variables ``x``, ``y``, ``z`` should only be defined
+   when reading a 3D field; ``t`` should only be defined when reading
+   a time-dependent value. Earlier BOUT++ versions (v5.1.0 and earler)
+   defined all of these to be 0 by default e.g. when reading scalar
+   inputs.
+
 A number of functions are defined, listed in table
 :numref:`tab-initexprfunc`. One slightly unusual feature (borrowed from `Julia <https://julialang.org/>`_)
 is that if a number comes before a symbol or an opening bracket (``(``)
@@ -109,11 +117,11 @@ The convention is the same as in `Python <https://www.python.org/>`_:
 If brackets are not balanced (closed) then the expression continues on the next line.
 
 All expressions are calculated in floating point and then converted to
-an integer if needed when read inside BOUT++. The conversion is done by rounding
-to the nearest integer, but throws an error if the floating point
-value is not within :math:`1e-3` of an integer. This is to minimise
-unexpected behaviour. If you want to round any result to an integer,
-use the ``round`` function:
+an integer (or boolean) if needed when read inside BOUT++. The
+conversion is done by rounding to the nearest integer, but throws an
+error if the floating point value is not within :math:`1e-3` of an
+integer. This is to minimise unexpected behaviour. If you want to
+round any result to an integer, use the ``round`` function:
 
 .. code-block:: cfg
 
@@ -124,6 +132,43 @@ Note that it is still possible to read ``bad_integer`` as a real
 number, since the type is determined by how it is used.
 
 Have a look through the examples to see how the options are used.
+
+Boolean expressions
+~~~~~~~~~~~~~~~~~~~
+
+Boolean values must be "true", "false", "True", "False", "1" or
+"0". All lowercase ("true"/"false") is preferred, but the uppercase
+versions are allowed to support Python string conversions. Booleans
+can be combined into expressions using binary operators `&` (logical
+AND), `|` (logical OR), and unary operator `!` (logical NOT). For
+example "true & false" evaluates to `false`; "!false" evaluates to
+`true`.  Like real values and integers, boolean expressions can refer
+to other variables:
+
+.. code-block:: cfg
+
+   switch = true
+   other_switch = !switch
+
+Boolean expressions can be formed by comparing real values using
+`>` and `<` comparison operators:
+
+.. code-block:: cfg
+
+   value = 3.2
+   is_true = value > 3
+   is_false = value < 2
+
+.. note::
+   Previous BOUT++ versions (v5.1.0 and earlier) were case
+   insensitive when reading boolean values, so would read "True" or
+   "yEs" as `true`, and "False" or "No" as `false`. These earlier
+   versions did not allow boolean expressions.
+
+Internally, booleans are evaluated as real values, with `true` being 1
+and `false` being 0. Logical operators (`&`, `|`, `!`) check that
+their left and right arguments are either close to 0 or close to 1
+(like integers, "close to" is within 1e-3).
 
 Special symbols in Option names
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -523,6 +568,12 @@ options available are listed in table :numref:`tab-outputopts`.
    +-------------+----------------------------------------------------+--------------+
    | enabled     | Writing is enabled                                 | true         |
    +-------------+----------------------------------------------------+--------------+
+   | type        | File type e.g. "netcdf" or "adios"                 | "netcdf"     |
+   +-------------+----------------------------------------------------+--------------+
+   | prefix      | File name prefix                                   | "BOUT.dmp"   |
+   +-------------+----------------------------------------------------+--------------+
+   | path        | Directory to write the file into                   | ``datadir``  |
+   +-------------+----------------------------------------------------+--------------+
    | floats      | Write floats rather than doubles                   | false        |
    +-------------+----------------------------------------------------+--------------+
    | flush       | Flush the file to disk after each write            | true         |
@@ -530,8 +581,6 @@ options available are listed in table :numref:`tab-outputopts`.
    | guards      | Output guard cells                                 | true         |
    +-------------+----------------------------------------------------+--------------+
    | openclose   | Re-open the file for each write, and close after   | true         |
-   +-------------+----------------------------------------------------+--------------+
-   | parallel    | Use parallel I/O                                   | false        |
    +-------------+----------------------------------------------------+--------------+
 
 |
@@ -541,20 +590,6 @@ want to exclude I/O from the timings. **floats** can be used to reduce the size
 of the output files: files are stored as double by default, but setting
 **floats = true** changes the output to single-precision floats.
 
-To enable parallel I/O for either output or restart files, set
-
-.. code-block:: cfg
-
-    parallel = true
-
-in the output or restart section. If you have compiled BOUT++ with a
-parallel I/O library such as pnetcdf (see
-:ref:`sec-advancedinstall`), then rather than outputting one file per
-processor, all processors will output to the same file. For restart
-files this is particularly useful, as it means that you can restart a
-job with a different number of processors. Note that this feature is
-still experimental, and incomplete: output dump files are not yet
-supported by the collect routines.
 
 Implementation
 --------------
@@ -833,30 +868,30 @@ This is currently quite rudimentary and needs improving.
 
 .. _sec-options-netcdf:
 
-Reading and writing to NetCDF
------------------------------
+Reading and writing to binary formats
+-------------------------------------
 
-The `bout::OptionsNetCDF` class provides an interface to read and
-write options. Examples are in integrated test
+The `bout::OptionsIO` class provides an interface to read and
+write options to binary files. Examples are in integrated test
 ``tests/integrated/test-options-netcdf/``
 
 To write the current `Options` tree (e.g. from ``BOUT.inp``) to a
 NetCDF file::
 
-  bout::OptionsNetCDF("settings.nc").write(Options::root());
+  bout::OptionsIO::create("settings.nc")->write(Options::root());
 
 and to read it in again::
 
-  Options data = bout::OptionsNetCDF("settings.nc").read();
+  Options data = bout::OptionsIO::create("settings.nc")->read();
 
 Fields can also be stored and written::
 
   Options fields;
   fields["f2d"] = Field2D(1.0);
   fields["f3d"] = Field3D(2.0);
-  bout::OptionsNetCDF("fields.nc").write(fields);
+  bout::OptionsIO::create("fields.nc").write(fields);
 
-This should allow the input settings and evolving variables to be
+This allows the input settings and evolving variables to be
 combined into a single tree (see above on joining trees) and written
 to the output dump or restart files.
 
@@ -865,7 +900,7 @@ an ``Array<BoutReal>``, 2D as ``Matrix<BoutReal>`` and 3D as
 ``Tensor<BoutReal>``. These can be extracted directly from the
 ``Options`` tree, or converted to a Field::
 
-  Options fields_in = bout::OptionsNetCDF("fields.nc").read();
+  Options fields_in = bout::OptionsIO::create("fields.nc")->read();
   Field2D f2d = fields_in["f2d"].as<Field2D>();
   Field3D f3d = fields_in["f3d"].as<Field3D>();
 
@@ -907,7 +942,7 @@ automatically set the ``"time_dimension"`` attribute::
   // Or use `assignRepeat` to do it automatically:
   data["field"].assignRepeat(Field3D(2.0));
   
-  bout::OptionsNetCDF("time.nc").write(data);
+  bout::OptionsIO::create("time.nc")->write(data);
   
   // Update time-dependent values. This can be done without `force` if the time_dimension
   // attribute is set
@@ -915,13 +950,13 @@ automatically set the ``"time_dimension"`` attribute::
   data["field"] = Field3D(3.0);
   
   // Append data to file
-  bout::OptionsNetCDF("time.nc", bout::OptionsNetCDF::FileMode::append).write(data);
+  bout::OptionsIO({{"file", "time.nc"}, {"append", true}})->write(data);
 
-.. note:: By default, `bout::OptionsNetCDF::write` will only write variables
+.. note:: By default, `bout::OptionsIO::write` will only write variables
           with a ``"time_dimension"`` of ``"t"``. You can write
           variables with a different time dimension by passing it as
           the second argument:
-          ``OptionsNetCDF(filename).write(options, "t2")`` for example.
+          ``OptionsIO::create(filename)->write(options, "t2")`` for example.
 
 
 FFT

@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
   Options::root()["Div_Q"] = Div_Q;
   Options::root()["Div_Q_SH"] = Div_Q_SH;
 
-  bout::writeDefaultOutputFile();
+  bout::writeDefaultOutputFile(opt);
 
   BoutFinalise();
   return 0;

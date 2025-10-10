@@ -39,8 +39,8 @@ int main(int argc, char** argv) {
   std::vector<Duration> times;
 
   // Get options root
-  auto globalOptions = Options::root();
-  auto modelOpts = globalOptions["tuningRegionBlockSize"];
+  auto& globalOptions = Options::root();
+  auto& modelOpts = globalOptions["tuningRegionBlockSize"];
   const int NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(100);
   const int numSteps = modelOpts["numSteps"].withDefault(16);
 

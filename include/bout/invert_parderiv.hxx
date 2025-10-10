@@ -28,8 +28,8 @@
  *
  ************************************************************************/
 
-#ifndef __INV_PAR_H__
-#define __INV_PAR_H__
+#ifndef BOUT_INV_PAR_H
+#define BOUT_INV_PAR_H
 
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
@@ -189,4 +189,4 @@ protected:
 private:
 };
 
-#endif // __INV_PAR_H__
+#endif // BOUT_INV_PAR_H

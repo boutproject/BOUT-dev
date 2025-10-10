@@ -27,8 +27,8 @@
 
 class RK4Solver;
 
-#ifndef __RK4_SOLVER_H__
-#define __RK4_SOLVER_H__
+#ifndef BOUT_RK4_SOLVER_H
+#define BOUT_RK4_SOLVER_H
 
 #include "mpi.h"
 
@@ -68,4 +68,4 @@ private:
   Array<BoutReal> k1, k2, k3, k4, k5; //< Time-stepping arrays
 };
 
-#endif // __RK4_SOLVER_H__
+#endif // BOUT_RK4_SOLVER_H

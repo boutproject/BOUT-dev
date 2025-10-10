@@ -113,7 +113,7 @@ int SplitRK::run() {
 
           // Check accuracy
           BoutReal local_err = 0.;
-          BOUT_OMP(parallel for reduction(+: local_err)   )
+          BOUT_OMP_PERF(parallel for reduction(+: local_err)   )
           for (int i = 0; i < nlocal; i++) {
             local_err +=
                 fabs(state2[i] - state1[i]) / (fabs(state1[i]) + fabs(state2[i]) + atol);
@@ -220,7 +220,7 @@ void SplitRK::take_diffusion_step(BoutReal curtime, BoutReal dt, Array<BoutReal>
   // Stage j = 1
   // y_m2 = y0 + weight/3.0 * f(y0)  -> u2
 
-  BOUT_OMP(parallel for)
+  BOUT_OMP_PERF(parallel for)
   for (int i = 0; i < dydt.size(); i++) {
     u2[i] = start[i] + (weight / 3.0) * dydt[i];
   }
@@ -231,7 +231,7 @@ void SplitRK::take_diffusion_step(BoutReal curtime, BoutReal dt, Array<BoutReal>
   run_diffusive(curtime + (weight / 3.0) * dt);
   save_derivs(std::begin(u3)); // f(y_m2) -> u3
 
-  BOUT_OMP(parallel for)
+  BOUT_OMP_PERF(parallel for)
   for (int i = 0; i < u3.size(); i++) {
     u1[i] = 1.5 * (u2[i] + weight * u3[i]) - 0.5 * start[i] - weight * dydt[i];
   }
@@ -251,7 +251,7 @@ void SplitRK::take_diffusion_step(BoutReal curtime, BoutReal dt, Array<BoutReal>
     run_diffusive(curtime);
     save_derivs(std::begin(u3)); // f(y_m1) -> u3
 
-    BOUT_OMP(parallel for)
+    BOUT_OMP_PERF(parallel for)
     for (int i = 0; i < u3.size(); i++) {
       // Next stage result in u3
       u3[i] = mu * (u1[i] + weight * (u3[i] - a_jm1 * dydt[i])) + nu * u2[i]
@@ -280,7 +280,7 @@ void SplitRK::take_advection_step(BoutReal curtime, BoutReal dt, Array<BoutReal>
   run_convective(curtime);
   save_derivs(std::begin(dydt));
 
-  BOUT_OMP(parallel for)
+  BOUT_OMP_PERF(parallel for)
   for (int i = 0; i < nlocal; i++) {
     u1[i] = start[i] + dt * dydt[i];
   }
@@ -289,7 +289,7 @@ void SplitRK::take_advection_step(BoutReal curtime, BoutReal dt, Array<BoutReal>
   run_convective(curtime + dt);
   save_derivs(std::begin(dydt));
 
-  BOUT_OMP(parallel for )
+  BOUT_OMP_PERF(parallel for )
   for (int i = 0; i < nlocal; i++) {
     u2[i] = 0.75 * start[i] + 0.25 * u1[i] + 0.25 * dt * dydt[i];
   }
@@ -298,7 +298,7 @@ void SplitRK::take_advection_step(BoutReal curtime, BoutReal dt, Array<BoutReal>
   run_convective(curtime + 0.5 * dt);
   save_derivs(std::begin(dydt));
 
-  BOUT_OMP(parallel for)
+  BOUT_OMP_PERF(parallel for)
   for (int i = 0; i < nlocal; i++) {
     result[i] = (1. / 3) * start[i] + (2. / 3.) * (u2[i] + dt * dydt[i]);
   }

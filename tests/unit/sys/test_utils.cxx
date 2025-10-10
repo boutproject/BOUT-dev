@@ -386,91 +386,6 @@ TEST(TensorTest, ConstGetData) {
       std::all_of(std::begin(tensor), std::end(tensor), [](int a) { return a == 3; }));
 }
 
-TEST(Invert3x3Test, Identity) {
-  Matrix<BoutReal> input(3, 3);
-  input = 0;
-  for (int i = 0; i < 3; i++) {
-    input(i, i) = 1.0;
-  }
-  auto expected = input;
-  invert3x3(input);
-
-  for (int j = 0; j < 3; j++) {
-    for (int i = 0; i < 3; i++) {
-      EXPECT_EQ(input(i, j), expected(i, j));
-    }
-  }
-}
-
-TEST(Invert3x3Test, InvertTwice) {
-  std::vector<BoutReal> rawDataMat = {0.05567105, 0.92458227, 0.19954631,
-                                      0.28581972, 0.54009039, 0.13234403,
-                                      0.8841194,  0.161224,   0.74853209};
-  std::vector<BoutReal> rawDataInv = {-2.48021781, 4.27410022,  -0.09449605,
-                                      0.6278449,   0.87275842,  -0.32168092,
-                                      2.79424897,  -5.23628123, 1.51684677};
-
-  Matrix<BoutReal> input(3, 3);
-  Matrix<BoutReal> expected(3, 3);
-
-  int counter = 0;
-  for (int j = 0; j < 3; j++) {
-    for (int i = 0; i < 3; i++) {
-      input(i, j) = rawDataMat[counter];
-      expected(i, j) = rawDataInv[counter];
-      counter++;
-    }
-  }
-
-  // Invert twice to check if we get back to where we started
-  invert3x3(input);
-
-  for (int j = 0; j < 3; j++) {
-    for (int i = 0; i < 3; i++) {
-      // Note we only check to single tolerance here
-      EXPECT_FLOAT_EQ(input(i, j), expected(i, j));
-    }
-  }
-}
-
-TEST(Invert3x3Test, Singular) {
-  Matrix<BoutReal> input(3, 3);
-  input = 0;
-  EXPECT_THROW(invert3x3(input), BoutException);
-}
-
-TEST(Invert3x3Test, BadCondition) {
-  Matrix<BoutReal> input(3, 3);
-
-  // Default small
-  input = 0.;
-  input(0, 0) = 1.0e-16;
-  input(1, 1) = 1.0;
-  input(2, 2) = 1.0;
-  EXPECT_THROW(invert3x3(input), BoutException);
-
-  // Default small -- not quite bad enough condition
-  input = 0.;
-  input(0, 0) = 1.0e-12;
-  input(1, 1) = 1.0;
-  input(2, 2) = 1.0;
-  EXPECT_NO_THROW(invert3x3(input));
-
-  // Non-default small
-  input = 0.;
-  input(0, 0) = 1.0e-12;
-  input(1, 1) = 1.0;
-  input(2, 2) = 1.0;
-  EXPECT_THROW(invert3x3(input, 1.0e-10), BoutException);
-
-  // Non-default small
-  input = 0.;
-  input(0, 0) = 1.0e-12;
-  input(1, 1) = 1.0;
-  input(2, 2) = 1.0;
-  EXPECT_NO_THROW(invert3x3(input, -1.0e-10));
-}
-
 TEST(NumberUtilitiesTest, SquareInt) {
   EXPECT_EQ(4, SQ(2));
   EXPECT_EQ(4, SQ(-2));
@@ -693,10 +608,10 @@ void function_template(T) {}
 
 TEST(FunctionTraitsTest, ResultType) {
   using bout::utils::function_traits;
-  static_assert(std::is_same<function_traits<function_typedef>::result_type, int>::value,
+  static_assert(std::is_same_v<function_traits<function_typedef>::result_type, int>,
                 "Wrong result_type for function_traits of a typedef");
   static_assert(
-      std::is_same<function_traits<decltype(&function_pointer)>::result_type, int>::value,
+      std::is_same_v<function_traits<decltype(&function_pointer)>::result_type, int>,
       "Wrong result_type for function_traits of a function pointer");
   static_assert(
       std::is_same<function_traits<decltype(&function_template<int>)>::result_type,
@@ -719,9 +634,8 @@ TEST(FunctionTraitsTest, NumberOfArgs) {
 
 TEST(FunctionTraitsTest, FirstArg) {
   using bout::utils::function_traits;
-  static_assert(
-      std::is_same<function_traits<function_typedef>::arg<0>::type, char>::value,
-      "Wrong first argument type for function_traits of a typedef");
+  static_assert(std::is_same_v<function_traits<function_typedef>::arg<0>::type, char>,
+                "Wrong first argument type for function_traits of a typedef");
   static_assert(std::is_same<function_traits<decltype(&function_pointer)>::arg<0>::type,
                              double>::value,
                 "Wrong first argument type for function_traits of a function pointer");
@@ -730,10 +644,10 @@ TEST(FunctionTraitsTest, FirstArg) {
                    int>::value,
       "Wrong first argument type for function_traits of a template function");
 
-  static_assert(std::is_same<function_traits<function_typedef>::arg_t<0>, char>::value,
+  static_assert(std::is_same_v<function_traits<function_typedef>::arg_t<0>, char>,
                 "Wrong first argument type for function_traits of a typedef using arg_t");
   static_assert(
-      std::is_same<function_traits<decltype(&function_pointer)>::arg_t<0>, double>::value,
+      std::is_same_v<function_traits<decltype(&function_pointer)>::arg_t<0>, double>,
       "Wrong first argument type for function_traits of a function pointer using arg_t");
   static_assert(
       std::is_same<function_traits<decltype(&function_template<int>)>::arg_t<0>,
@@ -743,10 +657,10 @@ TEST(FunctionTraitsTest, FirstArg) {
 
 TEST(FunctionTraitsTest, SecondArg) {
   using bout::utils::function_traits;
-  static_assert(std::is_same<function_traits<function_typedef>::arg<1>::type, int>::value,
+  static_assert(std::is_same_v<function_traits<function_typedef>::arg<1>::type, int>,
                 "Wrong second argument type for function_traits of a typedef");
   static_assert(
-      std::is_same<function_traits<function_typedef>::arg_t<1>, int>::value,
+      std::is_same_v<function_traits<function_typedef>::arg_t<1>, int>,
       "Wrong second argument type for function_traits of a typedef using arg_t");
 }
 

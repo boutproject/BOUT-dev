@@ -6,7 +6,9 @@
  *
  */
 
+#include "bout/parallel_boundary_region.hxx"
 #include "bout/paralleltransform.hxx"
+#include <bout/boundary_region.hxx>
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
 #include <bout/mesh.hxx>
@@ -264,11 +266,8 @@ ShiftedMetric::shiftZ(const Field3D& f,
 
   std::vector<Field3D> results{};
 
-  for (auto& phase : phases) {
-    // In C++17 std::vector::emplace_back returns a reference, which
-    // would be very useful here!
-    results.emplace_back(&mesh);
-    auto& current_result = results.back();
+  for (const auto& phase : phases) {
+    auto& current_result = results.emplace_back(&mesh);
     current_result.allocate();
     current_result.setLocation(f.getLocation());
 

@@ -29,6 +29,7 @@ idlpath="@IDLCONFIGPATH@"
 pythonpath="@PYTHONCONFIGPATH@"
 
 has_netcdf="@BOUT_HAS_NETCDF@"
+has_adios2="@BOUT_HAS_ADIOS2@"
 has_legacy_netcdf="@BOUT_HAS_LEGACY_NETCDF@"
 has_pnetcdf="@BOUT_HAS_PNETCDF@"
 has_pvode="@BOUT_HAS_PVODE@"
@@ -70,17 +71,18 @@ Available values for OPTION include:
   --idl          IDL path
   --python       Python path
 
-  --has-netcdf  NetCDF file support
+  --has-netcdf   NetCDF file support
+  --has-adios2   ADIOS2 file support
   --has-legacy-netcdf  Legacy NetCDF file support
-  --has-pnetcdf Parallel NetCDF file support
-  --has-pvode   PVODE solver support
-  --has-cvode   SUNDIALS CVODE solver support
-  --has-ida     SUNDIALS IDA solver support
-  --has-lapack  LAPACK support
-  --has-petsc   PETSc support
-  --has-hypre   Hypre support
-  --has-slepc   SLEPc support
-  --has-nls     Natural Language Support
+  --has-pnetcdf  Parallel NetCDF file support
+  --has-pvode    PVODE solver support
+  --has-cvode    SUNDIALS CVODE solver support
+  --has-ida      SUNDIALS IDA solver support
+  --has-lapack   LAPACK support
+  --has-petsc    PETSc support
+  --has-hypre    Hypre support
+  --has-slepc    SLEPc support
+  --has-nls      Natural Language Support
 
   --petsc-has-sundials 
 
@@ -109,6 +111,7 @@ all()
         echo "  --python      -> $pythonpath"
         echo
         echo "  --has-netcdf  -> $has_netcdf"
+        echo "  --has-adios   -> $has_adios"
         echo "  --has-legacy-netcdf  -> $has_legacy_netcdf"
         echo "  --has-pnetcdf -> $has_pnetcdf"
         echo "  --has-pvode   -> $has_pvode"
@@ -120,6 +123,7 @@ all()
         echo "  --has-slepc   -> $has_slepc"
         echo "  --has-arkode  -> $has_arkode"
         echo "  --has-nls     -> $has_nls"
+        echo "  --has-openmp  -> $has_openmp"
         echo
         echo "  --petsc-has-sundials -> $petsc_has_sundials"
         echo
@@ -195,6 +199,10 @@ while test $# -gt 0; do
 
     --has-netcdf)
         echo $has_netcdf
+        ;;
+
+    --has-adios)
+        echo $has_adios
         ;;
 
     --has-legacy-netcdf)

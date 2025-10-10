@@ -1,12 +1,3 @@
-# settings file for BOUT++
-#
-# Turbulence simulation in a 2D slab
-#
-
-# settings used by the core code
-
-nout = 1    # number of time-steps
-timestep = 1 # time between outputs
 MXG = 1
 MYG = 1      # No y derivatives, so no guard cells needed in y
 
@@ -68,6 +59,15 @@ rtol = 1e-08   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
 
 mms = true      # Test using Method of Manufactured Solutions
+output_step = 1 # time between outputs
+# settings file for BOUT++
+#
+# Turbulence simulation in a 2D slab
+#
+
+# settings used by the core code
+
+nout = 1    # number of time-steps
 
 ##################################################
 # general settings for the model

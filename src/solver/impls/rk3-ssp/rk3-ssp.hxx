@@ -33,8 +33,8 @@
 
 class RK3SSP;
 
-#ifndef __RK3SSP_SOLVER_H__
-#define __RK3SSP_SOLVER_H__
+#ifndef BOUT_RK3SSP_SOLVER_H
+#define BOUT_RK3SSP_SOLVER_H
 
 #include "mpi.h"
 
@@ -72,4 +72,4 @@ private:
   Array<BoutReal> u1, u2, u3, L; //< Time-stepping arrays
 };
 
-#endif // __RK4_SOLVER_H__
+#endif // BOUT_RK3SSP_SOLVER_H

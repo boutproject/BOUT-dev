@@ -1,4 +1,6 @@
 
+#include "bout/parallel_boundary_op.hxx"
+#include "bout/parallel_boundary_region.hxx"
 #include "bout/unused.hxx"
 #include <bout/boundary_factory.hxx>
 #include <bout/field_data.hxx>
@@ -151,10 +153,9 @@ void FieldData::setBoundary(const std::string& name) {
   }
 
   /// Get the mesh boundary regions
-  std::vector<BoundaryRegionPar*> par_reg = mesh->getBoundariesPar();
   /// Loop over the mesh parallel boundary regions
   for (const auto& reg : mesh->getBoundariesPar()) {
-    auto* op = dynamic_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
+    auto* op = dynamic_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg.get()));
     if (op != nullptr) {
       bndry_op_par.push_back(op);
     }
@@ -232,7 +233,7 @@ CELL_LOC FieldData::getLocation() const {
   return location;
 }
 
-BOUT_HOST_DEVICE Coordinates* FieldData::getCoordinates() const {
+Coordinates* FieldData::getCoordinates() const {
   auto fieldCoordinates_shared = fieldCoordinates.lock();
   if (fieldCoordinates_shared) {
     return fieldCoordinates_shared.get();
@@ -241,7 +242,7 @@ BOUT_HOST_DEVICE Coordinates* FieldData::getCoordinates() const {
   return fieldCoordinates.lock().get();
 }
 
-BOUT_HOST_DEVICE Coordinates* FieldData::getCoordinates(CELL_LOC loc) const {
+Coordinates* FieldData::getCoordinates(CELL_LOC loc) const {
   if (loc == CELL_DEFAULT) {
     return getCoordinates();
   }

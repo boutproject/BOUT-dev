@@ -1,3 +1,7 @@
+
+MZ = 1    # Z size
+
+[solver]
 # Perpendicular Laplacian test
 #
 # Tests the accuracy of the Delp2 operator on both uniform and
@@ -7,6 +11,6 @@
 
 nout = 0  # No timesteps
 
-MZ = 1    # Z size
+[mesh]
 
-grid = "test_delp2.grd.nc"
+file = "test_delp2.grd.nc"

@@ -1,11 +1,10 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include <set>
 #include <tuple>
 #include <vector>
 
 #include "fake_parallel_mesh.hxx"
-#include "test_extras.hxx"
 #include "gtest/gtest.h"
 
 #include "bout/petsc_interface.hxx"
@@ -13,12 +12,7 @@
 
 #if BOUT_HAS_PETSC
 
-/// Global mesh
-namespace bout {
-namespace globals {
-extern Mesh* mesh;
-} // namespace globals
-} // namespace bout
+#include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;
@@ -39,15 +33,14 @@ public:
         globalStarIndexer(bout::globals::mesh,
                           starStencil<ind_type>(bout::globals::mesh)),
         globalDefaultIndexer(bout::globals::mesh), guardx(bout::globals::mesh->getNXPE()),
-        guardy(std::is_same<T, FieldPerp>::value ? 0 : bout::globals::mesh->getNYPE()),
+        guardy(std::is_same_v<T, FieldPerp> ? 0 : bout::globals::mesh->getNYPE()),
         nx(bout::globals::mesh->LocalNx - 2 * guardx),
-        ny(std::is_same<T, FieldPerp>::value ? 1
-                                             : bout::globals::mesh->LocalNy - 2 * guardy),
-        nz(std::is_same<T, Field2D>::value ? 1 : bout::globals::mesh->LocalNz),
+        ny(std::is_same_v<T, FieldPerp> ? 1 : bout::globals::mesh->LocalNy - 2 * guardy),
+        nz(std::is_same_v<T, Field2D> ? 1 : bout::globals::mesh->LocalNz),
         mesh2(2, 2, 2) {
     mesh2.createDefaultRegions();
     mesh2.setCoordinates(nullptr);
-    test_coords = std::make_shared<Coordinates>(
+    auto test_coords = std::make_shared<Coordinates>(
         bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
@@ -82,15 +75,15 @@ TYPED_TEST(IndexerTest, TestConvertIndex) {
   BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
     int global = this->globalSquareIndexer.getGlobal(i);
     EXPECT_GE(global, 0);
-    BOUT_OMP(critical)
+    BOUT_OMP_SAFE(critical)
     EXPECT_TRUE(indicesGlobalSquare.insert(global).second);
     global = this->globalStarIndexer.getGlobal(i);
     EXPECT_GE(global, 0);
-    BOUT_OMP(critical)
+    BOUT_OMP_SAFE(critical)
     EXPECT_TRUE(indicesGlobalStar.insert(global).second);
     global = this->globalDefaultIndexer.getGlobal(i);
     EXPECT_GE(global, 0);
-    BOUT_OMP(critical)
+    BOUT_OMP_SAFE(critical)
     EXPECT_TRUE(indicesGlobalDefault.insert(global).second);
   }
 
@@ -98,25 +91,25 @@ TYPED_TEST(IndexerTest, TestConvertIndex) {
   BOUT_FOR(i, f.getRegion("RGN_XGUARDS")) {
     int global = this->globalSquareIndexer.getGlobal(i);
     EXPECT_GE(global, 0);
-    BOUT_OMP(critical)
+    BOUT_OMP_SAFE(critical)
     EXPECT_TRUE(indicesGlobalSquare.insert(global).second);
     global = this->globalStarIndexer.getGlobal(i);
     EXPECT_GE(global, 0);
-    BOUT_OMP(critical)
+    BOUT_OMP_SAFE(critical)
     EXPECT_TRUE(indicesGlobalStar.insert(global).second);
     EXPECT_LT(this->globalDefaultIndexer.getGlobal(i), 0);
   }
 
   // Check indices of Y guard cells are unique
-  if (!std::is_same<TypeParam, FieldPerp>::value) {
+  if constexpr (!std::is_same_v<TypeParam, FieldPerp>) {
     BOUT_FOR(i, f.getRegion("RGN_YGUARDS")) {
       int global = this->globalSquareIndexer.getGlobal(i);
       EXPECT_GE(global, 0);
-      BOUT_OMP(critical)
+      BOUT_OMP_SAFE(critical)
       EXPECT_TRUE(indicesGlobalSquare.insert(global).second);
       global = this->globalStarIndexer.getGlobal(i);
       EXPECT_GE(global, 0);
-      BOUT_OMP(critical)
+      BOUT_OMP_SAFE(critical)
       EXPECT_TRUE(indicesGlobalStar.insert(global).second);
       EXPECT_LT(this->globalDefaultIndexer.getGlobal(i), 0);
     }
@@ -178,7 +171,7 @@ TYPED_TEST(IndexerTest, TestGetRegionNobndry) {
   BOUT_FOR(i, rgn) {
     EXPECT_GE(i.x(), this->globalSquareIndexer.getMesh()->xstart);
     EXPECT_LE(i.x(), this->globalSquareIndexer.getMesh()->xend);
-    if (!std::is_same<TypeParam, FieldPerp>::value) {
+    if constexpr (!std::is_same_v<TypeParam, FieldPerp>) {
       EXPECT_GE(i.y(), this->globalSquareIndexer.getMesh()->ystart);
       EXPECT_LE(i.y(), this->globalSquareIndexer.getMesh()->yend);
     }
@@ -188,7 +181,7 @@ TYPED_TEST(IndexerTest, TestGetRegionNobndry) {
   BOUT_FOR(i, rgn) {
     EXPECT_GE(i.x(), this->globalStarIndexer.getMesh()->xstart);
     EXPECT_LE(i.x(), this->globalStarIndexer.getMesh()->xend);
-    if (!std::is_same<TypeParam, FieldPerp>::value) {
+    if constexpr (!std::is_same_v<TypeParam, FieldPerp>) {
       EXPECT_GE(i.y(), this->globalStarIndexer.getMesh()->ystart);
       EXPECT_LE(i.y(), this->globalStarIndexer.getMesh()->yend);
     }
@@ -198,7 +191,7 @@ TYPED_TEST(IndexerTest, TestGetRegionNobndry) {
   BOUT_FOR(i, rgn) {
     EXPECT_GE(i.x(), this->globalDefaultIndexer.getMesh()->xstart);
     EXPECT_LE(i.x(), this->globalDefaultIndexer.getMesh()->xend);
-    if (!std::is_same<TypeParam, FieldPerp>::value) {
+    if constexpr (!std::is_same_v<TypeParam, FieldPerp>) {
       EXPECT_GE(i.y(), this->globalDefaultIndexer.getMesh()->ystart);
       EXPECT_LE(i.y(), this->globalDefaultIndexer.getMesh()->yend);
     }
@@ -208,7 +201,7 @@ TYPED_TEST(IndexerTest, TestGetRegionNobndry) {
   BOUT_FOR(i, rgn) {
     EXPECT_GE(i.x(), this->localIndexer.getMesh()->xstart);
     EXPECT_LE(i.x(), this->localIndexer.getMesh()->xend);
-    if (!std::is_same<TypeParam, FieldPerp>::value) {
+    if constexpr (!std::is_same_v<TypeParam, FieldPerp>) {
       EXPECT_GE(i.y(), this->localIndexer.getMesh()->ystart);
       EXPECT_LE(i.y(), this->localIndexer.getMesh()->yend);
     }
@@ -230,7 +223,7 @@ TYPED_TEST(IndexerTest, TestGetRegionBndry) {
 
 TYPED_TEST(IndexerTest, TestGetRegionLowerY) {
   Region<typename TypeParam::ind_type> rgn;
-  if (std::is_same<TypeParam, FieldPerp>::value) {
+  if constexpr (std::is_same_v<TypeParam, FieldPerp>) {
     rgn = this->globalSquareIndexer.getRegionLowerY();
     EXPECT_EQ(rgn.asUnique().size(), 0);
     rgn = this->globalStarIndexer.getRegionLowerY();
@@ -251,7 +244,7 @@ TYPED_TEST(IndexerTest, TestGetRegionLowerY) {
 
 TYPED_TEST(IndexerTest, TestGetRegionUpperY) {
   Region<typename TypeParam::ind_type> rgn;
-  if (std::is_same<TypeParam, FieldPerp>::value) {
+  if constexpr (std::is_same_v<TypeParam, FieldPerp>) {
     rgn = this->globalSquareIndexer.getRegionUpperY();
     EXPECT_EQ(rgn.asUnique().size(), 0);
     rgn = this->globalStarIndexer.getRegionUpperY();
@@ -306,8 +299,8 @@ TYPED_TEST(IndexerTest, TestSparsityPatternAvailable) {
 }
 
 TYPED_TEST(IndexerTest, TestGetNumDiagonal) {
-  const int squareStencilInteriorSize = std::is_same<TypeParam, Field3D>::value ? 19 : 9,
-            starStencilInteriorSize = std::is_same<TypeParam, Field3D>::value ? 7 : 5,
+  const int squareStencilInteriorSize = std::is_same_v<TypeParam, Field3D> ? 19 : 9,
+            starStencilInteriorSize = std::is_same_v<TypeParam, Field3D> ? 7 : 5,
             boundsSize = 1;
   int numBoundaryCells = 0;
   for (int i : this->globalSquareIndexer.getNumDiagonal()) {

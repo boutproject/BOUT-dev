@@ -1,8 +1,8 @@
 /// Base type for factories
 
 #pragma once
-#ifndef __BOUT_GENERIC_FACTORY_H__
-#define __BOUT_GENERIC_FACTORY_H__
+#ifndef BOUT_GENERIC_FACTORY_H
+#define BOUT_GENERIC_FACTORY_H
 
 #include "bout/boutexception.hxx"
 #include "bout/options.hxx"
@@ -47,14 +47,6 @@
 ///
 ///     RegisterInFactory<Base, Derived, MyFactory, Options*> register("derived_type");
 ///     auto foo = MyFactory::getInstance().create("derived_type");
-///
-///   In a .cxx file the static members should be declared:
-///
-///     constexpr decltype(MyFactory::type_name) MyFactory::type_name;
-///     constexpr decltype(MyFactory::section_name) MyFactory::section_name;
-///     constexpr decltype(MyFactory::option_name) MyFactory::option_name;
-///     constexpr decltype(MyFactory::default_type) MyFactory::default_type;
-///
 ///
 /// @tparam BaseType       The base class that this factory creates
 /// @tparam DerivedFactory The derived factory inheriting from this class
@@ -259,4 +251,4 @@ public:
   };
 };
 
-#endif // __BOUT_GENERIC_FACTORY_H__
+#endif // BOUT_GENERIC_FACTORY_H

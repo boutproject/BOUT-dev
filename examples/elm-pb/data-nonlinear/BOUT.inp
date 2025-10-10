@@ -1,18 +1,7 @@
-# settings file for BOUT++
-# High-Beta reduced MHD case
-
-##################################################
-# Global settings used by the core code
-
-nout = 40          # number of time-steps
-timestep = 1       # time between outputs
 wall_limit = 1.55  # wall time limit (in hours)
 
 zperiod = 15        # Fraction of a torus to simulate
 MZ = 16             # Number of points in Z
-
-# Note: High resolution grid needed for nonlinear simulations
-grid = "cbm18_8_y064_x516_090309.nc"  # Grid file
 
 dump_format = "nc"      # Dump file format. "nc" = NetCDF, "pdb" = PDB
 restart_format = "nc"   # Restart file format
@@ -20,6 +9,9 @@ restart_format = "nc"   # Restart file format
 [mesh]
 
 staggergrids = false    # Use staggered grids
+
+# Note: High resolution grid needed for nonlinear simulations
+file = "cbm18_8_y064_x516_090309.nc"  # Grid file
 
 [mesh:paralleltransform]
 
@@ -55,8 +47,8 @@ shiftoutput = true  # Put the output into field-aligned coordinates
 
 flags = 0   # Flags for Laplacian inversion
 
-rtol = 1.e-9
-atol = 1.e-14
+rtol = 1e-09
+atol = 1e-14
 
 ##################################################
 # FFTs
@@ -80,14 +72,22 @@ use_jacobian = false  # Use user-supplied Jacobian
 mxstep = 5000   # Number of internal steps between outputs
 adams_moulton = false # Use Adams-Moulton method (default is BDF)
 func_iter = false     # Functional iteration (default is Newton)
+output_step = 1       # time between outputs
+# settings file for BOUT++
+# High-Beta reduced MHD case
+
+##################################################
+# Global settings used by the core code
+
+nout = 40          # number of time-steps
 
 ##################################################
 # settings for high-beta reduced MHD
 
 [highbeta]
 
-density = 1.0e19       # number density of deuterium [m^-3]
-                       # used to produce output normalisations
+density = 1e+19       # number density of deuterium [m^-3]
+# used to produce output normalisations
 
 evolve_jpar = false     # If true, evolve J raher than Psi
 
@@ -117,7 +117,7 @@ bm_exb_flag = 0
 bm_mag_flag = 0
 ##################################################################
 withflow = false     # With flow or not
-D_0 = 130000        # differential potential
+D_0 = 1.3e5         # differential potential
 D_s = 20            # shear parameter
 K_H_term = false    # Contain K-H term
 sign = -1           # flow direction
@@ -131,7 +131,7 @@ AA = 2.0          # ion mass in units of proton mass
 noshear = false        # zero all shear
 
 relax_j_vac = false    # Relax to zero-current in the vacuum
-relax_j_tconst = 1e-2  # Time constant for vacuum relaxation
+relax_j_tconst = 0.01  # Time constant for vacuum relaxation
 
 ## Toroidal filtering
 filter_z = true   # remove all except one mode
@@ -146,7 +146,7 @@ split_n0 = true  # Solve potential as separate n=0 and n != components
 ## Jpar smoothing
 smooth_j_x = true   # Filter Jpar in the X direction
 lowpass_j_z = 16   # Remove high-k modes. Specifies maximum harmonic to keep
- 
+
 ## mask in x boundaries
 mask_j_x = true
 
@@ -164,19 +164,19 @@ rmp_polpeak = 0.5   # Y location of maximum (fraction)
 ## Vacuum region control
 
 vacuum_pressure = 0.02 # the pressure below which it is considered vacuum
-                       # fraction of peak pressure
+# fraction of peak pressure
 vacuum_trans = 0.01   # transition width (fraction of P)
 
 ## Resistivity and Hyper-resistivity
 
-vac_lund = 1.0e8    # Lundquist number in vacuum  (negative -> infinity)
-core_lund = 1.0e8  # Lundquist number in core (negative -> infinity)
+vac_lund = 1.e8     # Lundquist number in vacuum  (negative -> infinity)
+core_lund = 1.e8    # Lundquist number in core (negative -> infinity)
 hyperresist = 1.e-4 # Hyper-resistivity coefficient (like 1 / Lundquist number)
 
 ## Inner boundary damping
 
 damp_width = -1       # Width of damping region (grid cells)
-damp_t_const = 1e-2  # Damping time constant
+damp_t_const = 0.01  # Damping time constant
 
 ## Parallel pressure diffusion
 
@@ -286,4 +286,3 @@ bndry_core = neumann
 bndry_xin = none
 bndry_xout = none
 bndry_target = neumann
-

@@ -17,7 +17,7 @@ the following tools and libraries:
 
 * ``git`` (>= 2.x)
 * `CMake <https://cmake.org/>`_
-* a C++-14 compiler (for example, GCC >= 5.0)
+* a C++-17 compiler (for example, GCC >= 8.0)
 * an ``MPI`` implementation (for example OpenMPI or MPICH)
 * The `NetCDF C library
   <https://www.unidata.ucar.edu/downloads/netcdf>`__

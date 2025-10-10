@@ -39,7 +39,3 @@ Field2D InvertParDiv::solve(const Field2D& f) {
 
 // DO NOT REMOVE: ensures linker keeps all symbols in this TU
 void InvertParDivFactory::ensureRegistered() {}
-constexpr decltype(InvertParDivFactory::type_name) InvertParDivFactory::type_name;
-constexpr decltype(InvertParDivFactory::section_name) InvertParDivFactory::section_name;
-constexpr decltype(InvertParDivFactory::option_name) InvertParDivFactory::option_name;
-constexpr decltype(InvertParDivFactory::default_type) InvertParDivFactory::default_type;

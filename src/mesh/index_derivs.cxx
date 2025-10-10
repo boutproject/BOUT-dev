@@ -20,7 +20,7 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include "bout/traits.hxx"
 #include <bout/index_derivs.hxx>
@@ -59,7 +59,7 @@ STAGGER Mesh::getStagger(const CELL_LOC inloc, const CELL_LOC outloc,
   }
 }
 
-STAGGER Mesh::getStagger(const CELL_LOC vloc, MAYBE_UNUSED(const CELL_LOC inloc),
+STAGGER Mesh::getStagger(const CELL_LOC vloc, [[maybe_unused]] const CELL_LOC inloc,
                          const CELL_LOC outloc, const CELL_LOC allowedStaggerLoc) const {
   TRACE("Mesh::getStagger -- four arguments");
   ASSERT1(inloc == outloc);
@@ -426,10 +426,9 @@ public:
     AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::Standard)
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
-    ASSERT2(direction == DIRECTION::Z); // Only in Z for now
-    ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
-    ASSERT2(
-        bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
+    ASSERT2(direction == DIRECTION::Z);    // Only in Z for now
+    ASSERT2(stagger == STAGGER::None);     // Staggering not currently supported
+    ASSERT2(bout::utils::is_Field3D_v<T>); // Should never need to call this with Field2D
 
     auto* theMesh = var.getMesh();
 
@@ -446,7 +445,7 @@ public:
     }
     const int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
 
-    BOUT_OMP(parallel)
+    BOUT_OMP_PERF(parallel)
     {
       Array<dcomplex> cv(ncz / 2 + 1);
       const BoutReal kwaveFac = TWOPI / ncz;
@@ -485,7 +484,6 @@ public:
   }
   static constexpr metaData meta{"FFT", 0, DERIV::Standard};
 };
-constexpr metaData FFTDerivativeType::meta;
 
 class FFT2ndDerivativeType {
 public:
@@ -494,10 +492,9 @@ public:
     AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::StandardSecond);
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
-    ASSERT2(direction == DIRECTION::Z); // Only in Z for now
-    ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
-    ASSERT2(
-        bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
+    ASSERT2(direction == DIRECTION::Z);    // Only in Z for now
+    ASSERT2(stagger == STAGGER::None);     // Staggering not currently supported
+    ASSERT2(bout::utils::is_Field3D_v<T>); // Should never need to call this with Field2D
 
     auto* theMesh = var.getMesh();
 
@@ -505,7 +502,7 @@ public:
     const int ncz = theMesh->getNpoints(direction);
     const int kmax = ncz / 2;
 
-    BOUT_OMP(parallel)
+    BOUT_OMP_PERF(parallel)
     {
       Array<dcomplex> cv(ncz / 2 + 1);
       const BoutReal kwaveFac = TWOPI / ncz;
@@ -544,7 +541,6 @@ public:
   }
   static constexpr metaData meta{"FFT", 0, DERIV::StandardSecond};
 };
-constexpr metaData FFT2ndDerivativeType::meta;
 
 produceCombinations<Set<WRAP_ENUM(DIRECTION, Z)>, Set<WRAP_ENUM(STAGGER, None)>,
                     Set<TypeContainer<Field3D>>,
@@ -574,7 +570,6 @@ public:
   }
   static constexpr metaData meta{"SPLIT", 2, DERIV::Flux};
 };
-constexpr metaData SplitFluxDerivativeType::meta;
 
 produceCombinations<
     Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y),

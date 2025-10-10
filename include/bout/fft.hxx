@@ -25,8 +25,8 @@
  * 
  *******************************************************************************/
 
-#ifndef __FFT_H__
-#define __FFT_H__
+#ifndef BOUT_FFT_H
+#define BOUT_FFT_H
 
 #include "bout/dcomplex.hxx"
 #include <bout/array.hxx>
@@ -132,4 +132,4 @@ inline void DST_rev(dcomplex* in, int length, BoutReal* out) {
   return bout::fft::DST_rev(in, length, out);
 }
 
-#endif // __FFT_H__
+#endif // BOUT_FFT_H

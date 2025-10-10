@@ -15,7 +15,7 @@
 find_package(Python3 3.6 COMPONENTS Interpreter Development)
 
 if (NOT Python3_FOUND)
-  message(STATUS "Could not find numpy as python3 was not found. Maybe the developement package is missing?")
+  message(STATUS "Could not find numpy as python was not found. Maybe the developement package is missing?")
   set(Numpy_FOUND ${Python3_FOUND})
   return()
 endif()

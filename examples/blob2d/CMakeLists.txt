@@ -8,4 +8,5 @@ endif()
 
 bout_add_example(blob2d
   SOURCES blob2d.cxx
-  DATA_DIRS delta_0.25 delta_1 delta_10 two_blobs)
+  DATA_DIRS delta_0.25 delta_1 delta_10 two_blobs data
+  EXTRA_FILES blob_velocity.py)

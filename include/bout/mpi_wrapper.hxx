@@ -27,8 +27,8 @@
 
 class MpiWrapper;
 
-#ifndef __MPIWRAPPER_H__
-#define __MPIWRAPPER_H__
+#ifndef BOUT_MPIWRAPPER_H
+#define BOUT_MPIWRAPPER_H
 
 #include <mpi.h>
 
@@ -153,4 +153,4 @@ public:
   virtual double MPI_Wtime() { return ::MPI_Wtime(); }
 };
 
-#endif // __MPIWRAPPER_H__
+#endif // BOUT_MPIWRAPPER_H

@@ -25,8 +25,8 @@
 
 class RKGenericSolver;
 
-#ifndef __RKGENERIC_SOLVER_H__
-#define __RKGENERIC_SOLVER_H__
+#ifndef BOUT_RKGENERIC_SOLVER_H
+#define BOUT_RKGENERIC_SOLVER_H
 
 #include "mpi.h"
 
@@ -77,4 +77,4 @@ private:
   std::unique_ptr<RKScheme> scheme{nullptr};
 };
 
-#endif // __RKGENERIC_SOLVER_H__
+#endif // BOUT_RKGENERIC_SOLVER_H
