@@ -1069,61 +1069,58 @@ int SNESSolver::run() {
       }
 #endif // PETSC_VERSION_GE(3,20,0)
 
-      if (looping) {
+      if (pid_controller) {
+        // Changing the timestep.
+        // Note: The preconditioner depends on the timestep,
+        // so we recalculate the jacobian and the preconditioner
+        //  every time the timestep changes
 
-        if (pid_controller) {
-          // Changing the timestep.
-          // Note: The preconditioner depends on the timestep,
-          // so we recalculate the jacobian and the preconditioner
-          //  every time the timestep changes
+        timestep = pid(timestep, nl_its);
 
-          timestep = pid(timestep, nl_its);
+        // NOTE(malamast): Do we really need this?
+        // Recompute Jacobian (for now)
+        if (saved_jacobian_lag == 0) {
+          SNESGetLagJacobian(snes, &saved_jacobian_lag);
+          SNESSetLagJacobian(snes, 1);
+        }
 
-          // NOTE(malamast): Do we really need this?
-          // Recompute Jacobian (for now)
-          if (saved_jacobian_lag == 0) {
-            SNESGetLagJacobian(snes, &saved_jacobian_lag);
-            SNESSetLagJacobian(snes, 1);
-          }
+      } else {
 
-        } else {
+        // Consider changing the timestep.
+        // Note: The preconditioner depends on the timestep,
+        // so if it is not recalculated the it will be less
+        // effective.
+        if ((nl_its <= lower_its) && (timestep < max_timestep)
+            && (steps_since_snes_failure > 2)) {
+          // Increase timestep slightly
+          timestep *= timestep_factor_on_lower_its;
 
-          // Consider changing the timestep.
-          // Note: The preconditioner depends on the timestep,
-          // so if it is not recalculated the it will be less
-          // effective.
-          if ((nl_its <= lower_its) && (timestep < max_timestep)
-              && (steps_since_snes_failure > 2)) {
-            // Increase timestep slightly
-            timestep *= timestep_factor_on_lower_its;
+          timestep = std::min(timestep, max_timestep);
 
-            timestep = std::min(timestep, max_timestep);
+          // Note: Setting the SNESJacobianFn to NULL retains
+          // previously set evaluation function.
+          //
+          // The SNES Jacobian is a combination of the RHS Jacobian
+          // and a factor involving the timestep.
+          // Depends on equation_form
+          // -> Probably call SNESSetJacobian(snes, Jfd, Jfd, NULL, fdcoloring);
 
-            // Note: Setting the SNESJacobianFn to NULL retains
-            // previously set evaluation function.
-            //
-            // The SNES Jacobian is a combination of the RHS Jacobian
-            // and a factor involving the timestep.
-            // Depends on equation_form
-            // -> Probably call SNESSetJacobian(snes, Jfd, Jfd, NULL, fdcoloring);
-
-            if (static_cast<BoutReal>(lin_its) / nl_its > 4) {
-              // Recompute Jacobian (for now)
-              if (saved_jacobian_lag == 0) {
-                SNESGetLagJacobian(snes, &saved_jacobian_lag);
-                SNESSetLagJacobian(snes, 1);
-              }
-            }
-
-          } else if (nl_its >= upper_its) {
-            // Reduce timestep slightly
-            timestep *= timestep_factor_on_upper_its;
-
-            // Recompute Jacobian
+          if (static_cast<BoutReal>(lin_its) / nl_its > 4) {
+            // Recompute Jacobian (for now)
             if (saved_jacobian_lag == 0) {
               SNESGetLagJacobian(snes, &saved_jacobian_lag);
               SNESSetLagJacobian(snes, 1);
             }
+          }
+
+        } else if (nl_its >= upper_its) {
+          // Reduce timestep slightly
+          timestep *= timestep_factor_on_upper_its;
+
+          // Recompute Jacobian
+          if (saved_jacobian_lag == 0) {
+            SNESGetLagJacobian(snes, &saved_jacobian_lag);
+            SNESSetLagJacobian(snes, 1);
           }
         }
       }
@@ -1132,7 +1129,7 @@ int SNESSolver::run() {
 
     if (!matrix_free) {
       ASSERT2(simtime >= target);
-      ASSERT2(simtime - dt < target);
+      ASSERT2(simtime - dt <= target);
       // Stepped over output timestep => Interpolate
       // snes_x is the solution at t = simtime
       // x0 is the solution at t = simtime - dt
