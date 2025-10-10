@@ -1,14 +1,14 @@
+#include <bout/boutcomm.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/derivs.hxx>
 #include <bout/globals.hxx>
+#include <bout/griddata.hxx>
 #include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 #include <bout/utils.hxx>
 
 #include <cmath>
-
-#include <bout/boutcomm.hxx>
-#include <bout/output.hxx>
 
 #include "impls/bout/boutmesh.hxx"
 
@@ -29,8 +29,19 @@ MeshFactory::ReturnType MeshFactory::create(const std::string& type, Options* op
 
   if (options->isSet("file") or Options::root().isSet("grid")) {
     // Specified mesh file
-    const auto grid_name =
-        (*options)["file"].withDefault(Options::root()["grid"].withDefault(""));
+    if (Options::root().isSet("grid")) {
+      output_warn.write("Setting `grid` is deprecated. Please set `mesh:file` instead.");
+    }
+    const auto grid_name1 = Options::root()["grid"].withDefault("");
+    const auto grid_name = (*options)["file"].withDefault(grid_name1);
+    if (options->isSet("file") and Options::root().isSet("grid")) {
+      if (grid_name1 != grid_name) {
+        throw BoutException(
+            "Mismatch in grid names - specified `{:s}` in grid and `{:s} in "
+            "mesh:file!\nPlease specify only one name or ensure they are the same!",
+            grid_name1, grid_name);
+      }
+    }
     output << "\nGetting grid data from file " << grid_name << "\n";
 
     // Create a grid file, using specified format if given
@@ -559,6 +570,14 @@ const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
   if (found == end(regionMap3D)) {
     throw BoutException(_("Couldn't find region {:s} in regionMap3D"), region_name);
   }
+  return region3D[found->second];
+}
+
+size_t Mesh::getRegionID(const std::string& region_name) const {
+  const auto found = regionMap3D.find(region_name);
+  if (found == end(regionMap3D)) {
+    throw BoutException(_("Couldn't find region {:s} in regionMap3D"), region_name);
+  }
   return found->second;
 }
 
@@ -595,7 +614,21 @@ void Mesh::addRegion3D(const std::string& region_name, const Region<>& region) {
     throw BoutException(_("Trying to add an already existing region {:s} to regionMap3D"),
                         region_name);
   }
-  regionMap3D[region_name] = region;
+
+  std::optional<size_t> id;
+  for (size_t i = 0; i < region3D.size(); ++i) {
+    if (region3D[i] == region) {
+      id = i;
+      break;
+    }
+  }
+  if (!id.has_value()) {
+    id = region3D.size();
+    region3D.push_back(region);
+  }
+
+  regionMap3D[region_name] = id.value();
+
   output_verbose.write(_("Registered region 3D {:s}"), region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
 }
@@ -734,7 +767,89 @@ void Mesh::recalculateStaggeredCoordinates() {
   }
 }
 
-constexpr decltype(MeshFactory::type_name) MeshFactory::type_name;
-constexpr decltype(MeshFactory::section_name) MeshFactory::section_name;
-constexpr decltype(MeshFactory::option_name) MeshFactory::option_name;
-constexpr decltype(MeshFactory::default_type) MeshFactory::default_type;
+std::optional<size_t> Mesh::getCommonRegion(std::optional<size_t> lhs,
+                                            std::optional<size_t> rhs) {
+  if (!lhs.has_value()) {
+    return rhs;
+  }
+  if (!rhs.has_value()) {
+    return lhs;
+  }
+  if (lhs.value() == rhs.value()) {
+    return lhs;
+  }
+  const size_t low = std::min(lhs.value(), rhs.value());
+  const size_t high = std::max(lhs.value(), rhs.value());
+
+  /* This function finds the ID of the region corresponding to the
+     intersection of two regions, and caches the result. The cache is a
+     vector, indexed by some function of the two input IDs. Because the
+     intersection of two regions doesn't depend on the order, and the
+     intersection of a region with itself is the identity operation, we can
+     order the IDs numerically and use a generalised triangle number:
+     $[n (n - 1) / 2] + m$ to construct the cache index. This diagram shows
+     the result for the first few numbers:
+       |  0  1  2  3
+     ----------------
+     0 |
+     1 |  0
+     2 |  1  2
+     3 |  3  4  5
+     4 |  6  7  8  9
+
+     These indices might be sparse, but presumably we don't expect to store
+     very many intersections so this shouldn't give much overhead.
+
+     After calculating the cache index, we look it up in the cache (possibly
+     reallocating to ensure it's large enough). If the index is in the cache,
+     we can just return it as-is, otherwise we need to do a bit more work.
+
+     First, we need to fully compute the intersection of the two regions. We
+     then check if this corresponds to an existing region. If so, we cache the
+     ID of that region and return it. Otherwise, we need to store this new
+     region in `region3D` -- the index in this vector is the ID we need to
+     cache and return here.
+   */
+  const size_t pos = (high * (high - 1)) / 2 + low;
+  if (region3Dintersect.size() <= pos) {
+    BOUT_OMP_SAFE(critical(mesh_intersection_realloc))
+    // By default this function does not need the mutex, however, if we are
+    // going to allocate global memory, we need to use a mutex.
+    // Now that we have the mutex, we need to check again whether a
+    // different thread was faster and already allocated.
+    // BOUT_OMP_SAFE(single) would work in most cases, but it would fail if the
+    // function is called in parallel with different arguments. While BOUT++
+    // is not currently doing it, other openmp parallised projects might be
+    // calling BOUT++ in this way.
+#if BOUT_USE_OPENMP
+    if (region3Dintersect.size() <= pos)
+#endif
+    {
+      region3Dintersect.resize(pos + 1, std::nullopt);
+    }
+  }
+  if (region3Dintersect[pos].has_value()) {
+    return region3Dintersect[pos];
+  }
+  {
+    BOUT_OMP_SAFE(critical(mesh_intersection))
+    // See comment above why we need to check again in case of OpenMP
+#if BOUT_USE_OPENMP
+    if (!region3Dintersect[pos].has_value())
+#endif
+    {
+      auto common = intersection(region3D[low], region3D[high]);
+      for (size_t i = 0; i < region3D.size(); ++i) {
+        if (common == region3D[i]) {
+          region3Dintersect[pos] = i;
+          break;
+        }
+      }
+      if (!region3Dintersect[pos].has_value()) {
+        region3Dintersect[pos] = region3D.size();
+        region3D.push_back(common);
+      }
+    }
+  }
+  return region3Dintersect[pos];
+}

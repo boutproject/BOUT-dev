@@ -19,8 +19,8 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  **************************************************************************/
 
-#ifndef __MASK_H__
-#define __MASK_H__
+#ifndef BOUT_MASK_H
+#define BOUT_MASK_H
 
 #include <vector>
 
@@ -66,6 +66,19 @@ public:
 
   inline bool& operator()(int jx, int jy, int jz) { return mask(jx, jy, jz); }
   inline const bool& operator()(int jx, int jy, int jz) const { return mask(jx, jy, jz); }
+
+  inline bool& operator[](const Ind3D& i) { return mask[i]; }
+  inline const bool& operator[](const Ind3D& i) const { return mask[i]; }
 };
 
-#endif //__MASK_H__
+inline std::unique_ptr<Region<Ind3D>> regionFromMask(const BoutMask& mask,
+                                                     const Mesh* mesh) {
+  std::vector<Ind3D> indices;
+  for (auto i : mesh->getRegion("RGN_ALL")) {
+    if (not mask(i.x(), i.y(), i.z())) {
+      indices.push_back(i);
+    }
+  }
+  return std::make_unique<Region<Ind3D>>(indices);
+}
+#endif //BOUT_MASK_H

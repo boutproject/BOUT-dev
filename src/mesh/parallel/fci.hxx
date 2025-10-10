@@ -23,8 +23,8 @@
  *
  **************************************************************************/
 
-#ifndef __FCITRANSFORM_H__
-#define __FCITRANSFORM_H__
+#ifndef BOUT_FCITRANSFORM_H
+#define BOUT_FCITRANSFORM_H
 
 #include <bout/interpolation_xz.hxx>
 #include <bout/mask.hxx>
@@ -44,8 +44,8 @@ class FCIMap {
 public:
   FCIMap() = delete;
   FCIMap(Mesh& mesh, const Coordinates::FieldMetric& dy, Options& options, int offset,
-         BoundaryRegionPar* inner_boundary, BoundaryRegionPar* outer_boundary,
-         bool zperiodic);
+         const std::shared_ptr<BoundaryRegionPar>& inner_boundary,
+         const std::shared_ptr<BoundaryRegionPar>& outer_boundary, bool zperiodic);
 
   // The mesh this map was created on
   Mesh& map_mesh;
@@ -53,8 +53,9 @@ public:
   /// Direction of map
   const int offset;
 
-  /// boundary mask - has the field line left the domain
-  BoutMask boundary_mask;
+  /// region containing all points where the field line has not left the
+  /// domain
+  Region<Ind3D> region_no_boundary;
   /// If any of the integration area has left the domain
   BoutMask corner_boundary_mask;
 
@@ -72,25 +73,29 @@ public:
   FCITransform() = delete;
   FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool zperiodic = true,
                Options* opt = nullptr)
-      : ParallelTransform(mesh, opt) {
+    : ParallelTransform(mesh, opt), R{&mesh}, Z{&mesh} {
 
     // check the coordinate system used for the grid data source
     FCITransform::checkInputGrid();
 
+    // Real-space coordinates of grid cells
+    mesh.get(R, "R", 0.0, false);
+    mesh.get(Z, "Z", 0.0, false);
+
     auto forward_boundary_xin =
-        new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD_XIN, +1, &mesh);
-    auto backward_boundary_xin =
-        new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD_XIN, -1, &mesh);
+        std::make_shared<BoundaryRegionPar>("FCI_forward", BNDRY_PAR_FWD_XIN, +1, &mesh);
+    auto backward_boundary_xin = std::make_shared<BoundaryRegionPar>(
+        "FCI_backward", BNDRY_PAR_BKWD_XIN, -1, &mesh);
     auto forward_boundary_xout =
-        new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD_XOUT, +1, &mesh);
-    auto backward_boundary_xout =
-        new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD_XOUT, -1, &mesh);
+        std::make_shared<BoundaryRegionPar>("FCI_forward", BNDRY_PAR_FWD_XOUT, +1, &mesh);
+    auto backward_boundary_xout = std::make_shared<BoundaryRegionPar>(
+        "FCI_backward", BNDRY_PAR_BKWD_XOUT, -1, &mesh);
 
     // Add the boundary region to the mesh's vector of parallel boundaries
-    mesh.addBoundaryPar(forward_boundary_xin);
-    mesh.addBoundaryPar(backward_boundary_xin);
-    mesh.addBoundaryPar(forward_boundary_xout);
-    mesh.addBoundaryPar(backward_boundary_xout);
+    mesh.addBoundaryPar(forward_boundary_xin, BoundaryParType::xin_fwd);
+    mesh.addBoundaryPar(backward_boundary_xin, BoundaryParType::xin_bwd);
+    mesh.addBoundaryPar(forward_boundary_xout, BoundaryParType::xout_fwd);
+    mesh.addBoundaryPar(backward_boundary_xout, BoundaryParType::xout_bwd);
 
     field_line_maps.reserve(mesh.ystart * 2);
     for (int offset = 1; offset < mesh.ystart + 1; ++offset) {
@@ -98,6 +103,22 @@ public:
                                    forward_boundary_xout, zperiodic);
       field_line_maps.emplace_back(mesh, dy, options, -offset, backward_boundary_xin,
                                    backward_boundary_xout, zperiodic);
+    }
+    ASSERT0(mesh.ystart == 1);
+    std::shared_ptr<BoundaryRegionPar> bndries[]{
+        forward_boundary_xin, forward_boundary_xout, backward_boundary_xin,
+        backward_boundary_xout};
+    for (auto& bndry : bndries) {
+      for (const auto& bndry2 : bndries) {
+        if (bndry->dir == bndry2->dir) {
+          continue;
+        }
+        for (bndry->first(); !bndry->isDone(); bndry->next()) {
+          if (bndry2->contains(*bndry)) {
+            bndry->setValid(0);
+          }
+        }
+      }
     }
   }
 
@@ -125,8 +146,12 @@ public:
 
   bool canToFromFieldAligned() const override { return false; }
 
+  /// Save mesh variables to output
+  /// If R and Z(x,y,z) coordinates are in the input then these are saved to output.
+  void outputVars(Options& output_options) override;
+
   bool requiresTwistShift(bool UNUSED(twist_shift_enabled),
-                          MAYBE_UNUSED(YDirectionType ytype)) override {
+                          [[maybe_unused]] YDirectionType ytype) override {
     // No Field3Ds require twist-shift, because they cannot be field-aligned
     ASSERT1(ytype == YDirectionType::Standard);
 
@@ -139,6 +164,9 @@ protected:
 private:
   /// FCI maps for each of the parallel slices
   std::vector<FCIMap> field_line_maps;
+
+  /// Real-space coordinates of grid points
+  Field3D R, Z;
 };
 
-#endif // __FCITRANSFORM_H__
+#endif // BOUT_FCITRANSFORM_H

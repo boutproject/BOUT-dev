@@ -29,27 +29,20 @@ class Field;
 #ifndef FIELD_H
 #define FIELD_H
 
-#include "bout/build_config.hxx"
-
 #include <cmath>
 #include <cstdio>
-#include <memory>
 #include <string>
-
-#include "bout/field_data.hxx"
 
 #include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/field_data.hxx"
 #include "bout/msg_stack.hxx"
 #include "bout/region.hxx"
-#include "bout/stencils.hxx"
 #include "bout/traits.hxx"
 #include "bout/utils.hxx"
 #include <bout/globals.hxx>
 #include <bout/rvec.hxx>
-
-#include "bout/unused.hxx"
 
 class Mesh;
 
@@ -86,6 +79,8 @@ public:
 
   std::string name;
 
+  bool isFci() const;
+
 #if CHECK > 0
   // Routines to test guard/boundary cells set
 
@@ -121,6 +116,9 @@ public:
    * Return the number of nz points
    */
   virtual int getNz() const;
+
+  /// Get the total number of points
+  virtual int size() const = 0;
 
   friend void swap(Field& first, Field& second) noexcept {
     using std::swap;
@@ -179,7 +177,7 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 /// copied and a data array that is allocated but not initialised.
 template <typename T>
 inline T emptyFrom(const T& f) {
-  static_assert(bout::utils::is_Field<T>::value, "emptyFrom only works on Fields");
+  static_assert(bout::utils::is_Field_v<T>, "emptyFrom only works on Fields");
   return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()})
       .allocate();
 }
@@ -188,7 +186,7 @@ inline T emptyFrom(const T& f) {
 /// another field and a data array allocated and initialised to zero.
 template <typename T>
 inline T zeroFrom(const T& f) {
-  static_assert(bout::utils::is_Field<T>::value, "zeroFrom only works on Fields");
+  static_assert(bout::utils::is_Field_v<T>, "zeroFrom only works on Fields");
   T result{emptyFrom(f)};
   result = 0.;
   return result;
@@ -198,7 +196,7 @@ inline T zeroFrom(const T& f) {
 /// another field and a data array allocated and filled with the given value.
 template <typename T>
 inline T filledFrom(const T& f, BoutReal fill_value) {
-  static_assert(bout::utils::is_Field<T>::value, "filledFrom only works on Fields");
+  static_assert(bout::utils::is_Field_v<T>, "filledFrom only works on Fields");
   T result{emptyFrom(f)};
   result = fill_value;
   return result;
@@ -217,7 +215,7 @@ template <
     typename T, typename Function,
     typename = decltype(std::declval<Function&>()(std::declval<typename T::ind_type&>()))>
 inline T filledFrom(const T& f, Function func, std::string region_string = "RGN_ALL") {
-  static_assert(bout::utils::is_Field<T>::value, "filledFrom only works on Fields");
+  static_assert(bout::utils::is_Field_v<T>, "filledFrom only works on Fields");
   T result{emptyFrom(f)};
   BOUT_FOR(i, result.getRegion(region_string)) { result[i] = func(i); }
   return result;
@@ -286,14 +284,14 @@ inline void checkPositive(const T& f, const std::string& name = "field",
 /// Convert \p f to field-aligned space in \p region (default: whole domain)
 template <typename T>
 inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
-  static_assert(bout::utils::is_Field<T>::value, "toFieldAligned only works on Fields");
+  static_assert(bout::utils::is_Field_v<T>, "toFieldAligned only works on Fields");
   return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
 }
 
 /// Convert \p f from field-aligned space in \p region (default: whole domain)
 template <typename T>
 inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
-  static_assert(bout::utils::is_Field<T>::value, "fromFieldAligned only works on Fields");
+  static_assert(bout::utils::is_Field_v<T>, "fromFieldAligned only works on Fields");
   return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
 }
 
@@ -367,7 +365,7 @@ inline bool isUniform(const T& f, bool allpe = false,
 /// @param[in] allpe   Check over all processors
 /// @param[in] region  The region to assume is uniform
 template <typename T, typename = bout::utils::EnableIfField<T>>
-inline BoutReal getUniform(const T& f, MAYBE_UNUSED(bool allpe) = false,
+inline BoutReal getUniform(const T& f, [[maybe_unused]] bool allpe = false,
                            const std::string& region = "RGN_ALL") {
 #if CHECK > 1
   if (not isUniform(f, allpe, region)) {

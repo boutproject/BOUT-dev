@@ -25,8 +25,8 @@
 
 class AdamsBashforthSolver;
 
-#ifndef __ADAMSBASHFORTH_SOLVER_H__
-#define __ADAMSBASHFORTH_SOLVER_H__
+#ifndef BOUT_ADAMSBASHFORTH_SOLVER_H
+#define BOUT_ADAMSBASHFORTH_SOLVER_H
 
 #include <bout/bout_types.hxx>
 #include <bout/solver.hxx>
@@ -96,4 +96,4 @@ private:
   int nlocal, neq;   // Number of variables on local processor and in total
 };
 
-#endif // __ADAMSBASHFORTH_SOLVER_H__
+#endif // BOUT_ADAMSBASHFORTH_SOLVER_H

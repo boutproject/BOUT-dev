@@ -161,7 +161,7 @@ During initialisation (the ``init`` function), the conduction example
 first reads an option (lines 21 and 24) from the input settings file
 (``data/BOUT.inp`` by default)::
 
-    auto options = Options::root()["conduction"];
+    auto& options = Options::root()["conduction"];
 
     OPTION(options, chi, 1.0);
 
@@ -500,8 +500,8 @@ object in the initialisation function::
       BoutReal gamma;
 
       int init(bool restarting) override {
-        auto globalOptions = Options::root();
-        auto options = globalOptions["mhd"];
+        auto& globalOptions = Options::root();
+        auto& options = globalOptions["mhd"];
 
         OPTION(options, g, 5.0 / 3.0);
         ...
@@ -636,43 +636,28 @@ Finding where bugs have occurred in a (fairly large) parallel code is
 a difficult problem. This is more of a concern for developers of
 BOUT++ (see the developers manual), but it is still useful for the
 user to be able to hunt down bug in their own code, or help narrow
-down where a bug could be occurring.
+down where a bug could be occurring. BOUT++ comes with a `TRACE` macro
+that can be used to easily identify specific regions in a model when
+an error occurs.
 
-If you have a bug which is easily reproduceable i.e. it occurs almost
-immediately every time you run the code, then the easiest way to hunt
-down the bug is to insert lots of ``output.write`` statements (see
-:ref:`sec-logging`). Things get harder when a bug only occurs after a
-long time of running, and/or only occasionally. For this type of
-problem, a useful tool can be the message stack. An easy way to use
-this message stack is to use the `TRACE` macro::
-
-    {
-          TRACE("Some message here"); // message pushed
-
-    } // Scope ends, message popped
-
-This will push the message, then pop the message when the current
-scope ends (except when an exception occurs).  The error message will
-also have the file name and line number appended, to help find where
-an error occurred. The run-time overhead of this should be small, but
-can be removed entirely if the compile-time flag ``-DCHECK`` is not
-defined or set to ``0``. This turns off checking, and ``TRACE``
-becomes an empty macro.  It is possible to use standard ``printf``
-like formatting with the trace macro, for example::
-
-    {
-          TRACE("The value of i is %d and this is an arbitrary %s", i, "string"); // message pushed
-    } // Scope ends, message popped
-
-In the ``mhd.cxx`` example each part of the ``rhs`` function is
-trace'd. If an error occurs then at least the equation where it
-happened will be printed::
+In the ``mhd.cxx`` example each part of the ``rhs`` function has a
+separate ``TRACE`` macro::
 
     {
       TRACE("ddt(rho)");
       ddt(rho) = -V_dot_Grad(v, rho) - rho*Div(v);
     }
 
+If there's a problem here that causes the model to crash, BOUT++ will
+print something like:
+
+.. code:: text
+
+    ====== Back trace ======
+    -> ddt(rho) on line 83 of 'examples/orszag-tang/mhd.cxx'
+
+For more details on what you can do with ``TRACE`` macros, see
+:ref:`sec-debugging`.
 
 .. _sec-physicsmodel-boundary-conditions:
 
@@ -1069,7 +1054,7 @@ styles.  For example::
 
    output.write("This is an integer: {}, and this a real: {}\n", 5, 2.0)
 
-   output << "This is an integer: " << 5 << ", and this a real: " << 2.0 << endl;
+   output << "This is an integer: " << 5 << ", and this a real: " << 2.0 << '\n';
 
 
 Formatting in the ``output.write`` function is done using the `{fmt}
@@ -1096,7 +1081,7 @@ For finer control over which messages are printed, several outputs are
 available, listed in the table below.
 
 ===================   =================================================================
-Name                  Useage
+Name                  Usage
 ===================   =================================================================
 ``output_debug``      For highly verbose output messages, that are normally not needed.
                       Needs to be enabled with a compile switch
@@ -1110,20 +1095,20 @@ Name                  Useage
 Controlling logging level
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By default all of the outputs except ``output_debug`` are saved to log
-and printed to console (processor 0 only).
+By default all of the outputs (except ``output_debug``) are saved to
+log and printed to console (processor 0 only).
 
-To reduce the volume of outputs the command line argument ``-q``
-(quiet) reduces the output level by one, and ``-v`` (verbose)
-increases it by one. Running with ``-q`` in the command line arguments
-suppresses the ``output_info`` messages, so that they will not appear
-in the console or log file. Running with ``-q -q`` suppresses
-everything except ``output_warn`` and ``output_error``.
+To reduce the volume of outputs the command line argument ``--quiet``
+(``-q`` for short) reduces the output level by one, and ``--verbose``
+(``-v`` for short) increases it by one. Running with ``-q`` in the
+command line arguments suppresses the ``output_info`` messages, so
+that they will not appear in the console or log file. Running with
+``-q -q`` suppresses everything except ``output_warn`` and
+``output_error``.
 
 To enable the ``output_debug`` messages, configure BOUT++ with a
 ``CHECK`` level ``>= 3``. To enable it at lower check levels,
-configure BOUT++ with ``-DENABLE_OUTPUT_DEBUG`` (for ``CMake``;
-``--enable-debug-output`` for ``./configure``)). When running BOUT++
+configure BOUT++ with ``-DBOUT_ENABLE_OUTPUT_DEBUG=ON``. When running BOUT++
 add a ``-v -v`` flag to see ``output_debug`` messages.
 
 .. _sec-3to4:

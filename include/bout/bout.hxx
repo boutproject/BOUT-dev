@@ -2,8 +2,6 @@
  *
  * @mainpage BOUT++
  *
- * @version 3.0
- *
  * @par Description
  * Framework for the solution of partial differential
  * equations, in particular fluid models in plasma physics.
@@ -33,10 +31,13 @@
  *
  **************************************************************************/
 
-#ifndef __BOUT_H__
-#define __BOUT_H__
+#ifndef BOUT_H
+#define BOUT_H
 
-#include "bout/build_config.hxx"
+#include <filesystem> // std::filesystem (C++17)
+
+// IWYU pragma: begin_keep, begin_export
+#include "bout/build_defines.hxx"
 
 #include "bout/boutcomm.hxx"
 #include "bout/difops.hxx" // Differential operators
@@ -44,7 +45,7 @@
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
-#include "bout/options_netcdf.hxx"
+#include "bout/options_io.hxx"
 #include "bout/output.hxx"
 #include "bout/smoothing.hxx" // Smoothing functions
 #include "bout/solver.hxx"
@@ -53,8 +54,8 @@
 #include "bout/vecops.hxx" // Vector differential operations
 #include "bout/vector2d.hxx"
 #include "bout/vector3d.hxx"
-#include "bout/version.hxx"
 #include "bout/where.hxx"
+// IWYU pragma: end_keep, end_export
 
 // BOUT++ main functions
 
@@ -107,10 +108,10 @@ void setupGetText();
 struct CommandLineArgs {
   int verbosity{4};
   bool color_output{false};
-  std::string data_dir{"data"};          ///< Directory for data input/output
-  std::string opt_file{"BOUT.inp"};      ///< Filename for the options file
-  std::string set_file{"BOUT.settings"}; ///< Filename for the options file
-  std::string log_file{"BOUT.log"};      ///< File name for the log file
+  std::filesystem::path data_dir{"data"};          ///< Directory for data input/output
+  std::filesystem::path opt_file{"BOUT.inp"};      ///< Filename for the options file
+  std::filesystem::path set_file{"BOUT.settings"}; ///< Filename for the options file
+  std::filesystem::path log_file{"BOUT.log"};      ///< File name for the log file
   /// The original set of command line arguments
   std::vector<std::string> original_argv;
   /// The "canonicalised" command line arguments, with single-letter
@@ -187,6 +188,8 @@ private:
   BoutReal mpi_start_time;
   /// Stop if file `stop_check_name` exists
   bool stop_check;
+  /// Check if this is the first time the monitor is called
+  bool first_time{true};
   /// Filename for `stop_check`
   std::string stop_check_name;
 };
@@ -206,4 +209,4 @@ private:
  */
 int BoutFinalise(bool write_settings = true);
 
-#endif // __BOUT_H__
+#endif // BOUT_H

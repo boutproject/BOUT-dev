@@ -1,9 +1,9 @@
 /// Support for i18n using GNU gettext
 
-#ifndef __BOUT_GETTEXT_H__
-#define __BOUT_GETTEXT_H__
+#ifndef BOUT_GETTEXT_H
+#define BOUT_GETTEXT_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_GETTEXT
 
@@ -19,4 +19,4 @@
 #define _(string) string
 
 #endif // BOUT_HAS_GETTEXT
-#endif // __BOUT_GETTEXT_H__
+#endif // BOUT_GETTEXT_H

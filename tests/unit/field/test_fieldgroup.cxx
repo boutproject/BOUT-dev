@@ -1,4 +1,3 @@
-#include "test_extras.hxx"
 #include "gtest/gtest.h"
 
 #include "bout/field2d.hxx"
@@ -283,9 +282,9 @@ TEST(FieldGroupTest, ConstIterator) {
 }
 
 TEST(FieldGroupTest, NotConstructableFromInt) {
-  EXPECT_FALSE((std::is_constructible<FieldGroup, int>::value));
+  EXPECT_FALSE((std::is_constructible_v<FieldGroup, int>));
 }
 
 TEST(FieldGroupTest, NotConstructableFromBoutReal) {
-  EXPECT_FALSE((std::is_constructible<FieldGroup, BoutReal>::value));
+  EXPECT_FALSE((std::is_constructible_v<FieldGroup, BoutReal>));
 }

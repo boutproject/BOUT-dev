@@ -4,9 +4,9 @@
  * Class for 3D X-Y-Z scalar fields
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ developers
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -32,6 +32,8 @@
 
 #include <cmath>
 
+#include "bout/parallel_boundary_op.hxx"
+#include "bout/parallel_boundary_region.hxx"
 #include <bout/assert.hxx>
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_op.hxx>
@@ -62,7 +64,8 @@ Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes direction
 /// Doesn't copy any data, just create a new reference to the same data (copy on change
 /// later)
 Field3D::Field3D(const Field3D& f)
-    : Field(f), data(f.data), yup_fields(f.yup_fields), ydown_fields(f.ydown_fields) {
+    : Field(f), data(f.data), yup_fields(f.yup_fields), ydown_fields(f.ydown_fields),
+      regionID(f.regionID) {
 
   TRACE("Field3D(Field3D&)");
 
@@ -126,7 +129,7 @@ Field3D& Field3D::allocate() {
   return *this;
 }
 
-BOUT_HOST_DEVICE Field3D* Field3D::timeDeriv() {
+Field3D* Field3D::timeDeriv() {
   if (deriv == nullptr) {
     deriv = new Field3D{emptyFrom(*this)};
   }
@@ -173,7 +176,7 @@ const Field3D& Field3D::ynext(int dir) const {
   if (dir > 0) {
     return yup(dir - 1);
   } else if (dir < 0) {
-    return ydown(std::abs(dir) - 1);
+    return ydown(-dir - 1);
   } else {
     return *this;
   }
@@ -250,6 +253,7 @@ Field3D& Field3D::operator=(const Field3D& rhs) {
   // Copy parallel slices or delete existing ones.
   yup_fields = rhs.yup_fields;
   ydown_fields = rhs.ydown_fields;
+  regionID = rhs.regionID;
 
   // Copy the data and data sizes
   nx = rhs.nx;
@@ -272,6 +276,7 @@ Field3D& Field3D::operator=(Field3D&& rhs) {
   nx = rhs.nx;
   ny = rhs.ny;
   nz = rhs.nz;
+  regionID = rhs.regionID;
 
   data = std::move(rhs.data);
 
@@ -290,6 +295,7 @@ Field3D& Field3D::operator=(const Field2D& rhs) {
   // Delete existing parallel slices. We don't copy parallel slices, so any
   // that currently exist will be incorrect.
   clearParallelSlices();
+  resetRegion();
 
   setLocation(rhs.getLocation());
 
@@ -317,6 +323,7 @@ void Field3D::operator=(const FieldPerp& rhs) {
   // Delete existing parallel slices. We don't copy parallel slices, so any
   // that currently exist will be incorrect.
   clearParallelSlices();
+  resetRegion();
 
   /// Make sure there's a unique array to copy data into
   allocate();
@@ -331,6 +338,7 @@ Field3D& Field3D::operator=(const BoutReal val) {
   // Delete existing parallel slices. We don't copy parallel slices, so any
   // that currently exist will be incorrect.
   clearParallelSlices();
+  resetRegion();
 
   allocate();
 
@@ -504,7 +512,7 @@ void Field3D::applyParallelBoundary(const std::string& condition) {
   /// Loop over the mesh boundary regions
   for (const auto& reg : fieldmesh->getBoundariesPar()) {
     auto op = std::unique_ptr<BoundaryOpPar>{
-        dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
+        dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg.get()))};
     op->apply(*this);
   }
 }
@@ -524,7 +532,7 @@ void Field3D::applyParallelBoundary(const std::string& region,
   for (const auto& reg : fieldmesh->getBoundariesPar()) {
     if (reg->label == region) {
       auto op = std::unique_ptr<BoundaryOpPar>{
-          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
+          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg.get()))};
       op->apply(*this);
       break;
     }
@@ -548,9 +556,9 @@ void Field3D::applyParallelBoundary(const std::string& region,
       // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
       // boundary of the right type
       auto tmp = std::unique_ptr<BoundaryOpPar>{
-          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
+          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg.get()))};
       // then clone that with the actual argument
-      auto op = std::unique_ptr<BoundaryOpPar>{tmp->clone(reg, f)};
+      auto op = std::unique_ptr<BoundaryOpPar>{tmp->clone(reg.get(), f)};
       op->apply(*this);
       break;
     }
@@ -618,7 +626,7 @@ Field3D filter(const Field3D& var, int N0, const std::string& rgn) {
 
   const Region<Ind2D>& region = var.getRegion2D(region_str);
 
-  BOUT_OMP(parallel)
+  BOUT_OMP_PERF(parallel)
   {
     Array<dcomplex> f(ncz / 2 + 1);
 
@@ -668,7 +676,7 @@ Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, const std::string
 
   const Region<Ind2D>& region = var.getRegion2D(region_str);
 
-  BOUT_OMP(parallel)
+  BOUT_OMP_PERF(parallel)
   {
     Array<dcomplex> f(ncz / 2 + 1);
 
@@ -742,8 +750,8 @@ namespace {
 #if CHECK > 2
 void checkDataIsFiniteOnRegion(const Field3D& f, const std::string& region) {
   // Do full checks
-  BOUT_FOR_SERIAL(i, f.getRegion(region)) {
-    if (!finite(f[i])) {
+  BOUT_FOR_SERIAL(i, f.getValidRegionWithDefault(region)) {
+    if (!std::isfinite(f[i])) {
       throw BoutException("Field3D: Operation on non-finite data at [{:d}][{:d}][{:d}]\n",
                           i.x(), i.y(), i.z());
     }
@@ -818,4 +826,16 @@ void swap(Field3D& first, Field3D& second) noexcept {
   swap(first.deriv, second.deriv);
   swap(first.yup_fields, second.yup_fields);
   swap(first.ydown_fields, second.ydown_fields);
+}
+
+const Region<Ind3D>&
+Field3D::getValidRegionWithDefault(const std::string& region_name) const {
+  if (regionID.has_value()) {
+    return fieldmesh->getRegion(regionID.value());
+  }
+  return fieldmesh->getRegion(region_name);
+}
+
+void Field3D::setRegion(const std::string& region_name) {
+  regionID = fieldmesh->getRegionID(region_name);
 }

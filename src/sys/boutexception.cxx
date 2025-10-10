@@ -1,11 +1,9 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/msg_stack.hxx>
-#include <bout/output.hxx>
 #include <bout/utils.hxx>
-#include <iostream>
 #include <mpi.h>
 
 #if BOUT_USE_BACKTRACE
@@ -18,6 +16,10 @@
 #include <string>
 
 #include <fmt/format.h>
+
+namespace {
+const std::string header{"====== Exception thrown ======\n"};
+}
 
 void BoutParallelThrowRhsFail(int status, const char* message) {
   int allstatus;
@@ -41,7 +43,8 @@ BoutException::~BoutException() {
   // just clear everything
   msg_stack.clear();
 #if BOUT_USE_BACKTRACE
-  free(messages);
+  // Call required for memory allocated by `backtrace_symbols`
+  free(messages); // NOLINT
 #endif
 }
 
@@ -84,7 +87,7 @@ std::string BoutException::getBacktrace() const {
       while ((retstr = fgets(out.data(), out.size() - 1, file)) != nullptr) {
         buf += retstr;
       }
-      int status = pclose(file);
+      int const status = pclose(file);
       if (status == 0) {
         backtrace_message += buf;
       }

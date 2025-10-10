@@ -1,4 +1,4 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_PETSC
 
@@ -18,9 +18,6 @@
 
 #include "petscmat.h"
 #include "petscsnes.h"
-
-// Redundent definition because < C++17
-constexpr int IMEXBDF2::MAX_SUPPORTED_ORDER;
 
 IMEXBDF2::IMEXBDF2(Options* opt)
     : Solver(opt), maxOrder((*options)["maxOrder"]

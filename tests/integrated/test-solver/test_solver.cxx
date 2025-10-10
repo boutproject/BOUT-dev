@@ -146,8 +146,6 @@ int main(int argc, char** argv) {
     }
   }
 
-  BoutFinalise(false);
-
   if (!errors.empty()) {
     output_test << "\n => Some failed tests\n\n";
     for (auto& error : errors) {

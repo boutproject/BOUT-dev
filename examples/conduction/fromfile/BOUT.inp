@@ -1,13 +1,5 @@
-#
-# Input file for conduction case
-#
-
-nout = 100       # Number of output timesteps
-timestep = 0.1  # Time between outputs
 
 MZ = 1          # Number of points in z
-
-grid = "conduct_grid.nc"
 
 
 ##################################################
@@ -19,6 +11,8 @@ symmetricGlobalY = true
 # These flags make the y-direction non-periodic
 ixseps1 = -1
 ixseps2 = -1
+
+file = "conduct_grid.nc"
 
 ##################################################
 [mesh:ddy]   # Methods used for parallel (y) derivative terms
@@ -35,6 +29,12 @@ type = pvode # Which solver to use
 
 atol = 1e-10 # absolute tolerance
 rtol = 1e-05  # relative tolerance
+output_step = 0.1  # Time between outputs
+#
+# Input file for conduction case
+#
+
+nout = 100       # Number of output timesteps
 
 ##################################################
 [conduction]  # Settings for the conduction model

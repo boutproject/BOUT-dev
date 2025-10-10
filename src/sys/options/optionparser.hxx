@@ -39,8 +39,8 @@
 
 class OptionParser;
 
-#ifndef __OPTIONPARSER_H__
-#define __OPTIONPARSER_H__
+#ifndef BOUT_OPTIONPARSER_H
+#define BOUT_OPTIONPARSER_H
 
 #include "bout/bout_types.hxx"
 #include "bout/options.hxx"
@@ -61,4 +61,4 @@ public:
 private:
 };
 
-#endif // __OPTIONPARSER_H__
+#endif // BOUT_OPTIONPARSER_H

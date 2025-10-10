@@ -28,10 +28,10 @@
 
 class LaplaceCyclic;
 
-#ifndef __LAP_CYCLIC_H__
-#define __LAP_CYCLIC_H__
+#ifndef BOUT_LAP_CYCLIC_H
+#define BOUT_LAP_CYCLIC_H
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/invert_laplace.hxx"
 
 #if BOUT_USE_METRIC_3D
@@ -125,4 +125,4 @@ private:
 
 #endif // BOUT_USE_METRIC_3D
 
-#endif // __SPT_H__
+#endif // BOUT_LAP_CYCLIC_H

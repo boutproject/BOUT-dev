@@ -23,7 +23,7 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_SLEPC
 
@@ -572,7 +572,7 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
   static int nConvPrev = 0;
 
   // Disable floating-point exceptions for the duration of this function
-  MAYBE_UNUSED(QuietFPE quiet_fpe{});
+  [[maybe_unused]] QuietFPE quiet_fpe{};
 
   // No output until after first iteration
   if (its < 1) {

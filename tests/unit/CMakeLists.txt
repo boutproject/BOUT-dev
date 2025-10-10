@@ -19,6 +19,9 @@ if(NOT TARGET gtest)
   message(FATAL_ERROR "googletest not found! Have you disabled the git submodules (GIT_SUBMODULE)?")
 endif()
 
+# Some unit tests require GMOCK, so make sure we build it
+set(BUILD_GMOCK ON)
+
 mark_as_advanced(
   BUILD_GMOCK BUILD_GTEST BUILD_SHARED_LIBS
   gmock_build_tests gtest_build_samples gtest_build_tests
@@ -66,6 +69,7 @@ set(serial_tests_source
   ./mesh/test_coordinates.cxx
   ./mesh/test_coordinates_accessor.cxx
   ./mesh/test_interpolation.cxx
+  ./mesh/test_invert3x3.cxx
   ./mesh/test_mesh.cxx
   ./mesh/test_paralleltransform.cxx
   ./solver/test_fakesolver.cxx
@@ -88,6 +92,8 @@ set(serial_tests_source
   ./sys/test_raja.cxx
   ./test_extras.cxx
   ./test_extras.hxx
+  ./fake_mesh.hxx
+  ./fake_mesh_fixture.hxx
   ./src/test_bout++.cxx)
 
 if(BOUT_HAS_HYPRE)

@@ -1,8 +1,8 @@
 
 class BoundaryRegion;
 
-#ifndef __BNDRY_REGION_H__
-#define __BNDRY_REGION_H__
+#ifndef BOUT_BNDRY_REGION_H
+#define BOUT_BNDRY_REGION_H
 
 #include <string>
 #include <utility>
@@ -142,4 +142,4 @@ private:
   int xs, xe;
 };
 
-#endif // __BNDRY_REGION_H__
+#endif // BOUT_BNDRY_REGION_H

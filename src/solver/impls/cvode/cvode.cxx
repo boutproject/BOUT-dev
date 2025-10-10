@@ -3,9 +3,9 @@
  *
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2024 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -51,6 +51,10 @@
 #include <cvode/cvode_bbdpre.h>
 #include <cvode/cvode_ls.h>
 
+#include <sunlinsol/sunlinsol_spbcgs.h>
+#include <sunlinsol/sunlinsol_spfgmr.h>
+#include <sunlinsol/sunlinsol_sptfqmr.h>
+
 #include <algorithm>
 #include <iterator>
 #include <numeric>
@@ -59,9 +63,12 @@
 BOUT_ENUM_CLASS(positivity_constraint, none, positive, non_negative, negative,
                 non_positive);
 
+BOUT_ENUM_CLASS(linear_solver, gmres, fgmres, tfqmr, bcgs);
+
 // NOLINTBEGIN(readability-identifier-length)
 namespace {
-int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
+int cvode_linear_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
+int cvode_nonlinear_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
 int cvode_bbd_rhs(sunindextype Nlocal, BoutReal t, N_Vector u, N_Vector du,
                   void* user_data);
 
@@ -218,9 +225,16 @@ int CvodeSolver::init() {
     throw BoutException("CVodeSetUserData failed\n");
   }
 
-  if (CVodeInit(cvode_mem, cvode_rhs, simtime, uvec) != CV_SUCCESS) {
+#if SUNDIALS_VERSION_MAJOR >= 6
+  // Set the default RHS to linear, then pass nonlinear rhs to NL solver
+  if (CVodeInit(cvode_mem, cvode_linear_rhs, simtime, uvec) != CV_SUCCESS) {
     throw BoutException("CVodeInit failed\n");
   }
+#else
+  if (CVodeInit(cvode_mem, cvode_nonlinear_rhs, simtime, uvec) != CV_SUCCESS) {
+    throw BoutException("CVodeInit failed\n");
+  }
+#endif
 
   if (mxorder > 0) {
     output_warn << "WARNING: Option 'mxorder' is deprecated. Please use "
@@ -244,7 +258,7 @@ int CvodeSolver::init() {
     f2dtols.reserve(f2d.size());
     std::transform(begin(f2d), end(f2d), std::back_inserter(f2dtols),
                    [this](const VarStr<Field2D>& f2) {
-                     auto f2_options = Options::root()[f2.name];
+                     auto& f2_options = Options::root()[f2.name];
                      const auto wrong_name = f2_options.isSet("abstol");
                      if (wrong_name) {
                        output_warn << "WARNING: Option 'abstol' for field " << f2.name
@@ -336,7 +350,24 @@ int CvodeSolver::init() {
 
     const auto prectype =
         use_precon ? (rightprec ? SUN_PREC_RIGHT : SUN_PREC_LEFT) : SUN_PREC_NONE;
-    sun_solver = callWithSUNContext(SUNLinSol_SPGMR, suncontext, uvec, prectype, maxl);
+
+    switch ((*options)["linear_solver"]
+                .doc("Set linear solver type. Default is gmres.")
+                .withDefault(linear_solver::gmres)) {
+    case linear_solver::gmres:
+      sun_solver = callWithSUNContext(SUNLinSol_SPGMR, suncontext, uvec, prectype, maxl);
+      break;
+    case linear_solver::fgmres:
+      sun_solver = callWithSUNContext(SUNLinSol_SPFGMR, suncontext, uvec, prectype, maxl);
+      break;
+    case linear_solver::tfqmr:
+      sun_solver =
+          callWithSUNContext(SUNLinSol_SPTFQMR, suncontext, uvec, prectype, maxl);
+      break;
+    case linear_solver::bcgs:
+      sun_solver = callWithSUNContext(SUNLinSol_SPBCGS, suncontext, uvec, prectype, maxl);
+      break;
+    };
     if (sun_solver == nullptr) {
       throw BoutException("Creating SUNDIALS linear solver failed\n");
     }
@@ -394,6 +425,11 @@ int CvodeSolver::init() {
     }
   }
 
+#if SUNDIALS_VERSION_MAJOR >= 6
+  // Set the RHS function to be used in the nonlinear solver
+  CVodeSetNlsRhsFn(cvode_mem, cvode_nonlinear_rhs);
+#endif
+
   // Set internal tolerance factors
   if (CVodeSetNonlinConvCoef(cvode_mem, cvode_nonlinear_convergence_coef) != CV_SUCCESS) {
     throw BoutException("CVodeSetNonlinConvCoef failed\n");
@@ -416,7 +452,7 @@ CvodeSolver::create_constraints(const std::vector<VarStr<FieldType>>& fields) {
   constraints.reserve(fields.size());
   std::transform(begin(fields), end(fields), std::back_inserter(constraints),
                  [](const VarStr<FieldType>& f) {
-                   auto f_options = Options::root()[f.name];
+                   auto& f_options = Options::root()[f.name];
                    const auto value =
                        f_options["positivity_constraint"]
                            .doc(fmt::format("Constraint to apply to {} if "
@@ -582,7 +618,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
  * RHS function du = F(t, u)
  **************************************************************************/
 
-void CvodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata) {
+void CvodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata, bool linear) {
   TRACE("Running RHS: CvodeSolver::res({})", t);
 
   // Load state from udata
@@ -593,7 +629,7 @@ void CvodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata) {
   CVodeGetLastStep(cvode_mem, &hcur);
 
   // Call RHS function
-  run_rhs(t);
+  run_rhs(t, linear);
 
   // Save derivatives to dudata
   save_derivs(dudata);
@@ -664,7 +700,7 @@ void CvodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jv
 
 // NOLINTBEGIN(readability-identifier-length)
 namespace {
-int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
+int cvode_linear_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 
   BoutReal* udata = N_VGetArrayPointer(u);
   BoutReal* dudata = N_VGetArrayPointer(du);
@@ -673,7 +709,23 @@ int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 
   // Calculate RHS function
   try {
-    s->rhs(t, udata, dudata);
+    s->rhs(t, udata, dudata, true);
+  } catch (BoutRhsFail& error) {
+    return 1;
+  }
+  return 0;
+}
+
+int cvode_nonlinear_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
+
+  BoutReal* udata = N_VGetArrayPointer(u);
+  BoutReal* dudata = N_VGetArrayPointer(du);
+
+  auto* s = static_cast<CvodeSolver*>(user_data);
+
+  // Calculate RHS function
+  try {
+    s->rhs(t, udata, dudata, false);
   } catch (BoutRhsFail& error) {
     return 1;
   }
@@ -683,7 +735,7 @@ int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 /// RHS function for BBD preconditioner
 int cvode_bbd_rhs(sunindextype UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
                   void* user_data) {
-  return cvode_rhs(t, u, du, user_data);
+  return cvode_linear_rhs(t, u, du, user_data);
 }
 
 /// Preconditioner function

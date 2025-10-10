@@ -1,8 +1,8 @@
 
 class RKF34Scheme;
 
-#ifndef __RKF34_SCHEME_H__
-#define __RKF34_SCHEME_H__
+#ifndef BOUT_RKF34_SCHEME_H
+#define BOUT_RKF34_SCHEME_H
 
 #include <bout/rkscheme.hxx>
 #include <bout/utils.hxx>
@@ -16,4 +16,4 @@ namespace {
 RegisterRKScheme<RKF34Scheme> registerrkschemef34(RKSCHEME_RKF34);
 }
 
-#endif // __RKF34_SCHEME_H__
+#endif // BOUT_RKF34_SCHEME_H

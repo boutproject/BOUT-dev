@@ -300,7 +300,7 @@ verion of the macro::
 For loops inside parallel regions, there is ``BOUT_FOR_INNER``::
 
     Field3D f(0.0);
-    BOUT_OMP(parallel) {
+    BOUT_OMP_PERF(parallel) {
       BOUT_FOR_INNER(i, f.getMesh()->getRegion3D("RGN_ALL")) {
          f[i] = a[i] + b[i];
       }
@@ -357,7 +357,7 @@ Tuning BOUT_FOR loops
 The ``BOUT_FOR`` macros use two nested loops: The outer loop is OpenMP
 parallelised, and iterates over contiguous blocks::
 
-  BOUT_OMP(parallel for schedule(guided))
+  BOUT_OMP_PERF(parallel for schedule(guided))
   for (auto block = region.getBlocks().cbegin();
        block < region.getBlocks().cend();
        ++block)

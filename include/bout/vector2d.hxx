@@ -34,12 +34,12 @@
 class Vector2D;
 
 #pragma once
-#ifndef __VECTOR2D_H__
-#define __VECTOR2D_H__
+#ifndef BOUT_VECTOR2D_H
+#define BOUT_VECTOR2D_H
 
 class Field2D;
 class Field3D;
-class Vector3D; //#include "bout/vector3d.hxx"
+class Vector3D;
 
 #include <bout/coordinates.hxx>
 
@@ -217,4 +217,4 @@ inline Vector2D zeroFrom(const Vector2D& v) {
  */
 inline Vector2D& ddt(Vector2D& f) { return *(f.timeDeriv()); }
 
-#endif // __VECTOR2D_H__
+#endif // BOUT_VECTOR2D_H

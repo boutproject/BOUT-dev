@@ -25,7 +25,7 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>
@@ -106,8 +106,8 @@ void fft_init(bool fft_measure) {
 
 #if !BOUT_USE_OPENMP
 // Serial code
-void rfft(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
-          MAYBE_UNUSED(dcomplex* out)) {
+void rfft([[maybe_unused]] const BoutReal* in, [[maybe_unused]] int length,
+          [[maybe_unused]] dcomplex* out) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
@@ -170,8 +170,8 @@ void rfft(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
 #endif
 }
 
-void irfft(MAYBE_UNUSED(const dcomplex* in), MAYBE_UNUSED(int length),
-           MAYBE_UNUSED(BoutReal* out)) {
+void irfft([[maybe_unused]] const dcomplex* in, [[maybe_unused]] int length,
+           [[maybe_unused]] BoutReal* out) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
@@ -233,8 +233,8 @@ void irfft(MAYBE_UNUSED(const dcomplex* in), MAYBE_UNUSED(int length),
 }
 #else
 // Parallel thread-safe version of rfft and irfft
-void rfft(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
-          MAYBE_UNUSED(dcomplex* out)) {
+void rfft([[maybe_unused]] const BoutReal* in, [[maybe_unused]] int length,
+          [[maybe_unused]] dcomplex* out) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
@@ -258,7 +258,7 @@ void rfft(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
     // use a `single` block here as that requires all threads to reach the
     // block (implicit barrier) which may not be true in all cases (e.g.
     // if there are 8 threads but only 4 call the fft routine).
-    BOUT_OMP(critical(rfft))
+    BOUT_OMP_SAFE(critical(rfft))
     if ((size != length) || (nthreads < n_th)) {
       if (size > 0) {
         // Free all memory
@@ -312,8 +312,8 @@ void rfft(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
 #endif
 }
 
-void irfft(MAYBE_UNUSED(const dcomplex* in), MAYBE_UNUSED(int length),
-           MAYBE_UNUSED(BoutReal* out)) {
+void irfft([[maybe_unused]] const dcomplex* in, [[maybe_unused]] int length,
+           [[maybe_unused]] BoutReal* out) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
@@ -335,7 +335,7 @@ void irfft(MAYBE_UNUSED(const dcomplex* in), MAYBE_UNUSED(int length),
     // use a `single` block here as that requires all threads to reach the
     // block (implicit barrier) which may not be true in all cases (e.g.
     // if there are 8 threads but only 4 call the fft routine).
-    BOUT_OMP(critical(irfft))
+    BOUT_OMP_SAFE(critical(irfft))
     if ((size != length) || (nthreads < n_th)) {
       if (size > 0) {
         // Free all memory
@@ -388,8 +388,8 @@ void irfft(MAYBE_UNUSED(const dcomplex* in), MAYBE_UNUSED(int length),
 #endif
 //  Discrete sine transforms (B Shanahan)
 
-void DST(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
-         MAYBE_UNUSED(dcomplex* out)) {
+void DST([[maybe_unused]] const BoutReal* in, [[maybe_unused]] int length,
+         [[maybe_unused]] dcomplex* out) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
@@ -446,8 +446,8 @@ void DST(MAYBE_UNUSED(const BoutReal* in), MAYBE_UNUSED(int length),
 #endif
 }
 
-void DST_rev(MAYBE_UNUSED(dcomplex* in), MAYBE_UNUSED(int length),
-             MAYBE_UNUSED(BoutReal* out)) {
+void DST_rev([[maybe_unused]] dcomplex* in, [[maybe_unused]] int length,
+             [[maybe_unused]] BoutReal* out) {
 #if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else

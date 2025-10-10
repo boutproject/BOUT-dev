@@ -23,19 +23,19 @@
  *     o Added Umpire support, in multiple iterations/variations
  */
 
-#ifndef __ARRAY_H__
-#define __ARRAY_H__
+#ifndef BOUT_ARRAY_H
+#define BOUT_ARRAY_H
 
 #include <algorithm>
 #include <map>
 #include <memory>
 #include <vector>
 
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP
 #include <omp.h>
 #endif
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_UMPIRE
 #include "umpire/Allocator.hpp"
@@ -375,22 +375,14 @@ private:
    * @param[in] cleanup   If set to true, deletes all dataBlock and clears the store
    */
   static storeType& store(bool cleanup = false) {
-#ifdef _OPENMP
     static arenaType arena(omp_get_max_threads());
-#else
-    static arenaType arena(1);
-#endif
     if (!cleanup) {
-#ifdef _OPENMP
       return arena[omp_get_thread_num()];
-#else
-      return arena[0];
-#endif
     }
 
     // Clean by deleting all data -- possible that just stores.clear() is
     // sufficient rather than looping over each entry.
-    BOUT_OMP(single)
+    BOUT_OMP_SAFE(single)
     {
       for (auto& stores : arena) {
         for (auto& p : stores) {
@@ -486,4 +478,4 @@ bool operator==(const Array<T, B1>& lhs, const Array<T, B2>& rhs) {
   return std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
-#endif // __ARRAY_H__
+#endif // BOUT_ARRAY_H

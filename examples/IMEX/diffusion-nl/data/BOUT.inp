@@ -1,7 +1,4 @@
 
-nout = 10
-timestep = 1
-
 alpha = 2.5  # Diffusion exponent: D = f ^ alpha
 
 MXG = 0
@@ -22,3 +19,8 @@ ixseps2 = ny
 
 scale = 1
 function = 1 + 0.5*sin(y)
+
+[solver]
+output_step = 1
+
+nout = 10
