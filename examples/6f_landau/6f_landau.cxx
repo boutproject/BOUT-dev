@@ -2086,50 +2086,33 @@ protected:
     }
 
     if (gyroviscous) {
-      Dperp2Phi0.setLocation(CELL_CENTRE);
       Dperp2Phi0.setBoundary("phi");
       dump.add(Dperp2Phi0, "Dperp2Phi0", 1);
-      Dperp2Phi.setLocation(CELL_CENTRE);
       Dperp2Phi.setBoundary("phi");
-      GradPhi02.setLocation(CELL_CENTRE);
       GradPhi02.setBoundary("phi");
-      GradcPhi.setLocation(CELL_CENTRE);
       GradcPhi.setBoundary("phi");
-      Dperp2Pi0.setLocation(CELL_CENTRE);
       Dperp2Pi0.setBoundary("P");
-      Dperp2Pi.setLocation(CELL_CENTRE);
       Dperp2Pi.setBoundary("P");
-      bracketPhi0P.setLocation(CELL_CENTRE);
       bracketPhi0P.setBoundary("P");
-      bracketPhiP0.setLocation(CELL_CENTRE);
       bracketPhiP0.setBoundary("P");
       if (impurity_prof && impurity_gyro) {
         Upara_imp = (A_imp * N_imp0) / (AA * N0);
         output.write("Max Upara_imp = {:e}, Min Upara_imp = {:e}\n", max(Upara_imp, true), min(Upara_imp, true));
         
-        Dperp2Pimp0.setLocation(CELL_CENTRE);
         Dperp2Pimp0.setBoundary("P");
-        bracketPhiPimp0.setLocation(CELL_CENTRE);
         bracketPhiPimp0.setBoundary("P");
       }
       if (nonlinear) {
-        GradPhi2.setLocation(CELL_CENTRE);
         GradPhi2.setBoundary("phi");
-	      bracketPhiP.setLocation(CELL_CENTRE);
         bracketPhiP.setBoundary("P");
       }
     }
 
     if (output_transfer) {
-      T_R.setLocation(CELL_YLOW);
       T_R.setBoundary("phi");
-      T_M.setLocation(CELL_YLOW);
       T_M.setBoundary("phi");
-      T_ID.setLocation(CELL_YLOW);
       T_ID.setBoundary("phi");
-      T_C.setLocation(CELL_YLOW);
       T_C.setBoundary("P");
-      T_G.setLocation(CELL_YLOW);
       T_G.setBoundary("P");
 
       dump.add(T_R, "T_R", 1);
@@ -2213,6 +2196,7 @@ protected:
       mask_jx1d = mask_x_1d(false, mask_flag_j, mask_width, mask_length);
       // dump.add(mask_jx1d, "mask_jx1d", 0);
     }
+    
     if (mask_phi_x) {
       mask_px1d = mask_x_1d(false, mask_flag_phi, mask_width, mask_length);
       // dump.add(mask_px1d, "mask_px1d", 0);
@@ -2236,6 +2220,8 @@ protected:
       output.write("\tSpitzer resistivity: {:e} -> {:e} [Ohm m]\n", min(eta),
                    max(eta));
       eta /= MU0 * Va * Lbar;
+      // eta.applyBoundary();
+      // mesh->communicate(eta);
       output.write("\t -> Lundquist {:e} -> {:e}\n", 1.0 / max(eta),
                    1.0 / min(eta));
       dump.add(eta, "eta", 1);
@@ -2371,6 +2357,7 @@ protected:
     if (diffusion_perp > 0.0) {
       omega_ci = Zi * ee * Bbar * B0 / Mi;
       omega_ce = ratio_pe * AA * ee * Bbar * B0 / Mi;
+
       kappa_perp_i = 2.0 * vth_i * vth_i * nu_i / (omega_ci * omega_ci); // * 1.e4;
       kappa_perp_e = 4.7 * vth_e * vth_e * nu_e / (omega_ce * omega_ce); // * 1.e4;
 
@@ -3132,8 +3119,10 @@ protected:
 
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
-
     aparSolver = Laplacian::create(&globalOptions["aparSolver"], loc);
+
+    // phiSolver->setInnerBoundaryFlags(INVERT_SET);
+    // phiSolver->setOuterBoundaryFlags(INVERT_SET);
 
     /////////////// CHECK VACUUM ////////////////////////////////////
     // In vacuum region, initial vorticity should equal zero
@@ -3489,7 +3478,7 @@ protected:
       }
 
       if (impurity_prof)
-        nu_e = 2.91e-6 * LnLambda * (N_tmp * Nbar * density / 1.e6) * (pow(Te_tmp * Tebar, -1.5)); // nu_e in 1/S.
+        nu_e = 2.91e-6 * LnLambda * (Ne_tmp * Nbar * density / 1.e6) * (pow(Te_tmp * Tebar, -1.5)); // nu_e in 1/S.
       else 
 	      nu_e = 2.91e-6 * LnLambda * (N_tmp * Nbar * density / 1.e6) * (pow(Te_tmp * Tebar, -1.5)); // nu_e in 1/S.
       
@@ -5630,10 +5619,6 @@ protected:
   } 
 
 
-
-
-
-
   // void SBC_Dirichlet(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
   //   // let the boundary equall to the value next to the boundary
   //   SBC_yup_eq(var, value, PF_limit, PF_limit_range);
@@ -5831,7 +5816,7 @@ protected:
     }
 
     p_tmp = N0 * (Tau_ie * ti_tmp + te_tmp) + ni_tmp * (Tau_ie * Ti0 + Te0);
-    u_tmp1 = u_tmp + gamma * ((B0 * B0) * Grad_par(jpar1 / B0, CELL_CENTRE) + 2.0 * Upara1 * b0xcv * Grad(p_tmp)); // curvature term
+    u_tmp1 = u_tmp + gamma * ((B0 * B0) * Grad_par(jpar1 / B0) + 2.0 * Upara1 * b0xcv * Grad(p_tmp)); // curvature term
     mesh->communicate(u_tmp1);
     u_tmp1.applyBoundary();
     Vipar = vi_tmp;

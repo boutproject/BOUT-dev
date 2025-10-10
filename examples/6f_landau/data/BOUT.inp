@@ -5,18 +5,26 @@
 ##################################################
 # Global settings used by the core code
 
-nout = 100                    # number of time-steps
-timestep = 1.0                 # time between outputs
+twistshift = true   # use twist-shift condition?
+non_uniform = true
+
+nout = 2 #3000                    # number of time-steps
+timestep = 0.1                 # time between outputs
 wall_limit = 48                # wall time limit (in hours)
 
-MZ = 16                        # number of points in z direction (2^n + 1)
-zperiod = 15                   # Fraction of a torus to simulate
+MZ = 64                        # Number of points in Z (toroidal) direction (2^n + 1)
+zperiod = 5                    # Fraction of a torus to simulate
 
-grid = "cbm18_dens6-0.5BS.grid.nc"
+MXG = 2
+MYG = 2
 
 [mesh]
-
 staggergrids = false           # Use staggered grids (EXPERIMENTAL)
+
+file = "d3d_large_elm_detachment_174287.04081_804_0.8psi1.1_54x64y_linear_2.bout.grd_classic_exp_constSOL_omgeb.nc"
+#file = "d3d_large_elm_detachment_174287.04081_804_0.8psi1.1_54x64y_linear_2.bout.grd_classic_exp_constSOL_omgeb_smoothedPF_w2D.nc"
+
+extrapolate_y = false # Can result in negative Jacobians in guard cells
 
 [mesh:paralleltransform]
 type = shifted                 # Use shifted metric method
@@ -25,49 +33,52 @@ type = shifted                 # Use shifted metric method
 # derivative methods
 
 [mesh:ddx]
-
 first = C4                     # order of first x derivatives (options are 2 or 4)
 second = C4                    # order of second x derivatives (2 or 4)
 upwind = W3                    # order of upwinding method (1, 4, 0 = TVD (DO NOT USE), 3 = WENO)
 
 [mesh:ddy]
-
 first = C2
 second = C2
 upwind = W3
 
 [mesh:ddz]
-
-first = C4                     # Z derivatives can be done using FFT
-second = C4
+first = FFT                     # Z derivatives can be done using FFT
+second = FFT
 upwind = W3
 
 ##################################################
 # Laplacian inversion routines
 
 [laplace]
-
-#nonuniform = true
+nonuniform = true
 #max_mode = 16                  # Maximum N to solve for
 
 ##################################################
 # FFTs
 
 [fft]
-
 fft_measurement_flag = measure # If using FFTW, perform tests to determine fastest method
 
 ##################################################
 # Solver settings
 
 [solver]
+#nout = 10000          # Number of output steps
+#output_step = 150    # Output timestep, normalised ion cyclotron times [1/Omega_ci]
 # mudq, mldq, mukeep, mlkeep preconditioner options
-atol = 1.0e-8                  # absolute tolerance
-rtol = 1.0e-5                  # relative tolerance
-
+type = cvode 
 use_precon = false             # Use preconditioner: User-supplied or BBD
+mxstep = 50000                # Max number of internal steps between outputs
+#cvode_max_order = 3
+#use_vector_abstol = false
+atol = 1.0e-10                 # absolute tolerance
+rtol = 1.0e-5                  # relative tolerance
+#maxl = 20
+#max_nonlinear_iterations = 7
+#diagnose = true
 
-mxstep = 10000                 # Number of internal steps between outputs
+
 
 ##################################################
 # settings for high-beta reduced MHD
@@ -77,20 +88,21 @@ mxstep = 10000                 # Number of internal steps between outputs
 density = 1.0e20               # number density normalization factor: Nixexp*density [m^-3], Nixexp from grid if existing.
 density_unit = 1.0e20          # number density unit for grid [m^-3]
 
-n0_fake_prof = true            # use the hyperbolic profile of n0. If both  n0_fake_prof and T0_fake_prof are false, use the profiles from grid file
-
+n0_fake_prof = false            # use the hyperbolic profile of n0. If both  n0_fake_prof and T0_fake_prof are false, use the profiles from grid file
 # case1: n0~n0_height*(p0/P00)^0.3*density
 n0_p0_0p3 = false              # if both n0_fake_prof and n0_p0_0p3 are true,
 #P00 = 23072.3                  # P0 at magnetic axis, required if n0_p0_0p3 is true.
-
 # case2: N0 = N0tanh(n0_height*Nbar, n0_ave*Nbar, n0_width, n0_center)
-n0_height = 2.0                # the total height of profile of N0, in percentage of Ni_x
+n0_height = 2.00               # the total height of profile of N0, in percentage of Ni_x
 n0_ave = 0.2                   # the constant tail of N0 profile, in percentage of Ni_x
 n0_width = 0.1                 # the width of the gradient of N0, in percentage of x
 n0_center = 0.636              # the the center of N0, in percentage of x
 n0_bottom_x = 0.81             # the start of flat region of N0 on SOL side, in percentage of x
+
 T0_fake_prof = false           # use the costant profile of T0. It is prior to n0_fake_prof
 Tconst = -1.0                  # the amplitude of Ti0 and Te0, in percentage of Tibar
+
+load_2d_bkgd = false         # Load background/equilibrium profiles from 2D transport similation data
 
 impurity_prof = false          # Include the profile of impurity in the equilibrium (Now only valid for experimental profiles of N0 anf T0)
 load_impurity = false          # if load impurity density from grid
@@ -101,13 +113,14 @@ quasi_neutral_Ni = false       # use quasi neutral condition to calculate N0 ins
 
 Zi = 1.0                       # ion charge number
 AA = 2.0                       # ion mass in units of proton mass
+#Zeff = 2.5
 
 laplace_alpha = 1.0            # test the effect of first order term of invert Laplace function
 Low_limit = 1e-10              # Limit the negative value of total density and temperatures
 
 ##################################################
 ## physical model -- effects to include/exclude
-nonlinear = false              # include non-linear terms?
+nonlinear = true               # include non-linear terms?
 
 diamag = true                  # Include diamagnetic effects?
 dia_fact = 1.0
@@ -129,17 +142,19 @@ parallel_viscous = false       # parallel viscosity terms
 include_jpar0 = true           # determines whether to include jpar0 terms
 include_curvature = true       # include curvature drive term?
 include_vipar = false          # include Vpar_dot_Grad terms [TEST]
+include_vpar0 = false          # include Vpar0 terms. Vpar0  is the ecuilibrium 2D backgraound from 2D trasnport simulations [TEST]
+include_U0 = false             # include U0 terms. U0 is the ecuilibrium 2D vorticity backgraound from 2D trasnport simulations [TEST]
 
 ## Resistivity and Hyper-resistivity
 spitzer_resist = true          # open the clculation of Spitzer resistivity
 vac_lund = -1.0e8              # Lundquist number in vacuum  (negative -> infinity)
 core_lund = -1.0e8             # Lundquist number in core (negative -> infinity)
-hyperresist = 1.0e-15          # Hyper-resistivity coefficient (like 1 / Lundquist number)
+hyperresist = 1.0e-14          # Hyper-resistivity coefficient (like 1 / Lundquist number)
 
 ## Parallel pressure diffusion
 diffusion_par = 1.0            # parallel thermal conductivity (>0 open)
-diffusion_perp = -1.00         # perpendicular thermal conductivity (>0 open), Landau damping closure not supported.
-diff_par_flutter = true        # the perturbed part of the termal conduction
+diffusion_perp = -1.0         # perpendicular thermal conductivity (>0 open), Landau damping closure not supported.
+diff_par_flutter = false        # the perturbed part of the termal conduction
 
 ## parallel heat flux options
 # case0: Spitzer-Harm parallel thermal conductivities [default]
@@ -149,25 +164,32 @@ q95_input = -5.0               # input q95 as a constant, if <0 use local q prof
 local_q = true                 # using magnetic field to calculate q profile, not recommanded
 q_alpha = 1.0                  # flux-limiting coefficient, typical value is [0.03, 3]
 
+# case2: Landau damping closure
+# NOTE: const q95_input required.
+#Landau = false                 # use Gyro-Landau fluid closure instead of thermal conductivity
+#Landau_coll = false            # Collisonal Landau closure
+#nLorentzian = 7                # number of Lorentzians, collisional: [3, 7, 9], collisionless: >=7
+#Landau_coeff = 1.0             # Coefficient for Landau Damping
+
 ## neoclassic switch
-neoclassic_i = false           # switch for ion neoclassical transport
-neoclassic_e = false           # switch for electron neoclassical transport
+neoclassic_i = true            # switch for ion neoclassical transport
+neoclassic_e = true            # switch for electron neoclassical transport
 epsilon = 0.4                  # the value of inverse aspect ratio
 
 ## 4th order diffusion
-hyperdiff_par_n4 = 1.0e-4      # 4th order Parallel density diffusion (< 0 = none)
-hyperdiff_par_ti4 = -1.0e-4    # 4th order Parallel ion temperature diffusion (< 0 = none)
-hyperdiff_par_te4 = -1.0e-4    # 4th order Parallel electron temperature diffusion (< 0 = none)
-hyperdiff_par_v4 = -1.0e-5     # 4th order Parallel ion velocity diffusion (< 0 = none)
-hyperdiff_par_u4 = 1.0e-5      # hyper parallel viscousity (<0 - none)
+hyperdiff_par_n4    = -1.0e-4      # 4th order Parallel density diffusion (< 0 = none)
+hyperdiff_par_ti4   = -1.0e-4      # 4th order Parallel ion temperature diffusion (< 0 = none)
+hyperdiff_par_te4   = -1.0e-4      # 4th order Parallel electron temperature diffusion (< 0 = none)
+hyperdiff_par_v4    = -1.0e-5      # 4th order Parallel ion velocity diffusion (< 0 = none)
+hyperdiff_par_u4    = -1.0e-5      # hyper parallel viscousity (<0 - none)
 hyperdiff_par_apar4 = -1.0e-5
 
-hyperdiff_perp_n4 = -1.0e-4    # 4th order perpendicular density diffusion (< 0 = none)
-hyperdiff_perp_ti4 = -1.0e-4   # 4th order perpendicular ion temperature diffusion (< 0 = none)
-hyperdiff_perp_te4 = -1.0e-4   # 4th order perpendicular electron temperature diffusion (< 0 = none)
-hyperdiff_perp_v4 = -1.0e-5    # 4th order perpendicular ion velocity diffusion (< 0 = none)
-hyperdiff_perp_u4 = -1.0e-5    # hyper perpendicular viscousity (<0 - none)
-hyperdiff_perp_apar4 = -1.0e-5
+hyperdiff_perp_n4   = -1.0e-4     # 4th order perpendicular density diffusion (< 0 = none)
+hyperdiff_perp_ti4  = -1.0e-4     # 4th order perpendicular ion temperature diffusion (< 0 = none)
+hyperdiff_perp_te4  = -1.0e-4     # 4th order perpendicular electron temperature diffusion (< 0 = none)
+hyperdiff_perp_v4   = -1.0e-5     # 4th order perpendicular ion velocity diffusion (< 0 = none)
+hyperdiff_perp_u4   = -1.0e-5     # hyper perpendicular viscousity (<0 - none)
+hyperdiff_perp_apar4= -1.0e-5
 
 ## Limit the infinity value of Jacobi
 limit_jacobi = false           # limit the value of jacobi at x-point region
@@ -177,7 +199,7 @@ const_bp = -0.5                # const Bpxy if >0
 
 ## filter the instability at PF
 PF_limit = false               # swith of the filter at PF
-PF_limit_range = 0.98          # the range of the filter at x direction (1 means all the PF region)
+PF_limit_range = 0.5          # the range of the filter at x direction (1 means all the PF region)
 PF_sink = -1                   # sink term at inner boundary of PF
 PFs_width = 0.06
 PFs_length = 0.1
@@ -240,11 +262,11 @@ Wrc = 4.5                      # recombination energy in eV
 
 ## Fixed fraction model for impurity radiation
 fix_fraction_imp = false
-Limp_carbon = false            # carbon
+Limp_carbon = true            # carbon
 Limp_nitro = false             # nitrogen
 Limp_Neon = false              # Neon
 Limp_Argon = false             # Argon
-Limp_carbon_adas = true        # carbon_adas
+Limp_carbon_adas = false        # carbon_adas
 Limp_nitro_adas = false        # nitrogen_adas
 Limp_Neon_adas = false         # Neon_adas
 Limp_Argon_adas = false        # Argon_adas
@@ -277,7 +299,7 @@ output_vradial = true          # output the results of radial velocity, induced 
 ##################################################
 evolve_jpar = false            # If true, evolve J raher than Psi EXPERIMENTAL
 evolve_pressure = true         # If false, switch off all pressure evolution
-evolve_psi = true
+evolve_psi = false
 phi_constraint = false         # Solve phi as a constraint (DAE system, needs IDA)
 jpar_bndry_width = -5
 
@@ -289,7 +311,7 @@ parallel_lr_diff = false       # parallel differencing method
 #   by the choices C or W in this input file
 # 1:BRACKET_SIMPLE; 2:BRACKET_ARAKAWA; 3:BRACKET_CTU.
 
-bracket_method_exb = 2         # differencing schemes for ExB
+bracket_method_exb = 0         # differencing schemes for ExB
 bracket_method_mag = 2         # differencing schemes for magnetic flutter
 #######################################################################
 
@@ -301,13 +323,13 @@ relax_j_vac = false            # Relax to zero-current in the vacuum
 relax_j_tconst = 0.01          # Time constant for vacuum relaxation
 
 ## Toroidal filtering
-filter_z = true                # remove all except one mode
+filter_z = false               # remove all except one mode
 filter_z_nonlinear = false     # remove all except zonal and filter_z_mode
 filter_z_mode = 1              # Specify which harmonic to keep (1 = fundamental)
 low_pass_z = 16                # Keep up to and including this harmonic (-1 = keep all)
-zonal_flow = false             # remove this zonal harmonic?
-zonal_field = false            # remove this zonal harmonic?
-zonal_bkgd = true              # remove this zonal harmonic?
+zonal_flow = false             # keep this zonal harmonic?
+zonal_field = false            # keep this zonal harmonic?
+zonal_bkgd = true              # keep this zonal harmonic?
 
 ## Toroidal filtering for certain position
 pos_filter = false             # switch to turn on the filter of the negative zonal background
@@ -325,7 +347,7 @@ pos_filter_length = 0.95       # length of pos_filter_zf with the normalization 
 smooth_j_x = true              # Filter Jpar in the X direction
 mask_j_x = false               # Mask Jpar at inner boundary in x direction
 mask_flag_j = 1                # mask flag, 0: mask on left boundary; 1: right; others: both on left and right
-mask_phi_x = true              # Mask phi at inner boundary in x direction
+mask_phi_x = false             # Mask phi at inner boundary in x direction
 mask_flag_phi = 2              # mask flag, 0: mask on left boundary; 1: right; others: both on left and right
 mask_length = 0.1              # the center of tanh function, DO NOT change
 mask_width = 0.03              # the width of tanh function, DO NOT change
@@ -345,22 +367,22 @@ hp_width = 0.1                 # heat width, in percentage of nx (< 0 = none)
 hp_length = 0.3                # heat length in percentage of nx (< 0 = none)
 
 ## sink rate in pressure
-sink_vp =  10.0                # sink rate in pressure (< 0 = none)
+sink_vp = -10.0                 # sink rate in pressure (< 0 = none)
 sp_width = 0.06                # sink width, in percentage of nx (< 0 = none)
 sp_length = 0.1                # sink length in percentage of nx (< 0 = none)
 
 ## left edge sink rate in vorticity
-sink_Ul =  10.0                # left edge sink rate in vorticity (< 0 = none)
+sink_Ul = -10.0                 # left edge sink rate in vorticity (< 0 = none)
 su_widthl = 0.06               # left edge sink width, in percentage of nx (< 0 = none)
 su_lengthl = 0.1               # left edge sink length in percentage of nx (< 0 = none)
 
 ## right edge sink rate in vorticity
-sink_Ur =  10.0                # right edge sink rate in vorticity (< 0 = none)
+sink_Ur = -10.0                 # right edge sink rate in vorticity (< 0 = none)
 su_widthr = 0.06               # right edge sink width, in percentage of nx (< 0 = none)
 su_lengthr = 0.1               # right edge sink length in percentage of nx (< 0 = none)
 
 ## right edge sink rate in Te
-sink_Ter =  10.0               # right edge sink rate in Te (< 0 = none)
+sink_Ter = -10.0                # right edge sink rate in Te (< 0 = none)
 ste_widthr  = 0.06             # right edge sink width, in percentage of nx (< 0 = none)
 ste_lengthr = 0.1              # right edge sink length in percentage of nx (< 0 = none)
 
@@ -389,6 +411,7 @@ outer_boundary_flags = 1 + 4   # INVERT_DC_GRAD + INVERT_AC_LAP
 
 [all]
 scale = 0.0                    # default size of initial perturbations
+function = 1.0
 
 # boundary conditions
 # -------------------
@@ -399,45 +422,69 @@ scale = 0.0                    # default size of initial perturbations
 #
 # relax( )   - Make boundary condition relaxing
 
-bndry_all = dirichlet_o2 # Default to zero-value
+#bndry_all = dirichlet_o2 # Default to zero-value
+bndry_all = dirichlet # Default to zero-value
 
 [U]   # vorticity
 scale = 1.0e-5
 function = sin(z) * exp(-((x-0.5)/0.1)^2) * exp(-((y/(2*pi)-0.5)/0.3)^2)
-#function = ballooning(gauss(x-0.5,0.1)*gauss(y-pi,0.6*pi)*sin(z),3)
+
+#bndry_core = neumann
+#bndry_xin = neumann
+#bndry_xout = neumann
+#bndry_sol = neumann
 
 [Ni]  # number density
-bndry_core = neumann
+#scale = 1.0e-5
+#bndry_core = neumann
+#bndry_xin = neumann
 #bndry_xout = neumann
+#bndry_sol = neumann
 
 [Ti]  # ion temperature
-bndry_core = neumann
+# scale = 1.0e-5
+#bndry_core = neumann
+#bndry_sol = neumann
+#bndry_xin = neumann
 #bndry_xout = neumann
 
 [Te]  # electron density
-bndry_core = neumann
+# scale = 1.0e-5
+#bndry_core = neumann
+#bndry_sol = neumann
+#bndry_xin = neumann
 #bndry_xout = neumann
 
 [P]   # pressure
-bndry_core = neumann
-#bndry_xout = neumann
+# scale = 1.0e-5
+# bndry_core = neumann
+# bndry_xin = neumann
+# bndry_xout = neumann
 
 [Psi] # Vector potential
 # zero laplacian
 bndry_xin = zerolaplace
 bndry_xout = zerolaplace
 
-[Vipar]
+[J]    # parallel current
+# Zero gradient in the core
+#bndry_core = neumann
+#bndry_xin = neumann
+#bndry_xout = neumann
 
+[Vipar]
 bndry_core = neumann
+#bndry_xin = neumann
+#bndry_xout = neumann
+#bndry_sol = neumann
 
 [phi]
-
 bndry_core = neumann
-bndry_xout = dirichlet
+# bndry_sol = neumann
+#bndry_xin = neumann
+#bndry_xout = neumann
 
 [kappa] # boundary for collision rate and conductivities
-
 bndry_xin = neumann
 bndry_xout = neumann
 
@@ -457,5 +504,3 @@ bndry_xout = neumann
 #[Vm]
 #bndry_core = neumann
 #bndry_sol = neumann
-
-
