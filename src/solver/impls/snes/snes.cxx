@@ -8,6 +8,7 @@
 #include <bout/boutexception.hxx>
 #include <bout/globals.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/output_bout_types.hxx>
 #include <bout/petsc_interface.hxx>
 #include <bout/utils.hxx>
 
@@ -83,8 +84,7 @@ PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  *
  * This can be a linearised and simplified form of FormFunction
  */
-PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f,
-                                              void* ctx) {
+PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f, void* ctx) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f, true);
 }
 
@@ -96,7 +96,7 @@ PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
 
   PetscFunctionReturn(s->precon(x, y));
 }
-}
+} // namespace
 
 SNESSolver::SNESSolver(Options* opts)
     : Solver(opts),
@@ -138,6 +138,21 @@ SNESSolver::SNESSolver(Options* opts)
           (*options)["timestep_factor_on_lower_its"]
               .doc("Multiply timestep if iterations are below lower_its")
               .withDefault(1.4)),
+      pseudo_time((*options)["pseudo_time"]
+                      .doc("Pseudo-Transient Continuation method?")
+                      .withDefault<bool>(false)),
+      pseudo_alpha((*options)["pseudo_alpha"]
+                       .doc("Sets timestep using dt = alpha / residual")
+                       .withDefault(100. * atol * timestep)),
+      pseudo_growth_factor((*options)["pseudo_growth_factor"]
+                               .doc("PTC growth factor on success")
+                               .withDefault(1.1)),
+      pseudo_reduction_factor((*options)["pseudo_reduction_factor"]
+                                  .doc("PTC reduction factor on failure")
+                                  .withDefault(0.5)),
+      pseudo_max_ratio((*options)["pseudo_max_ratio"]
+                           .doc("PTC maximum timestep ratio between neighbors")
+                           .withDefault(2.)),
       pid_controller(
           (*options)["pid_controller"].doc("Use PID controller?").withDefault(false)),
       target_its((*options)["target_its"].doc("Target snes iterations").withDefault(7)),
@@ -275,6 +290,21 @@ int SNESSolver::init() {
     // Storage for scaled 'x' state vectors
     ierr = VecDuplicate(snes_x, &scaled_x);
     CHKERRQ(ierr);
+  }
+
+  if (pseudo_time) {
+    // Storage for per-variable timestep
+    PetscCall(VecDuplicate(snes_x, &dt_vec));
+    // Starting timestep
+    PetscCall(VecSet(dt_vec, timestep));
+
+    // Storage for previous residual. Used to compare
+    // residuals before and after step, and adjust timestep accordingly
+    PetscCall(VecDuplicate(snes_x, &previous_f));
+
+    // Diagnostic outputs
+    pseudo_timestep = timestep;
+    pseudo_residual = 0.0;
   }
 
   // Nonlinear solver interface (SNES)
@@ -767,6 +797,19 @@ int SNESSolver::run() {
     CHKERRQ(ierr);
   }
 
+  if (pseudo_time) {
+    // Calculate the initial residual in snes_f
+    run_rhs(simtime);
+    {
+      BoutReal* fdata = nullptr;
+      ierr = VecGetArray(snes_f, &fdata);
+      CHKERRQ(ierr);
+      save_derivs(fdata);
+      ierr = VecRestoreArray(snes_f, &fdata);
+      CHKERRQ(ierr);
+    }
+  }
+
   BoutReal target = simtime;
   for (int s = 0; s < getNumberOutputSteps(); s++) {
     target += getOutputTimestep();
@@ -837,46 +880,67 @@ int SNESSolver::run() {
       // Copy the state (snes_x) into initial values (x0)
       VecCopy(snes_x, x0);
 
-      if (timestep < dt_min_reset) {
-        // Hit the minimum timestep, probably through repeated failures
+      if (pseudo_time) {
+        // Pseudo-Transient Continuation
+        // Each evolving quantity may have its own timestep
+        // Set timestep and dt scalars to the minimum of dt_vec
 
-        if (saved_jacobian_lag != 0) {
-          // Already tried this and it didn't work
-          throw BoutException("Solver failed after many attempts");
+        PetscCall(VecMin(dt_vec, nullptr, &timestep));
+        dt = timestep;
+
+        // Copy residual from snes_f to previous_f
+        // The value of snes_f is set before the timestepping loop
+        // then calculated after the timestep
+        PetscCall(VecCopy(snes_f, previous_f));
+
+        looping = true;
+        if (simtime + timestep >= target) {
+          looping = false;
+        }
+      } else {
+        // Timestepping
+
+        if (timestep < dt_min_reset) {
+          // Hit the minimum timestep, probably through repeated failures
+
+          if (saved_jacobian_lag != 0) {
+            // Already tried this and it didn't work
+            throw BoutException("Solver failed after many attempts");
+          }
+
+          // Try resetting the preconditioner, turn off predictor, and use a large timestep
+          SNESGetLagJacobian(snes, &saved_jacobian_lag);
+          SNESSetLagJacobian(snes, 1);
+          timestep = getOutputTimestep();
+          predictor = false; // Predictor can cause problems in near steady-state.
         }
 
-        // Try resetting the preconditioner, turn off predictor, and use a large timestep
-        SNESGetLagJacobian(snes, &saved_jacobian_lag);
-        SNESSetLagJacobian(snes, 1);
-        timestep = getOutputTimestep();
-        predictor = false; // Predictor can cause problems in near steady-state.
-      }
+        // Set the timestep
+        dt = timestep;
+        looping = true;
+        if (simtime + dt >= target) {
+          // Note: When the timestep is changed the preconditioner needs to be updated
+          // => Step over the output time and interpolate if not matrix free
 
-      // Set the timestep
-      dt = timestep;
-      looping = true;
-      if (simtime + dt >= target) {
-        // Note: When the timestep is changed the preconditioner needs to be updated
-        // => Step over the output time and interpolate if not matrix free
-
-        if (matrix_free) {
-          // Ensure that the timestep goes to the next output time and then stops.
-          // This avoids the need to interpolate
-          dt = target - simtime;
+          if (matrix_free) {
+            // Ensure that the timestep goes to the next output time and then stops.
+            // This avoids the need to interpolate
+            dt = target - simtime;
+          }
+          looping = false;
         }
-        looping = false;
-      }
 
-      if (predictor and (time1 > 0.0)) {
-        // Use (time1, x1) and (simtime, x0) to make prediction
-        // snes_x <- x0 + (dt / (simtime - time1)) * (x0 - x1)
-        // snes_x <- -β * x1 + (1 + β) * snes_x
-        BoutReal beta = dt / (simtime - time1);
-        VecAXPBY(snes_x, -beta, (1. + beta), x1);
-      }
+        if (predictor and (time1 > 0.0)) {
+          // Use (time1, x1) and (simtime, x0) to make prediction
+          // snes_x <- x0 + (dt / (simtime - time1)) * (x0 - x1)
+          // snes_x <- -β * x1 + (1 + β) * snes_x
+          BoutReal beta = dt / (simtime - time1);
+          VecAXPBY(snes_x, -beta, (1. + beta), x1);
+        }
 
-      if (pid_controller) {
-        SNESSetLagJacobian(snes, lag_jacobian);
+        if (pid_controller) {
+          SNESSetLagJacobian(snes, lag_jacobian);
+        }
       }
 
       // Run the solver
@@ -917,8 +981,16 @@ int SNESSolver::run() {
         ++snes_failures;
         steps_since_snes_failure = 0;
 
-        // Try a smaller timestep
-        timestep *= timestep_factor_on_failure;
+        if (pseudo_time) {
+          // Global scaling of timesteps
+          // Note: A better strategy might be to reduce timesteps
+          //       in problematic cells.
+          PetscCall(VecScale(dt_vec, timestep_factor_on_failure));
+
+        } else {
+          // Try a smaller timestep
+          timestep *= timestep_factor_on_failure;
+        }
         // Restore state
         VecCopy(x0, snes_x);
 
@@ -972,7 +1044,8 @@ int SNESSolver::run() {
 
       if (nl_its == 0) {
         // This can occur even with SNESSetForceIteration
-        // Results in simulation state freezing and rapidly going to the end
+        // Results in simulation state freezing and rapidly going
+        // to the end
 
         if (scale_vars) {
           // scaled_x <- snes_x * var_scaling_factors
@@ -1016,8 +1089,14 @@ int SNESSolver::run() {
         // Gather and print diagnostic information
 
         output.print("\r"); // Carriage return for printing to screen
+
+        // if (pseudo_time) {
+        //   output.write("\tTime {} alpha {} min_timestep {} nl_iter {} lin_iter {} reason {}",
+        //                simtime, pseudo_alpha, timestep, nl_its, lin_its, static_cast<int>(reason));
+        // } else {
         output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}, reason: {}",
                      simtime, timestep, nl_its, lin_its, static_cast<int>(reason));
+        // }
         if (snes_failures > 0) {
           output.write(", SNES failures: {}", snes_failures);
         }
@@ -1069,61 +1148,255 @@ int SNESSolver::run() {
       }
 #endif // PETSC_VERSION_GE(3,20,0)
 
-      if (looping) {
+      if (pseudo_time) {
+        // Adjust local timesteps
 
-        if (pid_controller) {
-          // Changing the timestep.
-          // Note: The preconditioner depends on the timestep,
-          // so we recalculate the jacobian and the preconditioner
-          //  every time the timestep changes
+        // Calculate residuals
+        if (scale_vars) {
+          // scaled_x <- snes_x * var_scaling_factors
+          PetscCall(VecPointwiseMult(scaled_x, snes_x, var_scaling_factors));
+          const BoutReal* xdata = nullptr;
+          PetscCall(VecGetArrayRead(scaled_x, &xdata));
+          load_vars(const_cast<BoutReal*>(xdata));
+          PetscCall(VecRestoreArrayRead(scaled_x, &xdata));
+        } else {
+          const BoutReal* xdata = nullptr;
+          PetscCall(VecGetArrayRead(snes_x, &xdata));
+          load_vars(const_cast<BoutReal*>(xdata));
+          PetscCall(VecRestoreArrayRead(snes_x, &xdata));
+        }
+        run_rhs(simtime);
+        {
+          BoutReal* fdata = nullptr;
+          PetscCall(VecGetArray(snes_f, &fdata));
+          save_derivs(fdata);
+          PetscCall(VecRestoreArray(snes_f, &fdata));
+        }
 
-          timestep = pid(timestep, nl_its);
+        // Compare previous_f with snes_f
+        // Use a per-cell timestep so that e.g density and pressure
+        // evolve in a way consistent with the equation of state.
 
-          // NOTE(malamast): Do we really need this?
-          // Recompute Jacobian (for now)
-          if (saved_jacobian_lag == 0) {
-            SNESGetLagJacobian(snes, &saved_jacobian_lag);
-            SNESSetLagJacobian(snes, 1);
+        // Reading the residual vectors
+        const BoutReal* previous_residual = nullptr;
+        PetscCall(VecGetArrayRead(previous_f, &previous_residual));
+        const BoutReal* current_residual = nullptr;
+        PetscCall(VecGetArrayRead(snes_f, &current_residual));
+        // Modifying the dt_vec values
+        BoutReal* dt_data = nullptr;
+        PetscCall(VecGetArray(dt_vec, &dt_data));
+
+        // Note: The ordering of quantities in the PETSc vectors
+        // depends on the Solver::loop_vars function
+        Mesh* mesh = bout::globals::mesh;
+        int idx = 0; // Index into PETSc Vecs
+
+        // Boundary cells
+        for (const auto& i2d : mesh->getRegion2D("RGN_BNDRY")) {
+          // Field2D quantities evolved together
+          int count = 0;
+          BoutReal R0 = 0.0;
+          BoutReal R1 = 0.0;
+
+          for (const auto& f : f2d) {
+            if (!f.evolve_bndry) {
+              continue; // Not evolving boundary => Skip
+            }
+            R0 += SQ(previous_residual[idx + count]);
+            R1 += SQ(current_residual[idx + count]);
+            ++count;
+          }
+          if (count > 0) {
+            R0 = sqrt(R0 / count);
+            R1 = sqrt(R1 / count);
+
+            // Adjust timestep for these quantities
+            BoutReal new_timestep = updatePseudoTimestep(dt_data[idx], R0, R1);
+            for (int i = 0; i != count; ++i) {
+              dt_data[idx++] = new_timestep;
+            }
           }
 
-        } else {
+          // Field3D quantities evolved together within a cell
+          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+            count = 0;
+            R0 = 0.0;
+            R1 = 0.0;
+            for (const auto& f : f3d) {
+              if (!f.evolve_bndry) {
+                continue; // Not evolving boundary => Skip
+              }
+              R0 += SQ(previous_residual[idx + count]);
+              R1 += SQ(current_residual[idx + count]);
+              ++count;
+            }
+            if (count > 0) {
+              R0 = sqrt(R0 / count);
+              R1 = sqrt(R1 / count);
 
-          // Consider changing the timestep.
-          // Note: The preconditioner depends on the timestep,
-          // so if it is not recalculated the it will be less
-          // effective.
-          if ((nl_its <= lower_its) && (timestep < max_timestep)
-              && (steps_since_snes_failure > 2)) {
-            // Increase timestep slightly
-            timestep *= timestep_factor_on_lower_its;
+              BoutReal new_timestep = updatePseudoTimestep(dt_data[idx], R0, R1);
 
-            timestep = std::min(timestep, max_timestep);
+              auto i3d = mesh->ind2Dto3D(i2d, jz);
+              pseudo_residual[i3d] = R1;
+              pseudo_timestep[i3d] = new_timestep;
 
-            // Note: Setting the SNESJacobianFn to NULL retains
-            // previously set evaluation function.
-            //
-            // The SNES Jacobian is a combination of the RHS Jacobian
-            // and a factor involving the timestep.
-            // Depends on equation_form
-            // -> Probably call SNESSetJacobian(snes, Jfd, Jfd, NULL, fdcoloring);
-
-            if (static_cast<BoutReal>(lin_its) / nl_its > 4) {
-              // Recompute Jacobian (for now)
-              if (saved_jacobian_lag == 0) {
-                SNESGetLagJacobian(snes, &saved_jacobian_lag);
-                SNESSetLagJacobian(snes, 1);
+              for (int i = 0; i != count; ++i) {
+                dt_data[idx++] = new_timestep;
               }
             }
+          }
+        }
 
-          } else if (nl_its >= upper_its) {
-            // Reduce timestep slightly
-            timestep *= timestep_factor_on_upper_its;
+        // Bulk of domain.
+        // These loops don't check the boundary flags
+        for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
+          // Field2D quantities evolved together
+          if (f2d.size() > 0) {
+            BoutReal R0 = 0.0;
+            BoutReal R1 = 0.0;
+            for (std::size_t i = 0; i != f2d.size(); ++i) {
+              R0 += SQ(previous_residual[idx + i]);
+              R1 += SQ(current_residual[idx + i]);
+            }
+            R0 = sqrt(R0 / f2d.size());
+            R1 = sqrt(R1 / f2d.size());
 
-            // Recompute Jacobian
+            // Adjust timestep for these quantities
+            BoutReal new_timestep = updatePseudoTimestep(dt_data[idx], R0, R1);
+            for (std::size_t i = 0; i != f2d.size(); ++i) {
+              dt_data[idx++] = new_timestep;
+            }
+          }
+
+          // Field3D quantities evolved together within a cell
+          if (f3d.size() > 0) {
+            for (int jz = 0; jz < mesh->LocalNz; jz++) {
+              BoutReal R0 = 0.0;
+              BoutReal R1 = 0.0;
+              for (std::size_t i = 0; i != f3d.size(); ++i) {
+                R0 += SQ(previous_residual[idx + i]);
+                R1 += SQ(current_residual[idx + i]);
+              }
+              R0 = sqrt(R0 / f3d.size());
+              R1 = sqrt(R1 / f3d.size());
+              BoutReal new_timestep = updatePseudoTimestep(dt_data[idx], R0, R1);
+
+              auto i3d = mesh->ind2Dto3D(i2d, jz);
+              pseudo_residual[i3d] = R1;
+
+              // Compare to neighbors
+              BoutReal min_neighboring_dt = max_timestep;
+              BoutReal mean_neighboring_dt = 0.0;
+              int neighbor_count = 0;
+              if (i3d.x() != 0) {
+                BoutReal val = pseudo_timestep[i3d.xm()];
+                min_neighboring_dt = std::min(min_neighboring_dt, val);
+                mean_neighboring_dt += val;
+                ++neighbor_count;
+              }
+              if (i3d.x() != mesh->LocalNx - 1) {
+                BoutReal val = pseudo_timestep[i3d.xp()];
+                min_neighboring_dt = std::min(min_neighboring_dt, val);
+                mean_neighboring_dt += val;
+                ++neighbor_count;
+              }
+              if (i3d.y() != 0) {
+                BoutReal val = pseudo_timestep[i3d.ym()];
+                min_neighboring_dt = std::min(min_neighboring_dt, val);
+                mean_neighboring_dt += val;
+                ++neighbor_count;
+              }
+              if (i3d.x() != mesh->LocalNy - 1) {
+                BoutReal val = pseudo_timestep[i3d.yp()];
+                min_neighboring_dt = std::min(min_neighboring_dt, val);
+                mean_neighboring_dt += val;
+                ++neighbor_count;
+              }
+              mean_neighboring_dt /= neighbor_count;
+
+              // Smooth
+              //new_timestep = 0.1 * mean_neighboring_dt + 0.9 * new_timestep;
+
+              // Limit ratio of timestep between neighboring cells
+              new_timestep =
+                  std::min(new_timestep, pseudo_max_ratio * min_neighboring_dt);
+
+              pseudo_timestep[i3d] = new_timestep;
+
+              for (std::size_t i = 0; i != f3d.size(); ++i) {
+                dt_data[idx++] = new_timestep;
+              }
+            }
+          }
+        }
+
+        // Restore Vec data arrays
+        PetscCall(VecRestoreArrayRead(previous_f, &previous_residual));
+        PetscCall(VecRestoreArrayRead(snes_f, &current_residual));
+        PetscCall(VecRestoreArray(dt_vec, &dt_data));
+
+        // Need timesteps on neighboring processors
+        // to limit ratio
+        mesh->communicate(pseudo_timestep);
+        // Neumann boundary so timestep isn't pinned at boundaries
+        pseudo_timestep.applyBoundary("neumann");
+
+        if (pid_controller) {
+          // Adjust pseudo_alpha based on nonlinear iterations
+          pseudo_alpha = pid(pseudo_alpha, nl_its, max_timestep * atol * 100);
+        }
+
+      } else if (pid_controller) {
+        // Changing the timestep using a PID controller.
+        // Note: The preconditioner depends on the timestep,
+        // so we recalculate the jacobian and the preconditioner
+        //  every time the timestep changes
+
+        timestep = pid(timestep, nl_its, max_timestep);
+
+        // NOTE(malamast): Do we really need this?
+        // Recompute Jacobian (for now)
+        if (saved_jacobian_lag == 0) {
+          SNESGetLagJacobian(snes, &saved_jacobian_lag);
+          SNESSetLagJacobian(snes, 1);
+        }
+
+      } else {
+        // Consider changing the timestep.
+        // Note: The preconditioner depends on the timestep,
+        // so if it is not recalculated the it will be less
+        // effective.
+        if ((nl_its <= lower_its) && (timestep < max_timestep)
+            && (steps_since_snes_failure > 2)) {
+          // Increase timestep slightly
+          timestep *= timestep_factor_on_lower_its;
+
+          timestep = std::min(timestep, max_timestep);
+
+          // Note: Setting the SNESJacobianFn to NULL retains
+          // previously set evaluation function.
+          //
+          // The SNES Jacobian is a combination of the RHS Jacobian
+          // and a factor involving the timestep.
+          // Depends on equation_form
+          // -> Probably call SNESSetJacobian(snes, Jfd, Jfd, NULL, fdcoloring);
+
+          if (static_cast<BoutReal>(lin_its) / nl_its > 4) {
+            // Recompute Jacobian (for now)
             if (saved_jacobian_lag == 0) {
               SNESGetLagJacobian(snes, &saved_jacobian_lag);
               SNESSetLagJacobian(snes, 1);
             }
+          }
+
+        } else if (nl_its >= upper_its) {
+          // Reduce timestep slightly
+          timestep *= timestep_factor_on_upper_its;
+
+          // Recompute Jacobian
+          if (saved_jacobian_lag == 0) {
+            SNESGetLagJacobian(snes, &saved_jacobian_lag);
+            SNESSetLagJacobian(snes, 1);
           }
         }
       }
@@ -1132,7 +1405,7 @@ int SNESSolver::run() {
 
     if (!matrix_free) {
       ASSERT2(simtime >= target);
-      ASSERT2(simtime - dt < target);
+      ASSERT2(simtime - dt <= target);
       // Stepped over output timestep => Interpolate
       // snes_x is the solution at t = simtime
       // x0 is the solution at t = simtime - dt
@@ -1179,6 +1452,56 @@ int SNESSolver::run() {
   }
 
   return 0;
+}
+
+/// Switched Evolution Relaxation (SER)
+BoutReal SNESSolver::updatePseudoTimestep(BoutReal previous_timestep,
+                                          BoutReal previous_residual,
+                                          BoutReal current_residual) {
+
+  // Timestep inversely proportional to the residual, clipped to avoid
+  // rapid changes in timestep.
+  return std::min(
+      {std::max({pseudo_alpha / current_residual, previous_timestep / 1.5, dt_min_reset}),
+       1.5 * previous_timestep, max_timestep});
+
+  /*
+
+  // Alternative strategy based on history of residuals
+  // A hybrid strategy may be most effective, in which the timestep is
+  // inversely proportional to residual initially, or when residuals are large,
+  // and then the method transitions to being history-based
+
+  const BoutReal converged_threshold = 100 * atol;
+  const BoutReal transition_threshold = 1000 * atol;
+
+  if (current_residual < converged_threshold) {
+    return max_timestep;
+  }
+
+  // Smoothly transition from SER updates to frozen timestep
+  if (current_residual < transition_threshold) {
+    BoutReal reduction_ratio = current_residual / previous_residual;
+
+    if (reduction_ratio < 0.8) {
+      return std::min(0.5*(pseudo_growth_factor + 1.) * previous_timestep,
+                      max_timestep);
+    } else if (reduction_ratio > 1.2) {
+      return std::max(0.5*(pseudo_reduction_factor + 1) * previous_timestep, dt_min_reset);
+    }
+    // Leave unchanged if residual changes are small
+    return previous_timestep;
+  }
+
+  if (current_residual <= previous_residual) {
+    // Success
+    return std::min(pseudo_growth_factor * previous_timestep,
+                    max_timestep);
+  }
+  // Failed
+  // Consider rejecting the step
+  return std::max(pseudo_reduction_factor * previous_timestep, dt_min_reset);
+  */
 }
 
 // f = rhs
@@ -1240,13 +1563,24 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
     // f = (x0 - x)/Δt + f
     // First calculate x - x0 to minimise floating point issues
     VecWAXPY(delta_x, -1.0, x0, x); // delta_x = x - x0
-    VecAXPY(f, -1. / dt, delta_x);  // f <- f - delta_x / dt
+    if (pseudo_time) {
+      // dt can be different for each quantity
+      VecPointwiseDivide(delta_x, delta_x, dt_vec); // delta_x /= dt
+      VecAXPY(f, -1., delta_x);                     // f <- f - delta_x
+    } else {
+      VecAXPY(f, -1. / dt, delta_x); // f <- f - delta_x / dt
+    }
     break;
   }
   case BoutSnesEquationForm::backward_euler: {
     // Backward Euler
     // Set f = x - x0 - Δt*f
-    VecAYPX(f, -dt, x);   // f <- x - Δt*f
+    if (pseudo_time) {
+      VecPointwiseMult(f, f, dt_vec); // f <- Δt*f
+      VecAYPX(f, -1, x);              // f <- x - f
+    } else {
+      VecAYPX(f, -dt, x); // f <- x - Δt*f
+    }
     VecAXPY(f, -1.0, x0); // f <- f - x0
     break;
   }
@@ -1443,7 +1777,7 @@ void SNESSolver::updateColoring() {
   }
 }
 
-BoutReal SNESSolver::pid(BoutReal timestep, int nl_its) {
+BoutReal SNESSolver::pid(BoutReal timestep, int nl_its, BoutReal max_dt) {
 
   /* ---------- multiplicative PID factors ---------- */
   const BoutReal facP = std::pow(double(target_its) / double(nl_its), kP);
@@ -1452,16 +1786,32 @@ BoutReal SNESSolver::pid(BoutReal timestep, int nl_its) {
                                      / double(nl_its) / double(nl_its_prev2),
                                  kD);
 
-  // clamp groth factor to avoid huge changes
+  // clamp growth factor to avoid huge changes
   const BoutReal fac = std::clamp(facP * facI * facD, 0.2, 5.0);
 
   /* ---------- update timestep and history ---------- */
-  const BoutReal dt_new = std::min(timestep * fac, max_timestep);
+  const BoutReal dt_new = std::min(timestep * fac, max_dt);
 
   nl_its_prev2 = nl_its_prev;
   nl_its_prev = nl_its;
 
   return dt_new;
+}
+
+void SNESSolver::outputVars(Options& output_options, bool save_repeat) {
+  // Call base class function
+  Solver::outputVars(output_options, save_repeat);
+
+  if (!save_repeat) {
+    return; // Don't save diagnostics to restart files
+  }
+
+  if (pseudo_time) {
+    output_options["snes_pseudo_residual"].assignRepeat(pseudo_residual, "t", save_repeat,
+                                                        "SNESSolver");
+    output_options["snes_pseudo_timestep"].assignRepeat(pseudo_timestep, "t", save_repeat,
+                                                        "SNESSolver");
+  }
 }
 
 #endif // BOUT_HAS_PETSC

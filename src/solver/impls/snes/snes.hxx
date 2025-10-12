@@ -39,6 +39,7 @@ class SNESSolver;
 
 #include <bout/bout_enum_class.hxx>
 #include <bout/bout_types.hxx>
+#include <bout/field3d.hxx>
 #include <bout/petsclib.hxx>
 
 #include <petsc.h>
@@ -88,9 +89,12 @@ public:
   /// finite difference approximated Jacobian.
   PetscErrorCode scaleJacobian(Mat B);
 
+  /// Save diagnostics to output
+  void outputVars(Options& output_options, bool save_repeat = true) override;
+
 private:
   BoutReal timestep;     ///< Internal timestep
-  BoutReal dt;           ///< Current timestep used in snes_function
+  BoutReal dt;           ///< Current timestep used in snes_function.
   BoutReal dt_min_reset; ///< If dt falls below this, reset solve
   BoutReal max_timestep; ///< Maximum timestep
 
@@ -107,6 +111,20 @@ private:
   BoutReal timestep_factor_on_upper_its;
   BoutReal timestep_factor_on_lower_its;
 
+  // Pseudo-Transient Continuation (PTC) variables
+  bool pseudo_time;                 ///< Use Pseudo time-stepping
+  BoutReal pseudo_alpha;            ///< dt = alpha / residual
+  BoutReal pseudo_growth_factor;    ///< Timestep increase 1.1 - 1.2
+  BoutReal pseudo_reduction_factor; ///< Timestep decrease 0.5
+  BoutReal pseudo_max_ratio;        ///< Maximum timestep ratio between neighboring cells
+  Vec dt_vec;                       ///< Each quantity can have its own timestep
+  Vec previous_f;                   ///< Previous residual
+  /// Decide the next pseudo-timestep
+  BoutReal updatePseudoTimestep(BoutReal previous_timestep, BoutReal previous_residual,
+                                BoutReal current_residual);
+  Field3D pseudo_residual; ///< Diagnostic output
+  Field3D pseudo_timestep;
+
   ///< PID controller parameters
   bool pid_controller; ///< Use PID controller?
   int target_its;      ///< Target number of nonlinear iterations for the PID controller.
@@ -118,7 +136,7 @@ private:
   int nl_its_prev;
   int nl_its_prev2;
 
-  BoutReal pid(BoutReal timestep, int nl_its); ///< Updates the timestep
+  BoutReal pid(BoutReal timestep, int nl_its, BoutReal max_dt); ///< Updates the timestep
 
   bool diagnose;          ///< Output additional diagnostics
   bool diagnose_failures; ///< Print diagnostics on SNES failures
