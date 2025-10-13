@@ -12,6 +12,7 @@
 #include <bout/petsc_interface.hxx>
 #include <bout/utils.hxx>
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -145,6 +146,9 @@ SNESSolver::SNESSolver(Options* opts)
           (*options)["timestep_factor_on_lower_its"]
               .doc("Multiply timestep if iterations are below lower_its")
               .withDefault(1.4)),
+      pseudo_strategy((*options)["pseudo_strategy"]
+                          .doc("PTC strategy to use when setting timesteps")
+                          .withDefault(BoutPTCStrategy::inverse_residual)),
       pseudo_alpha((*options)["pseudo_alpha"]
                        .doc("Sets timestep using dt = alpha / residual")
                        .withDefault(100. * atol * timestep)),
@@ -401,18 +405,13 @@ int SNESSolver::init() {
       auto n_square = (*options)["stencil:square"]
                           .doc("Extent of stencil (square)")
                           .withDefault<int>(0);
-      auto n_taxi = (*options)["stencil:taxi"]
-                        .doc("Extent of stencil (taxi-cab norm)")
-                        .withDefault<int>(0);
       auto n_cross = (*options)["stencil:cross"]
                          .doc("Extent of stencil (cross)")
                          .withDefault<int>(0);
       // Set n_taxi 2 if nothing else is set
-      // Probably a better way to do this
-      if (n_square == 0 && n_taxi == 0 && n_cross == 0) {
-        output_info.write("Setting solver:stencil:taxi = 2\n");
-        n_taxi = 2;
-      }
+      auto n_taxi = (*options)["stencil:taxi"]
+                        .doc("Extent of stencil (taxi-cab norm)")
+                        .withDefault<int>((n_square == 0 && n_cross == 0) ? 2 : 0);
 
       auto const xy_offsets = ColoringStencil::getOffsets(n_square, n_taxi, n_cross);
       {
@@ -1428,26 +1427,21 @@ int SNESSolver::run() {
   return 0;
 }
 
-/// Switched Evolution Relaxation (SER)
-BoutReal SNESSolver::updatePseudoTimestep(BoutReal previous_timestep,
-                                          BoutReal previous_residual,
-                                          BoutReal current_residual) {
-
-  // Timestep inversely proportional to the residual, clipped to avoid
-  // rapid changes in timestep.
+/// Timestep inversely proportional to the residual, clipped to avoid
+/// rapid changes in timestep.
+BoutReal SNESSolver::updatePseudoTimestep_inverse_residual(BoutReal previous_timestep,
+                                                           BoutReal current_residual) {
   return std::min(
       {std::max({pseudo_alpha / current_residual, previous_timestep / 1.5, dt_min_reset}),
        1.5 * previous_timestep, max_timestep});
+}
 
-  /*
-
-  // Alternative strategy based on history of residuals
-  // A hybrid strategy may be most effective, in which the timestep is
-  // inversely proportional to residual initially, or when residuals are large,
-  // and then the method transitions to being history-based
-
-  const BoutReal converged_threshold = 100 * atol;
-  const BoutReal transition_threshold = 1000 * atol;
+// Strategy based on history of residuals
+BoutReal SNESSolver::updatePseudoTimestep_history_based(BoutReal previous_timestep,
+                                                        BoutReal previous_residual,
+                                                        BoutReal current_residual) {
+  const BoutReal converged_threshold = 10 * atol;
+  const BoutReal transition_threshold = 100 * atol;
 
   if (current_residual < converged_threshold) {
     return max_timestep;
@@ -1455,13 +1449,14 @@ BoutReal SNESSolver::updatePseudoTimestep(BoutReal previous_timestep,
 
   // Smoothly transition from SER updates to frozen timestep
   if (current_residual < transition_threshold) {
-    BoutReal reduction_ratio = current_residual / previous_residual;
+    const BoutReal reduction_ratio = current_residual / previous_residual;
 
     if (reduction_ratio < 0.8) {
-      return std::min(0.5*(pseudo_growth_factor + 1.) * previous_timestep,
+      return std::min(0.5 * (pseudo_growth_factor + 1.) * previous_timestep,
                       max_timestep);
     } else if (reduction_ratio > 1.2) {
-      return std::max(0.5*(pseudo_reduction_factor + 1) * previous_timestep, dt_min_reset);
+      return std::max(0.5 * (pseudo_reduction_factor + 1) * previous_timestep,
+                      dt_min_reset);
     }
     // Leave unchanged if residual changes are small
     return previous_timestep;
@@ -1469,13 +1464,36 @@ BoutReal SNESSolver::updatePseudoTimestep(BoutReal previous_timestep,
 
   if (current_residual <= previous_residual) {
     // Success
-    return std::min(pseudo_growth_factor * previous_timestep,
-                    max_timestep);
+    return std::min(pseudo_growth_factor * previous_timestep, max_timestep);
   }
   // Failed
   // Consider rejecting the step
   return std::max(pseudo_reduction_factor * previous_timestep, dt_min_reset);
-  */
+}
+
+/// Switched Evolution Relaxation (SER)
+BoutReal SNESSolver::updatePseudoTimestep(BoutReal previous_timestep,
+                                          BoutReal previous_residual,
+                                          BoutReal current_residual) {
+  switch (pseudo_strategy) {
+  case BoutPTCStrategy::inverse_residual:
+    return updatePseudoTimestep_inverse_residual(previous_timestep, current_residual);
+
+  case BoutPTCStrategy::history_based:
+    return updatePseudoTimestep_history_based(previous_timestep, previous_residual,
+                                              current_residual);
+
+  case BoutPTCStrategy::hybrid:
+    // A hybrid strategy may be most effective, in which the timestep is
+    // inversely proportional to residual initially, or when residuals are large,
+    // and then the method transitions to being history-based
+    if (current_residual > 1000. * atol) {
+      return updatePseudoTimestep_inverse_residual(previous_timestep, current_residual);
+    } else {
+      return updatePseudoTimestep_history_based(previous_timestep, previous_residual,
+                                                current_residual);
+    }
+  };
 }
 
 PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {

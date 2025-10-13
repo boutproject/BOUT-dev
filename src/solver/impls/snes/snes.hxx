@@ -53,6 +53,11 @@ RegisterSolver<SNESSolver> registersolverbeuler("beuler");
 BOUT_ENUM_CLASS(BoutSnesEquationForm, pseudo_transient, rearranged_backward_euler,
                 backward_euler, direct_newton);
 
+BOUT_ENUM_CLASS(BoutPTCStrategy,
+                inverse_residual, ///< dt = pseudo_alpha / residual
+                history_based,    ///< Grow/shrink dt based on residual decrease/increase
+                hybrid); ///< Combine inverse_residual and history_based strategies
+
 /// Uses PETSc's SNES interface to find a steady state solution to a
 /// nonlinear ODE by integrating in time with Backward Euler
 class SNESSolver : public Solver {
@@ -125,6 +130,7 @@ private:
 
   // Pseudo-Transient Continuation (PTC) variables
   // These are used if equation_form = pseudo_transient
+  BoutPTCStrategy pseudo_strategy;  ///< Strategy to use when setting timesteps
   BoutReal pseudo_alpha;            ///< dt = alpha / residual
   BoutReal pseudo_growth_factor;    ///< Timestep increase 1.1 - 1.2
   BoutReal pseudo_reduction_factor; ///< Timestep decrease 0.5
@@ -134,6 +140,11 @@ private:
   /// Decide the next pseudo-timestep
   BoutReal updatePseudoTimestep(BoutReal previous_timestep, BoutReal previous_residual,
                                 BoutReal current_residual);
+  BoutReal updatePseudoTimestep_inverse_residual(BoutReal previous_timestep,
+                                                 BoutReal current_residual);
+  BoutReal updatePseudoTimestep_history_based(BoutReal previous_timestep,
+                                              BoutReal previous_residual,
+                                              BoutReal current_residual);
   Field3D pseudo_residual; ///< Diagnostic output
   Field3D pseudo_timestep;
 
