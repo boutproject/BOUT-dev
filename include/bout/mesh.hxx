@@ -757,7 +757,7 @@ public:
   void addRegionPerp(const std::string& region_name, const Region<IndPerp>& region);
 
   /// Converts an Ind2D to an Ind3D using calculation
-  Ind3D ind2Dto3D(const Ind2D& ind2D, int jz = 0) {
+  Ind3D ind2Dto3D(const Ind2D& ind2D, int jz = 0) const {
     return {ind2D.ind * LocalNz + jz, LocalNy, LocalNz};
   }
 

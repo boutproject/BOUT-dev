@@ -106,6 +106,11 @@ SNESSolver::SNESSolver(Options* opts)
                        .doc("If dt falls below this, reset to starting dt")
                        .withDefault(1e-6)),
       max_timestep((*options)["max_timestep"].doc("Maximum timestep").withDefault(1e37)),
+      equation_form(
+          (*options)["equation_form"]
+              .doc("Form of equation to solve: rearranged_backward_euler (default);"
+                   " pseudo_transient; backward_euler; direct_newton")
+              .withDefault(BoutSnesEquationForm::rearranged_backward_euler)),
       snes_type((*options)["snes_type"]
                     .doc("PETSc nonlinear solver method to use")
                     .withDefault("anderson")),
@@ -138,9 +143,6 @@ SNESSolver::SNESSolver(Options* opts)
           (*options)["timestep_factor_on_lower_its"]
               .doc("Multiply timestep if iterations are below lower_its")
               .withDefault(1.4)),
-      pseudo_time((*options)["pseudo_time"]
-                      .doc("Pseudo-Transient Continuation method?")
-                      .withDefault<bool>(false)),
       pseudo_alpha((*options)["pseudo_alpha"]
                        .doc("Sets timestep using dt = alpha / residual")
                        .withDefault(100. * atol * timestep)),
@@ -164,11 +166,6 @@ SNESSolver::SNESSolver(Options* opts)
       diagnose_failures((*options)["diagnose_failures"]
                             .doc("Print more diagnostics when SNES fails")
                             .withDefault<bool>(false)),
-      equation_form(
-          (*options)["equation_form"]
-              .doc("Form of equation to solve: rearranged_backward_euler (default);"
-                   " pseudo_transient; backward_euler; direct_newton")
-              .withDefault(BoutSnesEquationForm::rearranged_backward_euler)),
       predictor((*options)["predictor"].doc("Use linear predictor?").withDefault(true)),
       use_precon((*options)["use_precon"]
                      .doc("Use user-supplied preconditioner?")
@@ -292,7 +289,7 @@ int SNESSolver::init() {
     CHKERRQ(ierr);
   }
 
-  if (pseudo_time) {
+  if (equation_form == BoutSnesEquationForm::pseudo_transient) {
     // Storage for per-variable timestep
     PetscCall(VecDuplicate(snes_x, &dt_vec));
     // Starting timestep
@@ -797,7 +794,7 @@ int SNESSolver::run() {
     CHKERRQ(ierr);
   }
 
-  if (pseudo_time) {
+  if (equation_form == BoutSnesEquationForm::pseudo_transient) {
     // Calculate the initial residual in snes_f
     run_rhs(simtime);
     {
@@ -880,7 +877,7 @@ int SNESSolver::run() {
       // Copy the state (snes_x) into initial values (x0)
       VecCopy(snes_x, x0);
 
-      if (pseudo_time) {
+      if (equation_form == BoutSnesEquationForm::pseudo_transient) {
         // Pseudo-Transient Continuation
         // Each evolving quantity may have its own timestep
         // Set timestep and dt scalars to the minimum of dt_vec
@@ -981,7 +978,7 @@ int SNESSolver::run() {
         ++snes_failures;
         steps_since_snes_failure = 0;
 
-        if (pseudo_time) {
+        if (equation_form == BoutSnesEquationForm::pseudo_transient) {
           // Global scaling of timesteps
           // Note: A better strategy might be to reduce timesteps
           //       in problematic cells.
@@ -1089,14 +1086,8 @@ int SNESSolver::run() {
         // Gather and print diagnostic information
 
         output.print("\r"); // Carriage return for printing to screen
-
-        // if (pseudo_time) {
-        //   output.write("\tTime {} alpha {} min_timestep {} nl_iter {} lin_iter {} reason {}",
-        //                simtime, pseudo_alpha, timestep, nl_its, lin_its, static_cast<int>(reason));
-        // } else {
         output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}, reason: {}",
                      simtime, timestep, nl_its, lin_its, static_cast<int>(reason));
-        // }
         if (snes_failures > 0) {
           output.write(", SNES failures: {}", snes_failures);
         }
@@ -1148,7 +1139,7 @@ int SNESSolver::run() {
       }
 #endif // PETSC_VERSION_GE(3,20,0)
 
-      if (pseudo_time) {
+      if (equation_form == BoutSnesEquationForm::pseudo_transient) {
         // Adjust local timesteps
 
         // Calculate residuals
@@ -1552,35 +1543,27 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
   CHKERRQ(ierr);
 
   switch (equation_form) {
-  case BoutSnesEquationForm::pseudo_transient: {
-    // Pseudo-transient timestepping (as in UEDGE)
-    // f <- f - x/Δt
-    VecAXPY(f, -1. / dt, x);
-    break;
-  }
   case BoutSnesEquationForm::rearranged_backward_euler: {
     // Rearranged Backward Euler
     // f = (x0 - x)/Δt + f
     // First calculate x - x0 to minimise floating point issues
     VecWAXPY(delta_x, -1.0, x0, x); // delta_x = x - x0
-    if (pseudo_time) {
-      // dt can be different for each quantity
-      VecPointwiseDivide(delta_x, delta_x, dt_vec); // delta_x /= dt
-      VecAXPY(f, -1., delta_x);                     // f <- f - delta_x
-    } else {
-      VecAXPY(f, -1. / dt, delta_x); // f <- f - delta_x / dt
-    }
+    VecAXPY(f, -1. / dt, delta_x); // f <- f - delta_x / dt
+    break;
+  }
+  case BoutSnesEquationForm::pseudo_transient: {
+    // Pseudo-transient timestepping. Same as Rearranged Backward Euler
+    // except that Δt is a vector
+    // f = (x0 - x)/Δt + f
+    VecWAXPY(delta_x, -1.0, x0, x);
+    VecPointwiseDivide(delta_x, delta_x, dt_vec); // delta_x /= dt
+    VecAXPY(f, -1., delta_x);                     // f <- f - delta_x
     break;
   }
   case BoutSnesEquationForm::backward_euler: {
     // Backward Euler
     // Set f = x - x0 - Δt*f
-    if (pseudo_time) {
-      VecPointwiseMult(f, f, dt_vec); // f <- Δt*f
-      VecAYPX(f, -1, x);              // f <- x - f
-    } else {
-      VecAYPX(f, -dt, x); // f <- x - Δt*f
-    }
+    VecAYPX(f, -dt, x); // f <- x - Δt*f
     VecAXPY(f, -1.0, x0); // f <- f - x0
     break;
   }
@@ -1806,7 +1789,8 @@ void SNESSolver::outputVars(Options& output_options, bool save_repeat) {
     return; // Don't save diagnostics to restart files
   }
 
-  if (pseudo_time) {
+  if (equation_form == BoutSnesEquationForm::pseudo_transient) {
+    output_options["snes_pseudo_alpha"].assignRepeat(pseudo_alpha, "t", save_repeat, "SNESSolver");
     output_options["snes_pseudo_residual"].assignRepeat(pseudo_residual, "t", save_repeat,
                                                         "SNESSolver");
     output_options["snes_pseudo_timestep"].assignRepeat(pseudo_timestep, "t", save_repeat,

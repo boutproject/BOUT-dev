@@ -361,16 +361,145 @@ And the adaptive timestepping options:
 Backward Euler - SNES
 ---------------------
 
-The `beuler` or `snes` solver type (either name can be used) is
-intended mainly for solving steady-state problems, so integrates in
-time using a stable but low accuracy method (Backward Euler). It uses
-PETSc's SNES solvers to solve the nonlinear system at each timestep,
-and adjusts the internal timestep to keep the number of SNES
-iterations within a given range.
+The `beuler` or `snes` solver type (either name can be used) is a PETSc-based implicit
+solver for finding steady-state solutions to systems of partial differential equations.
+It supports multiple solution strategies including backward Euler timestepping,
+direct Newton iteration, and Pseudo-Transient Continuation (PTC) with Switched
+Evolution Relaxation (SER).
+
+Basic Configuration
+~~~~~~~~~~~~~~~~~~~
+
+The SNES solver is configured through the ``[solver]`` section of the input file:
+
+.. code-block:: ini
+
+   [solver]
+   type = snes
+
+   # Nonlinear solver settings
+   snes_type = newtonls          # anderson, newtonls, newtontr, nrichardson
+   atol = 1e-7                   # Absolute tolerance
+   rtol = 1e-6                   # Relative tolerance
+   stol = 1e-12                  # Solution change tolerance
+   max_nonlinear_iterations = 20 # Maximum SNES iterations per solve
+
+   # Linear solver settings
+   ksp_type = fgmres             # Linear solver: gmres, bicgstab, etc.
+   maxl = 20                     # Maximum linear iterations
+   pc_type = ilu                 # Preconditioner: ilu, bjacobi, hypre, etc.
+
+Timestepping Modes
+------------------
+
+The solver supports several timestepping strategies controlled by ``equation_form``:
+
+**Backward Euler (default)**
+   Standard implicit backward Euler method. Good for general timestepping.
+
+   .. code-block:: ini
+
+      equation_form = rearranged_backward_euler  # Default
+
+   This method has low accuracy in time but its dissipative properties
+   are helpful when evolving to steady state solutions.
+
+**Direct Newton**
+   Solves the steady-state problem F(u) = 0 directly without timestepping.
+
+   .. code-block:: ini
+
+      equation_form = direct_newton
+
+   This method is unlikely to converge unless the system is very close
+   to steady state.
+
+**Pseudo-Transient Continuation**
+   Uses pseudo-time to guide the solution to steady state. Recommended for
+   highly nonlinear problems where Newton's method fails.
+
+   .. code-block:: ini
+
+      equation_form = pseudo_transient
+
+   This uses the same form as rearranged_backward_euler, but the time step
+   can be different for each cell.
+
+
+Jacobian Finite Difference with Coloring
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The default and recommended approach for most problems:
+
+.. code-block:: ini
+
+   [solver]
+   use_coloring = true               # Enable (default)
+   lag_jacobian = 50                 # Reuse Jacobian for this many iterations
+
+   # Stencil shape (determines Jacobian sparsity pattern)
+   stencil:taxi = 2                  # Taxi-cab distance (default)
+   stencil:square = 0                # Square stencil extent
+   stencil:cross = 0                 # Cross stencil extent
+
+The coloring algorithm exploits the sparse structure of the Jacobian to reduce
+the number of function evaluations needed for finite differencing.
+
+Jacobian coloring stencil
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The stencil used to create the Jacobian colouring can be varied,
+depending on which numerical operators are in use.
+
+``solver:stencil:cross = N``
+e.g. for N == 2
+
+.. code-block:: bash
+
+        *
+        *
+    * * x * *
+        *
+        *
+
+
+``solver:stencil:square = N``
+e.g. for N == 2
+
+.. code-block:: bash
+
+    * * * * *
+    * * * * *
+    * * x * *
+    * * * * *
+    * * * * *
+
+``solver:stencil:taxi = N``
+e.g. for N == 2
+
+.. code-block:: bash
+
+        *
+      * * *
+    * * x * *
+      * * *
+        *
+
+Setting ``solver:force_symmetric_coloring = true``, will make sure
+that the jacobian colouring matrix is symmetric.  This will often
+include a few extra non-zeros that the stencil will miss otherwise
+
+
+
 
 +---------------------------+---------------+----------------------------------------------------+
 | Option                    | Default       |Description                                         |
 +===========================+===============+====================================================+
+| pseudo_time               | false         | Pseudo-Transient Continuation (PTC) method, using  |
+|                           |               | a different timestep for each cell.                |
++---------------------------+---------------+----------------------------------------------------+
+| pseudo_max_ratio          | 2.            | Maximum timestep ratio between neighboring cells   |
++---------------------------+---------------+----------------------------------------------------+
 | snes_type                 | newtonls      | PETSc SNES nonlinear solver (try anderson, qn)     |
 +---------------------------+---------------+----------------------------------------------------+
 | ksp_type                  | gmres         | PETSc KSP linear solver                            |
@@ -423,6 +552,8 @@ iterations within a given range.
 The predictor is linear extrapolation from the last two timesteps. It seems to be
 effective, but can be disabled by setting ``predictor = false``.
 
+
+
 The default `newtonls` SNES type can be very effective if combined
 with Jacobian coloring: The coloring enables the Jacobian to be
 calculated relatively efficiently; once a Jacobian matrix has been
@@ -456,50 +587,13 @@ Preconditioner types:
    Enable with command-line args ``-pc_type hypre -pc_hypre_type euclid -pc_hypre_euclid_levels k``
    where ``k`` is the level (1-8 typically).
 
-Jacobian coloring stencil
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The stencil used to create the Jacobian colouring can be varied,
-depending on which numerical operators are in use.
+Pseudo-Transient Continuation (PTC)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-``solver:stencil:cross = N``
-e.g. for N == 2
 
-.. code-block:: bash
+Saves diagnostic ``Field3D`` output variables ``snes_pseudo_residual`` and ``snes_pseudo_timestep``.
 
-        *
-        *
-    * * x * *
-        *
-        *
-
-
-``solver:stencil:square = N``
-e.g. for N == 2
-
-.. code-block:: bash
-
-    * * * * *
-    * * * * *
-    * * x * *
-    * * * * *
-    * * * * *
-
-``solver:stencil:taxi = N``
-e.g. for N == 2
-
-.. code-block:: bash
-
-        *
-      * * *
-    * * x * *
-      * * *
-        *
-
-Setting ``solver:force_symmetric_coloring = true``, will make sure
-that the jacobian colouring matrix is symmetric.  This will often
-include a few extra non-zeros that the stencil will miss otherwise
 
 ODE integration
 ---------------

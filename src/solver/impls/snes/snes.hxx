@@ -98,6 +98,9 @@ private:
   BoutReal dt_min_reset; ///< If dt falls below this, reset solve
   BoutReal max_timestep; ///< Maximum timestep
 
+  /// Form of the equation to solve
+  BoutSnesEquationForm equation_form;
+
   std::string snes_type;
   BoutReal atol; ///< Absolute tolerance
   BoutReal rtol; ///< Relative tolerance
@@ -112,7 +115,7 @@ private:
   BoutReal timestep_factor_on_lower_its;
 
   // Pseudo-Transient Continuation (PTC) variables
-  bool pseudo_time;                 ///< Use Pseudo time-stepping
+  // These are used if equation_form = pseudo_transient
   BoutReal pseudo_alpha;            ///< dt = alpha / residual
   BoutReal pseudo_growth_factor;    ///< Timestep increase 1.1 - 1.2
   BoutReal pseudo_reduction_factor; ///< Timestep decrease 0.5
@@ -143,9 +146,6 @@ private:
 
   int nlocal; ///< Number of variables on local processor
   int neq;    ///< Number of variables in total
-
-  /// Form of the equation to solve
-  BoutSnesEquationForm equation_form;
 
   PetscLib lib; ///< Handles initialising, finalising PETSc
   Vec snes_f;   ///< Used by SNES to store function
