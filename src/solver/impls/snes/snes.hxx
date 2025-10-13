@@ -136,8 +136,12 @@ private:
   BoutReal pseudo_reduction_factor; ///< Timestep decrease 0.5
   BoutReal pseudo_max_ratio;        ///< Maximum timestep ratio between neighboring cells
   Vec dt_vec;                       ///< Each quantity can have its own timestep
-  Vec previous_f;                   ///< Previous residual
-  /// Decide the next pseudo-timestep
+
+  /// Initialize the Pseudo-Transient Continuation method
+  PetscErrorCode initPseudoTimestepping();
+  /// Update dt_vec based on new solution x
+  PetscErrorCode updatePseudoTimestepping(Vec x);
+  /// Decide the next pseudo-timestep. Called by updatePseudoTimestepping
   BoutReal updatePseudoTimestep(BoutReal previous_timestep, BoutReal previous_residual,
                                 BoutReal current_residual);
   BoutReal updatePseudoTimestep_inverse_residual(BoutReal previous_timestep,
@@ -146,6 +150,7 @@ private:
                                               BoutReal previous_residual,
                                               BoutReal current_residual);
   Field3D pseudo_residual; ///< Diagnostic output
+  Field2D pseudo_residual_2d;
   Field3D pseudo_timestep;
 
   ///< PID controller parameters

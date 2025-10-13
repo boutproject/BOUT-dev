@@ -284,18 +284,7 @@ int SNESSolver::init() {
   }
 
   if (equation_form == BoutSnesEquationForm::pseudo_transient) {
-    // Storage for per-variable timestep
-    PetscCall(VecDuplicate(snes_x, &dt_vec));
-    // Starting timestep
-    PetscCall(VecSet(dt_vec, timestep));
-
-    // Storage for previous residual. Used to compare
-    // residuals before and after step, and adjust timestep accordingly
-    PetscCall(VecDuplicate(snes_x, &previous_f));
-
-    // Diagnostic outputs
-    pseudo_timestep = timestep;
-    pseudo_residual = 0.0;
+    PetscCall(initPseudoTimestepping());
   }
 
   // Nonlinear solver interface (SNES)
@@ -588,7 +577,8 @@ int SNESSolver::init() {
                   // 3D fields on this cell
                   for (int j = 0; j < n3d; j++) {
                     PetscInt col = ind2 + j;
-                    PetscErrorCode ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
+                    PetscErrorCode ierr =
+                        MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
 
                     if (ierr != PETSC_SUCCESS) {
                       output.write("ERROR: {} {} : ({}, {}) -> ({}, {}) : {} -> {}\n",
@@ -859,11 +849,6 @@ int SNESSolver::run() {
         PetscCall(VecMin(dt_vec, nullptr, &timestep));
         dt = timestep;
 
-        // Copy residual from snes_f to previous_f
-        // The value of snes_f is set before the timestepping loop
-        // then calculated after the timestep
-        PetscCall(VecCopy(snes_f, previous_f));
-
         looping = true;
         if (simtime + timestep >= target) {
           looping = false;
@@ -1107,176 +1092,7 @@ int SNESSolver::run() {
 
       if (equation_form == BoutSnesEquationForm::pseudo_transient) {
         // Adjust local timesteps
-
-        PetscCall(rhs_function(snes_x, snes_f, false));
-
-        // Compare previous_f with snes_f
-        // Use a per-cell timestep so that e.g density and pressure
-        // evolve in a way consistent with the equation of state.
-
-        // Reading the residual vectors
-        const BoutReal* previous_residual = nullptr;
-        PetscCall(VecGetArrayRead(previous_f, &previous_residual));
-        const BoutReal* current_residual = nullptr;
-        PetscCall(VecGetArrayRead(snes_f, &current_residual));
-        // Modifying the dt_vec values
-        BoutReal* dt_data = nullptr;
-        PetscCall(VecGetArray(dt_vec, &dt_data));
-
-        // Note: The ordering of quantities in the PETSc vectors
-        // depends on the Solver::loop_vars function
-        Mesh* mesh = bout::globals::mesh;
-        int idx = 0; // Index into PETSc Vecs
-
-        // Boundary cells
-        for (const auto& i2d : mesh->getRegion2D("RGN_BNDRY")) {
-          // Field2D quantities evolved together
-          int count = 0;
-          BoutReal R0 = 0.0;
-          BoutReal R1 = 0.0;
-
-          for (const auto& f : f2d) {
-            if (!f.evolve_bndry) {
-              continue; // Not evolving boundary => Skip
-            }
-            R0 += SQ(previous_residual[idx + count]);
-            R1 += SQ(current_residual[idx + count]);
-            ++count;
-          }
-          if (count > 0) {
-            R0 = sqrt(R0 / count);
-            R1 = sqrt(R1 / count);
-
-            // Adjust timestep for these quantities
-            BoutReal new_timestep = updatePseudoTimestep(dt_data[idx], R0, R1);
-            for (int i = 0; i != count; ++i) {
-              dt_data[idx++] = new_timestep;
-            }
-          }
-
-          // Field3D quantities evolved together within a cell
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            count = 0;
-            R0 = 0.0;
-            R1 = 0.0;
-            for (const auto& f : f3d) {
-              if (!f.evolve_bndry) {
-                continue; // Not evolving boundary => Skip
-              }
-              R0 += SQ(previous_residual[idx + count]);
-              R1 += SQ(current_residual[idx + count]);
-              ++count;
-            }
-            if (count > 0) {
-              R0 = sqrt(R0 / count);
-              R1 = sqrt(R1 / count);
-
-              BoutReal new_timestep = updatePseudoTimestep(dt_data[idx], R0, R1);
-
-              auto i3d = mesh->ind2Dto3D(i2d, jz);
-              pseudo_residual[i3d] = R1;
-              pseudo_timestep[i3d] = new_timestep;
-
-              for (int i = 0; i != count; ++i) {
-                dt_data[idx++] = new_timestep;
-              }
-            }
-          }
-        }
-
-        // Bulk of domain.
-        // These loops don't check the boundary flags
-        for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
-          // Field2D quantities evolved together
-          if (f2d.size() > 0) {
-            BoutReal R0 = 0.0;
-            BoutReal R1 = 0.0;
-            for (std::size_t i = 0; i != f2d.size(); ++i) {
-              R0 += SQ(previous_residual[idx + i]);
-              R1 += SQ(current_residual[idx + i]);
-            }
-            R0 = sqrt(R0 / f2d.size());
-            R1 = sqrt(R1 / f2d.size());
-
-            // Adjust timestep for these quantities
-            BoutReal new_timestep = updatePseudoTimestep(dt_data[idx], R0, R1);
-            for (std::size_t i = 0; i != f2d.size(); ++i) {
-              dt_data[idx++] = new_timestep;
-            }
-          }
-
-          // Field3D quantities evolved together within a cell
-          if (f3d.size() > 0) {
-            for (int jz = 0; jz < mesh->LocalNz; jz++) {
-              BoutReal R0 = 0.0;
-              BoutReal R1 = 0.0;
-              for (std::size_t i = 0; i != f3d.size(); ++i) {
-                R0 += SQ(previous_residual[idx + i]);
-                R1 += SQ(current_residual[idx + i]);
-              }
-              R0 = sqrt(R0 / f3d.size());
-              R1 = sqrt(R1 / f3d.size());
-              BoutReal new_timestep = updatePseudoTimestep(dt_data[idx], R0, R1);
-
-              auto i3d = mesh->ind2Dto3D(i2d, jz);
-              pseudo_residual[i3d] = R1;
-
-              // Compare to neighbors
-              BoutReal min_neighboring_dt = max_timestep;
-              BoutReal mean_neighboring_dt = 0.0;
-              int neighbor_count = 0;
-              if (i3d.x() != 0) {
-                const BoutReal val = pseudo_timestep[i3d.xm()];
-                min_neighboring_dt = std::min(min_neighboring_dt, val);
-                mean_neighboring_dt += val;
-                ++neighbor_count;
-              }
-              if (i3d.x() != mesh->LocalNx - 1) {
-                const BoutReal val = pseudo_timestep[i3d.xp()];
-                min_neighboring_dt = std::min(min_neighboring_dt, val);
-                mean_neighboring_dt += val;
-                ++neighbor_count;
-              }
-              if (i3d.y() != 0) {
-                const BoutReal val = pseudo_timestep[i3d.ym()];
-                min_neighboring_dt = std::min(min_neighboring_dt, val);
-                mean_neighboring_dt += val;
-                ++neighbor_count;
-              }
-              if (i3d.x() != mesh->LocalNy - 1) {
-                const BoutReal val = pseudo_timestep[i3d.yp()];
-                min_neighboring_dt = std::min(min_neighboring_dt, val);
-                mean_neighboring_dt += val;
-                ++neighbor_count;
-              }
-              mean_neighboring_dt /= neighbor_count;
-
-              // Smooth
-              //new_timestep = 0.1 * mean_neighboring_dt + 0.9 * new_timestep;
-
-              // Limit ratio of timestep between neighboring cells
-              new_timestep =
-                  std::min(new_timestep, pseudo_max_ratio * min_neighboring_dt);
-
-              pseudo_timestep[i3d] = new_timestep;
-
-              for (std::size_t i = 0; i != f3d.size(); ++i) {
-                dt_data[idx++] = new_timestep;
-              }
-            }
-          }
-        }
-
-        // Restore Vec data arrays
-        PetscCall(VecRestoreArrayRead(previous_f, &previous_residual));
-        PetscCall(VecRestoreArrayRead(snes_f, &current_residual));
-        PetscCall(VecRestoreArray(dt_vec, &dt_data));
-
-        // Need timesteps on neighboring processors
-        // to limit ratio
-        mesh->communicate(pseudo_timestep);
-        // Neumann boundary so timestep isn't pinned at boundaries
-        pseudo_timestep.applyBoundary("neumann");
+        PetscCall(updatePseudoTimestepping(snes_x));
 
         if (pid_controller) {
           // Adjust pseudo_alpha based on nonlinear iterations
@@ -1384,6 +1200,167 @@ int SNESSolver::run() {
   }
 
   return 0;
+}
+
+PetscErrorCode SNESSolver::initPseudoTimestepping() {
+  // Storage for per-variable timestep
+  PetscCall(VecDuplicate(snes_x, &dt_vec));
+  // Starting timestep
+  PetscCall(VecSet(dt_vec, timestep));
+
+  // Diagnostic outputs
+  pseudo_timestep = timestep;
+  pseudo_residual = 0.0;
+  pseudo_residual_2d = 0.0;
+
+  return PETSC_SUCCESS;
+}
+
+PetscErrorCode SNESSolver::updatePseudoTimestepping(Vec x) {
+  // Call RHS function to get time derivatives
+  PetscCall(rhs_function(x, snes_f, false));
+
+  // Use a per-cell timestep so that e.g density and pressure
+  // evolve in a way consistent with the equation of state.
+
+  // Reading the residual vectors
+  const BoutReal* current_residual = nullptr;
+  PetscCall(VecGetArrayRead(snes_f, &current_residual));
+  // Modifying the dt_vec values
+  BoutReal* dt_data = nullptr;
+  PetscCall(VecGetArray(dt_vec, &dt_data));
+
+  // Note: The ordering of quantities in the PETSc vectors
+  // depends on the Solver::loop_vars function
+  Mesh* mesh = bout::globals::mesh;
+  int idx = 0; // Index into PETSc Vecs
+
+  // Boundary cells
+  for (const auto& i2d : mesh->getRegion2D("RGN_BNDRY")) {
+    // Field2D quantities evolved together
+    int count = 0;
+    BoutReal residual = 0.0;
+
+    for (const auto& f : f2d) {
+      if (!f.evolve_bndry) {
+        continue; // Not evolving boundary => Skip
+      }
+      residual += SQ(current_residual[idx + count]);
+      ++count;
+    }
+    if (count > 0) {
+      residual = sqrt(residual / count);
+
+      // Adjust timestep for these quantities
+      BoutReal new_timestep =
+          updatePseudoTimestep(dt_data[idx], pseudo_residual_2d[i2d], residual);
+      for (int i = 0; i != count; ++i) {
+        dt_data[idx++] = new_timestep;
+      }
+      pseudo_residual_2d[i2d] = residual;
+    }
+
+    // Field3D quantities evolved together within a cell
+    for (int jz = 0; jz < mesh->LocalNz; jz++) {
+      count = 0;
+      residual = 0.0;
+      for (const auto& f : f3d) {
+        if (!f.evolve_bndry) {
+          continue; // Not evolving boundary => Skip
+        }
+        residual += SQ(current_residual[idx + count]);
+        ++count;
+      }
+      if (count > 0) {
+        residual = sqrt(residual / count);
+
+        auto i3d = mesh->ind2Dto3D(i2d, jz);
+        BoutReal new_timestep =
+            updatePseudoTimestep(dt_data[idx], pseudo_residual[i3d], residual);
+
+        pseudo_residual[i3d] = residual;
+        pseudo_timestep[i3d] = new_timestep;
+
+        for (int i = 0; i != count; ++i) {
+          dt_data[idx++] = new_timestep;
+        }
+      }
+    }
+  }
+
+  // Bulk of domain.
+  // These loops don't check the boundary flags
+  for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
+    // Field2D quantities evolved together
+    if (f2d.size() > 0) {
+      BoutReal residual = 0.0;
+      for (std::size_t i = 0; i != f2d.size(); ++i) {
+        residual += SQ(current_residual[idx + i]);
+      }
+      residual = sqrt(residual / f2d.size());
+
+      // Adjust timestep for these quantities
+      BoutReal new_timestep =
+          updatePseudoTimestep(dt_data[idx], pseudo_residual_2d[i2d], residual);
+      for (std::size_t i = 0; i != f2d.size(); ++i) {
+        dt_data[idx++] = new_timestep;
+      }
+      pseudo_residual_2d[i2d] = residual;
+    }
+
+    // Field3D quantities evolved together within a cell
+    if (f3d.size() > 0) {
+      for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        auto i3d = mesh->ind2Dto3D(i2d, jz);
+
+        BoutReal residual = 0.0;
+        for (std::size_t i = 0; i != f3d.size(); ++i) {
+          residual += SQ(current_residual[idx + i]);
+        }
+        residual = sqrt(residual / f3d.size());
+        BoutReal new_timestep =
+            updatePseudoTimestep(dt_data[idx], pseudo_residual[i3d], residual);
+
+        pseudo_residual[i3d] = residual;
+
+        // Compare to neighbors
+        BoutReal min_neighboring_dt = max_timestep;
+        if (i3d.x() != 0) {
+          min_neighboring_dt = std::min(min_neighboring_dt, pseudo_timestep[i3d.xm()]);
+        }
+        if (i3d.x() != mesh->LocalNx - 1) {
+          min_neighboring_dt = std::min(min_neighboring_dt, pseudo_timestep[i3d.xp()]);
+        }
+        if (i3d.y() != 0) {
+          min_neighboring_dt = std::min(min_neighboring_dt, pseudo_timestep[i3d.ym()]);
+        }
+        if (i3d.x() != mesh->LocalNy - 1) {
+          min_neighboring_dt = std::min(min_neighboring_dt, pseudo_timestep[i3d.yp()]);
+        }
+
+        // Limit ratio of timestep between neighboring cells
+        new_timestep = std::min(new_timestep, pseudo_max_ratio * min_neighboring_dt);
+
+        pseudo_timestep[i3d] = new_timestep;
+
+        for (std::size_t i = 0; i != f3d.size(); ++i) {
+          dt_data[idx++] = new_timestep;
+        }
+      }
+    }
+  }
+
+  // Restore Vec data arrays
+  PetscCall(VecRestoreArrayRead(snes_f, &current_residual));
+  PetscCall(VecRestoreArray(dt_vec, &dt_data));
+
+  // Need timesteps on neighboring processors
+  // to limit ratio
+  mesh->communicate(pseudo_timestep);
+  // Neumann boundary so timestep isn't pinned at boundaries
+  pseudo_timestep.applyBoundary("neumann");
+
+  return PETSC_SUCCESS;
 }
 
 /// Timestep inversely proportional to the residual, clipped to avoid
