@@ -94,8 +94,7 @@ PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f, void* c
 PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
   // Get the context
   SNESSolver* s;
-  int ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s));
-  CHKERRQ(ierr);
+  PetscCall(PCShellGetContext(pc, reinterpret_cast<void**>(&s)));
 
   PetscFunctionReturn(s->precon(x, y));
 }
@@ -245,55 +244,43 @@ int SNESSolver::init() {
                     n3Dvars(), n2Dvars(), neq, nlocal);
 
   // Initialise PETSc components
-  int ierr;
 
   // Vectors
   output_info.write("Creating vector\n");
-  ierr = VecCreate(BoutComm::get(), &snes_x);
-  CHKERRQ(ierr);
-  ierr = VecSetSizes(snes_x, nlocal, PETSC_DECIDE);
-  CHKERRQ(ierr);
-  ierr = VecSetFromOptions(snes_x);
-  CHKERRQ(ierr);
+  PetscCall(VecCreate(BoutComm::get(), &snes_x));
+  PetscCall(VecSetSizes(snes_x, nlocal, PETSC_DECIDE));
+  PetscCall(VecSetFromOptions(snes_x));
 
-  VecDuplicate(snes_x, &snes_f);
-  VecDuplicate(snes_x, &x0);
+  PetscCall(VecDuplicate(snes_x, &snes_f));
+  PetscCall(VecDuplicate(snes_x, &x0));
 
   if ((equation_form == BoutSnesEquationForm::rearranged_backward_euler)
       || (equation_form == BoutSnesEquationForm::pseudo_transient)) {
     // Need an intermediate vector for rearranged Backward Euler or Pseudo-Transient Continuation
-    ierr = VecDuplicate(snes_x, &delta_x);
-    CHKERRQ(ierr);
+    PetscCall(VecDuplicate(snes_x, &delta_x));
   }
 
   if (predictor) {
     // Storage for previous solution
-    ierr = VecDuplicate(snes_x, &x1);
-    CHKERRQ(ierr);
+    PetscCall(VecDuplicate(snes_x, &x1));
   }
 
   if (scale_rhs) {
     // Storage for rhs factors, one per evolving variable
-    ierr = VecDuplicate(snes_x, &rhs_scaling_factors);
-    CHKERRQ(ierr);
+    PetscCall(VecDuplicate(snes_x, &rhs_scaling_factors));
     // Set all factors to 1 to start with
-    ierr = VecSet(rhs_scaling_factors, 1.0);
-    CHKERRQ(ierr);
+    PetscCall(VecSet(rhs_scaling_factors, 1.0));
     // Array to store inverse Jacobian row norms
-    ierr = VecDuplicate(snes_x, &jac_row_inv_norms);
-    CHKERRQ(ierr);
+    PetscCall(VecDuplicate(snes_x, &jac_row_inv_norms));
   }
 
   if (scale_vars) {
     // Storage for var factors, one per evolving variable
-    ierr = VecDuplicate(snes_x, &var_scaling_factors);
-    CHKERRQ(ierr);
+    PetscCall(VecDuplicate(snes_x, &var_scaling_factors));
     // Set all factors to 1 to start with
-    ierr = VecSet(var_scaling_factors, 1.0);
-    CHKERRQ(ierr);
+    PetscCall(VecSet(var_scaling_factors, 1.0));
     // Storage for scaled 'x' state vectors
-    ierr = VecDuplicate(snes_x, &scaled_x);
-    CHKERRQ(ierr);
+    PetscCall(VecDuplicate(snes_x, &scaled_x));
   }
 
   if (equation_form == BoutSnesEquationForm::pseudo_transient) {
@@ -360,8 +347,7 @@ int SNESSolver::init() {
     // Create a vector to store interpolated output solution
     // Used so that the timestep does not have to be adjusted,
     // because that would require updating the preconditioner.
-    ierr = VecDuplicate(snes_x, &output_x);
-    CHKERRQ(ierr);
+    PetscCall(VecDuplicate(snes_x, &output_x));
 
     if (use_coloring) {
       // Use matrix coloring.
@@ -560,8 +546,7 @@ int SNESSolver::init() {
               // Depends on all variables on this cell
               for (int j = 0; j < n2d; j++) {
                 PetscInt col = ind2 + j;
-                ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
-                CHKERRQ(ierr);
+                PetscCall(MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES));
               }
             }
           }
@@ -578,8 +563,7 @@ int SNESSolver::init() {
               // Depends on 2D fields
               for (int j = 0; j < n2d; j++) {
                 PetscInt col = ind0 + j;
-                ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
-                CHKERRQ(ierr);
+                PetscCall(MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES));
               }
 
               // Star pattern
@@ -604,9 +588,9 @@ int SNESSolver::init() {
                   // 3D fields on this cell
                   for (int j = 0; j < n3d; j++) {
                     PetscInt col = ind2 + j;
-                    ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
+                    PetscErrorCode ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
 
-                    if (ierr != 0) {
+                    if (ierr != PETSC_SUCCESS) {
                       output.write("ERROR: {} {} : ({}, {}) -> ({}, {}) : {} -> {}\n",
                                    row, x, y, xi, yi, ind2, ind2 + n3d - 1);
                     }
@@ -631,8 +615,7 @@ int SNESSolver::init() {
         // Test if the matrix is symmetric
         // Values are 0 or 1 so tolerance (1e-5) shouldn't matter
         PetscBool symmetric;
-        ierr = MatIsSymmetric(Jfd, 1e-5, &symmetric);
-        CHKERRQ(ierr);
+        PetscCall(MatIsSymmetric(Jfd, 1e-5, &symmetric));
         if (!symmetric) {
           output_warn.write("Jacobian pattern is not symmetric\n");
         }
@@ -657,8 +640,7 @@ int SNESSolver::init() {
       if (prune_jacobian) {
         // Will remove small elements from the Jacobian.
         // Save a copy to recover from over-pruning
-        ierr = MatDuplicate(Jfd, MAT_SHARE_NONZERO_PATTERN, &Jfd_original);
-        CHKERRQ(ierr);
+        PetscCall(MatDuplicate(Jfd, MAT_SHARE_NONZERO_PATTERN, &Jfd_original));
       }
     } else {
       // Brute force calculation
@@ -785,15 +767,13 @@ int SNESSolver::init() {
 
 int SNESSolver::run() {
   TRACE("SNESSolver::run()");
-  int ierr;
+
   // Set initial guess at the solution from variables
   {
     BoutReal* xdata = nullptr;
-    int ierr = VecGetArray(snes_x, &xdata);
-    CHKERRQ(ierr);
+    PetscCall(VecGetArray(snes_x, &xdata));
     save_vars(xdata);
-    ierr = VecRestoreArray(snes_x, &xdata);
-    CHKERRQ(ierr);
+    PetscCall(VecRestoreArray(snes_x, &xdata));
   }
 
   if (equation_form == BoutSnesEquationForm::pseudo_transient) {
@@ -801,11 +781,9 @@ int SNESSolver::run() {
     run_rhs(simtime);
     {
       BoutReal* fdata = nullptr;
-      ierr = VecGetArray(snes_f, &fdata);
-      CHKERRQ(ierr);
+      PetscCall(VecGetArray(snes_f, &fdata));
       save_derivs(fdata);
-      ierr = VecRestoreArray(snes_f, &fdata);
-      CHKERRQ(ierr);
+      PetscCall(VecRestoreArray(snes_f, &fdata));
     }
   }
 
@@ -834,14 +812,11 @@ int SNESSolver::run() {
 
           // Take ownership of snes_x and var_scaling_factors data
           PetscScalar* snes_x_data = nullptr;
-          ierr = VecGetArray(snes_x, &snes_x_data);
-          CHKERRQ(ierr);
+          PetscCall(VecGetArray(snes_x, &snes_x_data));
           PetscScalar* x1_data;
-          ierr = VecGetArray(x1, &x1_data);
-          CHKERRQ(ierr);
+          PetscCall(VecGetArray(x1, &x1_data));
           PetscScalar* var_scaling_factors_data;
-          ierr = VecGetArray(var_scaling_factors, &var_scaling_factors_data);
-          CHKERRQ(ierr);
+          PetscCall(VecGetArray(var_scaling_factors, &var_scaling_factors_data));
 
           // Normalise each value in the state
           // Limit normalisation so scaling factor is never smaller than rtol
@@ -854,12 +829,9 @@ int SNESSolver::run() {
           }
 
           // Restore vector underlying data
-          ierr = VecRestoreArray(var_scaling_factors, &var_scaling_factors_data);
-          CHKERRQ(ierr);
-          ierr = VecRestoreArray(x1, &x1_data);
-          CHKERRQ(ierr);
-          ierr = VecRestoreArray(snes_x, &snes_x_data);
-          CHKERRQ(ierr);
+          PetscCall(VecRestoreArray(var_scaling_factors, &var_scaling_factors_data));
+          PetscCall(VecRestoreArray(x1, &x1_data));
+          PetscCall(VecRestoreArray(snes_x, &snes_x_data));
 
           if (diagnose) {
             // Print maximum and minimum scaling factors
@@ -955,7 +927,7 @@ int SNESSolver::run() {
       int lin_its;
       SNESGetLinearSolveIterations(snes, &lin_its);
 
-      if ((ierr != 0) or (reason < 0)) {
+      if ((ierr != PETSC_SUCCESS) or (reason < 0)) {
         // Diverged or SNES failed
 
         if (diagnose_failures) {
@@ -1001,8 +973,7 @@ int SNESSolver::run() {
           if (diagnose) {
             output.write("\nRestoring Jacobian\n");
           }
-          ierr = MatCopy(Jfd_original, Jfd, DIFFERENT_NONZERO_PATTERN);
-          CHKERRQ(ierr);
+          PetscCall(MatCopy(Jfd_original, Jfd, DIFFERENT_NONZERO_PATTERN));
           // The non-zero pattern has changed, so update coloring
           updateColoring();
           jacobian_pruned = false; // Reset flag. Will be set after pruning.
@@ -1048,33 +1019,26 @@ int SNESSolver::run() {
 
         if (scale_vars) {
           // scaled_x <- snes_x * var_scaling_factors
-          ierr = VecPointwiseMult(scaled_x, snes_x, var_scaling_factors);
-          CHKERRQ(ierr);
+          PetscCall(VecPointwiseMult(scaled_x, snes_x, var_scaling_factors));
 
           const BoutReal* xdata = nullptr;
-          ierr = VecGetArrayRead(scaled_x, &xdata);
-          CHKERRQ(ierr);
+          PetscCall(VecGetArrayRead(scaled_x, &xdata));
           load_vars(const_cast<BoutReal*>(xdata));
-          ierr = VecRestoreArrayRead(scaled_x, &xdata);
-          CHKERRQ(ierr);
+          PetscCall(VecRestoreArrayRead(scaled_x, &xdata));
         } else {
           const BoutReal* xdata = nullptr;
-          ierr = VecGetArrayRead(snes_x, &xdata);
-          CHKERRQ(ierr);
+          PetscCall(VecGetArrayRead(snes_x, &xdata));
           load_vars(const_cast<BoutReal*>(xdata));
-          ierr = VecRestoreArrayRead(snes_x, &xdata);
-          CHKERRQ(ierr);
+          PetscCall(VecRestoreArrayRead(snes_x, &xdata));
         }
         run_rhs(simtime);
 
         // Copy derivatives back
         {
           BoutReal* fdata = nullptr;
-          ierr = VecGetArray(snes_f, &fdata);
-          CHKERRQ(ierr);
+          PetscCall(VecGetArray(snes_f, &fdata));
           save_derivs(fdata);
-          ierr = VecRestoreArray(snes_f, &fdata);
-          CHKERRQ(ierr);
+          PetscCall(VecRestoreArray(snes_f, &fdata));
         }
 
         // Forward Euler
@@ -1130,7 +1094,7 @@ int SNESSolver::run() {
           }
 
           // Prune Jacobian, keeping diagonal elements
-          ierr = MatFilter(Jfd, prune_abstol, PETSC_TRUE, PETSC_TRUE);
+          PetscCall(MatFilter(Jfd, prune_abstol, PETSC_TRUE, PETSC_TRUE));
 
           // Update the coloring from Jfd matrix
           updateColoring();
@@ -1400,22 +1364,17 @@ int SNESSolver::run() {
     // Put the result into variables
     if (scale_vars) {
       // scaled_x <- output_x * var_scaling_factors
-      int ierr = VecPointwiseMult(scaled_x, output_x, var_scaling_factors);
-      CHKERRQ(ierr);
+      PetscCall(VecPointwiseMult(scaled_x, output_x, var_scaling_factors));
 
       const BoutReal* xdata = nullptr;
-      ierr = VecGetArrayRead(scaled_x, &xdata);
-      CHKERRQ(ierr);
+      PetscCall(VecGetArrayRead(scaled_x, &xdata));
       load_vars(const_cast<BoutReal*>(xdata));
-      ierr = VecRestoreArrayRead(scaled_x, &xdata);
-      CHKERRQ(ierr);
+      PetscCall(VecRestoreArrayRead(scaled_x, &xdata));
     } else {
       const BoutReal* xdata = nullptr;
-      int ierr = VecGetArrayRead(output_x, &xdata);
-      CHKERRQ(ierr);
+      PetscCall(VecGetArrayRead(output_x, &xdata));
       load_vars(const_cast<BoutReal*>(xdata));
-      ierr = VecRestoreArrayRead(output_x, &xdata);
-      CHKERRQ(ierr);
+      PetscCall(VecRestoreArrayRead(output_x, &xdata));
     }
     run_rhs(target); // Run RHS to calculate auxilliary variables
 
