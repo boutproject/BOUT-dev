@@ -69,6 +69,8 @@ public:
   ///
   ///     f = (x - gamma*G(x)) - rhs
   ///
+  /// The form depends on equation_form
+  ///
   ///
   /// @param[in] x  The state vector
   /// @param[out] f  The vector for the result f(x)
@@ -93,6 +95,13 @@ public:
   void outputVars(Options& output_options, bool save_repeat = true) override;
 
 private:
+  /// Call the physics model RHS function
+  ///
+  /// @param[in] x       The state vector. Will be scaled if scale_vars=true
+  /// @param[out] f      The vector for the result f(x)
+  /// @param[in] linear  Specifies that the SNES solver is in a linear (KSP) inner loop
+  PetscErrorCode rhs_function(Vec x, Vec f, bool linear);
+
   BoutReal timestep;     ///< Internal timestep
   BoutReal dt;           ///< Current timestep used in snes_function.
   BoutReal dt_min_reset; ///< If dt falls below this, reset solve
