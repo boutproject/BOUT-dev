@@ -219,7 +219,7 @@ jobs:
     container: ghcr.io/ggeorgakoudis/boutdev-cuda:latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
       - name: Build minimal CUDA 12.2 @ GCC9.4.0 @ Ubuntu 20.04
