@@ -14,14 +14,18 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <set>
 #include <vector>
 
 #include <bout/output.hxx>
 
 #include "petscerror.h"
+#include "petscmat.h"
 #include "petscpc.h"
 #include "petscsnes.h"
 #include "petscsys.h"
+#include "petscsystypes.h"
 #include "petscvec.h"
 
 class ColoringStencil {
@@ -270,7 +274,7 @@ PetscErrorCode SNESSolver::FDJinitialise() {
     // Mark non-zero entries
 
     output_progress.write("Marking non-zero Jacobian entries\n");
-    PetscScalar val = 1.0;
+    const PetscScalar val = 1.0;
     for (int x = mesh->xstart; x <= mesh->xend; x++) {
       for (int y = mesh->ystart; y <= mesh->yend; y++) {
 
@@ -288,14 +292,14 @@ PetscErrorCode SNESSolver::FDJinitialise() {
               continue;
             }
 
-            int ind2 = ROUND(index(xi, yi, 0));
+            const int ind2 = ROUND(index(xi, yi, 0));
             if (ind2 < 0) {
               continue; // A boundary point
             }
 
             // Depends on all variables on this cell
             for (int j = 0; j < n2d; j++) {
-              PetscInt col = ind2 + j;
+              const PetscInt col = ind2 + j;
               PetscCall(MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES));
             }
           }
@@ -312,7 +316,7 @@ PetscErrorCode SNESSolver::FDJinitialise() {
 
             // Depends on 2D fields
             for (int j = 0; j < n2d; j++) {
-              PetscInt col = ind0 + j;
+              const PetscInt col = ind0 + j;
               PetscCall(MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES));
             }
 
@@ -337,7 +341,7 @@ PetscErrorCode SNESSolver::FDJinitialise() {
 
                 // 3D fields on this cell
                 for (int j = 0; j < n3d; j++) {
-                  PetscInt col = ind2 + j;
+                  const PetscInt col = ind2 + j;
                   PetscErrorCode ierr =
                       MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
 
@@ -414,6 +418,7 @@ PetscErrorCode SNESSolver::FDJinitialise() {
 
     MatSetOption(Jfd, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
   }
+  return PETSC_SUCCESS;
 }
 
 PetscErrorCode SNESSolver::FDJpruneJacobian() {
@@ -457,6 +462,7 @@ PetscErrorCode SNESSolver::FDJpruneJacobian() {
     jacobian_pruned = true;
   }
 #endif // PETSC_VERSION_GE(3,20,0)
+  return PETSC_SUCCESS;
 }
 
 PetscErrorCode SNESSolver::FDJrestoreFromPruning() {
@@ -465,6 +471,7 @@ PetscErrorCode SNESSolver::FDJrestoreFromPruning() {
   // The non-zero pattern has changed, so update coloring
   updateColoring();
   jacobian_pruned = false; // Reset flag. Will be set after pruning.
+  return PETSC_SUCCESS;
 }
 
 SNESSolver::SNESSolver(Options* opts)
@@ -705,7 +712,8 @@ int SNESSolver::init() {
     // because that would require updating the preconditioner.
     PetscCall(VecDuplicate(snes_x, &output_x));
 
-    FDJinitialise();
+    // Initialize the Finite Difference Jacobian
+    PetscCall(FDJinitialise());
 
     // Re-use Jacobian
     // Note: If the 'Amat' Jacobian is matrix free, SNESComputeJacobian
@@ -1286,7 +1294,7 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping(Vec x) {
         residual = sqrt(residual / count);
 
         auto i3d = mesh->ind2Dto3D(i2d, jz);
-        BoutReal new_timestep =
+        const BoutReal new_timestep =
             updatePseudoTimestep(dt_data[idx], pseudo_residual[i3d], residual);
 
         pseudo_residual[i3d] = residual;
@@ -1303,7 +1311,7 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping(Vec x) {
   // These loops don't check the boundary flags
   for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
     // Field2D quantities evolved together
-    if (f2d.size() > 0) {
+    if (!f2d.empty()) {
       BoutReal residual = 0.0;
       for (std::size_t i = 0; i != f2d.size(); ++i) {
         residual += SQ(current_residual[idx + i]);
@@ -1311,7 +1319,7 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping(Vec x) {
       residual = sqrt(residual / f2d.size());
 
       // Adjust timestep for these quantities
-      BoutReal new_timestep =
+      const BoutReal new_timestep =
           updatePseudoTimestep(dt_data[idx], pseudo_residual_2d[i2d], residual);
       for (std::size_t i = 0; i != f2d.size(); ++i) {
         dt_data[idx++] = new_timestep;
@@ -1320,7 +1328,7 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping(Vec x) {
     }
 
     // Field3D quantities evolved together within a cell
-    if (f3d.size() > 0) {
+    if (!f3d.empty()) {
       for (int jz = 0; jz < mesh->LocalNz; jz++) {
         auto i3d = mesh->ind2Dto3D(i2d, jz);
 
@@ -1530,7 +1538,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
     PetscCall(VecPointwiseMult(f, f, rhs_scaling_factors));
   }
 
-  return 0;
+  return PETSC_SUCCESS;
 }
 
 /*
@@ -1572,7 +1580,7 @@ PetscErrorCode SNESSolver::scaleJacobian(Mat Jac_new) {
   jacobian_recalculated = true;
 
   if (!scale_rhs) {
-    return 0; // Not scaling the RHS values
+    return PETSC_SUCCESS; // Not scaling the RHS values
   }
 
   // Get index of rows owned by this processor

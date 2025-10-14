@@ -101,9 +101,9 @@ public:
   void outputVars(Options& output_options, bool save_repeat = true) override;
 
 private:
-  PetscErrorCode FDJinitialise();
-  PetscErrorCode FDJpruneJacobian();
-  PetscErrorCode FDJrestoreFromPruning();
+  PetscErrorCode FDJinitialise();         ///< Finite Difference Jacobian initialise
+  PetscErrorCode FDJpruneJacobian();      ///< Remove small elements from the Jacobian
+  PetscErrorCode FDJrestoreFromPruning(); ///< Restore Jacobian to original pattern
 
   /// Call the physics model RHS function
   ///
