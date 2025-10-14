@@ -58,6 +58,13 @@ BOUT_ENUM_CLASS(BoutPTCStrategy,
                 history_based,    ///< Grow/shrink dt based on residual decrease/increase
                 hybrid); ///< Combine inverse_residual and history_based strategies
 
+// class FiniteDifferenceJacobian {
+// public:
+//   PetscError initialise();
+// private:
+
+// };
+
 /// Uses PETSc's SNES interface to find a steady state solution to a
 /// nonlinear ODE by integrating in time with Backward Euler
 class SNESSolver : public Solver {
@@ -100,6 +107,10 @@ public:
   void outputVars(Options& output_options, bool save_repeat = true) override;
 
 private:
+  PetscErrorCode FDJinitialise();
+  PetscErrorCode FDJpruneJacobian();
+  PetscErrorCode FDJrestoreFromPruning();
+
   /// Call the physics model RHS function
   ///
   /// @param[in] x       The state vector. Will be scaled if scale_vars=true
