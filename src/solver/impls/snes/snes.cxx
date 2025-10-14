@@ -19,6 +19,7 @@
 #include <bout/output.hxx>
 
 #include "petscerror.h"
+#include "petscpc.h"
 #include "petscsnes.h"
 #include "petscsys.h"
 #include "petscvec.h"
@@ -1435,11 +1436,11 @@ BoutReal SNESSolver::updatePseudoTimestep(BoutReal previous_timestep,
     // and then the method transitions to being history-based
     if (current_residual > 1000. * atol) {
       return updatePseudoTimestep_inverse_residual(previous_timestep, current_residual);
-    } else {
-      return updatePseudoTimestep_history_based(previous_timestep, previous_residual,
-                                                current_residual);
     }
+    return updatePseudoTimestep_history_based(previous_timestep, previous_residual,
+                                              current_residual);
   };
+  throw BoutException("SNESSolver::updatePseudoTimestep invalid BoutPTCStrategy");
 }
 
 PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {

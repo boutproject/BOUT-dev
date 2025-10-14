@@ -39,6 +39,7 @@ class SNESSolver;
 
 #include <bout/bout_enum_class.hxx>
 #include <bout/bout_types.hxx>
+#include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
 #include <bout/petsclib.hxx>
 
@@ -57,13 +58,6 @@ BOUT_ENUM_CLASS(BoutPTCStrategy,
                 inverse_residual, ///< dt = pseudo_alpha / residual
                 history_based,    ///< Grow/shrink dt based on residual decrease/increase
                 hybrid); ///< Combine inverse_residual and history_based strategies
-
-// class FiniteDifferenceJacobian {
-// public:
-//   PetscError initialise();
-// private:
-
-// };
 
 /// Uses PETSc's SNES interface to find a steady state solution to a
 /// nonlinear ODE by integrating in time with Backward Euler
