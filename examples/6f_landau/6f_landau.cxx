@@ -5542,204 +5542,153 @@ protected:
 
   void SBC_Dirichlet(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
     // set the boundary equall to the value next to the boundary
-
-      auto var_fa = toFieldAligned(var);
-      auto value_fa = toFieldAligned(value);
-
-      // At y = ystart (lower boundary)
-
-      for (RangeIterator r = mesh->iterateBndryLowerY(); !r.isDone(); r++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
-
-          // Apply boundary condition half-way between cells
-          for (int jy = mesh->ystart - 1; jy >= 0; jy--) {
-
-            // Dirichlet condition on Jpar
-            var_fa(r.ind, jy, jz) = - 2. * value_fa(r.ind, jy, jz) - var_fa(r.ind, mesh->ystart, jz);
-          }
-        }
-      }
-
-      // At y = yend (upper boundary)
-
-      for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
-
-          // Apply boundary condition half-way between cells
-          for (int jy = mesh->yend + 1; jy < mesh->LocalNy; jy++) {
-
-            // Dirichlet condition on Jpar
-            // WARNING: this is not correct if staggered grids are used
-            ASSERT3(not mesh->StaggerGrids);
-            var_fa(r.ind, jy, jz) = 2. * value_fa(r.ind, jy, jz)  - var_fa(r.ind, mesh->yend, jz);
-          }
-        }
-      }
-
-      var = fromFieldAligned(var_fa);
-
+    SBC_yup_eq(var, value, PF_limit, PF_limit_range);
+    SBC_ydown_eq(var, -value, PF_limit, PF_limit_range);
   } 
-
 
   void SBC_Gradpar(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-    // set the boundary equall to the value next to the boundary
+    SBC_yup_Grad_par(var, value, PF_limit, PF_limit_range);
+    SBC_ydown_Grad_par(var, -value, PF_limit, PF_limit_range);
+  }
 
-      auto var_fa = toFieldAligned(var);
+  // Boundary to specified Field3D object
+  void SBC_yup_eq(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
+    
+    auto var_fa = toFieldAligned(var);
+    auto value_fa = toFieldAligned(value);
 
-      // At y = ystart (lower boundary)
+    for (RangeIterator xrup = mesh->iterateBndryUpperY(); !xrup.isDone(); xrup++) {
+      xind = xrup.ind;
+      indx = mesh->getGlobalXIndex(xind);
+      if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
+        for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
+          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+            var_fa(xind,jy,jz) = value_fa(xind,jy,jz);
+	        }
+        }
+      } else if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
+        for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
+          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+            var_fa(xind,jy,jz) = 0.;
+          }
+        }
+      } else if (!PF_limit) {
+        for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
+          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+            var_fa(xind,jy,jz) = value_fa(xind,jy,jz);
+	        }
+	      }
+      }
+    }
 
-      for (RangeIterator r = mesh->iterateBndryLowerY(); !r.isDone(); r++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+    var = fromFieldAligned(var_fa);
 
-          // Apply boundary condition half-way between cells
-          for (int jy = mesh->ystart - 1; jy >= 0; jy--) {
-            // Neumann conditions
-            var_fa(r.ind, jy, jz) = var_fa(r.ind, mesh->ystart, jz);
+  }
 
+  void SBC_ydown_eq(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
+
+    auto var_fa = toFieldAligned(var);
+    auto value_fa = toFieldAligned(value);
+
+    for (RangeIterator xrdn = mesh->iterateBndryLowerY(); !xrdn.isDone(); xrdn++) {
+      xind = xrdn.ind;
+      indx = mesh->getGlobalXIndex(xind);
+      if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
+        for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
+          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+            var_fa(xind,jy,jz) = value_fa(xind,jy,jz);
+          }
+        }
+      } else if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
+        for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
+          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+            var_fa(xind,jy,jz) = 0.;
+          }
+        }
+      } else if (!PF_limit) {
+        for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
+          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+            var_fa(xind,jy,jz) = value_fa(xind,jy,jz);
+          }
+	      }
+      }
+    }
+
+    var = fromFieldAligned(var_fa);
+
+  }
+
+  // Boundary gradient to specified Field3D object
+  void SBC_yup_Grad_par(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
+
+    Coordinates* coord = mesh->getCoordinates();
+
+    auto var_fa = toFieldAligned(var);
+    auto value_fa = toFieldAligned(value);
+    
+    for (RangeIterator xrup = mesh->iterateBndryUpperY(); !xrup.isDone(); xrup++) {
+      xind = xrup.ind;
+      indx = mesh->getGlobalXIndex(xind);
+      if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
+        for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
+          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+            var_fa(xind,jy,jz) = var_fa(xind,jy - 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value_fa(xind,jy,jz);
+          }
+        }
+      } else if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
+        for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
+          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+            var_fa(xind,jy,jz) = var_fa(xind,jy - 1,jz);
+          }
+        }
+      } else if (!PF_limit) {
+        for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
+          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+            var_fa(xind,jy,jz) = var_fa(xind,jy - 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value_fa(xind,jy,jz);
           }
         }
       }
+    }
 
-      // At y = yend (upper boundary)
+    var = fromFieldAligned(var_fa);
 
-      for (RangeIterator r = mesh->iterateBndryUpperY(); !r.isDone(); r++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+  }
 
-          // Apply boundary condition half-way between cells
-          for (int jy = mesh->yend + 1; jy < mesh->LocalNy; jy++) {
-            // Neumann conditions
-            var_fa(r.ind, jy, jz) = var_fa(r.ind, mesh->yend, jz);
+  void SBC_ydown_Grad_par(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
+    
+    Coordinates* coord = mesh->getCoordinates();
 
+    auto var_fa = toFieldAligned(var);
+    auto value_fa = toFieldAligned(value);
+    
+    for (RangeIterator xrdn = mesh->iterateBndryLowerY(); !xrdn.isDone(); xrdn++) {
+      xind = xrdn.ind;
+      indx = mesh->getGlobalXIndex(xind);
+      if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
+        for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
+          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+            var_fa(xind,jy,jz) = var_fa(xind,jy + 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value_fa(xind,jy,jz);
           }
         }
       }
+      if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
+        for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
+          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+            var_fa(xind,jy,jz) = var_fa(xind,jy + 1,jz);
+          }
+        }
+      } else if (!PF_limit) {
+        for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
+          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+            var_fa(xind,jy,jz) = var_fa(xind,jy + 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value_fa(xind,jy,jz);
+          }
+        }
+      }
+    }
 
-      var = fromFieldAligned(var_fa);
-
-  } 
-
-
-  // void SBC_Dirichlet(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-  //   // let the boundary equall to the value next to the boundary
-  //   SBC_yup_eq(var, value, PF_limit, PF_limit_range);
-  //   SBC_ydown_eq(var, -value, PF_limit, PF_limit_range);
-  // } 
-
-  // void SBC_Gradpar(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-  //   SBC_yup_Grad_par(var, value, PF_limit, PF_limit_range);
-  //   SBC_ydown_Grad_par(var, -value, PF_limit, PF_limit_range);
-  // }
-
-  // // Boundary to specified Field3D object
-  // void SBC_yup_eq(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-  //   RangeIterator xrup = mesh->iterateBndryUpperY();
+    var = fromFieldAligned(var_fa);
     
-  //   // for(xrup->first(); !xrup->isDone(); xrup->next())
-  //   for (; !xrup.isDone(); xrup++) {
-  //     xind = xrup.ind;
-  //     indx = mesh->getGlobalXIndex(xind);
-  //     if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
-  //       for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++)
-  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
-  //           var(xind,jy,jz) = value(xind,jy,jz);
-	//   }
-  //     } else if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
-  //       for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++)
-  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
-  //           var(xind,jy,jz) = 0.;
-  //         }
-  //     } else if (!PF_limit) {
-  //       for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
-  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
-  //           var(xind,jy,jz) = value(xind,jy,jz);
-	//   }
-	// }
-  //     }
-  //   }
-  // }
-
-  // void SBC_ydown_eq(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-  //   RangeIterator xrdn = mesh->iterateBndryLowerY();
-
-  //   // for(xrdn->first(); !xrdn->isDone(); xrdn->next())
-  //   for (; !xrdn.isDone(); xrdn++) {
-  //     xind = xrdn.ind;
-  //     indx = mesh->getGlobalXIndex(xind);
-  //     if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
-  //       for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--)
-  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
-  //           var(xind,jy,jz) = value(xind,jy,jz);
-  //         }
-  //     } else if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
-  //       for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--)
-  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
-  //           var(xind,jy,jz) = 0.;
-  //         }
-  //     } else if (!PF_limit) {
-  //       for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
-  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
-  //           var(xind,jy,jz) = value(xind,jy,jz);
-  //         }
-	// }
-  //     }
-  //   }
-  // }
-
-  // // Boundary gradient to specified Field3D object
-  // void SBC_yup_Grad_par(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-  //   RangeIterator xrup = mesh->iterateBndryUpperY();
-
-  //   Coordinates* coord = mesh->getCoordinates();
-    
-  //   // for(xrup->first(); !xrup->isDone(); xrup->next())
-  //   for (; !xrup.isDone(); xrup++) {
-  //     xind = xrup.ind;
-  //     indx = mesh->getGlobalXIndex(xind);
-  //     if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
-  //       for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++)
-  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
-  //           var(xind,jy,jz) = var(xind,jy - 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value(xind,jy,jz);
-  //         }
-  //     } else if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
-  //       for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++)
-  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
-  //           var(xind,jy,jz) = var(xind,jy - 1,jz);
-	//   }
-  //     } else if (!PF_limit) {
-  //       for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++)
-  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
-  //           var(xind,jy,jz) = var(xind,jy - 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value(xind,jy,jz);
-  //         }
-  //     }
-  //   }
-  // }
-
-  // void SBC_ydown_Grad_par(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-  //   RangeIterator xrdn = mesh->iterateBndryLowerY();
-  //   Coordinates* coord = mesh->getCoordinates();
-
-  //   for (; !xrdn.isDone(); xrdn++) {
-  //     xind = xrdn.ind;
-  //     indx = mesh->getGlobalXIndex(xind);
-  //       if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
-  //         for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--)
-  //           for (int jz = 0; jz < mesh->LocalNz; jz++) {
-  //             var(xind,jy,jz) = var(xind,jy + 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value(xind,jy,jz);
-	//     }
-  //     }
-  //     if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
-  //       for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--)
-  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
-  //           var(xind,jy,jz) = var(xind,jy + 1,jz);
-	//   }
-  //     } else if (!PF_limit) {
-  //       for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--)
-  //         for (int jz = 0; jz < mesh->LocalNz; jz++) {
-  //           var(xind,jy,jz) = var(xind,jy + 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value(xind,jy,jz);
-	//   }
-  //     }
-  //   }
-  // }
+  }
 
   /*****************************************************************************
    * Preconditioner
