@@ -540,6 +540,10 @@ SNESSolver::SNESSolver(Options* opts)
       kP((*options)["kP"].doc("Proportional PID parameter").withDefault(0.7)),
       kI((*options)["kI"].doc("Integral PID parameter").withDefault(0.3)),
       kD((*options)["kD"].doc("Derivative PID parameter").withDefault(0.2)),
+      pid_consider_failures(
+          (*options)["pid_consider_failures"]
+              .doc("Reduce timestep increases if recent solves have failed")
+              .withDefault<bool>(false)),
       diagnose(
           (*options)["diagnose"].doc("Print additional diagnostics").withDefault(false)),
       diagnose_failures((*options)["diagnose_failures"]
@@ -594,6 +598,9 @@ SNESSolver::SNESSolver(Options* opts)
                     .withDefault<bool>(false)),
       scale_vars((*options)["scale_vars"]
                      .doc("Scale variables (Jacobian column scaling)?")
+                     .withDefault<bool>(false)),
+      asinh_vars((*options)["asinh_vars"]
+                     .doc("Apply asinh() to all variables?")
                      .withDefault<bool>(false)) {}
 
 int SNESSolver::init() {
@@ -654,6 +661,8 @@ int SNESSolver::init() {
     // Set all factors to 1 to start with
     PetscCall(VecSet(var_scaling_factors, 1.0));
     // Storage for scaled 'x' state vectors
+    PetscCall(VecDuplicate(snes_x, &scaled_x));
+  } else if (asinh_vars) {
     PetscCall(VecDuplicate(snes_x, &scaled_x));
   }
 
@@ -824,18 +833,17 @@ int SNESSolver::run() {
     BoutReal* xdata = nullptr;
     PetscCall(VecGetArray(snes_x, &xdata));
     save_vars(xdata);
-    PetscCall(VecRestoreArray(snes_x, &xdata));
-  }
 
-  if (equation_form == BoutSnesEquationForm::pseudo_transient) {
-    // Calculate the initial residual in snes_f
-    run_rhs(simtime);
-    {
-      BoutReal* fdata = nullptr;
-      PetscCall(VecGetArray(snes_f, &fdata));
-      save_derivs(fdata);
-      PetscCall(VecRestoreArray(snes_f, &fdata));
+    if (asinh_vars) {
+      // Evolving asinh(vars)
+      PetscInt size;
+      PetscCall(VecGetLocalSize(snes_x, &size));
+      for (PetscInt i = 0; i != size; ++i) {
+        xdata[i] = std::asinh(xdata[i] / asinh_scale);
+      }
     }
+
+    PetscCall(VecRestoreArray(snes_x, &xdata));
   }
 
   BoutReal target = simtime;
@@ -847,6 +855,7 @@ int SNESSolver::run() {
     int steps_since_snes_failure = 0;
     int saved_jacobian_lag = 0;
     int loop_count = 0;
+    recent_failure_rate = 0.0;
     do {
       if (simtime >= target)
         break; // Could happen if step over multiple outputs
@@ -973,8 +982,13 @@ int SNESSolver::run() {
       int lin_its;
       SNESGetLinearSolveIterations(snes, &lin_its);
 
+      // Rolling average of recent failures
+      recent_failure_rate *= 1. - inv_failure_window;
+
       if ((ierr != PETSC_SUCCESS) or (reason < 0)) {
         // Diverged or SNES failed
+
+        recent_failure_rate += inv_failure_window;
 
         if (diagnose_failures) {
           // Print diagnostics to help identify source of the problem
@@ -1200,17 +1214,29 @@ int SNESSolver::run() {
     if (scale_vars) {
       // scaled_x <- output_x * var_scaling_factors
       PetscCall(VecPointwiseMult(scaled_x, output_x, var_scaling_factors));
-
-      const BoutReal* xdata = nullptr;
-      PetscCall(VecGetArrayRead(scaled_x, &xdata));
-      load_vars(const_cast<BoutReal*>(xdata));
-      PetscCall(VecRestoreArrayRead(scaled_x, &xdata));
+    } else if (asinh_vars) {
+      PetscCall(VecCopy(output_x, scaled_x));
     } else {
-      const BoutReal* xdata = nullptr;
-      PetscCall(VecGetArrayRead(output_x, &xdata));
-      load_vars(const_cast<BoutReal*>(xdata));
-      PetscCall(VecRestoreArrayRead(output_x, &xdata));
+      scaled_x = output_x;
     }
+
+    if (asinh_vars) {
+      PetscInt size;
+      PetscCall(VecGetLocalSize(scaled_x, &size));
+
+      BoutReal* scaled_data = nullptr;
+      PetscCall(VecGetArray(scaled_x, &scaled_data));
+      for (PetscInt i = 0; i != size; ++i) {
+        scaled_data[i] = asinh_scale * std::sinh(scaled_data[i]);
+      }
+      PetscCall(VecRestoreArray(scaled_x, &scaled_data));
+    }
+
+    const BoutReal* xdata = nullptr;
+    PetscCall(VecGetArrayRead(scaled_x, &xdata));
+    load_vars(const_cast<BoutReal*>(xdata));
+    PetscCall(VecRestoreArrayRead(scaled_x, &xdata));
+
     run_rhs(target); // Run RHS to calculate auxilliary variables
 
     if (call_monitors(target, s, getNumberOutputSteps()) != 0) {
@@ -1456,19 +1482,29 @@ PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {
   if (scale_vars) {
     // scaled_x <- x * var_scaling_factors
     PetscCall(VecPointwiseMult(scaled_x, x, var_scaling_factors));
-
-    const BoutReal* xdata = nullptr;
-    PetscCall(VecGetArrayRead(scaled_x, &xdata));
-    // const_cast needed due to load_vars API. Not writing to xdata.
-    load_vars(const_cast<BoutReal*>(xdata));
-    PetscCall(VecRestoreArrayRead(scaled_x, &xdata));
+  } else if (asinh_vars) {
+    PetscCall(VecCopy(x, scaled_x));
   } else {
-    const BoutReal* xdata = nullptr;
-    PetscCall(VecGetArrayRead(x, &xdata));
-    // const_cast needed due to load_vars API. Not writing to xdata.
-    load_vars(const_cast<BoutReal*>(xdata));
-    PetscCall(VecRestoreArrayRead(x, &xdata));
+    scaled_x = x;
   }
+
+  if (asinh_vars) {
+    PetscInt size;
+    PetscCall(VecGetLocalSize(scaled_x, &size));
+
+    BoutReal* scaled_data = nullptr;
+    PetscCall(VecGetArray(scaled_x, &scaled_data));
+    for (PetscInt i = 0; i != size; ++i) {
+      scaled_data[i] = asinh_scale * std::sinh(scaled_data[i]);
+    }
+    PetscCall(VecRestoreArray(scaled_x, &scaled_data));
+  }
+
+  const BoutReal* xdata = nullptr;
+  PetscCall(VecGetArrayRead(scaled_x, &xdata));
+  // const_cast needed due to load_vars API. Not writing to xdata.
+  load_vars(const_cast<BoutReal*>(xdata));
+  PetscCall(VecRestoreArrayRead(scaled_x, &xdata));
 
   try {
     // Call RHS function
@@ -1484,6 +1520,24 @@ PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {
   BoutReal* fdata = nullptr;
   PetscCall(VecGetArray(f, &fdata));
   save_derivs(fdata);
+
+  if (asinh_vars) {
+    // Modify time-derivatives for asinh(var) using chain rule
+    // Evolving u = asinh(var / scale)
+    //
+    // du/dt = dvar/dt * du/dvar
+    //
+    // du/var = 1 / sqrt(var^2 + scale^2)
+    PetscInt size;
+    PetscCall(VecGetLocalSize(f, &size));
+    const BoutReal* scaled_data = nullptr;
+    PetscCall(VecGetArrayRead(scaled_x, &scaled_data));
+    for (PetscInt i = 0; i != size; ++i) {
+      fdata[i] /= std::sqrt(SQ(scaled_data[i]) + SQ(asinh_scale));
+    }
+    PetscCall(VecRestoreArrayRead(scaled_x, &scaled_data));
+  }
+
   PetscCall(VecRestoreArray(f, &fdata));
   return PETSC_SUCCESS;
 }
@@ -1713,7 +1767,12 @@ BoutReal SNESSolver::pid(BoutReal timestep, int nl_its, BoutReal max_dt) {
                                  kD);
 
   // clamp growth factor to avoid huge changes
-  const BoutReal fac = std::clamp(facP * facI * facD, 0.2, 5.0);
+  BoutReal fac = std::clamp(facP * facI * facD, 0.2, 5.0);
+
+  if (pid_consider_failures && (fac > 1.0)) {
+    // Reduce aggressiveness if recent steps have failed often
+    fac = pow(fac, std::max(0.3, 1.0 - 2.0 * recent_failure_rate));
+  }
 
   /* ---------- update timestep and history ---------- */
   const BoutReal dt_new = std::min(timestep * fac, max_dt);

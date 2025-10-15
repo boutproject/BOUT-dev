@@ -165,6 +165,9 @@ private:
   BoutReal kP; ///< (0.6 - 0.8) Proportional parameter (main response to current step)
   BoutReal kI; ///< (0.2 - 0.4) Integral parameter (smooths history of changes)
   BoutReal kD; ///< (0.1 - 0.3) Derivative (dampens oscillation - optional)
+  bool pid_consider_failures; ///< Reduce timestep increases if recent solves have failed
+  BoutReal recent_failure_rate;            ///< Rolling average of recent failure rate
+  const BoutReal inv_failure_window = 0.1; ///< 1 / number of recent solves
 
   int nl_its_prev;
   int nl_its_prev2;
@@ -222,6 +225,9 @@ private:
   bool scale_vars;         ///< Scale individual variables?
   Vec var_scaling_factors; ///< Factors to multiply variables when passing to user
   Vec scaled_x;            ///< The values passed to the user RHS
+
+  bool asinh_vars; ///< Evolve asinh(vars) to compress magnitudes while preserving signs
+  const BoutReal asinh_scale = 1e-5; // Scale below which asinh response becomes ~linear
 };
 
 #else
