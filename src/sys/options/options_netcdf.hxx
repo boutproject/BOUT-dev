@@ -39,7 +39,7 @@ public:
   ///  - "append"  File mode, default is false
   OptionsNetCDF(Options& options);
 
-  ~OptionsNetCDF() {}
+  ~OptionsNetCDF() override = default;
 
   OptionsNetCDF(const OptionsNetCDF&) = delete;
   OptionsNetCDF(OptionsNetCDF&&) noexcept = default;
@@ -50,13 +50,15 @@ public:
   Options read(bool lazy = true) override;
 
   /// Write options to file
-  void write(const Options& options) { write(options, "t"); }
   void write(const Options& options, const std::string& time_dim) override;
 
   /// Check that all variables with the same time dimension have the
   /// same size in that dimension. Throws BoutException if there are
   /// any differences, otherwise is silent
   void verifyTimesteps() const override;
+
+  /// Flush file to disk
+  void flush() override;
 
 private:
   enum class FileMode {
@@ -74,7 +76,7 @@ private:
 };
 
 namespace {
-RegisterOptionsIO<OptionsNetCDF> registeroptionsnetcdf("netcdf");
+const inline RegisterOptionsIO<OptionsNetCDF> registeroptionsnetcdf("netcdf");
 }
 
 } // namespace bout
