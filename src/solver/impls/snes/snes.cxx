@@ -1124,13 +1124,13 @@ int SNESSolver::run() {
       }
 
       if (equation_form == BoutSnesEquationForm::pseudo_transient) {
-        // Adjust local timesteps
-        PetscCall(updatePseudoTimestepping(snes_x));
-
         if (pid_controller) {
           // Adjust pseudo_alpha based on nonlinear iterations
           pseudo_alpha = pid(pseudo_alpha, nl_its, max_timestep * atol * 100);
         }
+
+        // Adjust local timesteps
+        PetscCall(updatePseudoTimestepping(snes_x));
 
       } else if (pid_controller) {
         // Changing the timestep using a PID controller.
@@ -1166,7 +1166,6 @@ int SNESSolver::run() {
           // and a factor involving the timestep.
           // Depends on equation_form
           // -> Probably call SNESSetJacobian(snes, Jfd, Jfd, NULL, fdcoloring);
-
           if (static_cast<BoutReal>(lin_its) / nl_its > 4) {
             // Recompute Jacobian (for now)
             if (saved_jacobian_lag == 0) {
