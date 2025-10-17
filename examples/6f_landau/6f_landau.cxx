@@ -48,6 +48,65 @@ BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_target", "neumann");
 BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xin", "none");
 BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xout", "none");
 
+namespace {
+BoutReal clip(BoutReal value, BoutReal min, BoutReal max) {
+  if (value < min)
+    return min;
+  if (value > max)
+    return max;
+  return value;
+}
+
+Ind3D indexAt(const Field3D& f, int x, int y, int z) {
+  int ny = f.getNy();
+  int nz = f.getNz();
+  return Ind3D{(x * ny + y) * nz + z, ny, nz};
+}
+
+/// Limited free gradient of log of a quantity
+/// This ensures that the guard cell values remain positive
+/// while also ensuring that the quantity never increases
+///
+///  fm  fc | fp
+///         ^ boundary
+/// 
+/// exp( 2*log(fc) - log(fm) )
+/// Mode 0: default (exponential extrapolation if decreases, Neumann if increases)
+/// Mode 1: always exponential extrapolation
+/// Mode 2: always linear extrapolation
+
+BoutReal limitFree(BoutReal fm, BoutReal fc, BoutReal mode) {
+  if ((fm < fc) && (mode == 0)) {
+    return fc; // Neumann rather than increasing into boundary
+  }
+  if (fm < 1e-10) {
+    return fc; // Low / no density condition
+  }
+
+  BoutReal fp = 0;
+  if ((mode == 0) || (mode == 1)) {
+    fp = SQ(fc) / fm;     // Exponential
+  } else if (mode == 2) {
+    fp = 2.0 * fc - fm;   // Linear
+  } else {
+    throw BoutException("Unknown boundary mode");
+  }
+
+  return fp;  // Extrapolation
+
+
+#if CHECKLEVEL >= 2
+  if (!std::isfinite(fp)) {
+    throw BoutException("SheathBoundary limitFree: {}, {} -> {}", fm, fc, fp);
+  }
+#endif
+
+  return fp;
+}
+
+} // namespace
+
+
 class Elm_6f : public PhysicsModel {
 private:
 
@@ -166,7 +225,7 @@ private:
   
   bool gyroviscous;
   /// Temporary variables for gyroviscous
-  Field3D Dperp2Phi0, Dperp2Phi, GradPhi02, GradPhi2; 
+  Field3D Dperp2Phi0, Dperp2Phi, GradPhi02, GradPhi2;
   Field3D GradparPhi02, GradparPhi2, GradcPhi, GradcparPhi;
   Field3D Dperp2Pi0, Dperp2Pi, bracketPhi0P, bracketPhiP0, bracketPhiP;
   
@@ -431,6 +490,9 @@ private:
 
   /// Communication objects
   FieldGroup comms;
+
+  /// Auxiliary fields
+  Field3D zero, one; 
 
 #if BOUT_HAS_HYPRE
   std::unique_ptr<LaplaceXY2Hypre> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
@@ -1105,7 +1167,7 @@ protected:
                   .withDefault(-1.0);
     Sheath_width = options["Sheath_width"]
                   .doc("Sheath boundary width in grid number")
-                  .withDefault(1);
+                  .withDefault(0);
     SBC_phi = options["SBC_phi"]
                   .doc("use sheath boundary on phi instead of Jpar")
                   .withDefault(false);
@@ -1586,6 +1648,9 @@ protected:
       }
     }
 
+    // Auxiliary
+    zero = 0.0, one = 1.0; 
+
     /////////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
 
@@ -1651,8 +1716,8 @@ protected:
       output.write("Psipara1 = {:e}   AA = {:e}\n", Psipara1, AA);
     }
 
-    Upara0 = KB * Tebar * eV_K / (Zi * ee * Bbar * Va * Lbar);
-    Upara1 = KB * Tebar * eV_K / Mi / Va / Va;
+    Upara0 = KB * Tibar * eV_K / (Zi * ee * Bbar * Va * Lbar);
+    Upara1 = KB * Tebar * eV_K / (Mi * Va * Va);
     output.write("vorticity cinstant: Upara0 = {:e}     Upara1 = {:e}\n", Upara0, Upara1);
 
     if (gyroviscous) {
@@ -1679,8 +1744,8 @@ protected:
     if (compress0) {
       output.write("Including compression (Vipar) effects\n");
       Vipara = MU0 * KB * Nbar * density * Tebar * eV_K / (Bbar * Bbar);
-      // Vepara = Bbar / (MU0 * Zi * ee * Nbar * density * Lbar * Va);
-      Vepara = Bbar / (MU0 * ee * Nbar * density * Lbar * Va);
+      Vepara = Bbar / (MU0 * Zi * ee * Nbar * density * Lbar * Va);
+      // Vepara = Bbar / (MU0 * ee * Nbar * density * Lbar * Va);
       output.write("Normalized constant for Vipar :   Vipara = {:e}\n", Vipara);
       output.write("Normalized constant for Vepar :   Vepara = {:e}\n", Vepara);
     } else {
@@ -1972,7 +2037,7 @@ protected:
             return 1;
           }
           N_imp0 /= Nbar;
-        } else{
+        } else {
           N_imp0 = (Ne0 - Zi * N0) / Z_imp;
         }
         if (min(N_imp0, true) <= 0.) {
@@ -1991,7 +2056,7 @@ protected:
         T_imp0 = Ti0;
         P_imp0 = N_imp0 * T_imp0;
         // P_imp0 = P0 - N0*Ti0*Tau_ie - Ne0*Te0;
-              // T_imp0 = P_imp0/N_imp0;
+        // T_imp0 = P_imp0/N_imp0;
         if (min(T_imp0, true) <= 0.) {
           output.write("Error: Impurity temperature has negative value.\n");
           if (Nimp_lowlimit) {
@@ -2098,7 +2163,7 @@ protected:
       if (impurity_prof && impurity_gyro) {
         Upara_imp = (A_imp * N_imp0) / (AA * N0);
         output.write("Max Upara_imp = {:e}, Min Upara_imp = {:e}\n", max(Upara_imp, true), min(Upara_imp, true));
-        
+
         Dperp2Pimp0.setBoundary("P");
         bracketPhiPimp0.setBoundary("P");
       }
@@ -2209,7 +2274,7 @@ protected:
 
     // Transitions from 0 in core to 1 in vacuum
     vac_mask = (1.0 - tanh((P0 - vacuum_pressure) / vacuum_trans)) / 2.0;
-    LnLambda = 24.0 - log(pow(Zi * Nbar * density * Ne0 / 1.e6, 0.5) / (Tebar * Te0));  
+    LnLambda = 24.0 - log(pow(Zi * Nbar * density * Ne0 / 1.e6, 0.5) / (Tebar * Te0));
     output.write("\tlog Lambda: {:e} -> {:e} \n", min(LnLambda), max(LnLambda));
 
     if (spitzer_resist) {
@@ -2263,7 +2328,7 @@ protected:
       output.write("\tlocal min q: {:e}\n", min(q95));
     }
 
-    nu_e = 2.91e-6 * LnLambda * ((N0) * Nbar * density / 1.e6) * pow(Te0 * Tebar, -1.5); // nu_e in 1/S.
+    nu_e = 2.91e-6 * LnLambda * ((Ne0) * Nbar * density / 1.e6) * pow(Te0 * Tebar, -1.5); // nu_e in 1/S.
     output.write("\telectron collision rate: {:e} -> {:e} [1/s]\n", min(nu_e), max(nu_e));
     // nu_e.applyBoundary();
     // mesh->communicate(nu_e);
@@ -2700,12 +2765,7 @@ protected:
         Sn_ext.applyBoundary();
         mesh->communicate(Sn_ext);
       }
-  #if DEBUG_6F>0
-    output.write("Neutral initialization finished\n");
-  #endif
     }
-
-    
 
     // Background Impurity radiation source term. Calculated based on the background/equilibrium profiles.
     // To be substracted from the total source term  in the equation for the perturbed Te. 
@@ -2985,7 +3045,7 @@ protected:
 
       if (experiment_Er) { 
 	      if (diamag_er) {
-	        // get phi0 from grid file
+	        // get Er0 from grid file
 	        Field2D Er_tmp;
 	        mesh->get(Er_tmp, "E_r");
           Er0.x = Er0_factor * Er_tmp / (Bbar * Va * Rxy * Bpxy);
@@ -3361,8 +3421,8 @@ protected:
       P = lowPass(P, low_pass_z, zonal_bkgd);
     }
     
-    if ((gamma_i_BC > 0.0) && (gamma_e_BC > 0.0)) {
-      SBC_Gradpar(U, 0.0, PF_limit, PF_limit_range);
+    if ((gamma_i_BC > 0.0) && (gamma_e_BC > 0.0)) { 
+      SBC_Gradpar(U, zero, PF_limit, PF_limit_range);
     }
 
     // Field2D lap_temp=0.0;
@@ -3383,7 +3443,7 @@ protected:
         phiSolver->setCoefC(density_tmp);
         phi = phiSolver->solve(ubyn);
       }
-    } else { 
+    } else {
       ubyn = U * B0 / N0;
       if (diamag) {
         ubyn -= Upara0 / N0 * Delp2(Pi);
@@ -3680,8 +3740,8 @@ protected:
       }
       mesh->communicate(phi_sh);
       phi_sh.applyBoundary();
-      // SBC_Gradpar(phi, phi_sh, PF_limit, PF_limit_range);
-      SBC_Gradpar(phi, 0.0, PF_limit, PF_limit_range);
+      SBC_Gradpar(phi, phi_sh, PF_limit, PF_limit_range);
+      // SBC_Gradpar(phi, zero, PF_limit, PF_limit_range);
 
       if (nonlinear) {
         Jpar_sh = Ne_tmp * Nbar * density * ee;
@@ -3718,19 +3778,21 @@ protected:
       }
 
       if (compress0) {
-        if (full_sbc)
-          SBC_Dirichlet(Vipar, c_set/Va, PF_limit, PF_limit_range);
-        else
+        if (full_sbc) {
+          Field3D c_set_n = c_set/Va;
+          SBC_Dirichlet(Vipar, c_set_n, PF_limit, PF_limit_range);
+        } else {
           SBC_Dirichlet(Vipar, c_se, PF_limit, PF_limit_range);
+        }
       }
 
       // SBC_Gradpar(U, 0.0, PF_limit, PF_limit_range);
-      SBC_Gradpar(Ni, 0.0, PF_limit, PF_limit_range);
+      SBC_Gradpar(Ni, zero, PF_limit, PF_limit_range);
       // if (!Landau) {
-        // SBC_Gradpar(Ti, q_si, PF_limit, PF_limit_range);
-        // SBC_Gradpar(Te, q_se, PF_limit, PF_limit_range);
-        SBC_Gradpar(Ti, 0.0, PF_limit, PF_limit_range);
-        SBC_Gradpar(Te, 0.0, PF_limit, PF_limit_range);
+        SBC_Gradpar(Ti, q_si, PF_limit, PF_limit_range);
+        SBC_Gradpar(Te, q_se, PF_limit, PF_limit_range);
+        // SBC_Gradpar(Ti, 0.0, PF_limit, PF_limit_range);
+        // SBC_Gradpar(Te, 0.0, PF_limit, PF_limit_range);
         // } else {
       //   SBC_Gradpar(Ti, 0., PF_limit, PF_limit_range);
       //   SBC_Gradpar(Te, 0., PF_limit, PF_limit_range);
@@ -3838,18 +3900,21 @@ protected:
       if (Nn_recyc_BC) {
         SBC_Gradpar(Nn, Gamma_nn, PF_limit, PF_limit_range);
       } else {
-        SBC_Dirichlet(Nn, Rcyc_Nn * N_tmp, PF_limit, PF_limit_range); //NOTE(malamast): TODO:CHECK. I changed added that instead of the below. Check the -value.
+        Field3D Nn_sh = Rcyc_Nn * N_tmp;
+        SBC_Dirichlet(Nn, Nn_sh, PF_limit, PF_limit_range); //NOTE(malamast): TODO:CHECK. I changed added that instead of the below. Check the -value.
         // SBC_yup_eq(Nn, Rcyc_Nn * N_tmp, PF_limit, PF_limit_range);
         // SBC_ydown_eq(Nn, Rcyc_Nn * N_tmp, PF_limit, PF_limit_range);
       }
       if (Vn_recyc_BC) {
         if (full_sbc_Vn) {
-          SBC_Dirichlet(Vn, -Rcyc_Vn * c_set / Va, PF_limit, PF_limit_range);
+          Field3D Vn_sh_n = -Rcyc_Vn * c_set / Va; 
+          SBC_Dirichlet(Vn, Vn_sh_n, PF_limit, PF_limit_range);
         } else {
-          SBC_Dirichlet(Vn, -Rcyc_Vn * c_se, PF_limit, PF_limit_range);
+          Field3D Vn_sh = -Rcyc_Vn * c_se;
+          SBC_Dirichlet(Vn, Vn_sh, PF_limit, PF_limit_range);
         }
       } else {
-        SBC_Gradpar(Vn, 0.0, PF_limit, PF_limit_range);
+        SBC_Gradpar(Vn, zero, PF_limit, PF_limit_range);
       }
     }
     
@@ -4112,11 +4177,9 @@ protected:
         if (include_vpar0) {
           Vepar = - Jpar / Ne_tmp * Vepara + N_tmp / Ne_tmp * Vipar + Ni / Ne_tmp * Vipar0 -Zi * Ni / Ne_tmp * Vepar0 ; 
         } else {
-          // Vepar = Vipar - B0 * (Jpar) / N_tmp * Vepara;
-          Vepar = Vipar - Jpar / Ne_tmp * Vepara; //NOTE(malamast): That's weird. Why was it like that???
+          Vepar = Vipar - Jpar / Ne_tmp * Vepara;
         }
       } else {
-        // Vepar = Vipar - B0 * (Jpar) / N0 * Vepara; //NOTE(malamast): That's weird. Why was it like that???
         Vepar = Vipar - Jpar / Ne0 * Vepara;  
       }
       Vepar.applyBoundary();
@@ -4147,9 +4210,6 @@ protected:
       }
     }
 
-  #if DEBUG_6F>0
-    output.write("I see you 1!\n");
-  #endif
 
     /////////////////////////////////////////////////////////////////
     // Parallel electric field
@@ -4331,9 +4391,9 @@ protected:
         }
 
       }
-      
+
       if (nonlinear) {
-        ddt(U) -= bracket(phi, U, bm_exb);       // Advection
+        ddt(U) -= bracket(phi, U, bm_exb); // Advection
 
 	      if (compress0 && include_vipar) {
 	        ddt(U) -= Vpar_Grad_par(Vipar, U);
@@ -4360,6 +4420,7 @@ protected:
       }
 
       if (parallel_viscous && compress0) {
+        //ddt(U) += 0.333333 * Upara1 * b0xcv * Grad(pi_ci);
         ddt(U) -= 0.666667 * Upara1 * b0xcv * Grad(pi_ci); //NOTE(malamast): Should we exclude the background?
       }
 
@@ -4459,6 +4520,7 @@ protected:
 	      }
       }
 
+      // TODO: check
       if (output_transfer) {
         T_R = -bracket(phi, U - Upara0 / B0 * Dperp2Pi, bm_exb);
         mesh->communicate(T_R);
@@ -4514,9 +4576,6 @@ protected:
       }
     }
 
-  #if DEBUG_6F>0
-    output.write("I see you 3!\n");
-  #endif
     /////////////////////////////////////////////////////////////////
     // number density equation
 
@@ -4616,7 +4675,7 @@ protected:
         mesh->communicate(partf_neo_i);
         partf_neo_i.applyBoundary();
       }*/
-
+     
       // 4th order Parallel diffusion terms
       if (hyperdiff_par_n4 > 0.0) {
         tmpN2 = Grad2_par2new(Ni);
@@ -4633,9 +4692,7 @@ protected:
       }
     }
 
-  #if DEBUG_6F>0
-    output.write("I see you 4!\n");
-  #endif
+
     //////////////////////////////////////////////////////////////////
     // ion temperature equation
     {
@@ -4650,7 +4707,7 @@ protected:
       if (continuity) {
         ddt(Ti) -= 4.0 / 3.0 * Ti0 / B0 * b0xcv * Grad(phi);
         // ddt(Ti) -= 4.0/3.0 * Ti * b0xcv*Grad(phi0*B0) / B0; // ---> ?
-        // ddt(Ti) -= 4.0/3.0 * Tipara2 * Ti/N0 * b0xcv*Grad(Pi0) / (N0*B0);   // balanced by above ---> ?        
+        // ddt(Ti) -= 4.0/3.0 * Tipara2 * Ti/N0 * b0xcv*Grad(Pi0) / (N0*B0);   // balanced by above ---> ?
 	      // ddt(Ti) -= 4.0 / 3.0 * Ti / B0 * b0xcv * cross(Ve0_net, B0vec); // net flow // NOTE(malamast): Ve0_net is 0 ---> I have commented it out.
 
         ddt(Ti) -= 4.0 / 3.0 * Ti / B0 * b0xcv * Grad(phi0); // Added by malamast.
@@ -4685,7 +4742,7 @@ protected:
 
       if (compress0) {
         // ddt(Ti) -= Vipar * Grad_parP(Ti0);
-        // ddt(Ti) -= Vpar_Grad_par(Vipar, Ti0);        
+        // ddt(Ti) -= Vpar_Grad_par(Vipar, Ti0);
         if (include_vipar) {
           ddt(Ti) -= Vipar * Grad_parP(Ti0);
 
@@ -4695,7 +4752,7 @@ protected:
               ddt(Ti) += Vipar0 * bracket(Psi, Ti0, bm_mag) * B0; 
             else
               ddt(Ti) += Vipar0 * bracket(Apar, Ti0, bm_mag); 
-          }          
+          }
         }
 
         if (continuity) {
@@ -4721,7 +4778,7 @@ protected:
             if (evolve_psi)
               ddt(Ti) += Vipar * bracket(Psi, Ti, bm_mag) * B0; // Added by malamast
             else
-              ddt(Ti) += Vipar * bracket(Apar, Ti, bm_mag); // Added by malamast            
+              ddt(Ti) += Vipar * bracket(Apar, Ti, bm_mag); // Added by malamast
           }
 
           if (continuity)
@@ -4835,9 +4892,6 @@ protected:
       }
     }
 
-  #if DEBUG_6F>0
-    output.write("I see you 5!\n");
-  #endif
     //////////////////////////////////////////////////////////////////
     // electron temperature equation
     {
@@ -4923,7 +4977,7 @@ protected:
               ddt(Te) += Vepar0 * bracket(Psi, Te0, bm_mag) * B0; 
             else
               ddt(Te) += Vepar0 * bracket(Apar, Te0, bm_mag); 
-          }                  
+          }
         }
 
         if (continuity) {
@@ -4935,14 +4989,14 @@ protected:
               ddt(Te) += 2.0 / 3.0 * Te0 * B0 * bracket(Psi, Vepar0 / B0, bm_mag) * B0; 
             else
               ddt(Te) += 2.0 / 3.0 * Te0 * B0 * bracket(Apar, Vepar0 / B0, bm_mag); 
-          }          
+          }
         }
 
         if (nonlinear) {
           // ddt(Te) -= Vepar * Grad_par(Te);
 
           // ddt(Te) -= Vpar_Grad_par(Vepar, Te);
-          // ddt(Te) += Vepar * bracket(Psi, Te0, bm_mag)*B0;   
+          // ddt(Te) += Vepar * bracket(Psi, Te0, bm_mag)*B0;
 
           if (include_vipar) {
             ddt(Te) -= Vpar_Grad_par(Vepar, Te);
@@ -4981,7 +5035,6 @@ protected:
         //     q_par_landau = q_par_e;
         //   }
         // } else {
-
           ddt(Te) += kappa_par_e * Grad2_par2(Te) / Ne0; // Parallel diffusion 
           ddt(Te) += Grad_par(kappa_par_e) * Grad_par(Te) / Ne0;
 
@@ -5097,10 +5150,6 @@ protected:
       }
     }
 
-  #if DEBUG_6F>0
-    output.write("I see you 6!\n");
-  #endif
-
     //////////////////////////////////////////////////////////////////
     if (compress0) { // parallel velocity equation
       TRACE("ddt(Vipar)");
@@ -5189,14 +5238,11 @@ protected:
         if (include_vpar0){
           ddt(Vipar) -= sink_vp * sink_tanhxl(Vipar0, Vipar, sp_width, sp_length); // sink
         } else {
-          //Field2D V0tmp = 0.;
+          // Field2D V0tmp = 0.;
           ddt(Vipar) -= sink_vp * sink_tanhxl(F2D_tmp, Vipar, sp_width, sp_length); // sink
         }
       }
     }
-  #if DEBUG_6F>0
-    output.write("I see you 7!\n");
-  #endif
 
     //////////////////////////////////////////////////////////////////
     if (neutral) { // neutral model
@@ -5330,11 +5376,8 @@ protected:
       ddt(Vipar) -= Nn * (nu_iz + nu_cx) * (Vipar - Vn);
     }
     
-  #if DEBUG_6F>0
-    output.write("I see you 8!\n");
-  #endif
     //////////////////////////////////////////////////////////////////
-    
+
     if (PF_limit) {
       phi = PF_filter(phi, PF_limit_range);
       Jpar = PF_filter(Jpar, PF_limit_range);
@@ -5364,7 +5407,7 @@ protected:
       // P = PF_filter_2(P, PF_limit_range);
       // if (compress0) {
       //   Vipar = PF_filter_2(Vipar, PF_limit_range);
-      // }      
+      // }
 
     }
     
@@ -5420,15 +5463,10 @@ protected:
         ddt(Psi) -= PF_sink * sink_PF(F2D_tmp, Psi, PFs_width, PFs_length);
       else
         ddt(Apar) -= PF_sink * sink_PF(F2D_tmp, Apar, PFs_width, PFs_length);
-     
       ddt(Ni) -= PF_sink * sink_PF(N0, Ni, PFs_width, PFs_length);
-     
       ddt(Ti) -= PF_sink * sink_PF(Ti0, Ti, PFs_width, PFs_length);
-   
       ddt(Te) -= PF_sink * sink_PF(Te0, Te, PFs_width, PFs_length);
-    
       ddt(U) -= PF_sink * sink_PF(F2D_tmp, U, PFs_width, PFs_length);
-    
       //  sink_PFtmp = sink_PF(Te0,Te,PFs_width,PFs_length);
     }
 
@@ -5540,154 +5578,144 @@ protected:
   // Linearized
 
 
-  void SBC_Dirichlet(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
+  void SBC_Dirichlet(Field3D &var, Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
     // set the boundary equall to the value next to the boundary
-    SBC_yup_eq(var, value, PF_limit, PF_limit_range);
-    SBC_ydown_eq(var, -value, PF_limit, PF_limit_range);
-  } 
+    // SBC_yup_eq(var, value, PF_limit, PF_limit_range);
+    // SBC_ydown_eq(var, -value, PF_limit, PF_limit_range);
 
-  void SBC_Gradpar(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-    SBC_yup_Grad_par(var, value, PF_limit, PF_limit_range);
-    SBC_ydown_Grad_par(var, -value, PF_limit, PF_limit_range);
-  }
-
-  // Boundary to specified Field3D object
-  void SBC_yup_eq(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-    
     auto var_fa = toFieldAligned(var);
     auto value_fa = toFieldAligned(value);
 
+    // SBC_yup_eq
     for (RangeIterator xrup = mesh->iterateBndryUpperY(); !xrup.isDone(); xrup++) {
       xind = xrup.ind;
       indx = mesh->getGlobalXIndex(xind);
-      if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
-        for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var_fa(xind,jy,jz) = value_fa(xind,jy,jz);
-	        }
-        }
-      } else if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
-        for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var_fa(xind,jy,jz) = 0.;
+      if (PF_limit) {
+        if ((BoutReal(indx) > ixsep * PF_limit_range)) {
+          for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
+            for (int jz = 0; jz < mesh->LocalNz; jz++) {
+              var_fa(xind, jy, jz) = 2.0 * value_fa(xind, mesh->yend, jz) - var_fa(xind, mesh->yend, jz);
+            }
+          }
+        } else if ((BoutReal(indx) <= ixsep * PF_limit_range)) {
+          for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
+            for (int jz = 0; jz < mesh->LocalNz; jz++) {
+              var_fa(xind, jy, jz) = 0.0;
+            }
           }
         }
-      } else if (!PF_limit) {
+      } else {
         for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var_fa(xind,jy,jz) = value_fa(xind,jy,jz);
-	        }
+            var_fa(xind, jy, jz) = 2.0 * value_fa(xind, mesh->yend, jz) - var_fa(xind, mesh->yend, jz);
+          }
 	      }
       }
     }
 
-    var = fromFieldAligned(var_fa);
-
-  }
-
-  void SBC_ydown_eq(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-
-    auto var_fa = toFieldAligned(var);
-    auto value_fa = toFieldAligned(value);
-
+    // SBC_ydown_eq
     for (RangeIterator xrdn = mesh->iterateBndryLowerY(); !xrdn.isDone(); xrdn++) {
       xind = xrdn.ind;
       indx = mesh->getGlobalXIndex(xind);
-      if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
-        for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var_fa(xind,jy,jz) = value_fa(xind,jy,jz);
+      if (PF_limit) {
+        if ((BoutReal(indx) > ixsep * PF_limit_range)) {
+          for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
+            for (int jz = 0; jz < mesh->LocalNz; jz++) {
+              var_fa(xind, jy, jz) = -2.0 * value_fa(xind, mesh->ystart, jz) - var_fa(xind, mesh->ystart, jz);
+            }
+          }           
+
+        } else if ((BoutReal(indx) <= ixsep * PF_limit_range)) {
+          for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
+            for (int jz = 0; jz < mesh->LocalNz; jz++) {
+              var_fa(xind, jy, jz) = 0.;
+            }
           }
         }
-      } else if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
+      } else {
         for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var_fa(xind,jy,jz) = 0.;
-          }
-        }
-      } else if (!PF_limit) {
-        for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var_fa(xind,jy,jz) = value_fa(xind,jy,jz);
+            var_fa(xind, jy, jz) = -2.0 * value_fa(xind, mesh->ystart, jz) - var_fa(xind, mesh->ystart, jz);
           }
 	      }
       }
     }
 
     var = fromFieldAligned(var_fa);
+    value = fromFieldAligned(value_fa);    
 
   }
 
-  // Boundary gradient to specified Field3D object
-  void SBC_yup_Grad_par(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
 
-    Coordinates* coord = mesh->getCoordinates();
+
+  void SBC_Gradpar(Field3D &var, Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
+    // SBC_yup_Grad_par(var, value, PF_limit, PF_limit_range);
+    // SBC_ydown_Grad_par(var, -value, PF_limit, PF_limit_range);
 
     auto var_fa = toFieldAligned(var);
     auto value_fa = toFieldAligned(value);
-    
+
+    Coordinates* coord = mesh->getCoordinates();
+
+    // SBC_yup_Grad_par
     for (RangeIterator xrup = mesh->iterateBndryUpperY(); !xrup.isDone(); xrup++) {
       xind = xrup.ind;
       indx = mesh->getGlobalXIndex(xind);
-      if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
-        for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var_fa(xind,jy,jz) = var_fa(xind,jy - 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value_fa(xind,jy,jz);
+      if (PF_limit) {
+        if ((BoutReal(indx) > ixsep * PF_limit_range)) {
+          for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
+            for (int jz = 0; jz < mesh->LocalNz; jz++) {
+              var_fa(xind, jy, jz) = var_fa(xind, jy - 1, jz) + coord->dy(xind, jy) * sqrt(coord->g_22(xind, jy)) * value_fa(xind, mesh->yend, jz);
+            }
+          }
+        } else if ((BoutReal(indx) <= ixsep * PF_limit_range)) {
+          for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
+            for (int jz = 0; jz < mesh->LocalNz; jz++) {
+              var_fa(xind,jy,jz) = var_fa(xind,jy - 1,jz);
+            }
           }
         }
-      } else if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
+      } else {
         for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var_fa(xind,jy,jz) = var_fa(xind,jy - 1,jz);
-          }
-        }
-      } else if (!PF_limit) {
-        for (int jy = mesh->yend + 1 - Sheath_width; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var_fa(xind,jy,jz) = var_fa(xind,jy - 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value_fa(xind,jy,jz);
+            var_fa(xind, jy, jz) = var_fa(xind, jy - 1, jz) + coord->dy(xind, jy) * sqrt(coord->g_22(xind, jy)) * value_fa(xind, mesh->yend, jz);
           }
         }
       }
     }
 
-    var = fromFieldAligned(var_fa);
-
-  }
-
-  void SBC_ydown_Grad_par(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-    
-    Coordinates* coord = mesh->getCoordinates();
-
-    auto var_fa = toFieldAligned(var);
-    auto value_fa = toFieldAligned(value);
-    
+    // SBC_ydown_Grad_par
     for (RangeIterator xrdn = mesh->iterateBndryLowerY(); !xrdn.isDone(); xrdn++) {
       xind = xrdn.ind;
       indx = mesh->getGlobalXIndex(xind);
-      if (PF_limit && (BoutReal(indx) > ixsep * PF_limit_range)) {
-        for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var_fa(xind,jy,jz) = var_fa(xind,jy + 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value_fa(xind,jy,jz);
+      if (PF_limit) {
+        if ((BoutReal(indx) > ixsep * PF_limit_range)) {
+          for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
+            for (int jz = 0; jz < mesh->LocalNz; jz++) {
+              var_fa(xind, jy, jz) = var_fa(xind, jy + 1, jz) - coord->dy(xind, jy) * sqrt(coord->g_22(xind, jy)) * value_fa(xind, mesh->ystart, jz);
+            }
           }
         }
-      }
-      if (PF_limit && (BoutReal(indx) <= ixsep * PF_limit_range)) {
-        for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var_fa(xind,jy,jz) = var_fa(xind,jy + 1,jz);
+        if ((BoutReal(indx) <= ixsep * PF_limit_range)) {
+          for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
+            for (int jz = 0; jz < mesh->LocalNz; jz++) {
+              var_fa(xind,jy,jz) = var_fa(xind,jy + 1,jz);
+            }
           }
         }
-      } else if (!PF_limit) {
+      } else {
         for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
-            var_fa(xind,jy,jz) = var_fa(xind,jy + 1,jz) + coord->dy(xind,jy) * sqrt(coord->g_22(xind,jy)) * value_fa(xind,jy,jz);
+            var_fa(xind, jy, jz) = var_fa(xind, jy + 1, jz) - coord->dy(xind, jy) * sqrt(coord->g_22(xind, jy)) * value_fa(xind, mesh->ystart, jz);
           }
         }
       }
     }
 
+
     var = fromFieldAligned(var_fa);
-    
+    value = fromFieldAligned(value_fa);    
+
   }
 
   /*****************************************************************************
@@ -5733,7 +5761,6 @@ protected:
       jpar1 = smooth_x(jpar1);
       jpar1 = smooth_x(jpar1);
       jpar1 = smooth_x(jpar1);
-      jpar1 = smooth_y(jpar1);
       jpar1 = smooth_y(jpar1);
       jpar1 = smooth_y(jpar1);
       jpar1 = smooth_y(jpar1);
@@ -5839,7 +5866,7 @@ protected:
       mesh->communicate(Apar);
       Apar.applyBoundary();
     }
-    
+
     return 0;
   }
 

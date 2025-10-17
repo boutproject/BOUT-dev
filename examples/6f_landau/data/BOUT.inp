@@ -12,6 +12,7 @@ nout = 10                      # number of time-steps
 timestep = 0.1                # time between outputs
 wall_limit = 48.0              # wall time limit (in hours)
 
+
 MZ = 64                        # Number of points in Z (toroidal) direction (2^n + 1)
 zperiod = 5                    # Fraction of a torus to simulate
 
@@ -19,7 +20,7 @@ MXG = 2
 MYG = 2
 
 [input]
-error_on_unused_options=true
+error_on_unused_options = true
 transform_from_field_aligned = true
 
 [output]
@@ -40,13 +41,13 @@ type = shifted                 # Use shifted metric method
 # derivative methods
 
 [mesh:ddx]
-first = C2                     # order of first x derivatives (options are 2 or 4)
-second = C2                    # order of second x derivatives (2 or 4)
+first = C4                     # order of first x derivatives (options are 2 or 4)
+second = C4                    # order of second x derivatives (2 or 4)
 upwind = W3                    # order of upwinding method (1, 4, 0 = TVD (DO NOT USE), 3 = WENO)
 
 [mesh:ddy]
-first = C2
-second = C2
+first = C4
+second = C4
 upwind = W3
 
 [mesh:ddz]
@@ -59,7 +60,9 @@ upwind = W3
 
 [laplace]
 nonuniform = true
-#max_mode = 16                  # Maximum N to solve for
+type = tri
+include_yguards = false
+# maxmode = 16                  # Maximum N to solve for
 
 ##################################################
 # FFTs
@@ -137,17 +140,17 @@ experiment_Er = false          # Using experimental E_r
 Er0_factor = 1.0
 KH_term = false                # switch to Kelvin-Helmholtz term
 
-compress0 = false               # open the ion velocity equation
-continuity = false              # use continuity eqution
-eHall = false                   # electron Hall effects
-energy_flux = false             # energy flux
-energy_exch = false             # energy exchange
-thermal_force = false           # thermal force
-gyroviscous = false             # gyroviscous in vorticity
+compress0 = true               # open the ion velocity equation
+continuity = true              # use continuity eqution
+eHall = true                   # electron Hall effects
+energy_flux = true             # energy flux
+energy_exch = true             # energy exchange
+thermal_force = true           # thermal force
+gyroviscous = true             # gyroviscous in vorticity
 parallel_viscous = false       # parallel viscosity terms
 
-include_jpar0 = false           # determines whether to include jpar0 terms
-include_curvature = false       # include curvature drive term?
+include_jpar0 = true           # determines whether to include jpar0 terms
+include_curvature = true       # include curvature drive term?
 include_vipar = false          # include Vpar_dot_Grad terms [TEST]
 include_vpar0 = false          # include Vpar0 terms. Vpar0  is the ecuilibrium 2D backgraound from 2D trasnport simulations [TEST]
 include_U0 = false             # include U0 terms. U0 is the ecuilibrium 2D vorticity backgraound from 2D trasnport simulations [TEST]
@@ -159,7 +162,7 @@ core_lund = -1.0e8             # Lundquist number in core (negative -> infinity)
 hyperresist = 1.0e-14          # Hyper-resistivity coefficient (like 1 / Lundquist number)
 
 ## Pressure diffusion
-diffusion_par = -1.0            # parallel thermal conductivity (>0 open)
+diffusion_par = 1.0            # parallel thermal conductivity (>0 open)
 diffusion_perp = -1.0          # perpendicular thermal conductivity (>0 open), Landau damping closure not supported.
 diff_par_flutter = false       # the perturbed part of the termal conduction
 
@@ -179,8 +182,8 @@ local_q = true                 # using magnetic field to calculate q profile, no
 #Landau_coeff = 1.0             # Coefficient for Landau Damping
 
 ## neoclassic switch
-neoclassic_i = false            # switch for ion neoclassical transport
-neoclassic_e = false            # switch for electron neoclassical transport
+neoclassic_i = true            # switch for ion neoclassical transport
+neoclassic_e = true            # switch for electron neoclassical transport
 epsilon = 0.4                  # the value of inverse aspect ratio
 
 #############################################################################
@@ -293,7 +296,7 @@ Mm = 2.0                       # in Mi
 
 ## Fixed fraction model for impurity radiation
 fix_fraction_imp = false
-Limp_carbon = true             # carbon
+Limp_carbon = false             # carbon
 Limp_nitro = false             # nitrogen
 Limp_Neon = false              # Neon
 Limp_Argon = false             # Argon
@@ -388,8 +391,8 @@ heating_P = -1                 # heat power in watts (< 0 = none) # Not used
 hp_width = 0.1                 # heat width, in percentage of nx (< 0 = none) # Not used
 hp_length = 0.3                # heat length in percentage of nx (< 0 = none) # Not used
 
-## sink rate in pressure
-sink_vp = -10.0                # sink rate in pressure (< 0 = none)
+## sink rate in parallel velocity
+sink_vp = -10.0                # left edge sink rate in Vipar (< 0 = none)
 sp_width = 0.06                # sink width, in percentage of nx (< 0 = none)
 sp_length = 0.1                # sink length in percentage of nx (< 0 = none)
 
@@ -420,6 +423,8 @@ phi_curv = true                # Include curvature*Grad(phi) in P equation # Not
 [phiSolver]
 inner_boundary_flags = 1 + 4    # INVERT_DC_GRAD + INVERT_AC_LAP
 outer_boundary_flags = 4        # INVERT_AC_LAP
+type = tri
+include_yguards = false
 
 [aparSolver]
 inner_boundary_flags = 1 + 4    # INVERT_DC_GRAD + INVERT_AC_LAP
@@ -448,41 +453,57 @@ function = 1.0
 bndry_all = dirichlet # Default to zero-value
 
 [U]   # vorticity
-scale = 1.0 #1.0e-5
-function = sin(z) * exp(-((x-0.5)/0.1)^2) * exp(-((y/(2*pi)-0.5)/0.3)^2)
-#function = sin(y) 
+scale = 1.0e-5
+#function = sin(z) * exp(-((x-0.5)/0.1)^2) * exp(-((y/(2*pi)-0.5)/0.3)^2)
+function = sin(z) * exp(-((x-0.5)/0.1)^2) 
 
-#bndry_core = neumann
-#bndry_xin = neumann
-#bndry_xout = neumann
-#bndry_sol = neumann
+bndry_core = neumann
+bndry_sol = dirichlet
+bndry_pf = dirichlet
+bndry_xin = dirichlet
+bndry_xout = dirichlet
+bndry_lower_target = neumann
+bndry_upper_target = neumann
 
 [Ni]  # number density
 #scale = 1.0e-5
-#bndry_core = neumann
-#bndry_xin = neumann
-#bndry_xout = neumann
-#bndry_sol = neumann
+bndry_core = neumann
+bndry_sol = dirichlet
+bndry_pf = dirichlet
+bndry_xin = dirichlet
+bndry_xout = dirichlet
+bndry_lower_target = dirichlet
+bndry_upper_target = dirichlet
 
 [Ti]  # ion temperature
 # scale = 1.0e-5
-#bndry_core = neumann
-#bndry_sol = neumann
-#bndry_xin = neumann
-#bndry_xout = neumann
+bndry_core = neumann
+bndry_sol = dirichlet
+bndry_pf = dirichlet
+bndry_xin = dirichlet
+bndry_xout = dirichlet
+bndry_lower_target = dirichlet
+bndry_upper_target = dirichlet
 
 [Te]  # electron density
 # scale = 1.0e-5
-#bndry_core = neumann
-#bndry_sol = neumann
-#bndry_xin = neumann
-#bndry_xout = neumann
+bndry_core = neumann
+bndry_sol = dirichlet
+bndry_pf = dirichlet
+bndry_xin = dirichlet
+bndry_xout = dirichlet
+bndry_lower_target = dirichlet
+bndry_upper_target = dirichlet
 
 [P]  # pressure
 # scale = 1.0e-5
-# bndry_core = neumann
-# bndry_xin = neumann
-# bndry_xout = neumann
+bndry_core = neumann
+bndry_sol = dirichlet
+bndry_pf = dirichlet
+bndry_xin = dirichlet
+bndry_xout = dirichlet
+bndry_lower_target = dirichlet
+bndry_upper_target = dirichlet
 
 [Psi] # Vector potential
 # zero laplacian
@@ -492,26 +513,39 @@ bndry_xout = zerolaplace
 [J]    # parallel current
 # Zero gradient in the core
 #bndry_core = neumann
-#bndry_xin = neumann
-#bndry_xout = neumann
+bndry_core = neumann
+bndry_sol = dirichlet
+bndry_pf = dirichlet
+bndry_xin = dirichlet
+bndry_xout = dirichlet
+bndry_lower_target = dirichlet
+bndry_upper_target = dirichlet
 
 [Vipar]
 bndry_core = neumann
-#bndry_xin = neumann
-#bndry_xout = neumann
-#bndry_sol = neumann
+bndry_sol = dirichlet
+bndry_pf = dirichlet
+bndry_xin = dirichlet
+bndry_xout = dirichlet
+bndry_lower_target = dirichlet
+bndry_upper_target = dirichlet
 
 [phi]
 bndry_core = neumann
-# bndry_sol = neumann
-#bndry_xin = neumann
-#bndry_xout = neumann
+bndry_sol = neumann
+bndry_pf = neumann
+bndry_xin = neumann
+bndry_xout = neumann
+bndry_lower_target = neumann
+bndry_upper_target = neumann
 
 [kappa] # boundary for collision rate and conductivities
 bndry_core = neumann
 bndry_sol = neumann
 bndry_xin = neumann
 bndry_xout = neumann
+bndry_lower_target = neumann
+bndry_upper_target = neumann
 
 #[Nn] # number density
 #scale = 1.0e-5
