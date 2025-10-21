@@ -15,6 +15,8 @@
  *
  */
 
+BOUT_ENUM_CLASS(SheathLimitMode, limit_free, exponential_free, linear_free);
+
 namespace bout {
 namespace parallel_boundary_region {
 
@@ -40,12 +42,48 @@ struct Indices {
   Indices(Ind3D index, RealPoint&& intersection, BoutReal length, signed char valid,
           signed char offset, unsigned char abs_offset)
       : index(index), intersection(intersection), length(length), valid(valid),
-        offset(offset), abs_offset(abs_offset){};
+        offset(offset), abs_offset(abs_offset) {};
 };
 
 using IndicesVec = std::vector<Indices>;
 using IndicesIter = IndicesVec::iterator;
 using IndicesIterConst = IndicesVec::const_iterator;
+
+/// Limited free gradient of log of a quantity
+/// This ensures that the guard cell values remain positive
+/// while also ensuring that the quantity never increases
+///
+///  fm  fc | fp
+///         ^ boundary
+///
+/// exp( 2*log(fc) - log(fm) )
+inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc, SheathLimitMode mode) {
+  if ((fm < fc) && (mode == SheathLimitMode::limit_free)) {
+    return fc; // Neumann rather than increasing into boundary
+  }
+  if (fm < 1e-10) {
+    return fc; // Low / no density condition
+  }
+
+  BoutReal fp = 0;
+  switch (mode) {
+  case SheathLimitMode::limit_free:
+  case SheathLimitMode::exponential_free:
+    fp = SQ(fc) / fm; // Exponential
+    break;
+  case SheathLimitMode::linear_free:
+    fp = 2.0 * fc - fm; // Linear
+    break;
+  }
+
+#if CHECKLEVEL >= 2
+  if (!std::isfinite(fp)) {
+    throw BoutException("SheathBoundary limitFree: {}, {} -> {}", fm, fc, fp);
+  }
+#endif
+
+  return fp;
+}
 
 inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc) {
   if (fm < fc) {
@@ -74,31 +112,10 @@ class BoundaryRegionPar : public BoundaryRegionBase {
   IndicesIter bndry_position;
 
 public:
-  BoundaryRegionPar(const std::string& name, int dir, Mesh* passmesh)
-      : BoundaryRegionBase(name, passmesh), dir(dir) {
-    ASSERT0(std::abs(dir) == 1);
-    BoundaryRegionBase::isParallel = true;
-  }
-  BoundaryRegionPar(const std::string& name, BndryLoc loc, int dir, Mesh* passmesh)
-      : BoundaryRegionBase(name, loc, passmesh), dir(dir) {
-    BoundaryRegionBase::isParallel = true;
-    ASSERT0(std::abs(dir) == 1);
-  }
-
-  /// Add a point to the boundary
-  void add_point(Ind3D ind, BoutReal x, BoutReal y, BoutReal z, BoutReal length,
-                 signed char valid) {
-    bndry_points.emplace_back({ind, {x, y, z}, length, valid});
-  }
-  void add_point(int ix, int iy, int iz, BoutReal x, BoutReal y, BoutReal z,
-                 BoutReal length, signed char valid) {
-    bndry_points.emplace_back({xyz2ind(ix, iy, iz, localmesh), {x, y, z}, length, valid});
-  }
-
-  // final, so they can be inlined
-  void first() final { bndry_position = begin(bndry_points); }
-  void next() final { ++bndry_position; }
-  bool isDone() final { return (bndry_position == end(bndry_points)); }
+  BoundaryRegionParIterBase(IndicesVec& bndry_points, IndicesIter bndry_position, int dir,
+                            Mesh* localmesh)
+      : bndry_points(bndry_points), bndry_position(bndry_position), dir(dir),
+        localmesh(localmesh) {};
 
   // getter
   Ind3D ind() const { return bndry_position->index; }
