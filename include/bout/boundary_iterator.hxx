@@ -51,6 +51,14 @@ public:
     return 0.5 * (3 * f(0, ind()) - f(0, ind().yp(-by).xp(-bx)));
   }
 
+  BoutReal extrapolate_sheath_free(const Field3D& f, SheathLimitMode mode) const {
+    const BoutReal fac =
+        bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f), mode);
+    BoutReal val = ythis(f);
+    BoutReal next = mode == SheathLimitMode::linear_free ? val + fac : val * fac;
+    return 0.5 * (val + next);
+  }
+
   void limitFree(Field3D& f) const {
     const BoutReal fac =
         bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f));
