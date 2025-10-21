@@ -514,6 +514,7 @@ public:
   std::weak_ptr<Options> getTracking() { return tracking; };
 
   inline Field3DParallel asField3DParallel();
+  inline const Field3DParallel asField3DParallel() const;
 
 protected:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
@@ -781,6 +782,9 @@ private:
 };
 
 Field3DParallel Field3D::asField3DParallel() { return Field3DParallel(*this); }
+const Field3DParallel Field3D::asField3DParallel() const {
+  return Field3DParallel(*this);
+}
 
 
 inline Field3D operator+(const Field2D& lhs, const Field3DParallel& rhs) {
