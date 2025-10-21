@@ -16,6 +16,8 @@
  *
  */
 
+BOUT_ENUM_CLASS(SheathLimitMode, limit_free, exponential_free, linear_free);
+
 namespace bout {
 namespace parallel_boundary_region {
 
@@ -41,12 +43,48 @@ struct Indices {
   Indices(Ind3D index, RealPoint&& intersection, BoutReal length, signed char valid,
           signed char offset, unsigned char abs_offset)
       : index(index), intersection(intersection), length(length), valid(valid),
-        offset(offset), abs_offset(abs_offset){};
+        offset(offset), abs_offset(abs_offset) {};
 };
 
 using IndicesVec = std::vector<Indices>;
 using IndicesIter = IndicesVec::iterator;
 using IndicesIterConst = IndicesVec::const_iterator;
+
+/// Limited free gradient of log of a quantity
+/// This ensures that the guard cell values remain positive
+/// while also ensuring that the quantity never increases
+///
+///  fm  fc | fp
+///         ^ boundary
+///
+/// exp( 2*log(fc) - log(fm) )
+inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc, SheathLimitMode mode) {
+  if ((fm < fc) && (mode == SheathLimitMode::limit_free)) {
+    return fc; // Neumann rather than increasing into boundary
+  }
+  if (fm < 1e-10) {
+    return fc; // Low / no density condition
+  }
+
+  BoutReal fp = 0;
+  switch (mode) {
+  case SheathLimitMode::limit_free:
+  case SheathLimitMode::exponential_free:
+    fp = SQ(fc) / fm; // Exponential
+    break;
+  case SheathLimitMode::linear_free:
+    fp = 2.0 * fc - fm; // Linear
+    break;
+  }
+
+#if CHECKLEVEL >= 2
+  if (!std::isfinite(fp)) {
+    throw BoutException("SheathBoundary limitFree: {}, {} -> {}", fm, fc, fp);
+  }
+#endif
+
+  return fp;
+}
 
 inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc) {
   if (fm < fc) {
@@ -70,7 +108,7 @@ public:
   BoundaryRegionParIterBase(IndicesVec& bndry_points, IndicesIter bndry_position, int dir,
                             Mesh* localmesh)
       : bndry_points(bndry_points), bndry_position(bndry_position), dir(dir),
-        localmesh(localmesh){};
+        localmesh(localmesh) {};
 
   // getter
   Ind3D ind() const { return bndry_position->index; }
