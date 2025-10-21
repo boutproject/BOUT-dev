@@ -606,6 +606,28 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
   // Allow transform to fix things up
   transform->loadParallelMetrics(this);
+
+  if (Bxy.isFci()) {
+    BoutReal maxError = 0;
+    auto BJg = Bxy.asField3DParallel() * J / sqrt(g_22);
+    for (int p = -mesh->ystart ; p <= mesh->ystart ; p++) {
+      if (p==0) {
+	continue;
+      }
+      BOUT_FOR(i, BJg.getRegion("RGN_NO_BNDRY")) {
+	auto local = BJg[i] / BJg.ynext(p)[i.yp(p)];
+	maxError = std::max(std::abs(local-1),  maxError);
+      }
+    }
+    BoutReal allowedError = (*options)["allowedFluxError"].withDefault(1e-6);
+    if (maxError < allowedError / 100) {
+      output_info.write("\tInfo: The maximum flux conservation error is {:e}", maxError);
+    } else if (maxError < allowedError) {
+      output_warn.write("\tWarning: The maximum flux conservation error is {:e}", maxError);
+    } else {
+      throw BoutException("Error: The maximum flux conservation error is {:e}", maxError);
+    }
+  }
 }
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
