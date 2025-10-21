@@ -107,9 +107,13 @@ public:
     return ythis(f) * (1 + length()) - yprev(f) * length();
   }
 
-  inline BoutReal interpolate_sheath_o1(const Field3D& f) const {
+  inline BoutReal interpolate_sheath_o2(const Field3D& f) const {
     return ythis(f) * (1 - length()) + ynext(f) * length();
   }
+  inline BoutReal interpolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+    return ythis(f) * (1 - length()) + ynext(f) * length();
+  }
+
 
   inline BoutReal extrapolate_next_o1(const Field3D& f) const { return ythis(f); }
   inline BoutReal extrapolate_next_o2(const Field3D& f) const {

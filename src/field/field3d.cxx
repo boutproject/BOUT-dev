@@ -529,7 +529,7 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices) {
       for (auto& region : fieldmesh->getBoundariesPar()) {
         for (const auto& pnt : *region) {
           // Interpolate midpoint value in f3d
-          const BoutReal val = pnt.interpolate_sheath_o1(f3d);
+          const BoutReal val = pnt.interpolate_sheath_o2(f3d);
           // Set the same boundary value in this field
           pnt.dirichlet_o1(*this, val);
         }
