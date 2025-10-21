@@ -285,6 +285,23 @@ public:
     return val * length() + next * (1 - length());
   }
 
+  void set_free(Field3D& f, SheathLimitMode mode) const {
+    const auto fac = valid() > 0 ? limitFreeScale(yprev(f), ythis(f), mode)
+                                 : (mode == SheathLimitMode::linear_free ? 0 : 1);
+    auto val = ythis(f);
+    if (mode == SheathLimitMode::linear_free) {
+      ITER() {
+        val += fac;
+        getAt(f, i) = val;
+      }
+    } else {
+      ITER() {
+        val *= fac;
+        getAt(f, i) = val;
+      }
+    }
+  }
+
   void setAll(Field3D& f, const BoutReal val) const {
     for (int i = -localmesh->ystart; i <= localmesh->ystart; ++i) {
       f.ynext(i)[ind().yp(i)] = val;
