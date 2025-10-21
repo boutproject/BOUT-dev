@@ -43,7 +43,7 @@ public:
     return 2 * f(0, ind()) - f(0, ind().yp(-by).xp(-bx));
   }
 
-  BoutReal interpolate_sheath_o1(const Field3D& f) const {
+  BoutReal interpolate_sheath_o2(const Field3D& f) const {
     return (f[ind()] + ynext(f)) * 0.5;
   }
   BoutReal
