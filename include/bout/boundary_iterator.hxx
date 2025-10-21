@@ -59,6 +59,23 @@ public:
     return 0.5 * (val + next);
   }
 
+  void set_free(Field3D& f, SheathLimitMode mode) const {
+    const BoutReal fac =
+        bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f), mode);
+    BoutReal val = ythis(f);
+    if (mode == SheathLimitMode::linear_free) {
+      for (int i = 1; i <= localmesh->ystart; ++i) {
+        val += fac;
+        f[ind().yp(by * i).xp(bx * i)] = val;
+      }
+    } else {
+      for (int i = 1; i <= localmesh->ystart; ++i) {
+        val *= fac;
+        f[ind().yp(by * i).xp(bx * i)] = val;
+      }
+    }
+  }
+
   void limitFree(Field3D& f) const {
     const BoutReal fac =
         bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f));
