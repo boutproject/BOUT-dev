@@ -446,7 +446,32 @@ void Field3D::setBoundaryTo(const Field3D& f3d) {
 
   allocate(); // Make sure data allocated
 
-  /// Loop over boundary regions
+  if (isFci()) {
+    ASSERT1(f3d.hasParallelSlices());
+    if (copyParallelSlices) {
+      splitParallelSlices();
+      for (int i = 0; i < fieldmesh->ystart; ++i) {
+        yup(i) = f3d.yup(i);
+        ydown(i) = f3d.ydown(i);
+      }
+    } else {
+      // Set yup/ydown using midpoint values from f3d
+      ASSERT1(hasParallelSlices());
+
+      for (auto& region : fieldmesh->getBoundariesPar()) {
+        for (const auto& pnt : *region) {
+          // Interpolate midpoint value in f3d
+          const BoutReal val = pnt.interpolate_sheath_o2(f3d);
+          // Set the same boundary value in this field
+          pnt.dirichlet_o1(*this, val);
+        }
+      }
+    }
+  }
+
+  // Non-FCI.
+  // Transform to field-aligned coordinates?
+  // Loop over boundary regions
   for (const auto& reg : fieldmesh->getBoundaries()) {
     /// Loop within each region
     for (reg->first(); !reg->isDone(); reg->next()) {
