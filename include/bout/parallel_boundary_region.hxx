@@ -277,6 +277,14 @@ public:
     }
   }
 
+  BoutReal extrapolate_sheath_free(const Field3D& f, SheathLimitMode mode) const {
+    const auto fac = valid() > 0 ? limitFreeScale(yprev(f), ythis(f), mode)
+                                 : (mode == SheathLimitMode::linear_free ? 0 : 1);
+    auto val = ythis(f);
+    BoutReal next = mode == SheathLimitMode::linear_free ? val + fac : val * fac;
+    return val * length() + next * (1 - length());
+  }
+
   void setAll(Field3D& f, const BoutReal val) const {
     for (int i = -localmesh->ystart; i <= localmesh->ystart; ++i) {
       f.ynext(i)[ind().yp(i)] = val;
