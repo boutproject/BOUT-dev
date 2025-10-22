@@ -46,6 +46,12 @@ public:
   BoutReal interpolate_sheath_o2(const Field3D& f) const {
     return (f[ind()] + ynext(f)) * 0.5;
   }
+
+  BoutReal
+  interpolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+    return (f(0, ind()) + f(0, ind().yp(-by).xp(-bx))) * 0.5;
+  }
+
   BoutReal
   extrapolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
     return 0.5 * (3 * f(0, ind()) - f(0, ind().yp(-by).xp(-bx)));
