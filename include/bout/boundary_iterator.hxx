@@ -92,6 +92,11 @@ public:
     }
   }
 
+  bool is_lower() const {
+    ASSERT2(bx == 0);
+    return by == -1;
+  }
+
   void neumann_o1(Field3D& f, BoutReal grad) const {
     BoutReal val = ythis(f);
     for (int i = 1; i <= localmesh->ystart; ++i) {
