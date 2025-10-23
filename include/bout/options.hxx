@@ -205,6 +205,14 @@ public:
       bout::utils::variant<bool, int, BoutReal, std::string, Field2D, Field3D, FieldPerp,
                            Array<BoutReal>, Matrix<BoutReal>, Tensor<BoutReal>>;
 
+  /// Methods to iterate over `Options`
+  auto begin() { return std::begin(children); }
+  auto end() { return std::end(children); }
+  auto begin() const { return std::begin(children); }
+  auto end() const { return std::end(children); }
+  auto cbegin() const { return std::cbegin(children); }
+  auto cend() const { return std::cend(children); }
+
   /// A tree representation with leaves containing ValueType.
   /// Used to construct Options from initializer lists.
   ///
