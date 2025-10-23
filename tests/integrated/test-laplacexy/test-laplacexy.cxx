@@ -64,10 +64,10 @@ int main(int argc, char** argv) {
     rhs = a * Delp2(f, CELL_DEFAULT, false) + coords->g11 * DDX(a) * DDX(f) + b * f;
   }
 
-  LaplaceXY laplacexy;
-  laplacexy.setCoefs(a, b);
+  auto laplacexy = LaplaceXY::create();
+  laplacexy->setCoefs(a, b);
 
-  Field2D solution = laplacexy.solve(rhs, 0.);
+  Field2D solution = laplacexy->solve(rhs, 0.);
   Field2D relative_error = (f - solution) / f;
   Field2D absolute_error = f - solution;
   BoutReal max_error = max(abs(absolute_error), true);

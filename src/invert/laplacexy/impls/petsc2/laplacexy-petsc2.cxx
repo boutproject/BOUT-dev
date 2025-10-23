@@ -2,26 +2,25 @@
 
 #if BOUT_HAS_PETSC and not BOUT_USE_METRIC_3D
 
+#include "laplacexy-petsc2.hxx"
+
 #include <bout/assert.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/globals.hxx>
-#include <bout/invert/laplacexy2.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
 #include <petscksp.h>
 
-#include <cmath>
-
 namespace {
 Ind2D index2d(Mesh* mesh, int x, int y) {
   int ny = mesh->LocalNy;
-  return Ind2D(x * ny + y, ny, 1);
+  return Ind2D((x * ny) + y, ny, 1);
 }
 } // namespace
 
-LaplaceXY2::LaplaceXY2(Mesh* m, Options* opt, const CELL_LOC loc)
+LaplaceXYpetsc2::LaplaceXYpetsc2(Mesh* m, Options* opt, const CELL_LOC loc)
     : localmesh(m == nullptr ? bout::globals::mesh : m),
       indexConverter(std::make_shared<GlobalIndexer<Field2D>>(
           localmesh, squareStencil<Field2D::ind_type>(localmesh))),
@@ -100,12 +99,12 @@ LaplaceXY2::LaplaceXY2(Mesh* m, Options* opt, const CELL_LOC loc)
   // Decide boundary condititions
   if (localmesh->periodicY(localmesh->xstart)) {
     // Periodic in Y, so in the core
-    opt->get("core_bndry_dirichlet", x_inner_dirichlet, false);
+    x_inner_dirichlet = (*opt)["core_bndry_dirichlet"].withDefault(false);
   } else {
     // Non-periodic, so in the PF region
-    opt->get("pf_bndry_dirichlet", x_inner_dirichlet, true);
+    x_inner_dirichlet = (*opt)["pf_bndry_dirichlet"].withDefault(true);
   }
-  opt->get("y_bndry_dirichlet", y_bndry_dirichlet, false);
+  y_bndry_dirichlet = (*opt)["y_bndry_dirichlet"].withDefault(false);
 
   ///////////////////////////////////////////////////
   // Including Y derivatives?
@@ -123,7 +122,7 @@ LaplaceXY2::LaplaceXY2(Mesh* m, Options* opt, const CELL_LOC loc)
   setCoefs(one, zero);
 }
 
-void LaplaceXY2::setCoefs(const Field2D& A, const Field2D& B) {
+void LaplaceXYpetsc2::setCoefs(const Field2D& A, const Field2D& B) {
   Timer timer("invert");
 
   ASSERT1(A.getMesh() == localmesh);
@@ -290,7 +289,7 @@ void LaplaceXY2::setCoefs(const Field2D& A, const Field2D& B) {
 #endif
 }
 
-LaplaceXY2::~LaplaceXY2() {
+LaplaceXYpetsc2::~LaplaceXYpetsc2() {
   PetscBool is_finalised;
   PetscFinalized(&is_finalised);
 
@@ -300,7 +299,7 @@ LaplaceXY2::~LaplaceXY2() {
   }
 }
 
-Field2D LaplaceXY2::solve(const Field2D& rhs, const Field2D& x0) {
+Field2D LaplaceXYpetsc2::solve(const Field2D& rhs, const Field2D& x0) {
   Timer timer("invert");
 
   ASSERT1(rhs.getMesh() == localmesh);
@@ -310,7 +309,8 @@ Field2D LaplaceXY2::solve(const Field2D& rhs, const Field2D& x0) {
 
   // Load initial guess x0 into xs and rhs into bs
 
-  PetscVector<Field2D> xs(x0, indexConverter), bs(rhs, indexConverter);
+  PetscVector<Field2D> xs(x0, indexConverter);
+  PetscVector<Field2D> bs(rhs, indexConverter);
 
   if (localmesh->firstX()) {
     if (x_inner_dirichlet) {
@@ -381,11 +381,11 @@ Field2D LaplaceXY2::solve(const Field2D& rhs, const Field2D& x0) {
   // Solve the system
   KSPSolve(ksp, *bs.get(), *xs.get());
 
-  KSPConvergedReason reason;
+  KSPConvergedReason reason = KSP_CONVERGED_ITERATING;
   KSPGetConvergedReason(ksp, &reason);
 
   if (reason <= 0) {
-    throw BoutException("LaplaceXY2 failed to converge. Reason {} ({:d})",
+    throw BoutException("LaplaceXYpetsc2 failed to converge. Reason {} ({:d})",
                         KSPConvergedReasons[reason], static_cast<int>(reason));
   }
 

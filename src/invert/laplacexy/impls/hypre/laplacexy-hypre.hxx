@@ -30,63 +30,39 @@
  *
  **************************************************************************/
 
-#ifndef BOUT_LAPLACE_XY2_H
-#define BOUT_LAPLACE_XY2_H
+#ifndef LAPLACE_XY2_HYPRE_H
+#define LAPLACE_XY2_HYPRE_H
 
 #include "bout/build_defines.hxx"
+#include "bout/invert/laplacexy.hxx"
 
-#if (not BOUT_HAS_PETSC) or BOUT_USE_METRIC_3D
-// If no PETSc or 3D metrics
+#if !BOUT_HAS_PETSC
 
-#warning LaplaceXY2 requires PETSc and 2D metrics. No LaplaceXY2 available
+namespace {
+RegisterUnavailableLaplaceXY
+    registerlaplacexyhypre("hypre", "BOUT++ was not configured with HYPRE");
+}
 
-#include <bout/boutexception.hxx>
-#include <bout/mesh.hxx>
-#include <bout/options.hxx>
+#else // BOUT_HAS_PETSC
 
-/*!
- * Create a dummy class so that code will compile
- * without PETSc, but will throw an exception if
- * LaplaceXY is used.
- */
-class LaplaceXY2 {
+class Mesh;
+
+#include <bout/hypre_interface.hxx>
+
+class LaplaceXY2Hypre : public LaplaceXY {
 public:
-  LaplaceXY2(Mesh* UNUSED(m) = nullptr, Options* UNUSED(opt) = nullptr,
-             const CELL_LOC UNUSED(loc) = CELL_CENTRE) {
-    throw BoutException(
-        "LaplaceXY2 requires PETSc and 2D metrics. No LaplaceXY2 available");
-  }
-  void setCoefs(const Field2D& UNUSED(A), const Field2D& UNUSED(B)) {}
-  Field2D solve(const Field2D& UNUSED(rhs), const Field2D& UNUSED(x0)) {
-    throw BoutException(
-        "LaplaceXY2 requires PETSc and 2D metrics. No LaplaceXY2 available");
-  }
-};
-
-#else // BOUT_HAS_PETSC and 2D metrics
-
-#include "bout/utils.hxx"
-#include <bout/cyclic_reduction.hxx>
-#include <bout/mesh.hxx>
-#include <bout/petsc_interface.hxx>
-#include <bout/petsclib.hxx>
-
-class LaplaceXY2 {
-public:
-  /*!
-   * Constructor
-   */
-  LaplaceXY2(Mesh* m = nullptr, Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
-  /*!
-   * Destructor
-   */
-  ~LaplaceXY2();
+  LaplaceXY2Hypre(Mesh* m = nullptr, Options* opt = nullptr, CELL_LOC loc = CELL_CENTRE);
+  LaplaceXY2Hypre(const LaplaceXY2Hypre&) = delete;
+  LaplaceXY2Hypre(LaplaceXY2Hypre&&) = delete;
+  LaplaceXY2Hypre& operator=(const LaplaceXY2Hypre&) = delete;
+  LaplaceXY2Hypre& operator=(LaplaceXY2Hypre&&) = delete;
+  ~LaplaceXY2Hypre() override = default;
 
   /*!
    * Set coefficients (A, B) in equation:
    * Div( A * Grad_perp(x) ) + B*x = b
    */
-  void setCoefs(const Field2D& A, const Field2D& B);
+  void setCoefs(const Field2D& A, const Field2D& B) override;
 
   /*!
    * Solve Laplacian in X-Y
@@ -105,24 +81,22 @@ public:
    * The solution as a Field2D. On failure an exception will be raised
    *
    */
-  Field2D solve(const Field2D& rhs, const Field2D& x0);
+  Field2D solve(const Field2D& rhs, const Field2D& x0) override;
 
   /*!
    * Preconditioner function
-   * This is called by PETSc via a static function.
+   * This is called by Hypre via a static function.
    * and should not be called by external users
    */
-  int precon(Vec x, Vec y);
+  // int precon(HYPRE_IJVector x, HYPRE_IJVector y);
 
 private:
-  PetscLib lib; ///< Requires PETSc library
-
   Mesh* localmesh; ///< The mesh this operates on, provides metrics and communication
-
   IndexerPtr<Field2D> indexConverter;
-  PetscMatrix<Field2D> matrix; ///< Matrix to be inverted
-  KSP ksp;                     ///< Krylov Subspace solver
-  PC pc;                       ///< Preconditioner
+  bout::HypreMatrix<Field2D> M;
+  bout::HypreVector<Field2D> x;
+  bout::HypreVector<Field2D> b;
+  bout::HypreSystem<Field2D> linearSystem;
 
   // Y derivatives
   bool include_y_derivs; // Include Y derivative terms?
@@ -130,6 +104,8 @@ private:
   // Boundary conditions
   bool x_inner_dirichlet; // Dirichlet on inner X boundary?
   bool y_bndry_dirichlet; // Dirichlet on Y boundary?
+
+  bool print_timing;
 
   // Location of the rhs and solution
   CELL_LOC location;
@@ -140,5 +116,9 @@ private:
   MPI_Comm communicator();
 };
 
-#endif // BOUT_HAS_PETSC
-#endif // BOUT_LAPLACE_XY2_H
+namespace {
+const inline RegisterLaplaceXY<LaplaceXY2Hypre> registerlaplacexyhypre{"hypre"};
+}
+
+#endif // BOUT_HAS_HYPRE
+#endif // LAPLACE_XY_HYPRE_H
