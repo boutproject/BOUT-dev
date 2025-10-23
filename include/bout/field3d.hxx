@@ -777,6 +777,8 @@ public:
     return *this;
   }
   Field3DParallel& operator=(BoutReal);
+  Field3DParallel& allocate();
+
 private:
   void ensureFieldAligned();
 };
