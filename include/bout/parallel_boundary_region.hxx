@@ -43,7 +43,7 @@ struct Indices {
   Indices(Ind3D index, RealPoint&& intersection, BoutReal length, signed char valid,
           signed char offset, unsigned char abs_offset)
       : index(index), intersection(intersection), length(length), valid(valid),
-        offset(offset), abs_offset(abs_offset) {};
+        offset(offset), abs_offset(abs_offset){};
 };
 
 using IndicesVec = std::vector<Indices>;
@@ -108,7 +108,7 @@ public:
   BoundaryRegionParIterBase(IndicesVec& bndry_points, IndicesIter bndry_position, int dir,
                             Mesh* localmesh)
       : bndry_points(bndry_points), bndry_position(bndry_position), dir(dir),
-        localmesh(localmesh) {};
+        localmesh(localmesh){};
 
   // getter
   Ind3D ind() const { return bndry_position->index; }
