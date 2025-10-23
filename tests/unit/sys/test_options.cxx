@@ -1439,3 +1439,14 @@ TEST_F(OptionsTest, BoolCompound) {
   ASSERT_TRUE(Options("true & !false").as<bool>());
   ASSERT_TRUE(Options("2 > 1 & 2 < 3").as<bool>());
 }
+
+TEST_F(OptionsTest, Iterate) {
+  Options option{{{"value1", 1}, {"value2", 2}}};
+
+  for (auto& [name, value] : option) {
+    value.force(value.as<int>() + 1);
+  }
+
+  ASSERT_EQ(option["value1"], 2);
+  ASSERT_EQ(option["value2"], 3);
+}
