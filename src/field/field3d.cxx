@@ -1012,3 +1012,17 @@ void Field3DParallel::ensureFieldAligned() {
     }
   }
 }
+
+Field3DParallel& Field3DParallel::allocate() {
+  Field3D::allocate();
+  if (isFci()) {
+    ASSERT2(hasParallelSlices());
+    if (fieldmesh != nullptr) {
+      for (int i = 0; i < fieldmesh->ystart; ++i) {
+        yup_fields[i].allocate();
+        ydown_fields[i].allocate();
+      }
+    }
+  }
+  return *this;
+}
