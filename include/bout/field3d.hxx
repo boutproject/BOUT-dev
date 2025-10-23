@@ -739,27 +739,28 @@ inline Field3D copy(const Field3D& f) {
 /// "main" field, Field3DParallel will retain the parallel slices.
 class Field3DParallel : public Field3D {
 public:
-  template <class... Types>
+  explicit template <class... Types>
   Field3DParallel(Types... args) : Field3D(std::move(args)...) {
     ensureFieldAligned();
   }
   // Explicitly needed, as DirectionTypes is sometimes constructed from a
   // brace enclosed list
-  Field3DParallel(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
-                  DirectionTypes directions_in = {YDirectionType::Standard,
-                                                  ZDirectionType::Standard},
-                  std::optional<size_t> regionID = {})
+  explicit Field3DParallel(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
+                           DirectionTypes directions_in = {YDirectionType::Standard,
+                                                           ZDirectionType::Standard},
+                           std::optional<size_t> regionID = {})
       : Field3D(localmesh, location_in, directions_in, regionID) {
     splitParallelSlices();
     ensureFieldAligned();
   }
-  Field3DParallel(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
-                  DirectionTypes directions_in = {YDirectionType::Standard,
-                                                  ZDirectionType::Standard})
+  explicit Field3DParallel(Array<BoutReal> data, Mesh* localmesh,
+                           CELL_LOC location = CELL_CENTRE,
+                           DirectionTypes directions_in = {YDirectionType::Standard,
+                                                           ZDirectionType::Standard})
       : Field3D(std::move(data), localmesh, location, directions_in) {
     ensureFieldAligned();
   }
-  Field3DParallel(BoutReal, Mesh* mesh = nullptr);
+  explicit Field3DParallel(BoutReal, Mesh* mesh = nullptr);
   Field3D& asField3D() { return *this; }
   const Field3D& asField3D() const { return *this; }
 
@@ -786,6 +787,7 @@ public:
     return *this;
   }
   Field3DParallel& operator=(BoutReal);
+  Field3DParallel& allocate();
 
 private:
   void ensureFieldAligned();
