@@ -28,33 +28,28 @@
 
 /*******************************************************************************/
 
+#include "bout/build_defines.hxx"
+#include "bout/options.hxx"
 #include <bout/bout.hxx>
 #include <bout/constants.hxx>
 #include <bout/derivs.hxx>
+#include <bout/derivs.hxx>
+#include <bout/field_factory.hxx>
 #include <bout/initialprofiles.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/invert/laplacexy.hxx>
 #include <bout/invert_laplace.hxx>
+#include <bout/invert_laplace.hxx>
 #include <bout/invert_parderiv.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/physicsmodel.hxx>
+#include <bout/rajalib.hxx> // Defines BOUT_FOR_RAJA
+#include <bout/single_index_ops.hxx>
+#include <bout/smoothing.hxx>
 #include <bout/sourcex.hxx>
 #include <bout/utils.hxx>
 
 #include <math.h>
-
-#include <bout/derivs.hxx>
-#include <bout/invert_laplace.hxx>
-#include <bout/physicsmodel.hxx>
-#include <bout/single_index_ops.hxx>
-#include <bout/smoothing.hxx>
-
-#include <bout/rajalib.hxx> // Defines BOUT_FOR_RAJA
-
-#if BOUT_HAS_HYPRE
-#include <bout/invert/laplacexy2_hypre.hxx>
-#endif
-
-#include <bout/field_factory.hxx>
 
 CELL_LOC loc = CELL_CENTRE;
 
@@ -90,6 +85,10 @@ CELL_LOC loc = CELL_CENTRE;
 BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_target", "neumann");
 BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xin", "none");
 BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xout", "none");
+
+#if BOUT_HAS_HYPRE
+BOUT_OVERRIDE_DEFAULT_OPTION("laplacexy:type", "hypre");
+#endif
 
 /// 3-field ELM simulation
 class ELMpb : public PhysicsModel {
@@ -242,11 +241,7 @@ private:
 
   bool split_n0; // Solve the n=0 component of potential
 
-#if BOUT_HAS_HYPRE
-  std::unique_ptr<LaplaceXY2Hypre> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
-#else
   std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
-#endif
 
   Field2D phi2D; // Axisymmetric phi
 
@@ -567,13 +562,11 @@ public:
     split_n0 = options["split_n0"]
                    .doc("Solve zonal (n=0) component of potential using LaplaceXY?")
                    .withDefault(false);
+
     if (split_n0) {
       // Create an XY solver for n=0 component
-#if BOUT_HAS_HYPRE
-      laplacexy = bout::utils::make_unique<LaplaceXY2Hypre>(mesh);
-#else
-      laplacexy = bout::utils::make_unique<LaplaceXY>(mesh);
-#endif
+      laplacexy = LaplaceXY::create(mesh);
+
       // Set coefficients for Boussinesq solve
       laplacexy->setCoefs(1.0, 0.0);
       phi2D = 0.0; // Starting guess
