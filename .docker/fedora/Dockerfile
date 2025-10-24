@@ -22,7 +22,7 @@ RUN git clone $URL \
  && git checkout $COMMIT \
  && git submodule update --init --recursive
 
-
+ENV HOME=/home/boutuser
 WORKDIR /home/boutuser/BOUT-dev
 
 RUN cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/opt/bout++/ \
@@ -36,4 +36,11 @@ RUN cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/opt/bout++/ \
 RUN make -C build -j 2
 RUN sudo make -C build install
 
+ENV PATH=/opt/bout++/bin:$PATH \
+    LD_LIBRARY_PATH=/opt/bout++/lib:/opt/petsc/lib/:$LD_LIBRARY_PATH \
+    PYTHONPATH=/opt/bout++/lib/python3.13/site-packages/:$PYTHONPATH
+
+# Debug
 RUN find /opt/bout++
+# smoke test
+RUN python3 -c 'import boutpp'
