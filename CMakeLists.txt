@@ -177,6 +177,7 @@ set(BOUT_SOURCES
   ./include/bout/sys/range.hxx
   ./include/bout/sys/timer.hxx
   ./include/bout/sys/type_name.hxx
+  ./include/bout/twiddle.hxx
   ./include/bout/sys/uncopyable.hxx
   ./include/bout/sys/uuid.h
   ./include/bout/sys/variant.hxx
@@ -239,7 +240,7 @@ set(BOUT_SOURCES
   ./include/bout/invert/laplacexy2.hxx
   ./src/invert/laplacexy2/laplacexy2.cxx
   ./include/bout/invert/laplacexy2_hypre.hxx
-  ./src/invert/laplacexy2/laplacexy2_hypre.cxx 
+  ./src/invert/laplacexy2/laplacexy2_hypre.cxx
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.cxx
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.hxx
   ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.cxx
@@ -525,7 +526,7 @@ if (BOUT_ENABLE_WARNINGS)
     $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
       -Wall -Wextra > >
     $<$<CXX_COMPILER_ID:MSVC>:
-      /W4 >  
+      /W4 >
     $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=-Wall -Xcompiler=-Wextra >
    )
 
