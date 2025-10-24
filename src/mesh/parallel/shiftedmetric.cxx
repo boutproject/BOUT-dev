@@ -501,13 +501,11 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
   static Array<const BoutReal*> blocks_in(nblocks);
   static Array<BoutReal*> blocks_out(nblocks);
   static Array<const double2*> phs_in(nblocks);
-#endif
 
   for (const auto& phase : parallel_slice_phases) {
     auto& f_slice = f.ynext(phase.y_offset);
     f_slice.allocate();
 
-#if BOUT_HAS_CUDA
     static struct StreamRAII {
       cudaStream_t stream = 0;
       StreamRAII() {
@@ -550,7 +548,12 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
                      nbatches, stream.get());
 
     stream.synchronize();
+  }
 #else
+  for (const auto& phase : parallel_slice_phases) {
+    auto& f_slice = f.ynext(phase.y_offset);
+    f_slice.allocate();
+
     BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
       const int ix = i.x();
       const int iy = i.y();
@@ -558,8 +561,8 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
       shiftZ(&(f(ix, iy_offset, 0)), &(phase.phase_shift(ix, iy, 0)),
              &(f_slice(ix, iy_offset, 0)));
     }
-#endif
   }
+#endif
 }
 
 std::vector<Field3D>
