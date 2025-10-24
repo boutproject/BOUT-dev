@@ -36,14 +36,14 @@
 #include "bout/build_defines.hxx"
 #include "bout/invert/laplacexy.hxx"
 
-#if !BOUT_HAS_PETSC
+#if !BOUT_HAS_HYPRE
 
 namespace {
 RegisterUnavailableLaplaceXY
     registerlaplacexyhypre("hypre", "BOUT++ was not configured with HYPRE");
 }
 
-#else // BOUT_HAS_PETSC
+#else // BOUT_HAS_HYPRE
 
 class Mesh;
 
