@@ -67,9 +67,7 @@ using RegisterUnavailableLaplaceXY = LaplaceXYFactory::RegisterUnavailableInFact
 
 class LaplaceXY {
 public:
-  LaplaceXY(Mesh* m = nullptr, [[maybe_unused]] Options* options = nullptr,
-            const CELL_LOC loc = CELL_CENTRE)
-      : localmesh(m == nullptr ? bout::globals::mesh : m), location(loc) {}
+  LaplaceXY() = default;
   LaplaceXY(const LaplaceXY&) = default;
   LaplaceXY(LaplaceXY&&) = delete;
   LaplaceXY& operator=(const LaplaceXY&) = default;
@@ -90,9 +88,6 @@ protected:
   static const int INVERT_AC_GRAD = 2; // Use zero neumann (NOTE: AC is a misnomer)
   static const int INVERT_SET = 16;    // Set boundary to x0 value
   static const int INVERT_RHS = 32;    // Set boundary to b value
-private:
-  Mesh* localmesh; ///< The mesh this operates on, provides metrics and communication
-  CELL_LOC location;
 };
 
 #endif // BOUT_LAPLACEXY_H
