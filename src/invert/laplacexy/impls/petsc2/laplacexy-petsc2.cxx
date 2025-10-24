@@ -128,7 +128,7 @@ LaplaceXYpetsc2::LaplaceXYpetsc2(Mesh* m, Options* opt, const CELL_LOC loc)
   Field2D zero(0., localmesh);
   one.setLocation(location);
   zero.setLocation(location);
-  setCoefs(one, zero);
+  LaplaceXYpetsc2::setCoefs(one, zero);
 }
 
 void LaplaceXYpetsc2::setCoefs(const Field2D& A, const Field2D& B) {
