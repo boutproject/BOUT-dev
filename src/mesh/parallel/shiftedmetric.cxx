@@ -72,7 +72,6 @@ void ShiftedMetric::cachePhases() {
   toAlignedPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
 
   // To/From field aligned phases
-  // std::cout << "[TRACE] BOUT_FOR " << __FILE__ << ":" << __LINE__ << "\n";
   BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
     int ix = i.x();
     int iy = i.y();
@@ -111,7 +110,6 @@ void ShiftedMetric::cachePhases() {
 
   // Parallel slice phases -- note we don't shift in the boundaries/guards
   for (auto& slice : parallel_slice_phases) {
-    // std::cout << "[TRACE] BOUT_FOR " << __FILE__ << ":" << __LINE__ << "\n";
     BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
 
       int ix = i.x();
@@ -173,7 +171,6 @@ Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
 
   Field3D result{emptyFrom(f).setDirectionY(y_direction_out)};
 
-  // std::cout << "[TRACE] BOUT_FOR " << __FILE__ << ":" << __LINE__ << "\n";
   BOUT_FOR(i, mesh.getRegion2D(toString(region))) {
     shiftZ(&f(i, 0), &phs(i.x(), i.y(), 0), &result(i, 0));
   }
@@ -204,8 +201,7 @@ FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
   return result;
 }
 
-void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* out,
-                           int num_batches) const {
+void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* out) const {
 #if BOUT_HAS_UMPIRE
   // TODO: This static keyword is a hotfix and should be removed in
   //      future iterations. It is here because otherwise many allocations
@@ -217,7 +213,7 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* ou
 #endif
 
   // Take forward FFT
-  rfft(in, mesh.LocalNz * num_batches, &cmplx[0]);
+  rfft(in, mesh.LocalNz, &cmplx[0]);
 
   // Following is an algorithm approach to write a = a*b where a and b are
   // vectors of dcomplex.
@@ -246,13 +242,14 @@ __device__ inline unsigned int bit_reverse(unsigned int x, unsigned int log2n) {
 // Block-level cooperative FFT
 // Multiple threads cooperate on each FFT using shared memory
 template <int NZ, int FFTS_PER_BLOCK = 4>
-__global__ void
-fft_block_cooperative(const BoutReal** __restrict__ in, BoutReal** __restrict__ out,
-                      const double2** __restrict__ blocks_phs, const int Nz_runtime,
-                      const int nmodes, const int batches, const int nblocks) {
+__global__ void fft_block_cooperative(const BoutReal** __restrict__ in,
+                                      BoutReal** __restrict__ out,
+                                      const double2** __restrict__ blocks_phs,
+                                      const int batches, const int nblocks) {
 
   constexpr int LOG2_NZ = __builtin_ctz(NZ);
   constexpr double INV_NZ = 1.0 / (double)NZ;
+  constexpr int NMODES = (NZ / 2) + 1;
 
   // Shared memory for FFTS_PER_BLOCK FFTs
   // Each FFT needs NZ complex values
@@ -261,15 +258,15 @@ fft_block_cooperative(const BoutReal** __restrict__ in, BoutReal** __restrict__ 
   // Select twiddles based on size
   const double2* twiddles;
   if constexpr (NZ == 16) {
-    twiddles = c_twiddle_fwd_16;
+    twiddles = c_twiddle_16;
   } else if constexpr (NZ == 64) {
-    twiddles = c_twiddle_fwd_64;
+    twiddles = c_twiddle_64;
   } else if constexpr (NZ == 128) {
-    twiddles = c_twiddle_fwd_128;
+    twiddles = c_twiddle_128;
   } else if constexpr (NZ == 256) {
-    twiddles = c_twiddle_fwd_256;
+    twiddles = c_twiddle_256;
   } else if constexpr (NZ == 512) {
-    twiddles = c_twiddle_fwd_512;
+    twiddles = c_twiddle_512;
   } else {
     static_assert(NZ == 16 || NZ == 64 || NZ == 128 || NZ == 256 || NZ == 512,
                   "Unsupported NZ");
@@ -340,18 +337,18 @@ fft_block_cooperative(const BoutReal** __restrict__ in, BoutReal** __restrict__ 
   }
 
   // ===== APPLY PHASE SHIFT =====
-  for (int k = tid; k < nmodes; k += threads_per_fft) {
-    const double2 ph = phs[batch * nmodes + k];
+  for (int k = tid; k < NMODES; k += threads_per_fft) {
+    const double2 ph = phs[batch * NMODES + k];
     const double real = shared_fft[fft_id_in_block][k].x;
     const double imag = shared_fft[fft_id_in_block][k].y;
     shared_fft[fft_id_in_block][k].x = real * ph.x - imag * ph.y;
     shared_fft[fft_id_in_block][k].y = real * ph.y + imag * ph.x;
   }
 
-  for (int k = tid + nmodes; k < NZ; k += threads_per_fft) {
-    if (k >= nmodes) {
+  for (int k = tid + NMODES; k < NZ; k += threads_per_fft) {
+    if (k >= NMODES) {
       const int kk = NZ - k;
-      const double2 tmp = phs[batch * nmodes + kk];
+      const double2 tmp = phs[batch * NMODES + kk];
       const double real = shared_fft[fft_id_in_block][k].x;
       const double imag = shared_fft[fft_id_in_block][k].y;
       shared_fft[fft_id_in_block][k].x = real * tmp.x + imag * tmp.y;
@@ -418,18 +415,15 @@ fft_block_cooperative(const BoutReal** __restrict__ in, BoutReal** __restrict__ 
 }
 
 // Launcher for block-level cooperative FFT
-static void shiftZ_block_fft(Mesh& mesh, const BoutReal** in, BoutReal** out,
-                             const double2** phs, int nblocks, int batches,
+static void shiftZ_block_fft(const int Nz, const BoutReal** in, BoutReal** out,
+                             const double2** phs, int nblocks, int nbatches,
                              cudaStream_t stream = 0) {
-  int Nz = mesh.LocalNz;
-  int nmodes = Nz / 2 + 1;
-
   if ((Nz & (Nz - 1)) != 0) {
     fprintf(stderr, "Error: Nz=%d must be power of 2\n", Nz);
     return;
   }
 
-  const int total_ffts = nblocks * batches;
+  const int total_ffts = nblocks * nbatches;
 
   if (Nz == 16) {
     constexpr int FFTS_PER_BLOCK = 16;
@@ -439,7 +433,7 @@ static void shiftZ_block_fft(Mesh& mesh, const BoutReal** in, BoutReal** out,
     dim3 grid((total_ffts + FFTS_PER_BLOCK - 1) / FFTS_PER_BLOCK);
 
     fft_block_cooperative<16, FFTS_PER_BLOCK>
-        <<<grid, block, 0, stream>>>(in, out, phs, Nz, nmodes, batches, nblocks);
+        <<<grid, block, 0, stream>>>(in, out, phs, nbatches, nblocks);
   } else if (Nz == 64) {
     constexpr int FFTS_PER_BLOCK = 4;
     constexpr int THREADS_PER_FFT = 64; // Use 64 threads per FFT
@@ -448,7 +442,7 @@ static void shiftZ_block_fft(Mesh& mesh, const BoutReal** in, BoutReal** out,
     dim3 grid((total_ffts + FFTS_PER_BLOCK - 1) / FFTS_PER_BLOCK);
 
     fft_block_cooperative<64, FFTS_PER_BLOCK>
-        <<<grid, block, 0, stream>>>(in, out, phs, Nz, nmodes, batches, nblocks);
+        <<<grid, block, 0, stream>>>(in, out, phs, nbatches, nblocks);
 
   } else if (Nz == 128) {
     constexpr int FFTS_PER_BLOCK = 2;
@@ -458,7 +452,7 @@ static void shiftZ_block_fft(Mesh& mesh, const BoutReal** in, BoutReal** out,
     dim3 grid((total_ffts + FFTS_PER_BLOCK - 1) / FFTS_PER_BLOCK);
 
     fft_block_cooperative<128, FFTS_PER_BLOCK>
-        <<<grid, block, 0, stream>>>(in, out, phs, Nz, nmodes, batches, nblocks);
+        <<<grid, block, 0, stream>>>(in, out, phs, nbatches, nblocks);
 
   } else if (Nz == 256) {
     constexpr int FFTS_PER_BLOCK = 1;
@@ -468,7 +462,7 @@ static void shiftZ_block_fft(Mesh& mesh, const BoutReal** in, BoutReal** out,
     dim3 grid(total_ffts);
 
     fft_block_cooperative<256, FFTS_PER_BLOCK>
-        <<<grid, block, 0, stream>>>(in, out, phs, Nz, nmodes, batches, nblocks);
+        <<<grid, block, 0, stream>>>(in, out, phs, nbatches, nblocks);
 
   } else if (Nz == 512) {
     constexpr int FFTS_PER_BLOCK = 1;
@@ -478,10 +472,9 @@ static void shiftZ_block_fft(Mesh& mesh, const BoutReal** in, BoutReal** out,
     dim3 grid(total_ffts);
 
     fft_block_cooperative<512, FFTS_PER_BLOCK>
-        <<<grid, block, 0, stream>>>(in, out, phs, Nz, nmodes, batches, nblocks);
+        <<<grid, block, 0, stream>>>(in, out, phs, nbatches, nblocks);
   } else {
-    fprintf(stderr, "Unsupported Nz=%d for block FFT\n", Nz);
-    throw std::runtime_error("Unsupported Nz for block FFT");
+    throw std::runtime_error("Unsupported Nz " + std::to_string(Nz) + " for block FFT");
   }
 
   cudaError_t err = cudaGetLastError();
@@ -516,16 +509,30 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
     f_slice.allocate();
 
 #if BOUT_HAS_CUDA
+    static struct StreamRAII {
+      cudaStream_t stream = 0;
+      StreamRAII() {
+        if (cudaStreamCreate(&stream) != cudaSuccess) {
+          throw BoutException("Failed to create CUDA stream");
+        }
+      }
+
+      cudaStream_t get() const { return stream; }
+
+      void synchronize() const { cudaStreamSynchronize(stream); }
+
+      ~StreamRAII() { cudaStreamDestroy(stream); }
+    } stream;
     size_t block_idx = 0;
-    int num_batches =
+    int nbatches =
         region.getBlocks().cbegin()->second.ind - region.getBlocks().cbegin()->first.ind;
 
     for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();
          block < end; ++block) {
       auto idx_s = block->first;
       auto idx_e = block->second;
-      int inner_batches = idx_e.ind - idx_s.ind;
-      if (inner_batches != num_batches) {
+      int inner_nbatches = idx_e.ind - idx_s.ind;
+      if (inner_nbatches != nbatches) {
         throw BoutException(
             "Non-uniform number of batches in ShiftedMetric::calcParallelSlices");
       }
@@ -540,12 +547,11 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
       block_idx++;
     }
 
-    shiftZ_block_fft(mesh, &blocks_in[0], &blocks_out[0], &phs_in[0], nblocks,
-                     num_batches, 0);
+    shiftZ_block_fft(mesh.LocalNz, &blocks_in[0], &blocks_out[0], &phs_in[0], nblocks,
+                     nbatches, stream.get());
 
-    cudaDeviceSynchronize();
+    stream.synchronize();
 #else
-    // std::cout << "[TRACE] BOUT_FOR " << __FILE__ << ":" << __LINE__ << "\n";
     BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
       const int ix = i.x();
       const int iy = i.y();
@@ -553,8 +559,6 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
       shiftZ(&(f(ix, iy_offset, 0)), &(phase.phase_shift(ix, iy, 0)),
              &(f_slice(ix, iy_offset, 0)));
     }
-    //std::cout << "ShiftedMetric::shiftZ " << __FILE__ << " :" << __LINE__
-    //          << " count = " << count << " each size " << mesh.LocalNz << "\n";
 #endif
   }
 }
@@ -572,7 +576,6 @@ ShiftedMetric::shiftZ(const Field3D& f,
   Matrix<Array<dcomplex>> f_fft(mesh.LocalNx, mesh.LocalNy);
   f_fft = Array<dcomplex>(nmodes);
 
-  // std::cout << "[TRACE] BOUT_FOR " << __FILE__ << ":" << __LINE__ << "\n";
   BOUT_FOR(i, mesh.getRegion2D("RGN_ALL")) {
     int ix = i.x();
     int iy = i.y();
@@ -587,7 +590,6 @@ ShiftedMetric::shiftZ(const Field3D& f,
     current_result.allocate();
     current_result.setLocation(f.getLocation());
 
-    // std::cout << "[TRACE] BOUT_FOR " << __FILE__ << ":" << __LINE__ << "\n";
     BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
       // Deep copy the FFT'd field
       int ix = i.x();
