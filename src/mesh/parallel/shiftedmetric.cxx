@@ -227,6 +227,7 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* ou
   irfft(&cmplx[0], mesh.LocalNz, out); // Reverse FFT
 }
 
+#if BOUT_HAS_CUDA
 // Bit-reversal
 __device__ inline unsigned int bit_reverse(unsigned int x, unsigned int log2n) {
   unsigned int result = 0;
@@ -244,7 +245,7 @@ template <int NZ, int FFTS_PER_BLOCK = 4>
 __global__ void fft_block_cooperative(const BoutReal** __restrict__ in,
                                       BoutReal** __restrict__ out,
                                       const double2** __restrict__ blocks_phs,
-                                      const int batches, const int nblocks) {
+                                      const int nbatches, const int nblocks) {
 
   constexpr int LOG2_NZ = __builtin_ctz(NZ);
   constexpr double INV_NZ = 1.0 / (double)NZ;
@@ -276,11 +277,11 @@ __global__ void fft_block_cooperative(const BoutReal** __restrict__ in,
       threadIdx.y; // Which FFT this thread works on (0 to FFTS_PER_BLOCK-1)
   const int global_fft_id = blockIdx.x * FFTS_PER_BLOCK + fft_id_in_block;
 
-  if (global_fft_id >= nblocks * batches)
+  if (global_fft_id >= nblocks * nbatches)
     return;
 
-  const int block = global_fft_id / batches;
-  const int batch = global_fft_id % batches;
+  const int block = global_fft_id / nbatches;
+  const int batch = global_fft_id % nbatches;
 
   const double* __restrict__ in_line = in[block] + batch * NZ;
   double* __restrict__ out_line = out[block] + batch * NZ;
@@ -480,6 +481,7 @@ static void shiftZ_block_fft(const int Nz, const BoutReal** in, BoutReal** out,
     throw std::runtime_error(std::string("Block FFT failed: ") + cudaGetErrorString(err));
   }
 }
+#endif
 
 void ShiftedMetric::calcParallelSlices(Field3D& f) {
   if (f.getDirectionY() == YDirectionType::Aligned) {
@@ -490,8 +492,8 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
 
   f.splitParallelSlices();
 
+#if BOUT_HAS_CUDA
   auto& region = mesh.getRegion2D("RGN_NOY");
-
   static size_t nblocks = region.getBlocks().size();
   if (nblocks != region.getBlocks().size()) {
     throw BoutException("Number of blocks changed in ShiftedMetric::calcParallelSlices");
@@ -499,6 +501,7 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
   static Array<const BoutReal*> blocks_in(nblocks);
   static Array<BoutReal*> blocks_out(nblocks);
   static Array<const double2*> phs_in(nblocks);
+#endif
 
   for (const auto& phase : parallel_slice_phases) {
     auto& f_slice = f.ynext(phase.y_offset);
