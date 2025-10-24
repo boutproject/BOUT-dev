@@ -9,6 +9,9 @@ CheckOptions:
   # otherwise this breaks `ASSERT` macros!
   - key:             readability-simplify-boolean-expr.IgnoreMacros
     value:           'true'
+
+  - key: misc-include-cleaner.IgnoreHeaders
+    value: 'petsc.*\.h;mpi\.h'
 ---
 
 Disabled checks and reasons:
