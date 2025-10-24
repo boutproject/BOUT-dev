@@ -227,7 +227,6 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* ou
   irfft(&cmplx[0], mesh.LocalNz, out); // Reverse FFT
 }
 
-/* NEW CODE */
 // Bit-reversal
 __device__ inline unsigned int bit_reverse(unsigned int x, unsigned int log2n) {
   unsigned int result = 0;
@@ -364,16 +363,15 @@ __global__ void fft_block_cooperative(const BoutReal** __restrict__ in,
   }
   __syncthreads();
 
-  // Bit-reverse for inverse
-  __shared__ double2 temp_fft[FFTS_PER_BLOCK][NZ];
-  for (int i = tid; i < NZ; i += threads_per_fft) {
+  // Bit-reverse with standard swap to avoid temp array
+  // This is tricky but saves memory
+  for (int i = tid; i < NZ / 2; i += threads_per_fft) {
     const unsigned int rev_i = bit_reverse(i, LOG2_NZ);
-    temp_fft[fft_id_in_block][rev_i] = shared_fft[fft_id_in_block][i];
-  }
-  __syncthreads();
-
-  for (int i = tid; i < NZ; i += threads_per_fft) {
-    shared_fft[fft_id_in_block][i] = temp_fft[fft_id_in_block][i];
+    if (i < rev_i) { // Only swap once per pair
+      double2 temp = shared_fft[fft_id_in_block][i];
+      shared_fft[fft_id_in_block][i] = shared_fft[fft_id_in_block][rev_i];
+      shared_fft[fft_id_in_block][rev_i] = temp;
+    }
   }
   __syncthreads();
 
@@ -427,18 +425,18 @@ static void shiftZ_block_fft(const int Nz, const BoutReal** in, BoutReal** out,
 
   if (Nz == 16) {
     constexpr int FFTS_PER_BLOCK = 16;
-    constexpr int THREADS_PER_FFT = 16; // Use 64 threads per FFT
+    constexpr int THREADS_PER_FFT = 16;
 
-    dim3 block(THREADS_PER_FFT, FFTS_PER_BLOCK); // 16 x 16 = 256 threads
+    dim3 block(THREADS_PER_FFT, FFTS_PER_BLOCK);
     dim3 grid((total_ffts + FFTS_PER_BLOCK - 1) / FFTS_PER_BLOCK);
 
     fft_block_cooperative<16, FFTS_PER_BLOCK>
         <<<grid, block, 0, stream>>>(in, out, phs, nbatches, nblocks);
   } else if (Nz == 64) {
     constexpr int FFTS_PER_BLOCK = 4;
-    constexpr int THREADS_PER_FFT = 64; // Use 64 threads per FFT
+    constexpr int THREADS_PER_FFT = 64;
 
-    dim3 block(THREADS_PER_FFT, FFTS_PER_BLOCK); // 64 x 4 = 256 threads
+    dim3 block(THREADS_PER_FFT, FFTS_PER_BLOCK);
     dim3 grid((total_ffts + FFTS_PER_BLOCK - 1) / FFTS_PER_BLOCK);
 
     fft_block_cooperative<64, FFTS_PER_BLOCK>
@@ -448,7 +446,7 @@ static void shiftZ_block_fft(const int Nz, const BoutReal** in, BoutReal** out,
     constexpr int FFTS_PER_BLOCK = 2;
     constexpr int THREADS_PER_FFT = 128;
 
-    dim3 block(THREADS_PER_FFT, FFTS_PER_BLOCK); // 128 x 2 = 256 threads
+    dim3 block(THREADS_PER_FFT, FFTS_PER_BLOCK);
     dim3 grid((total_ffts + FFTS_PER_BLOCK - 1) / FFTS_PER_BLOCK);
 
     fft_block_cooperative<128, FFTS_PER_BLOCK>
@@ -458,7 +456,7 @@ static void shiftZ_block_fft(const int Nz, const BoutReal** in, BoutReal** out,
     constexpr int FFTS_PER_BLOCK = 1;
     constexpr int THREADS_PER_FFT = 256;
 
-    dim3 block(THREADS_PER_FFT, FFTS_PER_BLOCK); // 256 x 1 = 256 threads
+    dim3 block(THREADS_PER_FFT, FFTS_PER_BLOCK);
     dim3 grid(total_ffts);
 
     fft_block_cooperative<256, FFTS_PER_BLOCK>
@@ -466,9 +464,9 @@ static void shiftZ_block_fft(const int Nz, const BoutReal** in, BoutReal** out,
 
   } else if (Nz == 512) {
     constexpr int FFTS_PER_BLOCK = 1;
-    constexpr int THREADS_PER_FFT = 512; // 512 threads per FFT
+    constexpr int THREADS_PER_FFT = 512;
 
-    dim3 block(THREADS_PER_FFT, FFTS_PER_BLOCK); // 512 x 1 = 512 threads
+    dim3 block(THREADS_PER_FFT, FFTS_PER_BLOCK);
     dim3 grid(total_ffts);
 
     fft_block_cooperative<512, FFTS_PER_BLOCK>
@@ -482,8 +480,6 @@ static void shiftZ_block_fft(const int Nz, const BoutReal** in, BoutReal** out,
     throw std::runtime_error(std::string("Block FFT failed: ") + cudaGetErrorString(err));
   }
 }
-
-/* END NEWER CODE */
 
 void ShiftedMetric::calcParallelSlices(Field3D& f) {
   if (f.getDirectionY() == YDirectionType::Aligned) {
