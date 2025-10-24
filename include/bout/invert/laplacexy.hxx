@@ -33,12 +33,15 @@
 #ifndef BOUT_LAPLACEXY_H
 #define BOUT_LAPLACEXY_H
 
+#include <bout/bout_types.hxx>
 #include <bout/field2d.hxx>
 #include <bout/generic_factory.hxx>
 #include <bout/mesh.hxx>
-#include <bout/options.hxx>
+
+#include <string>
 
 class LaplaceXY;
+class Options;
 class Solver;
 
 class LaplaceXYFactory

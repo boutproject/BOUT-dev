@@ -4,14 +4,22 @@
 
 #include "laplacexy-petsc.hxx"
 
-#include <bout/assert.hxx>
-#include <bout/boutcomm.hxx>
-#include <bout/derivs.hxx>
-#include <bout/globals.hxx>
-#include <bout/output.hxx>
-#include <bout/sys/timer.hxx>
-#include <bout/utils.hxx>
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutcomm.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/cyclic_reduction.hxx"
+#include "bout/derivs.hxx"
+#include "bout/field2d.hxx"
+#include "bout/globals.hxx"
+#include "bout/options.hxx"
+#include "bout/petsclib.hxx"
+#include "bout/sys/range.hxx"
+#include "bout/solver.hxx"
+#include "bout/sys/timer.hxx"
+#include "bout/utils.hxx"
 
+#include <fmt/format.h>
 #include <petscksp.h>
 
 #include <cmath>

@@ -45,11 +45,16 @@ RegisterUnavailableLaplaceXY
 
 #else // BOUT_HAS_PETSC
 
-#include "bout/solver.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/cyclic_reduction.hxx"
+#include "bout/field2d.hxx"
+#include "bout/mesh.hxx"
+#include "bout/monitor.hxx"
+#include "bout/petsclib.hxx"
 #include "bout/utils.hxx"
-#include <bout/cyclic_reduction.hxx>
-#include <bout/mesh.hxx>
-#include <bout/petsclib.hxx>
+
+#include <memory>
+#include <string>
 
 class Options;
 class Solver;

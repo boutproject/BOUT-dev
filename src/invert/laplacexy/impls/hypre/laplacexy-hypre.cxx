@@ -5,11 +5,22 @@
 #include "laplacexy-hypre.hxx"
 
 #include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/field2d.hxx"
+#include "bout/globalindexer.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/operatorstencil.hxx"
+#include "bout/options.hxx"
 #include "bout/output.hxx"
+#include "bout/region.hxx"
+#include "bout/sys/range.hxx"
 #include "bout/sys/timer.hxx"
+
+#include <chrono>
+#include <memory>
 
 #if BOUT_HAS_CUDA && defined(__CUDACC__)
 #define gpuErrchk(ans) \

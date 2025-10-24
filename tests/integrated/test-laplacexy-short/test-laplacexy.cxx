@@ -24,11 +24,19 @@
  **************************************************************************/
 
 #include <bout/bout.hxx>
-#include <bout/constants.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/derivs.hxx>
+#include <bout/difops.hxx>
+#include <bout/field2d.hxx>
+#include <bout/globals.hxx>
 #include <bout/initialprofiles.hxx>
 #include <bout/invert/laplacexy.hxx>
 #include <bout/options.hxx>
+#include <bout/options_io.hxx>
+#include <bout/output.hxx>
+#include <bout/vecops.hxx>
+
+#include <cstdlib>
 
 int main(int argc, char** argv) {
 

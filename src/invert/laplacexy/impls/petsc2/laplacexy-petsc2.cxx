@@ -4,12 +4,21 @@
 
 #include "laplacexy-petsc2.hxx"
 
-#include <bout/assert.hxx>
-#include <bout/boutcomm.hxx>
-#include <bout/globals.hxx>
-#include <bout/output.hxx>
-#include <bout/sys/timer.hxx>
-#include <bout/utils.hxx>
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutcomm.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/field2d.hxx"
+#include "bout/globalindexer.hxx"
+#include "bout/globals.hxx"
+#include "bout/operatorstencil.hxx"
+#include "bout/options.hxx"
+#include "bout/petsc_interface.hxx"
+#include "bout/region.hxx"
+#include "bout/sys/range.hxx"
+#include "bout/sys/timer.hxx"
+
+#include <memory>
 
 #include <petscksp.h>
 

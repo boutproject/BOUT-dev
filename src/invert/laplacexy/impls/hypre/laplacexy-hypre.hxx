@@ -47,7 +47,10 @@ RegisterUnavailableLaplaceXY
 
 class Mesh;
 
-#include <bout/hypre_interface.hxx>
+#include "bout/bout_types.hxx"
+#include "bout/field2d.hxx"
+#include "bout/globalindexer.hxx"
+#include "bout/hypre_interface.hxx"
 
 class LaplaceXY2Hypre : public LaplaceXY {
 public:

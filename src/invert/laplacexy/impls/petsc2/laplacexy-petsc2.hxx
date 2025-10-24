@@ -50,10 +50,12 @@ RegisterUnavailableLaplaceXY
 
 #else // BOUT_HAS_PETSC
 
-#include <bout/cyclic_reduction.hxx>
-#include <bout/mesh.hxx>
-#include <bout/petsc_interface.hxx>
-#include <bout/petsclib.hxx>
+#include "bout/bout_types.hxx"
+#include "bout/field2d.hxx"
+#include "bout/globalindexer.hxx"
+#include "bout/mesh.hxx"
+#include "bout/petsc_interface.hxx"
+#include "bout/petsclib.hxx"
 
 class LaplaceXYpetsc2 : public LaplaceXY {
 public:
