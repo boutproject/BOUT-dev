@@ -517,6 +517,39 @@ TEST(BoutMeshTest, ChooseProcessorSplitNYPE) {
   EXPECT_EQ(mesh.getNYPE(), 4);
 }
 
+TEST(getMeshTopologyTest, ReturnsCFLWhenNoXPoints) {
+  BoutMesh mesh;
+  mesh.numberOfXPoints = 0;
+  EXPECT_EQ(mesh.getMeshTopology(1, 2, 3, 4, 5, 6, 7), "CFL");
+}
+
+TEST(getMeshTopologyTest, ReturnsSNWhenOneXPoint) {
+  BoutMesh mesh;
+  mesh.numberOfXPoints = 1;
+  EXPECT_EQ(mesh.getMeshTopology(1, 2, 3, 4, 5, 6, 7), "SN");
+}
+
+TEST(getMeshTopologyTest, ReturnsSFWhenSnowflakeConditionMet) {
+  BoutMesh mesh;
+  mesh.numberOfXPoints = 2;
+  // ny_inner between jyseps1_2 and jyseps2_2
+  EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 15, 1, 1), "SF");
+}
+
+TEST(getMeshTopologyTest, ReturnsUDNWhenTwoXPointsDifferentIndices) {
+  BoutMesh mesh;
+  mesh.numberOfXPoints = 2;
+  // ny_inner not between jyseps1_2 and jyseps2_2
+  EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 2), "UDN");
+}
+
+TEST(getMeshTopologyTest, ReturnsCDNWhenTwoXPointsSameIndices) {
+  BoutMesh mesh;
+  mesh.numberOfXPoints = 2;
+  // ny_inner not between jyseps1_2 and jyseps2_2
+  EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 1), "CDN");
+}
+
 struct FindProcessorParameters {
   int total_processors;
   int nx;

@@ -25,6 +25,10 @@ public:
   /// Read in the mesh from data sources
   int load() override;
 
+  std::string getMeshTopology(int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
+                                        int jyseps2_2_, int ny_inner_, int ixseps1_,
+                                        int ixseps2_);
+
   /////////////////////////////////////////////
   // Communicate variables
 

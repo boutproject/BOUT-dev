@@ -152,6 +152,39 @@ void BoutMesh::setXDecompositionIndices(const XDecompositionIndices& indices) {
   ixseps2 = indices.ixseps2;
 }
 
+std::string BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
+                                        int jyseps2_2_, int ny_inner_, int ixseps1_,
+                                        int ixseps2_) {
+  // Set member variables
+  jyseps1_1 = jyseps1_1_;
+  jyseps2_1 = jyseps2_1_;
+  jyseps1_2 = jyseps1_2_;
+  jyseps2_2 = jyseps2_2_;
+  ny_inner = ny_inner_;
+
+  ixseps1 = ixseps1_;
+  ixseps2 = ixseps2_;
+
+  std::string topology;
+
+  if (numberOfXPoints == 0) {
+    topology = "CFL"; //Closed loop
+  } else if (numberOfXPoints == 1) {
+    topology = "SN"; // Single Null
+  } else if (numberOfXPoints == 2) {
+    if (jyseps1_2 <= ny_inner and ny_inner <= jyseps2_2) {
+        topology =  "SF";} // Snowflake
+    else {
+        if (ixseps1 != ixseps2) {
+            topology =  "UDN";} // Unconnected Double Null
+        else {
+            topology =  "CDN"; // Connected Double Null
+        }
+    }
+  }
+  return topology;
+}
+
 namespace bout {
 CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
                                             int num_y_guards, int jyseps1_1,
