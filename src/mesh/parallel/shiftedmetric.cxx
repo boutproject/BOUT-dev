@@ -346,14 +346,12 @@ __global__ void fft_block_cooperative(const BoutReal** __restrict__ in,
   }
 
   for (int k = tid + NMODES; k < NZ; k += threads_per_fft) {
-    if (k >= NMODES) {
-      const int kk = NZ - k;
-      const double2 tmp = phs[batch * NMODES + kk];
-      const double real = shared_fft[fft_id_in_block][k].x;
-      const double imag = shared_fft[fft_id_in_block][k].y;
-      shared_fft[fft_id_in_block][k].x = real * tmp.x + imag * tmp.y;
-      shared_fft[fft_id_in_block][k].y = -real * tmp.y + imag * tmp.x;
-    }
+    const int kk = NZ - k;
+    const double2 tmp = phs[batch * NMODES + kk];
+    const double real = shared_fft[fft_id_in_block][k].x;
+    const double imag = shared_fft[fft_id_in_block][k].y;
+    shared_fft[fft_id_in_block][k].x = real * tmp.x + imag * tmp.y;
+    shared_fft[fft_id_in_block][k].y = -real * tmp.y + imag * tmp.x;
   }
   __syncthreads();
 
