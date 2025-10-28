@@ -64,6 +64,13 @@ jobs:
             cmake_options: ""
             on_cron: false
 
+          - name: "With CUDA"
+            os: ubuntu-22.04
+            cmake_options: "-BOUT_ENABLE_CUDA=ON"
+            on_cron: false
+            with_cuda: true
+            unit_only: true
+
           - name: "Optimised, static"
             os: ubuntu-latest
             cmake_options: "-DCHECK=0
@@ -195,6 +202,10 @@ jobs:
 
       - name: Build ADIOS2
         run: BUILD_ADIOS2=${{ matrix.config.build_adios2 }} ./.build_adios2_for_ci.sh 
+
+      - name: Install CUDA
+        if: ${{ matrix.config.with_cuda }} == true
+        uses: Jimver/cuda-toolkit@master
 
       - name: Build BOUT++
         run: UNIT_ONLY=${{ matrix.config.unit_only }} ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}
