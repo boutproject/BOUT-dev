@@ -67,8 +67,7 @@ jobs:
 
           - name: "With CUDA"
             os: ubuntu-22.04
-            cmake_options: "-BOUT_ENABLE_CUDA=ON
-                            -BOUT_USE_NLS=OFF"
+            cmake_options: "-DBOUT_ENABLE_CUDA=ON"
             on_cron: false
             with_cuda: true
             unit_only: true
