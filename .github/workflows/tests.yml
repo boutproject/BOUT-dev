@@ -212,6 +212,7 @@ jobs:
         with:
           method: 'network'
           linux-local-args: '["--toolkit"]'
+          cuda: '12.6.3'
 
       - name: Build BOUT++
         run: UNIT_ONLY=${{ matrix.config.unit_only }} ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}
