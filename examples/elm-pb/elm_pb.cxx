@@ -2041,6 +2041,7 @@ protected:
   int precon(BoutReal UNUSED(t), BoutReal gamma, BoutReal UNUSED(delta)) {
     // First matrix, applying L
     mesh->communicate(ddt(Psi));
+    ddt(Psi).applyBoundary("neumann");
     Field3D Jrhs;
     if (laplace_perp) {
       Jrhs = Laplace_perp(ddt(Psi));
@@ -2072,9 +2073,10 @@ protected:
     }
 
     mesh->communicate(Jrhs, ddt(P));
+    ddt(P).applyBoundary("neumann");
 
     Field3D U1 = ddt(U);
-    U1 += (gamma * B0 * B0) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(P);
+    U1 += (gamma * B0 * B0) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(ddt(P));
 
     // Second matrix, solving Alfven wave dynamics
     static std::unique_ptr<InvertPar> invU{nullptr};

@@ -168,11 +168,11 @@ jobs:
                  libparpack2-dev
                  libhypre-dev
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.x'
 
@@ -205,11 +205,11 @@ jobs:
     timeout-minutes: 120
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
-      - name: Build Fedora rawhide
-        run: ./.ci_fedora.sh setup openmpi rawhide
+      - name: Build Fedora
+        run: ./.ci_fedora.sh setup openmpi latest
         shell: bash
         env:
           TRAVIS_BUILD_DIR: ${{ github.workspace }}
@@ -219,7 +219,7 @@ jobs:
     container: ghcr.io/ggeorgakoudis/boutdev-cuda:latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
       - name: Build minimal CUDA 12.2 @ GCC9.4.0 @ Ubuntu 20.04
