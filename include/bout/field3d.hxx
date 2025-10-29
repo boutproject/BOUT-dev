@@ -739,10 +739,12 @@ inline Field3D copy(const Field3D& f) {
 /// "main" field, Field3DParallel will retain the parallel slices.
 class Field3DParallel : public Field3D {
 public:
-  explicit template <class... Types>
-  Field3DParallel(Types... args) : Field3D(std::move(args)...) {
+  template <class... Types>
+  explicit Field3DParallel(Types... args) : Field3D(std::move(args)...) {
     ensureFieldAligned();
   }
+  Field3DParallel(const Field3D& f) : Field3D(std::move(f)) { ensureFieldAligned(); }
+  Field3DParallel(const Field2D& f) : Field3D(std::move(f)) { ensureFieldAligned(); }
   // Explicitly needed, as DirectionTypes is sometimes constructed from a
   // brace enclosed list
   explicit Field3DParallel(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
