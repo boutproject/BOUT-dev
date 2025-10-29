@@ -63,11 +63,13 @@ jobs:
             os: ubuntu-22.04
             cmake_options: ""
             on_cron: false
-            with_cuda: false
 
           - name: "With CUDA"
             os: ubuntu-22.04
-            cmake_options: "-DBOUT_ENABLE_CUDA=ON"
+            cmake_options: "-DBOUT_ENABLE_CUDA=ON
+                            -DCMAKE_CUDA_ARCHITECTURES=80
+                            -DCUDA_ARCH=compute_80,code=sm_80
+                            "
             on_cron: false
             with_cuda: true
             unit_only: true
