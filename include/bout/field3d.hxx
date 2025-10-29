@@ -742,25 +742,22 @@ public:
   explicit Field3DParallel(Types... args) : Field3D(std::move(args)...) {
     ensureFieldAligned();
   }
-  Field3DParallel(const Field3D& f) : Field3D(std::move(f)) {
-    ensureFieldAligned();
-  }
-  Field3DParallel(const Field2D& f) : Field3D(std::move(f)) {
-    ensureFieldAligned();
-  }
+  Field3DParallel(const Field3D& f) : Field3D(std::move(f)) { ensureFieldAligned(); }
+  Field3DParallel(const Field2D& f) : Field3D(std::move(f)) { ensureFieldAligned(); }
   // Explicitly needed, as DirectionTypes is sometimes constructed from a
   // brace enclosed list
   explicit Field3DParallel(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
-                  DirectionTypes directions_in = {YDirectionType::Standard,
-                                                  ZDirectionType::Standard},
-                  std::optional<size_t> regionID = {})
+                           DirectionTypes directions_in = {YDirectionType::Standard,
+                                                           ZDirectionType::Standard},
+                           std::optional<size_t> regionID = {})
       : Field3D(localmesh, location_in, directions_in, regionID) {
     splitParallelSlices();
     ensureFieldAligned();
   }
-  explicit Field3DParallel(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
-                  DirectionTypes directions_in = {YDirectionType::Standard,
-                                                  ZDirectionType::Standard})
+  explicit Field3DParallel(Array<BoutReal> data, Mesh* localmesh,
+                           CELL_LOC location = CELL_CENTRE,
+                           DirectionTypes directions_in = {YDirectionType::Standard,
+                                                           ZDirectionType::Standard})
       : Field3D(std::move(data), localmesh, location, directions_in) {
     ensureFieldAligned();
   }
