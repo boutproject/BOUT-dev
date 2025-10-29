@@ -205,7 +205,7 @@ jobs:
         run: BUILD_ADIOS2=${{ matrix.config.build_adios2 }} ./.build_adios2_for_ci.sh 
 
       - name: Install CUDA
-        if: ${{ matrix.config.with_cuda }} == true
+        if: ${{ matrix.config.with_cuda }}
         uses: Jimver/cuda-toolkit@master
         with:
           method: 'network'
