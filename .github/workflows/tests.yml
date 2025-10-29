@@ -63,6 +63,7 @@ jobs:
             os: ubuntu-22.04
             cmake_options: ""
             on_cron: false
+            with_cuda: false
 
           - name: "With CUDA"
             os: ubuntu-22.04
@@ -206,6 +207,9 @@ jobs:
       - name: Install CUDA
         if: ${{ matrix.config.with_cuda }} == true
         uses: Jimver/cuda-toolkit@master
+        with:
+          method: 'network'
+          linux-local-args: '["--toolkit"]'
 
       - name: Build BOUT++
         run: UNIT_ONLY=${{ matrix.config.unit_only }} ./.ci_with_cmake.sh ${{ matrix.config.cmake_options }}
