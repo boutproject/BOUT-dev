@@ -508,6 +508,9 @@ SNESSolver::SNESSolver(Options* opts)
       upper_its((*options)["upper_its"]
                     .doc("Iterations above which the next timestep is reduced")
                     .withDefault(static_cast<int>(maxits * 0.8))),
+      max_snes_failures((*options)["max_snes_failures"]
+                            .doc("Abort after this number of consecutive failures")
+                            .withDefault(10)),
       timestep_factor_on_failure((*options)["timestep_factor_on_failure"]
                                      .doc("Multiply timestep on convergence failure")
                                      .withDefault(0.5)),
@@ -990,7 +993,10 @@ int SNESSolver::run() {
 
         recent_failure_rate += inv_failure_window;
 
-        if (diagnose_failures) {
+        ++snes_failures;
+        steps_since_snes_failure = 0;
+
+        if (diagnose_failures or (snes_failures == max_snes_failures)) {
           // Print diagnostics to help identify source of the problem
 
           output.write("\n======== SNES failed =========\n");
@@ -1009,15 +1015,25 @@ int SNESSolver::run() {
           }
         }
 
-        ++snes_failures;
-        steps_since_snes_failure = 0;
+        if (snes_failures == max_snes_failures) {
+          output.write("Too many SNES failures ({}). Aborting.");
+          return 1;
+        }
 
         if (equation_form == BoutSnesEquationForm::pseudo_transient) {
-          // Global scaling of timesteps
-          // Note: A better strategy might be to reduce timesteps
-          //       in problematic cells.
-          PetscCall(VecScale(dt_vec, timestep_factor_on_failure));
+          if (snes_failures == max_snes_failures - 1) {
+            // Last chance. Set to uniform smallest timestep
+            PetscCall(VecSet(dt_vec, dt_min_reset));
 
+          } else if (snes_failures == 5) {
+            // Set uniform timestep
+            PetscCall(VecSet(dt_vec, timestep));
+          } else {
+            // Global scaling of timesteps
+            // Note: A better strategy might be to reduce timesteps
+            //       in problematic cells.
+            PetscCall(VecScale(dt_vec, timestep_factor_on_failure));
+          }
         } else {
           // Try a smaller timestep
           timestep *= timestep_factor_on_failure;
