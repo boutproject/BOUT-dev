@@ -214,10 +214,10 @@ authors:
   - family-names: Tsagkaridis
     given-names: Malamas
 version: 5.2.0
-date-released: 2023-04-10
+date-released: 2025-10-10
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/
-doi: 10.5281/zenodo.13753882
+doi: 10.5281/zenodo.17313945
 license: 'LGPL-3.0-or-later'
 references:
   - type: article

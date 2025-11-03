@@ -1,15 +1,26 @@
-#include <bout/invert/laplacexy2_hypre.hxx>
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_HYPRE
 
+#include "laplacexy-hypre.hxx"
+
 #include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/field2d.hxx"
+#include "bout/globalindexer.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/operatorstencil.hxx"
+#include "bout/options.hxx"
 #include "bout/output.hxx"
+#include "bout/region.hxx"
+#include "bout/sys/range.hxx"
 #include "bout/sys/timer.hxx"
 
-#include <cmath>
+#include <chrono>
+#include <memory>
 
 #if BOUT_HAS_CUDA && defined(__CUDACC__)
 #define gpuErrchk(ans) \
@@ -226,7 +237,7 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
   }
 }
 
-Field2D LaplaceXY2Hypre::solve(Field2D& rhs, Field2D& x0) {
+Field2D LaplaceXY2Hypre::solve(const Field2D& rhs, const Field2D& x0) {
   Timer timer("invert");
 
   ASSERT1(rhs.getMesh() == localmesh);
