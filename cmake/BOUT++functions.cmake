@@ -259,7 +259,8 @@ function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
       ${TESTNAME} PROPERTIES ENVIRONMENT
                              PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}
     )
-    bout_copy_file(${TESTNAME}.py)
+    string(REGEX REPLACE "^(test-)?(.+)$" "test_\\2.py" TEST_FILNAME "${TESTNAME}")
+	bout_copy_file(${TEST_FILNAME})
   else()
     add_test(NAME ${TESTNAME} COMMAND ${TESTNAME} ${BOUT_TEST_OPTIONS_TESTARGS})
   endif()
