@@ -5638,18 +5638,19 @@ protected:
       }
     } else if (filter_z_nonlinear) {
       if (!emass) {
-        if (evolve_psi)
-	        ddt(Psi) = filter_z_non(ddt(Psi), 0, filter_z_mode);
-	      else 
-	        ddt(Apar) = filter_z_non(ddt(Apar), 0, filter_z_mode);
+        if (evolve_psi) {
+          ddt(Psi) = filter_z_non(ddt(Psi), 0, filter_z_mode);
+        } else {
+          ddt(Apar) = filter_z_non(ddt(Apar), 0, filter_z_mode);
+        }
       } else {
         ddt(Ajpar) = filter_z_non(ddt(Ajpar), 0, filter_z_mode);
       }
 
       ddt(U) = filter_z_non(ddt(U), 0, filter_z_mode);
-  
+
       ddt(Ni) = filter_z_non(ddt(Ni), 0, filter_z_mode);
-      
+
       ddt(Ti) = filter_z_non(ddt(Ti), 0, filter_z_mode);
 
       ddt(Te) = filter_z_non(ddt(Te), 0, filter_z_mode);
@@ -5856,7 +5857,8 @@ protected:
           for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
             for (int jz = 0; jz < mesh->LocalNz; jz++) {
               // var_fa(xind, jy, jz) = - value_fa(xind, jy, jz);
-              var_fa(xind, jy, jz) = - value_fa(xind, mesh->ystart, jz);
+              // var_fa(xind, jy, jz) = - value_fa(xind, mesh->ystart, jz);
+              var_fa(xind, jy, jz) = value_fa(xind, mesh->ystart, jz);
               // var_fa(xind, jy, jz) = -2.0 * value_fa(xind, mesh->ystart, jz) - var_fa(xind, mesh->ystart, jz);
             }
           }           
@@ -5872,7 +5874,8 @@ protected:
         for (int jy = mesh->ystart - 1 + Sheath_width; jy >= 0; jy--) {
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             // var_fa(xind, jy, jz) = - value_fa(xind, jy, jz);
-            var_fa(xind, jy, jz) = - value_fa(xind, mesh->ystart, jz);
+            // var_fa(xind, jy, jz) = - value_fa(xind, mesh->ystart, jz);
+            var_fa(xind, jy, jz) = value_fa(xind, mesh->ystart, jz);
             // var_fa(xind, jy, jz) = -2.0 * value_fa(xind, mesh->ystart, jz) - var_fa(xind, mesh->ystart, jz);
           }
 	      }
