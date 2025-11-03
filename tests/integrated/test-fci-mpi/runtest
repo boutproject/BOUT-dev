@@ -75,7 +75,7 @@ if success:
     print("\nAll tests passed")
 else:
     print("\nSome tests failed:")
-    for (nxpe, nype, name, error) in failures:
+    for nxpe, nype, name, error in failures:
         print("----------")
         print(f"case {nxpe=} {nype=} {name=}\n{error}")
 
