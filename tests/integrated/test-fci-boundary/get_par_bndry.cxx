@@ -8,7 +8,7 @@ int main(int argc, char** argv) {
 
   using bout::globals::mesh;
 
-  std::vector<Field3D> fields (static_cast<int>(BoundaryParType::SIZE), Field3D{0.0});
+  std::vector<Field3D> fields(static_cast<int>(BoundaryParType::SIZE), Field3D{0.0});
 
   Options dump;
   for (int i = 0; i < fields.size(); i++) {
