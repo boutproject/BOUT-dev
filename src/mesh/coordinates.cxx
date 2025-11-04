@@ -1609,7 +1609,7 @@ Field3D Coordinates::Div_par(const Field3DParallel& f, CELL_LOC outloc,
 
   // Need Bxy at location of f, which might be different from location of this
   // Coordinates object
-  auto Bxy_floc = f.getCoordinates()->Bxy;
+  const auto& Bxy_floc = f.getCoordinates()->Bxy;
 
   if (!f.hasParallelSlices()) {
     // No yup/ydown fields. The Grad_par operator will
