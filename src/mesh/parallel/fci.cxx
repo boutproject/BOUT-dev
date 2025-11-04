@@ -180,8 +180,8 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
   const int ncz = map_mesh->LocalNz;
 
   BoutMask to_remove(map_mesh);
-  const int xend =
-      map_mesh->xstart + ((map_mesh->xend - map_mesh->xstart + 1) * map_mesh->getNXPE()) - 1;
+  const int xend = map_mesh->xstart
+                   + ((map_mesh->xend - map_mesh->xstart + 1) * map_mesh->getNXPE()) - 1;
   // Serial loop because call to BoundaryRegionPar::addPoint
   // (probably?) can't be done in parallel
   BOUT_FOR_SERIAL(i, xt_prime.getRegion("RGN_NOBNDRY")) {
