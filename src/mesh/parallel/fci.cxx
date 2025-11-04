@@ -381,7 +381,8 @@ void FCITransform::checkInputGrid() {
           + "' used "
             "to generate metric components for FCITransform. Should be 'fci'.");
     }
-  } // else: parallel_transform variable not found in grid input, indicates older input
+  }
+  // else: parallel_transform variable not found in grid input, indicates older input
   //       file or grid from options so must rely on the user having ensured the type is
   //       correct
 }
