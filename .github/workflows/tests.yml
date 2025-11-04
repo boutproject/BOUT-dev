@@ -209,7 +209,7 @@ jobs:
         with:
           submodules: true
       - name: Build Fedora
-        run: ./.ci_fedora.sh setup openmpi latest
+        run: ./.ci_fedora.sh setup openmpi
         shell: bash
         env:
           TRAVIS_BUILD_DIR: ${{ github.workspace }}
