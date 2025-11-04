@@ -84,7 +84,7 @@ LaplaceXYpetsc::LaplaceXYpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
   default_prefix = opt->name();
 
   // Get MPI communicator
-  auto* comm = BoutComm::get();
+  auto comm = BoutComm::get();
 
   // Local size
   const int localN = localSize();

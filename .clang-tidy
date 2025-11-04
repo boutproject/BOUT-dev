@@ -12,6 +12,12 @@ CheckOptions:
 
   - key: misc-include-cleaner.IgnoreHeaders
     value: 'petsc.*\.h;mpi\.h'
+
+  - key: readability-qualified-auto.IgnoreAliasing
+    value: 'false'
+
+  - key: readability-qualified-auto.AllowedTypes
+    value: 'MPI_Comm'
 ---
 
 Disabled checks and reasons:
