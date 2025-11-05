@@ -69,7 +69,7 @@ std::string parallel_slice_field_name(std::string field, int offset) {
   // We only have a suffix for parallel slices beyond the first
   // This is for backwards compatibility
   const auto slice_suffix =
-    (std::abs(offset) > 1) ? fmt::format("_{}", std::abs(offset)) : "";
+      (std::abs(offset) > 1) ? fmt::format("_{}", std::abs(offset)) : "";
   return fmt::format("{}_{}{}", direction, field, slice_suffix);
 };
 
@@ -228,7 +228,8 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
 
   // If we can't read in any of these fields, things will silently not
   // work, so best throw
-  if (map_mesh->get(xt_prime, parallel_slice_field_name("xt_prime", offset_), 0.0, false) != 0) {
+  if (map_mesh->get(xt_prime, parallel_slice_field_name("xt_prime", offset_), 0.0, false)
+      != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
                         parallel_slice_field_name("xt_prime", offset_));
@@ -480,12 +481,12 @@ FCITransform::FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool 
         continue;
       }
       for (auto pnt : *bndry) {
-	for (auto pnt2 : *bndry2) {
-	  if (pnt.ind() == pnt2.ind()) {
-	    pnt.setValid(
-			 static_cast<signed char>(std::abs((pnt2.offset() - pnt.offset())) - 2));
-	  }
-	}
+        for (auto pnt2 : *bndry2) {
+          if (pnt.ind() == pnt2.ind()) {
+            pnt.setValid(
+                static_cast<signed char>(std::abs((pnt2.offset() - pnt.offset())) - 2));
+          }
+        }
       }
     }
   }
