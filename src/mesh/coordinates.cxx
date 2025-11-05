@@ -1814,7 +1814,7 @@ Coordinates::FieldMetric Coordinates::Laplace_par(const Field2D& f, CELL_LOC out
 
 Field3D Coordinates::Laplace_par(const Field3DParallel& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
-  return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * ::DDY(f, outloc) / J;
+  return D2DY2(f, outloc) / g_22 + DDY(J.asField3DParallel() / g_22, outloc) * ::DDY(f, outloc) / J;
 }
 
 // Full Laplacian operator on scalar field
