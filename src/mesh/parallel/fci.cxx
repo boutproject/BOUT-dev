@@ -63,6 +63,7 @@
 #include <string_view>
 
 namespace {
+using namespace std::literals;
 // Get a unique name for a field based on the sign/magnitude of the offset
 std::string parallel_slice_field_name(std::string field, int offset) {
   const auto direction = (offset > 0) ? "forward"sv : "backward"sv;
@@ -234,18 +235,18 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
                         "  Either add it to the grid file, or reduce MYG",
                         parallel_slice_field_name("xt_prime", offset_));
   }
-  if (map_mesh.get(zt_prime, parallel_slice_field_name("zt_prime", offset_), 0.0, false)
+  if (map_mesh->get(zt_prime, parallel_slice_field_name("zt_prime", offset_), 0.0, false)
       != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
                         parallel_slice_field_name("zt_prime", offset_));
   }
-  if (map_mesh.get(R_prime, parallel_slice_field_name("R", offset_), 0.0, false) != 0) {
+  if (map_mesh->get(R_prime, parallel_slice_field_name("R", offset_), 0.0, false) != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
                         parallel_slice_field_name("R", offset_));
   }
-  if (map_mesh.get(Z_prime, parallel_slice_field_name("Z", offset_), 0.0, false) != 0) {
+  if (map_mesh->get(Z_prime, parallel_slice_field_name("Z", offset_), 0.0, false) != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
                         parallel_slice_field_name("Z", offset_));
@@ -296,8 +297,8 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
   const int ncz = map_mesh->LocalNz;
 
   BoutMask to_remove(map_mesh);
-  const int xend =
-      map_mesh.xstart + (map_mesh.xend - map_mesh.xstart + 1) * map_mesh.getNXPE() - 1;
+  const int xend = map_mesh->xstart
+                   + (map_mesh->xend - map_mesh->xstart + 1) * map_mesh->getNXPE() - 1;
   // Default to the maximum number of points
   const int defValid{map_mesh->ystart - 1 + std::abs(offset)};
   // Serial loop because call to BoundaryRegionPar::addPoint
@@ -368,7 +369,7 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
     // that also means inner. So to differentiate between inner and outer we
     // need at least 2 points in the domain.
     ASSERT2(map_mesh->xend - map_mesh->xstart >= 2);
-    auto boundary = (xt_prime[i] < map_mesh.xstart) ? inner_boundary : outer_boundary;
+    auto boundary = (xt_prime[i] < map_mesh->xstart) ? inner_boundary : outer_boundary;
     if (!boundary->contains(x, y, z)) {
       boundary->add_point(x, y, z, x + dx, y + offset - sgn(offset) * 0.5,
                           z + dz, // Intersection point in local index space
