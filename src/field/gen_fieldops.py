@@ -157,6 +157,24 @@ class Field(object):
         else:
             return "{self.name}[{self.mixed_base_ind_var}]".format(self=self)
 
+    @property
+    def yup(self):
+        """Returns {{name}}.yup(i) if it is a field with parallel slices.
+        If it is BoutReal just {{name}}"""
+        if self.field_type == "BoutReal":
+            return "{self.name}".format(self=self)
+        else:
+            return "{self.name}.yup(i)".format(self=self)
+
+    @property
+    def ydown(self):
+        """Returns {{name}}.ydown(i) if it is a field with parallel slices.
+        If it is BoutReal just {{name}}"""
+        if self.field_type == "BoutReal":
+            return "{self.name}".format(self=self)
+        else:
+            return "{self.name}.ydown(i)".format(self=self)
+
     def __eq__(self, other):
         try:
             return self.field_type == other.field_type
