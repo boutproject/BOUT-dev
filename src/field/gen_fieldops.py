@@ -163,8 +163,7 @@ class Field(object):
         If it is BoutReal just {{name}}"""
         if self.field_type == "BoutReal":
             return "{self.name}".format(self=self)
-        else:
-            return "{self.name}.yup(i)".format(self=self)
+        return "{self.name}.yup(i)".format(self=self)
 
     @property
     def ydown(self):
@@ -172,8 +171,13 @@ class Field(object):
         If it is BoutReal just {{name}}"""
         if self.field_type == "BoutReal":
             return "{self.name}".format(self=self)
-        else:
-            return "{self.name}.ydown(i)".format(self=self)
+        return "{self.name}.ydown(i)".format(self=self)
+
+    @property
+    def assertParallelSlices(self):
+        if self.field_type == "BoutReal":
+            return ""
+        return f"ASSERT2({self.name}.hasParallelSlices());"
 
     def __eq__(self, other):
         try:

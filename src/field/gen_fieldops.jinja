@@ -19,6 +19,8 @@
     {% endif %}
     {% if out == "Field3DParallel" %}
       if ({{out.name}}.isFci()) {
+	{{ lhs.assertParallelSlices }}
+	{{ rhs.assertParallelSlices }}
         {{out.name}}.splitParallelSlices();
       {% if lhs.region_type == "3D" %}
         for (size_t i{0} ; i < {{lhs.name}}.numberParallelSlices() ; ++i) {
