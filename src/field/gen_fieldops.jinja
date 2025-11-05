@@ -16,8 +16,8 @@
       if ({{lhs.name}}.isFci()) {
         {{out.name}}.splitParallelSlices();
         for (size_t i{0} ; i < {{lhs.name}}.numberParallelSlices() ; ++i) {
-          {{out.name}}.yup(i) = {{lhs.name}}.yup(i) {{operator}} {{rhs.name}}.yup(i);
-          {{out.name}}.ydown(i) = {{lhs.name}}.ydown(i) {{operator}} {{rhs.name}}.ydown(i);
+          {{out.name}}.yup(i) = {{lhs.yup}} {{operator}} {{rhs.yup}};
+          {{out.name}}.ydown(i) = {{lhs.ydown}} {{operator}} {{rhs.ydown}};
         }
       }
       {% endif %}
@@ -27,8 +27,8 @@
       if ({{lhs.name}}.isFci()) {
         {{out.name}}.splitParallelSlices();
 	for (size_t i{0} ; i < {{lhs.name}}.numberParallelSlices() ; ++i) {
-          {{out.name}}.yup(i) = {{lhs.name}}.yup(i) {{operator}} {{rhs.name}};
-          {{out.name}}.ydown(i) = {{lhs.name}}.ydown(i) {{operator}} {{rhs.name}};
+          {{out.name}}.yup(i) = {{lhs.yup}} {{operator}} {{rhs.yup}};
+          {{out.name}}.ydown(i) = {{lhs.ydown}} {{operator}} {{rhs.ydown}};
         }
       }
       {% endif %}
@@ -38,8 +38,8 @@
       if ({{rhs.name}}.isFci()) {
         {{out.name}}.splitParallelSlices();
 	for (size_t i{0} ; i < {{rhs.name}}.numberParallelSlices() ; ++i) {
-          {{out.name}}.yup(i) = {{lhs.name}} {{operator}} {{rhs.name}}.yup(i);
-          {{out.name}}.ydown(i) = {{lhs.name}} {{operator}} {{rhs.name}}.ydown(i);
+          {{out.name}}.yup(i) = {{lhs.yup}} {{operator}} {{rhs.yup}};
+          {{out.name}}.ydown(i) = {{lhs.ydown}} {{operator}} {{rhs.ydown}};
         }
       }
       {% endif %}
