@@ -1620,8 +1620,7 @@ Field3D Coordinates::Div_par(const Field3DParallel& f, CELL_LOC outloc,
   auto coords = f.getCoordinates();
   // Need to modify yup and ydown fields
   Field3D Jg = coords->J / sqrt(coords->g_22.asField3DParallel());
-  return setName(Jg * Grad_par(f / Jg, outloc, method),
-                 "Div_par({:s})", f.name);
+  return setName(Jg * Grad_par(f / Jg, outloc, method), "Div_par({:s})", f.name);
 }
 
 /////////////////////////////////////////////////////////
@@ -1809,7 +1808,8 @@ Coordinates::FieldMetric Coordinates::Laplace_par(const Field2D& f, CELL_LOC out
 
 Field3D Coordinates::Laplace_par(const Field3DParallel& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
-  return D2DY2(f, outloc) / g_22 + DDY(J.asField3DParallel() / g_22, outloc) * ::DDY(f, outloc) / J;
+  return D2DY2(f, outloc) / g_22
+         + DDY(J.asField3DParallel() / g_22, outloc) * ::DDY(f, outloc) / J;
 }
 
 // Full Laplacian operator on scalar field
