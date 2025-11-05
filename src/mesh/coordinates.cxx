@@ -1570,13 +1570,8 @@ Field3D Coordinates::Div_par(const Field3DParallel& f, CELL_LOC outloc,
   }
 
   // Need to modify yup and ydown fields
-  Field3D f_B = f / Bxy_floc;
-  f_B.splitParallelSlices();
-  for (int i = 0; i < f.getMesh()->ystart; ++i) {
-    f_B.yup(i) = f.yup(i) / Bxy_floc.yup(i);
-    f_B.ydown(i) = f.ydown(i) / Bxy_floc.ydown(i);
-  }
-  return Bxy * Grad_par(f_B, outloc, method);
+  Field3D Jg = coords->J / sqrt(coords->g_22.asField3DParallel());
+  return Jg * Grad_par(f / Jg, outloc, method);
 }
 
 /////////////////////////////////////////////////////////
