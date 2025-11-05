@@ -1958,7 +1958,7 @@ Field3DParallel operator*(const Field3D& lhs, const Field3DParallel& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-  if (lhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) * rhs.yup(i);
@@ -1983,7 +1983,7 @@ Field3DParallel operator/(const Field3D& lhs, const Field3DParallel& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-  if (lhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) / rhs.yup(i);
@@ -2008,7 +2008,7 @@ Field3DParallel operator+(const Field3D& lhs, const Field3DParallel& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-  if (lhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) + rhs.yup(i);
@@ -2033,7 +2033,7 @@ Field3DParallel operator-(const Field3D& lhs, const Field3DParallel& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-  if (lhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) - rhs.yup(i);
@@ -2058,7 +2058,7 @@ Field3DParallel operator*(const Field3DParallel& lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-  if (lhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) * rhs.yup(i);
@@ -2116,7 +2116,7 @@ Field3DParallel operator/(const Field3DParallel& lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-  if (lhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) / rhs.yup(i);
@@ -2174,7 +2174,7 @@ Field3DParallel operator+(const Field3DParallel& lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-  if (lhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) + rhs.yup(i);
@@ -2232,7 +2232,7 @@ Field3DParallel operator-(const Field3DParallel& lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-  if (lhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) - rhs.yup(i);
@@ -2290,7 +2290,7 @@ Field3DParallel operator*(const Field3DParallel& lhs, const Field3DParallel& rhs
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-  if (lhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) * rhs.yup(i);
@@ -2348,7 +2348,7 @@ Field3DParallel operator/(const Field3DParallel& lhs, const Field3DParallel& rhs
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-  if (lhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) / rhs.yup(i);
@@ -2406,7 +2406,7 @@ Field3DParallel operator+(const Field3DParallel& lhs, const Field3DParallel& rhs
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-  if (lhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) + rhs.yup(i);
@@ -2464,7 +2464,7 @@ Field3DParallel operator-(const Field3DParallel& lhs, const Field3DParallel& rhs
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-  if (lhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) - rhs.yup(i);
@@ -2521,7 +2521,7 @@ Field3DParallel operator*(const Field3DParallel& lhs, const BoutReal rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getRegionID());
-  if (lhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) * rhs;
@@ -2581,7 +2581,7 @@ Field3DParallel operator/(const Field3DParallel& lhs, const BoutReal rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getRegionID());
-  if (lhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) / rhs;
@@ -2642,7 +2642,7 @@ Field3DParallel operator+(const Field3DParallel& lhs, const BoutReal rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getRegionID());
-  if (lhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) + rhs;
@@ -2702,7 +2702,7 @@ Field3DParallel operator-(const Field3DParallel& lhs, const BoutReal rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getRegionID());
-  if (lhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) - rhs;
@@ -2762,7 +2762,7 @@ Field3DParallel operator*(const BoutReal lhs, const Field3DParallel& rhs) {
   checkData(rhs);
 
   result.setRegion(rhs.getRegionID());
-  if (rhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs * rhs.yup(i);
@@ -2786,7 +2786,7 @@ Field3DParallel operator/(const BoutReal lhs, const Field3DParallel& rhs) {
   checkData(rhs);
 
   result.setRegion(rhs.getRegionID());
-  if (rhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs / rhs.yup(i);
@@ -2810,7 +2810,7 @@ Field3DParallel operator+(const BoutReal lhs, const Field3DParallel& rhs) {
   checkData(rhs);
 
   result.setRegion(rhs.getRegionID());
-  if (rhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs + rhs.yup(i);
@@ -2834,7 +2834,7 @@ Field3DParallel operator-(const BoutReal lhs, const Field3DParallel& rhs) {
   checkData(rhs);
 
   result.setRegion(rhs.getRegionID());
-  if (rhs.isFci()) {
+  if (result.isFci()) {
     result.splitParallelSlices();
     for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs - rhs.yup(i);
