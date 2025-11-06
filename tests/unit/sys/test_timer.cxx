@@ -271,7 +271,7 @@ TEST(TimerTest, ListAllInfo) {
 
   using namespace ::testing;
   EXPECT_THAT(cout_capture.str(), HasSubstr("Timer name         |"));
-  EXPECT_THAT(cout_capture.str(), ContainsRegex("one *| 0\\.\\d+ | 1    | 0\\.\\d+"));
-  EXPECT_THAT(cout_capture.str(), ContainsRegex("two *| 0 * | 2    | 0\\.\\d+"));
+  EXPECT_THAT(cout_capture.str(), ContainsRegex("one *| 0\\.[0-9]+ | 1    | 0\\.[0-9]+"));
+  EXPECT_THAT(cout_capture.str(), ContainsRegex("two *| 0 * | 2    | 0\\.[0-9]+"));
 }
 #endif

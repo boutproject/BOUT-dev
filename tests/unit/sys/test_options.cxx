@@ -1099,7 +1099,8 @@ value6 = 12
 }
 
 TEST_F(OptionsTest, InvalidFormat) {
-  EXPECT_THROW(fmt::format("{:nope}", Options{}), fmt::format_error);
+  EXPECT_THROW([[maybe_unused]] auto none = fmt::format("{:nope}", Options{}),
+               fmt::format_error);
 }
 
 TEST_F(OptionsTest, FormatValue) {
@@ -1438,4 +1439,15 @@ TEST_F(OptionsTest, BoolComparisonLT) {
 TEST_F(OptionsTest, BoolCompound) {
   ASSERT_TRUE(Options("true & !false").as<bool>());
   ASSERT_TRUE(Options("2 > 1 & 2 < 3").as<bool>());
+}
+
+TEST_F(OptionsTest, Iterate) {
+  Options option{{{"value1", 1}, {"value2", 2}}};
+
+  for (auto& [name, value] : option) {
+    value.force(value.as<int>() + 1);
+  }
+
+  ASSERT_EQ(option["value1"], 2);
+  ASSERT_EQ(option["value2"], 3);
 }

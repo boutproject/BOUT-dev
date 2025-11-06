@@ -1,9 +1,15 @@
 #pragma once
 
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/mesh.hxx"
 #include "bout/parallel_boundary_region.hxx"
+#include "bout/region.hxx"
 #include "bout/sys/parallel_stencils.hxx"
 #include "bout/sys/range.hxx"
+
+#include <algorithm>
+#include <functional>
 
 class BoundaryRegionIter {
 public:
@@ -11,7 +17,7 @@ public:
       : dir(bx + by), x(x), y(y), bx(bx), by(by), localmesh(mesh) {
     ASSERT3(bx * by == 0);
   }
-  bool operator!=(const BoundaryRegionIter& rhs) { return ind() != rhs.ind(); }
+  bool operator!=(const BoundaryRegionIter& rhs) const { return ind() != rhs.ind(); }
 
   Ind3D ind() const { return xyz2ind(x, y, z); }
   BoundaryRegionIter& operator++() {
@@ -36,19 +42,50 @@ public:
     return (f[ind()] * 3 - yprev(f)) * 0.5;
   }
 
-  BoutReal extrapolate_next_o2(const Field3D& f) const { return 2 * f[ind()] - yprev(f); }
+  BoutReal extrapolate_next_o2(const Field3D& f) const { return (2 * f[ind()]) - yprev(f); }
 
   BoutReal
   extrapolate_next_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
-    return 2 * f(0, ind()) - f(0, ind().yp(-by).xp(-bx));
+    return (2 * f(0, ind())) - f(0, ind().yp(-by).xp(-bx));
   }
 
-  BoutReal interpolate_sheath_o1(const Field3D& f) const {
+  BoutReal interpolate_sheath_o2(const Field3D& f) const {
     return (f[ind()] + ynext(f)) * 0.5;
   }
+
+  BoutReal
+  interpolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+    return (f(0, ind()) + f(0, ind().yp(-by).xp(-bx))) * 0.5;
+  }
+
   BoutReal
   extrapolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
     return 0.5 * (3 * f(0, ind()) - f(0, ind().yp(-by).xp(-bx)));
+  }
+
+  BoutReal extrapolate_sheath_free(const Field3D& f, SheathLimitMode mode) const {
+    const BoutReal fac =
+        bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f), mode);
+    const BoutReal val = ythis(f);
+    const BoutReal next = mode == SheathLimitMode::linear_free ? val + fac : val * fac;
+    return 0.5 * (val + next);
+  }
+
+  void set_free(Field3D& f, SheathLimitMode mode) const {
+    const BoutReal fac =
+        bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f), mode);
+    BoutReal val = ythis(f);
+    if (mode == SheathLimitMode::linear_free) {
+      for (int i = 1; i <= localmesh->ystart; ++i) {
+        val += fac;
+        f[ind().yp(by * i).xp(bx * i)] = val;
+      }
+    } else {
+      for (int i = 1; i <= localmesh->ystart; ++i) {
+        val *= fac;
+        f[ind().yp(by * i).xp(bx * i)] = val;
+      }
+    }
   }
 
   void limitFree(Field3D& f) const {
@@ -59,6 +96,11 @@ public:
       val *= fac;
       f[ind().yp(by * i).xp(bx * i)] = val;
     }
+  }
+
+  bool is_lower() const {
+    ASSERT2(bx == 0);
+    return by == -1;
   }
 
   void neumann_o1(Field3D& f, BoutReal grad) const {
@@ -97,7 +139,7 @@ public:
     }
   }
 
-  int abs_offset() const { return 1; }
+  static int abs_offset() { return 1; }
 
 #if BOUT_USE_METRIC_3D == 0
   BoutReal& ynext(Field2D& f) const { return f[ind().yp(by).xp(bx)]; }
@@ -107,7 +149,7 @@ public:
 #endif
 
   const int dir;
-
+  virtual ~BoundaryRegionIter = default;
 protected:
   int z{0};
   int x;

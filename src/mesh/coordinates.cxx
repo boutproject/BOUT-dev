@@ -606,6 +606,29 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
   // Allow transform to fix things up
   transform->loadParallelMetrics(this);
+
+  if (Bxy.isFci()) {
+    BoutReal maxError = 0;
+    auto BJg = Bxy.asField3DParallel() * J / sqrt(g_22);
+    for (int p = -mesh->ystart; p <= mesh->ystart; p++) {
+      if (p == 0) {
+        continue;
+      }
+      BOUT_FOR(i, BJg.getRegion("RGN_NO_BNDRY")) {
+        auto local = BJg[i] / BJg.ynext(p)[i.yp(p)];
+        maxError = std::max(std::abs(local - 1), maxError);
+      }
+    }
+    BoutReal allowedError = (*options)["allowedFluxError"].withDefault(1e-6);
+    if (maxError < allowedError / 100) {
+      output_info.write("\tInfo: The maximum flux conservation error is {:e}", maxError);
+    } else if (maxError < allowedError) {
+      output_warn.write("\tWarning: The maximum flux conservation error is {:e}",
+                        maxError);
+    } else {
+      throw BoutException("Error: The maximum flux conservation error is {:e}", maxError);
+    }
+  }
 }
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
@@ -1586,7 +1609,7 @@ Field3D Coordinates::Div_par(const Field3DParallel& f, CELL_LOC outloc,
 
   // Need Bxy at location of f, which might be different from location of this
   // Coordinates object
-  auto Bxy_floc = f.getCoordinates()->Bxy;
+  const auto& Bxy_floc = f.getCoordinates()->Bxy;
 
   if (!f.hasParallelSlices()) {
     // No yup/ydown fields. The Grad_par operator will
@@ -1596,14 +1619,8 @@ Field3D Coordinates::Div_par(const Field3DParallel& f, CELL_LOC outloc,
 
   auto coords = f.getCoordinates();
   // Need to modify yup and ydown fields
-  Field3D f_B = f / coords->J * sqrt(coords->g_22);
-  f_B.splitParallelSlices();
-  for (int i = 0; i < f.getMesh()->ystart; ++i) {
-    f_B.yup(i) = f.yup(i) / coords->J.yup(i) * sqrt(coords->g_22.yup(i));
-    f_B.ydown(i) = f.ydown(i) / coords->J.ydown(i) * sqrt(coords->g_22.ydown(i));
-  }
-  return setName(coords->J / sqrt(coords->g_22) * Grad_par(f_B, outloc, method),
-                 "Div_par({:s})", f.name);
+  Field3D Jg = coords->J / sqrt(coords->g_22.asField3DParallel());
+  return setName(Jg * Grad_par(f / Jg, outloc, method), "Div_par({:s})", f.name);
 }
 
 /////////////////////////////////////////////////////////
@@ -1791,7 +1808,8 @@ Coordinates::FieldMetric Coordinates::Laplace_par(const Field2D& f, CELL_LOC out
 
 Field3D Coordinates::Laplace_par(const Field3DParallel& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
-  return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * ::DDY(f, outloc) / J;
+  return D2DY2(f, outloc) / g_22
+         + DDY(J.asField3DParallel() / g_22, outloc) * ::DDY(f, outloc) / J;
 }
 
 // Full Laplacian operator on scalar field

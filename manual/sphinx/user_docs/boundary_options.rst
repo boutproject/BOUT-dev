@@ -502,7 +502,7 @@ geometries, as flux coordinate independent (FCI) method::
       void rhs() {
         BoutReal totalFlux = 0;
         yboundary.iter_pnts([&](auto& pnt) {
-          BoutReal flux = pnt.interpolate_sheath_o1(N) * pnt.interpolate_sheath_o1(V);
+          BoutReal flux = pnt.interpolate_sheath_o2(N) * pnt.interpolate_sheath_o2(V);
         });
       }
     
@@ -536,7 +536,7 @@ Here is a short summary of some members of ``pnt``, where ``f`` is a :
    * - ``pnt.yprev(f)``
      - Returns the value at the second to last point in the domain, if it is
        valid. NB: this point may not be valid.
-   * - ``pnt.interpolate_sheath_o1(f)``
+   * - ``pnt.interpolate_sheath_o2(f)``
      - Returns the value at the boundary, assuming the bounday value has been set
    * - ``pnt.extrapolate_sheath_o1(f)``
      - Returns the value at the boundary, extrapolating from the bulk, first order

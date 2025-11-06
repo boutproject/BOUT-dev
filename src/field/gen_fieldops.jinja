@@ -12,37 +12,25 @@
     {% if lhs.region_type == rhs.region_type == "3D" %}
       {{out.name}}.setRegion({{lhs.name}}.getMesh()->getCommonRegion({{lhs.name}}.getRegionID(),
                                                                      {{rhs.name}}.getRegionID()));
-      {% if out == "Field3DParallel" %}
-      if ({{lhs.name}}.isFci()) {
-        {{out.name}}.splitParallelSlices();
-        for (size_t i{0} ; i < {{lhs.name}}.numberParallelSlices() ; ++i) {
-          {{out.name}}.yup(i) = {{lhs.name}}.yup(i) {{operator}} {{rhs.name}}.yup(i);
-          {{out.name}}.ydown(i) = {{lhs.name}}.ydown(i) {{operator}} {{rhs.name}}.ydown(i);
-        }
-      }
-      {% endif %}
     {% elif lhs.region_type == "3D" %}
       {{out.name}}.setRegion({{lhs.name}}.getRegionID());
-      {% if rhs == "BoutReal" and out == "Field3DParallel" %}
-      if ({{lhs.name}}.isFci()) {
-        {{out.name}}.splitParallelSlices();
-	for (size_t i{0} ; i < {{lhs.name}}.numberParallelSlices() ; ++i) {
-          {{out.name}}.yup(i) = {{lhs.name}}.yup(i) {{operator}} {{rhs.name}};
-          {{out.name}}.ydown(i) = {{lhs.name}}.ydown(i) {{operator}} {{rhs.name}};
-        }
-      }
-      {% endif %}
     {% elif rhs.region_type == "3D" %}
       {{out.name}}.setRegion({{rhs.name}}.getRegionID());
-      {% if lhs == "BoutReal" and rhs == "Field3DParallel" %}
-      if ({{rhs.name}}.isFci()) {
+    {% endif %}
+    {% if out == "Field3DParallel" %}
+      if ({{out.name}}.isFci()) {
+	{{ lhs.assertParallelSlices }}
+	{{ rhs.assertParallelSlices }}
         {{out.name}}.splitParallelSlices();
-	for (size_t i{0} ; i < {{rhs.name}}.numberParallelSlices() ; ++i) {
-          {{out.name}}.yup(i) = {{lhs.name}} {{operator}} {{rhs.name}}.yup(i);
-          {{out.name}}.ydown(i) = {{lhs.name}} {{operator}} {{rhs.name}}.ydown(i);
+      {% if lhs.region_type == "3D" %}
+        for (size_t i{0} ; i < {{lhs.name}}.numberParallelSlices() ; ++i) {
+      {% else %}
+        for (size_t i{0} ; i < {{rhs.name}}.numberParallelSlices() ; ++i) {
+      {% endif %}
+          {{out.name}}.yup(i) = {{lhs.yup}} {{operator}} {{rhs.yup}};
+          {{out.name}}.ydown(i) = {{lhs.ydown}} {{operator}} {{rhs.ydown}};
         }
       }
-      {% endif %}
     {% endif %}
   {% endif %}
 

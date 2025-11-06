@@ -6,9 +6,9 @@
  * up a linear system.
  *
  **************************************************************************
- * Copyright 2019 C. MacMackin
+ * Copyright 2019 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -573,7 +573,7 @@ PetscVector<T> operator*(const PetscMatrix<T>& mat, const PetscVector<T>& vec) {
 namespace bout {
 template <class T>
 constexpr auto cast_MatFDColoringFn(T func) {
-  return func;
+  return reinterpret_cast<MatFDColoringFn*>(func); // NOLINT(*-reinterpret-cast)
 }
 } // namespace bout
 #else

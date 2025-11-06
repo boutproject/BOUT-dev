@@ -529,7 +529,7 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices) {
       for (auto& region : fieldmesh->getBoundariesPar()) {
         for (const auto& pnt : *region) {
           // Interpolate midpoint value in f3d
-          const BoutReal val = pnt.interpolate_sheath_o1(f3d);
+          const BoutReal val = pnt.interpolate_sheath_o2(f3d);
           // Set the same boundary value in this field
           pnt.dirichlet_o1(*this, val);
         }
@@ -1011,4 +1011,18 @@ void Field3DParallel::ensureFieldAligned() {
       }
     }
   }
+}
+
+Field3DParallel& Field3DParallel::allocate() {
+  Field3D::allocate();
+  if (isFci()) {
+    ASSERT2(hasParallelSlices());
+    if (fieldmesh != nullptr) {
+      for (int i = 0; i < fieldmesh->ystart; ++i) {
+        yup_fields[i].allocate();
+        ydown_fields[i].allocate();
+      }
+    }
+  }
+  return *this;
 }

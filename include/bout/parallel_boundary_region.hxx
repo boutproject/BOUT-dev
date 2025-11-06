@@ -16,6 +16,8 @@
  *
  */
 
+BOUT_ENUM_CLASS(SheathLimitMode, limit_free, exponential_free, linear_free);
+
 namespace bout {
 namespace parallel_boundary_region {
 
@@ -47,6 +49,42 @@ struct Indices {
 using IndicesVec = std::vector<Indices>;
 using IndicesIter = IndicesVec::iterator;
 using IndicesIterConst = IndicesVec::const_iterator;
+
+/// Limited free gradient of log of a quantity
+/// This ensures that the guard cell values remain positive
+/// while also ensuring that the quantity never increases
+///
+///  fm  fc | fp
+///         ^ boundary
+///
+/// exp( 2*log(fc) - log(fm) )
+inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc, SheathLimitMode mode) {
+  if ((fm < fc) && (mode == SheathLimitMode::limit_free)) {
+    return fc; // Neumann rather than increasing into boundary
+  }
+  if (fm < 1e-10) {
+    return fc; // Low / no density condition
+  }
+
+  BoutReal fp = 0;
+  switch (mode) {
+  case SheathLimitMode::limit_free:
+  case SheathLimitMode::exponential_free:
+    fp = SQ(fc) / fm; // Exponential
+    break;
+  case SheathLimitMode::linear_free:
+    fp = 2.0 * fc - fm; // Linear
+    break;
+  }
+
+#if CHECKLEVEL >= 2
+  if (!std::isfinite(fp)) {
+    throw BoutException("SheathBoundary limitFree: {}, {} -> {}", fm, fc, fp);
+  }
+#endif
+
+  return fp;
+}
 
 inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc) {
   if (fm < fc) {
@@ -107,7 +145,11 @@ public:
     return ythis(f) * (1 + length()) - yprev(f) * length();
   }
 
-  inline BoutReal interpolate_sheath_o1(const Field3D& f) const {
+  inline BoutReal interpolate_sheath_o2(const Field3D& f) const {
+    return ythis(f) * (1 - length()) + ynext(f) * length();
+  }
+  inline BoutReal
+  interpolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
     return ythis(f) * (1 - length()) + ynext(f) * length();
   }
 
@@ -196,6 +238,8 @@ public:
     }
   }
 
+  bool is_lower() const { return dir == -1; }
+
   // NB: value needs to be scaled by dy
   // neumann_o1 is actually o2 if we would use an appropriate one-sided stencil.
   // But in general we do not, and thus for normal C2 stencils, this is 1st order.
@@ -232,6 +276,31 @@ public:
     ITER() {
       val *= fac;
       getAt(f, i) = val;
+    }
+  }
+
+  BoutReal extrapolate_sheath_free(const Field3D& f, SheathLimitMode mode) const {
+    const auto fac = valid() > 0 ? limitFreeScale(yprev(f), ythis(f), mode)
+                                 : (mode == SheathLimitMode::linear_free ? 0 : 1);
+    auto val = ythis(f);
+    BoutReal next = mode == SheathLimitMode::linear_free ? val + fac : val * fac;
+    return val * length() + next * (1 - length());
+  }
+
+  void set_free(Field3D& f, SheathLimitMode mode) const {
+    const auto fac = valid() > 0 ? limitFreeScale(yprev(f), ythis(f), mode)
+                                 : (mode == SheathLimitMode::linear_free ? 0 : 1);
+    auto val = ythis(f);
+    if (mode == SheathLimitMode::linear_free) {
+      ITER() {
+        val += fac;
+        getAt(f, i) = val;
+      }
+    } else {
+      ITER() {
+        val *= fac;
+        getAt(f, i) = val;
+      }
     }
   }
 

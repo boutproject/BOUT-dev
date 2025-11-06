@@ -531,6 +531,7 @@ public:
   bool allowCalcParallelSlices{true};
 
   inline Field3DParallel asField3DParallel();
+  inline const Field3DParallel asField3DParallel() const;
 
 protected:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
@@ -738,26 +739,29 @@ inline Field3D copy(const Field3D& f) {
 class Field3DParallel : public Field3D {
 public:
   template <class... Types>
-  Field3DParallel(Types... args) : Field3D(std::move(args)...) {
+  explicit Field3DParallel(Types... args) : Field3D(std::move(args)...) {
     ensureFieldAligned();
   }
+  Field3DParallel(const Field3D& f) : Field3D(std::move(f)) { ensureFieldAligned(); }
+  Field3DParallel(const Field2D& f) : Field3D(std::move(f)) { ensureFieldAligned(); }
   // Explicitly needed, as DirectionTypes is sometimes constructed from a
   // brace enclosed list
-  Field3DParallel(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
-                  DirectionTypes directions_in = {YDirectionType::Standard,
-                                                  ZDirectionType::Standard},
-                  std::optional<size_t> regionID = {})
+  explicit Field3DParallel(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
+                           DirectionTypes directions_in = {YDirectionType::Standard,
+                                                           ZDirectionType::Standard},
+                           std::optional<size_t> regionID = {})
       : Field3D(localmesh, location_in, directions_in, regionID) {
     splitParallelSlices();
     ensureFieldAligned();
   }
-  Field3DParallel(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
-                  DirectionTypes directions_in = {YDirectionType::Standard,
-                                                  ZDirectionType::Standard})
+  explicit Field3DParallel(Array<BoutReal> data, Mesh* localmesh,
+                           CELL_LOC location = CELL_CENTRE,
+                           DirectionTypes directions_in = {YDirectionType::Standard,
+                                                           ZDirectionType::Standard})
       : Field3D(std::move(data), localmesh, location, directions_in) {
     ensureFieldAligned();
   }
-  Field3DParallel(BoutReal, Mesh* mesh = nullptr);
+  explicit Field3DParallel(BoutReal, Mesh* mesh = nullptr);
   Field3D& asField3D() { return *this; }
   const Field3D& asField3D() const { return *this; }
 
@@ -784,12 +788,16 @@ public:
     return *this;
   }
   Field3DParallel& operator=(BoutReal);
+  Field3DParallel& allocate();
 
 private:
   void ensureFieldAligned();
 };
 
 Field3DParallel Field3D::asField3DParallel() { return Field3DParallel(*this); }
+const Field3DParallel Field3D::asField3DParallel() const {
+  return Field3DParallel(*this);
+}
 
 inline Field3D operator+(const Field2D& lhs, const Field3DParallel& rhs) {
   return lhs + rhs.asField3D();
