@@ -398,7 +398,7 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
 
   const auto region2 = y_offset != 0 ? fmt::format("RGN_YPAR_{:+d}", y_offset) : region;
 
-  std::unique_ptr<GlobalField3DAccessInstance> const gf;
+  const std::unique_ptr<GlobalField3DAccessInstance> gf;
   if constexpr (monotonic) {
     gf = gf3daccess->communicate_asPtr(f);
   }

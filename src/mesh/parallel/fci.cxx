@@ -94,7 +94,7 @@ bool load_parallel_metric_component(const std::string& name, Field3D& component,
                                     int offset, bool doZero) {
   Mesh* mesh = component.getMesh();
   Field3D tmp{mesh};
-  bool const doload = mesh->sourceHasVar(name);
+  const bool doload = mesh->sourceHasVar(name);
   bool isValid{false};
   if (doload) {
     const auto pname = parallel_slice_field_name(name, offset);

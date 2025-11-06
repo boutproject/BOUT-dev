@@ -621,7 +621,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
         maxError = std::max(std::abs(local - 1), maxError);
       }
     }
-    BoutReal const allowedError = (*options)["allowedFluxError"].withDefault(1e-6);
+    const BoutReal allowedError = (*options)["allowedFluxError"].withDefault(1e-6);
     if (maxError < allowedError / 100) {
       output_info.write("\tInfo: The maximum flux conservation error is {:e}", maxError);
     } else if (maxError < allowedError) {
@@ -1621,7 +1621,7 @@ Field3D Coordinates::Div_par(const Field3DParallel& f, CELL_LOC outloc,
 
   auto* coords = f.getCoordinates();
   // Need to modify yup and ydown fields
-  Field3D const Jg = coords->J / sqrt(coords->g_22.asField3DParallel());
+  const Field3D Jg = coords->J / sqrt(coords->g_22.asField3DParallel());
   return setName(Jg * Grad_par(f / Jg, outloc, method), "Div_par({:s})", f.name);
 }
 
