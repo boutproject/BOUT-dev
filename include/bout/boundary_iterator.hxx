@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bout/assert.hxx"
 #include "bout/mesh.hxx"
 #include "bout/parallel_boundary_region.hxx"
 #include "bout/sys/parallel_stencils.hxx"
@@ -143,7 +144,7 @@ public:
 #endif
 
   const int dir;
-
+  virtual ~BoundaryRegionIter = default;
 protected:
   int z{0};
   int x;
