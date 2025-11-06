@@ -1,0 +1,209 @@
+#!/usr/bin/env python3
+#
+# Python script to run and analyse MMS test
+#
+
+import argparse
+import json
+import pathlib
+import sys
+from time import time
+
+from boutdata.collect import collect
+from boututils.run_wrapper import build_and_log, launch_safe
+from numpy import array, log, polyfit
+
+# Global parameters
+DIRECTORY = "data"
+NPROC = 2
+MTHREAD = 2
+OPERATORS = (
+    "FV_Div_par",
+    "FV_Div_par_K_Grad_par",
+    "FV_Div_par_K_Grad_par_mod",
+    "FV_Div_par_mod",
+    "FV_Div_par_fvv",
+)
+# Resolution in y and z
+NLIST = [8, 16, 32, 64]
+dx = 1.0 / array(NLIST)
+
+
+def quiet_collect(name: str) -> float:
+    # Index to return a plain (numpy) float rather than `BoutArray`
+    return collect(
+        name,
+        tind=[1, 1],
+        info=False,
+        path=DIRECTORY,
+        xguards=False,
+        yguards=False,
+    )[()]
+
+
+def assert_convergence(error, dx, name, expected) -> bool:
+    fit = polyfit(log(dx), log(error), 1)
+    order = fit[0]
+    print(f"{name} convergence order = {order:f} (fit)", end="")
+
+    order = log(error[-2] / error[-1]) / log(dx[-2] / dx[-1])
+    print(f", {order:f} (small spacing)", end="")
+
+    # Should be close to the expected order
+    success = order > expected * 0.95
+    print(f"\t............ {'PASS' if success else 'FAIL'}")
+
+    return success
+
+
+def run_fv_operators(nz: int, name: str) -> dict[str, float]:
+    # Command to run
+    args = f"MZ={nz} mesh:ny={nz} {name}"
+    cmd = f"./fv_mms {args}"
+    print(f"Running command: {cmd}", end="")
+
+    # Launch using MPI
+    start = time()
+    status, out = launch_safe(cmd, nproc=NPROC, mthread=MTHREAD, pipe=True)
+    print(f" ... done in {time() - start:.3}s")
+
+    # Save output to log file
+    pathlib.Path(f"run.log.{nz}").write_text(out)
+
+    if status:
+        print(f"Run failed!\nOutput was:\n{out}")
+        sys.exit(status)
+
+    return {
+        operator: {
+            "l_2": quiet_collect(f"{operator}_l_2"),
+            "l_inf": quiet_collect(f"{operator}_l_inf"),
+        }
+        for operator in OPERATORS
+    }
+
+
+def transpose(
+    errors: list[dict[str, dict[str, float]]],
+) -> dict[str, dict[str, list[float]]]:
+    """Turn a list of {operator: error} into a dict of {operator: [errors]}"""
+
+    kinds = ("l_2", "l_inf")
+    result = {operator: {kind: [] for kind in kinds} for operator in OPERATORS}
+    for error in errors:
+        for k, v in error.items():
+            for kind in kinds:
+                result[k][kind].append(v[kind])
+    return result
+
+
+def check_fv_operators(name: str, case: dict) -> bool:
+    failures = []
+
+    order = case["order"]
+    args = case["args"]
+
+    all_errors = []
+
+    for n in NLIST:
+        errors = run_fv_operators(n, args)
+        all_errors.append(errors)
+
+        for operator in OPERATORS:
+            l_2 = errors[operator]["l_2"]
+            l_inf = errors[operator]["l_inf"]
+
+            print(f"{operator} errors: l-2 {l_2:f} l-inf {l_inf:f}")
+
+    final_errors = transpose(all_errors)
+    for operator in OPERATORS:
+        test_name = f"{operator} {name}"
+        success = assert_convergence(
+            final_errors[operator]["l_2"], dx, test_name, order
+        )
+        if not success:
+            failures.append(test_name)
+
+    return final_errors, failures
+
+
+def make_plots(cases: dict[str, dict]):
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        print("No matplotlib")
+        return
+
+    num_operators = len(OPERATORS)
+    fig, axes = plt.subplots(1, num_operators, figsize=(num_operators * 4, 4))
+
+    for ax, operator in zip(axes, OPERATORS):
+        for name, case in cases.items():
+            ax.loglog(dx, case[operator]["l_2"], "-", label=f"{name} $l_2$")
+            ax.loglog(dx, case[operator]["l_inf"], "--", label=f"{name} $l_\\inf$")
+        ax.legend(loc="upper left")
+        ax.grid()
+        ax.set_title(f"Error scaling for {operator}")
+        ax.set_xlabel(r"Mesh spacing $\delta x$")
+        ax.set_ylabel("Error norm")
+
+    fig.tight_layout()
+    fig.savefig("fv_mms.pdf")
+    print("Plot saved to fv_mms.pdf")
+
+    if args.show_plots:
+        plt.show()
+    plt.close()
+
+
+if __name__ == "__main__":
+    build_and_log("Finite volume MMS test")
+
+    parser = argparse.ArgumentParser("Error scaling test for finite volume operators")
+    parser.add_argument(
+        "--make-plots", action="store_true", help="Create plots of error scaling"
+    )
+    parser.add_argument(
+        "--show-plots",
+        action="store_true",
+        help="Stop and show plots, implies --make-plots",
+    )
+    parser.add_argument(
+        "--dump-errors",
+        type=str,
+        help="Output file to dump errors as JSON",
+        default="fv_operator_errors.json",
+    )
+
+    args = parser.parse_args()
+
+    success = True
+    failures = []
+
+    cases = {
+        "default": {
+            "order": 2,
+            "args": "",
+        },
+    }
+
+    for name, case in cases.items():
+        error2, failures_ = check_fv_operators(name, case)
+        case.update(error2)
+        failures.extend(failures_)
+        success &= len(failures) == 0
+
+    if args.dump_errors:
+        pathlib.Path(args.dump_errors).write_text(json.dumps(cases))
+
+    if args.make_plots or args.show_plots:
+        make_plots(cases)
+
+    if success:
+        print("\nAll tests passed")
+    else:
+        print("\nSome tests failed:")
+        for failure in failures:
+            print(f"\t{failure}")
+
+    sys.exit(0 if success else 1)
