@@ -5,12 +5,16 @@
 #ifndef BOUT_FV_OPS_H
 #define BOUT_FV_OPS_H
 
+#include <cmath>
+
+#include "bout/bout_types.hxx"
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
-#include "bout/vector2d.hxx"
-
+#include "bout/mesh.hxx"
+#include "bout/output_bout_types.hxx" // NOLINT(unused-includes)
+#include "bout/region.hxx"
 #include "bout/utils.hxx"
-#include <bout/mesh.hxx>
+#include "bout/vector2d.hxx"
 
 namespace FV {
 /*!
@@ -524,5 +528,248 @@ const Field3D Div_f_v(const Field3D& n_in, const Vector3D& v, bool bndry_flux) {
    * X-Z Finite Volume diffusion operator
    */
 Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT);
+
+/// Finite volume parallel divergence
+///
+/// NOTE: Modified version, applies limiter to velocity and field
+///       Performs better (smaller overshoots) than Div_par
+///
+/// Preserves the sum of f*J*dx*dy*dz over the domain
+///
+/// @param[in] f_in   The field being advected.
+///                   This will be reconstructed at cell faces
+///                   using the given CellEdges method
+/// @param[in] v_in   The advection velocity.
+///                   This will be interpolated to cell boundaries
+///                   using linear interpolation
+/// @param[in] wave_speed_in  Local maximum speed of all waves in the system at each
+//                            point in space
+/// @param[in] fixflux     Fix the flux at the boundary to be the value at the
+///                        midpoint (for boundary conditions)
+///
+/// @param[out] flow_ylow    Flow at the lower Y cell boundary
+///                          Already includes area factor * flux
+template <typename CellEdges = MC>
+Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
+                    const Field3D& wave_speed_in, Field3D& flow_ylow,
+                    bool fixflux = true) {
+
+  Coordinates* coord = f_in.getCoordinates();
+
+  if (f_in.isFci()) {
+    // Use mid-point (cell boundary) averages
+    if (flow_ylow.isAllocated()) {
+      flow_ylow = emptyFrom(flow_ylow);
+    }
+
+    ASSERT1(f_in.hasParallelSlices());
+    ASSERT1(v_in.hasParallelSlices());
+
+    const auto& f_up = f_in.yup();
+    const auto& f_down = f_in.ydown();
+
+    const auto& v_up = v_in.yup();
+    const auto& v_down = v_in.ydown();
+
+    Field3D result{emptyFrom(f_in)};
+    BOUT_FOR(i, f_in.getRegion("RGN_NOBNDRY")) {
+      const auto iyp = i.yp();
+      const auto iym = i.ym();
+
+      result[i] = (0.25 * (f_in[i] + f_up[iyp]) * (v_in[i] + v_up[iyp])
+                       * (coord->J[i] + coord->J.yup()[iyp])
+                       / (sqrt(coord->g_22[i]) + sqrt(coord->g_22.yup()[iyp]))
+                   - 0.25 * (f_in[i] + f_down[iym]) * (v_in[i] + v_down[iym])
+                         * (coord->J[i] + coord->J.ydown()[iym])
+                         / (sqrt(coord->g_22[i]) + sqrt(coord->g_22.ydown()[iym])))
+                  / (coord->dy[i] * coord->J[i]);
+    }
+    return result;
+  }
+  ASSERT1_FIELDS_COMPATIBLE(f_in, v_in);
+  ASSERT1_FIELDS_COMPATIBLE(f_in, wave_speed_in);
+
+  const Mesh* mesh = f_in.getMesh();
+
+  CellEdges cellboundary;
+
+  ASSERT2(f_in.getDirectionY() == v_in.getDirectionY());
+  ASSERT2(f_in.getDirectionY() == wave_speed_in.getDirectionY());
+  const bool are_unaligned =
+      ((f_in.getDirectionY() == YDirectionType::Standard)
+       and (v_in.getDirectionY() == YDirectionType::Standard)
+       and (wave_speed_in.getDirectionY() == YDirectionType::Standard));
+
+  const Field3D f = are_unaligned ? toFieldAligned(f_in, "RGN_NOX") : f_in;
+  const Field3D v = are_unaligned ? toFieldAligned(v_in, "RGN_NOX") : v_in;
+  const Field3D wave_speed =
+      are_unaligned ? toFieldAligned(wave_speed_in, "RGN_NOX") : wave_speed_in;
+
+  Field3D result{zeroFrom(f)};
+  flow_ylow = zeroFrom(f);
+
+  for (int i = mesh->xstart; i <= mesh->xend; i++) {
+    const bool is_periodic_y = mesh->periodicY(i);
+    const bool is_first_y = mesh->firstY(i);
+    const bool is_last_y = mesh->lastY(i);
+
+    // Only need one guard cell, so no need to communicate fluxes Instead
+    // calculate in guard cells to get fluxes consistent between processors, but
+    // don't include the boundary cell. Note that this implies special handling
+    // of boundaries later
+    const int ys = (!is_first_y || is_periodic_y) ? mesh->ystart - 1 : mesh->ystart;
+    const int ye = (!is_last_y || is_periodic_y) ? mesh->yend + 1 : mesh->yend;
+
+    for (int j = ys; j <= ye; j++) {
+      // Pre-calculate factors which multiply fluxes
+#if not(BOUT_USE_METRIC_3D)
+      // For right cell boundaries
+      const BoutReal common_factor_r =
+          (coord->J(i, j) + coord->J(i, j + 1))
+          / (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j + 1)));
+
+      const BoutReal flux_factor_rc =
+          common_factor_r / (coord->dy(i, j) * coord->J(i, j));
+      const BoutReal flux_factor_rp =
+          common_factor_r / (coord->dy(i, j + 1) * coord->J(i, j + 1));
+
+      const BoutReal area_rp =
+          common_factor_r * coord->dx(i, j + 1) * coord->dz(i, j + 1);
+
+      // For left cell boundaries
+      const BoutReal common_factor_l =
+          (coord->J(i, j) + coord->J(i, j - 1))
+          / (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j - 1)));
+
+      const BoutReal flux_factor_lc =
+          common_factor_l / (coord->dy(i, j) * coord->J(i, j));
+      const BoutReal flux_factor_lm =
+          common_factor_l / (coord->dy(i, j - 1) * coord->J(i, j - 1));
+
+      const BoutReal area_lc = common_factor_l * coord->dx(i, j) * coord->dz(i, j);
+#endif
+      for (int k = 0; k < mesh->LocalNz; k++) {
+#if BOUT_USE_METRIC_3D
+        // For right cell boundaries
+        const BoutReal common_factor_r =
+            (coord->J(i, j, k) + coord->J(i, j + 1, k))
+            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j + 1, k)));
+
+        const BoutReal flux_factor_rc =
+            common_factor_r / (coord->dy(i, j, k) * coord->J(i, j, k));
+        const BoutReal flux_factor_rp =
+            common_factor_r / (coord->dy(i, j + 1, k) * coord->J(i, j + 1, k));
+
+        const BoutReal area_rp =
+            common_factor_r * coord->dx(i, j + 1, k) * coord->dz(i, j + 1, k);
+
+        // For left cell boundaries
+        const BoutReal common_factor_l =
+            (coord->J(i, j, k) + coord->J(i, j - 1, k))
+            / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j - 1, k)));
+
+        const BoutReal flux_factor_lc =
+            common_factor_l / (coord->dy(i, j, k) * coord->J(i, j, k));
+        const BoutReal flux_factor_lm =
+            common_factor_l / (coord->dy(i, j - 1, k) * coord->J(i, j - 1, k));
+
+        const BoutReal area_lc =
+            common_factor_l * coord->dx(i, j, k) * coord->dz(i, j, k);
+#endif
+
+        ////////////////////////////////////////////
+        // Reconstruct f at the cell faces
+        // This calculates s.R and s.L for the Right and Left
+        // face values on this cell
+
+        // Reconstruct f at the cell faces
+        // TODO(peter): We can remove this #ifdef guard after switching to C++20
+#if __cpp_designated_initializers >= 201707L
+        Stencil1D s{.c = f(i, j, k), .m = f(i, j - 1, k), .p = f(i, j + 1, k)};
+#else
+        Stencil1D s{f(i, j, k), f(i, j - 1, k), f(i, j + 1, k), BoutNaN,
+                    BoutNaN,    BoutNaN,        BoutNaN};
+#endif
+        cellboundary(s); // Calculate s.R and s.L
+
+        ////////////////////////////////////////////
+        // Reconstruct v at the cell faces
+        // TODO(peter): We can remove this #ifdef guard after switching to C++20
+#if __cpp_designated_initializers >= 201707L
+        Stencil1D sv{.c = v(i, j, k), .m = v(i, j - 1, k), .p = v(i, j + 1, k)};
+#else
+        Stencil1D sv{v(i, j, k), v(i, j - 1, k), v(i, j + 1, k), BoutNaN,
+                     BoutNaN,    BoutNaN,        BoutNaN};
+#endif
+        cellboundary(sv); // Calculate sv.R and sv.L
+
+        ////////////////////////////////////////////
+        // Right boundary
+
+        BoutReal flux = BoutNaN;
+
+        if (is_last_y && (j == mesh->yend) && !is_periodic_y) {
+          // Last point in domain
+
+          // Calculate velocity at right boundary (y+1/2)
+          const BoutReal vpar = 0.5 * (v(i, j, k) + v(i, j + 1, k));
+
+          const BoutReal bndryval = 0.5 * (s.c + s.p);
+          if (fixflux) {
+            // Use mid-point to be consistent with boundary conditions
+            flux = bndryval * vpar;
+          } else {
+            // Add flux due to difference in boundary values
+            flux = (s.R * vpar) + (wave_speed(i, j, k) * (s.R - bndryval));
+          }
+
+        } else {
+          // Maximum wave speed in the two cells
+          const BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j + 1, k),
+                                        fabs(v(i, j, k)), fabs(v(i, j + 1, k)));
+
+          flux = s.R * 0.5 * (sv.R + amax);
+        }
+
+        result(i, j, k) += flux * flux_factor_rc;
+        result(i, j + 1, k) -= flux * flux_factor_rp;
+
+        flow_ylow(i, j + 1, k) += flux * area_rp;
+
+        ////////////////////////////////////////////
+        // Calculate at left boundary
+
+        if (is_first_y && (j == mesh->ystart) && !is_periodic_y) {
+          // First point in domain
+          const BoutReal bndryval = 0.5 * (s.c + s.m);
+          const BoutReal vpar = 0.5 * (v(i, j, k) + v(i, j - 1, k));
+          if (fixflux) {
+            // Use mid-point to be consistent with boundary conditions
+            flux = bndryval * vpar;
+          } else {
+            // Add flux due to difference in boundary values
+            flux = (s.L * vpar) - (wave_speed(i, j, k) * (s.L - bndryval));
+          }
+        } else {
+
+          // Maximum wave speed in the two cells
+          const BoutReal amax = BOUTMAX(wave_speed(i, j, k), wave_speed(i, j - 1, k),
+                                        fabs(v(i, j, k)), fabs(v(i, j - 1, k)));
+
+          flux = s.L * 0.5 * (sv.L - amax);
+        }
+
+        result(i, j, k) -= flux * flux_factor_lc;
+        result(i, j - 1, k) += flux * flux_factor_lm;
+
+        flow_ylow(i, j, k) += flux * area_lc;
+      }
+    }
+  }
+  if (are_unaligned) {
+    flow_ylow = fromFieldAligned(flow_ylow, "RGN_NOBNDRY");
+  }
+  return are_unaligned ? fromFieldAligned(result, "RGN_NOBNDRY") : result;
+}
 } // namespace FV
 #endif // BOUT_FV_OPS_H
