@@ -30,6 +30,7 @@ OPERATORS = (
     "div_par_K_grad_par",
     "laplace_par",
     "FV_div_par_mod",
+    "FV_div_par_fvv",
 )
 # Note that we need at least _2_ interior points for hermite spline
 # interpolation due to an awkwardness with the boundaries
