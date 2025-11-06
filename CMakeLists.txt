@@ -465,7 +465,7 @@ set(BOUT_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}/lib")
 set_target_properties(bout++ PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
   ARCHIVE_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
-  SOVERSION 5.1.0)
+  SOVERSION 5.2.0)
 
 # Set some variables for the bout-config script
 set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -L\$BOUT_LIB_PATH -lbout++")
