@@ -61,6 +61,7 @@ for name, expr in (
     ("grad2_par2_solution", FCI_grad2_par2(f)),
     ("div_par_solution", FCI_div_par(f)),
     ("div_par_K_grad_par_solution", FCI_div_par_K_grad_par(f, K)),
+    ("div_par_K_grad_par_mod_solution", FCI_div_par_K_grad_par(f, K)),
     ("laplace_par_solution", FCI_Laplace_par(f)),
     ("FV_div_par_mod_solution", FCI_div_par(f * K)),
     ("FV_div_par_fvv_solution", FCI_div_par(f * K * K)),
