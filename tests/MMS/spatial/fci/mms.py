@@ -16,6 +16,7 @@ warnings.simplefilter("ignore", AlwaysWarning)
 f = sin(y - z) + sin(y - 2 * z)
 K = cos(z - y)
 
+
 Lx = 0.1
 Ly = 10.0
 Lz = 1.0
@@ -61,6 +62,7 @@ for name, expr in (
     ("div_par_solution", FCI_div_par(f)),
     ("div_par_K_grad_par_solution", FCI_div_par_K_grad_par(f, K)),
     ("laplace_par_solution", FCI_Laplace_par(f)),
+    ("FV_div_par_mod_solution", FCI_div_par(f * K)),
 ):
     expr_str = exprToStr(expr)
     print(f"{name} = {expr_str}")
