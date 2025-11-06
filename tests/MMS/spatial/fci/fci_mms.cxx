@@ -4,6 +4,7 @@
 #include "bout/field.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
+#include "bout/fv_ops.hxx"
 #include "bout/globals.hxx"
 #include "bout/options.hxx"
 #include "bout/options_io.hxx"
@@ -63,6 +64,10 @@ int main(int argc, char** argv) {
   fci_op_test("div_par", dump, input, Div_par(input));
   fci_op_test("div_par_K_grad_par", dump, input, Div_par_K_Grad_par(K, input));
   fci_op_test("laplace_par", dump, input, Laplace_par(input));
+
+  // Finite volume methods
+  Field3D flow_ylow;
+  fci_op_test("FV_div_par_mod", dump, input, FV::Div_par_mod(input, K, K, flow_ylow));
 
   bout::writeDefaultOutputFile(dump);
 
