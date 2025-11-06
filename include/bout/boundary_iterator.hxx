@@ -42,7 +42,9 @@ public:
     return (f[ind()] * 3 - yprev(f)) * 0.5;
   }
 
-  BoutReal extrapolate_next_o2(const Field3D& f) const { return (2 * f[ind()]) - yprev(f); }
+  BoutReal extrapolate_next_o2(const Field3D& f) const {
+    return (2 * f[ind()]) - yprev(f);
+  }
 
   BoutReal
   extrapolate_next_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
@@ -150,6 +152,7 @@ public:
 
   const int dir;
   virtual ~BoundaryRegionIter = default;
+
 protected:
   int z{0};
   int x;
