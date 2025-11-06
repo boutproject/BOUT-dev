@@ -63,6 +63,7 @@ for name, expr in (
     ("div_par_K_grad_par_solution", FCI_div_par_K_grad_par(f, K)),
     ("laplace_par_solution", FCI_Laplace_par(f)),
     ("FV_div_par_mod_solution", FCI_div_par(f * K)),
+    ("FV_div_par_fvv_solution", FCI_div_par(f * K * K)),
 ):
     expr_str = exprToStr(expr)
     print(f"{name} = {expr_str}")
