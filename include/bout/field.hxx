@@ -542,7 +542,7 @@ class Field3DParallel;
     T result{emptyFrom(f)};                                            \
     BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }     \
     if constexpr (std::is_base_of_v<Field3DParallel, T>) {             \
-      for (int i = 0; i < f.numberParallelSlices(); ++i) {             \
+      for (size_t i = 0; i < f.numberParallelSlices(); ++i) {	       \
         result.yup(i) = func(f.yup(i));                                \
         result.ydown(i) = func(f.ydown(i));                            \
       }                                                                \
