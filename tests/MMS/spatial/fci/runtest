@@ -28,6 +28,7 @@ OPERATORS = (
     "grad2_par2",
     "div_par",
     "div_par_K_grad_par",
+    "div_par_K_grad_par_mod",
     "laplace_par",
     "FV_div_par_mod",
     "FV_div_par_fvv",
