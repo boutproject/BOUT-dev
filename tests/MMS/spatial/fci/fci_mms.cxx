@@ -68,6 +68,7 @@ int main(int argc, char** argv) {
   // Finite volume methods
   Field3D flow_ylow;
   fci_op_test("FV_div_par_mod", dump, input, FV::Div_par_mod(input, K, K, flow_ylow));
+  fci_op_test("FV_div_par_fvv", dump, input, FV::Div_par_fvv(input, K, K));
 
   bout::writeDefaultOutputFile(dump);
 
