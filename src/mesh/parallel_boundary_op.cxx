@@ -1,9 +1,11 @@
 #include "bout/parallel_boundary_op.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/constants.hxx"
 #include "bout/field_factory.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 #include "bout/output.hxx"
+#include "bout/parallel_boundary_region.hxx"
 
 BoutReal BoundaryOpPar::getValue(const BoundaryRegionParIter& bndry, BoutReal t) {
   switch (value_type) {

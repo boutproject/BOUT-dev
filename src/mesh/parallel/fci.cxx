@@ -41,6 +41,7 @@
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_data.hxx"
@@ -61,6 +62,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace {
 using namespace std::literals;
@@ -84,15 +86,15 @@ void set_parallel_metric_component(std::string name, Field3D& component, int off
   auto& pcom = component.ynext(offset);
   pcom.allocate();
   pcom.setRegion(fmt::format("RGN_YPAR_{:+d}", offset));
-  pcom.name = name;
+  pcom.name = std::move(name);
   BOUT_FOR(i, component.getRegion("RGN_NOBNDRY")) { pcom[i.yp(offset)] = data[i]; }
 }
 
-bool load_parallel_metric_component(std::string name, Field3D& component, int offset,
-                                    bool doZero) {
+bool load_parallel_metric_component(const std::string& name, Field3D& component,
+                                    int offset, bool doZero) {
   Mesh* mesh = component.getMesh();
   Field3D tmp{mesh};
-  bool doload = mesh->sourceHasVar(name);
+  bool const doload = mesh->sourceHasVar(name);
   bool isValid{false};
   if (doload) {
     const auto pname = parallel_slice_field_name(name, offset);
@@ -298,7 +300,7 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
 
   BoutMask to_remove(map_mesh);
   const int xend = map_mesh->xstart
-                   + (map_mesh->xend - map_mesh->xstart + 1) * map_mesh->getNXPE() - 1;
+                   + ((map_mesh->xend - map_mesh->xstart + 1) * map_mesh->getNXPE()) - 1;
   // Default to the maximum number of points
   const int defValid{map_mesh->ystart - 1 + std::abs(offset)};
   // Serial loop because call to BoundaryRegionPar::addPoint
@@ -371,7 +373,7 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
     ASSERT2(map_mesh->xend - map_mesh->xstart >= 2);
     auto boundary = (xt_prime[i] < map_mesh->xstart) ? inner_boundary : outer_boundary;
     if (!boundary->contains(x, y, z)) {
-      boundary->add_point(x, y, z, x + dx, y + offset - sgn(offset) * 0.5,
+      boundary->add_point(x, y, z, x + dx, y + offset - (sgn(offset) * 0.5),
                           z + dz, // Intersection point in local index space
                           std::abs(offset_) - 0.5, // Distance to intersection
                           defValid, offset_);

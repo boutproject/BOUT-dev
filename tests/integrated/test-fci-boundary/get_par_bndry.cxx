@@ -1,7 +1,10 @@
 #include "bout/bout.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
+#include "bout/output.hxx"
 #include "bout/parallel_boundary_region.hxx"
+#include <fmt/format.h>
+#include <vector>
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);

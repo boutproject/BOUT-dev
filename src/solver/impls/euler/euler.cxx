@@ -1,6 +1,8 @@
 
 #include "euler.hxx"
 
+#include "bout/bout.hxx"
+#include "bout/field2d.hxx"
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/msg_stack.hxx>
@@ -9,6 +11,8 @@
 #include <bout/version.hxx>
 
 #include <cmath>
+#include <fmt/format.h>
+#include <memory>
 
 #include <bout/output.hxx>
 

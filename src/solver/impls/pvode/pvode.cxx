@@ -24,6 +24,11 @@
  **************************************************************************/
 
 #include "bout/build_defines.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include <bits/basic_string.h>
+#include <fmt/format.h>
+#include <vector>
 
 #include "pvode.hxx"
 
@@ -360,7 +365,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
   if (flag != SUCCESS) {
     output_error.write("ERROR CVODE step failed, flag = {:d}\n", flag);
     if (debug_on_failure) {
-      CVodeMemRec* cv_mem = (CVodeMem)cvode_mem;
+      CVodeMemRec const* cv_mem = (CVodeMem)cvode_mem;
       if (f2d.empty() and v2d.empty() and v3d.empty()) {
         Options debug{};
         using namespace std::string_literals;

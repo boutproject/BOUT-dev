@@ -1,6 +1,11 @@
 #include "fmt/format.h"
 #include "bout/bout.hxx"
+#include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
+#include "bout/globals.hxx"
+#include "bout/options.hxx"
+#include "bout/options_io.hxx"
+#include "bout/region.hxx"
 
 namespace {
 auto fci_mpi_test(int num, Options& dump) {

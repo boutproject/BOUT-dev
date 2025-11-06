@@ -20,10 +20,12 @@
  *
  **************************************************************************/
 
+#include "bout/boutexception.hxx"
 #include "bout/globals.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
 
+#include <fmt/format.h>
 #include <vector>
 
 XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh* mesh)

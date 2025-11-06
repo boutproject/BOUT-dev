@@ -484,8 +484,8 @@ int BoutMesh::load() {
   }
   ASSERT0(MXG >= 0);
 
-  bool meshHasMyg = Mesh::get(MYG, "MYG") == 0;
-  int meshMyg;
+  bool const meshHasMyg = Mesh::get(MYG, "MYG") == 0;
+  int meshMyg = 0;
   if (!meshHasMyg) {
     MYG = 2;
   } else {

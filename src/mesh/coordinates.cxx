@@ -4,6 +4,7 @@
  * given the contravariant metric tensor terms
  **************************************************************************/
 
+#include "bout/region.hxx"
 #include <bout/assert.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
@@ -18,6 +19,7 @@
 #include <bout/output_bout_types.hxx>
 
 #include <bout/globals.hxx>
+#include <vector>
 
 #include "invert3x3.hxx"
 #include "parallel/fci.hxx"
@@ -619,7 +621,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
         maxError = std::max(std::abs(local - 1), maxError);
       }
     }
-    BoutReal allowedError = (*options)["allowedFluxError"].withDefault(1e-6);
+    BoutReal const allowedError = (*options)["allowedFluxError"].withDefault(1e-6);
     if (maxError < allowedError / 100) {
       output_info.write("\tInfo: The maximum flux conservation error is {:e}", maxError);
     } else if (maxError < allowedError) {
@@ -1617,9 +1619,9 @@ Field3D Coordinates::Div_par(const Field3DParallel& f, CELL_LOC outloc,
     return Bxy * Grad_par(f / Bxy_floc, outloc, method);
   }
 
-  auto coords = f.getCoordinates();
+  auto* coords = f.getCoordinates();
   // Need to modify yup and ydown fields
-  Field3D Jg = coords->J / sqrt(coords->g_22.asField3DParallel());
+  Field3D const Jg = coords->J / sqrt(coords->g_22.asField3DParallel());
   return setName(Jg * Grad_par(f / Jg, outloc, method), "Div_par({:s})", f.name);
 }
 

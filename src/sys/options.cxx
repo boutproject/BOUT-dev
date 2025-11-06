@@ -1,6 +1,7 @@
 #include "bout/options.hxx"
 
 #include "bout/array.hxx"
+#include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field2d.hxx"
@@ -16,6 +17,7 @@
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
 
+#include <cstddef>
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
@@ -343,7 +345,7 @@ Options& Options::assign<>(Tensor<BoutReal> val, std::string source) {
   return *this;
 }
 
-void saveParallel(Options& opt, const std::string name, const Field3D& tosave) {
+void saveParallel(Options& opt, const std::string& name, const Field3D& tosave) {
   ASSERT0(tosave.isAllocated());
   opt[name] = tosave;
   for (size_t i0 = 1; i0 <= tosave.numberParallelSlices(); ++i0) {

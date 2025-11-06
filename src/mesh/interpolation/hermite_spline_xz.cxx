@@ -25,7 +25,12 @@
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_xz.hxx"
+#include "bout/mask.hxx"
+#include "bout/utils.hxx"
 
+#include <algorithm>
+#include <memory>
+#include <string>
 #include <vector>
 
 class IndConverter {
@@ -393,7 +398,7 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
 
   const auto region2 = y_offset != 0 ? fmt::format("RGN_YPAR_{:+d}", y_offset) : region;
 
-  std::unique_ptr<GlobalField3DAccessInstance> gf;
+  std::unique_ptr<GlobalField3DAccessInstance> const gf;
   if constexpr (monotonic) {
     gf = gf3daccess->communicate_asPtr(f);
   }
@@ -529,21 +534,21 @@ Field3D XZMonotonicHermiteSplineLegacy::interpolate(const Field3D& f,
   localmesh->communicateXZ(fx);
   // communicate in y, but do not calculate parallel slices
   {
-    auto h = localmesh->sendY(fx);
+    auto* h = localmesh->sendY(fx);
     localmesh->wait(h);
   }
   Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", "RGN_ALL");
   localmesh->communicateXZ(fz);
   // communicate in y, but do not calculate parallel slices
   {
-    auto h = localmesh->sendY(fz);
+    auto* h = localmesh->sendY(fz);
     localmesh->wait(h);
   }
   Field3D fxz = bout::derivatives::index::DDX(fz, CELL_DEFAULT, "DEFAULT");
   localmesh->communicateXZ(fxz);
   // communicate in y, but do not calculate parallel slices
   {
-    auto h = localmesh->sendY(fxz);
+    auto* h = localmesh->sendY(fxz);
     localmesh->wait(h);
   }
 
@@ -557,24 +562,24 @@ Field3D XZMonotonicHermiteSplineLegacy::interpolate(const Field3D& f,
     const auto icxpzp = iczp.xp();
 
     // Interpolate f in X at Z
-    const BoutReal f_z =
-        f[ic] * h00_x[i] + f[icxp] * h01_x[i] + fx[ic] * h10_x[i] + fx[icxp] * h11_x[i];
+    const BoutReal f_z = (f[ic] * h00_x[i]) + (f[icxp] * h01_x[i]) + (fx[ic] * h10_x[i])
+                         + (fx[icxp] * h11_x[i]);
 
     // Interpolate f in X at Z+1
-    const BoutReal f_zp1 = f[iczp] * h00_x[i] + f[icxpzp] * h01_x[i] + fx[iczp] * h10_x[i]
-                           + fx[icxpzp] * h11_x[i];
+    const BoutReal f_zp1 = (f[iczp] * h00_x[i]) + (f[icxpzp] * h01_x[i])
+                           + (fx[iczp] * h10_x[i]) + (fx[icxpzp] * h11_x[i]);
 
     // Interpolate fz in X at Z
-    const BoutReal fz_z = fz[ic] * h00_x[i] + fz[icxp] * h01_x[i] + fxz[ic] * h10_x[i]
-                          + fxz[icxp] * h11_x[i];
+    const BoutReal fz_z = (fz[ic] * h00_x[i]) + (fz[icxp] * h01_x[i])
+                          + (fxz[ic] * h10_x[i]) + (fxz[icxp] * h11_x[i]);
 
     // Interpolate fz in X at Z+1
-    const BoutReal fz_zp1 = fz[iczp] * h00_x[i] + fz[icxpzp] * h01_x[i]
-                            + fxz[iczp] * h10_x[i] + fxz[icxpzp] * h11_x[i];
+    const BoutReal fz_zp1 = (fz[iczp] * h00_x[i]) + (fz[icxpzp] * h01_x[i])
+                            + (fxz[iczp] * h10_x[i]) + (fxz[icxpzp] * h11_x[i]);
 
     // Interpolate in Z
     BoutReal result =
-        +f_z * h00_z[i] + f_zp1 * h01_z[i] + fz_z * h10_z[i] + fz_zp1 * h11_z[i];
+        (+f_z * h00_z[i]) + (f_zp1 * h01_z[i]) + (fz_z * h10_z[i]) + (fz_zp1 * h11_z[i]);
 
     ASSERT2(std::isfinite(result) || i.x() < localmesh->xstart
             || i.x() > localmesh->xend);
@@ -594,12 +599,8 @@ Field3D XZMonotonicHermiteSplineLegacy::interpolate(const Field3D& f,
     ASSERT2(std::isfinite(localmin) || i.x() < localmesh->xstart
             || i.x() > localmesh->xend);
 
-    if (result > localmax) {
-      result = localmax;
-    }
-    if (result < localmin) {
-      result = localmin;
-    }
+    result = std::min(result, localmax);
+    result = std::max(result, localmin);
 
     f_interp[iyp] = result;
   }

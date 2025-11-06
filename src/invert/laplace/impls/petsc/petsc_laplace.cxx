@@ -25,10 +25,14 @@
  **************************************************************************/
 
 #include "bout/build_defines.hxx"
+#include <cmath>
+#include <memory>
 
 #if BOUT_HAS_PETSC
 
 #include "petsc_laplace.hxx"
+
+#include <math.h>
 
 #include <bout/assert.hxx>
 #include <bout/boutcomm.hxx>
@@ -380,7 +384,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
   if (localmesh->firstX()) {
     for (int x = 0; x < localmesh->xstart; x++) {
       for (int z = 0; z < localmesh->LocalNz; z++) {
-        PetscScalar val; // Value of element to be set in the matrix
+        PetscScalar val = NAN; // Value of element to be set in the matrix
         // If Neumann Boundary Conditions are set.
         if (isInnerBoundaryFlagSet(INVERT_AC_GRAD)) {
           // Set values corresponding to nodes adjacent in x
@@ -814,7 +818,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
 
     // Call the actual solver
     {
-      Timer timer("petscsolve");
+      Timer const timer("petscsolve");
       KSPSolve(ksp, bs, xs); // Call the solver to solve the system
     }
 
@@ -830,7 +834,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
   }
     } else {
       timer.reset();
-      PetscErrorCode err = MatMult(MatA, bs, xs);
+      PetscErrorCode const err = MatMult(MatA, bs, xs);
       if (err != PETSC_SUCCESS) {
         throw BoutException("MatMult failed with {:d}", static_cast<int>(err));
       }

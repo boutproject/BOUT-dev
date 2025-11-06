@@ -166,8 +166,8 @@ protected:
 #if HS_USE_PETSC
   PetscLib* petsclib;
   bool isInit{false};
-  Mat petscWeights;
-  Vec rhs, result;
+  Mat petscWeights{};
+  Vec rhs{}, result{};
 #endif
 
 public:

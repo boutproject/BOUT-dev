@@ -263,7 +263,8 @@ Field3D Laplacian::forward(const Field3D& b) {
   ASSERT1(localmesh == b.getMesh());
 
   // Setting the start and end range of the y-slices
-  int ys = localmesh->ystart, ye = localmesh->yend;
+  int ys = localmesh->ystart;
+  int ye = localmesh->yend;
   if (include_yguards && localmesh->hasBndryLowerY()) {
     ys = 0; // Mesh contains a lower boundary
   }

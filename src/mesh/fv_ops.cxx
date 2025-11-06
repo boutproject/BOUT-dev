@@ -1,3 +1,5 @@
+#include "bout/boutexception.hxx"
+#include "bout/difops.hxx"
 #include <bout/fv_ops.hxx>
 #include <bout/globals.hxx>
 #include <bout/msg_stack.hxx>

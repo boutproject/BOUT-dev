@@ -23,10 +23,13 @@
  *
  **************************************************************************/
 
+#include "bout/unused.hxx"
 #include <bout/boutcomm.hxx>
 #include <bout/globals.hxx>
 
 #include <cmath>
+#include <cstddef>
+#include <optional>
 
 #include <bout/boutexception.hxx>
 #include <bout/fieldperp.hxx>

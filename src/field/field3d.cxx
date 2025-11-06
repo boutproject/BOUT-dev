@@ -25,12 +25,16 @@
  *
  **************************************************************************/
 
+#include "bout/bout_types.hxx"
 #include "bout/build_config.hxx"
 
 #include <bout/boutcomm.hxx>
 #include <bout/globals.hxx>
 
 #include <cmath>
+#include <cstddef>
+#include <fmt/format.h>
+#include <optional>
 
 #include "bout/parallel_boundary_op.hxx"
 #include "bout/parallel_boundary_region.hxx"
@@ -989,7 +993,7 @@ template Options* Field3D::track<Field2D>(const Field2D&, std::string);
 template Options* Field3D::track<FieldPerp>(const FieldPerp&, std::string);
 
 Options* Field3D::track(const BoutReal& change, std::string operation) {
-  if (tracking and tracking_state) {
+  if ((tracking != nullptr) and (tracking_state != 0)) {
     const std::string outname{fmt::format("track_{:s}_{:d}", selfname, tracking_state++)};
     tracking->set(outname, change, "tracking");
     (*tracking)[outname].setAttributes({
