@@ -23,7 +23,14 @@ from scipy.interpolate import RectBivariateSpline as RBS
 DIRECTORY = "data"
 NPROC = 2
 MTHREAD = 2
-OPERATORS = ("grad_par", "grad2_par2", "div_par", "div_par_K_grad_par", "laplace_par")
+OPERATORS = (
+    "grad_par",
+    "grad2_par2",
+    "div_par",
+    "div_par_K_grad_par",
+    "laplace_par",
+    "FV_div_par_mod",
+)
 # Note that we need at least _2_ interior points for hermite spline
 # interpolation due to an awkwardness with the boundaries
 NX = 4
