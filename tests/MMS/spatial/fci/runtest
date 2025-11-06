@@ -43,7 +43,7 @@ def quiet_collect(name: str) -> float:
     )[()]
 
 
-def assert_convergence(error, dx, name, order) -> bool:
+def assert_convergence(error, dx, name, expected) -> bool:
     fit = polyfit(log(dx), log(error), 1)
     order = fit[0]
     print(f"{name} convergence order = {order:f} (fit)", end="")
@@ -52,7 +52,7 @@ def assert_convergence(error, dx, name, order) -> bool:
     print(f", {order:f} (small spacing)", end="")
 
     # Should be close to the expected order
-    success = order > order * 0.95
+    success = order > expected * 0.95
     print(f"\t............ {'PASS' if success else 'FAIL'}")
 
     return success
