@@ -8,45 +8,29 @@
   checkData({{lhs.name}});
   checkData({{rhs.name}});
 
-  {% if out == "Field3D" %}
-    {% if lhs == rhs == "Field3D" %}
+  {% if out.region_type == "3D" %}
+    {% if lhs.region_type == rhs.region_type == "3D" %}
       {{out.name}}.setRegion({{lhs.name}}.getMesh()->getCommonRegion({{lhs.name}}.getRegionID(),
                                                                      {{rhs.name}}.getRegionID()));
-#if BOUT_USE_FCI_AUTOMAGIC
-      if ({{lhs.name}}.isFci() and {{lhs.name}}.hasParallelSlices() and {{rhs.name}}.hasParallelSlices()) {
-        {{out.name}}.splitParallelSlices();
-	for (size_t i{0} ; i < {{lhs.name}}.numberParallelSlices() ; ++i) {
-          {{out.name}}.yup(i) = {{lhs.name}}.yup(i) {{operator}} {{rhs.name}}.yup(i);
-          {{out.name}}.ydown(i) = {{lhs.name}}.ydown(i) {{operator}} {{rhs.name}}.ydown(i);
-        }
-      }
-#endif
-    {% elif lhs == "Field3D" %}
+    {% elif lhs.region_type == "3D" %}
       {{out.name}}.setRegion({{lhs.name}}.getRegionID());
-      {% if rhs == "BoutReal" %}
-#if BOUT_USE_FCI_AUTOMAGIC
-      if ({{lhs.name}}.isFci() and {{lhs.name}}.hasParallelSlices()) {
-        {{out.name}}.splitParallelSlices();
-	for (size_t i{0} ; i < {{lhs.name}}.numberParallelSlices() ; ++i) {
-          {{out.name}}.yup(i) = {{lhs.name}}.yup(i) {{operator}} {{rhs.name}};
-          {{out.name}}.ydown(i) = {{lhs.name}}.ydown(i) {{operator}} {{rhs.name}};
-        }
-      }
-#endif
-      {% endif %}
-    {% elif rhs == "Field3D" %}
+    {% elif rhs.region_type == "3D" %}
       {{out.name}}.setRegion({{rhs.name}}.getRegionID());
-      {% if lhs == "BoutReal" %}
-#if BOUT_USE_FCI_AUTOMAGIC
-      if ({{rhs.name}}.isFci() and {{rhs.name}}.hasParallelSlices()) {
+    {% endif %}
+    {% if out == "Field3DParallel" %}
+      if ({{out.name}}.isFci()) {
+	{{ lhs.assertParallelSlices }}
+	{{ rhs.assertParallelSlices }}
         {{out.name}}.splitParallelSlices();
-	for (size_t i{0} ; i < {{rhs.name}}.numberParallelSlices() ; ++i) {
-          {{out.name}}.yup(i) = {{lhs.name}} {{operator}} {{rhs.name}}.yup(i);
-          {{out.name}}.ydown(i) = {{lhs.name}} {{operator}} {{rhs.name}}.ydown(i);
+      {% if lhs.region_type == "3D" %}
+        for (size_t i{0} ; i < {{lhs.name}}.numberParallelSlices() ; ++i) {
+      {% else %}
+        for (size_t i{0} ; i < {{rhs.name}}.numberParallelSlices() ; ++i) {
+      {% endif %}
+          {{out.name}}.yup(i) = {{lhs.yup}} {{operator}} {{rhs.yup}};
+          {{out.name}}.ydown(i) = {{lhs.ydown}} {{operator}} {{rhs.ydown}};
         }
       }
-#endif
-      {% endif %}
     {% endif %}
   {% endif %}
 
@@ -110,29 +94,26 @@
       ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
     {% endif %}
 
-    {% if (lhs == "Field3D") %}
-      // Delete existing parallel slices. We don't copy parallel slices, so any
+    {% if lhs == "Field3D" %}
+      // Delete existing parallel slices. We don't update parallel slices, so any
       // that currently exist will be incorrect.
-      {% if (rhs == "Field3D" or rhs == "BoutReal") %}
-#if BOUT_USE_FCI_AUTOMAGIC
-      if (this->isFci() and this->hasParallelSlices() {% if rhs == "Field3D" %} and {{rhs.name}}.hasParallelSlices() {% endif %}) {
+      clearParallelSlices();
+    {% endif %}
+    {% if lhs == "Field3DParallel" and (rhs.region_type == "3D" or rhs == "BoutReal") %}
+      if (this->isFci()) {
 	for (size_t i{0} ; i < yup_fields.size() ; ++i) {
           yup(i) {{operator}}= {{rhs.name}}{% if rhs == "Field3D" %}.yup(i){% endif %};
           ydown(i) {{operator}}= {{rhs.name}}{% if rhs == "Field3D" %}.ydown(i){% endif %};
         }
-      } else
-#endif
-      {% endif %}
-      {
+      } else {
         clearParallelSlices();
       }
-
     {% endif %}
     checkData(*this);
     checkData({{rhs.name}});
 
-    {% if lhs == rhs == "Field3D" %}
-      regionID = fieldmesh->getCommonRegion(regionID, {{rhs.name}}.regionID);
+    {% if lhs.region_type == rhs.region_type == "3D" %}
+      regionID = fieldmesh->getCommonRegion(regionID, {{rhs.name}}.getRegionID());
     {% endif %}
 
 
@@ -176,7 +157,7 @@
     }
   {% endif %}
 
-  {% if lhs == "Field3D" %}
+  {% if lhs.region_type == "3D" %}
     track(rhs, "operator{{operator}}=");
   {% endif %}
 #if BOUT_USE_TRACK
@@ -186,7 +167,7 @@
     checkData(*this);
 
   } else {
-  {% if lhs == "Field3D" %}
+  {% if lhs.region_type == "3D" %}
     track(rhs, "operator{{operator}}=");
   {% endif %}
     (*this) = (*this) {{operator}} {{rhs.name}};

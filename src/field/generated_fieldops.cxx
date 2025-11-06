@@ -5,6 +5,7 @@
 #include <bout/interpolation.hxx>
 #include <bout/mesh.hxx>
 #include <bout/region.hxx>
+#include <cstddef>
 
 // Provide the C++ wrapper for multiplication of Field3D and Field3D
 Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
@@ -15,15 +16,6 @@ Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (lhs.isFci() and lhs.hasParallelSlices() and rhs.hasParallelSlices()) {
-    result.splitParallelSlices();
-    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
-      result.yup(i) = lhs.yup(i) * rhs.yup(i);
-      result.ydown(i) = lhs.ydown(i) * rhs.ydown(i);
-    }
-  }
-#endif
 
   BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs[index];
@@ -43,24 +35,13 @@ Field3D& Field3D::operator*=(const Field3D& rhs) {
   if (data.unique()) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
-    // Delete existing parallel slices. We don't copy parallel slices, so any
-// that currently exist will be incorrect.
-#if BOUT_USE_FCI_AUTOMAGIC
-    if (this->isFci() and this->hasParallelSlices() and rhs.hasParallelSlices()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) *= rhs.yup(i);
-        ydown(i) *= rhs.ydown(i);
-      }
-    } else
-#endif
-    {
-      clearParallelSlices();
-    }
-
+    // Delete existing parallel slices. We don't update parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
     checkData(*this);
     checkData(rhs);
 
-    regionID = fieldmesh->getCommonRegion(regionID, rhs.regionID);
+    regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
 
@@ -87,15 +68,6 @@ Field3D operator/(const Field3D& lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (lhs.isFci() and lhs.hasParallelSlices() and rhs.hasParallelSlices()) {
-    result.splitParallelSlices();
-    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
-      result.yup(i) = lhs.yup(i) / rhs.yup(i);
-      result.ydown(i) = lhs.ydown(i) / rhs.ydown(i);
-    }
-  }
-#endif
 
   BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] / rhs[index];
@@ -115,24 +87,13 @@ Field3D& Field3D::operator/=(const Field3D& rhs) {
   if (data.unique()) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
-    // Delete existing parallel slices. We don't copy parallel slices, so any
-// that currently exist will be incorrect.
-#if BOUT_USE_FCI_AUTOMAGIC
-    if (this->isFci() and this->hasParallelSlices() and rhs.hasParallelSlices()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) /= rhs.yup(i);
-        ydown(i) /= rhs.ydown(i);
-      }
-    } else
-#endif
-    {
-      clearParallelSlices();
-    }
-
+    // Delete existing parallel slices. We don't update parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
     checkData(*this);
     checkData(rhs);
 
-    regionID = fieldmesh->getCommonRegion(regionID, rhs.regionID);
+    regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
 
@@ -159,15 +120,6 @@ Field3D operator+(const Field3D& lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (lhs.isFci() and lhs.hasParallelSlices() and rhs.hasParallelSlices()) {
-    result.splitParallelSlices();
-    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
-      result.yup(i) = lhs.yup(i) + rhs.yup(i);
-      result.ydown(i) = lhs.ydown(i) + rhs.ydown(i);
-    }
-  }
-#endif
 
   BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs[index];
@@ -187,24 +139,13 @@ Field3D& Field3D::operator+=(const Field3D& rhs) {
   if (data.unique()) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
-    // Delete existing parallel slices. We don't copy parallel slices, so any
-// that currently exist will be incorrect.
-#if BOUT_USE_FCI_AUTOMAGIC
-    if (this->isFci() and this->hasParallelSlices() and rhs.hasParallelSlices()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) += rhs.yup(i);
-        ydown(i) += rhs.ydown(i);
-      }
-    } else
-#endif
-    {
-      clearParallelSlices();
-    }
-
+    // Delete existing parallel slices. We don't update parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
     checkData(*this);
     checkData(rhs);
 
-    regionID = fieldmesh->getCommonRegion(regionID, rhs.regionID);
+    regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
 
@@ -231,15 +172,6 @@ Field3D operator-(const Field3D& lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (lhs.isFci() and lhs.hasParallelSlices() and rhs.hasParallelSlices()) {
-    result.splitParallelSlices();
-    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
-      result.yup(i) = lhs.yup(i) - rhs.yup(i);
-      result.ydown(i) = lhs.ydown(i) - rhs.ydown(i);
-    }
-  }
-#endif
 
   BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs[index];
@@ -259,24 +191,13 @@ Field3D& Field3D::operator-=(const Field3D& rhs) {
   if (data.unique()) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
-    // Delete existing parallel slices. We don't copy parallel slices, so any
-// that currently exist will be incorrect.
-#if BOUT_USE_FCI_AUTOMAGIC
-    if (this->isFci() and this->hasParallelSlices() and rhs.hasParallelSlices()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) -= rhs.yup(i);
-        ydown(i) -= rhs.ydown(i);
-      }
-    } else
-#endif
-    {
-      clearParallelSlices();
-    }
-
+    // Delete existing parallel slices. We don't update parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
     checkData(*this);
     checkData(rhs);
 
-    regionID = fieldmesh->getCommonRegion(regionID, rhs.regionID);
+    regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
 
@@ -327,10 +248,9 @@ Field3D& Field3D::operator*=(const Field2D& rhs) {
   if (data.unique()) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
-    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // Delete existing parallel slices. We don't update parallel slices, so any
     // that currently exist will be incorrect.
-    { clearParallelSlices(); }
-
+    clearParallelSlices();
     checkData(*this);
     checkData(rhs);
 
@@ -389,10 +309,9 @@ Field3D& Field3D::operator/=(const Field2D& rhs) {
   if (data.unique()) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
-    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // Delete existing parallel slices. We don't update parallel slices, so any
     // that currently exist will be incorrect.
-    { clearParallelSlices(); }
-
+    clearParallelSlices();
     checkData(*this);
     checkData(rhs);
 
@@ -451,10 +370,9 @@ Field3D& Field3D::operator+=(const Field2D& rhs) {
   if (data.unique()) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
-    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // Delete existing parallel slices. We don't update parallel slices, so any
     // that currently exist will be incorrect.
-    { clearParallelSlices(); }
-
+    clearParallelSlices();
     checkData(*this);
     checkData(rhs);
 
@@ -512,10 +430,9 @@ Field3D& Field3D::operator-=(const Field2D& rhs) {
   if (data.unique()) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
-    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // Delete existing parallel slices. We don't update parallel slices, so any
     // that currently exist will be incorrect.
-    { clearParallelSlices(); }
-
+    clearParallelSlices();
     checkData(*this);
     checkData(rhs);
 
@@ -640,15 +557,6 @@ Field3D operator*(const Field3D& lhs, const BoutReal rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getRegionID());
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (lhs.isFci() and lhs.hasParallelSlices()) {
-    result.splitParallelSlices();
-    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
-      result.yup(i) = lhs.yup(i) * rhs;
-      result.ydown(i) = lhs.ydown(i) * rhs;
-    }
-  }
-#endif
 
   BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] * rhs;
@@ -667,20 +575,9 @@ Field3D& Field3D::operator*=(const BoutReal rhs) {
   // otherwise just call the non-inplace version
   if (data.unique()) {
 
-    // Delete existing parallel slices. We don't copy parallel slices, so any
-// that currently exist will be incorrect.
-#if BOUT_USE_FCI_AUTOMAGIC
-    if (this->isFci() and this->hasParallelSlices()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) *= rhs;
-        ydown(i) *= rhs;
-      }
-    } else
-#endif
-    {
-      clearParallelSlices();
-    }
-
+    // Delete existing parallel slices. We don't update parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
     checkData(*this);
     checkData(rhs);
 
@@ -708,15 +605,6 @@ Field3D operator/(const Field3D& lhs, const BoutReal rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getRegionID());
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (lhs.isFci() and lhs.hasParallelSlices()) {
-    result.splitParallelSlices();
-    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
-      result.yup(i) = lhs.yup(i) / rhs;
-      result.ydown(i) = lhs.ydown(i) / rhs;
-    }
-  }
-#endif
 
   const auto tmp = 1.0 / rhs;
   BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
@@ -736,20 +624,9 @@ Field3D& Field3D::operator/=(const BoutReal rhs) {
   // otherwise just call the non-inplace version
   if (data.unique()) {
 
-    // Delete existing parallel slices. We don't copy parallel slices, so any
-// that currently exist will be incorrect.
-#if BOUT_USE_FCI_AUTOMAGIC
-    if (this->isFci() and this->hasParallelSlices()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) /= rhs;
-        ydown(i) /= rhs;
-      }
-    } else
-#endif
-    {
-      clearParallelSlices();
-    }
-
+    // Delete existing parallel slices. We don't update parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
     checkData(*this);
     checkData(rhs);
 
@@ -778,15 +655,6 @@ Field3D operator+(const Field3D& lhs, const BoutReal rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getRegionID());
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (lhs.isFci() and lhs.hasParallelSlices()) {
-    result.splitParallelSlices();
-    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
-      result.yup(i) = lhs.yup(i) + rhs;
-      result.ydown(i) = lhs.ydown(i) + rhs;
-    }
-  }
-#endif
 
   BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] + rhs;
@@ -805,20 +673,9 @@ Field3D& Field3D::operator+=(const BoutReal rhs) {
   // otherwise just call the non-inplace version
   if (data.unique()) {
 
-    // Delete existing parallel slices. We don't copy parallel slices, so any
-// that currently exist will be incorrect.
-#if BOUT_USE_FCI_AUTOMAGIC
-    if (this->isFci() and this->hasParallelSlices()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) += rhs;
-        ydown(i) += rhs;
-      }
-    } else
-#endif
-    {
-      clearParallelSlices();
-    }
-
+    // Delete existing parallel slices. We don't update parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
     checkData(*this);
     checkData(rhs);
 
@@ -846,15 +703,6 @@ Field3D operator-(const Field3D& lhs, const BoutReal rhs) {
   checkData(rhs);
 
   result.setRegion(lhs.getRegionID());
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (lhs.isFci() and lhs.hasParallelSlices()) {
-    result.splitParallelSlices();
-    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
-      result.yup(i) = lhs.yup(i) - rhs;
-      result.ydown(i) = lhs.ydown(i) - rhs;
-    }
-  }
-#endif
 
   BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs[index] - rhs;
@@ -873,20 +721,9 @@ Field3D& Field3D::operator-=(const BoutReal rhs) {
   // otherwise just call the non-inplace version
   if (data.unique()) {
 
-    // Delete existing parallel slices. We don't copy parallel slices, so any
-// that currently exist will be incorrect.
-#if BOUT_USE_FCI_AUTOMAGIC
-    if (this->isFci() and this->hasParallelSlices()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) -= rhs;
-        ydown(i) -= rhs;
-      }
-    } else
-#endif
-    {
-      clearParallelSlices();
-    }
-
+    // Delete existing parallel slices. We don't update parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
     checkData(*this);
     checkData(rhs);
 
@@ -2209,15 +2046,6 @@ Field3D operator*(const BoutReal lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(rhs.getRegionID());
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (rhs.isFci() and rhs.hasParallelSlices()) {
-    result.splitParallelSlices();
-    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
-      result.yup(i) = lhs * rhs.yup(i);
-      result.ydown(i) = lhs * rhs.ydown(i);
-    }
-  }
-#endif
 
   BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs * rhs[index];
@@ -2238,15 +2066,6 @@ Field3D operator/(const BoutReal lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(rhs.getRegionID());
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (rhs.isFci() and rhs.hasParallelSlices()) {
-    result.splitParallelSlices();
-    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
-      result.yup(i) = lhs / rhs.yup(i);
-      result.ydown(i) = lhs / rhs.ydown(i);
-    }
-  }
-#endif
 
   BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs / rhs[index];
@@ -2267,15 +2086,6 @@ Field3D operator+(const BoutReal lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(rhs.getRegionID());
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (rhs.isFci() and rhs.hasParallelSlices()) {
-    result.splitParallelSlices();
-    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
-      result.yup(i) = lhs + rhs.yup(i);
-      result.ydown(i) = lhs + rhs.ydown(i);
-    }
-  }
-#endif
 
   BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs + rhs[index];
@@ -2296,15 +2106,6 @@ Field3D operator-(const BoutReal lhs, const Field3D& rhs) {
   checkData(rhs);
 
   result.setRegion(rhs.getRegionID());
-#if BOUT_USE_FCI_AUTOMAGIC
-  if (rhs.isFci() and rhs.hasParallelSlices()) {
-    result.splitParallelSlices();
-    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
-      result.yup(i) = lhs - rhs.yup(i);
-      result.ydown(i) = lhs - rhs.ydown(i);
-    }
-  }
-#endif
 
   BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs - rhs[index];
@@ -2449,6 +2250,1019 @@ FieldPerp operator-(const BoutReal lhs, const FieldPerp& rhs) {
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs - rhs[index];
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", "BR", rhs.name);
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for multiplication of Field3D and Field3DParallel
+Field3DParallel operator*(const Field3D& lhs, const Field3DParallel& rhs) {
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
+
+  Field3DParallel result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  if (result.isFci()) {
+    result.splitParallelSlices();
+    ASSERT2(lhs.hasParallelSlices());
+    ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) * rhs.yup(i);
+      result.ydown(i) = lhs.ydown(i) * rhs.ydown(i);
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] * rhs[index];
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, rhs.name);
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for division of Field3D and Field3DParallel
+Field3DParallel operator/(const Field3D& lhs, const Field3DParallel& rhs) {
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
+
+  Field3DParallel result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  if (result.isFci()) {
+    result.splitParallelSlices();
+    ASSERT2(lhs.hasParallelSlices());
+    ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) / rhs.yup(i);
+      result.ydown(i) = lhs.ydown(i) / rhs.ydown(i);
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] / rhs[index];
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, rhs.name);
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for addition of Field3D and Field3DParallel
+Field3DParallel operator+(const Field3D& lhs, const Field3DParallel& rhs) {
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
+
+  Field3DParallel result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  if (result.isFci()) {
+    result.splitParallelSlices();
+    ASSERT2(lhs.hasParallelSlices());
+    ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) + rhs.yup(i);
+      result.ydown(i) = lhs.ydown(i) + rhs.ydown(i);
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] + rhs[index];
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, rhs.name);
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for subtraction of Field3D and Field3DParallel
+Field3DParallel operator-(const Field3D& lhs, const Field3DParallel& rhs) {
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
+
+  Field3DParallel result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  if (result.isFci()) {
+    result.splitParallelSlices();
+    ASSERT2(lhs.hasParallelSlices());
+    ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) - rhs.yup(i);
+      result.ydown(i) = lhs.ydown(i) - rhs.ydown(i);
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] - rhs[index];
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, rhs.name);
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for multiplication of Field3DParallel and Field3D
+Field3DParallel operator*(const Field3DParallel& lhs, const Field3D& rhs) {
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
+
+  Field3DParallel result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  if (result.isFci()) {
+    result.splitParallelSlices();
+    ASSERT2(lhs.hasParallelSlices());
+    ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) * rhs.yup(i);
+      result.ydown(i) = lhs.ydown(i) * rhs.ydown(i);
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] * rhs[index];
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, rhs.name);
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update Field3DParallel by multiplication with Field3D
+Field3DParallel& Field3DParallel::operator*=(const Field3D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+
+    if (this->isFci()) {
+      for (size_t i{0}; i < yup_fields.size(); ++i) {
+        yup(i) *= rhs.yup(i);
+        ydown(i) *= rhs.ydown(i);
+      }
+    } else {
+      clearParallelSlices();
+    }
+    checkData(*this);
+    checkData(rhs);
+
+    regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
+
+    track(rhs, "operator*=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} *= {:s}", this->name, rhs.name);
+#endif
+
+    checkData(*this);
+
+  } else {
+    track(rhs, "operator*=");
+    (*this) = (*this) * rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for division of Field3DParallel and Field3D
+Field3DParallel operator/(const Field3DParallel& lhs, const Field3D& rhs) {
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
+
+  Field3DParallel result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  if (result.isFci()) {
+    result.splitParallelSlices();
+    ASSERT2(lhs.hasParallelSlices());
+    ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) / rhs.yup(i);
+      result.ydown(i) = lhs.ydown(i) / rhs.ydown(i);
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] / rhs[index];
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, rhs.name);
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update Field3DParallel by division with Field3D
+Field3DParallel& Field3DParallel::operator/=(const Field3D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+
+    if (this->isFci()) {
+      for (size_t i{0}; i < yup_fields.size(); ++i) {
+        yup(i) /= rhs.yup(i);
+        ydown(i) /= rhs.ydown(i);
+      }
+    } else {
+      clearParallelSlices();
+    }
+    checkData(*this);
+    checkData(rhs);
+
+    regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
+
+    track(rhs, "operator/=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} /= {:s}", this->name, rhs.name);
+#endif
+
+    checkData(*this);
+
+  } else {
+    track(rhs, "operator/=");
+    (*this) = (*this) / rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for addition of Field3DParallel and Field3D
+Field3DParallel operator+(const Field3DParallel& lhs, const Field3D& rhs) {
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
+
+  Field3DParallel result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  if (result.isFci()) {
+    result.splitParallelSlices();
+    ASSERT2(lhs.hasParallelSlices());
+    ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) + rhs.yup(i);
+      result.ydown(i) = lhs.ydown(i) + rhs.ydown(i);
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] + rhs[index];
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, rhs.name);
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update Field3DParallel by addition with Field3D
+Field3DParallel& Field3DParallel::operator+=(const Field3D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+
+    if (this->isFci()) {
+      for (size_t i{0}; i < yup_fields.size(); ++i) {
+        yup(i) += rhs.yup(i);
+        ydown(i) += rhs.ydown(i);
+      }
+    } else {
+      clearParallelSlices();
+    }
+    checkData(*this);
+    checkData(rhs);
+
+    regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
+
+    track(rhs, "operator+=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} += {:s}", this->name, rhs.name);
+#endif
+
+    checkData(*this);
+
+  } else {
+    track(rhs, "operator+=");
+    (*this) = (*this) + rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for subtraction of Field3DParallel and Field3D
+Field3DParallel operator-(const Field3DParallel& lhs, const Field3D& rhs) {
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
+
+  Field3DParallel result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  if (result.isFci()) {
+    result.splitParallelSlices();
+    ASSERT2(lhs.hasParallelSlices());
+    ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) - rhs.yup(i);
+      result.ydown(i) = lhs.ydown(i) - rhs.ydown(i);
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] - rhs[index];
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, rhs.name);
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update Field3DParallel by subtraction with Field3D
+Field3DParallel& Field3DParallel::operator-=(const Field3D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+
+    if (this->isFci()) {
+      for (size_t i{0}; i < yup_fields.size(); ++i) {
+        yup(i) -= rhs.yup(i);
+        ydown(i) -= rhs.ydown(i);
+      }
+    } else {
+      clearParallelSlices();
+    }
+    checkData(*this);
+    checkData(rhs);
+
+    regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
+
+    track(rhs, "operator-=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} -= {:s}", this->name, rhs.name);
+#endif
+
+    checkData(*this);
+
+  } else {
+    track(rhs, "operator-=");
+    (*this) = (*this) - rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for multiplication of Field3DParallel and Field3DParallel
+Field3DParallel operator*(const Field3DParallel& lhs, const Field3DParallel& rhs) {
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
+
+  Field3DParallel result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  if (result.isFci()) {
+    result.splitParallelSlices();
+    ASSERT2(lhs.hasParallelSlices());
+    ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) * rhs.yup(i);
+      result.ydown(i) = lhs.ydown(i) * rhs.ydown(i);
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] * rhs[index];
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, rhs.name);
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update Field3DParallel by multiplication with Field3DParallel
+Field3DParallel& Field3DParallel::operator*=(const Field3DParallel& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+
+    if (this->isFci()) {
+      for (size_t i{0}; i < yup_fields.size(); ++i) {
+        yup(i) *= rhs;
+        ydown(i) *= rhs;
+      }
+    } else {
+      clearParallelSlices();
+    }
+    checkData(*this);
+    checkData(rhs);
+
+    regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
+
+    track(rhs, "operator*=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} *= {:s}", this->name, rhs.name);
+#endif
+
+    checkData(*this);
+
+  } else {
+    track(rhs, "operator*=");
+    (*this) = (*this) * rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for division of Field3DParallel and Field3DParallel
+Field3DParallel operator/(const Field3DParallel& lhs, const Field3DParallel& rhs) {
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
+
+  Field3DParallel result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  if (result.isFci()) {
+    result.splitParallelSlices();
+    ASSERT2(lhs.hasParallelSlices());
+    ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) / rhs.yup(i);
+      result.ydown(i) = lhs.ydown(i) / rhs.ydown(i);
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] / rhs[index];
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, rhs.name);
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update Field3DParallel by division with Field3DParallel
+Field3DParallel& Field3DParallel::operator/=(const Field3DParallel& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+
+    if (this->isFci()) {
+      for (size_t i{0}; i < yup_fields.size(); ++i) {
+        yup(i) /= rhs;
+        ydown(i) /= rhs;
+      }
+    } else {
+      clearParallelSlices();
+    }
+    checkData(*this);
+    checkData(rhs);
+
+    regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
+
+    track(rhs, "operator/=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} /= {:s}", this->name, rhs.name);
+#endif
+
+    checkData(*this);
+
+  } else {
+    track(rhs, "operator/=");
+    (*this) = (*this) / rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for addition of Field3DParallel and Field3DParallel
+Field3DParallel operator+(const Field3DParallel& lhs, const Field3DParallel& rhs) {
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
+
+  Field3DParallel result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  if (result.isFci()) {
+    result.splitParallelSlices();
+    ASSERT2(lhs.hasParallelSlices());
+    ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) + rhs.yup(i);
+      result.ydown(i) = lhs.ydown(i) + rhs.ydown(i);
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] + rhs[index];
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, rhs.name);
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update Field3DParallel by addition with Field3DParallel
+Field3DParallel& Field3DParallel::operator+=(const Field3DParallel& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+
+    if (this->isFci()) {
+      for (size_t i{0}; i < yup_fields.size(); ++i) {
+        yup(i) += rhs;
+        ydown(i) += rhs;
+      }
+    } else {
+      clearParallelSlices();
+    }
+    checkData(*this);
+    checkData(rhs);
+
+    regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
+
+    track(rhs, "operator+=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} += {:s}", this->name, rhs.name);
+#endif
+
+    checkData(*this);
+
+  } else {
+    track(rhs, "operator+=");
+    (*this) = (*this) + rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for subtraction of Field3DParallel and Field3DParallel
+Field3DParallel operator-(const Field3DParallel& lhs, const Field3DParallel& rhs) {
+  ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
+
+  Field3DParallel result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
+  if (result.isFci()) {
+    result.splitParallelSlices();
+    ASSERT2(lhs.hasParallelSlices());
+    ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) - rhs.yup(i);
+      result.ydown(i) = lhs.ydown(i) - rhs.ydown(i);
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] - rhs[index];
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, rhs.name);
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update Field3DParallel by subtraction with Field3DParallel
+Field3DParallel& Field3DParallel::operator-=(const Field3DParallel& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+
+    if (this->isFci()) {
+      for (size_t i{0}; i < yup_fields.size(); ++i) {
+        yup(i) -= rhs;
+        ydown(i) -= rhs;
+      }
+    } else {
+      clearParallelSlices();
+    }
+    checkData(*this);
+    checkData(rhs);
+
+    regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
+
+    track(rhs, "operator-=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} -= {:s}", this->name, rhs.name);
+#endif
+
+    checkData(*this);
+
+  } else {
+    track(rhs, "operator-=");
+    (*this) = (*this) - rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for multiplication of Field3DParallel and BoutReal
+Field3DParallel operator*(const Field3DParallel& lhs, const BoutReal rhs) {
+
+  Field3DParallel result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getRegionID());
+  if (result.isFci()) {
+    result.splitParallelSlices();
+    ASSERT2(lhs.hasParallelSlices());
+
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) * rhs;
+      result.ydown(i) = lhs.ydown(i) * rhs;
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] * rhs;
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", lhs.name, "BR");
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update Field3DParallel by multiplication with BoutReal
+Field3DParallel& Field3DParallel::operator*=(const BoutReal rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+
+    if (this->isFci()) {
+      for (size_t i{0}; i < yup_fields.size(); ++i) {
+        yup(i) *= rhs;
+        ydown(i) *= rhs;
+      }
+    } else {
+      clearParallelSlices();
+    }
+    checkData(*this);
+    checkData(rhs);
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
+
+    track(rhs, "operator*=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} *= {:s}", this->name, "BR");
+#endif
+
+    checkData(*this);
+
+  } else {
+    track(rhs, "operator*=");
+    (*this) = (*this) * rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for division of Field3DParallel and BoutReal
+Field3DParallel operator/(const Field3DParallel& lhs, const BoutReal rhs) {
+
+  Field3DParallel result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getRegionID());
+  if (result.isFci()) {
+    result.splitParallelSlices();
+    ASSERT2(lhs.hasParallelSlices());
+
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) / rhs;
+      result.ydown(i) = lhs.ydown(i) / rhs;
+    }
+  }
+
+  const auto tmp = 1.0 / rhs;
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] * tmp;
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", lhs.name, "BR");
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update Field3DParallel by division with BoutReal
+Field3DParallel& Field3DParallel::operator/=(const BoutReal rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+
+    if (this->isFci()) {
+      for (size_t i{0}; i < yup_fields.size(); ++i) {
+        yup(i) /= rhs;
+        ydown(i) /= rhs;
+      }
+    } else {
+      clearParallelSlices();
+    }
+    checkData(*this);
+    checkData(rhs);
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs; }
+
+    track(rhs, "operator/=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} /= {:s}", this->name, "BR");
+#endif
+
+    checkData(*this);
+
+  } else {
+    track(rhs, "operator/=");
+    (*this) = (*this) / rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for addition of Field3DParallel and BoutReal
+Field3DParallel operator+(const Field3DParallel& lhs, const BoutReal rhs) {
+
+  Field3DParallel result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getRegionID());
+  if (result.isFci()) {
+    result.splitParallelSlices();
+    ASSERT2(lhs.hasParallelSlices());
+
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) + rhs;
+      result.ydown(i) = lhs.ydown(i) + rhs;
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] + rhs;
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", lhs.name, "BR");
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update Field3DParallel by addition with BoutReal
+Field3DParallel& Field3DParallel::operator+=(const BoutReal rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+
+    if (this->isFci()) {
+      for (size_t i{0}; i < yup_fields.size(); ++i) {
+        yup(i) += rhs;
+        ydown(i) += rhs;
+      }
+    } else {
+      clearParallelSlices();
+    }
+    checkData(*this);
+    checkData(rhs);
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
+
+    track(rhs, "operator+=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} += {:s}", this->name, "BR");
+#endif
+
+    checkData(*this);
+
+  } else {
+    track(rhs, "operator+=");
+    (*this) = (*this) + rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for subtraction of Field3DParallel and BoutReal
+Field3DParallel operator-(const Field3DParallel& lhs, const BoutReal rhs) {
+
+  Field3DParallel result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(lhs.getRegionID());
+  if (result.isFci()) {
+    result.splitParallelSlices();
+    ASSERT2(lhs.hasParallelSlices());
+
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs.yup(i) - rhs;
+      result.ydown(i) = lhs.ydown(i) - rhs;
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs[index] - rhs;
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} - {:s}", lhs.name, "BR");
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update Field3DParallel by subtraction with BoutReal
+Field3DParallel& Field3DParallel::operator-=(const BoutReal rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+
+    if (this->isFci()) {
+      for (size_t i{0}; i < yup_fields.size(); ++i) {
+        yup(i) -= rhs;
+        ydown(i) -= rhs;
+      }
+    } else {
+      clearParallelSlices();
+    }
+    checkData(*this);
+    checkData(rhs);
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
+
+    track(rhs, "operator-=");
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} -= {:s}", this->name, "BR");
+#endif
+
+    checkData(*this);
+
+  } else {
+    track(rhs, "operator-=");
+    (*this) = (*this) - rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for multiplication of BoutReal and Field3DParallel
+Field3DParallel operator*(const BoutReal lhs, const Field3DParallel& rhs) {
+
+  Field3DParallel result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(rhs.getRegionID());
+  if (result.isFci()) {
+    result.splitParallelSlices();
+
+    ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs * rhs.yup(i);
+      result.ydown(i) = lhs * rhs.ydown(i);
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs * rhs[index];
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} * {:s}", "BR", rhs.name);
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for division of BoutReal and Field3DParallel
+Field3DParallel operator/(const BoutReal lhs, const Field3DParallel& rhs) {
+
+  Field3DParallel result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(rhs.getRegionID());
+  if (result.isFci()) {
+    result.splitParallelSlices();
+
+    ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs / rhs.yup(i);
+      result.ydown(i) = lhs / rhs.ydown(i);
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs / rhs[index];
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} / {:s}", "BR", rhs.name);
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for addition of BoutReal and Field3DParallel
+Field3DParallel operator+(const BoutReal lhs, const Field3DParallel& rhs) {
+
+  Field3DParallel result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(rhs.getRegionID());
+  if (result.isFci()) {
+    result.splitParallelSlices();
+
+    ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs + rhs.yup(i);
+      result.ydown(i) = lhs + rhs.ydown(i);
+    }
+  }
+
+  BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
+    result[index] = lhs + rhs[index];
+  }
+
+#if BOUT_USE_TRACK
+  result.name = fmt::format("{:s} + {:s}", "BR", rhs.name);
+#endif
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for subtraction of BoutReal and Field3DParallel
+Field3DParallel operator-(const BoutReal lhs, const Field3DParallel& rhs) {
+
+  Field3DParallel result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  result.setRegion(rhs.getRegionID());
+  if (result.isFci()) {
+    result.splitParallelSlices();
+
+    ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      result.yup(i) = lhs - rhs.yup(i);
+      result.ydown(i) = lhs - rhs.ydown(i);
+    }
+  }
 
   BOUT_FOR(index, result.getValidRegionWithDefault("RGN_ALL")) {
     result[index] = lhs - rhs[index];

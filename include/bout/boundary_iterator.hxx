@@ -43,12 +43,43 @@ public:
     return 2 * f(0, ind()) - f(0, ind().yp(-by).xp(-bx));
   }
 
-  BoutReal interpolate_sheath_o1(const Field3D& f) const {
+  BoutReal interpolate_sheath_o2(const Field3D& f) const {
     return (f[ind()] + ynext(f)) * 0.5;
   }
+
+  BoutReal
+  interpolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+    return (f(0, ind()) + f(0, ind().yp(-by).xp(-bx))) * 0.5;
+  }
+
   BoutReal
   extrapolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
     return 0.5 * (3 * f(0, ind()) - f(0, ind().yp(-by).xp(-bx)));
+  }
+
+  BoutReal extrapolate_sheath_free(const Field3D& f, SheathLimitMode mode) const {
+    const BoutReal fac =
+        bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f), mode);
+    BoutReal val = ythis(f);
+    BoutReal next = mode == SheathLimitMode::linear_free ? val + fac : val * fac;
+    return 0.5 * (val + next);
+  }
+
+  void set_free(Field3D& f, SheathLimitMode mode) const {
+    const BoutReal fac =
+        bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f), mode);
+    BoutReal val = ythis(f);
+    if (mode == SheathLimitMode::linear_free) {
+      for (int i = 1; i <= localmesh->ystart; ++i) {
+        val += fac;
+        f[ind().yp(by * i).xp(bx * i)] = val;
+      }
+    } else {
+      for (int i = 1; i <= localmesh->ystart; ++i) {
+        val *= fac;
+        f[ind().yp(by * i).xp(bx * i)] = val;
+      }
+    }
   }
 
   void limitFree(Field3D& f) const {
@@ -59,6 +90,11 @@ public:
       val *= fac;
       f[ind().yp(by * i).xp(bx * i)] = val;
     }
+  }
+
+  bool is_lower() const {
+    ASSERT2(bx == 0);
+    return by == -1;
   }
 
   void neumann_o1(Field3D& f, BoutReal grad) const {
@@ -74,6 +110,12 @@ public:
     for (int i = 1; i <= localmesh->ystart; ++i) {
       val += grad;
       f[ind().yp(by * i).xp(bx * i)] = val;
+    }
+  }
+
+  void limit_at_least(Field3D& f, BoutReal value) const {
+    if (ynext(f) < value) {
+      ynext(f) = value;
     }
   }
 

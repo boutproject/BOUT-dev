@@ -5,7 +5,7 @@ MXG = 1
 
 
 solution = sin(pi*x)
-input = -pi^2*sin(pi*x)
+input_field = -pi^2*sin(pi*x)
 
 [mesh]
 

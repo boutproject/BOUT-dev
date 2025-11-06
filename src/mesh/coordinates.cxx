@@ -606,6 +606,29 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
   // Allow transform to fix things up
   transform->loadParallelMetrics(this);
+
+  if (Bxy.isFci()) {
+    BoutReal maxError = 0;
+    auto BJg = Bxy.asField3DParallel() * J / sqrt(g_22);
+    for (int p = -mesh->ystart; p <= mesh->ystart; p++) {
+      if (p == 0) {
+        continue;
+      }
+      BOUT_FOR(i, BJg.getRegion("RGN_NO_BNDRY")) {
+        auto local = BJg[i] / BJg.ynext(p)[i.yp(p)];
+        maxError = std::max(std::abs(local - 1), maxError);
+      }
+    }
+    BoutReal allowedError = (*options)["allowedFluxError"].withDefault(1e-6);
+    if (maxError < allowedError / 100) {
+      output_info.write("\tInfo: The maximum flux conservation error is {:e}", maxError);
+    } else if (maxError < allowedError) {
+      output_warn.write("\tWarning: The maximum flux conservation error is {:e}",
+                        maxError);
+    } else {
+      throw BoutException("Error: The maximum flux conservation error is {:e}", maxError);
+    }
+  }
 }
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
@@ -1039,15 +1062,9 @@ int Coordinates::geometry(bool recalculate_staggered,
   G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22)
           + 0.5 * g33 * DDY(g_33);
 
-  auto tmp = J * g12;
-  communicate(tmp);
-  G1 = (DDX(J * g11) + DDY(tmp) + DDZ(J * g13)) / J;
-  tmp = J * g22;
-  communicate(tmp);
-  G2 = (DDX(J * g12) + DDY(tmp) + DDZ(J * g23)) / J;
-  tmp = J * g23;
-  communicate(tmp);
-  G3 = (DDX(J * g13) + DDY(tmp) + DDZ(J * g33)) / J;
+  G1 = (DDX(J * g11) + DDY(J.asField3DParallel() * g12) + DDZ(J * g13)) / J;
+  G2 = (DDX(J * g12) + DDY(J.asField3DParallel() * g22) + DDZ(J * g23)) / J;
+  G3 = (DDX(J * g13) + DDY(J.asField3DParallel() * g23) + DDZ(J * g33)) / J;
 
   // Communicate christoffel symbol terms
   output_progress.write("\tCommunicating connection terms\n");
@@ -1125,7 +1142,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-      d1_dy = DDY(1. / dy); // d/di(1/dy)
+      d1_dy = DDY(1. / dy.asField3DParallel()); // d/di(1/dy)
 
       communicate(d1_dy);
       d1_dy =
@@ -1510,8 +1527,8 @@ Coordinates::FieldMetric Coordinates::DDY(const Field2D& f, CELL_LOC loc,
   return bout::derivatives::index::DDY(f, loc, method, region) / dy;
 }
 
-Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
-                         const std::string& region) const {
+Field3D Coordinates::DDY(const Field3DParallel& f, CELL_LOC outloc,
+                         const std::string& method, const std::string& region) const {
   return bout::derivatives::index::DDY(f, outloc, method, region) / dy;
 };
 
@@ -1543,7 +1560,7 @@ Coordinates::FieldMetric Coordinates::Grad_par(const Field2D& var,
   return DDY(var) * invSg();
 }
 
-Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
+Field3D Coordinates::Grad_par(const Field3DParallel& var, CELL_LOC outloc,
                               const std::string& method) {
   TRACE("Coordinates::Grad_par( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
@@ -1563,8 +1580,8 @@ Coordinates::FieldMetric Coordinates::Vpar_Grad_par(const Field2D& v, const Fiel
   return VDDY(v, f) * invSg();
 }
 
-Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
-                                   const std::string& method) {
+Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3DParallel& f,
+                                   CELL_LOC outloc, const std::string& method) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   return VDDY(v, f, outloc, method) * invSg();
@@ -1585,14 +1602,14 @@ Coordinates::FieldMetric Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
   return Bxy * Grad_par(f / Bxy_floc, outloc, method);
 }
 
-Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
+Field3D Coordinates::Div_par(const Field3DParallel& f, CELL_LOC outloc,
                              const std::string& method) {
   TRACE("Coordinates::Div_par( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   // Need Bxy at location of f, which might be different from location of this
   // Coordinates object
-  auto Bxy_floc = f.getCoordinates()->Bxy;
+  const auto& Bxy_floc = f.getCoordinates()->Bxy;
 
   if (!f.hasParallelSlices()) {
     // No yup/ydown fields. The Grad_par operator will
@@ -1602,14 +1619,8 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
 
   auto coords = f.getCoordinates();
   // Need to modify yup and ydown fields
-  Field3D f_B = f / coords->J * sqrt(coords->g_22);
-  f_B.splitParallelSlices();
-  for (int i = 0; i < f.getMesh()->ystart; ++i) {
-    f_B.yup(i) = f.yup(i) / coords->J.yup(i) * sqrt(coords->g_22.yup(i));
-    f_B.ydown(i) = f.ydown(i) / coords->J.ydown(i) * sqrt(coords->g_22.ydown(i));
-  }
-  return setName(coords->J / sqrt(coords->g_22) * Grad_par(f_B, outloc, method),
-                 "Div_par({:s})", f.name);
+  Field3D Jg = coords->J / sqrt(coords->g_22.asField3DParallel());
+  return setName(Jg * Grad_par(f / Jg, outloc, method), "Div_par({:s})", f.name);
 }
 
 /////////////////////////////////////////////////////////
@@ -1627,7 +1638,7 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
   return result;
 }
 
-Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
+Field3D Coordinates::Grad2_par2(const Field3DParallel& f, CELL_LOC outloc,
                                 const std::string& method) {
   TRACE("Coordinates::Grad2_par2( Field3D )");
   if (outloc == CELL_DEFAULT) {
@@ -1795,9 +1806,10 @@ Coordinates::FieldMetric Coordinates::Laplace_par(const Field2D& f, CELL_LOC out
   return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * DDY(f, outloc) / J;
 }
 
-Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
+Field3D Coordinates::Laplace_par(const Field3DParallel& f, CELL_LOC outloc) {
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
-  return D2DY2(f, outloc) / g_22 + DDY(J / g_22, outloc) * ::DDY(f, outloc) / J;
+  return D2DY2(f, outloc) / g_22
+         + DDY(J.asField3DParallel() / g_22, outloc) * ::DDY(f, outloc) / J;
 }
 
 // Full Laplacian operator on scalar field
@@ -1817,7 +1829,7 @@ Coordinates::FieldMetric Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
   return result;
 }
 
-Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
+Field3D Coordinates::Laplace(const Field3DParallel& f, CELL_LOC outloc,
                              const std::string& dfdy_boundary_conditions,
                              const std::string& dfdy_dy_region) {
   TRACE("Coordinates::Laplace( Field3D )");
