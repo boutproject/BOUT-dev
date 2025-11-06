@@ -107,9 +107,10 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
     const auto direction = (offset_ > 0) ? "forward"sv : "backward"sv;
     // We only have a suffix for parallel slices beyond the first
     // This is for backwards compatibility
-    const auto slice_suffix =
-        (std::abs(offset_) > 1) ? fmt::format("_{}", std::abs(offset_)) : "";
-    return fmt::format("{}_{}{}", direction, field, slice_suffix);
+    if (std::abs(offset_) == 1) {
+      return fmt::format("{}_{}", direction, field);
+    }
+    return fmt::format("{}_{}_{}", direction, field, std::abs(offset_));
   };
 
   // If we can't read in any of these fields, things will silently not
