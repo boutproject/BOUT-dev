@@ -32,7 +32,7 @@ fv = fv.subs(replace)
 v = fv / f
 
 # Substitute back to get input y coordinates
-replace = [ (metric.y, y*Ly/(2*pi) ) ]
+replace = [(metric.y, y * Ly / (2 * pi))]
 
 
 def Grad2_par2(f: Expr) -> Expr:
