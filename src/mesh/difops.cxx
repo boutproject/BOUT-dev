@@ -25,20 +25,20 @@
 
 #include "bout/build_defines.hxx"
 
-#include <bout/assert.hxx>
-#include <bout/derivs.hxx>
-#include <bout/difops.hxx>
-#include <bout/fft.hxx>
-#include <bout/globals.hxx>
-#include <bout/msg_stack.hxx>
-#include <bout/solver.hxx>
-#include <bout/utils.hxx>
-#include <bout/vecops.hxx>
-
-#include <bout/invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
-
-#include <bout/interpolation.hxx>
-#include <bout/unused.hxx>
+#include "bout/assert.hxx"
+#include "bout/derivs.hxx"
+#include "bout/difops.hxx"
+#include "bout/fft.hxx"
+#include "bout/field2d.hxx"
+#include "bout/globals.hxx"
+#include "bout/interpolation.hxx"
+#include "bout/invert_laplace.hxx" // Delp2 uses same coefficients as inversion code
+#include "bout/msg_stack.hxx"
+#include "bout/region.hxx"
+#include "bout/solver.hxx"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
+#include "bout/vecops.hxx"
 
 #include <cmath>
 
@@ -367,14 +367,14 @@ Field3D Div_par_K_Grad_par(const Field3D& kY, const Field3D& f, CELL_LOC outloc)
          + Div_par(kY, outloc) * Grad_par(f, outloc);
 }
 
-Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin,
-                                     Field3D& flow_ylow, bool bndry_flux) {
+Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& flow_ylow,
+                               bool bndry_flux) {
   TRACE("FV::Div_par_K_Grad_par_mod");
 
   ASSERT2(Kin.getLocation() == fin.getLocation());
 
-  Mesh* mesh = Kin.getMesh();
-  Coordinates* coord = fin.getCoordinates();
+  const Mesh* mesh = Kin.getMesh();
+  const Coordinates* coord = fin.getCoordinates();
 
   if (Kin.hasParallelSlices() && fin.hasParallelSlices()) {
     // Using parallel slices.
@@ -396,18 +396,22 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin,
       const auto iym = i.ym();
 
       // Upper cell edge
-      const BoutReal c_up = 0.5 * (Kin[i] + K_up[iyp]);               // K at the upper boundary
-      const BoutReal J_up = 0.5 * (coord->J[i] + coord->J.yup()[iyp]); // Jacobian at boundary
+      const BoutReal c_up = 0.5 * (Kin[i] + K_up[iyp]); // K at the upper boundary
+      const BoutReal J_up =
+          0.5 * (coord->J[i] + coord->J.yup()[iyp]); // Jacobian at boundary
       const BoutReal g_22_up = 0.5 * (coord->g_22[i] + coord->g_22.yup()[iyp]);
-      const BoutReal gradient_up = 2. * (f_up[iyp] - fin[i]) / (coord->dy[i] + coord->dy.yup()[iyp]);
+      const BoutReal gradient_up =
+          2. * (f_up[iyp] - fin[i]) / (coord->dy[i] + coord->dy.yup()[iyp]);
 
       const BoutReal flux_up = c_up * J_up * gradient_up / g_22_up;
 
       // Lower cell edge
-      const BoutReal c_down = 0.5 * (Kin[i] + K_down[iym]);               // K at the lower boundary
-      const BoutReal J_down = 0.5 * (coord->J[i] + coord->J.ydown()[iym]); // Jacobian at boundary
+      const BoutReal c_down = 0.5 * (Kin[i] + K_down[iym]); // K at the lower boundary
+      const BoutReal J_down =
+          0.5 * (coord->J[i] + coord->J.ydown()[iym]); // Jacobian at boundary
       const BoutReal g_22_down = 0.5 * (coord->g_22[i] + coord->g_22.ydown()[iym]);
-      const BoutReal gradient_down = 2. * (fin[i] - f_down[iym]) / (coord->dy[i] + coord->dy.ydown()[iym]);
+      const BoutReal gradient_down =
+          2. * (fin[i] - f_down[iym]) / (coord->dy[i] + coord->dy.ydown()[iym]);
 
       const BoutReal flux_down = c_down * J_down * gradient_down / g_22_down;
 
@@ -426,35 +430,32 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin,
 
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     // Calculate flux at upper surface
-
+    const auto ix = i.x();
+    const auto iy = i.y();
     const auto iyp = i.yp();
     const auto iym = i.ym();
 
-    if (bndry_flux || mesh->periodicY(i.x()) || !mesh->lastY(i.x())
-        || (i.y() != mesh->yend)) {
+    const bool is_periodic_y = mesh->periodicY(ix);
 
-      BoutReal c = 0.5 * (K[i] + K[iyp]);               // K at the upper boundary
-      BoutReal J = 0.5 * (coord->J[i] + coord->J[iyp]); // Jacobian at boundary
-      BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iyp]);
+    if (bndry_flux || is_periodic_y || !mesh->lastY(ix) || (iy != mesh->yend)) {
+      const BoutReal c = 0.5 * (K[i] + K[iyp]);               // K at the upper boundary
+      const BoutReal J = 0.5 * (coord->J[i] + coord->J[iyp]); // Jacobian at boundary
+      const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iyp]);
+      const BoutReal gradient = 2. * (f[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
 
-      BoutReal gradient = 2. * (f[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
-
-      BoutReal flux = c * J * gradient / g_22;
+      const BoutReal flux = c * J * gradient / g_22;
 
       result[i] += flux / (coord->dy[i] * coord->J[i]);
     }
 
     // Calculate flux at lower surface
-    if (bndry_flux || mesh->periodicY(i.x()) || !mesh->firstY(i.x())
-        || (i.y() != mesh->ystart)) {
-      BoutReal c = 0.5 * (K[i] + K[iym]);               // K at the lower boundary
-      BoutReal J = 0.5 * (coord->J[i] + coord->J[iym]); // Jacobian at boundary
+    if (bndry_flux || is_periodic_y || !mesh->firstY(ix) || (iy != mesh->ystart)) {
+      const BoutReal c = 0.5 * (K[i] + K[iym]);               // K at the lower boundary
+      const BoutReal J = 0.5 * (coord->J[i] + coord->J[iym]); // Jacobian at boundary
+      const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iym]);
+      const BoutReal gradient = 2. * (f[i] - f[iym]) / (coord->dy[i] + coord->dy[iym]);
 
-      BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iym]);
-
-      BoutReal gradient = 2. * (f[i] - f[iym]) / (coord->dy[i] + coord->dy[iym]);
-
-      BoutReal flux = c * J * gradient / g_22;
+      const BoutReal flux = c * J * gradient / g_22;
 
       result[i] -= flux / (coord->dy[i] * coord->J[i]);
       flow_ylow[i] = -flux * coord->dx[i] * coord->dz[i];
@@ -467,7 +468,6 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin,
 
   return result;
 }
-
 
 /*******************************************************************************
 * Delp2
