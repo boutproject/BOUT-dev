@@ -35,6 +35,10 @@ OPERATORS = {
     "FV_Div_par_mod_MinMod": 1.5,
     "FV_Div_par_fvv_MinMod": 1.5,
 
+    "FV_Div_par_Superbee": 1.5,
+    "FV_Div_par_mod_Superbee": 1.5,
+    "FV_Div_par_fvv_Superbee": 1.5,
+
     "FV_Div_par_K_Grad_par": 2,
     "FV_Div_par_K_Grad_par_mod": 2,
 }
