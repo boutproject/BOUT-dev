@@ -1,6 +1,11 @@
 #include "fmt/format.h"
 #include "bout/bout.hxx"
+#include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
+#include "bout/globals.hxx"
+#include "bout/options.hxx"
+#include "bout/options_io.hxx"
+#include "bout/region.hxx"
 
 namespace {
 auto fci_mpi_test(int num, Options& dump) {
@@ -8,7 +13,6 @@ auto fci_mpi_test(int num, Options& dump) {
   Field3D input{FieldFactory::get()->create3D(fmt::format("input_{:d}:function", num),
                                               Options::getRoot(), mesh)};
   mesh->communicate(input);
-
   input.applyParallelBoundary("parallel_neumann_o2");
 
   for (int slice = -mesh->ystart; slice <= mesh->ystart; ++slice) {
