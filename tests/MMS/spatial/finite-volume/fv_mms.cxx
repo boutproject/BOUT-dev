@@ -74,6 +74,13 @@ int main(int argc, char** argv) {
   fv_op_test("FV_Div_par_fvv", dump, input, FV::Div_par_fvv<FV::MinMod>(input, v, v),
              "_MinMod");
 
+  fv_op_test("FV_Div_par", dump, input, FV::Div_par<FV::Superbee>(input, v, v),
+             "_Superbee");
+  fv_op_test("FV_Div_par_mod", dump, input,
+             FV::Div_par_mod<FV::Superbee>(input, v, v, flow_ylow), "_Superbee");
+  fv_op_test("FV_Div_par_fvv", dump, input, FV::Div_par_fvv<FV::Superbee>(input, v, v),
+             "_Superbee");
+
   fv_op_test("FV_Div_par_K_Grad_par", dump, input, FV::Div_par_K_Grad_par(v, input));
   fv_op_test("FV_Div_par_K_Grad_par_mod", dump, input,
              Div_par_K_Grad_par_mod(v, input, flow_ylow));
