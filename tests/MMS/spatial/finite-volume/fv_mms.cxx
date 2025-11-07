@@ -1,4 +1,5 @@
 #include "bout/bout.hxx"
+#include "bout/difops.hxx"
 #include "bout/field.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
