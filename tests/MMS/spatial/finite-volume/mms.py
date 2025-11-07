@@ -21,13 +21,15 @@ metric = Metric()
 
 # Define solution in terms of input x,y,z
 f = 1 + 0.1 * sin(2 * y)
-K = 1 + 0.1 * cos(3 * y)
+fv = 1 + 0.1 * cos(3 * y)
+
 
 # Turn solution into real x and z coordinates
 replace = [(y, metric.y * 2 * pi / Ly)]
 
 f = f.subs(replace)
-K = K.subs(replace)
+fv = fv.subs(replace)
+v = fv / f
 
 # Substitute back to get input y coordinates
 replace = [ (metric.y, y*Ly/(2*pi) ) ]
@@ -48,12 +50,12 @@ options = BoutOptionsFile("data/BOUT.inp")
 
 for name, expr in (
     ("input_field", f),
-    ("K", K),
-    ("FV_Div_par_solution", Div_par(f * K)),
-    ("FV_Div_par_K_Grad_par_solution", Div_par_K_Grad_par(f, K)),
-    ("FV_Div_par_K_Grad_par_mod_solution", Div_par_K_Grad_par(f, K)),
-    ("FV_Div_par_mod_solution", Div_par(f * K)),
-    ("FV_Div_par_fvv_solution", Div_par(f * K * K)),
+    ("v", v),
+    ("FV_Div_par_solution", Div_par(f * v)),
+    ("FV_Div_par_K_Grad_par_solution", Div_par_K_Grad_par(f, v)),
+    ("FV_Div_par_K_Grad_par_mod_solution", Div_par_K_Grad_par(f, v)),
+    ("FV_Div_par_mod_solution", Div_par(f * v)),
+    ("FV_Div_par_fvv_solution", Div_par(f * v * v)),
 ):
     expr_str = exprToStr(expr.subs(replace))
     print(f"{name} = {expr_str}")
