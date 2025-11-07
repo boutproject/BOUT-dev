@@ -25,7 +25,6 @@ methods = {
     "hermitespline": 3,
     "lagrange4pt": 3,
     "bilinear": 2,
-    "monotonichermitespline": 2,
 }
 
 

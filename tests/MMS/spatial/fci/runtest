@@ -224,6 +224,12 @@ if __name__ == "__main__":
             "yperiodic": True,
             "args": "mesh:ddy:first=C2 mesh:paralleltransform:xzinterpolation:type=lagrange4pt",
         },
+        "nslice=1 monotonichermitespline": {
+            "nslice": 1,
+            "order": 2,
+            "yperiodic": True,
+            "args": "mesh:ddy:first=C2 mesh:paralleltransform:xzinterpolation:type=monotonichermitespline",
+        },
     }
 
     for name, case in cases.items():
