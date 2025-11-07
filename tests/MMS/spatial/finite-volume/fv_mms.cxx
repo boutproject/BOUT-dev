@@ -42,6 +42,15 @@ int main(int argc, char** argv) {
   Field3D v{FieldFactory::get()->create3D("v", Options::getRoot(), mesh)};
 
   // Communicate to calculate parallel transform.
+  if constexpr (bout::build::use_metric_3d) {
+    // Div_par operators require B parallel slices:
+    // Coordinates::geometry doesn't ensure this (yet)
+    auto& Bxy = mesh->getCoordinates()->Bxy;
+    auto& J = mesh->getCoordinates()->J;
+    auto& dy = mesh->getCoordinates()->dy;
+    auto& g_22 = mesh->getCoordinates()->g_22;
+    mesh->communicate(Bxy, J, dy, g_22);
+  }
   mesh->communicate(input, v);
 
   Options dump;
