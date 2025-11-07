@@ -71,9 +71,10 @@ std::string parallel_slice_field_name(std::string field, int offset) {
   const auto direction = (offset > 0) ? "forward"sv : "backward"sv;
   // We only have a suffix for parallel slices beyond the first
   // This is for backwards compatibility
-  const auto slice_suffix =
-      (std::abs(offset) > 1) ? fmt::format("_{}", std::abs(offset)) : "";
-  return fmt::format("{}_{}{}", direction, field, slice_suffix);
+  if (std::abs(offset) == 1) {
+    return fmt::format("{}_{}", direction, field);
+  }
+  return fmt::format("{}_{}_{}", direction, field, std::abs(offset));
 };
 
 #if BOUT_USE_METRIC_3D
@@ -505,7 +506,8 @@ void FCITransform::checkInputGrid() {
           + "' used "
             "to generate metric components for FCITransform. Should be 'fci'.");
     }
-  } // else: parallel_transform variable not found in grid input, indicates older input
+  }
+  // else: parallel_transform variable not found in grid input, indicates older input
   //       file or grid from options so must rely on the user having ensured the type is
   //       correct
 }

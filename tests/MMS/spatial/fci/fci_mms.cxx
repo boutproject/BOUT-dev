@@ -1,23 +1,26 @@
 #include "bout/bout.hxx"
 #include "bout/difops.hxx"
+#include "bout/field.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
+#include "bout/globals.hxx"
 #include "bout/options.hxx"
+#include "bout/options_io.hxx"
 #include "bout/utils.hxx"
 
-#include <cmath>
-#include <cstdlib>
 #include <fmt/format.h>
+
+#include <cmath>
 #include <string>
 
 namespace {
 auto fci_op_test(const std::string& name, Options& dump, const Field3D& input,
                  const Field3D& result) {
   auto* mesh = input.getMesh();
-  Field3D const solution{FieldFactory::get()->create3D(fmt::format("{}_solution", name),
+  const Field3D solution{FieldFactory::get()->create3D(fmt::format("{}_solution", name),
                                                        Options::getRoot(), mesh)};
-  Field3D const error{result - solution};
+  const Field3D error{result - solution};
 
   dump[fmt::format("{}_l_2", name)] = sqrt(mean(SQ(error), true, "RGN_NOBNDRY"));
   dump[fmt::format("{}_l_inf", name)] = max(abs(error), true, "RGN_NOBNDRY");

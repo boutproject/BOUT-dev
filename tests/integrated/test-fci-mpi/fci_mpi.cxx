@@ -13,7 +13,6 @@ auto fci_mpi_test(int num, Options& dump) {
   Field3D input{FieldFactory::get()->create3D(fmt::format("input_{:d}:function", num),
                                               Options::getRoot(), mesh)};
   mesh->communicate(input);
-
   input.applyParallelBoundary("parallel_neumann_o2");
 
   for (int slice = -mesh->ystart; slice <= mesh->ystart; ++slice) {
