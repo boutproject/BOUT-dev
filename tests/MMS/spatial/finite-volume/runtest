@@ -3,38 +3,40 @@
 # Python script to run and analyse MMS test
 #
 
-# Cores: 2
-# requires: zoidberg
-
 import argparse
 import json
 import pathlib
 import sys
 from time import time
 
-import boutconfig as conf
-import zoidberg as zb
 from boutdata.collect import collect
 from boututils.run_wrapper import build_and_log, launch_safe
-from numpy import arange, array, linspace, log, polyfit
+from numpy import array, log, polyfit
 
 # Global parameters
 DIRECTORY = "data"
 NPROC = 2
 MTHREAD = 2
-OPERATORS = (
-    "grad_par",
-    "grad2_par2",
-    "div_par",
-    "div_par_K_grad_par",
-    "div_par_K_grad_par_mod",
-    "laplace_par",
-    "FV_div_par_mod",
-    "FV_div_par_fvv",
-)
-# Note that we need at least _2_ interior points for hermite spline
-# interpolation due to an awkwardness with the boundaries
-NX = 4
+OPERATORS = {
+    # Slope-limiters necessarily reduce the accuracy in places
+    "FV_Div_par_MC": 1.5,
+    "FV_Div_par_mod_MC": 1.5,
+    "FV_Div_par_fvv_MC": 1.5,
+    "FV_Div_par_Upwind": 1,
+    "FV_Div_par_mod_Upwind": 1,
+    "FV_Div_par_fvv_Upwind": 1,
+    "FV_Div_par_Fromm": 1.5,
+    "FV_Div_par_mod_Fromm": 1.5,
+    "FV_Div_par_fvv_Fromm": 1.5,
+    "FV_Div_par_MinMod": 1.5,
+    "FV_Div_par_mod_MinMod": 1.5,
+    "FV_Div_par_fvv_MinMod": 1.5,
+    "FV_Div_par_Superbee": 1.5,
+    "FV_Div_par_mod_Superbee": 1.5,
+    "FV_Div_par_fvv_Superbee": 1.5,
+    "FV_Div_par_K_Grad_par": 2,
+    "FV_Div_par_K_Grad_par_mod": 2,
+}
 # Resolution in y and z
 NLIST = [8, 16, 32, 64]
 dx = 1.0 / array(NLIST)
@@ -67,38 +69,9 @@ def assert_convergence(error, dx, name, expected) -> bool:
     return success
 
 
-def run_fci_operators(
-    nslice: int, nz: int, yperiodic: bool, name: str
-) -> dict[str, float]:
-    # Define the magnetic field using new poloidal gridding method
-    # Note that the Bz and Bzprime parameters here must be the same as in mms.py
-    field = zb.field.Slab(Bz=0.05, Bzprime=0.1)
-    # Create rectangular poloidal grids
-    poloidal_grid = zb.poloidal_grid.RectangularPoloidalGrid(NX, nz, 0.1, 1.0, MXG=1)
-    # Set the ylength and y locations
-    ylength = 10.0
-
-    if yperiodic:
-        ycoords = linspace(0.0, ylength, nz, endpoint=False)
-    else:
-        # Doesn't include the end points
-        ycoords = (arange(nz) + 0.5) * ylength / float(nz)
-
-    # Create the grid
-    grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=yperiodic)
-    maps = zb.make_maps(grid, field, nslice=nslice, quiet=True, MXG=1)
-    zb.write_maps(
-        grid,
-        field,
-        maps,
-        new_names=False,
-        metric2d=conf.isMetric2D(),
-        quiet=True,
-    )
-
+def run_fv_operators(nz: int) -> dict[str, float]:
     # Command to run
-    args = f"MZ={nz} MYG={nslice} mesh:paralleltransform:y_periodic={yperiodic} {name}"
-    cmd = f"./fci_mms {args}"
+    cmd = f"./fv_mms MZ={nz} mesh:ny={nz}"
     print(f"Running command: {cmd}", end="")
 
     # Launch using MPI
@@ -136,18 +109,13 @@ def transpose(
     return result
 
 
-def check_fci_operators(name: str, case: dict) -> bool:
+def test_fv_operators() -> bool:
     failures = []
-
-    nslice = case["nslice"]
-    yperiodic = case["yperiodic"]
-    order = case["order"]
-    args = case["args"]
 
     all_errors = []
 
     for n in NLIST:
-        errors = run_fci_operators(nslice, n, yperiodic, args)
+        errors = run_fv_operators(n)
         all_errors.append(errors)
 
         for operator in OPERATORS:
@@ -157,13 +125,10 @@ def check_fci_operators(name: str, case: dict) -> bool:
             print(f"{operator} errors: l-2 {l_2:f} l-inf {l_inf:f}")
 
     final_errors = transpose(all_errors)
-    for operator in OPERATORS:
-        test_name = f"{operator} {name}"
-        success = assert_convergence(
-            final_errors[operator]["l_2"], dx, test_name, order
-        )
+    for operator, order in OPERATORS.items():
+        success = assert_convergence(final_errors[operator]["l_2"], dx, operator, order)
         if not success:
-            failures.append(test_name)
+            failures.append(operator)
 
     return final_errors, failures
 
@@ -179,9 +144,8 @@ def make_plots(cases: dict[str, dict]):
     fig, axes = plt.subplots(1, num_operators, figsize=(num_operators * 4, 4))
 
     for ax, operator in zip(axes, OPERATORS):
-        for name, case in cases.items():
-            ax.loglog(dx, case[operator]["l_2"], "-", label=f"{name} $l_2$")
-            ax.loglog(dx, case[operator]["l_inf"], "--", label=f"{name} $l_\\inf$")
+        ax.loglog(dx, cases[operator]["l_2"], "-", label="$l_2$")
+        ax.loglog(dx, cases[operator]["l_inf"], "--", label="$l_\\inf$")
         ax.legend(loc="upper left")
         ax.grid()
         ax.set_title(f"Error scaling for {operator}")
@@ -189,8 +153,8 @@ def make_plots(cases: dict[str, dict]):
         ax.set_ylabel("Error norm")
 
     fig.tight_layout()
-    fig.savefig("fci_mms.pdf")
-    print("Plot saved to fci_mms.pdf")
+    fig.savefig("fv_mms.pdf")
+    print("Plot saved to fv_mms.pdf")
 
     if args.show_plots:
         plt.show()
@@ -198,9 +162,9 @@ def make_plots(cases: dict[str, dict]):
 
 
 if __name__ == "__main__":
-    build_and_log("FCI MMS test")
+    build_and_log("Finite volume MMS test")
 
-    parser = argparse.ArgumentParser("Error scaling test for FCI operators")
+    parser = argparse.ArgumentParser("Error scaling test for finite volume operators")
     parser.add_argument(
         "--make-plots", action="store_true", help="Create plots of error scaling"
     )
@@ -213,45 +177,19 @@ if __name__ == "__main__":
         "--dump-errors",
         type=str,
         help="Output file to dump errors as JSON",
-        default="fci_operator_errors.json",
+        default="fv_operator_errors.json",
     )
 
     args = parser.parse_args()
 
-    success = True
-    failures = []
-    cases = {
-        "nslice=1 hermitespline": {
-            "nslice": 1,
-            "order": 2,
-            "yperiodic": True,
-            "args": "mesh:ddy:first=C2 mesh:paralleltransform:xzinterpolation:type=hermitespline",
-        },
-        "nslice=1 lagrange4pt": {
-            "nslice": 1,
-            "order": 2,
-            "yperiodic": True,
-            "args": "mesh:ddy:first=C2 mesh:paralleltransform:xzinterpolation:type=lagrange4pt",
-        },
-        "nslice=1 monotonichermitespline": {
-            "nslice": 1,
-            "order": 2,
-            "yperiodic": True,
-            "args": "mesh:ddy:first=C2 mesh:paralleltransform:xzinterpolation:type=monotonichermitespline",
-        },
-    }
-
-    for name, case in cases.items():
-        error2, failures_ = check_fci_operators(name, case)
-        case.update(error2)
-        failures.extend(failures_)
-        success &= len(failures) == 0
+    error2, failures = test_fv_operators()
+    success = len(failures) == 0
 
     if args.dump_errors:
-        pathlib.Path(args.dump_errors).write_text(json.dumps(cases))
+        pathlib.Path(args.dump_errors).write_text(json.dumps(error2))
 
     if args.make_plots or args.show_plots:
-        make_plots(cases)
+        make_plots(error2)
 
     if success:
         print("\nAll tests passed")

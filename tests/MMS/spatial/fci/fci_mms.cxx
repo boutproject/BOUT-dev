@@ -4,6 +4,7 @@
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
+#include "bout/fv_ops.hxx"
 #include "bout/globals.hxx"
 #include "bout/options.hxx"
 #include "bout/options_io.hxx"
@@ -52,11 +53,20 @@ int main(int argc, char** argv) {
   // Add mesh geometry variables
   mesh->outputVars(dump);
 
+  // Dummy variable for *_mod overloads
+  Field3D flow_ylow;
+
   fci_op_test("grad_par", dump, input, Grad_par(input));
   fci_op_test("grad2_par2", dump, input, Grad2_par2(input));
   fci_op_test("div_par", dump, input, Div_par(input));
   fci_op_test("div_par_K_grad_par", dump, input, Div_par_K_Grad_par(K, input));
+  fci_op_test("div_par_K_grad_par_mod", dump, input,
+              Div_par_K_Grad_par_mod(K, input, flow_ylow));
   fci_op_test("laplace_par", dump, input, Laplace_par(input));
+
+  // Finite volume methods
+  fci_op_test("FV_div_par_mod", dump, input, FV::Div_par_mod(input, K, K, flow_ylow));
+  fci_op_test("FV_div_par_fvv", dump, input, FV::Div_par_fvv(input, K, K));
 
   bout::writeDefaultOutputFile(dump);
 
