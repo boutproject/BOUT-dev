@@ -365,7 +365,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
   if (flag != SUCCESS) {
     output_error.write("ERROR CVODE step failed, flag = {:d}\n", flag);
     if (debug_on_failure) {
-      CVodeMemRec const* cv_mem = (CVodeMem)cvode_mem;
+      const CVodeMemRec* cv_mem = (CVodeMem)cvode_mem;
       if (f2d.empty() and v2d.empty() and v3d.empty()) {
         Options debug{};
         using namespace std::string_literals;

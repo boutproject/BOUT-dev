@@ -151,7 +151,7 @@ public:
 #endif
 
   const int dir;
-  virtual ~BoundaryRegionIter = default;
+  virtual ~BoundaryRegionIter() = default;
 
 protected:
   int z{0};

@@ -818,7 +818,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
 
     // Call the actual solver
     {
-      Timer const timer("petscsolve");
+      const Timer timer("petscsolve");
       KSPSolve(ksp, bs, xs); // Call the solver to solve the system
     }
 
@@ -834,7 +834,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
   }
     } else {
       timer.reset();
-      PetscErrorCode const err = MatMult(MatA, bs, xs);
+      const PetscErrorCode err = MatMult(MatA, bs, xs);
       if (err != PETSC_SUCCESS) {
         throw BoutException("MatMult failed with {:d}", static_cast<int>(err));
       }
