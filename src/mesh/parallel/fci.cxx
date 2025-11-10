@@ -147,6 +147,7 @@ void load_parallel_metric_components([[maybe_unused]] Coordinates* coords,
   LOAD_PAR(g_23, false);
 
   LOAD_PAR(dy, false);
+  LOAD_PAR(Bxy, false);
 
   if (not LOAD_PAR(J, true)) {
     auto g =
