@@ -10,6 +10,7 @@
 #include "bout/boutexception.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/coordinates.hxx"
+#include "bout/difops.hxx"
 #include "bout/field.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
