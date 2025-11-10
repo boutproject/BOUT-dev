@@ -1621,7 +1621,15 @@ Field3D Coordinates::Div_par(const Field3DParallel& f, CELL_LOC outloc,
 
   auto* coords = f.getCoordinates();
   // Need to modify yup and ydown fields
-  const Field3D Jg = coords->J / sqrt(coords->g_22.asField3DParallel());
+  Field3D Jg = coords->J / sqrt(coords->g_22);
+  Jg.splitParallelSlicesAndAllocate();
+  Field3DParallel B = coords->Bxy;
+  for (size_t j = 0; j < B.numberParallelSlices() ; ++j) {
+    BOUT_FOR(i, B.getRegion("RGN_NOBNDRY")) {
+      Jg.yup(j)[i.yp(j+1)] = Jg[i] * B.yup(j)[i.yp(j+1)] / B[i];
+      Jg.ydown(j)[i.ym(j+1)] = Jg[i] * B.ydown(j)[i.ym(j+1)] / B[i];
+    }
+  }
   return setName(Jg * Grad_par(f / Jg, outloc, method), "Div_par({:s})", f.name);
 }
 
