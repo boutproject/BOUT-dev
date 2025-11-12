@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import pytest
 # Test enabling/disabling exception backtrace from environment variable
 
 # requires all_tests
@@ -9,33 +9,32 @@ import os
 
 build_and_log("backtrace environment variable test")
 
-try:
-    del os.environ["BOUT_SHOW_BACKTRACE"]
-except KeyError:
-    pass
 
-success = True
-errors = []
+def test_backtrace():
+    try:
+        del os.environ["BOUT_SHOW_BACKTRACE"]
+    except KeyError:
+        pass
 
-_, output = shell("BOUT_SHOW_BACKTRACE=0 ./boutexcept", pipe=True)
+    success = True
+    errors = []
 
-if "troublemaker" in output:
-    success = False
-    print(
-        f"Fail: detected offending function name in output when not expected:\n{output}"
-    )
+    _, output = shell("./boutexcept", pipe=True)
 
-_, output = shell("./boutexcept", pipe=True)
+    if "troublemaker" in output:
+        success = False
+        pytest.fail("Fail: detected offending function name in output when not expected")
 
-if "troublemaker" not in output:
-    success = False
-    print(
-        f"Fail: did not detect offending function name in output when expected:\n{output}"
-    )
+    _, output = shell("BOUT_SHOW_BACKTRACE=yes ./boutexcept", pipe=True)
 
-if success:
-    print("=> All BoutException backtrace tests passed")
-    exit(0)
+    if "troublemaker" not in output:
+        success = False
+        print("Fail: did not detect offending function name in output when expected")
 
-print("=> Some failed tests")
-exit(1)
+    if success:
+        print("=> All BoutException backtrace tests passed")
+        exit(0)
+    assert success, f"Test failed"
+
+    print("=> Some failed tests")
+    exit(1)

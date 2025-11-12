@@ -8,10 +8,8 @@
 from boutdata.collect import collect
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 import numpy
-from sys import exit
 
 build_and_log("DataFileFacade test")
-
 
 success = True
 
@@ -38,41 +36,39 @@ testvars = {
 }
 
 
-for nproc in [1, 2]:
-    # delete any existing output
-    shell("rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc")
+def test_datafile_facade():
+    for nproc in [1, 2]:
+        # delete any existing output
+        shell("rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc")
 
-    print(f"   {nproc} processor....")
+        print(f"   {nproc} processor....")
 
-    # run the test executable
-    s, out = launch_safe("./test-datafile-facade", nproc=nproc, pipe=True)
-    with open(f"run.log.{nproc}", "w") as f:
-        f.write(out)
+        # run the test executable
+        s, out = launch_safe("./test-datafile-facade", nproc=nproc, pipe=True)
+        with open(f"run.log.{nproc}", "w") as f:
+            f.write(out)
 
-    # check the results
-    for name, expected in testvars.items():
-        # check non-evolving version
-        result = collect(name, path="data", info=False)
+        # check the results
+        for name, expected in testvars.items():
+            # check non-evolving version
+            result = collect(name, path="data", info=False)
 
-        if result.dtype.kind in ("S", "U"):
-            if str(result) != expected:
+            if result.dtype.kind in ("S", "U"):
+                if str(result) != expected:
+                    success = False
+                    print(
+                        f"{name} is different: got '{str(result)}', expected '{expected}'"
+                    )
+                continue
+
+            if not numpy.allclose(expected, result):
                 success = False
-                print(
-                    f"{name} is different: got '{str(result)}', expected '{expected}'"
-                )
-            continue
+                print(f"{name} is different: {numpy.max(numpy.abs(expected - result))}")
 
-        if not numpy.allclose(expected, result):
-            success = False
-            print(f"{name} is different: {numpy.max(numpy.abs(expected - result))}")
-
-if success:
-    print("=> All DataFileFacade tests passed")
-    # clean up binary files
-    shell(
-        "rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc data/restart/BOUT.restart.0.nc"
-    )
-    exit(0)
-
-print("=> Some failed tests")
-exit(1)
+    if success:
+        print("=> All DataFileFacade tests passed")
+        # clean up binary files
+        shell(
+            "rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc data/restart/BOUT.restart.0.nc"
+        )
+    assert success, f"=> Some failed tests"

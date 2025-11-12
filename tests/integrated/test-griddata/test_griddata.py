@@ -11,38 +11,37 @@ except:
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
-from sys import stdout, exit
+from sys import stdout
+
 
 build_and_log("griddata test")
 
-for nproc in [1]:
-    stdout.write("Checking %d processors ... " % (nproc))
 
-    shell("rm ./data*nc")
-    s, out = launch_safe("./test_griddata -d screw", nproc=nproc, pipe=True)
+def test_griddata():
+    for nproc in [1]:
+        stdout.write("Checking %d processors ... " % (nproc))
 
-    with open("run.log." + str(nproc), "w") as f:
-        f.write(out)
+        shell("rm ./data*nc")
+        s, out = launch_safe("./test_griddata -d screw", nproc=nproc, pipe=True)
 
-    prefix = "data"
-    Rxy = collect("Rxy", prefix=prefix, info=False)
-    Bpxy = collect("Bpxy", prefix=prefix, info=False)
-    dx = collect("dx", prefix=prefix, info=False)
+        with open("run.log." + str(nproc), "w") as f:
+            f.write(out)
 
-    nx, ny = Rxy.shape
+        prefix = "data"
+        Rxy = collect("Rxy", prefix=prefix, info=False)
+        Bpxy = collect("Bpxy", prefix=prefix, info=False)
+        dx = collect("dx", prefix=prefix, info=False)
 
-    # Handle 3D metric case
-    if len(dx.shape) == 3:
-        dx = dx[:, :, 0]
+        nx, ny = Rxy.shape
 
-    rwidth = 0.4
-    dr = float(rwidth) / nx
+        # Handle 3D metric case
+        if len(dx.shape) == 3:
+            dx = dx[:, :, 0]
 
-    # Test value of dx
-    if not np.allclose(dx, dr * Bpxy * Rxy, atol=1e-7):
-        print("Failed: dx does not match")
-        exit(1)
+        rwidth = 0.4
+        dr = float(rwidth) / nx
 
-    print("Passed")
+        # Test value of dx
+        assert np.allclose(dx, dr * Bpxy * Rxy, atol=1e-7), "Failed: dx does not match"
 
-exit(0)
+        print("Passed")

@@ -29,7 +29,7 @@ success = True
 def test1(ylower, yupper):
     global success
     if numpy.any(
-        numpy.abs(test_aligned[:, yupper, :] - test_aligned[:, ylower, :]) < 1.0e-6
+            numpy.abs(test_aligned[:, yupper, :] - test_aligned[:, ylower, :]) < 1.0e-6
     ):
         success = False
         print(

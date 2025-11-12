@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import pytest
 # Test initial conditions
 
 from boututils.run_wrapper import build_and_log, shell, launch_safe
@@ -10,6 +10,7 @@ import itertools
 from scipy.special import erf
 import numpy as np
 import os
+
 
 # requires not make
 # requires scipy
@@ -63,7 +64,7 @@ def gauss(x, width=1.0):
     """
     Normalised gaussian
     """
-    return np.exp(-(x**2) / (2 * width**2)) / np.sqrt(2 * np.pi)
+    return np.exp(-(x ** 2) / (2 * width ** 2)) / np.sqrt(2 * np.pi)
 
 
 def mixmode(x, seed=0.5):
@@ -89,8 +90,8 @@ def tanhhat(x, width, centre, steepness):
     BOUT++ TanhHat function
     """
     return 0.5 * (
-        np.tanh(steepness * (x - (centre - width / 2.0)))
-        + np.tanh(-steepness * (x - (centre + width / 2.0)))
+            np.tanh(steepness * (x - (centre - width / 2.0)))
+            + np.tanh(-steepness * (x - (centre + width / 2.0)))
     )
 
 
@@ -151,93 +152,89 @@ tan = np.tan
 TanhHat = tanhhat
 pi = np.pi
 
-########################################
-# Running the test
 
-# Some parameters
-success = True
-tolerance = 1e-13
-cmd = "./test_initial"
-datadir = "data"
-inputfile = os.path.join(datadir, "BOUT.inp")
+def test_initial():
+    # Running the test
 
-# Read the input file
-config = configparser.ConfigParser()
-with open(inputfile, "r") as f:
-    config.read_file(itertools.chain(["[global]"], f), source=inputfile)
+    # Some parameters
+    success = True
+    tolerance = 1e-13
+    cmd = "./test_initial"
+    datadir = "data"
+    inputfile = os.path.join(datadir, "BOUT.inp")
 
-# Find the variables that have a "function" option
-varlist = [key for key, values in config.items() if "function" in values]
+    # Read the input file
+    config = configparser.ConfigParser()
+    with open(inputfile, "r") as f:
+        config.read_file(itertools.chain(["[global]"], f), source=inputfile)
 
-# Remove the coordinate arrays
-for coord in ["var_x", "var_y", "var_z"]:
-    varlist.remove(coord)
+    # Find the variables that have a "function" option
+    varlist = [key for key, values in config.items() if "function" in values]
 
-build_and_log("initial conditions test")
+    # Remove the coordinate arrays
+    for coord in ["var_x", "var_y", "var_z"]:
+        varlist.remove(coord)
 
-nprocs = [1, 2, 3, 4]
-for nproc in nprocs:
-    status, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
-    with open("run.log.{}".format(nproc), "w") as f:
-        f.write(out)
+    build_and_log("initial conditions test")
 
-    if status != 0:
-        print("=> Could not run test")
-        print(status)
-        exit(status)
+    nprocs = [1, 2, 3, 4]
+    for nproc in nprocs:
+        status, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
+        with open("run.log.{}".format(nproc), "w") as f:
+            f.write(out)
 
-    # Collect the coordinate arrays separately
-    x = collect("var_x", xguards=True, yguards=True, path=datadir, info=False)
-    y = collect("var_y", xguards=True, yguards=True, path=datadir, info=False)
-    z = collect("var_z", xguards=True, yguards=True, path=datadir, info=False)
+        if status != 0:
+            print(status)
+            pytest.fail("=> Could not run test")
+            exit(status)
 
-    # Evaluate the functions
-    for var in varlist:
-        function = config[var]["function"]
-        function = function.replace("^", "**")
-        if ":" in function:
-            print(
-                "{} contains reference to variable - not possible to resolve at this time".format(
-                    var
+        # Collect the coordinate arrays separately
+        x = collect("var_x", xguards=True, yguards=True, path=datadir, info=False)
+        y = collect("var_y", xguards=True, yguards=True, path=datadir, info=False)
+        z = collect("var_z", xguards=True, yguards=True, path=datadir, info=False)
+
+        # Evaluate the functions
+        for var in varlist:
+            function = config[var]["function"]
+            function = function.replace("^", "**")
+            if ":" in function:
+                print(
+                    "{} contains reference to variable - not possible to resolve at this time".format(
+                        var
+                    )
                 )
-            )
-            continue
-        try:
-            analytic = eval(function)
-        except NotImplementedError as err:
-            print("{} not implemented, skipping".format(err.args[0]))
-        else:
-            data = collect(var, xguards=True, yguards=True, path=datadir, info=False)
-            E2 = np.sqrt(np.mean((analytic - data) ** 2))
-            if E2 < tolerance:
-                success_string = "PASS"
+                continue
+            try:
+                analytic = eval(function)
+            except NotImplementedError as err:
+                print("{} not implemented, skipping".format(err.args[0]))
             else:
-                if (var == "mixmode" or var == "mixmode_seed") and E2 < 1e-3:
-                    import platform
+                data = collect(var, xguards=True, yguards=True, path=datadir, info=False)
+                E2 = np.sqrt(np.mean((analytic - data) ** 2))
+                if E2 < tolerance:
+                    success_string = "PASS"
+                else:
+                    if (var == "mixmode" or var == "mixmode_seed") and E2 < 1e-3:
+                        import platform
 
-                    arch = platform.machine()
-                    if arch == "i686":
-                        # This can happen due tue excess precision e.g. on X87 architecture
-                        success_string = "WARNING"
+                        arch = platform.machine()
+                        if arch == "i686":
+                            # This can happen due tue excess precision e.g. on X87 architecture
+                            success_string = "WARNING"
+                        else:
+                            print(
+                                "This should only happen in i686 with an x87 math architecture."
+                            )
+                            print("We detected however an %s architecture." % arch)
+                            success_string = "FAIL"
+                            success = False
                     else:
-                        print(
-                            "This should only happen in i686 with an x87 math architecture."
-                        )
-                        print("We detected however an %s architecture." % arch)
                         success_string = "FAIL"
                         success = False
-                else:
-                    success_string = "FAIL"
-                    success = False
-            print(
-                "\tChecking {var:<12}: l-2: {err:.4e} ... {success}".format(
-                    var=var, err=E2, success=success_string
+                print(
+                    "\tChecking {var:<12}: l-2: {err:.4e} ... {success}".format(
+                        var=var, err=E2, success=success_string
+                    )
                 )
-            )
 
-if success:
-    print(" => All tests passed")
-    exit(0)
-else:
-    print(" => Some failed tests")
-    exit(1)
+    assert success, " => Some failed tests"

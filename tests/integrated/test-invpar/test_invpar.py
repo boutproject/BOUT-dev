@@ -10,7 +10,6 @@
 
 from boututils.run_wrapper import build_and_log, shell, launch
 from boutdata.collect import collect
-from sys import stdout, exit
 
 build_and_log("parallel inversion test")
 
@@ -26,39 +25,40 @@ flags_src = [
     dict(input_field="'ballooning(exp(-y*y)*cos(z)*gauss(x,0.2))'"),
 ]
 
-flags = ""
-for i, f in enumerate(flags_src):
-    fl = {"acoef": 1}
-    fl.update(f)
-    for k, v in fl.items():
-        flags += f" {k}_{i}={v}"
 
-regions = ["", " mesh:ixseps1=0 mesh:ixseps2=0"]
-flags = [flags + r for r in regions]
+def test_invpar():
+    global i, f, r, code
+    flags = ""
+    for i, f in enumerate(flags_src):
+        fl = {"acoef": 1}
+        fl.update(f)
+        for k, v in fl.items():
+            flags += f" {k}_{i}={v}"
 
-code = 0  # Return code
-for nproc in [1, 2, 4]:
-    cmd = "./test_invpar"
+    regions = ["", " mesh:ixseps1=0 mesh:ixseps2=0"]
+    flags = [flags + r for r in regions]
 
-    print("   %d processors...." % (nproc))
-    r = 0
-    for f in flags:
-        shell("rm data/BOUT.dmp.* 2> err.log")
+    code = 0  # Return code
+    for nproc in [1, 2, 4]:
+        cmd = "./test_invpar"
 
-        # Run the case
-        s, _ = launch(cmd + " -q -q -q " + f, nproc=nproc, mthread=1)
+        print("   %d processors...." % (nproc))
+        r = 0
+        for f in flags:
+            shell("rm data/BOUT.dmp.* 2> err.log")
 
-        code += s
+            # Run the case
+            s, _ = launch(cmd + " -q -q -q " + f, nproc=nproc, mthread=1)
 
-        if s == 0:
-            print("PASSED")
-        else:
-            print("FAILED")
+            code += s
 
+            if s == 0:
+                print("PASSED")
+            else:
+                print("FAILED")
+            assert s, f"Test failed for flag={f}"
 
-if code == 0:
-    print(" => All inversion tests passed")
-else:
-    print(" => Some failed tests")
-
-exit(code)
+    if code == 0:
+        print(" => All inversion tests passed")
+    else:
+        print(" => Some failed tests")
