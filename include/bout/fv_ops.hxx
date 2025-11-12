@@ -605,12 +605,10 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
                     bool fixflux = true) {
 
   Coordinates* coord = f_in.getCoordinates();
+  ASSERT1_FIELDS_COMPATIBLE(f_in, v_in);
 
   if (f_in.isFci()) {
     // Use mid-point (cell boundary) averages
-    if (flow_ylow.isAllocated()) {
-      flow_ylow = emptyFrom(flow_ylow);
-    }
 
     ASSERT1(f_in.hasParallelSlices());
     ASSERT1(v_in.hasParallelSlices());
@@ -636,7 +634,6 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
     }
     return result;
   }
-  ASSERT1_FIELDS_COMPATIBLE(f_in, v_in);
   ASSERT1_FIELDS_COMPATIBLE(f_in, wave_speed_in);
 
   const Mesh* mesh = f_in.getMesh();
