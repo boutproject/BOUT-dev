@@ -45,6 +45,16 @@ bool GridFromOptions::get(Mesh*, BoutReal& rval, const std::string& name, BoutRe
   return hasVar(name);
 }
 
+bool GridFromOptions::get(Mesh* m, Array<double>& rval, const std::string& name, BoutReal def) {
+  rval = getWithDefault(*options, name, def);
+  return hasVar(name);
+}
+
+bool GridFromOptions::get(Mesh* m, Matrix<double>& rval, const std::string& name, BoutReal def) {
+  rval = getWithDefault(*options, name, def);
+  return hasVar(name);
+}
+
 bool GridFromOptions::get(Mesh* m, Field2D& var, const std::string& name, BoutReal def,
                           CELL_LOC location) {
   if (!hasVar(name)) {

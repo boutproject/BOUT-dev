@@ -116,6 +116,35 @@ bool GridFile::get(Mesh* UNUSED(m), BoutReal& rval, const std::string& name,
   return success;
 }
 
+bool GridFile::get(Mesh* UNUSED(m), Array<double>& rval, const std::string& name,
+                   BoutReal def) {
+  Timer timer("io");
+  TRACE("GridFile::get(BoutArray)");
+  const bool success = data.isSet(name);
+  if (not success) {
+    // Override any previously set defaults
+    data[name].force(def);
+  }
+  rval = data[name];
+  return success;
+}
+
+bool GridFile::get(Mesh* UNUSED(m), Matrix<double>& rval, const std::string& name,
+                   BoutReal def) {
+  Timer timer("io");
+  TRACE("GridFile::get(BoutMatrix)");
+  const bool success = data.isSet(name);
+  if (not success) {
+    // Override any previously set defaults
+    data[name].force(def);
+    rval = data[name].as<double>();
+  }
+  else {
+    rval = data[name].as<Matrix<double>>();
+  }
+  return success;
+}
+
 /*!
  * Reads a 2D, 3D or FieldPerp field variable from a file
  * 
@@ -260,7 +289,8 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
       ASSERT1(yd >= 0);
     } else if (grid_yguards == 0) {
       // excluding ghostpoints
-      ASSERT1(size[1] == m->GlobalNy - m->numberOfYBoundaries() * 2 * myg);
+      ASSERT1(size[1] == m->GlobalNy - m->numberOfYBoundaries() * 2 * myg ||
+              size[1] == 2 || size[1] == 4); //TODO: In case of reading ghost points/weights.
       ny_to_read = m->LocalNy - 2 * myg;
       yd = myg;
     } else {

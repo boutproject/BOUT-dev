@@ -47,6 +47,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <iostream>
 
 #ifdef _MSC_VER
 // finite is not actually standard C++, it's a BSD extention for C

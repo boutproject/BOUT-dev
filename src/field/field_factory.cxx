@@ -155,6 +155,8 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   addGenerator("H", std::make_shared<FieldHeaviside>(nullptr));
   addGenerator("erf", std::make_shared<FieldGenOneArg<erf>>(nullptr, "erf"));
   addGenerator("fmod", std::make_shared<FieldGenTwoArg<fmod>>(nullptr, nullptr));
+  addGenerator("J", std::make_shared<FieldJGeneral>(nullptr, nullptr));
+  addGenerator("j", std::make_shared<FieldJGeneral>(nullptr, nullptr));
 
   addGenerator("min", std::make_shared<FieldMin>());
   addGenerator("max", std::make_shared<FieldMax>());

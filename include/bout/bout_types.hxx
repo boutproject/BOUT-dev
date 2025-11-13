@@ -66,7 +66,7 @@ constexpr DIFF_METHOD DIFF_S2 = DIFF_METHOD::s2;
 std::string toString(DIFF_METHOD location);
 
 /// Specify grid region for looping
-enum class REGION { all, nobndry, nox, noy, noz };
+enum class REGION {all, nobndry, nox, noy, noz};
 constexpr REGION RGN_ALL = REGION::all;
 constexpr REGION RGN_NOBNDRY = REGION::nobndry;
 constexpr REGION RGN_NOX = REGION::nox;

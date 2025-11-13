@@ -164,6 +164,34 @@ int Mesh::get(bool& bval, const std::string& name, bool def) {
   return !success;
 }
 
+int Mesh::get(Array<BoutReal>& rval, const std::string& name, BoutReal def) {
+  TRACE("Mesh::get(rval, {:s})", name);
+
+  if (source == nullptr) {
+    warn_default_used(def, name);
+    rval[0] = def; //TODO fix this?
+    return true;
+  }
+
+  bool success = source->get(this, rval, name, def);
+
+  return !success;
+}
+
+int Mesh::get(Matrix<BoutReal>& rval, const std::string& name, BoutReal def) {
+  TRACE("Mesh::get(rval, {:s})", name);
+
+  if (source == nullptr) {
+    warn_default_used(def, name);
+    rval(0,0) = def; //TODO: Fix this?
+    return true;
+  }
+
+  bool success = source->get(this, rval, name, def);
+
+  return !success;
+}
+
 int Mesh::get(Field2D& var, const std::string& name, BoutReal def, bool communicate,
               CELL_LOC location) {
   TRACE("Loading 2D field: Mesh::get(Field2D, {:s})", name);

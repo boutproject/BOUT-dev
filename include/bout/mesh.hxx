@@ -43,6 +43,7 @@ class Mesh;
 #ifndef BOUT_MESH_H
 #define BOUT_MESH_H
 
+#include "bout/array.hxx"
 #include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/coordinates.hxx" // Coordinates class
@@ -57,6 +58,7 @@ class Mesh;
 #include "bout/region.hxx"
 #include "bout/sys/range.hxx" // RangeIterator
 #include "bout/unused.hxx"
+#include "bout/utils.hxx"
 
 #include "mpi.h"
 
@@ -169,6 +171,25 @@ public:
   ///
   /// @returns zero if successful, non-zero on failure
   int get(bool& bval, const std::string& name, bool def = false);
+
+  /// Get an Array<BoutReal> from the input source
+  ///
+  /// @param[out] rval  The value will be put into this variable
+  /// @param[in] name   The name of the variable to read
+  /// @param[in] def    The default value if not found
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(Array<BoutReal>& rval, const std::string& name, BoutReal def = 0.0);
+
+  
+  /// Get a Matrix<BoutReal> from the input source
+  ///
+  /// @param[out] rval  The value will be put into this variable
+  /// @param[in] name   The name of the variable to read
+  /// @param[in] def    The default value if not found
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(Matrix<BoutReal>& rval, const std::string& name, BoutReal def = 0.0);
 
   /// Get a Field2D from the input source
   /// including communicating guard cells
