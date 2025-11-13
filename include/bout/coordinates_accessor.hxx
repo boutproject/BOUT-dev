@@ -31,7 +31,7 @@
 ///    -> If Coordinates data is changed, the cache should be cleared
 ///    by calling CoordinatesAccessor::clear()
 struct CoordinatesAccessor {
-  CoordinatesAccessor() = delete;
+  CoordinatesAccessor() {}
 
   /// Constructor from Coordinates
   /// Copies data from coords, doesn't modify it

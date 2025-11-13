@@ -23,6 +23,15 @@
 
 #include "RAJA/RAJA.hpp" // using RAJA lib
 
+#if BOUT_HAS_CUDA
+// TODO: Make configurable
+const int CUDA_BLOCK_SIZE = 256;
+using EXEC_POL = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
+//using EXEC_POL = RAJA::loop_exec;
+#else  // not BOUT_USE_CUDA
+using EXEC_POL = RAJA::loop_exec;
+#endif // end BOUT_USE_CUDA
+
 /// Wrapper around RAJA::forall
 /// Enables computations to be done on CPU or GPU (CUDA).
 ///
@@ -81,7 +90,7 @@ struct RajaForAll {
     // Note: must be a local variable
     const int* _ob_i_ind_raw = &_ob_i_ind[0];
     RAJA::forall<EXEC_POL>(RAJA::RangeSegment(0, _ob_i_ind.size()),
-                           [=] RAJA_DEVICE(int id) {
+                           [=] RAJA_DEVICE(int id) mutable {
                              // Look up index and call user function
                              f(_ob_i_ind_raw[id]);
                            });
@@ -127,7 +136,7 @@ private:
 /// to create variables which shadow the class members.
 ///
 #define BOUT_FOR_RAJA(index, region, ...) \
-  RajaForAll(region) << [ =, ##__VA_ARGS__ ] RAJA_DEVICE(int index)
+RajaForAll(region) << [ =, ##__VA_ARGS__ ] RAJA_DEVICE(int index) mutable
 
 #else // BOUT_HAS_RAJA
 

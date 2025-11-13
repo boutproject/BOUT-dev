@@ -23,6 +23,8 @@
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
 
+#include "bout/coordinates_accessor.hxx"
+
 // use anonymous namespace so this utility function is not available outside this file
 namespace {
 template <typename T, typename... Ts>
@@ -1203,10 +1205,11 @@ int Coordinates::geometry(bool recalculate_staggered,
     localmesh->recalculateStaggeredCoordinates();
   }
 
-  // Invalidate and recalculate cached variables
+  // Invalidate and recalculate cached variables and any accessor
   zlength_cache.reset();
   Grad2_par2_DDY_invSgCache.clear();
   invSgCache.reset();
+  CoordinatesAccessor::clear(this);
 
   return 0;
 }

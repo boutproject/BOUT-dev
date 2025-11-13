@@ -388,8 +388,15 @@ if (BOUT_GENERATE_FIELDOPS)
   if (NOT ClangFormat_FOUND)
     message(FATAL_ERROR "clang-format not found, but you have requested to generate code!")
   endif()
+  if (BOUT_ENABLE_RAJA)
+    set(GEN_LOOP_EXEC "raja")
+  elseif (BOUT_ENABLE_OPENMP)
+    set(GEN_LOOP_EXEC "openmp")
+  else()
+    set(GEN_LOOP_EXEC "serial")
+  endif()
   add_custom_command( OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/field/generated_fieldops.cxx
-    COMMAND ${Python3_EXECUTABLE} gen_fieldops.py --filename generated_fieldops.cxx.tmp
+    COMMAND ${Python3_EXECUTABLE} gen_fieldops.py --loop-exec ${GEN_LOOP_EXEC} --filename generated_fieldops.cxx.tmp
     COMMAND ${ClangFormat_BIN} generated_fieldops.cxx.tmp -i
     COMMAND ${CMAKE_COMMAND} -E rename generated_fieldops.cxx.tmp generated_fieldops.cxx
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.jinja  ${CMAKE_CURRENT_SOURCE_DIR}/src/field/gen_fieldops.py

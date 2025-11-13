@@ -133,6 +133,17 @@ class Field(object):
             return "{self.name}[{self.index_var}]".format(self=self)
 
     @property
+    def index_acc(self):
+        """Returns "_acc[{index_var}]" for an accessor-based index, except if
+        field_type is BoutReal, in which case just returns ""
+
+        """
+        if self.field_type == "BoutReal":
+            return "{self.name}".format(self=self)
+        else:
+            return "{self.name}_acc[{self.index_var}]".format(self=self)
+
+    @property
     def mixed_index(self):
         """Returns "[{index_var} + {jz_var}]" if field_type is Field3D,
         self.index if Field2D or just returns "" for BoutReal
@@ -148,6 +159,21 @@ class Field(object):
             return "{self.name}[{self.index_var}]".format(self=self)
 
     @property
+    def mixed_index_acc(self):
+        """Returns "_acc[{index_var} + {jz_var}]" for an accessor if field_type
+        is Field3D, self.index if Field2D or just returns "" for BoutReal
+
+        """
+        if self.field_type == "BoutReal":
+            return "{self.name}_acc".format(self=self)
+        elif self.field_type == "Field3D":
+            return "{self.name}_acc[{self.mixed_base_ind_var} + {self.jz_var}]".format(
+                self=self
+            )
+        else:  # Field2D
+            return "{self.name}_acc[{self.index_var}]".format(self=self)
+
+    @property
     def base_index(self):
         """Returns "[{mixed_base_ind_var}]" if field_type is Field3D, Field2D or FieldPerp
         or just returns "" for BoutReal
@@ -157,6 +183,17 @@ class Field(object):
             return "{self.name}".format(self=self)
         else:
             return "{self.name}[{self.mixed_base_ind_var}]".format(self=self)
+
+    @property
+    def base_index_acc(self):
+        """Returns "_acc[{mixed_base_ind_var}]" for an accessor if field_type is
+        Field3D, Field2D or FieldPerp or just returns "" for BoutReal
+
+        """
+        if self.field_type == "BoutReal":
+            return "{self.name}".format(self=self)
+        else:
+            return "{self.name}_acc[{self.mixed_base_ind_var}]".format(self=self)
 
     def __eq__(self, other):
         try:
@@ -198,11 +235,11 @@ if __name__ == "__main__":
     )
     # By default use OpenMP enabled loops but allow to disable
     parser.add_argument(
-        "--no-openmp",
-        action="store_false",
-        default=False,
-        dest="noOpenMP",
-        help="Don't use OpenMP compatible loops",
+        "--loop-exec",
+        default="openmp",
+        dest="loop_exec",
+        choices=["serial", "openmp", "raja"],
+        help="Choose the loop execution method. Default is OpenMP",
     )
 
     args = parser.parse_args()
@@ -213,10 +250,16 @@ if __name__ == "__main__":
     mixed_base_ind_var = "base_ind"
     region_name = '"RGN_ALL"'
 
-    if args.noOpenMP:
+    if args.loop_exec == "openmp":
+        region_loop = "BOUT_FOR"
+    elif args.loop_exec == "raja":
+        region_loop = "BOUT_FOR_RAJA"
+        header += "#include <bout/rajalib.hxx>\n"
+        header += "#include <bout/field_accessor.hxx>\n"
+    elif args.loop_exec == "serial":
         region_loop = "BOUT_FOR_SERIAL"
     else:
-        region_loop = "BOUT_FOR"
+        raise ValueError("Unknown loop execution method")
 
     # Declare what fields we currently support:
     # Field perp is currently missing
