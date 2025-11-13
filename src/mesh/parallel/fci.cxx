@@ -144,6 +144,7 @@ void load_parallel_metric_components([[maybe_unused]] Coordinates* coords,
   LOAD_PAR(g_23, false);
 
   LOAD_PAR(dy, false);
+  LOAD_PAR(Bxy, false);
 
   if (not LOAD_PAR(J, true)) {
     auto g =
@@ -163,18 +164,6 @@ void load_parallel_metric_components([[maybe_unused]] Coordinates* coords,
     auto J = 1. / sqrt(g);
     auto& pcom = coords->J.ynext(offset);
     BOUT_FOR(i, J.getRegion(rgn)) { pcom[i] = J[i]; }
-  }
-  if (coords->Bxy.getMesh()->sourceHasVar(parallel_slice_field_name("Bxy", 1))) {
-    LOAD_PAR(Bxy, true);
-  } else {
-    Field3D tmp{coords->Bxy.getMesh()};
-    tmp.allocate();
-    BOUT_FOR(iyp, coords->Bxy.getRegion("RGN_NOBNDRY")) {
-      const auto i = iyp.ym(offset);
-      tmp[i] = coords->Bxy[i] * coords->g_22[i] / coords->J[i]
-               * coords->J.ynext(offset)[iyp] / coords->g_22.ynext(offset)[iyp];
-    }
-    set_parallel_metric_component("Bxy", coords->Bxy, offset, tmp);
   }
 #undef LOAD_PAR
 
