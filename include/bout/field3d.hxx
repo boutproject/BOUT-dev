@@ -242,6 +242,12 @@ public:
 
   void splitParallelSlicesAndAllocate();
 
+  Field3D withoutParallelSlices() const {
+    Field3D copy = *this;
+    copy.clearParallelSlices();
+    return copy;
+  }
+
   /*!
    * Clear the parallel slices, yup and ydown
    */
