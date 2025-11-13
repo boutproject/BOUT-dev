@@ -470,13 +470,9 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
       const auto corners = {(*gf)[IndG3D(g3dinds[i][0])], (*gf)[IndG3D(g3dinds[i][1])],
                             (*gf)[IndG3D(g3dinds[i][2])], (*gf)[IndG3D(g3dinds[i][3])]};
       const auto minmax = std::minmax(corners);
-      if (f_interp[iyp] < minmax.first) {
-        f_interp[iyp] = minmax.first;
-      } else {
-        if (f_interp[iyp] > minmax.second) {
-          f_interp[iyp] = minmax.second;
-        }
-      }
+      const auto diff = (minmax.second - minmax.first) * 0.1 + 1e-2;
+      f_interp[iyp] = std::max(f_interp[iyp], minmax.first - diff);
+      f_interp[iyp] = std::min(f_interp[iyp], minmax.second + diff);
     }
 #if USE_NEW_WEIGHTS and defined(HS_USE_PETSC)
     ASSERT2(std::isfinite(cptr[int(i)]));
