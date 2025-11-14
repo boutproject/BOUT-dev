@@ -138,6 +138,31 @@ private:
   FieldGeneratorPtr gen;
 };
 
+//Bessel functions.
+class FieldJGeneral : public FieldGenerator {
+public:
+  FieldJGeneral(FieldGeneratorPtr order, FieldGeneratorPtr x)
+    : N(std::move(order)), X(std::move(x)) {}
+
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
+    if (args.size() != 2) {
+      throw ParseException("j(n, x) expects 2 arguments, got {:d}", args.size());
+    }
+    auto it = args.begin();
+    return std::make_shared<FieldJGeneral>(*it, *std::next(it));
+  }
+
+  BoutReal generate(const bout::generator::Context& pos) override {
+    const double nu = static_cast<double>(N->generate(pos));
+    const double x  = static_cast<double>(X->generate(pos));
+    const auto bessel = std::cyl_bessel_j(static_cast<double>(nu), x); // C++17
+    return static_cast<BoutReal>(bessel);
+  }
+
+private:
+  FieldGeneratorPtr N, X;
+};
+
 /// Minimum
 class FieldMin : public FieldGenerator {
 public:
