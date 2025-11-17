@@ -1,4 +1,5 @@
 #include "bout/bout.hxx"
+#include "bout/build_config.hxx"
 #include "bout/difops.hxx"
 #include "bout/field.hxx"
 #include "bout/field3d.hxx"
