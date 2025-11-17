@@ -6,9 +6,9 @@
  * up a linear system.
  *
  **************************************************************************
- * Copyright 2019 C. MacMackin
+ * Copyright 2019 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -565,6 +565,26 @@ PetscVector<T> operator*(const PetscMatrix<T>& mat, const PetscVector<T>& vec) {
   ASSERT2(err == 0);
   return PetscVector<T>(vec, result);
 }
+
+// Compatibility wrappers
+// For < 3.24
+#if PETSC_VERSION_GE(3, 24, 0) \
+    || (PETSC_VERSION_GE(3, 23, 0) && PETSC_VERSION_RELEASE == 0)
+namespace bout {
+template <class T>
+constexpr auto cast_MatFDColoringFn(T func) {
+  return reinterpret_cast<MatFDColoringFn*>(func); // NOLINT(*-reinterpret-cast)
+}
+} // namespace bout
+#else
+using MatFDColoringFn = PetscErrorCode (*)();
+namespace bout {
+template <class T>
+constexpr auto cast_MatFDColoringFn(T func) {
+  return reinterpret_cast<MatFDColoringFn>(func); // NOLINT(*-reinterpret-cast)
+}
+} // namespace bout
+#endif
 
 #endif // BOUT_HAS_PETSC
 

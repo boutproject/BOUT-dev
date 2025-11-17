@@ -22,10 +22,6 @@
 
 #include <math.h>
 
-#if BOUT_HAS_HYPRE
-#include <bout/invert/laplacexy2_hypre.hxx>
-#endif
-
 #include <bout/field_factory.hxx>
 
 CELL_LOC loc = CELL_CENTRE;
@@ -35,6 +31,10 @@ CELL_LOC loc = CELL_CENTRE;
 BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_target", "neumann");
 BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xin", "none");
 BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xout", "none");
+
+#if BOUT_HAS_HYPRE
+BOUT_OVERRIDE_DEFAULT_OPTION("laplacexy:type", "hypre");
+#endif
 
 /// 3-field ELM simulation
 class ELMpb : public PhysicsModel {
@@ -188,11 +188,7 @@ private:
 
   bool split_n0; // Solve the n=0 component of potential
 
-#if BOUT_HAS_HYPRE
-  std::unique_ptr<LaplaceXY2Hypre> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
-#else
   std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
-#endif
 
   Field2D phi2D; // Axisymmetric phi
 
@@ -525,11 +521,8 @@ protected:
                    .withDefault(false);
     if (split_n0) {
       // Create an XY solver for n=0 component
-#if BOUT_HAS_HYPRE
-      laplacexy = bout::utils::make_unique<LaplaceXY2Hypre>(mesh);
-#else
-      laplacexy = bout::utils::make_unique<LaplaceXY>(mesh);
-#endif
+      laplacexy = LaplaceXY::create(mesh);
+
       // Set coefficients for Boussinesq solve
       laplacexy->setCoefs(1.0, 0.0);
       phi2D = 0.0; // Starting guess
@@ -2041,6 +2034,7 @@ protected:
   int precon(BoutReal UNUSED(t), BoutReal gamma, BoutReal UNUSED(delta)) {
     // First matrix, applying L
     mesh->communicate(ddt(Psi));
+    ddt(Psi).applyBoundary("neumann");
     Field3D Jrhs;
     if (laplace_perp) {
       Jrhs = Laplace_perp(ddt(Psi));
@@ -2072,9 +2066,10 @@ protected:
     }
 
     mesh->communicate(Jrhs, ddt(P));
+    ddt(P).applyBoundary("neumann");
 
     Field3D U1 = ddt(U);
-    U1 += (gamma * B0 * B0) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(P);
+    U1 += (gamma * B0 * B0) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(ddt(P));
 
     // Second matrix, solving Alfven wave dynamics
     static std::unique_ptr<InvertPar> invU{nullptr};

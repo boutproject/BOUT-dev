@@ -452,10 +452,7 @@ void NcPutAttVisitor::operator()(const std::string& value) {
 void writeGroup(const Options& options, NcGroup group,
                 const std::string& time_dimension) {
 
-  for (const auto& childpair : options.getChildren()) {
-    const auto& name = childpair.first;
-    const auto& child = childpair.second;
-
+  for (const auto& [name, child] : options) {
     if (child.isValue()) {
       try {
         auto nctype = bout::utils::visit(NcTypeVisitor(), child.value);
