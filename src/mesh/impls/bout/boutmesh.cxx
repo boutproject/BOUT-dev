@@ -2146,15 +2146,17 @@ void BoutMesh::topology() {
   int limiter_count = 0;
   Mesh::get(limiter_count, "limiter_count", 0);
   if (limiter_count > 0) {
-    std::vector<int> limiter_yinds, limiter_xstarts, limiter_xends;
+    std::vector<int> limiter_yinds;
     if (!source->get(this, limiter_yinds, "limiter_yinds", limiter_count)) {
       throw BoutException("Couldn't read limiter_yinds vector of length {} from mesh",
                           limiter_count);
     }
+    std::vector<int> limiter_xstarts;
     if (!source->get(this, limiter_xstarts, "limiter_xstarts", limiter_count)) {
       throw BoutException("Couldn't read limiter_xstarts vector of length {} from mesh",
                           limiter_count);
     }
+    std::vector<int> limiter_xends;
     if (!source->get(this, limiter_xends, "limiter_xends", limiter_count)) {
       throw BoutException("Couldn't read limiter_xend vector of length {} from mesh",
                           limiter_count);

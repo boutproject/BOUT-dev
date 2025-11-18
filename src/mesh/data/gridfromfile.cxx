@@ -2,6 +2,7 @@
 #include "bout/traits.hxx"
 #include <bout/griddata.hxx>
 
+#include <bout/array.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
@@ -11,6 +12,9 @@
 #include <bout/sys/timer.hxx>
 #include <bout/unused.hxx>
 #include <bout/utils.hxx>
+
+#include <algorithm>
+#include <iterator>
 #include <utility>
 
 GridFile::GridFile(std::string gridfilename)
