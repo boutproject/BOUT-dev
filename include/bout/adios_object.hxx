@@ -57,9 +57,9 @@ public:
   }
 
   template <class T>
-  adios2::Variable<T> GetArrayVariable(const std::string& varname, adios2::Dims& shape,
-                                       const std::vector<std::string>& dimNames,
-                                       int rank) {
+  adios2::Variable<T>
+  GetArrayVariable(const std::string& varname, const adios2::Dims& shape,
+                   const std::vector<std::string>& dimNames, int rank) {
     adios2::Variable<T> v = io.InquireVariable<T>(varname);
     if (!v) {
       adios2::Dims start(shape.size());
