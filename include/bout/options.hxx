@@ -982,31 +982,31 @@ inline bool Options::similar<BoutReal>(BoutReal lhs, BoutReal rhs) const {
 
 /// Specialised as routines
 template <>
-std::string Options::as<std::string>(const std::string& similar_to) const;
+auto Options::as(const std::string& similar_to) const -> std::string;
 template <>
-int Options::as<int>(const int& similar_to) const;
+auto Options::as(const int& similar_to) const -> int;
 template <>
-BoutReal Options::as<BoutReal>(const BoutReal& similar_to) const;
+auto Options::as(const BoutReal& similar_to) const -> BoutReal;
 template <>
-bool Options::as<bool>(const bool& similar_to) const;
+auto Options::as(const bool& similar_to) const -> bool;
 template <>
-Field2D Options::as<Field2D>(const Field2D& similar_to) const;
+auto Options::as(const Field2D& similar_to) const -> Field2D;
 template <>
-Field3D Options::as<Field3D>(const Field3D& similar_to) const;
+auto Options::as(const Field3D& similar_to) const -> Field3D;
 template <>
-FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const;
+auto Options::as(const FieldPerp& similar_to) const -> FieldPerp;
 template <>
-Array<BoutReal> Options::as<Array<BoutReal>>(const Array<BoutReal>& similar_to) const;
+auto Options::as(const Array<BoutReal>& similar_to) const -> Array<BoutReal>;
 template <>
-Array<int> Options::as<Array<int>>(const Array<int>& similar_to) const;
+auto Options::as(const Array<int>& similar_to) const -> Array<int>;
 template <>
-Matrix<BoutReal> Options::as<Matrix<BoutReal>>(const Matrix<BoutReal>& similar_to) const;
+auto Options::as(const Matrix<BoutReal>& similar_to) const -> Matrix<BoutReal>;
 template <>
-Matrix<int> Options::as<Matrix<int>>(const Matrix<int>& similar_to) const;
+auto Options::as(const Matrix<int>& similar_to) const -> Matrix<int>;
 template <>
-Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_to) const;
+auto Options::as(const Tensor<BoutReal>& similar_to) const -> Tensor<BoutReal>;
 template <>
-Tensor<int> Options::as<Tensor<int>>(const Tensor<int>& similar_to) const;
+auto Options::as(const Tensor<int>& similar_to) const -> Tensor<int>;
 
 /// Convert \p value to string
 std::string toString(const Options& value);
