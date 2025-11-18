@@ -869,9 +869,9 @@ void Field3D::_track(const T& change, std::string operation) {
   const std::string changename = change.name;
 #endif
   (*locked)[outname].setAttributes({
-    {"operation", operation},
+      {"operation", operation},
 #if BOUT_USE_TRACK
-        {"rhs.name", changename},
+      {"rhs.name", changename},
 #endif
   });
 }

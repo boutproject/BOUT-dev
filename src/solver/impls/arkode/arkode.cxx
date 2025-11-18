@@ -229,8 +229,7 @@ int ArkodeSolver::init() {
     throw BoutException("ARKodeSetUserData failed\n");
   }
 
-  if (ARKodeSetLinear(arkode_mem, static_cast<int>(set_linear))
-      != ARK_SUCCESS) {
+  if (ARKodeSetLinear(arkode_mem, static_cast<int>(set_linear)) != ARK_SUCCESS) {
     throw BoutException("ARKodeSetLinear failed\n");
   }
 
@@ -415,8 +414,7 @@ int ArkodeSolver::init() {
         if (hasPreconditioner()) {
           output.write("\tUsing user-supplied preconditioner\n");
 
-          if (ARKodeSetPreconditioner(arkode_mem, nullptr, arkode_pre)
-              != ARKLS_SUCCESS) {
+          if (ARKodeSetPreconditioner(arkode_mem, nullptr, arkode_pre) != ARKLS_SUCCESS) {
             throw BoutException("ARKodeSetPreconditioner failed\n");
           }
         } else {
