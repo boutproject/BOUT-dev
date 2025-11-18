@@ -13,9 +13,9 @@
 class Field2D;
 class Field3D;
 class FieldPerp;
-template<class T>
+template <class T>
 class Matrix;
-template<class T>
+template <class T>
 class Tensor;
 
 namespace bout {

@@ -1,4 +1,5 @@
 #include "bout/build_defines.hxx"
+#include "bout/traits.hxx"
 
 #if BOUT_HAS_ADIOS2
 
@@ -317,8 +318,7 @@ const std::vector<std::string> DIMS_XZ = {"x", "z"};
 const std::vector<std::string> DIMS_XYZ = {"x", "y", "z"};
 
 namespace {
-template <typename T>
-using tuple_index_sequence = std::make_index_sequence<std::tuple_size_v<T>>;
+using bout::utils::tuple_index_sequence;
 
 template <class Tuple, std::size_t... I>
 auto make_shape_impl(std::size_t first, Tuple&& t,

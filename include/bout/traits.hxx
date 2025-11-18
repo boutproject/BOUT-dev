@@ -1,6 +1,7 @@
 #ifndef BOUT_TRAITS_H
 #define BOUT_TRAITS_H
 
+#include <tuple>
 #include <type_traits>
 
 class Field;
@@ -112,6 +113,10 @@ using EnableIfFieldPerp =
 /// Enable a function if T is a subclass of Options
 template <class T>
 using EnableIfOptions = std::enable_if_t<std::is_base_of_v<Options, T>>;
+
+/// Create a `std::index_sequence` with the length of a tuple ``T``
+template <typename T>
+using tuple_index_sequence = std::make_index_sequence<std::tuple_size_v<T>>;
 } // namespace utils
 } // namespace bout
 

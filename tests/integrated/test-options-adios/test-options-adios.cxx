@@ -3,6 +3,7 @@
 
 #include "bout/options_io.hxx"
 #include "bout/optionsreader.hxx"
+#include "bout/utils.hxx"
 
 using bout::OptionsIO;
 
@@ -45,18 +46,31 @@ int main(int argc, char** argv) {
   ///////////////////////////
   // Write fields
 
-  Options fields;
-  fields["f2d"] = Field2D(1.0);
-  fields["f3d"] = Field3D(2.0);
-  fields["fperp"] = FieldPerp(3.0);
-  auto f = OptionsIO::create({{"file", "fields.bp"}, {"type", "adios"}});
-  /*
+  {
+    constexpr int nx = 2;
+    constexpr int ny = 3;
+    Matrix<int> matrix_in(nx, ny);
+    int count = 0;
+
+    for (int i = 0; i < nx; ++i) {
+      for (int j = 0; j < ny; ++j) {
+        matrix_in(i, j) = ++count;
+      }
+    }
+
+    Options fields{{"f2d", Field2D(1.0)},
+                   {"f3d", Field3D(2.0)},
+                   {"fperp", FieldPerp(3.0)},
+                   {"matrix", matrix_in}};
+    auto f = OptionsIO::create({{"file", "fields.bp"}, {"type", "adios"}});
+    /*
      write() for adios only buffers data but does not guarantee writing to disk
      unless singleWriteFile is set to true 
      */
-  f->write(fields);
-  // indicate completion of step, required to get data on disk
-  f->verifyTimesteps();
+    f->write(fields);
+    // indicate completion of step, required to get data on disk
+    f->verifyTimesteps();
+  }
 
   ///////////////////////////
   // Read fields

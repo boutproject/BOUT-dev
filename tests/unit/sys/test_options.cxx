@@ -1450,3 +1450,21 @@ TEST_F(OptionsTest, Iterate) {
   ASSERT_EQ(option["value1"], 2);
   ASSERT_EQ(option["value2"], 3);
 }
+
+TEST_F(OptionsTest, MatrixInt) {
+  constexpr int nx = 2;
+  constexpr int ny = 3;
+  Matrix<int> matrix_in(nx, ny);
+  int count = 0;
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      matrix_in(i, j) = ++count;
+    }
+  }
+
+  Options options{{"int_matrix", matrix_in}};
+
+  const auto matrix_out = options["int_matrix"].as<Matrix<int>>();
+  ASSERT_EQ(matrix_out(nx - 1, ny - 1), matrix_in(nx - 1, ny - 1));
+}
