@@ -4,13 +4,19 @@
 #ifndef TYPE_NAME_HXX
 #define TYPE_NAME_HXX
 
+#include "bout/array.hxx"
 #include "bout/bout_types.hxx"
+
 #include <string>
 #include <typeinfo>
 
 class Field2D;
 class Field3D;
 class FieldPerp;
+template<class T>
+class Matrix;
+template<class T>
+class Tensor;
 
 namespace bout {
 namespace utils {
@@ -41,6 +47,19 @@ std::string typeName<Field3D>();
 
 template <>
 std::string typeName<FieldPerp>();
+
+template <>
+std::string typeName<Array<int>>();
+template <>
+std::string typeName<Array<BoutReal>>();
+template <>
+std::string typeName<Matrix<int>>();
+template <>
+std::string typeName<Matrix<BoutReal>>();
+template <>
+std::string typeName<Tensor<int>>();
+template <>
+std::string typeName<Tensor<BoutReal>>();
 } // namespace utils
 } // namespace bout
 
