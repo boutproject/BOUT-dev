@@ -5,13 +5,15 @@
 #include "options_netcdf.hxx"
 
 #include "bout/bout.hxx"
-#include "bout/globals.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/mesh.hxx"
 #include "bout/sys/timer.hxx"
+#include "bout/traits.hxx"
+
+#include <fmt/format.h>
 
 #include <climits>
 #include <exception>
-#include <iostream>
 #include <netcdf>
 #include <vector>
 
@@ -90,6 +92,10 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
         Array<double> value(static_cast<int>(dims[0].getSize()));
         var.getVar(value.begin());
         result[var_name] = value;
+      } else if (var_type == ncInt or var_type == ncShort) {
+        Array<int> value(static_cast<int>(dims[0].getSize()));
+        var.getVar(value.begin());
+        result[var_name] = value;
       } else if ((var_type == ncString) or (var_type == ncChar)) {
         std::string value;
         value.resize(dims[0].getSize());
@@ -102,6 +108,11 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
       if (var_type == ncDouble or var_type == ncFloat) {
         Matrix<double> value(static_cast<int>(dims[0].getSize()),
                              static_cast<int>(dims[1].getSize()));
+        var.getVar(value.begin());
+        result[var_name] = value;
+      } else if (var_type == ncInt) {
+        Matrix<int> value(static_cast<int>(dims[0].getSize()),
+                          static_cast<int>(dims[1].getSize()));
         var.getVar(value.begin());
         result[var_name] = value;
       }
@@ -213,6 +224,13 @@ struct NcTypeVisitor {
   NcType operator()(const T& UNUSED(t)) {
     return {}; // Null object by default
   }
+
+  NcType operator()([[maybe_unused]] const Array<int>& t) { return ncInt; }
+  NcType operator()([[maybe_unused]] const Array<BoutReal>& t) { return ncDouble; }
+  NcType operator()([[maybe_unused]] const Matrix<int>& t) { return ncInt; }
+  NcType operator()([[maybe_unused]] const Matrix<BoutReal>& t) { return ncDouble; }
+  NcType operator()([[maybe_unused]] const Tensor<int>& t) { return ncInt; }
+  NcType operator()([[maybe_unused]] const Tensor<BoutReal>& t) { return ncDouble; }
 };
 
 template <>
@@ -255,20 +273,9 @@ NcType NcTypeVisitor::operator()<FieldPerp>(const FieldPerp& UNUSED(t)) {
   return operator()<BoutReal>(0.0);
 }
 
-/// Visit a variant type, returning dimensions
-struct NcDimVisitor {
-  NcDimVisitor(NcGroup& group) : group(group) {}
-  template <typename T>
-  std::vector<NcDim> operator()(const T& UNUSED(value)) {
-    return {};
-  }
-
-private:
-  NcGroup& group;
-};
-
+namespace {
+// Find dimension with name and size in group, creating it if it doesn't exist
 NcDim findDimension(NcGroup& group, const std::string& name, unsigned int size) {
-  // Get the dimension
   try {
     auto dim = group.getDim(name, NcGroup::ParentsAndCurrent);
     if (dim.isNull()) {
@@ -292,6 +299,40 @@ NcDim findDimension(NcGroup& group, const std::string& name, unsigned int size) 
     throw BoutException("Error in findDimension('{:s}'): {:s}", name, e.what());
   }
 }
+
+using bout::utils::tuple_index_sequence;
+
+template <class Tuple, std::size_t... I>
+auto make_dims_impl(NcGroup& group, Tuple&& t, std::index_sequence<I...> /* index */) {
+  return std::vector{findDimension(group, fmt::format("dim_{}", I),
+                                   std::get<I>(std::forward<Tuple>(t)))...};
+}
+// Help get the dimensions for `Array`, `Matrix`, `Tensor` (amt)
+template <class T>
+auto make_amt_dims(NcGroup& group, const T& value) {
+  const auto shape = value.shape();
+  return make_dims_impl(group, shape, tuple_index_sequence<decltype(shape)>{});
+}
+} // namespace
+
+/// Visit a variant type, returning dimensions
+struct NcDimVisitor {
+  NcDimVisitor(NcGroup& group) : group(group) {}
+  template <typename T>
+  std::vector<NcDim> operator()(const T& UNUSED(value)) {
+    return {};
+  }
+
+  auto operator()(const Array<int>& value) { return make_amt_dims(group, value); }
+  auto operator()(const Array<BoutReal>& value) { return make_amt_dims(group, value); }
+  auto operator()(const Matrix<int>& value) { return make_amt_dims(group, value); }
+  auto operator()(const Matrix<BoutReal>& value) { return make_amt_dims(group, value); }
+  auto operator()(const Tensor<int>& value) { return make_amt_dims(group, value); }
+  auto operator()(const Tensor<BoutReal>& value) { return make_amt_dims(group, value); }
+
+private:
+  NcGroup& group;
+};
 
 template <>
 std::vector<NcDim> NcDimVisitor::operator()<Field2D>(const Field2D& value) {
@@ -337,6 +378,13 @@ struct NcPutVarVisitor {
     var.putVar(&value);
   }
 
+  void operator()(const Array<int>& value) { var.putVar(value.begin()); }
+  void operator()(const Array<BoutReal>& value) { var.putVar(value.begin()); }
+  void operator()(const Matrix<int>& value) { var.putVar(value.begin()); }
+  void operator()(const Matrix<BoutReal>& value) { var.putVar(value.begin()); }
+  void operator()(const Tensor<int>& value) { var.putVar(value.begin()); }
+  void operator()(const Tensor<BoutReal>& value) { var.putVar(value.begin()); }
+
 private:
   NcVar& var;
 };
@@ -381,6 +429,19 @@ struct NcPutVarCountVisitor {
   template <typename T>
   void operator()(const T& value) {
     var.putVar(start, &value);
+  }
+
+  void operator()(const Array<int>& value) { var.putVar(start, count, value.begin()); }
+  void operator()(const Array<BoutReal>& value) {
+    var.putVar(start, count, value.begin());
+  }
+  void operator()(const Matrix<int>& value) { var.putVar(start, count, value.begin()); }
+  void operator()(const Matrix<BoutReal>& value) {
+    var.putVar(start, count, value.begin());
+  }
+  void operator()(const Tensor<int>& value) { var.putVar(start, count, value.begin()); }
+  void operator()(const Tensor<BoutReal>& value) {
+    var.putVar(start, count, value.begin());
   }
 
 private:
