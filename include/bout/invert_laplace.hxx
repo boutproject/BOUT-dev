@@ -143,7 +143,7 @@ public:
 #elif BOUT_USE_PETSC
   static constexpr auto default_type = LAPLACE_PETSC;
 #else
-  static constexpr auto default_type = LAPLACE_SPT;
+  static constexpr auto default_type = LAPLACE_TRI;
 #endif
 
   ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
