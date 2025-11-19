@@ -138,7 +138,13 @@ public:
   static constexpr auto type_name = "Laplacian";
   static constexpr auto section_name = "laplace";
   static constexpr auto option_name = "type";
+#if BOUT_USE_METRIC_3D
   static constexpr auto default_type = LAPLACE_CYCLIC;
+#elif BOUT_USE_PETSC
+  static constexpr auto default_type = LAPLACE_PETSC;
+#else
+  static constexpr auto default_type = LAPLACE_SPT;
+#endif
 
   ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
                     Mesh* mesh = nullptr, Solver* solver = nullptr) {
