@@ -129,7 +129,7 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
       return Options(value);
     }
     if ((static_cast<int>(dims[0]) == mesh->GlobalNx)
-        and (static_cast<int>(dims[2]) == mesh->GlobalNz)) {
+        and (static_cast<int>(dims[1]) == mesh->GlobalNz)) {
       // Probably a FieldPerp
 
       // Read just the local piece of the array
