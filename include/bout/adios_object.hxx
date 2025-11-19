@@ -129,8 +129,8 @@ private:
 };
 
 /** Set user parameters for an IO group */
-void ADIOSSetParameters(const std::string& input, const char delimKeyValue,
-                        const char delimItem, adios2::IO& io);
+void ADIOSSetParameters(const std::string& input, char delimKeyValue, char delimItem,
+                        adios2::IO& io);
 
 } // namespace bout
 

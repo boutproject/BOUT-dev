@@ -65,8 +65,8 @@ ADIOSStream& ADIOSStream::ADIOSGetStream(const std::string& fname, adios2::Mode 
   return it->second;
 }
 
-void ADIOSSetParameters(const std::string& input, const char delimKeyValue,
-                        const char delimItem, adios2::IO& io) {
+void ADIOSSetParameters(const std::string& input, char delimKeyValue,
+                        char delimItem, adios2::IO& io) {
   auto lf_Trim = [](std::string& input) {
     input.erase(0, input.find_first_not_of(" \n\r\t")); // prefixing spaces
     input.erase(input.find_last_not_of(" \n\r\t") + 1); // suffixing spaces
@@ -76,7 +76,7 @@ void ADIOSSetParameters(const std::string& input, const char delimKeyValue,
   std::string parameter;
   while (std::getline(inputSS, parameter, delimItem)) {
     const size_t position = parameter.find(delimKeyValue);
-    if (position == parameter.npos) {
+    if (position == std::string::npos) {
       throw BoutException("ADIOSSetParameters(): wrong format for IO parameter "
                           + parameter + ", format must be key" + delimKeyValue
                           + "value for each entry");

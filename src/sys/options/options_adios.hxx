@@ -46,7 +46,7 @@ public:
 
   OptionsADIOS(const OptionsADIOS&) = delete;
   OptionsADIOS(OptionsADIOS&&) noexcept = default;
-  ~OptionsADIOS() = default;
+  ~OptionsADIOS() override = default;
 
   OptionsADIOS& operator=(const OptionsADIOS&) = delete;
   OptionsADIOS& operator=(OptionsADIOS&&) noexcept = default;
