@@ -271,11 +271,12 @@ set(BOUT_SOURCES
   ./src/mesh/interpolation/hermite_spline_z.cxx
   ./src/mesh/interpolation/interpolation_z.cxx
   ./src/mesh/interpolation/lagrange_4pt_xz.cxx
-  ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
   ./src/mesh/invert3x3.hxx
   ./src/mesh/mesh.cxx
   ./src/mesh/parallel/fci.cxx
   ./src/mesh/parallel/fci.hxx
+  ./src/mesh/parallel/fci_comm.cxx
+  ./src/mesh/parallel/fci_comm.hxx
   ./src/mesh/parallel/identity.cxx
   ./src/mesh/parallel/shiftedmetric.cxx
   ./src/mesh/parallel/shiftedmetricinterp.cxx
@@ -376,6 +377,7 @@ if (zoidberg_FOUND EQUAL 0)
 else()
   set(zoidberg_FOUND OFF)
 endif()
+message(STATUS "Found Zoidberg for FCI tests: ${zoidberg_FOUND}")
 
 option(BOUT_GENERATE_FIELDOPS "Automatically re-generate the Field arithmetic operators from the Python templates. \
 Requires Python3, clang-format, and Jinja2. Turn this OFF to skip generating them if, for example, \
@@ -593,6 +595,9 @@ else()
   set(BOUT_METRIC_TYPE "2D")
 endif()
 set(BOUT_USE_METRIC_3D ${BOUT_ENABLE_METRIC_3D})
+
+option(BOUT_ENABLE_FCI_AUTOMAGIC "Enable (slow?) automatic features for FCI" ON)
+set(BOUT_USE_FCI_AUTOMAGIC ${BOUT_ENABLE_FCI_AUTOMAGIC})
 
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("int main() { const char* name = __PRETTY_FUNCTION__; }"

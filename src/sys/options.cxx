@@ -1,6 +1,7 @@
 #include "bout/options.hxx"
 
 #include "bout/array.hxx"
+#include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field2d.hxx"
@@ -16,6 +17,7 @@
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
 
+#include <cstddef>
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
@@ -356,6 +358,22 @@ template <>
 Options& Options::assign<>(Tensor<int> val, std::string source) {
   _set_no_check(std::move(val), std::move(source));
   return *this;
+}
+
+void saveParallel(Options& opt, const std::string& name, const Field3D& tosave) {
+  ASSERT0(tosave.isAllocated());
+  opt[name] = tosave;
+  for (size_t i0 = 1; i0 <= tosave.numberParallelSlices(); ++i0) {
+    for (int i : {i0, -i0}) {
+      Field3D tmp;
+      tmp.allocate();
+      const auto& fpar = tosave.ynext(i);
+      for (auto j : fpar.getValidRegionWithDefault("RGN_NOBNDRY")) {
+        tmp[j.yp(-i)] = fpar[j];
+      }
+      opt[fmt::format("{}_y{:+d}", name, i)] = tmp;
+    }
+  }
 }
 
 namespace {

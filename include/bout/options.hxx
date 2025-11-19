@@ -1012,6 +1012,9 @@ auto Options::as(const Tensor<int>& similar_to) const -> Tensor<int>;
 /// Convert \p value to string
 std::string toString(const Options& value);
 
+/// Save the parallel fields
+void saveParallel(Options& opt, const std::string& name, const Field3D& tosave);
+
 /// Output a stringified \p value to a stream
 ///
 /// This is templated to avoid implict casting: anything is

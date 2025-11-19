@@ -83,8 +83,7 @@ PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  *
  * This can be a linearised and simplified form of FormFunction
  */
-PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f,
-                                              void* ctx) {
+PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f, void* ctx) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f, true);
 }
 
@@ -96,7 +95,7 @@ PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
 
   PetscFunctionReturn(s->precon(x, y));
 }
-}
+} // namespace
 
 SNESSolver::SNESSolver(Options* opts)
     : Solver(opts),

@@ -234,7 +234,21 @@ Field3D Div_par(const Field3D& f, const std::string& method, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Div_par(f, outloc, method);
 }
 
-Field3D Div_par(const Field3D& f, const Field3D& v) {
+Field3D Div_par(const Field3D& f_in, const Field3D& v_in) {
+#if BOUT_USE_FCI_AUTOMAGIC
+  auto f{f_in};
+  auto v{v_in};
+  if (!f.hasParallelSlices()) {
+    f.calcParallelSlices();
+  }
+  if (!v.hasParallelSlices()) {
+    v.calcParallelSlices();
+  }
+#else
+  const auto& f{f_in};
+  const auto& v{v_in};
+#endif
+
   ASSERT1_FIELDS_COMPATIBLE(f, v);
   ASSERT1(f.hasParallelSlices());
   ASSERT1(v.hasParallelSlices());

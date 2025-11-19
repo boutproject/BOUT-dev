@@ -40,7 +40,9 @@
 #include "bout/field3d.hxx"
 
 #include "bout/bout_types.hxx"
-#include "bout/solver.hxx"
+#include "bout/coordinates.hxx"
+
+class Solver;
 
 /*!
  * Parallel derivative (central differencing) in Y

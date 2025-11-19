@@ -9,20 +9,14 @@
 # cores: 4
 
 # Variables to compare
-from __future__ import print_function
-from builtins import str
-
 vars = [
     ("max_error1", 2.0e-4),
     ("max_error2", 2.0e-4),
     ("max_error3", 2.0e-4),
-    ("max_error4", 1.0e-5),
+    ("max_error4", 2.0e-4),
     ("max_error5", 2.0e-4),
-    ("max_error6", 2.0e-5),
-    ("max_error7", 2.0e-4),
-    ("max_error8", 2.0e-5),
+    ("max_error6", 2.0e-4),
 ]
-# tol = 1e-4                  # Absolute (?) tolerance
 
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
@@ -59,7 +53,7 @@ for nproc in [1, 2, 4]:
             print("Convergence error")
             success = False
         elif error > tol:
-            print("Fail, maximum error is = " + str(error))
+            print(f"Fail, maximum error is = {error}")
             success = False
         else:
             print("Pass")

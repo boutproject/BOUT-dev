@@ -25,8 +25,10 @@
  *
  **************************************************************************/
 
+#include "bout/bout_types.hxx"
 #include "bout/build_config.hxx"
 
+#include "bout/unused.hxx"
 #include <bout/boutcomm.hxx>
 #include <bout/rvec.hxx>
 
@@ -45,10 +47,13 @@
 
 #include <bout/output.hxx>
 #include <cmath>
+#include <cstddef>
+#include <optional>
 
 #include <bout/assert.hxx>
 
-Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
+Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in,
+                 std::optional<size_t> UNUSED(regionID))
     : Field(localmesh, location_in, directions_in) {
 
   if (fieldmesh) {
