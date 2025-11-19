@@ -30,7 +30,7 @@ public:
   TempFile& operator=(const TempFile&) = delete;
   TempFile& operator=(TempFile&&) = delete;
 
-  ~TempFile() { std::filesystem::remove(filename); }
+  ~TempFile() { std::filesystem::remove_all(filename); }
 
   // Enable conversions to std::string / const char*
   operator std::string() const { return filename.string(); }

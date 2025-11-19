@@ -5,8 +5,8 @@
 #include "bout/adios_object.hxx"
 #include "bout/boutexception.hxx"
 
-#include <exception>
-#include <iostream>
+#include <adios2.h>
+
 #include <unordered_map>
 
 namespace bout {
@@ -48,19 +48,19 @@ IOPtr GetIOPtr(const std::string IOName) {
 }
 
 ADIOSStream::~ADIOSStream() {
-  if (engine) {
+  if (engine_) {
     if (isInStep) {
-      engine.EndStep();
+      engine_.EndStep();
       isInStep = false;
     }
-    engine.Close();
+    engine_.Close();
   }
 }
 
-ADIOSStream& ADIOSStream::ADIOSGetStream(const std::string& fname) {
+ADIOSStream& ADIOSStream::ADIOSGetStream(const std::string& fname, adios2::Mode mode) {
   auto it = adiosStreams.find(fname);
   if (it == adiosStreams.end()) {
-    it = adiosStreams.emplace(fname, ADIOSStream(fname)).first;
+    it = adiosStreams.emplace(fname, ADIOSStream(fname, mode)).first;
   }
   return it->second;
 }

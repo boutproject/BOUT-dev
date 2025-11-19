@@ -16,6 +16,8 @@
 
 #if BOUT_HAS_ADIOS2
 
+#include "bout/boutexception.hxx"
+
 #include <adios2.h>
 #include <memory>
 #include <mpi.h>
@@ -36,14 +38,12 @@ IOPtr GetIOPtr(const std::string IOName);
 class ADIOSStream {
 public:
   adios2::IO io;
-  adios2::Engine engine;
   adios2::Variable<double> vTime;
   adios2::Variable<int> vStep;
   int adiosStep = 0;
-  bool isInStep = false; // true if BeginStep was called and EndStep was not yet called
 
   /** create or return the ADIOSStream based on the target file name */
-  static ADIOSStream& ADIOSGetStream(const std::string& fname);
+  static ADIOSStream& ADIOSGetStream(const std::string& fname, adios2::Mode mode);
 
   ~ADIOSStream();
 
@@ -74,9 +74,58 @@ public:
     return v;
   }
 
+  auto engine() -> adios2::Engine& {
+    if (not engine_) {
+      engine_ = io.Open(fname, file_mode);
+      if (not engine_) {
+        throw BoutException("Could not open ADIOS file '{:s}' for writing", fname);
+      }
+    }
+    return engine_;
+  }
+
+  void beginStep() {
+    if (not isInStep) {
+      engine().BeginStep();
+      isInStep = true;
+      adiosStep = static_cast<int>(engine().CurrentStep());
+    }
+  }
+
+  void endStep() {
+    if (isInStep) {
+      engine().EndStep();
+      isInStep = false;
+    }
+  }
+
+  void finish() {
+    if (engine_) {
+      engine().EndStep();
+      engine().Close();
+    }
+  }
+
 private:
-  ADIOSStream(const std::string fname) : fname(fname){};
+  ADIOSStream(const std::string& fname, adios2::Mode mode)
+      : fname(fname), file_mode(mode) {
+
+    ADIOSPtr adiosp = GetADIOSPtr();
+    std::string ioname = "write_" + fname;
+    try {
+      io = adiosp->AtIO(ioname);
+    } catch (const std::invalid_argument& e) {
+      io = adiosp->DeclareIO(ioname);
+      io.SetEngine("BP5");
+    }
+  };
+
   std::string fname;
+  adios2::Mode file_mode;
+  adios2::Engine engine_;
+
+  /// true if BeginStep was called and EndStep was not yet called
+  bool isInStep = false;
 };
 
 /** Set user parameters for an IO group */

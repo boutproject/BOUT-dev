@@ -4,15 +4,15 @@
 #if BOUT_HAS_ADIOS2
 
 #include "options_adios.hxx"
-#include "bout/adios_object.hxx"
 
-#include "bout/bout.hxx"
+#include "bout/adios_object.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/options.hxx"
 #include "bout/sys/timer.hxx"
 
-#include "adios2.h"
+#include <adios2.h>
 
 #include <cstddef>
 #include <exception>
@@ -34,8 +34,8 @@ OptionsADIOS::OptionsADIOS(Options& options) : OptionsIO(options) {
   }
 
   file_mode = (options["append"].doc("Append to existing file?").withDefault<bool>(false))
-                  ? FileMode::append
-                  : FileMode::replace;
+                  ? adios2::Mode::Append
+                  : adios2::Mode::Write;
 
   singleWriteFile = options["singleWriteFile"].withDefault<bool>(false);
 }
@@ -305,10 +305,16 @@ Options OptionsADIOS::read([[maybe_unused]] bool lazy) {
 }
 
 void OptionsADIOS::verifyTimesteps() const {
-  ADIOSStream& stream = ADIOSStream::ADIOSGetStream(filename);
-  stream.engine.EndStep();
-  stream.isInStep = false;
-  return;
+  // This doesn't _verify_ the timesteps, but does flush to disk.
+  // Maybe this is fine, because ADIOS2 doesn't require every variable
+  // to be in sync?
+  if (singleWriteFile) {
+    return;
+  }
+
+  ADIOSStream& stream = ADIOSStream::ADIOSGetStream(filename, file_mode);
+
+  stream.endStep();
 }
 
 const std::vector<std::string> DIMS_NONE;
@@ -355,7 +361,7 @@ struct ADIOSPutVarVisitor {
   template <typename T>
   void operator()(const T& value) {
     adios2::Variable<T> var = stream.GetValueVariable<T>(varname);
-    stream.engine.Put(var, value);
+    stream.engine().Put(var, value);
   }
 
   void operator()(const Array<int>& value) { put_helper(value); }
@@ -375,7 +381,7 @@ private:
     const auto shape = make_shape(static_cast<std::size_t>(BoutComm::size()), value);
     auto var = stream.GetArrayVariable<U>(varname, shape, DIMS_NONE, BoutComm::rank());
     var.SetSelection({make_start(value), make_shape(1, value)});
-    stream.engine.Put<U>(var, value.begin());
+    stream.engine().Put<U>(var, value.begin());
   }
 };
 
@@ -386,7 +392,7 @@ void ADIOSPutVarVisitor::operator()<bool>(const bool& value) {
     return;
   }
   adios2::Variable<int> var = stream.GetValueVariable<int>(varname);
-  stream.engine.Put<int>(var, static_cast<int>(value));
+  stream.engine().Put<int>(var, static_cast<int>(value));
 }
 
 template <>
@@ -396,7 +402,7 @@ void ADIOSPutVarVisitor::operator()<int>(const int& value) {
     return;
   }
   adios2::Variable<int> var = stream.GetValueVariable<int>(varname);
-  stream.engine.Put<int>(var, value);
+  stream.engine().Put<int>(var, value);
 }
 
 template <>
@@ -406,7 +412,7 @@ void ADIOSPutVarVisitor::operator()<BoutReal>(const BoutReal& value) {
     return;
   }
   adios2::Variable<BoutReal> var = stream.GetValueVariable<BoutReal>(varname);
-  stream.engine.Put<BoutReal>(var, value);
+  stream.engine().Put<BoutReal>(var, value);
 }
 
 template <>
@@ -416,7 +422,7 @@ void ADIOSPutVarVisitor::operator()<std::string>(const std::string& value) {
     return;
   }
   adios2::Variable<std::string> var = stream.GetValueVariable<std::string>(varname);
-  stream.engine.Put<std::string>(var, value, adios2::Mode::Sync);
+  stream.engine().Put<std::string>(var, value, adios2::Mode::Sync);
 }
 
 template <>
@@ -449,7 +455,7 @@ void ADIOSPutVarVisitor::operator()<Field2D>(const Field2D& value) {
       stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_XY, BoutComm::rank());
   var.SetSelection({start, count});
   var.SetMemorySelection({memStart, memCount});
-  stream.engine.Put<BoutReal>(var, &value(0, 0));
+  stream.engine().Put<BoutReal>(var, &value(0, 0));
 }
 
 template <>
@@ -487,7 +493,7 @@ void ADIOSPutVarVisitor::operator()<Field3D>(const Field3D& value) {
       stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_XYZ, BoutComm::rank());
   var.SetSelection({start, count});
   var.SetMemorySelection({memStart, memCount});
-  stream.engine.Put<BoutReal>(var, &value(0, 0, 0));
+  stream.engine().Put<BoutReal>(var, &value(0, 0, 0));
 }
 
 template <>
@@ -520,7 +526,7 @@ void ADIOSPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
       stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_XZ, BoutComm::rank());
   var.SetSelection({start, count});
   var.SetMemorySelection({memStart, memCount});
-  stream.engine.Put<BoutReal>(var, &value(0, 0));
+  stream.engine().Put<BoutReal>(var, &value(0, 0));
 }
 
 /// Visit a variant type, and put the data into a NcVar
@@ -604,48 +610,18 @@ void OptionsADIOS::write(const Options& options, const std::string& time_dim) {
   Timer timer("io");
 
   // ADIOSStream is just a BOUT++ object, it does not create anything inside ADIOS
-  ADIOSStream& stream = ADIOSStream::ADIOSGetStream(filename);
+  ADIOSStream& stream = ADIOSStream::ADIOSGetStream(filename, file_mode);
 
-  // Need to have an adios2::IO object first, which can only be created once.
-  if (!stream.io) {
-    ADIOSPtr adiosp = GetADIOSPtr();
-    std::string ioname = "write_" + filename;
-    try {
-      stream.io = adiosp->AtIO(ioname);
-    } catch (const std::invalid_argument& e) {
-      stream.io = adiosp->DeclareIO(ioname);
-      stream.io.SetEngine("BP5");
-    }
-  }
-
-  /* Open file once and keep it open, close in stream desctructor
-     or close after writing if singleWriteFile == true
-    */
-  if (!stream.engine) {
-    adios2::Mode amode =
-        (file_mode == FileMode::append ? adios2::Mode::Append : adios2::Mode::Write);
-    stream.engine = stream.io.Open(filename, amode);
-    if (!stream.engine) {
-      throw BoutException("Could not open ADIOS file '{:s}' for writing", filename);
-    }
-  }
-
-  /* Multiple write() calls allowed in a single adios step to output multiple
-     Options objects in the same step. verifyTimesteps() will indicate the 
-     completion of the step (and adios will publish the step).
-  */
-  if (!stream.isInStep) {
-    stream.engine.BeginStep();
-    stream.isInStep = true;
-    stream.adiosStep = stream.engine.CurrentStep();
-  }
+  // Multiple write() calls allowed in a single adios step to output multiple
+  // Options objects in the same step. verifyTimesteps() will indicate the
+  // completion of the step (and adios will publish the step).
+  stream.beginStep();
 
   writeGroup(options, stream, "", time_dim);
 
-  /* In singleWriteFile mode, we complete the step and close the file */
+  // In singleWriteFile mode, we complete the step and close the file
   if (singleWriteFile) {
-    stream.engine.EndStep();
-    stream.engine.Close();
+    stream.finish();
   }
 }
 

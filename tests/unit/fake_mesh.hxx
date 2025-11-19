@@ -50,6 +50,17 @@ public:
     OffsetY = 0;
     OffsetZ = 0;
 
+    // These bits only for ADIOS2, also boring due to single process
+    MapCountX = nx - 2;
+    MapCountY = ny - 2;
+    MapCountZ = nz;
+    MapGlobalX = nx;
+    MapGlobalY = ny;
+    MapGlobalZ = nz;
+    MapLocalX = nx - 2;
+    MapLocalY = ny - 2;
+    MapLocalZ = nz;
+
     // Small "inner" region
     xstart = 1;
     xend = nx - 2;

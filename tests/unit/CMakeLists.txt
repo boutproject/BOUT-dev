@@ -80,6 +80,7 @@ set(serial_tests_source
   ./sys/test_expressionparser.cxx
   ./sys/test_msg_stack.cxx
   ./sys/test_options.cxx
+  ./sys/test_options_adios2.cxx
   ./sys/test_options_fields.cxx
   ./sys/test_options_netcdf.cxx
   ./sys/test_optionsreader.cxx

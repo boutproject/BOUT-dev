@@ -5,7 +5,6 @@
 #define OPTIONS_ADIOS_H
 
 #include "bout/build_defines.hxx"
-#include "bout/options.hxx"
 #include "bout/options_io.hxx"
 
 #if !BOUT_HAS_ADIOS2
@@ -17,7 +16,10 @@ bout::RegisterUnavailableOptionsIO
 
 #else
 
-#include <memory>
+#include "bout/options.hxx"
+
+#include <adios2.h>
+
 #include <string>
 
 namespace bout {
@@ -61,15 +63,10 @@ public:
   void verifyTimesteps() const override;
 
 private:
-  enum class FileMode {
-    replace, ///< Overwrite file when writing
-    append   ///< Append to file when writing
-  };
-
   /// Name of the file on disk
   std::string filename;
   /// How to open the file for writing
-  FileMode file_mode{FileMode::replace};
+  adios2::Mode file_mode{adios2::Mode::Write};
   bool singleWriteFile = false;
 };
 
