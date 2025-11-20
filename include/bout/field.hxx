@@ -690,7 +690,7 @@ inline T setName(T&& f, const std::string& name, Types... args) {
 #if BOUT_USE_TRACK
   f.name = fmt::format(name, args...);
 #endif
-  return f;
+  return std::forward<T>(f);
 }
 
 #endif /* FIELD_H */
