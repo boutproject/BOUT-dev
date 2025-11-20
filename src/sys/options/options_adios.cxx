@@ -52,30 +52,30 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
   }
 
   if (variable.ShapeID() == adios2::ShapeID::LocalArray) {
-    throw std::invalid_argument(
-        "ADIOS reader did not implement reading local arrays like " + type + " " + name
-        + " in file " + reader.Name());
+    throw BoutException(
+        "ADIOS reader did not implement reading local arrays like `{}` '{}' in file '{}'",
+        type, name, reader.Name());
   }
 
   if (type != "double" && type != "float") {
-    throw std::invalid_argument(
-        "ADIOS reader did not implement reading arrays that are not double/float type. "
-        "Found "
-        + type + " " + name + " in file " + reader.Name());
+    throw BoutException("ADIOS reader did not implement reading arrays that are not "
+                        "`double`/`float` type. "
+                        "Found `{}` '{}' in file '{}'",
+                        type, name, reader.Name());
   }
 
   if (type == "double" && sizeof(BoutReal) != sizeof(double)) {
-    throw std::invalid_argument(
+    throw BoutException(
         "ADIOS does not allow for implicit type conversions. BoutReal type is "
-        "float but found "
-        + type + " " + name + " in file " + reader.Name());
+        "float but found `{}` '{}' in file '{}'",
+        type, name, reader.Name());
   }
 
   if (type == "float" && sizeof(BoutReal) != sizeof(float)) {
-    throw std::invalid_argument(
+    throw BoutException(
         "ADIOS reader does not allow for implicit type conversions. BoutReal type is "
-        "double but found "
-        + type + " " + name + " in file " + reader.Name());
+        "double but found `{}` '{}' in file '{}'",
+        type, name, reader.Name());
   }
 
   auto dims = variable.Shape();
