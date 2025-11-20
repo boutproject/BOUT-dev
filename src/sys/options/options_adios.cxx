@@ -1,5 +1,4 @@
 #include "bout/build_defines.hxx"
-#include "bout/traits.hxx"
 
 #if BOUT_HAS_ADIOS2
 
@@ -11,14 +10,26 @@
 #include "bout/mesh.hxx"
 #include "bout/options.hxx"
 #include "bout/sys/timer.hxx"
+#include "bout/traits.hxx"
 
 #include <adios2.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <exception>
-#include <tuple>
+#include <iterator>
 #include <utility>
 #include <vector>
+
+namespace {
+auto to_int_dims(const adios2::Dims& dims) {
+  std::vector<int> int_dims;
+  int_dims.reserve(dims.size());
+  std::transform(dims.begin(), dims.end(), std::back_inserter(int_dims),
+                 [](auto dim) { return static_cast<int>(dim); });
+  return int_dims;
+}
+} // namespace
 
 namespace bout {
 OptionsADIOS::OptionsADIOS(Options& options) : OptionsIO(options) {
@@ -78,13 +89,18 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
         type, name, reader.Name());
   }
 
-  auto dims = variable.Shape();
-  auto ndims = dims.size();
+  const auto dims = to_int_dims(variable.Shape());
+  const auto ndims = dims.size();
   adios2::Variable<BoutReal> variableD = io.InquireVariable<BoutReal>(name);
+
+  const bool dim0_is_x = ndims > 0 ? (dims[0] == mesh->GlobalNx) : false;
+  const bool dim1_is_y = ndims > 1 ? (dims[1] == mesh->GlobalNy) : false;
+  const bool dim1_is_z = ndims > 1 ? (dims[1] == mesh->GlobalNz) : false;
+  const bool dim2_is_z = ndims > 2 ? (dims[2] == mesh->GlobalNz) : false;
 
   switch (ndims) {
   case 1: {
-    Array<BoutReal> value(static_cast<int>(dims[0]));
+    Array<BoutReal> value(dims[0]);
     BoutReal* data = value.begin();
     reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
     return Options(value);
@@ -97,8 +113,7 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
     // - Add an attribute to specify field type or dimension labels
     // - Load all the data, and select a region when converting to a Field in Options
     // - Add a lazy loading type to Options, and load data when needed
-    if ((static_cast<int>(dims[0]) == mesh->GlobalNx)
-        and (static_cast<int>(dims[1]) == mesh->GlobalNy)) {
+    if (dim0_is_x and dim1_is_y) {
       // Probably a Field2D
 
       // Read just the local piece of the array
@@ -125,8 +140,7 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
       reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
       return Options(value);
     }
-    if ((static_cast<int>(dims[0]) == mesh->GlobalNx)
-        and (static_cast<int>(dims[1]) == mesh->GlobalNz)) {
+    if (dim0_is_x and dim1_is_z) {
       // Probably a FieldPerp
 
       // Read just the local piece of the array
@@ -153,15 +167,13 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
       reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
       return Options(value);
     }
-    Matrix<BoutReal> value(static_cast<int>(dims[0]), static_cast<int>(dims[1]));
+    Matrix<BoutReal> value(dims[0], dims[1]);
     BoutReal* data = value.begin();
     reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
     return Options(value);
   }
   case 3: {
-    if ((static_cast<int>(dims[0]) == mesh->GlobalNx)
-        and (static_cast<int>(dims[1]) == mesh->GlobalNy)
-        and (static_cast<int>(dims[2]) == mesh->GlobalNz)) {
+    if (dim0_is_x and dim1_is_y and dim2_is_z) {
       // Global array. Read just this processor's part of it
 
       Tensor<BoutReal> value(mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
@@ -194,8 +206,7 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
     }
     // Doesn't match global array size.
     // Read the entire array, in case it can be handled later
-    Tensor<BoutReal> value(static_cast<int>(dims[0]), static_cast<int>(dims[1]),
-                           static_cast<int>(dims[2]));
+    Tensor<BoutReal> value(dims[0], dims[1], dims[2]);
     BoutReal* data = value.begin();
     reader.Get<BoutReal>(variableD, data, adios2::Mode::Sync);
     return Options(value);
