@@ -112,6 +112,30 @@ TEST_F(OptionsAdios2Test, ReadWriteField3D) {
   EXPECT_DOUBLE_EQ(value(1, 1, 1), 2.4);
 }
 
+
+TEST_F(OptionsAdios2Test, ReadWriteMatrixInt) {
+  constexpr int nx = 2;
+  constexpr int ny = 3;
+  Matrix<int> matrix_in(nx, ny);
+  int count = 0;
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      matrix_in(i, j) = ++count;
+    }
+  }
+
+  {
+    Options options{{"int_matrix", matrix_in}};
+    OptionsIO::create(file_options)->write(options);
+  }
+
+  Options data = OptionsIO::create(file_options)->read();
+
+  const auto matrix_out = data["int_matrix"].as<Matrix<int>>();
+  ASSERT_EQ(matrix_out(nx - 1, ny - 1), matrix_in(nx - 1, ny - 1));
+}
+
 TEST_F(OptionsAdios2Test, Groups) {
   {
     Options options;
