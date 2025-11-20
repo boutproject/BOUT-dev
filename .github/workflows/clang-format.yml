@@ -8,10 +8,12 @@ on:
 
 jobs:
   clang-format:
+    # Release candidate branches tend to have big PRs which causes all sorts of problems
+    if: ${{ !endsWith(github.head_ref, '-rc') }}
     runs-on: ubuntu-latest
     steps:
       # Checkout the pull request branch, also include all history
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
@@ -22,9 +24,10 @@ jobs:
 
       - name: Run clang-format
         id: format
-        run: git clang-format origin/${{ github.base_ref }}
+        run:
+          while ! git clang-format origin/${{ github.base_ref }} ; do git add . ; done
 
       - name: Commit to the PR branch
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "Apply clang-format changes"

@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <tuple>
 #include <vector>
 
 #if BOUT_USE_OPENMP
@@ -282,6 +283,9 @@ public:
     // practice, it is so this shouldn't matter
     return ptr->size();
   }
+
+  /// Return shape of the array (the `size()` in a length-1 tuple)
+  std::tuple<size_type> shape() const { return std::make_tuple(size()); };
 
   /*!
    * Returns true if the data is unique to this Array.

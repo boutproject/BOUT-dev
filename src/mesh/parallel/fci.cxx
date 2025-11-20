@@ -15,9 +15,9 @@
  * possible to just swap in the FCI approach for the standard BOUT++
  * Grad_par operator.
  **************************************************************************
- * Copyright 2014 B.D.Dudson, P. Hill
+ * Copyright 2014 - 2025 BOUT++ developers
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -160,6 +160,8 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
   const int ncz = map_mesh.LocalNz;
 
   BoutMask to_remove(map_mesh);
+  const int xend =
+      map_mesh.xstart + (map_mesh.xend - map_mesh.xstart + 1) * map_mesh.getNXPE() - 1;
   // Serial loop because call to BoundaryRegionPar::addPoint
   // (probably?) can't be done in parallel
   BOUT_FOR_SERIAL(i, xt_prime.getRegion("RGN_NOBNDRY")) {
@@ -173,7 +175,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
       }
     }
 
-    if ((xt_prime[i] >= map_mesh.xstart) and (xt_prime[i] <= map_mesh.xend)) {
+    if ((xt_prime[i] >= map_mesh.xstart) and (xt_prime[i] <= xend)) {
       // Not a boundary
       continue;
     }
@@ -292,7 +294,7 @@ Field3D FCIMap::integrate(Field3D& f) const {
       // which would include cell edges and corners
       result[inext] = 0.5 * (f_c + 0.25 * (f_pp + f_mp + f_pm + f_mm));
     }
-    ASSERT2(finite(result[inext]));
+    ASSERT2(std::isfinite(result[inext]));
   }
   return result;
 }
@@ -345,4 +347,10 @@ void FCITransform::integrateParallelSlices(Field3D& f) {
   for (const auto& map : field_line_maps) {
     f.ynext(map.offset) = map.integrate(f);
   }
+}
+
+void FCITransform::outputVars(Options& output_options) {
+  // Real-space coordinates of grid points
+  output_options["R"].force(R, "FCI");
+  output_options["Z"].force(Z, "FCI");
 }

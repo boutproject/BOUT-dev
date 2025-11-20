@@ -1,4 +1,5 @@
 #include "bout/build_defines.hxx"
+#include "bout/traits.hxx"
 
 #if BOUT_HAS_ADIOS2
 
@@ -12,8 +13,11 @@
 #include "bout/sys/timer.hxx"
 
 #include "adios2.h"
+
+#include <cstddef>
 #include <exception>
-#include <iostream>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 namespace bout {
@@ -245,7 +249,7 @@ bool readAttribute(adios2::IO& io, const std::string& name, const std::string& t
   return false;
 }
 
-Options OptionsADIOS::read() {
+Options OptionsADIOS::read([[maybe_unused]] bool lazy) {
   Timer timer("io");
 
   // Open file
@@ -307,6 +311,43 @@ void OptionsADIOS::verifyTimesteps() const {
   return;
 }
 
+const std::vector<std::string> DIMS_NONE;
+const std::vector<std::string> DIMS_X = {"x"};
+const std::vector<std::string> DIMS_XY = {"x", "y"};
+const std::vector<std::string> DIMS_XZ = {"x", "z"};
+const std::vector<std::string> DIMS_XYZ = {"x", "y", "z"};
+
+namespace {
+using bout::utils::tuple_index_sequence;
+
+template <class Tuple, std::size_t... I>
+auto make_shape_impl(std::size_t first, Tuple&& t,
+                     std::index_sequence<I...> /* index */) {
+  return adios2::Dims{first,
+                      static_cast<std::size_t>(std::get<I>(std::forward<Tuple>(t)))...};
+}
+// Return an `adios2::Dims` with value ``{first, value.shape()[0]...}``
+template <class T>
+auto make_shape(std::size_t first, const T& value) {
+  const auto shape = value.shape();
+  return make_shape_impl(first, shape, tuple_index_sequence<decltype(shape)>{});
+}
+
+template <class Tuple, std::size_t... I>
+auto make_start_impl(Tuple&& t, std::index_sequence<I...> /* index */) {
+  // Hey look, a legitimate use of the comma operator to get a bunch
+  // of zeros the length of the index_sequence!
+  return adios2::Dims{static_cast<std::size_t>(BoutComm::rank()),
+                      (std::get<I>(std::forward<Tuple>(t)), std::size_t{0})...};
+}
+// Return an `adios2::Dims` with value ``{rank, 0...}``, with as many zeros as the dimension of ``T``
+template <class T>
+auto make_start(const T& value) {
+  const auto shape = value.shape();
+  return make_start_impl(shape, tuple_index_sequence<decltype(shape)>{});
+}
+} // namespace
+
 /// Visit a variant type, and put the data into a NcVar
 struct ADIOSPutVarVisitor {
   ADIOSPutVarVisitor(const std::string& name, ADIOSStream& stream)
@@ -317,9 +358,25 @@ struct ADIOSPutVarVisitor {
     stream.engine.Put(var, value);
   }
 
+  void operator()(const Array<int>& value) { put_helper(value); }
+  void operator()(const Array<BoutReal>& value) { put_helper(value); }
+  void operator()(const Matrix<int>& value) { put_helper(value); }
+  void operator()(const Matrix<BoutReal>& value) { put_helper(value); }
+  void operator()(const Tensor<int>& value) { put_helper(value); }
+  void operator()(const Tensor<BoutReal>& value) { put_helper(value); }
+
 private:
   const std::string& varname;
   ADIOSStream& stream;
+
+  // helper for `Array`, `Matrix`, `Tensor`
+  template <template <class> class T, class U>
+  void put_helper(const T<U>& value) {
+    const auto shape = make_shape(static_cast<std::size_t>(BoutComm::size()), value);
+    auto var = stream.GetArrayVariable<U>(varname, shape, DIMS_NONE, BoutComm::rank());
+    var.SetSelection({make_start(value), make_shape(1, value)});
+    stream.engine.Put<U>(var, value.begin());
+  }
 };
 
 template <>
@@ -388,7 +445,8 @@ void ADIOSPutVarVisitor::operator()<Field2D>(const Field2D& value) {
   adios2::Dims memCount = {static_cast<size_t>(value.getNx()),
                            static_cast<size_t>(value.getNy())};
 
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  adios2::Variable<BoutReal> var =
+      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_XY, BoutComm::rank());
   var.SetSelection({start, count});
   var.SetMemorySelection({memStart, memCount});
   stream.engine.Put<BoutReal>(var, &value(0, 0));
@@ -425,7 +483,8 @@ void ADIOSPutVarVisitor::operator()<Field3D>(const Field3D& value) {
                            static_cast<size_t>(value.getNy()),
                            static_cast<size_t>(value.getNz())};
 
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  adios2::Variable<BoutReal> var =
+      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_XYZ, BoutComm::rank());
   var.SetSelection({start, count});
   var.SetMemorySelection({memStart, memCount});
   stream.engine.Put<BoutReal>(var, &value(0, 0, 0));
@@ -457,47 +516,11 @@ void ADIOSPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
   adios2::Dims memCount = {static_cast<size_t>(value.getNx()),
                            static_cast<size_t>(value.getNz())};
 
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
+  adios2::Variable<BoutReal> var =
+      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_XZ, BoutComm::rank());
   var.SetSelection({start, count});
   var.SetMemorySelection({memStart, memCount});
   stream.engine.Put<BoutReal>(var, &value(0, 0));
-}
-
-template <>
-void ADIOSPutVarVisitor::operator()<Array<BoutReal>>(const Array<BoutReal>& value) {
-  // Pointer to data. Assumed to be contiguous array
-  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)value.size()};
-  adios2::Dims start = {(size_t)BoutComm::rank(), 0};
-  adios2::Dims count = {1, shape[1]};
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
-  var.SetSelection({start, count});
-  stream.engine.Put<BoutReal>(var, value.begin());
-}
-
-template <>
-void ADIOSPutVarVisitor::operator()<Matrix<BoutReal>>(const Matrix<BoutReal>& value) {
-  // Pointer to data. Assumed to be contiguous array
-  auto s = value.shape();
-  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)std::get<0>(s),
-                        (size_t)std::get<1>(s)};
-  adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0};
-  adios2::Dims count = {1, shape[1], shape[2]};
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
-  var.SetSelection({start, count});
-  stream.engine.Put<BoutReal>(var, value.begin());
-}
-
-template <>
-void ADIOSPutVarVisitor::operator()<Tensor<BoutReal>>(const Tensor<BoutReal>& value) {
-  // Pointer to data. Assumed to be contiguous array
-  auto s = value.shape();
-  adios2::Dims shape = {(size_t)BoutComm::size(), (size_t)std::get<0>(s),
-                        (size_t)std::get<1>(s), (size_t)std::get<2>(s)};
-  adios2::Dims start = {(size_t)BoutComm::rank(), 0, 0, 0};
-  adios2::Dims count = {1, shape[1], shape[2], shape[3]};
-  adios2::Variable<BoutReal> var = stream.GetArrayVariable<BoutReal>(varname, shape);
-  var.SetSelection({start, count});
-  stream.engine.Put<BoutReal>(var, value.begin());
 }
 
 /// Visit a variant type, and put the data into a NcVar

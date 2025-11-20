@@ -2,19 +2,10 @@
  * Implementation of the Mesh class, handling input files compatible with
  * BOUT / BOUT-06.
  *
- * Changelog
- * ---------
- *
- * 2015-01 Ben Dudson <benjamin.dudson@york.ac.uk>
- *      *
- *
- * 2010-05 Ben Dudson <bd512@york.ac.uk>
- *      * Initial version, adapted from grid.cpp and topology.cpp
- *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -1535,42 +1526,66 @@ bool BoutMesh::firstX() const { return PE_XIND == 0; }
 bool BoutMesh::lastX() const { return PE_XIND == NXPE - 1; }
 
 int BoutMesh::sendXOut(BoutReal* buffer, int size, int tag) {
-  if (PE_XIND == NXPE - 1) {
-    return 1;
-  }
-
   Timer timer("comms");
 
-  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND + 1, PE_YIND), tag,
+  int proc {-1};
+  if (PE_XIND == NXPE - 1) {
+    if (periodicX) {
+      // Wrap around to first processor in X
+      proc = PROC_NUM(0, PE_YIND);
+    } else {
+      return 1;
+    }
+  } else {
+    proc = PROC_NUM(PE_XIND + 1, PE_YIND);
+  }
+
+  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
                 BoutComm::get());
 
   return 0;
 }
 
 int BoutMesh::sendXIn(BoutReal* buffer, int size, int tag) {
-  if (PE_XIND == 0) {
-    return 1;
-  }
-
   Timer timer("comms");
 
-  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND - 1, PE_YIND), tag,
+  int proc {-1};
+  if (PE_XIND == 0) {
+    if (periodicX) {
+      // Wrap around to last processor in X
+      proc = PROC_NUM(NXPE - 1, PE_YIND);
+    } else {
+      return 1;
+    }
+  } else {
+    proc = PROC_NUM(PE_XIND - 1, PE_YIND);
+  }
+
+  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
                 BoutComm::get());
 
   return 0;
 }
 
 comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
-  if (PE_XIND == NXPE - 1) {
-    return nullptr;
-  }
-
   Timer timer("comms");
+
+  int proc {-1};
+  if (PE_XIND == NXPE - 1) {
+    if (periodicX) {
+      // Wrap around to first processor in X
+      proc = PROC_NUM(0, PE_YIND);
+    } else {
+      return nullptr;
+    }
+  } else {
+    proc = PROC_NUM(PE_XIND + 1, PE_YIND);
+  }
 
   // Get a communications handle. Not fussy about size of arrays
   CommHandle* ch = get_handle(0, 0);
 
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND + 1, PE_YIND), tag,
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
                  BoutComm::get(), ch->request);
 
   ch->in_progress = true;
@@ -1579,16 +1594,24 @@ comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
 }
 
 comm_handle BoutMesh::irecvXIn(BoutReal* buffer, int size, int tag) {
-  if (PE_XIND == 0) {
-    return nullptr;
-  }
-
   Timer timer("comms");
+
+  int proc {-1};
+  if (PE_XIND == 0) {
+    if (periodicX) {
+      // Wrap around to last processor in X
+      proc = PROC_NUM(NXPE - 1, PE_YIND);
+    } else {
+      return nullptr;
+    }
+  } else {
+    proc = PROC_NUM(PE_XIND - 1, PE_YIND);
+  }
 
   // Get a communications handle. Not fussy about size of arrays
   CommHandle* ch = get_handle(0, 0);
 
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND - 1, PE_YIND), tag,
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
                  BoutComm::get(), ch->request);
 
   ch->in_progress = true;
@@ -2116,6 +2139,37 @@ void BoutMesh::topology() {
 
     // Add target plates at the top
     add_target(ny_inner - 1, 0, nx);
+  }
+
+  // Additional limiters
+  // Each limiter needs 3 indices: A Y index, start and end X indices
+  int limiter_count = 0;
+  Mesh::get(limiter_count, "limiter_count", 0);
+  if (limiter_count > 0) {
+    std::vector<int> limiter_yinds;
+    if (!source->get(this, limiter_yinds, "limiter_yinds", limiter_count)) {
+      throw BoutException("Couldn't read limiter_yinds vector of length {} from mesh",
+                          limiter_count);
+    }
+    std::vector<int> limiter_xstarts;
+    if (!source->get(this, limiter_xstarts, "limiter_xstarts", limiter_count)) {
+      throw BoutException("Couldn't read limiter_xstarts vector of length {} from mesh",
+                          limiter_count);
+    }
+    std::vector<int> limiter_xends;
+    if (!source->get(this, limiter_xends, "limiter_xends", limiter_count)) {
+      throw BoutException("Couldn't read limiter_xend vector of length {} from mesh",
+                          limiter_count);
+    }
+
+    for (int i = 0; i < limiter_count; ++i) {
+      int const yind = limiter_yinds[i];
+      int const xstart = limiter_xstarts[i];
+      int const xend = limiter_xends[i];
+      output_info.write("Adding a limiter between y={} and {}. X indices {} to {}\n",
+                        yind, yind + 1, xstart, xend);
+      add_target(yind, xstart, xend);
+    }
   }
 
   if ((ixseps_inner > 0)

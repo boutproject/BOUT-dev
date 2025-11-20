@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "ruamel-yaml",
+#     "unidecode",
+# ]
+# ///
 import argparse
 import subprocess
 from collections import defaultdict
@@ -242,6 +249,9 @@ def update_citations():
 
     new_authors = []
     for author in unrecognised_authors:
+        if " " not in author:
+            # This is just a GitHub handle, skip
+            continue
         first_name, last_name = author.rsplit(maxsplit=1)
         new_authors.append({"family-names": last_name, "given-names": first_name})
 

@@ -1,0 +1,28 @@
+grid = grid.fci.nc
+
+[mesh]
+symmetricglobalx = true
+
+[mesh:ddy]
+first = C2
+second = C2
+
+[mesh:paralleltransform]
+type = fci
+y_periodic = true
+z_periodic = true
+
+[mesh:paralleltransform:xzinterpolation]
+type = hermitespline
+
+[input_0]
+function = sin(z)
+
+[input_1]
+function = cos(y)
+
+[input_2]
+function = sin(x)
+
+[input_3]
+function = sin(x) * sin(z) * cos(y)

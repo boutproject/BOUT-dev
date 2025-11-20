@@ -5,9 +5,9 @@
  * simple but common calculations
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -361,7 +361,6 @@ public:
     ASSERT2(0 <= i.ind && i.ind < n1 * n2 * n3);
     return data[i.ind];
   }
-
   T& operator[](Ind3D i) {
     // ny and nz are private :-(
     // ASSERT2(i.nz == n3);
@@ -422,7 +421,12 @@ inline BoutReal randomu() {
  * i.e. t * t
  */
 template <typename T>
-BOUT_HOST_DEVICE inline T SQ(const T& t) {
+inline T SQ(const T& t) {
+  return t * t;
+}
+
+template <>
+BOUT_HOST_DEVICE inline BoutReal SQ(const BoutReal& t) {
   return t * t;
 }
 
@@ -513,18 +517,18 @@ std::string toString(const T& val) {
 /// where the type may be std::string.
 inline std::string toString(const std::string& val) { return val; }
 
-template <>
-inline std::string toString<>(const Array<BoutReal>& UNUSED(val)) {
+template <typename T>
+inline std::string toString(const Array<T>& UNUSED(val)) {
   return "<Array>";
 }
 
-template <>
-inline std::string toString<>(const Matrix<BoutReal>& UNUSED(val)) {
+template <typename T>
+inline std::string toString(const Matrix<T>& UNUSED(val)) {
   return "<Matrix>";
 }
 
-template <>
-inline std::string toString<>(const Tensor<BoutReal>& UNUSED(val)) {
+template <typename T>
+inline std::string toString(const Tensor<T>& UNUSED(val)) {
   return "<Tensor>";
 }
 

@@ -333,12 +333,27 @@ Options& Options::assign<>(Array<BoutReal> val, std::string source) {
   return *this;
 }
 template <>
+Options& Options::assign<>(Array<int> val, std::string source) {
+  _set_no_check(std::move(val), std::move(source));
+  return *this;
+}
+template <>
 Options& Options::assign<>(Matrix<BoutReal> val, std::string source) {
   _set_no_check(std::move(val), std::move(source));
   return *this;
 }
 template <>
+Options& Options::assign<>(Matrix<int> val, std::string source) {
+  _set_no_check(std::move(val), std::move(source));
+  return *this;
+}
+template <>
 Options& Options::assign<>(Tensor<BoutReal> val, std::string source) {
+  _set_no_check(std::move(val), std::move(source));
+  return *this;
+}
+template <>
+Options& Options::assign<>(Tensor<int> val, std::string source) {
   _set_no_check(std::move(val), std::move(source));
   return *this;
 }
@@ -756,70 +771,69 @@ private:
 };
 } // namespace
 
-template <>
-Array<BoutReal> Options::as<Array<BoutReal>>(const Array<BoutReal>& similar_to) const {
-  if (is_section) {
-    throw BoutException(_("Option {:s} has no value"), full_name);
+namespace {
+// `Options::as` helper for `Array`, `Matrix`, `Tensor` (amt)
+template <class T>
+T as_amt(const Options& self, const T& similar_to) {
+  if (self.isSection()) {
+    throw BoutException(_("Option {:s} has no value"), self.str());
   }
 
-  Array<BoutReal> result = bout::utils::visit(
-      ConvertContainer<Array<BoutReal>>{
-          fmt::format(
-              _("Value for option {:s} cannot be converted to an Array<BoutReal>"),
-              full_name),
+  const T result = bout::utils::visit(
+      ConvertContainer<T>{
+          fmt::format(_("Value for option {:s} cannot be converted to an {}"), self.str(),
+                      bout::utils::typeName<T>()),
           similar_to},
-      value);
+      self.value);
 
-  // Mark this option as used
-  value_used = true;
+  printNameValueSourceLine(self, bout::utils::typeName<T>());
 
-  printNameValueSourceLine(*this, "Array<BoutReal>");
+  output_info.write("{} {} = {}", _("\tOption "), self.str(), bout::utils::typeName<T>());
+  if (self.hasAttribute("source")) {
+    // Specify the source of the setting
+    output_info.write(" ({})",
+                      bout::utils::variantToString(self.attributes.at("source")));
+  }
+  output_info.write("\n");
 
   return result;
 }
+} // namespace
 
 template <>
-Matrix<BoutReal> Options::as<Matrix<BoutReal>>(const Matrix<BoutReal>& similar_to) const {
-  if (is_section) {
-    throw BoutException(_("Option {:s} has no value"), full_name);
-  }
-
-  auto result = bout::utils::visit(
-      ConvertContainer<Matrix<BoutReal>>{
-          fmt::format(
-              _("Value for option {:s} cannot be converted to an Matrix<BoutReal>"),
-              full_name),
-          similar_to},
-      value);
-
-  // Mark this option as used
+auto Options::as(const Array<BoutReal>& similar_to) const -> Array<BoutReal> {
   value_used = true;
-
-  printNameValueSourceLine(*this, "Matrix<BoutReal>");
-
-  return result;
+  return as_amt(*this, similar_to);
 }
 
 template <>
-Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_to) const {
-  if (is_section) {
-    throw BoutException(_("Option {:s} has no value"), full_name);
-  }
-
-  auto result = bout::utils::visit(
-      ConvertContainer<Tensor<BoutReal>>{
-          fmt::format(
-              _("Value for option {:s} cannot be converted to an Tensor<BoutReal>"),
-              full_name),
-          similar_to},
-      value);
-
-  // Mark this option as used
+auto Options::as(const Array<int>& similar_to) const -> Array<int> {
   value_used = true;
+  return as_amt(*this, similar_to);
+}
 
-  printNameValueSourceLine(*this, "Tensor<BoutReal>");
+template <>
+auto Options::as(const Matrix<BoutReal>& similar_to) const -> Matrix<BoutReal> {
+  value_used = true;
+  return as_amt(*this, similar_to);
+}
 
-  return result;
+template <>
+auto Options::as(const Matrix<int>& similar_to) const -> Matrix<int> {
+  value_used = true;
+  return as_amt(*this, similar_to);
+}
+
+template <>
+auto Options::as(const Tensor<BoutReal>& similar_to) const -> Tensor<BoutReal> {
+  value_used = true;
+  return as_amt(*this, similar_to);
+}
+
+template <>
+auto Options::as(const Tensor<int>& similar_to) const -> Tensor<int> {
+  value_used = true;
+  return as_amt(*this, similar_to);
 }
 
 // Note: This is defined here rather than in the header
@@ -963,12 +977,17 @@ struct GetDimensions {
   std::vector<int> operator()([[maybe_unused]] int value) { return {1}; }
   std::vector<int> operator()([[maybe_unused]] BoutReal value) { return {1}; }
   std::vector<int> operator()([[maybe_unused]] const std::string& value) { return {1}; }
-  std::vector<int> operator()(const Array<BoutReal>& array) { return {array.size()}; }
-  std::vector<int> operator()(const Matrix<BoutReal>& array) {
+  template <typename T>
+  std::vector<int> operator()(const Array<T>& array) {
+    return {array.size()};
+  }
+  template <typename T>
+  std::vector<int> operator()(const Matrix<T>& array) {
     const auto shape = array.shape();
     return {std::get<0>(shape), std::get<1>(shape)};
   }
-  std::vector<int> operator()(const Tensor<BoutReal>& array) {
+  template <typename T>
+  std::vector<int> operator()(const Tensor<T>& array) {
     const auto shape = array.shape();
     return {std::get<0>(shape), std::get<1>(shape), std::get<2>(shape)};
   }

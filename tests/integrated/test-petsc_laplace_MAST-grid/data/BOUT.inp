@@ -1,6 +1,8 @@
 mz = 129
+
+[mesh]
 #MYG = 0
-grid = "grids/grid_MAST_SOL_jyis65.nc"
+file = "grids/grid_MAST_SOL_jyis65.nc"
 
 [mesh:ddx]
 first = C4

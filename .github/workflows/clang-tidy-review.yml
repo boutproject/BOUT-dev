@@ -5,9 +5,6 @@ on:
     paths:
       - '**.cxx'
       - '**.hxx'
-    branches-ignore:
-      # Release candidate branches tend to have big PRs which causes all sorts of problems
-      - 'v*rc'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -15,17 +12,18 @@ concurrency:
 
 jobs:
   review:
+    # Release candidate branches tend to have big PRs which causes all sorts of problems
+    if: ${{ !endsWith(github.head_ref, '-rc') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
 
       - name: Run clang-tidy
-        uses: ZedThree/clang-tidy-review@v0.19.0
+        uses: ZedThree/clang-tidy-review@v0.21.0
         id: review
         with:
-          annotations: true
           build_dir: build
           apt_packages: "libfftw3-dev,libnetcdf-c++4-dev,libopenmpi-dev,petsc-dev,slepc-dev,liblapack-dev,libparpack2-dev,libsundials-dev,uuid-dev"
           config_file: ".clang-tidy"
@@ -48,4 +46,4 @@ jobs:
                              -DBOUT_UPDATE_GIT_SUBMODULE=OFF
 
       - name: Upload clang-tidy fixes
-        uses: ZedThree/clang-tidy-review/upload@v0.19.0
+        uses: ZedThree/clang-tidy-review/upload@v0.21.0
