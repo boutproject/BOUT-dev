@@ -112,7 +112,6 @@ TEST_F(OptionsAdios2Test, ReadWriteField3D) {
   EXPECT_DOUBLE_EQ(value(1, 1, 1), 2.4);
 }
 
-
 TEST_F(OptionsAdios2Test, ReadWriteMatrixInt) {
   constexpr int nx = 2;
   constexpr int ny = 3;
