@@ -5,8 +5,8 @@
 #include "bout/adios_object.hxx"
 #include "bout/boutexception.hxx"
 
-#include <exception>
-#include <iostream>
+#include <adios2.h>
+
 #include <unordered_map>
 
 namespace bout {
@@ -48,25 +48,25 @@ IOPtr GetIOPtr(const std::string IOName) {
 }
 
 ADIOSStream::~ADIOSStream() {
-  if (engine) {
+  if (engine_) {
     if (isInStep) {
-      engine.EndStep();
+      engine_.EndStep();
       isInStep = false;
     }
-    engine.Close();
+    engine_.Close();
   }
 }
 
-ADIOSStream& ADIOSStream::ADIOSGetStream(const std::string& fname) {
+ADIOSStream& ADIOSStream::ADIOSGetStream(const std::string& fname, adios2::Mode mode) {
   auto it = adiosStreams.find(fname);
   if (it == adiosStreams.end()) {
-    it = adiosStreams.emplace(fname, ADIOSStream(fname)).first;
+    it = adiosStreams.emplace(fname, ADIOSStream(fname, mode)).first;
   }
   return it->second;
 }
 
-void ADIOSSetParameters(const std::string& input, const char delimKeyValue,
-                        const char delimItem, adios2::IO& io) {
+void ADIOSSetParameters(const std::string& input, char delimKeyValue, char delimItem,
+                        adios2::IO& io) {
   auto lf_Trim = [](std::string& input) {
     input.erase(0, input.find_first_not_of(" \n\r\t")); // prefixing spaces
     input.erase(input.find_last_not_of(" \n\r\t") + 1); // suffixing spaces
@@ -76,7 +76,7 @@ void ADIOSSetParameters(const std::string& input, const char delimKeyValue,
   std::string parameter;
   while (std::getline(inputSS, parameter, delimItem)) {
     const size_t position = parameter.find(delimKeyValue);
-    if (position == parameter.npos) {
+    if (position == std::string::npos) {
       throw BoutException("ADIOSSetParameters(): wrong format for IO parameter "
                           + parameter + ", format must be key" + delimKeyValue
                           + "value for each entry");
