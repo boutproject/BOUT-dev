@@ -10,7 +10,7 @@
 #if !BOUT_HAS_ADIOS2
 
 namespace {
-bout::RegisterUnavailableOptionsIO
+const bout::RegisterUnavailableOptionsIO
     registerunavailableoptionsadios("adios", "BOUT++ was not configured with ADIOS2");
 }
 
@@ -18,7 +18,7 @@ bout::RegisterUnavailableOptionsIO
 
 #include "bout/options.hxx"
 
-#include <adios2.h>
+#include <adios2.h> // IWYU pragma: keep
 
 #include <string>
 
@@ -71,7 +71,7 @@ private:
 };
 
 namespace {
-RegisterOptionsIO<OptionsADIOS> registeroptionsadios("adios");
+const RegisterOptionsIO<OptionsADIOS> registeroptionsadios("adios");
 }
 
 } // namespace bout

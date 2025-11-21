@@ -5,22 +5,31 @@
 #include "options_adios.hxx"
 
 #include "bout/adios_object.hxx"
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
 #include "bout/options.hxx"
+#include "bout/options_io.hxx"
+#include "bout/output.hxx"
 #include "bout/sys/timer.hxx"
+#include "bout/sys/variant.hxx"
 #include "bout/traits.hxx"
+#include "bout/utils.hxx"
 
-#include <adios2.h>
+#include <adios2.h> // IWYU pragma: keep
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <iterator>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -34,6 +43,7 @@ auto to_int_dims(const adios2::Dims& dims) {
   return int_dims;
 }
 
+// Helper class to construct Adios hyperslices
 struct Selection {
   // Offset of this processor's data into the global array
   adios2::Dims start;
@@ -338,12 +348,12 @@ OptionsADIOS::OptionsADIOS(Options& options) : OptionsIO(options) {
 }
 
 Options OptionsADIOS::read([[maybe_unused]] bool lazy) {
-  Timer timer("io");
+  const Timer timer("io");
 
   // Open file
-  ADIOSPtr adiosp = GetADIOSPtr();
+  ADIOSPtr const adiosp = GetADIOSPtr();
   adios2::IO io;
-  std::string ioname = "read_" + filename;
+  const std::string ioname = "read_" + filename;
   try {
     io = adiosp->AtIO(ioname);
   } catch (const std::invalid_argument& e) {
@@ -415,10 +425,9 @@ namespace {
 using bout::utils::tuple_index_sequence;
 
 template <class Tuple, std::size_t... I>
-auto make_shape_impl(std::size_t first, Tuple&& t,
+auto make_shape_impl(std::size_t first, const Tuple& t,
                      std::index_sequence<I...> /* index */) {
-  return adios2::Dims{first,
-                      static_cast<std::size_t>(std::get<I>(std::forward<Tuple>(t)))...};
+  return adios2::Dims{first, static_cast<std::size_t>(std::get<I>(t))...};
 }
 // Return an `adios2::Dims` with value ``{first, value.shape()[0]...}``
 template <class T>
@@ -428,11 +437,11 @@ auto make_shape(std::size_t first, const T& value) {
 }
 
 template <class Tuple, std::size_t... I>
-auto make_start_impl(Tuple&& t, std::index_sequence<I...> /* index */) {
+auto make_start_impl(const Tuple& t, std::index_sequence<I...> /* index */) {
   // Hey look, a legitimate use of the comma operator to get a bunch
   // of zeros the length of the index_sequence!
   return adios2::Dims{static_cast<std::size_t>(BoutComm::rank()),
-                      (std::get<I>(std::forward<Tuple>(t)), std::size_t{0})...};
+                      (std::get<I>(t), std::size_t{0})...};
 }
 // Return an `adios2::Dims` with value ``{rank, 0...}``, with as many zeros as the dimension of ``T``
 template <class T>
@@ -500,6 +509,7 @@ struct ADIOSPutVarVisitor {
   }
 
   void operator()(const Field2D& value) {
+    // Empty dim_sizes is fine because we provide full list of dim_names
     auto selection = Selection(DIMS_XY, {}, *value.getMesh());
     auto var = stream.GetArrayVariable<BoutReal>(varname, selection.shape, DIMS_XY,
                                                  BoutComm::rank());
@@ -509,6 +519,7 @@ struct ADIOSPutVarVisitor {
   }
 
   void operator()(const Field3D& value) {
+    // Empty dim_sizes is fine because we provide full list of dim_names
     auto selection = Selection(DIMS_XYZ, {}, *value.getMesh());
     auto var = stream.GetArrayVariable<BoutReal>(varname, selection.shape, DIMS_XYZ,
                                                  BoutComm::rank());
@@ -518,6 +529,7 @@ struct ADIOSPutVarVisitor {
   }
 
   void operator()(const FieldPerp& value) {
+    // Empty dim_sizes is fine because we provide full list of dim_names
     auto selection = Selection(DIMS_XZ, {}, *value.getMesh());
     auto var = stream.GetArrayVariable<BoutReal>(varname, selection.shape, DIMS_XZ,
                                                  BoutComm::rank());
@@ -599,7 +611,7 @@ void writeGroup(const Options& options, bout::ADIOSStream& stream,
 
         // Write the variable
         // Note: ADIOS2 uses '/' to as a group separator; BOUT++ uses ':'
-        std::string varname =
+        const std::string varname =
             groupname.empty() ? name : fmt::format("{}/{}", groupname, name);
         bout::utils::visit(ADIOSPutVarVisitor(varname, stream), child.value);
 
@@ -624,7 +636,7 @@ void writeGroup(const Options& options, bout::ADIOSStream& stream,
 namespace bout {
 /// Write options to file
 void OptionsADIOS::write(const Options& options, const std::string& time_dim) {
-  Timer timer("io");
+  const Timer timer("io");
 
   // ADIOSStream is just a BOUT++ object, it does not create anything inside ADIOS
   ADIOSStream& stream = ADIOSStream::ADIOSGetStream(filename, file_mode);

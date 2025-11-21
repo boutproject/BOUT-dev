@@ -18,6 +18,9 @@ CheckOptions:
 
   - key: readability-qualified-auto.AllowedTypes
     value: 'MPI_Comm'
+
+  - key: misc-include-cleaner.IgnoreHeaders
+    value: 'adios2/.*;bits/.*'
 ---
 
 Disabled checks and reasons:
