@@ -43,6 +43,8 @@ struct Selection {
   adios2::Dims mem_start;
   // The actual size of data pointer in memory (including ghost cells)
   adios2::Dims mem_count;
+  // Global shape, including boundaries but not guard cells
+  adios2::Dims shape;
   // Shape of the local variable to read into
   std::vector<int> dims;
 
@@ -104,17 +106,20 @@ struct Selection {
       dims.push_back(dim2_is_z ? mesh.LocalNz : dim_sizes[2]);
     }
 
+    shape.push_back(static_cast<std::size_t>(mesh.GlobalNx));
     start.push_back(static_cast<std::size_t>(mesh.MapGlobalX));
     count.push_back(static_cast<std::size_t>(mesh.MapCountX));
     mem_start.push_back(static_cast<std::size_t>(mesh.MapLocalX));
     mem_count.push_back(static_cast<std::size_t>(mesh.LocalNx));
 
     if (dim1_is_y) {
+      shape.push_back(static_cast<std::size_t>(mesh.GlobalNy));
       start.push_back(static_cast<std::size_t>(mesh.MapGlobalY));
       count.push_back(static_cast<std::size_t>(mesh.MapCountY));
       mem_start.push_back(static_cast<std::size_t>(mesh.MapLocalY));
       mem_count.push_back(static_cast<std::size_t>(mesh.LocalNy));
     } else if (dim1_is_z) {
+      shape.push_back(static_cast<std::size_t>(mesh.GlobalNz));
       start.push_back(static_cast<std::size_t>(mesh.MapGlobalZ));
       count.push_back(static_cast<std::size_t>(mesh.MapCountZ));
       mem_start.push_back(static_cast<std::size_t>(mesh.MapLocalZ));
@@ -122,6 +127,7 @@ struct Selection {
     }
 
     if (dim2_is_z) {
+      shape.push_back(static_cast<std::size_t>(mesh.GlobalNz));
       start.push_back(static_cast<std::size_t>(mesh.MapGlobalZ));
       count.push_back(static_cast<std::size_t>(mesh.MapCountZ));
       mem_start.push_back(static_cast<std::size_t>(mesh.MapLocalZ));
@@ -456,12 +462,69 @@ struct ADIOSPutVarVisitor {
     stream.engine().Put(var, value);
   }
 
-  void operator()(const Array<int>& value) { put_helper(value); }
-  void operator()(const Array<BoutReal>& value) { put_helper(value); }
-  void operator()(const Matrix<int>& value) { put_helper(value); }
-  void operator()(const Matrix<BoutReal>& value) { put_helper(value); }
-  void operator()(const Tensor<int>& value) { put_helper(value); }
-  void operator()(const Tensor<BoutReal>& value) { put_helper(value); }
+  void operator()(const Array<int>& value) { amt_put_helper(value); }
+  void operator()(const Array<BoutReal>& value) { amt_put_helper(value); }
+  void operator()(const Matrix<int>& value) { amt_put_helper(value); }
+  void operator()(const Matrix<BoutReal>& value) { amt_put_helper(value); }
+  void operator()(const Tensor<int>& value) { amt_put_helper(value); }
+  void operator()(const Tensor<BoutReal>& value) { amt_put_helper(value); }
+  void operator()(bool value) {
+    // Scalars are only written from processor 0
+    if (BoutComm::rank() != 0) {
+      return;
+    }
+    stream.engine().Put(stream.GetValueVariable<int>(varname), static_cast<int>(value));
+  }
+  void operator()(int value) {
+    // Scalars are only written from processor 0
+    if (BoutComm::rank() != 0) {
+      return;
+    }
+    stream.engine().Put(stream.GetValueVariable<int>(varname), value);
+  }
+  void operator()(BoutReal value) {
+    // Scalars are only written from processor 0
+    if (BoutComm::rank() != 0) {
+      return;
+    }
+    stream.engine().Put(stream.GetValueVariable<BoutReal>(varname), value);
+  }
+
+  void operator()(const std::string& value) {
+    // Scalars are only written from processor 0
+    if (BoutComm::rank() != 0) {
+      return;
+    }
+    stream.engine().Put<std::string>(stream.GetValueVariable<std::string>(varname), value,
+                                     adios2::Mode::Sync);
+  }
+
+  void operator()(const Field2D& value) {
+    auto selection = Selection(DIMS_XY, {}, *value.getMesh());
+    auto var = stream.GetArrayVariable<BoutReal>(varname, selection.shape, DIMS_XY,
+                                                 BoutComm::rank());
+    var.SetSelection(selection.selection());
+    var.SetMemorySelection(selection.memorySelection());
+    stream.engine().Put(var, &value(0, 0));
+  }
+
+  void operator()(const Field3D& value) {
+    auto selection = Selection(DIMS_XYZ, {}, *value.getMesh());
+    auto var = stream.GetArrayVariable<BoutReal>(varname, selection.shape, DIMS_XYZ,
+                                                 BoutComm::rank());
+    var.SetSelection(selection.selection());
+    var.SetMemorySelection(selection.memorySelection());
+    stream.engine().Put(var, &value(0, 0, 0));
+  }
+
+  void operator()(const FieldPerp& value) {
+    auto selection = Selection(DIMS_XZ, {}, *value.getMesh());
+    auto var = stream.GetArrayVariable<BoutReal>(varname, selection.shape, DIMS_XZ,
+                                                 BoutComm::rank());
+    var.SetSelection(selection.selection());
+    var.SetMemorySelection(selection.memorySelection());
+    stream.engine().Put<BoutReal>(var, &value(0, 0));
+  }
 
 private:
   const std::string& varname;
@@ -469,7 +532,7 @@ private:
 
   // helper for `Array`, `Matrix`, `Tensor`
   template <template <class> class T, class U>
-  void put_helper(const T<U>& value) {
+  void amt_put_helper(const T<U>& value) {
     const auto shape = make_shape(static_cast<std::size_t>(BoutComm::size()), value);
     auto var =
         stream.GetArrayVariable<U>(varname, shape, make_dims(value), BoutComm::rank());
@@ -477,150 +540,6 @@ private:
     stream.engine().Put<U>(var, value.begin());
   }
 };
-
-template <>
-void ADIOSPutVarVisitor::operator()<bool>(const bool& value) {
-  // Scalars are only written from processor 0
-  if (BoutComm::rank() != 0) {
-    return;
-  }
-  adios2::Variable<int> var = stream.GetValueVariable<int>(varname);
-  stream.engine().Put<int>(var, static_cast<int>(value));
-}
-
-template <>
-void ADIOSPutVarVisitor::operator()<int>(const int& value) {
-  // Scalars are only written from processor 0
-  if (BoutComm::rank() != 0) {
-    return;
-  }
-  adios2::Variable<int> var = stream.GetValueVariable<int>(varname);
-  stream.engine().Put<int>(var, value);
-}
-
-template <>
-void ADIOSPutVarVisitor::operator()<BoutReal>(const BoutReal& value) {
-  // Scalars are only written from processor 0
-  if (BoutComm::rank() != 0) {
-    return;
-  }
-  adios2::Variable<BoutReal> var = stream.GetValueVariable<BoutReal>(varname);
-  stream.engine().Put<BoutReal>(var, value);
-}
-
-template <>
-void ADIOSPutVarVisitor::operator()<std::string>(const std::string& value) {
-  // Scalars are only written from processor 0
-  if (BoutComm::rank() != 0) {
-    return;
-  }
-  adios2::Variable<std::string> var = stream.GetValueVariable<std::string>(varname);
-  stream.engine().Put<std::string>(var, value, adios2::Mode::Sync);
-}
-
-template <>
-void ADIOSPutVarVisitor::operator()<Field2D>(const Field2D& value) {
-  // Get the mesh that describes how local data relates to global arrays
-  auto mesh = value.getMesh();
-
-  // The global size of this array includes boundary cells but not communication guard cells.
-  // In general this array will be sparse because it may have gaps.
-  adios2::Dims shape = {static_cast<size_t>(mesh->GlobalNx),
-                        static_cast<size_t>(mesh->GlobalNy)};
-
-  // Offset of this processor's data into the global array
-  adios2::Dims start = {static_cast<size_t>(mesh->MapGlobalX),
-                        static_cast<size_t>(mesh->MapGlobalY)};
-
-  // The size of the mapped region
-  adios2::Dims count = {static_cast<size_t>(mesh->MapCountX),
-                        static_cast<size_t>(mesh->MapCountY)};
-
-  // Where the actual data starts in data pointer (to exclude ghost cells)
-  adios2::Dims memStart = {static_cast<size_t>(mesh->MapLocalX),
-                           static_cast<size_t>(mesh->MapLocalY)};
-
-  // The actual size of data pointer in memory (including ghost cells)
-  adios2::Dims memCount = {static_cast<size_t>(value.getNx()),
-                           static_cast<size_t>(value.getNy())};
-
-  adios2::Variable<BoutReal> var =
-      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_XY, BoutComm::rank());
-  var.SetSelection({start, count});
-  var.SetMemorySelection({memStart, memCount});
-  stream.engine().Put<BoutReal>(var, &value(0, 0));
-}
-
-template <>
-void ADIOSPutVarVisitor::operator()<Field3D>(const Field3D& value) {
-  // Get the mesh that describes how local data relates to global arrays
-  auto mesh = value.getMesh();
-
-  // The global size of this array includes boundary cells but not communication guard cells.
-  // In general this array will be sparse because it may have gaps.
-  adios2::Dims shape = {static_cast<size_t>(mesh->GlobalNx),
-                        static_cast<size_t>(mesh->GlobalNy),
-                        static_cast<size_t>(mesh->GlobalNz)};
-
-  // Offset of this processor's data into the global array
-  adios2::Dims start = {static_cast<size_t>(mesh->MapGlobalX),
-                        static_cast<size_t>(mesh->MapGlobalY),
-                        static_cast<size_t>(mesh->MapGlobalZ)};
-
-  // The size of the mapped region
-  adios2::Dims count = {static_cast<size_t>(mesh->MapCountX),
-                        static_cast<size_t>(mesh->MapCountY),
-                        static_cast<size_t>(mesh->MapCountZ)};
-
-  // Where the actual data starts in data pointer (to exclude ghost cells)
-  adios2::Dims memStart = {static_cast<size_t>(mesh->MapLocalX),
-                           static_cast<size_t>(mesh->MapLocalY),
-                           static_cast<size_t>(mesh->MapLocalZ)};
-
-  // The actual size of data pointer in memory (including ghost cells)
-  adios2::Dims memCount = {static_cast<size_t>(value.getNx()),
-                           static_cast<size_t>(value.getNy()),
-                           static_cast<size_t>(value.getNz())};
-
-  adios2::Variable<BoutReal> var =
-      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_XYZ, BoutComm::rank());
-  var.SetSelection({start, count});
-  var.SetMemorySelection({memStart, memCount});
-  stream.engine().Put<BoutReal>(var, &value(0, 0, 0));
-}
-
-template <>
-void ADIOSPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
-  // Get the mesh that describes how local data relates to global arrays
-  auto mesh = value.getMesh();
-
-  // The global size of this array includes boundary cells but not communication guard cells.
-  // In general this array will be sparse because it may have gaps.
-  adios2::Dims shape = {static_cast<size_t>(mesh->GlobalNx),
-                        static_cast<size_t>(mesh->GlobalNz)};
-
-  // Offset of this processor's data into the global array
-  adios2::Dims start = {static_cast<size_t>(mesh->MapGlobalX),
-                        static_cast<size_t>(mesh->MapGlobalZ)};
-
-  // The size of the mapped region
-  adios2::Dims count = {static_cast<size_t>(mesh->MapCountX),
-                        static_cast<size_t>(mesh->MapCountZ)};
-
-  // Where the actual data starts in data pointer (to exclude ghost cells)
-  adios2::Dims memStart = {static_cast<size_t>(mesh->MapLocalX),
-                           static_cast<size_t>(mesh->MapLocalZ)};
-
-  // The actual size of data pointer in memory (including ghost cells)
-  adios2::Dims memCount = {static_cast<size_t>(value.getNx()),
-                           static_cast<size_t>(value.getNz())};
-
-  adios2::Variable<BoutReal> var =
-      stream.GetArrayVariable<BoutReal>(varname, shape, DIMS_XZ, BoutComm::rank());
-  var.SetSelection({start, count});
-  var.SetMemorySelection({memStart, memCount});
-  stream.engine().Put<BoutReal>(var, &value(0, 0));
-}
 
 /// Visit a variant type, and put the data into a NcVar
 struct ADIOSPutAttVisitor {
@@ -632,16 +551,16 @@ struct ADIOSPutAttVisitor {
     stream.io.DefineAttribute<T>(attrname, value, varname, "/", false);
   }
 
+  void operator()(bool value) {
+    stream.io.DefineAttribute<int>(attrname, static_cast<int>(value), varname, "/",
+                                   false);
+  }
+
 private:
   const std::string& varname;
   const std::string& attrname;
   bout::ADIOSStream& stream;
 };
-
-template <>
-void ADIOSPutAttVisitor::operator()<bool>(const bool& value) {
-  stream.io.DefineAttribute<int>(attrname, (int)value, varname, "/", false);
-}
 
 void writeGroup(const Options& options, bout::ADIOSStream& stream,
                 const std::string& groupname, const std::string& time_dimension) {
