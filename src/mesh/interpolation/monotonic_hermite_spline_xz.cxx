@@ -36,26 +36,10 @@ Field3D XZMonotonicHermiteSpline::interpolate(const Field3D& f,
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
   Field3D fx = bout::derivatives::index::DDX(f, CELL_DEFAULT, "DEFAULT");
-  localmesh->communicateXZ(fx);
-  // communicate in y, but do not calculate parallel slices
-  {
-    auto h = localmesh->sendY(fx);
-    localmesh->wait(h);
-  }
   Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", "RGN_ALL");
-  localmesh->communicateXZ(fz);
-  // communicate in y, but do not calculate parallel slices
-  {
-    auto h = localmesh->sendY(fz);
-    localmesh->wait(h);
-  }
+  localmesh->communicate_no_slices(fx, fz);
   Field3D fxz = bout::derivatives::index::DDX(fz, CELL_DEFAULT, "DEFAULT");
-  localmesh->communicateXZ(fxz);
-  // communicate in y, but do not calculate parallel slices
-  {
-    auto h = localmesh->sendY(fxz);
-    localmesh->wait(h);
-  }
+  localmesh->communicate_no_slices(fxz);
 
   const auto curregion{getRegion(region)};
   BOUT_FOR(i, curregion) {

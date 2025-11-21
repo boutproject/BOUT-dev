@@ -53,7 +53,6 @@ public:
     StaggerGrids = false;
     periodicX = false;
     IncIntShear = false;
-    calcParallelSlices_on_communicate = true;
     options = Options::getRoot();
     mpi = mpiSmart.get();
   }

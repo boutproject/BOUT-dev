@@ -262,6 +262,16 @@ public:
     communicate(g);
   }
 
+  /// Communicate Fields without calculating the parallel slices
+  template <typename... Ts>
+  void communicate_no_slices(Ts&... ts) {
+    FieldGroup g(ts...);
+    const bool old = calcParallelSlices_on_communicate;
+    calcParallelSlices_on_communicate = false;
+    communicate(g);
+    calcParallelSlices_on_communicate = old;
+  }
+
   template <typename... Ts>
   void communicateXZ(Ts&... ts) {
     FieldGroup g(ts...);
@@ -795,9 +805,11 @@ protected:
   /// Mesh options section
   Options* options{nullptr};
 
+private:
   /// Set whether to call calcParallelSlices on all communicated fields (true) or not (false)
   bool calcParallelSlices_on_communicate{true};
 
+protected:
   /// Read a 1D array of integers
   const std::vector<int> readInts(const std::string& name, int n);
 
