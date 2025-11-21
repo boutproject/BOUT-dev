@@ -143,6 +143,8 @@ public:
   RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
   RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
   RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
+  bool hasBndryLowerY() const override { return false; }
+  bool hasBndryUpperY() const override { return false; }
   void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
   std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
   std::vector<std::shared_ptr<BoundaryRegionPar>>

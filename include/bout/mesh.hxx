@@ -464,11 +464,11 @@ public:
 
   /// Is there a boundary on the lower guard cells in Y
   /// on any processor along the X direction?
-  bool hasBndryLowerY();
+  virtual bool hasBndryLowerY() const = 0;
 
   /// Is there a boundary on the upper guard cells in Y
   /// on any processor along the X direction?
-  bool hasBndryUpperY();
+  virtual bool hasBndryUpperY() const = 0;
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor

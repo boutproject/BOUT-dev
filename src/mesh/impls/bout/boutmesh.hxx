@@ -156,6 +156,9 @@ public:
   RangeIterator iterateBndryUpperInnerY() const override;
   RangeIterator iterateBndryUpperOuterY() const override;
 
+  bool hasBndryLowerY() const override { return has_boundary_lower_y; }
+  bool hasBndryUpperY() const override { return has_boundary_upper_y; }
+
   // Boundary regions
   std::vector<BoundaryRegion*> getBoundaries() override;
   std::vector<std::shared_ptr<BoundaryRegionPar>>
@@ -400,6 +403,8 @@ private:
              static_cast<int>(BoundaryParType::SIZE)>
       par_boundary; // Vector of parallel boundary regions
 
+  bool has_boundary_lower_y{false};
+  bool has_boundary_upper_y{false};
   //////////////////////////////////////////////////
   // Communications
 
