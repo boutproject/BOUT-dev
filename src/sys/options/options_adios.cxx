@@ -241,42 +241,75 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
 
 Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& name,
                      const std::string& type) {
-#define declare_template_instantiation(T)           \
-  if (type == adios2::GetType<T>()) {               \
-    return readVariable<T>(reader, io, name, type); \
+  if (type == adios2::GetType<std::string>()) {
+    return readVariable<std::string>(reader, io, name, type);
   }
-  ADIOS2_FOREACH_ATTRIBUTE_PRIMITIVE_STDTYPE_1ARG(declare_template_instantiation)
-  declare_template_instantiation(std::string)
-#undef declare_template_instantiation
-      output_warn.write("ADIOS readVariable can't read type '{}' (variable '{}')", type,
-                        name);
+  if (type == adios2::GetType<char>()) {
+    return readVariable<char>(reader, io, name, type);
+  }
+  if (type == adios2::GetType<int8_t>()) {
+    return readVariable<int8_t>(reader, io, name, type);
+  }
+  if (type == adios2::GetType<int16_t>()) {
+    return readVariable<int16_t>(reader, io, name, type);
+  }
+  if (type == adios2::GetType<int32_t>()) {
+    return readVariable<int32_t>(reader, io, name, type);
+  }
+  if (type == adios2::GetType<int64_t>()) {
+    return readVariable<int64_t>(reader, io, name, type);
+  }
+  if (type == adios2::GetType<uint8_t>()) {
+    return readVariable<uint8_t>(reader, io, name, type);
+  }
+  if (type == adios2::GetType<uint16_t>()) {
+    return readVariable<uint16_t>(reader, io, name, type);
+  }
+  if (type == adios2::GetType<uint32_t>()) {
+    return readVariable<uint32_t>(reader, io, name, type);
+  }
+  if (type == adios2::GetType<uint64_t>()) {
+    return readVariable<uint64_t>(reader, io, name, type);
+  }
+  if (type == adios2::GetType<float>()) {
+    return readVariable<float>(reader, io, name, type);
+  }
+  if (type == adios2::GetType<double>()) {
+    return readVariable<double>(reader, io, name, type);
+  }
+  if (type == adios2::GetType<long double>()) {
+    return readVariable<long double>(reader, io, name, type);
+  }
+
+  output_warn.write("ADIOS readVariable can't read type '{}' (variable '{}')", type,
+                    name);
   return Options{};
 }
 
 bool readAttribute(adios2::IO& io, const std::string& name, const std::string& type,
                    Options& result) {
   // Attribute is the part of 'name' after the last '/' separator
-  std::string attrname;
+  std::string attrname = name;
   auto pos = name.find_last_of('/');
-  if (pos == std::string::npos) {
-    attrname = name;
-  } else {
+  if (pos != std::string::npos) {
     attrname = name.substr(pos + 1);
   }
 
-#define declare_template_instantiation(T)                  \
-  if (type == adios2::GetType<T>()) {                      \
-    adios2::Attribute<T> a = io.InquireAttribute<T>(name); \
-    result.attributes[attrname] = *a.Data().data();        \
-    return true;                                           \
+  if (type == adios2::GetType<int>()) {
+    result.attributes[attrname] = *io.InquireAttribute<int>(name).Data().data();
+    return true;
   }
-  // Only some types of attributes are supported
-  //declare_template_instantiation(bool)
-  declare_template_instantiation(int) declare_template_instantiation(BoutReal)
-      declare_template_instantiation(std::string)
-#undef declare_template_instantiation
-          output_warn.write("ADIOS readAttribute can't read type '{}' (variable '{}')",
-                            type, name);
+  if (type == adios2::GetType<BoutReal>()) {
+    result.attributes[attrname] = *io.InquireAttribute<BoutReal>(name).Data().data();
+    return true;
+  }
+  if (type == adios2::GetType<std::string>()) {
+    result.attributes[attrname] = *io.InquireAttribute<std::string>(name).Data().data();
+    return true;
+  }
+
+  output_warn.write("ADIOS readAttribute can't read type '{}' (variable '{}')", type,
+                    name);
   return false;
 }
 } // namespace
@@ -365,7 +398,7 @@ void OptionsADIOS::verifyTimesteps() const {
 
   stream.endStep();
 }
-}
+} // namespace bout
 
 const std::vector<std::string> DIMS_X = {"x"};
 const std::vector<std::string> DIMS_XY = {"x", "y"};
@@ -610,8 +643,8 @@ void ADIOSPutAttVisitor::operator()<bool>(const bool& value) {
   stream.io.DefineAttribute<int>(attrname, (int)value, varname, "/", false);
 }
 
-void writeGroup(const Options& options, bout::ADIOSStream& stream, const std::string& groupname,
-                const std::string& time_dimension) {
+void writeGroup(const Options& options, bout::ADIOSStream& stream,
+                const std::string& groupname, const std::string& time_dimension) {
 
   for (const auto& childpair : options.getChildren()) {
     const auto& name = childpair.first;
