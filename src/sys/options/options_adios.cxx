@@ -146,24 +146,6 @@ auto read_variable(adios2::IO& io, adios2::Engine& reader, const std::string& na
   reader.Get<U>(variable, value.begin(), adios2::Mode::Sync);
   return Options(value);
 }
-} // namespace
-
-namespace bout {
-OptionsADIOS::OptionsADIOS(Options& options) : OptionsIO(options) {
-  if (options["file"].doc("File name. Defaults to <path>/<prefix>.pb").isSet()) {
-    filename = options["file"].as<std::string>();
-  } else {
-    // Both path and prefix must be set
-    filename = fmt::format("{}/{}.bp", options["path"].as<std::string>(),
-                           options["prefix"].as<std::string>());
-  }
-
-  file_mode = (options["append"].doc("Append to existing file?").withDefault<bool>(false))
-                  ? adios2::Mode::Append
-                  : adios2::Mode::Write;
-
-  singleWriteFile = options["singleWriteFile"].withDefault<bool>(false);
-}
 
 template <class T>
 Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& name,
@@ -248,7 +230,8 @@ Options readVariable(adios2::Engine& reader, adios2::IO& io, const std::string& 
     break;
   }
   // Throw below
-  default: break;
+  default:
+    break;
   }
   auto dims_str = fmt::format("[{}]", fmt::join(dims, ", "));
   throw BoutException(
@@ -295,6 +278,24 @@ bool readAttribute(adios2::IO& io, const std::string& name, const std::string& t
           output_warn.write("ADIOS readAttribute can't read type '{}' (variable '{}')",
                             type, name);
   return false;
+}
+} // namespace
+
+namespace bout {
+OptionsADIOS::OptionsADIOS(Options& options) : OptionsIO(options) {
+  if (options["file"].doc("File name. Defaults to <path>/<prefix>.pb").isSet()) {
+    filename = options["file"].as<std::string>();
+  } else {
+    // Both path and prefix must be set
+    filename = fmt::format("{}/{}.bp", options["path"].as<std::string>(),
+                           options["prefix"].as<std::string>());
+  }
+
+  file_mode = (options["append"].doc("Append to existing file?").withDefault<bool>(false))
+                  ? adios2::Mode::Append
+                  : adios2::Mode::Write;
+
+  singleWriteFile = options["singleWriteFile"].withDefault<bool>(false);
 }
 
 Options OptionsADIOS::read([[maybe_unused]] bool lazy) {
@@ -364,6 +365,7 @@ void OptionsADIOS::verifyTimesteps() const {
 
   stream.endStep();
 }
+}
 
 const std::vector<std::string> DIMS_X = {"x"};
 const std::vector<std::string> DIMS_XY = {"x", "y"};
@@ -410,11 +412,10 @@ template <class T>
 auto make_dims(const T& value) {
   return make_dims_impl(tuple_index_sequence<decltype(value.shape())>{});
 }
-} // namespace
 
 /// Visit a variant type, and put the data into a NcVar
 struct ADIOSPutVarVisitor {
-  ADIOSPutVarVisitor(const std::string& name, ADIOSStream& stream)
+  ADIOSPutVarVisitor(const std::string& name, bout::ADIOSStream& stream)
       : varname(name), stream(stream) {}
   template <typename T>
   void operator()(const T& value) {
@@ -431,7 +432,7 @@ struct ADIOSPutVarVisitor {
 
 private:
   const std::string& varname;
-  ADIOSStream& stream;
+  bout::ADIOSStream& stream;
 
   // helper for `Array`, `Matrix`, `Tensor`
   template <template <class> class T, class U>
@@ -591,7 +592,7 @@ void ADIOSPutVarVisitor::operator()<FieldPerp>(const FieldPerp& value) {
 /// Visit a variant type, and put the data into a NcVar
 struct ADIOSPutAttVisitor {
   ADIOSPutAttVisitor(const std::string& varname, const std::string& attrname,
-                     ADIOSStream& stream)
+                     bout::ADIOSStream& stream)
       : varname(varname), attrname(attrname), stream(stream) {}
   template <typename T>
   void operator()(const T& value) {
@@ -601,7 +602,7 @@ struct ADIOSPutAttVisitor {
 private:
   const std::string& varname;
   const std::string& attrname;
-  ADIOSStream& stream;
+  bout::ADIOSStream& stream;
 };
 
 template <>
@@ -609,7 +610,7 @@ void ADIOSPutAttVisitor::operator()<bool>(const bool& value) {
   stream.io.DefineAttribute<int>(attrname, (int)value, varname, "/", false);
 }
 
-void writeGroup(const Options& options, ADIOSStream& stream, const std::string& groupname,
+void writeGroup(const Options& options, bout::ADIOSStream& stream, const std::string& groupname,
                 const std::string& time_dimension) {
 
   for (const auto& childpair : options.getChildren()) {
@@ -664,7 +665,9 @@ void writeGroup(const Options& options, ADIOSStream& stream, const std::string& 
     }
   }
 }
+} // namespace
 
+namespace bout {
 /// Write options to file
 void OptionsADIOS::write(const Options& options, const std::string& time_dim) {
   Timer timer("io");
