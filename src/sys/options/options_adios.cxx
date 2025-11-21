@@ -527,8 +527,9 @@ struct ADIOSPutVarVisitor {
   }
 
 private:
-  const std::string& varname;
-  bout::ADIOSStream& stream;
+  // Ok to keep const/refs here as visitor is only a temporary
+  const std::string& varname; // NOLINT(*-avoid-const-or-ref-data-members)
+  bout::ADIOSStream& stream;  // NOLINT(*-avoid-const-or-ref-data-members)
 
   // helper for `Array`, `Matrix`, `Tensor`
   template <template <class> class T, class U>
@@ -557,9 +558,10 @@ struct ADIOSPutAttVisitor {
   }
 
 private:
-  const std::string& varname;
-  const std::string& attrname;
-  bout::ADIOSStream& stream;
+  // Ok to keep const/refs here as visitor is only a temporary
+  const std::string& varname;  // NOLINT(*-avoid-const-or-ref-data-members)
+  const std::string& attrname; // NOLINT(*-avoid-const-or-ref-data-members)
+  bout::ADIOSStream& stream;   // NOLINT(*-avoid-const-or-ref-data-members)
 };
 
 void writeGroup(const Options& options, bout::ADIOSStream& stream,
