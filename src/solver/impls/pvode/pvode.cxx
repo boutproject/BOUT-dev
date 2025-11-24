@@ -36,6 +36,7 @@
 #include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
+#include <bout/options.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/unused.hxx>
 #include <bout/version.hxx>
