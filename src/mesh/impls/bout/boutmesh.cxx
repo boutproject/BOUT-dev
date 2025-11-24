@@ -607,6 +607,20 @@ int BoutMesh::load() {
   // Add boundary regions
   addBoundaryRegions();
 
+  // Set cached values
+  {
+    int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
+    int allbndry = 0;
+    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
+    has_boundary_lower_y = static_cast<bool>(allbndry);
+  }
+  {
+    int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
+    int allbndry = 0;
+    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
+    has_boundary_upper_y = static_cast<bool>(allbndry);
+  }
+
   // Initialize default coordinates
   getCoordinates();
 
