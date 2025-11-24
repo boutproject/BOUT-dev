@@ -198,8 +198,6 @@ int BoutInitialise(int& argc, char**& argv) {
 
     // Create the mesh
     bout::globals::mesh = Mesh::create();
-    // Load from sources. Required for Field initialisation
-    bout::globals::mesh->load();
 
     // time_report options are used in BoutFinalise, i.e. after we
     // check for unused options
@@ -312,7 +310,6 @@ template <class Factory>
   // We might need a global mesh for some types, so best make one
   bout::globals::mpi = new MpiWrapper();
   bout::globals::mesh = Mesh::create();
-  bout::globals::mesh->load();
 
   // An empty Options that we'll later check for used values
   Options help_options;

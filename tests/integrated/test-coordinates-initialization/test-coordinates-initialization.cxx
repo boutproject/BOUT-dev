@@ -15,8 +15,7 @@ int main() {
   bout::globals::mpi = new MpiWrapper();
 
   // Initialize a mesh
-  auto mesh = Mesh::create();
-  mesh->load();
+  auto* mesh = Mesh::create();
 
   // Test CELL_CENTRE
   Field3D f(0., mesh);

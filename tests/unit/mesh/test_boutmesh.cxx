@@ -242,13 +242,6 @@ BoutMeshParameters createDisconnectedDoubleNull(const BoutMeshGridInfo& grid) {
 ////////////////////////////////////////////////////////////
 // Start of tests
 
-TEST(BoutMeshTest, NullOptionsCheck) {
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
-
-  EXPECT_NO_THROW(BoutMesh mesh(new FakeGridDataSource, nullptr));
-}
-
 // Not a great test as it's not specific to the thing we want to test,
 // and can also take a whopping ~300ms!
 TEST(BoutMeshTest, SingleCoreDecomposition) {
@@ -264,10 +257,9 @@ TEST(BoutMeshTest, SingleCoreDecomposition) {
   options["MXG"] = 1;
   options["MYG"] = 0;
 
-  bout::globals::mpi = new MpiWrapper();
-  BoutMesh mesh{new GridFromOptions{&options}, &options};
-  EXPECT_NO_THROW(mesh.load());
-  delete bout::globals::mpi;
+  auto mpi_wrapper = MpiWrapper();
+  bout::globals::mpi = &mpi_wrapper;
+  EXPECT_NO_THROW(((BoutMesh{new GridFromOptions{&options}, &options})));
   bout::globals::mpi = nullptr;
 }
 

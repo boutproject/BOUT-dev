@@ -49,7 +49,11 @@
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
 BoutMesh::BoutMesh(GridDataSource* s, Options* opt) : Mesh(s, opt) {
+  TRACE("BoutMesh::BoutMesh()");
+  output_progress << _("Loading mesh") << endl;
+
   OPTION(options, symmetricGlobalX, true);
+
   if (!options->isSet("symmetricGlobalY")) {
     std::string optionfile = Options::root()["optionfile"].withDefault("BOUT.inp");
     output_warn << "WARNING: The default of this option has changed in release 4.1.\n\
@@ -64,6 +68,197 @@ If you want the old setting, you have to specify mesh:symmetricGlobalY=false in 
   comm_outer = MPI_COMM_NULL;
 
   mpi = bout::globals::mpi;
+
+  // Use root level options
+  auto& options = Options::root();
+
+  //////////////
+  // Number of processors
+
+  MPI_Comm_size(BoutComm::get(), &NPES);
+  MPI_Comm_rank(BoutComm::get(), &MYPE);
+
+  //////////////
+  // Grid sizes
+
+  if (Mesh::get(nx, "nx") != 0) {
+    throw BoutException(_("Mesh must contain nx"));
+  }
+
+  if (Mesh::get(ny, "ny") != 0) {
+    throw BoutException(_("Mesh must contain ny"));
+  }
+
+  if (Mesh::get(nz, "nz") != 0) {
+    // No "nz" variable in the grid file. Instead read MZ from options
+
+    OPTION(options, MZ, 64);
+    OPTION(options, nz, MZ);
+    ASSERT0(nz == MZ);
+    if (!is_pow2(nz)) {
+      // Should be a power of 2 for efficient FFTs
+      output_warn.write(
+          _("WARNING: Number of toroidal points should be 2^n for efficient "
+            "FFT performance -- consider changing MZ ({:d}) if using FFTs\n"),
+          nz);
+    }
+  } else {
+    MZ = nz;
+    output_info.write(_("\tRead nz from input grid file\n"));
+  }
+
+  output_info << _("\tGrid size: ") << nx << " x " << ny << " x " << nz << endl;
+
+  // Get guard cell sizes
+  // Try to read from grid file first, then if not found
+  // get from options
+  if (Mesh::get(MXG, "MXG") != 0) {
+    // Error code returned
+    MXG = options["MXG"].doc("Number of guard cells on each side in X").withDefault(2);
+  }
+  ASSERT0(MXG >= 0);
+
+  if (Mesh::get(MYG, "MYG") != 0) {
+    MYG = options["MYG"].doc("Number of guard cells on each side in Y").withDefault(2);
+  }
+  ASSERT0(MYG >= 0);
+
+  // For now only support no z-guard cells
+  MZG = 0;
+  ASSERT0(MZG >= 0);
+
+  // For now don't parallelise z
+  NZPE = 1;
+
+  output_info << _("\tGuard cells (x,y,z): ") << MXG << ", " << MYG << ", " << MZG
+              << std::endl;
+
+  // separatrix location
+  Mesh::get(ixseps1, "ixseps1", nx);
+  Mesh::get(ixseps2, "ixseps2", nx);
+  Mesh::get(jyseps1_1, "jyseps1_1", -1);
+  Mesh::get(jyseps1_2, "jyseps1_2", ny / 2);
+  Mesh::get(jyseps2_1, "jyseps2_1", jyseps1_2);
+  Mesh::get(jyseps2_2, "jyseps2_2", ny - 1);
+  Mesh::get(ny_inner, "ny_inner", jyseps2_1);
+
+  // Check inputs
+  setYDecompositionIndices(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
+
+  if (options.isSet("NXPE") or options.isSet("NYPE")) {
+    chooseProcessorSplit(options);
+  } else {
+    findProcessorSplit();
+  }
+
+  // Get X and Y processor indices
+  PE_YIND = MYPE / NXPE;
+  PE_XIND = MYPE % NXPE;
+
+  // Set the other grid sizes from nx, ny, nz
+  setDerivedGridSizes();
+
+  /// Get mesh options
+  OPTION(options, IncIntShear, false);
+  periodicX = options["periodicX"].doc("Make grid periodic in X?").withDefault(false);
+
+  async_send = options["async_send"]
+                   .doc("Whether to use asyncronous MPI sends")
+                   .withDefault(false);
+
+  if (options.isSet("zperiod")) {
+    OPTION(options, zperiod, 1);
+    ZMIN = 0.0;
+    ZMAX = 1.0 / static_cast<BoutReal>(zperiod);
+  } else {
+    OPTION(options, ZMIN, 0.0);
+    OPTION(options, ZMAX, 1.0);
+
+    zperiod = ROUND(1.0 / (ZMAX - ZMIN));
+  }
+
+  ///////////////////// TOPOLOGY //////////////////////////
+  /// Call topology to set layout of grid
+  topology();
+
+  TwistShift = options["twistshift"]
+                   .doc("Apply a Twist-Shift boundary using ShiftAngle?")
+                   .withDefault(false);
+
+  // Try to read the shift angle from the grid file
+  // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
+  // NOTE: Always read ShiftAngle as Coordinates will use hasBranchCutLower and
+  //       hasBranchCutUpper to set zShift for ShiftedMetric
+
+  ShiftAngle.resize(LocalNx);
+
+  if (!source->get(this, ShiftAngle, "ShiftAngle", LocalNx, getGlobalXIndex(0))) {
+    ShiftAngle.clear();
+  }
+
+  if (TwistShift) {
+    output_info.write("Applying Twist-Shift condition. Interpolation: FFT\n");
+    if (ShiftAngle.empty()) {
+      throw BoutException("ERROR: Twist-shift angle 'ShiftAngle' not found. "
+                          "Required when TwistShift==true.");
+    }
+  }
+
+  //////////////////////////////////////////////////////
+  /// Communicator
+
+  createCommunicators();
+  output_debug << "Got communicators" << endl;
+
+  //////////////////////////////////////////////////////
+  // Boundary regions
+  createXBoundaries();
+  createYBoundaries();
+
+  auto possible_boundaries = getPossibleBoundaries();
+  if (possible_boundaries.empty()) {
+    output_info.write(_("No boundary regions; domain is periodic\n"));
+  } else {
+    output_info.write(_("Possible boundary regions are: "));
+    for (const auto& boundary : possible_boundaries) {
+      output_info.write("{}, ", boundary);
+    }
+  }
+
+  if (!boundary.empty()) {
+    output_info << _("Boundary regions in this processor: ");
+    for (const auto& bndry : boundary) {
+      output_info << bndry->label << ", ";
+    }
+    output_info << endl;
+  } else {
+    output_info << _("No boundary regions in this processor") << endl;
+  }
+
+  output_info << _("Constructing default regions") << endl;
+  createDefaultRegions();
+
+  // Add boundary regions
+  addBoundaryRegions();
+
+  // Set cached values
+  {
+    int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
+    int allbndry = 0;
+    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
+    has_boundary_lower_y = static_cast<bool>(allbndry);
+  }
+  {
+    int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
+    int allbndry = 0;
+    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
+    has_boundary_upper_y = static_cast<bool>(allbndry);
+  }
+
+  // Initialize default coordinates
+  getCoordinates();
+
+  output_info.write(_("\tdone\n"));
 }
 
 BoutMesh::~BoutMesh() {
@@ -428,205 +623,6 @@ void BoutMesh::setDerivedGridSizes() {
   MapGlobalZ = 0;
   MapLocalZ = MZG; // Omit boundary cells
   MapCountZ = MZSUB;
-}
-
-int BoutMesh::load() {
-  TRACE("BoutMesh::load()");
-
-  output_progress << _("Loading mesh") << endl;
-
-  // Use root level options
-  auto& options = Options::root();
-
-  //////////////
-  // Number of processors
-
-  MPI_Comm_size(BoutComm::get(), &NPES);
-  MPI_Comm_rank(BoutComm::get(), &MYPE);
-
-  //////////////
-  // Grid sizes
-
-  if (Mesh::get(nx, "nx") != 0) {
-    throw BoutException(_("Mesh must contain nx"));
-  }
-
-  if (Mesh::get(ny, "ny") != 0) {
-    throw BoutException(_("Mesh must contain ny"));
-  }
-
-  if (Mesh::get(nz, "nz") != 0) {
-    // No "nz" variable in the grid file. Instead read MZ from options
-
-    OPTION(options, MZ, 64);
-    OPTION(options, nz, MZ);
-    ASSERT0(nz == MZ);
-    if (!is_pow2(nz)) {
-      // Should be a power of 2 for efficient FFTs
-      output_warn.write(
-          _("WARNING: Number of toroidal points should be 2^n for efficient "
-            "FFT performance -- consider changing MZ ({:d}) if using FFTs\n"),
-          nz);
-    }
-  } else {
-    MZ = nz;
-    output_info.write(_("\tRead nz from input grid file\n"));
-  }
-
-  output_info << _("\tGrid size: ") << nx << " x " << ny << " x " << nz << endl;
-
-  // Get guard cell sizes
-  // Try to read from grid file first, then if not found
-  // get from options
-  if (Mesh::get(MXG, "MXG") != 0) {
-    // Error code returned
-    MXG = options["MXG"].doc("Number of guard cells on each side in X").withDefault(2);
-  }
-  ASSERT0(MXG >= 0);
-
-  if (Mesh::get(MYG, "MYG") != 0) {
-    MYG = options["MYG"].doc("Number of guard cells on each side in Y").withDefault(2);
-  }
-  ASSERT0(MYG >= 0);
-
-  // For now only support no z-guard cells
-  MZG = 0;
-  ASSERT0(MZG >= 0);
-
-  // For now don't parallelise z
-  NZPE = 1;
-
-  output_info << _("\tGuard cells (x,y,z): ") << MXG << ", " << MYG << ", " << MZG
-              << std::endl;
-
-  // separatrix location
-  Mesh::get(ixseps1, "ixseps1", nx);
-  Mesh::get(ixseps2, "ixseps2", nx);
-  Mesh::get(jyseps1_1, "jyseps1_1", -1);
-  Mesh::get(jyseps1_2, "jyseps1_2", ny / 2);
-  Mesh::get(jyseps2_1, "jyseps2_1", jyseps1_2);
-  Mesh::get(jyseps2_2, "jyseps2_2", ny - 1);
-  Mesh::get(ny_inner, "ny_inner", jyseps2_1);
-
-  // Check inputs
-  setYDecompositionIndices(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
-
-  if (options.isSet("NXPE") or options.isSet("NYPE")) {
-    chooseProcessorSplit(options);
-  } else {
-    findProcessorSplit();
-  }
-
-  // Get X and Y processor indices
-  PE_YIND = MYPE / NXPE;
-  PE_XIND = MYPE % NXPE;
-
-  // Set the other grid sizes from nx, ny, nz
-  setDerivedGridSizes();
-
-  /// Get mesh options
-  OPTION(options, IncIntShear, false);
-  periodicX = options["periodicX"].doc("Make grid periodic in X?").withDefault(false);
-
-  async_send = options["async_send"]
-                   .doc("Whether to use asyncronous MPI sends")
-                   .withDefault(false);
-
-  if (options.isSet("zperiod")) {
-    OPTION(options, zperiod, 1);
-    ZMIN = 0.0;
-    ZMAX = 1.0 / static_cast<BoutReal>(zperiod);
-  } else {
-    OPTION(options, ZMIN, 0.0);
-    OPTION(options, ZMAX, 1.0);
-
-    zperiod = ROUND(1.0 / (ZMAX - ZMIN));
-  }
-
-  ///////////////////// TOPOLOGY //////////////////////////
-  /// Call topology to set layout of grid
-  topology();
-
-  TwistShift = options["twistshift"]
-                   .doc("Apply a Twist-Shift boundary using ShiftAngle?")
-                   .withDefault(false);
-
-  // Try to read the shift angle from the grid file
-  // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
-  // NOTE: Always read ShiftAngle as Coordinates will use hasBranchCutLower and
-  //       hasBranchCutUpper to set zShift for ShiftedMetric
-
-  ShiftAngle.resize(LocalNx);
-
-  if (!source->get(this, ShiftAngle, "ShiftAngle", LocalNx, getGlobalXIndex(0))) {
-    ShiftAngle.clear();
-  }
-
-  if (TwistShift) {
-    output_info.write("Applying Twist-Shift condition. Interpolation: FFT\n");
-    if (ShiftAngle.empty()) {
-      throw BoutException("ERROR: Twist-shift angle 'ShiftAngle' not found. "
-                          "Required when TwistShift==true.");
-    }
-  }
-
-  //////////////////////////////////////////////////////
-  /// Communicator
-
-  createCommunicators();
-  output_debug << "Got communicators" << endl;
-
-  //////////////////////////////////////////////////////
-  // Boundary regions
-  createXBoundaries();
-  createYBoundaries();
-
-  auto possible_boundaries = getPossibleBoundaries();
-  if (possible_boundaries.empty()) {
-    output_info.write(_("No boundary regions; domain is periodic\n"));
-  } else {
-    output_info.write(_("Possible boundary regions are: "));
-    for (const auto& boundary : possible_boundaries) {
-      output_info.write("{}, ", boundary);
-    }
-  }
-
-  if (!boundary.empty()) {
-    output_info << _("Boundary regions in this processor: ");
-    for (const auto& bndry : boundary) {
-      output_info << bndry->label << ", ";
-    }
-    output_info << endl;
-  } else {
-    output_info << _("No boundary regions in this processor") << endl;
-  }
-
-  output_info << _("Constructing default regions") << endl;
-  createDefaultRegions();
-
-  // Add boundary regions
-  addBoundaryRegions();
-
-  // Set cached values
-  {
-    int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
-    int allbndry = 0;
-    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
-    has_boundary_lower_y = static_cast<bool>(allbndry);
-  }
-  {
-    int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
-    int allbndry = 0;
-    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
-    has_boundary_upper_y = static_cast<bool>(allbndry);
-  }
-
-  // Initialize default coordinates
-  getCoordinates();
-
-  output_info.write(_("\tdone\n"));
-
-  return 0;
 }
 
 void BoutMesh::createCommunicators() {
@@ -1542,7 +1538,7 @@ bool BoutMesh::lastX() const { return PE_XIND == NXPE - 1; }
 int BoutMesh::sendXOut(BoutReal* buffer, int size, int tag) {
   Timer timer("comms");
 
-  int proc {-1};
+  int proc{-1};
   if (PE_XIND == NXPE - 1) {
     if (periodicX) {
       // Wrap around to first processor in X
@@ -1554,8 +1550,7 @@ int BoutMesh::sendXOut(BoutReal* buffer, int size, int tag) {
     proc = PROC_NUM(PE_XIND + 1, PE_YIND);
   }
 
-  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
-                BoutComm::get());
+  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get());
 
   return 0;
 }
@@ -1563,7 +1558,7 @@ int BoutMesh::sendXOut(BoutReal* buffer, int size, int tag) {
 int BoutMesh::sendXIn(BoutReal* buffer, int size, int tag) {
   Timer timer("comms");
 
-  int proc {-1};
+  int proc{-1};
   if (PE_XIND == 0) {
     if (periodicX) {
       // Wrap around to last processor in X
@@ -1575,8 +1570,7 @@ int BoutMesh::sendXIn(BoutReal* buffer, int size, int tag) {
     proc = PROC_NUM(PE_XIND - 1, PE_YIND);
   }
 
-  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
-                BoutComm::get());
+  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get());
 
   return 0;
 }
@@ -1584,7 +1578,7 @@ int BoutMesh::sendXIn(BoutReal* buffer, int size, int tag) {
 comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
   Timer timer("comms");
 
-  int proc {-1};
+  int proc{-1};
   if (PE_XIND == NXPE - 1) {
     if (periodicX) {
       // Wrap around to first processor in X
@@ -1599,8 +1593,8 @@ comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
   // Get a communications handle. Not fussy about size of arrays
   CommHandle* ch = get_handle(0, 0);
 
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
-                 BoutComm::get(), ch->request);
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get(),
+                 ch->request);
 
   ch->in_progress = true;
 
@@ -1610,7 +1604,7 @@ comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
 comm_handle BoutMesh::irecvXIn(BoutReal* buffer, int size, int tag) {
   Timer timer("comms");
 
-  int proc {-1};
+  int proc{-1};
   if (PE_XIND == 0) {
     if (periodicX) {
       // Wrap around to last processor in X
@@ -1625,8 +1619,8 @@ comm_handle BoutMesh::irecvXIn(BoutReal* buffer, int size, int tag) {
   // Get a communications handle. Not fussy about size of arrays
   CommHandle* ch = get_handle(0, 0);
 
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
-                 BoutComm::get(), ch->request);
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get(),
+                 ch->request);
 
   ch->in_progress = true;
 

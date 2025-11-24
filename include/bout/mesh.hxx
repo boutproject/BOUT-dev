@@ -121,13 +121,6 @@ public:
   /// @param[in] opt  Input options. Default is "mesh" section
   static Mesh* create(Options* opt = nullptr);
 
-  /// Loads the mesh values
-  ///
-  /// Currently need to create and load mesh in separate calls
-  /// because creating Fields uses the global "mesh" pointer
-  /// which isn't created until Mesh is constructed
-  virtual int load() { return 1; }
-
   /// Add output variables to \p output_options
   /// These are used for post-processing
   virtual void outputVars([[maybe_unused]] Options& output_options) {}

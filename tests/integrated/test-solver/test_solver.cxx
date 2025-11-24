@@ -76,7 +76,6 @@ int main(int argc, char** argv) {
   bout::globals::mpi = new MpiWrapper();
 
   bout::globals::mesh = Mesh::create();
-  bout::globals::mesh->load();
 
   constexpr BoutReal end = PI / 2.;
   constexpr int NOUT = 100;
