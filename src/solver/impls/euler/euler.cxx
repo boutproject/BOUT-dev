@@ -1,10 +1,10 @@
 
 #include "euler.hxx"
 
+#include "bout/field.hxx"
 #include "bout/version.hxx"
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
-#include "bout/field.hxx"
 #include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
