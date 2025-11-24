@@ -540,7 +540,7 @@ private:
   // non-changing copy that is used for the variable names in the dump files
   std::string selfname;
   template <typename T>
-  inline void track(const T& change, const std::string& operation) {
+  void track(const T& change, const std::string& operation) {
     if (tracking_state != 0) {
       _track(change, operation);
     }

@@ -875,7 +875,7 @@ void Field3D::setRegion(const std::string& region_name) {
 
 Field3D& Field3D::enableTracking(const std::string& name,
                                  std::weak_ptr<Options> _tracking) {
-  tracking = _tracking;
+  tracking = std::move(_tracking);
   tracking_state = 1;
   selfname = name;
   return *this;

@@ -364,7 +364,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
   if (flag != SUCCESS) {
     output_error.write("ERROR CVODE step failed, flag = {:d}\n", flag);
     if (debug_on_failure) {
-      CVodeMemRec* cv_mem = (CVodeMem)cvode_mem;
+      CVodeMemRec* cv_mem = static_cast<CVodeMem>(cvode_mem);
       if (!(f2d.empty() and v2d.empty() and v3d.empty())) {
         output_warn.write("debug_on_failure is currently only supported for Field3Ds");
         return -1.0;
