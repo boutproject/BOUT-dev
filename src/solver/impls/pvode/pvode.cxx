@@ -31,6 +31,7 @@
 
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/field.hxx>
 #include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
@@ -42,7 +43,11 @@
 #include <pvode/iterativ.h> // contains the enum for types of preconditioning
 #include <pvode/pvbbdpre.h> // band preconditioner function prototypes
 
+#include "fmt/format.h"
+
 #include <string>
+#include <memory>
+#include <bits/basic_string.h>
 
 using namespace pvode;
 

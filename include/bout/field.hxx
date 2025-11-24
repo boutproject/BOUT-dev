@@ -36,6 +36,7 @@ class Field;
 #include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/field_data.hxx"
 #include "bout/msg_stack.hxx"
 #include "bout/region.hxx"

@@ -33,11 +33,15 @@ class Field3D;
 #include "bout/field2d.hxx"
 #include "bout/fieldperp.hxx"
 #include "bout/region.hxx"
+#include "bout/traits.hxx"
 
+#include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 class Mesh;
+class Options;
 
 /// Class for 3D X-Y-Z scalar fields
 /*!

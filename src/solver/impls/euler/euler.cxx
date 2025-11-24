@@ -4,11 +4,17 @@
 #include "bout/version.hxx"
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
+#include "bout/field.hxx"
+#include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
+#include <bout/options.hxx>
 #include <bout/utils.hxx>
 
+#include <fmt/format.h>
+
 #include <cmath>
+#include <memory>
 
 #include <bout/output.hxx>
 

@@ -7,6 +7,7 @@
 #include <bout/assert.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
+#include <bout/field.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>

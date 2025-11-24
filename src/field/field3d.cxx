@@ -31,6 +31,8 @@
 #include <bout/globals.hxx>
 
 #include <cmath>
+#include <memory>
+#include <utility>
 
 #include "bout/parallel_boundary_op.hxx"
 #include "bout/parallel_boundary_region.hxx"
@@ -46,6 +48,8 @@
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/utils.hxx>
+
+#include "fmt/format.h"
 
 /// Constructor
 Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
