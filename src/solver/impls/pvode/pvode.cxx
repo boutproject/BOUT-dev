@@ -32,6 +32,7 @@
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/field.hxx>
+#include <bout/field3d.hxx>
 #include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
@@ -39,6 +40,7 @@
 #include <bout/unused.hxx>
 #include <bout/version.hxx>
 
+#include <pvode/cvode.h>
 #include <pvode/cvspgmr.h>  // use CVSPGMR linear solver each internal step
 #include <pvode/iterativ.h> // contains the enum for types of preconditioning
 #include <pvode/pvbbdpre.h> // band preconditioner function prototypes
@@ -47,6 +49,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 #include <bits/basic_string.h>
 
 using namespace pvode;
