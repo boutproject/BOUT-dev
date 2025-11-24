@@ -32,7 +32,7 @@ XZBilinear::XZBilinear(int y_offset, Mesh* mesh)
       w3(localmesh) {
 
   if (localmesh->getNXPE() > 1) {
-    throw BoutException("Do not support MPI splitting in X");
+    throw BoutException("XZBilinear interpolation does not support MPI splitting in X");
   }
 
   // Index arrays contain guard cells in order to get subscripts right
