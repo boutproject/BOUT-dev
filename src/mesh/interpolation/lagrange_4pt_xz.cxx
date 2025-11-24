@@ -30,7 +30,8 @@ XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh* mesh)
     : XZInterpolation(y_offset, mesh), t_x(localmesh), t_z(localmesh) {
 
   if (localmesh->getNXPE() > 1) {
-    throw BoutException("XZLagrange4pt interpolation does not support MPI splitting in X");
+    throw BoutException(
+        "XZLagrange4pt interpolation does not support MPI splitting in X");
   }
 
   // Index arrays contain guard cells in order to get subscripts right
