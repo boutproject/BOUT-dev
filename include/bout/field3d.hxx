@@ -2,7 +2,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -355,7 +355,7 @@ public:
    * Direct access to the underlying data array
    *
    * If CHECK > 2 then bounds checking is performed
-   * 
+   *
    * If CHECK <= 2 then no checks are performed, to
    * allow inlining and optimisation of inner loops
    */
@@ -473,19 +473,19 @@ public:
 
   ///@}
 
-#define FIELD3D_OP_EQUALS(OP_SYM)                                \
-  template <typename R>                                          \
-  std::enable_if_t<is_expr_field3d_v<R> || is_expr_field2d_v<R>  \
-                       || is_expr_constant_v<R>,                 \
-                   Field3D&> operator OP_SYM##=(const R & rhs) { \
-    if (data.unique()) {                                         \
-      clearParallelSlices();                                     \
-      auto Expr = (*this)OP_SYM rhs;                             \
-      Expr.evaluate(&data[0]);                                   \
-    } else {                                                     \
-      (*this) = (*this)OP_SYM rhs;                               \
-    }                                                            \
-    return *this;                                                \
+#define FIELD3D_OP_EQUALS(OP_SYM)                                                      \
+  template <typename R>                                                                \
+  std::enable_if_t<                                                                    \
+      is_expr_field3d_v<R> || is_expr_field2d_v<R> || is_expr_constant_v<R>, Field3D&> \
+  operator OP_SYM## = (const R& rhs) {                                                 \
+    if (data.unique()) {                                                               \
+      clearParallelSlices();                                                           \
+      auto expr = (*this)OP_SYM rhs;                                                   \
+      expr.evaluate(&data[0]);                                                         \
+    } else {                                                                           \
+      (*this) = (*this)OP_SYM rhs;                                                     \
+    }                                                                                  \
+    return *this;                                                                      \
   }
 
   FIELD3D_OP_EQUALS(+)
@@ -565,8 +565,8 @@ FieldPerp operator/(const Field3D& lhs, const FieldPerp& rhs);
 #define FIELD3D_FIELD3D_FIELD3D_OP(OP_SYM, OP_TYPE)                                    \
   template <typename L, typename R,                                                    \
             typename = std::enable_if_t<is_expr_field3d_v<L> && is_expr_field3d_v<R>>> \
-  BinaryExpr<Field3D, L, R, bout::op::OP_TYPE> operator OP_SYM(const L & lhs,          \
-                                                               const R & rhs) {        \
+  BinaryExpr<Field3D, L, R, bout::op::OP_TYPE> operator OP_SYM(const L& lhs,           \
+                                                               const R& rhs) {         \
     auto regionID =                                                                    \
         lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID());          \
     return BinaryExpr<Field3D, L, R, bout::op::OP_TYPE>{                               \
@@ -590,7 +590,7 @@ FIELD3D_FIELD3D_FIELD3D_OP(/, Div)
   template <typename L, typename R>                              \
   std::enable_if_t<is_expr_field3d_v<L> && is_expr_field2d_v<R>, \
                    BinaryExpr<Field3D, L, R, bout::op::OP_TYPE>> \
-  operator OP_SYM(const L & lhs, const R & rhs) {                \
+  operator OP_SYM(const L& lhs, const R& rhs) {                  \
     auto regionID = lhs.getRegionID();                           \
     int mesh_nz = lhs.getMesh()->LocalNz;                        \
     return BinaryExpr<Field3D, L, R, bout::op::OP_TYPE>{         \
@@ -613,7 +613,7 @@ FIELD3D_FIELD3D_FIELD2D_OP(/, Div)
   template <typename L, typename R>                                        \
   std::enable_if_t<is_expr_field3d_v<L> && is_expr_constant_v<R>,          \
                    BinaryExpr<Field3D, L, Constant<R>, bout::op::OP_TYPE>> \
-  operator OP_SYM(const L & lhs, R rhs) {                                  \
+  operator OP_SYM(const L& lhs, R rhs) {                                   \
     auto regionID = lhs.getRegionID();                                     \
     return BinaryExpr<Field3D, L, Constant<R>, bout::op::OP_TYPE>{         \
         static_cast<typename L::View>(lhs),                                \
@@ -635,7 +635,7 @@ FIELD3D_FIELD3D_BOUTREAL_OP(/, Div)
   template <typename L, typename R>                                        \
   std::enable_if_t<is_expr_constant_v<L> && is_expr_field3d_v<R>,          \
                    BinaryExpr<Field3D, Constant<L>, R, bout::op::OP_TYPE>> \
-  operator OP_SYM(const L & lhs, const R & rhs) {                          \
+  operator OP_SYM(const L& lhs, const R& rhs) {                            \
     auto regionID = rhs.getRegionID();                                     \
     return BinaryExpr<Field3D, Constant<L>, R, bout::op::OP_TYPE>{         \
         static_cast<typename Constant<L>::View>(lhs),                      \

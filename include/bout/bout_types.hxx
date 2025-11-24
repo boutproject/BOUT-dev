@@ -2,7 +2,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -145,8 +145,9 @@ struct Constant {
   T val;
   struct View {
     T v;
-   View(T v) : v(v) {}
-   __host__ __device__ T operator()(int) const { return v; }
+    cudaStream_t stream = 0;
+    View(T v) : v(v) {}
+    __host__ __device__ T operator()(int) const { return v; }
   };
   operator View() const { return {val}; }
 };

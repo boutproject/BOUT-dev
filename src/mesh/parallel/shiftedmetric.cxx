@@ -496,31 +496,38 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
   if (nblocks != region.getBlocks().size()) {
     throw BoutException("Number of blocks changed in ShiftedMetric::calcParallelSlices");
   }
-  static Array<const BoutReal*> blocks_in(nblocks);
-  static Array<BoutReal*> blocks_out(nblocks);
-  static Array<const double2*> phs_in(nblocks);
+
+  static struct StreamRAII {
+    cudaStream_t stream = 0;
+    StreamRAII() {
+      if (cudaStreamCreate(&stream) != cudaSuccess) {
+        throw BoutException("Failed to create CUDA stream");
+      }
+    }
+
+    cudaStream_t get() const { return stream; }
+
+    void synchronize() const { cudaStreamSynchronize(stream); }
+
+    ~StreamRAII() { cudaStreamDestroy(stream); }
+  } stream;
+
+  // Vector of Arrays for each phase.
+  std::vector<Array<const BoutReal*>> blocks_in_phase;
+  std::vector<Array<BoutReal*>> blocks_out_phase;
+  std::vector<Array<const double2*>> phs_in_phase;
 
   for (const auto& phase : parallel_slice_phases) {
     auto& f_slice = f.ynext(phase.y_offset);
     f_slice.allocate();
 
-    static struct StreamRAII {
-      cudaStream_t stream = 0;
-      StreamRAII() {
-        if (cudaStreamCreate(&stream) != cudaSuccess) {
-          throw BoutException("Failed to create CUDA stream");
-        }
-      }
-
-      cudaStream_t get() const { return stream; }
-
-      void synchronize() const { cudaStreamSynchronize(stream); }
-
-      ~StreamRAII() { cudaStreamDestroy(stream); }
-    } stream;
     size_t block_idx = 0;
     int nbatches =
         region.getBlocks().cbegin()->second.ind - region.getBlocks().cbegin()->first.ind;
+
+    Array<const BoutReal*>& blocks_in = blocks_in_phase.emplace_back(nblocks);
+    Array<BoutReal*>& blocks_out = blocks_out_phase.emplace_back(nblocks);
+    Array<const double2*>& phs_in = phs_in_phase.emplace_back(nblocks);
 
     for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();
          block < end; ++block) {
@@ -544,9 +551,10 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
 
     shiftZ_block_fft(mesh.LocalNz, &blocks_in[0], &blocks_out[0], &phs_in[0], nblocks,
                      nbatches, stream.get());
-
-    stream.synchronize();
   }
+
+  // Synchronize to ensure all shifts are complete.
+  stream.synchronize();
 #else
   for (const auto& phase : parallel_slice_phases) {
     auto& f_slice = f.ynext(phase.y_offset);

@@ -130,6 +130,40 @@ __global__ void __launch_bounds__(THREADS) evaluatorExpr(BoutReal* out, const Ex
 
 inline std::unordered_map<void*, Array<int>> regionIndicesCache;
 
+struct StreamsRAII {
+  std::vector<cudaStream_t> streams;
+
+  cudaStream_t get() {
+    cudaStream_t stream = 0;
+
+    if (streams.empty()) {
+      if (cudaStreamCreate(&stream) != cudaSuccess) {
+        throw BoutException("Failed to create CUDA stream");
+      }
+    } else {
+      stream = streams.back();
+      streams.pop_back();
+    }
+
+    return stream;
+  }
+
+  void put(cudaStream_t stream) { streams.push_back(stream); }
+
+  ~StreamsRAII() {
+    for (auto& stream : streams) {
+      cudaStreamDestroy(stream);
+    }
+  }
+
+  StreamsRAII() = default;
+  StreamsRAII(const StreamsRAII&) = delete;
+  StreamsRAII(StreamsRAII&&) = delete;
+  StreamsRAII& operator=(const StreamsRAII&) = delete;
+  StreamsRAII& operator=(StreamsRAII&&) = delete;
+};
+inline struct StreamsRAII streams;
+
 template <typename ResT, typename L, typename R, typename Func>
 struct BinaryExpr {
   typename L::View lhs;
@@ -220,16 +254,23 @@ struct BinaryExpr {
   operator View() const { return View{lhs, rhs, &indices[0], indices.size(), f}; }
 
   void evaluate(BoutReal* data) const {
+#if 1
+    cudaStream_t stream = streams.get();
     int blocks = (size() + THREADS - 1) / THREADS;
-    evaluatorExpr<<<blocks, THREADS>>>(&data[0], static_cast<View>(*this));
-    cudaDeviceSynchronize();
+    evaluatorExpr<<<blocks, THREADS, 0, stream>>>(&data[0], static_cast<View>(*this));
+    cudaStreamSynchronize(stream);
+    streams.put(stream);
+#endif
+
+#if 0
     // OpenMP impl.
-    //int e = size();
+    int e = size();
     //#pragma omp parallel for
-    //for (int i = 0; i < e; ++i) {
-    //  int idx = regionIdx(i);
-    //  data[idx] = operator()(idx); // single‐pass fusion
-    //}
+    for (int i = 0; i < e; ++i) {
+      int idx = regionIdx(i);
+      data[idx] = operator()(idx); // single‐pass fusion
+    }
+#endif
   }
 
   Mesh* getMesh() const { return mesh; }
@@ -238,4 +279,4 @@ struct BinaryExpr {
   std::optional<size_t> getRegionID() const { return regionID; };
 };
 
-#endif // BOUT_EXPRESSION_HX
+#endif // BOUT_FIELDSOPS_HXX

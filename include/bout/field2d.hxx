@@ -273,10 +273,10 @@ public:
 #define FIELD2D_OP_EQUALS(OP_SYM)                                           \
   template <typename R>                                                     \
   std::enable_if_t<is_expr_field2d_v<R> || is_expr_constant_v<R>, Field2D&> \
-  operator OP_SYM##=(R rhs) {                                               \
+  operator OP_SYM## = (R rhs) {                                             \
     if (data.unique()) {                                                    \
-      auto BE = (*this)OP_SYM rhs;                                          \
-      BE.evaluate(&data[0]);                                                \
+      auto expr = (*this)OP_SYM rhs;                                        \
+      expr.evaluate(&data[0]);                                              \
     } else {                                                                \
       (*this) = (*this)OP_SYM rhs;                                          \
     }                                                                       \
