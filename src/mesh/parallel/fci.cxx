@@ -122,7 +122,7 @@ void load_parallel_metric_components([[maybe_unused]] Coordinates* coords,
   LOAD_PAR(g13, false);
   LOAD_PAR(g23, false);
 
-  // LOAD_PAR(Bxy, false);  // Not yet written to mesh file
+  LOAD_PAR(Bxy, false);  // Not yet written to mesh file
 
   LOAD_PAR(g_11, false);
   LOAD_PAR(g_22, false);
