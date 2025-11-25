@@ -153,17 +153,17 @@ void load_parallel_metric_components([[maybe_unused]] Coordinates* coords,
 #undef LOAD_PAR
 
   // fixup for optimizing flux conservation
-  BOUT_FOR(i, J.getRegion("RGN_NOBNDRY")) {
-    is = i.yp(offset);
+  BOUT_FOR(i, coords->J.getRegion("RGN_NOBNDRY")) {
+    const auto is = i.yp(offset);
     const BoutReal fac = coords->Bxy[i] * sqrt(coords->g_11[i] * coords->g_33[i] - SQ(coords->g_13[i])) /
-      (coords->Bxy->ynext(offset)[is] * sqrt(coords->g_11->ynext(offset)[is] * coords->g_33->ynext(offset)[is] - SQ(coords->g_13->ynext(offset)[is])));
-    coords->g_11->ynext(offset)[is] *= fac;
-    coords->g_33->ynext(offset)[is] *= fac;
-    coords->g_13->ynext(offset)[is] *= fac;
-    coords->g11->ynext(offset)[is] /= fac;
-    coords->g33->ynext(offset)[is] /= fac;
-    coords->g13->ynext(offset)[is] /= fac;
-    coords->J->ynext(offset)[is] *= fac;
+      (coords->Bxy.ynext(offset)[is] * sqrt(coords->g_11.ynext(offset)[is] * coords->g_33.ynext(offset)[is] - SQ(coords->g_13.ynext(offset)[is])));
+    coords->g_11.ynext(offset)[is] *= fac;
+    coords->g_33.ynext(offset)[is] *= fac;
+    coords->g_13.ynext(offset)[is] *= fac;
+    coords->g11.ynext(offset)[is] /= fac;
+    coords->g33.ynext(offset)[is] /= fac;
+    coords->g13.ynext(offset)[is] /= fac;
+    coords->J.ynext(offset)[is] *= fac;
   }
 
 #endif
