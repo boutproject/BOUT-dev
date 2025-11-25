@@ -115,6 +115,7 @@ set(BOUT_SOURCES
   ./include/bout/field_factory.hxx
   ./include/bout/fieldgroup.hxx
   ./include/bout/fieldperp.hxx
+  ./include/bout/facefield3d.hxx
   ./include/bout/fv_ops.hxx
   ./include/bout/generic_factory.hxx
   ./include/bout/globalfield.hxx
@@ -139,6 +140,7 @@ set(BOUT_SOURCES
   ./include/bout/macro_for_each.hxx
   ./include/bout/mask.hxx
   ./include/bout/mesh.hxx
+  ./include/bout/mesh_facefield_comm.hxx
   ./include/bout/monitor.hxx
   ./include/bout/mpi_wrapper.hxx
   ./include/bout/msg_stack.hxx
@@ -199,6 +201,7 @@ set(BOUT_SOURCES
   ./src/field/fieldgenerators.hxx
   ./src/field/fieldgroup.cxx
   ./src/field/fieldperp.cxx
+  ./src/field/facefield3d.cxx
   ./src/field/generated_fieldops.cxx
   ./src/field/globalfield.cxx
   ./src/field/initialprofiles.cxx
@@ -258,6 +261,7 @@ set(BOUT_SOURCES
   ./src/mesh/boundary_standard.cxx
   ./src/mesh/coordinates.cxx
   ./src/mesh/coordinates_accessor.cxx
+  ./src/mesh/conservative_flux_div.cxx
   ./src/mesh/data/gridfromfile.cxx
   ./src/mesh/data/gridfromoptions.cxx
   ./src/mesh/difops.cxx
@@ -274,6 +278,7 @@ set(BOUT_SOURCES
   ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
   ./src/mesh/invert3x3.hxx
   ./src/mesh/mesh.cxx
+  ./src/mesh/mesh_facefield_comm.cxx
   ./src/mesh/parallel/fci.cxx
   ./src/mesh/parallel/fci.hxx
   ./src/mesh/parallel/identity.cxx
