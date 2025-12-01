@@ -14,7 +14,9 @@ using bout::globals::mesh;
 class CoordinatesTest : public FakeMeshFixture {
 public:
   using FieldMetric = Coordinates::FieldMetric;
-  CoordinatesTest() : FakeMeshFixture() {}
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  WithQuietOutput progress{output_progress};
 };
 
 constexpr BoutReal default_dz{TWOPI / CoordinatesTest::nz};
@@ -133,9 +135,7 @@ TEST_F(CoordinatesTest, CalcContravariant) {
                      FieldMetric{0.0}}; // IntShiftTorsion
   // No call to Coordinates::geometry() needed here
 
-  output_info.disable();
   coords.calcCovariant();
-  output_info.enable();
 
   EXPECT_TRUE(IsFieldEqual(coords.g_11, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.g_22, 1.0));
@@ -168,9 +168,7 @@ TEST_F(CoordinatesTest, CalcCovariant) {
                      FieldMetric{0.0}}; // IntShiftTorsion
   // No call to Coordinates::geometry() needed here
 
-  output_info.disable();
   coords.calcContravariant();
-  output_info.enable();
 
   EXPECT_TRUE(IsFieldEqual(coords.g11, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.g22, 1.0));
@@ -182,11 +180,7 @@ TEST_F(CoordinatesTest, CalcCovariant) {
 // #endif
 
 TEST_F(CoordinatesTest, DefaultConstructor) {
-  output_info.disable();
-  output_warn.disable();
   Coordinates coords(mesh);
-  output_warn.enable();
-  output_info.enable();
 
   EXPECT_TRUE(IsFieldEqual(coords.dx, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.dy, 1.0));
@@ -208,11 +202,7 @@ TEST_F(CoordinatesTest, ConstructWithMeshSpacing) {
   static_cast<FakeMesh*>(bout::globals::mesh)
       ->setGridDataSource(new FakeGridDataSource({{"dx", 2.0}, {"dy", 3.2}, {"dz", 42}}));
 
-  output_info.disable();
-  output_warn.disable();
   Coordinates coords(mesh);
-  output_warn.enable();
-  output_info.enable();
 
   EXPECT_TRUE(IsFieldEqual(coords.dx, 2.0));
   EXPECT_TRUE(IsFieldEqual(coords.dy, 3.2));
@@ -233,12 +223,8 @@ TEST_F(CoordinatesTest, SmallMeshSpacing) {
   static_cast<FakeMesh*>(bout::globals::mesh)
       ->setGridDataSource(new FakeGridDataSource({{"dx", 1e-9}}));
 
-  output_info.disable();
-  output_warn.disable();
   Coordinates coords(mesh);
   EXPECT_THROW(coords.geometry(), BoutException);
-  output_warn.enable();
-  output_info.enable();
 }
 
 TEST_F(CoordinatesTest, ConstructWithDiagonalContravariantMetric) {
@@ -247,11 +233,7 @@ TEST_F(CoordinatesTest, ConstructWithDiagonalContravariantMetric) {
       ->setGridDataSource(
           new FakeGridDataSource({{"g11", 2.0}, {"g22", 3.2}, {"g33", 42}}));
 
-  output_info.disable();
-  output_warn.disable();
   Coordinates coords(mesh);
-  output_warn.enable();
-  output_info.enable();
 
   // Didn't specify grid spacing, so default to 1
   EXPECT_TRUE(IsFieldEqual(coords.dx, 1.0));
@@ -280,20 +262,12 @@ TEST_F(CoordinatesTest, NegativeJacobian) {
   static_cast<FakeMesh*>(bout::globals::mesh)
       ->setGridDataSource(new FakeGridDataSource({{"J", -1.0}}));
 
-  output_info.disable();
-  output_warn.disable();
   EXPECT_THROW(Coordinates coords(mesh), BoutException);
-  output_warn.enable();
-  output_info.enable();
 }
 
 TEST_F(CoordinatesTest, NegativeB) {
   static_cast<FakeMesh*>(bout::globals::mesh)
       ->setGridDataSource(new FakeGridDataSource({{"Bxy", -1.0}}));
 
-  output_info.disable();
-  output_warn.disable();
   EXPECT_THROW(Coordinates coords(mesh), BoutException);
-  output_warn.enable();
-  output_info.enable();
 }
