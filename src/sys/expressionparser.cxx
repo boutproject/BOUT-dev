@@ -37,12 +37,6 @@ using namespace std::string_literals;
 
 using bout::generator::Context;
 
-// Note: Here rather than in header to avoid many deprecated warnings
-// Remove in future and make this function pure virtual
-double FieldGenerator::generate(const Context& ctx) {
-  return generate(ctx.x(), ctx.y(), ctx.z(), ctx.t());
-}
-
 /////////////////////////////////////////////
 namespace { // These classes only visible in this file
 
