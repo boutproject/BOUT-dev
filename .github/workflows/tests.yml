@@ -168,7 +168,7 @@ jobs:
                  libparpack2-dev
                  libhypre-dev
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: true
 
@@ -205,7 +205,7 @@ jobs:
     timeout-minutes: 120
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - name: Build Fedora
@@ -219,7 +219,7 @@ jobs:
     container: ghcr.io/ggeorgakoudis/boutdev-cuda:latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - name: Build minimal CUDA 12.2 @ GCC9.4.0 @ Ubuntu 20.04
