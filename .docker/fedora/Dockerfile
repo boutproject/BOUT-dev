@@ -36,7 +36,7 @@ RUN cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/usr/local/ \
     rm -rf build
 
 # Add unversioned path for python
-RUN sudo ln -s /usr/local/lib/python3.* /usr/local/lib/python3.x/
+RUN sudo ln -s /usr/local/lib/python3.* /usr/local/lib/python3.x
 
 ENV PATH=/usr/local/bin:$PATH \
     LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH \
