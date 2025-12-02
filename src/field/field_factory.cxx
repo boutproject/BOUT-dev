@@ -24,8 +24,12 @@
 
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/fieldperp.hxx>
 #include <bout/globals.hxx>
 #include <bout/output.hxx>
+#include <bout/traits.hxx>
 #include <bout/utils.hxx>
 
 #include "fieldgenerators.hxx"
@@ -94,6 +98,35 @@ auto trimsplit(const std::string& str) -> std::vector<std::string> {
                  [](const std::string& element) { return trim(element); });
   return result;
 }
+
+// Read variables from the grid file and make them available in expressions
+template <class T>
+auto read_grid_variables(FieldFactory& factory, Mesh& mesh, Options& options,
+                         const std::string& option_name) {
+  const auto field_variables =
+      options["input"][option_name]
+          .doc("Variables to read from the grid file and make available in expressions. "
+               "Comma-separated list of variable names")
+          .withDefault<std::string>("");
+
+  if (not field_variables.empty()) {
+    if (not mesh.isDataSourceGridFile()) {
+      throw BoutException("A grid file ('mesh:file') is required for `input:{}`",
+                          option_name);
+    }
+
+    for (const auto& name : trimsplit(field_variables)) {
+      if (not mesh.sourceHasVar(name)) {
+        const auto filename = Options::root()["mesh"]["file"].as<std::string>();
+        throw BoutException("Grid file '{}' missing `{}` specified in `input:{}`",
+                            filename, name, option_name);
+      }
+      T var;
+      mesh.get(var, name);
+      factory.addGenerator(name, std::make_shared<GridVariable<T>>(var, name));
+    }
+  }
+}
 } // namespace
 
 //////////////////////////////////////////////////////////
@@ -134,30 +167,6 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
     throw ParseException(
         "Invalid integer given as input:max_recursion_depth: '{:s}'",
         nonconst_options["input"]["max_recursion_depth"].as<std::string>());
-  }
-
-  const auto field_variables =
-      nonconst_options["input"]["field_variables"]
-          .doc("Variables to read from the grid file and make available in expressions. "
-               "Comma-separated list of variable names")
-          .withDefault<std::string>("");
-
-  if (not field_variables.empty()) {
-    if (not localmesh->isDataSourceGridFile()) {
-      throw BoutException("A grid file ('mesh:file') is required for `field_variables`");
-    }
-
-    for (const auto& name : trimsplit(field_variables)) {
-      if (not localmesh->sourceHasVar(name)) {
-        const auto filename = Options::root()["mesh"]["file"].as<std::string>();
-        throw BoutException(
-            "Grid file '{}' missing `{}` specified in `input:field_variables`", filename,
-            name);
-      }
-      Field3D var;
-      localmesh->get(var, name);
-      addGenerator(name, std::make_shared<Field3DVariable>(var, name));
-    }
   }
 
   // Useful values
@@ -214,6 +223,10 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
 
   // Where switch function
   addGenerator("where", std::make_shared<FieldWhere>(nullptr, nullptr, nullptr));
+
+  // Variables from the grid file
+  read_grid_variables<Field3D>(*this, *localmesh, nonconst_options, "read_Field3Ds");
+  read_grid_variables<Field2D>(*this, *localmesh, nonconst_options, "read_Field2Ds");
 }
 
 Field2D FieldFactory::create2D(const std::string& value, const Options* opt,

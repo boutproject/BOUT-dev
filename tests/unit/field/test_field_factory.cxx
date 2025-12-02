@@ -996,7 +996,7 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField3D) {
 
   {
     Options options{{"mesh", {{"file", filename.string()}}},
-                    {"input", {{"field_variables", "rho, theta"}}}};
+                    {"input", {{"read_Field3Ds", "rho, theta"}}}};
 
     dynamic_cast<FakeMesh*>(mesh)->setGridDataSource(new GridFile{filename});
     auto factory = FieldFactory{mesh, &options};
@@ -1004,5 +1004,63 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField3D) {
     const auto output = factory.create3D("rho * cos(theta)");
     const auto x = factory.create3D("x");
     EXPECT_TRUE(IsFieldEqual(output, x));
+  }
+}
+
+TEST_F(FieldFactoryFieldVariableTest, CreateField2D) {
+  bout::testing::TempFile filename;
+
+  {
+    // Write some fields to a grid file
+    FieldFactory factory{mesh};
+    const auto rho = factory.create2D("sqrt(x^2 + y^2)");
+    const auto theta = factory.create2D("atan(y, x)");
+    Options grid{{"rho", rho},
+                 {"theta", theta},
+                 {"nx", mesh->LocalNx},
+                 {"ny", mesh->LocalNy},
+                 {"nz", mesh->LocalNz}};
+    bout::OptionsIO::create(filename)->write(grid);
+  }
+
+  {
+    Options options{{"mesh", {{"file", filename.string()}}},
+                    {"input", {{"read_Field2Ds", "rho, theta"}}}};
+
+    dynamic_cast<FakeMesh*>(mesh)->setGridDataSource(new GridFile{filename});
+    auto factory = FieldFactory{mesh, &options};
+
+    const auto output = factory.create2D("rho * cos(theta)");
+    const auto x = factory.create2D("x");
+    EXPECT_TRUE(IsFieldEqual(output, x));
+  }
+}
+
+TEST_F(FieldFactoryFieldVariableTest, NoMeshFile) {
+  Options options{{"input", {{"read_Field2Ds", "rho, theta"}}}};
+
+  EXPECT_THROW((FieldFactory(mesh, &options)), BoutException);
+}
+
+TEST_F(FieldFactoryFieldVariableTest, MissingVariable) {
+  bout::testing::TempFile filename;
+
+  {
+    // Write some fields to a grid file
+    FieldFactory factory{mesh};
+    const auto rho = factory.create3D("sqrt(x^2 + y^2)");
+    Options grid{{"rho", rho},
+                 {"nx", mesh->LocalNx},
+                 {"ny", mesh->LocalNy},
+                 {"nz", mesh->LocalNz}};
+    bout::OptionsIO::create(filename)->write(grid);
+  }
+
+  {
+    Options options{{"mesh", {{"file", filename.string()}}},
+                    {"input", {{"read_Field3Ds", "rho, theta"}}}};
+
+    dynamic_cast<FakeMesh*>(mesh)->setGridDataSource(new GridFile{filename});
+    EXPECT_THROW((FieldFactory{mesh, &options}), BoutException);
   }
 }
