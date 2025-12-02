@@ -35,9 +35,12 @@ RUN cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/usr/local/ \
     sudo make -C build install; \
     rm -rf build
 
+# Add unversioned path for python
+RUN sudo ln -s /usr/local/lib/python3.* /usr/local/lib/python3.x/
+
 ENV PATH=/usr/local/bin:$PATH \
     LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH \
-    PYTHONPATH=/usr/local/lib/python3.13/site-packages/:$PYTHONPATH
+    PYTHONPATH=/usr/local/lib/python3.x/site-packages/:$PYTHONPATH
 
 # smoke test
 RUN python3 -c 'import boutpp'
