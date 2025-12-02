@@ -259,9 +259,6 @@ If you want the old setting, you have to specify mesh:symmetricGlobalY=false in 
     has_boundary_upper_y = static_cast<bool>(allbndry);
   }
 
-  // Initialize default coordinates
-  getCoordinates();
-
   output_info.write(_("\tdone\n"));
 }
 
