@@ -1068,7 +1068,6 @@ protected:
 
     // Load 2D profiles
     mesh->get(J0, "Jpar0");                      // A / m^2
-    // J0.applyBoundary("neumann");
 
     if (mesh->get(P0, "pressure_s")) {           // Pascals
       mesh->get(P0, "pressure");
@@ -1076,7 +1075,6 @@ protected:
     } else {
       output.write("Using pressure_s as P0.\n");
     }
-    // P0.applyBoundary("neumann");
 
     // Load curvature term
     b0xcv.covariant = false;                     // Read contravariant components
@@ -1200,7 +1198,7 @@ protected:
     density = options["density"].doc("number density normalization factor [m^-3]").withDefault(1.0e20);
     density_unit = options["density_unit"].doc("Number density unit for grid [m^-3]").withDefault(1.0e20);
     Zi = options["Zi"].doc("ion charge number").withDefault(1);
-    Zeff = options["Zeff"].doc("Electric resistivity multiplier").withDefault(1);
+    Zeff = options["Zeff"].doc("Electric resistivity multiplier").withDefault(1.0);
 
     evolve_jpar =
         options["evolve_jpar"].doc("If true, evolve J raher than Psi").withDefault(false);
@@ -1690,6 +1688,9 @@ protected:
 
     // Auxiliary
     zero = 0.0, one = 1.0; 
+    mesh->communicate(zero);
+    mesh->communicate(one);
+
 
     /////////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
@@ -2154,9 +2155,6 @@ protected:
 
     Pi0 = N0 * Ti0;
     Pe0 = Ne0 * Te0;
-
-    Pi0.applyBoundary("neumann");
-    Pe0.applyBoundary("neumann");
 
     jpar1.setBoundary("J");
     u_tmp1.setBoundary("U");
@@ -3104,9 +3102,11 @@ protected:
         phi0 = -Upara0 * Pi0 / N0;
       }
       mesh->communicate(phi0);
-      phi0.setBoundary("background");
-      phi0.applyBoundary();
-      SBC_FreeBoundary_2D(phi0);
+      if (load_2d_bkgd) {
+        phi0.setBoundary("background");
+        phi0.applyBoundary();
+        SBC_FreeBoundary_2D(phi0);
+      }
 
       if (experiment_Er) {
         if (diamag_er) {
@@ -3589,7 +3589,7 @@ protected:
     mesh->communicate(phi);
 
     // Apply a boundary condition on phi for target plates
-    phi.applyBoundary();
+    // phi.applyBoundary();
 
     if (emass) {
       Field2D acoeff = -delta_e_inv * N0 * N0;
@@ -3700,6 +3700,7 @@ protected:
       if (diffusion_perp > 0.0) {
         kappa_perp_i = 2.0 * vth_i * vth_i * nu_i / (omega_ci * omega_ci); // * 1.e4;
         kappa_perp_e = 4.7 * vth_e * vth_e * nu_e / (omega_ce * omega_ce); // * 1.e4;
+
         kappa_perp_i_fl = q_alpha * vth_i * q95 * Lbar; // * 1.e4;
         kappa_perp_e_fl = q_alpha * vth_e * q95 * Lbar; // * 1.e4;
 
@@ -3707,12 +3708,15 @@ protected:
           kappa_perp_i *= kappa_perp_i_fl / (kappa_perp_i + kappa_perp_i_fl);
           kappa_perp_e *= kappa_perp_e_fl / (kappa_perp_e + kappa_perp_e_fl);
         }
+
         kappa_perp_i *= Tipara1 * N_tmp;
         mesh->communicate(kappa_perp_i);
         kappa_perp_i.applyBoundary();
+
         kappa_perp_e *= Tepara1 * Ne_tmp;
         mesh->communicate(kappa_perp_e);
         kappa_perp_e.applyBoundary();
+
       }
 
       if (neoclassic_i) {
