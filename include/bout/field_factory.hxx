@@ -29,8 +29,6 @@ class FieldFactory;
 #ifndef BOUT_FIELD_FACTORY_H
 #define BOUT_FIELD_FACTORY_H
 
-#include "bout/mesh.hxx"
-
 #include "bout/sys/expressionparser.hxx"
 
 #include "bout/field2d.hxx"
@@ -43,8 +41,9 @@ class FieldFactory;
 #include <map>
 #include <string>
 
-// Utility routines to create generators from values
+class Mesh;
 
+// Utility routines to create generators from values
 FieldGeneratorPtr generator(BoutReal value);
 FieldGeneratorPtr generator(BoutReal* ptr);
 
@@ -95,6 +94,8 @@ public:
 
   /// Get the Singleton object
   static FieldFactory* get();
+  /// Set the Mesh on the singleton
+  static FieldFactory* setMesh(Mesh* mesh);
 
   /// clean the cache of parsed strings
   void cleanCache();

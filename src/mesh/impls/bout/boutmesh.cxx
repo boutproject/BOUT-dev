@@ -33,6 +33,7 @@
 #include <bout/dcomplex.hxx>
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
+#include <bout/field_factory.hxx>
 #include <bout/griddata.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
@@ -72,6 +73,7 @@ If you want the old setting, you have to specify mesh:symmetricGlobalY=false in 
   // Use root level options
   auto& options = Options::root();
 
+  FieldFactory::setMesh(this);
   //////////////
   // Number of processors
 

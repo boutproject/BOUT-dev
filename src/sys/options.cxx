@@ -7,6 +7,7 @@
 #include "bout/field3d.hxx"
 #include "bout/field_factory.hxx" // Used for parsing expressions
 #include "bout/fieldperp.hxx"
+#include "bout/mesh.hxx"
 #include "bout/output.hxx"
 #include "bout/sys/expressionparser.hxx"
 #include "bout/sys/gettext.hxx"
