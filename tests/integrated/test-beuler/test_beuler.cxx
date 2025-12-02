@@ -66,7 +66,6 @@ int main(int argc, char** argv) {
   bout::globals::mpi = new MpiWrapper();
 
   bout::globals::mesh = Mesh::create();
-  bout::globals::mesh->load();
 
   // Global options
   root["nout"] = 20;

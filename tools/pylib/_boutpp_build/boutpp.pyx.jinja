@@ -735,7 +735,6 @@ cdef options
             self.cobj = c.Mesh.create(opt)
             if self.cobj == NULL:
                 raise MemoryError("Not enough memory, allocation failed.")
-            self.cobj.load()
 
     @classmethod
     def getGlobal(cls):

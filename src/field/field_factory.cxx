@@ -485,4 +485,9 @@ FieldFactory* FieldFactory::get() {
   return &instance;
 }
 
+FieldFactory* FieldFactory::setMesh(Mesh* mesh) {
+  get()->fieldmesh = mesh;
+  return get();
+}
+
 void FieldFactory::cleanCache() { cache.clear(); }

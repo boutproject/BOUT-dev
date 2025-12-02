@@ -31,13 +31,11 @@ Loading a mesh
 The `Mesh constructor <Mesh::Mesh>` takes `GridDataSource` and
 `Options` objects. You can also call `Mesh::create` with just one of
 these objects, which will call out to the `MeshFactory` singleton to
-create a mesh "automatically". This is the way that it is done in
-:doc:`bout++.cxx <../_breathe_autogen/file/bout_09_09_8cxx>`. Once you
-have instantiated a `Mesh` object, you can then call `Mesh::load` to
-read in all the appropriate variables from the `GridDataSource`::
+create a mesh, reading in all the appropriate variables from the
+`GridDataSource` and/or `Options`. This is the way that it is done in
+:doc:`bout++.cxx <../_breathe_autogen/file/bout_09_09_8cxx>`::
 
     mesh = Mesh::create();  ///< Create the mesh
-    mesh->load();           ///< Load from sources. Required for Field initialisation
 
 For post-processing of the results, it’s useful to have mesh
 quantities in the dump files along with the results. To do this,

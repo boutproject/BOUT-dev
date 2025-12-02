@@ -22,9 +22,6 @@ public:
   BoutMesh(GridDataSource* s, Options* options = nullptr);
   ~BoutMesh() override;
 
-  /// Read in the mesh from data sources
-  int load() override;
-
   /////////////////////////////////////////////
   // Communicate variables
 
