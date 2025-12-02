@@ -1,17 +1,21 @@
 #include "gtest/gtest.h"
 
+#include "fake_mesh.hxx"
 #include "test_extras.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
+#include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/options_io.hxx"
 #include "bout/output.hxx"
 #include "bout/paralleltransform.hxx"
 #include "bout/traits.hxx"
 
 #include "fake_mesh_fixture.hxx"
+#include "test_tmpfiles.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;
@@ -968,4 +972,37 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create3DCantTransform) {
       [](typename Field3D::ind_type& index) -> BoutReal { return index.x(); }, mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+struct FieldFactoryFieldVariableTest : public FakeMeshFixture {
+  WithQuietOutput quiet{output_info};
+};
+
+TEST_F(FieldFactoryFieldVariableTest, CreateField3D) {
+  bout::testing::TempFile filename;
+
+  {
+    // Write some fields to a grid file
+    FieldFactory factory{mesh};
+    const auto rho = factory.create3D("sqrt(x^2 + y^2)");
+    const auto theta = factory.create3D("atan(y, x)");
+    Options grid{{"rho", rho},
+                 {"theta", theta},
+                 {"nx", mesh->LocalNx},
+                 {"ny", mesh->LocalNy},
+                 {"nz", mesh->LocalNz}};
+    bout::OptionsIO::create(filename)->write(grid);
+  }
+
+  {
+    Options options{{"mesh", {{"file", filename.string()}}},
+                    {"input", {{"field_variables", "rho, theta"}}}};
+
+    dynamic_cast<FakeMesh*>(mesh)->setGridDataSource(new GridFile{filename});
+    auto factory = FieldFactory{mesh, &options};
+
+    const auto output = factory.create3D("rho * cos(theta)");
+    const auto x = factory.create3D("x");
+    EXPECT_TRUE(IsFieldEqual(output, x));
+  }
 }
