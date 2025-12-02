@@ -215,7 +215,7 @@ If you want the old setting, you have to specify mesh:symmetricGlobalY=false in 
   createXBoundaries();
   createYBoundaries();
 
-  auto possible_boundaries = getPossibleBoundaries();
+  auto possible_boundaries = BoutMesh::getPossibleBoundaries();
   if (possible_boundaries.empty()) {
     output_info.write(_("No boundary regions; domain is periodic\n"));
   } else {
@@ -243,15 +243,17 @@ If you want the old setting, you have to specify mesh:symmetricGlobalY=false in 
 
   // Set cached values
   {
-    int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
+    int mybndry = static_cast<int>(!(BoutMesh::iterateBndryLowerY().isDone()));
     int allbndry = 0;
-    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
+    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR,
+                       BoutMesh::getXcomm(yend));
     has_boundary_lower_y = static_cast<bool>(allbndry);
   }
   {
-    int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
+    int mybndry = static_cast<int>(!(BoutMesh::iterateBndryUpperY().isDone()));
     int allbndry = 0;
-    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
+    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR,
+                       BoutMesh::getXcomm(ystart));
     has_boundary_upper_y = static_cast<bool>(allbndry);
   }
 
