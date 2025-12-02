@@ -19,19 +19,23 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-#include <bout/globals.hxx>
 
 #include <bout/field_factory.hxx>
 
-#include <cmath>
-
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/globals.hxx>
 #include <bout/output.hxx>
 #include <bout/utils.hxx>
 
-#include "bout/constants.hxx"
-
 #include "fieldgenerators.hxx"
+
+#include <algorithm>
+#include <cmath>
+#include <iterator>
+#include <memory>
+#include <string>
+#include <vector>
 
 using bout::generator::Context;
 
@@ -80,6 +84,16 @@ private:
 
   FieldGeneratorPtr target;
 };
+
+// Split a string on commas and trim whitespace from the results
+auto trimsplit(const std::string& str) -> std::vector<std::string> {
+  auto split = strsplit(str, ',');
+  std::vector<std::string> result{};
+  result.reserve(split.size());
+  std::transform(split.begin(), split.end(), std::back_inserter(result),
+                 [](const std::string& element) { return trim(element); });
+  return result;
+}
 } // namespace
 
 //////////////////////////////////////////////////////////
@@ -120,6 +134,30 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
     throw ParseException(
         "Invalid integer given as input:max_recursion_depth: '{:s}'",
         nonconst_options["input"]["max_recursion_depth"].as<std::string>());
+  }
+
+  const auto field_variables =
+      nonconst_options["input"]["field_variables"]
+          .doc("Variables to read from the grid file and make available in expressions. "
+               "Comma-separated list of variable names")
+          .withDefault<std::string>("");
+
+  if (not field_variables.empty()) {
+    if (not localmesh->isDataSourceGridFile()) {
+      throw BoutException("A grid file ('mesh:file') is required for `field_variables`");
+    }
+
+    for (const auto& name : trimsplit(field_variables)) {
+      if (not localmesh->sourceHasVar(name)) {
+        const auto filename = Options::root()["mesh"]["file"].as<std::string>();
+        throw BoutException(
+            "Grid file '{}' missing `{}` specified in `input:field_variables`", filename,
+            name);
+      }
+      Field3D var;
+      localmesh->get(var, name);
+      addGenerator(name, std::make_shared<Field3DVariable>(var, name));
+    }
   }
 
   // Useful values
