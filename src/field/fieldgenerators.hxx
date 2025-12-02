@@ -8,9 +8,9 @@
 #define BOUT_FIELDGENERATORS_H
 
 #include <bout/boutexception.hxx>
-#include <bout/field3d.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/sys/expressionparser.hxx>
+#include <bout/traits.hxx>
 #include <bout/unused.hxx>
 
 #include <cmath>
@@ -311,7 +311,7 @@ public:
   // Constructor
   FieldTanhHat(FieldGeneratorPtr xin, FieldGeneratorPtr widthin,
                FieldGeneratorPtr centerin, FieldGeneratorPtr steepnessin)
-      : X(xin), width(widthin), center(centerin), steepness(steepnessin){};
+      : X(xin), width(widthin), center(centerin), steepness(steepnessin) {};
   // Clone containing the list of arguments
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
   BoutReal generate(const bout::generator::Context& pos) override;
@@ -326,7 +326,7 @@ private:
 class FieldWhere : public FieldGenerator {
 public:
   FieldWhere(FieldGeneratorPtr test, FieldGeneratorPtr gt0, FieldGeneratorPtr lt0)
-      : test(test), gt0(gt0), lt0(lt0){};
+      : test(test), gt0(gt0), lt0(lt0) {};
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 3) {
@@ -357,9 +357,10 @@ private:
 };
 
 /// A `Field3D` that can be used in expressions
-class Field3DVariable : public FieldGenerator {
+template <class T, typename = bout::utils::EnableIfField<T>>
+class GridVariable : public FieldGenerator {
 public:
-  Field3DVariable(Field3D var, std::string name)
+  GridVariable(T var, std::string name)
       : variable(std::move(var)), name(std::move(name)) {}
 
   double generate(const bout::generator::Context& ctx) override {
@@ -370,13 +371,13 @@ public:
     if (args.size() != 0) {
       throw ParseException("Variable '{}' takes no arguments but got {:d}", args.size());
     }
-    return std::make_shared<Field3DVariable>(variable, name);
+    return std::make_shared<GridVariable<T>>(variable, name);
   }
 
   std::string str() const override { return name; }
 
 private:
-  Field3D variable;
+  T variable;
   std::string name;
 };
 
