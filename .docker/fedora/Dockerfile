@@ -36,4 +36,6 @@ RUN cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/opt/bout++/ \
 RUN make -C build -j 2
 RUN sudo make -C build install
 
+RUN python3 -c 'import boutpp'
+
 RUN find /opt/bout++
