@@ -31,15 +31,15 @@
 #include <bout/output.hxx>
 #include <bout/traits.hxx>
 #include <bout/utils.hxx>
+#include <bout/bout_enum_class.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/sys/expressionparser.hxx>
 
 #include "fieldgenerators.hxx"
 
-#include <algorithm>
 #include <cmath>
-#include <iterator>
 #include <memory>
 #include <string>
-#include <vector>
 
 using bout::generator::Context;
 
@@ -52,6 +52,8 @@ FieldGeneratorPtr generator(BoutReal value) {
 FieldGeneratorPtr generator(BoutReal* ptr) {
   return std::make_shared<FieldValuePtr>(ptr);
 }
+
+BOUT_ENUM_CLASS(GridVariableFunction, field3d, field2d, boutreal);
 
 namespace {
 /// Provides a placeholder whose target can be changed after creation.
@@ -89,41 +91,44 @@ private:
   FieldGeneratorPtr target;
 };
 
-// Split a string on commas and trim whitespace from the results
-auto trimsplit(const std::string& str) -> std::vector<std::string> {
-  auto split = strsplit(str, ',');
-  std::vector<std::string> result{};
-  result.reserve(split.size());
-  std::transform(split.begin(), split.end(), std::back_inserter(result),
-                 [](const std::string& element) { return trim(element); });
-  return result;
-}
-
 // Read variables from the grid file and make them available in expressions
 template <class T>
-auto read_grid_variables(FieldFactory& factory, Mesh& mesh, Options& options,
-                         const std::string& option_name) {
-  const auto field_variables =
-      options["input"][option_name]
-          .doc("Variables to read from the grid file and make available in expressions. "
-               "Comma-separated list of variable names")
-          .withDefault<std::string>("");
+auto add_grid_variable(FieldFactory& factory, Mesh& mesh, const std::string& name) {
+  T var;
+  mesh.get(var, name);
+  factory.addGenerator(name, std::make_shared<GridVariable<T>>(var, name));
+}
 
-  if (not field_variables.empty()) {
+auto read_grid_variables(FieldFactory& factory, Mesh& mesh, Options& options) {
+  auto& field_variables = options["input"]["grid_variables"].doc(
+      "Variables to read from the grid file and make available in expressions");
+
+  for (const auto& [name, value] : field_variables) {
     if (not mesh.isDataSourceGridFile()) {
-      throw BoutException("A grid file ('mesh:file') is required for `input:{}`",
-                          option_name);
+      throw BoutException(
+          "A grid file ('mesh:file') is required for `input:grid_variables`");
     }
 
-    for (const auto& name : trimsplit(field_variables)) {
-      if (not mesh.sourceHasVar(name)) {
-        const auto filename = Options::root()["mesh"]["file"].as<std::string>();
-        throw BoutException("Grid file '{}' missing `{}` specified in `input:{}`",
-                            filename, name, option_name);
-      }
-      T var;
+    if (not mesh.sourceHasVar(name)) {
+      const auto filename = Options::root()["mesh"]["file"].as<std::string>();
+      throw BoutException(
+          "Grid file '{}' missing `{}` specified in `input:grid_variables`", filename,
+          name);
+    }
+
+    const auto func = value.as<GridVariableFunction>();
+    switch (func) {
+    case GridVariableFunction::field3d:
+      add_grid_variable<Field3D>(factory, mesh, name);
+      break;
+    case GridVariableFunction::field2d:
+      add_grid_variable<Field2D>(factory, mesh, name);
+      break;
+    case GridVariableFunction::boutreal:
+      BoutReal var{};
       mesh.get(var, name);
-      factory.addGenerator(name, std::make_shared<GridVariable<T>>(var, name));
+      factory.addGenerator(name, std::make_shared<FieldValue>(var));
+      break;
     }
   }
 }
@@ -225,8 +230,7 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   addGenerator("where", std::make_shared<FieldWhere>(nullptr, nullptr, nullptr));
 
   // Variables from the grid file
-  read_grid_variables<Field3D>(*this, *localmesh, nonconst_options, "read_Field3Ds");
-  read_grid_variables<Field2D>(*this, *localmesh, nonconst_options, "read_Field2Ds");
+  read_grid_variables(*this, *localmesh, nonconst_options);
 }
 
 Field2D FieldFactory::create2D(const std::string& value, const Options* opt,

@@ -156,16 +156,19 @@ these are the only quantities specified, then the coordinates revert to
 Cartesian.
 
 You can read additional quantities from the grid and make them available in
-expressions in the input file using ``input:read_Field3Ds`` and
-``input:read_Field2Ds``:
+expressions in the input file by listing them in the ``input:grid_variables``
+section, with the key being the name in the grid file (``mesh:file``) and the
+value being the type (one of ``field3d``, ``field2d``, ``boutreal``):
 
 .. code-block:: cfg
 
-   [input]
-   read_Field2Ds = rho, theta
+   [input:grid_variables]
+   rho = field2d
+   theta = field2d
+   scale = boutreal
 
    [mesh]
-   B = (1 / rho) * cos(theta)
+   B = (scale / rho) * cos(theta)
 
 This section describes how to generate inputs for tokamak equilibria. If
 you’re not interested in tokamaks then you can skip to the next section.
