@@ -39,6 +39,8 @@ class SNESSolver;
 
 #include <bout/bout_enum_class.hxx>
 #include <bout/bout_types.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 #include <bout/petsclib.hxx>
 
 #include <petsc.h>
@@ -51,6 +53,11 @@ RegisterSolver<SNESSolver> registersolverbeuler("beuler");
 
 BOUT_ENUM_CLASS(BoutSnesEquationForm, pseudo_transient, rearranged_backward_euler,
                 backward_euler, direct_newton);
+
+BOUT_ENUM_CLASS(BoutPTCStrategy,
+                inverse_residual, ///< dt = pseudo_alpha / residual
+                history_based,    ///< Grow/shrink dt based on residual decrease/increase
+                hybrid); ///< Combine inverse_residual and history_based strategies
 
 /// Uses PETSc's SNES interface to find a steady state solution to a
 /// nonlinear ODE by integrating in time with Backward Euler
@@ -67,6 +74,8 @@ public:
   /// time integration this function calculates:
   ///
   ///     f = (x - gamma*G(x)) - rhs
+  ///
+  /// The form depends on equation_form
   ///
   ///
   /// @param[in] x  The state vector
@@ -88,11 +97,28 @@ public:
   /// finite difference approximated Jacobian.
   PetscErrorCode scaleJacobian(Mat B);
 
+  /// Save diagnostics to output
+  void outputVars(Options& output_options, bool save_repeat = true) override;
+
 private:
+  PetscErrorCode FDJinitialise();         ///< Finite Difference Jacobian initialise
+  PetscErrorCode FDJpruneJacobian();      ///< Remove small elements from the Jacobian
+  PetscErrorCode FDJrestoreFromPruning(); ///< Restore Jacobian to original pattern
+
+  /// Call the physics model RHS function
+  ///
+  /// @param[in] x       The state vector. Will be scaled if scale_vars=true
+  /// @param[out] f      The vector for the result f(x)
+  /// @param[in] linear  Specifies that the SNES solver is in a linear (KSP) inner loop
+  PetscErrorCode rhs_function(Vec x, Vec f, bool linear);
+
   BoutReal timestep;     ///< Internal timestep
-  BoutReal dt;           ///< Current timestep used in snes_function
+  BoutReal dt;           ///< Current timestep used in snes_function.
   BoutReal dt_min_reset; ///< If dt falls below this, reset solve
   BoutReal max_timestep; ///< Maximum timestep
+
+  /// Form of the equation to solve
+  BoutSnesEquationForm equation_form;
 
   std::string snes_type;
   BoutReal atol; ///< Absolute tolerance
@@ -103,9 +129,36 @@ private:
   int maxits;               ///< Maximum nonlinear iterations
   int lower_its, upper_its; ///< Limits on iterations for timestep adjustment
 
+  int max_snes_failures; ///< Maximum number of consecutive SNES failures before abort.
+
   BoutReal timestep_factor_on_failure;
   BoutReal timestep_factor_on_upper_its;
   BoutReal timestep_factor_on_lower_its;
+
+  // Pseudo-Transient Continuation (PTC) variables
+  // These are used if equation_form = pseudo_transient
+  BoutPTCStrategy pseudo_strategy;  ///< Strategy to use when setting timesteps
+  BoutReal pseudo_alpha;            ///< dt = alpha / residual
+  BoutReal pseudo_growth_factor;    ///< Timestep increase 1.1 - 1.2
+  BoutReal pseudo_reduction_factor; ///< Timestep decrease 0.5
+  BoutReal pseudo_max_ratio;        ///< Maximum timestep ratio between neighboring cells
+  Vec dt_vec;                       ///< Each quantity can have its own timestep
+
+  /// Initialize the Pseudo-Transient Continuation method
+  PetscErrorCode initPseudoTimestepping();
+  /// Update dt_vec based on new solution x
+  PetscErrorCode updatePseudoTimestepping(Vec x);
+  /// Decide the next pseudo-timestep. Called by updatePseudoTimestepping
+  BoutReal updatePseudoTimestep(BoutReal previous_timestep, BoutReal previous_residual,
+                                BoutReal current_residual);
+  BoutReal updatePseudoTimestep_inverse_residual(BoutReal previous_timestep,
+                                                 BoutReal current_residual);
+  BoutReal updatePseudoTimestep_history_based(BoutReal previous_timestep,
+                                              BoutReal previous_residual,
+                                              BoutReal current_residual);
+  Field3D pseudo_residual; ///< Diagnostic output
+  Field2D pseudo_residual_2d;
+  Field3D pseudo_timestep;
 
   ///< PID controller parameters
   bool pid_controller; ///< Use PID controller?
@@ -114,20 +167,20 @@ private:
   BoutReal kP; ///< (0.6 - 0.8) Proportional parameter (main response to current step)
   BoutReal kI; ///< (0.2 - 0.4) Integral parameter (smooths history of changes)
   BoutReal kD; ///< (0.1 - 0.3) Derivative (dampens oscillation - optional)
+  bool pid_consider_failures; ///< Reduce timestep increases if recent solves have failed
+  BoutReal recent_failure_rate;            ///< Rolling average of recent failure rate
+  const BoutReal inv_failure_window = 0.1; ///< 1 / number of recent solves
 
   int nl_its_prev;
   int nl_its_prev2;
 
-  BoutReal pid(BoutReal timestep, int nl_its); ///< Updates the timestep
+  BoutReal pid(BoutReal timestep, int nl_its, BoutReal max_dt); ///< Updates the timestep
 
   bool diagnose;          ///< Output additional diagnostics
   bool diagnose_failures; ///< Print diagnostics on SNES failures
 
   int nlocal; ///< Number of variables on local processor
   int neq;    ///< Number of variables in total
-
-  /// Form of the equation to solve
-  BoutSnesEquationForm equation_form;
 
   PetscLib lib; ///< Handles initialising, finalising PETSc
   Vec snes_f;   ///< Used by SNES to store function
@@ -174,6 +227,9 @@ private:
   bool scale_vars;         ///< Scale individual variables?
   Vec var_scaling_factors; ///< Factors to multiply variables when passing to user
   Vec scaled_x;            ///< The values passed to the user RHS
+
+  bool asinh_vars; ///< Evolve asinh(vars) to compress magnitudes while preserving signs
+  const BoutReal asinh_scale = 1e-5; // Scale below which asinh response becomes ~linear
 };
 
 #else
