@@ -8,10 +8,14 @@
 #define BOUT_FIELDGENERATORS_H
 
 #include <bout/boutexception.hxx>
+#include <bout/field3d.hxx>
 #include <bout/field_factory.hxx>
+#include <bout/sys/expressionparser.hxx>
 #include <bout/unused.hxx>
 
 #include <cmath>
+#include <memory>
+#include <string>
 
 //////////////////////////////////////////////////////////
 // Generators from values
@@ -350,6 +354,30 @@ public:
 
 private:
   FieldGeneratorPtr test, gt0, lt0;
+};
+
+/// A `Field3D` that can be used in expressions
+class Field3DVariable : public FieldGenerator {
+public:
+  Field3DVariable(Field3D var, std::string name)
+      : variable(std::move(var)), name(std::move(name)) {}
+
+  double generate(const bout::generator::Context& ctx) override {
+    return variable(ctx.ix(), ctx.jy(), ctx.kz());
+  }
+
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
+    if (args.size() != 0) {
+      throw ParseException("Variable '{}' takes no arguments but got {:d}", args.size());
+    }
+    return std::make_shared<Field3DVariable>(variable, name);
+  }
+
+  std::string str() const override { return name; }
+
+private:
+  Field3D variable;
+  std::string name;
 };
 
 #endif // BOUT_FIELDGENERATORS_H
