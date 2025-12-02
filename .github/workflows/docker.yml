@@ -26,18 +26,18 @@ jobs:
       matrix:
         mpi: [mpich]
         metric3d:
-          - name: "With OpenMP"
+          - name: "With 3D Metrics"
             cmake: ON
-            base_prefix: "openmp-"
+            base_prefix: ""
             tag_prefix: "3d-"
-          - name: "Without OpenMP"
+          - name: "With 2D Metrics"
             cmake: OFF
             base_prefix: ""
             tag_prefix: ""
         config:
           - name: "Debug"
             tag_postfix: "debug"
-            options: "-DCHECK=3"
+            options: "-DCHECK=4"
             base_postfix: "mini"
 
           - name: "Optimised"
@@ -47,7 +47,7 @@ jobs:
 
           - name: "Full"
             tag_postfix: "full"
-            options: "-DCHECK=3"
+            options: "-DCHECK=4"
             base_postfix: "full"
 
     steps:
@@ -75,7 +75,7 @@ jobs:
           build-args: |
             BASE=${{ matrix.mpi }}-${{ matrix.metric3d.base_prefix }}${{ matrix.config.base_postfix }}-main
             MPI=${{ matrix.mpi }}
-            CMAKE_OPTIONS=${{ matrix.config.options }} -DBOUT_ENABLE_METRIC_3D=${{ matrix.metric3d.cmake }} -DBOUT_ENABLE_OPENMP=${{ matrix.metric3d.cmake }}
+            CMAKE_OPTIONS=${{ matrix.config.options }} -DBOUT_ENABLE_METRIC_3D=${{ matrix.metric3d.cmake }}
             COMMIT=${{ github.sha }}
             URL=${{ github.server_url }}/${{ github.repository }}
           context: .docker/fedora/
