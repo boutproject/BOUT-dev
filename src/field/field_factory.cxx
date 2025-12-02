@@ -22,6 +22,8 @@
 
 #include <bout/field_factory.hxx>
 
+#include <bout/bout_enum_class.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/field2d.hxx>
@@ -29,11 +31,9 @@
 #include <bout/fieldperp.hxx>
 #include <bout/globals.hxx>
 #include <bout/output.hxx>
+#include <bout/sys/expressionparser.hxx>
 #include <bout/traits.hxx>
 #include <bout/utils.hxx>
-#include <bout/bout_enum_class.hxx>
-#include <bout/bout_types.hxx>
-#include <bout/sys/expressionparser.hxx>
 
 #include "fieldgenerators.hxx"
 

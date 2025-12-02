@@ -43,7 +43,7 @@ public:
   /// Cell indices
   int ix() const { return ix_; }
   int jy() const { return jy_; }
-  int kz() const { return kz_;}
+  int kz() const { return kz_; }
 
   /// Set the value of a parameter with given name
   Context& set(const std::string& name, BoutReal value) {
