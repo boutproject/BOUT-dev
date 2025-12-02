@@ -155,6 +155,18 @@ The only quantities which are required are the sizes of the grid. If
 these are the only quantities specified, then the coordinates revert to
 Cartesian.
 
+You can read additional quantities from the grid and make them available in
+expressions in the input file using ``input:read_Field3Ds`` and
+``input:read_Field2Ds``:
+
+.. code-block:: cfg
+
+   [input]
+   read_Field2Ds = rho, theta
+
+   [mesh]
+   B = (1 / rho) * cos(theta)
+
 This section describes how to generate inputs for tokamak equilibria. If
 you’re not interested in tokamaks then you can skip to the next section.
 
