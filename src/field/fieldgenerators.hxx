@@ -311,7 +311,7 @@ public:
   // Constructor
   FieldTanhHat(FieldGeneratorPtr xin, FieldGeneratorPtr widthin,
                FieldGeneratorPtr centerin, FieldGeneratorPtr steepnessin)
-      : X(xin), width(widthin), center(centerin), steepness(steepnessin) {};
+      : X(xin), width(widthin), center(centerin), steepness(steepnessin){};
   // Clone containing the list of arguments
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
   BoutReal generate(const bout::generator::Context& pos) override;
@@ -326,7 +326,7 @@ private:
 class FieldWhere : public FieldGenerator {
 public:
   FieldWhere(FieldGeneratorPtr test, FieldGeneratorPtr gt0, FieldGeneratorPtr lt0)
-      : test(test), gt0(gt0), lt0(lt0) {};
+      : test(test), gt0(gt0), lt0(lt0){};
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 3) {
