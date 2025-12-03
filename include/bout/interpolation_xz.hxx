@@ -24,8 +24,9 @@
 #ifndef BOUT_INTERP_XZ_H
 #define BOUT_INTERP_XZ_H
 
-#include "bout/bout_types.hxx"
-#include "bout/mask.hxx"
+#include <bout/bout_types.hxx>
+#include <bout/generic_factory.hxx>
+#include <bout/mask.hxx>
 
 #define USE_NEW_WEIGHTS 1
 #if BOUT_HAS_PETSC
