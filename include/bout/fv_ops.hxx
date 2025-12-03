@@ -858,24 +858,16 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
       const BoutReal amax =
           BOUTMAX(wave_speed_in[i], fabs(v_in[i]), fabs(v_up[iyp]), fabs(v_down[iym]));
 
-      const BoutReal term = (f_up[iyp] * v_up[iyp] * v_up[iyp] / B_up[iyp])
-                            - (f_down[iym] * v_down[iym] * v_down[iym] / B_down[iym]);
-
-      // Penalty terms. This implementation is very dissipative.
-      BoutReal penalty =
-          (amax * (f_in[i] * v_in[i] - f_up[iyp] * v_up[iyp]) / (B[i] + B_up[iyp]))
-          + (amax * (f_in[i] * v_in[i] - f_down[iym] * v_down[iym])
-             / (B[i] + B_down[iym]));
-
-      if (fabs(penalty) > fabs(term) and penalty * v_in[i] > 0) {
-        if (term * penalty > 0) {
-          penalty = term;
-        } else {
-          penalty = -term;
-        }
-      }
-
-      result[i] = B[i] * (term + penalty) / (2 * dy[i] * sqrt(g_22[i]));
+      result[i] =
+          B[i]
+          * ((f_up[iyp] * v_up[iyp] * v_up[iyp] / B_up[iyp])
+             - (f_down[iym] * v_down[iym] * v_down[iym] / B_down[iym])
+             // Penalty terms. This implementation is very dissipative.
+             // Note: This version adds a viscosity that damps gradients of velocity
+             + amax * (f_in[i] + f_up[iyp]) * (v_in[i] - v_up[iyp]) / (B[i] + B_up[iyp])
+             + amax * (f_in[i] + f_down[iym]) * (v_in[i] - v_down[iym])
+                   / (B[i] + B_down[iym]))
+          / (2 * dy[i] * sqrt(g_22[i]));
 
 #if CHECK > 0
       if (!std::isfinite(result[i])) {
