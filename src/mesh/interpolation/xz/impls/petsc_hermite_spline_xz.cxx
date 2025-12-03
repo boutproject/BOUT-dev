@@ -28,11 +28,13 @@
 
 #include "../../../impls/bout/boutmesh.hxx"
 #include "bout/bout.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/openmpwrap.hxx"
 
+#include <array>
 #include <vector>
 
 namespace {
@@ -136,12 +138,6 @@ XZPetscHermiteSpline::XZPetscHermiteSpline(int y_offset, Mesh* meshin)
   h10_z.allocate();
   h11_z.allocate();
 
-  newWeights.reserve(16);
-  for (int w = 0; w < 16; ++w) {
-    newWeights.emplace_back(localmesh);
-    newWeights[w].allocate();
-  }
-
   const int m = localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz;
   const int M = m * localmesh->getNXPE() * localmesh->getNYPE();
   MatCreateAIJ(BoutComm::get(), m, m, M, M, 16, nullptr, 16, nullptr, &petscWeights);
@@ -224,9 +220,9 @@ void XZPetscHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& de
     h11_x[i] = (t_x * t_x * t_x) - (t_x * t_x);
     h11_z[i] = (t_z * t_z * t_z) - (t_z * t_z);
 
-    for (int w = 0; w < 16; ++w) {
-      newWeights[w][i] = 0;
-    }
+    std::array<BoutReal, 16> weights{};
+    weights.fill(0.0);
+
     // The distribution of our weights:
     //  0   4   8    12
     //  1   5   9    13
@@ -235,51 +231,51 @@ void XZPetscHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& de
     // e.g. 1 == ic.xm(); 4 == ic.zm(); 5 == ic;  7 == ic.zp(2);
 
     // f[ic] * h00_x[i] + f[icxp] * h01_x[i] + fx[ic] * h10_x[i] + fx[icxp] * h11_x[i];
-    newWeights[5][i] += h00_x[i] * h00_z[i];
-    newWeights[9][i] += h01_x[i] * h00_z[i];
-    newWeights[9][i] += h10_x[i] * h00_z[i] / 2;
-    newWeights[1][i] -= h10_x[i] * h00_z[i] / 2;
-    newWeights[13][i] += h11_x[i] * h00_z[i] / 2;
-    newWeights[5][i] -= h11_x[i] * h00_z[i] / 2;
+    weights[5] += h00_x[i] * h00_z[i];
+    weights[9] += h01_x[i] * h00_z[i];
+    weights[9] += h10_x[i] * h00_z[i] / 2;
+    weights[1] -= h10_x[i] * h00_z[i] / 2;
+    weights[13] += h11_x[i] * h00_z[i] / 2;
+    weights[5] -= h11_x[i] * h00_z[i] / 2;
 
     // f[iczp] * h00_x[i] + f[icxpzp] * h01_x[i] +
     // fx[iczp] * h10_x[i] + fx[icxpzp] * h11_x[i];
-    newWeights[6][i] += h00_x[i] * h01_z[i];
-    newWeights[10][i] += h01_x[i] * h01_z[i];
-    newWeights[10][i] += h10_x[i] * h01_z[i] / 2;
-    newWeights[2][i] -= h10_x[i] * h01_z[i] / 2;
-    newWeights[14][i] += h11_x[i] * h01_z[i] / 2;
-    newWeights[6][i] -= h11_x[i] * h01_z[i] / 2;
+    weights[6] += h00_x[i] * h01_z[i];
+    weights[10] += h01_x[i] * h01_z[i];
+    weights[10] += h10_x[i] * h01_z[i] / 2;
+    weights[2] -= h10_x[i] * h01_z[i] / 2;
+    weights[14] += h11_x[i] * h01_z[i] / 2;
+    weights[6] -= h11_x[i] * h01_z[i] / 2;
 
     // fz[ic] * h00_x[i] + fz[icxp] * h01_x[i] +
     // fxz[ic] * h10_x[i]+ fxz[icxp] * h11_x[i];
-    newWeights[6][i] += h00_x[i] * h10_z[i] / 2;
-    newWeights[4][i] -= h00_x[i] * h10_z[i] / 2;
-    newWeights[10][i] += h01_x[i] * h10_z[i] / 2;
-    newWeights[8][i] -= h01_x[i] * h10_z[i] / 2;
-    newWeights[10][i] += h10_x[i] * h10_z[i] / 4;
-    newWeights[8][i] -= h10_x[i] * h10_z[i] / 4;
-    newWeights[2][i] -= h10_x[i] * h10_z[i] / 4;
-    newWeights[0][i] += h10_x[i] * h10_z[i] / 4;
-    newWeights[14][i] += h11_x[i] * h10_z[i] / 4;
-    newWeights[12][i] -= h11_x[i] * h10_z[i] / 4;
-    newWeights[6][i] -= h11_x[i] * h10_z[i] / 4;
-    newWeights[4][i] += h11_x[i] * h10_z[i] / 4;
+    weights[6] += h00_x[i] * h10_z[i] / 2;
+    weights[4] -= h00_x[i] * h10_z[i] / 2;
+    weights[10] += h01_x[i] * h10_z[i] / 2;
+    weights[8] -= h01_x[i] * h10_z[i] / 2;
+    weights[10] += h10_x[i] * h10_z[i] / 4;
+    weights[8] -= h10_x[i] * h10_z[i] / 4;
+    weights[2] -= h10_x[i] * h10_z[i] / 4;
+    weights[0] += h10_x[i] * h10_z[i] / 4;
+    weights[14] += h11_x[i] * h10_z[i] / 4;
+    weights[12] -= h11_x[i] * h10_z[i] / 4;
+    weights[6] -= h11_x[i] * h10_z[i] / 4;
+    weights[4] += h11_x[i] * h10_z[i] / 4;
 
     // fz[iczp] * h00_x[i] + fz[icxpzp] * h01_x[i] +
     // fxz[iczp] * h10_x[i] + fxz[icxpzp] * h11_x[i];
-    newWeights[7][i] += h00_x[i] * h11_z[i] / 2;
-    newWeights[5][i] -= h00_x[i] * h11_z[i] / 2;
-    newWeights[11][i] += h01_x[i] * h11_z[i] / 2;
-    newWeights[9][i] -= h01_x[i] * h11_z[i] / 2;
-    newWeights[11][i] += h10_x[i] * h11_z[i] / 4;
-    newWeights[9][i] -= h10_x[i] * h11_z[i] / 4;
-    newWeights[3][i] -= h10_x[i] * h11_z[i] / 4;
-    newWeights[1][i] += h10_x[i] * h11_z[i] / 4;
-    newWeights[15][i] += h11_x[i] * h11_z[i] / 4;
-    newWeights[13][i] -= h11_x[i] * h11_z[i] / 4;
-    newWeights[7][i] -= h11_x[i] * h11_z[i] / 4;
-    newWeights[5][i] += h11_x[i] * h11_z[i] / 4;
+    weights[7] += h00_x[i] * h11_z[i] / 2;
+    weights[5] -= h00_x[i] * h11_z[i] / 2;
+    weights[11] += h01_x[i] * h11_z[i] / 2;
+    weights[9] -= h01_x[i] * h11_z[i] / 2;
+    weights[11] += h10_x[i] * h11_z[i] / 4;
+    weights[9] -= h10_x[i] * h11_z[i] / 4;
+    weights[3] -= h10_x[i] * h11_z[i] / 4;
+    weights[1] += h10_x[i] * h11_z[i] / 4;
+    weights[15] += h11_x[i] * h11_z[i] / 4;
+    weights[13] -= h11_x[i] * h11_z[i] / 4;
+    weights[7] -= h11_x[i] * h11_z[i] / 4;
+    weights[5] += h11_x[i] * h11_z[i] / 4;
 
     PetscInt idxn[1] = {conv.fromLocalToGlobal(x, y + y_offset, z)};
     // output.write("debug: {:d} -> {:d}: {:d}:{:d} -> {:d}:{:d}\n",
@@ -293,7 +289,7 @@ void XZPetscHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& de
       for (int k = 0; k < 4; ++k) {
         idxm[k] = conv.fromMeshToGlobal(i_corn - 1 + j, y + y_offset,
                                         k_corner(x, y, z) - 1 + k);
-        vals[k] = newWeights[j * 4 + k][i];
+        vals[k] = weights[j * 4 + k];
       }
       BOUT_OMP(critical)
       MatSetValues(petscWeights, 1, idxn, 4, idxm, vals, INSERT_VALUES);

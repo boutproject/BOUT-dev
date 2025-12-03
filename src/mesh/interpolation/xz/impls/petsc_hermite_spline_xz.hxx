@@ -36,8 +36,6 @@ class XZPetscHermiteSpline : public XZInterpolation {
   Field3D h10_z;
   Field3D h11_z;
 
-  std::vector<Field3D> newWeights;
-
   PetscLib petsclib;
   bool isInit{false};
   Mat petscWeights;
