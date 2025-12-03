@@ -31,12 +31,10 @@
 class Options;
 
 /// Interpolate a field onto a perturbed set of points
-const Field3D interpolate(const Field3D& f, const Field3D& delta_x,
-                          const Field3D& delta_z);
+Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z);
 
-const Field3D interpolate(const Field2D& f, const Field3D& delta_x,
-                          const Field3D& delta_z);
-const Field3D interpolate(const Field2D& f, const Field3D& delta_x);
+Field3D interpolate(const Field2D& f, const Field3D& delta_x, const Field3D& delta_z);
+Field3D interpolate(const Field2D& f, const Field3D& delta_x);
 
 class XZInterpolation {
 public:

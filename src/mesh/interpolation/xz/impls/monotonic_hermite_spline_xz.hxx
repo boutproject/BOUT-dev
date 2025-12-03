@@ -3,6 +3,11 @@
 
 #include "hermite_spline_xz.hxx"
 
+#include "bout/boutexception.hxx"
+#include "bout/field3d.hxx"
+#include "bout/interpolation_xz.hxx"
+#include "bout/mask.hxx"
+#include "bout/options.hxx"
 #include <bout/bout_types.hxx>
 
 /// Monotonic Hermite spline interpolator

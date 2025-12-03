@@ -1,20 +1,25 @@
 #ifndef BOUT_XZPETSCHERMITESPLINE_HXX
 #define BOUT_XZPETSCHERMITESPLINE_HXX
 
-#include <bout/interpolation_xz.hxx>
 #include <bout/build_defines.hxx>
+#include <bout/interpolation_xz.hxx>
 
 #if not BOUT_HAS_PETSC
 namespace {
-  const XZInterpolationFactory::RegisterUnavailableInFactory registerunavailablepetschermitespline("petschermitespline", "BOUT++ was not configured with PETSc");
+const XZInterpolationFactory::RegisterUnavailableInFactory
+    registerunavailablepetschermitespline("petschermitespline",
+                                          "BOUT++ was not configured with PETSc");
 }
 #else
 
-#include <bout/bout_types.hxx>
 #include <bout/field3d.hxx>
+#include <bout/mask.hxx>
+#include <bout/paralleltransform.hxx>
 #include <bout/petsclib.hxx>
 #include <bout/region.hxx>
+#include <bout/utils.hxx>
 
+#include <string>
 #include <vector>
 
 class XZPetscHermiteSpline : public XZInterpolation {
@@ -38,13 +43,18 @@ class XZPetscHermiteSpline : public XZInterpolation {
 
   PetscLib petsclib;
   bool isInit{false};
-  Mat petscWeights;
-  Vec rhs, result;
+  Mat petscWeights{nullptr};
+  Vec rhs{nullptr};
+  Vec result{nullptr};
 
 public:
   XZPetscHermiteSpline(Mesh* mesh = nullptr, [[maybe_unused]] Options* options = nullptr)
       : XZPetscHermiteSpline(0, mesh) {}
   XZPetscHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr);
+  XZPetscHermiteSpline(const XZPetscHermiteSpline&) = default;
+  XZPetscHermiteSpline(XZPetscHermiteSpline&&) = delete;
+  XZPetscHermiteSpline& operator=(const XZPetscHermiteSpline&) = default;
+  XZPetscHermiteSpline& operator=(XZPetscHermiteSpline&&) = delete;
   XZPetscHermiteSpline(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZPetscHermiteSpline(y_offset, mesh) {
     setRegion(regionFromMask(mask, localmesh));
@@ -77,7 +87,8 @@ public:
 };
 
 namespace {
-const RegisterXZInterpolation<XZPetscHermiteSpline> registerinterppetschermitespline{"petschermitespline"};
+const RegisterXZInterpolation<XZPetscHermiteSpline> registerinterppetschermitespline{
+    "petschermitespline"};
 }
 
 #endif

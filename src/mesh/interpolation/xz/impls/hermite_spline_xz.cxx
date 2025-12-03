@@ -22,16 +22,23 @@
 
 #include "hermite_spline_xz.hxx"
 
-#include "../../../impls/bout/boutmesh.hxx"
+#include "bout/assert.hxx"
 #include "bout/bout.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_xz.hxx"
-#include "bout/openmpwrap.hxx"
+#include "bout/mask.hxx"
+#include "bout/paralleltransform.hxx"
 #include "bout/region.hxx"
 
-#include <vector>
+#include <fmt/format.h>
 
+#include <cmath>
+#include <string>
+#include <vector>
 
 XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh* meshin)
     : XZInterpolation(y_offset, meshin), h00_x(localmesh), h01_x(localmesh),
@@ -66,7 +73,7 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
 
   const int ny = localmesh->LocalNy;
   const int nz = localmesh->LocalNz;
-  const int xend = (localmesh->xend - localmesh->xstart + 1) * localmesh->getNXPE()
+  const int xend = ((localmesh->xend - localmesh->xstart + 1) * localmesh->getNXPE())
                    + localmesh->xstart - 1;
 
   BOUT_FOR(i, getRegion(region)) {
@@ -82,7 +89,7 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
     // t_x, t_z are the normalised coordinates \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
     BoutReal t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corn);
-    BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+    BoutReal const t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
     // NOTE: A (small) hack to avoid one-sided differences. We need at
     // least 2 interior points due to an awkwardness with the
@@ -122,7 +129,7 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
     }
 
     i_corner[i] = SpecificInd<IND_TYPE::IND_3D>(
-        (((i_corn * ny) + (y + y_offset)) * nz + k_corner(x, y, z)), ny, nz);
+        ((((i_corn * ny) + (y + y_offset)) * nz) + k_corner(x, y, z)), ny, nz);
 
     h00_x[i] = (2. * t_x * t_x * t_x) - (3. * t_x * t_x) + 1.;
     h00_z[i] = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;
@@ -169,8 +176,8 @@ XZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) {
   const int k_mod_p2 = (k_mod_p1 == nz) ? 0 : k_mod_p1 + 1;
 
   return {{i, j + yoffset, k_mod_m1, -0.5 * h10_z(i, j, k)},
-          {i, j + yoffset, k_mod, h00_z(i, j, k) - 0.5 * h11_z(i, j, k)},
-          {i, j + yoffset, k_mod_p1, h01_z(i, j, k) + 0.5 * h10_z(i, j, k)},
+          {i, j + yoffset, k_mod, h00_z(i, j, k) - (0.5 * h11_z(i, j, k))},
+          {i, j + yoffset, k_mod_p1, h01_z(i, j, k) + (0.5 * h10_z(i, j, k))},
           {i, j + yoffset, k_mod_p2, 0.5 * h11_z(i, j, k)}};
 }
 
@@ -188,9 +195,9 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
   // f has been communcated, and thus we can assume that the x-boundaries are
   // also valid in the y-boundary.  Thus the differentiated field needs no
   // extra comms.
-  Field3D fx = bout::derivatives::index::DDX(f, CELL_DEFAULT, "DEFAULT", region2);
-  Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", region2);
-  Field3D fxz = bout::derivatives::index::DDZ(fx, CELL_DEFAULT, "DEFAULT", region2);
+  const Field3D fx = bout::derivatives::index::DDX(f, CELL_DEFAULT, "DEFAULT", region2);
+  const Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", region2);
+  const Field3D fxz = bout::derivatives::index::DDZ(fx, CELL_DEFAULT, "DEFAULT", region2);
 
   BOUT_FOR(i, getRegion(region)) {
     const auto iyp = i.yp(y_offset);
@@ -201,24 +208,24 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
     const auto icxpzp = iczp.xp();
 
     // Interpolate f in X at Z
-    const BoutReal f_z =
-        f[ic] * h00_x[i] + f[icxp] * h01_x[i] + fx[ic] * h10_x[i] + fx[icxp] * h11_x[i];
+    const BoutReal f_z = (f[ic] * h00_x[i]) + (f[icxp] * h01_x[i]) + (fx[ic] * h10_x[i])
+                         + (fx[icxp] * h11_x[i]);
 
     // Interpolate f in X at Z+1
-    const BoutReal f_zp1 = f[iczp] * h00_x[i] + f[icxpzp] * h01_x[i] + fx[iczp] * h10_x[i]
-                           + fx[icxpzp] * h11_x[i];
+    const BoutReal f_zp1 = (f[iczp] * h00_x[i]) + (f[icxpzp] * h01_x[i])
+                           + (fx[iczp] * h10_x[i]) + (fx[icxpzp] * h11_x[i]);
 
     // Interpolate fz in X at Z
-    const BoutReal fz_z = fz[ic] * h00_x[i] + fz[icxp] * h01_x[i] + fxz[ic] * h10_x[i]
-                          + fxz[icxp] * h11_x[i];
+    const BoutReal fz_z = (fz[ic] * h00_x[i]) + (fz[icxp] * h01_x[i])
+                          + (fxz[ic] * h10_x[i]) + (fxz[icxp] * h11_x[i]);
 
     // Interpolate fz in X at Z+1
-    const BoutReal fz_zp1 = fz[iczp] * h00_x[i] + fz[icxpzp] * h01_x[i]
-                            + fxz[iczp] * h10_x[i] + fxz[icxpzp] * h11_x[i];
+    const BoutReal fz_zp1 = (fz[iczp] * h00_x[i]) + (fz[icxpzp] * h01_x[i])
+                            + (fxz[iczp] * h10_x[i]) + (fxz[icxpzp] * h11_x[i]);
 
     // Interpolate in Z
     f_interp[iyp] =
-        +f_z * h00_z[i] + f_zp1 * h01_z[i] + fz_z * h10_z[i] + fz_zp1 * h11_z[i];
+        (+f_z * h00_z[i]) + (f_zp1 * h01_z[i]) + (fz_z * h10_z[i]) + (fz_zp1 * h11_z[i]);
 
     ASSERT2(std::isfinite(f_interp[iyp]) || i.x() < localmesh->xstart
             || i.x() > localmesh->xend);

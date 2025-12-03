@@ -22,12 +22,17 @@
 
 #include "monotonic_hermite_spline_xz.hxx"
 
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
-#include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
+#include "bout/region.hxx"
+#include "bout/utils.hxx"
 
 #include <algorithm>
+#include <cmath>
+#include <string>
 
 Field3D XZMonotonicHermiteSpline::interpolate(const Field3D& f,
                                               const std::string& region) const {
@@ -53,24 +58,24 @@ Field3D XZMonotonicHermiteSpline::interpolate(const Field3D& f,
     const auto icxpzp = iczp.xp();
 
     // Interpolate f in X at Z
-    const BoutReal f_z =
-        f[ic] * h00_x[i] + f[icxp] * h01_x[i] + fx[ic] * h10_x[i] + fx[icxp] * h11_x[i];
+    const BoutReal f_z = (f[ic] * h00_x[i]) + (f[icxp] * h01_x[i]) + (fx[ic] * h10_x[i])
+                         + (fx[icxp] * h11_x[i]);
 
     // Interpolate f in X at Z+1
-    const BoutReal f_zp1 = f[iczp] * h00_x[i] + f[icxpzp] * h01_x[i] + fx[iczp] * h10_x[i]
-                           + fx[icxpzp] * h11_x[i];
+    const BoutReal f_zp1 = (f[iczp] * h00_x[i]) + (f[icxpzp] * h01_x[i])
+                           + (fx[iczp] * h10_x[i]) + (fx[icxpzp] * h11_x[i]);
 
     // Interpolate fz in X at Z
-    const BoutReal fz_z = fz[ic] * h00_x[i] + fz[icxp] * h01_x[i] + fxz[ic] * h10_x[i]
-                          + fxz[icxp] * h11_x[i];
+    const BoutReal fz_z = (fz[ic] * h00_x[i]) + (fz[icxp] * h01_x[i])
+                          + (fxz[ic] * h10_x[i]) + (fxz[icxp] * h11_x[i]);
 
     // Interpolate fz in X at Z+1
-    const BoutReal fz_zp1 = fz[iczp] * h00_x[i] + fz[icxpzp] * h01_x[i]
-                            + fxz[iczp] * h10_x[i] + fxz[icxpzp] * h11_x[i];
+    const BoutReal fz_zp1 = (fz[iczp] * h00_x[i]) + (fz[icxpzp] * h01_x[i])
+                            + (fxz[iczp] * h10_x[i]) + (fxz[icxpzp] * h11_x[i]);
 
     // Interpolate in Z
     BoutReal result =
-        +f_z * h00_z[i] + f_zp1 * h01_z[i] + fz_z * h10_z[i] + fz_zp1 * h11_z[i];
+        (+f_z * h00_z[i]) + (f_zp1 * h01_z[i]) + (fz_z * h10_z[i]) + (fz_zp1 * h11_z[i]);
 
     ASSERT2(std::isfinite(result) || i.x() < localmesh->xstart
             || i.x() > localmesh->xend);

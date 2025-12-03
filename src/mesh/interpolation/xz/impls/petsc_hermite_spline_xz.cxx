@@ -26,46 +26,45 @@
 
 #include "petsc_hermite_spline_xz.hxx"
 
-#include "../../../impls/bout/boutmesh.hxx"
-#include "bout/bout.hxx"
+#include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/field2d.hxx"
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_xz.hxx"
+#include "bout/mesh.hxx"
 #include "bout/openmpwrap.hxx"
+#include "bout/paralleltransform.hxx"
+#include "bout/region.hxx"
 
+#include <fmt/format.h>
+
+#include <algorithm>
 #include <array>
+#include <cmath>
+#include <cstddef>
+#include <string>
 #include <vector>
 
 namespace {
 class IndConverter {
 public:
-  IndConverter(Mesh* mesh)
-      : mesh(dynamic_cast<BoutMesh*>(mesh)), nxpe(mesh->getNXPE()), nype(mesh->getNYPE()),
-        xstart(mesh->xstart), ystart(mesh->ystart), zstart(0),
-        lnx(mesh->LocalNx - 2 * xstart), lny(mesh->LocalNy - 2 * ystart),
-        lnz(mesh->LocalNz - 2 * zstart) {}
+  IndConverter(Mesh* mesh) : mesh(mesh), nxpe(mesh->getNXPE()), nype(mesh->getNYPE()) {}
   // ix and iy are global indices
   // iy is local
   int fromMeshToGlobal(int ix, int iy, int iz) {
     const int xstart = mesh->xstart;
-    const int lnx = mesh->LocalNx - xstart * 2;
+    const int lnx = mesh->LocalNx - (xstart * 2);
     // x-proc-id
-    int pex = divToNeg(ix - xstart, lnx);
-    if (pex < 0) {
-      pex = 0;
-    }
-    if (pex >= nxpe) {
-      pex = nxpe - 1;
-    }
+    const int pex = std::clamp(divToNeg(ix - xstart, lnx), 0, nxpe - 1);
     const int zstart = 0;
-    const int lnz = mesh->LocalNz - zstart * 2;
+    const int lnz = mesh->LocalNz - (zstart * 2);
     // z-proc-id
     // pez only for wrapping around ; later needs similar treatment than pey
     const int pez = divToNeg(iz - zstart, lnz);
     // y proc-id - y is already local
     const int ystart = mesh->ystart;
-    const int lny = mesh->LocalNy - ystart * 2;
+    const int lny = mesh->LocalNy - (ystart * 2);
     const int pey_offset = divToNeg(iy - ystart, lny);
     int pey = pey_offset + mesh->getYProcIndex();
     while (pey < 0) {
@@ -78,8 +77,8 @@ public:
     ASSERT2(pex < nxpe);
     ASSERT2(pey >= 0);
     ASSERT2(pey < nype);
-    return fromLocalToGlobal(ix - pex * lnx, iy - pey_offset * lny, iz - pez * lnz, pex,
-                             pey, 0);
+    return fromLocalToGlobal(ix - (pex * lnx), iy - (pey_offset * lny), iz - (pez * lnz),
+                             pex, pey, 0);
   }
   int fromLocalToGlobal(const int ilocalx, const int ilocaly, const int ilocalz) {
     return fromLocalToGlobal(ilocalx, ilocaly, ilocalz, mesh->getXProcIndex(),
@@ -90,10 +89,10 @@ public:
     ASSERT3(ilocalx >= 0);
     ASSERT3(ilocaly >= 0);
     ASSERT3(ilocalz >= 0);
-    const int ilocal = ((ilocalx * mesh->LocalNy) + ilocaly) * mesh->LocalNz + ilocalz;
+    const int ilocal = (((ilocalx * mesh->LocalNy) + ilocaly) * mesh->LocalNz) + ilocalz;
     const int ret = ilocal
-                    + mesh->LocalNx * mesh->LocalNy * mesh->LocalNz
-                          * ((pey * nxpe + pex) * nzpe + pez);
+                    + (mesh->LocalNx * mesh->LocalNy * mesh->LocalNz
+                       * ((pey * nxpe + pex) * nzpe + pez));
     ASSERT3(ret >= 0);
     ASSERT3(ret < nxpe * nype * mesh->LocalNx * mesh->LocalNy * mesh->LocalNz);
     return ret;
@@ -101,12 +100,10 @@ public:
 
 private:
   // number of procs
-  BoutMesh* mesh;
-  const int nxpe;
-  const int nype;
-  const int nzpe{1};
-  const int xstart, ystart, zstart;
-  const int lnx, lny, lnz;
+  Mesh* mesh;
+  int nxpe;
+  int nype;
+  int nzpe{1};
   static int divToNeg(const int n, const int d) {
     return (n < 0) ? ((n - d + 1) / d) : (n / d);
   }
@@ -148,7 +145,7 @@ void XZPetscHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& de
 
   const int ny = localmesh->LocalNy;
   const int nz = localmesh->LocalNz;
-  const int xend = (localmesh->xend - localmesh->xstart + 1) * localmesh->getNXPE()
+  const int xend = ((localmesh->xend - localmesh->xstart + 1) * localmesh->getNXPE())
                    + localmesh->xstart - 1;
 
   IndConverter conv{localmesh};
@@ -166,7 +163,7 @@ void XZPetscHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& de
     // t_x, t_z are the normalised coordinates \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
     BoutReal t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corn);
-    BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+    const BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
     // NOTE: A (small) hack to avoid one-sided differences. We need at
     // least 2 interior points due to an awkwardness with the
@@ -205,8 +202,8 @@ void XZPetscHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& de
           x, y, z, delta_z(x, y, z), k_corner(x, y, z));
     }
 
-    i_corner[i] = SpecificInd<IND_TYPE::IND_3D>(
-        (((i_corn * ny) + (y + y_offset)) * nz + k_corner(x, y, z)), ny, nz);
+    i_corner[i] =
+        Ind3D(((((i_corn * ny) + (y + y_offset)) * nz) + k_corner(x, y, z)), ny, nz);
 
     h00_x[i] = (2. * t_x * t_x * t_x) - (3. * t_x * t_x) + 1.;
     h00_z[i] = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;
@@ -277,22 +274,19 @@ void XZPetscHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& de
     weights[7] -= h11_x[i] * h11_z[i] / 4;
     weights[5] += h11_x[i] * h11_z[i] / 4;
 
-    PetscInt idxn[1] = {conv.fromLocalToGlobal(x, y + y_offset, z)};
-    // output.write("debug: {:d} -> {:d}: {:d}:{:d} -> {:d}:{:d}\n",
-    // conv.fromLocalToGlobal(x, y + y_offset, z),
-    //     conv.fromMeshToGlobal(i_corn, y + y_offset, k_corner(x, y, z)),
-    //     x, z, i_corn, k_corner(x, y, z));
-    // ixstep = mesh->LocalNx * mesh->LocalNz;
-    for (int j = 0; j < 4; ++j) {
-      PetscInt idxm[4];
-      PetscScalar vals[4];
-      for (int k = 0; k < 4; ++k) {
-        idxm[k] = conv.fromMeshToGlobal(i_corn - 1 + j, y + y_offset,
-                                        k_corner(x, y, z) - 1 + k);
-        vals[k] = weights[j * 4 + k];
+    const PetscInt idxn = {conv.fromLocalToGlobal(x, y + y_offset, z)};
+    constexpr std::size_t stencil_size = 4;
+    for (std::size_t j = 0; j < stencil_size; ++j) {
+      std::array<PetscInt, stencil_size> idxm{};
+      std::array<PetscScalar, stencil_size> vals{};
+      for (std::size_t k = 0; k < stencil_size; ++k) {
+        idxm[k] = conv.fromMeshToGlobal(i_corn - 1 + static_cast<int>(j), y + y_offset,
+                                        k_corner(x, y, z) - 1 + static_cast<int>(k));
+        vals[k] = weights[(j * stencil_size) + k];
       }
       BOUT_OMP(critical)
-      MatSetValues(petscWeights, 1, idxn, 4, idxm, vals, INSERT_VALUES);
+      MatSetValues(petscWeights, 1, &idxn, stencil_size, idxm.data(), vals.data(),
+                   INSERT_VALUES);
     }
   }
 
@@ -335,8 +329,8 @@ XZPetscHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffs
   const int k_mod_p2 = (k_mod_p1 == nz) ? 0 : k_mod_p1 + 1;
 
   return {{i, j + yoffset, k_mod_m1, -0.5 * h10_z(i, j, k)},
-          {i, j + yoffset, k_mod, h00_z(i, j, k) - 0.5 * h11_z(i, j, k)},
-          {i, j + yoffset, k_mod_p1, h01_z(i, j, k) + 0.5 * h10_z(i, j, k)},
+          {i, j + yoffset, k_mod, h00_z(i, j, k) - (0.5 * h11_z(i, j, k))},
+          {i, j + yoffset, k_mod_p1, h01_z(i, j, k) + (0.5 * h10_z(i, j, k))},
           {i, j + yoffset, k_mod_p2, 0.5 * h11_z(i, j, k)}};
 }
 
@@ -349,8 +343,8 @@ Field3D XZPetscHermiteSpline::interpolate(const Field3D& f,
   const auto region2 =
       y_offset == 0 ? "RGN_NOY" : fmt::format("RGN_YPAR_{:+d}", y_offset);
 
-  BoutReal* ptr;
-  const BoutReal* cptr;
+  BoutReal* ptr = nullptr;
+  const BoutReal* cptr = nullptr;
   VecGetArray(rhs, &ptr);
   BOUT_FOR(i, f.getRegion("RGN_NOY")) { ptr[int(i)] = f[i]; }
   VecRestoreArray(rhs, &ptr);

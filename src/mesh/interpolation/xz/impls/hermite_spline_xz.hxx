@@ -3,10 +3,13 @@
 
 #include "bout/interpolation_xz.hxx"
 
-#include <bout/build_defines.hxx>
-#include <bout/bout_types.hxx>
+#include "bout/mask.hxx"
+#include "bout/paralleltransform.hxx"
+#include "bout/region.hxx"
+#include "bout/utils.hxx"
 #include <bout/field3d.hxx>
 
+#include <string>
 #include <vector>
 
 /// Hermite spline interpolation in XZ
@@ -42,7 +45,7 @@ public:
       : XZHermiteSpline(y_offset, mesh) {
     setRegion(regionFromMask(mask, localmesh));
   }
-  ~XZHermiteSpline() = default;
+  ~XZHermiteSpline() override = default;
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                    const std::string& region = "RGN_NOBNDRY") override;
@@ -63,7 +66,8 @@ public:
 };
 
 namespace {
-const RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{"hermitespline"};
+const RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{
+    "hermitespline"};
 }
 
 #endif // BOUT_XZHERMITESPLINE_HXX

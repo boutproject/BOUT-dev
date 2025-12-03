@@ -23,6 +23,10 @@
  *
  **************************************************************************/
 
+#include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 #include <bout/globals.hxx>
 #include <bout/interpolation_xz.hxx>
 #include <bout/msg_stack.hxx>
@@ -30,34 +34,28 @@
 #include <bout/unused.hxx>
 
 // NOLINTBEGIN(misc-include-cleaner, unused-includes)
+#include "impls/bilinear_xz.hxx"
 #include "impls/hermite_spline_xz.hxx"
+#include "impls/lagrange_4pt_xz.hxx"
 #include "impls/monotonic_hermite_spline_xz.hxx"
 #include "impls/petsc_hermite_spline_xz.hxx"
-#include "impls/lagrange_4pt_xz.hxx"
-#include "impls/bilinear_xz.hxx"
 // NOLINTEND(misc-include-cleaner, unused-includes)
 
-void printLocation(const Field3D& var) { output << toString(var.getLocation()); }
-void printLocation(const Field2D& var) { output << toString(var.getLocation()); }
-
-const char* strLocation(CELL_LOC loc) { return toString(loc).c_str(); }
-
-const Field3D interpolate(const Field3D& f, const Field3D& delta_x,
-                          const Field3D& delta_z) {
+Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z) {
   TRACE("Interpolating 3D field");
   XZLagrange4pt interpolateMethod{f.getMesh()};
   return interpolateMethod.interpolate(f, delta_x, delta_z);
 }
 
-const Field3D interpolate(const Field2D& f, const Field3D& delta_x,
-                          const Field3D& UNUSED(delta_z)) {
+Field3D interpolate(const Field2D& f, const Field3D& delta_x,
+                    const Field3D& UNUSED(delta_z)) {
   return interpolate(f, delta_x);
 }
 
-const Field3D interpolate(const Field2D& f, const Field3D& delta_x) {
+Field3D interpolate(const Field2D& f, const Field3D& delta_x) {
   TRACE("interpolate(Field2D, Field3D)");
 
-  Mesh* mesh = f.getMesh();
+  const Mesh* mesh = f.getMesh();
   ASSERT1(mesh == delta_x.getMesh());
   Field3D result{emptyFrom(delta_x)};
 
@@ -85,7 +83,7 @@ const Field3D interpolate(const Field2D& f, const Field3D& delta_x) {
           xs = 1.0;
         }
         // Interpolate in X
-        result(jx, jy, jz) = f(jxnew, jy) * (1.0 - xs) + f(jxnew + 1, jy) * xs;
+        result(jx, jy, jz) = (f(jxnew, jy) * (1.0 - xs)) + (f(jxnew + 1, jy) * xs);
       }
     }
   }

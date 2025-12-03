@@ -22,11 +22,19 @@
 
 #include "lagrange_4pt_xz.hxx"
 
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/interpolation_xz.hxx"
+#include "bout/mask.hxx"
 #include "bout/mesh.hxx"
+#include "bout/region.hxx"
 
-#include <vector>
+#include <cmath>
+#include <string>
 
 XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh* mesh)
     : XZInterpolation(y_offset, mesh), t_x(localmesh), t_z(localmesh) {
@@ -156,13 +164,13 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const Field3D& delta_x,
 // offset must be between 0 and 1
 BoutReal XZLagrange4pt::lagrange_4pt(const BoutReal v2m, const BoutReal vm,
                                      const BoutReal vp, const BoutReal v2p,
-                                     const BoutReal offset) const {
-  return -offset * (offset - 1.0) * (offset - 2.0) * v2m / 6.0
-         + 0.5 * (offset * offset - 1.0) * (offset - 2.0) * vm
-         - 0.5 * offset * (offset + 1.0) * (offset - 2.0) * vp
-         + offset * (offset * offset - 1.0) * v2p / 6.0;
+                                     const BoutReal offset) {
+  return (-offset * (offset - 1.0) * (offset - 2.0) * v2m / 6.0)
+         + (0.5 * (offset * offset - 1.0) * (offset - 2.0) * vm)
+         - (0.5 * offset * (offset + 1.0) * (offset - 2.0) * vp)
+         + (offset * (offset * offset - 1.0) * v2p / 6.0);
 }
 
-BoutReal XZLagrange4pt::lagrange_4pt(const BoutReal v[], const BoutReal offset) const {
+BoutReal XZLagrange4pt::lagrange_4pt(const BoutReal v[], const BoutReal offset) {
   return lagrange_4pt(v[0], v[1], v[2], v[3], offset);
 }

@@ -22,11 +22,19 @@
 
 #include "bilinear_xz.hxx"
 
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/globals.hxx"
+#include "bout/interpolation_xz.hxx"
+#include "bout/mask.hxx"
 #include "bout/mesh.hxx"
+#include "bout/region.hxx"
 
+#include <cmath>
 #include <string>
-#include <vector>
 
 XZBilinear::XZBilinear(int y_offset, Mesh* mesh)
     : XZInterpolation(y_offset, mesh), w0(localmesh), w1(localmesh), w2(localmesh),
@@ -111,10 +119,10 @@ Field3D XZBilinear::interpolate(const Field3D& f, const std::string& region) con
     const int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
     const int z_mod_p1 = (z_mod + 1) % ncz;
 
-    f_interp(x, y_next, z) = f(i_corner(x, y, z), y_next, z_mod) * w0(x, y, z)
-                             + f(i_corner(x, y, z) + 1, y_next, z_mod) * w1(x, y, z)
-                             + f(i_corner(x, y, z), y_next, z_mod_p1) * w2(x, y, z)
-                             + f(i_corner(x, y, z) + 1, y_next, z_mod_p1) * w3(x, y, z);
+    f_interp(x, y_next, z) = (f(i_corner(x, y, z), y_next, z_mod) * w0(x, y, z))
+                             + (f(i_corner(x, y, z) + 1, y_next, z_mod) * w1(x, y, z))
+                             + (f(i_corner(x, y, z), y_next, z_mod_p1) * w2(x, y, z))
+                             + (f(i_corner(x, y, z) + 1, y_next, z_mod_p1) * w3(x, y, z));
   }
   return f_interp;
 }

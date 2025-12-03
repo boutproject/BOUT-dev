@@ -1,7 +1,12 @@
 #ifndef BOUT_XZBILINEAR_HXX
 #define BOUT_XZBILINEAR_HXX
 
+#include "bout/field3d.hxx"
 #include "bout/interpolation_xz.hxx"
+#include "bout/mask.hxx"
+#include "bout/utils.hxx"
+
+#include <string>
 
 /// XZBilinear interpolation class
 ///
