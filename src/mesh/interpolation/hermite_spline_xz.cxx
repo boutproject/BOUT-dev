@@ -171,7 +171,19 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
     BoutReal t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corn);
     BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
-    // NOTE: A (small) hack to avoid one-sided differences
+    // NOTE: A (small) hack to avoid one-sided differences. We need at
+    // least 2 interior points due to an awkwardness with the
+    // boundaries. The splines need derivatives in x, but we don't
+    // know the value in the boundaries, so _any_ interpolation in the
+    // last interior cell can't be done. Instead, we fudge the
+    // interpolation in the last cell to be at the extreme right-hand
+    // edge of the previous cell (that is, exactly on the last
+    // interior point). However, this doesn't work with only one
+    // interior point, because we have to do something similar to the
+    // _first_ cell, and these two fudges cancel out and we end up
+    // indexing into the boundary anyway.
+    // TODO(peter): Can we remove this if we apply (dirichlet?) BCs to
+    // the X derivatives? Note that we need at least _2_
     if (i_corn >= xend) {
       i_corn = xend - 1;
       t_x = 1.0;
