@@ -20,6 +20,8 @@
  *
  **************************************************************************/
 
+#include "monotonic_hermite_spline_xz.hxx"
+
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_xz.hxx"

@@ -20,8 +20,9 @@
  *
  **************************************************************************/
 
+#include "bilinear_xz.hxx"
+
 #include "bout/globals.hxx"
-#include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
 
 #include <string>

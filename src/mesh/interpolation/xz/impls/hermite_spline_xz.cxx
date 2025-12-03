@@ -20,7 +20,9 @@
  *
  **************************************************************************/
 
-#include "../impls/bout/boutmesh.hxx"
+#include "hermite_spline_xz.hxx"
+
+#include "../../../impls/bout/boutmesh.hxx"
 #include "bout/bout.hxx"
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
@@ -133,7 +135,7 @@ XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh* meshin)
     newWeights.emplace_back(localmesh);
     newWeights[w].allocate();
   }
-#ifdef HS_USE_PETSC
+#ifdef BOUT_HAS_PETSC
   petsclib = new PetscLib(
       &Options::root()["mesh:paralleltransform:xzinterpolation:hermitespline"]);
   const int m = localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz;
@@ -141,7 +143,7 @@ XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh* meshin)
   MatCreateAIJ(BoutComm::get(), m, m, M, M, 16, nullptr, 16, nullptr, &petscWeights);
 #endif
 #endif
-#ifndef HS_USE_PETSC
+#ifndef BOUT_HAS_PETSC
   if (localmesh->getNXPE() > 1) {
     throw BoutException("Require PETSc for MPI splitting in X");
   }
@@ -155,7 +157,7 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
   const int nz = localmesh->LocalNz;
   const int xend = (localmesh->xend - localmesh->xstart + 1) * localmesh->getNXPE()
                    + localmesh->xstart - 1;
-#ifdef HS_USE_PETSC
+#ifdef BOUT_HAS_PETSC
   IndConverter conv{localmesh};
 #endif
   BOUT_FOR(i, getRegion(region)) {
@@ -283,7 +285,7 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
     newWeights[13][i] -= h11_x[i] * h11_z[i] / 4;
     newWeights[7][i] -= h11_x[i] * h11_z[i] / 4;
     newWeights[5][i] += h11_x[i] * h11_z[i] / 4;
-#ifdef HS_USE_PETSC
+#ifdef BOUT_HAS_PETSC
     PetscInt idxn[1] = {conv.fromLocalToGlobal(x, y + y_offset, z)};
     // output.write("debug: {:d} -> {:d}: {:d}:{:d} -> {:d}:{:d}\n",
     // conv.fromLocalToGlobal(x, y + y_offset, z),
@@ -304,7 +306,7 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
 #endif
 #endif
   }
-#ifdef HS_USE_PETSC
+#ifdef BOUT_HAS_PETSC
   MatAssemblyBegin(petscWeights, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(petscWeights, MAT_FINAL_ASSEMBLY);
   if (!isInit) {
@@ -359,7 +361,7 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
       y_offset == 0 ? "RGN_NOY" : fmt::format("RGN_YPAR_{:+d}", y_offset);
 
 #if USE_NEW_WEIGHTS
-#ifdef HS_USE_PETSC
+#ifdef BOUT_HAS_PETSC
   BoutReal* ptr;
   const BoutReal* cptr;
   VecGetArray(rhs, &ptr);

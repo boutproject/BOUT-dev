@@ -20,6 +20,8 @@
  *
  **************************************************************************/
 
+#include "lagrange_4pt_xz.hxx"
+
 #include "bout/globals.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"

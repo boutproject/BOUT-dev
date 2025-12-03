@@ -29,6 +29,13 @@
 #include <bout/output.hxx>
 #include <bout/unused.hxx>
 
+// NOLINTBEGIN(misc-include-cleaner, unused-includes)
+#include "impls/hermite_spline_xz.hxx"
+#include "impls/monotonic_hermite_spline_xz.hxx"
+#include "impls/lagrange_4pt_xz.hxx"
+#include "impls/bilinear_xz.hxx"
+// NOLINTEND(misc-include-cleaner, unused-includes)
+
 void printLocation(const Field3D& var) { output << toString(var.getLocation()); }
 void printLocation(const Field2D& var) { output << toString(var.getLocation()); }
 
@@ -85,11 +92,3 @@ const Field3D interpolate(const Field2D& f, const Field3D& delta_x) {
 }
 
 void XZInterpolationFactory::ensureRegistered() {}
-
-namespace {
-RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{"hermitespline"};
-RegisterXZInterpolation<XZMonotonicHermiteSpline> registerinterpmonotonichermitespline{
-    "monotonichermitespline"};
-RegisterXZInterpolation<XZLagrange4pt> registerinterplagrange4pt{"lagrange4pt"};
-RegisterXZInterpolation<XZBilinear> registerinterpbilinear{"bilinear"};
-} // namespace
