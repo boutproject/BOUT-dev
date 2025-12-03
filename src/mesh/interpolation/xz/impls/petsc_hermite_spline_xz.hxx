@@ -1,24 +1,25 @@
-#ifndef BOUT_XZHERMITESPLINE_HXX
-#define BOUT_XZHERMITESPLINE_HXX
+#ifndef BOUT_XZPETSCHERMITESPLINE_HXX
+#define BOUT_XZPETSCHERMITESPLINE_HXX
 
-#include "bout/interpolation_xz.hxx"
-
+#include <bout/interpolation_xz.hxx>
 #include <bout/build_defines.hxx>
+
+#if not BOUT_HAS_PETSC
+namespace {
+  const XZInterpolationFactory::RegisterUnavailableInFactory registerunavailablepetschermitespline("petschermitespline", "BOUT++ was not configured with PETSc");
+}
+#else
+
 #include <bout/bout_types.hxx>
 #include <bout/field3d.hxx>
+#include <bout/petsclib.hxx>
+#include <bout/region.hxx>
 
 #include <vector>
 
-/// Hermite spline interpolation in XZ
-///
-/// Does not support MPI splitting in X
-class XZHermiteSpline : public XZInterpolation {
-protected:
-  /// This is protected rather than private so that it can be
-  /// extended and used by HermiteSplineMonotonic
-
-  Tensor<Ind3D> i_corner; // index of bottom-left grid point
-  Tensor<int> k_corner;                           // z-index of bottom-left grid point
+class XZPetscHermiteSpline : public XZInterpolation {
+  Tensor<Ind3D> i_corner; //< index of bottom-left grid point
+  Tensor<int> k_corner;   //< z-index of bottom-left grid point
 
   // Basis functions for cubic Hermite spline interpolation
   //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
@@ -34,15 +35,30 @@ protected:
   Field3D h01_z;
   Field3D h10_z;
   Field3D h11_z;
+
+  std::vector<Field3D> newWeights;
+
+  PetscLib petsclib;
+  bool isInit{false};
+  Mat petscWeights;
+  Vec rhs, result;
+
 public:
-  XZHermiteSpline(Mesh* mesh = nullptr, [[maybe_unused]] Options* options = nullptr)
-      : XZHermiteSpline(0, mesh) {}
-  XZHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr);
-  XZHermiteSpline(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
-      : XZHermiteSpline(y_offset, mesh) {
+  XZPetscHermiteSpline(Mesh* mesh = nullptr, [[maybe_unused]] Options* options = nullptr)
+      : XZPetscHermiteSpline(0, mesh) {}
+  XZPetscHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr);
+  XZPetscHermiteSpline(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
+      : XZPetscHermiteSpline(y_offset, mesh) {
     setRegion(regionFromMask(mask, localmesh));
   }
-  ~XZHermiteSpline() = default;
+  ~XZPetscHermiteSpline() override {
+    if (isInit) {
+      MatDestroy(&petscWeights);
+      VecDestroy(&rhs);
+      VecDestroy(&result);
+      isInit = false;
+    }
+  }
 
   void calcWeights(const Field3D& delta_x, const Field3D& delta_z,
                    const std::string& region = "RGN_NOBNDRY") override;
@@ -63,7 +79,9 @@ public:
 };
 
 namespace {
-const RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{"hermitespline"};
+const RegisterXZInterpolation<XZPetscHermiteSpline> registerinterppetschermitespline{"petschermitespline"};
 }
 
-#endif // BOUT_XZHERMITESPLINE_HXX
+#endif
+
+#endif // BOUT_XZPETSCHERMITESPLINE_HXX

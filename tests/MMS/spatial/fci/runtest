@@ -258,6 +258,13 @@ if __name__ == "__main__":
             ),
         },
     }
+    if conf.has["petsc"]:
+        cases["nslice=1 petschermitespline"] = {
+            "nslice": 1,
+            "order": 2,
+            "yperiodic": True,
+            "args": "mesh:ddy:first=C2 mesh:paralleltransform:xzinterpolation:type=petschermitespline",
+        }
 
     for name, case in cases.items():
         error2, failures_ = check_fci_operators(name, case)

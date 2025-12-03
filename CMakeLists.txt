@@ -275,6 +275,8 @@ set(BOUT_SOURCES
   ./src/mesh/interpolation/xz/impls/lagrange_4pt_xz.hxx
   ./src/mesh/interpolation/xz/impls/monotonic_hermite_spline_xz.cxx
   ./src/mesh/interpolation/xz/impls/monotonic_hermite_spline_xz.hxx
+  ./src/mesh/interpolation/xz/impls/petsc_hermite_spline_xz.cxx
+  ./src/mesh/interpolation/xz/impls/petsc_hermite_spline_xz.hxx
   ./src/mesh/interpolation/xz/interpolation_xz.cxx
   ./src/mesh/invert3x3.hxx
   ./src/mesh/mesh.cxx

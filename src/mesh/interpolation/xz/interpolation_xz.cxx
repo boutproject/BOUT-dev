@@ -32,6 +32,7 @@
 // NOLINTBEGIN(misc-include-cleaner, unused-includes)
 #include "impls/hermite_spline_xz.hxx"
 #include "impls/monotonic_hermite_spline_xz.hxx"
+#include "impls/petsc_hermite_spline_xz.hxx"
 #include "impls/lagrange_4pt_xz.hxx"
 #include "impls/bilinear_xz.hxx"
 // NOLINTEND(misc-include-cleaner, unused-includes)
