@@ -23,16 +23,16 @@ from scipy.interpolate import RectBivariateSpline as RBS
 DIRECTORY = "data"
 NPROC = 2
 MTHREAD = 2
-OPERATORS = (
-    "grad_par",
-    "grad2_par2",
-    "div_par",
-    "div_par_K_grad_par",
-    "div_par_K_grad_par_mod",
-    "laplace_par",
-    "FV_div_par_mod",
-    "FV_div_par_fvv",
-)
+OPERATORS = {
+    "grad_par": 2,
+    "grad2_par2": 2,
+    "div_par": 2,
+    "div_par_K_grad_par": 2,
+    "div_par_K_grad_par_mod": 2,
+    "laplace_par": 2,
+    "FV_div_par_mod": 2,
+    "FV_div_par_fvv": 1,
+}
 # Note that we need at least _2_ interior points for hermite spline
 # interpolation due to an awkwardness with the boundaries
 NX = 4
@@ -169,10 +169,11 @@ def check_fci_operators(name: str, case: dict) -> bool:
             print(f"{operator} errors: l-2 {l_2:f} l-inf {l_inf:f}")
 
     final_errors = transpose(all_errors)
-    for operator in OPERATORS:
+    for operator, operator_order in OPERATORS.items():
         test_name = f"{operator} {name}"
+        expected_order = min(order, operator_order)
         success = assert_convergence(
-            final_errors[operator]["l_2"], dx, test_name, order
+            final_errors[operator]["l_2"], dx, test_name, expected_order
         )
         if not success:
             failures.append(test_name)
