@@ -28,7 +28,6 @@
 #include "bout/assert.hxx"
 #include "bout/derivs.hxx"
 #include "bout/difops.hxx"
-#include "bout/fft.hxx"
 #include "bout/field2d.hxx"
 #include "bout/globals.hxx"
 #include "bout/interpolation.hxx"
@@ -38,7 +37,6 @@
 #include "bout/solver.hxx"
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
-#include "bout/vecops.hxx"
 
 #include <cmath>
 
