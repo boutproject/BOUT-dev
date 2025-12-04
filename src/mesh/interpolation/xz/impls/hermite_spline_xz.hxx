@@ -50,8 +50,8 @@ protected:
   //
   // Protected so this can be reused between `XZHermiteSpline` and `XZMonotonicHermiteSpline`
   auto interpolate_point(const Field3D& f, const Field3D& fx, const Field3D& fz,
-                         const Field3D& fxz, const Ind3D& i) const
-      -> InterpolatePointResult {
+                         const Field3D& fxz,
+                         const Ind3D& i) const -> InterpolatePointResult {
     const auto ic = i_corner[i];
     const auto iczp = ic.zp();
     const auto icxp = ic.xp();
