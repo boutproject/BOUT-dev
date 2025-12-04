@@ -42,6 +42,8 @@ class Output;
 
 #include "fmt/core.h"
 
+#include <utility>
+
 using std::endl;
 
 /// Class for text output to stdout and/or log file
@@ -76,7 +78,8 @@ public:
   }
 
   template <class S, class... Args>
-  Output(const S& format, const Args&... args) : Output(fmt::format(format, args...)) {}
+  Output(const S& format, Args&&... args)
+      : Output(fmt::format(format, std::forward<decltype(args)>(args)...)) {}
 
   ~Output() override { close(); }
 
@@ -87,8 +90,8 @@ public:
   int open(const std::string& filename);
 
   template <class S, class... Args>
-  int open(const S& format, const Args&... args) {
-    return open(fmt::format(format, args...));
+  int open(const S& format, Args&&... args) {
+    return open(fmt::format(format, std::forward<decltype(args)>(args)...));
   }
 
   /// Close the log file
@@ -98,15 +101,15 @@ public:
   virtual void write(const std::string& message);
 
   template <class S, class... Args>
-  void write(const S& format, const Args&... args) {
-    write(fmt::format(format, args...));
+  void write(const S& format, Args&&... args) {
+    write(fmt::format(format, std::forward<decltype(args)>(args)...));
   }
   /// Same as write, but only to screen
   virtual void print(const std::string& message);
 
   template <class S, class... Args>
-  void print(const S& format, const Args&... args) {
-    print(fmt::format(format, args...));
+  void print(const S& format, Args&&... args) {
+    print(fmt::format(format, std::forward<decltype(args)>(args)...));
   }
 
   /// Add an output stream. All output will be sent to all streams
@@ -136,14 +139,14 @@ private:
 class DummyOutput : public Output {
 public:
   template <class S, class... Args>
-  void write([[maybe_unused]] const S& format, [[maybe_unused]] const Args&... args){};
+  void write([[maybe_unused]] const S& format, [[maybe_unused]] Args&&... args) {};
   template <class S, class... Args>
-  void print([[maybe_unused]] const S& format, [[maybe_unused]] const Args&... args){};
-  void write([[maybe_unused]] const std::string& message) override{};
-  void print([[maybe_unused]] const std::string& message) override{};
-  void enable() override{};
-  void disable() override{};
-  void enable([[maybe_unused]] bool enable){};
+  void print([[maybe_unused]] const S& format, [[maybe_unused]] Args&&... args) {};
+  void write([[maybe_unused]] const std::string& message) override {};
+  void print([[maybe_unused]] const std::string& message) override {};
+  void enable() override {};
+  void disable() override {};
+  void enable([[maybe_unused]] bool enable) {};
   bool isEnabled() override { return false; }
 };
 
@@ -156,13 +159,13 @@ class ConditionalOutput : public Output {
 public:
   /// @param[in] base    The Output object which will be written to if enabled
   /// @param[in] enabled Should this be enabled by default?
-  ConditionalOutput(Output* base, bool enabled = true) : base(base), enabled(enabled){};
+  ConditionalOutput(Output* base, bool enabled = true) : base(base), enabled(enabled) {};
 
   /// Constuctor taking ConditionalOutput. This allows several layers of conditions
   ///
   /// @param[in] base    A ConditionalOutput which will be written to if enabled
   ///
-  ConditionalOutput(ConditionalOutput* base) : base(base), enabled(base->enabled){};
+  ConditionalOutput(ConditionalOutput* base) : base(base), enabled(base->enabled) {};
 
   /// If enabled, writes a string using fmt formatting
   /// by calling base->write
@@ -170,10 +173,10 @@ public:
   void write(const std::string& message) override;
 
   template <class S, class... Args>
-  void write(const S& format, const Args&... args) {
+  void write(const S& format, Args&&... args) {
     if (enabled) {
       ASSERT1(base != nullptr);
-      base->write(fmt::format(format, args...));
+      base->write(fmt::format(format, std::forward<decltype(args)>(args)...));
     }
   }
 
@@ -182,10 +185,10 @@ public:
   void print(const std::string& message) override;
 
   template <class S, class... Args>
-  void print(const S& format, const Args&... args) {
+  void print(const S& format, Args&&... args) {
     if (enabled) {
       ASSERT1(base != nullptr);
-      base->print(fmt::format(format, args...));
+      base->print(fmt::format(format, std::forward<decltype(args)>(args)...));
     }
   }
 
