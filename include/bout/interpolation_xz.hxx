@@ -25,6 +25,7 @@
 #define BOUT_INTERP_XZ_H
 
 #include <bout/bout_types.hxx>
+#include <bout/build_defines.hxx>
 #include <bout/generic_factory.hxx>
 #include <bout/mask.hxx>
 
@@ -130,7 +131,11 @@ public:
   static constexpr auto type_name = "XZInterpolation";
   static constexpr auto section_name = "xzinterpolation";
   static constexpr auto option_name = "type";
+#if BOUT_HAS_PETSC
+  static constexpr auto default_type = "petschermitespline";
+#else
   static constexpr auto default_type = "hermitespline";
+#endif
 
   ReturnType create(Options* options = nullptr, Mesh* mesh = nullptr) const {
     return Factory::create(getType(options), mesh, options);
