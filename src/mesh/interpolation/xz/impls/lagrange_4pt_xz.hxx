@@ -1,7 +1,6 @@
 #ifndef BOUT_XZLAGRANGE_HXX
 #define BOUT_XZLAGRANGE_HXX
 
-#include "bout/bout_types.hxx"
 #include "bout/field3d.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/mask.hxx"
@@ -40,9 +39,6 @@ public:
   Field3D interpolate(const Field3D& f, const Field3D& delta_x, const Field3D& delta_z,
                       const BoutMask& mask,
                       const std::string& region = "RGN_NOBNDRY") override;
-  static BoutReal lagrange_4pt(BoutReal v2m, BoutReal vm, BoutReal vp, BoutReal v2p,
-                               BoutReal offset);
-  static BoutReal lagrange_4pt(const BoutReal v[], BoutReal offset);
 };
 
 namespace {
