@@ -24,7 +24,9 @@
 #ifndef BOUT_INTERP_XZ_H
 #define BOUT_INTERP_XZ_H
 
-#include "bout/mask.hxx"
+#include <bout/bout_types.hxx>
+#include <bout/generic_factory.hxx>
+#include <bout/mask.hxx>
 
 #define USE_NEW_WEIGHTS 1
 #if BOUT_HAS_PETSC
@@ -166,7 +168,8 @@ protected:
 #endif
 
 public:
-  XZHermiteSpline(Mesh* mesh = nullptr) : XZHermiteSpline(0, mesh) {}
+  XZHermiteSpline(Mesh* mesh = nullptr, [[maybe_unused]] Options* options = nullptr)
+      : XZHermiteSpline(0, mesh) {}
   XZHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr);
   XZHermiteSpline(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZHermiteSpline(y_offset, mesh) {
@@ -210,9 +213,29 @@ public:
 /// but also degrades accuracy near maxima and minima.
 /// Perhaps should only impose near boundaries, since that is where
 /// problems most obviously occur.
+///
+/// You can control how tight the clipping to the range of the neighbouring cell
+/// values through ``rtol`` and ``atol``:
+///
+///     diff = (max_of_neighours - min_of_neighours) * rtol + atol
+///
+/// and the interpolated value is instead clipped to the range
+/// ``[min_of_neighours - diff, max_of_neighours + diff]``
 class XZMonotonicHermiteSpline : public XZHermiteSpline {
+  /// Absolute tolerance for clipping
+  BoutReal atol = 0.0;
+  /// Relative tolerance for clipping
+  BoutReal rtol = 1.0;
+
 public:
-  XZMonotonicHermiteSpline(Mesh* mesh = nullptr) : XZHermiteSpline(0, mesh) {
+  XZMonotonicHermiteSpline(Mesh* mesh = nullptr, Options* options = nullptr)
+      : XZHermiteSpline(0, mesh),
+        atol{(*options)["atol"]
+                 .doc("Absolute tolerance for clipping overshoot")
+                 .withDefault(0.0)},
+        rtol{(*options)["rtol"]
+                 .doc("Relative tolerance for clipping overshoot")
+                 .withDefault(1.0)} {
     if (localmesh->getNXPE() > 1) {
       throw BoutException("Do not support MPI splitting in X");
     }
@@ -248,7 +271,8 @@ class XZLagrange4pt : public XZInterpolation {
   Field3D t_x, t_z;
 
 public:
-  XZLagrange4pt(Mesh* mesh = nullptr) : XZLagrange4pt(0, mesh) {}
+  XZLagrange4pt(Mesh* mesh = nullptr, [[maybe_unused]] Options* options = nullptr)
+      : XZLagrange4pt(0, mesh) {}
   XZLagrange4pt(int y_offset = 0, Mesh* mesh = nullptr);
   XZLagrange4pt(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZLagrange4pt(y_offset, mesh) {
@@ -284,7 +308,8 @@ class XZBilinear : public XZInterpolation {
   Field3D w0, w1, w2, w3;
 
 public:
-  XZBilinear(Mesh* mesh = nullptr) : XZBilinear(0, mesh) {}
+  XZBilinear(Mesh* mesh = nullptr, [[maybe_unused]] Options* options = nullptr)
+      : XZBilinear(0, mesh) {}
   XZBilinear(int y_offset = 0, Mesh* mesh = nullptr);
   XZBilinear(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
       : XZBilinear(y_offset, mesh) {
@@ -308,7 +333,7 @@ public:
 };
 
 class XZInterpolationFactory
-    : public Factory<XZInterpolation, XZInterpolationFactory, Mesh*> {
+    : public Factory<XZInterpolation, XZInterpolationFactory, Mesh*, Options*> {
 public:
   static constexpr auto type_name = "XZInterpolation";
   static constexpr auto section_name = "xzinterpolation";
@@ -316,10 +341,10 @@ public:
   static constexpr auto default_type = "hermitespline";
 
   ReturnType create(Options* options = nullptr, Mesh* mesh = nullptr) const {
-    return Factory::create(getType(options), mesh);
+    return Factory::create(getType(options), mesh, options);
   }
-  ReturnType create(const std::string& type, [[maybe_unused]] Options* options) const {
-    return Factory::create(type, nullptr);
+  ReturnType create(const std::string& type, Options* options) const {
+    return Factory::create(type, nullptr, options);
   }
 
   static void ensureRegistered();
