@@ -51,7 +51,10 @@ int main(int argc, char** argv) {
     // Div_par operators require B parallel slices:
     // Coordinates::geometry doesn't ensure this (yet)
     auto& Bxy = mesh->getCoordinates()->Bxy;
-    mesh->communicate(Bxy);
+    auto& J = mesh->getCoordinates()->J;
+    auto& g_22 = mesh->getCoordinates()->g_22;
+    auto& dy = mesh->getCoordinates()->dy;
+    mesh->communicate(Bxy, J, g_22, dy);
   }
   mesh->communicate(input, K);
 
