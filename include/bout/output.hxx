@@ -31,13 +31,11 @@ class Output;
 
 #include "bout/multiostream.hxx"
 #include <fstream>
-#include <functional>
 #include <iostream>
 #include <string>
 
 #include "bout/assert.hxx"
-#include "bout/boutexception.hxx"
-#include "bout/sys/gettext.hxx" // for gettext _() macro
+#include "bout/sys/gettext.hxx" // IWYU pragma: keep for gettext _() macro
 #include "bout/unused.hxx"
 
 #include "fmt/core.h"
@@ -63,13 +61,18 @@ using std::endl;
 class Output : private multioutbuf_init<char, std::char_traits<char>>,
                public std::basic_ostream<char, std::char_traits<char>> {
 
-  using _Tr = std::char_traits<char>;
-  using multioutbuf_init = ::multioutbuf_init<char, _Tr>;
+  using Tr = std::char_traits<char>;
+  using multioutbuf_init = ::multioutbuf_init<char, Tr>;
 
 public:
-  Output() : multioutbuf_init(), std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
+  Output() : multioutbuf_init(), std::basic_ostream<char, Tr>(multioutbuf_init::buf()) {
     Output::enable();
   }
+
+  Output(const Output&) = delete;
+  Output(Output&&) = delete;
+  Output& operator=(const Output&) = delete;
+  Output& operator=(Output&&) = delete;
 
   /// Specify a log file to open
   Output(const std::string& filename) {
@@ -113,12 +116,10 @@ public:
   }
 
   /// Add an output stream. All output will be sent to all streams
-  void add(std::basic_ostream<char, _Tr>& str) { multioutbuf_init::buf()->add(str); }
+  void add(std::basic_ostream<char, Tr>& str) { multioutbuf_init::buf()->add(str); }
 
   /// Remove an output stream
-  void remove(std::basic_ostream<char, _Tr>& str) {
-    multioutbuf_init::buf()->remove(str);
-  }
+  void remove(std::basic_ostream<char, Tr>& str) { multioutbuf_init::buf()->remove(str); }
 
   static Output* getInstance(); ///< Return pointer to instance
 
@@ -129,7 +130,7 @@ protected:
 
 private:
   std::ofstream file; ///< Log file stream
-  bool enabled;       ///< Whether output to stdout is enabled
+  bool enabled{};     ///< Whether output to stdout is enabled
 };
 
 /// Class which behaves like Output, but has no effect.
@@ -219,8 +220,6 @@ private:
   /// The lower-level Output to send output to
   Output* base;
 
-protected:
-  friend class WithQuietOutput;
   /// Does this instance output anything?
   bool enabled;
 };
@@ -279,18 +278,23 @@ ConditionalOutput& operator<<(ConditionalOutput& out, const T* t) {
 ///     // output now enabled
 class WithQuietOutput {
 public:
-  explicit WithQuietOutput(ConditionalOutput& output_in) : output(output_in) {
-    state = output.enabled;
-    output.disable();
+  WithQuietOutput(const WithQuietOutput&) = delete;
+  WithQuietOutput(WithQuietOutput&&) = delete;
+  WithQuietOutput& operator=(const WithQuietOutput&) = delete;
+  WithQuietOutput& operator=(WithQuietOutput&&) = delete;
+  explicit WithQuietOutput(ConditionalOutput& output_in)
+      : output(&output_in), state(output->isEnabled()) {
+    output->disable();
   }
 
-  ~WithQuietOutput() { output.enable(state); }
+  ~WithQuietOutput() { output->enable(state); }
 
 private:
-  ConditionalOutput& output;
+  ConditionalOutput* output;
   bool state;
 };
 
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 /// To allow statements like "output.write(...)" or "output << ..."
 /// Output for debugging
 #ifdef BOUT_USE_OUTPUT_DEBUG
@@ -306,5 +310,6 @@ extern ConditionalOutput output_verbose;  ///< less interesting messages
 
 /// Generic output, given the same level as output_progress
 extern ConditionalOutput output;
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 #endif // BOUT_OUTPUT_H
