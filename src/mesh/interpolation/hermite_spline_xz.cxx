@@ -25,6 +25,8 @@
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_xz.hxx"
+#include "bout/openmpwrap.hxx"
+#include "bout/region.hxx"
 
 #include <vector>
 
@@ -296,6 +298,7 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
                                         k_corner(x, y, z) - 1 + k);
         vals[k] = newWeights[j * 4 + k][i];
       }
+      BOUT_OMP(critical)
       MatSetValues(petscWeights, 1, idxn, 4, idxm, vals, INSERT_VALUES);
     }
 #endif
