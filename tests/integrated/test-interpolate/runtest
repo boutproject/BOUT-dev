@@ -26,6 +26,8 @@ methods = {
     "lagrange4pt": 3,
     "bilinear": 2,
 }
+if boutconfig.has["petsc"]:
+    methods["petschermitespline"] = 3
 
 
 build_and_log("Interpolation test")
@@ -47,7 +49,7 @@ for method in methods:
         dx = 1.0 / (nx)
 
         args = f" mesh:nx={nx + 4} mesh:dx={dx} MZ={nx} xzinterpolation:type={method}"
-        nproc = 2 if method == "hermitespline" and boutconfig.has["petsc"] else 1
+        nproc = 2 if method == "petschermitespline" and boutconfig.has["petsc"] else 1
         args += f" NXPE={nproc}"
 
         cmd = "./test_interpolate" + args
