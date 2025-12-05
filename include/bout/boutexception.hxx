@@ -32,8 +32,13 @@ public:
   /// backtrace (if available)
   std::string getBacktrace() const;
 
+  static void enableBacktrace() { show_backtrace = true; }
+  static void disableBacktrace() { show_backtrace = false; }
+
 private:
   std::string message;
+
+  static bool show_backtrace;
 };
 
 class BoutRhsFail : public BoutException {

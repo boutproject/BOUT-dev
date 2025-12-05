@@ -19,6 +19,8 @@ namespace {
 const std::string header{"====== Exception thrown ======\n"};
 }
 
+bool BoutException::show_backtrace = true;
+
 void BoutParallelThrowRhsFail(int status, const char* message) {
   int allstatus = 0;
   MPI_Allreduce(&status, &allstatus, 1, MPI_INT, MPI_LOR, BoutComm::get());
@@ -29,8 +31,13 @@ void BoutParallelThrowRhsFail(int status, const char* message) {
 }
 
 BoutException::BoutException(std::string msg) : message(std::move(msg)) {
-  const char* show_backtrace = std::getenv("BOUT_SHOW_BACKTRACE");
-  if (show_backtrace == nullptr or std::string{show_backtrace} != "0") {
+  const char* show_backtrace_env_var = std::getenv("BOUT_SHOW_BACKTRACE");
+  const auto should_show_backtrace =
+      show_backtrace
+      and ((show_backtrace_env_var == nullptr)
+           or (show_backtrace_env_var != nullptr
+               and std::string{show_backtrace_env_var} != "0"));
+  if (should_show_backtrace) {
     message = getBacktrace();
   }
 }
