@@ -265,13 +265,19 @@ set(BOUT_SOURCES
   ./src/mesh/impls/bout/boutmesh.cxx
   ./src/mesh/impls/bout/boutmesh.hxx
   ./src/mesh/index_derivs.cxx
-  ./src/mesh/interpolation_xz.cxx
-  ./src/mesh/interpolation/bilinear_xz.cxx
-  ./src/mesh/interpolation/hermite_spline_xz.cxx
   ./src/mesh/interpolation/hermite_spline_z.cxx
   ./src/mesh/interpolation/interpolation_z.cxx
-  ./src/mesh/interpolation/lagrange_4pt_xz.cxx
-  ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
+  ./src/mesh/interpolation/xz/impls/bilinear_xz.cxx
+  ./src/mesh/interpolation/xz/impls/bilinear_xz.hxx
+  ./src/mesh/interpolation/xz/impls/hermite_spline_xz.cxx
+  ./src/mesh/interpolation/xz/impls/hermite_spline_xz.hxx
+  ./src/mesh/interpolation/xz/impls/lagrange_4pt_xz.cxx
+  ./src/mesh/interpolation/xz/impls/lagrange_4pt_xz.hxx
+  ./src/mesh/interpolation/xz/impls/monotonic_hermite_spline_xz.cxx
+  ./src/mesh/interpolation/xz/impls/monotonic_hermite_spline_xz.hxx
+  ./src/mesh/interpolation/xz/impls/petsc_hermite_spline_xz.cxx
+  ./src/mesh/interpolation/xz/impls/petsc_hermite_spline_xz.hxx
+  ./src/mesh/interpolation/xz/interpolation_xz.cxx
   ./src/mesh/invert3x3.hxx
   ./src/mesh/mesh.cxx
   ./src/mesh/parallel/fci.cxx
@@ -376,6 +382,7 @@ if (zoidberg_FOUND EQUAL 0)
 else()
   set(zoidberg_FOUND OFF)
 endif()
+message(STATUS "Found Zoidberg for FCI tests: ${zoidberg_FOUND}")
 
 option(BOUT_GENERATE_FIELDOPS "Automatically re-generate the Field arithmetic operators from the Python templates. \
 Requires Python3, clang-format, and Jinja2. Turn this OFF to skip generating them if, for example, \
