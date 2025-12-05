@@ -165,6 +165,39 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
   PetscFunctionBegin;
 
   auto* s = static_cast<PetscSolver*>(ctx);
+
+  if (s->diagnose) {
+    // Print diagnostic information.
+    // Using the same format at the SNES solver
+
+    SNESConvergedReason reason;
+    SNESGetConvergedReason(s->snes, &reason);
+
+    PetscReal timestep;
+    TSGetTimeStep(s->ts, &timestep);
+
+    // SNES failure counter is only reset when TSSolve is called
+    static PetscInt prev_snes_failures = 0;
+    PetscInt snes_failures;
+    TSGetSNESFailures(s->ts, &snes_failures);
+    snes_failures -= prev_snes_failures;
+    prev_snes_failures += snes_failures;
+
+    // Get number of iterations
+    int nl_its;
+    SNESGetIterationNumber(s->snes, &nl_its);
+    int lin_its;
+    SNESGetLinearSolveIterations(s->snes, &lin_its);
+
+    output.print("\r"); // Carriage return for printing to screen
+    output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}, reason: {}",
+                     t, timestep, nl_its, lin_its, static_cast<int>(reason));
+    if (snes_failures > 0) {
+      output.write(", SNES failures: {}", snes_failures);
+    }
+    output.write("\n");
+  }
+
   if (t < s->next_output) {
     // Not reached output time yet => return
     PetscFunctionReturn(0);
