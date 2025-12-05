@@ -903,8 +903,19 @@ PetscErrorCode PetscSolver::rhs(BoutReal t, Vec udata, Vec dudata, bool linear) 
   load_vars(const_cast<BoutReal*>(udata_array));
   VecRestoreArrayRead(udata, &udata_array);
 
-  // Call RHS function
-  run_rhs(t, linear);
+  try {
+    // Call RHS function
+    run_rhs(t, linear);
+  } catch (BoutException& e) {
+    // Simulation might fail, e.g. negative densities
+    // if timestep too large
+    output_warn.write("WARNING: BoutException thrown: {}\n", e.what());
+
+    // Tell SNES that the input was out of domain
+    SNESSetFunctionDomainError(snes);
+    // Note: Returning non-zero error here leaves vectors in locked state
+    return 0;
+  }
 
   // Save derivatives to PETSc
   BoutReal* dudata_array;
