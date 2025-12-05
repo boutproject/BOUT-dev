@@ -4,6 +4,7 @@
 #include "test_extras.hxx"
 #include "test_fakesolver.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/physicsmodel.hxx"

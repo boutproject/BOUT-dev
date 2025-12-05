@@ -24,6 +24,7 @@
 #ifndef BOUT_INTERP_XZ_H
 #define BOUT_INTERP_XZ_H
 
+#include "bout/build_defines.hxx"
 #include "bout/mask.hxx"
 
 #define USE_NEW_WEIGHTS 1
