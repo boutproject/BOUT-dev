@@ -8,6 +8,7 @@ on:
       # Add your branch here if you want containers for it
       - db-WIP
       - docker-ci
+      - fci-higher-order-tidy-noop-default
 
 env:
   REGISTRY: ghcr.io
