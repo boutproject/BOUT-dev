@@ -33,6 +33,7 @@
 
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/build_defines.hxx>
 #include <bout/constants.hxx>
 #include <bout/globals.hxx>
 #include <bout/invert_laplace.hxx>

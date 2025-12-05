@@ -5,6 +5,7 @@
  **************************************************************************/
 
 #include <bout/assert.hxx>
+#include <bout/build_defines.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/msg_stack.hxx>

@@ -1,7 +1,7 @@
 #include "test_tmpfiles.hxx"
-#include "bout/boutexception.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/output.hxx"
-#include "bout/output_bout_types.hxx"
+#include "bout/output_bout_types.hxx" // IWYU pragma: keep
 #include "gtest/gtest.h"
 
 #include <fmt/ranges.h>
