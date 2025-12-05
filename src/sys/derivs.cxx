@@ -38,6 +38,7 @@
  *
  **************************************************************************/
 
+#include <bout/build_defines.hxx>
 #include <bout/constants.hxx>
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
