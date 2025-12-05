@@ -350,7 +350,7 @@ BoutReal Average_XY(const Field2D& var) {
   return Vol_Glb;
 }
 
-BoutReal Vol_Integral(const Field2D& var) {
+BoutReal Vol_Integral([[maybe_unused]] const Field2D& var) {
 #if BOUT_USE_METRIC_3D
   AUTO_TRACE();
   throw BoutException("Vol_Intregral currently incompatible with 3D metrics");

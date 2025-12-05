@@ -7,6 +7,7 @@
 #include <bout/assert.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
+#include <bout/field.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
@@ -1533,7 +1534,7 @@ Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
   TRACE("Coordinates::Grad_par( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  return ::DDY(var, outloc, method) * invSg();
+  return setName(::DDY(var, outloc, method) * invSg(), "Grad_par({:s})", var.name);
 }
 
 /////////////////////////////////////////////////////////
@@ -1592,7 +1593,7 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
     f_B.yup(i) = f.yup(i) / Bxy_floc.yup(i);
     f_B.ydown(i) = f.ydown(i) / Bxy_floc.ydown(i);
   }
-  return Bxy * Grad_par(f_B, outloc, method);
+  return setName(Bxy * Grad_par(f_B, outloc, method), "C:Div_par({:s})", f.name);
 }
 
 /////////////////////////////////////////////////////////
