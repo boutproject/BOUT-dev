@@ -433,8 +433,7 @@ private:
       solver->addMonitor(bout_monitor.get(), Solver::BACK);        \
       solver->solve();                                             \
     } catch (const BoutException& e) {                             \
-      output << "Error encountered: " << e.what();                 \
-      output << e.getBacktrace() << endl;                          \
+      output.write("Error encountered: {}\n", e.what());           \
       MPI_Abort(BoutComm::get(), 1);                               \
     }                                                              \
     BoutFinalise();                                                \

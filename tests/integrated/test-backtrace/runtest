@@ -17,13 +17,13 @@ except KeyError:
 success = True
 errors = []
 
-_, output = shell("./boutexcept", pipe=True)
+_, output = shell("BOUT_SHOW_BACKTRACE=0 ./boutexcept", pipe=True)
 
 if "troublemaker" in output:
     success = False
     print("Fail: detected offending function name in output when not expected")
 
-_, output = shell("BOUT_SHOW_BACKTRACE=yes ./boutexcept", pipe=True)
+_, output = shell("./boutexcept", pipe=True)
 
 if "troublemaker" not in output:
     success = False
