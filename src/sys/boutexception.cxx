@@ -1,5 +1,3 @@
-#include "bout/build_defines.hxx"
-
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/msg_stack.hxx>
@@ -7,13 +5,10 @@
 
 #include <mpi.h>
 
-#if BOUT_USE_BACKTRACE
-#include <dlfcn.h>
-#include <execinfo.h>
-#include <stdio.h>
-#endif
+#include <cpptrace/cpptrace.hpp> // IWYU pragma: keep
+#include <cpptrace/formatting.hpp>
+#include <cpptrace/utils.hpp>
 
-#include <array>
 #include <cstdlib>
 #include <string>
 #include <utility>
@@ -33,16 +28,10 @@ void BoutParallelThrowRhsFail(int status, const char* message) {
   }
 }
 
-BoutException::BoutException(std::string msg)
-    : message(std::move(msg))
-#if BOUT_USE_BACKTRACE
-      ,
-      trace_size(backtrace(trace.data(), TRACE_MAX)),
-      messages(backtrace_symbols(trace.data(), trace_size))
-#endif
-{
-  if (std::getenv("BOUT_SHOW_BACKTRACE") != nullptr) {
-    message = fmt::format("{}\n{}", getBacktrace(), message);
+BoutException::BoutException(std::string msg) : message(std::move(msg)) {
+  const char* show_backtrace = std::getenv("BOUT_SHOW_BACKTRACE");
+  if (show_backtrace == nullptr or std::string{show_backtrace} != "0") {
+    message = getBacktrace();
   }
 }
 
@@ -51,62 +40,27 @@ BoutException::~BoutException() {
   // up the msg_stack. We also won't know how many messages to pop, so
   // just clear everything
   msg_stack.clear();
-#if BOUT_USE_BACKTRACE
-  // Call required for memory allocated by `backtrace_symbols`
-  free(messages); // NOLINT
-#endif
 }
 
 std::string BoutException::getBacktrace() const {
-  std::string backtrace_message;
-#if BOUT_USE_BACKTRACE
-  backtrace_message = "====== Exception path ======\n";
-  // skip first stack frame (points here)
-  for (int i = trace_size - 1; i > 1; --i) {
-    backtrace_message = fmt::format(FMT_STRING("{}[bt] #{:d} {:s}\n"), backtrace_message,
-                                    i - 1, messages[i]);
-    // find first occurence of '(' or ' ' in message[i] and assume
-    // everything before that is the file name. (Don't go beyond 0 though
-    // (string terminator)
-    int p = 0; // snprintf %.*s expects int
-    while (messages[i][p] != '(' && messages[i][p] != ' ' && messages[i][p] != 0) {
-      ++p;
-    }
+  using namespace cpptrace;
 
-    // If we are compiled as PIE, need to get base pointer of .so and substract
-    Dl_info info;
-    const void* ptr = trace[i];
-    if (dladdr(ptr, &info) != 0) {
-      // Additionally, check whether this is the default offset for an executable
-      if (info.dli_fbase != reinterpret_cast<void*>(0x400000)) {
-        ptr = reinterpret_cast<void*>(reinterpret_cast<size_t>(ptr)
-                                      - reinterpret_cast<size_t>(info.dli_fbase));
-      }
-    }
+  const auto colours = isatty(stdout_fileno) || isatty(stderr_fileno)
+                           ? formatter::color_mode::always
+                           : formatter ::color_mode::none;
 
-    // Pipe stderr to /dev/null to avoid cluttering output
-    // when addr2line fails or is not installed
-    const auto syscom = fmt::format(
-        FMT_STRING("addr2line {:p} -Cfpie {:.{}s} 2> /dev/null"), ptr, messages[i], p);
-    // last parameter is the file name of the symbol
-    FILE* file = popen(syscom.c_str(), "r");
-    if (file != nullptr) {
-      std::array<char, 1024> out{};
-      const char* retstr = nullptr;
-      std::string buf;
-      while ((retstr = fgets(out.data(), out.size() - 1, file)) != nullptr) {
-        buf += retstr;
-      }
-      int const status = pclose(file);
-      if (status == 0) {
-        backtrace_message = fmt::format("{}{}", backtrace_message, buf);
-      }
-    }
-  }
-#else
-  backtrace_message = "Stacktrace not enabled.\n";
-#endif
+  auto formatter = cpptrace::formatter{}
+                       .addresses(formatter::address_mode::none)
+                       .break_before_filename(true)
+                       .colors(colours)
+                       .snippets(true)
+                       .filter([](const stacktrace_frame& frame) {
+                         return frame.symbol.find("BoutException::") == std::string::npos;
+                       })
+                       .filtered_frame_placeholders(false);
 
-  return fmt::format("{}{}\n{}{}\n", backtrace_message, msg_stack.getDump(), header,
+  const std::string backtrace_message = formatter.format(generate_trace());
+
+  return fmt::format("{}\n{}\n{}{}\n", backtrace_message, msg_stack.getDump(), header,
                      message);
 }

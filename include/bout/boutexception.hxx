@@ -1,9 +1,6 @@
 #ifndef BOUT_EXCEPTION_H
 #define BOUT_EXCEPTION_H
 
-#include "bout/build_defines.hxx"
-
-#include <array>
 #include <exception>
 #include <string>
 #include <utility>
@@ -37,12 +34,6 @@ public:
 
 private:
   std::string message;
-#if BOUT_USE_BACKTRACE
-  static constexpr unsigned int TRACE_MAX = 128;
-  std::array<void*, TRACE_MAX> trace{};
-  int trace_size;
-  char** messages;
-#endif
 };
 
 class BoutRhsFail : public BoutException {

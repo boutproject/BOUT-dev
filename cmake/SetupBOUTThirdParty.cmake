@@ -369,3 +369,19 @@ if (BOUT_USE_UUID_SYSTEM_GENERATOR)
 endif()
 message(STATUS "UUID_SYSTEM_GENERATOR: ${BOUT_USE_UUID_SYSTEM_GENERATOR}")
 set(BOUT_HAS_UUID_SYSTEM_GENERATOR ${BOUT_USE_UUID_SYSTEM_GENERATOR})
+
+option(BOUT_DOWNLOAD_CPPTRACE "Download cpptrace for backtrace support" ON)
+if (BOUT_DOWNLOAD_CPPTRACE)
+  include(FetchContent)
+  set(CPPTRACE_LIBDWARF_REPO "https://github.com/ZedThree/libdwarf-lite.git" CACHE STRING "" FORCE)
+  set(CPPTRACE_LIBDWARF_TAG "5f15f145d96278a64440f3c700f475233b4fd0e7" CACHE STRING "" FORCE)
+  FetchContent_Declare(
+    cpptrace
+    GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
+    GIT_TAG        v1.0.4
+  )
+  FetchContent_MakeAvailable(cpptrace)
+else()
+  find_package(cpptrace REQUIRED)
+endif()
+target_link_libraries(bout++ PUBLIC cpptrace::cpptrace)

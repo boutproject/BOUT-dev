@@ -2065,7 +2065,6 @@ PREDEFINED             = BACKTRACE \
                          BOUT_HAS_SLEPC \
                          BOUT_HAS_SUNDIALS \
                          BOUT_HAS_UUID_SYSTEM_GENERATOR \
-                         BOUT_USE_BACKTRACE \
                          BOUT_USE_COLOR \
                          BOUT_USE_OPENMP \
                          BOUT_USE_OUTPUT_DEBUG \

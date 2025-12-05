@@ -574,18 +574,6 @@ option(BOUT_ENABLE_SIGFPE "Signalling floating point exceptions" OFF)
 message(STATUS "Signalling floating point exceptions: BOUT_USE_SIGFPE=${BOUT_ENABLE_SIGFPE}")
 set(BOUT_USE_SIGFPE ${BOUT_ENABLE_SIGFPE})
 
-option(BOUT_ENABLE_BACKTRACE "Enable backtrace" ON)
-if (BOUT_ENABLE_BACKTRACE)
-  find_program(ADDR2LINE_FOUND addr2line)
-  if (NOT ADDR2LINE_FOUND)
-    message(FATAL_ERROR "addr2line not found. Disable backtrace by setting BOUT_ENABLE_BACKTRACE=Off")
-  endif()
-  target_link_libraries(bout++ PUBLIC ${CMAKE_DL_LIBS})
-  set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -l${CMAKE_DL_LIBS}")
-endif()
-message(STATUS "Enable backtrace: BOUT_USE_BACKTRACE=${BOUT_ENABLE_BACKTRACE}")
-set(BOUT_USE_BACKTRACE ${BOUT_ENABLE_BACKTRACE})
-
 option(BOUT_ENABLE_METRIC_3D "Enable 3D metric support" OFF)
 if(BOUT_ENABLE_METRIC_3D)
   set(BOUT_METRIC_TYPE "3D")
@@ -958,7 +946,6 @@ message("
    Output coloring          : ${BOUT_USE_COLOR}
    Field name tracking      : ${BOUT_USE_TRACK}
    Floating point exceptions: ${BOUT_USE_SIGFPE}
-   Backtrace enabled        : ${BOUT_USE_BACKTRACE}
    RAJA enabled             : ${BOUT_HAS_RAJA}
    Umpire enabled           : ${BOUT_HAS_UMPIRE}
    Caliper enabled          : ${BOUT_HAS_CALIPER}
