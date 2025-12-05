@@ -7,11 +7,17 @@
 #include <string>
 #include <vector>
 
-TEST(BoutExceptionTest, ThrowCorrect) {
+// NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
+struct BoutExceptionTest : public ::testing::Test {
+  BoutExceptionTest() { BoutException::enableBacktrace(); }
+  ~BoutExceptionTest() override { BoutException::disableBacktrace(); }
+};
+
+TEST_F(BoutExceptionTest, ThrowCorrect) {
   EXPECT_THROW(throw BoutException("test"), BoutException);
 }
 
-TEST(BoutExceptionTest, What) {
+TEST_F(BoutExceptionTest, What) {
   std::string test_message{"Test message"};
   try {
     throw BoutException(test_message);
@@ -26,7 +32,7 @@ TEST(BoutExceptionTest, What) {
   }
 }
 
-TEST(BoutExceptionTest, GetBacktrace) {
+TEST_F(BoutExceptionTest, GetBacktrace) {
   std::string test_message{"Test message"};
   try {
     throw BoutException(test_message);
@@ -39,7 +45,7 @@ TEST(BoutExceptionTest, GetBacktrace) {
   }
 }
 
-TEST(BoutExceptionTest, FmtJoin) {
+TEST_F(BoutExceptionTest, FmtJoin) {
   const std::vector things = {1, 2, 3, 4};
   const std::string expected = "list: 1, 2, 3, 4";
   const BoutException exception{"list: {}", fmt::join(things, ", ")};
