@@ -190,8 +190,8 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
     SNESGetLinearSolveIterations(s->snes, &lin_its);
 
     output.print("\r"); // Carriage return for printing to screen
-    output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}, reason: {}",
-                     t, timestep, nl_its, lin_its, static_cast<int>(reason));
+    output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}, reason: {}", t,
+                 timestep, nl_its, lin_its, static_cast<int>(reason));
     if (snes_failures > 0) {
       output.write(", SNES failures: {}", snes_failures);
     }
