@@ -165,6 +165,39 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
   PetscFunctionBegin;
 
   auto* s = static_cast<PetscSolver*>(ctx);
+
+  if (s->diagnose) {
+    // Print diagnostic information.
+    // Using the same format at the SNES solver
+
+    SNESConvergedReason reason;
+    SNESGetConvergedReason(s->snes, &reason);
+
+    PetscReal timestep;
+    TSGetTimeStep(s->ts, &timestep);
+
+    // SNES failure counter is only reset when TSSolve is called
+    static PetscInt prev_snes_failures = 0;
+    PetscInt snes_failures;
+    TSGetSNESFailures(s->ts, &snes_failures);
+    snes_failures -= prev_snes_failures;
+    prev_snes_failures += snes_failures;
+
+    // Get number of iterations
+    int nl_its;
+    SNESGetIterationNumber(s->snes, &nl_its);
+    int lin_its;
+    SNESGetLinearSolveIterations(s->snes, &lin_its);
+
+    output.print("\r"); // Carriage return for printing to screen
+    output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}, reason: {}", t,
+                 timestep, nl_its, lin_its, static_cast<int>(reason));
+    if (snes_failures > 0) {
+      output.write(", SNES failures: {}", snes_failures);
+    }
+    output.write("\n");
+  }
+
   if (t < s->next_output) {
     // Not reached output time yet => return
     PetscFunctionReturn(0);
@@ -903,8 +936,19 @@ PetscErrorCode PetscSolver::rhs(BoutReal t, Vec udata, Vec dudata, bool linear) 
   load_vars(const_cast<BoutReal*>(udata_array));
   VecRestoreArrayRead(udata, &udata_array);
 
-  // Call RHS function
-  run_rhs(t, linear);
+  try {
+    // Call RHS function
+    run_rhs(t, linear);
+  } catch (BoutException& e) {
+    // Simulation might fail, e.g. negative densities
+    // if timestep too large
+    output_warn.write("WARNING: BoutException thrown: {}\n", e.what());
+
+    // Tell SNES that the input was out of domain
+    SNESSetFunctionDomainError(snes);
+    // Note: Returning non-zero error here leaves vectors in locked state
+    return 0;
+  }
 
   // Save derivatives to PETSc
   BoutReal* dudata_array;
