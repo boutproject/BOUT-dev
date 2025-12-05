@@ -4,8 +4,11 @@
 #include "bout/boutexception.hxx"
 #include "gtest/gtest.h"
 
-#include <iostream>
+#include <fmt/ranges.h>
+
 #include <string>
+#include <string_view>
+#include <vector>
 
 TEST(BoutExceptionTest, ThrowCorrect) {
   EXPECT_THROW(throw BoutException("test"), BoutException);
@@ -43,6 +46,13 @@ TEST(BoutExceptionTest, GetBacktrace) {
     EXPECT_FALSE(IsSubString(e.getBacktrace(), expected_2));
 #endif
   }
+}
+
+TEST(BoutExceptionTest, FmtJoin) {
+  const std::vector things = {1, 2, 3, 4};
+  constexpr std::string_view expected = "list: 1, 2, 3, 4";
+  const BoutException exception{"list: {}", fmt::join(things, ", ")};
+  EXPECT_EQ(exception.what(), expected);
 }
 
 TEST(BoutRhsFailTest, ThrowCorrect) {

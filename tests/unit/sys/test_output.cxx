@@ -4,7 +4,10 @@
 #include "bout/output_bout_types.hxx"
 #include "gtest/gtest.h"
 
+#include <fmt/ranges.h>
+
 #include <string>
+#include <vector>
 
 // stdout redirection code from https://stackoverflow.com/a/4043813/2043465
 class OutputTest : public ::testing::Test {
@@ -384,4 +387,12 @@ TEST_F(OutputTest, FormatIndPerpi) {
   local_output.write("{:i}", ind);
 
   EXPECT_EQ(buffer.str(), "(15)");
+}
+
+TEST_F(OutputTest, FmtJoin) {
+  const std::vector things = {1, 2, 3, 4};
+  Output local_output;
+  local_output.write("list: {}", fmt::join(things, ", "));
+
+  EXPECT_EQ(buffer.str(), "list: 1, 2, 3, 4");
 }
