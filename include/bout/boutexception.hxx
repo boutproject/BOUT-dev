@@ -16,11 +16,16 @@ void BoutParallelThrowRhsFail(int status, const char* message);
 
 class BoutException : public std::exception {
 public:
+  BoutException(const BoutException&) = default;
+  BoutException(BoutException&&) = delete;
+  BoutException& operator=(const BoutException&) = default;
+  BoutException& operator=(BoutException&&) = delete;
   BoutException(std::string msg);
 
   template <class S, class... Args>
-  BoutException(const S& format, const Args&... args)
-      : BoutException(fmt::format(format, args...)) {}
+  BoutException(S&& format, Args&&... args)
+      : BoutException(fmt::format(std::forward<S>(format),
+                                  std::forward<decltype(args)>(args)...)) {}
 
   ~BoutException() override;
 
@@ -38,24 +43,24 @@ private:
   int trace_size;
   char** messages;
 #endif
-
-  void makeBacktrace();
 };
 
 class BoutRhsFail : public BoutException {
 public:
   BoutRhsFail(std::string message) : BoutException(std::move(message)) {}
   template <class S, class... Args>
-  BoutRhsFail(const S& format, const Args&... args)
-      : BoutRhsFail(fmt::format(format, args...)) {}
+  BoutRhsFail(S&& format, Args&&... args)
+      : BoutRhsFail(fmt::format(std::forward<S>(format),
+                                std::forward<decltype(args)>(args)...)) {}
 };
 
 class BoutIterationFail : public BoutException {
 public:
   BoutIterationFail(std::string message) : BoutException(std::move(message)) {}
   template <class S, class... Args>
-  BoutIterationFail(const S& format, const Args&... args)
-      : BoutIterationFail(fmt::format(format, args...)) {}
+  BoutIterationFail(S&& format, Args&&... args)
+      : BoutIterationFail(fmt::format(std::forward<S>(format),
+                                      std::forward<decltype(args)>(args)...)) {}
 };
 
 #endif

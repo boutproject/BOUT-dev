@@ -56,10 +56,10 @@ int main(int argc, char** argv) {
       FieldFactory::get()->create2D("input_field", Options::getRoot(), mesh);
 
   // Create a LaplaceXY solver
-  LaplaceXY laplacexy{mesh};
+  auto laplacexy = LaplaceXY::create(mesh);
 
   // Solve, using 0.0 as starting guess
-  Field2D solved = laplacexy.solve(input, 0.0);
+  Field2D solved = laplacexy->solve(input, 0.0);
 
   // Need to communicate guard cells
   mesh->communicate(solved);

@@ -238,6 +238,9 @@ public:
                       const std::string& region = "RGN_NOBNDRY") const override;
 };
 
+/// XZLagrange4pt interpolation class
+///
+/// Does not support MPI splitting in X
 class XZLagrange4pt : public XZInterpolation {
   Tensor<int> i_corner; // x-index of bottom-left grid point
   Tensor<int> k_corner; // z-index of bottom-left grid point
@@ -271,6 +274,9 @@ public:
   BoutReal lagrange_4pt(const BoutReal v[], BoutReal offset) const;
 };
 
+/// XZBilinear interpolation calss
+///
+/// Does not support MPI splitting in X.
 class XZBilinear : public XZInterpolation {
   Tensor<int> i_corner; // x-index of bottom-left grid point
   Tensor<int> k_corner; // z-index of bottom-left grid point

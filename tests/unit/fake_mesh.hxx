@@ -50,6 +50,17 @@ public:
     OffsetY = 0;
     OffsetZ = 0;
 
+    // These bits only for ADIOS2, also boring due to single process
+    MapCountX = nx - 2;
+    MapCountY = ny - 2;
+    MapCountZ = nz;
+    MapGlobalX = nx;
+    MapGlobalY = ny;
+    MapGlobalZ = nz;
+    MapLocalX = nx - 2;
+    MapLocalY = ny - 2;
+    MapLocalZ = nz;
+
     // Small "inner" region
     xstart = 1;
     xend = nx - 2;
@@ -143,6 +154,8 @@ public:
   RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
   RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
   RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
+  bool hasBndryLowerY() const override { return false; }
+  bool hasBndryUpperY() const override { return false; }
   void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
   std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
   std::vector<std::shared_ptr<BoundaryRegionPar>>
