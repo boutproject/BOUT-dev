@@ -37,11 +37,11 @@ TEST_F(BoutExceptionTest, GetBacktrace) {
   try {
     throw BoutException(test_message);
   } catch (const BoutException& e) {
-    std::string expected_1{"#2"};
-    std::string expected_2{"bout_test_main"};
     // Should be able to find something about backtrace
-    EXPECT_TRUE(IsSubString(e.what(), expected_1));
-    EXPECT_TRUE(IsSubString(e.what(), expected_2));
+    EXPECT_TRUE(IsSubString(e.what(), "#2"));
+    // We should be able to see either the main source file or the executable name
+    EXPECT_TRUE(IsSubString(e.what(), "bout_test_main")
+                || IsSubString(e.what(), "serial_tests"));
   }
 }
 
