@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 # requires boutpp
 # requires not make
-
+import os
+import pathlib
 import numpy as np
 import boutpp as bc
 import inspect
 
+this_directory = pathlib.Path(__file__).parent.absolute()
+os.chdir(this_directory)
 bc.init("-d test")
 mesh = bc.Mesh.getGlobal()
 field = bc.Field3D.fromMesh(mesh)
