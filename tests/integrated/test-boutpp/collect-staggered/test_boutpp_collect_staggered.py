@@ -1,50 +1,56 @@
 #!/usr/bin/env python3
+import os
+import pathlib
+
 import boutpp as bc
 
 # requires boutpp
 # requires not make
 
-bc.init("-q -q -q")
+def test_boutpp_collect_staggered():
+    bc.init("-q -q -q")
 
-fail = 0
-f = bc.create3D("sin(y)", outloc="YLOW")
+    fail = 0
+    f = bc.create3D("sin(y)", outloc="YLOW")
 
-dump = bc.Options()
-dump["f3d_evolve"].assignRepeat(f)
-dump["f3d_once"] = f
-bc.writeDefaultOutputFile(dump)
-
-
-fc = bc.create3D("sin(y)", outloc="CENTRE")
-
-fe = bc.Field3D.fromCollect("f3d_evolve", path="data", info=False)
-fo = bc.Field3D.fromCollect("f3d_once", path="data", info=False)
-
-if fe.getLocation() == fc.getLocation():
-    print("The loaded field should not be at CELL_CENTRE")
-    fail = 1
-
-if fo.getLocation() == fc.getLocation():
-    print("The loaded field should not be at CELL_CENTRE")
-    fail = 1
+    dump = bc.Options()
+    dump["f3d_evolve"].assignRepeat(f)
+    dump["f3d_once"] = f
+    bc.writeDefaultOutputFile(dump)
 
 
-def compare(a, b):
-    diff = a - bc.interp_to(b, a.getLocation())
-    err = bc.max(bc.sqrt(diff * diff))
-    return err
+    fc = bc.create3D("sin(y)", outloc="CENTRE")
+
+    this_directory = pathlib.Path(__file__).parent.absolute()
+    os.chdir(this_directory)
+    fe = bc.Field3D.fromCollect("f3d_evolve", path="data", info=False)
+    fo = bc.Field3D.fromCollect("f3d_once", path="data", info=False)
+
+    if fe.getLocation() == fc.getLocation():
+        print("The loaded field should not be at CELL_CENTRE")
+        fail = 1
+
+    if fo.getLocation() == fc.getLocation():
+        print("The loaded field should not be at CELL_CENTRE")
+        fail = 1
 
 
-if compare(fc, f) > 1e-3:
-    print("Something is wrong. Maybe interpolation is broken")
-    fail = 1
+    def compare(a, b):
+        diff = a - bc.interp_to(b, a.getLocation())
+        err = bc.max(bc.sqrt(diff * diff))
+        return err
 
-if compare(fc, fe) > 1e-3:
-    print("Something is wrong. Maybe setting the location from field failed.")
-    fail = 1
 
-if compare(fc, fo) > 1e-3:
-    print("Something is wrong. Maybe setting the location from field failed.")
-    fail = 1
+    if compare(fc, f) > 1e-3:
+        print("Something is wrong. Maybe interpolation is broken")
+        fail = 1
 
-exit(fail)
+    if compare(fc, fe) > 1e-3:
+        print("Something is wrong. Maybe setting the location from field failed.")
+        fail = 1
+
+    if compare(fc, fo) > 1e-3:
+        print("Something is wrong. Maybe setting the location from field failed.")
+        fail = 1
+
+    exit(fail)
