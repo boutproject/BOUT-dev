@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pathlib
 
 import numpy as np
 from sys import exit
@@ -30,6 +31,9 @@ nxpe = 3
 command = "./test-communications NXPE=" + str(nxpe)
 
 build_and_log("Communications Test")
+
+this_directory = pathlib.Path(__file__).parent.absolute()
+os.chdir(this_directory)
 
 # remove old outputs
 shell("rm data/BOUT.dmp.*")
