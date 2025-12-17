@@ -5,18 +5,20 @@ import sys
 # requires boutpp
 # requires not make
 
-boutpp.init(sys.argv[1:])
 
-dens = boutpp.create3D("0")
+def test_boutpp_legacy_model():
+    boutpp.init(sys.argv[1:])
 
-
-def rhs(time):
-    n_ddt = dens.ddt()
-    n_ddt[:, :, :] = dens * 0
-    n_ddt += 1
+    dens = boutpp.create3D("0")
 
 
-model = boutpp.PhysicsModelBase()
-model.setRhs(rhs)
-model.solve_for(n=dens)
-model.solve()
+    def rhs(time):
+        n_ddt = dens.ddt()
+        n_ddt[:, :, :] = dens * 0
+        n_ddt += 1
+
+
+    model = boutpp.PhysicsModelBase()
+    model.setRhs(rhs)
+    model.solve_for(n=dens)
+    model.solve()
