@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 
 import numpy as np
 from sys import exit
@@ -20,6 +21,9 @@ nype = 6  # need at least 6 to include all regions
 
 # run with processor splitting at separatrices
 ##################################################
+
+# MPI oversubscribe for communications test
+os.environ["OMPI_MCA_rmaps_base_oversubscribe"] = "1"  # Allows 18 procs
 
 # With nxpe=3, both separatrices are on processor boundaries
 nxpe = 3
@@ -277,6 +281,7 @@ test(f[:, -1], [107, 108, 109, 110, 111], 0, region, "upper y")
 ####################################################
 
 nxpe = 1
+
 command = "./test-communications NXPE=" + str(nxpe)
 
 # remove old outputs
