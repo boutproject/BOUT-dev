@@ -4,11 +4,15 @@
 # Run the test, compare results against the benchmark
 #
 
+import pytest
+import os
+import pathlib
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata import collect
 import boutconfig
 from numpy import sqrt, max, abs, mean, array, log, polyfit
-from sys import stdout, exit
+from sys import stdout
+
 
 # Display the plots as well as saving to file
 show_plot = False
@@ -30,12 +34,14 @@ methods = {
 }
 
 
-build_and_log("Interpolation test")
+@pytest.mark.parametrize("method", methods)
+def test_interpolate(method):
 
-print("Running Interpolation test")
-success = True
+    build_and_log("Interpolation test")
 
-for method in methods:
+    print("Running Interpolation test")
+    success = True
+
     print("------------------------------")
     print("Using {} interpolation".format(method))
 
@@ -44,6 +50,9 @@ for method in methods:
     for var in varlist:
         error_2[var] = []  # L2 error (RMS)
         error_inf[var] = []  # Maximum error
+
+    this_directory = pathlib.Path(__file__).parent.absolute()
+    os.chdir(this_directory)
 
     for nx in nxlist:
         dx = 1.0 / (nx)
@@ -135,10 +144,5 @@ for method in methods:
     else:
         print("Plotting disabled")
 
-print("------------------------------")
-if success:
-    print(" => All Interpolation tests passed")
-    exit(0)
-else:
-    print(" => Some failed tests")
-    exit(1)
+    print("------------------------------")
+    assert success, " => Some failed tests"
