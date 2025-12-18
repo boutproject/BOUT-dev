@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-
 # requires: fftw
 # cores: 4
 
+import pytest
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
-from sys import stdout, exit
+from sys import stdout
 
 tol = 1e-10  # Absolute tolerance
 
@@ -25,15 +25,16 @@ settings = [
 ]
 
 
-success = True
+@pytest.mark.parametrize("setting", settings)
+def test_delp2(setting):
 
-for i, opts in enumerate(settings):
     # Read benchmark values
-    print("Args: " + opts)
-    cmd = exefile + " " + opts
+    print("Args: " + setting)
+    cmd = exefile + " " + setting
 
     s, out = launch_safe(cmd, nproc=1, pipe=True)
-    with open("run.log." + str(i) + ".1", "w") as f:
+    file_suffix = '.'.join([x.split('=')[-1] for x in setting.split()])
+    with open("run.log." + str(file_suffix) + ".1", "w") as f:
         f.write(out)
 
     n0 = collect("n", path="data", info=False)
@@ -43,24 +44,13 @@ for i, opts in enumerate(settings):
 
         stdout.write("   %d processor...." % (nproc))
         s, out = launch_safe(cmd, nproc=nproc, mthread=1, pipe=True)
-        with open("run.log." + str(i) + "." + str(nproc), "w") as f:
+        with open("run.log." + str(file_suffix) + "." + str(nproc), "w") as f:
             f.write(out)
 
         # Collect output data
         n = collect("n", path="data", info=False)
-        if np.shape(n) != np.shape(n0):
-            print("Fail, wrong shape")
-            success = False
-        diff = np.max(np.abs(n - n0))
-        if diff > tol:
-            print("Fail, maximum difference = " + str(diff))
-            success = False
-        else:
-            print("Pass")
 
-if success:
-    print(" => All Delp2 tests passed")
-    exit(0)
-else:
-    print(" => Some failed tests")
-    exit(1)
+        assert np.shape(n) == np.shape(n0), "Fail, wrong shape"
+
+        diff = np.max(np.abs(n - n0))
+        assert diff <= tol, "Fail, maximum difference = " + str(diff)
