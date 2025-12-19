@@ -8,15 +8,25 @@
 #include <bout/boutexception.hxx>
 #include <bout/globals.hxx>
 #include <bout/msg_stack.hxx>
+#include <bout/output_bout_types.hxx>
 #include <bout/petsc_interface.hxx>
 #include <bout/utils.hxx>
 
+#include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <set>
 #include <vector>
 
 #include <bout/output.hxx>
 
+#include "petscerror.h"
+#include "petscmat.h"
+#include "petscpc.h"
 #include "petscsnes.h"
+#include "petscsys.h"
+#include "petscsystypes.h"
+#include "petscvec.h"
 
 class ColoringStencil {
 private:
@@ -83,19 +93,385 @@ PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  *
  * This can be a linearised and simplified form of FormFunction
  */
-PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f,
-                                              void* ctx) {
+PetscErrorCode FormFunctionForColoring(void* UNUSED(snes), Vec x, Vec f, void* ctx) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f, true);
 }
 
 PetscErrorCode snesPCapply(PC pc, Vec x, Vec y) {
   // Get the context
   SNESSolver* s;
-  int ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s));
-  CHKERRQ(ierr);
+  PetscCall(PCShellGetContext(pc, reinterpret_cast<void**>(&s)));
 
   PetscFunctionReturn(s->precon(x, y));
 }
+} // namespace
+
+PetscErrorCode SNESSolver::FDJinitialise() {
+  if (use_coloring) {
+    // Use matrix coloring.
+    // This greatly reduces the number of times the rhs() function
+    // needs to be evaluated when calculating the Jacobian.
+
+    // Use global mesh for now
+    Mesh* mesh = bout::globals::mesh;
+
+    //////////////////////////////////////////////////
+    // Get the local indices by starting at 0
+    Field3D index = globalIndex(0);
+
+    //////////////////////////////////////////////////
+    // Pre-allocate PETSc storage
+
+    output_progress.write("Setting Jacobian matrix sizes\n");
+
+    const int n2d = f2d.size();
+    const int n3d = f3d.size();
+
+    // Set size of Matrix on each processor to nlocal x nlocal
+    MatCreate(BoutComm::get(), &Jfd);
+    MatSetOption(Jfd, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
+    MatSetSizes(Jfd, nlocal, nlocal, PETSC_DETERMINE, PETSC_DETERMINE);
+    MatSetFromOptions(Jfd);
+    // Determine which row/columns of the matrix are locally owned
+    int Istart, Iend;
+    MatGetOwnershipRange(Jfd, &Istart, &Iend);
+    // Convert local into global indices
+    // Note: Not in the boundary cells, to keep -1 values
+    for (const auto& i : mesh->getRegion3D("RGN_NOBNDRY")) {
+      index[i] += Istart;
+    }
+    // Now communicate to fill guard cells
+    mesh->communicate(index);
+
+    // Non-zero elements on this processor
+    std::vector<PetscInt> d_nnz;
+    std::vector<PetscInt> o_nnz;
+    auto n_square = (*options)["stencil:square"]
+                        .doc("Extent of stencil (square)")
+                        .withDefault<int>(0);
+    auto n_cross =
+        (*options)["stencil:cross"].doc("Extent of stencil (cross)").withDefault<int>(0);
+    // Set n_taxi 2 if nothing else is set
+    auto n_taxi = (*options)["stencil:taxi"]
+                      .doc("Extent of stencil (taxi-cab norm)")
+                      .withDefault<int>((n_square == 0 && n_cross == 0) ? 2 : 0);
+
+    auto const xy_offsets = ColoringStencil::getOffsets(n_square, n_taxi, n_cross);
+    {
+      // This is ugly but can't think of a better and robust way to
+      // count the non-zeros for some arbitrary stencil
+      // effectively the same loop as the one that sets the non-zeros below
+      std::vector<std::set<int>> d_nnz_map2d(nlocal);
+      std::vector<std::set<int>> o_nnz_map2d(nlocal);
+      std::vector<std::set<int>> d_nnz_map3d(nlocal);
+      std::vector<std::set<int>> o_nnz_map3d(nlocal);
+      // Loop over every element in 2D to count the *unique* non-zeros
+      for (int x = mesh->xstart; x <= mesh->xend; x++) {
+        for (int y = mesh->ystart; y <= mesh->yend; y++) {
+
+          const int ind0 = ROUND(index(x, y, 0)) - Istart;
+
+          // 2D fields
+          for (int i = 0; i < n2d; i++) {
+            const PetscInt row = ind0 + i;
+            // Loop through each point in the stencil
+            for (const auto& [x_off, y_off] : xy_offsets) {
+              const int xi = x + x_off;
+              const int yi = y + y_off;
+              if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
+                  || (yi >= mesh->LocalNy)) {
+                continue;
+              }
+
+              const int ind2 = ROUND(index(xi, yi, 0));
+              if (ind2 < 0) {
+                continue; // A boundary point
+              }
+
+              // Depends on all variables on this cell
+              for (int j = 0; j < n2d; j++) {
+                const PetscInt col = ind2 + j;
+                if (col >= Istart && col < Iend) {
+                  d_nnz_map2d[row].insert(col);
+                } else {
+                  o_nnz_map2d[row].insert(col);
+                }
+              }
+            }
+          }
+          // 3D fields
+          for (int z = 0; z < mesh->LocalNz; z++) {
+            const int ind = ROUND(index(x, y, z)) - Istart;
+
+            for (int i = 0; i < n3d; i++) {
+              PetscInt row = ind + i;
+              if (z == 0) {
+                row += n2d;
+              }
+
+              // Depends on 2D fields
+              for (int j = 0; j < n2d; j++) {
+                const PetscInt col = ind0 + j;
+                if (col >= Istart && col < Iend) {
+                  d_nnz_map2d[row].insert(col);
+                } else {
+                  o_nnz_map2d[row].insert(col);
+                }
+              }
+
+              // Star pattern
+              for (const auto& [x_off, y_off] : xy_offsets) {
+                const int xi = x + x_off;
+                const int yi = y + y_off;
+
+                if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
+                    || (yi >= mesh->LocalNy)) {
+                  continue;
+                }
+
+                int ind2 = ROUND(index(xi, yi, 0));
+                if (ind2 < 0) {
+                  continue; // Boundary point
+                }
+
+                if (z == 0) {
+                  ind2 += n2d;
+                }
+
+                // 3D fields on this cell
+                for (int j = 0; j < n3d; j++) {
+                  const PetscInt col = ind2 + j;
+                  if (col >= Istart && col < Iend) {
+                    d_nnz_map3d[row].insert(col);
+                  } else {
+                    o_nnz_map3d[row].insert(col);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      d_nnz.reserve(nlocal);
+      d_nnz.reserve(nlocal);
+
+      for (int i = 0; i < nlocal; ++i) {
+        // Assume all elements in the z direction are potentially coupled
+        d_nnz.emplace_back(d_nnz_map3d[i].size() * mesh->LocalNz + d_nnz_map2d[i].size());
+        o_nnz.emplace_back(o_nnz_map3d[i].size() * mesh->LocalNz + o_nnz_map2d[i].size());
+      }
+    }
+
+    output_progress.write("Pre-allocating Jacobian\n");
+    // Pre-allocate
+    MatMPIAIJSetPreallocation(Jfd, 0, d_nnz.data(), 0, o_nnz.data());
+    MatSeqAIJSetPreallocation(Jfd, 0, d_nnz.data());
+    MatSetUp(Jfd);
+    MatSetOption(Jfd, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
+
+    //////////////////////////////////////////////////
+    // Mark non-zero entries
+
+    output_progress.write("Marking non-zero Jacobian entries\n");
+    const PetscScalar val = 1.0;
+    for (int x = mesh->xstart; x <= mesh->xend; x++) {
+      for (int y = mesh->ystart; y <= mesh->yend; y++) {
+
+        const int ind0 = ROUND(index(x, y, 0));
+
+        // 2D fields
+        for (int i = 0; i < n2d; i++) {
+          const PetscInt row = ind0 + i;
+
+          // Loop through each point in the stencil
+          for (const auto& [x_off, y_off] : xy_offsets) {
+            const int xi = x + x_off;
+            const int yi = y + y_off;
+            if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx) || (yi >= mesh->LocalNy)) {
+              continue;
+            }
+
+            const int ind2 = ROUND(index(xi, yi, 0));
+            if (ind2 < 0) {
+              continue; // A boundary point
+            }
+
+            // Depends on all variables on this cell
+            for (int j = 0; j < n2d; j++) {
+              const PetscInt col = ind2 + j;
+              PetscCall(MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES));
+            }
+          }
+        }
+        // 3D fields
+        for (int z = 0; z < mesh->LocalNz; z++) {
+          int ind = ROUND(index(x, y, z));
+
+          for (int i = 0; i < n3d; i++) {
+            PetscInt row = ind + i;
+            if (z == 0) {
+              row += n2d;
+            }
+
+            // Depends on 2D fields
+            for (int j = 0; j < n2d; j++) {
+              const PetscInt col = ind0 + j;
+              PetscCall(MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES));
+            }
+
+            // Star pattern
+            for (const auto& [x_off, y_off] : xy_offsets) {
+              int xi = x + x_off;
+              int yi = y + y_off;
+
+              if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
+                  || (yi >= mesh->LocalNy)) {
+                continue;
+              }
+              for (int zi = 0; zi < mesh->LocalNz; ++zi) {
+                int ind2 = ROUND(index(xi, yi, zi));
+                if (ind2 < 0) {
+                  continue; // Boundary point
+                }
+
+                if (z == 0) {
+                  ind2 += n2d;
+                }
+
+                // 3D fields on this cell
+                for (int j = 0; j < n3d; j++) {
+                  const PetscInt col = ind2 + j;
+                  PetscErrorCode ierr =
+                      MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
+
+                  if (ierr != PETSC_SUCCESS) {
+                    output.write("ERROR: {} {} : ({}, {}) -> ({}, {}) : {} -> {}\n", row,
+                                 x, y, xi, yi, ind2, ind2 + n3d - 1);
+                  }
+                  CHKERRQ(ierr);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Finished marking non-zero entries
+
+    output_progress.write("Assembling Jacobian matrix\n");
+
+    // Assemble Matrix
+    MatAssemblyBegin(Jfd, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(Jfd, MAT_FINAL_ASSEMBLY);
+
+    {
+      // Test if the matrix is symmetric
+      // Values are 0 or 1 so tolerance (1e-5) shouldn't matter
+      PetscBool symmetric;
+      PetscCall(MatIsSymmetric(Jfd, 1e-5, &symmetric));
+      if (!symmetric) {
+        output_warn.write("Jacobian pattern is not symmetric\n");
+      }
+    }
+
+    // The above can miss entries around the X-point branch cut:
+    // The diagonal terms are complicated because moving in X then Y
+    // is different from moving in Y then X at the X-point.
+    // Making sure the colouring matrix is symmetric does not
+    // necessarily give the correct stencil but may help.
+    if ((*options)["force_symmetric_coloring"]
+            .doc("Modifies coloring matrix to force it to be symmetric")
+            .withDefault<bool>(false)) {
+      Mat Jfd_T;
+      MatCreateTranspose(Jfd, &Jfd_T);
+      MatAXPY(Jfd, 1, Jfd_T, DIFFERENT_NONZERO_PATTERN);
+    }
+
+    output_progress.write("Creating Jacobian coloring\n");
+    updateColoring();
+
+    if (prune_jacobian) {
+      // Will remove small elements from the Jacobian.
+      // Save a copy to recover from over-pruning
+      PetscCall(MatDuplicate(Jfd, MAT_SHARE_NONZERO_PATTERN, &Jfd_original));
+    }
+  } else {
+    // Brute force calculation
+    // There is usually no reason to use this, except as a check of
+    // the coloring calculation.
+
+    MatCreateAIJ(
+        BoutComm::get(), nlocal, nlocal,  // Local sizes
+        PETSC_DETERMINE, PETSC_DETERMINE, // Global sizes
+        3, // Number of nonzero entries in diagonal portion of local submatrix
+        nullptr,
+        0, // Number of nonzeros per row in off-diagonal portion of local submatrix
+        nullptr, &Jfd);
+
+    if (matrix_free_operator) {
+      SNESSetJacobian(snes, Jmf, Jfd, SNESComputeJacobianDefault, this);
+    } else {
+      SNESSetJacobian(snes, Jfd, Jfd, SNESComputeJacobianDefault, this);
+    }
+
+    MatSetOption(Jfd, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+  }
+  return PETSC_SUCCESS;
+}
+
+PetscErrorCode SNESSolver::FDJpruneJacobian() {
+#if PETSC_VERSION_GE(3, 20, 0)
+
+  // Remove small elements from the Jacobian and recompute the coloring
+  // Only do this if there are a significant number of small elements.
+  int small_elements = 0;
+  int total_elements = 0;
+
+  // Get index of rows owned by this processor
+  int rstart, rend;
+  MatGetOwnershipRange(Jfd, &rstart, &rend);
+
+  PetscInt ncols;
+  const PetscScalar* vals;
+  for (int row = rstart; row < rend; row++) {
+    MatGetRow(Jfd, row, &ncols, nullptr, &vals);
+    for (int col = 0; col < ncols; col++) {
+      if (std::abs(vals[col]) < prune_abstol) {
+        ++small_elements;
+      }
+      ++total_elements;
+    }
+    MatRestoreRow(Jfd, row, &ncols, nullptr, &vals);
+  }
+
+  if (small_elements > prune_fraction * total_elements) {
+    if (diagnose) {
+      output.write("\nPruning Jacobian elements: {} / {}\n", small_elements,
+                   total_elements);
+    }
+
+    // Prune Jacobian, keeping diagonal elements
+    PetscCall(MatFilter(Jfd, prune_abstol, PETSC_TRUE, PETSC_TRUE));
+
+    // Update the coloring from Jfd matrix
+    updateColoring();
+
+    // Mark the Jacobian as pruned. This is so that it is only restored if pruned.
+    jacobian_pruned = true;
+  }
+#endif // PETSC_VERSION_GE(3,20,0)
+  return PETSC_SUCCESS;
+}
+
+PetscErrorCode SNESSolver::FDJrestoreFromPruning() {
+  // Restore pruned non-zero elements
+  PetscCall(MatCopy(Jfd_original, Jfd, DIFFERENT_NONZERO_PATTERN));
+  // The non-zero pattern has changed, so update coloring
+  updateColoring();
+  jacobian_pruned = false; // Reset flag. Will be set after pruning.
+  return PETSC_SUCCESS;
 }
 
 SNESSolver::SNESSolver(Options* opts)
@@ -106,6 +482,11 @@ SNESSolver::SNESSolver(Options* opts)
                        .doc("If dt falls below this, reset to starting dt")
                        .withDefault(1e-6)),
       max_timestep((*options)["max_timestep"].doc("Maximum timestep").withDefault(1e37)),
+      equation_form(
+          (*options)["equation_form"]
+              .doc("Form of equation to solve: rearranged_backward_euler (default);"
+                   " pseudo_transient; backward_euler; direct_newton")
+              .withDefault(BoutSnesEquationForm::rearranged_backward_euler)),
       snes_type((*options)["snes_type"]
                     .doc("PETSc nonlinear solver method to use")
                     .withDefault("anderson")),
@@ -127,6 +508,9 @@ SNESSolver::SNESSolver(Options* opts)
       upper_its((*options)["upper_its"]
                     .doc("Iterations above which the next timestep is reduced")
                     .withDefault(static_cast<int>(maxits * 0.8))),
+      max_snes_failures((*options)["max_snes_failures"]
+                            .doc("Abort after this number of consecutive failures")
+                            .withDefault(10)),
       timestep_factor_on_failure((*options)["timestep_factor_on_failure"]
                                      .doc("Multiply timestep on convergence failure")
                                      .withDefault(0.5)),
@@ -138,22 +522,36 @@ SNESSolver::SNESSolver(Options* opts)
           (*options)["timestep_factor_on_lower_its"]
               .doc("Multiply timestep if iterations are below lower_its")
               .withDefault(1.4)),
+      pseudo_strategy((*options)["pseudo_strategy"]
+                          .doc("PTC strategy to use when setting timesteps")
+                          .withDefault(BoutPTCStrategy::inverse_residual)),
+      pseudo_alpha((*options)["pseudo_alpha"]
+                       .doc("Sets timestep using dt = alpha / residual")
+                       .withDefault(100. * atol * timestep)),
+      pseudo_growth_factor((*options)["pseudo_growth_factor"]
+                               .doc("PTC growth factor on success")
+                               .withDefault(1.1)),
+      pseudo_reduction_factor((*options)["pseudo_reduction_factor"]
+                                  .doc("PTC reduction factor on failure")
+                                  .withDefault(0.5)),
+      pseudo_max_ratio((*options)["pseudo_max_ratio"]
+                           .doc("PTC maximum timestep ratio between neighbors")
+                           .withDefault(2.)),
       pid_controller(
           (*options)["pid_controller"].doc("Use PID controller?").withDefault(false)),
       target_its((*options)["target_its"].doc("Target snes iterations").withDefault(7)),
       kP((*options)["kP"].doc("Proportional PID parameter").withDefault(0.7)),
       kI((*options)["kI"].doc("Integral PID parameter").withDefault(0.3)),
       kD((*options)["kD"].doc("Derivative PID parameter").withDefault(0.2)),
+      pid_consider_failures(
+          (*options)["pid_consider_failures"]
+              .doc("Reduce timestep increases if recent solves have failed")
+              .withDefault<bool>(false)),
       diagnose(
           (*options)["diagnose"].doc("Print additional diagnostics").withDefault(false)),
       diagnose_failures((*options)["diagnose_failures"]
                             .doc("Print more diagnostics when SNES fails")
                             .withDefault<bool>(false)),
-      equation_form(
-          (*options)["equation_form"]
-              .doc("Form of equation to solve: rearranged_backward_euler (default);"
-                   " pseudo_transient; backward_euler; direct_newton")
-              .withDefault(BoutSnesEquationForm::rearranged_backward_euler)),
       predictor((*options)["predictor"].doc("Use linear predictor?").withDefault(true)),
       use_precon((*options)["use_precon"]
                      .doc("Use user-supplied preconditioner?")
@@ -203,6 +601,9 @@ SNESSolver::SNESSolver(Options* opts)
                     .withDefault<bool>(false)),
       scale_vars((*options)["scale_vars"]
                      .doc("Scale variables (Jacobian column scaling)?")
+                     .withDefault<bool>(false)),
+      asinh_vars((*options)["asinh_vars"]
+                     .doc("Apply asinh() to all variables?")
                      .withDefault<bool>(false)) {}
 
 int SNESSolver::init() {
@@ -227,54 +628,49 @@ int SNESSolver::init() {
                     n3Dvars(), n2Dvars(), neq, nlocal);
 
   // Initialise PETSc components
-  int ierr;
 
   // Vectors
   output_info.write("Creating vector\n");
-  ierr = VecCreate(BoutComm::get(), &snes_x);
-  CHKERRQ(ierr);
-  ierr = VecSetSizes(snes_x, nlocal, PETSC_DECIDE);
-  CHKERRQ(ierr);
-  ierr = VecSetFromOptions(snes_x);
-  CHKERRQ(ierr);
+  PetscCall(VecCreate(BoutComm::get(), &snes_x));
+  PetscCall(VecSetSizes(snes_x, nlocal, PETSC_DECIDE));
+  PetscCall(VecSetFromOptions(snes_x));
 
-  VecDuplicate(snes_x, &snes_f);
-  VecDuplicate(snes_x, &x0);
+  PetscCall(VecDuplicate(snes_x, &snes_f));
+  PetscCall(VecDuplicate(snes_x, &x0));
 
-  if (equation_form == BoutSnesEquationForm::rearranged_backward_euler) {
-    // Need an intermediate vector for rearranged Backward Euler
-    ierr = VecDuplicate(snes_x, &delta_x);
-    CHKERRQ(ierr);
+  if ((equation_form == BoutSnesEquationForm::rearranged_backward_euler)
+      || (equation_form == BoutSnesEquationForm::pseudo_transient)) {
+    // Need an intermediate vector for rearranged Backward Euler or Pseudo-Transient Continuation
+    PetscCall(VecDuplicate(snes_x, &delta_x));
   }
 
   if (predictor) {
     // Storage for previous solution
-    ierr = VecDuplicate(snes_x, &x1);
-    CHKERRQ(ierr);
+    PetscCall(VecDuplicate(snes_x, &x1));
   }
 
   if (scale_rhs) {
     // Storage for rhs factors, one per evolving variable
-    ierr = VecDuplicate(snes_x, &rhs_scaling_factors);
-    CHKERRQ(ierr);
+    PetscCall(VecDuplicate(snes_x, &rhs_scaling_factors));
     // Set all factors to 1 to start with
-    ierr = VecSet(rhs_scaling_factors, 1.0);
-    CHKERRQ(ierr);
+    PetscCall(VecSet(rhs_scaling_factors, 1.0));
     // Array to store inverse Jacobian row norms
-    ierr = VecDuplicate(snes_x, &jac_row_inv_norms);
-    CHKERRQ(ierr);
+    PetscCall(VecDuplicate(snes_x, &jac_row_inv_norms));
   }
 
   if (scale_vars) {
     // Storage for var factors, one per evolving variable
-    ierr = VecDuplicate(snes_x, &var_scaling_factors);
-    CHKERRQ(ierr);
+    PetscCall(VecDuplicate(snes_x, &var_scaling_factors));
     // Set all factors to 1 to start with
-    ierr = VecSet(var_scaling_factors, 1.0);
-    CHKERRQ(ierr);
+    PetscCall(VecSet(var_scaling_factors, 1.0));
     // Storage for scaled 'x' state vectors
-    ierr = VecDuplicate(snes_x, &scaled_x);
-    CHKERRQ(ierr);
+    PetscCall(VecDuplicate(snes_x, &scaled_x));
+  } else if (asinh_vars) {
+    PetscCall(VecDuplicate(snes_x, &scaled_x));
+  }
+
+  if (equation_form == BoutSnesEquationForm::pseudo_transient) {
+    PetscCall(initPseudoTimestepping());
   }
 
   // Nonlinear solver interface (SNES)
@@ -326,332 +722,10 @@ int SNESSolver::init() {
     // Create a vector to store interpolated output solution
     // Used so that the timestep does not have to be adjusted,
     // because that would require updating the preconditioner.
-    ierr = VecDuplicate(snes_x, &output_x);
-    CHKERRQ(ierr);
+    PetscCall(VecDuplicate(snes_x, &output_x));
 
-    if (use_coloring) {
-      // Use matrix coloring.
-      // This greatly reduces the number of times the rhs() function
-      // needs to be evaluated when calculating the Jacobian.
-
-      // Use global mesh for now
-      Mesh* mesh = bout::globals::mesh;
-
-      //////////////////////////////////////////////////
-      // Get the local indices by starting at 0
-      Field3D index = globalIndex(0);
-
-      //////////////////////////////////////////////////
-      // Pre-allocate PETSc storage
-
-      output_progress.write("Setting Jacobian matrix sizes\n");
-
-      const int n2d = f2d.size();
-      const int n3d = f3d.size();
-
-      // Set size of Matrix on each processor to nlocal x nlocal
-      MatCreate(BoutComm::get(), &Jfd);
-      MatSetOption(Jfd, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
-      MatSetSizes(Jfd, nlocal, nlocal, PETSC_DETERMINE, PETSC_DETERMINE);
-      MatSetFromOptions(Jfd);
-      // Determine which row/columns of the matrix are locally owned
-      int Istart, Iend;
-      MatGetOwnershipRange(Jfd, &Istart, &Iend);
-      // Convert local into global indices
-      // Note: Not in the boundary cells, to keep -1 values
-      for (const auto& i : mesh->getRegion3D("RGN_NOBNDRY")) {
-        index[i] += Istart;
-      }
-      // Now communicate to fill guard cells
-      mesh->communicate(index);
-
-      // Non-zero elements on this processor
-      std::vector<PetscInt> d_nnz;
-      std::vector<PetscInt> o_nnz;
-      auto n_square = (*options)["stencil:square"]
-                          .doc("Extent of stencil (square)")
-                          .withDefault<int>(0);
-      auto n_taxi = (*options)["stencil:taxi"]
-                        .doc("Extent of stencil (taxi-cab norm)")
-                        .withDefault<int>(0);
-      auto n_cross = (*options)["stencil:cross"]
-                         .doc("Extent of stencil (cross)")
-                         .withDefault<int>(0);
-      // Set n_taxi 2 if nothing else is set
-      // Probably a better way to do this
-      if (n_square == 0 && n_taxi == 0 && n_cross == 0) {
-        output_info.write("Setting solver:stencil:taxi = 2\n");
-        n_taxi = 2;
-      }
-
-      auto const xy_offsets = ColoringStencil::getOffsets(n_square, n_taxi, n_cross);
-      {
-        // This is ugly but can't think of a better and robust way to
-        // count the non-zeros for some arbitrary stencil
-        // effectively the same loop as the one that sets the non-zeros below
-        std::vector<std::set<int>> d_nnz_map2d(nlocal);
-        std::vector<std::set<int>> o_nnz_map2d(nlocal);
-        std::vector<std::set<int>> d_nnz_map3d(nlocal);
-        std::vector<std::set<int>> o_nnz_map3d(nlocal);
-        // Loop over every element in 2D to count the *unique* non-zeros
-        for (int x = mesh->xstart; x <= mesh->xend; x++) {
-          for (int y = mesh->ystart; y <= mesh->yend; y++) {
-
-            const int ind0 = ROUND(index(x, y, 0)) - Istart;
-
-            // 2D fields
-            for (int i = 0; i < n2d; i++) {
-              const PetscInt row = ind0 + i;
-              // Loop through each point in the stencil
-              for (const auto& [x_off, y_off] : xy_offsets) {
-                const int xi = x + x_off;
-                const int yi = y + y_off;
-                if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
-                    || (yi >= mesh->LocalNy)) {
-                  continue;
-                }
-
-                const int ind2 = ROUND(index(xi, yi, 0));
-                if (ind2 < 0) {
-                  continue; // A boundary point
-                }
-
-                // Depends on all variables on this cell
-                for (int j = 0; j < n2d; j++) {
-                  const PetscInt col = ind2 + j;
-                  if (col >= Istart && col < Iend) {
-                    d_nnz_map2d[row].insert(col);
-                  } else {
-                    o_nnz_map2d[row].insert(col);
-                  }
-                }
-              }
-            }
-            // 3D fields
-            for (int z = 0; z < mesh->LocalNz; z++) {
-              const int ind = ROUND(index(x, y, z)) - Istart;
-
-              for (int i = 0; i < n3d; i++) {
-                PetscInt row = ind + i;
-                if (z == 0) {
-                  row += n2d;
-                }
-
-                // Depends on 2D fields
-                for (int j = 0; j < n2d; j++) {
-                  const PetscInt col = ind0 + j;
-                  if (col >= Istart && col < Iend) {
-                    d_nnz_map2d[row].insert(col);
-                  } else {
-                    o_nnz_map2d[row].insert(col);
-                  }
-                }
-
-                // Star pattern
-                for (const auto& [x_off, y_off] : xy_offsets) {
-                  const int xi = x + x_off;
-                  const int yi = y + y_off;
-
-                  if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
-                      || (yi >= mesh->LocalNy)) {
-                    continue;
-                  }
-
-                  int ind2 = ROUND(index(xi, yi, 0));
-                  if (ind2 < 0) {
-                    continue; // Boundary point
-                  }
-
-                  if (z == 0) {
-                    ind2 += n2d;
-                  }
-
-                  // 3D fields on this cell
-                  for (int j = 0; j < n3d; j++) {
-                    const PetscInt col = ind2 + j;
-                    if (col >= Istart && col < Iend) {
-                      d_nnz_map3d[row].insert(col);
-                    } else {
-                      o_nnz_map3d[row].insert(col);
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        d_nnz.reserve(nlocal);
-        d_nnz.reserve(nlocal);
-
-        for (int i = 0; i < nlocal; ++i) {
-          // Assume all elements in the z direction are potentially coupled
-          d_nnz.emplace_back(d_nnz_map3d[i].size() * mesh->LocalNz
-                             + d_nnz_map2d[i].size());
-          o_nnz.emplace_back(o_nnz_map3d[i].size() * mesh->LocalNz
-                             + o_nnz_map2d[i].size());
-        }
-      }
-
-      output_progress.write("Pre-allocating Jacobian\n");
-      // Pre-allocate
-      MatMPIAIJSetPreallocation(Jfd, 0, d_nnz.data(), 0, o_nnz.data());
-      MatSeqAIJSetPreallocation(Jfd, 0, d_nnz.data());
-      MatSetUp(Jfd);
-      MatSetOption(Jfd, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
-
-      //////////////////////////////////////////////////
-      // Mark non-zero entries
-
-      output_progress.write("Marking non-zero Jacobian entries\n");
-      PetscScalar val = 1.0;
-      for (int x = mesh->xstart; x <= mesh->xend; x++) {
-        for (int y = mesh->ystart; y <= mesh->yend; y++) {
-
-          const int ind0 = ROUND(index(x, y, 0));
-
-          // 2D fields
-          for (int i = 0; i < n2d; i++) {
-            const PetscInt row = ind0 + i;
-
-            // Loop through each point in the stencil
-            for (const auto& [x_off, y_off] : xy_offsets) {
-              const int xi = x + x_off;
-              const int yi = y + y_off;
-              if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
-                  || (yi >= mesh->LocalNy)) {
-                continue;
-              }
-
-              int ind2 = ROUND(index(xi, yi, 0));
-              if (ind2 < 0) {
-                continue; // A boundary point
-              }
-
-              // Depends on all variables on this cell
-              for (int j = 0; j < n2d; j++) {
-                PetscInt col = ind2 + j;
-                ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
-                CHKERRQ(ierr);
-              }
-            }
-          }
-          // 3D fields
-          for (int z = 0; z < mesh->LocalNz; z++) {
-            int ind = ROUND(index(x, y, z));
-
-            for (int i = 0; i < n3d; i++) {
-              PetscInt row = ind + i;
-              if (z == 0) {
-                row += n2d;
-              }
-
-              // Depends on 2D fields
-              for (int j = 0; j < n2d; j++) {
-                PetscInt col = ind0 + j;
-                ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
-                CHKERRQ(ierr);
-              }
-
-              // Star pattern
-              for (const auto& [x_off, y_off] : xy_offsets) {
-                int xi = x + x_off;
-                int yi = y + y_off;
-
-                if ((xi < 0) || (yi < 0) || (xi >= mesh->LocalNx)
-                    || (yi >= mesh->LocalNy)) {
-                  continue;
-                }
-                for (int zi = 0; zi < mesh->LocalNz; ++zi) {
-                  int ind2 = ROUND(index(xi, yi, zi));
-                  if (ind2 < 0) {
-                    continue; // Boundary point
-                  }
-
-                  if (z == 0) {
-                    ind2 += n2d;
-                  }
-
-                  // 3D fields on this cell
-                  for (int j = 0; j < n3d; j++) {
-                    PetscInt col = ind2 + j;
-                    ierr = MatSetValues(Jfd, 1, &row, 1, &col, &val, INSERT_VALUES);
-
-                    if (ierr != 0) {
-                      output.write("ERROR: {} {} : ({}, {}) -> ({}, {}) : {} -> {}\n",
-                                   row, x, y, xi, yi, ind2, ind2 + n3d - 1);
-                    }
-                    CHKERRQ(ierr);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // Finished marking non-zero entries
-
-      output_progress.write("Assembling Jacobian matrix\n");
-
-      // Assemble Matrix
-      MatAssemblyBegin(Jfd, MAT_FINAL_ASSEMBLY);
-      MatAssemblyEnd(Jfd, MAT_FINAL_ASSEMBLY);
-
-      {
-        // Test if the matrix is symmetric
-        // Values are 0 or 1 so tolerance (1e-5) shouldn't matter
-        PetscBool symmetric;
-        ierr = MatIsSymmetric(Jfd, 1e-5, &symmetric);
-        CHKERRQ(ierr);
-        if (!symmetric) {
-          output_warn.write("Jacobian pattern is not symmetric\n");
-        }
-      }
-
-      // The above can miss entries around the X-point branch cut:
-      // The diagonal terms are complicated because moving in X then Y
-      // is different from moving in Y then X at the X-point.
-      // Making sure the colouring matrix is symmetric does not
-      // necessarily give the correct stencil but may help.
-      if ((*options)["force_symmetric_coloring"]
-              .doc("Modifies coloring matrix to force it to be symmetric")
-              .withDefault<bool>(false)) {
-        Mat Jfd_T;
-        MatCreateTranspose(Jfd, &Jfd_T);
-        MatAXPY(Jfd, 1, Jfd_T, DIFFERENT_NONZERO_PATTERN);
-      }
-
-      output_progress.write("Creating Jacobian coloring\n");
-      updateColoring();
-
-      if (prune_jacobian) {
-        // Will remove small elements from the Jacobian.
-        // Save a copy to recover from over-pruning
-        ierr = MatDuplicate(Jfd, MAT_SHARE_NONZERO_PATTERN, &Jfd_original);
-        CHKERRQ(ierr);
-      }
-    } else {
-      // Brute force calculation
-      // There is usually no reason to use this, except as a check of
-      // the coloring calculation.
-
-      MatCreateAIJ(
-          BoutComm::get(), nlocal, nlocal,  // Local sizes
-          PETSC_DETERMINE, PETSC_DETERMINE, // Global sizes
-          3, // Number of nonzero entries in diagonal portion of local submatrix
-          nullptr,
-          0, // Number of nonzeros per row in off-diagonal portion of local submatrix
-          nullptr, &Jfd);
-
-      if (matrix_free_operator) {
-        SNESSetJacobian(snes, Jmf, Jfd, SNESComputeJacobianDefault, this);
-      } else {
-        SNESSetJacobian(snes, Jfd, Jfd, SNESComputeJacobianDefault, this);
-      }
-
-      MatSetOption(Jfd, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
-    }
+    // Initialize the Finite Difference Jacobian
+    PetscCall(FDJinitialise());
 
     // Re-use Jacobian
     // Note: If the 'Amat' Jacobian is matrix free, SNESComputeJacobian
@@ -756,15 +830,23 @@ int SNESSolver::init() {
 
 int SNESSolver::run() {
   TRACE("SNESSolver::run()");
-  int ierr;
+
   // Set initial guess at the solution from variables
   {
     BoutReal* xdata = nullptr;
-    int ierr = VecGetArray(snes_x, &xdata);
-    CHKERRQ(ierr);
+    PetscCall(VecGetArray(snes_x, &xdata));
     save_vars(xdata);
-    ierr = VecRestoreArray(snes_x, &xdata);
-    CHKERRQ(ierr);
+
+    if (asinh_vars) {
+      // Evolving asinh(vars)
+      PetscInt size;
+      PetscCall(VecGetLocalSize(snes_x, &size));
+      for (PetscInt i = 0; i != size; ++i) {
+        xdata[i] = std::asinh(xdata[i] / asinh_scale);
+      }
+    }
+
+    PetscCall(VecRestoreArray(snes_x, &xdata));
   }
 
   BoutReal target = simtime;
@@ -776,6 +858,7 @@ int SNESSolver::run() {
     int steps_since_snes_failure = 0;
     int saved_jacobian_lag = 0;
     int loop_count = 0;
+    recent_failure_rate = 0.0;
     do {
       if (simtime >= target)
         break; // Could happen if step over multiple outputs
@@ -792,14 +875,11 @@ int SNESSolver::run() {
 
           // Take ownership of snes_x and var_scaling_factors data
           PetscScalar* snes_x_data = nullptr;
-          ierr = VecGetArray(snes_x, &snes_x_data);
-          CHKERRQ(ierr);
+          PetscCall(VecGetArray(snes_x, &snes_x_data));
           PetscScalar* x1_data;
-          ierr = VecGetArray(x1, &x1_data);
-          CHKERRQ(ierr);
+          PetscCall(VecGetArray(x1, &x1_data));
           PetscScalar* var_scaling_factors_data;
-          ierr = VecGetArray(var_scaling_factors, &var_scaling_factors_data);
-          CHKERRQ(ierr);
+          PetscCall(VecGetArray(var_scaling_factors, &var_scaling_factors_data));
 
           // Normalise each value in the state
           // Limit normalisation so scaling factor is never smaller than rtol
@@ -812,12 +892,9 @@ int SNESSolver::run() {
           }
 
           // Restore vector underlying data
-          ierr = VecRestoreArray(var_scaling_factors, &var_scaling_factors_data);
-          CHKERRQ(ierr);
-          ierr = VecRestoreArray(x1, &x1_data);
-          CHKERRQ(ierr);
-          ierr = VecRestoreArray(snes_x, &snes_x_data);
-          CHKERRQ(ierr);
+          PetscCall(VecRestoreArray(var_scaling_factors, &var_scaling_factors_data));
+          PetscCall(VecRestoreArray(x1, &x1_data));
+          PetscCall(VecRestoreArray(snes_x, &snes_x_data));
 
           if (diagnose) {
             // Print maximum and minimum scaling factors
@@ -837,46 +914,62 @@ int SNESSolver::run() {
       // Copy the state (snes_x) into initial values (x0)
       VecCopy(snes_x, x0);
 
-      if (timestep < dt_min_reset) {
-        // Hit the minimum timestep, probably through repeated failures
+      if (equation_form == BoutSnesEquationForm::pseudo_transient) {
+        // Pseudo-Transient Continuation
+        // Each evolving quantity may have its own timestep
+        // Set timestep and dt scalars to the minimum of dt_vec
 
-        if (saved_jacobian_lag != 0) {
-          // Already tried this and it didn't work
-          throw BoutException("Solver failed after many attempts");
+        PetscCall(VecMin(dt_vec, nullptr, &timestep));
+        dt = timestep;
+
+        looping = true;
+        if (simtime + timestep >= target) {
+          looping = false;
+        }
+      } else {
+        // Timestepping
+
+        if (timestep < dt_min_reset) {
+          // Hit the minimum timestep, probably through repeated failures
+
+          if (saved_jacobian_lag != 0) {
+            // Already tried this and it didn't work
+            throw BoutException("Solver failed after many attempts");
+          }
+
+          // Try resetting the preconditioner, turn off predictor, and use a large timestep
+          SNESGetLagJacobian(snes, &saved_jacobian_lag);
+          SNESSetLagJacobian(snes, 1);
+          timestep = getOutputTimestep();
+          predictor = false; // Predictor can cause problems in near steady-state.
         }
 
-        // Try resetting the preconditioner, turn off predictor, and use a large timestep
-        SNESGetLagJacobian(snes, &saved_jacobian_lag);
-        SNESSetLagJacobian(snes, 1);
-        timestep = getOutputTimestep();
-        predictor = false; // Predictor can cause problems in near steady-state.
-      }
+        // Set the timestep
+        dt = timestep;
+        looping = true;
+        if (simtime + dt >= target) {
+          // Note: When the timestep is changed the preconditioner needs to be updated
+          // => Step over the output time and interpolate if not matrix free
 
-      // Set the timestep
-      dt = timestep;
-      looping = true;
-      if (simtime + dt >= target) {
-        // Note: When the timestep is changed the preconditioner needs to be updated
-        // => Step over the output time and interpolate if not matrix free
-
-        if (matrix_free) {
-          // Ensure that the timestep goes to the next output time and then stops.
-          // This avoids the need to interpolate
-          dt = target - simtime;
+          if (matrix_free) {
+            // Ensure that the timestep goes to the next output time and then stops.
+            // This avoids the need to interpolate
+            dt = target - simtime;
+          }
+          looping = false;
         }
-        looping = false;
-      }
 
-      if (predictor and (time1 > 0.0)) {
-        // Use (time1, x1) and (simtime, x0) to make prediction
-        // snes_x <- x0 + (dt / (simtime - time1)) * (x0 - x1)
-        // snes_x <- -β * x1 + (1 + β) * snes_x
-        BoutReal beta = dt / (simtime - time1);
-        VecAXPBY(snes_x, -beta, (1. + beta), x1);
-      }
+        if (predictor and (time1 > 0.0)) {
+          // Use (time1, x1) and (simtime, x0) to make prediction
+          // snes_x <- x0 + (dt / (simtime - time1)) * (x0 - x1)
+          // snes_x <- -β * x1 + (1 + β) * snes_x
+          const BoutReal beta = dt / (simtime - time1);
+          VecAXPBY(snes_x, -beta, (1. + beta), x1);
+        }
 
-      if (pid_controller) {
-        SNESSetLagJacobian(snes, lag_jacobian);
+        if (pid_controller) {
+          SNESSetLagJacobian(snes, lag_jacobian);
+        }
       }
 
       // Run the solver
@@ -892,10 +985,18 @@ int SNESSolver::run() {
       int lin_its;
       SNESGetLinearSolveIterations(snes, &lin_its);
 
-      if ((ierr != 0) or (reason < 0)) {
+      // Rolling average of recent failures
+      recent_failure_rate *= 1. - inv_failure_window;
+
+      if ((ierr != PETSC_SUCCESS) or (reason < 0)) {
         // Diverged or SNES failed
 
-        if (diagnose_failures) {
+        recent_failure_rate += inv_failure_window;
+
+        ++snes_failures;
+        steps_since_snes_failure = 0;
+
+        if (diagnose_failures or (snes_failures == max_snes_failures)) {
           // Print diagnostics to help identify source of the problem
 
           output.write("\n======== SNES failed =========\n");
@@ -914,11 +1015,29 @@ int SNESSolver::run() {
           }
         }
 
-        ++snes_failures;
-        steps_since_snes_failure = 0;
+        if (snes_failures == max_snes_failures) {
+          output.write("Too many SNES failures ({}). Aborting.");
+          return 1;
+        }
 
-        // Try a smaller timestep
-        timestep *= timestep_factor_on_failure;
+        if (equation_form == BoutSnesEquationForm::pseudo_transient) {
+          if (snes_failures == max_snes_failures - 1) {
+            // Last chance. Set to uniform smallest timestep
+            PetscCall(VecSet(dt_vec, dt_min_reset));
+
+          } else if (snes_failures == 5) {
+            // Set uniform timestep
+            PetscCall(VecSet(dt_vec, timestep));
+          } else {
+            // Global scaling of timesteps
+            // Note: A better strategy might be to reduce timesteps
+            //       in problematic cells.
+            PetscCall(VecScale(dt_vec, timestep_factor_on_failure));
+          }
+        } else {
+          // Try a smaller timestep
+          timestep *= timestep_factor_on_failure;
+        }
         // Restore state
         VecCopy(x0, snes_x);
 
@@ -926,15 +1045,10 @@ int SNESSolver::run() {
         if (jacobian_pruned and (snes_failures > 2) and (4 * lin_its > 3 * maxl)) {
           // Taking 3/4 of maximum linear iterations on average per linear step
           // May indicate a preconditioner problem.
-          // Restore pruned non-zero elements
           if (diagnose) {
             output.write("\nRestoring Jacobian\n");
           }
-          ierr = MatCopy(Jfd_original, Jfd, DIFFERENT_NONZERO_PATTERN);
-          CHKERRQ(ierr);
-          // The non-zero pattern has changed, so update coloring
-          updateColoring();
-          jacobian_pruned = false; // Reset flag. Will be set after pruning.
+          PetscCall(FDJrestoreFromPruning());
         }
 
         if (saved_jacobian_lag == 0) {
@@ -972,26 +1086,22 @@ int SNESSolver::run() {
 
       if (nl_its == 0) {
         // This can occur even with SNESSetForceIteration
-        // Results in simulation state freezing and rapidly going to the end
+        // Results in simulation state freezing and rapidly going
+        // to the end
 
         if (scale_vars) {
           // scaled_x <- snes_x * var_scaling_factors
-          ierr = VecPointwiseMult(scaled_x, snes_x, var_scaling_factors);
-          CHKERRQ(ierr);
+          PetscCall(VecPointwiseMult(scaled_x, snes_x, var_scaling_factors));
 
           const BoutReal* xdata = nullptr;
-          ierr = VecGetArrayRead(scaled_x, &xdata);
-          CHKERRQ(ierr);
+          PetscCall(VecGetArrayRead(scaled_x, &xdata));
           load_vars(const_cast<BoutReal*>(xdata));
-          ierr = VecRestoreArrayRead(scaled_x, &xdata);
-          CHKERRQ(ierr);
+          PetscCall(VecRestoreArrayRead(scaled_x, &xdata));
         } else {
           const BoutReal* xdata = nullptr;
-          ierr = VecGetArrayRead(snes_x, &xdata);
-          CHKERRQ(ierr);
+          PetscCall(VecGetArrayRead(snes_x, &xdata));
           load_vars(const_cast<BoutReal*>(xdata));
-          ierr = VecRestoreArrayRead(snes_x, &xdata);
-          CHKERRQ(ierr);
+          PetscCall(VecRestoreArrayRead(snes_x, &xdata));
         }
 
         try {
@@ -1004,11 +1114,9 @@ int SNESSolver::run() {
         // Copy derivatives back
         {
           BoutReal* fdata = nullptr;
-          ierr = VecGetArray(snes_f, &fdata);
-          CHKERRQ(ierr);
+          PetscCall(VecGetArray(snes_f, &fdata));
           save_derivs(fdata);
-          ierr = VecRestoreArray(snes_f, &fdata);
-          CHKERRQ(ierr);
+          PetscCall(VecRestoreArray(snes_f, &fdata));
         }
 
         // Forward Euler
@@ -1030,58 +1138,29 @@ int SNESSolver::run() {
         output.write("\n");
       }
 
-#if PETSC_VERSION_GE(3, 20, 0)
       // MatFilter and MatEliminateZeros(Mat, bool) require PETSc >= 3.20
       if (jacobian_recalculated and prune_jacobian) {
         jacobian_recalculated = false; // Reset flag
 
-        // Remove small elements from the Jacobian and recompute the coloring
-        // Only do this if there are a significant number of small elements.
-        int small_elements = 0;
-        int total_elements = 0;
-
-        // Get index of rows owned by this processor
-        int rstart, rend;
-        MatGetOwnershipRange(Jfd, &rstart, &rend);
-
-        PetscInt ncols;
-        const PetscScalar* vals;
-        for (int row = rstart; row < rend; row++) {
-          MatGetRow(Jfd, row, &ncols, nullptr, &vals);
-          for (int col = 0; col < ncols; col++) {
-            if (std::abs(vals[col]) < prune_abstol) {
-              ++small_elements;
-            }
-            ++total_elements;
-          }
-          MatRestoreRow(Jfd, row, &ncols, nullptr, &vals);
-        }
-
-        if (small_elements > prune_fraction * total_elements) {
-          if (diagnose) {
-            output.write("\nPruning Jacobian elements: {} / {}\n", small_elements,
-                         total_elements);
-          }
-
-          // Prune Jacobian, keeping diagonal elements
-          ierr = MatFilter(Jfd, prune_abstol, PETSC_TRUE, PETSC_TRUE);
-
-          // Update the coloring from Jfd matrix
-          updateColoring();
-
-          // Mark the Jacobian as pruned. This is so that it is only restored if pruned.
-          jacobian_pruned = true;
-        }
+        FDJpruneJacobian();
       }
-#endif // PETSC_VERSION_GE(3,20,0)
 
-      if (pid_controller) {
-        // Changing the timestep.
+      if (equation_form == BoutSnesEquationForm::pseudo_transient) {
+        if (pid_controller) {
+          // Adjust pseudo_alpha based on nonlinear iterations
+          pseudo_alpha = pid(pseudo_alpha, nl_its, max_timestep * atol * 100);
+        }
+
+        // Adjust local timesteps
+        PetscCall(updatePseudoTimestepping(snes_x));
+
+      } else if (pid_controller) {
+        // Changing the timestep using a PID controller.
         // Note: The preconditioner depends on the timestep,
         // so we recalculate the jacobian and the preconditioner
         //  every time the timestep changes
 
-        timestep = pid(timestep, nl_its);
+        timestep = pid(timestep, nl_its, max_timestep);
 
         // NOTE(malamast): Do we really need this?
         // Recompute Jacobian (for now)
@@ -1091,7 +1170,6 @@ int SNESSolver::run() {
         }
 
       } else {
-
         // Consider changing the timestep.
         // Note: The preconditioner depends on the timestep,
         // so if it is not recalculated the it will be less
@@ -1110,7 +1188,6 @@ int SNESSolver::run() {
           // and a factor involving the timestep.
           // Depends on equation_form
           // -> Probably call SNESSetJacobian(snes, Jfd, Jfd, NULL, fdcoloring);
-
           if (static_cast<BoutReal>(lin_its) / nl_its > 4) {
             // Recompute Jacobian (for now)
             if (saved_jacobian_lag == 0) {
@@ -1157,23 +1234,29 @@ int SNESSolver::run() {
     // Put the result into variables
     if (scale_vars) {
       // scaled_x <- output_x * var_scaling_factors
-      int ierr = VecPointwiseMult(scaled_x, output_x, var_scaling_factors);
-      CHKERRQ(ierr);
-
-      const BoutReal* xdata = nullptr;
-      ierr = VecGetArrayRead(scaled_x, &xdata);
-      CHKERRQ(ierr);
-      load_vars(const_cast<BoutReal*>(xdata));
-      ierr = VecRestoreArrayRead(scaled_x, &xdata);
-      CHKERRQ(ierr);
+      PetscCall(VecPointwiseMult(scaled_x, output_x, var_scaling_factors));
+    } else if (asinh_vars) {
+      PetscCall(VecCopy(output_x, scaled_x));
     } else {
-      const BoutReal* xdata = nullptr;
-      int ierr = VecGetArrayRead(output_x, &xdata);
-      CHKERRQ(ierr);
-      load_vars(const_cast<BoutReal*>(xdata));
-      ierr = VecRestoreArrayRead(output_x, &xdata);
-      CHKERRQ(ierr);
+      scaled_x = output_x;
     }
+
+    if (asinh_vars) {
+      PetscInt size;
+      PetscCall(VecGetLocalSize(scaled_x, &size));
+
+      BoutReal* scaled_data = nullptr;
+      PetscCall(VecGetArray(scaled_x, &scaled_data));
+      for (PetscInt i = 0; i != size; ++i) {
+        scaled_data[i] = asinh_scale * std::sinh(scaled_data[i]);
+      }
+      PetscCall(VecRestoreArray(scaled_x, &scaled_data));
+    }
+
+    const BoutReal* xdata = nullptr;
+    PetscCall(VecGetArrayRead(scaled_x, &xdata));
+    load_vars(const_cast<BoutReal*>(xdata));
+    PetscCall(VecRestoreArrayRead(scaled_x, &xdata));
 
     try {
       run_rhs(target); // Run RHS to calculate auxilliary variables
@@ -1189,30 +1272,264 @@ int SNESSolver::run() {
   return 0;
 }
 
-// f = rhs
-PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
+PetscErrorCode SNESSolver::initPseudoTimestepping() {
+  // Storage for per-variable timestep
+  PetscCall(VecDuplicate(snes_x, &dt_vec));
+  // Starting timestep
+  PetscCall(VecSet(dt_vec, timestep));
+
+  // Diagnostic outputs
+  pseudo_timestep = timestep;
+  pseudo_residual = 0.0;
+  pseudo_residual_2d = 0.0;
+
+  return PETSC_SUCCESS;
+}
+
+PetscErrorCode SNESSolver::updatePseudoTimestepping(Vec x) {
+  // Call RHS function to get time derivatives
+  PetscCall(rhs_function(x, snes_f, false));
+
+  // Use a per-cell timestep so that e.g density and pressure
+  // evolve in a way consistent with the equation of state.
+
+  // Reading the residual vectors
+  const BoutReal* current_residual = nullptr;
+  PetscCall(VecGetArrayRead(snes_f, &current_residual));
+  // Modifying the dt_vec values
+  BoutReal* dt_data = nullptr;
+  PetscCall(VecGetArray(dt_vec, &dt_data));
+
+  // Note: The ordering of quantities in the PETSc vectors
+  // depends on the Solver::loop_vars function
+  Mesh* mesh = bout::globals::mesh;
+  int idx = 0; // Index into PETSc Vecs
+
+  // Boundary cells
+  for (const auto& i2d : mesh->getRegion2D("RGN_BNDRY")) {
+    // Field2D quantities evolved together
+    int count = 0;
+    BoutReal residual = 0.0;
+
+    for (const auto& f : f2d) {
+      if (!f.evolve_bndry) {
+        continue; // Not evolving boundary => Skip
+      }
+      residual += SQ(current_residual[idx + count]);
+      ++count;
+    }
+    if (count > 0) {
+      residual = sqrt(residual / count);
+
+      // Adjust timestep for these quantities
+      BoutReal new_timestep =
+          updatePseudoTimestep(dt_data[idx], pseudo_residual_2d[i2d], residual);
+      for (int i = 0; i != count; ++i) {
+        dt_data[idx++] = new_timestep;
+      }
+      pseudo_residual_2d[i2d] = residual;
+    }
+
+    // Field3D quantities evolved together within a cell
+    for (int jz = 0; jz < mesh->LocalNz; jz++) {
+      count = 0;
+      residual = 0.0;
+      for (const auto& f : f3d) {
+        if (!f.evolve_bndry) {
+          continue; // Not evolving boundary => Skip
+        }
+        residual += SQ(current_residual[idx + count]);
+        ++count;
+      }
+      if (count > 0) {
+        residual = sqrt(residual / count);
+
+        auto i3d = mesh->ind2Dto3D(i2d, jz);
+        const BoutReal new_timestep =
+            updatePseudoTimestep(dt_data[idx], pseudo_residual[i3d], residual);
+
+        pseudo_residual[i3d] = residual;
+        pseudo_timestep[i3d] = new_timestep;
+
+        for (int i = 0; i != count; ++i) {
+          dt_data[idx++] = new_timestep;
+        }
+      }
+    }
+  }
+
+  // Bulk of domain.
+  // These loops don't check the boundary flags
+  for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
+    // Field2D quantities evolved together
+    if (!f2d.empty()) {
+      BoutReal residual = 0.0;
+      for (std::size_t i = 0; i != f2d.size(); ++i) {
+        residual += SQ(current_residual[idx + i]);
+      }
+      residual = sqrt(residual / f2d.size());
+
+      // Adjust timestep for these quantities
+      const BoutReal new_timestep =
+          updatePseudoTimestep(dt_data[idx], pseudo_residual_2d[i2d], residual);
+      for (std::size_t i = 0; i != f2d.size(); ++i) {
+        dt_data[idx++] = new_timestep;
+      }
+      pseudo_residual_2d[i2d] = residual;
+    }
+
+    // Field3D quantities evolved together within a cell
+    if (!f3d.empty()) {
+      for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        auto i3d = mesh->ind2Dto3D(i2d, jz);
+
+        BoutReal residual = 0.0;
+        for (std::size_t i = 0; i != f3d.size(); ++i) {
+          residual += SQ(current_residual[idx + i]);
+        }
+        residual = sqrt(residual / f3d.size());
+        BoutReal new_timestep =
+            updatePseudoTimestep(dt_data[idx], pseudo_residual[i3d], residual);
+
+        pseudo_residual[i3d] = residual;
+
+        // Compare to neighbors
+        BoutReal min_neighboring_dt = max_timestep;
+        if (i3d.x() != 0) {
+          min_neighboring_dt = std::min(min_neighboring_dt, pseudo_timestep[i3d.xm()]);
+        }
+        if (i3d.x() != mesh->LocalNx - 1) {
+          min_neighboring_dt = std::min(min_neighboring_dt, pseudo_timestep[i3d.xp()]);
+        }
+        if (i3d.y() != 0) {
+          min_neighboring_dt = std::min(min_neighboring_dt, pseudo_timestep[i3d.ym()]);
+        }
+        if (i3d.x() != mesh->LocalNy - 1) {
+          min_neighboring_dt = std::min(min_neighboring_dt, pseudo_timestep[i3d.yp()]);
+        }
+
+        // Limit ratio of timestep between neighboring cells
+        new_timestep = std::min(new_timestep, pseudo_max_ratio * min_neighboring_dt);
+
+        pseudo_timestep[i3d] = new_timestep;
+
+        for (std::size_t i = 0; i != f3d.size(); ++i) {
+          dt_data[idx++] = new_timestep;
+        }
+      }
+    }
+  }
+
+  // Restore Vec data arrays
+  PetscCall(VecRestoreArrayRead(snes_f, &current_residual));
+  PetscCall(VecRestoreArray(dt_vec, &dt_data));
+
+  // Need timesteps on neighboring processors
+  // to limit ratio
+  mesh->communicate(pseudo_timestep);
+  // Neumann boundary so timestep isn't pinned at boundaries
+  pseudo_timestep.applyBoundary("neumann");
+
+  return PETSC_SUCCESS;
+}
+
+/// Timestep inversely proportional to the residual, clipped to avoid
+/// rapid changes in timestep.
+BoutReal SNESSolver::updatePseudoTimestep_inverse_residual(BoutReal previous_timestep,
+                                                           BoutReal current_residual) {
+  return std::min(
+      {std::max({pseudo_alpha / current_residual, previous_timestep / 1.5, dt_min_reset}),
+       1.5 * previous_timestep, max_timestep});
+}
+
+// Strategy based on history of residuals
+BoutReal SNESSolver::updatePseudoTimestep_history_based(BoutReal previous_timestep,
+                                                        BoutReal previous_residual,
+                                                        BoutReal current_residual) {
+  const BoutReal converged_threshold = 10 * atol;
+  const BoutReal transition_threshold = 100 * atol;
+
+  if (current_residual < converged_threshold) {
+    return max_timestep;
+  }
+
+  // Smoothly transition from SER updates to frozen timestep
+  if (current_residual < transition_threshold) {
+    const BoutReal reduction_ratio = current_residual / previous_residual;
+
+    if (reduction_ratio < 0.8) {
+      return std::min(0.5 * (pseudo_growth_factor + 1.) * previous_timestep,
+                      max_timestep);
+    } else if (reduction_ratio > 1.2) {
+      return std::max(0.5 * (pseudo_reduction_factor + 1) * previous_timestep,
+                      dt_min_reset);
+    }
+    // Leave unchanged if residual changes are small
+    return previous_timestep;
+  }
+
+  if (current_residual <= previous_residual) {
+    // Success
+    return std::min(pseudo_growth_factor * previous_timestep, max_timestep);
+  }
+  // Failed
+  // Consider rejecting the step
+  return std::max(pseudo_reduction_factor * previous_timestep, dt_min_reset);
+}
+
+/// Switched Evolution Relaxation (SER)
+BoutReal SNESSolver::updatePseudoTimestep(BoutReal previous_timestep,
+                                          BoutReal previous_residual,
+                                          BoutReal current_residual) {
+  switch (pseudo_strategy) {
+  case BoutPTCStrategy::inverse_residual:
+    return updatePseudoTimestep_inverse_residual(previous_timestep, current_residual);
+
+  case BoutPTCStrategy::history_based:
+    return updatePseudoTimestep_history_based(previous_timestep, previous_residual,
+                                              current_residual);
+
+  case BoutPTCStrategy::hybrid:
+    // A hybrid strategy may be most effective, in which the timestep is
+    // inversely proportional to residual initially, or when residuals are large,
+    // and then the method transitions to being history-based
+    if (current_residual > 1000. * atol) {
+      return updatePseudoTimestep_inverse_residual(previous_timestep, current_residual);
+    }
+    return updatePseudoTimestep_history_based(previous_timestep, previous_residual,
+                                              current_residual);
+  };
+  throw BoutException("SNESSolver::updatePseudoTimestep invalid BoutPTCStrategy");
+}
+
+PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {
   // Get data from PETSc into BOUT++ fields
   if (scale_vars) {
     // scaled_x <- x * var_scaling_factors
-    int ierr = VecPointwiseMult(scaled_x, x, var_scaling_factors);
-    CHKERRQ(ierr);
-
-    const BoutReal* xdata = nullptr;
-    ierr = VecGetArrayRead(scaled_x, &xdata);
-    CHKERRQ(ierr);
-    load_vars(const_cast<BoutReal*>(
-        xdata)); // const_cast needed due to load_vars API. Not writing to xdata.
-    ierr = VecRestoreArrayRead(scaled_x, &xdata);
-    CHKERRQ(ierr);
+    PetscCall(VecPointwiseMult(scaled_x, x, var_scaling_factors));
+  } else if (asinh_vars) {
+    PetscCall(VecCopy(x, scaled_x));
   } else {
-    const BoutReal* xdata = nullptr;
-    int ierr = VecGetArrayRead(x, &xdata);
-    CHKERRQ(ierr);
-    load_vars(const_cast<BoutReal*>(
-        xdata)); // const_cast needed due to load_vars API. Not writing to xdata.
-    ierr = VecRestoreArrayRead(x, &xdata);
-    CHKERRQ(ierr);
+    scaled_x = x;
   }
+
+  if (asinh_vars) {
+    PetscInt size;
+    PetscCall(VecGetLocalSize(scaled_x, &size));
+
+    BoutReal* scaled_data = nullptr;
+    PetscCall(VecGetArray(scaled_x, &scaled_data));
+    for (PetscInt i = 0; i != size; ++i) {
+      scaled_data[i] = asinh_scale * std::sinh(scaled_data[i]);
+    }
+    PetscCall(VecRestoreArray(scaled_x, &scaled_data));
+  }
+
+  const BoutReal* xdata = nullptr;
+  PetscCall(VecGetArrayRead(scaled_x, &xdata));
+  // const_cast needed due to load_vars API. Not writing to xdata.
+  load_vars(const_cast<BoutReal*>(xdata));
+  PetscCall(VecRestoreArrayRead(scaled_x, &xdata));
 
   try {
     // Call RHS function
@@ -1221,34 +1538,62 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
     // Simulation might fail, e.g. negative densities
     // if timestep too large
     output_warn.write("WARNING: BoutException thrown: {}\n", e.what());
+    return 2;
+  }
 
+  // Copy derivatives back
+  BoutReal* fdata = nullptr;
+  PetscCall(VecGetArray(f, &fdata));
+  save_derivs(fdata);
+
+  if (asinh_vars) {
+    // Modify time-derivatives for asinh(var) using chain rule
+    // Evolving u = asinh(var / scale)
+    //
+    // du/dt = dvar/dt * du/dvar
+    //
+    // du/var = 1 / sqrt(var^2 + scale^2)
+    PetscInt size;
+    PetscCall(VecGetLocalSize(f, &size));
+    const BoutReal* scaled_data = nullptr;
+    PetscCall(VecGetArrayRead(scaled_x, &scaled_data));
+    for (PetscInt i = 0; i != size; ++i) {
+      fdata[i] /= std::sqrt(SQ(scaled_data[i]) + SQ(asinh_scale));
+    }
+    PetscCall(VecRestoreArrayRead(scaled_x, &scaled_data));
+  }
+
+  PetscCall(VecRestoreArray(f, &fdata));
+  return PETSC_SUCCESS;
+}
+
+// Result in f depends on equation_form
+PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
+
+  // Call the RHS function
+  if (rhs_function(x, f, linear) != PETSC_SUCCESS) {
     // Tell SNES that the input was out of domain
     SNESSetFunctionDomainError(snes);
     // Note: Returning non-zero error here leaves vectors in locked state
     return 0;
   }
 
-  // Copy derivatives back
-  BoutReal* fdata = nullptr;
-  int ierr = VecGetArray(f, &fdata);
-  CHKERRQ(ierr);
-  save_derivs(fdata);
-  ierr = VecRestoreArray(f, &fdata);
-  CHKERRQ(ierr);
-
   switch (equation_form) {
-  case BoutSnesEquationForm::pseudo_transient: {
-    // Pseudo-transient timestepping (as in UEDGE)
-    // f <- f - x/Δt
-    VecAXPY(f, -1. / dt, x);
-    break;
-  }
   case BoutSnesEquationForm::rearranged_backward_euler: {
     // Rearranged Backward Euler
     // f = (x0 - x)/Δt + f
     // First calculate x - x0 to minimise floating point issues
     VecWAXPY(delta_x, -1.0, x0, x); // delta_x = x - x0
     VecAXPY(f, -1. / dt, delta_x);  // f <- f - delta_x / dt
+    break;
+  }
+  case BoutSnesEquationForm::pseudo_transient: {
+    // Pseudo-transient timestepping. Same as Rearranged Backward Euler
+    // except that Δt is a vector
+    // f = (x0 - x)/Δt + f
+    VecWAXPY(delta_x, -1.0, x0, x);
+    VecPointwiseDivide(delta_x, delta_x, dt_vec); // delta_x /= dt
+    VecAXPY(f, -1., delta_x);                     // f <- f - delta_x
     break;
   }
   case BoutSnesEquationForm::backward_euler: {
@@ -1269,11 +1614,10 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
 
   if (scale_rhs) {
     // f <- f * rhs_scaling_factors
-    ierr = VecPointwiseMult(f, f, rhs_scaling_factors);
-    CHKERRQ(ierr);
+    PetscCall(VecPointwiseMult(f, f, rhs_scaling_factors));
   }
 
-  return 0;
+  return PETSC_SUCCESS;
 }
 
 /*
@@ -1285,36 +1629,28 @@ PetscErrorCode SNESSolver::precon(Vec x, Vec f) {
     throw BoutException("No user preconditioner");
   }
 
-  int ierr;
-
   // Get data from PETSc into BOUT++ fields
   Vec solution;
-  SNESGetSolution(snes, &solution);
+  PetscCall(SNESGetSolution(snes, &solution));
   BoutReal* soldata;
-  ierr = VecGetArray(solution, &soldata);
-  CHKERRQ(ierr);
+  PetscCall(VecGetArray(solution, &soldata));
   load_vars(soldata);
-  ierr = VecRestoreArray(solution, &soldata);
-  CHKERRQ(ierr);
+  PetscCall(VecRestoreArray(solution, &soldata));
 
   // Load vector to be inverted into ddt() variables
   const BoutReal* xdata;
-  ierr = VecGetArrayRead(x, &xdata);
-  CHKERRQ(ierr);
+  PetscCall(VecGetArrayRead(x, &xdata));
   load_derivs(const_cast<BoutReal*>(xdata)); // Note: load_derivs does not modify data
-  ierr = VecRestoreArrayRead(x, &xdata);
-  CHKERRQ(ierr);
+  PetscCall(VecRestoreArrayRead(x, &xdata));
 
   // Run the preconditioner
   runPreconditioner(simtime + dt, dt, 0.0);
 
   // Save the solution from F_vars
   BoutReal* fdata;
-  ierr = VecGetArray(f, &fdata);
-  CHKERRQ(ierr);
+  PetscCall(VecGetArray(f, &fdata));
   save_derivs(fdata);
-  ierr = VecRestoreArray(f, &fdata);
-  CHKERRQ(ierr);
+  PetscCall(VecRestoreArray(f, &fdata));
 
   return 0;
 }
@@ -1323,10 +1659,8 @@ PetscErrorCode SNESSolver::scaleJacobian(Mat Jac_new) {
   jacobian_recalculated = true;
 
   if (!scale_rhs) {
-    return 0; // Not scaling the RHS values
+    return PETSC_SUCCESS; // Not scaling the RHS values
   }
-
-  int ierr;
 
   // Get index of rows owned by this processor
   int rstart, rend;
@@ -1342,8 +1676,7 @@ PetscErrorCode SNESSolver::scaleJacobian(Mat Jac_new) {
 
   // Calculate the norm of each row of the Jacobian
   PetscScalar* row_inv_norm_data;
-  ierr = VecGetArray(jac_row_inv_norms, &row_inv_norm_data);
-  CHKERRQ(ierr);
+  PetscCall(VecGetArray(jac_row_inv_norms, &row_inv_norm_data));
 
   PetscInt ncols;
   const PetscScalar* vals;
@@ -1367,12 +1700,11 @@ PetscErrorCode SNESSolver::scaleJacobian(Mat Jac_new) {
     MatRestoreRow(Jac_new, row, &ncols, nullptr, &vals);
   }
 
-  ierr = VecRestoreArray(jac_row_inv_norms, &row_inv_norm_data);
-  CHKERRQ(ierr);
+  PetscCall(VecRestoreArray(jac_row_inv_norms, &row_inv_norm_data));
 
   // Modify the RHS scaling: factor = factor / norm
-  ierr = VecPointwiseMult(rhs_scaling_factors, rhs_scaling_factors, jac_row_inv_norms);
-  CHKERRQ(ierr);
+  PetscCall(
+      VecPointwiseMult(rhs_scaling_factors, rhs_scaling_factors, jac_row_inv_norms));
 
   if (diagnose) {
     // Print maximum and minimum scaling factors
@@ -1383,10 +1715,9 @@ PetscErrorCode SNESSolver::scaleJacobian(Mat Jac_new) {
   }
 
   // Scale the Jacobian rows by multiplying on the left by 1/norm
-  ierr = MatDiagonalScale(Jac_new, jac_row_inv_norms, nullptr);
-  CHKERRQ(ierr);
+  PetscCall(MatDiagonalScale(Jac_new, jac_row_inv_norms, nullptr));
 
-  return 0;
+  return PETSC_SUCCESS;
 }
 
 ///
@@ -1451,7 +1782,7 @@ void SNESSolver::updateColoring() {
   }
 }
 
-BoutReal SNESSolver::pid(BoutReal timestep, int nl_its) {
+BoutReal SNESSolver::pid(BoutReal timestep, int nl_its, BoutReal max_dt) {
 
   /* ---------- multiplicative PID factors ---------- */
   const BoutReal facP = std::pow(double(target_its) / double(nl_its), kP);
@@ -1460,16 +1791,39 @@ BoutReal SNESSolver::pid(BoutReal timestep, int nl_its) {
                                      / double(nl_its) / double(nl_its_prev2),
                                  kD);
 
-  // clamp groth factor to avoid huge changes
-  const BoutReal fac = std::clamp(facP * facI * facD, 0.2, 5.0);
+  // clamp growth factor to avoid huge changes
+  BoutReal fac = std::clamp(facP * facI * facD, 0.2, 5.0);
+
+  if (pid_consider_failures && (fac > 1.0)) {
+    // Reduce aggressiveness if recent steps have failed often
+    fac = pow(fac, std::max(0.3, 1.0 - 2.0 * recent_failure_rate));
+  }
 
   /* ---------- update timestep and history ---------- */
-  const BoutReal dt_new = std::min(timestep * fac, max_timestep);
+  const BoutReal dt_new = std::min(timestep * fac, max_dt);
 
   nl_its_prev2 = nl_its_prev;
   nl_its_prev = nl_its;
 
   return dt_new;
+}
+
+void SNESSolver::outputVars(Options& output_options, bool save_repeat) {
+  // Call base class function
+  Solver::outputVars(output_options, save_repeat);
+
+  if (!save_repeat) {
+    return; // Don't save diagnostics to restart files
+  }
+
+  if (equation_form == BoutSnesEquationForm::pseudo_transient) {
+    output_options["snes_pseudo_alpha"].assignRepeat(pseudo_alpha, "t", save_repeat,
+                                                     "SNESSolver");
+    output_options["snes_pseudo_residual"].assignRepeat(pseudo_residual, "t", save_repeat,
+                                                        "SNESSolver");
+    output_options["snes_pseudo_timestep"].assignRepeat(pseudo_timestep, "t", save_repeat,
+                                                        "SNESSolver");
+  }
 }
 
 #endif // BOUT_HAS_PETSC
