@@ -993,7 +993,13 @@ int SNESSolver::run() {
           ierr = VecRestoreArrayRead(snes_x, &xdata);
           CHKERRQ(ierr);
         }
-        run_rhs(simtime);
+
+        try {
+          run_rhs(simtime);
+        } catch (BoutException& e) {
+          output_error.write("ERROR: BoutException thrown: {}\n", e.what());
+          return 1;
+        }
 
         // Copy derivatives back
         {
@@ -1168,7 +1174,12 @@ int SNESSolver::run() {
       ierr = VecRestoreArrayRead(output_x, &xdata);
       CHKERRQ(ierr);
     }
-    run_rhs(target); // Run RHS to calculate auxilliary variables
+
+    try {
+      run_rhs(target); // Run RHS to calculate auxilliary variables
+    } catch (BoutException& e) {
+      output_error.write("ERROR: BoutException thrown: {}\n", e.what());
+    }
 
     if (call_monitors(target, s, getNumberOutputSteps()) != 0) {
       break; // User signalled to quit
