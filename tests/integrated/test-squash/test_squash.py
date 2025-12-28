@@ -79,51 +79,52 @@ def verify(f1, f2):
                     raise RuntimeError("data mismatch in ", v, err, v1, v2)
 
 
-parser = argparse.ArgumentParser(description="Test the bout-squashoutput wrapper")
-parser.add_argument(
-    "executable", help="Path to bout-squashoutput", default="../../../bin", nargs="?"
-)
-args = parser.parse_args()
+def test_squash():
+    parser = argparse.ArgumentParser(description="Test the bout-squashoutput wrapper")
+    parser.add_argument(
+        "executable", help="Path to bout-squashoutput", default="../../../bin", nargs="?"
+    )
+    args = parser.parse_args()
 
-build_and_log("Squash test")
+    build_and_log("Squash test")
 
-bout_squashoutput = args.executable + "/bout-squashoutput"
+    bout_squashoutput = args.executable + "/bout-squashoutput"
 
-if not os.path.exists(bout_squashoutput):
-    bout_squashoutput = "bout-squashoutput"
+    if not os.path.exists(bout_squashoutput):
+        bout_squashoutput = "bout-squashoutput"
 
-print("Run once to get normal data")
-timed_shell_safe("./squash -q -q -q solver:nout=2")
-timed_shell_safe("mv data/BOUT.dmp.0.nc f1.nc")
+    print("Run once to get normal data")
+    timed_shell_safe("./squash -q -q -q solver:nout=2")
+    timed_shell_safe("mv data/BOUT.dmp.0.nc f1.nc")
 
-print("Parallel test")
-timed_shell_safe("rm -f f2.nc")
-timed_launch_safe("./squash -q -q -q solver:nout=2", nproc=4, mthread=1)
-timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
+    print("Parallel test")
+    timed_shell_safe("rm -f f2.nc")
+    timed_launch_safe("./squash -q -q -q solver:nout=2", nproc=4, mthread=1)
+    timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
 
-verify("f1.nc", "f2.nc")
+    verify("f1.nc", "f2.nc")
 
-print("Parallel and in two pieces")
-timed_shell_safe("rm -f f2.nc")
-timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
-timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
-timed_launch_safe("./squash -q -q -q restart", nproc=4, mthread=1)
-timed_shell_safe("{} -qdcal 9 data --outputname ../f2.nc".format(bout_squashoutput))
+    print("Parallel and in two pieces")
+    timed_shell_safe("rm -f f2.nc")
+    timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
+    timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
+    timed_launch_safe("./squash -q -q -q restart", nproc=4, mthread=1)
+    timed_shell_safe("{} -qdcal 9 data --outputname ../f2.nc".format(bout_squashoutput))
 
-verify("f1.nc", "f2.nc")
+    verify("f1.nc", "f2.nc")
 
-print("Parallel and in two pieces without dump_on_restart")
-timed_shell_safe("rm -f f2.nc")
-timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
-timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
-timed_launch_safe("./squash -q -q -q restart dump_on_restart=false", nproc=4, mthread=1)
-timed_shell_safe("{} -qdcal 9 data --outputname ../f2.nc".format(bout_squashoutput))
+    print("Parallel and in two pieces without dump_on_restart")
+    timed_shell_safe("rm -f f2.nc")
+    timed_launch_safe("./squash -q -q -q", nproc=4, mthread=1)
+    timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
+    timed_launch_safe("./squash -q -q -q restart dump_on_restart=false", nproc=4, mthread=1)
+    timed_shell_safe("{} -qdcal 9 data --outputname ../f2.nc".format(bout_squashoutput))
 
-verify("f1.nc", "f2.nc")
+    verify("f1.nc", "f2.nc")
 
-print("Sequential test")
-timed_shell_safe("rm -f f2.nc")
-timed_shell_safe("./squash -q -q -q solver:nout=2")
-timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
+    print("Sequential test")
+    timed_shell_safe("rm -f f2.nc")
+    timed_shell_safe("./squash -q -q -q solver:nout=2")
+    timed_shell_safe("{} -qdcl 9 data --outputname ../f2.nc".format(bout_squashoutput))
 
-verify("f1.nc", "f2.nc")
+    verify("f1.nc", "f2.nc")
