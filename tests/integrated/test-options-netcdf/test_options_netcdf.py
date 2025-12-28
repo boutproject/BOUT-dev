@@ -11,63 +11,65 @@ from boutdata.data import BoutOptionsFile
 import math
 import numpy as np
 
-build_and_log("options-netcdf test")
-shell("rm -f test-out.ini")
-shell("rm -f test-out.nc")
+def test_options_netcdf():
 
-# Create a NetCDF input file
-with DataFile("test.nc", create=True, format="NETCDF4") as f:
-    f.write("int", 42)
-    f.write("real", 3.1415)
-    f.write("string", "hello")
+    build_and_log("options-netcdf test")
+    shell("rm -f test-out.ini")
+    shell("rm -f test-out.nc")
 
-# run BOUT++
-launch("./test-options-netcdf", nproc=1, mthread=1)
+    # Create a NetCDF input file
+    with DataFile("test.nc", create=True, format="NETCDF4") as f:
+        f.write("int", 42)
+        f.write("real", 3.1415)
+        f.write("string", "hello")
 
-# Check the output INI file
-result = BoutOptionsFile("test-out.ini")
+    # run BOUT++
+    launch("./test-options-netcdf", nproc=1, mthread=1)
 
-print(result)
+    # Check the output INI file
+    result = BoutOptionsFile("test-out.ini")
 
-assert result["int"] == 42
-assert math.isclose(result["real"], 3.1415)
-assert result["string"] == "hello"
+    print(result)
 
-print("Checking saved NetCDF file")
-
-# Check the output NetCDF file
-with DataFile("test-out.nc") as f:
-    assert f["int"] == 42
-    assert math.isclose(f["real"], 3.1415)
+    assert result["int"] == 42
+    assert math.isclose(result["real"], 3.1415)
     assert result["string"] == "hello"
 
-print("Checking saved settings.ini")
+    print("Checking saved NetCDF file")
 
-# Check the settings.ini file, coming from BOUT.inp
-# which is converted to NetCDF, read in, then written again
-settings = BoutOptionsFile("settings.ini")
+    # Check the output NetCDF file
+    with DataFile("test-out.nc") as f:
+        assert f["int"] == 42
+        assert math.isclose(f["real"], 3.1415)
+        assert result["string"] == "hello"
 
-assert settings["mesh"]["nx"] == 5
-assert settings["mesh"]["ny"] == 2
+    print("Checking saved settings.ini")
 
-print("Checking saved fields.nc")
+    # Check the settings.ini file, coming from BOUT.inp
+    # which is converted to NetCDF, read in, then written again
+    settings = BoutOptionsFile("settings.ini")
 
-with DataFile("fields.nc") as f:
-    assert f["f2d"].shape == (5, 6)  # Field2D
-    assert f["f3d"].shape == (5, 6, 2)  # Field3D
-    assert f["fperp"].shape == (5, 2)  # FieldPerp
-    assert np.allclose(f["f2d"], 1.0)
-    assert np.allclose(f["f3d"], 2.0)
-    assert np.allclose(f["fperp"], 3.0)
+    assert settings["mesh"]["nx"] == 5
+    assert settings["mesh"]["ny"] == 2
 
-print("Checking saved fields2.nc")
+    print("Checking saved fields.nc")
 
-with DataFile("fields2.nc") as f:
-    assert f["f2d"].shape == (5, 6)  # Field2D
-    assert f["f3d"].shape == (5, 6, 2)  # Field3D
-    assert f["fperp"].shape == (5, 2)  # FieldPerp
-    assert np.allclose(f["f2d"], 1.0)
-    assert np.allclose(f["f3d"], 2.0)
-    assert np.allclose(f["fperp"], 3.0)
+    with DataFile("fields.nc") as f:
+        assert f["f2d"].shape == (5, 6)  # Field2D
+        assert f["f3d"].shape == (5, 6, 2)  # Field3D
+        assert f["fperp"].shape == (5, 2)  # FieldPerp
+        assert np.allclose(f["f2d"], 1.0)
+        assert np.allclose(f["f3d"], 2.0)
+        assert np.allclose(f["fperp"], 3.0)
 
-print(" => Passed")
+    print("Checking saved fields2.nc")
+
+    with DataFile("fields2.nc") as f:
+        assert f["f2d"].shape == (5, 6)  # Field2D
+        assert f["f3d"].shape == (5, 6, 2)  # Field3D
+        assert f["fperp"].shape == (5, 2)  # FieldPerp
+        assert np.allclose(f["f2d"], 1.0)
+        assert np.allclose(f["f3d"], 2.0)
+        assert np.allclose(f["fperp"], 3.0)
+
+    print(" => Passed")
