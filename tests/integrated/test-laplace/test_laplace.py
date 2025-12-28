@@ -41,37 +41,38 @@ build_and_log("Laplacian inversion test")
 print("Reading benchmark data")
 bmk = {v: collect(v, path="data", prefix="benchmark", info=False) for v in vars}
 
-print("Running Laplacian inversion test")
-success = True
 
-for solver in ["cyclic", "pcr", "pcr_thomas"]:
-    for nproc in [1, 2, 4]:
-        nxpe = 1
-        if nproc > 2:
-            nxpe = 2
+def test_laplace():
 
-        cmd = f"./test_laplace NXPE={nxpe} laplace:type={solver}"
+    # Read benchmark values
+    print("Reading benchmark data")
+    bmk = {}
+    for v in vars:
+        bmk[v] = collect(v, path="data", prefix="benchmark", info=False)
 
-        shell("rm data/BOUT.dmp.*.nc")
+    print("Running Laplacian inversion test")
+    success = True
 
-        print(f"   {solver} solver with {nproc} processors ({nxpe=})....")
-        s, out = launch_safe(cmd, nproc=nproc, mthread=1, pipe=True)
-        with open(f"run.log.{nproc}", "w") as f:
-            f.write(out)
+    cmd = "./test_laplace NXPE=" + str(nxpe) + " laplace:type=" + solver
+       
+    print(f"   {solver} solver with {nproc} processors ({nxpe=})....")
+    s, out = launch_safe(cmd, nproc=nproc, mthread=1, pipe=True)
+    with open(f"run.log.{nproc}", "w") as f:
+        f.write(out)
 
-        cache = create_cache(path="data", prefix="BOUT.dmp")
+    cache = create_cache(path="data", prefix="BOUT.dmp")
 
-        # Collect output data
-        for v in vars:
-            print(f"      Checking variable {v} ...", end="")
-            result = collect(v, path="data", info=False, datafile_cache=cache)
-            # Compare benchmark and output
-            try:
-                npt.assert_allclose(result, bmk[v], atol=tol, rtol=tol)
-                print("Pass")
-            except AssertionError as e:
-                print(f"Fail: {e}")
-                success = False
+    # Collect output data
+    for v in vars:
+        print(f"      Checking variable {v} ...", end="")
+        result = collect(v, path="data", info=False, datafile_cache=cache)
+        # Compare benchmark and output
+        try:
+        npt.assert_allclose(result, bmk[v], atol=tol, rtol=tol)
+        print("Pass")
+        except AssertionError as e:
+        print(f"Fail: {e}")
+        success = False
 
         # Only check FieldPerps on one processor because reading them in is
         # quite annoying on mutliple cores due to mismatched global y indices
@@ -89,9 +90,19 @@ for solver in ["cyclic", "pcr", "pcr_thomas"]:
                     print(f"Fail: {e}")
                     success = False
 
-if success:
-    print(" => All Laplacian inversion tests passed")
-    exit(0)
-else:
-    print(" => Some failed tests")
-    exit(1)
+            # Collect output data
+            for v in vars:
+                stdout.write("      Checking variable " + v + " ... ")
+                result = collect(v, path="data", info=False)
+                # Compare benchmark and output
+                if npt.shape(bmk[v]) != npt.shape(result):
+                    print("Fail, wrong shape")
+                    success = False
+                diff = npt.max(npt.abs(bmk[v] - result))
+                if diff > tol:
+                    print("Fail, maximum difference = " + str(diff))
+                    success = False
+                else:
+                    print("Pass")
+
+    assert success, " => Some failed tests"
