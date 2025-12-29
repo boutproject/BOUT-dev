@@ -974,7 +974,10 @@ TYPED_TEST(FieldFactoryCreationTest, CreatePeriodicY) {
   auto output = this->create("is_periodic_y");
 
   auto expected = makeField<TypeParam>(
-                                     [](typename TypeParam::ind_type& index) -> BoutReal { return mesh->periodicY(index.x()); }, mesh);
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return mesh->periodicY(index.x());
+      },
+      mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
 }
@@ -997,7 +1000,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreatePeriodicYoutsideCore) {
   auto output = this->create("is_periodic_y", nullptr, &localmesh);
 
   auto expected = makeField<TypeParam>(
-                                     [](typename TypeParam::ind_type& index) -> BoutReal { return 0.0; }, &localmesh);
+      [](typename TypeParam::ind_type& index) -> BoutReal { return 0.0; }, &localmesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
 }
@@ -1019,7 +1022,10 @@ TYPED_TEST(FieldFactoryCreationTest, CreatePeriodicYacrossSeparatrix) {
   auto output = this->create("is_periodic_y", nullptr, &localmesh);
 
   auto expected = makeField<TypeParam>(
-                                       [&](typename TypeParam::ind_type& index) -> BoutReal { return index.x() < localmesh.ix_separatrix; }, &localmesh);
+      [&](typename TypeParam::ind_type& index) -> BoutReal {
+        return index.x() < localmesh.ix_separatrix;
+      },
+      &localmesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
 }

@@ -575,7 +575,7 @@ public:
 };
 
 #endif // PETSC
-};     // namespace inversion
-};     // namespace bout
+}; // namespace inversion
+}; // namespace bout
 
 #endif // HEADER GUARD

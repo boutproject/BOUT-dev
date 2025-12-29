@@ -417,8 +417,7 @@ int ArkodeSolver::init() {
         if (hasPreconditioner()) {
           output.write("\tUsing user-supplied preconditioner\n");
 
-          if (ARKodeSetPreconditioner(arkode_mem, nullptr, arkode_pre)
-              != ARKLS_SUCCESS) {
+          if (ARKodeSetPreconditioner(arkode_mem, nullptr, arkode_pre) != ARKLS_SUCCESS) {
             throw BoutException("ARKodeSetPreconditioner failed\n");
           }
         } else {

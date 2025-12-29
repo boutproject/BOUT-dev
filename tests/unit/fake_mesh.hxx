@@ -122,10 +122,12 @@ public:
   MPI_Comm getYcomm(int UNUSED(jx)) const override { return BoutComm::get(); }
 
   // Periodic Y
-  int ix_separatrix {1000000}; // separatrix index
+  int ix_separatrix{1000000}; // separatrix index
 
   bool periodicY(int jx) const override { return jx < ix_separatrix; }
-  bool periodicY(int jx, BoutReal& UNUSED(ts)) const override { return jx < ix_separatrix; }
+  bool periodicY(int jx, BoutReal& UNUSED(ts)) const override {
+    return jx < ix_separatrix;
+  }
   int numberOfYBoundaries() const override { return 1; }
   std::pair<bool, BoutReal> hasBranchCutLower(int UNUSED(jx)) const override {
     return std::make_pair(false, 0.);
