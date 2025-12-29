@@ -8,6 +8,7 @@
 #include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
+#include <bout/sys/generator_context.hxx>
 #include <bout/utils.hxx>
 
 using bout::generator::Context;
@@ -460,18 +461,18 @@ void BoundaryDirichlet::apply(Field3D& f, BoutReal t) {
 
       for (; !bndry->isDone(); bndry->next1d()) {
         // Calculate the X and Y normalised values half-way between the guard cell and grid cell
-        BoutReal xnorm = 0.5
-                         * (mesh->GlobalX(bndry->x)                 // In the guard cell
-                            + mesh->GlobalX(bndry->x - bndry->bx)); // the grid cell
+        const BoutReal xnorm = 0.5
+                               * (mesh->GlobalX(bndry->x) // In the guard cell
+                                  + mesh->GlobalX(bndry->x - bndry->bx)); // the grid cell
 
-        BoutReal ynorm = 0.5
-                         * (mesh->GlobalY(bndry->y)                 // In the guard cell
-                            + mesh->GlobalY(bndry->y - bndry->by)); // the grid cell
+        const BoutReal ynorm = TWOPI * 0.5
+                               * (mesh->GlobalY(bndry->y) // In the guard cell
+                                  + mesh->GlobalY(bndry->y - bndry->by)); // the grid cell
 
         for (int zk = 0; zk < mesh->LocalNz; zk++) {
           if (fg) {
-            val = fg->generate(xnorm, TWOPI * ynorm, TWOPI * (zk - 0.5) / (mesh->LocalNz),
-                               t);
+            val = fg->generate(
+                Context(bndry, zk, loc, t, mesh).set("x", xnorm, "y", ynorm));
           }
           f(bndry->x, bndry->y, zk) =
               2 * val - f(bndry->x - bndry->bx, bndry->y - bndry->by, zk);
@@ -508,14 +509,14 @@ void BoundaryDirichlet::apply(Field3D& f, BoutReal t) {
         // can help with the stability of higher order methods.
         for (int i = 1; i < bndry->width; i++) {
           // Set any other guard cells using the values on the cells
-          int xi = bndry->x + i * bndry->bx;
-          int yi = bndry->y + i * bndry->by;
-          xnorm = mesh->GlobalX(xi);
-          ynorm = mesh->GlobalY(yi);
+          const int xi = bndry->x + (i * bndry->bx);
+          const int yi = bndry->y + (i * bndry->by);
+          const auto xnorm = mesh->GlobalX(xi);
+          const auto ynorm = mesh->GlobalY(yi) * TWOPI;
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(xnorm, TWOPI * ynorm,
-                                 TWOPI * (zk - 0.5) / (mesh->LocalNz), t);
+              val = fg->generate(
+                  Context(bndry, zk, loc, t, mesh).set("x", xnorm, "y", ynorm));
             }
             f(xi, yi, zk) = val;
           }
@@ -965,18 +966,18 @@ void BoundaryDirichlet_O3::apply(Field3D& f, BoutReal t) {
 
       for (; !bndry->isDone(); bndry->next1d()) {
         // Calculate the X and Y normalised values half-way between the guard cell and grid cell
-        BoutReal xnorm = 0.5
-                         * (mesh->GlobalX(bndry->x)                 // In the guard cell
-                            + mesh->GlobalX(bndry->x - bndry->bx)); // the grid cell
+        const BoutReal xnorm = 0.5
+                               * (mesh->GlobalX(bndry->x) // In the guard cell
+                                  + mesh->GlobalX(bndry->x - bndry->bx)); // the grid cell
 
-        BoutReal ynorm = 0.5
-                         * (mesh->GlobalY(bndry->y)                 // In the guard cell
-                            + mesh->GlobalY(bndry->y - bndry->by)); // the grid cell
+        const BoutReal ynorm = TWOPI * 0.5
+                               * (mesh->GlobalY(bndry->y) // In the guard cell
+                                  + mesh->GlobalY(bndry->y - bndry->by)); // the grid cell
 
         for (int zk = 0; zk < mesh->LocalNz; zk++) {
           if (fg) {
-            val = fg->generate(xnorm, TWOPI * ynorm, TWOPI * (zk - 0.5) / (mesh->LocalNz),
-                               t);
+            val = fg->generate(
+                Context(bndry, zk, loc, t, mesh).set("x", xnorm, "y", ynorm));
           }
 
           f(bndry->x, bndry->y, zk) =
@@ -1431,18 +1432,18 @@ void BoundaryDirichlet_O4::apply(Field3D& f, BoutReal t) {
       // Shifted in Z
       for (; !bndry->isDone(); bndry->next1d()) {
         // Calculate the X and Y normalised values half-way between the guard cell and grid cell
-        BoutReal xnorm = 0.5
-                         * (mesh->GlobalX(bndry->x)                 // In the guard cell
-                            + mesh->GlobalX(bndry->x - bndry->bx)); // the grid cell
+        const BoutReal xnorm = 0.5
+                               * (mesh->GlobalX(bndry->x) // In the guard cell
+                                  + mesh->GlobalX(bndry->x - bndry->bx)); // the grid cell
 
-        BoutReal ynorm = 0.5
-                         * (mesh->GlobalY(bndry->y)                 // In the guard cell
-                            + mesh->GlobalY(bndry->y - bndry->by)); // the grid cell
+        const BoutReal ynorm = TWOPI * 0.5
+                               * (mesh->GlobalY(bndry->y) // In the guard cell
+                                  + mesh->GlobalY(bndry->y - bndry->by)); // the grid cell
 
         for (int zk = 0; zk < mesh->LocalNz; zk++) {
           if (fg) {
-            val = fg->generate(xnorm, TWOPI * ynorm, TWOPI * (zk - 0.5) / (mesh->LocalNz),
-                               t);
+            val = fg->generate(
+                Context(bndry, zk, loc, t, mesh).set("x", xnorm, "y", ynorm));
           }
 
           f(bndry->x, bndry->y, zk) =
@@ -2137,20 +2138,22 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
         for (; !bndry->isDone(); bndry->next1d()) {
           // Calculate the X and Y normalised values half-way between the guard cell and
           // grid cell
-          BoutReal xnorm = 0.5
-                           * (mesh->GlobalX(bndry->x)                 // In the guard cell
-                              + mesh->GlobalX(bndry->x - bndry->bx)); // the grid cell
+          const BoutReal xnorm =
+              0.5
+              * (mesh->GlobalX(bndry->x)                 // In the guard cell
+                 + mesh->GlobalX(bndry->x - bndry->bx)); // the grid cell
 
-          BoutReal ynorm = 0.5
-                           * (mesh->GlobalY(bndry->y)                 // In the guard cell
-                              + mesh->GlobalY(bndry->y - bndry->by)); // the grid cell
+          const BoutReal ynorm =
+              TWOPI * 0.5
+              * (mesh->GlobalY(bndry->y)                 // In the guard cell
+                 + mesh->GlobalY(bndry->y - bndry->by)); // the grid cell
 
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
                              + bndry->by * metric->dy(bndry->x, bndry->y, zk);
             if (fg) {
-              val = fg->generate(xnorm, TWOPI * ynorm,
-                                 TWOPI * (zk - 0.5) / (mesh->LocalNz), t);
+              val = fg->generate(
+                  Context(bndry, zk, loc, t, mesh).set("x", xnorm, "y", ynorm));
             }
             f(bndry->x, bndry->y, zk) =
                 f(bndry->x - bndry->bx, bndry->y - bndry->by, zk) + delta * val;

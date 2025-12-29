@@ -8,7 +8,7 @@ and preconditioners. See the "ksptype" and "pctype" settings in BOUT.inp
 
 Run with
 
-    $ ./test-laplacexy -ksp_monitor
+    $ ./test-laplacexy -laplacexy:petsc:ksp_monitor
 
 which should print the KSP norms from PETSc:
 
@@ -31,3 +31,8 @@ which should print the KSP norms from PETSc:
     16 KSP Residual norm 4.309526296050e-01
     17 KSP Residual norm 1.115269396077e-01
     18 KSP Residual norm 4.334487475743e-13
+
+HYPRE
+-----
+
+Use the `hypre` directory to use the HYPRE preconditioner instead of PETSc.

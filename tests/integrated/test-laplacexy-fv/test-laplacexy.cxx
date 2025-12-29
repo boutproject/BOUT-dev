@@ -23,18 +23,23 @@
  *
  **************************************************************************/
 
-#include <bout/bout.hxx>
-#include <bout/constants.hxx>
-#include <bout/derivs.hxx>
-#include <bout/initialprofiles.hxx>
-#include <bout/invert/laplacexy.hxx>
-#include <bout/options.hxx>
+#include "bout/bout.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/difops.hxx"
+#include "bout/field2d.hxx"
+#include "bout/initialprofiles.hxx"
+#include "bout/invert/laplacexy.hxx"
+#include "bout/options.hxx"
+#include "bout/options_io.hxx"
+#include "bout/output.hxx"
+
+#include <cstdlib>
 
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
 
-  LaplaceXY laplacexy;
+  auto laplacexy = LaplaceXY::create();
 
   // Solving equations of the form
   // Div(A Grad_perp(f)) + B*f = rhs
@@ -57,9 +62,9 @@ int main(int argc, char** argv) {
   Field2D rhs, rhs_check;
   rhs = Laplace_perpXY(a, f) + b * f;
 
-  laplacexy.setCoefs(a, b);
+  laplacexy->setCoefs(a, b);
 
-  sol = laplacexy.solve(rhs, 0.);
+  sol = laplacexy->solve(rhs, 0.);
   error = (f - sol) / f;
   absolute_error = f - sol;
   max_error = max(abs(absolute_error), true);

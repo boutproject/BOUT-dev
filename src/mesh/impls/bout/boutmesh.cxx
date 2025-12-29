@@ -607,6 +607,20 @@ int BoutMesh::load() {
   // Add boundary regions
   addBoundaryRegions();
 
+  // Set cached values
+  {
+    int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
+    int allbndry = 0;
+    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
+    has_boundary_lower_y = static_cast<bool>(allbndry);
+  }
+  {
+    int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
+    int allbndry = 0;
+    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
+    has_boundary_upper_y = static_cast<bool>(allbndry);
+  }
+
   // Initialize default coordinates
   getCoordinates();
 
@@ -2139,6 +2153,37 @@ void BoutMesh::topology() {
 
     // Add target plates at the top
     add_target(ny_inner - 1, 0, nx);
+  }
+
+  // Additional limiters
+  // Each limiter needs 3 indices: A Y index, start and end X indices
+  int limiter_count = 0;
+  Mesh::get(limiter_count, "limiter_count", 0);
+  if (limiter_count > 0) {
+    std::vector<int> limiter_yinds;
+    if (!source->get(this, limiter_yinds, "limiter_yinds", limiter_count)) {
+      throw BoutException("Couldn't read limiter_yinds vector of length {} from mesh",
+                          limiter_count);
+    }
+    std::vector<int> limiter_xstarts;
+    if (!source->get(this, limiter_xstarts, "limiter_xstarts", limiter_count)) {
+      throw BoutException("Couldn't read limiter_xstarts vector of length {} from mesh",
+                          limiter_count);
+    }
+    std::vector<int> limiter_xends;
+    if (!source->get(this, limiter_xends, "limiter_xends", limiter_count)) {
+      throw BoutException("Couldn't read limiter_xend vector of length {} from mesh",
+                          limiter_count);
+    }
+
+    for (int i = 0; i < limiter_count; ++i) {
+      int const yind = limiter_yinds[i];
+      int const xstart = limiter_xstarts[i];
+      int const xend = limiter_xends[i];
+      output_info.write("Adding a limiter between y={} and {}. X indices {} to {}\n",
+                        yind, yind + 1, xstart, xend);
+      add_target(yind, xstart, xend);
+    }
   }
 
   if ((ixseps_inner > 0)

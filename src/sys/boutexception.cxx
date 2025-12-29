@@ -4,16 +4,19 @@
 #include <bout/boutexception.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/utils.hxx>
+
 #include <mpi.h>
 
 #if BOUT_USE_BACKTRACE
 #include <dlfcn.h>
 #include <execinfo.h>
+#include <stdio.h>
 #endif
 
 #include <array>
 #include <cstdlib>
 #include <string>
+#include <utility>
 
 #include <fmt/format.h>
 
@@ -22,18 +25,24 @@ const std::string header{"====== Exception thrown ======\n"};
 }
 
 void BoutParallelThrowRhsFail(int status, const char* message) {
-  int allstatus;
+  int allstatus = 0;
   MPI_Allreduce(&status, &allstatus, 1, MPI_INT, MPI_LOR, BoutComm::get());
 
-  if (allstatus) {
+  if (allstatus != 0) {
     throw BoutRhsFail(message);
   }
 }
 
-BoutException::BoutException(std::string msg) : message(std::move(msg)) {
-  makeBacktrace();
+BoutException::BoutException(std::string msg)
+    : message(std::move(msg))
+#if BOUT_USE_BACKTRACE
+      ,
+      trace_size(backtrace(trace.data(), TRACE_MAX)),
+      messages(backtrace_symbols(trace.data(), trace_size))
+#endif
+{
   if (std::getenv("BOUT_SHOW_BACKTRACE") != nullptr) {
-    message = getBacktrace() + "\n" + message;
+    message = fmt::format("{}\n{}", getBacktrace(), message);
   }
 }
 
@@ -54,7 +63,8 @@ std::string BoutException::getBacktrace() const {
   backtrace_message = "====== Exception path ======\n";
   // skip first stack frame (points here)
   for (int i = trace_size - 1; i > 1; --i) {
-    backtrace_message += fmt::format(FMT_STRING("[bt] #{:d} {:s}\n"), i - 1, messages[i]);
+    backtrace_message = fmt::format(FMT_STRING("{}[bt] #{:d} {:s}\n"), backtrace_message,
+                                    i - 1, messages[i]);
     // find first occurence of '(' or ' ' in message[i] and assume
     // everything before that is the file name. (Don't go beyond 0 though
     // (string terminator)
@@ -65,11 +75,11 @@ std::string BoutException::getBacktrace() const {
 
     // If we are compiled as PIE, need to get base pointer of .so and substract
     Dl_info info;
-    void* ptr = trace[i];
-    if (dladdr(trace[i], &info)) {
+    const void* ptr = trace[i];
+    if (dladdr(ptr, &info) != 0) {
       // Additionally, check whether this is the default offset for an executable
       if (info.dli_fbase != reinterpret_cast<void*>(0x400000)) {
-        ptr = reinterpret_cast<void*>(reinterpret_cast<size_t>(trace[i])
+        ptr = reinterpret_cast<void*>(reinterpret_cast<size_t>(ptr)
                                       - reinterpret_cast<size_t>(info.dli_fbase));
       }
     }
@@ -82,14 +92,14 @@ std::string BoutException::getBacktrace() const {
     FILE* file = popen(syscom.c_str(), "r");
     if (file != nullptr) {
       std::array<char, 1024> out{};
-      char* retstr = nullptr;
+      const char* retstr = nullptr;
       std::string buf;
       while ((retstr = fgets(out.data(), out.size() - 1, file)) != nullptr) {
         buf += retstr;
       }
       int const status = pclose(file);
       if (status == 0) {
-        backtrace_message += buf;
+        backtrace_message = fmt::format("{}{}", backtrace_message, buf);
       }
     }
   }
@@ -97,12 +107,6 @@ std::string BoutException::getBacktrace() const {
   backtrace_message = "Stacktrace not enabled.\n";
 #endif
 
-  return backtrace_message + msg_stack.getDump() + "\n" + header + message + "\n";
-}
-
-void BoutException::makeBacktrace() {
-#if BOUT_USE_BACKTRACE
-  trace_size = backtrace(trace.data(), TRACE_MAX);
-  messages = backtrace_symbols(trace.data(), trace_size);
-#endif
+  return fmt::format("{}{}\n{}{}\n", backtrace_message, msg_stack.getDump(), header,
+                     message);
 }
