@@ -24,11 +24,7 @@ public:
       : Context(i.x(), i.y(), 0, (loc == CELL_ZLOW) ? CELL_CENTRE : loc, msh, t) {}
 
   /// Specify a cell index, together with the cell location, mesh and time
-  ///
   Context(int ix, int iy, int iz, CELL_LOC loc, Mesh* msh, BoutReal t);
-
-  /// Specify the values directly
-  Context(BoutReal x, BoutReal y, BoutReal z, Mesh* msh, BoutReal t);
 
   /// If constructed without parameters, contains no values (null).
   /// Requesting x,y,z or t throws an exception
@@ -43,6 +39,11 @@ public:
   BoutReal y() const { return get("y"); }
   BoutReal z() const { return get("z"); }
   BoutReal t() const { return get("t"); }
+
+  /// Cell indices
+  int ix() const { return ix_; }
+  int jy() const { return jy_; }
+  int kz() const { return kz_; }
 
   /// Set the value of a parameter with given name
   Context& set(const std::string& name, BoutReal value) {
@@ -76,6 +77,10 @@ public:
   }
 
 private:
+  int ix_{0};
+  int jy_{0};
+  int kz_{0};
+
   Mesh* localmesh{nullptr}; ///< The mesh on which the position is defined
 
   /// Contains user-set values which can be set and retrieved

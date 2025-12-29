@@ -133,7 +133,7 @@ public:
   MPI_Comm getYcomm(int UNUSED(jx)) const override { return BoutComm::get(); }
   bool periodicY(int UNUSED(jx)) const override { return true; }
   bool periodicY(int UNUSED(jx), BoutReal& UNUSED(ts)) const override { return true; }
-  int numberOfYBoundaries() const override { return 1; }
+  int numberOfYBoundaries() const override { return 0; }
   std::pair<bool, BoutReal> hasBranchCutLower(int UNUSED(jx)) const override {
     return std::make_pair(false, 0.);
   }

@@ -19,19 +19,27 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-#include <bout/globals.hxx>
 
 #include <bout/field_factory.hxx>
 
-#include <cmath>
-
+#include <bout/bout_enum_class.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/fieldperp.hxx>
+#include <bout/globals.hxx>
 #include <bout/output.hxx>
+#include <bout/sys/expressionparser.hxx>
+#include <bout/traits.hxx>
 #include <bout/utils.hxx>
 
-#include "bout/constants.hxx"
-
 #include "fieldgenerators.hxx"
+
+#include <cmath>
+#include <memory>
+#include <string>
 
 using bout::generator::Context;
 
@@ -44,6 +52,8 @@ FieldGeneratorPtr generator(BoutReal value) {
 FieldGeneratorPtr generator(BoutReal* ptr) {
   return std::make_shared<FieldValuePtr>(ptr);
 }
+
+BOUT_ENUM_CLASS(GridVariableFunction, field3d, field2d, boutreal);
 
 namespace {
 /// Provides a placeholder whose target can be changed after creation.
@@ -80,6 +90,48 @@ private:
 
   FieldGeneratorPtr target;
 };
+
+// Read variables from the grid file and make them available in expressions
+template <class T>
+auto add_grid_variable(FieldFactory& factory, Mesh& mesh, const std::string& name) {
+  T var;
+  mesh.get(var, name);
+  factory.addGenerator(name, std::make_shared<GridVariable<T>>(var, name));
+}
+
+auto read_grid_variables(FieldFactory& factory, Mesh& mesh, Options& options) {
+  auto& field_variables = options["input"]["grid_variables"].doc(
+      "Variables to read from the grid file and make available in expressions");
+
+  for (const auto& [name, value] : field_variables) {
+    if (not mesh.isDataSourceGridFile()) {
+      throw BoutException(
+          "A grid file ('mesh:file') is required for `input:grid_variables`");
+    }
+
+    if (not mesh.sourceHasVar(name)) {
+      const auto filename = Options::root()["mesh"]["file"].as<std::string>();
+      throw BoutException(
+          "Grid file '{}' missing `{}` specified in `input:grid_variables`", filename,
+          name);
+    }
+
+    const auto func = value.as<GridVariableFunction>();
+    switch (func) {
+    case GridVariableFunction::field3d:
+      add_grid_variable<Field3D>(factory, mesh, name);
+      break;
+    case GridVariableFunction::field2d:
+      add_grid_variable<Field2D>(factory, mesh, name);
+      break;
+    case GridVariableFunction::boutreal:
+      BoutReal var{};
+      mesh.get(var, name);
+      factory.addGenerator(name, std::make_shared<FieldValue>(var));
+      break;
+    }
+  }
+}
 } // namespace
 
 //////////////////////////////////////////////////////////
@@ -176,6 +228,9 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
 
   // Where switch function
   addGenerator("where", std::make_shared<FieldWhere>(nullptr, nullptr, nullptr));
+
+  // Variables from the grid file
+  read_grid_variables(*this, *localmesh, nonconst_options);
 }
 
 Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
