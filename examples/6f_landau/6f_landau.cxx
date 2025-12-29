@@ -1679,18 +1679,15 @@ protected:
     }
 
     if (sheath_boundaries) {
-
       c_se = 0.0, vth_et = 0.0, c_set = 0.0;
       q_se = 0.0, q_si = 0.0;
       Jpar_sh = 0.0, phi_sh = 0.0; 
-
     }
 
     // Auxiliary
     zero = 0.0, one = 1.0; 
     mesh->communicate(zero);
     mesh->communicate(one);
-
 
     /////////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
@@ -3518,6 +3515,7 @@ protected:
 
     if (sheath_boundaries) {
       SBC_Gradpar(U, zero, PF_limit, PF_limit_range);
+      // SBC_Gradpar(phi, zero, PF_limit, PF_limit_range);
     }
 
     // Field2D lap_temp=0.0;
@@ -3591,6 +3589,26 @@ protected:
     // Apply a boundary condition on phi for target plates
     // phi.applyBoundary();
 
+    // // Outer boundary cells
+    // if (mesh->firstX()) {
+    //   for (int i = mesh->xstart - 2; i >= 0; --i) {
+    //     for (int j = mesh->ystart; j <= mesh->yend; ++j) {
+    //       for (int k = 0; k < mesh->LocalNz; ++k) {
+    //         phi(i, j, k) = phi(i + 1, j, k);
+    //       }
+    //     }
+    //   }
+    // }
+    // if (mesh->lastX()) {
+    //   for (int i = mesh->xend + 2; i < mesh->LocalNx; ++i) {
+    //     for (int j = mesh->ystart; j <= mesh->yend; ++j) {
+    //       for (int k = 0; k < mesh->LocalNz; ++k) {
+    //         phi(i, j, k) = phi(i - 1, j, k);
+    //       }
+    //     }
+    //   }
+    // }
+
     if (emass) {
       Field2D acoeff = -delta_e_inv * N0 * N0;
       if (compress0) {
@@ -3622,7 +3640,7 @@ protected:
 
     if (!nonlinear && (parallel_viscous && compress0)) {
       pi_ci = -eta_i0 * 2. * (pow(B0, -0.5)) * Grad_par((pow(B0, 0.5)) * Vipar);
-      pi_ci -= eta_i0 * b0xcv * (Er0_net + Grad(phi)) / B0;
+      pi_ci -= eta_i0 * b0xcv * (Er0_net + Grad(phi)) / B0; // We need to apply SBC on phi first, before calculating Grad(phi)
       mesh->communicate(pi_ci);
       pi_ci.applyBoundary();
     }
@@ -3667,7 +3685,7 @@ protected:
       if (parallel_viscous && compress0) {
         eta_i0 = 0.96 * (Pi0 + Pi) * Tau_ie * nu_i * Tbar;
         pi_ci = -eta_i0 * 2. / sqrt(B0) * Grad_parP((sqrt(B0) * Vipar));
-        pi_ci -= eta_i0 * b0xcv * (Er0_net + Grad(phi)) / B0;
+        pi_ci -= eta_i0 * b0xcv * (Er0_net + Grad(phi)) / B0;  // We need to apply SBC on phi first, before calculating Grad(phi)
         mesh->communicate(pi_ci);
         pi_ci.applyBoundary();
       }
@@ -3905,7 +3923,7 @@ protected:
       // Jpar_sh.applyBoundary("neumann");
       SBC_Dirichlet(Jpar, Jpar_sh, PF_limit, PF_limit_range);
       // SBC_Dirichlet(Jpar, zero, PF_limit, PF_limit_range);
-      SBC_Gradpar(Jpar, zero, PF_limit, PF_limit_range);
+      // SBC_Gradpar(Jpar, zero, PF_limit, PF_limit_range);
 
       if (diffusion_par > 0.0) {
         if (full_sbc) {
@@ -3932,6 +3950,13 @@ protected:
 
       // SBC_Gradpar(U, zero, PF_limit, PF_limit_range);
       SBC_Gradpar(Ni, zero, PF_limit, PF_limit_range);
+      SBC_Dirichlet(P, zero, PF_limit, PF_limit_range);
+      if (evolve_psi) {
+        SBC_Dirichlet(Psi, zero, PF_limit, PF_limit_range);
+      } else {
+        SBC_Dirichlet(Apar, zero, PF_limit, PF_limit_range);
+      }
+
       // if (!Landau) {
         SBC_Gradpar(Ti, q_si, PF_limit, PF_limit_range);
         SBC_Gradpar(Te, q_se, PF_limit, PF_limit_range);
