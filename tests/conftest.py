@@ -1,18 +1,11 @@
-import os
 import pytest
-from contextlib import contextmanager
 from pathlib import Path
 
 
-@contextmanager
-def chdir(path: Path):
-    """Temporarily change the current working directory."""
-    old_cwd = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(old_cwd)
+@pytest.fixture(autouse=True)
+def cwd_to_test_file_dir(monkeypatch, test_dir):
+    """Automatically change CWD to the directory of the current test file."""
+    monkeypatch.chdir(test_dir)
 
 @pytest.fixture
 def test_dir(request) -> Path:
