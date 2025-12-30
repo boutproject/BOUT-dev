@@ -4,15 +4,13 @@
 
 from boututils.run_wrapper import build_and_log, launch_safe
 
-build_and_log("vector communication test")
+def test_vec():
 
-status, out = launch_safe("./testVec", nproc=4, pipe=True)
+    build_and_log("vector communication test")
 
-with open("run.log.4", "w") as f:
-    f.write(out)
+    status, out = launch_safe("./testVec", nproc=4, pipe=True)
 
-if status:
-    print(" => Test failed")
-    exit(status)
+    with open("run.log.4", "w") as f:
+        f.write(out)
 
-print(" => Test passed")
+    assert not status, " => Test failed"
