@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
+import os
 import pytest
 from boututils.run_wrapper import build_and_log, launch_safe
 from boutdata.collect import collect
-
 from numpy import max, abs
 
 shift_types = ["shifted", "shiftedinterp"]
@@ -15,7 +15,7 @@ def build_project():
     build_and_log("parallel slices test")
 
 
-def run_case(shift_type, variable, build_project):
+def run_case(shift_type, variable):
     s, out = launch_safe(
         "./test_yupdown mesh:paralleltransform:type=" + shift_type,
         nproc=1,
@@ -42,6 +42,9 @@ def run_case(shift_type, variable, build_project):
 
 
 @pytest.mark.parametrize("shift_type, variable", list(zip(shift_types, variables)))
-def test_case(shift_type, variable, build_project):
-    success = run_case(shift_type, variable, build_project)
+def test_case(shift_type, variable):
+    # MPI oversubscribe
+    os.environ["OMPI_MCA_rmaps_base_oversubscribe"] = "1"  # Allows 18 procs
+
+    success = run_case(shift_type, variable)
     assert success, f"Test failed for shift_type={shift_type}: , variable={variable}"
