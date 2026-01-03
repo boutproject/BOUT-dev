@@ -780,6 +780,11 @@ if(BOUT_TESTS)
     add_dependencies(check check-unit-tests)
   endif()
 
+  # Copy the pytest config file
+  configure_file(
+    "${PROJECT_SOURCE_DIR}/tests/conftest.py"
+    "${PROJECT_BINARY_DIR}/include/bout/version.hxx/tests/conftest.py")
+
 endif()
 
 option(BOUT_BUILD_EXAMPLES "Build the examples" ON)
