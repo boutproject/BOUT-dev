@@ -53,4 +53,4 @@ def test_boutpp_collect_staggered():
         print("Something is wrong. Maybe setting the location from field failed.")
         fail = 1
 
-    exit(fail)
+    assert fail == 0
