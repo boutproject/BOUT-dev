@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import os
-import pathlib
 import boutpp as bc
 import numpy as np
 from boutdata import collect
@@ -11,8 +9,6 @@ from boutdata import collect
 
 def test_boutpp_collect():
 
-    this_directory = pathlib.Path(__file__).parent.absolute()
-    os.chdir(this_directory)
     bc.init("-d input".split(" "))
 
     f = bc.Field3D.fromMesh(None)
