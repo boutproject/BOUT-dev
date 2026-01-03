@@ -2,7 +2,7 @@
 import pytest
 # Test initial conditions
 
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import launch_safe
 from boutdata.collect import collect
 
 import configparser
@@ -174,8 +174,6 @@ def test_initial():
     # Remove the coordinate arrays
     for coord in ["var_x", "var_y", "var_z"]:
         varlist.remove(coord)
-
-    build_and_log("initial conditions test")
 
     nprocs = [1, 2, 3, 4]
     for nproc in nprocs:

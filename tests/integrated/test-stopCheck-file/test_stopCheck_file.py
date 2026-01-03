@@ -4,14 +4,12 @@
 
 import sys
 
-from boututils.run_wrapper import build_and_log, launch
+from boututils.run_wrapper import launch
 from boutdata.collect import collect
 
 nproc = 1
 
 def test_stopCheck_file():
-
-    build_and_log("stopCheck test")
 
     check_values = [True, False]
     expected_steps = [1, 11]

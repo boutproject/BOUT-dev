@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
 
@@ -19,7 +19,7 @@ def test_restarting():
 
     print("-> Testing restart append")
 
-    shell("rm -f data/BOUT.dmp.0.nc")
+    shell(["rm -f data/BOUT.dmp.0.nc"])
     s, out = launch_safe("./test_restarting solver:nout=5", nproc=1, pipe=True)
     s, out = launch_safe(
         "./test_restarting solver:nout=5 restart append", nproc=1, pipe=True
@@ -51,7 +51,7 @@ def test_restarting():
 
     print("-> Testing restart")
 
-    shell("rm -f data/BOUT.dmp.0.nc")
+    shell(["rm -f data/BOUT.dmp.0.nc"])
     s, out = launch_safe("./test_restarting solver:nout=5", nproc=1, pipe=True)
     s, out = launch_safe("./test_restarting solver:nout=5 restart", nproc=1, pipe=True)
 

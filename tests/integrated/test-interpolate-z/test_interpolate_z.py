@@ -4,7 +4,7 @@
 # Run the test, compare results against the benchmark
 #
 
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boutdata import collect
 from numpy import sqrt, max, abs, mean, array, log, polyfit
 from sys import stdout
@@ -29,7 +29,6 @@ methods = {
 
 
 def test_interpolate_z():
-    build_and_log("ZInterpolation test")
 
     print("Running ZInterpolation test")
     success = True
@@ -55,7 +54,7 @@ def test_interpolate_z():
 
             cmd = "./test_interpolate" + args
 
-            shell("rm data/BOUT.dmp.*.nc")
+            shell(["rm data/BOUT.dmp.*.nc"])
 
             s, out = launch_safe(cmd, nproc=nproc, pipe=True)
             with open("run.log.{}.{}".format(method, nx), "w") as f:

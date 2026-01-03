@@ -7,7 +7,7 @@
 # Run the test, compare results against the benchmark
 #
 
-from boututils.run_wrapper import shell, launch_safe, getmpirun, build_and_log
+from boututils.run_wrapper import shell, launch_safe, getmpirun
 from boutdata.collect import collect
 import numpy as np
 from sys import exit
@@ -15,8 +15,6 @@ from sys import exit
 tol = 1e-10  # Absolute tolerance
 
 MPIRUN = getmpirun()
-
-build_and_log("LaplaceXZ test")
 
 print("Running LaplaceXZ test")
 success = True
@@ -26,7 +24,7 @@ for nproc in [1, 2, 4]:
 
     cmd = "./test-laplacexz nxpe=" + str(nxpe)
 
-    shell("rm data/BOUT.dmp.*.nc")
+    shell(["rm data/BOUT.dmp.*.nc"])
 
     print("   %d processors (nxpe = %d)...." % (nproc, nxpe))
     s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, mthread=1, pipe=True)

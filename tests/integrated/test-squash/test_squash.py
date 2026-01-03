@@ -4,7 +4,7 @@ from boututils.datafile import DataFile
 import itertools
 import time
 import numpy as np
-from boututils.run_wrapper import launch_safe, shell_safe, build_and_log
+from boututils.run_wrapper import launch_safe, shell_safe
 import argparse
 import re
 import os.path
@@ -85,8 +85,6 @@ def test_squash():
         "executable", help="Path to bout-squashoutput", default="../../../bin", nargs="?"
     )
     args = parser.parse_args()
-
-    build_and_log("Squash test")
 
     bout_squashoutput = args.executable + "/bout-squashoutput"
 

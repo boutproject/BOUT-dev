@@ -3,10 +3,9 @@
 # requires: slepc
 
 from boutdata.collect import collect
-from boututils.run_wrapper import build_and_log, launch_safe
+from boututils.run_wrapper import launch_safe
 from numpy import isclose
 
-build_and_log("SLEPc eigen solver test")
 
 print("Running SLEPc eigen solver test")
 status, out = launch_safe("./test-slepc-solver", nproc=1, pipe=True, verbose=True)

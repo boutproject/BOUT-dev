@@ -2,7 +2,7 @@
 import os
 import numpy as np
 from boututils.datafile import DataFile
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 
 # Cores: 18
 # Requires: netcdf
@@ -18,6 +18,7 @@ def run_test(actual, expected, procnum, region, boundary):
             ))
 
 
+# noinspection DuplicatedCode
 def test_communications():
 
     #################################################
@@ -36,10 +37,8 @@ def test_communications():
     nxpe = 3
     command = "./test-communications NXPE=" + str(nxpe)
 
-    build_and_log("Communications Test")
-
     # remove old outputs
-    shell("rm data/BOUT.dmp.*")
+    shell(["rm data/BOUT.dmp.*"])
 
     print("Running Communications Test, nproc=" + str(nxpe * nype))
 
@@ -181,7 +180,7 @@ def test_communications():
     command = "./test-communications NXPE=" + str(nxpe)
 
     # remove old outputs
-    shell("rm data/BOUT.dmp.*")
+    shell(["rm data/BOUT.dmp.*"])
 
     print("Running Communications Test, nproc=" + str(nxpe * nype))
 
@@ -281,7 +280,7 @@ def test_communications():
     command = "./test-communications NXPE=" + str(nxpe)
 
     # remove old outputs
-    shell("rm data/BOUT.dmp.*")
+    shell(["rm data/BOUT.dmp.*"])
 
     print("Running Communications Test, nproc=" + str(nxpe * nype))
 
@@ -345,7 +344,7 @@ def test_communications():
     command = "./test-communications -d data_limiter NXPE=" + str(nxpe)
 
     # remove old outputs
-    shell("rm data_limiter/BOUT.dmp.*")
+    shell(["rm data_limiter/BOUT.dmp.*"])
 
     print("Running Communications Test, nproc=" + str(nxpe * nype))
 
@@ -381,7 +380,7 @@ def test_communications():
     command = "./test-communications -d data_limiter NXPE=" + str(nxpe)
 
     # remove old outputs
-    shell("rm data_limiter/BOUT.dmp.*")
+    shell(["rm data_limiter/BOUT.dmp.*"])
 
     print("Running Communications Test, nproc=" + str(nxpe * nype))
 
@@ -410,7 +409,7 @@ def test_communications():
     command = "./test-communications -d data_limiter NXPE=" + str(nxpe)
 
     # remove old outputs
-    shell("rm data_limiter/BOUT.dmp.*")
+    shell(["rm data_limiter/BOUT.dmp.*"])
 
     print("Running Communications Test, nproc=" + str(nxpe * nype))
 

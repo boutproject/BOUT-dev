@@ -11,20 +11,17 @@
 from __future__ import print_function
 from __future__ import division
 
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
-import numpy as np
-from sys import stdout, exit
+from sys import exit
 
 nprocs = [1, 2]  # Number of processors to run on
 reltol = 1.0e-3  # Allowed relative tolerance
 nthreads = 1
 
 
-build_and_log("invertable operator test")
-
 # Delete old output files
-shell("rm data/BOUT.dmp.*")
+shell(["rm data/BOUT.dmp.*"])
 
 
 def run(path, nproc, log=False):

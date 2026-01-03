@@ -3,15 +3,13 @@
 # cores: 4
 
 import pytest
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout
 
 tol = 1e-10  # Absolute tolerance
 
-
-build_and_log("Delp2 operator test")
 
 # The command to run
 exefile = "./test_delp2"
@@ -40,7 +38,7 @@ def test_delp2(setting):
     n0 = collect("n", path="data", info=False)
 
     for nproc in [2, 4]:
-        shell("rm data/BOUT.dmp.*.nc")
+        shell(["rm data/BOUT.dmp.*.nc"])
 
         stdout.write("   %d processor...." % (nproc))
         s, out = launch_safe(cmd, nproc=nproc, mthread=1, pipe=True)

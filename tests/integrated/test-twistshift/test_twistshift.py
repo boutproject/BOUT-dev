@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from boutdata import collect
-from boututils.run_wrapper import build_and_log, launch_safe
+from boututils.run_wrapper import launch_safe
 import numpy
 
 datapath = "data"
@@ -10,8 +10,6 @@ tol = 1.0e-13
 
 
 def test_twistshift():
-
-    build_and_log("twistshift test")
 
     s, out = launch_safe("./test-twistshift", nproc=nproc, pipe=True)
     with open("run.log." + str(nproc), "w") as f:

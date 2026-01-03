@@ -8,10 +8,9 @@
 # Requires: netcdf
 # Cores: 4
 
-from boututils.run_wrapper import build_and_log, shell, launch
+from boututils.run_wrapper import shell, launch
 from boutdata.collect import collect
 
-build_and_log("parallel inversion test")
 
 flags_src = [
     dict(acoef=1, bcoef=0, ccoef=0, dcoef=0, ecoef=0),
@@ -45,7 +44,7 @@ def test_invpar():
         print("   %d processors...." % (nproc))
         r = 0
         for f in flags:
-            shell("rm data/BOUT.dmp.* 2> err.log")
+            shell(["rm data/BOUT.dmp.* 2> err.log"])
 
             # Run the case
             s, _ = launch(cmd + " -q -q -q " + f, nproc=nproc, mthread=1)

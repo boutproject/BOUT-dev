@@ -4,10 +4,8 @@ import pytest
 
 # requires all_tests
 
-from boututils.run_wrapper import build_and_log, shell
+from boututils.run_wrapper import shell
 import os
-
-build_and_log("backtrace environment variable test")
 
 
 def test_backtrace():
@@ -17,15 +15,14 @@ def test_backtrace():
         pass
 
     success = True
-    errors = []
 
-    _, output = shell("./boutexcept", pipe=True)
+    _, output = shell(["./boutexcept"], pipe=True)
 
     if "troublemaker" in output:
         success = False
         pytest.fail("Fail: detected offending function name in output when not expected")
 
-    _, output = shell("BOUT_SHOW_BACKTRACE=yes ./boutexcept", pipe=True)
+    _, output = shell(["BOUT_SHOW_BACKTRACE=yes ./boutexcept"], pipe=True)
 
     if "troublemaker" not in output:
         success = False

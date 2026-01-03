@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from boututils.run_wrapper import build_and_log, launch_safe
+from boututils.run_wrapper import launch_safe
 
 import os
 import re
@@ -199,5 +199,4 @@ class TestCommandLineArgs(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    build_and_log("Command arguments test")
     unittest.main(verbosity=2)

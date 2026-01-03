@@ -9,7 +9,7 @@ from boutdata import restart
 from boutdata.collect import collect
 from boututils.boutarray import BoutArray
 from boututils.datafile import DataFile
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 import numpy
 import os
 import uuid
@@ -21,8 +21,6 @@ mxg = 2
 myg = 2
 
 def test_restart_io():
-
-    build_and_log("restart I/O test")
 
     x = numpy.linspace(0.0, 1.0, nx + 2 * mxg)[:, numpy.newaxis, numpy.newaxis]
     y = numpy.linspace(0.0, 1.0, ny + 2 * myg)[numpy.newaxis, :, numpy.newaxis]

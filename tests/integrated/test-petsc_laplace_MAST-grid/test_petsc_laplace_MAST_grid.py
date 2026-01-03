@@ -24,13 +24,10 @@ vars = [
 ]
 # tol = 1e-4                  # Absolute (?) tolerance
 
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 from sys import stdout, exit
 
-build_and_log(
-    "PETSc Laplacian inversion test with non-identity metric (taken from grid for MAST SOL)"
-)
 
 print(
     "Running PETSc Laplacian inversion test with non-identity metric (taken from grid for MAST SOL)"
@@ -46,7 +43,7 @@ for nproc in [1, 2, 4]:
             jy
         )
 
-        shell("rm data/BOUT.dmp.*.nc")
+        shell(["rm data/BOUT.dmp.*.nc"])
 
         print("   {} processors, grid_MAST_SOL_jyis{}".format(nproc, jy))
         s, out = launch_safe(cmd, nproc=nproc, pipe=True)

@@ -7,7 +7,7 @@
 import pytest
 import os
 import pathlib
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boutdata import collect
 import boutconfig
 from numpy import sqrt, max, abs, mean, array, log, polyfit
@@ -37,8 +37,6 @@ methods = {
 @pytest.mark.parametrize("method", methods)
 def test_interpolate(method):
 
-    build_and_log("Interpolation test")
-
     print("Running Interpolation test")
     success = True
 
@@ -63,7 +61,7 @@ def test_interpolate(method):
 
         cmd = "./test_interpolate" + args
 
-        shell("rm data/BOUT.dmp.*.nc")
+        shell(["rm data/BOUT.dmp.*.nc"])
 
         s, out = launch_safe(cmd, nproc=nproc, pipe=True)
         with open("run.log.{}.{}".format(method, nx), "w") as f:

@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 
-from boututils.run_wrapper import build_and_log, launch_safe
+from boututils.run_wrapper import launch_safe
 from boutdata.collect import collect
 from sys import stdout
 
 from numpy import max, abs
 
 def test_yupdown_weights():
-
-    build_and_log("parallel slices and weights test")
 
     failed = False
     for shifttype in ["shiftedinterp"]:

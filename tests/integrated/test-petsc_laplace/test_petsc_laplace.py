@@ -24,15 +24,13 @@ errors = [
 ]
 tol = 2e-4  # Absolute (?) tolerance
 
-build_and_log("PETSc Laplacian inversion test")
-
 print("Running PETSc Laplacian inversion test")
 success = True
 
 for nproc in [1, 2, 4]:
     cmd = "./test_petsc_laplace"
 
-    shell("rm data/BOUT.dmp.*.nc")
+    shell(["rm data/BOUT.dmp.*.nc"])
 
     print(f"   {nproc} processors....")
     s, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)

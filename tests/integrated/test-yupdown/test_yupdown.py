@@ -1,18 +1,12 @@
 #!/usr/bin/env python3
 import os
 import pytest
-from boututils.run_wrapper import build_and_log, launch_safe
+from boututils.run_wrapper import launch_safe
 from boutdata.collect import collect
 from numpy import max, abs
 
 shift_types = ["shifted", "shiftedinterp"]
 variables = [("ddy", "ddy_check"), ("ddy2", "ddy_check")]
-
-
-@pytest.fixture(scope="module")
-def build_project():
-    """Build the project once per test module."""
-    build_and_log("parallel slices test")
 
 
 def run_case(shift_type, variable):

@@ -13,10 +13,9 @@ try:
     from builtins import str
 except:
     pass
-from boututils.run_wrapper import build_and_log, shell, launch
+from boututils.run_wrapper import shell, launch
 from sys import stdout
 
-build_and_log("Cyclic Reduction test")
 
 flags = ["", "nsys=2", "nsys=5 periodic", "nsys=7 n=10"]
 
@@ -32,7 +31,7 @@ def test_cyclic():
         for f in flags:
             stdout.write("\tflags '" + f + "' ... ")
 
-            shell("rm data/BOUT.dmp.* 2> err.log")
+            shell(["rm data/BOUT.dmp.* 2> err.log"])
 
             # Run the case
             status, out = launch(cmd + " " + f, nproc=nproc, mthread=1, pipe=True)

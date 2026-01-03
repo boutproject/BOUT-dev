@@ -6,10 +6,9 @@
 # cores: 2
 
 from boutdata.collect import collect
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 import numpy
 
-build_and_log("DataFileFacade test")
 
 success = True
 
@@ -39,7 +38,7 @@ testvars = {
 def test_datafile_facade():
     for nproc in [1, 2]:
         # delete any existing output
-        shell("rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc")
+        shell(["rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc"])
 
         print(f"   {nproc} processor....")
 
@@ -69,6 +68,6 @@ def test_datafile_facade():
         print("=> All DataFileFacade tests passed")
         # clean up binary files
         shell(
-            "rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc data/restart/BOUT.restart.0.nc"
+            ["rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc data/restart/BOUT.restart.0.nc"]
         )
     assert success, f"=> Some failed tests"

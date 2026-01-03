@@ -20,7 +20,7 @@ vars = ["pade1", "pade2"]
 
 tol = 1e-7  # Absolute tolerance, benchmark values are floats
 
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout

@@ -8,7 +8,7 @@
 # requires: petsc
 # cores: 8
 
-from boututils.run_wrapper import build_and_log, shell, shell_safe, launch, launch_safe
+from boututils.run_wrapper import shell, launch, launch_safe
 from boutdata.collect import collect
 from sys import exit
 
@@ -37,8 +37,6 @@ argslist = [
     "f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann b:function=.1",
 ]
 
-build_and_log("LaplaceXY inversion test")
-
 print("Running LaplaceXY inversion test")
 success = True
 
@@ -47,7 +45,7 @@ for nproc in [8]:
     for args in argslist:
         cmd = "./test-laplacexy " + args
 
-        shell("rm data/BOUT.dmp.*.nc > /dev/null 2>&1")
+        shell(["rm data/BOUT.dmp.*.nc > /dev/null 2>&1"])
 
         s, out = launch(
             cmd + " laplacexy:pctype=hypre", nproc=nproc, pipe=True, verbose=True

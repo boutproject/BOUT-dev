@@ -11,7 +11,7 @@
 vars = ["yavg2d", "yavg3d", "sm3d"]
 tol = 1e-7  # Absolute tolerance, benchmark values are floats
 
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout
@@ -33,7 +33,7 @@ def test_smooth():
             nproc = nxpe * nype
             cmd = "./test_smooth"
 
-            shell("rm data/BOUT.dmp.*.nc")
+            shell(["rm data/BOUT.dmp.*.nc"])
 
             print("   %d processor (%d x %d)...." % (nproc, nxpe, nype))
             s, out = launch_safe(cmd + " NXPE=" + str(nxpe), nproc=nproc, pipe=True)

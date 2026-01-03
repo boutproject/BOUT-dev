@@ -3,7 +3,7 @@
 # requires: petsc
 
 from boutdata import collect
-from boututils.run_wrapper import launch, build_and_log
+from boututils.run_wrapper import launch
 from sys import exit
 
 test_directories = [
@@ -14,8 +14,6 @@ test_directories = [
 ]
 
 tolerance = 1.0e-6
-
-build_and_log("Laplace 3D with PETSc")
 
 success = True
 errors = {}

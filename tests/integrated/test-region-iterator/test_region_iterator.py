@@ -13,11 +13,9 @@ try:
     from builtins import str
 except:
     pass
-from boututils.run_wrapper import build_and_log, launch_safe
-from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe
 from sys import exit
 
-build_and_log("Region Iterator test")
 
 flags = [""]
 cmd = "./test_region_iterator"

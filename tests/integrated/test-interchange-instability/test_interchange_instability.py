@@ -14,14 +14,13 @@ from __future__ import division
 nproc = 2  # Number of processors to run on
 reltol = 1.0e-3  # Allowed relative tolerance in growth-rate
 
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
 
 nthreads = 1
 
 def test_interchange_instability():
-    build_and_log("interchange instability test")
 
     # Delete old output files
     shell("rm data_1/BOUT.dmp.*")

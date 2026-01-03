@@ -8,10 +8,10 @@
 # Requires: netcdf
 # Cores: 4
 
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect, create_cache
 import numpy.testing as npt
-from sys import exit
+from sys import stdout
 
 
 # Variables to compare
@@ -35,7 +35,6 @@ vars = [
 ]
 tol = 1e-6  # Absolute tolerance
 
-build_and_log("Laplacian inversion test")
 
 # Read benchmark values
 print("Reading benchmark data")

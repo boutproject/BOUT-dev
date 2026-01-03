@@ -5,7 +5,7 @@
 # requires: not legacy_netcdf
 
 from boututils.datafile import DataFile
-from boututils.run_wrapper import build_and_log, shell, launch_safe as launch
+from boututils.run_wrapper import shell, launch_safe as launch
 from boutdata.data import BoutOptionsFile
 
 import math
@@ -13,9 +13,8 @@ import numpy as np
 
 def test_options_netcdf():
 
-    build_and_log("options-netcdf test")
-    shell("rm -f test-out.ini")
-    shell("rm -f test-out.nc")
+    shell(["rm -f test-out.ini"])
+    shell(["rm -f test-out.nc"])
 
     # Create a NetCDF input file
     with DataFile("test.nc", create=True, format="NETCDF4") as f:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 from netCDF4 import Dataset
 import numpy
@@ -11,8 +11,6 @@ from sys import stdout
 # Requires: netcdf
 
 def test_griddata_yboundary_guards():
-
-    build_and_log("griddata test")
 
     nx = 4
     ny = 24
@@ -123,7 +121,7 @@ def test_griddata_yboundary_guards():
     for nproc in [6]:
         stdout.write("Checking %d processors ... " % (nproc))
 
-        shell("rm ./data*/BOUT.dmp.*.nc run.log.*")
+        shell(["rm ./data*/BOUT.dmp.*.nc run.log.*"])
 
         success = True
 
