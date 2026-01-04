@@ -14,16 +14,29 @@ def test_dir(request) -> Path:
     return Path(request.fspath).parent
 
 @pytest.fixture
-def make_dir_and_copy_input(tmp_path, test_dir, original_dir_name="data"):
+def copy_data_directory(request, tmp_path):
+    """
+    Provides a writable copy of a pre-existing directory (e.g. "data", "test", "input")
+    in a unique temporary location.
 
-    if not test_dir.exists():
-        pytest.fail(f"Expected test directory '{test_dir}' not found")
+    The name of the original directory is taken from request.node.input_dir_name
+    (set via a marker on the test).
+    """
+    # Get the requested original directory name (default to "data" if not specified)
+    original_name = getattr(request.node, "input_dir_name", "data")
 
-    # Unique run dir per test
-    run_dir = tmp_path / original_dir_name
-    shutil.copytree(test_dir, run_dir)
+    # Location of the original input directory (sibling to the test file)
+    test_file_dir = Path(request.fspath).parent
+    original_dir = test_file_dir / original_name
 
-    return str(run_dir)
+    if not original_dir.is_dir():
+        pytest.fail(f"Expected input directory '{original_dir}' does not exist")
+
+    # Unique writable copy for this test
+    run_dir = tmp_path / original_name
+    shutil.copytree(original_dir, run_dir, dirs_exist_ok=True)
+
+    return run_dir
 
 @pytest.fixture(autouse=True)
 def finalize_boutpp(request):
