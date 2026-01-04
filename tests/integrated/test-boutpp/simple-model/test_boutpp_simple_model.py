@@ -7,8 +7,9 @@ from boutpp import *
 
 
 def test_boutpp_simple_model():
-    init("-d mini")
 
+    init("-d mini")
+    request.node.boutpp_initialized = True
 
     class MyModel(PhysicsModel):
         def init(self, restart):

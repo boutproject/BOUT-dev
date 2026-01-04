@@ -9,6 +9,7 @@ import numpy as np
 def test_boutpp_mms_ddz():
     errorlist = ""
     boutpp.init("-d data -q -q -q")  # +" -f BOUT.settings")
+    request.node.boutpp_initialized = True
 
     shapes = []
     errors = []

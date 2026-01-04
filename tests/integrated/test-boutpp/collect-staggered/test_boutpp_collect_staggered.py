@@ -8,7 +8,9 @@ import boutpp as bc
 # requires not make
 
 def test_boutpp_collect_staggered():
+
     bc.init("-q -q -q")
+    request.node.boutpp_initialized = True
 
     fail = 0
     f = bc.create3D("sin(y)", outloc="YLOW")
