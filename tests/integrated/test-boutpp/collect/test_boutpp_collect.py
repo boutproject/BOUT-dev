@@ -9,7 +9,7 @@ from boutdata import collect
 # requires not make
 
 
-def test_boutpp_collect():
+def test_boutpp_collect(request):
 
     bc.init("-d input".split(" "))
     request.node.boutpp_initialized = True

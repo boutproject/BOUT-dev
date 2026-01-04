@@ -5,50 +5,52 @@ import numpy as np
 import boutpp as bc
 import inspect
 
-bc.init("-d test")
-request.node.boutpp_initialized = True
+def test_slicing(request):
 
-mesh = bc.Mesh.getGlobal()
-field = bc.Field3D.fromMesh(mesh)
-ndat = np.random.random(field.shape)
-field[:] = ndat
+    bc.init("-d test")
+    request.node.boutpp_initialized = True
 
-assert np.all(ndat == field[:])
+    mesh = bc.Mesh.getGlobal()
+    field = bc.Field3D.fromMesh(mesh)
+    ndat = np.random.random(field.shape)
+    field[:] = ndat
 
-examples = [
-    lambda x: x[2],
-    lambda x: x[-2],
-    lambda x: x[1, 3],
-    lambda x: x[1, -1],
-    lambda x: x[0],
-    lambda x: x[0][2],
-    lambda x: x[1:7:2],
-    lambda x: x[-2:10],
-    lambda x: x[-3:3:-1],
-    lambda x: x[5:],
-    lambda x: x[1:2],
-    lambda x: x[..., 0],
-    lambda x: x[:, :, 0],
-    lambda x: x[np.array([3, 3, 1, 8])],
-    lambda x: x[np.array([3, 3, -3, 8])],
-    lambda x: x[np.array([1, -1])],
-    lambda x: x[np.array([3, 4])],
-    lambda x: x[[0, 1, 2], [0, 1, 0]],
-    lambda x: x[1:2, 1:3],
-    lambda x: x[1:2, [1, 2]],
-    lambda x: x[ndat < 0],
-]
+    assert np.all(ndat == field[:])
 
-print(field.shape)
-for ex in examples:
-    print("testing", inspect.getsource(ex))
-    try:
-        nout = ex(ndat)
-        fout = ex(field)
-        assert (
-            fout.shape == nout.shape
-        ), f"Field3D returned {{ fout.shape }} but numpy {{ nout.shape }}"
-        assert np.all(fout == nout), f"data mismatch, {{ fout == nout }}"
-    except:
-        print("Failed to test", inspect.getsource(ex))
-        raise
+    examples = [
+        lambda x: x[2],
+        lambda x: x[-2],
+        lambda x: x[1, 3],
+        lambda x: x[1, -1],
+        lambda x: x[0],
+        lambda x: x[0][2],
+        lambda x: x[1:7:2],
+        lambda x: x[-2:10],
+        lambda x: x[-3:3:-1],
+        lambda x: x[5:],
+        lambda x: x[1:2],
+        lambda x: x[..., 0],
+        lambda x: x[:, :, 0],
+        lambda x: x[np.array([3, 3, 1, 8])],
+        lambda x: x[np.array([3, 3, -3, 8])],
+        lambda x: x[np.array([1, -1])],
+        lambda x: x[np.array([3, 4])],
+        lambda x: x[[0, 1, 2], [0, 1, 0]],
+        lambda x: x[1:2, 1:3],
+        lambda x: x[1:2, [1, 2]],
+        lambda x: x[ndat < 0],
+    ]
+
+    print(field.shape)
+    for ex in examples:
+        print("testing", inspect.getsource(ex))
+        try:
+            nout = ex(ndat)
+            fout = ex(field)
+            assert (
+                fout.shape == nout.shape
+            ), f"Field3D returned {{ fout.shape }} but numpy {{ nout.shape }}"
+            assert np.all(fout == nout), f"data mismatch, {{ fout == nout }}"
+        except:
+            print("Failed to test", inspect.getsource(ex))
+            raise

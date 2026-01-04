@@ -6,7 +6,7 @@ import sys
 # requires not make
 
 
-def test_boutpp_legacy_model():
+def test_boutpp_legacy_model(request):
 
     boutpp.init(sys.argv[1:])
     request.node.boutpp_initialized = True

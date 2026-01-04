@@ -6,7 +6,7 @@
 from boutpp import *
 
 
-def test_boutpp_simple_model():
+def test_boutpp_simple_model(request):
 
     init("-d mini")
     request.node.boutpp_initialized = True
