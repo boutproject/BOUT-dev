@@ -117,7 +117,7 @@ class TestCommandLineArgs(unittest.TestCase):
         with open(OUTPUT_FILE) as f:
             contents = f.read()
             self.assertIn(
-                '"runtest" is not a directory',
+                'DataDir "runtest" does not exist or is not accessible',
                 contents,
                 msg="FAIL: Error message not printed when missing input directory",
             )
