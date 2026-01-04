@@ -783,7 +783,7 @@ if(BOUT_TESTS)
   # Copy the pytest config file
   configure_file(
     "${PROJECT_SOURCE_DIR}/tests/conftest.py"
-    "${PROJECT_BINARY_DIR}/include/bout/version.hxx/tests/conftest.py")
+    "${PROJECT_BINARY_DIR}/tests/conftest.py")
 
 endif()
 
