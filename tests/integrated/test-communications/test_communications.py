@@ -18,7 +18,7 @@ def run_test(actual, expected, procnum, region, boundary):
             ))
 
 
-# noinspection DuplicatedCode
+@pytest.mark.input_dir("data_limiter")
 def test_communications():
 
     #################################################

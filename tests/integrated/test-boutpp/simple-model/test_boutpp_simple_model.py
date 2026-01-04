@@ -6,6 +6,7 @@
 from boutpp import *
 
 
+@pytest.mark.input_dir("mini")
 def test_boutpp_simple_model(request):
 
     init("-d mini")

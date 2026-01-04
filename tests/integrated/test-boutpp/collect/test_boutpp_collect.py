@@ -9,6 +9,7 @@ from boutdata import collect
 # requires not make
 
 
+@pytest.mark.input_dir("input")
 def test_boutpp_collect(request):
 
     bc.init("-d input".split(" "))
