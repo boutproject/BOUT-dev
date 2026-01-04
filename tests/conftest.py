@@ -4,6 +4,11 @@ import boutpp
 from pathlib import Path
 
 
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "input_dir(name): specify the pre-existing input directory name for this test"
+    )
+
 @pytest.fixture(autouse=True)
 def cwd_to_test_file_dir(monkeypatch, test_dir):
     """Automatically change CWD to the directory of the current test file."""
