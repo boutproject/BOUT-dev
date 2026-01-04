@@ -1,4 +1,5 @@
 import pytest
+import shutil
 import boutpp
 from pathlib import Path
 
@@ -11,6 +12,18 @@ def cwd_to_test_file_dir(monkeypatch, test_dir):
 @pytest.fixture
 def test_dir(request) -> Path:
     return Path(request.fspath).parent
+
+@pytest.fixture
+def make_dir_and_copy_input(tmp_path, test_dir, original_dir_name="data"):
+
+    if not test_dir.exists():
+        pytest.fail(f"Expected test directory '{test_dir}' not found")
+
+    # Unique run dir per test
+    run_dir = tmp_path / original_dir_name
+    shutil.copytree(test_dir, run_dir)
+
+    return str(run_dir)
 
 @pytest.fixture(autouse=True)
 def finalize_boutpp(request):

@@ -1,6 +1,7 @@
 import pytest
 
 @pytest.fixture(autouse=True, scope="function")
-def xdist_each(request):
-    request.node.add_marker(pytest.mark.xdist_group(name="each_test"))  # Forces one per worker if combined
-
+def unique_xdist_group(request):
+    # Unique group per test function (nodeid is unique, e.g., test_file.py::test_func)
+    group_name = f"boutpp_isolated_{request.node.nodeid.replace('/', '_').replace('::', '_')}"
+    request.node.add_marker(pytest.mark.xdist_group(name=group_name))
