@@ -63,7 +63,12 @@ std::string BoutException::getBacktrace() const {
                        .snippets(true)
                        .symbols(formatter::symbol_mode::pretty)
                        .filter([](const stacktrace_frame& frame) {
-                         return frame.symbol.find("BoutException::") == std::string::npos;
+                         return (
+                             // Don't include our exception machinery
+                             (frame.symbol.find("BoutException::") == std::string::npos)
+                             // Don't include pre-main functions
+                             and (frame.symbol.find("__libc_start") == std::string::npos)
+                             and (frame.symbol != "_start"));
                        })
                        .filtered_frame_placeholders(false);
 
