@@ -69,8 +69,7 @@ std::string BoutException::getBacktrace() const {
                              // Don't include pre-main functions
                              and (frame.symbol.find("__libc_start") == std::string::npos)
                              and (frame.symbol != "_start"));
-                       })
-                       .filtered_frame_placeholders(false);
+                       });
 
   const std::string backtrace_message = formatter.format(generate_trace());
 
