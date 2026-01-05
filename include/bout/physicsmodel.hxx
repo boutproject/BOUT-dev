@@ -418,26 +418,26 @@ private:
  */
 #define BOUTMAIN(ModelClass)                                       \
   int main(int argc, char** argv) {                                \
-    int init_err = BoutInitialise(argc, argv);                     \
-    if (init_err < 0) {                                            \
-      return 0;                                                    \
-    }                                                              \
-    if (init_err > 0) {                                            \
-      return init_err;                                             \
-    }                                                              \
     try {                                                          \
+      int init_err = BoutInitialise(argc, argv);                   \
+      if (init_err < 0) {                                          \
+        return 0;                                                  \
+      }                                                            \
+      if (init_err > 0) {                                          \
+        return init_err;                                           \
+      }                                                            \
       auto model = bout::utils::make_unique<ModelClass>();         \
       auto solver = Solver::create();                              \
       solver->setModel(model.get());                               \
       auto bout_monitor = bout::utils::make_unique<BoutMonitor>(); \
       solver->addMonitor(bout_monitor.get(), Solver::BACK);        \
       solver->solve();                                             \
+      BoutFinalise();                                              \
+      return 0;                                                    \
     } catch (const BoutException& e) {                             \
       output.write("Error encountered: {}\n", e.what());           \
       MPI_Abort(BoutComm::get(), 1);                               \
     }                                                              \
-    BoutFinalise();                                                \
-    return 0;                                                      \
   }
 
 /// Macro to replace solver->add, passing variable name
@@ -480,8 +480,7 @@ private:
 
 /// Add fields to the solver.
 /// This should accept up to ten arguments
-#define SOLVE_FOR(...) \
-  { MACRO_FOR_EACH(SOLVE_FOR1, __VA_ARGS__) }
+#define SOLVE_FOR(...) {MACRO_FOR_EACH(SOLVE_FOR1, __VA_ARGS__)}
 
 /// Write this variable once to the grid file
 #define SAVE_ONCE1(var) dump.addOnce(var, #var);
@@ -521,8 +520,7 @@ private:
     dump.addOnce(var6, #var6);                         \
   }
 
-#define SAVE_ONCE(...) \
-  { MACRO_FOR_EACH(SAVE_ONCE1, __VA_ARGS__) }
+#define SAVE_ONCE(...) {MACRO_FOR_EACH(SAVE_ONCE1, __VA_ARGS__)}
 
 /// Write this variable every timestep
 #define SAVE_REPEAT1(var) dump.addRepeat(var, #var);
@@ -562,7 +560,6 @@ private:
     dump.addRepeat(var6, #var6);                         \
   }
 
-#define SAVE_REPEAT(...) \
-  { MACRO_FOR_EACH(SAVE_REPEAT1, __VA_ARGS__) }
+#define SAVE_REPEAT(...) {MACRO_FOR_EACH(SAVE_REPEAT1, __VA_ARGS__)}
 
 #endif // BOUT_PHYSICS_MODEL_H

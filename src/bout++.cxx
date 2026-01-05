@@ -141,74 +141,68 @@ int BoutInitialise(int& argc, char**& argv) {
     return 1;
   }
 
-  try {
-    checkDataDirectoryIsAccessible(args.data_dir);
+  checkDataDirectoryIsAccessible(args.data_dir);
 
-    // Set the command-line arguments
-    SlepcLib::setArgs(argc, argv); // SLEPc initialisation
-    PetscLib::setArgs(argc, argv); // PETSc initialisation
-    Solver::setArgs(argc, argv);   // Solver initialisation
-    BoutComm::setArgs(argc, argv); // MPI initialisation
+  // Set the command-line arguments
+  SlepcLib::setArgs(argc, argv); // SLEPc initialisation
+  PetscLib::setArgs(argc, argv); // PETSc initialisation
+  Solver::setArgs(argc, argv);   // Solver initialisation
+  BoutComm::setArgs(argc, argv); // MPI initialisation
 
-    const int MYPE = BoutComm::rank();
+  const int MYPE = BoutComm::rank();
 
-    setupBoutLogColor(args.color_output, MYPE);
+  setupBoutLogColor(args.color_output, MYPE);
 
-    setupOutput(args.data_dir, args.log_file, args.verbosity, MYPE);
+  setupOutput(args.data_dir, args.log_file, args.verbosity, MYPE);
 
-    savePIDtoFile(args.data_dir, MYPE);
+  savePIDtoFile(args.data_dir, MYPE);
 
 #if BOUT_HAS_ADIOS2
-    bout::ADIOSInit(BoutComm::get());
+  bout::ADIOSInit(BoutComm::get());
 #endif
 
-    // Print the different parts of the startup info
-    printStartupHeader(MYPE, BoutComm::size());
-    printCompileTimeOptions();
-    printCommandLineArguments(args.original_argv);
+  // Print the different parts of the startup info
+  printStartupHeader(MYPE, BoutComm::size());
+  printCompileTimeOptions();
+  printCommandLineArguments(args.original_argv);
 
-    // Load settings file
-    OptionsReader* reader = OptionsReader::getInstance();
-    // Ideally we'd use the long options for `datadir` and
-    // `optionfile` here, but we'd need to call parseCommandLine
-    // _first_ in order to do that and set the source, etc., but we
-    // need to call that _second_ in order to override the input file
-    reader->read(Options::getRoot(), "{}", (args.data_dir / args.opt_file).string());
+  // Load settings file
+  OptionsReader* reader = OptionsReader::getInstance();
+  // Ideally we'd use the long options for `datadir` and
+  // `optionfile` here, but we'd need to call parseCommandLine
+  // _first_ in order to do that and set the source, etc., but we
+  // need to call that _second_ in order to override the input file
+  reader->read(Options::getRoot(), "{}", (args.data_dir / args.opt_file).string());
 
-    // Get options override from command-line
-    reader->parseCommandLine(Options::getRoot(), args.argv);
+  // Get options override from command-line
+  reader->parseCommandLine(Options::getRoot(), args.argv);
 
-    // Get the variables back out so they count as having been used
-    // when checking for unused options. They normally _do_ get used,
-    // but it's possible that only happens in BoutFinalise, which is
-    // too late for that check.
-    const auto datadir = Options::root()["datadir"].withDefault<std::string>(DEFAULT_DIR);
-    [[maybe_unused]] const auto optionfile =
-        Options::root()["optionfile"].withDefault<std::string>(args.opt_file);
-    const auto settingsfile =
-        Options::root()["settingsfile"].withDefault<std::string>(args.set_file);
+  // Get the variables back out so they count as having been used
+  // when checking for unused options. They normally _do_ get used,
+  // but it's possible that only happens in BoutFinalise, which is
+  // too late for that check.
+  const auto datadir = Options::root()["datadir"].withDefault<std::string>(DEFAULT_DIR);
+  [[maybe_unused]] const auto optionfile =
+      Options::root()["optionfile"].withDefault<std::string>(args.opt_file);
+  const auto settingsfile =
+      Options::root()["settingsfile"].withDefault<std::string>(args.set_file);
 
-    setRunStartInfo(Options::root());
+  setRunStartInfo(Options::root());
 
-    if (MYPE == 0) {
-      writeSettingsFile(Options::root(), datadir, settingsfile);
-    }
-
-    bout::globals::mpi = new MpiWrapper();
-
-    // Create the mesh
-    bout::globals::mesh = Mesh::create();
-    // Load from sources. Required for Field initialisation
-    bout::globals::mesh->load();
-
-    // time_report options are used in BoutFinalise, i.e. after we
-    // check for unused options
-    Options::root()["time_report"].setConditionallyUsed();
-
-  } catch (const BoutException& e) {
-    output_error.write(_("Error encountered during initialisation: {:s}\n"), e.what());
-    throw;
+  if (MYPE == 0) {
+    writeSettingsFile(Options::root(), datadir, settingsfile);
   }
+
+  bout::globals::mpi = new MpiWrapper();
+
+  // Create the mesh
+  bout::globals::mesh = Mesh::create();
+  // Load from sources. Required for Field initialisation
+  bout::globals::mesh->load();
+
+  // time_report options are used in BoutFinalise, i.e. after we
+  // check for unused options
+  Options::root()["time_report"].setConditionallyUsed();
 
   return 0;
 }
