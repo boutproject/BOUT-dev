@@ -38,15 +38,3 @@ def copy_and_cwd_to_tmp_dir(request, tmp_path, monkeypatch):
     shutil.copytree(original_dir, run_dir_path, dirs_exist_ok=True)
 
     monkeypatch.chdir(tmp_path)
-
-@pytest.fixture(autouse=True)
-def finalize_boutpp(request):
-    """Automatically finalize BOUT++ after each test that used it."""
-    yield  # Run the test
-
-    # Check if this test used boutpp init (heuristic: look for marker or direct check)
-    if hasattr(request.node, "boutpp_initialized"):
-        try:
-            boutpp.finalise()
-        except Exception:
-            pass  # If already finalized or error, ignore

@@ -6,10 +6,9 @@ import boutpp as bc
 import inspect
 
 @pytest.mark.input_dir("test")
-def test_slicing(request):
+def test_slicing():
 
     bc.init("-d test")
-    request.node.boutpp_initialized = True
 
     mesh = bc.Mesh.getGlobal()
     field = bc.Field3D.fromMesh(mesh)

@@ -6,10 +6,9 @@ import sys
 # requires not make
 
 
-def test_boutpp_legacy_model(request):
+def test_boutpp_legacy_model():
 
     boutpp.init(sys.argv[1:])
-    request.node.boutpp_initialized = True
 
     dens = boutpp.create3D("0")
 
