@@ -70,7 +70,7 @@
   enum class enumname { __VA_ARGS__ };                                         \
                                                                                \
   inline std::string toString(enumname e) {                                    \
-    AUTO_TRACE();                                                              \
+                                                                               \
     const static std::map<enumname, std::string> toString_map = {              \
         BOUT_ENUM_CLASS_MAP_ARGS(BOUT_ENUM_CLASS_STR, enumname, __VA_ARGS__)}; \
     auto found = toString_map.find(e);                                         \
@@ -81,7 +81,7 @@
   }                                                                            \
                                                                                \
   inline enumname BOUT_MAKE_FROMSTRING_NAME(enumname)(const std::string& s) {  \
-    AUTO_TRACE();                                                              \
+                                                                               \
     const static std::map<std::string, enumname> fromString_map = {            \
         BOUT_ENUM_CLASS_MAP_ARGS(BOUT_STR_ENUM_CLASS, enumname, __VA_ARGS__)}; \
     auto found = fromString_map.find(s);                                       \

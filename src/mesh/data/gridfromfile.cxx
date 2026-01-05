@@ -143,7 +143,6 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
       "templated GridFile::getField only works for Field2D, Field3D or FieldPerp");
 
   Timer timer("io");
-  AUTO_TRACE();
 
   if (not data.isSet(name)) {
     // Variable not found

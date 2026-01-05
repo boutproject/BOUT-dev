@@ -61,7 +61,7 @@ namespace inversion {
 /// No-op function to use as a default -- may wish to remove once testing phase complete
 template <typename T>
 T identity(const T& in) {
-  AUTO_TRACE();
+
   return in;
 };
 
@@ -137,8 +137,8 @@ public:
         opt(optIn == nullptr ? Options::getRoot()->getSection("invertableOperator")
                              : optIn),
         localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn), lib(opt) {
-    AUTO_TRACE();
-  };
+
+        };
 
   /// Destructor just has to cleanup the PETSc owned objects.
   ~InvertableOperator() {
@@ -177,10 +177,7 @@ public:
   }
 
   /// Provide a synonym for applying the operator to a Field
-  T apply(const T& input) {
-    AUTO_TRACE();
-    return operator()(input);
-  }
+  T apply(const T& input) { return operator()(input); }
 
   /// Sets up the PETSc objects required for inverting the operator
   /// Currently also takes the functor that applies the operator this class
@@ -386,7 +383,7 @@ public:
   // but suspect it's not as there are KSPGuess objects
   // to deal with.
   T invert(const T& rhsField, const T& guess) {
-    AUTO_TRACE();
+
     auto ierr = fieldToPetscVec(guess, lhs);
     CHKERRQ(ierr);
     return invert(rhsField);

@@ -35,7 +35,6 @@ SplitRK::SplitRK(Options* opts)
 }
 
 int SplitRK::init() {
-  AUTO_TRACE();
 
   Solver::init();
   output.write(_("\n\tSplit Runge-Kutta-Legendre and SSP-RK3 solver\n"));
@@ -79,7 +78,6 @@ int SplitRK::init() {
 }
 
 int SplitRK::run() {
-  AUTO_TRACE();
 
   for (int step = 0; step < getNumberOutputSteps(); step++) {
     // Take an output step

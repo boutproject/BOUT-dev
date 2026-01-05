@@ -1019,7 +1019,6 @@ PREDEFINED             = BACKTRACE \
                          BOUT_HAS_LAPACK \
                          BOUT_HAS_NETCDF \
                          BOUT_HAS_PETSC \
-                         BOUT_HAS_PRETTY_FUNCTION \
                          BOUT_HAS_PVODE \
                          BOUT_HAS_SCOREP \
                          BOUT_HAS_SLEPC \

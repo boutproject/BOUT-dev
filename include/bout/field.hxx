@@ -239,7 +239,6 @@ namespace bout {
 template <typename T>
 inline void checkFinite(const T& f, const std::string& name = "field",
                         const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   if (!f.isAllocated()) {
     throw BoutException("{:s} is not allocated", name);
@@ -263,7 +262,6 @@ inline void checkFinite(const T& f, const std::string& name = "field",
 template <typename T>
 inline void checkPositive(const T& f, const std::string& name = "field",
                           const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   if (!f.isAllocated()) {
     throw BoutException("{:s} is not allocated", name);
@@ -307,7 +305,6 @@ inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
 template <typename T, typename = bout::utils::EnableIfField<T>>
 inline BoutReal min(const T& f, bool allpe = false,
                     const std::string& rgn = "RGN_NOBNDRY") {
-  AUTO_TRACE();
 
   checkData(f);
 
@@ -392,7 +389,6 @@ inline BoutReal getUniform(const T& f, [[maybe_unused]] bool allpe = false,
 template <typename T, typename = bout::utils::EnableIfField<T>>
 inline BoutReal max(const T& f, bool allpe = false,
                     const std::string& rgn = "RGN_NOBNDRY") {
-  AUTO_TRACE();
 
   checkData(f);
 
@@ -426,7 +422,6 @@ inline BoutReal max(const T& f, bool allpe = false,
 template <typename T, typename = bout::utils::EnableIfField<T>>
 inline BoutReal mean(const T& f, bool allpe = false,
                      const std::string& rgn = "RGN_NOBNDRY") {
-  AUTO_TRACE();
 
   checkData(f);
 
@@ -457,7 +452,6 @@ inline BoutReal mean(const T& f, bool allpe = false,
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 template <typename T, typename = bout::utils::EnableIfField<T>>
 T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   ASSERT1(areFieldsCompatible(lhs, rhs));
 
@@ -471,7 +465,6 @@ T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
 
 template <typename T, typename = bout::utils::EnableIfField<T>>
 T pow(const T& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   // Check if the inputs are allocated
   checkData(lhs);
@@ -487,7 +480,6 @@ T pow(const T& lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
 
 template <typename T, typename = bout::utils::EnableIfField<T>>
 T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   // Check if the inputs are allocated
   checkData(lhs);
@@ -524,7 +516,7 @@ T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
 #define FIELD_FUNC(name, func)                                     \
   template <typename T, typename = bout::utils::EnableIfField<T>>  \
   inline T name(const T& f, const std::string& rgn = "RGN_ALL") {  \
-    AUTO_TRACE();                                                  \
+                                                                   \
     /* Check if the input is allocated */                          \
     checkData(f);                                                  \
     /* Define and allocate the output result */                    \
@@ -632,7 +624,6 @@ FIELD_FUNC(tanh, ::tanh)
 /// default (can be changed using the \p rgn argument
 template <typename T, typename = bout::utils::EnableIfField<T>>
 inline bool finite(const T& f, const std::string& rgn = "RGN_ALL") {
-  AUTO_TRACE();
 
   if (!f.isAllocated()) {
     return false;

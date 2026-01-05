@@ -1,18 +1,9 @@
 #include "bout/boutexception.hxx"
 #include "bout/msg_stack.hxx"
 
-void troublemaker() {
-  AUTO_TRACE();
-  throw BoutException("test");
-}
-void f() {
-  AUTO_TRACE();
-  troublemaker();
-}
-void e() {
-  AUTO_TRACE();
-  f();
-}
+void troublemaker() { throw BoutException("test"); }
+void f() { troublemaker(); }
+void e() { f(); }
 
 int main() {
   e();

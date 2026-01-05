@@ -75,21 +75,14 @@ struct DerivativeStore {
   }
 
   /// Report if store has any registered methods
-  bool isEmpty() const {
-    AUTO_TRACE();
-    return registeredMethods.empty();
-  };
+  bool isEmpty() const { return registeredMethods.empty(); };
 
   /// Report if store has any registered methods for specific type determined by key
-  bool isEmpty(std::size_t key) const {
-    AUTO_TRACE();
-    return registeredMethods.count(key) == 0;
-  }
+  bool isEmpty(std::size_t key) const { return registeredMethods.count(key) == 0; }
 
   /// Report if store has any registered methods for specific type
   bool isEmpty(DERIV derivType, DIRECTION direction,
                STAGGER stagger = STAGGER::None) const {
-    AUTO_TRACE();
 
     // Get the key
     auto key = getKey(direction, stagger, toString(derivType));
@@ -100,7 +93,6 @@ struct DerivativeStore {
   /// specified derivative type, direction and stagger.
   std::set<std::string> getAvailableMethods(DERIV derivType, DIRECTION direction,
                                             STAGGER stagger = STAGGER::None) const {
-    AUTO_TRACE();
 
     // Get the key
     auto key = getKey(direction, stagger, toString(derivType));
@@ -115,7 +107,6 @@ struct DerivativeStore {
   /// specified derivative type, direction and stagger.
   void listAvailableMethods(DERIV derivType, DIRECTION direction,
                             STAGGER stagger = STAGGER::None) const {
-    AUTO_TRACE();
 
     // Introductory information
     output_info << "Available methods for derivative type '";
@@ -134,7 +125,7 @@ struct DerivativeStore {
   /// depends on the derivType input.
   void registerDerivative(standardFunc func, DERIV derivType, DIRECTION direction,
                           STAGGER stagger, std::string methodName) {
-    AUTO_TRACE();
+
     const auto key = getKey(direction, stagger, methodName);
 
     switch (derivType) {
@@ -176,7 +167,7 @@ struct DerivativeStore {
   /// depends on the derivType input.
   void registerDerivative(upwindFunc func, DERIV derivType, DIRECTION direction,
                           STAGGER stagger, std::string methodName) {
-    AUTO_TRACE();
+
     const auto key = getKey(direction, stagger, methodName);
 
     switch (derivType) {
@@ -210,14 +201,14 @@ struct DerivativeStore {
   template <typename Direction, typename Stagger, typename Method>
   void registerDerivative(standardFunc func, Direction direction, Stagger stagger,
                           Method method) {
-    AUTO_TRACE();
+
     registerDerivative(func, method.meta.derivType, direction.lookup(), stagger.lookup(),
                        method.meta.key);
   }
   template <typename Direction, typename Stagger, typename Method>
   void registerDerivative(upwindFunc func, Direction direction, Stagger stagger,
                           Method method) {
-    AUTO_TRACE();
+
     registerDerivative(func, method.meta.derivType, direction.lookup(), stagger.lookup(),
                        method.meta.key);
   }
@@ -231,7 +222,6 @@ struct DerivativeStore {
                                      STAGGER stagger = STAGGER::None,
                                      DERIV derivType = DERIV::Standard) const {
 
-    AUTO_TRACE();
     const auto realName = nameLookup(
         name, defaultMethods.at(getKey(direction, stagger, toString(derivType))));
     const auto key = getKey(direction, stagger, realName);
@@ -262,20 +252,20 @@ struct DerivativeStore {
 
   standardFunc getStandard2ndDerivative(std::string name, DIRECTION direction,
                                         STAGGER stagger = STAGGER::None) const {
-    AUTO_TRACE();
+
     return getStandardDerivative(name, direction, stagger, DERIV::StandardSecond);
   };
 
   standardFunc getStandard4thDerivative(std::string name, DIRECTION direction,
                                         STAGGER stagger = STAGGER::None) const {
-    AUTO_TRACE();
+
     return getStandardDerivative(name, direction, stagger, DERIV::StandardFourth);
   };
 
   flowFunc getFlowDerivative(std::string name, DIRECTION direction,
                              STAGGER stagger = STAGGER::None,
                              DERIV derivType = DERIV::Upwind) const {
-    AUTO_TRACE();
+
     const auto realName = nameLookup(
         name, defaultMethods.at(getKey(direction, stagger, toString(derivType))));
     const auto key = getKey(direction, stagger, realName);
@@ -305,18 +295,17 @@ struct DerivativeStore {
 
   upwindFunc getUpwindDerivative(std::string name, DIRECTION direction,
                                  STAGGER stagger = STAGGER::None) const {
-    AUTO_TRACE();
+
     return getFlowDerivative(name, direction, stagger, DERIV::Upwind);
   };
 
   fluxFunc getFluxDerivative(std::string name, DIRECTION direction,
                              STAGGER stagger = STAGGER::None) const {
-    AUTO_TRACE();
+
     return getFlowDerivative(name, direction, stagger, DERIV::Flux);
   };
 
   void initialise(Options* options) {
-    AUTO_TRACE();
 
     // To replicate the existing behaviour we first search for a section called
     //"dd?" and if the option isn't in there we search a section called "diff"
@@ -490,7 +479,7 @@ private:
 
   std::string getMethodName(std::string name, DIRECTION direction,
                             STAGGER stagger = STAGGER::None) const {
-    AUTO_TRACE();
+
     return name + " (" + toString(direction) + ", " + toString(stagger) + ")";
   };
 
@@ -506,7 +495,7 @@ private:
   /// methods with the same function interface in the same map, which
   /// might be nice.
   std::size_t getKey(DIRECTION direction, STAGGER stagger, std::string key) const {
-    AUTO_TRACE();
+
     // Note this key is indepedent of the field type (and hence the
     // key is the same for 3D/2D fields) as we have to use different
     // maps to store the different field types as the signature is
@@ -524,7 +513,7 @@ private:
   /// that can be used to account for run-time choices
   template <typename Direction, typename Stagger, typename Method>
   std::size_t getKey() const {
-    AUTO_TRACE();
+
     // Note this key is indepedent of the field type (and hence the
     // key is the same for 3D/2D fields) as we have to use different
     // maps to store the different field types as the signature is

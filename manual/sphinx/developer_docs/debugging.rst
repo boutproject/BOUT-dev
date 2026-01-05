@@ -37,11 +37,10 @@ add a ``-v -v`` flag to see ``output_debug`` messages.
 Message Stack
 =============
 
-The second utility BOUT++ has to help debugging is the message stack
-using the `TRACE` (and related `AUTO_TRACE`) macro. These are very
-useful for when a bug only occurs after a long time of running, and/or
-only occasionally. The ``TRACE`` macro can simply be dropped in
-anywhere in the code::
+The second utility BOUT++ has to help debugging is the message stack using the
+`TRACE` macro. This is very useful for when a bug only occurs after a long time
+of running, and/or only occasionally. The ``TRACE`` macro can simply be dropped
+in anywhere in the code::
 
     {
       TRACE("Some message here"); // message pushed
@@ -94,11 +93,6 @@ If you need to capture runtime information in the message, you can use
 the ``fmt`` syntax also used by the loggers::
 
     TRACE("Value of i={}, some arbitrary {}", i, "string");
-
-There is also an ``AUTO_TRACE`` macro that automatically captures the
-name of the function it's used in. This is used throughout the main
-library, especially in functions where numerical issues are likely to
-arise.
 
 Backtrace
 =========

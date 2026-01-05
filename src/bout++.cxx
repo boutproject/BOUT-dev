@@ -566,8 +566,6 @@ void printCompileTimeOptions() {
   output_info.write(_("\tNetCDF support {}{}\n"), is_enabled(has_netcdf), netcdf_flavour);
   output_info.write(_("\tADIOS2 support {}\n"), is_enabled(has_adios2));
   output_info.write(_("\tPETSc support {}\n"), is_enabled(has_petsc));
-  output_info.write(_("\tPretty function name support {}\n"),
-                    is_enabled(has_pretty_function));
   output_info.write(_("\tPVODE support {}\n"), is_enabled(has_pvode));
   output_info.write(_("\tScore-P support {}\n"), is_enabled(has_scorep));
   output_info.write(_("\tSLEPc support {}\n"), is_enabled(has_slepc));
@@ -696,7 +694,6 @@ void addBuildFlagsToOptions(Options& options) {
   options["has_umpire"].force(bout::build::has_umpire);
   options["has_caliper"].force(bout::build::has_caliper);
   options["has_raja"].force(bout::build::has_raja);
-  options["has_pretty_function"].force(bout::build::has_pretty_function);
   options["has_pvode"].force(bout::build::has_pvode);
   options["has_scorep"].force(bout::build::has_scorep);
   options["has_slepc"].force(bout::build::has_slepc);

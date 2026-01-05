@@ -188,7 +188,6 @@ Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
 
 Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
                                BoutReal t) const {
-  AUTO_TRACE();
 
   if (localmesh == nullptr) {
     if (fieldmesh == nullptr) {
@@ -220,7 +219,6 @@ Field3D FieldFactory::create3D(const std::string& value, const Options* opt,
 
 Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
                                BoutReal t) const {
-  AUTO_TRACE();
 
   if (localmesh == nullptr) {
     if (fieldmesh == nullptr) {
@@ -271,7 +269,6 @@ FieldPerp FieldFactory::createPerp(const std::string& value, const Options* opt,
 
 FieldPerp FieldFactory::createPerp(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
                                    BoutReal t) const {
-  AUTO_TRACE();
 
   if (localmesh == nullptr) {
     if (fieldmesh == nullptr) {

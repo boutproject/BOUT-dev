@@ -423,7 +423,7 @@ class FFTDerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void standard(const T& var, T& result, const std::string& region) const {
-    AUTO_TRACE();
+
     ASSERT2(meta.derivType == DERIV::Standard)
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
     ASSERT2(direction == DIRECTION::Z);    // Only in Z for now
@@ -479,7 +479,7 @@ public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void upwindOrFlux(const T& UNUSED(vel), const T& UNUSED(var), T& UNUSED(result),
                     const std::string& UNUSED(region)) const {
-    AUTO_TRACE();
+
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
   }
   static constexpr metaData meta{"FFT", 0, DERIV::Standard};
@@ -489,7 +489,7 @@ class FFT2ndDerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void standard(const T& var, T& result, const std::string& region) const {
-    AUTO_TRACE();
+
     ASSERT2(meta.derivType == DERIV::StandardSecond);
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
     ASSERT2(direction == DIRECTION::Z);    // Only in Z for now
@@ -536,7 +536,7 @@ public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void upwindOrFlux(const T& UNUSED(vel), const T& UNUSED(var), T& UNUSED(result),
                     const std::string& UNUSED(region)) const {
-    AUTO_TRACE();
+
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
   }
   static constexpr metaData meta{"FFT", 0, DERIV::StandardSecond};
@@ -552,14 +552,14 @@ class SplitFluxDerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void standard(const T&, T&, const std::string) const {
-    AUTO_TRACE();
+
     throw BoutException("The SPLIT method isn't available for standard");
   }
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void upwindOrFlux(const T& vel, const T& var, T& result,
                     const std::string region) const {
-    AUTO_TRACE();
+
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
     result = bout::derivatives::index::flowDerivative<T, direction, DERIV::Upwind>(

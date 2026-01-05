@@ -119,7 +119,7 @@ Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc, const std::string& method)
 }
 
 Vector2D Grad_perp(const Field2D& f, CELL_LOC outloc, const std::string& method) {
-  AUTO_TRACE();
+
   SCOREP0();
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
 
@@ -370,7 +370,7 @@ Field3D V_dot_Grad(const Vector3D& v, const Field3D& f) {
 // operation (addition) between the two input types.
 template <typename T, typename F, typename R = decltype(T{} + F{})>
 R V_dot_Grad(const T& v, const F& a) {
-  AUTO_TRACE();
+
   SCOREP0();
   ASSERT1(v.getLocation() == a.getLocation());
   ASSERT1(v.getLocation() != CELL_VSHIFT);
