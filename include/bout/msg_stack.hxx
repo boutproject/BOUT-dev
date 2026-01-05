@@ -89,6 +89,9 @@ public:
   std::string getDump() { return ""; }
 #endif
 
+  /// Current stack size
+  std::size_t size() const { return position; }
+
 private:
   std::vector<std::string> stack;                  ///< Message stack;
   std::vector<std::string>::size_type position{0}; ///< Position in stack

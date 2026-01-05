@@ -15,10 +15,6 @@
 
 #include <fmt/format.h>
 
-namespace {
-const std::string header{"====== Exception thrown ======\n"};
-}
-
 bool BoutException::show_backtrace = true;
 
 void BoutParallelThrowRhsFail(int status, const char* message) {
@@ -71,8 +67,13 @@ std::string BoutException::getBacktrace() const {
                              and (frame.symbol != "_start"));
                        });
 
-  const std::string backtrace_message = formatter.format(generate_trace());
+  std::string backtrace_message =
+      fmt::format("{}\n\n====== Exception thrown ======\n{}",
+                  formatter.format(generate_trace()), message);
 
-  return fmt::format("{}\n{}\n{}{}\n", backtrace_message, msg_stack.getDump(), header,
-                     message);
+  if (msg_stack.size() > 0) {
+    return fmt::format("{}\n\nAdditional information:\n{}", backtrace_message,
+                       msg_stack.getDump());
+  }
+  return backtrace_message;
 }
