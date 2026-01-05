@@ -432,12 +432,12 @@ private:
       auto bout_monitor = bout::utils::make_unique<BoutMonitor>(); \
       solver->addMonitor(bout_monitor.get(), Solver::BACK);        \
       solver->solve();                                             \
-      BoutFinalise();                                              \
-      return 0;                                                    \
     } catch (const BoutException& e) {                             \
       output.write("Error encountered: {}\n", e.what());           \
       MPI_Abort(BoutComm::get(), 1);                               \
     }                                                              \
+    BoutFinalise();                                                \
+    return 0;                                                      \
   }
 
 /// Macro to replace solver->add, passing variable name
