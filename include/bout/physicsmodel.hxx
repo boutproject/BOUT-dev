@@ -480,7 +480,8 @@ private:
 
 /// Add fields to the solver.
 /// This should accept up to ten arguments
-#define SOLVE_FOR(...) {MACRO_FOR_EACH(SOLVE_FOR1, __VA_ARGS__)}
+#define SOLVE_FOR(...) \
+  { MACRO_FOR_EACH(SOLVE_FOR1, __VA_ARGS__) }
 
 /// Write this variable once to the grid file
 #define SAVE_ONCE1(var) dump.addOnce(var, #var);
@@ -520,7 +521,8 @@ private:
     dump.addOnce(var6, #var6);                         \
   }
 
-#define SAVE_ONCE(...) {MACRO_FOR_EACH(SAVE_ONCE1, __VA_ARGS__)}
+#define SAVE_ONCE(...) \
+  { MACRO_FOR_EACH(SAVE_ONCE1, __VA_ARGS__) }
 
 /// Write this variable every timestep
 #define SAVE_REPEAT1(var) dump.addRepeat(var, #var);
@@ -560,6 +562,7 @@ private:
     dump.addRepeat(var6, #var6);                         \
   }
 
-#define SAVE_REPEAT(...) {MACRO_FOR_EACH(SAVE_REPEAT1, __VA_ARGS__)}
+#define SAVE_REPEAT(...) \
+  { MACRO_FOR_EACH(SAVE_REPEAT1, __VA_ARGS__) }
 
 #endif // BOUT_PHYSICS_MODEL_H
