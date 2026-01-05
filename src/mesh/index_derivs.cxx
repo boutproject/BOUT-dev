@@ -25,7 +25,6 @@
 #include "bout/traits.hxx"
 #include <bout/index_derivs.hxx>
 #include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/unused.hxx>
 
 /*******************************************************************************
@@ -34,7 +33,6 @@
 
 /// Initialise the derivative methods. Must be called before any derivatives are used
 void Mesh::derivs_init(Options* options) {
-  TRACE("Initialising derivatives");
   // For each direction need to set what the default method is for each type
   // of derivative.
   DerivativeStore<Field3D>::getInstance().initialise(options);
@@ -45,7 +43,6 @@ void Mesh::derivs_init(Options* options) {
 
 STAGGER Mesh::getStagger(const CELL_LOC inloc, const CELL_LOC outloc,
                          const CELL_LOC allowedStaggerLoc) const {
-  TRACE("Mesh::getStagger -- three arguments");
   ASSERT1(outloc == inloc || (outloc == CELL_CENTRE && inloc == allowedStaggerLoc)
           || (outloc == allowedStaggerLoc && inloc == CELL_CENTRE));
 
@@ -61,7 +58,6 @@ STAGGER Mesh::getStagger(const CELL_LOC inloc, const CELL_LOC outloc,
 
 STAGGER Mesh::getStagger(const CELL_LOC vloc, [[maybe_unused]] const CELL_LOC inloc,
                          const CELL_LOC outloc, const CELL_LOC allowedStaggerLoc) const {
-  TRACE("Mesh::getStagger -- four arguments");
   ASSERT1(inloc == outloc);
   ASSERT1(vloc == inloc || (vloc == CELL_CENTRE && inloc == allowedStaggerLoc)
           || (vloc == allowedStaggerLoc && inloc == CELL_CENTRE));

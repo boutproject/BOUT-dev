@@ -336,7 +336,6 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b) { return solve(b, b); }
  * \returns sol     The solution x of the problem Ax=b.
  */
 FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
-  TRACE("LaplacePetsc::solve");
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);

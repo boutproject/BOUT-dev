@@ -325,8 +325,6 @@ PetscSolver::~PetscSolver() {
 
 int PetscSolver::init() {
 
-  TRACE("Initialising PETSc-dev solver");
-
   Solver::init();
 
   int nlocal = getLocalN(); // Number of evolving variables on this processor
@@ -970,7 +968,6 @@ PetscErrorCode PetscSolver::formFunction(Vec U, Vec F) {
 
 // Matrix-free preconditioner function
 PetscErrorCode PetscSolver::pre(Vec x, Vec y) {
-  TRACE("PetscSolver::pre()");
 
   BoutReal* data;
 

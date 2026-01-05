@@ -241,8 +241,6 @@ SlepcSolver::~SlepcSolver() {
 
 int SlepcSolver::init() {
 
-  TRACE("Initialising SLEPc solver");
-
   // Report initialisation
   output.write("Initialising SLEPc solver\n");
   if (selfSolve) {

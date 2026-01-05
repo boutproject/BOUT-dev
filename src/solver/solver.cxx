@@ -664,9 +664,6 @@ void Solver::writeToModelOutputFile(const Options& options) {
  **************************************************************************/
 
 int Solver::init() {
-
-  TRACE("Solver::init()");
-
   if (initialised) {
     throw BoutException(_("ERROR: Solver is already initialised\n"));
   }

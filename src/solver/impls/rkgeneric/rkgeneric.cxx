@@ -40,8 +40,6 @@ void RKGenericSolver::setMaxTimestep(BoutReal dt) {
 
 int RKGenericSolver::init() {
 
-  TRACE("Initialising RKGeneric solver");
-
   Solver::init();
   output << "\n\tRunge-Kutta generic solver with scheme type " << scheme->getType()
          << "\n";
@@ -86,8 +84,6 @@ void RKGenericSolver::resetInternalFields() {
 }
 
 int RKGenericSolver::run() {
-  TRACE("RKGenericSolver::run()");
-
   for (int s = 0; s < getNumberOutputSteps(); s++) {
     BoutReal target = simtime + getOutputTimestep();
 

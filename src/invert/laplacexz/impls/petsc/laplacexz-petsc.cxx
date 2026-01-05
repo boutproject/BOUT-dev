@@ -97,8 +97,6 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
    *                  given by b
    */
 
-  TRACE("LaplaceXZpetsc::LaplaceXZpetsc");
-
   if (opt == nullptr) {
     // If no options supplied, use default
     opt = &(Options::root())["laplacexz"];
@@ -260,8 +258,6 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
 
 LaplaceXZpetsc::~LaplaceXZpetsc() {
 
-  TRACE("LaplaceXZpetsc::~LaplaceXZpetsc");
-
   PetscBool petsc_is_finalised;
   PetscFinalized(&petsc_is_finalised);
 
@@ -292,8 +288,6 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
    * Ain       - The A coefficient in div(A grad_perp(B)) + Bf = b
    * Bin       - The B coefficient in div(A grad_perp(B)) + Bf = b
    */
-
-  TRACE("LaplaceXZpetsc::setCoefs");
 
   ASSERT1(Ain.getMesh() == localmesh);
   ASSERT1(Bin.getMesh() == localmesh);
@@ -766,8 +760,6 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
    * Output
    * result    - The solved x (returned as a Field3D) in the matrix problem Ax=b
    */
-
-  TRACE("LaplaceXZpetsc::solve");
 
   ASSERT1(bin.getMesh() == localmesh);
   ASSERT1(x0in.getMesh() == localmesh);

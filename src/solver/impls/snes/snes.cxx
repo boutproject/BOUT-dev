@@ -607,9 +607,6 @@ SNESSolver::SNESSolver(Options* opts)
                      .withDefault<bool>(false)) {}
 
 int SNESSolver::init() {
-
-  TRACE("Initialising SNES solver");
-
   Solver::init();
   output << "\n\tSNES steady state solver\n";
 
@@ -829,8 +826,6 @@ int SNESSolver::init() {
 }
 
 int SNESSolver::run() {
-  TRACE("SNESSolver::run()");
-
   // Set initial guess at the solution from variables
   {
     BoutReal* xdata = nullptr;

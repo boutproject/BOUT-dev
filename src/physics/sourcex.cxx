@@ -77,7 +77,6 @@ const Field3D sink_tanhx(const Field2D& UNUSED(f0), const Field3D& f, BoutReal s
 
 // create radial buffer zones to set jpar zero near radial boundaries
 const Field3D mask_x(const Field3D& f, bool UNUSED(BoutRealspace)) {
-  TRACE("mask_x");
 
   Mesh* localmesh = f.getMesh();
 
@@ -101,7 +100,6 @@ const Field3D mask_x(const Field3D& f, bool UNUSED(BoutRealspace)) {
 // create radial buffer zones to set jpar zero near radial boundaries
 const Field3D sink_tanhxl(const Field2D& UNUSED(f0), const Field3D& f, BoutReal swidth,
                           BoutReal slength, bool UNUSED(BoutRealspace)) {
-  TRACE("sink_tanhx");
 
   Mesh* localmesh = f.getMesh();
 
@@ -123,7 +121,6 @@ const Field3D sink_tanhxl(const Field2D& UNUSED(f0), const Field3D& f, BoutReal 
 // create radial buffer zones to set jpar zero near radial boundaries
 const Field3D sink_tanhxr(const Field2D& UNUSED(f0), const Field3D& f, BoutReal swidth,
                           BoutReal slength, bool UNUSED(BoutRealspace)) {
-  TRACE("sink_tanhxr");
 
   Mesh* localmesh = f.getMesh();
 
@@ -144,7 +141,6 @@ const Field3D sink_tanhxr(const Field2D& UNUSED(f0), const Field3D& f, BoutReal 
 
 // create radial buffer zones to damp Psi to zero near radial boundaries
 const Field3D buff_x(const Field3D& f, bool UNUSED(BoutRealspace)) {
-  TRACE("buff_x");
 
   Mesh* localmesh = f.getMesh();
 

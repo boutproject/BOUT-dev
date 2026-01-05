@@ -29,7 +29,6 @@
 
 #include <bout/derivs.hxx>
 #include <bout/globals.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/unused.hxx>
 #include <bout/utils.hxx>
 #include <bout/vecops.hxx>
@@ -39,7 +38,7 @@
  **************************************************************************/
 
 Vector2D Grad(const Field2D& f, CELL_LOC outloc, const std::string& method) {
-  TRACE("Grad( Field2D )");
+
   SCOREP0();
   CELL_LOC outloc_x, outloc_y, outloc_z;
   if (outloc == CELL_VSHIFT) {
@@ -68,7 +67,7 @@ Vector2D Grad(const Field2D& f, CELL_LOC outloc, const std::string& method) {
 }
 
 Vector3D Grad(const Field3D& f, CELL_LOC outloc, const std::string& method) {
-  TRACE("Grad( Field3D )");
+
   SCOREP0();
   CELL_LOC outloc_x, outloc_y, outloc_z;
   if (outloc == CELL_VSHIFT) {
@@ -97,7 +96,7 @@ Vector3D Grad(const Field3D& f, CELL_LOC outloc, const std::string& method) {
 }
 
 Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc, const std::string& method) {
-  TRACE("Grad_perp( Field3D )");
+
   SCOREP0();
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
 
@@ -145,7 +144,7 @@ Vector2D Grad_perp(const Field2D& f, CELL_LOC outloc, const std::string& method)
 
 Coordinates::FieldMetric Div(const Vector2D& v, CELL_LOC outloc,
                              const std::string& method) {
-  TRACE("Div( Vector2D )");
+
   SCOREP0();
   if (outloc == CELL_DEFAULT) {
     outloc = v.getLocation();
@@ -170,7 +169,7 @@ Coordinates::FieldMetric Div(const Vector2D& v, CELL_LOC outloc,
 }
 
 Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method) {
-  TRACE("Div( Vector3D )");
+
   SCOREP0();
   if (outloc == CELL_DEFAULT) {
     outloc = v.getLocation();
@@ -209,7 +208,7 @@ Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method) {
 
 Coordinates::FieldMetric Div(const Vector2D& v, const Field2D& f, CELL_LOC outloc,
                              const std::string& method) {
-  TRACE("Div( Vector2D, Field2D )");
+
   SCOREP0();
   if (outloc == CELL_DEFAULT) {
     outloc = v.getLocation();
@@ -236,7 +235,6 @@ Coordinates::FieldMetric Div(const Vector2D& v, const Field2D& f, CELL_LOC outlo
 
 Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
             const std::string& method) {
-  TRACE("Div( Vector3D, Field3D )");
 
   if (outloc == CELL_DEFAULT) {
     outloc = v.getLocation();
@@ -265,8 +263,6 @@ Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
 
 Vector2D Curl(const Vector2D& v) {
 
-  TRACE("Curl( Vector2D )");
-
   ASSERT1(v.getLocation() != CELL_VSHIFT);
   Mesh* localmesh = v.getMesh();
   auto metric = v.x.getCoordinates();
@@ -292,7 +288,7 @@ Vector2D Curl(const Vector2D& v) {
 }
 
 Vector3D Curl(const Vector3D& v) {
-  TRACE("Curl( Vector3D )");
+
   SCOREP0();
   ASSERT1(v.getLocation() != CELL_VSHIFT);
 
@@ -323,7 +319,7 @@ Vector3D Curl(const Vector3D& v) {
  * Upwinding operators
  **************************************************************************/
 Coordinates::FieldMetric V_dot_Grad(const Vector2D& v, const Field2D& f) {
-  TRACE("V_dot_Grad( Vector2D , Field2D )");
+
   SCOREP0();
 
   // Get contravariant components of v
@@ -334,7 +330,7 @@ Coordinates::FieldMetric V_dot_Grad(const Vector2D& v, const Field2D& f) {
 }
 
 Field3D V_dot_Grad(const Vector2D& v, const Field3D& f) {
-  TRACE("V_dot_Grad( Vector2D , Field3D )");
+
   SCOREP0();
 
   // Get contravariant components of v
@@ -345,7 +341,7 @@ Field3D V_dot_Grad(const Vector2D& v, const Field3D& f) {
 }
 
 Field3D V_dot_Grad(const Vector3D& v, const Field2D& f) {
-  TRACE("V_dot_Grad( Vector3D , Field2D )");
+
   SCOREP0();
 
   // Get contravariant components of v
@@ -356,7 +352,7 @@ Field3D V_dot_Grad(const Vector3D& v, const Field2D& f) {
 }
 
 Field3D V_dot_Grad(const Vector3D& v, const Field3D& f) {
-  TRACE("V_dot_Grad( Vector3D , Field3D )");
+
   SCOREP0();
 
   // Get contravariant components of v

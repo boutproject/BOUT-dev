@@ -33,7 +33,6 @@ void EulerSolver::setMaxTimestep(BoutReal dt) {
 }
 
 int EulerSolver::init() {
-  TRACE("Initialising Euler solver");
 
   Solver::init();
 
@@ -63,7 +62,6 @@ int EulerSolver::init() {
 }
 
 int EulerSolver::run() {
-  TRACE("EulerSolver::run()");
 
   for (int s = 0; s < getNumberOutputSteps(); s++) {
     BoutReal target = simtime + getOutputTimestep();

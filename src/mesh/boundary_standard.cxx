@@ -7,7 +7,6 @@
 #include <bout/globals.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/generator_context.hxx>
 #include <bout/utils.hxx>
@@ -30,8 +29,6 @@ using bout::generator::Context;
  */
 #if CHECK > 0
 void verifyNumPoints(BoundaryRegion* region, int ptsRequired) {
-  TRACE("Verifying number of points available for BC");
-
   int ptsAvailGlobal, ptsAvailLocal, ptsAvail;
   std::string side, gridType;
   Mesh* mesh = region->localmesh;
@@ -3606,7 +3603,6 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   }
 
   void BoundaryRelax::apply_ddt(Field2D & f) {
-    TRACE("BoundaryRelax::apply_ddt(Field2D)");
 
     // Make a copy of f
     Field2D g = f;
@@ -3622,7 +3618,6 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   }
 
   void BoundaryRelax::apply_ddt(Field3D & f) {
-    TRACE("BoundaryRelax::apply_ddt(Field3D)");
 
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());

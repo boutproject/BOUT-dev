@@ -46,8 +46,6 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
                                    Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0) {
 
-  TRACE("LaplaceMultigrid::LaplaceMultigrid(Options *opt)");
-
   // periodic x-direction not handled: see MultigridAlg::communications
   ASSERT1(!localmesh->periodicX);
 
@@ -222,8 +220,6 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
 }
 
 FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
-
-  TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
 
   ASSERT1(localmesh == b_in.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b_in.getLocation() == location);
@@ -578,7 +574,6 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
 }
 
 void LaplaceMultigrid::generateMatrixF(int level) {
-  TRACE("LaplaceMultigrid::generateMatrixF(int)");
 
   // Set (fine-level) matrix entries
 

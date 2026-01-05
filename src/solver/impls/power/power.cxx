@@ -15,7 +15,6 @@ PowerSolver::PowerSolver(Options* opts)
       curtime((*options)["curtime"].doc("Simulation time (fixed)").withDefault(0.0)) {}
 
 int PowerSolver::init() {
-  TRACE("Initialising Power solver");
 
   Solver::init();
   output << "\n\tPower eigenvalue solver\n";
@@ -44,7 +43,6 @@ int PowerSolver::init() {
 }
 
 int PowerSolver::run() {
-  TRACE("PowerSolver::run()");
 
   // Make sure that f0 has a norm of 1
   divide(f0, norm(f0));

@@ -304,7 +304,6 @@ FieldPerp LaplacePCR_THOMAS::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 }
 
 Field3D LaplacePCR_THOMAS::solve(const Field3D& rhs, const Field3D& x0) {
-  TRACE("LaplacePCR_THOMAS::solve(Field3D, Field3D)");
 
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);

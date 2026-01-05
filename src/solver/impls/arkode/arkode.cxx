@@ -188,7 +188,6 @@ ArkodeSolver::~ArkodeSolver() {
  **************************************************************************/
 
 int ArkodeSolver::init() {
-  TRACE("Initialising ARKODE solver");
 
   Solver::init();
 
@@ -507,8 +506,6 @@ int ArkodeSolver::init() {
  **************************************************************************/
 
 int ArkodeSolver::run() {
-  TRACE("ArkodeSolver::run()");
-
   if (!initialised) {
     throw BoutException("ArkodeSolver not initialised\n");
   }

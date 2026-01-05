@@ -136,8 +136,6 @@ static PetscErrorCode imexbdf2PCapply(PC pc, Vec x, Vec y) {
  */
 int IMEXBDF2::init() {
 
-  TRACE("Initialising IMEX-BDF2 solver");
-
   Solver::init();
   output << "\n\tIMEX-BDF2 time-integration solver\n";
 
@@ -741,7 +739,6 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
 }
 
 int IMEXBDF2::run() {
-  TRACE("IMEXBDF2::run()");
 
   // Multi-step scheme, so first steps are different
   int order = 1;

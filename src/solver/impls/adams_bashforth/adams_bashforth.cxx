@@ -304,8 +304,6 @@ void AdamsBashforthSolver::setMaxTimestep(BoutReal dt) {
 
 int AdamsBashforthSolver::init() {
 
-  TRACE("Initialising AdamsBashforth solver");
-
   Solver::init();
   output << "\n\tAdams-Bashforth (explicit) multistep solver\n";
 

@@ -59,7 +59,7 @@ InvertParDivCR::InvertParDivCR(Options* opt, CELL_LOC location, Mesh* mesh_in)
 }
 
 Field3D InvertParDivCR::solve(const Field3D& f) {
-  TRACE("InvertParDivCR::solve(Field3D)");
+
   ASSERT1(localmesh == f.getMesh());
   ASSERT1(location == f.getLocation());
 

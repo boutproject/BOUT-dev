@@ -30,7 +30,6 @@
 #include <bout/difops.hxx>
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/solver.hxx>
 #include <bout/utils.hxx>
 #include <bout/vecops.hxx>
@@ -458,8 +457,6 @@ Field2D Laplace_perpXY(const Field2D& A, const Field2D& f) {
 Coordinates::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
                                           CELL_LOC outloc) {
 
-  TRACE("b0xGrad_dot_Grad( Field2D , Field2D )");
-
   if (outloc == CELL_DEFAULT) {
     outloc = A.getLocation();
   }
@@ -489,7 +486,6 @@ Coordinates::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
 }
 
 Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A, CELL_LOC outloc) {
-  TRACE("b0xGrad_dot_Grad( Field2D , Field3D )");
 
   if (outloc == CELL_DEFAULT) {
     outloc = A.getLocation();
@@ -531,7 +527,6 @@ Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A, CELL_LOC outloc) 
 }
 
 Field3D b0xGrad_dot_Grad(const Field3D& p, const Field2D& A, CELL_LOC outloc) {
-  TRACE("b0xGrad_dot_Grad( Field3D , Field2D )");
 
   if (outloc == CELL_DEFAULT) {
     outloc = A.getLocation();
@@ -566,7 +561,6 @@ Field3D b0xGrad_dot_Grad(const Field3D& p, const Field2D& A, CELL_LOC outloc) {
 }
 
 Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A, CELL_LOC outloc) {
-  TRACE("b0xGrad_dot_Grad( Field3D , Field3D )");
 
   if (outloc == CELL_DEFAULT) {
     outloc = A.getLocation();
@@ -614,7 +608,6 @@ Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A, CELL_LOC outloc) 
 Coordinates::FieldMetric bracket(const Field2D& f, const Field2D& g,
                                  BRACKET_METHOD method, CELL_LOC outloc,
                                  Solver* UNUSED(solver)) {
-  TRACE("bracket(Field2D, Field2D)");
 
   ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
@@ -637,7 +630,6 @@ Coordinates::FieldMetric bracket(const Field2D& f, const Field2D& g,
 
 Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
                 CELL_LOC outloc, Solver* solver) {
-  TRACE("bracket(Field3D, Field2D)");
 
   ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
@@ -826,7 +818,6 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
 
 Field3D bracket(const Field2D& f, const Field3D& g, BRACKET_METHOD method,
                 CELL_LOC outloc, Solver* solver) {
-  TRACE("bracket(Field2D, Field3D)");
 
   ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
@@ -863,8 +854,6 @@ Field3D bracket(const Field2D& f, const Field3D& g, BRACKET_METHOD method,
 
 Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
                 CELL_LOC outloc, [[maybe_unused]] Solver* solver) {
-  TRACE("Field3D, Field3D");
-
   ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();

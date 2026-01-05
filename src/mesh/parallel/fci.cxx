@@ -251,7 +251,6 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
 }
 
 Field3D FCIMap::integrate(Field3D& f) const {
-  TRACE("FCIMap::integrate");
 
   ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   ASSERT1(&map_mesh == f.getMesh());
@@ -315,7 +314,6 @@ void FCITransform::checkInputGrid() {
 }
 
 void FCITransform::calcParallelSlices(Field3D& f) {
-  TRACE("FCITransform::calcParallelSlices");
 
   ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
@@ -333,7 +331,6 @@ void FCITransform::calcParallelSlices(Field3D& f) {
 }
 
 void FCITransform::integrateParallelSlices(Field3D& f) {
-  TRACE("FCITransform::integrateParallelSlices");
 
   ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with

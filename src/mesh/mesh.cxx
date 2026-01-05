@@ -298,7 +298,6 @@ bool Mesh::sourceHasYBoundaryGuards() { return source->hasYBoundaryGuards(); }
  **************************************************************************/
 
 void Mesh::communicateXZ(FieldGroup& g) {
-  TRACE("Mesh::communicate(FieldGroup&)");
 
   // Send data
   comm_handle h = sendX(g);
@@ -308,7 +307,6 @@ void Mesh::communicateXZ(FieldGroup& g) {
 }
 
 void Mesh::communicateYZ(FieldGroup& g) {
-  TRACE("Mesh::communicate(FieldGroup&)");
 
   // Send data
   comm_handle h = sendY(g);
@@ -325,7 +323,6 @@ void Mesh::communicateYZ(FieldGroup& g) {
 }
 
 void Mesh::communicate(FieldGroup& g) {
-  TRACE("Mesh::communicate(FieldGroup&)");
 
   if (include_corner_cells) {
     // Send data in y-direction

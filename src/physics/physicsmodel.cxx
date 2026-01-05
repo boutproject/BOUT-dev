@@ -164,7 +164,6 @@ void PhysicsModel::bout_solve(Vector3D& var, const char* name,
 }
 
 int PhysicsModel::postInit(bool restarting) {
-  TRACE("PhysicsModel::postInit");
 
   if (restarting) {
     solver->readEvolvingVariablesFromOptions(restart_options);
