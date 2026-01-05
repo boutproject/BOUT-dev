@@ -9,39 +9,35 @@ def pytest_configure(config):
         "markers", "input_dir(name): specify the pre-existing input directory name for this test"
     )
 
-@pytest.fixture(autouse=True)
-def cwd_to_test_file_dir(monkeypatch, test_dir):
-    """Automatically change CWD to the directory of the current test file."""
-    monkeypatch.chdir(test_dir)
-
 @pytest.fixture
 def test_dir(request) -> Path:
     return Path(request.fspath).parent
 
-@pytest.fixture
-def copy_data_directory(request, tmp_path):
+@pytest.fixture(autouse=True)
+def copy_and_cwd_to_tmp_dir(request, tmp_path, monkeypatch):
     """
-    Provides a writable copy of a pre-existing directory (e.g. "data", "test", "input")
-    in a unique temporary location.
+    Provides a unique, writable copy of a pre-existing input directory
+    and changes cwd to it.
 
-    The name of the original directory is taken from request.node.input_dir_name
-    (set via a marker on the test).
+    The original directory name is taken from:
+      - or @pytest.mark.input_dir("name") marker
+      - default: "data"
     """
-    # Get the requested original directory name (default to "data" if not specified)
-    original_name = getattr(request.node, "input_dir_name", "data")
 
-    # Location of the original input directory (sibling to the test file)
+    marker = request.node.get_closest_marker("input_dir")
+    original_name = marker.kwargs.get('name', 'data') if marker else "data"
+
     test_file_dir = Path(request.fspath).parent
     original_dir = test_file_dir / original_name
 
     if not original_dir.is_dir():
-        pytest.fail(f"Expected input directory '{original_dir}' does not exist")
+        pytest.fail(f"Expected input directory '{original_dir}' not found")
 
-    # Unique writable copy for this test
-    run_dir = tmp_path / original_name
-    shutil.copytree(original_dir, run_dir, dirs_exist_ok=True)
+    # Create unique writable copy
+    run_dir_path = tmp_path / original_name
+    shutil.copytree(original_dir, run_dir_path, dirs_exist_ok=True)
 
-    return run_dir
+    monkeypatch.chdir(tmp_path)
 
 @pytest.fixture(autouse=True)
 def finalize_boutpp(request):
