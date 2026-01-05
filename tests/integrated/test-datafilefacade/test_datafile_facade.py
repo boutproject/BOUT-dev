@@ -10,8 +10,6 @@ from boututils.run_wrapper import shell, launch_safe
 import numpy
 
 
-success = True
-
 testvars = {
     "f2d": 0.1,
     "f3d": 0.2,
@@ -36,6 +34,9 @@ testvars = {
 
 
 def test_datafile_facade():
+
+    success = True
+
     for nproc in [1, 2]:
         # delete any existing output
         shell(["rm -f data/BOUT.dmp.*.nc data/BOUT.restart.*.nc"])
