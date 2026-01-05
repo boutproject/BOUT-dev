@@ -2,15 +2,13 @@
  * radial source and mask operators
  **************************************************************/
 
-#include <bout/globals.hxx>
-#include <cmath>
-
 #include <bout/field2d.hxx>
+#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/sourcex.hxx>
+#include <bout/unused.hxx>
 
-#include "bout/unused.hxx"
+#include <cmath>
 
 BoutReal TanH(BoutReal a) {
   BoutReal temp = exp(a);

@@ -6,7 +6,6 @@
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/options_io.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>

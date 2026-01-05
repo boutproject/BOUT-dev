@@ -1,6 +1,6 @@
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
-#include <bout/msg_stack.hxx>
+
 #include <map>
 
 namespace {

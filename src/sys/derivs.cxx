@@ -44,14 +44,10 @@
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>
 #include <bout/interpolation.hxx>
-#include <bout/msg_stack.hxx>
-#include <bout/stencils.hxx>
-#include <bout/utils.hxx>
-
-#include <cmath>
-
 #include <bout/output.hxx>
+#include <bout/stencils.hxx>
 #include <bout/unused.hxx>
+#include <bout/utils.hxx>
 
 /*******************************************************************************
  * First central derivatives

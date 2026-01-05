@@ -22,13 +22,12 @@
 #ifndef BOUT_ENUM_CLASS_H
 #define BOUT_ENUM_CLASS_H
 
-#include "bout/boutexception.hxx"
+#include "bout/boutexception.hxx" // IWYU pragma: keep
 #include "bout/macro_for_each.hxx"
-#include "bout/msg_stack.hxx"
-#include "bout/options.hxx"
+#include "bout/options.hxx" // IWYU pragma: keep
 
-#include <map>
-#include <string>
+#include <map>    // IWYU pragma: keep
+#include <string> // IWYU pragma: keep
 
 /// Create some macro magic similar to bout/macro_for_each.hxx, but allowing for the enum
 /// class name to be passed through to each _call

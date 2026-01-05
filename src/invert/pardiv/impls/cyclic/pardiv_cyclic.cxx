@@ -46,7 +46,6 @@
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/surfaceiter.hxx>
 #include <bout/utils.hxx>
 

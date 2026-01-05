@@ -4,10 +4,8 @@
 
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
-#include <bout/msg_stack.hxx>
-#include <bout/utils.hxx>
-
 #include <bout/output.hxx>
+#include <bout/utils.hxx>
 
 #include <array>
 

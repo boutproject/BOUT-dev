@@ -43,7 +43,6 @@
 #include <bout/bout_types.hxx>
 #include <bout/fft.hxx>
 #include <bout/interpolation.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/stencils.hxx>
 #include <bout/unused.hxx>
 

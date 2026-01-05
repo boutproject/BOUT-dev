@@ -42,7 +42,6 @@
 #include <bout/globals.hxx>
 #include <bout/initialprofiles.hxx>
 #include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
 
 void initial_profile(const std::string& name, Field3D& var) {
 

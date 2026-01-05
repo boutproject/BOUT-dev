@@ -1,6 +1,5 @@
 #include <bout/fv_ops.hxx>
 #include <bout/globals.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/utils.hxx>
 

@@ -3,10 +3,8 @@
 
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/utils.hxx>
-#include <cmath>
 
 #include <bout/output.hxx>
 

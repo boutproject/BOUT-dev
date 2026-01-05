@@ -5,7 +5,6 @@
 
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 

@@ -38,7 +38,6 @@
 #include <bout/globals.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>

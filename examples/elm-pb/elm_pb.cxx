@@ -13,7 +13,6 @@
 #include <bout/invert/laplacexy.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/invert_parderiv.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/sourcex.hxx>
 #include <bout/utils.hxx>
 

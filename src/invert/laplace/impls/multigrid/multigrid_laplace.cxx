@@ -33,7 +33,6 @@
 #if not BOUT_USE_METRIC_3D
 
 #include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
 
 #if BOUT_USE_OPENMP

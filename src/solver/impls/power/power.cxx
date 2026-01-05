@@ -3,12 +3,10 @@
 #include "power.hxx"
 
 #include <bout/boutcomm.hxx>
-#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 
 #include <cmath>
-
-#include <bout/output.hxx>
 
 PowerSolver::PowerSolver(Options* opts)
     : Solver(opts),

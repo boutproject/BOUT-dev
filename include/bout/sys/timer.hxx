@@ -7,7 +7,6 @@
 #include <type_traits>
 
 #include "bout/msg_stack.hxx"
-#include "bout/output.hxx"
 
 /*!
  * Timing class for performance benchmarking and diagnosis

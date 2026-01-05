@@ -1,4 +1,4 @@
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #if BOUT_HAS_PETSC
 
@@ -7,7 +7,7 @@
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/globals.hxx>
-#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 #include <bout/output_bout_types.hxx>
 #include <bout/petsc_interface.hxx>
 #include <bout/utils.hxx>
@@ -17,8 +17,6 @@
 #include <cstddef>
 #include <set>
 #include <vector>
-
-#include <bout/output.hxx>
 
 #include "petscerror.h"
 #include "petscmat.h"

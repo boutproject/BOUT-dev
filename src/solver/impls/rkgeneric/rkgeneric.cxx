@@ -4,12 +4,8 @@
 
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
-#include <bout/msg_stack.hxx>
-#include <bout/utils.hxx>
-
-#include <cmath>
-
 #include <bout/output.hxx>
+#include <bout/utils.hxx>
 
 RKGenericSolver::RKGenericSolver(Options* opts)
     : Solver(opts), atol((*options)["atol"].doc("Absolute tolerance").withDefault(1.e-5)),

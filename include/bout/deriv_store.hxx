@@ -38,7 +38,6 @@
 
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
 
 /// Here we have a templated singleton that is used to store DerivativeFunctions
