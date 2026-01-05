@@ -13,20 +13,23 @@ def pytest_configure(config):
 def test_dir(request) -> Path:
     return Path(request.fspath).parent
 
-@pytest.fixture(autouse=True)
-def copy_and_cwd_to_tmp_dir(request, tmp_path, monkeypatch):
+@pytest.fixture(scope="function", autouse=True)
+def copy_and_cwd_to_unique_tmp_dir(request, tmp_path_factory, monkeypatch):
     """
-    Provides a unique, writable copy of the test directory
-    and changes cwd to it.
+    For each test function, create a unique temporary copy of the test directory
+    and change cwd to it.
     """
 
     test_file_dir = Path(request.fspath).parent
 
     if not test_file_dir.is_dir():
-        pytest.fail(f"Expected input directory '{test_file_dir}' not found")
+        pytest.fail(f"Expected test directory '{test_file_dir}' not found")
 
-    # Create unique writable copy
-    run_dir_path = tmp_path / test_file_dir.name
-    shutil.copytree(test_file_dir, run_dir_path, dirs_exist_ok=True)
+    # Create a unique temp dir for this test
+    run_dir = tmp_path_factory.mktemp(test_file_dir.name)
 
-    monkeypatch.chdir(run_dir_path)
+    # Copy the original test directory into it
+    shutil.copytree(test_file_dir, run_dir, dirs_exist_ok=True)
+
+    # Change working directory to the copy
+    monkeypatch.chdir(run_dir)
