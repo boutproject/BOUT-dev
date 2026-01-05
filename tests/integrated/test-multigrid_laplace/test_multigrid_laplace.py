@@ -10,9 +10,6 @@
 
 from __future__ import print_function
 
-import os
-import pathlib
-
 try:
     from builtins import str
 except:

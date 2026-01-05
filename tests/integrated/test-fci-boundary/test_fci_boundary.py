@@ -3,8 +3,6 @@
 # Python script to run and analyse MMS test
 
 
-import os
-import pathlib
 import numpy as np
 from boututils.run_wrapper import launch_safe
 from boututils.datafile import DataFile

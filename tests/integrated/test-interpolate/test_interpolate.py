@@ -5,8 +5,6 @@
 #
 
 import pytest
-import os
-import pathlib
 from boututils.run_wrapper import shell, launch_safe
 from boutdata import collect
 import boutconfig
@@ -48,9 +46,6 @@ def test_interpolate(method):
     for var in varlist:
         error_2[var] = []  # L2 error (RMS)
         error_inf[var] = []  # Maximum error
-
-    this_directory = pathlib.Path(__file__).parent.absolute()
-    os.chdir(this_directory)
 
     for nx in nxlist:
         dx = 1.0 / (nx)

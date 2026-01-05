@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import os
-import pathlib
 
 import boutpp as bc
 
@@ -22,8 +20,6 @@ def test_boutpp_collect_staggered():
 
     fc = bc.create3D("sin(y)", outloc="CENTRE")
 
-    this_directory = pathlib.Path(__file__).parent.absolute()
-    os.chdir(this_directory)
     fe = bc.Field3D.fromCollect("f3d_evolve", path="data", info=False)
     fo = bc.Field3D.fromCollect("f3d_once", path="data", info=False)
 

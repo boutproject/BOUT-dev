@@ -20,8 +20,6 @@ except:
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 from numpy import abs, seterr
-import os
-import pathlib
 
 def test_fieldgroupcomm():
 
@@ -46,9 +44,6 @@ def test_fieldgroupcomm():
         cmd = "./{exe} ".format(exe=exeName)
 
         shell("rm data/BOUT.dmp.*.nc")
-
-        this_directory = pathlib.Path(__file__).parent.absolute()
-        os.chdir(this_directory)
 
         print("   %d processors ...." % (nproc))
         s, out = launch_safe(cmd, nproc=nproc, pipe=True)
