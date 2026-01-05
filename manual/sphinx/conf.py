@@ -82,22 +82,21 @@ if on_readthedocs:
     pwd = "/".join(os.getcwd().split("/")[:-2])
     os.system("git submodule update --init --recursive ../../externalpackages/fmt")
     cmake = (
-        "cmake  . -DBOUT_USE_FFTW=ON"
-        + " -DBOUT_USE_LAPACK=OFF"
-        + " -DBOUT_ENABLE_PYTHON=ON"
-        + " -DBOUT_UPDATE_GIT_SUBMODULE=OFF"
-        + " -DBOUT_TESTS=OFF"
-        + " -DBOUT_ALLOW_INSOURCE_BUILD=ON"
-        + f" -DPython3_ROOT_DIR={pydir}"
-        + f" -Dmpark_variant_DIR={pwd}/externalpackages/mpark.variant/"
-        + f" -Dfmt_DIR={pwd}/externalpackages/fmt/"
+        "cmake  . "
+        " -B build"
+        " -DBOUT_USE_FFTW=ON"
+        " -DBOUT_USE_LAPACK=OFF"
+        " -DBOUT_ENABLE_PYTHON=ON"
+        " -DBOUT_UPDATE_GIT_SUBMODULE=OFF"
+        " -DBOUT_TESTS=OFF"
+        " -DBOUT_ALLOW_INSOURCE_BUILD=ON"
+        f" -DPython3_ROOT_DIR={pydir}"
+        f" -Dmpark_variant_DIR={pwd}/externalpackages/mpark.variant/"
+        f" -Dfmt_DIR={pwd}/externalpackages/fmt/"
     )
-    # os.system("mkdir ../../build")
-    os.system("echo " + cmake)
-    x = os.system("cd ../.. ;" + cmake)
-    assert x == 0
-    x = os.system("cd ../.. ; make -j 2 -f Makefile")
-    assert x == 0
+    subprocess.run(f"echo {cmake}", shell=True)
+    subprocess.run(f"cd ../../; {cmake}", shell=True, check=True)
+    subprocess.run("cd ../.. ; cmake --build build -j 2", shell=True, check=True)
 
 
 # readthedocs currently runs out of memory if we actually dare to try to do this
