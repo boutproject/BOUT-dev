@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-import os
-import pathlib
 import boutpp as bc
 import numpy as np
+import pytest
 from boutdata import collect
 
 # requires boutpp
 # requires not make
 
 
-@pytest.mark.input_dir("input")
+@pytest.mark.input_dir(name="input")
 def test_boutpp_collect(request):
 
     bc.init("-d input".split(" "))
