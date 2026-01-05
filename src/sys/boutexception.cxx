@@ -54,13 +54,14 @@ std::string BoutException::getBacktrace() const {
 
   const auto colours = isatty(stdout_fileno) || isatty(stderr_fileno)
                            ? formatter::color_mode::always
-                           : formatter ::color_mode::none;
+                           : formatter::color_mode::none;
 
   auto formatter = cpptrace::formatter{}
                        .addresses(formatter::address_mode::none)
                        .break_before_filename(true)
                        .colors(colours)
                        .snippets(true)
+                       .symbols(formatter::symbol_mode::pretty)
                        .filter([](const stacktrace_frame& frame) {
                          return frame.symbol.find("BoutException::") == std::string::npos;
                        })
