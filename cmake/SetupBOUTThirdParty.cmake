@@ -374,11 +374,11 @@ option(BOUT_DOWNLOAD_CPPTRACE "Download cpptrace for backtrace support" ON)
 if (BOUT_DOWNLOAD_CPPTRACE)
   include(FetchContent)
   set(CPPTRACE_LIBDWARF_REPO "https://github.com/ZedThree/libdwarf-lite.git" CACHE STRING "" FORCE)
-  set(CPPTRACE_LIBDWARF_TAG "5f15f145d96278a64440f3c700f475233b4fd0e7" CACHE STRING "" FORCE)
+  set(CPPTRACE_LIBDWARF_TAG "ebe10a39afd56b8247de633bfe17666ad50ab95e" CACHE STRING "" FORCE)
   FetchContent_Declare(
     cpptrace
-    GIT_REPOSITORY https://github.com/jeremy-rifkin/cpptrace.git
-    GIT_TAG        v1.0.4
+    GIT_REPOSITORY https://github.com/ZedThree/cpptrace.git
+    GIT_TAG        "027f9aee2d34dbe1c98f26224e1fbe1654cb4aae"
   )
   FetchContent_MakeAvailable(cpptrace)
 else()
