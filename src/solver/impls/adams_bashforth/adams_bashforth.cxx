@@ -5,9 +5,6 @@
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/output.hxx>
-#include <bout/utils.hxx>
-
-#include <array>
 
 namespace {
 BoutReal lagrange_at_position_denominator(const std::deque<BoutReal>& grid,

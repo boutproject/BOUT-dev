@@ -5,7 +5,6 @@
 #include <bout/boutexception.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/output.hxx>
-#include <bout/utils.hxx>
 
 EulerSolver::EulerSolver(Options* options)
     : Solver(options), mxstep((*options)["mxstep"]

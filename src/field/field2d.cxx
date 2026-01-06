@@ -36,8 +36,6 @@
 #include <bout/globals.hxx> // for mesh
 #include <bout/mesh.hxx>
 #include <bout/output.hxx>
-#include <bout/rvec.hxx>
-#include <bout/utils.hxx>
 
 #include <cmath>
 

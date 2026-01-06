@@ -31,11 +31,9 @@ class MsgStack;
 
 #include "bout/build_defines.hxx"
 
-#include "bout/unused.hxx"
-
 #include "fmt/core.h"
 
-#include <cstdarg>
+#include <cstddef>
 #include <exception>
 #include <string>
 #include <vector>
@@ -82,7 +80,7 @@ public:
   }
 
   void pop() {}
-  void pop(int UNUSED(id)) {}
+  void pop(int [[maybe_unused]] id) {}
   void clear() {}
 
   void dump() {}

@@ -45,7 +45,6 @@
 #include <bout/globals.hxx>
 #include <bout/interpolation.hxx>
 #include <bout/output.hxx>
-#include <bout/stencils.hxx>
 #include <bout/unused.hxx>
 #include <bout/utils.hxx>
 

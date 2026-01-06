@@ -29,6 +29,7 @@
 #ifndef __DERIV_STORE_HXX__
 #define __DERIV_STORE_HXX__
 
+#include <cstddef>
 #include <functional>
 #include <map>
 #include <set>
