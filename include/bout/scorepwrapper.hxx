@@ -20,9 +20,9 @@
 /// we need to say if we support this or not by defining BOUT_HAS_PRETTY_FUNCTION (to be
 /// implemented in configure)
 #if BOUT_HAS_PRETTY_FUNCTION
-#define __thefunc__ __PRETTY_FUNCTION__
+#define _thefunc_ __PRETTY_FUNCTION__
 #else
-#define __thefunc__ __func__
+#define _thefunc_ __func__
 #endif
 
 /// Instrument a function with scorep
@@ -31,7 +31,7 @@
 /// If we don't have scorep support then just define a null function
 #if BOUT_HAS_SCOREP
 #define SCOREP_BASE_CALL(...) \
-  SCOREP_USER_REGION(__thefunc__, SCOREP_USER_REGION_TYPE_FUNCTION)
+  SCOREP_USER_REGION(_thefunc_, SCOREP_USER_REGION_TYPE_FUNCTION)
 #else
 #define SCOREP_BASE_CALL(...)
 #endif
