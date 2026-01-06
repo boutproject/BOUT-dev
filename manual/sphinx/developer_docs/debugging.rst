@@ -69,14 +69,15 @@ help find where an error occurred. For example, given this snippet::
 we would see something like the following output:
 
 .. code:: text
-       
-    ====== Back trace ======
+
+    ====== Exception thrown ======
+    Something went wrong
+
+    === Additional information ===
     -> 4. Inner-most scope on line 58 of '/path/to/model.cxx'
     -> 2. Middle scope on line 53 of '/path/to/model.cxx'
     -> 1. Outer-most scope on line 51 of '/path/to/model.cxx'
 
-    ====== Exception thrown ======
-    Something went wrong
 
 The third ``TRACE`` message doesn't appear in the output because we've
 left its scope and it's no longer relevant.
@@ -97,44 +98,58 @@ the ``fmt`` syntax also used by the loggers::
 Backtrace
 =========
 
-Lastly, BOUT++ can also automatically print a backtrace in the event
-of a crash. This is a compile-time option in the BOUT++ library
-(``-DBOUT_ENABLE_BACKTRACE=ON``, the default, requires the
-``addr2line`` program to be installed), and debug symbols to be turned
-on (``-DCMAKE_BUILD_TYPE=Debug`` or ``=RelWithDebInfo``) in BOUT++
-_and_ the physics model. If debug symbols are only present in part, the
-backtrace will be missing names for the other part.
-
-The output looks something like this:
+Lastly, BOUT++ can also automatically print a backtrace in the event of a
+crash. This is very useful to include if you ever need to report a bug to the
+developers! The output looks something like this:
 
 .. code:: text
 
     ...
-    Error encountered
-    ====== Exception path ======
-    [bt] #10 ./backtrace() [0x40a27e]
-    _start at /home/abuild/rpmbuild/BUILD/glibc-2.33/csu/../sysdeps/x86_64/start.S:122
-    [bt] #9 /lib64/libc.so.6(__libc_start_main+0xd5) [0x7fecbfa28b25]
-    __libc_start_main at /usr/src/debug/glibc-2.33-4.1.x86_64/csu/../csu/libc-start.c:332
-    [bt] #8 ./backtrace() [0x40a467]
-    main at /path/to/BOUT-dev/build/../examples/backtrace/backtrace.cxx:32 (discriminator 9)
-    [bt] #7 /path/to/BOUT-dev/build/libbout++.so(_ZN6Solver8setModelEP12PhysicsModel+0xb5) [0x7fecc0ca2e93]
-    Solver::setModel(PhysicsModel*) at /path/to/BOUT-dev/build/../src/solver/solver.cxx:94
-    [bt] #6 /path/to/BOUT-dev/build/libbout++.so(_ZN12PhysicsModel10initialiseEP6Solver+0xc0) [0x7fecc0cad594]
-    PhysicsModel::initialise(Solver*) at /path/to/BOUT-dev/build/../include/bout/physicsmodel.hxx:93 (discriminator 5)
-    [bt] #5 ./backtrace() [0x40a986]
-    Backtrace::init(bool) at /path/to/BOUT-dev/build/../examples/backtrace/backtrace.cxx:27
-    [bt] #4 ./backtrace() [0x40a3cf]
-    f3() at /path/to/BOUT-dev/build/../examples/backtrace/backtrace.cxx:19
-    [bt] #3 ./backtrace() [0x40a3be]
-    f2(int) at /path/to/BOUT-dev/build/../examples/backtrace/backtrace.cxx:15
-    [bt] #2 ./backtrace() [0x40a386]
-    f1() at /path/to/BOUT-dev/build/../examples/backtrace/backtrace.cxx:13 (discriminator 2)
-    [bt] #1 ./backtrace(_ZN13BoutExceptionC1IA19_cJEEERKT_DpRKT0_+0xba) [0x40ae16]
-    BoutException::BoutException<char [19]>(char const (&) [19]) at /path/to/BOUT-dev/build/../include/bout/../boutexception.hxx:28 (discriminator 2)
-              
+    Error encountered: Stack trace (most recent call first):
+    #0 (filtered)
+    #1 (filtered)
+    #2 (filtered)
+    #3 in BoutMesh::createCommunicators()
+       at BOUT-dev/src/mesh/impls/bout/boutmesh.cxx:709:64
+         707:       }
+         708:       // Unconditional exception for demo purposes
+       > 709:       throw BoutException("Single null outer SOL not correct\n");
+                                                                             ^
+         710:       MPI_Group_free(&group);
+         711:     }
+    #4 in BoutMesh::load()
+       at BOUT-dev/src/mesh/impls/bout/boutmesh.cxx:575:22
+         573:   /// Communicator
+         574:
+       > 575:   createCommunicators();
+                                   ^
+         576:   output_debug << "Got communicators" << endl;
+    #5 in BoutInitialise(int&, char**&)
+       at BOUT-dev/src/bout++.cxx:201:28
+         199:   bout::globals::mesh = Mesh::create();
+         200:   // Load from sources. Required for Field initialisation
+       > 201:   bout::globals::mesh->load();
+                                         ^
+         202:
+         203:   // time_report options are used in BoutFinalise, i.e. after we
+    #6 in main
+       at BOUT-dev/examples/elm-pb/elm_pb.cxx:2161:1
+        2159: };
+        2160:
+      > 2161: BOUTMAIN(ELMpb);
+              ^
+    #7 (filtered)
+    #8 (filtered)
+    #9 (filtered)
 
-This output tends to be much harder to read than the message stack
-from ``TRACE`` macros, but the advantage is that it doesn't require
-any modifications to the code to use, and can give you more precise
-location information.
+    ====== Exception thrown ======
+    Single null outer SOL not correct
+
+
+Debug symbols are required to get the filename/line number and code snippets. If
+they are missing in either BOUT++ or the physics model, only the function name
+and signature will be included for that part.
+
+Including debug symbols is a configure time ``CMake`` option, set either:
+``-DCMAKE_BUILD_TYPE=Debug`` or ``-DCMAKE_BUILD_TYPE=RelWithDebInfo`` (the
+default).
