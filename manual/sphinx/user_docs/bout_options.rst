@@ -554,42 +554,42 @@ may be useful anyway. See :ref:`sec-output` for more details.
 Input and Output
 ----------------
 
-The output (dump) files with time-history are controlled by settings
-in a section called “output”. Restart files contain a single
-time-slice, and are controlled by a section called “restart”. The
-options available are listed in table :numref:`tab-outputopts`.
+The output (dump) files with time-history are controlled by settings in a
+section called ``"output"``. Restart files contain a single time-slice, and are
+controlled by a section called ``"restart"``. The options available are listed
+in table :numref:`tab-outputopts`.
 
 .. _tab-outputopts:
 .. table:: Output file options
 	   
-   +-------------+----------------------------------------------------+--------------+
-   | Option      | Description                                        | Default      |
-   |             |                                                    | value        |
-   +-------------+----------------------------------------------------+--------------+
-   | enabled     | Writing is enabled                                 | true         |
-   +-------------+----------------------------------------------------+--------------+
-   | type        | File type e.g. "netcdf" or "adios"                 | "netcdf"     |
-   +-------------+----------------------------------------------------+--------------+
-   | prefix      | File name prefix                                   | "BOUT.dmp"   |
-   +-------------+----------------------------------------------------+--------------+
-   | path        | Directory to write the file into                   | ``datadir``  |
-   +-------------+----------------------------------------------------+--------------+
-   | floats      | Write floats rather than doubles                   | false        |
-   +-------------+----------------------------------------------------+--------------+
-   | flush       | Flush the file to disk after each write            | true         |
-   +-------------+----------------------------------------------------+--------------+
-   | guards      | Output guard cells                                 | true         |
-   +-------------+----------------------------------------------------+--------------+
-   | openclose   | Re-open the file for each write, and close after   | true         |
-   +-------------+----------------------------------------------------+--------------+
+   +----------------------+-----------------------------------------+----------------+
+   | Option               | Description                             | Default value  |
+   +======================+=========================================+================+
+   | ``append``           | Append to existing file if true,        | ``false``      |
+   |                      | otherwise overwrite                     |                |
+   +----------------------+-----------------------------------------+----------------+
+   | ``enabled``          | Writing is enabled                      | ``true``       |
+   +----------------------+-----------------------------------------+----------------+
+   | ``flush_frequency``  | How many output timesteps between       | ``1``          |
+   |                      | writing output to disk (NetCDF only)    |                |
+   +----------------------+-----------------------------------------+----------------+
+   | ``prefix``           | File name prefix                        | ``"BOUT.dmp"`` |
+   +----------------------+-----------------------------------------+----------------+
+   | ``path``             | Directory to write the file into        | ``datadir``    |
+   +----------------------+-----------------------------------------+----------------+
+   | ``type``             | File type, either ``"netcdf"`` or       | ``"netcdf"``   |
+   |                      | ``"adios"``                             |                |
+   +----------------------+-----------------------------------------+----------------+
 
 |
 
-**enabled** is useful mainly for doing performance or scaling tests, where you
-want to exclude I/O from the timings. **floats** can be used to reduce the size
-of the output files: files are stored as double by default, but setting
-**floats = true** changes the output to single-precision floats.
-
+- ``enabled`` is useful mainly for doing performance or scaling tests, where you
+  want to exclude I/O from the timings.
+- If you find that IO is taking more and more time as your simulation goes on,
+  try setting ``flush_frequency`` to a larger value such as ``10``. This can
+  workaround an issue with NetCDF where subsequent writes take longer and
+  longer. However, larger values risk losing more data in the event of a crash
+  or the simulation being killed early.
 
 Implementation
 --------------
