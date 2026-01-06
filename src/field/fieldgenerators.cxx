@@ -1,6 +1,8 @@
 
 #include "fieldgenerators.hxx"
 
+#include <memory>
+
 #include <bout/constants.hxx>
 #include <bout/utils.hxx>
 
