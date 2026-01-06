@@ -26,7 +26,7 @@
 #include <bout/assert.hxx>
 #include <bout/output.hxx>
 
-#include <fmt/base.h>
+#include <fmt/format.h>         // NOLINT(misc-include-cleaner)
 
 #include <iostream>
 #include <string>
