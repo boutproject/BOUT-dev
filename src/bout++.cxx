@@ -27,7 +27,7 @@
 
 #include "bout/build_config.hxx"
 
-const char DEFAULT_DIR[] = "data";
+static constexpr auto DEFAULT_DIR = "data";
 
 #define GLOBALORIGIN
 
