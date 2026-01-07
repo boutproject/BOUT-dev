@@ -55,7 +55,7 @@ def test_invpar():
                 print("PASSED")
             else:
                 print("FAILED")
-            assert s, f"Test failed for flag={f}"
+            assert s == 0, f"Test failed for flag={f}"
 
     if code == 0:
         print(" => All inversion tests passed")
