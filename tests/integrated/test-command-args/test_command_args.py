@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from boututils.run_wrapper import launch_safe
-import pytest
 import os
 import re
 import shutil
@@ -73,7 +72,6 @@ class TestCommandLineArgs(unittest.TestCase):
             msg="FAIL: no different.log.0 file in data directory",
         )
 
-    @pytest.mark.input_dir("data")
     def testLongLogArgument(self):
         self.makeDirAndCopyInput("data")
         launch_safe(self.command + " --log log", pipe=True, nproc=1, mthread=1)
@@ -85,7 +83,6 @@ class TestCommandLineArgs(unittest.TestCase):
             os.path.exists("data/log.0"), msg="FAIL: no log.0 file in data directory"
         )
 
-    @pytest.mark.input_dir("test")
     def testDirectoryArgument(self):
         self.makeDirAndCopyInput("test")
         launch_safe(self.command + " -d test", pipe=True, nproc=1, mthread=1)
@@ -122,7 +119,6 @@ class TestCommandLineArgs(unittest.TestCase):
                 msg="FAIL: Error message not printed when missing input directory",
             )
 
-    @pytest.mark.input_dir("test")
     def testDirectoryArgumentOldSettingsFile(self):
         self.makeDirAndCopyInput("test")
         launch_safe(self.command + " -d test", pipe=True, nproc=1, mthread=1)
@@ -150,7 +146,6 @@ class TestCommandLineArgs(unittest.TestCase):
                 msg="FAIL: datadir from command line clobbered by BOUT.settings",
             )
 
-    @pytest.mark.input_dir("test")
     def testShortOptionsAreUsed(self):
         self.makeDirAndCopyInput("test")
         launch_safe(self.command + " -d test", pipe=True, nproc=1, mthread=1)
@@ -167,7 +162,6 @@ class TestCommandLineArgs(unittest.TestCase):
             matches = re.findall("not used.*Command line", contents)
             self.assertEqual(matches, [], msg="FAIL: command line options not used")
 
-    @pytest.mark.input_dir("test")
     def testCommandLineOptionsArePrinted(self):
         self.makeDirAndCopyInput("test")
         launch_safe(self.command + " -d test", pipe=True, nproc=1, mthread=1)

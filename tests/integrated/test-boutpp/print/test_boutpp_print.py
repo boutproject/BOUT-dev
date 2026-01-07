@@ -3,7 +3,6 @@ import subprocess
 import time
 
 
-@pytest.mark.input_dir("test")
 def test_runtest():
     # BOUT_TOP from script dir (CWD-independent)
     script_dir = os.path.dirname(os.path.abspath(__file__))

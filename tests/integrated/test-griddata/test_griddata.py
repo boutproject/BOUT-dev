@@ -14,7 +14,6 @@ import numpy as np
 from sys import stdout
 
 
-@pytest.mark.input_dir("screw")
 def test_griddata():
     for nproc in [1]:
         stdout.write("Checking %d processors ... " % (nproc))

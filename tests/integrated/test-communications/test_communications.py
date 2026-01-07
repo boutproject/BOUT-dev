@@ -18,7 +18,6 @@ def run_test(actual, expected, procnum, region, boundary):
             ))
 
 
-@pytest.mark.input_dir("data_limiter")
 def test_communications():
 
     #################################################

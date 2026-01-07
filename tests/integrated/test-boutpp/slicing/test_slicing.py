@@ -5,7 +5,6 @@ import numpy as np
 import boutpp as bc
 import inspect
 
-@pytest.mark.input_dir("test")
 def test_slicing():
 
     bc.init("-d test")
