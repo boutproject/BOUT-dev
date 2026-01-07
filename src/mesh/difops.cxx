@@ -779,7 +779,7 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
       for (int jy = mesh->ystart; jy <= mesh->yend; jy++) {
         const BoutReal partialFactor = 1.0 / (12 * metric->dz(jx, jy));
         const BoutReal spacingFactor = partialFactor / metric->dx(jx, jy);
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
           const int jzp = jz + 1 < ncz ? jz + 1 : 0;
           // Above is alternative to const int jzp = (jz + 1) % ncz;
           const int jzm = jz - 1 >= 0 ? jz - 1 : ncz - 1;
@@ -904,7 +904,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
     int ncz = mesh->LocalNz;
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
       for (int x = 1; x <= mesh->LocalNx - 2; x++) {
-        for (int z = 0; z < mesh->LocalNz; z++) {
+        for (int z = mesh->zstart; z <= mesh->zend; z++) {
           int zm = (z - 1 + ncz) % ncz;
           int zp = (z + 1) % ncz;
 

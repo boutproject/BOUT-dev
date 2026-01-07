@@ -48,7 +48,7 @@ Field3D Div_a_Grad_perp(const Field3D& a, const Field3D& f) {
 
   for (int i = xs; i <= xe; i++) {
     for (int j = mesh->ystart; j <= mesh->yend; j++) {
-      for (int k = 0; k < mesh->LocalNz; k++) {
+      for (int k = mesh->zstart; k <= mesh->zend; k++) {
         // Calculate flux from i to i+1
 
         BoutReal fout = 0.5 * (a(i, j, k) + a(i + 1, j, k))
@@ -282,7 +282,7 @@ const Field3D D4DY4(const Field3D& d_in, const Field3D& f_in) {
                          mesh->yend;
 
     for (int j = ystart; j <= yend; j++) {
-      for (int k = 0; k < mesh->LocalNz; k++) {
+      for (int k = mesh->zstart; k <= mesh->zend; k++) {
         BoutReal dy3 = SQ(coord->dy(i, j, k)) * coord->dy(i, j, k);
         // 3rd derivative at upper boundary
 
@@ -329,7 +329,7 @@ const Field3D D4DY4_Index(const Field3D& f_in, bool bndry_flux) {
 
         if (j != mesh->yend || !has_upper_boundary) {
 
-          for (int k = 0; k < mesh->LocalNz; k++) {
+          for (int k = mesh->zstart; k <= mesh->zend; k++) {
             // Right boundary common factors
             const BoutReal common_factor = 0.25
                                            * (coord->dy(i, j, k) + coord->dy(i, j + 1, k))
@@ -353,7 +353,7 @@ const Field3D D4DY4_Index(const Field3D& f_in, bool bndry_flux) {
           // At a domain boundary
           // Use a one-sided difference formula
 
-          for (int k = 0; k < mesh->LocalNz; k++) {
+          for (int k = mesh->zstart; k <= mesh->zend; k++) {
             // Right boundary common factors
             const BoutReal common_factor = 0.25
                                            * (coord->dy(i, j, k) + coord->dy(i, j + 1, k))
@@ -383,7 +383,7 @@ const Field3D D4DY4_Index(const Field3D& f_in, bool bndry_flux) {
         // Calculate the fluxes
 
         if (j != mesh->ystart || !has_lower_boundary) {
-          for (int k = 0; k < mesh->LocalNz; k++) {
+          for (int k = mesh->zstart; k <= mesh->zend; k++) {
             const BoutReal common_factor = 0.25
                                            * (coord->dy(i, j, k) + coord->dy(i, j + 1, k))
                                            * (coord->J(i, j, k) + coord->J(i, j - 1, k));
@@ -402,7 +402,7 @@ const Field3D D4DY4_Index(const Field3D& f_in, bool bndry_flux) {
           }
         } else {
           // On a domain (Y) boundary
-          for (int k = 0; k < mesh->LocalNz; k++) {
+          for (int k = mesh->zstart; k <= mesh->zend; k++) {
             const BoutReal common_factor = 0.25
                                            * (coord->dy(i, j, k) + coord->dy(i, j + 1, k))
                                            * (coord->J(i, j, k) + coord->J(i, j - 1, k));
@@ -463,7 +463,7 @@ void communicateFluxes(Field3D& f) {
     mesh->wait(xin);
     // Add to cells
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
-      for (int z = 0; z < mesh->LocalNz; z++) {
+      for (int z = mesh->zstart; z <= mesh->zend; z++) {
         f(2, y, z) += f(0, y, z);
       }
     }
@@ -472,7 +472,7 @@ void communicateFluxes(Field3D& f) {
     mesh->wait(xout);
     // Add to cells
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
-      for (int z = 0; z < mesh->LocalNz; z++) {
+      for (int z = mesh->zstart; z <= mesh->zend; z++) {
         f(mesh->LocalNx - 3, y, z) += f(mesh->LocalNx - 1, y, z);
       }
     }

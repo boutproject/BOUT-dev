@@ -1366,7 +1366,7 @@ protected:
               // Calculate a single phi boundary value for all Y slices
               BoutReal philocal = 0.0;
               for (int j = mesh->ystart; j <= mesh->yend; j++) {
-                for (int k = 0; k < mesh->LocalNz; k++) {
+                for (int k = mesh->zstart; k <= mesh->zend; k++) {
                   philocal += phi(mesh->xstart, j, k);
                 }
               }
@@ -1379,7 +1379,7 @@ protected:
             for (int j = mesh->ystart; j <= mesh->yend; j++) {
               if (!phi_core_averagey) {
                 phivalue = 0.0; // Calculate phi boundary for each Y index separately
-                for (int k = 0; k < mesh->LocalNz; k++) {
+                for (int k = mesh->zstart; k <= mesh->zend; k++) {
                   phivalue += phi(mesh->xstart, j, k);
                 }
                 phivalue /= mesh->LocalNz; // Average in Z of point next to boundary
@@ -1393,7 +1393,7 @@ protected:
               BoutReal const newvalue = weight * oldvalue + (1. - weight) * phivalue;
 
               // Set phi at the boundary to this value
-              for (int k = 0; k < mesh->LocalNz; k++) {
+              for (int k = mesh->zstart; k <= mesh->zend; k++) {
                 phi(mesh->xstart - 1, j, k) = 2. * newvalue - phi(mesh->xstart, j, k);
                 phi(mesh->xstart - 2, j, k) = phi(mesh->xstart - 1, j, k);
               }
@@ -1403,7 +1403,7 @@ protected:
           if (mesh->lastX()) {
             for (int j = mesh->ystart; j <= mesh->yend; j++) {
               BoutReal phivalue = 0.0;
-              for (int k = 0; k < mesh->LocalNz; k++) {
+              for (int k = mesh->zstart; k <= mesh->zend; k++) {
                 phivalue += phi(mesh->xend, j, k);
               }
               phivalue /= mesh->LocalNz; // Average in Z of point next to boundary
@@ -1416,7 +1416,7 @@ protected:
               BoutReal const newvalue = weight * oldvalue + (1. - weight) * phivalue;
 
               // Set phi at the boundary to this value
-              for (int k = 0; k < mesh->LocalNz; k++) {
+              for (int k = mesh->zstart; k <= mesh->zend; k++) {
                 phi(mesh->xend + 1, j, k) = 2. * newvalue - phi(mesh->xend, j, k);
                 phi(mesh->xend + 2, j, k) = phi(mesh->xend + 1, j, k);
               }
@@ -1441,7 +1441,7 @@ protected:
 
       if (mesh->firstX()) {
         for (int j = mesh->ystart; j <= mesh->yend; j++) {
-          for (int k = 0; k < mesh->LocalNz; k++) {
+          for (int k = mesh->zstart; k <= mesh->zend; k++) {
             // Average phi + Pi at the boundary, and set the boundary cell
             // to this value. The phi solver will then put the value back
             // onto the cell mid-point
@@ -1453,7 +1453,7 @@ protected:
 
       if (mesh->lastX()) {
         for (int j = mesh->ystart; j <= mesh->yend; j++) {
-          for (int k = 0; k < mesh->LocalNz; k++) {
+          for (int k = mesh->zstart; k <= mesh->zend; k++) {
             phi_shift(mesh->xend + 1, j, k) =
                 0.5 * (phi_shift(mesh->xend + 1, j, k) + phi_shift(mesh->xend, j, k));
           }
@@ -1513,7 +1513,7 @@ protected:
     if (mesh->firstX()) {
       for (int i = mesh->xstart - 2; i >= 0; --i) {
         for (int j = mesh->ystart; j <= mesh->yend; ++j) {
-          for (int k = 0; k < mesh->LocalNz; ++k) {
+          for (int k = mesh->zstart; k <= mesh->zend; ++k) {
             phi(i, j, k) = phi(i + 1, j, k);
           }
         }
@@ -1523,7 +1523,7 @@ protected:
     if (mesh->lastX()) {
       for (int i = mesh->xend + 2; i < mesh->LocalNx; ++i) {
         for (int j = mesh->ystart; j <= mesh->yend; ++j) {
-          for (int k = 0; k < mesh->LocalNz; ++k) {
+          for (int k = mesh->zstart; k <= mesh->zend; ++k) {
             phi(i, j, k) = phi(i - 1, j, k);
           }
         }
