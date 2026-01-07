@@ -505,9 +505,6 @@ public:
   virtual void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> UNUSED(bndry),
                               BoundaryParType UNUSED(type)) {}
 
-  /// Branch-cut special handling (experimental)
-  virtual Field3D smoothSeparatrix(const Field3D& f) { return f; }
-
   virtual BoutReal GlobalX(int jx) const = 0;      ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0;      ///< Continuous Y index (0 -> 1)
   virtual BoutReal GlobalX(BoutReal jx) const = 0; ///< Continuous X index between 0 and 1

@@ -3115,47 +3115,6 @@ void BoutMesh::addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
   par_boundary[static_cast<int>(BoundaryParType::all)].push_back(bndry);
 }
 
-Field3D BoutMesh::smoothSeparatrix(const Field3D& f) {
-  Field3D result{emptyFrom(f)};
-  if ((ixseps_inner > 0) && (ixseps_inner < nx - 1)) {
-    if (XPROC(ixseps_inner) == PE_XIND) {
-      int x = getLocalXIndex(ixseps_inner);
-      for (int y = 0; y < LocalNy; y++) {
-        for (int z = 0; z < LocalNz; z++) {
-          result(x, y, z) = 0.5 * (f(x, y, z) + f(x - 1, y, z));
-        }
-      }
-    }
-    if (XPROC(ixseps_inner - 1) == PE_XIND) {
-      int x = getLocalXIndex(ixseps_inner - 1);
-      for (int y = 0; y < LocalNy; y++) {
-        for (int z = 0; z < LocalNz; z++) {
-          result(x, y, z) = 0.5 * (f(x, y, z) + f(x + 1, y, z));
-        }
-      }
-    }
-  }
-  if ((ixseps_outer > 0) && (ixseps_outer < nx - 1) && (ixseps_outer != ixseps_inner)) {
-    if (XPROC(ixseps_outer) == PE_XIND) {
-      int x = getLocalXIndex(ixseps_outer);
-      for (int y = 0; y < LocalNy; y++) {
-        for (int z = 0; z < LocalNz; z++) {
-          result(x, y, z) = 0.5 * (f(x, y, z) + f(x - 1, y, z));
-        }
-      }
-    }
-    if (XPROC(ixseps_outer - 1) == PE_XIND) {
-      int x = getLocalXIndex(ixseps_outer - 1);
-      for (int y = 0; y < LocalNy; y++) {
-        for (int z = 0; z < LocalNz; z++) {
-          result(x, y, z) = 0.5 * (f(x, y, z) + f(x + 1, y, z));
-        }
-      }
-    }
-  }
-  return result;
-}
-
 BoutReal BoutMesh::GlobalX(int jx) const {
   if (symmetricGlobalX) {
     // With this definition the boundary sits dx/2 away form the first/last inner points
