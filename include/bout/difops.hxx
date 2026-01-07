@@ -276,13 +276,11 @@ enum class BRACKET_METHOD {
   arakawa,    ///< Arakawa method in X-Z (optimised)
   ctu,        ///< Corner Transport Upwind (CTU) method. Explicit method only, needs the
               ///  timestep from the solver
-  arakawa_old ///< Older version, for regression testing of optimised version.
 };
 constexpr BRACKET_METHOD BRACKET_STD = BRACKET_METHOD::standard;
 constexpr BRACKET_METHOD BRACKET_SIMPLE = BRACKET_METHOD::simple;
 constexpr BRACKET_METHOD BRACKET_ARAKAWA = BRACKET_METHOD::arakawa;
 constexpr BRACKET_METHOD BRACKET_CTU = BRACKET_METHOD::ctu;
-constexpr BRACKET_METHOD BRACKET_ARAKAWA_OLD = BRACKET_METHOD::arakawa_old;
 
 /*!
  * Compute advection operator terms, which can be cast as
