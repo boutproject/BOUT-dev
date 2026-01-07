@@ -13,7 +13,7 @@ y_periodic = true
 z_periodic = true
 
 [mesh:paralleltransform:xzinterpolation]
-type = hermitespline
+type = petschermitespline
 
 [input_0]
 function = sin(z)

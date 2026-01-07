@@ -1,0 +1,225 @@
+/**************************************************************************
+ * Copyright 2015-2018 B.D.Dudson, P. Hill
+ *
+ * Contact: Ben Dudson, bd512@york.ac.uk
+ *
+ * This file is part of BOUT++.
+ *
+ * BOUT++ is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BOUT++ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ **************************************************************************/
+
+#include "hermite_spline_xz.hxx"
+
+#include "bout/assert.hxx"
+#include "bout/bout.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
+#include "bout/globals.hxx"
+#include "bout/index_derivs_interface.hxx"
+#include "bout/interpolation_xz.hxx"
+#include "bout/mask.hxx"
+#include "bout/paralleltransform.hxx"
+#include "bout/region.hxx"
+
+#include <fmt/format.h>
+
+#include <cmath>
+#include <string>
+#include <vector>
+
+XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh* meshin)
+    : XZInterpolation(y_offset, meshin), h00_x(localmesh), h01_x(localmesh),
+      h10_x(localmesh), h11_x(localmesh), h00_z(localmesh), h01_z(localmesh),
+      h10_z(localmesh), h11_z(localmesh) {
+
+  if (localmesh->getNXPE() > 1) {
+    throw BoutException("hermitespline does not support MPI splitting in X");
+  }
+
+  // Index arrays contain guard cells in order to get subscripts right
+  i_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
+  k_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
+
+  // Initialise in order to avoid 'uninitialized value' errors from Valgrind when using
+  // guard-cell values
+  k_corner = -1;
+
+  // Allocate Field3D members
+  h00_x.allocate();
+  h01_x.allocate();
+  h10_x.allocate();
+  h11_x.allocate();
+  h00_z.allocate();
+  h01_z.allocate();
+  h10_z.allocate();
+  h11_z.allocate();
+}
+
+void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
+                                  const std::string& region) {
+
+  const int ny = localmesh->LocalNy;
+  const int nz = localmesh->LocalNz;
+  const int xend = ((localmesh->xend - localmesh->xstart + 1) * localmesh->getNXPE())
+                   + localmesh->xstart - 1;
+
+  BOUT_FOR(i, getRegion(region)) {
+    const int x = i.x();
+    const int y = i.y();
+    const int z = i.z();
+
+    // The integer part of xt_prime, zt_prime are the indices of the cell
+    // containing the field line end-point
+    int i_corn = static_cast<int>(floor(delta_x(x, y, z)));
+    k_corner(x, y, z) = static_cast<int>(floor(delta_z(x, y, z)));
+
+    // t_x, t_z are the normalised coordinates \in [0,1) within the cell
+    // calculated by taking the remainder of the floating point index
+    BoutReal t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corn);
+    BoutReal const t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+
+    // NOTE: A (small) hack to avoid one-sided differences. We need at
+    // least 2 interior points due to an awkwardness with the
+    // boundaries. The splines need derivatives in x, but we don't
+    // know the value in the boundaries, so _any_ interpolation in the
+    // last interior cell can't be done. Instead, we fudge the
+    // interpolation in the last cell to be at the extreme right-hand
+    // edge of the previous cell (that is, exactly on the last
+    // interior point). However, this doesn't work with only one
+    // interior point, because we have to do something similar to the
+    // _first_ cell, and these two fudges cancel out and we end up
+    // indexing into the boundary anyway.
+    // TODO(peter): Can we remove this if we apply (dirichlet?) BCs to
+    // the X derivatives? Note that we need at least _2_
+    if (i_corn >= xend) {
+      i_corn = xend - 1;
+      t_x = 1.0;
+    }
+    if (i_corn < localmesh->xstart) {
+      i_corn = localmesh->xstart;
+      t_x = 0.0;
+    }
+
+    k_corner(x, y, z) = ((k_corner(x, y, z) % nz) + nz) % nz;
+
+    // Check that t_x and t_z are in range
+    if ((t_x < 0.0) || (t_x > 1.0)) {
+      throw BoutException(
+          "t_x={:e} out of range at ({:d},{:d},{:d}) (delta_x={:e}, i_corn={:d})", t_x, x,
+          y, z, delta_x(x, y, z), i_corn);
+    }
+
+    if ((t_z < 0.0) || (t_z > 1.0)) {
+      throw BoutException(
+          "t_z={:e} out of range at ({:d},{:d},{:d}) (delta_z={:e}, k_corner={:d})", t_z,
+          x, y, z, delta_z(x, y, z), k_corner(x, y, z));
+    }
+
+    i_corner[i] = SpecificInd<IND_TYPE::IND_3D>(
+        ((((i_corn * ny) + (y + y_offset)) * nz) + k_corner(x, y, z)), ny, nz);
+
+    h00_x[i] = (2. * t_x * t_x * t_x) - (3. * t_x * t_x) + 1.;
+    h00_z[i] = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;
+
+    h01_x[i] = (-2. * t_x * t_x * t_x) + (3. * t_x * t_x);
+    h01_z[i] = (-2. * t_z * t_z * t_z) + (3. * t_z * t_z);
+
+    h10_x[i] = t_x * (1. - t_x) * (1. - t_x);
+    h10_z[i] = t_z * (1. - t_z) * (1. - t_z);
+
+    h11_x[i] = (t_x * t_x * t_x) - (t_x * t_x);
+    h11_z[i] = (t_z * t_z * t_z) - (t_z * t_z);
+  }
+}
+
+void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
+                                  const BoutMask& mask, const std::string& region) {
+  setMask(mask);
+  calcWeights(delta_x, delta_z, region);
+}
+
+/*!
+ * Return position and weight of points needed to approximate the function value at the
+ * point that the field line through (i,j,k) meets the (j+1)-plane. For the case where
+ * only the z-direction is not aligned to grid points, the approximation is: f(i,j+1,k*) =
+ * h00_z * f(i,j+1,k) + h01_z * f(i,j+1,k+1)
+ *                 + h10_z * dfdz(i,j+1,k) + h11_z * dfdz(i,j+1,k+1)
+ *               = h00_z * f(i,j+1,k) + h01_z * f(i,j+1,k+1)
+ *                 + h10_z * ( f(i,j+1,k+1) - f(i,j+1,k-1) ) / 2
+ *                 + h11_z * ( f(i,j+1,k+2) - f(i,j+1,k) ) / 2
+ * for k* a point between k and k+1. Therefore, this function returns
+ *   position 		weight
+ *   (i, j+1, k-1)	- h10_z / 2
+ *   (i, j+1, k)	h00_z - h11_z / 2
+ *   (i, j+1, k+1)	h01_z + h10_z / 2
+ *   (i, j+1, k+2)	h11_z / 2
+ */
+std::vector<ParallelTransform::PositionsAndWeights>
+XZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) {
+  const int nz = localmesh->LocalNz;
+  const int k_mod = k_corner(i, j, k);
+  const int k_mod_m1 = (k_mod > 0) ? (k_mod - 1) : (nz - 1);
+  const int k_mod_p1 = (k_mod == nz) ? 0 : k_mod + 1;
+  const int k_mod_p2 = (k_mod_p1 == nz) ? 0 : k_mod_p1 + 1;
+
+  return {{i, j + yoffset, k_mod_m1, -0.5 * h10_z(i, j, k)},
+          {i, j + yoffset, k_mod, h00_z(i, j, k) - (0.5 * h11_z(i, j, k))},
+          {i, j + yoffset, k_mod_p1, h01_z(i, j, k) + (0.5 * h10_z(i, j, k))},
+          {i, j + yoffset, k_mod_p2, 0.5 * h11_z(i, j, k)}};
+}
+
+Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region) const {
+
+  ASSERT1(f.getMesh() == localmesh);
+  Field3D f_interp{emptyFrom(f)};
+
+  const auto region2 =
+      y_offset == 0 ? "RGN_NOY" : fmt::format("RGN_YPAR_{:+d}", y_offset);
+
+  // Derivatives are used for tension and need to be on dimensionless
+  // coordinates
+
+  // f has been communcated, and thus we can assume that the x-boundaries are
+  // also valid in the y-boundary.  Thus the differentiated field needs no
+  // extra comms.
+  const Field3D fx = bout::derivatives::index::DDX(f, CELL_DEFAULT, "DEFAULT", region2);
+  const Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", region2);
+  const Field3D fxz = bout::derivatives::index::DDZ(fx, CELL_DEFAULT, "DEFAULT", region2);
+
+  BOUT_FOR(i, getRegion(region)) {
+    const auto iyp = i.yp(y_offset);
+    f_interp[iyp] = interpolate_point(f, fx, fz, fxz, i).result;
+    ASSERT2(std::isfinite(f_interp[iyp]) || i.x() < localmesh->xstart
+            || i.x() > localmesh->xend);
+  }
+
+  f_interp.setRegion(region2);
+  ASSERT2(f_interp.getRegionID());
+  return f_interp;
+}
+
+Field3D XZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_x,
+                                     const Field3D& delta_z, const std::string& region) {
+  calcWeights(delta_x, delta_z, region);
+  return interpolate(f, region);
+}
+
+Field3D XZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_x,
+                                     const Field3D& delta_z, const BoutMask& mask,
+                                     const std::string& region) {
+  calcWeights(delta_x, delta_z, mask, region);
+  return interpolate(f, region);
+}
