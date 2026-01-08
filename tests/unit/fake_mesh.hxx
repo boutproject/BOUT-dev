@@ -73,8 +73,6 @@ public:
 
     // Unused variables
     periodicX = false;
-    NXPE = 1;
-    PE_XIND = 0;
     IncIntShear = false;
     maxregionblocksize = MAXREGIONBLOCKSIZE;
 

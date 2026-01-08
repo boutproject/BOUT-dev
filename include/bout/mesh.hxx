@@ -368,8 +368,6 @@ public:
   /// Domain is periodic in X?
   bool periodicX{false};
 
-  int NXPE, PE_XIND; ///< Number of processors in X, and X processor index
-
   /// Send a buffer of data to processor at X index +1
   ///
   /// @param[in] buffer  The data to send. Must be at least length \p size
