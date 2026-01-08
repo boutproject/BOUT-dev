@@ -273,7 +273,7 @@ Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A,
 enum class BRACKET_METHOD {
   standard, ///< Use b0xGrad_dot_Grad
   simple,   ///< Keep only terms in X-Z
-  arakawa,  ///< Arakawa method in X-Z (optimised)
+  arakawa,  ///< Arakawa method in X-Z
   ctu,      ///< Corner Transport Upwind (CTU) method. Explicit method only, needs the
             ///  timestep from the solver
 };
