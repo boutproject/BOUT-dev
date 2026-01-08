@@ -332,10 +332,13 @@ The default build configuration options try to be sensible for new
 users and developers, but there are a few you probably want to set
 manually for production runs or for debugging:
 
-* ``CMAKE_BUILD_TYPE``: The default is ``RelWithDebInfo``, which
-  builds an optimised executable with debug symbols included. Change
-  this to ``Release`` to remove the debug symbols, or ``Debug`` for an
-  unoptimised build, but better debug experience
+* ``CMAKE_BUILD_TYPE``: The default is ``RelWithDebInfo``, which builds an
+  optimised executable with debug symbols included. This is generally the most
+  useful, except for developers, who may wish to use ``Debug`` for an
+  unoptimised build, but better debug experience. There are a couple of other
+  choices (``Release`` and ``MinSizeRel``) which also produce optimised
+  executables, but without debug symbols, which is only really useful for
+  producing smaller binaries.
 
 * ``CHECK``: This sets the level of internal runtime checking done in
   the BOUT++ library, and ranges from 0 to 4 (inclusive). By default,
@@ -376,6 +379,8 @@ configures SUNDIALS to use MPI.
 For ADIOS2, use ``-DBOUT_DOWNLOAD_ADIOS2=ON``. This will download and
 configure `ADIOS2 <https://adios2.readthedocs.io/>`_, enabling BOUT++
 to read and write this high-performance parallel file format.
+
+For cpptrace, use ``-DBOUT_DOWNLOAD_CPPTRACE=on`` (the default).
 
 Bundled Dependencies
 ~~~~~~~~~~~~~~~~~~~~

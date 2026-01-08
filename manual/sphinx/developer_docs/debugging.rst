@@ -34,10 +34,74 @@ To enable the ``output_debug`` messages, configure BOUT++ with a
 configure BOUT++ with ``-DENABLE_OUTPUT_DEBUG``. When running BOUT++
 add a ``-v -v`` flag to see ``output_debug`` messages.
 
+Backtrace
+=========
+
+BOUT++ can also automatically print a backtrace in the event of a crash. This is
+very useful to include if you ever need to report a bug to the developers! The
+output looks something like this:
+
+.. code:: text
+
+    ...
+    Error encountered: Stack trace (most recent call first):
+    #0 (filtered)
+    #1 (filtered)
+    #2 (filtered)
+    #3 in BoutMesh::createCommunicators()
+       at BOUT-dev/src/mesh/impls/bout/boutmesh.cxx:709:64
+         707:       }
+         708:       // Unconditional exception for demo purposes
+       > 709:       throw BoutException("Single null outer SOL not correct\n");
+                                                                             ^
+         710:       MPI_Group_free(&group);
+         711:     }
+    #4 in BoutMesh::load()
+       at BOUT-dev/src/mesh/impls/bout/boutmesh.cxx:575:22
+         573:   /// Communicator
+         574:
+       > 575:   createCommunicators();
+                                   ^
+         576:   output_debug << "Got communicators" << endl;
+    #5 in BoutInitialise(int&, char**&)
+       at BOUT-dev/src/bout++.cxx:201:28
+         199:   bout::globals::mesh = Mesh::create();
+         200:   // Load from sources. Required for Field initialisation
+       > 201:   bout::globals::mesh->load();
+                                         ^
+         202:
+         203:   // time_report options are used in BoutFinalise, i.e. after we
+    #6 in main
+       at BOUT-dev/examples/elm-pb/elm_pb.cxx:2161:1
+        2159: };
+        2160:
+      > 2161: BOUTMAIN(ELMpb);
+              ^
+    #7 (filtered)
+    #8 (filtered)
+    #9 (filtered)
+
+    ====== Exception thrown ======
+    Single null outer SOL not correct
+
+
+Debug symbols are required to get the filename/line number and code snippets. If
+they are missing in either BOUT++ or the physics model, only the function name
+and signature will be included for that part.
+
+Including debug symbols is a configure time ``CMake`` option, set either:
+``-DCMAKE_BUILD_TYPE=Debug`` or ``-DCMAKE_BUILD_TYPE=RelWithDebInfo`` (the
+default).
+
+The formatting of this backtrace is controlled in
+`BoutException::getBacktrace()` using the `cpptrace
+<https://github.com/jeremy-rifkin/cpptrace>`_ library.
+
+
 Message Stack
 =============
 
-The second utility BOUT++ has to help debugging is the message stack using the
+Another utility BOUT++ has to help debugging is the message stack using the
 `TRACE` macro. This is very useful for when a bug only occurs after a long time
 of running, and/or only occasionally. The ``TRACE`` macro can simply be dropped
 in anywhere in the code::
@@ -94,62 +158,3 @@ If you need to capture runtime information in the message, you can use
 the ``fmt`` syntax also used by the loggers::
 
     TRACE("Value of i={}, some arbitrary {}", i, "string");
-
-Backtrace
-=========
-
-Lastly, BOUT++ can also automatically print a backtrace in the event of a
-crash. This is very useful to include if you ever need to report a bug to the
-developers! The output looks something like this:
-
-.. code:: text
-
-    ...
-    Error encountered: Stack trace (most recent call first):
-    #0 (filtered)
-    #1 (filtered)
-    #2 (filtered)
-    #3 in BoutMesh::createCommunicators()
-       at BOUT-dev/src/mesh/impls/bout/boutmesh.cxx:709:64
-         707:       }
-         708:       // Unconditional exception for demo purposes
-       > 709:       throw BoutException("Single null outer SOL not correct\n");
-                                                                             ^
-         710:       MPI_Group_free(&group);
-         711:     }
-    #4 in BoutMesh::load()
-       at BOUT-dev/src/mesh/impls/bout/boutmesh.cxx:575:22
-         573:   /// Communicator
-         574:
-       > 575:   createCommunicators();
-                                   ^
-         576:   output_debug << "Got communicators" << endl;
-    #5 in BoutInitialise(int&, char**&)
-       at BOUT-dev/src/bout++.cxx:201:28
-         199:   bout::globals::mesh = Mesh::create();
-         200:   // Load from sources. Required for Field initialisation
-       > 201:   bout::globals::mesh->load();
-                                         ^
-         202:
-         203:   // time_report options are used in BoutFinalise, i.e. after we
-    #6 in main
-       at BOUT-dev/examples/elm-pb/elm_pb.cxx:2161:1
-        2159: };
-        2160:
-      > 2161: BOUTMAIN(ELMpb);
-              ^
-    #7 (filtered)
-    #8 (filtered)
-    #9 (filtered)
-
-    ====== Exception thrown ======
-    Single null outer SOL not correct
-
-
-Debug symbols are required to get the filename/line number and code snippets. If
-they are missing in either BOUT++ or the physics model, only the function name
-and signature will be included for that part.
-
-Including debug symbols is a configure time ``CMake`` option, set either:
-``-DCMAKE_BUILD_TYPE=Debug`` or ``-DCMAKE_BUILD_TYPE=RelWithDebInfo`` (the
-default).
