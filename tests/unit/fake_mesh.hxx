@@ -107,10 +107,12 @@ public:
     return nullptr;
   }
   int wait(comm_handle UNUSED(handle)) override { return 0; }
-  int getNXPE() override { return 1; }
-  int getNYPE() override { return 1; }
-  int getXProcIndex() override { return 1; }
-  int getYProcIndex() override { return 1; }
+  int getNXPE() const override { return 1; }
+  int getNYPE() const override { return 1; }
+  int getNZPE() const override { return 1; }
+  int getXProcIndex() const override { return 1; }
+  int getYProcIndex() const override { return 1; }
+  int getZProcIndex() const override { return 1; }
   bool firstX() const override { return true; }
   bool lastX() const override { return true; }
   int sendXOut(BoutReal* UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) override {

@@ -57,10 +57,12 @@ public:
   /////////////////////////////////////////////
   // non-local communications
 
-  int getNXPE() override;       ///< The number of processors in the X direction
-  int getNYPE() override;       ///< The number of processors in the Y direction
-  int getXProcIndex() override; ///< This processor's index in X direction
-  int getYProcIndex() override; ///< This processor's index in Y direction
+  int getNXPE() const override;       ///< The number of processors in the X direction
+  int getNYPE() const override;       ///< The number of processors in the Y direction
+  int getNZPE() const override;       ///< The number of processors in the Z direction
+  int getXProcIndex() const override; ///< This processor's index in X direction
+  int getYProcIndex() const override; ///< This processor's index in Y direction
+  int getZProcIndex() const override; ///< This processor's index in Z direction
 
   /////////////////////////////////////////////
   // X communications

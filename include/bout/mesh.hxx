@@ -354,10 +354,12 @@ public:
 
   // non-local communications
 
-  virtual int getNXPE() = 0;       ///< The number of processors in the X direction
-  virtual int getNYPE() = 0;       ///< The number of processors in the Y direction
-  virtual int getXProcIndex() = 0; ///< This processor's index in X direction
-  virtual int getYProcIndex() = 0; ///< This processor's index in Y direction
+  virtual int getNXPE() const = 0;       ///< The number of processors in the X direction
+  virtual int getNYPE() const = 0;       ///< The number of processors in the Y direction
+  virtual int getNZPE() const = 0;       ///< The number of processors in the Z direction
+  virtual int getXProcIndex() const = 0; ///< This processor's index in X direction
+  virtual int getYProcIndex() const = 0; ///< This processor's index in Y direction
+  virtual int getZProcIndex() const = 0; ///< This processor's index in Z direction
 
   // X communications
   virtual bool firstX()
