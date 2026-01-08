@@ -72,8 +72,7 @@ std::string BoutException::getBacktrace() const {
                   formatter.format(generate_trace()), message);
 
   if (msg_stack.size() > 0) {
-    return fmt::format("{}\n\n{}", backtrace_message,
-                       msg_stack.getDump());
+    return fmt::format("{}\n\n{}", backtrace_message, msg_stack.getDump());
   }
   return backtrace_message;
 }
