@@ -21,13 +21,13 @@ _, output = shell("BOUT_SHOW_BACKTRACE=0 ./boutexcept", pipe=True)
 
 if "troublemaker" in output:
     success = False
-    print("Fail: detected offending function name in output when not expected")
+    print(f"Fail: detected offending function name in output when not expected:\n{output}")
 
 _, output = shell("./boutexcept", pipe=True)
 
 if "troublemaker" not in output:
     success = False
-    print("Fail: did not detect offending function name in output when expected")
+    print(f"Fail: did not detect offending function name in output when expected:\n{output}")
 
 if success:
     print("=> All BoutException backtrace tests passed")
