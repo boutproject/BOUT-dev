@@ -72,7 +72,7 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED
   D.setLocation(location);
 
   // Number of procs must be a factor of 2
-  const int n = localmesh->NXPE;
+  const int n = localmesh->getNXPE();
   if (!is_pow2(n)) {
     throw BoutException("LaplaceIPT error: NXPE must be a power of 2");
   }

@@ -7,7 +7,6 @@
 #include "bout/unused.hxx"
 #include <bout/mesh.hxx>
 
-#include <cmath>
 #include <list>
 #include <set>
 #include <string>
@@ -208,7 +207,7 @@ protected:
   /// `getPossibleBoundaries`. \p create_regions controls whether or
   /// not the various `Region`s are created on the new mesh
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
-           int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y, bool periodic_X,
+           int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y, bool periodic_X_,
            int ixseps1_, int ixseps2_, int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
            int jyseps2_2_, int ny_inner_, bool create_regions = true);
 
@@ -296,6 +295,9 @@ private:
 
   int NPES; ///< Number of processors
   int MYPE; ///< Rank of this processor
+
+  int PE_XIND; ///< X index of this processor
+  int NXPE;    ///< Number of processors in the X direction
 
   int PE_YIND; ///< Y index of this processor
   int NYPE;    ///< Number of processors in the Y direction
