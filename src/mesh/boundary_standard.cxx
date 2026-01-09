@@ -2631,6 +2631,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 #if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
+    bout::fft::checkZSerial(*mesh, "Zero Laplace on Field3D");
     int ncz = mesh->LocalNz;
 
     Coordinates* metric = f.getCoordinates();
@@ -2734,6 +2735,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 #if not(BOUT_USE_METRIC_3D)
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
+    bout::fft::checkZSerial(*mesh, "Zero Laplace on Field3D");
     const int ncz = mesh->LocalNz;
 
     ASSERT0(ncz % 2 == 0); // Allocation assumes even number
@@ -2843,6 +2845,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
 
     Mesh* mesh = bndry->localmesh;
     ASSERT1(mesh == f.getMesh());
+    bout::fft::checkZSerial(*mesh, "Zero Laplace on Field3D");
+
     Coordinates* metric = f.getCoordinates();
 
     int ncz = mesh->LocalNz;
