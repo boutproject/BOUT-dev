@@ -310,9 +310,12 @@ private:
   /// Is this processor in the core region?
   bool MYPE_IN_CORE{false};
 
-  int XGLOBAL(BoutReal xloc, BoutReal& xglo) const;
-  int YGLOBAL(BoutReal yloc, BoutReal& yglo) const;
-  int ZGLOBAL(BoutReal zloc, BoutReal& zglo) const;
+  /// Returns the global X index given a local index
+  BoutReal getGlobalXIndex(BoutReal xloc) const;
+  /// Returns the global Y index given a local index
+  BoutReal getGlobalYIndex(BoutReal yloc) const;
+  /// Returns the global Z index given a local index
+  BoutReal getGlobalZIndex(BoutReal zloc) const;
 
   // Topology
   int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;
