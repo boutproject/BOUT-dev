@@ -78,8 +78,6 @@ enums["BRACKET_METHOD"].extra = {
     "ARAKAWA": "arakawa",
     "BRACKET_CTU": "ctu",
     "CTU": "ctu",
-    "BRACKET_ARAKAWA_OLD": "arakawa_old",
-    "ARAKAWA_OLD": "arakawa_old",
 }
 enums["CELL_LOC"].extra = {
     "CELL_DEFAULT": "deflt",

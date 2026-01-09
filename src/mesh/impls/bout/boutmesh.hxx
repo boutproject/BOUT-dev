@@ -167,8 +167,6 @@ public:
                       BoundaryParType type) override;
   std::set<std::string> getPossibleBoundaries() const override;
 
-  Field3D smoothSeparatrix(const Field3D& f) override;
-
   int getNx() const { return nx; }
   int getNy() const { return ny; }
 
