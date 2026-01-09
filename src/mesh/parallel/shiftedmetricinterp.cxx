@@ -128,10 +128,10 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (int z = mesh.zstart; z <= mesh.zend; z++) {
       forward_boundary_xin->add_point(
           it.ind, mesh.yend, z,
-          mesh.GlobalX(it.ind),                           // x
-          2. * PI * mesh.GlobalY(mesh.yend + 0.5),        // y
-          zlength * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
-              + 0.5 * (zShift(it.ind, mesh.yend + 1) - zShift(it.ind, mesh.yend)),
+          mesh.GlobalX(it.ind),                    // x
+          2. * PI * mesh.GlobalY(mesh.yend + 0.5), // y
+          (zlength * mesh.GlobalZ(z))              // z
+              + (0.5 * (zShift(it.ind, mesh.yend + 1) - zShift(it.ind, mesh.yend))),
           0.25
               * (1                                                     // dy/2
                  + dy(it.ind, mesh.yend + 1) / dy(it.ind, mesh.yend)), // length
@@ -144,10 +144,10 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (int z = mesh.zstart; z <= mesh.zend; z++) {
       backward_boundary_xin->add_point(
           it.ind, mesh.ystart, z,
-          mesh.GlobalX(it.ind),                           // x
-          2. * PI * mesh.GlobalY(mesh.ystart - 0.5),      // y
-          zlength * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
-              + 0.5 * (zShift(it.ind, mesh.ystart) - zShift(it.ind, mesh.ystart - 1)),
+          mesh.GlobalX(it.ind),                      // x
+          2. * PI * mesh.GlobalY(mesh.ystart - 0.5), // y
+          (zlength * mesh.GlobalZ(z))                // z
+              + (0.5 * (zShift(it.ind, mesh.ystart) - zShift(it.ind, mesh.ystart - 1))),
           0.25
               * (1 // dy/2
                  + dy(it.ind, mesh.ystart - 1) / dy(it.ind, mesh.ystart)),
@@ -161,10 +161,10 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (int z = mesh.zstart; z <= mesh.zend; z++) {
       forward_boundary_xout->add_point(
           it.ind, mesh.yend, z,
-          mesh.GlobalX(it.ind),                           // x
-          2. * PI * mesh.GlobalY(mesh.yend + 0.5),        // y
-          zlength * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
-              + 0.5 * (zShift(it.ind, mesh.yend + 1) - zShift(it.ind, mesh.yend)),
+          mesh.GlobalX(it.ind),                    // x
+          2. * PI * mesh.GlobalY(mesh.yend + 0.5), // y
+          (zlength * mesh.GlobalZ(z))              // z
+              + (0.5 * (zShift(it.ind, mesh.yend + 1) - zShift(it.ind, mesh.yend))),
           0.25
               * (1 // dy/2
                  + dy(it.ind, mesh.yend + 1) / dy(it.ind, mesh.yend)),
@@ -177,10 +177,10 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (int z = mesh.zstart; z <= mesh.zend; z++) {
       backward_boundary_xout->add_point(
           it.ind, mesh.ystart, z,
-          mesh.GlobalX(it.ind),                           // x
-          2. * PI * mesh.GlobalY(mesh.ystart - 0.5),      // y
-          zlength * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
-              + 0.5 * (zShift(it.ind, mesh.ystart) - zShift(it.ind, mesh.ystart - 1)),
+          mesh.GlobalX(it.ind),                      // x
+          2. * PI * mesh.GlobalY(mesh.ystart - 0.5), // y
+          (zlength * mesh.GlobalZ(z))                // z
+              + (0.5 * (zShift(it.ind, mesh.ystart) - zShift(it.ind, mesh.ystart - 1))),
           0.25
               * (dy(it.ind, mesh.ystart - 1) / dy(it.ind, mesh.ystart) // dy/2
                  + 1),
