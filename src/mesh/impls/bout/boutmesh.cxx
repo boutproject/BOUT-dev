@@ -1696,35 +1696,32 @@ int BoutMesh::PROC_NUM(int xind, int yind) const {
     return -1;
   }
 
-  return yind * NXPE + xind;
+  return (yind * NXPE) + xind;
 }
 
-/// Returns the global X index given a local index
-int BoutMesh::XGLOBAL(BoutReal xloc, BoutReal& xglo) const {
-  xglo = xloc + PE_XIND * MXSUB;
-  return static_cast<int>(xglo);
+BoutReal BoutMesh::getGlobalXIndex(BoutReal xloc) const {
+  return xloc + (PE_XIND * MXSUB);
 }
 
-int BoutMesh::getGlobalXIndex(int xlocal) const { return xlocal + PE_XIND * MXSUB; }
+int BoutMesh::getGlobalXIndex(int xlocal) const { return xlocal + (PE_XIND * MXSUB); }
 
 int BoutMesh::getGlobalXIndexNoBoundaries(int xlocal) const {
-  return xlocal + PE_XIND * MXSUB - MXG;
+  return xlocal + (PE_XIND * MXSUB) - MXG;
 }
 
-int BoutMesh::getLocalXIndex(int xglobal) const { return xglobal - PE_XIND * MXSUB; }
+int BoutMesh::getLocalXIndex(int xglobal) const { return xglobal - (PE_XIND * MXSUB); }
 
 int BoutMesh::getLocalXIndexNoBoundaries(int xglobal) const {
-  return xglobal - PE_XIND * MXSUB + MXG;
+  return xglobal - (PE_XIND * MXSUB) + MXG;
 }
 
-int BoutMesh::YGLOBAL(BoutReal yloc, BoutReal& yglo) const {
-  yglo = yloc + PE_YIND * MYSUB - MYG;
-  return static_cast<int>(yglo);
+BoutReal BoutMesh::getGlobalYIndex(BoutReal yloc) const {
+  return yloc + (PE_YIND * MYSUB) - MYG;
 }
 
 int BoutMesh::getGlobalYIndex(int ylocal) const {
-  int yglobal = ylocal + PE_YIND * MYSUB;
-  if (jyseps1_2 > jyseps2_1 and PE_YIND * MYSUB + 2 * MYG + 1 > ny_inner) {
+  int yglobal = ylocal + (PE_YIND * MYSUB);
+  if (jyseps1_2 > jyseps2_1 and (PE_YIND * MYSUB) + (2 * MYG) + 1 > ny_inner) {
     // Double null, and we are past the upper target
     yglobal += 2 * MYG;
   }
@@ -1732,12 +1729,12 @@ int BoutMesh::getGlobalYIndex(int ylocal) const {
 }
 
 int BoutMesh::getGlobalYIndexNoBoundaries(int ylocal) const {
-  return ylocal + PE_YIND * MYSUB - MYG;
+  return ylocal + (PE_YIND * MYSUB) - MYG;
 }
 
 int BoutMesh::getLocalYIndex(int yglobal) const {
-  int ylocal = yglobal - PE_YIND * MYSUB;
-  if (jyseps1_2 > jyseps2_1 and PE_YIND * MYSUB + 2 * MYG + 1 > ny_inner) {
+  int ylocal = yglobal - (PE_YIND * MYSUB);
+  if (jyseps1_2 > jyseps2_1 and (PE_YIND * MYSUB) + (2 * MYG) + 1 > ny_inner) {
     // Double null, and we are past the upper target
     ylocal -= 2 * MYG;
   }
@@ -1745,7 +1742,7 @@ int BoutMesh::getLocalYIndex(int yglobal) const {
 }
 
 int BoutMesh::getLocalYIndexNoBoundaries(int yglobal) const {
-  return yglobal - PE_YIND * MYSUB + MYG;
+  return yglobal - (PE_YIND * MYSUB) + MYG;
 }
 
 int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + (yproc * MYSUB) - MYG; }
@@ -1754,14 +1751,14 @@ int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - (yproc * MYSUB) 
 
 int BoutMesh::getGlobalZIndex(int zlocal) const { return zlocal + (PE_ZIND * MZSUB); }
 
-int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const { return zlocal + (PE_ZIND * MZSUB) - MZG; }
+int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const {
+  return zlocal + (PE_ZIND * MZSUB) - MZG;
+}
 
 int BoutMesh::getLocalZIndex(int zglobal) const { return zglobal; }
 
-/// Returns the global Z index given a local index
-int BoutMesh::ZGLOBAL(BoutReal zloc, BoutReal& zglo) const {
-  zglo = zloc + (PE_ZIND * MZSUB);
-  return static_cast<int>(zglo);
+BoutReal BoutMesh::getGlobalZIndex(BoutReal zloc) const {
+  return zloc + (PE_ZIND * MZSUB);
 }
 
 int BoutMesh::getLocalZIndexNoBoundaries(int zglobal) const { return zglobal; }
@@ -3136,8 +3133,7 @@ BoutReal BoutMesh::GlobalX(int jx) const {
 BoutReal BoutMesh::GlobalX(BoutReal jx) const {
 
   // Get global X index as a BoutReal
-  BoutReal xglo;
-  XGLOBAL(jx, xglo);
+  const BoutReal xglo = getGlobalXIndex(jx);
 
   if (symmetricGlobalX) {
     // With this definition the boundary sits dx/2 away form the first/last inner points
@@ -3191,8 +3187,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
 BoutReal BoutMesh::GlobalY(BoutReal jy) const {
 
   // Get global Y index as a BoutReal
-  BoutReal yglo;
-  YGLOBAL(jy, yglo);
+  BoutReal yglo = getGlobalYIndex(jy);
 
   if (symmetricGlobalY) {
     BoutReal yi = yglo;
@@ -3245,8 +3240,7 @@ BoutReal BoutMesh::GlobalZ(int jz) const {
 BoutReal BoutMesh::GlobalZ(BoutReal jz) const {
 
   // Get global Z index as a BoutReal
-  BoutReal zglo;
-  ZGLOBAL(jz, zglo);
+  const BoutReal zglo = getGlobalZIndex(jz);
 
   if (symmetricGlobalZ) {
     // With this definition the boundary sits dx/2 away form the first/last inner points
