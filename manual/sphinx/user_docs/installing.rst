@@ -380,21 +380,35 @@ For ADIOS2, use ``-DBOUT_DOWNLOAD_ADIOS2=ON``. This will download and
 configure `ADIOS2 <https://adios2.readthedocs.io/>`_, enabling BOUT++
 to read and write this high-performance parallel file format.
 
-For cpptrace, use ``-DBOUT_DOWNLOAD_CPPTRACE=on`` (the default).
-
 Bundled Dependencies
 ~~~~~~~~~~~~~~~~~~~~
 
-BOUT++ bundles some dependencies, currently `mpark.variant
-<https://github.com/mpark/variant>`_, `fmt <https://fmt.dev>`_ and
-`googletest <https://github.com/google/googletest>`_. If you wish to
-use an existing installation of ``mpark.variant``, you can set
-``-DBOUT_USE_SYSTEM_MPARK_VARIANT=ON``, and supply the installation
-path using ``mpark_variant_ROOT`` via the command line or environment
-variable if it is installed in a non standard loction. Similarly for
-``fmt``, using ``-DBOUT_USE_SYSTEM_FMT=ON`` and ``fmt_ROOT``
-respectively. To turn off both, you can set
-``-DBOUT_USE_GIT_SUBMODULE=OFF``.
+BOUT++ bundles some dependencies, currently:
+
+- `mpark.variant <https://github.com/mpark/variant>`_
+- `fmt <https://fmt.dev>`_
+- `cpptrace <https://github.com/jeremy-rifkin/cpptrace>`_
+- ``googletest <https://github.com/google/googletest>`_ (for unit tests)
+
+Aside from ``googletest``, the others are required dependencies and can either
+be built as part of the BOUT++ build, or provided externally. If you wish to use
+existing installations of some of these, set the following flags:
+
++--------------------+-----------------------------------+------------------------+
+| Name               | Flag for external installation    | Library path           |
++====================+===================================+========================+
+| ``mpark.variant``  | ``BOUT_USE_SYSTEM_MPARK_VARIANT`` | ``mpark_variant_ROOT`` |
++--------------------+-----------------------------------+------------------------+
+| ``fmt``            | ``BOUT_USE_SYSTEM_FMT``           | ``fmt_ROOT``           |
++--------------------+-----------------------------------+------------------------+
+| ``cpptrace``       | ``BOUT_USE_SYSTEM_CPPTRACE``      | ``cpptrace_ROOT``      |
++--------------------+-----------------------------------+------------------------+
+
+You can also set ``-DBOUT_USE_GIT_SUBMODULE=OFF`` to not use any of the bundled
+versions.
+
+If the libraries are in non-standard locations, you may also need to supply the
+relevant library path flags.
 
 The recommended way to use ``googletest`` is to compile it at the same
 time as your project, therefore there is no option to use an external
