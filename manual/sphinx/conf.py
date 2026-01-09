@@ -76,11 +76,7 @@ if on_readthedocs:
     pydir = "/".join(python.split("/")[:-2])
     os.system("which clang-format")
     os.system("which clang-format-6.0")
-    os.system(
-        "git submodule update --init --recursive ../../externalpackages/mpark.variant"
-    )
-    pwd = "/".join(os.getcwd().split("/")[:-2])
-    os.system("git submodule update --init --recursive ../../externalpackages/fmt")
+    subprocess.run("git submodule update --init --recursive", shell=True)
     cmake = (
         "cmake  . "
         " -B build"
@@ -91,8 +87,6 @@ if on_readthedocs:
         " -DBOUT_TESTS=OFF"
         " -DBOUT_ALLOW_INSOURCE_BUILD=ON"
         f" -DPython3_ROOT_DIR={pydir}"
-        f" -Dmpark_variant_DIR={pwd}/externalpackages/mpark.variant/"
-        f" -Dfmt_DIR={pwd}/externalpackages/fmt/"
     )
     subprocess.run(f"echo {cmake}", shell=True)
     subprocess.run(f"cd ../../; {cmake}", shell=True, check=True)
