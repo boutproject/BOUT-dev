@@ -331,7 +331,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       if (mesh->firstX()) {
         // Lower X boundary
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
             if (z == 0) {
@@ -350,7 +350,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       } else {
         // On another processor
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
             if (z == 0) {
@@ -373,7 +373,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       if (mesh->lastX()) {
         // Upper X boundary
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
             if (z == 0) {
@@ -392,7 +392,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       } else {
         // On another processor
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2((localIndex >= 0) && (localIndex < localN));
             if (z == 0) {
@@ -559,7 +559,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
           }
 
           // 3D fields
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
 
             int ind = ROUND(index(x, y, z));
 
@@ -1420,7 +1420,7 @@ void IMEXBDF2::loopVars(BoutReal* u) {
       if (mesh->firstX() && !mesh->periodicX) {
         for (int jx = 0; jx < mesh->xstart; ++jx) {
           for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
-            for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+            for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
               op.run(jx, jy, jz, u);
               ++u;
             }
@@ -1432,7 +1432,7 @@ void IMEXBDF2::loopVars(BoutReal* u) {
       if (mesh->lastX() && !mesh->periodicX) {
         for (int jx = mesh->xend + 1; jx < mesh->LocalNx; ++jx) {
           for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
-            for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+            for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
               op.run(jx, jy, jz, u);
               ++u;
             }
@@ -1442,7 +1442,7 @@ void IMEXBDF2::loopVars(BoutReal* u) {
       // Lower Y
       for (RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); ++xi) {
         for (int jy = 0; jy < mesh->ystart; ++jy) {
-          for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
             op.run(*xi, jy, jz, u);
             ++u;
           }
@@ -1452,7 +1452,7 @@ void IMEXBDF2::loopVars(BoutReal* u) {
       // Upper Y
       for (RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); ++xi) {
         for (int jy = mesh->yend + 1; jy < mesh->LocalNy; ++jy) {
-          for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
             op.run(*xi, jy, jz, u);
             ++u;
           }
@@ -1463,7 +1463,7 @@ void IMEXBDF2::loopVars(BoutReal* u) {
     // Bulk of points
     for (int jx = mesh->xstart; jx <= mesh->xend; ++jx) {
       for (int jy = mesh->ystart; jy <= mesh->yend; ++jy) {
-        for (int jz = 0; jz < mesh->LocalNz; ++jz) {
+        for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
           op.run(jx, jy, jz, u);
           ++u;
         }

@@ -258,7 +258,7 @@ const Field3D Div_par(const Field3D& f_in, const Field3D& v_in,
       BoutReal flux_factor_lm =
           common_factor / (coord->dy(i, j - 1) * coord->J(i, j - 1));
 #endif
-      for (int k = 0; k < mesh->LocalNz; k++) {
+      for (int k = mesh->zstart; k <= mesh->zend; k++) {
 #if BOUT_USE_METRIC_3D
         // For right cell boundaries
         BoutReal common_factor =

@@ -660,7 +660,7 @@ int PetscSolver::init() {
               }
             }
             // 3D fields
-            for (int z = 0; z < mesh->LocalNz; z++) {
+            for (int z = mesh->zstart; z <= mesh->zend; z++) {
               const int ind = ROUND(index(x, y, z)) - Istart;
 
               for (int i = 0; i < n3d; i++) {
@@ -768,7 +768,7 @@ int PetscSolver::init() {
             }
           }
           // 3D fields
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int const ind = ROUND(index(x, y, z));
 
             for (int i = 0; i < n3d; i++) {
@@ -792,7 +792,7 @@ int PetscSolver::init() {
                     || (yi >= mesh->LocalNy)) {
                   continue;
                 }
-                for (int zi = 0; zi < mesh->LocalNz; ++zi) {
+                for (int zi = mesh->zstart; zi <= mesh->zend; ++zi) {
                   int ind2 = ROUND(index(xi, yi, zi));
                   if (ind2 < 0) {
                     continue; // Boundary point

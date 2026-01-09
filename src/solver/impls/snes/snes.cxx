@@ -200,7 +200,7 @@ PetscErrorCode SNESSolver::FDJinitialise() {
             }
           }
           // 3D fields
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             const int ind = ROUND(index(x, y, z)) - Istart;
 
             for (int i = 0; i < n3d; i++) {
@@ -305,7 +305,7 @@ PetscErrorCode SNESSolver::FDJinitialise() {
           }
         }
         // 3D fields
-        for (int z = 0; z < mesh->LocalNz; z++) {
+        for (int z = mesh->zstart; z <= mesh->zend; z++) {
           int ind = ROUND(index(x, y, z));
 
           for (int i = 0; i < n3d; i++) {
@@ -329,7 +329,7 @@ PetscErrorCode SNESSolver::FDJinitialise() {
                   || (yi >= mesh->LocalNy)) {
                 continue;
               }
-              for (int zi = 0; zi < mesh->LocalNz; ++zi) {
+              for (int zi = mesh->zstart; zi <= mesh->zend; ++zi) {
                 int ind2 = ROUND(index(xi, yi, zi));
                 if (ind2 < 0) {
                   continue; // Boundary point
@@ -1331,7 +1331,7 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping(Vec x) {
     }
 
     // Field3D quantities evolved together within a cell
-    for (int jz = 0; jz < mesh->LocalNz; jz++) {
+    for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
       count = 0;
       residual = 0.0;
       for (const auto& f : f3d) {
@@ -1380,7 +1380,7 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping(Vec x) {
 
     // Field3D quantities evolved together within a cell
     if (!f3d.empty()) {
-      for (int jz = 0; jz < mesh->LocalNz; jz++) {
+      for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
         auto i3d = mesh->ind2Dto3D(i2d, jz);
 
         BoutReal residual = 0.0;

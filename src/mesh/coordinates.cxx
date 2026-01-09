@@ -225,7 +225,7 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
           ASSERT1(bndry->bx == 0 or localmesh->xstart > 1);
           ASSERT1(bndry->by == 0 or localmesh->ystart > 1);
           // note that either bx or by is >0 here
-          for (int zi = 0; zi < localmesh->LocalNz; ++zi) {
+          for (int zi = localmesh->zstart; zi <= localmesh->zend; ++zi) {
             result(bndry->x, bndry->y, zi) =
                 (9.
                      * (f(bndry->x - bndry->bx, bndry->y - bndry->by, zi)
@@ -256,7 +256,7 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
           for (int i = extrap_start; i < bndry->width; i++) {
             int xi = bndry->x + i * bndry->bx;
             int yi = bndry->y + i * bndry->by;
-            for (int zi = 0; zi < localmesh->LocalNz; ++zi) {
+            for (int zi = localmesh->zstart; zi <= localmesh->zend; ++zi) {
               result(xi, yi, zi) =
                   3.0 * result(xi - bndry->bx, yi - bndry->by, zi)
                   - 3.0 * result(xi - 2 * bndry->bx, yi - 2 * bndry->by, zi)
@@ -266,7 +266,7 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
         } else {
           // not enough grid points to extrapolate, set equal to last grid point
           for (int i = extrap_start; i < bndry->width; i++) {
-            for (int zi = 0; zi < localmesh->LocalNz; ++zi) {
+            for (int zi = localmesh->zstart; zi <= localmesh->zend; ++zi) {
               result(bndry->x + i * bndry->bx, bndry->y + i * bndry->by, zi) =
                   result(bndry->x - bndry->bx, bndry->y - bndry->by, zi);
             }
