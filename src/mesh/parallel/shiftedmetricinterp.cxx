@@ -27,6 +27,8 @@
  *
  **************************************************************************/
 
+#include <algorithm>
+
 #include "shiftedmetricinterp.hxx"
 #include "bout/constants.hxx"
 #include "bout/parallel_boundary_region.hxx"
@@ -114,11 +116,10 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
 
   interp_from_aligned->calcWeights(zt_prime_from);
 
-  int yvalid = mesh.LocalNy - 2 * mesh.ystart;
   // avoid overflow - no stencil need more than 5 points
-  if (yvalid > 20) {
-    yvalid = 20;
-  }
+  const auto yvalid =
+      static_cast<signed char>(std::min(mesh.LocalNy - (2 * mesh.ystart), 20));
+
   // Create regions for parallel boundary conditions
   Field2D dy;
   mesh.get(dy, "dy", 1.);
