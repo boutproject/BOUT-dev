@@ -36,6 +36,7 @@
 
 #include <string_view>
 
+class Mesh;
 class Options;
 
 BOUT_ENUM_CLASS(FFT_MEASUREMENT_FLAG, estimate, measure, exhaustive);
