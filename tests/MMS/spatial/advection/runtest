@@ -43,7 +43,6 @@ build_and_log("MMS steady-state advection test")
 # List of options to be passed for each test
 options = [
     ("method=2", "Arakawa", "-^", 2),
-    ("method=4", "Arakawa-old", "-.", 2),
     (
         "method=1 mesh:ddx:upwind=u1 mesh:ddz:upwind=u1",
         "SIMPLE: 1st order upwind",
