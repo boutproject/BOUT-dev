@@ -65,6 +65,8 @@ LaplacePCR_THOMAS::LaplacePCR_THOMAS(Options* opt, CELL_LOC loc, Mesh* mesh_in,
       ncx(localmesh->LocalNx), ny(localmesh->LocalNy), avec(ny, nmode, ncx),
       bvec(ny, nmode, ncx), cvec(ny, nmode, ncx) {
 
+  bout::fft::checkZSerial(*localmesh, "`pcr_thomas` inversion");
+
   Acoef.setLocation(location);
   C1coef.setLocation(location);
   C2coef.setLocation(location);

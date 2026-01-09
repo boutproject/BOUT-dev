@@ -67,6 +67,8 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED
       ncx(localmesh->LocalNx), ny(localmesh->LocalNy), avec(ny, nmode, ncx),
       bvec(ny, nmode, ncx), cvec(ny, nmode, ncx) {
 
+  bout::fft::checkZSerial(*localmesh, "`pcr` inversion");
+
   Acoef.setLocation(location);
   C1coef.setLocation(location);
   C2coef.setLocation(location);

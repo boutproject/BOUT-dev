@@ -67,6 +67,8 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED
       au(ny, nmode), bu(ny, nmode), rl(nmode), ru(nmode), r1(ny, nmode), r2(ny, nmode),
       first_call(ny), x0saved(ny, 4, nmode), converged(nmode), fine_error(4, nmode) {
 
+  bout::fft::checkZSerial(*localmesh, "`ipt` inversion");
+
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);

@@ -1659,7 +1659,7 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
 
   Field3D result{emptyFrom(f).setLocation(outloc)};
 
-  if (useFFT and not bout::build::use_metric_3d) {
+  if (useFFT and not bout::build::use_metric_3d and localmesh->getNZPE() == 1) {
     int ncz = localmesh->LocalNz;
 
     // Allocate memory
@@ -1727,7 +1727,7 @@ FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
   int jy = f.getIndex();
   result.setIndex(jy);
 
-  if (useFFT) {
+  if (useFFT and localmesh->getNZPE() == 1) {
     int ncz = localmesh->LocalNz;
 
     // Allocate memory
