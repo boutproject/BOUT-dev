@@ -698,6 +698,36 @@ int SNESSolver::init() {
     PetscCall(initPseudoTimestepping());
   }
 
+
+  if (have_constraints) {
+    // CreatePETSc-native index sets representing the two parts of your DAE.
+    PetscInt istart, iend;
+    PetscCall(VecGetOwnershipRange(snes_x, &istart, &iend));
+    ASSERT2(iend - istart == nlocal);
+
+    std::vector<PetscInt> diff_idx;
+    std::vector<PetscInt> alg_idx;
+    diff_idx.reserve(nlocal);
+    alg_idx.reserve(nlocal);
+
+    for (PetscInt i = 0; i < nlocal; ++i) {
+      const PetscInt gi = istart + i;
+      if (is_dae[i] > 0.5) {       // differential
+        diff_idx.push_back(gi);
+      } else {                     // algebraic constraint (i.e. phi)
+        alg_idx.push_back(gi);
+      }
+    }
+
+    PetscCall(ISCreateGeneral(BoutComm::get(), diff_idx.size(), diff_idx.data(),
+                              PETSC_COPY_VALUES, &is_diff));
+    PetscCall(ISCreateGeneral(BoutComm::get(), alg_idx.size(), alg_idx.data(),
+                              PETSC_COPY_VALUES, &is_alg));
+
+    have_is_maps = true;
+  }
+
+
   // Nonlinear solver interface (SNES)
   output_info.write("Create SNES\n");
   SNESCreate(BoutComm::get(), &snes);
@@ -831,6 +861,25 @@ int SNESSolver::init() {
 #endif
       }
     }
+  }
+
+  if (have_constraints && have_is_maps && !matrix_free && pc_type == "fieldsplit") {
+    output_info.write("Using PCFieldSplit preconditioner for DAE system\n");
+
+    // Use PETSc fieldsplit
+    PetscCall(PCSetType(pc, PCFIELDSPLIT));
+    exit(0);
+
+    // Give PETSc the index sets
+    PetscCall(PCFieldSplitSetIS(pc, "diff", is_diff));
+    PetscCall(PCFieldSplitSetIS(pc, "alg",  is_alg));
+
+    // Let the user configure from options (recommended)
+    // Example options you can set in input file:
+    //   -pc_fieldsplit_type additive
+    //   -fieldsplit_alg_pc_type hypre -fieldsplit_alg_pc_hypre_type boomeramg
+    //   -fieldsplit_diff_pc_type ilu
+    //
   }
 
   // Get runtime options
@@ -1633,8 +1682,10 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
     break;
   }
   case BoutSnesEquationForm::backward_euler: {
-    // Backward Euler
-    // Set f = x - x0 - Δt*f
+    // Backward Euler:
+    // Differential:  F = x - x0 - dt*f
+    // Algebraic:     F = G(x)  (already stored in f by rhs_function)
+
     if (!have_constraints) {
 
       VecAYPX(f, -dt, x);   // f <- x - Δt*f
@@ -1642,30 +1693,24 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
 
     } else {
 
-      const BoutReal* xdata = nullptr;
-      PetscCall(VecGetArrayRead(x, &xdata));
-
-      const BoutReal* x0data = nullptr;
-      PetscCall(VecGetArrayRead(x0, &x0data));
-
-      // Copy derivatives
-      BoutReal* fdata = nullptr;
-      PetscCall(VecGetArray(f, &fdata));      
-
+      ASSERT2(have_is_maps);
       // Some constraints
-      for (int i = 0; i < nlocal; i++) {
-        if (is_dae[i] > 0.5) { // 1 -> differential, 0 -> algebraic
-          fdata[i] = xdata[i] - x0data[i] - dt * fdata[i];
-        }
-        // Otherwise the constraint is that fdata[i] = rhs (residual of algebraic equation)
-      }
 
-      // PetscCall(VecRestoreArrayRead(x, &xdata)); // NOTE: Do we need this?
-      // PetscCall(VecRestoreArrayRead(x0, &x0data)); // NOTE: Do we need this?
-      PetscCall(VecRestoreArray(f, &fdata));
+      Vec x_diff, x0_diff, f_diff;
+
+      PetscCall(VecGetSubVector(x,  is_diff, &x_diff));
+      PetscCall(VecGetSubVector(x0, is_diff, &x0_diff));
+      PetscCall(VecGetSubVector(f,  is_diff, &f_diff));
+
+      PetscCall(VecAYPX(f_diff, -dt, x_diff));   // f_diff <- x_diff - dt*f_diff
+      PetscCall(VecAXPY(f_diff, -1.0, x0_diff)); // f_diff <- f_diff - x0_diff
+
+      PetscCall(VecRestoreSubVector(x,  is_diff, &x_diff));
+      PetscCall(VecRestoreSubVector(x0, is_diff, &x0_diff));
+      PetscCall(VecRestoreSubVector(f,  is_diff, &f_diff));
+
 
     }
-
     break;
   }
   case BoutSnesEquationForm::direct_newton: {

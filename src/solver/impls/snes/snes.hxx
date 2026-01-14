@@ -185,6 +185,10 @@ private:
   bool have_constraints;  ///< Are there any constraint variables?
   Array<BoutReal> is_dae; ///< If using constraints, 1 -> DAE, 0 -> AE
 
+  IS is_diff = nullptr;  // is_dae == 1
+  IS is_alg  = nullptr;  // is_dae == 0 (phi constraint and any other algebraics)
+  bool have_is_maps = false;
+
   PetscLib lib; ///< Handles initialising, finalising PETSc
   Vec snes_f;   ///< Used by SNES to store function
   Vec snes_x;   ///< Result of SNES
