@@ -616,7 +616,6 @@ int SNESSolver::init() {
 
     // Use PETSc fieldsplit
     PetscCall(PCSetType(pc, PCFIELDSPLIT));
-    exit(0);
 
     // Give PETSc the index sets
     PetscCall(PCFieldSplitSetIS(pc, "diff", is_diff));
