@@ -604,7 +604,9 @@ SNESSolver::SNESSolver(Options* opts)
                      .withDefault<bool>(false)),
       asinh_vars((*options)["asinh_vars"]
                      .doc("Apply asinh() to all variables?")
-                     .withDefault<bool>(false)) {}
+                     .withDefault<bool>(false)) {
+  has_constraints = true; ///< This solver can handle constraints
+}
 
 int SNESSolver::init() {
 
@@ -626,6 +628,29 @@ int SNESSolver::init() {
 
   output_info.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
                     n3Dvars(), n2Dvars(), neq, nlocal);
+
+  // Check if there are any constraints
+  have_constraints = false;
+
+  for (int i = 0; i < n2Dvars(); i++) {
+    if (f2d[i].constraint) {
+      have_constraints = true;
+      break;
+    }
+  }
+  for (int i = 0; i < n3Dvars(); i++) {
+    if (f3d[i].constraint) {
+      have_constraints = true;
+      break;
+    }
+  }
+
+  if (have_constraints) {
+    is_dae.reallocate(nlocal);
+    // Call the Solver function, which sets the array
+    // to one when not a constraint, zero for constraint
+    set_id(std::begin(is_dae));
+  }
 
   // Initialise PETSc components
 
@@ -752,6 +777,9 @@ int SNESSolver::init() {
 #if PETSC_VERSION_GE(3, 8, 0)
   SNESSetForceIteration(snes, PETSC_TRUE);
 #endif
+
+  // Enable checking for domain errors in Jacobian evaluation
+  SNESSetCheckJacobianDomainError(snes, PETSC_TRUE);
 
   // Get KSP context from SNES
   KSP ksp;
@@ -1162,7 +1190,7 @@ int SNESSolver::run() {
 
         timestep = pid(timestep, nl_its, max_timestep);
 
-        // NOTE(malamast): Do we really need this?
+        // NOTE: Do we really need this?
         // Recompute Jacobian (for now)
         if (saved_jacobian_lag == 0) {
           SNESGetLagJacobian(snes, &saved_jacobian_lag);
@@ -1262,6 +1290,8 @@ int SNESSolver::run() {
       run_rhs(target); // Run RHS to calculate auxilliary variables
     } catch (BoutException& e) {
       output_error.write("ERROR: BoutException thrown: {}\n", e.what());
+      // NOTE: what happens if we hit the exception here? 
+      // Should we add a relaxation step to update the state vector?
     }
 
     if (call_monitors(target, s, getNumberOutputSteps()) != 0) {
@@ -1573,7 +1603,13 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
   // Call the RHS function
   if (rhs_function(x, f, linear) != PETSC_SUCCESS) {
     // Tell SNES that the input was out of domain
-    SNESSetFunctionDomainError(snes);
+    if (linear) {
+      // During Jacobian evaluation
+      SNESSetJacobianDomainError(snes);
+    } else {
+      // During function evaluation
+      SNESSetFunctionDomainError(snes);
+    }
     // Note: Returning non-zero error here leaves vectors in locked state
     return 0;
   }
@@ -1599,8 +1635,37 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
   case BoutSnesEquationForm::backward_euler: {
     // Backward Euler
     // Set f = x - x0 - Δt*f
-    VecAYPX(f, -dt, x);   // f <- x - Δt*f
-    VecAXPY(f, -1.0, x0); // f <- f - x0
+    if (!have_constraints) {
+
+      VecAYPX(f, -dt, x);   // f <- x - Δt*f
+      VecAXPY(f, -1.0, x0); // f <- f - x0
+
+    } else {
+
+      const BoutReal* xdata = nullptr;
+      PetscCall(VecGetArrayRead(x, &xdata));
+
+      const BoutReal* x0data = nullptr;
+      PetscCall(VecGetArrayRead(x0, &x0data));
+
+      // Copy derivatives
+      BoutReal* fdata = nullptr;
+      PetscCall(VecGetArray(f, &fdata));      
+
+      // Some constraints
+      for (int i = 0; i < nlocal; i++) {
+        if (is_dae[i] > 0.5) { // 1 -> differential, 0 -> algebraic
+          fdata[i] = xdata[i] - x0data[i] - dt * fdata[i];
+        }
+        // Otherwise the constraint is that fdata[i] = rhs (residual of algebraic equation)
+      }
+
+      // PetscCall(VecRestoreArrayRead(x, &xdata)); // NOTE: Do we need this?
+      // PetscCall(VecRestoreArrayRead(x0, &x0data)); // NOTE: Do we need this?
+      PetscCall(VecRestoreArray(f, &fdata));
+
+    }
+
     break;
   }
   case BoutSnesEquationForm::direct_newton: {
