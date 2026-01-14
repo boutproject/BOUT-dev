@@ -698,7 +698,6 @@ int SNESSolver::init() {
     PetscCall(initPseudoTimestepping());
   }
 
-
   if (have_constraints) {
     // CreatePETSc-native index sets representing the two parts of your DAE.
     PetscInt istart, iend;
@@ -712,9 +711,9 @@ int SNESSolver::init() {
 
     for (PetscInt i = 0; i < nlocal; ++i) {
       const PetscInt gi = istart + i;
-      if (is_dae[i] > 0.5) {       // differential
+      if (is_dae[i] > 0.5) { // differential
         diff_idx.push_back(gi);
-      } else {                     // algebraic constraint (i.e. phi)
+      } else { // algebraic constraint (i.e. phi)
         alg_idx.push_back(gi);
       }
     }
@@ -726,7 +725,6 @@ int SNESSolver::init() {
 
     have_is_maps = true;
   }
-
 
   // Nonlinear solver interface (SNES)
   output_info.write("Create SNES\n");
@@ -871,7 +869,7 @@ int SNESSolver::init() {
 
     // Give PETSc the index sets
     PetscCall(PCFieldSplitSetIS(pc, "diff", is_diff));
-    PetscCall(PCFieldSplitSetIS(pc, "alg",  is_alg));
+    PetscCall(PCFieldSplitSetIS(pc, "alg", is_alg));
 
     // Let the user configure from options (recommended)
     // Example options you can set in input file:
@@ -1703,18 +1701,16 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
 
       Vec x_diff, x0_diff, f_diff;
 
-      PetscCall(VecGetSubVector(x,  is_diff, &x_diff));
+      PetscCall(VecGetSubVector(x, is_diff, &x_diff));
       PetscCall(VecGetSubVector(x0, is_diff, &x0_diff));
-      PetscCall(VecGetSubVector(f,  is_diff, &f_diff));
+      PetscCall(VecGetSubVector(f, is_diff, &f_diff));
 
       PetscCall(VecAYPX(f_diff, -dt, x_diff));   // f_diff <- x_diff - dt*f_diff
       PetscCall(VecAXPY(f_diff, -1.0, x0_diff)); // f_diff <- f_diff - x0_diff
 
-      PetscCall(VecRestoreSubVector(x,  is_diff, &x_diff));
+      PetscCall(VecRestoreSubVector(x, is_diff, &x_diff));
       PetscCall(VecRestoreSubVector(x0, is_diff, &x0_diff));
-      PetscCall(VecRestoreSubVector(f,  is_diff, &f_diff));
-
-
+      PetscCall(VecRestoreSubVector(f, is_diff, &f_diff));
     }
     break;
   }
