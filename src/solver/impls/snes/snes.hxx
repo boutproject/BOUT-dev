@@ -182,6 +182,9 @@ private:
   int nlocal; ///< Number of variables on local processor
   int neq;    ///< Number of variables in total
 
+  bool have_constraints;  ///< Are there any constraint variables?
+  Array<BoutReal> is_dae; ///< If using constraints, 1 -> DAE, 0 -> AE
+
   PetscLib lib; ///< Handles initialising, finalising PETSc
   Vec snes_f;   ///< Used by SNES to store function
   Vec snes_x;   ///< Result of SNES
