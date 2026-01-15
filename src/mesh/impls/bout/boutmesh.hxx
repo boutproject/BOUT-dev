@@ -487,10 +487,21 @@ struct CheckMeshResult {
 
 /// Check that \p total_processors can be decomposed into \p
 /// num_y_processors in Y for the given `BoutMesh` topology parameters
-CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
-                                            int num_y_guards, int jyseps1_1,
-                                            int jyseps2_1, int jyseps1_2, int jyseps2_2,
-                                            int ny_inner);
+CheckMeshResult checkBoutMeshYDecomposition(
+    int num_y_processors, int ny,
+    int num_y_guards,
+    int jyseps1_1, int jyseps2_1,
+    int jyseps1_2, int jyseps2_2,
+    int ny_inner);
+
+// New topology-aware API
+CheckMeshResult checkBoutMeshYDecomposition(
+    int num_y_processors, int ny,
+    int num_y_guards,
+    int jyseps1_1, int jyseps2_1,
+    int jyseps1_2, int jyseps2_2,
+    int ny_inner,
+    std::string topology);
 } // namespace bout
 
 #endif // BOUT_BOUTMESH_H

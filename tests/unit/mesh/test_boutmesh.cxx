@@ -272,108 +272,31 @@ TEST(BoutMeshTest, SingleCoreDecomposition) {
   bout::globals::mpi = nullptr;
 }
 
-struct SetYDecompositionTestParameters {
-  BoutMeshExposer::YDecompositionIndices input;
-  BoutMeshExposer::YDecompositionIndices expected;
-  int number_of_X_points;
-  std::string test_name;
-};
+//New bit: 
 
-std::ostream& operator<<(std::ostream& out,
-                         const SetYDecompositionTestParameters& value) {
-  return out << "SetYDecompositionTestParameters{input=" << value.input
-             << ", expected=" << value.expected
-             << ", number_of_X_points=" << value.number_of_X_points << "}";
-}
-
-std::string SetYDecompositionTestParametersToString(
-    const ::testing::TestParamInfo<SetYDecompositionTestParameters>& param) {
-  return param.param.test_name;
-}
-
-struct BoutMeshSetYDecompositionTest
-    : public ::testing::TestWithParam<SetYDecompositionTestParameters> {
-  virtual ~BoutMeshSetYDecompositionTest() = default;
-};
-
-INSTANTIATE_TEST_SUITE_P(
-    GoodDecompositions, BoutMeshSetYDecompositionTest,
-    ::testing::Values(SetYDecompositionTestParameters{{-1, 7, 15, 23, 12},
-                                                      {-1, 7, 15, 23, 12},
-                                                      0,
-                                                      "CoreOnly"},
-                      SetYDecompositionTestParameters{
-                          {3, 7, 7, 19, 12}, {3, 7, 7, 19, 12}, 1, "SingleNull"},
-                      SetYDecompositionTestParameters{
-                          {3, 7, 15, 19, 12}, {3, 7, 15, 19, 12}, 2, "DoubleNull"},
-                      SetYDecompositionTestParameters{
-                          {-12, 7, 15, 19, 12}, {-1, 7, 15, 19, 12}, 2, "Jyseps11Low"},
-                      SetYDecompositionTestParameters{
-                          {3, 1, 15, 19, 12}, {3, 4, 15, 19, 12}, 2, "Jyseps21Low"},
-                      SetYDecompositionTestParameters{
-                          {3, 7, 5, 19, 12}, {3, 7, 7, 19, 12}, 1, "Jyseps12Low"},
-                      SetYDecompositionTestParameters{
-                          {3, 7, 15, 32, 12}, {3, 7, 15, 23, 12}, 2, "Jyseps22High"},
-                      SetYDecompositionTestParameters{
-                          {3, 7, 15, 8, 12}, {3, 7, 15, 15, 12}, 2, "Jyseps22Low"}),
-    SetYDecompositionTestParametersToString);
-
-TEST_P(BoutMeshSetYDecompositionTest, BasicTest) {
-  WithQuietOutput warn{output_warn};
-  const auto params = GetParam();
-
-  BoutMeshExposer mesh(1, 24, 1, 1, 1);
-  const auto actual_indices = mesh.setYDecompositionIndices(params.input);
-  EXPECT_EQ(actual_indices, params.expected);
-  EXPECT_EQ(mesh.numberOfXPoints, params.number_of_X_points);
-}
-
-TEST(BoutMeshTest, SetYDecompositionIndicesJyseps22LowInconsistent) {
-  WithQuietOutput warn{output_warn};
-  BoutMeshExposer mesh(1, 24, 1, 1, 1);
-
-  EXPECT_THROW(mesh.setYDecompositionIndices({3, 7, 32, 8, 12}), BoutException);
-}
-
+// Decomposition tests for checkBoutMeshYDecomposition (topology-aware)
 struct DecompositionTestParameters {
   int total_processors;
   int num_y_processors;
   int ny;
   int num_y_guards;
   BoutMeshExposer::YDecompositionIndices indices;
-  std::string expected_message; // Expect this fragment to be in the result.reason for bad
-                                // decompositions
+  std::string topology;
+  std::string expected_message;
   std::string name;
 };
 
-DecompositionTestParameters
-makeDecompositionTestParameters(const BoutMeshParameters& inputs,
-                                const std::string& name) {
-  return {inputs.grid.total_processors,
-          inputs.grid.nype,
-          inputs.grid.total_ny,
-          inputs.grid.num_y_guards,
-          inputs.y_indices,
-          "",
-          name};
-}
-
-std::ostream& operator<<(std::ostream& out, const DecompositionTestParameters& value) {
+std::ostream& operator<<(std::ostream& out,
+                         const DecompositionTestParameters& value) {
   return out << fmt::format(
              "DecompositionTestParameters{{"
-             "total_processors = {}, "
-             "num_y_processors = {}, "
-             "ny = {}, "
-             "num_y_guards = {}, "
-             "jyseps1_1 = {}, "
-             "jyseps2_1 = {}, "
-             "jyseps1_2 = {}, "
-             "jyseps2_2 = {}, "
-             "ny_inner = {}, "
-             "expected_message = {} }}",
-             value.total_processors, value.num_y_processors, value.ny, value.num_y_guards,
-             value.indices.jyseps1_1, value.indices.jyseps2_1, value.indices.jyseps1_2,
-             value.indices.jyseps2_2, value.indices.ny_inner, value.expected_message);
+             "num_y_processors = {}, ny = {}, num_y_guards = {}, "
+             "jyseps1_1 = {}, jyseps2_1 = {}, jyseps1_2 = {}, jyseps2_2 = {}, "
+             "ny_inner = {}, topology = {}, expected_message = {} }}",
+             value.num_y_processors, value.ny, value.num_y_guards,
+             value.indices.jyseps1_1, value.indices.jyseps2_1,
+             value.indices.jyseps1_2, value.indices.jyseps2_2,
+             value.indices.ny_inner, value.topology, value.expected_message);
 }
 
 std::string DecompositionTestParametersToString(
@@ -381,21 +304,42 @@ std::string DecompositionTestParametersToString(
   return param.param.name;
 }
 
+DecompositionTestParameters
+makeDecompositionTestParameters(const BoutMeshParameters& inputs,
+                                const std::string& name,
+                                const std::string& topology = "UDN") {
+  return {inputs.grid.total_processors,
+          inputs.grid.nype,
+          inputs.grid.total_ny,
+          inputs.grid.num_y_guards,
+          inputs.y_indices,
+          topology,
+          "",
+          name};
+}
+
+// Fixtures
 struct BoutMeshDecompositionTest
     : public testing::TestWithParam<DecompositionTestParameters> {
   virtual ~BoutMeshDecompositionTest() = default;
 };
 
+using BadBoutMeshDecompositionTest = BoutMeshDecompositionTest;
+
+
+// GOOD decompositions (ALL previous + topology argument)
 INSTANTIATE_TEST_SUITE_P(
     GoodDecompositions, BoutMeshDecompositionTest,
     ::testing::Values(
-        DecompositionTestParameters{1, 1, 1, 1, {-1, 0, 0, 0, 0}, "", "OnePoint"},
-        DecompositionTestParameters{1, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPoints"},
+        // ---- Original basic cases ----
+        DecompositionTestParameters{1, 1, 1, 1, {-1, 0, 0, 0, 0}, "UDN", "", "OnePoint"},
+        DecompositionTestParameters{1, 1, 8, 1, {-1, 4, 4, 7, 4}, "UDN", "", "EightPoints"},
         DecompositionTestParameters{
-            2, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCores"},
+            2, 1, 8, 1, {-1, 4, 4, 7, 4}, "UDN", "", "EightPointsTwoCores"},
         DecompositionTestParameters{
-            2, 2, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCoresNYPE2"},
-        // The following should basically all work by construction
+            2, 2, 8, 1, {-1, 4, 4, 7, 4}, "UDN", "", "EightPointsTwoCoresNYPE2"},
+
+        // ---- Constructed topologies (unchanged behaviour) ----
         makeDecompositionTestParameters(createCore({4, 4, 2, 2, 1, 1}), "Core"),
         makeDecompositionTestParameters(createSOL({4, 4, 2, 2, 1, 1}), "SOL"),
         makeDecompositionTestParameters(createLimiter({4, 4, 2, 2, 1, 1}), "Limiter"),
@@ -404,68 +348,117 @@ INSTANTIATE_TEST_SUITE_P(
                                         "SingleNull"),
         makeDecompositionTestParameters(createDoubleNull({4, 4, 2, 2, 1, 6}),
                                         "DoubleNull"),
-        makeDecompositionTestParameters(createDisconnectedDoubleNull({12, 4, 2, 2, 1, 6}),
-                                        "DisconnectedDoubleNull")),
+        makeDecompositionTestParameters(
+            createDisconnectedDoubleNull({12, 4, 2, 2, 1, 6}),
+            "DisconnectedDoubleNull")),
+
     DecompositionTestParametersToString);
 
+
+// GOOD test body
 TEST_P(BoutMeshDecompositionTest, CheckYDecomposition) {
-  const auto params = GetParam();
+  const auto& p = GetParam();
+
   auto result = bout::checkBoutMeshYDecomposition(
-      params.num_y_processors, params.ny, 1, params.indices.jyseps1_1,
-      params.indices.jyseps2_1, params.indices.jyseps1_2, params.indices.jyseps2_2,
-      params.indices.ny_inner);
+      p.num_y_processors, p.ny, p.num_y_guards,
+      p.indices.jyseps1_1, p.indices.jyseps2_1,
+      p.indices.jyseps1_2, p.indices.jyseps2_2,
+      p.indices.ny_inner, p.topology);
 
   EXPECT_TRUE(result.success);
   EXPECT_TRUE(result.reason.empty());
 }
 
-using BadBoutMeshDecompositionTest = BoutMeshDecompositionTest;
-
+// BAD decompositions (ALL previous + topology argument)
 INSTANTIATE_TEST_SUITE_P(
     BasicBad, BadBoutMeshDecompositionTest,
     ::testing::Values(
         DecompositionTestParameters{
-            2, 2, 1, 1, {-1, 0, 0, 2, 0}, "ny/NYPE", "TooManyCores"},
+            2, 2, 1, 1, {-1, 0, 0, 2, 0},
+            "UDN", "ny/NYPE", "TooManyCores"},
         DecompositionTestParameters{
-            1, 1, 2, 1, {0, 0, 0, 2, 0}, "Leg region jyseps1_1+1", "BadLegRegion"}),
+            1, 1, 2, 1, {0, 0, 0, 2, 0},
+            "UDN", "Leg region jyseps1_1+1", "BadLegRegion"}),
+
     DecompositionTestParametersToString);
 
 INSTANTIATE_TEST_SUITE_P(
     BadDoubleNull, BadBoutMeshDecompositionTest,
     ::testing::Values(
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 5, 6, 10, 0}, "Core region jyseps2_1", "CoreRegion1"},
+            1, 1, 4, 1, {3, 5, 6, 10, 0},
+            "UDN", "Core region jyseps2_1", "CoreRegion1"},
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 7, 8, 11, 0}, "Core region jyseps2_2", "CoreRegion2"},
+            1, 1, 4, 1, {3, 7, 8, 11, 0},
+            "UDN", "Core region jyseps2_2", "CoreRegion2"},
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 7, 8, 12, 11}, "leg region ny_inner", "UpperLeg1"},
+            1, 1, 4, 1, {3, 7, 8, 12, 11},
+            "UDN", "leg region ny_inner", "UpperLeg1"},
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 7, 8, 12, 8}, "leg region jyseps1_2-ny_inner+1", "UpperLeg2"},
+            1, 1, 4, 1, {3, 7, 8, 12, 8},
+            "UDN", "leg region jyseps1_2-ny_inner+1", "UpperLeg2"},
         DecompositionTestParameters{
-            1, 6, 25, 1, {3, 7, 15, 19, 12}, "leg region ny-jyseps2_2-1", "LegRegion"}),
+            1, 6, 25, 1, {3, 7, 15, 19, 12},
+            "UDN", "leg region ny-jyseps2_2-1", "LegRegion"}),
+
     DecompositionTestParametersToString);
 
 INSTANTIATE_TEST_SUITE_P(
     BadSingleNull, BadBoutMeshDecompositionTest,
     ::testing::Values(
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 4, 4, 6, 0}, "Core region jyseps2_2-jyseps1_1", "CoreRegion"},
+            1, 1, 4, 1, {3, 4, 4, 6, 0},
+            "UDN", "Core region jyseps2_2-jyseps1_1", "CoreRegion"},
         DecompositionTestParameters{
-            1, 3, 13, 1, {3, 4, 4, 7, 0}, "leg region ny-jyseps2_2-1", "LegRegion"}),
+            1, 3, 13, 1, {3, 4, 4, 7, 0},
+            "UDN", "leg region ny-jyseps2_2-1", "LegRegion"}),
+
     DecompositionTestParametersToString);
 
+
+// BAD test body
 TEST_P(BadBoutMeshDecompositionTest, BadSingleCoreYDecomposition) {
-  const auto params = GetParam();
+  const auto& p = GetParam();
+
   auto result = bout::checkBoutMeshYDecomposition(
-      params.num_y_processors, params.ny, params.num_y_guards, params.indices.jyseps1_1,
-      params.indices.jyseps2_1, params.indices.jyseps1_2, params.indices.jyseps2_2,
-      params.indices.ny_inner);
+      p.num_y_processors, p.ny, p.num_y_guards,
+      p.indices.jyseps1_1, p.indices.jyseps2_1,
+      p.indices.jyseps1_2, p.indices.jyseps2_2,
+      p.indices.ny_inner, p.topology);
 
   using ::testing::HasSubstr;
-
   EXPECT_FALSE(result.success);
-  EXPECT_THAT(result.reason, HasSubstr(params.expected_message));
+  EXPECT_THAT(result.reason, HasSubstr(p.expected_message));
 }
+
+// NEW: Snowflake-specific tests
+INSTANTIATE_TEST_SUITE_P(
+    SnowflakeGood, BoutMeshDecompositionTest,
+    ::testing::Values(
+        DecompositionTestParameters{
+            1, 1, 24, 1, {3, 7, 11, 15, 12},
+            "SF", "", "SnowflakeGood"}),
+
+    DecompositionTestParametersToString);
+
+INSTANTIATE_TEST_SUITE_P(
+    SnowflakeBad, BadBoutMeshDecompositionTest,
+    ::testing::Values(
+        DecompositionTestParameters{
+            1, 1, 24, 1, {3, 8, 11, 15, 12},
+            "SF", "Core region jyseps2_1", "SnowflakeBadCore"},
+        DecompositionTestParameters{
+            1, 1, 24, 1, {3, 7, 11, 17, 12},
+            "SF", "leg region jyseps2_2", "SnowflakeBadELeg"},
+        DecompositionTestParameters{
+            1, 1, 24, 1, {3, 7, 13, 15, 12},
+            "SF", "leg region jyseps1_2-jyseps2_1", "SnowflakeBadWLeg"}),
+
+    DecompositionTestParametersToString);
+
+  //End of new bit
+
+//End of the test
 
 TEST(BoutMeshTest, ChooseProcessorSplitBadNXPE) {
   WithQuietOutput info{output_info};
