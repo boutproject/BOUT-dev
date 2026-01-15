@@ -47,6 +47,7 @@ public:
   using BoutMesh::XPROC;
   using BoutMesh::YDecompositionIndices;
   using BoutMesh::YPROC;
+  using BoutMesh::getMeshTopology;
 };
 
 /// Minimal parameters need to construct a grid useful for testing
@@ -518,33 +519,33 @@ TEST(BoutMeshTest, ChooseProcessorSplitNYPE) {
 }
 
 TEST(getMeshTopologyTest, ReturnsCFLWhenNoXPoints) {
-  BoutMesh mesh;
+  BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 0;
   EXPECT_EQ(mesh.getMeshTopology(1, 2, 3, 4, 5, 6, 7), "CFL");
 }
 
 TEST(getMeshTopologyTest, ReturnsSNWhenOneXPoint) {
-  BoutMesh mesh;
+  BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 1;
   EXPECT_EQ(mesh.getMeshTopology(1, 2, 3, 4, 5, 6, 7), "SN");
 }
 
 TEST(getMeshTopologyTest, ReturnsSFWhenSnowflakeConditionMet) {
-  BoutMesh mesh;
+  BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 2;
   // ny_inner between jyseps1_2 and jyseps2_2
   EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 15, 1, 1), "SF");
 }
 
 TEST(getMeshTopologyTest, ReturnsUDNWhenTwoXPointsDifferentIndices) {
-  BoutMesh mesh;
+  BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 2;
   // ny_inner not between jyseps1_2 and jyseps2_2
   EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 2), "UDN");
 }
 
 TEST(getMeshTopologyTest, ReturnsCDNWhenTwoXPointsSameIndices) {
-  BoutMesh mesh;
+  BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 2;
   // ny_inner not between jyseps1_2 and jyseps2_2
   EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 1), "CDN");
