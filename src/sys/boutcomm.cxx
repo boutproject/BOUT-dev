@@ -58,6 +58,10 @@ int BoutComm::size() {
   return NPES;
 }
 
+void BoutComm::abort(int errorcode) {
+  MPI_Abort(get(), errorcode);
+}
+
 BoutComm* BoutComm::getInstance() {
   if (instance == nullptr) {
     // Create the singleton object

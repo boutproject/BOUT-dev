@@ -1108,7 +1108,10 @@ int SNESSolver::run() {
           run_rhs(simtime);
         } catch (BoutException& e) {
           output_error.write("ERROR: BoutException thrown: {}\n", e.what());
-          return 1;
+          // Abort simulation. There is no way to recover and
+          // synchronise unless all processors throw exceptions
+          // together
+          BoutComm::abort(1);
         }
 
         // Copy derivatives back
@@ -1262,6 +1265,9 @@ int SNESSolver::run() {
       run_rhs(target); // Run RHS to calculate auxilliary variables
     } catch (BoutException& e) {
       output_error.write("ERROR: BoutException thrown: {}\n", e.what());
+      // Abort simulation. There is no way to recover unless
+      // all processors throw an exception at the same point.
+      BoutComm::abort(1);
     }
 
     if (call_monitors(target, s, getNumberOutputSteps()) != 0) {
@@ -1538,7 +1544,9 @@ PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {
     // Simulation might fail, e.g. negative densities
     // if timestep too large
     output_warn.write("WARNING: BoutException thrown: {}\n", e.what());
-    return 2;
+    // Abort simulation. Unless all processors threw an exception
+    // at the same point, there is no way to synchronise again.
+    BoutComm::abort(2);
   }
 
   // Copy derivatives back

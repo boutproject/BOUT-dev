@@ -4,9 +4,9 @@
 * 
 *
 **************************************************************************
-* Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+* Copyright 2010 - 2026 BOUT++ contributors
 *
-* Contact: Ben Dudson, bd512@york.ac.uk
+* Contact: Ben Dudson, dudson2@llnl.gov
 * 
 * This file is part of BOUT++.
 *
@@ -48,6 +48,8 @@ public:
 
   static int rank(); ///< Rank: my processor number
   static int size(); ///< Size: number of processors
+
+  static void abort(int errorcode); ///< MPI abort
 
   // Setting options
   void setComm(MPI_Comm c);
