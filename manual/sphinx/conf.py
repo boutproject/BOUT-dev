@@ -72,8 +72,6 @@ if on_readthedocs:
     sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
     print(os.environ)
     print(sys.argv)
-    python = sys.argv[0]
-    pydir = "/".join(python.split("/")[:-2])
     os.system("which clang-format")
     os.system("which clang-format-6.0")
     subprocess.run("git submodule update --init --recursive", shell=True)
@@ -86,7 +84,7 @@ if on_readthedocs:
         " -DBOUT_UPDATE_GIT_SUBMODULE=OFF"
         " -DBOUT_TESTS=OFF"
         " -DBOUT_ALLOW_INSOURCE_BUILD=ON"
-        f" -DPython3_ROOT_DIR={pydir}"
+        f" -DPython3_ROOT_DIR={sys.exec_prefix}"
     )
     subprocess.run(f"echo {cmake}", shell=True)
     subprocess.run(f"{cmake}", shell=True, check=True)
