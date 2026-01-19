@@ -95,7 +95,6 @@ if on_readthedocs:
     sys.path.append("bout_build/tools/pylib")
 
 
-# readthedocs currently runs out of memory if we actually dare to try to do this
 if has_breathe:
     # Run doxygen to generate the XML sources
     if on_readthedocs:
