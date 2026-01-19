@@ -15,7 +15,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Data doesn't depend on matrix job, so this should cache between all jobs
+  cache_zenodo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Zenodo test data
+        uses: actions/cache@v4
+        with:
+          path: ./zenodo_data
+          # If we update the test, invalidate the cache
+          key: zenodo-data-${{ hashFiles('tests/integrated/test-fci-mpi/CMakeLists.txt') }}
+
+      - name: Download Zenodo test data
+        run: |
+          if [[ ! -e zenodo_data/grid.fci.nc ]]; then
+            echo "Downloading Zenodo data"
+            mkdir -p zenodo_data
+            wget \
+              https://zenodo.org/records/7614499/files/W7X-conf4-36x8x128.fci.nc?download=1 \
+              --output-document=zenodo_data/grid.fci.nc \
+              --retry-on-http-error=502,503,504 \
+              --tries 3
+          else
+            echo "Using cached Zenodo data"
+          fi
+          mkdir -pv build/tests/integrated/test-fci-mpi
+          cp -v zenodo_data/grid.fci.nc build/tests/integrated/test-fci-mpi
+
   standard_tests:
+    needs: cache_zenodo
     timeout-minutes: 60
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
@@ -185,24 +213,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ./zenodo_data
-          # Data doesn't depend on matrix job, so this should cache between all jobs
-          key: zenodo-data
-
-      - name: Download Zenodo test data
-        run: |
-          if [[ ! -e zenodo_data/grid.fci.nc ]]; then
-            echo "Downloading Zenodo data"
-            mkdir -p zenodo_data
-            wget \
-              https://zenodo.org/records/7614499/files/W7X-conf4-36x8x128.fci.nc?download=1 \
-              --output-document=zenodo_data/grid.fci.nc \
-              --retry-on-http-error=502,503,504 \
-              --tries 3
-          else
-            echo "Using cached Zenodo data"
-          fi
-          mkdir -pv build/tests/integrated/test-fci-mpi
-          cp -v zenodo_data/grid.fci.nc build/tests/integrated/test-fci-mpi
+          # If we update the test, invalidate the cache
+          key: zenodo-data-${{ hashFiles('tests/integrated/test-fci-mpi/CMakeLists.txt') }}
 
       - name: Cache SUNDIALS build
         uses: actions/cache@v4
@@ -225,18 +237,28 @@ jobs:
   Fedora:
     # This is its own job as it doesn't use most of the steps of the
     # standard_tests
+    needs: cache_zenodo
     timeout-minutes: 120
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
           submodules: true
+
+      - name: Cache Zenodo test data
+        uses: actions/cache@v4
+        with:
+          path: ./zenodo_data
+          # If we update the test, invalidate the cache
+          key: zenodo-data-${{ hashFiles('tests/integrated/test-fci-mpi/CMakeLists.txt') }}
+
       - name: Build Fedora
         run: ./.ci_fedora.sh setup openmpi
         shell: bash
         env:
           TRAVIS_BUILD_DIR: ${{ github.workspace }}
   CUDA:
+    needs: cache_zenodo
     timeout-minutes: 60
     runs-on: ubuntu-latest
     container: ghcr.io/ggeorgakoudis/boutdev-cuda:latest
