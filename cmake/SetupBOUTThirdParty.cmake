@@ -164,8 +164,8 @@ if (BOUT_USE_NETCDF)
     include(FetchContent)
     FetchContent_Declare(
       netcdf-cxx4
-      GIT_REPOSITORY https://github.com/ZedThree/netcdf-cxx4
-      GIT_TAG        "ad3e50953190615cb69dcc8a4652f9a88a8499cf"
+      GIT_REPOSITORY https://github.com/Unidata/netcdf-cxx4
+      GIT_TAG        "a43d6d4d415d407712c246faca553bd951730dc1"
       )
     # Don't build the netcdf tests, they have lots of warnings
     set(NCXX_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
