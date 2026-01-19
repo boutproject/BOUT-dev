@@ -7,6 +7,7 @@
 #include "bout/unused.hxx"
 #include <bout/mesh.hxx>
 
+#include <array>
 #include <list>
 #include <set>
 #include <string>
@@ -425,10 +426,10 @@ private:
   struct CommHandle {
     /// Array of receive requests. One for each possible neighbour; one each way in X, two
     /// each way in Y
-    MPI_Request request[6];
+    std::array<MPI_Request, 6> request;
     /// Array of send requests (for non-blocking send). One for each possible neighbour;
     /// one each way in X, two each way in Y
-    MPI_Request sendreq[6];
+    std::array<MPI_Request, 6> sendreq;
     /// Length of the buffers used to send/receive (in BoutReals)
     int xbufflen, ybufflen;
     /// Sending buffers
