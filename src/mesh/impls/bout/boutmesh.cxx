@@ -3243,7 +3243,7 @@ BoutReal BoutMesh::GlobalZ(BoutReal jz) const {
   const BoutReal zglo = getGlobalZIndex(jz);
 
   if (symmetricGlobalZ) {
-    // With this definition the boundary sits dx/2 away form the first/last inner points
+    // With this definition the boundary sits dz/2 away form the first/last inner points
     return (0.5 + zglo - (nz - MZ) * 0.5) / static_cast<BoutReal>(MZ);
   }
   return zglo / static_cast<BoutReal>(MZ);
