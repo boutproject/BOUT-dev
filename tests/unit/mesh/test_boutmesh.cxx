@@ -644,6 +644,7 @@ TEST_P(BadBoutMeshFindProcessorTest, FindProcessor) {
   EXPECT_THROW(mesh.findProcessorSplit(), BoutException);
 }
 
+namespace {
 struct ProcNumParameters {
   BoutMeshExposer::ProcSizes num_procs;
   BoutMeshExposer::ProcSizes index;
@@ -651,10 +652,13 @@ struct ProcNumParameters {
 };
 
 std::ostream& operator<<(std::ostream& out, const ProcNumParameters& value) {
-  return out << fmt::format("NXPE = {}, processor index = ({}, {}), expected_result = {}",
-                            value.num_procs.x, value.index.x, value.index.x,
+  return out << fmt::format("NXPE={}, NYPE={}, NZPE={}, processor index = ({}, {}, {}), "
+                            "expected_result = {}",
+                            value.num_procs.x, value.num_procs.y, value.num_procs.z,
+                            value.index.x, value.index.y, value.index.z,
                             value.expected_result);
 }
+} // namespace
 
 struct BoutMeshProcNumTest : public testing::TestWithParam<ProcNumParameters> {
   virtual ~BoutMeshProcNumTest() = default;
@@ -698,7 +702,7 @@ TEST_P(BoutMeshProcNumTest, ProcNum) {
   Options options{{"NXPE", params.num_procs.x}};
   mesh.chooseProcessorSplit(options);
 
-  const int result = mesh.PROC_NUM(params.index.x, params.index.y);
+  const int result = mesh.PROC_NUM(params.index.x, params.index.y, params.index.z);
   EXPECT_EQ(result, params.expected_result);
 }
 

@@ -45,6 +45,8 @@
 #include <iterator>
 #include <set>
 
+#include "fmt/ranges.h"
+
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
@@ -643,34 +645,34 @@ void BoutMesh::createCommunicators() {
 
   int proc[3]; // Processor range
 
-  for (int yp = 0; yp < NYPE; yp++) {
-    proc[0] = PROC_NUM(0, yp);        // First
-    proc[1] = PROC_NUM(NXPE - 1, yp); // Last
-    proc[2] = 1;                      // stride
+  for (int yp = 0; yp < NYPE; ++yp) {
+    for (int zp = 0; zp < NZPE; ++zp) {
+      proc[0] = PROC_NUM(0, yp, zp);        // First
+      proc[1] = PROC_NUM(NXPE - 1, yp, zp); // Last
+      proc[2] = 1;                          // stride
 
-    output_debug << "XCOMM " << proc[0] << ", " << proc[1] << endl;
+      output_debug.write("XCOMM {}\n", fmt::join(proc, ", "));
 
-    if (MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS) {
-      throw BoutException(
-          "Could not create X communication group for yp={:d} (xind={:d},yind={:d})\n",
-          yp, PE_XIND, PE_YIND);
-    }
-    if (MPI_Comm_create(BoutComm::get(), group, &comm_tmp) != MPI_SUCCESS) {
-      throw BoutException(
-          "Could not create X communicator for yp={:d} (xind={:d},yind={:d})\n", yp,
-          PE_XIND, PE_YIND);
-    }
-    MPI_Group_free(&group);
-
-    if (yp == PE_YIND) {
-      // Should be in this group
-      if (comm_tmp == MPI_COMM_NULL) {
-        throw BoutException("X communicator null");
+      if (MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS) {
+        throw BoutException("Could not create X communication group for yp={} zp={} "
+                            "(xind={}, yind={}, zind={})",
+                            yp, zp, PE_XIND, PE_YIND, PE_ZIND);
       }
+      if (MPI_Comm_create(BoutComm::get(), group, &comm_tmp) != MPI_SUCCESS) {
+        throw BoutException(
+            "Could not create X communicator for yp={} zp={} (xind={}, yind={}, zind={})",
+            yp, zp, PE_XIND, PE_YIND, PE_ZIND);
+      }
+      MPI_Group_free(&group);
 
-      comm_x = comm_tmp;
-    } else {
-      if (comm_tmp != MPI_COMM_NULL) {
+      if (yp == PE_YIND && zp == PE_ZIND) {
+        // Should be in this group
+        if (comm_tmp == MPI_COMM_NULL) {
+          throw BoutException("X communicator null");
+        }
+
+        comm_x = comm_tmp;
+      } else if (comm_tmp != MPI_COMM_NULL) {
         throw BoutException("X communicator should be null");
       }
     }
@@ -689,90 +691,204 @@ void BoutMesh::createCommunicators() {
     // Single-null. All processors with same PE_XIND
     TRACE("Creating Outer SOL communicators for Single Null operation");
 
-    for (int i = 0; i < NXPE; i++) {
-      proc[0] = PROC_NUM(i, 0);
-      proc[1] = PROC_NUM(i, NYPE - 1);
+    for (int xp = 0; xp < NXPE; ++xp) {
+      for (int zp = 0; zp < NZPE; ++zp) {
+        proc[0] = PROC_NUM(xp, 0, zp);
+        proc[1] = PROC_NUM(xp, NYPE - 1, zp);
 
-      output_debug << "Outer SOL " << proc[0] << ", " << proc[1] << endl;
+        output_debug.write("Outer SOL {}\n", fmt::join(proc, ", "));
 
-      MPI_Group_range_incl(group_world, 1, &proc, &group);
-      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
-      if (i == PE_XIND) {
-        // Should be part of this communicator
-        if (comm_tmp == MPI_COMM_NULL) {
-          // error
+        MPI_Group_range_incl(group_world, 1, &proc, &group);
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+        if (xp == PE_XIND and zp == PE_ZIND) {
+          // Should be part of this communicator
+          if (comm_tmp == MPI_COMM_NULL) {
+            throw BoutException("Single null outer SOL not correct\n");
+          }
+          comm_outer = comm_tmp;
+        } else if (comm_tmp != MPI_COMM_NULL) {
+          // Not part of this communicator so should be NULL
           throw BoutException("Single null outer SOL not correct\n");
         }
-        comm_outer = comm_tmp;
-      } else if (comm_tmp != MPI_COMM_NULL) {
-        // Not part of this communicator so should be NULL
-        throw BoutException("Single null outer SOL not correct\n");
+        MPI_Group_free(&group);
       }
-      MPI_Group_free(&group);
     }
   } else {
     // Double null
     TRACE("Creating Outer SOL communicators for Double Null operation");
 
-    for (int i = 0; i < NXPE; i++) {
-      // Inner SOL
-      proc[0] = PROC_NUM(i, 0);
-      proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
+    for (int xp = 0; xp < NXPE; xp++) {
+      for (int zp = 0; zp < NZPE; ++zp) {
+        // Inner SOL
+        proc[0] = PROC_NUM(xp, 0, zp);
+        proc[1] = PROC_NUM(xp, YPROC(ny_inner - 1), zp);
 
-      output_debug << "Double Null inner SOL " << proc[0] << ", " << proc[1] << endl;
+        output_debug.write("Double Null inner SOL {}\n", fmt::join(proc, ", "));
 
-      if (MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS) {
-        throw BoutException("MPI_Group_range_incl failed for xp = {:d}", NXPE);
+        if (MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS) {
+          throw BoutException("MPI_Group_range_incl failed for xp = {:d}", NXPE);
+        }
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+        if (comm_tmp != MPI_COMM_NULL) {
+          comm_outer = comm_tmp;
+        }
+        MPI_Group_free(&group);
+
+        // Outer SOL
+        proc[0] = PROC_NUM(xp, YPROC(ny_inner), zp);
+        proc[1] = PROC_NUM(xp, NYPE - 1, zp);
+
+        output_debug.write("Double Null outer SOL {}\n", fmt::join(proc, ", "));
+
+        MPI_Group_range_incl(group_world, 1, &proc, &group);
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+        if (comm_tmp != MPI_COMM_NULL) {
+          comm_outer = comm_tmp;
+        }
+        MPI_Group_free(&group);
       }
-      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
-      if (comm_tmp != MPI_COMM_NULL) {
-        comm_outer = comm_tmp;
-      }
-      MPI_Group_free(&group);
-
-      // Outer SOL
-      proc[0] = PROC_NUM(i, YPROC(ny_inner));
-      proc[1] = PROC_NUM(i, NYPE - 1);
-
-      output_debug << "Double Null outer SOL " << proc[0] << ", " << proc[1] << endl;
-
-      MPI_Group_range_incl(group_world, 1, &proc, &group);
-      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
-      if (comm_tmp != MPI_COMM_NULL) {
-        comm_outer = comm_tmp;
-      }
-      MPI_Group_free(&group);
     }
   }
 
-  for (int i = 0; i < NXPE; i++) {
-    // Lower PF region
+  for (int xp = 0; xp < NXPE; ++xp) {
+    for (int zp = 0; zp < NZPE; ++zp) {
+      // Lower PF region
 
-    if ((jyseps1_1 >= 0) || (jyseps2_2 + 1 < ny)) {
-      // A lower PF region exists
-      TRACE("Creating lower PF communicators for xp={:d}", i);
+      if ((jyseps1_1 >= 0) || (jyseps2_2 + 1 < ny)) {
+        // A lower PF region exists
+        TRACE("Creating lower PF communicators for xp={:d}", xp);
 
-      output_debug << "Creating lower PF communicators for xp = " << i << endl;
+        output_debug.write("Creating lower PF communicators for xp={}, zp={}\n", xp, zp);
 
-      if (jyseps1_1 >= 0) {
-        proc[0] = PROC_NUM(i, 0);
-        proc[1] = PROC_NUM(i, YPROC(jyseps1_1));
+        if (jyseps1_1 >= 0) {
+          proc[0] = PROC_NUM(xp, 0, zp);
+          proc[1] = PROC_NUM(xp, YPROC(jyseps1_1), zp);
 
-        output_debug << "PF1 " << proc[0] << ", " << proc[1] << endl;
+          output_debug.write("PF1 {}\n", fmt::join(proc, ", "));
+
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+        } else {
+          group_tmp1 = MPI_GROUP_EMPTY;
+        }
+
+        if (jyseps2_2 + 1 < ny) {
+          proc[0] = PROC_NUM(xp, YPROC(jyseps2_2 + 1), zp);
+          proc[1] = PROC_NUM(xp, NYPE - 1, zp);
+
+          output_debug.write("PF2 {}\n", fmt::join(proc, ", "));
+
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+        } else {
+          group_tmp2 = MPI_GROUP_EMPTY;
+        }
+
+        MPI_Group_union(group_tmp1, group_tmp2, &group);
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+        if (comm_tmp != MPI_COMM_NULL) {
+          comm_inner = comm_tmp;
+          if (ixseps_lower == ixseps_outer) {
+            // Between the separatrices is still in the PF region
+            output_debug.write("-> Inner and middle\n");
+
+            comm_middle = comm_inner;
+          } else {
+            output_debug.write("-> Outer and middle\n");
+
+            comm_middle = comm_outer;
+          }
+        }
+
+        output_debug.write("Freeing\n");
+
+        MPI_Group_free(&group);
+        if (group_tmp1 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp1);
+        }
+        if (group_tmp2 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp2);
+        }
+
+        output_debug.write("done lower PF\n");
+      }
+
+      if (jyseps2_1 != jyseps1_2) {
+        // Upper PF region
+        // Note need to order processors so that a continuous surface is formed
+        TRACE("Creating upper PF communicators for xp={:d}", xp);
+
+        output_debug.write("Creating upper PF communicators for xp={}, zp={}\n", xp, zp);
+
+        proc[0] = PROC_NUM(xp, YPROC(ny_inner), zp);
+        proc[1] = PROC_NUM(xp, YPROC(jyseps1_2), zp);
+
+        output_debug.write("PF3 {}\n", fmt::join(proc, ", "));
 
         MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+        proc[0] = PROC_NUM(xp, YPROC(jyseps2_1 + 1), zp);
+        proc[1] = PROC_NUM(xp, YPROC(ny_inner - 1), zp);
+
+        output_debug.write("PF4 {}\n", fmt::join(proc, ", "));
+
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+        MPI_Group_union(group_tmp1, group_tmp2, &group);
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+        if (comm_tmp != MPI_COMM_NULL) {
+          comm_inner = comm_tmp;
+          if (ixseps_upper == ixseps_outer) {
+            output_debug.write("-> Inner and middle\n");
+
+            comm_middle = comm_inner;
+          } else {
+            output_debug.write("-> Outer and middle\n");
+
+            comm_middle = comm_outer;
+            // MPI_Comm_dup(comm_outer, &comm_middle);
+          }
+        }
+
+        output_debug.write("Freeing\n");
+
+        MPI_Group_free(&group);
+        if (group_tmp1 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp1);
+        }
+        if (group_tmp2 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp2);
+        }
+
+        output_debug.write("done upper PF\n");
+      }
+
+      // Core region
+      TRACE("Creating core communicators");
+      if (jyseps2_1 > jyseps1_1) {
+        proc[0] = PROC_NUM(xp, YPROC(jyseps1_1 + 1), zp);
+        proc[1] = PROC_NUM(xp, YPROC(jyseps2_1), zp);
+
+        output_debug.write("CORE1 {}\n", fmt::join(proc, ", "));
+
+        if ((proc[0] < 0) || (proc[1] < 0)) {
+          throw BoutException("Invalid processor range for core processors");
+        }
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
       } else {
+        // no core region between jyseps1_1 and jyseps2_1
         group_tmp1 = MPI_GROUP_EMPTY;
       }
 
-      if (jyseps2_2 + 1 < ny) {
-        proc[0] = PROC_NUM(i, YPROC(jyseps2_2 + 1));
-        proc[1] = PROC_NUM(i, NYPE - 1);
+      if (jyseps2_2 > jyseps1_2) {
+        proc[0] = PROC_NUM(xp, YPROC(jyseps1_2 + 1), zp);
+        proc[1] = PROC_NUM(xp, YPROC(jyseps2_2), zp);
 
-        output_debug << "PF2 " << proc[0] << ", " << proc[1] << endl;
+        output_debug.write("CORE2 {}\n", fmt::join(proc, ", "));
 
-        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+        if ((proc[0] < 0) || (proc[1] < 0)) {
+          group_tmp2 = MPI_GROUP_EMPTY;
+        } else {
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+        }
       } else {
+        // no core region between jyseps1_2 and jyseps2_2
         group_tmp2 = MPI_GROUP_EMPTY;
       }
 
@@ -780,133 +896,20 @@ void BoutMesh::createCommunicators() {
       MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if (comm_tmp != MPI_COMM_NULL) {
         comm_inner = comm_tmp;
-        if (ixseps_lower == ixseps_outer) {
-          // Between the separatrices is still in the PF region
 
-          output_debug << "-> Inner and middle\n";
-
-          comm_middle = comm_inner;
-        } else {
-
-          output_debug << "-> Outer and middle\n";
-
-          comm_middle = comm_outer;
+        if (ixseps_inner == ixseps_outer) {
+          MPI_Comm_dup(comm_inner, &comm_middle);
         }
       }
 
-      output_debug << "Freeing\n";
-
-      MPI_Group_free(&group);
       if (group_tmp1 != MPI_GROUP_EMPTY) {
         MPI_Group_free(&group_tmp1);
       }
       if (group_tmp2 != MPI_GROUP_EMPTY) {
         MPI_Group_free(&group_tmp2);
       }
-
-      output_debug << "done lower PF\n";
-    }
-
-    if (jyseps2_1 != jyseps1_2) {
-      // Upper PF region
-      // Note need to order processors so that a continuous surface is formed
-      TRACE("Creating upper PF communicators for xp={:d}", i);
-
-      output_debug << "Creating upper PF communicators for xp = " << i << endl;
-
-      proc[0] = PROC_NUM(i, YPROC(ny_inner));
-      proc[1] = PROC_NUM(i, YPROC(jyseps1_2));
-
-      output_debug << "PF3 " << proc[0] << ", " << proc[1] << endl;
-
-      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-      proc[0] = PROC_NUM(i, YPROC(jyseps2_1 + 1));
-      proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
-
-      output_debug << "PF4 " << proc[0] << ", " << proc[1] << endl;
-
-      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
-      MPI_Group_union(group_tmp1, group_tmp2, &group);
-      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
-      if (comm_tmp != MPI_COMM_NULL) {
-        comm_inner = comm_tmp;
-        if (ixseps_upper == ixseps_outer) {
-
-          output_debug << "-> Inner and middle\n";
-
-          comm_middle = comm_inner;
-        } else {
-
-          output_debug << "-> Outer and middle\n";
-
-          comm_middle = comm_outer;
-          // MPI_Comm_dup(comm_outer, &comm_middle);
-        }
-      }
-
-      output_debug << "Freeing\n";
-
       MPI_Group_free(&group);
-      if (group_tmp1 != MPI_GROUP_EMPTY) {
-        MPI_Group_free(&group_tmp1);
-      }
-      if (group_tmp2 != MPI_GROUP_EMPTY) {
-        MPI_Group_free(&group_tmp2);
-      }
-
-      output_debug << "done upper PF\n";
     }
-
-    // Core region
-    TRACE("Creating core communicators");
-    if (jyseps2_1 > jyseps1_1) {
-      proc[0] = PROC_NUM(i, YPROC(jyseps1_1 + 1));
-      proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
-
-      output_debug << "CORE1 " << proc[0] << ", " << proc[1] << endl;
-
-      if ((proc[0] < 0) || (proc[1] < 0)) {
-        throw BoutException("Invalid processor range for core processors");
-      }
-      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-    } else {
-      // no core region between jyseps1_1 and jyseps2_1
-      group_tmp1 = MPI_GROUP_EMPTY;
-    }
-
-    if (jyseps2_2 > jyseps1_2) {
-      proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
-      proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
-
-      output_debug << "CORE2 " << proc[0] << ", " << proc[1] << endl;
-
-      if ((proc[0] < 0) || (proc[1] < 0)) {
-        group_tmp2 = MPI_GROUP_EMPTY;
-      } else {
-        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
-      }
-    } else {
-      // no core region between jyseps1_2 and jyseps2_2
-      group_tmp2 = MPI_GROUP_EMPTY;
-    }
-
-    MPI_Group_union(group_tmp1, group_tmp2, &group);
-    MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
-    if (comm_tmp != MPI_COMM_NULL) {
-      comm_inner = comm_tmp;
-
-      if (ixseps_inner == ixseps_outer) {
-        MPI_Comm_dup(comm_inner, &comm_middle);
-      }
-    }
-
-    if (group_tmp1 != MPI_GROUP_EMPTY) {
-      MPI_Group_free(&group_tmp1);
-    }
-    if (group_tmp2 != MPI_GROUP_EMPTY) {
-      MPI_Group_free(&group_tmp2);
-    }
-    MPI_Group_free(&group);
   }
 
   if (ixseps_inner == ixseps_outer) {
@@ -915,57 +918,73 @@ void BoutMesh::createCommunicators() {
   } else {
     // Need to handle unbalanced double-null case
 
-    output_debug << "Unbalanced " << endl;
+    output_debug.write("Unbalanced\n");
 
     if (ixseps_upper > ixseps_lower) {
       // middle is connected to the bottom
       TRACE("Creating unbalanced lower communicators");
 
-      for (int i = 0; i < NXPE; i++) {
-        proc[0] = PROC_NUM(i, 0);
-        proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
-        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-        proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
-        proc[1] = PROC_NUM(i, NYPE - 1);
-        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
-        MPI_Group_union(group_tmp1, group_tmp2, &group);
-        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
-        if (comm_tmp != MPI_COMM_NULL) {
-          comm_middle = comm_tmp;
-        }
+      for (int xp = 0; xp < NXPE; xp++) {
+        for (int zp = 0; zp < NZPE; ++zp) {
+          proc[0] = PROC_NUM(xp, 0, zp);
+          proc[1] = PROC_NUM(xp, YPROC(jyseps2_1), zp);
+          output_debug.write("Unbalanced lower 1 {}\n", fmt::join(proc, ", "));
 
-        if (group_tmp1 != MPI_GROUP_EMPTY) {
-          MPI_Group_free(&group_tmp1);
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+
+          proc[0] = PROC_NUM(xp, YPROC(jyseps1_2 + 1), zp);
+          proc[1] = PROC_NUM(xp, NYPE - 1, zp);
+
+          output_debug.write("Unbalanced lower 2 {}\n", fmt::join(proc, ", "));
+
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+          MPI_Group_union(group_tmp1, group_tmp2, &group);
+          MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+          if (comm_tmp != MPI_COMM_NULL) {
+            comm_middle = comm_tmp;
+          }
+
+          if (group_tmp1 != MPI_GROUP_EMPTY) {
+            MPI_Group_free(&group_tmp1);
+          }
+          if (group_tmp2 != MPI_GROUP_EMPTY) {
+            MPI_Group_free(&group_tmp2);
+          }
+          MPI_Group_free(&group);
         }
-        if (group_tmp2 != MPI_GROUP_EMPTY) {
-          MPI_Group_free(&group_tmp2);
-        }
-        MPI_Group_free(&group);
       }
     } else {
       // middle is connected to the top
       TRACE("Creating unbalanced upper communicators");
 
-      for (int i = 0; i < NXPE; i++) {
-        proc[0] = PROC_NUM(i, YPROC(ny_inner));
-        proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
-        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-        proc[0] = PROC_NUM(i, YPROC(jyseps1_1 + 1));
-        proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
-        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
-        MPI_Group_union(group_tmp1, group_tmp2, &group);
-        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
-        if (comm_tmp != MPI_COMM_NULL) {
-          comm_middle = comm_tmp;
-        }
+      for (int xp = 0; xp < NXPE; ++xp) {
+        for (int zp = 0; zp < NZPE; ++zp) {
+          proc[0] = PROC_NUM(xp, YPROC(ny_inner), zp);
+          proc[1] = PROC_NUM(xp, YPROC(jyseps2_2), zp);
 
-        if (group_tmp1 != MPI_GROUP_EMPTY) {
-          MPI_Group_free(&group_tmp1);
+          output_debug.write("Unbalanced upper 1 {}\n", fmt::join(proc, ", "));
+
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+          proc[0] = PROC_NUM(xp, YPROC(jyseps1_1 + 1), zp);
+          proc[1] = PROC_NUM(xp, YPROC(ny_inner - 1), zp);
+
+          output_debug.write("Unbalanced upper 2 {}\n", fmt::join(proc, ", "));
+
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+          MPI_Group_union(group_tmp1, group_tmp2, &group);
+          MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+          if (comm_tmp != MPI_COMM_NULL) {
+            comm_middle = comm_tmp;
+          }
+
+          if (group_tmp1 != MPI_GROUP_EMPTY) {
+            MPI_Group_free(&group_tmp1);
+          }
+          if (group_tmp2 != MPI_GROUP_EMPTY) {
+            MPI_Group_free(&group_tmp2);
+          }
+          MPI_Group_free(&group);
         }
-        if (group_tmp2 != MPI_GROUP_EMPTY) {
-          MPI_Group_free(&group_tmp2);
-        }
-        MPI_Group_free(&group);
       }
     }
   }
@@ -1547,20 +1566,19 @@ bool BoutMesh::lastX() const { return PE_XIND == NXPE - 1; }
 int BoutMesh::sendXOut(BoutReal* buffer, int size, int tag) {
   Timer timer("comms");
 
-  int proc {-1};
+  int proc{-1};
   if (PE_XIND == NXPE - 1) {
     if (periodicX) {
       // Wrap around to first processor in X
-      proc = PROC_NUM(0, PE_YIND);
+      proc = PROC_NUM(0, PE_YIND, PE_ZIND);
     } else {
       return 1;
     }
   } else {
-    proc = PROC_NUM(PE_XIND + 1, PE_YIND);
+    proc = PROC_NUM(PE_XIND + 1, PE_YIND, PE_ZIND);
   }
 
-  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
-                BoutComm::get());
+  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get());
 
   return 0;
 }
@@ -1568,20 +1586,19 @@ int BoutMesh::sendXOut(BoutReal* buffer, int size, int tag) {
 int BoutMesh::sendXIn(BoutReal* buffer, int size, int tag) {
   Timer timer("comms");
 
-  int proc {-1};
+  int proc{-1};
   if (PE_XIND == 0) {
     if (periodicX) {
       // Wrap around to last processor in X
-      proc = PROC_NUM(NXPE - 1, PE_YIND);
+      proc = PROC_NUM(NXPE - 1, PE_YIND, PE_ZIND);
     } else {
       return 1;
     }
   } else {
-    proc = PROC_NUM(PE_XIND - 1, PE_YIND);
+    proc = PROC_NUM(PE_XIND - 1, PE_YIND, PE_ZIND);
   }
 
-  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
-                BoutComm::get());
+  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get());
 
   return 0;
 }
@@ -1589,23 +1606,23 @@ int BoutMesh::sendXIn(BoutReal* buffer, int size, int tag) {
 comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
   Timer timer("comms");
 
-  int proc {-1};
+  int proc{-1};
   if (PE_XIND == NXPE - 1) {
     if (periodicX) {
       // Wrap around to first processor in X
-      proc = PROC_NUM(0, PE_YIND);
+      proc = PROC_NUM(0, PE_YIND, PE_ZIND);
     } else {
       return nullptr;
     }
   } else {
-    proc = PROC_NUM(PE_XIND + 1, PE_YIND);
+    proc = PROC_NUM(PE_XIND + 1, PE_YIND, PE_ZIND);
   }
 
   // Get a communications handle. Not fussy about size of arrays
   CommHandle* ch = get_handle(0, 0);
 
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
-                 BoutComm::get(), ch->request.data());
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get(),
+                 ch->request.data());
 
   ch->in_progress = true;
 
@@ -1615,23 +1632,23 @@ comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
 comm_handle BoutMesh::irecvXIn(BoutReal* buffer, int size, int tag) {
   Timer timer("comms");
 
-  int proc {-1};
+  int proc{-1};
   if (PE_XIND == 0) {
     if (periodicX) {
       // Wrap around to last processor in X
-      proc = PROC_NUM(NXPE - 1, PE_YIND);
+      proc = PROC_NUM(NXPE - 1, PE_YIND, PE_ZIND);
     } else {
       return nullptr;
     }
   } else {
-    proc = PROC_NUM(PE_XIND - 1, PE_YIND);
+    proc = PROC_NUM(PE_XIND - 1, PE_YIND, PE_ZIND);
   }
 
   // Get a communications handle. Not fussy about size of arrays
   CommHandle* ch = get_handle(0, 0);
 
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
-                 BoutComm::get(), ch->request.data());
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get(),
+                 ch->request.data());
 
   ch->in_progress = true;
 
@@ -1688,15 +1705,18 @@ bool BoutMesh::lastY(int xpos) const {
  * can be implemented later (maybe)
  ****************************************************************/
 
-int BoutMesh::PROC_NUM(int xind, int yind) const {
+int BoutMesh::PROC_NUM(int xind, int yind, int zind) const {
   if ((xind >= NXPE) || (xind < 0)) {
     return -1;
   }
   if ((yind >= NYPE) || (yind < 0)) {
     return -1;
   }
+  if ((zind >= NZPE) || (zind < 0)) {
+    return -1;
+  }
 
-  return (yind * NXPE) + xind;
+  return (((zind * NYPE) + yind) * NXPE) + xind;
 }
 
 BoutReal BoutMesh::getGlobalXIndex(BoutReal xloc) const {
@@ -1828,20 +1848,20 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
  ****************************************************************/
 
 void BoutMesh::default_connections() {
-  DDATA_OUTDEST = PROC_NUM(PE_XIND, PE_YIND - 1);
-  UDATA_OUTDEST = PROC_NUM(PE_XIND, PE_YIND + 1);
+  DDATA_OUTDEST = PROC_NUM(PE_XIND, PE_YIND - 1, PE_ZIND);
+  UDATA_OUTDEST = PROC_NUM(PE_XIND, PE_YIND + 1, PE_ZIND);
 
-  IDATA_DEST = PROC_NUM(PE_XIND - 1, PE_YIND);
-  ODATA_DEST = PROC_NUM(PE_XIND + 1, PE_YIND);
+  IDATA_DEST = PROC_NUM(PE_XIND - 1, PE_YIND, PE_ZIND);
+  ODATA_DEST = PROC_NUM(PE_XIND + 1, PE_YIND, PE_ZIND);
 
   /// Check if X is periodic
   if (periodicX) {
     if (PE_XIND == (NXPE - 1)) {
-      ODATA_DEST = PROC_NUM(0, PE_YIND);
+      ODATA_DEST = PROC_NUM(0, PE_YIND, PE_ZIND);
     }
 
     if (PE_XIND == 0) {
-      IDATA_DEST = PROC_NUM(NXPE - 1, PE_YIND);
+      IDATA_DEST = PROC_NUM(NXPE - 1, PE_YIND, PE_ZIND);
     }
   }
 }
@@ -1911,12 +1931,12 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
     xlt = LocalNx;
   }
 
-  if (MYPE == PROC_NUM(PE_XIND, ypeup)) { /* PROCESSOR SENDING +VE Y */
+  if (MYPE == PROC_NUM(PE_XIND, ypeup, PE_ZIND)) { /* PROCESSOR SENDING +VE Y */
     /* Set the branch cut x position */
     if (xge <= MXG) {
       /* Connect on the inside */
       UDATA_XSPLIT = xlt;
-      UDATA_INDEST = PROC_NUM(PE_XIND, ypedown);
+      UDATA_INDEST = PROC_NUM(PE_XIND, ypedown, PE_ZIND);
       if (UDATA_XSPLIT == LocalNx) {
         UDATA_OUTDEST = -1;
       }
@@ -1930,7 +1950,7 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
         UDATA_INDEST = UDATA_OUTDEST;
       }
       UDATA_XSPLIT = xge;
-      UDATA_OUTDEST = PROC_NUM(PE_XIND, ypedown);
+      UDATA_OUTDEST = PROC_NUM(PE_XIND, ypedown, PE_ZIND);
       if (UDATA_XSPLIT <= 0) {
         UDATA_INDEST = -1;
       }
@@ -1940,12 +1960,12 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
     }
   }
 
-  if (MYPE == PROC_NUM(PE_XIND, ypedown)) { /* PROCESSOR SENDING -VE Y */
+  if (MYPE == PROC_NUM(PE_XIND, ypedown, PE_ZIND)) { /* PROCESSOR SENDING -VE Y */
     /* Set the branch cut x position */
     if (xge <= MXG) {
       /* Connect on the inside */
       DDATA_XSPLIT = xlt;
-      DDATA_INDEST = PROC_NUM(PE_XIND, ypeup);
+      DDATA_INDEST = PROC_NUM(PE_XIND, ypeup, PE_ZIND);
       if (DDATA_XSPLIT == LocalNx) {
         DDATA_OUTDEST = -1;
       }
@@ -1959,7 +1979,7 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
         DDATA_INDEST = DDATA_OUTDEST;
       }
       DDATA_XSPLIT = xge;
-      DDATA_OUTDEST = PROC_NUM(PE_XIND, ypeup);
+      DDATA_OUTDEST = PROC_NUM(PE_XIND, ypeup, PE_ZIND);
       if (DDATA_XSPLIT == 0) {
         DDATA_INDEST = -1;
       }
@@ -1999,7 +2019,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
     return; // Not in this x domain
   }
 
-  if (MYPE == PROC_NUM(PE_XIND, ypeup)) {
+  if (MYPE == PROC_NUM(PE_XIND, ypeup, PE_ZIND)) {
     // Target on upper processor boundary
     if (xge <= MXG) {
       // Target on inside
@@ -2022,7 +2042,7 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
       output_info.write("=> This processor has target upper outer\n");
     }
   }
-  if (MYPE == PROC_NUM(PE_XIND, ypedown)) {
+  if (MYPE == PROC_NUM(PE_XIND, ypedown, PE_ZIND)) {
     // Target on upper processor boundary
     if (xge <= MXG) {
       // Target on inside

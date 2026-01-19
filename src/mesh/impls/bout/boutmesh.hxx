@@ -345,9 +345,9 @@ protected:
   // for testing
 
   // Processor number, local <-> global translation
-  /// Returns the processor number, given X (\p xind) and Y (\p yind)
+  /// Returns the processor number, given X (\p xind), Y (\p yind), Z (\p zind)
   /// processor indices. Returns -1 if out of range (no processor)
-  int PROC_NUM(int xind, int yind) const;
+  int PROC_NUM(int xind, int yind, int zind) const;
   int YGLOBAL(int yloc, int yproc) const;
   int YLOCAL(int yglo, int yproc) const;
   /// Return the Y processor number given a global Y index
