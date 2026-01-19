@@ -78,8 +78,8 @@ if on_readthedocs:
     os.system("which clang-format-6.0")
     subprocess.run("git submodule update --init --recursive", shell=True)
     cmake = (
-        "cmake  . "
-        " -B build"
+        "cmake -S ../.. "
+        " -B bout_build"
         " -DBOUT_USE_FFTW=ON"
         " -DBOUT_USE_LAPACK=OFF"
         " -DBOUT_ENABLE_PYTHON=ON"
@@ -89,8 +89,12 @@ if on_readthedocs:
         f" -DPython3_ROOT_DIR={pydir}"
     )
     subprocess.run(f"echo {cmake}", shell=True)
-    subprocess.run(f"cd ../../; {cmake}", shell=True, check=True)
-    subprocess.run("cd ../.. ; cmake --build build -j 2", shell=True, check=True)
+    subprocess.run(f"{cmake}", shell=True, check=True)
+    subprocess.run("cmake --build bout_build", shell=True, check=True)
+
+    # Add the build directory to sys.path so that sphinx picks up the built
+    # Python modules
+    sys.path.append("bout_build/tools/pylib")
 
 
 # readthedocs currently runs out of memory if we actually dare to try to do this
