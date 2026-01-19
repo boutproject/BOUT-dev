@@ -357,12 +357,20 @@ protected:
 
 private:
   // Twist-shift switches
-  bool TS_up_in, TS_up_out, TS_down_in, TS_down_out;
+  bool TS_up_in = false;
+  bool TS_up_out = false;
+  bool TS_down_in = false;
+  bool TS_down_out = false;
 
   // Communication parameters calculated by topology
-  int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
-  int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
-  int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
+  int UDATA_INDEST = -1;        ///< Processor in +y, lower side of branch cut
+  int UDATA_OUTDEST = -1;       ///< Processor in +y, upper side of branch cut
+  int UDATA_XSPLIT = 0;         ///< X index of branch cut on +y side
+  int DDATA_INDEST = -1;        ///< Processor in -y, lower side of branch cut
+  int DDATA_OUTDEST = -1;       ///< Processor in -y, upper side of branch cut
+  int DDATA_XSPLIT = 0;         ///< X index of branch cut on -y side
+  int IDATA_DEST = -1;          ///< Processor in -x
+  int ODATA_DEST = -1;          ///< Processor in +x
 
   // Settings
   bool TwistShift; // Use a twist-shift condition in core?

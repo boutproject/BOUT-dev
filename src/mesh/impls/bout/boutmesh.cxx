@@ -1850,16 +1850,11 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
  ****************************************************************/
 
 void BoutMesh::default_connections() {
-  DDATA_XSPLIT = UDATA_XSPLIT = 0;  // everything by default outside (arb. choice)
-  DDATA_INDEST = UDATA_INDEST = -1; // since nothing inside
-
   DDATA_OUTDEST = PROC_NUM(PE_XIND, PE_YIND - 1);
   UDATA_OUTDEST = PROC_NUM(PE_XIND, PE_YIND + 1);
 
   IDATA_DEST = PROC_NUM(PE_XIND - 1, PE_YIND);
   ODATA_DEST = PROC_NUM(PE_XIND + 1, PE_YIND);
-
-  TS_up_in = TS_up_out = TS_down_in = TS_down_out = false; // No twist-shifts
 
   /// Check if X is periodic
   if (periodicX) {
