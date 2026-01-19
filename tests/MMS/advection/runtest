@@ -20,7 +20,6 @@ import pickle
 
 import time
 
-
 if __name__ == "__main__":
     build_and_log("MMS advection")
 
