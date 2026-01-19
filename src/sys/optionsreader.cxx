@@ -1,6 +1,5 @@
 #include <bout/assert.hxx>
 #include <bout/boutexception.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/optionsreader.hxx>
 #include <bout/utils.hxx>
 
@@ -23,7 +22,6 @@ OptionsReader* OptionsReader::getInstance() {
 }
 
 void OptionsReader::read(Options* options, const std::string& filename) {
-  TRACE("OptionsReader::read");
   if (filename.empty()) {
     throw BoutException("OptionsReader::read passed empty filename\n");
   }
@@ -34,7 +32,6 @@ void OptionsReader::read(Options* options, const std::string& filename) {
 }
 
 void OptionsReader::write(Options* options, const std::string& filename) {
-  TRACE("OptionsReader::write");
   if (filename.empty()) {
     throw BoutException("OptionsReader::write passed empty filename\n");
   }

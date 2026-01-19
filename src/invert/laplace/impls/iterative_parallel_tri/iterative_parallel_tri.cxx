@@ -234,7 +234,6 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
-  TRACE("LaplaceIPT::solve(const, const)");
 
   FieldPerp x{emptyFrom(b)};
 

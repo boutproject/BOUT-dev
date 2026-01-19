@@ -46,10 +46,8 @@
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
 #include <bout/globals.hxx>
-#include <bout/msg_stack.hxx>
-#include <bout/utils.hxx>
-
 #include <bout/surfaceiter.hxx>
+#include <bout/utils.hxx>
 
 #include <cmath>
 
@@ -63,7 +61,7 @@ InvertParCR::InvertParCR(Options* opt, CELL_LOC location, Mesh* mesh_in)
 }
 
 const Field3D InvertParCR::solve(const Field3D& f) {
-  TRACE("InvertParCR::solve(Field3D)");
+
   ASSERT1(localmesh == f.getMesh());
   ASSERT1(location == f.getLocation());
 

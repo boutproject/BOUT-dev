@@ -5,9 +5,9 @@
  **************************************************************************/
 
 #include <bout/assert.hxx>
+#include <bout/build_defines.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
@@ -931,7 +931,7 @@ const Field2D& Coordinates::zlength() const {
 
 int Coordinates::geometry(bool recalculate_staggered,
                           bool force_interpolate_from_centre) {
-  TRACE("Coordinates::geometry");
+
   localmesh->communicate_no_slices(dx, dy, dz, g11, g22, g33, g12, g13, g23, g_11, g_22,
                                    g_33, g_12, g_13, g_23, J, Bxy);
 
@@ -1201,7 +1201,6 @@ int Coordinates::geometry(bool recalculate_staggered,
 }
 
 int Coordinates::calcCovariant(const std::string& region) {
-  TRACE("Coordinates::calcCovariant");
 
   // Make sure metric elements are allocated
   g_11.allocate();
@@ -1264,7 +1263,6 @@ int Coordinates::calcCovariant(const std::string& region) {
 }
 
 int Coordinates::calcContravariant(const std::string& region) {
-  TRACE("Coordinates::calcContravariant");
 
   // Make sure metric elements are allocated
   g11.allocate();
@@ -1319,7 +1317,7 @@ int Coordinates::calcContravariant(const std::string& region) {
 }
 
 int Coordinates::jacobian() {
-  TRACE("Coordinates::jacobian");
+
   // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
 
   const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
@@ -1521,7 +1519,7 @@ Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc, const std::string& m
 Coordinates::FieldMetric Coordinates::Grad_par(const Field2D& var,
                                                [[maybe_unused]] CELL_LOC outloc,
                                                const std::string& UNUSED(method)) {
-  TRACE("Coordinates::Grad_par( Field2D )");
+
   ASSERT1(location == outloc
           || (outloc == CELL_DEFAULT && location == var.getLocation()));
 
@@ -1530,7 +1528,7 @@ Coordinates::FieldMetric Coordinates::Grad_par(const Field2D& var,
 
 Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
                               const std::string& method) {
-  TRACE("Coordinates::Grad_par( Field3D )");
+
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   return ::DDY(var, outloc, method) * invSg();
@@ -1560,7 +1558,7 @@ Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC 
 
 Coordinates::FieldMetric Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
                                               const std::string& method) {
-  TRACE("Coordinates::Div_par( Field2D )");
+
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   // Need Bxy at location of f, which might be different from location of this
@@ -1572,7 +1570,7 @@ Coordinates::FieldMetric Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
 
 Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
                              const std::string& method) {
-  TRACE("Coordinates::Div_par( Field3D )");
+
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   // Need Bxy at location of f, which might be different from location of this
@@ -1601,7 +1599,7 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
 
 Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outloc,
                                                  const std::string& method) {
-  TRACE("Coordinates::Grad2_par2( Field2D )");
+
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
   auto result = Grad2_par2_DDY_invSg(outloc, method) * DDY(f, outloc, method)
@@ -1612,7 +1610,7 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
 
 Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
                                 const std::string& method) {
-  TRACE("Coordinates::Grad2_par2( Field3D )");
+
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -1636,7 +1634,7 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
 
 Coordinates::FieldMetric Coordinates::Delp2(const Field2D& f, CELL_LOC outloc,
                                             bool UNUSED(useFFT)) {
-  TRACE("Coordinates::Delp2( Field2D )");
+
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   auto result = G1 * DDX(f, outloc) + g11 * D2DX2(f, outloc);
@@ -1645,7 +1643,6 @@ Coordinates::FieldMetric Coordinates::Delp2(const Field2D& f, CELL_LOC outloc,
 }
 
 Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
-  TRACE("Coordinates::Delp2( Field3D )");
 
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1711,7 +1708,6 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
 }
 
 FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
-  TRACE("Coordinates::Delp2( FieldPerp )");
 
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1788,7 +1784,7 @@ Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
 Coordinates::FieldMetric Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
                                               const std::string& dfdy_boundary_conditions,
                                               const std::string& dfdy_dy_region) {
-  TRACE("Coordinates::Laplace( Field2D )");
+
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   auto result = G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc)
@@ -1803,7 +1799,7 @@ Coordinates::FieldMetric Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
 Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
                              const std::string& dfdy_boundary_conditions,
                              const std::string& dfdy_dy_region) {
-  TRACE("Coordinates::Laplace( Field3D )");
+
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc)
@@ -1822,7 +1818,7 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
 // solver
 Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
                                     [[maybe_unused]] const Field2D& f) {
-  TRACE("Coordinates::Laplace_perpXY( Field2D )");
+
 #if not(BOUT_USE_METRIC_3D)
   Field2D result;
   result.allocate();

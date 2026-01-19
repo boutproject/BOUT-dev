@@ -3,13 +3,11 @@
 
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
+#include <bout/output.hxx>
 #include <bout/utils.hxx>
 
 #include <cmath>
-
-#include <bout/output.hxx>
 
 RK4Solver::RK4Solver(Options* opts)
     : Solver(opts), atol((*options)["atol"].doc("Absolute tolerance").withDefault(1.e-5)),
@@ -38,8 +36,6 @@ void RK4Solver::setMaxTimestep(BoutReal dt) {
 }
 
 int RK4Solver::init() {
-
-  TRACE("Initialising RK4 solver");
 
   Solver::init();
   output << "\n\tRunge-Kutta 4th-order solver\n";
@@ -77,8 +73,6 @@ int RK4Solver::init() {
 }
 
 int RK4Solver::run() {
-  TRACE("RK4Solver::run()");
-
   for (int s = 0; s < getNumberOutputSteps(); s++) {
     BoutReal target = simtime + getOutputTimestep();
 

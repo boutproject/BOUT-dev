@@ -418,14 +418,14 @@ private:
  */
 #define BOUTMAIN(ModelClass)                                       \
   int main(int argc, char** argv) {                                \
-    int init_err = BoutInitialise(argc, argv);                     \
-    if (init_err < 0) {                                            \
-      return 0;                                                    \
-    }                                                              \
-    if (init_err > 0) {                                            \
-      return init_err;                                             \
-    }                                                              \
     try {                                                          \
+      int init_err = BoutInitialise(argc, argv);                   \
+      if (init_err < 0) {                                          \
+        return 0;                                                  \
+      }                                                            \
+      if (init_err > 0) {                                          \
+        return init_err;                                           \
+      }                                                            \
       auto model = bout::utils::make_unique<ModelClass>();         \
       auto solver = Solver::create();                              \
       solver->setModel(model.get());                               \
@@ -433,8 +433,7 @@ private:
       solver->addMonitor(bout_monitor.get(), Solver::BACK);        \
       solver->solve();                                             \
     } catch (const BoutException& e) {                             \
-      output << "Error encountered: " << e.what();                 \
-      output << e.getBacktrace() << endl;                          \
+      output.write("Error encountered: {}\n", e.what());           \
       MPI_Abort(BoutComm::get(), 1);                               \
     }                                                              \
     BoutFinalise();                                                \

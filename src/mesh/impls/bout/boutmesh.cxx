@@ -431,7 +431,6 @@ void BoutMesh::setDerivedGridSizes() {
 }
 
 int BoutMesh::load() {
-  TRACE("BoutMesh::load()");
 
   output_progress << _("Loading mesh") << endl;
 
@@ -1363,7 +1362,6 @@ comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
 }
 
 int BoutMesh::wait(comm_handle handle) {
-  TRACE("BoutMesh::wait(comm_handle)");
 
   if (handle == nullptr) {
     return 1;

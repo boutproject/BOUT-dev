@@ -29,12 +29,13 @@ class Output;
 #ifndef BOUT_OUTPUT_H
 #define BOUT_OUTPUT_H
 
-#include "bout/multiostream.hxx"
 #include <fstream>
 #include <iostream>
 #include <string>
 
 #include "bout/assert.hxx"
+#include "bout/build_defines.hxx"
+#include "bout/multiostream.hxx"
 #include "bout/sys/gettext.hxx" // IWYU pragma: keep for gettext _() macro
 #include "bout/unused.hxx"
 

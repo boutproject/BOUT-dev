@@ -15,10 +15,8 @@
 #if BOUT_HAS_PETSC // Requires PETSc
 
 #include <bout/assert.hxx>
-#include <bout/sys/timer.hxx>
-
-#include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
+#include <bout/sys/timer.hxx>
 
 LaplaceXZpetsc::LaplaceXZpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
     : LaplaceXZ(m, opt, loc), lib(opt == nullptr ? &(Options::root()["laplacexz"]) : opt),
@@ -96,8 +94,6 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
    * INVERT_RHS     - As "Specifiaction through ghost points", where "in" is
    *                  given by b
    */
-
-  TRACE("LaplaceXZpetsc::LaplaceXZpetsc");
 
   if (opt == nullptr) {
     // If no options supplied, use default
@@ -260,8 +256,6 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
 
 LaplaceXZpetsc::~LaplaceXZpetsc() {
 
-  TRACE("LaplaceXZpetsc::~LaplaceXZpetsc");
-
   PetscBool petsc_is_finalised;
   PetscFinalized(&petsc_is_finalised);
 
@@ -292,8 +286,6 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
    * Ain       - The A coefficient in div(A grad_perp(B)) + Bf = b
    * Bin       - The B coefficient in div(A grad_perp(B)) + Bf = b
    */
-
-  TRACE("LaplaceXZpetsc::setCoefs");
 
   ASSERT1(Ain.getMesh() == localmesh);
   ASSERT1(Bin.getMesh() == localmesh);
@@ -766,8 +758,6 @@ Field3D LaplaceXZpetsc::solve(const Field3D& bin, const Field3D& x0in) {
    * Output
    * result    - The solved x (returned as a Field3D) in the matrix problem Ax=b
    */
-
-  TRACE("LaplaceXZpetsc::solve");
 
   ASSERT1(bin.getMesh() == localmesh);
   ASSERT1(x0in.getMesh() == localmesh);

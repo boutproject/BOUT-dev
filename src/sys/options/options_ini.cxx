@@ -50,11 +50,9 @@
  **************************************************************************/
 
 #include "options_ini.hxx"
-#include <bout/boutexception.hxx>
-#include <bout/msg_stack.hxx>
-#include <bout/utils.hxx>
 
-#include <algorithm>
+#include <bout/boutexception.hxx>
+#include <bout/utils.hxx>
 
 using namespace std;
 
@@ -151,8 +149,6 @@ void OptionINI::read(Options* options, const string& filename) {
 }
 
 void OptionINI::write(Options* options, const std::string& filename) {
-  TRACE("OptionsINI::write");
-
   std::ofstream fout;
   fout.open(filename, ios::out | ios::trunc);
 

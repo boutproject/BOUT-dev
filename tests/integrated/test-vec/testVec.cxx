@@ -14,13 +14,11 @@ public:
 };
 
 int VecTest::init(bool UNUSED(restarting)) {
-  TRACE("Halt in VecTest::init");
   SOLVE_FOR(n);
   return 0;
 }
 
 int VecTest::rhs(BoutReal UNUSED(t)) {
-  TRACE("Halt in VecTest::rhs");
   mesh->communicate(n);
   gradPerpN = Grad_perp(n);
   mesh->communicate(gradPerpN);

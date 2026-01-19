@@ -106,8 +106,6 @@ Options::Options(InitializerList values, Options* parent_instance,
 }
 
 Options& Options::operator[](const std::string& name) {
-  TRACE("Options::operator[]");
-
   if (isValue()) {
     throw BoutException(_("Trying to index Option '{0}' with '{1}', but '{0}' is a "
                           "value, not a section.\n"
@@ -145,8 +143,6 @@ Options& Options::operator[](const std::string& name) {
 }
 
 const Options& Options::operator[](const std::string& name) const {
-  TRACE("Options::operator[] const");
-
   if (isValue()) {
     throw BoutException(_("Trying to index Option '{0}' with '{1}', but '{0}' is a "
                           "value, not a section.\n"

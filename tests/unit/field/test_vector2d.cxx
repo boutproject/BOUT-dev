@@ -1,8 +1,8 @@
-#include "gtest/gtest.h"
+#include <bout/build_defines.hxx>
 
-#include "bout/boutexception.hxx"
 #if not(BOUT_USE_METRIC_3D)
 #include "test_extras.hxx"
+#include "bout/boutexception.hxx"
 #include "bout/mesh.hxx"
 #include "bout/mpi_wrapper.hxx"
 #include "bout/output.hxx"
@@ -10,6 +10,8 @@
 #include "bout/vector3d.hxx"
 
 #include "fake_mesh.hxx"
+
+#include "gtest/gtest.h"
 
 // The unit tests use the global mesh
 using namespace bout::globals;

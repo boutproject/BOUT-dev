@@ -444,19 +444,19 @@ public:
       value = matrix->getVal(row, column);
     }
     Element& operator=(const Element& other) {
-      AUTO_TRACE();
+
       ASSERT3(finite(static_cast<BoutReal>(other)));
       return *this = static_cast<BoutReal>(other);
     }
     Element& operator=(BoutReal value_) {
-      AUTO_TRACE();
+
       ASSERT3(finite(value_));
       value = value_;
       setValues(value);
       return *this;
     }
     Element& operator+=(BoutReal value_) {
-      AUTO_TRACE();
+
       ASSERT3(finite(value_));
       auto column_position = std::find(cbegin(positions), cend(positions), column);
       if (column_position != cend(positions)) {

@@ -649,7 +649,7 @@ public:
   /// Returns the non-CELL_CENTRE location
   /// allowed as a staggered location
   static CELL_LOC getAllowedStaggerLoc(DIRECTION direction) {
-    AUTO_TRACE();
+
     switch (direction) {
     case (DIRECTION::X):
       return CELL_XLOW;
@@ -667,7 +667,7 @@ public:
   /// Returns the number of grid points in the
   /// particular direction
   int getNpoints(DIRECTION direction) const {
-    AUTO_TRACE();
+
     switch (direction) {
     case (DIRECTION::X):
       return LocalNx;
@@ -685,7 +685,7 @@ public:
   /// Returns the number of guard points in the
   /// particular direction
   int getNguard(DIRECTION direction) const {
-    AUTO_TRACE();
+
     switch (direction) {
     case (DIRECTION::X):
       return xstart;
