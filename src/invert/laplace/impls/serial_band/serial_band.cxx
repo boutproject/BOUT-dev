@@ -46,7 +46,7 @@ LaplaceSerialBand::LaplaceSerialBand(Options* opt, const CELL_LOC loc, Mesh* mes
                                      Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
 
-  bout::fft::checkZSerial(*localmesh, "`band` inversion");
+  bout::fft::assertZSerial(*localmesh, "`band` inversion");
 
   Acoef.setLocation(location);
   Ccoef.setLocation(location);
