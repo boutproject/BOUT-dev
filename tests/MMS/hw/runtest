@@ -15,7 +15,6 @@ from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, concatenate
 
-
 build_and_log("MMS test")
 
 # List of NX values to use
