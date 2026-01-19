@@ -181,6 +181,29 @@ jobs:
           python -m pip install --upgrade pip setuptools
           python -m pip install -r requirements.txt
 
+      - name: Cache Zenodo test data
+        uses: actions/cache@v4
+        with:
+          path: ./zenodo_data
+          # Data doesn't depend on matrix job, so this should cache between all jobs
+          key: zenodo-data
+
+      - name: Download Zenodo test data
+        run: |
+          if [[ ! -e zenodo_data/grid.fci.nc ]]; then
+            echo "Downloading Zenodo data"
+            mkdir -p zenodo_data
+            wget \
+              https://zenodo.org/records/7614499/files/W7X-conf4-36x8x128.fci.nc?download=1 \
+              --output-document=zenodo_data/grid.fci.nc \
+              --retry-on-http-error=502,503,504 \
+              --tries 3
+          else
+            echo "Using cached Zenodo data"
+          fi
+          mkdir -pv build/tests/integrated/test-fci-mpi
+          cp -v zenodo_data/grid.fci.nc build/tests/integrated/test-fci-mpi
+
       - name: Cache SUNDIALS build
         uses: actions/cache@v4
         with:
