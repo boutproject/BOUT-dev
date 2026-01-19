@@ -116,7 +116,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
 
   interp_from_aligned->calcWeights(zt_prime_from);
 
-  // avoid overflow - no stencil need more than 5 points
+  // avoid overflow - no stencil needs more than 5 points
   const auto yvalid =
       static_cast<signed char>(std::min(mesh.LocalNy - (2 * mesh.ystart), 20));
 
