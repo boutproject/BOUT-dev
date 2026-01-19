@@ -121,10 +121,10 @@ Array<BoutReal> irfft(const Array<dcomplex>& in, int length);
 /// Generally, FFTs must be done over the full Z domain. Currently, most
 /// methods using FFTs don't handle parallelising in Z
 #if BOUT_CHECK_LEVEL > 0
-void checkZSerial(const Mesh& mesh, std::string_view name);
+void assertZSerial(const Mesh& mesh, std::string_view name);
 #else
-inline void checkZSerial([[maybe_unused]] const Mesh& mesh,
-                         [[maybe_unused]] std::string_view name) {}
+inline void assertZSerial([[maybe_unused]] const Mesh& mesh,
+                          [[maybe_unused]] std::string_view name) {}
 #endif
 } // namespace fft
 } // namespace bout

@@ -24,7 +24,7 @@ ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
   ASSERT1(zShift.getLocation() == location);
   // check the coordinate system used for the grid data source
   ShiftedMetric::checkInputGrid();
-  bout::fft::checkZSerial(m, "ShiftedMetric");
+  bout::fft::assertZSerial(m, "ShiftedMetric");
 
   cachePhases();
 }

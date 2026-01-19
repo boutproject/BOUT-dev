@@ -535,7 +535,7 @@ Array<BoutReal> irfft(const Array<dcomplex>& in, int length) {
 }
 
 #if BOUT_CHECK_LEVEL > 0
-void checkZSerial(const Mesh& mesh, std::string_view name) {
+void assertZSerial(const Mesh& mesh, std::string_view name) {
   if (mesh.getNZPE() != 1) {
     throw BoutException("{} uses FFTs which are currently incompatible with multiple "
                         "processors in Z (using {})",

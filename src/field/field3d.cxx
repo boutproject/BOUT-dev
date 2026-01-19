@@ -604,7 +604,7 @@ FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, const std::string& rgn) 
 
 Field3D filter(const Field3D& var, int N0, const std::string& rgn) {
 
-  bout::fft::checkZSerial(*var.getMesh(), "`filter`");
+  bout::fft::assertZSerial(*var.getMesh(), "`filter`");
   checkData(var);
 
   int ncz = var.getNz();
@@ -650,7 +650,7 @@ Field3D filter(const Field3D& var, int N0, const std::string& rgn) {
 // Fourier filter in z with zmin
 Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, const std::string& rgn) {
 
-  bout::fft::checkZSerial(*var.getMesh(), "`lowPass`");
+  bout::fft::assertZSerial(*var.getMesh(), "`lowPass`");
   checkData(var);
   int ncz = var.getNz();
 
@@ -699,7 +699,7 @@ Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, const std::string
  * Use FFT to shift by an angle in the Z direction
  */
 void shiftZ(Field3D& var, int jx, int jy, double zangle) {
-  bout::fft::checkZSerial(*var.getMesh(), "`shiftZ`");
+  bout::fft::assertZSerial(*var.getMesh(), "`shiftZ`");
   checkData(var);
   var.allocate(); // Ensure that var is unique
   Mesh* localmesh = var.getMesh();
