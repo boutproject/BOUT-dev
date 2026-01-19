@@ -1423,14 +1423,14 @@ int BoutMesh::wait(comm_handle handle) {
   if (ch->var_list.empty()) {
 
     // Just waiting for a single MPI request
-    mpi->MPI_Wait(ch->request, &status);
+    mpi->MPI_Wait(ch->request.data(), &status);
     free_handle(ch);
 
     return 0;
   }
 
   do {
-    mpi->MPI_Waitany(6, ch->request, &ind, &status);
+    mpi->MPI_Waitany(6, ch->request.data(), &ind, &status);
     switch (ind) {
     case 0: { // Up, inner
       unpack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB + MYG, MYSUB + 2 * MYG,
@@ -1478,22 +1478,22 @@ int BoutMesh::wait(comm_handle handle) {
     MPI_Status async_status;
 
     if (UDATA_INDEST != -1) {
-      mpi->MPI_Wait(ch->sendreq, &async_status);
+      mpi->MPI_Wait(&ch->sendreq[0], &async_status);
     }
     if (UDATA_OUTDEST != -1) {
-      mpi->MPI_Wait(ch->sendreq + 1, &async_status);
+      mpi->MPI_Wait(&ch->sendreq[1], &async_status);
     }
     if (DDATA_INDEST != -1) {
-      mpi->MPI_Wait(ch->sendreq + 2, &async_status);
+      mpi->MPI_Wait(&ch->sendreq[2], &async_status);
     }
     if (DDATA_OUTDEST != -1) {
-      mpi->MPI_Wait(ch->sendreq + 3, &async_status);
+      mpi->MPI_Wait(&ch->sendreq[3], &async_status);
     }
     if (IDATA_DEST != -1) {
-      mpi->MPI_Wait(ch->sendreq + 4, &async_status);
+      mpi->MPI_Wait(&ch->sendreq[4], &async_status);
     }
     if (ODATA_DEST != -1) {
-      mpi->MPI_Wait(ch->sendreq + 5, &async_status);
+      mpi->MPI_Wait(&ch->sendreq[5], &async_status);
     }
   }
 
@@ -1638,8 +1638,8 @@ comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
   // Get a communications handle. Not fussy about size of arrays
   CommHandle* ch = get_handle(0, 0);
 
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get(),
-                 ch->request);
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
+                 BoutComm::get(), ch->request.data());
 
   ch->in_progress = true;
 
@@ -1664,8 +1664,8 @@ comm_handle BoutMesh::irecvXIn(BoutReal* buffer, int size, int tag) {
   // Get a communications handle. Not fussy about size of arrays
   CommHandle* ch = get_handle(0, 0);
 
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get(),
-                 ch->request);
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
+                 BoutComm::get(), ch->request.data());
 
   ch->in_progress = true;
 
