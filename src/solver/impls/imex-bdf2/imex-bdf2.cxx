@@ -10,6 +10,7 @@
 #include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/utils.hxx>
+#include <bout/petsc_interface.hxx>
 
 #include <cmath>
 
@@ -652,7 +653,7 @@ void IMEXBDF2::constructSNES(SNES* snesIn) {
       MatFDColoringCreate(Jmf, iscoloring, &fdcoloring);
       // Set the function to difference
       MatFDColoringSetFunction(
-          fdcoloring, reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring),
+          fdcoloring,  bout::cast_MatFDColoringFn(FormFunctionForColoring),
           this);
       MatFDColoringSetFromOptions(fdcoloring);
       MatFDColoringSetUp(Jmf, iscoloring, fdcoloring);

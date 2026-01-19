@@ -8,6 +8,7 @@
 #include <bout/boutexception.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/utils.hxx>
+#include <bout/petsc_interface.hxx>
 
 #include <array>
 #include <cmath>
@@ -1333,7 +1334,7 @@ void SNESSolver::updateColoring() {
   MatFDColoringDestroy(&fdcoloring);
   MatFDColoringCreate(Jfd, iscoloring, &fdcoloring);
   MatFDColoringSetFunction(
-      fdcoloring, reinterpret_cast<PetscErrorCode (*)()>(FormFunctionForColoring), this);
+      fdcoloring, bout::cast_MatFDColoringFn(FormFunctionForColoring), this);
   MatFDColoringSetFromOptions(fdcoloring);
   MatFDColoringSetUp(Jfd, iscoloring, fdcoloring);
   ISColoringDestroy(&iscoloring);
