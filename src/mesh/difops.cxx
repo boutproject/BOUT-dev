@@ -390,7 +390,9 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& 
   const Mesh* mesh = Kin.getMesh();
   const Coordinates* coord = fin.getCoordinates();
 
-  if (Kin.hasParallelSlices() && fin.hasParallelSlices()) {
+  if (Kin.isFci()) {
+    ASSERT1(Kin.hasParallelSlices());
+    ASSERT1(fin.hasParallelSlices());
     // Using parallel slices.
     // Note: Y slices may use different coordinate systems
     //       -> Only B, dy and g_22 can be used in yup/ydown
