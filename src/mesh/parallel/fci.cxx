@@ -149,37 +149,6 @@ void load_parallel_metric_components([[maybe_unused]] Coordinates* coords,
   LOAD_PAR(dy, false);
   LOAD_PAR(Bxy, false);
 
-  if (not LOAD_PAR(J, true)) {
-    auto g =
-        coords->g11.ynext(offset) * coords->g22.ynext(offset) * coords->g33.ynext(offset)
-        + 2.0 * coords->g12.ynext(offset) * coords->g13.ynext(offset)
-              * coords->g23.ynext(offset)
-        - coords->g11.ynext(offset) * coords->g23.ynext(offset)
-              * coords->g23.ynext(offset)
-        - coords->g22.ynext(offset) * coords->g13.ynext(offset)
-              * coords->g13.ynext(offset)
-        - coords->g33.ynext(offset) * coords->g12.ynext(offset)
-              * coords->g12.ynext(offset);
-
-    const auto rgn = fmt::format("RGN_YPAR_{:+d}", offset);
-    // Check that g is positive
-    bout::checkPositive(g, "The determinant of g^ij", rgn);
-    auto J = 1. / sqrt(g);
-    auto& pcom = coords->J.ynext(offset);
-    BOUT_FOR(i, J.getRegion(rgn)) { pcom[i] = J[i]; }
-  }
-  if (coords->Bxy.getMesh()->sourceHasVar(parallel_slice_field_name("Bxy", 1))) {
-    LOAD_PAR(Bxy, true);
-  } else {
-    Field3D tmp{coords->Bxy.getMesh()};
-    tmp.allocate();
-    BOUT_FOR(iyp, coords->Bxy.getRegion("RGN_NOBNDRY")) {
-      const auto i = iyp.ym(offset);
-      tmp[i] = coords->Bxy[i] * coords->g_22[i] / coords->J[i]
-               * coords->J.ynext(offset)[iyp] / coords->g_22.ynext(offset)[iyp];
-    }
-    set_parallel_metric_component("Bxy", coords->Bxy, offset, tmp);
-  }
 #undef LOAD_PAR
 #endif
 }
