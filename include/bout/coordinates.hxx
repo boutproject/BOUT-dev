@@ -101,6 +101,20 @@ public:
   /// Covariant metric tensor
   FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
+  /// get g_22 at the cell faces;
+  const FieldMetric& g_22_ylow() const;
+  const FieldMetric& g_22_yhigh() const;
+  /// get Jxz at the cell faces or cell centre
+  const FieldMetric& Jxz_ylow() const;
+  const FieldMetric& Jxz_yhigh() const;
+  const FieldMetric& Jxz() const;
+
+private:
+  mutable std::optional<FieldMetric> _g_22_ylow, _g_22_yhigh;
+  mutable std::optional<FieldMetric> _Jxz_ylow, _Jxz_yhigh, _Jxz_centre;
+  void _compute_Jxz_cell_faces() const;
+
+public:
   /// Christoffel symbol of the second kind (connection coefficients)
   FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
   FieldMetric G2_11, G2_22, G2_33, G2_12, G2_13, G2_23;
@@ -235,12 +249,14 @@ private:
   /// Cache variable for Grad2_par2
   mutable std::map<std::string, std::unique_ptr<FieldMetric>> Grad2_par2_DDY_invSgCache;
   mutable std::unique_ptr<FieldMetric> invSgCache{nullptr};
+  mutable std::optional<FieldMetric> JgCache;
 
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
 
   const FieldMetric& invSg() const;
+  const FieldMetric& Jg() const;
   const FieldMetric& Grad2_par2_DDY_invSg(CELL_LOC outloc,
                                           const std::string& method) const;
 
