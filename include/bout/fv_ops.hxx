@@ -624,13 +624,11 @@ Field3D Div_par_mod(const Field3D& f_in, const Field3D& v_in,
       const auto iyp = i.yp();
       const auto iym = i.ym();
 
-      result[i] = (0.25 * (f_in[i] + f_up[iyp]) * (v_in[i] + v_up[iyp])
-                       * (coord->J[i] + coord->J.yup()[iyp])
-                       / (sqrt(coord->g_22[i]) + sqrt(coord->g_22.yup()[iyp]))
-                   - 0.25 * (f_in[i] + f_down[iym]) * (v_in[i] + v_down[iym])
-                         * (coord->J[i] + coord->J.ydown()[iym])
-                         / (sqrt(coord->g_22[i]) + sqrt(coord->g_22.ydown()[iym])))
-                  / (coord->dy[i] * coord->J[i]);
+      result[i] =
+          (0.25 * (f_in[i] + f_up[iyp]) * (v_in[i] + v_up[iyp]) * coord->Jxz_yhigh()[i]
+           - 0.25 * (f_in[i] + f_down[iym]) * (v_in[i] + v_down[iym])
+                 * coord->Jxz_ylow()[i])
+          / (coord->dy[i] * coord->J[i]);
     }
     return result;
   }
