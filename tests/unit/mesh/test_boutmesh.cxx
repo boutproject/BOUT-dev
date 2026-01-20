@@ -24,11 +24,14 @@ public:
       : BoutMesh(grid, guards, input_pes) {}
   BoutMeshExposer(ProcSizes grid, ProcSizes guards, ProcSizes num_procs)
       : BoutMesh(grid, guards, num_procs) {}
-  BoutMeshExposer(int nx, int ny, int nz, int nxpe, int nype, int pe_xind, int pe_yind,
-                  bool create_topology = true, bool symmetric_X = true,
-                  bool symmetric_Y = true)
-      : BoutMesh({(nxpe * (nx - 2)) + 2, nype * ny, nz}, {1, 1, 0}, {nxpe, nype, 1},
-                 {pe_xind, pe_yind, 0}, create_topology, symmetric_X, symmetric_Y) {}
+  BoutMeshExposer(ProcSizes grid, ProcSizes guards, ProcSizes num_procs,
+                  ProcSizes proc_index, bool create_topology = true,
+                  bool symmetric_X = true, bool symmetric_Y = true)
+      : BoutMesh({(num_procs.x * (grid.x - 2)) + 2, num_procs.y * grid.y,
+                  num_procs.z * grid.z},
+                 {guards.x, guards.y, guards.z}, {num_procs.x, num_procs.y, num_procs.z},
+                 {proc_index.x, proc_index.y, proc_index.z}, create_topology, symmetric_X,
+                 symmetric_Y) {}
   BoutMeshExposer(const BoutMeshParameters& inputs, bool periodicX_ = false);
   // Make protected methods public for testing
   using BoutMesh::add_target;
@@ -706,9 +709,19 @@ TEST_P(BoutMeshProcNumTest, ProcNum) {
   EXPECT_EQ(result, params.expected_result);
 }
 
+namespace {
+// 2x2x2 processors, 3x3x3 (not including guards) on each processor
+auto BasicCubeMesh(BoutMeshExposer::ProcSizes proc_index = {0, 0, 0}) {
+  return BoutMeshExposer{{5, 3, 3}, {1, 1, 0}, {2, 2, 2}, proc_index};
+}
+// 3x3x3 processors, 3x3x3 (not including guards) on each processor
+auto SmallCubeMesh(BoutMeshExposer::ProcSizes proc_index = {0, 0, 0}) {
+  return BoutMeshExposer{{5, 3, 3}, {1, 1, 0}, {3, 3, 3}, proc_index};
+}
+} // namespace
+
 TEST_F(BoutMeshTest, YProc) {
-  // 2x2 processors, 3x3x1 (not including guards) on each processor
-  BoutMeshExposer mesh(5, 3, 1, 2, 2, 0, 0);
+  const auto mesh = BasicCubeMesh();
 
   // YPROC is defined over the range (0, ny=6)
   EXPECT_EQ(mesh.YPROC(-4), -1);
@@ -723,8 +736,7 @@ TEST_F(BoutMeshTest, YProc) {
 }
 
 TEST_F(BoutMeshTest, XProc) {
-  // 2x2 processors, 3x3x1 (not including guards) on each processor
-  BoutMeshExposer mesh(5, 3, 1, 2, 2, 0, 0);
+  const auto mesh = BasicCubeMesh();
 
   EXPECT_EQ(mesh.XPROC(-4), 0);
   EXPECT_EQ(mesh.XPROC(0), 0);
@@ -740,8 +752,6 @@ TEST_F(BoutMeshTest, XProc) {
 }
 
 TEST_F(BoutMeshTest, GetGlobalXIndex) {
-  // 2x2 processors, 3x3x1 (not including guards) on each processor
-
   // Boundaries are included in the global index
 
   // |<--  1st X-proc -->|
@@ -754,28 +764,28 @@ TEST_F(BoutMeshTest, GetGlobalXIndex) {
   // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd X-processor
   // +---+---+---+---+---+---+---+---+
 
-  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  const auto mesh00 = BasicCubeMesh({0, 0, 0});
   EXPECT_EQ(mesh00.getGlobalXIndex(0), 0);
   EXPECT_EQ(mesh00.getGlobalXIndex(1), 1);
   EXPECT_EQ(mesh00.getGlobalXIndex(2), 2);
   EXPECT_EQ(mesh00.getGlobalXIndex(3), 3);
   EXPECT_EQ(mesh00.getGlobalXIndex(4), 4);
 
-  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  const auto mesh01 = BasicCubeMesh({0, 1, 0});
   EXPECT_EQ(mesh01.getGlobalXIndex(0), 0);
   EXPECT_EQ(mesh01.getGlobalXIndex(1), 1);
   EXPECT_EQ(mesh01.getGlobalXIndex(2), 2);
   EXPECT_EQ(mesh01.getGlobalXIndex(3), 3);
   EXPECT_EQ(mesh01.getGlobalXIndex(4), 4);
 
-  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  const auto mesh10 = BasicCubeMesh({1, 0, 0});
   EXPECT_EQ(mesh10.getGlobalXIndex(0), 3);
   EXPECT_EQ(mesh10.getGlobalXIndex(1), 4);
   EXPECT_EQ(mesh10.getGlobalXIndex(2), 5);
   EXPECT_EQ(mesh10.getGlobalXIndex(3), 6);
   EXPECT_EQ(mesh10.getGlobalXIndex(4), 7);
 
-  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  const auto mesh11 = BasicCubeMesh({1, 1, 0});
   EXPECT_EQ(mesh11.getGlobalXIndex(0), 3);
   EXPECT_EQ(mesh11.getGlobalXIndex(1), 4);
   EXPECT_EQ(mesh11.getGlobalXIndex(2), 5);
@@ -784,8 +794,6 @@ TEST_F(BoutMeshTest, GetGlobalXIndex) {
 }
 
 TEST_F(BoutMeshTest, GetGlobalXIndexNoBoundaries) {
-  // 2x2 processors, 3x3x1 (not including guards) on each processor
-
   // Global indices start counting from the first non-boundary point
 
   // |<--  1st X-proc -->|
@@ -798,28 +806,28 @@ TEST_F(BoutMeshTest, GetGlobalXIndexNoBoundaries) {
   // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd X-processor
   // +---+---+---+---+---+---+---+---+
 
-  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  const auto mesh00 = BasicCubeMesh({0, 0, 0});
   EXPECT_EQ(mesh00.getGlobalXIndexNoBoundaries(0), -1);
   EXPECT_EQ(mesh00.getGlobalXIndexNoBoundaries(1), 0);
   EXPECT_EQ(mesh00.getGlobalXIndexNoBoundaries(2), 1);
   EXPECT_EQ(mesh00.getGlobalXIndexNoBoundaries(3), 2);
   EXPECT_EQ(mesh00.getGlobalXIndexNoBoundaries(4), 3);
 
-  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  const auto mesh01 = BasicCubeMesh({0, 1, 0});
   EXPECT_EQ(mesh01.getGlobalXIndexNoBoundaries(0), -1);
   EXPECT_EQ(mesh01.getGlobalXIndexNoBoundaries(1), 0);
   EXPECT_EQ(mesh01.getGlobalXIndexNoBoundaries(2), 1);
   EXPECT_EQ(mesh01.getGlobalXIndexNoBoundaries(3), 2);
   EXPECT_EQ(mesh01.getGlobalXIndexNoBoundaries(4), 3);
 
-  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  const auto mesh10 = BasicCubeMesh({1, 0, 0});
   EXPECT_EQ(mesh10.getGlobalXIndexNoBoundaries(0), 2);
   EXPECT_EQ(mesh10.getGlobalXIndexNoBoundaries(1), 3);
   EXPECT_EQ(mesh10.getGlobalXIndexNoBoundaries(2), 4);
   EXPECT_EQ(mesh10.getGlobalXIndexNoBoundaries(3), 5);
   EXPECT_EQ(mesh10.getGlobalXIndexNoBoundaries(4), 6);
 
-  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  const auto mesh11 = BasicCubeMesh({1, 1, 0});
   EXPECT_EQ(mesh11.getGlobalXIndexNoBoundaries(0), 2);
   EXPECT_EQ(mesh11.getGlobalXIndexNoBoundaries(1), 3);
   EXPECT_EQ(mesh11.getGlobalXIndexNoBoundaries(2), 4);
@@ -828,7 +836,7 @@ TEST_F(BoutMeshTest, GetGlobalXIndexNoBoundaries) {
 }
 
 TEST_F(BoutMeshTest, GlobalXIntSymmetricX) {
-  BoutMeshExposer mesh01(4, 3, 1, 2, 2, 0, 1);
+  BoutMeshExposer mesh01({4, 3, 1}, {1, 1, 0}, {2, 2, 1}, {0, 1, 0});
   EXPECT_EQ(mesh01.GlobalX(0), -0.125);
   EXPECT_EQ(mesh01.GlobalX(1), 0.125);
   EXPECT_EQ(mesh01.GlobalX(2), 0.375);
@@ -837,7 +845,7 @@ TEST_F(BoutMeshTest, GlobalXIntSymmetricX) {
 }
 
 TEST_F(BoutMeshTest, GlobalXIntAsymmetricX) {
-  BoutMeshExposer mesh01(4, 3, 1, 2, 2, 0, 1, false, false);
+  BoutMeshExposer mesh01({4, 3, 1}, {1, 1, 0}, {2, 2, 1}, {0, 1, 0}, false, false);
   EXPECT_EQ(mesh01.GlobalX(0), 0.);
   EXPECT_EQ(mesh01.GlobalX(1), 0.25);
   EXPECT_EQ(mesh01.GlobalX(2), 0.5);
@@ -846,7 +854,7 @@ TEST_F(BoutMeshTest, GlobalXIntAsymmetricX) {
 }
 
 TEST_F(BoutMeshTest, GlobalXRealSymmetricX) {
-  BoutMeshExposer mesh01(4, 3, 1, 2, 2, 0, 1);
+  BoutMeshExposer mesh01({4, 3, 1}, {1, 1, 0}, {2, 2, 1}, {0, 1, 0});
   EXPECT_EQ(mesh01.GlobalX(0.5), 0.);
   EXPECT_EQ(mesh01.GlobalX(1.5), 0.25);
   EXPECT_EQ(mesh01.GlobalX(2.5), 0.5);
@@ -855,7 +863,7 @@ TEST_F(BoutMeshTest, GlobalXRealSymmetricX) {
 }
 
 TEST_F(BoutMeshTest, GlobalXRealAsymmetricX) {
-  BoutMeshExposer mesh01(4, 3, 1, 2, 2, 0, 1, false, false);
+  BoutMeshExposer mesh01({4, 3, 1}, {1, 1, 0}, {2, 2, 1}, {0, 1, 0}, false, false);
   EXPECT_EQ(mesh01.GlobalX(0.5), 0.125);
   EXPECT_EQ(mesh01.GlobalX(1.5), 0.375);
   EXPECT_EQ(mesh01.GlobalX(2.5), 0.625);
@@ -864,8 +872,6 @@ TEST_F(BoutMeshTest, GlobalXRealAsymmetricX) {
 }
 
 TEST_F(BoutMeshTest, GetLocalXIndex) {
-  // 2x2 processors, 3x3x1 (not including guards) on each processor
-
   // Boundaries are included in the local index
 
   // |<--  1st X-proc -->|
@@ -878,28 +884,28 @@ TEST_F(BoutMeshTest, GetLocalXIndex) {
   // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd X-processor
   // +---+---+---+---+---+---+---+---+
 
-  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  const auto mesh00 = BasicCubeMesh({0, 0, 0});
   EXPECT_EQ(mesh00.getLocalXIndex(0), 0);
   EXPECT_EQ(mesh00.getLocalXIndex(1), 1);
   EXPECT_EQ(mesh00.getLocalXIndex(2), 2);
   EXPECT_EQ(mesh00.getLocalXIndex(3), 3);
   EXPECT_EQ(mesh00.getLocalXIndex(4), 4);
 
-  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  const auto mesh01 = BasicCubeMesh({0, 1, 0});
   EXPECT_EQ(mesh01.getLocalXIndex(0), 0);
   EXPECT_EQ(mesh01.getLocalXIndex(1), 1);
   EXPECT_EQ(mesh01.getLocalXIndex(2), 2);
   EXPECT_EQ(mesh01.getLocalXIndex(3), 3);
   EXPECT_EQ(mesh01.getLocalXIndex(4), 4);
 
-  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  const auto mesh10 = BasicCubeMesh({1, 0, 0});
   EXPECT_EQ(mesh10.getLocalXIndex(3), 0);
   EXPECT_EQ(mesh10.getLocalXIndex(4), 1);
   EXPECT_EQ(mesh10.getLocalXIndex(5), 2);
   EXPECT_EQ(mesh10.getLocalXIndex(6), 3);
   EXPECT_EQ(mesh10.getLocalXIndex(7), 4);
 
-  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  const auto mesh11 = BasicCubeMesh({1, 1, 0});
   EXPECT_EQ(mesh11.getLocalXIndex(3), 0);
   EXPECT_EQ(mesh11.getLocalXIndex(4), 1);
   EXPECT_EQ(mesh11.getLocalXIndex(5), 2);
@@ -908,8 +914,6 @@ TEST_F(BoutMeshTest, GetLocalXIndex) {
 }
 
 TEST_F(BoutMeshTest, GetLocalXIndexNoBoundaries) {
-  // 2x2 processors, 3x3x1 (not including guards) on each processor
-
   // Local indices start counting from the first non-boundary point
 
   // |<--  1st X-proc -->|
@@ -922,28 +926,28 @@ TEST_F(BoutMeshTest, GetLocalXIndexNoBoundaries) {
   // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd X-processor
   // +---+---+---+---+---+---+---+---+
 
-  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  const auto mesh00 = BasicCubeMesh({0, 0, 0});
   EXPECT_EQ(mesh00.getLocalXIndexNoBoundaries(-1), 0);
   EXPECT_EQ(mesh00.getLocalXIndexNoBoundaries(0), 1);
   EXPECT_EQ(mesh00.getLocalXIndexNoBoundaries(1), 2);
   EXPECT_EQ(mesh00.getLocalXIndexNoBoundaries(2), 3);
   EXPECT_EQ(mesh00.getLocalXIndexNoBoundaries(3), 4);
 
-  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  const auto mesh01 = BasicCubeMesh({0, 1, 0});
   EXPECT_EQ(mesh01.getLocalXIndexNoBoundaries(-1), 0);
   EXPECT_EQ(mesh01.getLocalXIndexNoBoundaries(0), 1);
   EXPECT_EQ(mesh01.getLocalXIndexNoBoundaries(1), 2);
   EXPECT_EQ(mesh01.getLocalXIndexNoBoundaries(2), 3);
   EXPECT_EQ(mesh01.getLocalXIndexNoBoundaries(3), 4);
 
-  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  const auto mesh10 = BasicCubeMesh({1, 0, 0});
   EXPECT_EQ(mesh10.getLocalXIndexNoBoundaries(2), 0);
   EXPECT_EQ(mesh10.getLocalXIndexNoBoundaries(3), 1);
   EXPECT_EQ(mesh10.getLocalXIndexNoBoundaries(4), 2);
   EXPECT_EQ(mesh10.getLocalXIndexNoBoundaries(5), 3);
   EXPECT_EQ(mesh10.getLocalXIndexNoBoundaries(6), 4);
 
-  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  const auto mesh11 = BasicCubeMesh({1, 1, 0});
   EXPECT_EQ(mesh11.getLocalXIndexNoBoundaries(2), 0);
   EXPECT_EQ(mesh11.getLocalXIndexNoBoundaries(3), 1);
   EXPECT_EQ(mesh11.getLocalXIndexNoBoundaries(4), 2);
@@ -952,8 +956,6 @@ TEST_F(BoutMeshTest, GetLocalXIndexNoBoundaries) {
 }
 
 TEST_F(BoutMeshTest, GetGlobalYIndexSingleNull) {
-  // 2x2 processors, 3x3x1 (not including guards) on each processor
-
   // Boundaries are included in the global index
 
   // |<--  1st Y-proc -->|
@@ -966,28 +968,28 @@ TEST_F(BoutMeshTest, GetGlobalYIndexSingleNull) {
   // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Y-processor
   // +---+---+---+---+---+---+---+---+
 
-  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  const auto mesh00 = BasicCubeMesh({0, 0, 0});
   EXPECT_EQ(mesh00.getGlobalYIndex(0), 0);
   EXPECT_EQ(mesh00.getGlobalYIndex(1), 1);
   EXPECT_EQ(mesh00.getGlobalYIndex(2), 2);
   EXPECT_EQ(mesh00.getGlobalYIndex(3), 3);
   EXPECT_EQ(mesh00.getGlobalYIndex(4), 4);
 
-  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  const auto mesh01 = BasicCubeMesh({0, 1, 0});
   EXPECT_EQ(mesh01.getGlobalYIndex(0), 3);
   EXPECT_EQ(mesh01.getGlobalYIndex(1), 4);
   EXPECT_EQ(mesh01.getGlobalYIndex(2), 5);
   EXPECT_EQ(mesh01.getGlobalYIndex(3), 6);
   EXPECT_EQ(mesh01.getGlobalYIndex(4), 7);
 
-  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  const auto mesh10 = BasicCubeMesh({1, 0, 0});
   EXPECT_EQ(mesh10.getGlobalYIndex(0), 0);
   EXPECT_EQ(mesh10.getGlobalYIndex(1), 1);
   EXPECT_EQ(mesh10.getGlobalYIndex(2), 2);
   EXPECT_EQ(mesh10.getGlobalYIndex(3), 3);
   EXPECT_EQ(mesh10.getGlobalYIndex(4), 4);
 
-  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  const auto mesh11 = BasicCubeMesh({1, 1, 0});
   EXPECT_EQ(mesh11.getGlobalYIndex(0), 3);
   EXPECT_EQ(mesh11.getGlobalYIndex(1), 4);
   EXPECT_EQ(mesh11.getGlobalYIndex(2), 5);
@@ -996,8 +998,6 @@ TEST_F(BoutMeshTest, GetGlobalYIndexSingleNull) {
 }
 
 TEST_F(BoutMeshTest, GetGlobalYIndexDoubleNull) {
-  // 2x2 processors, 3x3x1 (not including guards) on each processor
-
   // Boundaries are included in the global index
   // Double-null, so extra boundary in middle of domain
 
@@ -1011,7 +1011,7 @@ TEST_F(BoutMeshTest, GetGlobalYIndexDoubleNull) {
   // |-5 |-4 |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Y-processor
   // +---+---+---+---+---+---+---+---+---+---+
 
-  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  auto mesh00 = BasicCubeMesh({0, 0, 0});
   mesh00.setYDecompositionIndices({-1, 2, 5, 5, 4});
   EXPECT_EQ(mesh00.getGlobalYIndex(0), 0);
   EXPECT_EQ(mesh00.getGlobalYIndex(1), 1);
@@ -1019,7 +1019,7 @@ TEST_F(BoutMeshTest, GetGlobalYIndexDoubleNull) {
   EXPECT_EQ(mesh00.getGlobalYIndex(3), 3);
   EXPECT_EQ(mesh00.getGlobalYIndex(4), 4);
 
-  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  auto mesh01 = BasicCubeMesh({0, 1, 0});
   mesh01.setYDecompositionIndices({-1, 2, 5, 5, 4});
   EXPECT_EQ(mesh01.getGlobalYIndex(0), 5);
   EXPECT_EQ(mesh01.getGlobalYIndex(1), 6);
@@ -1027,7 +1027,7 @@ TEST_F(BoutMeshTest, GetGlobalYIndexDoubleNull) {
   EXPECT_EQ(mesh01.getGlobalYIndex(3), 8);
   EXPECT_EQ(mesh01.getGlobalYIndex(4), 9);
 
-  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  auto mesh10 = BasicCubeMesh({1, 0, 0});
   mesh10.setYDecompositionIndices({-1, 2, 5, 5, 4});
   EXPECT_EQ(mesh10.getGlobalYIndex(0), 0);
   EXPECT_EQ(mesh10.getGlobalYIndex(1), 1);
@@ -1035,7 +1035,7 @@ TEST_F(BoutMeshTest, GetGlobalYIndexDoubleNull) {
   EXPECT_EQ(mesh10.getGlobalYIndex(3), 3);
   EXPECT_EQ(mesh10.getGlobalYIndex(4), 4);
 
-  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  auto mesh11 = BasicCubeMesh({1, 1, 0});
   mesh11.setYDecompositionIndices({-1, 2, 5, 5, 4});
   EXPECT_EQ(mesh11.getGlobalYIndex(0), 5);
   EXPECT_EQ(mesh11.getGlobalYIndex(1), 6);
@@ -1045,8 +1045,6 @@ TEST_F(BoutMeshTest, GetGlobalYIndexDoubleNull) {
 }
 
 TEST_F(BoutMeshTest, GetGlobalYIndexNoBoundaries) {
-  // 2x2 processors, 3x3x1 (not including guards) on each processor
-
   // Global indices start counting from the first non-boundary point
 
   // |<--  1st Y-proc -->|
@@ -1059,28 +1057,28 @@ TEST_F(BoutMeshTest, GetGlobalYIndexNoBoundaries) {
   // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Y-processor
   // +---+---+---+---+---+---+---+---+
 
-  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  const auto mesh00 = BasicCubeMesh({0, 0, 0});
   EXPECT_EQ(mesh00.getGlobalYIndexNoBoundaries(0), -1);
   EXPECT_EQ(mesh00.getGlobalYIndexNoBoundaries(1), 0);
   EXPECT_EQ(mesh00.getGlobalYIndexNoBoundaries(2), 1);
   EXPECT_EQ(mesh00.getGlobalYIndexNoBoundaries(3), 2);
   EXPECT_EQ(mesh00.getGlobalYIndexNoBoundaries(4), 3);
 
-  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  const auto mesh01 = BasicCubeMesh({0, 1, 0});
   EXPECT_EQ(mesh01.getGlobalYIndexNoBoundaries(0), 2);
   EXPECT_EQ(mesh01.getGlobalYIndexNoBoundaries(1), 3);
   EXPECT_EQ(mesh01.getGlobalYIndexNoBoundaries(2), 4);
   EXPECT_EQ(mesh01.getGlobalYIndexNoBoundaries(3), 5);
   EXPECT_EQ(mesh01.getGlobalYIndexNoBoundaries(4), 6);
 
-  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  const auto mesh10 = BasicCubeMesh({1, 0, 0});
   EXPECT_EQ(mesh10.getGlobalYIndexNoBoundaries(0), -1);
   EXPECT_EQ(mesh10.getGlobalYIndexNoBoundaries(1), 0);
   EXPECT_EQ(mesh10.getGlobalYIndexNoBoundaries(2), 1);
   EXPECT_EQ(mesh10.getGlobalYIndexNoBoundaries(3), 2);
   EXPECT_EQ(mesh10.getGlobalYIndexNoBoundaries(4), 3);
 
-  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  const auto mesh11 = BasicCubeMesh({1, 1, 0});
   EXPECT_EQ(mesh11.getGlobalYIndexNoBoundaries(0), 2);
   EXPECT_EQ(mesh11.getGlobalYIndexNoBoundaries(1), 3);
   EXPECT_EQ(mesh11.getGlobalYIndexNoBoundaries(2), 4);
@@ -1089,8 +1087,6 @@ TEST_F(BoutMeshTest, GetGlobalYIndexNoBoundaries) {
 }
 
 TEST_F(BoutMeshTest, GetLocalYIndexSingleNull) {
-  // 2x2 processors, 3x3x1 (not including guards) on each processor
-
   // Boundaries are included in the local index
 
   // |<--  1st Y-proc -->|
@@ -1103,28 +1099,28 @@ TEST_F(BoutMeshTest, GetLocalYIndexSingleNull) {
   // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Y-processor
   // +---+---+---+---+---+---+---+---+
 
-  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  const auto mesh00 = BasicCubeMesh({0, 0, 0});
   EXPECT_EQ(mesh00.getLocalYIndex(0), 0);
   EXPECT_EQ(mesh00.getLocalYIndex(1), 1);
   EXPECT_EQ(mesh00.getLocalYIndex(2), 2);
   EXPECT_EQ(mesh00.getLocalYIndex(3), 3);
   EXPECT_EQ(mesh00.getLocalYIndex(4), 4);
 
-  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  const auto mesh01 = BasicCubeMesh({0, 1, 0});
   EXPECT_EQ(mesh01.getLocalYIndex(3), 0);
   EXPECT_EQ(mesh01.getLocalYIndex(4), 1);
   EXPECT_EQ(mesh01.getLocalYIndex(5), 2);
   EXPECT_EQ(mesh01.getLocalYIndex(6), 3);
   EXPECT_EQ(mesh01.getLocalYIndex(7), 4);
 
-  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  const auto mesh10 = BasicCubeMesh({1, 0, 0});
   EXPECT_EQ(mesh10.getLocalYIndex(0), 0);
   EXPECT_EQ(mesh10.getLocalYIndex(1), 1);
   EXPECT_EQ(mesh10.getLocalYIndex(2), 2);
   EXPECT_EQ(mesh10.getLocalYIndex(3), 3);
   EXPECT_EQ(mesh10.getLocalYIndex(4), 4);
 
-  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  const auto mesh11 = BasicCubeMesh({1, 1, 0});
   EXPECT_EQ(mesh11.getLocalYIndex(3), 0);
   EXPECT_EQ(mesh11.getLocalYIndex(4), 1);
   EXPECT_EQ(mesh11.getLocalYIndex(5), 2);
@@ -1133,8 +1129,6 @@ TEST_F(BoutMeshTest, GetLocalYIndexSingleNull) {
 }
 
 TEST_F(BoutMeshTest, GetLocalYIndexDoubleNull) {
-  // 2x2 processors, 3x3x1 (not including guards) on each processor
-
   // Boundaries are included in the global index
   // Double-null, so extra boundary in middle of domain
 
@@ -1148,7 +1142,7 @@ TEST_F(BoutMeshTest, GetLocalYIndexDoubleNull) {
   // |-5 |-4 |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Y-processor
   // +---+---+---+---+---+---+---+---+---+---+
 
-  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  auto mesh00 = BasicCubeMesh({0, 0, 0});
   mesh00.setYDecompositionIndices({-1, 2, 5, 5, 4});
   EXPECT_EQ(mesh00.getLocalYIndex(0), 0);
   EXPECT_EQ(mesh00.getLocalYIndex(1), 1);
@@ -1156,7 +1150,7 @@ TEST_F(BoutMeshTest, GetLocalYIndexDoubleNull) {
   EXPECT_EQ(mesh00.getLocalYIndex(3), 3);
   EXPECT_EQ(mesh00.getLocalYIndex(4), 4);
 
-  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  auto mesh01 = BasicCubeMesh({0, 1, 0});
   mesh01.setYDecompositionIndices({-1, 2, 5, 5, 4});
   EXPECT_EQ(mesh01.getLocalYIndex(5), 0);
   EXPECT_EQ(mesh01.getLocalYIndex(6), 1);
@@ -1164,7 +1158,7 @@ TEST_F(BoutMeshTest, GetLocalYIndexDoubleNull) {
   EXPECT_EQ(mesh01.getLocalYIndex(8), 3);
   EXPECT_EQ(mesh01.getLocalYIndex(9), 4);
 
-  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  auto mesh10 = BasicCubeMesh({1, 0, 0});
   mesh10.setYDecompositionIndices({-1, 2, 5, 5, 4});
   EXPECT_EQ(mesh10.getLocalYIndex(0), 0);
   EXPECT_EQ(mesh10.getLocalYIndex(1), 1);
@@ -1172,7 +1166,7 @@ TEST_F(BoutMeshTest, GetLocalYIndexDoubleNull) {
   EXPECT_EQ(mesh10.getLocalYIndex(3), 3);
   EXPECT_EQ(mesh10.getLocalYIndex(4), 4);
 
-  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  auto mesh11 = BasicCubeMesh({1, 1, 0});
   mesh11.setYDecompositionIndices({-1, 2, 5, 5, 4});
   EXPECT_EQ(mesh11.getLocalYIndex(5), 0);
   EXPECT_EQ(mesh11.getLocalYIndex(6), 1);
@@ -1182,8 +1176,6 @@ TEST_F(BoutMeshTest, GetLocalYIndexDoubleNull) {
 }
 
 TEST_F(BoutMeshTest, GetLocalYIndexNoBoundaries) {
-  // 2x2 processors, 3x3x1 (not including guards) on each processor
-
   // Local indices start counting from the first non-boundary point
 
   // |<--  1st Y-proc -->|
@@ -1196,28 +1188,28 @@ TEST_F(BoutMeshTest, GetLocalYIndexNoBoundaries) {
   // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Y-processor
   // +---+---+---+---+---+---+---+---+
 
-  BoutMeshExposer mesh00(5, 3, 1, 2, 2, 0, 0);
+  const auto mesh00 = BasicCubeMesh({0, 0, 0});
   EXPECT_EQ(mesh00.getLocalYIndexNoBoundaries(-1), 0);
   EXPECT_EQ(mesh00.getLocalYIndexNoBoundaries(0), 1);
   EXPECT_EQ(mesh00.getLocalYIndexNoBoundaries(1), 2);
   EXPECT_EQ(mesh00.getLocalYIndexNoBoundaries(2), 3);
   EXPECT_EQ(mesh00.getLocalYIndexNoBoundaries(3), 4);
 
-  BoutMeshExposer mesh01(5, 3, 1, 2, 2, 0, 1);
+  const auto mesh01 = BasicCubeMesh({0, 1, 0});
   EXPECT_EQ(mesh01.getLocalYIndexNoBoundaries(2), 0);
   EXPECT_EQ(mesh01.getLocalYIndexNoBoundaries(3), 1);
   EXPECT_EQ(mesh01.getLocalYIndexNoBoundaries(4), 2);
   EXPECT_EQ(mesh01.getLocalYIndexNoBoundaries(5), 3);
   EXPECT_EQ(mesh01.getLocalYIndexNoBoundaries(6), 4);
 
-  BoutMeshExposer mesh10(5, 3, 1, 2, 2, 1, 0);
+  const auto mesh10 = BasicCubeMesh({1, 0, 0});
   EXPECT_EQ(mesh10.getLocalYIndexNoBoundaries(-1), 0);
   EXPECT_EQ(mesh10.getLocalYIndexNoBoundaries(0), 1);
   EXPECT_EQ(mesh10.getLocalYIndexNoBoundaries(1), 2);
   EXPECT_EQ(mesh10.getLocalYIndexNoBoundaries(2), 3);
   EXPECT_EQ(mesh10.getLocalYIndexNoBoundaries(3), 4);
 
-  BoutMeshExposer mesh11(5, 3, 1, 2, 2, 1, 1);
+  const auto mesh11 = BasicCubeMesh({1, 1, 0});
   EXPECT_EQ(mesh11.getLocalYIndexNoBoundaries(2), 0);
   EXPECT_EQ(mesh11.getLocalYIndexNoBoundaries(3), 1);
   EXPECT_EQ(mesh11.getLocalYIndexNoBoundaries(4), 2);
@@ -1350,34 +1342,32 @@ TEST_F(BoutMeshTest, GlobalYRealAsymmetricY) {
 }
 
 TEST_F(BoutMeshTest, GetGlobalZIndex) {
-  // 2x2 processors, 3x3x1 (not including guards) on each processor
-
   // Boundaries are included in the global index
 
   // No parallelisation in Z, so function is just the identity
 
-  BoutMeshExposer mesh00(5, 3, 4, 2, 2, 0, 0);
+  const auto mesh00 = BasicCubeMesh({0, 0, 0});
   EXPECT_EQ(mesh00.getGlobalZIndex(0), 0);
   EXPECT_EQ(mesh00.getGlobalZIndex(1), 1);
   EXPECT_EQ(mesh00.getGlobalZIndex(2), 2);
   EXPECT_EQ(mesh00.getGlobalZIndex(3), 3);
   EXPECT_EQ(mesh00.getGlobalZIndex(4), 4);
 
-  BoutMeshExposer mesh01(5, 3, 4, 2, 2, 0, 1);
+  const auto mesh01 = BasicCubeMesh({0, 1, 0});
   EXPECT_EQ(mesh01.getGlobalZIndex(0), 0);
   EXPECT_EQ(mesh01.getGlobalZIndex(1), 1);
   EXPECT_EQ(mesh01.getGlobalZIndex(2), 2);
   EXPECT_EQ(mesh01.getGlobalZIndex(3), 3);
   EXPECT_EQ(mesh01.getGlobalZIndex(4), 4);
 
-  BoutMeshExposer mesh10(5, 3, 4, 2, 2, 1, 0);
+  const auto mesh10 = BasicCubeMesh({1, 0, 0});
   EXPECT_EQ(mesh10.getGlobalZIndex(0), 0);
   EXPECT_EQ(mesh10.getGlobalZIndex(1), 1);
   EXPECT_EQ(mesh10.getGlobalZIndex(2), 2);
   EXPECT_EQ(mesh10.getGlobalZIndex(3), 3);
   EXPECT_EQ(mesh10.getGlobalZIndex(4), 4);
 
-  BoutMeshExposer mesh11(5, 3, 4, 2, 2, 1, 1);
+  const auto mesh11 = BasicCubeMesh({1, 1, 0});
   EXPECT_EQ(mesh11.getGlobalZIndex(0), 0);
   EXPECT_EQ(mesh11.getGlobalZIndex(1), 1);
   EXPECT_EQ(mesh11.getGlobalZIndex(2), 2);
@@ -1386,30 +1376,28 @@ TEST_F(BoutMeshTest, GetGlobalZIndex) {
 }
 
 TEST_F(BoutMeshTest, GetGlobalZIndexNoBoundaries) {
-  // 2x2 processors, 3x3x1 (not including guards) on each processor
-
-  BoutMeshExposer mesh00(5, 3, 4, 2, 2, 0, 0);
+  const auto mesh00 = BasicCubeMesh({0, 0, 0});
   EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(0), 0);
   EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(1), 1);
   EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(2), 2);
   EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(3), 3);
   EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(4), 4);
 
-  BoutMeshExposer mesh01(5, 3, 4, 2, 2, 0, 1);
+  const auto mesh01 = BasicCubeMesh({0, 1, 0});
   EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(0), 0);
   EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(1), 1);
   EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(2), 2);
   EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(3), 3);
   EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(4), 4);
 
-  BoutMeshExposer mesh10(5, 3, 4, 2, 2, 1, 0);
+  const auto mesh10 = BasicCubeMesh({1, 0, 0});
   EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(0), 0);
   EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(1), 1);
   EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(2), 2);
   EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(3), 3);
   EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(4), 4);
 
-  BoutMeshExposer mesh11(5, 3, 4, 2, 2, 1, 1);
+  const auto mesh11 = BasicCubeMesh({1, 1, 0});
   EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(0), 0);
   EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(1), 1);
   EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(2), 2);
@@ -1418,8 +1406,6 @@ TEST_F(BoutMeshTest, GetGlobalZIndexNoBoundaries) {
 }
 
 TEST_F(BoutMeshTest, GetLocalZIndex) {
-  // 2x2 processors, 3x3x1 (not including guards) on each processor
-
   // Boundaries are included in the local index
 
   // |<--  1st Z-proc -->|
@@ -1432,28 +1418,28 @@ TEST_F(BoutMeshTest, GetLocalZIndex) {
   // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Z-processor
   // +---+---+---+---+---+---+---+---+
 
-  BoutMeshExposer mesh00(5, 3, 4, 2, 2, 0, 0);
+  const auto mesh00 = BasicCubeMesh({0, 0, 0});
   EXPECT_EQ(mesh00.getLocalZIndex(0), 0);
   EXPECT_EQ(mesh00.getLocalZIndex(1), 1);
   EXPECT_EQ(mesh00.getLocalZIndex(2), 2);
   EXPECT_EQ(mesh00.getLocalZIndex(3), 3);
   EXPECT_EQ(mesh00.getLocalZIndex(4), 4);
 
-  BoutMeshExposer mesh01(5, 3, 4, 2, 2, 0, 1);
+  const auto mesh01 = BasicCubeMesh({0, 1, 0});
   EXPECT_EQ(mesh01.getLocalZIndex(0), 0);
   EXPECT_EQ(mesh01.getLocalZIndex(1), 1);
   EXPECT_EQ(mesh01.getLocalZIndex(2), 2);
   EXPECT_EQ(mesh01.getLocalZIndex(3), 3);
   EXPECT_EQ(mesh01.getLocalZIndex(4), 4);
 
-  BoutMeshExposer mesh10(5, 3, 4, 2, 2, 1, 0);
+  const auto mesh10 = BasicCubeMesh({1, 0, 0});
   EXPECT_EQ(mesh10.getLocalZIndex(0), 0);
   EXPECT_EQ(mesh10.getLocalZIndex(1), 1);
   EXPECT_EQ(mesh10.getLocalZIndex(2), 2);
   EXPECT_EQ(mesh10.getLocalZIndex(3), 3);
   EXPECT_EQ(mesh10.getLocalZIndex(4), 4);
 
-  BoutMeshExposer mesh11(5, 3, 4, 2, 2, 1, 1);
+  const auto mesh11 = BasicCubeMesh({1, 1, 0});
   EXPECT_EQ(mesh11.getLocalZIndex(0), 0);
   EXPECT_EQ(mesh11.getLocalZIndex(1), 1);
   EXPECT_EQ(mesh11.getLocalZIndex(2), 2);
@@ -1462,8 +1448,6 @@ TEST_F(BoutMeshTest, GetLocalZIndex) {
 }
 
 TEST_F(BoutMeshTest, GetLocalZIndexNoBoundaries) {
-  // 2x2 processors, 3x3x1 (not including guards) on each processor
-
   // Local indices start counting from the first non-boundary point
 
   // |<--  1st Z-proc -->|
@@ -1476,28 +1460,28 @@ TEST_F(BoutMeshTest, GetLocalZIndexNoBoundaries) {
   // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Z-processor
   // +---+---+---+---+---+---+---+---+
 
-  BoutMeshExposer mesh00(5, 3, 4, 2, 2, 0, 0);
+  const auto mesh00 = BasicCubeMesh({0, 0, 0});
   EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(0), 0);
   EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(1), 1);
   EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(2), 2);
   EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(3), 3);
   EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(4), 4);
 
-  BoutMeshExposer mesh01(5, 3, 4, 2, 2, 0, 1);
+  const auto mesh01 = BasicCubeMesh({0, 1, 0});
   EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(0), 0);
   EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(1), 1);
   EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(2), 2);
   EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(3), 3);
   EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(4), 4);
 
-  BoutMeshExposer mesh10(5, 3, 4, 2, 2, 1, 0);
+  const auto mesh10 = BasicCubeMesh({1, 0, 0});
   EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(0), 0);
   EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(1), 1);
   EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(2), 2);
   EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(3), 3);
   EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(4), 4);
 
-  BoutMeshExposer mesh11(5, 3, 4, 2, 2, 1, 1);
+  const auto mesh11 = BasicCubeMesh({1, 1, 0});
   EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(0), 0);
   EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(1), 1);
   EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(2), 2);
@@ -1506,86 +1490,86 @@ TEST_F(BoutMeshTest, GetLocalZIndexNoBoundaries) {
 }
 
 TEST_F(BoutMeshTest, FirstX) {
-  BoutMeshExposer mesh00(5, 3, 4, 3, 3, 0, 0);
+  const auto mesh00 = SmallCubeMesh({0, 0, 0});
   EXPECT_TRUE(mesh00.firstX());
-  BoutMeshExposer mesh10(5, 3, 4, 3, 3, 1, 0);
+  const auto mesh10 = SmallCubeMesh({1, 0, 0});
   EXPECT_FALSE(mesh10.firstX());
-  BoutMeshExposer mesh20(5, 3, 4, 3, 3, 2, 0);
+  const auto mesh20 = SmallCubeMesh({2, 0, 0});
   EXPECT_FALSE(mesh20.firstX());
-  BoutMeshExposer mesh01(5, 3, 4, 3, 3, 0, 1);
+  const auto mesh01 = SmallCubeMesh({0, 1, 0});
   EXPECT_TRUE(mesh01.firstX());
-  BoutMeshExposer mesh11(5, 3, 4, 3, 3, 1, 1);
+  const auto mesh11 = SmallCubeMesh({1, 1, 0});
   EXPECT_FALSE(mesh11.firstX());
-  BoutMeshExposer mesh21(5, 3, 4, 3, 3, 2, 1);
+  const auto mesh21 = SmallCubeMesh({2, 1, 0});
   EXPECT_FALSE(mesh21.firstX());
-  BoutMeshExposer mesh02(5, 3, 4, 3, 3, 0, 2);
+  const auto mesh02 = SmallCubeMesh({0, 2, 0});
   EXPECT_TRUE(mesh02.firstX());
-  BoutMeshExposer mesh12(5, 3, 4, 3, 3, 1, 2);
+  const auto mesh12 = SmallCubeMesh({1, 2, 0});
   EXPECT_FALSE(mesh12.firstX());
-  BoutMeshExposer mesh22(5, 3, 4, 3, 3, 2, 2);
+  const auto mesh22 = SmallCubeMesh({2, 2, 0});
   EXPECT_FALSE(mesh22.firstX());
 }
 
 TEST_F(BoutMeshTest, LastX) {
-  BoutMeshExposer mesh00(5, 3, 4, 3, 3, 0, 0);
+  const auto mesh00 = SmallCubeMesh({0, 0, 0});
   EXPECT_FALSE(mesh00.lastX());
-  BoutMeshExposer mesh10(5, 3, 4, 3, 3, 1, 0);
+  const auto mesh10 = SmallCubeMesh({1, 0, 0});
   EXPECT_FALSE(mesh10.lastX());
-  BoutMeshExposer mesh20(5, 3, 4, 3, 3, 2, 0);
+  const auto mesh20 = SmallCubeMesh({2, 0, 0});
   EXPECT_TRUE(mesh20.lastX());
-  BoutMeshExposer mesh01(5, 3, 4, 3, 3, 0, 1);
+  const auto mesh01 = SmallCubeMesh({0, 1, 0});
   EXPECT_FALSE(mesh01.lastX());
-  BoutMeshExposer mesh11(5, 3, 4, 3, 3, 1, 1);
+  const auto mesh11 = SmallCubeMesh({1, 1, 0});
   EXPECT_FALSE(mesh11.lastX());
-  BoutMeshExposer mesh21(5, 3, 4, 3, 3, 2, 1);
+  const auto mesh21 = SmallCubeMesh({2, 1, 0});
   EXPECT_TRUE(mesh21.lastX());
-  BoutMeshExposer mesh02(5, 3, 4, 3, 3, 0, 2);
+  const auto mesh02 = SmallCubeMesh({0, 2, 0});
   EXPECT_FALSE(mesh02.lastX());
-  BoutMeshExposer mesh12(5, 3, 4, 3, 3, 1, 2);
+  const auto mesh12 = SmallCubeMesh({1, 2, 0});
   EXPECT_FALSE(mesh12.lastX());
-  BoutMeshExposer mesh22(5, 3, 4, 3, 3, 2, 2);
+  const auto mesh22 = SmallCubeMesh({2, 2, 0});
   EXPECT_TRUE(mesh22.lastX());
 }
 
 TEST_F(BoutMeshTest, FirstY) {
-  BoutMeshExposer mesh00(5, 3, 4, 3, 3, 0, 0);
+  const auto mesh00 = SmallCubeMesh({0, 0, 0});
   EXPECT_TRUE(mesh00.firstY());
-  BoutMeshExposer mesh10(5, 3, 4, 3, 3, 1, 0);
+  const auto mesh10 = SmallCubeMesh({1, 0, 0});
   EXPECT_TRUE(mesh10.firstY());
-  BoutMeshExposer mesh20(5, 3, 4, 3, 3, 2, 0);
+  const auto mesh20 = SmallCubeMesh({2, 0, 0});
   EXPECT_TRUE(mesh20.firstY());
-  BoutMeshExposer mesh01(5, 3, 4, 3, 3, 0, 1);
+  const auto mesh01 = SmallCubeMesh({0, 1, 0});
   EXPECT_FALSE(mesh01.firstY());
-  BoutMeshExposer mesh11(5, 3, 4, 3, 3, 1, 1);
+  const auto mesh11 = SmallCubeMesh({1, 1, 0});
   EXPECT_FALSE(mesh11.firstY());
-  BoutMeshExposer mesh21(5, 3, 4, 3, 3, 2, 1);
+  const auto mesh21 = SmallCubeMesh({2, 1, 0});
   EXPECT_FALSE(mesh21.firstY());
-  BoutMeshExposer mesh02(5, 3, 4, 3, 3, 0, 2);
+  const auto mesh02 = SmallCubeMesh({0, 2, 0});
   EXPECT_FALSE(mesh02.firstY());
-  BoutMeshExposer mesh12(5, 3, 4, 3, 3, 1, 2);
+  const auto mesh12 = SmallCubeMesh({1, 2, 0});
   EXPECT_FALSE(mesh12.firstY());
-  BoutMeshExposer mesh22(5, 3, 4, 3, 3, 2, 2);
+  const auto mesh22 = SmallCubeMesh({2, 2, 0});
   EXPECT_FALSE(mesh22.firstY());
 }
 
 TEST_F(BoutMeshTest, LastY) {
-  BoutMeshExposer mesh00(5, 3, 4, 3, 3, 0, 0);
+  const auto mesh00 = SmallCubeMesh({0, 0, 0});
   EXPECT_FALSE(mesh00.lastY());
-  BoutMeshExposer mesh10(5, 3, 4, 3, 3, 1, 0);
+  const auto mesh10 = SmallCubeMesh({1, 0, 0});
   EXPECT_FALSE(mesh10.lastY());
-  BoutMeshExposer mesh20(5, 3, 4, 3, 3, 2, 0);
+  const auto mesh20 = SmallCubeMesh({2, 0, 0});
   EXPECT_FALSE(mesh20.lastY());
-  BoutMeshExposer mesh01(5, 3, 4, 3, 3, 0, 1);
+  const auto mesh01 = SmallCubeMesh({0, 1, 0});
   EXPECT_FALSE(mesh01.lastY());
-  BoutMeshExposer mesh11(5, 3, 4, 3, 3, 1, 1);
+  const auto mesh11 = SmallCubeMesh({1, 1, 0});
   EXPECT_FALSE(mesh11.lastY());
-  BoutMeshExposer mesh21(5, 3, 4, 3, 3, 2, 1);
+  const auto mesh21 = SmallCubeMesh({2, 1, 0});
   EXPECT_FALSE(mesh21.lastY());
-  BoutMeshExposer mesh02(5, 3, 4, 3, 3, 0, 2);
+  const auto mesh02 = SmallCubeMesh({0, 2, 0});
   EXPECT_TRUE(mesh02.lastY());
-  BoutMeshExposer mesh12(5, 3, 4, 3, 3, 1, 2);
+  const auto mesh12 = SmallCubeMesh({1, 2, 0});
   EXPECT_TRUE(mesh12.lastY());
-  BoutMeshExposer mesh22(5, 3, 4, 3, 3, 2, 2);
+  const auto mesh22 = SmallCubeMesh({2, 2, 0});
   EXPECT_TRUE(mesh22.lastY());
 }
 
@@ -1609,7 +1593,7 @@ void checkRegionSizes(const BoutMeshExposer& mesh, std::array<int, 3> rgn_lower_
 TEST_F(BoutMeshTest, DefaultConnectionsCore1x1) {
   // 5x3x1 grid on 1 processor, 1 boundary point. Boundaries should be
   // simple 1D rectangles, with 4 boundaries on this processor
-  BoutMeshExposer mesh00(5, 3, 1, 1, 1, 0, 0, false);
+  BoutMeshExposer mesh00({5, 3, 1}, {1, 1, 0}, {1, 1, 1}, {0, 0, 0}, false);
 
   mesh00.default_connections();
 
