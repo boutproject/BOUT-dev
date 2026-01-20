@@ -1775,13 +1775,15 @@ int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const {
   return zlocal + (PE_ZIND * MZSUB) - MZG;
 }
 
-int BoutMesh::getLocalZIndex(int zglobal) const { return zglobal; }
+int BoutMesh::getLocalZIndex(int zglobal) const { return zglobal - (PE_ZIND * MZSUB); }
 
 BoutReal BoutMesh::getGlobalZIndex(BoutReal zloc) const {
   return zloc + (PE_ZIND * MZSUB);
 }
 
-int BoutMesh::getLocalZIndexNoBoundaries(int zglobal) const { return zglobal; }
+int BoutMesh::getLocalZIndexNoBoundaries(int zglobal) const {
+  return zglobal - (PE_ZIND * MZSUB) + MZG;
+}
 
 int BoutMesh::YPROC(int yind) const {
   if ((yind < 0) || (yind >= ny)) {
