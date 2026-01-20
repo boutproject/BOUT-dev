@@ -1776,39 +1776,19 @@ int BoutMesh::XPROC(int xind) const { return (xind >= MXG) ? (xind - MXG) / MXSU
  *                     TESTING UTILITIES
  ****************************************************************/
 
-BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
-                   int nype, int pe_xind, int pe_yind, bool create_topology,
-                   bool symmetric_X, bool symmetric_Y)
-    : nx(input_nx), ny(input_ny), nz(input_nz), symmetricGlobalX(symmetric_X),
-      symmetricGlobalY(symmetric_Y), MXG(mxg), MYG(myg), MZG(0) {
-  maxregionblocksize = MAXREGIONBLOCKSIZE;
-
-  PE_XIND = pe_xind;
-  PE_YIND = pe_yind;
-  NPES = nxpe * nype;
-  MYPE = nxpe * pe_yind + pe_xind;
-
-  ixseps1 = nx;
-  ixseps2 = nx;
-  jyseps1_1 = -1;
-  jyseps1_2 = ny / 2;
-  jyseps2_1 = jyseps1_2;
-  jyseps2_2 = ny - 1;
-  ny_inner = jyseps2_1;
-  numberOfXPoints = 0;
-
-  NXPE = nxpe;
-  NYPE = nype;
-  NZPE = 1;
+BoutMesh::BoutMesh(ProcSizes grid, ProcSizes guards, ProcSizes num_procs,
+                   ProcSizes proc_index, bool create_topology, bool symmetric_X,
+                   bool symmetric_Y)
+    : nx(grid.x), ny(grid.y), nz(grid.z), NPES(num_procs.x * num_procs.y),
+      MYPE((((proc_index.z * num_procs.y) + proc_index.y) * num_procs.x) + proc_index.x),
+      PE_XIND(proc_index.x), NXPE(num_procs.x), PE_YIND(proc_index.y), NYPE(num_procs.y),
+      PE_ZIND(proc_index.z), NZPE(num_procs.z), ixseps1(nx), ixseps2(nx), jyseps1_1(-1),
+      jyseps2_1(ny / 2), jyseps1_2(jyseps2_1), jyseps2_2(ny - 1), ny_inner(jyseps2_1),
+      symmetricGlobalX(symmetric_X), symmetricGlobalY(symmetric_Y), MXG(guards.x),
+      MYG(guards.y), MZG(guards.z) {
 
   // Set the other grid sizes from nx, ny, nz
   setDerivedGridSizes();
-
-  periodicX = false;
-
-  ZMIN = 0.0;
-  ZMAX = 1.0;
-  zperiod = 1.0;
 
   if (not create_topology) {
     return;
@@ -1817,9 +1797,7 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   // Call topology to set layout of grid
   topology();
 
-  TwistShift = false;
   ShiftAngle.resize(LocalNx);
-
   ShiftAngle.clear();
 
   createDefaultRegions();
