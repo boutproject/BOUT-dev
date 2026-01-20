@@ -174,7 +174,6 @@ void setBC(PetscVector<Field3D>& rhs, const Field3D& b_in,
 }
 
 Field3D LaplacePetsc3dAmg::solve(const Field3D& b_in, const Field3D& x0) {
-  AUTO_TRACE();
 
   // Timing reported in the log files. Includes any matrix construction.
   // The timing for just the solve phase can be retrieved from the "petscsolve"

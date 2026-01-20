@@ -42,7 +42,6 @@ class InvertableOperator;
 #include <bout/boutexception.hxx>
 #include <bout/globals.hxx>
 #include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
@@ -61,14 +60,14 @@ namespace inversion {
 /// No-op function to use as a default -- may wish to remove once testing phase complete
 template <typename T>
 T identity(const T& in) {
-  AUTO_TRACE();
+
   return in;
 };
 
 /// Pack a PetscVec from a Field<T>
 template <typename T>
 PetscErrorCode fieldToPetscVec(const T& in, Vec out) {
-  TRACE("fieldToPetscVec<T>");
+
   Timer timer("invertable_operator_packing");
 
   PetscScalar* vecData;
@@ -93,7 +92,7 @@ PetscErrorCode fieldToPetscVec(const T& in, Vec out) {
 /// Pack a Field<T> from a PetscVec
 template <typename T>
 PetscErrorCode petscVecToField(Vec in, T& out) {
-  TRACE("petscVecToField<T>");
+
   Timer timer("invertable_operator_packing");
 
   const PetscScalar* vecData;
@@ -136,13 +135,12 @@ public:
       : operatorFunction(func), preconditionerFunction(func),
         opt(optIn == nullptr ? Options::getRoot()->getSection("invertableOperator")
                              : optIn),
-        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn), lib(opt) {
-    AUTO_TRACE();
-  };
+        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn), lib(opt){
+
+                                                                               };
 
   /// Destructor just has to cleanup the PETSc owned objects.
   ~InvertableOperator() {
-    TRACE("InvertableOperator<T>::destructor");
 
     KSPDestroy(&ksp);
     MatDestroy(&matOperator);
@@ -157,7 +155,7 @@ public:
   /// do this they can set alsoSetPreconditioner to false.
   void setOperatorFunction(const function_signature& func,
                            bool alsoSetPreconditioner = true) {
-    TRACE("InvertableOperator<T>::setOperatorFunction");
+
     operatorFunction = func;
     if (alsoSetPreconditioner) {
       preconditionerFunction = func;
@@ -166,28 +164,21 @@ public:
 
   /// Allow the user to override the existing preconditioner function
   void setPreconditionerFunction(const function_signature& func) {
-    TRACE("InvertableOperator<T>::setPreconditionerFunction");
+
     preconditionerFunction = func;
   }
 
   /// Provide a way to apply the operator to a Field
-  T operator()(const T& input) {
-    TRACE("InvertableOperator<T>::operator()");
-    return operatorFunction(input);
-  }
+  T operator()(const T& input) { return operatorFunction(input); }
 
   /// Provide a synonym for applying the operator to a Field
-  T apply(const T& input) {
-    AUTO_TRACE();
-    return operator()(input);
-  }
+  T apply(const T& input) { return operator()(input); }
 
   /// Sets up the PETSc objects required for inverting the operator
   /// Currently also takes the functor that applies the operator this class
   /// represents. Not actually required by any of the setup so this should
   /// probably be moved to a separate place (maybe the constructor).
   PetscErrorCode setup() {
-    TRACE("InvertableOperator<T>::setup");
 
     Timer timer("invertable_operator_setup");
     if (doneSetup) {
@@ -386,7 +377,7 @@ public:
   // but suspect it's not as there are KSPGuess objects
   // to deal with.
   T invert(const T& rhsField, const T& guess) {
-    AUTO_TRACE();
+
     auto ierr = fieldToPetscVec(guess, lhs);
     CHKERRQ(ierr);
     return invert(rhsField);
@@ -397,7 +388,7 @@ public:
   /// of the operator we represent. Should probably provide an overload or similar as a
   /// way of setting the initial guess.
   T invert(const T& rhsField) {
-    TRACE("InvertableOperator<T>::invert");
+
     Timer timer("invertable_operator_invert");
 
     if (!doneSetup) {
@@ -444,7 +435,6 @@ public:
   /// applying the registered function on the calculated inverse gives
   /// back the initial values.
   bool verify(const T& rhsIn, BoutReal tol = 1.0e-5) {
-    TRACE("InvertableOperator<T>::verify");
 
     T result = invert(rhsIn);
     localmesh->communicate(result);
@@ -463,7 +453,7 @@ public:
   /// that as the Timer "labels" are not unique to an instance the time
   /// reported is summed across all different instances.
   static void reportTime() {
-    TRACE("InvertableOperator<T>::reportTime");
+
     BoutReal time_setup = Timer::resetTime("invertable_operator_setup");
     BoutReal time_invert = Timer::resetTime("invertable_operator_invert");
     BoutReal time_packing = Timer::resetTime("invertable_operator_packing");
@@ -503,7 +493,7 @@ private:
   /// Copies data from v1 into a field of type T, calls the function on this and then
   /// copies the result into the v2 argument.
   static PetscErrorCode functionWrapper(Mat m, Vec v1, Vec v2) {
-    TRACE("InvertableOperator<T>::functionWrapper");
+
     InvertableOperator<T>* ctx;
     auto ierr = MatShellGetContext(m, &ctx);
     T tmpField(ctx->localmesh);
@@ -534,7 +524,7 @@ private:
   /// Copies data from v1 into a field of type T, calls the function on this and then
   /// copies the result into the v2 argument.
   static PetscErrorCode preconditionerWrapper(Mat m, Vec v1, Vec v2) {
-    TRACE("InvertableOperator<T>::functionWrapper");
+
     InvertableOperator<T>* ctx;
     auto ierr = MatShellGetContext(m, &ctx);
     T tmpField(ctx->localmesh);

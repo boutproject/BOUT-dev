@@ -21,7 +21,6 @@
 #cmakedefine01 BOUT_HAS_SLEPC
 #cmakedefine01 BOUT_HAS_SUNDIALS
 #cmakedefine01 BOUT_HAS_UUID_SYSTEM_GENERATOR
-#cmakedefine01 BOUT_USE_BACKTRACE
 #cmakedefine01 BOUT_USE_COLOR
 #cmakedefine01 BOUT_USE_OPENMP
 #cmakedefine01 BOUT_USE_OUTPUT_DEBUG
@@ -39,5 +38,8 @@
 
 // CMake build does not support legacy interface
 #define BOUT_HAS_LEGACY_NETCDF 0
+
+// We now always turn this on
+#define BOUT_USE_BACKTRACE 1
 
 #endif // BOUT_BUILD_CONFIG_HXX

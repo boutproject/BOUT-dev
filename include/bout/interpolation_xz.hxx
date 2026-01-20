@@ -24,6 +24,7 @@
 #ifndef BOUT_INTERP_XZ_H
 #define BOUT_INTERP_XZ_H
 
+#include "bout/build_defines.hxx"
 #include "bout/mask.hxx"
 
 #define USE_NEW_WEIGHTS 1
@@ -218,6 +219,9 @@ public:
 using XZMonotonicHermiteSpline = XZHermiteSplineBase<true>;
 using XZHermiteSpline = XZHermiteSplineBase<false>;
 
+/// XZLagrange4pt interpolation class
+///
+/// Does not support MPI splitting in X
 class XZLagrange4pt : public XZInterpolation {
   Tensor<int> i_corner; // x-index of bottom-left grid point
   Tensor<int> k_corner; // z-index of bottom-left grid point
@@ -251,6 +255,9 @@ public:
   BoutReal lagrange_4pt(const BoutReal v[], BoutReal offset) const;
 };
 
+/// XZBilinear interpolation calss
+///
+/// Does not support MPI splitting in X.
 class XZBilinear : public XZInterpolation {
   Tensor<int> i_corner; // x-index of bottom-left grid point
   Tensor<int> k_corner; // z-index of bottom-left grid point

@@ -3,19 +3,16 @@
 #include "power.hxx"
 
 #include <bout/boutcomm.hxx>
-#include <bout/msg_stack.hxx>
+#include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 
 #include <cmath>
-
-#include <bout/output.hxx>
 
 PowerSolver::PowerSolver(Options* opts)
     : Solver(opts),
       curtime((*options)["curtime"].doc("Simulation time (fixed)").withDefault(0.0)) {}
 
 int PowerSolver::init() {
-  TRACE("Initialising Power solver");
 
   Solver::init();
   output << "\n\tPower eigenvalue solver\n";
@@ -44,7 +41,6 @@ int PowerSolver::init() {
 }
 
 int PowerSolver::run() {
-  TRACE("PowerSolver::run()");
 
   // Make sure that f0 has a norm of 1
   divide(f0, norm(f0));

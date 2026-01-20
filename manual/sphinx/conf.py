@@ -72,35 +72,29 @@ if on_readthedocs:
     sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
     print(os.environ)
     print(sys.argv)
-    python = sys.argv[0]
-    pydir = "/".join(python.split("/")[:-2])
     os.system("which clang-format")
     os.system("which clang-format-6.0")
-    os.system(
-        "git submodule update --init --recursive ../../externalpackages/mpark.variant"
-    )
-    pwd = "/".join(os.getcwd().split("/")[:-2])
-    os.system("git submodule update --init --recursive ../../externalpackages/fmt")
+    subprocess.run("git submodule update --init --recursive", shell=True)
     cmake = (
-        "cmake  . -DBOUT_USE_FFTW=ON"
-        + " -DBOUT_USE_LAPACK=OFF"
-        + " -DBOUT_ENABLE_PYTHON=ON"
-        + " -DBOUT_UPDATE_GIT_SUBMODULE=OFF"
-        + " -DBOUT_TESTS=OFF"
-        + " -DBOUT_ALLOW_INSOURCE_BUILD=ON"
-        + f" -DPython3_ROOT_DIR={pydir}"
-        + f" -Dmpark_variant_DIR={pwd}/externalpackages/mpark.variant/"
-        + f" -Dfmt_DIR={pwd}/externalpackages/fmt/"
+        "cmake -S ../.. "
+        " -B bout_build"
+        " -DBOUT_USE_FFTW=ON"
+        " -DBOUT_USE_LAPACK=OFF"
+        " -DBOUT_ENABLE_PYTHON=ON"
+        " -DBOUT_UPDATE_GIT_SUBMODULE=OFF"
+        " -DBOUT_TESTS=OFF"
+        " -DBOUT_ALLOW_INSOURCE_BUILD=ON"
+        f" -DPython3_ROOT_DIR={sys.exec_prefix}"
     )
-    # os.system("mkdir ../../build")
-    os.system("echo " + cmake)
-    x = os.system("cd ../.. ;" + cmake)
-    assert x == 0
-    x = os.system("cd ../.. ; make -j 2 -f Makefile")
-    assert x == 0
+    subprocess.run(f"echo {cmake}", shell=True)
+    subprocess.run(f"{cmake}", shell=True, check=True)
+    subprocess.run("cmake --build bout_build", shell=True, check=True)
+
+    # Add the build directory to sys.path so that sphinx picks up the built
+    # Python modules
+    sys.path.append("bout_build/tools/pylib")
 
 
-# readthedocs currently runs out of memory if we actually dare to try to do this
 if has_breathe:
     # Run doxygen to generate the XML sources
     if on_readthedocs:

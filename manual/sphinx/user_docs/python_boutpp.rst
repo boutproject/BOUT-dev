@@ -160,7 +160,7 @@ A real example - check derivative contributions:
               phi[-1,:,z]=phi_arr
       with open(path+"/equilibrium/phi_eq.dat","rb") as inf:
           phi_arr=np.fromfile(inf,dtype=np.double)
-          bm="BRACKET_ARAKAWA_OLD"
+          bm="BRACKET_ARAKAWA"
 
           for tind in range(len(times)):
               vort     = Field3D.fromCollect("vort"     ,path=path,tind=tind,info=False)

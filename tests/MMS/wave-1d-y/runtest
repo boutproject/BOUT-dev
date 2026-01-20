@@ -20,7 +20,6 @@ from sys import stdout
 
 from numpy import sqrt, max, abs, mean, array, log, concatenate, pi
 
-
 build_and_log("Making MMS wave test")
 
 # List of NX values to use

@@ -45,7 +45,6 @@ namespace index {
 template <typename T, DIRECTION direction, DERIV derivType>
 T flowDerivative(const T& vel, const T& f, CELL_LOC outloc, const std::string& method,
                  const std::string& region) {
-  AUTO_TRACE();
 
   // Checks
   static_assert(bout::utils::is_Field2D_v<T> || bout::utils::is_Field3D_v<T>,
@@ -110,7 +109,6 @@ T flowDerivative(const T& vel, const T& f, CELL_LOC outloc, const std::string& m
 template <typename T, DIRECTION direction, DERIV derivType>
 T standardDerivative(const T& f, CELL_LOC outloc, const std::string& method,
                      const std::string& region) {
-  AUTO_TRACE();
 
   // Checks
   static_assert(bout::utils::is_Field2D_v<T> || bout::utils::is_Field3D_v<T>,
@@ -174,7 +172,7 @@ T standardDerivative(const T& f, CELL_LOC outloc, const std::string& method,
 template <typename T>
 T DDX(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
       const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return standardDerivative<T, DIRECTION::X, DERIV::Standard>(f, outloc, method, region);
 }
 inline Field3D DDX(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
@@ -186,7 +184,7 @@ inline Field3D DDX(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
 template <typename T>
 T D2DX2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
         const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return standardDerivative<T, DIRECTION::X, DERIV::StandardSecond>(f, outloc, method,
                                                                     region);
 }
@@ -194,7 +192,7 @@ T D2DX2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
 template <typename T>
 T D4DX4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
         const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return standardDerivative<T, DIRECTION::X, DERIV::StandardFourth>(f, outloc, method,
                                                                     region);
 }
@@ -204,7 +202,7 @@ T D4DX4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
 template <typename T>
 T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
       const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   if (f.isFci()) {
     ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     if (!f.hasParallelSlices()) {
@@ -231,7 +229,7 @@ inline Field3D DDY(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
 template <typename T>
 T D2DY2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
         const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   if (f.hasParallelSlices()) {
     ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::StandardSecond>(
@@ -248,7 +246,7 @@ T D2DY2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
 template <typename T>
 T D4DY4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
         const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   if (f.hasParallelSlices()) {
     ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::StandardFourth>(
@@ -266,7 +264,7 @@ T D4DY4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
 template <typename T>
 T DDZ(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
       const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return standardDerivative<T, DIRECTION::Z, DERIV::Standard>(f, outloc, method, region);
 }
 inline Field3D DDZ(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
@@ -278,7 +276,7 @@ inline Field3D DDZ(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
 template <typename T>
 T D2DZ2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
         const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return standardDerivative<T, DIRECTION::Z, DERIV::StandardSecond>(f, outloc, method,
                                                                     region);
 }
@@ -286,7 +284,7 @@ T D2DZ2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
 template <typename T>
 T D4DZ4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
         const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return standardDerivative<T, DIRECTION::Z, DERIV::StandardFourth>(f, outloc, method,
                                                                     region);
 }
@@ -311,14 +309,14 @@ T D4DZ4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
 template <typename T>
 T VDDX(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return flowDerivative<T, DIRECTION::X, DERIV::Upwind>(vel, f, outloc, method, region);
 }
 
 template <typename T>
 T FDDX(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return flowDerivative<T, DIRECTION::X, DERIV::Flux>(vel, f, outloc, method, region);
 }
 
@@ -327,7 +325,6 @@ T FDDX(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
 template <typename T>
 T VDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
 
   // Note the following chunk is copy+pasted from flowDerivative
   // above. Not pulled out as a separate function due the number of
@@ -388,7 +385,7 @@ inline Field3D VDDY(const Field3D& v, const Field3DParallel& f,
 template <typename T>
 T FDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   const bool fHasParallelSlices = (f.hasParallelSlices());
   const bool velHasParallelSlices = (vel.hasParallelSlices());
   if (fHasParallelSlices && velHasParallelSlices) {
@@ -419,14 +416,14 @@ inline Field3D FDDY(const Field3D& v, const Field3DParallel& f,
 template <typename T>
 T VDDZ(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return flowDerivative<T, DIRECTION::Z, DERIV::Upwind>(vel, f, outloc, method, region);
 }
 
 template <typename T>
 T FDDZ(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY") {
-  AUTO_TRACE();
+
   return flowDerivative<T, DIRECTION::Z, DERIV::Flux>(vel, f, outloc, method, region);
 }
 

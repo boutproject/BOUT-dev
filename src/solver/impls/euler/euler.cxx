@@ -5,16 +5,9 @@
 #include "bout/field2d.hxx"
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
-#include <bout/utils.hxx>
-#include <bout/version.hxx>
-
-#include <cmath>
-#include <fmt/format.h>
-#include <memory>
-
 #include <bout/output.hxx>
+#include <bout/version.hxx>
 
 EulerSolver::EulerSolver(Options* options)
     : Solver(options), mxstep((*options)["mxstep"]
@@ -41,7 +34,6 @@ void EulerSolver::setMaxTimestep(BoutReal dt) {
 }
 
 int EulerSolver::init() {
-  TRACE("Initialising Euler solver");
 
   Solver::init();
 
@@ -71,7 +63,6 @@ int EulerSolver::init() {
 }
 
 int EulerSolver::run() {
-  TRACE("EulerSolver::run()");
 
   for (int s = 0; s < getNumberOutputSteps(); s++) {
     BoutReal target = simtime + getOutputTimestep();

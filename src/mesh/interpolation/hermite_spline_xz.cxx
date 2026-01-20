@@ -22,6 +22,7 @@
 
 #include "../impls/bout/boutmesh.hxx"
 #include "../parallel/fci_comm.hxx"
+#include "bout/bout.hxx"
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_xz.hxx"
@@ -140,16 +141,9 @@ XZHermiteSplineBase<monotonic>::XZHermiteSplineBase(int y_offset, Mesh* meshin)
 #ifdef HS_USE_PETSC
   petsclib = new PetscLib(
       &Options::root()["mesh:paralleltransform:xzinterpolation:hermitespline"]);
-  // MatCreate(MPI_Comm comm,Mat *A)
-  // MatCreate(MPI_COMM_WORLD, &petscWeights);
-  //  MatSetSizes(petscWeights, m, m, M, M);
-  // PetscErrorCode MatCreateAIJ(MPI_Comm comm, PetscInt m, PetscInt n, PetscInt M,
-  // PetscInt N, 			      PetscInt d_nz, const PetscInt d_nnz[],
-  // PetscInt o_nz, const PetscInt o_nnz[], Mat *A)
-  //  MatSetSizes(Mat A,PetscInt m,PetscInt n,PetscInt M,PetscInt N)
   const int m = localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz;
   const int M = m * localmesh->getNXPE() * localmesh->getNYPE();
-  MatCreateAIJ(MPI_COMM_WORLD, m, m, M, M, 16, nullptr, 16, nullptr, &petscWeights);
+  MatCreateAIJ(BoutComm::get(), m, m, M, M, 16, nullptr, 16, nullptr, &petscWeights);
 #endif
 #endif
   if constexpr (monotonic) {
@@ -393,10 +387,11 @@ template <bool monotonic>
 Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
                                                     const std::string& region) const {
 
+  const auto region2 =
+      y_offset == 0 ? "RGN_NOY" : fmt::format("RGN_YPAR_{:+d}", y_offset);
+
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
-
-  const auto region2 = y_offset != 0 ? fmt::format("RGN_YPAR_{:+d}", y_offset) : region;
 
   std::unique_ptr<GlobalField3DAccessInstance> gf;
   if constexpr (monotonic) {

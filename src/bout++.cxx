@@ -27,7 +27,7 @@
 
 #include "bout/build_config.hxx"
 
-const char DEFAULT_DIR[] = "data";
+static constexpr auto DEFAULT_DIR = "data";
 
 #define GLOBALORIGIN
 
@@ -141,74 +141,68 @@ int BoutInitialise(int& argc, char**& argv) {
     return 1;
   }
 
-  try {
-    checkDataDirectoryIsAccessible(args.data_dir);
+  checkDataDirectoryIsAccessible(args.data_dir);
 
-    // Set the command-line arguments
-    SlepcLib::setArgs(argc, argv); // SLEPc initialisation
-    PetscLib::setArgs(argc, argv); // PETSc initialisation
-    Solver::setArgs(argc, argv);   // Solver initialisation
-    BoutComm::setArgs(argc, argv); // MPI initialisation
+  // Set the command-line arguments
+  SlepcLib::setArgs(argc, argv); // SLEPc initialisation
+  PetscLib::setArgs(argc, argv); // PETSc initialisation
+  Solver::setArgs(argc, argv);   // Solver initialisation
+  BoutComm::setArgs(argc, argv); // MPI initialisation
 
-    const int MYPE = BoutComm::rank();
+  const int MYPE = BoutComm::rank();
 
-    setupBoutLogColor(args.color_output, MYPE);
+  setupBoutLogColor(args.color_output, MYPE);
 
-    setupOutput(args.data_dir, args.log_file, args.verbosity, MYPE);
+  setupOutput(args.data_dir, args.log_file, args.verbosity, MYPE);
 
-    savePIDtoFile(args.data_dir, MYPE);
+  savePIDtoFile(args.data_dir, MYPE);
 
 #if BOUT_HAS_ADIOS2
-    bout::ADIOSInit(BoutComm::get());
+  bout::ADIOSInit(BoutComm::get());
 #endif
 
-    // Print the different parts of the startup info
-    printStartupHeader(MYPE, BoutComm::size());
-    printCompileTimeOptions();
-    printCommandLineArguments(args.original_argv);
+  // Print the different parts of the startup info
+  printStartupHeader(MYPE, BoutComm::size());
+  printCompileTimeOptions();
+  printCommandLineArguments(args.original_argv);
 
-    // Load settings file
-    OptionsReader* reader = OptionsReader::getInstance();
-    // Ideally we'd use the long options for `datadir` and
-    // `optionfile` here, but we'd need to call parseCommandLine
-    // _first_ in order to do that and set the source, etc., but we
-    // need to call that _second_ in order to override the input file
-    reader->read(Options::getRoot(), "{}", (args.data_dir / args.opt_file).string());
+  // Load settings file
+  OptionsReader* reader = OptionsReader::getInstance();
+  // Ideally we'd use the long options for `datadir` and
+  // `optionfile` here, but we'd need to call parseCommandLine
+  // _first_ in order to do that and set the source, etc., but we
+  // need to call that _second_ in order to override the input file
+  reader->read(Options::getRoot(), "{}", (args.data_dir / args.opt_file).string());
 
-    // Get options override from command-line
-    reader->parseCommandLine(Options::getRoot(), args.argv);
+  // Get options override from command-line
+  reader->parseCommandLine(Options::getRoot(), args.argv);
 
-    // Get the variables back out so they count as having been used
-    // when checking for unused options. They normally _do_ get used,
-    // but it's possible that only happens in BoutFinalise, which is
-    // too late for that check.
-    const auto datadir = Options::root()["datadir"].withDefault<std::string>(DEFAULT_DIR);
-    [[maybe_unused]] const auto optionfile =
-        Options::root()["optionfile"].withDefault<std::string>(args.opt_file);
-    const auto settingsfile =
-        Options::root()["settingsfile"].withDefault<std::string>(args.set_file);
+  // Get the variables back out so they count as having been used
+  // when checking for unused options. They normally _do_ get used,
+  // but it's possible that only happens in BoutFinalise, which is
+  // too late for that check.
+  const auto datadir = Options::root()["datadir"].withDefault<std::string>(DEFAULT_DIR);
+  [[maybe_unused]] const auto optionfile =
+      Options::root()["optionfile"].withDefault<std::string>(args.opt_file);
+  const auto settingsfile =
+      Options::root()["settingsfile"].withDefault<std::string>(args.set_file);
 
-    setRunStartInfo(Options::root());
+  setRunStartInfo(Options::root());
 
-    if (MYPE == 0) {
-      writeSettingsFile(Options::root(), datadir, settingsfile);
-    }
-
-    bout::globals::mpi = new MpiWrapper();
-
-    // Create the mesh
-    bout::globals::mesh = Mesh::create();
-    // Load from sources. Required for Field initialisation
-    bout::globals::mesh->load();
-
-    // time_report options are used in BoutFinalise, i.e. after we
-    // check for unused options
-    Options::root()["time_report"].setConditionallyUsed();
-
-  } catch (const BoutException& e) {
-    output_error.write(_("Error encountered during initialisation: {:s}\n"), e.what());
-    throw;
+  if (MYPE == 0) {
+    writeSettingsFile(Options::root(), datadir, settingsfile);
   }
+
+  bout::globals::mpi = new MpiWrapper();
+
+  // Create the mesh
+  bout::globals::mesh = Mesh::create();
+  // Load from sources. Required for Field initialisation
+  bout::globals::mesh->load();
+
+  // time_report options are used in BoutFinalise, i.e. after we
+  // check for unused options
+  Options::root()["time_report"].setConditionallyUsed();
 
   return 0;
 }
@@ -566,8 +560,6 @@ void printCompileTimeOptions() {
   output_info.write(_("\tNetCDF support {}{}\n"), is_enabled(has_netcdf), netcdf_flavour);
   output_info.write(_("\tADIOS2 support {}\n"), is_enabled(has_adios2));
   output_info.write(_("\tPETSc support {}\n"), is_enabled(has_petsc));
-  output_info.write(_("\tPretty function name support {}\n"),
-                    is_enabled(has_pretty_function));
   output_info.write(_("\tPVODE support {}\n"), is_enabled(has_pvode));
   output_info.write(_("\tScore-P support {}\n"), is_enabled(has_scorep));
   output_info.write(_("\tSLEPc support {}\n"), is_enabled(has_slepc));
@@ -696,7 +688,6 @@ void addBuildFlagsToOptions(Options& options) {
   options["has_umpire"].force(bout::build::has_umpire);
   options["has_caliper"].force(bout::build::has_caliper);
   options["has_raja"].force(bout::build::has_raja);
-  options["has_pretty_function"].force(bout::build::has_pretty_function);
   options["has_pvode"].force(bout::build::has_pvode);
   options["has_scorep"].force(bout::build::has_scorep);
   options["has_slepc"].force(bout::build::has_slepc);

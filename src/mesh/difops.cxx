@@ -25,20 +25,19 @@
 
 #include "bout/build_defines.hxx"
 
-#include "bout/assert.hxx"
-#include "bout/derivs.hxx"
-#include "bout/difops.hxx"
-#include "bout/fft.hxx"
-#include "bout/field2d.hxx"
-#include "bout/globals.hxx"
-#include "bout/interpolation.hxx"
-#include "bout/invert_laplace.hxx" // Delp2 uses same coefficients as inversion code
-#include "bout/msg_stack.hxx"
-#include "bout/region.hxx"
-#include "bout/solver.hxx"
-#include "bout/unused.hxx"
-#include "bout/utils.hxx"
-#include "bout/vecops.hxx"
+#include <bout/assert.hxx>
+#include <bout/derivs.hxx>
+#include <bout/difops.hxx>
+#include <bout/fft.hxx>
+#include <bout/globals.hxx>
+#include <bout/solver.hxx>
+#include <bout/utils.hxx>
+#include <bout/vecops.hxx>
+
+#include <bout/invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
+
+#include <bout/interpolation.hxx>
+#include <bout/unused.hxx>
 
 #include <cmath>
 
@@ -574,8 +573,6 @@ Field2D Laplace_perpXY(const Field2D& A, const Field2D& f) {
 Coordinates::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
                                           CELL_LOC outloc) {
 
-  TRACE("b0xGrad_dot_Grad( Field2D , Field2D )");
-
   if (outloc == CELL_DEFAULT) {
     outloc = A.getLocation();
   }
@@ -605,7 +602,6 @@ Coordinates::FieldMetric b0xGrad_dot_Grad(const Field2D& phi, const Field2D& A,
 }
 
 Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A, CELL_LOC outloc) {
-  TRACE("b0xGrad_dot_Grad( Field2D , Field3D )");
 
   if (outloc == CELL_DEFAULT) {
     outloc = A.getLocation();
@@ -647,7 +643,6 @@ Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A, CELL_LOC outloc) 
 }
 
 Field3D b0xGrad_dot_Grad(const Field3D& p, const Field2D& A, CELL_LOC outloc) {
-  TRACE("b0xGrad_dot_Grad( Field3D , Field2D )");
 
   if (outloc == CELL_DEFAULT) {
     outloc = A.getLocation();
@@ -682,7 +677,6 @@ Field3D b0xGrad_dot_Grad(const Field3D& p, const Field2D& A, CELL_LOC outloc) {
 }
 
 Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A, CELL_LOC outloc) {
-  TRACE("b0xGrad_dot_Grad( Field3D , Field3D )");
 
   if (outloc == CELL_DEFAULT) {
     outloc = A.getLocation();
@@ -730,7 +724,6 @@ Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A, CELL_LOC outloc) 
 Coordinates::FieldMetric bracket(const Field2D& f, const Field2D& g,
                                  BRACKET_METHOD method, CELL_LOC outloc,
                                  Solver* UNUSED(solver)) {
-  TRACE("bracket(Field2D, Field2D)");
 
   ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
@@ -753,7 +746,6 @@ Coordinates::FieldMetric bracket(const Field2D& f, const Field2D& g,
 
 Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
                 CELL_LOC outloc, Solver* solver) {
-  TRACE("bracket(Field3D, Field2D)");
 
   ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
@@ -887,46 +879,6 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
 
     break;
   }
-  case BRACKET_ARAKAWA_OLD: {
-#if not(BOUT_USE_METRIC_3D)
-    const int ncz = mesh->LocalNz;
-    BOUT_OMP_PERF(parallel for)
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-      for (int jy = mesh->ystart; jy <= mesh->yend; jy++) {
-        const BoutReal partialFactor = 1.0 / (12 * metric->dz(jx, jy));
-        const BoutReal spacingFactor = partialFactor / metric->dx(jx, jy);
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
-          const int jzp = jz + 1 < ncz ? jz + 1 : 0;
-          // Above is alternative to const int jzp = (jz + 1) % ncz;
-          const int jzm = jz - 1 >= 0 ? jz - 1 : ncz - 1;
-          // Above is alternative to const int jzmTmp = (jz - 1 + ncz) % ncz;
-
-          // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-          BoutReal Jpp =
-              ((f(jx, jy, jzp) - f(jx, jy, jzm)) * (g(jx + 1, jy) - g(jx - 1, jy))
-               - (f(jx + 1, jy, jz) - f(jx - 1, jy, jz)) * (g(jx, jy) - g(jx, jy)));
-
-          // J+x
-          BoutReal Jpx = (g(jx + 1, jy) * (f(jx + 1, jy, jzp) - f(jx + 1, jy, jzm))
-                          - g(jx - 1, jy) * (f(jx - 1, jy, jzp) - f(jx - 1, jy, jzm))
-                          - g(jx, jy) * (f(jx + 1, jy, jzp) - f(jx - 1, jy, jzp))
-                          + g(jx, jy) * (f(jx + 1, jy, jzm) - f(jx - 1, jy, jzm)));
-
-          // Jx+
-          BoutReal Jxp = (g(jx + 1, jy) * (f(jx, jy, jzp) - f(jx + 1, jy, jz))
-                          - g(jx - 1, jy) * (f(jx - 1, jy, jz) - f(jx, jy, jzm))
-                          - g(jx - 1, jy) * (f(jx, jy, jzp) - f(jx - 1, jy, jz))
-                          + g(jx + 1, jy) * (f(jx + 1, jy, jz) - f(jx, jy, jzm)));
-
-          result(jx, jy, jz) = (Jpp + Jpx + Jxp) * spacingFactor;
-        }
-      }
-    }
-#else
-    throw BoutException("BRACKET_ARAKAWA_OLD not valid with 3D metrics yet.");
-#endif
-    break;
-  }
   case BRACKET_SIMPLE: {
     // Use a subset of terms for comparison to BOUT-06
     result = VDDX(DDZ(f, outloc), g, outloc);
@@ -942,7 +894,6 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
 
 Field3D bracket(const Field2D& f, const Field3D& g, BRACKET_METHOD method,
                 CELL_LOC outloc, Solver* solver) {
-  TRACE("bracket(Field2D, Field3D)");
 
   ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
@@ -979,8 +930,6 @@ Field3D bracket(const Field2D& f, const Field3D& g, BRACKET_METHOD method,
 
 Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
                 CELL_LOC outloc, [[maybe_unused]] Solver* solver) {
-  TRACE("Field3D, Field3D");
-
   ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
@@ -1020,7 +969,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
     int ncz = mesh->LocalNz;
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
       for (int x = 1; x <= mesh->LocalNx - 2; x++) {
-        for (int z = 0; z < mesh->LocalNz; z++) {
+        for (int z = mesh->zstart; z <= mesh->zend; z++) {
           int zm = (z - 1 + ncz) % ncz;
           int zp = (z + 1) % ncz;
 
@@ -1204,63 +1153,6 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
         result(jx, jy, jz) = (Jpp + Jpx + Jxp) * spacingFactor;
       }
     }
-    break;
-  }
-  case BRACKET_ARAKAWA_OLD: {
-    // Arakawa scheme for perpendicular flow
-
-    const int ncz = mesh->LocalNz;
-
-    // We need to discard const qualifier in order to manipulate
-    // storage array directly
-    Field3D f_temp = f;
-    Field3D g_temp = g;
-
-    BOUT_OMP_PERF(parallel for)
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-      for (int jy = mesh->ystart; jy <= mesh->yend; jy++) {
-#if not(BOUT_USE_METRIC_3D)
-        const BoutReal spacingFactor =
-            1.0 / (12 * metric->dz(jx, jy) * metric->dx(jx, jy));
-#endif
-        const BoutReal* Fxm = f_temp(jx - 1, jy);
-        const BoutReal* Fx = f_temp(jx, jy);
-        const BoutReal* Fxp = f_temp(jx + 1, jy);
-        const BoutReal* Gxm = g_temp(jx - 1, jy);
-        const BoutReal* Gx = g_temp(jx, jy);
-        const BoutReal* Gxp = g_temp(jx + 1, jy);
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
-#if BOUT_USE_METRIC_3D
-          const BoutReal spacingFactor =
-              1.0 / (12 * metric->dz(jx, jy, jz) * metric->dx(jx, jy, jz));
-#endif
-          const int jzp = jz + 1 < ncz ? jz + 1 : 0;
-          // Above is alternative to const int jzp = (jz + 1) % ncz;
-          const int jzm = jz - 1 >= 0 ? jz - 1 : ncz - 1;
-          // Above is alternative to const int jzm = (jz - 1 + ncz) % ncz;
-
-          // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-          // NOLINTNEXTLINE
-          BoutReal Jpp = ((Fx[jzp] - Fx[jzm]) * (Gxp[jz] - Gxm[jz])
-                          - (Fxp[jz] - Fxm[jz]) * (Gx[jzp] - Gx[jzm]));
-
-          // J+x
-          // NOLINTNEXTLINE
-          BoutReal Jpx =
-              (Gxp[jz] * (Fxp[jzp] - Fxp[jzm]) - Gxm[jz] * (Fxm[jzp] - Fxm[jzm])
-               - Gx[jzp] * (Fxp[jzp] - Fxm[jzp]) + Gx[jzm] * (Fxp[jzm] - Fxm[jzm]));
-
-          // Jx+
-          // NOLINTNEXTLINE
-          BoutReal Jxp =
-              (Gxp[jzp] * (Fx[jzp] - Fxp[jz]) - Gxm[jzm] * (Fxm[jz] - Fx[jzm])
-               - Gxm[jzp] * (Fx[jzp] - Fxm[jz]) + Gxp[jzm] * (Fxp[jz] - Fx[jzm]));
-
-          result(jx, jy, jz) = (Jpp + Jpx + Jxp) * spacingFactor;
-        }
-      }
-    }
-
     break;
   }
   case BRACKET_SIMPLE: {

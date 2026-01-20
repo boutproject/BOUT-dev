@@ -13,3 +13,6 @@
 [submodule "externalpackages/boutdata"]
 	path = externalpackages/boutdata
 	url = https://github.com/boutproject/boutdata.git
+[submodule "externalpackages/cpptrace"]
+	path = externalpackages/cpptrace
+	url = https://github.com/ZedThree/cpptrace.git

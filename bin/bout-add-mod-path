@@ -104,8 +104,7 @@ def create_mod(modulepath, name, top, build):
     else:
         prereq = ""
     with open(filename, "w") as f:
-        f.write(
-            f"""#%Module 1.0
+        f.write(f"""#%Module 1.0
 #
 #  BOUT++ module for use with 'environment-modules' package
 #  Created by bout-add-mod-path v0.9
@@ -119,17 +118,14 @@ setenv        BOUT_TOP         {top}
 prepend-path  PATH             {top}/bin
 prepend-path  PYTHONPATH       {top}/tools/pylib
 prepend-path  IDL_PATH        +{top}/tools/idllib:'<IDL_DEFAULT>'
-"""
-        )
+""")
         if build != top:
-            f.write(
-                f"""#%Module 1.0
+            f.write(f"""#%Module 1.0
 setenv        BOUT_BUILD       {build}
 prepend-path  PATH             {build}/bin
 prepend-path  LD_LIBRARY_PATH  {build}/lib
 prepend-path  PYTHONPATH       {build}/tools/pylib
-"""
-            )
+""")
     print(f"created `{filename}`")
 
 

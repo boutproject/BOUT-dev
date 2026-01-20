@@ -5,23 +5,13 @@
 #ifndef BOUT_FV_OPS_H
 #define BOUT_FV_OPS_H
 
-#include "bout/assert.hxx"
-#include "bout/bout_types.hxx"
-#include "bout/boutexception.hxx"
 #include "bout/build_defines.hxx"
-#include "bout/coordinates.hxx"
-#include "bout/difops.hxx"
-#include "bout/field.hxx"
-#include "bout/field2d.hxx"
+#include <bout/difops.hxx>
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
-#include "bout/mesh.hxx"
-#include "bout/output_bout_types.hxx" // NOLINT(unused-includes, misc-include-cleaner)
-#include "bout/region.hxx"
 #include "bout/utils.hxx"
 #include "bout/vector2d.hxx"
-
-#include <cmath>
+#include <bout/mesh.hxx>
 
 namespace FV {
 /*!
@@ -312,7 +302,7 @@ Field3D Div_par(const Field3D& f_in, const Field3D& v_in, const Field3D& wave_sp
       const BoutReal flux_factor_lm =
           common_factor / (coord->dy(i, j - 1) * coord->J(i, j - 1));
 #endif
-      for (int k = 0; k < mesh->LocalNz; k++) {
+      for (int k = mesh->zstart; k <= mesh->zend; k++) {
 #if BOUT_USE_METRIC_3D
         // For right cell boundaries
         BoutReal common_factor =

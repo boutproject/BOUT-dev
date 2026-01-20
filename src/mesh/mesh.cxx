@@ -298,7 +298,6 @@ bool Mesh::sourceHasYBoundaryGuards() { return source->hasYBoundaryGuards(); }
  **************************************************************************/
 
 void Mesh::communicateXZ(FieldGroup& g) {
-  TRACE("Mesh::communicate(FieldGroup&)");
 
   // Send data
   comm_handle h = sendX(g);
@@ -308,7 +307,6 @@ void Mesh::communicateXZ(FieldGroup& g) {
 }
 
 void Mesh::communicateYZ(FieldGroup& g) {
-  TRACE("Mesh::communicate(FieldGroup&)");
 
   // Send data
   comm_handle h = sendY(g);
@@ -325,7 +323,6 @@ void Mesh::communicateYZ(FieldGroup& g) {
 }
 
 void Mesh::communicate(FieldGroup& g) {
-  TRACE("Mesh::communicate(FieldGroup&)");
 
   if (include_corner_cells) {
     // Send data in y-direction
@@ -406,34 +403,6 @@ int Mesh::ySize(int jx) const {
   int all;
   mpi->MPI_Allreduce(&local, &all, 1, MPI_INT, MPI_SUM, comm);
   return all;
-}
-
-bool Mesh::hasBndryLowerY() {
-  static bool calc = false, answer;
-  if (calc) {
-    return answer; // Already calculated
-  }
-
-  int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
-  int allbndry;
-  mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
-  answer = static_cast<bool>(allbndry);
-  calc = true;
-  return answer;
-}
-
-bool Mesh::hasBndryUpperY() {
-  static bool calc = false, answer;
-  if (calc) {
-    return answer; // Already calculated
-  }
-
-  int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
-  int allbndry;
-  mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
-  answer = static_cast<bool>(allbndry);
-  calc = true;
-  return answer;
 }
 
 int Mesh::localSize3D() {

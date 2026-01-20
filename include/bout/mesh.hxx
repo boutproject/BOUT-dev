@@ -262,6 +262,16 @@ public:
     communicate(g);
   }
 
+  /// Communicate Fields without calculating the parallel slices
+  template <typename... Ts>
+  void communicate_no_slices(Ts&... ts) {
+    FieldGroup g(ts...);
+    const bool old = calcParallelSlices_on_communicate;
+    calcParallelSlices_on_communicate = false;
+    communicate(g);
+    calcParallelSlices_on_communicate = old;
+  }
+
   template <typename... Ts>
   void communicateXZ(Ts&... ts) {
     FieldGroup g(ts...);
@@ -464,11 +474,11 @@ public:
 
   /// Is there a boundary on the lower guard cells in Y
   /// on any processor along the X direction?
-  bool hasBndryLowerY();
+  virtual bool hasBndryLowerY() const = 0;
 
   /// Is there a boundary on the upper guard cells in Y
   /// on any processor along the X direction?
-  bool hasBndryUpperY();
+  virtual bool hasBndryUpperY() const = 0;
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor
@@ -494,9 +504,6 @@ public:
   /// Add a parallel(Y) boundary to this processor
   virtual void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> UNUSED(bndry),
                               BoundaryParType UNUSED(type)) {}
-
-  /// Branch-cut special handling (experimental)
-  virtual Field3D smoothSeparatrix(const Field3D& f) { return f; }
 
   virtual BoutReal GlobalX(int jx) const = 0;      ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0;      ///< Continuous Y index (0 -> 1)
@@ -642,7 +649,7 @@ public:
   /// Returns the non-CELL_CENTRE location
   /// allowed as a staggered location
   static CELL_LOC getAllowedStaggerLoc(DIRECTION direction) {
-    AUTO_TRACE();
+
     switch (direction) {
     case (DIRECTION::X):
       return CELL_XLOW;
@@ -660,7 +667,7 @@ public:
   /// Returns the number of grid points in the
   /// particular direction
   int getNpoints(DIRECTION direction) const {
-    AUTO_TRACE();
+
     switch (direction) {
     case (DIRECTION::X):
       return LocalNx;
@@ -678,7 +685,7 @@ public:
   /// Returns the number of guard points in the
   /// particular direction
   int getNguard(DIRECTION direction) const {
-    AUTO_TRACE();
+
     switch (direction) {
     case (DIRECTION::X):
       return xstart;
@@ -757,7 +764,7 @@ public:
   void addRegionPerp(const std::string& region_name, const Region<IndPerp>& region);
 
   /// Converts an Ind2D to an Ind3D using calculation
-  Ind3D ind2Dto3D(const Ind2D& ind2D, int jz = 0) {
+  Ind3D ind2Dto3D(const Ind2D& ind2D, int jz = 0) const {
     return {ind2D.ind * LocalNz + jz, LocalNy, LocalNz};
   }
 
@@ -795,9 +802,11 @@ protected:
   /// Mesh options section
   Options* options{nullptr};
 
+private:
   /// Set whether to call calcParallelSlices on all communicated fields (true) or not (false)
   bool calcParallelSlices_on_communicate{true};
 
+protected:
   /// Read a 1D array of integers
   const std::vector<int> readInts(const std::string& name, int n);
 

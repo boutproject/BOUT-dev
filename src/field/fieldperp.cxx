@@ -34,7 +34,6 @@
 #include <bout/boutexception.hxx>
 #include <bout/fieldperp.hxx>
 #include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/utils.hxx>
 
 FieldPerp::FieldPerp(Mesh* localmesh, CELL_LOC location_in, int yindex_in,
@@ -54,7 +53,6 @@ FieldPerp::FieldPerp(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC location
                      int yindex_in, DirectionTypes directions)
     : Field(localmesh, location_in, directions), yindex(yindex_in),
       nx(fieldmesh->LocalNx), nz(fieldmesh->LocalNz), data(std::move(data_in)) {
-  TRACE("FieldPerp: Copy constructor from Array and Mesh");
 
   ASSERT1(data.size() == nx * nz);
 }
@@ -100,7 +98,6 @@ FieldPerp& FieldPerp::operator=(const FieldPerp& rhs) {
 }
 
 FieldPerp& FieldPerp::operator=(const BoutReal rhs) {
-  TRACE("FieldPerp = BoutReal");
 
   allocate();
 

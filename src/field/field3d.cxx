@@ -25,8 +25,7 @@
  *
  **************************************************************************/
 
-#include "bout/bout_types.hxx"
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 #include <bout/boutcomm.hxx>
 #include <bout/globals.hxx>
@@ -47,7 +46,6 @@
 #include <bout/fft.hxx>
 #include <bout/field3d.hxx>
 #include <bout/interpolation.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/utils.hxx>
 
@@ -73,8 +71,6 @@ Field3D::Field3D(const Field3D& f)
       regionID(f.regionID), tracking_state(f.tracking_state), tracking(f.tracking),
       selfname(f.selfname) {
 
-  TRACE("Field3D(Field3D&)");
-
   if (fieldmesh) {
     nx = fieldmesh->LocalNx;
     ny = fieldmesh->LocalNy;
@@ -84,8 +80,6 @@ Field3D::Field3D(const Field3D& f)
 
 Field3D::Field3D(const Field2D& f) : Field(f) {
 
-  TRACE("Field3D: Copy constructor from Field2D");
-
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
   nz = fieldmesh->LocalNz;
@@ -94,8 +88,6 @@ Field3D::Field3D(const Field2D& f) : Field(f) {
 }
 
 Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
-
-  TRACE("Field3D: Copy constructor from value");
 
   *this = val;
 }
@@ -119,7 +111,6 @@ Field3DParallel::Field3DParallel(const BoutReal val, Mesh* localmesh)
 Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation,
                  DirectionTypes directions_in)
     : Field(localmesh, datalocation, directions_in), data(std::move(data_in)) {
-  TRACE("Field3D: Copy constructor from Array and Mesh");
 
   nx = fieldmesh->LocalNx;
   ny = fieldmesh->LocalNy;
@@ -159,7 +150,6 @@ Field3D* Field3D::timeDeriv() {
 }
 
 void Field3D::splitParallelSlices() {
-  TRACE("Field3D::splitParallelSlices");
 
   if (hasParallelSlices()) {
     return;
@@ -183,7 +173,6 @@ void Field3D::splitParallelSlicesAndAllocate() {
 }
 
 void Field3D::clearParallelSlices() {
-  TRACE("Field3D::clearParallelSlices");
 
   if (!hasParallelSlices()) {
     return;
@@ -276,7 +265,6 @@ Field3D& Field3D::operator=(const Field3D& rhs) {
     return (*this); // skip this assignment
   }
 
-  TRACE("Field3D: Assignment from Field3D");
   track(rhs, "operator=");
 
   // Copy base slice
@@ -298,7 +286,6 @@ Field3D& Field3D::operator=(const Field3D& rhs) {
 }
 
 Field3D& Field3D::operator=(Field3D&& rhs) {
-  TRACE("Field3D: Assignment from Field3D");
   track(rhs, "operator=");
 
   // Move parallel slices or delete existing ones.
@@ -320,7 +307,6 @@ Field3D& Field3D::operator=(Field3D&& rhs) {
 }
 
 Field3D& Field3D::operator=(const Field2D& rhs) {
-  TRACE("Field3D = Field2D");
   track(rhs, "operator=");
 
   /// Check that the data is allocated
@@ -348,7 +334,6 @@ Field3D& Field3D::operator=(const Field2D& rhs) {
 }
 
 void Field3D::operator=(const FieldPerp& rhs) {
-  TRACE("Field3D = FieldPerp");
 
   ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
   /// Check that the data is allocated
@@ -367,7 +352,6 @@ void Field3D::operator=(const FieldPerp& rhs) {
 }
 
 Field3D& Field3D::operator=(const BoutReal val) {
-  TRACE("Field3D = BoutReal");
   track(val, "operator=");
 
   // Delete existing parallel slices. We don't copy parallel slices, so any
@@ -416,7 +400,6 @@ Field3D& Field3D::calcParallelSlices() {
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
 void Field3D::applyBoundary(bool init) {
-  TRACE("Field3D::applyBoundary()");
 
 #if CHECK > 0
   if (init) {
@@ -439,7 +422,6 @@ void Field3D::applyBoundary(bool init) {
 }
 
 void Field3D::applyBoundary(BoutReal t) {
-  TRACE("Field3D::applyBoundary()");
 
 #if CHECK > 0
   if (not isBoundarySet()) {
@@ -456,7 +438,6 @@ void Field3D::applyBoundary(BoutReal t) {
 }
 
 void Field3D::applyBoundary(const std::string& condition) {
-  TRACE("Field3D::applyBoundary(condition)");
 
   checkData(*this);
 
@@ -474,7 +455,7 @@ void Field3D::applyBoundary(const std::string& condition) {
 }
 
 void Field3D::applyBoundary(const std::string& region, const std::string& condition) {
-  TRACE("Field3D::applyBoundary(string, string)");
+
   checkData(*this);
 
   /// Get the boundary factory (singleton)
@@ -500,7 +481,6 @@ void Field3D::applyBoundary(const std::string& region, const std::string& condit
 }
 
 void Field3D::applyTDerivBoundary() {
-  TRACE("Field3D::applyTDerivBoundary()");
 
   checkData(*this);
   ASSERT1(deriv != nullptr);
@@ -512,7 +492,6 @@ void Field3D::applyTDerivBoundary() {
 }
 
 void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices) {
-  TRACE("Field3D::setBoundary(const Field3D&)");
 
   checkData(f3d);
 
@@ -564,10 +543,13 @@ void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices) {
 
 void Field3D::applyParallelBoundary() {
 
-  TRACE("Field3D::applyParallelBoundary()");
-
   checkData(*this);
-  ASSERT1(hasParallelSlices());
+  if (isFci()) {
+    ASSERT1(hasParallelSlices());
+  }
+  if (!hasParallelSlices()) {
+    return;
+  }
 
   // Apply boundary to this field
   for (const auto& bndry : getBoundaryOpPars()) {
@@ -592,10 +574,13 @@ void Field3D::applyParallelBoundaryWithDefault(const std::string& condition) {
 
 void Field3D::applyParallelBoundary(BoutReal t) {
 
-  TRACE("Field3D::applyParallelBoundary(t)");
-
   checkData(*this);
-  ASSERT1(hasParallelSlices());
+  if (isFci()) {
+    ASSERT1(hasParallelSlices());
+  }
+  if (!hasParallelSlices()) {
+    return;
+  }
 
   // Apply boundary to this field
   for (const auto& bndry : getBoundaryOpPars()) {
@@ -605,10 +590,13 @@ void Field3D::applyParallelBoundary(BoutReal t) {
 
 void Field3D::applyParallelBoundary(const std::string& condition) {
 
-  TRACE("Field3D::applyParallelBoundary(condition)");
-
   checkData(*this);
-  ASSERT1(hasParallelSlices());
+  if (isFci()) {
+    ASSERT1(hasParallelSlices());
+  }
+  if (!hasParallelSlices()) {
+    return;
+  }
 
   /// Get the boundary factory (singleton)
   BoundaryFactory* bfact = BoundaryFactory::getInstance();
@@ -624,10 +612,13 @@ void Field3D::applyParallelBoundary(const std::string& condition) {
 void Field3D::applyParallelBoundary(const std::string& region,
                                     const std::string& condition) {
 
-  TRACE("Field3D::applyParallelBoundary(region, condition)");
-
   checkData(*this);
-  ASSERT1(hasParallelSlices());
+  if (isFci()) {
+    ASSERT1(hasParallelSlices());
+  }
+  if (!hasParallelSlices()) {
+    return;
+  }
 
   /// Get the boundary factory (singleton)
   BoundaryFactory* bfact = BoundaryFactory::getInstance();
@@ -646,10 +637,13 @@ void Field3D::applyParallelBoundary(const std::string& region,
 void Field3D::applyParallelBoundary(const std::string& region,
                                     const std::string& condition, Field3D* f) {
 
-  TRACE("Field3D::applyParallelBoundary(region, condition, f)");
-
   checkData(*this);
-  ASSERT1(hasParallelSlices());
+  if (isFci()) {
+    ASSERT1(hasParallelSlices());
+  }
+  if (!hasParallelSlices()) {
+    return;
+  }
 
   /// Get the boundary factory (singleton)
   BoundaryFactory* bfact = BoundaryFactory::getInstance();
@@ -678,7 +672,7 @@ Field3D operator-(const Field3D& f) { return -1.0 * f; }
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
 Field3D pow(const Field3D& lhs, const Field2D& rhs, const std::string& rgn) {
-  TRACE("pow(Field3D, Field2D)");
+
   // Check if the inputs are allocated
   checkData(lhs);
   checkData(rhs);
@@ -694,7 +688,6 @@ Field3D pow(const Field3D& lhs, const Field2D& rhs, const std::string& rgn) {
 }
 
 FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, const std::string& rgn) {
-  TRACE("pow(Field3D, FieldPerp)");
 
   checkData(lhs);
   checkData(rhs);
@@ -714,7 +707,6 @@ FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, const std::string& rgn) 
 // Friend functions
 
 Field3D filter(const Field3D& var, int N0, const std::string& rgn) {
-  TRACE("filter(Field3D, int)");
 
   checkData(var);
 
@@ -760,7 +752,6 @@ Field3D filter(const Field3D& var, int N0, const std::string& rgn) {
 
 // Fourier filter in z with zmin
 Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, const std::string& rgn) {
-  TRACE("lowPass(Field3D, {}, {})", zmax, keep_zonal);
 
   checkData(var);
   int ncz = var.getNz();
@@ -810,7 +801,7 @@ Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, const std::string
  * Use FFT to shift by an angle in the Z direction
  */
 void shiftZ(Field3D& var, int jx, int jy, double zangle) {
-  TRACE("shiftZ");
+
   checkData(var);
   var.allocate(); // Ensure that var is unique
   Mesh* localmesh = var.getMesh();
@@ -879,7 +870,6 @@ void checkData(const Field3D& f, const std::string& region) {
 #endif
 
 Field2D DC(const Field3D& f, const std::string& rgn) {
-  TRACE("DC(Field3D)");
 
   checkData(f);
 

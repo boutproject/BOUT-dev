@@ -68,9 +68,6 @@ int main(int argc, char** argv) {
     ITERATOR_TEST_BLOCK("Bracket [2D,3D] ARAKAWA",
                         result = bracket(a, c, BRACKET_ARAKAWA););
 
-    ITERATOR_TEST_BLOCK("Bracket [2D,3D] ARAKAWA_OLD",
-                        result = bracket(a, c, BRACKET_ARAKAWA_OLD););
-
     ITERATOR_TEST_BLOCK("Bracket [2D,3D] SIMPLE",
                         result = bracket(a, c, BRACKET_SIMPLE););
 
@@ -81,20 +78,11 @@ int main(int argc, char** argv) {
     ITERATOR_TEST_BLOCK("Bracket [3D,3D] ARAKAWA",
                         result = bracket(a, b, BRACKET_ARAKAWA););
 
-    ITERATOR_TEST_BLOCK("Bracket [3D,3D] ARAKAWA_OLD",
-                        result = bracket(a, b, BRACKET_ARAKAWA_OLD););
-
     ITERATOR_TEST_BLOCK("Bracket [3D,3D] SIMPLE",
                         result = bracket(a, b, BRACKET_SIMPLE););
 
     ITERATOR_TEST_BLOCK("Bracket [3D,3D] DEFAULT", result = bracket(a, b, BRACKET_STD););
   }
-
-  // Uncomment below for a "correctness" check
-  // Field3D resNew = bracket(a, b, BRACKET_ARAKAWA); mesh->communicate(resNew);
-  // Field3D resOld = bracket(a, b, BRACKET_ARAKAWA_OLD); mesh->communicate(resOld);
-  // time_output << "Max abs diff is
-  // "<<max(abs(resNew-resOld),true)/max(abs(resOld),true)<<std::endl;
 
   if (profileMode) {
     int nthreads = 0;

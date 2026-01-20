@@ -38,8 +38,10 @@
 #if not BOUT_USE_METRIC_3D
 
 #include "cyclic_laplace.hxx"
-#include "bout/assert.hxx"
-#include "bout/bout_types.hxx"
+
+#include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
@@ -302,7 +304,6 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 }
 
 Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
-  TRACE("LaplaceCyclic::solve(Field3D, Field3D)");
 
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
@@ -591,21 +592,21 @@ void LaplaceCyclic ::verify_solution(const Matrix<dcomplex>& a_ver,
   }
 
   if (xproc > 0) {
-    MPI_Irecv(&rbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank - 1, 901, MPI_COMM_WORLD,
+    MPI_Irecv(&rbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank - 1, 901, BoutComm::get(),
               &request[1]);
     for (int kz = 0; kz < nsys; kz++) {
       sbufdown[kz] = x_ver(kz, 1);
     }
-    MPI_Isend(&sbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank - 1, 900, MPI_COMM_WORLD,
+    MPI_Isend(&sbufdown[0], nsys, MPI_DOUBLE_COMPLEX, myrank - 1, 900, BoutComm::get(),
               &request[0]);
   }
   if (xproc < nprocs - 1) {
-    MPI_Irecv(&rbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 900, MPI_COMM_WORLD,
+    MPI_Irecv(&rbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 900, BoutComm::get(),
               &request[3]);
     for (int kz = 0; kz < nsys; kz++) {
       sbufup[kz] = x_ver(kz, nx);
     }
-    MPI_Isend(&sbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 901, MPI_COMM_WORLD,
+    MPI_Isend(&sbufup[0], nsys, MPI_DOUBLE_COMPLEX, myrank + 1, 901, BoutComm::get(),
               &request[2]);
   }
 

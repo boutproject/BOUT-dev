@@ -950,7 +950,7 @@ automatically set the ``"time_dimension"`` attribute::
   data["field"] = Field3D(3.0);
   
   // Append data to file
-  bout::OptionsIO({{"file", "time.nc"}, {"append", true}})->write(data);
+  bout::OptionsIO::create({{"file", "time.nc"}, {"append", true}})->write(data);
 
 .. note:: By default, `bout::OptionsIO::write` will only write variables
           with a ``"time_dimension"`` of ``"t"``. You can write

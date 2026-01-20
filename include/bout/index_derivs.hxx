@@ -43,7 +43,6 @@
 #include <bout/bout_types.hxx>
 #include <bout/fft.hxx>
 #include <bout/interpolation.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/stencils.hxx>
 #include <bout/unused.hxx>
 
@@ -84,7 +83,7 @@ class DerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void standard(const T& var, T& result, const std::string& region) const {
-    AUTO_TRACE();
+
     ASSERT2(meta.derivType == DERIV::Standard || meta.derivType == DERIV::StandardSecond
             || meta.derivType == DERIV::StandardFourth)
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
@@ -98,7 +97,7 @@ public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void upwindOrFlux(const T& vel, const T& var, T& result,
                     const std::string& region) const {
-    AUTO_TRACE();
+
     ASSERT2(meta.derivType == DERIV::Upwind || meta.derivType == DERIV::Flux)
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
 
@@ -133,7 +132,7 @@ struct registerMethod {
   template <typename Direction, typename Stagger, typename FieldTypeContainer,
             typename Method>
   void operator()(Direction, Stagger, FieldTypeContainer, Method) {
-    AUTO_TRACE();
+
     using namespace std::placeholders;
 
     // Now we want to get the actual field type out of the TypeContainer

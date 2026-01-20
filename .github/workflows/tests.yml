@@ -168,7 +168,7 @@ jobs:
                  libparpack2-dev
                  libhypre-dev
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: true
 
@@ -182,7 +182,7 @@ jobs:
           python -m pip install -r requirements.txt
 
       - name: Cache SUNDIALS build
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /home/runner/local
           key: bout-sundials-${{ matrix.config.os }}${{ matrix.config.build_petsc }}
@@ -205,11 +205,11 @@ jobs:
     timeout-minutes: 120
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - name: Build Fedora
-        run: ./.ci_fedora.sh setup openmpi latest
+        run: ./.ci_fedora.sh setup openmpi
         shell: bash
         env:
           TRAVIS_BUILD_DIR: ${{ github.workspace }}
@@ -219,7 +219,7 @@ jobs:
     container: ghcr.io/ggeorgakoudis/boutdev-cuda:latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - name: Build minimal CUDA 12.2 @ GCC9.4.0 @ Ubuntu 20.04

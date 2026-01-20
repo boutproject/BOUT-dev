@@ -33,11 +33,11 @@
 
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/build_defines.hxx>
 #include <bout/constants.hxx>
 #include <bout/globals.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
@@ -155,7 +155,6 @@ void Laplacian::cleanup() { instance.reset(); }
  **********************************************************************************/
 
 Field3D Laplacian::solve(const Field3D& b) {
-  TRACE("Laplacian::solve(Field3D)");
 
   ASSERT1(b.getLocation() == location);
   ASSERT1(localmesh == b.getMesh());
@@ -216,7 +215,6 @@ Field2D Laplacian::solve(const Field2D& b) {
  * \returns x All the y-slices of x_slice in the equation A*x_slice = b_slice
  */
 Field3D Laplacian::solve(const Field3D& b, const Field3D& x0) {
-  TRACE("Laplacian::solve(Field3D, Field3D)");
 
   ASSERT1(b.getLocation() == location);
   ASSERT1(x0.getLocation() == location);

@@ -47,7 +47,6 @@
 //#define DIAGNOSE 1
 
 #include "mpi.h"
-#include "bout/msg_stack.hxx"
 #include "bout/utils.hxx"
 #include <bout/lapack_routines.hxx>
 
@@ -118,7 +117,6 @@ public:
   /// @param[in] b   Diagonal values. Should have size [nsys][N]
   /// @param[in] c   Right diagonal. Should have size [nsys][N]
   void setCoefs(const Matrix<T>& a, const Matrix<T>& b, const Matrix<T>& c) {
-    TRACE("CyclicReduce::setCoefs");
 
     int nsys = std::get<0>(a.shape());
 
@@ -169,7 +167,7 @@ public:
   /// @param[in] rhs Matrix storing Values of the rhs for each system
   /// @param[out] x  Matrix storing the result for each system
   void solve(const Matrix<T>& rhs, Matrix<T>& x) {
-    TRACE("CyclicReduce::solve");
+
     ASSERT2(static_cast<int>(std::get<0>(rhs.shape())) == Nsys);
     ASSERT2(static_cast<int>(std::get<0>(x.shape())) == Nsys);
     ASSERT2(static_cast<int>(std::get<1>(rhs.shape())) == N);

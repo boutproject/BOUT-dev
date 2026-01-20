@@ -156,6 +156,9 @@ public:
   RangeIterator iterateBndryUpperInnerY() const override;
   RangeIterator iterateBndryUpperOuterY() const override;
 
+  bool hasBndryLowerY() const override { return has_boundary_lower_y; }
+  bool hasBndryUpperY() const override { return has_boundary_upper_y; }
+
   // Boundary regions
   std::vector<BoundaryRegion*> getBoundaries() override;
   std::vector<std::shared_ptr<BoundaryRegionPar>>
@@ -163,8 +166,6 @@ public:
   void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
                       BoundaryParType type) override;
   std::set<std::string> getPossibleBoundaries() const override;
-
-  Field3D smoothSeparatrix(const Field3D& f) override;
 
   int getNx() const { return nx; }
   int getNy() const { return ny; }
@@ -400,6 +401,8 @@ private:
              static_cast<int>(BoundaryParType::SIZE)>
       par_boundary; // Vector of parallel boundary regions
 
+  bool has_boundary_lower_y{false};
+  bool has_boundary_upper_y{false};
   //////////////////////////////////////////////////
   // Communications
 

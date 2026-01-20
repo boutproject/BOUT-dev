@@ -25,14 +25,10 @@
  **************************************************************************/
 
 #include "bout/build_defines.hxx"
-#include <cmath>
-#include <memory>
 
 #if BOUT_HAS_PETSC
 
 #include "petsc_laplace.hxx"
-
-#include <math.h>
 
 #include <bout/assert.hxx>
 #include <bout/boutcomm.hxx>
@@ -150,7 +146,7 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   if (fourth_order) {
     // first and last 2*localmesh-LocalNz entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
     if (localmesh->firstX() && localmesh->lastX()) {
-      for (int i = 0; i < localmesh->LocalNz; i++) {
+      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
         d_nnz[i] = 15;
         d_nnz[localN - 1 - i] = 15;
         o_nnz[i] = 0;
@@ -163,7 +159,7 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
         o_nnz[localN - 1 - i] = 0;
       }
     } else if (localmesh->firstX()) {
-      for (int i = 0; i < localmesh->LocalNz; i++) {
+      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
         d_nnz[i] = 15;
         d_nnz[localN - 1 - i] = 15;
         o_nnz[i] = 0;
@@ -176,7 +172,7 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
         o_nnz[localN - 1 - i] = 5;
       }
     } else if (localmesh->lastX()) {
-      for (int i = 0; i < localmesh->LocalNz; i++) {
+      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
         d_nnz[i] = 15;
         d_nnz[localN - 1 - i] = 15;
         o_nnz[i] = 10;
@@ -189,7 +185,7 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
         o_nnz[localN - 1 - i] = 0;
       }
     } else {
-      for (int i = 0; i < localmesh->LocalNz; i++) {
+      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
         d_nnz[i] = 15;
         d_nnz[localN - 1 - i] = 15;
         o_nnz[i] = 10;
@@ -220,28 +216,28 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   } else {
     // first and last localmesh->LocalNz entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
     if (localmesh->firstX() && localmesh->lastX()) {
-      for (int i = 0; i < localmesh->LocalNz; i++) {
+      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
         d_nnz[i] = 6;
         d_nnz[localN - 1 - i] = 6;
         o_nnz[i] = 0;
         o_nnz[localN - 1 - i] = 0;
       }
     } else if (localmesh->firstX()) {
-      for (int i = 0; i < localmesh->LocalNz; i++) {
+      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
         d_nnz[i] = 6;
         d_nnz[localN - 1 - i] = 6;
         o_nnz[i] = 0;
         o_nnz[localN - 1 - i] = 3;
       }
     } else if (localmesh->lastX()) {
-      for (int i = 0; i < localmesh->LocalNz; i++) {
+      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
         d_nnz[i] = 6;
         d_nnz[localN - 1 - i] = 6;
         o_nnz[i] = 3;
         o_nnz[localN - 1 - i] = 0;
       }
     } else {
-      for (int i = 0; i < localmesh->LocalNz; i++) {
+      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
         d_nnz[i] = 6;
         d_nnz[localN - 1 - i] = 6;
         o_nnz[i] = 3;
@@ -342,7 +338,6 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b) { return solve(b, b); }
  */
 FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
                               const bool forward) {
-  TRACE("LaplacePetsc::solve");
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
@@ -360,12 +355,12 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
   MatGetOwnershipRange(MatA, &Istart, &Iend);
 
   int i = Istart; // The row in the PETSc matrix
+  {
+    Timer timer("petscsetup");
 
-  auto timer = std::make_unique<Timer>("petscsetup");
+    //     if ((fourth_order) && !(lastflag&INVERT_4TH_ORDER)) throw BoutException("Should not change INVERT_4TH_ORDER flag in LaplacePetsc: 2nd order and 4th order require different pre-allocation to optimize PETSc solver");
 
-  //     if ((fourth_order) && !(lastflag&INVERT_4TH_ORDER)) throw BoutException("Should not change INVERT_4TH_ORDER flag in LaplacePetsc: 2nd order and 4th order require different pre-allocation to optimize PETSc solver");
-
-  /* Set Matrix Elements
+    /* Set Matrix Elements
    *
    * Loop over locally owned rows of matrix A
    * i labels NODE POINT from
@@ -379,96 +374,95 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
    * In other word the indexing is done in a row-major order, but starting at
    * bottom left rather than top left
    */
-  // X=0 to localmesh->xstart-1 defines the boundary region of the domain.
-  // Set the values for the inner boundary region
-  if (localmesh->firstX()) {
-    for (int x = 0; x < localmesh->xstart; x++) {
-      for (int z = 0; z < localmesh->LocalNz; z++) {
-        PetscScalar val = NAN; // Value of element to be set in the matrix
-        // If Neumann Boundary Conditions are set.
-        if (isInnerBoundaryFlagSet(INVERT_AC_GRAD)) {
-          // Set values corresponding to nodes adjacent in x
-          if (fourth_order) {
-            // Fourth Order Accuracy on Boundary
-            Element(i, x, z, 0, 0,
-                    -25.0 / (12.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
-                    MatA);
-            Element(i, x, z, 1, 0,
-                    4.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
-            Element(i, x, z, 2, 0,
-                    -3.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
-            Element(i, x, z, 3, 0,
-                    4.0 / (3.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
-                    MatA);
-            Element(i, x, z, 4, 0,
-                    -1.0 / (4.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
-                    MatA);
+    // X=0 to localmesh->xstart-1 defines the boundary region of the domain.
+    // Set the values for the inner boundary region
+    if (localmesh->firstX()) {
+      for (int x = 0; x < localmesh->xstart; x++) {
+        for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
+          PetscScalar val; // Value of element to be set in the matrix
+          // If Neumann Boundary Conditions are set.
+          if (isInnerBoundaryFlagSet(INVERT_AC_GRAD)) {
+            // Set values corresponding to nodes adjacent in x
+            if (fourth_order) {
+              // Fourth Order Accuracy on Boundary
+              Element(i, x, z, 0, 0,
+                      -25.0 / (12.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
+                      MatA);
+              Element(i, x, z, 1, 0,
+                      4.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
+              Element(i, x, z, 2, 0,
+                      -3.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
+              Element(i, x, z, 3, 0,
+                      4.0 / (3.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
+                      MatA);
+              Element(i, x, z, 4, 0,
+                      -1.0 / (4.0 * coords->dx(x, y, z)) / sqrt(coords->g_11(x, y, z)),
+                      MatA);
+            } else {
+              // Second Order Accuracy on Boundary
+              //   Element(i,x,z, 0, 0, -3.0 / (2.0*coords->dx(x,y)), MatA );
+              //   Element(i,x,z, 1, 0,  2.0 / coords->dx(x,y), MatA );
+              //   Element(i,x,z, 2, 0, -1.0 / (2.0*coords->dx(x,y)), MatA );
+              //   Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0
+              //   in case 4th order flag was used previously: not allowed now
+              //   Element(i,x,z, 4, 0, 0.0, MatA );
+              // Second Order Accuracy on Boundary, set half-way between grid points
+              Element(i, x, z, 0, 0,
+                      -1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
+              Element(i, x, z, 1, 0,
+                      1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
+              Element(i, x, z, 2, 0, 0.0, MatA);
+              //                      Element(i,x,z, 3, 0, 0.0, MatA );  // Reset
+              //                      these elements to 0 in case 4th order flag was
+              //                      used previously: not allowed now
+              //                      Element(i,x,z, 4, 0, 0.0, MatA );
+            }
           } else {
-            // Second Order Accuracy on Boundary
-            //   Element(i,x,z, 0, 0, -3.0 / (2.0*coords->dx(x,y)), MatA );
-            //   Element(i,x,z, 1, 0,  2.0 / coords->dx(x,y), MatA );
-            //   Element(i,x,z, 2, 0, -1.0 / (2.0*coords->dx(x,y)), MatA );
-            //   Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0
-            //   in case 4th order flag was used previously: not allowed now
-            //   Element(i,x,z, 4, 0, 0.0, MatA );
-            // Second Order Accuracy on Boundary, set half-way between grid points
-            Element(i, x, z, 0, 0,
-                    -1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
-            Element(i, x, z, 1, 0,
-                    1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
-            Element(i, x, z, 2, 0, 0.0, MatA);
-            //                      Element(i,x,z, 3, 0, 0.0, MatA );  // Reset
-            //                      these elements to 0 in case 4th order flag was
-            //                      used previously: not allowed now
-            //                      Element(i,x,z, 4, 0, 0.0, MatA );
+            if (fourth_order) {
+              // Set Diagonal Values to 1
+              Element(i, x, z, 0, 0, 1., MatA);
+
+              // Set off diagonal elements to zero
+              Element(i, x, z, 1, 0, 0.0, MatA);
+              Element(i, x, z, 2, 0, 0.0, MatA);
+              Element(i, x, z, 3, 0, 0.0, MatA);
+              Element(i, x, z, 4, 0, 0.0, MatA);
+            } else {
+              Element(i, x, z, 0, 0, 0.5, MatA);
+              Element(i, x, z, 1, 0, 0.5, MatA);
+              Element(i, x, z, 2, 0, 0., MatA);
+            }
           }
-        } else {
-          if (fourth_order) {
-            // Set Diagonal Values to 1
-            Element(i, x, z, 0, 0, 1., MatA);
 
-            // Set off diagonal elements to zero
-            Element(i, x, z, 1, 0, 0.0, MatA);
-            Element(i, x, z, 2, 0, 0.0, MatA);
-            Element(i, x, z, 3, 0, 0.0, MatA);
-            Element(i, x, z, 4, 0, 0.0, MatA);
-          } else {
-            Element(i, x, z, 0, 0, 0.5, MatA);
-            Element(i, x, z, 1, 0, 0.5, MatA);
-            Element(i, x, z, 2, 0, 0., MatA);
+          val = 0; // Initialize val
+
+          // Set Components of RHS
+          // If the inner boundary value should be set by b or x0
+          if (isInnerBoundaryFlagSet(INVERT_RHS)) {
+            val = b[x][z];
+          } else if (isInnerBoundaryFlagSet(INVERT_SET)) {
+            val = x0[x][z];
           }
-        }
 
-        val = 0; // Initialize val
+          // Set components of the RHS (the PETSc vector bs)
+          // 1 element is being set in row i to val
+          // INSERT_VALUES replaces existing entries with new values
+          VecSetValues(bs, 1, &i, &val, INSERT_VALUES);
 
-        // Set Components of RHS
-        // If the inner boundary value should be set by b or x0
-        if (isInnerBoundaryFlagSet(INVERT_RHS)) {
-          val = b[x][z];
-        } else if (isInnerBoundaryFlagSet(INVERT_SET)) {
+          // Set components of the and trial solution (the PETSc vector xs)
+          // 1 element is being set in row i to val
+          // INSERT_VALUES replaces existing entries with new values
           val = x0[x][z];
+          VecSetValues(xs, 1, &i, &val, INSERT_VALUES);
+
+          i++; // Increment row in Petsc matrix
         }
-
-        // Set components of the RHS (the PETSc vector bs)
-        // 1 element is being set in row i to val
-        // INSERT_VALUES replaces existing entries with new values
-        VecSetValues(bs, 1, &i, &val, INSERT_VALUES);
-
-        // Set components of the and trial solution (the PETSc vector xs)
-        // 1 element is being set in row i to val
-        // INSERT_VALUES replaces existing entries with new values
-        val = x0[x][z];
-        VecSetValues(xs, 1, &i, &val, INSERT_VALUES);
-
-        ASSERT3(i == getIndex(x, z));
-        i++; // Increment row in Petsc matrix
       }
     }
-  }
 
     // Set the values for the main domain
     for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
-      for (int z = 0; z < localmesh->LocalNz; z++) {
+      for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
         // NOTE: Only A0 is the A from setCoefA ()
         BoutReal A0, A1, A2, A3, A4, A5;
         A0 = A(x, y, z);
@@ -647,7 +641,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
     // Set the values for the outer boundary region
     if (localmesh->lastX()) {
       for (int x = localmesh->xend + 1; x < localmesh->LocalNx; x++) {
-        for (int z = 0; z < localmesh->LocalNz; z++) {
+        for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
           // Set Diagonal Values to 1
           PetscScalar val = 1;
           Element(i, x, z, 0, 0, val, MatA);
@@ -750,77 +744,102 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
     if (not forward) {
       // Configure Linear Solver
 #if PETSC_VERSION_GE(3, 5, 0)
-    KSPSetOperators(ksp, MatA, MatA);
+      KSPSetOperators(ksp, MatA, MatA);
 #else
-    KSPSetOperators(ksp, MatA, MatA, DIFFERENT_NONZERO_PATTERN);
+      KSPSetOperators(ksp, MatA, MatA, DIFFERENT_NONZERO_PATTERN);
 #endif
-    PC pc; // The preconditioner option
+      PC pc; // The preconditioner option
 
-    if (direct) { // If a direct solver has been chosen
-      // Get the preconditioner
-      KSPGetPC(ksp, &pc);
-      // Set the preconditioner
-      PCSetType(pc, PCLU);
-      // Set the solver type
+      if (direct) { // If a direct solver has been chosen
+	// Get the preconditioner
+	KSPGetPC(ksp, &pc);
+	// Set the preconditioner
+	PCSetType(pc, PCLU);
+	// Set the solver type
 #if PETSC_VERSION_GE(3, 9, 0)
-      PCFactorSetMatSolverType(pc, "mumps");
+	PCFactorSetMatSolverType(pc, "mumps");
 #else
-      PCFactorSetMatSolverPackage(pc, "mumps");
+	PCFactorSetMatSolverPackage(pc, "mumps");
 #endif
-    } else {                            // If a iterative solver has been chosen
-      KSPSetType(ksp, ksptype.c_str()); // Set the type of the solver
+      } else {                            // If a iterative solver has been chosen
+	KSPSetType(ksp, ksptype.c_str()); // Set the type of the solver
 
-      if (ksptype == KSPRICHARDSON) {
-        KSPRichardsonSetScale(ksp, richardson_damping_factor);
-      }
+	if (ksptype == KSPRICHARDSON) {
+	  KSPRichardsonSetScale(ksp, richardson_damping_factor);
+	}
 #ifdef KSPCHEBYSHEV
-      else if (ksptype == KSPCHEBYSHEV) {
-        KSPChebyshevSetEigenvalues(ksp, chebyshev_max, chebyshev_min);
-      }
+	else if (ksptype == KSPCHEBYSHEV) {
+	  KSPChebyshevSetEigenvalues(ksp, chebyshev_max, chebyshev_min);
+	}
 #endif
-      else if (ksptype == KSPGMRES) {
-        KSPGMRESSetRestart(ksp, gmres_max_steps);
+	else if (ksptype == KSPGMRES) {
+	  KSPGMRESSetRestart(ksp, gmres_max_steps);
+	}
+
+	// Set the relative and absolute tolerances
+	KSPSetTolerances(ksp, rtol, atol, dtol, maxits);
+
+	// If the initial guess is not set to zero
+	if (!isGlobalFlagSet(INVERT_START_NEW)) {
+	  KSPSetInitialGuessNonzero(ksp, static_cast<PetscBool>(true));
+	}
+
+	// Get the preconditioner
+	KSPGetPC(ksp, &pc);
+
+	// Set the type of the preconditioner
+	PCSetType(pc, pctype.c_str());
+
+	// If pctype = user in BOUT.inp, it will be translated to PCSHELL upon
+	// construction of the object
+	if (pctype == PCSHELL) {
+	  // User-supplied preconditioner function
+	  PCShellSetApply(pc, laplacePCapply);
+	  PCShellSetContext(pc, this);
+	  if (rightprec) {
+	    KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
+	  } else {
+	    KSPSetPCSide(ksp, PC_LEFT); // Left preconditioning
+	  }
+	  //ierr = PCShellSetApply(pc,laplacePCapply);CHKERRQ(ierr);
+	  //ierr = PCShellSetContext(pc,this);CHKERRQ(ierr);
+	  //ierr = KSPSetPCSide(ksp, PC_RIGHT);CHKERRQ(ierr);
+	}
+	
+	lib.setOptionsFromInputFile(ksp);
+      }
+      //timer.reset();
+
+      // Call the actual solver
+      {
+	const Timer timer("petscsolve");
+	KSPSolve(ksp, bs, xs); // Call the solver to solve the system
       }
 
-      // Set the relative and absolute tolerances
-      KSPSetTolerances(ksp, rtol, atol, dtol, maxits);
-
-      // If the initial guess is not set to zero
-      if (!isGlobalFlagSet(INVERT_START_NEW)) {
-        KSPSetInitialGuessNonzero(ksp, static_cast<PetscBool>(true));
+      KSPConvergedReason reason;
+      KSPGetConvergedReason(ksp, &reason);
+      if (reason == -3) { // Too many iterations, might be fixed by taking smaller timestep
+	throw BoutIterationFail("petsc_laplace: too many iterations");
       }
-
-      // Get the preconditioner
-      KSPGetPC(ksp, &pc);
-
-      // Set the type of the preconditioner
-      PCSetType(pc, pctype.c_str());
-
-      // If pctype = user in BOUT.inp, it will be translated to PCSHELL upon
-      // construction of the object
-      if (pctype == PCSHELL) {
-        // User-supplied preconditioner function
-        PCShellSetApply(pc, laplacePCapply);
-        PCShellSetContext(pc, this);
-        if (rightprec) {
-          KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
-        } else {
-          KSPSetPCSide(ksp, PC_LEFT); // Left preconditioning
-        }
-        //ierr = PCShellSetApply(pc,laplacePCapply);CHKERRQ(ierr);
-        //ierr = PCShellSetContext(pc,this);CHKERRQ(ierr);
-        //ierr = KSPSetPCSide(ksp, PC_RIGHT);CHKERRQ(ierr);
+      if (reason <= 0) {
+	throw BoutException(
+			    "petsc_laplace: inversion failed to converge. KSPConvergedReason: {} ({})",
+			    KSPConvergedReasons[reason], static_cast<int>(reason));
       }
-
-      lib.setOptionsFromInputFile(ksp);
+    } else {
+      //timer.reset();
+      const PetscErrorCode err = MatMult(MatA, bs, xs);
+      if (err != PETSC_SUCCESS) {
+        throw BoutException("MatMult failed with {:d}", static_cast<int>(err));
+      }
     }
-    timer.reset();
+  }
 
-    // Call the actual solver
-    {
-      const Timer timer("petscsolve");
-      KSPSolve(ksp, bs, xs); // Call the solver to solve the system
-    }
+  // Call the actual solver
+  {
+    Timer timer("petscsolve");
+    KSPSolve(ksp, bs, xs); // Call the solver to solve the system
+  }
 
   KSPConvergedReason reason;
   KSPGetConvergedReason(ksp, &reason);
@@ -832,31 +851,24 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
         "petsc_laplace: inversion failed to converge. KSPConvergedReason: {} ({})",
         KSPConvergedReasons[reason], static_cast<int>(reason));
   }
-    } else {
-      timer.reset();
-      const PetscErrorCode err = MatMult(MatA, bs, xs);
-      if (err != PETSC_SUCCESS) {
-        throw BoutException("MatMult failed with {:d}", static_cast<int>(err));
-      }
-    }
 
-    // Add data to FieldPerp Object
-    i = Istart;
-    // Set the inner boundary values
-    if (localmesh->firstX()) {
-      for (int x = 0; x < localmesh->xstart; x++) {
-        for (int z = 0; z < localmesh->LocalNz; z++) {
-          PetscScalar val = 0;
-          VecGetValues(xs, 1, &i, &val);
-          sol[x][z] = val;
-          i++; // Increment row in Petsc matrix
-        }
+  // Add data to FieldPerp Object
+  i = Istart;
+  // Set the inner boundary values
+  if (localmesh->firstX()) {
+    for (int x = 0; x < localmesh->xstart; x++) {
+      for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
+        PetscScalar val = 0;
+        VecGetValues(xs, 1, &i, &val);
+        sol[x][z] = val;
+        i++; // Increment row in Petsc matrix
       }
     }
+  }
 
   // Set the main domain values
   for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
-    for (int z = 0; z < localmesh->LocalNz; z++) {
+    for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
       PetscScalar val = 0;
       VecGetValues(xs, 1, &i, &val);
       sol[x][z] = val;
@@ -867,7 +879,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
   // Set the outer boundary values
   if (localmesh->lastX()) {
     for (int x = localmesh->xend + 1; x < localmesh->LocalNx; x++) {
-      for (int z = 0; z < localmesh->LocalNz; z++) {
+      for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
         PetscScalar val = 0;
         VecGetValues(xs, 1, &i, &val);
         sol[x][z] = val;
@@ -1096,7 +1108,7 @@ void LaplacePetsc::vecToField(Vec xs, FieldPerp& f) {
   int i = Istart;
   if (localmesh->firstX()) {
     for (int x = 0; x < localmesh->xstart; x++) {
-      for (int z = 0; z < localmesh->LocalNz; z++) {
+      for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
         PetscScalar val;
         VecGetValues(xs, 1, &i, &val);
         f[x][z] = val;
@@ -1106,7 +1118,7 @@ void LaplacePetsc::vecToField(Vec xs, FieldPerp& f) {
   }
 
   for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
-    for (int z = 0; z < localmesh->LocalNz; z++) {
+    for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
       PetscScalar val;
       VecGetValues(xs, 1, &i, &val);
       f[x][z] = val;
@@ -1116,7 +1128,7 @@ void LaplacePetsc::vecToField(Vec xs, FieldPerp& f) {
 
   if (localmesh->lastX()) {
     for (int x = localmesh->xend + 1; x < localmesh->LocalNx; x++) {
-      for (int z = 0; z < localmesh->LocalNz; z++) {
+      for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
         PetscScalar val;
         VecGetValues(xs, 1, &i, &val);
         f[x][z] = val;
@@ -1133,7 +1145,7 @@ void LaplacePetsc::fieldToVec(const FieldPerp& f, Vec bs) {
   int i = Istart;
   if (localmesh->firstX()) {
     for (int x = 0; x < localmesh->xstart; x++) {
-      for (int z = 0; z < localmesh->LocalNz; z++) {
+      for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
         PetscScalar val = f[x][z];
         VecSetValues(bs, 1, &i, &val, INSERT_VALUES);
         i++; // Increment row in Petsc matrix
@@ -1142,7 +1154,7 @@ void LaplacePetsc::fieldToVec(const FieldPerp& f, Vec bs) {
   }
 
   for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
-    for (int z = 0; z < localmesh->LocalNz; z++) {
+    for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
       PetscScalar val = f[x][z];
       VecSetValues(bs, 1, &i, &val, INSERT_VALUES);
       i++; // Increment row in Petsc matrix
@@ -1151,7 +1163,7 @@ void LaplacePetsc::fieldToVec(const FieldPerp& f, Vec bs) {
 
   if (localmesh->lastX()) {
     for (int x = localmesh->xend + 1; x < localmesh->LocalNx; x++) {
-      for (int z = 0; z < localmesh->LocalNz; z++) {
+      for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
         PetscScalar val = f[x][z];
         VecSetValues(bs, 1, &i, &val, INSERT_VALUES);
         i++; // Increment row in Petsc matrix

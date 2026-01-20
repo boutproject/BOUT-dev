@@ -211,7 +211,6 @@ void ShiftedMetricInterp::checkInputGrid() {
  * Calculate the Y up and down fields
  */
 void ShiftedMetricInterp::calcParallelSlices(Field3D& f) {
-  AUTO_TRACE();
 
   // Ensure that yup and ydown are different fields
   f.splitParallelSlices();

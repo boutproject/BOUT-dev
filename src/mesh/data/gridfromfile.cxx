@@ -2,21 +2,23 @@
 #include "bout/traits.hxx"
 #include <bout/griddata.hxx>
 
+#include <bout/array.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/options_io.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/unused.hxx>
 #include <bout/utils.hxx>
+
+#include <algorithm>
+#include <iterator>
 #include <utility>
 
 GridFile::GridFile(std::string gridfilename)
     : GridDataSource(true), data(bout::OptionsIO::create(gridfilename)->read()),
       filename(std::move(gridfilename)) {
-  TRACE("GridFile constructor");
 
   // Get number of y-boundary guard cells saved in the grid file
   grid_yguards = data["y_boundary_guards"].withDefault<int>(0);
@@ -56,7 +58,7 @@ bool GridFile::hasVar(const std::string& name) { return data.isSet(name); }
 bool GridFile::get(Mesh* UNUSED(m), std::string& sval, const std::string& name,
                    const std::string& def) {
   Timer timer("io");
-  TRACE("GridFile::get(std::string)");
+
   const bool success = data.isSet(name);
   if (not success) {
     // Override any previously set defaults
@@ -89,7 +91,7 @@ bool GridFile::get(Mesh* UNUSED(m), std::string& sval, const std::string& name,
  */
 bool GridFile::get(Mesh* UNUSED(m), int& ival, const std::string& name, int def) {
   Timer timer("io");
-  TRACE("GridFile::get(int)");
+
   const bool success = data.isSet(name);
   if (not success) {
     // Override any previously set defaults
@@ -106,7 +108,7 @@ bool GridFile::get(Mesh* UNUSED(m), int& ival, const std::string& name, int def)
 bool GridFile::get(Mesh* UNUSED(m), BoutReal& rval, const std::string& name,
                    BoutReal def) {
   Timer timer("io");
-  TRACE("GridFile::get(BoutReal)");
+
   const bool success = data.isSet(name);
   if (not success) {
     // Override any previously set defaults
@@ -139,7 +141,6 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
       "templated GridFile::getField only works for Field2D, Field3D or FieldPerp");
 
   Timer timer("io");
-  AUTO_TRACE();
 
   if (not data.isSet(name)) {
     // Variable not found
@@ -469,14 +470,31 @@ bool GridFile::get([[maybe_unused]] Mesh* m, [[maybe_unused]] std::vector<int>& 
                    [[maybe_unused]] const std::string& name, [[maybe_unused]] int len,
                    [[maybe_unused]] int offset,
                    [[maybe_unused]] GridDataSource::Direction dir) {
-  TRACE("GridFile::get(vector<int>)");
 
-  return false;
+  if (not data.isSet(name)) {
+    return false;
+  }
+
+  const auto full_var = data[name].as<Array<int>>();
+
+  // Check size
+  if (full_var.size() < len + offset) {
+    throw BoutException("{} has length {}. Expected {} elements + {} offset", name,
+                        full_var.size(), len, offset);
+  }
+
+  // Ensure that output variable has the correct size
+  var.resize(len);
+
+  const auto* it = std::begin(full_var);
+  std::advance(it, offset);
+  std::copy_n(it, len, std::begin(var));
+
+  return true;
 }
 
 bool GridFile::get(Mesh* UNUSED(m), std::vector<BoutReal>& var, const std::string& name,
                    int len, int offset, GridDataSource::Direction UNUSED(dir)) {
-  TRACE("GridFile::get(vector<BoutReal>)");
 
   if (not data.isSet(name)) {
     return false;

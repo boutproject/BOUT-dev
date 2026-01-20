@@ -37,7 +37,6 @@
 /// return. Otherwise, an empty `std::optional` is return
 namespace bout {
 inline std::optional<BoutReal> invert3x3(Matrix<BoutReal>& a) {
-  TRACE("invert3x3");
 
   // Calculate the first co-factors
   const BoutReal A = a(1, 1) * a(2, 2) - a(1, 2) * a(2, 1);
