@@ -1014,6 +1014,12 @@ void Field3DParallel::ensureFieldAligned() {
         ASSERT2(ydown_fields[i].getRegionID().has_value());
       }
     }
+    if (isAllocated()) {
+      for (int i = 0; i < fieldmesh->ystart; ++i) {
+        ASSERT2(yup_fields[i].isAllocated());
+        ASSERT2(ydown_fields[i].isAllocated());
+      }
+    }
   }
 }
 
