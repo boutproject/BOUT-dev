@@ -1039,15 +1039,13 @@ int Coordinates::geometry(bool recalculate_staggered,
   G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22)
           + 0.5 * g33 * DDY(g_33);
 
-  auto tmp = J * g12;
-  communicate(tmp);
-  G1 = (DDX(J * g11) + DDY(tmp) + DDZ(J * g13)) / J;
-  tmp = J * g22;
-  communicate(tmp);
-  G2 = (DDX(J * g12) + DDY(tmp) + DDZ(J * g23)) / J;
-  tmp = J * g23;
-  communicate(tmp);
-  G3 = (DDX(J * g13) + DDY(tmp) + DDZ(J * g33)) / J;
+  if (J.isFci()) {
+    G1 = G2 = G3 = BoutNaN;
+  } else {
+    G1 = (DDX(J * g11) + DDY(J * g12) + DDZ(J * g13)) / J;
+    G2 = (DDX(J * g12) + DDY(J * g22) + DDZ(J * g23)) / J;
+    G3 = (DDX(J * g13) + DDY(J * g23) + DDZ(J * g33)) / J;
+  }
 
   // Communicate christoffel symbol terms
   output_progress.write("\tCommunicating connection terms\n");
@@ -1282,6 +1280,31 @@ int Coordinates::calcCovariant(const std::string& region) {
                    max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
 
   output_info.write("\tLocal maximum error in off-diagonal inversion is {:e}\n", maxerr);
+
+  if (Bxy.isFci()) {
+    BoutReal maxError = 0;
+    Options* options = Options::getRoot();
+    auto BJg = Bxy.asField3DParallel() * J / sqrt(g_22.asField3DParallel());
+    auto* mesh = localmesh;
+    for (int p = -mesh->ystart; p <= mesh->ystart; p++) {
+      if (p == 0) {
+        continue;
+      }
+      BOUT_FOR(i, BJg.getRegion("RGN_NOBNDRY")) {
+        auto local = BJg[i] / BJg.ynext(p)[i.yp(p)];
+        maxError = std::max(std::abs(local - 1), maxError);
+      }
+    }
+    const BoutReal allowedError = (*options)["allowedFluxError"].withDefault(1e-6);
+    if (maxError < allowedError / 100) {
+      output_info.write("\tInfo: The maximum flux conservation error is {:e}", maxError);
+    } else if (maxError < allowedError) {
+      output_warn.write("\tWarning: The maximum flux conservation error is {:e}",
+                        maxError);
+    } else {
+      throw BoutException("Error: The maximum flux conservation error is {:e}", maxError);
+    }
+  }
 
   return 0;
 }
@@ -1600,16 +1623,8 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
     return Bxy * Grad_par(f / Bxy_floc, outloc, method);
   }
 
-  // Need to modify yup and ydown fields
-  //Field3D f_B = f / Bxy_floc;
-  //return setName(Bxy * Grad_par(f_B, outloc, method),
-  //               "Div_par({:s})", f.name);
-
-  auto coords = f.getCoordinates();
-  // Note: Arithmetic operators iterate over yup/ydown slices
-  Field3D f_B = f * coords->J / sqrt(coords->g_22);
-  return setName(sqrt(coords->g_22) * Grad_par(f_B, outloc, method) / coords->J,
-                 "Div_par({:s})", f.name);
+  ASSERT3(f.getCoordinates() == this);
+  return setName(Jg() * Grad_par(f / Jg(), outloc, method), "Div_par({:s})", f.name);
 }
 
 /////////////////////////////////////////////////////////
@@ -1899,11 +1914,29 @@ Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
 
 const Coordinates::FieldMetric& Coordinates::invSg() const {
   if (invSgCache == nullptr) {
-    auto ptr = std::make_unique<FieldMetric>();
+    auto ptr = std::make_unique<Coordinates::FieldMetric>();
     (*ptr) = 1.0 / sqrt(g_22);
     invSgCache = std::move(ptr);
   }
   return *invSgCache;
+}
+
+const Coordinates::FieldMetric& Coordinates::Jg() const {
+  if (not JgCache.has_value()) {
+    auto* coords = this; //
+    // Need to modify yup and ydown fields
+    Field3D Jg = coords->Jxz();
+    Jg.splitParallelSlicesAndAllocate();
+    Field3DParallel B = coords->Bxy;
+    for (size_t j = 0; j < B.numberParallelSlices(); ++j) {
+      BOUT_FOR(i, B.getRegion("RGN_NOBNDRY")) {
+        Jg.yup(j)[i.yp(j + 1)] = Jg[i] * B.yup(j)[i.yp(j + 1)] / B[i];
+        Jg.ydown(j)[i.ym(j + 1)] = Jg[i] * B.ydown(j)[i.ym(j + 1)] / B[i];
+      }
+    }
+    JgCache = Jg;
+  }
+  return *JgCache;
 }
 
 const Coordinates::FieldMetric&
@@ -1919,7 +1952,7 @@ Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) co
   invSgCache->applyParallelBoundary("parallel_neumann_o2");
 
   // cache
-  auto ptr = std::make_unique<FieldMetric>();
+  auto ptr = std::make_unique<Coordinates::FieldMetric>();
   *ptr = DDY(*invSgCache, outloc, method) * invSg();
   Grad2_par2_DDY_invSgCache[method] = std::move(ptr);
   return *Grad2_par2_DDY_invSgCache[method];
@@ -2025,6 +2058,99 @@ void Coordinates::checkContravariant() {
         bout::checkFinite(g23.ynext(sign * dy), "g23.ynext",
                           fmt::format("RGN_YPAR_{:+d}", sign * dy));
       }
+    }
+  }
+}
+
+const Coordinates::FieldMetric& Coordinates::g_22_ylow() const {
+  if (_g_22_ylow.has_value()) {
+    return *_g_22_ylow;
+  }
+  _g_22_ylow.emplace(emptyFrom(g_22));
+  //_g_22_ylow->setLocation(CELL_YLOW);
+  auto mesh = Bxy.getMesh();
+  if (Bxy.isFci()) {
+    if (mesh->get(_g_22_ylow.value(), "g_22_cell_ylow", 0.0, false)) { //, CELL_YLOW)) {
+      throw BoutException("The grid file does not contain `g_22_cell_ylow`.");
+    }
+  } else {
+    ASSERT0(mesh->ystart > 0);
+    BOUT_FOR(i, g_22.getRegion("RGN_NOY")) {
+      _g_22_ylow.value()[i] = SQ(0.5 * (sqrt(g_22[i]) + sqrt(g_22[i.ym()])));
+    }
+  }
+  return g_22_ylow();
+}
+
+const Coordinates::FieldMetric& Coordinates::g_22_yhigh() const {
+  if (_g_22_yhigh.has_value()) {
+    return *_g_22_yhigh;
+  }
+  _g_22_yhigh.emplace(emptyFrom(g_22));
+  //_g_22_yhigh->setLocation(CELL_YHIGH);
+  auto mesh = Bxy.getMesh();
+  if (Bxy.isFci()) {
+    if (mesh->get(_g_22_yhigh.value(), "g_22_cell_yhigh", 0.0,
+                  false)) { //, CELL_YHIGH)) {
+      throw BoutException("The grid file does not contain `g_22_cell_yhigh`.");
+    }
+  } else {
+    ASSERT0(mesh->ystart > 0);
+    BOUT_FOR(i, g_22.getRegion("RGN_NOY")) {
+      _g_22_yhigh.value()[i] = SQ(0.5 * (sqrt(g_22[i]) + sqrt(g_22[i.yp()])));
+    }
+  }
+  return g_22_yhigh();
+}
+
+const Coordinates::FieldMetric& Coordinates::Jxz_ylow() const {
+  if (!_Jxz_ylow.has_value()) {
+    _compute_Jxz_cell_faces();
+  }
+  return *_Jxz_ylow;
+}
+const Coordinates::FieldMetric& Coordinates::Jxz_yhigh() const {
+  if (!_Jxz_yhigh.has_value()) {
+    _compute_Jxz_cell_faces();
+  }
+  return *_Jxz_yhigh;
+}
+const Coordinates::FieldMetric& Coordinates::Jxz() const {
+  if (!_Jxz_centre.has_value()) {
+    _compute_Jxz_cell_faces();
+  }
+  return *_Jxz_centre;
+}
+
+void Coordinates::_compute_Jxz_cell_faces() const {
+  _Jxz_centre.emplace(sqrt(g_11 * g_33 - SQ(g_13)));
+  _Jxz_ylow.emplace(emptyFrom(_Jxz_centre.value()));
+  //_Jxz_ylow->setLocation(CELL_YLOW);
+  _Jxz_yhigh.emplace(emptyFrom(_Jxz_centre.value()));
+  //_Jxz_yhigh->setLocation(CELL_YHIGH);
+  auto* mesh = _Jxz_centre->getMesh();
+  if (Bxy.isFci()) {
+    Coordinates::FieldMetric By_c;
+    Coordinates::FieldMetric By_h;
+    Coordinates::FieldMetric By_l;
+    if (mesh->get(By_c, "By", 0.0, false, CELL_CENTRE)) {
+      throw BoutException("The grid file does not contain `By`.");
+    }
+    if (mesh->get(By_l, "By_cell_ylow", 0.0, false)) { //, CELL_YLOW)) {
+      throw BoutException("The grid file does not contain `By_cell_ylow`.");
+    }
+    if (mesh->get(By_h, "By_cell_yhigh", 0.0, false)) { //, CELL_YHIGH)) {
+      throw BoutException("The grid file does not contain `By_cell_yhigh`.");
+    }
+    BOUT_FOR(i, By_c.getRegion("RGN_NOY")) {
+      (*_Jxz_ylow)[i] = By_c[i] / By_l[i] * (*_Jxz_centre)[i];
+      (*_Jxz_yhigh)[i] = By_c[i] / By_h[i] * (*_Jxz_centre)[i];
+    }
+  } else {
+    ASSERT0(mesh->ystart > 0);
+    BOUT_FOR(i, _Jxz_centre->getRegion("RGN_NOY")) {
+      (*_Jxz_ylow)[i] = 0.5 * ((*_Jxz_centre)[i] + (*_Jxz_centre)[i.ym()]);
+      (*_Jxz_yhigh)[i] = 0.5 * ((*_Jxz_centre)[i] + (*_Jxz_centre)[i.yp()]);
     }
   }
 }
