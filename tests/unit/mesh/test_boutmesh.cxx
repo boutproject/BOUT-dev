@@ -712,11 +712,11 @@ TEST_P(BoutMeshProcNumTest, ProcNum) {
 namespace {
 // 2x2x2 processors, 3x3x3 (not including guards) on each processor
 auto BasicCubeMesh(BoutMeshExposer::ProcSizes proc_index = {0, 0, 0}) {
-  return BoutMeshExposer{{5, 3, 3}, {1, 1, 0}, {2, 2, 2}, proc_index};
+  return BoutMeshExposer{{5, 3, 3}, {1, 1, 1}, {2, 2, 2}, proc_index};
 }
 // 3x3x3 processors, 3x3x3 (not including guards) on each processor
 auto SmallCubeMesh(BoutMeshExposer::ProcSizes proc_index = {0, 0, 0}) {
-  return BoutMeshExposer{{5, 3, 3}, {1, 1, 0}, {3, 3, 3}, proc_index};
+  return BoutMeshExposer{{5, 3, 3}, {1, 1, 1}, {3, 3, 3}, proc_index};
 }
 } // namespace
 
@@ -1344,7 +1344,15 @@ TEST_F(BoutMeshTest, GlobalYRealAsymmetricY) {
 TEST_F(BoutMeshTest, GetGlobalZIndex) {
   // Boundaries are included in the global index
 
-  // No parallelisation in Z, so function is just the identity
+  // |<--  1st Z-proc -->|
+  //             |<--  2nd Z-proc -->|
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- Global indices
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- 1st Z-processor
+  // +---+---+---+---+---+---+---+---+
+  // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Z-processor
+  // +---+---+---+---+---+---+---+---+
 
   const auto mesh00 = BasicCubeMesh({0, 0, 0});
   EXPECT_EQ(mesh00.getGlobalZIndex(0), 0);
@@ -1360,49 +1368,61 @@ TEST_F(BoutMeshTest, GetGlobalZIndex) {
   EXPECT_EQ(mesh01.getGlobalZIndex(3), 3);
   EXPECT_EQ(mesh01.getGlobalZIndex(4), 4);
 
-  const auto mesh10 = BasicCubeMesh({1, 0, 0});
-  EXPECT_EQ(mesh10.getGlobalZIndex(0), 0);
-  EXPECT_EQ(mesh10.getGlobalZIndex(1), 1);
-  EXPECT_EQ(mesh10.getGlobalZIndex(2), 2);
-  EXPECT_EQ(mesh10.getGlobalZIndex(3), 3);
-  EXPECT_EQ(mesh10.getGlobalZIndex(4), 4);
+  const auto mesh10 = BasicCubeMesh({0, 0, 1});
+  EXPECT_EQ(mesh10.getGlobalZIndex(0), 3);
+  EXPECT_EQ(mesh10.getGlobalZIndex(1), 4);
+  EXPECT_EQ(mesh10.getGlobalZIndex(2), 5);
+  EXPECT_EQ(mesh10.getGlobalZIndex(3), 6);
+  EXPECT_EQ(mesh10.getGlobalZIndex(4), 7);
 
-  const auto mesh11 = BasicCubeMesh({1, 1, 0});
-  EXPECT_EQ(mesh11.getGlobalZIndex(0), 0);
-  EXPECT_EQ(mesh11.getGlobalZIndex(1), 1);
-  EXPECT_EQ(mesh11.getGlobalZIndex(2), 2);
-  EXPECT_EQ(mesh11.getGlobalZIndex(3), 3);
-  EXPECT_EQ(mesh11.getGlobalZIndex(4), 4);
+  const auto mesh11 = BasicCubeMesh({0, 1, 1});
+  EXPECT_EQ(mesh11.getGlobalZIndex(0), 3);
+  EXPECT_EQ(mesh11.getGlobalZIndex(1), 4);
+  EXPECT_EQ(mesh11.getGlobalZIndex(2), 5);
+  EXPECT_EQ(mesh11.getGlobalZIndex(3), 6);
+  EXPECT_EQ(mesh11.getGlobalZIndex(4), 7);
 }
 
 TEST_F(BoutMeshTest, GetGlobalZIndexNoBoundaries) {
+  // Global indices start counting from the first non-boundary point
+
+  // |<--  1st Z-proc -->|
+  //             |<--  2nd Z-proc -->|
+  // +---+---+---+---+---+---+---+---+
+  // |-1*| 0 | 1 | 2 | 3 | 4 | 5 | 6*| <- Global indices
+  // +---+---+---+---+---+---+---+---+
+  // | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | <- 1st Z-processor
+  // +---+---+---+---+---+---+---+---+
+  // |-3 |-2 |-1 | 0 | 1 | 2 | 3 | 4 | <- 2nd Z-processor
+  // +---+---+---+---+---+---+---+---+
+
   const auto mesh00 = BasicCubeMesh({0, 0, 0});
-  EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(0), 0);
-  EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(1), 1);
-  EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(2), 2);
-  EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(3), 3);
-  EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(4), 4);
+  EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(0), -1);
+  EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(1), 0);
+  EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(2), 1);
+  EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(3), 2);
+  EXPECT_EQ(mesh00.getGlobalZIndexNoBoundaries(4), 3);
 
   const auto mesh01 = BasicCubeMesh({0, 1, 0});
-  EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(0), 0);
-  EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(1), 1);
-  EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(2), 2);
-  EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(3), 3);
-  EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(4), 4);
+  EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(0), -1);
+  EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(1), 0);
+  EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(2), 1);
+  EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(3), 2);
+  EXPECT_EQ(mesh01.getGlobalZIndexNoBoundaries(4), 3);
 
-  const auto mesh10 = BasicCubeMesh({1, 0, 0});
-  EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(0), 0);
-  EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(1), 1);
-  EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(2), 2);
-  EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(3), 3);
-  EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(4), 4);
+  const auto mesh10 = BasicCubeMesh({0, 0, 1});
+  EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(0), 2);
+  EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(1), 3);
+  EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(2), 4);
+  EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(3), 5);
+  EXPECT_EQ(mesh10.getGlobalZIndexNoBoundaries(4), 6);
 
-  const auto mesh11 = BasicCubeMesh({1, 1, 0});
-  EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(0), 0);
-  EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(1), 1);
-  EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(2), 2);
-  EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(3), 3);
-  EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(4), 4);
+  const auto mesh11 = BasicCubeMesh({1, 0, 1});
+  EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(0), 2);
+  EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(1), 3);
+  EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(2), 4);
+  EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(3), 5);
+  EXPECT_EQ(mesh11.getGlobalZIndexNoBoundaries(4), 6);
 }
 
 TEST_F(BoutMeshTest, GetLocalZIndex) {
@@ -1432,19 +1452,19 @@ TEST_F(BoutMeshTest, GetLocalZIndex) {
   EXPECT_EQ(mesh01.getLocalZIndex(3), 3);
   EXPECT_EQ(mesh01.getLocalZIndex(4), 4);
 
-  const auto mesh10 = BasicCubeMesh({1, 0, 0});
-  EXPECT_EQ(mesh10.getLocalZIndex(0), 0);
-  EXPECT_EQ(mesh10.getLocalZIndex(1), 1);
-  EXPECT_EQ(mesh10.getLocalZIndex(2), 2);
-  EXPECT_EQ(mesh10.getLocalZIndex(3), 3);
-  EXPECT_EQ(mesh10.getLocalZIndex(4), 4);
+  const auto mesh10 = BasicCubeMesh({0, 0, 1});
+  EXPECT_EQ(mesh10.getLocalZIndex(3), 0);
+  EXPECT_EQ(mesh10.getLocalZIndex(4), 1);
+  EXPECT_EQ(mesh10.getLocalZIndex(5), 2);
+  EXPECT_EQ(mesh10.getLocalZIndex(6), 3);
+  EXPECT_EQ(mesh10.getLocalZIndex(7), 4);
 
-  const auto mesh11 = BasicCubeMesh({1, 1, 0});
-  EXPECT_EQ(mesh11.getLocalZIndex(0), 0);
-  EXPECT_EQ(mesh11.getLocalZIndex(1), 1);
-  EXPECT_EQ(mesh11.getLocalZIndex(2), 2);
-  EXPECT_EQ(mesh11.getLocalZIndex(3), 3);
-  EXPECT_EQ(mesh11.getLocalZIndex(4), 4);
+  const auto mesh11 = BasicCubeMesh({0, 1, 1});
+  EXPECT_EQ(mesh11.getLocalZIndex(3), 0);
+  EXPECT_EQ(mesh11.getLocalZIndex(4), 1);
+  EXPECT_EQ(mesh11.getLocalZIndex(5), 2);
+  EXPECT_EQ(mesh11.getLocalZIndex(6), 3);
+  EXPECT_EQ(mesh11.getLocalZIndex(7), 4);
 }
 
 TEST_F(BoutMeshTest, GetLocalZIndexNoBoundaries) {
@@ -1461,32 +1481,32 @@ TEST_F(BoutMeshTest, GetLocalZIndexNoBoundaries) {
   // +---+---+---+---+---+---+---+---+
 
   const auto mesh00 = BasicCubeMesh({0, 0, 0});
-  EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(0), 0);
-  EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(1), 1);
-  EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(2), 2);
-  EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(3), 3);
-  EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(4), 4);
+  EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(-1), 0);
+  EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(0), 1);
+  EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(1), 2);
+  EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(2), 3);
+  EXPECT_EQ(mesh00.getLocalZIndexNoBoundaries(3), 4);
 
   const auto mesh01 = BasicCubeMesh({0, 1, 0});
-  EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(0), 0);
-  EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(1), 1);
-  EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(2), 2);
-  EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(3), 3);
-  EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(4), 4);
+  EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(-1), 0);
+  EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(0), 1);
+  EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(1), 2);
+  EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(2), 3);
+  EXPECT_EQ(mesh01.getLocalZIndexNoBoundaries(3), 4);
 
-  const auto mesh10 = BasicCubeMesh({1, 0, 0});
-  EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(0), 0);
-  EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(1), 1);
-  EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(2), 2);
-  EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(3), 3);
-  EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(4), 4);
+  const auto mesh10 = BasicCubeMesh({0, 0, 1});
+  EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(2), 0);
+  EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(3), 1);
+  EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(4), 2);
+  EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(5), 3);
+  EXPECT_EQ(mesh10.getLocalZIndexNoBoundaries(6), 4);
 
-  const auto mesh11 = BasicCubeMesh({1, 1, 0});
-  EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(0), 0);
-  EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(1), 1);
-  EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(2), 2);
-  EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(3), 3);
-  EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(4), 4);
+  const auto mesh11 = BasicCubeMesh({1, 0, 1});
+  EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(2), 0);
+  EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(3), 1);
+  EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(4), 2);
+  EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(5), 3);
+  EXPECT_EQ(mesh11.getLocalZIndexNoBoundaries(6), 4);
 }
 
 TEST_F(BoutMeshTest, FirstX) {
