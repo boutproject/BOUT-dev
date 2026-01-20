@@ -198,14 +198,23 @@ public:
   int getLocalZIndexNoBoundaries(int zglobal) const override;
 
 protected:
+  /// Helper type for constructing meshs for testing.
+  ///
+  /// Mostly just lets us break up long lists of ints into sets of 3
+  struct ProcSizes {
+    int x;
+    int y;
+    int z;
+  };
+
   /// A constructor used when making fake meshes for testing. This
   /// will make a mesh which thinks it corresponds to the subdomain on
   /// one processor, even though it's actually being run in serial.
   ///
   /// Pass \p create_topology = false to not set up topology, regions etc.
-  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
-           int pe_xind, int pe_yind, bool create_topology = true, bool symmetric_X = true,
-           bool symmetric_Y = true);
+  BoutMesh(ProcSizes grid, ProcSizes guards, ProcSizes num_procs, ProcSizes proc_index,
+           bool create_topology = true, bool symmetric_X = true, bool symmetric_Y = true);
+
   /// Another constructor useful for testing, and used in
   /// `getPossibleBoundaries`. \p create_regions controls whether or
   /// not the various `Region`s are created on the new mesh
@@ -215,10 +224,16 @@ protected:
            int jyseps2_2_, int ny_inner_, bool create_regions = true);
 
   /// Very basic initialisation, only suitable for testing
-  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int input_npes)
-      : nx(input_nx), ny(input_ny), nz(input_nz), NPES(input_npes), ixseps1(nx),
-        ixseps2(nx), jyseps1_1(-1), jyseps2_1(ny / 2), jyseps1_2(jyseps2_1),
-        jyseps2_2(ny - 1), ny_inner(jyseps2_1), MXG(mxg), MYG(myg), MZG(0) {}
+  BoutMesh(ProcSizes grid, ProcSizes guards, int input_npes)
+      : nx(grid.x), ny(grid.y), nz(grid.z), NPES(input_npes), ixseps1(nx), ixseps2(nx),
+        jyseps1_1(-1), jyseps2_1(ny / 2), jyseps1_2(jyseps2_1), jyseps2_2(ny - 1),
+        ny_inner(jyseps2_1), MXG(guards.x), MYG(guards.y), MZG(guards.z) {}
+  /// Also only for testing, but specify processor decomposition
+  BoutMesh(ProcSizes grid, ProcSizes guards, ProcSizes num_procs)
+      : nx(grid.x), ny(grid.y), nz(grid.z), NPES(num_procs.x * num_procs.y),
+        NXPE(num_procs.x), NYPE(num_procs.y), NZPE(num_procs.z), ixseps1(nx), ixseps2(nx),
+        jyseps1_1(-1), jyseps2_1(ny / 2), jyseps1_2(jyseps2_1), jyseps2_2(ny - 1),
+        ny_inner(jyseps2_1), MXG(guards.x), MYG(guards.y), MZG(guards.z) {}
 
   /// For debugging purposes (when creating fake parallel meshes), make
   /// the send and receive buffers share memory. This allows for
@@ -363,33 +378,36 @@ private:
   bool TS_down_out = false;
 
   // Communication parameters calculated by topology
-  int UDATA_INDEST = -1;        ///< Processor in +y, lower side of branch cut
-  int UDATA_OUTDEST = -1;       ///< Processor in +y, upper side of branch cut
-  int UDATA_XSPLIT = 0;         ///< X index of branch cut on +y side
-  int DDATA_INDEST = -1;        ///< Processor in -y, lower side of branch cut
-  int DDATA_OUTDEST = -1;       ///< Processor in -y, upper side of branch cut
-  int DDATA_XSPLIT = 0;         ///< X index of branch cut on -y side
-  int IDATA_DEST = -1;          ///< Processor in -x
-  int ODATA_DEST = -1;          ///< Processor in +x
+  int UDATA_INDEST = -1;  ///< Processor in +y, lower side of branch cut
+  int UDATA_OUTDEST = -1; ///< Processor in +y, upper side of branch cut
+  int UDATA_XSPLIT = 0;   ///< X index of branch cut on +y side
+  int DDATA_INDEST = -1;  ///< Processor in -y, lower side of branch cut
+  int DDATA_OUTDEST = -1; ///< Processor in -y, upper side of branch cut
+  int DDATA_XSPLIT = 0;   ///< X index of branch cut on -y side
+  int IDATA_DEST = -1;    ///< Processor in -x
+  int ODATA_DEST = -1;    ///< Processor in +x
 
   // Settings
-  bool TwistShift; // Use a twist-shift condition in core?
+  bool TwistShift{false}; ///< Use a twist-shift condition in core?
 
   bool symmetricGlobalX;        ///< Use a symmetric definition in `GlobalX()` function
   bool symmetricGlobalY;        ///< Use a symmetric definition in `GlobalY()` function
   bool symmetricGlobalZ{false}; ///< Use a symmetric definition in `GlobalZ()` function
 
-  int zperiod;
-  BoutReal ZMIN, ZMAX; // Range of the Z domain (in fractions of 2pi)
+  int zperiod = 1.0;   ///< Number of 2pi periods in Z
+  BoutReal ZMIN = 0.0; ///< Minimum of the Z domain (in fractions of 2pi)
+  BoutReal ZMAX = 1.0; ///< Maximum of the Z domain (in fractions of 2pi)
 
-  int MXG, MYG, MZG; // Boundary sizes
+  int MXG = 2; ///< Number of X guard cells
+  int MYG = 2; ///< Number of Y guard cells
+  int MZG = 0; ///< Number of Z guard cells
 
   // Grid file provenance tracking info
-  std::string grid_id = "";
-  std::string hypnotoad_version = "";
-  std::string hypnotoad_git_hash = "";
-  std::string hypnotoad_git_diff = "";
-  std::string hypnotoad_geqdsk_filename = "";
+  std::string grid_id;
+  std::string hypnotoad_version;
+  std::string hypnotoad_git_hash;
+  std::string hypnotoad_git_diff;
+  std::string hypnotoad_geqdsk_filename;
 
 protected:
   // These are protected so we can make them public in the test suite
