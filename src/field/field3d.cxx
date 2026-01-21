@@ -31,6 +31,7 @@
 #include <bout/globals.hxx>
 
 #include <cmath>
+#include <cpptrace/cpptrace.hpp>
 #include <cstddef>
 #include <fmt/format.h>
 #include <optional>
@@ -958,23 +959,22 @@ Field3D& Field3D::enableTracking(const std::string& name, Options& _tracking) {
 }
 
 template <class T>
-Options* Field3D::track(const T& change, std::string operation) {
-  if (tracking != nullptr and tracking_state != 0) {
-    const std::string outname{fmt::format("track_{:s}_{:d}", selfname, tracking_state++)};
-    tracking->set(outname, change, "tracking");
-    // Workaround for bug in gcc9.4
+Options* Field3D::doTrack(const T& change, std::string operation) {
+  const std::string outname{fmt::format("track_{:s}_{:d}", selfname, tracking_state++)};
+  tracking->set(outname, change, "tracking");
+  const std::string trace = cpptrace::generate_trace().to_string();
+  // Workaround for bug in gcc9.4
 #if BOUT_USE_TRACK
-    const std::string changename = change.name;
+  const std::string changename = change.name;
 #endif
-    (*tracking)[outname].setAttributes({
-        {"operation", operation},
+  (*tracking)[outname].setAttributes({
+      {"operation", operation},
 #if BOUT_USE_TRACK
-        {"rhs.name", changename},
+      {"rhs.name2", changename},
 #endif
-    });
-    return &(*tracking)[outname];
-  }
-  return nullptr;
+      {"trace", trace},
+  });
+  return &(*tracking)[outname];
 }
 
 template Options* Field3D::track<Field3DParallel>(const Field3DParallel&, std::string);
@@ -982,17 +982,16 @@ template Options* Field3D::track<Field3D>(const Field3D&, std::string);
 template Options* Field3D::track<Field2D>(const Field2D&, std::string);
 template Options* Field3D::track<FieldPerp>(const FieldPerp&, std::string);
 
-Options* Field3D::track(const BoutReal& change, std::string operation) {
-  if ((tracking != nullptr) and (tracking_state != 0)) {
-    const std::string outname{fmt::format("track_{:s}_{:d}", selfname, tracking_state++)};
-    tracking->set(outname, change, "tracking");
-    (*tracking)[outname].setAttributes({
-        {"operation", operation},
-        {"rhs.name", "BR"},
-    });
-    return &(*tracking)[outname];
-  }
-  return nullptr;
+Options* Field3D::doTrack(const BoutReal& change, std::string operation) {
+  const std::string outname{fmt::format("track_{:s}_{:d}", selfname, tracking_state++)};
+  tracking->set(outname, change, "tracking");
+  const std::string trace = cpptrace::generate_trace().to_string();
+  (*tracking)[outname].setAttributes({
+      {"operation", operation},
+      {"rhs.name2", "BR"},
+      {"trace", trace},
+  });
+  return &(*tracking)[outname];
 }
 
 void Field3DParallel::ensureFieldAligned() {

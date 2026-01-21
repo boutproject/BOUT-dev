@@ -553,8 +553,15 @@ protected:
   Options* tracking{nullptr};
   std::string selfname;
   template <class T>
-  Options* track(const T& change, std::string operation);
-  Options* track(const BoutReal& change, std::string operation);
+  Options* track(const T& change, std::string operation) {
+    if (tracking != nullptr and tracking_state != 0) {
+      return doTrack(change, operation);
+    }
+    return nullptr;
+  }
+  template <class T>
+  Options* doTrack(const T& change, std::string operation);
+  Options* doTrack(const BoutReal& change, std::string operation);
 };
 
 // Non-member overloaded operators
