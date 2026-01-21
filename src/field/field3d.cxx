@@ -33,6 +33,7 @@
 #include <cmath>
 #include <memory>
 #include <utility>
+#include <cpptrace/cpptrace.hpp>
 
 #include "bout/parallel_boundary_op.hxx"
 #include "bout/parallel_boundary_region.hxx"
@@ -859,6 +860,9 @@ void Field3D::_track(const T& change, std::string operation) {
   const std::string outname{fmt::format("track_{:s}_{:d}", selfname, tracking_state++)};
 
   locked->set(outname, change, "tracking");
+
+  const std::string trace = cpptrace::generate_trace().to_string();
+
   // Workaround for bug in gcc9.4
 #if BOUT_USE_TRACK
   const std::string changename = change.name;
@@ -868,6 +872,7 @@ void Field3D::_track(const T& change, std::string operation) {
 #if BOUT_USE_TRACK
       {"rhs.name", changename},
 #endif
+      {"trace", trace},
   });
 }
 
@@ -885,10 +890,12 @@ void Field3D::_track(const BoutReal& change, std::string operation) {
   if (locked == nullptr) {
     return;
   }
+  const std::string trace = cpptrace::generate_trace().to_string();
   const std::string outname{fmt::format("track_{:s}_{:d}", selfname, tracking_state++)};
   locked->set(outname, change, "tracking");
   (*locked)[outname].setAttributes({
       {"operation", operation},
       {"rhs.name", "BoutReal"},
+      {"trace", trace},
   });
 }
