@@ -33,6 +33,7 @@ set(serial_tests_source
   ./field/test_field.cxx
   ./field/test_field2d.cxx
   ./field/test_field3d.cxx
+  ./field/test_facefield3d.cxx
   ./field/test_field_factory.cxx
   ./field/test_fieldgroup.cxx
   ./field/test_fieldperp.cxx
@@ -66,11 +67,14 @@ set(serial_tests_source
   ./mesh/parallel/test_shiftedmetric.cxx
   ./mesh/test_boundary_factory.cxx
   ./mesh/test_boutmesh.cxx
+  ./mesh/test_conservative_flux_div.cxx
+  ./mesh/test_conservative_flux_div_compile.cxx
   ./mesh/test_coordinates.cxx
   ./mesh/test_coordinates_accessor.cxx
   ./mesh/test_interpolation.cxx
   ./mesh/test_invert3x3.cxx
   ./mesh/test_mesh.cxx
+  ./mesh/test_facefield_comm.cxx
   ./mesh/test_paralleltransform.cxx
   ./solver/test_fakesolver.cxx
   ./solver/test_fakesolver.hxx
