@@ -2450,5 +2450,25 @@ TEST_F(Field3DTest, ZeroFrom) {
   EXPECT_TRUE(field2.isAllocated());
   EXPECT_TRUE(IsFieldEqual(field2, 0.));
 }
+
+TEST_F(Field3DTest, Field3DParallel) {
+  Field3DParallel field(1.0);
+  field = 1.0;
+
+  Field3D field2 = field;
+
+  auto& field3 = field.asField3D();
+
+  field *= 2;
+
+  EXPECT_TRUE(IsFieldEqual(field, 2.0));
+  EXPECT_TRUE(IsFieldEqual(field2, 1.0));
+  EXPECT_TRUE(IsFieldEqual(field3, 2.0));
+
+  field3.asField3DParallel() *= 3;
+
+  EXPECT_TRUE(IsFieldEqual(field3, 6.0));
+}
+
 // Restore compiler warnings
 #pragma GCC diagnostic pop

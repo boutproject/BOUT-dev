@@ -750,6 +750,9 @@ public:
     ensureFieldAligned();
   }
   Field3DParallel(const Field3D& f) : Field3D(std::move(f)) { ensureFieldAligned(); }
+  Field3DParallel(const Field3D& f, bool isRef) : Field3D(std::move(f)), isRef(isRef) {
+    ensureFieldAligned();
+  }
   Field3DParallel(const Field2D& f) : Field3D(std::move(f)) { ensureFieldAligned(); }
   // Explicitly needed, as DirectionTypes is sometimes constructed from a
   // brace enclosed list
@@ -799,9 +802,10 @@ public:
 
 private:
   void ensureFieldAligned();
+  bool isRef{false};
 };
 
-Field3DParallel Field3D::asField3DParallel() { return Field3DParallel(*this); }
+Field3DParallel Field3D::asField3DParallel() { return Field3DParallel(*this, true); }
 const Field3DParallel Field3D::asField3DParallel() const {
   return Field3DParallel(*this);
 }

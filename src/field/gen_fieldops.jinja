@@ -89,7 +89,11 @@
 {{lhs}} &{{lhs}}::operator{{operator}}=(const {{rhs.passByReference}}) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
+{% if lhs == "Field3DParallel" %}
+  if (data.unique() or isRef) {
+{% else %}
   if (data.unique()) {
+{% endif %}
     {% if lhs != "BoutReal" and rhs != "BoutReal" %}
       ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
     {% endif %}
