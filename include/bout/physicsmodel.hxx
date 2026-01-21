@@ -47,6 +47,7 @@ class PhysicsModel;
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
 
+#include <cstddef>
 #include <type_traits>
 #include <vector>
 
@@ -376,6 +377,9 @@ protected:
     PhysicsModel* model;
   };
 
+  /// Set timestep counter for flushing file
+  void setFlushCounter(std::size_t iteration) { flush_counter = iteration; }
+
 private:
   /// State for outputs
   Options output_options;
@@ -399,6 +403,10 @@ private:
   bool initialised{false};
   /// write restarts and pass outputMonitor method inside a Monitor subclass
   PhysicsModelMonitor modelMonitor{this};
+  /// How often to flush to disk
+  std::size_t flush_frequency{1};
+  /// Current timestep counter
+  std::size_t flush_counter{0};
 };
 
 /*!

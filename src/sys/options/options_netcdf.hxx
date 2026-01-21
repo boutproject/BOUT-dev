@@ -39,7 +39,7 @@ public:
   ///  - "append"  File mode, default is false
   OptionsNetCDF(Options& options);
 
-  ~OptionsNetCDF() {}
+  ~OptionsNetCDF() override = default;
 
   OptionsNetCDF(const OptionsNetCDF&) = delete;
   OptionsNetCDF(OptionsNetCDF&&) noexcept = default;
@@ -58,6 +58,9 @@ public:
   /// any differences, otherwise is silent
   void verifyTimesteps() const override;
 
+  /// Flush file to disk
+  void flush() override;
+
 private:
   enum class FileMode {
     replace, ///< Overwrite file when writing
@@ -74,7 +77,7 @@ private:
 };
 
 namespace {
-RegisterOptionsIO<OptionsNetCDF> registeroptionsnetcdf("netcdf");
+const inline RegisterOptionsIO<OptionsNetCDF> registeroptionsnetcdf("netcdf");
 }
 
 } // namespace bout
