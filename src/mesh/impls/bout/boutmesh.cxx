@@ -165,24 +165,24 @@ std::string BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_, int jyseps
   ixseps1 = ixseps1_;
   ixseps2 = ixseps2_;
 
-  std::string topology;
+  std::string topology_from_mesh;
 
   if (numberOfXPoints == 0) {
-    topology = "CFL"; //Closed loop
+    topology_from_mesh = "CFL"; //Closed loop
   } else if (numberOfXPoints == 1) {
-    topology = "SN"; // Single Null
+    topology_from_mesh = "SN"; // Single Null
   } else if (numberOfXPoints == 2) {
     if (jyseps1_2 <= ny_inner and ny_inner <= jyseps2_2) {
-        topology =  "SF";} // Snowflake
+        topology_from_mesh =  "SF";} // Snowflake
     else {
         if (ixseps1 != ixseps2) {
-            topology =  "UDN";} // Unconnected Double Null
+            topology_from_mesh =  "UDN";} // Unconnected Double Null
         else {
-            topology =  "CDN"; // Connected Double Null
+            topology_from_mesh =  "CDN"; // Connected Double Null
         }
     }
   }
-  return topology;
+  return topology_from_mesh;
 }
 
 namespace bout {
@@ -298,21 +298,21 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
                       jyseps1_2, jyseps2_1, jyseps1_2 - jyseps2_1 - 1, num_local_y_points)};
       }
 
-      if ((ny - jyseps2_2 - 1) % num_local_y_points != 0) {
+      if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
       return {
         false, 
         fmt::format(_("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
                          "multiple of MYSUB ({:d})\n"),
-                       ny, jyseps2_2, ny - jyseps2_2 - 1, num_local_y_points)};
+                       ny, jyseps2_2, ny - 1 - jyseps2_2, num_local_y_points)};
       }
 
       //Check central region
-      if ((ny_inner - 1- jyseps2_1) % num_local_y_points != 0) {
+      if ((ny_inner - 1 - jyseps2_1) % num_local_y_points != 0) {
       return {
           false,
           fmt::format(_("\t -> central region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
                           "be a multiple of MYSUB ({:d})\n"),
-                      ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, num_local_y_points)};
+                      ny_inner, jyseps2_1, ny_inner - 1 - jyseps2_1, num_local_y_points)};
       }
 
       //Check South leg region
@@ -336,16 +336,108 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
     }
   }
 
-  if ((ny - jyseps2_2 - 1) % num_local_y_points != 0) {
+  if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
     return {false, fmt::format(
                        _("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
                          "multiple of MYSUB ({:d})\n"),
-                       ny, jyseps2_2, ny - jyseps2_2 - 1, num_local_y_points)};
+                       ny, jyseps2_2, ny - 1 - jyseps2_2, num_local_y_points)};
   }
 
   return {true, ""};
 }
+
+  CheckMeshResult findValidProcessorNum(int ny, int nx, int NPES, int NYPE, int NXPE) {
+    
+    int min_num_of_processors = 0;
+    int num_of_processors = NPES;
+    int min_nype = NYPE;
+    int min_nxpe = NXPE;
+
+    for (int possible_nxpe = min_nxpe; possible_nxpe <= num_of_processors; possible_nxpe++){
+      if (nx % possible_nxpe != 0)continue;
+
+      for (int possible_nype = min_nype; possible_nype <= num_of_processors - possible_nxpe; possible_nype++){
+        if (ny % possible_nype != 0)continue;
+
+        int min_num_of_processors = possible_nxpe * possible_nype;
+        return{true, fmt::format(
+          "\t The minimum number of processors for the given number of points is NPES={:d}, on x={:d} and on y={:d}. Try running with at least this number of processors.",
+          min_num_of_processors, possible_nxpe, possible_nype)};
+        //break;
+      }
+    }
+    if (min_num_of_processors == 0){
+      return{false, fmt::format(
+          "\t No valid processor decomposition found for the given number of points nx={:d}, ny={:d}. Try changing the number of points.", nx, ny)};
+    }
+  }
+
+  CheckMeshResult findValidYDecomposition(int ny,
+    int num_y_processors,
+    int num_y_guards,
+    int jyseps1_1_start,
+    int jyseps2_1_start,
+    int jyseps1_2_start,
+    int jyseps2_2_start,
+    int ny_inner_start, 
+    std::string topology) {
+
+  if (ny % num_y_processors != 0) {
+    return {false, fmt::format(
+                        "\t ny ({:d}) must be divisible by NYPE ({:d}). Try changing the number of points or processors in Y.",ny, num_y_processors)};
+  }
+
+  for (int jyseps1_1 = jyseps1_1_start; jyseps1_1 < ny; ++jyseps1_1) {
+
+    for (int jyseps2_1 = jyseps2_1_start;
+         jyseps2_1 < ny; ++jyseps2_1) {
+
+      for (int jyseps1_2 = jyseps1_2_start;
+           jyseps1_2 < ny; ++jyseps1_2) {
+
+        for (int ny_inner = ny_inner_start;
+             ny_inner < ny; ++ny_inner) {
+
+          for (int jyseps2_2 = jyseps2_2_start;
+               jyseps2_2 < ny; ++jyseps2_2) {
+
+            if (topology == "UDN" || topology == "CDN"){
+              if (not (jyseps1_1 < jyseps2_1 &&
+                 jyseps2_1 < ny_inner &&
+                 ny_inner < jyseps1_2 &&
+                 jyseps1_2 < jyseps2_2)){
+                continue;
+                }}
+            else if (topology == "SF"){
+              if (not (jyseps1_1 < jyseps2_1 &&
+                 jyseps2_1 < ny_inner &&
+                 jyseps1_2 < ny_inner &&
+                 ny_inner < jyseps2_2)){
+                continue;
+                }
+            }
+
+            auto result = bout::checkBoutMeshYDecomposition(num_y_processors, ny, num_y_guards, jyseps1_1, jyseps2_1,
+                                                  jyseps1_2, jyseps2_2, ny_inner, topology);
+
+            if (result.success) {
+              return {true, fmt::format(
+                      "\t A valid decomposition in Y close to the one given in the grid would be: "
+                      "jyseps1_1={:d}, jyseps2_1={:d}, jyseps1_2={:d}, jyseps2_2={:d}, ny_inner={:d}",
+                      jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner)};
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return {false, fmt::format(
+                      "\t No valid Y decomposition found for ny = {:d} and NYPE = {:d}. Try changing the number of points or processors in Y.",ny, num_y_processors)};
+}
+
 } // namespace bout
+
 
 void BoutMesh::chooseProcessorSplit(Options& options) {
   // Possible issues:
@@ -380,10 +472,16 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
     NXPE = NPES / NYPE;
   }
 
+  auto topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
+                                  ixseps1, ixseps2);
+
   auto result = bout::checkBoutMeshYDecomposition(NYPE, ny, MYG, jyseps1_1, jyseps2_1,
-                                                  jyseps1_2, jyseps2_2, ny_inner);
+                                                  jyseps1_2, jyseps2_2, ny_inner, topology);
 
   if (not result.success) {
+    auto valid_y_decompostion= bout::findValidYDecomposition(ny, NYPE, MYG, jyseps1_1, jyseps2_1,
+                                                             jyseps1_2, jyseps2_2, ny_inner, topology);
+    output_info.write(valid_y_decompostion.reason);
     throw BoutException(result.reason);
   }
 }
@@ -392,6 +490,9 @@ void BoutMesh::findProcessorSplit() {
   MX = nx - 2 * MXG;
 
   NXPE = -1; // Best option
+
+  auto topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
+                                  ixseps1, ixseps2);
 
   // Results in square domains
   const BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny));
@@ -408,7 +509,7 @@ void BoutMesh::findProcessorSplit() {
       const int nyp = NPES / i;
 
       auto result = bout::checkBoutMeshYDecomposition(nyp, ny, MYG, jyseps1_1, jyseps2_1,
-                                                      jyseps1_2, jyseps2_2, ny_inner);
+                                                      jyseps1_2, jyseps2_2, ny_inner, topology);
 
       if (not result.success) {
         output_info.write(result.reason);
@@ -463,6 +564,8 @@ void BoutMesh::setDerivedGridSizes() {
   MX = nx - 2 * MXG;
   MXSUB = MX / NXPE;
   if ((MX % NXPE) != 0) {
+    auto valid_process_num = bout::findValidProcessorNum(ny, nx, NPES, NXPE);
+    output_info.write(valid_process_num.reason);
     throw BoutException(_("Cannot split {:d} X points equally between {:d} processors\n"),
                         MX, NXPE);
   }
@@ -471,6 +574,8 @@ void BoutMesh::setDerivedGridSizes() {
   MY = ny;
   MYSUB = MY / NYPE;
   if ((MY % NYPE) != 0) {
+    auto valid_process_num = bout::findValidProcessorNum(ny, nx, NPES, NYPE);
+    output_info.write(valid_process_num.reason);
     throw BoutException(
         _("\tERROR: Cannot split {:d} Y points equally between {:d} processors\n"), MY,
         NYPE);

@@ -566,6 +566,95 @@ TEST_P(BadBoutMeshDecompositionTest, BadSingleCoreYDecomposition) {
   //Ask Peter about baddecomtest
   //EXPECT_THAT(result.reason, HasSubstr(params.expected_message));
 }
+
+
+  TEST(BoutMeshDecompositionTest, ValidYDecomposition) {
+  int ny = 16;
+  int num_y_processors = 4;
+  int num_y_guards = 1;
+
+  int jyseps1_1_start = 1;
+  int jyseps2_1_start = 3;
+  int jyseps1_2_start = 6;
+  int jyseps2_2_start = 12;
+  int ny_inner_start = 8;
+
+  std::string topology = "SF";
+
+  auto result = bout::findValidYDecomposition(ny, num_y_processors, num_y_guards,
+                                        jyseps1_1_start, jyseps2_1_start,
+                                        jyseps1_2_start, jyseps2_2_start,
+                                        ny_inner_start, topology);
+
+  EXPECT_TRUE(result.success);
+  // Optional: parse numbers from result.message or call check function
+  // to ensure returned decomposition is valid
+}
+
+TEST(BoutMeshDecompositionTest, InvalidYDecompositionBecuaseofNYPE) {
+  int ny = 8;
+  int num_y_processors = 3; // deliberately incompatible
+  int num_y_guards = 1;
+
+  int jyseps1_1_start = 0;
+  int jyseps2_1_start = 0;
+  int jyseps1_2_start = 0;
+  int jyseps2_2_start = 0;
+  int ny_inner_start = 0;
+
+  std::string topology = "SF";
+
+  auto result = bout::findValidYDecomposition(ny, num_y_processors, num_y_guards,
+                                        jyseps1_1_start, jyseps2_1_start,
+                                        jyseps1_2_start, jyseps2_2_start,
+                                        ny_inner_start, topology);
+
+  EXPECT_FALSE(result.success);
+}
+
+TEST(BoutMeshDecompositionTest, InvalidYDecompositionBecuaseofTopologyUDN) {
+  int ny = 18; // minimal meaningful number
+  int num_y_processors = 9;
+  int num_y_guards = 1;
+
+  int jyseps1_1_start = 1;
+  int jyseps2_1_start = 1;
+  int jyseps1_2_start = 17;
+  int jyseps2_2_start = 1;
+  int ny_inner_start = 1;
+
+  std::string topology = "UDN";
+
+  auto result = bout::findValidYDecomposition(ny, num_y_processors, num_y_guards,
+                                        jyseps1_1_start, jyseps2_1_start,
+                                        jyseps1_2_start, jyseps2_2_start,
+                                        ny_inner_start, topology);
+
+  // Since npes divides ny, a valid decomposition may exist
+  EXPECT_FALSE(result.success);
+}
+
+TEST(BoutMeshDecompositionTest, InvalidYDecompositionBecuaseofTopologySF) {
+  int ny = 18; // minimal meaningful number
+  int num_y_processors = 9;
+  int num_y_guards = 1;
+
+  int jyseps1_1_start = 1;
+  int jyseps2_1_start = 1;
+  int jyseps1_2_start = 1;
+  int jyseps2_2_start = 1;
+  int ny_inner_start = 17;
+
+  std::string topology = "SF";
+
+  auto result = bout::findValidYDecomposition(ny, num_y_processors, num_y_guards,
+                                        jyseps1_1_start, jyseps2_1_start,
+                                        jyseps1_2_start, jyseps2_2_start,
+                                        ny_inner_start, topology);
+
+  // Since npes divides ny, a valid decomposition may exist
+  EXPECT_FALSE(result.success);
+}
   //End of new bit
 
 //End of the test

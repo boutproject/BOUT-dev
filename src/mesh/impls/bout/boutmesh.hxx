@@ -398,6 +398,8 @@ protected:
   /// Adds 2D and 3D regions for boundaries
   void addBoundaryRegions();
 
+  //void findValidProcessorNum(int ny, int nx);
+
 private:
   std::vector<BoundaryRegion*> boundary; // Vector of boundary regions
   std::array<std::vector<std::shared_ptr<BoundaryRegionPar>>,
@@ -470,6 +472,7 @@ private:
 
   int unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
                   int ylt, BoutReal* buffer);
+
 };
 
 namespace {
@@ -494,7 +497,7 @@ CheckMeshResult checkBoutMeshYDecomposition(
     int jyseps1_2, int jyseps2_2,
     int ny_inner);
 
-// New topology-aware API
+// New topology-aware
 CheckMeshResult checkBoutMeshYDecomposition(
     int num_y_processors, int ny,
     int num_y_guards,
@@ -502,6 +505,13 @@ CheckMeshResult checkBoutMeshYDecomposition(
     int jyseps1_2, int jyseps2_2,
     int ny_inner,
     std::string topology);
+
+  CheckMeshResult findValidProcessorNum(int ny, int nx, int NPES, int NYPE = 1, int NXPE = 1);
+
+  CheckMeshResult findValidYDecomposition(int ny, int NPES, int NYPE,
+                                        int jyseps1_1, int jyseps2_1,
+                                        int jyseps1_2, int jyseps2_2,
+                                        int ny_inner, std::string topology);
 } // namespace bout
 
 #endif // BOUT_BOUTMESH_H
