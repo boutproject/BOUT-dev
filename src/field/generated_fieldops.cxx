@@ -2088,7 +2088,7 @@ Field3DParallel operator*(const Field3DParallel& lhs, const Field3D& rhs) {
 Field3DParallel& Field3DParallel::operator*=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
-  if (data.unique()) {
+  if (data.unique() or isRef) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     if (this->isFci()) {
@@ -2148,7 +2148,7 @@ Field3DParallel operator/(const Field3DParallel& lhs, const Field3D& rhs) {
 Field3DParallel& Field3DParallel::operator/=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
-  if (data.unique()) {
+  if (data.unique() or isRef) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     if (this->isFci()) {
@@ -2208,7 +2208,7 @@ Field3DParallel operator+(const Field3DParallel& lhs, const Field3D& rhs) {
 Field3DParallel& Field3DParallel::operator+=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
-  if (data.unique()) {
+  if (data.unique() or isRef) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     if (this->isFci()) {
@@ -2268,7 +2268,7 @@ Field3DParallel operator-(const Field3DParallel& lhs, const Field3D& rhs) {
 Field3DParallel& Field3DParallel::operator-=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
-  if (data.unique()) {
+  if (data.unique() or isRef) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     if (this->isFci()) {
@@ -2328,7 +2328,7 @@ Field3DParallel operator*(const Field3DParallel& lhs, const Field3DParallel& rhs
 Field3DParallel& Field3DParallel::operator*=(const Field3DParallel& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
-  if (data.unique()) {
+  if (data.unique() or isRef) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     if (this->isFci()) {
@@ -2388,7 +2388,7 @@ Field3DParallel operator/(const Field3DParallel& lhs, const Field3DParallel& rhs
 Field3DParallel& Field3DParallel::operator/=(const Field3DParallel& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
-  if (data.unique()) {
+  if (data.unique() or isRef) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     if (this->isFci()) {
@@ -2448,7 +2448,7 @@ Field3DParallel operator+(const Field3DParallel& lhs, const Field3DParallel& rhs
 Field3DParallel& Field3DParallel::operator+=(const Field3DParallel& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
-  if (data.unique()) {
+  if (data.unique() or isRef) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     if (this->isFci()) {
@@ -2508,7 +2508,7 @@ Field3DParallel operator-(const Field3DParallel& lhs, const Field3DParallel& rhs
 Field3DParallel& Field3DParallel::operator-=(const Field3DParallel& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
-  if (data.unique()) {
+  if (data.unique() or isRef) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     if (this->isFci()) {
@@ -2570,7 +2570,7 @@ Field3DParallel operator*(const Field3DParallel& lhs, const BoutReal rhs) {
 Field3DParallel& Field3DParallel::operator*=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
-  if (data.unique()) {
+  if (data.unique() or isRef) {
 
     if (this->isFci()) {
       for (size_t i{0}; i < yup_fields.size(); ++i) {
@@ -2633,7 +2633,7 @@ Field3DParallel operator/(const Field3DParallel& lhs, const BoutReal rhs) {
 Field3DParallel& Field3DParallel::operator/=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
-  if (data.unique()) {
+  if (data.unique() or isRef) {
 
     if (this->isFci()) {
       for (size_t i{0}; i < yup_fields.size(); ++i) {
@@ -2695,7 +2695,7 @@ Field3DParallel operator+(const Field3DParallel& lhs, const BoutReal rhs) {
 Field3DParallel& Field3DParallel::operator+=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
-  if (data.unique()) {
+  if (data.unique() or isRef) {
 
     if (this->isFci()) {
       for (size_t i{0}; i < yup_fields.size(); ++i) {
@@ -2757,7 +2757,7 @@ Field3DParallel operator-(const Field3DParallel& lhs, const BoutReal rhs) {
 Field3DParallel& Field3DParallel::operator-=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
-  if (data.unique()) {
+  if (data.unique() or isRef) {
 
     if (this->isFci()) {
       for (size_t i{0}; i < yup_fields.size(); ++i) {
