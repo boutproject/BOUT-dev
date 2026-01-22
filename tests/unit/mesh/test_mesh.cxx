@@ -290,7 +290,7 @@ TEST_F(MeshTest, MsgLen) {
 
   std::vector<FieldData*> var_list{&f3D_1, &f2D_1, &f3D_2, &f2D_2};
 
-  const int len = localmesh.msg_len(var_list, 0, nx, 0, ny);
+  const int len = localmesh.msg_len(var_list, 0, nx, 0, ny, 0, nz);
 
-  EXPECT_EQ(len, 2 * (nx * ny * nz) + 2 * (nx * ny));
+  EXPECT_EQ(len, (2 * (nx * ny * nz)) + (2 * (nx * ny)));
 }

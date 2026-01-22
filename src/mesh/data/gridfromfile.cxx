@@ -18,15 +18,10 @@
 
 GridFile::GridFile(std::string gridfilename)
     : GridDataSource(true), data(bout::OptionsIO::create(gridfilename)->read()),
-      filename(std::move(gridfilename)) {
-
-  // Get number of y-boundary guard cells saved in the grid file
-  grid_yguards = data["y_boundary_guards"].withDefault<int>(0);
-  // Get number ny_inner from the grid file.
-  // Is already read in BoutMesh, but this way we don't have to the Mesh API to
-  // get it from there.
-  ny_inner = data["ny_inner"].withDefault<int>(0);
-}
+      filename(std::move(gridfilename)),
+      grid_yguards(data["y_boundary_guards"].withDefault<int>(0)),
+      ny_inner(data["ny_inner"].withDefault<int>(0)),
+      grid_zguards(data["MZG"].withDefault<int>(0)) {}
 
 /*!
  * Tests whether a variable exists in the file
@@ -197,15 +192,18 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
   ///Ghost region widths.
   const int mxg = (m->LocalNx - (m->xend - m->xstart + 1)) / 2;
   const int myg = (m->LocalNy - (m->yend - m->ystart + 1)) / 2;
+  const int mzg = (m->LocalNz - (m->zend - m->zstart + 1)) / 2;
   ///Check that ghost region widths are in fact integers
   ASSERT1((m->LocalNx - (m->xend - m->xstart + 1)) % 2 == 0);
   ASSERT1((m->LocalNy - (m->yend - m->ystart + 1)) % 2 == 0);
+  ASSERT1((m->LocalNz - (m->zend - m->zstart + 1)) % 2 == 0);
 
   // Index offsets into source array
-  int xs = m->OffsetX;
+  const int xs = m->OffsetX;
   // Need to increase offset by 2*(# boundary guards) for each target position
   // we pass
   int ys = m->OffsetY;
+  const int zs = m->OffsetZ;
 
   // Total number of y-boundary cells in grid file, used for check later.
   // Value depends on if we are double-null or not.
@@ -227,10 +225,12 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
   // Index offsets into destination
   int xd = -1;
   int yd = -1;
+  int zd = -1;
 
   // Number of points to read.
   int nx_to_read = -1;
   int ny_to_read = -1;
+  int nz_to_read = -1;
 
   ///Check if field dimensions are correct. x-direction
   int grid_xguards = (size[0] - (m->GlobalNx - 2 * mxg)) / 2;
@@ -273,8 +273,30 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
     }
   }
 
+  if constexpr (not bout::utils::is_Field2D_v<T>) {
+    if (grid_zguards > 0) {
+      // including ghostpoints
+      ASSERT1(size[1] == m->GlobalNz);
+      nz_to_read = m->LocalNz;
+      zd = grid_zguards - mzg;
+      ASSERT1(zd >= 0);
+    } else if (grid_zguards == 0) {
+      // excluding ghostpoints
+      ASSERT1(size[2] == m->GlobalNz - (2 * mzg));
+      nz_to_read = m->LocalNz - (2 * mzg);
+      zd = mzg;
+    } else {
+      throw BoutException(
+          "Could not read '{:s}' from file: number of z-boundary guard cells "
+          "in the grid file grid_zguards={:d} neither matches grid_zguards >= mzg={:d} "
+          "nor grid_zguards = 0",
+          name, grid_zguards, mzg);
+    }
+  }
+
   // Now read data from file
-  readField(m, name, ys, yd, ny_to_read, xs, xd, nx_to_read, size, var);
+  readField(m, name, ys, yd, ny_to_read, xs, xd, nx_to_read, zs, zd, nz_to_read, size,
+            var);
 
   if (location != CELL_DEFAULT and var.getLocation() != location) {
     throw BoutException("Incorrect location of field {:s} in grid file, expected {:s}, "
@@ -348,6 +370,8 @@ void readFieldAttributes(Options& field_options, Field& f) {
 
 void GridFile::readField(Mesh* UNUSED(m), const std::string& name, int ys, int yd,
                          int ny_to_read, int xs, int xd, int nx_to_read,
+                         [[maybe_unused]] int zs, [[maybe_unused]] int zd,
+                         [[maybe_unused]] int nz_to_read,
                          const std::vector<int>& UNUSED(size), Field2D& var) {
 
   readFieldAttributes(data[name], var);
@@ -364,8 +388,8 @@ void GridFile::readField(Mesh* UNUSED(m), const std::string& name, int ys, int y
 }
 
 void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd, int ny_to_read,
-                         int xs, int xd, int nx_to_read, const std::vector<int>& size,
-                         Field3D& var) {
+                         int xs, int xd, int nx_to_read, int zs, int zd, int nz_to_read,
+                         const std::vector<int>& size, Field3D& var) {
 
   readFieldAttributes(data[name], var);
 
@@ -379,8 +403,8 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd, int n
     for (int x = xs; x < xs + nx_to_read; ++x) {
       for (int y = ys; y < ys + ny_to_read; ++y) {
         BoutReal const value = full_var(x, y);
-        for (int z = 0; z < var.getNz(); z++) {
-          var(x - xs + xd, y - ys + yd, z) = value;
+        for (int z = zs; z < zs + nz_to_read; z++) {
+          var(x - xs + xd, y - ys + yd, z - zs + zd) = value;
         }
       }
     }
@@ -390,19 +414,13 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd, int n
   // Check whether "nz" is defined
   if (hasVar("nz")) {
     // Check the array is the right size
-    if (size[2] != m->LocalNz) {
+    if (size[2] != nz_to_read) {
       throw BoutException("3D variable '{:s}' has incorrect size {:d} (expecting {:d})",
                           name, size[2], m->LocalNz);
     }
 
-    if (!readgrid_3dvar_real(name,
-                             ys,         // Start reading at global y-index
-                             yd,         // Insert data starting from y=yd
-                             ny_to_read, // Length of data in Y
-                             xs,         // Start reading at global x-index
-                             xd,         // Insert data starting from x=xd
-                             nx_to_read, // Length of data in X
-                             var)) {
+    if (!readgrid_3dvar_real(name, ys, yd, ny_to_read, xs, xd, nx_to_read, zs, zd,
+                             nz_to_read, var)) {
       throw BoutException("\tWARNING: Could not read '{:s}' from grid. Setting to zero\n",
                           name);
     }
@@ -423,8 +441,9 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd, int n
 }
 
 void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int UNUSED(yd),
-                         int UNUSED(ny_to_read), int xs, int xd, int nx_to_read,
-                         const std::vector<int>& size, FieldPerp& var) {
+                         int UNUSED(ny_to_read), int xs, int xd, int nx_to_read, int zs,
+                         int zd, int nz_to_read, const std::vector<int>& size,
+                         FieldPerp& var) {
 
   readFieldAttributes(data[name], var);
 
@@ -444,11 +463,7 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
             size[2], m->LocalNz);
       }
 
-      if (!readgrid_perpvar_real(name,
-                                 xs,         // Start reading at global x-index
-                                 xd,         // Insert data starting from x=xd
-                                 nx_to_read, // Length of data in X
-                                 var)) {
+      if (!readgrid_perpvar_real(name, xs, xd, nx_to_read, zs, zd, nz_to_read, var)) {
         throw BoutException(
             "\tWARNING: Could not read '{:s}' from grid. Setting to zero\n", name);
       }
@@ -624,8 +639,8 @@ bool GridFile::readgrid_3dvar_fft(Mesh* m, const std::string& name, int yread, i
  * any processing
  */
 bool GridFile::readgrid_3dvar_real(const std::string& name, int yread, int ydest,
-                                   int ysize, int xread, int xdest, int xsize,
-                                   Field3D& var) {
+                                   int ysize, int xread, int xdest, int xsize, int zread,
+                                   int zdest, int zsize, Field3D& var) {
   /// Check the arguments make sense
   if ((yread < 0) || (ydest < 0) || (ysize < 0) || (xread < 0) || (xdest < 0)
       || (xsize < 0)) {
@@ -644,11 +659,11 @@ bool GridFile::readgrid_3dvar_real(const std::string& name, int yread, int ydest
 
   if (not option.is_loaded()) {
     const auto& chunk = option.doLazyLoad(xread, xread + xsize - 1, yread,
-                                          yread + ysize - 1, 0, size[2] - 1);
+                                          yread + ysize - 1, zread, zread + zsize - 1);
     for (int jx = 0; jx < xsize; jx++) {
       for (int jy = 0; jy < ysize; jy++) {
-        for (int jz = 0; jz < size[2]; ++jz) {
-          var(jx + xdest, jy + ydest, jz) = chunk(jx, jy, jz);
+        for (int jz = 0; jz < zsize; ++jz) {
+          var(jx + xdest, jy + ydest, jz + zdest) = chunk(jx, jy, jz);
         }
       }
     }
@@ -660,8 +675,9 @@ bool GridFile::readgrid_3dvar_real(const std::string& name, int yread, int ydest
       // jx is global x-index to start from
       for (int jy = yread; jy < yread + ysize; jy++) {
         // jy is global y-index to start from
-        for (int jz = 0; jz < size[2]; ++jz) {
-          var(jx - xread + xdest, jy - yread + ydest, jz) = full_var(jx, jy, jz);
+        for (int jz = zread; jz < zread + zsize; ++jz) {
+          var(jx - xread + xdest, jy - yread + ydest, jz - zread + zdest) =
+              full_var(jx, jy, jz);
         }
       }
     }
@@ -764,7 +780,8 @@ bool GridFile::readgrid_perpvar_fft(Mesh* m, const std::string& name, int xread,
  * any processing
  */
 bool GridFile::readgrid_perpvar_real(const std::string& name, int xread, int xdest,
-                                     int xsize, FieldPerp& var) {
+                                     int xsize, int zread, int zdest, int zsize,
+                                     FieldPerp& var) {
   /// Check the arguments make sense
   if ((xread < 0) || (xdest < 0) || (xsize < 0)) {
     return false;
@@ -783,8 +800,8 @@ bool GridFile::readgrid_perpvar_real(const std::string& name, int xread, int xde
 
   for (int jx = xread; jx < xread + xsize; jx++) {
     // jx is global x-index to start from
-    for (int jz = 0; jz < size[1]; ++jz) {
-      var(jx - xread + xdest, jz) = full_var(jx, jz);
+    for (int jz = zread; jz < zread + zsize; ++jz) {
+      var(jx - xread + xdest, jz - zread + zdest) = full_var(jx, jz);
     }
   }
 

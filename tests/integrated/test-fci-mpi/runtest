@@ -6,12 +6,11 @@
 # Cores: 8
 # requires: metric_3d
 
-from boututils.run_wrapper import build_and_log, launch_safe, shell_safe
+from boututils.run_wrapper import build_and_log, launch_safe
 from boutdata.collect import collect
-import boutconfig as conf
 import itertools
 
-import numpy as np
+import numpy.testing as npt
 
 # Resolution in x and y
 nlist = [1, 2, 4]
@@ -54,4 +53,4 @@ for nslice in nslices:
                         ref[name] = collect(name, **collect_kw)
         else:
             for name, val in ref.items():
-                assert np.allclose(val, collect(name, **collect_kw))
+                npt.assert_allclose(collect(name, **collect_kw), val)

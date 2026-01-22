@@ -490,9 +490,7 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
       std::back_inserter(interpPattern),
       [localmesh](ParallelTransform::PositionsAndWeights position) -> OffsetInd3D {
         return {localmesh->xstart - position.i, localmesh->ystart - position.j,
-                ((localmesh->LocalNz - position.k) < position.k)
-                    ? position.k - localmesh->LocalNz
-                    : position.k};
+                localmesh->zstart - position.k};
       });
 
   const OffsetInd3D zero;

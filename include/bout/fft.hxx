@@ -124,7 +124,7 @@ Array<BoutReal> irfft(const Array<dcomplex>& in, int length);
 void assertZSerial(const Mesh& mesh, std::string_view name);
 #else
 inline void assertZSerial([[maybe_unused]] const Mesh& mesh,
-                         [[maybe_unused]] std::string_view name) {}
+                          [[maybe_unused]] std::string_view name) {}
 #endif
 } // namespace fft
 } // namespace bout

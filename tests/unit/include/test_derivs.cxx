@@ -56,15 +56,15 @@ public:
     using DirectionFunction = int (Index::*)() const;
     DirectionFunction dir;
 
-    // Number of guard cells in (x, y). The "other" direction will
-    // have none
+    // Number of guard cells. The "other" direction will have none
     int x_guards{0};
     int y_guards{0};
+    int z_guards{0};
 
     // Grid sizes
     int nx{3};
     int ny{3};
-    int nz{2};
+    int nz{3};
 
     // This must be a balance between getting any kind of accuracy and
     // each derivative running in ~1ms or less
@@ -88,6 +88,7 @@ public:
     case DIRECTION::Z:
       nz = grid_size;
       dir = &Index::z;
+      z_guards = 2;
       region = "RGN_ALL";
       break;
     default:
@@ -101,6 +102,8 @@ public:
     mesh->xend = nx - (x_guards + 1);
     mesh->ystart = y_guards;
     mesh->yend = ny - (y_guards + 1);
+    mesh->zstart = z_guards;
+    mesh->zend = nz - (z_guards + 1);
 
     mesh->createDefaultRegions();
 

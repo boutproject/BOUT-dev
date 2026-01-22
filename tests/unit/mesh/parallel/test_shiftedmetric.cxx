@@ -25,6 +25,11 @@ public:
     mesh->ystart = 2;
     mesh->yend = mesh->LocalNy - 3;
 
+    // Don't use Z guards to preserve old behaviour
+    // TODO(peter): test with Z guards
+    mesh->zstart = 0;
+    mesh->zend = nz - 1;
+
     mesh->createDefaultRegions();
 
     zShift = Field2D{mesh};

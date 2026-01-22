@@ -31,7 +31,7 @@ class Options;
 /// - This is a mesh for a single process, so the global and local
 /// indices are the same.
 ///
-/// - There is a single guard cell at each of the start/end x/y grids.
+/// - There is a single guard cell at each of the start/end x/y/z grids.
 ///
 /// - Only the **grid** information is assumed to be used -- anything
 ///   else will likely **not** work!
@@ -53,21 +53,21 @@ public:
     // These bits only for ADIOS2, also boring due to single process
     MapCountX = nx - 2;
     MapCountY = ny - 2;
-    MapCountZ = nz;
+    MapCountZ = nz - 2;
     MapGlobalX = nx;
     MapGlobalY = ny;
     MapGlobalZ = nz;
     MapLocalX = nx - 2;
     MapLocalY = ny - 2;
-    MapLocalZ = nz;
+    MapLocalZ = nz - 2;
 
     // Small "inner" region
     xstart = 1;
     xend = nx - 2;
     ystart = 1;
     yend = ny - 2;
-    zstart = 0; // no guards
-    zend = nz - 1;
+    zstart = 1;
+    zend = nz - 2;
 
     StaggerGrids = false;
 
@@ -97,13 +97,35 @@ public:
     addBoundary(new BoundaryRegionYDown("lower_target", xstart, xend, this));
   }
 
-  comm_handle send(FieldGroup& UNUSED(g)) override { return nullptr; }
+  comm_handle send(FieldGroup& g) override { return sendZ(g); }
   comm_handle sendX(FieldGroup& UNUSED(g), comm_handle UNUSED(handle) = nullptr,
                     bool UNUSED(disable_corners) = false) override {
     return nullptr;
   }
   comm_handle sendY(FieldGroup& UNUSED(g),
                     comm_handle UNUSED(handle) = nullptr) override {
+    return nullptr;
+  }
+  comm_handle sendZ(FieldGroup& g, comm_handle UNUSED(handle) = nullptr) override {
+    // We need to copy the Z guards
+    for (auto* f : g) {
+      if (!f->is3D()) {
+        continue;
+      }
+      auto& f3D = *dynamic_cast<Field3D*>(f);
+      for (int x = 0; x < LocalNx; ++x) {
+        for (int y = 0; y < LocalNy; ++y) {
+          for (int z = 0; z < zstart; ++z) {
+            // zend - MZG + 1 + z
+            f3D(x, y, z) = f3D(x, y, (zend - zstart + 1) + z);
+          }
+          for (int z = zend + 1; z < LocalNz; ++z) {
+            f3D(x, y, z) = f3D(x, y, z - zend);
+          }
+        }
+      }
+    }
+
     return nullptr;
   }
   int wait(comm_handle UNUSED(handle)) override { return 0; }
@@ -195,37 +217,37 @@ public:
   void createBoundaryRegions() {
     addRegion2D("RGN_LOWER_Y",
                 Region<Ind2D>(0, LocalNx - 1, 0, ystart - 1, 0, 0, LocalNy, 1));
-    addRegion3D("RGN_LOWER_Y", Region<Ind3D>(0, LocalNx - 1, 0, ystart - 1, 0,
-                                             LocalNz - 1, LocalNy, LocalNz));
+    addRegion3D("RGN_LOWER_Y", Region<Ind3D>(0, LocalNx - 1, 0, ystart - 1, zstart, zend,
+                                             LocalNy, LocalNz));
     addRegion2D("RGN_LOWER_Y_THIN", getRegion2D("RGN_LOWER_Y"));
     addRegion3D("RGN_LOWER_Y_THIN", getRegion3D("RGN_LOWER_Y"));
 
     addRegion2D("RGN_UPPER_Y",
                 Region<Ind2D>(0, LocalNx - 1, yend + 1, LocalNy - 1, 0, 0, LocalNy, 1));
-    addRegion3D("RGN_UPPER_Y", Region<Ind3D>(0, LocalNx - 1, yend + 1, LocalNy - 1, 0,
-                                             LocalNz - 1, LocalNy, LocalNz));
+    addRegion3D("RGN_UPPER_Y", Region<Ind3D>(0, LocalNx - 1, yend + 1, LocalNy - 1,
+                                             zstart, zend, LocalNy, LocalNz));
     addRegion2D("RGN_UPPER_Y_THIN", getRegion2D("RGN_UPPER_Y"));
     addRegion3D("RGN_UPPER_Y_THIN", getRegion3D("RGN_UPPER_Y"));
 
     addRegion2D("RGN_INNER_X",
                 Region<Ind2D>(0, xstart - 1, ystart, yend, 0, 0, LocalNy, 1));
-    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, 0, LocalNz - 1,
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, zstart, zend,
                                              LocalNy, LocalNz));
     addRegionPerp("RGN_INNER_X",
-                  Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz));
+                  Region<IndPerp>(0, xstart - 1, 0, 0, zstart, zend, 1, LocalNz));
     addRegionPerp("RGN_INNER_X_THIN",
-                  Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz));
+                  Region<IndPerp>(0, xstart - 1, 0, 0, zstart, zend, 1, LocalNz));
     addRegion2D("RGN_INNER_X_THIN", getRegion2D("RGN_INNER_X"));
     addRegion3D("RGN_INNER_X_THIN", getRegion3D("RGN_INNER_X"));
 
     addRegion2D("RGN_OUTER_X",
                 Region<Ind2D>(xend + 1, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1));
-    addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, 0,
-                                             LocalNz - 1, LocalNy, LocalNz));
-    addRegionPerp("RGN_OUTER_X", Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, 0,
-                                                 LocalNz - 1, 1, LocalNz));
-    addRegionPerp("RGN_OUTER_X_THIN", Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, 0,
-                                                      LocalNz - 1, 1, LocalNz));
+    addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, zstart,
+                                             zend, LocalNy, LocalNz));
+    addRegionPerp("RGN_OUTER_X",
+                  Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, zstart, zend, 1, LocalNz));
+    addRegionPerp("RGN_OUTER_X_THIN",
+                  Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, zstart, zend, 1, LocalNz));
     addRegion2D("RGN_OUTER_X_THIN", getRegion2D("RGN_OUTER_X"));
     addRegion3D("RGN_OUTER_X_THIN", getRegion3D("RGN_OUTER_X"));
 

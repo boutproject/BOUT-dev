@@ -336,6 +336,12 @@ void Mesh::communicate(FieldGroup& g) {
 
     // Wait for data from other processors
     wait(h);
+
+    // Send data in z-direction
+    h = sendZ(g);
+
+    // Wait for data from other processors
+    wait(h);
   } else {
     // Send data
     comm_handle h = send(g);
@@ -375,13 +381,13 @@ void Mesh::communicate(FieldPerp& f) {
 }
 
 int Mesh::msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                  int ylt) {
+                  int ylt, int zge, int zlt) {
   int len = 0;
 
   /// Loop over variables
   for (const auto& var : var_list) {
     if (var->is3D()) {
-      len += (xlt - xge) * (ylt - yge) * LocalNz * var->elementSize();
+      len += (xlt - xge) * (ylt - yge) * (zlt - zge) * var->elementSize();
     } else {
       len += (xlt - xge) * (ylt - yge) * var->elementSize();
     }
