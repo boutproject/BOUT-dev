@@ -51,6 +51,8 @@ public:
   /// Send only in the y-direction
   comm_handle sendY(FieldGroup& g, comm_handle handle = nullptr) override;
 
+  comm_handle sendZ(FieldGroup& g, comm_handle handle = nullptr) override;
+
   /// Wait for a send operation to complete
   /// @param[in] handle  The handle returned by send()
   int wait(comm_handle handle) override;
@@ -218,10 +220,10 @@ protected:
   /// Another constructor useful for testing, and used in
   /// `getPossibleBoundaries`. \p create_regions controls whether or
   /// not the various `Region`s are created on the new mesh
-  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
-           int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y, bool periodic_X_,
-           int ixseps1_, int ixseps2_, int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
-           int jyseps2_2_, int ny_inner_, bool create_regions = true);
+  BoutMesh(ProcSizes input_n, ProcSizes guards, ProcSizes num_procs, ProcSizes proc_index,
+           bool symmetric_X, bool symmetric_Y, bool periodic_X_, int ixseps1_,
+           int ixseps2_, int jyseps1_1_, int jyseps2_1_, int jyseps1_2_, int jyseps2_2_,
+           int ny_inner_, bool create_regions = true);
 
   /// Very basic initialisation, only suitable for testing
   BoutMesh(ProcSizes grid, ProcSizes guards, int input_npes)
@@ -311,8 +313,9 @@ private:
 
   int MYSUB, MXSUB, MZSUB; ///< Size of the grid on this processor
 
-  int NPES; ///< Number of processors
-  int MYPE; ///< Rank of this processor
+  int total_processors; ///< Total number of processors
+  int NPES;             ///< Number of processors in X-Y plane
+  int MYPE;             ///< Rank of this processor
 
   int PE_XIND; ///< X index of this processor
   int NXPE;    ///< Number of processors in the X direction
@@ -386,6 +389,8 @@ private:
   int DDATA_XSPLIT = 0;   ///< X index of branch cut on -y side
   int IDATA_DEST = -1;    ///< Processor in -x
   int ODATA_DEST = -1;    ///< Processor in +x
+  int z_minus_dest = -1;  ///< Processor in -z
+  int z_plus_dest = -1;   ///< Processor in +z
 
   // Settings
   bool TwistShift{false}; ///< Use a twist-shift condition in core?
@@ -400,7 +405,7 @@ private:
 
   int MXG = 2; ///< Number of X guard cells
   int MYG = 2; ///< Number of Y guard cells
-  int MZG = 0; ///< Number of Z guard cells
+  int MZG = 2; ///< Number of Z guard cells
 
   // Grid file provenance tracking info
   std::string grid_id;
@@ -450,18 +455,22 @@ private:
   /// Communication handle
   /// Used to keep track of communications between send and receive
   struct CommHandle {
+    static constexpr int num_requests = 8;
     /// Array of receive requests. One for each possible neighbour; one each way in X, two
-    /// each way in Y
-    std::array<MPI_Request, 6> request;
+    /// each way in Y, one each way in Z
+    std::array<MPI_Request, num_requests> request;
     /// Array of send requests (for non-blocking send). One for each possible neighbour;
-    /// one each way in X, two each way in Y
-    std::array<MPI_Request, 6> sendreq;
+    /// one each way in X, two each way in Y, one each way in Z
+    std::array<MPI_Request, num_requests> sendreq;
     /// Length of the buffers used to send/receive (in BoutReals)
-    int xbufflen, ybufflen;
+    int xbufflen, ybufflen, zbufflen;
     /// Sending buffers
     Array<BoutReal> umsg_sendbuff, dmsg_sendbuff, imsg_sendbuff, omsg_sendbuff;
     /// Receiving buffers
     Array<BoutReal> umsg_recvbuff, dmsg_recvbuff, imsg_recvbuff, omsg_recvbuff;
+    /// Z communication buffers
+    Array<BoutReal> zplus_sendbuff, zminus_sendbuff;
+    Array<BoutReal> zplus_recvbuff, zminus_recvbuff;
     /// Is the communication still going?
     bool in_progress;
     /// Are corner cells included in x-communication?
@@ -472,7 +481,7 @@ private:
     FieldGroup var_list;
   };
   void free_handle(CommHandle* h);
-  CommHandle* get_handle(int xlen, int ylen);
+  CommHandle* get_handle(int xlen, int ylen, int zlen);
   void clear_handles();
   std::list<CommHandle*> comm_list; // List of allocated communication handles
 
@@ -501,13 +510,16 @@ private:
   /// Create the MPI requests to receive data in the y-direction. Non-blocking call.
   void post_receiveY(CommHandle& ch);
 
+  /// Create the MPI requests to receive data in the z-direction. Non-blocking call.
+  void post_receiveZ(CommHandle& ch);
+
   /// Take data from objects and put into a buffer
   int pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                int ylt, BoutReal* buffer);
+                int ylt, int zge, int zlt, BoutReal* buffer);
   /// Copy data from a buffer back into the fields
 
   int unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                  int ylt, BoutReal* buffer);
+                  int ylt, int zge, int zlt, BoutReal* buffer);
 };
 
 namespace {

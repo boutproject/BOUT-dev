@@ -20,7 +20,7 @@
 ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
                              BoutReal zlength_in, Options* opt)
     : ParallelTransform(m, opt), location(location_in), zShift(std::move(zShift_)),
-      zlength(zlength_in) {
+      zlength(zlength_in), z_points(m.zend - m.zstart + 1) {
   ASSERT1(zShift.getLocation() == location);
   // check the coordinate system used for the grid data source
   ShiftedMetric::checkInputGrid();
@@ -61,7 +61,7 @@ void ShiftedMetric::cachePhases() {
   // As we're attached to a mesh we can expect the z direction to
   // not change once we've been created so precalculate the complex
   // phases used in transformations
-  nmodes = mesh.LocalNz / 2 + 1;
+  nmodes = (z_points / 2) + 1;
 
   // Allocate storage for our 3d phase information.
   fromAlignedPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
@@ -159,16 +159,15 @@ Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
   ASSERT1(f.getMesh() == &mesh);
   ASSERT1(f.getLocation() == location);
 
-  if (mesh.LocalNz == 1) {
+  if (mesh.zend == mesh.zstart) {
     // Shifting does not change the array values
-    Field3D result = copy(f).setDirectionY(y_direction_out);
-    return result;
+    return copy(f).setDirectionY(y_direction_out);
   }
 
   Field3D result{emptyFrom(f).setDirectionY(y_direction_out)};
 
-  BOUT_FOR(i, mesh.getRegion2D(toString(region))) {
-    shiftZ(&f(i, 0), &phs(i.x(), i.y(), 0), &result(i, 0));
+  BOUT_FOR(i, mesh.getRegion2D(region)) {
+    shiftZ(&f(i, mesh.zstart), &phs(i.x(), i.y(), 0), &result(i, mesh.zstart));
   }
 
   return result;
@@ -180,10 +179,9 @@ FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
   ASSERT1(f.getMesh() == &mesh);
   ASSERT1(f.getLocation() == location);
 
-  if (mesh.LocalNz == 1) {
+  if (mesh.zend == mesh.zstart) {
     // Shifting does not change the array values
-    FieldPerp result = copy(f).setDirectionY(y_direction_out);
-    return result;
+    return copy(f).setDirectionY(y_direction_out);
   }
 
   FieldPerp result{emptyFrom(f).setDirectionY(y_direction_out)};
@@ -191,7 +189,7 @@ FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
   int y = f.getIndex();
   // Note that this loop is essentially hardcoded to be RGN_NOX
   for (int i = mesh.xstart; i <= mesh.xend; ++i) {
-    shiftZ(&f(i, 0), &phs(i, y, 0), &result(i, 0));
+    shiftZ(&f(i, mesh.zstart), &phs(i, y, 0), &result(i, mesh.zstart));
   }
 
   return result;
@@ -209,7 +207,7 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* ou
 #endif
 
   // Take forward FFT
-  rfft(in, mesh.LocalNz, &cmplx[0]);
+  rfft(in, z_points, &cmplx[0]);
 
   // Following is an algorithm approach to write a = a*b where a and b are
   // vectors of dcomplex.
@@ -220,7 +218,7 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* ou
     cmplx[jz] *= phs[jz];
   }
 
-  irfft(&cmplx[0], mesh.LocalNz, out); // Reverse FFT
+  irfft(&cmplx[0], z_points, out); // Reverse FFT
 }
 
 void ShiftedMetric::calcParallelSlices(Field3D& f) {
@@ -239,8 +237,8 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
       const int ix = i.x();
       const int iy = i.y();
       const int iy_offset = iy + phase.y_offset;
-      shiftZ(&(f(ix, iy_offset, 0)), &(phase.phase_shift(ix, iy, 0)),
-             &(f_slice(ix, iy_offset, 0)));
+      shiftZ(&(f(ix, iy_offset, mesh.zstart)), &(phase.phase_shift(ix, iy, 0)),
+             &(f_slice(ix, iy_offset, mesh.zstart)));
     }
   }
 }
@@ -252,7 +250,7 @@ ShiftedMetric::shiftZ(const Field3D& f,
   ASSERT1(f.getLocation() == location);
   ASSERT1(f.getDirectionY() == YDirectionType::Standard);
 
-  const int nmodes = mesh.LocalNz / 2 + 1;
+  const int nmodes = (z_points / 2) + 1;
 
   // FFT in Z of input field at each (x, y) point
   Matrix<Array<dcomplex>> f_fft(mesh.LocalNx, mesh.LocalNy);
@@ -262,7 +260,7 @@ ShiftedMetric::shiftZ(const Field3D& f,
     int ix = i.x();
     int iy = i.y();
     f_fft(ix, iy).ensureUnique();
-    rfft(&f(i, 0), mesh.LocalNz, f_fft(ix, iy).begin());
+    rfft(&(f(i, mesh.zstart)), z_points, f_fft(ix, iy).begin());
   }
 
   std::vector<Field3D> results{};
@@ -284,7 +282,8 @@ ShiftedMetric::shiftZ(const Field3D& f,
         shifted_temp[jz] *= phase.phase_shift(ix, iy, jz);
       }
 
-      irfft(shifted_temp.begin(), mesh.LocalNz, &current_result(i.yp(phase.y_offset), 0));
+      irfft(shifted_temp.begin(), z_points,
+            &current_result(i.yp(phase.y_offset), mesh.zstart));
     }
   }
 

@@ -170,8 +170,8 @@ struct SpecificInd {
   int ny = -1, nz = -1; ///< Sizes of y and z dimensions
 
   SpecificInd() = default;
-  SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz){};
-  explicit SpecificInd(int i) : ind(i){};
+  SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz) {};
+  explicit SpecificInd(int i) : ind(i) {};
 
   /// Allow explicit conversion to an int
   explicit operator int() const { return ind; }
@@ -290,26 +290,15 @@ struct SpecificInd {
   }
   /// The index one point -1 in y
   inline SpecificInd ym(int dy = 1) const { return yp(-dy); }
-  /// The index one point +1 in z. Wraps around zend to zstart
-  /// An alternative, non-branching calculation is :
-  /// ind + dz - nz * ((ind + dz) / nz  - ind / nz)
-  /// but this appears no faster (and perhaps slower).
+  /// The index one point +1 in z
   inline SpecificInd zp(int dz = 1) const {
-    ASSERT3(dz >= 0);
-    dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
-    return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz};
+    if constexpr (N == IND_TYPE::IND_2D) {
+      return *this;
+    }
+    return {ind + dz, ny, nz};
   }
-  /// The index one point -1 in z. Wraps around zstart to zend
-  /// An alternative, non-branching calculation is :
-  /// ind - dz + nz * ( (nz + ind) / nz - (nz + ind - dz) / nz)
-  /// but this appears no faster (and perhaps slower).
-  inline SpecificInd zm(int dz = 1) const {
-    dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
-    ASSERT3(dz >= 0);
-    return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
-  }
-  /// Automatically select zm or zp depending on sign
-  inline SpecificInd zpm(int dz) const { return dz > 0 ? zp(dz) : zm(-dz); }
+  /// The index one point -1 in z
+  inline SpecificInd zm(int dz = 1) const { return zp(-dz); }
 
   // and for 2 cells
   inline SpecificInd xpp() const { return xp(2); }
@@ -320,9 +309,7 @@ struct SpecificInd {
   inline SpecificInd zmm() const { return zm(2); }
 
   /// Generic offset of \p index in multiple directions simultaneously
-  inline SpecificInd offset(int dx, int dy, int dz) const {
-    return zpm(dz).yp(dy).xp(dx);
-  }
+  inline SpecificInd offset(int dx, int dy, int dz) const { return zp(dz).yp(dy).xp(dx); }
 };
 
 /// Relational operators
@@ -490,10 +477,9 @@ template <typename T = Ind3D>
 class Region {
   // Following prevents a Region being created with anything other
   // than Ind2D, Ind3D or IndPerp as template type
-  static_assert(
-      std::is_base_of_v<
-          Ind2D, T> || std::is_base_of_v<Ind3D, T> || std::is_base_of_v<IndPerp, T>,
-      "Region must be templated with one of IndPerp, Ind2D or Ind3D");
+  static_assert(std::is_base_of_v<Ind2D, T> || std::is_base_of_v<Ind3D, T>
+                    || std::is_base_of_v<IndPerp, T>,
+                "Region must be templated with one of IndPerp, Ind2D or Ind3D");
 
 public:
   using data_type = T;
@@ -569,7 +555,7 @@ public:
   };
 
   Region(RegionIndices& indices, int maxregionblocksize = MAXREGIONBLOCKSIZE)
-      : indices(indices), blocks(getContiguousBlocks(maxregionblocksize)){};
+      : indices(indices), blocks(getContiguousBlocks(maxregionblocksize)) {};
 
   // We need to first set the blocks, and only after that call getRegionIndices.
   // Do not put in the member initialisation

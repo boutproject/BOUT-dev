@@ -75,6 +75,9 @@ int main(int argc, char** argv) {
       if (index.x() >= mesh->xend && mesh->getNXPE() - 1 == mesh->getXProcIndex()) {
         dx = index.x() - dice();
       }
+      if (index.z() >= mesh->zend && mesh->getNZPE() - 1 == mesh->getZProcIndex()) {
+        dz = index.z() - dice();
+      }
       deltax[index] = dx;
       deltaz[index] = dz;
       // Get the global indices
@@ -87,6 +90,7 @@ int main(int argc, char** argv) {
     }
 
     deltax += (mesh->LocalNx - mesh->xstart * 2) * mesh->getXProcIndex();
+    deltaz += (mesh->LocalNz - mesh->zstart * 2) * mesh->getZProcIndex();
     // Create the interpolation object from the input options
     auto interp = XZInterpolationFactory::getInstance().create();
 

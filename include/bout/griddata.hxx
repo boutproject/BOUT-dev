@@ -129,20 +129,38 @@ public:
 private:
   Options data;
   std::string filename;
+
+  // These next three quantities are already read in `BoutMesh`, but this way we
+  // don't need the Mesh API to get them here
+
+  // Number of y-boundary guard cells saved in the grid file
   int grid_yguards{0};
   int ny_inner{0};
+  // Number of z-boundary guard cells save in the grid file.
+  // Always zero for older grid files
+  int grid_zguards{0};
 
   bool readgrid_3dvar_fft(Mesh* m, const std::string& name, int yread, int ydest,
                           int ysize, int xread, int xdest, int xsize, Field3D& var);
 
+  // \param yread  Start reading at global y-index
+  // \param ydest  Insert data starting from y=yd
+  // \param ysize  Length of data in Y
+  // \param xread  Start reading at global x-index
+  // \param xdest  Insert data starting from x=xd
+  // \param xsize  Length of data in X
+  // \param zread  Start reading at global z-index
+  // \param zdest  Insert data starting from z=zd
+  // \param zsize  Length of data in Z
   bool readgrid_3dvar_real(const std::string& name, int yread, int ydest, int ysize,
-                           int xread, int xdest, int xsize, Field3D& var);
+                           int xread, int xdest, int xsize, int zread, int zdest,
+                           int zsize, Field3D& var);
 
   bool readgrid_perpvar_fft(Mesh* m, const std::string& name, int xread, int xdest,
                             int xsize, FieldPerp& var);
 
   bool readgrid_perpvar_real(const std::string& name, int xread, int xdest, int xsize,
-                             FieldPerp& var);
+                             int zread, int zdest, int zsize, FieldPerp& var);
 
   // convenience template method to remove code duplication between Field2D,
   // Field3D and FieldPerp versions of get
@@ -151,13 +169,16 @@ private:
                 CELL_LOC location);
   // utility method for Field2D to implement unshared parts of getField
   void readField(Mesh* m, const std::string& name, int ys, int yd, int ny_to_read, int xs,
-                 int xd, int nx_to_read, const std::vector<int>& size, Field2D& var);
+                 int xd, int nx_to_read, int zs, int zd, int nz_to_read,
+                 const std::vector<int>& size, Field2D& var);
   // utility method for Field3D to implement unshared parts of getField
   void readField(Mesh* m, const std::string& name, int ys, int yd, int ny_to_read, int xs,
-                 int xd, int nx_to_read, const std::vector<int>& size, Field3D& var);
+                 int xd, int nx_to_read, int zs, int zd, int nz_to_read,
+                 const std::vector<int>& size, Field3D& var);
   // utility method for FieldPerp to implement unshared parts of getField
   void readField(Mesh* m, const std::string& name, int ys, int yd, int ny_to_read, int xs,
-                 int xd, int nx_to_read, const std::vector<int>& size, FieldPerp& var);
+                 int xd, int nx_to_read, int zs, int zd, int nz_to_read,
+                 const std::vector<int>& size, FieldPerp& var);
 };
 
 /*!

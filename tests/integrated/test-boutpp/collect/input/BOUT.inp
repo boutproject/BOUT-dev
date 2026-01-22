@@ -10,6 +10,7 @@ ny = n
 nz = n
 MXG = 0
 MYG = 0
+MZG = 0
 dy = 1/n/2/pi
 
 [solver]

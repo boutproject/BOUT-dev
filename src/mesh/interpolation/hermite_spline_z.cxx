@@ -20,6 +20,8 @@
  *
  **************************************************************************/
 
+#include "bout/boutexception.hxx"
+#include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_z.hxx"
@@ -33,6 +35,10 @@ ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D> region_in
                 : y_offset == 0       ? "RGN_NOBNDRY"
                                       : "RGN_NOX"),
       h00(localmesh), h01(localmesh), h10(localmesh), h11(localmesh) {
+
+  if (localmesh->getNZPE() > 1) {
+    throw BoutException("ZHermiteSpline only works with 1 processor in Z");
+  }
 
   if (region_in.size() != 0) {
     output_warn << "Custom region passed to ZInterpolation. ZHermiteSpline requires an "
@@ -59,7 +65,8 @@ ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D> region_in
 void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
 
   const int ncy = localmesh->LocalNy;
-  const int ncz = localmesh->LocalNz;
+  const int mzg = localmesh->zstart;
+  const int ncz = localmesh->LocalNz - (2 * mzg);
 
   // Calculate weights for all points if y_offset==0 in case they are needed, otherwise
   // only calculate weights for RGN_NOY, which should be a superset of 'region'
@@ -79,13 +86,19 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
     // calculated by taking the remainder of the floating point index
     const BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(corner_zind);
 
-    // Make corner_zind be in the range 0<=corner_zind<nz
+    // Make corner_zind be in the range zstart <= corner_zind < zend
+    //
+    // Basically, we want to ignore the guard cells here. Our use case is just
+    // ShiftedMetricInterp, where we might want to wrap around several
+    // times. This also currently limits us to a single processor in Z
+    //
     // This needs to be done after calculating t_z (the coordinate within the
     // cell) because delta_z is allowed to be less than 0 or greater than ncz.
-    corner_zind = ((corner_zind % ncz) + ncz) % ncz;
+    corner_zind = (((corner_zind % ncz) + ncz) % ncz) + mzg;
 
     // Convert z-index to Ind3D
-    k_corner[i.ind] = Ind3D((x * ncy + y) * ncz + corner_zind, ncy, ncz);
+    k_corner[i.ind] = Ind3D(((x * ncy + y) * localmesh->LocalNz) + corner_zind, ncy,
+                            localmesh->LocalNz);
 
     // Check that t_z is in range
     if ((t_z < 0.0) || (t_z > 1.0)) {
@@ -134,7 +147,7 @@ ZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) co
   ASSERT3(k <= localmesh->LocalNz);
 
   const int ncz = localmesh->LocalNz;
-  const auto corner = k_corner[(i * localmesh->LocalNy + j) * ncz + k];
+  const auto corner = k_corner[((i * localmesh->LocalNy + j) * ncz) + k];
   const int k_mod = corner.z();
   const int k_mod_m1 = corner.zm().z();
   const int k_mod_p1 = corner.zp().z();
@@ -166,6 +179,7 @@ Field3D ZHermiteSpline::interpolate(const Field3D& f,
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
   Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", local_fz_region);
+  localmesh->communicate_no_slices(fz);
 
   BOUT_FOR(i, local_region) {
     const auto corner = k_corner[i.ind].yp(y_offset);

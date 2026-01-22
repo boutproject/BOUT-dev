@@ -1,5 +1,7 @@
 #include "bout/build_defines.hxx"
 
+#if BOUT_HAS_PETSC
+
 #include <set>
 #include <tuple>
 #include <vector>
@@ -9,20 +11,24 @@
 
 #include "bout/petsc_interface.hxx"
 #include "bout/region.hxx"
-
-#if BOUT_HAS_PETSC
+#include "bout/traits.hxx"
 
 #include "fake_mesh_fixture.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;
+using namespace bout::utils;
 
 template <typename T>
 class IndexerTest : public FakeMeshFixture {
 public:
   using ind_type = typename T::ind_type;
   GlobalIndexer<T> globalSquareIndexer, globalStarIndexer, globalDefaultIndexer;
-  int guardx, guardy, nx, ny, nz;
+  int guardx, guardy, guardz;
+  // Grid sizes without guards
+  int nx, ny, nz;
+  // Grid sizes including guards
+  int total_nx, total_ny, total_nz;
   FakeMesh mesh2;
   GlobalIndexer<T> localIndexer;
 
@@ -33,11 +39,13 @@ public:
         globalStarIndexer(bout::globals::mesh,
                           starStencil<ind_type>(bout::globals::mesh)),
         globalDefaultIndexer(bout::globals::mesh), guardx(bout::globals::mesh->getNXPE()),
-        guardy(std::is_same_v<T, FieldPerp> ? 0 : bout::globals::mesh->getNYPE()),
-        nx(bout::globals::mesh->LocalNx - 2 * guardx),
-        ny(std::is_same_v<T, FieldPerp> ? 1 : bout::globals::mesh->LocalNy - 2 * guardy),
-        nz(std::is_same_v<T, Field2D> ? 1 : bout::globals::mesh->LocalNz),
-        mesh2(2, 2, 2) {
+        guardy(is_FieldPerp_v<T> ? 0 : bout::globals::mesh->getNYPE()),
+        guardz(is_Field2D_v<T> ? 0 : bout::globals::mesh->getNZPE()),
+        nx(bout::globals::mesh->LocalNx - (2 * guardx)),
+        ny(is_FieldPerp_v<T> ? 1 : bout::globals::mesh->LocalNy - (2 * guardy)),
+        nz(is_Field2D_v<T> ? 1 : bout::globals::mesh->LocalNz - (2 * guardz)),
+        total_nx(mesh->LocalNx), total_ny(is_FieldPerp_v<T> ? 1 : mesh->LocalNy),
+        total_nz(is_Field2D_v<T> ? 1 : mesh->LocalNz), mesh2(2, 2, 2) {
     mesh2.createDefaultRegions();
     mesh2.setCoordinates(nullptr);
     auto test_coords = std::make_shared<Coordinates>(
@@ -230,7 +238,7 @@ TYPED_TEST(IndexerTest, TestGetRegionLowerY) {
     EXPECT_EQ(rgn.size(), 0);
   } else {
     rgn = this->globalSquareIndexer.getRegionLowerY();
-    EXPECT_EQ(rgn.asUnique().size(), (this->nx + 2 * this->guardx) * this->nz);
+    EXPECT_EQ(rgn.asUnique().size(), this->total_nx * this->nz);
     BOUT_FOR(i, rgn) { EXPECT_LT(i.y(), this->globalSquareIndexer.getMesh()->ystart); }
     rgn = this->globalStarIndexer.getRegionLowerY();
     EXPECT_EQ(rgn.asUnique().size(), this->nx * this->nz);
@@ -251,7 +259,7 @@ TYPED_TEST(IndexerTest, TestGetRegionUpperY) {
     EXPECT_EQ(rgn.size(), 0);
   } else {
     rgn = this->globalSquareIndexer.getRegionUpperY();
-    EXPECT_EQ(rgn.asUnique().size(), (this->nx + 2 * this->guardx) * this->nz);
+    EXPECT_EQ(rgn.asUnique().size(), this->total_nx * this->nz);
     BOUT_FOR(i, rgn) { EXPECT_GT(i.y(), this->globalSquareIndexer.getMesh()->yend); }
     rgn = this->globalStarIndexer.getRegionUpperY();
     EXPECT_EQ(rgn.asUnique().size(), this->nx * this->nz);
@@ -332,8 +340,7 @@ TYPED_TEST(IndexerTest, TestGetNumOffDiagonal) {
 }
 
 TYPED_TEST(IndexerTest, TestSize) {
-  EXPECT_EQ(this->globalSquareIndexer.size(),
-            (this->nx + 2 * this->guardx) * (this->ny + 2 * this->guardy) * this->nz);
+  EXPECT_EQ(this->globalSquareIndexer.size(), this->total_nx * this->total_ny * this->nz);
   EXPECT_EQ(this->globalStarIndexer.size(), this->nx * this->ny * this->nz
                                                 + 2 * this->nz * this->ny * this->guardx
                                                 + 2 * this->nz * this->nx * this->guardy);

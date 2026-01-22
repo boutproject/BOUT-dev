@@ -157,13 +157,15 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
   // Get MPI communicator
   MPI_Comm comm = localmesh->getXcomm();
 
+  const auto z_points = localmesh->zend - localmesh->zstart + 1;
+
   // Local size
-  int localN = (localmesh->xend - localmesh->xstart + 1) * (localmesh->LocalNz);
+  int localN = (localmesh->xend - localmesh->xstart + 1) * z_points;
   if (localmesh->firstX()) {
-    localN += localmesh->LocalNz;
+    localN += z_points;
   }
   if (localmesh->lastX()) {
-    localN += localmesh->LocalNz;
+    localN += z_points;
   }
 
   // Create Vectors
@@ -211,13 +213,13 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
 
     if (localmesh->lastX()) {
       for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
-        int ind = localN - (localmesh->LocalNz) + z;
+        int ind = localN - z_points + z;
         d_nnz[ind] = 2;
       }
     } else {
       // One point on another processor
       for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
-        int ind = localN - (localmesh->LocalNz) + z;
+        int ind = localN - z_points + z;
         d_nnz[ind] -= 1;
         o_nnz[ind] += 1;
       }
@@ -310,6 +312,8 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
   Field3D A = Ain;
   Field3D B = Bin;
 
+  const auto z_points = localmesh->zend - localmesh->zstart + 1;
+
   // Each Y slice is handled as a separate set of matrices and KSP context
   for (auto& it : slice) {
     // Get Y index
@@ -331,7 +335,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
           PetscScalar val = 1.0;
           MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
-          int col = row + (localmesh->LocalNz); // +1 in X
+          int col = row + z_points; // +1 in X
           val = -1.0;
           MatSetValues(it.MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
@@ -343,7 +347,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
           PetscScalar val = 1.0;
           MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
-          int col = row + (localmesh->LocalNz); // +1 in X
+          int col = row + z_points; // +1 in X
           val = 0.0;
           MatSetValues(it.MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
@@ -355,7 +359,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
           PetscScalar val = 1.0;
           MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
-          int col = row + (localmesh->LocalNz); // +1 in X
+          int col = row + z_points; // +1 in X
           val = 0.0;
           MatSetValues(it.MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
@@ -370,7 +374,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
           PetscScalar val = 0.5;
           MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
-          int col = row + (localmesh->LocalNz); // +1 in X
+          int col = row + z_points; // +1 in X
           MatSetValues(it.MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           row++;
@@ -420,8 +424,8 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
 
         // ZZ component
         // Wrap around z-1 and z+1 indices
-        const int zminus = (z - 1 + (localmesh->LocalNz)) % (localmesh->LocalNz);
-        const int zplus = (z + 1) % (localmesh->LocalNz);
+        const int zminus = (z - 1 + z_points) % z_points;
+        const int zplus = (z + 1) % z_points;
 
         {
           const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x, y, zplus));
@@ -600,42 +604,42 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
         MatSetValues(it.MatA, 1, &row, 1, &row, &c, INSERT_VALUES);
 
         // X + 1
-        int col = row + (localmesh->LocalNz);
+        int col = row + z_points;
         MatSetValues(it.MatA, 1, &row, 1, &col, &xp, INSERT_VALUES);
 
         // X - 1
-        col = row - (localmesh->LocalNz);
+        col = row - z_points;
         MatSetValues(it.MatA, 1, &row, 1, &col, &xm, INSERT_VALUES);
 
         // Z + 1
         col = row + 1;
-        if (z == localmesh->LocalNz - 1) {
-          col -= localmesh->LocalNz; // Wrap around
+        if (z == localmesh->zend) {
+          col -= z_points; // Wrap around
         }
 
         MatSetValues(it.MatA, 1, &row, 1, &col, &zp, INSERT_VALUES);
 
         // X + 1, Z + 1
-        const int xpzp_col = col + localmesh->LocalNz;
+        const int xpzp_col = col + z_points;
         MatSetValues(it.MatA, 1, &row, 1, &xpzp_col, &xpzp, INSERT_VALUES);
 
         // X - 1, Z + 1
-        const int xmzp_col = col - localmesh->LocalNz;
+        const int xmzp_col = col - z_points;
         MatSetValues(it.MatA, 1, &row, 1, &xmzp_col, &xmzp, INSERT_VALUES);
 
         // Z - 1
         col = row - 1;
-        if (z == 0) {
-          col += localmesh->LocalNz; // Wrap around
+        if (z == localmesh->zstart) {
+          col += z_points; // Wrap around
         }
         MatSetValues(it.MatA, 1, &row, 1, &col, &zm, INSERT_VALUES);
 
         // X + 1, Z - 1
-        const int xpzm_col = col + localmesh->LocalNz;
+        const int xpzm_col = col + z_points;
         MatSetValues(it.MatA, 1, &row, 1, &xpzm_col, &xpzm, INSERT_VALUES);
 
         // X - 1, Z - 1
-        const int xmzm_col = col - localmesh->LocalNz;
+        const int xmzm_col = col - z_points;
         MatSetValues(it.MatA, 1, &row, 1, &xmzm_col, &xmzm, INSERT_VALUES);
 
         row++;
@@ -651,7 +655,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
           PetscScalar val = 1.0;
           MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
-          int col = row - (localmesh->LocalNz); // -1 in X
+          int col = row - z_points; // -1 in X
           val = -1.0;
           MatSetValues(it.MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
@@ -663,7 +667,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
           PetscScalar val = 1.0;
           MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
-          int col = row - (localmesh->LocalNz); // -1 in X
+          int col = row - z_points; // -1 in X
           val = 0.0;
           MatSetValues(it.MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
@@ -675,7 +679,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
           PetscScalar val = 1.0;
           MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
-          int col = row - (localmesh->LocalNz); // -1 in X
+          int col = row - z_points; // -1 in X
           val = 0.0;
           MatSetValues(it.MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
@@ -688,7 +692,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D& Ain, const Field3D& Bin) {
         for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
           MatSetValues(it.MatA, 1, &row, 1, &row, &val, INSERT_VALUES);
 
-          int col = row - (localmesh->LocalNz); // -1 in X
+          int col = row - z_points; // -1 in X
           MatSetValues(it.MatA, 1, &row, 1, &col, &val, INSERT_VALUES);
 
           row++;

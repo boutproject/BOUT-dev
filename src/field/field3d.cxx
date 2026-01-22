@@ -702,16 +702,16 @@ void shiftZ(Field3D& var, int jx, int jy, double zangle) {
   bout::fft::assertZSerial(*var.getMesh(), "`shiftZ`");
   checkData(var);
   var.allocate(); // Ensure that var is unique
-  Mesh* localmesh = var.getMesh();
+  const Mesh* localmesh = var.getMesh();
 
-  int ncz = localmesh->LocalNz;
+  const int ncz = localmesh->zend - localmesh->zstart + 1;
   if (ncz == 1) {
     return; // Shifting doesn't do anything
   }
 
-  Array<dcomplex> v(ncz / 2 + 1);
+  Array<dcomplex> v((ncz / 2) + 1);
 
-  rfft(&(var(jx, jy, 0)), ncz, v.begin()); // Forward FFT
+  rfft(&(var(jx, jy, localmesh->zstart)), ncz, v.begin());
 
   BoutReal zlength = var.getCoordinates()->zlength()(jx, jy);
 
@@ -721,7 +721,7 @@ void shiftZ(Field3D& var, int jx, int jy, double zangle) {
     v[jz] *= dcomplex(cos(kwave * zangle), -sin(kwave * zangle));
   }
 
-  irfft(v.begin(), ncz, &(var(jx, jy, 0))); // Reverse FFT
+  irfft(v.begin(), ncz, &(var(jx, jy, localmesh->zstart)));
 }
 
 void shiftZ(Field3D& var, double zangle, const std::string& rgn) {

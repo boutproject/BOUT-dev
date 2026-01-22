@@ -25,10 +25,11 @@
 
 #include <bout/bout.hxx>
 #include <bout/constants.hxx>
-// #include <bout/sys/timer.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/options.hxx>
+
+#include <algorithm>
 #include <cmath>
 
 BoutReal max_error_at_ystart(const Field3D& error);
@@ -64,8 +65,8 @@ int main(int argc, char** argv) {
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-          BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          BoutReal z = BoutReal(jz) / nz;
+          const BoutReal x = mesh->GlobalX(jx);
+          const BoutReal z = mesh->GlobalZ(jz);
           f1(jx, jy, jz) =
               0. + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
               - 50.
@@ -85,8 +86,8 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
+            const BoutReal x = mesh->GlobalX(jx);
+            const BoutReal z = mesh->GlobalZ(jz);
             f1(jx, jy, jz) =
                 0. + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
                 - 50.
@@ -107,8 +108,8 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
+            const BoutReal x = mesh->GlobalX(jx);
+            const BoutReal z = mesh->GlobalZ(jz);
             f1(jx, jy, jz) =
                 0. + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
                 - 50.
@@ -132,8 +133,8 @@ int main(int argc, char** argv) {
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-          BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          BoutReal z = BoutReal(jz) / nz;
+          const BoutReal x = mesh->GlobalX(jx);
+          const BoutReal z = mesh->GlobalZ(jz);
           d1(jx, jy, jz) =
               1.e-7
               * (1. + 0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.));
@@ -144,8 +145,8 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
+            const BoutReal x = mesh->GlobalX(jx);
+            const BoutReal z = mesh->GlobalZ(jz);
             d1(jx, jy, jz) =
                 1.e-7
                 * (1.
@@ -158,8 +159,8 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
+            const BoutReal x = mesh->GlobalX(jx);
+            const BoutReal z = mesh->GlobalZ(jz);
             d1(jx, jy, jz) =
                 1.e-7
                 * (1.
@@ -175,8 +176,8 @@ int main(int argc, char** argv) {
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-          BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          BoutReal z = BoutReal(jz) / nz;
+          const BoutReal x = mesh->GlobalX(jx);
+          const BoutReal z = mesh->GlobalZ(jz);
           c1(jx, jy, jz) = 1.
                            + 1.e-6 * 0.15 * exp(-50. * pow(x - p, 2) * 2.)
                                  * sin(2. * PI * (z - q) * 2.);
@@ -187,8 +188,8 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
+            const BoutReal x = mesh->GlobalX(jx);
+            const BoutReal z = mesh->GlobalZ(jz);
             c1(jx, jy, jz) = 1.
                              + 1.e-6 * 0.15 * exp(-50. * pow(x - p, 2) * 2.)
                                    * sin(2. * PI * (z - q) * 2.);
@@ -200,8 +201,8 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
+            const BoutReal x = mesh->GlobalX(jx);
+            const BoutReal z = mesh->GlobalZ(jz);
             c1(jx, jy, jz) = 1.
                              + 1.e-6 * 0.15 * exp(-50. * pow(x - p, 2) * 2.)
                                    * sin(2. * PI * (z - q) * 2.);
@@ -216,8 +217,8 @@ int main(int argc, char** argv) {
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-          BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          BoutReal z = BoutReal(jz) / nz;
+          const BoutReal x = mesh->GlobalX(jx);
+          const BoutReal z = mesh->GlobalZ(jz);
           a1(jx, jy, jz) =
               -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
         }
@@ -227,8 +228,8 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
+            const BoutReal x = mesh->GlobalX(jx);
+            const BoutReal z = mesh->GlobalZ(jz);
             a1(jx, jy, jz) =
                 -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
           }
@@ -239,8 +240,8 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
+            const BoutReal x = mesh->GlobalX(jx);
+            const BoutReal z = mesh->GlobalZ(jz);
             a1(jx, jy, jz) =
                 -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
           }
@@ -469,8 +470,8 @@ int main(int argc, char** argv) {
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-          BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          BoutReal z = BoutReal(jz) / nz;
+          const BoutReal x = mesh->GlobalX(jx);
+          const BoutReal z = mesh->GlobalZ(jz);
           f5(jx, jy, jz) =
               0. + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
               - 50.
@@ -490,8 +491,8 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
+            const BoutReal x = mesh->GlobalX(jx);
+            const BoutReal z = mesh->GlobalZ(jz);
             f5(jx, jy, jz) =
                 0. + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
                 - 50.
@@ -512,8 +513,8 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
+            const BoutReal x = mesh->GlobalX(jx);
+            const BoutReal z = mesh->GlobalZ(jz);
             f5(jx, jy, jz) =
                 0. + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
                 - 50.
@@ -537,8 +538,8 @@ int main(int argc, char** argv) {
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-          BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          BoutReal z = BoutReal(jz) / nz;
+          const BoutReal x = mesh->GlobalX(jx);
+          const BoutReal z = mesh->GlobalZ(jz);
           d5(jx, jy, jz) =
               1.e-7 * (1. + p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.));
         }
@@ -548,8 +549,8 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
+            const BoutReal x = mesh->GlobalX(jx);
+            const BoutReal z = mesh->GlobalZ(jz);
             d5(jx, jy, jz) =
                 1.e-7 * (1. + p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.));
           }
@@ -560,8 +561,8 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
+            const BoutReal x = mesh->GlobalX(jx);
+            const BoutReal z = mesh->GlobalZ(jz);
             d5(jx, jy, jz) =
                 1.e-7 * (1. + p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.));
           }
@@ -575,8 +576,8 @@ int main(int argc, char** argv) {
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-          BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          BoutReal z = BoutReal(jz) / nz;
+          const BoutReal x = mesh->GlobalX(jx);
+          const BoutReal z = mesh->GlobalZ(jz);
           c5(jx, jy, jz) =
               1. + 1.e-6 * p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.);
         }
@@ -586,8 +587,8 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
+            const BoutReal x = mesh->GlobalX(jx);
+            const BoutReal z = mesh->GlobalZ(jz);
             c5(jx, jy, jz) =
                 1. + 1.e-6 * p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.);
           }
@@ -598,8 +599,8 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
+            const BoutReal x = mesh->GlobalX(jx);
+            const BoutReal z = mesh->GlobalZ(jz);
             c5(jx, jy, jz) =
                 1. + 1.e-6 * p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.);
           }
@@ -613,8 +614,8 @@ int main(int argc, char** argv) {
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
         for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-          BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-          BoutReal z = BoutReal(jz) / nz;
+          const BoutReal x = mesh->GlobalX(jx);
+          const BoutReal z = mesh->GlobalZ(jz);
           a5(jx, jy, jz) = -1. + p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.);
         }
       }
@@ -623,8 +624,8 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
+            const BoutReal x = mesh->GlobalX(jx);
+            const BoutReal z = mesh->GlobalZ(jz);
             a5(jx, jy, jz) =
                 -1. + p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.);
           }
@@ -635,8 +636,8 @@ int main(int argc, char** argv) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
           for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-            BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
-            BoutReal z = BoutReal(jz) / nz;
+            const BoutReal x = mesh->GlobalX(jx);
+            const BoutReal z = mesh->GlobalZ(jz);
             a5(jx, jy, jz) =
                 -1. + p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.);
           }
@@ -861,13 +862,11 @@ int main(int argc, char** argv) {
 
 BoutReal max_error_at_ystart(const Field3D& error) {
   const auto* mesh = error.getMesh();
-  BoutReal local_max_error = error(mesh->xstart, mesh->ystart, 0);
+  BoutReal local_max_error = 0.0;
 
   for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
     for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-      if (local_max_error < error(jx, mesh->ystart, jz)) {
-        local_max_error = error(jx, mesh->ystart, jz);
-      }
+      local_max_error = std::max(local_max_error, error(jx, mesh->ystart, jz));
     }
   }
 

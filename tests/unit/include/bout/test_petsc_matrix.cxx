@@ -25,7 +25,7 @@ using ::testing::Return;
 
 class MockTransform : public ParallelTransformIdentity {
 public:
-  MockTransform(Mesh& mesh_in) : ParallelTransformIdentity(mesh_in){};
+  MockTransform(Mesh& mesh_in) : ParallelTransformIdentity(mesh_in) {};
   MOCK_METHOD(std::vector<PositionsAndWeights>, getWeightsForYApproximation,
               (int i, int j, int k, int y_offset), (override));
   MOCK_METHOD(std::vector<PositionsAndWeights>, getWeightsForYUpApproximation,
@@ -161,14 +161,14 @@ TYPED_TEST(PetscMatrixTest, MoveAssignment) {
 // Test getting elements
 TYPED_TEST(PetscMatrixTest, TestGetElements) {
   PetscMatrix<TypeParam> matrix(this->indexer);
-  BOUT_FOR_SERIAL(i, this->field.getRegion("RGN_NOY")) {
+  BOUT_FOR_SERIAL(i, this->field.getRegion("RGN_NOBNDRY")) {
     matrix(i, i) = static_cast<BoutReal>(i.ind);
   }
   Mat* rawmat = matrix.get();
   MatAssemblyBegin(*rawmat, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(*rawmat, MAT_FINAL_ASSEMBLY);
-  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
-    BOUT_FOR_SERIAL(j, this->field.getRegion("RGN_NOY")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
+    BOUT_FOR_SERIAL(j, this->field.getRegion("RGN_NOBNDRY")) {
       int i_ind = this->indexer->getGlobal(i);
       int j_ind = this->indexer->getGlobal(j);
       PetscScalar matContents;
@@ -418,7 +418,7 @@ TYPED_TEST(PetscMatrixTest, TestSwap) {
 TYPED_TEST(PetscMatrixTest, TestMatrixVectorMultiplyIdentity) {
   PetscMatrix<TypeParam> matrix(this->indexer);
   this->field.allocate();
-  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
     this->field[i] = static_cast<BoutReal>(i.ind);
     matrix(i, i) = 1.0;
   }
@@ -427,7 +427,7 @@ TYPED_TEST(PetscMatrixTest, TestMatrixVectorMultiplyIdentity) {
   matrix.assemble();
   PetscVector<TypeParam> product = matrix * vector;
   TypeParam prodField = product.toField();
-  BOUT_FOR(i, prodField.getRegion("RGN_NOY")) {
+  BOUT_FOR(i, prodField.getRegion("RGN_NOBNDRY")) {
     EXPECT_NEAR(prodField[i], this->field[i], 1.e-10);
   }
 }
@@ -438,17 +438,17 @@ TYPED_TEST(PetscMatrixTest, TestMatrixVectorMultiplyOnes) {
   this->field.allocate();
   PetscVector<TypeParam> vector(this->field, this->indexer);
   BoutReal total = 0.0;
-  BOUT_FOR_OMP(i, this->field.getRegion("RGN_NOY"),
+  BOUT_FOR_OMP(i, this->field.getRegion("RGN_NOBNDRY"),
      	       parallel for reduction(+:total) schedule(BOUT_OPENMP_SCHEDULE)) {
     vector(i) = static_cast<BoutReal>(i.ind);
     total += i.ind;
-    BOUT_FOR_SERIAL(j, this->field.getRegion("RGN_NOY")) { matrix(i, j) = 1.0; }
+    BOUT_FOR_SERIAL(j, this->field.getRegion("RGN_NOBNDRY")) { matrix(i, j) = 1.0; }
   }
   vector.assemble();
   matrix.assemble();
   PetscVector<TypeParam> product = matrix * vector;
   TypeParam prodField = product.toField();
-  BOUT_FOR(i, prodField.getRegion("RGN_NOY")) {
+  BOUT_FOR(i, prodField.getRegion("RGN_NOBNDRY")) {
     EXPECT_NEAR(prodField[i], total, 1.e-10);
   }
 }

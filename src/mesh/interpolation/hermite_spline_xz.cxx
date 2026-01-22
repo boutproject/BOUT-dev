@@ -143,6 +143,9 @@ XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh* meshin)
   if (localmesh->getNXPE() > 1) {
     throw BoutException("Require PETSc for MPI splitting in X");
   }
+  if (localmesh->getNZPE() > 1) {
+    throw BoutException("Require PETSc for MPI splitting in Z");
+  }
 #endif
 }
 

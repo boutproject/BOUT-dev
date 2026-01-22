@@ -8,10 +8,14 @@
 # requires: all_tests
 # cores: 4
 
-# Variables to compare
-from __future__ import print_function
-from builtins import str
 
+from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boutdata.collect import collect, create_cache
+
+import numpy.testing as npt
+from sys import exit
+
+# Variables to compare
 vars = [
     ("max_error1", 2.0e-4),
     ("max_error2", 2.0e-4),
@@ -22,13 +26,6 @@ vars = [
     ("max_error7", 2.0e-4),
     ("max_error8", 2.0e-5),
 ]
-# tol = 1e-4                  # Absolute (?) tolerance
-
-from boututils.run_wrapper import build_and_log, shell, launch_safe
-from boutdata.collect import collect
-
-# import numpy as np
-from sys import stdout, exit
 
 build_and_log("PETSc Laplacian inversion test")
 
@@ -44,21 +41,22 @@ for nproc in [1, 2, 4]:
 
     shell("rm data/BOUT.dmp.*.nc")
 
-    print("   %d processors...." % nproc)
+    print(f"   {nproc} processors....")
     s, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
-    f = open("run.log." + str(nproc), "w")
-    f.write(out)
-    f.close()
+    with open("run.log." + str(nproc), "w") as f:
+        f.write(out)
+
+    cache = create_cache(path="data", prefix="BOUT.dmp")
 
     # Collect output data
     for varname, tol in vars:
-        stdout.write("      Checking " + varname + " ... ")
-        error = collect(varname, path="data", info=False)
+        print(f"      Checking {varname} ... ", end="")
+        error = collect(varname, path="data", info=False, datafile_cache=cache)
         if error <= 0:
             print("Convergence error")
             success = False
         elif error > tol:
-            print("Fail, maximum error is = " + str(error))
+            print(f"Fail, maximum error is = {error}")
             success = False
         else:
             print("Pass")

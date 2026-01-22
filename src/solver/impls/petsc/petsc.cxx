@@ -627,7 +627,7 @@ int PetscSolver::init() {
         for (int x = mesh->xstart; x <= mesh->xend; x++) {
           for (int y = mesh->ystart; y <= mesh->yend; y++) {
 
-            const int ind0 = ROUND(index(x, y, 0)) - Istart;
+            const int ind0 = ROUND(index(x, y, mesh->zstart)) - Istart;
 
             // 2D fields
             for (int i = 0; i < n2d; i++) {
@@ -641,7 +641,7 @@ int PetscSolver::init() {
                   continue;
                 }
 
-                const int ind2 = ROUND(index(xi, yi, 0));
+                const int ind2 = ROUND(index(xi, yi, mesh->zstart));
                 if (ind2 < 0) {
                   continue; // A boundary point
                 }
@@ -663,7 +663,7 @@ int PetscSolver::init() {
 
               for (int i = 0; i < n3d; i++) {
                 PetscInt row = ind + i;
-                if (z == 0) {
+                if (z == mesh->zstart) {
                   row += n2d;
                 }
 
@@ -687,7 +687,7 @@ int PetscSolver::init() {
                     continue;
                   }
 
-                  int ind2 = ROUND(index(xi, yi, 0));
+                  int ind2 = ROUND(index(xi, yi, mesh->zstart));
                   if (ind2 < 0) {
                     continue; // Boundary point
                   }
@@ -714,12 +714,12 @@ int PetscSolver::init() {
         d_nnz.reserve(nlocal);
         d_nnz.reserve(nlocal);
 
+        const auto z_points = mesh->zend - mesh->zstart + 1;
+
         for (int i = 0; i < nlocal; ++i) {
           // Assume all elements in the z direction are potentially coupled
-          d_nnz.emplace_back((d_nnz_map3d[i].size() * mesh->LocalNz)
-                             + d_nnz_map2d[i].size());
-          o_nnz.emplace_back((o_nnz_map3d[i].size() * mesh->LocalNz)
-                             + o_nnz_map2d[i].size());
+          d_nnz.emplace_back((d_nnz_map3d[i].size() * z_points) + d_nnz_map2d[i].size());
+          o_nnz.emplace_back((o_nnz_map3d[i].size() * z_points) + o_nnz_map2d[i].size());
         }
       }
 
@@ -738,7 +738,7 @@ int PetscSolver::init() {
       for (int x = mesh->xstart; x <= mesh->xend; x++) {
         for (int y = mesh->ystart; y <= mesh->yend; y++) {
 
-          const int ind0 = ROUND(index(x, y, 0));
+          const int ind0 = ROUND(index(x, y, mesh->zstart));
 
           // 2D fields
           for (int i = 0; i < n2d; i++) {
@@ -753,7 +753,7 @@ int PetscSolver::init() {
                 continue;
               }
 
-              int const ind2 = ROUND(index(xi, yi, 0));
+              int const ind2 = ROUND(index(xi, yi, mesh->zstart));
               if (ind2 < 0) {
                 continue; // A boundary point
               }

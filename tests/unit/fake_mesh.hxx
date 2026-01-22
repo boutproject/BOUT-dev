@@ -31,21 +31,21 @@ class Options;
 /// - This is a mesh for a single process, so the global and local
 /// indices are the same.
 ///
-/// - There is a single guard cell at each of the start/end x/y grids.
+/// - There is a single guard cell at each of the start/end x/y/z grids.
 ///
 /// - Only the **grid** information is assumed to be used -- anything
 ///   else will likely **not** work!
 class FakeMesh : public Mesh {
 public:
-  FakeMesh(int nx, int ny, int nz, MpiWrapper& mpi_in) {
+  FakeMesh(int nx, int ny, int nz, MpiWrapper& mpi_in, int nguards = 1) {
     // Mesh only on one process, so global and local indices are the
     // same
     GlobalNx = nx;
     GlobalNy = ny;
     GlobalNz = nz;
-    GlobalNxNoBoundaries = nx - 2;
-    GlobalNyNoBoundaries = ny - 2;
-    GlobalNzNoBoundaries = nz;
+    GlobalNxNoBoundaries = nx - (2 * nguards);
+    GlobalNyNoBoundaries = ny - (2 * nguards);
+    GlobalNzNoBoundaries = nz - (2 * nguards);
     LocalNx = nx;
     LocalNy = ny;
     LocalNz = nz;
@@ -54,23 +54,23 @@ public:
     OffsetZ = 0;
 
     // These bits only for ADIOS2, also boring due to single process
-    MapCountX = nx - 2;
-    MapCountY = ny - 2;
-    MapCountZ = nz;
+    MapCountX = nx - (2 * nguards);
+    MapCountY = ny - (2 * nguards);
+    MapCountZ = nz - (2 * nguards);
     MapGlobalX = nx;
     MapGlobalY = ny;
     MapGlobalZ = nz;
-    MapLocalX = nx - 2;
-    MapLocalY = ny - 2;
-    MapLocalZ = nz;
+    MapLocalX = nx - (2 * nguards);
+    MapLocalY = ny - (2 * nguards);
+    MapLocalZ = nz - (2 * nguards);
 
     // Small "inner" region
-    xstart = 1;
-    xend = nx - 2;
-    ystart = 1;
-    yend = ny - 2;
-    zstart = 0; // no guards
-    zend = nz - 1;
+    xstart = nguards;
+    xend = nx - nguards - 1;
+    ystart = nguards;
+    yend = ny - nguards - 1;
+    zstart = nguards;
+    zend = nz - nguards - 1;
 
     StaggerGrids = false;
 
@@ -84,6 +84,8 @@ public:
     mpi = &mpi_in;
   }
   FakeMesh(int nx, int ny, int nz) : FakeMesh(nx, ny, nz, *bout::globals::mpi) {}
+  FakeMesh(int nx, int ny, int nz, int nguards)
+      : FakeMesh(nx, ny, nz, *bout::globals::mpi, nguards) {}
 
   void setCoordinates(std::shared_ptr<Coordinates> coords,
                       CELL_LOC location = CELL_CENTRE) {
@@ -100,13 +102,35 @@ public:
     addBoundary(new BoundaryRegionYDown("lower_target", xstart, xend, this));
   }
 
-  comm_handle send(FieldGroup& UNUSED(g)) override { return nullptr; }
+  comm_handle send(FieldGroup& g) override { return sendZ(g); }
   comm_handle sendX(FieldGroup& UNUSED(g), comm_handle UNUSED(handle) = nullptr,
                     bool UNUSED(disable_corners) = false) override {
     return nullptr;
   }
   comm_handle sendY(FieldGroup& UNUSED(g),
                     comm_handle UNUSED(handle) = nullptr) override {
+    return nullptr;
+  }
+  comm_handle sendZ(FieldGroup& g, comm_handle UNUSED(handle) = nullptr) override {
+    // We need to copy the Z guards
+    for (auto* f : g) {
+      if (!f->is3D()) {
+        continue;
+      }
+      auto& f3D = *dynamic_cast<Field3D*>(f);
+      for (int x = 0; x < LocalNx; ++x) {
+        for (int y = 0; y < LocalNy; ++y) {
+          for (int z = 0; z < zstart; ++z) {
+            // zend - MZG + 1 + z
+            f3D(x, y, z) = f3D(x, y, (zend - zstart + 1) + z);
+          }
+          for (int z = zend + 1; z < LocalNz; ++z) {
+            f3D(x, y, z) = f3D(x, y, z - zend);
+          }
+        }
+      }
+    }
+
     return nullptr;
   }
   int wait(comm_handle UNUSED(handle)) override { return 0; }
@@ -171,24 +195,30 @@ public:
   getBoundariesPar(BoundaryParType UNUSED(type)) override {
     return std::vector<std::shared_ptr<BoundaryRegionPar>>();
   }
-  BoutReal GlobalX(int jx) const override { return jx; }
-  BoutReal GlobalY(int jy) const override { return jy; }
-  BoutReal GlobalZ(int jz) const override { return jz; }
+  BoutReal GlobalX(int jx) const override {
+    return static_cast<BoutReal>(getGlobalXIndexNoBoundaries(jx)) / GlobalNxNoBoundaries;
+  }
+  BoutReal GlobalY(int jy) const override {
+    return static_cast<BoutReal>(getGlobalYIndexNoBoundaries(jy)) / GlobalNyNoBoundaries;
+  }
+  BoutReal GlobalZ(int jz) const override {
+    return static_cast<BoutReal>(getGlobalZIndexNoBoundaries(jz)) / GlobalNzNoBoundaries;
+  }
   BoutReal GlobalX(BoutReal jx) const override { return jx; }
   BoutReal GlobalY(BoutReal jy) const override { return jy; }
   BoutReal GlobalZ(BoutReal jz) const override { return jz; }
-  int getGlobalXIndex(int) const override { return 0; }
-  int getGlobalXIndexNoBoundaries(int) const override { return 0; }
+  int getGlobalXIndex(int x) const override { return x; }
+  int getGlobalXIndexNoBoundaries(int x) const override { return x - xstart; }
   int getGlobalYIndex(int y) const override { return y; }
-  int getGlobalYIndexNoBoundaries(int y) const override { return y; }
+  int getGlobalYIndexNoBoundaries(int y) const override { return y - ystart; }
   int getGlobalZIndex(int z) const override { return z; }
-  int getGlobalZIndexNoBoundaries(int z) const override { return z; }
-  int getLocalXIndex(int) const override { return 0; }
-  int getLocalXIndexNoBoundaries(int) const override { return 0; }
+  int getGlobalZIndexNoBoundaries(int z) const override { return z - zstart; }
+  int getLocalXIndex(int x) const override { return x; }
+  int getLocalXIndexNoBoundaries(int x) const override { return x + xstart; }
   int getLocalYIndex(int y) const override { return y; }
-  int getLocalYIndexNoBoundaries(int y) const override { return y; }
+  int getLocalYIndexNoBoundaries(int y) const override { return y + ystart; }
   int getLocalZIndex(int z) const override { return z; }
-  int getLocalZIndexNoBoundaries(int z) const override { return z; }
+  int getLocalZIndexNoBoundaries(int z) const override { return z + zstart; }
 
   void initDerivs(Options* opt) {
     StaggerGrids = true;
@@ -198,37 +228,37 @@ public:
   void createBoundaryRegions() {
     addRegion2D("RGN_LOWER_Y",
                 Region<Ind2D>(0, LocalNx - 1, 0, ystart - 1, 0, 0, LocalNy, 1));
-    addRegion3D("RGN_LOWER_Y", Region<Ind3D>(0, LocalNx - 1, 0, ystart - 1, 0,
-                                             LocalNz - 1, LocalNy, LocalNz));
+    addRegion3D("RGN_LOWER_Y", Region<Ind3D>(0, LocalNx - 1, 0, ystart - 1, zstart, zend,
+                                             LocalNy, LocalNz));
     addRegion2D("RGN_LOWER_Y_THIN", getRegion2D("RGN_LOWER_Y"));
     addRegion3D("RGN_LOWER_Y_THIN", getRegion3D("RGN_LOWER_Y"));
 
     addRegion2D("RGN_UPPER_Y",
                 Region<Ind2D>(0, LocalNx - 1, yend + 1, LocalNy - 1, 0, 0, LocalNy, 1));
-    addRegion3D("RGN_UPPER_Y", Region<Ind3D>(0, LocalNx - 1, yend + 1, LocalNy - 1, 0,
-                                             LocalNz - 1, LocalNy, LocalNz));
+    addRegion3D("RGN_UPPER_Y", Region<Ind3D>(0, LocalNx - 1, yend + 1, LocalNy - 1,
+                                             zstart, zend, LocalNy, LocalNz));
     addRegion2D("RGN_UPPER_Y_THIN", getRegion2D("RGN_UPPER_Y"));
     addRegion3D("RGN_UPPER_Y_THIN", getRegion3D("RGN_UPPER_Y"));
 
     addRegion2D("RGN_INNER_X",
                 Region<Ind2D>(0, xstart - 1, ystart, yend, 0, 0, LocalNy, 1));
-    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, 0, LocalNz - 1,
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, zstart, zend,
                                              LocalNy, LocalNz));
     addRegionPerp("RGN_INNER_X",
-                  Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz));
+                  Region<IndPerp>(0, xstart - 1, 0, 0, zstart, zend, 1, LocalNz));
     addRegionPerp("RGN_INNER_X_THIN",
-                  Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz));
+                  Region<IndPerp>(0, xstart - 1, 0, 0, zstart, zend, 1, LocalNz));
     addRegion2D("RGN_INNER_X_THIN", getRegion2D("RGN_INNER_X"));
     addRegion3D("RGN_INNER_X_THIN", getRegion3D("RGN_INNER_X"));
 
     addRegion2D("RGN_OUTER_X",
                 Region<Ind2D>(xend + 1, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1));
-    addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, 0,
-                                             LocalNz - 1, LocalNy, LocalNz));
-    addRegionPerp("RGN_OUTER_X", Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, 0,
-                                                 LocalNz - 1, 1, LocalNz));
-    addRegionPerp("RGN_OUTER_X_THIN", Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, 0,
-                                                      LocalNz - 1, 1, LocalNz));
+    addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, zstart,
+                                             zend, LocalNy, LocalNz));
+    addRegionPerp("RGN_OUTER_X",
+                  Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, zstart, zend, 1, LocalNz));
+    addRegionPerp("RGN_OUTER_X_THIN",
+                  Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, zstart, zend, 1, LocalNz));
     addRegion2D("RGN_OUTER_X_THIN", getRegion2D("RGN_OUTER_X"));
     addRegion3D("RGN_OUTER_X_THIN", getRegion3D("RGN_OUTER_X"));
 

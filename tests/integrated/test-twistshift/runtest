@@ -33,10 +33,7 @@ def test1(ylower, yupper):
     ):
         success = False
         print(
-            "Fail - test_aligned should not be periodic jy=%i and jy=%i should be "
-            "different",
-            yupper,
-            ylower,
+            f"Fail - test_aligned should not be periodic jy={yupper} and jy={ylower} should be different",
         )
 
 
@@ -57,10 +54,7 @@ def test2(ylower, yupper):
     if numpy.any(numpy.abs(result[:, yupper, :] - result[:, ylower, :]) > tol):
         success = False
         print(
-            "Fail - result should be periodic jy=%i and jy=%i should not be "
-            "different",
-            yupper,
-            ylower,
+            f"Fail - result should be periodic jy={yupper} and jy={ylower} should not be different",
         )
         print(ylower, result[:, ylower, :])
         print(yupper, result[:, yupper, :])

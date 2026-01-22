@@ -1,5 +1,6 @@
 MXG = 1
 MYG = 1
+MZG = 1
 
 [mesh]
 nx = 8

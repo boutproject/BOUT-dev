@@ -436,8 +436,7 @@ OperatorStencil<Ind3D> LaplaceHypre3d::getStencil(Mesh* localmesh,
   std::transform(pw.begin(), pw.end(), std::back_inserter(interpPattern),
                  [localmesh](ParallelTransform::PositionsAndWeights p) -> OffsetInd3D {
                    return {localmesh->xstart - p.i, localmesh->ystart - p.j,
-                           localmesh->LocalNz - p.k < p.k ? p.k - localmesh->LocalNz
-                                                          : p.k};
+                           localmesh->zstart - p.k};
                  });
 
   OffsetInd3D zero;

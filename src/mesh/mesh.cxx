@@ -304,12 +304,24 @@ void Mesh::communicateXZ(FieldGroup& g) {
 
   // Wait for data from other processors
   wait(h);
+
+  // Send data in z-direction
+  h = sendZ(g);
+
+  // Wait for data from other processors
+  wait(h);
 }
 
 void Mesh::communicateYZ(FieldGroup& g) {
 
   // Send data
   comm_handle h = sendY(g);
+
+  // Wait for data from other processors
+  wait(h);
+
+  // Send data in z-direction
+  h = sendZ(g);
 
   // Wait for data from other processors
   wait(h);
@@ -333,6 +345,12 @@ void Mesh::communicate(FieldGroup& g) {
 
     // Send data in x-direction
     h = sendX(g);
+
+    // Wait for data from other processors
+    wait(h);
+
+    // Send data in z-direction
+    h = sendZ(g);
 
     // Wait for data from other processors
     wait(h);
@@ -375,13 +393,13 @@ void Mesh::communicate(FieldPerp& f) {
 }
 
 int Mesh::msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                  int ylt) {
+                  int ylt, int zge, int zlt) {
   int len = 0;
 
   /// Loop over variables
   for (const auto& var : var_list) {
     if (var->is3D()) {
-      len += (xlt - xge) * (ylt - yge) * LocalNz * var->elementSize();
+      len += (xlt - xge) * (ylt - yge) * (zlt - zge) * var->elementSize();
     } else {
       len += (xlt - xge) * (ylt - yge) * var->elementSize();
     }
@@ -633,6 +651,8 @@ void Mesh::createDefaultRegions() {
   addRegion3D("RGN_NOY", Region<Ind3D>(0, LocalNx - 1, ystart, yend, 0, LocalNz - 1,
                                        LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_NOZ", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, zstart, zend,
+                                       LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_NOYZ", Region<Ind3D>(0, LocalNx - 1, ystart, yend, zstart, zend,
                                        LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_GUARDS", mask(getRegion3D("RGN_ALL"), getRegion3D("RGN_NOBNDRY")));
   addRegion3D("RGN_XGUARDS",

@@ -3,6 +3,7 @@
 #include "test_extras.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
 #include "bout/griddata.hxx"
 #include "bout/mesh.hxx"
 #include "bout/options.hxx"
@@ -21,10 +22,6 @@ public:
   GridFromOptionsTest() {
 
     mesh_from_options.StaggerGrids = true;
-    mesh_from_options.xstart = 2;
-    mesh_from_options.xend = nx - 3;
-    mesh_from_options.ystart = 2;
-    mesh_from_options.yend = ny - 3;
 
     mesh_from_options.createDefaultRegions();
 
@@ -56,14 +53,17 @@ public:
         bout::utils::make_unique<ParallelTransformIdentity>(mesh_from_options));
 
     expected_2d = makeField<Field2D>(
-        [](Field2D::ind_type& index) {
-          return index.x() + (TWOPI * index.y()) + (TWOPI * index.z()) + 3;
+        [&](Field2D::ind_type& index) {
+          return mesh_from_options.GlobalX(index.x())
+                 + (TWOPI * mesh_from_options.GlobalY(index.y())) + 3;
         },
         &mesh_from_options);
 
     expected_3d = makeField<Field3D>(
-        [](Field3D::ind_type& index) {
-          return index.x() + (TWOPI * index.y()) + (TWOPI * index.z()) + 3;
+        [&](Field3D::ind_type& index) {
+          return mesh_from_options.GlobalX(index.x())
+                 + (TWOPI * mesh_from_options.GlobalY(index.y()))
+                 + (TWOPI * mesh_from_options.GlobalZ(index.z())) + 3;
         },
         &mesh_from_options);
     expected_metric =
@@ -82,9 +82,10 @@ public:
     // note GridFromOptions* griddata will be deleted by the ~Mesh() destructor
   }
 
-  static const int nx{9};
-  static const int ny{11};
-  static const int nz{5};
+  static constexpr int nx{9};
+  static constexpr int ny{11};
+  static constexpr int nz{9};
+  static constexpr int num_guards{2};
 
   std::shared_ptr<Coordinates> test_coords;
   Options options;
@@ -93,7 +94,7 @@ public:
   Field2D expected_2d;
   Field3D expected_3d;
   Coordinates::FieldMetric expected_metric;
-  FakeMesh mesh_from_options{nx, ny, nz};
+  FakeMesh mesh_from_options{nx, ny, nz, num_guards};
 };
 
 // higher tolerance used when field values are ~50
@@ -225,6 +226,13 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealX) {
   std::vector<BoutReal> result{};
   std::vector<BoutReal> expected{3., 4., 5., 6., 7., 8., 9., 10., 11.};
 
+  mesh_from_options.GlobalNxNoBoundaries = 1;
+  mesh_from_options.xstart = 0;
+  mesh_from_options.GlobalNyNoBoundaries = 1;
+  mesh_from_options.ystart = 0;
+  mesh_from_options.GlobalNzNoBoundaries = 1;
+  mesh_from_options.zstart = 0;
+
   EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", nx));
   EXPECT_EQ(result, expected);
 }
@@ -232,6 +240,13 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealX) {
 TEST_F(GridFromOptionsTest, GetVectorBoutRealXOffset) {
   std::vector<BoutReal> result{};
   std::vector<BoutReal> expected{4., 5., 6., 7., 8., 9., 10., 11., 12.};
+
+  mesh_from_options.GlobalNxNoBoundaries = 1;
+  mesh_from_options.xstart = 0;
+  mesh_from_options.GlobalNyNoBoundaries = 1;
+  mesh_from_options.ystart = 0;
+  mesh_from_options.GlobalNzNoBoundaries = 1;
+  mesh_from_options.zstart = 0;
 
   EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", nx, 1,
                             GridDataSource::Direction::X));
@@ -241,6 +256,13 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealXOffset) {
 TEST_F(GridFromOptionsTest, GetVectorBoutRealXMeshOffset) {
   std::vector<BoutReal> result{};
   std::vector<BoutReal> expected{2., 3., 4., 5., 6., 7., 8., 9., 10.};
+
+  mesh_from_options.GlobalNxNoBoundaries = 1;
+  mesh_from_options.xstart = 0;
+  mesh_from_options.GlobalNyNoBoundaries = 1;
+  mesh_from_options.ystart = 0;
+  mesh_from_options.GlobalNzNoBoundaries = 1;
+  mesh_from_options.zstart = 0;
 
   mesh_from_options.OffsetX = 1;
   mesh_from_options.OffsetY = 100;
@@ -272,6 +294,13 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealY) {
                                  3. + (9. * TWOPI),
                                  3. + (10. * TWOPI)};
 
+  mesh_from_options.GlobalNxNoBoundaries = 1;
+  mesh_from_options.xstart = 0;
+  mesh_from_options.GlobalNyNoBoundaries = 1;
+  mesh_from_options.ystart = 0;
+  mesh_from_options.GlobalNzNoBoundaries = 1;
+  mesh_from_options.zstart = 0;
+
   EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", ny, 0,
                             GridDataSource::Direction::Y));
   EXPECT_EQ(result, expected);
@@ -283,6 +312,13 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealYOffset) {
                                  3. + (4. * TWOPI),  3. + (5. * TWOPI), 3. + (6. * TWOPI),
                                  3. + (7. * TWOPI),  3. + (8. * TWOPI), 3. + (9. * TWOPI),
                                  3. + (10. * TWOPI), 3. + (11. * TWOPI)};
+
+  mesh_from_options.GlobalNxNoBoundaries = 1;
+  mesh_from_options.xstart = 0;
+  mesh_from_options.GlobalNyNoBoundaries = 1;
+  mesh_from_options.ystart = 0;
+  mesh_from_options.GlobalNzNoBoundaries = 1;
+  mesh_from_options.zstart = 0;
 
   EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", ny, 1,
                             GridDataSource::Direction::Y));
@@ -297,6 +333,13 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealYMeshOffset) {
                                  3. + (5. * TWOPI), 3. + (6. * TWOPI),
                                  3. + (7. * TWOPI), 3. + (8. * TWOPI),
                                  3. + (9. * TWOPI)};
+
+  mesh_from_options.GlobalNxNoBoundaries = 1;
+  mesh_from_options.xstart = 0;
+  mesh_from_options.GlobalNyNoBoundaries = 1;
+  mesh_from_options.ystart = 0;
+  mesh_from_options.GlobalNzNoBoundaries = 1;
+  mesh_from_options.zstart = 0;
 
   mesh_from_options.OffsetX = 100;
   mesh_from_options.OffsetY = 1;
@@ -316,8 +359,22 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealYNone) {
 
 TEST_F(GridFromOptionsTest, GetVectorBoutRealZ) {
   std::vector<BoutReal> result{};
-  std::vector<BoutReal> expected{3., 3. + (1. * TWOPI), 3. + (2. * TWOPI),
-                                 3. + (3. * TWOPI), 3. + (4. * TWOPI)};
+  std::vector<BoutReal> expected{3.,
+                                 3. + TWOPI,
+                                 3. + (2. * TWOPI),
+                                 3. + (3. * TWOPI),
+                                 3. + (4. * TWOPI),
+                                 3. + (5. * TWOPI),
+                                 3. + (6. * TWOPI),
+                                 3. + (7. * TWOPI),
+                                 3. + (8. * TWOPI)};
+
+  mesh_from_options.GlobalNxNoBoundaries = 1;
+  mesh_from_options.xstart = 0;
+  mesh_from_options.GlobalNyNoBoundaries = 1;
+  mesh_from_options.ystart = 0;
+  mesh_from_options.GlobalNzNoBoundaries = 1;
+  mesh_from_options.zstart = 0;
 
   EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", nz, 0,
                             GridDataSource::Direction::Z));
@@ -326,8 +383,19 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealZ) {
 
 TEST_F(GridFromOptionsTest, GetVectorBoutRealZOffset) {
   std::vector<BoutReal> result{};
-  std::vector<BoutReal> expected{3. + (1. * TWOPI), 3. + (2. * TWOPI), 3. + (3. * TWOPI),
-                                 3. + (4. * TWOPI), 3. + (5. * TWOPI)};
+  std::vector<BoutReal> expected{
+      3. + (1. * TWOPI), 3. + (2. * TWOPI), 3. + (3. * TWOPI),
+      3. + (4. * TWOPI), 3. + (5. * TWOPI), 3. + (6. * TWOPI),
+      3. + (7. * TWOPI), 3. + (8. * TWOPI), 3. + (9. * TWOPI),
+
+  };
+
+  mesh_from_options.GlobalNxNoBoundaries = 1;
+  mesh_from_options.xstart = 0;
+  mesh_from_options.GlobalNyNoBoundaries = 1;
+  mesh_from_options.ystart = 0;
+  mesh_from_options.GlobalNzNoBoundaries = 1;
+  mesh_from_options.zstart = 0;
 
   EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", nz, 1,
                             GridDataSource::Direction::Z));
@@ -336,8 +404,20 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealZOffset) {
 
 TEST_F(GridFromOptionsTest, GetVectorBoutRealZMeshOffset) {
   std::vector<BoutReal> result{};
-  std::vector<BoutReal> expected{3. + (-1. * TWOPI), 3., 3. + (1. * TWOPI),
-                                 3. + (2. * TWOPI), 3. + (3. * TWOPI)};
+  std::vector<BoutReal> expected{
+      3. - TWOPI,        3.,
+      3. + TWOPI,        3. + (2. * TWOPI),
+      3. + (3. * TWOPI), 3. + (4. * TWOPI),
+      3. + (5. * TWOPI), 3. + (6. * TWOPI),
+      3. + (7. * TWOPI),
+  };
+
+  mesh_from_options.GlobalNxNoBoundaries = 1;
+  mesh_from_options.xstart = 0;
+  mesh_from_options.GlobalNyNoBoundaries = 1;
+  mesh_from_options.ystart = 0;
+  mesh_from_options.GlobalNzNoBoundaries = 1;
+  mesh_from_options.zstart = 0;
 
   mesh_from_options.OffsetX = 100;
   mesh_from_options.OffsetY = 100;
@@ -392,11 +472,19 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowInterp) {
   // make the mesh have boundaries to avoid NaNs in guard cells after interpolating
   mesh_from_options.createBoundaries();
 
-  auto coords = mesh_from_options.getCoordinates(CELL_XLOW);
+  const auto* coords = mesh_from_options.getCoordinates(CELL_XLOW);
 
   Coordinates::FieldMetric expected_xlow = makeField<Coordinates::FieldMetric>(
-      [](Coordinates::FieldMetric::ind_type& index) {
-        return index.x() - 0.5 + (TWOPI * index.y()) + (TWOPI * index.z()) + 3;
+      [&](Coordinates::FieldMetric::ind_type& index) {
+        BoutReal z = 0.0;
+        if constexpr (bout::utils::is_Field3D_v<Coordinates::FieldMetric>) {
+          z = mesh_from_options.GlobalZ(index.z());
+        }
+
+        return ((mesh_from_options.GlobalX(index.x() - 1)
+                 + mesh_from_options.GlobalX(index.x()))
+                / 2.)
+               + (TWOPI * mesh_from_options.GlobalY(index.y())) + (TWOPI * z) + 3;
       },
       &mesh_from_options);
 
@@ -418,26 +506,29 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowInterp) {
 TEST_F(GridFromOptionsTest, CoordinatesXlowRead) {
   // *_xlow fields added to options, will be read to initialise Coordinates
 
-  // Note '(9 - x)' here because FakeMesh::GlobalX(int jx) returns jx, not a
-  // global position between 0 and 1 (in grid cells, <0 or >1 in boundaries),
-  // like a Mesh is supposed to.
-  std::string expected_string_xlow{"(9 - x) + y + 3"};
-
   // modify mesh section in global options
   options["dx_xlow"] = "1.";
   options["dy_xlow"] = "1.";
-  options["g11_xlow"] = expected_string_xlow + " + 5.";
-  options["g22_xlow"] = expected_string_xlow + " + 4.";
-  options["g33_xlow"] = expected_string_xlow + " + 3.";
-  options["g12_xlow"] = expected_string_xlow + " + 2.";
-  options["g13_xlow"] = expected_string_xlow + " + 1.";
-  options["g23_xlow"] = expected_string_xlow;
+  options["g11_xlow"] = expected_string + " + 5.";
+  options["g22_xlow"] = expected_string + " + 4.";
+  options["g33_xlow"] = expected_string + " + 3.";
+  options["g12_xlow"] = expected_string + " + 2.";
+  options["g13_xlow"] = expected_string + " + 1.";
+  options["g23_xlow"] = expected_string;
 
-  auto coords = mesh_from_options.getCoordinates(CELL_XLOW);
+  const auto* coords = mesh_from_options.getCoordinates(CELL_XLOW);
 
   Field2D expected_xlow = makeField<Field2D>(
-      [](Field2D::ind_type& index) {
-        return (nx - index.x() + 0.5) + (TWOPI * index.y()) + (TWOPI * index.z()) + 3;
+      [&](Field2D::ind_type& index) {
+        BoutReal z = 0.0;
+        if constexpr (bout::utils::is_Field3D_v<Coordinates::FieldMetric>) {
+          z = mesh_from_options.GlobalZ(index.z());
+        }
+
+        return ((mesh_from_options.GlobalX(index.x() - 1)
+                 + mesh_from_options.GlobalX(index.x()))
+                / 2.)
+               + (TWOPI * mesh_from_options.GlobalY(index.y())) + (TWOPI * z) + 3;
       },
       &mesh_from_options);
 
@@ -465,11 +556,21 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
   // make the mesh have boundaries to avoid NaNs in guard cells after interpolating
   mesh_from_options.createBoundaries();
 
-  auto* coords = mesh_from_options.getCoordinates(CELL_YLOW);
+  const auto* coords = mesh_from_options.getCoordinates(CELL_YLOW);
 
   Field2D expected_ylow = makeField<Field2D>(
-      [](Field2D::ind_type& index) {
-        return index.x() + (TWOPI * (index.y() - 0.5)) + (TWOPI * index.z()) + 3;
+      [&](Field2D::ind_type& index) {
+        BoutReal z = 0.0;
+        if constexpr (bout::utils::is_Field3D_v<Coordinates::FieldMetric>) {
+          z = mesh_from_options.GlobalZ(index.z());
+        }
+
+        return mesh_from_options.GlobalX(index.x())
+               + (TWOPI
+                  * (mesh_from_options.GlobalY(index.y() - 1)
+                     + mesh_from_options.GlobalY(index.y()))
+                  / 2.)
+               + (TWOPI * z) + 3;
       },
       &mesh_from_options);
 
@@ -498,28 +599,31 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
 TEST_F(GridFromOptionsTest, CoordinatesYlowRead) {
 #if not(BOUT_USE_METRIC_3D)
   // *_ylow fields added to options, will be read to initialise Coordinates
-
-  // Note '(2*pi*11 - y)' here because FakeMesh::GlobalY(int jy) returns jy, not a
-  // global position between 0 and 1 (in grid cells, <0 or >1 in boundaries),
-  // like a Mesh is supposed to. That means 'y' in input expressions varies
-  // between 0 and 2*pi*ny.
-  std::string expected_string_ylow{"x + (2*pi*11 - y) + 3"};
-
   // modify mesh section in global options
   options["dx_ylow"] = "1.";
   options["dy_ylow"] = "1.";
-  options["g11_ylow"] = expected_string_ylow + " + 5.";
-  options["g22_ylow"] = expected_string_ylow + " + 4.";
-  options["g33_ylow"] = expected_string_ylow + " + 3.";
-  options["g12_ylow"] = expected_string_ylow + " + 2.";
-  options["g13_ylow"] = expected_string_ylow + " + 1.";
-  options["g23_ylow"] = expected_string_ylow;
+  options["g11_ylow"] = expected_string + " + 5.";
+  options["g22_ylow"] = expected_string + " + 4.";
+  options["g33_ylow"] = expected_string + " + 3.";
+  options["g12_ylow"] = expected_string + " + 2.";
+  options["g13_ylow"] = expected_string + " + 1.";
+  options["g23_ylow"] = expected_string;
 
-  auto coords = mesh_from_options.getCoordinates(CELL_YLOW);
+  const auto* coords = mesh_from_options.getCoordinates(CELL_YLOW);
 
   Field2D expected_ylow = makeField<Field2D>(
-      [](Field2D::ind_type& index) {
-        return index.x() + (TWOPI * (ny - index.y() + 0.5)) + (TWOPI * index.z()) + 3;
+      [&](Field2D::ind_type& index) {
+        BoutReal z = 0.0;
+        if constexpr (bout::utils::is_Field3D_v<Coordinates::FieldMetric>) {
+          z = mesh_from_options.GlobalZ(index.z());
+        }
+
+        return mesh_from_options.GlobalX(index.x())
+               + (TWOPI
+                  * (mesh_from_options.GlobalY(index.y() - 1)
+                     + mesh_from_options.GlobalY(index.y()))
+                  / 2.)
+               + (TWOPI * z) + 3;
       },
       &mesh_from_options);
 

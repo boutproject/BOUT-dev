@@ -39,6 +39,7 @@
 #include "fmt/core.h"
 #include <mpi.h>
 
+#include <algorithm>
 #include <cmath>
 #include <string_view>
 
@@ -219,13 +220,11 @@ int main(int argc, char** argv) {
 
 BoutReal max_error_at_ystart(const Field3D& error) {
   const auto* mesh = error.getMesh();
-  BoutReal local_max_error = error(mesh->xstart, mesh->ystart, 0);
+  BoutReal local_max_error = 0.0;
 
   for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
     for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-      if (local_max_error < error(jx, mesh->ystart, jz)) {
-        local_max_error = error(jx, mesh->ystart, jz);
-      }
+      local_max_error = std::max(local_max_error, error(jx, mesh->ystart, jz));
     }
   }
 
@@ -259,22 +258,19 @@ void apply_flat_boundary(Field3D& bcoef) {
 }
 
 Field3D generate_f1(const Mesh& mesh) {
-  const BoutReal nx = mesh.GlobalNx - 2 * mesh.xstart - 1;
-  const BoutReal nz = mesh.GlobalNz;
-
   constexpr BoutReal p = 0.39503274; // NOLINT
   constexpr BoutReal q = 0.20974396; // NOLINT
 
   Field3D result;
   result.allocate();
   for (int jx = mesh.xstart; jx <= mesh.xend; jx++) {
-    const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+    const BoutReal x = mesh.GlobalX(jx);
     for (int jy = 0; jy < mesh.LocalNy; jy++) {
       for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-        const BoutReal z = BoutReal(jz) / nz;
+        const BoutReal z = mesh.GlobalZ(jz);
         //make the gradients zero at both x-boundaries
         result(jx, jy, jz) = 0.
-                             + exp(-(100. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+                             + exp(-((100. * pow(x - p, 2)) + 1. - cos(2. * PI * (z - q))))
                              - 50.
                                    * (2. * p * exp(-100. * pow(-p, 2)) * x
                                       + (-p * exp(-100. * pow(-p, 2))
@@ -286,14 +282,13 @@ Field3D generate_f1(const Mesh& mesh) {
   }
   if (mesh.firstX()) {
     for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
-      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
-
+      const BoutReal x = mesh.GlobalX(jx);
       for (int jy = 0; jy < mesh.LocalNy; jy++) {
         for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-          const BoutReal z = BoutReal(jz) / nz;
+          const BoutReal z = mesh.GlobalZ(jz);
           //make the gradients zero at both x-boundaries
           result(jx, jy, jz) = 0.
-                               + exp(-(60. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+                               + exp(-((60. * pow(x - p, 2)) + 1. - cos(2. * PI * (z - q))))
                                - 50.
                                      * (2. * p * exp(-60. * pow(-p, 2)) * x
                                         + (-p * exp(-60. * pow(-p, 2))
@@ -306,13 +301,13 @@ Field3D generate_f1(const Mesh& mesh) {
   }
   if (mesh.lastX()) {
     for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
-      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      const BoutReal x = mesh.GlobalX(jx);
       for (int jy = 0; jy < mesh.LocalNy; jy++) {
         for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-          const BoutReal z = BoutReal(jz) / nz;
+          const BoutReal z = mesh.GlobalZ(jz);
           //make the gradients zero at both x-boundaries
           result(jx, jy, jz) = 0.
-                               + exp(-(60. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+                               + exp(-((60. * pow(x - p, 2)) + 1. - cos(2. * PI * (z - q))))
                                - 50.
                                      * (2. * p * exp(-60. * pow(-p, 2)) * x
                                         + (-p * exp(-60. * pow(-p, 2))
@@ -330,43 +325,40 @@ Field3D generate_f1(const Mesh& mesh) {
 }
 
 Field3D generate_d1(const Mesh& mesh) {
-  const BoutReal nx = mesh.GlobalNx - 2 * mesh.xstart - 1;
-  const BoutReal nz = mesh.GlobalNz;
-
   constexpr BoutReal p = 0.512547;   // NOLINT
   constexpr BoutReal q = 0.30908712; // NOLINT
   Field3D result;
   result.allocate();
   for (int jx = mesh.xstart; jx <= mesh.xend; jx++) {
-    const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+    const BoutReal x = mesh.GlobalX(jx);
     for (int jy = 0; jy < mesh.LocalNy; jy++) {
       for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-        const BoutReal z = BoutReal(jz) / nz;
+        const BoutReal z = mesh.GlobalZ(jz);
         result(jx, jy, jz) =
-            1. + 0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.);
+            1. + (0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.));
       }
     }
   }
   if (mesh.firstX()) {
     for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
-      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      const BoutReal x = mesh.GlobalX(jx);
       for (int jy = 0; jy < mesh.LocalNy; jy++) {
         for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-          const BoutReal z = BoutReal(jz) / nz;
+          const BoutReal z = mesh.GlobalZ(jz);
           result(jx, jy, jz) =
-              1. + 0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.);
+              1. + (0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.));
         }
       }
     }
   }
   if (mesh.lastX()) {
     for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
-      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      const BoutReal x = mesh.GlobalX(jx);
       for (int jy = 0; jy < mesh.LocalNy; jy++) {
         for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-          const BoutReal z = BoutReal(jz) / nz;
+          const BoutReal z = mesh.GlobalZ(jz);
           result(jx, jy, jz) =
-              1. + 0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.);
+              1. + (0.2 * exp(-50. * pow(x - p, 2) / 4.) * sin(2. * PI * (z - q) * 3.));
         }
       }
     }
@@ -376,43 +368,40 @@ Field3D generate_d1(const Mesh& mesh) {
 }
 
 Field3D generate_c1(const Mesh& mesh) {
-  const BoutReal nx = mesh.GlobalNx - 2 * mesh.xstart - 1;
-  const BoutReal nz = mesh.GlobalNz;
-
   constexpr BoutReal p = 0.18439023;  // NOLINT
   constexpr BoutReal q = 0.401089473; // NOLINT
   Field3D result;
   result.allocate();
   for (int jx = mesh.xstart; jx <= mesh.xend; jx++) {
-    const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+    const BoutReal x = mesh.GlobalX(jx);
     for (int jy = 0; jy < mesh.LocalNy; jy++) {
       for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-        const BoutReal z = BoutReal(jz) / nz;
+        const BoutReal z = mesh.GlobalZ(jz);
         result(jx, jy, jz) =
-            1. + 0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.);
+            1. + (0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.));
       }
     }
   }
   if (mesh.firstX()) {
     for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
-      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      const BoutReal x = mesh.GlobalX(jx);
       for (int jy = 0; jy < mesh.LocalNy; jy++) {
         for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-          const BoutReal z = BoutReal(jz) / nz;
+          const BoutReal z = mesh.GlobalZ(jz);
           result(jx, jy, jz) =
-              1. + 0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.);
+              1. + (0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.));
         }
       }
     }
   }
   if (mesh.lastX()) {
     for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
-      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      const BoutReal x = mesh.GlobalX(jx);
       for (int jy = 0; jy < mesh.LocalNy; jy++) {
         for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-          const BoutReal z = BoutReal(jz) / nz;
+          const BoutReal z = mesh.GlobalZ(jz);
           result(jx, jy, jz) =
-              1. + 0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.);
+              1. + (0.15 * exp(-50. * pow(x - p, 2) * 2.) * sin(2. * PI * (z - q) * 2.));
         }
       }
     }
@@ -423,43 +412,40 @@ Field3D generate_c1(const Mesh& mesh) {
 }
 
 Field3D generate_a1(const Mesh& mesh) {
-  const BoutReal nx = mesh.GlobalNx - 2 * mesh.xstart - 1;
-  const BoutReal nz = mesh.GlobalNz;
-
   constexpr BoutReal p = 0.612547;   // NOLINT
   constexpr BoutReal q = 0.30908712; // NOLINT
   Field3D result;
   result.allocate();
   for (int jx = mesh.xstart; jx <= mesh.xend; jx++) {
-    const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+    const BoutReal x = mesh.GlobalX(jx);
     for (int jy = 0; jy < mesh.LocalNy; jy++) {
       for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-        const BoutReal z = BoutReal(jz) / nz;
+        const BoutReal z = mesh.GlobalZ(jz);
         result(jx, jy, jz) =
-            -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
+            -1. + (0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.));
       }
     }
   }
   if (mesh.firstX()) {
     for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
-      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      const BoutReal x = mesh.GlobalX(jx);
       for (int jy = 0; jy < mesh.LocalNy; jy++) {
         for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-          const BoutReal z = BoutReal(jz) / nz;
+          const BoutReal z = mesh.GlobalZ(jz);
           result(jx, jy, jz) =
-              -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
+              -1. + (0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.));
         }
       }
     }
   }
   if (mesh.lastX()) {
     for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
-      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      const BoutReal x = mesh.GlobalX(jx);
       for (int jy = 0; jy < mesh.LocalNy; jy++) {
         for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-          const BoutReal z = BoutReal(jz) / nz;
+          const BoutReal z = mesh.GlobalZ(jz);
           result(jx, jy, jz) =
-              -1. + 0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.);
+              -1. + (0.1 * exp(-50. * pow(x - p, 2) * 2.5) * sin(2. * PI * (z - q) * 7.));
         }
       }
     }
@@ -470,20 +456,18 @@ Field3D generate_a1(const Mesh& mesh) {
 }
 
 Field3D generate_f5(const Mesh& mesh) {
-  const BoutReal nx = mesh.GlobalNx - 2 * mesh.xstart - 1;
-  const BoutReal nz = mesh.GlobalNz;
   constexpr BoutReal p = 0.623901;   // NOLINT
   constexpr BoutReal q = 0.01209489; // NOLINT
   Field3D result;
   result.allocate();
   for (int jx = mesh.xstart; jx <= mesh.xend; jx++) {
-    const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+    const BoutReal x = mesh.GlobalX(jx);
     for (int jy = 0; jy < mesh.LocalNy; jy++) {
       for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-        const BoutReal z = BoutReal(jz) / nz;
+        const BoutReal z = mesh.GlobalZ(jz);
         //make the gradients zero at both x-boundaries
         result(jx, jy, jz) =
-            0. + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+            0. + exp(-((50. * pow(x - p, 2)) + 1. - cos(2. * PI * (z - q))))
             - 50.
                   * (2. * p * exp(-50. * pow(-p, 2)) * x
                      + (-p * exp(-50. * pow(-p, 2)) - (1 - p) * exp(-50. * pow(1 - p, 2)))
@@ -494,13 +478,13 @@ Field3D generate_f5(const Mesh& mesh) {
   }
   if (mesh.firstX()) {
     for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
-      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      const BoutReal x = mesh.GlobalX(jx);
       for (int jy = 0; jy < mesh.LocalNy; jy++) {
         for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-          const BoutReal z = BoutReal(jz) / nz;
+          const BoutReal z = mesh.GlobalZ(jz);
           //make the gradients zero at both x-boundaries
           result(jx, jy, jz) = 0.
-                               + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+                               + exp(-((50. * pow(x - p, 2)) + 1. - cos(2. * PI * (z - q))))
                                - 50.
                                      * (2. * p * exp(-50. * pow(-p, 2)) * x
                                         + (-p * exp(-50. * pow(-p, 2))
@@ -513,13 +497,13 @@ Field3D generate_f5(const Mesh& mesh) {
   }
   if (mesh.lastX()) {
     for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
-      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      const BoutReal x = mesh.GlobalX(jx);
       for (int jy = 0; jy < mesh.LocalNy; jy++) {
         for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-          const BoutReal z = BoutReal(jz) / nz;
+          const BoutReal z = mesh.GlobalZ(jz);
           //make the gradients zero at both x-boundaries
           result(jx, jy, jz) = 0.
-                               + exp(-(50. * pow(x - p, 2) + 1. - cos(2. * PI * (z - q))))
+                               + exp(-((50. * pow(x - p, 2)) + 1. - cos(2. * PI * (z - q))))
                                - 50.
                                      * (2. * p * exp(-50. * pow(-p, 2)) * x
                                         + (-p * exp(-50. * pow(-p, 2))
@@ -536,39 +520,37 @@ Field3D generate_f5(const Mesh& mesh) {
 }
 
 Field3D generate_d5(const Mesh& mesh) {
-  const BoutReal nx = mesh.GlobalNx - 2 * mesh.xstart - 1;
-  const BoutReal nz = mesh.GlobalNz;
   constexpr BoutReal p = 0.63298589;  // NOLINT
   constexpr BoutReal q = 0.889237890; // NOLINT
   Field3D result;
   result.allocate();
   for (int jx = mesh.xstart; jx <= mesh.xend; jx++) {
-    const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+    const BoutReal x = mesh.GlobalX(jx);
     for (int jy = 0; jy < mesh.LocalNy; jy++) {
       for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-        const BoutReal z = BoutReal(jz) / nz;
-        result(jx, jy, jz) = 1. + p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.);
+        const BoutReal z = mesh.GlobalZ(jz);
+        result(jx, jy, jz) = 1. + (p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.));
       }
     }
   }
   if (mesh.firstX()) {
     for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
-      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      const BoutReal x = mesh.GlobalX(jx);
       for (int jy = 0; jy < mesh.LocalNy; jy++) {
         for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-          const BoutReal z = BoutReal(jz) / nz;
-          result(jx, jy, jz) = 1. + p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.);
+          const BoutReal z = mesh.GlobalZ(jz);
+          result(jx, jy, jz) = 1. + (p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.));
         }
       }
     }
   }
   if (mesh.lastX()) {
     for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
-      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      const BoutReal x = mesh.GlobalX(jx);
       for (int jy = 0; jy < mesh.LocalNy; jy++) {
         for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-          const BoutReal z = BoutReal(jz) / nz;
-          result(jx, jy, jz) = 1. + p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.);
+          const BoutReal z = mesh.GlobalZ(jz);
+          result(jx, jy, jz) = 1. + (p * cos(2. * PI * x) * sin(2. * PI * (z - q) * 3.));
         }
       }
     }
@@ -578,8 +560,6 @@ Field3D generate_d5(const Mesh& mesh) {
 }
 
 Field3D generate_c5(const Mesh& mesh) {
-  const BoutReal nx = mesh.GlobalNx - 2 * mesh.xstart - 1;
-  const BoutReal nz = mesh.GlobalNz;
   constexpr BoutReal p = 0.160983834;   // NOLINT
   constexpr BoutReal q = 0.73050121087; // NOLINT
 
@@ -587,34 +567,34 @@ Field3D generate_c5(const Mesh& mesh) {
 
   result.allocate();
   for (int jx = mesh.xstart; jx <= mesh.xend; jx++) {
-    const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+    const BoutReal x = mesh.GlobalX(jx);
     for (int jy = 0; jy < mesh.LocalNy; jy++) {
       for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-        const BoutReal z = BoutReal(jz) / nz;
-        result(jx, jy, jz) = 1. + p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.);
+        const BoutReal z = mesh.GlobalZ(jz);
+        result(jx, jy, jz) = 1. + (p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.));
       }
     }
   }
   if (mesh.firstX()) {
     for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
-      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      const BoutReal x = mesh.GlobalX(jx);
       for (int jy = 0; jy < mesh.LocalNy; jy++) {
         for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-          const BoutReal z = BoutReal(jz) / nz;
+          const BoutReal z = mesh.GlobalZ(jz);
           result(jx, jy, jz) =
-              1. + p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.);
+              1. + (p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.));
         }
       }
     }
   }
   if (mesh.lastX()) {
     for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
-      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      const BoutReal x = mesh.GlobalX(jx);
       for (int jy = 0; jy < mesh.LocalNy; jy++) {
         for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-          const BoutReal z = BoutReal(jz) / nz;
+          const BoutReal z = mesh.GlobalZ(jz);
           result(jx, jy, jz) =
-              1. + p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.);
+              1. + (p * cos(2. * PI * x * 5) * sin(2. * PI * (z - q) * 2.));
         }
       }
     }
@@ -624,42 +604,40 @@ Field3D generate_c5(const Mesh& mesh) {
 }
 
 Field3D generate_a5(const Mesh& mesh) {
-  const BoutReal nx = mesh.GlobalNx - 2 * mesh.xstart - 1;
-  const BoutReal nz = mesh.GlobalNz;
   constexpr BoutReal p = 0.5378950; // NOLINT
   constexpr BoutReal q = 0.2805870; // NOLINT
   Field3D result;
   result.allocate();
   for (int jx = mesh.xstart; jx <= mesh.xend; jx++) {
-    const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+    const BoutReal x = mesh.GlobalX(jx);
     for (int jy = 0; jy < mesh.LocalNy; jy++) {
       for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-        const BoutReal z = BoutReal(jz) / nz;
+        const BoutReal z = mesh.GlobalZ(jz);
         result(jx, jy, jz) =
-            -1. + p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.);
+            -1. + (p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.));
       }
     }
   }
   if (mesh.firstX()) {
     for (int jx = mesh.xstart - 1; jx >= 0; jx--) {
-      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      const BoutReal x = mesh.GlobalX(jx);
       for (int jy = 0; jy < mesh.LocalNy; jy++) {
         for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-          const BoutReal z = BoutReal(jz) / nz;
+          const BoutReal z = mesh.GlobalZ(jz);
           result(jx, jy, jz) =
-              -1. + p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.);
+              -1. + (p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.));
         }
       }
     }
   }
   if (mesh.lastX()) {
     for (int jx = mesh.xend + 1; jx < mesh.LocalNx; jx++) {
-      const BoutReal x = BoutReal(mesh.getGlobalXIndex(jx) - mesh.xstart) / nx;
+      const BoutReal x = mesh.GlobalX(jx);
       for (int jy = 0; jy < mesh.LocalNy; jy++) {
         for (int jz = mesh.zstart; jz <= mesh.zend; jz++) {
-          const BoutReal z = BoutReal(jz) / nz;
+          const BoutReal z = mesh.GlobalZ(jz);
           result(jx, jy, jz) =
-              -1. + p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.);
+              -1. + (p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.));
         }
       }
     }

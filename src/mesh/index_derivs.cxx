@@ -27,6 +27,8 @@
 #include <bout/mesh.hxx>
 #include <bout/unused.hxx>
 
+#include <algorithm>
+
 /*******************************************************************************
  * Helper routines
  *******************************************************************************/
@@ -430,21 +432,16 @@ public:
     ASSERT2(theMesh->getNZPE() == 1); // Only works if serial in Z for FFTs
 
     // Calculate how many Z wavenumbers will be removed
-    const int ncz = theMesh->getNpoints(direction);
+    const int guards = theMesh->getNguard(direction);
+    const int ncz = theMesh->getNpoints(direction) - (2 * guards);
 
-    int kfilter = static_cast<int>(theMesh->fft_derivs_filter * ncz
-                                   / 2); // truncates, rounding down
-    if (kfilter < 0) {
-      kfilter = 0;
-    }
-    if (kfilter > (ncz / 2)) {
-      kfilter = ncz / 2;
-    }
-    const int kmax = ncz / 2 - kfilter; // Up to and including this wavenumber index
+    // truncates, rounding down
+    const int kfilter = std::clamp(static_cast<int>(theMesh->fft_derivs_filter * ncz / 2), 0, ncz / 2);
+    const int kmax = (ncz / 2) - kfilter; // Up to and including this wavenumber index
 
     BOUT_OMP_PERF(parallel)
     {
-      Array<dcomplex> cv(ncz / 2 + 1);
+      Array<dcomplex> cv((ncz / 2) + 1);
       const BoutReal kwaveFac = TWOPI / ncz;
 
       // Note we lookup a 2D region here even though we're operating on a Field3D
@@ -457,7 +454,7 @@ public:
       // here,
       // but should be ok for now.
       BOUT_FOR_INNER(i, theMesh->getRegion2D(region)) {
-        auto i3D = theMesh->ind2Dto3D(i, 0);
+        auto i3D = theMesh->ind2Dto3D(i, guards);
         rfft(&var[i3D], ncz, cv.begin()); // Forward FFT
 
         for (int jz = 0; jz <= kmax; jz++) {
@@ -497,12 +494,14 @@ public:
     ASSERT2(theMesh->getNZPE() == 1); // Only works if serial in Z for FFTs
 
     // Calculate how many Z wavenumbers will be removed
-    const int ncz = theMesh->getNpoints(direction);
+    // Calculate how many Z wavenumbers will be removed
+    const int guards = theMesh->getNguard(direction);
+    const int ncz = theMesh->getNpoints(direction) - (2 * guards);
     const int kmax = ncz / 2;
 
     BOUT_OMP_PERF(parallel)
     {
-      Array<dcomplex> cv(ncz / 2 + 1);
+      Array<dcomplex> cv((ncz / 2) + 1);
       const BoutReal kwaveFac = TWOPI / ncz;
 
       // Note we lookup a 2D region here even though we're operating on a Field3D
@@ -515,7 +514,7 @@ public:
       // here,
       // but should be ok for now.
       BOUT_FOR_INNER(i, theMesh->getRegion2D(region)) {
-        auto i3D = theMesh->ind2Dto3D(i, 0);
+        auto i3D = theMesh->ind2Dto3D(i, guards);
         rfft(&var[i3D], ncz, cv.begin()); // Forward FFT
 
         for (int jz = 0; jz <= kmax; jz++) {
