@@ -56,39 +56,43 @@ public:
     using DirectionFunction = int (Index::*)() const;
     DirectionFunction dir;
 
-    // Number of guard cells in (x, y). The "other" direction will
-    // have none
+    constexpr auto num_guards = 2;
+
+    // Number of guard cells. The "other" direction will have none
     int x_guards{0};
     int y_guards{0};
+    int z_guards{0};
 
     // Grid sizes
     int nx{3};
     int ny{3};
-    int nz{2};
+    int nz{3};
 
     // This must be a balance between getting any kind of accuracy and
     // each derivative running in ~1ms or less
     constexpr int grid_size{128};
-    const BoutReal box_length{TWOPI / grid_size};
+    // Subtract guard cells from grid size
+    const BoutReal box_length{TWOPI / (grid_size - (2 * num_guards))};
 
     // Set all the variables for this direction
     switch (std::get<DIRECTION>(GetParam())) {
     case DIRECTION::X:
       nx = grid_size;
       dir = &Index::x;
-      x_guards = 2;
+      x_guards = num_guards;
       region = "RGN_NOX";
       break;
     case DIRECTION::Y:
       ny = grid_size;
       dir = &Index::y;
-      y_guards = 2;
+      y_guards = num_guards;
       region = "RGN_NOY";
       break;
     case DIRECTION::Z:
       nz = grid_size;
       dir = &Index::z;
-      region = "RGN_ALL";
+      z_guards = num_guards;
+      region = "RGN_NOZ";
       break;
     default:
       throw BoutException("bad direction");
@@ -101,6 +105,8 @@ public:
     mesh->xend = nx - (x_guards + 1);
     mesh->ystart = y_guards;
     mesh->yend = ny - (y_guards + 1);
+    mesh->zstart = z_guards;
+    mesh->zend = nz - (z_guards + 1);
 
     mesh->createDefaultRegions();
 

@@ -47,15 +47,31 @@ def test_options_netcdf():
     # which is converted to NetCDF, read in, then written again
     settings = BoutOptionsFile("settings.ini")
 
-    assert settings["mesh"]["nx"] == 5
-    assert settings["mesh"]["ny"] == 2
+    nx = settings["mesh"]["nx"]
+    ny = settings["mesh"]["ny"]
+    nz = settings["mesh"]["nz"]
+
+    assert nx == 5
+    assert ny == 2
+    assert nz == 2
+
+    MXG = settings["MXG"]
+    MYG = settings["MYG"]
+    MZG = settings["MZG"]
+
+    assert MXG == 2
+    assert MYG == 2
+    assert MZG == 2
+
+    total_ny = ny + (2 * MYG)
+    total_nz = nz + (2 * MZG)
 
     print("Checking saved fields.nc")
 
     with DataFile("fields.nc") as f:
-        assert f["f2d"].shape == (5, 6)  # Field2D
-        assert f["f3d"].shape == (5, 6, 2)  # Field3D
-        assert f["fperp"].shape == (5, 2)  # FieldPerp
+        assert f["f2d"].shape == (nx, total_ny)  # Field2D
+        assert f["f3d"].shape == (nx, total_ny, total_nz)  # Field3D
+        assert f["fperp"].shape == (nx, total_nz)  # FieldPerp
         npt.assert_allclose(f["f2d"], 1.0)
         npt.assert_allclose(f["f3d"], 2.0)
         npt.assert_allclose(f["fperp"], 3.0)
@@ -63,9 +79,9 @@ def test_options_netcdf():
     print("Checking saved fields2.nc")
 
     with DataFile("fields2.nc") as f:
-        assert f["f2d"].shape == (5, 6)  # Field2D
-        assert f["f3d"].shape == (5, 6, 2)  # Field3D
-        assert f["fperp"].shape == (5, 2)  # FieldPerp
+        assert f["f2d"].shape == (nx, total_ny)  # Field2D
+        assert f["f3d"].shape == (nx, total_ny, total_nz)  # Field3D
+        assert f["fperp"].shape == (nx, total_nz)  # FieldPerp
         npt.assert_allclose(f["f2d"], 1.0)
         npt.assert_allclose(f["f3d"], 2.0)
         npt.assert_allclose(f["fperp"], 3.0)

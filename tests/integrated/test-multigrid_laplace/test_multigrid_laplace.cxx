@@ -23,6 +23,8 @@
  *
  **************************************************************************/
 
+#include <algorithm>
+#include "bout/bout_types.hxx"
 #include <bout/bout.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
@@ -173,14 +175,14 @@ int main(int argc, char** argv) {
   // make field to pass in boundary conditions
   Field3D x0 = 0.;
   if (mesh->firstX()) {
-    for (int k = mesh->zstart; k <= mesh->zend; k++) {
+    for (int k = 0; k <= mesh->LocalNz; k++) {
       x0(mesh->xstart - 1, mesh->ystart, k) =
           0.5
           * (f3(mesh->xstart - 1, mesh->ystart, k) + f3(mesh->xstart, mesh->ystart, k));
     }
   }
   if (mesh->lastX()) {
-    for (int k = mesh->zstart; k <= mesh->zend; k++) {
+    for (int k = 0; k <= mesh->LocalNz; k++) {
       x0(mesh->xend + 1, mesh->ystart, k) =
           0.5 * (f3(mesh->xend + 1, mesh->ystart, k) + f3(mesh->xend, mesh->ystart, k));
     }
@@ -308,17 +310,15 @@ Field3D this_Grad_perp_dot_Grad_perp(const Field3D& f, const Field3D& g) {
 BoutReal max_error_at_ystart(const Field3D& error) {
   auto* mesh = error.getMesh();
 
-  BoutReal local_max_error = error(mesh->xstart, mesh->ystart, 0);
+  BoutReal local_max_error = 0.0;
 
   for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
     for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-      if (local_max_error < error(jx, mesh->ystart, jz)) {
-        local_max_error = error(jx, mesh->ystart, jz);
-      }
+      local_max_error = std::max(local_max_error, error(jx, mesh->ystart, jz));
     }
   }
 
-  BoutReal max_error;
+  BoutReal max_error = BoutNaN;
 
   MPI_Allreduce(&local_max_error, &max_error, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
 

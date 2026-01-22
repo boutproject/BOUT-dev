@@ -32,7 +32,7 @@
 #define BOUT_MULTIGRID_LAPLACE_H
 
 #include "bout/build_defines.hxx"
-#include "bout/invert_laplace.hxx"
+#include <bout/invert_laplace.hxx>
 
 #if BOUT_USE_METRIC_3D
 
@@ -43,13 +43,20 @@ RegisterUnavailableLaplace
 
 #else
 
-#include <bout/mpi_wrapper.hxx>
-
+#include <bout/array.hxx>
+#include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 #include <bout/globals.hxx>
+#include <bout/mpi_wrapper.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
+#include <bout/unused.hxx>
 #include <bout/utils.hxx>
+
+#include <memory>
 
 #define MAXGM 15
 
@@ -119,7 +126,8 @@ private:
 
 class Multigrid1DP : public MultigridAlg {
 public:
-  Multigrid1DP(int, int, int, int, int, int, MPI_Comm, int);
+  Multigrid1DP(int level, int lx, int lz, int gx, int gz, int dl, int merge,
+               MPI_Comm comm, int check);
   ~Multigrid1DP(){};
   void setMultigridC(int);
   void setPcheck(int);

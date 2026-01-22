@@ -17,13 +17,14 @@ ny = 16
 nz = 4
 mxg = 2
 myg = 2
+mzg = 2
 
 
 def test_restart_io():
 
     x = numpy.linspace(0.0, 1.0, nx + 2 * mxg)[:, numpy.newaxis, numpy.newaxis]
     y = numpy.linspace(0.0, 1.0, ny + 2 * myg)[numpy.newaxis, :, numpy.newaxis]
-    z = numpy.linspace(0.0, 1.0, nz)[numpy.newaxis, numpy.newaxis, :]
+    z = numpy.linspace(0.0, 1.0, nz + 2 * mzg)[numpy.newaxis, numpy.newaxis, :]
 
     testvars = {}
     testvars["f3d"] = BoutArray(
@@ -54,7 +55,7 @@ def test_restart_io():
         base_restart.write("MZSUB", nz)
         base_restart.write("MXG", mxg)
         base_restart.write("MYG", myg)
-        base_restart.write("MZG", 0)
+        base_restart.write("MZG", mzg)
         base_restart.write("nx", nx + 2 * mxg)
         base_restart.write("ny", ny)
         base_restart.write("nz", nz)
@@ -109,7 +110,12 @@ def test_restart_io():
         for name in testvars.keys():
             # check non-evolving version
             result = collect(
-                name + "_once", path="data", xguards=True, yguards=True, info=False
+                name + "_once",
+                path="data",
+                xguards=True,
+                yguards=True,
+                zguards=True,
+                info=False,
             )
             testvar = testvars[name]
 
@@ -138,7 +144,9 @@ def test_restart_io():
                     )
 
             # check evolving versions
-            result = collect(name, path="data", xguards=True, yguards=True, info=False)
+            result = collect(
+                name, path="data", xguards=True, yguards=True, zguards=True, info=False
+            )
 
             for result_timeslice in result:
                 if not numpy.all(testvar == result_timeslice):

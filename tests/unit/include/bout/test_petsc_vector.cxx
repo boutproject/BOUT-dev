@@ -1,3 +1,4 @@
+#include "test_extras.hxx"
 #include "bout/build_defines.hxx"
 
 #include <utility>
@@ -10,6 +11,7 @@
 #include "bout/operatorstencil.hxx"
 #include "bout/petsc_interface.hxx"
 #include "bout/region.hxx"
+#include "bout/traits.hxx"
 
 #if BOUT_HAS_PETSC
 
@@ -19,6 +21,8 @@
 
 // The unit tests use the global mesh
 using namespace bout::globals;
+using bout::utils::is_Field2D_v;
+using bout::utils::is_FieldPerp_v;
 
 // Reuse the "standard" fixture for FakeMesh
 template <typename F>
@@ -29,6 +33,10 @@ public:
   F field;
   OperatorStencil<ind_type> stencil;
   IndexerPtr<F> indexer;
+  // Total number of cells in Z guard regions
+  // FakeMesh has boundaries on all sides except Z, so when comparing sizes
+  // we want the whole mesh except the Z guards
+  int zguards = 2 * (nx * (is_FieldPerp_v<F> ? 1 : ny) * (is_Field2D_v<F> ? 0 : 1));
 
   PetscVectorTest()
       : FakeMeshFixture(), field(1.5, bout::globals::mesh),
@@ -67,13 +75,15 @@ TYPED_TEST(PetscVectorTest, FieldConstructor) {
   }
   PetscVector<TypeParam> vector(this->field, this->indexer);
   Vec* vectorPtr = vector.get();
-  PetscScalar* vecContents;
-  PetscInt n;
+  PetscScalar* vecContents = nullptr;
+  PetscInt n = 0;
   VecGetArray(*vectorPtr, &vecContents);
   VecGetLocalSize(*vectorPtr, &n);
-  ASSERT_EQ(n, this->field.getNx() * this->field.getNy() * this->field.getNz());
+  ASSERT_EQ(n, this->field.size() - this->zguards);
   TypeParam result = vector.toField();
-  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) { EXPECT_EQ(result[i], this->field[i]); }
+  // We go into the X boundaries, but not Y or Z (which are only _guards_)
+  EXPECT_TRUE(IsFieldEqual(result, this->field, "RGN_NOBNDRY"));
+  EXPECT_TRUE(IsFieldEqual(result, this->field, "RGN_XGUARDS"));
 }
 
 // Test copy constructor
@@ -81,7 +91,8 @@ TYPED_TEST(PetscVectorTest, CopyConstructor) {
   SCOPED_TRACE("CopyConstructor");
   PetscVector<TypeParam> vector(this->field, this->indexer);
   PetscVector<TypeParam> copy(vector);
-  Vec *vectorPtr = vector.get(), *copyPtr = copy.get();
+  Vec* vectorPtr = vector.get();
+  Vec* copyPtr = copy.get();
   EXPECT_NE(vectorPtr, copyPtr);
   testVectorsEqual(vectorPtr, copyPtr);
 }
@@ -103,13 +114,15 @@ TYPED_TEST(PetscVectorTest, FieldAssignment) {
   const TypeParam val(-10.);
   vector = val;
   Vec* vectorPtr = vector.get();
-  PetscScalar* vecContents;
-  PetscInt n;
+  PetscScalar* vecContents = nullptr;
+  PetscInt n = 0;
   VecGetArray(*vectorPtr, &vecContents);
   VecGetLocalSize(*vectorPtr, &n);
-  ASSERT_EQ(n, this->field.getNx() * this->field.getNy() * this->field.getNz());
+  ASSERT_EQ(n, this->field.size() - this->zguards);
   TypeParam result = vector.toField();
-  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) { EXPECT_EQ(result[i], val[i]); }
+  // We go into the X boundaries, but not Y or Z (which are only _guards_)
+  EXPECT_TRUE(IsFieldEqual(result, val, "RGN_NOBNDRY"));
+  EXPECT_TRUE(IsFieldEqual(result, val, "RGN_XGUARDS"));
 }
 
 // Test copy assignment
@@ -146,9 +159,9 @@ TYPED_TEST(PetscVectorTest, SetElement) {
   PetscInt size = 0;
   VecGetArray(*vectorPtr, &vecContents);
   VecGetLocalSize(*vectorPtr, &size);
-  ASSERT_EQ(size, this->field.size());
+  EXPECT_EQ(size, this->field.size() - this->zguards);
   TypeParam result = vector.toField();
-  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) { EXPECT_EQ(result[i], val[i]); }
+  EXPECT_TRUE(IsFieldEqual(result, val, "RGN_NOBNDRY"));
 }
 
 // Test getting elements
@@ -211,8 +224,9 @@ TYPED_TEST(PetscVectorTest, TestMixedSetting) {
   vector.assemble();
   PetscScalar* vecContents = nullptr;
   VecGetArray(*(vector.get()), &vecContents);
-  ASSERT_EQ(vecContents[index1.ind], r);
-  ASSERT_EQ(vecContents[index2.ind], this->field[index2] + r);
+  const auto& indices = this->indexer->getIntIndices();
+  ASSERT_EQ(vecContents[indices[index1.ind]], r);
+  ASSERT_EQ(vecContents[indices[index2.ind]], this->field[index2] + r);
 }
 
 // Test destroy

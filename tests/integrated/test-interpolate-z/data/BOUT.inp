@@ -7,7 +7,7 @@ MZ = 4   # Z size
 NXPE = 1
 
 ZMAX = 1
-MXG = 2
+MXG = 1
 MYG = 0
 
 periodicX = false
@@ -15,8 +15,8 @@ periodicX = false
 
 [mesh]
 symmetricGlobalX = false
-dx = 0.3926990816 # 2pi / 16
-nx = 8
+dx = 1 / nx
+nx = 3
 ny = 1
 
 [mesh:ddz]

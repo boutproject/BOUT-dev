@@ -69,7 +69,8 @@ def test_interpolate(method):
                 var + "_solution", path="data", xguards=False, info=False
             )
 
-            E = interp - solution
+            # Don't include Z guard cells
+            E = (interp - solution).squeeze()[:, 2:-2]
 
             if False:
                 import matplotlib.pyplot as plt

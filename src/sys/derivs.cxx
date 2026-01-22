@@ -371,7 +371,11 @@ Field3D D2DXDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
   const auto x_location =
       (outloc == CELL_ZLOW or f.getLocation() == CELL_ZLOW) ? CELL_DEFAULT : outloc;
 
-  return DDZ(DDX(f, x_location, method, region), outloc, method, region);
+  // Set z-guard cells and z-boundary cells before calculating DDZ
+  Field3D ddx = DDX(f, x_location, method, region);
+  f.getMesh()->communicateZ(ddx);
+
+  return DDZ(ddx, outloc, method, region);
 }
 
 bout::FieldMetric D2DYDZ(const Field2D& f, CELL_LOC outloc,
@@ -394,7 +398,11 @@ Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc,
   const auto y_location =
       (outloc == CELL_ZLOW or f.getLocation() == CELL_ZLOW) ? CELL_DEFAULT : outloc;
 
-  return DDZ(DDY(f, y_location, method, region), outloc, method, region);
+  // Set z-guard cells and z-boundary cells before calculating DDZ
+  Field3D ddy = DDY(f, y_location, method, region);
+  f.getMesh()->communicateZ(ddy);
+
+  return DDZ(ddy, outloc, method, region);
 }
 
 /*******************************************************************************

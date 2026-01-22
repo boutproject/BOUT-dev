@@ -43,7 +43,6 @@
 #define BOUT_INV_PAR_CR_H
 
 #include "bout/build_defines.hxx"
-#include "bout/invert_parderiv.hxx"
 
 #if BOUT_USE_METRIC_3D
 
@@ -54,9 +53,16 @@ RegisterUnavailableInvertPar registerinvertparcyclic{
 
 #else
 
-#include "bout/dcomplex.hxx"
-#include "bout/utils.hxx"
+#include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/invert_parderiv.hxx>
+#include <bout/utils.hxx>
 #include <bout/globals.hxx>
+
+class Mesh;
+class Options;
 
 class InvertParCR : public InvertPar {
 public:
@@ -101,6 +107,9 @@ private:
   Field2D A{0.0}, B{0.0}, C{0.0}, D{0.0}, E{0.0};
   Field2D sg; // Coefficient of DDY contribution to Grad2_par2
 
+  /// Number of points in Z
+  int ncz;
+  /// Number of subsystems
   int nsys;
 };
 

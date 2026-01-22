@@ -19,7 +19,7 @@ numTests = 4  # We test 4 different boundary conditions (with slightly different
 def test_multigrid_laplace(nproc, inputfile):
     # set nxpe on the command line as we only use solution from one point in y,
     # so splitting in y-direction is redundant (and also doesn't help test the multigrid solver)
-    cmd = f"./test_multigrid_laplace -f {inputfile} NXPE={nproc} input:error_on_unused_options=false"
+    cmd = f"./test_multigrid_laplace -f {inputfile} NXPE={nproc} NZPE=1 input:error_on_unused_options=false"
 
     shell(["rm -f data/BOUT.dmp.*.nc"])
 

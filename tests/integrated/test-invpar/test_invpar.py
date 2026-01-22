@@ -21,7 +21,6 @@ flags_src = [
 
 
 def test_invpar():
-    global i, f, r, code
     flags = ""
     for i, f in enumerate(flags_src):
         fl = {"acoef": 1}
@@ -46,6 +45,6 @@ def test_invpar():
 
             code += s
             print(
-                "Run with flags {f} and {nproc} cores {'PASSED' if s == 0 else 'FAILED'}"
+                f"Run with flags {f} and {nproc} cores {'PASSED' if s == 0 else 'FAILED'}"
             )
     assert code == 0, "Some tests failed"

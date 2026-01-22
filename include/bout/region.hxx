@@ -292,28 +292,20 @@ struct SpecificInd {
     ASSERT3(std::abs(dy) < ny);
     return {ind + (dy * nz), ny, nz};
   }
+
   /// The index one point -1 in y
   SpecificInd ym(int dy = 1) const { return yp(-dy); }
-  /// The index one point +1 in z. Wraps around zend to zstart
-  /// An alternative, non-branching calculation is :
-  /// ind + dz - nz * ((ind + dz) / nz  - ind / nz)
-  /// but this appears no faster (and perhaps slower).
+
+  /// The index one point +1 in z
   SpecificInd zp(int dz = 1) const {
-    ASSERT3(dz >= 0);
-    dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
-    return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz};
+    if constexpr (N == IND_TYPE::IND_2D) {
+      return *this;
+    }
+    return {ind + dz, ny, nz};
   }
-  /// The index one point -1 in z. Wraps around zstart to zend
-  /// An alternative, non-branching calculation is :
-  /// ind - dz + nz * ( (nz + ind) / nz - (nz + ind - dz) / nz)
-  /// but this appears no faster (and perhaps slower).
-  SpecificInd zm(int dz = 1) const {
-    dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
-    ASSERT3(dz >= 0);
-    return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
-  }
-  /// Automatically select zm or zp depending on sign
-  SpecificInd zpm(int dz) const { return dz > 0 ? zp(dz) : zm(-dz); }
+
+  /// The index one point -1 in z
+  SpecificInd zm(int dz = 1) const { return zp(-dz); }
 
   // and for 2 cells
   SpecificInd xpp() const { return xp(2); }
@@ -324,7 +316,7 @@ struct SpecificInd {
   SpecificInd zmm() const { return zm(2); }
 
   /// Generic offset of \p index in multiple directions simultaneously
-  SpecificInd offset(int dx, int dy, int dz) const { return zpm(dz).yp(dy).xp(dx); }
+  SpecificInd offset(int dx, int dy, int dz) const { return zp(dz).yp(dy).xp(dx); }
 
   /// Relational operator
   auto operator<=>(const SpecificInd<N>& rhs) const { return ind <=> rhs.ind; }

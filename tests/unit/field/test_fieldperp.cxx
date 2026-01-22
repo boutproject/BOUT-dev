@@ -369,9 +369,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOZ) {
 
   // This is the set of indices actually inside the region we want
   std::set<std::vector<int>> region_indices;
-  region_indices.insert({0, 0});
   region_indices.insert({0, 1});
-  region_indices.insert({1, 0});
   region_indices.insert({1, 1});
   const int num_sentinels = region_indices.size();
 
@@ -393,8 +391,8 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOZ) {
   }
 
   EXPECT_EQ(found_sentinels, num_sentinels);
-  EXPECT_EQ(sum, (nx * nz - num_sentinels) + (num_sentinels * sentinel));
-  EXPECT_TRUE(region_indices == result_indices);
+  EXPECT_EQ(sum, (nx * (nz - 2) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_EQ(region_indices, result_indices);
 }
 
 TEST_F(FieldPerpTest, IterateOverRGN_NOX) {
@@ -436,7 +434,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOX) {
 
   EXPECT_EQ(found_sentinels, num_sentinels);
   EXPECT_EQ(sum, ((nz * (nx - 2)) - num_sentinels) + (num_sentinels * sentinel));
-  EXPECT_TRUE(region_indices == result_indices);
+  EXPECT_EQ(region_indices, result_indices);
 }
 
 TEST_F(FieldPerpTest, IterateOverRGN_XGUARDS) {
@@ -456,7 +454,6 @@ TEST_F(FieldPerpTest, IterateOverRGN_XGUARDS) {
 
   // This is the set of indices actually inside the region we want
   std::set<std::vector<int>> region_indices;
-  region_indices.insert({0, 0});
   region_indices.insert({0, 1});
 
   const int num_sentinels = region_indices.size();
@@ -479,8 +476,8 @@ TEST_F(FieldPerpTest, IterateOverRGN_XGUARDS) {
   }
 
   EXPECT_EQ(found_sentinels, num_sentinels);
-  EXPECT_EQ(sum, ((2 * nz) - num_sentinels) + (num_sentinels * sentinel));
-  EXPECT_TRUE(region_indices == result_indices);
+  EXPECT_EQ(sum, ((2 * (nz - 2)) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_EQ(region_indices, result_indices);
 }
 
 TEST_F(FieldPerpTest, IterateOverRGN_YGUARDS) {
@@ -522,7 +519,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_YGUARDS) {
 
   EXPECT_EQ(found_sentinels, num_sentinels);
   EXPECT_EQ(sum, (((nx - 2) * 0 * nz) - num_sentinels) + (num_sentinels * sentinel));
-  EXPECT_TRUE(region_indices == result_indices);
+  EXPECT_EQ(region_indices, result_indices);
 }
 
 TEST_F(FieldPerpTest, IterateOverRGN_ZGUARDS) {
@@ -542,6 +539,7 @@ TEST_F(FieldPerpTest, IterateOverRGN_ZGUARDS) {
 
   // This is the set of indices actually inside the region we want
   std::set<std::vector<int>> region_indices;
+  region_indices.insert({1, 0});
 
   const int num_sentinels = region_indices.size();
 
@@ -563,8 +561,8 @@ TEST_F(FieldPerpTest, IterateOverRGN_ZGUARDS) {
   }
 
   EXPECT_EQ(found_sentinels, num_sentinels);
-  EXPECT_EQ(sum, ((nx - 2) * 0 - num_sentinels) + (num_sentinels * sentinel));
-  EXPECT_TRUE(region_indices == result_indices);
+  EXPECT_EQ(sum, (((nx - 2) * 2) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_EQ(region_indices, result_indices);
 }
 
 TEST_F(FieldPerpTest, IterateOverRGN_NOCORNERS) {
@@ -584,9 +582,8 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOCORNERS) {
 
   // This is the set of indices actually inside the region we want
   std::set<std::vector<int>> region_indices;
-  region_indices.insert({0, 0});
-  region_indices.insert({0, 1});
   region_indices.insert({1, 0});
+  region_indices.insert({0, 1});
   region_indices.insert({1, 1});
 
   const int num_sentinels = region_indices.size();
@@ -609,8 +606,8 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOCORNERS) {
   }
 
   EXPECT_EQ(found_sentinels, num_sentinels);
-  EXPECT_EQ(sum, ((nx * nz) - num_sentinels) + (num_sentinels * sentinel));
-  EXPECT_TRUE(region_indices == result_indices);
+  EXPECT_EQ(sum, ((nx * nz) - 4 - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_EQ(region_indices, result_indices);
 }
 
 TEST_F(FieldPerpTest, Indexing) {

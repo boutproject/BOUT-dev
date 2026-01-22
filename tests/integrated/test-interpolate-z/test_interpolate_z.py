@@ -44,15 +44,9 @@ def test_interpolate_z():
             error_inf[var] = []  # Maximum error
 
         for nx in nxlist:
-            dx = 1.0 / (nx)
+            cmd = f"./test_interpolate MZ={nx} zinterpolation:type={method}"
 
-            args = (
-                f" mesh:nx={nx + 4} mesh:dx={dx} MZ={nx} zinterpolation:type={method}"
-            )
-
-            cmd = "./test_interpolate" + args
-
-            shell(["rm data/BOUT.dmp.*.nc"])
+            shell(["rm -f data/BOUT.dmp.*.nc"])
 
             s, out = launch_safe(cmd, nproc=nproc, pipe=True)
             with open("run.log.{}.{}".format(method, nx), "w") as f:

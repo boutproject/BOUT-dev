@@ -32,15 +32,25 @@
 #if not BOUT_USE_METRIC_3D
 
 #include "multigrid_laplace.hxx"
-#include "bout/unused.hxx"
-#include <bout/openmpwrap.hxx>
 
+#include <bout/array.hxx>
+#include <bout/bout_types.hxx>
+#include <bout/globals.hxx>
+#include <bout/openmpwrap.hxx>
+#include <bout/output.hxx>
+#include <bout/unused.hxx>
+#include <bout/utils.hxx>
+
+#include <fmt/format.h>
+#include <mpi.h>
+
+#include <cmath>
 #include <cstdio>
 #include <string>
 
-Multigrid1DP::Multigrid1DP(int level, int lx, int lz, int gx, int dl, int merge,
+Multigrid1DP::Multigrid1DP(int level, int lx, int lz, int gx, int gz, int dl, int merge,
                            MPI_Comm comm, int check)
-    : MultigridAlg(level, lx, lz, gx, lz, comm, check) {
+    : MultigridAlg(level, lx, lz, gx, gz, comm, check) {
 
   mglevel = level;
 
@@ -152,7 +162,7 @@ Multigrid1DP::Multigrid1DP(int level, int lx, int lz, int gx, int dl, int merge,
       int keys = rProcI / nz;
       MPI_Comm_split(commMG, colors, keys, &comm2D);
       rMG = bout::utils::make_unique<Multigrid2DPf1D>(
-          kk, lx, lz, gnx[0], lnz[0], dl - kk + 1, nx, nz, commMG, pcheck);
+          kk, lx, lz, gnx[0], gnz[0], dl - kk + 1, nx, nz, commMG, pcheck);
     } else {
       int nn = gnx[0];
       int mm = gnz[0];

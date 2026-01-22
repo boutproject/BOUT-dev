@@ -9,7 +9,9 @@ MZ = 32    # Z size
 symmetricGlobalX = false
 symmetricGlobalY = false
 
-file = "test_laplace.grd.nc"
+nx = 12
+ny = 16
+ShiftAngle = 5 * 2 * pi * x
 
 [laplace]
 all_terms = false

@@ -51,6 +51,15 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
   // periodic x-direction not handled: see MultigridAlg::communications
   ASSERT1(!localmesh->periodicX);
 
+#if BOUT_CHECK_LEVEL > 0
+  if (localmesh->getNZPE() != 1) {
+    throw BoutException("LaplaceMultigrid uses a communication pattern which is "
+                        "currently incompatible with multiple "
+                        "processors in Z (using {})",
+                        localmesh->getNZPE());
+  }
+#endif
+
   A.setLocation(location);
   C1.setLocation(location);
   C2.setLocation(location);
@@ -102,14 +111,14 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
 
   commX = localmesh->getXcomm();
 
-  Nx_local = localmesh->xend - localmesh->xstart + 1;      // excluding guard cells
-  Nx_global = localmesh->GlobalNx - 2 * localmesh->xstart; // excluding guard cells
+  Nx_local = localmesh->xend - localmesh->xstart + 1; // excluding guard cells
+  Nx_global = localmesh->GlobalNxNoBoundaries;
 
   if (mgcount == 0) {
     output << "Nx=" << Nx_global << "(" << Nx_local << ")" << endl;
   }
-  Nz_global = localmesh->GlobalNz;
-  Nz_local = Nz_global; // No parallelization in z-direction (for now)
+  Nz_global = localmesh->GlobalNzNoBoundaries;
+  Nz_local = localmesh->zend - localmesh->zstart + 1;
 
   if (mgcount == 0) {
     output << "Nz=" << Nz_global << "(" << Nz_local << ")" << endl;
@@ -177,7 +186,7 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
   }
   adlevel = mglevel - aclevel;
 
-  kMG = bout::utils::make_unique<Multigrid1DP>(aclevel, Nx_local, Nz_local, Nx_global,
+  kMG = bout::utils::make_unique<Multigrid1DP>(aclevel, Nx_local, Nz_local, Nx_global, Nz_global,
                                                adlevel, mgmpi, commX, pcheck);
   kMG->mgplag = mgplag;
   kMG->mgsm = mgsm;
@@ -213,9 +222,7 @@ LaplaceMultigrid::LaplaceMultigrid(Options* opt, const CELL_LOC loc, Mesh* mesh_
     }
     BOUT_OMP_SAFE(parallel)
     BOUT_OMP_SAFE(master)
-    {
-      output << "Num threads = " << omp_get_num_threads() << endl;
-    }
+    { output << "Num threads = " << omp_get_num_threads() << endl; }
   }
 }
 
@@ -253,7 +260,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
     for (int i = 1; i < lxx + 1; i++) {
       for (int k = 1; k < lzz + 1; k++) {
         int i2 = i - 1 + localmesh->xstart;
-        int k2 = k - 1;
+        int k2 = k - 1 + localmesh->zstart;
         x[i * lz2 + k] = x0[i2][k2];
       }
     }
@@ -265,7 +272,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
   for (int i = 1; i < lxx + 1; i++) {
     for (int k = 1; k < lzz + 1; k++) {
       int i2 = i - 1 + localmesh->xstart;
-      int k2 = k - 1;
+      int k2 = k - 1 + localmesh->zstart;
       b[i * lz2 + k] = b_in(i2, k2);
     }
   }
@@ -463,7 +470,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
   for (int i = 1; i < lxx + 1; i++) {
     for (int k = 1; k < lzz + 1; k++) {
       int i2 = i - 1 + localmesh->xstart;
-      int k2 = k - 1;
+      int k2 = k - 1 + localmesh->zstart;
       result(i2, k2) = x[i * lz2 + k];
     }
   }
@@ -476,7 +483,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
-          int k2 = k - 1;
+          int k2 = k - 1 + localmesh->zstart;
           result(i2, k2) = x[lz2 + k]
                            - x0(localmesh->xstart - 1, k2)
                                  * sqrt(coords->g_11(localmesh->xstart, yindex))
@@ -488,7 +495,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
-          int k2 = k - 1;
+          int k2 = k - 1 + localmesh->zstart;
           result(i2, k2) = x[lz2 + k];
         }
       }
@@ -500,7 +507,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
-          int k2 = k - 1;
+          int k2 = k - 1 + localmesh->zstart;
           result(i2, k2) = 2. * x0(localmesh->xstart - 1, k2) - x[lz2 + k];
         }
       } else {
@@ -509,7 +516,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
-          int k2 = k - 1;
+          int k2 = k - 1 + localmesh->zstart;
           result(i2, k2) = -x[lz2 + k];
         }
       }
@@ -524,7 +531,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
-          int k2 = k - 1;
+          int k2 = k - 1 + localmesh->zstart;
           result(i2, k2) = x[lxx * lz2 + k]
                            + x0(localmesh->xend + 1, k2)
                                  * sqrt(coords->g_11(localmesh->xend, yindex))
@@ -536,7 +543,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
-          int k2 = k - 1;
+          int k2 = k - 1 + localmesh->zstart;
           result(i2, k2) = x[lxx * lz2 + k];
         }
       }
@@ -548,7 +555,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
-          int k2 = k - 1;
+          int k2 = k - 1 + localmesh->zstart;
           result(i2, k2) = 2. * x0(localmesh->xend + 1, k2) - x[lxx * lz2 + k];
         }
       } else {
@@ -557,7 +564,7 @@ FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
         BOUT_OMP_PERF(parallel default(shared))
         BOUT_OMP_PERF(for)
         for (int k = 1; k < lzz + 1; k++) {
-          int k2 = k - 1;
+          int k2 = k - 1 + localmesh->zstart;
           result(i2, k2) = -x[lxx * lz2 + k];
         }
       }
@@ -583,7 +590,7 @@ void LaplaceMultigrid::generateMatrixF(int level) {
   for (int i = 1; i < llx + 1; i++) {
     for (int k = 1; k < llz + 1; k++) {
       int i2 = i - 1 + localmesh->xstart;
-      int k2 = k - 1;
+      int k2 = k - 1 + localmesh->zstart;
       int k2p = (k2 + 1) % Nz_global;
       int k2m = (k2 + Nz_global - 1) % Nz_global;
 

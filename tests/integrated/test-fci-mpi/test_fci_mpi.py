@@ -2,14 +2,10 @@
 #
 # Python script to run and analyse MPI test
 
-from boututils.run_wrapper import launch_safe
-from boutdata.collect import collect
-import itertools
-
 import numpy.testing as npt
+from boutdata.collect import collect
+from boututils.run_wrapper import launch_safe
 
-# Resolution in x and y
-NLIST = [1, 2, 4]
 MAXCORES = 8
 NSLICES = [1]
 
@@ -18,9 +14,9 @@ def test_fci_mpi():
 
     COLLECT_KW = dict(info=False, xguards=False, yguards=False, path="data")
 
-    def run_case(nxpe: int, nype: int, mthread: int):
+    def run_case(nxpe: int, nype: int, nzpe: int, mthread: int):
 
-        cmd = f"./fci_mpi NXPE={nxpe} NYPE={nype} mesh:paralleltransform:xzinterpolation:type={implementation}"
+        cmd = f"./fci_mpi NXPE={nxpe} NYPE={nype} NZPE={nzpe} mesh:paralleltransform:xzinterpolation:type={implementation}"
         print(f"Running command: {cmd}")
 
         _, out = launch_safe(cmd, nproc=nxpe * nype, mthread=mthread, pipe=True)
@@ -29,8 +25,8 @@ def test_fci_mpi():
         with open(f"run.log.{nxpe}.{nype}.{nslice}.log", "w") as f:
             f.write(out)
 
-    def test_case(nxpe: int, nype: int, mthread: int, ref: dict) -> bool:
-        run_case(nxpe, nype, mthread)
+    def test_case(nxpe: int, nype: int, nzpe: int, mthread: int, ref: dict) -> bool:
+        run_case(nxpe, nype, nzpe, mthread)
 
         failures = ""
 
@@ -38,7 +34,7 @@ def test_fci_mpi():
             try:
                 npt.assert_allclose(val, collect(name, **COLLECT_KW))
             except AssertionError as e:
-                failures += f"\ncase {nxpe=} {nype=} {name=}\n{e}"
+                failures += f"\ncase {nxpe=} {nype=} {nzpe=} {name=}\n{e}"
 
         return failures
 
@@ -56,7 +52,7 @@ def test_fci_mpi():
                         name = f"output_{i}_{y:+d}"
                         ref[name] = collect(name, **COLLECT_KW)
 
-            for nxpe, nype in itertools.product(NLIST, NLIST):
+            for nxpe, nype, nzpe in [(2, 1, 1), (1, 2, 1), (1, 1, 2), (2, 2, 2)]:
                 if (nxpe, nype) == (1, 1):
                     # reference case, done above
                     continue
@@ -64,8 +60,8 @@ def test_fci_mpi():
                 if nxpe * nype > MAXCORES:
                     continue
 
-                mthread = MAXCORES // (nxpe * nype)
-                failures_ = test_case(nxpe, nype, mthread, ref)
+                mthread = MAXCORES // (nxpe * nype * nzpe)
+                failures_ = test_case(nxpe, nype, nzpe, mthread, ref, implementation)
                 failures += failures_
 
         success = len(failures) == 0

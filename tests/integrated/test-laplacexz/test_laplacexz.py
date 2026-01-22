@@ -30,9 +30,8 @@ def test_laplacexz(nproc):
     with open(f"run.log.{nproc}", "w") as f:
         f.write(out)
 
-    # Collect output data
-    f = collect("f", path="data", info=False)
-    f2 = collect("f2", path="data", info=False)
+    f = collect("f", path="data", info=False).squeeze()
+    f2 = collect("f2", path="data", info=False).squeeze()
     print("      Checking tolerance... ")
     # Compare benchmark and output
     np.testing.assert_allclose(

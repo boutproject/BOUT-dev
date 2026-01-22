@@ -771,8 +771,6 @@ private:
     // Use global mesh: FIX THIS!
     const Mesh* mesh = bout::globals::mesh;
 
-    const int nz = mesh->LocalNz;
-
     switch (op) {
     case SOLVER_VAR_OP::LOAD: {
       /// Load variables from IDA into BOUT++
@@ -789,7 +787,7 @@ private:
         p++;
       }
 
-      for (int jz = 0; jz < nz; jz++) {
+      for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
 
         auto metadata_it = f3d.begin();
         // Loop over 3D variables
@@ -821,7 +819,7 @@ private:
         p++;
       }
 
-      for (int jz = 0; jz < nz; jz++) {
+      for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
 
         // Loop over 3D variables
         for (const auto& metadata : f3d) {
@@ -854,7 +852,7 @@ private:
         p++;
       }
 
-      for (int jz = 0; jz < nz; jz++) {
+      for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
 
         auto metadata_it = f3d.begin();
         // Loop over 3D variables

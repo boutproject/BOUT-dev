@@ -2,7 +2,6 @@
 #define LAPLACEXZ_CYCLIC_HXX
 
 #include "bout/build_defines.hxx"
-#include "bout/invert/laplacexz.hxx"
 
 #if BOUT_USE_METRIC_3D
 
@@ -13,16 +12,26 @@ RegisterUnavailableLaplaceXZ registerlaplacexzcylic{
 
 #else
 
-#include "bout/utils.hxx"
+#include <bout/array.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/cyclic_reduction.hxx>
 #include <bout/dcomplex.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 #include <bout/globals.hxx>
+#include <bout/invert/laplacexz.hxx>
+#include <bout/utils.hxx>
+
+#include <memory>
+
+class Mesh;
+class Options;
 
 class LaplaceXZcyclic : public LaplaceXZ {
 public:
   LaplaceXZcyclic(Mesh* m = nullptr, Options* options = nullptr,
-                  const CELL_LOC loc = CELL_CENTRE);
-  ~LaplaceXZcyclic() {}
+                  CELL_LOC loc = CELL_CENTRE);
+  ~LaplaceXZcyclic() override {}
 
   using LaplaceXZ::setCoefs;
   void setCoefs(const Field2D& A, const Field2D& B) override;
@@ -31,8 +40,18 @@ public:
   Field3D solve(const Field3D& b, const Field3D& x0) override;
 
 private:
+  /// Start and end X index
   int xstart, xend;
-  int nmode, nloc, nsys;
+  /// Number of points in Z
+  int ncz;
+  /// Number of Z Fourier modes, including DC
+  int nmode;
+  /// Number of points in X on this processor
+  /// including boundaries but not guard cells
+  int nloc;
+  /// Number of independent systems of
+  /// equations to solve
+  int nsys;
   Matrix<dcomplex> acoef, bcoef, ccoef, xcmplx, rhscmplx;
   Array<dcomplex> k1d, k1d_2;
   std::unique_ptr<CyclicReduce<dcomplex>> cr; ///< Tridiagonal solver

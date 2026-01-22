@@ -5,7 +5,6 @@
 #include <cmath>
 #include <memory>
 #include <string>
-#include <vector>
 
 // A simple phyics model with a stiff decay towards a steady state solution
 //
@@ -33,7 +32,7 @@ public:
 
   bool check_solution(BoutReal atol) {
     // Return true if correct solution
-    return (std::abs(f(1, 1, 0)) < atol) and (std::abs(g(1, 1, 0) - 1) < atol);
+    return (std::abs(f(1, 1, 1)) < atol) and (std::abs(g(1, 1, 1) - 1) < atol);
   }
 
   // Don't need any restarting, or options to control data paths
@@ -52,6 +51,7 @@ int main(int argc, char** argv) {
 
   root["mesh"]["MXG"] = 1;
   root["mesh"]["MYG"] = 1;
+  root["mesh"]["MZG"] = 1;
   root["mesh"]["nx"] = 3;
   root["mesh"]["ny"] = 1;
   root["mesh"]["nz"] = 1;

@@ -84,7 +84,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateFromFunction) {
   auto output = this->create(generator);
 
   auto expected = makeField<TypeParam>(
-      [](typename TypeParam::ind_type& index) -> BoutReal { return index.x() + 1.; },
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return (index.x() - mesh->xstart) + 1.;
+      },
       mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
@@ -154,7 +156,10 @@ TYPED_TEST(FieldFactoryCreationTest, CreateX) {
   auto output = this->create("x");
 
   auto expected = makeField<TypeParam>(
-      [](typename TypeParam::ind_type& index) -> BoutReal { return index.x(); }, mesh);
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return index.x() - mesh->xstart;
+      },
+      mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
 }
@@ -163,17 +168,25 @@ TYPED_TEST(FieldFactoryCreationTest, CreateY) {
   auto output = this->create("y");
 
   auto expected = makeField<TypeParam>(
-      [](typename TypeParam::ind_type& index) -> BoutReal { return TWOPI * index.y(); },
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return TWOPI * (index.y() - mesh->ystart) / mesh->GlobalNyNoBoundaries;
+      },
       mesh);
 
-  EXPECT_TRUE(IsFieldEqual(output, expected));
+  EXPECT_TRUE(IsFieldEqual(output, expected, "RGN_NOBNDRY"));
 }
 
 TYPED_TEST(FieldFactoryCreationTest, CreateZ) {
   auto output = this->create("z");
 
   auto expected = makeField<TypeParam>(
-      [](typename TypeParam::ind_type& index) -> BoutReal { return TWOPI * index.z(); },
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        if constexpr (bout::utils::is_Field2D_v<TypeParam>) {
+          return 0.0;
+        }
+
+        return TWOPI * (index.z() - mesh->zstart) / mesh->GlobalNzNoBoundaries;
+      },
       mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
@@ -185,7 +198,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateXStaggered) {
   auto output = this->create("x", nullptr, this->mesh_staggered, CELL_XLOW);
 
   auto expected = makeField<TypeParam>(
-      [](typename TypeParam::ind_type& index) -> BoutReal { return index.x() - 0.5; },
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return (index.x() - mesh->xstart) - 0.5;
+      },
       mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
@@ -199,7 +214,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateYStaggered) {
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
-        return TWOPI * (index.y() - 0.5);
+        return TWOPI * ((index.y() - mesh->ystart) - 0.5) / mesh->GlobalNyNoBoundaries;
       },
       mesh);
 
@@ -214,12 +229,16 @@ TYPED_TEST(FieldFactoryCreationTest, CreateZStaggered) {
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
+        if constexpr (bout::utils::is_Field2D_v<TypeParam>) {
+          return 0.0;
+        }
+
         auto offset = BoutReal{0.0};
         if constexpr (bout::utils::is_Field3D_v<TypeParam>) {
           offset = 0.5;
         }
 
-        return TWOPI * (index.z() - offset);
+        return TWOPI * ((index.z() - mesh->zstart) - offset) / mesh->GlobalNzNoBoundaries;
       },
       mesh);
 
@@ -238,7 +257,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateSinX) {
   auto output = this->create("sin(x)");
 
   auto expected = makeField<TypeParam>(
-      [](typename TypeParam::ind_type& index) -> BoutReal { return std::sin(index.x()); },
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return std::sin((index.x() - mesh->xstart));
+      },
       mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
@@ -248,7 +269,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateCosX) {
   auto output = this->create("cos(x)");
 
   auto expected = makeField<TypeParam>(
-      [](typename TypeParam::ind_type& index) -> BoutReal { return std::cos(index.x()); },
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return std::cos((index.x() - mesh->xstart));
+      },
       mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
@@ -258,7 +281,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateTanX) {
   auto output = this->create("tan(x)");
 
   auto expected = makeField<TypeParam>(
-      [](typename TypeParam::ind_type& index) -> BoutReal { return std::tan(index.x()); },
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return std::tan((index.x() - mesh->xstart));
+      },
       mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
@@ -269,7 +294,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateAsinX) {
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
-        return std::asin(index.x());
+        return std::asin((index.x() - mesh->xstart));
       },
       mesh);
 
@@ -281,7 +306,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateAcosX) {
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
-        return std::acos(index.x());
+        return std::acos((index.x() - mesh->xstart));
       },
       mesh);
 
@@ -293,7 +318,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateAtanX) {
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
-        return std::atan(index.x());
+        return std::atan((index.x() - mesh->xstart));
       },
       mesh);
 
@@ -305,7 +330,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateAtanX2) {
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
-        return std::atan2(index.x(), 2.);
+        return std::atan2((index.x() - mesh->xstart), 2.);
       },
       mesh);
 
@@ -317,7 +342,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateSinhX) {
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
-        return std::sinh(index.x());
+        return std::sinh((index.x() - mesh->xstart));
       },
       mesh);
 
@@ -329,7 +354,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateCoshX) {
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
-        return std::cosh(index.x());
+        return std::cosh((index.x() - mesh->xstart));
       },
       mesh);
 
@@ -341,7 +366,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateTanhX) {
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
-        return std::tanh(index.x());
+        return std::tanh((index.x() - mesh->xstart));
       },
       mesh);
 
@@ -352,7 +377,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateExpX) {
   auto output = this->create("exp(x)");
 
   auto expected = makeField<TypeParam>(
-      [](typename TypeParam::ind_type& index) -> BoutReal { return std::exp(index.x()); },
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return std::exp((index.x() - mesh->xstart));
+      },
       mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
@@ -362,7 +389,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateLogX) {
   auto output = this->create("log(x)");
 
   auto expected = makeField<TypeParam>(
-      [](typename TypeParam::ind_type& index) -> BoutReal { return std::log(index.x()); },
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return std::log((index.x() - mesh->xstart));
+      },
       mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
@@ -373,7 +402,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateGaussX) {
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
-        return std::exp(-std::pow(index.x(), 2) / 2.) / std::sqrt(TWOPI);
+        return std::exp(-std::pow((index.x() - mesh->xstart), 2) / 2.) / std::sqrt(TWOPI);
       },
       mesh);
 
@@ -386,7 +415,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateGaussWithWidthX) {
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
         constexpr auto width = BoutReal{4.};
-        return std::exp(-std::pow(index.x() / width, 2) / 2.)
+        return std::exp(-std::pow((index.x() - mesh->xstart) / width, 2) / 2.)
                / (std::sqrt(TWOPI) * width);
       },
       mesh);
@@ -398,7 +427,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateAbsX) {
   auto output = this->create("abs(x)");
 
   auto expected = makeField<TypeParam>(
-      [](typename TypeParam::ind_type& index) -> BoutReal { return std::abs(index.x()); },
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return std::abs((index.x() - mesh->xstart));
+      },
       mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
@@ -409,7 +440,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateSqrtX) {
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
-        return std::sqrt(index.x());
+        return std::sqrt((index.x() - mesh->xstart));
       },
       mesh);
 
@@ -421,7 +452,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateHeavisideXPi) {
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
-        if (index.x() > PI) {
+        if ((index.x() - mesh->xstart) > PI) {
           return 1.0;
         } else {
           return 0.0;
@@ -436,7 +467,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateErfX) {
   auto output = this->create("erf(x)");
 
   auto expected = makeField<TypeParam>(
-      [](typename TypeParam::ind_type& index) -> BoutReal { return std::erf(index.x()); },
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return std::erf((index.x() - mesh->xstart));
+      },
       mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
@@ -447,7 +480,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateFmodX) {
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
-        return std::fmod(PI, index.x());
+        return std::fmod(PI, (index.x() - mesh->xstart));
       },
       mesh);
 
@@ -488,7 +521,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreatePowX) {
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
-        return std::pow(index.x(), 2);
+        return std::pow((index.x() - mesh->xstart), 2);
       },
       mesh);
 
@@ -505,8 +538,10 @@ TYPED_TEST(FieldFactoryCreationTest, CreateTanhHatX) {
         constexpr auto steepness = BoutReal{3.};
 
         return 0.5
-               * (std::tanh(steepness * (index.x() - (centre - 0.5 * width)))
-                  - std::tanh(steepness * (index.x() - (centre + 0.5 * width))));
+               * (std::tanh(steepness
+                            * ((index.x() - mesh->xstart) - (centre - 0.5 * width)))
+                  - std::tanh(steepness
+                              * ((index.x() - mesh->xstart) - (centre + 0.5 * width))));
       },
       mesh);
 
@@ -528,7 +563,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateWithLookup) {
 
   auto expected = makeField<TypeParam>(
       [&a_value](typename TypeParam::ind_type& index) -> BoutReal {
-        return index.x() + a_value;
+        return (index.x() - mesh->xstart) + a_value;
       },
       mesh);
 
@@ -546,7 +581,7 @@ TYPED_TEST(FieldFactoryCreationTest, ParseFromCache) {
 
   auto expected = makeField<TypeParam>(
       [&a_value](typename TypeParam::ind_type& index) -> BoutReal {
-        return index.x() + a_value;
+        return (index.x() - mesh->xstart) + a_value;
       },
       mesh);
 
@@ -554,11 +589,12 @@ TYPED_TEST(FieldFactoryCreationTest, ParseFromCache) {
 }
 
 TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
-  constexpr auto nx = int{1};
-  constexpr auto ny = int{1};
-  constexpr auto nz = int{1};
+  constexpr auto nx = 1;
+  constexpr auto ny = 1;
+  constexpr auto nz = 1;
 
-  FakeMesh localmesh{nx, ny, nz};
+  FakeMesh localmesh{nx, ny, nz, 0};
+
   localmesh.createDefaultRegions();
   localmesh.setCoordinates(std::make_shared<Coordinates>(
       &localmesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
@@ -846,7 +882,10 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create2D) {
 
   // Field2Ds can't be transformed, so expect no change
   auto expected = makeField<Field2D>(
-      [](typename Field2D::ind_type& index) -> BoutReal { return index.x(); }, mesh);
+      [](typename Field2D::ind_type& index) -> BoutReal {
+        return (index.x() - mesh->xstart);
+      },
+      mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
 }
@@ -860,7 +899,10 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create3D) {
   auto output = factory.create3D("x");
 
   auto expected = makeField<Field3D>(
-      [](typename Field3D::ind_type& index) -> BoutReal { return -index.x(); }, mesh);
+      [](typename Field3D::ind_type& index) -> BoutReal {
+        return -(index.x() - mesh->xstart);
+      },
+      mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
 }
@@ -877,7 +919,10 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create2DNoTransform) {
 
   // Field2Ds can't be transformed, so expect no change
   auto expected = makeField<Field2D>(
-      [](typename Field2D::ind_type& index) -> BoutReal { return index.x(); }, mesh);
+      [](typename Field2D::ind_type& index) -> BoutReal {
+        return (index.x() - mesh->xstart);
+      },
+      mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
 }
@@ -893,7 +938,10 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create3DNoTransform) {
   auto output = factory.create3D("x");
 
   auto expected = makeField<Field3D>(
-      [](typename Field3D::ind_type& index) -> BoutReal { return index.x(); }, mesh);
+      [](typename Field3D::ind_type& index) -> BoutReal {
+        return index.x() - mesh->xstart;
+      },
+      mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
 }
@@ -908,7 +956,10 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create2DCantTransform) {
 
   // Field2Ds can't be transformed, so expect no change
   auto expected = makeField<Field2D>(
-      [](typename Field2D::ind_type& index) -> BoutReal { return index.x(); }, mesh);
+      [](typename Field2D::ind_type& index) -> BoutReal {
+        return (index.x() - mesh->xstart);
+      },
+      mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
 }
@@ -922,7 +973,10 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create3DCantTransform) {
   auto output = factory.create3D("x");
 
   auto expected = makeField<Field3D>(
-      [](typename Field3D::ind_type& index) -> BoutReal { return index.x(); }, mesh);
+      [](typename Field3D::ind_type& index) -> BoutReal {
+        return (index.x() - mesh->xstart);
+      },
+      mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
 }
@@ -932,7 +986,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreatePeriodicY) {
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
-        return mesh->periodicY(index.x());
+        return mesh->periodicY((index.x() - mesh->xstart));
       },
       mesh);
 
@@ -963,7 +1017,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreatePeriodicYoutsideCore) {
 }
 
 TYPED_TEST(FieldFactoryCreationTest, CreatePeriodicYacrossSeparatrix) {
-  FakeMesh localmesh{5, 1, 1};
+  FakeMesh localmesh{5, 1, 1, 0};
   localmesh.createDefaultRegions();
   localmesh.ix_separatrix = 2; // All points in core
   localmesh.setCoordinates(std::make_shared<Coordinates>(
@@ -1001,7 +1055,8 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField3D) {
     const auto theta = factory.create3D("atan(y, x)");
     const Options grid{{"rho", rho},          {"theta", theta},
                        {"nx", mesh->LocalNx}, {"ny", mesh->LocalNy - 2},
-                       {"nz", mesh->LocalNz}, {"y_boundary_guards", 1}};
+                       {"nz", mesh->LocalNz}, {"y_boundary_guards", 1},
+                       {"MZG", mesh->zstart}};
     bout::OptionsIO::create(filename)->write(grid);
   }
 

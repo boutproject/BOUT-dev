@@ -12,7 +12,7 @@
 #include "fake_mesh_fixture.hxx"
 #include "test_extras.hxx"
 
-using YBTest = FakeMeshFixture_tmpl<4, 5, 7>;
+using YBTest = FakeMeshFixture_tmpl<4, 5, 9>;
 
 using bout::boundary::BoundaryIterator;
 using bout::boundary::YBoundary;
