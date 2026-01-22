@@ -57,28 +57,26 @@ public:
 
 /// Minimal parameters need to construct a grid useful for testing
 struct BoutMeshGridInfo {
-  int local_nx; // Does _not_ include guard cells
-  int local_ny; // Does _not_ include guard cells
-  int num_x_guards;
-  int num_y_guards;
-  int nxpe;
-  int nype;
-  int pe_xind;
-  int pe_yind;
+  using ProcSizes = BoutMeshExposer::ProcSizes;
+  ProcSizes local_n; // Does _not_ include guard cells
+  ProcSizes guards;
+  ProcSizes num_procs;
+  ProcSizes proc_index;
   bool symmetric_X;
   bool symmetric_Y;
   // The below are constructed consistently with the above
-  int total_nx; // _Does_ include guard cells
-  int total_ny; // Does _not_ include guard cells
-  int total_processors;
-  BoutMeshGridInfo(int local_nx_, int local_ny_, int num_x_guards_, int num_y_guards_,
-                   int nxpe_, int nype_, int pe_xind_ = 0, int pe_yind_ = 0,
-                   bool symmetric_X_ = true, bool symmetric_Y_ = true)
-      : local_nx(local_nx_), local_ny(local_ny_), num_x_guards(num_x_guards_),
-        num_y_guards(num_y_guards_), nxpe(nxpe_), nype(nype_), pe_xind(pe_xind_),
-        pe_yind(pe_yind_), symmetric_X(symmetric_X_), symmetric_Y(symmetric_Y_),
-        total_nx((nxpe * local_nx) + (2 * num_x_guards)), total_ny(nype * local_ny),
-        total_processors(nxpe * nype) {}
+  ProcSizes total_n;
+  // x _Does_ include guard cells
+  // y Does _not_ include guard cells
+  // z Does _not_ include guard cells
+  int total_processors{num_procs.x * num_procs.y * num_procs.z};
+  BoutMeshGridInfo(ProcSizes local_n_, ProcSizes guards_, ProcSizes num_procs_,
+                   ProcSizes proc_index_ = {0, 0, 0}, bool symmetric_X_ = true,
+                   bool symmetric_Y_ = true)
+      : local_n(local_n_), guards(guards_), num_procs(num_procs_),
+        proc_index(proc_index_), symmetric_X(symmetric_X_), symmetric_Y(symmetric_Y_),
+        total_n{(num_procs.x * local_n.x) + (2 * guards.x), num_procs.y * local_n.y,
+                num_procs.z * local_n.z} {}
 };
 
 /// Grid and topology information to make a `BoutMesh`
@@ -91,13 +89,12 @@ struct BoutMeshParameters {
 /// Now we've got the definition of `BoutMeshParameters`, we can
 /// actually make a `BoutMeshExposer`
 BoutMeshExposer::BoutMeshExposer(const BoutMeshParameters& inputs, bool periodicX_)
-    : BoutMesh(inputs.grid.total_nx, inputs.grid.total_ny, 1, inputs.grid.num_x_guards,
-               inputs.grid.num_y_guards, inputs.grid.nxpe, inputs.grid.nype,
-               inputs.grid.pe_xind, inputs.grid.pe_yind, inputs.grid.symmetric_X,
-               inputs.grid.symmetric_Y, periodicX_, inputs.x_indices.ixseps1,
-               inputs.x_indices.ixseps2, inputs.y_indices.jyseps1_1,
-               inputs.y_indices.jyseps2_1, inputs.y_indices.jyseps1_2,
-               inputs.y_indices.jyseps2_2, inputs.y_indices.ny_inner) {}
+    : BoutMesh(inputs.grid.total_n, inputs.grid.guards, inputs.grid.num_procs,
+               inputs.grid.proc_index, inputs.grid.symmetric_X, inputs.grid.symmetric_Y,
+               periodicX_, inputs.x_indices.ixseps1, inputs.x_indices.ixseps2,
+               inputs.y_indices.jyseps1_1, inputs.y_indices.jyseps2_1,
+               inputs.y_indices.jyseps1_2, inputs.y_indices.jyseps2_2,
+               inputs.y_indices.ny_inner) {}
 
 /// Equality operator to help testing
 bool operator==(const BoutMeshExposer::YDecompositionIndices& lhs,
@@ -161,89 +158,91 @@ std::ostream& operator<<(std::ostream& out,
 // different topologies. We don't just return a `BoutMeshExposer`,
 // because we can reuse the `BoutMeshParameters` for other tests where
 // we don't want a full `Mesh` object
+namespace {
 BoutMeshParameters createCore(const BoutMeshGridInfo& grid) {
   return {grid,
-          {grid.total_nx, grid.total_nx},
-          {-1, (grid.total_ny / 2) - 1, (grid.total_ny / 2) - 1, grid.total_ny - 1,
-           grid.total_ny / 2}};
+          {grid.total_n.x, grid.total_n.x},
+          {-1, (grid.total_n.y / 2) - 1, (grid.total_n.y / 2) - 1, grid.total_n.y - 1,
+           grid.total_n.y / 2}};
 }
 
 BoutMeshParameters createSOL(const BoutMeshGridInfo& grid) {
   return {grid,
           {0, 0},
-          {-1, (grid.total_ny / 2) - 1, (grid.total_ny / 2) - 1, grid.total_ny - 1,
-           grid.total_ny / 2}};
+          {-1, (grid.total_n.y / 2) - 1, (grid.total_n.y / 2) - 1, grid.total_n.y - 1,
+           grid.total_n.y / 2}};
 }
 
 BoutMeshParameters createLimiter(const BoutMeshGridInfo& grid) {
   return {grid,
-          {grid.total_nx / 2, grid.total_nx},
-          {-1, (grid.total_ny / 2) - 1, (grid.total_ny / 2) - 1, grid.total_ny - 1,
-           grid.total_ny / 2}};
+          {grid.total_n.x / 2, grid.total_n.x},
+          {-1, (grid.total_n.y / 2) - 1, (grid.total_n.y / 2) - 1, grid.total_n.y - 1,
+           grid.total_n.y / 2}};
 }
 
 BoutMeshParameters createXPoint(const BoutMeshGridInfo& grid) {
-  if (grid.nype < 4) {
+  if (grid.num_procs.y < 4) {
     throw BoutException(
         "createXPoint: Not enough processors for x-point topology (nype={}, needs 4)",
-        grid.nype);
+        grid.num_procs.y);
   }
 
   return {grid,
-          {grid.total_nx / 2, grid.total_nx / 2},
-          {grid.local_ny - 1, grid.local_ny - 1, grid.total_ny - grid.local_ny - 1,
-           grid.total_ny - grid.local_ny - 1, 2 * grid.local_ny}};
+          {grid.total_n.x / 2, grid.total_n.x / 2},
+          {grid.local_n.y - 1, grid.local_n.y - 1, grid.total_n.y - grid.local_n.y - 1,
+           grid.total_n.y - grid.local_n.y - 1, 2 * grid.local_n.y}};
 }
 
 BoutMeshParameters createSingleNull(const BoutMeshGridInfo& grid) {
-  if (grid.nype < 3) {
+  if (grid.num_procs.y < 3) {
     throw BoutException(
         "createXPoint: Not enough processors for single-null topology (nype={}, needs 3)",
-        grid.nype);
+        grid.num_procs.y);
   }
 
   return {grid,
-          {grid.total_nx / 2, grid.total_nx},
-          {grid.local_ny - 1, (grid.total_ny / 2) - 1, (grid.total_ny / 2) - 1,
-           grid.total_ny - grid.local_ny - 1, grid.total_ny / 2}};
+          {grid.total_n.x / 2, grid.total_n.x},
+          {grid.local_n.y - 1, (grid.total_n.y / 2) - 1, (grid.total_n.y / 2) - 1,
+           grid.total_n.y - grid.local_n.y - 1, grid.total_n.y / 2}};
 }
 
 BoutMeshParameters createDoubleNull(const BoutMeshGridInfo& grid) {
-  if (grid.nype < 6) {
+  if (grid.num_procs.y < 6) {
     throw BoutException("createDoubleNull: Not enough processors for double-null "
                         "topology (nype={}, needs 6)",
-                        grid.nype);
+                        grid.num_procs.y);
   }
 
-  const int ny_inner = 3 * grid.local_ny;
+  const int ny_inner = 3 * grid.local_n.y;
   return {grid,
-          {grid.total_nx / 2, grid.total_nx / 2},
-          {grid.local_ny - 1, ny_inner - grid.local_ny - 1, ny_inner + grid.local_ny - 1,
-           grid.total_ny - grid.local_ny - 1, ny_inner}};
+          {grid.total_n.x / 2, grid.total_n.x / 2},
+          {grid.local_n.y - 1, ny_inner - grid.local_n.y - 1,
+           ny_inner + grid.local_n.y - 1, grid.total_n.y - grid.local_n.y - 1, ny_inner}};
 }
 
 BoutMeshParameters createDisconnectedDoubleNull(const BoutMeshGridInfo& grid) {
-  if (grid.nype < 6) {
+  if (grid.num_procs.y < 6) {
     throw BoutException(
         "createDisconnectedDoubleNull: Not enough processors for disconnected "
         "double-null topology (nype={}, needs 6)",
-        grid.nype);
+        grid.num_procs.y);
   }
 
-  if ((grid.total_nx / 2) + 4 > grid.total_nx) {
+  if ((grid.total_n.x / 2) + 4 > grid.total_n.x) {
     throw BoutException(
         "createDisconnectedDoubleNull: Not enough points in x-direction "
         "(need ixseps2 = ((nxpe * (local_nx - 2)) + 2) / 2 + 4 = {} to "
         "be less than total_nx = (nxpe * (local_nx - 2)) + 2 = {}; nxpe={}, local_nx={}",
-        (grid.total_nx / 2) + 4, grid.total_nx, grid.nxpe, grid.local_nx);
+        (grid.total_n.x / 2) + 4, grid.total_n.x, grid.num_procs.x, grid.local_n.x);
   }
 
-  const int ny_inner = 3 * grid.local_ny;
+  const int ny_inner = 3 * grid.local_n.y;
   return {grid,
-          {grid.total_nx / 2, grid.total_nx / 2 + 4},
-          {grid.local_ny - 1, ny_inner - grid.local_ny - 1, ny_inner + grid.local_ny - 1,
-           grid.total_ny - grid.local_ny - 1, ny_inner}};
+          {grid.total_n.x / 2, (grid.total_n.x / 2) + 4},
+          {grid.local_n.y - 1, ny_inner - grid.local_n.y - 1,
+           ny_inner + grid.local_n.y - 1, grid.total_n.y - grid.local_n.y - 1, ny_inner}};
 }
+} // namespace
 
 ////////////////////////////////////////////////////////////
 // Start of tests
@@ -353,9 +352,9 @@ DecompositionTestParameters
 makeDecompositionTestParameters(const BoutMeshParameters& inputs,
                                 const std::string& name) {
   return {inputs.grid.total_processors,
-          inputs.grid.nype,
-          inputs.grid.total_ny,
-          inputs.grid.num_y_guards,
+          inputs.grid.num_procs.y,
+          inputs.grid.total_n.y,
+          inputs.grid.guards.y,
           inputs.y_indices,
           "",
           name};
@@ -399,16 +398,21 @@ INSTANTIATE_TEST_SUITE_P(
         DecompositionTestParameters{
             2, 2, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCoresNYPE2"},
         // The following should basically all work by construction
-        makeDecompositionTestParameters(createCore({4, 4, 2, 2, 1, 1}), "Core"),
-        makeDecompositionTestParameters(createSOL({4, 4, 2, 2, 1, 1}), "SOL"),
-        makeDecompositionTestParameters(createLimiter({4, 4, 2, 2, 1, 1}), "Limiter"),
-        makeDecompositionTestParameters(createXPoint({4, 4, 2, 2, 1, 4}), "XPoint"),
-        makeDecompositionTestParameters(createSingleNull({4, 4, 2, 2, 1, 3}),
-                                        "SingleNull"),
-        makeDecompositionTestParameters(createDoubleNull({4, 4, 2, 2, 1, 6}),
-                                        "DoubleNull"),
-        makeDecompositionTestParameters(createDisconnectedDoubleNull({12, 4, 2, 2, 1, 6}),
-                                        "DisconnectedDoubleNull")),
+        makeDecompositionTestParameters(createCore({{4, 4, 1}, {2, 2, 2}, {1, 1, 1}}),
+                                        "Core"),
+        makeDecompositionTestParameters(createSOL({{4, 4, 1}, {2, 2, 2}, {1, 1, 1}}),
+                                        "SOL"),
+        makeDecompositionTestParameters(createLimiter({{4, 4, 1}, {2, 2, 2}, {1, 1, 1}}),
+                                        "Limiter"),
+        makeDecompositionTestParameters(createXPoint({{4, 4, 1}, {2, 2, 2}, {1, 4, 1}}),
+                                        "XPoint"),
+        makeDecompositionTestParameters(
+            createSingleNull({{4, 4, 1}, {2, 2, 2}, {1, 3, 1}}), "SingleNull"),
+        makeDecompositionTestParameters(
+            createDoubleNull({{4, 4, 1}, {2, 2, 2}, {1, 6, 1}}), "DoubleNull"),
+        makeDecompositionTestParameters(
+            createDisconnectedDoubleNull({{12, 4, 1}, {2, 2, 2}, {1, 6, 1}}),
+            "DisconnectedDoubleNull")),
     DecompositionTestParametersToString);
 
 TEST_P(BoutMeshDecompositionTest, CheckYDecomposition) {
@@ -528,11 +532,11 @@ struct FindProcessorParameters {
 
 FindProcessorParameters makeFindProcessorParameters(const BoutMeshParameters& inputs) {
   return {inputs.grid.total_processors,
-          {inputs.grid.total_nx, inputs.grid.total_ny, 1},
-          {inputs.grid.num_x_guards, inputs.grid.num_y_guards, 0},
+          {inputs.grid.total_n.x, inputs.grid.total_n.y, inputs.grid.total_n.z},
+          {inputs.grid.guards.x, inputs.grid.guards.y, inputs.grid.guards.z},
           inputs.y_indices,
-          inputs.grid.nxpe,
-          inputs.grid.nype};
+          inputs.grid.num_procs.x,
+          inputs.grid.num_procs.y};
 }
 
 std::ostream& operator<<(std::ostream& out, const FindProcessorParameters& value) {
@@ -581,22 +585,25 @@ INSTANTIATE_TEST_SUITE_P(
         FindProcessorParameters{
             8192, {132, 128, 1}, {2, 2, 0}, {15, 47, 79, 111, 64}, 128, 64},
         // The following should work basically by construction
-        makeFindProcessorParameters(createCore({4, 4, 2, 2, 1, 1})),
-        makeFindProcessorParameters(createCore({4, 4, 2, 2, 2, 2})),
-        makeFindProcessorParameters(createCore({4, 4, 2, 2, 4, 4})),
-        makeFindProcessorParameters(createSOL({4, 4, 2, 2, 1, 1})),
-        makeFindProcessorParameters(createSOL({4, 4, 2, 2, 17, 13})),
-        makeFindProcessorParameters(createSOL({4, 4, 2, 2, 37, 67})),
-        makeFindProcessorParameters(createLimiter({4, 4, 2, 2, 1, 1})),
-        makeFindProcessorParameters(createLimiter({4, 4, 2, 2, 5, 6})),
-        makeFindProcessorParameters(createXPoint({4, 4, 2, 2, 1, 4})),
-        makeFindProcessorParameters(createXPoint({4, 4, 2, 2, 89, 32})),
-        makeFindProcessorParameters(createSingleNull({4, 4, 2, 2, 1, 3})),
-        makeFindProcessorParameters(createSingleNull({4, 4, 2, 2, 23, 31})),
-        makeFindProcessorParameters(createDoubleNull({4, 4, 2, 2, 1, 6})),
-        makeFindProcessorParameters(createDoubleNull({4, 4, 2, 2, 7, 7})),
-        makeFindProcessorParameters(createDisconnectedDoubleNull({12, 4, 2, 2, 1, 6})),
-        makeFindProcessorParameters(createDisconnectedDoubleNull({12, 4, 2, 2, 6, 66}))));
+        makeFindProcessorParameters(createCore({{4, 4, 1}, {2, 2, 2}, {1, 1, 1}})),
+        makeFindProcessorParameters(createCore({{4, 4, 1}, {2, 2, 2}, {2, 2, 1}})),
+        makeFindProcessorParameters(createCore({{4, 4, 1}, {2, 2, 2}, {4, 4, 1}})),
+        makeFindProcessorParameters(createSOL({{4, 4, 1}, {2, 2, 2}, {1, 1, 1}})),
+        makeFindProcessorParameters(createSOL({{4, 4, 1}, {2, 2, 2}, {17, 13, 1}})),
+        makeFindProcessorParameters(createSOL({{4, 4, 1}, {2, 2, 2}, {37, 67, 1}})),
+        makeFindProcessorParameters(createLimiter({{4, 4, 1}, {2, 2, 2}, {1, 1, 1}})),
+        makeFindProcessorParameters(createLimiter({{4, 4, 1}, {2, 2, 2}, {5, 6, 1}})),
+        makeFindProcessorParameters(createXPoint({{4, 4, 1}, {2, 2, 2}, {1, 4, 1}})),
+        makeFindProcessorParameters(createXPoint({{4, 4, 1}, {2, 2, 2}, {89, 32, 1}})),
+        makeFindProcessorParameters(createSingleNull({{4, 4, 1}, {2, 2, 2}, {1, 3, 1}})),
+        makeFindProcessorParameters(
+            createSingleNull({{4, 4, 1}, {2, 2, 2}, {23, 31, 1}})),
+        makeFindProcessorParameters(createDoubleNull({{4, 4, 1}, {2, 2, 2}, {1, 6, 1}})),
+        makeFindProcessorParameters(createDoubleNull({{4, 4, 1}, {2, 2, 2}, {7, 7, 1}})),
+        makeFindProcessorParameters(
+            createDisconnectedDoubleNull({{12, 4, 1}, {2, 2, 2}, {1, 6, 1}})),
+        makeFindProcessorParameters(
+            createDisconnectedDoubleNull({{12, 4, 1}, {2, 2, 2}, {6, 66, 1}}))));
 
 TEST_P(BoutMeshFindProcessorTest, FindProcessor) {
   WithQuietOutput info{output_info};
@@ -1218,27 +1225,29 @@ TEST_F(BoutMeshTest, GetLocalYIndexNoBoundaries) {
 }
 
 TEST_F(BoutMeshTest, GlobalYIntSymmetricY) {
-  BoutMeshExposer mesh_inner_pf(createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 0}));
+  BoutMeshExposer mesh_inner_pf(
+      createDisconnectedDoubleNull({{12, 4, 1}, {1, 1, 2}, {1, 6, 1}, {0, 0, 0}}));
   EXPECT_EQ(mesh_inner_pf.GlobalY(0), -0.5625);
   EXPECT_EQ(mesh_inner_pf.GlobalY(1), -0.4375);
   EXPECT_EQ(mesh_inner_pf.GlobalY(2), -0.3125);
   EXPECT_EQ(mesh_inner_pf.GlobalY(3), -0.1875);
 
   BoutMeshExposer mesh_inner_core(
-      createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 1}));
+      createDisconnectedDoubleNull({{12, 4, 1}, {1, 1, 2}, {1, 6, 1}, {0, 1, 0}}));
   EXPECT_EQ(mesh_inner_core.GlobalY(0), -0.0625);
   EXPECT_EQ(mesh_inner_core.GlobalY(1), 0.0625);
   EXPECT_EQ(mesh_inner_core.GlobalY(2), 0.1875);
   EXPECT_EQ(mesh_inner_core.GlobalY(3), 0.3125);
 
   BoutMeshExposer mesh_outer_core(
-      createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 4}));
+      createDisconnectedDoubleNull({{12, 4, 1}, {1, 1, 2}, {1, 6, 1}, {0, 4, 0}}));
   EXPECT_EQ(mesh_outer_core.GlobalY(0), 0.4375);
   EXPECT_EQ(mesh_outer_core.GlobalY(1), 0.5625);
   EXPECT_EQ(mesh_outer_core.GlobalY(2), 0.6875);
   EXPECT_EQ(mesh_outer_core.GlobalY(3), 0.8125);
 
-  BoutMeshExposer mesh_outer_pf(createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 5}));
+  BoutMeshExposer mesh_outer_pf(
+      createDisconnectedDoubleNull({{12, 4, 1}, {1, 1, 2}, {1, 6, 1}, {0, 5, 0}}));
   EXPECT_EQ(mesh_outer_pf.GlobalY(0), 0.9375);
   EXPECT_EQ(mesh_outer_pf.GlobalY(1), 1.0625);
   EXPECT_EQ(mesh_outer_pf.GlobalY(2), 1.1875);
@@ -1246,7 +1255,8 @@ TEST_F(BoutMeshTest, GlobalYIntSymmetricY) {
 }
 
 TEST_F(BoutMeshTest, GlobalYIntAsymmetricY) {
-  auto grid_inner_pf = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 0});
+  auto grid_inner_pf =
+      createDisconnectedDoubleNull({{12, 4, 1}, {1, 1, 2}, {1, 6, 1}, {0, 0, 0}});
   grid_inner_pf.grid.symmetric_Y = false;
   BoutMeshExposer mesh_inner_pf(grid_inner_pf);
   EXPECT_EQ(mesh_inner_pf.GlobalY(0), 0);
@@ -1254,7 +1264,8 @@ TEST_F(BoutMeshTest, GlobalYIntAsymmetricY) {
   EXPECT_EQ(mesh_inner_pf.GlobalY(2), 0);
   EXPECT_EQ(mesh_inner_pf.GlobalY(3), 0);
 
-  auto grid_inner_core = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 1});
+  auto grid_inner_core =
+      createDisconnectedDoubleNull({{12, 4, 1}, {1, 1, 2}, {1, 6, 1}, {0, 1, 0}});
   grid_inner_core.grid.symmetric_Y = false;
   BoutMeshExposer mesh_inner_core(grid_inner_core);
   EXPECT_EQ(mesh_inner_core.GlobalY(0), -0.125);
@@ -1262,7 +1273,8 @@ TEST_F(BoutMeshTest, GlobalYIntAsymmetricY) {
   EXPECT_EQ(mesh_inner_core.GlobalY(2), 0.125);
   EXPECT_EQ(mesh_inner_core.GlobalY(3), 0.25);
 
-  auto grid_outer_core = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 4});
+  auto grid_outer_core =
+      createDisconnectedDoubleNull({{12, 4, 1}, {1, 1, 2}, {1, 6, 1}, {0, 4, 0}});
   grid_outer_core.grid.symmetric_Y = false;
   BoutMeshExposer mesh_outer_core(grid_outer_core);
   EXPECT_EQ(mesh_outer_core.GlobalY(0), 0.375);
@@ -1270,7 +1282,8 @@ TEST_F(BoutMeshTest, GlobalYIntAsymmetricY) {
   EXPECT_EQ(mesh_outer_core.GlobalY(2), 0.625);
   EXPECT_EQ(mesh_outer_core.GlobalY(3), 0.75);
 
-  auto grid_outer_pf = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 5});
+  auto grid_outer_pf =
+      createDisconnectedDoubleNull({{12, 4, 1}, {1, 1, 2}, {1, 6, 1}, {0, 5, 0}});
   grid_outer_pf.grid.symmetric_Y = false;
   BoutMeshExposer mesh_outer_pf(grid_outer_pf);
   // EXPECT_EQ(mesh_outer_pf.GlobalY(0), 2.375); // Does this make sense?
@@ -1280,27 +1293,29 @@ TEST_F(BoutMeshTest, GlobalYIntAsymmetricY) {
 }
 
 TEST_F(BoutMeshTest, GlobalYRealSymmetricY) {
-  BoutMeshExposer mesh_inner_pf(createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 0}));
+  BoutMeshExposer mesh_inner_pf(
+      createDisconnectedDoubleNull({{12, 4, 1}, {1, 1, 2}, {1, 6, 1}, {0, 0, 0}}));
   EXPECT_EQ(mesh_inner_pf.GlobalY(0.5), -0.5);
   EXPECT_EQ(mesh_inner_pf.GlobalY(1.5), -0.375);
   EXPECT_EQ(mesh_inner_pf.GlobalY(2.5), -0.25);
   EXPECT_EQ(mesh_inner_pf.GlobalY(3.5), -0.125);
 
   BoutMeshExposer mesh_inner_core(
-      createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 1}));
+      createDisconnectedDoubleNull({{12, 4, 1}, {1, 1, 2}, {1, 6, 1}, {0, 1, 0}}));
   EXPECT_EQ(mesh_inner_core.GlobalY(0.5), 0.0);
   EXPECT_EQ(mesh_inner_core.GlobalY(1.5), 0.125);
   EXPECT_EQ(mesh_inner_core.GlobalY(2.5), 0.25);
   EXPECT_EQ(mesh_inner_core.GlobalY(3.5), 0.375);
 
   BoutMeshExposer mesh_outer_core(
-      createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 4}));
+      createDisconnectedDoubleNull({{12, 4, 1}, {1, 1, 2}, {1, 6, 1}, {0, 4, 0}}));
   EXPECT_EQ(mesh_outer_core.GlobalY(0.5), 0.5);
   EXPECT_EQ(mesh_outer_core.GlobalY(1.5), 0.625);
   EXPECT_EQ(mesh_outer_core.GlobalY(2.5), 0.75);
   EXPECT_EQ(mesh_outer_core.GlobalY(3.5), 0.875);
 
-  BoutMeshExposer mesh_outer_pf(createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 5}));
+  BoutMeshExposer mesh_outer_pf(
+      createDisconnectedDoubleNull({{12, 4, 1}, {1, 1, 2}, {1, 6, 1}, {0, 5, 0}}));
   EXPECT_EQ(mesh_outer_pf.GlobalY(0.5), 1.0);
   EXPECT_EQ(mesh_outer_pf.GlobalY(1.5), 1.125);
   EXPECT_EQ(mesh_outer_pf.GlobalY(2.5), 1.25);
@@ -1308,7 +1323,8 @@ TEST_F(BoutMeshTest, GlobalYRealSymmetricY) {
 }
 
 TEST_F(BoutMeshTest, GlobalYRealAsymmetricY) {
-  auto grid_inner_pf = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 0});
+  auto grid_inner_pf =
+      createDisconnectedDoubleNull({{12, 4, 1}, {1, 1, 2}, {1, 6, 1}, {0, 0, 0}});
   grid_inner_pf.grid.symmetric_Y = false;
   BoutMeshExposer mesh_inner_pf(grid_inner_pf);
   EXPECT_EQ(mesh_inner_pf.GlobalY(0.5), 0);
@@ -1316,7 +1332,8 @@ TEST_F(BoutMeshTest, GlobalYRealAsymmetricY) {
   EXPECT_EQ(mesh_inner_pf.GlobalY(2.5), 0);
   EXPECT_EQ(mesh_inner_pf.GlobalY(3.5), 0);
 
-  auto grid_inner_core = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 1});
+  auto grid_inner_core =
+      createDisconnectedDoubleNull({{12, 4, 1}, {1, 1, 2}, {1, 6, 1}, {0, 1, 0}});
   grid_inner_core.grid.symmetric_Y = false;
   BoutMeshExposer mesh_inner_core(grid_inner_core);
   EXPECT_EQ(mesh_inner_core.GlobalY(0.5), -0.0625);
@@ -1324,7 +1341,8 @@ TEST_F(BoutMeshTest, GlobalYRealAsymmetricY) {
   EXPECT_EQ(mesh_inner_core.GlobalY(2.5), 0.1875);
   EXPECT_EQ(mesh_inner_core.GlobalY(3.5), 0.3125);
 
-  auto grid_outer_core = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 4});
+  auto grid_outer_core =
+      createDisconnectedDoubleNull({{12, 4, 1}, {1, 1, 2}, {1, 6, 1}, {0, 4, 0}});
   grid_outer_core.grid.symmetric_Y = false;
   BoutMeshExposer mesh_outer_core(grid_outer_core);
   EXPECT_EQ(mesh_outer_core.GlobalY(0.5), 0.4375);
@@ -1332,7 +1350,8 @@ TEST_F(BoutMeshTest, GlobalYRealAsymmetricY) {
   EXPECT_EQ(mesh_outer_core.GlobalY(2.5), 0.6875);
   EXPECT_EQ(mesh_outer_core.GlobalY(3.5), 0.8125);
 
-  auto grid_outer_pf = createDisconnectedDoubleNull({12, 4, 1, 1, 1, 6, 0, 5});
+  auto grid_outer_pf =
+      createDisconnectedDoubleNull({{12, 4, 1}, {1, 1, 2}, {1, 6, 1}, {0, 5, 0}});
   grid_outer_pf.grid.symmetric_Y = false;
   BoutMeshExposer mesh_outer_pf(grid_outer_pf);
   EXPECT_EQ(mesh_outer_pf.GlobalY(0.5), 1);
@@ -1631,7 +1650,7 @@ TEST_F(BoutMeshTest, DefaultConnectionsCore1x1) {
 TEST_F(BoutMeshTest, TopologySOL2x2) {
   {
     SCOPED_TRACE("TopologySOL2x2, mesh00");
-    BoutMeshExposer mesh00(createSOL({3, 3, 1, 1, 2, 2, 0, 0}));
+    BoutMeshExposer mesh00(createSOL({{3, 3, 1}, {1, 1, 1}, {2, 2, 1}, {0, 0, 0}}));
     BoutMeshExposer::ConnectionInfo expected00{false, false, false, false, -1, 2,
                                                0,     -1,    -1,    0,     -1, 1};
     EXPECT_EQ(mesh00.getConnectionInfo(), expected00);
@@ -1640,7 +1659,7 @@ TEST_F(BoutMeshTest, TopologySOL2x2) {
 
   {
     SCOPED_TRACE("TopologySOL2x2, mesh01");
-    BoutMeshExposer mesh01(createSOL({3, 3, 1, 1, 2, 2, 0, 1}));
+    BoutMeshExposer mesh01(createSOL({{3, 3, 1}, {1, 1, 1}, {2, 2, 1}, {0, 1, 0}}));
     BoutMeshExposer::ConnectionInfo expected01{false, false, false, false, -1, -1,
                                                0,     -1,    0,     0,     -1, 3};
     EXPECT_EQ(mesh01.getConnectionInfo(), expected01);
@@ -1649,7 +1668,7 @@ TEST_F(BoutMeshTest, TopologySOL2x2) {
 
   {
     SCOPED_TRACE("TopologySOL2x2, mesh10");
-    BoutMeshExposer mesh10(createSOL({3, 3, 1, 1, 2, 2, 1, 0}));
+    BoutMeshExposer mesh10(createSOL({{3, 3, 1}, {1, 1, 1}, {2, 2, 1}, {1, 0, 0}}));
     BoutMeshExposer::ConnectionInfo expected10{false, false, false, false, -1, 3,
                                                0,     -1,    -1,    0,     0,  -1};
     EXPECT_EQ(mesh10.getConnectionInfo(), expected10);
@@ -1658,7 +1677,7 @@ TEST_F(BoutMeshTest, TopologySOL2x2) {
 
   {
     SCOPED_TRACE("TopologySOL2x2, mesh11");
-    BoutMeshExposer mesh11(createSOL({3, 3, 1, 1, 2, 2, 1, 1}));
+    BoutMeshExposer mesh11(createSOL({{3, 3, 1}, {1, 1, 1}, {2, 2, 1}, {1, 1, 0}}));
     BoutMeshExposer::ConnectionInfo expected11{false, false, false, false, -1, -1,
                                                0,     -1,    1,     0,     2,  -1};
     EXPECT_EQ(mesh11.getConnectionInfo(), expected11);
@@ -1670,7 +1689,7 @@ TEST_F(BoutMeshTest, TopologySOLPeriodicX2x2) {
   {
     SCOPED_TRACE("TopologySOLPeriodicX2x2, mesh00");
 
-    BoutMeshExposer mesh00(createSOL({3, 3, 1, 1, 2, 2, 0, 0}), true);
+    BoutMeshExposer mesh00(createSOL({{3, 3, 1}, {1, 1, 1}, {2, 2, 1}, {0, 0, 0}}), true);
     BoutMeshExposer::ConnectionInfo expected00{false, false, false, false, -1, 2,
                                                0,     -1,    -1,    0,     1,  1};
     EXPECT_EQ(mesh00.getConnectionInfo(), expected00);
@@ -1679,7 +1698,7 @@ TEST_F(BoutMeshTest, TopologySOLPeriodicX2x2) {
 
   {
     SCOPED_TRACE("TopologySOLPeriodicX2x2, mesh01");
-    BoutMeshExposer mesh01(createSOL({3, 3, 1, 1, 2, 2, 0, 1}), true);
+    BoutMeshExposer mesh01(createSOL({{3, 3, 1}, {1, 1, 1}, {2, 2, 1}, {0, 1, 0}}), true);
     BoutMeshExposer::ConnectionInfo expected01{false, false, false, false, -1, -1,
                                                0,     -1,    0,     0,     3,  3};
     EXPECT_EQ(mesh01.getConnectionInfo(), expected01);
@@ -1688,7 +1707,7 @@ TEST_F(BoutMeshTest, TopologySOLPeriodicX2x2) {
 
   {
     SCOPED_TRACE("TopologySOLPeriodicX2x2, mesh10");
-    BoutMeshExposer mesh10(createSOL({3, 3, 1, 1, 2, 2, 1, 0}), true);
+    BoutMeshExposer mesh10(createSOL({{3, 3, 1}, {1, 1, 1}, {2, 2, 1}, {1, 0, 0}}), true);
     BoutMeshExposer::ConnectionInfo expected10{false, false, false, false, -1, 3,
                                                0,     -1,    -1,    0,     0,  0};
     EXPECT_EQ(mesh10.getConnectionInfo(), expected10);
@@ -1697,7 +1716,7 @@ TEST_F(BoutMeshTest, TopologySOLPeriodicX2x2) {
 
   {
     SCOPED_TRACE("TopologySOLPeriodicX2x2, mesh11");
-    BoutMeshExposer mesh11(createSOL({3, 3, 1, 1, 2, 2, 1, 1}), true);
+    BoutMeshExposer mesh11(createSOL({{3, 3, 1}, {1, 1, 1}, {2, 2, 1}, {1, 1, 0}}), true);
     BoutMeshExposer::ConnectionInfo expected11{false, false, false, false, -1, -1,
                                                0,     -1,    1,     0,     2,  2};
     EXPECT_EQ(mesh11.getConnectionInfo(), expected11);
@@ -1708,7 +1727,8 @@ TEST_F(BoutMeshTest, TopologySOLPeriodicX2x2) {
 TEST_F(BoutMeshTest, TopologySingleNull2x3) {
   {
     SCOPED_TRACE("TopologySingleNull2x3, mesh00");
-    BoutMeshExposer mesh00(createSingleNull({3, 3, 1, 1, 2, 3, 0, 0}));
+    BoutMeshExposer mesh00(
+        createSingleNull({{3, 3, 1}, {1, 1, 1}, {2, 3, 1}, {0, 0, 0}}));
     BoutMeshExposer::ConnectionInfo expected00{false, false, false, false, 4,  2,
                                                4,     -1,    -1,    0,     -1, 1};
     EXPECT_EQ(mesh00.getConnectionInfo(), expected00);
@@ -1717,7 +1737,8 @@ TEST_F(BoutMeshTest, TopologySingleNull2x3) {
 
   {
     SCOPED_TRACE("TopologySingleNull2x3, mesh01");
-    BoutMeshExposer mesh01(createSingleNull({3, 3, 1, 1, 2, 3, 0, 1}));
+    BoutMeshExposer mesh01(
+        createSingleNull({{3, 3, 1}, {1, 1, 1}, {2, 3, 1}, {0, 1, 0}}));
     BoutMeshExposer::ConnectionInfo expected01{true, false, true, false, 2,  4,
                                                4,    2,     0,    4,     -1, 3};
     EXPECT_EQ(mesh01.getConnectionInfo(), expected01);
@@ -1726,7 +1747,8 @@ TEST_F(BoutMeshTest, TopologySingleNull2x3) {
 
   {
     SCOPED_TRACE("TopologySingleNull2x3, mesh02");
-    BoutMeshExposer mesh02(createSingleNull({3, 3, 1, 1, 2, 3, 0, 2}));
+    BoutMeshExposer mesh02(
+        createSingleNull({{3, 3, 1}, {1, 1, 1}, {2, 3, 1}, {0, 2, 0}}));
     BoutMeshExposer::ConnectionInfo expected02{false, false, false, false, -1, -1,
                                                0,     0,     2,     4,     -1, 5};
     EXPECT_EQ(mesh02.getConnectionInfo(), expected02);
@@ -1735,7 +1757,8 @@ TEST_F(BoutMeshTest, TopologySingleNull2x3) {
 
   {
     SCOPED_TRACE("TopologySingleNull2x3, mesh10");
-    BoutMeshExposer mesh10(createSingleNull({3, 3, 1, 1, 2, 3, 1, 0}));
+    BoutMeshExposer mesh10(
+        createSingleNull({{3, 3, 1}, {1, 1, 1}, {2, 3, 1}, {1, 0, 0}}));
     BoutMeshExposer::ConnectionInfo expected10{false, false, false, false, 5, 3,
                                                1,     -1,    -1,    0,     0, -1};
     EXPECT_EQ(mesh10.getConnectionInfo(), expected10);
@@ -1744,7 +1767,8 @@ TEST_F(BoutMeshTest, TopologySingleNull2x3) {
 
   {
     SCOPED_TRACE("TopologySingleNull2x3, mesh11");
-    BoutMeshExposer mesh11(createSingleNull({3, 3, 1, 1, 2, 3, 1, 1}));
+    BoutMeshExposer mesh11(
+        createSingleNull({{3, 3, 1}, {1, 1, 1}, {2, 3, 1}, {1, 1, 0}}));
     BoutMeshExposer::ConnectionInfo expected11{true, false, true, false, 3, 5,
                                                1,    3,     1,    1,     2, -1};
     EXPECT_EQ(mesh11.getConnectionInfo(), expected11);
@@ -1753,7 +1777,8 @@ TEST_F(BoutMeshTest, TopologySingleNull2x3) {
 
   {
     SCOPED_TRACE("TopologySingleNull2x3, mesh12");
-    BoutMeshExposer mesh12(createSingleNull({3, 3, 1, 1, 2, 3, 1, 2}));
+    BoutMeshExposer mesh12(
+        createSingleNull({{3, 3, 1}, {1, 1, 1}, {2, 3, 1}, {1, 2, 0}}));
     BoutMeshExposer::ConnectionInfo expected11{false, false, false, false, -1, -1,
                                                0,     1,     3,     1,     4,  -1};
     EXPECT_EQ(mesh12.getConnectionInfo(), expected11);
@@ -1764,7 +1789,8 @@ TEST_F(BoutMeshTest, TopologySingleNull2x3) {
 TEST_F(BoutMeshTest, TopologyDisconnectedDoubleNull1x6) {
   {
     SCOPED_TRACE("TopologyDisconnectedDoubleNull1x6, mesh00"); // Inner lower leg
-    BoutMeshExposer mesh00(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 0}));
+    BoutMeshExposer mesh00(
+        createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 0, 0}}));
     BoutMeshExposer::ConnectionInfo expected00{false, false, false, false, 5,  1,
                                                7,     -1,    -1,    0,     -1, -1};
     EXPECT_EQ(mesh00.getConnectionInfo(), expected00);
@@ -1773,7 +1799,8 @@ TEST_F(BoutMeshTest, TopologyDisconnectedDoubleNull1x6) {
 
   {
     SCOPED_TRACE("TopologyDisconnectedDoubleNull1x6, mesh01"); // Inner core
-    BoutMeshExposer mesh01(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
+    BoutMeshExposer mesh01(
+        createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 1, 0}}));
     BoutMeshExposer::ConnectionInfo expected01{false, false, true, false, 4,  2,
                                                11,    4,     0,    7,     -1, -1};
     EXPECT_EQ(mesh01.getConnectionInfo(), expected01);
@@ -1782,7 +1809,8 @@ TEST_F(BoutMeshTest, TopologyDisconnectedDoubleNull1x6) {
 
   {
     SCOPED_TRACE("TopologyDisconnectedDoubleNull1x6, mesh02"); // Inner upper leg
-    BoutMeshExposer mesh02(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 2}));
+    BoutMeshExposer mesh02(
+        createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 2, 0}}));
     BoutMeshExposer::ConnectionInfo expected01{false, false, false, false, -1, -1,
                                                14,    3,     1,     11,    -1, -1};
     EXPECT_EQ(mesh02.getConnectionInfo(), expected01);
@@ -1791,7 +1819,8 @@ TEST_F(BoutMeshTest, TopologyDisconnectedDoubleNull1x6) {
 
   {
     SCOPED_TRACE("TopologyDisconnectedDoubleNull1x6, mesh03"); // Outer upper leg
-    BoutMeshExposer mesh03(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 3}));
+    BoutMeshExposer mesh03(
+        createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 3, 0}}));
     BoutMeshExposer::ConnectionInfo expected10{false, false, false, false, 2,  4,
                                                11,    -1,    -1,    14,    -1, -1};
     EXPECT_EQ(mesh03.getConnectionInfo(), expected10);
@@ -1800,7 +1829,8 @@ TEST_F(BoutMeshTest, TopologyDisconnectedDoubleNull1x6) {
 
   {
     SCOPED_TRACE("TopologyDisconnectedDoubleNull1x6, mesh04"); // Outer core
-    BoutMeshExposer mesh04(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 4}));
+    BoutMeshExposer mesh04(
+        createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 4, 0}}));
     BoutMeshExposer::ConnectionInfo expected11{true, false, false, false, 1,  5,
                                                7,    1,     3,     11,    -1, -1};
     EXPECT_EQ(mesh04.getConnectionInfo(), expected11);
@@ -1809,7 +1839,8 @@ TEST_F(BoutMeshTest, TopologyDisconnectedDoubleNull1x6) {
 
   {
     SCOPED_TRACE("TopologyDisconnectedDoubleNull1x6, mesh05"); // Outer lower leg
-    BoutMeshExposer mesh05(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 5}));
+    BoutMeshExposer mesh05(
+        createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 5, 0}}));
     BoutMeshExposer::ConnectionInfo expected11{false, false, false, false, -1, -1,
                                                0,     0,     4,     7,     -1, -1};
     EXPECT_EQ(mesh05.getConnectionInfo(), expected11);
@@ -1818,36 +1849,37 @@ TEST_F(BoutMeshTest, TopologyDisconnectedDoubleNull1x6) {
 }
 
 TEST_F(BoutMeshTest, SetDerivedGridSizes) {
-  BoutMeshGridInfo grid{12, 3, 1, 2, 3, 6, 2, 2};
+  BoutMeshGridInfo grid{{12, 3, 2}, {1, 2, 1}, {3, 6, 4}, {2, 2, 2}};
   BoutMeshExposer mesh(createDisconnectedDoubleNull(grid));
 
-  EXPECT_EQ(mesh.GlobalNx, grid.total_nx);
-  EXPECT_EQ(mesh.GlobalNy, grid.total_ny + 8);
-  EXPECT_EQ(mesh.GlobalNz, 1);
+  EXPECT_EQ(mesh.GlobalNx, grid.total_n.x);
+  EXPECT_EQ(mesh.GlobalNy, grid.total_n.y + 8);
+  EXPECT_EQ(mesh.GlobalNz, grid.total_n.z + 2);
 
-  EXPECT_EQ(mesh.GlobalNxNoBoundaries, grid.total_nx - 2);
-  EXPECT_EQ(mesh.GlobalNyNoBoundaries, grid.total_ny);
-  EXPECT_EQ(mesh.GlobalNzNoBoundaries, 1);
+  EXPECT_EQ(mesh.GlobalNxNoBoundaries, grid.total_n.x - 2);
+  EXPECT_EQ(mesh.GlobalNyNoBoundaries, grid.total_n.y);
+  EXPECT_EQ(mesh.GlobalNzNoBoundaries, grid.total_n.z);
 
-  EXPECT_EQ(mesh.OffsetX, 2 * grid.local_nx);
-  EXPECT_EQ(mesh.OffsetY, 2 * grid.local_ny);
-  EXPECT_EQ(mesh.OffsetZ, 0);
+  EXPECT_EQ(mesh.OffsetX, 2 * grid.local_n.x);
+  EXPECT_EQ(mesh.OffsetY, 2 * grid.local_n.y);
+  EXPECT_EQ(mesh.OffsetZ, 2 * grid.local_n.z);
 
-  EXPECT_EQ(mesh.LocalNx, grid.local_nx + 2);
-  EXPECT_EQ(mesh.LocalNy, grid.local_ny + 4);
-  EXPECT_EQ(mesh.LocalNz, 1);
+  EXPECT_EQ(mesh.LocalNx, grid.local_n.x + 2);
+  EXPECT_EQ(mesh.LocalNy, grid.local_n.y + 4);
+  EXPECT_EQ(mesh.LocalNz, grid.local_n.z + 2);
 
   EXPECT_EQ(mesh.xstart, 1);
   EXPECT_EQ(mesh.xend, 12);
   EXPECT_EQ(mesh.ystart, 2);
   EXPECT_EQ(mesh.yend, 4);
-  EXPECT_EQ(mesh.zstart, 0);
-  EXPECT_EQ(mesh.zend, 0);
+  EXPECT_EQ(mesh.zstart, 1);
+  EXPECT_EQ(mesh.zend, 2);
 }
 
 TEST_F(BoutMeshTest, CreateXBoundariesPeriodicX) {
   // Periodic in X, so no boundaries
-  BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 3, 6, 1, 0}));
+  BoutMeshExposer mesh(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {3, 6, 1}, {1, 0, 0}}));
   mesh.periodicX = true;
   mesh.createXBoundaries();
 
@@ -1857,7 +1889,8 @@ TEST_F(BoutMeshTest, CreateXBoundariesPeriodicX) {
 
 TEST_F(BoutMeshTest, CreateXBoundariesNoGuards) {
   // No guards in X, so no boundaries
-  BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 0, 1, 3, 6, 1, 0}));
+  BoutMeshExposer mesh(
+      createDisconnectedDoubleNull({{12, 3, 1}, {0, 1, 1}, {3, 6, 1}, {1, 0, 0}}));
   mesh.createXBoundaries();
 
   auto boundaries = mesh.getBoundaries();
@@ -1866,7 +1899,8 @@ TEST_F(BoutMeshTest, CreateXBoundariesNoGuards) {
 
 TEST_F(BoutMeshTest, CreateXBoundariesDoubleNullInsidePF) {
   // Three cores in X, inside core, one boundary
-  BoutMeshExposer mesh_inside(createDisconnectedDoubleNull({12, 3, 1, 1, 3, 6, 0, 0}));
+  BoutMeshExposer mesh_inside(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {3, 6, 1}, {0, 0, 0}}));
   mesh_inside.createXBoundaries();
 
   auto boundaries_inside = mesh_inside.getBoundaries();
@@ -1876,7 +1910,8 @@ TEST_F(BoutMeshTest, CreateXBoundariesDoubleNullInsidePF) {
 
 TEST_F(BoutMeshTest, CreateXBoundariesDoubleNullMiddlePF) {
   // Three cores in X, middle core, so no boundaries
-  BoutMeshExposer mesh_middle(createDisconnectedDoubleNull({12, 3, 1, 1, 3, 6, 1, 0}));
+  BoutMeshExposer mesh_middle(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {3, 6, 1}, {1, 0, 0}}));
   mesh_middle.createXBoundaries();
 
   auto boundaries_middle = mesh_middle.getBoundaries();
@@ -1885,7 +1920,8 @@ TEST_F(BoutMeshTest, CreateXBoundariesDoubleNullMiddlePF) {
 
 TEST_F(BoutMeshTest, CreateXBoundariesDoubleNullOutsidePF) {
   // Three cores in X, outside core, one boundary
-  BoutMeshExposer mesh_inside(createDisconnectedDoubleNull({12, 3, 1, 1, 3, 6, 0, 0}));
+  BoutMeshExposer mesh_inside(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {3, 6, 1}, {0, 0, 0}}));
   mesh_inside.createXBoundaries();
 
   auto boundaries_inside = mesh_inside.getBoundaries();
@@ -1895,7 +1931,8 @@ TEST_F(BoutMeshTest, CreateXBoundariesDoubleNullOutsidePF) {
 
 TEST_F(BoutMeshTest, CreateXBoundariesDoubleNullInsideOutsideCore) {
   // One core in X, so we expect two boundaries
-  BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
+  BoutMeshExposer mesh(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 1, 0}}));
   mesh.createXBoundaries();
 
   auto boundaries = mesh.getBoundaries();
@@ -1905,7 +1942,8 @@ TEST_F(BoutMeshTest, CreateXBoundariesDoubleNullInsideOutsideCore) {
 }
 
 TEST_F(BoutMeshTest, CreateYBoundariesNoGuards) {
-  BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 0, 1, 6, 0, 0}));
+  BoutMeshExposer mesh(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 0, 1}, {1, 6, 1}, {0, 0, 0}}));
   mesh.createYBoundaries();
 
   auto boundaries = mesh.getBoundaries();
@@ -1913,7 +1951,7 @@ TEST_F(BoutMeshTest, CreateYBoundariesNoGuards) {
 }
 
 TEST_F(BoutMeshTest, CreateYBoundariesClosedFieldLines) {
-  BoutMeshExposer mesh(createCore({4, 4, 2, 2, 4, 4}));
+  BoutMeshExposer mesh(createCore({{4, 4, 1}, {2, 2, 2}, {4, 4, 1}}));
   mesh.createYBoundaries();
 
   auto boundaries = mesh.getBoundaries();
@@ -1921,7 +1959,8 @@ TEST_F(BoutMeshTest, CreateYBoundariesClosedFieldLines) {
 }
 
 TEST_F(BoutMeshTest, CreateYBoundariesInnerLower) {
-  BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 0}));
+  BoutMeshExposer mesh(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 0, 0}}));
   mesh.createYBoundaries();
 
   auto boundaries = mesh.getBoundaries();
@@ -1930,7 +1969,8 @@ TEST_F(BoutMeshTest, CreateYBoundariesInnerLower) {
 }
 
 TEST_F(BoutMeshTest, CreateYBoundariesInnerUpper) {
-  BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 2}));
+  BoutMeshExposer mesh(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 2, 0}}));
   mesh.createYBoundaries();
 
   auto boundaries = mesh.getBoundaries();
@@ -1939,7 +1979,8 @@ TEST_F(BoutMeshTest, CreateYBoundariesInnerUpper) {
 }
 
 TEST_F(BoutMeshTest, CreateYBoundariesOuterUpper) {
-  BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 5}));
+  BoutMeshExposer mesh(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 5, 0}}));
   mesh.createYBoundaries();
 
   auto boundaries = mesh.getBoundaries();
@@ -1948,7 +1989,8 @@ TEST_F(BoutMeshTest, CreateYBoundariesOuterUpper) {
 }
 
 TEST_F(BoutMeshTest, CreateYBoundariesOuterLower) {
-  BoutMeshExposer mesh(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 3}));
+  BoutMeshExposer mesh(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 3, 0}}));
   mesh.createYBoundaries();
 
   auto boundaries = mesh.getBoundaries();
@@ -1957,11 +1999,13 @@ TEST_F(BoutMeshTest, CreateYBoundariesOuterLower) {
 }
 
 TEST_F(BoutMeshTest, PeriodicY) {
-  BoutMeshExposer mesh00(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 0}));
+  BoutMeshExposer mesh00(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 0, 0}}));
   EXPECT_FALSE(mesh00.periodicY(2));
   EXPECT_FALSE(mesh00.periodicY(10));
 
-  BoutMeshExposer mesh01(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
+  BoutMeshExposer mesh01(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 1, 0}}));
   EXPECT_TRUE(mesh01.periodicY(2));
   EXPECT_FALSE(mesh01.periodicY(10));
 }
@@ -1970,7 +2014,8 @@ TEST_F(BoutMeshTest, PeriodicYWithShiftAngle) {
   const std::vector<BoutReal> shift_angle = {-1., 11., 10., 9., 8., 7., 6.,
                                              5.,  4.,  3.,  2., 1., 0., -1.};
 
-  BoutMeshExposer mesh00(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 0}));
+  BoutMeshExposer mesh00(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 0, 0}}));
   mesh00.setShiftAngle(shift_angle);
   BoutReal twist_shift00;
   EXPECT_FALSE(mesh00.periodicY(2, twist_shift00));
@@ -1978,7 +2023,8 @@ TEST_F(BoutMeshTest, PeriodicYWithShiftAngle) {
   EXPECT_FALSE(mesh00.periodicY(10, twist_shift00));
   EXPECT_EQ(twist_shift00, 0.);
 
-  BoutMeshExposer mesh01(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
+  BoutMeshExposer mesh01(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 1, 0}}));
   mesh01.setShiftAngle(shift_angle);
   BoutReal twist_shift01;
   EXPECT_TRUE(mesh01.periodicY(2, twist_shift01));
@@ -1988,46 +2034,53 @@ TEST_F(BoutMeshTest, PeriodicYWithShiftAngle) {
 }
 
 TEST_F(BoutMeshTest, NumberOfYBoundaries) {
-  BoutMeshExposer mesh_SOL(createSOL({3, 3, 1, 1, 2, 2, 1, 1}));
+  BoutMeshExposer mesh_SOL(createSOL({{3, 3, 1}, {1, 1, 1}, {2, 2, 1}, {1, 1, 0}}));
   EXPECT_EQ(mesh_SOL.numberOfYBoundaries(), 1);
 
-  BoutMeshExposer mesh_DND(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 0}));
+  BoutMeshExposer mesh_DND(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 0, 0}}));
   EXPECT_EQ(mesh_DND.numberOfYBoundaries(), 2);
 }
 
 TEST_F(BoutMeshTest, HasBranchCutLower) {
-  BoutMeshExposer mesh_SOL(createSOL({3, 3, 1, 1, 2, 2, 1, 1}));
+  BoutMeshExposer mesh_SOL(createSOL({{3, 3, 1}, {1, 1, 1}, {2, 2, 1}, {1, 1, 0}}));
   EXPECT_EQ(mesh_SOL.hasBranchCutLower(2), std::make_pair(false, 0.));
 
   const std::vector<BoutReal> shift_angle = {-1., 11., 10., 9., 8., 7., 6.,
                                              5.,  4.,  3.,  2., 1., 0., -1.};
-  BoutMeshExposer mesh_DND01(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
+  BoutMeshExposer mesh_DND01(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 1, 0}}));
   mesh_DND01.setShiftAngle(shift_angle);
   EXPECT_EQ(mesh_DND01.hasBranchCutLower(3), std::make_pair(true, 9.));
 
-  BoutMeshExposer mesh_DND04(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 4}));
+  BoutMeshExposer mesh_DND04(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 4, 0}}));
   mesh_DND04.setShiftAngle(shift_angle);
   EXPECT_EQ(mesh_DND04.hasBranchCutLower(2), std::make_pair(false, 0.));
 }
 
 TEST_F(BoutMeshTest, HasBranchCutUpper) {
-  BoutMeshExposer mesh_SOL(createSOL({3, 3, 1, 1, 2, 2, 1, 1}));
+  BoutMeshExposer mesh_SOL(createSOL({{3, 3, 1}, {1, 1, 1}, {2, 2, 1}, {1, 1, 0}}));
   EXPECT_EQ(mesh_SOL.hasBranchCutUpper(2), std::make_pair(false, 0.));
 
   const std::vector<BoutReal> shift_angle = {-1., 11., 10., 9., 8., 7., 6.,
                                              5.,  4.,  3.,  2., 1., 0., -1.};
-  BoutMeshExposer mesh_DND01(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
+  BoutMeshExposer mesh_DND01(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 1, 0}}));
   mesh_DND01.setShiftAngle(shift_angle);
   EXPECT_EQ(mesh_DND01.hasBranchCutUpper(3), std::make_pair(false, 0.));
 
-  BoutMeshExposer mesh_DND04(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 4}));
+  BoutMeshExposer mesh_DND04(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 4, 0}}));
   mesh_DND04.setShiftAngle(shift_angle);
   EXPECT_EQ(mesh_DND04.hasBranchCutUpper(2), std::make_pair(true, 10.));
 }
 
 TEST_F(BoutMeshTest, GetPossibleBoundariesCore) {
-  BoutMeshExposer mesh_core_1x1(createCore({12, 3, 1, 1, 1, 1, 0, 0}));
-  BoutMeshExposer mesh_core_32x64(createCore({12, 3, 1, 1, 32, 64, 7, 4}));
+  BoutMeshExposer mesh_core_1x1(
+      createCore({{12, 3, 1}, {1, 1, 1}, {1, 1, 1}, {0, 0, 0}}));
+  BoutMeshExposer mesh_core_32x64(
+      createCore({{12, 3, 1}, {1, 1, 1}, {32, 64, 1}, {7, 4, 0}}));
 
   std::set<std::string> boundaries{"core", "sol"};
 
@@ -2036,17 +2089,20 @@ TEST_F(BoutMeshTest, GetPossibleBoundariesCore) {
 }
 
 TEST_F(BoutMeshTest, GetPossibleBoundariesCorePeriodicX) {
-  BoutMeshExposer mesh_core_1x1(createCore({12, 3, 1, 1, 1, 1, 0, 0}), true);
-  BoutMeshExposer mesh_core_32x64(createCore({12, 3, 1, 1, 32, 64, 7, 4}), true);
+  BoutMeshExposer mesh_core_1x1(createCore({{12, 3, 1}, {1, 1, 1}, {1, 1, 1}, {0, 0, 0}}),
+                                true);
+  BoutMeshExposer mesh_core_32x64(
+      createCore({{12, 3, 1}, {1, 1, 1}, {32, 64, 1}, {7, 4, 0}}), true);
 
   EXPECT_TRUE(mesh_core_1x1.getPossibleBoundaries().empty());
   EXPECT_TRUE(mesh_core_32x64.getPossibleBoundaries().empty());
 }
 
 TEST_F(BoutMeshTest, GetPossibleBoundariesDND) {
-  BoutMeshExposer mesh_DND_1x6(createDisconnectedDoubleNull({12, 3, 1, 1, 1, 6, 0, 1}));
+  BoutMeshExposer mesh_DND_1x6(
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {1, 6, 1}, {0, 1, 0}}));
   BoutMeshExposer mesh_DND_32x64(
-      createDisconnectedDoubleNull({12, 3, 1, 1, 32, 64, 0, 4}));
+      createDisconnectedDoubleNull({{12, 3, 1}, {1, 1, 1}, {32, 64, 1}, {0, 4, 0}}));
 
   std::set<std::string> boundaries{"core", "pf", "sol", "upper_target", "lower_target"};
 

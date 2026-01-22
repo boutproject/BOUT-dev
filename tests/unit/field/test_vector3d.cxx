@@ -89,12 +89,12 @@ TEST_F(Vector3DTest, ApplyBoundaryString) {
   v.applyBoundary("dirichlet(1.0)");
 
   // boundary cell in x
-  EXPECT_DOUBLE_EQ(v.x(0, 2, 0), 2.0);
+  EXPECT_DOUBLE_EQ(v.x(0, 2, 1), 2.0);
   EXPECT_DOUBLE_EQ(v.y(4, 2, 1), 2.0);
 
   // boundary cell in y
-  EXPECT_DOUBLE_EQ(v.x(2, 0, 2), 2.0);
-  EXPECT_DOUBLE_EQ(v.z(2, 4, 0), 2.0);
+  EXPECT_DOUBLE_EQ(v.x(2, 0, 1), 2.0);
+  EXPECT_DOUBLE_EQ(v.z(2, 4, 1), 2.0);
 
   // Middle cell not changed
   EXPECT_DOUBLE_EQ(v.x(2, 2, 1), 0.0);

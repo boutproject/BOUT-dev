@@ -19,9 +19,7 @@ public:
   Context(const SpecificInd<N>& i, CELL_LOC loc, Mesh* msh, BoutReal t)
       : Context(i.x(), i.y(), i.z(), loc, msh, t) {}
 
-  // If Ind2D, z should be 0.0 even if ZLOW (Is this sensible?)
-  Context(const Ind2D& i, CELL_LOC loc, Mesh* msh, BoutReal t)
-      : Context(i.x(), i.y(), 0, (loc == CELL_ZLOW) ? CELL_CENTRE : loc, msh, t) {}
+  Context(const Ind2D& i, CELL_LOC loc, Mesh* msh, BoutReal t);
 
   /// Specify a cell index, together with the cell location, mesh and time
   ///
@@ -36,8 +34,7 @@ public:
 
   /// The location on the boundary
   Context(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal t, Mesh* msh);
-  Context(const BoundaryRegion* bndry, CELL_LOC loc, BoutReal t, Mesh* msh)
-      : Context(bndry, 0, loc, t, msh){};
+  Context(const BoundaryRegion* bndry, CELL_LOC loc, BoutReal t, Mesh* msh);
 
   BoutReal x() const { return get("x"); }
   BoutReal y() const { return get("y"); }

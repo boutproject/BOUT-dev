@@ -222,7 +222,6 @@ public:
   Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
 
 private:
-  int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
   CELL_LOC location;
 

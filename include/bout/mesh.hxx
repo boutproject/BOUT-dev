@@ -283,6 +283,12 @@ public:
     communicateYZ(g);
   }
 
+  template <typename... Ts>
+  void communicateZ(Ts&... ts) {
+    FieldGroup g(ts...);
+    communicateZ(g);
+  }
+
   /*!
    * Communicate a group of fields
    */
@@ -299,6 +305,12 @@ public:
   ///
   /// @param g  The group of fields to communicate. Guard cells will be modified
   void communicateYZ(FieldGroup& g);
+
+  /// Communcate guard cells in Z only
+  /// i.e. no X or Y communication
+  ///
+  /// @param g  The group of fields to communicate. Guard cells will be modified
+  void communicateZ(FieldGroup& g);
 
   /*!
    * Send a list of FieldData objects
@@ -329,6 +341,14 @@ public:
     return sendY(g);
   }
 
+  /// Send guard cells from a list of FieldData objects in the z-direction
+  /// Packs arguments into a FieldGroup and passes to send(FieldGroup&).
+  template <typename... Ts>
+  comm_handle sendZ(Ts&... ts) {
+    FieldGroup g(ts...);
+    return sendZ(g);
+  }
+
   /// Perform communications without waiting for them
   /// to finish. Requires a call to wait() afterwards.
   ///
@@ -342,6 +362,9 @@ public:
 
   /// Send only the y-guard cells
   virtual comm_handle sendY(FieldGroup& g, comm_handle handle = nullptr) = 0;
+
+  /// Send only the z-guard cells
+  virtual comm_handle sendZ(FieldGroup& g, comm_handle handle = nullptr) = 0;
 
   /// Wait for the handle, return error code
   virtual int wait(comm_handle handle) = 0; ///< Wait for the handle, return error code
@@ -693,7 +716,7 @@ public:
     case (DIRECTION::YAligned):
       return ystart;
     case (DIRECTION::Z):
-      return 2;
+      return zstart;
     default:
       throw BoutException("Unhandled direction encountered in getNguard");
     }
@@ -809,9 +832,9 @@ protected:
   /// Read a 1D array of integers
   const std::vector<int> readInts(const std::string& name, int n);
 
-  /// Calculates the size of a message for a given x and y range
-  int msg_len(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
-              int ylt) const;
+  /// Calculates the size of a message for a given (x, y, z) range
+  int msg_len(const std::vector<Field*>& var_list, int xge, int xlt, int yge, int ylt,
+              int zge, int zlt) const;
 
   /// Initialise derivatives
   void derivs_init(Options* options);

@@ -33,9 +33,8 @@ for nproc in [1, 2, 4]:
     with open("run.log." + str(nproc), "w") as f:
         f.write(out)
 
-    # Collect output data
-    f = collect("f", path="data", info=False)
-    f2 = collect("f2", path="data", info=False)
+    f = collect("f", path="data", info=False).squeeze()
+    f2 = collect("f2", path="data", info=False).squeeze()
     print("      Checking tolerance... ")
     # Compare benchmark and output
     if np.shape(f) != np.shape(f2):

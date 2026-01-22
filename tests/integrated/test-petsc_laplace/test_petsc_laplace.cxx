@@ -176,17 +176,17 @@ int main(int argc, char** argv) {
 
   // Need this here to ensure PETSc isn't finalised until after the global mesh,
   // otherwise we get problems from `MPI_Comm_free` on the X communicator
-  PetscLib lib{};
+  const PetscLib lib{};
   {
     // Not be used for 3D metrics
     Options::root()["laplace"].setConditionallyUsed();
-
     // For 3D metrics, we need to use one of PETSc's preconditioners
     // and `sor` seems to always be available
     constexpr auto petsc_pc = "sor";
+    using bout::globals::mesh;
 
     auto& options_2nd = Options::root()["petsc2nd"];
-    if constexpr (bout::build::use_metric_3d) {
+    if (bout::build::use_metric_3d or mesh->getNZPE() > 1) {
       options_2nd["pctype"] = petsc_pc;
       options_2nd["rightprec"].setConditionallyUsed();
       options_2nd["precon"].setConditionallyUsed();
@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
     auto invert = Laplacian::create(&options_2nd);
 
     auto& options_4th = Options::root()["petsc4th"];
-    if constexpr (bout::build::use_metric_3d) {
+    if (bout::build::use_metric_3d or mesh->getNZPE() > 1) {
       options_4th["pctype"] = petsc_pc;
       options_4th["rightprec"].setConditionallyUsed();
       options_4th["precon"].setConditionallyUsed();
@@ -205,7 +205,6 @@ int main(int argc, char** argv) {
     Options dump;
 
     // Solving equations of the form d*Delp2(f) + 1/c*Grad_perp(c).Grad_perp(f) + a*f = b for various f, a, c, d
-    using bout::globals::mesh;
 
     // Only Neumann x-boundary conditions are implemented so far, so test functions should be Neumann in x and periodic in z.
     // Use Field3D's, but solver only works on FieldPerp slices, so only use 1 y-point

@@ -35,7 +35,7 @@ protected:
 
 public:
   explicit ZInterpolation(int y_offset = 0, Mesh* mesh = nullptr,
-                          Region<Ind3D> region_in = {});
+                          const Region<Ind3D>& region_in = {});
   virtual ~ZInterpolation() = default;
 
   virtual void calcWeights(const Field3D& delta_z) = 0;
