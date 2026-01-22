@@ -466,7 +466,7 @@ TEST_P(BadBoutMeshDecompositionTest, BadSingleCoreYDecomposition) {
   EXPECT_THAT(result.reason, HasSubstr(params.expected_message));
 }
 
-TEST(BoutMeshTest, ChooseProcessorSplitBadNXPE) {
+TEST(BoutMeshTest, ChooseProcessorSplitBadNXPETooManyXProcs) {
   WithQuietOutput info{output_info};
   Options options{{"NXPE", 3}};
 
@@ -475,7 +475,7 @@ TEST(BoutMeshTest, ChooseProcessorSplitBadNXPE) {
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
-TEST(BoutMeshTest, ChooseProcessorSplitBadNYPE) {
+TEST(BoutMeshTest, ChooseProcessorSplitBadNYPETooManyYProcs) {
   WithQuietOutput info{output_info};
   Options options{{"NYPE", 7}};
 
@@ -484,11 +484,29 @@ TEST(BoutMeshTest, ChooseProcessorSplitBadNYPE) {
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
+TEST(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisibleByNYPE) {
+  WithQuietOutput info{output_info};
+  Options options{{"NXPE", 5}};
+
+  BoutMeshExposer mesh(5, 24, 1, 1, 1, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
+TEST(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisibleByNYPE) {
+  WithQuietOutput info{output_info};
+  Options options{{"NYPE", 5}};
+
+  BoutMeshExposer mesh(5, 5, 1, 1, 1, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
 TEST(BoutMeshTest, ChooseProcessorSplitNXPE) {
   WithQuietOutput info{output_info};
   Options options{{"NXPE", 4}};
 
-  BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
+  BoutMeshExposer mesh(4, 24, 1, 1, 1, 8);
 
   EXPECT_NO_THROW(mesh.chooseProcessorSplit(options));
 
