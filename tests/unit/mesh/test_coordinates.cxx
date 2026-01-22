@@ -19,7 +19,7 @@ public:
   WithQuietOutput progress{output_progress};
 };
 
-constexpr BoutReal default_dz{TWOPI / CoordinatesTest::nz};
+constexpr BoutReal default_dz{TWOPI / (CoordinatesTest::nz - 2)};
 
 TEST_F(CoordinatesTest, ZLength) {
   Coordinates coords{mesh,
@@ -44,13 +44,13 @@ TEST_F(CoordinatesTest, ZLength) {
                      FieldMetric{0.0}}; // IntShiftTorsion
   // No call to Coordinates::geometry() needed here
 
-  EXPECT_TRUE(IsFieldEqual(coords.zlength(), 7.0));
+  EXPECT_TRUE(IsFieldEqual(coords.zlength(), 5.0));
 }
 
 #if BOUT_USE_METRIC_3D
 TEST_F(CoordinatesTest, ZLength3D) {
   auto dz = makeField<FieldMetric>([](const Ind3D& i) -> BoutReal {
-    return static_cast<BoutReal>(i.x() + i.y()) / nz;
+    return static_cast<BoutReal>(i.x() + i.y()) / (nz - 2);
   });
   auto expected =
       makeField<Field2D>([](const Ind2D& i) -> BoutReal { return i.x() + i.y(); });

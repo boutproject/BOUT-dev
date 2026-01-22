@@ -24,6 +24,8 @@
  **************************************************************************/
 
 #include "../../../src/invert/laplace/impls/naulin/naulin_laplace.hxx"
+
+#include "bout/bout_types.hxx"
 #include <bout/bout.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
@@ -31,6 +33,8 @@
 #include <bout/field_factory.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/options.hxx>
+
+#include <algorithm>
 #include <cmath>
 
 BoutReal max_error_at_ystart(const Field3D& error);
@@ -312,17 +316,15 @@ Field3D this_Grad_perp_dot_Grad_perp(const Field3D& f, const Field3D& g) {
 
 BoutReal max_error_at_ystart(const Field3D& error) {
   const auto* mesh = error.getMesh();
-  BoutReal local_max_error = error(mesh->xstart, mesh->ystart, 0);
+  BoutReal local_max_error = 0.0;
 
   for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
     for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-      if (local_max_error < error(jx, mesh->ystart, jz)) {
-        local_max_error = error(jx, mesh->ystart, jz);
-      }
+      local_max_error = std::max(local_max_error, error(jx, mesh->ystart, jz));
     }
   }
 
-  BoutReal max_error;
+  BoutReal max_error = BoutNaN;
 
   MPI_Allreduce(&local_max_error, &max_error, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
 

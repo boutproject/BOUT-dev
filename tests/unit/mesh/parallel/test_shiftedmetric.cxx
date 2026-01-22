@@ -6,9 +6,10 @@
 #include "../../src/mesh/parallel/shiftedmetricinterp.hxx"
 #include "test_extras.hxx"
 #include "bout/fft.hxx"
-#include "bout/options_io.hxx"
-#include "bout/output.hxx"
+#include "bout/field2d.hxx"
+#include "bout/globals.hxx"
 #include "bout/paralleltransform.hxx"
+#include "bout/traits.hxx"
 
 #if BOUT_HAS_FFTW
 #include "fake_mesh.hxx"
@@ -23,9 +24,8 @@ public:
     WithQuietOutput quiet_info{output_info};
     WithQuietOutput quiet_warn{output_warn};
 
-    delete mesh;
-    mesh = new FakeMesh(nx, ny, nz);
-    static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
+    test_mesh.setCoordinates(nullptr);
+    mesh = &test_mesh;
 
     // Use two y-guards to test multiple parallel slices
     mesh->ystart = 2;
@@ -39,14 +39,14 @@ public:
                        {2., 4., 6., 8., 10., 12., 14.},
                        {3., 6., 9., 12., 15., 18., 21.}});
 
-    static_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
+    test_mesh.setCoordinates(std::make_shared<Coordinates>(
         mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}));
     // No call to Coordinates::geometry() needed here
 
-    auto coords = mesh->getCoordinates();
+    auto* coords = mesh->getCoordinates();
     coords->setParallelTransform(bout::utils::make_unique<Transform>(
         *mesh, CELL_CENTRE, zShift, coords->zlength()(0, 0)));
 
@@ -56,44 +56,51 @@ public:
     // constant in y, as this can hide bugs. Shuffling also means the rows are
     // different by something that is not a shift in the z-direction to ensure
     // that this also cannot hide bugs.
-    fillField(input_temp, {{{1., 2., 3., 4., 5.},
-                            {2., 1., 3., 4., 5.},
-                            {1., 3., 2., 4., 5.},
-                            {1., 2., 4., 3., 5.},
-                            {1., 2., 3., 5., 4.},
-                            {1., 2., 3., 4., 5.},
-                            {2., 1., 3., 4., 5.}},
+    fillField(input_temp, {{{-77., 1., 2., 3., 4., 5., -99.},
+                            {-77., 2., 1., 3., 4., 5., -99.},
+                            {-77., 1., 3., 2., 4., 5., -99.},
+                            {-77., 1., 2., 4., 3., 5., -99.},
+                            {-77., 1., 2., 3., 5., 4., -99.},
+                            {-77., 1., 2., 3., 4., 5., -99.},
+                            {-77., 2., 1., 3., 4., 5., -99.}},
 
-                           {{2., 1., 3., 4., 5.},
-                            {1., 3., 2., 4., 5.},
-                            {1., 2., 4., 3., 5.},
-                            {1., 2., 3., 5., 4.},
-                            {1., 2., 3., 4., 5.},
-                            {2., 1., 3., 4., 5.},
-                            {1., 3., 2., 4., 5.}},
+                           {{-77., 2., 1., 3., 4., 5., -99.},
+                            {-77., 1., 3., 2., 4., 5., -99.},
+                            {-77., 1., 2., 4., 3., 5., -99.},
+                            {-77., 1., 2., 3., 5., 4., -99.},
+                            {-77., 1., 2., 3., 4., 5., -99.},
+                            {-77., 2., 1., 3., 4., 5., -99.},
+                            {-77., 1., 3., 2., 4., 5., -99.}},
 
-                           {{1., 3., 2., 4., 5.},
-                            {1., 2., 4., 3., 5.},
-                            {1., 2., 3., 5., 4.},
-                            {1., 2., 3., 4., 5.},
-                            {2., 1., 3., 4., 5.},
-                            {1., 3., 2., 4., 5.},
-                            {1., 2., 4., 3., 5.}}});
+                           {{-77., 1., 3., 2., 4., 5., -99.},
+                            {-77., 1., 2., 4., 3., 5., -99.},
+                            {-77., 1., 2., 3., 5., 4., -99.},
+                            {-77., 1., 2., 3., 4., 5., -99.},
+                            {-77., 2., 1., 3., 4., 5., -99.},
+                            {-77., 1., 3., 2., 4., 5., -99.},
+                            {-77., 1., 2., 4., 3., 5., -99.}}});
 
+    original = copy(input_temp);
+    // Make sure Z guards are copied
+    mesh->communicate_no_slices(input_temp);
     input = std::move(input_temp);
   }
 
-  virtual ~ShiftedMetricTest() {
-    delete mesh;
-    mesh = nullptr;
-  }
+  ShiftedMetricTest(const ShiftedMetricTest&) = delete;
+  ShiftedMetricTest(ShiftedMetricTest&&) = delete;
+  ShiftedMetricTest& operator=(const ShiftedMetricTest&) = delete;
+  ShiftedMetricTest& operator=(ShiftedMetricTest&&) = delete;
+  ~ShiftedMetricTest() override { bout::globals::mesh = nullptr; }
 
   static constexpr int nx = 3;
   static constexpr int ny = 7;
-  static constexpr int nz = 5;
+  static constexpr int nz = 7;
+
+  FakeMesh test_mesh{nx, ny, nz};
 
   Field2D zShift;
   Field3D input;
+  Field3D original;
 };
 
 using ShiftedMetricTypes = ::testing::Types<ShiftedMetric, ShiftedMetricInterp>;
@@ -103,34 +110,34 @@ TYPED_TEST(ShiftedMetricTest, ToFieldAligned) {
   Field3D expected{mesh};
   expected.setDirectionY(YDirectionType::Aligned);
 
-  fillField(expected, {{{2., 3., 4., 5., 1.},
-                        {3., 4., 5., 2., 1.},
-                        {4., 5., 1., 3., 2.},
-                        {5., 1., 2., 4., 3.},
-                        {1., 2., 3., 5., 4.},
-                        {2., 3., 4., 5., 1.},
-                        {3., 4., 5., 2., 1.}},
+  fillField(expected, {{{-99., 2., 3., 4., 5., 1., -99.},
+                        {-99., 3., 4., 5., 2., 1., -99.},
+                        {-99., 4., 5., 1., 3., 2., -99.},
+                        {-99., 5., 1., 2., 4., 3., -99.},
+                        {-99., 1., 2., 3., 5., 4., -99.},
+                        {-99., 2., 3., 4., 5., 1., -99.},
+                        {-99., 3., 4., 5., 2., 1., -99.}},
 
-                       {{3., 4., 5., 2., 1.},
-                        {5., 1., 3., 2., 4.},
-                        {2., 4., 3., 5., 1.},
-                        {5., 4., 1., 2., 3.},
-                        {1., 2., 3., 4., 5.},
-                        {3., 4., 5., 2., 1.},
-                        {5., 1., 3., 2., 4.}},
+                       {{-99., 3., 4., 5., 2., 1., -99.},
+                        {-99., 5., 1., 3., 2., 4., -99.},
+                        {-99., 2., 4., 3., 5., 1., -99.},
+                        {-99., 5., 4., 1., 2., 3., -99.},
+                        {-99., 1., 2., 3., 4., 5., -99.},
+                        {-99., 3., 4., 5., 2., 1., -99.},
+                        {-99., 5., 1., 3., 2., 4., -99.}},
 
-                       {{4., 5., 1., 3., 2.},
-                        {2., 4., 3., 5., 1.},
-                        {4., 1., 2., 3., 5.},
-                        {3., 4., 5., 1., 2.},
-                        {2., 1., 3., 4., 5.},
-                        {4., 5., 1., 3., 2.},
-                        {2., 4., 3., 5., 1.}}});
+                       {{-99., 4., 5., 1., 3., 2., -99.},
+                        {-99., 2., 4., 3., 5., 1., -99.},
+                        {-99., 4., 1., 2., 3., 5., -99.},
+                        {-99., 3., 4., 5., 1., 2., -99.},
+                        {-99., 2., 1., 3., 4., 5., -99.},
+                        {-99., 4., 5., 1., 3., 2., -99.},
+                        {-99., 2., 4., 3., 5., 1., -99.}}});
 
   Field3D result = toFieldAligned(this->input);
 
-  EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(result), this->input));
+  EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_NOZ", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(result), this->input, "RGN_NOZ"));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
   EXPECT_FALSE(areFieldsCompatible(result, this->input));
 }
@@ -143,49 +150,49 @@ TYPED_TEST(ShiftedMetricTest, FromFieldAligned) {
   Field3D expected{mesh, CELL_CENTRE};
   expected.setDirectionY(YDirectionType::Standard);
 
-  fillField(expected, {{{5., 1., 2., 3., 4.},
-                        {4., 5., 2., 1., 3.},
-                        {2., 4., 5., 1., 3.},
-                        {2., 4., 3., 5., 1.},
-                        {1., 2., 3., 5., 4.},
-                        {5., 1., 2., 3., 4.},
-                        {4., 5., 2., 1., 3.}},
+  fillField(expected, {{{-99., 5., 1., 2., 3., 4., -99.},
+                        {-99., 4., 5., 2., 1., 3., -99.},
+                        {-99., 2., 4., 5., 1., 3., -99.},
+                        {-99., 2., 4., 3., 5., 1., -99.},
+                        {-99., 1., 2., 3., 5., 4., -99.},
+                        {-99., 5., 1., 2., 3., 4., -99.},
+                        {-99., 4., 5., 2., 1., 3., -99.}},
 
-                       {{4., 5., 2., 1., 3.},
-                        {3., 2., 4., 5., 1.},
-                        {5., 1., 2., 4., 3.},
-                        {3., 5., 4., 1., 2.},
-                        {1., 2., 3., 4., 5.},
-                        {4., 5., 2., 1., 3.},
-                        {3., 2., 4., 5., 1.}},
+                       {{-99., 4., 5., 2., 1., 3., -99.},
+                        {-99., 3., 2., 4., 5., 1., -99.},
+                        {-99., 5., 1., 2., 4., 3., -99.},
+                        {-99., 3., 5., 4., 1., 2., -99.},
+                        {-99., 1., 2., 3., 4., 5., -99.},
+                        {-99., 4., 5., 2., 1., 3., -99.},
+                        {-99., 3., 2., 4., 5., 1., -99.}},
 
-                       {{2., 4., 5., 1., 3.},
-                        {5., 1., 2., 4., 3.},
-                        {2., 3., 5., 4., 1.},
-                        {4., 5., 1., 2., 3.},
-                        {2., 1., 3., 4., 5.},
-                        {2., 4., 5., 1., 3.},
-                        {5., 1., 2., 4., 3.}}});
+                       {{-99., 2., 4., 5., 1., 3., -99.},
+                        {-99., 5., 1., 2., 4., 3., -99.},
+                        {-99., 2., 3., 5., 4., 1., -99.},
+                        {-99., 4., 5., 1., 2., 3., -99.},
+                        {-99., 2., 1., 3., 4., 5., -99.},
+                        {-99., 2., 4., 5., 1., 3., -99.},
+                        {-99., 5., 1., 2., 4., 3., -99.}}});
 
   Field3D result = fromFieldAligned(this->input);
 
   // Loosen tolerance a bit due to FFTs
-  EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(toFieldAligned(result), this->input, "RGN_ALL", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_NOZ", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(result), this->input, "RGN_NOZ", FFTTolerance));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
   EXPECT_FALSE(areFieldsCompatible(result, this->input));
 }
 
 TYPED_TEST(ShiftedMetricTest, FromToFieldAligned) {
   EXPECT_TRUE(IsFieldEqual(fromFieldAligned(toFieldAligned(this->input)), this->input,
-                           "RGN_ALL", FFTTolerance));
+                           "RGN_NOZ", FFTTolerance));
 }
 
 TYPED_TEST(ShiftedMetricTest, ToFromFieldAligned) {
   this->input.setDirectionY(YDirectionType::Aligned);
 
   EXPECT_TRUE(IsFieldEqual(toFieldAligned(fromFieldAligned(this->input)), this->input,
-                           "RGN_ALL", FFTTolerance));
+                           "RGN_NOZ", FFTTolerance));
 }
 
 TYPED_TEST(ShiftedMetricTest, ToFieldAlignedFieldPerp) {
@@ -196,29 +203,29 @@ TYPED_TEST(ShiftedMetricTest, ToFieldAlignedFieldPerp) {
   Field3D expected{mesh};
   expected.setDirectionY(YDirectionType::Aligned);
 
-  fillField(expected, {{{2., 3., 4., 5., 1.},
-                        {3., 4., 5., 2., 1.},
-                        {4., 5., 1., 3., 2.},
-                        {5., 1., 2., 4., 3.},
-                        {1., 2., 3., 5., 4.},
-                        {2., 3., 4., 5., 1.},
-                        {3., 4., 5., 2., 1.}},
+  fillField(expected, {{{-99., 2., 3., 4., 5., 1., -99.},
+                        {-99., 3., 4., 5., 2., 1., -99.},
+                        {-99., 4., 5., 1., 3., 2., -99.},
+                        {-99., 5., 1., 2., 4., 3., -99.},
+                        {-99., 1., 2., 3., 5., 4., -99.},
+                        {-99., 2., 3., 4., 5., 1., -99.},
+                        {-99., 3., 4., 5., 2., 1., -99.}},
 
-                       {{3., 4., 5., 2., 1.},
-                        {5., 1., 3., 2., 4.},
-                        {2., 4., 3., 5., 1.},
-                        {5., 4., 1., 2., 3.},
-                        {1., 2., 3., 4., 5.},
-                        {3., 4., 5., 2., 1.},
-                        {5., 1., 3., 2., 4.}},
+                       {{-99., 3., 4., 5., 2., 1., -99.},
+                        {-99., 5., 1., 3., 2., 4., -99.},
+                        {-99., 2., 4., 3., 5., 1., -99.},
+                        {-99., 5., 4., 1., 2., 3., -99.},
+                        {-99., 1., 2., 3., 4., 5., -99.},
+                        {-99., 3., 4., 5., 2., 1., -99.},
+                        {-99., 5., 1., 3., 2., 4., -99.}},
 
-                       {{4., 5., 1., 3., 2.},
-                        {2., 4., 3., 5., 1.},
-                        {4., 1., 2., 3., 5.},
-                        {3., 4., 5., 1., 2.},
-                        {2., 1., 3., 4., 5.},
-                        {4., 5., 1., 3., 2.},
-                        {2., 4., 3., 5., 1.}}});
+                       {{-99., 4., 5., 1., 3., 2., -99.},
+                        {-99., 2., 4., 3., 5., 1., -99.},
+                        {-99., 4., 1., 2., 3., 5., -99.},
+                        {-99., 3., 4., 5., 1., 2., -99.},
+                        {-99., 2., 1., 3., 4., 5., -99.},
+                        {-99., 4., 5., 1., 3., 2., -99.},
+                        {-99., 2., 4., 3., 5., 1., -99.}}});
 
   FieldPerp result = toFieldAligned(sliceXZ(this->input, 3), "RGN_NOX");
 
@@ -244,29 +251,29 @@ TYPED_TEST(ShiftedMetricTest, FromFieldAlignedFieldPerp) {
   Field3D expected{mesh, CELL_CENTRE};
   expected.setDirectionY(YDirectionType::Standard);
 
-  fillField(expected, {{{5., 1., 2., 3., 4.},
-                        {4., 5., 2., 1., 3.},
-                        {2., 4., 5., 1., 3.},
-                        {2., 4., 3., 5., 1.},
-                        {1., 2., 3., 5., 4.},
-                        {5., 1., 2., 3., 4.},
-                        {4., 5., 2., 1., 3.}},
+  fillField(expected, {{{-99., 5., 1., 2., 3., 4., -99.},
+                        {-99., 4., 5., 2., 1., 3., -99.},
+                        {-99., 2., 4., 5., 1., 3., -99.},
+                        {-99., 2., 4., 3., 5., 1., -99.},
+                        {-99., 1., 2., 3., 5., 4., -99.},
+                        {-99., 5., 1., 2., 3., 4., -99.},
+                        {-99., 4., 5., 2., 1., 3., -99.}},
 
-                       {{4., 5., 2., 1., 3.},
-                        {3., 2., 4., 5., 1.},
-                        {5., 1., 2., 4., 3.},
-                        {3., 5., 4., 1., 2.},
-                        {1., 2., 3., 4., 5.},
-                        {4., 5., 2., 1., 3.},
-                        {3., 2., 4., 5., 1.}},
+                       {{-99., 4., 5., 2., 1., 3., -99.},
+                        {-99., 3., 2., 4., 5., 1., -99.},
+                        {-99., 5., 1., 2., 4., 3., -99.},
+                        {-99., 3., 5., 4., 1., 2., -99.},
+                        {-99., 1., 2., 3., 4., 5., -99.},
+                        {-99., 4., 5., 2., 1., 3., -99.},
+                        {-99., 3., 2., 4., 5., 1., -99.}},
 
-                       {{2., 4., 5., 1., 3.},
-                        {5., 1., 2., 4., 3.},
-                        {2., 3., 5., 4., 1.},
-                        {4., 5., 1., 2., 3.},
-                        {2., 1., 3., 4., 5.},
-                        {2., 4., 5., 1., 3.},
-                        {5., 1., 2., 4., 3.}}});
+                       {{-99., 2., 4., 5., 1., 3., -99.},
+                        {-99., 5., 1., 2., 4., 3., -99.},
+                        {-99., 2., 3., 5., 4., 1., -99.},
+                        {-99., 4., 5., 1., 2., 3., -99.},
+                        {-99., 2., 1., 3., 4., 5., -99.},
+                        {-99., 2., 4., 5., 1., 3., -99.},
+                        {-99., 5., 1., 2., 4., 3., -99.}}});
 
   FieldPerp result = fromFieldAligned(sliceXZ(this->input, 4), "RGN_NOX");
 
@@ -331,18 +338,18 @@ TYPED_TEST(ShiftedMetricTest, CalcParallelSlices) {
   const int ydown_2_start = is_shifted_interp ? mesh->ystart : mesh->ystart - 2;
 
   mesh->addRegion3D("RGN_YUP",
-                    Region<Ind3D>(xstart, xend, mesh->ystart + 1, yup_1_end, 0,
-                                  mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
+                    Region<Ind3D>(xstart, xend, mesh->ystart + 1, yup_1_end, mesh->zstart,
+                                  mesh->zend, mesh->LocalNy, mesh->LocalNz));
   mesh->addRegion3D("RGN_YUP2",
-                    Region<Ind3D>(xstart, xend, mesh->ystart + 2, yup_2_end, 0,
-                                  mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
+                    Region<Ind3D>(xstart, xend, mesh->ystart + 2, yup_2_end, mesh->zstart,
+                                  mesh->zend, mesh->LocalNy, mesh->LocalNz));
 
-  mesh->addRegion3D("RGN_YDOWN",
-                    Region<Ind3D>(xstart, xend, ydown_1_start, mesh->yend - 1, 0,
-                                  mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
-  mesh->addRegion3D("RGN_YDOWN2",
-                    Region<Ind3D>(xstart, xend, ydown_2_start, mesh->yend - 2, 0,
-                                  mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
+  mesh->addRegion3D("RGN_YDOWN", Region<Ind3D>(xstart, xend, ydown_1_start,
+                                               mesh->yend - 1, mesh->zstart, mesh->zend,
+                                               mesh->LocalNy, mesh->LocalNz));
+  mesh->addRegion3D("RGN_YDOWN2", Region<Ind3D>(xstart, xend, ydown_2_start,
+                                                mesh->yend - 2, mesh->zstart, mesh->zend,
+                                                mesh->LocalNy, mesh->LocalNz));
   output_info.enable();
 
   // Actual interesting bit here!
@@ -352,107 +359,107 @@ TYPED_TEST(ShiftedMetricTest, CalcParallelSlices) {
   Field3D expected_up_1{mesh};
 
   // Note: here zeroes are for values we don't expect to read
-  fillField(expected_up_1, {{{0., 0., 0., 0., 0.},
-                             {0., 0., 0., 0., 0.},
-                             {0., 0., 0., 0., 0.},
-                             {2., 4., 3., 5., 1.},
-                             {2., 3., 5., 4., 1.},
-                             {2., 3., 4., 5., 1.},
-                             {0., 0., 0., 0., 0.}},
+  fillField(expected_up_1, {{{0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 2., 4., 3., 5., 1., 0.},
+                             {0., 2., 3., 5., 4., 1., 0.},
+                             {0., 2., 3., 4., 5., 1., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.}},
 
-                            {{0., 0., 0., 0., 0.},
-                             {0., 0., 0., 0., 0.},
-                             {0., 0., 0., 0., 0.},
-                             {3., 5., 4., 1., 2.},
-                             {3., 4., 5., 1., 2.},
-                             {3., 4., 5., 2., 1.},
-                             {0., 0., 0., 0., 0.}},
+                            {{0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 3., 5., 4., 1., 2., 0.},
+                             {0., 3., 4., 5., 1., 2., 0.},
+                             {0., 3., 4., 5., 2., 1., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.}},
 
-                            {{0., 0., 0., 0., 0.},
-                             {0., 0., 0., 0., 0.},
-                             {0., 0., 0., 0., 0.},
-                             {4., 5., 1., 2., 3.},
-                             {4., 5., 2., 1., 3.},
-                             {4., 5., 1., 3., 2.},
-                             {0., 0., 0., 0., 0.}}});
+                            {{0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 4., 5., 1., 2., 3., 0.},
+                             {0., 4., 5., 2., 1., 3., 0.},
+                             {0., 4., 5., 1., 3., 2., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.}}});
 
   Field3D expected_up_2{mesh};
 
-  fillField(expected_up_2, {{{0., 0., 0., 0., 0.},
-                             {0., 0., 0., 0., 0.},
-                             {0., 0., 0., 0., 0.},
-                             {0., 0., 0., 0., 0.},
-                             {3., 5., 4., 1., 2.},
-                             {3., 4., 5., 1., 2.},
-                             {3., 4., 5., 2., 1.}},
+  fillField(expected_up_2, {{{0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 3., 5., 4., 1., 2., 0.},
+                             {0., 3., 4., 5., 1., 2., 0.},
+                             {0., 3., 4., 5., 2., 1., 0.}},
 
-                            {{0., 0., 0., 0., 0.},
-                             {0., 0., 0., 0., 0.},
-                             {0., 0., 0., 0., 0.},
-                             {0., 0., 0., 0., 0.},
-                             {5., 1., 2., 3., 4.},
-                             {5., 2., 1., 3., 4.},
-                             {5., 1., 3., 2., 4.}},
+                            {{0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 5., 1., 2., 3., 4., 0.},
+                             {0., 5., 2., 1., 3., 4., 0.},
+                             {0., 5., 1., 3., 2., 4., 0.}},
 
-                            {{0., 0., 0., 0., 0.},
-                             {0., 0., 0., 0., 0.},
-                             {0., 0., 0., 0., 0.},
-                             {0., 0., 0., 0., 0.},
-                             {1., 3., 4., 5., 2.},
-                             {3., 2., 4., 5., 1.},
-                             {2., 4., 3., 5., 1.}}});
+                            {{0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 0., 0., 0., 0., 0., 0.},
+                             {0., 1., 3., 4., 5., 2., 0.},
+                             {0., 3., 2., 4., 5., 1., 0.},
+                             {0., 2., 4., 3., 5., 1., 0.}}});
 
   Field3D expected_down_1{mesh};
 
-  fillField(expected_down_1, {{{0., 0., 0., 0., 0.},
-                               {5., 2., 1., 3., 4.},
-                               {5., 1., 3., 2., 4.},
-                               {5., 1., 2., 4., 3.},
-                               {0., 0., 0., 0., 0.},
-                               {0., 0., 0., 0., 0.},
-                               {0., 0., 0., 0., 0.}},
+  fillField(expected_down_1, {{{0., 0., 0., 0., 0., 0., 0.},
+                               {0., 5., 2., 1., 3., 4., 0.},
+                               {0., 5., 1., 3., 2., 4., 0.},
+                               {0., 5., 1., 2., 4., 3., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.}},
 
-                              {{0., 0., 0., 0., 0.},
-                               {4., 5., 1., 3., 2.},
-                               {3., 5., 1., 2., 4.},
-                               {5., 4., 1., 2., 3.},
-                               {0., 0., 0., 0., 0.},
-                               {0., 0., 0., 0., 0.},
-                               {0., 0., 0., 0., 0.}},
+                              {{0., 0., 0., 0., 0., 0., 0.},
+                               {0., 4., 5., 1., 3., 2., 0.},
+                               {0., 3., 5., 1., 2., 4., 0.},
+                               {0., 5., 4., 1., 2., 3., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.}},
 
-                              {{0., 0., 0., 0., 0.},
-                               {4., 3., 5., 1., 2.},
-                               {3., 5., 4., 1., 2.},
-                               {3., 4., 5., 1., 2.},
-                               {0., 0., 0., 0., 0.},
-                               {0., 0., 0., 0., 0.},
-                               {0., 0., 0., 0., 0.}}});
+                              {{0., 0., 0., 0., 0., 0., 0.},
+                               {0., 4., 3., 5., 1., 2., 0.},
+                               {0., 3., 5., 4., 1., 2., 0.},
+                               {0., 3., 4., 5., 1., 2., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.}}});
 
   Field3D expected_down_2{mesh};
 
-  fillField(expected_down_2, {{{4., 5., 1., 2., 3.},
-                               {4., 5., 2., 1., 3.},
-                               {4., 5., 1., 3., 2.},
-                               {0., 0., 0., 0., 0.},
-                               {0., 0., 0., 0., 0.},
-                               {0., 0., 0., 0., 0.},
-                               {0., 0., 0., 0., 0.}},
+  fillField(expected_down_2, {{{0., 4., 5., 1., 2., 3., 0.},
+                               {0., 4., 5., 2., 1., 3., 0.},
+                               {0., 4., 5., 1., 3., 2., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.}},
 
-                              {{1., 3., 4., 5., 2.},
-                               {3., 2., 4., 5., 1.},
-                               {2., 4., 3., 5., 1.},
-                               {0., 0., 0., 0., 0.},
-                               {0., 0., 0., 0., 0.},
-                               {0., 0., 0., 0., 0.},
-                               {0., 0., 0., 0., 0.}},
+                              {{0., 1., 3., 4., 5., 2., 0.},
+                               {0., 3., 2., 4., 5., 1., 0.},
+                               {0., 2., 4., 3., 5., 1., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.}},
 
-                              {{5., 1., 3., 2., 4.},
-                               {5., 1., 2., 4., 3.},
-                               {4., 1., 2., 3., 5.},
-                               {0., 0., 0., 0., 0.},
-                               {0., 0., 0., 0., 0.},
-                               {0., 0., 0., 0., 0.},
-                               {0., 0., 0., 0., 0.}}});
+                              {{0., 5., 1., 3., 2., 4., 0.},
+                               {0., 5., 1., 2., 4., 3., 0.},
+                               {0., 4., 1., 2., 3., 5., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0., 0., 0.}}});
 
   EXPECT_TRUE(IsFieldEqual(this->input.ynext(1), expected_up_1, "RGN_YUP", FFTTolerance));
   EXPECT_TRUE(

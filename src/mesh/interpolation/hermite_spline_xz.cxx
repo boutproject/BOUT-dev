@@ -168,6 +168,9 @@ XZHermiteSplineBase<monotonic, imp_type>::XZHermiteSplineBase(int y_offset, Mesh
     if (localmesh->getNXPE() > 1) {
       throw BoutException("Require PETSc for MPI splitting in X");
     }
+    if (localmesh->getNZPE() > 1) {
+      throw BoutException("Require PETSc for MPI splitting in Z");
+    }
   }
 }
 

@@ -79,7 +79,7 @@ inline MPI_Comm getComm([[maybe_unused]] const T& field) {
 
 template <>
 inline MPI_Comm getComm([[maybe_unused]] const FieldPerp& field) {
-  return field.getMesh()->getXcomm();
+  return field.getMesh()->getXZcomm();
 }
 
 template <class T>
@@ -293,7 +293,7 @@ public:
   PetscMatrix(IndexerPtr<T> indConverter, bool preallocate = true)
       : matrix(new Mat()), indexConverter(indConverter),
         pt(&indConverter->getMesh()->getCoordinates()->getParallelTransform()) {
-    MPI_Comm comm = std::is_same_v<T, FieldPerp> ? indConverter->getMesh()->getXcomm()
+    MPI_Comm comm = std::is_same_v<T, FieldPerp> ? indConverter->getMesh()->getXZcomm()
                                                  : BoutComm::get();
     const int size = indexConverter->size();
 

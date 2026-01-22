@@ -138,8 +138,9 @@ auto set_stencil(const Mesh& localmesh, bool fourth_order) {
 
 LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
                            [[maybe_unused]] Solver* solver)
-    : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
-      issetD(false), issetC(false), issetE(false), comm(localmesh->getXcomm()),
+    : Laplacian(opt, loc, mesh_in), A(0.0, mesh_in), C1(1.0, mesh_in), C2(1.0, mesh_in),
+      D(1.0, mesh_in), Ex(0.0, mesh_in), Ez(0.0, mesh_in), issetD(false), issetC(false),
+      issetE(false), comm(localmesh->getXZcomm()),
       opts(opt == nullptr ? &(Options::root()["laplace"]) : opt),
       // WARNING: only a few of these options actually make sense: see the
       // PETSc documentation to work out which they are (possibly

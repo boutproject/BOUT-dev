@@ -328,6 +328,12 @@ void Mesh::communicateXZ(FieldGroup& g) {
 
   // Wait for data from other processors
   wait(h);
+
+  // Send data in z-direction
+  h = sendZ(g);
+
+  // Wait for data from other processors
+  wait(h);
 }
 
 void Mesh::communicateYZ(FieldGroup& g) {
@@ -338,12 +344,29 @@ void Mesh::communicateYZ(FieldGroup& g) {
   // Wait for data from other processors
   wait(h);
 
+  // Send data in z-direction
+  h = sendZ(g);
+
+  // Wait for data from other processors
+  wait(h);
+
   // Calculate yup and ydown fields for 3D fields
   if (calcParallelSlices_on_communicate) {
     for (const auto& fptr : g.field3d()) {
       fptr->calcParallelSlices();
     }
   }
+}
+
+void Mesh::communicateZ(FieldGroup& g) {
+
+  // We _could_ special case NZPE=1 and do the copying ourselves
+
+  // Send data in z-direction
+  comm_handle h = sendZ(g);
+
+  // Wait for data from other processors
+  wait(h);
 }
 
 void Mesh::communicate(FieldGroup& g) {
@@ -357,6 +380,12 @@ void Mesh::communicate(FieldGroup& g) {
 
     // Send data in x-direction
     h = sendX(g);
+
+    // Wait for data from other processors
+    wait(h);
+
+    // Send data in z-direction
+    h = sendZ(g);
 
     // Wait for data from other processors
     wait(h);
@@ -376,15 +405,15 @@ void Mesh::communicate(FieldGroup& g) {
   }
 }
 
-int Mesh::msg_len(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
-                  int ylt) const {
+int Mesh::msg_len(const std::vector<Field*>& var_list, int xge, int xlt, int yge, int ylt,
+                  int zge, int zlt) const {
   int len = 0;
 
   using enum Field::FieldType;
 
   const auto x_length = xlt - xge;
   const auto y_length = ylt - yge;
-  const auto z_length = LocalNz;
+  const auto z_length = zlt - zge;
 
   /// Loop over variables
   for (const auto& var : var_list) {
@@ -506,7 +535,7 @@ int Mesh::globalStartIndex2D() {
 int Mesh::globalStartIndexPerp() {
   int localSize = localSizePerp();
   int cumulativeSize = 0;
-  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXcomm());
+  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXZcomm());
   return cumulativeSize - localSize;
 }
 
@@ -649,6 +678,8 @@ void Mesh::createDefaultRegions() {
                                        LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_NOZ", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, zstart, zend,
                                        LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_NOYZ", Region<Ind3D>(0, LocalNx - 1, ystart, yend, zstart, zend,
+                                        LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_GUARDS", mask(getRegion3D("RGN_ALL"), getRegion3D("RGN_NOBNDRY")));
   addRegion3D("RGN_XGUARDS",
               Region<Ind3D>(0, xstart - 1, ystart, yend, zstart, zend, LocalNy, LocalNz,
@@ -671,8 +702,8 @@ void Mesh::createDefaultRegions() {
 
   for (int offset_ = -ystart; offset_ <= ystart; ++offset_) {
     const auto region = fmt::format("RGN_YPAR_{:+d}", offset_);
-    addRegion3D(region, Region<Ind3D>(xstart, xend, ystart + offset_, yend + offset_, 0,
-                                      LocalNz - 1, LocalNy, LocalNz));
+    addRegion3D(region, Region<Ind3D>(xstart, xend, ystart + offset_, yend + offset_,
+                                      zstart, zend, LocalNy, LocalNz));
   }
 
   //2D regions

@@ -4,7 +4,6 @@
 
 from boututils.run_wrapper import build_and_log, launch_safe
 from boutdata.collect import collect
-import itertools
 import sys
 
 import numpy.testing as npt
@@ -19,27 +18,31 @@ build_and_log("FCI MPI test")
 COLLECT_KW = dict(info=False, xguards=False, yguards=False, path="data")
 
 
-def run_case(nxpe: int, nype: int, mthread: int):
-    cmd = f"./fci_mpi NXPE={nxpe} NYPE={nype} mesh:paralleltransform:xzinterpolation:type={implementation}"
+def run_case(nxpe: int, nype: int, nzpe: int, mthread: int):
+    cmd = f"./fci_mpi NXPE={nxpe} NYPE={nype} NZPE={nzpe} mesh:paralleltransform:xzinterpolation:type={implementation}"
     print(f"Running command: {cmd}")
 
-    _, out = launch_safe(cmd, nproc=nxpe * nype, mthread=mthread, pipe=True)
+    _, out = launch_safe(cmd, nproc=nxpe * nype * nzpe, mthread=mthread, pipe=True)
 
     # Save output to log file
     with open(f"run.log.{nxpe}.{nype}.{nslice}.log", "w") as f:
         f.write(out)
 
 
-def test_case(nxpe: int, nype: int, mthread: int, ref: dict) -> bool:
-    run_case(nxpe, nype, mthread)
+def test_case(
+    nxpe: int, nype: int, nzpe: int, mthread: int, ref: dict, implementation: str
+) -> list:
+    run_case(nxpe, nype, nzpe, mthread)
 
     failures = []
 
     for name, val in ref.items():
         try:
             npt.assert_allclose(val, collect(name, **COLLECT_KW))
+            print("PASS")
         except AssertionError as e:
-            failures.append((nxpe, nype, name, e))
+            failures.append((nxpe, nype, nzpe, f"{name} {implementation}", e))
+            print("FAIL")
 
     return failures
 
@@ -49,7 +52,7 @@ failures = []
 for implementation in ["hermitespline", "monotonichermitespline"]:
     for nslice in NSLICES:
         # reference data!
-        run_case(1, 1, MAXCORES)
+        run_case(1, 1, 1, MAXCORES)
 
         ref = {}
         for i in range(4):
@@ -58,16 +61,12 @@ for implementation in ["hermitespline", "monotonichermitespline"]:
                     name = f"output_{i}_{y:+d}"
                     ref[name] = collect(name, **COLLECT_KW)
 
-        for nxpe, nype in itertools.product(NLIST, NLIST):
-            if (nxpe, nype) == (1, 1):
-                # reference case, done above
-                continue
-
+        for nxpe, nype, nzpe in [(2, 1, 1), (1, 2, 1), (1, 1, 2), (2, 2, 2)]:
             if nxpe * nype > MAXCORES:
                 continue
 
-            mthread = MAXCORES // (nxpe * nype)
-            failures_ = test_case(nxpe, nype, mthread, ref)
+            mthread = MAXCORES // (nxpe * nype * nzpe)
+            failures_ = test_case(nxpe, nype, nzpe, mthread, ref, implementation)
             failures.extend(failures_)
 
 
@@ -76,7 +75,7 @@ if success:
     print("\nAll tests passed")
 else:
     print("\nSome tests failed:")
-    for nxpe, nype, name, error in failures:
+    for nxpe, nype, nzpe, name, error in failures:
         print("----------")
         print(f"case {nxpe=} {nype=} {name=}\n{error}")
 

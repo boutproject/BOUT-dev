@@ -8,6 +8,11 @@
 namespace bout {
 namespace generator {
 
+// If Ind2D, z should be 0.0 even if ZLOW (Is this sensible?)
+Context::Context(const Ind2D& i, CELL_LOC loc, Mesh* msh, BoutReal t)
+    : Context(i.x(), i.y(), msh->zstart, (loc == CELL_ZLOW) ? CELL_CENTRE : loc, msh, t) {
+}
+
 Context::Context(int ix, int iy, int iz, CELL_LOC loc, Mesh* msh, BoutReal t)
     : localmesh(msh) {
 
@@ -22,6 +27,9 @@ Context::Context(int ix, int iy, int iz, CELL_LOC loc, Mesh* msh, BoutReal t)
 
   parameters["t"] = t;
 }
+
+Context::Context(const BoundaryRegion* bndry, CELL_LOC loc, BoutReal t, Mesh* msh)
+    : Context(bndry, msh->zstart, loc, t, msh) {};
 
 Context::Context(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal t, Mesh* msh)
     : localmesh(msh) {

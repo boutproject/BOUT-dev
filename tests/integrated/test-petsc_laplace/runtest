@@ -29,12 +29,12 @@ build_and_log("PETSc Laplacian inversion test")
 print("Running PETSc Laplacian inversion test")
 success = True
 
-for nproc in [1, 2, 4]:
-    cmd = "./test_petsc_laplace"
+for nproc, nzpe in [(1, 1), (2, 1), (2, 2), (4, 1)]:
+    cmd = f"./test_petsc_laplace NZPE={nzpe}"
 
     shell("rm data/BOUT.dmp.*.nc")
 
-    print(f"   {nproc} processors....")
+    print(f"   {nproc} processors, {nzpe=}....")
     s, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
 
     pathlib.Path(f"run.log.{nproc}").write_text(out)

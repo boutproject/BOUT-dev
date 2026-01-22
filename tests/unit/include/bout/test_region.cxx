@@ -177,8 +177,8 @@ TEST_F(RegionTest, defaultRegions) {
   const int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   EXPECT_EQ(mesh->getRegion("RGN_ALL").getIndices().size(), nmesh);
 
-  const int nnobndry =
-      RegionTest::nz * (mesh->yend - mesh->ystart + 1) * (mesh->xend - mesh->xstart + 1);
+  const int nnobndry = (mesh->zend - mesh->zstart + 1) * (mesh->yend - mesh->ystart + 1)
+                       * (mesh->xend - mesh->xstart + 1);
   EXPECT_EQ(mesh->getRegion("RGN_NOBNDRY").getIndices().size(), nnobndry);
 
   const int nnox = RegionTest::nz * RegionTest::ny * (mesh->xend - mesh->xstart + 1);
@@ -186,6 +186,9 @@ TEST_F(RegionTest, defaultRegions) {
 
   const int nnoy = RegionTest::nz * RegionTest::nx * (mesh->yend - mesh->ystart + 1);
   EXPECT_EQ(mesh->getRegion("RGN_NOY").getIndices().size(), nnoy);
+
+  const int nnoz = RegionTest::nx * RegionTest::ny * (mesh->zend - mesh->zstart + 1);
+  EXPECT_EQ(mesh->getRegion("RGN_NOZ").getIndices().size(), nnoz);
 }
 
 TEST_F(RegionTest, regionLoopAll) {
@@ -1799,9 +1802,15 @@ TEST_F(IndexOffsetTest, ZPlusOne) {
         EXPECT_EQ(index->y(), j);
         EXPECT_EQ(index->z(), k);
 
-        EXPECT_EQ(index->zp().x(), i);
-        EXPECT_EQ(index->zp().y(), j);
-        EXPECT_EQ(index->zp().z(), (k + 1) % nz);
+        const auto zp = index->zp();
+
+        if (k >= (nz - 1)) {
+          // skip this point
+        } else {
+          EXPECT_EQ(zp.x(), i);
+          EXPECT_EQ(zp.y(), j);
+          EXPECT_EQ(zp.z(), (k + 1) % nz);
+        }
         ++index;
       }
     }
@@ -1872,9 +1881,13 @@ TEST_F(IndexOffsetTest, ZPlusOneGeneric) {
         EXPECT_EQ(index->y(), j);
         EXPECT_EQ(index->z(), k);
 
-        EXPECT_EQ((index->plus<1, DIRECTION::Z>().x()), i);
-        EXPECT_EQ((index->plus<1, DIRECTION::Z>().y()), j);
-        EXPECT_EQ((index->plus<1, DIRECTION::Z>().z()), (k + 1) % nz);
+        if (k >= (nz - 1)) {
+          // skip this point
+        } else {
+          EXPECT_EQ((index->plus<1, DIRECTION::Z>().x()), i);
+          EXPECT_EQ((index->plus<1, DIRECTION::Z>().y()), j);
+          EXPECT_EQ((index->plus<1, DIRECTION::Z>().z()), (k + 1) % nz);
+        }
         ++index;
       }
     }
@@ -1945,9 +1958,13 @@ TEST_F(IndexOffsetTest, ZMinusOne) {
         EXPECT_EQ(index->y(), j);
         EXPECT_EQ(index->z(), k);
 
-        EXPECT_EQ(index->zm().x(), i);
-        EXPECT_EQ(index->zm().y(), j);
-        EXPECT_EQ(index->zm().z(), (k - 1 + nz) % nz);
+        if (k < 1) {
+          // skip this point
+        } else {
+          EXPECT_EQ(index->zm().x(), i);
+          EXPECT_EQ(index->zm().y(), j);
+          EXPECT_EQ(index->zm().z(), (k - 1 + nz) % nz);
+        }
         ++index;
       }
     }
@@ -2018,9 +2035,13 @@ TEST_F(IndexOffsetTest, ZMinusOneGeneric) {
         EXPECT_EQ(index->y(), j);
         EXPECT_EQ(index->z(), k);
 
-        EXPECT_EQ((index->minus<1, DIRECTION::Z>().x()), i);
-        EXPECT_EQ((index->minus<1, DIRECTION::Z>().y()), j);
-        EXPECT_EQ((index->minus<1, DIRECTION::Z>().z()), (k - 1 + nz) % nz);
+        if (k < 1) {
+          // skip this point
+        } else {
+          EXPECT_EQ((index->minus<1, DIRECTION::Z>().x()), i);
+          EXPECT_EQ((index->minus<1, DIRECTION::Z>().y()), j);
+          EXPECT_EQ((index->minus<1, DIRECTION::Z>().z()), (k - 1 + nz) % nz);
+        }
         ++index;
       }
     }
@@ -2091,9 +2112,13 @@ TEST_F(IndexOffsetTest, ZPlusTwo) {
         EXPECT_EQ(index->y(), j);
         EXPECT_EQ(index->z(), k);
 
-        EXPECT_EQ(index->zpp().x(), i);
-        EXPECT_EQ(index->zpp().y(), j);
-        EXPECT_EQ(index->zpp().z(), (k + 2 + nz) % nz);
+        if (k >= (nz - 2)) {
+          // skip this point
+        } else {
+          EXPECT_EQ(index->zpp().x(), i);
+          EXPECT_EQ(index->zpp().y(), j);
+          EXPECT_EQ(index->zpp().z(), (k + 2 + nz) % nz);
+        }
         ++index;
       }
     }
@@ -2159,7 +2184,9 @@ TEST_F(IndexOffsetTest, ZMinusTwo) {
 
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
-      for (int k = 0; k < nz; ++k) {
+      ++index;
+      ++index;
+      for (int k = 2; k < nz; ++k) {
         EXPECT_EQ(index->x(), i);
         EXPECT_EQ(index->y(), j);
         EXPECT_EQ(index->z(), k);
@@ -2185,12 +2212,12 @@ TEST_F(IndexOffsetTest, Offset111) {
         EXPECT_EQ(index->y(), j);
         EXPECT_EQ(index->z(), k);
 
-        if (i >= (nx - 1) or j >= (ny - 1)) {
+        if (i >= (nx - 1) or j >= (ny - 1) or k >= (nz - 1)) {
           // skip this point
         } else {
           EXPECT_EQ(index->offset(1, 1, 1).x(), i + 1);
           EXPECT_EQ(index->offset(1, 1, 1).y(), j + 1);
-          EXPECT_EQ(index->offset(1, 1, 1).z(), (k + 1 + nz) % nz);
+          EXPECT_EQ(index->offset(1, 1, 1).z(), k + 1);
         }
         ++index;
       }
@@ -2210,12 +2237,12 @@ TEST_F(IndexOffsetTest, Offsetm1m1m1) {
         EXPECT_EQ(index->y(), j);
         EXPECT_EQ(index->z(), k);
 
-        if (i < 1 or j < 1) {
+        if (i < 1 or j < 1 or k < 1) {
           // skip this point
         } else {
           EXPECT_EQ(index->offset(-1, -1, -1).x(), i - 1);
           EXPECT_EQ(index->offset(-1, -1, -1).y(), j - 1);
-          EXPECT_EQ(index->offset(-1, -1, -1).z(), (k - 1 + nz) % nz);
+          EXPECT_EQ(index->offset(-1, -1, -1).z(), k - 1);
         }
         ++index;
       }

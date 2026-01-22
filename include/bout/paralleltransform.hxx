@@ -246,6 +246,8 @@ private:
 
   /// Length of the z-domain in radians
   BoutReal zlength{0.};
+  /// Number of points in Z (excluding guards)
+  int z_points;
 
   int nmodes;
 

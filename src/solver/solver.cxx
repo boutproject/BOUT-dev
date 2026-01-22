@@ -1041,8 +1041,6 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
   // Use global mesh: FIX THIS!
   Mesh* mesh = bout::globals::mesh;
 
-  int nz = mesh->LocalNz;
-
   switch (op) {
   case SOLVER_VAR_OP::LOAD_VARS: {
     /// Load variables from IDA into BOUT++
@@ -1056,7 +1054,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
       p++;
     }
 
-    for (int jz = 0; jz < nz; jz++) {
+    for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
 
       // Loop over 3D variables
       for (const auto& f : f3d) {
@@ -1082,7 +1080,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
       p++;
     }
 
-    for (int jz = 0; jz < nz; jz++) {
+    for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
 
       // Loop over 3D variables
       for (const auto& f : f3d) {
@@ -1112,7 +1110,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
       p++;
     }
 
-    for (int jz = 0; jz < nz; jz++) {
+    for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
 
       // Loop over 3D variables
       for (const auto& f : f3d) {
@@ -1142,7 +1140,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
       p++;
     }
 
-    for (int jz = 0; jz < nz; jz++) {
+    for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
 
       // Loop over 3D variables
       for (const auto& f : f3d) {
@@ -1167,7 +1165,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
       p++;
     }
 
-    for (int jz = 0; jz < nz; jz++) {
+    for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
 
       // Loop over 3D variables
       for (const auto& f : f3d) {
@@ -1354,11 +1352,11 @@ Field3D Solver::globalIndex(int localStart) {
 
   // Bulk of points
   for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
-    // Zero index contains 2D and 3D variables
-    index[mesh->ind2Dto3D(i2d, 0)] = ind;
+    // First interior index contains 2D and 3D variables
+    index[mesh->ind2Dto3D(i2d, mesh->zstart)] = ind;
     ind += n2d + n3d;
 
-    for (int jz = 1; jz < nz; jz++) {
+    for (int jz = mesh->zstart + 1; jz <= mesh->zend; jz++) {
       index[mesh->ind2Dto3D(i2d, jz)] = ind;
       ind += n3d;
     }

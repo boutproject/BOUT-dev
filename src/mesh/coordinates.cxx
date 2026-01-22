@@ -8,20 +8,20 @@
 #include <bout/build_defines.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
-#include <bout/output.hxx>
-#include <bout/sys/timer.hxx>
-#include <bout/utils.hxx>
-
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
-#include <bout/interpolation.hxx>
-#include <bout/output_bout_types.hxx>
-
 #include <bout/globals.hxx>
+#include <bout/interpolation.hxx>
+#include <bout/output.hxx>
+#include <bout/output_bout_types.hxx>
+#include <bout/sys/timer.hxx>
+#include <bout/utils.hxx>
 
 #include "invert3x3.hxx"
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
+
+#include <utility>
 
 namespace {
 /// Interpolate a Field2D to a new CELL_LOC with interp_to.
@@ -225,7 +225,7 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
           ASSERT1(bndry->bx == 0 or localmesh->xstart > 1);
           ASSERT1(bndry->by == 0 or localmesh->ystart > 1);
           // note that either bx or by is >0 here
-          for (int zi = localmesh->zstart; zi <= localmesh->zend; ++zi) {
+          for (int zi = 0; zi < localmesh->LocalNz; ++zi) {
             result(bndry->x, bndry->y, zi) =
                 (9.
                      * (f(bndry->x - bndry->bx, bndry->y - bndry->by, zi)
@@ -256,7 +256,7 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
           for (int i = extrap_start; i < bndry->width; i++) {
             int xi = bndry->x + i * bndry->bx;
             int yi = bndry->y + i * bndry->by;
-            for (int zi = localmesh->zstart; zi <= localmesh->zend; ++zi) {
+            for (int zi = 0; zi < localmesh->LocalNz; ++zi) {
               result(xi, yi, zi) =
                   3.0 * result(xi - bndry->bx, yi - bndry->by, zi)
                   - 3.0 * result(xi - 2 * bndry->bx, yi - 2 * bndry->by, zi)
@@ -266,7 +266,7 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
         } else {
           // not enough grid points to extrapolate, set equal to last grid point
           for (int i = extrap_start; i < bndry->width; i++) {
-            for (int zi = localmesh->zstart; zi <= localmesh->zend; ++zi) {
+            for (int zi = 0; zi < localmesh->LocalNz; ++zi) {
               result(bndry->x + i * bndry->bx, bndry->y + i * bndry->by, zi) =
                   result(bndry->x - bndry->bx, bndry->y - bndry->by, zi);
             }
@@ -363,13 +363,13 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
                          FieldMetric g_23, FieldMetric ShiftTorsion,
                          FieldMetric IntShiftTorsion)
-    : dx(std::move(dx)), dy(std::move(dy)), dz(dz), J(std::move(J)), Bxy(std::move(Bxy)),
-      g11(std::move(g11)), g22(std::move(g22)), g33(std::move(g33)), g12(std::move(g12)),
-      g13(std::move(g13)), g23(std::move(g23)), g_11(std::move(g_11)),
-      g_22(std::move(g_22)), g_33(std::move(g_33)), g_12(std::move(g_12)),
-      g_13(std::move(g_13)), g_23(std::move(g_23)), ShiftTorsion(std::move(ShiftTorsion)),
-      IntShiftTorsion(std::move(IntShiftTorsion)), nz(mesh->LocalNz), localmesh(mesh),
-      location(CELL_CENTRE) {}
+    : dx(std::move(dx)), dy(std::move(dy)), dz(std::move(dz)), J(std::move(J)),
+      Bxy(std::move(Bxy)), g11(std::move(g11)), g22(std::move(g22)), g33(std::move(g33)),
+      g12(std::move(g12)), g13(std::move(g13)), g23(std::move(g23)),
+      g_11(std::move(g_11)), g_22(std::move(g_22)), g_33(std::move(g_33)),
+      g_12(std::move(g_12)), g_13(std::move(g_13)), g_23(std::move(g_23)),
+      ShiftTorsion(std::move(ShiftTorsion)), IntShiftTorsion(std::move(IntShiftTorsion)),
+      localmesh(mesh), location(CELL_CENTRE) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
     : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh),
@@ -409,8 +409,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   mesh->get(dx, "dx", 1.0, false);
   mesh->get(dy, "dy", 1.0, false);
 
-  nz = mesh->LocalNz;
-
   {
     auto& options = Options::root();
     const bool has_zperiod = options.isSet("zperiod");
@@ -418,7 +416,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     const auto zmax = has_zperiod ? 1.0 / options["zperiod"].withDefault(1.0)
                                   : options["ZMAX"].withDefault(1.0);
 
-    const auto default_dz = (zmax - zmin) * TWOPI / nz;
+    const auto default_dz = (zmax - zmin) * TWOPI / mesh->GlobalNzNoBoundaries;
 
     mesh->get(dz, "dz", default_dz, false);
   }
@@ -608,8 +606,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
   std::string suffix = getLocationSuffix(location);
 
-  nz = mesh->LocalNz;
-
   // Default to true in case staggered quantities are not read from file
   bool extrapolate_x = true;
   bool extrapolate_y = true;
@@ -636,7 +632,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       const auto zmax = has_zperiod ? 1.0 / options["zperiod"].withDefault(1.0)
                                     : options["ZMAX"].withDefault(1.0);
 
-      const auto default_dz = (zmax - zmin) * TWOPI / nz;
+      const auto default_dz = (zmax - zmin) * TWOPI / mesh->GlobalNzNoBoundaries;
       getAtLoc(mesh, dz, "dz", suffix, location, default_dz);
     }
     setParallelTransform(options);
@@ -920,9 +916,9 @@ const Field2D& Coordinates::zlength() const {
     zlength_cache = std::make_unique<Field2D>(0., localmesh);
 
 #if BOUT_USE_METRIC_3D
-    BOUT_FOR_SERIAL(i, dz.getRegion("RGN_ALL")) { (*zlength_cache)[i] += dz[i]; }
+    BOUT_FOR_SERIAL(i, dz.getRegion("RGN_NOZ")) { (*zlength_cache)[i] += dz[i]; }
 #else
-    (*zlength_cache) = dz * nz;
+    (*zlength_cache) = dz * localmesh->GlobalNzNoBoundaries;
 #endif
   }
 
@@ -1660,11 +1656,12 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
   Field3D result{emptyFrom(f).setLocation(outloc)};
 
   if (useFFT and not bout::build::use_metric_3d and localmesh->getNZPE() == 1) {
-    int ncz = localmesh->LocalNz;
+    const int ncz = localmesh->zend - localmesh->zstart + 1;
+    const auto nmodes = (ncz / 2) + 1;
 
     // Allocate memory
-    auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
-    auto delft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
+    auto ft = Matrix<dcomplex>(localmesh->LocalNx, nmodes);
+    auto delft = Matrix<dcomplex>(localmesh->LocalNx, nmodes);
 
     // Loop over y indices
     // Note: should not include y-guard or y-boundary points here as that would
@@ -1674,11 +1671,11 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
       // Take forward FFT
 
       for (int jx = 0; jx < localmesh->LocalNx; jx++) {
-        rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
+        rfft(&f(jx, jy, localmesh->zstart), ncz, &ft(jx, 0));
       }
 
       // Loop over kz
-      for (int jz = 0; jz <= ncz / 2; jz++) {
+      for (int jz = 0; jz < nmodes; jz++) {
 
         // No smoothing in the x direction
         for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
@@ -1694,7 +1691,7 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
       // Reverse FFT
       for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
 
-        irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
+        irfft(&delft(jx, 0), ncz, &result(jx, jy, localmesh->zstart));
       }
     }
   } else {

@@ -52,6 +52,7 @@
 #include <bout/utils.hxx>
 
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
 #include <algorithm>
 #include <cmath>
@@ -107,6 +108,9 @@ BoutMesh::~BoutMesh() {
   }
   if (comm_outer != MPI_COMM_NULL) {
     MPI_Comm_free(&comm_outer);
+  }
+  if (comm_xz != MPI_COMM_NULL) {
+    MPI_Comm_free(&comm_xz);
   }
 }
 
@@ -349,10 +353,11 @@ void BoutMesh::setDerivedGridSizes() {
   }
 
   GlobalNx = nx;
-  GlobalNy =
-      ny
-      + 2 * MYG; // Note: For double null this should be be 4 * MYG if boundary cells are stored
-  GlobalNz = nz;
+  // Note: For double null this should be be 4 * MYG if boundary cells are stored
+  GlobalNy = ny + (2 * MYG);
+  // TODO(peter): Is this correct if Z is always periodic? i.e. has _guards_ but
+  // no _boundaries_
+  GlobalNz = nz + (2 * MZG);
 
   // If we've got a second pair of diverator legs, we need an extra
   // pair of boundary regions
@@ -395,7 +400,7 @@ void BoutMesh::setDerivedGridSizes() {
   // Note: These don't properly include guard/boundary cells
   OffsetX = PE_XIND * MXSUB;
   OffsetY = PE_YIND * MYSUB;
-  OffsetZ = 0;
+  OffsetZ = PE_ZIND * MZSUB;
 
   // Number of grid cells on this processor is ng* = M*SUB + guard/boundary cells
   LocalNx = MXSUB + 2 * MXG;
@@ -450,7 +455,8 @@ void BoutMesh::setDerivedGridSizes() {
     MapCountY += MYG;
   }
 
-  MapGlobalZ = 0;
+  // TODO(peter): double check these
+  MapGlobalZ = PE_ZIND * MZSUB;
   MapLocalZ = MZG; // Omit boundary cells
   MapCountZ = MZSUB;
 }
@@ -465,8 +471,10 @@ int BoutMesh::load() {
   //////////////
   // Number of processors
 
-  MPI_Comm_size(BoutComm::get(), &NPES);
+  MPI_Comm_size(BoutComm::get(), &total_processors);
   MPI_Comm_rank(BoutComm::get(), &MYPE);
+  // NPES is now just for the X-Y plane
+  NPES = total_processors;
 
   //////////////
   // Grid sizes
@@ -524,12 +532,10 @@ int BoutMesh::load() {
   }
   ASSERT0(MYG >= 0);
 
-  // For now only support no z-guard cells
-  MZG = 0;
+  if (Mesh::get(MZG, "MZG") != 0) {
+    MZG = options["MZG"].doc("Number of guard cells on each side in Z").withDefault(2);
+  }
   ASSERT0(MZG >= 0);
-
-  // For now don't parallelise z
-  NZPE = 1;
 
   output_info << _("\tGuard cells (x,y,z): ") << MXG << ", " << MYG << ", " << MZG
               << std::endl;
@@ -546,6 +552,20 @@ int BoutMesh::load() {
   // Check inputs
   setYDecompositionIndices(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
 
+  // We decompose in Z first, just according to what the user sets
+  if (options.isSet("NZPE")) {
+    NZPE = options["NZPE"].doc("Decomposition in the Z direction").withDefault(1);
+    if ((NPES % NZPE) != 0) {
+      throw BoutException(
+          _f("Number of processors ({:d}) not divisible by NPs in z direction ({:d})\n"),
+          NPES, NZPE);
+    }
+    // This then sets how processors we have left available for the more
+    // complicated X-Y decomposition
+    NPES = total_processors / NZPE;
+    output_info.write(_f("Using {} processors in Z, {} left for X-Y plane"), NZPE, NPES);
+  }
+
   if (options.isSet("NXPE") or options.isSet("NYPE")) {
     chooseProcessorSplit(options);
   } else {
@@ -553,9 +573,9 @@ int BoutMesh::load() {
   }
 
   // Get X, Y, Z processor indices
-  PE_YIND = MYPE / NXPE;
   PE_XIND = MYPE % NXPE;
-  PE_ZIND = 0;
+  PE_YIND = (MYPE / NXPE) % NYPE;
+  PE_ZIND = MYPE / (NXPE * NYPE);
 
   ASSERT2(MYPE == getProcIndex(PE_XIND, PE_YIND, PE_ZIND));
 
@@ -667,9 +687,42 @@ int BoutMesh::load() {
   return 0;
 }
 
+namespace {
+auto make_XZ_communicator(const BoutMesh& mesh, MPI_Group group_world) -> MPI_Comm {
+  std::vector<int> ranks;
+
+  const int yp = mesh.getYProcIndex();
+
+  // All processors with the same Y index
+  for (int xp = 0; xp < mesh.getNXPE(); ++xp) {
+    for (int zp = 0; zp < mesh.getNZPE(); ++zp) {
+      ranks.push_back(mesh.getProcIndex(xp, yp, zp));
+    }
+  }
+  MPI_Group group{};
+  if (MPI_Group_incl(group_world, static_cast<int>(ranks.size()), ranks.data(), &group)
+      != MPI_SUCCESS) {
+    throw BoutException("Could not create X-Z communication group for ranks {}",
+                        fmt::join(ranks, ", "));
+  }
+
+  MPI_Comm comm_xz{};
+  if (MPI_Comm_create(BoutComm::get(), group, &comm_xz) != MPI_SUCCESS) {
+    throw BoutException("Could not create X-Z communicator for yp={} (xind={}, yind={}, "
+                        "zind={}) ranks={}",
+                        yp, mesh.getXProcIndex(), mesh.getYProcIndex(),
+                        mesh.getZProcIndex(), fmt::join(ranks, ", "));
+  }
+
+  return comm_xz;
+}
+} // namespace
+
 void BoutMesh::createCommunicators() {
   MPI_Group group_world{};
   MPI_Comm_group(BoutComm::get(), &group_world); // Get the entire group
+
+  comm_xz = make_XZ_communicator(*this, group_world);
 
   //////////////////////////////////////////////////////
   /// Communicator in X
@@ -699,15 +752,19 @@ void BoutMesh::createCommunicators() {
       }
       MPI_Group_free(&group);
 
-      if (yp == PE_YIND && zp == PE_ZIND) {
+      if (yp == PE_YIND and zp == PE_ZIND) {
         // Should be in this group
         if (comm_tmp == MPI_COMM_NULL) {
-          throw BoutException("X communicator null");
+          throw BoutException(
+              "X communicator null for yp={} zp={} (xind={}, yind={}, zind={})", yp, zp,
+              PE_XIND, PE_YIND, PE_ZIND);
         }
 
         comm_x = comm_tmp;
       } else if (comm_tmp != MPI_COMM_NULL) {
-        throw BoutException("X communicator should be null");
+        throw BoutException("X communicator should be null for yp={} zp={} (xind={}, "
+                            "yind={}, zind={}) for group {}",
+                            yp, zp, PE_XIND, PE_YIND, PE_ZIND, fmt::join(proc, ", "));
       }
     }
   }
@@ -1057,7 +1114,9 @@ void BoutMesh::createXBoundaries() {
   }
 }
 
-int BoutMesh::getProcIndex(int X, int Y, int Z) const { return Y * NXPE + X; }
+int BoutMesh::getProcIndex(int X, int Y, int Z) const {
+  return (((Z * NYPE) + Y) * NXPE) + X;
+}
 
 void BoutMesh::createYBoundaries() {
   if (MYG <= 0) {
@@ -1114,26 +1173,22 @@ std::set<std::string> BoutMesh::getPossibleBoundaries() const {
         }
 
         // Make a copy of this mesh, EXCEPT we change the (X, Y) rank of the processor
-        BoutMesh mesh_copy{mesh->GlobalNx,
-                           mesh->GlobalNyNoBoundaries,
-                           mesh->GlobalNz,
-                           mesh->MXG,
-                           mesh->MYG,
-                           mesh->NXPE,
-                           mesh->NYPE,
-                           x_rank,
-                           y_rank,
-                           mesh->symmetricGlobalX,
-                           mesh->symmetricGlobalY,
-                           mesh->periodicX,
-                           mesh->ixseps1,
-                           mesh->ixseps2,
-                           mesh->jyseps1_1,
-                           mesh->jyseps2_1,
-                           mesh->jyseps1_2,
-                           mesh->jyseps2_2,
-                           mesh->ny_inner,
-                           false};
+        BoutMesh mesh_copy{
+            {mesh->GlobalNx, mesh->GlobalNyNoBoundaries, mesh->GlobalNzNoBoundaries},
+            {mesh->MXG, mesh->MYG, mesh->MZG},
+            {mesh->NXPE, mesh->NYPE, mesh->NZPE},
+            {x_rank, y_rank, 0},
+            mesh->symmetricGlobalX,
+            mesh->symmetricGlobalY,
+            mesh->periodicX,
+            mesh->ixseps1,
+            mesh->ixseps2,
+            mesh->jyseps1_1,
+            mesh->jyseps2_1,
+            mesh->jyseps1_2,
+            mesh->jyseps2_2,
+            mesh->ny_inner,
+            false};
         // We need to create the boundaries
         mesh_copy.createXBoundaries();
         mesh_copy.createYBoundaries();
@@ -1173,13 +1228,24 @@ void BoutMesh::setShiftAngle(const std::vector<BoutReal>& shift_angle) {
  *                 COMMUNICATIONS
  ****************************************************************/
 
-const int IN_SENT_UP = 0;    ///< Data lower in X than branch-cut, at upper boundary in Y
-const int OUT_SENT_UP = 1;   ///< Data higher in X than branch-cut, at upper boundary in Y
-const int IN_SENT_DOWN = 2;  ///< Data lower in X than branch-cut, at lower boundary in Y
-const int OUT_SENT_DOWN = 3; ///< Data higher in X than branch-cut, at lower boundary in Y
+/// Data lower in X than branch-cut, at upper boundary in Y
+constexpr int IN_SENT_UP = 0;
+/// Data higher in X than branch-cut, at upper boundary in Y
+constexpr int OUT_SENT_UP = 1;
+/// Data lower in X than branch-cut, at lower boundary in Y
+constexpr int IN_SENT_DOWN = 2;
+/// Data higher in X than branch-cut, at lower boundary in Y
+constexpr int OUT_SENT_DOWN = 3;
 // X communication signals
-const int IN_SENT_OUT = 4; ///< Data going in positive X direction (in to out)
-const int OUT_SENT_IN = 5; ///< Data going in negative X direction (out to in)
+/// Data going in positive X direction (in to out)
+constexpr int IN_SENT_OUT = 4;
+/// Data going in negative X direction (out to in)
+constexpr int OUT_SENT_IN = 5;
+// Z communication signals
+/// Data sent from -z to +z
+constexpr int Z_SENT_NEGATIVE = 6;
+/// Data sent from +z to -z
+constexpr int Z_SENT_POSITIVE = 7;
 
 void BoutMesh::post_receiveX(CommHandle& ch) {
   /// Post receive data from left (x-1)
@@ -1187,7 +1253,8 @@ void BoutMesh::post_receiveX(CommHandle& ch) {
   if (IDATA_DEST != -1) {
     mpi->MPI_Irecv(
         std::begin(ch.imsg_recvbuff),
-        msg_len(ch.var_list.get(), 0, MXG, 0, ch.include_x_corners ? LocalNy : MYSUB),
+        msg_len(ch.var_list.get(), 0, MXG, 0, ch.include_x_corners ? LocalNy : MYSUB, 0,
+                ch.include_x_corners ? LocalNz : MZSUB),
         PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(), &ch.request[4]);
   }
 
@@ -1196,7 +1263,8 @@ void BoutMesh::post_receiveX(CommHandle& ch) {
   if (ODATA_DEST != -1) {
     mpi->MPI_Irecv(
         std::begin(ch.omsg_recvbuff),
-        msg_len(ch.var_list.get(), 0, MXG, 0, ch.include_x_corners ? LocalNy : MYSUB),
+        msg_len(ch.var_list.get(), 0, MXG, 0, ch.include_x_corners ? LocalNy : MYSUB, 0,
+                ch.include_x_corners ? LocalNz : MZSUB),
         PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(), &ch.request[5]);
   }
 }
@@ -1209,13 +1277,14 @@ void BoutMesh::post_receiveY(CommHandle& ch) {
 
   len = 0;
   if (UDATA_INDEST != -1) {
-    len = msg_len(ch.var_list.get(), 0, UDATA_XSPLIT, 0, MYG);
+    len = msg_len(ch.var_list.get(), 0, UDATA_XSPLIT, 0, MYG, 0, MZSUB);
     mpi->MPI_Irecv(std::begin(ch.umsg_recvbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
                    IN_SENT_DOWN, BoutComm::get(), &ch.request[0]);
   }
   if (UDATA_OUTDEST != -1) {
     inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
-    mpi->MPI_Irecv(inbuff, msg_len(ch.var_list.get(), UDATA_XSPLIT, LocalNx, 0, MYG),
+    mpi->MPI_Irecv(inbuff,
+                   msg_len(ch.var_list.get(), UDATA_XSPLIT, LocalNx, 0, MYG, 0, MZSUB),
                    PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_DOWN, BoutComm::get(),
                    &ch.request[1]);
   }
@@ -1225,15 +1294,35 @@ void BoutMesh::post_receiveY(CommHandle& ch) {
   len = 0;
 
   if (DDATA_INDEST != -1) { // If sending & recieving data from a processor
-    len = msg_len(ch.var_list.get(), 0, DDATA_XSPLIT, 0, MYG);
+    len = msg_len(ch.var_list.get(), 0, DDATA_XSPLIT, 0, MYG, 0, MZSUB);
     mpi->MPI_Irecv(std::begin(ch.dmsg_recvbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
                    IN_SENT_UP, BoutComm::get(), &ch.request[2]);
   }
   if (DDATA_OUTDEST != -1) {
     inbuff = &ch.dmsg_recvbuff[len];
-    mpi->MPI_Irecv(inbuff, msg_len(ch.var_list.get(), DDATA_XSPLIT, LocalNx, 0, MYG),
-                   PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_UP, BoutComm::get(),
-                   &ch.request[3]);
+    mpi->MPI_Irecv(
+        inbuff, msg_len(ch.var_list.get(), DDATA_XSPLIT, LocalNx, 0, MYG, 0, MZSUB),
+        PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_UP, BoutComm::get(), &ch.request[3]);
+  }
+}
+
+void BoutMesh::post_receiveZ(CommHandle& ch) {
+  /// Post receive data from left (z-1)
+
+  if (z_minus_dest != -1) {
+    mpi->MPI_Irecv(std::begin(ch.zminus_recvbuff),
+                   msg_len(ch.var_list.get(), 0, LocalNx, 0, LocalNy, 0, MZG),
+                   PVEC_REAL_MPI_TYPE, z_minus_dest, Z_SENT_POSITIVE, BoutComm::get(),
+                   &ch.request[Z_SENT_NEGATIVE]);
+  }
+
+  // Post receive data from right (z+1)
+
+  if (z_plus_dest != -1) {
+    mpi->MPI_Irecv(std::begin(ch.zplus_recvbuff),
+                   msg_len(ch.var_list.get(), 0, LocalNx, 0, LocalNy, 0, MZG),
+                   PVEC_REAL_MPI_TYPE, z_plus_dest, Z_SENT_NEGATIVE, BoutComm::get(),
+                   &ch.request[Z_SENT_POSITIVE]);
   }
 }
 
@@ -1248,15 +1337,17 @@ comm_handle BoutMesh::send(FieldGroup& g) {
   }
 
   /// Work out length of buffer needed
-  int xlen = msg_len(g.get(), 0, MXG, 0, MYSUB);
-  int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG);
+  const int xlen = msg_len(g.get(), 0, MXG, 0, MYSUB, 0, MZSUB);
+  const int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG, 0, MZSUB);
+  const int zlen = msg_len(g.get(), 0, MXSUB, 0, MYSUB, 0, MZG);
 
   /// Get a communications handle of (at least) the needed size
-  CommHandle* ch = get_handle(xlen, ylen);
+  CommHandle* ch = get_handle(xlen, ylen, zlen);
   ch->var_list = g; // Group of fields to send
 
   sendX(g, ch, true);
   sendY(g, ch);
+  sendZ(g, ch);
 
   return static_cast<void*>(ch);
 }
@@ -1270,10 +1361,11 @@ comm_handle BoutMesh::sendX(FieldGroup& g, comm_handle handle, bool disable_corn
   CommHandle* ch = nullptr;
   if (handle == nullptr) {
     /// Work out length of buffer needed
-    int xlen = msg_len(g.get(), 0, MXG, 0, with_corners ? LocalNy : MYSUB);
+    int xlen = msg_len(g.get(), 0, MXG, 0, with_corners ? LocalNy : MYSUB, 0,
+                       with_corners ? LocalNz : MZSUB);
 
     /// Get a communications handle of (at least) the needed size
-    ch = get_handle(xlen, 0);
+    ch = get_handle(xlen, 0, 0);
     ch->var_list = g; // Group of fields to send
   } else {
     ch = static_cast<CommHandle*>(handle);
@@ -1289,9 +1381,10 @@ comm_handle BoutMesh::sendX(FieldGroup& g, comm_handle handle, bool disable_corn
   /// Send to the left (x-1)
 
   if (IDATA_DEST != -1) {
-    int len = pack_data(ch->var_list.get(), MXG, 2 * MXG, ch->include_x_corners ? 0 : MYG,
-                        ch->include_x_corners ? LocalNy : MYG + MYSUB,
-                        std::begin(ch->imsg_sendbuff));
+    int len = pack_data(
+        ch->var_list.get(), MXG, 2 * MXG, ch->include_x_corners ? 0 : MYG,
+        ch->include_x_corners ? LocalNy : MYG + MYSUB, ch->include_x_corners ? 0 : MZG,
+        ch->include_x_corners ? LocalNz : MZG + MZSUB, std::begin(ch->imsg_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
                      IN_SENT_OUT, BoutComm::get(), &(ch->sendreq[4]));
@@ -1306,7 +1399,8 @@ comm_handle BoutMesh::sendX(FieldGroup& g, comm_handle handle, bool disable_corn
   if (ODATA_DEST != -1) {
     int len = pack_data(
         ch->var_list.get(), MXSUB, MXSUB + MXG, ch->include_x_corners ? 0 : MYG,
-        ch->include_x_corners ? LocalNy : MYG + MYSUB, std::begin(ch->omsg_sendbuff));
+        ch->include_x_corners ? LocalNy : MYG + MYSUB, ch->include_x_corners ? 0 : MZG,
+        ch->include_x_corners ? LocalNz : MZG + MZSUB, std::begin(ch->omsg_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
                      OUT_SENT_IN, BoutComm::get(), &(ch->sendreq[5]));
@@ -1329,10 +1423,10 @@ comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
   CommHandle* ch;
   if (handle == nullptr) {
     /// Work out length of buffer needed
-    int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG);
+    int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG, 0, LocalNz);
 
     /// Get a communications handle of (at least) the needed size
-    ch = get_handle(0, ylen);
+    ch = get_handle(0, ylen, 0);
     ch->var_list = g; // Group of fields to send
   } else {
     ch = static_cast<CommHandle*>(handle);
@@ -1349,8 +1443,8 @@ comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
   BoutReal* outbuff = nullptr;
 
   if (UDATA_INDEST != -1) { // If there is a destination for inner x data
-    len = pack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB, MYSUB + MYG,
-                    std::begin(ch->umsg_sendbuff));
+    len = pack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB, MYSUB + MYG, MZG,
+                    MZG + MZSUB, std::begin(ch->umsg_sendbuff));
     // Send the data to processor UDATA_INDEST
 
     if (async_send) {
@@ -1368,8 +1462,8 @@ comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
   if (UDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
                                          // of the buffer
-    len =
-        pack_data(ch->var_list.get(), UDATA_XSPLIT, LocalNx, MYSUB, MYSUB + MYG, outbuff);
+    len = pack_data(ch->var_list.get(), UDATA_XSPLIT, LocalNx, MYSUB, MYSUB + MYG, MZG,
+                    MZG + MZSUB, outbuff);
     // Send the data to processor UDATA_OUTDEST
     if (async_send) {
       mpi->MPI_Isend(outbuff, len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
@@ -1384,7 +1478,7 @@ comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
 
   len = 0;
   if (DDATA_INDEST != -1) { // If there is a destination for inner x data
-    len = pack_data(ch->var_list.get(), 0, DDATA_XSPLIT, MYG, 2 * MYG,
+    len = pack_data(ch->var_list.get(), 0, DDATA_XSPLIT, MYG, 2 * MYG, MZG, MZG + MZSUB,
                     std::begin(ch->dmsg_sendbuff));
     // Send the data to processor DDATA_INDEST
     if (async_send) {
@@ -1398,7 +1492,8 @@ comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
   if (DDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
                                          // of the buffer
-    len = pack_data(ch->var_list.get(), DDATA_XSPLIT, LocalNx, MYG, 2 * MYG, outbuff);
+    len = pack_data(ch->var_list.get(), DDATA_XSPLIT, LocalNx, MYG, 2 * MYG, MZG,
+                    MZG + MZSUB, outbuff);
     // Send the data to processor DDATA_OUTDEST
 
     if (async_send) {
@@ -1415,6 +1510,62 @@ comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
 
   /// Mark as y-communication
   ch->has_y_communication = true;
+
+  return static_cast<void*>(ch);
+}
+
+comm_handle BoutMesh::sendZ(FieldGroup& g, comm_handle handle) {
+  /// Start timer
+  Timer timer("comms");
+
+  CommHandle* ch = nullptr;
+  if (handle == nullptr) {
+    /// Work out length of buffer needed
+    const int zlen = msg_len(g.get(), 0, LocalNx, 0, LocalNy, 0, MZG);
+
+    /// Get a communications handle of (at least) the needed size
+    ch = get_handle(0, 0, zlen);
+    ch->var_list = g; // Group of fields to send
+  } else {
+    ch = static_cast<CommHandle*>(handle);
+  }
+
+  /// Post receives
+  post_receiveZ(*ch);
+
+  //////////////////////////////////////////////////
+
+  /// Send to the left (z-1)
+
+  if (z_minus_dest != -1) {
+    int len = pack_data(ch->var_list.get(), 0, LocalNx, 0, LocalNy, MZG, 2 * MZG,
+                        std::begin(ch->zminus_sendbuff));
+    if (async_send) {
+      mpi->MPI_Isend(std::begin(ch->zminus_sendbuff), len, PVEC_REAL_MPI_TYPE,
+                     z_minus_dest, Z_SENT_NEGATIVE, BoutComm::get(),
+                     &(ch->sendreq[Z_SENT_NEGATIVE]));
+    } else {
+      mpi->MPI_Send(std::begin(ch->zminus_sendbuff), len, PVEC_REAL_MPI_TYPE,
+                    z_minus_dest, Z_SENT_NEGATIVE, BoutComm::get());
+    }
+  }
+
+  /// Send to the right (z+1)
+
+  if (z_plus_dest != -1) {
+    int len = pack_data(ch->var_list.get(), 0, LocalNx, 0, LocalNy, MZSUB, MZSUB + MZG,
+                        std::begin(ch->zplus_sendbuff));
+    if (async_send) {
+      mpi->MPI_Isend(std::begin(ch->zplus_sendbuff), len, PVEC_REAL_MPI_TYPE, z_plus_dest,
+                     Z_SENT_POSITIVE, BoutComm::get(), &(ch->sendreq[Z_SENT_POSITIVE]));
+    } else {
+      mpi->MPI_Send(std::begin(ch->zplus_sendbuff), len, PVEC_REAL_MPI_TYPE, z_plus_dest,
+                    Z_SENT_POSITIVE, BoutComm::get());
+    }
+  }
+
+  /// Mark communication handle as in progress
+  ch->in_progress = true;
 
   return static_cast<void*>(ch);
 }
@@ -1449,41 +1600,53 @@ int BoutMesh::wait(comm_handle handle) {
   }
 
   do {
-    mpi->MPI_Waitany(6, ch->request.data(), &ind, &status);
+    mpi->MPI_Waitany(CommHandle::num_requests, ch->request.data(), &ind, &status);
     switch (ind) {
     case 0: { // Up, inner
-      unpack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB + MYG, MYSUB + 2 * MYG,
-                  std::begin(ch->umsg_recvbuff));
+      unpack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB + MYG, MYSUB + (2 * MYG),
+                  MZG, MZG + MZSUB, std::begin(ch->umsg_recvbuff));
       break;
     }
     case 1: { // Up, outer
-      len = msg_len(ch->var_list.get(), 0, UDATA_XSPLIT, 0, MYG);
-      unpack_data(ch->var_list.get(), UDATA_XSPLIT, LocalNx, MYSUB + MYG, MYSUB + 2 * MYG,
-                  &(ch->umsg_recvbuff[len]));
+      len = msg_len(ch->var_list.get(), 0, UDATA_XSPLIT, 0, MYG, 0, MZSUB);
+      unpack_data(ch->var_list.get(), UDATA_XSPLIT, LocalNx, MYSUB + MYG,
+                  MYSUB + (2 * MYG), MZG, MZG + MZSUB, &(ch->umsg_recvbuff[len]));
       break;
     }
     case 2: { // Down, inner
-      unpack_data(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG,
+      unpack_data(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG, MZG, MZG + MZSUB,
                   std::begin(ch->dmsg_recvbuff));
       break;
     }
     case 3: { // Down, outer
-      len = msg_len(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG);
-      unpack_data(ch->var_list.get(), DDATA_XSPLIT, LocalNx, 0, MYG,
+      len = msg_len(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG, 0, MZSUB);
+      unpack_data(ch->var_list.get(), DDATA_XSPLIT, LocalNx, 0, MYG, MZG, MZG + MZSUB,
                   &(ch->dmsg_recvbuff[len]));
       break;
     }
     case 4: { // inner
-      unpack_data(ch->var_list.get(), 0, MXG, ch->include_x_corners ? 0 : MYG,
-                  ch->include_x_corners ? LocalNy : MYG + MYSUB,
-                  std::begin(ch->imsg_recvbuff));
+      unpack_data(
+          ch->var_list.get(), 0, MXG, ch->include_x_corners ? 0 : MYG,
+          ch->include_x_corners ? LocalNy : MYG + MYSUB, ch->include_x_corners ? 0 : MZG,
+          ch->include_x_corners ? LocalNz : MZG + MZSUB, std::begin(ch->imsg_recvbuff));
       break;
     }
     case 5: { // outer
-      unpack_data(ch->var_list.get(), MXSUB + MXG, MXSUB + 2 * MXG,
-                  ch->include_x_corners ? 0 : MYG,
-                  ch->include_x_corners ? LocalNy : MYG + MYSUB,
-                  std::begin(ch->omsg_recvbuff));
+      unpack_data(
+          ch->var_list.get(), MXSUB + MXG, MXSUB + (2 * MXG),
+          ch->include_x_corners ? 0 : MYG, ch->include_x_corners ? LocalNy : MYG + MYSUB,
+          ch->include_x_corners ? 0 : MZG, ch->include_x_corners ? LocalNz : MZG + MZSUB,
+          std::begin(ch->omsg_recvbuff));
+      break;
+    }
+    case Z_SENT_NEGATIVE: {
+      unpack_data(ch->var_list.get(), 0, LocalNx, 0, LocalNy, 0, MZG,
+                  std::begin(ch->zminus_recvbuff));
+      break;
+    }
+    case Z_SENT_POSITIVE: {
+      unpack_data(ch->var_list.get(), 0, LocalNx, 0, LocalNy, MZSUB + MZG,
+                  MZSUB + (2 * MZG), std::begin(ch->zplus_recvbuff));
       break;
     }
     }
@@ -1513,6 +1676,12 @@ int BoutMesh::wait(comm_handle handle) {
     }
     if (ODATA_DEST != -1) {
       mpi->MPI_Wait(&ch->sendreq[5], &async_status);
+    }
+    if (z_minus_dest != -1) {
+      mpi->MPI_Wait(&ch->sendreq[Z_SENT_NEGATIVE], &async_status);
+    }
+    if (z_plus_dest != -1) {
+      mpi->MPI_Wait(&ch->sendreq[Z_SENT_POSITIVE], &async_status);
     }
   }
 
@@ -1655,7 +1824,7 @@ comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
   }
 
   // Get a communications handle. Not fussy about size of arrays
-  CommHandle* ch = get_handle(0, 0);
+  CommHandle* ch = get_handle(0, 0, 0);
 
   mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get(),
                  ch->request.data());
@@ -1681,7 +1850,7 @@ comm_handle BoutMesh::irecvXIn(BoutReal* buffer, int size, int tag) {
   }
 
   // Get a communications handle. Not fussy about size of arrays
-  CommHandle* ch = get_handle(0, 0);
+  CommHandle* ch = get_handle(0, 0, 0);
 
   mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get(),
                  ch->request.data());
@@ -1814,7 +1983,7 @@ int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const {
 int BoutMesh::getLocalZIndex(int zglobal) const { return zglobal - (PE_ZIND * MZSUB); }
 
 BoutReal BoutMesh::getGlobalZIndex(BoutReal zloc) const {
-  return zloc + (PE_ZIND * MZSUB);
+  return zloc + (PE_ZIND * MZSUB) - MZG;
 }
 
 int BoutMesh::getLocalZIndexNoBoundaries(int zglobal) const {
@@ -1837,7 +2006,9 @@ int BoutMesh::XPROC(int xind) const { return (xind >= MXG) ? (xind - MXG) / MXSU
 BoutMesh::BoutMesh(ProcSizes grid, ProcSizes guards, ProcSizes num_procs,
                    ProcSizes proc_index, bool create_topology, bool symmetric_X,
                    bool symmetric_Y)
-    : nx(grid.x), ny(grid.y), nz(grid.z), NPES(num_procs.x * num_procs.y),
+    : nx(grid.x), ny(grid.y), nz(grid.z),
+      total_processors(num_procs.x * num_procs.y * num_procs.z),
+      NPES(num_procs.x * num_procs.y),
       MYPE((((proc_index.z * num_procs.y) + proc_index.y) * num_procs.x) + proc_index.x),
       PE_XIND(proc_index.x), NXPE(num_procs.x), PE_YIND(proc_index.y), NYPE(num_procs.y),
       PE_ZIND(proc_index.z), NZPE(num_procs.z), ixseps1(nx), ixseps2(nx), jyseps1_1(-1),
@@ -1862,15 +2033,19 @@ BoutMesh::BoutMesh(ProcSizes grid, ProcSizes guards, ProcSizes num_procs,
   addBoundaryRegions();
 }
 
-BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
-                   int nype, int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y,
+BoutMesh::BoutMesh(ProcSizes input_n, ProcSizes guards, ProcSizes num_procs,
+                   ProcSizes proc_index, bool symmetric_X, bool symmetric_Y,
                    bool periodic_X_, int ixseps1_, int ixseps2_, int jyseps1_1_,
                    int jyseps2_1_, int jyseps1_2_, int jyseps2_2_, int ny_inner_,
                    bool create_regions)
-    : nx(input_nx), ny(input_ny), nz(input_nz), NPES(nxpe * nype),
-      MYPE((nxpe * pe_yind) + pe_xind), PE_XIND(pe_xind), NXPE(nxpe), PE_YIND(pe_yind),
-      NYPE(nype), ixseps1(ixseps1_), ixseps2(ixseps2_), symmetricGlobalX(symmetric_X),
-      symmetricGlobalY(symmetric_Y), MXG(mxg), MYG(myg), MZG(0) {
+    : nx(input_n.x), ny(input_n.y), nz(input_n.z),
+      total_processors(num_procs.x * num_procs.y * num_procs.z),
+      NPES(num_procs.x * num_procs.y),
+      MYPE((((proc_index.z * num_procs.y) + proc_index.y) * num_procs.x) + proc_index.x),
+      PE_XIND(proc_index.x), NXPE(num_procs.x), PE_YIND(proc_index.y), NYPE(num_procs.y),
+      PE_ZIND(proc_index.z), NZPE(num_procs.z), ixseps1(ixseps1_), ixseps2(ixseps2_),
+      symmetricGlobalX(symmetric_X), symmetricGlobalY(symmetric_Y), MXG(guards.x),
+      MYG(guards.y), MZG(guards.z) {
 
   periodicX = periodic_X_;
   setYDecompositionIndices(jyseps1_1_, jyseps2_1_, jyseps1_2_, jyseps2_2_, ny_inner_);
@@ -1902,6 +2077,12 @@ void BoutMesh::default_connections() {
       IDATA_DEST = PROC_NUM(NXPE - 1, PE_YIND, PE_ZIND);
     }
   }
+
+  // Always periodic
+  const auto z_minus_proc = PE_ZIND == 0 ? NZPE - 1 : PE_ZIND - 1;
+  z_minus_dest = PROC_NUM(PE_XIND, PE_YIND, z_minus_proc);
+  const auto z_plus_proc = PE_ZIND == (NZPE - 1) ? 0 : PE_ZIND + 1;
+  z_plus_dest = PROC_NUM(PE_XIND, PE_YIND, z_plus_proc);
 }
 
 void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
@@ -2265,7 +2446,7 @@ void BoutMesh::topology() {
  *                     Communication handles
  ****************************************************************/
 
-BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen) {
+BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen, int zlen) {
   if (comm_list.empty()) {
     // Allocate a new CommHandle
 
@@ -2288,8 +2469,16 @@ BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen) {
       ch->omsg_recvbuff.reallocate(xlen);
     }
 
+    if (zlen > 0) {
+      ch->zminus_sendbuff.reallocate(zlen);
+      ch->zplus_sendbuff.reallocate(zlen);
+      ch->zminus_recvbuff.reallocate(zlen);
+      ch->zplus_recvbuff.reallocate(zlen);
+    }
+
     ch->xbufflen = xlen;
     ch->ybufflen = ylen;
+    ch->zbufflen = zlen;
 
     ch->in_progress = false;
 
@@ -2316,6 +2505,14 @@ BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen) {
     ch->omsg_recvbuff.reallocate(xlen);
 
     ch->xbufflen = xlen;
+  }
+  if (ch->zbufflen < zlen) {
+    ch->zminus_sendbuff.reallocate(zlen);
+    ch->zplus_sendbuff.reallocate(zlen);
+    ch->zminus_recvbuff.reallocate(zlen);
+    ch->zplus_recvbuff.reallocate(zlen);
+
+    ch->zbufflen = zlen;
   }
 
   ch->in_progress = false;
@@ -2348,11 +2545,13 @@ void BoutMesh::clear_handles() {
 /// different processors.
 void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin,
                                    BoutMesh* xout) {
-  const int xlen = LocalNy * LocalNz * MXG * 5, ylen = LocalNx * LocalNz * MYG * 5;
+  const int xlen = LocalNy * LocalNz * MXG * 5;
+  const int ylen = LocalNx * LocalNz * MYG * 5;
+  const int zlen = LocalNx * LocalNy * MZG * 5;
 
-  CommHandle* ch = get_handle(xlen, ylen);
+  CommHandle* ch = get_handle(xlen, ylen, zlen);
   if (yup != nullptr) {
-    CommHandle* other = (yup == this) ? ch : yup->get_handle(xlen, ylen);
+    CommHandle* other = (yup == this) ? ch : yup->get_handle(xlen, ylen, zlen);
     if (other->dmsg_sendbuff.unique()) {
       ch->umsg_recvbuff = other->dmsg_sendbuff;
     }
@@ -2361,7 +2560,7 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
     }
   }
   if (ydown != nullptr) {
-    CommHandle* other = (ydown == this) ? ch : ydown->get_handle(xlen, ylen);
+    CommHandle* other = (ydown == this) ? ch : ydown->get_handle(xlen, ylen, zlen);
     if (other->umsg_sendbuff.unique()) {
       ch->dmsg_recvbuff = other->umsg_sendbuff;
     }
@@ -2370,7 +2569,7 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
     }
   }
   if (xin != nullptr) {
-    CommHandle* other = (xin == this) ? ch : xin->get_handle(xlen, ylen);
+    CommHandle* other = (xin == this) ? ch : xin->get_handle(xlen, ylen, zlen);
     if (other->omsg_sendbuff.unique()) {
       ch->imsg_recvbuff = other->omsg_sendbuff;
     }
@@ -2379,7 +2578,7 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
     }
   }
   if (xout != nullptr) {
-    CommHandle* other = (xout == this) ? ch : xout->get_handle(xlen, ylen);
+    CommHandle* other = (xout == this) ? ch : xout->get_handle(xlen, ylen, zlen);
     if (other->imsg_sendbuff.unique()) {
       ch->omsg_recvbuff = other->imsg_sendbuff;
     }
@@ -2395,12 +2594,10 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
  ****************************************************************/
 
 int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
-                        int ylt, BoutReal* buffer) const {
+                        int ylt, int zge, int zlt, BoutReal* buffer) const {
 
   using enum Field::FieldType;
   int len = 0;
-  const int zge = 0;
-  const int zlt = LocalNz;
 
   for (const auto& var : var_list) {
     switch (var->field_type()) {
@@ -2449,12 +2646,10 @@ int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, i
 }
 
 int BoutMesh::unpack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
-                          int ylt, const BoutReal* buffer) const {
+                          int ylt, int zge, int zlt, BoutReal* buffer) const {
 
   using enum Field::FieldType;
   int len = 0;
-  const int zge = 0;
-  const int zlt = LocalNz;
 
   for (const auto& var : var_list) {
     switch (var->field_type()) {
@@ -2646,7 +2841,7 @@ void BoutMesh::addBoundaryRegions() {
     }
   }
 
-  addRegion3D("RGN_LOWER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart - 1, 0, LocalNz - 1,
+  addRegion3D("RGN_LOWER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart - 1, zstart, zend,
                                                  LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_LOWER_INNER_Y",
               Region<Ind2D>(xs, xe, 0, ystart - 1, 0, 0, LocalNy, 1, maxregionblocksize));
@@ -2685,7 +2880,7 @@ void BoutMesh::addBoundaryRegions() {
     xe = -2;
   }
 
-  addRegion3D("RGN_LOWER_OUTER_Y", Region<Ind3D>(xs, xe, 0, ystart - 1, 0, LocalNz - 1,
+  addRegion3D("RGN_LOWER_OUTER_Y", Region<Ind3D>(xs, xe, 0, ystart - 1, zstart, zend,
                                                  LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_LOWER_OUTER_Y",
               Region<Ind2D>(xs, xe, 0, ystart - 1, 0, 0, LocalNy, 1, maxregionblocksize));
@@ -2718,7 +2913,7 @@ void BoutMesh::addBoundaryRegions() {
     xe = LocalNx - 1;
   }
 
-  addRegion3D("RGN_LOWER_Y", Region<Ind3D>(xs, xe, 0, ystart - 1, 0, LocalNz - 1, LocalNy,
+  addRegion3D("RGN_LOWER_Y", Region<Ind3D>(xs, xe, 0, ystart - 1, zstart, zend, LocalNy,
                                            LocalNz, maxregionblocksize));
   addRegion2D("RGN_LOWER_Y",
               Region<Ind2D>(xs, xe, 0, ystart - 1, 0, 0, LocalNy, 1, maxregionblocksize));
@@ -2758,8 +2953,8 @@ void BoutMesh::addBoundaryRegions() {
   }
 
   addRegion3D("RGN_UPPER_INNER_Y",
-              Region<Ind3D>(xs, xe, yend + 1, LocalNy - 1, 0, LocalNz - 1, LocalNy,
-                            LocalNz, maxregionblocksize));
+              Region<Ind3D>(xs, xe, yend + 1, LocalNy - 1, zstart, zend, LocalNy, LocalNz,
+                            maxregionblocksize));
   addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, yend + 1, LocalNy - 1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_INNER_Y");
@@ -2798,8 +2993,8 @@ void BoutMesh::addBoundaryRegions() {
   }
 
   addRegion3D("RGN_UPPER_OUTER_Y",
-              Region<Ind3D>(xs, xe, yend + 1, LocalNy - 1, 0, LocalNz - 1, LocalNy,
-                            LocalNz, maxregionblocksize));
+              Region<Ind3D>(xs, xe, yend + 1, LocalNy - 1, zstart, zend, LocalNy, LocalNz,
+                            maxregionblocksize));
   addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, yend + 1, LocalNy - 1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_OUTER_Y");
@@ -2831,7 +3026,7 @@ void BoutMesh::addBoundaryRegions() {
     xe = LocalNx - 1;
   }
 
-  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, yend + 1, LocalNy - 1, 0, LocalNz - 1,
+  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, yend + 1, LocalNy - 1, zstart, zend,
                                            LocalNy, LocalNz, maxregionblocksize));
   addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, yend + 1, LocalNy - 1, 0, 0, LocalNy,
                                            1, maxregionblocksize));
@@ -2840,18 +3035,18 @@ void BoutMesh::addBoundaryRegions() {
   // Inner X
   if (firstX() && !periodicX) {
     addRegion3D("RGN_INNER_X_THIN",
-                Region<Ind3D>(xstart - 1, xstart - 1, ystart, yend, 0, LocalNz - 1,
-                              LocalNy, LocalNz, maxregionblocksize));
+                Region<Ind3D>(xstart - 1, xstart - 1, ystart, yend, zstart, zend, LocalNy,
+                              LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X_THIN", Region<Ind2D>(xstart - 1, xstart - 1, ystart, yend, 0,
                                                   0, LocalNy, 1, maxregionblocksize));
     addRegionPerp("RGN_INNER_X_THIN",
-                  Region<IndPerp>(xstart - 1, xstart - 1, 0, 0, 0, LocalNz - 1, 1,
-                                  LocalNz, maxregionblocksize));
-    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, 0, LocalNz - 1,
+                  Region<IndPerp>(xstart - 1, xstart - 1, 0, 0, zstart, zend, 1, LocalNz,
+                                  maxregionblocksize));
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, zstart, zend,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart - 1, ystart, yend, 0, 0, LocalNy,
                                              1, maxregionblocksize));
-    addRegionPerp("RGN_INNER_X", Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1,
+    addRegionPerp("RGN_INNER_X", Region<IndPerp>(0, xstart - 1, 0, 0, zstart, zend, 1,
                                                  LocalNz, maxregionblocksize));
     all_boundaries.emplace_back("RGN_INNER_X");
 
@@ -2875,21 +3070,19 @@ void BoutMesh::addBoundaryRegions() {
   // Outer X
   if (lastX() && !periodicX) {
     addRegion3D("RGN_OUTER_X_THIN",
-                Region<Ind3D>(xend + 1, xend + 1, ystart, yend, 0, LocalNz - 1, LocalNy,
+                Region<Ind3D>(xend + 1, xend + 1, ystart, yend, zstart, zend, LocalNy,
                               LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X_THIN", Region<Ind2D>(xend + 1, xend + 1, ystart, yend, 0, 0,
                                                   LocalNy, 1, maxregionblocksize));
     addRegionPerp("RGN_OUTER_X_THIN",
-                  Region<IndPerp>(xend + 1, xend + 1, 0, 0, 0, LocalNz - 1, 1, LocalNz,
+                  Region<IndPerp>(xend + 1, xend + 1, 0, 0, zstart, zend, 1, LocalNz,
                                   maxregionblocksize));
-    addRegion3D("RGN_OUTER_X",
-                Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, 0, LocalNz - 1,
-                              LocalNy, LocalNz, maxregionblocksize));
+    addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, zstart,
+                                             zend, LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend + 1, LocalNx - 1, ystart, yend, 0, 0,
                                              LocalNy, 1, maxregionblocksize));
-    addRegionPerp("RGN_OUTER_X",
-                  Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz,
-                                  maxregionblocksize));
+    addRegionPerp("RGN_OUTER_X", Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, zstart,
+                                                 zend, 1, LocalNz, maxregionblocksize));
     all_boundaries.emplace_back("RGN_OUTER_X");
 
     output_info.write("\tBoundary region outer X\n");
@@ -3330,6 +3523,7 @@ void BoutMesh::outputVars(Options& output_options) {
   output_options["MZSUB"].force(MZSUB, "BoutMesh");
   output_options["PE_XIND"].force(PE_XIND, "BoutMesh");
   output_options["PE_YIND"].force(PE_YIND, "BoutMesh");
+  output_options["PE_ZIND"].force(PE_ZIND, "BoutMesh");
   output_options["MYPE"].force(MYPE, "BoutMesh");
   output_options["MXG"].force(MXG, "BoutMesh");
   output_options["MYG"].force(MYG, "BoutMesh");
