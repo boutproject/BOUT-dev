@@ -29,6 +29,32 @@ Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
 }
 
 // Provide the C++ operator to update Field3D by multiplication with Field3D
+Field3D& Field3D::update_multiplication_inplace(const Field3D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+
+  // Delete existing parallel slices. We don't update parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+  checkData(*this);
+  checkData(rhs);
+
+  regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
+
+  BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
+
+  track(rhs, "operator*=");
+#if BOUT_USE_TRACK
+  name = fmt::format("{:s} *= {:s}", this->name, rhs.name);
+#endif
+
+  checkData(*this);
+
+  return *this;
+}
+
+// Provide the C++ operator to update Field3D by multiplication with Field3D
 Field3D& Field3D::operator*=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
@@ -78,6 +104,32 @@ Field3D operator/(const Field3D& lhs, const Field3D& rhs) {
 #endif
   checkData(result);
   return result;
+}
+
+// Provide the C++ operator to update Field3D by division with Field3D
+Field3D& Field3D::update_division_inplace(const Field3D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+
+  // Delete existing parallel slices. We don't update parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+  checkData(*this);
+  checkData(rhs);
+
+  regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
+
+  BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
+
+  track(rhs, "operator/=");
+#if BOUT_USE_TRACK
+  name = fmt::format("{:s} /= {:s}", this->name, rhs.name);
+#endif
+
+  checkData(*this);
+
+  return *this;
 }
 
 // Provide the C++ operator to update Field3D by division with Field3D
@@ -133,6 +185,32 @@ Field3D operator+(const Field3D& lhs, const Field3D& rhs) {
 }
 
 // Provide the C++ operator to update Field3D by addition with Field3D
+Field3D& Field3D::update_addition_inplace(const Field3D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+
+  // Delete existing parallel slices. We don't update parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+  checkData(*this);
+  checkData(rhs);
+
+  regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
+
+  BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
+
+  track(rhs, "operator+=");
+#if BOUT_USE_TRACK
+  name = fmt::format("{:s} += {:s}", this->name, rhs.name);
+#endif
+
+  checkData(*this);
+
+  return *this;
+}
+
+// Provide the C++ operator to update Field3D by addition with Field3D
 Field3D& Field3D::operator+=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
@@ -182,6 +260,32 @@ Field3D operator-(const Field3D& lhs, const Field3D& rhs) {
 #endif
   checkData(result);
   return result;
+}
+
+// Provide the C++ operator to update Field3D by subtraction with Field3D
+Field3D& Field3D::update_subtraction_inplace(const Field3D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+
+  // Delete existing parallel slices. We don't update parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+  checkData(*this);
+  checkData(rhs);
+
+  regionID = fieldmesh->getCommonRegion(regionID, rhs.getRegionID());
+
+  BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
+
+  track(rhs, "operator-=");
+#if BOUT_USE_TRACK
+  name = fmt::format("{:s} -= {:s}", this->name, rhs.name);
+#endif
+
+  checkData(*this);
+
+  return *this;
 }
 
 // Provide the C++ operator to update Field3D by subtraction with Field3D
@@ -239,6 +343,35 @@ Field3D operator*(const Field3D& lhs, const Field2D& rhs) {
 #endif
   checkData(result);
   return result;
+}
+
+// Provide the C++ operator to update Field3D by multiplication with Field2D
+Field3D& Field3D::update_multiplication_inplace(const Field2D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+
+  // Delete existing parallel slices. We don't update parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+  checkData(*this);
+  checkData(rhs);
+
+  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+    const auto base_ind = fieldmesh->ind2Dto3D(index);
+    for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
+      (*this)[base_ind + jz] *= rhs[index];
+    }
+  }
+
+  track(rhs, "operator*=");
+#if BOUT_USE_TRACK
+  name = fmt::format("{:s} *= {:s}", this->name, rhs.name);
+#endif
+
+  checkData(*this);
+
+  return *this;
 }
 
 // Provide the C++ operator to update Field3D by multiplication with Field2D
@@ -303,6 +436,36 @@ Field3D operator/(const Field3D& lhs, const Field2D& rhs) {
 }
 
 // Provide the C++ operator to update Field3D by division with Field2D
+Field3D& Field3D::update_division_inplace(const Field2D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+
+  // Delete existing parallel slices. We don't update parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+  checkData(*this);
+  checkData(rhs);
+
+  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+    const auto base_ind = fieldmesh->ind2Dto3D(index);
+    const auto tmp = 1.0 / rhs[index];
+    for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
+      (*this)[base_ind + jz] *= tmp;
+    }
+  }
+
+  track(rhs, "operator/=");
+#if BOUT_USE_TRACK
+  name = fmt::format("{:s} /= {:s}", this->name, rhs.name);
+#endif
+
+  checkData(*this);
+
+  return *this;
+}
+
+// Provide the C++ operator to update Field3D by division with Field2D
 Field3D& Field3D::operator/=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
@@ -364,6 +527,35 @@ Field3D operator+(const Field3D& lhs, const Field2D& rhs) {
 }
 
 // Provide the C++ operator to update Field3D by addition with Field2D
+Field3D& Field3D::update_addition_inplace(const Field2D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+
+  // Delete existing parallel slices. We don't update parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+  checkData(*this);
+  checkData(rhs);
+
+  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+    const auto base_ind = fieldmesh->ind2Dto3D(index);
+    for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
+      (*this)[base_ind + jz] += rhs[index];
+    }
+  }
+
+  track(rhs, "operator+=");
+#if BOUT_USE_TRACK
+  name = fmt::format("{:s} += {:s}", this->name, rhs.name);
+#endif
+
+  checkData(*this);
+
+  return *this;
+}
+
+// Provide the C++ operator to update Field3D by addition with Field2D
 Field3D& Field3D::operator+=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
@@ -421,6 +613,35 @@ Field3D operator-(const Field3D& lhs, const Field2D& rhs) {
 #endif
   checkData(result);
   return result;
+}
+
+// Provide the C++ operator to update Field3D by subtraction with Field2D
+Field3D& Field3D::update_subtraction_inplace(const Field2D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+
+  // Delete existing parallel slices. We don't update parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+  checkData(*this);
+  checkData(rhs);
+
+  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+    const auto base_ind = fieldmesh->ind2Dto3D(index);
+    for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
+      (*this)[base_ind + jz] -= rhs[index];
+    }
+  }
+
+  track(rhs, "operator-=");
+#if BOUT_USE_TRACK
+  name = fmt::format("{:s} -= {:s}", this->name, rhs.name);
+#endif
+
+  checkData(*this);
+
+  return *this;
 }
 
 // Provide the C++ operator to update Field3D by subtraction with Field2D
@@ -570,6 +791,29 @@ Field3D operator*(const Field3D& lhs, const BoutReal rhs) {
 }
 
 // Provide the C++ operator to update Field3D by multiplication with BoutReal
+Field3D& Field3D::update_multiplication_inplace(const BoutReal rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+
+  // Delete existing parallel slices. We don't update parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+  checkData(*this);
+  checkData(rhs);
+
+  BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
+
+  track(rhs, "operator*=");
+#if BOUT_USE_TRACK
+  name = fmt::format("{:s} *= {:s}", this->name, "BR");
+#endif
+
+  checkData(*this);
+
+  return *this;
+}
+
+// Provide the C++ operator to update Field3D by multiplication with BoutReal
 Field3D& Field3D::operator*=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
@@ -616,6 +860,30 @@ Field3D operator/(const Field3D& lhs, const BoutReal rhs) {
 #endif
   checkData(result);
   return result;
+}
+
+// Provide the C++ operator to update Field3D by division with BoutReal
+Field3D& Field3D::update_division_inplace(const BoutReal rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+
+  // Delete existing parallel slices. We don't update parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+  checkData(*this);
+  checkData(rhs);
+
+  const auto tmp = 1.0 / rhs;
+  BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= tmp; }
+
+  track(rhs, "operator/=");
+#if BOUT_USE_TRACK
+  name = fmt::format("{:s} /= {:s}", this->name, "BR");
+#endif
+
+  checkData(*this);
+
+  return *this;
 }
 
 // Provide the C++ operator to update Field3D by division with BoutReal
@@ -668,6 +936,29 @@ Field3D operator+(const Field3D& lhs, const BoutReal rhs) {
 }
 
 // Provide the C++ operator to update Field3D by addition with BoutReal
+Field3D& Field3D::update_addition_inplace(const BoutReal rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+
+  // Delete existing parallel slices. We don't update parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+  checkData(*this);
+  checkData(rhs);
+
+  BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
+
+  track(rhs, "operator+=");
+#if BOUT_USE_TRACK
+  name = fmt::format("{:s} += {:s}", this->name, "BR");
+#endif
+
+  checkData(*this);
+
+  return *this;
+}
+
+// Provide the C++ operator to update Field3D by addition with BoutReal
 Field3D& Field3D::operator+=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
@@ -713,6 +1004,29 @@ Field3D operator-(const Field3D& lhs, const BoutReal rhs) {
 #endif
   checkData(result);
   return result;
+}
+
+// Provide the C++ operator to update Field3D by subtraction with BoutReal
+Field3D& Field3D::update_subtraction_inplace(const BoutReal rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+
+  // Delete existing parallel slices. We don't update parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+  checkData(*this);
+  checkData(rhs);
+
+  BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
+
+  track(rhs, "operator-=");
+#if BOUT_USE_TRACK
+  name = fmt::format("{:s} -= {:s}", this->name, "BR");
+#endif
+
+  checkData(*this);
+
+  return *this;
 }
 
 // Provide the C++ operator to update Field3D by subtraction with BoutReal
@@ -2420,9 +2734,16 @@ Field3DParallel& Field3DParallel::operator*=(const Field3D& rhs) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     if (this->isFci()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) *= rhs.yup(i);
-        ydown(i) *= rhs.ydown(i);
+      if (isRef) {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i).update_multiplication_inplace(rhs.yup(i));
+          ydown(i).update_multiplication_inplace(rhs.ydown(i));
+        }
+      } else {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i) *= rhs.yup(i);
+          ydown(i) *= rhs.ydown(i);
+        }
       }
     } else {
       clearParallelSlices();
@@ -2486,9 +2807,16 @@ Field3DParallel& Field3DParallel::operator/=(const Field3D& rhs) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     if (this->isFci()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) /= rhs.yup(i);
-        ydown(i) /= rhs.ydown(i);
+      if (isRef) {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i).update_division_inplace(rhs.yup(i));
+          ydown(i).update_division_inplace(rhs.ydown(i));
+        }
+      } else {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i) /= rhs.yup(i);
+          ydown(i) /= rhs.ydown(i);
+        }
       }
     } else {
       clearParallelSlices();
@@ -2552,9 +2880,16 @@ Field3DParallel& Field3DParallel::operator+=(const Field3D& rhs) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     if (this->isFci()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) += rhs.yup(i);
-        ydown(i) += rhs.ydown(i);
+      if (isRef) {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i).update_addition_inplace(rhs.yup(i));
+          ydown(i).update_addition_inplace(rhs.ydown(i));
+        }
+      } else {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i) += rhs.yup(i);
+          ydown(i) += rhs.ydown(i);
+        }
       }
     } else {
       clearParallelSlices();
@@ -2618,9 +2953,16 @@ Field3DParallel& Field3DParallel::operator-=(const Field3D& rhs) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     if (this->isFci()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) -= rhs.yup(i);
-        ydown(i) -= rhs.ydown(i);
+      if (isRef) {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i).update_subtraction_inplace(rhs.yup(i));
+          ydown(i).update_subtraction_inplace(rhs.ydown(i));
+        }
+      } else {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i) -= rhs.yup(i);
+          ydown(i) -= rhs.ydown(i);
+        }
       }
     } else {
       clearParallelSlices();
@@ -2684,9 +3026,16 @@ Field3DParallel& Field3DParallel::operator*=(const Field3DParallel& rhs) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     if (this->isFci()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) *= rhs;
-        ydown(i) *= rhs;
+      if (isRef) {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i).update_multiplication_inplace(rhs);
+          ydown(i).update_multiplication_inplace(rhs);
+        }
+      } else {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i) *= rhs;
+          ydown(i) *= rhs;
+        }
       }
     } else {
       clearParallelSlices();
@@ -2750,9 +3099,16 @@ Field3DParallel& Field3DParallel::operator/=(const Field3DParallel& rhs) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     if (this->isFci()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) /= rhs;
-        ydown(i) /= rhs;
+      if (isRef) {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i).update_division_inplace(rhs);
+          ydown(i).update_division_inplace(rhs);
+        }
+      } else {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i) /= rhs;
+          ydown(i) /= rhs;
+        }
       }
     } else {
       clearParallelSlices();
@@ -2816,9 +3172,16 @@ Field3DParallel& Field3DParallel::operator+=(const Field3DParallel& rhs) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     if (this->isFci()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) += rhs;
-        ydown(i) += rhs;
+      if (isRef) {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i).update_addition_inplace(rhs);
+          ydown(i).update_addition_inplace(rhs);
+        }
+      } else {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i) += rhs;
+          ydown(i) += rhs;
+        }
       }
     } else {
       clearParallelSlices();
@@ -2882,9 +3245,16 @@ Field3DParallel& Field3DParallel::operator-=(const Field3DParallel& rhs) {
     ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
 
     if (this->isFci()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) -= rhs;
-        ydown(i) -= rhs;
+      if (isRef) {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i).update_subtraction_inplace(rhs);
+          ydown(i).update_subtraction_inplace(rhs);
+        }
+      } else {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i) -= rhs;
+          ydown(i) -= rhs;
+        }
       }
     } else {
       clearParallelSlices();
@@ -2946,9 +3316,16 @@ Field3DParallel& Field3DParallel::operator*=(const BoutReal rhs) {
   if (data.unique() or isRef) {
 
     if (this->isFci()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) *= rhs;
-        ydown(i) *= rhs;
+      if (isRef) {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i).update_multiplication_inplace(rhs);
+          ydown(i).update_multiplication_inplace(rhs);
+        }
+      } else {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i) *= rhs;
+          ydown(i) *= rhs;
+        }
       }
     } else {
       clearParallelSlices();
@@ -3009,9 +3386,16 @@ Field3DParallel& Field3DParallel::operator/=(const BoutReal rhs) {
   if (data.unique() or isRef) {
 
     if (this->isFci()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) /= rhs;
-        ydown(i) /= rhs;
+      if (isRef) {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i).update_division_inplace(rhs);
+          ydown(i).update_division_inplace(rhs);
+        }
+      } else {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i) /= rhs;
+          ydown(i) /= rhs;
+        }
       }
     } else {
       clearParallelSlices();
@@ -3071,9 +3455,16 @@ Field3DParallel& Field3DParallel::operator+=(const BoutReal rhs) {
   if (data.unique() or isRef) {
 
     if (this->isFci()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) += rhs;
-        ydown(i) += rhs;
+      if (isRef) {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i).update_addition_inplace(rhs);
+          ydown(i).update_addition_inplace(rhs);
+        }
+      } else {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i) += rhs;
+          ydown(i) += rhs;
+        }
       }
     } else {
       clearParallelSlices();
@@ -3133,9 +3524,16 @@ Field3DParallel& Field3DParallel::operator-=(const BoutReal rhs) {
   if (data.unique() or isRef) {
 
     if (this->isFci()) {
-      for (size_t i{0}; i < yup_fields.size(); ++i) {
-        yup(i) -= rhs;
-        ydown(i) -= rhs;
+      if (isRef) {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i).update_subtraction_inplace(rhs);
+          ydown(i).update_subtraction_inplace(rhs);
+        }
+      } else {
+        for (size_t i{0}; i < yup_fields.size(); ++i) {
+          yup(i) -= rhs;
+          ydown(i) -= rhs;
+        }
       }
     } else {
       clearParallelSlices();

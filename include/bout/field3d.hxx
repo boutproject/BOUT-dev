@@ -479,6 +479,19 @@ public:
   Field3D& operator/=(BoutReal rhs);
   ///@}
 
+  Field3D& update_multiplication_inplace(const Field3D& rhs);
+  Field3D& update_division_inplace(const Field3D& rhs);
+  Field3D& update_addition_inplace(const Field3D& rhs);
+  Field3D& update_subtraction_inplace(const Field3D& rhs);
+  Field3D& update_multiplication_inplace(const Field2D& rhs);
+  Field3D& update_division_inplace(const Field2D& rhs);
+  Field3D& update_addition_inplace(const Field2D& rhs);
+  Field3D& update_subtraction_inplace(const Field2D& rhs);
+  Field3D& update_multiplication_inplace(BoutReal rhs);
+  Field3D& update_division_inplace(BoutReal rhs);
+  Field3D& update_addition_inplace(BoutReal rhs);
+  Field3D& update_subtraction_inplace(BoutReal rhs);
+
   // FieldData virtual functions
   bool is3D() const override { return true; }
 
@@ -805,7 +818,14 @@ private:
   bool isRef{false};
 };
 
-Field3DParallel Field3D::asField3DParallel() { return Field3DParallel(*this, true); }
+Field3DParallel Field3D::asField3DParallel() {
+  allocate();
+  for (size_t i = 0; i < numberParallelSlices(); ++i) {
+    yup(i).allocate();
+    ydown(i).allocate();
+  }
+  return Field3DParallel(*this, true);
+}
 const Field3DParallel Field3D::asField3DParallel() const {
   return Field3DParallel(*this);
 }
