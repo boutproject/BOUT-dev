@@ -12,6 +12,9 @@ auto fci_mpi_test(int num, Options& dump) {
   using bout::globals::mesh;
   Field3D input{FieldFactory::get()->create3D(fmt::format("input_{:d}:function", num),
                                               Options::getRoot(), mesh)};
+
+  dump[fmt::format("input_{}", num)] = input;
+
   mesh->communicate(input);
   input.applyParallelBoundary("parallel_neumann_o2");
 

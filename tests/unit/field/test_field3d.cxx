@@ -486,10 +486,8 @@ TEST_F(Field3DTest, IterateOverRGN_NOBNDRY) {
   test_indices.insert({1, 1, 1});
 
   // This is the set of indices actually inside the region we want
-  std::set<std::vector<int>> region_indices;
-  region_indices.insert({1, 1, 0});
-  region_indices.insert({1, 1, 1});
-  const int num_sentinels = region_indices.size();
+  const std::set<std::vector<int>> region_indices{{1, 1, 1}};
+  const auto num_sentinels = static_cast<int>(region_indices.size());
 
   // Assign sentinel value to watch out for to our chosen points
   for (const auto& index : test_indices) {
@@ -509,9 +507,9 @@ TEST_F(Field3DTest, IterateOverRGN_NOBNDRY) {
   }
 
   EXPECT_EQ(found_sentinels, num_sentinels);
-  EXPECT_EQ(sum,
-            (((nx - 2) * (ny - 2) * nz) - num_sentinels) + (num_sentinels * sentinel));
-  EXPECT_TRUE(region_indices == result_indices);
+  EXPECT_EQ(sum, (((nx - 2) * (ny - 2) * (nz - 2)) - num_sentinels)
+                     + (num_sentinels * sentinel));
+  EXPECT_EQ(region_indices, result_indices);
 }
 
 TEST_F(Field3DTest, IterateOverRGN_NOX) {
@@ -611,7 +609,6 @@ TEST_F(Field3DTest, IterateOverRGN_NOY) {
 }
 
 TEST_F(Field3DTest, IterateOverRGN_NOZ) {
-  const int mzguard = 0;
   Field3D field;
 
   field = 1.0;
@@ -632,13 +629,9 @@ TEST_F(Field3DTest, IterateOverRGN_NOZ) {
 
   // This is the set of indices actually inside the region we want
   std::set<std::vector<int>> region_indices;
-  region_indices.insert({0, 0, 0});
   region_indices.insert({0, 0, 1});
-  region_indices.insert({0, 1, 0});
-  region_indices.insert({1, 0, 0});
   region_indices.insert({0, 1, 1});
   region_indices.insert({1, 0, 1});
-  region_indices.insert({1, 1, 0});
   region_indices.insert({1, 1, 1});
   const int num_sentinels = region_indices.size();
 
@@ -660,9 +653,8 @@ TEST_F(Field3DTest, IterateOverRGN_NOZ) {
   }
 
   EXPECT_EQ(found_sentinels, num_sentinels);
-  EXPECT_EQ(sum,
-            ((nx * (ny) * (nz - mzguard)) - num_sentinels) + (num_sentinels * sentinel));
-  EXPECT_TRUE(region_indices == result_indices);
+  EXPECT_EQ(sum, ((nx * (ny) * (nz - 2)) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_EQ(region_indices, result_indices);
 }
 
 TEST_F(Field3DTest, IterateOverRGN_XGUARDS) {
@@ -686,7 +678,6 @@ TEST_F(Field3DTest, IterateOverRGN_XGUARDS) {
 
   // This is the set of indices actually inside the region we want
   std::set<std::vector<int>> region_indices;
-  region_indices.insert({0, 1, 0});
   region_indices.insert({0, 1, 1});
 
   const int num_sentinels = region_indices.size();
@@ -709,8 +700,9 @@ TEST_F(Field3DTest, IterateOverRGN_XGUARDS) {
   }
 
   EXPECT_EQ(found_sentinels, num_sentinels);
-  EXPECT_EQ(sum, ((2 * (ny - 2) * nz) - num_sentinels) + (num_sentinels * sentinel));
-  EXPECT_TRUE(region_indices == result_indices);
+  EXPECT_EQ(sum,
+            ((2 * (ny - 2) * (nz - 2)) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_EQ(region_indices, result_indices);
 }
 
 TEST_F(Field3DTest, IterateOverRGN_YGUARDS) {
@@ -734,7 +726,6 @@ TEST_F(Field3DTest, IterateOverRGN_YGUARDS) {
 
   // This is the set of indices actually inside the region we want
   std::set<std::vector<int>> region_indices;
-  region_indices.insert({1, 0, 0});
   region_indices.insert({1, 0, 1});
 
   const int num_sentinels = region_indices.size();
@@ -757,8 +748,9 @@ TEST_F(Field3DTest, IterateOverRGN_YGUARDS) {
   }
 
   EXPECT_EQ(found_sentinels, num_sentinels);
-  EXPECT_EQ(sum, (((nx - 2) * 2 * nz) - num_sentinels) + (num_sentinels * sentinel));
-  EXPECT_TRUE(region_indices == result_indices);
+  EXPECT_EQ(sum,
+            (((nx - 2) * 2 * (nz - 2)) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_EQ(region_indices, result_indices);
 }
 
 TEST_F(Field3DTest, IterateOverRGN_ZGUARDS) {
@@ -781,8 +773,8 @@ TEST_F(Field3DTest, IterateOverRGN_ZGUARDS) {
   test_indices.insert({1, 1, 1});
 
   // This is the set of indices actually inside the region we want
-  const std::set<std::vector<int>> region_indices;
-
+  std::set<std::vector<int>> region_indices;
+  region_indices.insert({1, 1, 0});
   const int num_sentinels = region_indices.size();
 
   // Assign sentinel value to watch out for to our chosen points
@@ -803,8 +795,8 @@ TEST_F(Field3DTest, IterateOverRGN_ZGUARDS) {
   }
 
   EXPECT_EQ(found_sentinels, num_sentinels);
-  EXPECT_EQ(sum, ((nx - 2) * (ny - 2) * 0 - num_sentinels) + (num_sentinels * sentinel));
-  EXPECT_TRUE(region_indices == result_indices);
+  EXPECT_EQ(sum, ((nx - 2) * (ny - 2) * 2 - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_EQ(region_indices, result_indices);
 }
 
 TEST_F(Field3DTest, IterateOverRGN_NOCORNERS) {
@@ -828,8 +820,6 @@ TEST_F(Field3DTest, IterateOverRGN_NOCORNERS) {
 
   // This is the set of indices actually inside the region we want
   std::set<std::vector<int>> region_indices;
-  region_indices.insert({0, 1, 0});
-  region_indices.insert({1, 0, 0});
   region_indices.insert({0, 1, 1});
   region_indices.insert({1, 0, 1});
   region_indices.insert({1, 1, 0});
@@ -855,8 +845,10 @@ TEST_F(Field3DTest, IterateOverRGN_NOCORNERS) {
   }
 
   EXPECT_EQ(found_sentinels, num_sentinels);
-  EXPECT_EQ(sum, (((nx * ny - 4) * nz) - num_sentinels) + (num_sentinels * sentinel));
-  EXPECT_TRUE(region_indices == result_indices);
+  EXPECT_EQ(sum, ((nx * ny * nz) - 4 * (nx - 2) - 4 * (ny - 2) - 4 * (nz - 2) - 8
+                  - num_sentinels)
+                     + (num_sentinels * sentinel));
+  EXPECT_EQ(region_indices, result_indices);
 }
 
 TEST_F(Field3DTest, IterateOver2DRGN_ALL) {

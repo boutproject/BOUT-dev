@@ -1,28 +1,33 @@
-#include "laplacexz-cyclic.hxx"
 #include "bout/build_defines.hxx"
 
 #if not BOUT_USE_METRIC_3D
 
+#include "laplacexz-cyclic.hxx"
+
+#include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
+#include <bout/cyclic_reduction.hxx>
+#include <bout/dcomplex.hxx>
 #include <bout/fft.hxx>
+#include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
+#include <bout/invert/laplacexz.hxx>
+#include <bout/options.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
+#include <cstdlib>
+#include <iterator>
+
 LaplaceXZcyclic::LaplaceXZcyclic(Mesh* m, Options* options, const CELL_LOC loc)
-    : LaplaceXZ(m, options, loc) {
+    : LaplaceXZ(m, options, loc), ncz(localmesh->zend - localmesh->zstart + 1),
+      nmode(ncz / 2 + 1), nsys(nmode * (localmesh->yend - localmesh->ystart + 1)) {
   // Note: `m` may be nullptr, but localmesh is set in LaplaceXZ base constructor
   bout::fft::assertZSerial(*localmesh, "`cyclic` X-Z inversion");
 
-  // Number of Z Fourier modes, including DC
-  nmode = (localmesh->LocalNz) / 2 + 1;
-
-  // Number of independent systems of
-  // equations to solve
-  nsys = nmode * (localmesh->yend - localmesh->ystart + 1);
-
-  // Start and end X index
   xstart = localmesh->xstart; // Starting X index
   if (localmesh->firstX()) {
     xstart -= 1;
@@ -32,8 +37,6 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh* m, Options* options, const CELL_LOC loc)
     xend += 1;
   }
 
-  // Number of points in X on this processor
-  // including boundaries but not guard cells
   nloc = xend - xstart + 1;
 
   acoef.reallocate(nsys, nloc);
@@ -181,8 +184,8 @@ Field3D LaplaceXZcyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
       if (inner_boundary_flags & INVERT_SET) {
         // Fourier transform x0 in Z at xstart-1 and xstart
-        rfft(&x0(localmesh->xstart - 1, y, 0), localmesh->LocalNz, std::begin(k1d));
-        rfft(&x0(localmesh->xstart, y, 0), localmesh->LocalNz, std::begin(k1d_2));
+        rfft(&x0(localmesh->xstart - 1, y, localmesh->zstart), ncz, std::begin(k1d));
+        rfft(&x0(localmesh->xstart, y, localmesh->zstart), ncz, std::begin(k1d_2));
         for (int kz = 0; kz < nmode; kz++) {
           // Use the same coefficients as applied to the solution
           // so can either set gradient or value
@@ -191,8 +194,8 @@ Field3D LaplaceXZcyclic::solve(const Field3D& rhs, const Field3D& x0) {
         }
       } else if (inner_boundary_flags & INVERT_RHS) {
         // Fourier transform rhs in Z at xstart-1 and xstart
-        rfft(&rhs(localmesh->xstart - 1, y, 0), localmesh->LocalNz, std::begin(k1d));
-        rfft(&rhs(localmesh->xstart, y, 0), localmesh->LocalNz, std::begin(k1d_2));
+        rfft(&rhs(localmesh->xstart - 1, y, localmesh->zstart), ncz, std::begin(k1d));
+        rfft(&rhs(localmesh->xstart, y, localmesh->zstart), ncz, std::begin(k1d_2));
         for (int kz = 0; kz < nmode; kz++) {
           // Use the same coefficients as applied to the solution
           // so can either set gradient or value
@@ -209,7 +212,7 @@ Field3D LaplaceXZcyclic::solve(const Field3D& rhs, const Field3D& x0) {
     // Bulk of the domain
     for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
       // Fourier transform RHS
-      rfft(&rhs(x, y, 0), localmesh->LocalNz, std::begin(k1d));
+      rfft(&rhs(x, y, localmesh->zstart), ncz, std::begin(k1d));
       for (int kz = 0; kz < nmode; kz++) {
         rhscmplx(ind + kz, x - xstart) = k1d[kz];
       }
@@ -220,8 +223,8 @@ Field3D LaplaceXZcyclic::solve(const Field3D& rhs, const Field3D& x0) {
       // Outer X boundary
       if (outer_boundary_flags & INVERT_SET) {
         // Fourier transform x0 in Z at xend and xend+1
-        rfft(&x0(localmesh->xend, y, 0), localmesh->LocalNz, std::begin(k1d));
-        rfft(&x0(localmesh->xend + 1, y, 0), localmesh->LocalNz, std::begin(k1d_2));
+        rfft(&x0(localmesh->xend, y, localmesh->zstart), ncz, std::begin(k1d));
+        rfft(&x0(localmesh->xend + 1, y, localmesh->zstart), ncz, std::begin(k1d_2));
         for (int kz = 0; kz < nmode; kz++) {
           // Use the same coefficients as applied to the solution
           // so can either set gradient or value
@@ -230,8 +233,8 @@ Field3D LaplaceXZcyclic::solve(const Field3D& rhs, const Field3D& x0) {
         }
       } else if (outer_boundary_flags & INVERT_RHS) {
         // Fourier transform rhs in Z at xstart-1 and xstart
-        rfft(&rhs(localmesh->xend, y, 0), localmesh->LocalNz, std::begin(k1d));
-        rfft(&rhs(localmesh->xend + 1, y, 0), localmesh->LocalNz, std::begin(k1d_2));
+        rfft(&rhs(localmesh->xend, y, localmesh->zstart), ncz, std::begin(k1d));
+        rfft(&rhs(localmesh->xend + 1, y, localmesh->zstart), ncz, std::begin(k1d_2));
         for (int kz = 0; kz < nmode; kz++) {
           // Use the same coefficients as applied to the solution
           // so can either set gradient or value
@@ -266,7 +269,7 @@ Field3D LaplaceXZcyclic::solve(const Field3D& rhs, const Field3D& x0) {
       }
 
       // This shifts back to field-aligned coordinates
-      irfft(std::begin(k1d), localmesh->LocalNz, &result(x, y, 0));
+      irfft(std::begin(k1d), ncz, &result(x, y, localmesh->zstart));
     }
     ind += nmode;
   }

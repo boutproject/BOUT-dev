@@ -1248,11 +1248,11 @@ Field3D Solver::globalIndex(int localStart) {
 
   // Bulk of points
   for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
-    // Zero index contains 2D and 3D variables
-    index[mesh->ind2Dto3D(i2d, 0)] = ind;
+    // First interior index contains 2D and 3D variables
+    index[mesh->ind2Dto3D(i2d, mesh->zstart)] = ind;
     ind += n2d + n3d;
 
-    for (int jz = 1; jz < nz; jz++) {
+    for (int jz = mesh->zstart + 1; jz <= mesh->zend; jz++) {
       index[mesh->ind2Dto3D(i2d, jz)] = ind;
       ind += n3d;
     }

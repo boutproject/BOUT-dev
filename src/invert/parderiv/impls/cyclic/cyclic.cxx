@@ -35,28 +35,36 @@
  *
  ************************************************************************/
 
-#include "cyclic.hxx"
 #include "bout/build_defines.hxx"
 
 #if not BOUT_USE_METRIC_3D
 
+#include "cyclic.hxx"
+
+#include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/coordinates.hxx>
 #include <bout/cyclic_reduction.hxx>
+#include <bout/dcomplex.hxx>
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
 #include <bout/globals.hxx>
+#include <bout/invert_parderiv.hxx>
 #include <bout/surfaceiter.hxx>
 #include <bout/utils.hxx>
 
 #include <cmath>
 
 InvertParCR::InvertParCR(Options* opt, CELL_LOC location, Mesh* mesh_in)
-    : InvertPar(opt, location, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
+    : InvertPar(opt, location, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0),
+      ncz(localmesh->zend - localmesh->zstart + 1), nsys(1 + ncz / 2) {
 
   bout::fft::assertZSerial(*localmesh, "InvertParCR");
   // Number of k equations to solve for each x location
-  nsys = 1 + (localmesh->LocalNz) / 2;
 
   sg = sqrt(localmesh->getCoordinates(location)->g_22());
   sg = DDY(1. / sg) / sg;
@@ -144,7 +152,7 @@ const Field3D InvertParCR::solve(const Field3D& f) {
 
     // Take Fourier transform
     for (int y = 0; y < localmesh->LocalNy - localmesh->ystart - local_ystart; y++) {
-      rfft(alignedField(x, y + local_ystart), localmesh->LocalNz, &rhs(y + y0, 0));
+      rfft(&alignedField(x, y + local_ystart, localmesh->zstart), ncz, &rhs(y + y0, 0));
     }
 
     // Set up tridiagonal system
@@ -237,7 +245,7 @@ const Field3D InvertParCR::solve(const Field3D& f) {
 
     // Inverse Fourier transform
     for (int y = 0; y < size; y++) {
-      irfft(&rhs(y, 0), localmesh->LocalNz, result(x, y + local_ystart - y0));
+      irfft(&rhs(y, 0), ncz, &result(x, y + local_ystart - y0, localmesh->zstart));
     }
   }
 

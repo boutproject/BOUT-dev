@@ -56,6 +56,7 @@ int main(int argc, char** argv) {
 
   root["mesh"]["MXG"] = 1;
   root["mesh"]["MYG"] = 1;
+  root["mesh"]["MZG"] = 1;
   root["mesh"]["nx"] = 3;
   root["mesh"]["ny"] = 1;
   root["mesh"]["nz"] = 1;
@@ -129,10 +130,11 @@ int main(int argc, char** argv) {
       solver->addMonitor(&bout_monitor, Solver::BACK);
 
       solver->solve();
+      const auto result = model.field(1, 1, 1);
 
-      if (std::abs(model.field(1, 1, 0) - expected) > tolerance) {
-        output_test << " FAILED\n";
-        errors[name] = model.field(1, 1, 0);
+      if (std::abs(result - expected) > tolerance) {
+        output_test.write(" FAILED ({})\n", result);
+        errors[name] = result;
       } else {
         output_test << " PASSED\n";
       }

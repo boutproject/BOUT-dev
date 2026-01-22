@@ -36,6 +36,7 @@
 #include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
 #include "bout/field3d.hxx"
+#include "bout/interpolation_z.hxx"
 
 ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
                                          Field2D zShift_in, BoutReal zlength_in,
@@ -55,6 +56,8 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
 
   const BoutReal z_factor = static_cast<BoutReal>(mesh.GlobalNzNoBoundaries) / zlength;
 
+  const auto factory = ZInterpolationFactory::getInstance();
+
   // Create the Interpolation objects and set whether they go up or down the
   // magnetic field
   auto& interp_options = options["zinterpolation"];
@@ -66,10 +69,9 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
   // offset, so we don't need to faff about after this
   for (int y_offset = 0; y_offset < mesh.ystart; ++y_offset) {
     parallel_slice_interpolators[yup_index + y_offset] =
-        ZInterpolationFactory::getInstance().create(&interp_options, y_offset + 1, &mesh);
+        factory.create(&interp_options, y_offset + 1, &mesh);
     parallel_slice_interpolators[ydown_index + y_offset] =
-        ZInterpolationFactory::getInstance().create(&interp_options, -y_offset - 1,
-                                                    &mesh);
+        factory.create(&interp_options, -y_offset - 1, &mesh);
 
     // Find the index positions where the magnetic field line intersects the x-z plane
     // y_offset points up
@@ -98,10 +100,8 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
   }
 
   // Set up interpolation to/from field-aligned coordinates
-  interp_to_aligned =
-      ZInterpolationFactory::getInstance().create(&interp_options, 0, &mesh);
-  interp_from_aligned =
-      ZInterpolationFactory::getInstance().create(&interp_options, 0, &mesh);
+  interp_to_aligned = factory.create(&interp_options, 0, &mesh);
+  interp_from_aligned = factory.create(&interp_options, 0, &mesh);
 
   Field3D zt_prime_to(&mesh);
   Field3D zt_prime_from(&mesh);
@@ -215,7 +215,8 @@ void ShiftedMetricInterp::checkInputGrid() {
                           + "' used to generate metric components for ShiftedMetric. "
                             "Should be 'orthogonal'.");
     }
-  } // else: coordinate_system variable not found in grid input, indicates older input
+  }
+  // else: coordinate_system variable not found in grid input, indicates older input
   //       file so must rely on the user having ensured the type is correct
 }
 
@@ -223,6 +224,11 @@ void ShiftedMetricInterp::checkInputGrid() {
  * Calculate the Y up and down fields
  */
 void ShiftedMetricInterp::calcParallelSlices(Field3D& f) {
+  if (f.getDirectionY() == YDirectionType::Aligned) {
+    // Cannot calculate parallel slices for field-aligned fields, so return without
+    // setting yup or ydown
+    return;
+  }
 
   // Ensure that yup and ydown are different fields
   f.splitParallelSlices();

@@ -490,7 +490,6 @@ public:
   const bout::boundary::YBoundary& getYBoundary(Options* options = nullptr) const;
 
 private:
-  int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh* localmesh;
   Options* localoptions{nullptr};
   CELL_LOC location;

@@ -32,13 +32,13 @@ TEST_F(PetscMappingTest, create_region) {
 
   // Note: 1 boundary cell in X and Y
   cell_number(0, 0, 0) = 0; // Corner
-  cell_number(1, 1, 0) = 1; // In domain
+  cell_number(1, 1, 1) = 1; // In domain
   cell_number(0, 1, 1) = 2; // Xin boundary
 
   auto rgn = PetscCellMapping::create_region(cell_number);
   ASSERT_EQ(1, rgn.size());
 
-  const Ind3D expected_ind = cell_number.indexAt(1, 1, 0);
+  const Ind3D expected_ind = cell_number.indexAt(1, 1, 1);
   ASSERT_TRUE(expected_ind == *rgn.begin());
 }
 
@@ -47,7 +47,7 @@ TEST_F(PetscMappingTest, create_region_xin) {
 
   // Note: 1 boundary cell in X and Y
   cell_number(0, 0, 0) = 0; // Corner
-  cell_number(1, 1, 0) = 1; // In domain
+  cell_number(1, 1, 1) = 1; // In domain
   cell_number(0, 1, 1) = 2; // Xin boundary
 
   auto rgn = PetscCellMapping::create_region_xin(cell_number);
@@ -63,7 +63,7 @@ TEST_F(PetscMappingTest, mapping) {
 
   // Note: 1 boundary cell in X and Y
   cell_number(0, 0, 0) = 2; // Corner
-  cell_number(1, 1, 0) = 0; // In domain
+  cell_number(1, 1, 1) = 0; // In domain
   cell_number(0, 1, 1) = 1; // Xin boundary
 
   const Field3D forward_cell_number{-1.0};
@@ -85,9 +85,9 @@ TEST_F(PetscOperatorTest, identity) {
   const Field3D backward_cell_number{-1.0};
 
   // Three cells active
-  cell_number(1, 1, 0) = 0;
-  cell_number(1, 2, 0) = 1;
-  cell_number(1, 2, 1) = 2;
+  cell_number(1, 1, 1) = 0;
+  cell_number(1, 2, 2) = 1;
+  cell_number(1, 2, 3) = 2;
 
   auto mapping = std::make_shared<const PetscCellMapping>(
       cell_number, forward_cell_number, backward_cell_number, 3);
@@ -100,18 +100,18 @@ TEST_F(PetscOperatorTest, identity) {
   const PetscCellOperator identity(mapping, mapping, rows, cols, weights);
 
   Field3D value{0.0};
-  value(1, 1, 0) = 10;
-  value(1, 2, 0) = 21;
-  value(1, 2, 1) = 32;
+  value(1, 1, 1) = 10;
+  value(1, 2, 2) = 21;
+  value(1, 2, 3) = 32;
   value.splitParallelSlices();
   value.yup() = -1.0;
   value.ydown() = -1.0;
 
   const Field3D result = identity(value);
 
-  EXPECT_EQ(10, result(1, 1, 0));
-  EXPECT_EQ(21, result(1, 2, 0));
-  EXPECT_EQ(32, result(1, 2, 1));
+  EXPECT_EQ(10, result(1, 1, 1));
+  EXPECT_EQ(21, result(1, 2, 2));
+  EXPECT_EQ(32, result(1, 2, 3));
 }
 
 TEST_F(PetscOperatorTest, identity_yupdown) {
@@ -120,11 +120,11 @@ TEST_F(PetscOperatorTest, identity_yupdown) {
   Field3D backward_cell_number{-1.0};
 
   // Three cells active
-  cell_number(1, 1, 0) = 0;
-  cell_number(1, 2, 0) = 1;
-  cell_number(1, 2, 1) = 2;
+  cell_number(1, 1, 1) = 0;
+  cell_number(1, 2, 2) = 1;
+  cell_number(1, 2, 3) = 2;
 
-  forward_cell_number(1, 2, 0) = 3;
+  forward_cell_number(1, 2, 1) = 3;
   backward_cell_number(1, 1, 2) = 4;
 
   auto mapping = std::make_shared<const PetscCellMapping>(
@@ -138,18 +138,18 @@ TEST_F(PetscOperatorTest, identity_yupdown) {
   const PetscCellOperator identity(mapping, mapping, rows, cols, weights);
 
   Field3D value{0.0};
-  value(1, 1, 0) = 10;
-  value(1, 2, 0) = 21;
-  value(1, 2, 1) = 32;
+  value(1, 1, 1) = 10;
+  value(1, 2, 2) = 21;
+  value(1, 2, 3) = 32;
   value.splitParallelSlices();
   value.yup() = -1.0;
   value.ydown() = -1.0;
 
   const Field3D result = identity(value);
 
-  EXPECT_EQ(10, result(1, 1, 0));
-  EXPECT_EQ(21, result(1, 2, 0));
-  EXPECT_EQ(32, result(1, 2, 1));
+  EXPECT_EQ(10, result(1, 1, 1));
+  EXPECT_EQ(21, result(1, 2, 2));
+  EXPECT_EQ(32, result(1, 2, 3));
 }
 
 #endif // BOUT_HAS_PETSC

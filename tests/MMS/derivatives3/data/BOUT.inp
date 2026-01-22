@@ -7,6 +7,7 @@ ny = 32
 nz = n
 MXG = 0
 MYG = 2
+MZG = 2
 dy = 1/ny
 
 [solver]
@@ -25,6 +26,7 @@ n = 2
 dz = 2*Pi/nz
 MXG = 0
 MYG = 0
+MZG = 2
 
 [meshy]
 staggergrids = true
@@ -35,7 +37,7 @@ n = 6
 dy = 2*Pi/ny
 MXG = 0
 MYG = 2
-
+MZG = 0
 
 [meshx]
 staggergrids = true
@@ -46,3 +48,4 @@ n = 2
 dx = 2*Pi/ny
 MXG = 2
 MYG = 0
+MZG = 0

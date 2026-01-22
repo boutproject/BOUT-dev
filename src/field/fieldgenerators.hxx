@@ -9,6 +9,7 @@
 
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/field.hxx>
 #include <bout/field_factory.hxx>
 #include <bout/sys/expressionparser.hxx>
 #include <bout/sys/generator_context.hxx>
@@ -388,13 +389,14 @@ public:
 ///
 /// The variable is read from Mesh when first used and shared between
 /// clones. This is to avoid circular dependencies in construction.
+template <IsField T>
 class GridVariable : public FieldGenerator {
 private:
   struct LazyLoaded {
     LazyLoaded(Mesh* mesh, std::string name)
         : mesh(mesh), name(std::move(name)), var(mesh) {}
 
-    const Field3D& get() {
+    const T& get() {
       if (!is_loaded.load(std::memory_order_acquire)) {
         std::lock_guard<std::mutex> guard(load_mutex);
         if (!is_loaded.load(std::memory_order_relaxed)) {
@@ -410,7 +412,7 @@ private:
 
     Mesh* mesh;
     std::string name;
-    Field3D var;
+    T var;
     std::atomic<bool> is_loaded{false};
     std::mutex load_mutex;
   };

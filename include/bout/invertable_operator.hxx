@@ -135,9 +135,9 @@ public:
       : operatorFunction(func), preconditionerFunction(func),
         opt(optIn == nullptr ? Options::getRoot()->getSection("invertableOperator")
                              : optIn),
-        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn), lib(opt) {
+        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn), lib(opt){
 
-        };
+                                                                               };
 
   /// Destructor just has to cleanup the PETSc owned objects.
   ~InvertableOperator() {
@@ -198,15 +198,15 @@ public:
         Region<Ind3D> nocorner3D = localmesh->getRegion3D("RGN_NOBNDRY");
         if (!localmesh->periodicX) {
           if (localmesh->firstX()) {
-            nocorner3D += Region<Ind3D>(0, localmesh->xstart - 1, localmesh->ystart,
-                                        localmesh->yend, 0, localmesh->LocalNz - 1,
-                                        localmesh->LocalNy, localmesh->LocalNz,
-                                        localmesh->maxregionblocksize);
+            nocorner3D += Region<Ind3D>(
+                0, localmesh->xstart - 1, localmesh->ystart, localmesh->yend,
+                localmesh->zstart, localmesh->zend, localmesh->LocalNy,
+                localmesh->LocalNz, localmesh->maxregionblocksize);
           }
           if (localmesh->lastX()) {
             nocorner3D += Region<Ind3D>(
                 localmesh->LocalNx - localmesh->xstart, localmesh->LocalNx - 1,
-                localmesh->ystart, localmesh->yend, 0, localmesh->LocalNz - 1,
+                localmesh->ystart, localmesh->yend, localmesh->zstart, localmesh->zend,
                 localmesh->LocalNy, localmesh->LocalNz, localmesh->maxregionblocksize);
           }
         }
@@ -214,14 +214,14 @@ public:
           if (not localmesh->periodicY(ix)) {
             if (localmesh->firstY(ix)) {
               nocorner3D += Region<Ind3D>(
-                  ix, ix, 0, localmesh->ystart - 1, 0, localmesh->LocalNz - 1,
+                  ix, ix, 0, localmesh->ystart - 1, localmesh->zstart, localmesh->zend,
                   localmesh->LocalNy, localmesh->LocalNz, localmesh->maxregionblocksize);
             }
             if (localmesh->lastY(ix)) {
               nocorner3D += Region<Ind3D>(
                   ix, ix, localmesh->LocalNy - localmesh->ystart, localmesh->LocalNy - 1,
-                  0, localmesh->LocalNz - 1, localmesh->LocalNy, localmesh->LocalNz,
-                  localmesh->maxregionblocksize);
+                  localmesh->zstart, localmesh->zend, localmesh->LocalNy,
+                  localmesh->LocalNz, localmesh->maxregionblocksize);
             }
           }
         }
@@ -271,9 +271,9 @@ public:
         Region<IndPerp> nocornerPerp = localmesh->getRegionPerp("RGN_NOBNDRY");
         if (!localmesh->periodicX) {
           if (localmesh->firstX()) {
-            nocornerPerp +=
-                Region<IndPerp>(0, localmesh->xstart - 1, 0, 0, 0, localmesh->LocalNz - 1,
-                                1, localmesh->LocalNz, localmesh->maxregionblocksize);
+            nocornerPerp += Region<IndPerp>(
+                0, localmesh->xstart - 1, 0, 0, localmesh->zstart, localmesh->zend, 1,
+                localmesh->LocalNz, localmesh->maxregionblocksize);
           }
           if (localmesh->lastX()) {
             nocornerPerp +=

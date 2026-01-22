@@ -13,21 +13,26 @@ IMPLEMENTATIONS = ["hermitespline", "monotonichermitespline"]
 COLLECT_KW = {"info": False, "xguards": False, "yguards": False, "path": "data"}
 
 
-def run_case(nxpe: int, nype: int, mthread: int, nslice: int, implementation: str):
-    cmd = f"./fci_mpi NXPE={nxpe} NYPE={nype} mesh:paralleltransform:xzinterpolation:type={implementation}"
+def run_case(
+    nxpe: int, nype: int, nzpe: int, mthread: int, nslice: int, implementation: str
+):
+    cmd = (
+        f"./fci_mpi NXPE={nxpe} NYPE={nype} NZPE={nzpe} "
+        f"mesh:paralleltransform:xzinterpolation:type={implementation}"
+    )
     print(f"Running command: {cmd}")
 
-    _, out = launch_safe(cmd, nproc=nxpe * nype, mthread=mthread, pipe=True)
+    _, out = launch_safe(cmd, nproc=nxpe * nype * nzpe, mthread=mthread, pipe=True)
 
     # Save output to log file
-    with open(f"run.log.{nxpe}.{nype}.{nslice}.log", "w") as f:
+    with open(f"run.log.{nxpe}.{nype}.{nzpe}.{nslice}.log", "w") as f:
         f.write(out)
 
 
 @pytest.mark.parametrize("implementation", IMPLEMENTATIONS)
 @pytest.mark.parametrize("nslice", NSLICES)
 def test_fci_mpi(implementation, nslice, subtests):
-    run_case(1, 1, MAXCORES, nslice, implementation)
+    run_case(1, 1, 1, MAXCORES, nslice, implementation)
     cache = create_cache(path="data", prefix="BOUT.dmp")
 
     ref = {}
@@ -40,9 +45,9 @@ def test_fci_mpi(implementation, nslice, subtests):
     # Explicitly delete cache to close netCDF files
     del cache
 
-    for nxpe, nype in [(2, 1), (1, 2), (2, 2)]:
-        mthread = MAXCORES // (nxpe * nype)
-        run_case(nxpe, nype, mthread, nslice, implementation)
+    for nxpe, nype, nzpe in [(2, 1, 1), (1, 2, 1), (1, 1, 2), (2, 2, 2)]:
+        mthread = MAXCORES // (nxpe * nype * nzpe)
+        run_case(nxpe, nype, nzpe, mthread, nslice, implementation)
 
         cache = create_cache(path="data", prefix="BOUT.dmp")
         results = {
@@ -52,5 +57,5 @@ def test_fci_mpi(implementation, nslice, subtests):
         del cache
 
         for name, val in ref.items():
-            with subtests.test(msg=f"{name}, {nxpe=}, {nype=}"):
+            with subtests.test(msg=f"{name}, {nxpe=}, {nype=}, {nzpe=}"):
                 npt.assert_allclose(val, results[name])

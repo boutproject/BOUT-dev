@@ -30,9 +30,9 @@ void MetricTensor::check(int ystart) {
       g11_m.hasParallelSlices() && &g11_m.ynext(1) != &g11_m;
 
   // Diagonal metric components should be finite
-  bout::checkFinite(g11_m, "g11", "RGN_NOCORNERS");
-  bout::checkFinite(g22_m, "g22", "RGN_NOCORNERS");
-  bout::checkFinite(g33_m, "g33", "RGN_NOCORNERS");
+  bout::checkFinite(g11_m, "g11");
+  bout::checkFinite(g22_m, "g22");
+  bout::checkFinite(g33_m, "g33");
   if (non_identity_parallel_transform) {
     for (int dy = 1; dy <= ystart; ++dy) {
       for (const auto sign : {1, -1}) {
@@ -45,9 +45,9 @@ void MetricTensor::check(int ystart) {
   }
 
   // Diagonal metric components should be positive
-  bout::checkPositive(g11_m, "g11", "RGN_NOCORNERS");
-  bout::checkPositive(g22_m, "g22", "RGN_NOCORNERS");
-  bout::checkPositive(g33_m, "g33", "RGN_NOCORNERS");
+  bout::checkPositive(g11_m, "g11");
+  bout::checkPositive(g22_m, "g22");
+  bout::checkPositive(g33_m, "g33");
   if (non_identity_parallel_transform) {
     for (int dy = 1; dy <= ystart; ++dy) {
       for (const auto sign : {1, -1}) {
@@ -60,9 +60,9 @@ void MetricTensor::check(int ystart) {
   }
 
   // Off-diagonal metric components should be finite
-  bout::checkFinite(g12_m, "g12", "RGN_NOCORNERS");
-  bout::checkFinite(g13_m, "g13", "RGN_NOCORNERS");
-  bout::checkFinite(g23_m, "g23", "RGN_NOCORNERS");
+  bout::checkFinite(g12_m, "g12");
+  bout::checkFinite(g13_m, "g13");
+  bout::checkFinite(g23_m, "g23");
   // Check off-diagonal separately, might not have them even if we have parallel
   // slices for the diagonal components
   if (g23_m.hasParallelSlices() && &g23_m.ynext(1) != &g23_m) {

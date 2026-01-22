@@ -93,9 +93,10 @@ private:
 };
 
 // Read variables from the grid file and make them available in expressions
+template<IsField T>
 auto add_grid_variable(FieldFactory& factory, Mesh& mesh, const std::string& name) {
   factory.addGenerator(fmt::format("gridvar:{}", name),
-                       std::make_shared<GridVariable>(&mesh, name));
+                       std::make_shared<GridVariable<T>>(&mesh, name));
 }
 
 auto read_grid_variables(FieldFactory& factory, Mesh* mesh, Options& options) {
@@ -126,8 +127,10 @@ auto read_grid_variables(FieldFactory& factory, Mesh* mesh, Options& options) {
     const auto func = value.as<GridVariableFunction>();
     switch (func) {
     case GridVariableFunction::field3d:
+      add_grid_variable<Field3D>(factory, *mesh, name);
+      break;
     case GridVariableFunction::field2d:
-      add_grid_variable(factory, *mesh, name);
+      add_grid_variable<Field2D>(factory, *mesh, name);
       break;
     case GridVariableFunction::boutreal:
       BoutReal var{};

@@ -1,11 +1,18 @@
+#include <bout/boundary_region.hxx>
 #include <bout/bout.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/field2d.hxx>
 #include <bout/field_factory.hxx>
+#include <bout/options.hxx>
 #include <bout/output.hxx>
 #include <bout/snb.hxx>
+#include <bout/utils.hxx>
+
+#include <cstdlib>
+#include <string>
 
 // Convert __LINE__ to string S__LINE__
 #define S(x) #x
@@ -181,16 +188,20 @@ int main(int argc, char** argv) {
 
     // Check that fluxes are reversed in y
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
-      if (fabs(Div_q_SH_2(0, y, 0) - Div_q_SH_1(0, mesh->yend - y + mesh->ystart, 0))
-          > 1e-6 * (fabs(Div_q_SH_2(0, y, 0)) + fabs(Div_q_SH_1(0, y, 0)))) {
-        throw BoutException("SH: y = {:d}: {:e} != {:e}", y, Div_q_SH_2(0, y, 0),
-                            Div_q_SH_1(0, mesh->yend - y + mesh->ystart, 0));
+      const auto SH2 = Div_q_SH_2(mesh->xstart, y, mesh->zstart);
+      const auto SH1 = Div_q_SH_1(mesh->xstart, y, mesh->zstart);
+      const auto SH1_rev =
+          Div_q_SH_1(mesh->xstart, mesh->yend - y + mesh->ystart, mesh->zstart);
+      if (std::abs(SH2 - SH1_rev) > 1e-6 * (std::abs(SH2) + std::abs(SH1))) {
+        throw BoutException("SH: y = {:d}: {:e} != {:e}", y, SH2, SH1_rev);
       }
 
-      if (fabs(Div_q_2(0, y, 0) - Div_q_1(0, mesh->yend - y + mesh->ystart, 0))
-          > 1e-6 * (fabs(Div_q_2(0, y, 0)) + fabs(Div_q_1(0, y, 0)))) {
-        throw BoutException("SNB: y = {:d}: {:e} != {:e}", y, Div_q_2(0, y, 0),
-                            Div_q_1(0, mesh->yend - y + mesh->ystart, 0));
+      const auto SNB2 = Div_q_2(mesh->xstart, y, mesh->zstart);
+      const auto SNB1 = Div_q_1(mesh->xstart, y, mesh->zstart);
+      const auto SNB1_rev =
+          Div_q_1(mesh->xstart, mesh->yend - y + mesh->ystart, mesh->zstart);
+      if (std::abs(SNB2 - SNB1_rev) > 1e-6 * (std::abs(SNB2) + std::abs(SNB1))) {
+        throw BoutException("SNB: y = {:d}: {:e} != {:e}", y, SNB2, SNB1_rev);
       }
     }
   }
@@ -242,13 +253,15 @@ int main(int argc, char** argv) {
     BoutReal q_snb = 0.0;
     BoutReal q_maxabs = 0.0; // Maximum heat flux as a reference scale
     for (int y = mesh->ystart; y <= mesh->yend; y++) {
-      q_sh += Div_q_SH(mesh->xstart, y, 0) * J(mesh->xstart, y) * dy(mesh->xstart, y);
-      q_snb += Div_q(mesh->xstart, y, 0) * J(mesh->xstart, y) * dy(mesh->xstart, y);
+      q_sh += Div_q_SH(mesh->xstart, y, mesh->zstart) * J(mesh->xstart, y)
+              * dy(mesh->xstart, y);
+      q_snb +=
+          Div_q(mesh->xstart, y, mesh->zstart) * J(mesh->xstart, y) * dy(mesh->xstart, y);
 
-      q_maxabs = BOUTMAX(q_maxabs, fabs(q_sh), fabs(q_snb));
+      q_maxabs = BOUTMAX(q_maxabs, std::abs(q_sh), std::abs(q_snb));
     }
     // Expect integrals to be the same
-    EXPECT_LT(fabs(q_sh - q_snb), 1e-8 * q_maxabs);
+    EXPECT_LT(std::abs(q_sh - q_snb), 1e-8 * q_maxabs);
   }
 
   bout::checkForUnusedOptions();

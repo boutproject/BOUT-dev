@@ -62,10 +62,11 @@ namespace {
 template <IsField T>
 void fillGuards_impl(T& result, CELL_LOC location, const T& f, bool extrapolate_x,
                      bool extrapolate_y, bool no_extra_interpolate = false) {
-  const auto* localmesh = result.getMesh();
+  auto* localmesh = result.getMesh();
 
-  const auto zstart = bout::build::use_metric_3d ? localmesh->zstart : 0;
-  const auto zend = bout::build::use_metric_3d ? localmesh->zend : 0;
+  // For 3D metrics, we also need to set all the Z guard cells
+  constexpr auto zstart = 0;
+  const auto zend = bout::build::use_metric_3d ? localmesh->LocalNz - 1 : 0;
 
   for (auto& newbndry : localmesh->getBoundaries()) {
     auto* bndry = newbndry->getLegacyPointer();
@@ -146,6 +147,9 @@ void fillGuards_impl(T& result, CELL_LOC location, const T& f, bool extrapolate_
       }
     }
   }
+  // Fill in Z guards
+  localmesh->communicateZ(result);
+
 #if CHECK > 0
   if (not(
           // if include_corner_cells=true, then we extrapolate valid data into the
@@ -269,7 +273,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
                          FieldMetric g_33, FieldMetric g_12, FieldMetric g_13,
                          FieldMetric g_23, FieldMetric ShiftTorsion,
                          FieldMetric IntShiftTorsion)
-    : nz(mesh->LocalNz), localmesh(mesh), location(CELL_CENTRE), dx_(std::move(dx)),
+    : localmesh(mesh), location(CELL_CENTRE), dx_(std::move(dx)),
       dy_(std::move(dy)), dz_(std::move(dz)), ShiftTorsion_(std::move(ShiftTorsion)),
       IntShiftTorsion_(std::move(IntShiftTorsion)),
       transform(bout::utils::make_unique<ParallelTransformIdentity>(*localmesh)),
@@ -280,7 +284,7 @@ Coordinates::Coordinates(Mesh* mesh, FieldMetric dx, FieldMetric dy, FieldMetric
       jacobian_cache(std::make_unique<FieldMetric>(std::move(J))), Bxy_(std::move(Bxy)) {}
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
-    : nz(mesh->LocalNz), localmesh(mesh), localoptions(options), location(CELL_CENTRE),
+    : localmesh(mesh), localoptions(options), location(CELL_CENTRE),
       dx_(1., mesh), dy_(1., mesh), dz_(1., mesh), d1_dx_(mesh), d1_dy_(mesh),
       d1_dz_(mesh), ShiftTorsion_(0.0, mesh), IntShiftTorsion_(0.0, mesh),
       contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
@@ -296,7 +300,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                          const Coordinates* coords_in, bool force_interpolate_from_centre)
-    : nz(mesh->LocalNz), localmesh(mesh), localoptions(options), location(loc),
+    : localmesh(mesh), localoptions(options), location(loc),
       dx_(1., mesh), dy_(1., mesh), dz_(1., mesh), d1_dx_(mesh), d1_dy_(mesh),
       d1_dz_(mesh), ShiftTorsion_(0.0, mesh), IntShiftTorsion_(0.0, mesh),
       contravariantMetricTensor(1., 1., 1., 0, 0, 0, mesh),
@@ -341,10 +345,10 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     setJ(interpField(coords_in->J()));
     setBxy(interpField(coords_in->Bxy()));
 
-    bout::checkFinite(J(), "The Jacobian", "RGN_NOCORNERS");
-    bout::checkPositive(J(), "The Jacobian", "RGN_NOCORNERS");
-    bout::checkFinite(Bxy(), "Bxy", "RGN_NOCORNERS");
-    bout::checkPositive(Bxy(), "Bxy", "RGN_NOCORNERS");
+    bout::checkFinite(J(), "The Jacobian");
+    bout::checkPositive(J(), "The Jacobian");
+    bout::checkFinite(Bxy(), "Bxy");
+    bout::checkPositive(Bxy(), "Bxy");
 
     ShiftTorsion_ = interpField(coords_in->ShiftTorsion_);
 
@@ -427,7 +431,7 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
     const auto zmax = has_zperiod ? 1.0 / options["zperiod"].withDefault(1.0)
                                   : options["ZMAX"].withDefault(1.0);
 
-    const auto default_dz = (zmax - zmin) * TWOPI / nz;
+    const auto default_dz = (zmax - zmin) * TWOPI / localmesh->GlobalNzNoBoundaries;
 
     // We can't use the helper functions here because in 3D we might (always?)
     // need to transform from field aligned -- which requires dz! So we have to
@@ -510,8 +514,8 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
   }
 
   // Check jacobian
-  bout::checkFinite(J(), "J" + suffix, "RGN_NOCORNERS");
-  bout::checkPositive(J(), "J" + suffix, "RGN_NOCORNERS");
+  bout::checkFinite(J(), "J" + suffix);
+  bout::checkPositive(J(), "J" + suffix);
   if (min(abs(J())) < 1.0e-10) {
     throw BoutException("\tERROR: Jacobian{:s} becomes very small\n", suffix);
   }
@@ -532,8 +536,8 @@ void Coordinates::readFromMesh(Options* options, const std::string& suffix) {
   }
 
   // Check Bxy
-  bout::checkFinite(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
-  bout::checkPositive(Bxy(), "Bxy" + suffix, "RGN_NOCORNERS");
+  bout::checkFinite(Bxy(), "Bxy" + suffix);
+  bout::checkPositive(Bxy(), "Bxy" + suffix);
 
   if (not localmesh->sourceHasVar("ShiftTorsion" + suffix)) {
     output_warn.write("\tWARNING: No Torsion specified for zShift. "
@@ -667,9 +671,9 @@ const Field2D& Coordinates::zlength() const {
     zlength_cache = std::make_unique<Field2D>(0., localmesh);
 
 #if BOUT_USE_METRIC_3D
-    BOUT_FOR_SERIAL(i, dz().getRegion("RGN_ALL")) { (*zlength_cache)[i] += dz()[i]; }
+    BOUT_FOR_SERIAL(i, dz().getRegion("RGN_NOZ")) { (*zlength_cache)[i] += dz()[i]; }
 #else
-    (*zlength_cache) = dz_ * nz;
+    (*zlength_cache) = dz_ * localmesh->GlobalNzNoBoundaries;
 #endif
   }
 
@@ -1065,8 +1069,8 @@ const Coordinates::FieldMetric& Coordinates::calcJ() const {
 }
 
 void Coordinates::setJ(const FieldMetric& J, const bool communicate) {
-  bout::checkFinite(J, "J", "RGN_NOCORNERS");
-  bout::checkPositive(J, "J", "RGN_NOCORNERS");
+  bout::checkFinite(J, "J");
+  bout::checkPositive(J, "J");
 
   //TODO: Calculate J and check value is close
   invalidateJacobianCaches();

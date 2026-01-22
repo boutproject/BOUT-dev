@@ -17,14 +17,15 @@ def test_boutpp_mms_ddz(run_isolated):
     doPlot = False
     nzs = np.logspace(start, mmax, num=mmax - start + 1, base=2)
     for nz in nzs:
-        boutpp.setOption("meshz:nz", "%d" % nz, force=True)
-        boutpp.setOption("meshz:dz", "2*pi/%d" % nz, force=True)
+        nz = int(nz)
+        boutpp.setOption("meshz:nz", f"{nz}", force=True)
+        boutpp.setOption("meshz:dz", f"2*pi/{nz}", force=True)
         mesh = boutpp.Mesh(section="meshz")
         f = boutpp.create3D("sin(z)", mesh)
         sim = boutpp.DDZ(f)
         ana = boutpp.create3D("cos(z)", mesh)
         err = sim - ana
-        err = np.max(np.abs(err.getAll()))
+        err = np.max(np.abs(err.getAll()[:, :, 2:-2]))
         errors.append(err)
 
     if doPlot:

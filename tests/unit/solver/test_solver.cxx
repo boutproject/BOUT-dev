@@ -637,14 +637,20 @@ TEST_F(SolverTest, GetLocalN) {
 
   constexpr auto globalmesh_nx_no_boundry = SolverTest::nx - 2;
   constexpr auto globalmesh_ny_no_boundry = SolverTest::ny - 2;
+  constexpr auto globalmesh_nz_no_boundry = SolverTest::nz - 2;
   constexpr auto localmesh_nx_no_boundry = localmesh_nx - 2;
   constexpr auto localmesh_ny_no_boundry = localmesh_ny - 2;
+  constexpr auto localmesh_nz_no_boundry = localmesh_nz - 2;
   constexpr auto expected_total =
+      // field1 -- 2D on global mesh
       (globalmesh_nx_no_boundry * globalmesh_ny_no_boundry)
+      // field2 -- 2D on localmesh -- evolve boundary
       + (localmesh_nx * localmesh_ny)
-      + (localmesh_nx_no_boundry * localmesh_ny_no_boundry * localmesh_nz)
-      + (nx * ny * nz);
-
+      // field3 -- 3D on localmesh
+      + (localmesh_nx_no_boundry * localmesh_ny_no_boundry * localmesh_nz_no_boundry)
+      // field4 -- 3D on global mesh -- evolve boundary -- Z has guards but no boundary!
+      + (nx * ny * globalmesh_nz_no_boundry);
+  ;
   EXPECT_EQ(solver.getLocalN(), expected_total);
 }
 

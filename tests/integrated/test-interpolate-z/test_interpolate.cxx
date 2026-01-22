@@ -68,7 +68,12 @@ int main(int argc, char** argv) {
   for (const auto& index : deltaz) {
     // Get some random displacements
     BoutReal dz = index.z() + dice();
-    deltaz[index] = dz;
+    if (index.z() >= mesh->zend && mesh->getNZPE() - 1 == mesh->getZProcIndex()) {
+      dz = index.z() - dice();
+    }
+    // Shift left by number of guard cells -- ZHermiteSpline assumes we're
+    // working in "global-index-no-boundaries space"
+    deltaz[index] = dz - mesh->zstart;
     // Get the global indices
     bout::generator::Context pos{index, CELL_CENTRE, deltaz.getMesh(), 0.0};
     pos.set("x", mesh->GlobalX(index.x()), "z", TWOPI * mesh->GlobalZ(dz));

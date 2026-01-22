@@ -576,11 +576,12 @@ Field3D Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
   Field3D result{emptyFrom(f).setLocation(outloc)};
 
   if (useFFT and not bout::build::use_metric_3d and mesh->getNZPE() == 1) {
-    const int ncz = mesh->LocalNz;
+    const int ncz = mesh->zend - mesh->zstart + 1;
+    const auto nmodes = (ncz / 2) + 1;
 
     // Allocate memory
-    auto ft = Matrix<dcomplex>(mesh->LocalNx, (ncz / 2) + 1);
-    auto delft = Matrix<dcomplex>(mesh->LocalNx, (ncz / 2) + 1);
+    auto ft = Matrix<dcomplex>(mesh->LocalNx, nmodes);
+    auto delft = Matrix<dcomplex>(mesh->LocalNx, nmodes);
 
     // Loop over y indices
     // Note: should not include y-guard or y-boundary points here as that would
@@ -590,7 +591,7 @@ Field3D Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
       // Take forward FFT
 
       for (int jx = 0; jx < mesh->LocalNx; jx++) {
-        rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
+        rfft(&f(jx, jy, mesh->zstart), ncz, &ft(jx, 0));
       }
 
       // Loop over kz
@@ -612,7 +613,7 @@ Field3D Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
       // Reverse FFT
       for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
 
-        irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
+        irfft(&delft(jx, 0), ncz, &result(jx, jy, mesh->zstart));
       }
     }
   } else {
@@ -647,15 +648,16 @@ FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
   result.setIndex(jy);
 
   if (useFFT and mesh->getNZPE() == 1) {
-    const int ncz = mesh->LocalNz;
+    const int ncz = mesh->zend - mesh->zstart + 1;
+    const auto nmodes = (ncz / 2) + 1;
 
     // Allocate memory
-    auto ft = Matrix<dcomplex>(mesh->LocalNx, (ncz / 2) + 1);
-    auto delft = Matrix<dcomplex>(mesh->LocalNx, (ncz / 2) + 1);
+    auto ft = Matrix<dcomplex>(mesh->LocalNx, nmodes);
+    auto delft = Matrix<dcomplex>(mesh->LocalNx, nmodes);
 
     // Take forward FFT
     for (int jx = 0; jx < mesh->LocalNx; jx++) {
-      rfft(&f(jx, 0), ncz, &ft(jx, 0));
+      rfft(&f(jx, mesh->zstart), ncz, &ft(jx, 0));
     }
 
     // Loop over kz
@@ -676,7 +678,7 @@ FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
 
     // Reverse FFT
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-      irfft(&delft(jx, 0), ncz, &result(jx, 0));
+      irfft(&delft(jx, 0), ncz, &result(jx, mesh->zstart));
     }
 
   } else {

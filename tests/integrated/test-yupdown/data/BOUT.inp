@@ -1,9 +1,11 @@
 twistshift = true
 
 [mesh]
-nx = 12
+nx = 3
 ny = 12
 nz = 64
+
+MXG = 1
 
 zShift = y
 ShiftAngle = 2.*pi
