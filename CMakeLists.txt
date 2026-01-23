@@ -785,6 +785,11 @@ if(BOUT_TESTS)
     "${PROJECT_SOURCE_DIR}/tests/conftest.py"
     "${PROJECT_BINARY_DIR}/tests/conftest.py")
 
+  # Copy the pytest config file for the boutpp tests
+  configure_file(
+    "${PROJECT_SOURCE_DIR}/tests/integrated/test-boutpp/conftest.py"
+    "${PROJECT_BINARY_DIR}/tests/integrated/test-boutpp/conftest.py")
+
 endif()
 
 option(BOUT_BUILD_EXAMPLES "Build the examples" ON)
