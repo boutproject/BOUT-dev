@@ -112,7 +112,7 @@ bool load_parallel_metric_component(const std::string& name, Field3D& component,
       if (doZero) {
         lmin = lmax = 0.0;
       } else {
-        throw BoutException("{:s} not in grid file but not constant!\n"
+        throw BoutException("{:s} is neither in the grid file, nor constant!\n"
                             "  Cannot determine value for parallel slices.\n"
                             "  Regenerate the grid with a recent zoidberg!",
                             name);
