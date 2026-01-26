@@ -66,9 +66,8 @@ Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes direction
 /// later)
 Field3D::Field3D(const Field3D& f)
     : Field(f), data(f.data), yup_fields(f.yup_fields), ydown_fields(f.ydown_fields),
-      regionID(f.regionID) {
-
-  TRACE("Field3D(Field3D&)");
+      regionID(f.regionID), tracking_state(f.tracking_state), tracking(f.tracking),
+      selfname(f.selfname) {
 
   if (fieldmesh) {
     nx = fieldmesh->LocalNx;
