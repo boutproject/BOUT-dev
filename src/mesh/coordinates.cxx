@@ -1284,7 +1284,7 @@ int Coordinates::calcCovariant(const std::string& region) {
   if (Bxy.isFci()) {
     BoutReal maxError = 0;
     Options* options = Options::getRoot();
-    auto BJg = Bxy.asField3DParallel() * J / sqrt(g_22.asField3DParallel());
+    auto BJg = Bxy * J / sqrt(g_22);
     auto* mesh = localmesh;
     for (int p = -mesh->ystart; p <= mesh->ystart; p++) {
       if (p == 0) {
