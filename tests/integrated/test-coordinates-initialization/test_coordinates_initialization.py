@@ -3,7 +3,7 @@ import subprocess
 import time
 
 
-def test_runtest():
+def test_runtest(test_dir):
 
     cmd = './runtest'
     # MPI oversubscribe for communications test
