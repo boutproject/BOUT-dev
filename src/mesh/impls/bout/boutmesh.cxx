@@ -346,31 +346,53 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
   return {true, ""};
 }
 
-  CheckMeshResult findValidProcessorNum(int ny, int nx, int NPES, int NYPE, int NXPE) {
-    
-    int min_num_of_processors = 0;
-    int num_of_processors = NPES;
-    int min_nype = NYPE;
-    int min_nxpe = NXPE;
+CheckMeshResult findValidProcessorNum(int ny, int nx,
+                                     int NPES,
+                                     int NYPE,
+                                     int NXPE) {
+  int best_nxpe = 0;
+  int best_nype = 0;
+  int best_npes = 0;
 
-    for (int possible_nxpe = min_nxpe; possible_nxpe <= num_of_processors; possible_nxpe++){
-      if (nx % possible_nxpe != 0)continue;
+  for (int possible_nxpe = NXPE; possible_nxpe <= NPES; ++possible_nxpe) {
+    if (nx % possible_nxpe != 0) continue;
 
-      for (int possible_nype = min_nype; possible_nype <= num_of_processors - possible_nxpe; possible_nype++){
-        if (ny % possible_nype != 0)continue;
+    for (int possible_nype = NYPE;
+         possible_nype <= NPES / possible_nxpe;
+         ++possible_nype) {
+      
+      if (possible_nype == 1 && possible_nxpe == 1 && NPES > 1) continue; // Skip single processor unless NPES=1
+      if (ny % possible_nype != 0) continue;
+      if (NPES % (possible_nxpe * possible_nype) != 0) continue;
+      int possible_npes = possible_nxpe * possible_nype;
 
-        int min_num_of_processors = possible_nxpe * possible_nype;
-        return{true, fmt::format(
-          "\t The minimum number of processors for the given number of points is NPES={:d}, on x={:d} and on y={:d}. Try running with at least this number of processors.",
-          min_num_of_processors, possible_nxpe, possible_nype)};
-        //break;
+      if (possible_npes > best_npes) {
+        best_npes = possible_npes;
+        best_nxpe = possible_nxpe;
+        best_nype = possible_nype;
       }
     }
-    if (min_num_of_processors == 0){
-      return{false, fmt::format(
-          "\t No valid processor decomposition found for the given number of points nx={:d}, ny={:d}. Try changing the number of points.", nx, ny)};
-    }
   }
+
+  if (best_npes > 0) {
+    return {
+      true,
+      fmt::format(
+        "\t -> Best processor decomposition found: "
+        "NPES={:d}, NXPE={:d}, and NYPE={:d}.",
+        best_npes, best_nxpe, best_nype)
+    };
+  }
+
+  return {
+    false,
+    fmt::format(
+      "\t -> No valid processor decomposition found for nx={:d}, ny={:d} with the number of given processors NPES = {:d}. "
+      "Try changing the number of points.",
+      nx, ny, NPES)
+  };
+}
+
 
   CheckMeshResult findValidYDecomposition(int ny,
     int num_y_processors,
@@ -384,7 +406,7 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
 
   if (ny % num_y_processors != 0) {
     return {false, fmt::format(
-                        "\t ny ({:d}) must be divisible by NYPE ({:d}). Try changing the number of points or processors in Y.",ny, num_y_processors)};
+                        "\t ->ny ({:d}) must be divisible by NYPE ({:d}). Try changing the number of points or processors in Y.",ny, num_y_processors)};
   }
 
   for (int jyseps1_1 = jyseps1_1_start; jyseps1_1 < ny; ++jyseps1_1) {
@@ -422,7 +444,7 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
 
             if (result.success) {
               return {true, fmt::format(
-                      "\t A valid decomposition in Y close to the one given in the grid would be: "
+                      "\t -> A valid decomposition in Y close to the one given in the grid would be: "
                       "jyseps1_1={:d}, jyseps2_1={:d}, jyseps1_2={:d}, jyseps2_2={:d}, ny_inner={:d}",
                       jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner)};
             }
@@ -433,7 +455,7 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
   }
 
   return {false, fmt::format(
-                      "\t No valid Y decomposition found for ny = {:d} and NYPE = {:d}. Try changing the number of points or processors in Y.",ny, num_y_processors)};
+                      "\t -> No valid Y decomposition found for ny = {:d} and NYPE = {:d}. Try changing the number of points or processors in Y.",ny, num_y_processors)};
 }
 
 } // namespace bout
@@ -456,6 +478,12 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
           NPES, NXPE);
     }
 
+    if (nx % NXPE != 0) {
+      throw BoutException(
+          _("Number of x points ({:d}) not divisible by NPs in x direction ({:d})\n"), nx,
+          NXPE);
+    }
+
     NYPE = NPES / NXPE;
   } else {
     // NXPE not set, but NYPE is
@@ -467,6 +495,12 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
       throw BoutException(
           _("Number of processors ({:d}) not divisible by NPs in y direction ({:d})\n"),
           NPES, NYPE);
+    }
+
+    if (ny % NYPE != 0) {
+      throw BoutException(
+          _("Number of y points ({:d}) not divisible by NPs in y direction ({:d})\n"), nx,
+          NXPE);
     }
 
     NXPE = NPES / NYPE;

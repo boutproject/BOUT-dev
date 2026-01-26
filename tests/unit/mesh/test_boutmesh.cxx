@@ -587,8 +587,6 @@ TEST_P(BadBoutMeshDecompositionTest, BadSingleCoreYDecomposition) {
                                         ny_inner_start, topology);
 
   EXPECT_TRUE(result.success);
-  // Optional: parse numbers from result.message or call check function
-  // to ensure returned decomposition is valid
 }
 
 TEST(BoutMeshDecompositionTest, InvalidYDecompositionBecuaseofNYPE) {
@@ -613,7 +611,7 @@ TEST(BoutMeshDecompositionTest, InvalidYDecompositionBecuaseofNYPE) {
 }
 
 TEST(BoutMeshDecompositionTest, InvalidYDecompositionBecuaseofTopologyUDN) {
-  int ny = 18; // minimal meaningful number
+  int ny = 18;
   int num_y_processors = 9;
   int num_y_guards = 1;
 
@@ -629,13 +627,11 @@ TEST(BoutMeshDecompositionTest, InvalidYDecompositionBecuaseofTopologyUDN) {
                                         jyseps1_1_start, jyseps2_1_start,
                                         jyseps1_2_start, jyseps2_2_start,
                                         ny_inner_start, topology);
-
-  // Since npes divides ny, a valid decomposition may exist
   EXPECT_FALSE(result.success);
 }
 
 TEST(BoutMeshDecompositionTest, InvalidYDecompositionBecuaseofTopologySF) {
-  int ny = 18; // minimal meaningful number
+  int ny = 18;
   int num_y_processors = 9;
   int num_y_guards = 1;
 
@@ -651,15 +647,63 @@ TEST(BoutMeshDecompositionTest, InvalidYDecompositionBecuaseofTopologySF) {
                                         jyseps1_1_start, jyseps2_1_start,
                                         jyseps1_2_start, jyseps2_2_start,
                                         ny_inner_start, topology);
-
-  // Since npes divides ny, a valid decomposition may exist
   EXPECT_FALSE(result.success);
 }
+
+
+TEST(BoutMeshDecompositionTest, BasicValidProcessDecompositionDefaults) {
+  // 8x6 grid, up to 16 processors
+  auto result = bout::findValidProcessorNum(/*ny=*/8, /*nx=*/6, /*NPES=*/16);
+  using ::testing::HasSubstr;
+  EXPECT_TRUE(result.success);
+  EXPECT_THAT(result.reason, HasSubstr("NPES=16"));
+  EXPECT_THAT(result.reason, HasSubstr("NXPE=2"));
+  EXPECT_THAT(result.reason, HasSubstr("NYPE=8"));
+}
+
+TEST(BoutMeshDecompositionTest, RespectsNXPE) {
+  int NXPE=2;
+  auto result = bout::findValidProcessorNum(/*ny=*/8, /*nx=*/8, /*NPES=*/16,
+                    NXPE);
+  using ::testing::HasSubstr;
+  EXPECT_TRUE(result.success);
+  EXPECT_THAT(result.reason, HasSubstr("NPES=16"));
+  EXPECT_THAT(result.reason, HasSubstr("NXPE=2"));
+  EXPECT_THAT(result.reason, HasSubstr("NYPE=8"));
+}
+
+TEST(BoutMeshDecompositionTest, RespectsNYPE) {
+  int NYPE=16;
+  auto result = bout::findValidProcessorNum(/*ny=*/16, /*nx=*/8, /*NPES=*/16,
+                    NYPE);
+  using ::testing::HasSubstr;
+  EXPECT_TRUE(result.success);
+  EXPECT_THAT(result.reason, HasSubstr("NPES=16"));
+  EXPECT_THAT(result.reason, HasSubstr("NXPE=1"));
+  EXPECT_THAT(result.reason, HasSubstr("NYPE=16"));
+}
+
+
+TEST(BoutMeshDecompositionTest, NoValidDecomposition) {
+  // Prime sizes, limited processors
+  auto result = bout::findValidProcessorNum(/*ny=*/7, /*nx=*/8, /*NPES=*/5);
+  using ::testing::HasSubstr;
+  EXPECT_FALSE(result.success);
+  EXPECT_THAT(result.reason, HasSubstr("No valid processor decomposition found"));
+}
+
+TEST(BoutMeshDecompositionTest, SingleProcessorOnly) {
+  auto result = bout::findValidProcessorNum(/*ny=*/10, /*nx=*/10, /*NPES=*/1);
+  using ::testing::HasSubstr;
+  EXPECT_TRUE(result.success);
+  EXPECT_THAT(result.reason, HasSubstr("NPES=1"));
+}
+
   //End of new bit
 
 //End of the test
 
-TEST(BoutMeshTest, ChooseProcessorSplitBadNXPE) {
+TEST(BoutMeshTest, ChooseProcessorSplitBadNXPETooManyXProcs) {
   WithQuietOutput info{output_info};
   Options options{{"NXPE", 3}};
 
@@ -668,7 +712,7 @@ TEST(BoutMeshTest, ChooseProcessorSplitBadNXPE) {
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
-TEST(BoutMeshTest, ChooseProcessorSplitBadNYPE) {
+TEST(BoutMeshTest, ChooseProcessorSplitBadNYPETooManyYProcs) {
   WithQuietOutput info{output_info};
   Options options{{"NYPE", 7}};
 
@@ -677,11 +721,29 @@ TEST(BoutMeshTest, ChooseProcessorSplitBadNYPE) {
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
+TEST(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisibleByNYPE) {
+  WithQuietOutput info{output_info};
+  Options options{{"NXPE", 5}};
+
+  BoutMeshExposer mesh(4, 24, 1, 1, 1, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
+TEST(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisibleByNYPE) {
+  WithQuietOutput info{output_info};
+  Options options{{"NYPE", 5}};
+
+  BoutMeshExposer mesh(5, 5, 1, 1, 1, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
 TEST(BoutMeshTest, ChooseProcessorSplitNXPE) {
   WithQuietOutput info{output_info};
   Options options{{"NXPE", 4}};
 
-  BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
+  BoutMeshExposer mesh(4, 24, 1, 1, 1, 8);
 
   EXPECT_NO_THROW(mesh.chooseProcessorSplit(options));
 
