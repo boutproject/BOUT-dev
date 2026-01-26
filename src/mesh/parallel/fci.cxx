@@ -68,12 +68,8 @@ bool load_parallel_metric_component(std::string name, Field3D& component, int of
   if (doload) {
     const auto pname = parallel_slice_field_name(name, offset);
     isValid = mesh->get(tmp, pname, 0.0, false) == 0;
-    if (not isValid) {
-      throw BoutException("Could not read {:s} from grid file!\n"
-                          "Regenerate the grid with a recent zoidberg!",
-                          pname);
-    }
-  } else {
+  }
+  if (not isValid) {
     auto lmin = min(component, true);
     auto lmax = max(component, true);
     if (lmin != lmax) {
@@ -122,7 +118,7 @@ void load_parallel_metric_components([[maybe_unused]] Coordinates* coords,
   LOAD_PAR(g13, false);
   LOAD_PAR(g23, false);
 
-  LOAD_PAR(Bxy, false);  // Not yet written to mesh file
+  LOAD_PAR(Bxy, false);
 
   LOAD_PAR(g_11, false);
   LOAD_PAR(g_22, false);
