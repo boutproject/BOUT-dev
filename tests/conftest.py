@@ -8,6 +8,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "input_dir(name): specify the pre-existing input directory name for this test"
     )
+    config.addinivalue_line(
+        "serial"
+    )
 
 @pytest.fixture
 def test_dir(request) -> Path:

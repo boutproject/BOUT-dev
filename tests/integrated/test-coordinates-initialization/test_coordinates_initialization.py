@@ -1,8 +1,10 @@
+import pytest
 import os
 import subprocess
 import time
 
 
+@pytest.mark.serial
 def test_runtest(test_dir):
 
     cmd = './runtest'
