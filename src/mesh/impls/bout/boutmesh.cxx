@@ -208,7 +208,7 @@ namespace bout {
 CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
                                             int num_y_guards, int jyseps1_1,
                                             int jyseps2_1, int jyseps1_2, int jyseps2_2,
-                                            int ny_inner, std::string topology) {
+                                            int ny_inner, std::string mesh_topology) {
 
   const int num_local_y_points = ny / num_y_processors;
 
@@ -227,7 +227,7 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
     
   if (jyseps2_1 != jyseps1_2) {
     // Unconnected Double Null or SF
-    if (topology == "UDN") {
+    if (mesh_topology == "UDN") {
       if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
         return {
             false,
@@ -261,7 +261,7 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
       }
     }
 
-    if (topology == "SF"){
+    if (mesh_topology == "SF"){
       //Ask peter about this bit
 
       //Check Core region
@@ -402,7 +402,7 @@ CheckMeshResult findValidProcessorNum(int ny, int nx,
     int jyseps1_2_start,
     int jyseps2_2_start,
     int ny_inner_start, 
-    std::string topology) {
+    std::string mesh_topology) {
 
   if (ny % num_y_processors != 0) {
     return {false, fmt::format(
@@ -423,14 +423,14 @@ CheckMeshResult findValidProcessorNum(int ny, int nx,
           for (int jyseps2_2 = jyseps2_2_start;
                jyseps2_2 < ny; ++jyseps2_2) {
 
-            if (topology == "UDN" || topology == "CDN"){
+            if (mesh_topology == "UDN" || mesh_topology == "CDN"){
               if (not (jyseps1_1 < jyseps2_1 &&
                  jyseps2_1 < ny_inner &&
                  ny_inner < jyseps1_2 &&
                  jyseps1_2 < jyseps2_2)){
                 continue;
                 }}
-            else if (topology == "SF"){
+            else if (mesh_topology == "SF"){
               if (not (jyseps1_1 < jyseps2_1 &&
                  jyseps2_1 < ny_inner &&
                  jyseps1_2 < ny_inner &&
@@ -440,7 +440,7 @@ CheckMeshResult findValidProcessorNum(int ny, int nx,
             }
 
             auto result = bout::checkBoutMeshYDecomposition(num_y_processors, ny, num_y_guards, jyseps1_1, jyseps2_1,
-                                                  jyseps1_2, jyseps2_2, ny_inner, topology);
+                                                  jyseps1_2, jyseps2_2, ny_inner, mesh_topology);
 
             if (result.success) {
               return {true, fmt::format(
@@ -506,15 +506,15 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
     NXPE = NPES / NYPE;
   }
 
-  auto topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
+  auto mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
                                   ixseps1, ixseps2);
 
   auto result = bout::checkBoutMeshYDecomposition(NYPE, ny, MYG, jyseps1_1, jyseps2_1,
-                                                  jyseps1_2, jyseps2_2, ny_inner, topology);
+                                                  jyseps1_2, jyseps2_2, ny_inner, mesh_topology);
 
   if (not result.success) {
     auto valid_y_decompostion= bout::findValidYDecomposition(ny, NYPE, MYG, jyseps1_1, jyseps2_1,
-                                                             jyseps1_2, jyseps2_2, ny_inner, topology);
+                                                             jyseps1_2, jyseps2_2, ny_inner, mesh_topology);
     output_info.write(valid_y_decompostion.reason);
     throw BoutException(result.reason);
   }
@@ -525,7 +525,7 @@ void BoutMesh::findProcessorSplit() {
 
   NXPE = -1; // Best option
 
-  auto topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
+  auto mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
                                   ixseps1, ixseps2);
 
   // Results in square domains
@@ -543,7 +543,7 @@ void BoutMesh::findProcessorSplit() {
       const int nyp = NPES / i;
 
       auto result = bout::checkBoutMeshYDecomposition(nyp, ny, MYG, jyseps1_1, jyseps2_1,
-                                                      jyseps1_2, jyseps2_2, ny_inner, topology);
+                                                      jyseps1_2, jyseps2_2, ny_inner, mesh_topology);
 
       if (not result.success) {
         output_info.write(result.reason);
@@ -765,6 +765,10 @@ int BoutMesh::load() {
   Mesh::get(jyseps2_2, "jyseps2_2", ny - 1);
   Mesh::get(ny_inner, "ny_inner", jyseps2_1);
 
+  //Look into making this variable global
+  auto mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
+                                  ixseps1, ixseps2);
+
   // Check inputs
   setYDecompositionIndices(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
 
@@ -802,6 +806,7 @@ int BoutMesh::load() {
 
   ///////////////////// TOPOLOGY //////////////////////////
   /// Call topology to set layout of grid
+  /// Renamed variable topology because of this function
   topology();
 
   TwistShift = options["twistshift"]
