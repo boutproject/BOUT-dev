@@ -145,7 +145,44 @@ void load_parallel_metric_components([[maybe_unused]] Coordinates* coords,
   LOAD_PAR(dy, false);
   LOAD_PAR(Bxy, false);
 
+  if (not LOAD_PAR(J, true)) {
+    auto g =
+        coords->g11.ynext(offset) * coords->g22.ynext(offset) * coords->g33.ynext(offset)
+        + 2.0 * coords->g12.ynext(offset) * coords->g13.ynext(offset)
+              * coords->g23.ynext(offset)
+        - coords->g11.ynext(offset) * coords->g23.ynext(offset)
+              * coords->g23.ynext(offset)
+        - coords->g22.ynext(offset) * coords->g13.ynext(offset)
+              * coords->g13.ynext(offset)
+        - coords->g33.ynext(offset) * coords->g12.ynext(offset)
+              * coords->g12.ynext(offset);
+
+    const auto rgn = fmt::format("RGN_YPAR_{:+d}", offset);
+    // Check that g is positive
+    bout::checkPositive(g, "The determinant of g^ij", rgn);
+    auto J = 1. / sqrt(g);
+    auto& pcom = coords->J.ynext(offset);
+    BOUT_FOR(i, J.getRegion(rgn)) { pcom[i] = J[i]; }
+  }
 #undef LOAD_PAR
+
+  // fixup for optimizing flux conservation
+  BOUT_FOR(i, coords->J.getRegion("RGN_NOBNDRY")) {
+    const auto is = i.yp(offset);
+    const BoutReal fac =
+        coords->Bxy[i] * sqrt(coords->g_11[i] * coords->g_33[i] - SQ(coords->g_13[i]))
+        / (coords->Bxy.ynext(offset)[is]
+           * sqrt(coords->g_11.ynext(offset)[is] * coords->g_33.ynext(offset)[is]
+                  - SQ(coords->g_13.ynext(offset)[is])));
+    coords->g_11.ynext(offset)[is] *= fac;
+    coords->g_33.ynext(offset)[is] *= fac;
+    coords->g_13.ynext(offset)[is] *= fac;
+    coords->g11.ynext(offset)[is] /= fac;
+    coords->g33.ynext(offset)[is] /= fac;
+    coords->g13.ynext(offset)[is] /= fac;
+    coords->J.ynext(offset)[is] *= fac;
+  }
+
 #endif
 }
 
