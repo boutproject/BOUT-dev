@@ -112,7 +112,12 @@ for nproc in [1, 2, 4]:
     for name in testvars.keys():
         # check non-evolving version
         result = collect(
-            name + "_once", path="data", xguards=True, yguards=True, zguards=True, info=False
+            name + "_once",
+            path="data",
+            xguards=True,
+            yguards=True,
+            zguards=True,
+            info=False,
         )
         testvar = testvars[name]
 
@@ -139,7 +144,9 @@ for nproc in [1, 2, 4]:
                 )
 
         # check evolving versions
-        result = collect(name, path="data", xguards=True, yguards=True, zguards=True, info=False)
+        result = collect(
+            name, path="data", xguards=True, yguards=True, zguards=True, info=False
+        )
 
         for result_timeslice in result:
             if not numpy.all(testvar == result_timeslice):

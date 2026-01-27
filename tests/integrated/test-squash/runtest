@@ -55,7 +55,9 @@ def verify(f1, f2):
 
             if d1[v].shape != d2[v].shape:
                 raise RuntimeError(
-                    "shape mismatch in '{}': {} vs {}".format(v, d1[v].shape, d2[v].shape)
+                    "shape mismatch in '{}': {} vs {}".format(
+                        v, d1[v].shape, d2[v].shape
+                    )
                 )
 
             v1 = d1[v]
