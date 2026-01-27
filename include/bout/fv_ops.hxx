@@ -12,6 +12,9 @@
 #include "bout/utils.hxx"
 #include "bout/vector2d.hxx"
 #include <bout/mesh.hxx>
+#if CHECK > 0
+#include <bout/output_bout_types.hxx>
+#endif
 
 namespace FV {
 /*!
