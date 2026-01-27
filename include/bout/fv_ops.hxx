@@ -870,7 +870,7 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
 #if CHECK > 0
       if (!std::isfinite(result[i])) {
         throw BoutException("Non-finite value in Div_par_fvv at {}\n"
-                            "fup {} vup {} fdown {} vdown {} amax {}\n",
+                            "fup {} vup {} fdown {} vdown {} amax {}\n"
                             "B {} Bup {} Bdown {} dy {} sqrt(g_22} {}", i, f_up[i],
                             v_up[i], f_down[i], v_down[i], amax, B[i], B_up[i], B_down[i],
                             dy[i], sqrt(g_22[i]));
