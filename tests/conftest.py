@@ -9,7 +9,7 @@ def pytest_configure(config):
         "markers", "input_dir(name): specify the pre-existing input directory name for this test"
     )
     config.addinivalue_line(
-        "serial"
+        "markers", "serial: mark that the test should not be run concurrently with other. "
     )
 
 @pytest.fixture
