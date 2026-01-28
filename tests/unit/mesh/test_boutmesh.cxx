@@ -241,11 +241,11 @@ BoutMeshParameters createDisconnectedDoubleNull(const BoutMeshGridInfo& grid) {
 }
 
 BoutMeshParameters createSnowflake(const BoutMeshGridInfo& grid) {
-  // Need at least 7 y-subdomains for a minimal snowflake
-  if (grid.nype < 7) {
+  // Need at least 6 y-subdomains for a minimal snowflake
+  if (grid.nype < 6) {
     throw BoutException(
         "createSnowflake: Not enough processors for snowflake topology "
-        "(nype={}, needs at least 7)",
+        "(nype={}, needs at least 6)",
         grid.nype);
   }
 
@@ -385,13 +385,13 @@ struct DecompositionTestParameters {
   std::string expected_message; // Expect this fragment to be in the result.reason for bad
                                 // decompositions
   std::string name;
-  std::string topology; // New: topology string
+  MeshTopology mesh_topology; // New: topology enum
 };
 
 DecompositionTestParameters
 makeDecompositionTestParameters(const BoutMeshParameters& inputs,
                                 const std::string& name,
-                                const std::string& topology = "SF") { // default to SF
+                                MeshTopology mesh_topology = MeshTopology::SF) { // default to SF
   return {inputs.grid.total_processors,
           inputs.grid.nype,
           inputs.grid.total_ny,
@@ -399,7 +399,7 @@ makeDecompositionTestParameters(const BoutMeshParameters& inputs,
           inputs.y_indices,
           "",
           name,
-          topology};
+          mesh_topology};
 }
 
 
@@ -419,7 +419,7 @@ std::ostream& operator<<(std::ostream& out, const DecompositionTestParameters& v
              "expected_message = {} }}",
              value.total_processors, value.num_y_processors, value.ny, value.num_y_guards,
              value.indices.jyseps1_1, value.indices.jyseps2_1, value.indices.jyseps1_2,
-             value.indices.jyseps2_2, value.indices.ny_inner, value.topology,
+             value.indices.jyseps2_2, value.indices.ny_inner, toString(value.mesh_topology),
              value.expected_message);
 }
 
@@ -437,23 +437,23 @@ struct BoutMeshDecompositionTest
 INSTANTIATE_TEST_SUITE_P(
     GoodDecompositions, BoutMeshDecompositionTest,
     ::testing::Values(
-        DecompositionTestParameters{1, 1, 1, 1, {-1, 0, 0, 0, 0}, "", "OnePoint", "SN"},
-        DecompositionTestParameters{1, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPoints", "SN"},
+        DecompositionTestParameters{1, 1, 1, 1, {-1, 0, 0, 0, 0}, "", "OnePoint", MeshTopology::SN},
+        DecompositionTestParameters{1, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPoints", MeshTopology::SN},
         DecompositionTestParameters{
-            2, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCores", "SN"},
+            2, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCores", MeshTopology::SN},
         DecompositionTestParameters{
-            2, 2, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCoresNYPE2","SN"},
+            2, 2, 8, 1, {-1, 4, 4, 7, 4}, "", "EightPointsTwoCoresNYPE2", MeshTopology::SN},
         // The following should basically all work by construction
-        makeDecompositionTestParameters(createCore({4, 4, 2, 2, 1, 1}), "Core", "SN"),
-        makeDecompositionTestParameters(createSOL({4, 4, 2, 2, 1, 1}), "SOL", "SN"),
-        makeDecompositionTestParameters(createLimiter({4, 4, 2, 2, 1, 1}), "Limiter", "SN"),
-        makeDecompositionTestParameters(createXPoint({4, 4, 2, 2, 1, 4}), "XPoint", "SN"),
+        makeDecompositionTestParameters(createCore({4, 4, 2, 2, 1, 1}), "Core", MeshTopology::SN),
+        makeDecompositionTestParameters(createSOL({4, 4, 2, 2, 1, 1}), "SOL", MeshTopology::SN),
+        makeDecompositionTestParameters(createLimiter({4, 4, 2, 2, 1, 1}), "Limiter", MeshTopology::SN),
+        makeDecompositionTestParameters(createXPoint({4, 4, 2, 2, 1, 4}), "XPoint", MeshTopology::SN),
         makeDecompositionTestParameters(createSingleNull({4, 4, 2, 2, 1, 3}),
-                                        "SingleNull", "SN"),
+                                        "SingleNull", MeshTopology::SN),
         makeDecompositionTestParameters(createDoubleNull({4, 4, 2, 2, 1, 6}),
-                                        "DoubleNull", "CDN"),
+                                        "DoubleNull", MeshTopology::CDN),
         makeDecompositionTestParameters(createDisconnectedDoubleNull({12, 4, 2, 2, 1, 6}),
-                                        "DisconnectedDoubleNull", "UDN")),
+                                        "DisconnectedDoubleNull", MeshTopology::UDN)),
     DecompositionTestParametersToString);
 
 
@@ -462,14 +462,13 @@ INSTANTIATE_TEST_SUITE_P(
     GoodSnowflake, BoutMeshDecompositionTest,
     ::testing::Values(
         // Minimal snowflake, 1 processor, passes trivially
-        DecompositionTestParameters{1, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "MinimalSF", "SF"},
-
+        DecompositionTestParameters{1, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "MinimalSF", MeshTopology::SF},
         // Snowflake with 2 y-processors, ny divisible correctly
-        DecompositionTestParameters{2, 2, 16, 1, {-1, 8, 8, 15, 8}, "", "SF16PointsNYPE2", "SF"},
+        DecompositionTestParameters{2, 2, 16, 1, {-1, 8, 8, 15, 8}, "", "SF16PointsNYPE2", MeshTopology::SF},
 
         // A slightly more realistic SF grid
         makeDecompositionTestParameters(createSnowflake({4, 6, 2, 2, 1, 9}), 
-                                            "Snowflake", "SF")
+                                            "Snowflake", MeshTopology::SF)
     ),
     DecompositionTestParametersToString);
 
@@ -482,7 +481,7 @@ TEST_P(BoutMeshDecompositionTest, CheckYDecomposition) {
       params.indices.jyseps1_1, params.indices.jyseps2_1,
       params.indices.jyseps1_2, params.indices.jyseps2_2,
       params.indices.ny_inner,
-      params.topology); // <- pass topology
+      params.mesh_topology); // <- pass topology
 
   EXPECT_TRUE(result.success);
   EXPECT_TRUE(result.reason.empty());
@@ -504,15 +503,15 @@ INSTANTIATE_TEST_SUITE_P(
     BadDoubleNull, BadBoutMeshDecompositionTest,
     ::testing::Values(
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 5, 6, 10, 0}, "Core region jyseps2_1", "CoreRegion1", "UDN"},
+            1, 1, 4, 1, {3, 5, 6, 10, 0}, "Core region jyseps2_1", "CoreRegion1", MeshTopology::UDN},
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 7, 8, 11, 0}, "Core region jyseps2_2", "CoreRegion2", "UDN"},
+            1, 1, 4, 1, {3, 7, 8, 11, 0}, "Core region jyseps2_2", "CoreRegion2", MeshTopology::UDN},
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 7, 8, 12, 11}, "leg region ny_inner", "UpperLeg1", "UDN"},
+            1, 1, 4, 1, {3, 7, 8, 12, 11}, "leg region ny_inner", "UpperLeg1", MeshTopology::UDN},
         DecompositionTestParameters{
-            1, 1, 4, 1, {3, 7, 8, 12, 8}, "leg region jyseps1_2-ny_inner+1", "UpperLeg2", "UDN"},
+            1, 1, 4, 1, {3, 7, 8, 12, 8}, "leg region jyseps1_2-ny_inner+1", "UpperLeg2", MeshTopology::UDN},
         DecompositionTestParameters{
-            1, 6, 25, 1, {3, 7, 15, 19, 12}, "leg region ny-jyseps2_2-1", "LegRegion", "UDN"}),
+            1, 6, 25, 1, {3, 7, 15, 19, 12}, "leg region ny-jyseps2_2-1", "LegRegion", MeshTopology::UDN}),
     DecompositionTestParametersToString);
 
 INSTANTIATE_TEST_SUITE_P(
@@ -531,21 +530,20 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(
         // Core region
         DecompositionTestParameters{
-          2, 2, 16, 1, {3, 5, 6, 9, 7}, "Core region jyseps2_1", "SF_CoreRegion1","SF"},
+          2, 2, 16, 1, {7, 14, 6, 9, 7}, "Core region jyseps2_1", "SF_CoreRegion1", MeshTopology::SF},
 
         // E-leg region
         DecompositionTestParameters{
-          2, 2, 16, 1, {3, 7, 8, 10, 7}, "leg region jyseps2_2", "SF_ELeg1","SF"},
-
+          6, 6, 48, 1, {7, 15, 19, 25, 23}, "leg region jyseps2_2", "SF_ELeg1", MeshTopology::SF},
+        DecompositionTestParameters{
+          8, 8, 32, 1, {3, 7, 9, 15, 12}, "leg region ny_inner - 1", "SF_ELeg2", MeshTopology::SF},
         // W-leg region
         DecompositionTestParameters{
-          2, 2, 16, 1, {3, 8, 9, 11, 7}, "leg region jyseps1_2", "SF_WLeg1","SF"},
+          6, 6, 48, 1, {7, 15, 24, 40, 33}, "leg region jyseps1_2", "SF_WLeg1", MeshTopology::SF}
 
-        // Central region violation
-        DecompositionTestParameters{1, 1, 8, 1, {-1, 5, 4, 7, 7}, "central region ny_inner", "CentralRegionFail", "SF"},
 
-        // South-leg region violation
-        DecompositionTestParameters{1, 1, 9, 1, {-1, 4, 4, 7, 4}, "leg region ny", "SouthLegFail", "SF"}
+        // Central region violation not possible if the others are correct
+        // South-leg region violation not possible if the others are correct
     ),
     DecompositionTestParametersToString);
 
@@ -558,13 +556,13 @@ TEST_P(BadBoutMeshDecompositionTest, BadSingleCoreYDecomposition) {
       params.indices.jyseps1_1, params.indices.jyseps2_1,
       params.indices.jyseps1_2, params.indices.jyseps2_2,
       params.indices.ny_inner,
-      params.topology); // <- pass topology
+      params.mesh_topology); // <- pass topology
 
   using ::testing::HasSubstr;
 
   EXPECT_FALSE(result.success);
   //Ask Peter about baddecomtest
-  //EXPECT_THAT(result.reason, HasSubstr(params.expected_message));
+  EXPECT_THAT(result.reason, HasSubstr(params.expected_message));
 }
 
 
@@ -579,12 +577,12 @@ TEST_P(BadBoutMeshDecompositionTest, BadSingleCoreYDecomposition) {
   int jyseps2_2_start = 12;
   int ny_inner_start = 8;
 
-  std::string topology = "SF";
+  MeshTopology mesh_topology = MeshTopology::SF;
 
   auto result = bout::findValidYDecomposition(ny, num_y_processors, num_y_guards,
                                         jyseps1_1_start, jyseps2_1_start,
                                         jyseps1_2_start, jyseps2_2_start,
-                                        ny_inner_start, topology);
+                                        ny_inner_start, mesh_topology);
 
   EXPECT_TRUE(result.success);
 }
@@ -600,12 +598,12 @@ TEST(BoutMeshDecompositionTest, InvalidYDecompositionBecuaseofNYPE) {
   int jyseps2_2_start = 0;
   int ny_inner_start = 0;
 
-  std::string topology = "SF";
+  MeshTopology mesh_topology = MeshTopology::SF;
 
   auto result = bout::findValidYDecomposition(ny, num_y_processors, num_y_guards,
                                         jyseps1_1_start, jyseps2_1_start,
                                         jyseps1_2_start, jyseps2_2_start,
-                                        ny_inner_start, topology);
+                                        ny_inner_start, mesh_topology);
 
   EXPECT_FALSE(result.success);
 }
@@ -621,12 +619,12 @@ TEST(BoutMeshDecompositionTest, InvalidYDecompositionBecuaseofTopologyUDN) {
   int jyseps2_2_start = 1;
   int ny_inner_start = 1;
 
-  std::string topology = "UDN";
+  MeshTopology mesh_topology = MeshTopology::UDN;
 
   auto result = bout::findValidYDecomposition(ny, num_y_processors, num_y_guards,
                                         jyseps1_1_start, jyseps2_1_start,
                                         jyseps1_2_start, jyseps2_2_start,
-                                        ny_inner_start, topology);
+                                        ny_inner_start, mesh_topology);
   EXPECT_FALSE(result.success);
 }
 
@@ -641,12 +639,12 @@ TEST(BoutMeshDecompositionTest, InvalidYDecompositionBecuaseofTopologySF) {
   int jyseps2_2_start = 1;
   int ny_inner_start = 17;
 
-  std::string topology = "SF";
+  MeshTopology mesh_topology = MeshTopology::SF;
 
   auto result = bout::findValidYDecomposition(ny, num_y_processors, num_y_guards,
                                         jyseps1_1_start, jyseps2_1_start,
                                         jyseps1_2_start, jyseps2_2_start,
-                                        ny_inner_start, topology);
+                                        ny_inner_start, mesh_topology);
   EXPECT_FALSE(result.success);
 }
 
@@ -775,34 +773,34 @@ TEST(BoutMeshTest, ChooseProcessorSplitNYPE) {
 TEST(getMeshTopologyTest, ReturnsCFLWhenNoXPoints) {
   BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 0;
-  EXPECT_EQ(mesh.getMeshTopology(1, 2, 3, 4, 5, 6, 7), "CFL");
+  EXPECT_EQ(mesh.getMeshTopology(1, 2, 3, 4, 5, 6, 7), MeshTopology::CFL);
 }
 
 TEST(getMeshTopologyTest, ReturnsSNWhenOneXPoint) {
   BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 1;
-  EXPECT_EQ(mesh.getMeshTopology(1, 2, 3, 4, 5, 6, 7), "SN");
+  EXPECT_EQ(mesh.getMeshTopology(1, 2, 3, 4, 5, 6, 7), MeshTopology::SN);
 }
 
 TEST(getMeshTopologyTest, ReturnsSFWhenSnowflakeConditionMet) {
   BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 2;
   // ny_inner between jyseps1_2 and jyseps2_2
-  EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 15, 1, 1), "SF");
+  EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 15, 1, 1), MeshTopology::SF);
 }
 
 TEST(getMeshTopologyTest, ReturnsUDNWhenTwoXPointsDifferentIndices) {
   BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 2;
   // ny_inner not between jyseps1_2 and jyseps2_2
-  EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 2), "UDN");
+  EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 2), MeshTopology::UDN);
 }
 
 TEST(getMeshTopologyTest, ReturnsCDNWhenTwoXPointsSameIndices) {
   BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 2;
   // ny_inner not between jyseps1_2 and jyseps2_2
-  EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 1), "CDN");
+  EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 1), MeshTopology::CDN);
 }
 
 struct FindProcessorParameters {

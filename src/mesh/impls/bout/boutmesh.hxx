@@ -17,6 +17,15 @@
 ///
 /// Topology and communications compatible with BOUT
 /// conventions.
+
+BOUT_ENUM_CLASS(MeshTopology,
+                CFL,  // Closed field line
+                SN,   // Single null
+                SF,   // Snowflake
+                UDN,  // Unconnected double null
+                CDN); // Connected double null
+
+
 class BoutMesh : public Mesh {
 public:
   BoutMesh(GridDataSource* s, Options* options = nullptr);
@@ -25,7 +34,7 @@ public:
   /// Read in the mesh from data sources
   int load() override;
 
-  std::string getMeshTopology(int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
+  MeshTopology getMeshTopology(int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
                                         int jyseps2_2_, int ny_inner_, int ixseps1_,
                                         int ixseps2_);
 
@@ -504,14 +513,14 @@ CheckMeshResult checkBoutMeshYDecomposition(
     int jyseps1_1, int jyseps2_1,
     int jyseps1_2, int jyseps2_2,
     int ny_inner,
-    std::string topology);
+    MeshTopology mesh_topology);
 
   CheckMeshResult findValidProcessorNum(int ny, int nx, int NPES, int NYPE = 1, int NXPE = 1);
 
   CheckMeshResult findValidYDecomposition(int ny, int NPES, int NYPE,
                                         int jyseps1_1, int jyseps2_1,
                                         int jyseps1_2, int jyseps2_2,
-                                        int ny_inner, std::string topology);
+                                        int ny_inner, MeshTopology mesh_topology);
 } // namespace bout
 
 #endif // BOUT_BOUTMESH_H

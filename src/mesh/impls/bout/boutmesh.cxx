@@ -152,38 +152,46 @@ void BoutMesh::setXDecompositionIndices(const XDecompositionIndices& indices) {
   ixseps2 = indices.ixseps2;
 }
 
-std::string BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_, int jyseps1_2_,
-                                        int jyseps2_2_, int ny_inner_, int ixseps1_,
-                                        int ixseps2_) {
+
+MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Returns MeshTopology that is type enum
+                                      int jyseps1_2_, int jyseps2_2_,
+                                      int ny_inner_, int ixseps1_,
+                                      int ixseps2_) {
+                                  
   // Set member variables
   jyseps1_1 = jyseps1_1_;
   jyseps2_1 = jyseps2_1_;
   jyseps1_2 = jyseps1_2_;
   jyseps2_2 = jyseps2_2_;
-  ny_inner = ny_inner_;
-
-  ixseps1 = ixseps1_;
-  ixseps2 = ixseps2_;
-
-  std::string topology_from_mesh;
+  ny_inner  = ny_inner_;
+  ixseps1   = ixseps1_;
+  ixseps2   = ixseps2_;
 
   if (numberOfXPoints == 0) {
-    topology_from_mesh = "CFL"; //Closed loop
-  } else if (numberOfXPoints == 1) {
-    topology_from_mesh = "SN"; // Single Null
-  } else if (numberOfXPoints == 2) {
-    if (jyseps1_2 <= ny_inner and ny_inner <= jyseps2_2) {
-        topology_from_mesh =  "SF";} // Snowflake
-    else {
-        if (ixseps1 != ixseps2) {
-            topology_from_mesh =  "UDN";} // Unconnected Double Null
-        else {
-            topology_from_mesh =  "CDN"; // Connected Double Null
-        }
-    }
+    return MeshTopology::CFL;
   }
-  return topology_from_mesh;
+
+  if (numberOfXPoints == 1) {
+    return MeshTopology::SN;
+  }
+
+  if (numberOfXPoints == 2) {
+    if (jyseps1_2 <= ny_inner && ny_inner <= jyseps2_2) {
+      return MeshTopology::SF;
+    }
+
+    if (ixseps1 != ixseps2) {
+      return MeshTopology::UDN;
+    }
+
+    return MeshTopology::CDN;
+  }
+
+  // Optional: defensive programming
+  throw BoutException("Invalid numberOfXPoints = {}", numberOfXPoints);
 }
+
+
 
 namespace bout {
 CheckMeshResult checkBoutMeshYDecomposition(
@@ -199,7 +207,7 @@ CheckMeshResult checkBoutMeshYDecomposition(
       jyseps1_1, jyseps2_1,
       jyseps1_2, jyseps2_2,
       ny_inner,
-      "UDN");
+      MeshTopology::UDN);
 }
 
 } // namespace bout
@@ -208,7 +216,7 @@ namespace bout {
 CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
                                             int num_y_guards, int jyseps1_1,
                                             int jyseps2_1, int jyseps1_2, int jyseps2_2,
-                                            int ny_inner, std::string mesh_topology) {
+                                            int ny_inner, MeshTopology mesh_topology) {
 
   const int num_local_y_points = ny / num_y_processors;
 
@@ -227,7 +235,7 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
     
   if (jyseps2_1 != jyseps1_2) {
     // Unconnected Double Null or SF
-    if (mesh_topology == "UDN") {
+    if (mesh_topology == MeshTopology::UDN){ 
       if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
         return {
             false,
@@ -261,7 +269,7 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
       }
     }
 
-    if (mesh_topology == "SF"){
+    if (mesh_topology == MeshTopology::SF){
       //Ask peter about this bit
 
       //Check Core region
@@ -285,7 +293,7 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
       if ((ny_inner - 1 - jyseps1_2) % num_local_y_points != 0) {
       return {
           false,
-          fmt::format(_("\t -> leg region ny_inner ({:d}-{:d} = {:d}) must "
+          fmt::format(_("\t -> leg region ny_inner - 1 - jyseps1_2({:d}-{:d} = {:d}) must "
                           "be a multiple of MYSUB ({:d})\n"),
                       ny_inner, jyseps1_2, ny_inner - 1 - jyseps1_2, num_local_y_points)};
       }
@@ -293,9 +301,9 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
       if ((jyseps1_2 - jyseps2_1) % num_local_y_points != 0) {
       return {
           false,
-          fmt::format(_("\t -> leg region jyseps1_2-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
+          fmt::format(_("\t -> leg region jyseps1_2-jyseps2_1 ({:d}-{:d} = {:d}) must "
                           "be a multiple of MYSUB ({:d})\n"),
-                      jyseps1_2, jyseps2_1, jyseps1_2 - jyseps2_1 - 1, num_local_y_points)};
+                      jyseps1_2, jyseps2_1, jyseps1_2 - jyseps2_1, num_local_y_points)};
       }
 
       if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
@@ -312,11 +320,11 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
           false,
           fmt::format(_("\t -> central region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
                           "be a multiple of MYSUB ({:d})\n"),
-                      ny_inner, jyseps2_1, ny_inner - 1 - jyseps2_1, num_local_y_points)};
+                      ny_inner - 1, jyseps2_1, ny_inner - 1 - jyseps2_1, num_local_y_points)};
       }
 
       //Check South leg region
-      if ((ny - 1 - ny_inner + 1) % num_local_y_points != 0) {
+      if ((ny - ny_inner) % num_local_y_points != 0) {
       return {
           false,
           fmt::format(_("\t -> leg region ny - 1 - ny_inner + 1 ({:d}-{:d} = {:d}) must "
@@ -345,6 +353,7 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
 
   return {true, ""};
 }
+
 
 CheckMeshResult findValidProcessorNum(int ny, int nx,
                                      int NPES,
@@ -402,7 +411,7 @@ CheckMeshResult findValidProcessorNum(int ny, int nx,
     int jyseps1_2_start,
     int jyseps2_2_start,
     int ny_inner_start, 
-    std::string mesh_topology) {
+    MeshTopology mesh_topology) {
 
   if (ny % num_y_processors != 0) {
     return {false, fmt::format(
@@ -423,14 +432,14 @@ CheckMeshResult findValidProcessorNum(int ny, int nx,
           for (int jyseps2_2 = jyseps2_2_start;
                jyseps2_2 < ny; ++jyseps2_2) {
 
-            if (mesh_topology == "UDN" || mesh_topology == "CDN"){
+            if (mesh_topology == MeshTopology::UDN || mesh_topology == MeshTopology::CDN){
               if (not (jyseps1_1 < jyseps2_1 &&
                  jyseps2_1 < ny_inner &&
                  ny_inner < jyseps1_2 &&
                  jyseps1_2 < jyseps2_2)){
                 continue;
                 }}
-            else if (mesh_topology == "SF"){
+            else if (mesh_topology == MeshTopology::SF){
               if (not (jyseps1_1 < jyseps2_1 &&
                  jyseps2_1 < ny_inner &&
                  jyseps1_2 < ny_inner &&
@@ -765,7 +774,6 @@ int BoutMesh::load() {
   Mesh::get(jyseps2_2, "jyseps2_2", ny - 1);
   Mesh::get(ny_inner, "ny_inner", jyseps2_1);
 
-  //Look into making this variable global
   auto mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
                                   ixseps1, ixseps2);
 
