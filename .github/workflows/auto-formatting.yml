@@ -46,7 +46,7 @@ jobs:
           $HOME/.local/bin/cmake-format $(find -name CMakeLists.txt) cmake/*.cmake
 
       - name: Commit formatting
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "[bot] Apply format changes"
           skip_push: true
@@ -54,9 +54,9 @@ jobs:
       - name: Ignore formatting
         run: |
           msg=$(git rev-list --format=%s --max-count=1 HEAD|tail -n -1)
-          test "$msg" == "Apply format changes" && git rev-parse HEAD > .git-blame-ignore-revs
+          test "$msg" = "[bot] Apply format changes" && git rev-parse HEAD > .git-blame-ignore-revs || :
 
       - name: Commit formatting
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "[bot] Add last format changes commit to ignore file"
