@@ -156,7 +156,7 @@ namespace bout {
 CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
                                             int num_y_guards, int jyseps1_1,
                                             int jyseps2_1, int jyseps1_2, int jyseps2_2,
-                                            int ny_inner) {                                       
+                                            int ny_inner) {
 
   const int num_local_y_points = ny / num_y_processors;
 
