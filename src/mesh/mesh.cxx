@@ -654,7 +654,7 @@ void Mesh::createDefaultRegions() {
                                 + getRegion3D("RGN_YGUARDS") + getRegion3D("RGN_ZGUARDS"))
                                    .unique());
 
-  for (int offset_=-ystart ; offset_ <= ystart; ++offset_) {
+  for (int offset_ = -ystart; offset_ <= ystart; ++offset_) {
     const auto region = fmt::format("RGN_YPAR_{:+d}", offset_);
     addRegion3D(region, Region<Ind3D>(xstart, xend, ystart + offset_, yend + offset_, 0,
                                       LocalNz - 1, LocalNy, LocalNz));

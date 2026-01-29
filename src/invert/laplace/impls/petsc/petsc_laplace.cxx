@@ -751,80 +751,81 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
       PC pc; // The preconditioner option
 
       if (direct) { // If a direct solver has been chosen
-	// Get the preconditioner
-	KSPGetPC(ksp, &pc);
-	// Set the preconditioner
-	PCSetType(pc, PCLU);
-	// Set the solver type
+        // Get the preconditioner
+        KSPGetPC(ksp, &pc);
+        // Set the preconditioner
+        PCSetType(pc, PCLU);
+        // Set the solver type
 #if PETSC_VERSION_GE(3, 9, 0)
-	PCFactorSetMatSolverType(pc, "mumps");
+        PCFactorSetMatSolverType(pc, "mumps");
 #else
-	PCFactorSetMatSolverPackage(pc, "mumps");
+        PCFactorSetMatSolverPackage(pc, "mumps");
 #endif
       } else {                            // If a iterative solver has been chosen
-	KSPSetType(ksp, ksptype.c_str()); // Set the type of the solver
+        KSPSetType(ksp, ksptype.c_str()); // Set the type of the solver
 
-	if (ksptype == KSPRICHARDSON) {
-	  KSPRichardsonSetScale(ksp, richardson_damping_factor);
-	}
+        if (ksptype == KSPRICHARDSON) {
+          KSPRichardsonSetScale(ksp, richardson_damping_factor);
+        }
 #ifdef KSPCHEBYSHEV
-	else if (ksptype == KSPCHEBYSHEV) {
-	  KSPChebyshevSetEigenvalues(ksp, chebyshev_max, chebyshev_min);
-	}
+        else if (ksptype == KSPCHEBYSHEV) {
+          KSPChebyshevSetEigenvalues(ksp, chebyshev_max, chebyshev_min);
+        }
 #endif
-	else if (ksptype == KSPGMRES) {
-	  KSPGMRESSetRestart(ksp, gmres_max_steps);
-	}
+        else if (ksptype == KSPGMRES) {
+          KSPGMRESSetRestart(ksp, gmres_max_steps);
+        }
 
-	// Set the relative and absolute tolerances
-	KSPSetTolerances(ksp, rtol, atol, dtol, maxits);
+        // Set the relative and absolute tolerances
+        KSPSetTolerances(ksp, rtol, atol, dtol, maxits);
 
-	// If the initial guess is not set to zero
-	if (!isGlobalFlagSet(INVERT_START_NEW)) {
-	  KSPSetInitialGuessNonzero(ksp, static_cast<PetscBool>(true));
-	}
+        // If the initial guess is not set to zero
+        if (!isGlobalFlagSet(INVERT_START_NEW)) {
+          KSPSetInitialGuessNonzero(ksp, static_cast<PetscBool>(true));
+        }
 
-	// Get the preconditioner
-	KSPGetPC(ksp, &pc);
+        // Get the preconditioner
+        KSPGetPC(ksp, &pc);
 
-	// Set the type of the preconditioner
-	PCSetType(pc, pctype.c_str());
+        // Set the type of the preconditioner
+        PCSetType(pc, pctype.c_str());
 
-	// If pctype = user in BOUT.inp, it will be translated to PCSHELL upon
-	// construction of the object
-	if (pctype == PCSHELL) {
-	  // User-supplied preconditioner function
-	  PCShellSetApply(pc, laplacePCapply);
-	  PCShellSetContext(pc, this);
-	  if (rightprec) {
-	    KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
-	  } else {
-	    KSPSetPCSide(ksp, PC_LEFT); // Left preconditioning
-	  }
-	  //ierr = PCShellSetApply(pc,laplacePCapply);CHKERRQ(ierr);
-	  //ierr = PCShellSetContext(pc,this);CHKERRQ(ierr);
-	  //ierr = KSPSetPCSide(ksp, PC_RIGHT);CHKERRQ(ierr);
-	}
-	
-	lib.setOptionsFromInputFile(ksp);
+        // If pctype = user in BOUT.inp, it will be translated to PCSHELL upon
+        // construction of the object
+        if (pctype == PCSHELL) {
+          // User-supplied preconditioner function
+          PCShellSetApply(pc, laplacePCapply);
+          PCShellSetContext(pc, this);
+          if (rightprec) {
+            KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
+          } else {
+            KSPSetPCSide(ksp, PC_LEFT); // Left preconditioning
+          }
+          //ierr = PCShellSetApply(pc,laplacePCapply);CHKERRQ(ierr);
+          //ierr = PCShellSetContext(pc,this);CHKERRQ(ierr);
+          //ierr = KSPSetPCSide(ksp, PC_RIGHT);CHKERRQ(ierr);
+        }
+
+        lib.setOptionsFromInputFile(ksp);
       }
       //timer.reset();
 
       // Call the actual solver
       {
-	const Timer timer("petscsolve");
-	KSPSolve(ksp, bs, xs); // Call the solver to solve the system
+        const Timer timer("petscsolve");
+        KSPSolve(ksp, bs, xs); // Call the solver to solve the system
       }
 
       KSPConvergedReason reason;
       KSPGetConvergedReason(ksp, &reason);
-      if (reason == -3) { // Too many iterations, might be fixed by taking smaller timestep
-	throw BoutIterationFail("petsc_laplace: too many iterations");
+      if (reason
+          == -3) { // Too many iterations, might be fixed by taking smaller timestep
+        throw BoutIterationFail("petsc_laplace: too many iterations");
       }
       if (reason <= 0) {
-	throw BoutException(
-			    "petsc_laplace: inversion failed to converge. KSPConvergedReason: {} ({})",
-			    KSPConvergedReasons[reason], static_cast<int>(reason));
+        throw BoutException(
+            "petsc_laplace: inversion failed to converge. KSPConvergedReason: {} ({})",
+            KSPConvergedReasons[reason], static_cast<int>(reason));
       }
     } else {
       //timer.reset();

@@ -6,11 +6,11 @@
 #define BOUT_FV_OPS_H
 
 #include "bout/build_defines.hxx"
-#include <bout/difops.hxx>
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
 #include "bout/utils.hxx"
 #include "bout/vector2d.hxx"
+#include <bout/difops.hxx>
 #include <bout/mesh.hxx>
 #if CHECK > 0
 #include <bout/output_bout_types.hxx>
@@ -856,8 +856,8 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
 
       // Penalty terms. This implementation is very dissipative.
       const BoutReal penalty =
-	(amax * (f_in[i] + f_up[iyp]) * (v_in[i] - v_up[iyp]) / (B[i] + B_up[iyp]))
-	+ (amax * (f_in[i] +f_down[iym]) * (v_in[i] - v_down[iym])
+          (amax * (f_in[i] + f_up[iyp]) * (v_in[i] - v_up[iyp]) / (B[i] + B_up[iyp]))
+          + (amax * (f_in[i] + f_down[iym]) * (v_in[i] - v_down[iym])
              / (B[i] + B_down[iym]));
 
       // if (fabs(penalty) > fabs(term) and penalty * v_in[i] > 0) {
@@ -874,9 +874,9 @@ Field3D Div_par_fvv(const Field3D& f_in, const Field3D& v_in,
       if (!std::isfinite(result[i])) {
         throw BoutException("Non-finite value in Div_par_fvv at {}\n"
                             "fup {} vup {} fdown {} vdown {} amax {}\n"
-                            "B {} Bup {} Bdown {} dy {} sqrt(g_22} {}", i, f_up[i],
-                            v_up[i], f_down[i], v_down[i], amax, B[i], B_up[i], B_down[i],
-                            dy[i], sqrt(g_22[i]));
+                            "B {} Bup {} Bdown {} dy {} sqrt(g_22} {}",
+                            i, f_up[i], v_up[i], f_down[i], v_down[i], amax, B[i],
+                            B_up[i], B_down[i], dy[i], sqrt(g_22[i]));
       }
 #endif
     }
