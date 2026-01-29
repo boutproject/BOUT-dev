@@ -25,28 +25,19 @@
  *
  **************************************************************************/
 
-#include "bout/build_config.hxx"
-
-#include <bout/boutcomm.hxx>
-#include <bout/rvec.hxx>
-
-#include <bout/globals.hxx> // for mesh
-
-#include <bout/field2d.hxx>
-
-#include <bout/utils.hxx>
-
-#include <bout/boundary_factory.hxx>
-#include <bout/boundary_op.hxx>
-
-#include <bout/boutexception.hxx>
-#include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
-
-#include <bout/output.hxx>
-#include <cmath>
+#include "bout/build_defines.hxx"
 
 #include <bout/assert.hxx>
+#include <bout/boundary_factory.hxx>
+#include <bout/boundary_op.hxx>
+#include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/field2d.hxx>
+#include <bout/globals.hxx> // for mesh
+#include <bout/mesh.hxx>
+#include <bout/output.hxx>
+
+#include <cmath>
 
 Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
     : Field(localmesh, location_in, directions_in) {
@@ -62,7 +53,6 @@ Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes direction
 }
 
 Field2D::Field2D(const Field2D& f) : Field(f), data(f.data) {
-  TRACE("Field2D(Field2D&)");
 
 #if BOUT_USE_TRACK
   name = f.name;
@@ -145,8 +135,6 @@ Field2D& Field2D::operator=(const Field2D& rhs) {
     return (*this); // skip this assignment
   }
 
-  TRACE("Field2D: Assignment from Field2D");
-
   Field::operator=(rhs);
 
   // Copy the data and data sizes
@@ -164,8 +152,6 @@ Field2D& Field2D::operator=(Field2D&& rhs) noexcept {
   if (this == &rhs) {
     return (*this); // skip this assignment
   }
-
-  TRACE("Field2D: Move assignment from Field2D");
 
   // Move the data and data sizes
   nx = rhs.nx;
@@ -185,7 +171,6 @@ Field2D& Field2D::operator=(const BoutReal rhs) {
   name = "<r2D>";
 #endif
 
-  TRACE("Field2D = BoutReal");
   allocate();
 
   BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs; }
@@ -196,7 +181,6 @@ Field2D& Field2D::operator=(const BoutReal rhs) {
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
 void Field2D::applyBoundary(bool init) {
-  TRACE("Field2D::applyBoundary()");
 
 #if CHECK > 0
   if (init) {
@@ -218,7 +202,6 @@ void Field2D::applyBoundary(bool init) {
 }
 
 void Field2D::applyBoundary(BoutReal time) {
-  TRACE("Field2D::applyBoundary(time)");
 
 #if CHECK > 0
   if (not isBoundarySet()) {
@@ -234,7 +217,6 @@ void Field2D::applyBoundary(BoutReal time) {
 }
 
 void Field2D::applyBoundary(const std::string& condition) {
-  TRACE("Field2D::applyBoundary(condition)");
 
   checkData(*this);
 
@@ -268,7 +250,7 @@ void Field2D::applyBoundary(const std::string& condition) {
 }
 
 void Field2D::applyBoundary(const std::string& region, const std::string& condition) {
-  TRACE("Field2D::applyBoundary(string, string)");
+
   checkData(*this);
 
   /// Get the boundary factory (singleton)
@@ -310,7 +292,6 @@ void Field2D::applyBoundary(const std::string& region, const std::string& condit
 }
 
 void Field2D::applyTDerivBoundary() {
-  TRACE("Field2D::applyTDerivBoundary()");
 
   checkData(*this);
   ASSERT1(deriv != nullptr);
@@ -322,7 +303,6 @@ void Field2D::applyTDerivBoundary() {
 }
 
 void Field2D::setBoundaryTo(const Field2D& f2d) {
-  TRACE("Field2D::setBoundary(const Field2D&)");
 
   checkData(f2d);
 

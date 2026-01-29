@@ -20,7 +20,6 @@ from numpy import sqrt, max, abs, mean, array, log
 
 from os.path import join
 
-
 build_and_log("MMS diffusion test")
 
 # List of input directories

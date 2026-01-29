@@ -42,10 +42,8 @@
 #include <bout/globals.hxx>
 #include <bout/initialprofiles.hxx>
 #include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
 
 void initial_profile(const std::string& name, Field3D& var) {
-  AUTO_TRACE();
 
   Mesh* localmesh = var.getMesh();
 
@@ -65,7 +63,6 @@ void initial_profile(const std::string& name, Field3D& var) {
 }
 
 void initial_profile(const std::string& name, Field2D& var) {
-  AUTO_TRACE();
 
   Mesh* localmesh = var.getMesh();
 
@@ -85,7 +82,6 @@ void initial_profile(const std::string& name, Field2D& var) {
 }
 
 void initial_profile(const std::string& name, Vector2D& var) {
-  AUTO_TRACE();
 
   if (var.covariant) {
     initial_profile(name + "_x", var.x);
@@ -99,7 +95,6 @@ void initial_profile(const std::string& name, Vector2D& var) {
 }
 
 void initial_profile(const std::string& name, Vector3D& var) {
-  AUTO_TRACE();
 
   if (var.covariant) {
     initial_profile(name + "_x", var.x);

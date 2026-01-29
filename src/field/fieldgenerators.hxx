@@ -352,4 +352,29 @@ private:
   FieldGeneratorPtr test, gt0, lt0;
 };
 
+/// Function that evaluates to 1 when Y is periodic (i.e. in the core), 0 otherwise
+/// Note: Assumes symmetricGlobalX
+class FieldPeriodicY : public FieldGenerator {
+public:
+  FieldPeriodicY() = default;
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
+    return std::make_shared<FieldPeriodicY>();
+  }
+  BoutReal generate(const bout::generator::Context& ctx) override {
+    const Mesh* mesh = ctx.getMesh();
+    const BoutReal local_inner_boundary =
+        0.5 * (mesh->GlobalX(mesh->xstart - 1) + mesh->GlobalX(mesh->xstart));
+    const BoutReal local_outer_boundary =
+        0.5 * (mesh->GlobalX(mesh->xend + 1) + mesh->GlobalX(mesh->xend));
+    const int local_index = mesh->xstart
+                            + int(((ctx.x() - local_inner_boundary)
+                                   / (local_outer_boundary - local_inner_boundary))
+                                  * (mesh->xend - mesh->xstart + 1));
+    if (mesh->periodicY(local_index)) {
+      return 1.0;
+    }
+    return 0.0;
+  }
+};
+
 #endif // BOUT_FIELDGENERATORS_H

@@ -14,7 +14,8 @@
   if (str.find(substring) != std::string::npos) {
     return ::testing::AssertionSuccess();
   } else {
-    return ::testing::AssertionFailure() << '"' << substring << "\" not found in " << str;
+    return ::testing::AssertionFailure()
+           << '"' << substring << "\" not found in \"" << str << '"';
   }
 }
 

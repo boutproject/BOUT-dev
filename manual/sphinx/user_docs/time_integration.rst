@@ -361,16 +361,350 @@ And the adaptive timestepping options:
 Backward Euler - SNES
 ---------------------
 
-The `beuler` or `snes` solver type (either name can be used) is
-intended mainly for solving steady-state problems, so integrates in
-time using a stable but low accuracy method (Backward Euler). It uses
-PETSc's SNES solvers to solve the nonlinear system at each timestep,
-and adjusts the internal timestep to keep the number of SNES
-iterations within a given range.
+The `beuler` or `snes` solver type (either name can be used) is a PETSc-based implicit
+solver for finding steady-state solutions to systems of partial differential equations.
+It supports multiple solution strategies including backward Euler timestepping,
+direct Newton iteration, and Pseudo-Transient Continuation (PTC) with Switched
+Evolution Relaxation (SER).
+
+Basic Configuration
+~~~~~~~~~~~~~~~~~~~
+
+The SNES solver is configured through the ``[solver]`` section of the input file:
+
+.. code-block:: ini
+
+   [solver]
+   type = snes
+
+   # Nonlinear solver settings
+   snes_type = newtonls          # anderson, newtonls, newtontr, nrichardson
+   atol = 1e-7                   # Absolute tolerance
+   rtol = 1e-6                   # Relative tolerance
+   stol = 1e-12                  # Solution change tolerance
+   max_nonlinear_iterations = 20 # Maximum SNES iterations per solve
+
+   # Linear solver settings
+   ksp_type = fgmres             # Linear solver: gmres, bicgstab, etc.
+   maxl = 20                     # Maximum linear iterations
+   pc_type = ilu                 # Preconditioner: ilu, bjacobi, hypre, etc.
+
+Timestepping Modes
+~~~~~~~~~~~~~~~~~~
+
+The solver supports several timestepping strategies controlled by ``equation_form``:
+
+**Backward Euler (default)**
+   Standard implicit backward Euler method. Good for general timestepping.
+
+   .. code-block:: ini
+
+      equation_form = rearranged_backward_euler  # Default
+
+   This method has low accuracy in time but its dissipative properties
+   are helpful when evolving to steady state solutions.
+
+**Direct Newton**
+   Solves the steady-state problem F(u) = 0 directly without timestepping.
+
+   .. code-block:: ini
+
+      equation_form = direct_newton
+
+   This method is unlikely to converge unless the system is very close
+   to steady state.
+
+**Pseudo-Transient Continuation**
+   Uses pseudo-time to guide the solution to steady state. Recommended for
+   highly nonlinear problems where Newton's method fails.
+
+   .. code-block:: ini
+
+      equation_form = pseudo_transient
+
+   This uses the same form as rearranged_backward_euler, but the time step
+   can be different for each cell.
+
+Adaptive Timestepping
+~~~~~~~~~~~~~~~~~~~~~
+
+When ``equation_form = rearranged_backward_euler`` (default), the
+solver uses global timestepping with adaptive timestep control based
+on nonlinear iteration count.
+
+.. code-block:: ini
+
+   [solver]
+   type = snes
+   equation_form = rearranged_backward_euler
+
+   # Initial and maximum timesteps
+   timestep = 1.0                         # Initial timestep
+   max_timestep = 1e10                    # Upper limit on timestep
+   dt_min_reset = 1e-6                    # Reset the solver when timestep < this
+
+   # Timestep adaptation
+   lower_its = 3                          # Increase dt if iterations < this
+   upper_its = 10                         # Decrease dt if iterations > this
+   timestep_factor_on_lower_its = 1.4     # Growth factor
+   timestep_factor_on_upper_its = 0.9     # Reduction factor
+   timestep_factor_on_failure = 0.5       # Reduction on convergence failure
+
+PID Controller
+^^^^^^^^^^^^^^
+
+An alternative adaptive strategy using a PID controller:
+
+.. code-block:: ini
+
+   [solver]
+   pid_controller = true
+   target_its = 7        # Target number of nonlinear iterations
+   kP = 0.7              # Proportional gain
+   kI = 0.3              # Integral gain
+   kD = 0.2              # Derivative gain
+
+The PID controller adjusts the timestep to maintain approximately ``target_its``
+nonlinear iterations per solve, providing smoother adaptation than threshold-based
+methods.
+
+Pseudo-Transient Continuation and Switched Evolution Relaxation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When ``equation_form = pseudo_transient`` the solver uses
+Pseudo-Transient Continuation (PTC). This is a robust numerical
+technique for solving steady-state problems that are too nonlinear for
+direct Newton iteration. Instead of solving the steady-state system
+**F(u) = 0** directly, PTC solves a modified time-dependent problem:
+
+.. math::
+
+   M(u) \frac{\partial u}{\partial \tau} + F(u) = 0
+
+where :math:`\tau` is a pseudo-time variable (not physical time) and :math:`M(u)`
+is a preconditioning matrix. As :math:`\tau \to \infty`, the solution converges
+to the steady state **F(u) = 0**.
+
+The key advantage of PTC is that it transforms a difficult root-finding problem
+into a sequence of easier initial value problems. Poor initial guesses that would
+cause Newton's method to diverge can still reach the solution via a stable
+pseudo-transient path.
+
+The Switched Evolution Relaxation (SER) method is a spatially adaptive
+variant of PTC that allows each cell to use a different
+pseudo-timestep :math:`\Delta\tau_i`. The timestep in each cell adapts
+based on the local residual, allowing the algorithm to take large
+timesteps in well-behaved regions (fast convergence), while taking
+small timesteps in difficult regions (stable advancement).  The the
+same :math:`\Delta\tau_i` is used for all equations (density,
+momentum, energy etc.) within each cell. This maintains coupling
+between temperature, pressure, and composition through the equation of
+state.
+
+**Key parameters:**
+
+``pseudo_max_ratio`` (default: 2.0)
+   Maximum allowed ratio of timesteps between neighboring cells. This prevents
+   sharp spatial gradients in convergence rate.
+
+**Example PTC configuration:**
+
+.. code-block:: ini
+
+   [solver]
+   type = snes
+   equation_form = pseudo_transient
+
+   timestep = 1.0                # Initial timestep
+
+   # SER parameters
+   pid_controller = true          # Scale timesteps based on iterations
+   pseudo_max_ratio = 2.0         # Limit neighbor timestep ratio
+
+   # Tolerances
+   atol = 1e-7
+   rtol = 1e-6
+   stol = 1e-12
+
+SER timestep strategy
+^^^^^^^^^^^^^^^^^^^^^
+
+After each nonlinear solve the timesteps in each cell are adjusted.
+The strategy used depends on the ``pseudo_strategy`` option:
+
+**inverse_residual** (default)
+
+If ``pseudo_strategy = inverse_residual`` then the timestep is inversely
+proportional to the RMS residual in each cell.
+``pseudo_alpha`` (default: 100 × atol × timestep)
+Controls the relationship between residual and timestep. The local timestep
+is computed as:
+
+.. math::
+
+   \Delta\tau_i = \frac{\alpha}{||R_i||}
+
+Larger values allow more aggressive timestepping. The default is to use
+a fixed ``pseudo_alpha`` but a better strategy is to enable the PID controller
+that adjusts this parameter based on the nonlinear solver convergence.
+
+The timestep is limited to be between ``dt_min_reset`` and
+``max_timestep``.  In addition the timestep is limited between 0.67 ×
+previous timestep and 1.5 × previous timestep, to limit sudden changes
+in timestep.
+
+In practice this strategy seems to work well, though problems could
+arise when residuals become very small.
+
+**history_based**
+
+When ``pseudo_strategy = history_based`` the history of residuals
+within each cell is used to adjust the timestep. The key parameters
+are:
+
+``pseudo_growth_factor`` (default: 1.1)
+   Factor by which timestep increases when residual decreases successfully.
+
+``pseudo_reduction_factor`` (default: 0.5)
+   Factor by which timestep decreases when residual increases (step rejected).
+
+This method may be less susceptible to fluctuations when residuals
+become small, but tends to be slower to converge when residuals are
+large.
+
+**hybrid**
+
+When ``pseudo_strategy = hybrid`` the ``inverse_residual`` and
+``history_based`` strategies are combined: When the residuals are
+large the ``inverse_residual`` method is used, and when residuals
+become small the method switches to ``history_based``.
+
+PID Controller
+^^^^^^^^^^^^^^
+
+When using the PTC method the PID controller can be used to dynamically
+adjust ``pseudo_alpha`` depending on the nonlinearity of the system:
+
+.. code-block:: ini
+
+   [solver]
+   pid_controller = true
+   target_its = 7        # Target number of nonlinear iterations
+   kP = 0.7              # Proportional gain
+   kI = 0.3              # Integral gain
+   kD = 0.2              # Derivative gain
+
+The PID controller adjusts ``pseudo_alpha``, scaling all cell
+timesteps together, to maintain approximately ``target_its`` nonlinear
+iterations per solve.
+
+With this enabled the solver uses the number of nonlinear iterations
+to scale timesteps globally, and residuals to scale timesteps locally.
+Note that the PID controller has no effect on the ``history_based``
+strategy because that strategy does not use ``pseudo_alpha``.
+
+Jacobian Finite Difference with Coloring
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The default and recommended approach for most problems:
+
+.. code-block:: ini
+
+   [solver]
+   use_coloring = true               # Enable (default)
+   lag_jacobian = 5                  # Reuse Jacobian for this many iterations
+
+   # Stencil shape (determines Jacobian sparsity pattern)
+   stencil:taxi = 2                  # Taxi-cab distance (default)
+   stencil:square = 0                # Square stencil extent
+   stencil:cross = 0                 # Cross stencil extent
+
+The coloring algorithm exploits the sparse structure of the Jacobian to reduce
+the number of function evaluations needed for finite differencing.
+
+Jacobian coloring stencil
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The stencil used to create the Jacobian colouring can be varied,
+depending on which numerical operators are in use. It is important to
+note that the coloring won't work for every problem: It assumes that
+each evolving quantity is coupled to all other evolving quantities on
+the same grid cell, and on all the neighbouring grid cells. If the RHS
+function includes Fourier transforms, or matrix inversions
+(e.g. potential solves) then these will introduce longer-range
+coupling and the Jacobian calculation will give spurious
+results. Generally the method will then fail to converge. Two
+solutions are to a) switch to matrix-free (``matrix_free=true``),
+or b) solve the matrix inversion as a constraint.
+
+
+``solver:stencil:cross = N``
+e.g. for N == 2
+
+.. code-block:: bash
+
+        *
+        *
+    * * x * *
+        *
+        *
+
+
+``solver:stencil:square = N``
+e.g. for N == 2
+
+.. code-block:: bash
+
+    * * * * *
+    * * * * *
+    * * x * *
+    * * * * *
+    * * * * *
+
+``solver:stencil:taxi = N``
+e.g. for N == 2
+
+.. code-block:: bash
+
+        *
+      * * *
+    * * x * *
+      * * *
+        *
+
+Setting ``solver:force_symmetric_coloring = true``, will make sure
+that the jacobian colouring matrix is symmetric.  This will often
+include a few extra non-zeros that the stencil will miss otherwise
+
+Diagnostics and Monitoring
+---------------------------
+
+.. code-block:: ini
+
+   [solver]
+   diagnose = true                # Print iteration info to screen
+   diagnose_failures = true       # Detailed diagnostics on failures
+
+When ``equation_form = pseudo_transient``, the solver saves additional diagnostic fields:
+
+- ``snes_pseudo_residual``: Local residual in each cell
+- ``snes_pseudo_timestep``: Local pseudo-timestep in each cell
+- ``snes_pseudo_alpha``: Global timestep scaling
+
+These can be visualized to understand convergence behavior and identify
+problematic regions.
+
+Summary of solver options
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 +---------------------------+---------------+----------------------------------------------------+
 | Option                    | Default       |Description                                         |
 +===========================+===============+====================================================+
+| pseudo_time               | false         | Pseudo-Transient Continuation (PTC) method, using  |
+|                           |               | a different timestep for each cell.                |
++---------------------------+---------------+----------------------------------------------------+
+| pseudo_max_ratio          | 2.            | Maximum timestep ratio between neighboring cells   |
++---------------------------+---------------+----------------------------------------------------+
 | snes_type                 | newtonls      | PETSc SNES nonlinear solver (try anderson, qn)     |
 +---------------------------+---------------+----------------------------------------------------+
 | ksp_type                  | gmres         | PETSc KSP linear solver                            |
@@ -427,16 +761,7 @@ The default `newtonls` SNES type can be very effective if combined
 with Jacobian coloring: The coloring enables the Jacobian to be
 calculated relatively efficiently; once a Jacobian matrix has been
 calculated, effective preconditioners can be used to speed up
-convergence.  It is important to note that the coloring assumes a star
-stencil and so won't work for every problem: It assumes that each
-evolving quantity is coupled to all other evolving quantities on the
-same grid cell, and on all the neighbouring grid cells. If the RHS
-function includes Fourier transforms, or matrix inversions
-(e.g. potential solves) then these will introduce longer-range
-coupling and the Jacobian calculation will give spurious
-results. Generally the method will then fail to converge. Two
-solutions are to a) switch to matrix-free (``matrix_free=true``), or b)
-solve the matrix inversion as a constraint.
+convergence.
 
 The `SNES type
 <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESType.html>`_
@@ -456,50 +781,7 @@ Preconditioner types:
    Enable with command-line args ``-pc_type hypre -pc_hypre_type euclid -pc_hypre_euclid_levels k``
    where ``k`` is the level (1-8 typically).
 
-Jacobian coloring stencil
-~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The stencil used to create the Jacobian colouring can be varied,
-depending on which numerical operators are in use.
-
-
-``solver:stencil:cross = N``
-e.g. for N == 2
-
-.. code-block:: bash
-
-        *
-        *
-    * * x * *
-        *
-        *
-
-
-``solver:stencil:square = N``
-e.g. for N == 2
-
-.. code-block:: bash
-
-    * * * * *
-    * * * * *
-    * * x * *
-    * * * * *
-    * * * * *
-
-``solver:stencil:taxi = N``
-e.g. for N == 2
-
-.. code-block:: bash
-
-        *
-      * * *
-    * * x * *
-      * * *
-        *
-
-Setting ``solver:force_symmetric_coloring = true``, will make sure
-that the jacobian colouring matrix is symmetric.  This will often
-include a few extra non-zeros that the stencil will miss otherwise
 
 ODE integration
 ---------------

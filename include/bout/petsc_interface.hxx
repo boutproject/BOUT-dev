@@ -363,7 +363,7 @@ public:
       }
     }
     Element& operator=(const Element& other) {
-      AUTO_TRACE();
+
       if (this == &other) {
         return *this;
       }
@@ -372,14 +372,14 @@ public:
       return *this;
     }
     Element& operator=(BoutReal val) {
-      AUTO_TRACE();
+
       ASSERT3(finite(val));
       value = val;
       setValues(val, INSERT_VALUES);
       return *this;
     }
     Element& operator+=(BoutReal val) {
-      AUTO_TRACE();
+
       ASSERT3(finite(val));
       auto columnPosition = std::find(positions.begin(), positions.end(), petscCol);
       if (columnPosition != positions.end()) {

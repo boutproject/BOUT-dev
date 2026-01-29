@@ -35,7 +35,6 @@
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
-#include "bout/msg_stack.hxx"
 #include "bout/region.hxx"
 #include "bout/unused.hxx"
 

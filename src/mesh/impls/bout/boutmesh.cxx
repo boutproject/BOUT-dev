@@ -431,7 +431,6 @@ void BoutMesh::setDerivedGridSizes() {
 }
 
 int BoutMesh::load() {
-  TRACE("BoutMesh::load()");
 
   output_progress << _("Loading mesh") << endl;
 
@@ -606,6 +605,20 @@ int BoutMesh::load() {
 
   // Add boundary regions
   addBoundaryRegions();
+
+  // Set cached values
+  {
+    int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
+    int allbndry = 0;
+    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
+    has_boundary_lower_y = static_cast<bool>(allbndry);
+  }
+  {
+    int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
+    int allbndry = 0;
+    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
+    has_boundary_upper_y = static_cast<bool>(allbndry);
+  }
 
   // Initialize default coordinates
   getCoordinates();
@@ -1349,7 +1362,6 @@ comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
 }
 
 int BoutMesh::wait(comm_handle handle) {
-  TRACE("BoutMesh::wait(comm_handle)");
 
   if (handle == nullptr) {
     return 1;
@@ -3099,47 +3111,6 @@ void BoutMesh::addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
   }
   par_boundary[static_cast<int>(type)].push_back(bndry);
   par_boundary[static_cast<int>(BoundaryParType::all)].push_back(bndry);
-}
-
-Field3D BoutMesh::smoothSeparatrix(const Field3D& f) {
-  Field3D result{emptyFrom(f)};
-  if ((ixseps_inner > 0) && (ixseps_inner < nx - 1)) {
-    if (XPROC(ixseps_inner) == PE_XIND) {
-      int x = getLocalXIndex(ixseps_inner);
-      for (int y = 0; y < LocalNy; y++) {
-        for (int z = 0; z < LocalNz; z++) {
-          result(x, y, z) = 0.5 * (f(x, y, z) + f(x - 1, y, z));
-        }
-      }
-    }
-    if (XPROC(ixseps_inner - 1) == PE_XIND) {
-      int x = getLocalXIndex(ixseps_inner - 1);
-      for (int y = 0; y < LocalNy; y++) {
-        for (int z = 0; z < LocalNz; z++) {
-          result(x, y, z) = 0.5 * (f(x, y, z) + f(x + 1, y, z));
-        }
-      }
-    }
-  }
-  if ((ixseps_outer > 0) && (ixseps_outer < nx - 1) && (ixseps_outer != ixseps_inner)) {
-    if (XPROC(ixseps_outer) == PE_XIND) {
-      int x = getLocalXIndex(ixseps_outer);
-      for (int y = 0; y < LocalNy; y++) {
-        for (int z = 0; z < LocalNz; z++) {
-          result(x, y, z) = 0.5 * (f(x, y, z) + f(x - 1, y, z));
-        }
-      }
-    }
-    if (XPROC(ixseps_outer - 1) == PE_XIND) {
-      int x = getLocalXIndex(ixseps_outer - 1);
-      for (int y = 0; y < LocalNy; y++) {
-        for (int z = 0; z < LocalNz; z++) {
-          result(x, y, z) = 0.5 * (f(x, y, z) + f(x + 1, y, z));
-        }
-      }
-    }
-  }
-  return result;
 }
 
 BoutReal BoutMesh::GlobalX(int jx) const {

@@ -5,10 +5,9 @@
  **************************************************************************/
 
 #include <bout/assert.hxx>
+#include <bout/build_defines.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
-#include <bout/field.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
@@ -24,19 +23,7 @@
 #include "parallel/fci.hxx"
 #include "parallel/shiftedmetricinterp.hxx"
 
-// use anonymous namespace so this utility function is not available outside this file
 namespace {
-template <typename T, typename... Ts>
-// Use sendY()/sendX() and wait() instead of Mesh::communicate() to ensure we
-// don't try to calculate parallel slices as Coordinates are not constructed yet
-void communicate(T& t, Ts&... ts) {
-  FieldGroup g(t, ts...);
-  auto h = t.getMesh()->sendY(g);
-  t.getMesh()->wait(h);
-  h = t.getMesh()->sendX(g);
-  t.getMesh()->wait(h);
-}
-
 /// Interpolate a Field2D to a new CELL_LOC with interp_to.
 /// Communicates to set internal guard cells.
 /// Boundary guard cells are set by extrapolating from the grid, like
@@ -56,7 +43,7 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location, bool extr
   // communicate f. We will sort out result's boundary guard cells below, but
   // not f's so we don't want to change f.
   result.allocate();
-  communicate(result);
+  localmesh->communicate_no_slices(result);
 
   // Extrapolate into boundaries (if requested) so that differential geometry
   // terms can be interpolated if necessary
@@ -205,7 +192,7 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
   // communicate f. We will sort out result's boundary guard cells below, but
   // not f's so we don't want to change f.
   result.allocate();
-  communicate(result);
+  localmesh->communicate_no_slices(result);
 
   // Extrapolate into boundaries (if requested) so that differential geometry
   // terms can be interpolated if necessary
@@ -238,7 +225,7 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
           ASSERT1(bndry->bx == 0 or localmesh->xstart > 1);
           ASSERT1(bndry->by == 0 or localmesh->ystart > 1);
           // note that either bx or by is >0 here
-          for (int zi = 0; zi < localmesh->LocalNz; ++zi) {
+          for (int zi = localmesh->zstart; zi <= localmesh->zend; ++zi) {
             result(bndry->x, bndry->y, zi) =
                 (9.
                      * (f(bndry->x - bndry->bx, bndry->y - bndry->by, zi)
@@ -269,7 +256,7 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
           for (int i = extrap_start; i < bndry->width; i++) {
             int xi = bndry->x + i * bndry->bx;
             int yi = bndry->y + i * bndry->by;
-            for (int zi = 0; zi < localmesh->LocalNz; ++zi) {
+            for (int zi = localmesh->zstart; zi <= localmesh->zend; ++zi) {
               result(xi, yi, zi) =
                   3.0 * result(xi - bndry->bx, yi - bndry->by, zi)
                   - 3.0 * result(xi - 2 * bndry->bx, yi - 2 * bndry->by, zi)
@@ -279,7 +266,7 @@ Field3D interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
         } else {
           // not enough grid points to extrapolate, set equal to last grid point
           for (int i = extrap_start; i < bndry->width; i++) {
-            for (int zi = 0; zi < localmesh->LocalNz; ++zi) {
+            for (int zi = localmesh->zstart; zi <= localmesh->zend; ++zi) {
               result(bndry->x + i * bndry->bx, bndry->y + i * bndry->by, zi) =
                   result(bndry->x - bndry->bx, bndry->y - bndry->by, zi);
             }
@@ -445,7 +432,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
                                  transform.get());
 
   if (mesh->periodicX) {
-    communicate(dx);
+    mesh->communicate_no_slices(dx);
   }
 
   dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y, false,
@@ -554,7 +541,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     // Compare calculated and loaded values
     output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J - Jcalc)));
 
-    communicate(J);
+    mesh->communicate_no_slices(J);
 
     // Re-evaluate Bxy using new J
     Bxy = sqrt(g_22) / J;
@@ -661,7 +648,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                           extrapolate_y, false, transform.get());
 
     if (mesh->periodicX) {
-      communicate(dx);
+      mesh->communicate_no_slices(dx);
     }
 
     getAtLocAndFillGuards(mesh, dy, "dy", suffix, location, 1.0, extrapolate_x,
@@ -944,9 +931,9 @@ const Field2D& Coordinates::zlength() const {
 
 int Coordinates::geometry(bool recalculate_staggered,
                           bool force_interpolate_from_centre) {
-  TRACE("Coordinates::geometry");
-  communicate(dx, dy, dz, g11, g22, g33, g12, g13, g23, g_11, g_22, g_33, g_12, g_13,
-              g_23, J, Bxy);
+
+  localmesh->communicate_no_slices(dx, dy, dz, g11, g22, g33, g12, g13, g23, g_11, g_22,
+                                   g_33, g_12, g_13, g_23, J, Bxy);
 
   output_progress.write("Calculating differential geometry terms\n");
 
@@ -1029,20 +1016,21 @@ int Coordinates::geometry(bool recalculate_staggered,
           + 0.5 * g33 * DDY(g_33);
 
   auto tmp = J * g12;
-  communicate(tmp);
+  localmesh->communicate_no_slices(tmp);
   G1 = (DDX(J * g11) + DDY(tmp) + DDZ(J * g13)) / J;
   tmp = J * g22;
-  communicate(tmp);
+  localmesh->communicate_no_slices(tmp);
   G2 = (DDX(J * g12) + DDY(tmp) + DDZ(J * g23)) / J;
   tmp = J * g23;
-  communicate(tmp);
+  localmesh->communicate_no_slices(tmp);
   G3 = (DDX(J * g13) + DDY(tmp) + DDZ(J * g33)) / J;
 
   // Communicate christoffel symbol terms
   output_progress.write("\tCommunicating connection terms\n");
 
-  communicate(G1_11, G1_22, G1_33, G1_12, G1_13, G1_23, G2_11, G2_22, G2_33, G2_12, G2_13,
-              G2_23, G3_11, G3_22, G3_33, G3_12, G3_13, G3_23, G1, G2, G3);
+  localmesh->communicate_no_slices(G1_11, G1_22, G1_33, G1_12, G1_13, G1_23, G2_11, G2_22,
+                                   G2_33, G2_12, G2_13, G2_23, G3_11, G3_22, G3_33, G3_12,
+                                   G3_13, G3_23, G1, G2, G3);
 
   // Set boundary guard cells of Christoffel symbol terms
   // Ideally, when location is staggered, we would set the upper/outer boundary point
@@ -1099,7 +1087,7 @@ int Coordinates::geometry(bool recalculate_staggered,
           "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
       d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
 
-      communicate(d1_dx);
+      localmesh->communicate_no_slices(d1_dx);
       d1_dx =
           interpolateAndExtrapolate(d1_dx, location, true, true, true, transform.get());
     } else {
@@ -1116,7 +1104,7 @@ int Coordinates::geometry(bool recalculate_staggered,
           "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
       d1_dy = DDY(1. / dy); // d/di(1/dy)
 
-      communicate(d1_dy);
+      localmesh->communicate_no_slices(d1_dy);
       d1_dy =
           interpolateAndExtrapolate(d1_dy, location, true, true, true, transform.get());
     } else {
@@ -1133,7 +1121,7 @@ int Coordinates::geometry(bool recalculate_staggered,
       output_warn.write(
           "\tWARNING: differencing quantity 'd2z' not found. Calculating from dz\n");
       d1_dz = bout::derivatives::index::DDZ(1. / dz);
-      communicate(d1_dz);
+      localmesh->communicate_no_slices(d1_dz);
       d1_dz =
           interpolateAndExtrapolate(d1_dz, location, true, true, true, transform.get());
     } else {
@@ -1153,7 +1141,7 @@ int Coordinates::geometry(bool recalculate_staggered,
           "\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
       d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
 
-      communicate(d1_dx);
+      localmesh->communicate_no_slices(d1_dx);
       d1_dx =
           interpolateAndExtrapolate(d1_dx, location, true, true, true, transform.get());
     } else {
@@ -1168,7 +1156,7 @@ int Coordinates::geometry(bool recalculate_staggered,
           "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
       d1_dy = DDY(1. / dy); // d/di(1/dy)
 
-      communicate(d1_dy);
+      localmesh->communicate_no_slices(d1_dy);
       d1_dy =
           interpolateAndExtrapolate(d1_dy, location, true, true, true, transform.get());
     } else {
@@ -1184,7 +1172,7 @@ int Coordinates::geometry(bool recalculate_staggered,
           "\tWARNING: differencing quantity 'd2z' not found. Calculating from dz\n");
       d1_dz = bout::derivatives::index::DDZ(1. / dz);
 
-      communicate(d1_dz);
+      localmesh->communicate_no_slices(d1_dz);
       d1_dz =
           interpolateAndExtrapolate(d1_dz, location, true, true, true, transform.get());
     } else {
@@ -1197,7 +1185,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     d1_dz = 0;
 #endif
   }
-  communicate(d1_dx, d1_dy, d1_dz);
+  localmesh->communicate_no_slices(d1_dx, d1_dy, d1_dz);
 
   if (location == CELL_CENTRE && recalculate_staggered) {
     // Re-calculate interpolated Coordinates at staggered locations
@@ -1213,7 +1201,6 @@ int Coordinates::geometry(bool recalculate_staggered,
 }
 
 int Coordinates::calcCovariant(const std::string& region) {
-  TRACE("Coordinates::calcCovariant");
 
   // Make sure metric elements are allocated
   g_11.allocate();
@@ -1276,7 +1263,6 @@ int Coordinates::calcCovariant(const std::string& region) {
 }
 
 int Coordinates::calcContravariant(const std::string& region) {
-  TRACE("Coordinates::calcContravariant");
 
   // Make sure metric elements are allocated
   g11.allocate();
@@ -1331,7 +1317,7 @@ int Coordinates::calcContravariant(const std::string& region) {
 }
 
 int Coordinates::jacobian() {
-  TRACE("Coordinates::jacobian");
+
   // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
 
   const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
@@ -1367,7 +1353,7 @@ void fixZShiftGuards(Field2D& zShift) {
                                      not localmesh->sourceHasYBoundaryGuards(), false);
 
   // make sure zShift has been communicated
-  communicate(zShift);
+  localmesh->communicate_no_slices(zShift);
 
   // Correct guard cells for discontinuity of zShift at poloidal branch cut
   for (int x = 0; x < localmesh->LocalNx; x++) {
@@ -1533,7 +1519,7 @@ Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc, const std::string& m
 Coordinates::FieldMetric Coordinates::Grad_par(const Field2D& var,
                                                [[maybe_unused]] CELL_LOC outloc,
                                                const std::string& UNUSED(method)) {
-  TRACE("Coordinates::Grad_par( Field2D )");
+
   ASSERT1(location == outloc
           || (outloc == CELL_DEFAULT && location == var.getLocation()));
 
@@ -1542,7 +1528,7 @@ Coordinates::FieldMetric Coordinates::Grad_par(const Field2D& var,
 
 Field3D Coordinates::Grad_par(const Field3D& var, CELL_LOC outloc,
                               const std::string& method) {
-  TRACE("Coordinates::Grad_par( Field3D )");
+
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   return setName(::DDY(var, outloc, method) * invSg(), "Grad_par({:s})", var.name);
@@ -1572,7 +1558,7 @@ Field3D Coordinates::Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC 
 
 Coordinates::FieldMetric Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
                                               const std::string& method) {
-  TRACE("Coordinates::Div_par( Field2D )");
+
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   // Need Bxy at location of f, which might be different from location of this
@@ -1584,7 +1570,7 @@ Coordinates::FieldMetric Coordinates::Div_par(const Field2D& f, CELL_LOC outloc,
 
 Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
                              const std::string& method) {
-  TRACE("Coordinates::Div_par( Field3D )");
+
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   // Need Bxy at location of f, which might be different from location of this
@@ -1613,7 +1599,7 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
 
 Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outloc,
                                                  const std::string& method) {
-  TRACE("Coordinates::Grad2_par2( Field2D )");
+
   ASSERT1(location == outloc || (outloc == CELL_DEFAULT && location == f.getLocation()));
 
   auto result = Grad2_par2_DDY_invSg(outloc, method) * DDY(f, outloc, method)
@@ -1624,7 +1610,7 @@ Coordinates::FieldMetric Coordinates::Grad2_par2(const Field2D& f, CELL_LOC outl
 
 Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
                                 const std::string& method) {
-  TRACE("Coordinates::Grad2_par2( Field3D )");
+
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
   }
@@ -1648,7 +1634,7 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
 
 Coordinates::FieldMetric Coordinates::Delp2(const Field2D& f, CELL_LOC outloc,
                                             bool UNUSED(useFFT)) {
-  TRACE("Coordinates::Delp2( Field2D )");
+
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   auto result = G1 * DDX(f, outloc) + g11 * D2DX2(f, outloc);
@@ -1657,7 +1643,6 @@ Coordinates::FieldMetric Coordinates::Delp2(const Field2D& f, CELL_LOC outloc,
 }
 
 Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
-  TRACE("Coordinates::Delp2( Field3D )");
 
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1723,7 +1708,6 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
 }
 
 FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
-  TRACE("Coordinates::Delp2( FieldPerp )");
 
   if (outloc == CELL_DEFAULT) {
     outloc = f.getLocation();
@@ -1800,7 +1784,7 @@ Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
 Coordinates::FieldMetric Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
                                               const std::string& dfdy_boundary_conditions,
                                               const std::string& dfdy_dy_region) {
-  TRACE("Coordinates::Laplace( Field2D )");
+
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   auto result = G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc)
@@ -1815,7 +1799,7 @@ Coordinates::FieldMetric Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
 Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
                              const std::string& dfdy_boundary_conditions,
                              const std::string& dfdy_dy_region) {
-  TRACE("Coordinates::Laplace( Field3D )");
+
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc)
@@ -1834,7 +1818,7 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
 // solver
 Field2D Coordinates::Laplace_perpXY([[maybe_unused]] const Field2D& A,
                                     [[maybe_unused]] const Field2D& f) {
-  TRACE("Coordinates::Laplace_perpXY( Field2D )");
+
 #if not(BOUT_USE_METRIC_3D)
   Field2D result;
   result.allocate();

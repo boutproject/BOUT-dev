@@ -127,7 +127,6 @@ PvodeSolver::~PvodeSolver() {
  **************************************************************************/
 
 int PvodeSolver::init() {
-  TRACE("Initialising PVODE solver");
 
   int mudq, mldq, mukeep, mlkeep;
   boole optIn;
@@ -292,7 +291,6 @@ int PvodeSolver::init() {
  **************************************************************************/
 
 int PvodeSolver::run() {
-  TRACE("PvodeSolver::run()");
 
   if (!pvode_initialised) {
     throw BoutException("PvodeSolver not initialised\n");

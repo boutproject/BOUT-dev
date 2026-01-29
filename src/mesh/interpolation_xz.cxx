@@ -25,7 +25,6 @@
 
 #include <bout/globals.hxx>
 #include <bout/interpolation_xz.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/output.hxx>
 #include <bout/unused.hxx>
 
@@ -36,7 +35,6 @@ const char* strLocation(CELL_LOC loc) { return toString(loc).c_str(); }
 
 const Field3D interpolate(const Field3D& f, const Field3D& delta_x,
                           const Field3D& delta_z) {
-  TRACE("Interpolating 3D field");
   XZLagrange4pt interpolateMethod{f.getMesh()};
   return interpolateMethod.interpolate(f, delta_x, delta_z);
 }
@@ -47,8 +45,6 @@ const Field3D interpolate(const Field2D& f, const Field3D& delta_x,
 }
 
 const Field3D interpolate(const Field2D& f, const Field3D& delta_x) {
-  TRACE("interpolate(Field2D, Field3D)");
-
   Mesh* mesh = f.getMesh();
   ASSERT1(mesh == delta_x.getMesh());
   Field3D result{emptyFrom(delta_x)};

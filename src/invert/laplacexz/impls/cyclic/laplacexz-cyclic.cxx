@@ -5,7 +5,6 @@
 
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
@@ -61,7 +60,7 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh* m, Options* options, const CELL_LOC loc)
 }
 
 void LaplaceXZcyclic::setCoefs(const Field2D& A2D, const Field2D& B2D) {
-  TRACE("LaplaceXZcyclic::setCoefs");
+
   Timer timer("invert");
 
   ASSERT1(A2D.getMesh() == localmesh);

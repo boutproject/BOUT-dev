@@ -5,17 +5,7 @@
 #include "bout/version.hxx"
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
-#include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
-#include <bout/options.hxx>
-#include <bout/utils.hxx>
-
-#include <fmt/format.h>
-
-#include <cmath>
-#include <memory>
-
 #include <bout/output.hxx>
 
 EulerSolver::EulerSolver(Options* options)
@@ -43,7 +33,6 @@ void EulerSolver::setMaxTimestep(BoutReal dt) {
 }
 
 int EulerSolver::init() {
-  TRACE("Initialising Euler solver");
 
   Solver::init();
 
@@ -73,7 +62,6 @@ int EulerSolver::init() {
 }
 
 int EulerSolver::run() {
-  TRACE("EulerSolver::run()");
 
   for (int s = 0; s < getNumberOutputSteps(); s++) {
     BoutReal target = simtime + getOutputTimestep();
