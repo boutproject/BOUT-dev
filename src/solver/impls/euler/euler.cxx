@@ -1,15 +1,15 @@
 #include "euler.hxx"
 
-#include <bout/field.hxx>
-#include <bout/version.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/field.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/output.hxx>
+#include <bout/version.hxx>
 
 #include <cstdlib>
-#include <memory>
 #include <fmt/format.h>
+#include <memory>
 
 EulerSolver::EulerSolver(Options* options)
     : Solver(options), mxstep((*options)["mxstep"]
