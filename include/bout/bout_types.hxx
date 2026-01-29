@@ -25,6 +25,8 @@
 #include <limits>
 #include <string>
 
+#include <cuda_runtime_api.h>
+
 /// Size of real numbers
 using BoutReal = double;
 

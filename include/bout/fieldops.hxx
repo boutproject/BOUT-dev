@@ -5,10 +5,16 @@
 #include "bout/array.hxx"
 #include "bout/bout_types.hxx"
 
-#include <cuda_runtime.h>
 #include <optional>
 #include <type_traits>
 #include <unordered_map>
+#include <vector>
+
+// CUDA: only pull in the *runtime API* (types + function prototypes) when CUDA is enabled.
+// Do NOT include <cuda_runtime.h> in a public header.
+#if defined(__CUDACC__) || defined(CAMP_HAVE_CUDA) || defined(BOUT_ENABLE_CUDA)
+  #include <cuda_runtime_api.h>
+#endif
 
 class Mesh;
 class Field3D;
@@ -102,6 +108,11 @@ struct Add {
 };
 };
 
+// ----------------------------------------------------------------------------
+// CUDA kernel: only visible to NVCC (or a CUDA-capable compilation frontend).
+// This prevents g++ from seeing __global__/__launch_bounds__/threadIdx/etc.
+// ----------------------------------------------------------------------------
+#if defined(__CUDACC__)
 template <typename Expr>
 __global__ void __launch_bounds__(THREADS) evaluatorExpr(BoutReal* out, const Expr expr) {
   int tid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -127,9 +138,14 @@ __global__ void __launch_bounds__(THREADS) evaluatorExpr(BoutReal* out, const Ex
   //  out[idx] = expr(idx); // single‐pass fusion
   //}
 }
+#endif
 
 inline std::unordered_map<void*, Array<int>> regionIndicesCache;
 
+// ----------------------------------------------------------------------------
+// Streams: only for CUDA compilation. Host builds get a fallback path in evaluate().
+// ----------------------------------------------------------------------------
+#if defined(__CUDACC__)
 struct StreamsRAII {
   std::vector<cudaStream_t> streams;
 
@@ -163,6 +179,7 @@ struct StreamsRAII {
   StreamsRAII& operator=(StreamsRAII&&) = delete;
 };
 inline struct StreamsRAII streams;
+#endif
 
 template <typename ResT, typename L, typename R, typename Func>
 struct BinaryExpr {
@@ -254,18 +271,18 @@ struct BinaryExpr {
   operator View() const { return View{lhs, rhs, &indices[0], indices.size(), f}; }
 
   void evaluate(BoutReal* data) const {
-#if 1
+
+#if defined(__CUDACC__)
     cudaStream_t stream = streams.get();
     int blocks = (size() + THREADS - 1) / THREADS;
     evaluatorExpr<<<blocks, THREADS, 0, stream>>>(&data[0], static_cast<View>(*this));
     cudaStreamSynchronize(stream);
     streams.put(stream);
-#endif
 
-#if 0
-    // OpenMP impl.
-    int e = size();
-    //#pragma omp parallel for
+#else
+    // Host fallback: keep header parsable/compilable by g++ in pylib builds.
+    // (Optional: add OpenMP pragma if desired.)
+    const int e = size();
     for (int i = 0; i < e; ++i) {
       int idx = regionIdx(i);
       data[idx] = operator()(idx); // single‐pass fusion
@@ -279,4 +296,4 @@ struct BinaryExpr {
   std::optional<size_t> getRegionID() const { return regionID; };
 };
 
-#endif // BOUT_FIELDSOPS_HXX
+#endif // BOUT_FIELDOPS_HXX
