@@ -31,9 +31,9 @@
 #include <bout/globals.hxx>
 
 #include <cmath>
+#include <cpptrace/cpptrace.hpp>
 #include <memory>
 #include <utility>
-#include <cpptrace/cpptrace.hpp>
 
 #include "bout/parallel_boundary_op.hxx"
 #include "bout/parallel_boundary_region.hxx"
