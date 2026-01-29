@@ -54,7 +54,7 @@ jobs:
       - name: Ignore formatting
         run: |
           msg=$(git rev-list --format=%s --max-count=1 HEAD|tail -n -1)
-          test "$msg" = "[bot] Apply format changes" && git rev-parse HEAD > .git-blame-ignore-revs || :
+          test "$msg" = "[bot] Apply format changes" && git rev-parse HEAD >> .git-blame-ignore-revs || :
 
       - name: Commit formatting
         uses: stefanzweifel/git-auto-commit-action@v7
