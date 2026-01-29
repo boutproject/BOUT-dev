@@ -342,8 +342,7 @@ def create_patch(filename, original, modified):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=textwrap.dedent(
-            """\
+        description=textwrap.dedent("""\
             Fix macro defines for BOUT++ v4 -> v5
 
             Please note that this is only slightly better than dumb text replacement. It
@@ -359,8 +358,7 @@ if __name__ == "__main__":
             still replace them in strings or comments.
 
             Please check the diff output carefully!
-            """
-        ),
+            """),
     )
 
     parser.add_argument("files", action="store", nargs="+", help="Input files")

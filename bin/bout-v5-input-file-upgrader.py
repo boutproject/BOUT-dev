@@ -271,8 +271,7 @@ def possibly_apply_patch(patch, options_file, quiet=False, force=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=textwrap.dedent(
-            """\
+        description=textwrap.dedent("""\
             Fix input files for BOUT++ v5+
 
             Please note that this will only fix input options in sections with
@@ -300,8 +299,7 @@ if __name__ == "__main__":
 
             Files that change in this way will have the "canonicalisation" patch
             presented first. If you choose not to apply this patch, the "upgrade
-            fixer" patch will still include it."""
-        ),
+            fixer" patch will still include it."""),
     )
 
     parser.add_argument("files", action="store", nargs="+", help="Input files")
