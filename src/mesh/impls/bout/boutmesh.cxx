@@ -245,7 +245,11 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
           _("Number of processors ({:d}) not divisible by NPs in x direction ({:d})\n"),
           NPES, NXPE);
     }
-
+    if (nx % NXPE != 0) {
+      throw BoutException(
+          _("Number of x points ({:d}) not divisible by NPs in x direction ({:d})\n"), nx,
+          NXPE);
+    }
     NYPE = NPES / NXPE;
   } else {
     // NXPE not set, but NYPE is
@@ -258,7 +262,11 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
           _("Number of processors ({:d}) not divisible by NPs in y direction ({:d})\n"),
           NPES, NYPE);
     }
-
+    if (ny % NYPE != 0) {
+      throw BoutException(
+          _("Number of y points ({:d}) not divisible by NPs in y direction ({:d})\n"), nx,
+          NXPE);
+    }
     NXPE = NPES / NYPE;
   }
 
