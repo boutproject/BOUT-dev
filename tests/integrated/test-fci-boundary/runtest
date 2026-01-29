@@ -8,7 +8,6 @@ from boutdata.collect import collect
 
 import numpy as np
 
-
 nprocs = [1]
 mthread = 2
 
