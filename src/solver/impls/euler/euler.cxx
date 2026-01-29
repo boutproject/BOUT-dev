@@ -1,5 +1,7 @@
-
 #include "euler.hxx"
+
+#include <cstdlib>
+#include <memory>
 
 #include "bout/field.hxx"
 #include "bout/version.hxx"
