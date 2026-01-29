@@ -23,6 +23,7 @@
  *
  **************************************************************************/
 
+#include "parallel/fci_comm.hxx"
 #include <bout/globals.hxx>
 #include <bout/interpolation_xz.hxx>
 #include <bout/output.hxx>
@@ -86,6 +87,8 @@ namespace {
 RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{"hermitespline"};
 RegisterXZInterpolation<XZMonotonicHermiteSpline> registerinterpmonotonichermitespline{
     "monotonichermitespline"};
+RegisterXZInterpolation<XZMonotonicHermiteSplineLegacy>
+    registerinterpmonotonichermitesplinelegacy{"monotonichermitesplinelegacy"};
 RegisterXZInterpolation<XZLagrange4pt> registerinterplagrange4pt{"lagrange4pt"};
 RegisterXZInterpolation<XZBilinear> registerinterpbilinear{"bilinear"};
 } // namespace
