@@ -289,8 +289,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def,
       ASSERT1(yd >= 0);
     } else if (grid_yguards == 0) {
       // excluding ghostpoints
-      ASSERT1(size[1] == m->GlobalNy - m->numberOfYBoundaries() * 2 * myg ||
-              size[1] == 2 || size[1] == 4); //TODO: In case of reading ghost points/weights.
+      ASSERT1(size[1] == m->GlobalNy - m->numberOfYBoundaries() * 2 * myg);
       ny_to_read = m->LocalNy - 2 * myg;
       yd = myg;
     } else {

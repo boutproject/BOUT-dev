@@ -169,7 +169,7 @@ int Mesh::get(Array<BoutReal>& rval, const std::string& name, BoutReal def) {
 
   if (source == nullptr) {
     warn_default_used(def, name);
-    rval[0] = def; //TODO fix this?
+    rval = Array<BoutReal>(0);
     return true;
   }
 
@@ -183,7 +183,7 @@ int Mesh::get(Matrix<BoutReal>& rval, const std::string& name, BoutReal def) {
 
   if (source == nullptr) {
     warn_default_used(def, name);
-    rval(0,0) = def; //TODO: Fix this?
+    rval = Matrix<BoutReal>();
     return true;
   }
 
@@ -637,6 +637,17 @@ bool Mesh::hasRegionPerp(const std::string& region_name) const {
   return regionMapPerp.find(region_name) != std::end(regionMapPerp);
 }
 
+void Mesh::upsertRegion3D(const std::string& region_name, const Region<>& new_region) {
+  //Update if existing region, otherwise just insert.
+  if (this->hasRegion3D(region_name)) {
+    const auto region_id = regionMap3D[region_name];
+    region3D[region_id] = new_region;
+    output_warn.write("WARNING: Updating region 3D, " + region_name);
+  } else {
+    this->addRegion3D(region_name, new_region);
+  }
+}
+
 void Mesh::addRegion3D(const std::string& region_name, const Region<>& region) {
   if (regionMap3D.count(region_name)) {
     throw BoutException(_("Trying to add an already existing region {:s} to regionMap3D"),
@@ -659,6 +670,16 @@ void Mesh::addRegion3D(const std::string& region_name, const Region<>& region) {
 
   output_verbose.write(_("Registered region 3D {:s}"), region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
+}
+
+void Mesh::upsertRegion2D(const std::string& region_name, const Region<Ind2D>& new_region) {
+  //Update if existing region, otherwise just insert.
+  if (this->hasRegion2D(region_name)) {
+    const auto region_id = regionMap2D[region_name];
+    output_warn.write("WARNING: Updating region 2D, " + region_name);
+  } else {
+    this->addRegion2D(region_name, new_region);
+  }
 }
 
 void Mesh::addRegion2D(const std::string& region_name, const Region<Ind2D>& region) {
