@@ -16,7 +16,7 @@ Context::Context(int ix, int iy, int iz, CELL_LOC loc, Mesh* msh, BoutReal t)
                                        : TWOPI * msh->GlobalY(iy);
 
   parameters["z"] = (loc == CELL_ZLOW)
-                        ? (iz - 0.5) / static_cast<BoutReal>(msh->LocalNz) // * TWOPI;
+                        ? (iz - 0.5) / static_cast<BoutReal>(msh->LocalNz) // * TWOPI; //IMM_BNDRY_TODO: How to handle this?
                         : iz / static_cast<BoutReal>(msh->LocalNz); // * TWOPI;
 
   parameters["t"] = t;
