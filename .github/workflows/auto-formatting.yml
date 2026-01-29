@@ -1,0 +1,62 @@
+name: format-command
+
+on:
+  pull_request:
+
+jobs:
+  clang-format:
+    # Release candidate branches tend to have big PRs which causes all sorts of problems
+    if: ${{ !endsWith(github.head_ref, '-rc') }}
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the pull request branch, also include all history
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      # This also installs git-clang-format
+      - name: Install formatters
+        run: |
+          sudo apt install clang-format python3-pip python3-setuptools python3-wheel
+          pip3 install ruff cmake-format
+
+      - name: Version
+        run: |
+          python3 --version
+          $HOME/.local/bin/ruff --version
+          clang-format --version
+          $HOME/.local/bin/cmake-format --version
+
+      - name: Run clang-format
+        id: format
+        run:
+          while ! git clang-format origin/${{ github.base_ref }} ; do git add . ; done
+
+      - name: Run ruff
+        run: |
+          pwd
+          ls
+          $HOME/.local/bin/ruff format .
+          
+      - name: Run cmake-format
+        run: |
+          pwd
+          ls
+          $HOME/.local/bin/cmake-format $(find -name CMakeLists.txt) cmake/*.cmake
+
+      - name: Commit formatting
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "[bot] Apply format changes"
+          skip_push: true
+
+      - name: Ignore formatting
+        run: |
+          msg=$(git rev-list --format=%s --max-count=1 HEAD|tail -n -1)
+          test "$msg" == "Apply format changes" && git rev-parse HEAD > .git-blame-ignore-revs
+
+      - name: Commit formatting
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "[bot] Add last format changes commit to ignore file"
