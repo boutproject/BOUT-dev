@@ -3232,9 +3232,11 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
 BoutReal BoutMesh::GlobalZ(int jz) const {
   if (symmetricGlobalZ) {
     // With this definition the boundary sits dz/2 away form the first/last inner points
-    return (0.5 + getGlobalZIndex(jz) - (nz - MZ) * 0.5) / static_cast<BoutReal>(MZ);
+    return (0.5 + getGlobalZIndexNoBoundaries(jz) - (nz - MZ) * 0.5)
+           / static_cast<BoutReal>(MZ);
   }
-  return static_cast<BoutReal>(getGlobalZIndex(jz)) / static_cast<BoutReal>(MZ);
+  return static_cast<BoutReal>(getGlobalZIndexNoBoundaries(jz))
+         / static_cast<BoutReal>(MZ);
 }
 
 BoutReal BoutMesh::GlobalZ(BoutReal jz) const {
