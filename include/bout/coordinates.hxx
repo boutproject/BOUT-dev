@@ -112,7 +112,7 @@ public:
 
 private:
   mutable std::optional<FieldMetric> _g_22_ylow, _g_22_yhigh;
-  mutable std::optional<FieldMetric> _Jxz_ylow, _Jxz_yhigh, _Jxz_centre;
+  mutable std::optional<FieldMetric> _jxz_ylow, _jxz_yhigh, _jxz_centre;
   void _compute_Jxz_cell_faces() const;
 
 public:

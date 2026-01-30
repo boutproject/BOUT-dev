@@ -2094,31 +2094,32 @@ const Coordinates::FieldMetric& Coordinates::g_22_yhigh() const {
 }
 
 const Coordinates::FieldMetric& Coordinates::Jxz_ylow() const {
-  if (!_Jxz_ylow.has_value()) {
+  if (!_jxz_ylow.has_value()) {
     _compute_Jxz_cell_faces();
   }
-  return *_Jxz_ylow;
+  return *_jxz_ylow;
 }
 const Coordinates::FieldMetric& Coordinates::Jxz_yhigh() const {
-  if (!_Jxz_yhigh.has_value()) {
+  if (!_jxz_yhigh.has_value()) {
     _compute_Jxz_cell_faces();
   }
-  return *_Jxz_yhigh;
+  return *_jxz_yhigh;
 }
 const Coordinates::FieldMetric& Coordinates::Jxz() const {
-  if (!_Jxz_centre.has_value()) {
+  if (!_jxz_centre.has_value()) {
     _compute_Jxz_cell_faces();
   }
-  return *_Jxz_centre;
+  return *_jxz_centre;
+}
 }
 
 void Coordinates::_compute_Jxz_cell_faces() const {
-  _Jxz_centre.emplace(sqrt(g_11 * g_33 - SQ(g_13)));
-  _Jxz_ylow.emplace(emptyFrom(_Jxz_centre.value()));
-  //_Jxz_ylow->setLocation(CELL_YLOW);
-  _Jxz_yhigh.emplace(emptyFrom(_Jxz_centre.value()));
-  //_Jxz_yhigh->setLocation(CELL_YHIGH);
-  auto* mesh = _Jxz_centre->getMesh();
+  _jxz_centre.emplace(sqrt(g_11 * g_33 - SQ(g_13)));
+  _jxz_ylow.emplace(emptyFrom(_jxz_centre.value()));
+  //_jxz_ylow->setLocation(CELL_YLOW);
+  _jxz_yhigh.emplace(emptyFrom(_jxz_centre.value()));
+  //_jxz_yhigh->setLocation(CELL_YHIGH);
+  auto* mesh = _jxz_centre->getMesh();
   if (Bxy.isFci()) {
     Coordinates::FieldMetric By_c;
     Coordinates::FieldMetric By_h;
@@ -2133,14 +2134,14 @@ void Coordinates::_compute_Jxz_cell_faces() const {
       throw BoutException("The grid file does not contain `By_cell_yhigh`.");
     }
     BOUT_FOR(i, By_c.getRegion("RGN_NOY")) {
-      (*_Jxz_ylow)[i] = By_c[i] / By_l[i] * (*_Jxz_centre)[i];
-      (*_Jxz_yhigh)[i] = By_c[i] / By_h[i] * (*_Jxz_centre)[i];
+      (*_jxz_ylow)[i] = By_c[i] / By_l[i] * (*_jxz_centre)[i];
+      (*_jxz_yhigh)[i] = By_c[i] / By_h[i] * (*_jxz_centre)[i];
     }
   } else {
     ASSERT0(mesh->ystart > 0);
-    BOUT_FOR(i, _Jxz_centre->getRegion("RGN_NOY")) {
-      (*_Jxz_ylow)[i] = 0.5 * ((*_Jxz_centre)[i] + (*_Jxz_centre)[i.ym()]);
-      (*_Jxz_yhigh)[i] = 0.5 * ((*_Jxz_centre)[i] + (*_Jxz_centre)[i.yp()]);
+    BOUT_FOR(i, _jxz_centre->getRegion("RGN_NOY")) {
+      (*_jxz_ylow)[i] = 0.5 * ((*_jxz_centre)[i] + (*_jxz_centre)[i.ym()]);
+      (*_jxz_yhigh)[i] = 0.5 * ((*_jxz_centre)[i] + (*_jxz_centre)[i.yp()]);
     }
   }
 }
