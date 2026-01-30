@@ -105,10 +105,15 @@ public:
   /// get g_22 at the cell faces;
   const FieldMetric& g_22_ylow() const;
   const FieldMetric& g_22_yhigh() const;
+  FieldMetric& g_22_ylow();
+  FieldMetric& g_22_yhigh();
   /// get Jxz at the cell faces or cell centre
   const FieldMetric& Jxz_ylow() const;
   const FieldMetric& Jxz_yhigh() const;
   const FieldMetric& Jxz() const;
+  FieldMetric& Jxz_ylow();
+  FieldMetric& Jxz_yhigh();
+  FieldMetric& Jxz();
 
 private:
   mutable std::optional<FieldMetric> _g_22_ylow, _g_22_yhigh;
