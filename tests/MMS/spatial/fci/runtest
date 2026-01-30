@@ -16,7 +16,7 @@ import boutconfig as conf
 import zoidberg as zb
 from boutdata.collect import collect
 from boututils.run_wrapper import build_and_log, launch_safe
-from numpy import arange, array, linspace, log, polyfit
+from numpy import array, linspace, log, polyfit
 
 # Global parameters
 DIRECTORY = "data"
@@ -67,9 +67,12 @@ def assert_convergence(error, dx, name, expected) -> bool:
     return success
 
 
-def run_fci_operators(
-    nslice: int, nz: int, yperiodic: bool, name: str
-) -> dict[str, float]:
+def make_grids():
+    for nz in NLIST:
+        make_grid(nz)
+
+
+def make_grid(nz: int):
     # Define the magnetic field using new poloidal gridding method
     # Note that the Bz and Bzprime parameters here must be the same as in mms.py
     field = zb.field.Slab(Bz=0.05, Bzprime=0.1)
@@ -78,15 +81,11 @@ def run_fci_operators(
     # Set the ylength and y locations
     ylength = 10.0
 
-    if yperiodic:
-        ycoords = linspace(0.0, ylength, nz, endpoint=False)
-    else:
-        # Doesn't include the end points
-        ycoords = (arange(nz) + 0.5) * ylength / float(nz)
+    ycoords = linspace(0.0, ylength, nz, endpoint=False)
 
     # Create the grid
-    grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=yperiodic)
-    maps = zb.make_maps(grid, field, nslice=nslice, quiet=True, MXG=1)
+    grid = zb.grid.Grid(poloidal_grid, ycoords, ylength, yperiodic=True)
+    maps = zb.make_maps(grid, field, nslice=1, quiet=True, MXG=1)
     zb.write_maps(
         grid,
         field,
@@ -94,10 +93,14 @@ def run_fci_operators(
         new_names=False,
         metric2d=conf.isMetric2D(),
         quiet=True,
+        gridfile=f"mesh.{nz}.fci.nc",
     )
 
+
+def run_fci_operators(nslice: int, nz: int, name: str) -> dict[str, float]:
+
     # Command to run
-    args = f"MZ={nz} MYG={nslice} mesh:paralleltransform:y_periodic={yperiodic} {name}"
+    args = f"MYG={nslice} {name} mesh:file=mesh.{nz}.fci.nc"
     cmd = f"./fci_mms {args}"
     print(f"Running command: {cmd}", end="")
 
@@ -140,14 +143,13 @@ def check_fci_operators(name: str, case: dict) -> bool:
     failures = []
 
     nslice = case["nslice"]
-    yperiodic = case["yperiodic"]
     order = case["order"]
     args = case["args"]
 
     all_errors = []
 
     for n in NLIST:
-        errors = run_fci_operators(nslice, n, yperiodic, args)
+        errors = run_fci_operators(nslice, n, args)
         all_errors.append(errors)
 
         for operator in OPERATORS:
@@ -224,22 +226,21 @@ if __name__ == "__main__":
         "nslice=1 hermitespline": {
             "nslice": 1,
             "order": 2,
-            "yperiodic": True,
             "args": "mesh:ddy:first=C2 mesh:paralleltransform:xzinterpolation:type=hermitespline",
         },
         "nslice=1 lagrange4pt": {
             "nslice": 1,
             "order": 2,
-            "yperiodic": True,
             "args": "mesh:ddy:first=C2 mesh:paralleltransform:xzinterpolation:type=lagrange4pt",
         },
         "nslice=1 monotonichermitespline": {
             "nslice": 1,
             "order": 2,
-            "yperiodic": True,
             "args": "mesh:ddy:first=C2 mesh:paralleltransform:xzinterpolation:type=monotonichermitespline",
         },
     }
+
+    make_grids()
 
     for name, case in cases.items():
         error2, failures_ = check_fci_operators(name, case)
