@@ -2093,6 +2093,16 @@ const Coordinates::FieldMetric& Coordinates::g_22_yhigh() const {
   return g_22_yhigh();
 }
 
+Coordinates::FieldMetric& Coordinates::g_22_yhigh() {
+  return const_cast<Coordinates::FieldMetric&>(
+      const_cast<const Coordinates*>(this)->g_22_yhigh());
+}
+
+Coordinates::FieldMetric& Coordinates::g_22_ylow() {
+  return const_cast<Coordinates::FieldMetric&>(
+      const_cast<const Coordinates*>(this)->g_22_ylow());
+}
+
 const Coordinates::FieldMetric& Coordinates::Jxz_ylow() const {
   if (!_jxz_ylow.has_value()) {
     _compute_Jxz_cell_faces();
@@ -2111,6 +2121,24 @@ const Coordinates::FieldMetric& Coordinates::Jxz() const {
   }
   return *_jxz_centre;
 }
+
+Coordinates::FieldMetric& Coordinates::Jxz_ylow() {
+  if (!_jxz_ylow.has_value()) {
+    _compute_Jxz_cell_faces();
+  }
+  return *_jxz_ylow;
+}
+Coordinates::FieldMetric& Coordinates::Jxz_yhigh() {
+  if (!_jxz_yhigh.has_value()) {
+    _compute_Jxz_cell_faces();
+  }
+  return *_jxz_yhigh;
+}
+Coordinates::FieldMetric& Coordinates::Jxz() {
+  if (!_jxz_centre.has_value()) {
+    _compute_Jxz_cell_faces();
+  }
+  return *_jxz_centre;
 }
 
 void Coordinates::_compute_Jxz_cell_faces() const {
