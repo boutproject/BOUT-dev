@@ -23,8 +23,8 @@ FFTTransform::FFTTransform(const Mesh& mesh, int nmode, int xs, int xe, int ys, 
 
 auto FFTTransform::forward(const Laplacian& laplacian, const Field3D& rhs,
                            const Field3D& x0, const Field2D& Acoef, const Field2D& C1coef,
-                           const Field2D& C2coef, const Field2D& Dcoef) const
-    -> Matrices {
+                           const Field2D& C2coef,
+                           const Field2D& Dcoef) const -> Matrices {
 
   Matrices result(nsys, nx);
 
@@ -74,8 +74,8 @@ auto FFTTransform::forward(const Laplacian& laplacian, const Field3D& rhs,
   return result;
 }
 
-auto FFTTransform::backward(const Field3D& rhs, const Matrix<dcomplex>& xcmplx3D) const
-    -> Field3D {
+auto FFTTransform::backward(const Field3D& rhs,
+                            const Matrix<dcomplex>& xcmplx3D) const -> Field3D {
   Field3D x{emptyFrom(rhs)};
 
   // FFT back to real space
@@ -157,8 +157,8 @@ auto FFTTransform::forward(const Laplacian& laplacian, const FieldPerp& rhs,
   return result;
 }
 
-auto FFTTransform::backward(const FieldPerp& rhs, const Matrix<dcomplex>& xcmplx) const
-    -> FieldPerp {
+auto FFTTransform::backward(const FieldPerp& rhs,
+                            const Matrix<dcomplex>& xcmplx) const -> FieldPerp {
   FieldPerp x{emptyFrom(rhs)};
 
   // FFT back to real space
@@ -204,8 +204,8 @@ DSTTransform::DSTTransform(const Mesh& mesh, int nmode, int xs, int xe, int ys, 
 
 auto DSTTransform::forward(const Laplacian& laplacian, const Field3D& rhs,
                            const Field3D& x0, const Field2D& Acoef, const Field2D& C1coef,
-                           const Field2D& C2coef, const Field2D& Dcoef) const
-    -> Matrices {
+                           const Field2D& C2coef,
+                           const Field2D& Dcoef) const -> Matrices {
 
   Matrices result(nsys, nx);
 
@@ -255,8 +255,8 @@ auto DSTTransform::forward(const Laplacian& laplacian, const Field3D& rhs,
   return result;
 }
 
-auto DSTTransform::backward(const Field3D& rhs, const Matrix<dcomplex>& xcmplx3D) const
-    -> Field3D {
+auto DSTTransform::backward(const Field3D& rhs,
+                            const Matrix<dcomplex>& xcmplx3D) const -> Field3D {
   Field3D x{emptyFrom(rhs)};
 
   // DST back to real space
@@ -341,8 +341,8 @@ auto DSTTransform::forward(const Laplacian& laplacian, const FieldPerp& rhs,
   return result;
 }
 
-auto DSTTransform::backward(const FieldPerp& rhs, const Matrix<dcomplex>& xcmplx) const
-    -> FieldPerp {
+auto DSTTransform::backward(const FieldPerp& rhs,
+                            const Matrix<dcomplex>& xcmplx) const -> FieldPerp {
   FieldPerp x{emptyFrom(rhs)};
 
   // DST back to real space
