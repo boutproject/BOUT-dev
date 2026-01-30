@@ -75,10 +75,15 @@ private:
   pvode::machEnvType machEnv{nullptr};
   void* cvode_mem{nullptr};
 
-  BoutReal abstol, reltol; // addresses passed in init must be preserved
+  BoutReal abstol, reltol;
+  // addresses passed in init must be preserved
   pvode::PVBBDData pdata{nullptr};
 
-  bool pvode_initialised = false;
+  /// is pvode already initialised?
+  bool pvode_initialised{false};
+
+  /// Add debugging data if solver fails
+  bool debug_on_failure{false};
 };
 
 #endif // BOUT_PVODE_SOLVER_H
