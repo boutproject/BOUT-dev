@@ -1,9 +1,14 @@
 #include "bout/build_defines.hxx"
 
 #include "gtest/gtest.h"
+#include <type_traits>
 
+#include "../../src/mesh/parallel/shiftedmetricinterp.hxx"
 #include "test_extras.hxx"
 #include "bout/fft.hxx"
+#include "bout/options_io.hxx"
+#include "bout/output.hxx"
+#include "bout/paralleltransform.hxx"
 
 #if BOUT_HAS_FFTW
 #include "fake_mesh.hxx"
@@ -11,6 +16,7 @@
 // The unit tests use the global mesh
 using namespace bout::globals;
 
+template <class Transform>
 class ShiftedMetricTest : public ::testing::Test {
 public:
   ShiftedMetricTest() {
@@ -41,7 +47,7 @@ public:
     // No call to Coordinates::geometry() needed here
 
     auto coords = mesh->getCoordinates();
-    coords->setParallelTransform(bout::utils::make_unique<ShiftedMetric>(
+    coords->setParallelTransform(bout::utils::make_unique<Transform>(
         *mesh, CELL_CENTRE, zShift, coords->zlength()(0, 0)));
 
     Field3D input_temp{mesh};
@@ -90,7 +96,10 @@ public:
   Field3D input;
 };
 
-TEST_F(ShiftedMetricTest, ToFieldAligned) {
+using ShiftedMetricTypes = ::testing::Types<ShiftedMetric, ShiftedMetricInterp>;
+TYPED_TEST_SUITE(ShiftedMetricTest, ShiftedMetricTypes);
+
+TYPED_TEST(ShiftedMetricTest, ToFieldAligned) {
   Field3D expected{mesh};
   expected.setDirectionY(YDirectionType::Aligned);
 
@@ -118,18 +127,18 @@ TEST_F(ShiftedMetricTest, ToFieldAligned) {
                         {4., 5., 1., 3., 2.},
                         {2., 4., 3., 5., 1.}}});
 
-  Field3D result = toFieldAligned(input);
+  Field3D result = toFieldAligned(this->input);
 
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(result), input));
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(result), this->input));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
-  EXPECT_FALSE(areFieldsCompatible(result, input));
+  EXPECT_FALSE(areFieldsCompatible(result, this->input));
 }
 
-TEST_F(ShiftedMetricTest, FromFieldAligned) {
+TYPED_TEST(ShiftedMetricTest, FromFieldAligned) {
   // reset input.yDirectionType so that fromFieldAligned is not a null
   // operation
-  input.setDirectionY(YDirectionType::Aligned);
+  this->input.setDirectionY(YDirectionType::Aligned);
 
   Field3D expected{mesh, CELL_CENTRE};
   expected.setDirectionY(YDirectionType::Standard);
@@ -158,28 +167,33 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
                         {2., 4., 5., 1., 3.},
                         {5., 1., 2., 4., 3.}}});
 
-  Field3D result = fromFieldAligned(input);
+  Field3D result = fromFieldAligned(this->input);
+
 
   // Loosen tolerance a bit due to FFTs
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(toFieldAligned(result), input, "RGN_ALL", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(result), this->input, "RGN_ALL", FFTTolerance));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
-  EXPECT_FALSE(areFieldsCompatible(result, input));
+  EXPECT_FALSE(areFieldsCompatible(result, this->input));
 }
 
-TEST_F(ShiftedMetricTest, FromToFieldAligned) {
-  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(toFieldAligned(input)), input, "RGN_ALL",
+TYPED_TEST(ShiftedMetricTest, FromToFieldAligned) {
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(toFieldAligned(this->input)), this->input, "RGN_ALL",
                            FFTTolerance));
 }
 
-TEST_F(ShiftedMetricTest, ToFromFieldAligned) {
-  input.setDirectionY(YDirectionType::Aligned);
+TYPED_TEST(ShiftedMetricTest, ToFromFieldAligned) {
+  this->input.setDirectionY(YDirectionType::Aligned);
 
-  EXPECT_TRUE(IsFieldEqual(toFieldAligned(fromFieldAligned(input)), input, "RGN_ALL",
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(fromFieldAligned(this->input)), this->input, "RGN_ALL",
                            FFTTolerance));
 }
 
-TEST_F(ShiftedMetricTest, ToFieldAlignedFieldPerp) {
+TYPED_TEST(ShiftedMetricTest, ToFieldAlignedFieldPerp) {
+  if constexpr (std::is_same_v<TypeParam, ShiftedMetricInterp>) {
+    GTEST_SKIP_("Not implemented yet");
+  }
+
   Field3D expected{mesh};
   expected.setDirectionY(YDirectionType::Aligned);
 
@@ -207,22 +221,26 @@ TEST_F(ShiftedMetricTest, ToFieldAlignedFieldPerp) {
                         {4., 5., 1., 3., 2.},
                         {2., 4., 3., 5., 1.}}});
 
-  FieldPerp result = toFieldAligned(sliceXZ(input, 3), "RGN_NOX");
+  FieldPerp result = toFieldAligned(sliceXZ(this->input, 3), "RGN_NOX");
 
   // Note that the region argument does not do anything for FieldPerp, as
   // FieldPerp does not have a getRegion2D() method. Values are never set in
   // the x-guard or x-boundary cells
   EXPECT_TRUE(IsFieldEqual(result, sliceXZ(expected, 3), "RGN_NOBNDRY", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(result, "RGN_NOX"), sliceXZ(input, 3),
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(result, "RGN_NOX"), sliceXZ(this->input, 3),
                            "RGN_NOBNDRY", FFTTolerance));
   EXPECT_TRUE(areFieldsCompatible(result, sliceXZ(expected, 3)));
-  EXPECT_FALSE(areFieldsCompatible(result, sliceXZ(input, 3)));
+  EXPECT_FALSE(areFieldsCompatible(result, sliceXZ(this->input, 3)));
 }
 
-TEST_F(ShiftedMetricTest, FromFieldAlignedFieldPerp) {
-  // reset input.yDirectionType so that fromFieldAligned is not a null
+TYPED_TEST(ShiftedMetricTest, FromFieldAlignedFieldPerp) {
+  if constexpr (std::is_same_v<TypeParam, ShiftedMetricInterp>) {
+    GTEST_SKIP_("Not implemented yet");
+  }
+
+  // reset this->input.yDirectionType so that fromFieldAligned is not a null
   // operation
-  input.setDirectionY(YDirectionType::Aligned);
+  this->input.setDirectionY(YDirectionType::Aligned);
 
   Field3D expected{mesh, CELL_CENTRE};
   expected.setDirectionY(YDirectionType::Standard);
@@ -251,43 +269,52 @@ TEST_F(ShiftedMetricTest, FromFieldAlignedFieldPerp) {
                         {2., 4., 5., 1., 3.},
                         {5., 1., 2., 4., 3.}}});
 
-  FieldPerp result = fromFieldAligned(sliceXZ(input, 4), "RGN_NOX");
+  FieldPerp result = fromFieldAligned(sliceXZ(this->input, 4), "RGN_NOX");
 
   // Note that the region argument does not do anything for FieldPerp, as
   // FieldPerp does not have a getRegion2D() method. Values are never set in
   // the x-guard or x-boundary cells
   EXPECT_TRUE(IsFieldEqual(result, sliceXZ(expected, 4), "RGN_NOBNDRY", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(toFieldAligned(result, "RGN_NOX"), sliceXZ(input, 4),
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(result, "RGN_NOX"), sliceXZ(this->input, 4),
                            "RGN_NOBNDRY", FFTTolerance));
   EXPECT_TRUE(areFieldsCompatible(result, sliceXZ(expected, 4)));
-  EXPECT_FALSE(areFieldsCompatible(result, sliceXZ(input, 4)));
+  EXPECT_FALSE(areFieldsCompatible(result, sliceXZ(this->input, 4)));
 }
 
-TEST_F(ShiftedMetricTest, FromToFieldAlignedFieldPerp) {
+TYPED_TEST(ShiftedMetricTest, FromToFieldAlignedFieldPerp) {
+  if constexpr (std::is_same_v<TypeParam, ShiftedMetricInterp>) {
+    GTEST_SKIP_("Not implemented yet");
+  }
+
   // Note that the region argument does not do anything for FieldPerp, as
   // FieldPerp does not have a getRegion2D() method. Values are never set in
   // the x-guard or x-boundary cells
   EXPECT_TRUE(IsFieldEqual(
-      fromFieldAligned(toFieldAligned(sliceXZ(input, 2), "RGN_NOX"), "RGN_NOX"),
-      sliceXZ(input, 2), "RGN_NOBNDRY", FFTTolerance));
+      fromFieldAligned(toFieldAligned(sliceXZ(this->input, 2), "RGN_NOX"), "RGN_NOX"),
+      sliceXZ(this->input, 2), "RGN_NOBNDRY", FFTTolerance));
 }
 
-TEST_F(ShiftedMetricTest, ToFromFieldAlignedFieldPerp) {
+TYPED_TEST(ShiftedMetricTest, ToFromFieldAlignedFieldPerp) {
+  if constexpr (std::is_same_v<TypeParam, ShiftedMetricInterp>) {
+    GTEST_SKIP_("Not implemented yet");
+  }
+
   // Note that the region argument does not do anything for FieldPerp, as
   // FieldPerp does not have a getRegion2D() method. Values are never set in
   // the x-guard or x-boundary cells
-  input.setDirectionY(YDirectionType::Aligned);
+  this->input.setDirectionY(YDirectionType::Aligned);
 
   EXPECT_TRUE(IsFieldEqual(
-      toFieldAligned(fromFieldAligned(sliceXZ(input, 6), "RGN_NOX"), "RGN_NOX"),
-      sliceXZ(input, 6), "RGN_NOBNDRY", FFTTolerance));
+      toFieldAligned(fromFieldAligned(sliceXZ(this->input, 6), "RGN_NOX"), "RGN_NOX"),
+      sliceXZ(this->input, 6), "RGN_NOBNDRY", FFTTolerance));
 }
 
-TEST_F(ShiftedMetricTest, CalcParallelSlices) {
+TYPED_TEST(ShiftedMetricTest, CalcParallelSlices) {
+  WithQuietOutput quiet_info{output_info};
+
   // We don't shift in the guard cells, and the parallel slices are
   // stored offset in y, therefore we need to make new regions that we
   // can compare the expected and actual outputs over
-  output_info.disable();
   mesh->addRegion3D("RGN_YUP",
                     Region<Ind3D>(0, mesh->LocalNx - 1, mesh->ystart + 1, mesh->yend + 1,
                                   0, mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
@@ -304,7 +331,7 @@ TEST_F(ShiftedMetricTest, CalcParallelSlices) {
   output_info.enable();
 
   // Actual interesting bit here!
-  input.getCoordinates()->getParallelTransform().calcParallelSlices(input);
+  this->input.getCoordinates()->getParallelTransform().calcParallelSlices(this->input);
   // Expected output values
 
   Field3D expected_up_1{mesh};
@@ -386,9 +413,9 @@ TEST_F(ShiftedMetricTest, CalcParallelSlices) {
                                {0., 0., 0., 0., 0.},
                                {0., 0., 0., 0., 0.}}});
 
-  Field3D expected_down2{mesh};
+  Field3D expected_down_2{mesh};
 
-  fillField(expected_down2, {{{4., 5., 1., 2., 3.},
+  fillField(expected_down_2, {{{4., 5., 1., 2., 3.},
                               {4., 5., 2., 1., 3.},
                               {4., 5., 1., 3., 2.},
                               {0., 0., 0., 0., 0.},
@@ -412,9 +439,9 @@ TEST_F(ShiftedMetricTest, CalcParallelSlices) {
                               {0., 0., 0., 0., 0.},
                               {0., 0., 0., 0., 0.}}});
 
-  EXPECT_TRUE(IsFieldEqual(input.ynext(1), expected_up_1, "RGN_YUP", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(input.ynext(2), expected_up_2, "RGN_YUP2", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(input.ynext(-1), expected_down_1, "RGN_YDOWN", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(input.ynext(-2), expected_down2, "RGN_YDOWN2", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(this->input.ynext(1), expected_up_1, "RGN_YUP", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(this->input.ynext(2), expected_up_2, "RGN_YUP2", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(this->input.ynext(-1), expected_down_1, "RGN_YDOWN", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(this->input.ynext(-2), expected_down_2, "RGN_YDOWN2", FFTTolerance));
 }
 #endif
