@@ -66,15 +66,13 @@ public:
     xend = nx - 2;
     ystart = 1;
     yend = ny - 2;
-    zstart = 0;
+    zstart = 0; // no guards
     zend = nz - 1;
 
     StaggerGrids = false;
 
     // Unused variables
     periodicX = false;
-    NXPE = 1;
-    PE_XIND = 0;
     IncIntShear = false;
     maxregionblocksize = MAXREGIONBLOCKSIZE;
 
@@ -109,10 +107,12 @@ public:
     return nullptr;
   }
   int wait(comm_handle UNUSED(handle)) override { return 0; }
-  int getNXPE() override { return 1; }
-  int getNYPE() override { return 1; }
-  int getXProcIndex() override { return 1; }
-  int getYProcIndex() override { return 1; }
+  int getNXPE() const override { return 1; }
+  int getNYPE() const override { return 1; }
+  int getNZPE() const override { return 1; }
+  int getXProcIndex() const override { return 1; }
+  int getYProcIndex() const override { return 1; }
+  int getZProcIndex() const override { return 1; }
   bool firstX() const override { return true; }
   bool lastX() const override { return true; }
   int sendXOut(BoutReal* UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) override {
@@ -170,20 +170,22 @@ public:
   }
   BoutReal GlobalX(int jx) const override { return jx; }
   BoutReal GlobalY(int jy) const override { return jy; }
+  BoutReal GlobalZ(int jz) const override { return jz; }
   BoutReal GlobalX(BoutReal jx) const override { return jx; }
   BoutReal GlobalY(BoutReal jy) const override { return jy; }
+  BoutReal GlobalZ(BoutReal jz) const override { return jz; }
   int getGlobalXIndex(int) const override { return 0; }
   int getGlobalXIndexNoBoundaries(int) const override { return 0; }
   int getGlobalYIndex(int y) const override { return y; }
   int getGlobalYIndexNoBoundaries(int y) const override { return y; }
-  int getGlobalZIndex(int) const override { return 0; }
-  int getGlobalZIndexNoBoundaries(int) const override { return 0; }
+  int getGlobalZIndex(int z) const override { return z; }
+  int getGlobalZIndexNoBoundaries(int z) const override { return z; }
   int getLocalXIndex(int) const override { return 0; }
   int getLocalXIndexNoBoundaries(int) const override { return 0; }
   int getLocalYIndex(int y) const override { return y; }
   int getLocalYIndexNoBoundaries(int y) const override { return y; }
-  int getLocalZIndex(int) const override { return 0; }
-  int getLocalZIndexNoBoundaries(int) const override { return 0; }
+  int getLocalZIndex(int z) const override { return z; }
+  int getLocalZIndexNoBoundaries(int z) const override { return z; }
 
   void initDerivs(Options* opt) {
     StaggerGrids = true;
