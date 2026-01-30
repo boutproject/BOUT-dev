@@ -169,7 +169,6 @@ TYPED_TEST(ShiftedMetricTest, FromFieldAligned) {
 
   Field3D result = fromFieldAligned(this->input);
 
-
   // Loosen tolerance a bit due to FFTs
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL", FFTTolerance));
   EXPECT_TRUE(IsFieldEqual(toFieldAligned(result), this->input, "RGN_ALL", FFTTolerance));
@@ -178,15 +177,15 @@ TYPED_TEST(ShiftedMetricTest, FromFieldAligned) {
 }
 
 TYPED_TEST(ShiftedMetricTest, FromToFieldAligned) {
-  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(toFieldAligned(this->input)), this->input, "RGN_ALL",
-                           FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(toFieldAligned(this->input)), this->input,
+                           "RGN_ALL", FFTTolerance));
 }
 
 TYPED_TEST(ShiftedMetricTest, ToFromFieldAligned) {
   this->input.setDirectionY(YDirectionType::Aligned);
 
-  EXPECT_TRUE(IsFieldEqual(toFieldAligned(fromFieldAligned(this->input)), this->input, "RGN_ALL",
-                           FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(fromFieldAligned(this->input)), this->input,
+                           "RGN_ALL", FFTTolerance));
 }
 
 TYPED_TEST(ShiftedMetricTest, ToFieldAlignedFieldPerp) {
@@ -432,32 +431,35 @@ TYPED_TEST(ShiftedMetricTest, CalcParallelSlices) {
   Field3D expected_down_2{mesh};
 
   fillField(expected_down_2, {{{4., 5., 1., 2., 3.},
-                              {4., 5., 2., 1., 3.},
-                              {4., 5., 1., 3., 2.},
-                              {0., 0., 0., 0., 0.},
-                              {0., 0., 0., 0., 0.},
-                              {0., 0., 0., 0., 0.},
-                              {0., 0., 0., 0., 0.}},
+                               {4., 5., 2., 1., 3.},
+                               {4., 5., 1., 3., 2.},
+                               {0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0.}},
 
-                             {{1., 3., 4., 5., 2.},
-                              {3., 2., 4., 5., 1.},
-                              {2., 4., 3., 5., 1.},
-                              {0., 0., 0., 0., 0.},
-                              {0., 0., 0., 0., 0.},
-                              {0., 0., 0., 0., 0.},
-                              {0., 0., 0., 0., 0.}},
+                              {{1., 3., 4., 5., 2.},
+                               {3., 2., 4., 5., 1.},
+                               {2., 4., 3., 5., 1.},
+                               {0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0.}},
 
-                             {{5., 1., 3., 2., 4.},
-                              {5., 1., 2., 4., 3.},
-                              {4., 1., 2., 3., 5.},
-                              {0., 0., 0., 0., 0.},
-                              {0., 0., 0., 0., 0.},
-                              {0., 0., 0., 0., 0.},
-                              {0., 0., 0., 0., 0.}}});
+                              {{5., 1., 3., 2., 4.},
+                               {5., 1., 2., 4., 3.},
+                               {4., 1., 2., 3., 5.},
+                               {0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0.},
+                               {0., 0., 0., 0., 0.}}});
 
   EXPECT_TRUE(IsFieldEqual(this->input.ynext(1), expected_up_1, "RGN_YUP", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(this->input.ynext(2), expected_up_2, "RGN_YUP2", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(this->input.ynext(-1), expected_down_1, "RGN_YDOWN", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(this->input.ynext(-2), expected_down_2, "RGN_YDOWN2", FFTTolerance));
+  EXPECT_TRUE(
+      IsFieldEqual(this->input.ynext(2), expected_up_2, "RGN_YUP2", FFTTolerance));
+  EXPECT_TRUE(
+      IsFieldEqual(this->input.ynext(-1), expected_down_1, "RGN_YDOWN", FFTTolerance));
+  EXPECT_TRUE(
+      IsFieldEqual(this->input.ynext(-2), expected_down_2, "RGN_YDOWN2", FFTTolerance));
 }
 #endif
