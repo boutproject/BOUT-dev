@@ -158,9 +158,9 @@ XZHermiteSplineBase<monotonic>::XZHermiteSplineBase(int y_offset, Mesh* meshin)
 }
 
 template <bool monotonic>
-void XZHermiteSplineBase<monotonic>::calcWeights(const Field3D& delta_x,
-                                                 const Field3D& delta_z,
-                                                 [[maybe_unused]] const std::string& region) {
+void XZHermiteSplineBase<monotonic>::calcWeights(
+    const Field3D& delta_x, const Field3D& delta_z,
+    [[maybe_unused]] const std::string& region) {
 
   const int ny = localmesh->LocalNy;
   const int nz = localmesh->LocalNz;
@@ -384,8 +384,8 @@ XZHermiteSplineBase<monotonic>::getWeightsForYApproximation(int i, int j, int k,
 }
 
 template <bool monotonic>
-Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
-                                                    [[maybe_unused]] const std::string& region) const {
+Field3D XZHermiteSplineBase<monotonic>::interpolate(
+    const Field3D& f, [[maybe_unused]] const std::string& region) const {
 
   const auto region2 =
       y_offset == 0 ? "RGN_NOY" : fmt::format("RGN_YPAR_{:+d}", y_offset);
