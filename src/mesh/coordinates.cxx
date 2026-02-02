@@ -1590,7 +1590,7 @@ Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
     f_B.yup(i) = f.yup(i) / Bxy_floc.yup(i);
     f_B.ydown(i) = f.ydown(i) / Bxy_floc.ydown(i);
   }
-  return xy * Grad_par(f_B, outloc, method);
+  return Bxy * Grad_par(f_B, outloc, method);
 }
 
 /////////////////////////////////////////////////////////
