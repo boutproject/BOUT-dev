@@ -179,8 +179,7 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
     if (jyseps1_2 <= ny_inner && ny_inner <= jyseps2_2) {
       return MeshTopology::SF;
     }
-
-    if (ixseps1 != ixseps2) {
+    else if (ixseps1 != ixseps2) { //added else if for UDN
       return MeshTopology::UDN;
     }
 
@@ -306,6 +305,9 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
                       jyseps1_2, jyseps2_1, jyseps1_2 - jyseps2_1, num_local_y_points)};
       }
 
+      //Just for safety, but should always pass if the others do:
+
+      //Check W leg region
       if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
       return {
         false, 
@@ -883,11 +885,13 @@ int BoutMesh::load() {
   output_info.write(_("\tdone\n"));
 
   return 0;
-}
+} // unchanged, is not topology dependent
 
 void BoutMesh::createCommunicators() {
   MPI_Group group_world{};
   MPI_Comm_group(BoutComm::get(), &group_world); // Get the entire group
+  MeshTopology mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
+                                  ixseps1, ixseps2);
 
   //////////////////////////////////////////////////////
   /// Communicator in X
@@ -940,7 +944,8 @@ void BoutMesh::createCommunicators() {
 
   // Outer SOL regions
   if (jyseps1_2 == jyseps2_1) {
-    // Single-null. All processors with same PE_XIND
+    // Single-null and CFL
+    //All processors with same PE_XIND
     TRACE("Creating Outer SOL communicators for Single Null operation");
 
     for (int i = 0; i < NXPE; i++) {
@@ -964,8 +969,10 @@ void BoutMesh::createCommunicators() {
       }
       MPI_Group_free(&group);
     }
-  } else {
+
+  } else if (mesh_topology == MeshTopology::CDN || mesh_topology == MeshTopology::UDN) {
     // Double null
+    // Difference with UCD and CDN comes from a secondary inner SOL region (ixseps1 != ixseps2)
     TRACE("Creating Outer SOL communicators for Double Null operation");
 
     for (int i = 0; i < NXPE; i++) {
@@ -998,121 +1005,322 @@ void BoutMesh::createCommunicators() {
       MPI_Group_free(&group);
     }
   }
+  else if (mesh_topology == MeshTopology::SF){
+    //Will be closer to SN since there is only a outter SOL region.
+    TRACE("Creating Outer SOL communicators for Snowflake operation");
+
+      for (int i = 0; i < NXPE; i++) {
+        // Outer SOL in Snowflake: below the lower X-point
+        proc[0] = PROC_NUM(i, 0);
+        proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
+        proc[2] = NXPE;
+
+        output_debug << "SF outer SOL " << proc[0] << ", " << proc[1] << endl;
+
+        MPI_Group_range_incl(group_world, 1, &proc, &group);
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+
+        if (i == PE_XIND) {
+          if (comm_tmp == MPI_COMM_NULL) {
+            throw BoutException("Snowflake outer SOL not correct\n");
+          }
+          comm_outer = comm_tmp;
+        } else if (comm_tmp != MPI_COMM_NULL) {
+          throw BoutException("Snowflake outer SOL not correct\n");
+        }
+
+        MPI_Group_free(&group);
+      }
+    } 
+  else{
+    throw BoutException("Unsupported mesh topology for communicator creation");
+    }
 
   for (int i = 0; i < NXPE; i++) {
-    // Lower PF region
+    if (mesh_topology != MeshTopology::SF){
+      // Lower PF region
 
-    if ((jyseps1_1 >= 0) || (jyseps2_2 + 1 < ny)) {
-      // A lower PF region exists
-      TRACE("Creating lower PF communicators for xp={:d}", i);
+      if ((jyseps1_1 >= 0) || (jyseps2_2 + 1 < ny)) {
+        // A lower PF region exists
+        TRACE("Creating lower PF communicators for xp={:d}", i);
 
-      output_debug << "Creating lower PF communicators for xp = " << i << endl;
+        output_debug << "Creating lower PF communicators for xp = " << i << endl;
 
-      if (jyseps1_1 >= 0) {
-        proc[0] = PROC_NUM(i, 0);
-        proc[1] = PROC_NUM(i, YPROC(jyseps1_1));
+        if (jyseps1_1 >= 0) {
+          proc[0] = PROC_NUM(i, 0);
+          proc[1] = PROC_NUM(i, YPROC(jyseps1_1));
 
-        output_debug << "PF1 " << proc[0] << ", " << proc[1] << endl;
+          output_debug << "PF1 " << proc[0] << ", " << proc[1] << endl;
 
-        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-      } else {
-        group_tmp1 = MPI_GROUP_EMPTY;
-      }
-
-      if (jyseps2_2 + 1 < ny) {
-        proc[0] = PROC_NUM(i, YPROC(jyseps2_2 + 1));
-        proc[1] = PROC_NUM(i, NYPE - 1);
-
-        output_debug << "PF2 " << proc[0] << ", " << proc[1] << endl;
-
-        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
-      } else {
-        group_tmp2 = MPI_GROUP_EMPTY;
-      }
-
-      MPI_Group_union(group_tmp1, group_tmp2, &group);
-      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
-      if (comm_tmp != MPI_COMM_NULL) {
-        comm_inner = comm_tmp;
-        if (ixseps_lower == ixseps_outer) {
-          // Between the separatrices is still in the PF region
-
-          output_debug << "-> Inner and middle\n";
-
-          comm_middle = comm_inner;
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
         } else {
-
-          output_debug << "-> Outer and middle\n";
-
-          comm_middle = comm_outer;
+          group_tmp1 = MPI_GROUP_EMPTY;
         }
-      }
 
-      output_debug << "Freeing\n";
+        if (jyseps2_2 + 1 < ny) {
+          proc[0] = PROC_NUM(i, YPROC(jyseps2_2 + 1));
+          proc[1] = PROC_NUM(i, NYPE - 1);
 
-      MPI_Group_free(&group);
-      if (group_tmp1 != MPI_GROUP_EMPTY) {
-        MPI_Group_free(&group_tmp1);
-      }
-      if (group_tmp2 != MPI_GROUP_EMPTY) {
-        MPI_Group_free(&group_tmp2);
-      }
+          output_debug << "PF2 " << proc[0] << ", " << proc[1] << endl;
 
-      output_debug << "done lower PF\n";
-    }
-
-    if (jyseps2_1 != jyseps1_2) {
-      // Upper PF region
-      // Note need to order processors so that a continuous surface is formed
-      TRACE("Creating upper PF communicators for xp={:d}", i);
-
-      output_debug << "Creating upper PF communicators for xp = " << i << endl;
-
-      proc[0] = PROC_NUM(i, YPROC(ny_inner));
-      proc[1] = PROC_NUM(i, YPROC(jyseps1_2));
-
-      output_debug << "PF3 " << proc[0] << ", " << proc[1] << endl;
-
-      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-      proc[0] = PROC_NUM(i, YPROC(jyseps2_1 + 1));
-      proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
-
-      output_debug << "PF4 " << proc[0] << ", " << proc[1] << endl;
-
-      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
-      MPI_Group_union(group_tmp1, group_tmp2, &group);
-      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
-      if (comm_tmp != MPI_COMM_NULL) {
-        comm_inner = comm_tmp;
-        if (ixseps_upper == ixseps_outer) {
-
-          output_debug << "-> Inner and middle\n";
-
-          comm_middle = comm_inner;
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
         } else {
-
-          output_debug << "-> Outer and middle\n";
-
-          comm_middle = comm_outer;
-          // MPI_Comm_dup(comm_outer, &comm_middle);
+          group_tmp2 = MPI_GROUP_EMPTY;
         }
+
+        MPI_Group_union(group_tmp1, group_tmp2, &group);
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+        if (comm_tmp != MPI_COMM_NULL) {
+          comm_inner = comm_tmp;
+          if (ixseps_lower == ixseps_outer) {
+            // Between the separatrices is still in the PF region
+
+            output_debug << "-> Inner and middle\n";
+
+            comm_middle = comm_inner;
+          } else {
+
+            output_debug << "-> Outer and middle\n";
+
+            comm_middle = comm_outer;
+          }
+        }
+
+        output_debug << "Freeing\n";
+
+        MPI_Group_free(&group);
+        if (group_tmp1 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp1);
+        }
+        if (group_tmp2 != MPI_GROUP_EMPTY) {
+          MPI_Group_free(&group_tmp2);
+        }
+
+        output_debug << "done lower PF\n";
       }
 
-      output_debug << "Freeing\n";
+      if (jyseps2_1 != jyseps1_2) {
+        // ONly possible topology is UDN or CDN here
+          // Upper PF region
+          // Note need to order processors so that a continuous surface is formed
+          TRACE("Creating upper PF communicators for xp={:d}", i);
 
-      MPI_Group_free(&group);
-      if (group_tmp1 != MPI_GROUP_EMPTY) {
-        MPI_Group_free(&group_tmp1);
-      }
-      if (group_tmp2 != MPI_GROUP_EMPTY) {
-        MPI_Group_free(&group_tmp2);
-      }
+          output_debug << "Creating upper PF communicators for xp = " << i << endl;
 
-      output_debug << "done upper PF\n";
-    }
+          proc[0] = PROC_NUM(i, YPROC(ny_inner));
+          proc[1] = PROC_NUM(i, YPROC(jyseps1_2));
+
+          output_debug << "PF3 " << proc[0] << ", " << proc[1] << endl;
+
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+          proc[0] = PROC_NUM(i, YPROC(jyseps2_1 + 1));
+          proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
+
+          output_debug << "PF4 " << proc[0] << ", " << proc[1] << endl;
+
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+          MPI_Group_union(group_tmp1, group_tmp2, &group);
+          MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+          if (comm_tmp != MPI_COMM_NULL) {
+            comm_inner = comm_tmp;
+            if (ixseps_upper == ixseps_outer) {
+
+              output_debug << "-> Inner and middle\n";
+
+              comm_middle = comm_inner;
+            } else {
+
+              output_debug << "-> Outer and middle\n";
+
+              comm_middle = comm_outer;
+              // MPI_Comm_dup(comm_outer, &comm_middle);
+            }
+          }
+
+          output_debug << "Freeing\n";
+
+          MPI_Group_free(&group);
+          if (group_tmp1 != MPI_GROUP_EMPTY) {
+            MPI_Group_free(&group_tmp1);
+          }
+          if (group_tmp2 != MPI_GROUP_EMPTY) {
+            MPI_Group_free(&group_tmp2);
+          }
+
+          output_debug << "done upper PF\n";
+      }
+     } else if (mesh_topology == MeshTopology::SF){
+        // Snowflake upper PF region communicators. Note there are 4 regions to consider here (Central, East, West, South).
+
+          MPI_Comm comm_pf_w{};
+          MPI_Comm comm_pf_e{};
+          MPI_Comm comm_pf_c{};
+          MPI_Comm comm_pf_s{};
+
+        TRACE("Creating Snowflake PF communicators for xp={:d}", i);
+
+        if (i >= 0 && i <= ixseps1) {
+
+          // PF_W
+          MPI_Group pf_group = MPI_GROUP_EMPTY;
+
+          auto add_pf_range = [&](int ylo, int yhi) {
+            if (ylo > yhi) return;
+
+            proc[0] = PROC_NUM(i, YPROC(ylo));
+            proc[1] = PROC_NUM(i, YPROC(yhi));
+            proc[2] = NXPE;
+
+            MPI_Group tmp;
+            MPI_Group_range_incl(group_world, 1, &proc, &tmp);
+
+            if (pf_group == MPI_GROUP_EMPTY) {
+              pf_group = tmp;
+            } else {
+              MPI_Group new_group;
+              MPI_Group_union(pf_group, tmp, &new_group);
+              MPI_Group_free(&pf_group);
+              MPI_Group_free(&tmp);
+              pf_group = new_group;
+            }
+          };
+
+          // PF_W Y ranges
+          add_pf_range(0, jyseps1_1);
+          add_pf_range(jyseps2_1, jyseps1_2);
+          add_pf_range(jyseps2_2, ny - 1);
+
+          MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
+          if (comm_tmp != MPI_COMM_NULL) {
+            comm_pf_w = comm_tmp;
+          }
+
+          if (pf_group != MPI_GROUP_EMPTY) {
+            MPI_Group_free(&pf_group);
+          }
+        }
+
+        ////////////////////////////////////////////////////
+        // PF_E
+
+        if (i >= 0 && i <= ixseps1) {
+
+          MPI_Group pf_group = MPI_GROUP_EMPTY;
+
+          auto add_pf_range = [&](int ylo, int yhi) {
+            if (ylo > yhi) return;
+
+            proc[0] = PROC_NUM(i, YPROC(ylo));
+            proc[1] = PROC_NUM(i, YPROC(yhi));
+            proc[2] = NXPE;
+
+            MPI_Group tmp;
+            MPI_Group_range_incl(group_world, 1, &proc, &tmp);
+
+            if (pf_group == MPI_GROUP_EMPTY) {
+              pf_group = tmp;
+            } else {
+              MPI_Group new_group;
+              MPI_Group_union(pf_group, tmp, &new_group);
+              MPI_Group_free(&pf_group);
+              MPI_Group_free(&tmp);
+              pf_group = new_group;
+            }
+          };
+
+          // PF_E Y ranges
+          add_pf_range(jyseps1_2, ny_inner - 1);
+          add_pf_range(ny_inner + 1, jyseps2_2);
+
+          MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
+          if (comm_tmp != MPI_COMM_NULL) {
+            comm_pf_e = comm_tmp;
+          }
+
+          if (pf_group != MPI_GROUP_EMPTY) {
+            MPI_Group_free(&pf_group);
+          }
+        }
+
+        ////////////////////////////////////////////////////
+        // PF_C
+
+        if (i >= ixseps1 && i <= ixseps2) {
+
+          MPI_Group pf_group = MPI_GROUP_EMPTY;
+
+          auto add_pf_range = [&](int ylo, int yhi) {
+            if (ylo > yhi) return;
+
+            proc[0] = PROC_NUM(i, YPROC(ylo));
+            proc[1] = PROC_NUM(i, YPROC(yhi));
+            proc[2] = NXPE;
+
+            MPI_Group tmp;
+            MPI_Group_range_incl(group_world, 1, &proc, &tmp);
+
+            if (pf_group == MPI_GROUP_EMPTY) {
+              pf_group = tmp;
+            } else {
+              MPI_Group new_group;
+              MPI_Group_union(pf_group, tmp, &new_group);
+              MPI_Group_free(&pf_group);
+              MPI_Group_free(&tmp);
+              pf_group = new_group;
+            }
+          };
+
+          // PF_C Y ranges
+          add_pf_range(0, jyseps1_1);
+          add_pf_range(jyseps2_1, ny_inner - 1);
+
+          MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
+          if (comm_tmp != MPI_COMM_NULL) {
+            comm_pf_c = comm_tmp;
+          }
+
+          if (pf_group != MPI_GROUP_EMPTY) {
+            MPI_Group_free(&pf_group);
+          }
+        }
+
+        ////////////////////////////////////////////////////
+        // PF_S
+
+        if (i >= ixseps1 && i <= nx - 1) {
+
+          MPI_Group pf_group = MPI_GROUP_EMPTY;
+
+          proc[0] = PROC_NUM(i, YPROC(ny_inner - 1));
+          proc[1] = PROC_NUM(i, YPROC(ny - 1));
+          proc[2] = NXPE;
+
+          MPI_Group_range_incl(group_world, 1, &proc, &pf_group);
+          MPI_Comm_create(BoutComm::get(), pf_group, &comm_tmp);
+
+          if (comm_tmp != MPI_COMM_NULL) {
+            comm_pf_s = comm_tmp;
+          }
+
+          if (pf_group != MPI_GROUP_EMPTY) {
+            MPI_Group_free(&pf_group);
+          }
+        }
+      output_debug << "SF PF rank "
+             << PE_XIND << "," << PE_YIND
+             << " W=" << (comm_pf_w != MPI_COMM_NULL)
+             << " E=" << (comm_pf_e != MPI_COMM_NULL)
+             << " C=" << (comm_pf_c != MPI_COMM_NULL)
+             << " S=" << (comm_pf_s != MPI_COMM_NULL)
+             << endl;
+     }
 
     // Core region
     TRACE("Creating core communicators");
+    //Works for all topologies. SN and SF is the complete core region. For CDN and UDN its the inner core region.
+    group_tmp1 = MPI_GROUP_EMPTY;
+    group_tmp2 = MPI_GROUP_EMPTY;
+
     if (jyseps2_1 > jyseps1_1) {
       proc[0] = PROC_NUM(i, YPROC(jyseps1_1 + 1));
       proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
@@ -1128,20 +1336,23 @@ void BoutMesh::createCommunicators() {
       group_tmp1 = MPI_GROUP_EMPTY;
     }
 
-    if (jyseps2_2 > jyseps1_2) {
-      proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
-      proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
+    //Only for CDN and UDN outer core region. Add check to ensure only created for these topologies. Maybe topology should go inside second if.
+    if (mesh_topology == MeshTopology::CDN || mesh_topology == MeshTopology::UDN){
+      if (jyseps2_2 > jyseps1_2) {
+        proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
+        proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
 
-      output_debug << "CORE2 " << proc[0] << ", " << proc[1] << endl;
+        output_debug << "CORE2 " << proc[0] << ", " << proc[1] << endl;
 
-      if ((proc[0] < 0) || (proc[1] < 0)) {
-        group_tmp2 = MPI_GROUP_EMPTY;
+        if ((proc[0] < 0) || (proc[1] < 0)) {
+          group_tmp2 = MPI_GROUP_EMPTY;
+        } else {
+          MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+        }
       } else {
-        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+        // no core region between jyseps1_2 and jyseps2_2
+        group_tmp2 = MPI_GROUP_EMPTY;
       }
-    } else {
-      // no core region between jyseps1_2 and jyseps2_2
-      group_tmp2 = MPI_GROUP_EMPTY;
     }
 
     MPI_Group_union(group_tmp1, group_tmp2, &group);

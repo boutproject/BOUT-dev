@@ -799,7 +799,7 @@ TEST(getMeshTopologyTest, ReturnsUDNWhenTwoXPointsDifferentIndices) {
 TEST(getMeshTopologyTest, ReturnsCDNWhenTwoXPointsSameIndices) {
   BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 2;
-  // ny_inner not between jyseps1_2 and jyseps2_2
+  // ny_inner not between jyseps1_2 and jyseps2_2 but ixseps1 == ixseps2
   EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 25, 1, 1), MeshTopology::CDN);
 }
 
