@@ -35,7 +35,6 @@ class Field;
 #include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
-#include "bout/build_defines.hxx"
 #include "bout/field_data.hxx"
 #include "bout/region.hxx"
 #include "bout/traits.hxx"
@@ -667,20 +666,5 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
 }
 
 #undef FIELD_FUNC
-
-template <typename T, typename = bout::utils::EnableIfField<T>, class... Types>
-inline void setName(T& f, const std::string& name, Types... args) {
-#if BOUT_USE_TRACK
-  f.name = fmt::format(name, args...);
-#endif
-}
-
-template <typename T, typename = bout::utils::EnableIfField<T>, class... Types>
-inline T setName(T&& f, const std::string& name, Types... args) {
-#if BOUT_USE_TRACK
-  f.name = fmt::format(name, args...);
-#endif
-  return std::forward<T>(f);
-}
 
 #endif /* FIELD_H */
