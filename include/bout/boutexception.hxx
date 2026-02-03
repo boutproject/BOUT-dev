@@ -21,7 +21,7 @@ public:
 
   template <class S, class... Args>
   BoutException(S&& format, Args&&... args)
-      : BoutException(fmt::format(std::forward<S>(format),
+      : BoutException(fmt::format(fmt::runtime(std::forward<S>(format)),
                                   std::forward<decltype(args)>(args)...)) {}
 
   ~BoutException() override;
@@ -46,7 +46,7 @@ public:
   BoutRhsFail(std::string message) : BoutException(std::move(message)) {}
   template <class S, class... Args>
   BoutRhsFail(S&& format, Args&&... args)
-      : BoutRhsFail(fmt::format(std::forward<S>(format),
+      : BoutRhsFail(fmt::format(fmt::runtime(std::forward<S>(format)),
                                 std::forward<decltype(args)>(args)...)) {}
 };
 
@@ -55,7 +55,7 @@ public:
   BoutIterationFail(std::string message) : BoutException(std::move(message)) {}
   template <class S, class... Args>
   BoutIterationFail(S&& format, Args&&... args)
-      : BoutIterationFail(fmt::format(std::forward<S>(format),
+      : BoutIterationFail(fmt::format(fmt::runtime(std::forward<S>(format)),
                                       std::forward<decltype(args)>(args)...)) {}
 };
 

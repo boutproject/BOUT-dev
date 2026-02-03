@@ -83,7 +83,8 @@ public:
 
   template <class S, class... Args>
   Output(const S& format, Args&&... args)
-      : Output(fmt::format(format, std::forward<decltype(args)>(args)...)) {}
+      : Output(fmt::format(fmt::runtime(format), std::forward<decltype(args)>(args)...)) {
+  }
 
   ~Output() override { close(); }
 
@@ -95,7 +96,7 @@ public:
 
   template <class S, class... Args>
   int open(const S& format, Args&&... args) {
-    return open(fmt::format(format, std::forward<decltype(args)>(args)...));
+    return open(fmt::format(fmt::runtime(format), std::forward<decltype(args)>(args)...));
   }
 
   /// Close the log file
@@ -106,14 +107,14 @@ public:
 
   template <class S, class... Args>
   void write(const S& format, Args&&... args) {
-    write(fmt::format(format, std::forward<decltype(args)>(args)...));
+    write(fmt::format(fmt::runtime(format), std::forward<decltype(args)>(args)...));
   }
   /// Same as write, but only to screen
   virtual void print(const std::string& message);
 
   template <class S, class... Args>
   void print(const S& format, Args&&... args) {
-    print(fmt::format(format, std::forward<decltype(args)>(args)...));
+    print(fmt::format(fmt::runtime(format), std::forward<decltype(args)>(args)...));
   }
 
   /// Add an output stream. All output will be sent to all streams
@@ -178,7 +179,8 @@ public:
   void write(const S& format, Args&&... args) {
     if (enabled) {
       ASSERT1(base != nullptr);
-      base->write(fmt::format(format, std::forward<decltype(args)>(args)...));
+      base->write(
+          fmt::format(fmt::runtime(format), std::forward<decltype(args)>(args)...));
     }
   }
 
@@ -190,7 +192,8 @@ public:
   void print(const S& format, Args&&... args) {
     if (enabled) {
       ASSERT1(base != nullptr);
-      base->print(fmt::format(format, std::forward<decltype(args)>(args)...));
+      base->print(
+          fmt::format(fmt::runtime(format), std::forward<decltype(args)>(args)...));
     }
   }
 
