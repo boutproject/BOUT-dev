@@ -158,3 +158,23 @@ If you need to capture runtime information in the message, you can use
 the ``fmt`` syntax also used by the loggers::
 
     TRACE("Value of i={}, some arbitrary {}", i, "string");
+
+
+Time evolution
+==============
+
+It can be convinient to know what happend when the simulation failed.
+The pvode solver can dump the state of the simulation, at the time where the
+solver failed. This information does include the single terms in the
+derivative. This allows to identify which term is causing the issue.
+In addition the residuum is dump. This not only tells which term, but also
+where the solver is struggeling.
+This can be enabled with::
+
+     solver:type=pvode solver:debug_on_failure=true
+
+It is also possible to dump at a specific time using the euler solver.
+This can be handy to track down what is causing differences between two
+different versions. It can be used with::
+
+      solver:type=euler solver:dump_at_time=0 input:error_on_unused_options=false
