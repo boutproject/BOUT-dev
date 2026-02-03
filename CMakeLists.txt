@@ -522,10 +522,10 @@ set_target_properties(
 set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -L\$BOUT_LIB_PATH -lbout++")
 set(BOUT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(CONFIG_CFLAGS
-    "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CXX_FLAGS} -std=c++17"
+    "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CXX_FLAGS} -std=c++20"
 )
 
-target_compile_features(bout++ PUBLIC cxx_std_17)
+target_compile_features(bout++ PUBLIC cxx_std_20)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
 # Optional compiler features
