@@ -14,7 +14,7 @@
 ///
 /// 2. Restart files:
 ///
-///       auto restart = OptionsIOFactory::getInstance().createOutput();
+///       auto restart = OptionsIOFactory::getInstance().createRestart();
 ///       restart->write(data);
 ///
 ///    where data is an Options tree. By default restart files are configured
