@@ -380,7 +380,8 @@ BoutReal PvodeSolver::run(BoutReal tout) {
         std::vector<bool> evolve_bndrys{};
         for (const auto& f : f3d) {
           mesh = f.var->getMesh();
-          Field3D to_load{0., mesh}.setLocation(f.location);
+          Field3D to_load{0., mesh};
+          to_load.setLocation(f.location);
           debug[fmt::format("{:s}{:s}", prefix, f.name)] = to_load;
           list_of_fields.push_back(to_load);
           evolve_bndrys.push_back(f.evolve_bndry);
