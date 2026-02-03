@@ -56,7 +56,7 @@ void writeDefaultOutputFile(Options& data) {
   OptionsIOFactory::getInstance().createOutput()->write(data);
 }
 
-void OptionsIO::write(const std::string& prefix, Options data, Mesh* mesh) {
+void OptionsIO::write(const std::string& prefix, Options& data, Mesh* mesh) {
   Options file_options = {{"prefix", prefix}};
   data["BOUT_VERSION"].force(bout::version::as_double);
   if (mesh != nullptr) {

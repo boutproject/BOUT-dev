@@ -87,7 +87,7 @@ public:
   /// Write some data to a file with a given name prefix
   /// This will be done in parallel. If Mesh is given, also mesh data will be
   /// added, which is needed for xBOUT or boutdata to read the files.
-  static void write(const std::string& prefix, Options data, Mesh* mesh = nullptr);
+  static void write(const std::string& prefix, Options& data, Mesh* mesh = nullptr);
 
   /// Create an OptionsIO for I/O to the given file.
   /// The file will be configured using the given `config` options:
