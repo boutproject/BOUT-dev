@@ -171,10 +171,17 @@ residuum is dumped. This identifies not only which term is causing the issue,
 but also where in the domain the solver is struggling.  This can be enabled
 with::
 
-     solver:type=pvode solver:debug_on_failure=true
+    solver:type=pvode solver:debug_on_failure=true
+
+It can be also useful for understanding why the solver is slow. Forcing a
+higher min_timestep, the solver will fail to evolve the system as it
+encounters the situation, and provides information where it is happening.
+This can be done with::
+
+    solver:type=pvode solver:debug_on_failure=true solver:min_timestep=1e2
 
 It is also possible to dump at a specific time using the euler solver.
 This can be useful for tracking down what is causing differences between two
 different versions. It can be used with::
 
-      solver:type=euler solver:dump_at_time=0 input:error_on_unused_options=false
+    solver:type=euler solver:dump_at_time=0 input:error_on_unused_options=false
