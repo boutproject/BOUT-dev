@@ -164,19 +164,10 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& star
       mesh = f.var->getMesh();
     }
 
-    if (mesh != nullptr) {
-      mesh->outputVars(debug);
-      debug["BOUT_VERSION"].force(bout::version::as_double);
-    }
-
     const std::string outnumber =
         dump_at_time < -3 ? fmt::format(".{}", debug_counter++) : "";
-    const std::string outname =
-        fmt::format("{}/BOUT.debug{}.{}.nc",
-                    Options::root()["datadir"].withDefault<std::string>("data"),
-                    outnumber, BoutComm::rank());
-
-    bout::OptionsIO::create(outname)->write(debug);
+    const std::string outname = fmt::format("BOUT.debug{}", outnumber);
+    bout::OptionsIO::write(outname, debug, mesh);
     MPI_Barrier(BoutComm::get());
     for (auto& f : f3d) {
       f.F_var->disableTracking();

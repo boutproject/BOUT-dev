@@ -399,17 +399,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
       for (auto& f : f3d) {
         saveParallel(debug, f.name, *f.var);
       }
-
-      if (mesh != nullptr) {
-        mesh->outputVars(debug);
-        debug["BOUT_VERSION"].force(bout::version::as_double);
-      }
-
-      const std::string outname = fmt::format(
-          "{}/BOUT.debug.{}.nc",
-          Options::root()["datadir"].withDefault<std::string>("data"), BoutComm::rank());
-
-      bout::OptionsIO::create(outname)->write(debug);
+      bout::OptionsIO::write("BOUT.debug", debug, mesh);
       MPI_Barrier(BoutComm::get());
     }
     return -1.0;
