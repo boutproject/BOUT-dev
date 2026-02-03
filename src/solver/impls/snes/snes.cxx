@@ -1090,7 +1090,7 @@ int SNESSolver::run() {
         }
 
         if (snes_failures == max_snes_failures) {
-          output.write("Too many SNES failures ({}). Aborting.");
+          output.write("Too many SNES failures ({}). Aborting.", snes_failures);
           return 1;
         }
 
@@ -1182,6 +1182,11 @@ int SNESSolver::run() {
           run_rhs(simtime);
         } catch (BoutException& e) {
           output_error.write("ERROR: BoutException thrown: {}\n", e.what());
+
+          fmt::print(stderr, "1 ERROR rank {}: BoutException: {}\n",
+                    BoutComm::rank(), e.what());
+          fflush(stderr);
+          
           // Abort simulation. There is no way to recover and
           // synchronise unless all processors throw exceptions
           // together
@@ -1339,6 +1344,11 @@ int SNESSolver::run() {
       run_rhs(target); // Run RHS to calculate auxilliary variables
     } catch (BoutException& e) {
       output_error.write("ERROR: BoutException thrown: {}\n", e.what());
+
+      fmt::print(stderr, "2 ERROR rank {}: BoutException: {}\n",
+                BoutComm::rank(), e.what());
+      fflush(stderr);
+
       // Abort simulation. There is no way to recover unless
       // all processors throw an exception at the same point.
       BoutComm::abort(1);
@@ -1618,6 +1628,11 @@ PetscErrorCode SNESSolver::rhs_function(Vec x, Vec f, bool linear) {
     // Simulation might fail, e.g. negative densities
     // if timestep too large
     output_warn.write("WARNING: BoutException thrown: {}\n", e.what());
+
+    fmt::print(stderr, "3 ERROR rank {}: BoutException: {}\n",
+              BoutComm::rank(), e.what());
+    fflush(stderr);
+
     // Abort simulation. Unless all processors threw an exception
     // at the same point, there is no way to synchronise again.
     BoutComm::abort(2);
@@ -1658,6 +1673,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
     if (linear) {
       // During Jacobian evaluation
       SNESSetJacobianDomainError(snes);
+      SNESSetFunctionDomainError(snes);
     } else {
       // During function evaluation
       SNESSetFunctionDomainError(snes);
@@ -1669,19 +1685,70 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
   switch (equation_form) {
   case BoutSnesEquationForm::rearranged_backward_euler: {
     // Rearranged Backward Euler
-    // f = (x0 - x)/Δt + f
-    // First calculate x - x0 to minimise floating point issues
-    VecWAXPY(delta_x, -1.0, x0, x); // delta_x = x - x0
-    VecAXPY(f, -1. / dt, delta_x);  // f <- f - delta_x / dt
+    // F = (x0 - x)/Δt + f
+    // Algebraic:     F = G(x)  (already stored in f by rhs_function)
+
+    if (!have_constraints) {
+
+      // First calculate x - x0 to minimise floating point issues
+      VecWAXPY(delta_x, -1.0, x0, x); // delta_x = x - x0
+      VecAXPY(f, -1.0 / dt, delta_x);  // f <- f - delta_x / dt
+
+    } else {
+
+      ASSERT2(have_is_maps);
+      // Some constraints
+
+      Vec x_diff, x0_diff, delta_x_diff, f_diff;
+      PetscCall(VecGetSubVector(x, is_diff, &x_diff));
+      PetscCall(VecGetSubVector(x0, is_diff, &x0_diff));
+      PetscCall(VecGetSubVector(delta_x, is_diff, &delta_x_diff));
+      PetscCall(VecGetSubVector(f, is_diff, &f_diff));
+
+      PetscCall(VecWAXPY(delta_x_diff, -1.0, x0_diff, x_diff)); // delta_x_diff = x_diff - x0_diff
+      PetscCall(VecAXPY(f_diff, -1.0 / dt, delta_x_diff));       // f_diff <- f_diff - delta_x / dt
+
+      PetscCall(VecRestoreSubVector(x, is_diff, &x_diff));
+      PetscCall(VecRestoreSubVector(x0, is_diff, &x0_diff));
+      PetscCall(VecRestoreSubVector(delta_x, is_diff, &delta_x_diff));
+      PetscCall(VecRestoreSubVector(f, is_diff, &f_diff));
+    }
     break;
   }
   case BoutSnesEquationForm::pseudo_transient: {
     // Pseudo-transient timestepping. Same as Rearranged Backward Euler
     // except that Δt is a vector
-    // f = (x0 - x)/Δt + f
-    VecWAXPY(delta_x, -1.0, x0, x);
-    VecPointwiseDivide(delta_x, delta_x, dt_vec); // delta_x /= dt
-    VecAXPY(f, -1., delta_x);                     // f <- f - delta_x
+    // F = (x0 - x)/Δt + f
+    // Algebraic:     F = G(x)  (already stored in f by rhs_function)
+
+    if (!have_constraints) {
+
+
+      VecWAXPY(delta_x, -1.0, x0, x);
+      VecPointwiseDivide(delta_x, delta_x, dt_vec); // delta_x /= dt
+      VecAXPY(f, -1.0, delta_x);                     // f <- f - delta_x
+
+
+    } else {
+      ASSERT2(have_is_maps);
+
+      Vec x_diff, x0_diff, delta_x_diff, f_diff, dt_vec_diff;
+      PetscCall(VecGetSubVector(x, is_diff, &x_diff));
+      PetscCall(VecGetSubVector(x0, is_diff, &x0_diff));
+      PetscCall(VecGetSubVector(delta_x, is_diff, &delta_x_diff));
+      PetscCall(VecGetSubVector(f, is_diff, &f_diff));
+      PetscCall(VecGetSubVector(dt_vec, is_diff, &dt_vec_diff));
+
+      PetscCall(VecWAXPY(delta_x_diff, -1.0, x0_diff, x_diff));
+      PetscCall(VecPointwiseDivide(delta_x_diff, delta_x_diff, dt_vec_diff)); // delta_x /= dt
+      PetscCall(VecAXPY(f_diff, -1.0, delta_x_diff));                         // f <- f - delta_x
+
+      PetscCall(VecRestoreSubVector(delta_x, is_diff, &delta_x_diff));
+      PetscCall(VecRestoreSubVector(x,      is_diff, &x_diff));
+      PetscCall(VecRestoreSubVector(x0,     is_diff, &x0_diff));
+      PetscCall(VecRestoreSubVector(f,      is_diff, &f_diff));
+      PetscCall(VecRestoreSubVector(dt_vec, is_diff, &dt_vec_diff));
+    }
     break;
   }
   case BoutSnesEquationForm::backward_euler: {
@@ -1700,7 +1767,6 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f, bool linear) {
       // Some constraints
 
       Vec x_diff, x0_diff, f_diff;
-
       PetscCall(VecGetSubVector(x, is_diff, &x_diff));
       PetscCall(VecGetSubVector(x0, is_diff, &x0_diff));
       PetscCall(VecGetSubVector(f, is_diff, &f_diff));
