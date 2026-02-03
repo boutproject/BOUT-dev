@@ -186,7 +186,6 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
     return MeshTopology::CDN;
   }
 
-  // Optional: defensive programming
   throw BoutException("Invalid numberOfXPoints = {}", numberOfXPoints);
 }
 
@@ -1447,14 +1446,18 @@ void BoutMesh::createXBoundaries() {
     return;
   }
 
+  MeshTopology mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
+                                  ixseps1, ixseps2);
+
+  // Get a global index in this processor
+  const int yg = getGlobalYIndexNoBoundaries(MYG);
+
   if (PE_XIND == 0) {
     // Inner either core or PF
 
-    // Get a global index in this processor
-    const int yg = getGlobalYIndexNoBoundaries(MYG);
-
     if (((yg > jyseps1_1) and (yg <= jyseps2_1))
-        or ((yg > jyseps1_2) and (yg <= jyseps2_2))) {
+        or ((yg > jyseps1_2) and (yg <= jyseps2_2))) { 
+      //Unchanged for new SF topology
       // Core
       boundary.push_back(new BoundaryRegionXIn("core", ystart, yend, this));
     } else {
@@ -1464,11 +1467,24 @@ void BoutMesh::createXBoundaries() {
   }
 
   if (PE_XIND == (NXPE - 1)) {
-    // Outer SOL
-    boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
+    if (mesh_topology != MeshTopology::SF){
+      // Outer SOL
+      boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
+    }
+    else{
+      if (yg > ny_inner){
+        // Snowflake south PF outer region
+        boundary.push_back(new BoundaryRegionXOut("south_pf_outer", ystart, yend, this));
+      }
+      else{
+        // Outer SOL
+        boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
+      }
+    }
   }
 }
 
+//Unchanged. Not topology dependent. 
 void BoutMesh::createYBoundaries() {
   if (MYG <= 0) {
     return;
@@ -1506,6 +1522,7 @@ void BoutMesh::createYBoundaries() {
   }
 }
 
+// Unchanged. Not topology dependent.
 std::set<std::string> BoutMesh::getPossibleBoundaries() const {
   // Result set: set so it automatically takes care of duplicates
   std::set<std::string> all_boundaries{};
@@ -2561,6 +2578,9 @@ void BoutMesh::topology() {
     throw BoutException("\tERROR: Grid Y size must be >= guard cell size\n");
   }
 
+  auto mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
+                                       ixseps1, ixseps2);
+
   if (jyseps2_1 == jyseps1_2) {
     /********* SINGLE NULL OPERATION *************/
     output_info.write("\tEQUILIBRIUM IS SINGLE NULL (SND) \n");
@@ -2573,7 +2593,7 @@ void BoutMesh::topology() {
                    true);                                 // Twist-shift this connection
     set_connection(jyseps1_1, jyseps2_2 + 1, 0, ixseps1); // No twist-shift in PF region
 
-  } else {
+  } else if (mesh_topology == MeshTopology::CDN || mesh_topology == MeshTopology::UDN) {
     /*************** DOUBLE NULL OPERATION *******************/
     /* UPPER LEGS: Do not have to be the same length as each
        other or lower legs, but do have to have an integer number
@@ -2620,13 +2640,65 @@ void BoutMesh::topology() {
 
     // Add target plates at the top
     add_target(ny_inner - 1, 0, nx);
+
+  } else if (mesh_topology == MeshTopology::SF) {
+    /*************** Snowflake OPERATION *******************/
+    /* Each PFR does not have to be the same length as each
+       other, but do have to have an integer number
+       of processors */
+    if ((ny_inner - jyseps2_1 - 1) % MYSUB != 0) {
+      throw BoutException("\tTopology error: Central PFR does not have integer "
+                          "number of processors\n");
+    }
+    if ((ny_inner - 1 - jyseps1_2) % MYSUB != 0 || (jyseps2_2 - ny_inner + 1) % MYSUB != 0) {
+      throw BoutException("\tTopology error: East PFR does not have integer "
+                          "number of processors\n");
+    }
+
+    if (ixseps1 == ixseps2) {
+      /*************** Snowflake topology can't have the two same separatrices ******************/
+      throw BoutException("\t Topology error: Snowflake topology can't have the two same separatrices\n");
+
+    } else if (ixseps1 < ixseps2) {
+      /*************** SF Usuall configuration **********************/
+      output_info.write("\tSF Usuall configuration\n");
+      ixseps_inner = ixseps_lower = ixseps1;
+      ixseps_outer = ixseps_upper = ixseps2;
+    } else {
+      /*************** SF Reverse configuration **********************/
+      output_info.write("\tSF Reverse configuration\n");
+      ixseps_inner = ixseps_upper = ixseps2;
+      ixseps_outer = ixseps_lower = ixseps1;
+    }
+
+    /* Following code works for any Snowflake */
+
+    /********* SF CONNECTIONS **********/
+    default_connections();
+    set_connection(jyseps1_2 + 1, jyseps2_2, 0, ixseps_lower,
+                   ixseps1 <= ixseps2);                        /* E_PFR */
+    //set_connection(jyseps2_1 + 1, jyseps1_2, ixseps_lower, ixseps_upper); /* C_PFR  */
+    set_connection(jyseps1_1 + 1, jyseps2_1, 0, ixseps_upper); /* Core  */
+    
+    // Snowflake has multiple physical targets, but only one Y-boundary.
+    // Other targets are reached via X-connectivity.
+    // Add East target
+    add_target(ny_inner - 1, 0, nx);
   }
 
-  if ((ixseps_inner > 0)
-      && (((PE_YIND * MYSUB > jyseps1_1) && (PE_YIND * MYSUB <= jyseps2_1))
-          || ((PE_YIND * MYSUB > jyseps1_2) && (PE_YIND * MYSUB <= jyseps2_2)))) {
-    MYPE_IN_CORE = true; /* processor is in the core */
-  }
+  if (mesh_topology == MeshTopology::SF) {
+    if (ixseps_inner > 0 &&
+        (PE_YIND * MYSUB > jyseps1_1) &&
+        (PE_YIND * MYSUB <= jyseps2_1)) {
+          MYPE_IN_CORE = true;}
+  } else {
+      //This is for DN topologies
+      if ((ixseps_inner > 0)
+        && (((PE_YIND * MYSUB > jyseps1_1) && (PE_YIND * MYSUB <= jyseps2_1))
+            || ((PE_YIND * MYSUB > jyseps1_2) && (PE_YIND * MYSUB <= jyseps2_2)))) {
+      MYPE_IN_CORE = true; /* processor is in the core */
+      }
+    }
 
   if (DDATA_XSPLIT > LocalNx) {
     DDATA_XSPLIT = LocalNx;
