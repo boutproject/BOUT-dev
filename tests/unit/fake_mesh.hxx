@@ -236,18 +236,17 @@ public:
                                  "RGN_OUTER_X"};
 
     // Sum up and get unique points in the boundaries defined above
-    addRegion2D("RGN_BNDRY",
-                std::accumulate(begin(boundary_names), end(boundary_names),
-                                Region<Ind2D>{},
-                                [this](Region<Ind2D>& a, const std::string& b) {
-                                  return a + getRegion2D(b);
-                                })
-                    .unique());
+    addRegion2D("RGN_BNDRY", std::accumulate(begin(boundary_names), end(boundary_names),
+                                             Region<Ind2D>{},
+                                             [&](Region<Ind2D> a, const std::string& b) {
+                                               return a + getRegion2D(b);
+                                             })
+                                 .unique());
 
     addRegion3D("RGN_BNDRY",
                 std::accumulate(begin(boundary_names), end(boundary_names),
                                 Region<Ind3D>{},
-                                [this](Region<Ind3D>& a, const std::string& b) {
+                                [this](Region<Ind3D> a, const std::string& b) {
                                   return a + getRegion3D(b);
                                 })
                     .unique());
