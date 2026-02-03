@@ -333,13 +333,15 @@ may need to change your input file.
 
     // No matches, just point out the error
     if (possible_matches.empty()) {
-      return fmt::format(message_template, name, problem_bit);
+      return fmt::format(fmt::runtime(message_template), name, problem_bit);
     }
 
     // Give the first suggestion as a possible alternative
-    std::string error_message = fmt::format(message_template, name, problem_bit);
-    error_message += fmt::format(_("\n  {1: ^{2}}{0}\n  Did you mean '{0}'?"),
-                                 possible_matches.begin()->name, "", start);
+    std::string error_message =
+        fmt::format(fmt::runtime(message_template), name, problem_bit);
+    error_message +=
+        fmt::format(fmt::runtime(_("\n  {1: ^{2}}{0}\n  Did you mean '{0}'?")),
+                    possible_matches.begin()->name, "", start);
     return error_message;
   };
 

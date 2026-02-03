@@ -1099,7 +1099,9 @@ value6 = 12
 }
 
 TEST_F(OptionsTest, InvalidFormat) {
-  EXPECT_THROW([[maybe_unused]] auto none = fmt::format("{:nope}", Options{}), fmt::format_error);
+  EXPECT_THROW([[maybe_unused]] auto none =
+                   fmt::format(fmt::runtime("{:nope}"), Options{}),
+               fmt::format_error);
 }
 
 TEST_F(OptionsTest, FormatValue) {
@@ -1110,7 +1112,7 @@ TEST_F(OptionsTest, FormatValue) {
   const std::string expected =
       "value1 = 4		# type: int, doc: This is a value, source: some test";
 
-  EXPECT_EQ(expected, fmt::format("{:ds}", options["value1"]));
+  EXPECT_EQ(expected, fmt::format(fmt::runtime("{:ds}"), options["value1"]));
 }
 
 TEST_F(OptionsTest, FormatDefault) {
@@ -1138,7 +1140,7 @@ value4 = 3.2
 value6 = 12
 )";
 
-  EXPECT_EQ(fmt::format("{}", option), expected);
+  EXPECT_EQ(fmt::format(fmt::runtime("{}"), option), expected);
 }
 
 TEST_F(OptionsTest, FormatDocstrings) {
@@ -1169,7 +1171,7 @@ value4 = 3.2
 value6 = 12
 )";
 
-  EXPECT_EQ(fmt::format("{:d}", option), expected);
+  EXPECT_EQ(fmt::format(fmt::runtime("{:d}"), option), expected);
 }
 
 TEST_F(OptionsTest, FormatDocstringsAndInline) {
@@ -1192,9 +1194,9 @@ section2:subsection1:value4 = 3.2
 section3:subsection2:value6 = 12
 )";
 
-  EXPECT_EQ(fmt::format("{:di}", option), expected);
+  EXPECT_EQ(fmt::format(fmt::runtime("{:di}"), option), expected);
   // Order of format spec shouldn't matter
-  EXPECT_EQ(fmt::format("{:id}", option), expected);
+  EXPECT_EQ(fmt::format(fmt::runtime("{:id}"), option), expected);
 }
 
 TEST_F(OptionsTest, FormatDocstringsAndInlineKeysOnly) {
@@ -1219,16 +1221,16 @@ section2:subsection1:value4
 section3:subsection2:value6		# source: a test
 )";
 
-  EXPECT_EQ(fmt::format("{:ksdi}", option), expected);
+  EXPECT_EQ(fmt::format(fmt::runtime("{:ksdi}"), option), expected);
   // Order of format spec shouldn't matter
-  EXPECT_EQ(fmt::format("{:idsk}", option), expected);
+  EXPECT_EQ(fmt::format(fmt::runtime("{:idsk}"), option), expected);
 }
 
 TEST_F(OptionsTest, FormatUnused) {
   Options option{{"section1", {{"value1", 42}}}};
   std::string expected =
       "section1:value1\t\t# unused value (NOT marked conditionally used)\n";
-  EXPECT_EQ(fmt::format("{:iku}", option), expected);
+  EXPECT_EQ(fmt::format(fmt::runtime("{:iku}"), option), expected);
 }
 
 TEST_F(OptionsTest, FormatConditionallyUsed) {
@@ -1236,7 +1238,7 @@ TEST_F(OptionsTest, FormatConditionallyUsed) {
   option.setConditionallyUsed();
   std::string expected =
       "section1:value1\t\t# unused value (marked conditionally used)\n";
-  EXPECT_EQ(fmt::format("{:iku}", option), expected);
+  EXPECT_EQ(fmt::format(fmt::runtime("{:iku}"), option), expected);
 }
 
 TEST_F(OptionsTest, GetUnused) {
