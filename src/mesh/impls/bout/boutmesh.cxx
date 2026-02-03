@@ -163,14 +163,16 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
   // Check size of Y mesh if we've got multiple processors in Y
   if (num_local_y_points < num_y_guards and num_y_processors != 1) {
     return {false,
-            fmt::format(_("\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n"), ny,
-                        num_y_processors, num_local_y_points, num_y_guards)};
+            fmt::format(fmt::runtime(_(
+                            "\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n")),
+                        ny, num_y_processors, num_local_y_points, num_y_guards)};
   }
   // Check branch cuts
   if ((jyseps1_1 + 1) % num_local_y_points != 0) {
-    return {false, fmt::format(_("\t -> Leg region jyseps1_1+1 ({:d}) must be a "
-                                 "multiple of MYSUB ({:d})\n"),
-                               jyseps1_1 + 1, num_local_y_points)};
+    return {false,
+            fmt::format(fmt::runtime(_("\t -> Leg region jyseps1_1+1 ({:d}) must be a "
+                                       "multiple of MYSUB ({:d})\n")),
+                        jyseps1_1 + 1, num_local_y_points)};
   }
 
   if (jyseps2_1 != jyseps1_2) {
@@ -179,50 +181,57 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
     if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
       return {
           false,
-          fmt::format(_("\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
-                        "be a multiple of MYSUB ({:d})\n"),
+          fmt::format(fmt::runtime(_(
+                          "\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
+                          "be a multiple of MYSUB ({:d})\n")),
                       jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
     }
 
     if ((jyseps2_2 - jyseps1_2) % num_local_y_points != 0) {
       return {
           false,
-          fmt::format(_("\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
-                        "be a multiple of MYSUB ({:d})\n"),
+          fmt::format(fmt::runtime(_(
+                          "\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
+                          "be a multiple of MYSUB ({:d})\n")),
                       jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, num_local_y_points)};
     }
 
     // Check upper legs
     if ((ny_inner - jyseps2_1 - 1) % num_local_y_points != 0) {
-      return {
-          false,
-          fmt::format(_("\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
-                        "be a multiple of MYSUB ({:d})\n"),
-                      ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, num_local_y_points)};
+      return {false,
+              fmt::format(
+                  fmt::runtime(
+                      _("\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
+                        "be a multiple of MYSUB ({:d})\n")),
+                  ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, num_local_y_points)};
     }
     if ((jyseps1_2 - ny_inner + 1) % num_local_y_points != 0) {
-      return {
-          false,
-          fmt::format(_("\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must "
-                        "be a multiple of MYSUB ({:d})\n"),
-                      jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, num_local_y_points)};
+      return {false,
+              fmt::format(
+                  fmt::runtime(
+                      _("\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must "
+                        "be a multiple of MYSUB ({:d})\n")),
+                  jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, num_local_y_points)};
     }
   } else {
     // Single Null
     if ((jyseps2_2 - jyseps1_1) % num_local_y_points != 0) {
       return {
           false,
-          fmt::format(_("\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must "
-                        "be a multiple of MYSUB ({:d})\n"),
+          fmt::format(fmt::runtime(_(
+                          "\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must "
+                          "be a multiple of MYSUB ({:d})\n")),
                       jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, num_local_y_points)};
     }
   }
 
   if ((ny - jyseps2_2 - 1) % num_local_y_points != 0) {
-    return {false, fmt::format(
-                       _("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
-                         "multiple of MYSUB ({:d})\n"),
-                       ny, jyseps2_2, ny - jyseps2_2 - 1, num_local_y_points)};
+    return {
+        false,
+        fmt::format(fmt::runtime(_(
+                        "\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
+                        "multiple of MYSUB ({:d})\n")),
+                    ny, jyseps2_2, ny - jyseps2_2 - 1, num_local_y_points)};
   }
 
   return {true, ""};

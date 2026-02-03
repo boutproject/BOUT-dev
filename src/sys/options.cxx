@@ -760,8 +760,9 @@ T as_amt(const Options& self, const T& similar_to) {
 
   const T result = bout::utils::visit(
       ConvertContainer<T>{
-          fmt::format(_("Value for option {:s} cannot be converted to an {}"), self.str(),
-                      bout::utils::typeName<T>()),
+          fmt::format(
+              fmt::runtime(_("Value for option {:s} cannot be converted to an {}")),
+              self.str(), bout::utils::typeName<T>()),
           similar_to},
       self.value);
 
@@ -1098,20 +1099,22 @@ bout::details::OptionsFormatterBase::format(const Options& options,
   // Get all the child values first
   for (const auto& child : children) {
     if (child.second.isValue()) {
-      fmt::format_to(ctx.out(), format_string, child.second);
+      fmt::format_to(ctx.out(), fmt::runtime(format_string), child.second);
       fmt::format_to(ctx.out(), "\n");
     }
   }
 
   // Now descend the tree, accumulating subsections
   for (const auto& subsection : options.subsections()) {
-    fmt::format_to(ctx.out(), format_string, *subsection.second);
+    fmt::format_to(ctx.out(), fmt::runtime(format_string), *subsection.second);
   }
 
   return ctx.out();
 }
 
-std::string toString(const Options& value) { return fmt::format("{}", value); }
+std::string toString(const Options& value) {
+  return fmt::format(fmt::runtime("{}"), value);
+}
 
 namespace bout {
 void checkForUnusedOptions() {
@@ -1157,7 +1160,7 @@ void checkForUnusedOptions(const Options& options, const std::string& data_dir,
       }
       possible_misspellings += fmt::format("\nUnused option '{}', did you mean:\n", key);
       for (const auto& match : fuzzy_matches) {
-        possible_misspellings += fmt::format("\t{:idk}\n", match.match);
+        possible_misspellings += fmt::format(fmt::runtime("\t{:idk}\n"), match.match);
       }
     }
 
