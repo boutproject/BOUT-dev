@@ -42,9 +42,12 @@ Field3D& Field3D::operator*=(const Field3D& rhs) {
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
 
+    track(rhs, "operator*=");
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator*=");
     (*this) = (*this) * rhs;
   }
   return *this;
@@ -86,9 +89,12 @@ Field3D& Field3D::operator/=(const Field3D& rhs) {
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
 
+    track(rhs, "operator/=");
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator/=");
     (*this) = (*this) / rhs;
   }
   return *this;
@@ -130,9 +136,12 @@ Field3D& Field3D::operator+=(const Field3D& rhs) {
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
 
+    track(rhs, "operator+=");
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator+=");
     (*this) = (*this) + rhs;
   }
   return *this;
@@ -174,9 +183,12 @@ Field3D& Field3D::operator-=(const Field3D& rhs) {
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
 
+    track(rhs, "operator-=");
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator-=");
     (*this) = (*this) - rhs;
   }
   return *this;
@@ -226,9 +238,12 @@ Field3D& Field3D::operator*=(const Field2D& rhs) {
       }
     }
 
+    track(rhs, "operator*=");
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator*=");
     (*this) = (*this) * rhs;
   }
   return *this;
@@ -280,9 +295,12 @@ Field3D& Field3D::operator/=(const Field2D& rhs) {
       }
     }
 
+    track(rhs, "operator/=");
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator/=");
     (*this) = (*this) / rhs;
   }
   return *this;
@@ -332,9 +350,12 @@ Field3D& Field3D::operator+=(const Field2D& rhs) {
       }
     }
 
+    track(rhs, "operator+=");
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator+=");
     (*this) = (*this) + rhs;
   }
   return *this;
@@ -384,9 +405,12 @@ Field3D& Field3D::operator-=(const Field2D& rhs) {
       }
     }
 
+    track(rhs, "operator-=");
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator-=");
     (*this) = (*this) - rhs;
   }
   return *this;
@@ -504,9 +528,12 @@ Field3D& Field3D::operator*=(const BoutReal rhs) {
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
 
+    track(rhs, "operator*=");
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator*=");
     (*this) = (*this) * rhs;
   }
   return *this;
@@ -546,9 +573,12 @@ Field3D& Field3D::operator/=(const BoutReal rhs) {
     const auto tmp = 1.0 / rhs;
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= tmp; }
 
+    track(rhs, "operator/=");
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator/=");
     (*this) = (*this) / rhs;
   }
   return *this;
@@ -586,9 +616,12 @@ Field3D& Field3D::operator+=(const BoutReal rhs) {
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
 
+    track(rhs, "operator+=");
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator+=");
     (*this) = (*this) + rhs;
   }
   return *this;
@@ -626,9 +659,12 @@ Field3D& Field3D::operator-=(const BoutReal rhs) {
 
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
 
+    track(rhs, "operator-=");
+
     checkData(*this);
 
   } else {
+    track(rhs, "operator-=");
     (*this) = (*this) - rhs;
   }
   return *this;
