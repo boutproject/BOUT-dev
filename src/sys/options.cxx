@@ -771,7 +771,8 @@ Matrix<BoutReal> Options::as<Matrix<BoutReal>>(const Matrix<BoutReal>& similar_t
   auto result = bout::utils::visit(
       ConvertContainer<Matrix<BoutReal>>{
           fmt::format(
-              _("Value for option {:s} cannot be converted to an Matrix<BoutReal>"),
+              fmt::runtime(
+                  _("Value for option {:s} cannot be converted to an Matrix<BoutReal>")),
               full_name),
           similar_to},
       value);
@@ -793,7 +794,8 @@ Tensor<BoutReal> Options::as<Tensor<BoutReal>>(const Tensor<BoutReal>& similar_t
   auto result = bout::utils::visit(
       ConvertContainer<Tensor<BoutReal>>{
           fmt::format(
-              _("Value for option {:s} cannot be converted to an Tensor<BoutReal>"),
+              fmt::runtime(
+                  _("Value for option {:s} cannot be converted to an Tensor<BoutReal>")),
               full_name),
           similar_to},
       value);
