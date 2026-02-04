@@ -860,7 +860,7 @@ inline Field3DParallel
 filledFrom(const Field3DParallel& f,
            std::function<BoutReal(int yoffset, Ind3D index)> func) {
   auto result{emptyFrom(f)};
-  if (f.hasParallelSlices()) {
+  if (f.isFci()) {
     BOUT_FOR(i, result.getRegion("RGN_NOY")) { result[i] = func(0, i); }
 
     for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
