@@ -76,7 +76,8 @@ public:
   }
 
   template <class S, class... Args>
-  Output(const S& format, const Args&... args) : Output(fmt::format(fmt::runtime(format), args...)) {}
+  Output(const S& format, const Args&... args)
+      : Output(fmt::format(fmt::runtime(format), args...)) {}
 
   ~Output() override { close(); }
 

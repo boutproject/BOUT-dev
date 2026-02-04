@@ -747,9 +747,9 @@ Array<BoutReal> Options::as<Array<BoutReal>>(const Array<BoutReal>& similar_to) 
 
   Array<BoutReal> result = bout::utils::visit(
       ConvertContainer<Array<BoutReal>>{
-	fmt::format(fmt::runtime(
-				 _("Value for option {:s} cannot be converted to an Array<BoutReal>")
-				 ),
+          fmt::format(
+              fmt::runtime(
+                  _("Value for option {:s} cannot be converted to an Array<BoutReal>")),
               full_name),
           similar_to},
       value);
