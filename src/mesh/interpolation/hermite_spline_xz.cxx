@@ -119,8 +119,12 @@ XZHermiteSplineBase<monotonic>::XZHermiteSplineBase(int y_offset, Mesh* meshin,
     if (options == nullptr) {
       options = &Options::root()["mesh:paralleltransform:xzinterpolation"];
     }
-    abs_fac_monotonic = (*options)["abs_tol"].withDefault(abs_fac_monotonic);
-    rel_fac_monotonic = (*options)["rel_tol"].withDefault(rel_fac_monotonic);
+    abs_fac_monotonic = (*options)["atol"]
+                            .doc("Absolute tolerance for clipping overshoot")
+                            .withDefault(abs_fac_monotonic);
+    rel_fac_monotonic = (*options)["rtol"]
+                            .doc("Relative tolerance for clipping overshoot")
+                            .withDefault(rel_fac_monotonic);
   }
 
   // Index arrays contain guard cells in order to get subscripts right
@@ -479,8 +483,9 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(
       const auto corners = {(*gf)[IndG3D(g3dinds[i][0])], (*gf)[IndG3D(g3dinds[i][1])],
                             (*gf)[IndG3D(g3dinds[i][2])], (*gf)[IndG3D(g3dinds[i][3])]};
       const auto minmax = std::minmax(corners);
+
       const auto diff =
-          (minmax.second - minmax.first) * rel_fac_monotonic + abs_fac_monotonic;
+          ((minmax.second - minmax.first) * rel_fac_monotonic) + abs_fac_monotonic;
       f_interp[iyp] = std::max(f_interp[iyp], minmax.first - diff);
       f_interp[iyp] = std::min(f_interp[iyp], minmax.second + diff);
     }
