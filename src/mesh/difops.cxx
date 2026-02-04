@@ -406,6 +406,14 @@ Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& 
     Field3D result{zeroFrom(fin)};
     flow_ylow = zeroFrom(fin);
 
+#if BOUT_USE_OPENMP
+    // ensure they are loaded, before they are used
+    coord->Jxz_yhigh();
+    coord->Jxz_ylow();
+    coord->g_22_yhigh();
+    coord->g_22_ylow();
+#endif
+
     BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
       const auto iyp = i.yp();
       const auto iym = i.ym();
