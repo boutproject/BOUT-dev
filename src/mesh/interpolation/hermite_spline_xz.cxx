@@ -107,6 +107,18 @@ XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh* meshin)
       h10_x(localmesh), h11_x(localmesh), h00_z(localmesh), h01_z(localmesh),
       h10_z(localmesh), h11_z(localmesh) {
 
+  if constexpr (monotonic) {
+    if (options == nullptr) {
+      options = &Options::root()["mesh:paralleltransform:xzinterpolation"];
+    }
+    abs_fac_monotonic = (*options)["atol"]
+                            .doc("Absolute tolerance for clipping overshoot")
+                            .withDefault(abs_fac_monotonic);
+    rel_fac_monotonic = (*options)["rtol"]
+                            .doc("Relative tolerance for clipping overshoot")
+                            .withDefault(rel_fac_monotonic);
+  }
+
   // Index arrays contain guard cells in order to get subscripts right
   i_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
   k_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
@@ -422,6 +434,25 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
     f_interp[iyp] =
         +f_z * h00_z[i] + f_zp1 * h01_z[i] + fz_z * h10_z[i] + fz_zp1 * h11_z[i];
 
+    if constexpr (monotonic) {
+#endif
+      const auto corners = {(*gf)[IndG3D(g3dinds[i][0])], (*gf)[IndG3D(g3dinds[i][1])],
+                            (*gf)[IndG3D(g3dinds[i][2])], (*gf)[IndG3D(g3dinds[i][3])]};
+      const auto minmax = std::minmax(corners);
+
+      const auto diff =
+          ((minmax.second - minmax.first) * rel_fac_monotonic) + abs_fac_monotonic;
+      f_interp[iyp] = std::max(f_interp[iyp], minmax.first - diff);
+      f_interp[iyp] = std::min(f_interp[iyp], minmax.second + diff);
+    }
+#if USE_NEW_WEIGHTS and defined(HS_USE_PETSC)
+    ASSERT2(std::isfinite(cptr[int(i)]));
+  }
+  VecRestoreArrayRead(result, &cptr);
+#elif USE_NEW_WEIGHTS
+    ASSERT2(std::isfinite(f_interp[iyp]));
+  }
+#else
     ASSERT2(std::isfinite(f_interp[iyp]) || i.x() < localmesh->xstart
             || i.x() > localmesh->xend);
   }
