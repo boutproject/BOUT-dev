@@ -180,12 +180,17 @@ protected:
   Vec rhs, result;
 #endif
 
+  /// Factors to allow for some wiggleroom
+  BoutReal abs_fac_monotonic{1e-2};
+  BoutReal rel_fac_monotonic{1e-1};
+
 public:
   XZHermiteSplineBase(Mesh* mesh = nullptr, [[maybe_unused]] Options* options = nullptr)
-      : XZHermiteSplineBase(0, mesh) {}
-  XZHermiteSplineBase(int y_offset = 0, Mesh* mesh = nullptr);
-  XZHermiteSplineBase(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
-      : XZHermiteSplineBase(y_offset, mesh) {
+      : XZHermiteSplineBase(0, mesh, options) {}
+  XZHermiteSplineBase(int y_offset = 0, Mesh* mesh = nullptr, Options* options = nullptr);
+  XZHermiteSplineBase(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr,
+		      Options* options = nullptr)
+      : XZHermiteSplineBase(y_offset, mesh, options) {
     setRegion(regionFromMask(mask, localmesh));
   }
   ~XZHermiteSplineBase() {
