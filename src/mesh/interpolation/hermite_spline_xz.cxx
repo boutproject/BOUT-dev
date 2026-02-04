@@ -109,10 +109,19 @@ private:
 };
 
 template <bool monotonic>
-XZHermiteSplineBase<monotonic>::XZHermiteSplineBase(int y_offset, Mesh* meshin)
+XZHermiteSplineBase<monotonic>::XZHermiteSplineBase(int y_offset, Mesh* meshin,
+                                                    Options* options)
     : XZInterpolation(y_offset, meshin), h00_x(localmesh), h01_x(localmesh),
       h10_x(localmesh), h11_x(localmesh), h00_z(localmesh), h01_z(localmesh),
       h10_z(localmesh), h11_z(localmesh) {
+
+  if constexpr (monotonic) {
+    if (options == nullptr) {
+      options = &Options::root()["mesh:paralleltransform:xzinterpolation"];
+    }
+    abs_fac_monotonic = (*options)["abs_tol"].withDefault(abs_fac_monotonic);
+    rel_fac_monotonic = (*options)["rel_tol"].withDefault(rel_fac_monotonic);
+  }
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
@@ -470,13 +479,10 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(
       const auto corners = {(*gf)[IndG3D(g3dinds[i][0])], (*gf)[IndG3D(g3dinds[i][1])],
                             (*gf)[IndG3D(g3dinds[i][2])], (*gf)[IndG3D(g3dinds[i][3])]};
       const auto minmax = std::minmax(corners);
-      if (f_interp[iyp] < minmax.first) {
-        f_interp[iyp] = minmax.first;
-      } else {
-        if (f_interp[iyp] > minmax.second) {
-          f_interp[iyp] = minmax.second;
-        }
-      }
+      const auto diff =
+          (minmax.second - minmax.first) * rel_fac_monotonic + abs_fac_monotonic;
+      f_interp[iyp] = std::max(f_interp[iyp], minmax.first - diff);
+      f_interp[iyp] = std::min(f_interp[iyp], minmax.second + diff);
     }
 #if USE_NEW_WEIGHTS and defined(HS_USE_PETSC)
     ASSERT2(std::isfinite(cptr[int(i)]));
