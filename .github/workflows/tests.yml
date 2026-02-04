@@ -179,6 +179,7 @@ jobs:
       - name: Install pip packages
         run: |
           python -m pip install --upgrade pip setuptools
+          python -m pip install git+https://github.com/boutproject/zoidberg@better-metric
           python -m pip install -r requirements.txt
 
       - name: Cache SUNDIALS build

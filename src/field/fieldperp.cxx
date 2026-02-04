@@ -23,10 +23,13 @@
  *
  **************************************************************************/
 
+#include "bout/unused.hxx"
 #include <bout/boutcomm.hxx>
 #include <bout/globals.hxx>
 
 #include <cmath>
+#include <cstddef>
+#include <optional>
 
 #include <bout/boutexception.hxx>
 #include <bout/fieldperp.hxx>
@@ -34,7 +37,7 @@
 #include <bout/utils.hxx>
 
 FieldPerp::FieldPerp(Mesh* localmesh, CELL_LOC location_in, int yindex_in,
-                     DirectionTypes directions)
+                     DirectionTypes directions, std::optional<size_t> UNUSED(regionID))
     : Field(localmesh, location_in, directions), yindex(yindex_in) {
   if (fieldmesh) {
     nx = fieldmesh->LocalNx;

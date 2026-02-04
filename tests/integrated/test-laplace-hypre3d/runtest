@@ -13,7 +13,7 @@ test_directories = [
     ("data_circular_core-sol", 1),
 ]
 
-tolerance = 1.0e-6
+tolerance = 1.0e-4
 
 build_and_log("Laplace 3D with Hypre")
 

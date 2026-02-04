@@ -334,6 +334,7 @@ TEST_P(FirstDerivativesInterfaceTest, Sanity) {
     result = bout::derivatives::index::DDX(input);
     break;
   case DIRECTION::Y:
+    input.setDirectionY(YDirectionType::Aligned);
     result = bout::derivatives::index::DDY(input);
     break;
   case DIRECTION::Z:

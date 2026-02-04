@@ -10,7 +10,7 @@ NCVER=${NCVER:-4.7.4}
 NCCXXVER=${NCCXXVER:-4.3.1}
 FFTWVER=${FFTWVER:-3.3.9}
 SUNVER=${SUNVER:-5.7.0}
-PETSCVER=${PETSCVER:-3.15.0}
+PETSCVER=${PETSCVER:-3.21.4}
 
 
 HDF5FLAGS=${HDF5FLAGS:-}
@@ -147,7 +147,7 @@ petsc() {
     test -z $PETSC_DIR || error "\$PETSC_DIR is set ($PETSC_DIR) - please unset"
     test -z $PETSC_ARCH || error "\$PETSC_ARCH is set ($PETSC_ARCH) - please unset"
     cd $BUILD
-    wget -c https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-$PETSCVER.tar.gz || :
+    wget -c https://web.cels.anl.gov/projects/petsc/download/release-snapshots/petsc-$PETSCVER.tar.gz || :
     tar -xf petsc-$PETSCVER.tar.gz
     cd petsc-$PETSCVER
     unset PETSC_DIR

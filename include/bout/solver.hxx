@@ -321,6 +321,8 @@ public:
   /// @param[in] save_repeat    If true, add variables with time dimension
   virtual void outputVars(Options& output_options, bool save_repeat = true);
 
+  void modelOutputVars(Options& output_options);
+
   /// Copy evolving variables out of \p options
   virtual void readEvolvingVariablesFromOptions(Options& options);
 

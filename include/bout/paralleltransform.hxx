@@ -90,6 +90,10 @@ public:
   /// require a twist-shift at branch cuts on closed field lines?
   virtual bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) = 0;
 
+  /// Can be implemented to load parallel metrics
+  /// Needed by FCI
+  virtual void loadParallelMetrics(Coordinates* UNUSED(coords)) {}
+
 protected:
   /// This method should be called in the constructor to check that if the grid
   /// has a 'parallel_transform' variable, it has the correct value
