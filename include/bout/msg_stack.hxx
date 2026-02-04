@@ -76,7 +76,7 @@ public:
 
   template <class S, class... Args>
   int push(const S& format, const Args&... args) {
-    return push(fmt::format(format, args...));
+    return push(fmt::format(fmt::runtime(format), args...));
   }
 
   void pop();       ///< Remove the last message
@@ -145,8 +145,8 @@ public:
 
   template <class S, class... Args>
   MsgStackItem(const std::string& file, int line, const S& msg, const Args&... args)
-      : point(msg_stack.push("{:s} on line {:d} of '{:s}'", fmt::format(msg, args...),
-                             line, file)) {}
+      : point(msg_stack.push("{:s} on line {:d} of '{:s}'",
+                             fmt::format(fmt::runtime(msg), args...), line, file)) {}
   ~MsgStackItem() {
     // If an exception has occurred, don't pop the message
     if (exception_count == std::uncaught_exceptions()) {

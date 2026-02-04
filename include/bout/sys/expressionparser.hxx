@@ -249,7 +249,7 @@ public:
 
   template <class S, class... Args>
   ParseException(const S& format, const Args&... args)
-      : message(fmt::format(format, args...)) {}
+      : message(fmt::format(fmt::runtime(format), args...)) {}
 
   ~ParseException() override = default;
 

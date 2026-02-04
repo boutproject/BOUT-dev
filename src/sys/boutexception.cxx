@@ -3,7 +3,6 @@
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/msg_stack.hxx>
-#include <bout/utils.hxx>
 #include <mpi.h>
 
 #if BOUT_USE_BACKTRACE

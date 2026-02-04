@@ -71,7 +71,7 @@ public:
 
   template <class S, class... Args>
   void read(Options* options, const S& format, const Args&... args) {
-    return read(options, fmt::format(format, args...));
+    return read(options, fmt::format(fmt::runtime(format), args...));
   }
 
   /// Write options to file
@@ -82,7 +82,7 @@ public:
 
   template <class S, class... Args>
   void write(Options* options, const S& format, const Args&... args) {
-    return write(options, fmt::format(format, args...));
+    return write(options, fmt::format(fmt::runtime(format), args...));
   }
 
   /// Parse options from the command line

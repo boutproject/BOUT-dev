@@ -337,7 +337,7 @@ template <class Factory>
   // type. Note that this does require all the options are used in the
   // constructor, and not in a `init` method or similar
   std::cout << fmt::format("Input options for {} '{}':\n\n", Factory::type_name, type);
-  std::cout << fmt::format("{:id}\n", help_options);
+  std::cout << fmt::format(fmt::runtime("{:id}\n"), help_options);
   std::exit(EXIT_SUCCESS);
 }
 
