@@ -790,6 +790,11 @@ if(BOUT_TESTS)
     "${PROJECT_SOURCE_DIR}/tests/integrated/test-boutpp/conftest.py"
     "${PROJECT_BINARY_DIR}/tests/integrated/test-boutpp/conftest.py")
 
+  # Copy the pytest shell script
+  configure_file(
+    "${PROJECT_SOURCE_DIR}/tests/run_integrated_tests.sh"
+    "${PROJECT_BINARY_DIR}/tests/run_integrated_tests.sh")
+
 endif()
 
 option(BOUT_BUILD_EXAMPLES "Build the examples" ON)
