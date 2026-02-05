@@ -190,7 +190,6 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
 }
 
 
-
 namespace bout {
 CheckMeshResult checkBoutMeshYDecomposition(
     int num_y_processors, int ny,
@@ -516,9 +515,6 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
     NXPE = NPES / NYPE;
   }
 
-  auto mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
-                                  ixseps1, ixseps2);
-
   auto result = bout::checkBoutMeshYDecomposition(NYPE, ny, MYG, jyseps1_1, jyseps2_1,
                                                   jyseps1_2, jyseps2_2, ny_inner, mesh_topology);
 
@@ -534,9 +530,6 @@ void BoutMesh::findProcessorSplit() {
   MX = nx - 2 * MXG;
 
   NXPE = -1; // Best option
-
-  auto mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
-                                  ixseps1, ixseps2);
 
   // Results in square domains
   const BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny));
@@ -775,9 +768,6 @@ int BoutMesh::load() {
   Mesh::get(jyseps2_2, "jyseps2_2", ny - 1);
   Mesh::get(ny_inner, "ny_inner", jyseps2_1);
 
-  auto mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
-                                  ixseps1, ixseps2);
-
   // Check inputs
   setYDecompositionIndices(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
 
@@ -889,8 +879,6 @@ int BoutMesh::load() {
 void BoutMesh::createCommunicators() {
   MPI_Group group_world{};
   MPI_Comm_group(BoutComm::get(), &group_world); // Get the entire group
-  MeshTopology mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
-                                  ixseps1, ixseps2);
 
   //////////////////////////////////////////////////////
   /// Communicator in X
@@ -1445,9 +1433,6 @@ void BoutMesh::createXBoundaries() {
   if (MXG <= 0) {
     return;
   }
-
-  MeshTopology mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
-                                  ixseps1, ixseps2);
 
   // Get a global index in this processor
   const int yg = getGlobalYIndexNoBoundaries(MYG);
@@ -2315,6 +2300,9 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   PE_XIND = pe_xind;
   periodicX = periodicX_;
   setYDecompositionIndices(jyseps1_1_, jyseps2_1_, jyseps1_2_, jyseps2_2_, ny_inner_);
+  mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1,
+                                jyseps1_2, jyseps2_2,
+                                ny_inner, ixseps1, ixseps2);
   setDerivedGridSizes();
   topology();
   if (create_regions) {
@@ -2577,9 +2565,6 @@ void BoutMesh::topology() {
   if (MYSUB < MYG) {
     throw BoutException("\tERROR: Grid Y size must be >= guard cell size\n");
   }
-
-  auto mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner,
-                                       ixseps1, ixseps2);
 
   if (jyseps2_1 == jyseps1_2) {
     /********* SINGLE NULL OPERATION *************/
@@ -2991,39 +2976,74 @@ int BoutMesh::ySize(int xpos) const {
   int xglobal = getGlobalXIndex(xpos);
   int yglobal = getGlobalYIndexNoBoundaries(MYG);
 
-  if ((xglobal < ixseps_lower) && ((yglobal <= jyseps1_1) || (yglobal > jyseps2_2))) {
-    // Lower PF region
-    return (jyseps1_1 + 1) + (ny - jyseps2_2);
+  //Old divisions working for all other topologies. 
+  if (mesh_topology == MeshTopology::SF) {
+    if (xglobal < ixseps_lower) {
+      if ((yglobal <= jyseps1_1) || (yglobal > jyseps2_2) || 
+        (yglobal <= jyseps1_2 && yglobal > jyseps2_1)) {
+        // West PF region in Snowflake
+        return (jyseps1_1 + 1) + (ny - jyseps2_2) + (jyseps1_2 - jyseps2_1);
 
-  } else if ((xglobal < ixseps_upper) && (yglobal > jyseps2_1)
-             && (yglobal >= jyseps1_2)) {
-    // Upper PF region
-    return jyseps1_2 - jyseps2_1;
+      } else if ((yglobal > jyseps1_2) && (yglobal <= jyseps2_2)) {
+        // East PF region in Snowflake
+        return (jyseps2_2 - ny_inner + 1) + (ny_inner - 1 - jyseps1_2);
+      } 
 
-  } else if (xglobal < ixseps_inner) {
-    // Core
-    return (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
+    } else if (((xglobal < ixseps_upper) && (xglobal >= ixseps_lower)) &&
+              (((yglobal > jyseps2_1) && (yglobal <= ny_inner - 1)) 
+              || (yglobal <= jyseps1_1))) {
+      // Center PF region in Snowflake
+      return (ny_inner - 1 - jyseps2_1) + (jyseps1_1 + 1);
 
-  } else if (jyseps2_1 == jyseps1_2) {
-    // Single null, so in the SOL
-    return ny;
+    } else if (xglobal < ixseps_upper) {
+      // Core
+      return (jyseps2_1 - jyseps1_1);
 
-  } else if ((xglobal >= ixseps_inner) && (xglobal < ixseps_outer)) {
-    // Intermediate SOL in DND
-
-    if (ixseps_lower < ixseps_upper) {
-      // Connects to lower divertor
-      return (jyseps2_1 + 1) + (ny - jyseps1_2);
-    } else {
-      // Connects to upper divertor
-      return jyseps2_2 - jyseps1_1;
+    } else if (xglobal >= ixseps_lower){
+      if (yglobal <= ny_inner - 1){
+        // Outer SOL
+        return ny - ny_inner;
+      } else {
+        // South PF region in Snowflake
+        return (ny - ny_inner + 1);
+      }
     }
-  } else if (yglobal < ny_inner) {
-    // Inner SOL
-    return ny_inner;
+  } else {
+    if ((xglobal < ixseps_lower) && ((yglobal <= jyseps1_1) || (yglobal > jyseps2_2))) {
+      // Lower PF region
+      return (jyseps1_1 + 1) + (ny - jyseps2_2);
+
+    } else if ((xglobal < ixseps_upper) && (yglobal > jyseps2_1)
+    //This is almost surely wrong!!
+              && (yglobal >= jyseps1_2)) {
+      // Upper PF region
+      return jyseps1_2 - jyseps2_1;
+
+    } else if (xglobal < ixseps_inner) {
+      // Core (should there not be a division here between SN and DN?)
+      return (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
+
+    } else if (jyseps2_1 == jyseps1_2) {
+      // Single null, so in the SOL
+      return ny;
+
+    } else if ((xglobal >= ixseps_inner) && (xglobal < ixseps_outer)) {
+      // Intermediate SOL in DND
+
+      if (ixseps_lower < ixseps_upper) {
+        // Connects to lower divertor
+        return (jyseps2_1 + 1) + (ny - jyseps1_2);
+      } else {
+        // Connects to upper divertor
+        return jyseps2_2 - jyseps1_1;
+      }
+    } else if (yglobal < ny_inner) {
+      // Inner SOL
+      return ny_inner;
+    }
+    // Outer SOL
+    return ny - ny_inner;
   }
-  // Outer SOL
-  return ny - ny_inner;
 }
 
 MPI_Comm BoutMesh::getYcomm(int xpos) const {

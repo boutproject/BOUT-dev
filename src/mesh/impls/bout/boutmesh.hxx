@@ -325,6 +325,8 @@ private:
 
   std::vector<BoutReal> ShiftAngle; ///< Angle for twist-shift location
 
+  MeshTopology mesh_topology;
+
 protected:
   // These are protected so we can make them public in the test suite
   // for testing

@@ -2531,3 +2531,29 @@ TEST(BoutMeshTest, GetPossibleBoundariesDND) {
   EXPECT_EQ(mesh_DND_1x6.getPossibleBoundaries(), boundaries);
   EXPECT_EQ(mesh_DND_32x64.getPossibleBoundaries(), boundaries);
 }
+
+//New SF tests for possible boundaries: Needs modifying of more functions.
+/*
+TEST(BoutMeshTest, GetPossibleBoundariesSnowflake) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
+  // Minimal valid Snowflake (nype >= 6)
+  BoutMeshExposer mesh_SF_1x6(createSnowflake({12, 3, 1, 1, 1, 6, 0, 2}));
+
+  // Larger Snowflake decomposition
+  BoutMeshExposer mesh_SF_32x64(createSnowflake({12, 3, 1, 1, 32, 64, 0, 4}));
+
+  std::set<std::string> boundaries{
+      "core",
+      "pf",
+      "sol",
+      "upper_target",
+      "lower_target",
+      "south_pf_outer"
+  };
+
+  EXPECT_EQ(mesh_SF_1x6.getPossibleBoundaries(), boundaries);
+  EXPECT_EQ(mesh_SF_32x64.getPossibleBoundaries(), boundaries);
+}
+*/
