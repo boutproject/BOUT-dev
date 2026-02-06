@@ -461,10 +461,8 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     GoodSnowflake, BoutMeshDecompositionTest,
     ::testing::Values(
-        // Minimal snowflake, 1 processor, passes trivially
-        DecompositionTestParameters{1, 1, 8, 1, {-1, 4, 4, 7, 4}, "", "MinimalSF", MeshTopology::SF},
-        // Snowflake with 2 y-processors, ny divisible correctly
-        DecompositionTestParameters{2, 2, 16, 1, {-1, 8, 8, 15, 8}, "", "SF16PointsNYPE2", MeshTopology::SF},
+        // Snowflake with 6 procesors in y, which is the minimum for a snowflake with the standard assumptions about where the separatrices are.
+        DecompositionTestParameters{6, 6, 48, 1, {-1, 15, 23, 31, 24}, "", "SF48PointsNYPE6", MeshTopology::SF},
 
         // A slightly more realistic SF grid
         makeDecompositionTestParameters(createSnowflake({4, 6, 2, 2, 1, 9}), 

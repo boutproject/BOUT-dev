@@ -191,48 +191,46 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
 
 
 namespace bout {
-CheckMeshResult checkBoutMeshYDecomposition(
-    int num_y_processors, int ny,
-    int num_y_guards,
-    int jyseps1_1, int jyseps2_1,
-    int jyseps1_2, int jyseps2_2,
-    int ny_inner) {
+  CheckMeshResult checkBoutMeshYDecomposition(
+      int num_y_processors, int ny,
+      int num_y_guards,
+      int jyseps1_1, int jyseps2_1,
+      int jyseps1_2, int jyseps2_2,
+      int ny_inner) {
 
-  // Preserve legacy behaviour (Single / Double Null)
-  return checkBoutMeshYDecomposition(
-      num_y_processors, ny, num_y_guards,
-      jyseps1_1, jyseps2_1,
-      jyseps1_2, jyseps2_2,
-      ny_inner,
-      MeshTopology::UDN);
-}
-
-} // namespace bout
-
-namespace bout {
-CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
-                                            int num_y_guards, int jyseps1_1,
-                                            int jyseps2_1, int jyseps1_2, int jyseps2_2,
-                                            int ny_inner, MeshTopology mesh_topology) {
-
-  const int num_local_y_points = ny / num_y_processors;
-
-  // Check size of Y mesh if we've got multiple processors in Y
-  if (num_local_y_points < num_y_guards and num_y_processors != 1) {
-    return {false,
-            fmt::format(_("\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n"), ny,
-                        num_y_processors, num_local_y_points, num_y_guards)};
+    // Preserve legacy behaviour (Single / Double Null)
+    return checkBoutMeshYDecomposition(
+        num_y_processors, ny, num_y_guards,
+        jyseps1_1, jyseps2_1,
+        jyseps1_2, jyseps2_2,
+        ny_inner,
+        MeshTopology::UDN);
   }
-  // Check branch cuts
-  if ((jyseps1_1 + 1) % num_local_y_points != 0) {
-    return {false, fmt::format(_("\t -> Leg region jyseps1_1+1 ({:d}) must be a "
-                                 "multiple of MYSUB ({:d})\n"),
-                               jyseps1_1 + 1, num_local_y_points)};
-  }
-    
-  if (jyseps2_1 != jyseps1_2) {
-    // Unconnected Double Null or SF
-    if (mesh_topology == MeshTopology::UDN){ 
+
+  } // namespace bout
+
+  namespace bout {
+  CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
+                                              int num_y_guards, int jyseps1_1,
+                                              int jyseps2_1, int jyseps1_2, int jyseps2_2,
+                                              int ny_inner, MeshTopology mesh_topology) {
+
+    const int num_local_y_points = ny / num_y_processors;
+
+    // Check size of Y mesh if we've got multiple processors in Y
+    if (num_local_y_points < num_y_guards and num_y_processors != 1) {
+      return {false,
+              fmt::format(_("\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n"), ny,
+                          num_y_processors, num_local_y_points, num_y_guards)};
+    }
+    // Check branch cuts
+    if ((jyseps1_1 + 1) % num_local_y_points != 0) {
+      return {false, fmt::format(_("\t -> Leg region jyseps1_1+1 ({:d}) must be a "
+                                  "multiple of MYSUB ({:d})\n"),
+                                jyseps1_1 + 1, num_local_y_points)};
+    }
+
+    if (mesh_topology == MeshTopology::UDN || mesh_topology == MeshTopology::CDN){ 
       if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
         return {
             false,
@@ -264,9 +262,7 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
                           "be a multiple of MYSUB ({:d})\n"),
                         jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, num_local_y_points)};
       }
-    }
-
-    if (mesh_topology == MeshTopology::SF){
+    } else if (mesh_topology == MeshTopology::SF){
       //Ask peter about this bit
 
       //Check Core region
@@ -310,8 +306,8 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
       return {
         false, 
         fmt::format(_("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
-                         "multiple of MYSUB ({:d})\n"),
-                       ny, jyseps2_2, ny - 1 - jyseps2_2, num_local_y_points)};
+                          "multiple of MYSUB ({:d})\n"),
+                        ny, jyseps2_2, ny - 1 - jyseps2_2, num_local_y_points)};
       }
 
       //Check central region
@@ -331,9 +327,7 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
                           "be a multiple of MYSUB ({:d})\n"),
                       ny, ny_inner, ny - ny_inner, num_local_y_points)};
       }
-  }
-
-  } else {
+    }  else if ((mesh_topology == MeshTopology::SN) || (mesh_topology == MeshTopology::CFL)){
     // Single Null or connected Double Null
     if ((jyseps2_2 - jyseps1_1) % num_local_y_points != 0) {
       return {
@@ -346,127 +340,126 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
 
   if ((ny - 1 - jyseps2_2) % num_local_y_points != 0) {
     return {false, fmt::format(
-                       _("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
-                         "multiple of MYSUB ({:d})\n"),
-                       ny, jyseps2_2, ny - 1 - jyseps2_2, num_local_y_points)};
+                        _("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
+                          "multiple of MYSUB ({:d})\n"),
+                        ny, jyseps2_2, ny - 1 - jyseps2_2, num_local_y_points)};
   }
 
   return {true, ""};
-}
-
-
-CheckMeshResult findValidProcessorNum(int ny, int nx,
-                                     int NPES,
-                                     int NYPE,
-                                     int NXPE) {
-  int best_nxpe = 0;
-  int best_nype = 0;
-  int best_npes = 0;
-
-  for (int possible_nxpe = NXPE; possible_nxpe <= NPES; ++possible_nxpe) {
-    if (nx % possible_nxpe != 0) continue;
-
-    for (int possible_nype = NYPE;
-         possible_nype <= NPES / possible_nxpe;
-         ++possible_nype) {
-      
-      if (possible_nype == 1 && possible_nxpe == 1 && NPES > 1) continue; // Skip single processor unless NPES=1
-      if (ny % possible_nype != 0) continue;
-      if (NPES % (possible_nxpe * possible_nype) != 0) continue;
-      int possible_npes = possible_nxpe * possible_nype;
-
-      if (possible_npes > best_npes) {
-        best_npes = possible_npes;
-        best_nxpe = possible_nxpe;
-        best_nype = possible_nype;
-      }
-    }
   }
 
-  if (best_npes > 0) {
+
+  CheckMeshResult findValidProcessorNum(int ny, int nx,
+                                      int NPES,
+                                      int NYPE,
+                                      int NXPE) {
+    int best_nxpe = 0;
+    int best_nype = 0;
+    int best_npes = 0;
+
+    for (int possible_nxpe = NXPE; possible_nxpe <= NPES; ++possible_nxpe) {
+      if (nx % possible_nxpe != 0) continue;
+
+      for (int possible_nype = NYPE;
+          possible_nype <= NPES / possible_nxpe;
+          ++possible_nype) {
+        
+        if (possible_nype == 1 && possible_nxpe == 1 && NPES > 1) continue; // Skip single processor unless NPES=1
+        if (ny % possible_nype != 0) continue;
+        if (NPES % (possible_nxpe * possible_nype) != 0) continue;
+        int possible_npes = possible_nxpe * possible_nype;
+
+        if (possible_npes > best_npes) {
+          best_npes = possible_npes;
+          best_nxpe = possible_nxpe;
+          best_nype = possible_nype;
+        }
+      }
+    }
+
+    if (best_npes > 0) {
+      return {
+        true,
+        fmt::format(
+          "\t -> Best processor decomposition found: "
+          "NPES={:d}, NXPE={:d}, and NYPE={:d}.",
+          best_npes, best_nxpe, best_nype)
+      };
+    }
+
     return {
-      true,
+      false,
       fmt::format(
-        "\t -> Best processor decomposition found: "
-        "NPES={:d}, NXPE={:d}, and NYPE={:d}.",
-        best_npes, best_nxpe, best_nype)
+        "\t -> No valid processor decomposition found for nx={:d}, ny={:d} with the number of given processors NPES = {:d}. "
+        "Try changing the number of points.",
+        nx, ny, NPES)
     };
   }
 
-  return {
-    false,
-    fmt::format(
-      "\t -> No valid processor decomposition found for nx={:d}, ny={:d} with the number of given processors NPES = {:d}. "
-      "Try changing the number of points.",
-      nx, ny, NPES)
-  };
-}
 
+    CheckMeshResult findValidYDecomposition(int ny,
+      int num_y_processors,
+      int num_y_guards,
+      int jyseps1_1_start,
+      int jyseps2_1_start,
+      int jyseps1_2_start,
+      int jyseps2_2_start,
+      int ny_inner_start, 
+      MeshTopology mesh_topology) {
 
-  CheckMeshResult findValidYDecomposition(int ny,
-    int num_y_processors,
-    int num_y_guards,
-    int jyseps1_1_start,
-    int jyseps2_1_start,
-    int jyseps1_2_start,
-    int jyseps2_2_start,
-    int ny_inner_start, 
-    MeshTopology mesh_topology) {
+    if (ny % num_y_processors != 0) {
+      return {false, fmt::format(
+                          "\t ->ny ({:d}) must be divisible by NYPE ({:d}). Try changing the number of points or processors in Y.",ny, num_y_processors)};
+    }
 
-  if (ny % num_y_processors != 0) {
-    return {false, fmt::format(
-                        "\t ->ny ({:d}) must be divisible by NYPE ({:d}). Try changing the number of points or processors in Y.",ny, num_y_processors)};
-  }
+    for (int jyseps1_1 = jyseps1_1_start; jyseps1_1 < ny; ++jyseps1_1) {
 
-  for (int jyseps1_1 = jyseps1_1_start; jyseps1_1 < ny; ++jyseps1_1) {
+      for (int jyseps2_1 = jyseps2_1_start;
+          jyseps2_1 < ny; ++jyseps2_1) {
 
-    for (int jyseps2_1 = jyseps2_1_start;
-         jyseps2_1 < ny; ++jyseps2_1) {
+        for (int jyseps1_2 = jyseps1_2_start;
+            jyseps1_2 < ny; ++jyseps1_2) {
 
-      for (int jyseps1_2 = jyseps1_2_start;
-           jyseps1_2 < ny; ++jyseps1_2) {
+          for (int ny_inner = ny_inner_start;
+              ny_inner < ny; ++ny_inner) {
 
-        for (int ny_inner = ny_inner_start;
-             ny_inner < ny; ++ny_inner) {
+            for (int jyseps2_2 = jyseps2_2_start;
+                jyseps2_2 < ny; ++jyseps2_2) {
 
-          for (int jyseps2_2 = jyseps2_2_start;
-               jyseps2_2 < ny; ++jyseps2_2) {
+              if (mesh_topology == MeshTopology::UDN || mesh_topology == MeshTopology::CDN){
+                if (not (jyseps1_1 < jyseps2_1 &&
+                  jyseps2_1 < ny_inner &&
+                  ny_inner < jyseps1_2 &&
+                  jyseps1_2 < jyseps2_2)){
+                  continue;
+                  }}
+              else if (mesh_topology == MeshTopology::SF){
+                if (not (jyseps1_1 < jyseps2_1 &&
+                  jyseps2_1 < ny_inner &&
+                  jyseps1_2 < ny_inner &&
+                  ny_inner < jyseps2_2)){
+                  continue;
+                  }
+              }
 
-            if (mesh_topology == MeshTopology::UDN || mesh_topology == MeshTopology::CDN){
-              if (not (jyseps1_1 < jyseps2_1 &&
-                 jyseps2_1 < ny_inner &&
-                 ny_inner < jyseps1_2 &&
-                 jyseps1_2 < jyseps2_2)){
-                continue;
-                }}
-            else if (mesh_topology == MeshTopology::SF){
-              if (not (jyseps1_1 < jyseps2_1 &&
-                 jyseps2_1 < ny_inner &&
-                 jyseps1_2 < ny_inner &&
-                 ny_inner < jyseps2_2)){
-                continue;
-                }
-            }
+              auto result = bout::checkBoutMeshYDecomposition(num_y_processors, ny, num_y_guards, jyseps1_1, jyseps2_1,
+                                                    jyseps1_2, jyseps2_2, ny_inner, mesh_topology);
 
-            auto result = bout::checkBoutMeshYDecomposition(num_y_processors, ny, num_y_guards, jyseps1_1, jyseps2_1,
-                                                  jyseps1_2, jyseps2_2, ny_inner, mesh_topology);
-
-            if (result.success) {
-              return {true, fmt::format(
-                      "\t -> A valid decomposition in Y close to the one given in the grid would be: "
-                      "jyseps1_1={:d}, jyseps2_1={:d}, jyseps1_2={:d}, jyseps2_2={:d}, ny_inner={:d}",
-                      jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner)};
+              if (result.success) {
+                return {true, fmt::format(
+                        "\t -> A valid decomposition in Y close to the one given in the grid would be: "
+                        "jyseps1_1={:d}, jyseps2_1={:d}, jyseps1_2={:d}, jyseps2_2={:d}, ny_inner={:d}",
+                        jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner)};
+              }
             }
           }
         }
       }
     }
+
+    return {false, fmt::format(
+                        "\t -> No valid Y decomposition found for ny = {:d} and NYPE = {:d}. Try changing the number of points or processors in Y.",ny, num_y_processors)};
   }
-
-  return {false, fmt::format(
-                      "\t -> No valid Y decomposition found for ny = {:d} and NYPE = {:d}. Try changing the number of points or processors in Y.",ny, num_y_processors)};
-}
-
 } // namespace bout
 
 
@@ -3046,6 +3039,7 @@ int BoutMesh::ySize(int xpos) const {
   }
 }
 
+//Unchanged, not dependent on topology
 MPI_Comm BoutMesh::getYcomm(int xpos) const {
   int xglobal = getGlobalXIndex(xpos);
 
@@ -3060,7 +3054,7 @@ MPI_Comm BoutMesh::getYcomm(int xpos) const {
 /****************************************************************
  *                 Range iteration
  ****************************************************************/
-
+//Not topology dependent
 void BoutMesh::addBoundaryRegions() {
   std::list<std::string> all_boundaries; ///< Keep track of all boundary regions
 
@@ -3706,6 +3700,37 @@ BoutReal BoutMesh::GlobalX(BoutReal jx) const {
 }
 
 BoutReal BoutMesh::GlobalY(int jy) const {
+  if (mesh_topology == MeshTopology::SF){
+    if (symmetricGlobalY) {
+    BoutReal yi = getGlobalYIndexNoBoundaries(jy);
+    int nycore = (jyseps2_1 - jyseps1_1);
+
+    if (yi < ny_inner) {
+      // before upper target
+      yi -= jyseps1_1 + 0.5;
+    }
+    return yi / nycore;
+    }
+
+    int ly = getGlobalYIndexNoBoundaries(jy); // global poloidal index across subdomains
+    int nycore = (jyseps2_1 - jyseps1_1);
+
+    if (MYPE_IN_CORE) {
+      // Turn ly into an index over the core cells only
+      ly -= jyseps1_1 + 1; //Only core bit in SF case
+    } else {
+      // Not in core. Need to get the last "core" value
+      if (ly <= jyseps1_1) {
+        // West leg upper
+        ly = 0;
+      } else {
+        ly = nycore;
+      }
+  }
+  return static_cast<BoutReal>(ly) / static_cast<BoutReal>(nycore);
+
+  } else {
+  //Keep previous behaviour.
   if (symmetricGlobalY) {
     BoutReal yi = getGlobalYIndexNoBoundaries(jy);
     int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
@@ -3718,7 +3743,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
       yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
     }
     return yi / nycore;
-  }
+    }
 
   int ly = getGlobalYIndexNoBoundaries(jy); // global poloidal index across subdomains
   int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
@@ -3745,52 +3770,82 @@ BoutReal BoutMesh::GlobalY(int jy) const {
   }
 
   return static_cast<BoutReal>(ly) / static_cast<BoutReal>(nycore);
+  }
 }
 
 BoutReal BoutMesh::GlobalY(BoutReal jy) const {
+  if (mesh_topology == MeshTopology::SF){
+    // Get global Y index as a BoutReal
+    BoutReal yglo;
+    YGLOBAL(jy, yglo);
 
-  // Get global Y index as a BoutReal
-  BoutReal yglo;
-  YGLOBAL(jy, yglo);
+    if (symmetricGlobalY) {
+      BoutReal yi = yglo;
+      int nycore = (jyseps2_1 - jyseps1_1);
 
-  if (symmetricGlobalY) {
-    BoutReal yi = yglo;
+      yi -= jyseps1_1 + 0.5;
+      return yi / nycore;
+    }
+
+    int nycore = (jyseps2_1 - jyseps1_1);
+
+    if (MYPE_IN_CORE) {
+      // Turn yglo into an index over the core cells onyglo
+        yglo -= jyseps1_1 + 1;
+    } else {
+      // Not in core. Need to get the last "core" value
+      if (yglo <= jyseps1_1) {
+        yglo = 0;
+      } else {
+        yglo = nycore;
+      }
+    }
+
+    return yglo / static_cast<BoutReal>(nycore);
+  } else {
+    // Get global Y index as a BoutReal
+    BoutReal yglo;
+    YGLOBAL(jy, yglo);
+
+    if (symmetricGlobalY) {
+      BoutReal yi = yglo;
+      int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
+
+      if (yi < ny_inner) {
+        // before upper target
+        yi -= jyseps1_1 + 0.5;
+      } else {
+        // after upper target
+        yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
+      }
+      return yi / nycore;
+    }
+
     int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
-    if (yi < ny_inner) {
-      // before upper target
-      yi -= jyseps1_1 + 0.5;
+    if (MYPE_IN_CORE) {
+      // Turn yglo into an index over the core cells onyglo
+      if (yglo <= jyseps2_1) {
+        yglo -= jyseps1_1 + 1;
+      } else {
+        yglo -= jyseps1_1 + 1 + (jyseps1_2 - jyseps2_1);
+      }
     } else {
-      // after upper target
-      yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
+      // Not in core. Need to get the last "core" value
+      if (yglo <= jyseps1_1) {
+        // Inner lower leg
+        yglo = 0;
+      } else if ((yglo > jyseps2_1) && (yglo <= jyseps1_2)) {
+        // Upper legs
+        yglo = jyseps2_1 - jyseps1_1;
+      } else if (yglo > jyseps2_2) {
+        // Outer lower leg
+        yglo = nycore;
+      }
     }
-    return yi / nycore;
+
+    return yglo / static_cast<BoutReal>(nycore);
   }
-
-  int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
-
-  if (MYPE_IN_CORE) {
-    // Turn yglo into an index over the core cells onyglo
-    if (yglo <= jyseps2_1) {
-      yglo -= jyseps1_1 + 1;
-    } else {
-      yglo -= jyseps1_1 + 1 + (jyseps1_2 - jyseps2_1);
-    }
-  } else {
-    // Not in core. Need to get the last "core" value
-    if (yglo <= jyseps1_1) {
-      // Inner lower leg
-      yglo = 0;
-    } else if ((yglo > jyseps2_1) && (yglo <= jyseps1_2)) {
-      // Upper legs
-      yglo = jyseps2_1 - jyseps1_1;
-    } else if (yglo > jyseps2_2) {
-      // Outer lower leg
-      yglo = nycore;
-    }
-  }
-
-  return yglo / static_cast<BoutReal>(nycore);
 }
 
 void BoutMesh::outputVars(Options& output_options) {
@@ -3821,6 +3876,7 @@ void BoutMesh::outputVars(Options& output_options) {
   output_options["jyseps2_1"].force(jyseps2_1, "BoutMesh");
   output_options["jyseps2_2"].force(jyseps2_2, "BoutMesh");
   output_options["ny_inner"].force(ny_inner, "BoutMesh");
+  output_options["mesh_topology"].force(mesh_topology, "BoutMesh");
 
   getCoordinates()->outputVars(output_options);
 
