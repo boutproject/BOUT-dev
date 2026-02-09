@@ -4,7 +4,7 @@
 
 from boutdata import collect
 from boututils.run_wrapper import launch
-from sys import exit
+
 
 test_directories = [
     ("data_slab_core", 1),
@@ -15,31 +15,30 @@ test_directories = [
 
 tolerance = 1.0e-6
 
-success = True
-errors = {}
+def test_laplace_petsc3d():
 
-for directory, nproc in test_directories:
-    command = f"./test-laplace3d -d {directory}"
-    print("running on", nproc, "processors:", command)
-    status, output = launch(command, nproc=nproc, pipe=True)
+    errors = {}
 
-    if status:
-        print("FAILED")
-        print(output)
-        errors[directory] = "<bad exit>"
-        continue
+    for directory, nproc in test_directories:
+        command = f"./test-laplace3d -d {directory}"
+        print("running on", nproc, "processors:", command)
+        status, output = launch(command, nproc=nproc, pipe=True)
 
-    error_max = collect("error_max", path=directory, info=False)
-    if error_max > tolerance:
-        errors[directory] = error_max
+        if status:
+            print("FAILED")
+            print(output)
+            errors[directory] = "<bad exit>"
+            continue
 
-print("**********")
+        error_max = collect("error_max", path=directory, info=False)
+        if error_max > tolerance:
+            errors[directory] = error_max
 
-if errors:
-    print("Some failures:")
-    for name, error in errors.items():
-        print(f"{name}, max error: {error}")
-    exit(1)
+    print("**********")
 
-print("All passed")
-exit(0)
+    if errors:
+        print("Some failures:")
+        for name, error in errors.items():
+            print(f"{name}, max error: {error}")
+
+    assert not errors
