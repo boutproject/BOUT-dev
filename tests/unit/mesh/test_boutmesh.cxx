@@ -771,20 +771,20 @@ TEST(BoutMeshTest, ChooseProcessorSplitNYPE) {
 TEST(getMeshTopologyTest, ReturnsCFLWhenNoXPoints) {
   BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 0;
-  EXPECT_EQ(mesh.getMeshTopology(1, 2, 3, 4, 5, 6, 7), MeshTopology::CFL);
+  EXPECT_EQ(mesh.getMeshTopology(-1, 2, 3, 10, 5, 6, 7), MeshTopology::CFL);
 }
 
 TEST(getMeshTopologyTest, ReturnsSNWhenOneXPoint) {
   BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 1;
-  EXPECT_EQ(mesh.getMeshTopology(1, 2, 3, 4, 5, 6, 7), MeshTopology::SN);
+  EXPECT_EQ(mesh.getMeshTopology(1, 2, 2, 4, 5, 6, 7), MeshTopology::SN);
 }
 
 TEST(getMeshTopologyTest, ReturnsSFWhenSnowflakeConditionMet) {
   BoutMeshExposer mesh(8, 8, 1, 1, 1);
   mesh.numberOfXPoints = 2;
   // ny_inner between jyseps1_2 and jyseps2_2
-  EXPECT_EQ(mesh.getMeshTopology(0, 0, 10, 20, 15, 1, 1), MeshTopology::SF);
+  EXPECT_EQ(mesh.getMeshTopology(7, 39, 45, 63, 56, 8, 5), MeshTopology::SF);
 }
 
 TEST(getMeshTopologyTest, ReturnsUDNWhenTwoXPointsDifferentIndices) {

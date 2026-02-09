@@ -167,26 +167,18 @@ MeshTopology BoutMesh::getMeshTopology(int jyseps1_1_, int jyseps2_1_,    //Retu
   ixseps1   = ixseps1_;
   ixseps2   = ixseps2_;
 
-  if (numberOfXPoints == 0) {
+  if (jyseps1_1 < 0 and jyseps2_2 >= ny - 1) {
     return MeshTopology::CFL;
-  }
-
-  if (numberOfXPoints == 1) {
+  } else if (jyseps2_1 == jyseps1_2) {
     return MeshTopology::SN;
-  }
-
-  if (numberOfXPoints == 2) {
-    if (jyseps1_2 <= ny_inner && ny_inner <= jyseps2_2) {
-      return MeshTopology::SF;
-    }
-    else if (ixseps1 != ixseps2) { //added else if for UDN
-      return MeshTopology::UDN;
-    }
-
+  } else if (ixseps1 == ixseps2) {
     return MeshTopology::CDN;
+  } else if (jyseps1_2 <= ny_inner_ && ny_inner_ <= jyseps2_2) {
+    return MeshTopology::SF;
   }
-
-  throw BoutException("Invalid numberOfXPoints = {}", numberOfXPoints);
+  else{
+    return MeshTopology::UDN;
+   }
 }
 
 
@@ -448,7 +440,7 @@ namespace bout {
               if (result.success) {
                 return {true, fmt::format(
                         "\t -> A valid decomposition in Y close to the one given in the grid would be: "
-                        "jyseps1_1={:d}, jyseps2_1={:d}, jyseps1_2={:d}, jyseps2_2={:d}, ny_inner={:d}",
+                        "jyseps1_1={:d}, jyseps2_1={:d}, jyseps1_2={:d}, jyseps2_2={:d}, ny_inner={:d}\n",
                         jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner)};
               }
             }
@@ -761,6 +753,12 @@ int BoutMesh::load() {
   Mesh::get(jyseps2_2, "jyseps2_2", ny - 1);
   Mesh::get(ny_inner, "ny_inner", jyseps2_1);
 
+  mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1,
+                                jyseps1_2, jyseps2_2,
+                                ny_inner, ixseps1, ixseps2);
+  output_info << "Detected mesh topology = "
+         << toString(mesh_topology) << std::endl;
+
   // Check inputs
   setYDecompositionIndices(jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2, ny_inner);
 
@@ -921,9 +919,9 @@ void BoutMesh::createCommunicators() {
   MPI_Group group_tmp2{};
 
   proc[2] = NXPE; // Stride in processor rank
-
   // Outer SOL regions
-  if (jyseps1_2 == jyseps2_1) {
+  if (ixseps1 == ixseps2) {
+    //mesh_topology == MeshTopology::SN || mesh_topology == MeshTopology::CFL
     // Single-null and CFL
     //All processors with same PE_XIND
     TRACE("Creating Outer SOL communicators for Single Null operation");
@@ -1013,7 +1011,8 @@ void BoutMesh::createCommunicators() {
       }
     } 
   else{
-    throw BoutException("Unsupported mesh topology for communicator creation");
+    std::string mesh_top = toString(mesh_topology);
+    throw BoutException(_("Unsupported mesh topology {:s} for communicator creation\n"), mesh_top);
     }
 
   for (int i = 0; i < NXPE; i++) {
@@ -2296,6 +2295,8 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1,
                                 jyseps1_2, jyseps2_2,
                                 ny_inner, ixseps1, ixseps2);
+  output << "Detected mesh topology = "
+         << toString(mesh_topology) << endl;
   setDerivedGridSizes();
   topology();
   if (create_regions) {
