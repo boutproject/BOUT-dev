@@ -3,7 +3,7 @@
 # Fixes issue #3233 by using updated fmt library version
 
 FROM docker.io/nvidia/cuda:12.6.1-devel-ubuntu22.04 AS base
-MAINTAINER BOUT++ Development Team
+LABEL maintainer="BOUT++ Development Team"
 USER root
 
 # Install system dependencies
@@ -31,6 +31,9 @@ RUN \
 
 FROM base AS setup-spack
 
+# CUDA architecture: 70=Volta, 75=Turing, 80=Ampere, 89=Ada, 90=Hopper
+ARG CUDA_ARCH=80
+
 # Install Spack and set up environment
 RUN \
  git clone --depth 1 --single-branch --branch v0.23.0 https://github.com/spack/spack.git &&\
@@ -39,8 +42,8 @@ RUN \
  spack env activate /spack-env &&\
  spack add cmake@3.24: &&\
  spack add blt@0.6.2 &&\
- spack add 'umpire@2024.07.0+cuda~examples+numa+openmp cuda_arch=80' &&\
- spack add 'raja@2024.07.0+cuda~examples~exercises+openmp cuda_arch=80' &&\
+ spack add "umpire@2024.07.0+cuda~examples+numa+openmp cuda_arch=${CUDA_ARCH}" &&\
+ spack add "raja@2024.07.0+cuda~examples~exercises+openmp cuda_arch=${CUDA_ARCH}" &&\
  spack add fmt@11.0.2 &&\
  spack add netcdf-cxx4@4.3.1 &&\
  spack add fftw@3.3.10 &&\
@@ -54,6 +57,8 @@ ENV PATH="${SPACK_ROOT}/bin:${PATH}"
 
 FROM setup-spack AS bout-build
 
+ARG CUDA_ARCH=80
+
 # Create boutuser (for consistency with existing Docker setup)
 RUN useradd -m -s /bin/bash boutuser && \
     echo "boutuser:boutforever" | chpasswd && \
@@ -64,7 +69,7 @@ WORKDIR /home/boutuser
 
 # Clone and build BOUT++
 ARG BOUT_URL=https://github.com/boutproject/BOUT-dev.git
-ARG BOUT_COMMIT=main
+ARG BOUT_COMMIT=master
 
 RUN git clone ${BOUT_URL} BOUT-dev && \
     cd BOUT-dev && \
@@ -88,8 +93,7 @@ RUN . /spack/share/spack/setup-env.sh && \
 USER boutuser
 
 # Configure BOUT++ with CUDA support
-# Note: cuda_arch=80 corresponds to Ampere architecture (A100)
-# Adjust cuda_arch based on your target GPU architecture
+# CUDA_ARCH is set via build arg (default: 80 for Ampere/A100)
 RUN . /spack/share/spack/setup-env.sh && \
     spack env activate /spack-env && \
     spack load cmake fmt raja umpire netcdf-cxx4 fftw && \
@@ -97,7 +101,8 @@ RUN . /spack/share/spack/setup-env.sh && \
       -DCMAKE_INSTALL_PREFIX=/opt/bout++ \
       -DCMAKE_BUILD_TYPE=Release \
       -DBOUT_ENABLE_CUDA=ON \
-      -DCUDA_ARCH="compute_80,code=sm_80" \
+      -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH} \
+      -DCUDA_ARCH="compute_${CUDA_ARCH},code=sm_${CUDA_ARCH}" \
       -DBOUT_ENABLE_RAJA=ON \
       -DBOUT_ENABLE_UMPIRE=ON \
       -DBOUT_USE_SYSTEM_FMT=ON \

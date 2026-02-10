@@ -216,13 +216,13 @@ jobs:
   CUDA:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    container: ghcr.io/ggeorgakoudis/boutdev-cuda:latest
+    container: ghcr.io/boutproject/bout-dev/boutdev-cuda:latest
 
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: true
-      - name: Build minimal CUDA 12.2 @ GCC9.4.0 @ Ubuntu 20.04
+      - name: Build minimal CUDA 12.6 @ Ubuntu 22.04
         run: |
           . /spack/share/spack/setup-env.sh
           spack env activate -p /spack-env

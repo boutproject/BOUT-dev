@@ -19,7 +19,7 @@ This Dockerfile addresses issue [#3233](https://github.com/boutproject/BOUT-dev/
 - Docker or Podman installed
 - NVIDIA Docker runtime (nvidia-docker2) for GPU access
 - NVIDIA GPU with Compute Capability 8.0+ (Ampere or newer)
-  - For other architectures, modify `cuda_arch` in the Dockerfile
+  - For other architectures, use the `CUDA_ARCH` build arg (see below)
 
 ## Building the Container
 
@@ -59,22 +59,19 @@ docker run --gpus all -it bout-cuda:latest bash -c "nvidia-smi && nvcc --version
 
 ## GPU Architecture Notes
 
-The Dockerfile is configured for NVIDIA A100 GPUs (Ampere, `cuda_arch=80`).
+The default build targets NVIDIA A100 GPUs (Ampere, `cuda_arch=80`).
 
-For other GPU architectures, modify these lines in the Dockerfile:
+For other GPU architectures, pass the `CUDA_ARCH` build arg:
 
-```dockerfile
-# For Volta (V100): cuda_arch=70
-spack add 'umpire@2024.07.0+cuda~examples+numa+openmp cuda_arch=70'
-spack add 'raja@2024.07.0+cuda~examples~exercises+openmp cuda_arch=70'
-# And in CMake configuration:
--DCUDA_ARCH="compute_70,code=sm_70"
+```bash
+# For Volta (V100)
+docker build --build-arg CUDA_ARCH=70 -t bout-cuda:volta .
 
-# For Hopper (H100): cuda_arch=90
-spack add 'umpire@2024.07.0+cuda~examples+numa+openmp cuda_arch=90'
-spack add 'raja@2024.07.0+cuda~examples~exercises+openmp cuda_arch=90'
-# And in CMake configuration:
--DCUDA_ARCH="compute_90,code=sm_90"
+# For Hopper (H100)
+docker build --build-arg CUDA_ARCH=90 -t bout-cuda:hopper .
+
+# Or using the build script
+./build.sh --cuda-arch 70
 ```
 
 Common CUDA architectures:

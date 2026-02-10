@@ -10,7 +10,7 @@ REPO_ROOT="$( cd "$SCRIPT_DIR/../.." && pwd )"
 IMAGE_NAME="bout-cuda"
 IMAGE_TAG="latest"
 BOUT_URL="https://github.com/boutproject/BOUT-dev.git"
-BOUT_COMMIT="main"
+BOUT_COMMIT="master"
 CUDA_ARCH="80"  # Default to Ampere (A100)
 BUILD_ARGS=""
 
@@ -44,7 +44,7 @@ while [[ $# -gt 0 ]]; do
       echo "  -n, --name NAME        Image name (default: bout-cuda)"
       echo "  -t, --tag TAG          Image tag (default: latest)"
       echo "  --url URL              BOUT++ repository URL"
-      echo "  --commit COMMIT        BOUT++ commit/branch to build (default: main)"
+      echo "  --commit COMMIT        BOUT++ commit/branch to build (default: master)"
       echo "  --cuda-arch ARCH       CUDA architecture (default: 80 for Ampere)"
       echo "                         70=Volta, 75=Turing, 80=Ampere, 86=Ampere(mobile)"
       echo "                         89=Ada, 90=Hopper"
@@ -65,14 +65,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Update Dockerfile with CUDA architecture if not default
-if [ "$CUDA_ARCH" != "80" ]; then
-  echo "Note: Building for CUDA architecture $CUDA_ARCH"
-  echo "      You may need to edit the Dockerfile to change cuda_arch in Spack commands"
-fi
-
 BUILD_ARGS="--build-arg BOUT_URL=${BOUT_URL}"
 BUILD_ARGS="${BUILD_ARGS} --build-arg BOUT_COMMIT=${BOUT_COMMIT}"
+BUILD_ARGS="${BUILD_ARGS} --build-arg CUDA_ARCH=${CUDA_ARCH}"
 
 echo "============================================"
 echo "Building BOUT++ CUDA Docker Image"
