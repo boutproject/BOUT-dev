@@ -254,7 +254,9 @@ function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
 
   # Set the actual test command
   if (BOUT_TEST_OPTIONS_USE_RUNTEST)
-    add_test(NAME ${TESTNAME} COMMAND pytest ${BOUT_TEST_OPTIONS_TESTARGS})
+    add_test(NAME ${TESTNAME}
+      COMMAND ./runtest ${BOUT_TEST_OPTIONS_TESTARGS}
+      )
     set_tests_properties(
       ${TESTNAME} PROPERTIES ENVIRONMENT
                              PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}
