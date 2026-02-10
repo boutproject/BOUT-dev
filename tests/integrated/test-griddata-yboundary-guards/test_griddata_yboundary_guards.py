@@ -4,7 +4,7 @@ from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 from netCDF4 import Dataset
 import numpy
-import os.path
+from pathlib import Path
 from sys import stdout
 
 # Cores: 6
@@ -19,10 +19,11 @@ def test_griddata_yboundary_guards():
     # first generate some grid files to test
     # double null case:
     for n_yguards in [0, 1, 2]:
-        datadir = "data-doublenull-" + str(n_yguards)
+        datadir = Path("data-doublenull-" + str(n_yguards))
         gridname = "grid-doublenull-" + str(n_yguards) + ".nc"
+        file_path = datadir / gridname
 
-        with Dataset(os.path.join(datadir, gridname), "w") as gridfile:
+        with Dataset(file_path, "w") as gridfile:
             gridfile.createDimension("x", nx)
             gridfile.createDimension("y", ny + 4 * n_yguards)
 
@@ -69,10 +70,11 @@ def test_griddata_yboundary_guards():
 
     # grid files for single-null:
     for n_yguards in [0, 1, 2]:
-        datadir = "data-singlenull-" + str(n_yguards)
+        datadir = Path("data-singlenull-" + str(n_yguards))
         gridname = "grid-singlenull-" + str(n_yguards) + ".nc"
+        file_path = datadir / gridname
 
-        with Dataset(os.path.join(datadir, gridname), "w") as gridfile:
+        with Dataset(file_path, "w") as gridfile:
             gridfile.createDimension("x", nx)
             gridfile.createDimension("y", ny + 2 * n_yguards)
 

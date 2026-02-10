@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
 
 from boututils.run_wrapper import launch_safe
-import os
+from pathlib import Path
 import re
 import shutil
 import unittest
 import platform
 
-OUTPUT_FILE = "stdout.log" if platform.system() == "FreeBSD" else "stderr.log"
 
+OUTPUT_FILE = Path("stdout.log") if platform.system() == "FreeBSD" else "stderr.log"
 
 class TestCommandLineArgs(unittest.TestCase):
     command = "./command-args >stdout.log 2>stderr.log"
 
     def makeDirAndCopyInput(self, path):
-        os.mkdir(path)
+        Path.mkdir(path)
         shutil.copy("BOUT.inp", path)
 
     def setUp(self):
         try:
-            os.remove(OUTPUT_FILE)
+            Path.unlink(OUTPUT_FILE)
         except OSError:
             pass
         shutil.rmtree("./data", ignore_errors=True)
@@ -52,11 +52,11 @@ class TestCommandLineArgs(unittest.TestCase):
         self.makeDirAndCopyInput("data")
         launch_safe(self.command, pipe=True, nproc=1, mthread=1)
         self.assertTrue(
-            os.path.exists("data/BOUT.settings"),
+            Path.exists(Path("data/BOUT.settings")),
             msg="FAIL: No BOUT.settings file in data directory",
         )
         self.assertTrue(
-            os.path.exists("data/BOUT.log.0"),
+            Path.exists(Path("data/BOUT.log.0")),
             msg="FAIL: No BOUT.log.0 file in data directory",
         )
 
@@ -64,11 +64,11 @@ class TestCommandLineArgs(unittest.TestCase):
         self.makeDirAndCopyInput("data")
         launch_safe(self.command + " -l different.log", pipe=True, nproc=1, mthread=1)
         self.assertFalse(
-            os.path.exists("data/BOUT.log.0"),
+            Path.exists(Path("data/BOUT.log.0")),
             msg="FAIL: BOUT.log.0 file in data directory",
         )
         self.assertTrue(
-            os.path.exists("data/different.log.0"),
+            Path.exists(Path("data/different.log.0")),
             msg="FAIL: no different.log.0 file in data directory",
         )
 
@@ -76,22 +76,22 @@ class TestCommandLineArgs(unittest.TestCase):
         self.makeDirAndCopyInput("data")
         launch_safe(self.command + " --log log", pipe=True, nproc=1, mthread=1)
         self.assertFalse(
-            os.path.exists("data/BOUT.log.0"),
+            Path.exists(Path("data/BOUT.log.0")),
             msg="FAIL: BOUT.log.0 file in data directory",
         )
         self.assertTrue(
-            os.path.exists("data/log.0"), msg="FAIL: no log.0 file in data directory"
+            Path.exists(Path("data/log.0")), msg="FAIL: no log.0 file in data directory"
         )
 
     def testDirectoryArgument(self):
         self.makeDirAndCopyInput("test")
         launch_safe(self.command + " -d test", pipe=True, nproc=1, mthread=1)
         self.assertTrue(
-            os.path.exists("test/BOUT.settings"),
+            Path.exists(Path("test/BOUT.settings")),
             msg="FAIL: No BOUT.settings file in test directory",
         )
         self.assertTrue(
-            os.path.exists("test/BOUT.log.0"),
+            Path.exists(Path("test/BOUT.log.0")),
             msg="FAIL: No BOUT.log.0 file in data directory",
         )
 

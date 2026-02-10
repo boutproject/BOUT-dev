@@ -11,8 +11,8 @@ from boututils.boutarray import BoutArray
 from boututils.datafile import DataFile
 from boututils.run_wrapper import shell, launch_safe
 import numpy
-import os
 import uuid
+from pathlib import Path
 
 nx = 8
 ny = 16
@@ -43,15 +43,13 @@ def test_restart_io():
     )
 
     # make restart file
-    restartdir = os.path.join("data", "restart")
+    restartdir = Path("data") / "restart"
     try:
-        os.mkdir(restartdir)
+        Path.mkdir(restartdir)
     except FileExistsError:
         pass
 
-    with DataFile(
-        os.path.join(restartdir, "BOUT.restart.0.nc"), create=True
-    ) as base_restart:
+    with DataFile(restartdir / "BOUT.restart.0.nc", create=True) as base_restart:
         base_restart.write("MXSUB", nx)
         base_restart.write("MYSUB", ny)
         base_restart.write("MZSUB", nz)

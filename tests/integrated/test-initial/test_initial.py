@@ -9,7 +9,7 @@ import configparser
 import itertools
 from scipy.special import erf
 import numpy as np
-import os
+from pathlib import Path
 
 
 # requires not make
@@ -160,8 +160,8 @@ def test_initial():
     success = True
     tolerance = 1e-13
     cmd = "./test_initial"
-    datadir = "data"
-    inputfile = os.path.join(datadir, "BOUT.inp")
+    datadir = Path("data")
+    inputfile = datadir / "BOUT.inp"
 
     # Read the input file
     config = configparser.ConfigParser()

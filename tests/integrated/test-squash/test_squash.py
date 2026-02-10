@@ -7,7 +7,7 @@ import numpy as np
 from boututils.run_wrapper import launch_safe, shell_safe
 import argparse
 import re
-import os.path
+from pathlib import Path
 
 # requires: all_tests
 # requires: netcdf
@@ -88,7 +88,7 @@ def test_squash():
 
     bout_squashoutput = args.executable + "/bout-squashoutput"
 
-    if not os.path.exists(bout_squashoutput):
+    if not Path.exists(bout_squashoutput):
         bout_squashoutput = "bout-squashoutput"
 
     print("Run once to get normal data")
