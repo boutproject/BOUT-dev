@@ -364,10 +364,16 @@ void saveParallel(Options& opt, const std::string& name, const Field3D& tosave) 
       Field3D tmp;
       tmp.allocate();
       const auto& fpar = tosave.ynext(i);
-      for (auto j : tmp.getRegion("RGN_NOY")) {
-        tmp[j] = fpar[j.yp(i)];
+      if (fpar.isAllocated()) {
+	for (auto j : tmp.getRegion("RGN_NOY")) {
+	  tmp[j] = fpar[j.yp(i)];
+	}
+	opt[fmt::format("{}_y{:+d}", name, i)] = tmp;
+      } else {
+	if (tosave.isFci()) { // likely an error
+	  throw BoutException("Tried to save parallel fields - but parallel field {i} is not allocated", i);
+	}
       }
-      opt[fmt::format("{}_y{:+d}", name, i)] = tmp;
     }
   }
 }
