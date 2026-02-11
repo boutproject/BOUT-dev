@@ -86,7 +86,7 @@ def test_squash():
     )
     args = parser.parse_args()
 
-    bout_squashoutput = args.executable + "/bout-squashoutput"
+    bout_squashoutput = Path(args.executable + "/bout-squashoutput")
 
     if not Path.exists(bout_squashoutput):
         bout_squashoutput = "bout-squashoutput"
