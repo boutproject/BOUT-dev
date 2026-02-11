@@ -1897,6 +1897,8 @@ void SNESSolver::outputVars(Options& output_options, bool save_repeat) {
 
   output_options["snes_local_residual"].assignRepeat(local_residual, "t", save_repeat,
                                                      "SNESSolver");
+  output_options["snes_global_residual"].assignRepeat(global_residual, "t", save_repeat,
+                                                      "SNESSolver");
 
   if (equation_form == BoutSnesEquationForm::pseudo_transient) {
     output_options["snes_pseudo_alpha"].assignRepeat(pseudo_alpha, "t", save_repeat,
