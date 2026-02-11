@@ -148,10 +148,20 @@ private:
   BoutReal updateGlobalTimestep(BoutReal timestep, int nl_its,
                                 BoutReal recent_failure_rate, BoutReal max_dt);
 
+  /// Calculate per-cell and global residuals
+  /// given an input system state `x`
+  PetscErrorCode updateResiduals(Vec x);
+  Field3D local_residual;         ///< Residual of Field3D quantities in each cell
+  Field2D local_residual_2d;      ///< Residual of Field2D quantities in each cell
+  BoutReal global_residual;       ///< Global residual measure
+  Field3D local_residual_prev;    ///< Previous Field3D local residuals
+  Field2D local_residual_2d_prev; ///< Previous Field2D local residuals
+  BoutReal global_residual_prev;  ///< Previous global residual
+
   /// Initialize the Pseudo-Transient Continuation method
   PetscErrorCode initPseudoTimestepping();
-  /// Update dt_vec based on new solution x
-  PetscErrorCode updatePseudoTimestepping(Vec x);
+  /// Update dt_vec based on residuals
+  PetscErrorCode updatePseudoTimestepping();
   /// Decide the next pseudo-timestep. Called by updatePseudoTimestepping
   BoutReal updatePseudoTimestep(BoutReal previous_timestep, BoutReal previous_residual,
                                 BoutReal current_residual);
@@ -160,8 +170,7 @@ private:
   BoutReal updatePseudoTimestep_history_based(BoutReal previous_timestep,
                                               BoutReal previous_residual,
                                               BoutReal current_residual);
-  Field3D pseudo_residual; ///< Diagnostic output
-  Field2D pseudo_residual_2d;
+
   Field3D pseudo_timestep;
 
   ///< PID controller parameters

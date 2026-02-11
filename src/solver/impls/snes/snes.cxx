@@ -670,6 +670,10 @@ int SNESSolver::init() {
   if (equation_form == BoutSnesEquationForm::pseudo_transient) {
     PetscCall(initPseudoTimestepping());
   }
+  // Per-cell residuals
+  local_residual = 0.0;
+  local_residual_2d = 0.0;
+  global_residual = 0.0;
 
   // Nonlinear solver interface (SNES)
   output_info.write("Create SNES\n");
@@ -843,6 +847,15 @@ int SNESSolver::run() {
     }
 
     PetscCall(VecRestoreArray(snes_x, &xdata));
+  }
+
+  // Initialise residuals
+  local_residual = 0.0;
+  local_residual_2d = 0.0;
+  global_residual = 0.0;
+  PetscCall(updateResiduals(snes_x));
+  if (diagnose) {
+    output.write("\n    Residual: {}\n", global_residual);
   }
 
   BoutReal target = simtime;
@@ -1122,6 +1135,9 @@ int SNESSolver::run() {
 
       simtime += dt;
 
+      // Update local and global residuals
+      PetscCall(updateResiduals(snes_x));
+
       if (diagnose) {
         // Gather and print diagnostic information
 
@@ -1132,6 +1148,8 @@ int SNESSolver::run() {
           output.write(", SNES failures: {}", snes_failures);
         }
         output.write("\n");
+        // Print residual on separate line, so post-processing isn't affected
+        output.write("    Residual: {}\n", global_residual);
       }
 
       // MatFilter and MatEliminateZeros(Mat, bool) require PETSc >= 3.20
@@ -1146,7 +1164,7 @@ int SNESSolver::run() {
         pseudo_alpha = updateGlobalTimestep(pseudo_alpha, nl_its, recent_failure_rate, max_timestep * atol * 100);
 
         // Adjust local timesteps
-        PetscCall(updatePseudoTimestepping(snes_x));
+        PetscCall(updatePseudoTimestepping());
 
       } else {
         // Adjust timestep
@@ -1255,6 +1273,95 @@ BoutReal SNESSolver::updateGlobalTimestep(BoutReal timestep, int nl_its,
   return timestep; // No change
 }
 
+PetscErrorCode SNESSolver::updateResiduals(Vec x) {
+  // Push residuals to previous residuals
+  // Copying so that data is not shared
+  local_residual_prev = copy(local_residual);
+  local_residual_2d_prev = copy(local_residual_2d);
+  global_residual_prev = global_residual;
+
+  // Call RHS function to get time derivatives
+  PetscCall(rhs_function(x, snes_f, false));
+
+  // Reading the residual vectors
+  const BoutReal* current_residual = nullptr;
+  PetscCall(VecGetArrayRead(snes_f, &current_residual));
+
+  // Note: The ordering of quantities in the PETSc vectors
+  // depends on the Solver::loop_vars function
+  Mesh* mesh = bout::globals::mesh;
+  int idx = 0; // Index into PETSc Vecs
+
+  // Boundary cells
+  for (const auto& i2d : mesh->getRegion2D("RGN_BNDRY")) {
+    // Field2D quantities evolved together
+    BoutReal residual = 0.0;
+    int count = 0;
+
+    for (const auto& f : f2d) {
+      if (!f.evolve_bndry) {
+        continue; // Not evolving boundary => Skip
+      }
+      residual += SQ(current_residual[idx++]);
+      ++count;
+    }
+    if (count > 0) {
+      local_residual_2d[i2d] = sqrt(residual / count);
+    }
+
+    // Field3D quantities evolved together within a cell
+    for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
+      count = 0;
+      residual = 0.0;
+      for (const auto& f : f3d) {
+        if (!f.evolve_bndry) {
+          continue; // Not evolving boundary => Skip
+        }
+        residual += SQ(current_residual[idx++]);
+        ++count;
+      }
+      if (count > 0) {
+        auto i3d = mesh->ind2Dto3D(i2d, jz);
+        local_residual[i3d] = sqrt(residual / count);
+      }
+    }
+  }
+
+  // Bulk of domain.
+  // These loops don't check the boundary flags
+  for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
+    // Field2D quantities evolved together
+    if (!f2d.empty()) {
+      BoutReal residual = 0.0;
+      for (std::size_t i = 0; i != f2d.size(); ++i) {
+        residual += SQ(current_residual[idx++]);
+      }
+      local_residual_2d[i2d] = sqrt(residual / static_cast<BoutReal>(f2d.size()));
+    }
+
+    // Field3D quantities evolved together within a cell
+    if (!f3d.empty()) {
+      for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
+        auto i3d = mesh->ind2Dto3D(i2d, jz);
+
+        BoutReal residual = 0.0;
+        for (std::size_t i = 0; i != f3d.size(); ++i) {
+          residual += SQ(current_residual[idx++]);
+        }
+        local_residual[i3d] = sqrt(residual / static_cast<BoutReal>(f3d.size()));
+      }
+    }
+  }
+
+  // Restore Vec data arrays
+  PetscCall(VecRestoreArrayRead(snes_f, &current_residual));
+
+  // Global residual metric (RMS)
+  global_residual = std::sqrt(mean(SQ(local_residual), true));
+
+  return PETSC_SUCCESS;
+}
+
 PetscErrorCode SNESSolver::initPseudoTimestepping() {
   // Storage for per-variable timestep
   PetscCall(VecDuplicate(snes_x, &dt_vec));
@@ -1263,22 +1370,14 @@ PetscErrorCode SNESSolver::initPseudoTimestepping() {
 
   // Diagnostic outputs
   pseudo_timestep = timestep;
-  pseudo_residual = 0.0;
-  pseudo_residual_2d = 0.0;
 
   return PETSC_SUCCESS;
 }
 
-PetscErrorCode SNESSolver::updatePseudoTimestepping(Vec x) {
-  // Call RHS function to get time derivatives
-  PetscCall(rhs_function(x, snes_f, false));
-
+PetscErrorCode SNESSolver::updatePseudoTimestepping() {
   // Use a per-cell timestep so that e.g density and pressure
   // evolve in a way consistent with the equation of state.
 
-  // Reading the residual vectors
-  const BoutReal* current_residual = nullptr;
-  PetscCall(VecGetArrayRead(snes_f, &current_residual));
   // Modifying the dt_vec values
   BoutReal* dt_data = nullptr;
   PetscCall(VecGetArray(dt_vec, &dt_data));
@@ -1292,47 +1391,34 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping(Vec x) {
   for (const auto& i2d : mesh->getRegion2D("RGN_BNDRY")) {
     // Field2D quantities evolved together
     int count = 0;
-    BoutReal residual = 0.0;
-
     for (const auto& f : f2d) {
       if (!f.evolve_bndry) {
         continue; // Not evolving boundary => Skip
       }
-      residual += SQ(current_residual[idx + count]);
       ++count;
     }
     if (count > 0) {
-      residual = sqrt(residual / count);
-
       // Adjust timestep for these quantities
-      BoutReal new_timestep =
-          updatePseudoTimestep(dt_data[idx], pseudo_residual_2d[i2d], residual);
+      BoutReal new_timestep = updatePseudoTimestep(dt_data[idx], local_residual_2d_prev[i2d],
+                                                   local_residual_2d[i2d]);
       for (int i = 0; i != count; ++i) {
         dt_data[idx++] = new_timestep;
       }
-      pseudo_residual_2d[i2d] = residual;
     }
 
     // Field3D quantities evolved together within a cell
     for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
       count = 0;
-      residual = 0.0;
       for (const auto& f : f3d) {
         if (!f.evolve_bndry) {
           continue; // Not evolving boundary => Skip
         }
-        residual += SQ(current_residual[idx + count]);
         ++count;
       }
       if (count > 0) {
-        residual = sqrt(residual / count);
-
         auto i3d = mesh->ind2Dto3D(i2d, jz);
-        const BoutReal new_timestep =
-            updatePseudoTimestep(dt_data[idx], pseudo_residual[i3d], residual);
-
-        pseudo_residual[i3d] = residual;
-        pseudo_timestep[i3d] = new_timestep;
+        const BoutReal new_timestep = updatePseudoTimestep(
+            dt_data[idx], local_residual_prev[i3d], local_residual[i3d]);
 
         for (int i = 0; i != count; ++i) {
           dt_data[idx++] = new_timestep;
@@ -1346,19 +1432,12 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping(Vec x) {
   for (const auto& i2d : mesh->getRegion2D("RGN_NOBNDRY")) {
     // Field2D quantities evolved together
     if (!f2d.empty()) {
-      BoutReal residual = 0.0;
-      for (std::size_t i = 0; i != f2d.size(); ++i) {
-        residual += SQ(current_residual[idx + i]);
-      }
-      residual = sqrt(residual / f2d.size());
-
       // Adjust timestep for these quantities
-      const BoutReal new_timestep =
-          updatePseudoTimestep(dt_data[idx], pseudo_residual_2d[i2d], residual);
+      const BoutReal new_timestep = updatePseudoTimestep(
+          dt_data[idx], local_residual_2d_prev[i2d], local_residual_2d[i2d]);
       for (std::size_t i = 0; i != f2d.size(); ++i) {
         dt_data[idx++] = new_timestep;
       }
-      pseudo_residual_2d[i2d] = residual;
     }
 
     // Field3D quantities evolved together within a cell
@@ -1366,15 +1445,8 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping(Vec x) {
       for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
         auto i3d = mesh->ind2Dto3D(i2d, jz);
 
-        BoutReal residual = 0.0;
-        for (std::size_t i = 0; i != f3d.size(); ++i) {
-          residual += SQ(current_residual[idx + i]);
-        }
-        residual = sqrt(residual / f3d.size());
-        BoutReal new_timestep =
-            updatePseudoTimestep(dt_data[idx], pseudo_residual[i3d], residual);
-
-        pseudo_residual[i3d] = residual;
+        BoutReal new_timestep = updatePseudoTimestep(
+            dt_data[idx], local_residual_prev[i3d], local_residual[i3d]);
 
         // Compare to neighbors
         BoutReal min_neighboring_dt = max_timestep;
@@ -1404,7 +1476,6 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping(Vec x) {
   }
 
   // Restore Vec data arrays
-  PetscCall(VecRestoreArrayRead(snes_f, &current_residual));
   PetscCall(VecRestoreArray(dt_vec, &dt_data));
 
   // Need timesteps on neighboring processors
@@ -1801,11 +1872,12 @@ void SNESSolver::outputVars(Options& output_options, bool save_repeat) {
     return; // Don't save diagnostics to restart files
   }
 
+  output_options["snes_local_residual"].assignRepeat(local_residual, "t", save_repeat,
+                                                     "SNESSolver");
+
   if (equation_form == BoutSnesEquationForm::pseudo_transient) {
     output_options["snes_pseudo_alpha"].assignRepeat(pseudo_alpha, "t", save_repeat,
                                                      "SNESSolver");
-    output_options["snes_pseudo_residual"].assignRepeat(pseudo_residual, "t", save_repeat,
-                                                        "SNESSolver");
     output_options["snes_pseudo_timestep"].assignRepeat(pseudo_timestep, "t", save_repeat,
                                                         "SNESSolver");
   }
