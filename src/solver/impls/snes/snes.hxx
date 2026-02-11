@@ -144,6 +144,10 @@ private:
   BoutReal pseudo_max_ratio;        ///< Maximum timestep ratio between neighboring cells
   Vec dt_vec;                       ///< Each quantity can have its own timestep
 
+  /// Adjust the global timestep
+  BoutReal updateGlobalTimestep(BoutReal timestep, int nl_its,
+                                BoutReal recent_failure_rate, BoutReal max_dt);
+
   /// Initialize the Pseudo-Transient Continuation method
   PetscErrorCode initPseudoTimestepping();
   /// Update dt_vec based on new solution x

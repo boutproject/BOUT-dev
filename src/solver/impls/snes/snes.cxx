@@ -851,7 +851,6 @@ int SNESSolver::run() {
 
     bool looping = true;
     int snes_failures = 0; // Count SNES convergence failures
-    int steps_since_snes_failure = 0;
     int saved_jacobian_lag = 0;
     int loop_count = 0;
     recent_failure_rate = 0.0;
@@ -990,7 +989,6 @@ int SNESSolver::run() {
         recent_failure_rate += last_failure_weight;
 
         ++snes_failures;
-        steps_since_snes_failure = 0;
 
         if (diagnose_failures or (snes_failures == max_snes_failures)) {
           // Print diagnostics to help identify source of the problem
@@ -1123,7 +1121,6 @@ int SNESSolver::run() {
       }
 
       simtime += dt;
-      ++steps_since_snes_failure;
 
       if (diagnose) {
         // Gather and print diagnostic information
@@ -1145,67 +1142,25 @@ int SNESSolver::run() {
       }
 
       if (equation_form == BoutSnesEquationForm::pseudo_transient) {
-        if (pid_controller) {
-          // Adjust pseudo_alpha based on nonlinear iterations
-          pseudo_alpha = pid(pseudo_alpha, nl_its, max_timestep * atol * 100);
-        }
+        // Adjust pseudo_alpha to globally scale timesteps
+        pseudo_alpha = updateGlobalTimestep(pseudo_alpha, nl_its, recent_failure_rate, max_timestep * atol * 100);
 
         // Adjust local timesteps
         PetscCall(updatePseudoTimestepping(snes_x));
 
-      } else if (pid_controller) {
-        // Changing the timestep using a PID controller.
-        // Note: The preconditioner depends on the timestep,
-        // so we recalculate the jacobian and the preconditioner
-        //  every time the timestep changes
+      } else {
+        // Adjust timestep
+        timestep = updateGlobalTimestep(timestep, nl_its, recent_failure_rate, max_timestep);
+      }
 
-        timestep = pid(timestep, nl_its, max_timestep);
-
-        // NOTE(malamast): Do we really need this?
-        // Recompute Jacobian (for now)
+      if (static_cast<BoutReal>(lin_its) / nl_its > 0.5 * maxl) {
+        // Recompute Jacobian if number of linear iterations is too high
         if (saved_jacobian_lag == 0) {
           SNESGetLagJacobian(snes, &saved_jacobian_lag);
           SNESSetLagJacobian(snes, 1);
         }
-
-      } else {
-        // Consider changing the timestep.
-        // Note: The preconditioner depends on the timestep,
-        // so if it is not recalculated the it will be less
-        // effective.
-        if ((nl_its <= lower_its) && (timestep < max_timestep)
-            && (steps_since_snes_failure > 2)) {
-          // Increase timestep slightly
-          timestep *= timestep_factor_on_lower_its;
-
-          timestep = std::min(timestep, max_timestep);
-
-          // Note: Setting the SNESJacobianFn to NULL retains
-          // previously set evaluation function.
-          //
-          // The SNES Jacobian is a combination of the RHS Jacobian
-          // and a factor involving the timestep.
-          // Depends on equation_form
-          // -> Probably call SNESSetJacobian(snes, Jfd, Jfd, NULL, fdcoloring);
-          if (static_cast<BoutReal>(lin_its) / nl_its > 4) {
-            // Recompute Jacobian (for now)
-            if (saved_jacobian_lag == 0) {
-              SNESGetLagJacobian(snes, &saved_jacobian_lag);
-              SNESSetLagJacobian(snes, 1);
-            }
-          }
-
-        } else if (nl_its >= upper_its) {
-          // Reduce timestep slightly
-          timestep *= timestep_factor_on_upper_its;
-
-          // Recompute Jacobian
-          if (saved_jacobian_lag == 0) {
-            SNESGetLagJacobian(snes, &saved_jacobian_lag);
-            SNESSetLagJacobian(snes, 1);
-          }
-        }
       }
+
       snes_failures = 0;
     } while (looping);
 
@@ -1272,6 +1227,32 @@ int SNESSolver::run() {
   }
 
   return 0;
+}
+
+BoutReal SNESSolver::updateGlobalTimestep(BoutReal timestep, int nl_its,
+                                          BoutReal recent_failure_rate, BoutReal max_dt) {
+  // Note: The preconditioner depends on the timestep,
+  // so if it is not recalculated the it will be less
+  // effective.
+
+  if (pid_controller) {
+    // Changing the timestep using a PID controller.
+    return pid(timestep, nl_its, max_dt);
+  }
+
+  // Consider changing the timestep.
+  if ((nl_its <= lower_its) && (timestep < max_timestep) && (recent_failure_rate < 0.5)) {
+    // Increase timestep slightly
+    timestep *= timestep_factor_on_lower_its;
+
+    return std::min(timestep, max_timestep);
+  }
+
+  if (nl_its >= upper_its) {
+    // Reduce timestep slightly
+    return timestep * timestep_factor_on_upper_its;
+  }
+  return timestep; // No change
 }
 
 PetscErrorCode SNESSolver::initPseudoTimestepping() {
