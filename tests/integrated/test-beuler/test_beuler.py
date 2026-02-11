@@ -2,22 +2,13 @@
 
 # requires: petsc
 
-from boututils.run_wrapper import shell_safe, launch_safe
-
-nthreads = 1
-nproc = 1
+from boututils.run_wrapper import shell_safe
 
 
 def test_beuler():
-    print("Making solver test")
-    shell_safe("make > make.log")
-
     print("Running solver test")
-    status, out = launch_safe("./test_beuler", nproc=nproc, mthread=nthreads, pipe=True)
+    status, out = shell_safe("./test_beuler", pipe=True)
     with open("run.log", "w") as f:
         f.write(out)
 
-    if status:
-        print(out)
-
-    assert status, out
+    assert status == 0, out

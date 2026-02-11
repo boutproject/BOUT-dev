@@ -1,19 +1,12 @@
 #!/usr/bin/env python3
 
-from boututils.run_wrapper import launch_safe
-
-from sys import exit
-
-nthreads = 1
-nproc = 1
+from boututils.run_wrapper import shell_safe
 
 
-print("Running solver test")
-status, out = launch_safe("./test_solver", nproc=nproc, mthread=nthreads, pipe=True)
-with open("run.log", "w") as f:
-    f.write(out)
+def test_solver():
+    print("Running solver test")
+    status, out = shell_safe("./test_solver", pipe=True)
+    with open("run.log", "w") as f:
+        f.write(out)
 
-if status:
-    print(out)
-
-exit(status)
+    assert status == 0, out
