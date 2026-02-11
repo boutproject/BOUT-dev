@@ -2,5 +2,5 @@ import pytest
 
 
 @pytest.mark.serial
-def test_runtest(run_in_terminal):
-    pass
+def test_runtest(assert_success_in_shell):
+    assert_success_in_shell("./runtest")
