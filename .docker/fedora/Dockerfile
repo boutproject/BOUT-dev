@@ -1,5 +1,5 @@
 ARG BASE
-FROM ghcr.io/dschwoerer/bout-container-base:$BASE
+FROM ghcr.io/boutproject/bout-container-base:$BASE
 
 # ----------------------------------------------------------------
 # Build and install BOUT++
