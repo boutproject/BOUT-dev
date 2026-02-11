@@ -474,6 +474,14 @@ PetscErrorCode SNESSolver::FDJrestoreFromPruning() {
 
 SNESSolver::SNESSolver(Options* opts)
     : Solver(opts),
+      output_trigger(
+          (*options)["output_trigger"]
+              .doc("Decides when to save outputs. fixed_time_interval, residual_ratio")
+              .withDefault(BoutSnesOutput::fixed_time_interval)),
+      output_residual_ratio(
+          (*options)["output_residual_ratio"]
+              .doc("Trigger an output when residual falls by this ratio")
+              .withDefault(0.5)),
       timestep(
           (*options)["timestep"].doc("Initial backward Euler timestep").withDefault(1.0)),
       dt_min_reset((*options)["dt_min_reset"]
@@ -535,8 +543,13 @@ SNESSolver::SNESSolver(Options* opts)
       pseudo_max_ratio((*options)["pseudo_max_ratio"]
                            .doc("PTC maximum timestep ratio between neighbors")
                            .withDefault(2.)),
-      pid_controller(
-          (*options)["pid_controller"].doc("Use PID controller?").withDefault(false)),
+      timestep_control((*options)["timestep_control"]
+                           .doc("Timestep control method")
+                           .withDefault(BoutSnesTimestep::pid_nonlinear_its)),
+      timestep_factor((*options)["timestep_factor"]
+                          .doc("When timestep_control=residual_ratio, multiply timestep "
+                               "by this factor each step")
+                          .withDefault(1.1)),
       target_its((*options)["target_its"].doc("Target snes iterations").withDefault(7)),
       kP((*options)["kP"].doc("Proportional PID parameter").withDefault(0.7)),
       kI((*options)["kI"].doc("Integral PID parameter").withDefault(0.3)),
@@ -733,16 +746,10 @@ int SNESSolver::init() {
     // Note: If the 'Amat' Jacobian is matrix free, SNESComputeJacobian
     //       always updates its reference 'u' vector every nonlinear iteration
     SNESSetLagJacobian(snes, lag_jacobian);
-    if (pid_controller) {
-      nl_its_prev = target_its;
-      nl_its_prev2 = target_its;
-      SNESSetLagJacobianPersists(snes, PETSC_FALSE);
-      SNESSetLagPreconditionerPersists(snes, PETSC_FALSE);
-    } else {
-      // Set Jacobian and preconditioner to persist across time steps
-      SNESSetLagJacobianPersists(snes, PETSC_TRUE);
-      SNESSetLagPreconditionerPersists(snes, PETSC_TRUE);
-    }
+    nl_its_prev = target_its;
+    nl_its_prev2 = target_its;
+    SNESSetLagJacobianPersists(snes, PETSC_FALSE);
+    SNESSetLagPreconditionerPersists(snes, PETSC_FALSE);
     SNESSetLagPreconditioner(snes, 1); // Rebuild when Jacobian is rebuilt
   }
 
@@ -859,6 +866,7 @@ int SNESSolver::run() {
   }
 
   BoutReal target = simtime;
+  recent_failure_rate = 0.0;
   for (int s = 0; s < getNumberOutputSteps(); s++) {
     target += getOutputTimestep();
 
@@ -866,10 +874,14 @@ int SNESSolver::run() {
     int snes_failures = 0; // Count SNES convergence failures
     int saved_jacobian_lag = 0;
     int loop_count = 0;
-    recent_failure_rate = 0.0;
+
+    BoutReal start_global_residual = global_residual;
     do {
-      if (simtime >= target)
+      if ((output_trigger == BoutSnesOutput::fixed_time_interval && (simtime >= target))
+          || (output_trigger == BoutSnesOutput::residual_ratio
+              && (global_residual <= start_global_residual * output_residual_ratio)))
         break; // Could happen if step over multiple outputs
+
       if (scale_vars) {
         // Individual variable scaling
         // Note: If variables are rescaled then the Jacobian columns
@@ -930,8 +942,7 @@ int SNESSolver::run() {
         PetscCall(VecMin(dt_vec, nullptr, &timestep));
         dt = timestep;
 
-        looping = true;
-        if (simtime + timestep >= target) {
+        if (output_trigger == BoutSnesOutput::fixed_time_interval && simtime + timestep >= target) {
           looping = false;
         }
       } else {
@@ -954,8 +965,7 @@ int SNESSolver::run() {
 
         // Set the timestep
         dt = timestep;
-        looping = true;
-        if (simtime + dt >= target) {
+        if (output_trigger == BoutSnesOutput::fixed_time_interval && simtime + dt >= target) {
           // Note: When the timestep is changed the preconditioner needs to be updated
           // => Step over the output time and interpolate if not matrix free
 
@@ -975,9 +985,7 @@ int SNESSolver::run() {
           VecAXPBY(snes_x, -beta, (1. + beta), x1);
         }
 
-        if (pid_controller) {
-          SNESSetLagJacobian(snes, lag_jacobian);
-        }
+        SNESSetLagJacobian(snes, lag_jacobian);
       }
 
       // Run the solver
@@ -1182,7 +1190,8 @@ int SNESSolver::run() {
       snes_failures = 0;
     } while (looping);
 
-    if (!matrix_free) {
+    BoutReal output_time = simtime;
+    if (output_trigger == BoutSnesOutput::fixed_time_interval && !matrix_free) {
       ASSERT2(simtime >= target);
       ASSERT2(simtime - dt <= target);
       // Stepped over output timestep => Interpolate
@@ -1197,6 +1206,7 @@ int SNESSolver::run() {
 
       // output_x <- alpha * x0 + (1 - alpha) * output_x
       VecAXPBY(output_x, alpha, 1. - alpha, x0);
+      output_time = target;
 
     } else {
       // Timestep was adjusted to hit target output time
@@ -1231,7 +1241,7 @@ int SNESSolver::run() {
     PetscCall(VecRestoreArrayRead(scaled_x, &xdata));
 
     try {
-      run_rhs(target); // Run RHS to calculate auxilliary variables
+      run_rhs(output_time); // Run RHS to calculate auxilliary variables
     } catch (BoutException& e) {
       output_error.write("ERROR: BoutException thrown: {}\n", e.what());
       // Abort simulation. There is no way to recover unless
@@ -1239,7 +1249,7 @@ int SNESSolver::run() {
       BoutComm::abort(1);
     }
 
-    if (call_monitors(target, s, getNumberOutputSteps()) != 0) {
+    if (call_monitors(output_time, s, getNumberOutputSteps()) != 0) {
       break; // User signalled to quit
     }
   }
@@ -1253,22 +1263,35 @@ BoutReal SNESSolver::updateGlobalTimestep(BoutReal timestep, int nl_its,
   // so if it is not recalculated the it will be less
   // effective.
 
-  if (pid_controller) {
+  switch (timestep_control) {
+  case BoutSnesTimestep::pid_nonlinear_its:
     // Changing the timestep using a PID controller.
     return pid(timestep, nl_its, max_dt);
-  }
 
-  // Consider changing the timestep.
-  if ((nl_its <= lower_its) && (timestep < max_timestep) && (recent_failure_rate < 0.5)) {
-    // Increase timestep slightly
-    timestep *= timestep_factor_on_lower_its;
+  case BoutSnesTimestep::threshold_nonlinear_its:
+    // Consider changing the timestep, based on thresholds in NL iterations
+    if ((nl_its <= lower_its) && (timestep < max_timestep) && (recent_failure_rate < 0.5)) {
+      // Increase timestep slightly
+      timestep *= timestep_factor_on_lower_its;
+      return std::min(timestep, max_timestep);
+    }
 
-    return std::min(timestep, max_timestep);
-  }
+    if (nl_its >= upper_its) {
+      // Reduce timestep slightly
+      return timestep * timestep_factor_on_upper_its;
+    }
+    return timestep; // No change
 
-  if (nl_its >= upper_its) {
-    // Reduce timestep slightly
-    return timestep * timestep_factor_on_upper_its;
+  case BoutSnesTimestep::residual_ratio:
+    // Use ratio of previous and current global residual
+    // Intended to be the same as https://petsc.org/release/manualpages/TS/TSPSEUDO/
+    // (Note the PETSc manual has the expression for dt_n upside down)
+
+    return std::min({timestep_factor * timestep * global_residual_prev / global_residual,
+                     max_timestep});
+
+  case BoutSnesTimestep::fixed:
+    break;
   }
   return timestep; // No change
 }

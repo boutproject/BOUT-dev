@@ -4,7 +4,7 @@
  * using PETSc for the SNES interface
  *
  **************************************************************************
- * Copyright 2015-2025 BOUT++ contributors
+ * Copyright 2015-2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -59,6 +59,16 @@ BOUT_ENUM_CLASS(BoutPTCStrategy,
                 history_based,    ///< Grow/shrink dt based on residual decrease/increase
                 hybrid); ///< Combine inverse_residual and history_based strategies
 
+BOUT_ENUM_CLASS(BoutSnesTimestep,
+                pid_nonlinear_its,       ///< PID controller on nonlinear iterations
+                threshold_nonlinear_its, ///< Use thresholds on nonlinear iterations
+                residual_ratio,          ///< Use ratio of previous and current residual
+                fixed);                  ///< Fixed timestep (no adaptation)
+
+BOUT_ENUM_CLASS(BoutSnesOutput,
+                fixed_time_interval, ///< Output at fixed time intervals
+                residual_ratio);     ///< When the residual is reduced by a given ratio
+
 /// Uses PETSc's SNES interface to find a steady state solution to a
 /// nonlinear ODE by integrating in time with Backward Euler
 class SNESSolver : public Solver {
@@ -111,6 +121,10 @@ private:
   /// @param[out] f      The vector for the result f(x)
   /// @param[in] linear  Specifies that the SNES solver is in a linear (KSP) inner loop
   PetscErrorCode rhs_function(Vec x, Vec f, bool linear);
+
+  BoutSnesOutput output_trigger; ///< Sets when outputs are written
+
+  BoutReal output_residual_ratio; ///< Trigger an output when residual falls by this ratio
 
   BoutReal timestep;     ///< Internal timestep
   BoutReal dt;           ///< Current timestep used in snes_function.
@@ -173,8 +187,11 @@ private:
 
   Field3D pseudo_timestep;
 
-  ///< PID controller parameters
-  bool pid_controller; ///< Use PID controller?
+  /// Timestep controller method
+  BoutSnesTimestep timestep_control;
+
+  /// When using BoutSnesTimestep::residual_ratio
+  BoutReal timestep_factor; ///< Multiply timestep by this each step
 
   /// Target number of nonlinear iterations for the PID controller.
   /// This can be non-integer to push timestep more aggressively
@@ -187,8 +204,8 @@ private:
   BoutReal recent_failure_rate;            ///< Rolling average of recent failure rate
   BoutReal last_failure_weight;            ///< 1 / number of recent solves
 
-  int nl_its_prev;
-  int nl_its_prev2;
+  BoutReal nl_its_prev;
+  BoutReal nl_its_prev2;
 
   BoutReal pid(BoutReal timestep, int nl_its, BoutReal max_dt); ///< Updates the timestep
 
