@@ -172,7 +172,7 @@ private:
   BoutReal kD; ///< (0.1 - 0.3) Derivative (dampens oscillation - optional)
   bool pid_consider_failures; ///< Reduce timestep increases if recent solves have failed
   BoutReal recent_failure_rate;            ///< Rolling average of recent failure rate
-  const BoutReal inv_failure_window = 0.1; ///< 1 / number of recent solves
+  BoutReal last_failure_weight;            ///< 1 / number of recent solves
 
   int nl_its_prev;
   int nl_its_prev2;

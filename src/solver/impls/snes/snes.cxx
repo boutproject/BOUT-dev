@@ -545,6 +545,9 @@ SNESSolver::SNESSolver(Options* opts)
           (*options)["pid_consider_failures"]
               .doc("Reduce timestep increases if recent solves have failed")
               .withDefault<bool>(false)),
+      last_failure_weight((*options)["last_failure_weight"]
+                              .doc("Weighting of last timestep in recent failure rate")
+                              .withDefault(0.1)),
       diagnose(
           (*options)["diagnose"].doc("Print additional diagnostics").withDefault(false)),
       diagnose_failures((*options)["diagnose_failures"]
@@ -979,12 +982,12 @@ int SNESSolver::run() {
       SNESGetLinearSolveIterations(snes, &lin_its);
 
       // Rolling average of recent failures
-      recent_failure_rate *= 1. - inv_failure_window;
+      recent_failure_rate *= 1. - last_failure_weight;
 
       if ((ierr != PETSC_SUCCESS) or (reason < 0)) {
         // Diverged or SNES failed
 
-        recent_failure_rate += inv_failure_window;
+        recent_failure_rate += last_failure_weight;
 
         ++snes_failures;
         steps_since_snes_failure = 0;
