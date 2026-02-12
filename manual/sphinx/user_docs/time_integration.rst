@@ -562,7 +562,7 @@ state.
    timestep = 1.0                # Initial timestep
 
    # SER parameters
-   timestep_control = pid_controller  # Scale timesteps based on iterations
+   timestep_control = pid_nonlinear_its  # Scale timesteps based on iterations
    pseudo_max_ratio = 2.0         # Limit neighbor timestep ratio
 
    # Tolerances
@@ -632,7 +632,7 @@ adjust ``pseudo_alpha`` depending on the nonlinearity of the system:
 .. code-block:: ini
 
    [solver]
-   timestep_control = pid_controller   # Scale global timestep using PID controller
+   timestep_control = pid_nonlinear_its   # Scale global timestep using PID controller
    target_its = 7        # Target number of nonlinear iterations
    kP = 0.7              # Proportional gain
    kI = 0.3              # Integral gain
