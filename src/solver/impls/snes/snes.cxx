@@ -942,7 +942,8 @@ int SNESSolver::run() {
         PetscCall(VecMin(dt_vec, nullptr, &timestep));
         dt = timestep;
 
-        if (output_trigger == BoutSnesOutput::fixed_time_interval && simtime + timestep >= target) {
+        if (output_trigger == BoutSnesOutput::fixed_time_interval
+            && simtime + timestep >= target) {
           looping = false;
         }
       } else {
@@ -965,7 +966,8 @@ int SNESSolver::run() {
 
         // Set the timestep
         dt = timestep;
-        if (output_trigger == BoutSnesOutput::fixed_time_interval && simtime + dt >= target) {
+        if (output_trigger == BoutSnesOutput::fixed_time_interval
+            && simtime + dt >= target) {
           // Note: When the timestep is changed the preconditioner needs to be updated
           // => Step over the output time and interpolate if not matrix free
 
@@ -1169,14 +1171,16 @@ int SNESSolver::run() {
 
       if (equation_form == BoutSnesEquationForm::pseudo_transient) {
         // Adjust pseudo_alpha to globally scale timesteps
-        pseudo_alpha = updateGlobalTimestep(pseudo_alpha, nl_its, recent_failure_rate, max_timestep * atol * 100);
+        pseudo_alpha = updateGlobalTimestep(pseudo_alpha, nl_its, recent_failure_rate,
+                                            max_timestep * atol * 100);
 
         // Adjust local timesteps
         PetscCall(updatePseudoTimestepping());
 
       } else {
         // Adjust timestep
-        timestep = updateGlobalTimestep(timestep, nl_its, recent_failure_rate, max_timestep);
+        timestep =
+            updateGlobalTimestep(timestep, nl_its, recent_failure_rate, max_timestep);
       }
 
       if (static_cast<BoutReal>(lin_its) / nl_its > 0.5 * maxl) {
@@ -1270,7 +1274,8 @@ BoutReal SNESSolver::updateGlobalTimestep(BoutReal timestep, int nl_its,
 
   case BoutSnesTimestep::threshold_nonlinear_its:
     // Consider changing the timestep, based on thresholds in NL iterations
-    if ((nl_its <= lower_its) && (timestep < max_timestep) && (recent_failure_rate < 0.5)) {
+    if ((nl_its <= lower_its) && (timestep < max_timestep)
+        && (recent_failure_rate < 0.5)) {
       // Increase timestep slightly
       timestep *= timestep_factor_on_lower_its;
       return std::min(timestep, max_timestep);
@@ -1422,8 +1427,8 @@ PetscErrorCode SNESSolver::updatePseudoTimestepping() {
     }
     if (count > 0) {
       // Adjust timestep for these quantities
-      BoutReal new_timestep = updatePseudoTimestep(dt_data[idx], local_residual_2d_prev[i2d],
-                                                   local_residual_2d[i2d]);
+      BoutReal new_timestep = updatePseudoTimestep(
+          dt_data[idx], local_residual_2d_prev[i2d], local_residual_2d[i2d]);
       for (int i = 0; i != count; ++i) {
         dt_data[idx++] = new_timestep;
       }
