@@ -256,8 +256,10 @@ PetscErrorCode SNESSolver::FDJinitialise() {
 
       for (int i = 0; i < nlocal; ++i) {
         // Assume all elements in the z direction are potentially coupled
-        d_nnz.emplace_back(d_nnz_map3d[i].size() * mesh->LocalNz + d_nnz_map2d[i].size());
-        o_nnz.emplace_back(o_nnz_map3d[i].size() * mesh->LocalNz + o_nnz_map2d[i].size());
+        d_nnz.emplace_back((d_nnz_map3d[i].size() * mesh->LocalNz)
+                           + d_nnz_map2d[i].size());
+        o_nnz.emplace_back((o_nnz_map3d[i].size() * mesh->LocalNz)
+                           + o_nnz_map2d[i].size());
       }
     }
 
@@ -369,7 +371,7 @@ PetscErrorCode SNESSolver::FDJinitialise() {
       // Values are 0 or 1 so tolerance (1e-5) shouldn't matter
       PetscBool symmetric;
       PetscCall(MatIsSymmetric(Jfd, 1e-5, &symmetric));
-      if (!symmetric) {
+      if (!static_cast<bool>(symmetric)) {
         output_warn.write("Jacobian pattern is not symmetric\n");
       }
     }
@@ -597,6 +599,10 @@ SNESSolver::SNESSolver(Options* opts)
       lag_jacobian((*options)["lag_jacobian"]
                        .doc("Re-use the Jacobian this number of SNES iterations")
                        .withDefault(50)),
+      jacobian_persists(
+          (*options)["jacobian_persists"]
+              .doc("Re-use Jacobian and preconditioner across nonlinear solves")
+              .withDefault<bool>(false)),
       use_coloring((*options)["use_coloring"]
                        .doc("Use matrix coloring to calculate Jacobian?")
                        .withDefault<bool>(true)),
@@ -630,7 +636,7 @@ int SNESSolver::init() {
   // Get total problem size
   int ntmp;
   if (bout::globals::mpi->MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM,
-                                        BoutComm::get())) {
+                                        BoutComm::get()) != 0) {
     throw BoutException("MPI_Allreduce failed!");
   }
   neq = ntmp;
@@ -748,9 +754,11 @@ int SNESSolver::init() {
     SNESSetLagJacobian(snes, lag_jacobian);
     nl_its_prev = target_its;
     nl_its_prev2 = target_its;
-    SNESSetLagJacobianPersists(snes, PETSC_FALSE);
-    SNESSetLagPreconditionerPersists(snes, PETSC_FALSE);
-    SNESSetLagPreconditioner(snes, 1); // Rebuild when Jacobian is rebuilt
+    PetscCall(
+        SNESSetLagJacobianPersists(snes, static_cast<PetscBool>(jacobian_persists)));
+    PetscCall(SNESSetLagPreconditionerPersists(
+        snes, static_cast<PetscBool>(jacobian_persists)));
+    PetscCall(SNESSetLagPreconditioner(snes, 1)); // Rebuild when Jacobian is rebuilt
   }
 
   // Set tolerances
@@ -826,10 +834,10 @@ int SNESSolver::init() {
     SNESType snestype;
     SNESGetType(snes, &snestype);
     output_info.write("SNES Type : {}\n", snestype);
-    if (ksptype) {
+    if (ksptype != nullptr) {
       output_info.write("KSP Type  : {}\n", ksptype);
     }
-    if (pctype) {
+    if (pctype != nullptr) {
       output_info.write("PC Type   : {}\n", pctype);
     }
   }
@@ -879,8 +887,9 @@ int SNESSolver::run() {
     do {
       if ((output_trigger == BoutSnesOutput::fixed_time_interval && (simtime >= target))
           || (output_trigger == BoutSnesOutput::residual_ratio
-              && (global_residual <= start_global_residual * output_residual_ratio)))
+              && (global_residual <= start_global_residual * output_residual_ratio))) {
         break; // Could happen if step over multiple outputs
+      }
 
       if (scale_vars) {
         // Individual variable scaling
@@ -1033,7 +1042,7 @@ int SNESSolver::run() {
         }
 
         if (snes_failures == max_snes_failures) {
-          output.write("Too many SNES failures ({}). Aborting.");
+          output.write("Too many SNES failures ({}). Aborting.", snes_failures);
           return 1;
         }
 

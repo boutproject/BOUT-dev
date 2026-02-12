@@ -243,6 +243,7 @@ private:
   bool matrix_free;          ///< Use matrix free Jacobian
   bool matrix_free_operator; ///< Use matrix free Jacobian in the operator?
   int lag_jacobian;          ///< Re-use Jacobian
+  bool jacobian_persists;    ///< Re-use Jacobian and preconditioner across nonlinear solves
   bool use_coloring;         ///< Use matrix coloring
 
   bool jacobian_recalculated; ///< Flag set when Jacobian is recalculated
