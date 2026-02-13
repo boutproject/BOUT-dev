@@ -5,7 +5,7 @@
 #include <bout/field.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/output.hxx>
-#include <bout/version.hxx>
+#include <bout/options_io.hxx>
 
 #include <cstdlib>
 #include <fmt/format.h>

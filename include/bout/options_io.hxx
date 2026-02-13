@@ -45,6 +45,7 @@
 #include "bout/build_defines.hxx"
 #include "bout/generic_factory.hxx"
 #include "bout/options.hxx"
+#include "bout/mesh.hxx"
 
 #include <memory>
 #include <string>

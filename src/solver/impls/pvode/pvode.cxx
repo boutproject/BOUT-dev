@@ -37,9 +37,9 @@
 #include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
+#include <bout/options_io.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/unused.hxx>
-#include <bout/version.hxx>
 
 #include <pvode/cvode.h>
 #include <pvode/cvspgmr.h>  // use CVSPGMR linear solver each internal step
