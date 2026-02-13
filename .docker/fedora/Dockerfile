@@ -31,7 +31,7 @@ RUN cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/usr/local/ \
           -DBOUT_ENABLE_PYTHON=ON \
           -DBOUT_USE_SUNDIALS=ON -DSUNDIALS_ROOT=/usr/lib64/$MPI/ -DSUNDIALS_INCLUDE_DIR=/usr/include/$MPI-x86_64/sundials/ \
 	  $CMAKE_OPTIONS || (cat /home/boutuser/BOUT-dev/build/CMakeFiles/CMake{Output,Error}.log  ; exit 1); \
-    make -C build -j 2; \
+    make -C build -j 2 VERBOSE=1; \
     sudo make -C build install; \
     rm -rf build
 
