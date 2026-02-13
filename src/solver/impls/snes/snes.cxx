@@ -1063,6 +1063,9 @@ int SNESSolver::run() {
         } else {
           // Try a smaller timestep
           timestep *= timestep_factor_on_failure;
+          if (diagnose) {
+            output.write("  => Reduced timestep to {}\n", timestep);
+          }
         }
         // Restore state
         VecCopy(x0, snes_x);
@@ -1081,6 +1084,8 @@ int SNESSolver::run() {
           // This triggers a Jacobian recalculation
           SNESGetLagJacobian(snes, &saved_jacobian_lag);
           SNESSetLagJacobian(snes, 1);
+          PetscCall(SNESSetLagJacobianPersists(snes, PETSC_FALSE));
+          PetscCall(SNESSetLagPreconditionerPersists(snes, PETSC_FALSE));
         }
 
         // Check lock state
@@ -1102,6 +1107,10 @@ int SNESSolver::run() {
         // to previous value
         SNESSetLagJacobian(snes, saved_jacobian_lag);
         saved_jacobian_lag = 0;
+        PetscCall(
+            SNESSetLagJacobianPersists(snes, static_cast<PetscBool>(jacobian_persists)));
+        PetscCall(SNESSetLagPreconditionerPersists(
+            snes, static_cast<PetscBool>(jacobian_persists)));
       }
 
       if (predictor) {
