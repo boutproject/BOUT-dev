@@ -25,7 +25,8 @@ RUN \
    curl \
    libcurl4-openssl-dev \
    gfortran \
-   ca-certificates &&\
+   ca-certificates \
+   libssl-dev &&\
  apt upgrade -y &&\
  apt clean
 
@@ -45,11 +46,11 @@ RUN \
  spack add "umpire@2024.07.0+cuda~examples+numa+openmp cuda_arch=${CUDA_ARCH}" &&\
  spack add "raja@2024.07.0+cuda~examples~exercises+openmp cuda_arch=${CUDA_ARCH}" &&\
  spack add fmt@11.0.2 &&\
- spack add netcdf-cxx4@4.3.1 &&\
- spack add fftw@3.3.10 &&\
+ spack add 'netcdf-cxx4@4.3.1 ^mpich' &&\
+ spack add 'fftw@3.3.10 ^mpich' &&\
  spack external find --not-buildable &&\
- spack external find perl cuda bzip2 pkgconfig ncurses mpich curl --not-buildable &&\
- spack install -j$(nproc)
+ spack external find perl cuda bzip2 pkgconfig ncurses mpich curl openssl --not-buildable &&\
+ spack install --show-log-on-error -j$(nproc)
 
 # Set up environment variables for the build
 ENV SPACK_ROOT=/spack
