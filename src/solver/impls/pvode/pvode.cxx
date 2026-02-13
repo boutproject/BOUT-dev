@@ -39,7 +39,6 @@
 #include <bout/output.hxx>
 #include <bout/options_io.hxx>
 #include <bout/sys/timer.hxx>
-#include <bout/unused.hxx>
 
 #include <pvode/cvode.h>
 #include <pvode/cvspgmr.h>  // use CVSPGMR linear solver each internal step
@@ -411,7 +410,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
  * RHS function
  **************************************************************************/
 
-void PvodeSolver::rhs(int UNUSED(N), BoutReal t, BoutReal* udata, BoutReal* dudata) {
+void PvodeSolver::rhs([[maybe_unused]] int N, BoutReal t, BoutReal* udata, BoutReal* dudata) {
   TRACE("Running RHS: PvodeSolver::rhs({})", t);
 
   // Get current timestep
@@ -427,7 +426,7 @@ void PvodeSolver::rhs(int UNUSED(N), BoutReal t, BoutReal* udata, BoutReal* duda
   save_derivs(dudata);
 }
 
-void PvodeSolver::gloc(int UNUSED(N), BoutReal t, BoutReal* udata, BoutReal* dudata) {
+void PvodeSolver::gloc([[maybe_unused]] int N, BoutReal t, BoutReal* udata, BoutReal* dudata) {
   TRACE("Running RHS: PvodeSolver::gloc({})", t);
 
   Timer timer("rhs");
@@ -468,8 +467,8 @@ void solver_gloc(integer N, BoutReal t, BoutReal* u, BoutReal* udot, void* f_dat
 }
 
 // Preconditioner communication function
-void solver_cfn(integer UNUSED(N), BoutReal UNUSED(t), N_Vector UNUSED(u),
-                void* UNUSED(f_data)) {
+void solver_cfn([[maybe_unused]] integer N, [[maybe_unused]] BoutReal t, [[maybe_unused]] N_Vector u,
+                [[maybe_unused]] void* f_data) {
   // doesn't do anything at the moment
 }
 
