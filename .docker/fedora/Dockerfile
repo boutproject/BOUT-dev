@@ -26,6 +26,7 @@ ENV HOME=/home/boutuser
 WORKDIR /home/boutuser/BOUT-dev
 
 RUN cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
           -DBOUT_GENERATE_FIELDOPS=OFF \
           -DBOUT_USE_PETSC=ON -DPETSc_ROOT=/usr/local \
           -DBOUT_ENABLE_PYTHON=ON \
