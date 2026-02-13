@@ -36,8 +36,8 @@
 #include <bout/mesh.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
-#include <bout/output.hxx>
 #include <bout/options_io.hxx>
+#include <bout/output.hxx>
 #include <bout/sys/timer.hxx>
 
 #include <pvode/cvode.h>
@@ -410,7 +410,8 @@ BoutReal PvodeSolver::run(BoutReal tout) {
  * RHS function
  **************************************************************************/
 
-void PvodeSolver::rhs([[maybe_unused]] int N, BoutReal t, BoutReal* udata, BoutReal* dudata) {
+void PvodeSolver::rhs([[maybe_unused]] int N, BoutReal t, BoutReal* udata,
+                      BoutReal* dudata) {
   TRACE("Running RHS: PvodeSolver::rhs({})", t);
 
   // Get current timestep
@@ -426,7 +427,8 @@ void PvodeSolver::rhs([[maybe_unused]] int N, BoutReal t, BoutReal* udata, BoutR
   save_derivs(dudata);
 }
 
-void PvodeSolver::gloc([[maybe_unused]] int N, BoutReal t, BoutReal* udata, BoutReal* dudata) {
+void PvodeSolver::gloc([[maybe_unused]] int N, BoutReal t, BoutReal* udata,
+                       BoutReal* dudata) {
   TRACE("Running RHS: PvodeSolver::gloc({})", t);
 
   Timer timer("rhs");
@@ -467,8 +469,8 @@ void solver_gloc(integer N, BoutReal t, BoutReal* u, BoutReal* udot, void* f_dat
 }
 
 // Preconditioner communication function
-void solver_cfn([[maybe_unused]] integer N, [[maybe_unused]] BoutReal t, [[maybe_unused]] N_Vector u,
-                [[maybe_unused]] void* f_data) {
+void solver_cfn([[maybe_unused]] integer N, [[maybe_unused]] BoutReal t,
+                [[maybe_unused]] N_Vector u, [[maybe_unused]] void* f_data) {
   // doesn't do anything at the moment
 }
 

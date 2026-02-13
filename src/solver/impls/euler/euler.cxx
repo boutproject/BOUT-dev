@@ -4,8 +4,8 @@
 #include <bout/boutexception.hxx>
 #include <bout/field.hxx>
 #include <bout/openmpwrap.hxx>
-#include <bout/output.hxx>
 #include <bout/options_io.hxx>
+#include <bout/output.hxx>
 
 #include <cstdlib>
 #include <fmt/format.h>
