@@ -1784,6 +1784,9 @@ protected:
 
     if (compress0) {
       output.write("Including compression (Vipar) effects\n");
+      if (include_vipar) {
+        output.write("Including all compresssion (Vipar) effects\n");
+      }
       Vipara = MU0 * KB * Nbar * density * Tebar * eV_K / (Bbar * Bbar);
       Vepara = Bbar / (MU0 * Zi * ee * Nbar * density * Lbar * Va);
       // Vepara = Bbar / (MU0 * ee * Nbar * density * Lbar * Va);
@@ -2568,7 +2571,7 @@ protected:
     coord->g_23 = Btxy * hthe * Rxy / Bpxy;
 
     // Calculate quantities from metric tensor
-    coord->geometry(); 
+    coord->geometry();
 
     // Set B field vector
     B0vec.covariant = false;
@@ -3451,12 +3454,10 @@ protected:
 
     Coordinates* coord = mesh->getCoordinates();
     // Ensure positivity of total variables
-    Ni = field_floor(Ni, N0, 1e-10); 
-    Ti = field_floor(Ti, Ti0, 1e-10); 
-    Te = field_floor(Te, Te0, 1e-10); 
-
-    if (compress0 && include_vpar0){
-      Vipar = field_floor(Vipar, Vipar0, 1e-10); 
+    if (nonlinear) {
+      Ni = field_floor(Ni, N0, 1e-10); 
+      Ti = field_floor(Ti, Ti0, 1e-10); 
+      Te = field_floor(Te, Te0, 1e-10); 
     }
 
     // Perform communications
@@ -3662,7 +3663,7 @@ protected:
       if (impurity_prof) {
         nu_e = 2.91e-6 * LnLambda * (Ne_tmp * Nbar * density / 1.e6) * (pow(Te_tmp * Tebar, -1.5)); // nu_e in 1/S.
       } else { 
-	      nu_e = 2.91e-6 * LnLambda * (N_tmp * Nbar * density / 1.e6) * (pow(Te_tmp * Tebar, -1.5)); // nu_e in 1/S.
+        nu_e = 2.91e-6 * LnLambda * (N_tmp * Nbar * density / 1.e6) * (pow(Te_tmp * Tebar, -1.5)); // nu_e in 1/S.
       // nu_e.applyBoundary();
       // mesh->communicate(nu_e);
       }
@@ -3716,6 +3717,7 @@ protected:
       }
 
       if (diffusion_perp > 0.0) {
+
         kappa_perp_i = 2.0 * vth_i * vth_i * nu_i / (omega_ci * omega_ci); // * 1.e4;
         kappa_perp_e = 4.7 * vth_e * vth_e * nu_e / (omega_ce * omega_ce); // * 1.e4;
 
@@ -3746,6 +3748,7 @@ protected:
         // Dri_neo.applyBoundary();
         // xii_neo.applyBoundary();
       }
+
       if (neoclassic_e) {
         rho_e = 2.38e-6 * sqrt(Te_tmp * Tebar) / B0 / Bbar;
         xie_neo = (q95 * q95) / epsilon / sqrt(epsilon) * nu_e * rho_e * rho_e;
@@ -3950,7 +3953,6 @@ protected:
 
       // SBC_Gradpar(U, zero, PF_limit, PF_limit_range);
       SBC_Gradpar(Ni, zero, PF_limit, PF_limit_range);
-      SBC_Dirichlet(P, zero, PF_limit, PF_limit_range);
       if (evolve_psi) {
         SBC_Dirichlet(Psi, zero, PF_limit, PF_limit_range);
       } else {
@@ -4369,7 +4371,6 @@ protected:
       if (nonlinear) {
         if (include_vpar0) {
           Vepar = - Jpar / Ne_tmp * Vepara + N_tmp / Ne_tmp * Vipar + Ni / Ne_tmp * Vipar0 -Zi * Ni / Ne_tmp * Vepar0;
-          Vepar = field_floor(Vepar, Vepar0, 1e-10);
         } else {
           Vepar = Vipar - Jpar / Ne_tmp * Vepara;
         }
@@ -5840,8 +5841,13 @@ protected:
 
   void SBC_Dirichlet(Field3D &var, Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
     // set the boundary equall to the value next to the boundary
-    // SBC_yup_eq(var, value, PF_limit, PF_limit_range);
-    // SBC_ydown_eq(var, -value, PF_limit, PF_limit_range);
+    SBC_yup_eq(var, value, PF_limit, PF_limit_range);
+    SBC_ydown_eq(var, -value, PF_limit, PF_limit_range);
+    // SBC_ydown_eq(var, value, PF_limit, PF_limit_range);
+  }
+
+  // Boundary to specified Field3D object
+  void SBC_yup_eq(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
 
     auto var_fa = toFieldAligned(var);
     auto value_fa = toFieldAligned(value);
@@ -5877,6 +5883,15 @@ protected:
       }
     }
 
+    var = fromFieldAligned(var_fa);
+    // value = fromFieldAligned(value_fa);  
+  }
+
+  void SBC_ydown_eq(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
+
+    auto var_fa = toFieldAligned(var);
+    auto value_fa = toFieldAligned(value);
+
     // SBC_ydown_eq
     for (RangeIterator xrdn = mesh->iterateBndryLowerY(); !xrdn.isDone(); xrdn++) {
       xind = xrdn.ind;
@@ -5887,8 +5902,8 @@ protected:
             for (int jz = 0; jz < mesh->LocalNz; jz++) {
               // var_fa(xind, jy, jz) = - value_fa(xind, jy, jz);
               // var_fa(xind, jy, jz) = - value_fa(xind, mesh->ystart, jz);
-              var_fa(xind, jy, jz) = value_fa(xind, mesh->ystart, jz);
               // var_fa(xind, jy, jz) = -2.0 * value_fa(xind, mesh->ystart, jz) - var_fa(xind, mesh->ystart, jz);
+              var_fa(xind, jy, jz) = value_fa(xind, mesh->ystart, jz);
             }
           }           
 
@@ -5904,23 +5919,27 @@ protected:
           for (int jz = 0; jz < mesh->LocalNz; jz++) {
             // var_fa(xind, jy, jz) = - value_fa(xind, jy, jz);
             // var_fa(xind, jy, jz) = - value_fa(xind, mesh->ystart, jz);
-            var_fa(xind, jy, jz) = value_fa(xind, mesh->ystart, jz);
             // var_fa(xind, jy, jz) = -2.0 * value_fa(xind, mesh->ystart, jz) - var_fa(xind, mesh->ystart, jz);
+            var_fa(xind, jy, jz) = value_fa(xind, mesh->ystart, jz);
           }
 	      }
       }
     }
 
     var = fromFieldAligned(var_fa);
-    value = fromFieldAligned(value_fa);    
-
+    // value = fromFieldAligned(value_fa);    
   }
 
   // Boundary gradient to specified Field3D object
   void SBC_Gradpar(Field3D &var, Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-    // SBC_yup_Grad_par(var, value, PF_limit, PF_limit_range);
-    // SBC_ydown_Grad_par(var, -value, PF_limit, PF_limit_range);
+    SBC_yup_Grad_par(var, value, PF_limit, PF_limit_range);
+    SBC_ydown_Grad_par(var, -value, PF_limit, PF_limit_range);
+    // SBC_ydown_Grad_par(var, value, PF_limit, PF_limit_range);
+  }
 
+
+  void SBC_yup_Grad_par(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
+  
     auto var_fa = toFieldAligned(var);
     auto value_fa = toFieldAligned(value);
 
@@ -5955,6 +5974,18 @@ protected:
       }
     }
 
+    var = fromFieldAligned(var_fa);
+    // value = fromFieldAligned(value_fa);    
+
+  }
+
+  void SBC_ydown_Grad_par(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
+
+    auto var_fa = toFieldAligned(var);
+    auto value_fa = toFieldAligned(value);
+
+    Coordinates* coord = mesh->getCoordinates();
+
     // SBC_ydown_Grad_par
     for (RangeIterator xrdn = mesh->iterateBndryLowerY(); !xrdn.isDone(); xrdn++) {
       xind = xrdn.ind;
@@ -5985,10 +6016,8 @@ protected:
       }
     }
 
-
     var = fromFieldAligned(var_fa);
-    value = fromFieldAligned(value_fa);    
-
+    // value = fromFieldAligned(value_fa);    
   }
 
   void SBC_FreeBoundary(Field3D &var, bool PF_limit, BoutReal PF_limit_range) {
