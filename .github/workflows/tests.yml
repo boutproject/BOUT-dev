@@ -216,16 +216,15 @@ jobs:
   CUDA:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    container: ghcr.io/boutproject/bout-dev/boutdev-cuda:latest
+    container: ghcr.io/boutproject/bout-container-base:boutdev-cuda
 
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: true
-      - name: Build minimal CUDA 12.6 @ Ubuntu 22.04
+      - name: Build BOUT++ with CUDA 12.6
         run: |
-          . /spack/share/spack/setup-env.sh
-          spack env activate -p /spack-env
+          . /usr/local/bin/bout-env.bash
           git config --global --add safe.directory $GITHUB_WORKSPACE
           rm -rf build
           cmake -S $GITHUB_WORKSPACE -B build \
