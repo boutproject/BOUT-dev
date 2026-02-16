@@ -11,10 +11,10 @@ int main(int argc, char** argv) {
 
   // interior cells
   BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
-    f[i] = mesh->GlobalNzNoBoundaries
-               * (mesh->GlobalNyNoBoundaries * mesh->getGlobalXIndexNoBoundaries(i.x())
-                  + mesh->getGlobalYIndexNoBoundaries(i.y()))
-           + i.z();
+    f[i] = (mesh->GlobalNzNoBoundaries
+            * (mesh->GlobalNyNoBoundaries * mesh->getGlobalXIndexNoBoundaries(i.x())
+               + mesh->getGlobalYIndexNoBoundaries(i.y())))
+           + mesh->getGlobalZIndexNoBoundaries(i.z());
   }
 
   // lower x-boundary cells
@@ -25,10 +25,10 @@ int main(int argc, char** argv) {
       for (int y = mesh->ystart; y <= mesh->yend; y++) {
         for (int z = mesh->zstart; z <= mesh->zend; z++) {
           f(x, y, z) = startind
-                       + mesh->GlobalNzNoBoundaries
-                             * (mesh->GlobalNyNoBoundaries * x
-                                + mesh->getGlobalYIndexNoBoundaries(y))
-                       + z;
+                       + (mesh->GlobalNzNoBoundaries
+                          * (mesh->GlobalNyNoBoundaries * x
+                             + mesh->getGlobalYIndexNoBoundaries(y)))
+                       + mesh->getGlobalZIndexNoBoundaries(z);
         }
       }
     }
@@ -41,10 +41,10 @@ int main(int argc, char** argv) {
       for (int y = mesh->ystart; y <= mesh->yend; y++) {
         for (int z = mesh->zstart; z <= mesh->zend; z++) {
           f(mesh->xend + 1 + x, y, z) = startind
-                                        + mesh->GlobalNzNoBoundaries
-                                              * (mesh->GlobalNyNoBoundaries * x
-                                                 + mesh->getGlobalYIndexNoBoundaries(y))
-                                        + z;
+                                        + (mesh->GlobalNzNoBoundaries
+                                           * (mesh->GlobalNyNoBoundaries * x
+                                              + mesh->getGlobalYIndexNoBoundaries(y)))
+                                        + mesh->getGlobalZIndexNoBoundaries(z);
         }
       }
     }
@@ -56,8 +56,9 @@ int main(int argc, char** argv) {
     int x = it.ind;
     for (int y = 0; y < mesh->ystart; y++) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
-        f(x, y, z) =
-            startind + mesh->GlobalNzNoBoundaries * (mesh->getGlobalXIndex(x) + y) + z;
+        f(x, y, z) = startind
+                     + (mesh->GlobalNzNoBoundaries * (mesh->getGlobalXIndex(x) + y))
+                     + mesh->getGlobalZIndexNoBoundaries(z);
       }
     }
   }
@@ -69,7 +70,8 @@ int main(int argc, char** argv) {
     for (int y = 0; y < mesh->ystart; y++) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
         f(x, mesh->yend + 1 + y, z) =
-            startind + mesh->GlobalNzNoBoundaries * (mesh->getGlobalXIndex(x) + y) + z;
+            startind + (mesh->GlobalNzNoBoundaries * (mesh->getGlobalXIndex(x) + y))
+            + mesh->getGlobalZIndexNoBoundaries(z);
       }
     }
   }
