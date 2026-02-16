@@ -27,8 +27,13 @@
  *
  **************************************************************************/
 
+#include <algorithm>
+
 #include "shiftedmetricinterp.hxx"
+
+#include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
+#include "bout/field3d.hxx"
 #include "bout/parallel_boundary_region.hxx"
 
 ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
@@ -36,11 +41,18 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
                                          Options* opt)
     : ParallelTransform(mesh, opt), location(location_in), zShift(std::move(zShift_in)),
       zlength(zlength_in), ydown_index(mesh.ystart) {
+
+  if (mesh.getNZPE() > 1) {
+    throw BoutException("ShiftedMetricInterp only works with 1 processor in Z");
+  }
+
   // check the coordinate system used for the grid data source
   ShiftedMetricInterp::checkInputGrid();
 
   // Allocate space for interpolator cache: y-guard cells in each direction
   parallel_slice_interpolators.resize(mesh.ystart * 2);
+
+  const BoutReal z_factor = static_cast<BoutReal>(mesh.GlobalNzNoBoundaries) / zlength;
 
   // Create the Interpolation objects and set whether they go up or down the
   // magnetic field
@@ -60,16 +72,16 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
 
     // Find the index positions where the magnetic field line intersects the x-z plane
     // y_offset points up
-    Field3D zt_prime_up(&mesh), zt_prime_down(&mesh);
+    Field3D zt_prime_up(&mesh);
+    Field3D zt_prime_down(&mesh);
     zt_prime_up.allocate();
     zt_prime_down.allocate();
 
     for (const auto& i : zt_prime_up.getRegion(RGN_NOY)) {
       // Field line moves in z by an angle zShift(i,j+1)-zShift(i,j) when going
       // from j to j+1, but we want the shift in index-space
-      zt_prime_up[i] = static_cast<BoutReal>(i.z())
-                       + (zShift[i.yp(y_offset + 1)] - zShift[i])
-                             * static_cast<BoutReal>(mesh.GlobalNz) / zlength;
+      zt_prime_up[i] = static_cast<BoutReal>(mesh.getGlobalZIndexNoBoundaries(i.z()))
+                       + ((zShift[i.yp(y_offset + 1)] - zShift[i]) * z_factor);
     }
 
     parallel_slice_interpolators[yup_index + y_offset]->calcWeights(zt_prime_up);
@@ -77,9 +89,8 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (const auto& i : zt_prime_down.getRegion(RGN_NOY)) {
       // Field line moves in z by an angle -(zShift(i,j)-zShift(i,j-1)) when going
       // from j to j-1, but we want the shift in index-space
-      zt_prime_down[i] = static_cast<BoutReal>(i.z())
-                         - (zShift[i] - zShift[i.ym(y_offset + 1)])
-                               * static_cast<BoutReal>(mesh.GlobalNz) / zlength;
+      zt_prime_down[i] = static_cast<BoutReal>(mesh.getGlobalZIndexNoBoundaries(i.z()))
+                         - ((zShift[i] - zShift[i.ym(y_offset + 1)]) * z_factor);
     }
 
     parallel_slice_interpolators[ydown_index + y_offset]->calcWeights(zt_prime_down);
@@ -91,15 +102,16 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
   interp_from_aligned =
       ZInterpolationFactory::getInstance().create(&interp_options, 0, &mesh);
 
-  Field3D zt_prime_to(&mesh), zt_prime_from(&mesh);
+  Field3D zt_prime_to(&mesh);
+  Field3D zt_prime_from(&mesh);
   zt_prime_to.allocate();
   zt_prime_from.allocate();
 
   for (const auto& i : zt_prime_to) {
     // Field line moves in z by an angle zShift(i,j) when going
     // from y0 to y(j), but we want the shift in index-space
-    zt_prime_to[i] = static_cast<BoutReal>(i.z())
-                     + zShift[i] * static_cast<BoutReal>(mesh.GlobalNz) / zlength;
+    zt_prime_to[i] = static_cast<BoutReal>(mesh.getGlobalZIndexNoBoundaries(i.z()))
+                     + (zShift[i] * z_factor);
   }
 
   interp_to_aligned->calcWeights(zt_prime_to);
@@ -108,17 +120,16 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     // Field line moves in z by an angle zShift(i,j) when going
     // from y0 to y(j), but we want the shift in index-space.
     // Here we reverse the shift, so subtract zShift
-    zt_prime_from[i] = static_cast<BoutReal>(i.z())
-                       - zShift[i] * static_cast<BoutReal>(mesh.GlobalNz) / zlength;
+    zt_prime_from[i] = static_cast<BoutReal>(mesh.getGlobalZIndexNoBoundaries(i.z()))
+                       - (zShift[i] * z_factor);
   }
 
   interp_from_aligned->calcWeights(zt_prime_from);
 
-  int yvalid = mesh.LocalNy - 2 * mesh.ystart;
-  // avoid overflow - no stencil need more than 5 points
-  if (yvalid > 20) {
-    yvalid = 20;
-  }
+  // avoid overflow - no stencil needs more than 5 points
+  const auto yvalid =
+      static_cast<signed char>(std::min(mesh.LocalNy - (2 * mesh.ystart), 20));
+
   // Create regions for parallel boundary conditions
   Field2D dy;
   mesh.get(dy, "dy", 1.);
@@ -128,10 +139,10 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (int z = mesh.zstart; z <= mesh.zend; z++) {
       forward_boundary_xin->add_point(
           it.ind, mesh.yend, z,
-          mesh.GlobalX(it.ind),                           // x
-          2. * PI * mesh.GlobalY(mesh.yend + 0.5),        // y
-          zlength * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
-              + 0.5 * (zShift(it.ind, mesh.yend + 1) - zShift(it.ind, mesh.yend)),
+          mesh.GlobalX(it.ind),                    // x
+          2. * PI * mesh.GlobalY(mesh.yend + 0.5), // y
+          (zlength * mesh.GlobalZ(z))              // z
+              + (0.5 * (zShift(it.ind, mesh.yend + 1) - zShift(it.ind, mesh.yend))),
           0.25
               * (1                                                     // dy/2
                  + dy(it.ind, mesh.yend + 1) / dy(it.ind, mesh.yend)), // length
@@ -144,10 +155,10 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (int z = mesh.zstart; z <= mesh.zend; z++) {
       backward_boundary_xin->add_point(
           it.ind, mesh.ystart, z,
-          mesh.GlobalX(it.ind),                           // x
-          2. * PI * mesh.GlobalY(mesh.ystart - 0.5),      // y
-          zlength * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
-              + 0.5 * (zShift(it.ind, mesh.ystart) - zShift(it.ind, mesh.ystart - 1)),
+          mesh.GlobalX(it.ind),                      // x
+          2. * PI * mesh.GlobalY(mesh.ystart - 0.5), // y
+          (zlength * mesh.GlobalZ(z))                // z
+              + (0.5 * (zShift(it.ind, mesh.ystart) - zShift(it.ind, mesh.ystart - 1))),
           0.25
               * (1 // dy/2
                  + dy(it.ind, mesh.ystart - 1) / dy(it.ind, mesh.ystart)),
@@ -161,10 +172,10 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (int z = mesh.zstart; z <= mesh.zend; z++) {
       forward_boundary_xout->add_point(
           it.ind, mesh.yend, z,
-          mesh.GlobalX(it.ind),                           // x
-          2. * PI * mesh.GlobalY(mesh.yend + 0.5),        // y
-          zlength * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
-              + 0.5 * (zShift(it.ind, mesh.yend + 1) - zShift(it.ind, mesh.yend)),
+          mesh.GlobalX(it.ind),                    // x
+          2. * PI * mesh.GlobalY(mesh.yend + 0.5), // y
+          (zlength * mesh.GlobalZ(z))              // z
+              + (0.5 * (zShift(it.ind, mesh.yend + 1) - zShift(it.ind, mesh.yend))),
           0.25
               * (1 // dy/2
                  + dy(it.ind, mesh.yend + 1) / dy(it.ind, mesh.yend)),
@@ -177,10 +188,10 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
     for (int z = mesh.zstart; z <= mesh.zend; z++) {
       backward_boundary_xout->add_point(
           it.ind, mesh.ystart, z,
-          mesh.GlobalX(it.ind),                           // x
-          2. * PI * mesh.GlobalY(mesh.ystart - 0.5),      // y
-          zlength * BoutReal(z) / BoutReal(mesh.GlobalNz) // z
-              + 0.5 * (zShift(it.ind, mesh.ystart) - zShift(it.ind, mesh.ystart - 1)),
+          mesh.GlobalX(it.ind),                      // x
+          2. * PI * mesh.GlobalY(mesh.ystart - 0.5), // y
+          (zlength * mesh.GlobalZ(z))                // z
+              + (0.5 * (zShift(it.ind, mesh.ystart) - zShift(it.ind, mesh.ystart - 1))),
           0.25
               * (dy(it.ind, mesh.ystart - 1) / dy(it.ind, mesh.ystart) // dy/2
                  + 1),

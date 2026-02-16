@@ -13,6 +13,7 @@
 LaplaceXZcyclic::LaplaceXZcyclic(Mesh* m, Options* options, const CELL_LOC loc)
     : LaplaceXZ(m, options, loc) {
   // Note: `m` may be nullptr, but localmesh is set in LaplaceXZ base constructor
+  bout::fft::assertZSerial(*localmesh, "`cyclic` X-Z inversion");
 
   // Number of Z Fourier modes, including DC
   nmode = (localmesh->LocalNz) / 2 + 1;

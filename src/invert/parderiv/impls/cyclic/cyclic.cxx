@@ -53,6 +53,8 @@
 
 InvertParCR::InvertParCR(Options* opt, CELL_LOC location, Mesh* mesh_in)
     : InvertPar(opt, location, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
+
+  bout::fft::assertZSerial(*localmesh, "InvertParCR");
   // Number of k equations to solve for each x location
   nsys = 1 + (localmesh->LocalNz) / 2;
 

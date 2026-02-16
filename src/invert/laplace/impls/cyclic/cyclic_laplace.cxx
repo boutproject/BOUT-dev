@@ -57,6 +57,8 @@ LaplaceCyclic::LaplaceCyclic(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
                              Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), C1coef(1.0), C2coef(1.0), Dcoef(1.0) {
 
+  bout::fft::assertZSerial(*localmesh, "`cyclic` inversion");
+
   Acoef.setLocation(location);
   C1coef.setLocation(location);
   C2coef.setLocation(location);
