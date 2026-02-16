@@ -756,7 +756,7 @@ int BoutMesh::load() {
   mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1,
                                 jyseps1_2, jyseps2_2,
                                 ny_inner, ixseps1, ixseps2);
-  output_info << "Detected mesh topology = "
+  output_info << _("Detected mesh topology = ")
          << toString(mesh_topology) << std::endl;
 
   // Check inputs
@@ -920,8 +920,7 @@ void BoutMesh::createCommunicators() {
 
   proc[2] = NXPE; // Stride in processor rank
   // Outer SOL regions
-  if (ixseps1 == ixseps2) {
-    //mesh_topology == MeshTopology::SN || mesh_topology == MeshTopology::CFL
+  if (mesh_topology == MeshTopology::SN || mesh_topology == MeshTopology::CFL) {
     // Single-null and CFL
     //All processors with same PE_XIND
     TRACE("Creating Outer SOL communicators for Single Null operation");
@@ -998,15 +997,13 @@ void BoutMesh::createCommunicators() {
         MPI_Group_range_incl(group_world, 1, &proc, &group);
         MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
 
-        if (i == PE_XIND) {
-          if (comm_tmp == MPI_COMM_NULL) {
-            throw BoutException("Snowflake outer SOL not correct\n");
-          }
-          comm_outer = comm_tmp;
-        } else if (comm_tmp != MPI_COMM_NULL) {
-          throw BoutException("Snowflake outer SOL not correct\n");
+        if (MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS) {
+          throw BoutException("MPI_Group_range_incl failed for xp = {:d}", NXPE);
         }
-
+        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+        if (comm_tmp != MPI_COMM_NULL) {
+          comm_outer = comm_tmp;
+        }
         MPI_Group_free(&group);
       }
     } 
@@ -1078,7 +1075,7 @@ void BoutMesh::createCommunicators() {
         output_debug << "done lower PF\n";
       }
 
-      if (jyseps2_1 != jyseps1_2) {
+      if (jyseps2_1 != jyseps1_2) { //CHANGE: Sebastian
         // ONly possible topology is UDN or CDN here
           // Upper PF region
           // Note need to order processors so that a continuous surface is formed
@@ -1416,6 +1413,7 @@ void BoutMesh::createCommunicators() {
   MPI_Group_free(&group_world);
   // Now have communicators for all regions.
 }
+
 
 void BoutMesh::createXBoundaries() {
   // Need boundaries in X if not periodic and have X guard cells
@@ -2295,8 +2293,6 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   mesh_topology = getMeshTopology(jyseps1_1, jyseps2_1,
                                 jyseps1_2, jyseps2_2,
                                 ny_inner, ixseps1, ixseps2);
-  output << "Detected mesh topology = "
-         << toString(mesh_topology) << endl;
   setDerivedGridSizes();
   topology();
   if (create_regions) {
@@ -2638,16 +2634,16 @@ void BoutMesh::topology() {
       /*************** Snowflake topology can't have the two same separatrices ******************/
       throw BoutException("\t Topology error: Snowflake topology can't have the two same separatrices\n");
 
-    } else if (ixseps1 < ixseps2) {
-      /*************** SF Usuall configuration **********************/
-      output_info.write("\tSF Usuall configuration\n");
-      ixseps_inner = ixseps_lower = ixseps1;
-      ixseps_outer = ixseps_upper = ixseps2;
+    } else if (ixseps2 < ixseps1) {
+      /*************** SF Usual configuration **********************/
+      output_info.write("\tSF Usual configuration\n");
+      ixseps_inner = ixseps_lower = ixseps2;
+      ixseps_outer = ixseps_upper = ixseps1;
     } else {
       /*************** SF Reverse configuration **********************/
       output_info.write("\tSF Reverse configuration\n");
-      ixseps_inner = ixseps_upper = ixseps2;
-      ixseps_outer = ixseps_lower = ixseps1;
+      ixseps_inner = ixseps_upper = ixseps1;
+      ixseps_outer = ixseps_lower = ixseps2;
     }
 
     /* Following code works for any Snowflake */
