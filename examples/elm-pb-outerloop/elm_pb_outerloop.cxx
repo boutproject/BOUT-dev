@@ -50,6 +50,27 @@
 
 #include <bout/rajalib.hxx> // Defines BOUT_FOR_RAJA
 
+#include <nvtx3/nvToolsExt.h>
+inline void nvtxPushColor(const char* name, uint32_t argb)
+{
+  nvtxEventAttributes_t ev{};
+  ev.version = NVTX_VERSION;
+  ev.size    = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+  ev.messageType = NVTX_MESSAGE_TYPE_ASCII;
+  ev.message.ascii = name;
+  ev.colorType = NVTX_COLOR_ARGB;
+  ev.color = argb;
+
+  nvtxRangePushEx(&ev);
+}
+
+inline void nvtxPop()
+{
+  nvtxRangePop();
+}
+
+
+
 #if BOUT_HAS_HYPRE
 #include <bout/invert/laplacexy2_hypre.hxx>
 #endif
@@ -1275,13 +1296,18 @@ public:
   bool first_run = true; // For printing out some diagnostics first time around
 
   int rhs(BoutReal t) override {
+
+    nvtxPushColor("rhs_communicate", 0xFFFFFF00);
     // Perform communications
     mesh->communicate(comms);
+    nvtxPop();
 
     Coordinates* metric = mesh->getCoordinates();
 
     ////////////////////////////////////////////
     // Transitions from 0 in core to 1 in vacuum
+
+    nvtxPushColor("rhs_nonlinear", 0xFFFFFF00);
     if (nonlinear) {
       vac_mask = (1.0 - tanh(((P0 + P) - vacuum_pressure) / vacuum_trans)) / 2.0;
 
@@ -1302,10 +1328,12 @@ public:
       }
       eta = interp_to(eta, loc);
     }
+    nvtxPop();
 
     ////////////////////////////////////////////
     // Resonant Magnetic Perturbation code
 
+    nvtxPushColor("rhs_include_rmp", 0xFFFFFF00);
     if (include_rmp) {
 
       if ((rmp_ramp > 0.0) || (rmp_freq > 0.0) || (rmp_rotate != 0.0)) {
@@ -1356,16 +1384,20 @@ public:
 
       mesh->communicate(rmp_Psi);
     }
+    nvtxPop();
 
     ////////////////////////////////////////////
     // Inversion
 
+    nvtxPushColor("BOUT_FOR_RAJA_aparSolver", 0xFFFFFF00);
     if (evolve_jpar) {
       // Invert laplacian for Psi
       Psi = aparSolver->solve(Jpar);
       mesh->communicate(Psi);
     }
+    nvtxPop();
 
+    nvtxPushColor("rhs_phi_constraint", 0xFFFFFF00);
     if (phi_constraint) {
       // Phi being solved as a constraint
 
@@ -1417,7 +1449,9 @@ public:
       phi.applyBoundary();
       mesh->communicate(phi);
     }
+    nvtxPop();
 
+    nvtxPushColor("rhs_evolve_jpar", 0xFFFFFF00);
     if (!evolve_jpar) {
       // Get J from Psi
       Jpar = Delp2(Psi);
@@ -1479,6 +1513,7 @@ public:
         }
       }
     }
+    nvtxPop();
 
     ////////////////////////////////////////////////////
     // Sheath boundary conditions
@@ -1487,6 +1522,7 @@ public:
     // to Jpar so that Jpar = sqrt(mi/me)/(2*pi) * phi
     //
 
+    nvtxPushColor("rhs_sheath_boundaries", 0xFFFFFF00);
     if (sheath_boundaries) {
 
       // At y = ystart (lower boundary)
@@ -1533,6 +1569,7 @@ public:
         }
       }
     }
+    nvtxPop();
 
     ////////////////////////////////////////////////////
     // Check that settings match compile-time switches
@@ -1604,6 +1641,7 @@ public:
     // Note: Capture all class member variables into local scope
     //       or an illegal memory access may occur on GPUs
 
+    nvtxPushColor("BOUT_FOR_RAJA_ddt_Jpar_acc", 0xFFFFFF00);
     BOUT_FOR_RAJA(
         i, Jpar.getRegion("RGN_NOBNDRY"),
         CAPTURE(delta_i, hyperresist, relax_j_tconst, dnorm, ehyperviscos, viscos_perp)) {
@@ -1680,6 +1718,7 @@ public:
       ddt(P_acc)[i] = 0.0;
 #endif
     };
+    nvtxPop();
 
       // Terms which are not yet single index operators
       // Note: Terms which are included in the single index loop
@@ -1750,45 +1789,78 @@ public:
     //   ddt(U) += SQ(B0) * b0xGrad_dot_Grad(rmp_Psi, J0, CELL_CENTRE);
     // }
 
-    ddt(U) += b0xcv * Grad(P); // curvature term
+    nvtxPushColor("rhs_ddt", 0xFFFFFF00);
+
+    // nvtxPushColor("rhs_ddt_U_acc", 0xFFFFFF00); 
+    // ddt(U) += b0xcv * Grad(P); // curvature term
+    // nvtxPop();
+
+    mesh->communicate(P);
+    P.applyBoundary();
+
+    auto region = U.getRegion("RGN_NOBNDRY");
+
+    auto b0xcv_x_acc = FieldAccessor<>(b0xcv.x);
+    auto b0xcv_y_acc = FieldAccessor<>(b0xcv.y);
+    auto b0xcv_z_acc = FieldAccessor<>(b0xcv.z);
+
+    nvtxPushColor("rhs_ddt_U_acc", 0xFFFFFF00);    
+    BOUT_FOR_RAJA(i, region, CAPTURE(P_acc, U_acc, b0xcv_x_acc, b0xcv_y_acc, b0xcv_z_acc)) {
+      BoutReal dPdx = DDX(P_acc, i);
+      BoutReal dPdy = DDY(P_acc, i);
+      BoutReal dPdz = DDZ(P_acc, i);
+
+      ddt(U_acc)[i] += b0xcv_x_acc[i] * dPdx
+                     + b0xcv_y_acc[i] * dPdy
+                     + b0xcv_z_acc[i] * dPdz;
+    };
+    nvtxPop();
 
     // if (!nogradparj) { // Parallel current term
     //   ddt(U) -= SQ(B0) * Grad_parP(Jpar, CELL_CENTRE); // b dot grad j
     // }
 
+    nvtxPushColor("rhs_ddt_withflow_K_H_term", 0xFFFFFF00);  
     if (withflow && K_H_term) { // K_H_term
       ddt(U) -= b0xGrad_dot_Grad(phi, U0);
     }
+    nvtxPop();
 
     // if (diamag_phi0) { // Equilibrium flow
     //   ddt(U) -= b0xGrad_dot_Grad(phi0, U);
     // }
 
+    nvtxPushColor("rhs_ddt_withflow", 0xFFFFFF00);  
     if (withflow) { // net flow
       ddt(U) -= V_dot_Grad(V0net, U);
     }
+    nvtxPop();
 
     // if (nonlinear) { // Advection
     //   ddt(U) -= bracket(phi, U, bm_exb) * B0;
     // }
 
     // Viscosity terms
-
+    nvtxPushColor("rhs_ddt_viscos_par", 0xFFFFFF00);  
     if (viscos_par > 0.0) { // Parallel viscosity
       ddt(U) += viscos_par * Grad2_par2(U);
     }
+    nvtxPop();
 
+    nvtxPushColor("rhs_ddt_diffusion_u4", 0xFFFFFF00);  
     if (diffusion_u4 > 0.0) {
       tmpU2 = D2DY2(U);
       mesh->communicate(tmpU2);
       tmpU2.applyBoundary();
       ddt(U) -= diffusion_u4 * D2DY2(tmpU2);
     }
+    nvtxPop();
 
     // if (viscos_perp > 0.0) { // Perpendicular viscosity
     //   ddt(U) += viscos_perp * Delp2(U);
     // }
-
+    nvtxPop();
+    nvtxPushColor("rhs_hyperviscos", 0xFFFFFF00);
     // Hyper-viscosity
     if (hyperviscos > 0.0) {
       // Calculate coefficient.
@@ -1874,7 +1946,8 @@ public:
 
     ////////////////////////////////////////////////////
     // Pressure equation
-
+    nvtxPop();
+    nvtxPushColor("rhs_evolve_pressure", 0xFFFFFF00);
     if (evolve_pressure) {
 
       // ddt(P) -= b0xGrad_dot_Grad(phi, P0);
@@ -1921,7 +1994,8 @@ public:
 
     ////////////////////////////////////////////////////
     // Compressional effects
-
+    nvtxPop();
+    nvtxPushColor("rhs_compress", 0xFFFFFF00);
     if (compress) {
 
       ddt(P) -= beta * Div_par(Vpar, CELL_CENTRE);
@@ -1979,6 +2053,8 @@ public:
     }
 
     first_run = false;
+
+    nvtxPop();
 
     return 0;
   }
