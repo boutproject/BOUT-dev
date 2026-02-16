@@ -4,7 +4,7 @@
  * using PETSc for the SNES interface
  *
  **************************************************************************
- * Copyright 2015-2025 BOUT++ contributors
+ * Copyright 2015-2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -59,6 +59,16 @@ BOUT_ENUM_CLASS(BoutPTCStrategy,
                 history_based,    ///< Grow/shrink dt based on residual decrease/increase
                 hybrid); ///< Combine inverse_residual and history_based strategies
 
+BOUT_ENUM_CLASS(BoutSnesTimestep,
+                pid_nonlinear_its,       ///< PID controller on nonlinear iterations
+                threshold_nonlinear_its, ///< Use thresholds on nonlinear iterations
+                residual_ratio,          ///< Use ratio of previous and current residual
+                fixed);                  ///< Fixed timestep (no adaptation)
+
+BOUT_ENUM_CLASS(BoutSnesOutput,
+                fixed_time_interval, ///< Output at fixed time intervals
+                residual_ratio);     ///< When the residual is reduced by a given ratio
+
 /// Uses PETSc's SNES interface to find a steady state solution to a
 /// nonlinear ODE by integrating in time with Backward Euler
 class SNESSolver : public Solver {
@@ -112,6 +122,10 @@ private:
   /// @param[in] linear  Specifies that the SNES solver is in a linear (KSP) inner loop
   PetscErrorCode rhs_function(Vec x, Vec f, bool linear);
 
+  BoutSnesOutput output_trigger; ///< Sets when outputs are written
+
+  BoutReal output_residual_ratio; ///< Trigger an output when residual falls by this ratio
+
   BoutReal timestep;     ///< Internal timestep
   BoutReal dt;           ///< Current timestep used in snes_function.
   BoutReal dt_min_reset; ///< If dt falls below this, reset solve
@@ -144,10 +158,24 @@ private:
   BoutReal pseudo_max_ratio;        ///< Maximum timestep ratio between neighboring cells
   Vec dt_vec;                       ///< Each quantity can have its own timestep
 
+  /// Adjust the global timestep
+  BoutReal updateGlobalTimestep(BoutReal timestep, int nl_its,
+                                BoutReal recent_failure_rate, BoutReal max_dt);
+
+  /// Calculate per-cell and global residuals
+  /// given an input system state `x`
+  PetscErrorCode updateResiduals(Vec x);
+  Field3D local_residual;         ///< Residual of Field3D quantities in each cell
+  Field2D local_residual_2d;      ///< Residual of Field2D quantities in each cell
+  BoutReal global_residual;       ///< Global residual measure
+  Field3D local_residual_prev;    ///< Previous Field3D local residuals
+  Field2D local_residual_2d_prev; ///< Previous Field2D local residuals
+  BoutReal global_residual_prev;  ///< Previous global residual
+
   /// Initialize the Pseudo-Transient Continuation method
   PetscErrorCode initPseudoTimestepping();
-  /// Update dt_vec based on new solution x
-  PetscErrorCode updatePseudoTimestepping(Vec x);
+  /// Update dt_vec based on residuals
+  PetscErrorCode updatePseudoTimestepping();
   /// Decide the next pseudo-timestep. Called by updatePseudoTimestepping
   BoutReal updatePseudoTimestep(BoutReal previous_timestep, BoutReal previous_residual,
                                 BoutReal current_residual);
@@ -156,23 +184,28 @@ private:
   BoutReal updatePseudoTimestep_history_based(BoutReal previous_timestep,
                                               BoutReal previous_residual,
                                               BoutReal current_residual);
-  Field3D pseudo_residual; ///< Diagnostic output
-  Field2D pseudo_residual_2d;
+
   Field3D pseudo_timestep;
 
-  ///< PID controller parameters
-  bool pid_controller; ///< Use PID controller?
-  int target_its;      ///< Target number of nonlinear iterations for the PID controller.
-  ///< Use with caution! Not tested values.
+  /// Timestep controller method
+  BoutSnesTimestep timestep_control;
+
+  /// When using BoutSnesTimestep::residual_ratio
+  BoutReal timestep_factor; ///< Multiply timestep by this each step
+
+  /// Target number of nonlinear iterations for the PID controller.
+  /// This can be non-integer to push timestep more aggressively
+  BoutReal target_its;
+
   BoutReal kP; ///< (0.6 - 0.8) Proportional parameter (main response to current step)
   BoutReal kI; ///< (0.2 - 0.4) Integral parameter (smooths history of changes)
   BoutReal kD; ///< (0.1 - 0.3) Derivative (dampens oscillation - optional)
   bool pid_consider_failures; ///< Reduce timestep increases if recent solves have failed
   BoutReal recent_failure_rate;            ///< Rolling average of recent failure rate
-  const BoutReal inv_failure_window = 0.1; ///< 1 / number of recent solves
+  BoutReal last_failure_weight;            ///< 1 / number of recent solves
 
-  int nl_its_prev;
-  int nl_its_prev2;
+  BoutReal nl_its_prev;
+  BoutReal nl_its_prev2;
 
   BoutReal pid(BoutReal timestep, int nl_its, BoutReal max_dt); ///< Updates the timestep
 
@@ -210,6 +243,7 @@ private:
   bool matrix_free;          ///< Use matrix free Jacobian
   bool matrix_free_operator; ///< Use matrix free Jacobian in the operator?
   int lag_jacobian;          ///< Re-use Jacobian
+  bool jacobian_persists; ///< Re-use Jacobian and preconditioner across nonlinear solves
   bool use_coloring;         ///< Use matrix coloring
 
   bool jacobian_recalculated; ///< Flag set when Jacobian is recalculated
