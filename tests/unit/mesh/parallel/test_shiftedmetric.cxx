@@ -314,35 +314,19 @@ TYPED_TEST(ShiftedMetricTest, CalcParallelSlices) {
   // We don't shift in the guard cells, and the parallel slices are
   // stored offset in y, therefore we need to make new regions that we
   // can compare the expected and actual outputs over
-
-  constexpr bool is_shifted_interp = std::is_same_v<TypeParam, ShiftedMetricInterp>;
-
-  // ShiftedMetricInterp doesn't seem to store interpolated values in _any_ of the
-  // guards, so we can only check the interior X point
-  const int xstart = is_shifted_interp ? mesh->xstart : 0;
-  const int xend = is_shifted_interp ? mesh->xend : mesh->LocalNx - 1;
-
-  // It also means we can't check in the _y_ guards either.
-  // TODO(peter): Is this a bug?
-  const int yup_1_end = is_shifted_interp ? mesh->yend : mesh->yend + 1;
-  const int yup_2_end = is_shifted_interp ? mesh->yend : mesh->yend + 2;
-
-  const int ydown_1_start = is_shifted_interp ? mesh->ystart : mesh->ystart - 1;
-  const int ydown_2_start = is_shifted_interp ? mesh->ystart : mesh->ystart - 2;
-
   mesh->addRegion3D("RGN_YUP",
-                    Region<Ind3D>(xstart, xend, mesh->ystart + 1, yup_1_end, 0,
-                                  mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
+                    Region<Ind3D>(0, mesh->LocalNx - 1, mesh->ystart + 1, mesh->yend + 1,
+                                  0, mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
   mesh->addRegion3D("RGN_YUP2",
-                    Region<Ind3D>(xstart, xend, mesh->ystart + 2, yup_2_end, 0,
-                                  mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
+                    Region<Ind3D>(0, mesh->LocalNx - 1, mesh->ystart + 2, mesh->yend + 2,
+                                  0, mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
 
   mesh->addRegion3D("RGN_YDOWN",
-                    Region<Ind3D>(xstart, xend, ydown_1_start, mesh->yend - 1, 0,
-                                  mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
+                    Region<Ind3D>(0, mesh->LocalNx - 1, mesh->ystart - 1, mesh->yend - 1,
+                                  0, mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
   mesh->addRegion3D("RGN_YDOWN2",
-                    Region<Ind3D>(xstart, xend, ydown_2_start, mesh->yend - 2, 0,
-                                  mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
+                    Region<Ind3D>(0, mesh->LocalNx - 1, mesh->ystart - 2, mesh->yend - 2,
+                                  0, mesh->LocalNz - 1, mesh->LocalNy, mesh->LocalNz));
   output_info.enable();
 
   // Actual interesting bit here!
