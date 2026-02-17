@@ -52,7 +52,16 @@
 #include "options_ini.hxx"
 
 #include <bout/boutexception.hxx>
+#include <bout/options.hxx>
+#include <bout/sys/gettext.hxx>
 #include <bout/utils.hxx>
+
+#include <cstddef>
+#include <fstream>
+#include <ios>
+#include <string>
+
+#include "fmt/format.h"
 
 using namespace std;
 
@@ -65,7 +74,7 @@ void OptionINI::read(Options* options, const string& filename) {
   fin.open(filename.c_str());
 
   if (!fin.good()) {
-    throw BoutException(_("\tOptions file '{:s}' not found\n"), filename);
+    throw BoutException(_f("\tOptions file '{:s}' not found\n"), filename);
   }
 
   Options* section = options; // Current section
@@ -142,7 +151,7 @@ void OptionINI::read(Options* options, const string& filename) {
         // Add this to the current section
         section->set(key, value, filename);
       } // section test
-    }   // buffer.empty
+    } // buffer.empty
   } while (!fin.eof());
 
   fin.close();
@@ -153,11 +162,11 @@ void OptionINI::write(Options* options, const std::string& filename) {
   fout.open(filename, ios::out | ios::trunc);
 
   if (!fout.good()) {
-    throw BoutException(_("Could not open output file '{:s}'\n"), filename);
+    throw BoutException(_f("Could not open output file '{:s}'\n"), filename);
   }
 
   // Call recursive function to write to file
-  fout << fmt::format(fmt::runtime("{:uds}"), *options);
+  fout << fmt::format("{:uds}", *options);
 
   fout.close();
 }
@@ -193,10 +202,10 @@ void OptionINI::parse(const string& buffer, string& key, string& value) {
   value = trim(buffer.substr(startpos + 1), " \t\r\n\"");
 
   if (key.empty()) {
-    throw BoutException(_("\tEmpty key\n\tLine: {:s}"), buffer);
+    throw BoutException(_f("\tEmpty key\n\tLine: {:s}"), buffer);
   }
 
   if (key.find(':') != std::string::npos) {
-    throw BoutException(_("\tKey must not contain ':' character\n\tLine: {:s}"), buffer);
+    throw BoutException(_f("\tKey must not contain ':' character\n\tLine: {:s}"), buffer);
   }
 }

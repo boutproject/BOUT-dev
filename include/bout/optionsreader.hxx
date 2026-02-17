@@ -36,7 +36,8 @@ class OptionsReader;
 
 #include "bout/options.hxx"
 
-#include "fmt/core.h"
+#include <fmt/base.h>
+#include <fmt/core.h>
 
 #include <string>
 #include <vector>
@@ -69,9 +70,10 @@ public:
   /// @param[in] file  The name of the file. printf style arguments can be used to create the file name.
   void read(Options* options, const std::string& filename);
 
-  template <class S, class... Args>
-  void read(Options* options, const S& format, const Args&... args) {
-    return read(options, fmt::format(fmt::runtime(format), args...));
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  void read(Options* options, fmt::format_string<Args...> format, Args&&... args) {
+    return read(options, fmt::vformat(format, fmt::make_format_args(args...)));
   }
 
   /// Write options to file
@@ -80,9 +82,10 @@ public:
   /// @param[in] file   The name of the file to (over)write
   void write(Options* options, const std::string& filename);
 
-  template <class S, class... Args>
-  void write(Options* options, const S& format, const Args&... args) {
-    return write(options, fmt::format(fmt::runtime(format), args...));
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  void write(Options* options, fmt::format_string<Args...> format, Args&&... args) {
+    return write(options, fmt::vformat(format, fmt::make_format_args(args...)));
   }
 
   /// Parse options from the command line

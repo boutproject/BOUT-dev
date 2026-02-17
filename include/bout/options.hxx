@@ -52,6 +52,7 @@ class Options;
 #include "bout/utils.hxx"
 
 #include <fmt/core.h>
+#include <fmt/format.h>
 
 #include <cmath>
 #include <functional>
@@ -626,8 +627,8 @@ public:
       // Option not found. Copy the value from the default.
       this->_set_no_check(def.value, DEFAULT_SOURCE);
 
-      output_info << _("\tOption ") << full_name << " = " << def.full_name << " ("
-                  << DEFAULT_SOURCE << ")\n";
+      output_info.write("{}{} = {}({})\n", _("\tOption "), full_name, def.full_name,
+                        DEFAULT_SOURCE);
     } else {
       // Check if this was previously set as a default option
       if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
@@ -911,8 +912,8 @@ private:
                       << ")\n";
         } else {
           throw BoutException(
-              _("Options: Setting a value from same source ({:s}) to new value "
-                "'{:s}' - old value was '{:s}'."),
+              _f("Options: Setting a value from same source ({:s}) to new value "
+                 "'{:s}' - old value was '{:s}'."),
               source, toString(val), bout::utils::variantToString(value));
         }
       }
@@ -1043,7 +1044,40 @@ namespace details {
 /// so that we can put the function definitions in the .cxx file,
 /// avoiding lengthy recompilation if we change it
 struct OptionsFormatterBase {
-  auto parse(fmt::format_parse_context& ctx) -> fmt::format_parse_context::iterator;
+  constexpr auto parse(fmt::format_parse_context& ctx) {
+    const auto* it = ctx.begin();
+    const auto *const end = ctx.end();
+
+    while (it != end and *it != '}') {
+      switch (*it) {
+      case 'd':
+        docstrings = true;
+        ++it;
+        break;
+      case 'i':
+        inline_section_names = true;
+        ++it;
+        break;
+      case 'k':
+        key_only = true;
+        ++it;
+        break;
+      case 's':
+        source = true;
+        ++it;
+        break;
+      case 'u':
+        unused = true;
+        ++it;
+        break;
+      default:
+        throw fmt::format_error("invalid format for 'Options'");
+      }
+    }
+
+    return it;
+  }
+
   auto format(const Options& options, fmt::format_context& ctx) const
       -> fmt::format_context::iterator;
 
@@ -1060,8 +1094,6 @@ private:
   bool key_only{false};
   /// Include the 'source' attribute, if present
   bool source{false};
-  /// Format string to passed down to subsections
-  std::string format_string;
 };
 } // namespace details
 } // namespace bout

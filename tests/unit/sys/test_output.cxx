@@ -332,7 +332,7 @@ TEST_F(OutputTest, FormatInd3DInvalid) {
   Ind3D ind(11, 2, 3);
 
   Output local_output;
-  EXPECT_THROW(local_output.write("{:b}", ind), fmt::format_error);
+  EXPECT_THROW(local_output.write(fmt::runtime("{:b}"), ind), fmt::format_error);
 }
 
 TEST_F(OutputTest, FormatInd2Ddefault) {
