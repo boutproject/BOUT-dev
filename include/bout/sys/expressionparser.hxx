@@ -29,7 +29,8 @@
 
 #include "bout/unused.hxx"
 
-#include "fmt/core.h"
+#include <fmt/base.h>
+#include <fmt/core.h>
 
 #include <exception>
 #include <list>
@@ -239,11 +240,16 @@ private:
 
 class ParseException : public std::exception {
 public:
+  ParseException(const ParseException&) = default;
+  ParseException(ParseException&&) = delete;
+  ParseException& operator=(const ParseException&) = default;
+  ParseException& operator=(ParseException&&) = delete;
   ParseException(const std::string& message_) : message(message_) {}
 
-  template <class S, class... Args>
-  ParseException(const S& format, const Args&... args)
-      : message(fmt::format(fmt::runtime(format), args...)) {}
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  ParseException(fmt::format_string<Args...> format, Args&&... args)
+      : message(fmt::vformat(format, fmt::make_format_args(args...))) {}
 
   ~ParseException() override = default;
 

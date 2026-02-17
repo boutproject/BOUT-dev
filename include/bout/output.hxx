@@ -39,7 +39,8 @@ class Output;
 #include "bout/sys/gettext.hxx" // IWYU pragma: keep for gettext _() macro
 #include "bout/unused.hxx"
 
-#include "fmt/core.h"
+#include <fmt/base.h>
+#include <fmt/core.h>
 
 #include <utility>
 
@@ -81,10 +82,10 @@ public:
     open(filename);
   }
 
-  template <class S, class... Args>
-  Output(const S& format, Args&&... args)
-      : Output(fmt::format(fmt::runtime(format), std::forward<decltype(args)>(args)...)) {
-  }
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  Output(fmt::format_string<Args...> format, Args&&... args)
+      : Output(fmt::vformat(format, fmt::make_format_args(args...))) {}
 
   ~Output() override { close(); }
 
@@ -94,9 +95,10 @@ public:
   /// Open an output log file
   int open(const std::string& filename);
 
-  template <class S, class... Args>
-  int open(const S& format, Args&&... args) {
-    return open(fmt::format(fmt::runtime(format), std::forward<decltype(args)>(args)...));
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  int open(fmt::format_string<Args...> format, Args&&... args) {
+    return open(fmt::vformat(format, fmt::make_format_args(args...)));
   }
 
   /// Close the log file
@@ -105,16 +107,18 @@ public:
   /// Write a string using fmt format
   virtual void write(const std::string& message);
 
-  template <class S, class... Args>
-  void write(const S& format, Args&&... args) {
-    write(fmt::format(fmt::runtime(format), std::forward<decltype(args)>(args)...));
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  void write(fmt::format_string<Args...> format, Args&&... args) {
+    write(fmt::vformat(format, fmt::make_format_args(args...)));
   }
   /// Same as write, but only to screen
   virtual void print(const std::string& message);
 
-  template <class S, class... Args>
-  void print(const S& format, Args&&... args) {
-    print(fmt::format(fmt::runtime(format), std::forward<decltype(args)>(args)...));
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  void print(fmt::format_string<Args...> format, Args&&... args) {
+    print(fmt::vformat(format, fmt::make_format_args(args...)));
   }
 
   /// Add an output stream. All output will be sent to all streams
@@ -175,12 +179,12 @@ public:
   /// This string is then sent to log file and stdout (on processor 0)
   void write(const std::string& message) override;
 
-  template <class S, class... Args>
-  void write(const S& format, Args&&... args) {
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  void write(fmt::format_string<Args...> format, Args&&... args) {
     if (enabled) {
       ASSERT1(base != nullptr);
-      base->write(
-          fmt::format(fmt::runtime(format), std::forward<decltype(args)>(args)...));
+      base->write(fmt::vformat(format, fmt::make_format_args(args...)));
     }
   }
 
@@ -188,12 +192,12 @@ public:
   /// note: unlike write, this is not also sent to log files
   void print(const std::string& message) override;
 
-  template <class S, class... Args>
-  void print(const S& format, Args&&... args) {
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  void print(fmt::format_string<Args...> format, Args&&... args) {
     if (enabled) {
       ASSERT1(base != nullptr);
-      base->print(
-          fmt::format(fmt::runtime(format), std::forward<decltype(args)>(args)...));
+      base->print(fmt::vformat(format, fmt::make_format_args(args...)));
     }
   }
 

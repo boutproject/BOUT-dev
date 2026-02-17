@@ -26,24 +26,44 @@
 
 #include "boutmesh.hxx"
 
+#include <bout/assert.hxx>
 #include <bout/boundary_region.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/dcomplex.hxx>
 #include <bout/derivs.hxx>
 #include <bout/fft.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/field_data.hxx>
+#include <bout/fieldgroup.hxx>
+#include <bout/globals.hxx>
 #include <bout/griddata.hxx>
 #include <bout/msg_stack.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
 #include <bout/parallel_boundary_region.hxx>
+#include <bout/region.hxx>
+#include <bout/sys/gettext.hxx>
+#include <bout/sys/range.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
+#include <fmt/format.h>
+
 #include <algorithm>
+#include <cmath>
+#include <cstddef>
 #include <iterator>
+#include <list>
+#include <memory>
+#include <ostream>
 #include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
@@ -165,16 +185,14 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
   // Check size of Y mesh if we've got multiple processors in Y
   if (num_local_y_points < num_y_guards and num_y_processors != 1) {
     return {false,
-            fmt::format(fmt::runtime(_(
-                            "\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n")),
+            fmt::format(_f("\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n"),
                         ny, num_y_processors, num_local_y_points, num_y_guards)};
   }
   // Check branch cuts
   if ((jyseps1_1 + 1) % num_local_y_points != 0) {
-    return {false,
-            fmt::format(fmt::runtime(_("\t -> Leg region jyseps1_1+1 ({:d}) must be a "
-                                       "multiple of MYSUB ({:d})\n")),
-                        jyseps1_1 + 1, num_local_y_points)};
+    return {false, fmt::format(_f("\t -> Leg region jyseps1_1+1 ({:d}) must be a "
+                                  "multiple of MYSUB ({:d})\n"),
+                               jyseps1_1 + 1, num_local_y_points)};
   }
 
   if (jyseps2_1 != jyseps1_2) {
@@ -183,18 +201,16 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
     if ((jyseps2_1 - jyseps1_1) % num_local_y_points != 0) {
       return {
           false,
-          fmt::format(fmt::runtime(_(
-                          "\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
-                          "be a multiple of MYSUB ({:d})\n")),
+          fmt::format(_f("\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
+                         "be a multiple of MYSUB ({:d})\n"),
                       jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, num_local_y_points)};
     }
 
     if ((jyseps2_2 - jyseps1_2) % num_local_y_points != 0) {
       return {
           false,
-          fmt::format(fmt::runtime(_(
-                          "\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
-                          "be a multiple of MYSUB ({:d})\n")),
+          fmt::format(_f("\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
+                         "be a multiple of MYSUB ({:d})\n"),
                       jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, num_local_y_points)};
     }
 
@@ -202,17 +218,15 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
     if ((ny_inner - jyseps2_1 - 1) % num_local_y_points != 0) {
       return {false,
               fmt::format(
-                  fmt::runtime(
-                      _("\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
-                        "be a multiple of MYSUB ({:d})\n")),
+                  _f("\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
+                     "be a multiple of MYSUB ({:d})\n"),
                   ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, num_local_y_points)};
     }
     if ((jyseps1_2 - ny_inner + 1) % num_local_y_points != 0) {
       return {false,
               fmt::format(
-                  fmt::runtime(
-                      _("\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must "
-                        "be a multiple of MYSUB ({:d})\n")),
+                  _f("\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must "
+                     "be a multiple of MYSUB ({:d})\n"),
                   jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, num_local_y_points)};
     }
   } else {
@@ -220,9 +234,8 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
     if ((jyseps2_2 - jyseps1_1) % num_local_y_points != 0) {
       return {
           false,
-          fmt::format(fmt::runtime(_(
-                          "\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must "
-                          "be a multiple of MYSUB ({:d})\n")),
+          fmt::format(_f("\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must "
+                         "be a multiple of MYSUB ({:d})\n"),
                       jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, num_local_y_points)};
     }
   }
@@ -230,9 +243,8 @@ CheckMeshResult checkBoutMeshYDecomposition(int num_y_processors, int ny,
   if ((ny - jyseps2_2 - 1) % num_local_y_points != 0) {
     return {
         false,
-        fmt::format(fmt::runtime(_(
-                        "\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
-                        "multiple of MYSUB ({:d})\n")),
+        fmt::format(_f("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
+                       "multiple of MYSUB ({:d})\n"),
                     ny, jyseps2_2, ny - jyseps2_2 - 1, num_local_y_points)};
   }
 
@@ -253,7 +265,7 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
                .withDefault(1);
     if ((NPES % NXPE) != 0) {
       throw BoutException(
-          _("Number of processors ({:d}) not divisible by NPs in x direction ({:d})\n"),
+          _f("Number of processors ({:d}) not divisible by NPs in x direction ({:d})\n"),
           NPES, NXPE);
     }
 
@@ -266,7 +278,7 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
                .withDefault(1);
     if ((NPES % NYPE) != 0) {
       throw BoutException(
-          _("Number of processors ({:d}) not divisible by NPs in y direction ({:d})\n"),
+          _f("Number of processors ({:d}) not divisible by NPs in y direction ({:d})\n"),
           NPES, NYPE);
     }
 
@@ -289,14 +301,14 @@ void BoutMesh::findProcessorSplit() {
   // Results in square domains
   const BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny));
 
-  output_info.write(_("Finding value for NXPE (ideal = {:f})\n"), ideal);
+  output_info.write(_f("Finding value for NXPE (ideal = {:f})\n"), ideal);
 
   for (int i = 1; i <= NPES; i++) { // Loop over all possibilities
     if ((NPES % i == 0) &&          // Processors divide equally
         (MX % i == 0) &&            // Mesh in X divides equally
         (ny % (NPES / i) == 0)) {   // Mesh in Y divides equally
 
-      output_info.write(_("\tCandidate value: {:d}\n"), i);
+      output_info.write(_f("\tCandidate value: {:d}\n"), i);
 
       const int nyp = NPES / i;
 
@@ -323,15 +335,15 @@ void BoutMesh::findProcessorSplit() {
 
   NYPE = NPES / NXPE;
 
-  output_progress.write(_("\tDomain split (NXPE={:d}, NYPE={:d}) into domains "
-                          "(localNx={:d}, localNy={:d})\n"),
+  output_progress.write(_f("\tDomain split (NXPE={:d}, NYPE={:d}) into domains "
+                           "(localNx={:d}, localNy={:d})\n"),
                         NXPE, NYPE, MX / NXPE, ny / NYPE);
 }
 
 void BoutMesh::setDerivedGridSizes() {
   // Check that nx is large enough
   if (nx <= 2 * MXG) {
-    throw BoutException(_("Error: nx must be greater than 2 times MXG (2 * {:d})"), MXG);
+    throw BoutException(_f("Error: nx must be greater than 2 times MXG (2 * {:d})"), MXG);
   }
 
   GlobalNx = nx;
@@ -356,8 +368,8 @@ void BoutMesh::setDerivedGridSizes() {
   MX = nx - 2 * MXG;
   MXSUB = MX / NXPE;
   if ((MX % NXPE) != 0) {
-    throw BoutException(_("Cannot split {:d} X points equally between {:d} processors\n"),
-                        MX, NXPE);
+    throw BoutException(
+        _f("Cannot split {:d} X points equally between {:d} processors\n"), MX, NXPE);
   }
 
   // NOTE: No grid data reserved for Y boundary cells - copy from neighbours
@@ -365,7 +377,7 @@ void BoutMesh::setDerivedGridSizes() {
   MYSUB = MY / NYPE;
   if ((MY % NYPE) != 0) {
     throw BoutException(
-        _("\tERROR: Cannot split {:d} Y points equally between {:d} processors\n"), MY,
+        _f("\tERROR: Cannot split {:d} Y points equally between {:d} processors\n"), MY,
         NYPE);
   }
 
@@ -373,7 +385,7 @@ void BoutMesh::setDerivedGridSizes() {
   MZSUB = MZ / NZPE;
   if ((MZ % NZPE) != 0) {
     throw BoutException(
-        _("\tERROR: Cannot split {:d} Z points equally between {:d} processors\n"), MZ,
+        _f("\tERROR: Cannot split {:d} Z points equally between {:d} processors\n"), MZ,
         NZPE);
   }
 
@@ -474,8 +486,8 @@ int BoutMesh::load() {
     if (!is_pow2(nz)) {
       // Should be a power of 2 for efficient FFTs
       output_warn.write(
-          _("WARNING: Number of toroidal points should be 2^n for efficient "
-            "FFT performance -- consider changing MZ ({:d}) if using FFTs\n"),
+          _f("WARNING: Number of toroidal points should be 2^n for efficient "
+             "FFT performance -- consider changing MZ ({:d}) if using FFTs\n"),
           nz);
     }
   } else {
@@ -1556,7 +1568,7 @@ bool BoutMesh::lastX() const { return PE_XIND == NXPE - 1; }
 int BoutMesh::sendXOut(BoutReal* buffer, int size, int tag) {
   Timer timer("comms");
 
-  int proc {-1};
+  int proc{-1};
   if (PE_XIND == NXPE - 1) {
     if (periodicX) {
       // Wrap around to first processor in X
@@ -1568,8 +1580,7 @@ int BoutMesh::sendXOut(BoutReal* buffer, int size, int tag) {
     proc = PROC_NUM(PE_XIND + 1, PE_YIND);
   }
 
-  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
-                BoutComm::get());
+  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get());
 
   return 0;
 }
@@ -1577,7 +1588,7 @@ int BoutMesh::sendXOut(BoutReal* buffer, int size, int tag) {
 int BoutMesh::sendXIn(BoutReal* buffer, int size, int tag) {
   Timer timer("comms");
 
-  int proc {-1};
+  int proc{-1};
   if (PE_XIND == 0) {
     if (periodicX) {
       // Wrap around to last processor in X
@@ -1589,8 +1600,7 @@ int BoutMesh::sendXIn(BoutReal* buffer, int size, int tag) {
     proc = PROC_NUM(PE_XIND - 1, PE_YIND);
   }
 
-  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
-                BoutComm::get());
+  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get());
 
   return 0;
 }
@@ -1598,7 +1608,7 @@ int BoutMesh::sendXIn(BoutReal* buffer, int size, int tag) {
 comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
   Timer timer("comms");
 
-  int proc {-1};
+  int proc{-1};
   if (PE_XIND == NXPE - 1) {
     if (periodicX) {
       // Wrap around to first processor in X
@@ -1613,8 +1623,8 @@ comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
   // Get a communications handle. Not fussy about size of arrays
   CommHandle* ch = get_handle(0, 0);
 
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
-                 BoutComm::get(), ch->request);
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get(),
+                 ch->request);
 
   ch->in_progress = true;
 
@@ -1624,7 +1634,7 @@ comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
 comm_handle BoutMesh::irecvXIn(BoutReal* buffer, int size, int tag) {
   Timer timer("comms");
 
-  int proc {-1};
+  int proc{-1};
   if (PE_XIND == 0) {
     if (periodicX) {
       // Wrap around to last processor in X
@@ -1639,8 +1649,8 @@ comm_handle BoutMesh::irecvXIn(BoutReal* buffer, int size, int tag) {
   // Get a communications handle. Not fussy about size of arrays
   CommHandle* ch = get_handle(0, 0);
 
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
-                 BoutComm::get(), ch->request);
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag, BoutComm::get(),
+                 ch->request);
 
   ch->in_progress = true;
 

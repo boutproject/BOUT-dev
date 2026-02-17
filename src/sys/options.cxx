@@ -107,10 +107,10 @@ Options::Options(InitializerList values, Options* parent_instance,
 
 Options& Options::operator[](const std::string& name) {
   if (isValue()) {
-    throw BoutException(_("Trying to index Option '{0}' with '{1}', but '{0}' is a "
-                          "value, not a section.\n"
-                          "This is likely the result of clashing input options, and you "
-                          "may have to rename one of them.\n"),
+    throw BoutException(_f("Trying to index Option '{0}' with '{1}', but '{0}' is a "
+                           "value, not a section.\n"
+                           "This is likely the result of clashing input options, and you "
+                           "may have to rename one of them.\n"),
                         full_name, name);
   }
 
@@ -144,10 +144,10 @@ Options& Options::operator[](const std::string& name) {
 
 const Options& Options::operator[](const std::string& name) const {
   if (isValue()) {
-    throw BoutException(_("Trying to index Option '{0}' with '{1}', but '{0}' is a "
-                          "value, not a section.\n"
-                          "This is likely the result of clashing input options, and you "
-                          "may have to rename one of them.\n"),
+    throw BoutException(_f("Trying to index Option '{0}' with '{1}', but '{0}' is a "
+                           "value, not a section.\n"
+                           "This is likely the result of clashing input options, and you "
+                           "may have to rename one of them.\n"),
                         full_name, name);
   }
 
@@ -165,7 +165,7 @@ const Options& Options::operator[](const std::string& name) const {
   auto child = children.find(name);
   if (child == children.end()) {
     // Doesn't exist
-    throw BoutException(_("Option {:s}:{:s} does not exist"), full_name, name);
+    throw BoutException(_f("Option {:s}:{:s} does not exist"), full_name, name);
   }
 
   return child->second;
@@ -369,7 +369,7 @@ double parseExpression(const Options::ValueType& value, const Options* options,
     return gen->generate({});
   } catch (ParseException& error) {
     // Convert any exceptions to something a bit more useful
-    throw BoutException(_("Couldn't get {} from option {:s} = '{:s}': {}"), type,
+    throw BoutException(_f("Couldn't get {} from option {:s} = '{:s}': {}"), type,
                         full_name, bout::utils::variantToString(value), error.what());
   }
 }
@@ -377,7 +377,7 @@ double parseExpression(const Options::ValueType& value, const Options* options,
 /// Helper function to print `key = value` with optional source
 template <class T>
 void printNameValueSourceLine(const Options& option, const T& value) {
-  output_info.write(_("\tOption {} = {}"), option.str(), value);
+  output_info.write(_f("\tOption {} = {}"), option.str(), value);
   if (option.hasAttribute("source")) {
     // Specify the source of the setting
     output_info.write(" ({})",
@@ -390,7 +390,7 @@ void printNameValueSourceLine(const Options& option, const T& value) {
 template <>
 std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) const {
   if (is_section) {
-    throw BoutException(_("Option {:s} has no value"), full_name);
+    throw BoutException(_f("Option {:s} has no value"), full_name);
   }
 
   // Mark this option as used
@@ -406,7 +406,7 @@ std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) cons
 template <>
 int Options::as<int>(const int& UNUSED(similar_to)) const {
   if (is_section) {
-    throw BoutException(_("Option {:s} has no value"), full_name);
+    throw BoutException(_f("Option {:s} has no value"), full_name);
   }
 
   int result = 0;
@@ -426,7 +426,7 @@ int Options::as<int>(const int& UNUSED(similar_to)) const {
 
     } else {
       // Another type which can't be converted
-      throw BoutException(_("Value for option {:s} is not an integer"), full_name);
+      throw BoutException(_f("Value for option {:s} is not an integer"), full_name);
     }
 
     // Convert to int by rounding
@@ -434,7 +434,7 @@ int Options::as<int>(const int& UNUSED(similar_to)) const {
 
     // Check that the value is close to an integer
     if (fabs(rval - static_cast<BoutReal>(result)) > 1e-3) {
-      throw BoutException(_("Value for option {:s} = {:e} is not an integer"), full_name,
+      throw BoutException(_f("Value for option {:s} = {:e} is not an integer"), full_name,
                           rval);
     }
   }
@@ -449,7 +449,7 @@ int Options::as<int>(const int& UNUSED(similar_to)) const {
 template <>
 BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) const {
   if (is_section) {
-    throw BoutException(_("Option {:s} has no value"), full_name);
+    throw BoutException(_f("Option {:s} has no value"), full_name);
   }
 
   BoutReal result = BoutNaN;
@@ -464,7 +464,7 @@ BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) const {
     result = parseExpression(value, this, "BoutReal", full_name);
 
   } else {
-    throw BoutException(_("Value for option {:s} cannot be converted to a BoutReal"),
+    throw BoutException(_f("Value for option {:s} cannot be converted to a BoutReal"),
                         full_name);
   }
 
@@ -479,7 +479,7 @@ BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) const {
 template <>
 bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
   if (is_section) {
-    throw BoutException(_("Option {:s} has no value"), full_name);
+    throw BoutException(_f("Option {:s} has no value"), full_name);
   }
 
   bool result = false;
@@ -494,12 +494,12 @@ bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
     // Check that the result is either close to 1 (true) or close to 0 (false)
     const int ival = ROUND(rval);
     if ((fabs(rval - static_cast<BoutReal>(ival)) > 1e-3) or (ival < 0) or (ival > 1)) {
-      throw BoutException(_("Value for option {:s} = {:e} is not a bool"), full_name,
+      throw BoutException(_f("Value for option {:s} = {:e} is not a bool"), full_name,
                           rval);
     }
     result = ival == 1;
   } else {
-    throw BoutException(_("Value for option {:s} cannot be converted to a bool"),
+    throw BoutException(_f("Value for option {:s} cannot be converted to a bool"),
                         full_name);
   }
 
@@ -579,7 +579,7 @@ Field3D Options::as<Field3D>(const Field3D& similar_to) const {
                         localmesh->LocalNz);
   }
 
-  throw BoutException(_("Value for option {:s} cannot be converted to a Field3D"),
+  throw BoutException(_f("Value for option {:s} cannot be converted to a Field3D"),
                       full_name);
 }
 
@@ -631,7 +631,7 @@ Field2D Options::as<Field2D>(const Field2D& similar_to) const {
     }
   }
 
-  throw BoutException(_("Value for option {:s} cannot be converted to a Field2D"),
+  throw BoutException(_f("Value for option {:s} cannot be converted to a Field2D"),
                       full_name);
 }
 
@@ -713,7 +713,7 @@ FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
     // to select a region from it using Mesh e.g. if this
     // is from the input grid file.
   }
-  throw BoutException(_("Value for option {:s} cannot be converted to a FieldPerp"),
+  throw BoutException(_f("Value for option {:s} cannot be converted to a FieldPerp"),
                       full_name);
 }
 
@@ -755,14 +755,13 @@ namespace {
 template <class T>
 T as_amt(const Options& self, const T& similar_to) {
   if (self.isSection()) {
-    throw BoutException(_("Option {:s} has no value"), self.str());
+    throw BoutException(_f("Option {:s} has no value"), self.str());
   }
 
   const T result = bout::utils::visit(
       ConvertContainer<T>{
-          fmt::format(
-              fmt::runtime(_("Value for option {:s} cannot be converted to an {}")),
-              self.str(), bout::utils::typeName<T>()),
+          fmt::format(_f("Value for option {:s} cannot be converted to an {}"),
+                      self.str(), bout::utils::typeName<T>()),
           similar_to},
       self.value);
 
@@ -984,43 +983,6 @@ std::vector<int> Options::getShape() const {
   return lazy_shape;
 }
 
-fmt::format_parse_context::iterator
-bout::details::OptionsFormatterBase::parse(fmt::format_parse_context& ctx) {
-
-  const auto* closing_brace = std::find(ctx.begin(), ctx.end(), '}');
-  std::for_each(ctx.begin(), closing_brace, [&](auto ctx_opt) {
-    switch (ctx_opt) {
-    case 'd':
-      docstrings = true;
-      break;
-    case 'i':
-      inline_section_names = true;
-      break;
-    case 'k':
-      key_only = true;
-      break;
-    case 's':
-      source = true;
-      break;
-    case 'u':
-      unused = true;
-      break;
-    default:
-      throw fmt::format_error("invalid format for 'Options'");
-    }
-  });
-
-  // Keep a copy of the format string (without the last '}') so we can
-  // pass it down to the subsections.
-  const auto size = std::distance(ctx.begin(), closing_brace);
-  format_string.reserve(size + 3);
-  format_string.assign("{:");
-  format_string.append(ctx.begin(), closing_brace);
-  format_string.push_back('}');
-
-  return closing_brace;
-}
-
 fmt::format_context::iterator
 bout::details::OptionsFormatterBase::format(const Options& options,
                                             fmt::format_context& ctx) const {
@@ -1099,22 +1061,20 @@ bout::details::OptionsFormatterBase::format(const Options& options,
   // Get all the child values first
   for (const auto& child : children) {
     if (child.second.isValue()) {
-      fmt::format_to(ctx.out(), fmt::runtime(format_string), child.second);
+      format(child.second, ctx);
       fmt::format_to(ctx.out(), "\n");
     }
   }
 
   // Now descend the tree, accumulating subsections
   for (const auto& subsection : options.subsections()) {
-    fmt::format_to(ctx.out(), fmt::runtime(format_string), *subsection.second);
+    format(*subsection.second, ctx);
   }
 
   return ctx.out();
 }
 
-std::string toString(const Options& value) {
-  return fmt::format(fmt::runtime("{}"), value);
-}
+std::string toString(const Options& value) { return fmt::format("{}", value); }
 
 namespace bout {
 void checkForUnusedOptions() {
@@ -1160,7 +1120,7 @@ void checkForUnusedOptions(const Options& options, const std::string& data_dir,
       }
       possible_misspellings += fmt::format("\nUnused option '{}', did you mean:\n", key);
       for (const auto& match : fuzzy_matches) {
-        possible_misspellings += fmt::format(fmt::runtime("\t{:idk}\n"), match.match);
+        possible_misspellings += fmt::format("\t{:idk}\n", match.match);
       }
     }
 
@@ -1170,10 +1130,7 @@ void checkForUnusedOptions(const Options& options, const std::string& data_dir,
             ? ""
             : fmt::format("Suggested alternatives:\n{}", possible_misspellings);
 
-    // Raw string to help with the formatting of the message, and a
-    // separate variable so clang-format doesn't barf on the
-    // exception
-    const std::string unused_message = _(R"(
+    throw BoutException(_f(R"(
 There were unused input options:
 -----
 {:i}
@@ -1196,9 +1153,8 @@ turn off this check for unused options. You can always set
 'input:validate=true' to check inputs without running the full
 simulation.
 
-{})");
-
-    throw BoutException(unused_message, unused, data_dir, option_file,
+{})"),
+                        unused, data_dir, option_file,
                         unused.getChildren().begin()->first, additional_info);
   }
 }
