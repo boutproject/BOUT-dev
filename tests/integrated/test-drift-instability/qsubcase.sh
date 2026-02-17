@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Create a set of runs and submit to a queueing system e.g. Sun Grid Engine
 #

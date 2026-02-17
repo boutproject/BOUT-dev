@@ -1,5 +1,5 @@
 
-input = sin(pi*x - y)
+input_field = sin(pi*x - y)
 calc_metric = true  # Read Rxy, Bpxy etc and calculate metric
 
 non_uniform = true  # Include corrections to second derivatives

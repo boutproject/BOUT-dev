@@ -50,20 +50,29 @@ public:
     OffsetY = 0;
     OffsetZ = 0;
 
+    // These bits only for ADIOS2, also boring due to single process
+    MapCountX = nx - 2;
+    MapCountY = ny - 2;
+    MapCountZ = nz;
+    MapGlobalX = nx;
+    MapGlobalY = ny;
+    MapGlobalZ = nz;
+    MapLocalX = nx - 2;
+    MapLocalY = ny - 2;
+    MapLocalZ = nz;
+
     // Small "inner" region
     xstart = 1;
     xend = nx - 2;
     ystart = 1;
     yend = ny - 2;
-    zstart = 0;
+    zstart = 0; // no guards
     zend = nz - 1;
 
     StaggerGrids = false;
 
     // Unused variables
     periodicX = false;
-    NXPE = 1;
-    PE_XIND = 0;
     IncIntShear = false;
     maxregionblocksize = MAXREGIONBLOCKSIZE;
 
@@ -98,10 +107,12 @@ public:
     return nullptr;
   }
   int wait(comm_handle UNUSED(handle)) override { return 0; }
-  int getNXPE() override { return 1; }
-  int getNYPE() override { return 1; }
-  int getXProcIndex() override { return 1; }
-  int getYProcIndex() override { return 1; }
+  int getNXPE() const override { return 1; }
+  int getNYPE() const override { return 1; }
+  int getNZPE() const override { return 1; }
+  int getXProcIndex() const override { return 1; }
+  int getYProcIndex() const override { return 1; }
+  int getZProcIndex() const override { return 1; }
   bool firstX() const override { return true; }
   bool lastX() const override { return true; }
   int sendXOut(BoutReal* UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) override {
@@ -120,8 +131,14 @@ public:
   }
   MPI_Comm getXcomm(int UNUSED(jy)) const override { return BoutComm::get(); }
   MPI_Comm getYcomm(int UNUSED(jx)) const override { return BoutComm::get(); }
-  bool periodicY(int UNUSED(jx)) const override { return true; }
-  bool periodicY(int UNUSED(jx), BoutReal& UNUSED(ts)) const override { return true; }
+
+  // Periodic Y
+  int ix_separatrix{1000000}; // separatrix index
+
+  bool periodicY(int jx) const override { return jx < ix_separatrix; }
+  bool periodicY(int jx, BoutReal& UNUSED(ts)) const override {
+    return jx < ix_separatrix;
+  }
   int numberOfYBoundaries() const override { return 1; }
   std::pair<bool, BoutReal> hasBranchCutLower(int UNUSED(jx)) const override {
     return std::make_pair(false, 0.);
@@ -143,6 +160,8 @@ public:
   RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
   RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
   RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
+  bool hasBndryLowerY() const override { return false; }
+  bool hasBndryUpperY() const override { return false; }
   void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
   std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
   std::vector<std::shared_ptr<BoundaryRegionPar>>
@@ -151,20 +170,22 @@ public:
   }
   BoutReal GlobalX(int jx) const override { return jx; }
   BoutReal GlobalY(int jy) const override { return jy; }
+  BoutReal GlobalZ(int jz) const override { return jz; }
   BoutReal GlobalX(BoutReal jx) const override { return jx; }
   BoutReal GlobalY(BoutReal jy) const override { return jy; }
+  BoutReal GlobalZ(BoutReal jz) const override { return jz; }
   int getGlobalXIndex(int) const override { return 0; }
   int getGlobalXIndexNoBoundaries(int) const override { return 0; }
   int getGlobalYIndex(int y) const override { return y; }
   int getGlobalYIndexNoBoundaries(int y) const override { return y; }
-  int getGlobalZIndex(int) const override { return 0; }
-  int getGlobalZIndexNoBoundaries(int) const override { return 0; }
+  int getGlobalZIndex(int z) const override { return z; }
+  int getGlobalZIndexNoBoundaries(int z) const override { return z; }
   int getLocalXIndex(int) const override { return 0; }
   int getLocalXIndexNoBoundaries(int) const override { return 0; }
   int getLocalYIndex(int y) const override { return y; }
   int getLocalYIndexNoBoundaries(int y) const override { return y; }
-  int getLocalZIndex(int) const override { return 0; }
-  int getLocalZIndexNoBoundaries(int) const override { return 0; }
+  int getLocalZIndex(int z) const override { return z; }
+  int getLocalZIndexNoBoundaries(int z) const override { return z; }
 
   void initDerivs(Options* opt) {
     StaggerGrids = true;

@@ -1,7 +1,7 @@
 /**************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -176,6 +176,9 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
 
   // Where switch function
   addGenerator("where", std::make_shared<FieldWhere>(nullptr, nullptr, nullptr));
+
+  // Periodic in the Y direction?
+  addGenerator("is_periodic_y", std::make_shared<FieldPeriodicY>());
 }
 
 Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
@@ -185,7 +188,6 @@ Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
 
 Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
                                BoutReal t) const {
-  AUTO_TRACE();
 
   if (localmesh == nullptr) {
     if (fieldmesh == nullptr) {
@@ -217,7 +219,6 @@ Field3D FieldFactory::create3D(const std::string& value, const Options* opt,
 
 Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
                                BoutReal t) const {
-  AUTO_TRACE();
 
   if (localmesh == nullptr) {
     if (fieldmesh == nullptr) {
@@ -268,7 +269,6 @@ FieldPerp FieldFactory::createPerp(const std::string& value, const Options* opt,
 
 FieldPerp FieldFactory::createPerp(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
                                    BoutReal t) const {
-  AUTO_TRACE();
 
   if (localmesh == nullptr) {
     if (fieldmesh == nullptr) {

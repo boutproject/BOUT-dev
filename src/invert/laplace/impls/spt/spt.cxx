@@ -45,6 +45,9 @@
 LaplaceSPT::LaplaceSPT(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
                        Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
+
+  bout::fft::assertZSerial(*localmesh, "`spt` inversion");
+
   Acoef.setLocation(location);
   Ccoef.setLocation(location);
   Dcoef.setLocation(location);
@@ -95,7 +98,7 @@ FieldPerp LaplaceSPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     if (isInnerBoundaryFlagSetOnFirstX(INVERT_SET)) {
       // Copy x0 inner boundary into bs
       for (int ix = 0; ix < xbndry; ix++) {
-        for (int iz = 0; iz < localmesh->LocalNz; iz++) {
+        for (int iz = localmesh->zstart; iz <= localmesh->zend; iz++) {
           bs[ix][iz] = x0[ix][iz];
         }
       }
@@ -103,7 +106,7 @@ FieldPerp LaplaceSPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     if (isOuterBoundaryFlagSetOnLastX(INVERT_SET)) {
       // Copy x0 outer boundary into bs
       for (int ix = localmesh->LocalNx - 1; ix >= localmesh->LocalNx - xbndry; ix--) {
-        for (int iz = 0; iz < localmesh->LocalNz; iz++) {
+        for (int iz = localmesh->zstart; iz <= localmesh->zend; iz++) {
           bs[ix][iz] = x0[ix][iz];
         }
       }
@@ -181,7 +184,7 @@ Field3D LaplaceSPT::solve(const Field3D& b, const Field3D& x0) {
       // Copy x0 inner boundary into bs
       for (int ix = 0; ix < xbndry; ix++) {
         for (int iy = 0; iy < localmesh->LocalNy; iy++) {
-          for (int iz = 0; iz < localmesh->LocalNz; iz++) {
+          for (int iz = localmesh->zstart; iz <= localmesh->zend; iz++) {
             bs(ix, iy, iz) = x0(ix, iy, iz);
           }
         }
@@ -191,7 +194,7 @@ Field3D LaplaceSPT::solve(const Field3D& b, const Field3D& x0) {
       // Copy x0 outer boundary into bs
       for (int ix = localmesh->LocalNx - 1; ix >= localmesh->LocalNx - xbndry; ix--) {
         for (int iy = 0; iy < localmesh->LocalNy; iy++) {
-          for (int iz = 0; iz < localmesh->LocalNz; iz++) {
+          for (int iz = localmesh->zstart; iz <= localmesh->zend; iz++) {
             bs(ix, iy, iz) = x0(ix, iy, iz);
           }
         }
@@ -341,14 +344,14 @@ int LaplaceSPT::start(const FieldPerp& b, SPT_data& data) {
     // Send data
     localmesh->sendXOut(std::begin(data.buffer), 4 * (maxmode + 1), data.comm_tag);
 
-  } else if (localmesh->PE_XIND == 1) {
+  } else if (localmesh->getXProcIndex() == 1) {
     // Post a receive
     data.recv_handle =
         localmesh->irecvXIn(std::begin(data.buffer), 4 * (maxmode + 1), data.comm_tag);
   }
 
   data.proc++; // Now moved onto the next processor
-  if (localmesh->NXPE == 2) {
+  if (localmesh->getNXPE() == 2) {
     data.dir = -1; // Special case. Otherwise reversal handled in spt_continue
   }
 
@@ -366,7 +369,7 @@ int LaplaceSPT::next(SPT_data& data) {
     return 1;
   }
 
-  if (localmesh->PE_XIND == data.proc) {
+  if (localmesh->getXProcIndex() == data.proc) {
     /// This processor's turn to do inversion
 
     // Wait for data to arrive
@@ -450,7 +453,7 @@ int LaplaceSPT::next(SPT_data& data) {
       }
     }
 
-    if (localmesh->PE_XIND != 0) { // If not finished yet
+    if (localmesh->getXProcIndex() != 0) { // If not finished yet
       /// Send data
 
       if (data.dir > 0) {
@@ -460,7 +463,7 @@ int LaplaceSPT::next(SPT_data& data) {
       }
     }
 
-  } else if (localmesh->PE_XIND == data.proc + data.dir) {
+  } else if (localmesh->getXProcIndex() == data.proc + data.dir) {
     // This processor is next, post receive
 
     if (data.dir > 0) {
@@ -474,7 +477,7 @@ int LaplaceSPT::next(SPT_data& data) {
 
   data.proc += data.dir;
 
-  if (data.proc == localmesh->NXPE - 1) {
+  if (data.proc == localmesh->getNXPE() - 1) {
     data.dir = -1; // Reverses direction at the end
   }
 
@@ -519,7 +522,7 @@ void LaplaceSPT::finish(SPT_data& data, FieldPerp& x) {
   if (!localmesh->firstX()) {
     // Set left boundary to zero (Prevent unassigned values in corners)
     for (int ix = 0; ix < localmesh->xstart; ix++) {
-      for (int kz = 0; kz < localmesh->LocalNz; kz++) {
+      for (int kz = localmesh->zstart; kz <= localmesh->zend; kz++) {
         x(ix, kz) = 0.0;
       }
     }
@@ -527,7 +530,7 @@ void LaplaceSPT::finish(SPT_data& data, FieldPerp& x) {
   if (!localmesh->lastX()) {
     // Same for right boundary
     for (int ix = localmesh->xend + 1; ix < localmesh->LocalNx; ix++) {
-      for (int kz = 0; kz < localmesh->LocalNz; kz++) {
+      for (int kz = localmesh->zstart; kz <= localmesh->zend; kz++) {
         x(ix, kz) = 0.0;
       }
     }

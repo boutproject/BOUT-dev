@@ -2,19 +2,10 @@
  * Implementation of the Mesh class, handling input files compatible with
  * BOUT / BOUT-06.
  *
- * Changelog
- * ---------
- *
- * 2015-01 Ben Dudson <benjamin.dudson@york.ac.uk>
- *      *
- *
- * 2010-05 Ben Dudson <bd512@york.ac.uk>
- *      * Initial version, adapted from grid.cpp and topology.cpp
- *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -66,6 +57,8 @@ If you want the old setting, you have to specify mesh:symmetricGlobalY=false in 
                 << optionfile << "\n";
   }
   OPTION(options, symmetricGlobalY, true);
+  OPTION(options, symmetricGlobalZ, false); // The default should be updated to true but
+                                            // this breaks backwards compatibility
 
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
@@ -440,7 +433,6 @@ void BoutMesh::setDerivedGridSizes() {
 }
 
 int BoutMesh::load() {
-  TRACE("BoutMesh::load()");
 
   output_progress << _("Loading mesh") << endl;
 
@@ -526,9 +518,10 @@ int BoutMesh::load() {
     findProcessorSplit();
   }
 
-  // Get X and Y processor indices
+  // Get X, Y, Z processor indices
   PE_YIND = MYPE / NXPE;
   PE_XIND = MYPE % NXPE;
+  PE_ZIND = 0;
 
   // Set the other grid sizes from nx, ny, nz
   setDerivedGridSizes();
@@ -615,6 +608,20 @@ int BoutMesh::load() {
 
   // Add boundary regions
   addBoundaryRegions();
+
+  // Set cached values
+  {
+    int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
+    int allbndry = 0;
+    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
+    has_boundary_lower_y = static_cast<bool>(allbndry);
+  }
+  {
+    int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
+    int allbndry = 0;
+    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
+    has_boundary_upper_y = static_cast<bool>(allbndry);
+  }
 
   // Initialize default coordinates
   getCoordinates();
@@ -1358,7 +1365,6 @@ comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
 }
 
 int BoutMesh::wait(comm_handle handle) {
-  TRACE("BoutMesh::wait(comm_handle)");
 
   if (handle == nullptr) {
     return 1;
@@ -1516,13 +1522,17 @@ int BoutMesh::wait(comm_handle handle) {
  *             Non-Local Communications
  ***************************************************************/
 
-int BoutMesh::getNXPE() { return NXPE; }
+int BoutMesh::getNXPE() const { return NXPE; }
 
-int BoutMesh::getNYPE() { return NYPE; }
+int BoutMesh::getNYPE() const { return NYPE; }
 
-int BoutMesh::getXProcIndex() { return PE_XIND; }
+int BoutMesh::getNZPE() const { return NZPE; }
 
-int BoutMesh::getYProcIndex() { return PE_YIND; }
+int BoutMesh::getXProcIndex() const { return PE_XIND; }
+
+int BoutMesh::getYProcIndex() const { return PE_YIND; }
+
+int BoutMesh::getZProcIndex() const { return PE_ZIND; }
 
 /****************************************************************
  *                 X COMMUNICATIONS
@@ -1535,42 +1545,66 @@ bool BoutMesh::firstX() const { return PE_XIND == 0; }
 bool BoutMesh::lastX() const { return PE_XIND == NXPE - 1; }
 
 int BoutMesh::sendXOut(BoutReal* buffer, int size, int tag) {
-  if (PE_XIND == NXPE - 1) {
-    return 1;
-  }
-
   Timer timer("comms");
 
-  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND + 1, PE_YIND), tag,
+  int proc {-1};
+  if (PE_XIND == NXPE - 1) {
+    if (periodicX) {
+      // Wrap around to first processor in X
+      proc = PROC_NUM(0, PE_YIND);
+    } else {
+      return 1;
+    }
+  } else {
+    proc = PROC_NUM(PE_XIND + 1, PE_YIND);
+  }
+
+  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
                 BoutComm::get());
 
   return 0;
 }
 
 int BoutMesh::sendXIn(BoutReal* buffer, int size, int tag) {
-  if (PE_XIND == 0) {
-    return 1;
-  }
-
   Timer timer("comms");
 
-  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND - 1, PE_YIND), tag,
+  int proc {-1};
+  if (PE_XIND == 0) {
+    if (periodicX) {
+      // Wrap around to last processor in X
+      proc = PROC_NUM(NXPE - 1, PE_YIND);
+    } else {
+      return 1;
+    }
+  } else {
+    proc = PROC_NUM(PE_XIND - 1, PE_YIND);
+  }
+
+  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
                 BoutComm::get());
 
   return 0;
 }
 
 comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
-  if (PE_XIND == NXPE - 1) {
-    return nullptr;
-  }
-
   Timer timer("comms");
+
+  int proc {-1};
+  if (PE_XIND == NXPE - 1) {
+    if (periodicX) {
+      // Wrap around to first processor in X
+      proc = PROC_NUM(0, PE_YIND);
+    } else {
+      return nullptr;
+    }
+  } else {
+    proc = PROC_NUM(PE_XIND + 1, PE_YIND);
+  }
 
   // Get a communications handle. Not fussy about size of arrays
   CommHandle* ch = get_handle(0, 0);
 
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND + 1, PE_YIND), tag,
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
                  BoutComm::get(), ch->request);
 
   ch->in_progress = true;
@@ -1579,16 +1613,24 @@ comm_handle BoutMesh::irecvXOut(BoutReal* buffer, int size, int tag) {
 }
 
 comm_handle BoutMesh::irecvXIn(BoutReal* buffer, int size, int tag) {
-  if (PE_XIND == 0) {
-    return nullptr;
-  }
-
   Timer timer("comms");
+
+  int proc {-1};
+  if (PE_XIND == 0) {
+    if (periodicX) {
+      // Wrap around to last processor in X
+      proc = PROC_NUM(NXPE - 1, PE_YIND);
+    } else {
+      return nullptr;
+    }
+  } else {
+    proc = PROC_NUM(PE_XIND - 1, PE_YIND);
+  }
 
   // Get a communications handle. Not fussy about size of arrays
   CommHandle* ch = get_handle(0, 0);
 
-  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND - 1, PE_YIND), tag,
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, proc, tag,
                  BoutComm::get(), ch->request);
 
   ch->in_progress = true;
@@ -1654,35 +1696,32 @@ int BoutMesh::PROC_NUM(int xind, int yind) const {
     return -1;
   }
 
-  return yind * NXPE + xind;
+  return (yind * NXPE) + xind;
 }
 
-/// Returns the global X index given a local index
-int BoutMesh::XGLOBAL(BoutReal xloc, BoutReal& xglo) const {
-  xglo = xloc + PE_XIND * MXSUB;
-  return static_cast<int>(xglo);
+BoutReal BoutMesh::getGlobalXIndex(BoutReal xloc) const {
+  return xloc + (PE_XIND * MXSUB);
 }
 
-int BoutMesh::getGlobalXIndex(int xlocal) const { return xlocal + PE_XIND * MXSUB; }
+int BoutMesh::getGlobalXIndex(int xlocal) const { return xlocal + (PE_XIND * MXSUB); }
 
 int BoutMesh::getGlobalXIndexNoBoundaries(int xlocal) const {
-  return xlocal + PE_XIND * MXSUB - MXG;
+  return xlocal + (PE_XIND * MXSUB) - MXG;
 }
 
-int BoutMesh::getLocalXIndex(int xglobal) const { return xglobal - PE_XIND * MXSUB; }
+int BoutMesh::getLocalXIndex(int xglobal) const { return xglobal - (PE_XIND * MXSUB); }
 
 int BoutMesh::getLocalXIndexNoBoundaries(int xglobal) const {
-  return xglobal - PE_XIND * MXSUB + MXG;
+  return xglobal - (PE_XIND * MXSUB) + MXG;
 }
 
-int BoutMesh::YGLOBAL(BoutReal yloc, BoutReal& yglo) const {
-  yglo = yloc + PE_YIND * MYSUB - MYG;
-  return static_cast<int>(yglo);
+BoutReal BoutMesh::getGlobalYIndex(BoutReal yloc) const {
+  return yloc + (PE_YIND * MYSUB) - MYG;
 }
 
 int BoutMesh::getGlobalYIndex(int ylocal) const {
-  int yglobal = ylocal + PE_YIND * MYSUB;
-  if (jyseps1_2 > jyseps2_1 and PE_YIND * MYSUB + 2 * MYG + 1 > ny_inner) {
+  int yglobal = ylocal + (PE_YIND * MYSUB);
+  if (jyseps1_2 > jyseps2_1 and (PE_YIND * MYSUB) + (2 * MYG) + 1 > ny_inner) {
     // Double null, and we are past the upper target
     yglobal += 2 * MYG;
   }
@@ -1690,12 +1729,12 @@ int BoutMesh::getGlobalYIndex(int ylocal) const {
 }
 
 int BoutMesh::getGlobalYIndexNoBoundaries(int ylocal) const {
-  return ylocal + PE_YIND * MYSUB - MYG;
+  return ylocal + (PE_YIND * MYSUB) - MYG;
 }
 
 int BoutMesh::getLocalYIndex(int yglobal) const {
-  int ylocal = yglobal - PE_YIND * MYSUB;
-  if (jyseps1_2 > jyseps2_1 and PE_YIND * MYSUB + 2 * MYG + 1 > ny_inner) {
+  int ylocal = yglobal - (PE_YIND * MYSUB);
+  if (jyseps1_2 > jyseps2_1 and (PE_YIND * MYSUB) + (2 * MYG) + 1 > ny_inner) {
     // Double null, and we are past the upper target
     ylocal -= 2 * MYG;
   }
@@ -1703,18 +1742,24 @@ int BoutMesh::getLocalYIndex(int yglobal) const {
 }
 
 int BoutMesh::getLocalYIndexNoBoundaries(int yglobal) const {
-  return yglobal - PE_YIND * MYSUB + MYG;
+  return yglobal - (PE_YIND * MYSUB) + MYG;
 }
 
-int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + yproc * MYSUB - MYG; }
+int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + (yproc * MYSUB) - MYG; }
 
-int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - yproc * MYSUB + MYG; }
+int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - (yproc * MYSUB) + MYG; }
 
-int BoutMesh::getGlobalZIndex(int zlocal) const { return zlocal; }
+int BoutMesh::getGlobalZIndex(int zlocal) const { return zlocal + (PE_ZIND * MZSUB); }
 
-int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const { return zlocal; }
+int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const {
+  return zlocal + (PE_ZIND * MZSUB) - MZG;
+}
 
 int BoutMesh::getLocalZIndex(int zglobal) const { return zglobal; }
+
+BoutReal BoutMesh::getGlobalZIndex(BoutReal zloc) const {
+  return zloc + (PE_ZIND * MZSUB);
+}
 
 int BoutMesh::getLocalZIndexNoBoundaries(int zglobal) const { return zglobal; }
 
@@ -1783,16 +1828,15 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
 
 BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
                    int nype, int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y,
-                   bool periodicX_, int ixseps1_, int ixseps2_, int jyseps1_1_,
+                   bool periodic_X_, int ixseps1_, int ixseps2_, int jyseps1_1_,
                    int jyseps2_1_, int jyseps1_2_, int jyseps2_2_, int ny_inner_,
                    bool create_regions)
     : nx(input_nx), ny(input_ny), nz(input_nz), NPES(nxpe * nype),
-      MYPE(nxpe * pe_yind + pe_xind), PE_YIND(pe_yind), NYPE(nype), NZPE(1),
-      ixseps1(ixseps1_), ixseps2(ixseps2_), symmetricGlobalX(symmetric_X),
+      MYPE((nxpe * pe_yind) + pe_xind), PE_XIND(pe_xind), NXPE(nxpe), PE_YIND(pe_yind),
+      NYPE(nype), ixseps1(ixseps1_), ixseps2(ixseps2_), symmetricGlobalX(symmetric_X),
       symmetricGlobalY(symmetric_Y), MXG(mxg), MYG(myg), MZG(0) {
-  NXPE = nxpe;
-  PE_XIND = pe_xind;
-  periodicX = periodicX_;
+
+  periodicX = periodic_X_;
   setYDecompositionIndices(jyseps1_1_, jyseps2_1_, jyseps1_2_, jyseps2_2_, ny_inner_);
   setDerivedGridSizes();
   topology();
@@ -2116,6 +2160,37 @@ void BoutMesh::topology() {
 
     // Add target plates at the top
     add_target(ny_inner - 1, 0, nx);
+  }
+
+  // Additional limiters
+  // Each limiter needs 3 indices: A Y index, start and end X indices
+  int limiter_count = 0;
+  Mesh::get(limiter_count, "limiter_count", 0);
+  if (limiter_count > 0) {
+    std::vector<int> limiter_yinds;
+    if (!source->get(this, limiter_yinds, "limiter_yinds", limiter_count)) {
+      throw BoutException("Couldn't read limiter_yinds vector of length {} from mesh",
+                          limiter_count);
+    }
+    std::vector<int> limiter_xstarts;
+    if (!source->get(this, limiter_xstarts, "limiter_xstarts", limiter_count)) {
+      throw BoutException("Couldn't read limiter_xstarts vector of length {} from mesh",
+                          limiter_count);
+    }
+    std::vector<int> limiter_xends;
+    if (!source->get(this, limiter_xends, "limiter_xends", limiter_count)) {
+      throw BoutException("Couldn't read limiter_xend vector of length {} from mesh",
+                          limiter_count);
+    }
+
+    for (int i = 0; i < limiter_count; ++i) {
+      int const yind = limiter_yinds[i];
+      int const xstart = limiter_xstarts[i];
+      int const xend = limiter_xends[i];
+      output_info.write("Adding a limiter between y={} and {}. X indices {} to {}\n",
+                        yind, yind + 1, xstart, xend);
+      add_target(yind, xstart, xend);
+    }
   }
 
   if ((ixseps_inner > 0)
@@ -3047,47 +3122,6 @@ void BoutMesh::addBoundaryPar(std::shared_ptr<BoundaryRegionPar> bndry,
   par_boundary[static_cast<int>(BoundaryParType::all)].push_back(bndry);
 }
 
-Field3D BoutMesh::smoothSeparatrix(const Field3D& f) {
-  Field3D result{emptyFrom(f)};
-  if ((ixseps_inner > 0) && (ixseps_inner < nx - 1)) {
-    if (XPROC(ixseps_inner) == PE_XIND) {
-      int x = getLocalXIndex(ixseps_inner);
-      for (int y = 0; y < LocalNy; y++) {
-        for (int z = 0; z < LocalNz; z++) {
-          result(x, y, z) = 0.5 * (f(x, y, z) + f(x - 1, y, z));
-        }
-      }
-    }
-    if (XPROC(ixseps_inner - 1) == PE_XIND) {
-      int x = getLocalXIndex(ixseps_inner - 1);
-      for (int y = 0; y < LocalNy; y++) {
-        for (int z = 0; z < LocalNz; z++) {
-          result(x, y, z) = 0.5 * (f(x, y, z) + f(x + 1, y, z));
-        }
-      }
-    }
-  }
-  if ((ixseps_outer > 0) && (ixseps_outer < nx - 1) && (ixseps_outer != ixseps_inner)) {
-    if (XPROC(ixseps_outer) == PE_XIND) {
-      int x = getLocalXIndex(ixseps_outer);
-      for (int y = 0; y < LocalNy; y++) {
-        for (int z = 0; z < LocalNz; z++) {
-          result(x, y, z) = 0.5 * (f(x, y, z) + f(x - 1, y, z));
-        }
-      }
-    }
-    if (XPROC(ixseps_outer - 1) == PE_XIND) {
-      int x = getLocalXIndex(ixseps_outer - 1);
-      for (int y = 0; y < LocalNy; y++) {
-        for (int z = 0; z < LocalNz; z++) {
-          result(x, y, z) = 0.5 * (f(x, y, z) + f(x + 1, y, z));
-        }
-      }
-    }
-  }
-  return result;
-}
-
 BoutReal BoutMesh::GlobalX(int jx) const {
   if (symmetricGlobalX) {
     // With this definition the boundary sits dx/2 away form the first/last inner points
@@ -3099,8 +3133,7 @@ BoutReal BoutMesh::GlobalX(int jx) const {
 BoutReal BoutMesh::GlobalX(BoutReal jx) const {
 
   // Get global X index as a BoutReal
-  BoutReal xglo;
-  XGLOBAL(jx, xglo);
+  const BoutReal xglo = getGlobalXIndex(jx);
 
   if (symmetricGlobalX) {
     // With this definition the boundary sits dx/2 away form the first/last inner points
@@ -3154,8 +3187,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
 BoutReal BoutMesh::GlobalY(BoutReal jy) const {
 
   // Get global Y index as a BoutReal
-  BoutReal yglo;
-  YGLOBAL(jy, yglo);
+  BoutReal yglo = getGlobalYIndex(jy);
 
   if (symmetricGlobalY) {
     BoutReal yi = yglo;
@@ -3195,6 +3227,28 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
   }
 
   return yglo / static_cast<BoutReal>(nycore);
+}
+
+BoutReal BoutMesh::GlobalZ(int jz) const {
+  if (symmetricGlobalZ) {
+    // With this definition the boundary sits dz/2 away form the first/last inner points
+    return (0.5 + getGlobalZIndexNoBoundaries(jz) - (nz - MZ) * 0.5)
+           / static_cast<BoutReal>(MZ);
+  }
+  return static_cast<BoutReal>(getGlobalZIndexNoBoundaries(jz))
+         / static_cast<BoutReal>(MZ);
+}
+
+BoutReal BoutMesh::GlobalZ(BoutReal jz) const {
+
+  // Get global Z index as a BoutReal
+  const BoutReal zglo = getGlobalZIndex(jz);
+
+  if (symmetricGlobalZ) {
+    // With this definition the boundary sits dz/2 away form the first/last inner points
+    return (0.5 + zglo - (nz - MZ) * 0.5) / static_cast<BoutReal>(MZ);
+  }
+  return zglo / static_cast<BoutReal>(MZ);
 }
 
 void BoutMesh::outputVars(Options& output_options) {

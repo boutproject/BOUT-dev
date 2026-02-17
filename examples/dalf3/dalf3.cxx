@@ -71,8 +71,6 @@ private:
 
   BoutReal viscosity, hyper_viscosity;
 
-  bool smooth_separatrix;
-
   FieldGroup comms;
 
   std::unique_ptr<Laplacian> phiSolver{nullptr};  // Laplacian solver in X-Z
@@ -132,7 +130,6 @@ protected:
     viscosity = options["viscosity"].withDefault(-1.0);
     hyper_viscosity = options["hyper_viscosity"].withDefault(-1.0);
     viscosity_par = options["viscosity_par"].withDefault(-1.0);
-    smooth_separatrix = options["smooth_separatrix"].withDefault(false);
 
     filter_z = options["filter_z"].withDefault(false);
 
@@ -300,7 +297,7 @@ protected:
     // LaplaceXY for n=0 solve
     if (split_n0) {
       // Create an XY solver for n=0 component
-      laplacexy = std::make_unique<LaplaceXY>(mesh);
+      laplacexy = LaplaceXY::create(mesh);
       phi2D = 0.0; // Starting guess
     }
 
@@ -465,11 +462,6 @@ protected:
     // Electron pressure
     ddt(Pe) = -bracket(phi, Pet, bm)
               + Pet * (Kappa(phi - Pe) + B0 * Grad_parP(jpar - Vpar) / B0);
-
-    if (smooth_separatrix) {
-      // Experimental smoothing across separatrix
-      ddt(Vort) += mesh->smoothSeparatrix(Vort);
-    }
 
     if (filter_z) {
       ddt(Pe) = filter(ddt(Pe), 1);

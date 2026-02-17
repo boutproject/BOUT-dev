@@ -35,8 +35,8 @@ def getversion():
             version = os.environ["BOUT_PRETEND_VERSION"]
             return version
 
-        _bout_previous_version = "v5.1.1"
-        _bout_next_version = "v5.2.0"
+        _bout_previous_version = "v5.2.0"
+        _bout_next_version = "v5.2.1"
 
         try:
             try:
@@ -176,7 +176,7 @@ def build_sdist(sdist_directory, config_settings=None):
     print(config_settings, sdist_directory)
     enable_gz = True
     enable_xz = False
-    external = {"fmt", "mpark.variant"}
+    external = {"fmt", "mpark.variant", "cpptrace"}
     if config_settings is not None:
         global useLocalVersion, pkgname
         for k, v in config_settings.items():
@@ -212,13 +212,18 @@ def build_sdist(sdist_directory, config_settings=None):
         run(f"rm {tmp}")
 
     with open(tmp, "w") as f:
-        f.write(
-            f"""Metadata-Version: 2.1
+        f.write(f"""Metadata-Version: 2.1
 Name: {pkgname}
 Version: {getversion()}
-License-File: COPYING
-"""
-        )
+""")
+        with open("LICENSE") as src:
+            pre = "License: "
+            for l in src:
+                f.write(f"{pre}{l}")
+                pre = "         "
+        f.write("Description-Content-Type: text/markdown\n\n")
+        with open("README.md") as src:
+            f.write(src.read())
     run(
         f"tar --append -f {sdist_directory}/{fname} _version.txt --xform='s\\_version.txt\\{prefix}/_version.txt\\'"
     )
@@ -262,23 +267,19 @@ def prepare_metadata_for_build_wheel(
     distinfo = f"{metadata_directory}/{thisdir}"
     mkdir_p(distinfo)
     with open(f"{distinfo}/METADATA", "w") as f:
-        f.write(
-            f"""Metadata-Version: 2.1
+        f.write(f"""Metadata-Version: 2.1
 Name: {pkgname}
 Version: {getversion()}
 License-File: COPYING
-"""
-        )
+""")
     run(f"cp LICENSE {distinfo}/COPYING")
     run(f"cp LICENSE.GPL {distinfo}/COPYING.GPL")
     with open(f"{distinfo}/WHEEL", "w") as f:
-        f.write(
-            f"""Wheel-Version: 1.0
+        f.write(f"""Wheel-Version: 1.0
 Generator: boutpp_custom_build_wheel ({getversion()})
 Root-Is-Purelib: false
 Tag: {gettag()}
-"""
-        )
+""")
 
     if record:
         with open(f"{distinfo}/RECORD", "w") as f:

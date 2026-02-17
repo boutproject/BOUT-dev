@@ -9,9 +9,9 @@
  *
  * 
  **************************************************************************
- * Copyright 2014 B.D.Dudson
+ * Copyright 2014-2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -33,10 +33,11 @@
 #ifndef BOUT_COORDINATES_H
 #define BOUT_COORDINATES_H
 
-#include "bout/bout_types.hxx"
-#include "bout/field2d.hxx"
-#include "bout/field3d.hxx"
-#include "bout/paralleltransform.hxx"
+#include <bout/bout_types.hxx>
+#include <bout/build_defines.hxx>
+#include <bout/field2d.hxx>
+#include <bout/field3d.hxx>
+#include <bout/paralleltransform.hxx>
 
 class Mesh;
 
@@ -132,9 +133,10 @@ public:
     transform = std::move(pt);
   }
 
+  bool hasParallelTransform() const { return transform != nullptr; }
   /// Return the parallel transform
-  ParallelTransform& getParallelTransform() {
-    ASSERT1(transform != nullptr);
+  ParallelTransform& getParallelTransform() const {
+    ASSERT1(hasParallelTransform());
     return *transform;
   }
 

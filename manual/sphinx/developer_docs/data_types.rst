@@ -255,9 +255,9 @@ parallelise and vectorise. Some tuning of this is possible, see below
 for details. It replaces the C-style triple-nested loop::
 
    Field3D f(0.0);
-   for (int i = mesh->xstart; i < mesh->xend; ++i) {
-     for (int j = mesh->ystart; j < mesh->yend; ++j) {
-       for (int k = 0; k < mesh->LocalNz; ++k) {
+   for (int i = mesh->xstart; i <= mesh->xend; ++i) {
+     for (int j = mesh->ystart; j <= mesh->yend; ++j) {
+       for (int k = mesh->zstart; k <= mesh->zend; ++k) {
          f(i,j,k) = a(i,j,k) + b(i,j,k)
        }
      }

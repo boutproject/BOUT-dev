@@ -17,9 +17,9 @@
  *     * Incorporates code from topology.cpp and Communicator
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010-2025 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  * 
  * This file is part of BOUT++.
  *
@@ -262,6 +262,16 @@ public:
     communicate(g);
   }
 
+  /// Communicate Fields without calculating the parallel slices
+  template <typename... Ts>
+  void communicate_no_slices(Ts&... ts) {
+    FieldGroup g(ts...);
+    const bool old = calcParallelSlices_on_communicate;
+    calcParallelSlices_on_communicate = false;
+    communicate(g);
+    calcParallelSlices_on_communicate = old;
+  }
+
   template <typename... Ts>
   void communicateXZ(Ts&... ts) {
     FieldGroup g(ts...);
@@ -344,10 +354,12 @@ public:
 
   // non-local communications
 
-  virtual int getNXPE() = 0;       ///< The number of processors in the X direction
-  virtual int getNYPE() = 0;       ///< The number of processors in the Y direction
-  virtual int getXProcIndex() = 0; ///< This processor's index in X direction
-  virtual int getYProcIndex() = 0; ///< This processor's index in Y direction
+  virtual int getNXPE() const = 0;       ///< The number of processors in the X direction
+  virtual int getNYPE() const = 0;       ///< The number of processors in the Y direction
+  virtual int getNZPE() const = 0;       ///< The number of processors in the Z direction
+  virtual int getXProcIndex() const = 0; ///< This processor's index in X direction
+  virtual int getYProcIndex() const = 0; ///< This processor's index in Y direction
+  virtual int getZProcIndex() const = 0; ///< This processor's index in Z direction
 
   // X communications
   virtual bool firstX()
@@ -357,8 +369,6 @@ public:
 
   /// Domain is periodic in X?
   bool periodicX{false};
-
-  int NXPE, PE_XIND; ///< Number of processors in X, and X processor index
 
   /// Send a buffer of data to processor at X index +1
   ///
@@ -464,11 +474,11 @@ public:
 
   /// Is there a boundary on the lower guard cells in Y
   /// on any processor along the X direction?
-  bool hasBndryLowerY();
+  virtual bool hasBndryLowerY() const = 0;
 
   /// Is there a boundary on the upper guard cells in Y
   /// on any processor along the X direction?
-  bool hasBndryUpperY();
+  virtual bool hasBndryUpperY() const = 0;
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor
@@ -495,13 +505,12 @@ public:
   virtual void addBoundaryPar(std::shared_ptr<BoundaryRegionPar> UNUSED(bndry),
                               BoundaryParType UNUSED(type)) {}
 
-  /// Branch-cut special handling (experimental)
-  virtual Field3D smoothSeparatrix(const Field3D& f) { return f; }
-
   virtual BoutReal GlobalX(int jx) const = 0;      ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0;      ///< Continuous Y index (0 -> 1)
+  virtual BoutReal GlobalZ(int jz) const = 0;      ///< Continuous Z index (0 -> 1)
   virtual BoutReal GlobalX(BoutReal jx) const = 0; ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(BoutReal jy) const = 0; ///< Continuous Y index (0 -> 1)
+  virtual BoutReal GlobalZ(BoutReal jz) const = 0; ///< Continuous Z index (0 -> 1)
 
   //////////////////////////////////////////////////////////
 
@@ -626,10 +635,23 @@ public:
     return inserted.first->second;
   }
 
+  std::shared_ptr<Coordinates>
+  getCoordinatesConst(const CELL_LOC location = CELL_CENTRE) const {
+    ASSERT1(location != CELL_DEFAULT);
+    ASSERT1(location != CELL_VSHIFT);
+
+    auto found = coords_map.find(location);
+    if (found != coords_map.end()) {
+      // True branch most common, returns immediately
+      return found->second;
+    }
+    throw BoutException("Coordinates not yet set. Use non-const version!");
+  }
+
   /// Returns the non-CELL_CENTRE location
   /// allowed as a staggered location
-  CELL_LOC getAllowedStaggerLoc(DIRECTION direction) const {
-    AUTO_TRACE();
+  static CELL_LOC getAllowedStaggerLoc(DIRECTION direction) {
+
     switch (direction) {
     case (DIRECTION::X):
       return CELL_XLOW;
@@ -647,7 +669,7 @@ public:
   /// Returns the number of grid points in the
   /// particular direction
   int getNpoints(DIRECTION direction) const {
-    AUTO_TRACE();
+
     switch (direction) {
     case (DIRECTION::X):
       return LocalNx;
@@ -665,7 +687,7 @@ public:
   /// Returns the number of guard points in the
   /// particular direction
   int getNguard(DIRECTION direction) const {
-    AUTO_TRACE();
+
     switch (direction) {
     case (DIRECTION::X):
       return xstart;
@@ -744,7 +766,7 @@ public:
   void addRegionPerp(const std::string& region_name, const Region<IndPerp>& region);
 
   /// Converts an Ind2D to an Ind3D using calculation
-  Ind3D ind2Dto3D(const Ind2D& ind2D, int jz = 0) {
+  Ind3D ind2Dto3D(const Ind2D& ind2D, int jz = 0) const {
     return {ind2D.ind * LocalNz + jz, LocalNy, LocalNz};
   }
 
@@ -782,9 +804,11 @@ protected:
   /// Mesh options section
   Options* options{nullptr};
 
+private:
   /// Set whether to call calcParallelSlices on all communicated fields (true) or not (false)
   bool calcParallelSlices_on_communicate{true};
 
+protected:
   /// Read a 1D array of integers
   const std::vector<int> readInts(const std::string& name, int n);
 
@@ -818,6 +842,16 @@ public:
     ASSERT1(RegionID.has_value());
     return region3D[RegionID.value()];
   }
+  bool isFci() const {
+    const auto coords = this->getCoordinatesConst();
+    if (coords == nullptr) {
+      return false;
+    }
+    if (not coords->hasParallelTransform()) {
+      return false;
+    }
+    return not coords->getParallelTransform().canToFromFieldAligned();
+  }
 
 private:
   /// Allocates default Coordinates objects
@@ -827,8 +861,7 @@ private:
   /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
   /// would not be correct).
   std::shared_ptr<Coordinates>
-  createDefaultCoordinates(const CELL_LOC location,
-                           bool force_interpolate_from_centre = false);
+  createDefaultCoordinates(CELL_LOC location, bool force_interpolate_from_centre = false);
 
   //Internal region related information
   std::map<std::string, size_t> regionMap3D;

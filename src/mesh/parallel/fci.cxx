@@ -160,6 +160,8 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
   const int ncz = map_mesh.LocalNz;
 
   BoutMask to_remove(map_mesh);
+  const int xend =
+      map_mesh.xstart + (map_mesh.xend - map_mesh.xstart + 1) * map_mesh.getNXPE() - 1;
   // Serial loop because call to BoundaryRegionPar::addPoint
   // (probably?) can't be done in parallel
   BOUT_FOR_SERIAL(i, xt_prime.getRegion("RGN_NOBNDRY")) {
@@ -173,7 +175,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
       }
     }
 
-    if ((xt_prime[i] >= map_mesh.xstart) and (xt_prime[i] <= map_mesh.xend)) {
+    if ((xt_prime[i] >= map_mesh.xstart) and (xt_prime[i] <= xend)) {
       // Not a boundary
       continue;
     }
@@ -249,7 +251,6 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
 }
 
 Field3D FCIMap::integrate(Field3D& f) const {
-  TRACE("FCIMap::integrate");
 
   ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   ASSERT1(&map_mesh == f.getMesh());
@@ -313,7 +314,6 @@ void FCITransform::checkInputGrid() {
 }
 
 void FCITransform::calcParallelSlices(Field3D& f) {
-  TRACE("FCITransform::calcParallelSlices");
 
   ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
@@ -331,7 +331,6 @@ void FCITransform::calcParallelSlices(Field3D& f) {
 }
 
 void FCITransform::integrateParallelSlices(Field3D& f) {
-  TRACE("FCITransform::integrateParallelSlices");
 
   ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
@@ -345,4 +344,10 @@ void FCITransform::integrateParallelSlices(Field3D& f) {
   for (const auto& map : field_line_maps) {
     f.ynext(map.offset) = map.integrate(f);
   }
+}
+
+void FCITransform::outputVars(Options& output_options) {
+  // Real-space coordinates of grid points
+  output_options["R"].force(R, "FCI");
+  output_options["Z"].force(Z, "FCI");
 }

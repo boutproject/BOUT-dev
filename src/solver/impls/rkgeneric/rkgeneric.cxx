@@ -4,12 +4,8 @@
 
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
-#include <bout/msg_stack.hxx>
-#include <bout/utils.hxx>
-
-#include <cmath>
-
 #include <bout/output.hxx>
+#include <bout/utils.hxx>
 
 RKGenericSolver::RKGenericSolver(Options* opts)
     : Solver(opts), atol((*options)["atol"].doc("Absolute tolerance").withDefault(1.e-5)),
@@ -39,8 +35,6 @@ void RKGenericSolver::setMaxTimestep(BoutReal dt) {
 }
 
 int RKGenericSolver::init() {
-
-  TRACE("Initialising RKGeneric solver");
 
   Solver::init();
   output << "\n\tRunge-Kutta generic solver with scheme type " << scheme->getType()
@@ -86,8 +80,6 @@ void RKGenericSolver::resetInternalFields() {
 }
 
 int RKGenericSolver::run() {
-  TRACE("RKGenericSolver::run()");
-
   for (int s = 0; s < getNumberOutputSteps(); s++) {
     BoutReal target = simtime + getOutputTimestep();
 

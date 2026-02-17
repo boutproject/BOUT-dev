@@ -4,7 +4,7 @@
  * Adapted from the BOUT code by B.Dudson, University of York, Oct 2007
  *
  **************************************************************************
- * Copyright 2010-2023 BOUT++ contributors
+ * Copyright 2010-2025 BOUT++ contributors
  *
  * Contact Ben Dudson, dudson2@llnl.gov
  *
@@ -27,7 +27,7 @@
 
 #include "bout/build_config.hxx"
 
-const char DEFAULT_DIR[] = "data";
+static constexpr auto DEFAULT_DIR = "data";
 
 #define GLOBALORIGIN
 
@@ -67,10 +67,9 @@ const char DEFAULT_DIR[] = "data";
 
 #include <csignal>
 #include <ctime>
+#include <filesystem>
 #include <string>
 #include <vector>
-
-#include <sys/stat.h>
 
 // Value passed at compile time
 // Used for MD5SUM, BOUT_LOCALE_PATH, and REVISION
@@ -80,12 +79,6 @@ const char DEFAULT_DIR[] = "data";
 #define INDIRECT1_BOUTMAIN(a) #a
 #define INDIRECT0_BOUTMAIN(...) INDIRECT1_BOUTMAIN(#__VA_ARGS__)
 #define STRINGIFY(a) INDIRECT0_BOUTMAIN(a)
-
-// Define S_ISDIR if not defined by system headers (that is, MSVC)
-// Taken from https://github.com/curl/curl/blob/e59540139a398dc70fde6aec487b19c5085105af/lib/curl_setup.h#L748-L751
-#if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
-#define S_ISDIR(m) (((m)&S_IFMT) == S_IFDIR)
-#endif
 
 #ifdef _MSC_VER
 #include <windows.h>
@@ -148,74 +141,68 @@ int BoutInitialise(int& argc, char**& argv) {
     return 1;
   }
 
-  try {
-    checkDataDirectoryIsAccessible(args.data_dir);
+  checkDataDirectoryIsAccessible(args.data_dir);
 
-    // Set the command-line arguments
-    SlepcLib::setArgs(argc, argv); // SLEPc initialisation
-    PetscLib::setArgs(argc, argv); // PETSc initialisation
-    Solver::setArgs(argc, argv);   // Solver initialisation
-    BoutComm::setArgs(argc, argv); // MPI initialisation
+  // Set the command-line arguments
+  SlepcLib::setArgs(argc, argv); // SLEPc initialisation
+  PetscLib::setArgs(argc, argv); // PETSc initialisation
+  Solver::setArgs(argc, argv);   // Solver initialisation
+  BoutComm::setArgs(argc, argv); // MPI initialisation
 
-    const int MYPE = BoutComm::rank();
+  const int MYPE = BoutComm::rank();
 
-    setupBoutLogColor(args.color_output, MYPE);
+  setupBoutLogColor(args.color_output, MYPE);
 
-    setupOutput(args.data_dir, args.log_file, args.verbosity, MYPE);
+  setupOutput(args.data_dir, args.log_file, args.verbosity, MYPE);
 
-    savePIDtoFile(args.data_dir, MYPE);
+  savePIDtoFile(args.data_dir, MYPE);
 
 #if BOUT_HAS_ADIOS2
-    bout::ADIOSInit(BoutComm::get());
+  bout::ADIOSInit(BoutComm::get());
 #endif
 
-    // Print the different parts of the startup info
-    printStartupHeader(MYPE, BoutComm::size());
-    printCompileTimeOptions();
-    printCommandLineArguments(args.original_argv);
+  // Print the different parts of the startup info
+  printStartupHeader(MYPE, BoutComm::size());
+  printCompileTimeOptions();
+  printCommandLineArguments(args.original_argv);
 
-    // Load settings file
-    OptionsReader* reader = OptionsReader::getInstance();
-    // Ideally we'd use the long options for `datadir` and
-    // `optionfile` here, but we'd need to call parseCommandLine
-    // _first_ in order to do that and set the source, etc., but we
-    // need to call that _second_ in order to override the input file
-    reader->read(Options::getRoot(), "{}/{}", args.data_dir, args.opt_file);
+  // Load settings file
+  OptionsReader* reader = OptionsReader::getInstance();
+  // Ideally we'd use the long options for `datadir` and
+  // `optionfile` here, but we'd need to call parseCommandLine
+  // _first_ in order to do that and set the source, etc., but we
+  // need to call that _second_ in order to override the input file
+  reader->read(Options::getRoot(), "{}", (args.data_dir / args.opt_file).string());
 
-    // Get options override from command-line
-    reader->parseCommandLine(Options::getRoot(), args.argv);
+  // Get options override from command-line
+  reader->parseCommandLine(Options::getRoot(), args.argv);
 
-    // Get the variables back out so they count as having been used
-    // when checking for unused options. They normally _do_ get used,
-    // but it's possible that only happens in BoutFinalise, which is
-    // too late for that check.
-    const auto datadir = Options::root()["datadir"].withDefault<std::string>(DEFAULT_DIR);
-    [[maybe_unused]] const auto optionfile =
-        Options::root()["optionfile"].withDefault<std::string>(args.opt_file);
-    const auto settingsfile =
-        Options::root()["settingsfile"].withDefault<std::string>(args.set_file);
+  // Get the variables back out so they count as having been used
+  // when checking for unused options. They normally _do_ get used,
+  // but it's possible that only happens in BoutFinalise, which is
+  // too late for that check.
+  const auto datadir = Options::root()["datadir"].withDefault<std::string>(DEFAULT_DIR);
+  [[maybe_unused]] const auto optionfile =
+      Options::root()["optionfile"].withDefault<std::string>(args.opt_file);
+  const auto settingsfile =
+      Options::root()["settingsfile"].withDefault<std::string>(args.set_file);
 
-    setRunStartInfo(Options::root());
+  setRunStartInfo(Options::root());
 
-    if (MYPE == 0) {
-      writeSettingsFile(Options::root(), datadir, settingsfile);
-    }
-
-    bout::globals::mpi = new MpiWrapper();
-
-    // Create the mesh
-    bout::globals::mesh = Mesh::create();
-    // Load from sources. Required for Field initialisation
-    bout::globals::mesh->load();
-
-    // time_report options are used in BoutFinalise, i.e. after we
-    // check for unused options
-    Options::root()["time_report"].setConditionallyUsed();
-
-  } catch (const BoutException& e) {
-    output_error.write(_("Error encountered during initialisation: {:s}\n"), e.what());
-    throw;
+  if (MYPE == 0) {
+    writeSettingsFile(Options::root(), datadir, settingsfile);
   }
+
+  bout::globals::mpi = new MpiWrapper();
+
+  // Create the mesh
+  bout::globals::mesh = Mesh::create();
+  // Load from sources. Required for Field initialisation
+  bout::globals::mesh->load();
+
+  // time_report options are used in BoutFinalise, i.e. after we
+  // check for unused options
+  Options::root()["time_report"].setConditionallyUsed();
 
   return 0;
 }
@@ -506,9 +493,8 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
 }
 
 void checkDataDirectoryIsAccessible(const std::string& data_dir) {
-  struct stat test;
-  if (stat(data_dir.c_str(), &test) == 0) {
-    if (!S_ISDIR(test.st_mode)) {
+  if (std::filesystem::exists(data_dir)) {
+    if (!std::filesystem::is_directory(data_dir)) {
       throw BoutException(_("DataDir \"{:s}\" is not a directory\n"), data_dir);
     }
   } else {
@@ -574,8 +560,6 @@ void printCompileTimeOptions() {
   output_info.write(_("\tNetCDF support {}{}\n"), is_enabled(has_netcdf), netcdf_flavour);
   output_info.write(_("\tADIOS2 support {}\n"), is_enabled(has_adios2));
   output_info.write(_("\tPETSc support {}\n"), is_enabled(has_petsc));
-  output_info.write(_("\tPretty function name support {}\n"),
-                    is_enabled(has_pretty_function));
   output_info.write(_("\tPVODE support {}\n"), is_enabled(has_pvode));
   output_info.write(_("\tScore-P support {}\n"), is_enabled(has_scorep));
   output_info.write(_("\tSLEPc support {}\n"), is_enabled(has_slepc));
@@ -704,7 +688,6 @@ void addBuildFlagsToOptions(Options& options) {
   options["has_umpire"].force(bout::build::has_umpire);
   options["has_caliper"].force(bout::build::has_caliper);
   options["has_raja"].force(bout::build::has_raja);
-  options["has_pretty_function"].force(bout::build::has_pretty_function);
   options["has_pvode"].force(bout::build::has_pvode);
   options["has_scorep"].force(bout::build::has_scorep);
   options["has_slepc"].force(bout::build::has_slepc);

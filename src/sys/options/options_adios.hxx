@@ -5,19 +5,21 @@
 #define OPTIONS_ADIOS_H
 
 #include "bout/build_defines.hxx"
-#include "bout/options.hxx"
 #include "bout/options_io.hxx"
 
 #if !BOUT_HAS_ADIOS2
 
 namespace {
-bout::RegisterUnavailableOptionsIO
+const bout::RegisterUnavailableOptionsIO
     registerunavailableoptionsadios("adios", "BOUT++ was not configured with ADIOS2");
 }
 
 #else
 
-#include <memory>
+#include "bout/options.hxx"
+
+#include <adios2.h> // IWYU pragma: keep
+
 #include <string>
 
 namespace bout {
@@ -44,7 +46,7 @@ public:
 
   OptionsADIOS(const OptionsADIOS&) = delete;
   OptionsADIOS(OptionsADIOS&&) noexcept = default;
-  ~OptionsADIOS() = default;
+  ~OptionsADIOS() override = default;
 
   OptionsADIOS& operator=(const OptionsADIOS&) = delete;
   OptionsADIOS& operator=(OptionsADIOS&&) noexcept = default;
@@ -61,20 +63,15 @@ public:
   void verifyTimesteps() const override;
 
 private:
-  enum class FileMode {
-    replace, ///< Overwrite file when writing
-    append   ///< Append to file when writing
-  };
-
   /// Name of the file on disk
   std::string filename;
   /// How to open the file for writing
-  FileMode file_mode{FileMode::replace};
+  adios2::Mode file_mode{adios2::Mode::Write};
   bool singleWriteFile = false;
 };
 
 namespace {
-RegisterOptionsIO<OptionsADIOS> registeroptionsadios("adios");
+const RegisterOptionsIO<OptionsADIOS> registeroptionsadios("adios");
 }
 
 } // namespace bout

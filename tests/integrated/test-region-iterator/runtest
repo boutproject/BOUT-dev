@@ -17,7 +17,6 @@ from boututils.run_wrapper import build_and_log, launch_safe
 from boutdata.collect import collect
 from sys import exit
 
-
 build_and_log("Region Iterator test")
 
 flags = [""]

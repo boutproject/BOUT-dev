@@ -4,7 +4,6 @@
 #
 
 MZ = 4   # Z size
-NXPE = 1
 
 ZMAX = 1
 MXG = 2

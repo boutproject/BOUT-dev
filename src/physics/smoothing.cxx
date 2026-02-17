@@ -37,7 +37,6 @@
 #include <bout/bout_types.hxx>
 #include <bout/globals.hxx>
 #include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/smoothing.hxx>
 
 #include <bout/constants.hxx>
@@ -46,7 +45,6 @@
 
 // Smooth using simple 1-2-1 filter
 const Field3D smooth_x(const Field3D& f) {
-  TRACE("smooth_x");
   Mesh* mesh = f.getMesh();
   Field3D result{emptyFrom(f)};
 
@@ -76,7 +74,6 @@ const Field3D smooth_x(const Field3D& f) {
 }
 
 const Field3D smooth_y(const Field3D& f) {
-  TRACE("smooth_y");
   Mesh* mesh = f.getMesh();
   Field3D result{emptyFrom(f)};
 
@@ -117,7 +114,6 @@ const Field3D smooth_y(const Field3D& f) {
   so no processor/branch cuts in X
  */
 const Field2D averageX(const Field2D& f) {
-  TRACE("averageX(Field2D)");
   Mesh* mesh = f.getMesh();
 
   int ngx = mesh->LocalNx;
@@ -176,8 +172,6 @@ const Field2D averageX(const Field2D& f) {
   
  */
 const Field3D averageX(const Field3D& f) {
-  TRACE("averageX(Field3D)");
-
   Mesh* mesh = f.getMesh();
 
   int ngx = mesh->LocalNx;
@@ -230,8 +224,6 @@ const Field3D averageX(const Field3D& f) {
 }
 
 const Field2D averageY(const Field2D& f) {
-  TRACE("averageY(Field2D)");
-
   Mesh* mesh = f.getMesh();
   int ngx = mesh->LocalNx;
   int ngy = mesh->LocalNy;
@@ -275,8 +267,6 @@ const Field2D averageY(const Field2D& f) {
 }
 
 const Field3D averageY(const Field3D& f) {
-  TRACE("averageY(Field3D)");
-
   Mesh* mesh = f.getMesh();
 
   int ngx = mesh->LocalNx;
@@ -352,7 +342,7 @@ BoutReal Average_XY(const Field2D& var) {
 
 BoutReal Vol_Integral(const Field2D& var) {
 #if BOUT_USE_METRIC_3D
-  AUTO_TRACE();
+
   throw BoutException("Vol_Intregral currently incompatible with 3D metrics");
 #else
   Mesh* mesh = var.getMesh();
@@ -431,7 +421,7 @@ void nl_filter(rvec& f, BoutReal w) {
 }
 
 const Field3D nl_filter_x(const Field3D& f, BoutReal w) {
-  TRACE("nl_filter_x( Field3D )");
+
   Mesh* mesh = f.getMesh();
 
   Field3D result{emptyFrom(f)};
@@ -453,7 +443,6 @@ const Field3D nl_filter_x(const Field3D& f, BoutReal w) {
 }
 
 const Field3D nl_filter_y(const Field3D& f, BoutReal w) {
-  TRACE("nl_filter_x( Field3D )");
 
   Mesh* mesh = f.getMesh();
 
@@ -481,7 +470,6 @@ const Field3D nl_filter_y(const Field3D& f, BoutReal w) {
 }
 
 const Field3D nl_filter_z(const Field3D& fs, BoutReal w) {
-  TRACE("nl_filter_z( Field3D )");
 
   Mesh* mesh = fs.getMesh();
   Field3D result{emptyFrom(fs)};

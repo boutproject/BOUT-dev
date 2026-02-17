@@ -1,23 +1,10 @@
 /**************************************************************************
  * Sets initial profiles
  *
- * ChangeLog
- * =========
- *
- * 2011-02-12 Ben Dudson <bd512@york.ac.uk>
- *    * Changed to use new options system. For now the structure of the
- *      options is the same, but this could be modified more easily in future
- *
- * 2010-05-12 Ben Dudson <bd512@york.ac.uk>
- *
- *    * Changed random numbers to use a hash of the parameters
- *      so that the phase doesn't vary with number of processors or grid size
- *      User can vary phase to give a different random sequence
- *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -42,21 +29,17 @@
 #include <bout/globals.hxx>
 #include <bout/initialprofiles.hxx>
 #include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
 
 void initial_profile(const std::string& name, Field3D& var) {
-  AUTO_TRACE();
 
   Mesh* localmesh = var.getMesh();
 
   Options* varOpts = Options::getRoot()->getSection(name);
 
-  FieldFactory f(localmesh);
-
   std::string function;
   VAROPTION(varOpts, function, "0.0");
 
-  var = f.create3D(function, varOpts, nullptr, var.getLocation());
+  var = FieldFactory::get()->create3D(function, varOpts, localmesh, var.getLocation());
 
   // Optionally scale the variable
   BoutReal scale;
@@ -65,18 +48,15 @@ void initial_profile(const std::string& name, Field3D& var) {
 }
 
 void initial_profile(const std::string& name, Field2D& var) {
-  AUTO_TRACE();
 
   Mesh* localmesh = var.getMesh();
 
   Options* varOpts = Options::getRoot()->getSection(name);
 
-  FieldFactory f(localmesh);
-
   std::string function;
   VAROPTION(varOpts, function, "0.0");
 
-  var = f.create2D(function, varOpts, nullptr, var.getLocation());
+  var = FieldFactory::get()->create2D(function, varOpts, localmesh, var.getLocation());
 
   // Optionally scale the variable
   BoutReal scale;
@@ -85,7 +65,6 @@ void initial_profile(const std::string& name, Field2D& var) {
 }
 
 void initial_profile(const std::string& name, Vector2D& var) {
-  AUTO_TRACE();
 
   if (var.covariant) {
     initial_profile(name + "_x", var.x);
@@ -99,7 +78,6 @@ void initial_profile(const std::string& name, Vector2D& var) {
 }
 
 void initial_profile(const std::string& name, Vector3D& var) {
-  AUTO_TRACE();
 
   if (var.covariant) {
     initial_profile(name + "_x", var.x);
