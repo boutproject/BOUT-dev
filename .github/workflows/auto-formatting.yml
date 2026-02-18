@@ -43,7 +43,7 @@ jobs:
         run: |
           pwd
           ls
-          $HOME/.local/bin/cmake-format $(find -name CMakeLists.txt) cmake/*.cmake
+          $HOME/.local/bin/cmake-format -i $(find -name CMakeLists.txt) cmake/*.cmake
 
       - name: Commit formatting
         uses: stefanzweifel/git-auto-commit-action@v7
