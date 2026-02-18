@@ -216,7 +216,7 @@ jobs:
   CUDA:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    container: ghcr.io/boutproject/bout-container-base:boutdev-cuda
+    container: ghcr.io/boutproject/bout-container-base:ci-cuda
 
     steps:
       - uses: actions/checkout@v6
