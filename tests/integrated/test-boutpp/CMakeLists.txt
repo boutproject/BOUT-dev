@@ -1,4 +1,4 @@
-if (BOUT_ENABLE_PYTHON)
+if(BOUT_ENABLE_PYTHON)
   add_subdirectory(collect)
   add_subdirectory(collect-staggered)
   add_subdirectory(legacy-model)
