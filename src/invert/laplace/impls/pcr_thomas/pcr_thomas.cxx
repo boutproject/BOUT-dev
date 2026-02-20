@@ -37,9 +37,11 @@
  **************************************************************************/
 
 #include "pcr_thomas.hxx"
-#include "bout/globals.hxx"
 
+#include "bout/array.hxx"
 #include "bout/boutcomm.hxx"
+#include "bout/dcomplex.hxx"
+#include "bout/globals.hxx"
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
@@ -556,6 +558,8 @@ void LaplacePCR_THOMAS ::pcr_thomas_solver(Matrix<dcomplex>& a_mpi,
   const int xend = localmesh->xend;
   const int nx = xend - xstart + 1; // number of interior points
 
+  const int nsys = std::get<0>(a_mpi.shape());
+
   // Handle boundary points so that the PCR algorithm works with arrays of
   // the same size on each rank.
   // Note that this modifies the coefficients of b and r in the first and last
@@ -622,6 +626,8 @@ void LaplacePCR_THOMAS ::eliminate_boundary_rows(const Matrix<dcomplex>& a,
                                                  const Matrix<dcomplex>& c,
                                                  Matrix<dcomplex>& r) {
 
+  const int nsys = std::get<0>(a.shape());
+
   if (localmesh->firstX()) {
     // x index is first interior row
     const int xstart = localmesh->xstart;
@@ -656,6 +662,8 @@ void LaplacePCR_THOMAS ::apply_boundary_conditions(const Matrix<dcomplex>& a,
                                                    const Matrix<dcomplex>& r,
                                                    Matrix<dcomplex>& x) {
 
+  const int nsys = std::get<0>(a.shape());
+
   if (localmesh->firstX()) {
     for (int kz = 0; kz < nsys; kz++) {
       for (int ix = localmesh->xstart - 1; ix >= 0; ix--) {
@@ -681,6 +689,8 @@ void LaplacePCR_THOMAS ::apply_boundary_conditions(const Matrix<dcomplex>& a,
 void LaplacePCR_THOMAS ::cr_forward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
                                                  Matrix<dcomplex>& c,
                                                  Matrix<dcomplex>& r) const {
+  const int nsys = std::get<0>(a.shape());
+
   MPI_Comm comm = BoutComm::get();
   Array<dcomplex> alpha(nsys);
   Array<dcomplex> gamma(nsys);
@@ -756,6 +766,8 @@ void LaplacePCR_THOMAS ::cr_backward_multiple_row(Matrix<dcomplex>& a,
                                                   Matrix<dcomplex>& c,
                                                   Matrix<dcomplex>& r,
                                                   Matrix<dcomplex>& x) const {
+  const int nsys = std::get<0>(a.shape());
+
   MPI_Comm comm = BoutComm::get();
 
   MPI_Status status;
@@ -806,6 +818,8 @@ void LaplacePCR_THOMAS ::cr_backward_multiple_row(Matrix<dcomplex>& a,
 void LaplacePCR_THOMAS ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
                                                 Matrix<dcomplex>& c, Matrix<dcomplex>& r,
                                                 Matrix<dcomplex>& x) const {
+
+  const int nsys = std::get<0>(a.shape());
 
   Array<dcomplex> alpha(nsys);
   Array<dcomplex> gamma(nsys);
@@ -984,6 +998,8 @@ void LaplacePCR_THOMAS ::pThomas_forward_multiple_row(Matrix<dcomplex>& a,
                                                       Matrix<dcomplex>& b,
                                                       Matrix<dcomplex>& c,
                                                       Matrix<dcomplex>& r) const {
+  const int nsys = std::get<0>(a.shape());
+
   for (int kz = 0; kz < nsys; kz++) {
     for (int i = 3; i <= n_mpi; i++) {
       const dcomplex alpha = -a(kz, i) / b(kz, i - 1);
@@ -1015,6 +1031,8 @@ void LaplacePCR_THOMAS ::pcr_double_row_substitution(Matrix<dcomplex>& a,
                                                      Matrix<dcomplex>& c,
                                                      Matrix<dcomplex>& r,
                                                      Matrix<dcomplex>& x) {
+  const int nsys = std::get<0>(a.shape());
+
   Array<dcomplex> alpha(nsys);
   Array<dcomplex> gamma(nsys);
   Array<dcomplex> sbuf(4 * nsys);

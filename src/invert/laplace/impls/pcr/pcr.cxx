@@ -37,22 +37,21 @@
  **************************************************************************/
 
 #include "pcr.hxx"
-#include "bout/globals.hxx"
 
+#include <bout/array.hxx>
+#include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
+#include <bout/dcomplex.hxx>
 #include <bout/fft.hxx>
+#include <bout/globals.hxx>
 #include <bout/lapack_routines.hxx>
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
+#include <bout/output.hxx>
+#include <bout/scorepwrapper.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
-#include <cmath>
-
-#include "bout/boutcomm.hxx"
-#include <bout/output.hxx>
-
-#include <bout/scorepwrapper.hxx>
 
 #include <algorithm>
 #include <cmath>
@@ -556,6 +555,8 @@ void LaplacePCR ::cr_pcr_solver(Matrix<dcomplex>& a_mpi, Matrix<dcomplex>& b_mpi
   const int xend = localmesh->xend;
   const int nx = xend - xstart + 1; // number of interior points
 
+  const int nsys = std::get<0>(a_mpi.shape());
+
   // Handle boundary points so that the PCR algorithm works with arrays of
   // the same size on each rank.
   // Note that this modifies the coefficients of b and r in the first and last
@@ -622,6 +623,8 @@ void LaplacePCR ::cr_pcr_solver(Matrix<dcomplex>& a_mpi, Matrix<dcomplex>& b_mpi
 void LaplacePCR ::eliminate_boundary_rows(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
                                           Matrix<dcomplex>& c, Matrix<dcomplex>& r) {
 
+  const int nsys = std::get<0>(a.shape());
+
   if (localmesh->firstX()) {
     for (int kz = 0; kz < nsys; kz++) {
       // Do forward elimination on *all* boundary rows up to xstart
@@ -657,6 +660,8 @@ void LaplacePCR ::apply_boundary_conditions(const Matrix<dcomplex>& a,
                                             const Matrix<dcomplex>& r,
                                             Matrix<dcomplex>& x) {
 
+  const int nsys = std::get<0>(a.shape());
+
   if (localmesh->firstX()) {
     for (int kz = 0; kz < nsys; kz++) {
       for (int ix = localmesh->xstart - 1; ix >= 0; ix--) {
@@ -682,6 +687,8 @@ void LaplacePCR ::apply_boundary_conditions(const Matrix<dcomplex>& a,
 void LaplacePCR ::cr_forward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
                                           Matrix<dcomplex>& c,
                                           Matrix<dcomplex>& r) const {
+  const int nsys = std::get<0>(a.shape());
+
   MPI_Comm comm = BoutComm::get();
   Array<dcomplex> alpha(nsys);
   Array<dcomplex> gamma(nsys);
@@ -755,6 +762,8 @@ void LaplacePCR ::cr_forward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>&
 void LaplacePCR ::cr_backward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
                                            Matrix<dcomplex>& c, Matrix<dcomplex>& r,
                                            Matrix<dcomplex>& x) const {
+  const int nsys = std::get<0>(a.shape());
+
   MPI_Comm comm = BoutComm::get();
 
   MPI_Status status;
@@ -805,6 +814,8 @@ void LaplacePCR ::cr_backward_multiple_row(Matrix<dcomplex>& a, Matrix<dcomplex>
 void LaplacePCR ::pcr_forward_single_row(Matrix<dcomplex>& a, Matrix<dcomplex>& b,
                                          Matrix<dcomplex>& c, Matrix<dcomplex>& r,
                                          Matrix<dcomplex>& x) const {
+
+  const int nsys = std::get<0>(a.shape());
 
   Array<dcomplex> alpha(nsys);
   Array<dcomplex> gamma(nsys);
