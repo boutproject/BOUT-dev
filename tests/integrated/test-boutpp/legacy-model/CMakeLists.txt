@@ -1,6 +1,6 @@
-bout_add_integrated_test(test-boutpp-legacy-model
-  USE_RUNTEST
-  USE_DATA_BOUT_INP
+bout_add_integrated_test(
+  test-boutpp-legacy-model
+  USE_RUNTEST USE_DATA_BOUT_INP
   REQUIRES BOUT_ENABLE_PYTHON
 )
 
