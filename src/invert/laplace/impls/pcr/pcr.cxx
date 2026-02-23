@@ -36,6 +36,10 @@
  *
  **************************************************************************/
 
+#include "bout/build_defines.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include "pcr.hxx"
 #include "bout/globals.hxx"
 
@@ -1108,3 +1112,5 @@ void LaplacePCR ::verify_solution(const Matrix<dcomplex>& a_ver,
   output.write("max abs error {}\n", max_error);
   output.write("max abs error location {} {}\n", max_loc_x, max_loc_z);
 }
+
+#endif // BOUT_USE_METRIC_3D

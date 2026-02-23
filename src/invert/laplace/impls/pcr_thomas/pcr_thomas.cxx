@@ -36,6 +36,10 @@
  *
  **************************************************************************/
 
+#include "bout/build_defines.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include "pcr_thomas.hxx"
 #include "bout/globals.hxx"
 
@@ -1190,3 +1194,5 @@ void LaplacePCR_THOMAS ::verify_solution(const Matrix<dcomplex>& a_ver,
   }
   output.write("max abs error {}\n", max_error);
 }
+
+#endif // BOUT_USE_METRIC_3D
