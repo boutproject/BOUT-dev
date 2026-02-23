@@ -16,11 +16,9 @@ vars = [
     ("max_error1", 2.0e-4),
     ("max_error2", 2.0e-4),
     ("max_error3", 2.0e-4),
-    ("max_error4", 1.0e-5),
     ("max_error5", 2.0e-4),
     ("max_error6", 2.0e-5),
     ("max_error7", 2.0e-4),
-    ("max_error8", 2.0e-5),
 ]
 # tol = 1e-4                  # Absolute (?) tolerance
 

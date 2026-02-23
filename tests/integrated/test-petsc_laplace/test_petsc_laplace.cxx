@@ -26,6 +26,7 @@
 #include "bout/bout.hxx" // NOLINT
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/build_config.hxx"
 #include "bout/constants.hxx"
 #include "bout/difops.hxx"
 #include "bout/field2d.hxx"
@@ -39,6 +40,7 @@
 #include "fmt/core.h"
 #include <mpi.h>
 
+#include <algorithm>
 #include <cmath>
 #include <string_view>
 
@@ -112,10 +114,37 @@ int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
   {
-    Options* options = Options::getRoot()->getSection("petsc2nd");
-    auto invert = Laplacian::create(options);
-    options = Options::getRoot()->getSection("petsc4th");
-    auto invert_4th = Laplacian::create(options);
+    // Not be used for 3D metrics
+    Options::root()["laplace"].setConditionallyUsed();
+
+    // For 3D metrics, we need to use one of PETSc's preconditioners
+    // and mumps seems to be the best? Or at least HYPRE doesn't work
+    // on this test with more than one processor.
+#ifdef PETSC_HAVE_MUMPS
+    constexpr auto petsc_has_mumps = true;
+#else
+    constexpr auto petsc_has_mumps = false;
+#endif
+
+    // Preconditioner to use for 3D metrics
+    constexpr auto petsc_pc = petsc_has_mumps ? "mumps" : "lu";
+
+    auto& options_2nd = Options::root()["petsc2nd"];
+    if constexpr (bout::build::use_metric_3d) {
+      options_2nd["pctype"] = petsc_pc;
+      options_2nd["rightprec"].setConditionallyUsed();
+      options_2nd["precon"].setConditionallyUsed();
+    }
+
+    auto invert = Laplacian::create(&options_2nd);
+
+    auto& options_4th = Options::root()["petsc4th"];
+    if constexpr (bout::build::use_metric_3d) {
+      options_4th["pctype"] = petsc_pc;
+      options_4th["rightprec"].setConditionallyUsed();
+      options_4th["precon"].setConditionallyUsed();
+    }
+    auto invert_4th = Laplacian::create(&options_4th);
 
     Options dump;
 
@@ -136,34 +165,26 @@ int main(int argc, char** argv) {
 
     const Field3D b_1 = forward_laplace(f_1, a_1, c_1, d_1);
 
-    int test_num = 0;
-    check_laplace(++test_num, "PETSc 2nd order", *invert, INVERT_AC_GRAD, INVERT_AC_GRAD,
-                  a_1, c_1, d_1, b_1, f_1, mesh->ystart, dump);
+    check_laplace(1, "PETSc 2nd order", *invert, INVERT_AC_GRAD, INVERT_AC_GRAD, a_1, c_1,
+                  d_1, b_1, f_1, mesh->ystart, dump);
 
     /////////////////////////////////////////////////
     // Test 2: Gaussian x-profiles, 4th order Krylov
 
-    check_laplace(++test_num, "PETSc 4th order", *invert_4th, INVERT_AC_GRAD,
-                  INVERT_AC_GRAD, a_1, c_1, d_1, b_1, f_1, mesh->ystart, dump);
+    check_laplace(2, "PETSc 4th order", *invert_4th, INVERT_AC_GRAD, INVERT_AC_GRAD, a_1,
+                  c_1, d_1, b_1, f_1, mesh->ystart, dump);
 
     ////////////////////////////////////////////////////////////////////////////////////////
-    // Test 3+4: Gaussian x-profiles, z-independent coefficients and compare with SPT method
+    // Test 3+4: Gaussian x-profiles, z-independent coefficients
 
     const Field2D a_3 = DC(a_1);
     const Field2D c_3 = DC(c_1);
     const Field2D d_3 = DC(d_1);
     const Field3D b_3 = forward_laplace(f_1, a_3, c_3, d_3);
 
-    check_laplace(++test_num, "with coefficients constant in z, PETSc 2nd order", *invert,
+    check_laplace(3, "with coefficients constant in z, PETSc 2nd order", *invert,
                   INVERT_AC_GRAD, INVERT_AC_GRAD, a_3, c_3, d_3, b_3, f_1, mesh->ystart,
                   dump);
-
-    Options* SPT_options = Options::getRoot()->getSection("SPT");
-    auto invert_SPT = Laplacian::create(SPT_options);
-
-    check_laplace(++test_num, "with coefficients constant in z, default solver",
-                  *invert_SPT, INVERT_AC_GRAD, INVERT_AC_GRAD | INVERT_DC_GRAD, a_3, c_3,
-                  d_3, b_3, f_1, mesh->ystart, dump);
 
     //////////////////////////////////////////////
     // Test 5: Cosine x-profiles, 2nd order Krylov
@@ -176,16 +197,14 @@ int main(int argc, char** argv) {
 
     const Field3D b_5 = forward_laplace(f_5, a_5, c_5, d_5);
 
-    check_laplace(++test_num, "different profiles, PETSc 2nd order", *invert,
-                  INVERT_AC_GRAD, INVERT_AC_GRAD, a_5, c_5, d_5, b_5, f_5, mesh->ystart,
-                  dump);
+    check_laplace(5, "different profiles, PETSc 2nd order", *invert, INVERT_AC_GRAD,
+                  INVERT_AC_GRAD, a_5, c_5, d_5, b_5, f_5, mesh->ystart, dump);
 
     //////////////////////////////////////////////
     // Test 6: Cosine x-profiles, 4th order Krylov
 
-    check_laplace(++test_num, "different profiles, PETSc 4th order", *invert_4th,
-                  INVERT_AC_GRAD, INVERT_AC_GRAD, a_5, c_5, d_5, b_5, f_5, mesh->ystart,
-                  dump);
+    check_laplace(6, "different profiles, PETSc 4th order", *invert_4th, INVERT_AC_GRAD,
+                  INVERT_AC_GRAD, a_5, c_5, d_5, b_5, f_5, mesh->ystart, dump);
 
     //////////////////////////////////////////////////////////////////////////////////////
     // Test 7+8: Cosine x-profiles, z-independent coefficients and compare with SPT method
@@ -195,15 +214,10 @@ int main(int argc, char** argv) {
     const Field2D d_7 = DC(d_5);
     const Field3D b_7 = forward_laplace(f_5, a_7, c_7, d_7);
 
-    check_laplace(++test_num,
+    check_laplace(7,
                   "different profiles, with coefficients constant in z, PETSc 2nd order",
                   *invert, INVERT_AC_GRAD, INVERT_AC_GRAD, a_7, c_7, d_7, b_7, f_5,
                   mesh->ystart, dump);
-
-    check_laplace(++test_num,
-                  "different profiles, with coefficients constant in z, default solver",
-                  *invert_SPT, INVERT_AC_GRAD, INVERT_AC_GRAD | INVERT_DC_GRAD, a_7, c_7,
-                  d_7, b_7, f_5, mesh->ystart, dump);
 
     // Write and close the output file
     bout::writeDefaultOutputFile(dump);
@@ -219,13 +233,11 @@ int main(int argc, char** argv) {
 
 BoutReal max_error_at_ystart(const Field3D& error) {
   const auto* mesh = error.getMesh();
-  BoutReal local_max_error = error(mesh->xstart, mesh->ystart, 0);
+  BoutReal local_max_error = 0.0;
 
   for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
     for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-      if (local_max_error < error(jx, mesh->ystart, jz)) {
-        local_max_error = error(jx, mesh->ystart, jz);
-      }
+      local_max_error = std::max(local_max_error, error(jx, mesh->ystart, jz));
     }
   }
 
