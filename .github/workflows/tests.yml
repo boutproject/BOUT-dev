@@ -235,7 +235,7 @@ jobs:
   CUDA:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    container: ghcr.io/ggeorgakoudis/boutdev-cuda:latest
+    container: ghcr.io/boutproject/bout-container-base:ci-cuda
     env:
       BOUT_TEST_DOWNLOAD_FLAGS: --retry-on-http-error=502,503,504 --tries 3
     steps:
