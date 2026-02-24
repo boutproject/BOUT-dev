@@ -11,9 +11,12 @@
 #include "bout/region.hxx"
 #include "bout/traits.hxx"
 
-#include "fmt/base.h"
+#include <fmt/base.h>
 #include <fmt/format.h>
 
+#include <cstddef>
+#include <string>
+#include <string_view>
 #include <type_traits>
 
 template <IND_TYPE N>
@@ -59,14 +62,62 @@ struct fmt::formatter<SpecificInd<N>> {
 
 /// Formatter for Fields
 template <class T>
-struct fmt::formatter<T, std::enable_if_t<bout::utils::is_Field_v<T>, char>> : fmt::formatter<BoutReal> {
+struct fmt::formatter<T, std::enable_if_t<bout::utils::is_Field_v<T>, char>> {
+private:
+  fmt::formatter<BoutReal> underlying;
+
+  static constexpr auto default_region = "RGN_ALL";
+  std::string_view region = default_region;
+
+public:
+  constexpr auto parse(format_parse_context& ctx) {
+    const auto* it = ctx.begin();
+    const auto* end = ctx.end();
+
+    if (it == end) {
+      return underlying.parse(ctx);
+    }
+
+    // Other cases handled explicitly below
+    // NOLINTNEXTLINE(bugprone-switch-missing-default-case)
+    switch (*it) {
+    case 'r':
+      ++it;
+      if (*it != '\'') {
+        throw fmt::format_error("invalid format for Field");
+      }
+      const auto* rgn_start = ++it;
+      std::size_t size = 0;
+      while (*it != '\'') {
+        ++size;
+        ++it;
+      }
+      region = std::string_view(rgn_start, size);
+      ++it;
+      break;
+    }
+
+    if (it != end && *it != '}') {
+      if (*it != ':') {
+        throw fmt::format_error("invalid format specifier");
+      }
+      ++it;
+    }
+
+    ctx.advance_to(it);
+    return underlying.parse(ctx);
+  }
+
   auto format(const T& f, format_context& ctx) const -> format_context::iterator {
     const auto* mesh = f.getMesh();
-    int previous_x = 0;
-    int previous_y = 0;
-    int previous_z = 0;
 
-    BOUT_FOR(i, f.getRegion("RGN_ALL")) {
+    const auto rgn = f.getRegion(std::string(region));
+    const auto i = rgn.begin();
+    int previous_x = i->x();
+    int previous_y = i->y();
+    int previous_z = i->z();
+
+    BOUT_FOR(i, rgn) {
       const auto ix = i.x();
       const auto iy = i.y();
       const auto iz = i.z();
@@ -82,7 +133,7 @@ struct fmt::formatter<T, std::enable_if_t<bout::utils::is_Field_v<T>, char>> : f
       }
 
       format_to(ctx.out(), "{:c}: ", i);
-      formatter<BoutReal>::format(f[i], ctx);
+      underlying.format(f[i], ctx);
       format_to(ctx.out(), ";");
       previous_x = ix;
       previous_y = iy;
