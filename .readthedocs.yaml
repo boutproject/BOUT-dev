@@ -34,3 +34,8 @@ build:
     - make
     - clang-format
     - fftw-dev
+  jobs:
+    post_checkout:
+      # Use `git log` to check if the latest commit contains "[bot]",
+      # in that case exit the command with 183 to cancel the build
+      - (git --no-pager log --pretty="tformat:%s -- %b" -1 | paste -s -d " " | grep -viqE "\[(bot|skip ci)\]") || exit 183
