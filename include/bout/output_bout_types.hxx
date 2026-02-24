@@ -5,14 +5,16 @@
 #ifndef OUTPUT_BOUT_TYPES_H
 #define OUTPUT_BOUT_TYPES_H
 
-#include "fmt/base.h"
-#include <fmt/format.h>
-
 #include "bout/bout_types.hxx"
-#include "bout/field2d.hxx"
 #include "bout/mesh.hxx"
 #include "bout/output.hxx" // IWYU pragma: keep
 #include "bout/region.hxx"
+#include "bout/traits.hxx"
+
+#include "fmt/base.h"
+#include <fmt/format.h>
+
+#include <type_traits>
 
 template <IND_TYPE N>
 struct fmt::formatter<SpecificInd<N>> {
@@ -55,58 +57,38 @@ struct fmt::formatter<SpecificInd<N>> {
   }
 };
 
-class Field2D;
-class Field3D;
-class FieldPerp;
-
-template <>
-struct fmt::formatter<Field2D> : fmt::formatter<BoutReal> {
-  auto format(const Field2D& f, format_context& ctx) const -> format_context::iterator {
+/// Formatter for Fields
+template <class T>
+struct fmt::formatter<T, std::enable_if_t<bout::utils::is_Field_v<T>, char>> : fmt::formatter<BoutReal> {
+  auto format(const T& f, format_context& ctx) const -> format_context::iterator {
     const auto* mesh = f.getMesh();
-    for (int ix = 0; ix < mesh->LocalNx; ++ix) {
-      for (int jy = 0; jy < mesh->LocalNy; ++jy) {
-        format_to(ctx.out(), "({}, {}): ", ix, jy);
-        formatter<BoutReal>::format(f(ix, jy), ctx);
-        format_to(ctx.out(), (jy < mesh->LocalNy - 1) ? "; " : ";");
+    int previous_x = 0;
+    int previous_y = 0;
+    int previous_z = 0;
+
+    BOUT_FOR(i, f.getRegion("RGN_ALL")) {
+      const auto ix = i.x();
+      const auto iy = i.y();
+      const auto iz = i.z();
+
+      if (iz > previous_z) {
+        format_to(ctx.out(), " ");
       }
-      format_to(ctx.out(), "\n");
-    }
-    return format_to(ctx.out(), "\n");
-  }
-};
-
-template <>
-struct fmt::formatter<Field3D> : fmt::formatter<BoutReal> {
-  auto format(const Field3D& f, format_context& ctx) const -> format_context::iterator {
-    const auto* mesh = f.getMesh();
-    for (int ix = 0; ix < mesh->LocalNx; ++ix) {
-      for (int jy = 0; jy < mesh->LocalNy; ++jy) {
-        for (int kz = 0; kz < mesh->LocalNz; ++kz) {
-          format_to(ctx.out(), "({}, {}, {}): ", ix, jy, kz);
-          formatter<BoutReal>::format(f(ix, jy, kz), ctx);
-          format_to(ctx.out(), (kz < mesh->LocalNz - 1) ? "; " : ";");
-        }
+      if (iy > previous_y) {
         format_to(ctx.out(), "\n");
       }
-      format_to(ctx.out(), "\n");
-    }
-    return format_to(ctx.out(), "\n");
-  }
-};
-
-template <>
-struct fmt::formatter<FieldPerp> : fmt::formatter<BoutReal> {
-  auto format(const FieldPerp& f, format_context& ctx) const -> format_context::iterator {
-    const auto* mesh = f.getMesh();
-    for (int ix = 0; ix < mesh->LocalNx; ++ix) {
-      for (int kz = 0; kz < mesh->LocalNz; ++kz) {
-        format_to(ctx.out(), "({}, {}): ", ix, kz);
-        formatter<BoutReal>::format(f(ix, kz), ctx);
-        format_to(ctx.out(), (kz < mesh->LocalNz - 1) ? "; " : ";");
+      if (ix > previous_x) {
+        format_to(ctx.out(), "\n\n");
       }
-      format_to(ctx.out(), "\n");
+
+      format_to(ctx.out(), "{:c}: ", i);
+      formatter<BoutReal>::format(f[i], ctx);
+      format_to(ctx.out(), ";");
+      previous_x = ix;
+      previous_y = iy;
+      previous_z = iz;
     }
-    return format_to(ctx.out(), "\n");
+    return format_to(ctx.out(), "");
   }
 };
 
