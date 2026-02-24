@@ -47,7 +47,7 @@ TEST_F(FormatFieldTest, Field2DSpec) {
 
   fillField(f, {{0., 1., 2., 3., 4.}, {5., 6., 7., 8., 9.}, {10., 11., 12., 13., 14.}});
 
-  const auto out = fmt::format("{:3.1e}", f);
+  const auto out = fmt::format("{::3.1e}", f);
 
   const std::string expected =
     R"((0, 0): 0.0e+00;
@@ -107,7 +107,7 @@ TEST_F(FormatFieldTest, Field3DSpec) {
                 {{10., 11}, {12., 13}, {14., 15}, {16., 17}, {18., 19}},
                 {{20., 21}, {22., 23}, {24., 25}, {26., 27}, {28., 29}}});
 
-  const auto out = fmt::format("{:3.1e}", f);
+  const auto out = fmt::format("{::3.1e}", f);
 
   const std::string expected =
       R"((0, 0, 0): 0.0e+00; (0, 0, 1): 1.0e+00;
@@ -127,6 +127,25 @@ TEST_F(FormatFieldTest, Field3DSpec) {
 (2, 2, 0): 2.4e+01; (2, 2, 1): 2.5e+01;
 (2, 3, 0): 2.6e+01; (2, 3, 1): 2.7e+01;
 (2, 4, 0): 2.8e+01; (2, 4, 1): 2.9e+01;)";
+  EXPECT_EQ(out, expected);
+}
+
+
+TEST_F(FormatFieldTest, Field3DRegionSpec) {
+  Field3D f{bout::globals::mesh};
+
+  fillField(f, {{{0., 1}, {2., 3}, {4., 5}, {6., 7}, {8., 9}},
+                {{10., 11}, {12., 13}, {14., 15}, {16., 17}, {18., 19}},
+                {{20., 21}, {22., 23}, {24., 25}, {26., 27}, {28., 29}}});
+
+  const auto out = fmt::format("{:r'RGN_NOX':3.1e}", f);
+
+  const std::string expected =
+      R"((1, 0, 0): 1.0e+01; (1, 0, 1): 1.1e+01;
+(1, 1, 0): 1.2e+01; (1, 1, 1): 1.3e+01;
+(1, 2, 0): 1.4e+01; (1, 2, 1): 1.5e+01;
+(1, 3, 0): 1.6e+01; (1, 3, 1): 1.7e+01;
+(1, 4, 0): 1.8e+01; (1, 4, 1): 1.9e+01;)";
   EXPECT_EQ(out, expected);
 }
 
@@ -159,7 +178,7 @@ TEST_F(FormatFieldTest, FieldPerpSpec) {
 
   FieldPerp g = sliceXZ(f, 0);
 
-  const auto out = fmt::format("{:3.1e}", g);
+  const auto out = fmt::format("{::3.1e}", g);
 
   const std::string expected =
       R"((0, 0): 0.0e+00; (0, 1): 1.0e+00;
