@@ -132,6 +132,9 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   MatSetSizes(MatA, localN, localN, size, size);
   MatSetFromOptions(MatA);
 
+  const bool first_x = localmesh->firstX();
+  const bool last_x = localmesh->lastX();
+
   /* Pre allocate memory
    * nnz denotes an array containing the number of non-zeros in the various rows
    * for
@@ -139,109 +142,49 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
    * o_nnz - The off-diagonal terms in the matrix (needed when running in
    *         parallel)
    */
-  PetscInt *d_nnz, *o_nnz;
+  PetscInt *d_nnz = nullptr;
+  PetscInt *o_nnz = nullptr;
   PetscMalloc((localN) * sizeof(PetscInt), &d_nnz);
   PetscMalloc((localN) * sizeof(PetscInt), &o_nnz);
   if (fourth_order) {
-    // first and last 2*localmesh-LocalNz entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
-    if (localmesh->firstX() && localmesh->lastX()) {
-      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
-        d_nnz[i] = 15;
-        d_nnz[localN - 1 - i] = 15;
-        o_nnz[i] = 0;
-        o_nnz[localN - 1 - i] = 0;
-      }
-      for (int i = (localmesh->LocalNz); i < 2 * (localmesh->LocalNz); i++) {
-        d_nnz[i] = 20;
-        d_nnz[localN - 1 - i] = 20;
-        o_nnz[i] = 0;
-        o_nnz[localN - 1 - i] = 0;
-      }
-    } else if (localmesh->firstX()) {
-      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
-        d_nnz[i] = 15;
-        d_nnz[localN - 1 - i] = 15;
-        o_nnz[i] = 0;
-        o_nnz[localN - 1 - i] = 10;
-      }
-      for (int i = (localmesh->LocalNz); i < 2 * (localmesh->LocalNz); i++) {
-        d_nnz[i] = 20;
-        d_nnz[localN - 1 - i] = 20;
-        o_nnz[i] = 0;
-        o_nnz[localN - 1 - i] = 5;
-      }
-    } else if (localmesh->lastX()) {
-      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
-        d_nnz[i] = 15;
-        d_nnz[localN - 1 - i] = 15;
-        o_nnz[i] = 10;
-        o_nnz[localN - 1 - i] = 0;
-      }
-      for (int i = (localmesh->LocalNz); i < 2 * (localmesh->LocalNz); i++) {
-        d_nnz[i] = 20;
-        d_nnz[localN - 1 - i] = 20;
-        o_nnz[i] = 5;
-        o_nnz[localN - 1 - i] = 0;
-      }
-    } else {
-      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
-        d_nnz[i] = 15;
-        d_nnz[localN - 1 - i] = 15;
-        o_nnz[i] = 10;
-        o_nnz[localN - 1 - i] = 10;
-      }
-      for (int i = (localmesh->LocalNz); i < 2 * (localmesh->LocalNz); i++) {
-        d_nnz[i] = 20;
-        d_nnz[localN - 1 - i] = 20;
-        o_nnz[i] = 5;
-        o_nnz[localN - 1 - i] = 5;
-      }
+    // first and last 2*localmesh-LocalNz entries are the edge x-values that
+    // (may) have 'off-diagonal' components (i.e. on another processor)
+
+    const int first_first_off = first_x ? 0 : 10;
+    const int first_last_off = last_x ? 0 : 10;
+    const int second_first_off = first_x ? 0 : 5;
+    const int second_last_off = last_x ? 0 : 5;
+
+    for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
+      d_nnz[i] = 15;
+      d_nnz[localN - 1 - i] = 15;
+      o_nnz[i] = first_first_off;
+      o_nnz[localN - 1 - i] = first_last_off;
+    }
+    for (int i = (localmesh->LocalNz); i < 2 * (localmesh->LocalNz); i++) {
+      d_nnz[i] = 20;
+      d_nnz[localN - 1 - i] = 20;
+      o_nnz[i] = second_first_off;
+      o_nnz[localN - 1 - i] = second_last_off;
     }
 
-    for (int i = 2 * (localmesh->LocalNz); i < localN - 2 * ((localmesh->LocalNz)); i++) {
+    for (int i = 2 * (localmesh->LocalNz); i < localN - (2 * localmesh->LocalNz); i++) {
       d_nnz[i] = 25;
       d_nnz[localN - 1 - i] = 25;
       o_nnz[i] = 0;
       o_nnz[localN - 1 - i] = 0;
     }
-
-    // Use d_nnz and o_nnz for preallocating the matrix
-    if (localmesh->firstX() && localmesh->lastX()) {
-      // Only one processor in X
-      MatSeqAIJSetPreallocation(MatA, 0, d_nnz);
-    } else {
-      MatMPIAIJSetPreallocation(MatA, 0, d_nnz, 0, o_nnz);
-    }
   } else {
-    // first and last localmesh->LocalNz entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
-    if (localmesh->firstX() && localmesh->lastX()) {
-      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
-        d_nnz[i] = 6;
-        d_nnz[localN - 1 - i] = 6;
-        o_nnz[i] = 0;
-        o_nnz[localN - 1 - i] = 0;
-      }
-    } else if (localmesh->firstX()) {
-      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
-        d_nnz[i] = 6;
-        d_nnz[localN - 1 - i] = 6;
-        o_nnz[i] = 0;
-        o_nnz[localN - 1 - i] = 3;
-      }
-    } else if (localmesh->lastX()) {
-      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
-        d_nnz[i] = 6;
-        d_nnz[localN - 1 - i] = 6;
-        o_nnz[i] = 3;
-        o_nnz[localN - 1 - i] = 0;
-      }
-    } else {
-      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
-        d_nnz[i] = 6;
-        d_nnz[localN - 1 - i] = 6;
-        o_nnz[i] = 3;
-        o_nnz[localN - 1 - i] = 3;
-      }
+    // first and last localmesh->LocalNz entries are the edge x-values that
+    // (may) have 'off-diagonal' components (i.e. on another processor)
+    const int first_off = first_x ? 0 : 3;
+    const int last_off = last_x ? 0 : 3;
+
+    for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
+      d_nnz[i] = 6;
+      d_nnz[localN - 1 - i] = 6;
+      o_nnz[i] = first_off;
+      o_nnz[localN - 1 - i] = last_off;
     }
 
     for (int i = localmesh->LocalNz; i < localN - (localmesh->LocalNz); i++) {
@@ -250,14 +193,15 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
       o_nnz[i] = 0;
       o_nnz[localN - 1 - i] = 0;
     }
-
-    // Use d_nnz and o_nnz for preallocating the matrix
-    if (localmesh->firstX() && localmesh->lastX()) {
-      MatSeqAIJSetPreallocation(MatA, 0, d_nnz);
-    } else {
-      MatMPIAIJSetPreallocation(MatA, 0, d_nnz, 0, o_nnz);
-    }
   }
+  // Use d_nnz and o_nnz for preallocating the matrix
+  if (localmesh->firstX() && localmesh->lastX()) {
+    // Only one processor in X
+    MatSeqAIJSetPreallocation(MatA, 0, d_nnz);
+  } else {
+    MatMPIAIJSetPreallocation(MatA, 0, d_nnz, 0, o_nnz);
+  }
+
   // Free the d_nnz and o_nnz arrays, as these are will not be used anymore
   PetscFree(d_nnz);
   PetscFree(o_nnz);
