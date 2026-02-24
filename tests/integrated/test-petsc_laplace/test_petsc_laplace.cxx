@@ -32,6 +32,7 @@
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
+#include "bout/globals.hxx"
 #include "bout/invert_laplace.hxx"
 #include "bout/options.hxx"
 #include "bout/options_io.hxx"
@@ -106,7 +107,7 @@ Field3D forward_laplace(const Field3D& field, const T& acoef, const T& ccoef,
 Field3D generate_f1(const Mesh& mesh);
 
 Field3D generate_d1(Mesh& mesh) {
-  Options options{{"p_d1", 0.512547}, {"q_d1", 0.30908712}};
+  const Options options{{"p_d1", 0.512547}, {"q_d1", 0.30908712}};
 
   return FieldFactory::get()->create3D(
       "1. + (0.2 * exp(-50. * (x - p_d1)^2 / 4.) * sin((z - 2. * pi * q_d1) * 3.))",
@@ -114,7 +115,7 @@ Field3D generate_d1(Mesh& mesh) {
 }
 
 Field3D generate_c1(Mesh& mesh) {
-  Options options{{"p_c1", 0.18439023}, {"q_c1", 0.401089473}};
+  const Options options{{"p_c1", 0.18439023}, {"q_c1", 0.401089473}};
 
   return FieldFactory::get()->create3D(
       "1. + (0.15 * exp(-50. * (x - p_c1)^2 * 2.) * sin((z - 2. * pi * q_c1) * 2.))",
@@ -122,7 +123,7 @@ Field3D generate_c1(Mesh& mesh) {
 }
 
 Field3D generate_a1(Mesh& mesh) {
-  Options options{{"p_a1", 0.612547}, {"q_a1", 0.30908712}};
+  const Options options{{"p_a1", 0.612547}, {"q_a1", 0.30908712}};
 
   return FieldFactory::get()->create3D(
       "-1. + (0.1 * exp(-50. * (x - p_a1)^2 * 2.5) * sin((z - 2. * pi * q_a1) * 7.))",
@@ -130,7 +131,7 @@ Field3D generate_a1(Mesh& mesh) {
 }
 
 Field3D generate_f5(Mesh& mesh) {
-  Options options{{"p_f5", 0.623901}, {"q_f5", 0.01209489}};
+  const Options options{{"p_f5", 0.623901}, {"q_f5", 0.01209489}};
 
   auto result = FieldFactory::get()->create3D(
       "exp(-((50. * (x - p_f5)^2) + 1. - cos((z - 2. * pi * q_f5))))"
@@ -145,14 +146,14 @@ Field3D generate_f5(Mesh& mesh) {
 }
 
 Field3D generate_d5(Mesh& mesh) {
-  Options options{{"p_d5", 0.63298589}, {"q_d5", 0.889237890}};
+  const Options options{{"p_d5", 0.63298589}, {"q_d5", 0.889237890}};
 
   return FieldFactory::get()->create3D(
       "1. + (p_d5 * cos(2. * pi * x) * sin((z - 2 * pi * q_d5) * 3.))", &options, &mesh);
 }
 
 Field3D generate_c5(Mesh& mesh) {
-  Options options{{"p_c5", 0.160983834}, {"q_c5", 0.73050121087}};
+  const Options options{{"p_c5", 0.160983834}, {"q_c5", 0.73050121087}};
 
   return FieldFactory::get()->create3D(
       "1. + (p_c5 * cos(2. * pi * x * 5) * sin((z - 2 * pi * q_c5) * 2.))", &options,
@@ -160,7 +161,7 @@ Field3D generate_c5(Mesh& mesh) {
 }
 
 Field3D generate_a5(Mesh& mesh) {
-  Options options{{"p_a5", 0.5378950}, {"q_a5", 0.2805870}};
+  const Options options{{"p_a5", 0.5378950}, {"q_a5", 0.2805870}};
 
   return FieldFactory::get()->create3D(
       "-1. + (p_a5 * cos(2. * pi * x * 2.) * sin((z - 2. * pi * q_a5) * 7.))", &options,
@@ -362,12 +363,11 @@ Field3D generate_f1(const Mesh& mesh) {
         //make the gradients zero at both x-boundaries
         result(jx, jy, jz) =
             0. + exp(-((100. * pow(x - p, 2)) + 1. - cos(2. * PI * (z - q))))
-            - 50.
-                  * (2. * p * exp(-100. * pow(-p, 2)) * x
-                     + (-p * exp(-100. * pow(-p, 2))
-                        - (1 - p) * exp(-100. * pow(1 - p, 2)))
-                           * pow(x, 2))
-                  * exp(-(1. - cos(2. * PI * (z - q))));
+            - (50.
+               * (2. * p * exp(-100. * pow(-p, 2)) * x
+                  + (-p * exp(-100. * pow(-p, 2)) - (1 - p) * exp(-100. * pow(1 - p, 2)))
+                        * pow(x, 2))
+               * exp(-(1. - cos(2. * PI * (z - q)))));
       }
     }
   }
@@ -380,12 +380,11 @@ Field3D generate_f1(const Mesh& mesh) {
           //make the gradients zero at both x-boundaries
           result(jx, jy, jz) =
               0. + exp(-((60. * pow(x - p, 2)) + 1. - cos(2. * PI * (z - q))))
-              - 50.
-                    * (2. * p * exp(-60. * pow(-p, 2)) * x
-                       + (-p * exp(-60. * pow(-p, 2))
-                          - (1 - p) * exp(-60. * pow(1 - p, 2)))
-                             * pow(x, 2))
-                    * exp(-(1. - cos(2. * PI * (z - q))));
+              - (50.
+                 * (2. * p * exp(-60. * pow(-p, 2)) * x
+                    + (-p * exp(-60. * pow(-p, 2)) - (1 - p) * exp(-60. * pow(1 - p, 2)))
+                          * pow(x, 2))
+                 * exp(-(1. - cos(2. * PI * (z - q)))));
         }
       }
     }
@@ -399,12 +398,11 @@ Field3D generate_f1(const Mesh& mesh) {
           //make the gradients zero at both x-boundaries
           result(jx, jy, jz) =
               0. + exp(-((60. * pow(x - p, 2)) + 1. - cos(2. * PI * (z - q))))
-              - 50.
-                    * (2. * p * exp(-60. * pow(-p, 2)) * x
-                       + (-p * exp(-60. * pow(-p, 2))
-                          - (1 - p) * exp(-60. * pow(1 - p, 2)))
-                             * pow(x, 2))
-                    * exp(-(1. - cos(2. * PI * (z - q))));
+              - (50.
+                 * (2. * p * exp(-60. * pow(-p, 2)) * x
+                    + (-p * exp(-60. * pow(-p, 2)) - (1 - p) * exp(-60. * pow(1 - p, 2)))
+                          * pow(x, 2))
+                 * exp(-(1. - cos(2. * PI * (z - q)))));
         }
       }
     }
