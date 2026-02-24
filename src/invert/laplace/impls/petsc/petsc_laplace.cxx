@@ -31,7 +31,10 @@
 #include "petsc_laplace.hxx"
 
 #include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
 #include <bout/output.hxx>
 #include <bout/petsclib.hxx>
@@ -53,34 +56,49 @@
 #define KSP_BICG "bicg"
 #define KSP_PREONLY "preonly"
 
-static PetscErrorCode laplacePCapply(PC pc, Vec x, Vec y) {
+namespace {
+PetscErrorCode laplacePCapply(PC pc, Vec x, Vec y) {
   PetscFunctionBegin; // NOLINT
 
   LaplacePetsc* laplace = nullptr;
-  const int ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&laplace)); // NOLINT
-  CHKERRQ(ierr);
+  CHKERRQ(PCShellGetContext(pc, reinterpret_cast<void**>(&laplace))); // NOLINT
 
   PetscFunctionReturn(laplace->precon(x, y)); // NOLINT
 }
+} // namespace
 
 LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
-                           Solver* UNUSED(solver))
+                           [[maybe_unused]] Solver* solver)
     : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
-      issetD(false), issetC(false), issetE(false),
-      lib(opt == nullptr ? &(Options::root()["laplace"]) : opt) {
+      issetD(false), issetC(false), issetE(false), comm(localmesh->getXcomm()),
+      opts(opt == nullptr ? &(Options::root()["laplace"]) : opt),
+      // WARNING: only a few of these options actually make sense: see the
+      // PETSc documentation to work out which they are (possibly
+      // pbjacobi, sor might be useful choices?)
+      ksptype((*opts)["ksptype"].doc("KSP solver type").withDefault(KSPGMRES)),
+      pctype((*opts)["pctype"]
+                 .doc("Preconditioner type. See the PETSc documentation for options")
+                 .withDefault("none")),
+      richardson_damping_factor((*opts)["richardson_damping_factor"].withDefault(1.0)),
+      chebyshev_max((*opts)["chebyshev_max"].withDefault(100)),
+      chebyshev_min((*opts)["chebyshev_min"].withDefault(0.01)),
+      gmres_max_steps((*opts)["gmres_max_steps"].withDefault(30)),
+      rtol((*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5)),
+      atol((*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-50)),
+      dtol((*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e5)),
+      maxits(
+          (*opts)["maxits"].doc("Maximum number of KSP iterations").withDefault(100000)),
+      direct((*opts)["direct"].doc("Use direct (LU) solver?").withDefault(false)),
+      fourth_order(
+          (*opts)["fourth_order"].doc("Use fourth order stencil").withDefault(false)),
+      lib(opts) {
+
   A.setLocation(location);
   C1.setLocation(location);
   C2.setLocation(location);
   D.setLocation(location);
   Ex.setLocation(location);
   Ez.setLocation(location);
-
-  // Get Options in Laplace Section
-  if (!opt) {
-    opts = Options::getRoot()->getSection("laplace");
-  } else {
-    opts = opt;
-  }
 
 #if CHECK > 0
   // Checking flags are set to something which is not implemented
@@ -93,24 +111,23 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   }
 #endif
 
-  // Get communicator for group of processors in X - all points in z-x plane for fixed y.
-  comm = localmesh->getXcomm();
+  const bool first_x = localmesh->firstX();
+  const bool last_x = localmesh->lastX();
 
   // Need to determine local size to use based on prior parallelisation
   // Coefficient values are stored only on local processors.
   localN = (localmesh->xend - localmesh->xstart + 1) * (localmesh->LocalNz);
-  if (localmesh->firstX()) {
-    localN +=
-        localmesh->xstart
-        * (localmesh->LocalNz); // If on first processor add on width of boundary region
+  if (first_x) {
+    // If on first processor add on width of boundary region
+    localN += localmesh->xstart * (localmesh->LocalNz);
   }
-  if (localmesh->lastX()) {
-    localN +=
-        localmesh->xstart
-        * (localmesh->LocalNz); // If on last processor add on width of boundary region
+  if (last_x) {
+    // If on last processor add on width of boundary region
+    localN += localmesh->xstart * (localmesh->LocalNz);
   }
 
   // Calculate 'size' (the total number of points in physical grid)
+  size = localN;
   if (bout::globals::mpi->MPI_Allreduce(&localN, &size, 1, MPI_INT, MPI_SUM, comm)
       != MPI_SUCCESS) {
     throw BoutException("Error in MPI_Allreduce during LaplacePetsc initialisation");
@@ -126,16 +143,11 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   VecSetFromOptions(xs);
   VecDuplicate(xs, &bs);
 
-  // Get 4th order solver switch
-  opts->get("fourth_order", fourth_order, false);
-
   // Set size of (the PETSc) Matrix on each processor to localN x localN
   MatCreate(comm, &MatA);
   MatSetSizes(MatA, localN, localN, size, size);
   MatSetFromOptions(MatA);
 
-  const bool first_x = localmesh->firstX();
-  const bool last_x = localmesh->lastX();
   // Pre allocate memory. See MatMPIAIJSetPreallocation docs for more info
   // Number of non-zero elements in each row of matrix owned by this processor
   // ("diagonal submatrices")
@@ -206,53 +218,21 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   // Declare KSP Context (abstract PETSc object that manages all Krylov methods)
   KSPCreate(comm, &ksp);
 
-  // Get KSP Solver Type (Generalizes Minimal RESidual is the default)
-  ksptype = (*opts)["ksptype"].doc("KSP solver type").withDefault(KSP_GMRES);
-
-  // Get preconditioner type
-  // WARNING: only a few of these options actually make sense: see the
-  // PETSc documentation to work out which they are (possibly
-  // pbjacobi, sor might be useful choices?)
-  pctype = (*opts)["pctype"]
-               .doc("Preconditioner type. See the PETSc documentation for options")
-               .withDefault("none");
-
   // Let "user" be a synonym for "shell"
   if (pctype == "user") {
     pctype = PCSHELL;
   }
 
-  // Get Options specific to particular solver types
-  opts->get("richardson_damping_factor", richardson_damping_factor, 1.0, true);
-  opts->get("chebyshev_max", chebyshev_max, 100, true);
-  opts->get("chebyshev_min", chebyshev_min, 0.01, true);
-  opts->get("gmres_max_steps", gmres_max_steps, 30, true);
-
-  // Get Tolerances for KSP solver
-  rtol = (*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5);
-  atol = (*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-50);
-  dtol = (*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e5);
-  maxits = (*opts)["maxits"].doc("Maximum number of KSP iterations").withDefault(100000);
-
-  // Get direct solver switch
-  direct = (*opts)["direct"].doc("Use direct (LU) solver?").withDefault(false);
   if (direct) {
-    output << endl
-           << "Using LU decompostion for direct solution of system" << endl
-           << endl;
+    output.write("\nUsing LU decompostion for direct solution of system\n");
   }
 
   if (pctype == PCSHELL) {
-
     rightprec = (*opts)["rightprec"].doc("Right preconditioning?").withDefault(true);
 
     // Options for preconditioner are in a subsection
     pcsolve = Laplacian::create(opts->getSection("precon"));
   }
-
-  // Ensure that the matrix is constructed first time
-  //   coefchanged = true;
-  //  lastflag = -1;
 }
 
 FieldPerp LaplacePetsc::solve(const FieldPerp& b) { return solve(b, b); }
