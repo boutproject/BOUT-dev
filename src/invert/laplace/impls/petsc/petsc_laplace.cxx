@@ -116,14 +116,15 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
 
   // Need to determine local size to use based on prior parallelisation
   // Coefficient values are stored only on local processors.
-  localN = (localmesh->xend - localmesh->xstart + 1) * (localmesh->LocalNz);
+  const auto local_nz = localmesh->zend - localmesh->zstart + 1;
+  localN = (localmesh->xend - localmesh->xstart + 1) * local_nz;
   if (first_x) {
     // If on first processor add on width of boundary region
-    localN += localmesh->xstart * (localmesh->LocalNz);
+    localN += localmesh->xstart * local_nz;
   }
   if (last_x) {
     // If on last processor add on width of boundary region
-    localN += localmesh->xstart * (localmesh->LocalNz);
+    localN += localmesh->xstart * local_nz;
   }
 
   // Calculate 'size' (the total number of points in physical grid)
@@ -134,7 +135,7 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   }
 
   // Calculate total (physical) grid dimensions
-  meshz = localmesh->LocalNz;
+  meshz = local_nz;
   meshx = size / meshz;
 
   // Create PETSc type of vectors for the solution and the RHS vector
@@ -165,39 +166,39 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
     const int second_first_off = first_x ? 0 : 5;
     const int second_last_off = last_x ? 0 : 5;
 
-    for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
+    for (int i = 0; i <= local_nz; i++) {
       d_nnz[i] = 15;
       d_nnz[localN - 1 - i] = 15;
       o_nnz[i] = first_first_off;
       o_nnz[localN - 1 - i] = first_last_off;
     }
-    for (int i = (localmesh->LocalNz); i < 2 * (localmesh->LocalNz); i++) {
+    for (int i = local_nz; i < 2 * local_nz; i++) {
       d_nnz[i] = 20;
       d_nnz[localN - 1 - i] = 20;
       o_nnz[i] = second_first_off;
       o_nnz[localN - 1 - i] = second_last_off;
     }
 
-    for (int i = 2 * (localmesh->LocalNz); i < localN - (2 * localmesh->LocalNz); i++) {
+    for (int i = 2 * local_nz; i < localN - (2 * local_nz); i++) {
       d_nnz[i] = 25;
       d_nnz[localN - 1 - i] = 25;
       o_nnz[i] = 0;
       o_nnz[localN - 1 - i] = 0;
     }
   } else {
-    // first and last localmesh->LocalNz entries are the edge x-values that
+    // first and last local_nz entries are the edge x-values that
     // (may) have 'off-diagonal' components (i.e. on another processor)
     const int first_off = first_x ? 0 : 3;
     const int last_off = last_x ? 0 : 3;
 
-    for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
+    for (int i = 0; i <= local_nz; i++) {
       d_nnz[i] = 6;
       d_nnz[localN - 1 - i] = 6;
       o_nnz[i] = first_off;
       o_nnz[localN - 1 - i] = last_off;
     }
 
-    for (int i = localmesh->LocalNz; i < localN - (localmesh->LocalNz); i++) {
+    for (int i = local_nz; i < localN - local_nz; i++) {
       d_nnz[i] = 9;
       d_nnz[localN - 1 - i] = 9;
       o_nnz[i] = 0;
@@ -639,7 +640,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
 
     if (i != Iend) {
-      throw BoutException("Petsc index sanity check failed");
+      throw BoutException("Petsc index sanity check failed: i={} != Iend={}", i, Iend);
     }
 
     // Assemble Matrix
@@ -809,9 +810,13 @@ void LaplacePetsc::Element(int i, int x, int z, int xshift, int zshift, PetscSca
   // Need to convert LOCAL x to GLOBAL x in order to correctly calculate
   // PETSC Matrix Index.
   int xoffset = Istart / meshz;
-  if (Istart % meshz != 0) {
-    throw BoutException("Petsc index sanity check 3 failed");
+#if CHECK > 2
+  const int rem = Istart % meshz;
+  if (rem != 0) {
+    throw BoutException("Petsc index sanity check 3 failed: Istart={} % meshz={} == {}",
+                        Istart, meshz, rem);
   }
+#endif
 
   // Calculate the row to be set
   int row_new = x + xshift; // should never be out of range.
@@ -820,7 +825,7 @@ void LaplacePetsc::Element(int i, int x, int z, int xshift, int zshift, PetscSca
   }
 
   // Calculate the column to be set
-  int col_new = z + zshift;
+  int col_new = z + zshift - localmesh->zstart;
   if (col_new < 0) {
     col_new += meshz;
   } else if (col_new > meshz - 1) {
