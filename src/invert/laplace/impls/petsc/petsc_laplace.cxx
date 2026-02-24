@@ -38,6 +38,8 @@
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
+#include <vector>
+
 #define KSP_RICHARDSON "richardson"
 #define KSP_CHEBYSHEV "chebyshev"
 #define KSP_CG "cg"
@@ -134,18 +136,14 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
 
   const bool first_x = localmesh->firstX();
   const bool last_x = localmesh->lastX();
+  // Pre allocate memory. See MatMPIAIJSetPreallocation docs for more info
+  // Number of non-zero elements in each row of matrix owned by this processor
+  // ("diagonal submatrices")
+  std::vector<PetscInt> d_nnz(localN, 0);
+  // Number of non-zero elements in each row of matrix owned by other processors
+  // ("offdiagonal submatrices")
+  std::vector<PetscInt> o_nnz(localN, 0);
 
-  /* Pre allocate memory
-   * nnz denotes an array containing the number of non-zeros in the various rows
-   * for
-   * d_nnz - The diagonal terms in the matrix
-   * o_nnz - The off-diagonal terms in the matrix (needed when running in
-   *         parallel)
-   */
-  PetscInt *d_nnz = nullptr;
-  PetscInt *o_nnz = nullptr;
-  PetscMalloc((localN) * sizeof(PetscInt), &d_nnz);
-  PetscMalloc((localN) * sizeof(PetscInt), &o_nnz);
   if (fourth_order) {
     // first and last 2*localmesh-LocalNz entries are the edge x-values that
     // (may) have 'off-diagonal' components (i.e. on another processor)
@@ -194,17 +192,14 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
       o_nnz[localN - 1 - i] = 0;
     }
   }
-  // Use d_nnz and o_nnz for preallocating the matrix
-  if (localmesh->firstX() && localmesh->lastX()) {
+
+  if (first_x and last_x) {
     // Only one processor in X
-    MatSeqAIJSetPreallocation(MatA, 0, d_nnz);
+    MatSeqAIJSetPreallocation(MatA, 0, d_nnz.data());
   } else {
-    MatMPIAIJSetPreallocation(MatA, 0, d_nnz, 0, o_nnz);
+    MatMPIAIJSetPreallocation(MatA, 0, d_nnz.data(), 0, o_nnz.data());
   }
 
-  // Free the d_nnz and o_nnz arrays, as these are will not be used anymore
-  PetscFree(d_nnz);
-  PetscFree(o_nnz);
   // Sets up the internal matrix data structures for the later use.
   MatSetUp(MatA);
 
