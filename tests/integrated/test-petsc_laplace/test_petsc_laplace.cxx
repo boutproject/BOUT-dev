@@ -186,7 +186,7 @@ int main(int argc, char** argv) {
 #endif
 
     // Preconditioner to use for 3D metrics
-    constexpr auto petsc_pc = petsc_has_mumps ? "mumps" : "lu";
+    constexpr auto petsc_pc = petsc_has_mumps ? "mumps" : "sor";
 
     auto& options_2nd = Options::root()["petsc2nd"];
     if constexpr (bout::build::use_metric_3d) {
