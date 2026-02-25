@@ -313,9 +313,7 @@ show :
   # Look for petscvec first, if it doesn't exist, we must be using single-library
   petsc_find_library(VEC petscvec)
   if(PETSC_LIBRARY_VEC)
-    petsc_find_library(
-      SYS "petscsys;petsc"
-    )
+    petsc_find_library(SYS "petscsys;petsc")
     # libpetscsys is called libpetsc prior to 3.1 (when single-library was introduced)
     petsc_find_library(MAT petscmat)
     petsc_find_library(DM petscdm)

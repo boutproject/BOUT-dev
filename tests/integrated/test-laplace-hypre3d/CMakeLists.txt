@@ -5,5 +5,4 @@ bout_add_integrated_test(
               data_slab_core/BOUT.inp data_slab_sol/BOUT.inp
   USE_RUNTEST
   REQUIRES BOUT_HAS_HYPRE
-  REQUIRES BOUT_RUN_ALL_TESTS
 )
