@@ -372,6 +372,7 @@ set(BOUT_SOURCES
     ./src/sys/options/options_adios.hxx
     ./src/sys/optionsreader.cxx
     ./src/sys/output.cxx
+    ./src/sys/output_bout_types.cxx
     ./src/sys/petsclib.cxx
     ./src/sys/range.cxx
     ./src/sys/slepclib.cxx

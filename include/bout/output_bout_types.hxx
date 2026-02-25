@@ -60,12 +60,23 @@ struct fmt::formatter<SpecificInd<N>> {
   }
 };
 
+namespace bout {
+namespace details {
+template <class T>
+/// Transpose a region so that it iterates in Z first, then Y, then X
+///
+/// Caution: this is the most inefficient memory order!
+auto region_transpose(const Region<T>& region) -> Region<T>;
+}
+} // namespace bout
+
 /// Formatter for Fields
 ///
 /// Format specification:
 ///
 /// - ``n``: Don't show indices
 /// - ``r'<region name>'``: Use given region (default: ``RGN_ALL``)
+/// - ``T``: Transpose field so X is first dimension
 template <class T>
 struct fmt::formatter<T, std::enable_if_t<bout::utils::is_Field_v<T>, char>> {
 private:
@@ -75,6 +86,7 @@ private:
   std::string_view region = default_region;
 
   bool show_indices = true;
+  bool transpose = false;
 
 public:
   constexpr auto parse(format_parse_context& ctx) {
@@ -109,6 +121,10 @@ public:
         show_indices = false;
         ++it;
         break;
+      case 'T':
+        transpose = true;
+        ++it;
+        break;
       }
     }
 
@@ -126,7 +142,9 @@ public:
   auto format(const T& f, format_context& ctx) const -> format_context::iterator {
     const auto* mesh = f.getMesh();
 
-    const auto rgn = f.getRegion(std::string(region));
+    const auto rgn_ = f.getRegion(std::string(region));
+    const auto rgn = transpose ? bout::details::region_transpose(rgn_) : rgn_;
+
     const auto i = rgn.begin();
     int previous_x = i->x();
     int previous_y = i->y();
@@ -138,13 +156,13 @@ public:
       const auto iz = i.z();
 
       if (iz > previous_z) {
-        format_to(ctx.out(), " ");
+        format_to(ctx.out(), transpose ? "\n\n" : " ");
       }
       if (iy > previous_y) {
         format_to(ctx.out(), "\n");
       }
       if (ix > previous_x) {
-        format_to(ctx.out(), "\n\n");
+        format_to(ctx.out(), transpose ? " " : "\n\n");
       }
 
       if (show_indices) {
