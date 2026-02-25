@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 project(preconditioning-wave LANGUAGES CXX)
 
-if (NOT TARGET bout++::bout++)
+if(NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
