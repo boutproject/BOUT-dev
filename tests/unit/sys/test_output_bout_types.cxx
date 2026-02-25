@@ -149,6 +149,36 @@ TEST_F(FormatFieldTest, Field3DRegionSpec) {
   EXPECT_EQ(out, expected);
 }
 
+TEST_F(FormatFieldTest, NoIndices) {
+  Field3D f{bout::globals::mesh};
+
+  fillField(f, {{{0., 1}, {2., 3}, {4., 5}, {6., 7}, {8., 9}},
+                {{10., 11}, {12., 13}, {14., 15}, {16., 17}, {18., 19}},
+                {{20., 21}, {22., 23}, {24., 25}, {26., 27}, {28., 29}}});
+
+  const auto out = fmt::format("{:n}", f);
+
+  const std::string expected =
+      R"(0; 1;
+2; 3;
+4; 5;
+6; 7;
+8; 9;
+
+10; 11;
+12; 13;
+14; 15;
+16; 17;
+18; 19;
+
+20; 21;
+22; 23;
+24; 25;
+26; 27;
+28; 29;)";
+  EXPECT_EQ(out, expected);
+}
+
 TEST_F(FormatFieldTest, FieldPerp) {
   Field3D f{bout::globals::mesh};
 

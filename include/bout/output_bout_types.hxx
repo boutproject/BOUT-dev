@@ -61,6 +61,11 @@ struct fmt::formatter<SpecificInd<N>> {
 };
 
 /// Formatter for Fields
+///
+/// Format specification:
+///
+/// - ``n``: Don't show indices
+/// - ``r'<region name>'``: Use given region (default: ``RGN_ALL``)
 template <class T>
 struct fmt::formatter<T, std::enable_if_t<bout::utils::is_Field_v<T>, char>> {
 private:
@@ -68,6 +73,8 @@ private:
 
   static constexpr auto default_region = "RGN_ALL";
   std::string_view region = default_region;
+
+  bool show_indices = true;
 
 public:
   constexpr auto parse(format_parse_context& ctx) {
@@ -78,26 +85,34 @@ public:
       return underlying.parse(ctx);
     }
 
-    // Other cases handled explicitly below
-    // NOLINTNEXTLINE(bugprone-switch-missing-default-case)
-    switch (*it) {
-    case 'r':
-      ++it;
-      if (*it != '\'') {
-        throw fmt::format_error("invalid format for Field");
-      }
-      const auto* rgn_start = ++it;
-      std::size_t size = 0;
-      while (*it != '\'') {
-        ++size;
+    while (it != end and *it != ':' and *it != '}') {
+      // Other cases handled explicitly below
+      // NOLINTNEXTLINE(bugprone-switch-missing-default-case)
+      switch (*it) {
+      case 'r':
         ++it;
+        if (*it != '\'') {
+          throw fmt::format_error("invalid format for Field");
+        }
+        {
+          const auto* rgn_start = ++it;
+          std::size_t size = 0;
+          while (*it != '\'') {
+            ++size;
+            ++it;
+          }
+          region = std::string_view(rgn_start, size);
+        }
+        ++it;
+        break;
+      case 'n':
+        show_indices = false;
+        ++it;
+        break;
       }
-      region = std::string_view(rgn_start, size);
-      ++it;
-      break;
     }
 
-    if (it != end && *it != '}') {
+    if (it != end and *it != '}') {
       if (*it != ':') {
         throw fmt::format_error("invalid format specifier");
       }
@@ -132,7 +147,9 @@ public:
         format_to(ctx.out(), "\n\n");
       }
 
-      format_to(ctx.out(), "{:c}: ", i);
+      if (show_indices) {
+        format_to(ctx.out(), "{:c}: ", i);
+      }
       underlying.format(f[i], ctx);
       format_to(ctx.out(), ";");
       previous_x = ix;
