@@ -983,19 +983,16 @@ void BoutMesh::createCommunicators() {
     }
   }
   else if (mesh_topology == MeshTopology::SF){
-    //Will be closer to SN since there is only a outter SOL region.
+    //Will be closer to SN since there is only 1 outter SOL region.
     TRACE("Creating Outer SOL communicators for Snowflake operation");
 
       for (int i = 0; i < NXPE; i++) {
-        // Outer SOL in Snowflake: below the lower X-point
+        // Outer SOL in Snowflake
         proc[0] = PROC_NUM(i, 0);
         proc[1] = PROC_NUM(i, YPROC(ny_inner - 1));
-        proc[2] = NXPE;
+        //proc[2] = NXPE;
 
         output_debug << "SF outer SOL " << proc[0] << ", " << proc[1] << endl;
-
-        MPI_Group_range_incl(group_world, 1, &proc, &group);
-        MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
 
         if (MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS) {
           throw BoutException("MPI_Group_range_incl failed for xp = {:d}", NXPE);
@@ -1135,7 +1132,7 @@ void BoutMesh::createCommunicators() {
 
         TRACE("Creating Snowflake PF communicators for xp={:d}", i);
 
-        if (i >= 0 && i <= ixseps1) {
+        if (i >= 0 && i <= ixseps2) {
 
           // PF_W
           MPI_Group pf_group = MPI_GROUP_EMPTY;
@@ -1179,7 +1176,7 @@ void BoutMesh::createCommunicators() {
         ////////////////////////////////////////////////////
         // PF_E
 
-        if (i >= 0 && i <= ixseps1) {
+        if (i >= 0 && i <= ixseps2) {
 
           MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -1221,7 +1218,7 @@ void BoutMesh::createCommunicators() {
         ////////////////////////////////////////////////////
         // PF_C
 
-        if (i >= ixseps1 && i <= ixseps2) {
+        if (i >= ixseps2 && i <= ixseps1) {
 
           MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -1263,7 +1260,7 @@ void BoutMesh::createCommunicators() {
         ////////////////////////////////////////////////////
         // PF_S
 
-        if (i >= ixseps1 && i <= nx - 1) {
+        if (i >= ixseps2 && i <= nx - 1) {
 
           MPI_Group pf_group = MPI_GROUP_EMPTY;
 
@@ -2651,10 +2648,12 @@ void BoutMesh::topology() {
     /********* SF CONNECTIONS **********/
     default_connections();
     set_connection(jyseps1_2 + 1, jyseps2_2, 0, ixseps_lower,
-                   ixseps1 <= ixseps2);                        /* E_PFR */
+                   ixseps2 <= ixseps1);                        /* E_PFR */
+    set_connection(jyseps1_2, jyseps2_2 + 1, 0, ixseps_lower); /* W_PFR at E_PFR boundary */
     //set_connection(jyseps2_1 + 1, jyseps1_2, ixseps_lower, ixseps_upper); /* C_PFR  */
     set_connection(jyseps1_1 + 1, jyseps2_1, 0, ixseps_upper); /* Core  */
-    
+    set_connection(jyseps1_1, jyseps2_1 + 1, 0, ixseps_upper); /* W_PFR at Core boundary */
+
     // Snowflake has multiple physical targets, but only one Y-boundary.
     // Other targets are reached via X-connectivity.
     // Add East target
