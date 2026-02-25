@@ -1,5 +1,6 @@
 #include "fake_mesh_fixture.hxx"
 #include "test_extras.hxx"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include "bout/field2d.hxx"
@@ -287,4 +288,33 @@ TEST_F(FormatFieldTest, FieldPerpSpec) {
 
 (2, 0): 2.0e+01; (2, 1): 2.1e+01;)";
   EXPECT_EQ(out, expected);
+}
+
+using FormatFieldTestLargerMesh = FakeMeshFixture_tmpl<10, 10, 10>;
+
+TEST_F(FormatFieldTestLargerMesh, Field3DEdges) {
+  Field3D f{1., bout::globals::mesh};
+
+  const auto out = fmt::format("{:e1}", f);
+
+  const std::string expected =
+      R"((0, 0, 0): 1; ... (0, 0, 9): 1;
+...
+(0, 9, 0): 1; ... (0, 9, 9): 1;
+
+...
+
+(9, 0, 0): 1; ... (9, 0, 9): 1;
+...
+(9, 9, 0): 1; ... (9, 9, 9): 1;)";
+  EXPECT_EQ(out, expected);
+}
+
+TEST_F(FormatFieldTestLargerMesh, Field3DFull) {
+  Field3D f{1., bout::globals::mesh};
+
+  const auto out = fmt::format("{:f}", f);
+
+  using namespace ::testing;
+  EXPECT_THAT(out, Not(HasSubstr("...")));
 }
