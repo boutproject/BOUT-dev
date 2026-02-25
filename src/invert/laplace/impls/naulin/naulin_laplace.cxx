@@ -143,9 +143,9 @@
 #include <bout/derivs.hxx>
 #include <bout/difops.hxx>
 #include <bout/globals.hxx>
+#include <bout/invert_laplace.hxx>
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
-#include <bout/invert_laplace.hxx>
 
 #include "naulin_laplace.hxx"
 

@@ -823,10 +823,10 @@ Field3DParallel Field3D::asField3DParallel() {
     allocate();
     for (size_t i = 0; i < numberParallelSlices(); ++i) {
       if (yup(i).isAllocated()) {
-	yup(i).allocate();
+        yup(i).allocate();
       }
       if (ydown(i).isAllocated()) {
-	ydown(i).allocate();
+        ydown(i).allocate();
       }
     }
   }
