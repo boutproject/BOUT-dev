@@ -43,6 +43,9 @@ public:
     GlobalNx = nx;
     GlobalNy = ny;
     GlobalNz = nz;
+    GlobalNxNoBoundaries = nx - 2;
+    GlobalNyNoBoundaries = ny - 2;
+    GlobalNzNoBoundaries = nz;
     LocalNx = nx;
     LocalNy = ny;
     LocalNz = nz;

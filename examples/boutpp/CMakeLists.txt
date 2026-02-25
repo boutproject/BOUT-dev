@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-if (NOT TARGET bout++::bout++)
+if(NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
