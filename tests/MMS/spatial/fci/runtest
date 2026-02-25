@@ -32,6 +32,11 @@ OPERATORS = (
     "FV_div_par_mod",
     "FV_div_par_fvv",
 )
+
+# div_par_fvv is also tested in ../finite-volume, where 1.5th order is achieved
+operator_order = {
+    "FV_div_par_fvv": 1,
+}
 # Note that we need at least _2_ interior points for hermite spline
 # interpolation due to an awkwardness with the boundaries
 NX = 4
@@ -162,7 +167,10 @@ def check_fci_operators(name: str, case: dict) -> bool:
     for operator in OPERATORS:
         test_name = f"{operator} {name}"
         success = assert_convergence(
-            final_errors[operator]["l_2"], dx, test_name, order
+            final_errors[operator]["l_2"],
+            dx,
+            test_name,
+            operator_order.get(operator, order),
         )
         if not success:
             failures.append(test_name)
