@@ -427,6 +427,7 @@ public:
     ASSERT2(bout::utils::is_Field3D_v<T>); // Should never need to call this with Field2D
 
     auto* theMesh = var.getMesh();
+    ASSERT2(theMesh->getNZPE() == 1); // Only works if serial in Z for FFTs
 
     // Calculate how many Z wavenumbers will be removed
     const int ncz = theMesh->getNpoints(direction);
@@ -493,6 +494,7 @@ public:
     ASSERT2(bout::utils::is_Field3D_v<T>); // Should never need to call this with Field2D
 
     auto* theMesh = var.getMesh();
+    ASSERT2(theMesh->getNZPE() == 1); // Only works if serial in Z for FFTs
 
     // Calculate how many Z wavenumbers will be removed
     const int ncz = theMesh->getNpoints(direction);

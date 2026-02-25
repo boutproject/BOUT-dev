@@ -57,6 +57,8 @@ If you want the old setting, you have to specify mesh:symmetricGlobalY=false in 
                 << optionfile << "\n";
   }
   OPTION(options, symmetricGlobalY, true);
+  OPTION(options, symmetricGlobalZ, false); // The default should be updated to true but
+                                            // this breaks backwards compatibility
 
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
@@ -528,9 +530,10 @@ int BoutMesh::load() {
     findProcessorSplit();
   }
 
-  // Get X and Y processor indices
+  // Get X, Y, Z processor indices
   PE_YIND = MYPE / NXPE;
   PE_XIND = MYPE % NXPE;
+  PE_ZIND = 0;
 
   // Set the other grid sizes from nx, ny, nz
   setDerivedGridSizes();
@@ -1536,13 +1539,17 @@ int BoutMesh::wait(comm_handle handle) {
  *             Non-Local Communications
  ***************************************************************/
 
-int BoutMesh::getNXPE() { return NXPE; }
+int BoutMesh::getNXPE() const { return NXPE; }
 
-int BoutMesh::getNYPE() { return NYPE; }
+int BoutMesh::getNYPE() const { return NYPE; }
 
-int BoutMesh::getXProcIndex() { return PE_XIND; }
+int BoutMesh::getNZPE() const { return NZPE; }
 
-int BoutMesh::getYProcIndex() { return PE_YIND; }
+int BoutMesh::getXProcIndex() const { return PE_XIND; }
+
+int BoutMesh::getYProcIndex() const { return PE_YIND; }
+
+int BoutMesh::getZProcIndex() const { return PE_ZIND; }
 
 /****************************************************************
  *                 X COMMUNICATIONS
@@ -1706,35 +1713,32 @@ int BoutMesh::PROC_NUM(int xind, int yind) const {
     return -1;
   }
 
-  return yind * NXPE + xind;
+  return (yind * NXPE) + xind;
 }
 
-/// Returns the global X index given a local index
-int BoutMesh::XGLOBAL(BoutReal xloc, BoutReal& xglo) const {
-  xglo = xloc + PE_XIND * MXSUB;
-  return static_cast<int>(xglo);
+BoutReal BoutMesh::getGlobalXIndex(BoutReal xloc) const {
+  return xloc + (PE_XIND * MXSUB);
 }
 
-int BoutMesh::getGlobalXIndex(int xlocal) const { return xlocal + PE_XIND * MXSUB; }
+int BoutMesh::getGlobalXIndex(int xlocal) const { return xlocal + (PE_XIND * MXSUB); }
 
 int BoutMesh::getGlobalXIndexNoBoundaries(int xlocal) const {
-  return xlocal + PE_XIND * MXSUB - MXG;
+  return xlocal + (PE_XIND * MXSUB) - MXG;
 }
 
-int BoutMesh::getLocalXIndex(int xglobal) const { return xglobal - PE_XIND * MXSUB; }
+int BoutMesh::getLocalXIndex(int xglobal) const { return xglobal - (PE_XIND * MXSUB); }
 
 int BoutMesh::getLocalXIndexNoBoundaries(int xglobal) const {
-  return xglobal - PE_XIND * MXSUB + MXG;
+  return xglobal - (PE_XIND * MXSUB) + MXG;
 }
 
-int BoutMesh::YGLOBAL(BoutReal yloc, BoutReal& yglo) const {
-  yglo = yloc + PE_YIND * MYSUB - MYG;
-  return static_cast<int>(yglo);
+BoutReal BoutMesh::getGlobalYIndex(BoutReal yloc) const {
+  return yloc + (PE_YIND * MYSUB) - MYG;
 }
 
 int BoutMesh::getGlobalYIndex(int ylocal) const {
-  int yglobal = ylocal + PE_YIND * MYSUB;
-  if (jyseps1_2 > jyseps2_1 and PE_YIND * MYSUB + 2 * MYG + 1 > ny_inner) {
+  int yglobal = ylocal + (PE_YIND * MYSUB);
+  if (jyseps1_2 > jyseps2_1 and (PE_YIND * MYSUB) + (2 * MYG) + 1 > ny_inner) {
     // Double null, and we are past the upper target
     yglobal += 2 * MYG;
   }
@@ -1742,12 +1746,12 @@ int BoutMesh::getGlobalYIndex(int ylocal) const {
 }
 
 int BoutMesh::getGlobalYIndexNoBoundaries(int ylocal) const {
-  return ylocal + PE_YIND * MYSUB - MYG;
+  return ylocal + (PE_YIND * MYSUB) - MYG;
 }
 
 int BoutMesh::getLocalYIndex(int yglobal) const {
-  int ylocal = yglobal - PE_YIND * MYSUB;
-  if (jyseps1_2 > jyseps2_1 and PE_YIND * MYSUB + 2 * MYG + 1 > ny_inner) {
+  int ylocal = yglobal - (PE_YIND * MYSUB);
+  if (jyseps1_2 > jyseps2_1 and (PE_YIND * MYSUB) + (2 * MYG) + 1 > ny_inner) {
     // Double null, and we are past the upper target
     ylocal -= 2 * MYG;
   }
@@ -1755,18 +1759,24 @@ int BoutMesh::getLocalYIndex(int yglobal) const {
 }
 
 int BoutMesh::getLocalYIndexNoBoundaries(int yglobal) const {
-  return yglobal - PE_YIND * MYSUB + MYG;
+  return yglobal - (PE_YIND * MYSUB) + MYG;
 }
 
-int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + yproc * MYSUB - MYG; }
+int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + (yproc * MYSUB) - MYG; }
 
-int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - yproc * MYSUB + MYG; }
+int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - (yproc * MYSUB) + MYG; }
 
-int BoutMesh::getGlobalZIndex(int zlocal) const { return zlocal; }
+int BoutMesh::getGlobalZIndex(int zlocal) const { return zlocal + (PE_ZIND * MZSUB); }
 
-int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const { return zlocal; }
+int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const {
+  return zlocal + (PE_ZIND * MZSUB) - MZG;
+}
 
 int BoutMesh::getLocalZIndex(int zglobal) const { return zglobal; }
+
+BoutReal BoutMesh::getGlobalZIndex(BoutReal zloc) const {
+  return zloc + (PE_ZIND * MZSUB);
+}
 
 int BoutMesh::getLocalZIndexNoBoundaries(int zglobal) const { return zglobal; }
 
@@ -1835,16 +1845,15 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
 
 BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
                    int nype, int pe_xind, int pe_yind, bool symmetric_X, bool symmetric_Y,
-                   bool periodicX_, int ixseps1_, int ixseps2_, int jyseps1_1_,
+                   bool periodic_X_, int ixseps1_, int ixseps2_, int jyseps1_1_,
                    int jyseps2_1_, int jyseps1_2_, int jyseps2_2_, int ny_inner_,
                    bool create_regions)
     : nx(input_nx), ny(input_ny), nz(input_nz), NPES(nxpe * nype),
-      MYPE(nxpe * pe_yind + pe_xind), PE_YIND(pe_yind), NYPE(nype), NZPE(1),
-      ixseps1(ixseps1_), ixseps2(ixseps2_), symmetricGlobalX(symmetric_X),
+      MYPE((nxpe * pe_yind) + pe_xind), PE_XIND(pe_xind), NXPE(nxpe), PE_YIND(pe_yind),
+      NYPE(nype), ixseps1(ixseps1_), ixseps2(ixseps2_), symmetricGlobalX(symmetric_X),
       symmetricGlobalY(symmetric_Y), MXG(mxg), MYG(myg), MZG(0) {
-  NXPE = nxpe;
-  PE_XIND = pe_xind;
-  periodicX = periodicX_;
+
+  periodicX = periodic_X_;
   setYDecompositionIndices(jyseps1_1_, jyseps2_1_, jyseps1_2_, jyseps2_2_, ny_inner_);
   setDerivedGridSizes();
   topology();
@@ -3163,8 +3172,7 @@ BoutReal BoutMesh::GlobalX(int jx) const {
 BoutReal BoutMesh::GlobalX(BoutReal jx) const {
 
   // Get global X index as a BoutReal
-  BoutReal xglo;
-  XGLOBAL(jx, xglo);
+  const BoutReal xglo = getGlobalXIndex(jx);
 
   if (symmetricGlobalX) {
     // With this definition the boundary sits dx/2 away form the first/last inner points
@@ -3218,8 +3226,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
 BoutReal BoutMesh::GlobalY(BoutReal jy) const {
 
   // Get global Y index as a BoutReal
-  BoutReal yglo;
-  YGLOBAL(jy, yglo);
+  BoutReal yglo = getGlobalYIndex(jy);
 
   if (symmetricGlobalY) {
     BoutReal yi = yglo;
@@ -3259,6 +3266,28 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
   }
 
   return yglo / static_cast<BoutReal>(nycore);
+}
+
+BoutReal BoutMesh::GlobalZ(int jz) const {
+  if (symmetricGlobalZ) {
+    // With this definition the boundary sits dz/2 away form the first/last inner points
+    return (0.5 + getGlobalZIndexNoBoundaries(jz) - (nz - MZ) * 0.5)
+           / static_cast<BoutReal>(MZ);
+  }
+  return static_cast<BoutReal>(getGlobalZIndexNoBoundaries(jz))
+         / static_cast<BoutReal>(MZ);
+}
+
+BoutReal BoutMesh::GlobalZ(BoutReal jz) const {
+
+  // Get global Z index as a BoutReal
+  const BoutReal zglo = getGlobalZIndex(jz);
+
+  if (symmetricGlobalZ) {
+    // With this definition the boundary sits dz/2 away form the first/last inner points
+    return (0.5 + zglo - (nz - MZ) * 0.5) / static_cast<BoutReal>(MZ);
+  }
+  return zglo / static_cast<BoutReal>(MZ);
 }
 
 void BoutMesh::outputVars(Options& output_options) {
