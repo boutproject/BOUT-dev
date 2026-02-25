@@ -12,6 +12,7 @@
 #include "bout/traits.hxx"
 
 #include <fmt/base.h>
+#include <fmt/color.h>
 #include <fmt/format.h>
 
 #include <cstddef>
@@ -67,7 +68,9 @@ template <class T>
 ///
 /// Caution: this is the most inefficient memory order!
 auto region_transpose(const Region<T>& region) -> Region<T>;
-}
+
+auto colour(BoutReal value, BoutReal min, BoutReal max) -> fmt::text_style;
+} // namespace details
 } // namespace bout
 
 /// Formatter for Fields
@@ -77,6 +80,7 @@ auto region_transpose(const Region<T>& region) -> Region<T>;
 /// - ``n``: Don't show indices
 /// - ``r'<region name>'``: Use given region (default: ``RGN_ALL``)
 /// - ``T``: Transpose field so X is first dimension
+/// - ``#``: Plot slices as 2D heatmap
 template <class T>
 struct fmt::formatter<T, std::enable_if_t<bout::utils::is_Field_v<T>, char>> {
 private:
@@ -87,6 +91,7 @@ private:
 
   bool show_indices = true;
   bool transpose = false;
+  bool plot = false;
 
 public:
   constexpr auto parse(format_parse_context& ctx) {
@@ -125,6 +130,11 @@ public:
         transpose = true;
         ++it;
         break;
+      case '#':
+        plot = true;
+        show_indices = false;
+        ++it;
+        break;
       }
     }
 
@@ -140,15 +150,30 @@ public:
   }
 
   auto format(const T& f, format_context& ctx) const -> format_context::iterator {
+    using namespace bout::details;
+
     const auto* mesh = f.getMesh();
 
-    const auto rgn_ = f.getRegion(std::string(region));
-    const auto rgn = transpose ? bout::details::region_transpose(rgn_) : rgn_;
+    const auto rgn_str = std::string{region};
+    const auto rgn_ = f.getRegion(rgn_str);
+    const auto rgn = transpose ? region_transpose(rgn_) : rgn_;
 
     const auto i = rgn.begin();
     int previous_x = i->x();
     int previous_y = i->y();
     int previous_z = i->z();
+
+    // Range of the data for plotting
+    BoutReal plot_min = 0.0;
+    BoutReal plot_max = 0.0;
+    if (plot) {
+      plot_min = min(f, false, rgn_str);
+      plot_max = max(f, false, rgn_str);
+    }
+
+    // Separators
+    const auto* const block_sep = "\n\n";
+    const auto* const item_sep = plot ? "" : " ";
 
     BOUT_FOR(i, rgn) {
       const auto ix = i.x();
@@ -156,20 +181,24 @@ public:
       const auto iz = i.z();
 
       if (iz > previous_z) {
-        format_to(ctx.out(), transpose ? "\n\n" : " ");
+        format_to(ctx.out(), transpose ? block_sep : item_sep);
       }
       if (iy > previous_y) {
         format_to(ctx.out(), "\n");
       }
       if (ix > previous_x) {
-        format_to(ctx.out(), transpose ? " " : "\n\n");
+        format_to(ctx.out(), transpose ? item_sep : block_sep);
       }
 
       if (show_indices) {
         format_to(ctx.out(), "{:c}: ", i);
       }
-      underlying.format(f[i], ctx);
-      format_to(ctx.out(), ";");
+      if (plot) {
+        format_to(ctx.out(), "{}", styled("█", colour(f[i], plot_min, plot_max)));
+      } else {
+        underlying.format(f[i], ctx);
+        format_to(ctx.out(), ";");
+      }
       previous_x = ix;
       previous_y = iy;
       previous_z = iz;
