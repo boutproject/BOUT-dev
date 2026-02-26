@@ -106,7 +106,7 @@ public:
 
   GlobalField3DAccessInstance(const GlobalField3DAccess* gfa,
                               std::vector<BoutReal>&& data)
-    : gfa(*gfa), data(std::move(data)){};
+      : gfa(*gfa), data(std::move(data)){};
 
 private:
   const GlobalField3DAccess& gfa;
@@ -216,7 +216,7 @@ private:
     }
     std::vector<MPI_Request> reqs2(toSend.size());
     int cnt = 0;
-    for ([[maybe_unused]] auto *dummy : reqs) {
+    for ([[maybe_unused]] auto* dummy : reqs) {
       int ind{0};
       auto ret = MPI_Waitany(reqs.size(), reqs.data(), &ind, MPI_STATUS_IGNORE);
       ASSERT0(ret == MPI_SUCCESS);

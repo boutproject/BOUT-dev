@@ -2059,9 +2059,10 @@ const Coordinates::FieldMetric& Coordinates::g_22_ylow() const {
   }
   _g_22_ylow.emplace(emptyFrom(g_22));
   //_g_22_ylow->setLocation(CELL_YLOW);
-  auto *mesh = Bxy.getMesh();
+  auto* mesh = Bxy.getMesh();
   if (Bxy.isFci()) {
-    if (mesh->get(_g_22_ylow.value(), "g_22_cell_ylow", 0.0, false) != 0) { //, CELL_YLOW)) {
+    if (mesh->get(_g_22_ylow.value(), "g_22_cell_ylow", 0.0, false)
+        != 0) { //, CELL_YLOW)) {
       throw BoutException("The grid file does not contain `g_22_cell_ylow`.");
     }
   } else {
@@ -2079,10 +2080,11 @@ const Coordinates::FieldMetric& Coordinates::g_22_yhigh() const {
   }
   _g_22_yhigh.emplace(emptyFrom(g_22));
   //_g_22_yhigh->setLocation(CELL_YHIGH);
-  auto *mesh = Bxy.getMesh();
+  auto* mesh = Bxy.getMesh();
   if (Bxy.isFci()) {
     if (mesh->get(_g_22_yhigh.value(), "g_22_cell_yhigh", 0.0,
-                  false) != 0) { //, CELL_YHIGH)) {
+                  false)
+        != 0) { //, CELL_YHIGH)) {
       throw BoutException("The grid file does not contain `g_22_cell_yhigh`.");
     }
   } else {
