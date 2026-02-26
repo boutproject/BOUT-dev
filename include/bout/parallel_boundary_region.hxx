@@ -3,6 +3,12 @@
 
 #include "bout/boundary_region.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/build_defines.hxx"
+#include "bout/field2d.hxx"
+#include "bout/region.hxx"
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <functional>
 #include <vector>
 

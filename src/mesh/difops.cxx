@@ -25,6 +25,8 @@
 
 #include "bout/build_defines.hxx"
 
+#include "bout/index_derivs_interface.hxx"
+#include "bout/region.hxx"
 #include <bout/assert.hxx>
 #include <bout/derivs.hxx>
 #include <bout/difops.hxx>

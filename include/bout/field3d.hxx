@@ -20,6 +20,10 @@
  *
  **************************************************************************/
 
+#include "bout/field_data.hxx"
+#include "bout/traits.hxx"
+#include <cstddef>
+#include <string>
 class Field3D;
 
 #pragma once

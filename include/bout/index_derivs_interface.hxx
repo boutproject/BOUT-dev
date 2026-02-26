@@ -29,6 +29,8 @@
 #ifndef __INDEX_DERIVS_INTERFACE_HXX__
 #define __INDEX_DERIVS_INTERFACE_HXX__
 
+#include "bout/boutexception.hxx"
+#include "bout/field3d.hxx"
 #include "bout/traits.hxx"
 #include <bout/bout_types.hxx>
 #include <bout/deriv_store.hxx>

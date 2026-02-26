@@ -26,6 +26,9 @@
 
 #include "bout/build_defines.hxx"
 #include "bout/mask.hxx"
+#include <array>
+#include <petscmat.h>
+#include <petscvec.h>
 
 #define USE_NEW_WEIGHTS 1
 #if BOUT_HAS_PETSC

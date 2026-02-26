@@ -24,6 +24,8 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+#include <cstddef>
+#include <optional>
 class Field2D;
 
 #pragma once

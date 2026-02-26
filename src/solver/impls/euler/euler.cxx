@@ -8,6 +8,8 @@
 #include <bout/openmpwrap.hxx>
 #include <bout/output.hxx>
 #include <bout/version.hxx>
+#include <cstdlib>
+#include <memory>
 
 EulerSolver::EulerSolver(Options* options)
     : Solver(options), mxstep((*options)["mxstep"]

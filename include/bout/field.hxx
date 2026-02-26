@@ -24,6 +24,9 @@
  *
  */
 
+#include "bout/build_defines.hxx"
+#include "bout/unused.hxx"
+#include <cstddef>
 class Field;
 
 #ifndef FIELD_H
