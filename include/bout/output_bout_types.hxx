@@ -239,7 +239,7 @@ public:
     bool shown_skip = false;
     constexpr auto skip_sep = "...";
 
-    BOUT_FOR(i, rgn) {
+    BOUT_FOR_SERIAL(i, rgn) {
       const auto ix = i.x();
       const auto iy = i.y();
       const auto iz = i.z();
