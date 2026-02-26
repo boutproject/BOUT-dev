@@ -20,7 +20,7 @@ inline BoutReal dirichlet_o2(BoutReal spacing0, BoutReal value0, BoutReal spacin
 }
 inline BoutReal neumann_o2(BoutReal UNUSED(spacing0), BoutReal value0, BoutReal spacing1,
                            BoutReal value1) {
-  return -spacing1 * value0 + value1;
+  return (-spacing1 * value0) + value1;
 }
 inline BoutReal dirichlet_o3(BoutReal spacing0, BoutReal value0, BoutReal spacing1,
                              BoutReal value1, BoutReal spacing2, BoutReal value2) {

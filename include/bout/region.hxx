@@ -139,7 +139,7 @@ class BoutMask;
   BOUT_FOR_OMP(index, (region), for schedule(BOUT_OPENMP_SCHEDULE) nowait)
 // NOLINTEND(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 
-enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2, IND_GLOBAL_3D };
+enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2, IND_GLOBAL_3D = 3 };
 
 /// Indices base class for Fields -- Regions are dereferenced into these
 ///

@@ -748,7 +748,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
 #else
       KSPSetOperators(ksp, MatA, MatA, DIFFERENT_NONZERO_PATTERN);
 #endif
-      PC pc; // The preconditioner option
+      PC pc = nullptr; // The preconditioner option
 
       if (direct) { // If a direct solver has been chosen
         // Get the preconditioner

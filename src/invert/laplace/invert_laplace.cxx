@@ -31,6 +31,7 @@
  *
  */
 
+#include "bout/index_derivs_interface.hxx"
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/build_defines.hxx>

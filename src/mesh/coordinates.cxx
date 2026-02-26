@@ -4,6 +4,7 @@
  * given the contravariant metric tensor terms
  **************************************************************************/
 
+#include "bout/field3d.hxx"
 #include "bout/region.hxx"
 #include <bout/assert.hxx>
 #include <bout/build_defines.hxx>
@@ -1911,7 +1912,7 @@ const Coordinates::FieldMetric& Coordinates::invSg() const {
 
 const Coordinates::FieldMetric& Coordinates::Jg() const {
   if (not JgCache.has_value()) {
-    auto* coords = this; //
+    const auto* coords = this; //
     // Need to modify yup and ydown fields
     auto Jg = coords->Jxz();
 #if BOUT_USE_METRIC_3D
@@ -2058,9 +2059,9 @@ const Coordinates::FieldMetric& Coordinates::g_22_ylow() const {
   }
   _g_22_ylow.emplace(emptyFrom(g_22));
   //_g_22_ylow->setLocation(CELL_YLOW);
-  auto mesh = Bxy.getMesh();
+  auto *mesh = Bxy.getMesh();
   if (Bxy.isFci()) {
-    if (mesh->get(_g_22_ylow.value(), "g_22_cell_ylow", 0.0, false)) { //, CELL_YLOW)) {
+    if (mesh->get(_g_22_ylow.value(), "g_22_cell_ylow", 0.0, false) != 0) { //, CELL_YLOW)) {
       throw BoutException("The grid file does not contain `g_22_cell_ylow`.");
     }
   } else {
@@ -2078,10 +2079,10 @@ const Coordinates::FieldMetric& Coordinates::g_22_yhigh() const {
   }
   _g_22_yhigh.emplace(emptyFrom(g_22));
   //_g_22_yhigh->setLocation(CELL_YHIGH);
-  auto mesh = Bxy.getMesh();
+  auto *mesh = Bxy.getMesh();
   if (Bxy.isFci()) {
     if (mesh->get(_g_22_yhigh.value(), "g_22_cell_yhigh", 0.0,
-                  false)) { //, CELL_YHIGH)) {
+                  false) != 0) { //, CELL_YHIGH)) {
       throw BoutException("The grid file does not contain `g_22_cell_yhigh`.");
     }
   } else {
@@ -2152,13 +2153,13 @@ void Coordinates::_compute_Jxz_cell_faces() const {
     Coordinates::FieldMetric By_c;
     Coordinates::FieldMetric By_h;
     Coordinates::FieldMetric By_l;
-    if (mesh->get(By_c, "By", 0.0, false, CELL_CENTRE)) {
+    if (mesh->get(By_c, "By", 0.0, false, CELL_CENTRE) != 0) {
       throw BoutException("The grid file does not contain `By`.");
     }
-    if (mesh->get(By_l, "By_cell_ylow", 0.0, false)) { //, CELL_YLOW)) {
+    if (mesh->get(By_l, "By_cell_ylow", 0.0, false) != 0) { //, CELL_YLOW)) {
       throw BoutException("The grid file does not contain `By_cell_ylow`.");
     }
-    if (mesh->get(By_h, "By_cell_yhigh", 0.0, false)) { //, CELL_YHIGH)) {
+    if (mesh->get(By_h, "By_cell_yhigh", 0.0, false) != 0) { //, CELL_YHIGH)) {
       throw BoutException("The grid file does not contain `By_cell_yhigh`.");
     }
     BOUT_FOR(i, By_c.getRegion("RGN_NOY")) {

@@ -1,7 +1,9 @@
 #ifndef BOUT_PAR_BNDRY_H
 #define BOUT_PAR_BNDRY_H
 
+#include "bout/assert.hxx"
 #include "bout/boundary_region.hxx"
+#include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/field2d.hxx"
@@ -10,9 +12,11 @@
 #include <cmath>
 #include <cstdlib>
 #include <functional>
+#include <string>
 #include <vector>
 
 #include "bout/sys/parallel_stencils.hxx"
+#include "bout/utils.hxx"
 #include <bout/field3d.hxx>
 #include <bout/mesh.hxx>
 
@@ -79,7 +83,7 @@ inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc, SheathLimitMode mode) {
     fp = SQ(fc) / fm; // Exponential
     break;
   case SheathLimitMode::linear_free:
-    fp = 2.0 * fc - fm; // Linear
+    fp = (2.0 * fc) - fm; // Linear
     break;
   }
 

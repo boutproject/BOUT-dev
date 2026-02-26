@@ -57,8 +57,8 @@ struct globalToLocal1D {
   const int globalwith;
   const bool periodic;
   globalToLocal1D(int mg, int npe, int localwith, bool periodic)
-      : mg(mg), npe(npe), localwith(localwith), local(localwith - 2 * mg),
-        global(local * npe), globalwith(global + 2 * mg), periodic(periodic){};
+      : mg(mg), npe(npe), localwith(localwith), local(localwith - (2 * mg)),
+        global(local * npe), globalwith(global + (2 * mg)), periodic(periodic){};
   ProcLocal convert(int id) const {
     if (periodic) {
       while (id < mg) {
@@ -68,14 +68,14 @@ struct globalToLocal1D {
         id -= global;
       }
     }
-    int idwo = id - mg;
+    int const idwo = id - mg;
     int proc = idwo / local;
     if (not periodic) {
       if (proc >= npe) {
         proc = npe - 1;
       }
     }
-    int loc = id - local * proc;
+    int const loc = id - (local * proc);
 #if CHECK > 1
     if ((loc < 0 or loc > localwith or proc < 0 or proc >= npe)
         or (periodic and (loc < mg or loc >= local + mg))) {
@@ -93,7 +93,7 @@ struct XYZ2Ind {
   const int ny;
   const int nz;
   ind convert(const int x, const int y, const int z) const {
-    return {z + (y + x * ny) * nz, ny, nz};
+    return {z + ((y + x * ny) * nz), ny, nz};
   }
   ind operator()(const int x, const int y, const int z) const { return convert(x, y, z); }
   XYZ2Ind(const int nx, const int ny, const int nz) : nx(nx), ny(ny), nz(nz) {}
@@ -105,8 +105,8 @@ public:
   const BoutReal& operator[](IndG3D ind) const;
 
   GlobalField3DAccessInstance(const GlobalField3DAccess* gfa,
-                              const std::vector<BoutReal>&& data)
-      : gfa(*gfa), data(std::move(data)){};
+                              std::vector<BoutReal>&& data)
+    : gfa(*gfa), data(std::move(data)){};
 
 private:
   const GlobalField3DAccess& gfa;
@@ -136,7 +136,7 @@ public:
 #endif
   }
 
-  void operator[](IndG3D ind) { return get(ind); }
+  void operator[](IndG3D ind) { get(ind); }
   void setup() {
     ASSERT2(is_setup == false);
 #ifdef _OPENMP
@@ -145,14 +145,14 @@ public:
     }
     o_ids.clear();
 #endif
-    toGet.resize(g2lx.npe * g2ly.npe * g2lz.npe);
+    toGet.resize(static_cast<size_type>(g2lx.npe * g2ly.npe * g2lz.npe));
     for (const auto id : ids) {
-      IndG3D gind{id, g2ly.globalwith, g2lz.globalwith};
+      const IndG3D gind{id, g2ly.globalwith, g2lz.globalwith};
       const auto pix = g2lx.convert(gind.x());
       const auto piy = g2ly.convert(gind.y());
       const auto piz = g2lz.convert(gind.z());
       ASSERT3(piz.proc == 0);
-      toGet[piy.proc * g2lx.npe + pix.proc].push_back(
+      toGet[(piy.proc * g2lx.npe) + pix.proc].push_back(
           xyzl.convert(pix.ind, piy.ind, piz.ind).ind);
     }
     for (auto& v : toGet) {
@@ -161,19 +161,19 @@ public:
     commCommLists();
     {
       int offset = 0;
-      for (auto get : toGet) {
+      for (const auto& get : toGet) {
         getOffsets.push_back(offset);
         offset += get.size();
       }
       getOffsets.push_back(offset);
     }
     for (const auto id : ids) {
-      IndG3D gind{id, g2ly.globalwith, g2lz.globalwith};
+      const IndG3D gind{id, g2ly.globalwith, g2lz.globalwith};
       const auto pix = g2lx.convert(gind.x());
       const auto piy = g2ly.convert(gind.y());
       const auto piz = g2lz.convert(gind.z());
       ASSERT3(piz.proc == 0);
-      const auto proc = piy.proc * g2lx.npe + pix.proc;
+      const auto proc = (piy.proc * g2lx.npe) + pix.proc;
       const auto& vec = toGet[proc];
       const auto tofind = xyzl.convert(pix.ind, piy.ind, piz.ind).ind;
       auto it = std::lower_bound(vec.begin(), vec.end(), tofind);
@@ -216,9 +216,9 @@ private:
     }
     std::vector<MPI_Request> reqs2(toSend.size());
     int cnt = 0;
-    for ([[maybe_unused]] auto dummy : reqs) {
+    for ([[maybe_unused]] auto *dummy : reqs) {
       int ind{0};
-      auto ret = MPI_Waitany(reqs.size(), &reqs[0], &ind, MPI_STATUS_IGNORE);
+      auto ret = MPI_Waitany(reqs.size(), reqs.data(), &ind, MPI_STATUS_IGNORE);
       ASSERT0(ret == MPI_SUCCESS);
       ASSERT3(ind != MPI_UNDEFINED);
       ASSERT2(static_cast<size_t>(ind) < toSend.size());
@@ -234,7 +234,7 @@ private:
       ASSERT0(ret == MPI_SUCCESS);
     }
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
-      if (toGet[proc].size() != 0) {
+      if (!toGet[proc].empty()) {
         const auto ret = MPI_Send(static_cast<void*>(toGet[proc].data()),
                                   toGet[proc].size(), MPI_INT, proc, 666 * 666, comm);
         ASSERT0(ret == MPI_SUCCESS);
@@ -276,7 +276,7 @@ private:
     std::vector<MPI_Request> reqs(toSend.size());
     int cnt1 = 0;
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
-      if (toGet[proc].size() == 0) {
+      if (toGet[proc].empty()) {
         continue;
       }
       auto ret =
@@ -287,7 +287,7 @@ private:
     }
     int cnt = 0;
     for (size_t proc = 0; proc < toGet.size(); ++proc) {
-      if (toSend[proc].size() == 0) {
+      if (toSend[proc].empty()) {
         continue;
       }
       const void* start = static_cast<void*>(sendBuffer.data() + cnt);

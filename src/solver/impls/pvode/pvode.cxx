@@ -61,7 +61,7 @@ namespace {
 void pvode_load_data_f3d(const std::vector<bool>& evolve_bndrys,
                          std::vector<Field3D>& ffs, const BoutReal* udata) {
   int p = 0;
-  Mesh* mesh = ffs[0].getMesh();
+  const Mesh* mesh = ffs[0].getMesh();
   const int nz = mesh->LocalNz;
   for (const auto& bndry : {true, false}) {
     for (const auto& i2d : mesh->getRegion2D(bndry ? "RGN_BNDRY" : "RGN_NOBNDRY")) {

@@ -2,6 +2,7 @@
 
 #include "./boundary_iterator.hxx"
 #include "bout/assert.hxx"
+#include "bout/options"
 #include "bout/options.hxx"
 #include "bout/parallel_boundary_region.hxx"
 #include <memory>

@@ -1,5 +1,6 @@
 
 #include "euler.hxx"
+#include "fmt/format.h"
 
 #include "bout/bout.hxx"
 #include "bout/field2d.hxx"

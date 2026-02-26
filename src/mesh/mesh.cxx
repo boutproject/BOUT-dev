@@ -10,6 +10,7 @@
 
 #include <cmath>
 
+#include "fmt/format.h"
 #include "impls/bout/boutmesh.hxx"
 
 MeshFactory::ReturnType MeshFactory::create(Options* options,

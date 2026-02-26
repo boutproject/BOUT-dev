@@ -5,6 +5,7 @@
 #ifndef BOUT_FV_OPS_H
 #define BOUT_FV_OPS_H
 
+#include "bout/bout_types.hxx"
 #include "bout/build_defines.hxx"
 #include "bout/field3d.hxx"
 #include "bout/globals.hxx"
