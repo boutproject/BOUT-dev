@@ -250,7 +250,7 @@ jobs:
           # If we update the test, invalidate the cache
           key: zenodo-data-${{ hashFiles('tests/integrated/test-fci-mpi/CMakeLists.txt') }}
 
-      - name: Build minimal CUDA 12.2 @ GCC9.4.0 @ Ubuntu 20.04
+      - name: Build minimal CUDA 12.6 @ GCC11 @ Ubuntu 22.04
         run: |
           . /spack/share/spack/setup-env.sh
           spack env activate -p /spack-env
@@ -259,6 +259,7 @@ jobs:
           cmake -S $GITHUB_WORKSPACE -B build \
             -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CUDA_HOST_COMPILER=g++ \
             -DBOUT_ENABLE_RAJA=on \
             -DBOUT_ENABLE_UMPIRE=on \
             -DBOUT_ENABLE_CUDA=on \
