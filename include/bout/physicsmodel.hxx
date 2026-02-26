@@ -47,6 +47,8 @@ class PhysicsModel;
 #include "bout/unused.hxx"
 #include "bout/utils.hxx"
 
+#include <chrono>
+#include <thread>
 #include <type_traits>
 #include <vector>
 
@@ -434,6 +436,7 @@ private:
       solver->solve();                                             \
     } catch (const BoutException& e) {                             \
       output.write("Error encountered: {}\n", e.what());           \
+      std::this_thread::sleep_for(std::chrono::milliseconds(100)); \
       MPI_Abort(BoutComm::get(), 1);                               \
     }                                                              \
     BoutFinalise();                                                \
