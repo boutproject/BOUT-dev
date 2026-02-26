@@ -4,6 +4,7 @@ class BoundaryRegion;
 #ifndef BOUT_BNDRY_REGION_H
 #define BOUT_BNDRY_REGION_H
 
+#include "bout/mesh.hxx"
 #include <string>
 #include <utility>
 

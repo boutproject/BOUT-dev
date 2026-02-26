@@ -25,6 +25,8 @@
 
 #include "bout/build_defines.hxx"
 
+#include "bout/index_derivs_interface.hxx"
+#include "bout/region.hxx"
 #include <bout/assert.hxx>
 #include <bout/derivs.hxx>
 #include <bout/difops.hxx>
@@ -233,7 +235,21 @@ Field3D Div_par(const Field3D& f, const std::string& method, CELL_LOC outloc) {
   return f.getCoordinates(outloc)->Div_par(f, outloc, method);
 }
 
-Field3D Div_par(const Field3D& f, const Field3D& v) {
+Field3D Div_par(const Field3D& f_in, const Field3D& v_in) {
+#if BOUT_USE_FCI_AUTOMAGIC
+  auto f{f_in};
+  auto v{v_in};
+  if (!f.hasParallelSlices()) {
+    f.calcParallelSlices();
+  }
+  if (!v.hasParallelSlices()) {
+    v.calcParallelSlices();
+  }
+#else
+  const auto& f{f_in};
+  const auto& v{v_in};
+#endif
+
   ASSERT1_FIELDS_COMPATIBLE(f, v);
   ASSERT1(f.hasParallelSlices());
   ASSERT1(v.hasParallelSlices());
@@ -364,6 +380,116 @@ Field3D Div_par_K_Grad_par(const Field3D& kY, const Field3D& f, CELL_LOC outloc)
   }
   return interp_to(kY, outloc) * Grad2_par2(f, outloc)
          + Div_par(kY, outloc) * Grad_par(f, outloc);
+}
+
+Field3D Div_par_K_Grad_par_mod(const Field3D& Kin, const Field3D& fin, Field3D& flow_ylow,
+                               bool bndry_flux) {
+  TRACE("FV::Div_par_K_Grad_par_mod");
+
+  ASSERT2(Kin.getLocation() == fin.getLocation());
+
+  const Mesh* mesh = Kin.getMesh();
+  const Coordinates* coord = fin.getCoordinates();
+
+  if (Kin.isFci()) {
+    ASSERT1(Kin.hasParallelSlices());
+    ASSERT1(fin.hasParallelSlices());
+    // Using parallel slices.
+    // Note: Y slices may use different coordinate systems
+    //       -> Only B, dy and g_22 can be used in yup/ydown
+    //          Others (e.g J) may not be averaged between y planes.
+
+    const auto& K_up = Kin.yup();
+    const auto& K_down = Kin.ydown();
+
+    const auto& f_up = fin.yup();
+    const auto& f_down = fin.ydown();
+
+    Field3D result{zeroFrom(fin)};
+    flow_ylow = zeroFrom(fin);
+
+#if BOUT_USE_OPENMP
+    // ensure they are loaded, before they are used
+    coord->Jxz_yhigh();
+    coord->Jxz_ylow();
+    coord->g_22_yhigh();
+    coord->g_22_ylow();
+#endif
+
+    BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+      const auto iyp = i.yp();
+      const auto iym = i.ym();
+
+      // Upper cell edge
+      const BoutReal c_up = 0.5 * (Kin[i] + K_up[iyp]); // K at the upper boundary
+
+      const BoutReal Jxz_up = coord->Jxz_yhigh()[i] / sqrt(coord->g_22_yhigh()[i]);
+
+      const BoutReal gradient_up =
+          2. * (f_up[iyp] - fin[i]) / (coord->dy[i] + coord->dy.yup()[iyp]);
+
+      const BoutReal flux_up = c_up * Jxz_up * gradient_up;
+
+      // Lower cell edge
+      const BoutReal c_down = 0.5 * (Kin[i] + K_down[iym]); // K at the lower boundary
+      const BoutReal Jxz_down = coord->Jxz_ylow()[i] / sqrt(coord->g_22_ylow()[i]);
+      const BoutReal gradient_down =
+          2. * (fin[i] - f_down[iym]) / (coord->dy[i] + coord->dy.ydown()[iym]);
+
+      const BoutReal flux_down = c_down * Jxz_down * gradient_down;
+
+      result[i] = (flux_up - flux_down) / (coord->dy[i] * coord->J[i]);
+    }
+
+    return result;
+  }
+
+  // Calculate in field-aligned coordinates
+  const auto& K = toFieldAligned(Kin, "RGN_NOX");
+  const auto& f = toFieldAligned(fin, "RGN_NOX");
+
+  Field3D result{zeroFrom(f)};
+  flow_ylow = zeroFrom(f);
+
+  BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+    // Calculate flux at upper surface
+    const auto ix = i.x();
+    const auto iy = i.y();
+    const auto iyp = i.yp();
+    const auto iym = i.ym();
+
+    const bool is_periodic_y = mesh->periodicY(ix);
+
+    if (bndry_flux || is_periodic_y || !mesh->lastY(ix) || (iy != mesh->yend)) {
+      const BoutReal c = 0.5 * (K[i] + K[iyp]);               // K at the upper boundary
+      const BoutReal J = 0.5 * (coord->J[i] + coord->J[iyp]); // Jacobian at boundary
+      const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iyp]);
+      const BoutReal gradient = 2. * (f[iyp] - f[i]) / (coord->dy[i] + coord->dy[iyp]);
+
+      const BoutReal flux = c * J * gradient / g_22;
+
+      result[i] += flux / (coord->dy[i] * coord->J[i]);
+    }
+
+    // Calculate flux at lower surface
+    if (bndry_flux || is_periodic_y || !mesh->firstY(ix) || (iy != mesh->ystart)) {
+      const BoutReal c = 0.5 * (K[i] + K[iym]);               // K at the lower boundary
+      const BoutReal J = 0.5 * (coord->J[i] + coord->J[iym]); // Jacobian at boundary
+      const BoutReal g_22 = 0.5 * (coord->g_22[i] + coord->g_22[iym]);
+      const BoutReal gradient = 2. * (f[i] - f[iym]) / (coord->dy[i] + coord->dy[iym]);
+
+      const BoutReal flux = c * J * gradient / g_22;
+
+      result[i] -= flux / (coord->dy[i] * coord->J[i]);
+      flow_ylow[i] = -flux * coord->dx[i] * coord->dz[i];
+    }
+  }
+
+  // Shifted to field aligned coordinates, so need to shift back
+  result = fromFieldAligned(result, "RGN_NOBNDRY");
+  flow_ylow = fromFieldAligned(flow_ylow);
+
+  return result;
 }
 
 /*******************************************************************************

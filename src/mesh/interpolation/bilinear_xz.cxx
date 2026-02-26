@@ -20,6 +20,7 @@
  *
  **************************************************************************/
 
+#include "bout/boutexception.hxx"
 #include "bout/globals.hxx"
 #include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"

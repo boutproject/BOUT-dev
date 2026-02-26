@@ -362,7 +362,7 @@ if(BOUT_USE_SUNDIALS)
         CACHE BOOL "" FORCE
     )
     set(ENABLE_OPENMP
-        OFF
+        ${BOUT_USE_OPENMP}
         CACHE BOOL "" FORCE
     )
     if(BUILD_SHARED_LIBS)

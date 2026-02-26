@@ -37,82 +37,224 @@
  **************************************************************************/
 
 #include "fci.hxx"
+
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/build_defines.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
+#include "bout/field_data.hxx"
+#include "bout/mesh.hxx"
+#include "bout/msg_stack.hxx"
+#include "bout/options.hxx"
 #include "bout/parallel_boundary_op.hxx"
 #include "bout/parallel_boundary_region.hxx"
-#include <bout/bout_types.hxx>
-#include <bout/constants.hxx>
-#include <bout/mesh.hxx>
-#include <bout/msg_stack.hxx>
-#include <bout/utils.hxx>
+#include "bout/paralleltransform.hxx"
+#include "bout/region.hxx"
 
+#include <fmt/format.h>
+
+#include <array>
+#include <cmath>
+#include <cstddef>
+#include <cstdlib>
+#include <memory>
 #include <string>
+#include <string_view>
 
-FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& options,
-               int offset_, const std::shared_ptr<BoundaryRegionPar>& inner_boundary,
+namespace {
+using namespace std::literals;
+// Get a unique name for a field based on the sign/magnitude of the offset
+std::string parallel_slice_field_name(std::string field, int offset) {
+  const auto direction = (offset > 0) ? "forward"sv : "backward"sv;
+  // We only have a suffix for parallel slices beyond the first
+  // This is for backwards compatibility
+  if (std::abs(offset) == 1) {
+    return fmt::format("{}_{}", direction, field);
+  }
+  return fmt::format("{}_{}_{}", direction, field, std::abs(offset));
+};
+
+#if BOUT_USE_METRIC_3D
+void set_parallel_metric_component(std::string name, Field3D& component, int offset,
+                                   Field3D& data) {
+  if (!component.hasParallelSlices()) {
+    component.splitParallelSlices();
+    component.allowCalcParallelSlices = false;
+  }
+  auto& pcom = component.ynext(offset);
+  pcom.allocate();
+  pcom.setRegion(fmt::format("RGN_YPAR_{:+d}", offset));
+  pcom.name = std::move(name);
+  BOUT_FOR(i, component.getRegion("RGN_NOBNDRY")) { pcom[i.yp(offset)] = data[i]; }
+}
+
+bool load_parallel_metric_component(const std::string& name, Field3D& component,
+                                    int offset, bool doZero) {
+  Mesh* mesh = component.getMesh();
+  Field3D tmp{mesh};
+  const bool doload = mesh->sourceHasVar(name);
+  bool isValid{false};
+  if (doload) {
+    const auto pname = parallel_slice_field_name(name, offset);
+    isValid = mesh->get(tmp, pname, 0.0, false) == 0;
+  }
+  if (not isValid) {
+    auto lmin = min(component, true);
+    auto lmax = max(component, true);
+    if (lmin != lmax) {
+      if (doZero) {
+        lmin = lmax = 0.0;
+      } else {
+        throw BoutException("{:s} is neither in the grid file, nor constant!\n"
+                            "  Cannot determine value for parallel slices.\n"
+                            "  Regenerate the grid with a recent zoidberg!",
+                            name);
+      }
+    } else {
+      isValid = true;
+    }
+    tmp = lmin;
+  }
+  set_parallel_metric_component(name, component, offset, tmp);
+  return isValid;
+}
+#endif
+
+void load_parallel_metric_components([[maybe_unused]] Coordinates* coords,
+                                     [[maybe_unused]] int offset) {
+#if BOUT_USE_METRIC_3D
+#define LOAD_PAR(var, doZero) \
+  load_parallel_metric_component(#var, coords->var, offset, doZero)
+  LOAD_PAR(g11, false);
+  LOAD_PAR(g22, false);
+  LOAD_PAR(g33, false);
+  LOAD_PAR(g12, false);
+  LOAD_PAR(g13, false);
+  LOAD_PAR(g23, false);
+
+  LOAD_PAR(g_11, false);
+  LOAD_PAR(g_22, false);
+  LOAD_PAR(g_33, false);
+  LOAD_PAR(g_12, false);
+  LOAD_PAR(g_13, false);
+  LOAD_PAR(g_23, false);
+
+  LOAD_PAR(dy, false);
+  LOAD_PAR(Bxy, false);
+
+  if (not LOAD_PAR(J, true)) {
+    auto g =
+        coords->g11.ynext(offset) * coords->g22.ynext(offset) * coords->g33.ynext(offset)
+        + 2.0 * coords->g12.ynext(offset) * coords->g13.ynext(offset)
+              * coords->g23.ynext(offset)
+        - coords->g11.ynext(offset) * coords->g23.ynext(offset)
+              * coords->g23.ynext(offset)
+        - coords->g22.ynext(offset) * coords->g13.ynext(offset)
+              * coords->g13.ynext(offset)
+        - coords->g33.ynext(offset) * coords->g12.ynext(offset)
+              * coords->g12.ynext(offset);
+
+    const auto rgn = fmt::format("RGN_YPAR_{:+d}", offset);
+    // Check that g is positive
+    bout::checkPositive(g, "The determinant of g^ij", rgn);
+    auto J = 1. / sqrt(g);
+    auto& pcom = coords->J.ynext(offset);
+    BOUT_FOR(i, J.getRegion(rgn)) { pcom[i] = J[i]; }
+  }
+#undef LOAD_PAR
+
+  // fixup for optimizing flux conservation
+  BOUT_FOR(i, coords->J.getRegion("RGN_NOBNDRY")) {
+    const auto is = i.yp(offset);
+    const BoutReal fac =
+        coords->Bxy[i] * sqrt(coords->g_11[i] * coords->g_33[i] - SQ(coords->g_13[i]))
+        / (coords->Bxy.ynext(offset)[is]
+           * sqrt(coords->g_11.ynext(offset)[is] * coords->g_33.ynext(offset)[is]
+                  - SQ(coords->g_13.ynext(offset)[is])));
+    coords->g_11.ynext(offset)[is] *= fac;
+    coords->g_33.ynext(offset)[is] *= fac;
+    coords->g_13.ynext(offset)[is] *= fac;
+    coords->g11.ynext(offset)[is] /= fac;
+    coords->g33.ynext(offset)[is] /= fac;
+    coords->g13.ynext(offset)[is] /= fac;
+    coords->J.ynext(offset)[is] *= fac;
+  }
+
+#endif
+}
+
+template <typename T>
+int sgn(T val) {
+  return (T(0) < val) - (val < T(0));
+}
+
+} // namespace
+
+using namespace std::string_view_literals;
+
+FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
+               Options& options, int offset,
+               const std::shared_ptr<BoundaryRegionPar>& inner_boundary,
                const std::shared_ptr<BoundaryRegionPar>& outer_boundary, bool zperiodic)
-    : map_mesh(mesh), offset(offset_),
-      region_no_boundary(map_mesh.getRegion("RGN_NOBNDRY")),
+    : map_mesh(&mesh), offset_(offset),
+      region_no_boundary(map_mesh->getRegion("RGN_NOBNDRY")),
       corner_boundary_mask(map_mesh) {
 
-  TRACE("Creating FCIMAP for direction {:d}", offset);
+  TRACE("Creating FCIMAP for direction {:d}", offset_);
 
-  if (offset == 0) {
+  if (offset_ == 0) {
     throw BoutException(
         "FCIMap called with offset = 0; You probably didn't mean to do that");
   }
 
   auto& interpolation_options = options["xzinterpolation"];
-  interp =
-      XZInterpolationFactory::getInstance().create(&interpolation_options, &map_mesh);
-  interp->setYOffset(offset);
+  interp = XZInterpolationFactory::getInstance().create(&interpolation_options, map_mesh);
+  interp->setYOffset(offset_);
 
   interp_corner =
-      XZInterpolationFactory::getInstance().create(&interpolation_options, &map_mesh);
-  interp_corner->setYOffset(offset);
+      XZInterpolationFactory::getInstance().create(&interpolation_options, map_mesh);
+  interp_corner->setYOffset(offset_);
 
   // Index-space coordinates of forward/backward points
-  Field3D xt_prime{&map_mesh}, zt_prime{&map_mesh};
+  Field3D xt_prime{map_mesh};
+  Field3D zt_prime{map_mesh};
 
   // Real-space coordinates of grid points
-  Field3D R{&map_mesh}, Z{&map_mesh};
+  Field3D R{map_mesh};
+  Field3D Z{map_mesh};
 
   // Real-space coordinates of forward/backward points
-  Field3D R_prime{&map_mesh}, Z_prime{&map_mesh};
+  Field3D R_prime{map_mesh};
+  Field3D Z_prime{map_mesh};
 
-  map_mesh.get(R, "R", 0.0, false);
-  map_mesh.get(Z, "Z", 0.0, false);
-
-  // Get a unique name for a field based on the sign/magnitude of the offset
-  const auto parallel_slice_field_name = [&](std::string field) -> std::string {
-    const std::string direction = (offset > 0) ? "forward" : "backward";
-    // We only have a suffix for parallel slices beyond the first
-    // This is for backwards compatibility
-    const std::string slice_suffix =
-        (std::abs(offset) > 1) ? "_" + std::to_string(std::abs(offset)) : "";
-    return direction + "_" + field + slice_suffix;
-  };
+  map_mesh->get(R, "R", 0.0, false);
+  map_mesh->get(Z, "Z", 0.0, false);
 
   // If we can't read in any of these fields, things will silently not
   // work, so best throw
-  if (map_mesh.get(xt_prime, parallel_slice_field_name("xt_prime"), 0.0, false) != 0) {
+  if (map_mesh->get(xt_prime, parallel_slice_field_name("xt_prime", offset_), 0.0, false)
+      != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
-                        parallel_slice_field_name("xt_prime"));
+                        parallel_slice_field_name("xt_prime", offset_));
   }
-  if (map_mesh.get(zt_prime, parallel_slice_field_name("zt_prime"), 0.0, false) != 0) {
+  if (map_mesh->get(zt_prime, parallel_slice_field_name("zt_prime", offset_), 0.0, false)
+      != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
-                        parallel_slice_field_name("zt_prime"));
+                        parallel_slice_field_name("zt_prime", offset_));
   }
-  if (map_mesh.get(R_prime, parallel_slice_field_name("R"), 0.0, false) != 0) {
+  if (map_mesh->get(R_prime, parallel_slice_field_name("R", offset_), 0.0, false) != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
-                        parallel_slice_field_name("R"));
+                        parallel_slice_field_name("R", offset_));
   }
-  if (map_mesh.get(Z_prime, parallel_slice_field_name("Z"), 0.0, false) != 0) {
+  if (map_mesh->get(Z_prime, parallel_slice_field_name("Z", offset_), 0.0, false) != 0) {
     throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
-                        parallel_slice_field_name("Z"));
+                        parallel_slice_field_name("Z", offset_));
   }
 
   // Cell corners
@@ -157,25 +299,28 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
     interp->calcWeights(xt_prime, zt_prime);
   }
 
-  const int ncz = map_mesh.LocalNz;
+  const int ncz = map_mesh->LocalNz;
 
   BoutMask to_remove(map_mesh);
-  const int xend =
-      map_mesh.xstart + (map_mesh.xend - map_mesh.xstart + 1) * map_mesh.getNXPE() - 1;
+  const int xend = map_mesh->xstart
+                   + ((map_mesh->xend - map_mesh->xstart + 1) * map_mesh->getNXPE()) - 1;
+  // Default to the maximum number of points
+  const int defValid{map_mesh->ystart - 1 + std::abs(offset)};
   // Serial loop because call to BoundaryRegionPar::addPoint
   // (probably?) can't be done in parallel
   BOUT_FOR_SERIAL(i, xt_prime.getRegion("RGN_NOBNDRY")) {
     // z is periodic, so make sure the z-index wraps around
     if (zperiodic) {
-      zt_prime[i] = zt_prime[i]
-                    - ncz * (static_cast<int>(zt_prime[i] / static_cast<BoutReal>(ncz)));
+      zt_prime[i] =
+          zt_prime[i]
+          - (ncz * (static_cast<int>(zt_prime[i] / static_cast<BoutReal>(ncz))));
 
       if (zt_prime[i] < 0.0) {
         zt_prime[i] += ncz;
       }
     }
 
-    if ((xt_prime[i] >= map_mesh.xstart) and (xt_prime[i] <= xend)) {
+    if ((xt_prime[i] >= map_mesh->xstart) and (xt_prime[i] <= xend)) {
       // Not a boundary
       continue;
     }
@@ -215,7 +360,7 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
     const BoutReal dR_dz = 0.5 * (R[i_zp] - R[i_zm]);
     const BoutReal dZ_dz = 0.5 * (Z[i_zp] - Z[i_zm]);
 
-    const BoutReal det = dR_dx * dZ_dz - dR_dz * dZ_dx; // Determinant of 2x2 matrix
+    const BoutReal det = (dR_dx * dZ_dz) - (dR_dz * dZ_dx); // Determinant of 2x2 matrix
 
     const BoutReal dR = R_prime[i] - R[i];
     const BoutReal dZ = Z_prime[i] - Z[i];
@@ -228,32 +373,24 @@ FCIMap::FCIMap(Mesh& mesh, const Coordinates::FieldMetric& UNUSED(dy), Options& 
     // outer boundary. However, if any of the surrounding points are negative,
     // that also means inner. So to differentiate between inner and outer we
     // need at least 2 points in the domain.
-    ASSERT2(map_mesh.xend - map_mesh.xstart >= 2);
-    auto boundary = (xt_prime[i] < map_mesh.xstart) ? inner_boundary : outer_boundary;
-    boundary->add_point(x, y, z, x + dx, y + 0.5 * offset,
-                        z + dz, // Intersection point in local index space
-                        0.5,    // Distance to intersection
-                        1       // Default to that there is a point in the other direction
-    );
+    ASSERT2(map_mesh->xend - map_mesh->xstart >= 2);
+    auto boundary = (xt_prime[i] < map_mesh->xstart) ? inner_boundary : outer_boundary;
+    if (!boundary->contains(x, y, z)) {
+      boundary->add_point(x, y, z, x + dx, y + offset - (sgn(offset) * 0.5),
+                          z + dz, // Intersection point in local index space
+                          std::abs(offset_) - 0.5, // Distance to intersection
+                          defValid, offset_);
+    }
   }
   region_no_boundary = region_no_boundary.mask(to_remove);
 
   interp->setRegion(region_no_boundary);
-
-  const auto region = fmt::format("RGN_YPAR_{:+d}", offset);
-  if (not map_mesh.hasRegion3D(region)) {
-    // The valid region for this slice
-    map_mesh.addRegion3D(
-        region, Region<Ind3D>(map_mesh.xstart, map_mesh.xend, map_mesh.ystart + offset,
-                              map_mesh.yend + offset, 0, map_mesh.LocalNz - 1,
-                              map_mesh.LocalNy, map_mesh.LocalNz));
-  }
 }
 
 Field3D FCIMap::integrate(Field3D& f) const {
 
   ASSERT1(f.getDirectionY() == YDirectionType::Standard);
-  ASSERT1(&map_mesh == f.getMesh());
+  ASSERT1(map_mesh == f.getMesh());
 
   // Cell centre values
   Field3D centre = interp->interpolate(f);
@@ -268,7 +405,7 @@ Field3D FCIMap::integrate(Field3D& f) const {
 #endif
 
   BOUT_FOR(i, region_no_boundary) {
-    const auto inext = i.yp(offset);
+    const auto inext = i.yp(offset_);
     const BoutReal f_c = centre[inext];
     const auto izm = i.zm();
     const int x = i.x();
@@ -277,7 +414,7 @@ Field3D FCIMap::integrate(Field3D& f) const {
     const int zm = izm.z();
     if (corner_boundary_mask(x, y, z) || corner_boundary_mask(x - 1, y, z)
         || corner_boundary_mask(x, y, zm) || corner_boundary_mask(x - 1, y, zm)
-        || (x == map_mesh.xstart)) {
+        || (x == map_mesh->xstart)) {
       // One of the corners leaves the domain.
       // Use the cell centre value, since boundary conditions are not
       // currently applied to corners.
@@ -298,22 +435,77 @@ Field3D FCIMap::integrate(Field3D& f) const {
   return result;
 }
 
+FCITransform::FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool zperiodic,
+                           Options* opt)
+    : ParallelTransform(mesh, opt), R{&mesh}, Z{&mesh} {
+
+  // check the coordinate system used for the grid data source
+  FCITransform::checkInputGrid();
+
+  // Real-space coordinates of grid cells
+  mesh.get(R, "R", 0.0, false);
+  mesh.get(Z, "Z", 0.0, false);
+
+  auto forward_boundary_xin =
+      std::make_shared<BoundaryRegionPar>("FCI_forward", BNDRY_PAR_FWD_XIN, +1, &mesh);
+  auto backward_boundary_xin =
+      std::make_shared<BoundaryRegionPar>("FCI_backward", BNDRY_PAR_BKWD_XIN, -1, &mesh);
+  auto forward_boundary_xout =
+      std::make_shared<BoundaryRegionPar>("FCI_forward", BNDRY_PAR_FWD_XOUT, +1, &mesh);
+  auto backward_boundary_xout =
+      std::make_shared<BoundaryRegionPar>("FCI_backward", BNDRY_PAR_BKWD_XOUT, -1, &mesh);
+
+  // Add the boundary region to the mesh's vector of parallel boundaries
+  mesh.addBoundaryPar(forward_boundary_xin, BoundaryParType::xin_fwd);
+  mesh.addBoundaryPar(backward_boundary_xin, BoundaryParType::xin_bwd);
+  mesh.addBoundaryPar(forward_boundary_xout, BoundaryParType::xout_fwd);
+  mesh.addBoundaryPar(backward_boundary_xout, BoundaryParType::xout_bwd);
+
+  field_line_maps.reserve(static_cast<std::size_t>(mesh.ystart) * 2);
+  for (int offset = 1; offset < mesh.ystart + 1; ++offset) {
+    field_line_maps.emplace_back(mesh, dy, options, offset, forward_boundary_xin,
+                                 forward_boundary_xout, zperiodic);
+    field_line_maps.emplace_back(mesh, dy, options, -offset, backward_boundary_xin,
+                                 backward_boundary_xout, zperiodic);
+  }
+  const std::array bndries = {forward_boundary_xin, forward_boundary_xout,
+                              backward_boundary_xin, backward_boundary_xout};
+  for (const auto& bndry : bndries) {
+    for (const auto& bndry2 : bndries) {
+      if (bndry->dir == bndry2->dir) {
+        continue;
+      }
+      for (auto pnt : *bndry) {
+        for (auto pnt2 : *bndry2) {
+          if (pnt.ind() == pnt2.ind()) {
+            pnt.setValid(
+                static_cast<signed char>(std::abs((pnt2.offset() - pnt.offset())) - 2));
+          }
+        }
+      }
+    }
+  }
+}
+
 void FCITransform::checkInputGrid() {
   std::string parallel_transform;
   if (mesh.isDataSourceGridFile()
-      && !mesh.get(parallel_transform, "parallel_transform")) {
+      && (mesh.get(parallel_transform, "parallel_transform") == 0)) {
     if (parallel_transform != "fci") {
       throw BoutException(
           "Incorrect parallel transform type '" + parallel_transform
           + "' used "
             "to generate metric components for FCITransform. Should be 'fci'.");
     }
-  } // else: parallel_transform variable not found in grid input, indicates older input
-    //       file or grid from options so must rely on the user having ensured the type is
-    //       correct
+  }
+  // else: parallel_transform variable not found in grid input, indicates older input
+  //       file or grid from options so must rely on the user having ensured the type is
+  //       correct
 }
 
 void FCITransform::calcParallelSlices(Field3D& f) {
+
+  ASSERT1(f.allowCalcParallelSlices);
 
   ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
@@ -325,8 +517,8 @@ void FCITransform::calcParallelSlices(Field3D& f) {
 
   // Interpolate f onto yup and ydown fields
   for (const auto& map : field_line_maps) {
-    f.ynext(map.offset) = map.interpolate(f);
-    f.ynext(map.offset).setRegion(fmt::format("RGN_YPAR_{:+d}", map.offset));
+    f.ynext(map.offset()) = map.interpolate(f);
+    f.ynext(map.offset()).setRegion(fmt::format("RGN_YPAR_{:+d}", map.offset()));
   }
 }
 
@@ -342,7 +534,14 @@ void FCITransform::integrateParallelSlices(Field3D& f) {
 
   // Integrate f onto yup and ydown fields
   for (const auto& map : field_line_maps) {
-    f.ynext(map.offset) = map.integrate(f);
+    f.ynext(map.offset()) = map.integrate(f);
+  }
+}
+
+void FCITransform::loadParallelMetrics(Coordinates* coords) {
+  for (int i = 1; i <= mesh.ystart; ++i) {
+    load_parallel_metric_components(coords, -i);
+    load_parallel_metric_components(coords, i);
   }
 }
 

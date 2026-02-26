@@ -138,7 +138,11 @@ public:
   static constexpr auto type_name = "Laplacian";
   static constexpr auto section_name = "laplace";
   static constexpr auto option_name = "type";
+#if BOUT_USE_METRIC_3D
+  static constexpr auto default_type = LAPLACE_PETSC;
+#else
   static constexpr auto default_type = LAPLACE_CYCLIC;
+#endif
 
   ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
                     Mesh* mesh = nullptr, Solver* solver = nullptr) {
@@ -254,6 +258,11 @@ public:
   }
   virtual Field3D solve(const Field3D& b, const Field3D& x0);
   virtual Field2D solve(const Field2D& b, const Field2D& x0);
+
+  /// Some implementations can also implement the forward operator for testing
+  /// and debugging
+  virtual FieldPerp forward(const FieldPerp& f);
+  virtual Field3D forward(const Field3D& f);
 
   /// Coefficients in tridiagonal inversion
   void tridagCoefs(int jx, int jy, int jz, dcomplex& a, dcomplex& b, dcomplex& c,

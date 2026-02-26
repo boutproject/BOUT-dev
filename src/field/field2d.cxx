@@ -25,8 +25,10 @@
  *
  **************************************************************************/
 
+#include "bout/bout_types.hxx"
 #include "bout/build_defines.hxx"
 
+#include "bout/unused.hxx"
 #include <bout/assert.hxx>
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_op.hxx>
@@ -38,8 +40,11 @@
 #include <bout/output.hxx>
 
 #include <cmath>
+#include <cstddef>
+#include <optional>
 
-Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
+Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in,
+                 std::optional<size_t> UNUSED(regionID))
     : Field(localmesh, location_in, directions_in) {
 
   if (fieldmesh) {

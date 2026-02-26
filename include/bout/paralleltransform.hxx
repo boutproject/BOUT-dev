@@ -9,6 +9,7 @@
 #include "bout/bout_types.hxx"
 #include "bout/dcomplex.hxx"
 #include "bout/field3d.hxx"
+#include "bout/field_data.hxx"
 #include "bout/options.hxx"
 #include "bout/unused.hxx"
 
@@ -89,6 +90,10 @@ public:
   /// If \p twist_shift_enabled is true, does a `Field3D` with Y direction \p ytype
   /// require a twist-shift at branch cuts on closed field lines?
   virtual bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) = 0;
+
+  /// Can be implemented to load parallel metrics
+  /// Needed by FCI
+  virtual void loadParallelMetrics(Coordinates* UNUSED(coords)) {}
 
 protected:
   /// This method should be called in the constructor to check that if the grid

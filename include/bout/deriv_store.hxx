@@ -33,8 +33,10 @@
 #include <functional>
 #include <map>
 #include <set>
+#include <type_traits>
 #include <unordered_map>
 
+#include "bout/field3d.hxx"
 #include <bout/scorepwrapper.hxx>
 
 #include <bout/bout_types.hxx>
@@ -521,5 +523,14 @@ private:
     return getKey(Direction{}.lookup(), Stagger{}.lookup(), Method{}.meta.key);
   }
 };
+
+template <typename T>
+auto& getStore() {
+  if constexpr (std::is_same<T, Field3DParallel>::value) {
+    return DerivativeStore<Field3D>::getInstance();
+  } else {
+    return DerivativeStore<T>::getInstance();
+  }
+}
 
 #endif

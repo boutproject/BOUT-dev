@@ -38,6 +38,7 @@
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
 #include <bout/paralleltransform.hxx>
+#include <optional>
 
 class Mesh;
 
@@ -102,6 +103,25 @@ public:
   /// Covariant metric tensor
   FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
+  /// get g_22 at the cell faces;
+  const FieldMetric& g_22_ylow() const;
+  const FieldMetric& g_22_yhigh() const;
+  FieldMetric& g_22_ylow();
+  FieldMetric& g_22_yhigh();
+  /// get Jxz at the cell faces or cell centre
+  const FieldMetric& Jxz_ylow() const;
+  const FieldMetric& Jxz_yhigh() const;
+  const FieldMetric& Jxz() const;
+  FieldMetric& Jxz_ylow();
+  FieldMetric& Jxz_yhigh();
+  FieldMetric& Jxz();
+
+private:
+  mutable std::optional<FieldMetric> _g_22_ylow, _g_22_yhigh;
+  mutable std::optional<FieldMetric> _jxz_ylow, _jxz_yhigh, _jxz_centre;
+  void _compute_Jxz_cell_faces() const;
+
+public:
   /// Christoffel symbol of the second kind (connection coefficients)
   FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
   FieldMetric G2_11, G2_22, G2_33, G2_12, G2_13, G2_23;
@@ -160,7 +180,7 @@ public:
               const std::string& method = "DEFAULT",
               const std::string& region = "RGN_NOBNDRY");
 
-  Field3D DDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+  Field3D DDY(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",
               const std::string& region = "RGN_NOBNDRY") const;
 
@@ -172,7 +192,7 @@ public:
   FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
                        const std::string& method = "DEFAULT");
 
-  Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
+  Field3D Grad_par(const Field3DParallel& var, CELL_LOC outloc = CELL_DEFAULT,
                    const std::string& method = "DEFAULT");
 
   /// Advection along magnetic field V*b.Grad(f)
@@ -180,7 +200,7 @@ public:
                             CELL_LOC outloc = CELL_DEFAULT,
                             const std::string& method = "DEFAULT");
 
-  Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
+  Field3D Vpar_Grad_par(const Field3D& v, const Field3DParallel& f,
                         CELL_LOC outloc = CELL_DEFAULT,
                         const std::string& method = "DEFAULT");
 
@@ -188,14 +208,14 @@ public:
   FieldMetric Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                       const std::string& method = "DEFAULT");
 
-  Field3D Div_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+  Field3D Div_par(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& method = "DEFAULT");
 
   // Second derivative along magnetic field
   FieldMetric Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                          const std::string& method = "DEFAULT");
 
-  Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+  Field3D Grad2_par2(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
                      const std::string& method = "DEFAULT");
   // Perpendicular Laplacian operator, using only X-Z derivatives
   // NOTE: This might be better bundled with the Laplacian inversion code
@@ -207,13 +227,13 @@ public:
   // Full parallel Laplacian operator on scalar field
   // Laplace_par(f) = Div( b (b dot Grad(f)) )
   FieldMetric Laplace_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT);
-  Field3D Laplace_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT);
+  Field3D Laplace_par(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT);
 
   // Full Laplacian operator on scalar field
   FieldMetric Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                       const std::string& dfdy_boundary_conditions = "free_o3",
                       const std::string& dfdy_dy_region = "");
-  Field3D Laplace(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+  Field3D Laplace(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& dfdy_boundary_conditions = "free_o3",
                   const std::string& dfdy_dy_region = "");
 
@@ -236,12 +256,14 @@ private:
   /// Cache variable for Grad2_par2
   mutable std::map<std::string, std::unique_ptr<FieldMetric>> Grad2_par2_DDY_invSgCache;
   mutable std::unique_ptr<FieldMetric> invSgCache{nullptr};
+  mutable std::optional<FieldMetric> JgCache;
 
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
 
   const FieldMetric& invSg() const;
+  const FieldMetric& Jg() const;
   const FieldMetric& Grad2_par2_DDY_invSg(CELL_LOC outloc,
                                           const std::string& method) const;
 

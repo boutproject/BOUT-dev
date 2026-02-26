@@ -4,7 +4,7 @@ bout_add_mms_test(
   USE_RUNTEST USE_DATA_BOUT_INP
   PROCESSORS 6
   DOWNLOAD
-    https://zenodo.org/records/7614499/files/W7X-conf4-36x8x128.fci.nc?download=1
+    https://zenodo.org/records/17571607/files/W7X-conf0-36x8x128.fci.nc?download=1
   DOWNLOAD_NAME grid.fci.nc
   REQUIRES BOUT_HAS_PETSC
 )

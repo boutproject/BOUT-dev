@@ -63,8 +63,9 @@ static PetscErrorCode laplacePCapply(PC pc, Vec x, Vec y) {
 
 LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
                            Solver* UNUSED(solver))
-    : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
-      issetD(false), issetC(false), issetE(false),
+    : Laplacian(opt, loc, mesh_in), A(0.0, mesh_in), C1(1.0, mesh_in), C2(1.0, mesh_in),
+      D(1.0, mesh_in), Ex(0.0, mesh_in), Ez(0.0, mesh_in), issetD(false), issetC(false),
+      issetE(false), sol(mesh_in),
       lib(opt == nullptr ? &(Options::root()["laplace"]) : opt) {
   A.setLocation(location);
   C1.setLocation(location);
@@ -335,7 +336,8 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b) { return solve(b, b); }
  *
  * \returns sol     The solution x of the problem Ax=b.
  */
-FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
+FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0,
+                              const bool forward) {
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
@@ -345,7 +347,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   checkFlags();
 #endif
 
-  int y = b.getIndex(); // Get the Y index
+  const int y = b.getIndex(); // Get the Y index
   sol.setIndex(y);      // Initialize the solution field.
   sol = 0.;
 
@@ -470,11 +472,11 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
         // Set the matrix coefficients
         Coeffs(x, y, z, A1, A2, A3, A4, A5);
 
-        BoutReal dx = coords->dx(x, y, z);
-        BoutReal dx2 = SQ(dx);
-        BoutReal dz = coords->dz(x, y, z);
-        BoutReal dz2 = SQ(dz);
-        BoutReal dxdz = dx * dz;
+        const BoutReal dx = coords->dx(x, y, z);
+        const BoutReal dx2 = SQ(dx);
+        const BoutReal dz = coords->dz(x, y, z);
+        const BoutReal dz2 = SQ(dz);
+        const BoutReal dxdz = dx * dz;
 
         ASSERT3(std::isfinite(A1));
         ASSERT3(std::isfinite(A2));
@@ -630,6 +632,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
         // Set Components of Trial Solution Vector
         val = x0[x][z];
         VecSetValues(xs, 1, &i, &val, INSERT_VALUES);
+        ASSERT3(i == getIndex(x, z));
         i++;
       }
     }
@@ -713,7 +716,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
           // INSERT_VALUES replaces existing entries with new values
           val = x0[x][z];
           VecSetValues(xs, 1, &i, &val, INSERT_VALUES);
-
+          ASSERT3(i == getIndex(x, z));
           i++; // Increment row in Petsc matrix
         }
       }
@@ -738,71 +741,98 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
     VecAssemblyBegin(xs);
     VecAssemblyEnd(xs);
 
-    // Configure Linear Solver
+    if (not forward) {
+      // Configure Linear Solver
 #if PETSC_VERSION_GE(3, 5, 0)
-    KSPSetOperators(ksp, MatA, MatA);
+      KSPSetOperators(ksp, MatA, MatA);
 #else
-    KSPSetOperators(ksp, MatA, MatA, DIFFERENT_NONZERO_PATTERN);
+      KSPSetOperators(ksp, MatA, MatA, DIFFERENT_NONZERO_PATTERN);
 #endif
-    PC pc; // The preconditioner option
+      PC pc = nullptr; // The preconditioner option
 
-    if (direct) { // If a direct solver has been chosen
-      // Get the preconditioner
-      KSPGetPC(ksp, &pc);
-      // Set the preconditioner
-      PCSetType(pc, PCLU);
-      // Set the solver type
+      if (direct) { // If a direct solver has been chosen
+        // Get the preconditioner
+        KSPGetPC(ksp, &pc);
+        // Set the preconditioner
+        PCSetType(pc, PCLU);
+        // Set the solver type
 #if PETSC_VERSION_GE(3, 9, 0)
-      PCFactorSetMatSolverType(pc, "mumps");
+        PCFactorSetMatSolverType(pc, "mumps");
 #else
-      PCFactorSetMatSolverPackage(pc, "mumps");
+        PCFactorSetMatSolverPackage(pc, "mumps");
 #endif
-    } else {                            // If a iterative solver has been chosen
-      KSPSetType(ksp, ksptype.c_str()); // Set the type of the solver
+      } else {                            // If a iterative solver has been chosen
+        KSPSetType(ksp, ksptype.c_str()); // Set the type of the solver
 
-      if (ksptype == KSPRICHARDSON) {
-        KSPRichardsonSetScale(ksp, richardson_damping_factor);
-      }
-#ifdef KSPCHEBYSHEV
-      else if (ksptype == KSPCHEBYSHEV) {
-        KSPChebyshevSetEigenvalues(ksp, chebyshev_max, chebyshev_min);
-      }
-#endif
-      else if (ksptype == KSPGMRES) {
-        KSPGMRESSetRestart(ksp, gmres_max_steps);
-      }
-
-      // Set the relative and absolute tolerances
-      KSPSetTolerances(ksp, rtol, atol, dtol, maxits);
-
-      // If the initial guess is not set to zero
-      if (!isGlobalFlagSet(INVERT_START_NEW)) {
-        KSPSetInitialGuessNonzero(ksp, static_cast<PetscBool>(true));
-      }
-
-      // Get the preconditioner
-      KSPGetPC(ksp, &pc);
-
-      // Set the type of the preconditioner
-      PCSetType(pc, pctype.c_str());
-
-      // If pctype = user in BOUT.inp, it will be translated to PCSHELL upon
-      // construction of the object
-      if (pctype == PCSHELL) {
-        // User-supplied preconditioner function
-        PCShellSetApply(pc, laplacePCapply);
-        PCShellSetContext(pc, this);
-        if (rightprec) {
-          KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
-        } else {
-          KSPSetPCSide(ksp, PC_LEFT); // Left preconditioning
+        if (ksptype == KSPRICHARDSON) {
+          KSPRichardsonSetScale(ksp, richardson_damping_factor);
         }
-        //ierr = PCShellSetApply(pc,laplacePCapply);CHKERRQ(ierr);
-        //ierr = PCShellSetContext(pc,this);CHKERRQ(ierr);
-        //ierr = KSPSetPCSide(ksp, PC_RIGHT);CHKERRQ(ierr);
+#ifdef KSPCHEBYSHEV
+        else if (ksptype == KSPCHEBYSHEV) {
+          KSPChebyshevSetEigenvalues(ksp, chebyshev_max, chebyshev_min);
+        }
+#endif
+        else if (ksptype == KSPGMRES) {
+          KSPGMRESSetRestart(ksp, gmres_max_steps);
+        }
+
+        // Set the relative and absolute tolerances
+        KSPSetTolerances(ksp, rtol, atol, dtol, maxits);
+
+        // If the initial guess is not set to zero
+        if (!isGlobalFlagSet(INVERT_START_NEW)) {
+          KSPSetInitialGuessNonzero(ksp, static_cast<PetscBool>(true));
+        }
+
+        // Get the preconditioner
+        KSPGetPC(ksp, &pc);
+
+        // Set the type of the preconditioner
+        PCSetType(pc, pctype.c_str());
+
+        // If pctype = user in BOUT.inp, it will be translated to PCSHELL upon
+        // construction of the object
+        if (pctype == PCSHELL) {
+          // User-supplied preconditioner function
+          PCShellSetApply(pc, laplacePCapply);
+          PCShellSetContext(pc, this);
+          if (rightprec) {
+            KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
+          } else {
+            KSPSetPCSide(ksp, PC_LEFT); // Left preconditioning
+          }
+          //ierr = PCShellSetApply(pc,laplacePCapply);CHKERRQ(ierr);
+          //ierr = PCShellSetContext(pc,this);CHKERRQ(ierr);
+          //ierr = KSPSetPCSide(ksp, PC_RIGHT);CHKERRQ(ierr);
+        }
+
+        lib.setOptionsFromInputFile(ksp);
+      }
+      //timer.reset();
+
+      // Call the actual solver
+      {
+        const Timer timer("petscsolve");
+        KSPSolve(ksp, bs, xs); // Call the solver to solve the system
       }
 
-      lib.setOptionsFromInputFile(ksp);
+      KSPConvergedReason reason;
+      KSPGetConvergedReason(ksp, &reason);
+      if (reason
+          == -3) { // Too many iterations, might be fixed by taking smaller timestep
+        throw BoutIterationFail("petsc_laplace: too many iterations");
+      }
+      if (reason <= 0) {
+        throw BoutException(
+            "petsc_laplace: inversion failed to converge. KSPConvergedReason: {} ({})",
+            KSPConvergedReasons[reason], static_cast<int>(reason));
+      }
+    } else {
+      //timer.reset();
+      const PetscErrorCode err = MatMult(MatA, bs, xs);
+      if (err != PETSC_SUCCESS) {
+        throw BoutException("MatMult failed with {:d}", static_cast<int>(err));
+      }
     }
   }
 
@@ -869,6 +899,33 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   return sol;
 }
 
+int LaplacePetsc::getIndex(const int x, const int z) {
+  // Need to convert LOCAL x to GLOBAL x in order to correctly calculate
+  // PETSC Matrix Index.
+  int xoffset = Istart / meshz;
+  if (Istart % meshz != 0) {
+    throw BoutException("Petsc index sanity check 3 failed");
+  }
+
+  // Calculate the row to be set
+  int row_new = x; // should never be out of range.
+  if (!localmesh->firstX()) {
+    row_new += (xoffset - localmesh->xstart);
+  }
+
+  // Calculate the column to be set
+  int col_new = z;
+  if (col_new < 0) {
+    col_new += meshz;
+  } else if (col_new > meshz - 1) {
+    col_new -= meshz;
+  }
+  ASSERT3(0 <= col_new and col_new < meshz);
+
+  // Convert to global indices
+  return (row_new * meshz) + col_new;
+}
+
 /*!
  * Sets the elements of the matrix A, which is used to solve the problem Ax=b.
  *
@@ -884,33 +941,10 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
  *
  * \param[out] MatA     The matrix A used in the inversion
  */
-void LaplacePetsc::Element(int i, int x, int z, int xshift, int zshift, PetscScalar ele,
-                           Mat& MatA) {
+void LaplacePetsc::Element(const int i, const int x, const int z, const int xshift,
+                           const int zshift, const PetscScalar ele, Mat& MatA) {
 
-  // Need to convert LOCAL x to GLOBAL x in order to correctly calculate
-  // PETSC Matrix Index.
-  int xoffset = Istart / meshz;
-  if (Istart % meshz != 0) {
-    throw BoutException("Petsc index sanity check 3 failed");
-  }
-
-  // Calculate the row to be set
-  int row_new = x + xshift; // should never be out of range.
-  if (!localmesh->firstX()) {
-    row_new += (xoffset - localmesh->xstart);
-  }
-
-  // Calculate the column to be set
-  int col_new = z + zshift;
-  if (col_new < 0) {
-    col_new += meshz;
-  } else if (col_new > meshz - 1) {
-    col_new -= meshz;
-  }
-
-  // Convert to global indices
-  int index = (row_new * meshz) + col_new;
-
+  const int index = getIndex(x + xshift, z + zshift);
 #if CHECK > 2
   if (!std::isfinite(ele)) {
     throw BoutException("Non-finite element at x={:d}, z={:d}, row={:d}, col={:d}\n", x,

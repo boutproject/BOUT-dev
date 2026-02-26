@@ -8,14 +8,29 @@
   checkData({{lhs.name}});
   checkData({{rhs.name}});
 
-  {% if out == "Field3D" %}
-    {% if lhs == rhs == "Field3D" %}
+  {% if out.region_type == "3D" %}
+    {% if lhs.region_type == rhs.region_type == "3D" %}
       {{out.name}}.setRegion({{lhs.name}}.getMesh()->getCommonRegion({{lhs.name}}.getRegionID(),
                                                                      {{rhs.name}}.getRegionID()));
-    {% elif lhs == "Field3D" %}
+    {% elif lhs.region_type == "3D" %}
       {{out.name}}.setRegion({{lhs.name}}.getRegionID());
-    {% elif rhs == "Field3D" %}
+    {% elif rhs.region_type == "3D" %}
       {{out.name}}.setRegion({{rhs.name}}.getRegionID());
+    {% endif %}
+    {% if out == "Field3DParallel" %}
+      if ({{out.name}}.isFci()) {
+	{{ lhs.assertParallelSlices }}
+	{{ rhs.assertParallelSlices }}
+        {{out.name}}.splitParallelSlices();
+      {% if lhs.region_type == "3D" %}
+        for (size_t i{0} ; i < {{lhs.name}}.numberParallelSlices() ; ++i) {
+      {% else %}
+        for (size_t i{0} ; i < {{rhs.name}}.numberParallelSlices() ; ++i) {
+      {% endif %}
+          {{out.name}}.yup(i) = {{lhs.yup}} {{operator}} {{rhs.yup}};
+          {{out.name}}.ydown(i) = {{lhs.ydown}} {{operator}} {{rhs.ydown}};
+        }
+      }
     {% endif %}
   {% endif %}
 
@@ -61,31 +76,121 @@
 	}
   {% endif %}
 
+#if BOUT_USE_TRACK
+  {{out.name}}.name = fmt::format("{:s} {{operator}} {:s}", {{'"BR"' if lhs == "BoutReal" else lhs.name + ".name"}}
+  		      				     	  , {{'"BR"' if rhs == "BoutReal" else rhs.name + ".name"}});
+#endif
   checkData({{out.name}});
   return {{out.name}};
 }
+
+{% if out.field_type == lhs.field_type and lhs == "Field3D" %}
+// Provide the C++ operator to update {{lhs}} by {{operator_name}} with {{rhs}}
+{{lhs}} &{{lhs}}::update_{{operator_name}}_inplace(const {{rhs.passByReference}}) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  {% if lhs != "BoutReal" and rhs != "BoutReal" %}
+    ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
+  {% endif %}
+
+    // Delete existing parallel slices. We don't update parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
+    checkData(*this);
+    checkData({{rhs.name}});
+
+    {% if lhs.region_type == rhs.region_type == "3D" %}
+      regionID = fieldmesh->getCommonRegion(regionID, {{rhs.name}}.getRegionID());
+    {% endif %}
+
+
+  {% if (lhs == "Field3D") and (rhs =="Field2D") %}
+    {{region_loop}}({{index_var}}, {{rhs.name}}.getRegion({{region_name}})) {
+	const auto {{mixed_base_ind}} = fieldmesh->ind2Dto3D({{index_var}});
+	{% if (operator == "/") and (rhs == "Field2D") %}
+           const auto tmp = 1.0 / {{rhs.mixed_index}};
+	   for (int {{jz_var}} = 0; {{jz_var}} < fieldmesh->LocalNz; ++{{jz_var}}){
+		   (*this)[{{mixed_base_ind}} + {{jz_var}}] *= tmp;
+        {% else %}
+           for (int {{jz_var}} = 0; {{jz_var}} < fieldmesh->LocalNz; ++{{jz_var}}){
+	           (*this)[{{mixed_base_ind}} + {{jz_var}}] {{operator}}= {{rhs.index}};
+        {% endif %}
+	}
+	}
+  {% elif rhs == "FieldPerp" and (lhs == "Field3D" or lhs == "Field2D")%}
+    Mesh *localmesh = this->getMesh();
+
+    {{region_loop}}({{index_var}}, {{rhs.name}}.getRegion({{region_name}})) {
+            int yind = {{rhs.name}}.getIndex();
+            const auto {{mixed_base_ind}} = localmesh->indPerpto3D({{index_var}}, yind);
+            (*this)[{{base_ind_var}}] {{operator}}= {{rhs.index}};
+	}
+  {% elif (operator == "/") and (lhs == "Field3D" or lhs == "Field2D") and (rhs =="BoutReal") %}
+    const auto tmp = 1.0 / {{rhs.index}};
+    {{region_loop}}({{index_var}}, this->getRegion({{region_name}})) {
+        (*this)[{{index_var}}] *= tmp;
+    }
+  {% else %}
+    {{region_loop}}({{index_var}}, this->getRegion({{region_name}})) {
+      (*this)[{{index_var}}] {{operator}}= {{rhs.index}};
+    }
+  {% endif %}
+
+  {% if lhs.region_type == "3D" %}
+    track(rhs, "operator{{operator}}=");
+  {% endif %}
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} {{operator}}= {:s}", this->name, {{'"BR"' if rhs == "BoutReal" else rhs.name + ".name"}});
+#endif
+
+  checkData(*this);
+
+  return *this;
+}
+{% endif %}
+
 
 {% if out.field_type == lhs.field_type %}
 // Provide the C++ operator to update {{lhs}} by {{operator_name}} with {{rhs}}
 {{lhs}} &{{lhs}}::operator{{operator}}=(const {{rhs.passByReference}}) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
+{% if lhs == "Field3DParallel" %}
+  if (data.unique() or isRef) {
+{% else %}
   if (data.unique()) {
+{% endif %}
     {% if lhs != "BoutReal" and rhs != "BoutReal" %}
       ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
     {% endif %}
 
-    {% if (lhs == "Field3D") %}
-      // Delete existing parallel slices. We don't copy parallel slices, so any
+    {% if lhs == "Field3D" %}
+      // Delete existing parallel slices. We don't update parallel slices, so any
       // that currently exist will be incorrect.
       clearParallelSlices();
-
+    {% endif %}
+    {% if lhs == "Field3DParallel" and (rhs.region_type == "3D" or rhs == "BoutReal") %}
+      if (this->isFci()) {
+        if (isRef) {
+          for (size_t i{0} ; i < yup_fields.size() ; ++i) {
+            yup(i).update_{{operator_name}}_inplace({{rhs.name}}{% if rhs == "Field3D" %}.yup(i){% endif %});
+            ydown(i).update_{{operator_name}}_inplace({{rhs.name}}{% if rhs == "Field3D" %}.ydown(i){% endif %});
+          }
+        } else {
+          for (size_t i{0} ; i < yup_fields.size() ; ++i) {
+            yup(i) {{operator}}= {{rhs.name}}{% if rhs == "Field3D" %}.yup(i){% endif %};
+            ydown(i) {{operator}}= {{rhs.name}}{% if rhs == "Field3D" %}.ydown(i){% endif %};
+          }
+        }
+      } else {
+        clearParallelSlices();
+      }
     {% endif %}
     checkData(*this);
     checkData({{rhs.name}});
 
-    {% if lhs == rhs == "Field3D" %}
-      regionID = fieldmesh->getCommonRegion(regionID, {{rhs.name}}.regionID);
+    {% if lhs.region_type == rhs.region_type == "3D" %}
+      regionID = fieldmesh->getCommonRegion(regionID, {{rhs.name}}.getRegionID());
     {% endif %}
 
 
@@ -129,9 +234,19 @@
     }
   {% endif %}
 
+  {% if lhs.region_type == "3D" %}
+    track(rhs, "operator{{operator}}=");
+  {% endif %}
+#if BOUT_USE_TRACK
+    name = fmt::format("{:s} {{operator}}= {:s}", this->name, {{'"BR"' if rhs == "BoutReal" else rhs.name + ".name"}});
+#endif
+
     checkData(*this);
 
   } else {
+  {% if lhs.region_type == "3D" %}
+    track(rhs, "operator{{operator}}=");
+  {% endif %}
     (*this) = (*this) {{operator}} {{rhs.name}};
   }
   return *this;
