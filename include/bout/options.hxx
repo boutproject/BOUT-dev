@@ -1046,7 +1046,7 @@ namespace details {
 struct OptionsFormatterBase {
   constexpr auto parse(fmt::format_parse_context& ctx) {
     const auto* it = ctx.begin();
-    const auto *const end = ctx.end();
+    const auto* const end = ctx.end();
 
     while (it != end and *it != '}') {
       switch (*it) {
