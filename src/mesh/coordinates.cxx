@@ -591,6 +591,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
     IntShiftTorsion = 0.;
   }
+
+  // Allow transform to fix things up
+  transform->loadParallelMetrics(this);
 }
 
 Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
@@ -879,6 +882,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
                                                   true, true, false, transform.get());
     }
   }
+  // Allow transform to fix things up
+  transform->loadParallelMetrics(this);
 }
 
 void Coordinates::outputVars(Options& output_options) {
@@ -1015,15 +1020,13 @@ int Coordinates::geometry(bool recalculate_staggered,
   G3_23 = 0.5 * g13 * (DDZ(g_12) + DDY(g_13) - DDX(g_23)) + 0.5 * g23 * DDZ(g_22)
           + 0.5 * g33 * DDY(g_33);
 
-  auto tmp = J * g12;
-  localmesh->communicate_no_slices(tmp);
-  G1 = (DDX(J * g11) + DDY(tmp) + DDZ(J * g13)) / J;
-  tmp = J * g22;
-  localmesh->communicate_no_slices(tmp);
-  G2 = (DDX(J * g12) + DDY(tmp) + DDZ(J * g23)) / J;
-  tmp = J * g23;
-  localmesh->communicate_no_slices(tmp);
-  G3 = (DDX(J * g13) + DDY(tmp) + DDZ(J * g33)) / J;
+  if (J.isFci()) {
+    G1 = G2 = G3 = BoutNaN;
+  } else {
+    G1 = (DDX(J * g11) + DDY(J * g12) + DDZ(J * g13)) / J;
+    G2 = (DDX(J * g12) + DDY(J * g22) + DDZ(J * g23)) / J;
+    G3 = (DDX(J * g13) + DDY(J * g23) + DDZ(J * g33)) / J;
+  }
 
   // Communicate christoffel symbol terms
   output_progress.write("\tCommunicating connection terms\n");
