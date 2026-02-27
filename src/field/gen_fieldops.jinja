@@ -129,9 +129,16 @@
     }
   {% endif %}
 
+  {% if lhs == "Field3D" %}
+    track(rhs, "operator{{operator}}=");
+  {% endif %}
+
     checkData(*this);
 
   } else {
+  {% if lhs == "Field3D" %}
+    track(rhs, "operator{{operator}}=");
+  {% endif %}
     (*this) = (*this) {{operator}} {{rhs.name}};
   }
   return *this;
