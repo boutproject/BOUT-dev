@@ -482,6 +482,11 @@ public:
   friend class Vector2D;
 
   Field3D& calcParallelSlices();
+  void allowParallelSlices([[maybe_unused]] bool allow) {
+#if CHECK > 0
+    allowCalcParallelSlices = allow;
+#endif
+  }
 
   void applyBoundary(bool init = false) override;
   void applyBoundary(BoutReal t);
@@ -509,6 +514,8 @@ public:
   int size() const override { return nx * ny * nz; };
 
   std::weak_ptr<Options> getTracking() { return tracking; };
+
+  bool allowCalcParallelSlices{true};
 
 private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null

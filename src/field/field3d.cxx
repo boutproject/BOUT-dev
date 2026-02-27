@@ -342,6 +342,7 @@ Field3D& Field3D::operator=(const BoutReal val) {
 }
 
 Field3D& Field3D::calcParallelSlices() {
+  ASSERT2(allowCalcParallelSlices);
   getCoordinates()->getParallelTransform().calcParallelSlices(*this);
   return *this;
 }
