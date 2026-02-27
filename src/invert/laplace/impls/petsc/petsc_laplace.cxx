@@ -31,12 +31,17 @@
 #include "petsc_laplace.hxx"
 
 #include <bout/assert.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/globals.hxx>
 #include <bout/mesh.hxx>
 #include <bout/output.hxx>
 #include <bout/petsclib.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
+
+#include <vector>
 
 #define KSP_RICHARDSON "richardson"
 #define KSP_CHEBYSHEV "chebyshev"
@@ -51,34 +56,49 @@
 #define KSP_BICG "bicg"
 #define KSP_PREONLY "preonly"
 
-static PetscErrorCode laplacePCapply(PC pc, Vec x, Vec y) {
+namespace {
+PetscErrorCode laplacePCapply(PC pc, Vec x, Vec y) {
   PetscFunctionBegin; // NOLINT
 
   LaplacePetsc* laplace = nullptr;
-  const int ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&laplace)); // NOLINT
-  CHKERRQ(ierr);
+  CHKERRQ(PCShellGetContext(pc, reinterpret_cast<void**>(&laplace))); // NOLINT
 
   PetscFunctionReturn(laplace->precon(x, y)); // NOLINT
 }
+} // namespace
 
 LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
-                           Solver* UNUSED(solver))
+                           [[maybe_unused]] Solver* solver)
     : Laplacian(opt, loc, mesh_in), A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
-      issetD(false), issetC(false), issetE(false),
-      lib(opt == nullptr ? &(Options::root()["laplace"]) : opt) {
+      issetD(false), issetC(false), issetE(false), comm(localmesh->getXcomm()),
+      opts(opt == nullptr ? &(Options::root()["laplace"]) : opt),
+      // WARNING: only a few of these options actually make sense: see the
+      // PETSc documentation to work out which they are (possibly
+      // pbjacobi, sor might be useful choices?)
+      ksptype((*opts)["ksptype"].doc("KSP solver type").withDefault(KSPGMRES)),
+      pctype((*opts)["pctype"]
+                 .doc("Preconditioner type. See the PETSc documentation for options")
+                 .withDefault("none")),
+      richardson_damping_factor((*opts)["richardson_damping_factor"].withDefault(1.0)),
+      chebyshev_max((*opts)["chebyshev_max"].withDefault(100)),
+      chebyshev_min((*opts)["chebyshev_min"].withDefault(0.01)),
+      gmres_max_steps((*opts)["gmres_max_steps"].withDefault(30)),
+      rtol((*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5)),
+      atol((*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-50)),
+      dtol((*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e5)),
+      maxits(
+          (*opts)["maxits"].doc("Maximum number of KSP iterations").withDefault(100000)),
+      direct((*opts)["direct"].doc("Use direct (LU) solver?").withDefault(false)),
+      fourth_order(
+          (*opts)["fourth_order"].doc("Use fourth order stencil").withDefault(false)),
+      lib(opts) {
+
   A.setLocation(location);
   C1.setLocation(location);
   C2.setLocation(location);
   D.setLocation(location);
   Ex.setLocation(location);
   Ez.setLocation(location);
-
-  // Get Options in Laplace Section
-  if (!opt) {
-    opts = Options::getRoot()->getSection("laplace");
-  } else {
-    opts = opt;
-  }
 
 #if CHECK > 0
   // Checking flags are set to something which is not implemented
@@ -91,31 +111,31 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   }
 #endif
 
-  // Get communicator for group of processors in X - all points in z-x plane for fixed y.
-  comm = localmesh->getXcomm();
+  const bool first_x = localmesh->firstX();
+  const bool last_x = localmesh->lastX();
 
   // Need to determine local size to use based on prior parallelisation
   // Coefficient values are stored only on local processors.
-  localN = (localmesh->xend - localmesh->xstart + 1) * (localmesh->LocalNz);
-  if (localmesh->firstX()) {
-    localN +=
-        localmesh->xstart
-        * (localmesh->LocalNz); // If on first processor add on width of boundary region
+  const auto local_nz = localmesh->zend - localmesh->zstart + 1;
+  localN = (localmesh->xend - localmesh->xstart + 1) * local_nz;
+  if (first_x) {
+    // If on first processor add on width of boundary region
+    localN += localmesh->xstart * local_nz;
   }
-  if (localmesh->lastX()) {
-    localN +=
-        localmesh->xstart
-        * (localmesh->LocalNz); // If on last processor add on width of boundary region
+  if (last_x) {
+    // If on last processor add on width of boundary region
+    localN += localmesh->xstart * local_nz;
   }
 
   // Calculate 'size' (the total number of points in physical grid)
+  size = localN;
   if (bout::globals::mpi->MPI_Allreduce(&localN, &size, 1, MPI_INT, MPI_SUM, comm)
       != MPI_SUCCESS) {
     throw BoutException("Error in MPI_Allreduce during LaplacePetsc initialisation");
   }
 
   // Calculate total (physical) grid dimensions
-  meshz = localmesh->LocalNz;
+  meshz = local_nz;
   meshx = size / meshz;
 
   // Create PETSc type of vectors for the solution and the RHS vector
@@ -124,196 +144,96 @@ LaplacePetsc::LaplacePetsc(Options* opt, const CELL_LOC loc, Mesh* mesh_in,
   VecSetFromOptions(xs);
   VecDuplicate(xs, &bs);
 
-  // Get 4th order solver switch
-  opts->get("fourth_order", fourth_order, false);
-
   // Set size of (the PETSc) Matrix on each processor to localN x localN
   MatCreate(comm, &MatA);
   MatSetSizes(MatA, localN, localN, size, size);
   MatSetFromOptions(MatA);
 
-  /* Pre allocate memory
-   * nnz denotes an array containing the number of non-zeros in the various rows
-   * for
-   * d_nnz - The diagonal terms in the matrix
-   * o_nnz - The off-diagonal terms in the matrix (needed when running in
-   *         parallel)
-   */
-  PetscInt *d_nnz, *o_nnz;
-  PetscMalloc((localN) * sizeof(PetscInt), &d_nnz);
-  PetscMalloc((localN) * sizeof(PetscInt), &o_nnz);
+  // Pre allocate memory. See MatMPIAIJSetPreallocation docs for more info
+  // Number of non-zero elements in each row of matrix owned by this processor
+  // ("diagonal submatrices")
+  std::vector<PetscInt> d_nnz(localN, 0);
+  // Number of non-zero elements in each row of matrix owned by other processors
+  // ("offdiagonal submatrices")
+  std::vector<PetscInt> o_nnz(localN, 0);
+
   if (fourth_order) {
-    // first and last 2*localmesh-LocalNz entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
-    if (localmesh->firstX() && localmesh->lastX()) {
-      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
-        d_nnz[i] = 15;
-        d_nnz[localN - 1 - i] = 15;
-        o_nnz[i] = 0;
-        o_nnz[localN - 1 - i] = 0;
-      }
-      for (int i = (localmesh->LocalNz); i < 2 * (localmesh->LocalNz); i++) {
-        d_nnz[i] = 20;
-        d_nnz[localN - 1 - i] = 20;
-        o_nnz[i] = 0;
-        o_nnz[localN - 1 - i] = 0;
-      }
-    } else if (localmesh->firstX()) {
-      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
-        d_nnz[i] = 15;
-        d_nnz[localN - 1 - i] = 15;
-        o_nnz[i] = 0;
-        o_nnz[localN - 1 - i] = 10;
-      }
-      for (int i = (localmesh->LocalNz); i < 2 * (localmesh->LocalNz); i++) {
-        d_nnz[i] = 20;
-        d_nnz[localN - 1 - i] = 20;
-        o_nnz[i] = 0;
-        o_nnz[localN - 1 - i] = 5;
-      }
-    } else if (localmesh->lastX()) {
-      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
-        d_nnz[i] = 15;
-        d_nnz[localN - 1 - i] = 15;
-        o_nnz[i] = 10;
-        o_nnz[localN - 1 - i] = 0;
-      }
-      for (int i = (localmesh->LocalNz); i < 2 * (localmesh->LocalNz); i++) {
-        d_nnz[i] = 20;
-        d_nnz[localN - 1 - i] = 20;
-        o_nnz[i] = 5;
-        o_nnz[localN - 1 - i] = 0;
-      }
-    } else {
-      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
-        d_nnz[i] = 15;
-        d_nnz[localN - 1 - i] = 15;
-        o_nnz[i] = 10;
-        o_nnz[localN - 1 - i] = 10;
-      }
-      for (int i = (localmesh->LocalNz); i < 2 * (localmesh->LocalNz); i++) {
-        d_nnz[i] = 20;
-        d_nnz[localN - 1 - i] = 20;
-        o_nnz[i] = 5;
-        o_nnz[localN - 1 - i] = 5;
-      }
+    // first and last 2*localmesh-LocalNz entries are the edge x-values that
+    // (may) have 'off-diagonal' components (i.e. on another processor)
+
+    const int first_first_off = first_x ? 0 : 10;
+    const int first_last_off = last_x ? 0 : 10;
+    const int second_first_off = first_x ? 0 : 5;
+    const int second_last_off = last_x ? 0 : 5;
+
+    for (int i = 0; i <= local_nz; i++) {
+      d_nnz[i] = 15;
+      d_nnz[localN - 1 - i] = 15;
+      o_nnz[i] = first_first_off;
+      o_nnz[localN - 1 - i] = first_last_off;
+    }
+    for (int i = local_nz; i < 2 * local_nz; i++) {
+      d_nnz[i] = 20;
+      d_nnz[localN - 1 - i] = 20;
+      o_nnz[i] = second_first_off;
+      o_nnz[localN - 1 - i] = second_last_off;
     }
 
-    for (int i = 2 * (localmesh->LocalNz); i < localN - 2 * ((localmesh->LocalNz)); i++) {
+    for (int i = 2 * local_nz; i < localN - (2 * local_nz); i++) {
       d_nnz[i] = 25;
       d_nnz[localN - 1 - i] = 25;
       o_nnz[i] = 0;
       o_nnz[localN - 1 - i] = 0;
     }
-
-    // Use d_nnz and o_nnz for preallocating the matrix
-    if (localmesh->firstX() && localmesh->lastX()) {
-      // Only one processor in X
-      MatSeqAIJSetPreallocation(MatA, 0, d_nnz);
-    } else {
-      MatMPIAIJSetPreallocation(MatA, 0, d_nnz, 0, o_nnz);
-    }
   } else {
-    // first and last localmesh->LocalNz entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
-    if (localmesh->firstX() && localmesh->lastX()) {
-      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
-        d_nnz[i] = 6;
-        d_nnz[localN - 1 - i] = 6;
-        o_nnz[i] = 0;
-        o_nnz[localN - 1 - i] = 0;
-      }
-    } else if (localmesh->firstX()) {
-      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
-        d_nnz[i] = 6;
-        d_nnz[localN - 1 - i] = 6;
-        o_nnz[i] = 0;
-        o_nnz[localN - 1 - i] = 3;
-      }
-    } else if (localmesh->lastX()) {
-      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
-        d_nnz[i] = 6;
-        d_nnz[localN - 1 - i] = 6;
-        o_nnz[i] = 3;
-        o_nnz[localN - 1 - i] = 0;
-      }
-    } else {
-      for (int i = localmesh->zstart; i <= localmesh->zend; i++) {
-        d_nnz[i] = 6;
-        d_nnz[localN - 1 - i] = 6;
-        o_nnz[i] = 3;
-        o_nnz[localN - 1 - i] = 3;
-      }
+    // first and last local_nz entries are the edge x-values that
+    // (may) have 'off-diagonal' components (i.e. on another processor)
+    const int first_off = first_x ? 0 : 3;
+    const int last_off = last_x ? 0 : 3;
+
+    for (int i = 0; i <= local_nz; i++) {
+      d_nnz[i] = 6;
+      d_nnz[localN - 1 - i] = 6;
+      o_nnz[i] = first_off;
+      o_nnz[localN - 1 - i] = last_off;
     }
 
-    for (int i = localmesh->LocalNz; i < localN - (localmesh->LocalNz); i++) {
+    for (int i = local_nz; i < localN - local_nz; i++) {
       d_nnz[i] = 9;
       d_nnz[localN - 1 - i] = 9;
       o_nnz[i] = 0;
       o_nnz[localN - 1 - i] = 0;
     }
-
-    // Use d_nnz and o_nnz for preallocating the matrix
-    if (localmesh->firstX() && localmesh->lastX()) {
-      MatSeqAIJSetPreallocation(MatA, 0, d_nnz);
-    } else {
-      MatMPIAIJSetPreallocation(MatA, 0, d_nnz, 0, o_nnz);
-    }
   }
-  // Free the d_nnz and o_nnz arrays, as these are will not be used anymore
-  PetscFree(d_nnz);
-  PetscFree(o_nnz);
+
+  if (first_x and last_x) {
+    // Only one processor in X
+    MatSeqAIJSetPreallocation(MatA, 0, d_nnz.data());
+  } else {
+    MatMPIAIJSetPreallocation(MatA, 0, d_nnz.data(), 0, o_nnz.data());
+  }
+
   // Sets up the internal matrix data structures for the later use.
   MatSetUp(MatA);
 
   // Declare KSP Context (abstract PETSc object that manages all Krylov methods)
   KSPCreate(comm, &ksp);
 
-  // Get KSP Solver Type (Generalizes Minimal RESidual is the default)
-  ksptype = (*opts)["ksptype"].doc("KSP solver type").withDefault(KSP_GMRES);
-
-  // Get preconditioner type
-  // WARNING: only a few of these options actually make sense: see the
-  // PETSc documentation to work out which they are (possibly
-  // pbjacobi, sor might be useful choices?)
-  pctype = (*opts)["pctype"]
-               .doc("Preconditioner type. See the PETSc documentation for options")
-               .withDefault("none");
-
   // Let "user" be a synonym for "shell"
   if (pctype == "user") {
     pctype = PCSHELL;
   }
 
-  // Get Options specific to particular solver types
-  opts->get("richardson_damping_factor", richardson_damping_factor, 1.0, true);
-  opts->get("chebyshev_max", chebyshev_max, 100, true);
-  opts->get("chebyshev_min", chebyshev_min, 0.01, true);
-  opts->get("gmres_max_steps", gmres_max_steps, 30, true);
-
-  // Get Tolerances for KSP solver
-  rtol = (*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5);
-  atol = (*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-50);
-  dtol = (*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e5);
-  maxits = (*opts)["maxits"].doc("Maximum number of KSP iterations").withDefault(100000);
-
-  // Get direct solver switch
-  direct = (*opts)["direct"].doc("Use direct (LU) solver?").withDefault(false);
   if (direct) {
-    output << endl
-           << "Using LU decompostion for direct solution of system" << endl
-           << endl;
+    output.write("\nUsing LU decompostion for direct solution of system\n");
   }
 
   if (pctype == PCSHELL) {
-
     rightprec = (*opts)["rightprec"].doc("Right preconditioning?").withDefault(true);
 
     // Options for preconditioner are in a subsection
     pcsolve = Laplacian::create(opts->getSection("precon"));
   }
-
-  // Ensure that the matrix is constructed first time
-  //   coefchanged = true;
-  //  lastflag = -1;
 }
 
 FieldPerp LaplacePetsc::solve(const FieldPerp& b) { return solve(b, b); }
@@ -720,7 +640,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
 
     if (i != Iend) {
-      throw BoutException("Petsc index sanity check failed");
+      throw BoutException("Petsc index sanity check failed: i={} != Iend={}", i, Iend);
     }
 
     // Assemble Matrix
@@ -890,9 +810,13 @@ void LaplacePetsc::Element(int i, int x, int z, int xshift, int zshift, PetscSca
   // Need to convert LOCAL x to GLOBAL x in order to correctly calculate
   // PETSC Matrix Index.
   int xoffset = Istart / meshz;
-  if (Istart % meshz != 0) {
-    throw BoutException("Petsc index sanity check 3 failed");
+#if CHECK > 2
+  const int rem = Istart % meshz;
+  if (rem != 0) {
+    throw BoutException("Petsc index sanity check 3 failed: Istart={} % meshz={} == {}",
+                        Istart, meshz, rem);
   }
+#endif
 
   // Calculate the row to be set
   int row_new = x + xshift; // should never be out of range.
@@ -901,7 +825,7 @@ void LaplacePetsc::Element(int i, int x, int z, int xshift, int zshift, PetscSca
   }
 
   // Calculate the column to be set
-  int col_new = z + zshift;
+  int col_new = z + zshift - localmesh->zstart;
   if (col_new < 0) {
     col_new += meshz;
   } else if (col_new > meshz - 1) {

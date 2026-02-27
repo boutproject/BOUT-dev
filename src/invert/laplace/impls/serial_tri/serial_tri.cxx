@@ -24,6 +24,10 @@
  *
  **************************************************************************/
 
+#include "bout/build_defines.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include "serial_tri.hxx"
 #include "bout/globals.hxx"
 
@@ -247,3 +251,5 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   return x; // Result of the inversion
 }
+
+#endif // BOUT_USE_METRIC_3D
