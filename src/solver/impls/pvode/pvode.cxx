@@ -396,6 +396,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
       for (auto& f : f3d) {
         saveParallel(debug, f.name, *f.var);
+	debug[fmt::format("ddt_{:s}", f.name)] = f.F_var;
       }
       bout::OptionsIO::write("BOUT.debug", debug, mesh);
       MPI_Barrier(BoutComm::get());
