@@ -889,7 +889,7 @@ Fields can also be stored and written::
   Options fields;
   fields["f2d"] = Field2D(1.0);
   fields["f3d"] = Field3D(2.0);
-  bout::OptionsIO::create("fields.nc").write(fields);
+  bout::OptionsIO::create("fields.nc")->write(fields);
 
 This allows the input settings and evolving variables to be
 combined into a single tree (see above on joining trees) and written
@@ -950,7 +950,7 @@ automatically set the ``"time_dimension"`` attribute::
   data["field"] = Field3D(3.0);
   
   // Append data to file
-  bout::OptionsIO({{"file", "time.nc"}, {"append", true}})->write(data);
+  bout::OptionsIO::create({{"file", "time.nc"}, {"append", true}})->write(data);
 
 .. note:: By default, `bout::OptionsIO::write` will only write variables
           with a ``"time_dimension"`` of ``"t"``. You can write

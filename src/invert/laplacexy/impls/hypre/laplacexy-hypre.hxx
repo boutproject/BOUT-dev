@@ -43,6 +43,12 @@ RegisterUnavailableLaplaceXY
     registerlaplacexyhypre("hypre", "BOUT++ was not configured with HYPRE");
 }
 
+#elif BOUT_USE_METRIC_3D
+namespace {
+RegisterUnavailableLaplaceXY
+    registerlaplacexyhypre("hypre", "BOUT++ was configured with 3D metrics");
+}
+
 #else // BOUT_HAS_HYPRE
 
 class Mesh;

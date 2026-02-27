@@ -840,7 +840,8 @@ EXCLUDE                = ../../examples \
                          ../../manual/ \
                          ../../bin/ \
                          ../../externalpackages/googletest/ \
-                         ../../tests/
+                         ../../tests/ \
+                         ../../build/_deps/
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -2059,13 +2060,11 @@ PREDEFINED             = BACKTRACE \
                          BOUT_HAS_LAPACK \
                          BOUT_HAS_NETCDF \
                          BOUT_HAS_PETSC \
-                         BOUT_HAS_PRETTY_FUNCTION \
                          BOUT_HAS_PVODE \
                          BOUT_HAS_SCOREP \
                          BOUT_HAS_SLEPC \
                          BOUT_HAS_SUNDIALS \
                          BOUT_HAS_UUID_SYSTEM_GENERATOR \
-                         BOUT_USE_BACKTRACE \
                          BOUT_USE_COLOR \
                          BOUT_USE_OPENMP \
                          BOUT_USE_OUTPUT_DEBUG \

@@ -30,6 +30,7 @@ jobs:
       OMPI_MCA_rmaps_base_oversubscribe: yes
       PRTE_MCA_rmaps_default_mapping_policy: ":oversubscribe"
       MPIRUN: mpiexec -np
+      BOUT_TEST_DOWNLOAD_FLAGS: --retry-on-http-error=502,503,504 --tries 3
     strategy:
       fail-fast: true
       matrix:
@@ -39,7 +40,7 @@ jobs:
         is_cron:
           - ${{ github.event_name == 'cron' }}
         config:
-          - name: "CMake, PETSc unreleased, ADIOS2"
+          - name: "PETSc unreleased, ADIOS2, 3D metrics"
             os: ubuntu-24.04
             cmake_options: "-DBUILD_SHARED_LIBS=ON
                             -DBOUT_ENABLE_METRIC_3D=ON
@@ -120,22 +121,6 @@ jobs:
             omp_num_threads: 2
             on_cron: false
 
-          - name: "CMake, new PETSc"
-            os: ubuntu-latest
-            cmake_options: "-DBUILD_SHARED_LIBS=ON
-                            -DBOUT_ENABLE_METRIC_3D=ON
-                            -DBOUT_ENABLE_OPENMP=ON
-                            -DBOUT_USE_PETSC=ON
-                            -DBOUT_USE_SLEPC=ON
-                            -DBOUT_USE_SUNDIALS=ON
-                            -DBOUT_USE_HYPRE=OFF
-                            -DBOUT_ENABLE_PYTHON=ON
-                            -DSUNDIALS_ROOT=/home/runner/local
-                            -DPETSC_DIR=/home/runner/local/petsc
-                            -DSLEPC_DIR=/home/runner/local/slepc"
-            build_petsc: -petsc
-            on_cron: false
-
         exclude:
           - is_cron: true
             config:
@@ -168,21 +153,29 @@ jobs:
                  libparpack2-dev
                  libhypre-dev
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: true
 
       - uses: actions/setup-python@v6
         with:
           python-version: '3.x'
+          cache: 'pip'
 
       - name: Install pip packages
         run: |
           python -m pip install --upgrade pip setuptools
           python -m pip install -r requirements.txt
 
-      - name: Cache SUNDIALS build
+      - name: Cache Zenodo test data
         uses: actions/cache@v4
+        with:
+          path: build/tests/integrated/test-fci-mpi/grid.fci.nc
+          # If we update the test, invalidate the cache
+          key: zenodo-data-${{ hashFiles('tests/integrated/test-fci-mpi/CMakeLists.txt') }}
+
+      - name: Cache SUNDIALS build
+        uses: actions/cache@v5
         with:
           path: /home/runner/local
           key: bout-sundials-${{ matrix.config.os }}${{ matrix.config.build_petsc }}
@@ -204,10 +197,20 @@ jobs:
     # standard_tests
     timeout-minutes: 120
     runs-on: ubuntu-latest
+    env:
+      BOUT_TEST_DOWNLOAD_FLAGS: --retry-on-http-error=502,503,504 --tries 3
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: true
+
+      - name: Cache Zenodo test data
+        uses: actions/cache@v4
+        with:
+          path: build/tests/integrated/test-fci-mpi/grid.fci.nc
+          # If we update the test, invalidate the cache
+          key: zenodo-data-${{ hashFiles('tests/integrated/test-fci-mpi/CMakeLists.txt') }}
+
       - name: Build Fedora
         run: ./.ci_fedora.sh setup openmpi
         shell: bash
@@ -217,11 +220,20 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     container: ghcr.io/ggeorgakoudis/boutdev-cuda:latest
-
+    env:
+      BOUT_TEST_DOWNLOAD_FLAGS: --retry-on-http-error=502,503,504 --tries 3
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: true
+
+      - name: Cache Zenodo test data
+        uses: actions/cache@v4
+        with:
+          path: build/tests/integrated/test-fci-mpi/grid.fci.nc
+          # If we update the test, invalidate the cache
+          key: zenodo-data-${{ hashFiles('tests/integrated/test-fci-mpi/CMakeLists.txt') }}
+
       - name: Build minimal CUDA 12.2 @ GCC9.4.0 @ Ubuntu 20.04
         run: |
           . /spack/share/spack/setup-env.sh

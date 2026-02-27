@@ -36,6 +36,10 @@
  *
  **************************************************************************/
 
+#include "bout/build_defines.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include "pcr_thomas.hxx"
 #include "bout/globals.hxx"
 
@@ -64,6 +68,8 @@ LaplacePCR_THOMAS::LaplacePCR_THOMAS(Options* opt, CELL_LOC loc, Mesh* mesh_in,
       C2coef(1.0, localmesh), Dcoef(1.0, localmesh), nmode(maxmode + 1),
       ncx(localmesh->LocalNx), ny(localmesh->LocalNy), avec(ny, nmode, ncx),
       bvec(ny, nmode, ncx), cvec(ny, nmode, ncx) {
+
+  bout::fft::assertZSerial(*localmesh, "`pcr_thomas` inversion");
 
   Acoef.setLocation(location);
   C1coef.setLocation(location);
@@ -304,7 +310,6 @@ FieldPerp LaplacePCR_THOMAS::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 }
 
 Field3D LaplacePCR_THOMAS::solve(const Field3D& rhs, const Field3D& x0) {
-  TRACE("LaplacePCR_THOMAS::solve(Field3D, Field3D)");
 
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
@@ -1189,3 +1194,5 @@ void LaplacePCR_THOMAS ::verify_solution(const Matrix<dcomplex>& a_ver,
   }
   output.write("max abs error {}\n", max_error);
 }
+
+#endif // BOUT_USE_METRIC_3D

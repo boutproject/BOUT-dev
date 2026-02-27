@@ -1,13 +1,13 @@
 #include "gtest/gtest.h"
 
 #include "test_extras.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/constants.hxx"
 #include "bout/griddata.hxx"
 #include "bout/mesh.hxx"
 #include "bout/options.hxx"
 #include "bout/output.hxx"
 
-#include <numeric>
 #include <string>
 #include <vector>
 
@@ -57,13 +57,13 @@ public:
 
     expected_2d = makeField<Field2D>(
         [](Field2D::ind_type& index) {
-          return index.x() + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
+          return index.x() + (TWOPI * index.y()) + (TWOPI * index.z()) + 3;
         },
         &mesh_from_options);
 
     expected_3d = makeField<Field3D>(
         [](Field3D::ind_type& index) {
-          return index.x() + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
+          return index.x() + (TWOPI * index.y()) + (TWOPI * index.z()) + 3;
         },
         &mesh_from_options);
     expected_metric =
@@ -316,8 +316,8 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealYNone) {
 
 TEST_F(GridFromOptionsTest, GetVectorBoutRealZ) {
   std::vector<BoutReal> result{};
-  std::vector<BoutReal> expected{3., 3. + (1. * TWOPI / nz), 3. + (2. * TWOPI / nz),
-                                 3. + (3. * TWOPI / nz), 3. + (4. * TWOPI / nz)};
+  std::vector<BoutReal> expected{3., 3. + (1. * TWOPI), 3. + (2. * TWOPI),
+                                 3. + (3. * TWOPI), 3. + (4. * TWOPI)};
 
   EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", nz, 0,
                             GridDataSource::Direction::Z));
@@ -326,9 +326,8 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealZ) {
 
 TEST_F(GridFromOptionsTest, GetVectorBoutRealZOffset) {
   std::vector<BoutReal> result{};
-  std::vector<BoutReal> expected{3. + (1. * TWOPI / nz), 3. + (2. * TWOPI / nz),
-                                 3. + (3. * TWOPI / nz), 3. + (4. * TWOPI / nz),
-                                 3. + (5. * TWOPI / nz)};
+  std::vector<BoutReal> expected{3. + (1. * TWOPI), 3. + (2. * TWOPI), 3. + (3. * TWOPI),
+                                 3. + (4. * TWOPI), 3. + (5. * TWOPI)};
 
   EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", nz, 1,
                             GridDataSource::Direction::Z));
@@ -337,8 +336,8 @@ TEST_F(GridFromOptionsTest, GetVectorBoutRealZOffset) {
 
 TEST_F(GridFromOptionsTest, GetVectorBoutRealZMeshOffset) {
   std::vector<BoutReal> result{};
-  std::vector<BoutReal> expected{3. + (-1. * TWOPI / nz), 3., 3. + (1. * TWOPI / nz),
-                                 3. + (2. * TWOPI / nz), 3. + (3. * TWOPI / nz)};
+  std::vector<BoutReal> expected{3. + (-1. * TWOPI), 3., 3. + (1. * TWOPI),
+                                 3. + (2. * TWOPI), 3. + (3. * TWOPI)};
 
   mesh_from_options.OffsetX = 100;
   mesh_from_options.OffsetY = 100;
@@ -397,7 +396,7 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowInterp) {
 
   Coordinates::FieldMetric expected_xlow = makeField<Coordinates::FieldMetric>(
       [](Coordinates::FieldMetric::ind_type& index) {
-        return index.x() - 0.5 + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
+        return index.x() - 0.5 + (TWOPI * index.y()) + (TWOPI * index.z()) + 3;
       },
       &mesh_from_options);
 
@@ -438,8 +437,7 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowRead) {
 
   Field2D expected_xlow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
-        return (nx - index.x() + 0.5) + (TWOPI * index.y()) + (TWOPI * index.z() / nz)
-               + 3;
+        return (nx - index.x() + 0.5) + (TWOPI * index.y()) + (TWOPI * index.z()) + 3;
       },
       &mesh_from_options);
 
@@ -471,7 +469,7 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
 
   Field2D expected_ylow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
-        return index.x() + (TWOPI * (index.y() - 0.5)) + (TWOPI * index.z() / nz) + 3;
+        return index.x() + (TWOPI * (index.y() - 0.5)) + (TWOPI * index.z()) + 3;
       },
       &mesh_from_options);
 
@@ -521,8 +519,7 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowRead) {
 
   Field2D expected_ylow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
-        return index.x() + (TWOPI * (ny - index.y() + 0.5)) + (TWOPI * index.z() / nz)
-               + 3;
+        return index.x() + (TWOPI * (ny - index.y() + 0.5)) + (TWOPI * index.z()) + 3;
       },
       &mesh_from_options);
 

@@ -24,6 +24,10 @@
  *
  **************************************************************************/
 
+#include "bout/build_defines.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include "serial_tri.hxx"
 #include "bout/globals.hxx"
 
@@ -33,14 +37,15 @@
 #include <bout/lapack_routines.hxx>
 #include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
-#include <bout/utils.hxx>
-#include <cmath>
-
 #include <bout/output.hxx>
+#include <bout/utils.hxx>
 
 LaplaceSerialTri::LaplaceSerialTri(Options* opt, CELL_LOC loc, Mesh* mesh_in,
                                    Solver* UNUSED(solver))
     : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0) {
+
+  bout::fft::assertZSerial(*localmesh, "`tri` inversion");
+
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);
@@ -246,3 +251,5 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   return x; // Result of the inversion
 }
+
+#endif // BOUT_USE_METRIC_3D

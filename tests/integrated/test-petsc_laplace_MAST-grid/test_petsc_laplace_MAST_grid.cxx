@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
     f1.allocate();
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
           BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
           BoutReal z = BoutReal(jz) / nz;
           f1(jx, jy, jz) =
@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
     if (mesh->firstX()) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             f1(jx, jy, jz) =
@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
     if (mesh->lastX()) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             f1(jx, jy, jz) =
@@ -131,7 +131,7 @@ int main(int argc, char** argv) {
     d1.allocate();
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
           BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
           BoutReal z = BoutReal(jz) / nz;
           d1(jx, jy, jz) =
@@ -143,7 +143,7 @@ int main(int argc, char** argv) {
     if (mesh->firstX()) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             d1(jx, jy, jz) =
@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
     if (mesh->lastX()) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             d1(jx, jy, jz) =
@@ -174,7 +174,7 @@ int main(int argc, char** argv) {
     c1.allocate();
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
           BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
           BoutReal z = BoutReal(jz) / nz;
           c1(jx, jy, jz) = 1.
@@ -186,7 +186,7 @@ int main(int argc, char** argv) {
     if (mesh->firstX()) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             c1(jx, jy, jz) = 1.
@@ -199,7 +199,7 @@ int main(int argc, char** argv) {
     if (mesh->lastX()) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             c1(jx, jy, jz) = 1.
@@ -215,7 +215,7 @@ int main(int argc, char** argv) {
     a1.allocate();
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
           BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
           BoutReal z = BoutReal(jz) / nz;
           a1(jx, jy, jz) =
@@ -226,7 +226,7 @@ int main(int argc, char** argv) {
     if (mesh->firstX()) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             a1(jx, jy, jz) =
@@ -238,7 +238,7 @@ int main(int argc, char** argv) {
     if (mesh->lastX()) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             a1(jx, jy, jz) =
@@ -256,7 +256,7 @@ int main(int argc, char** argv) {
     if (mesh->firstX()) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             b1(jx, jy, jz) = b1(jx + 1, jy, jz);
           }
         }
@@ -265,7 +265,7 @@ int main(int argc, char** argv) {
     if (mesh->lastX()) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             b1(jx, jy, jz) = b1(jx - 1, jy, jz);
           }
         }
@@ -371,7 +371,7 @@ int main(int argc, char** argv) {
     if (mesh->firstX()) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             b3(jx, jy, jz) = b3(jx + 1, jy, jz);
           }
         }
@@ -380,7 +380,7 @@ int main(int argc, char** argv) {
     if (mesh->lastX()) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             b3(jx, jy, jz) = b3(jx - 1, jy, jz);
           }
         }
@@ -468,7 +468,7 @@ int main(int argc, char** argv) {
     f5.allocate();
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
           BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
           BoutReal z = BoutReal(jz) / nz;
           f5(jx, jy, jz) =
@@ -489,7 +489,7 @@ int main(int argc, char** argv) {
     if (mesh->firstX()) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             f5(jx, jy, jz) =
@@ -511,7 +511,7 @@ int main(int argc, char** argv) {
     if (mesh->lastX()) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             f5(jx, jy, jz) =
@@ -536,7 +536,7 @@ int main(int argc, char** argv) {
     d5.allocate();
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
           BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
           BoutReal z = BoutReal(jz) / nz;
           d5(jx, jy, jz) =
@@ -547,7 +547,7 @@ int main(int argc, char** argv) {
     if (mesh->firstX()) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             d5(jx, jy, jz) =
@@ -559,7 +559,7 @@ int main(int argc, char** argv) {
     if (mesh->lastX()) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             d5(jx, jy, jz) =
@@ -574,7 +574,7 @@ int main(int argc, char** argv) {
     c5.allocate();
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
           BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
           BoutReal z = BoutReal(jz) / nz;
           c5(jx, jy, jz) =
@@ -585,7 +585,7 @@ int main(int argc, char** argv) {
     if (mesh->firstX()) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             c5(jx, jy, jz) =
@@ -597,7 +597,7 @@ int main(int argc, char** argv) {
     if (mesh->lastX()) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             c5(jx, jy, jz) =
@@ -612,7 +612,7 @@ int main(int argc, char** argv) {
     a5.allocate();
     for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+        for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
           BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
           BoutReal z = BoutReal(jz) / nz;
           a5(jx, jy, jz) = -1. + p * cos(2. * PI * x * 2.) * sin(2. * PI * (z - q) * 7.);
@@ -622,7 +622,7 @@ int main(int argc, char** argv) {
     if (mesh->firstX()) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             a5(jx, jy, jz) =
@@ -634,7 +634,7 @@ int main(int argc, char** argv) {
     if (mesh->lastX()) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             BoutReal x = BoutReal(mesh->getGlobalXIndex(jx) - mesh->xstart) / nx;
             BoutReal z = BoutReal(jz) / nz;
             a5(jx, jy, jz) =
@@ -650,7 +650,7 @@ int main(int argc, char** argv) {
     if (mesh->firstX()) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             b5(jx, jy, jz) = b5(jx + 1, jy, jz);
           }
         }
@@ -659,7 +659,7 @@ int main(int argc, char** argv) {
     if (mesh->lastX()) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             b5(jx, jy, jz) = b5(jx - 1, jy, jz);
           }
         }
@@ -762,7 +762,7 @@ int main(int argc, char** argv) {
     if (mesh->firstX()) {
       for (int jx = mesh->xstart - 1; jx >= 0; jx--) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             b7(jx, jy, jz) = b7(jx + 1, jy, jz);
           }
         }
@@ -771,7 +771,7 @@ int main(int argc, char** argv) {
     if (mesh->lastX()) {
       for (int jx = mesh->xend + 1; jx < mesh->LocalNx; jx++) {
         for (int jy = 0; jy < mesh->LocalNy; jy++) {
-          for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
             b7(jx, jy, jz) = b7(jx - 1, jy, jz);
           }
         }
@@ -864,7 +864,7 @@ BoutReal max_error_at_ystart(const Field3D& error) {
   BoutReal local_max_error = error(mesh->xstart, mesh->ystart, 0);
 
   for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-    for (int jz = 0; jz < mesh->LocalNz; jz++) {
+    for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
       if (local_max_error < error(jx, mesh->ystart, jz)) {
         local_max_error = error(jx, mesh->ystart, jz);
       }

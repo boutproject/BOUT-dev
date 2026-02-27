@@ -1,4 +1,5 @@
-bout_add_integrated_test(test-boutpp-collect
+bout_add_integrated_test(
+  test-boutpp-collect
   USE_RUNTEST
   EXTRA_FILES input/BOUT.inp
   REQUIRES BOUT_ENABLE_PYTHON

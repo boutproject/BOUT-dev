@@ -5,8 +5,8 @@
 ///
 /// 1. Dump files, containing time history:
 ///
-///       auto dump = OptionsIOFactory::getInstance().createOutput();
-///       dump->write(data);
+///        auto dump = OptionsIOFactory::getInstance().createOutput();
+///        dump->write(data);
 ///
 ///    where data is an Options tree. By default dump files are configured
 ///    with the root `output` section, or an Option tree can be passed to
@@ -14,20 +14,27 @@
 ///
 /// 2. Restart files:
 ///
-///       auto restart = OptionsIOFactory::getInstance().createOutput();
-///       restart->write(data);
+///        auto restart = OptionsIOFactory::getInstance().createRestart();
+///        restart->write(data);
 ///
 ///    where data is an Options tree. By default restart files are configured
 ///    with the root `restart_files` section, or an Option tree can be passed to
 ///    `createRestart`.
 ///
 /// 3. Ad-hoc single files
-///   Note: The caller should consider how multiple processors interact with the file.
+///    Note: The caller should consider how multiple processors interact with the file.
 ///
-///       auto file = OptionsIOFactory::getInstance().createFile("some_file.nc");
-///   or
-///       auto file = OptionsIO::create("some_file.nc");
+///        auto file = OptionsIOFactory::getInstance().createFile("some_file.nc");
+///    or
+///        auto file = OptionsIO::create("some_file.nc");
 ///
+/// 4. Ad-hoc parallel files
+///    This adds also metric information, such that the file can be read with
+///    boutdata or xBOUT
+///
+///        OptionIO::write("some_file", data, mesh);
+///
+///    if mesh is omitted, no grid information is added.
 ///
 
 #pragma once
@@ -37,6 +44,7 @@
 
 #include "bout/build_defines.hxx"
 #include "bout/generic_factory.hxx"
+#include "bout/mesh.hxx"
 #include "bout/options.hxx"
 
 #include <memory>
@@ -76,6 +84,11 @@ public:
   /// Create an OptionsIO for I/O to the given file.
   /// This uses the default file type and default options.
   static std::unique_ptr<OptionsIO> create(const std::string& file);
+
+  /// Write some data to a file with a given name prefix
+  /// This will be done in parallel. If Mesh is given, also mesh data will be
+  /// added, which is needed for xBOUT or boutdata to read the files.
+  static void write(const std::string& prefix, Options& data, Mesh* mesh = nullptr);
 
   /// Create an OptionsIO for I/O to the given file.
   /// The file will be configured using the given `config` options:

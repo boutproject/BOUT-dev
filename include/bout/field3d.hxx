@@ -33,11 +33,15 @@ class Field3D;
 #include "bout/field2d.hxx"
 #include "bout/fieldperp.hxx"
 #include "bout/region.hxx"
+#include "bout/traits.hxx"
 
+#include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 class Mesh;
+class Options;
 
 /// Class for 3D X-Y-Z scalar fields
 /*!
@@ -291,6 +295,17 @@ public:
   /// cuts on closed field lines?
   bool requiresTwistShift(bool twist_shift_enabled);
 
+  /// Enable a special tracking mode for debugging
+  /// Save all changes that, are done to the field, to tracking
+  Field3D& enableTracking(const std::string& name, std::weak_ptr<Options> tracking);
+
+  /// Disable tracking
+  Field3D& disableTracking() {
+    tracking.reset();
+    tracking_state = 0;
+    return *this;
+  }
+
   /////////////////////////////////////////////////////////
   // Data access
 
@@ -493,6 +508,8 @@ public:
 
   int size() const override { return nx * ny * nz; };
 
+  std::weak_ptr<Options> getTracking() { return tracking; };
+
 private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1}, nz{-1};
@@ -508,6 +525,22 @@ private:
 
   /// RegionID over which the field is valid
   std::optional<size_t> regionID;
+
+  /// counter for tracking, to assign unique names to the variable names
+  int tracking_state{0};
+  std::weak_ptr<Options> tracking;
+  // name is changed if we assign to the variable, while selfname is a
+  // non-changing copy that is used for the variable names in the dump files
+  std::string selfname;
+  template <typename T>
+  void track(const T& change, const std::string& operation) {
+    if (tracking_state != 0) {
+      _track(change, operation);
+    }
+  }
+  template <typename T, typename = bout::utils::EnableIfField<T>>
+  void _track(const T& change, std::string operation);
+  void _track(const BoutReal& change, std::string operation);
 };
 
 // Non-member overloaded operators

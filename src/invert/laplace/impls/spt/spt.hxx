@@ -39,10 +39,20 @@
 class LaplaceSPT;
 
 #ifndef BOUT_SPT_H
+#include "bout/build_defines.hxx"
+#include "bout/invert_laplace.hxx"
+
+#if BOUT_USE_METRIC_3D
+
+namespace {
+const RegisterUnavailableLaplace
+    registerlaplacespt(LAPLACE_SPT, "BOUT++ was configured with 3D metrics");
+}
+
+#else
 #define BOUT_SPT_H
 
 #include <bout/dcomplex.hxx>
-#include <bout/invert_laplace.hxx>
 #include <bout/mesh.hxx>
 #include <bout/options.hxx>
 #include <bout/utils.hxx>
@@ -153,7 +163,9 @@ private:
 namespace {
 // Note: After class definition so compiler knows that
 //       registered class is derived from Laplacian
-RegisterLaplace<LaplaceSPT> registerlaplacespt(LAPLACE_SPT);
+const RegisterLaplace<LaplaceSPT> registerlaplacespt(LAPLACE_SPT);
 } // namespace
+
+#endif // BOUT_USE_METRIC_3D
 
 #endif // BOUT_SPT_H

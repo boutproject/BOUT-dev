@@ -36,6 +36,10 @@
  *
  **************************************************************************/
 
+#include "bout/build_defines.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include "pcr.hxx"
 #include "bout/globals.hxx"
 
@@ -66,6 +70,8 @@ LaplacePCR::LaplacePCR(Options* opt, CELL_LOC loc, Mesh* mesh_in, Solver* UNUSED
       C2coef(1.0, localmesh), Dcoef(1.0, localmesh), nmode(maxmode + 1),
       ncx(localmesh->LocalNx), ny(localmesh->LocalNy), avec(ny, nmode, ncx),
       bvec(ny, nmode, ncx), cvec(ny, nmode, ncx) {
+
+  bout::fft::assertZSerial(*localmesh, "`pcr` inversion");
 
   Acoef.setLocation(location);
   C1coef.setLocation(location);
@@ -308,7 +314,6 @@ FieldPerp LaplacePCR::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 }
 
 Field3D LaplacePCR::solve(const Field3D& rhs, const Field3D& x0) {
-  TRACE("LaplacePCR::solve(Field3D, Field3D)");
 
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
@@ -1107,3 +1112,5 @@ void LaplacePCR ::verify_solution(const Matrix<dcomplex>& a_ver,
   output.write("max abs error {}\n", max_error);
   output.write("max abs error location {} {}\n", max_loc_x, max_loc_z);
 }
+
+#endif // BOUT_USE_METRIC_3D

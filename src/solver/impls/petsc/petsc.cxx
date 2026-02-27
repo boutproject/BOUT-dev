@@ -2,7 +2,7 @@
  * Interface to PETSc solver
  *
  **************************************************************************
- * Copyright 2010 - 2025 BOUT++ contributors
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -165,6 +165,39 @@ PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, vo
   PetscFunctionBegin;
 
   auto* s = static_cast<PetscSolver*>(ctx);
+
+  if (s->diagnose) {
+    // Print diagnostic information.
+    // Using the same format at the SNES solver
+
+    SNESConvergedReason reason;
+    SNESGetConvergedReason(s->snes, &reason);
+
+    PetscReal timestep;
+    TSGetTimeStep(s->ts, &timestep);
+
+    // SNES failure counter is only reset when TSSolve is called
+    static PetscInt prev_snes_failures = 0;
+    PetscInt snes_failures;
+    TSGetSNESFailures(s->ts, &snes_failures);
+    snes_failures -= prev_snes_failures;
+    prev_snes_failures += snes_failures;
+
+    // Get number of iterations
+    int nl_its;
+    SNESGetIterationNumber(s->snes, &nl_its);
+    int lin_its;
+    SNESGetLinearSolveIterations(s->snes, &lin_its);
+
+    output.print("\r"); // Carriage return for printing to screen
+    output.write("Time: {}, timestep: {}, nl iter: {}, lin iter: {}, reason: {}", t,
+                 timestep, nl_its, lin_its, static_cast<int>(reason));
+    if (snes_failures > 0) {
+      output.write(", SNES failures: {}", snes_failures);
+    }
+    output.write("\n");
+  }
+
   if (t < s->next_output) {
     // Not reached output time yet => return
     PetscFunctionReturn(0);
@@ -291,8 +324,6 @@ PetscSolver::~PetscSolver() {
  **************************************************************************/
 
 int PetscSolver::init() {
-
-  TRACE("Initialising PETSc-dev solver");
 
   Solver::init();
 
@@ -627,7 +658,7 @@ int PetscSolver::init() {
               }
             }
             // 3D fields
-            for (int z = 0; z < mesh->LocalNz; z++) {
+            for (int z = mesh->zstart; z <= mesh->zend; z++) {
               const int ind = ROUND(index(x, y, z)) - Istart;
 
               for (int i = 0; i < n3d; i++) {
@@ -735,7 +766,7 @@ int PetscSolver::init() {
             }
           }
           // 3D fields
-          for (int z = 0; z < mesh->LocalNz; z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int const ind = ROUND(index(x, y, z));
 
             for (int i = 0; i < n3d; i++) {
@@ -759,7 +790,7 @@ int PetscSolver::init() {
                     || (yi >= mesh->LocalNy)) {
                   continue;
                 }
-                for (int zi = 0; zi < mesh->LocalNz; ++zi) {
+                for (int zi = mesh->zstart; zi <= mesh->zend; ++zi) {
                   int ind2 = ROUND(index(xi, yi, zi));
                   if (ind2 < 0) {
                     continue; // Boundary point
@@ -903,8 +934,17 @@ PetscErrorCode PetscSolver::rhs(BoutReal t, Vec udata, Vec dudata, bool linear) 
   load_vars(const_cast<BoutReal*>(udata_array));
   VecRestoreArrayRead(udata, &udata_array);
 
-  // Call RHS function
-  run_rhs(t, linear);
+  try {
+    // Call RHS function
+    run_rhs(t, linear);
+  } catch (BoutException& e) {
+    // Simulation might fail, e.g. negative densities
+    // if timestep too large
+    output_error.write("BoutException thrown: {}\n", e.what());
+    // There is no way to recover and synchronise MPI ranks
+    // unless they all threw an exception at the same point.
+    BoutComm::abort(1);
+  }
 
   // Save derivatives to PETSc
   BoutReal* dudata_array;
@@ -926,7 +966,6 @@ PetscErrorCode PetscSolver::formFunction(Vec U, Vec F) {
 
 // Matrix-free preconditioner function
 PetscErrorCode PetscSolver::pre(Vec x, Vec y) {
-  TRACE("PetscSolver::pre()");
 
   BoutReal* data;
 

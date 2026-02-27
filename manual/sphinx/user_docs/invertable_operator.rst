@@ -48,7 +48,6 @@ the ``operator()`` call::
 
     // Drop C term for now
     Field3D operator()(const Field3D &input) {
-      TRACE("myLaplacian::operator()");
       Timer timer("invertable_operator_operate");
       Field3D result = A * input + D * Delp2(input);
 
@@ -68,7 +67,6 @@ A more complete example is ::
 
     // Drop C term for now
     Field3D operator()(const Field3D &input) {
-      TRACE("myLaplacian::operator()");
       Timer timer("invertable_operator_operate");
       Field3D result = A * input + D * Delp2(input);
 

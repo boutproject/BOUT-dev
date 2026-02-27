@@ -33,7 +33,7 @@ def getversion():
         with contextlib.suppress(KeyError):
             # 0. Check whether version is set via environment variable
             version = os.environ["BOUT_PRETEND_VERSION"]
-            return version
+            return version.lstrip("v")
 
         _bout_previous_version = "v5.2.0"
         _bout_next_version = "v5.2.1"
@@ -74,7 +74,7 @@ def getversion():
                 version = _bout_previous_version + ".rc+" + hash
                 with open("_version.txt", "w") as f:
                     f.write(version + "\n")
-    return version
+    return version.lstrip("v")
 
 
 def run(cmd):
@@ -176,7 +176,7 @@ def build_sdist(sdist_directory, config_settings=None):
     print(config_settings, sdist_directory)
     enable_gz = True
     enable_xz = False
-    external = {"fmt", "mpark.variant"}
+    external = {"fmt", "mpark.variant", "cpptrace"}
     if config_settings is not None:
         global useLocalVersion, pkgname
         for k, v in config_settings.items():
@@ -281,7 +281,7 @@ License-File: COPYING
     with open(f"{distinfo}/WHEEL", "w") as f:
         f.write(
             f"""Wheel-Version: 1.0
-Generator: boutpp_custom_build_wheel ({getversion()})
+Generator: boutpp_custom_build_wheel (version {getversion()})
 Root-Is-Purelib: false
 Tag: {gettag()}
 """

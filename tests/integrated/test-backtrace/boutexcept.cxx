@@ -1,18 +1,12 @@
 #include "bout/boutexception.hxx"
-#include "bout/msg_stack.hxx"
 
-void troublemaker() {
-  AUTO_TRACE();
-  throw BoutException("test");
-}
-void f() {
-  AUTO_TRACE();
-  troublemaker();
-}
-void e() {
-  AUTO_TRACE();
-  f();
-}
+// Can't use anonymous namespace, or the compiler will inline everything,
+// defeating the point of this test.
+// NOLINTBEGIN(misc-use-internal-linkage)
+void troublemaker() { throw BoutException("test"); }
+void f() { troublemaker(); }
+void e() { f(); }
+// NOLINTEND(misc-use-internal-linkage)
 
 int main() {
   e();
