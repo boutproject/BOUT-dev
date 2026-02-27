@@ -252,8 +252,7 @@ jobs:
 
       - name: Build minimal CUDA 12.6 @ GCC11 @ Ubuntu 22.04
         run: |
-          . /spack/share/spack/setup-env.sh
-          spack env activate -p /spack-env
+          . /usr/local/bin/bout-env.bash
           git config --global --add safe.directory $GITHUB_WORKSPACE
           rm -rf build
           cmake -S $GITHUB_WORKSPACE -B build \
