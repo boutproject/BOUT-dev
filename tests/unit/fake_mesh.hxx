@@ -19,6 +19,7 @@
 #include <iterator>
 #include <memory>
 #include <numeric>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -239,7 +240,7 @@ public:
     addRegion2D("RGN_BNDRY", std::accumulate(begin(boundary_names), end(boundary_names),
                                              Region<Ind2D>{},
                                              [&](Region<Ind2D> a, const std::string& b) {
-                                               return a + getRegion2D(b);
+                                               return std::move(a) + getRegion2D(b);
                                              })
                                  .unique());
 
@@ -247,7 +248,7 @@ public:
                 std::accumulate(begin(boundary_names), end(boundary_names),
                                 Region<Ind3D>{},
                                 [this](Region<Ind3D> a, const std::string& b) {
-                                  return a + getRegion3D(b);
+                                  return std::move(a) + getRegion3D(b);
                                 })
                     .unique());
     addRegionPerp("RGN_BNDRY",
