@@ -219,7 +219,7 @@ jobs:
   CUDA:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    container: ghcr.io/ggeorgakoudis/boutdev-cuda:latest
+    container: ghcr.io/boutproject/bout-container-base:ci-cuda
     env:
       BOUT_TEST_DOWNLOAD_FLAGS: --retry-on-http-error=502,503,504 --tries 3
     steps:
@@ -234,15 +234,15 @@ jobs:
           # If we update the test, invalidate the cache
           key: zenodo-data-${{ hashFiles('tests/integrated/test-fci-mpi/CMakeLists.txt') }}
 
-      - name: Build minimal CUDA 12.2 @ GCC9.4.0 @ Ubuntu 20.04
+      - name: Build minimal CUDA 12.6 @ GCC11 @ Ubuntu 22.04
         run: |
-          . /spack/share/spack/setup-env.sh
-          spack env activate -p /spack-env
+          . /usr/local/bin/bout-env.bash
           git config --global --add safe.directory $GITHUB_WORKSPACE
           rm -rf build
           cmake -S $GITHUB_WORKSPACE -B build \
             -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_CXX_COMPILER=g++ \
+            -DCMAKE_CUDA_HOST_COMPILER=g++ \
             -DBOUT_ENABLE_RAJA=on \
             -DBOUT_ENABLE_UMPIRE=on \
             -DBOUT_ENABLE_CUDA=on \
