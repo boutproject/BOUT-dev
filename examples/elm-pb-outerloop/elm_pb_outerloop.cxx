@@ -1490,7 +1490,19 @@ public:
       }
 
       // Get Delp2(J) from J
-      Jpar2 = Delp2(Jpar);
+      nvtxPushColor("rhs_evolve_jpar", 0xFFFFFF00);
+      mesh->communicate(Jpar);
+      Jpar.applyBoundary();
+
+      Jpar2 = 0.0;
+      auto Jpar_acc  = FieldAccessor<>(Jpar);
+      auto Jpar2_acc = FieldAccessor<>(Jpar2);
+
+      BOUT_FOR_RAJA(i, Jpar.getRegion("RGN_NOBNDRY"),
+                    CAPTURE(Jpar_acc, Jpar2_acc)) {
+        Jpar2_acc[i] = Delp2(Jpar_acc, i);
+      };
+      nvtxPop();
 
       Jpar2.applyBoundary();
       mesh->communicate(Jpar2);
@@ -1795,14 +1807,18 @@ public:
     // ddt(U) += b0xcv * Grad(P); // curvature term
     // nvtxPop();
 
+    nvtxPushColor("rhs_communicate", 0xFFFFFF00);    
     mesh->communicate(P);
     P.applyBoundary();
+    nvtxPop();
 
+    nvtxPushColor("rhs_accessor", 0xFFFFFF00);    
     auto region = U.getRegion("RGN_NOBNDRY");
 
     auto b0xcv_x_acc = FieldAccessor<>(b0xcv.x);
     auto b0xcv_y_acc = FieldAccessor<>(b0xcv.y);
     auto b0xcv_z_acc = FieldAccessor<>(b0xcv.z);
+    nvtxPop();
 
     nvtxPushColor("rhs_ddt_U_acc", 0xFFFFFF00);    
     BOUT_FOR_RAJA(i, region, CAPTURE(P_acc, U_acc, b0xcv_x_acc, b0xcv_y_acc, b0xcv_z_acc)) {
@@ -1848,11 +1864,50 @@ public:
     nvtxPop();
 
     nvtxPushColor("rhs_ddt_diffusion_u4", 0xFFFFFF00);  
+    // if (diffusion_u4 > 0.0) {
+    //   tmpU2 = D2DY2(U);
+    //   mesh->communicate(tmpU2);
+    //   tmpU2.applyBoundary();
+    //   ddt(U) -= diffusion_u4 * D2DY2(tmpU2);
+    // }
+    // nvtxPop();
+
+
     if (diffusion_u4 > 0.0) {
-      tmpU2 = D2DY2(U);
+
+      // Kernel 1: tmpU2 = D2DY2(U)
+      nvtxPushColor("rhs_diff_initTmpU2", 0xFFFFFF00);    
+      tmpU2 = 0.0;
+      auto tmpU2a_acc = FieldAccessor<>(tmpU2);
+      nvtxPop();
+
+      nvtxPushColor("rhs_diff_loop1", 0xFFFFFF00);    
+      BOUT_FOR_RAJA(i, region, CAPTURE(U_acc, tmpU2a_acc)) {
+        tmpU2a_acc[i] = D2DY2(U_acc, i);
+      };
+      nvtxPop();
+
+      nvtxPushColor("rhs_diff_communicate", 0xFFFFFF00);    
+      // Host: halo exchange + BCs
       mesh->communicate(tmpU2);
       tmpU2.applyBoundary();
-      ddt(U) -= diffusion_u4 * D2DY2(tmpU2);
+      nvtxPop();
+
+      nvtxPushColor("rhs_diff_acce", 0xFFFFFF00);    
+      // Kernel 2: ddt(U) -= diffusion_u4 * D2DY2(tmpU2)
+      auto tmpU2b_acc = FieldAccessor<>(tmpU2);
+
+      const BoutReal diffusion = diffusion_u4;
+
+      auto& ddtU = ddt(U);               // keep alive (avoid proxy lifetime)
+      auto ddtU_acc = FieldAccessor<>(ddtU);
+      nvtxPop();
+
+      nvtxPushColor("rhs_diff_loop2", 0xFFFFFF00);    
+      BOUT_FOR_RAJA(i, region, CAPTURE(diffusion, ddtU_acc, tmpU2b_acc)) {
+        ddtU_acc[i] -= diffusion * D2DY2(tmpU2b_acc, i);
+      };
+      nvtxPop();
     }
     nvtxPop();
 
