@@ -24,23 +24,38 @@
 
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutcomm.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
+#include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
+#include "bout/globals.hxx"
 #include "bout/initialprofiles.hxx"
 #include "bout/interpolation.hxx"
+#include "bout/monitor.hxx"
 #include "bout/msg_stack.hxx"
+#include "bout/options.hxx"
 #include "bout/output.hxx"
 #include "bout/region.hxx"
 #include "bout/solver.hxx"
+#include "bout/sys/gettext.hxx"
 #include "bout/sys/timer.hxx"
 #include "bout/sys/uuid.h"
+#include "bout/unused.hxx"
+#include "bout/utils.hxx"
+#include "bout/vector2d.hxx"
+#include "bout/vector3d.hxx"
+
+#include <fmt/format.h>
 
 #include <cmath>
-#include <cstring>
 #include <ctime>
+#include <memory>
 #include <numeric>
 #include <set>
+#include <string>
+#include <utility>
 
 // Implementations:
 #include "impls/adams_bashforth/adams_bashforth.hxx"
@@ -507,11 +522,11 @@ int Solver::solve(int nout, BoutReal timestep) {
   finaliseMonitorPeriods(nout, timestep);
 
   output_progress.write(
-      _("Solver running for {:d} outputs with output timestep of {:e}\n"), nout,
+      _f("Solver running for {:d} outputs with output timestep of {:e}\n"), nout,
       timestep);
   if (default_monitor_period > 1) {
     output_progress.write(
-        _("Solver running for {:d} outputs with monitor timestep of {:e}\n"),
+        _f("Solver running for {:d} outputs with monitor timestep of {:e}\n"),
         nout / default_monitor_period, timestep * default_monitor_period);
   }
 
@@ -537,7 +552,7 @@ int Solver::solve(int nout, BoutReal timestep) {
   }
 
   time_t start_time = time(nullptr);
-  output_progress.write(_("\nRun started at  : {:s}\n"), toString(start_time));
+  output_progress.write(_f("\nRun started at  : {:s}\n"), toString(start_time));
 
   Timer timer("run"); // Start timer
 
@@ -583,7 +598,7 @@ int Solver::solve(int nout, BoutReal timestep) {
     status = run();
 
     time_t end_time = time(nullptr);
-    output_progress.write(_("\nRun finished at  : {:s}\n"), toString(end_time));
+    output_progress.write(_f("\nRun finished at  : {:s}\n"), toString(end_time));
     output_progress.write(_("Run time : "));
 
     int dt = end_time - start_time;
@@ -766,7 +781,7 @@ BoutReal Solver::adjustMonitorPeriods(Monitor* new_monitor) {
   }
 
   if (!isMultiple(internal_timestep, new_monitor->timestep)) {
-    throw BoutException(_("Couldn't add Monitor: {:g} is not a multiple of {:g}!"),
+    throw BoutException(_f("Couldn't add Monitor: {:g} is not a multiple of {:g}!"),
                         internal_timestep, new_monitor->timestep);
   }
 
@@ -782,8 +797,8 @@ BoutReal Solver::adjustMonitorPeriods(Monitor* new_monitor) {
 
   if (initialised) {
     throw BoutException(
-        _("Solver::addMonitor: Cannot reduce timestep (from {:g} to {:g}) "
-          "after init is called!"),
+        _f("Solver::addMonitor: Cannot reduce timestep (from {:g} to {:g}) "
+           "after init is called!"),
         internal_timestep, new_monitor->timestep);
   }
 
@@ -883,7 +898,7 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
             monitor.monitor->call(this, simtime, iter / monitor.monitor->period,
                                   NOUT / monitor.monitor->period);
         if (ret != 0) {
-          throw BoutException(_("Monitor signalled to quit (return code {})"), ret);
+          throw BoutException(_f("Monitor signalled to quit (return code {})"), ret);
         }
         // Write the monitor's diagnostics to the main output file
         Options monitor_dump;
@@ -905,7 +920,7 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     for (const auto& monitor : monitors) {
       monitor.monitor->cleanup();
     }
-    output_error.write(_("Monitor signalled to quit (exception {})\n"), e.what());
+    output_error.write(_f("Monitor signalled to quit (exception {})\n"), e.what());
     throw;
   }
 
@@ -1234,13 +1249,13 @@ void Solver::load_derivs(BoutReal* udata) {
 void Solver::save_vars(BoutReal* udata) {
   for (const auto& f : f2d) {
     if (!f.var->isAllocated()) {
-      throw BoutException(_("Variable '{:s}' not initialised"), f.name);
+      throw BoutException(_f("Variable '{:s}' not initialised"), f.name);
     }
   }
 
   for (const auto& f : f3d) {
     if (!f.var->isAllocated()) {
-      throw BoutException(_("Variable '{:s}' not initialised"), f.name);
+      throw BoutException(_f("Variable '{:s}' not initialised"), f.name);
     }
   }
 
@@ -1283,8 +1298,8 @@ void Solver::save_derivs(BoutReal* dudata) {
   // Make sure 3D fields are at the correct cell location
   for (const auto& f : f3d) {
     if (f.var->getLocation() != (f.F_var)->getLocation()) {
-      throw BoutException(_("Time derivative at wrong location - Field is at {:s}, "
-                            "derivative is at {:s} for field '{:s}'\n"),
+      throw BoutException(_f("Time derivative at wrong location - Field is at {:s}, "
+                             "derivative is at {:s} for field '{:s}'\n"),
                           toString(f.var->getLocation()),
                           toString(f.F_var->getLocation()), f.name);
     }
@@ -1488,7 +1503,7 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
 #if CHECK > 0
   for (const auto& f : f3d) {
     if (!f.F_var->isAllocated()) {
-      throw BoutException(_("Time derivative for variable '{:s}' not set"), f.name);
+      throw BoutException(_f("Time derivative for variable '{:s}' not set"), f.name);
     }
   }
 #endif

@@ -1,5 +1,21 @@
 #include "split-rk.hxx"
 
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/field2d.hxx"
+#include "bout/globals.hxx"
+#include "bout/openmpwrap.hxx"
+#include "bout/options.hxx"
+#include "bout/output.hxx"
+#include "bout/solver.hxx"
+#include "bout/sys/gettext.hxx"
+#include "bout/utils.hxx"
+
+#include <cmath>
+#include <iterator>
+
 SplitRK::SplitRK(Options* opts)
     : Solver(opts), nstages((*options)["nstages"]
                                 .doc("Number of stages in RKL step. Must be > 1")
@@ -72,7 +88,7 @@ int SplitRK::init() {
   ASSERT0(ninternal_steps > 0);
 
   timestep = getOutputTimestep() / ninternal_steps;
-  output.write(_("\tUsing a timestep {:e}\n"), timestep);
+  output.write(_f("\tUsing a timestep {:e}\n"), timestep);
 
   return 0;
 }
