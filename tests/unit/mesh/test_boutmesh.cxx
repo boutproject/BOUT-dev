@@ -464,7 +464,7 @@ TEST_P(BadBoutMeshDecompositionTest, BadSingleCoreYDecomposition) {
   EXPECT_THAT(result.reason, HasSubstr(params.expected_message));
 }
 
-TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPE) {
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPETooManyXProcs) {
   Options options{{"NXPE", 3}};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
@@ -472,7 +472,7 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPE) {
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
-TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPE) {
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPETooManyYProcs) {
   Options options{{"NYPE", 7}};
 
   BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
@@ -480,10 +480,46 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPE) {
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisibleByNYPE) {
+  WithQuietOutput info{output_info};
+  Options options{{"NXPE", 5}};
+
+  BoutMeshExposer mesh(5, 24, 1, 1, 1, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisibleByNYPE) {
+  WithQuietOutput info{output_info};
+  Options options{{"NYPE", 5}};
+
+  BoutMeshExposer mesh(5, 5, 1, 1, 1, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisibleByNYPE) {
+  WithQuietOutput info{output_info};
+  Options options{{"NXPE", 5}};
+
+  BoutMeshExposer mesh(5, 24, 1, 1, 1, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisibleByNYPE) {
+  WithQuietOutput info{output_info};
+  Options options{{"NYPE", 5}};
+
+  BoutMeshExposer mesh(5, 5, 1, 1, 1, 8);
+
+  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
+}
+
 TEST_F(BoutMeshTest, ChooseProcessorSplitNXPE) {
   Options options{{"NXPE", 4}};
 
-  BoutMeshExposer mesh(1, 24, 1, 1, 1, 8);
+  BoutMeshExposer mesh(4, 24, 1, 1, 1, 8);
 
   EXPECT_NO_THROW(mesh.chooseProcessorSplit(options));
 
