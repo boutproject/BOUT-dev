@@ -402,6 +402,7 @@ if(zoidberg_FOUND EQUAL 0)
 else()
   set(zoidberg_FOUND OFF)
 endif()
+message(STATUS "Found Zoidberg for FCI tests: ${zoidberg_FOUND}")
 
 option(
   BOUT_GENERATE_FIELDOPS

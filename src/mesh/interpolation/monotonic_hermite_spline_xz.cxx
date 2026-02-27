@@ -25,7 +25,7 @@
 #include "bout/interpolation_xz.hxx"
 #include "bout/mesh.hxx"
 
-#include <vector>
+#include <algorithm>
 
 Field3D XZMonotonicHermiteSpline::interpolate(const Field3D& f,
                                               const std::string& region) const {
@@ -80,7 +80,6 @@ Field3D XZMonotonicHermiteSpline::interpolate(const Field3D& f,
     // Perhaps should only impose near boundaries, since that is where
     // problems most obviously occur.
     const BoutReal localmax = BOUTMAX(f[ic], f[icxp], f[iczp], f[icxpzp]);
-
     const BoutReal localmin = BOUTMIN(f[ic], f[icxp], f[iczp], f[icxpzp]);
 
     ASSERT2(std::isfinite(localmax) || i.x() < localmesh->xstart
@@ -88,12 +87,10 @@ Field3D XZMonotonicHermiteSpline::interpolate(const Field3D& f,
     ASSERT2(std::isfinite(localmin) || i.x() < localmesh->xstart
             || i.x() > localmesh->xend);
 
-    if (result > localmax) {
-      result = localmax;
-    }
-    if (result < localmin) {
-      result = localmin;
-    }
+    const auto diff = ((localmax - localmin) * rtol) + atol;
+
+    result = std::min(result, localmax + diff);
+    result = std::max(result, localmin - diff);
 
     f_interp[iyp] = result;
   }
