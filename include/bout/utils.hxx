@@ -187,6 +187,7 @@ typename std::vector<T, Alloc>::size_type erase_if(std::vector<T, Alloc>& c, Pre
   return r;
 }
 #else
+using std::erase;
 using std::erase_if;
 #endif
 } // namespace utils
