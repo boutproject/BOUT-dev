@@ -41,11 +41,15 @@ RegisterUnavailableLaplace registerlaplacepetsc(LAPLACE_PETSC,
 
 #else
 
+#include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/globalindexer.hxx>
 #include <bout/globals.hxx>
 #include <bout/options.hxx>
 #include <bout/output.hxx>
+#include <bout/petsc_interface.hxx>
 #include <bout/petsclib.hxx>
+#include <bout/region.hxx>
 
 #include <petscksp.h>
 
@@ -59,12 +63,7 @@ class LaplacePetsc : public Laplacian {
 public:
   LaplacePetsc(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
                Mesh* mesh_in = nullptr, Solver* solver = nullptr);
-  ~LaplacePetsc() {
-    KSPDestroy(&ksp);
-    VecDestroy(&xs);
-    VecDestroy(&bs);
-    MatDestroy(&MatA);
-  }
+  ~LaplacePetsc() override;
 
   using Laplacian::setCoefA;
   using Laplacian::setCoefC;
@@ -199,9 +198,21 @@ public:
   int precon(Vec x, Vec y); ///< Preconditioner function
 
 private:
-  void Element(int i, int x, int z, int xshift, int zshift, PetscScalar ele, Mat& MatA);
-  void Coeffs(int x, int y, int z, BoutReal& A1, BoutReal& A2, BoutReal& A3, BoutReal& A4,
-              BoutReal& A5);
+  struct CoeffsA {
+    BoutReal A1;
+    BoutReal A2;
+    BoutReal A3;
+    BoutReal A4;
+    BoutReal A5;
+  };
+
+  /// Calculate the coefficients ``A1-5``
+  CoeffsA Coeffs(Ind3D i);
+
+  /// Set `operator2D` for the second order scheme
+  void setSecondOrderMatrix(int y, bool inner_X_neumann, bool outer_X_neumann);
+  /// Set `operator2D` for the fourth order scheme
+  void setFourthOrderMatrix(int y, bool inner_X_neumann, bool outer_X_neumann);
 
   /* Ex and Ez
    * Additional 1st derivative terms to allow for solution field to be
@@ -220,17 +231,9 @@ private:
 
   FieldPerp sol; // solution Field
 
-  /// Istart is the first row of MatA owned by the process, Iend is 1 greater than the last row.
-  int Istart = -1;
-  int Iend = -1;
-
-  /// Mesh sizes, total size, no of points on this processor
-  int meshx, meshz, size, localN;
   MPI_Comm comm;
-  Mat MatA = nullptr; ///< Stencil matrix
-  Vec xs = nullptr;   ///< Solution vector
-  Vec bs = nullptr;   ///< RHS vector
-  KSP ksp = nullptr;  ///< PETSc solver
+  KSP ksp = nullptr; ///< PETSc solver
+  bool ksp_initialised = false;
 
   Options* opts;       ///< Laplace Section Options Object
   std::string ksptype; ///< KSP solver type
@@ -248,13 +251,12 @@ private:
   bool direct; //Use direct LU solver if true.
   bool fourth_order;
 
+  IndexerPtr<FieldPerp> indexer;
+  PetscMatrix<FieldPerp> operator2D;
   PetscLib lib;
 
   bool rightprec;                     // Right preconditioning
   std::unique_ptr<Laplacian> pcsolve; // Laplacian solver for preconditioning
-
-  void vecToField(Vec x, FieldPerp& f);       // Copy a vector into a fieldperp
-  void fieldToVec(const FieldPerp& f, Vec x); // Copy a fieldperp into a vector
 
   static constexpr int implemented_flags = INVERT_START_NEW;
   static constexpr int implemented_boundary_flags =
