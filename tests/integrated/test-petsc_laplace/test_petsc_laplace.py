@@ -12,7 +12,6 @@ from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect, create_cache
 
 import pathlib
-from sys import exit
 
 errors = [
     "max_error1",
@@ -24,36 +23,34 @@ errors = [
 ]
 tol = 2e-4  # Absolute (?) tolerance
 
-print("Running PETSc Laplacian inversion test")
-success = True
+def test_petsc_laplace():
 
-for nproc in [1, 2, 4]:
-    cmd = "./test_petsc_laplace"
 
-    shell(["rm data/BOUT.dmp.*.nc"])
+    print("Running PETSc Laplacian inversion test")
+    success = True
 
-    print(f"   {nproc} processors....")
-    s, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
+    for nproc in [1, 2, 4]:
+        cmd = "./test_petsc_laplace"
 
-    pathlib.Path(f"run.log.{nproc}").write_text(out)
-    cache = create_cache(path="data", prefix="BOUT.dmp")
+        shell(["rm data/BOUT.dmp.*.nc"])
 
-    # Collect output data
-    for varname in errors:
-        print(f"      Checking {varname} ... ", end="")
-        error = collect(varname, path="data", info=False, datafile_cache=cache)
-        if error <= 0:
-            print("Convergence error")
-            success = False
-        elif error > tol:
-            print(f"Fail, maximum error is = {error:e}")
-            success = False
-        else:
-            print("Pass")
+        print(f"   {nproc} processors....")
+        s, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
 
-if success:
-    print(" => All PETSc Laplacian inversion tests passed")
-    exit(0)
-else:
-    print(" => Some failed tests")
-    exit(1)
+        pathlib.Path(f"run.log.{nproc}").write_text(out)
+        cache = create_cache(path="data", prefix="BOUT.dmp")
+
+        # Collect output data
+        for varname in errors:
+            print(f"      Checking {varname} ... ", end="")
+            error = collect(varname, path="data", info=False, datafile_cache=cache)
+            if error <= 0:
+                print("Convergence error")
+                success = False
+            elif error > tol:
+                print(f"Fail, maximum error is = {error:e}")
+                success = False
+            else:
+                print("Pass")
+
+    assert success, " => Some failed tests"
