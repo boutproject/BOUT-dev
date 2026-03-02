@@ -7,7 +7,6 @@
 # requires: hypre
 # cores: 8
 
-from sys import exit
 
 from boutdata.collect import collect
 from boututils.run_wrapper import launch_safe, shell
@@ -37,35 +36,32 @@ argslist = [
     "f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann b:function=.1",
 ]
 
-print("Running LaplaceXY inversion test")
-success = True
+def test_laplacexy2_hypre():
 
-for nproc in [8]:
-    print("   %d processors...." % nproc)
-    for args in argslist:
-        cmd = "./test-laplacexy " + args
+    print("Running LaplaceXY inversion test")
+    success = True
 
-        shell(["rm data/BOUT.dmp.*.nc > /dev/null 2>&1"])
+    for nproc in [8]:
+        print("   %d processors...." % nproc)
+        for args in argslist:
+            cmd = "./test-laplacexy " + args
 
-        s, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
+            shell(["rm data/BOUT.dmp.*.nc > /dev/null 2>&1"])
 
-        with open(f"run.log.{nproc}", "w") as f:
-            f.write(out)
+            s, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
 
-        # Collect output data
-        error = collect("max_error", path="data", info=False)
-        if error <= 0:
-            print("Convergence error")
-            success = False
-        elif error > tol:
-            print("Fail, maximum error is = " + str(error))
-            success = False
-        else:
-            print("Pass")
+            with open(f"run.log.{nproc}", "w") as f:
+                f.write(out)
 
-if success:
-    print(" => All LaplaceXY inversion tests passed")
-    exit(0)
-else:
-    print(" => Some failed tests")
-    exit(1)
+            # Collect output data
+            error = collect("max_error", path="data", info=False)
+            if error <= 0:
+                print("Convergence error")
+                success = False
+            elif error > tol:
+                print("Fail, maximum error is = " + str(error))
+                success = False
+            else:
+                print("Pass")
+
+    assert success, " => Some failed tests"
