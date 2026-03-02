@@ -11,9 +11,9 @@
 from __future__ import print_function
 from __future__ import division
 
+import pytest
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
-from sys import exit
 
 nprocs = [1, 2]  # Number of processors to run on
 reltol = 1.0e-3  # Allowed relative tolerance
@@ -44,7 +44,7 @@ def run(path, nproc, log=False):
         print(
             "  => Failed (verification step - value is {s})".format(s=passVerification)
         )
-        exit(1)
+        pytest.fail()
 
     if maxRelErrLaplacians > reltol:
         print(
@@ -52,11 +52,10 @@ def run(path, nproc, log=False):
                 s=maxRelErrLaplacians
             )
         )
-        exit(1)
+        pytest.fail()
 
 
-for np in nprocs:
-    run("data", np)
+def test_invertable_operator():
 
-print("  => All tests passed")
-exit(0)
+    for np in nprocs:
+        run("data", np)
