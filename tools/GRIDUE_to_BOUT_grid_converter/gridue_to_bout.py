@@ -194,7 +194,7 @@ def plot(GridueParams: dict, edgecolor="black", ax: object = None, show=True):
     return ax
 
 
-def calcHy( nx, ny, g: dict, dy: float):
+def calcHy(nx, ny, g: dict, dy: float):
     """
     Calculate poloidal arc length metric from gridue dictionary
     """
@@ -294,17 +294,17 @@ def calcMetric(grd: dict, bpsign, verbose=False, ignore_checks=False):
         Dictionary containing grid data with keys:
         "Rxy", "Zxy", "Brxy", "Bzxy", "Btxy", "Bpxy", "Bxy", "hy",
         "cosBeta", "tanBeta", "curl_bOverB_Rhat", "curl_bOverB_Zhat",
-        "curl_bOverB_zetahat". 
+        "curl_bOverB_zetahat".
     bpsign : int
         Sign of the magnetic field (1 for normal, -1 for reversed).
-    verbose : bool, optional               
+    verbose : bool, optional
         If True, print detailed information about the metric tensor and Jacobian.
     ignore_checks : bool, optional
         If True, ignore checks on the Jacobian's relative error.
 
     Returns:
     dict
-        A dictionary containing the metric tensor components, Jacobian, and other related quantities for each grid point. 
+        A dictionary containing the metric tensor components, Jacobian, and other related quantities for each grid point.
         --> Each component is a 2D array with shape [radial, poloidal].
     """
 
@@ -389,7 +389,7 @@ def calcMetric(grd: dict, bpsign, verbose=False, ignore_checks=False):
     if np.max(np.abs(rel_error)) > 1e-6:
         if ignore_checks:
             print("WARNING: Relative error in Jacobian too large.")
-        #else:
+        # else:
         #    raise ValueError(f"Relative error in Jacobian too large: {np.max(np.abs(rel_error))}")
 
     # We want to output contravariant components of Curl(b/B) in the
@@ -530,6 +530,7 @@ def calcRZCurvature(g: dict):
     # Return as [radial, poloidal]
     return curl_bOverB_Rhat.T, curl_bOverB_Zhat.T, curl_bOverB_zetahat.T
 
+
 def main():
     import argparse
 
@@ -558,7 +559,14 @@ Note that in most cases these grids are non-orthogonal."""
 
     Convert_grids(gridue_file, output_filename, plotting, verbose, ignore_checks)
 
-def Convert_grids(gridue_file: str, output_filename: str, plotting: bool = False, verbose: bool = False, ignore_checks: bool = False):
+
+def Convert_grids(
+    gridue_file: str,
+    output_filename: str,
+    plotting: bool = False,
+    verbose: bool = False,
+    ignore_checks: bool = False,
+):
     """
     Convert UEDGE grid file to BOUT++ grid format.
 
@@ -620,10 +628,10 @@ def Convert_grids(gridue_file: str, output_filename: str, plotting: bool = False
     psixy = psi[:, :, 0].T
     nx, ny = Rxy.shape
 
-    #idx = [np.array([1, 2, 4, 3, 1])]
+    # idx = [np.array([1, 2, 4, 3, 1])]
 
-    #pol = []
-    #for i in range(nx):
+    # pol = []
+    # for i in range(nx):
     #        for j in range(ny):
     #            np.concatenate((rm[i][j][idx], zm[i][j][idx])).reshape(2, 5).T
 
@@ -639,10 +647,12 @@ def Convert_grids(gridue_file: str, output_filename: str, plotting: bool = False
     dx = np.zeros((nx, ny))
     for i in range(nx):
         for j in range(ny):
-            if i > 1 and i < nx-2:
-                dx[i, j] = 0.5*(psi[j, i + 1, 0] - psi[j, i - 1, 0])
+            if i > 1 and i < nx - 2:
+                dx[i, j] = 0.5 * (psi[j, i + 1, 0] - psi[j, i - 1, 0])
             else:
-                dx[i, j] = 0.5 * (psi[j, i, 3] + psi[j, i, 4] - psi[j, i, 1] - psi[j, i, 2])
+                dx[i, j] = 0.5 * (
+                    psi[j, i, 3] + psi[j, i, 4] - psi[j, i, 1] - psi[j, i, 2]
+                )
 
     # Note: UEDGE grids have narrow cells on the radial
     # boundaries. BOUT++ applies boundary conditions half-way between
@@ -664,7 +674,7 @@ def Convert_grids(gridue_file: str, output_filename: str, plotting: bool = False
 
     # Calculate hy, the arc length along the flux surface passing through
     # the center of each cell.
-    hy = calcHy(nx,ny,g, dy)
+    hy = calcHy(nx, ny, g, dy)
 
     # Calculate angle between x and y coordinates. sinBeta = 0, cosBeta = 1 for an orthogonal mesh
     sinBeta, cosBeta = calcGridAngle(g)
@@ -706,11 +716,11 @@ def Convert_grids(gridue_file: str, output_filename: str, plotting: bool = False
     Zxy = grd["Zxy"]
     nx, ny = Rxy.shape
 
-    #Get Mesh Topology and remove guard cells accordingly
+    # Get Mesh Topology and remove guard cells accordingly
     mesh_topology = getMeshTopology(g, nx, ny)
 
     if mesh_topology == "SF":
-        #SF case
+        # SF case
         ixseps1 = g["iyseparatrix1"] + 2  # Main X-point separatrix
         ixseps2 = min(g["iyseparatrix3"] + 2, nx)  # Secondary X-point separatrix
         # Remove guard cells on either side of X-point.
@@ -855,7 +865,7 @@ def Convert_grids(gridue_file: str, output_filename: str, plotting: bool = False
         )
 
     if plotting:
-        plt.plot(Rxy, Zxy, "x") #needs to be transposed. 
+        plt.plot(Rxy, Zxy, "x")  # needs to be transposed.
         plt.plot(Rxy[ixseps1, :], Zxy[ixseps1, :], color="magenta", label="ixseps1")
         if ixseps2 < nx:
             plt.plot(Rxy[ixseps2, :], Zxy[ixseps2, :], color="r", label="ixseps2")
@@ -881,7 +891,7 @@ def Convert_grids(gridue_file: str, output_filename: str, plotting: bool = False
     with DataFile(output_filename, create=True, format="NETCDF4") as f:
         # Save unique ID for grid file
         import uuid
-        
+
         f.write_file_attribute("grid_id", str(uuid.uuid1()))
         f.write_file_attribute("gridue", str(gridue_file))
 
@@ -905,6 +915,7 @@ def Convert_grids(gridue_file: str, output_filename: str, plotting: bool = False
         f.write("zShift", zShift)
         f.write("ShiftAngle", ShiftAngle)
 
+
 def getMeshTopology(g, nx, ny):
     """
     Get mesh topology from gridue data.
@@ -922,25 +933,26 @@ def getMeshTopology(g, nx, ny):
         - "jyseps1_2": int, index of the lower outer leg separatrix.
         - "jyseps2_2": int, index of the upper outer leg separatrix.
     """
-    
+
     ixseps1 = g["iyseparatrix1"] + 2  # Lower X-point separatrix
-    ixseps2 = min(g["iyseparatrix2"] + 2, nx)  # Upper X-point separatrix 
+    ixseps2 = min(g["iyseparatrix2"] + 2, nx)  # Upper X-point separatrix
     jyseps1_1 = g["ix_cut1"] - 1
     jyseps2_1 = g["ix_cut2"]
     ny_inner = g["ix_inner"]
     jyseps1_2 = g["ix_cut3"]
     jyseps2_2 = g["ix_cut4"] - 1
-    
-    if (jyseps1_1 < 0 and jyseps2_2 >= ny - 1):
+
+    if jyseps1_1 < 0 and jyseps2_2 >= ny - 1:
         return "CFL"
-    elif (jyseps2_1 == jyseps1_2):
+    elif jyseps2_1 == jyseps1_2:
         return "SN"
-    elif (jyseps1_2 <= ny_inner and ny_inner <= jyseps2_2):
+    elif jyseps1_2 <= ny_inner and ny_inner <= jyseps2_2:
         return "SF"
-    elif (ixseps1 == ixseps2):
+    elif ixseps1 == ixseps2:
         return "CDN"
     else:
-        return "UDN";
+        return "UDN"
+
 
 if __name__ == "__main__":
     main()
