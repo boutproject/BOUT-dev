@@ -11,7 +11,6 @@
 
 from boututils.run_wrapper import shell, launch, launch_safe
 from boutdata.collect import collect
-from sys import exit
 
 tol_orth = 5.0e-8
 
@@ -52,51 +51,48 @@ argslist = [
     "f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=free_o3 f:bndry_ydown=free_o3 b:function=.1 laplacexy:pctype=hypre",
 ]
 
-print("Running LaplaceXY inversion test")
-success = True
+def test_laplacexy():
 
-for nproc in [8]:
-    print("   %d processors...." % nproc)
-    for nonorth, tol in [(False, tol_orth), (True, tol_nonorth)]:
-        for args in argslist:
-            if not nonorth:
-                args += " mesh:g12=0."
+    print("Running LaplaceXY inversion test")
+    success = True
 
-            cmd = "./test-laplacexy " + args
+    for nproc in [8]:
+        print("   %d processors...." % nproc)
+        for nonorth, tol in [(False, tol_orth), (True, tol_nonorth)]:
+            for args in argslist:
+                if not nonorth:
+                    args += " mesh:g12=0."
 
-            shell(["rm data/BOUT.dmp.*.nc > /dev/null 2>&1"])
+                cmd = "./test-laplacexy " + args
 
-            if "hypre" in args:
-                s, out = launch(cmd, nproc=nproc, pipe=True, verbose=True)
-                if s == 134:
-                    # PETSc did not recognise pctype option, probably means it
-                    # was not compiled with hypre, so skip tests that need
-                    # hypre to converge
-                    print(
-                        "hypre not available as pre-conditioner in PETSc. Skipping..."
-                    )
-                    continue
-            else:
-                s, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
+                shell(["rm data/BOUT.dmp.*.nc > /dev/null 2>&1"])
 
-            f = open("run.log." + str(nproc), "w")
-            f.write(out)
-            f.close()
+                if "hypre" in args:
+                    s, out = launch(cmd, nproc=nproc, pipe=True, verbose=True)
+                    if s == 134:
+                        # PETSc did not recognise pctype option, probably means it
+                        # was not compiled with hypre, so skip tests that need
+                        # hypre to converge
+                        print(
+                            "hypre not available as pre-conditioner in PETSc. Skipping..."
+                        )
+                        continue
+                else:
+                    s, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
 
-            # Collect output data
-            error = collect("max_error", path="data", info=False)
-            if error <= 0:
-                print("Convergence error")
-                success = False
-            elif error > tol:
-                print("Fail, maximum error is = " + str(error))
-                success = False
-            else:
-                print("Pass")
+                f = open("run.log." + str(nproc), "w")
+                f.write(out)
+                f.close()
 
-if success:
-    print(" => All LaplaceXY inversion tests passed")
-    exit(0)
-else:
-    print(" => Some failed tests")
-    exit(1)
+                # Collect output data
+                error = collect("max_error", path="data", info=False)
+                if error <= 0:
+                    print("Convergence error")
+                    success = False
+                elif error > tol:
+                    print("Fail, maximum error is = " + str(error))
+                    success = False
+                else:
+                    print("Pass")
+
+    assert success, " => Some failed tests"
