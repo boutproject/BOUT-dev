@@ -26,49 +26,44 @@ vars = [
 
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
-from sys import stdout, exit
+from sys import stdout
 
 
-print(
-    "Running PETSc Laplacian inversion test with non-identity metric (taken from grid for MAST SOL)"
-)
-success = True
+def test_petsc_laplace_MAST_grid():
 
-for nproc in [1, 2, 4]:
-    #  nxpe = 1
-    #  if nproc > 2:
-    #    nxpe = 2
-    for jy in [2, 34, 65, 81, 113]:
-        cmd = "./test_petsc_laplace_MAST_grid mesh:file=grids/grid_MAST_SOL_jyis{}.nc".format(
-            jy
-        )
-
-        shell(["rm data/BOUT.dmp.*.nc"])
-
-        print("   {} processors, grid_MAST_SOL_jyis{}".format(nproc, jy))
-        s, out = launch_safe(cmd, nproc=nproc, pipe=True)
-        f = open("run.log." + str(nproc), "w")
-        f.write(out)
-        f.close()
-
-        # Collect output data
-        for v in vars:
-            stdout.write("      Checking " + v[0] + " ... ")
-            error = collect(v[0], path="data", info=False)
-            if error <= 0:
-                print("Convergence error")
-                success = False
-            elif error > v[1]:
-                print("Fail, maximum error is = " + str(error))
-                success = False
-            else:
-                print("Pass")
-
-if success:
     print(
-        " => All PETSc Laplacian inversion with non-identity metric (taken from grid for MAST SOL) tests passed"
+        "Running PETSc Laplacian inversion test with non-identity metric (taken from grid for MAST SOL)"
     )
-    exit(0)
-else:
-    print(" => Some failed tests")
-    exit(1)
+    success = True
+
+    for nproc in [1, 2, 4]:
+        #  nxpe = 1
+        #  if nproc > 2:
+        #    nxpe = 2
+        for jy in [2, 34, 65, 81, 113]:
+            cmd = "./test_petsc_laplace_MAST_grid mesh:file=grids/grid_MAST_SOL_jyis{}.nc".format(
+                jy
+            )
+
+            shell(["rm data/BOUT.dmp.*.nc"])
+
+            print("   {} processors, grid_MAST_SOL_jyis{}".format(nproc, jy))
+            s, out = launch_safe(cmd, nproc=nproc, pipe=True)
+            f = open("run.log." + str(nproc), "w")
+            f.write(out)
+            f.close()
+
+            # Collect output data
+            for v in vars:
+                stdout.write("      Checking " + v[0] + " ... ")
+                error = collect(v[0], path="data", info=False)
+                if error <= 0:
+                    print("Convergence error")
+                    success = False
+                elif error > v[1]:
+                    print("Fail, maximum error is = " + str(error))
+                    success = False
+                else:
+                    print("Pass")
+
+    assert success, " => Some failed tests"
