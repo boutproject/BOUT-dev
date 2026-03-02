@@ -4,7 +4,6 @@
 
 from boutdata import collect
 from boututils.run_wrapper import launch_safe
-from sys import exit
 
 test_directories = [
     ("data_slab_core", 1),
@@ -15,22 +14,20 @@ test_directories = [
 
 tolerance = 1.0e-6
 
-success = True
-for directory, nproc in test_directories:
-    command = "test-laplace3d -d " + directory
-    print("running on", nproc, "processors:", command)
-    launch_safe(command, nproc=nproc)
+def test_laplace_hypre3d():
 
-    error_max = collect("error_max", path=directory, info=False)
+    success = True
+    for directory, nproc in test_directories:
+        command = "test-laplace3d -d " + directory
+        print("running on", nproc, "processors:", command)
+        launch_safe(command, nproc=nproc)
 
-    if error_max > tolerance:
-        print(directory + " failed with maximum error {}".format(error_max))
-        success = False
-    else:
-        print(directory + " passed with maximum error {}".format(error_max))
+        error_max = collect("error_max", path=directory, info=False)
 
-if success:
-    print("All passed")
-    exit(0)
-else:
-    exit(1)
+        if error_max > tolerance:
+            print(directory + " failed with maximum error {}".format(error_max))
+            success = False
+        else:
+            print(directory + " passed with maximum error {}".format(error_max))
+
+    assert success
