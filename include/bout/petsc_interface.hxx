@@ -40,18 +40,27 @@
 #include <type_traits>
 #include <vector>
 
+#include <bout/array.hxx>
+#include <bout/assert.hxx>
 #include <bout/bout_types.hxx>
 #include <bout/boutcomm.hxx>
+#include <bout/boutexception.hxx>
 #include <bout/globalindexer.hxx>
 #include <bout/mesh.hxx>
+#include <bout/openmpwrap.hxx>
 #include <bout/operatorstencil.hxx>
 #include <bout/paralleltransform.hxx>
 #include <bout/petsclib.hxx>
 #include <bout/region.hxx>
 #include <bout/traits.hxx>
 
+#include <petscmat.h>
+#include <petscsys.h>
 #include <petscsystypes.h>
 #include <petscvec.h>
+#include <petscversion.h>
+
+#include <utility>
 
 /*!
  * A class which wraps PETSc vector objects, allowing them to be
