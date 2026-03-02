@@ -394,7 +394,6 @@ public:
 
   private:
     void setValues(BoutReal val, InsertMode mode) {
-      TRACE("PetscMatrix setting values at ({}, {})", petscRow, petscCol);
       ASSERT3(positions.size() > 0);
       std::vector<PetscScalar> values;
       std::transform(weights.begin(), weights.end(), std::back_inserter(values),
@@ -405,7 +404,8 @@ public:
       status = MatSetValues(*petscMatrix, 1, &petscRow, positions.size(),
                             positions.data(), values.data(), mode);
       if (status != 0) {
-        throw BoutException("Error when setting elements of a PETSc matrix.");
+        throw BoutException("Error when setting elements of a PETSc matrix at ({}, {})",
+                            petscRow, petscCol);
       }
     }
     Mat* petscMatrix;
