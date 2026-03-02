@@ -10,7 +10,6 @@
 
 from boututils.run_wrapper import shell, launch, launch_safe
 from boutdata.collect import collect
-from sys import exit
 
 tol = 5.0e-8
 
@@ -37,47 +36,44 @@ argslist = [
     "f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann b:function=.1",
 ]
 
-print("Running LaplaceXY inversion test")
-success = True
+def test_laplacexy_fv():
 
-for nproc in [8]:
-    print("   %d processors...." % nproc)
-    for args in argslist:
-        cmd = "./test-laplacexy " + args
+    print("Running LaplaceXY inversion test")
+    success = True
 
-        shell(["rm data/BOUT.dmp.*.nc > /dev/null 2>&1"])
+    for nproc in [8]:
+        print("   %d processors...." % nproc)
+        for args in argslist:
+            cmd = "./test-laplacexy " + args
 
-        s, out = launch(
-            cmd + " laplacexy:pctype=hypre", nproc=nproc, pipe=True, verbose=True
-        )
-        if s == 134:
-            # PETSc did not recognise pctype option, probably means it
-            # was not compiled with hypre, so skip tests that need
-            # hypre to converge
-            print(
-                "hypre not available as pre-conditioner in PETSc. Re-running with "
-                + "pctype=shell..."
+            shell(["rm data/BOUT.dmp.*.nc > /dev/null 2>&1"])
+
+            s, out = launch(
+                cmd + " laplacexy:pctype=hypre", nproc=nproc, pipe=True, verbose=True
             )
-            _, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
+            if s == 134:
+                # PETSc did not recognise pctype option, probably means it
+                # was not compiled with hypre, so skip tests that need
+                # hypre to converge
+                print(
+                    "hypre not available as pre-conditioner in PETSc. Re-running with "
+                    + "pctype=shell..."
+                )
+                _, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
 
-        f = open("run.log." + str(nproc), "w")
-        f.write(out)
-        f.close()
+            f = open("run.log." + str(nproc), "w")
+            f.write(out)
+            f.close()
 
-        # Collect output data
-        error = collect("max_error", path="data", info=False)
-        if error <= 0:
-            print("Convergence error")
-            success = False
-        elif error > tol:
-            print("Fail, maximum error is = " + str(error))
-            success = False
-        else:
-            print("Pass")
+            # Collect output data
+            error = collect("max_error", path="data", info=False)
+            if error <= 0:
+                print("Convergence error")
+                success = False
+            elif error > tol:
+                print("Fail, maximum error is = " + str(error))
+                success = False
+            else:
+                print("Pass")
 
-if success:
-    print(" => All LaplaceXY inversion tests passed")
-    exit(0)
-else:
-    print(" => Some failed tests")
-    exit(1)
+    assert success, " => Some failed tests"
