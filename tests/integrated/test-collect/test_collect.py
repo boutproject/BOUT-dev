@@ -7,18 +7,14 @@ from boututils.run_wrapper import shell, shell_safe
 from boutdata import collect
 import numpy as np
 
-shell_safe("make > make.log")
 
-shell_safe("./test-collect")
+def test_collect():
 
-# Try collecting data using incorrect case
-# This should be corrected automatically
-a = collect("A", path="data")
 
-if not np.allclose(a, 1.23):
-    print("Wrong value => Failed")
-    print(a)
-    exit(1)
+    shell_safe("./test-collect")
 
-print("Passed")
-exit(0)
+    # Try collecting data using incorrect case
+    # This should be corrected automatically
+    a = collect("A", path="data")
+
+    assert np.allclose(a, 1.23), f"Wrong value => Failed: {a}"
