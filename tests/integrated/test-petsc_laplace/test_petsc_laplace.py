@@ -8,7 +8,7 @@
 # requires: all_tests
 # cores: 4
 
-from boututils.run_wrapper import build_and_log, shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect, create_cache
 
 import pathlib
