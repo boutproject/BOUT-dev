@@ -14,7 +14,6 @@ try:
 except:
     pass
 from boututils.run_wrapper import launch_safe
-from sys import exit
 
 
 flags = [""]
@@ -22,25 +21,23 @@ cmd = "./test_region_iterator"
 code = 0  # Return code
 pipe = True
 
-for nproc in [1, 2]:  # Number of mpi procs
-    for mthread in [1]:  # Number of omp threads (not yet supported)
-        print("\t{n} processors and {m} threads".format(n=nproc, m=mthread))
 
-        for f in flags:
-            # Run the case
-            s, out = launch_safe(cmd + " " + f, nproc=nproc, pipe=pipe)
-            if pipe:
-                f = open("run.log." + str(nproc) + "." + str(mthread), "w")
-                f.write(out)
-                f.close()
+def test_region_iterator():
 
-            # If we've got here we know that cmd launched by launch_safe passed
-            # as otherwise it raises.
-            print("Passed")
+    for nproc in [1, 2]:  # Number of mpi procs
+        for mthread in [1]:  # Number of omp threads (not yet supported)
+            print("\t{n} processors and {m} threads".format(n=nproc, m=mthread))
 
-if code == 0:
-    print(" => All range iterator tests passed")
-else:
-    print(" => Some failed tests")
+            for f in flags:
+                # Run the case
+                s, out = launch_safe(cmd + " " + f, nproc=nproc, pipe=pipe)
+                if pipe:
+                    f = open("run.log." + str(nproc) + "." + str(mthread), "w")
+                    f.write(out)
+                    f.close()
 
-exit(code)
+                # If we've got here we know that cmd launched by launch_safe passed
+                # as otherwise it raises.
+                print("Passed")
+
+    assert code == 0, " => Some failed tests"
