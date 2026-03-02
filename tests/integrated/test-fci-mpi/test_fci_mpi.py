@@ -14,7 +14,7 @@ MAXCORES = 8
 NSLICES = [1]
 
 
-def fci_mpi():
+def test_fci_mpi():
 
     COLLECT_KW = dict(info=False, xguards=False, yguards=False, path="data")
 
