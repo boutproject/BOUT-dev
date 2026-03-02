@@ -13,19 +13,17 @@ add_subdirectory(time-petsc)
 add_subdirectory(wave-1d)
 add_subdirectory(wave-1d-y)
 
-########################################
+# ##############################################################################
 # The following require boutpp:
-if (BOUT_ENABLE_PYTHON)
+if(BOUT_ENABLE_PYTHON)
   add_subdirectory(bracket)
   add_subdirectory(derivatives3)
   add_subdirectory(shiftedmetricinterp)
   add_subdirectory(upwinding3)
 endif()
 
-########################################
+# ##############################################################################
 # The following are marked as broken
 
-# add_subdirectory(elm-pb)
-# add_subdirectory(fieldalign)
-# add_subdirectory(GBS)
+# add_subdirectory(elm-pb) add_subdirectory(fieldalign) add_subdirectory(GBS)
 # add_subdirectory(tokamak)

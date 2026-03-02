@@ -1,6 +1,8 @@
-bout_add_integrated_test(test-interpolate-z
-  SOURCES test_interpolate.cxx
+bout_add_integrated_test(
+  test-interpolate-z
+  SOURCES
+  test_interpolate.cxx
   USE_RUNTEST
   USE_DATA_BOUT_INP
-  REQUIRES BOUT_HAS_FFTW
-  )
+  REQUIRES
+  BOUT_HAS_FFTW)

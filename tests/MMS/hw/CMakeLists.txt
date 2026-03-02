@@ -1,7 +1,10 @@
-bout_add_mms_test(MMS-hw
-  SOURCES hw.cxx
+bout_add_mms_test(
+  MMS-hw
+  SOURCES
+  hw.cxx
   USE_RUNTEST
   USE_DATA_BOUT_INP
-  REQUIRES BOUT_RUN_ALL_TESTS
-  PROCESSORS 4
-)
+  REQUIRES
+  BOUT_RUN_ALL_TESTS
+  PROCESSORS
+  4)

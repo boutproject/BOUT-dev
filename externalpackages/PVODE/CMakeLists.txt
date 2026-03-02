@@ -6,14 +6,16 @@ else()
   cmake_policy(VERSION 3.12)
 endif()
 
-project(PVODE
+project(
+  PVODE
   DESCRIPTION "ODE Solver"
   VERSION 0.1
   LANGUAGES CXX)
 
 find_package(MPI REQUIRED)
 
-add_library(pvode
+add_library(
+  pvode
   source/cvode.cpp
   source/nvector.cpp
   source/llnlmath.cpp
@@ -32,64 +34,55 @@ add_library(pvode
   include/pvode/nvector.h
   include/pvode/smalldense.h
   include/pvode/spgmr.h
-  include/pvode/vector.h
-  )
+  include/pvode/vector.h)
 
-target_include_directories(pvode PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/pvode>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-  )
+target_include_directories(
+  pvode
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/pvode>
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+         $<INSTALL_INTERFACE:include>)
 target_link_libraries(pvode PUBLIC MPI::MPI_CXX)
 
-add_library(pvpre
-  include/pvode/pvbbdpre.h
-  precon/pvbbdpre.cpp
-  precon/band.cpp
-  precon/band.h
-  )
+add_library(pvpre include/pvode/pvbbdpre.h precon/pvbbdpre.cpp precon/band.cpp
+                  precon/band.h)
 
+set_target_properties(pvode PROPERTIES SOVERSION 1.0.0)
 
-set_target_properties(pvode PROPERTIES
-  SOVERSION 1.0.0)
-
-target_include_directories(pvpre PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/pvode>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-  )
+target_include_directories(
+  pvpre
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/pvode>
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+         $<INSTALL_INTERFACE:include>)
 target_link_libraries(pvpre PUBLIC pvode MPI::MPI_CXX)
 
-
-set_target_properties(pvpre PROPERTIES
-  SOVERSION 1.0.0)
+set_target_properties(pvpre PROPERTIES SOVERSION 1.0.0)
 
 include(GNUInstallDirs)
-install(TARGETS pvode pvpre
+install(
+  TARGETS pvode pvpre
   EXPORT PVODETargets
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-  INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-  )
+  INCLUDES
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
   PVODEConfigVersion.cmake
   VERSION ${PACKAGE_VERSION}
-  COMPATIBILITY SameMajorVersion
-  )
+  COMPATIBILITY SameMajorVersion)
 
-install(EXPORT PVODETargets
+install(
+  EXPORT PVODETargets
   FILE PVODEConfig.cmake
   NAMESPACE PVODE::
-  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/PVODE"
-  )
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/PVODE")
 
-export(EXPORT PVODETargets
+export(
+  EXPORT PVODETargets
   FILE "${CMAKE_CURRENT_BINARY_DIR}/PVODEConfig.cmake"
-  NAMESPACE PVODE::
-  )
+  NAMESPACE PVODE::)
 
 export(PACKAGE PVODE)

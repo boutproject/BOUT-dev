@@ -1,5 +1,2 @@
-bout_add_integrated_test(test-command-args
-  SOURCES command-args.cxx
-  USE_RUNTEST
-  EXTRA_FILES BOUT.inp
-  )
+bout_add_integrated_test(test-command-args SOURCES command-args.cxx USE_RUNTEST
+                         EXTRA_FILES BOUT.inp)

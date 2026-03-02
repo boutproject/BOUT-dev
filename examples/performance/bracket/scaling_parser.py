@@ -2,8 +2,7 @@ import csv
 
 
 def read_file(filename):
-    reader = csv.reader(open(filename, 'r'), delimiter='\t',
-                        skipinitialspace=True)
+    reader = csv.reader(open(filename, "r"), delimiter="\t", skipinitialspace=True)
 
     # Skip header
     for _, _ in zip(range(4), reader):
@@ -13,7 +12,7 @@ def read_file(filename):
     for line in reader:
         if line == []:
             break
-        case_lines[line[0].rstrip('.')] = line[1]
+        case_lines[line[0].rstrip(".")] = line[1]
 
     titles = next(reader)
     cases_weak = {col.strip(): [] for col in titles[:-1]}

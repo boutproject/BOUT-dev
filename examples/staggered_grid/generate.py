@@ -4,11 +4,11 @@
 # Generate an input mesh
 #
 
-from boututils.datafile import DataFile # Wrapper around NetCDF4 libraries
+from boututils.datafile import DataFile  # Wrapper around NetCDF4 libraries
 
-nx = 5   # Minimum is 5: 2 boundary, one evolved
+nx = 5  # Minimum is 5: 2 boundary, one evolved
 ny = 32  # Minimum 5. Should be divisible by number of processors (so powers of 2 nice)
-dy = 1. # distance between points in y, in m/g22/lengthunit
+dy = 1.0  # distance between points in y, in m/g22/lengthunit
 ixseps1 = -1
 ixseps2 = -1
 
