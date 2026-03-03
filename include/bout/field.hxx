@@ -24,6 +24,7 @@
  *
  */
 
+#include "bout/unused.hxx"
 class Field;
 
 #ifndef FIELD_H
@@ -31,7 +32,6 @@ class Field;
 
 #include <cmath>
 #include <cstdio>
-#include <memory>
 #include <optional>
 #include <string>
 
