@@ -2,7 +2,7 @@
 #
 # Python script to run and analyse MMS test
 
-from boututils.run_wrapper import build_and_log, launch_safe
+from boututils.run_wrapper import launch_safe
 from boutdata.collect import collect
 import itertools
 
