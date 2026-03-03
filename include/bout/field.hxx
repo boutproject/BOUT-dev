@@ -135,9 +135,9 @@ public:
   virtual void resetRegion() {}
   virtual std::optional<size_t> getRegionID() const { return {}; }
   virtual bool hasParallelSlices() const { return true; }
-  virtual void calcParallelSlices() const {}
-  virtual void splitParallelSlices() const {}
-  virtual void clearParallelSlices() const {}
+  virtual void calcParallelSlices() {}
+  virtual void splitParallelSlices() {}
+  virtual void clearParallelSlices() {}
 
 private:
   /// Labels for the type of coordinate system this field is defined over
