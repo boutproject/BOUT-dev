@@ -239,15 +239,15 @@ public:
    * Ensure that this field has separate fields
    * for yup and ydown.
    */
-  void splitParallelSlices();
+  void splitParallelSlices() override;
 
   /*!
    * Clear the parallel slices, yup and ydown
    */
-  void clearParallelSlices();
+  void clearParallelSlices() override;
 
   /// Check if this field has yup and ydown fields
-  bool hasParallelSlices() const {
+  bool hasParallelSlices() const override {
 #if CHECK > 2
     if (yup_fields.size() != ydown_fields.size()) {
       throw BoutException(
@@ -482,7 +482,7 @@ public:
   friend class Vector3D;
   friend class Vector2D;
 
-  Field3D& calcParallelSlices();
+  void calcParallelSlices() override;
 
   void applyBoundary(bool init = false) override;
   void applyBoundary(BoutReal t);
@@ -511,7 +511,8 @@ public:
 
   std::weak_ptr<Options> getTracking() { return tracking; };
 
-  bool allowCalcParallelSlices{true};
+  bool allowCalcParallelSlices() const { return _allowCalcParallelSlices; };
+  void disallowCalcParallelSlices() { _allowCalcParallelSlices = false; };
 
 private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
@@ -532,6 +533,8 @@ private:
   /// counter for tracking, to assign unique names to the variable names
   int tracking_state{0};
   std::weak_ptr<Options> tracking;
+
+  bool _allowCalcParallelSlices{true};
   // name is changed if we assign to the variable, while selfname is a
   // non-changing copy that is used for the variable names in the dump files
   std::string selfname;

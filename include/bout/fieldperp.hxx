@@ -157,12 +157,6 @@ public:
     return *this;
   }
 
-  /// Dummy functions to increase portability
-  bool hasParallelSlices() const { return true; }
-  void calcParallelSlices() const {}
-  void clearParallelSlices() {}
-  int numberParallelSlices() { return 0; }
-
   FieldPerp& yup(std::vector<FieldPerp>::size_type UNUSED(index) = 0) { return *this; }
   const FieldPerp& yup(std::vector<FieldPerp>::size_type UNUSED(index) = 0) const {
     return *this;

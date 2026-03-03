@@ -128,11 +128,16 @@ public:
     swap(first.directions, second.directions);
   }
 
+  /// Dummy functions to increase portability
   virtual void setRegion(size_t UNUSED(regionID)) {}
   virtual void setRegion(std::optional<size_t> UNUSED(regionID)) {}
   virtual void setRegion(const std::string& UNUSED(region_name)) {}
   virtual void resetRegion() {}
   virtual std::optional<size_t> getRegionID() const { return {}; }
+  virtual bool hasParallelSlices() const { return true; }
+  virtual void calcParallelSlices() const {}
+  virtual void splitParallelSlices() const {}
+  virtual void clearParallelSlices() const {}
 
 private:
   /// Labels for the type of coordinate system this field is defined over
