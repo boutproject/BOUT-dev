@@ -23,6 +23,7 @@
  *
  **************************************************************************/
 
+#include <vector>
 class FieldPerp;
 
 #ifndef BOUT_FIELDPERP_H
