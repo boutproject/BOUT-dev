@@ -189,7 +189,7 @@ public:
       : XZHermiteSplineBase(0, mesh, options) {}
   XZHermiteSplineBase(int y_offset = 0, Mesh* mesh = nullptr, Options* options = nullptr);
   XZHermiteSplineBase(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr,
-		      Options* options = nullptr)
+                      Options* options = nullptr)
       : XZHermiteSplineBase(y_offset, mesh, options) {
     setRegion(regionFromMask(mask, localmesh));
   }

@@ -21,8 +21,8 @@
  **************************************************************************/
 
 #include "../impls/bout/boutmesh.hxx"
-#include "bout/bout.hxx"
 #include "../parallel/fci_comm.hxx"
+#include "bout/bout.hxx"
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_xz.hxx"
@@ -162,9 +162,9 @@ XZHermiteSplineBase<monotonic>::XZHermiteSplineBase(int y_offset, Mesh* meshin,
 }
 
 template <bool monotonic>
-void XZHermiteSplineBase<monotonic>::calcWeights(const Field3D& delta_x,
-                                                 const Field3D& delta_z,
-                                                 [[maybe_unused]] const std::string& region) {
+void XZHermiteSplineBase<monotonic>::calcWeights(
+    const Field3D& delta_x, const Field3D& delta_z,
+    [[maybe_unused]] const std::string& region) {
 
   const int ny = localmesh->LocalNy;
   const int nz = localmesh->LocalNz;
@@ -371,8 +371,9 @@ template <bool monotonic>
 std::vector<ParallelTransform::PositionsAndWeights>
 XZHermiteSplineBase<monotonic>::getWeightsForYApproximation(int i, int j, int k,
                                                             int yoffset) {
-  if (localmesh->getNXPE() > 1){
-    throw BoutException("It is likely that the function calling this is not handling the result correctly.");
+  if (localmesh->getNXPE() > 1) {
+    throw BoutException("It is likely that the function calling this is not handling the "
+                        "result correctly.");
   }
   const int nz = localmesh->LocalNz;
   const int k_mod = k_corner(i, j, k);
@@ -387,8 +388,8 @@ XZHermiteSplineBase<monotonic>::getWeightsForYApproximation(int i, int j, int k,
 }
 
 template <bool monotonic>
-Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
-                                                    [[maybe_unused]] const std::string& region) const {
+Field3D XZHermiteSplineBase<monotonic>::interpolate(
+    const Field3D& f, [[maybe_unused]] const std::string& region) const {
 
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
