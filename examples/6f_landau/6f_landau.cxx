@@ -43,7 +43,8 @@ CELL_LOC loc = CELL_CENTRE;
 
 /// Set default options
 /// This sets sensible defaults for when it's not set in the input
-BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_target", "neumann");
+BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_target", "fromFieldAligned(neumann)");
+// BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_target", "neumann");
 BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xin", "none");
 BOUT_OVERRIDE_DEFAULT_OPTION("phi:bndry_xout", "none");
 
@@ -354,7 +355,7 @@ private:
   bool remove_DC;
 
   // Load background/equilibrium profiles from 2D transport similation data
-  bool load_2d_bkgd;
+  bool load_2d_bkgd, load_1d_bkgd;
 
   /********** Normalization coefficients ***************************************/
   BoutReal density;                              // density normalization factor [m^-3]
@@ -683,8 +684,6 @@ private:
     return result;
   }
 
-
-
   const Field3D field_larger(const Field3D &f, const BoutReal limit) {
     Field3D result;
     result.allocate();
@@ -725,7 +724,6 @@ private:
     mesh->communicate(result);
     return result;
   }
-
 
   const Field3D field_floor(Field3D &f, const Field2D &f0, const BoutReal limit) {
 
@@ -1034,7 +1032,6 @@ protected:
     // Get the metric tensor
     Coordinates* coord = mesh->getCoordinates();
 
-
     output.write("Solving high-beta flute reduced equations\n");
     output.write("\tFile    : {:s}\n", __FILE__);
     output.write("\tCompiled: {:s} at {:s}\n", __DATE__, __TIME__);
@@ -1134,10 +1131,13 @@ protected:
     Tconst = options["Tconst"]
                    .doc("the amplitude of constant temperature, in percentage")
                    .withDefault(-1.0);
-
-                   
+            
     load_2d_bkgd = options["load_2d_bkgd"]
 	           .doc("Load background/equilibrium profiles from 2D transport similation data.")
+		   .withDefault(false);
+
+    load_1d_bkgd = options["load_1d_bkgd"]
+	           .doc("Load background/equilibrium profiles from 2D transport similation data - 1D profiles at the omp.")
 		   .withDefault(false);
 
     impurity_prof = options["impurity_prof"]
@@ -1405,7 +1405,7 @@ protected:
     emass_inv = options["emass_inv"].doc("inverse of electron mass").withDefault(1.0);
 
     diamag = options["diamag"].doc("Diamagnetic effects?").withDefault(false);
-    diamag_phi0 = options["diamag_phi0"].doc("Include equilibrium phi0").withDefault(diamag);
+    diamag_phi0 = options["diamag_phi0"].doc("Include equilibrium phi0").withDefault(false);
     dia_fact = options["dia_fact"].doc("Scale diamagnetic effects by this factor").withDefault(1.0);
     diamag_er = options["diamag_er"].doc("switch from phi0 to Er0").withDefault(false);
     energy_flux = options["energy_flux"].doc("energy flux").withDefault(false);
@@ -1686,8 +1686,6 @@ protected:
 
     // Auxiliary
     zero = 0.0, one = 1.0; 
-    mesh->communicate(zero);
-    mesh->communicate(one);
 
     /////////////////////////////////////////////////////////////////
     // SHIFTED RADIAL COORDINATES
@@ -1706,24 +1704,24 @@ protected:
 
     /////////////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
-    Bbar = options["Bbar"].doc("Reference magnetic field [T]").withDefault(1.0);
-    // if (mesh->get(Bbar, "bmag")) { // Typical magnetic field
-    //   Bbar = 1.0;
-    // }
-    Lbar = options["Lbar"].doc("Reference length scale [m]").withDefault(1.0);
-    // if (mesh->get(Lbar, "rmag")) { // Typical length scale
-    //   Lbar = 1.0;
-    // }
+    // Bbar = options["Bbar"].doc("Reference magnetic field [T]").withDefault(1.0);
+    if (mesh->get(Bbar, "bmag")) { // Typical magnetic field
+      Bbar = 1.0;
+    }
+    // Lbar = options["Lbar"].doc("Reference length scale [m]").withDefault(1.0);
+    if (mesh->get(Lbar, "rmag")) { // Typical length scale
+      Lbar = 1.0;
+    }
 
-    Tibar = options["Tibar"].doc("Reference temperature [eV]").withDefault(1.0);
-    // if (mesh->get(Tibar, "Ti_x")) { // Typical ion temperature scale
-    //   Tibar = 1.0;
-    // }
+    // Tibar = options["Tibar"].doc("Reference temperature [eV]").withDefault(1.0);
+    if (mesh->get(Tibar, "Ti_x")) { // Typical ion temperature scale
+      Tibar = 1.0;
+    }
 
-    Tebar = options["Tebar"].doc("Reference temperature [eV]").withDefault(1.0);
-    // if (mesh->get(Tebar, "Te_x")) { // Typical electron temperature scale
-    //   Tebar = 1.0;
-    // }
+    // Tebar = options["Tebar"].doc("Reference temperature [eV]").withDefault(1.0);
+    if (mesh->get(Tebar, "Te_x")) { // Typical electron temperature scale
+      Tebar = 1.0;
+    }
 
     if (mesh->get(Nbar, "Nixexp")) { // Typical ion density scale
       Nbar = 1.0;
@@ -1826,6 +1824,7 @@ protected:
 
     if (hyperviscos > 0.0) {
       output.write("Hyper-viscosity coefficient: {:e}\n", hyperviscos);
+      hyper_mu_x.setBoundary("dirichlet_input"); // Set to zero on all boundaries
       dump.add(hyper_mu_x, "hyper_mu_x", 1);
     }
 
@@ -2075,6 +2074,84 @@ protected:
       // T_imp0 /= Tibar;
       // P_imp0 = N_imp0 * T_imp0;
 
+
+    } else if (load_1d_bkgd) {
+
+      if (mesh->get(P0, "P_1D")) { // [Pa]
+        output_error.write("Error: Cannot read P_1D from grid\n");
+        return 1;
+      }
+      P0.setBoundary("background");
+      P0.applyBoundary();
+      // SBC_FreeBoundary_2D(P0);
+
+      if (mesh->get(N0, "Nd+_1D")) { // [1e20 #/m^3]
+        output_error.write("Error: Cannot read Nd+_2D from grid\n");
+        return 1;
+      }
+      N0.setBoundary("background");
+      N0.applyBoundary();
+      // SBC_FreeBoundary_2D(N0);
+
+      if (mesh->get(Ti0, "Td+_1D")) { // [eV]]
+        output_error.write("Error: Cannot read Td+_2D from grid\n");
+        exit(0);
+        return 1;
+      }
+      Ti0.setBoundary("background");
+      Ti0.applyBoundary();
+      // SBC_FreeBoundary_2D(Ti0);
+
+      if (mesh->get(Ne0, "Ne_1D")) { // [1e20 #/m^3]
+        output_error.write("Error: Cannot read Ne_2D from grid\n");
+        return 1;
+      }
+      Ne0.setBoundary("background");
+      Ne0.applyBoundary();
+      // SBC_FreeBoundary_2D(Ne0);
+
+      if (mesh->get(Te0, "Te_1D")) { // [eV]
+        output_error.write("Error: Cannot read Te_2D from grid\n");
+        return 1;
+      }
+      Te0.setBoundary("background");
+      Te0.applyBoundary();
+      // SBC_FreeBoundary_2D(Te0);
+
+      Vipar0 = 0.0;
+      Vepar0 = 0.0;
+
+      // if (load_impurity) {
+
+      //   if (mesh->get(N_imp0, "Nd_2D")) { // [1e20 #/m^3]
+      //     output.write("Error: Cannot read Nd_2D from grid\n");
+      //     return 1;
+      //   }
+
+      //   if (mesh->get(T_imp0, "Td_2D")) { // [1e20 #/m^3]
+      //     output.write("Error: Cannot read Nd_2D from grid\n");
+      //     return 1;
+      //   }
+
+      // }
+
+      P0 = P0 / (KB * (Tebar) * eV_K * Nbar * density);
+
+      N0 /= Nbar;
+      Ti0 /= Tibar;
+      Ne0 /= Nbar;
+      Te0 /= Tebar;
+
+      Vipar0 /= Va;
+      Vepar0 /= Va;
+
+      // Ne0 = Zi * N0; // quasi-neutral condition
+      N_imp0 = 0;
+      // N_imp0 /= Nbar;
+      // T_imp0 /= Tibar;
+      // P_imp0 = N_imp0 * T_imp0;
+
+
     } else {
       if (mesh->get(N0, "Niexp")) { // N_i0
         output_error.write("Error: Cannot read Ni0 from grid\n");
@@ -2166,6 +2243,7 @@ protected:
     if (spitzer_resist) {
       eta.setBoundary("kappa");
     }
+
     if (diffusion_par > 0.0 || diffusion_perp > 0.0) {
       nu_i.setBoundary("kappa");
       vth_i.setBoundary("kappa");
@@ -2462,6 +2540,9 @@ protected:
 
       kappa_par_i_lin = 1.0;
       kappa_par_e_lin = 1.0;
+      // kappa_par_i_lin = B0; // It was B0 in older version of v3
+      // kappa_par_e_lin = B0; // It was B0 in older version of v3
+
       for (jx = 0; jx < mesh->LocalNx; jx++)
         for (jy = 0; jy < mesh->LocalNy; jy++) {
           kappa_par_i_lin(jx,jy) = kappa_par_i(jx,jy,0);
@@ -2504,12 +2585,12 @@ protected:
       }
       kappa_perp_i *= Tipara1 * N0;
       output.write("\tUsed normalized ion perp thermal conductivity: {:e} -> {:e}\n", min(kappa_perp_i), max(kappa_perp_i));
-      // kappa_perp_i.applyBoundary();
-      // mesh->communicate(kappa_perp_i);
+      kappa_perp_i.applyBoundary();
+      mesh->communicate(kappa_perp_i);
       kappa_perp_e *= Tepara1 * Ne0;
       output.write("\tUsed normalized electron perp thermal conductivity: {:e} -> {:e}\n", min(kappa_perp_e), max(kappa_perp_e));
-      // kappa_perp_e.applyBoundary();
-      // mesh->communicate(kappa_perp_e);
+      kappa_perp_e.applyBoundary();
+      mesh->communicate(kappa_perp_e);
 
       dump.add(kappa_perp_i, "kappa_perp_i", 1);
       dump.add(kappa_perp_e, "kappa_perp_e", 1);
@@ -2617,7 +2698,6 @@ protected:
 	      }
       }
     }
-
     NiSource.applyBoundary();
     mesh->communicate(NiSource);
     SAVE_ONCE(NiSource);
@@ -2644,7 +2724,6 @@ protected:
 	      }
       }
     }
-
     TeSource.applyBoundary();
     mesh->communicate(TeSource);
     SAVE_ONCE(TeSource);
@@ -2674,9 +2753,9 @@ protected:
     TiSource.applyBoundary();
     mesh->communicate(TiSource);
     SAVE_ONCE(TiSource);
-  //  dump.add(NiSource, "NiSource", 1);
-  // dump.add(TeSource, "TeSource", 1);
-  // dump.add(TeSource, "TiSource", 1);
+    // dump.add(NiSource, "NiSource", 1);
+    // dump.add(TeSource, "TeSource", 1);
+    // dump.add(TeSource, "TiSource", 1);
 
     //initialize neutral profile				
     if (neutral) {
@@ -3031,10 +3110,10 @@ protected:
 
       Srad0 = -Limp0 * frac_imp * Ne_tmp0 * Ne_tmp0 * Nbar * density / (1.602e-19 * Tebar / Tbar);  //Normalized //NOTE(malamast): Should we multiply with Nbar * density?
       mesh->communicate(Srad0);
-      Srad0.applyBoundary("neumann");
+      // Srad0.applyBoundary();
       Wrad0 = Srad0 / Ne_tmp0;
       mesh->communicate(Wrad0);
-      Wrad0.applyBoundary("neumann");
+      // Wrad0.applyBoundary();
       dump.add(Wrad0, "Wrad0", 0);
     }
 
@@ -3078,6 +3157,7 @@ protected:
       }
     }
 
+
     if (phi_constraint) {
       // Implicit Phi solve using IDA
       solver->constraint(phi, C_phi, "phi");
@@ -3092,6 +3172,20 @@ protected:
       // setPrecon(&Elm_6f::precon);
     }
 
+    SAVE_REPEAT(ddt(Ni));
+    SAVE_REPEAT(ddt(Te));
+    SAVE_REPEAT(ddt(Ti));
+    SAVE_REPEAT(ddt(U));
+    SAVE_REPEAT(ddt(Apar));
+    SAVE_REPEAT(ddt(Vipar));
+
+    /*  bxgradb = B0vec ^ Grad(B0)/B0/B0;
+      bxgradb.toCovariant();
+      dump.add(bxgradb.x, "bcurvx",0);
+      dump.add(bxgradb.y, "bcurvy",0);
+      dump.add(bxgradb.z, "bcurvz",0);
+    */
+
     // Diamagnetic phi0
     if (diamag && diamag_phi0) {
       if (n0_p0_0p3) {
@@ -3102,9 +3196,12 @@ protected:
         phi0 = -Upara0 * Pi0 / N0;
       }
       mesh->communicate(phi0);
-      if (load_2d_bkgd) {
+
+      if (load_2d_bkgd || load_1d_bkgd) {
         phi0.setBoundary("background");
         phi0.applyBoundary();
+      }
+      if (load_2d_bkgd) {
         SBC_FreeBoundary_2D(phi0);
       }
 
@@ -3140,7 +3237,7 @@ protected:
           // U0_net = Delp2(phi0_net) * N0tmp/B0;
           U0_net = N0 / B0 * (Delp2(phi0) + Upara0 * Delp2(Pi0) / N0); // NOTE(malamast): WARNING: deprecated. We overwrite U0_net below.
           mesh->communicate(U0_net);
-          U0_net.applyBoundary("dirichlet");
+          U0_net.applyBoundary("dirichlet"); //NOTE(malamast): You will have issues here at the parallel boundaries. 
         }
       } else {
         if (diamag_er) {
@@ -3163,12 +3260,14 @@ protected:
         } else {
           // Stationary equilibrium plasma. ExB velocity balances diamagnetic drift
           Er0_dia = -Grad(phi0);
+          Er0_dia.setBoundary("dirichlet_input");
           mesh->communicate(Er0_dia);
           Er0_dia.x.applyBoundary();
           Er0_dia.y.applyBoundary();
           Er0_dia.z.applyBoundary();
 
           Er0 = Er0_dia;
+          Er0.setBoundary("dirichlet_input");
           mesh->communicate(Er0);
           (Er0.x).applyBoundary();
           (Er0.y).applyBoundary();
@@ -3189,35 +3288,45 @@ protected:
 
     // Er0_net, Ve0, Ve0_dia, Ve0_net, U0_net
     // applyBoundary(), communicate
+    Er0_net.setBoundary("dirichlet_input");
     mesh->communicate(Er0_net);
     Er0_net.x.applyBoundary();
     Er0_net.y.applyBoundary();
     Er0_net.z.applyBoundary();
 
     Ve0 = cross(Er0, B0vec) / (B0 * B0);
-    // Ve0.setBoundary("Vipar");
+    Ve0.setBoundary("Vipar");
     mesh->communicate(Ve0);
-    Ve0.x.applyBoundary("neumann");
-    Ve0.y.applyBoundary("neumann");
-    Ve0.z.applyBoundary("neumann");
+    Ve0.x.applyBoundary();
+    Ve0.y.applyBoundary();
+    Ve0.z.applyBoundary();
 
     Ve0_dia = cross(Er0_dia, B0vec) / (B0 * B0);
-    // Ve0_dia.setBoundary("Vipar");
+    Ve0_dia.setBoundary("Vipar");
     mesh->communicate(Ve0_dia);
-    Ve0_dia.x.applyBoundary("neumann");
-    Ve0_dia.y.applyBoundary("neumann");
-    Ve0_dia.z.applyBoundary("neumann");
+    Ve0_dia.x.applyBoundary();
+    Ve0_dia.y.applyBoundary();
+    Ve0_dia.z.applyBoundary();
 
     Ve0_net = Ve0 - Ve0_dia;
-    // Ve0_net.setBoundary("Vipar");
+    Ve0_net.setBoundary("Vipar");
     mesh->communicate(Ve0_net);
-    Ve0_net.x.applyBoundary("neumann");
-    Ve0_net.y.applyBoundary("neumann");
-    Ve0_net.z.applyBoundary("neumann");
+    Ve0_net.x.applyBoundary();
+    Ve0_net.y.applyBoundary();
+    Ve0_net.z.applyBoundary();
 
-    U0_net = B0vec * Curl(N0 * Ve0_net) / B0;
+
+    U0_net = 0.0; // B0vec * Curl(N0 * Ve0_net) / B0; //NOTE(malamast): this is causing issues when run in debug mode. 
+    U0_net.setBoundary("dirichlet_input");
     mesh->communicate(U0_net);
-    U0_net.applyBoundary("dirichlet");
+    U0_net.applyBoundary();
+
+
+    // MPI_Barrier(BoutComm::get());
+    // output << "stop 1"  << "\n";
+    // MPI_Barrier(BoutComm::get());
+    // throw BoutException("Stopping execution");
+
 
     // Add some equilibrium quantities and normalisations
     // everything needed to recover physical units
@@ -3253,6 +3362,9 @@ protected:
 
     /////////////// CHECK VACUUM ////////////////////////////////////
     // In vacuum region, initial vorticity should equal zero
+
+    phi.setBoundary("phi");
+    phi.applyBoundary();
 
     ubyn.setBoundary("U");
 
@@ -3316,8 +3428,8 @@ protected:
       // output << max(c_se0, true) << "\t" << max(vth_e0, true) << endl;
       dump.add(Jpar_sh, "Jpar_sh", 1);
       Jpar_sh0 = Ne0 * Nbar * density * ee;
-      // Jpar_sh0 *= c_se0 - vth_e0 / (2.0 * sqrt(PI)) * exp(- ee * (phi0 * Va * Lbar * Bbar) / (KB * Te0 * Tebar * eV_K));
-      Jpar_sh0 *= c_se0 - vth_e0 / (2.0 * sqrt(PI)) * (1. - ee * (phi0 * Va * Lbar * Bbar) / (KB * Te0 * Tebar * eV_K)); // Linearized 
+      Jpar_sh0 *= c_se0 - vth_e0 / (2.0 * sqrt(PI)) * exp(- ee * (phi0 * Va * Lbar * Bbar) / (KB * Te0 * Tebar * eV_K));
+      // Jpar_sh0 *= c_se0 - vth_e0 / (2.0 * sqrt(PI)) * (1. - ee * (phi0 * Va * Lbar * Bbar) / (KB * Te0 * Tebar * eV_K)); // Linearized 
       dump.add(phi_sh, "phi_sh", 1);
       phi_sh.setBoundary("phi");
       // phi_sh0 = -Te0 * Tebar;
@@ -3404,35 +3516,35 @@ protected:
 
     if (hyperdiff_par_u4 > 0.0 || hyperdiff_perp_u4 > 0.0) {
       // tmpU2.setBoundary("U");
-      tmpU2.setBoundary("neumann");
+      tmpU2.setBoundary("neumann_input");
     }
 
     if (hyperdiff_par_apar4 > 0.0 || hyperdiff_perp_apar4 > 0.0) {
       // tmpA2.setBoundary("J");
-      tmpA2.setBoundary("neumann");
+      tmpA2.setBoundary("neumann_input");
     }
 
     if (hyperdiff_par_n4 > 0.0 || hyperdiff_perp_n4 > 0.0) {
       // tmpN2.setBoundary("Ni");
-      tmpN2.setBoundary("neumann");
+      tmpN2.setBoundary("neumann_input");
     }
 
     if (hyperdiff_par_ti4 > 0.0 || hyperdiff_perp_ti4 > 0.0) {
       // tmpTi2.setBoundary("Ti");
-      tmpTi2.setBoundary("neumann");
+      tmpTi2.setBoundary("neumann_input");
     }
 
     if (hyperdiff_par_te4 > 0.0 || hyperdiff_perp_te4 > 0.0) {
       // tmpTe2.setBoundary("Te");
-      tmpTe2.setBoundary("neumann");
+      tmpTe2.setBoundary("neumann_input");
     }
 
     if (hyperdiff_par_v4 > 0.0 || hyperdiff_perp_v4 > 0.0) {
       // tmpVp2.setBoundary("Vipar");
-      tmpVp2.setBoundary("neumann");
+      tmpVp2.setBoundary("neumann_input");
     }
 
-    phi.setBoundary("phi"); // Set boundary conditions
+    // phi.setBoundary("phi"); // Set boundary conditions
 
     P.setBoundary("P");
     Jpar.setBoundary("J");
@@ -3512,7 +3624,10 @@ protected:
     mesh->communicate(Pe);
     Pe.applyBoundary();
     mesh->communicate(P);
-    P.applyBoundary();    
+    P.applyBoundary();
+
+    // Apply a boundary condition on phi for target plates
+    phi.applyBoundary(); // This is to pick up BC from file. Otherwise they are set from the lapalacian solver below.
 
     if (sheath_boundaries) {
       SBC_Gradpar(U, zero, PF_limit, PF_limit_range);
@@ -3527,7 +3642,7 @@ protected:
       if (diamag) {
         ubyn -= Upara0 / density_tmp * Delp2(Pi);
 
-        ubyn -= Grad_perp(phi0) * Grad_perp(Ni) / N0; //  NOTE(malamast): TODO<! check
+        // ubyn -= Grad_perp(phi0) * Grad_perp(Ni) / N0; //  NOTE(malamast): TODO<! check
 
       }
       mesh->communicate(ubyn);
@@ -3546,7 +3661,7 @@ protected:
         ubyn -= Upara0 / N0 * Delp2(Pi);
         // ubyn -= Upara0 / N0 * Laplace_perp(Pi);
 
-        ubyn -= Grad_perp(phi0) * Grad_perp(Ni) / N0; //  NOTE(malamast): TODO<! check
+        // ubyn -= Grad_perp(phi0) * Grad_perp(Ni) / N0; //  NOTE(malamast): TODO<! check
 
       }
       mesh->communicate(ubyn);
@@ -3588,27 +3703,7 @@ protected:
     mesh->communicate(phi);
 
     // Apply a boundary condition on phi for target plates
-    // phi.applyBoundary();
-
-    // // Outer boundary cells
-    // if (mesh->firstX()) {
-    //   for (int i = mesh->xstart - 2; i >= 0; --i) {
-    //     for (int j = mesh->ystart; j <= mesh->yend; ++j) {
-    //       for (int k = 0; k < mesh->LocalNz; ++k) {
-    //         phi(i, j, k) = phi(i + 1, j, k);
-    //       }
-    //     }
-    //   }
-    // }
-    // if (mesh->lastX()) {
-    //   for (int i = mesh->xend + 2; i < mesh->LocalNx; ++i) {
-    //     for (int j = mesh->ystart; j <= mesh->yend; ++j) {
-    //       for (int k = 0; k < mesh->LocalNz; ++k) {
-    //         phi(i, j, k) = phi(i - 1, j, k);
-    //       }
-    //     }
-    //   }
-    // }
+    phi.applyBoundary();
 
     if (emass) {
       Field2D acoeff = -delta_e_inv * N0 * N0;
@@ -3664,9 +3759,9 @@ protected:
         nu_e = 2.91e-6 * LnLambda * (Ne_tmp * Nbar * density / 1.e6) * (pow(Te_tmp * Tebar, -1.5)); // nu_e in 1/S.
       } else { 
         nu_e = 2.91e-6 * LnLambda * (N_tmp * Nbar * density / 1.e6) * (pow(Te_tmp * Tebar, -1.5)); // nu_e in 1/S.
+      }
       // nu_e.applyBoundary();
       // mesh->communicate(nu_e);
-      }
       
       if (diffusion_par > 0.0 || diffusion_perp > 0.0 || parallel_viscous || neoclassic_i || neoclassic_e) {
         // Use Spitzer thermal conductivities
@@ -3753,6 +3848,7 @@ protected:
         rho_e = 2.38e-6 * sqrt(Te_tmp * Tebar) / B0 / Bbar;
         xie_neo = (q95 * q95) / epsilon / sqrt(epsilon) * nu_e * rho_e * rho_e;
         xie_neo *= Tepara1;
+        // xie_neo.applyBoundary();
       }
     }
 
@@ -3771,7 +3867,7 @@ protected:
           mesh->communicate(q_par_e);
           q_par_i.applyBoundary();
           q_par_e.applyBoundary();
-        } 
+        }
     */
 
     if (radial_diffusion && nonlinear) {
@@ -3795,14 +3891,13 @@ protected:
 
       for (jx = 0; jx < mesh->LocalNx; jx++) {
         for (jy = 0; jy < mesh->LocalNy; jy++) {
-	        for (jz = 0; jz < mesh->LocalNz; jz++) {
-	          if (diff_radial(jx,jy,jz) > diffusion_coef_Hmode1) {
-	            diff_radial(jx,jy,jz) = diffusion_coef_Hmode1;
-	          }
-	        }
-	      }
+          for (jz = 0; jz < mesh->LocalNz; jz++) {
+            if (diff_radial(jx,jy,jz) > diffusion_coef_Hmode1) {
+              diff_radial(jx,jy,jz) = diffusion_coef_Hmode1;
+            }
+          }
+        }
       }
-
       diff_radial = nl_filter(diff_radial, 1);
     }
 
@@ -3902,8 +3997,8 @@ protected:
 
       if (nonlinear) {
         Jpar_sh = Ne_tmp * Nbar * density * ee;
-        // Jpar_sh *= c_set - vth_et / (2.0 * sqrt(PI)) * exp(- ee * ((phi + phi0) * Va * Lbar * Bbar) / (KB * Te_tmp * Tebar * eV_K));
-        Jpar_sh *= c_set - vth_et / (2.0 * sqrt(PI)) * (1. - ee * ((phi + phi0) * Va * Lbar * Bbar) / (KB * Te_tmp * Tebar * eV_K)); // Linearized. This is to avoid large currents when phi+phi0<0.
+        Jpar_sh *= c_set - vth_et / (2.0 * sqrt(PI)) * exp(- ee * ((phi + phi0) * Va * Lbar * Bbar) / (KB * Te_tmp * Tebar * eV_K));
+        // Jpar_sh *= c_set - vth_et / (2.0 * sqrt(PI)) * (1. - ee * ((phi + phi0) * Va * Lbar * Bbar) / (KB * Te_tmp * Tebar * eV_K)); // Linearized. This is to avoid large currents when phi+phi0<0.
 
         Jpar_sh -= Jpar_sh0;
         Jpar_sh *= MU0 * Lbar / Bbar;
@@ -3923,7 +4018,7 @@ protected:
         Jpar_sh *= MU0 * Lbar / (Bbar);
       }
       mesh->communicate(Jpar_sh);
-      // Jpar_sh.applyBoundary("neumann");
+      // Jpar_sh.applyBoundary("neumann_input");
       SBC_Dirichlet(Jpar, Jpar_sh, PF_limit, PF_limit_range);
       // SBC_Dirichlet(Jpar, zero, PF_limit, PF_limit_range);
       // SBC_Gradpar(Jpar, zero, PF_limit, PF_limit_range);
@@ -3953,11 +4048,11 @@ protected:
 
       // SBC_Gradpar(U, zero, PF_limit, PF_limit_range);
       SBC_Gradpar(Ni, zero, PF_limit, PF_limit_range);
-      if (evolve_psi) {
-        SBC_Dirichlet(Psi, zero, PF_limit, PF_limit_range);
-      } else {
-        SBC_Dirichlet(Apar, zero, PF_limit, PF_limit_range);
-      }
+      // if (evolve_psi) {
+      //   SBC_Dirichlet(Psi, zero, PF_limit, PF_limit_range);
+      // } else {
+      //   SBC_Dirichlet(Apar, zero, PF_limit, PF_limit_range);
+      // }
 
       // if (!Landau) {
         SBC_Gradpar(Ti, q_si, PF_limit, PF_limit_range);
@@ -3985,9 +4080,9 @@ protected:
     //     // std::cout << "  " << Ti_tmp(xind, mesh->yend, 16) << "  " << Ti_tmp(xind, mesh->yend+1, 16) << "  " << Ti_tmp(xind, mesh->yend+2, 16) << std::endl;
     //     // std::cout << "  " << phi0(xind, mesh->yend) << "  " << phi0(xind, mesh->yend+1) << "  " << phi0(xind, mesh->yend+2) << std::endl;
     //   // }
-    // }    
+    // }
 
-
+    // MPI_Barrier(BoutComm::get());
 
   //   // update Landau parallel heat flux
   //   if (diffusion_par && Landau) {
@@ -4273,16 +4368,16 @@ protected:
               BoutReal Te_tmp_loc  = Te_tmp_real(jx,jy,jz);
               if (Te_tmp_loc >= 1.5 and Te_tmp_loc <= 100) {
                 Limp(jx,jy,jz) = - 4.9692e-48 * pow(Te_tmp_loc, 10)
-                                      + 2.8025e-45 * pow(Te_tmp_loc, 9)
-                                      - 6.7148e-43 * pow(Te_tmp_loc, 8)
-                                      + 8.8636e-41 * pow(Te_tmp_loc, 7)
-                                      - 6.9642e-39 * pow(Te_tmp_loc, 6)
-                                      + 3.2559e-37 * pow(Te_tmp_loc, 5)
-                                      - 8.3410e-36 * pow(Te_tmp_loc, 4)
-                                      + 8.6011e-35 * pow(Te_tmp_loc, 3)
-                                      + 1.9958e-34 * pow(Te_tmp_loc, 2)
-                                      + 4.9864e-34 * Te_tmp_loc
-                                      - 9.9412e-34;
+                                  + 2.8025e-45 * pow(Te_tmp_loc, 9)
+                                  - 6.7148e-43 * pow(Te_tmp_loc, 8)
+                                  + 8.8636e-41 * pow(Te_tmp_loc, 7)
+                                  - 6.9642e-39 * pow(Te_tmp_loc, 6)
+                                  + 3.2559e-37 * pow(Te_tmp_loc, 5)
+                                  - 8.3410e-36 * pow(Te_tmp_loc, 4)
+                                  + 8.6011e-35 * pow(Te_tmp_loc, 3)
+                                  + 1.9958e-34 * pow(Te_tmp_loc, 2)
+                                  + 4.9864e-34 * Te_tmp_loc
+                                  - 9.9412e-34;
               } else if (Te_tmp_loc >= 1.0 and Te_tmp_loc < 1.5) {
                 Limp(jx,jy,jz) = 5e-35 * (Te_tmp_loc - 1.0);
               } else {
@@ -4326,10 +4421,10 @@ protected:
       
       Srad = -Limp * frac_imp * Ne_tmp * Ne_tmp * Nbar * density / (1.602e-19 * Tebar / Tbar);        //Normalized //NOTE(malamast): Should we multiply with Nbar * density?
       mesh->communicate(Srad);
-      Srad.applyBoundary("neumann");
+      // Srad.applyBoundary("neumann");
       Wrad = Srad / Ne_tmp;
       mesh->communicate(Wrad);
-      Wrad.applyBoundary("neumann");
+      // Wrad.applyBoundary("neumann");
     }
 
     if (jpar_bndry_width > 0) {
@@ -4532,20 +4627,20 @@ protected:
 
     //////////////////////////////////////////////////////////////////
     // Vorticity equation
-
     {
       TRACE("ddt(U)");
 
       ddt(U) = 0.0;
 
       if (BScurrent) {
-        if (evolve_psi)
+        if (evolve_psi) {
           ddt(U) = -SQ(B0) * bracket(Psi, Jpar_BS0 / B0, bm_mag) * B0;
-	          else  
+        } else {
           ddt(U) = -SQ(B0) * bracket(Apar, Jpar_BS0 / B0, bm_mag);
+        }
       } else {
         if (evolve_psi) {
-	        ddt(U) = -SQ(B0) * bracket(Psi, J0 / B0, bm_mag) * B0; // Grad j term
+          ddt(U) = -SQ(B0) * bracket(Psi, J0 / B0, bm_mag) * B0; // Grad j term
         } else {
           ddt(U) = -SQ(B0) * bracket(Apar, J0 / B0, bm_mag);     // Grad j term
         }
@@ -4579,7 +4674,7 @@ protected:
         }
 
         if (include_vpar0) {
-          ddt(U) -= Vipar0 * Grad_parP(U);  //NOTE(malamast): U0_net is zero in our case.
+          ddt(U) -= Vipar0 * Grad_parP(U); // Added by malamast
         }
 
         if (include_U0 && include_vpar0) {
@@ -4778,7 +4873,7 @@ protected:
         // Calculate coefficient.
 
         hyper_mu_x = hyperviscos * coord->g_11 * SQ(coord->dx) * abs(coord->g11 * D2DX2(U)) / (abs(U) + 1e-3);
-        hyper_mu_x.applyBoundary("dirichlet"); // Set to zero on all boundaries
+        hyper_mu_x.applyBoundary(); // Set to zero on all boundaries
 
         ddt(U) += hyper_mu_x * coord->g11 * D2DX2(U);
 
@@ -4802,7 +4897,6 @@ protected:
 
     /////////////////////////////////////////////////////////////////
     // number density equation
-
     {
       TRACE("ddt(Ni)");
 
@@ -5832,6 +5926,16 @@ protected:
 
     first_run = false;
 
+    // For debuging
+    // ddt(U) = 0.0;
+    // ddt(Apar) = 0.0;
+    // ddt(Ti) = 0.0;
+    // ddt(Te) = 0.0;
+    // ddt(Ni) = 0.0;
+    // if (compress0) {
+    //   ddt(Vipar) = 0.0;
+    // }
+
     return 0;
   }
 
@@ -5844,6 +5948,12 @@ protected:
     SBC_yup_eq(var, value, PF_limit, PF_limit_range);
     SBC_ydown_eq(var, -value, PF_limit, PF_limit_range);
     // SBC_ydown_eq(var, value, PF_limit, PF_limit_range);
+  }
+
+  void SBC_Gradpar(Field3D &var, Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
+    SBC_yup_Grad_par(var, value, PF_limit, PF_limit_range);
+    SBC_ydown_Grad_par(var, -value, PF_limit, PF_limit_range);
+    // SBC_ydown_Grad_par(var, value, PF_limit, PF_limit_range);
   }
 
   // Boundary to specified Field3D object
@@ -5931,13 +6041,6 @@ protected:
   }
 
   // Boundary gradient to specified Field3D object
-  void SBC_Gradpar(Field3D &var, Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
-    SBC_yup_Grad_par(var, value, PF_limit, PF_limit_range);
-    SBC_ydown_Grad_par(var, -value, PF_limit, PF_limit_range);
-    // SBC_ydown_Grad_par(var, value, PF_limit, PF_limit_range);
-  }
-
-
   void SBC_yup_Grad_par(Field3D &var, const Field3D &value, bool PF_limit, BoutReal PF_limit_range) {
   
     auto var_fa = toFieldAligned(var);
@@ -6112,7 +6215,6 @@ protected:
     }
 
   }
-
   
   /*****************************************************************************
    * Preconditioner
