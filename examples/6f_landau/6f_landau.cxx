@@ -184,8 +184,6 @@ private:
   Field3D kappa_perp_e;                          // Electron perpendicular Thermal Conductivity profile (kg*M / S^2)
   Field3D kappa_par_i_fl, kappa_par_e_fl;
   Field3D kappa_perp_i_fl, kappa_perp_e_fl;
-  Field3D q_par_i, q_par_e;
-  Field3D q_par_fl, q_par_landau;
 
   /********** Model options and additional variables ***************************/
   bool evolve_psi;
@@ -263,18 +261,8 @@ private:
   bool fluxlimit;                                // flux limited condition
   BoutReal q_alpha;                              // flux limiting coefficient
 
-  // // case2: Landau damping closure
-  // bool Landau;           // Use Gyro Landau Fluid closure instead of thermal conductivity
-  // bool Landau_coll;      // collisional Landau Damping
-  // BoutReal Landau_coeff; // Coefficient for Landau Damping
-  // int nLorentzian;       // number of Lorentzians, collisional: [3, 7, 12], collisionless: >=7
-  // BoutReal kappa_0;      // collisionless Landau damping coefficient
-  // Field3D kappa_i;       // ion collisional Landau damping coefficient (0.5*nu_i/vth_i)
-  // Field3D kappa_e;       // electron collisional Landau damping coefficient (0.5*nu_e/vthe_e)  
-
   bool sheath_boundaries;                        // Apply sheath boundaries in Y
   Field3D SBC_value_i, SBC_value_e;
-  bool full_sbc;                                 // full-f version of sheath BC for ion parallel velocity
 
   /// impurity
   bool impurity_prof, load_impurity, impurity_gyro;
@@ -468,6 +456,10 @@ private:
   Field3D Xim_x, Xim_z;                          // Displacement of y-1 (in cell index space)
 
   bool phi_constraint;                           // Solver for phi using a solver constraint
+  bool phi_boundary_relax;           // Relax x boundaries of phi towards Neumann?
+  bool phi_core_averagey;            // Average phi core boundary in Y?
+  BoutReal phi_boundary_timescale;   // Relaxation timescale
+  BoutReal phi_boundary_last_update; // Time when last updated
 
   bool output_transfer;                          // output the results of energy transfer
   bool output_ohm;                               // output the results of the terms in Ohm's law
@@ -1079,17 +1071,18 @@ protected:
 
     // Load metrics
     if (mesh->get(Rxy, "Rxy")) { // m
-      output_error.write("Error: Cannot read Rxy from grid\n");
-      return 1;
+      throw BoutException("Error: Cannot read Rxy from grid\n");
     }
     if (mesh->get(Bpxy, "Bpxy")) { // T
-      output_error.write("Error: Cannot read Bpxy from grid\n");
-      return 1;
+      throw BoutException("Error: Cannot read Bpxy from grid\n");
     }
     mesh->get(Btxy, "Btxy");                     // T
     mesh->get(B0, "Bxy");                        // T
     mesh->get(hthe, "hthe");                     // m
     mesh->get(I, "sinty");                       // m^-2 T^-1
+    // mesh->get(Psixy, "psixy");        // get Psi
+    // mesh->get(Psiaxis, "psi_axis");   // axis flux
+    // mesh->get(Psibndry, "psi_bndry"); // edge flux
 
     /////////////////////////////////////////////////////////////////
     // Read parameters from the options file
@@ -1204,6 +1197,9 @@ protected:
         options["evolve_jpar"].doc("If true, evolve J raher than Psi").withDefault(false);
     phi_constraint =
         options["phi_constraint"].doc("Use solver constraint for phi").withDefault(false);
+    phi_boundary_relax = options["phi_boundary_relax"]
+                             .doc("Relax x boundaries of phi towards Neumann?")
+                             .withDefault<bool>(false);
 
     // Effects to include/exclude
     nonlinear = options["nonlinear"].withDefault(false);
@@ -1356,8 +1352,7 @@ protected:
       break;
     }
     default:
-      output << "ERROR: Invalid choice of bracket method. Must be 0 - 3\n";
-      return 1;
+      throw BoutException("Invalid choice of bracket method. Must be 0 - 3\n");
     }
 
     // int bracket_method;
@@ -1384,8 +1379,7 @@ protected:
       break;
     }
     default:
-      output << "ERROR: Invalid choice of bracket method. Must be 0 - 3\n";
-      return 1;
+      throw BoutException("Invalid choice of bracket method. Must be 0 - 3\n");
     }
 
     eHall = options["eHall"]
@@ -1513,7 +1507,6 @@ protected:
     diffusion_par = options["diffusion_par"].doc("Parallel temperature diffusion").withDefault(-1.0);
     diffusion_perp = options["diffusion_perp"].doc("Perpendicular temperature diffusion").withDefault(-1.0);
     diff_par_flutter =  options["diff_par_flutter"].doc("add magnetic flutter terms").withDefault(false);
-    full_sbc =  options["full_sbc"].withDefault(false);
     fluxlimit =  options["fluxlimit"].withDefault(false);
     hyperdiff_par_n4 =  options["hyperdiff_par_n4"]
 	                .doc("4th Parallel density diffusion")
@@ -1957,7 +1950,7 @@ protected:
         P00 = P00 / (ee * Tebar * Nbar * density);
         N0 = n0_height * (pow(P0 / P00, 0.3));
       } else {
-	      N0 = N0tanh(n0_height * Nbar, n0_ave * Nbar, n0_width, n0_center, n0_bottom_x);
+	      N0 = N0tanh(n0_height * Nbar, n0_ave * Nbar, n0_width, n0_center, n0_bottom_x); // Do we need Nbar here?
       }
       Ti0 = P0 / N0 / (1.0 + Zi);
       Te0 = Ti0;
@@ -2154,18 +2147,15 @@ protected:
 
     } else {
       if (mesh->get(N0, "Niexp")) { // N_i0
-        output_error.write("Error: Cannot read Ni0 from grid\n");
-        return 1;
+        throw BoutException("Error: Cannot read Ni0 from grid\n");
       }
 
       if (mesh->get(Ti0, "Tiexp")) { // T_i0
-        output_error.write("Error: Cannot read Ti0 from grid\n");
-        return 1;
+        throw BoutException("Error: Cannot read Ti0 from grid\n");
       }
 
       if (mesh->get(Te0, "Teexp")) { // T_e0
-        output_error.write("Error: Cannot read Te0 from grid\n");
-        return 1;
+        throw BoutException("Error: Cannot read Te0 from grid\n");
       }
 
       N0 /= Nbar;
@@ -2174,14 +2164,12 @@ protected:
 
       if (impurity_prof) {
         if (mesh->get(Ne0, "Neexp")) { // N_e0
-          output.write("Error: Cannot read Ne0 from grid\n");
-          return 1;
+          throw BoutException("Error: Cannot read Ne0 from grid\n");
         }
         Ne0 /= Nbar;
         if (load_impurity) {
           if (mesh->get(N_imp0, "N_imp")) {
-            output.write("Error: Cannot read N_imp from grid\n");
-            return 1;
+            throw BoutException("Error: Cannot read N_imp from grid\n");
           }
           N_imp0 /= Nbar;
         } else {
@@ -2233,6 +2221,7 @@ protected:
     Pi0 = N0 * Ti0;
     Pe0 = Ne0 * Te0;
 
+    // For the physics-based preconditioner
     jpar1.setBoundary("J");
     u_tmp1.setBoundary("U");
     ti_tmp2.setBoundary("Ti");
@@ -2258,27 +2247,6 @@ protected:
         bracket1e.setBoundary("Te");
         gradpar_te.setBoundary("Te");
       }
-
-      // if (Landau) {
-      //   q_par_e.setBoundary("q_par_e");
-      //   q_par_i.setBoundary("q_par_i");
-      //   q_par_e = 0.;
-      //   q_par_i = 0.;
-      //   dump.add(q_par_e, "q_par_e", 1);
-      //   dump.add(q_par_i, "q_par_i", 1);
-      //   if (output_qparcompare) {
-      //     q_par_fl.setBoundary("q_par_e");
-      //     dump.add(q_par_fl, "q_par_fl", 1);
-      //     q_par_landau.setBoundary("q_par_e");
-      //     dump.add(q_par_landau, "q_par_landau", 1);
-      //   }
-      //   if (Landau_coll) {
-      //     kappa_i.setBoundary("kappa");
-      //     kappa_e.setBoundary("kappa");
-      //   }
-      //   SBC_value_i.setBoundary("kappa");
-      //   SBC_value_e.setBoundary("kappa");
-      // }
     }
 
     if (neoclassic_i || neoclassic_e) {
@@ -2548,20 +2516,6 @@ protected:
           kappa_par_i_lin(jx,jy) = kappa_par_i(jx,jy,0);
           kappa_par_e_lin(jx,jy) = kappa_par_e(jx,jy,0);
         }
-
-      // if (Landau) {
-      //   if (Landau_coll) {
-      //     output.write("Collisional Landau damping closure used!\n");
-      //     kappa_i = 0.5 * nu_i / vth_i;
-      //     kappa_i *= Lbar; // normalization
-      //     kappa_e = 0.5 * nu_e / vth_e;
-      //     kappa_e *= Lbar; // normalization
-      //   } else {
-      //     output.write("Collisionless Landau damping closure used!\n");
-      //     kappa_0 = 2. / (20. * (2 * PI * q95_input));
-      //     output.write("\tkappa_0 = %e\n", kappa_0);
-      //   }
-      // }
     }
 
     if (diffusion_perp > 0.0) {
@@ -2753,6 +2707,7 @@ protected:
     TiSource.applyBoundary();
     mesh->communicate(TiSource);
     SAVE_ONCE(TiSource);
+
     // dump.add(NiSource, "NiSource", 1);
     // dump.add(TeSource, "TeSource", 1);
     // dump.add(TeSource, "TiSource", 1);
@@ -3117,7 +3072,6 @@ protected:
       dump.add(Wrad0, "Wrad0", 0);
     }
 
-
     /**************** SET EVOLVING VARIABLES ***********************************/
 
     // Tell BOUT which variables to evolve
@@ -3160,16 +3114,25 @@ protected:
 
     if (phi_constraint) {
       // Implicit Phi solve using IDA
+
+      if (!solver->constraints()) {
+        throw BoutException("Cannot constrain. Run again with phi_constraint=false.\n");
+      }
+
       solver->constraint(phi, C_phi, "phi");
-      
+
       // Set preconditioner
       setPrecon(&Elm_6f::precon_phi);
+
     } else {
       // Phi solved in RHS (explicitly)
       SAVE_REPEAT(phi);
 
       // Set preconditioner
       // setPrecon(&Elm_6f::precon);
+
+      // Set Jacobian
+      // setJacobian((jacobianfunc)&Elm_6f::jacobian);
     }
 
     SAVE_REPEAT(ddt(Ni));
@@ -3355,10 +3318,29 @@ protected:
 
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create(&globalOptions["phiSolver"]);
+    // Save performance metrics to output, using the
+    // given name as the prefix.
+    phiSolver->savePerformance(*solver, "phiSolver");
+
     aparSolver = Laplacian::create(&globalOptions["aparSolver"], loc);
 
-    // phiSolver->setInnerBoundaryFlags(INVERT_SET);
-    // phiSolver->setOuterBoundaryFlags(INVERT_SET);
+    if (phi_boundary_relax) {
+      // Set the last update time to -1, so it will reset
+      // the first time RHS function is called
+      phi_boundary_last_update = -1.;
+      phi_core_averagey = options["phi_core_averagey"]
+                              .doc("Average phi core boundary in Y?")
+                              .withDefault<bool>(false)
+                          and mesh->periodicY(mesh->xstart);
+
+      phi_boundary_timescale = options["phi_boundary_timescale"]
+                                   .doc("Timescale for phi boundary relaxation [seconds]")
+                                   .withDefault(1e-7)
+                               / Tbar; // Normalise time units to Tbar
+
+      phiSolver->setInnerBoundaryFlags(INVERT_SET);
+      phiSolver->setOuterBoundaryFlags(INVERT_SET);
+    }
 
     /////////////// CHECK VACUUM ////////////////////////////////////
     // In vacuum region, initial vorticity should equal zero
@@ -3403,6 +3385,7 @@ protected:
         } else {
           phiSolver->setCoefC(logn0);
           phi = phiSolver->solve(ubyn);
+          phi = 0.0;
         }
       }
     }
@@ -3852,24 +3835,6 @@ protected:
       }
     }
 
-    // update Landau parallel heat flux
-    /*  if (diffusion_par && Landau) {
-          SBC_value_i = gamma_i_BC * Pi * c_set / (1.6 * N0  * vth_i);
-          SBC_value_e = gamma_e_BC * Pe * c_set / (1.6 * Ne0 * vth_e);
-          if (Landau_coll) {
-            q_par_i = -Landau_coeff * (2. / 3.) * N0 * 2. * sqrt(2. / PI) * vth_i / Va *eiSign_kpar_wcoll(Ti, kappa_i, 2, nLorentzian, SBC_value_i);
-            q_par_e = -Landau_coeff * (2. / 3.) * Ne0 * 2. * sqrt(2. / PI) * vth_e / Va * iSign_kpar_wcoll(Te, kappa_e, 2, nLorentzian, SBC_value_e);
-          } else {
-            q_par_i = -Landau_coeff * (2. / 3.) * N0 * 2. * sqrt(2. / PI) * vth_i / Va * iSign_kpar(Ti, kappa_0, 2, nLorentzian, SBC_value_i);
-            q_par_e = -Landau_coeff * (2. / 3.) * Ne0 * 2. * sqrt(2. / PI) * vth_e / Va * iSign_kpar(Te, kappa_0, 2, nLorentzian, SBC_value_e);
-          }
-          mesh->communicate(q_par_i);
-          mesh->communicate(q_par_e);
-          q_par_i.applyBoundary();
-          q_par_e.applyBoundary();
-        }
-    */
-
     if (radial_diffusion && nonlinear) {
       ddx_ni = DDX(N_tmp);
       mesh->communicate(ddx_ni);
@@ -3931,18 +3896,10 @@ protected:
     // Smooth j in x
     if (smooth_j_x && !sheath_boundaries) {
       Jpar = smooth_x(Jpar);
-      /*Jpar = smooth_x(Jpar);
-      Jpar = smooth_x(Jpar);
-      Jpar = smooth_x(Jpar);
-      Jpar = smooth_x(Jpar);
-      Jpar = smooth_y(Jpar);
-      Jpar = smooth_y(Jpar);
-      Jpar = smooth_y(Jpar);
-      Jpar = smooth_y(Jpar);
-      Jpar = smooth_y(Jpar);
-      */
-      mesh->communicate(Jpar);
+      // Jpar = smooth_x(Jpar);
+      // Jpar = smooth_y(Jpar);
       Jpar.applyBoundary();
+      mesh->communicate(Jpar);
     }
 
     if (mask_j_x) {
@@ -4024,45 +3981,31 @@ protected:
       // SBC_Gradpar(Jpar, zero, PF_limit, PF_limit_range);
 
       if (diffusion_par > 0.0) {
-        if (full_sbc) {
-          q_se = -2. / 3. * gamma_e_BC * (Pe + Pe0) * c_set / Va / kappa_par_e; // * (Nbar*density*KB);
-          q_si = -2. / 3. * gamma_i_BC * (Pi + Pi0) * c_set / Va / kappa_par_i; // * (Nbar*density*KB);
-	      } else {
-          q_se = -2. / 3. * gamma_e_BC * Pe * c_se / kappa_par_e; // * (Nbar*density*KB); //NOTE(malamast): do we need to add 2.5*Ne*Te*Vepar/kappa_par_e here?
-          q_si = -2. / 3. * gamma_i_BC * Pi * c_se / kappa_par_i; // * (Nbar*density*KB); //NOTE(malamast): do we need to add 2.5*Ni*Ti*Vipar/kappa_par_i here?
-	      }
+        q_se = -2. / 3. * gamma_e_BC * Pe * c_se / kappa_par_e; // * (Nbar*density*KB); //NOTE(malamast): do we need to add 2.5*Ne*Te*Vepar/kappa_par_e here?
+        q_si = -2. / 3. * gamma_i_BC * Pi * c_se / kappa_par_i; // * (Nbar*density*KB); //NOTE(malamast): do we need to add 2.5*Ni*Ti*Vipar/kappa_par_i here?
       } else {
         q_se = 0.;
         q_si = 0.;
       }
 
       if (compress0) {
-        if (full_sbc) {
-          Field3D c_set_n = c_set/Va;
-          SBC_Dirichlet(Vipar, c_set_n, PF_limit, PF_limit_range);
-        } else {
-          SBC_Dirichlet(Vipar, c_se, PF_limit, PF_limit_range);
-          // SBC_Dirichlet(Vipar, zero, PF_limit, PF_limit_range);
-        }
+        SBC_Dirichlet(Vipar, c_se, PF_limit, PF_limit_range);
+        // SBC_Dirichlet(Vipar, zero, PF_limit, PF_limit_range);
       }
 
       // SBC_Gradpar(U, zero, PF_limit, PF_limit_range);
       SBC_Gradpar(Ni, zero, PF_limit, PF_limit_range);
-      // if (evolve_psi) {
-      //   SBC_Dirichlet(Psi, zero, PF_limit, PF_limit_range);
-      // } else {
-      //   SBC_Dirichlet(Apar, zero, PF_limit, PF_limit_range);
-      // }
+      if (evolve_psi) {
+        SBC_Dirichlet(Psi, zero, PF_limit, PF_limit_range);
+      } else {
+        SBC_Dirichlet(Apar, zero, PF_limit, PF_limit_range);
+      }
 
-      // if (!Landau) {
-        SBC_Gradpar(Ti, q_si, PF_limit, PF_limit_range);
-        SBC_Gradpar(Te, q_se, PF_limit, PF_limit_range);
-        // SBC_Gradpar(Ti, zero, PF_limit, PF_limit_range);
-        // SBC_Gradpar(Te, zero, PF_limit, PF_limit_range);
-        // } else {
-      //   SBC_Gradpar(Ti, zero, PF_limit, PF_limit_range);
-      //   SBC_Gradpar(Te, zero, PF_limit, PF_limit_range);
-      // }     
+      SBC_Gradpar(Ti, q_si, PF_limit, PF_limit_range);
+      SBC_Gradpar(Te, q_se, PF_limit, PF_limit_range);
+      // SBC_Gradpar(Ti, zero, PF_limit, PF_limit_range);
+      // SBC_Gradpar(Te, zero, PF_limit, PF_limit_range);
+   
     }
 
     
@@ -4083,36 +4026,6 @@ protected:
     // }
 
     // MPI_Barrier(BoutComm::get());
-
-  //   // update Landau parallel heat flux
-  //   if (diffusion_par && Landau) {
-  //     if (full_sbc) {
-  //       SBC_value_i = gamma_i_BC * (Pi + Pi0) * c_set / (1.6 * N0  * vth_i);
-  //       SBC_value_e = gamma_e_BC * (Pe + Pe0) * c_set / (1.6 * Ne0 * vth_e);
-  //     } else {
-  //       SBC_value_i = gamma_i_BC * Pi * c_set / (1.6 * N0  * vth_i);
-  //       SBC_value_e = gamma_e_BC * Pe * c_set / (1.6 * Ne0 * vth_e);
-  //     }
-  //     if (Landau_coll) {
-  //       q_par_i = -Landau_coeff * (2. / 3.) * N0 * 2. * sqrt(2. / PI) * vth_i / Va * iSign_kpar_wcoll(Ti, kappa_i, 2, nLorentzian, SBC_value_i);
-  //       q_par_e = -Landau_coeff * (2. / 3.) * Ne0 * 2. * sqrt(2. / PI) * vth_e / Va * iSign_kpar_wcoll(Te, kappa_e, 2, nLorentzian, SBC_value_e);
-  //     } else {
-  //       q_par_i = -Landau_coeff * (2. / 3.) * N0 * 2. * sqrt(2. / PI) * vth_i / Va * iSign_kpar(Ti, kappa_0, 2, nLorentzian, SBC_value_i);
-  //       q_par_e = -Landau_coeff * (2. / 3.) * Ne0 * 2. * sqrt(2. / PI) * vth_e / Va * iSign_kpar(Te, kappa_0, 2, nLorentzian, SBC_value_e);
-  //     }
-  //     mesh->communicate(q_par_i);
-  //     mesh->communicate(q_par_e);
-  //     q_par_i.applyBoundary();
-  //     q_par_e.applyBoundary();
-
-  // /*    SBC_value_i = gamma_i_BC * (Pi + Pi0) * c_set / Va;
-  //     SBC_value_e = gamma_e_BC * (Pe + Pe0) * c_set / Va;
-  //     SBC_Dirichlet(q_par_i, SBC_value_i, PF_limit, PF_limit_range);
-  //     SBC_Dirichlet(q_par_e, SBC_value_e, PF_limit, PF_limit_range);
-  // */
-  //     SBC_Gradpar(q_par_i, 0., PF_limit, PF_limit_range);
-  //     SBC_Gradpar(q_par_e, 0., PF_limit, PF_limit_range);
-  //   }
 
     if (neutral) {
       N_tmp = field_larger(N0 + Ni, Low_limit);
@@ -4443,16 +4356,8 @@ protected:
     // Smooth j in x
     if (smooth_j_x && sheath_boundaries) {
       Jpar = smooth_x(Jpar);
-      /*Jpar = smooth_x(Jpar);
-      Jpar = smooth_x(Jpar);
-      Jpar = smooth_x(Jpar);
-      Jpar = smooth_x(Jpar);
-      Jpar = smooth_y(Jpar);
-      Jpar = smooth_y(Jpar);
-      Jpar = smooth_y(Jpar);
-      Jpar = smooth_y(Jpar);
-      Jpar = smooth_y(Jpar);
-      */
+      // Jpar = smooth_x(Jpar);
+      // Jpar = smooth_y(Jpar);      
     }
 
     if (mask_j_x) {
@@ -4667,7 +4572,7 @@ protected:
 
       if (compress0 && include_vipar) {
 
-        ddt(U) -= Vipar * Grad_parP(U0_net);  //NOTE(malamast): U0_net is zero in our case.
+        // ddt(U) -= Vipar * Grad_parP(U0_net);  //NOTE(malamast): U0_net is zero in our case.
 
         if (include_U0) {
           ddt(U) -= Vipar * Grad_parP(U0); // Added by malamast
@@ -5116,13 +5021,6 @@ protected:
 
       if (diffusion_par > 0.0) {
 
-        // if (Landau) {
-        //   if (diff_par_flutter)
-        //     ddt(Ti) -= Grad_parP(q_par_i) / N0;
-        //   else
-        //     ddt(Ti) -= Grad_par(q_par_i) / N0;
-        // } else {
-
           ddt(Ti) += kappa_par_i * Grad2_par2(Ti) / N0; // Parallel diffusion
           ddt(Ti) += Grad_par(kappa_par_i) * Grad_par(Ti) / N0;
 
@@ -5349,17 +5247,6 @@ protected:
       }
 
       if (diffusion_par > 0.0) {
-        // if (Landau) {
-        //   if (diff_par_flutter)
-        //     ddt(Te) -= Grad_parP(q_par_e) / Ne0;
-        //   else
-        //     ddt(Te) -= Grad_par(q_par_e) / Ne0;
-
-        //   if (output_qparcompare) {
-        //     q_par_fl = kappa_par_e * Grad_par(Te);
-        //     q_par_landau = q_par_e;
-        //   }
-        // } else {
           ddt(Te) += kappa_par_e * Grad2_par2(Te) / Ne0; // Parallel diffusion
           ddt(Te) += Grad_par(kappa_par_e) * Grad_par(Te) / Ne0;
 
