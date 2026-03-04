@@ -3,6 +3,7 @@
 
 #include "bout/boundary_region.hxx"
 #include "bout/bout_types.hxx"
+#include <functional>
 #include <vector>
 
 #include "bout/sys/parallel_stencils.hxx"
@@ -101,15 +102,8 @@ inline BoutReal limitFreeScale(BoutReal fm, BoutReal fc) {
   return fp;
 }
 
-class BoundaryRegionPar : public BoundaryRegionBase {
-  
-  using IndicesVec = std::vector<Indices>;
-  using IndicesIter = IndicesVec::iterator;
-
-  /// Vector of points in the boundary
-  IndicesVec bndry_points;
-  /// Current position in the boundary points
-  IndicesIter bndry_position;
+template <class IndicesVec, class IndicesIter>
+class BoundaryRegionParIterBase {
 
 public:
   BoundaryRegionParIterBase(IndicesVec& bndry_points, IndicesIter bndry_position, int dir,
@@ -130,25 +124,15 @@ public:
   // setter
   void setValid(signed char valid) { bndry_position->valid = valid; }
 
-  // setter
-  void setValid(signed char val) { bndry_position->valid = val; }
-
-  bool contains(const BoundaryRegionPar& bndry) const {
-    return std::binary_search(
-        begin(bndry_points), end(bndry_points), *bndry.bndry_position,
-        [](const Indices& i1, const Indices& i2) { return i1.index < i2.index; });
-  }
-
   // extrapolate a given point to the boundary
   BoutReal extrapolate_sheath_o1(const Field3D& f) const { return ythis(f); }
   BoutReal extrapolate_sheath_o2(const Field3D& f) const {
     ASSERT3(valid() >= 0);
     if (valid() < 1) {
-      return extrapolate_o1(f);
+      return extrapolate_sheath_o1(f);
     }
     return ythis(f) * (1 + length()) - yprev(f) * length();
   }
-
   inline BoutReal
   extrapolate_sheath_o1(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
     return ythis(f);
@@ -165,10 +149,10 @@ public:
   inline BoutReal interpolate_sheath_o2(const Field3D& f) const {
     return ythis(f) * (1 - length()) + ynext(f) * length();
   }
-  inline BoutReal interpolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
+  inline BoutReal
+  interpolate_sheath_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
     return ythis(f) * (1 - length()) + ynext(f) * length();
   }
-
 
   inline BoutReal extrapolate_next_o1(const Field3D& f) const { return ythis(f); }
   inline BoutReal extrapolate_next_o2(const Field3D& f) const {
@@ -187,7 +171,7 @@ public:
   extrapolate_next_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
     ASSERT3(valid() >= 0);
     if (valid() < 1) {
-      return extrapolate_sheath_o1(f);
+      return extrapolate_next_o1(f);
     }
     return ythis(f) * 2 - yprev(f);
   }
