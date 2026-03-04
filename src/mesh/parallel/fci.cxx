@@ -85,7 +85,7 @@ void load_parallel_metric_component(std::string name, Field3D& component, int of
   }
   if (!component.hasParallelSlices()){
     component.splitParallelSlices();
-    component.allowCalcParallelSlices = false;
+    component.disallowCalcParallelSlices();
   }
   auto& pcom = component.ynext(offset);
   pcom.allocate();
