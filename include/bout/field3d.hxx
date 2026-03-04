@@ -605,8 +605,8 @@ void checkData(const Field3D& f, const std::string& region = "RGN_NOBNDRY");
 #else
 /// Ignored with disabled CHECK; Throw an exception if \p f is not
 /// allocated or if any elements are non-finite (for CHECK > 2)
-inline void checkData(const Field3D& UNUSED(f),
-                      const std::string& UNUSED(region) = "RGN_NOBNDRY"){};
+inline void checkData([[maybe_unused]] const Field3D& f,
+                      [[maybe_unused]] const std::string& region = "RGN_NOBNDRY"){};
 #endif
 
 /// Fourier filtering, removes all except one mode
@@ -667,7 +667,7 @@ Field2D DC(const Field3D& f, const std::string& rgn = "RGN_ALL");
 #if CHECK > 2
 void invalidateGuards(Field3D& var);
 #else
-inline void invalidateGuards(Field3D& UNUSED(var)) {}
+inline void invalidateGuards([[maybe_unused]] Field3D& var) {}
 #endif
 
 /// Returns a reference to the time-derivative of a field \p f
@@ -678,7 +678,7 @@ inline Field3D& ddt(Field3D& f) { return *(f.timeDeriv()); }
 /// toString template specialisation
 /// Defined in utils.hxx
 template <>
-inline std::string toString<>(const Field3D& UNUSED(val)) {
+inline std::string toString<>([[maybe_unused]] const Field3D& val) {
   return "<Field3D>";
 }
 

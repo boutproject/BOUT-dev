@@ -24,7 +24,6 @@
  *
  */
 
-#include "bout/unused.hxx"
 class Field;
 
 #ifndef FIELD_H
@@ -129,9 +128,9 @@ public:
   }
 
   /// Dummy functions to increase portability
-  virtual void setRegion(size_t UNUSED(regionID)) {}
-  virtual void setRegion(std::optional<size_t> UNUSED(regionID)) {}
-  virtual void setRegion(const std::string& UNUSED(region_name)) {}
+  virtual void setRegion([[maybe_unused]] size_t regionID) {}
+  virtual void setRegion([[maybe_unused]] std::optional<size_t> regionID) {}
+  virtual void setRegion([[maybe_unused]] const std::string& region_name) {}
   virtual void resetRegion() {}
   virtual std::optional<size_t> getRegionID() const { return {}; }
   virtual bool hasParallelSlices() const { return true; }
