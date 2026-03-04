@@ -440,7 +440,7 @@ void Field3D::applyTDerivBoundary() {
   }
 }
 
-void Field3D::setBoundaryTo(const Field3D& f3d) {
+void Field3D::setBoundaryTo(const Field3D& f3d, bool copyParallelSlices) {
 
   checkData(f3d);
 
@@ -463,7 +463,7 @@ void Field3D::setBoundaryTo(const Field3D& f3d) {
           // Interpolate midpoint value in f3d
           const BoutReal val = pnt.interpolate_sheath_o2(f3d);
           // Set the same boundary value in this field
-          pnt.dirichlet_o1(*this, val);
+          pnt.dirichlet_o2(*this, val);
         }
       }
     }
@@ -473,6 +473,9 @@ void Field3D::setBoundaryTo(const Field3D& f3d) {
   // Transform to field-aligned coordinates?
   // Loop over boundary regions
   for (const auto& reg : fieldmesh->getBoundaries()) {
+    if (isFci() && reg->by != 0) {
+      continue;
+    }
     /// Loop within each region
     for (reg->first(); !reg->isDone(); reg->next()) {
       for (int z = 0; z < nz; z++) {
