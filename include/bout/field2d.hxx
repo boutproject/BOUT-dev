@@ -37,6 +37,8 @@ class Field2D;
 #include "bout/fieldperp.hxx"
 #include "bout/region.hxx"
 
+#include <cstddef>
+
 #if BOUT_HAS_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib
 #endif
@@ -331,7 +333,7 @@ inline Field2D fromFieldAligned(const Field2D& f,
 void checkData(const Field2D& f, const std::string& region = "RGN_NOBNDRY");
 #else
 inline void checkData([[maybe_unused]] const Field2D& f,
-                      [[maybe_unused]] std::string region) = "RGN_NOBNDRY" {}
+                      [[maybe_unused]] std::string region = "RGN_NOBNDRY") {}
 #endif
 
 /// Force guard cells of passed field \p var to NaN
