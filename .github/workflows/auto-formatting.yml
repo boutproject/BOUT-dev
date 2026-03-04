@@ -60,3 +60,31 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "[bot] Add last format changes commit to ignore file"
+
+      - name: Run clang-tidy
+        uses: ZedThree/clang-tidy-review@v0.23.1
+        id: review
+        with:
+          build_dir: build
+          apt_packages: "libfftw3-dev,libnetcdf-c++4-dev,libopenmpi-dev,petsc-dev,slepc-dev,liblapack-dev,libparpack2-dev,libsundials-dev,uuid-dev"
+          config_file: ".clang-tidy"
+          # Googletest triggers a _lot_ of clang-tidy warnings, so ignore all
+          # the unit tests until they're fixed or ignored upstream
+          exclude: "tests/unit/*cxx"
+          lgtm_comment_body: ''
+          cmake_command: |
+            pip install --break-system-packages cmake && \
+            cmake --version && \
+            git config --global --add safe.directory "$GITHUB_WORKSPACE" && \
+            cmake . -B build -DBUILD_SHARED_LIBS=ON \
+                             -DBOUT_USE_PETSC=ON \
+                             -DBOUT_USE_SLEPC=ON \
+                             -DBOUT_USE_SUNDIALS=ON \
+                             -DBOUT_BUILD_EXAMPLES=ON \
+                             -DBOUT_BUILD_DOCS=OFF \
+                             -DBOUT_ENABLE_PYTHON=OFF \
+                             -DCMAKE_EXPORT_COMPILE_COMMANDS=On \
+                             -DBOUT_UPDATE_GIT_SUBMODULE=OFF
+
+      - name: Upload clang-tidy fixes
+        uses: ZedThree/clang-tidy-review/upload@v0.23.1
