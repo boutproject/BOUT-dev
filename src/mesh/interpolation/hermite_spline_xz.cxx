@@ -21,11 +21,16 @@
  **************************************************************************/
 
 #include "../impls/bout/boutmesh.hxx"
+#include "../parallel/fci_comm.hxx"
 #include "bout/bout.hxx"
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_xz.hxx"
+#include "bout/mask.hxx"
 
+#include <algorithm>
+#include <memory>
+#include <string>
 #include <vector>
 
 class IndConverter {
@@ -35,7 +40,7 @@ public:
         xstart(mesh->xstart), ystart(mesh->ystart), zstart(0),
         lnx(mesh->LocalNx - 2 * xstart), lny(mesh->LocalNy - 2 * ystart),
         lnz(mesh->LocalNz - 2 * zstart) {}
-  // ix and iy are global indices
+  // ix and iz are global indices
   // iy is local
   int fromMeshToGlobal(int ix, int iy, int iz) {
     const int xstart = mesh->xstart;
@@ -102,10 +107,20 @@ private:
   }
 };
 
-XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh* meshin)
+template <bool monotonic>
+XZHermiteSplineBase<monotonic>::XZHermiteSplineBase(int y_offset, Mesh* meshin,
+                                                    Options* options)
     : XZInterpolation(y_offset, meshin), h00_x(localmesh), h01_x(localmesh),
       h10_x(localmesh), h11_x(localmesh), h00_z(localmesh), h01_z(localmesh),
       h10_z(localmesh), h11_z(localmesh) {
+
+  if constexpr (monotonic) {
+    if (options == nullptr) {
+      options = &Options::root()["mesh:paralleltransform:xzinterpolation"];
+    }
+    abs_fac_monotonic = (*options)["abs_tol"].withDefault(abs_fac_monotonic);
+    rel_fac_monotonic = (*options)["rel_tol"].withDefault(rel_fac_monotonic);
+  }
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
@@ -139,6 +154,10 @@ XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh* meshin)
   MatCreateAIJ(BoutComm::get(), m, m, M, M, 16, nullptr, 16, nullptr, &petscWeights);
 #endif
 #endif
+  if constexpr (monotonic) {
+    gf3daccess = std::make_unique<GlobalField3DAccess>(localmesh);
+    g3dinds.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
+  }
 #ifndef HS_USE_PETSC
   if (localmesh->getNXPE() > 1) {
     throw BoutException("Require PETSc for MPI splitting in X");
@@ -146,8 +165,10 @@ XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh* meshin)
 #endif
 }
 
-void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
-                                  const std::string& region) {
+template <bool monotonic>
+void XZHermiteSplineBase<monotonic>::calcWeights(
+    const Field3D& delta_x, const Field3D& delta_z,
+    [[maybe_unused]] const std::string& region) {
 
   const int ny = localmesh->LocalNy;
   const int nz = localmesh->LocalNz;
@@ -156,6 +177,8 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
 #ifdef HS_USE_PETSC
   IndConverter conv{localmesh};
 #endif
+  [[maybe_unused]] const int y_global_offset =
+      localmesh->getYProcIndex() * (localmesh->yend - localmesh->ystart + 1);
   BOUT_FOR(i, getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
@@ -300,6 +323,18 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
     }
 #endif
 #endif
+    if constexpr (monotonic) {
+      const auto gind =
+          gf3daccess->xyzg(i_corn, y + y_offset + y_global_offset, k_corner(x, y, z));
+      gf3daccess->get(gind);
+      gf3daccess->get(gind.xp(1));
+      gf3daccess->get(gind.zp(1));
+      gf3daccess->get(gind.xp(1).zp(1));
+      g3dinds[i] = {gind.ind, gind.xp(1).ind, gind.zp(1).ind, gind.xp(1).zp(1).ind};
+    }
+  }
+  if constexpr (monotonic) {
+    gf3daccess->setup();
   }
 #ifdef HS_USE_PETSC
   MatAssemblyBegin(petscWeights, MAT_FINAL_ASSEMBLY);
@@ -311,8 +346,11 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
 #endif
 }
 
-void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
-                                  const BoutMask& mask, const std::string& region) {
+template <bool monotonic>
+void XZHermiteSplineBase<monotonic>::calcWeights(const Field3D& delta_x,
+                                                 const Field3D& delta_z,
+                                                 const BoutMask& mask,
+                                                 const std::string& region) {
   setMask(mask);
   calcWeights(delta_x, delta_z, region);
 }
@@ -333,8 +371,14 @@ void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z
  *   (i, j+1, k+1)	h01_z + h10_z / 2
  *   (i, j+1, k+2)	h11_z / 2
  */
+template <bool monotonic>
 std::vector<ParallelTransform::PositionsAndWeights>
-XZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) {
+XZHermiteSplineBase<monotonic>::getWeightsForYApproximation(int i, int j, int k,
+                                                            int yoffset) {
+  if (localmesh->getNXPE() > 1) {
+    throw BoutException("It is likely that the function calling this is not handling the "
+                        "result correctly.");
+  }
   const int nz = localmesh->LocalNz;
   const int k_mod = k_corner(i, j, k);
   const int k_mod_m1 = (k_mod > 0) ? (k_mod - 1) : (nz - 1);
@@ -347,16 +391,21 @@ XZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) {
           {i, j + yoffset, k_mod_p2, 0.5 * h11_z(i, j, k)}};
 }
 
-Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region) const {
+template <bool monotonic>
+Field3D XZHermiteSplineBase<monotonic>::interpolate(
+    const Field3D& f, [[maybe_unused]] const std::string& region) const {
 
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
-  const auto region2 =
-      y_offset == 0 ? "RGN_NOY" : fmt::format("RGN_YPAR_{:+d}", y_offset);
+  const auto region2 = y_offset != 0 ? fmt::format("RGN_YPAR_{:+d}", y_offset) : region;
 
-#if USE_NEW_WEIGHTS
-#ifdef HS_USE_PETSC
+  std::unique_ptr<GlobalField3DAccessInstance> gf;
+  if constexpr (monotonic) {
+    gf = gf3daccess->communicate_asPtr(f);
+  }
+
+#if USE_NEW_WEIGHTS and defined(HS_USE_PETSC)
   BoutReal* ptr;
   const BoutReal* cptr;
   VecGetArray(rhs, &ptr);
@@ -366,10 +415,10 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
   VecGetArrayRead(result, &cptr);
   BOUT_FOR(i, f.getRegion(region2)) {
     f_interp[i] = cptr[int(i)];
-    ASSERT2(std::isfinite(cptr[int(i)]));
-  }
-  VecRestoreArrayRead(result, &cptr);
-#else
+    if constexpr (monotonic) {
+      const auto iyp = i;
+      const auto i = iyp.ym(y_offset);
+#elif USE_NEW_WEIGHTS // No Petsc
   BOUT_FOR(i, getRegion(region)) {
     auto ic = i_corner[i];
     auto iyp = i.yp(y_offset);
@@ -381,15 +430,16 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
       f_interp[iyp] += newWeights[w * 4 + 2][i] * f[ic.zp().xp(w - 1)];
       f_interp[iyp] += newWeights[w * 4 + 3][i] * f[ic.zp(2).xp(w - 1)];
     }
-  }
-#endif
-#else
+    if constexpr (monotonic) {
+#else                 // Legacy interpolation
+  // TODO(peter): Should we apply dirichlet BCs to derivatives?
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
 
   // f has been communcated, and thus we can assume that the x-boundaries are
   // also valid in the y-boundary.  Thus the differentiated field needs no
   // extra comms.
+  // TODO(dave) Add assert that we do not use z-splitting or z-guards.
   Field3D fx = bout::derivatives::index::DDX(f, CELL_DEFAULT, "DEFAULT", region2);
   Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", region2);
   Field3D fxz = bout::derivatives::index::DDZ(fx, CELL_DEFAULT, "DEFAULT", region2);
@@ -422,6 +472,24 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
     f_interp[iyp] =
         +f_z * h00_z[i] + f_zp1 * h01_z[i] + fz_z * h10_z[i] + fz_zp1 * h11_z[i];
 
+    if constexpr (monotonic) {
+#endif
+      const auto corners = {(*gf)[IndG3D(g3dinds[i][0])], (*gf)[IndG3D(g3dinds[i][1])],
+                            (*gf)[IndG3D(g3dinds[i][2])], (*gf)[IndG3D(g3dinds[i][3])]};
+      const auto minmax = std::minmax(corners);
+      const auto diff =
+          ((minmax.second - minmax.first) * rel_fac_monotonic) + abs_fac_monotonic;
+      f_interp[iyp] = std::max(f_interp[iyp], minmax.first - diff);
+      f_interp[iyp] = std::min(f_interp[iyp], minmax.second + diff);
+    }
+#if USE_NEW_WEIGHTS and defined(HS_USE_PETSC)
+    ASSERT2(std::isfinite(cptr[int(i)]));
+  }
+  VecRestoreArrayRead(result, &cptr);
+#elif USE_NEW_WEIGHTS
+    ASSERT2(std::isfinite(f_interp[iyp]));
+  }
+#else
     ASSERT2(std::isfinite(f_interp[iyp]) || i.x() < localmesh->xstart
             || i.x() > localmesh->xend);
   }
@@ -431,15 +499,24 @@ Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region
   return f_interp;
 }
 
-Field3D XZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_x,
-                                     const Field3D& delta_z, const std::string& region) {
+template <bool monotonic>
+Field3D XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f,
+                                                    const Field3D& delta_x,
+                                                    const Field3D& delta_z,
+                                                    const std::string& region) {
   calcWeights(delta_x, delta_z, region);
   return interpolate(f, region);
 }
 
-Field3D XZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_x,
-                                     const Field3D& delta_z, const BoutMask& mask,
-                                     const std::string& region) {
+template <bool monotonic>
+Field3D
+XZHermiteSplineBase<monotonic>::interpolate(const Field3D& f, const Field3D& delta_x,
+                                            const Field3D& delta_z, const BoutMask& mask,
+                                            const std::string& region) {
   calcWeights(delta_x, delta_z, mask, region);
   return interpolate(f, region);
 }
+
+// ensure they are instantiated
+template class XZHermiteSplineBase<true>;
+template class XZHermiteSplineBase<false>;
