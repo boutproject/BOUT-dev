@@ -845,7 +845,6 @@ void Field3D::setRegion(const std::string& region_name) {
   regionID = fieldmesh->getRegionID(region_name);
 }
 
-void Field3D::resetRegion() { regionID.reset(); };
 void Field3D::resetRegionParallel() {
   if (isFci()) {
     for (int i = 0; i < fieldmesh->ystart; ++i) {
