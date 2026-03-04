@@ -62,6 +62,13 @@
 #include <string>
 #include <string_view>
 
+namespace {
+template <typename T>
+int sgn(T val) {
+  return (T(0) < val) - (val < T(0));
+}
+} // namespace
+
 using namespace std::string_view_literals;
 
 FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,

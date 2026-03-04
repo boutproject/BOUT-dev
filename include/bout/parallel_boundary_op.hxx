@@ -49,7 +49,7 @@ protected:
   enum class ValueType { GEN, FIELD, REAL };
   const ValueType value_type{ValueType::REAL};
 
-  BoutReal getValue(const BoundaryRegionPar& bndry, BoutReal t);
+  BoutReal getValue(const BoundaryRegionParIter& bndry, BoutReal t);
 };
 
 template <class T, bool isNeumann = false>
@@ -95,12 +95,13 @@ public:
 
     auto dy = f.getCoordinates()->dy;
 
-    for (bndry->first(); !bndry->isDone(); bndry->next()) {
-      BoutReal value = getValue(*bndry, t);
+    for (auto pnt : *bndry) {
+      //for (bndry->first(); !bndry->isDone(); bndry->next()) {
+      BoutReal value = getValue(pnt, t);
       if (isNeumann) {
-        value *= dy[bndry->ind()];
+        value *= dy[pnt.ind()];
       }
-      static_cast<T*>(this)->apply_stencil(f, bndry, value);
+      static_cast<T*>(this)->apply_stencil(f, pnt, value);
     }
   }
 };
@@ -111,24 +112,27 @@ public:
 class BoundaryOpPar_dirichlet_o1 : public BoundaryOpParTemp<BoundaryOpPar_dirichlet_o1> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  static void apply_stencil(Field3D& f, const BoundaryRegionPar* bndry, BoutReal value) {
-    bndry->dirichlet_o1(f, value);
+  static void apply_stencil(Field3D& f, const BoundaryRegionParIter& pnt,
+                            BoutReal value) {
+    pnt.dirichlet_o1(f, value);
   }
 };
 
 class BoundaryOpPar_dirichlet_o2 : public BoundaryOpParTemp<BoundaryOpPar_dirichlet_o2> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  static void apply_stencil(Field3D& f, const BoundaryRegionPar* bndry, BoutReal value) {
-    bndry->dirichlet_o2(f, value);
+  static void apply_stencil(Field3D& f, const BoundaryRegionParIter& pnt,
+                            BoutReal value) {
+    pnt.dirichlet_o2(f, value);
   }
 };
 
 class BoundaryOpPar_dirichlet_o3 : public BoundaryOpParTemp<BoundaryOpPar_dirichlet_o3> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  static void apply_stencil(Field3D& f, const BoundaryRegionPar* bndry, BoutReal value) {
-    bndry->dirichlet_o3(f, value);
+  static void apply_stencil(Field3D& f, const BoundaryRegionParIter& pnt,
+                            BoutReal value) {
+    pnt.dirichlet_o3(f, value);
   }
 };
 
@@ -136,8 +140,9 @@ class BoundaryOpPar_neumann_o1
     : public BoundaryOpParTemp<BoundaryOpPar_neumann_o1, true> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  static void apply_stencil(Field3D& f, const BoundaryRegionPar* bndry, BoutReal value) {
-    bndry->neumann_o1(f, value);
+  static void apply_stencil(Field3D& f, const BoundaryRegionParIter& pnt,
+                            BoutReal value) {
+    pnt.neumann_o1(f, value);
   }
 };
 
@@ -145,8 +150,9 @@ class BoundaryOpPar_neumann_o2
     : public BoundaryOpParTemp<BoundaryOpPar_neumann_o2, true> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  static void apply_stencil(Field3D& f, const BoundaryRegionPar* bndry, BoutReal value) {
-    bndry->neumann_o2(f, value);
+  static void apply_stencil(Field3D& f, const BoundaryRegionParIter& pnt,
+                            BoutReal value) {
+    pnt.neumann_o2(f, value);
   }
 };
 
@@ -154,8 +160,9 @@ class BoundaryOpPar_neumann_o3
     : public BoundaryOpParTemp<BoundaryOpPar_neumann_o3, true> {
 public:
   using BoundaryOpParTemp::BoundaryOpParTemp;
-  static void apply_stencil(Field3D& f, const BoundaryRegionPar* bndry, BoutReal value) {
-    bndry->neumann_o3(f, value);
+  static void apply_stencil(Field3D& f, const BoundaryRegionParIter& pnt,
+                            BoutReal value) {
+    pnt.neumann_o3(f, value);
   }
 };
 
