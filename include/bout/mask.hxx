@@ -26,6 +26,7 @@
 
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/region.hxx"
 
 /**
  * 3D array of bools to mask Field3Ds
