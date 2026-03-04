@@ -31,7 +31,7 @@
 #include <vector>
 
 const BoutReal& GlobalField3DAccessInstance::operator[](IndG3D ind) const {
-  auto it = gfa.mapping.find(ind.ind);
-  ASSERT2(it != gfa.mapping.end());
+  auto it = gfa->mapping.find(ind.ind);
+  ASSERT2(it != gfa->mapping.end());
   return data[it->second];
 }

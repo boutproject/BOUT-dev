@@ -49,13 +49,13 @@ struct ProcLocal {
   int ind;
 };
 struct globalToLocal1D {
-  const int mg;
-  const int npe;
-  const int localwith;
-  const int local;
-  const int global;
-  const int globalwith;
-  const bool periodic;
+  int mg;
+  int npe;
+  int localwith;
+  int local;
+  int global;
+  int globalwith;
+  bool periodic;
   globalToLocal1D(int mg, int npe, int localwith, bool periodic)
       : mg(mg), npe(npe), localwith(localwith), local(localwith - (2 * mg)),
         global(local * npe), globalwith(global + (2 * mg)), periodic(periodic) {};
@@ -106,11 +106,11 @@ public:
 
   GlobalField3DAccessInstance(const GlobalField3DAccess* gfa,
                               std::vector<BoutReal>&& data)
-      : gfa(*gfa), data(std::move(data)) {};
+      : gfa(gfa), data(std::move(data)) {};
 
 private:
-  const GlobalField3DAccess& gfa;
-  const std::vector<BoutReal> data;
+  const GlobalField3DAccess* gfa;
+  std::vector<BoutReal> data;
 };
 
 class GlobalField3DAccess {
@@ -145,7 +145,7 @@ public:
     }
     o_ids.clear();
 #endif
-    toGet.resize(static_cast<size_type>(g2lx.npe * g2ly.npe * g2lz.npe));
+    toGet.resize(static_cast<size_t>(g2lx.npe * g2ly.npe * g2lz.npe));
     for (const auto id : ids) {
       const IndG3D gind{id, g2ly.globalwith, g2lz.globalwith};
       const auto pix = g2lx.convert(gind.x());
