@@ -485,13 +485,12 @@ int BoutMesh::load() {
   }
   ASSERT0(MXG >= 0);
 
-  bool meshHasMyg = Mesh::get(MYG, "MYG") == 0;
-  int meshMyg;
+  const bool meshHasMyg = Mesh::get(MYG, "MYG") == 0;
   if (!meshHasMyg) {
     MYG = 2;
-  } else {
-    meshMyg = MYG;
   }
+  int meshMyg = MYG;
+
   if (options.isSet("MYG") or (!meshHasMyg)) {
     MYG = options["MYG"].doc("Number of guard cells on each side in Y").withDefault(MYG);
   }
