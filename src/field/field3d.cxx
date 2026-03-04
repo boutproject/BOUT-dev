@@ -52,8 +52,8 @@
 #include "fmt/format.h"
 
 /// Constructor
-Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
-    : Field(localmesh, location_in, directions_in) {
+Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in, std::optional<size_t> regionID)
+: Field(localmesh, location_in, directions_in), regionID(regionID) {
 #if BOUT_USE_TRACK
   name = "<F3D>";
 #endif
