@@ -11,15 +11,15 @@ inline BoutReal pow(BoutReal val, int exp) {
   ASSERT3(exp == 3);
   return val * val * val;
 }
-inline BoutReal dirichlet_o1(BoutReal UNUSED(spacing0), BoutReal value0) {
+inline BoutReal dirichlet_o1([[maybe_unused]] BoutReal spacing0, BoutReal value0) {
   return value0;
 }
 inline BoutReal dirichlet_o2(BoutReal spacing0, BoutReal value0, BoutReal spacing1,
                              BoutReal value1) {
   return (spacing0 * value1 - spacing1 * value0) / (spacing0 - spacing1);
 }
-inline BoutReal neumann_o2(BoutReal UNUSED(spacing0), BoutReal value0, BoutReal spacing1,
-                           BoutReal value1) {
+inline BoutReal neumann_o2([[maybe_unused]] BoutReal spacing0, BoutReal value0,
+                           BoutReal spacing1, BoutReal value1) {
   return -spacing1 * value0 + value1;
 }
 inline BoutReal dirichlet_o3(BoutReal spacing0, BoutReal value0, BoutReal spacing1,
