@@ -747,8 +747,7 @@ std::ostream& operator<<(std::ostream& out, const Field3D& value);
 inline Field3D copy(const Field3D& f) {
   Field3D result{f};
   result.allocate();
-  const size_t numSlices = result.hasParallelSlices() ? result.fieldmesh->ystart : 0;
-  for (size_t i = 0; i < numSlices; ++i) {
+  for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
     result.yup(i).allocate();
     result.ydown(i).allocate();
   }
