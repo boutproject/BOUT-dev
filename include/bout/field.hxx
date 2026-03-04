@@ -137,6 +137,7 @@ public:
   virtual void calcParallelSlices() {}
   virtual void splitParallelSlices() {}
   virtual void clearParallelSlices() {}
+  virtual size_t numberParallelSlices() const { return 0; }
 
 private:
   /// Labels for the type of coordinate system this field is defined over

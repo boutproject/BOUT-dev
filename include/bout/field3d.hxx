@@ -267,6 +267,13 @@ public:
 #endif
   }
 
+  size_t numberParallelSlices() const override {
+#if CHECK > 0
+    hasParallelSlices();
+#endif
+    return yup_fields.size();
+  }
+
   /// Check if this field has yup and ydown fields
   /// Return reference to yup field
   Field3D& yup(size_t index = 0) {
