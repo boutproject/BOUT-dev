@@ -216,7 +216,7 @@ private:
     }
     std::vector<MPI_Request> reqs2(toSend.size());
     int cnt = 0;
-    for ([[maybe_unused]] auto* dummy : reqs) {
+    for ([[maybe_unused]] auto dummy : reqs) {
       int ind{0};
       auto ret = MPI_Waitany(reqs.size(), reqs.data(), &ind, MPI_STATUS_IGNORE);
       ASSERT0(ret == MPI_SUCCESS);
