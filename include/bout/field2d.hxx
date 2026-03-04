@@ -36,7 +36,6 @@ class Field2D;
 #include "bout/field_data.hxx"
 #include "bout/fieldperp.hxx"
 #include "bout/region.hxx"
-#include "bout/unused.hxx"
 
 #if BOUT_HAS_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib
@@ -133,21 +132,18 @@ public:
     return *this;
   }
 
-  /// Check if this field has yup and ydown fields
-  bool hasParallelSlices() const { return true; }
-
-  Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) { return *this; }
-  const Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
+  Field2D& yup([[maybe_unused]] size_t index = 0) { return *this; }
+  const Field2D& yup([[maybe_unused]] size_t index = 0) const {
     return *this;
   }
 
-  Field2D& ydown(std::vector<Field2D>::size_type UNUSED(index) = 0) { return *this; }
-  const Field2D& ydown(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
+  Field2D& ydown([[maybe_unused]] size_t index = 0) { return *this; }
+  const Field2D& ydown([[maybe_unused]] size_t index = 0) const {
     return *this;
   }
 
-  Field2D& ynext(int UNUSED(dir)) { return *this; }
-  const Field2D& ynext(int UNUSED(dir)) const { return *this; }
+  Field2D& ynext([[maybe_unused]] int dir) { return *this; }
+  const Field2D& ynext([[maybe_unused]] int dir) const { return *this; }
 
   // Operators
 
@@ -230,8 +226,8 @@ public:
    * DIrect access to underlying array. This version is for compatibility
    * with Field3D objects
    */
-  BoutReal& operator()(int jx, int jy, int UNUSED(jz)) { return operator()(jx, jy); }
-  const BoutReal& operator()(int jx, int jy, int UNUSED(jz)) const {
+  BoutReal& operator()(int jx, int jy, [[maybe_unused]] int jz) { return operator()(jx, jy); }
+  const BoutReal& operator()(int jx, int jy, [[maybe_unused]] int jz) const {
     return operator()(jx, jy);
   }
 
@@ -274,7 +270,7 @@ public:
 
   friend void swap(Field2D& first, Field2D& second) noexcept;
 
-  int size() const override { return nx * ny; };
+  int size() const override { return nx * ny; }
 
 private:
   /// Internal data array. Handles allocation/freeing of memory
@@ -318,12 +314,12 @@ Field2D operator-(const Field2D& f);
 // Non-member functions
 
 inline Field2D toFieldAligned(const Field2D& f,
-                              const std::string& UNUSED(region) = "RGN_ALL") {
+                              [[maybe_unused]] const std::string& region = "RGN_ALL") {
   return f;
 }
 
 inline Field2D fromFieldAligned(const Field2D& f,
-                                const std::string& UNUSED(region) = "RGN_ALL") {
+                                [[maybe_unused]] const std::string& region = "RGN_ALL") {
   return f;
 }
 
@@ -334,15 +330,15 @@ inline Field2D fromFieldAligned(const Field2D& f,
 /// default (can be changed using the \p rgn argument
 void checkData(const Field2D& f, const std::string& region = "RGN_NOBNDRY");
 #else
-inline void checkData(const Field2D& UNUSED(f),
-                      std::string UNUSED(region) = "RGN_NOBNDRY") {}
+inline void checkData([[maybe_unused]] const Field2D& f,
+                      [[maybe_unused]] std::string region) = "RGN_NOBNDRY" {}
 #endif
 
 /// Force guard cells of passed field \p var to NaN
 #if CHECK > 2
 void invalidateGuards(Field2D& var);
 #else
-inline void invalidateGuards(Field2D& UNUSED(var)) {}
+inline void invalidateGuards([[maybe_unused]] Field2D& var) {}
 #endif
 
 /// Average in the Z direction
@@ -358,7 +354,7 @@ inline Field2D& ddt(Field2D& f) { return *(f.timeDeriv()); }
 /// toString template specialisation
 /// Defined in utils.hxx
 template <>
-inline std::string toString<>(const Field2D& UNUSED(val)) {
+inline std::string toString<>([[maybe_unused]] const Field2D& val) {
   return "<Field2D>";
 }
 
