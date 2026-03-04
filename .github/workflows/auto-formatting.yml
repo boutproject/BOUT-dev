@@ -73,6 +73,7 @@ jobs:
           exclude: "tests/unit/*cxx"
           lgtm_comment_body: ''
           cmake_command: |
+            git config --global --add safe.directory /github/workspace && \
             git submodule update --init --recursive --recommend-shallow && \
             pip install --break-system-packages cmake && \
             cmake --version && \
