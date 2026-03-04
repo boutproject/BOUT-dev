@@ -1570,7 +1570,7 @@ Field3D Coordinates::Div_par(const Field3DParallel& f, CELL_LOC outloc,
   }
 
   // Need to modify yup and ydown fields
-  Field3D Jg = coords->J / sqrt(coords->g_22.asField3DParallel());
+  Field3D Jg = J / sqrt(g_22.asField3DParallel());
   return Jg * Grad_par(f / Jg, outloc, method);
 }
 
