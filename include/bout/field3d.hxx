@@ -20,6 +20,7 @@
  *
  **************************************************************************/
 
+#include <cstddef>
 class Field3D;
 
 #pragma once
@@ -238,15 +239,15 @@ public:
    * Ensure that this field has separate fields
    * for yup and ydown.
    */
-  void splitParallelSlices();
+  void splitParallelSlices() override;
 
   /*!
    * Clear the parallel slices, yup and ydown
    */
-  void clearParallelSlices();
+  void clearParallelSlices() override;
 
   /// Check if this field has yup and ydown fields
-  bool hasParallelSlices() const {
+  bool hasParallelSlices() const override {
 #if CHECK > 2
     if (yup_fields.size() != ydown_fields.size()) {
       throw BoutException(
@@ -263,24 +264,24 @@ public:
 
   /// Check if this field has yup and ydown fields
   /// Return reference to yup field
-  Field3D& yup(std::vector<Field3D>::size_type index = 0) {
+  Field3D& yup(size_t index = 0) {
     ASSERT2(index < yup_fields.size());
     return yup_fields[index];
   }
   /// Return const reference to yup field
-  const Field3D& yup(std::vector<Field3D>::size_type index = 0) const {
+  const Field3D& yup(size_t index = 0) const {
     ASSERT2(index < yup_fields.size());
     return yup_fields[index];
   }
 
   /// Return reference to ydown field
-  Field3D& ydown(std::vector<Field3D>::size_type index = 0) {
+  Field3D& ydown(size_t index = 0) {
     ASSERT2(index < ydown_fields.size());
     return ydown_fields[index];
   }
 
   /// Return const reference to ydown field
-  const Field3D& ydown(std::vector<Field3D>::size_type index = 0) const {
+  const Field3D& ydown(size_t index = 0) const {
     ASSERT2(index < ydown_fields.size());
     return ydown_fields[index];
   }
@@ -327,11 +328,11 @@ public:
   const Region<Ind3D>& getRegion(const std::string& region_name) const;
   /// Use region provided by the default, and if none is set, use the provided one
   const Region<Ind3D>& getValidRegionWithDefault(const std::string& region_name) const;
-  void setRegion(const std::string& region_name);
-  void resetRegion() { regionID.reset(); };
-  void setRegion(size_t id) { regionID = id; };
-  void setRegion(std::optional<size_t> id) { regionID = id; };
-  std::optional<size_t> getRegionID() const { return regionID; };
+  void setRegion(const std::string& region_name) override;
+  void resetRegion() override { regionID.reset(); };
+  void setRegion(size_t id) override { regionID = id; };
+  void setRegion(std::optional<size_t> id) override { regionID = id; };
+  std::optional<size_t> getRegionID() const override { return regionID; };
 
   /// Return a Region<Ind2D> reference to use to iterate over the x- and
   /// y-indices of this field
@@ -481,7 +482,7 @@ public:
   friend class Vector3D;
   friend class Vector2D;
 
-  Field3D& calcParallelSlices();
+  void calcParallelSlices() override;
 
   void applyBoundary(bool init = false) override;
   void applyBoundary(BoutReal t);
@@ -510,6 +511,9 @@ public:
 
   std::weak_ptr<Options> getTracking() { return tracking; };
 
+  bool allowCalcParallelSlices() const { return _allowCalcParallelSlices; };
+  void disallowCalcParallelSlices() { _allowCalcParallelSlices = false; };
+
 private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
   int nx{-1}, ny{-1}, nz{-1};
@@ -529,6 +533,8 @@ private:
   /// counter for tracking, to assign unique names to the variable names
   int tracking_state{0};
   std::weak_ptr<Options> tracking;
+
+  bool _allowCalcParallelSlices{true};
   // name is changed if we assign to the variable, while selfname is a
   // non-changing copy that is used for the variable names in the dump files
   std::string selfname;
@@ -599,8 +605,8 @@ void checkData(const Field3D& f, const std::string& region = "RGN_NOBNDRY");
 #else
 /// Ignored with disabled CHECK; Throw an exception if \p f is not
 /// allocated or if any elements are non-finite (for CHECK > 2)
-inline void checkData(const Field3D& UNUSED(f),
-                      const std::string& UNUSED(region) = "RGN_NOBNDRY"){};
+inline void checkData([[maybe_unused]] const Field3D& f,
+                      [[maybe_unused]] const std::string& region = "RGN_NOBNDRY"){};
 #endif
 
 /// Fourier filtering, removes all except one mode
@@ -661,7 +667,7 @@ Field2D DC(const Field3D& f, const std::string& rgn = "RGN_ALL");
 #if CHECK > 2
 void invalidateGuards(Field3D& var);
 #else
-inline void invalidateGuards(Field3D& UNUSED(var)) {}
+inline void invalidateGuards([[maybe_unused]] Field3D& var) {}
 #endif
 
 /// Returns a reference to the time-derivative of a field \p f
@@ -672,7 +678,7 @@ inline Field3D& ddt(Field3D& f) { return *(f.timeDeriv()); }
 /// toString template specialisation
 /// Defined in utils.hxx
 template <>
-inline std::string toString<>(const Field3D& UNUSED(val)) {
+inline std::string toString<>([[maybe_unused]] const Field3D& val) {
   return "<Field3D>";
 }
 
