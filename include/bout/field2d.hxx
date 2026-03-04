@@ -67,7 +67,8 @@ public:
    */
   Field2D(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
           DirectionTypes directions_in = {YDirectionType::Standard,
-                                          ZDirectionType::Average});
+                                          ZDirectionType::Average},
+          std::optional<size_t> regionID = {});
 
   /*!
    * Copy constructor. After this both fields
