@@ -30,6 +30,8 @@ class Field;
 #define FIELD_H
 
 #include <cmath>
+#include <cstdio>
+#include <optional>
 #include <string>
 
 #include "bout/bout_types.hxx"
@@ -124,6 +126,17 @@ public:
     swap(first.name, second.name);
     swap(first.directions, second.directions);
   }
+
+  /// Dummy functions to increase portability
+  virtual void setRegion([[maybe_unused]] size_t regionID) {}
+  virtual void setRegion([[maybe_unused]] std::optional<size_t> regionID) {}
+  virtual void setRegion([[maybe_unused]] const std::string& region_name) {}
+  virtual void resetRegion() {}
+  virtual std::optional<size_t> getRegionID() const { return {}; }
+  virtual bool hasParallelSlices() const { return true; }
+  virtual void calcParallelSlices() {}
+  virtual void splitParallelSlices() {}
+  virtual void clearParallelSlices() {}
 
 private:
   /// Labels for the type of coordinate system this field is defined over
