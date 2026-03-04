@@ -27,6 +27,7 @@
 #include <bout/bout_types.hxx>
 #include <bout/generic_factory.hxx>
 #include <bout/mask.hxx>
+#include <array>
 
 #define USE_NEW_WEIGHTS 1
 #if BOUT_HAS_PETSC
@@ -193,7 +194,7 @@ public:
       : XZHermiteSplineBase(y_offset, mesh, options) {
     setRegion(regionFromMask(mask, localmesh));
   }
-  ~XZHermiteSplineBase() {
+  ~XZHermiteSplineBase() override {
 #if HS_USE_PETSC
     if (isInit) {
       MatDestroy(&petscWeights);

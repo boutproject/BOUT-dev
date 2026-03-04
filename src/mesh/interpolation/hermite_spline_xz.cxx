@@ -26,8 +26,10 @@
 #include "bout/globals.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/interpolation_xz.hxx"
+#include "bout/mask.hxx"
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -476,7 +478,7 @@ Field3D XZHermiteSplineBase<monotonic>::interpolate(
                             (*gf)[IndG3D(g3dinds[i][2])], (*gf)[IndG3D(g3dinds[i][3])]};
       const auto minmax = std::minmax(corners);
       const auto diff =
-          (minmax.second - minmax.first) * rel_fac_monotonic + abs_fac_monotonic;
+          ((minmax.second - minmax.first) * rel_fac_monotonic) + abs_fac_monotonic;
       f_interp[iyp] = std::max(f_interp[iyp], minmax.first - diff);
       f_interp[iyp] = std::min(f_interp[iyp], minmax.second + diff);
     }
