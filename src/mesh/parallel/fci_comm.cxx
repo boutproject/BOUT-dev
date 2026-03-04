@@ -24,6 +24,9 @@
  **************************************************************************/
 
 #include "fci_comm.hxx"
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/region.hxx"
 
 #include <vector>
 

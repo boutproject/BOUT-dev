@@ -32,6 +32,9 @@
 #include "bout/mesh.hxx"
 #include "bout/region.hxx"
 #include <algorithm>
+#include <cstddef>
+#include <cstdio>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <set>
