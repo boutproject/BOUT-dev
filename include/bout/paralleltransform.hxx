@@ -92,7 +92,7 @@ public:
 
   /// Can be implemented to load parallel metrics
   /// Needed by FCI
-  virtual void loadParallelMetrics(MAYBE_UNUSED(Coordinates* coords)) {}
+  virtual void loadParallelMetrics([[maybe_unused]] Coordinates* coords) {}
 
 protected:
   /// This method should be called in the constructor to check that if the grid
