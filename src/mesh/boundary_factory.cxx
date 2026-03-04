@@ -6,6 +6,7 @@
 #include <bout/options.hxx>
 #include <bout/utils.hxx>
 
+#include <array>
 #include <list>
 #include <map>
 #include <string>
