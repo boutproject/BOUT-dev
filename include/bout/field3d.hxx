@@ -264,24 +264,24 @@ public:
 
   /// Check if this field has yup and ydown fields
   /// Return reference to yup field
-  Field3D& yup(std::vector<Field3D>::size_type index = 0) {
+  Field3D& yup(size_t index = 0) {
     ASSERT2(index < yup_fields.size());
     return yup_fields[index];
   }
   /// Return const reference to yup field
-  const Field3D& yup(std::vector<Field3D>::size_type index = 0) const {
+  const Field3D& yup(size_t index = 0) const {
     ASSERT2(index < yup_fields.size());
     return yup_fields[index];
   }
 
   /// Return reference to ydown field
-  Field3D& ydown(std::vector<Field3D>::size_type index = 0) {
+  Field3D& ydown(size_t index = 0) {
     ASSERT2(index < ydown_fields.size());
     return ydown_fields[index];
   }
 
   /// Return const reference to ydown field
-  const Field3D& ydown(std::vector<Field3D>::size_type index = 0) const {
+  const Field3D& ydown(size_t index = 0) const {
     ASSERT2(index < ydown_fields.size());
     return ydown_fields[index];
   }

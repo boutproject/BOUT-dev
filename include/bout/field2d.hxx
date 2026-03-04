@@ -132,13 +132,13 @@ public:
     return *this;
   }
 
-  Field2D& yup([[maybe_unused]] std::vector<Field2D>::size_type index = 0) { return *this; }
-  const Field2D& yup([[maybe_unused]] std::vector<Field2D>::size_type index = 0) const {
+  Field2D& yup([[maybe_unused]] size_t index = 0) { return *this; }
+  const Field2D& yup([[maybe_unused]] size_t index = 0) const {
     return *this;
   }
 
-  Field2D& ydown([[maybe_unused]] std::vector<Field2D>::size_type index = 0) { return *this; }
-  const Field2D& ydown([[maybe_unused]] std::vector<Field2D>::size_type index) = 0 const {
+  Field2D& ydown([[maybe_unused]] size_t index = 0) { return *this; }
+  const Field2D& ydown([[maybe_unused]] size_t index = 0) const {
     return *this;
   }
 
