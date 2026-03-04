@@ -377,9 +377,8 @@ Field3DParallel& Field3DParallel::operator=(const BoutReal val) {
   return *this;
 }
 
-Field3D& Field3D::calcParallelSlices() {
+void Field3D::calcParallelSlices() {
   getCoordinates()->getParallelTransform().calcParallelSlices(*this);
-  return *this;
 }
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
