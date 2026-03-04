@@ -75,6 +75,7 @@ std::string parallel_slice_field_name(std::string field, int offset) {
   return direction + "_" + field + slice_suffix;
 };
 
+#if BOUT_USE_METRIC_3D
 void load_parallel_metric_component(std::string name, Field3D& component, int offset) {
   Mesh* mesh = component.getMesh();
   Field3D tmp{mesh};
@@ -86,7 +87,7 @@ void load_parallel_metric_component(std::string name, Field3D& component, int of
   }
   if (!component.hasParallelSlices()) {
     component.splitParallelSlices();
-    component.allowCalcParallelSlices = false;
+    component.disallowCalcParallelSlices();
   }
   auto& pcom = component.ynext(offset);
   pcom.allocate();
@@ -106,6 +107,7 @@ void load_parallel_metric_components(Coordinates* coords, int offset) {
   LOAD_PAR(J);
 #undef LOAD_PAR
 }
+#endif
 
 } // namespace
 
@@ -453,8 +455,10 @@ void FCITransform::outputVars(Options& output_options) {
 }
 
 void FCITransform::loadParallelMetrics(Coordinates* coords) {
+#if BOUT_USE_METRIC_3D
   for (int i = 1; i <= mesh.ystart; ++i) {
     load_parallel_metric_components(coords, -i);
     load_parallel_metric_components(coords, i);
   }
+#endif
 }
