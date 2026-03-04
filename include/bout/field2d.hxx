@@ -37,6 +37,8 @@ class Field2D;
 #include "bout/fieldperp.hxx"
 #include "bout/region.hxx"
 
+#include <cstddef>
+
 #if BOUT_HAS_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib
 #endif
