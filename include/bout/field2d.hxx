@@ -24,6 +24,7 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+#include "bout/utils.hxx"
 class Field2D;
 
 #pragma once

@@ -20,6 +20,7 @@
  *
  **************************************************************************/
 
+#include "bout/utils.hxx"
 #include <cstddef>
 class Field3D;
 
