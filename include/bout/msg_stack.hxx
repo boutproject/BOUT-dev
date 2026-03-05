@@ -31,6 +31,7 @@ class MsgStack;
 
 #include "bout/build_defines.hxx"
 
+#include "fmt/base.h"
 #include "fmt/core.h"
 
 #include <cstddef>
@@ -60,9 +61,10 @@ public:
   int push(std::string message);
   int push() { return push(""); }
 
-  template <class S, class... Args>
-  int push(const S& format, const Args&... args) {
-    return push(fmt::format(format, args...));
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  int push(fmt::format_string<Args...> format, Args&&... args) {
+    return push(fmt::vformat(format, fmt::make_format_args(args...)));
   }
 
   void pop();       ///< Remove the last message
@@ -74,8 +76,8 @@ public:
 #else
   /// Dummy functions which should be optimised out
   int push(const std::string&) { return 0; }
-  template <class S, class... Args>
-  int push(const S&, const Args&...) {
+  template <class... Args>
+  int push(fmt::format_string<Args...> format, const Args&... args) {
     return 0;
   }
 
@@ -132,10 +134,13 @@ public:
   MsgStackItem(const std::string& file, int line, const char* msg)
       : point(msg_stack.push("{:s} on line {:d} of '{:s}'", msg, line, file)) {}
 
-  template <class S, class... Args>
-  MsgStackItem(const std::string& file, int line, const S& msg, const Args&... args)
-      : point(msg_stack.push("{:s} on line {:d} of '{:s}'", fmt::format(msg, args...),
-                             line, file)) {}
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  MsgStackItem(const std::string& file, int line, fmt::format_string<Args...> msg,
+               Args&&... args)
+      : point(msg_stack.push("{:s} on line {:d} of '{:s}'",
+                             fmt::vformat(msg, fmt::make_format_args(args...)), line,
+                             file)) {}
   ~MsgStackItem() {
     // If an exception has occurred, don't pop the message
     if (exception_count == std::uncaught_exceptions()) {

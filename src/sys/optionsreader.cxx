@@ -1,6 +1,9 @@
 #include <bout/assert.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/options.hxx>
 #include <bout/optionsreader.hxx>
+#include <bout/output.hxx>
+#include <bout/sys/gettext.hxx>
 #include <bout/utils.hxx>
 
 // Interface for option file parsers
@@ -9,7 +12,9 @@
 // Individual parsers
 #include "options/options_ini.hxx"
 
-#include <bout/output.hxx>
+#include <cstddef>
+#include <string>
+#include <vector>
 
 OptionsReader* OptionsReader::instance = nullptr;
 
@@ -36,7 +41,7 @@ void OptionsReader::write(Options* options, const std::string& filename) {
     throw BoutException("OptionsReader::write passed empty filename\n");
   }
 
-  output_info.write(_("Writing options to file {:s}\n"), filename);
+  output_info.write(_f("Writing options to file {:s}\n"), filename);
 
   OptionINI{}.write(options, filename);
 }
@@ -105,7 +110,7 @@ void OptionsReader::parseCommandLine(Options* options,
       size_t endpos = buffer.find_last_of('=');
 
       if (startpos != endpos) {
-        throw BoutException(_("\tMultiple '=' in command-line argument '{:s}'\n"),
+        throw BoutException(_f("\tMultiple '=' in command-line argument '{:s}'\n"),
                             buffer);
       }
 
@@ -121,7 +126,7 @@ void OptionsReader::parseCommandLine(Options* options,
       }
 
       if (key.empty() || value.empty()) {
-        throw BoutException(_("\tEmpty key or value in command line '{:s}'\n"), buffer);
+        throw BoutException(_f("\tEmpty key or value in command line '{:s}'\n"), buffer);
       }
 
       options->set(key, value, _("Command line"));

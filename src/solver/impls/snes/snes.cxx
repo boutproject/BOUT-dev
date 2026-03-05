@@ -347,7 +347,7 @@ PetscErrorCode SNESSolver::FDJinitialise() {
 
                   if (ierr != PETSC_SUCCESS) {
                     output.write("ERROR: {} {} : ({}, {}) -> ({}, {}) : {} -> {}\n", row,
-                                 x, y, xi, yi, ind2, ind2 + n3d - 1);
+                                 col, x, y, xi, yi, ind2, ind2 + n3d - 1);
                   }
                   CHKERRQ(ierr);
                 }
