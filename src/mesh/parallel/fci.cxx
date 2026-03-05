@@ -188,8 +188,8 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
   const int ncz = map_mesh->LocalNz;
 
   BoutMask to_remove(map_mesh);
-  const int xend =
-      map_mesh->xstart + (map_mesh->xend - map_mesh->xstart + 1) * map_mesh->getNXPE() - 1;
+  const int xend = map_mesh->xstart
+                   + (map_mesh->xend - map_mesh->xstart + 1) * map_mesh->getNXPE() - 1;
   // Default to the maximum number of points
   const int defValid{map_mesh->ystart - 1 + std::abs(offset)};
   // Serial loop because call to BoundaryRegionPar::addPoint
@@ -369,16 +369,16 @@ FCITransform::FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool 
   for (auto& bndry : bndries) {
     for (const auto& bndry2 : bndries) {
       if (bndry->dir == bndry2->dir) {
-	continue;
+        continue;
       }
       for (auto pnt : *bndry) {
-	for (auto pnt2 : *bndry2) {
+        for (auto pnt2 : *bndry2) {
 #warning this could likely be done faster
-	  if (pnt.ind() == pnt2.ind()) {
-	    pnt.setValid(
-			 static_cast<signed char>(std::abs((pnt2.offset() - pnt.offset())) - 2));
-	  }
-	}
+          if (pnt.ind() == pnt2.ind()) {
+            pnt.setValid(
+                static_cast<signed char>(std::abs((pnt2.offset() - pnt.offset())) - 2));
+          }
+        }
       }
     }
   }

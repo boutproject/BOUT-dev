@@ -24,10 +24,9 @@ int main(int argc, char** argv) {
     const auto boundary = static_cast<BoundaryParType>(i);
     const auto boundary_name = toString(boundary);
     mesh->communicate(fields[i]);
-    for (auto& bndry_par :
-         mesh->getBoundariesPar(static_cast<BoundaryParType>(i))) {
+    for (auto& bndry_par : mesh->getBoundariesPar(static_cast<BoundaryParType>(i))) {
       output.write("{:s} region\n", toString(static_cast<BoundaryParType>(i)));
-      for (const auto& pnt: *bndry_par) {
+      for (const auto& pnt : *bndry_par) {
         fields[i][pnt.ind()] += 1;
         output.write("{:s} increment\n", toString(static_cast<BoundaryParType>(i)));
       }
