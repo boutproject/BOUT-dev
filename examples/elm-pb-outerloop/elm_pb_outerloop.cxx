@@ -1807,28 +1807,23 @@ public:
     // ddt(U) += b0xcv * Grad(P); // curvature term
     // nvtxPop();
 
-    nvtxPushColor("rhs_communicate", 0xFFFFFF00);    
-    mesh->communicate(P);
-    P.applyBoundary();
-    nvtxPop();
-
-    nvtxPushColor("rhs_accessor", 0xFFFFFF00);    
+    // nvtxPushColor("rhs_accessor", 0xFFFFFF00);    
     auto region = U.getRegion("RGN_NOBNDRY");
 
-    auto b0xcv_x_acc = FieldAccessor<>(b0xcv.x);
-    auto b0xcv_y_acc = FieldAccessor<>(b0xcv.y);
-    auto b0xcv_z_acc = FieldAccessor<>(b0xcv.z);
-    nvtxPop();
+    auto b0xcv_x = Field2DAccessor<>(b0xcv.x);
+    auto b0xcv_y = Field2DAccessor<>(b0xcv.y);
+    auto b0xcv_z = Field2DAccessor<>(b0xcv.z);
 
-    nvtxPushColor("rhs_ddt_U_acc", 0xFFFFFF00);    
-    BOUT_FOR_RAJA(i, region, CAPTURE(P_acc, U_acc, b0xcv_x_acc, b0xcv_y_acc, b0xcv_z_acc)) {
-      BoutReal dPdx = DDX(P_acc, i);
-      BoutReal dPdy = DDY(P_acc, i);
-      BoutReal dPdz = DDZ(P_acc, i);
+    BOUT_FOR_RAJA(i, region, CAPTURE(P_acc, U_acc, b0xcv_x, b0xcv_y, b0xcv_z)) {
+      const int i2d = i / P_acc.mesh_nz;   // or U_acc.mesh_nz
 
-      ddt(U_acc)[i] += b0xcv_x_acc[i] * dPdx
-                     + b0xcv_y_acc[i] * dPdy
-                     + b0xcv_z_acc[i] * dPdz;
+      const BoutReal dPdx = DDX(P_acc, i);
+      const BoutReal dPdy = DDY(P_acc, i);
+      const BoutReal dPdz = DDZ(P_acc, i);
+
+      ddt(U_acc)[i] += b0xcv_x[i2d] * dPdx
+                    + b0xcv_y[i2d] * dPdy
+                    + b0xcv_z[i2d] * dPdz;
     };
     nvtxPop();
 
