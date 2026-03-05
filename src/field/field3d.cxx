@@ -144,6 +144,10 @@ void Field3D::splitParallelSlices() {
     // ParallelTransform, so we don't need a full constructor
     yup_fields.emplace_back(fieldmesh);
     ydown_fields.emplace_back(fieldmesh);
+    if (isFci()) {
+      yup_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", i + 1));
+      ydown_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", -i - 1));
+    }
   }
 }
 
@@ -341,9 +345,8 @@ Field3D& Field3D::operator=(const BoutReal val) {
   return *this;
 }
 
-Field3D& Field3D::calcParallelSlices() {
+void Field3D::calcParallelSlices() {
   getCoordinates()->getParallelTransform().calcParallelSlices(*this);
-  return *this;
 }
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
@@ -840,6 +843,15 @@ Field3D::getValidRegionWithDefault(const std::string& region_name) const {
 
 void Field3D::setRegion(const std::string& region_name) {
   regionID = fieldmesh->getRegionID(region_name);
+}
+
+void Field3D::resetRegionParallel() {
+  if (isFci()) {
+    for (int i = 0; i < fieldmesh->ystart; ++i) {
+      yup_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", i + 1));
+      ydown_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", -i - 1));
+    }
+  }
 }
 
 Field3D& Field3D::enableTracking(const std::string& name,
