@@ -135,14 +135,10 @@ public:
   }
 
   Field2D& yup([[maybe_unused]] size_t index = 0) { return *this; }
-  const Field2D& yup([[maybe_unused]] size_t index = 0) const {
-    return *this;
-  }
+  const Field2D& yup([[maybe_unused]] size_t index = 0) const { return *this; }
 
   Field2D& ydown([[maybe_unused]] size_t index = 0) { return *this; }
-  const Field2D& ydown([[maybe_unused]] size_t index = 0) const {
-    return *this;
-  }
+  const Field2D& ydown([[maybe_unused]] size_t index = 0) const { return *this; }
 
   Field2D& ynext([[maybe_unused]] int dir) { return *this; }
   const Field2D& ynext([[maybe_unused]] int dir) const { return *this; }
@@ -228,7 +224,9 @@ public:
    * DIrect access to underlying array. This version is for compatibility
    * with Field3D objects
    */
-  BoutReal& operator()(int jx, int jy, [[maybe_unused]] int jz) { return operator()(jx, jy); }
+  BoutReal& operator()(int jx, int jy, [[maybe_unused]] int jz) {
+    return operator()(jx, jy);
+  }
   const BoutReal& operator()(int jx, int jy, [[maybe_unused]] int jz) const {
     return operator()(jx, jy);
   }
