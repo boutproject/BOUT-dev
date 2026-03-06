@@ -38,6 +38,12 @@ public:
   }
 
   void init(Options& options, Mesh* mesh = nullptr) {
+    if (is_init) {
+      if (optptr == &options) {
+        return;
+      }
+      throw BoutException("YBoundary is already initialised!");
+    }
     if (mesh == nullptr) {
       mesh = bout::globals::mesh;
     }
@@ -70,6 +76,7 @@ public:
       }
     }
     is_init = true;
+    optptr = &options;
   }
 
 private:
@@ -77,4 +84,5 @@ private:
   std::vector<std::shared_ptr<NewBoundaryRegionY>> boundary_regions;
 
   bool is_init{false};
+  Options* optptr;
 };
