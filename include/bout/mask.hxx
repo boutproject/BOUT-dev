@@ -26,6 +26,7 @@
 
 #include "bout/globals.hxx"
 #include "bout/mesh.hxx"
+#include "bout/region.hxx"
 
 /**
  * 3D array of bools to mask Field3Ds
@@ -80,4 +81,12 @@ inline std::unique_ptr<Region<Ind3D>> regionFromMask(const BoutMask& mask,
   }
   return std::make_unique<Region<Ind3D>>(indices);
 }
+
+inline BoutMask maskFromRegion(const Region<Ind3D>& region, const Mesh* mesh) {
+  BoutMask mask{mesh, false};
+
+  BOUT_FOR(i, region) { mask[i] = true; }
+  return mask;
+}
+
 #endif //BOUT_MASK_H
