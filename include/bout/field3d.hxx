@@ -513,7 +513,7 @@ public:
 
   std::weak_ptr<Options> getTracking() { return tracking; };
 
-  bool allowCalcParallelSlices() const { return _allowCalcParallelSlices; };
+  bool areCalcParallelSlicesAllowed() const { return _allowCalcParallelSlices; };
   void disallowCalcParallelSlices() { _allowCalcParallelSlices = false; };
 
 private:
