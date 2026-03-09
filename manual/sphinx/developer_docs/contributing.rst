@@ -142,6 +142,45 @@ then they will be able to checkout your branch::
 *Note*: If you have write access to the central BOUT-dev repository, you
 can push your branches there.
 
+Running Tests
+~~~~~~~~~~~~~
+
+We run many tests and checks automatically on GitHub for a variety of build
+configurations. See :ref:`sec-runtestsuite` for how to run them
+locally. Running the full test suite can take some time, but it's a good idea to
+run at least the unit tests locally when you're making changes.
+
+Install Pre-Commit Hooks (Optional but recommended)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Along with the automated tests, we also run things like formatters and static
+analysis. For frequent developers, we strongly recommend installing them locally
+and building them into your regular workflow. You can install the majority of
+our developer tools at once using `uv <https://docs.astral.sh/uv/>`_:
+
+.. code-block:: console
+
+    uv sync --only-dev
+
+This will create a new virtual environment (typically under ``.venv``) and
+install all the tools into that. You can then activate the virtual environment
+and use the tools manually, or via integrations in your editor.
+
+We also have a `prek <https://prek.j178.dev>`_ config that can run some of
+these automatically when you make commits using "pre-commit hooks". Install our
+developer tools with ``uv`` as above, and then install the pre-commit hook:
+
+.. code-block:: console
+
+    prek install
+
+This will then automatically call things like `clang-format
+<https://clang.llvm.org/docs/ClangFormat.html>`_ and `ruff
+<https://astral.sh/ruff>`_ when you create a commit, and abort the commit if
+there's a problem, for example if a formatter changes any files. For the
+formatters, this usually just means staging any changes they make and trying
+again.
+
 Making changes, commits
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -188,6 +227,25 @@ guidelines below, you won’t go far wrong though.
 These guidelines are intended to make code easier to read and therefore
 easier to understand. Being consistent in coding style also helps
 comprehension by reducing cognitive load.
+
+We use various tools to enforce code style and quality:
+
+- `clang-format <https://clang.llvm.org/docs/ClangFormat.html>`_ for formatting
+  of C++ code
+- `clang-tidy <https://clang.llvm.org/extra/clang-tidy/index.html>`_ for linting
+  and static analysis of C++ code
+- `ruff <https://astral.sh/ruff>`_ for formatting and linting of Python code
+- `cmake-format <https://github.com/cheshirekow/cmake_format>`_ for formatting
+  CMake files
+- `sphinx-lint <https://github.com/sphinx-contrib/sphinx-lint>`_ for linting
+  documentation pages
+
+You can install all of these tools using:
+
+.. code-block:: console
+
+    pip install -r requirements_dev.txt
+
 
 Comments
 ~~~~~~~~
