@@ -73,7 +73,7 @@ public:
   FCITransform() = delete;
   FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool zperiodic = true,
                Options* opt = nullptr)
-    : ParallelTransform(mesh, opt), R{&mesh}, Z{&mesh} {
+      : ParallelTransform(mesh, opt), R{&mesh}, Z{&mesh} {
 
     // check the coordinate system used for the grid data source
     FCITransform::checkInputGrid();

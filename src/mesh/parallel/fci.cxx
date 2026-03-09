@@ -309,8 +309,8 @@ void FCITransform::checkInputGrid() {
             "to generate metric components for FCITransform. Should be 'fci'.");
     }
   } // else: parallel_transform variable not found in grid input, indicates older input
-    //       file or grid from options so must rely on the user having ensured the type is
-    //       correct
+  //       file or grid from options so must rely on the user having ensured the type is
+  //       correct
 }
 
 void FCITransform::calcParallelSlices(Field3D& f) {
