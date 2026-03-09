@@ -38,7 +38,7 @@ jobs:
           pwd
           ls
           $HOME/.local/bin/ruff format .
-          
+
       - name: Run cmake-format
         run: |
           pwd
@@ -50,13 +50,3 @@ jobs:
         with:
           commit_message: "[bot] Apply format changes"
           skip_push: true
-
-      - name: Ignore formatting
-        run: |
-          msg=$(git rev-list --format=%s --max-count=1 HEAD|tail -n -1)
-          test "$msg" = "[bot] Apply format changes" && git rev-parse HEAD >> .git-blame-ignore-revs || :
-
-      - name: Commit formatting
-        uses: stefanzweifel/git-auto-commit-action@v7
-        with:
-          commit_message: "[bot] Add last format changes commit to ignore file"
