@@ -372,7 +372,7 @@ void saveParallel(Options& opt, const std::string& name, const Field3D& tosave) 
       } else {
         if (tosave.isFci()) { // likely an error
           throw BoutException(
-              "Tried to save parallel fields - but parallel field {i} is not allocated",
+              "Tried to save parallel fields - but parallel field {} is not allocated",
               i);
         }
       }
