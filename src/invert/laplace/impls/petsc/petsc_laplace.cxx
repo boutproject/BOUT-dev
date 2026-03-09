@@ -73,7 +73,6 @@ PetscErrorCode laplacePCapply(PC pc, Vec x, Vec y) {
   PetscFunctionReturn(laplace->precon(x, y)); // NOLINT
 }
 
-// TODO: handle fourth order
 auto set_stencil(const Mesh& localmesh, bool fourth_order) {
   OperatorStencil<IndPerp> stencil;
   IndexOffset<IndPerp> zero;
