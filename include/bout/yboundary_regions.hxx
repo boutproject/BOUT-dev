@@ -1,7 +1,13 @@
 #pragma once
 
 #include "./boundary_iterator.hxx"
+#include "bout/assert.hxx"
+#include "bout/boutexception.hxx"
+#include "bout/globals.hxx"
+#include "bout/options.hxx"
 #include "bout/parallel_boundary_region.hxx"
+#include <memory>
+#include <vector>
 
 /// This class allows to simplify iterating over y-boundaries.
 ///

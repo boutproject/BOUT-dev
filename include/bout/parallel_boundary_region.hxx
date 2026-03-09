@@ -3,9 +3,15 @@
 
 #include "bout/boundary_region.hxx"
 #include "bout/bout_types.hxx"
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <functional>
 #include <vector>
 
+#include "bout/build_defines.hxx"
+#include "bout/field2d.hxx"
+#include "bout/region.hxx"
 #include "bout/sys/parallel_stencils.hxx"
 #include <bout/field3d.hxx>
 #include <bout/mesh.hxx>
