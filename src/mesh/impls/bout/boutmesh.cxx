@@ -1332,10 +1332,6 @@ void BoutMesh::createCommunicators() {
     MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
     if (comm_tmp != MPI_COMM_NULL) {
       comm_inner = comm_tmp;
-
-      if (ixseps_inner == ixseps_outer) {
-        MPI_Comm_dup(comm_inner, &comm_middle);
-      }
     }
 
     if (group_tmp1 != MPI_GROUP_EMPTY) {
@@ -1348,8 +1344,10 @@ void BoutMesh::createCommunicators() {
   }
 
   if (ixseps_inner == ixseps_outer) {
-    // Balanced null, so no middle
-    MPI_Comm_dup(comm_inner, &comm_middle);
+    // Balanced null: comm_middle = comm_inner (only for procs that are in the core group)
+    if (comm_inner != MPI_COMM_NULL) {
+      MPI_Comm_dup(comm_inner, &comm_middle);
+    }
   } else {
     // Need to handle unbalanced double-null case
 
