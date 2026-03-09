@@ -99,7 +99,7 @@ auto set_stencil(const Mesh& localmesh, bool fourth_order) {
     });
   }
 
-  std::vector offsetsVec(offsets.begin(), offsets.end());
+  const std::vector offsetsVec(offsets.begin(), offsets.end());
   stencil.add(
       [&localmesh](IndPerp ind) -> bool {
         return (localmesh.xstart <= ind.x() && ind.x() <= localmesh.xend
@@ -249,7 +249,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   const int y = b.getIndex(); // Get the Y index
   {
-    Timer timer("petscsetup");
+    const Timer timer("petscsetup");
 
     const bool inner_X_neumann = isInnerBoundaryFlagSet(INVERT_AC_GRAD);
     const bool outer_X_neumann = isOuterBoundaryFlagSet(INVERT_AC_GRAD);
@@ -276,7 +276,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
 #else
     KSPSetOperators(ksp, *operator2D.get(), *operator2D.get(), DIFFERENT_NONZERO_PATTERN);
 #endif
-    PC pc; // The preconditioner option
+    PC pc = nullptr; // The preconditioner option
 
     if (direct) { // If a direct solver has been chosen
       // Get the preconditioner
@@ -355,11 +355,11 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   // Call the actual solver
   {
-    Timer timer("petscsolve");
+    const Timer timer("petscsolve");
     KSPSolve(ksp, *rhs.get(), *guess.get());
   }
 
-  KSPConvergedReason reason;
+  KSPConvergedReason reason = KSP_CONVERGED_ITERATING;
   KSPGetConvergedReason(ksp, &reason);
   if (reason == -3) { // Too many iterations, might be fixed by taking smaller timestep
     throw BoutIterationFail("petsc_laplace: too many iterations");
@@ -454,15 +454,15 @@ LaplacePetsc::CoeffsA LaplacePetsc::Coeffs(Ind3D i) {
   // A second/fourth order derivative term
   if (issetC) {
     if ((x > 1) && (x < (localmesh->LocalNx - 2))) {
-      BoutReal ddx_C;
-      BoutReal ddz_C;
+      BoutReal ddx_C = BoutNaN;
+      BoutReal ddz_C = BoutNaN;
 
       if (fourth_order) {
         // Fourth order discretization of C in x
-        ddx_C = (-C2[i.xpp()] + 8. * C2[i.xp()] - 8. * C2[i.xm()] + C2[i.xmm()])
+        ddx_C = (-C2[i.xpp()] + (8. * C2[i.xp()]) - (8. * C2[i.xm()]) + C2[i.xmm()])
                 / (12. * coords->dx[i] * (C1[i]));
         // Fourth order discretization of C in z
-        ddz_C = (-C2[i.zpp()] + 8. * C2[i.zp()] - 8. * C2[i.zm()] + C2[i.zmm()])
+        ddz_C = (-C2[i.zpp()] + (8. * C2[i.zp()]) - (8. * C2[i.zm()]) + C2[i.zmm()])
                 / (12. * coords->dz[i] * (C1[i]));
       } else {
         // Second order discretization of C in x
@@ -545,11 +545,11 @@ void LaplacePetsc::setSecondOrderMatrix(int y, bool inner_X_neumann,
     ASSERT3(std::isfinite(A4));
     ASSERT3(std::isfinite(A5));
 
-    BoutReal dx = coords->dx[i];
-    BoutReal dx2 = SQ(dx);
-    BoutReal dz = coords->dz[i];
-    BoutReal dz2 = SQ(dz);
-    BoutReal dxdz = dx * dz;
+    const BoutReal dx = coords->dx[i];
+    const BoutReal dx2 = SQ(dx);
+    const BoutReal dz = coords->dz[i];
+    const BoutReal dz2 = SQ(dz);
+    const BoutReal dxdz = dx * dz;
     operator2D(l, l) = A0 - (2.0 * ((A1 / dx2) + (A2 / dz2)));
     operator2D(l, l.xm().zm()) = A3 / (4.0 * dxdz);
     operator2D(l, l.xm()) = (A1 / dx2) - (A4 / (2.0 * dx));
@@ -628,11 +628,11 @@ void LaplacePetsc::setFourthOrderMatrix(int y, bool inner_X_neumann,
     ASSERT3(std::isfinite(A4));
     ASSERT3(std::isfinite(A5));
 
-    BoutReal dx = coords->dx[i];
-    BoutReal dx2 = SQ(dx);
-    BoutReal dz = coords->dz[i];
-    BoutReal dz2 = SQ(dz);
-    BoutReal dxdz = dx * dz;
+    const BoutReal dx = coords->dx[i];
+    const BoutReal dx2 = SQ(dx);
+    const BoutReal dz = coords->dz[i];
+    const BoutReal dz2 = SQ(dz);
+    const BoutReal dxdz = dx * dz;
 
     operator2D(l, l) = A0 - ((5.0 / 2.0) * ((A1 / dx2) + (A2 / dz2)));
     operator2D(l, l.xmm().zmm()) = A3 / (144.0 * dxdz);
@@ -675,7 +675,7 @@ int LaplacePetsc::precon(Vec x, Vec y) {
   }
 
   // Call the preconditioner solver
-  FieldPerp yfield = pcsolve->solve(xfield);
+  const FieldPerp yfield = pcsolve->solve(xfield);
 
   VecCopy(*PetscVector{yfield, indexer}.get(), y);
 
