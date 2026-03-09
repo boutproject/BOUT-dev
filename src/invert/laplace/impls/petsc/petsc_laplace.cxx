@@ -47,6 +47,7 @@
 #include <bout/utils.hxx>
 
 #include <cmath>
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -143,7 +144,7 @@ auto set_stencil(const Mesh& localmesh, bool fourth_order) {
     }
   }
 
-  stencil.add([](IndPerp UNUSED(ind)) -> bool { return true; }, {zero});
+  stencil.add([]([[maybe_unused]] IndPerp ind) -> bool { return true; }, {zero});
   return stencil;
 }
 } // namespace
