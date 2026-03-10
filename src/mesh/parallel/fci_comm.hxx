@@ -159,7 +159,6 @@ public:
 #endif
   }
 
-  void operator[](IndG3D ind) { get(ind); }
   void setup() {
     ASSERT2(is_setup == false);
 #ifdef _OPENMP

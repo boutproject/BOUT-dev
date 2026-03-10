@@ -29,14 +29,13 @@
 #include <bout/mask.hxx>
 #include <array>
 
-#define USE_NEW_WEIGHTS 1
 #if BOUT_HAS_PETSC
-#define HS_USE_PETSC 1
-#endif
-
-#ifdef HS_USE_PETSC
 #include "bout/petsclib.hxx"
 #endif
+
+namespace {
+enum class implementation_type { new_weights, petsc, legacy };
+}
 
 class Options;
 class GlobalField3DAccess;
@@ -145,7 +144,7 @@ public:
 /// but also degrades accuracy near maxima and minima.
 /// Perhaps should only impose near boundaries, since that is where
 /// problems most obviously occur.
-template <bool monotonic>
+template <bool monotonic, implementation_type imp_type>
 class XZHermiteSplineBase : public XZInterpolation {
 protected:
   /// This is protected rather than private so that it can be
@@ -174,7 +173,7 @@ protected:
 
   std::vector<Field3D> newWeights;
 
-#if HS_USE_PETSC
+#if BOUT_HAS_PETSC
   PetscLib* petsclib;
   bool isInit{false};
   Mat petscWeights;
@@ -195,7 +194,7 @@ public:
     setRegion(regionFromMask(mask, localmesh));
   }
   ~XZHermiteSplineBase() override {
-#if HS_USE_PETSC
+#if BOUT_HAS_PETSC
     if (isInit) {
       MatDestroy(&petscWeights);
       VecDestroy(&rhs);
@@ -224,8 +223,21 @@ public:
   getWeightsForYApproximation(int i, int j, int k, int yoffset) override;
 };
 
-using XZMonotonicHermiteSpline = XZHermiteSplineBase<true>;
-using XZHermiteSpline = XZHermiteSplineBase<false>;
+using XZMonotonicHermiteSplineSerial =
+    XZHermiteSplineBase<true, implementation_type::new_weights>;
+using XZHermiteSplineSerial =
+    XZHermiteSplineBase<false, implementation_type::new_weights>;
+using XZMonotonicHermiteSplineLegacy =
+    XZHermiteSplineBase<true, implementation_type::legacy>;
+using XZHermiteSplineLegacy = XZHermiteSplineBase<false, implementation_type::legacy>;
+#if BOUT_HAS_PETSC
+using XZMonotonicHermiteSpline = XZHermiteSplineBase<true, implementation_type::petsc>;
+using XZHermiteSpline = XZHermiteSplineBase<false, implementation_type::petsc>;
+#else
+using XZMonotonicHermiteSpline =
+    XZHermiteSplineBase<true, implementation_type::new_weights>;
+using XZHermiteSpline = XZHermiteSplineBase<false, implementation_type::new_weights>;
+#endif
 
 /// XZLagrange4pt interpolation class
 ///
