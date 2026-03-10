@@ -62,6 +62,15 @@ fci_comm::ProcLocal fci_comm::GlobalToLocal1D::convert(int id) const {
 }
 
 void GlobalField3DAccess::setup() {
+  // We need to send a list of data to every processor of which data
+  // we want We also get a list of all the data that every other
+  // processor wants Some of theses lists may be empty. We still need
+  // to send them, later we can skip that.  We also compute where the
+  // requested data will be stored later on. This is currently
+  // implemented as a map, to memory efficient, as the data is
+  // sparse. We could also store the mapping as a dense array, if it
+  // turns out this lookup is not fast enough, but that may limit
+  // scaling at some point.
   ASSERT2(is_setup == false);
 #ifdef _OPENMP
   for (auto& o_id : o_ids) {
@@ -164,9 +173,12 @@ void GlobalField3DAccess::commCommLists() {
 }
 
 std::vector<BoutReal> GlobalField3DAccess::communicate_data(const Field3D& f) {
+  // Ensure setup is called, to setup communication pattern
   if (not is_setup) {
     setup();
   }
+  // We now send the previosly requested data to every processor, that wanted some.
+  // We also get the data we requested.
   ASSERT2(f.getMesh() == mesh);
   std::vector<BoutReal> data(getOffsets.back());
   std::vector<BoutReal> sendBuffer(sendBufferSize);
