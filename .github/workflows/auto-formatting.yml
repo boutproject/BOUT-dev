@@ -15,38 +15,19 @@ jobs:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
-      # This also installs git-clang-format
-      - name: Install formatters
-        run: |
-          sudo apt install clang-format python3-pip python3-setuptools python3-wheel
-          pip3 install ruff cmake-format
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
 
-      - name: Version
-        run: |
-          python3 --version
-          $HOME/.local/bin/ruff --version
-          clang-format --version
-          $HOME/.local/bin/cmake-format --version
-
-      - name: Run clang-format
-        id: format
-        run:
-          while ! git clang-format origin/${{ github.base_ref }} ; do git add . ; done
-
-      - name: Run ruff
-        run: |
-          pwd
-          ls
-          $HOME/.local/bin/ruff format .
-
-      - name: Run cmake-format
-        run: |
-          pwd
-          ls
-          $HOME/.local/bin/cmake-format -i $(find -name CMakeLists.txt) cmake/*.cmake
-
-      - name: Commit formatting
-        uses: stefanzweifel/git-auto-commit-action@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
-          commit_message: "[bot] Apply format changes"
-          skip_push: true
+          enable-cache: true
+
+      - name: Install dev tools
+        run: uv sync --only-dev
+
+      - name: Check prek versions are up-to-date
+        run: uv tool run sync-with-uv --check --diff
+
+      - name: Run everything
+        run: uv tool run prek run --show-diff-on-failure --from-ref origin/${{ github.base_ref }}
