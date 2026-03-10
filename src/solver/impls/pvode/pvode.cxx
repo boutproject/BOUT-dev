@@ -47,7 +47,6 @@
 
 #include "fmt/format.h"
 
-#include <bits/basic_string.h>
 #include <memory>
 #include <string>
 #include <vector>
