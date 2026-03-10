@@ -360,6 +360,8 @@ public:
   virtual int getXProcIndex() const = 0; ///< This processor's index in X direction
   virtual int getYProcIndex() const = 0; ///< This processor's index in Y direction
   virtual int getZProcIndex() const = 0; ///< This processor's index in Z direction
+  /// The index of a processor with given X, Y, and Z index
+  virtual int getProcIndex(int X, int Y, int Z) const = 0;
 
   // X communications
   virtual bool firstX()

@@ -76,7 +76,7 @@ void GlobalField3DAccess::setup() {
     const auto piy = g2ly.convert(gind.y());
     const auto piz = g2lz.convert(gind.z());
     ASSERT3(piz.proc == 0);
-    toGet[(piy.proc * g2lx.getNPE()) + pix.proc].push_back(
+    toGet[mesh.getProcIndex(pix.proc, piy.index, piz.index)].push_back(
         xyzl.convert(pix.ind, piy.ind, piz.ind).ind);
   }
   for (auto& v : toGet) {
@@ -97,7 +97,7 @@ void GlobalField3DAccess::setup() {
     const auto piy = g2ly.convert(gind.y());
     const auto piz = g2lz.convert(gind.z());
     ASSERT3(piz.proc == 0);
-    const auto proc = (piy.proc * g2lx.getNPE()) + pix.proc;
+    const auto proc = mesh.getProcIndex(pix.proc, piy.index, piz.index);
     const auto& vec = toGet[proc];
     const auto tofind = xyzl.convert(pix.ind, piy.ind, piz.ind).ind;
     auto it = std::lower_bound(vec.begin(), vec.end(), tofind);
@@ -116,7 +116,7 @@ void GlobalField3DAccess::commCommLists() {
   {
     int thisproc;
     MPI_Comm_rank(comm, &thisproc);
-    ASSERT0(thisproc == mesh->getYProcIndex() * g2lx.getNPE() + mesh->getXProcIndex());
+    ASSERT0(thisproc == mesh.getProcIndex(pix.proc, piy.index, piz.index));
   }
 #endif
   std::vector<MPI_Request> reqs(toSend.size());
