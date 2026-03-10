@@ -121,14 +121,12 @@ void GlobalField3DAccess::commCommLists() {
 #endif
   std::vector<MPI_Request> reqs(toSend.size());
   for (size_t proc = 0; proc < toGet.size(); ++proc) {
-    auto ret = MPI_Irecv(static_cast<void*>(&toSendSizes[proc]), 1, MPI_INT, proc, 666,
-                         comm, &reqs[proc]);
+    auto ret = MPI_Irecv(&toSendSizes[proc], 1, MPI_INT, proc, 666, comm, &reqs[proc]);
     ASSERT0(ret == MPI_SUCCESS);
   }
   for (size_t proc = 0; proc < toGet.size(); ++proc) {
     toGetSizes[proc] = toGet[proc].size();
-    auto ret =
-        MPI_Send(static_cast<void*>(&toGetSizes[proc]), 1, MPI_INT, proc, 666, comm);
+    auto ret = MPI_Send(&toGetSizes[proc], 1, MPI_INT, proc, 666, comm);
     ASSERT0(ret == MPI_SUCCESS);
   }
   std::vector<MPI_Request> reqs2(toSend.size());
@@ -146,14 +144,14 @@ void GlobalField3DAccess::commCommLists() {
     sendBufferSize += toSendSizes[ind];
     toSend[ind].resize(toSendSizes[ind], -1);
 
-    ret = MPI_Irecv(static_cast<void*>(toSend[ind].data()), toSend[ind].size(), MPI_INT,
-                    ind, 666 * 666, comm, reqs2.data() + cnt++);
+    ret = MPI_Irecv(toSend[ind].data(), toSend[ind].size(), MPI_INT, ind, 666 * 666, comm,
+                    reqs2.data() + cnt++);
     ASSERT0(ret == MPI_SUCCESS);
   }
   for (size_t proc = 0; proc < toGet.size(); ++proc) {
     if (!toGet[proc].empty()) {
-      const auto ret = MPI_Send(static_cast<void*>(toGet[proc].data()),
-                                toGet[proc].size(), MPI_INT, proc, 666 * 666, comm);
+      const auto ret = MPI_Send(toGet[proc].data(), toGet[proc].size(), MPI_INT, proc,
+                                666 * 666, comm);
       ASSERT0(ret == MPI_SUCCESS);
     }
   }
@@ -178,9 +176,8 @@ std::vector<BoutReal> GlobalField3DAccess::communicate_data(const Field3D& f) {
     if (toGet[proc].empty()) {
       continue;
     }
-    auto ret =
-        MPI_Irecv(static_cast<void*>(data.data() + getOffsets[proc]), toGet[proc].size(),
-                  MPI_DOUBLE, proc, 666, comm, reqs.data() + cnt1);
+    auto ret = MPI_Irecv(data.data() + getOffsets[proc], toGet[proc].size(), MPI_DOUBLE,
+                         proc, 666, comm, reqs.data() + cnt1);
     ASSERT0(ret == MPI_SUCCESS);
     cnt1++;
   }
@@ -189,7 +186,7 @@ std::vector<BoutReal> GlobalField3DAccess::communicate_data(const Field3D& f) {
     if (toSend[proc].empty()) {
       continue;
     }
-    const void* start = static_cast<void*>(sendBuffer.data() + cnt);
+    const void* start = sendBuffer.data() + cnt;
     for (auto i : toSend[proc]) {
       sendBuffer[cnt++] = f[Ind3D(i)];
     }
