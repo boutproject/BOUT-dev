@@ -41,6 +41,23 @@
 #include <stddef.h>
 #include <utility>
 #include <vector>
+
+/// GlobalField3DAccess is a class to set up the communication
+/// patterns, to request abitrary data form the global
+/// field. GlobalField3DAccessInstance is an instance. after
+/// GlobalField3DAccess has communicated the pre-requested data. Only
+/// data that has been pre-requested can be requested from
+/// GlobalField3DAccessInstance after communication.
+///
+/// The usage looks a bit like this:
+///
+/// GlobalField3DAccess gfa;
+/// // Request an abitrary number of global indices ``gi``:
+/// gfa.request(gi)
+/// // Communicate data
+/// const auto data = gfa.communicate(f3d);
+/// // Now data can be accesssed for all previously requested ``gi``s:
+/// data[gi]
 class GlobalField3DAccess;
 
 namespace fci_comm {
