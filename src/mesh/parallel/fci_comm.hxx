@@ -48,7 +48,7 @@ struct ProcLocal {
   int proc;
   int ind;
 };
-struct globalToLocal1D {
+struct GlobalToLocal1D {
   int mg;
   int npe;
   int localwith;
@@ -56,9 +56,9 @@ struct globalToLocal1D {
   int global;
   int globalwith;
   bool periodic;
-  globalToLocal1D(int mg, int npe, int localwith, bool periodic)
+  GlobalToLocal1D(int mg, int npe, int localwith, bool periodic)
       : mg(mg), npe(npe), localwith(localwith), local(localwith - (2 * mg)),
-        global(local * npe), globalwith(global + (2 * mg)), periodic(periodic){};
+        global(local * npe), globalwith(global + (2 * mg)), periodic(periodic) {};
   ProcLocal convert(int id) const {
     if (periodic) {
       while (id < mg) {
@@ -77,11 +77,17 @@ struct globalToLocal1D {
     }
     const int loc = id - (local * proc);
 #if CHECK > 1
-    if ((loc < 0 or loc > localwith or proc < 0 or proc >= npe)
-        or (periodic and (loc < mg or loc >= local + mg))) {
-      printf("globalToLocal1D failure: %d %d, %d %d, %d %d %s\n", id, idwo, globalwith,
-             npe, proc, loc, periodic ? "periodic" : "non-periodic");
-      ASSERT0(false);
+    if (loc < 0) {
+      throw BoutException("GlobalToLocal1D failure: loc is {} and thus smaller then 0\n",
+                          loc);
+    }
+    ASSERT1(loc <= localwith);
+    ASSERT1(proc >= 0);
+    ASSERT1(proc < npe);
+    if (periodic and (loc < mg or loc >= local + mg)) {
+      throw BoutException(
+          "GlobalToLocal1D failure - expected {} < {} < {} because we are periodic\n", mg,
+          loc, local + mg);
     }
 #endif
     return {proc, loc};
@@ -254,9 +260,9 @@ private:
   std::set<int> ids;
   std::map<int, int> mapping;
   bool is_setup{false};
-  const fci_comm::globalToLocal1D g2lx;
-  const fci_comm::globalToLocal1D g2ly;
-  const fci_comm::globalToLocal1D g2lz;
+  const fci_comm::GlobalToLocal1D g2lx;
+  const fci_comm::GlobalToLocal1D g2ly;
+  const fci_comm::GlobalToLocal1D g2lz;
 
 public:
   const fci_comm::XYZ2Ind<Ind3D> xyzl;
