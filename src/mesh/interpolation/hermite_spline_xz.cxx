@@ -178,7 +178,7 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
   const int nz = localmesh->LocalNz;
   const int xend = (localmesh->xend - localmesh->xstart + 1) * localmesh->getNXPE()
                    + localmesh->xstart - 1;
-  [[maybe_unused]] IndConverter conv{localmesh};
+  [[maybe_unused]] const IndConverter conv{localmesh};
 
   [[maybe_unused]] const int y_global_offset =
       localmesh->getYProcIndex() * (localmesh->yend - localmesh->ystart + 1);
@@ -320,7 +320,7 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
           for (int k = 0; k < 4; ++k) {
             idxm[k] = conv.fromMeshToGlobal(i_corn - 1 + j, y + y_offset,
                                             k_corner(x, y, z) - 1 + k);
-            vals[k] = newWeights[j * 4 + k][i];
+            vals[k] = newWeights[(j * 4) + k][i];
           }
           MatSetValues(petscWeights, 1, idxn, 4, idxm, vals, INSERT_VALUES);
         }
@@ -406,8 +406,8 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
   }
 
   if constexpr (imp_type == implementation_type::petsc) {
-    BoutReal* ptr;
-    const BoutReal* cptr;
+    BoutReal* ptr = nullptr;
+    const BoutReal* cptr = nullptr;
     VecGetArray(rhs, &ptr);
     BOUT_FOR(i, f.getRegion("RGN_NOY")) { ptr[int(i)] = f[i]; }
     VecRestoreArray(rhs, &ptr);
@@ -438,10 +438,10 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
 
       f_interp[iyp] = 0;
       for (int w = 0; w < 4; ++w) {
-        f_interp[iyp] += newWeights[w * 4 + 0][i] * f[ic.zm().xp(w - 1)];
-        f_interp[iyp] += newWeights[w * 4 + 1][i] * f[ic.xp(w - 1)];
-        f_interp[iyp] += newWeights[w * 4 + 2][i] * f[ic.zp().xp(w - 1)];
-        f_interp[iyp] += newWeights[w * 4 + 3][i] * f[ic.zp(2).xp(w - 1)];
+        f_interp[iyp] += newWeights[(w * 4) + 0][i] * f[ic.zm().xp(w - 1)];
+        f_interp[iyp] += newWeights[(w * 4) + 1][i] * f[ic.xp(w - 1)];
+        f_interp[iyp] += newWeights[(w * 4) + 2][i] * f[ic.zp().xp(w - 1)];
+        f_interp[iyp] += newWeights[(w * 4) + 3][i] * f[ic.zp(2).xp(w - 1)];
       }
       if constexpr (monotonic) {
         const auto corners = {(*gf)[IndG3D(g3dinds[i][0])], (*gf)[IndG3D(g3dinds[i][1])],

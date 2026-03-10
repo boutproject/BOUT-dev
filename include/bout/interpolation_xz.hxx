@@ -176,8 +176,8 @@ protected:
 #if BOUT_HAS_PETSC
   PetscLib* petsclib;
   bool isInit{false};
-  Mat petscWeights;
-  Vec rhs, result;
+  Mat petscWeights{};
+  Vec rhs{}, result{};
 #endif
 
   /// Factors to allow for some wiggleroom

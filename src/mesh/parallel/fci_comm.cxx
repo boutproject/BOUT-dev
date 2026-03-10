@@ -26,6 +26,7 @@
 #include "fci_comm.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
+#include "bout/field3d.hxx"
 #include "bout/region.hxx"
 
 #include <algorithm>
@@ -89,7 +90,7 @@ void GlobalField3DAccess::setup() {
     const auto piy = global2local_y.convert(gind.y());
     const auto piz = global2local_z.convert(gind.z());
     ASSERT3(piz.proc == 0);
-    toGet[mesh.getProcIndex(pix.proc, piy.index, piz.index)].push_back(
+    toGet[mesh->getProcIndex(pix.proc, piy.index, piz.index)].push_back(
         xyzlocal.convert(pix.ind, piy.ind, piz.ind).ind);
   }
   for (auto& v : toGet) {
@@ -110,7 +111,7 @@ void GlobalField3DAccess::setup() {
     const auto piy = global2local_y.convert(gind.y());
     const auto piz = global2local_z.convert(gind.z());
     ASSERT3(piz.proc == 0);
-    const auto proc = mesh.getProcIndex(pix.proc, piy.index, piz.index);
+    const auto proc = mesh->getProcIndex(pix.proc, piy.index, piz.index);
     const auto& vec = toGet[proc];
     const auto tofind = xyzlocal.convert(pix.ind, piy.ind, piz.ind).ind;
     auto it = std::lower_bound(vec.begin(), vec.end(), tofind);

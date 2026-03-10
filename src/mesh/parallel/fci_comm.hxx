@@ -31,10 +31,6 @@
 #include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
 #include "bout/region.hxx"
-#include <algorithm>
-#include <cstddef>
-#include <cstdio>
-#include <iterator>
 #include <map>
 #include <memory>
 #include <set>
@@ -166,11 +162,11 @@ private:
   std::map<int, int> mapping;
   bool is_setup{false};
   fci_comm::GlobalToLocal1D global2local_x;
-  fci_comm::GlobalToLocal1D global2localy;
+  fci_comm::GlobalToLocal1D global2local_y;
   fci_comm::GlobalToLocal1D global2local_z;
 
 public:
-  fci_comm::XYZ2Ind<Ind3D> xyzlocal;
+  fci_comm::XYZ2Ind<Ind3D> xyzlocal{};
 
 private:
   std::vector<std::vector<int>> toGet;
