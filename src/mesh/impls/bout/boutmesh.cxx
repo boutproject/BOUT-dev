@@ -1017,7 +1017,7 @@ void BoutMesh::createXBoundaries() {
   }
 }
 
-int BoutMesh::getProcIndex(int X, int Y, int Z) { return Y * NXPE + X; }
+int BoutMesh::getProcIndex(int X, int Y, int Z) const { return Y * NXPE + X; }
 
 void BoutMesh::createYBoundaries() {
   if (MYG <= 0) {
