@@ -44,7 +44,7 @@ public:
         lnz(mesh->LocalNz - 2 * zstart) {}
   // ix and iz are global indices
   // iy is local
-  int fromMeshToGlobal(int ix, int iy, int iz) {
+  int fromMeshToGlobal(int ix, int iy, int iz) const {
     const int xstart = mesh->xstart;
     const int lnx = mesh->LocalNx - xstart * 2;
     // x-proc-id
@@ -78,12 +78,12 @@ public:
     return fromLocalToGlobal(ix - pex * lnx, iy - pey_offset * lny, iz - pez * lnz, pex,
                              pey, 0);
   }
-  int fromLocalToGlobal(const int ilocalx, const int ilocaly, const int ilocalz) {
+  int fromLocalToGlobal(const int ilocalx, const int ilocaly, const int ilocalz) const {
     return fromLocalToGlobal(ilocalx, ilocaly, ilocalz, mesh->getXProcIndex(),
                              mesh->getYProcIndex(), 0);
   }
   int fromLocalToGlobal(const int ilocalx, const int ilocaly, const int ilocalz,
-                        const int pex, const int pey, const int pez) {
+                        const int pex, const int pey, const int pez) const {
     ASSERT3(ilocalx >= 0);
     ASSERT3(ilocaly >= 0);
     ASSERT3(ilocalz >= 0);
@@ -327,8 +327,8 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
       }
     }
     if constexpr (monotonic) {
-      const auto gind =
-          gf3daccess->xyzg(i_corn, y + y_offset + y_global_offset, k_corner(x, y, z));
+      const auto gind = gf3daccess->xyzglobal(i_corn, y + y_offset + y_global_offset,
+                                              k_corner(x, y, z));
       gf3daccess->request(gind);
       gf3daccess->request(gind.xp(1));
       gf3daccess->request(gind.zp(1));

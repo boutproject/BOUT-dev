@@ -90,8 +90,8 @@ void GlobalField3DAccess::setup() {
     const auto piy = global2local_y.convert(gind.y());
     const auto piz = global2local_z.convert(gind.z());
     ASSERT3(piz.proc == 0);
-    toGet[mesh->getProcIndex(pix.proc, piy.index, piz.index)].push_back(
-        xyzlocal.convert(pix.ind, piy.ind, piz.ind).ind);
+    toGet[mesh->getProcIndex(pix.proc, piy.proc, piz.proc)].push_back(
+        xyzlocal.convert(pix.index, piy.index, piz.index).ind);
   }
   for (auto& v : toGet) {
     std::sort(v.begin(), v.end());
@@ -113,7 +113,7 @@ void GlobalField3DAccess::setup() {
     ASSERT3(piz.proc == 0);
     const auto proc = mesh->getProcIndex(pix.proc, piy.index, piz.index);
     const auto& vec = toGet[proc];
-    const auto tofind = xyzlocal.convert(pix.ind, piy.ind, piz.ind).ind;
+    const auto tofind = xyzlocal.convert(pix.index, piy.index, piz.index).ind;
     auto it = std::lower_bound(vec.begin(), vec.end(), tofind);
     ASSERT3(it != vec.end());
     ASSERT3(*it == tofind);
@@ -130,7 +130,9 @@ void GlobalField3DAccess::commCommLists() {
   {
     int thisproc;
     MPI_Comm_rank(comm, &thisproc);
-    ASSERT0(thisproc == mesh.getProcIndex(pix.proc, piy.index, piz.index));
+    ASSERT0(thisproc
+            == mesh->getProcIndex(mesh->getXProcIndex(), mesh->getYProcIndex(),
+                                  mesh->getZProcIndex()));
   }
 #endif
   std::vector<MPI_Request> reqs(toSend.size());

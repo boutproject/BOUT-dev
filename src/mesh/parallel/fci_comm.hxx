@@ -59,7 +59,7 @@ class GlobalField3DAccess;
 namespace fci_comm {
 struct ProcLocal {
   int proc;
-  int ind;
+  int index;
 };
 
 /// Class to convert global to local indices for 1D
@@ -121,6 +121,8 @@ public:
         global2local_z(mesh->zstart, mesh->getNZPE(), mesh->LocalNz, true),
         xyzlocal(global2local_x.getLocalWith(), global2local_y.getLocalWith(),
                  global2local_z.getLocalWith()),
+        xyzglobal(global2local_x.getGlobalWith(), global2local_y.getGlobalWith(),
+                  global2local_z.getGlobalWith()),
         comm(BoutComm::get()) {
 #ifdef _OPENMP
     openmp_ids.resize(omp_get_max_threads());
@@ -128,7 +130,7 @@ public:
 #if CHECK >= 2
     // We could also allow false, but then we would need to ensure it
     // is false everywhere.
-    for (int x = 0; x < mesh->localNx, ++x) {
+    for (int x = 0; x < mesh->LocalNx; ++x) {
       ASSERT2(mesh->periodicY(x) == true);
     }
 #endif
@@ -166,7 +168,8 @@ private:
   fci_comm::GlobalToLocal1D global2local_z;
 
 public:
-  fci_comm::XYZ2Ind<Ind3D> xyzlocal{};
+  fci_comm::XYZ2Ind<Ind3D> xyzlocal;
+  fci_comm::XYZ2Ind<IndG3D> xyzglobal;
 
 private:
   std::vector<std::vector<int>> toGet;
@@ -177,7 +180,7 @@ private:
   std::vector<BoutReal> communicate_data(const Field3D& f);
 };
 
-const BoutReal& GlobalField3DAccessInstance::operator[](IndG3D ind) const {
+inline const BoutReal& GlobalField3DAccessInstance::operator[](IndG3D ind) const {
   auto it = gfa->mapping.find(ind.ind);
   ASSERT2(it != gfa->mapping.end());
   return data[it->second];
