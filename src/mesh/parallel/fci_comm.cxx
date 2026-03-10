@@ -78,15 +78,16 @@ void GlobalField3DAccess::setup() {
   }
   o_ids.clear();
 #endif
-  toGet.resize(static_cast<size_t>(g2lx.getNPE() * g2ly.getNPE() * g2lz.getNPE()));
+  toGet.resize(static_cast<size_t>(global2local_x.getNPE() * global2local_y.getNPE()
+                                   * global2local_z.getNPE()));
   for (const auto id : ids) {
-    const IndG3D gind{id, g2ly.getGlobalWith(), g2lz.getGlobalWith()};
-    const auto pix = g2lx.convert(gind.x());
-    const auto piy = g2ly.convert(gind.y());
-    const auto piz = g2lz.convert(gind.z());
+    const IndG3D gind{id, global2local_y.getGlobalWith(), global2local_z.getGlobalWith()};
+    const auto pix = global2local_x.convert(gind.x());
+    const auto piy = global2local_y.convert(gind.y());
+    const auto piz = global2local_z.convert(gind.z());
     ASSERT3(piz.proc == 0);
     toGet[mesh.getProcIndex(pix.proc, piy.index, piz.index)].push_back(
-        xyzl.convert(pix.ind, piy.ind, piz.ind).ind);
+        xyzlocal.convert(pix.ind, piy.ind, piz.ind).ind);
   }
   for (auto& v : toGet) {
     std::sort(v.begin(), v.end());
@@ -101,14 +102,14 @@ void GlobalField3DAccess::setup() {
     getOffsets.push_back(offset);
   }
   for (const auto id : ids) {
-    const IndG3D gind{id, g2ly.getGlobalWith(), g2lz.getGlobalWith()};
-    const auto pix = g2lx.convert(gind.x());
-    const auto piy = g2ly.convert(gind.y());
-    const auto piz = g2lz.convert(gind.z());
+    const IndG3D gind{id, global2local_y.getGlobalWith(), global2local_z.getGlobalWith()};
+    const auto pix = global2local_x.convert(gind.x());
+    const auto piy = global2local_y.convert(gind.y());
+    const auto piz = global2local_z.convert(gind.z());
     ASSERT3(piz.proc == 0);
     const auto proc = mesh.getProcIndex(pix.proc, piy.index, piz.index);
     const auto& vec = toGet[proc];
-    const auto tofind = xyzl.convert(pix.ind, piy.ind, piz.ind).ind;
+    const auto tofind = xyzlocal.convert(pix.ind, piy.ind, piz.ind).ind;
     auto it = std::lower_bound(vec.begin(), vec.end(), tofind);
     ASSERT3(it != vec.end());
     ASSERT3(*it == tofind);

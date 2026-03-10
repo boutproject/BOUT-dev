@@ -119,11 +119,12 @@ class GlobalField3DAccess {
 public:
   friend class GlobalField3DAccessInstance;
   GlobalField3DAccess(Mesh* mesh)
-      : mesh(mesh), g2lx(mesh->xstart, mesh->getNXPE(), mesh->LocalNx, mesh->periodicX),
-        g2ly(mesh->ystart, mesh->getNYPE(), mesh->LocalNy, true),
-        g2lz(mesh->zstart, mesh->getNZPE(), mesh->LocalNz, true),
-        xyzl(g2lx.getLocalWith(), g2ly.getLocalWith(), g2lz.getLocalWith()),
-        xyzg(g2lx.getGlobalWith(), g2ly.getGlobalWith(), g2lz.getGlobalWith()),
+      : mesh(mesh),
+        global2local_x(mesh->xstart, mesh->getNXPE(), mesh->LocalNx, mesh->periodicX),
+        global2local_y(mesh->ystart, mesh->getNYPE(), mesh->LocalNy, true),
+        global2local_z(mesh->zstart, mesh->getNZPE(), mesh->LocalNz, true),
+        xyzlocal(global2local_x.getLocalWith(), global2local_y.getLocalWith(),
+                 global2local_z.getLocalWith()),
         comm(BoutComm::get()) {
 #ifdef _OPENMP
     openmp_ids.resize(omp_get_max_threads());
@@ -164,13 +165,12 @@ private:
   std::set<int> ids;
   std::map<int, int> mapping;
   bool is_setup{false};
-  fci_comm::GlobalToLocal1D g2lx;
-  fci_comm::GlobalToLocal1D g2ly;
-  fci_comm::GlobalToLocal1D g2lz;
+  fci_comm::GlobalToLocal1D global2local_x;
+  fci_comm::GlobalToLocal1D global2localy;
+  fci_comm::GlobalToLocal1D global2local_z;
 
 public:
-  fci_comm::XYZ2Ind<Ind3D> xyzl;
-  fci_comm::XYZ2Ind<IndG3D> xyzg;
+  fci_comm::XYZ2Ind<Ind3D> xyzlocal;
 
 private:
   std::vector<std::vector<int>> toGet;
