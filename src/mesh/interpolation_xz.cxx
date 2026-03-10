@@ -90,14 +90,11 @@ RegisterXZInterpolation<XZMonotonicHermiteSpline> registerinterpmonotonichermite
 RegisterXZInterpolation<XZHermiteSplineSerial> registerinterphermitesplines{
     "hermitesplineserial"};
 RegisterXZInterpolation<XZMonotonicHermiteSplineSerial>
-    registerinterpmonotonichermitesplines{"monotonichermitesplinelegacy"};
+    registerinterpmonotonichermitesplines{"monotonichermitesplineserial"};
 RegisterXZInterpolation<XZHermiteSplineLegacy> registerinterphermitesplinel{
-    "hermitesplineserial"};
+    "hermitesplinelegacy"};
 RegisterXZInterpolation<XZMonotonicHermiteSplineLegacy>
     registerinterpmonotonichermitesplinel{"monotonichermitesplinelegacy"};
-RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{"hermitespline"};
-RegisterXZInterpolation<XZMonotonicHermiteSpline> registerinterpmonotonichermitespline{
-    "monotonichermitespline"};
 RegisterXZInterpolation<XZLagrange4pt> registerinterplagrange4pt{"lagrange4pt"};
 RegisterXZInterpolation<XZBilinear> registerinterpbilinear{"bilinear"};
 } // namespace
