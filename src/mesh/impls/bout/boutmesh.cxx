@@ -485,8 +485,19 @@ int BoutMesh::load() {
   }
   ASSERT0(MXG >= 0);
 
-  if (Mesh::get(MYG, "MYG") != 0) {
-    MYG = options["MYG"].doc("Number of guard cells on each side in Y").withDefault(2);
+  const bool meshHasMyg = Mesh::get(MYG, "MYG") == 0;
+  if (!meshHasMyg) {
+    MYG = 2;
+  }
+  int meshMyg = MYG;
+
+  if (options.isSet("MYG") or (!meshHasMyg)) {
+    MYG = options["MYG"].doc("Number of guard cells on each side in Y").withDefault(MYG);
+  }
+  if (meshHasMyg && MYG != meshMyg) {
+    output_warn.write(_("Options changed the number of y-guard cells. Grid has {} but "
+                        "option specified {}! Continuing with {}"),
+                      meshMyg, MYG, MYG);
   }
   ASSERT0(MYG >= 0);
 
