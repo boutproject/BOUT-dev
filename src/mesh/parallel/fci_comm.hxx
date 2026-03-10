@@ -119,7 +119,7 @@ class GlobalField3DAccess {
 public:
   friend class GlobalField3DAccessInstance;
   GlobalField3DAccess(Mesh* mesh)
-      : mesh(mesh), g2lx(mesh->xstart, mesh->getNXPE(), mesh->LocalNx, false),
+      : mesh(mesh), g2lx(mesh->xstart, mesh->getNXPE(), mesh->LocalNx, mesh->periodicX),
         g2ly(mesh->ystart, mesh->getNYPE(), mesh->LocalNy, true),
         g2lz(mesh->zstart, mesh->getNZPE(), mesh->LocalNz, true),
         xyzl(g2lx.getLocalWith(), g2ly.getLocalWith(), g2lz.getLocalWith()),
