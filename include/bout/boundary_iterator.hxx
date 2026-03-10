@@ -7,19 +7,20 @@
 #include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
 #include "bout/parallel_boundary_region.hxx"
+#include "bout/region.hxx"
 #include "bout/sys/parallel_stencils.hxx"
 #include "bout/sys/range.hxx"
-#include <algorithm>
 #include <functional>
 #include <utility>
 
 class BoundaryRegionIter {
 public:
+  virtual ~BoundaryRegionIter() = default;
   BoundaryRegionIter(int x, int y, int bx, int by, Mesh* mesh)
       : dir(bx + by), x(x), y(y), bx(bx), by(by), localmesh(mesh) {
     ASSERT3(bx * by == 0);
   }
-  bool operator!=(const BoundaryRegionIter& rhs) { return ind() != rhs.ind(); }
+  bool operator!=(const BoundaryRegionIter& rhs) const { return ind() != rhs.ind(); }
 
   Ind3D ind() const { return xyz2ind(x, y, z); }
   BoundaryRegionIter& operator++() {
@@ -44,11 +45,13 @@ public:
     return (f[ind()] * 3 - yprev(f)) * 0.5;
   }
 
-  BoutReal extrapolate_next_o2(const Field3D& f) const { return 2 * f[ind()] - yprev(f); }
+  BoutReal extrapolate_next_o2(const Field3D& f) const {
+    return (2 * f[ind()]) - yprev(f);
+  }
 
   BoutReal
   extrapolate_next_o2(const std::function<BoutReal(int yoffset, Ind3D ind)>& f) const {
-    return 2 * f(0, ind()) - f(0, ind().yp(-by).xp(-bx));
+    return (2 * f(0, ind())) - f(0, ind().yp(-by).xp(-bx));
   }
 
   BoutReal interpolate_sheath_o2(const Field3D& f) const {
@@ -68,8 +71,8 @@ public:
   BoutReal extrapolate_sheath_free(const Field3D& f, SheathLimitMode mode) const {
     const BoutReal fac =
         bout::parallel_boundary_region::limitFreeScale(yprev(f), ythis(f), mode);
-    BoutReal val = ythis(f);
-    BoutReal next = mode == SheathLimitMode::linear_free ? val + fac : val * fac;
+    const BoutReal val = ythis(f);
+    const BoutReal next = mode == SheathLimitMode::linear_free ? val + fac : val * fac;
     return 0.5 * (val + next);
   }
 
@@ -122,9 +125,7 @@ public:
   }
 
   void limit_at_least(Field3D& f, BoutReal value) const {
-    if (ynext(f) < value) {
-      ynext(f) = value;
-    }
+    ynext(f) = std::max(ynext(f), value);
   }
 
   BoutReal& ynext(Field3D& f) const { return f[ind().yp(by).xp(bx)]; }
@@ -141,7 +142,7 @@ public:
     }
   }
 
-  int abs_offset() const { return 1; }
+  static int abs_offset() { return 1; }
 
 #if BOUT_USE_METRIC_3D == 0
   BoutReal& ynext(Field2D& f) const { return f[ind().yp(by).xp(bx)]; }
@@ -166,13 +167,14 @@ private:
   int nz() const { return localmesh->LocalNz; }
 
   Ind3D xyz2ind(int x, int y, int z) const {
-    return Ind3D{(x * ny() + y) * nz() + z, ny(), nz()};
+    return Ind3D{((x * ny() + y) * nz()) + z, ny(), nz()};
   }
 };
 
 class BoundaryRegionIterY : public BoundaryRegionIter {
 public:
-  BoundaryRegionIterY(RangeIterator r, int y, int dir, bool is_end, Mesh* mesh)
+  virtual ~BoundaryRegionIterY() = default;
+  BoundaryRegionIterY(const RangeIterator& r, int y, int dir, bool is_end, Mesh* mesh)
       : BoundaryRegionIter(r.ind, y, 0, dir, mesh), r(r), is_end(is_end) {}
 
   bool operator!=(const BoundaryRegionIterY& rhs) {
@@ -189,7 +191,7 @@ public:
     return x != rhs.x;
   }
 
-  virtual void _next() override {
+  void _next() override {
     ++r;
     x = r.ind;
   }
@@ -201,8 +203,8 @@ private:
 
 class NewBoundaryRegionY {
 public:
-  NewBoundaryRegionY(Mesh* mesh, bool lower, RangeIterator r)
-      : mesh(mesh), lower(lower), r(std::move(r)) {}
+  NewBoundaryRegionY(Mesh* mesh, bool lower, const RangeIterator& r)
+      : mesh(mesh), lower(lower), r(r) {}
   BoundaryRegionIterY begin(bool begin = true) {
     return BoundaryRegionIterY(r, lower ? mesh->ystart : mesh->yend, lower ? -1 : +1,
                                !begin, mesh);

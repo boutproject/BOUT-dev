@@ -189,7 +189,7 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
 
   BoutMask to_remove(map_mesh);
   const int xend = map_mesh->xstart
-                   + (map_mesh->xend - map_mesh->xstart + 1) * map_mesh->getNXPE() - 1;
+                   + ((map_mesh->xend - map_mesh->xstart + 1) * map_mesh->getNXPE()) - 1;
   // Default to the maximum number of points
   const int defValid{map_mesh->ystart - 1 + std::abs(offset)};
   // Serial loop because call to BoundaryRegionPar::addPoint
@@ -262,7 +262,7 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
     ASSERT2(map_mesh->xend - map_mesh->xstart >= 2);
     auto boundary = (xt_prime[i] < map_mesh->xstart) ? inner_boundary : outer_boundary;
     if (!boundary->contains(x, y, z)) {
-      boundary->add_point(x, y, z, x + dx, y + offset - sgn(offset) * 0.5,
+      boundary->add_point(x, y, z, x + dx, y + offset - (sgn(offset) * 0.5),
                           z + dz, // Intersection point in local index space
                           std::abs(offset) - 0.5, // Distance to intersection
                           defValid, offset);
@@ -366,7 +366,7 @@ FCITransform::FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool 
   }
   const std::array bndries = {forward_boundary_xin, forward_boundary_xout,
                               backward_boundary_xin, backward_boundary_xout};
-  for (auto& bndry : bndries) {
+  for (const auto& bndry : bndries) {
     for (const auto& bndry2 : bndries) {
       if (bndry->dir == bndry2->dir) {
         continue;

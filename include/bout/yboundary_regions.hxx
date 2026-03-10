@@ -54,10 +54,13 @@ public:
       mesh = bout::globals::mesh;
     }
 
-    bool lower_y = options["lower_y"].doc("Boundary on lower y?").withDefault<bool>(true);
-    bool upper_y = options["upper_y"].doc("Boundary on upper y?").withDefault<bool>(true);
-    bool outer_x = options["outer_x"].doc("Boundary on outer x?").withDefault<bool>(true);
-    bool inner_x =
+    const bool lower_y =
+        options["lower_y"].doc("Boundary on lower y?").withDefault<bool>(true);
+    const bool upper_y =
+        options["upper_y"].doc("Boundary on upper y?").withDefault<bool>(true);
+    const bool outer_x =
+        options["outer_x"].doc("Boundary on outer x?").withDefault<bool>(true);
+    const bool inner_x =
         options["inner_x"].doc("Boundary on inner x?").withDefault<bool>(false);
 
     if (mesh->isFci()) {
