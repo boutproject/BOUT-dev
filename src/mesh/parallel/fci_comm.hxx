@@ -71,7 +71,7 @@ struct ProcLocal {
 struct GlobalToLocal1D {
   GlobalToLocal1D(int mg, int npe, int localwith, bool periodic)
       : mg(mg), npe(npe), localwith(localwith), local(localwith - (2 * mg)),
-        global(local * npe), globalwith(global + (2 * mg)), periodic(periodic) {};
+        global(local * npe), globalwith(global + (2 * mg)), periodic(periodic){};
   ProcLocal convert(int id) const;
   int getLocalWith() const { return localwith; }
   int getGlobalWith() const { return globalwith; }
