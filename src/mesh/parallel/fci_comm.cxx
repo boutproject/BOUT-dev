@@ -28,6 +28,9 @@
 #include "bout/bout_types.hxx"
 #include "bout/region.hxx"
 
+#include <algorithm>
+#include <cstddef>
+#include <mpi.h>
 #include <vector>
 
 fci_comm::ProcLocal fci_comm::GlobalToLocal1D::convert(int id) const {
