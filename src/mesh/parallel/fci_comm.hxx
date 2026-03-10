@@ -121,7 +121,7 @@ public:
   GlobalField3DAccess(Mesh* mesh)
       : mesh(mesh), g2lx(mesh->xstart, mesh->getNXPE(), mesh->LocalNx, false),
         g2ly(mesh->ystart, mesh->getNYPE(), mesh->LocalNy, true),
-        g2lz(mesh->zstart, 1, mesh->LocalNz, true),
+        g2lz(mesh->zstart, mesh->getNZPE(), mesh->LocalNz, true),
         xyzl(g2lx.getLocalWith(), g2ly.getLocalWith(), g2lz.getLocalWith()),
         xyzg(g2lx.getGlobalWith(), g2ly.getGlobalWith(), g2lz.getGlobalWith()),
         comm(BoutComm::get()) {
