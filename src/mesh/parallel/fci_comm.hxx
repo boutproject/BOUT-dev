@@ -128,6 +128,13 @@ public:
 #ifdef _OPENMP
     openmp_ids.resize(omp_get_max_threads());
 #endif
+#if CHECK >= 2
+    // We could also allow false, but then we would need to ensure it
+    // is false everywhere.
+    for (int x = 0; x < mesh->localNx, ++x) {
+      ASSERT2(mesh->periodicY(x) == true);
+    }
+#endif
   };
   void request(IndG3D ind) {
     ASSERT2(is_setup == false);
