@@ -132,7 +132,7 @@ public:
     o_ids.resize(omp_get_max_threads());
 #endif
   };
-  void get(IndG3D ind) {
+  void request(IndG3D ind) {
     ASSERT2(is_setup == false);
 #ifdef _OPENMP
     ASSERT2(o_ids.size() > static_cast<size_t>(omp_get_thread_num()));

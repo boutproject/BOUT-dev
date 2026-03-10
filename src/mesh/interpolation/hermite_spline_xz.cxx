@@ -326,10 +326,10 @@ void XZHermiteSplineBase<monotonic>::calcWeights(
     if constexpr (monotonic) {
       const auto gind =
           gf3daccess->xyzg(i_corn, y + y_offset + y_global_offset, k_corner(x, y, z));
-      gf3daccess->get(gind);
-      gf3daccess->get(gind.xp(1));
-      gf3daccess->get(gind.zp(1));
-      gf3daccess->get(gind.xp(1).zp(1));
+      gf3daccess->request(gind);
+      gf3daccess->request(gind.xp(1));
+      gf3daccess->request(gind.zp(1));
+      gf3daccess->request(gind.xp(1).zp(1));
       g3dinds[i] = {gind.ind, gind.xp(1).ind, gind.zp(1).ind, gind.xp(1).zp(1).ind};
     }
   }
