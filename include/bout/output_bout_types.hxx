@@ -232,8 +232,10 @@ public:
     }
 
     // Separators
-    constexpr auto block_sep = "\n\n";
-    const auto* const item_sep = plot ? "" : " ";
+    const auto block_sep = fmt::runtime("\n\n");
+    const auto item_sep = fmt::runtime(plot ? "" : " ");
+    const auto x_sep = transpose ? item_sep : block_sep;
+    const auto z_sep = transpose ? block_sep : item_sep;
 
     // If we've shown the skip sep already this dim
     bool shown_skip = false;
@@ -250,13 +252,13 @@ public:
               and (iz < start_z or iz > end_z));
 
       if ((not shown_skip or should_show) and iz > previous_z) {
-        format_to(ctx.out(), transpose ? block_sep : item_sep);
+        format_to(ctx.out(), z_sep);
       }
       if ((not shown_skip or should_show) and iy > previous_y) {
         format_to(ctx.out(), "\n");
       }
       if ((not shown_skip or should_show) and ix > previous_x) {
-        format_to(ctx.out(), transpose ? item_sep : block_sep);
+        format_to(ctx.out(), x_sep);
       }
 
       if (show_indices and should_show) {
