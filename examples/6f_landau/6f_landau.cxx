@@ -12,6 +12,27 @@
  * 3. for zonal field solver, hypre needed
  * */
 
+/* Known issues with the 6-field model
+  1)  The ion parallel viscosity terms (enabled by parallel_viscous = true) have been 
+      implemented as full-f terms and not as perturbations. The background/equilibrium part
+      has to be removed to make it consistent with the rest of the analysis. Doing so, might 
+      break the linear runs when we set nonlinear = false.
+  2)  The neutral model has been implemented as a full-f model. Many inconsistencies with the rest of the model and analysis.
+  3)  The landau heat flux closure has been removed.
+  4)  The sheath boundary conditions have been partially fixed. However, this breaks the linear 
+      runs when we set nonlinear = false. We will need to linearize the sound speed and heat fluxes for 
+      the linear runs, which will be done in the future.
+  5)  We apply BC on jpar after the sheath boundary conditions. This means that jpar takes BC from the input file.
+      Unphysical values were observed when I applied sheath BC on jpar. 
+  6)  We apply neumann BC on the potential phi in the parallel dir (sheath). Should we do something else? 
+  7)  The auxiliary functions have not been tested when we migrated from v3 to v5. You may need to check if they are still correct. 
+      Older grid versions used to use different definitions for jysep1, jysep2, jysep1_2, jysep2_1 indexes. 
+      Different counting of y indexing was also for used to be used for double null cases.  
+  8)  The zonal flow filed solver has not been tested.
+  9)  We use the phiSolver in the preconditioner and the constrains but the setCoef should be differnet there.
+      We will need to difine a different instance of the Laplacian with different coeefficients for the preconditioner and constrains.
+*/
+
 #include <cassert>
 
 #include "bout/bout.hxx"
