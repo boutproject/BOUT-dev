@@ -111,7 +111,7 @@ void GlobalField3DAccess::setup() {
     const auto piy = global2local_y.convert(gind.y());
     const auto piz = global2local_z.convert(gind.z());
     ASSERT3(piz.proc == 0);
-    const auto proc = mesh->getProcIndex(pix.proc, piy.index, piz.index);
+    const auto proc = mesh->getProcIndex(pix.proc, piy.proc, piz.proc);
     const auto& vec = toGet[proc];
     const auto tofind = xyzlocal.convert(pix.index, piy.index, piz.index).ind;
     auto it = std::lower_bound(vec.begin(), vec.end(), tofind);
