@@ -6,6 +6,7 @@
 #include "bout/globals.hxx"
 #include "bout/options.hxx"
 #include "bout/parallel_boundary_region.hxx"
+#include "bout/mask.hxx"
 #include <memory>
 #include <vector>
 
@@ -98,17 +99,17 @@ public:
     });
   }
 
-  bool contains_ylow(Ind3D ind) const { return _contains[0][ind] }
-  bool contains_yhigh(Ind3D ind) const { return _contains[1][ind] }
+  bool contains_ylow(Ind3D ind) const { return _contains[0][ind]; }
+  bool contains_yhigh(Ind3D ind) const { return _contains[1][ind]; }
   template <int dir>
-  bool contains(Ind3D ind) {
+  bool contains(Ind3D ind) const {
+    static_assert(dir == 1 || dir == -1);
     if constexpr (dir == 1) {
       return _contains[1][ind];
     }
     if constexpr (dir == -1) {
       return _contains[0][ind];
     }
-    static_assert(false); // Only for +1 and -1
   }
   bool contains(int dir, Ind3D ind) const {
     if (dir == 1) {

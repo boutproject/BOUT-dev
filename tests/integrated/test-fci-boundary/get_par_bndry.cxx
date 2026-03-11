@@ -7,6 +7,8 @@
 #include "bout/output.hxx"
 #include "bout/parallel_boundary_region.hxx"
 
+#include "bout/yboundary_regions.hxx"
+
 #include <fmt/format.h>
 
 #include <vector>
@@ -35,6 +37,10 @@ int main(int argc, char** argv) {
 
     dump[fmt::format("field_{:s}", boundary_name)] = fields[i];
   }
+
+  Options dummy;
+  YBoundary ybndry;
+  ybndry.init(dummy, mesh);
 
   bout::writeDefaultOutputFile(dump);
 
