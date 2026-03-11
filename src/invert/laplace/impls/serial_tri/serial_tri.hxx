@@ -29,8 +29,19 @@ class LaplaceSerialTri;
 #ifndef BOUT_SERIAL_TRI_H
 #define BOUT_SERIAL_TRI_H
 
+#include "bout/build_defines.hxx"
+#include "bout/invert_laplace.hxx"
+
+#if BOUT_USE_METRIC_3D
+
+namespace {
+const RegisterUnavailableLaplace
+    registerlaplacetri(LAPLACE_TRI, "BOUT++ was configured with 3D metrics");
+}
+
+#else
+
 #include <bout/dcomplex.hxx>
-#include <bout/invert_laplace.hxx>
 #include <bout/options.hxx>
 
 namespace {
@@ -79,5 +90,7 @@ private:
   // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b
   Field2D A, C, D;
 };
+
+#endif // BOUT_USE_METRIC_3D
 
 #endif // BOUT_SERIAL_TRI_H

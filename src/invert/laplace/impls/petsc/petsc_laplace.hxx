@@ -220,17 +220,19 @@ private:
 
   FieldPerp sol; // solution Field
 
-  // Istart is the first row of MatA owned by the process, Iend is 1 greater than the last row.
-  int Istart, Iend;
+  /// Istart is the first row of MatA owned by the process, Iend is 1 greater than the last row.
+  int Istart = -1;
+  int Iend = -1;
 
-  int meshx, meshz, size,
-      localN; // Mesh sizes, total size, no of points on this processor
+  /// Mesh sizes, total size, no of points on this processor
+  int meshx, meshz, size, localN;
   MPI_Comm comm;
-  Mat MatA;
-  Vec xs, bs; // Solution and RHS vectors
-  KSP ksp;
+  Mat MatA = nullptr; ///< Stencil matrix
+  Vec xs = nullptr;   ///< Solution vector
+  Vec bs = nullptr;   ///< RHS vector
+  KSP ksp = nullptr;  ///< PETSc solver
 
-  Options* opts;       // Laplace Section Options Object
+  Options* opts;       ///< Laplace Section Options Object
   std::string ksptype; ///< KSP solver type
   std::string pctype;  ///< Preconditioner type
 

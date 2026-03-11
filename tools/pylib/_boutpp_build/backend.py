@@ -33,7 +33,7 @@ def getversion():
         with contextlib.suppress(KeyError):
             # 0. Check whether version is set via environment variable
             version = os.environ["BOUT_PRETEND_VERSION"]
-            return version
+            return version.lstrip("v")
 
         _bout_previous_version = "v5.2.0"
         _bout_next_version = "v5.2.1"
@@ -74,7 +74,7 @@ def getversion():
                 version = _bout_previous_version + ".rc+" + hash
                 with open("_version.txt", "w") as f:
                     f.write(version + "\n")
-    return version
+    return version.lstrip("v")
 
 
 def run(cmd):
@@ -212,10 +212,12 @@ def build_sdist(sdist_directory, config_settings=None):
         run(f"rm {tmp}")
 
     with open(tmp, "w") as f:
-        f.write(f"""Metadata-Version: 2.1
+        f.write(
+            f"""Metadata-Version: 2.1
 Name: {pkgname}
 Version: {getversion()}
-""")
+"""
+        )
         with open("LICENSE") as src:
             pre = "License: "
             for l in src:
@@ -267,19 +269,23 @@ def prepare_metadata_for_build_wheel(
     distinfo = f"{metadata_directory}/{thisdir}"
     mkdir_p(distinfo)
     with open(f"{distinfo}/METADATA", "w") as f:
-        f.write(f"""Metadata-Version: 2.1
+        f.write(
+            f"""Metadata-Version: 2.1
 Name: {pkgname}
 Version: {getversion()}
 License-File: COPYING
-""")
+"""
+        )
     run(f"cp LICENSE {distinfo}/COPYING")
     run(f"cp LICENSE.GPL {distinfo}/COPYING.GPL")
     with open(f"{distinfo}/WHEEL", "w") as f:
-        f.write(f"""Wheel-Version: 1.0
-Generator: boutpp_custom_build_wheel ({getversion()})
+        f.write(
+            f"""Wheel-Version: 1.0
+Generator: boutpp_custom_build_wheel (version {getversion()})
 Root-Is-Purelib: false
 Tag: {gettag()}
-""")
+"""
+        )
 
     if record:
         with open(f"{distinfo}/RECORD", "w") as f:

@@ -31,6 +31,10 @@
  *
  */
 
+#include "bout/build_defines.hxx"
+
+#if not BOUT_USE_METRIC_3D
+
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
@@ -553,3 +557,5 @@ void LaplaceSPT::SPT_data::allocate(int mm, int nx) {
 
   buffer.reallocate(4 * mm);
 }
+
+#endif // BOUT_USE_METRIC_3D

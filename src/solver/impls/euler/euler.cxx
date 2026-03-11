@@ -1,10 +1,15 @@
-
 #include "euler.hxx"
 
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
+#include <bout/field.hxx>
 #include <bout/openmpwrap.hxx>
+#include <bout/options_io.hxx>
 #include <bout/output.hxx>
+
+#include <cstdlib>
+#include <fmt/format.h>
+#include <memory>
 
 EulerSolver::EulerSolver(Options* options)
     : Solver(options), mxstep((*options)["mxstep"]
@@ -15,7 +20,10 @@ EulerSolver::EulerSolver(Options* options)
                      .withDefault(2.)),
       timestep((*options)["timestep"]
                    .doc("Internal timestep (defaults to output timestep)")
-                   .withDefault(getOutputTimestep())) {}
+                   .withDefault(getOutputTimestep())),
+      dump_at_time((*options)["dump_at_time"]
+                       .doc("Dump debug info about the simulation")
+                       .withDefault(-1)) {}
 
 void EulerSolver::setMaxTimestep(BoutReal dt) {
   if (dt >= cfl_factor * timestep) {
@@ -134,7 +142,37 @@ void EulerSolver::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& star
                             Array<BoutReal>& result) {
 
   load_vars(std::begin(start));
+  const bool dump_now =
+      (dump_at_time >= 0 && std::abs(dump_at_time - curtime) < dt) || dump_at_time < -3;
+  std::shared_ptr<Options> debug_ptr;
+  if (dump_now) {
+    debug_ptr = std::make_shared<Options>();
+    Options& debug = *debug_ptr;
+    for (auto& f : f3d) {
+      f.F_var->enableTracking(fmt::format("ddt_{:s}", f.name), debug_ptr);
+      debug[fmt::format("pre_{:s}", f.name)] = *f.var;
+      f.var->allocate();
+    }
+  }
+
   run_rhs(curtime);
+  if (dump_now) {
+    Options& debug = *debug_ptr;
+    Mesh* mesh{nullptr};
+    for (auto& f : f3d) {
+      saveParallel(debug, f.name, *f.var);
+      mesh = f.var->getMesh();
+    }
+
+    const std::string outnumber =
+        dump_at_time < -3 ? fmt::format(".{}", debug_counter++) : "";
+    const std::string outname = fmt::format("BOUT.debug{}", outnumber);
+    bout::OptionsIO::write(outname, debug, mesh);
+    MPI_Barrier(BoutComm::get());
+    for (auto& f : f3d) {
+      f.F_var->disableTracking();
+    }
+  }
   save_derivs(std::begin(result));
 
   BOUT_OMP_PERF(parallel for)

@@ -20,7 +20,7 @@ CheckOptions:
     value: 'MPI_Comm'
 
   - key: misc-include-cleaner.IgnoreHeaders
-    value: 'adios2/.*;bits/.*;cpptrace/.*'
+    value: 'adios2/.*;bits/.*;cpptrace/.*;petsc.*\.h'
 ---
 
 Disabled checks and reasons:

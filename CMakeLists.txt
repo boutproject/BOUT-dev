@@ -231,6 +231,8 @@ set(BOUT_SOURCES
     ./src/field/where.cxx
     ./src/invert/fft_fftw.cxx
     ./src/invert/lapack_routines.cxx
+    ./src/invert/laplace/common_transform.cxx
+    ./src/invert/laplace/common_transform.hxx
     ./src/invert/laplace/impls/cyclic/cyclic_laplace.cxx
     ./src/invert/laplace/impls/cyclic/cyclic_laplace.hxx
     ./src/invert/laplace/impls/iterative_parallel_tri/iterative_parallel_tri.cxx

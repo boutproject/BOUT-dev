@@ -29,8 +29,19 @@ class LaplacePCR_THOMAS;
 #ifndef BOUT_PCR_THOMAS_H
 #define BOUT_PCR_THOMAS_H
 
+#include "bout/build_defines.hxx"
+#include "bout/invert_laplace.hxx"
+
+#if BOUT_USE_METRIC_3D
+
+namespace {
+const RegisterUnavailableLaplace
+    registerlaplacepcrthomas(LAPLACE_PCR_THOMAS, "BOUT++ was configured with 3D metrics");
+}
+
+#else
+
 #include <bout/dcomplex.hxx>
-#include <bout/invert_laplace.hxx>
 #include <bout/options.hxx>
 #include <bout/utils.hxx>
 
@@ -177,5 +188,7 @@ private:
 
   bool dst{false};
 };
+
+#endif // BOUT_USE_METRIC_3D
 
 #endif // BOUT_PCR_THOMAS_H
