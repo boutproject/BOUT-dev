@@ -142,45 +142,6 @@ then they will be able to checkout your branch::
 *Note*: If you have write access to the central BOUT-dev repository, you
 can push your branches there.
 
-Running Tests
-~~~~~~~~~~~~~
-
-We run many tests and checks automatically on GitHub for a variety of build
-configurations. See :ref:`sec-runtestsuite` for how to run them
-locally. Running the full test suite can take some time, but it's a good idea to
-run at least the unit tests locally when you're making changes.
-
-Install Pre-Commit Hooks (Optional but recommended)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Along with the automated tests, we also run things like formatters and static
-analysis. For frequent developers, we strongly recommend installing them locally
-and building them into your regular workflow. You can install the majority of
-our developer tools at once using `uv <https://docs.astral.sh/uv/>`_:
-
-.. code-block:: console
-
-    uv sync --only-dev
-
-This will create a new virtual environment (typically under ``.venv``) and
-install all the tools into that. You can then activate the virtual environment
-and use the tools manually, or via integrations in your editor.
-
-We also have a `prek <https://prek.j178.dev>`_ config that can run some of
-these automatically when you make commits using "pre-commit hooks". Install our
-developer tools with ``uv`` as above, and then install the pre-commit hook:
-
-.. code-block:: console
-
-    prek install
-
-This will then automatically call things like `clang-format
-<https://clang.llvm.org/docs/ClangFormat.html>`_ and `ruff
-<https://astral.sh/ruff>`_ when you create a commit, and abort the commit if
-there's a problem, for example if a formatter changes any files. For the
-formatters, this usually just means staging any changes they make and trying
-again.
-
 Making changes, commits
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -211,6 +172,78 @@ maintainers will review your code and merge it into **next**. They may
 give you comments to improve the code. You can make additional changes
 and push them to the same feature branch and they will be automatically
 added to the pull request.
+
+Running Tests
+~~~~~~~~~~~~~
+
+We run many tests and checks automatically on GitHub (collectively called "CI")
+for a variety of build configurations. See :ref:`sec-runtestsuite` for how to
+run them locally. Running the full test suite can take some time, but it's a
+good idea to run at least the unit tests locally when you're making changes:
+
+.. code-block:: console
+
+    cmake --build build --target check-unit-tests
+
+Along with the automated tests, we also run things like formatters and static
+analysis in CI, which may provide further feedback (see :ref:`sec-coding-style`
+for more details). If your PR fails the format check on CI, please install the
+formatters and run them according to the next section. Usually this is just:
+
+.. code-block:: console
+
+    git clang-format next
+
+which will format just the parts of C++ files that have changed since ``next``.
+
+Formatting and Linters
+~~~~~~~~~~~~~~~~~~~~~~
+
+For frequent developers, we strongly recommend installing the formatting and
+linting tools locally and building them into your regular workflow. You can
+install the majority of our developer tools at once using `uv
+<https://docs.astral.sh/uv/>`_ from the top of your BOUT++ directory:
+
+.. code-block:: console
+
+    uv sync --only-dev --inexact
+
+This will install all the developer tools into a virtual environment (creating
+one if necessary, typically under ``.venv``). You can then activate the virtual
+environment and use the tools manually, or via integrations in your editor.
+
+We *strongly* recommend using ``uv`` to install the developer tools, as this
+will ensure that you get the *exact* versions used in CI and by other
+developers, but you could also use ``pip install --group dev`` if you wish.
+
+The quickest way to run all the formatters on a PR at once is typically:
+
+.. code-block:: console
+
+    uv tool run prek run --from-ref next
+
+This will run all our formatters on files that have changed since ``next``.
+
+Install Pre-Commit Hooks (Optional but recommended)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We also have a `prek <https://prek.j178.dev>`_ config that can run some of
+these automatically using pre-commit hooks -- that is, when you run ``git
+commit``, these tools will run and abort the commit if they change any
+files. You then just have to stage the new changes and try again.
+
+Install our developer tools with ``uv`` as above, and then install the
+pre-commit hook:
+
+.. code-block:: console
+
+    prek install
+
+That's it! ``prek`` will install the tools into their own separate virtual
+environment so they won't interfere with any you may have, and ``git`` will take
+care of running them automatically.
+
+.. _sec-coding-style:
 
 Coding Style
 ------------
