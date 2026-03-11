@@ -48,8 +48,8 @@ class PhysicsModel;
 #include "bout/utils.hxx"
 
 #include <chrono>
-#include <thread>
 #include <cstddef>
+#include <thread>
 #include <type_traits>
 #include <vector>
 
