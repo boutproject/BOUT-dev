@@ -1,7 +1,7 @@
 /**************************************************************************
- * Copyright 2015-2018 B.D.Dudson, P. Hill
+ * Copyright 2015 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -109,7 +109,7 @@ private:
   }
 };
 
-template <bool monotonic, implementation_type imp_type>
+template <bool monotonic, bout::details::implementation_type imp_type>
 XZHermiteSplineBase<monotonic, imp_type>::XZHermiteSplineBase(int y_offset, Mesh* meshin,
                                                               Options* options)
     : XZInterpolation(y_offset, meshin), h00_x(localmesh), h01_x(localmesh),
@@ -142,15 +142,15 @@ XZHermiteSplineBase<monotonic, imp_type>::XZHermiteSplineBase(int y_offset, Mesh
   h10_z.allocate();
   h11_z.allocate();
 
-  if constexpr (imp_type == implementation_type::new_weights
-                || imp_type == implementation_type::petsc) {
+  if constexpr (imp_type == bout::details::implementation_type::new_weights
+                || imp_type == bout::details::implementation_type::petsc) {
     newWeights.reserve(16);
     for (int w = 0; w < 16; ++w) {
       newWeights.emplace_back(localmesh);
       newWeights[w].allocate();
     }
   }
-  if constexpr (imp_type == implementation_type::petsc) {
+  if constexpr (imp_type == bout::details::implementation_type::petsc) {
 #if BOUT_HAS_PETSC
     petsclib = new PetscLib(
         &Options::root()["mesh:paralleltransform:xzinterpolation:hermitespline"]);
@@ -163,15 +163,15 @@ XZHermiteSplineBase<monotonic, imp_type>::XZHermiteSplineBase(int y_offset, Mesh
     gf3daccess = std::make_unique<GlobalField3DAccess>(localmesh);
     g3dinds.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
   }
-  if constexpr (imp_type == implementation_type::new_weights
-                || imp_type == implementation_type::legacy) {
+  if constexpr (imp_type == bout::details::implementation_type::new_weights
+                || imp_type == bout::details::implementation_type::legacy) {
     if (localmesh->getNXPE() > 1) {
       throw BoutException("Require PETSc for MPI splitting in X");
     }
   }
 }
 
-template <bool monotonic, implementation_type imp_type>
+template <bool monotonic, bout::details::implementation_type imp_type>
 void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
     const Field3D& delta_x, const Field3D& delta_z,
     [[maybe_unused]] const std::string& region) {
@@ -251,8 +251,8 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
     h11_x[i] = (t_x * t_x * t_x) - (t_x * t_x);
     h11_z[i] = (t_z * t_z * t_z) - (t_z * t_z);
 
-    if constexpr (imp_type == implementation_type::new_weights
-                  || imp_type == implementation_type::petsc) {
+    if constexpr (imp_type == bout::details::implementation_type::new_weights
+                  || imp_type == bout::details::implementation_type::petsc) {
       for (int w = 0; w < 16; ++w) {
         newWeights[w][i] = 0;
       }
@@ -309,7 +309,7 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
       newWeights[13][i] -= h11_x[i] * h11_z[i] / 4;
       newWeights[7][i] -= h11_x[i] * h11_z[i] / 4;
       newWeights[5][i] += h11_x[i] * h11_z[i] / 4;
-      if (imp_type == implementation_type::petsc) {
+      if (imp_type == bout::details::implementation_type::petsc) {
 #if BOUT_HAS_PETSC
         PetscInt idxn[1] = {conv.fromLocalToGlobal(x, y + y_offset, z)};
         // output.write("debug: {:d} -> {:d}: {:d}:{:d} -> {:d}:{:d}\n",
@@ -340,7 +340,7 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
       g3dinds[i] = {gind.ind, gind.xp(1).ind, gind.zp(1).ind, gind.xp(1).zp(1).ind};
     }
   }
-  if constexpr (imp_type == implementation_type::petsc) {
+  if constexpr (imp_type == bout::details::implementation_type::petsc) {
 #if BOUT_HAS_PETSC
     MatAssemblyBegin(petscWeights, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(petscWeights, MAT_FINAL_ASSEMBLY);
@@ -352,7 +352,7 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
   }
 }
 
-template <bool monotonic, implementation_type imp_type>
+template <bool monotonic, bout::details::implementation_type imp_type>
 void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(const Field3D& delta_x,
                                                            const Field3D& delta_z,
                                                            const BoutMask& mask,
@@ -377,7 +377,7 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(const Field3D& delta_
  *   (i, j+1, k+1)	h01_z + h10_z / 2
  *   (i, j+1, k+2)	h11_z / 2
  */
-template <bool monotonic, implementation_type imp_type>
+template <bool monotonic, bout::details::implementation_type imp_type>
 std::vector<ParallelTransform::PositionsAndWeights>
 XZHermiteSplineBase<monotonic, imp_type>::getWeightsForYApproximation(int i, int j, int k,
                                                                       int yoffset) {
@@ -397,7 +397,7 @@ XZHermiteSplineBase<monotonic, imp_type>::getWeightsForYApproximation(int i, int
           {i, j + yoffset, k_mod_p2, 0.5 * h11_z(i, j, k)}};
 }
 
-template <bool monotonic, implementation_type imp_type>
+template <bool monotonic, bout::details::implementation_type imp_type>
 Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
     const Field3D& f, [[maybe_unused]] const std::string& region) const {
 
@@ -411,7 +411,7 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
     gf = gf3daccess->communicate_asPtr(f);
   }
 
-  if constexpr (imp_type == implementation_type::petsc) {
+  if constexpr (imp_type == bout::details::implementation_type::petsc) {
 #if BOUT_HAS_PETSC
     BoutReal* ptr = nullptr;
     const BoutReal* cptr = nullptr;
@@ -439,7 +439,7 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
 #endif
   }
 
-  if constexpr (imp_type == implementation_type::new_weights) {
+  if constexpr (imp_type == bout::details::implementation_type::new_weights) {
     BOUT_FOR(i, getRegion(region)) {
       auto ic = i_corner[i];
       auto iyp = i.yp(y_offset);
@@ -463,7 +463,7 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
       ASSERT2(std::isfinite(f_interp[iyp]));
     }
   }
-  if constexpr (imp_type == implementation_type::legacy) {
+  if constexpr (imp_type == bout::details::implementation_type::legacy) {
     // Legacy interpolation
     // TODO(peter): Should we apply dirichlet BCs to derivatives?
     // Derivatives are used for tension and need to be on dimensionless
@@ -523,7 +523,7 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
   return f_interp;
 }
 
-template <bool monotonic, implementation_type imp_type>
+template <bool monotonic, bout::details::implementation_type imp_type>
 Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(const Field3D& f,
                                                               const Field3D& delta_x,
                                                               const Field3D& delta_z,
@@ -532,7 +532,7 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(const Field3D& f,
   return interpolate(f, region);
 }
 
-template <bool monotonic, implementation_type imp_type>
+template <bool monotonic, bout::details::implementation_type imp_type>
 Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(const Field3D& f,
                                                               const Field3D& delta_x,
                                                               const Field3D& delta_z,
@@ -543,11 +543,11 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(const Field3D& f,
 }
 
 // ensure they are instantiated
-template class XZHermiteSplineBase<true, implementation_type::new_weights>;
-template class XZHermiteSplineBase<false, implementation_type::new_weights>;
-template class XZHermiteSplineBase<true, implementation_type::legacy>;
-template class XZHermiteSplineBase<false, implementation_type::legacy>;
+template class XZHermiteSplineBase<true, bout::details::implementation_type::new_weights>;
+template class XZHermiteSplineBase<false, bout::details::implementation_type::new_weights>;
+template class XZHermiteSplineBase<true, bout::details::implementation_type::legacy>;
+template class XZHermiteSplineBase<false, bout::details::implementation_type::legacy>;
 #if BOUT_HAS_PETSC
-template class XZHermiteSplineBase<true, implementation_type::petsc>;
-template class XZHermiteSplineBase<false, implementation_type::petsc>;
+template class XZHermiteSplineBase<true, bout::details::implementation_type::petsc>;
+template class XZHermiteSplineBase<false, bout::details::implementation_type::petsc>;
 #endif
