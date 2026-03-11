@@ -77,10 +77,10 @@ void GlobalField3DAccess::setup() {
   // scaling at some point.
   ASSERT2(is_setup == false);
 #ifdef _OPENMP
-  for (auto& o_id : o_ids) {
+  for (auto& o_id : openmp_ids) {
     ids.merge(o_id);
   }
-  o_ids.clear();
+  openmp_ids.clear();
 #endif
   toGet.resize(static_cast<size_t>(global2local_x.getNPE() * global2local_y.getNPE()
                                    * global2local_z.getNPE()));
