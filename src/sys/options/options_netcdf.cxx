@@ -158,6 +158,12 @@ void readGroup(const std::string& filename, const NcGroup& group, Options& resul
           var.getVar(value.begin());
           result[var_name] = value;
         }
+      } else if (var_type == ncInt) {
+        Tensor<int> value(static_cast<int>(dims[0].getSize()),
+                          static_cast<int>(dims[1].getSize()),
+                          static_cast<int>(dims[2].getSize()));
+        var.getVar(value.begin());
+        result[var_name] = value;
       }
     }
     }

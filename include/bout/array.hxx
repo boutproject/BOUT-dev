@@ -228,6 +228,14 @@ public:
   }
 
   /*!
+   * Change shape of the container.
+   * Invalidates contents.
+   */
+  void reshape(std::tuple<size_type> new_shape) {
+    reallocate(std::get<0>(new_shape));
+  }
+
+  /*!
    * Holds a static variable which controls whether
    * memory blocks (dataBlock) are put into a store
    * or new/deleted each time.
