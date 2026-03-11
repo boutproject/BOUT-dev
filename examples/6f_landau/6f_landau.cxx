@@ -135,7 +135,8 @@ private:
   Field2D phi0;                                  // When diamagnetic terms used
 
   Field2D N0, Ti0, Te0, Ne0, N_imp0, T_imp0;     // number density and temperature
-  Field2D Pi0, Pe0, P_imp0, density_tmp;
+  Field2D Pi0, Pe0, P_imp0;
+  Field2D logn0, density_tmp;
   Field2D q95;
   BoutReal q95_input;
   bool local_q;
@@ -3301,7 +3302,20 @@ protected:
     // Save performance metrics to output, using the
     // given name as the prefix.
     phiSolver->savePerformance(*solver, "phiSolver");
-    // phiSolver->setCoefC(N0);
+
+    density_tmp = N0 + A_imp / AA * N_imp0;
+
+    if (impurity_prof) {
+      logn0 = laplace_alpha * density_tmp;
+      if (laplace_alpha > 0.0) {
+        phiSolver->setCoefC(logn0);
+      }
+    } else {
+      logn0 = laplace_alpha * N0;
+      if (laplace_alpha > 0.0) {
+        phiSolver->setCoefC(logn0);
+      }
+    }
 
     aparSolver = Laplacian::create(&globalOptions["aparSolver"], loc);
 
@@ -3314,43 +3328,25 @@ protected:
     ubyn = 0.0;
     ubyn.setBoundary("U");
 
-    density_tmp = N0 + A_imp / AA * N_imp0;
-
     if (!restarting) { // NOTE(malamast): Do we realy need that?
       // Only if not restarting: Check initial perturbation
 
       // Set U to zero where P0 < vacuum_pressure
       U = where(P0 - vacuum_pressure, U, 0.0);
 
-      // Field2D lap_temp = 0.0;
-      // TODO: diamag in U?
       if (impurity_prof) {
-        Field2D logn0 = laplace_alpha * density_tmp;
         ubyn = U * B0 / density_tmp;
-        mesh->communicate(ubyn);
-        ubyn.applyBoundary();
-
-        // Phi should be consistent with U
-        if (laplace_alpha <= 0.0) {
-          phi = phiSolver->solve(ubyn);
-        } else {
-          phiSolver->setCoefC(logn0);
-          phi = phiSolver->solve(ubyn);
-        }
+        // Ni_tot = N0+A_imp*N_imp0;
+        // else
+        // Ni_tot = N0;
       } else {
-        Field2D logn0 = laplace_alpha * N0;
         ubyn = U * B0 / N0;
-        mesh->communicate(ubyn);
-        ubyn.applyBoundary();
-
-        // Phi should be consistent with U
-        if (laplace_alpha <= 0.0) {
-          phi = phiSolver->solve(ubyn);
-        } else {
-          phiSolver->setCoefC(logn0);
-          phi = phiSolver->solve(ubyn);
-        }
       }
+      mesh->communicate(ubyn);
+      ubyn.applyBoundary();
+
+      // Phi should be consistent with U
+      phi = phiSolver->solve(ubyn);
     }
     // mesh->communicate(phi);
     // phi.applyBoundary();
@@ -3595,48 +3591,28 @@ protected:
       SBC_Gradpar(phi, zero, PF_limit, PF_limit_range);
     }
 
-    // Field2D lap_temp=0.0;
-    // Field2D logn0 = laplace_alpha * N0;
     // ubyn = U * B0 / max(N0, true);
     if (impurity_prof) {
       ubyn = U * B0 / density_tmp;
       if (diamag) {
         ubyn -= Upara0 / density_tmp * Delp2(Pi);
-
-        // ubyn -= Grad_perp(phi0) * Grad_perp(Ni) / N0; //  NOTE(malamast): TODO<! check
-
-      }
-      ubyn.applyBoundary();
-      mesh->communicate(ubyn);
-
-      // Invert laplacian for phi
-      if (laplace_alpha <= 0.0) {
-        phi = phiSolver->solve(ubyn);
-      } else {
-        phiSolver->setCoefC(density_tmp);
-        phi = phiSolver->solve(ubyn);
+        // ubyn -= Upara0 / density_tmp * Laplace_perp(Pi);
+        // ubyn -= Grad_perp(phi0) * Grad_perp(Ni) / density_tmp; //  NOTE(malamast): TODO<! check
       }
     } else {
       ubyn = U * B0 / N0;
       if (diamag) {
         ubyn -= Upara0 / N0 * Delp2(Pi);
         // ubyn -= Upara0 / N0 * Laplace_perp(Pi);
-
         // ubyn -= Grad_perp(phi0) * Grad_perp(Ni) / N0; //  NOTE(malamast): TODO<! check
-
-      }
-      ubyn.applyBoundary();
-      mesh->communicate(ubyn);
-
-      // Invert laplacian for phi
-      if (laplace_alpha <= 0.0) {
-        phi = phiSolver->solve(ubyn);
-      } else {
-        phiSolver->setCoefC(N0);
-        phi = phiSolver->solve(ubyn); // NOTE(malamast): a) Should this be N0 + Ni  instead of just N0
-                                      //                 b) Should we subtract the term 1/N0 Grad_perp(phi0) * Grad_perp(Ni) like we did above with  Upara0 / N0 * Delp2(Pi)?
       }
     }
+    ubyn.applyBoundary();
+    mesh->communicate(ubyn);
+    // Invert laplacian for phi
+    phi = phiSolver->solve(ubyn); // NOTE(malamast): a) Should this be N0 + Ni  instead of just N0
+                                  //                 b) Should we subtract the term 1/N0 Grad_perp(phi0) * Grad_perp(Ni) like we did above with  Upara0 / N0 * Delp2(Pi)?
+
     // mesh->communicate(phi);
     // phi.applyBoundary();
 
@@ -6201,7 +6177,8 @@ protected:
     // third metrix
     BoutReal Ntemp = max(N0, true);
     // TODO: diamag in U?
-    phi_tmp = phiSolver->solve(U * B0 / Ntemp);
+    // phi_tmp = invert_laplace(U * B0 / Ntemp, phi_flags, NULL);
+    phi_tmp = phiSolver->solve(U * B0 / Ntemp); // What is the alpha coef here?
     mesh->communicate(phi_tmp);
     phi_tmp.applyBoundary();
     Ni = ni_tmp - gamma * bracket(phi_tmp, N0, bm_exb);
@@ -6238,7 +6215,7 @@ protected:
    *****************************************************************************/
 
   int precon_phi(BoutReal UNUSED(t), BoutReal UNUSED(cj), BoutReal UNUSED(delta)) {
-    ddt(phi) = phiSolver->solve(C_phi - ddt(U));
+    ddt(phi) = phiSolver->solve(C_phi - ddt(U)); // What is the alpha coef here?
     return 0;
   }
 };
