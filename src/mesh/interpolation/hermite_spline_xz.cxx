@@ -151,11 +151,13 @@ XZHermiteSplineBase<monotonic, imp_type>::XZHermiteSplineBase(int y_offset, Mesh
     }
   }
   if constexpr (imp_type == implementation_type::petsc) {
+#if BOUT_HAS_PETSC
     petsclib = new PetscLib(
         &Options::root()["mesh:paralleltransform:xzinterpolation:hermitespline"]);
     const int m = localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz;
     const int M = m * localmesh->getNXPE() * localmesh->getNYPE() * localmesh->getNZPE();
     MatCreateAIJ(BoutComm::get(), m, m, M, M, 16, nullptr, 16, nullptr, &petscWeights);
+#endif
   }
   if constexpr (monotonic) {
     gf3daccess = std::make_unique<GlobalField3DAccess>(localmesh);
@@ -308,6 +310,7 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
       newWeights[7][i] -= h11_x[i] * h11_z[i] / 4;
       newWeights[5][i] += h11_x[i] * h11_z[i] / 4;
       if (imp_type == implementation_type::petsc) {
+#if BOUT_HAS_PETSC
         PetscInt idxn[1] = {conv.fromLocalToGlobal(x, y + y_offset, z)};
         // output.write("debug: {:d} -> {:d}: {:d}:{:d} -> {:d}:{:d}\n",
         // conv.fromLocalToGlobal(x, y + y_offset, z),
@@ -324,6 +327,7 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
           }
           MatSetValues(petscWeights, 1, idxn, 4, idxm, vals, INSERT_VALUES);
         }
+#endif
       }
     }
     if constexpr (monotonic) {
@@ -337,12 +341,14 @@ void XZHermiteSplineBase<monotonic, imp_type>::calcWeights(
     }
   }
   if constexpr (imp_type == implementation_type::petsc) {
+#if BOUT_HAS_PETSC
     MatAssemblyBegin(petscWeights, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(petscWeights, MAT_FINAL_ASSEMBLY);
     if (!isInit) {
       MatCreateVecs(petscWeights, &rhs, &result);
     }
     isInit = true;
+#endif
   }
 }
 
@@ -406,6 +412,7 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
   }
 
   if constexpr (imp_type == implementation_type::petsc) {
+#if BOUT_HAS_PETSC
     BoutReal* ptr = nullptr;
     const BoutReal* cptr = nullptr;
     VecGetArray(rhs, &ptr);
@@ -429,6 +436,7 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
       ASSERT2(std::isfinite(cptr[int(i)]));
     }
     VecRestoreArrayRead(result, &cptr);
+#endif
   }
 
   if constexpr (imp_type == implementation_type::new_weights) {
