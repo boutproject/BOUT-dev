@@ -229,7 +229,8 @@ private:
   bool issetC;
   bool issetE;
 
-  FieldPerp sol; // solution Field
+  /// Y-index of solution field.
+  int yindex = -1;
 
   MPI_Comm comm;
   KSP ksp = nullptr; ///< PETSc solver

@@ -234,7 +234,9 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   checkFlags();
 #endif
 
-  const int y = b.getIndex(); // Get the Y index
+  // Set member variable so that we can pass through to shell preconditioner if
+  // required
+  yindex = b.getIndex();
   {
     const Timer timer("petscsetup");
 
@@ -243,9 +245,9 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
 
     // Set the operator matrix
     if (fourth_order) {
-      setFourthOrderMatrix(y, inner_X_neumann, outer_X_neumann);
+      setFourthOrderMatrix(yindex, inner_X_neumann, outer_X_neumann);
     } else {
-      setSecondOrderMatrix(y, inner_X_neumann, outer_X_neumann);
+      setSecondOrderMatrix(yindex, inner_X_neumann, outer_X_neumann);
     }
 
     operator2D.assemble();
@@ -358,7 +360,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   }
 
   auto sol = guess.toField();
-  sol.setIndex(y);
+  sol.setIndex(yindex);
   checkData(sol);
 
   // Return the solution
@@ -651,7 +653,7 @@ void LaplacePetsc::setFourthOrderMatrix(int y, bool inner_X_neumann,
 
 /// Preconditioner function
 int LaplacePetsc::precon(Vec x, Vec y) {
-  FieldPerp xfield(indexer->getMesh(), location, sol.getIndex());
+  FieldPerp xfield(indexer->getMesh(), location, yindex);
   xfield = 0.0;
 
   BOUT_FOR_SERIAL(i, indexer->getRegionAll()) {
