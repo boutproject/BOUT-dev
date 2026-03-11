@@ -23,6 +23,8 @@ labels = [r"$" + var + r"$" for var in varlist]
 
 methods = {
     "hermitespline": 3,
+    "hermitesplinelegacy": 3,
+    "hermitesplineserial": 3,
     "lagrange4pt": 3,
     "bilinear": 2,
 }

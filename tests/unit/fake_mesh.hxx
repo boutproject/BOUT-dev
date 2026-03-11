@@ -114,9 +114,13 @@ public:
   int getNXPE() const override { return 1; }
   int getNYPE() const override { return 1; }
   int getNZPE() const override { return 1; }
-  int getXProcIndex() const override { return 1; }
-  int getYProcIndex() const override { return 1; }
-  int getZProcIndex() const override { return 1; }
+  int getXProcIndex() const override { return 0; }
+  int getYProcIndex() const override { return 0; }
+  int getZProcIndex() const override { return 0; }
+  int getProcIndex([[maybe_unused]] int X, [[maybe_unused]] int Y,
+                   [[maybe_unused]] int Z) const override {
+    return 0;
+  }
   bool firstX() const override { return true; }
   bool lastX() const override { return true; }
   int sendXOut(BoutReal* UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) override {
