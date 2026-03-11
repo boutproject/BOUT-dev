@@ -51,19 +51,6 @@
 #include <set>
 #include <vector>
 
-#define KSP_RICHARDSON "richardson"
-#define KSP_CHEBYSHEV "chebyshev"
-#define KSP_CG "cg"
-#define KSP_GMRES "gmres"
-#define KSP_TCQMR "tcqmr"
-#define KSP_BCGS "bcgs"
-#define KSP_CGS "cgs"
-#define KSP_TFQMR "tfqmr"
-#define KSP_CR "cr"
-#define KSP_LSQR "lsqr"
-#define KSP_BICG "bicg"
-#define KSP_PREONLY "preonly"
-
 namespace {
 PetscErrorCode laplacePCapply(PC pc, Vec x, Vec y) {
   PetscFunctionBegin; // NOLINT
