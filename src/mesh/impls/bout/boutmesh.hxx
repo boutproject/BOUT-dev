@@ -63,6 +63,7 @@ public:
   int getXProcIndex() const override; ///< This processor's index in X direction
   int getYProcIndex() const override; ///< This processor's index in Y direction
   int getZProcIndex() const override; ///< This processor's index in Z direction
+  int getProcIndex(int X, int Y, int Z) const override;
 
   /////////////////////////////////////////////
   // X communications

@@ -555,6 +555,8 @@ int BoutMesh::load() {
   PE_XIND = MYPE % NXPE;
   PE_ZIND = 0;
 
+  ASSERT2(MYPE == getProcIndex(PE_XIND, PE_YIND, PE_ZIND));
+
   // Set the other grid sizes from nx, ny, nz
   setDerivedGridSizes();
 
@@ -1035,6 +1037,8 @@ void BoutMesh::createXBoundaries() {
     boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend, this));
   }
 }
+
+int BoutMesh::getProcIndex(int X, int Y, int Z) const { return Y * NXPE + X; }
 
 void BoutMesh::createYBoundaries() {
   if (MYG <= 0) {

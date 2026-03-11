@@ -82,7 +82,7 @@ public:
   }
 
   void pop() {}
-  void pop(int [[maybe_unused]] id) {}
+  void pop([[maybe_unused]] int id) {}
   void clear() {}
 
   void dump() {}

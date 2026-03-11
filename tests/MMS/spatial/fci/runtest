@@ -17,7 +17,6 @@ import zoidberg as zb
 from boutdata.collect import collect
 from boututils.run_wrapper import build_and_log, launch_safe
 from numpy import arange, array, linspace, log, polyfit
-from scipy.interpolate import RectBivariateSpline as RBS
 
 # Global parameters
 DIRECTORY = "data"
@@ -46,15 +45,16 @@ NLIST = [8, 16, 32, 64]
 dx = 1.0 / array(NLIST)
 
 
-def myRBS(a, b, c):
-    """RectBivariateSpline, but automatically tune spline degree for small arrays"""
-    mx, _ = c.shape
-    kx = max(mx - 1, 1)
-    kx = min(kx, 3)
-    return RBS(a, b, c, kx=kx)
+success = True
 
+error_2 = {}
+error_inf = {}
+method_orders = {}
 
-zb.poloidal_grid.RectBivariateSpline = myRBS
+# Run with periodic Y?
+yperiodic = True
+
+build_and_log("FCI MMS test")
 
 
 def quiet_collect(name: str) -> float:
