@@ -10,8 +10,8 @@
 #include "bout/region.hxx"
 #include "bout/sys/parallel_stencils.hxx"
 #include "bout/sys/range.hxx"
+#include <algorithm>
 #include <functional>
-#include <utility>
 
 class BoundaryRegionIter {
 public:
@@ -173,7 +173,7 @@ private:
 
 class BoundaryRegionIterY : public BoundaryRegionIter {
 public:
-  virtual ~BoundaryRegionIterY() = default;
+  ~BoundaryRegionIterY() override = default;
   BoundaryRegionIterY(const RangeIterator& r, int y, int dir, bool is_end, Mesh* mesh)
       : BoundaryRegionIter(r.ind, y, 0, dir, mesh), r(r), is_end(is_end) {}
 

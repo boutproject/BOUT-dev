@@ -7,6 +7,7 @@
 #include "bout/mask.hxx"
 #include "bout/options.hxx"
 #include "bout/parallel_boundary_region.hxx"
+#include "bout/region.hxx"
 #include <memory>
 #include <vector>
 
