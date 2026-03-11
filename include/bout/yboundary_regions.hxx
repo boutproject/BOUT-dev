@@ -104,20 +104,20 @@ public:
   bool contains(Ind3D ind) {
     if constexpr (dir == 1) {
       return _contains[1][ind];
-    } else if constexpr (dir == -1) {
-      return _contains[0][ind];
-    } else {
-      static_assert(false); // Only for +1 and -1
     }
+    if constexpr (dir == -1) {
+      return _contains[0][ind];
+    }
+    static_assert(false); // Only for +1 and -1
   }
   bool contains(int dir, Ind3D ind) const {
     if (dir == 1) {
       return contains<+1>(ind);
-    } else if (dir == -1) {
-      return contains<-1>(ind);
-    } else {
-      throw BoutException("only dir == 1 and dir == -1 are implemented, not {}", dir);
     }
+    if (dir == -1) {
+      return contains<-1>(ind);
+    }
+    throw BoutException("only dir == 1 and dir == -1 are implemented, not {}", dir);
   }
 
 private:
