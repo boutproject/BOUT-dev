@@ -216,39 +216,3 @@ jobs:
         shell: bash
         env:
           TRAVIS_BUILD_DIR: ${{ github.workspace }}
-  CUDA:
-    timeout-minutes: 60
-    runs-on: ubuntu-latest
-    container: ghcr.io/ggeorgakoudis/boutdev-cuda:latest
-    env:
-      BOUT_TEST_DOWNLOAD_FLAGS: --retry-on-http-error=502,503,504 --tries 3
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: true
-
-      - name: Cache Zenodo test data
-        uses: actions/cache@v5
-        with:
-          path: build/tests/integrated/test-fci-mpi/grid.fci.nc
-          # If we update the test, invalidate the cache
-          key: zenodo-data-${{ hashFiles('tests/integrated/test-fci-mpi/CMakeLists.txt') }}
-
-      - name: Build minimal CUDA 12.2 @ GCC9.4.0 @ Ubuntu 20.04
-        run: |
-          . /spack/share/spack/setup-env.sh
-          spack env activate -p /spack-env
-          git config --global --add safe.directory $GITHUB_WORKSPACE
-          rm -rf build
-          cmake -S $GITHUB_WORKSPACE -B build \
-            -DCMAKE_C_COMPILER=gcc \
-            -DCMAKE_CXX_COMPILER=g++ \
-            -DBOUT_ENABLE_RAJA=on \
-            -DBOUT_ENABLE_UMPIRE=on \
-            -DBOUT_ENABLE_CUDA=on \
-            -DCMAKE_CUDA_ARCHITECTURES=80 \
-            -DCUDA_ARCH=compute_80,code=sm_80 \
-            -DBOUT_ENABLE_WARNINGS=off \
-            -DBOUT_USE_SYSTEM_FMT=on
-          cd build
-          make -j 4

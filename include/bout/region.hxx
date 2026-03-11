@@ -972,6 +972,12 @@ Region<T> operator+(const Region<T>& lhs, const Region<T>& rhs) {
   return Region<T>(indices);
 }
 
+template <typename T>
+Region<T> operator+(Region<T>&& lhs, const Region<T>& rhs) {
+  lhs += rhs;
+  return std::move(lhs);
+}
+
 /// Returns a new region based on input but with indices offset by
 /// a constant
 template <typename T>
