@@ -4,9 +4,9 @@
 #include "bout/assert.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/globals.hxx"
+#include "bout/mask.hxx"
 #include "bout/options.hxx"
 #include "bout/parallel_boundary_region.hxx"
-#include "bout/mask.hxx"
 #include <memory>
 #include <vector>
 

@@ -37,10 +37,28 @@ int main(int argc, char** argv) {
 
     dump[fmt::format("field_{:s}", boundary_name)] = fields[i];
   }
+  for (const auto& name : {"forward_xt_prime", "backward_xt_prime"}) {
+    Field3D tmp;
+    mesh->get(tmp, name);
+    dump[name] = tmp;
+  }
 
-  Options dummy;
-  YBoundary ybndry;
-  ybndry.init(dummy, mesh);
+  {
+    Options dummy;
+    YBoundary ybndry;
+    ybndry.init(dummy, mesh);
+
+    std::vector<Field3D> fields(mesh->ystart * 2 + 1, Field3D{0.0});
+    for (auto& field : fields) {
+      field.allocate();
+    }
+    ybndry.iter_pnts(
+        [&](const auto& pnt) { fields[pnt.dir + mesh->ystart][pnt.ind()] += 1; });
+
+    for (int i = -mesh->ystart; i <= mesh->ystart; ++i) {
+      dump[fmt::format("ybndry_{}", i)] = fields[i + mesh->ystart];
+    }
+  }
 
   bout::writeDefaultOutputFile(dump);
 
