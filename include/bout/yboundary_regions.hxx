@@ -86,12 +86,45 @@ public:
     }
     is_init = true;
     optptr = &options;
+    // Cache boundary regions
+    _contains.emplace_back(mesh, false);
+    _contains.emplace_back(mesh, false);
+    iter_pnts([&](const auto& pnt) {
+      if (pnt.dir == 1) {
+        _contains[1][pnt.ind()] = true;
+      } else if (pnt.dir == -1) {
+        _contains[0][pnt.ind()] = true;
+      }
+    });
+  }
+
+  bool contains_ylow(Ind3D ind) const { return _contains[0][ind] }
+  bool contains_yhigh(Ind3D ind) const { return _contains[1][ind] }
+  template <int dir>
+  bool contains(Ind3D ind) {
+    if constexpr (dir == 1) {
+      return _contains[1][ind];
+    } else if constexpr (dir == -1) {
+      return _contains[0][ind];
+    } else {
+      static_assert(false); // Only for +1 and -1
+    }
+  }
+  bool contains(int dir, Ind3D ind) const {
+    if (dir == 1) {
+      return contains<+1>(ind);
+    } else if (dir == -1) {
+      return contains<-1>(ind);
+    } else {
+      throw BoutException("only dir == 1 and dir == -1 are implemented, not {}", dir);
+    }
   }
 
 private:
   std::vector<std::shared_ptr<BoundaryRegionPar>> boundary_regions_par;
   std::vector<std::shared_ptr<NewBoundaryRegionY>> boundary_regions;
 
+  std::vector<BoutMask> _contains;
   bool is_init{false};
   Options* optptr;
 };
