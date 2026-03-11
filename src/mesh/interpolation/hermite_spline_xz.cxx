@@ -544,7 +544,8 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(const Field3D& f,
 
 // ensure they are instantiated
 template class XZHermiteSplineBase<true, bout::details::implementation_type::new_weights>;
-template class XZHermiteSplineBase<false, bout::details::implementation_type::new_weights>;
+template class XZHermiteSplineBase<false,
+                                   bout::details::implementation_type::new_weights>;
 template class XZHermiteSplineBase<true, bout::details::implementation_type::legacy>;
 template class XZHermiteSplineBase<false, bout::details::implementation_type::legacy>;
 #if BOUT_HAS_PETSC

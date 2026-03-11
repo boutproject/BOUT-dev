@@ -36,7 +36,7 @@ namespace bout {
 namespace details {
 enum class implementation_type { new_weights, petsc, legacy };
 }
-}
+} // namespace bout
 
 class Options;
 class GlobalField3DAccess;
@@ -225,19 +225,23 @@ public:
 };
 
 using XZMonotonicHermiteSplineSerial =
-  XZHermiteSplineBase<true, bout::details::implementation_type::new_weights>;
+    XZHermiteSplineBase<true, bout::details::implementation_type::new_weights>;
 using XZHermiteSplineSerial =
     XZHermiteSplineBase<false, bout::details::implementation_type::new_weights>;
 using XZMonotonicHermiteSplineLegacy =
     XZHermiteSplineBase<true, bout::details::implementation_type::legacy>;
-using XZHermiteSplineLegacy = XZHermiteSplineBase<false, bout::details::implementation_type::legacy>;
+using XZHermiteSplineLegacy =
+    XZHermiteSplineBase<false, bout::details::implementation_type::legacy>;
 #if BOUT_HAS_PETSC
-using XZMonotonicHermiteSpline = XZHermiteSplineBase<true, bout::details::implementation_type::petsc>;
-using XZHermiteSpline = XZHermiteSplineBase<false, bout::details::implementation_type::petsc>;
+using XZMonotonicHermiteSpline =
+    XZHermiteSplineBase<true, bout::details::implementation_type::petsc>;
+using XZHermiteSpline =
+    XZHermiteSplineBase<false, bout::details::implementation_type::petsc>;
 #else
 using XZMonotonicHermiteSpline =
     XZHermiteSplineBase<true, bout::details::implementation_type::new_weights>;
-using XZHermiteSpline = XZHermiteSplineBase<false, bout::details::implementation_type::new_weights>;
+using XZHermiteSpline =
+    XZHermiteSplineBase<false, bout::details::implementation_type::new_weights>;
 #endif
 
 /// XZLagrange4pt interpolation class
