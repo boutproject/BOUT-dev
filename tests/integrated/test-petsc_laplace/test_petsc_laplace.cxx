@@ -182,16 +182,8 @@ int main(int argc, char** argv) {
     Options::root()["laplace"].setConditionallyUsed();
 
     // For 3D metrics, we need to use one of PETSc's preconditioners
-    // and mumps seems to be the best? Or at least HYPRE doesn't work
-    // on this test with more than one processor.
-#ifdef PETSC_HAVE_MUMPS
-    constexpr auto petsc_has_mumps = true;
-#else
-    constexpr auto petsc_has_mumps = false;
-#endif
-
-    // Preconditioner to use for 3D metrics
-    constexpr auto petsc_pc = petsc_has_mumps ? "mumps" : "sor";
+    // and `sor` seems to always be available
+    constexpr auto petsc_pc = "sor";
 
     auto& options_2nd = Options::root()["petsc2nd"];
     if constexpr (bout::build::use_metric_3d) {
