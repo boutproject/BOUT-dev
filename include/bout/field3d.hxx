@@ -866,7 +866,7 @@ inline Field3D operator/(const Field3DParallel& lhs, const Field2D& rhs) {
 
 inline Field3DParallel
 filledFrom(const Field3DParallel& f,
-           std::function<BoutReal(int yoffset, Ind3D index)> func) {
+           const std::function<BoutReal(int yoffset, Ind3D index)>& func) {
   auto result{emptyFrom(f)};
   if (f.isFci()) {
     BOUT_FOR(i, result.getRegion("RGN_NOY")) { result[i] = func(0, i); }
