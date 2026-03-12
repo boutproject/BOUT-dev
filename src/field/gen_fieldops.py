@@ -16,7 +16,6 @@ from __future__ import print_function
 from builtins import object
 
 import argparse
-from collections import OrderedDict
 import contextlib
 from copy import deepcopy as copy
 import itertools
