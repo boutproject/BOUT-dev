@@ -23,6 +23,7 @@
  *
  **************************************************************************/
 
+#include "bout/unused.hxx"
 #include <bout/boutcomm.hxx>
 #include <bout/globals.hxx>
 

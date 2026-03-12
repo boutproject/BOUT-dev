@@ -25,6 +25,7 @@
  *
  */
 #include "bout/utils.hxx"
+#include <optional>
 class Field2D;
 
 #pragma once
