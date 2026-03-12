@@ -744,26 +744,45 @@ FieldPerp Options::as<FieldPerp>(const FieldPerp& similar_to) const {
 }
 
 namespace {
-/// Visitor to convert an int, BoutReal or Array/Matrix/Tensor to the
-/// appropriate container
+/// Primary declaration of ConvertContainer, for specialization below.
+/// No definition needed unless it is used.
 template <class Container>
-struct ConvertContainer {
+struct ConvertContainer;
+
+/// Visitor to convert an int, BoutReal or Array/Matrix/Tensor to the
+/// appropriate container. Templated on both the container class C
+/// and scalar type Scalar.
+template <template <class> class C, class Scalar>
+struct ConvertContainer<C<Scalar>> {
+  using Container = C<Scalar>;
   ConvertContainer(std::string error, Container similar_to_)
       : error_message(std::move(error)), similar_to(std::move(similar_to_)) {}
 
   Container operator()(int value) {
     Container result(similar_to);
-    std::fill(std::begin(result), std::end(result), value);
+    std::fill(std::begin(result), std::end(result), static_cast<Scalar>(value));
     return result;
   }
 
   Container operator()(BoutReal value) {
     Container result(similar_to);
-    std::fill(std::begin(result), std::end(result), value);
+    std::fill(std::begin(result), std::end(result), static_cast<Scalar>(value));
     return result;
   }
 
   Container operator()(const Container& value) { return value; }
+
+  // Convert between scalar types: C<OtherScalar> -> C<Scalar>
+  // The size of the returned result will be the same as the input value
+  template <class OtherScalar>
+  Container operator()(const C<OtherScalar>& value) {
+    Container result(similar_to);
+    result.reshape(value.shape()); // Resize to shape of input
+
+    std::transform(std::begin(value), std::end(value), std::begin(result),
+                   [](const OtherScalar& x) { return static_cast<Scalar>(x); });
+    return result;
+  }
 
   template <class Other>
   Container operator()([[maybe_unused]] const Other& value) {
