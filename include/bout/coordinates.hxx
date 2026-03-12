@@ -3,16 +3,16 @@
  *
  * ChangeLog
  * =========
- * 
+ *
  * 2014-11-10 Ben Dudson <bd512@york.ac.uk>
  *    * Created by separating metric from Mesh
  *
- * 
+ *
  **************************************************************************
  * Copyright 2014-2025 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -402,10 +402,10 @@ private:
 class TokamakCoordinates : public Coordinates {
 public:
   TokamakCoordinates(Mesh *mesh) : Coordinates(mesh) {
-    
+
   }
 private:
-  
+
 };
 */
 
