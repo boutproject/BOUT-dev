@@ -22,12 +22,29 @@
  *
  **************************************************************************/
 
-#include <bout/sys/expressionparser.hxx>
+#include "bout/sys/expressionparser.hxx"
 
+#include <bout/bout_types.hxx>
+#include <bout/boutexception.hxx>
+#include <bout/sys/generator_context.hxx>
+#include <bout/sys/gettext.hxx>
+#include <bout/unused.hxx>
+#include <bout/utils.hxx>
+
+#include <fmt/format.h>
+
+#include <algorithm>
+#include <cctype>
+#include <cmath>
+#include <cstdio>
+#include <ios>
+#include <list>
+#include <memory>
+#include <set>
+#include <sstream>
+#include <string>
 #include <utility>
-
-#include "bout/sys/gettext.hxx"
-#include "bout/utils.hxx"
+#include <vector>
 
 using std::list;
 using std::string;
@@ -183,7 +200,7 @@ FieldGeneratorPtr FieldBinary::clone(const list<FieldGeneratorPtr> args) {
 bool toBool(BoutReal rval) {
   int ival = ROUND(rval);
   if ((fabs(rval - static_cast<BoutReal>(ival)) > 1e-3) or (ival < 0) or (ival > 1)) {
-    throw BoutException(_("Boolean operator argument {:e} is not a bool"), rval);
+    throw BoutException(_f("Boolean operator argument {:e} is not a bool"), rval);
   }
   return ival == 1;
 }
@@ -302,11 +319,6 @@ ExpressionParser::fuzzyFind(const std::string& name,
 FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo& lex) const {
   // Make a nice error message if we couldn't find the identifier
   const auto generatorNotFoundErrorMessage = [&](const std::string& name) -> std::string {
-    const std::string message_template = _(
-        R"(Couldn't find generator '{}'. BOUT++ expressions are now case-sensitive, so you
-may need to change your input file.
-{})");
-
     // Start position of the current identifier: by this point, we've either
     // moved one character past the token, or we're still at the start
     const auto start =
@@ -326,13 +338,18 @@ may need to change your input file.
                           [](const auto& match) -> bool { return match.distance == 0; });
 
     // No matches, just point out the error
+    std::string error_message = fmt::format(
+        _f(
+            R"(Couldn't find generator '{}'. BOUT++ expressions are now case-sensitive, so you
+may need to change your input file.
+{})"),
+        name, problem_bit);
     if (possible_matches.empty()) {
-      return fmt::format(message_template, name, problem_bit);
+      return error_message;
     }
 
     // Give the first suggestion as a possible alternative
-    std::string error_message = fmt::format(message_template, name, problem_bit);
-    error_message += fmt::format(_("\n  {1: ^{2}}{0}\n  Did you mean '{0}'?"),
+    error_message += fmt::format(_f("\n  {1: ^{2}}{0}\n  Did you mean '{0}'?"),
                                  possible_matches.begin()->name, "", start);
     return error_message;
   };

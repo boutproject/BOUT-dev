@@ -139,7 +139,7 @@ class BoutMask;
   BOUT_FOR_OMP(index, (region), for schedule(BOUT_OPENMP_SCHEDULE) nowait)
 // NOLINTEND(cppcoreguidelines-macro-usage,bugprone-macro-parentheses)
 
-enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };
+enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2, IND_GLOBAL_3D = 3 };
 
 /// Indices base class for Fields -- Regions are dereferenced into these
 ///
@@ -386,6 +386,7 @@ inline SpecificInd<N> operator-(SpecificInd<N> lhs, const SpecificInd<N>& rhs) {
 using Ind3D = SpecificInd<IND_TYPE::IND_3D>;
 using Ind2D = SpecificInd<IND_TYPE::IND_2D>;
 using IndPerp = SpecificInd<IND_TYPE::IND_PERP>;
+using IndG3D = SpecificInd<IND_TYPE::IND_GLOBAL_3D>;
 
 /// Get string representation of Ind3D
 inline std::string toString(const Ind3D& i) {
@@ -970,6 +971,12 @@ Region<T> operator+(const Region<T>& lhs, const Region<T>& rhs) {
   auto indicesRhs = rhs.getIndices();
   indices.insert(std::end(indices), std::begin(indicesRhs), std::end(indicesRhs));
   return Region<T>(indices);
+}
+
+template <typename T>
+Region<T> operator+(Region<T>&& lhs, const Region<T>& rhs) {
+  lhs += rhs;
+  return std::move(lhs);
 }
 
 /// Returns a new region based on input but with indices offset by

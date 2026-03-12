@@ -19,6 +19,7 @@
 #include <iterator>
 #include <memory>
 #include <numeric>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -113,9 +114,13 @@ public:
   int getNXPE() const override { return 1; }
   int getNYPE() const override { return 1; }
   int getNZPE() const override { return 1; }
-  int getXProcIndex() const override { return 1; }
-  int getYProcIndex() const override { return 1; }
-  int getZProcIndex() const override { return 1; }
+  int getXProcIndex() const override { return 0; }
+  int getYProcIndex() const override { return 0; }
+  int getZProcIndex() const override { return 0; }
+  int getProcIndex([[maybe_unused]] int X, [[maybe_unused]] int Y,
+                   [[maybe_unused]] int Z) const override {
+    return 0;
+  }
   bool firstX() const override { return true; }
   bool lastX() const override { return true; }
   int sendXOut(BoutReal* UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) override {
@@ -236,19 +241,18 @@ public:
                                  "RGN_OUTER_X"};
 
     // Sum up and get unique points in the boundaries defined above
-    addRegion2D("RGN_BNDRY",
-                std::accumulate(begin(boundary_names), end(boundary_names),
-                                Region<Ind2D>{},
-                                [this](Region<Ind2D>& a, const std::string& b) {
-                                  return a + getRegion2D(b);
-                                })
-                    .unique());
+    addRegion2D("RGN_BNDRY", std::accumulate(begin(boundary_names), end(boundary_names),
+                                             Region<Ind2D>{},
+                                             [&](Region<Ind2D> a, const std::string& b) {
+                                               return std::move(a) + getRegion2D(b);
+                                             })
+                                 .unique());
 
     addRegion3D("RGN_BNDRY",
                 std::accumulate(begin(boundary_names), end(boundary_names),
                                 Region<Ind3D>{},
-                                [this](Region<Ind3D>& a, const std::string& b) {
-                                  return a + getRegion3D(b);
+                                [this](Region<Ind3D> a, const std::string& b) {
+                                  return std::move(a) + getRegion3D(b);
                                 })
                     .unique());
     addRegionPerp("RGN_BNDRY",

@@ -145,6 +145,7 @@ void Field3D::splitParallelSlices() {
     yup_fields.emplace_back(fieldmesh);
     ydown_fields.emplace_back(fieldmesh);
   }
+  resetRegionParallel();
 }
 
 void Field3D::clearParallelSlices() {
@@ -867,6 +868,15 @@ Field3D::getValidRegionWithDefault(const std::string& region_name) const {
 
 void Field3D::setRegion(const std::string& region_name) {
   regionID = fieldmesh->getRegionID(region_name);
+}
+
+void Field3D::resetRegionParallel() {
+  if (isFci()) {
+    for (int i = 0; i < fieldmesh->ystart; ++i) {
+      yup_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", i + 1));
+      ydown_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", -i - 1));
+    }
+  }
 }
 
 Field3D& Field3D::enableTracking(const std::string& name,

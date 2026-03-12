@@ -1,7 +1,6 @@
 #include <bout/boutcomm.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/msg_stack.hxx>
-#include <bout/utils.hxx>
 
 #include <mpi.h>
 
@@ -11,7 +10,6 @@
 
 #include <cstdlib>
 #include <string>
-#include <utility>
 
 #include <fmt/format.h>
 

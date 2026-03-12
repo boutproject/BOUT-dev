@@ -296,11 +296,12 @@ set(BOUT_SOURCES
     ./src/mesh/interpolation/hermite_spline_z.cxx
     ./src/mesh/interpolation/interpolation_z.cxx
     ./src/mesh/interpolation/lagrange_4pt_xz.cxx
-    ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
     ./src/mesh/invert3x3.hxx
     ./src/mesh/mesh.cxx
     ./src/mesh/parallel/fci.cxx
     ./src/mesh/parallel/fci.hxx
+    ./src/mesh/parallel/fci_comm.cxx
+    ./src/mesh/parallel/fci_comm.hxx
     ./src/mesh/parallel/identity.cxx
     ./src/mesh/parallel/shiftedmetric.cxx
     ./src/mesh/parallel/shiftedmetricinterp.cxx
@@ -374,6 +375,7 @@ set(BOUT_SOURCES
     ./src/sys/options/options_adios.hxx
     ./src/sys/optionsreader.cxx
     ./src/sys/output.cxx
+    ./src/sys/output_bout_types.cxx
     ./src/sys/petsclib.cxx
     ./src/sys/range.cxx
     ./src/sys/slepclib.cxx
@@ -525,10 +527,10 @@ set_target_properties(
 set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -L\$BOUT_LIB_PATH -lbout++")
 set(BOUT_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(CONFIG_CFLAGS
-    "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CXX_FLAGS} -std=c++17"
+    "${CONFIG_CFLAGS} -I\${BOUT_INCLUDE_PATH} -I${CMAKE_CURRENT_BINARY_DIR}/include ${CMAKE_CXX_FLAGS} -std=c++20"
 )
 
-target_compile_features(bout++ PUBLIC cxx_std_17)
+target_compile_features(bout++ PUBLIC cxx_std_20)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
 # Optional compiler features

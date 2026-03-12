@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 
+#include "fmt/base.h"
 #include "fmt/core.h"
 
 /// Throw BoutRhsFail with \p message if any one process has non-zero
@@ -19,10 +20,10 @@ public:
   BoutException& operator=(BoutException&&) = delete;
   BoutException(std::string msg);
 
-  template <class S, class... Args>
-  BoutException(S&& format, Args&&... args)
-      : BoutException(fmt::format(std::forward<S>(format),
-                                  std::forward<decltype(args)>(args)...)) {}
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  BoutException(fmt::format_string<Args...> format, Args&&... args)
+      : BoutException(fmt::vformat(format, fmt::make_format_args(args...))) {}
 
   ~BoutException() override;
 
@@ -44,19 +45,19 @@ private:
 class BoutRhsFail : public BoutException {
 public:
   BoutRhsFail(std::string message) : BoutException(std::move(message)) {}
-  template <class S, class... Args>
-  BoutRhsFail(S&& format, Args&&... args)
-      : BoutRhsFail(fmt::format(std::forward<S>(format),
-                                std::forward<decltype(args)>(args)...)) {}
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  BoutRhsFail(fmt::format_string<Args...> format, Args&&... args)
+      : BoutRhsFail(fmt::vformat(format, fmt::make_format_args(args...))) {}
 };
 
 class BoutIterationFail : public BoutException {
 public:
   BoutIterationFail(std::string message) : BoutException(std::move(message)) {}
-  template <class S, class... Args>
-  BoutIterationFail(S&& format, Args&&... args)
-      : BoutIterationFail(fmt::format(std::forward<S>(format),
-                                      std::forward<decltype(args)>(args)...)) {}
+  template <class... Args>
+  // NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
+  BoutIterationFail(fmt::format_string<Args...> format, Args&&... args)
+      : BoutIterationFail(fmt::vformat(format, fmt::make_format_args(args...))) {}
 };
 
 #endif

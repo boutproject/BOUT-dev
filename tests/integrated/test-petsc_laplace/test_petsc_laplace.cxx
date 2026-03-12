@@ -37,6 +37,7 @@
 #include "bout/options.hxx"
 #include "bout/options_io.hxx"
 #include "bout/output.hxx"
+#include "bout/petsclib.hxx"
 #include "bout/traits.hxx"
 #include "bout/vecops.hxx"
 
@@ -172,21 +173,17 @@ Field3D generate_a5(Mesh& mesh) {
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
+
+  // Need this here to ensure PETSc isn't finalised until after the global mesh,
+  // otherwise we get problems from `MPI_Comm_free` on the X communicator
+  PetscLib lib{};
   {
     // Not be used for 3D metrics
     Options::root()["laplace"].setConditionallyUsed();
 
     // For 3D metrics, we need to use one of PETSc's preconditioners
-    // and mumps seems to be the best? Or at least HYPRE doesn't work
-    // on this test with more than one processor.
-#ifdef PETSC_HAVE_MUMPS
-    constexpr auto petsc_has_mumps = true;
-#else
-    constexpr auto petsc_has_mumps = false;
-#endif
-
-    // Preconditioner to use for 3D metrics
-    constexpr auto petsc_pc = petsc_has_mumps ? "mumps" : "sor";
+    // and `sor` seems to always be available
+    constexpr auto petsc_pc = "sor";
 
     auto& options_2nd = Options::root()["petsc2nd"];
     if constexpr (bout::build::use_metric_3d) {
@@ -209,25 +206,6 @@ int main(int argc, char** argv) {
 
     // Solving equations of the form d*Delp2(f) + 1/c*Grad_perp(c).Grad_perp(f) + a*f = b for various f, a, c, d
     using bout::globals::mesh;
-
-    Field3D loop_x;
-    Field3D loop_z;
-    loop_x.allocate();
-    loop_z.allocate();
-    for (int jx = mesh->xstart; jx <= mesh->xend; jx++) {
-      const BoutReal x = mesh->GlobalX(jx);
-      for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        for (int jz = mesh->zstart; jz <= mesh->zend; jz++) {
-          const BoutReal z = mesh->GlobalZ(jz);
-          loop_x(jx, jy, jz) = x;
-          loop_z(jx, jy, jz) = z;
-        }
-      }
-    }
-    dump["loop_x"] = loop_x;
-    dump["loop_z"] = loop_z;
-    dump["exp_x"] = FieldFactory::get()->create3D("x");
-    dump["exp_z"] = FieldFactory::get()->create3D("z");
 
     // Only Neumann x-boundary conditions are implemented so far, so test functions should be Neumann in x and periodic in z.
     // Use Field3D's, but solver only works on FieldPerp slices, so only use 1 y-point

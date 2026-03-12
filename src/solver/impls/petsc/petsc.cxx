@@ -807,7 +807,7 @@ int PetscSolver::init() {
 
                     if (ierr != 0) {
                       output.write("ERROR: {} {} : ({}, {}) -> ({}, {}) : {} -> {}\n",
-                                   row, x, y, xi, yi, ind2, ind2 + n3d - 1);
+                                   row, col, x, y, xi, yi, ind2, ind2 + n3d - 1);
                     }
                     CHKERRQ(ierr);
                   }
