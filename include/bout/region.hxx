@@ -1,9 +1,9 @@
 /**************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
  * Region class by D. Dickinson 2018
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -170,8 +170,8 @@ struct SpecificInd {
   int ny = -1, nz = -1; ///< Sizes of y and z dimensions
 
   SpecificInd() = default;
-  SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz){};
-  explicit SpecificInd(int i) : ind(i){};
+  SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz) {};
+  explicit SpecificInd(int i) : ind(i) {};
 
   /// Allow explicit conversion to an int
   explicit operator int() const { return ind; }
@@ -491,10 +491,9 @@ template <typename T = Ind3D>
 class Region {
   // Following prevents a Region being created with anything other
   // than Ind2D, Ind3D or IndPerp as template type
-  static_assert(
-      std::is_base_of_v<
-          Ind2D, T> || std::is_base_of_v<Ind3D, T> || std::is_base_of_v<IndPerp, T>,
-      "Region must be templated with one of IndPerp, Ind2D or Ind3D");
+  static_assert(std::is_base_of_v<Ind2D, T> || std::is_base_of_v<Ind3D, T>
+                    || std::is_base_of_v<IndPerp, T>,
+                "Region must be templated with one of IndPerp, Ind2D or Ind3D");
 
 public:
   using data_type = T;
@@ -570,7 +569,7 @@ public:
   };
 
   Region(RegionIndices& indices, int maxregionblocksize = MAXREGIONBLOCKSIZE)
-      : indices(indices), blocks(getContiguousBlocks(maxregionblocksize)){};
+      : indices(indices), blocks(getContiguousBlocks(maxregionblocksize)) {};
 
   // We need to first set the blocks, and only after that call getRegionIndices.
   // Do not put in the member initialisation

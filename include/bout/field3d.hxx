@@ -1,8 +1,8 @@
 /**************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ * Contact: Ben Dudson, dudson2@llnl.gov
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -348,6 +348,14 @@ public:
     return std::end(getRegion("RGN_ALL"));
   };
 
+  /// Convert (x, y, z) to an Ind3D
+  /// Requires mesh size.
+  Ind3D indexAt(int x, int y, int z) const {
+    const int ny = this->getNy();
+    const int nz = this->getNz();
+    return Ind3D{(((x * ny) + y) * nz) + z, ny, nz};
+  }
+
   BoutReal& operator[](const Ind3D& d) { return data[d.ind]; }
   const BoutReal& operator[](const Ind3D& d) const { return data[d.ind]; }
 
@@ -361,7 +369,7 @@ public:
    * Direct access to the underlying data array
    *
    * If CHECK > 2 then bounds checking is performed
-   * 
+   *
    * If CHECK <= 2 then no checks are performed, to
    * allow inlining and optimisation of inner loops
    */
