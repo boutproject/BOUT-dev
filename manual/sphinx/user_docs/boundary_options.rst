@@ -450,7 +450,7 @@ Previously of they where implemented using a `RangeIterator`::
         lower_y = options["lower_y"].doc("Boundary on lower y?").withDefault<bool>(lower_y);
         upper_y = options["upper_y"].doc("Boundary on upper y?").withDefault<bool>(upper_y);
       }
-    
+
       void rhs() {
         BoutReal totalFlux = 0;
         if (lower_y) {
@@ -478,14 +478,14 @@ Previously of they where implemented using a `RangeIterator`::
           }
         }
       }
-    
+
     private:
       bool lower_y{true};
       bool upper_y{true};
       const Field3D& N;
       const Field3D& V;
     }
-    
+
 
 This can be replaced using the `YBoundary` class, which not only simplifies the
 code, but also allows to have the same code working with non-field-aligned
@@ -499,20 +499,20 @@ geometries, as flux coordinate independent (FCI) method::
         // Set what kind of yboundaries you want to include
         yboundary.init(opt);
       }
-    
+
       void rhs() {
         BoutReal totalFlux = 0;
         yboundary.iter_pnts([&](auto& pnt) {
           BoutReal flux = pnt.interpolate_sheath_o2(N) * pnt.interpolate_sheath_o2(V);
         });
       }
-    
+
     private:
       YBoundary ybounday;
       const Field3D& N;
       const Field3D& V;
     };
-    
+
 
 
 There are several member functions of ``pnt``. ``pnt`` is of type
