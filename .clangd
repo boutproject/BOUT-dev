@@ -1,0 +1,6 @@
+Diagnostics:
+  MissingIncludes: Strict
+  ClangTidy:
+    FastCheckFilter: None
+  Includes:
+    IgnoreHeader: ["adios2/.*", "bits/.*", "cpptrace/.*", "petsc.*"]

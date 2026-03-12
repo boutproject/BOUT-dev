@@ -1,5 +1,5 @@
 ---
-Checks:          'clang-diagnostic-*,clang-analyzer-*,performance-*,readability-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,mpi-*,misc-*,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers,-misc-non-private-member-variables-in-classes,-clang-analyzer-optin.mpi*,-bugprone-exception-escape,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-readability-function-cognitive-complexity,-misc-no-recursion,-bugprone-easily-swappable-parameters,-readability-identifier-length'
+Checks:          'clang-diagnostic-*,clang-analyzer-*,performance-*,readability-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,mpi-*,misc-*,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers,-misc-non-private-member-variables-in-classes,-clang-analyzer-optin.mpi*,-bugprone-exception-escape,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-readability-function-cognitive-complexity,-misc-no-recursion,-bugprone-easily-swappable-parameters,-readability-identifier-length,-cppcoreguidelines-pro-bounds-avoid-unchecked-container-access'
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
 FormatStyle:     file
@@ -29,6 +29,7 @@ These are all basically unavoidable in HPC numeric code:
 -readability-magic-numbers
 -cppcoreguidelines-avoid-magic-numbers
 -cppcoreguidelines-pro-bounds-pointer-arithmetic
+-cppcoreguidelines-pro-bounds-avoid-unchecked-container-access
 -readability-function-cognitive-complexity
 -bugprone-easily-swappable-parameters
 -readability-identifier-length

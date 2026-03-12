@@ -1,0 +1,62 @@
+# This file requires prek rather than pre-commit
+exclude:
+  glob:
+    - "tools/**/*.pro"
+    - "tools/**/*.m"
+    - "tools/**/*.[ch]"
+
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+- repo: builtin
+  hooks:
+    - id: trailing-whitespace
+    - id: end-of-file-fixer
+    - id: check-added-large-files
+
+# This would be nice to use, but it is a significant slowdown:
+
+# # Sync versions of hook tools with `uv.lock`
+# - repo: https://github.com/tsvikas/sync-with-uv
+#   rev: v0.5.0
+#   hooks:
+#     - id: sync-with-uv
+
+# C++ formatting
+- repo: https://github.com/pre-commit/mirrors-clang-format
+  rev: v22.1.0
+  hooks:
+  - id: clang-format
+    types_or: [c++, c, cuda]
+
+# Python linting and formatting
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.15.5
+  hooks:
+    # Run the linter.
+    - id: ruff-check
+    # Run the formatter.
+    - id: ruff-format
+
+# CMake formatting
+- repo: https://github.com/cheshirekow/cmake-format-precommit
+  rev: v0.6.13
+  hooks:
+    - id: cmake-format
+      additional_dependencies: [pyyaml>=5.1]
+
+# Various config files
+- repo: https://github.com/python-jsonschema/check-jsonschema
+  rev: 0.37.0
+  hooks:
+    - id: check-github-workflows
+    - id: check-readthedocs
+    - id: check-citation-file-format
+    - id: check-dependabot
+
+# Docs linting
+- repo: https://github.com/sphinx-contrib/sphinx-lint
+  rev: v1.0.2
+  hooks:
+    - id: sphinx-lint
+      files: 'manual/sphinx/.*'
