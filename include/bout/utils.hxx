@@ -5,7 +5,7 @@
  * simple but common calculations
  *
  **************************************************************************
- * Copyright 2010 - 2025 BOUT++ contributors
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  * 
@@ -231,6 +231,14 @@ public:
     data.reallocate(new_size_1 * new_size_2);
   }
 
+  /*!
+   * Change shape of the container.
+   * Invalidates contents.
+   */
+  void reshape(std::tuple<size_type, size_type> new_shape) {
+    reallocate(std::get<0>(new_shape), std::get<1>(new_shape));
+  }
+
   Matrix& operator=(const Matrix& other) {
     n1 = other.n1;
     n2 = other.n2;
@@ -329,6 +337,14 @@ public:
     n2 = new_size_2;
     n3 = new_size_3;
     data.reallocate(new_size_1 * new_size_2 * new_size_3);
+  }
+
+  /*!
+   * Change shape of the container.
+   * Invalidates contents.
+   */
+  void reshape(std::tuple<size_type, size_type, size_type> new_shape) {
+    reallocate(std::get<0>(new_shape), std::get<1>(new_shape), std::get<2>(new_shape));
   }
 
   Tensor& operator=(const Tensor& other) {

@@ -4,3 +4,23 @@ requires = []
 # Defined by PEP 517:
 build-backend = "backend"
 backend-path = ["tools/pylib/_boutpp_build/"]
+
+[dependency-groups]
+dev = [
+     "cmake~=4.2",
+     "clang-format~=22.0",
+     "clang-tidy~=22.0",
+     "clangd~=22.0",
+     "clangd-tidy~=1.1",
+     "cmakelang~=0.6",
+     "prek>=0.3.5",
+     "pyyaml~=6.0",
+     "ruff~=0.15",
+     "sphinx-lint~=1.0",
+     "sync-with-uv~=0.5.0",
+]
+maint = [
+      "pygithub~=2.8",
+      "ruamel-yaml~=0.19",
+      "Unidecode~=1.3",
+]
