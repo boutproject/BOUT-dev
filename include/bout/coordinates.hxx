@@ -108,17 +108,142 @@ public:
   FieldMetric& g_22_ylow();
   FieldMetric& g_22_yhigh();
   /// get Jxz at the cell faces or cell centre
-  const FieldMetric& Jxz_ylow() const;
-  const FieldMetric& Jxz_yhigh() const;
-  const FieldMetric& Jxz() const;
-  FieldMetric& Jxz_ylow();
-  FieldMetric& Jxz_yhigh();
-  FieldMetric& Jxz();
+  const FieldMetric& Jxz_ylow() const {
+    if (!_jxz_ylow.has_value()) {
+      _compute_Jxz_cell_faces();
+    }
+    return *_jxz_ylow;
+  }
+  const FieldMetric& Jxz_yhigh() const {
+    if (!_jxz_yhigh.has_value()) {
+      _compute_Jxz_cell_faces();
+    }
+    return *_jxz_yhigh;
+  }
+  const FieldMetric& Jxz() const {
+    if (!_jxz_centre.has_value()) {
+      _compute_Jxz_cell_faces();
+    }
+    return *_jxz_centre;
+  }
+  FieldMetric& Jxz_ylow() {
+    if (!_jxz_ylow.has_value()) {
+      _compute_Jxz_cell_faces();
+    }
+    return *_jxz_ylow;
+  }
+  FieldMetric& Jxz_yhigh() {
+    if (!_jxz_yhigh.has_value()) {
+      _compute_Jxz_cell_faces();
+    }
+    return *_jxz_yhigh;
+  }
+  FieldMetric& Jxz() {
+    if (!_jxz_centre.has_value()) {
+      _compute_Jxz_cell_faces();
+    }
+    return *_jxz_centre;
+  }
+  // Cell Areas
+  const FieldMetric& cell_area_xlow() const {
+    if (!_cell_area_xlow.has_value()) {
+      _compute_cell_area_x();
+    }
+    return _cell_area_xlow;
+  }
+  const FieldMetric& cell_area_xhigh() const {
+    if (!_cell_area_xhigh.has_value()) {
+      _compute_cell_area_x();
+    }
+    return _cell_area_xhigh;
+  }
+  const FieldMetric& cell_area_ylow() const {
+    if (!_cell_area_ylow.has_value()) {
+      _compute_cell_area_y();
+    }
+    return _cell_area_ylow;
+  }
+  const FieldMetric& cell_area_yhigh() const {
+    if (!_cell_area_yhigh.has_value()) {
+      _compute_cell_area_y();
+    }
+    return _cell_area_yhigh;
+  }
+  const FieldMetric& cell_area_zlow() const {
+    if (!_cell_area_zlow.has_value()) {
+      _compute_cell_area_z();
+    }
+    return _cell_area_zlow;
+  }
+  const FieldMetric& cell_area_zhigh() const {
+    if (!_cell_area_zhigh.has_value()) {
+      _compute_cell_area_z();
+    }
+    return _cell_area_zhigh;
+  }
+  FieldMetric& cell_area_xlow() {
+    if (!_cell_area_xlow.has_value()) {
+      _compute_cell_area_x();
+    }
+    return _cell_area_xlow;
+  }
+  FieldMetric& cell_area_xhigh() {
+    if (!_cell_area_xhigh.has_value()) {
+      _compute_cell_area_x();
+    }
+    return _cell_area_xhigh;
+  }
+  FieldMetric& cell_area_ylow() {
+    if (!_cell_area_ylow.has_value()) {
+      _compute_cell_area_y();
+    }
+    return _cell_area_ylow;
+  }
+  FieldMetric& cell_area_yhigh() {
+    if (!_cell_area_yhigh.has_value()) {
+      _compute_cell_area_y();
+    }
+    return _cell_area_yhigh;
+  }
+  FieldMetric& cell_area_zlow() {
+    if (!_cell_area_zlow.has_value()) {
+      _compute_cell_area_z();
+    }
+    return _cell_area_zlow;
+  }
+  FieldMetric& cell_area_zhigh() {
+    if (!_cell_area_zhigh.has_value()) {
+      _compute_cell_area_z();
+    }
+    return _cell_area_zhigh;
+  }
+  // Cell Volume
+  const FieldMetric& cell_volume() const {
+    if (!_cell_volume.has_value()) {
+      _compute_cell_volume();
+    }
+    return _cell_volume;
+  }
+  FieldMetric& cell_volume() {
+    if (!_cell_volume.has_value()) {
+      _compute_cell_volume();
+    }
+    return _cell_volume;
+  }
 
 private:
   mutable std::optional<FieldMetric> _g_22_ylow, _g_22_yhigh;
   mutable std::optional<FieldMetric> _jxz_ylow, _jxz_yhigh, _jxz_centre;
+  mutable std::optional<FieldMetric> _cell_area_xlow, _cell_area_xhigh;
+  mutable std::optional<FieldMetric> _cell_area_ylow, _cell_area_yhigh;
+  mutable std::optional<FieldMetric> _cell_area_zlow, _cell_area_zhigh;
+  mutable std::optional<FieldMetric> _cell_volume;
+  mutable std::optional<FieldMetric> _jxz_ylow, _jxz_yhigh, _jxz_centre;
   void _compute_Jxz_cell_faces() const;
+  void _compute_cell_area_x() const;
+  void _compute_cell_area_y() const;
+  void _compute_cell_area_z() const;
+  void _compute_cell_volume() const;
 
 public:
   /// Christoffel symbol of the second kind (connection coefficients)

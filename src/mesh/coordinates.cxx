@@ -2092,54 +2092,6 @@ const Coordinates::FieldMetric& Coordinates::g_22_yhigh() const {
   return g_22_yhigh();
 }
 
-Coordinates::FieldMetric& Coordinates::g_22_yhigh() {
-  return const_cast<Coordinates::FieldMetric&>(
-      const_cast<const Coordinates*>(this)->g_22_yhigh());
-}
-
-Coordinates::FieldMetric& Coordinates::g_22_ylow() {
-  return const_cast<Coordinates::FieldMetric&>(
-      const_cast<const Coordinates*>(this)->g_22_ylow());
-}
-
-const Coordinates::FieldMetric& Coordinates::Jxz_ylow() const {
-  if (!_jxz_ylow.has_value()) {
-    _compute_Jxz_cell_faces();
-  }
-  return *_jxz_ylow;
-}
-const Coordinates::FieldMetric& Coordinates::Jxz_yhigh() const {
-  if (!_jxz_yhigh.has_value()) {
-    _compute_Jxz_cell_faces();
-  }
-  return *_jxz_yhigh;
-}
-const Coordinates::FieldMetric& Coordinates::Jxz() const {
-  if (!_jxz_centre.has_value()) {
-    _compute_Jxz_cell_faces();
-  }
-  return *_jxz_centre;
-}
-
-Coordinates::FieldMetric& Coordinates::Jxz_ylow() {
-  if (!_jxz_ylow.has_value()) {
-    _compute_Jxz_cell_faces();
-  }
-  return *_jxz_ylow;
-}
-Coordinates::FieldMetric& Coordinates::Jxz_yhigh() {
-  if (!_jxz_yhigh.has_value()) {
-    _compute_Jxz_cell_faces();
-  }
-  return *_jxz_yhigh;
-}
-Coordinates::FieldMetric& Coordinates::Jxz() {
-  if (!_jxz_centre.has_value()) {
-    _compute_Jxz_cell_faces();
-  }
-  return *_jxz_centre;
-}
-
 void Coordinates::_compute_Jxz_cell_faces() const {
   _jxz_centre.emplace(sqrt(g_11 * g_33 - SQ(g_13)));
   _jxz_ylow.emplace(emptyFrom(_jxz_centre.value()));
@@ -2172,3 +2124,55 @@ void Coordinates::_compute_Jxz_cell_faces() const {
     }
   }
 }
+
+void Coordinates::_compute_cell_area_x() const {
+  const auto area_centre = sqrt(g_22 * g_33 - SQ(g_23)) * dy * dz;
+  _cell_area_xlow.emplace(emptyFrom(area_centre));
+  _cell_area_xhigh.emplace(emptyFrom(area_centre));
+  // We cannot setLocation, as that would trigger the computation of staggered
+  // metrics.
+  ASSERT0(mesh->xstart > 0);
+  BOUT_FOR(i, _jxz_centre->getRegion("RGN_NOX")) {
+    (*_cell_area_xlow)[i] = 0.5 * (area_centre[i] + area_centre[i.xm()]);
+    (*_cell_area_xhigh)[i] = 0.5 * (area_centre[i] + area_centre[i.xp()]);
+  }
+}
+
+void Coordinates::_compute_cell_area_y() const {
+  const auto Jxz = Jxz();
+  if (Jxz.isFci()) {
+    ASSERT4(isUniform(dx, true, "RGN_ALL"));
+    ASSERT2(isUniform(dx, false, "RGN_ALL"));
+    ASSERT4(isUniform(dz, true, "RGN_ALL"));
+    ASSERT2(isUniform(dz, false, "RGN_ALL"));
+    _cell_area_ylow = _Jxz_ylow * dx * dz;
+    _cell_area_yhigh = _Jxz_yhigh * dx * dz;
+  } else {
+    // Field aligned
+    const auto area_centre = sqrt(g_11 * g_33 - SQ(g_13)) * dx * dz;
+    _cell_area_ylow.emplace(emptyFrom(area_centre));
+    _cell_area_yhigh.emplace(emptyFrom(area_centre));
+    // We cannot setLocation, as that would trigger the computation of staggered
+    // metrics.
+    ASSERT0(mesh->ystart > 0);
+    BOUT_FOR(i, _jxz_centre->getRegion("RGN_NOY")) {
+      (*_cell_area_ylow)[i] = 0.5 * (area_centre[i] + area_centre[i.ym()]);
+      (*_cell_area_yhigh)[i] = 0.5 * (area_centre[i] + area_centre[i.yp()]);
+    }
+  }
+}
+
+void Coordinates::_compute_cell_area_z() const {
+  const auto area_centre = sqrt(g_11 * g_22 - SQ(g_12)) * dx * dy;
+  _cell_area_zlow.emplace(emptyFrom(area_centre));
+  _cell_area_zhigh.emplace(emptyFrom(area_centre));
+  // We cannot setLocation, as that would trigger the computation of staggered
+  // metrics.
+  //ASSERT0(mesh->zstart > 0);
+  BOUT_FOR(i, _jxz_centre->getRegion("RGN_NOZ")) {
+    (*_cell_area_zlow)[i] = 0.5 * (area_centre[i] + area_centre[i.zm()]);
+    (*_cell_area_zhigh)[i] = 0.5 * (area_centre[i] + area_centre[i.zp()]);
+  }
+}
+
+void Coordinates::_compute_cell_volume() const { _cell_volume.emplace(J * dx * dy * dz); }
