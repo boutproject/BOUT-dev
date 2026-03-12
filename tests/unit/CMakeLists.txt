@@ -97,6 +97,7 @@ set(serial_tests_source
     ./mesh/test_invert3x3.cxx
     ./mesh/test_mesh.cxx
     ./mesh/test_paralleltransform.cxx
+    ./mesh/test_petsc_operators.cxx
     ./solver/test_fakesolver.cxx
     ./solver/test_fakesolver.hxx
     ./solver/test_solver.cxx

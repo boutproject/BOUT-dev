@@ -248,7 +248,7 @@ private:
 };
 
 /*!
- * A class which wraps PETSc vector objects, allowing them to be
+ * A class which wraps PETSc matrix objects, allowing them to be
  * indexed using the BOUT++ scheme. It provides the option of setting
  * a y-offset that interpolates onto field lines.
  */
@@ -289,7 +289,7 @@ public:
   }
 
   // Construct a matrix capable of operating on the specified field,
-  // preallocating memory if requeted and possible.
+  // preallocating memory if requested and possible.
   PetscMatrix(IndexerPtr<T> indConverter, bool preallocate = true)
       : matrix(new Mat()), indexConverter(indConverter),
         pt(&indConverter->getMesh()->getCoordinates()->getParallelTransform()) {
