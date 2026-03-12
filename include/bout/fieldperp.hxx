@@ -5,7 +5,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -47,8 +47,8 @@ class Field3D; // #include "bout/field3d.hxx"
 
 /*!
  * Represents a 2D field perpendicular to the magnetic field
- * at a particular index in Y, which only varies in X-Z. 
- * 
+ * at a particular index in Y, which only varies in X-Z.
+ *
  * Primarily used inside field solvers
  */
 class FieldPerp : public Field {
@@ -208,7 +208,7 @@ public:
 
   /*!
    * Access to the underlying data array at a given x,z index
-   * 
+   *
    * If CHECK > 2 then bounds checking is performed, otherwise
    * no checks are performed
    */
@@ -244,9 +244,9 @@ public:
   }
 
   /*!
-   * Access to the underlying data array. (X,Y,Z) indices for consistency with 
+   * Access to the underlying data array. (X,Y,Z) indices for consistency with
    * other field types
-   * 
+   *
    */
   BoutReal& operator()(int jx, int UNUSED(jy), int jz) { return (*this)(jx, jz); }
 
@@ -255,7 +255,7 @@ public:
   }
 
   /*!
-   * Addition, modifying in-place. 
+   * Addition, modifying in-place.
    * This loops over the entire domain, including guard/boundary cells
    */
   FieldPerp& operator+=(const FieldPerp& rhs);
@@ -264,7 +264,7 @@ public:
   FieldPerp& operator+=(BoutReal rhs);
 
   /*!
-   * Subtraction, modifying in place. 
+   * Subtraction, modifying in place.
    * This loops over the entire domain, including guard/boundary cells
    */
   FieldPerp& operator-=(const FieldPerp& rhs);
@@ -273,7 +273,7 @@ public:
   FieldPerp& operator-=(BoutReal rhs);
 
   /*!
-   * Multiplication, modifying in place. 
+   * Multiplication, modifying in place.
    * This loops over the entire domain, including guard/boundary cells
    */
   FieldPerp& operator*=(const FieldPerp& rhs);
@@ -282,7 +282,7 @@ public:
   FieldPerp& operator*=(BoutReal rhs);
 
   /*!
-   * Division, modifying in place. 
+   * Division, modifying in place.
    * This loops over the entire domain, including guard/boundary cells
    */
   FieldPerp& operator/=(const FieldPerp& rhs);

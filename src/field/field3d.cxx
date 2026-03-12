@@ -7,7 +7,7 @@
  * Copyright 2010 - 2025 BOUT++ developers
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -234,7 +234,7 @@ const Region<Ind2D>& Field3D::getRegion2D(const std::string& region_name) const 
 }
 
 /***************************************************************
- *                         OPERATORS 
+ *                         OPERATORS
  ***************************************************************/
 
 /////////////////// ASSIGNMENT ////////////////////
@@ -710,7 +710,7 @@ Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, const std::string
   return result;
 }
 
-/* 
+/*
  * Use FFT to shift by an angle in the Z direction
  */
 void shiftZ(Field3D& var, int jx, int jy, double zangle) {

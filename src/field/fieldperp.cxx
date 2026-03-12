@@ -5,7 +5,7 @@
  * Copyright 2010 - 2025 BOUT++ developers
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -78,7 +78,7 @@ FieldPerp& FieldPerp::allocate() {
 }
 
 /***************************************************************
- *                         ASSIGNMENT 
+ *                         ASSIGNMENT
  ***************************************************************/
 
 FieldPerp& FieldPerp::operator=(const FieldPerp& rhs) {
