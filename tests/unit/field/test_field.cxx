@@ -26,6 +26,7 @@ public:
 
   bool is3D() const override { return false; }
   int size() const override { return 42; }
+  FieldType field_type() const override { return FieldType::field2d; }
 };
 } // namespace
 

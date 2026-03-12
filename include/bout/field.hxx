@@ -6,7 +6,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -30,6 +30,7 @@ class Field;
 #define FIELD_H
 
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <optional>
 #include <string>
@@ -119,6 +120,11 @@ public:
 
   /// Get the total number of points
   virtual int size() const = 0;
+
+  /// Enum to distinguish the different kinds of Fields
+  enum class FieldType : std::uint8_t { field3d, field2d, fieldperp };
+  /// Is this an instance of `Field3D`, `Field2D`, or `FieldPerp`?
+  virtual FieldType field_type() const = 0;
 
   friend void swap(Field& first, Field& second) noexcept {
     using std::swap;
