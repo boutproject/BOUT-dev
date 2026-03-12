@@ -764,11 +764,11 @@ public:
   explicit Field3DParallel(Types... args) : Field3D(std::move(args)...) {
     ensureFieldAligned();
   }
-  Field3DParallel(const Field3D& f) : Field3D(std::move(f)) { ensureFieldAligned(); }
-  Field3DParallel(const Field3D& f, bool isRef) : Field3D(std::move(f)), isRef(isRef) {
+  Field3DParallel(const Field3D& f) : Field3D(f) { ensureFieldAligned(); }
+  Field3DParallel(const Field3D& f, bool isRef) : Field3D(f), isRef(isRef) {
     ensureFieldAligned();
   }
-  Field3DParallel(const Field2D& f) : Field3D(std::move(f)) { ensureFieldAligned(); }
+  Field3DParallel(const Field2D& f) : Field3D(f) { ensureFieldAligned(); }
   // Explicitly needed, as DirectionTypes is sometimes constructed from a
   // brace enclosed list
   explicit Field3DParallel(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
