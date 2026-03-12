@@ -206,7 +206,7 @@ template <typename T>
 T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
       const std::string& region = "RGN_NOBNDRY") {
 
-  if (f.isFci()) {
+  if (f.isFci() or f.hasParallelSlices()) {
     ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     if (!f.hasParallelSlices()) {
       throw BoutException(
@@ -215,13 +215,12 @@ T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "D
     }
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::Standard>(f, outloc,
                                                                           method, region);
-  } else {
-    const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
-    const T f_aligned = is_unaligned ? toFieldAligned(f, "RGN_NOX") : f;
-    T result = standardDerivative<T, DIRECTION::Y, DERIV::Standard>(f_aligned, outloc,
-                                                                    method, region);
-    return is_unaligned ? fromFieldAligned(result, region) : result;
   }
+  const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
+  const T f_aligned = is_unaligned ? toFieldAligned(f, "RGN_NOX") : f;
+  T result = standardDerivative<T, DIRECTION::Y, DERIV::Standard>(f_aligned, outloc,
+                                                                  method, region);
+  return is_unaligned ? fromFieldAligned(result, region) : result;
 }
 inline Field3D DDY(const Field3DParallel& f, CELL_LOC outloc = CELL_DEFAULT,
                    const std::string& method = "DEFAULT",
