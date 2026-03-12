@@ -6,7 +6,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -137,6 +137,7 @@ public:
   virtual void calcParallelSlices() {}
   virtual void splitParallelSlices() {}
   virtual void clearParallelSlices() {}
+  virtual size_t numberParallelSlices() const { return 0; }
 
 private:
   /// Labels for the type of coordinate system this field is defined over
@@ -189,7 +190,8 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 template <typename T>
 inline T emptyFrom(const T& f) {
   static_assert(bout::utils::is_Field_v<T>, "emptyFrom only works on Fields");
-  return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()})
+  return T(f.getMesh(), f.getLocation(),
+           DirectionTypes{f.getDirectionY(), f.getDirectionZ()}, f.getRegionID())
       .allocate();
 }
 
@@ -521,20 +523,27 @@ T pow(BoutReal lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
  * result for non-finite numbers
  *
  */
+class Field3DParallel;
 #ifdef FIELD_FUNC
 #error This macro has already been defined
 #else
-#define FIELD_FUNC(name, func)                                     \
-  template <typename T, typename = bout::utils::EnableIfField<T>>  \
-  inline T name(const T& f, const std::string& rgn = "RGN_ALL") {  \
-                                                                   \
-    /* Check if the input is allocated */                          \
-    checkData(f);                                                  \
-    /* Define and allocate the output result */                    \
-    T result{emptyFrom(f)};                                        \
-    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); } \
-    checkData(result);                                             \
-    return result;                                                 \
+#define FIELD_FUNC(_name, func)                                        \
+  template <typename T, typename = bout::utils::EnableIfField<T>>      \
+  inline T _name(const T& f, const std::string& rgn = "RGN_ALL") {     \
+    /* Check if the input is allocated */                              \
+    checkData(f);                                                      \
+    /* Define and allocate the output result */                        \
+    T result{emptyFrom(f)};                                            \
+    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }     \
+    if constexpr (std::is_base_of_v<Field3DParallel, T>) {             \
+      for (int i = 0; i < f.numberParallelSlices(); ++i) {             \
+        result.yup(i) = func(f.yup(i));                                \
+        result.ydown(i) = func(f.ydown(i));                            \
+      }                                                                \
+    }                                                                  \
+    result.name = std::string(#_name "(") + f.name + std::string(")"); \
+    checkData(result);                                                 \
+    return result;                                                     \
   }
 #endif
 
@@ -658,6 +667,8 @@ T copy(const T& f) {
   return result;
 }
 
+class Field3DParallel;
+
 /// Apply a floor value \p f to a field \p var. Any value lower than
 /// the floor is set to the floor.
 ///
@@ -674,7 +685,36 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
       result[d] = f;
     }
   }
-
+  if constexpr (std::is_same_v<T, Field3DParallel>) {
+    if (var.hasParallelSlices()) {
+      for (size_t i = 0; i < result.numberParallelSlices(); ++i) {
+        if (result.yup(i).isAllocated()) {
+          BOUT_FOR(d, result.yup(i).getRegion(rgn)) {
+            if (result.yup(i)[d] < f) {
+              result.yup(i)[d] = f;
+            }
+          }
+        } else {
+          if (result.isFci()) {
+            throw BoutException("Expected parallel slice to be allocated");
+          }
+        }
+        if (result.ydown(i).isAllocated()) {
+          BOUT_FOR(d, result.ydown(i).getRegion(rgn)) {
+            if (result.ydown(i)[d] < f) {
+              result.ydown(i)[d] = f;
+            }
+          }
+        } else {
+          if (result.isFci()) {
+            throw BoutException("Expected parallel slice to be allocated");
+          }
+        }
+      }
+    }
+  } else {
+    result.clearParallelSlices();
+  }
   return result;
 }
 

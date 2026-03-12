@@ -38,8 +38,11 @@
 #include <bout/output.hxx>
 
 #include <cmath>
+#include <cstddef>
+#include <optional>
 
-Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
+Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in,
+                 [[maybe_unused]] std::optional<size_t> regionID)
     : Field(localmesh, location_in, directions_in) {
 
   if (fieldmesh) {

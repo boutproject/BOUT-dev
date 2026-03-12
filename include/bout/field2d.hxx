@@ -68,7 +68,8 @@ public:
    */
   Field2D(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
           DirectionTypes directions_in = {YDirectionType::Standard,
-                                          ZDirectionType::Average});
+                                          ZDirectionType::Average},
+          std::optional<size_t> regionID = {});
 
   /*!
    * Copy constructor. After this both fields
@@ -273,6 +274,9 @@ public:
 
   int size() const override { return nx * ny; }
 
+  Field2D& asField3DParallel() { return *this; }
+  const Field2D& asField3DParallel() const { return *this; }
+
 private:
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
@@ -285,6 +289,10 @@ private:
 };
 
 // Non-member overloaded operators
+FieldPerp operator+(const Field2D& lhs, const FieldPerp& rhs);
+FieldPerp operator-(const Field2D& lhs, const FieldPerp& rhs);
+FieldPerp operator*(const Field2D& lhs, const FieldPerp& rhs);
+FieldPerp operator/(const Field2D& lhs, const FieldPerp& rhs);
 
 Field2D operator+(const Field2D& lhs, const Field2D& rhs);
 Field2D operator-(const Field2D& lhs, const Field2D& rhs);
