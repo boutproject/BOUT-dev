@@ -20,6 +20,7 @@
 #include <bout/region.hxx>
 #include <bout/sys/gettext.hxx>
 #include <bout/sys/range.hxx>
+#include <bout/sys/variant.hxx>
 #include <bout/unused.hxx>
 #include <bout/utils.hxx>
 #include <bout/vector2d.hxx>
@@ -376,39 +377,36 @@ void Mesh::communicate(FieldGroup& g) {
   }
 }
 
-/// This is a bit of a hack for now to get FieldPerp communications
-/// The FieldData class needs to be changed to accomodate FieldPerp objects
-void Mesh::communicate(FieldPerp& f) {
-  comm_handle recv[2];
+namespace {
+struct MsgLenVisitor {
+  int xge;
+  int xlt;
+  int yge;
+  int ylt;
+  int zge;
+  int zlt;
 
-  int nin = xstart;              // Number of x points in inner guard cell
-  int nout = LocalNx - xend - 1; // Number of x points in outer guard cell
+  int operator()(const Field3D* var) const {
+    return (xlt - xge) * (ylt - yge) * (zlt - zge) * var->elementSize();
+  }
+  int operator()(const Field2D* var) const {
+    return (xlt - xge) * (ylt - yge) * var->elementSize();
+  }
+  int operator()(const FieldPerp* var) const {
+    return (xlt - xge) * (zlt - zge) * var->elementSize();
+  }
+};
+} // namespace
 
-  // Post receives for guard cell regions
-
-  recv[0] = irecvXIn(f[0], nin * LocalNz, 0);
-  recv[1] = irecvXOut(f[xend + 1], nout * LocalNz, 1);
-
-  // Send data
-  sendXIn(f[xstart], nin * LocalNz, 1);
-  sendXOut(f[xend - nout + 1], nout * LocalNz, 0);
-
-  // Wait for receive
-  wait(recv[0]);
-  wait(recv[1]);
-}
-
-int Mesh::msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                  int ylt) {
+int Mesh::msg_len(const std::vector<FieldGroup::Item>& var_list, int xge, int xlt,
+                  int yge, int ylt) {
   int len = 0;
+
+  const auto visitor = MsgLenVisitor{xge, xlt, yge, ylt, 0, LocalNz};
 
   /// Loop over variables
   for (const auto& var : var_list) {
-    if (var->is3D()) {
-      len += (xlt - xge) * (ylt - yge) * LocalNz * var->elementSize();
-    } else {
-      len += (xlt - xge) * (ylt - yge) * var->elementSize();
-    }
+    len += bout::utils::visit(visitor, var);
   }
 
   return len;

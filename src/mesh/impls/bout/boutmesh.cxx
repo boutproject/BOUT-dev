@@ -49,6 +49,7 @@
 #include <bout/sys/gettext.hxx>
 #include <bout/sys/range.hxx>
 #include <bout/sys/timer.hxx>
+#include <bout/sys/variant.hxx>
 #include <bout/utils.hxx>
 
 #include <fmt/format.h>
@@ -1400,6 +1401,16 @@ comm_handle BoutMesh::sendY(FieldGroup& g, comm_handle handle) {
   return static_cast<void*>(ch);
 }
 
+namespace {
+// FieldGroup stores a vector of variants now, rather than a pointer to the
+// FieldData base class, so we need this visitor as a shim
+struct DoneCommsVisitor {
+  void operator()(Field3D* var) const { var->doneComms(); }
+  void operator()(Field2D* var) const { var->doneComms(); }
+  void operator()(FieldPerp* var) const { var->doneComms(); }
+};
+} // namespace
+
 int BoutMesh::wait(comm_handle handle) {
 
   if (handle == nullptr) {
@@ -1545,7 +1556,7 @@ int BoutMesh::wait(comm_handle handle) {
 #if CHECK > 0
   // Keeping track of whether communications have been done
   for (const auto& var : ch->var_list) {
-    var->doneComms();
+    bout::utils::visit(DoneCommsVisitor{}, var);
   }
 #endif
 
@@ -2218,9 +2229,9 @@ void BoutMesh::topology() {
     }
 
     for (int i = 0; i < limiter_count; ++i) {
-      int const yind = limiter_yinds[i];
-      int const xstart = limiter_xstarts[i];
-      int const xend = limiter_xends[i];
+      const int yind = limiter_yinds[i];
+      const int xstart = limiter_xstarts[i];
+      const int xend = limiter_xends[i];
       output_info.write("Adding a limiter between y={} and {}. X indices {} to {}\n",
                         yind, yind + 1, xstart, xend);
       add_target(yind, xstart, xend);
@@ -2397,72 +2408,121 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
  *                   Communication utilities
  ****************************************************************/
 
-int BoutMesh::pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt,
+namespace {
+// Visitor for packing data from a `FieldGroup::Item` into an existing buffer
+struct PackDataVisitor {
+  int xge;
+  int xlt;
+  int yge;
+  int ylt;
+  int zge;
+  int zlt;
+  BoutReal* buffer;
+  int len;
+
+  int operator()(const Field3D* var) {
+    const auto& var3d_ref = *var;
+    ASSERT2(var3d_ref.isAllocated());
+    for (int jx = xge; jx < xlt; jx++) {
+      for (int jy = yge; jy < ylt; jy++) {
+        for (int jz = zge; jz < zlt; jz++, len++) {
+          buffer[len] = var3d_ref(jx, jy, jz);
+        }
+      }
+    }
+    return len;
+  }
+
+  int operator()(const Field2D* var) {
+    const auto& var2d_ref = *var;
+    ASSERT2(var2d_ref.isAllocated());
+    for (int jx = xge; jx < xlt; jx++) {
+      for (int jy = yge; jy < ylt; jy++, len++) {
+        buffer[len] = var2d_ref(jx, jy);
+      }
+    }
+    return len;
+  }
+
+  int operator()(const FieldPerp* var) {
+    const auto& varperp_ref = *var;
+    ASSERT2(varperp_ref.isAllocated());
+    for (int jx = xge; jx < xlt; jx++) {
+      for (int jz = zge; jz < zlt; jz++, len++) {
+        buffer[len] = varperp_ref(jx, jz);
+      }
+    }
+    return len;
+  }
+};
+
+// Visitor for unpacking a buffer into a `FieldGroup::Item`
+struct UnpackDataVisitor {
+  int xge;
+  int xlt;
+  int yge;
+  int ylt;
+  int zge;
+  int zlt;
+  BoutReal* buffer;
+  int len;
+
+  void operator()(Field3D* var) {
+    auto& var3d_ref = *var;
+    ASSERT2(var3d_ref.isAllocated());
+    for (int jx = xge; jx < xlt; jx++) {
+      for (int jy = yge; jy < ylt; jy++) {
+        for (int jz = zge; jz < zlt; jz++, len++) {
+          var3d_ref(jx, jy, jz) = buffer[len];
+        }
+      }
+    }
+  }
+
+  void operator()(Field2D* var) {
+    auto& var2d_ref = *var;
+    ASSERT2(var2d_ref.isAllocated());
+    for (int jx = xge; jx < xlt; jx++) {
+      for (int jy = yge; jy < ylt; jy++, len++) {
+        var2d_ref(jx, jy) = buffer[len];
+      }
+    }
+  }
+
+  void operator()(FieldPerp* var) {
+    auto& varperp_ref = *var;
+    ASSERT2(varperp_ref.isAllocated());
+    for (int jx = xge; jx < xlt; jx++) {
+      for (int jz = zge; jz < zlt; jz++, len++) {
+        varperp_ref(jx, jz) = buffer[len];
+      }
+    }
+  }
+};
+} // namespace
+
+int BoutMesh::pack_data(const std::vector<FieldGroup::Item>& var_list, int xge, int xlt,
                         int yge, int ylt, BoutReal* buffer) {
 
-  int len = 0;
+  auto visitor = PackDataVisitor{xge, xlt, yge, ylt, 0, LocalNz, buffer, 0};
 
-  /// Loop over variables
   for (const auto& var : var_list) {
-    if (var->is3D()) {
-      // 3D variable
-      auto* var3d_ref_ptr = dynamic_cast<Field3D*>(var);
-      ASSERT0(var3d_ref_ptr != nullptr);
-      auto& var3d_ref = *var3d_ref_ptr;
-      ASSERT2(var3d_ref.isAllocated());
-      for (int jx = xge; jx != xlt; jx++) {
-        for (int jy = yge; jy < ylt; jy++) {
-          for (int jz = 0; jz < LocalNz; jz++, len++) {
-            buffer[len] = var3d_ref(jx, jy, jz);
-          }
-        }
-      }
-    } else {
-      // 2D variable
-      auto* var2d_ref_ptr = dynamic_cast<Field2D*>(var);
-      ASSERT0(var2d_ref_ptr != nullptr);
-      auto& var2d_ref = *var2d_ref_ptr;
-      ASSERT2(var2d_ref.isAllocated());
-      for (int jx = xge; jx != xlt; jx++) {
-        for (int jy = yge; jy < ylt; jy++, len++) {
-          buffer[len] = var2d_ref(jx, jy);
-        }
-      }
-    }
+    bout::utils::visit(visitor, var);
   }
 
-  return (len);
+  return visitor.len;
 }
 
-int BoutMesh::unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt,
+int BoutMesh::unpack_data(const std::vector<FieldGroup::Item>& var_list, int xge, int xlt,
                           int yge, int ylt, BoutReal* buffer) {
 
-  int len = 0;
+  auto visitor = UnpackDataVisitor{xge, xlt, yge, ylt, 0, LocalNz, buffer, 0};
 
-  /// Loop over variables
   for (const auto& var : var_list) {
-    if (var->is3D()) {
-      // 3D variable
-      auto& var3d_ref = *dynamic_cast<Field3D*>(var);
-      for (int jx = xge; jx != xlt; jx++) {
-        for (int jy = yge; jy < ylt; jy++) {
-          for (int jz = 0; jz < LocalNz; jz++, len++) {
-            var3d_ref(jx, jy, jz) = buffer[len];
-          }
-        }
-      }
-    } else {
-      // 2D variable
-      auto& var2d_ref = *dynamic_cast<Field2D*>(var);
-      for (int jx = xge; jx != xlt; jx++) {
-        for (int jy = yge; jy < ylt; jy++, len++) {
-          var2d_ref(jx, jy) = buffer[len];
-        }
-      }
-    }
+    bout::utils::visit(visitor, var);
   }
 
-  return (len);
+  return visitor.len;
 }
 
 /****************************************************************

@@ -1,15 +1,17 @@
 #ifndef BOUT_FIELDGROUP_H
 #define BOUT_FIELDGROUP_H
 
-#include "bout/field_data.hxx"
-#include <bout/field3d.hxx>
-
+#include <bout/sys/variant.hxx>
+#include <bout/traits.hxx>
 #include <bout/vector2d.hxx>
 #include <bout/vector3d.hxx>
 
 #include <vector>
 
-#include <algorithm>
+class Field2D;
+class Field3D;
+class FieldPerp;
+class FieldData;
 
 /// Group together fields for easier communication
 ///
@@ -19,14 +21,18 @@
 /// components (x,y,z) as Field2D or Field3D objects.
 class FieldGroup {
 public:
+  using Item = bout::utils::variant<Field3D*, Field2D*, FieldPerp*>;
+
   FieldGroup() = default;
   FieldGroup(const FieldGroup& other) = default;
   FieldGroup(FieldGroup&& other) = default;
   FieldGroup& operator=(const FieldGroup& other) = default;
   FieldGroup& operator=(FieldGroup&& other) = default;
+  ~FieldGroup() = default;
 
   /// Constructor with a single FieldData \p f
-  FieldGroup(FieldData& f) { fvec.push_back(&f); }
+  FieldGroup(Field2D& f) { fvec.push_back(&f); }
+  FieldGroup(FieldPerp& f) { fvec.push_back(&f); }
 
   /// Constructor with a single Field3D \p f
   FieldGroup(Field3D& f) {
@@ -83,7 +89,8 @@ public:
   /// A pointer to this field will be stored internally,
   /// so the lifetime of this variable should be longer
   /// than the lifetime of this group.
-  void add(FieldData& f) { fvec.push_back(&f); }
+  void add(Field2D& f) { fvec.push_back(&f); }
+  void add(FieldPerp& f) { fvec.push_back(&f); }
 
   // Add a 3D field \p f, which goes into both vectors.
   //
@@ -121,18 +128,8 @@ public:
   }
 
   /// Add multiple fields to this group
-  ///
-  /// This is a variadic template which allows Field3D objects to be
-  /// treated as a special case. An arbitrary number of fields can be
-  /// added.
-  template <typename... Ts>
-  void add(FieldData& t, Ts&... ts) {
-    add(t);     // Add the first using functions above
-    add(ts...); // Add the rest
-  }
-
-  template <typename... Ts>
-  void add(Field3D& t, Ts&... ts) {
+  template <typename T, typename... Ts, typename = bout::utils::EnableIfField<T>>
+  void add(T& t, Ts&... ts) {
     add(t);     // Add the first using functions above
     add(ts...); // Add the rest
   }
@@ -165,16 +162,14 @@ public:
   }
 
   /// Iteration over all fields
-  using iterator = std::vector<FieldData*>::iterator;
-  iterator begin() { return fvec.begin(); }
-  iterator end() { return fvec.end(); }
+  auto begin() { return fvec.begin(); }
+  auto end() { return fvec.end(); }
 
   /// Const iteration over all fields
-  using const_iterator = std::vector<FieldData*>::const_iterator;
-  const_iterator begin() const { return fvec.begin(); }
-  const_iterator end() const { return fvec.end(); }
+  auto begin() const { return fvec.cbegin(); }
+  auto end() const { return fvec.cend(); }
 
-  const std::vector<FieldData*>& get() const { return fvec; }
+  const std::vector<Item>& get() const { return fvec; }
 
   /// Iteration over 3D fields
   const std::vector<Field3D*>& field3d() const { return f3vec; }
@@ -183,8 +178,8 @@ public:
   void makeUnique();
 
 private:
-  std::vector<FieldData*> fvec; // Vector of fields
-  std::vector<Field3D*> f3vec;  // Vector of 3D fields
+  std::vector<Item> fvec;      // Vector of fields
+  std::vector<Field3D*> f3vec; // Vector of 3D fields
 };
 
 /// Combine two FieldGroups

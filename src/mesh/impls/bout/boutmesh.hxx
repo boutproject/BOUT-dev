@@ -476,12 +476,12 @@ private:
   void post_receiveY(CommHandle& ch);
 
   /// Take data from objects and put into a buffer
-  int pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
+  int pack_data(const std::vector<FieldGroup::Item>& var_list, int xge, int xlt, int yge,
                 int ylt, BoutReal* buffer);
   /// Copy data from a buffer back into the fields
 
-  int unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                  int ylt, BoutReal* buffer);
+  int unpack_data(const std::vector<FieldGroup::Item>& var_list, int xge, int xlt,
+                  int yge, int ylt, BoutReal* buffer);
 };
 
 namespace {
