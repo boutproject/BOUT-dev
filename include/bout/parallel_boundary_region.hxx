@@ -451,7 +451,8 @@ public:
 
   bool contains(const int ix, const int iy, const int iz) const {
     const auto i2 = xyz2ind(ix, iy, iz, localmesh);
-    return std::ranges::any_of(bndry_points, [](auto i1) { return i2.index == i2; });
+    return std::ranges::any_of(bndry_points.begin(), bndry_points.end(),
+                               [&i2](auto i1) { return i1.index == i2; });
   }
 
   // setter
