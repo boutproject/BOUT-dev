@@ -23,6 +23,8 @@
  *
  **************************************************************************/
 
+#include <cstddef>
+#include <optional>
 #include <vector>
 class FieldPerp;
 

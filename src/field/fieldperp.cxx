@@ -27,6 +27,8 @@
 #include <bout/globals.hxx>
 
 #include <cmath>
+#include <cstddef>
+#include <optional>
 
 #include <bout/boutexception.hxx>
 #include <bout/fieldperp.hxx>
