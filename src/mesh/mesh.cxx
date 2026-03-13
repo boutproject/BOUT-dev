@@ -516,7 +516,7 @@ int Mesh::globalStartIndex2D() {
 int Mesh::globalStartIndexPerp() {
   int localSize = localSizePerp();
   int cumulativeSize = 0;
-  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXcomm());
+  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXZcomm());
   return cumulativeSize - localSize;
 }
 

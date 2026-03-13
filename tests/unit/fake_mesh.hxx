@@ -139,6 +139,7 @@ public:
   }
   MPI_Comm getXcomm(int UNUSED(jy)) const override { return BoutComm::get(); }
   MPI_Comm getYcomm(int UNUSED(jx)) const override { return BoutComm::get(); }
+  MPI_Comm getXZcomm() const override { return BoutComm::get(); }
 
   // Periodic Y
   int ix_separatrix{1000000}; // separatrix index
