@@ -2121,14 +2121,14 @@ void Coordinates::_compute_cell_area_x() const {
 }
 
 void Coordinates::_compute_cell_area_y() const {
-  const auto Jxz = Jxz();
-  if (Jxz.isFci()) {
+  Jxz();
+  if (_jxz_centre->isFci()) {
     ASSERT4(isUniform(dx, true, "RGN_ALL"));
     ASSERT2(isUniform(dx, false, "RGN_ALL"));
     ASSERT4(isUniform(dz, true, "RGN_ALL"));
     ASSERT2(isUniform(dz, false, "RGN_ALL"));
-    _cell_area_ylow = _Jxz_ylow * dx * dz;
-    _cell_area_yhigh = _Jxz_yhigh * dx * dz;
+    _cell_area_ylow = _jxz_ylow * dx * dz;
+    _cell_area_yhigh = _jxz_yhigh * dx * dz;
   } else {
     // Field aligned
     const auto area_centre = sqrt(g_11 * g_33 - SQ(g_13)) * dx * dz;
