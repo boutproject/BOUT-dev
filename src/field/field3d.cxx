@@ -25,6 +25,7 @@
  *
  **************************************************************************/
 
+#include "bout/bout_types.hxx"
 #include "bout/build_defines.hxx"
 
 #include <bout/boutcomm.hxx>
@@ -32,7 +33,9 @@
 
 #include <cmath>
 #include <cpptrace/cpptrace.hpp>
+#include <cstddef>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "bout/parallel_boundary_op.hxx"
@@ -52,8 +55,9 @@
 #include "fmt/format.h"
 
 /// Constructor
-Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
-    : Field(localmesh, location_in, directions_in) {
+Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in,
+                 std::optional<size_t> regionID)
+    : Field(localmesh, location_in, directions_in), regionID{regionID} {
 #if BOUT_USE_TRACK
   name = "<F3D>";
 #endif
