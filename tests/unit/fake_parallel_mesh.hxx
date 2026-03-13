@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "../../src/mesh/impls/bout/boutmesh.hxx"
+#include "bout/assert.hxx"
 #include "bout/boundary_op.hxx"
 #include "bout/boundary_region.hxx"
 #include "bout/boutcomm.hxx"
@@ -237,7 +238,7 @@ private:
     return BoutMesh::sendY(g, handle);
   }
 
-  FieldGroup makeGroup(FakeParallelMesh* m, const std::vector<int>& ids) {
+  static FieldGroup makeGroup(FakeParallelMesh* m, const std::vector<int>& ids) {
     FieldGroup g;
     for (const int i : ids) {
       ASSERT1(m->registeredFieldIds.contains(i));
