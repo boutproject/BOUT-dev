@@ -15,6 +15,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 /// Handles mapping between global cell index used in the mesh file,
@@ -74,6 +75,41 @@ public:
     }
   }
 
+  template <typename Function>
+  void map_local_field(Function func) const {
+    const std::vector<std::reference_wrapper<const Region<Ind3D>>> regions = {
+        evolving_region, xin_region, xout_region};
+    PetscInt row = 0; // Starting from 0, not row_start
+    for (const auto& region : regions) {
+      BOUT_FOR_SERIAL(i, region.get()) {
+        func(row, i);
+        ++row;
+      }
+    }
+  }
+
+  template <typename Function>
+  void map_local_yup(Function func) const {
+    PetscInt row = evolving_region.size() + xin_region.size() + xout_region.size();
+    BOUT_FOR_SERIAL(i, yup_region) {
+      func(row, i);
+      ++row;
+    }
+  }
+
+  template <typename Function>
+  void map_local_ydown(Function func) const {
+    PetscInt row = evolving_region.size() + xin_region.size() + xout_region.size()
+                   + yup_region.size();
+    BOUT_FOR_SERIAL(i, ydown_region) {
+      func(row, i);
+      ++row;
+    }
+  }
+
+  /// Return a matrix that reorders vectors from petsc global index to mesh index
+  Mat getPetscToMesh() const { return mat_petsc_to_mesh; }
+
 private:
   PetscLib lib; // Initialize and finalize PETSc
 
@@ -87,6 +123,7 @@ private:
 
   PetscInt row_start, row_end; ///< Local row indices
   Mat mat_mesh_to_petsc;
+  Mat mat_petsc_to_mesh;
 };
 
 /// Shared pointer to const PetscMapping

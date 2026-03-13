@@ -94,15 +94,19 @@ PetscMapping::PetscMapping(const Field3D& cell_number, const Field3D& forward_ce
   });
   MatAssemblyBegin(mat_mesh_to_petsc, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(mat_mesh_to_petsc, MAT_FINAL_ASSEMBLY);
+
+  // Transpose to map petsc indices to mesh indices
+  MatTranspose(mat_mesh_to_petsc, MAT_INITIAL_MATRIX, &mat_petsc_to_mesh);
 }
 
 PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int> cols,
                              Array<BoutReal> weights)
     : mapping(mapping) {
 
-  MatCreate(BoutComm::get(), &mat_operator);
+  Mat mat;
+  MatCreate(BoutComm::get(), &mat);
   int nlocal = mapping->size();
-  MatSetSizes(mat_operator, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE);
+  MatSetSizes(mat, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE);
 
   mapping->map_evolving([&](PetscInt row, Ind3D, PetscInt mesh_index) {
     if (mesh_index >= rows.size()) {
@@ -113,11 +117,16 @@ PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int
     int end_ind = (mesh_index + 1 < rows.size()) ? rows[mesh_index + 1] : cols.size();
     output.write("Mapping {} : {} -> {}\n", row, start_ind, end_ind);
 
-    MatSetValues(mat_operator, 1, &row, end_ind - start_ind, &cols[start_ind],
-                 &weights[start_ind], INSERT_VALUES);
+    MatSetValues(mat, 1, &row, end_ind - start_ind, &cols[start_ind], &weights[start_ind],
+                 INSERT_VALUES);
   });
-  MatAssemblyBegin(mat_operator, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(mat_operator, MAT_FINAL_ASSEMBLY);
+  MatAssemblyBegin(mat, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(mat, MAT_FINAL_ASSEMBLY);
+
+  // Row indices are PETSc indices but columns are mesh indices
+  // Multiply on the right by PetscToMesh.
+  MatMatMult(mat, mapping->getPetscToMesh(), MAT_INITIAL_MATRIX, PETSC_DETERMINE,
+             &this->mat_operator);
 }
 
 /// Perform operation
@@ -128,8 +137,16 @@ Field3D PetscOperator::operator()(const Field3D& rhs) const {
 
   // Fill vec from rhs
   PetscScalar* x;
+  // Copy rows from Field3D cells
   VecGetArray(rhs_vec, &x);
-  throw BoutException("Not implemented");
+  mapping->map_local_field([&](PetscInt row, const Ind3D& i) { x[row] = rhs[i]; });
+
+  // Copy Yup / Ydown values from boundaries
+  const Field3D& yup = rhs.yup();
+  mapping->map_local_yup([&](PetscInt row, const Ind3D& i) { x[row] = yup[i]; });
+
+  const Field3D& ydown = rhs.yup();
+  mapping->map_local_ydown([&](PetscInt row, const Ind3D& i) { x[row] = ydown[i]; });
   VecRestoreArray(rhs_vec, &x);
 
   // Perform Mat-Vec muliplication
@@ -141,7 +158,7 @@ Field3D PetscOperator::operator()(const Field3D& rhs) const {
   Field3D result;
   const PetscScalar* r;
   VecGetArrayRead(result_vec, &r);
-  throw BoutException("Not implemented");
+  mapping->map_local_field([&](PetscInt row, const Ind3D& i) { result[i] = r[row]; });
   VecRestoreArrayRead(result_vec, &r);
 
   return result;
