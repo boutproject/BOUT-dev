@@ -480,7 +480,7 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPETooManyYProcs) {
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
-TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisibleByNYPE) {
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisible_0) {
   WithQuietOutput info{output_info};
   Options options{{"NXPE", 5}};
 
@@ -489,7 +489,7 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisibleByNYPE) {
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
-TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisibleByNYPE) {
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisible_0) {
   WithQuietOutput info{output_info};
   Options options{{"NYPE", 5}};
 
@@ -498,7 +498,7 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisibleByNYPE) {
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
-TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisibleByNYPE) {
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisible_1) {
   WithQuietOutput info{output_info};
   Options options{{"NXPE", 5}};
 
@@ -507,7 +507,7 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisibleByNYPE) {
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
-TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisibleByNYPE) {
+TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisible_1) {
   WithQuietOutput info{output_info};
   Options options{{"NYPE", 5}};
 
