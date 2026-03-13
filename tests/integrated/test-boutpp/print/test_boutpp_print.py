@@ -4,7 +4,7 @@ import subprocess
 def test_boutpp_print():
 
     msg = 'Can we print to the log from python? 🎉 __does_it_still__work {} {:s}'
-    cmd = ["python3", "test.py"] + msg.split()
+    cmd = ["python3", "test.py", msg]
 
     print(f"+ python3 test.py {msg} > out.log")
     with open("out.log", "w") as f:
