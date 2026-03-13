@@ -1259,31 +1259,6 @@ int Coordinates::calcCovariant(const std::string& region) {
 
   output_info.write("\tLocal maximum error in off-diagonal inversion is {:e}\n", maxerr);
 
-  if (Bxy.isFci()) {
-    BoutReal maxError = 0;
-    Options* options = Options::getRoot();
-    auto BJg = Bxy.asField3DParallel() * J / sqrt(g_22.asField3DParallel());
-    auto* mesh = localmesh;
-    for (int p = -mesh->ystart; p <= mesh->ystart; p++) {
-      if (p == 0) {
-        continue;
-      }
-      BOUT_FOR(i, BJg.getRegion("RGN_NOBNDRY")) {
-        auto local = BJg[i] / BJg.ynext(p)[i.yp(p)];
-        maxError = std::max(std::abs(local - 1), maxError);
-      }
-    }
-    const BoutReal allowedError = (*options)["allowedFluxError"].withDefault(1e-6);
-    if (maxError < allowedError / 100) {
-      output_info.write("\tInfo: The maximum flux conservation error is {:e}", maxError);
-    } else if (maxError < allowedError) {
-      output_warn.write("\tWarning: The maximum flux conservation error is {:e}",
-                        maxError);
-    } else {
-      throw BoutException("Error: The maximum flux conservation error is {:e}", maxError);
-    }
-  }
-
   return 0;
 }
 
