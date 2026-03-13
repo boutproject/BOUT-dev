@@ -3,16 +3,16 @@
  *
  * ChangeLog
  * =========
- * 
+ *
  * 2014-11-10 Ben Dudson <bd512@york.ac.uk>
  *    * Created by separating metric from Mesh
  *
- * 
+ *
  **************************************************************************
  * Copyright 2014-2025 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -102,6 +102,149 @@ public:
   /// Covariant metric tensor
   FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
+  /// get g_22 at the cell faces;
+  const FieldMetric& g_22_ylow() const;
+  const FieldMetric& g_22_yhigh() const;
+  FieldMetric& g_22_ylow();
+  FieldMetric& g_22_yhigh();
+  /// get Jxz at the cell faces or cell centre
+  const FieldMetric& Jxz_ylow() const {
+    if (!_jxz_ylow.has_value()) {
+      _compute_Jxz_cell_faces();
+    }
+    return *_jxz_ylow;
+  }
+  const FieldMetric& Jxz_yhigh() const {
+    if (!_jxz_yhigh.has_value()) {
+      _compute_Jxz_cell_faces();
+    }
+    return *_jxz_yhigh;
+  }
+  const FieldMetric& Jxz() const {
+    if (!_jxz_centre.has_value()) {
+      _compute_Jxz_cell_faces();
+    }
+    return *_jxz_centre;
+  }
+  FieldMetric& Jxz_ylow() {
+    if (!_jxz_ylow.has_value()) {
+      _compute_Jxz_cell_faces();
+    }
+    return *_jxz_ylow;
+  }
+  FieldMetric& Jxz_yhigh() {
+    if (!_jxz_yhigh.has_value()) {
+      _compute_Jxz_cell_faces();
+    }
+    return *_jxz_yhigh;
+  }
+  FieldMetric& Jxz() {
+    if (!_jxz_centre.has_value()) {
+      _compute_Jxz_cell_faces();
+    }
+    return *_jxz_centre;
+  }
+  // Cell Areas
+  const FieldMetric& cell_area_xlow() const {
+    if (!_cell_area_xlow.has_value()) {
+      _compute_cell_area_x();
+    }
+    return *_cell_area_xlow;
+  }
+  const FieldMetric& cell_area_xhigh() const {
+    if (!_cell_area_xhigh.has_value()) {
+      _compute_cell_area_x();
+    }
+    return *_cell_area_xhigh;
+  }
+  const FieldMetric& cell_area_ylow() const {
+    if (!_cell_area_ylow.has_value()) {
+      _compute_cell_area_y();
+    }
+    return *_cell_area_ylow;
+  }
+  const FieldMetric& cell_area_yhigh() const {
+    if (!_cell_area_yhigh.has_value()) {
+      _compute_cell_area_y();
+    }
+    return *_cell_area_yhigh;
+  }
+  const FieldMetric& cell_area_zlow() const {
+    if (!_cell_area_zlow.has_value()) {
+      _compute_cell_area_z();
+    }
+    return *_cell_area_zlow;
+  }
+  const FieldMetric& cell_area_zhigh() const {
+    if (!_cell_area_zhigh.has_value()) {
+      _compute_cell_area_z();
+    }
+    return *_cell_area_zhigh;
+  }
+  FieldMetric& cell_area_xlow() {
+    if (!_cell_area_xlow.has_value()) {
+      _compute_cell_area_x();
+    }
+    return *_cell_area_xlow;
+  }
+  FieldMetric& cell_area_xhigh() {
+    if (!_cell_area_xhigh.has_value()) {
+      _compute_cell_area_x();
+    }
+    return *_cell_area_xhigh;
+  }
+  FieldMetric& cell_area_ylow() {
+    if (!_cell_area_ylow.has_value()) {
+      _compute_cell_area_y();
+    }
+    return *_cell_area_ylow;
+  }
+  FieldMetric& cell_area_yhigh() {
+    if (!_cell_area_yhigh.has_value()) {
+      _compute_cell_area_y();
+    }
+    return *_cell_area_yhigh;
+  }
+  FieldMetric& cell_area_zlow() {
+    if (!_cell_area_zlow.has_value()) {
+      _compute_cell_area_z();
+    }
+    return *_cell_area_zlow;
+  }
+  FieldMetric& cell_area_zhigh() {
+    if (!_cell_area_zhigh.has_value()) {
+      _compute_cell_area_z();
+    }
+    return *_cell_area_zhigh;
+  }
+  // Cell Volume
+  const FieldMetric& cell_volume() const {
+    if (!_cell_volume.has_value()) {
+      _compute_cell_volume();
+    }
+    return *_cell_volume;
+  }
+  FieldMetric& cell_volume() {
+    if (!_cell_volume.has_value()) {
+      _compute_cell_volume();
+    }
+    return *_cell_volume;
+  }
+
+private:
+  mutable std::optional<FieldMetric> _g_22_ylow, _g_22_yhigh;
+  mutable std::optional<FieldMetric> _jxz_ylow, _jxz_yhigh, _jxz_centre;
+  mutable std::optional<FieldMetric> _cell_area_xlow, _cell_area_xhigh;
+  mutable std::optional<FieldMetric> _cell_area_ylow, _cell_area_yhigh;
+  mutable std::optional<FieldMetric> _cell_area_zlow, _cell_area_zhigh;
+  mutable std::optional<FieldMetric> _cell_volume;
+  void _compute_Jxz_cell_faces() const;
+  void _compute_cell_area_x() const;
+  void _compute_cell_area_y() const;
+  void _compute_cell_area_z() const;
+  void _compute_cell_volume() const;
+
+public:
   /// Christoffel symbol of the second kind (connection coefficients)
   FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
   FieldMetric G2_11, G2_22, G2_33, G2_12, G2_13, G2_23;
@@ -256,10 +399,10 @@ private:
 class TokamakCoordinates : public Coordinates {
 public:
   TokamakCoordinates(Mesh *mesh) : Coordinates(mesh) {
-    
+
   }
 private:
-  
+
 };
 */
 
