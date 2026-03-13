@@ -3,7 +3,7 @@
  *
  * Interface for mesh classes. Contains standard variables and useful
  * routines.
- * 
+ *
  * Changelog
  * =========
  *
@@ -11,7 +11,7 @@
  *     * Removing coordinate system into separate
  *       Coordinates class
  *     * Adding index derivative functions from derivs.cxx
- * 
+ *
  * 2010-06 Ben Dudson, Sean Farley
  *     * Initial version, adapted from GridData class
  *     * Incorporates code from topology.cpp and Communicator
@@ -20,7 +20,7 @@
  * Copyright 2010-2025 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -43,6 +43,7 @@ class Mesh;
 #ifndef BOUT_MESH_H
 #define BOUT_MESH_H
 
+#include "bout/array.hxx"
 #include "bout/bout_enum_class.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/coordinates.hxx" // Coordinates class
@@ -169,6 +170,9 @@ public:
   ///
   /// @returns zero if successful, non-zero on failure
   int get(bool& bval, const std::string& name, bool def = false);
+
+  int get(Array<int>& var, const std::string& name);
+  int get(Array<BoutReal>& var, const std::string& name);
 
   /// Get a Field2D from the input source
   /// including communicating guard cells

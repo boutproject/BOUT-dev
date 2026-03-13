@@ -179,13 +179,21 @@ int Mesh::get(bool& bval, const std::string& name, bool def) {
   if (source == nullptr) {
     warn_default_used(def, name);
     bval = def;
-    return true;
+    return 1;
   }
 
   int bval_as_int = 0;
-  bool success = source->get(this, bval_as_int, name, def);
+  const bool success = source->get(this, bval_as_int, name, int(def));
   bval = bool(bval_as_int);
-  return !success;
+  return success ? 0 : 1;
+}
+
+int Mesh::get(Array<int>& var, const std::string& name) {
+  return source->get(var, name) ? 0 : 1;
+}
+
+int Mesh::get(Array<BoutReal>& var, const std::string& name) {
+  return source->get(var, name) ? 0 : 1;
 }
 
 int Mesh::get(Field2D& var, const std::string& name, BoutReal def, bool communicate,

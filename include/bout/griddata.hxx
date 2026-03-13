@@ -2,9 +2,9 @@
  * Functions to read input variables on a grid/mesh
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -29,11 +29,15 @@ class GridDataSource;
 #define BOUT_GRIDDATA_H
 
 #include "mesh.hxx"
+#include "bout/array.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/options.hxx"
 
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
+
+#include <string>
+#include <vector>
 
 /// Interface class to serve grid data
 /*!
@@ -70,6 +74,15 @@ public:
   static constexpr Direction X = Direction::X;
   static constexpr Direction Y = Direction::Y;
   static constexpr Direction Z = Direction::Z;
+
+  virtual bool get([[maybe_unused]] Array<int>& var,
+                   [[maybe_unused]] const std::string& name) {
+    return false;
+  }
+  virtual bool get([[maybe_unused]] Array<BoutReal>& var,
+                   [[maybe_unused]] const std::string& name) {
+    return false;
+  }
 
   virtual bool get(Mesh* m, std::vector<int>& var, const std::string& name, int len,
                    int offset = 0, Direction dir = GridDataSource::X) = 0;
@@ -114,6 +127,9 @@ public:
            CELL_LOC location = CELL_DEFAULT) override {
     return getField(m, var, name, def, location);
   }
+
+  bool get(Array<int>& var, const std::string& name) override;
+  bool get(Array<BoutReal>& var, const std::string& name) override;
 
   bool get(Mesh* m, std::vector<int>& var, const std::string& name, int len,
            int offset = 0, GridDataSource::Direction dir = GridDataSource::X) override;

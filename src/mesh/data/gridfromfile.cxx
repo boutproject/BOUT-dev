@@ -3,6 +3,7 @@
 #include <bout/griddata.hxx>
 
 #include <bout/array.hxx>
+#include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
@@ -14,7 +15,9 @@
 
 #include <algorithm>
 #include <iterator>
+#include <string>
 #include <utility>
+#include <vector>
 
 GridFile::GridFile(std::string gridfilename)
     : GridDataSource(true), data(bout::OptionsIO::create(gridfilename)->read()),
@@ -120,7 +123,7 @@ bool GridFile::get(Mesh* UNUSED(m), BoutReal& rval, const std::string& name,
 
 /*!
  * Reads a 2D, 3D or FieldPerp field variable from a file
- * 
+ *
  * Successfully reads Field2D or FieldPerp if the variable in the file is 0-D or 2-D.
  * Successfully reads Field3D if the variable in the file is 0-D, 2-D or 3-D.
  */
@@ -378,7 +381,7 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd, int n
 
     for (int x = xs; x < xs + nx_to_read; ++x) {
       for (int y = ys; y < ys + ny_to_read; ++y) {
-        BoutReal const value = full_var(x, y);
+        const BoutReal value = full_var(x, y);
         for (int z = 0; z < var.getNz(); z++) {
           var(x - xs + xd, y - ys + yd, z) = value;
         }
@@ -464,6 +467,22 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
       }
     }
   }
+}
+
+bool GridFile::get(Array<int>& var, const std::string& name) {
+  if (not data.isSet(name)) {
+    return false;
+  }
+  var = data[name].as<Array<int>>();
+  return true;
+}
+
+bool GridFile::get(Array<BoutReal>& var, const std::string& name) {
+  if (not data.isSet(name)) {
+    return false;
+  }
+  var = data[name].as<Array<BoutReal>>();
+  return true;
 }
 
 bool GridFile::get([[maybe_unused]] Mesh* m, [[maybe_unused]] std::vector<int>& var,
