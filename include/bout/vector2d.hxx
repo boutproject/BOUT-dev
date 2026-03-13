@@ -13,7 +13,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -142,7 +142,7 @@ public:
   CELL_LOC getLocation() const override;
 
   // FieldData virtual functions
-  bool is3D() const override { return false; }
+  FieldType field_type() const override { return FieldType::field2d; }
   int elementSize() const override { return 3; }
 
   /// Apply boundary condition to all fields
