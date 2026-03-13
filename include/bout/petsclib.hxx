@@ -1,31 +1,31 @@
 /*!************************************************************************
  * Provides access to the PETSc library, handling initialisation and
- * finalisation. 
+ * finalisation.
  *
  * Usage
  * -----
  *
  * #include <bout/petsclib.hxx>
- * 
+ *
  * class MyClass {
  *   public:
- *   
+ *
  *   private:
  *     PetscLib lib;
  * };
- * 
+ *
  *
  * This will then automatically initialise Petsc the first time an object
  * is created, and finalise it when the last object is destroyed.
  *
  * This header tries to workaround some annoying PETSc features, and
  * so it *must* be included before *any* PETSc header.
- * 
+ *
  **************************************************************************
- * Copyright 2012 - 2025 BOUT++ contributors
+ * Copyright 2012 - 2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -48,6 +48,8 @@
 
 #include "bout/build_defines.hxx"
 
+#include <string>
+
 class Options;
 
 #if BOUT_HAS_PETSC
@@ -66,7 +68,7 @@ class Options;
 #include "bout/boutexception.hxx"
 
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
-#define BOUT_DO_PETSC(cmd) PetscLib::assertIerr((cmd), #cmd)
+#define BOUT_DO_PETSC(cmd) PetscLib::assertIerr((cmd), #cmd, __FILE__, __LINE__)
 
 /*!
  * Handles initialisation and finalisation of PETSc library.
@@ -124,10 +126,17 @@ public:
   static void cleanup();
 
   static inline void assertIerr(PetscErrorCode ierr,
-                                const std::string& petsc_op = "PETSc operation") {
-    if (ierr != 0) {
-      throw BoutException("{:s} failed with {:d}", petsc_op, ierr);
+                                const std::string& petsc_op = "PETSc operation",
+                                const char* file = nullptr, int linenr = 0) {
+    if (PetscLikely(ierr == PETSC_SUCCESS)) {
+      return;
     }
+
+    const char* err_msg = nullptr;
+    PetscErrorMessage(ierr, &err_msg, nullptr);
+    throw BoutException("{:s} failed at {}:{} with {:d} [{}]", petsc_op,
+                        (file != nullptr) ? file : "unknown_file", linenr, ierr,
+                        (err_msg != nullptr) ? err_msg : "");
   }
 
   static BoutException SNESFailure(SNES& snes);

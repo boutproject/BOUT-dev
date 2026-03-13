@@ -1,4 +1,12 @@
-/// Represent operators using PETSc matrices
+/// Represent finite-difference operators using PETSc matrices.
+///
+/// This header defines:
+/// - `PetscMapping`, which maps between mesh-global numbering,
+///   PETSc numbering, and `Field3D` storage;
+/// - `PetscOperator`, which wraps a PETSc `Mat` as a linear operator on
+///   `Field3D` objects; and
+/// - `PetscOperators`, a helper for reading mappings and operators from
+///   a `Mesh`.
 ///
 
 #include "bout/array.hxx"
@@ -18,39 +26,84 @@
 #include <utility>
 #include <vector>
 
-/// Handles mapping between global cell index used in the mesh file,
-/// and the global indexing used in PETSc that depends on the mesh
-/// decomposition across MPI ranks.
+/// Map between mesh-global cell numbering and PETSc numbering.
 ///
-/// Each processor reads a chunk of the global arrays into Field3Ds:
-///  - cell_number
-///  - forward_cell_number
-///  - backward_cell_number
-/// Non-negative values in these arrays indicate a cell number.
+/// The mesh file stores operator stencils and weights using a mesh-global
+/// numbering scheme. This numbering includes:
+/// - evolving cells in the main domain;
+/// - X-boundary cells; and
+/// - Y-boundary cells represented by the `yup` and `ydown` fields.
 ///
-/// A Petsc Mat is constructed that maps between petsc indices and
-/// mesh indices.
+/// PETSc uses a different global numbering based on the MPI distribution
+/// of rows and vector entries. `PetscMapping` records the correspondence
+/// between these numbering systems and provides helper methods to iterate
+/// over the local cells in a consistent order.
+///
+/// The mapping order used by this class is:
+/// 1. evolving cells;
+/// 2. inner X-boundary cells;
+/// 3. outer X-boundary cells;
+/// 4. `yup` boundary cells; and
+/// 5. `ydown` boundary cells.
+///
+/// A pair of PETSc matrices is constructed internally to reorder vectors
+/// between mesh-global and PETSc-global numbering.
 class PetscMapping {
 public:
+  /// Construct the mapping from mesh numbering fields.
+  ///
+  /// @param cell_number Mesh-global cell numbers for evolving cells.
+  /// @param forward_cell_number Mesh-global cell numbers associated with
+  ///   forward Y-boundary (`yup`) values.
+  /// @param backward_cell_number Mesh-global cell numbers associated with
+  ///   backward Y-boundary (`ydown`) values.
+  ///
+  /// Non-negative values in the numbering fields identify valid cells.
+  /// The constructor builds the local regions and the PETSc permutation
+  /// matrices needed to translate between mesh and PETSc numbering.
   PetscMapping(const Field3D& cell_number, const Field3D& forward_cell_number,
                const Field3D& backward_cell_number);
 
-  // Static functions for unit testing
+  /// Destroy the PETSc matrices owned by this mapping.
+  ~PetscMapping();
+
+  /// Build a region containing all valid cells in a numbering field.
+  ///
+  /// @param cell_number Field whose entries contain mesh-global cell numbers.
+  /// @return A region containing all indices with non-negative cell numbers.
+  ///
+  /// This helper is public for unit testing.
   static Region<Ind3D> create_region(const Field3D& cell_number);
+
+  /// Build a region containing valid cells on the inner X boundary.
+  ///
+  /// @param cell_number Field whose entries contain mesh-global cell numbers.
+  /// @return A region containing valid cells adjacent to the inner X boundary.
   static Region<Ind3D> create_region_xin(const Field3D& cell_number);
+
+  /// Build a region containing valid cells on the outer X boundary.
+  ///
+  /// @param cell_number Field whose entries contain mesh-global cell numbers.
+  /// @return A region containing valid cells adjacent to the outer X boundary.
   static Region<Ind3D> create_region_xout(const Field3D& cell_number);
 
-  /// Total number of cells, including X and Y boundaries
+  /// Return the total number of locally mapped cells.
+  ///
+  /// The count includes evolving cells and all boundary cells represented
+  /// in the mapping on this processor.
   unsigned int size() const {
     return evolving_region.size() + xin_region.size() + xout_region.size()
            + yup_region.size() + ydown_region.size();
   }
 
-  /// Loops over cells and calls the given function with arguments:
-  ///   - PetscInt  PETSc row index
-  ///   - Ind3D     Index into Field3D variables
-  ///   - int       Global cell number in mesh
+  /// Iterate over locally owned evolving cells in PETSc row order.
   ///
+  /// @tparam Function Callable with signature
+  ///   `func(PetscInt petsc_row, Ind3D index, int mesh_global_index)`.
+  /// @param func Function called once for each evolving cell owned locally.
+  ///
+  /// The PETSc row index starts at the locally owned global row `row_start`.
+  /// The supplied `Ind3D` index refers to the main `Field3D` storage.
   template <typename Function>
   void map_evolving(Function func) const {
     PetscInt row = this->row_start;
@@ -60,8 +113,17 @@ public:
     }
   }
 
-  /// Note: It doesn't make sense to pass the Ind3D because
-  /// some reference Field3D, some the yup/ydown fields.
+  /// Iterate over all locally mapped cells in PETSc row order.
+  ///
+  /// @tparam Function Callable with signature
+  ///   `func(PetscInt petsc_row, int mesh_global_index)`.
+  /// @param func Function called once for each mapped cell owned locally.
+  ///
+  /// The iteration order is evolving, inner X boundary, outer X boundary,
+  /// `yup`, then `ydown`.
+  ///
+  /// No `Ind3D` is passed because some entries refer to interior `Field3D`
+  /// storage while others refer to boundary storage in `yup` or `ydown`.
   template <typename Function>
   void map(Function func) const {
     const std::vector<std::reference_wrapper<const Region<Ind3D>>> regions = {
@@ -75,6 +137,15 @@ public:
     }
   }
 
+  /// Iterate over locally stored entries packed from the main `Field3D`.
+  ///
+  /// @tparam Function Callable with signature `func(PetscInt local_index, Ind3D index)`.
+  /// @param func Function called once for each evolving or X-boundary cell
+  ///   stored in the local PETSc vector layout.
+  ///
+  /// The index passed to `func` is a local vector index beginning at zero.
+  /// Only the main field storage is traversed here; Y-boundary values are
+  /// handled separately by `map_local_yup()` and `map_local_ydown()`.
   template <typename Function>
   void map_local_field(Function func) const {
     const std::vector<std::reference_wrapper<const Region<Ind3D>>> regions = {
@@ -88,6 +159,12 @@ public:
     }
   }
 
+  /// Iterate over local vector entries corresponding to `yup` boundary values.
+  ///
+  /// @tparam Function Callable with signature `func(PetscInt local_index, Ind3D index)`.
+  /// @param func Function called once for each locally stored `yup` entry.
+  ///
+  /// The local index is the offset into the packed local PETSc vector.
   template <typename Function>
   void map_local_yup(Function func) const {
     PetscInt row = evolving_region.size() + xin_region.size() + xout_region.size();
@@ -97,6 +174,12 @@ public:
     }
   }
 
+  /// Iterate over local vector entries corresponding to `ydown` boundary values.
+  ///
+  /// @tparam Function Callable with signature `func(PetscInt local_index, Ind3D index)`.
+  /// @param func Function called once for each locally stored `ydown` entry.
+  ///
+  /// The local index is the offset into the packed local PETSc vector.
   template <typename Function>
   void map_local_ydown(Function func) const {
     PetscInt row = evolving_region.size() + xin_region.size() + xout_region.size()
@@ -107,72 +190,185 @@ public:
     }
   }
 
-  /// Return a matrix that reorders vectors from petsc global index to mesh index
+  /// Return the PETSc matrix that maps PETSc ordering to mesh ordering.
+  ///
+  /// @return PETSc matrix representing the permutation from PETSc global
+  ///   indices to mesh-global indices.
   Mat getPetscToMesh() const { return mat_petsc_to_mesh; }
 
 private:
   PetscLib lib; // Initialize and finalize PETSc
 
+  /// Mesh-global numbering for cells stored on this rank.
   Field3D cell_number;
 
-  Region<Ind3D> evolving_region; ///< Evolving cells
-  Region<Ind3D> xin_region;      ///< X boundary cells in inner boundary
-  Region<Ind3D> xout_region;     ///< X boundary cells in outer boundary
-  Region<Ind3D> yup_region;      ///< Y boundary cells in forward direction
-  Region<Ind3D> ydown_region;    ///< Y boundary cells in backward direction
+  /// Evolving cells in the main domain.
+  Region<Ind3D> evolving_region;
 
-  PetscInt row_start, row_end; ///< Local row indices
+  /// X-boundary cells on the inner radial boundary.
+  Region<Ind3D> xin_region;
+
+  /// X-boundary cells on the outer radial boundary.
+  Region<Ind3D> xout_region;
+
+  /// Y-boundary cells in the forward direction.
+  Region<Ind3D> yup_region;
+
+  /// Y-boundary cells in the backward direction.
+  Region<Ind3D> ydown_region;
+
+  /// First and one-past-last PETSc global rows owned by this rank.
+  PetscInt row_start, row_end;
+
+  /// Permutation matrix mapping mesh-global ordering to PETSc ordering.
   Mat mat_mesh_to_petsc;
+
+  /// Permutation matrix mapping PETSc ordering to mesh-global ordering.
   Mat mat_petsc_to_mesh;
 };
 
-/// Shared pointer to const PetscMapping
-/// Mapping is const after creation.
+/// Shared pointer to an immutable `PetscMapping`.
+///
+/// The mapping is constructed once and then shared by operators that use it.
 using PetscMappingPtr = std::shared_ptr<const PetscMapping>;
 
-/// Represents an operator on Field3Ds
+/// Linear operator on `Field3D` backed by a PETSc matrix.
+///
+/// `PetscOperator` wraps a PETSc `Mat` whose rows and columns use the PETSc
+/// numbering defined by a corresponding `PetscMapping`. Operators are usually
+/// constructed from CSR arrays read from the mesh file and can then be:
+/// - applied to a `Field3D`;
+/// - composed with other operators; and
+/// - added or subtracted.
 class PetscOperator {
 public:
-  /// Create using CSR format arrays
+  /// Construct an operator from CSR data in mesh-global numbering.
+  ///
+  /// @param mapping Shared mapping between mesh and PETSc numbering.
+  /// @param rows CSR row offsets.
+  /// @param cols CSR column indices in mesh-global numbering.
+  /// @param weights CSR non-zero values.
+  ///
+  /// The CSR arrays define an operator in mesh-global numbering. The
+  /// constructor converts this representation into a PETSc matrix using
+  /// the supplied mapping.
   PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int> cols,
                 Array<BoutReal> weights);
 
-  /// Perform operation
+  /// Destroy the PETSc matrix and working vectors owned by this operator.
+  ~PetscOperator();
+
+  /// Apply the operator to a field.
+  ///
+  /// @param rhs Input field, including any required `yup` and `ydown`
+  ///   boundary values.
+  /// @return Result of applying the operator to `rhs`.
+  ///
+  /// The input field is packed into PETSc vector storage using the mapping,
+  /// multiplied by the PETSc matrix, then unpacked back into a `Field3D`.
   Field3D operator()(const Field3D& rhs) const;
 
-  /// Operator composition
+  /// Compose this operator with another operator.
+  ///
+  /// @param rhs Right-hand-side operator.
+  /// @return The composed operator `(*this) * rhs`.
+  ///
+  /// Both operators must use compatible mappings.
   PetscOperator operator*(const PetscOperator& rhs) const;
 
-  /// Operator addition
+  /// Add two operators.
+  ///
+  /// @param rhs Right-hand-side operator.
+  /// @return The sum of the two operators.
+  ///
+  /// Both operators must use compatible mappings.
   PetscOperator operator+(const PetscOperator& rhs) const;
 
-  /// Operator subtraction
+  /// Subtract one operator from another.
+  ///
+  /// @param rhs Right-hand-side operator.
+  /// @return The difference of the two operators.
+  ///
+  /// Both operators must use compatible mappings.
   PetscOperator operator-(const PetscOperator& rhs) const;
 
 private:
+  /// Construct directly from an existing PETSc matrix.
+  ///
+  /// @param mapping Shared mapping between mesh and PETSc numbering.
+  /// @param mat PETSc matrix implementing the operator.
+  ///
+  /// This constructor is used internally when creating operators from
+  /// PETSc matrix algebra such as composition, addition, or subtraction.
   PetscOperator(PetscMappingPtr mapping, Mat mat)
-      : mapping(std::move(mapping)), mat_operator(mat) {}
+      : mapping(std::move(mapping)), mat_operator(mat) {
+    // Allocate working vectors
+    VecCreate(BoutComm::get(), &this->rhs_vec);
+    VecSetSizes(this->rhs_vec, this->mapping->size(), PETSC_DETERMINE);
+    VecDuplicate(this->rhs_vec, &this->result_vec);
+  }
+
+  /// Shared mapping between mesh and PETSc numbering.
   PetscMappingPtr mapping;
+
+  /// PETSc matrix implementing the operator.
   Mat mat_operator;
+
+  /// Work vector holding the packed input field.
+  Vec rhs_vec;
+
+  /// Work vector holding the packed result.
+  Vec result_vec;
 };
 
+/// Collection of PETSc operators read from a mesh.
+///
+/// `PetscOperators` owns the `PetscMapping` derived from the mesh numbering
+/// fields and provides access to named operators stored in the mesh file
+/// as CSR arrays.
 class PetscOperators {
 public:
+  /// Construct PETSc operator support from a mesh.
   ///
-  /// Reads from the mesh:
-  /// - cell_number : Field3D
-  /// - forward_cell_number : Field3D
-  /// - backward_cell_number : Field3D
-  /// - total_cells : int, optional
+  /// Reads the following mesh variables:
+  /// - `cell_number`
+  /// - `forward_cell_number`
+  /// - `backward_cell_number`
+  ///
+  /// and uses them to construct the shared `PetscMapping`.
+  ///
+  /// @param mesh Mesh from which numbering fields and operators are read.
   PetscOperators(Mesh* mesh);
 
-private:
-  /// Read a Field3D from the mesh or throw BoutException if not found.
-  Field3D meshGetField3D(Mesh* mesh, const std::string& name);
+  /// Retrieve a named PETSc operator from the mesh.
+  ///
+  /// @param name Base name of the operator in the mesh file.
+  /// @return A `PetscOperator` constructed from the arrays
+  ///   `{name}_rows`, `{name}_columns`, and `{name}_weights`.
+  ///
+  /// Throws `BoutException` if any of the required arrays are missing.
+  PetscOperator get(const std::string& name) const;
 
-  /// Read a 1D Array<T> from the mesh or throw BoutException
+private:
+  /// Read a `Field3D` from the mesh.
+  ///
+  /// @param mesh Mesh from which to read.
+  /// @param name Name of the field.
+  /// @return The requested `Field3D`.
+  ///
+  /// Throws `BoutException` if the field is not present.
+  Field3D meshGetField3D(Mesh* mesh, const std::string& name) const;
+
+  /// Read a one-dimensional `Array<T>` from the mesh.
+  ///
+  /// @tparam T Array element type.
+  /// @param mesh Mesh from which to read.
+  /// @param name Name of the array.
+  /// @return The requested array.
+  ///
+  /// Throws `BoutException` if the array is not present.
   template <typename T>
-  Array<T> meshGetArray(Mesh* mesh, const std::string& name) {
+  Array<T> meshGetArray(Mesh* mesh, const std::string& name) const {
     Array<T> result;
     if (mesh->get(result, name) != 0) {
       throw BoutException("PetscOperators requires Array<int> '{}'", name);
@@ -180,5 +376,9 @@ private:
     return result;
   }
 
+  /// Mesh from which operator data are read.
+  Mesh* mesh;
+
+  /// Shared mapping used by all operators created from this mesh.
   PetscMappingPtr mapping;
 };

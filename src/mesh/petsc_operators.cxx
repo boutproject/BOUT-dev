@@ -6,9 +6,11 @@
 #include "bout/field3d.hxx"
 #include "bout/output.hxx"
 #include "bout/output_bout_types.hxx"
+#include "bout/petsclib.hxx"
 #include "bout/region.hxx"
 #include <memory>
 #include <string>
+#include <utility>
 
 Region<Ind3D> PetscMapping::create_region(const Field3D& cell_number) {
   Region<Ind3D>::RegionIndices indices;
@@ -27,7 +29,7 @@ Region<Ind3D> PetscMapping::create_region_xin(const Field3D& cell_number) {
     for (int i = 0; i < mesh->xstart; ++i) {
       for (int j = mesh->ystart; j <= mesh->yend; ++j) {
         for (int k = mesh->zstart; k <= mesh->zend; ++k) {
-          if (cell_number(i, j, k) > 0) {
+          if (cell_number(i, j, k) > -1) {
             xin_indices.push_back(cell_number.indexAt(i, j, k));
           }
         }
@@ -44,7 +46,7 @@ Region<Ind3D> PetscMapping::create_region_xout(const Field3D& cell_number) {
     for (int i = mesh->xend + 1; i < mesh->LocalNx; ++i) {
       for (int j = mesh->ystart; j <= mesh->yend; ++j) {
         for (int k = mesh->zstart; k <= mesh->zend; ++k) {
-          if (cell_number(i, j, k) > 0) {
+          if (cell_number(i, j, k) > -1) {
             xout_indices.push_back(cell_number.indexAt(i, j, k));
           }
         }
@@ -75,38 +77,45 @@ PetscMapping::PetscMapping(const Field3D& cell_number, const Field3D& forward_ce
   // Maps PETSc row (or column) indices to the global indices used in
   // the mesh.  This is needed because the PETSc indices depend on the
   // number of processors.
-  MatCreate(BoutComm::get(), &mat_mesh_to_petsc);
-  MatSetSizes(mat_mesh_to_petsc, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE);
-  MatSetType(mat_mesh_to_petsc, MATMPIAIJ);
+  BOUT_DO_PETSC(MatCreate(BoutComm::get(), &mat_mesh_to_petsc));
+  BOUT_DO_PETSC(
+      MatSetSizes(mat_mesh_to_petsc, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE));
+  BOUT_DO_PETSC(MatSetType(mat_mesh_to_petsc, MATMPIAIJ));
   // Each row will have one non-zero entry, which could be in
   // either the "diagonal" or "off-diagonal" block.
-  MatMPIAIJSetPreallocation(mat_mesh_to_petsc, 1, nullptr, 1, nullptr);
+  BOUT_DO_PETSC(MatMPIAIJSetPreallocation(mat_mesh_to_petsc, 1, nullptr, 1, nullptr));
 
   // Get the range of rows owned by this processor
-  MatGetOwnershipRange(mat_mesh_to_petsc, &row_start, &row_end);
+  BOUT_DO_PETSC(MatGetOwnershipRange(mat_mesh_to_petsc, &row_start, &row_end));
   output.write("Local row range: {} -> {}\n", row_start, row_end);
 
   // Iterate through regions in this order
   this->map([&](PetscInt row, PetscInt col) {
     // `row` is the PETSc index; `col` is the Mesh index
     const PetscScalar ONE = 1.0;
-    MatSetValues(mat_mesh_to_petsc, 1, &row, 1, &col, &ONE, INSERT_VALUES);
+    BOUT_DO_PETSC(MatSetValues(mat_mesh_to_petsc, 1, &row, 1, &col, &ONE, INSERT_VALUES));
   });
-  MatAssemblyBegin(mat_mesh_to_petsc, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(mat_mesh_to_petsc, MAT_FINAL_ASSEMBLY);
+  BOUT_DO_PETSC(MatAssemblyBegin(mat_mesh_to_petsc, MAT_FINAL_ASSEMBLY));
+  BOUT_DO_PETSC(MatAssemblyEnd(mat_mesh_to_petsc, MAT_FINAL_ASSEMBLY));
 
   // Transpose to map petsc indices to mesh indices
   MatTranspose(mat_mesh_to_petsc, MAT_INITIAL_MATRIX, &mat_petsc_to_mesh);
 }
 
+PetscMapping::~PetscMapping() {
+  MatDestroy(&this->mat_mesh_to_petsc);
+  MatDestroy(&this->mat_petsc_to_mesh);
+}
+
 PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int> cols,
                              Array<BoutReal> weights)
-    : mapping(mapping) {
+    : mapping(std::move(mapping)) {
 
   Mat mat;
-  MatCreate(BoutComm::get(), &mat);
+  BOUT_DO_PETSC(MatCreate(BoutComm::get(), &mat));
+  BOUT_DO_PETSC(MatSetType(mat, MATMPIAIJ));
   int nlocal = mapping->size();
-  MatSetSizes(mat, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE);
+  BOUT_DO_PETSC(MatSetSizes(mat, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE));
 
   mapping->map_evolving([&](PetscInt row, Ind3D, PetscInt mesh_index) {
     if (mesh_index >= rows.size()) {
@@ -115,51 +124,55 @@ PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int
     // Get the range of indices into columns and weights
     int start_ind = rows[mesh_index];
     int end_ind = (mesh_index + 1 < rows.size()) ? rows[mesh_index + 1] : cols.size();
-    output.write("Mapping {} : {} -> {}\n", row, start_ind, end_ind);
 
-    MatSetValues(mat, 1, &row, end_ind - start_ind, &cols[start_ind], &weights[start_ind],
-                 INSERT_VALUES);
+    BOUT_DO_PETSC(MatSetValues(mat, 1, &row, end_ind - start_ind, &cols[start_ind],
+                               &weights[start_ind], INSERT_VALUES));
   });
-  MatAssemblyBegin(mat, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(mat, MAT_FINAL_ASSEMBLY);
+  BOUT_DO_PETSC(MatAssemblyBegin(mat, MAT_FINAL_ASSEMBLY));
+  BOUT_DO_PETSC(MatAssemblyEnd(mat, MAT_FINAL_ASSEMBLY));
 
   // Row indices are PETSc indices but columns are mesh indices
   // Multiply on the right by PetscToMesh.
-  MatMatMult(mat, mapping->getPetscToMesh(), MAT_INITIAL_MATRIX, PETSC_DETERMINE,
-             &this->mat_operator);
+  BOUT_DO_PETSC(MatMatMult(mat, mapping->getPetscToMesh(), MAT_INITIAL_MATRIX,
+                           PETSC_DETERMINE, &this->mat_operator));
+
+  // Allocate vectors for operator input and output
+  BOUT_DO_PETSC(VecCreate(BoutComm::get(), &this->rhs_vec));
+  BOUT_DO_PETSC(VecSetSizes(this->rhs_vec, this->mapping->size(), PETSC_DETERMINE));
+  BOUT_DO_PETSC(VecDuplicate(this->rhs_vec, &this->result_vec));
+}
+
+PetscOperator::~PetscOperator() {
+  MatDestroy(&this->mat_operator);
+  VecDestroy(&this->rhs_vec);
+  VecDestroy(&this->result_vec);
 }
 
 /// Perform operation
 Field3D PetscOperator::operator()(const Field3D& rhs) const {
-  Vec rhs_vec;
-  VecCreate(BoutComm::get(), &rhs_vec);
-  VecSetSizes(rhs_vec, this->mapping->size(), PETSC_DETERMINE);
-
   // Fill vec from rhs
   PetscScalar* x;
   // Copy rows from Field3D cells
-  VecGetArray(rhs_vec, &x);
+  BOUT_DO_PETSC(VecGetArray(this->rhs_vec, &x));
   mapping->map_local_field([&](PetscInt row, const Ind3D& i) { x[row] = rhs[i]; });
 
   // Copy Yup / Ydown values from boundaries
   const Field3D& yup = rhs.yup();
   mapping->map_local_yup([&](PetscInt row, const Ind3D& i) { x[row] = yup[i]; });
 
-  const Field3D& ydown = rhs.yup();
+  const Field3D& ydown = rhs.ydown();
   mapping->map_local_ydown([&](PetscInt row, const Ind3D& i) { x[row] = ydown[i]; });
-  VecRestoreArray(rhs_vec, &x);
+  BOUT_DO_PETSC(VecRestoreArray(this->rhs_vec, &x));
 
   // Perform Mat-Vec muliplication
-  Vec result_vec;
-  VecDuplicate(rhs_vec, &result_vec);
-  MatMult(this->mat_operator, rhs_vec, result_vec);
+  BOUT_DO_PETSC(MatMult(this->mat_operator, rhs_vec, result_vec));
 
   // Copy result_vec into a Field3D
-  Field3D result;
+  Field3D result{emptyFrom(rhs)}; // This allocates memory
   const PetscScalar* r;
-  VecGetArrayRead(result_vec, &r);
+  BOUT_DO_PETSC(VecGetArrayRead(result_vec, &r));
   mapping->map_local_field([&](PetscInt row, const Ind3D& i) { result[i] = r[row]; });
-  VecRestoreArrayRead(result_vec, &r);
+  BOUT_DO_PETSC(VecRestoreArrayRead(result_vec, &r));
 
   return result;
 }
@@ -168,8 +181,8 @@ Field3D PetscOperator::operator()(const Field3D& rhs) const {
 PetscOperator PetscOperator::operator*(const PetscOperator& rhs) const {
   ASSERT0(this->mapping == rhs.mapping);
   Mat mat;
-  MatMatMult(this->mat_operator, rhs.mat_operator, MAT_INITIAL_MATRIX, PETSC_DETERMINE,
-             &mat);
+  BOUT_DO_PETSC(MatMatMult(this->mat_operator, rhs.mat_operator, MAT_INITIAL_MATRIX,
+                           PETSC_DETERMINE, &mat));
   return PetscOperator(this->mapping, mat);
 }
 
@@ -177,8 +190,8 @@ PetscOperator PetscOperator::operator*(const PetscOperator& rhs) const {
 PetscOperator PetscOperator::operator+(const PetscOperator& rhs) const {
   ASSERT0(this->mapping == rhs.mapping);
   Mat mat;
-  MatDuplicate(mat_operator, MAT_COPY_VALUES, &mat);
-  MatAXPY(mat, 1.0, rhs.mat_operator, UNKNOWN_NONZERO_PATTERN);
+  BOUT_DO_PETSC(MatDuplicate(mat_operator, MAT_COPY_VALUES, &mat));
+  BOUT_DO_PETSC(MatAXPY(mat, 1.0, rhs.mat_operator, UNKNOWN_NONZERO_PATTERN));
   return PetscOperator(this->mapping, mat);
 }
 
@@ -186,12 +199,12 @@ PetscOperator PetscOperator::operator+(const PetscOperator& rhs) const {
 PetscOperator PetscOperator::operator-(const PetscOperator& rhs) const {
   ASSERT0(this->mapping == rhs.mapping);
   Mat mat;
-  MatDuplicate(mat_operator, MAT_COPY_VALUES, &mat);
-  MatAXPY(mat, -1.0, rhs.mat_operator, UNKNOWN_NONZERO_PATTERN);
+  BOUT_DO_PETSC(MatDuplicate(mat_operator, MAT_COPY_VALUES, &mat));
+  BOUT_DO_PETSC(MatAXPY(mat, -1.0, rhs.mat_operator, UNKNOWN_NONZERO_PATTERN));
   return PetscOperator(this->mapping, mat);
 }
 
-Field3D PetscOperators::meshGetField3D(Mesh* mesh, const std::string& name) {
+Field3D PetscOperators::meshGetField3D(Mesh* mesh, const std::string& name) const {
   Field3D result;
   if (mesh->get(result, name) != 0) {
     throw BoutException("PetscOperators requires field '{}'", name);
@@ -200,10 +213,10 @@ Field3D PetscOperators::meshGetField3D(Mesh* mesh, const std::string& name) {
 }
 
 PetscOperators::PetscOperators(Mesh* mesh)
-    : mapping(std::make_shared<const PetscMapping>(
-          meshGetField3D(mesh, "cell_number"),
-          meshGetField3D(mesh, "forward_cell_number"),
-          meshGetField3D(mesh, "backward_cell_number"))) {
+    : mesh(mesh), mapping(std::make_shared<const PetscMapping>(
+                      meshGetField3D(mesh, "cell_number"),
+                      meshGetField3D(mesh, "forward_cell_number"),
+                      meshGetField3D(mesh, "backward_cell_number"))) {
 
   int mesh_total_cells;
   if (mesh->get(mesh_total_cells, "total_cells") == 0) {
@@ -213,9 +226,10 @@ PetscOperators::PetscOperators(Mesh* mesh)
                           mesh_total_cells, mapping->size());
     }
   }
+}
 
-  // Read forward operator
-  PetscOperator forward(mapping, this->meshGetArray<int>(mesh, "forward_rows"),
-                        this->meshGetArray<int>(mesh, "forward_columns"),
-                        this->meshGetArray<BoutReal>(mesh, "forward_weights"));
+PetscOperator PetscOperators::get(const std::string& name) const {
+  return PetscOperator(this->mapping, this->meshGetArray<int>(this->mesh, name + "_rows"),
+                       this->meshGetArray<int>(this->mesh, name + "_columns"),
+                       this->meshGetArray<BoutReal>(this->mesh, name + "_weights"));
 }
