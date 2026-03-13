@@ -2088,6 +2088,7 @@ void Coordinates::_compute_cell_area_x() const {
   _cell_area_xhigh.emplace(emptyFrom(area_centre));
   // We cannot setLocation, as that would trigger the computation of staggered
   // metrics.
+  auto mesh = Bxy.getMesh();
   ASSERT0(mesh->xstart > 0);
   BOUT_FOR(i, _jxz_centre->getRegion("RGN_NOX")) {
     (*_cell_area_xlow)[i] = 0.5 * (area_centre[i] + area_centre[i.xm()]);
@@ -2102,8 +2103,8 @@ void Coordinates::_compute_cell_area_y() const {
     ASSERT2(isUniform(dx, false, "RGN_ALL"));
     ASSERT4(isUniform(dz, true, "RGN_ALL"));
     ASSERT2(isUniform(dz, false, "RGN_ALL"));
-    _cell_area_ylow = _jxz_ylow * dx * dz;
-    _cell_area_yhigh = _jxz_yhigh * dx * dz;
+    _cell_area_ylow.emplace(*_jxz_ylow * dx * dz);
+    _cell_area_yhigh.emplace(*_jxz_yhigh * dx * dz);
   } else {
     // Field aligned
     const auto area_centre = sqrt(g_11 * g_33 - SQ(g_13)) * dx * dz;
@@ -2111,6 +2112,7 @@ void Coordinates::_compute_cell_area_y() const {
     _cell_area_yhigh.emplace(emptyFrom(area_centre));
     // We cannot setLocation, as that would trigger the computation of staggered
     // metrics.
+    auto mesh = Bxy.getMesh();
     ASSERT0(mesh->ystart > 0);
     BOUT_FOR(i, _jxz_centre->getRegion("RGN_NOY")) {
       (*_cell_area_ylow)[i] = 0.5 * (area_centre[i] + area_centre[i.ym()]);
