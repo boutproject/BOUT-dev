@@ -1,13 +1,14 @@
 #include "bout/petsc_operators.hxx"
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
 #include "bout/output.hxx"
 #include "bout/output_bout_types.hxx"
 #include "bout/region.hxx"
-
-#include <functional>
+#include <memory>
 #include <string>
-#include <vector>
 
 Region<Ind3D> PetscMapping::create_region(const Field3D& cell_number) {
   Region<Ind3D>::RegionIndices indices;
@@ -55,7 +56,7 @@ Region<Ind3D> PetscMapping::create_region_xout(const Field3D& cell_number) {
 
 PetscMapping::PetscMapping(const Field3D& cell_number, const Field3D& forward_cell_number,
                            const Field3D& backward_cell_number)
-    : evolving_region(create_region(cell_number)),
+    : cell_number(cell_number), evolving_region(create_region(cell_number)),
       xin_region(create_region_xin(cell_number)),
       xout_region(create_region_xout(cell_number)),
       yup_region(create_region(forward_cell_number)),
@@ -82,24 +83,95 @@ PetscMapping::PetscMapping(const Field3D& cell_number, const Field3D& forward_ce
   MatMPIAIJSetPreallocation(mat_mesh_to_petsc, 1, nullptr, 1, nullptr);
 
   // Get the range of rows owned by this processor
-  PetscInt row_start, row_end;
   MatGetOwnershipRange(mat_mesh_to_petsc, &row_start, &row_end);
   output.write("Local row range: {} -> {}\n", row_start, row_end);
 
-  PetscInt row = row_start;
-  const PetscScalar ONE = 1.0;
   // Iterate through regions in this order
-  const std::vector<std::reference_wrapper<Region<Ind3D>>> regions = {
-      evolving_region, xin_region, xout_region, yup_region, ydown_region};
-  for (const auto& region : regions) {
-    BOUT_FOR_SERIAL(i, region.get()) {
-      const PetscInt col = ROUND(cell_number[i]);
-      MatSetValues(mat_mesh_to_petsc, 1, &row, 1, &col, &ONE, INSERT_VALUES);
-      ++row;
-    }
-  }
+  this->map([&](PetscInt row, PetscInt col) {
+    // `row` is the PETSc index; `col` is the Mesh index
+    const PetscScalar ONE = 1.0;
+    MatSetValues(mat_mesh_to_petsc, 1, &row, 1, &col, &ONE, INSERT_VALUES);
+  });
   MatAssemblyBegin(mat_mesh_to_petsc, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(mat_mesh_to_petsc, MAT_FINAL_ASSEMBLY);
+}
+
+PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int> cols,
+                             Array<BoutReal> weights)
+    : mapping(mapping) {
+
+  MatCreate(BoutComm::get(), &mat_operator);
+  int nlocal = mapping->size();
+  MatSetSizes(mat_operator, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE);
+
+  mapping->map_evolving([&](PetscInt row, Ind3D, PetscInt mesh_index) {
+    if (mesh_index >= rows.size()) {
+      return; // No weights -> skip
+    }
+    // Get the range of indices into columns and weights
+    int start_ind = rows[mesh_index];
+    int end_ind = (mesh_index + 1 < rows.size()) ? rows[mesh_index + 1] : cols.size();
+    output.write("Mapping {} : {} -> {}\n", row, start_ind, end_ind);
+
+    MatSetValues(mat_operator, 1, &row, end_ind - start_ind, &cols[start_ind],
+                 &weights[start_ind], INSERT_VALUES);
+  });
+  MatAssemblyBegin(mat_operator, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(mat_operator, MAT_FINAL_ASSEMBLY);
+}
+
+/// Perform operation
+Field3D PetscOperator::operator()(const Field3D& rhs) const {
+  Vec rhs_vec;
+  VecCreate(BoutComm::get(), &rhs_vec);
+  VecSetSizes(rhs_vec, this->mapping->size(), PETSC_DETERMINE);
+
+  // Fill vec from rhs
+  PetscScalar* x;
+  VecGetArray(rhs_vec, &x);
+  throw BoutException("Not implemented");
+  VecRestoreArray(rhs_vec, &x);
+
+  // Perform Mat-Vec muliplication
+  Vec result_vec;
+  VecDuplicate(rhs_vec, &result_vec);
+  MatMult(this->mat_operator, rhs_vec, result_vec);
+
+  // Copy result_vec into a Field3D
+  Field3D result;
+  const PetscScalar* r;
+  VecGetArrayRead(result_vec, &r);
+  throw BoutException("Not implemented");
+  VecRestoreArrayRead(result_vec, &r);
+
+  return result;
+}
+
+/// Operator composition
+PetscOperator PetscOperator::operator*(const PetscOperator& rhs) const {
+  ASSERT0(this->mapping == rhs.mapping);
+  Mat mat;
+  MatMatMult(this->mat_operator, rhs.mat_operator, MAT_INITIAL_MATRIX, PETSC_DETERMINE,
+             &mat);
+  return PetscOperator(this->mapping, mat);
+}
+
+/// Operator addition
+PetscOperator PetscOperator::operator+(const PetscOperator& rhs) const {
+  ASSERT0(this->mapping == rhs.mapping);
+  Mat mat;
+  MatDuplicate(mat_operator, MAT_COPY_VALUES, &mat);
+  MatAXPY(mat, 1.0, rhs.mat_operator, UNKNOWN_NONZERO_PATTERN);
+  return PetscOperator(this->mapping, mat);
+}
+
+/// Operator subtraction
+PetscOperator PetscOperator::operator-(const PetscOperator& rhs) const {
+  ASSERT0(this->mapping == rhs.mapping);
+  Mat mat;
+  MatDuplicate(mat_operator, MAT_COPY_VALUES, &mat);
+  MatAXPY(mat, -1.0, rhs.mat_operator, UNKNOWN_NONZERO_PATTERN);
+  return PetscOperator(this->mapping, mat);
 }
 
 Field3D PetscOperators::meshGetField3D(Mesh* mesh, const std::string& name) {
@@ -111,19 +183,22 @@ Field3D PetscOperators::meshGetField3D(Mesh* mesh, const std::string& name) {
 }
 
 PetscOperators::PetscOperators(Mesh* mesh)
-    : mapping(PetscMapping(meshGetField3D(mesh, "cell_number"),
-                           meshGetField3D(mesh, "forward_cell_number"),
-                           meshGetField3D(mesh, "backward_cell_number"))) {
+    : mapping(std::make_shared<const PetscMapping>(
+          meshGetField3D(mesh, "cell_number"),
+          meshGetField3D(mesh, "forward_cell_number"),
+          meshGetField3D(mesh, "backward_cell_number"))) {
 
   int mesh_total_cells;
   if (mesh->get(mesh_total_cells, "total_cells") == 0) {
     // Check total number of cells
-    if (mesh_total_cells != mapping.size()) {
+    if (mesh_total_cells != mapping->size()) {
       throw BoutException("Total cells in mesh {} doesn't match mapping size {}",
-                          mesh_total_cells, mapping.size());
+                          mesh_total_cells, mapping->size());
     }
   }
 
-  //MatCreate(comm, &mat_yforward);
-  //MatSetSizes(mat_yforward, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE);
+  // Read forward operator
+  PetscOperator forward(mapping, this->meshGetArray<int>(mesh, "forward_rows"),
+                        this->meshGetArray<int>(mesh, "forward_columns"),
+                        this->meshGetArray<BoutReal>(mesh, "forward_weights"));
 }
