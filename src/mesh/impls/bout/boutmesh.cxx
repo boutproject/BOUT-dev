@@ -268,7 +268,11 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
           _f("Number of processors ({:d}) not divisible by NPs in x direction ({:d})\n"),
           NPES, NXPE);
     }
-
+    if (nx % NXPE != 0) {
+      throw BoutException(
+          _("Number of x points ({:d}) not divisible by NPs in x direction ({:d})\n"), nx,
+          NXPE);
+    }
     NYPE = NPES / NXPE;
   } else {
     // NXPE not set, but NYPE is
@@ -281,7 +285,11 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
           _f("Number of processors ({:d}) not divisible by NPs in y direction ({:d})\n"),
           NPES, NYPE);
     }
-
+    if (ny % NYPE != 0) {
+      throw BoutException(
+          _("Number of y points ({:d}) not divisible by NPs in y direction ({:d})\n"), nx,
+          NXPE);
+    }
     NXPE = NPES / NYPE;
   }
 
@@ -2218,9 +2226,9 @@ void BoutMesh::topology() {
     }
 
     for (int i = 0; i < limiter_count; ++i) {
-      int const yind = limiter_yinds[i];
-      int const xstart = limiter_xstarts[i];
-      int const xend = limiter_xends[i];
+      const int yind = limiter_yinds[i];
+      const int xstart = limiter_xstarts[i];
+      const int xend = limiter_xends[i];
       output_info.write("Adding a limiter between y={} and {}. X indices {} to {}\n",
                         yind, yind + 1, xstart, xend);
       add_target(yind, xstart, xend);
