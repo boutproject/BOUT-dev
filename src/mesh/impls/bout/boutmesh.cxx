@@ -52,6 +52,7 @@
 #include <bout/utils.hxx>
 
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
 #include <algorithm>
 #include <cmath>
@@ -105,6 +106,9 @@ BoutMesh::~BoutMesh() {
   }
   if (comm_outer != MPI_COMM_NULL) {
     MPI_Comm_free(&comm_outer);
+  }
+  if (comm_xz != MPI_COMM_NULL) {
+    MPI_Comm_free(&comm_xz);
   }
 }
 
@@ -665,9 +669,42 @@ int BoutMesh::load() {
   return 0;
 }
 
+namespace {
+auto make_XZ_communicator(const BoutMesh& mesh, MPI_Group group_world) -> MPI_Comm {
+  std::vector<int> ranks;
+
+  const int yp = mesh.getYProcIndex();
+
+  // All processors with the same Y index
+  for (int xp = 0; xp < mesh.getNXPE(); ++xp) {
+    for (int zp = 0; zp < mesh.getNZPE(); ++zp) {
+      ranks.push_back(mesh.getProcIndex(xp, yp, zp));
+    }
+  }
+  MPI_Group group{};
+  if (MPI_Group_incl(group_world, static_cast<int>(ranks.size()), ranks.data(), &group)
+      != MPI_SUCCESS) {
+    throw BoutException("Could not create X-Z communication group for ranks {}",
+                        fmt::join(ranks, ", "));
+  }
+
+  MPI_Comm comm_xz{};
+  if (MPI_Comm_create(BoutComm::get(), group, &comm_xz) != MPI_SUCCESS) {
+    throw BoutException("Could not create X-Z communicator for yp={} (xind={}, yind={}, "
+                        "zind={}) ranks={}",
+                        yp, mesh.getXProcIndex(), mesh.getYProcIndex(),
+                        mesh.getZProcIndex(), fmt::join(ranks, ", "));
+  }
+
+  return comm_xz;
+}
+} // namespace
+
 void BoutMesh::createCommunicators() {
   MPI_Group group_world{};
   MPI_Comm_group(BoutComm::get(), &group_world); // Get the entire group
+
+  comm_xz = make_XZ_communicator(*this, group_world);
 
   //////////////////////////////////////////////////////
   /// Communicator in X
@@ -1038,7 +1075,9 @@ void BoutMesh::createXBoundaries() {
   }
 }
 
-int BoutMesh::getProcIndex(int X, int Y, int Z) const { return Y * NXPE + X; }
+int BoutMesh::getProcIndex(int X, int Y, int Z) const {
+  return (((Z * NYPE) + Y) * NXPE) + X;
+}
 
 void BoutMesh::createYBoundaries() {
   if (MYG <= 0) {
@@ -2218,9 +2257,9 @@ void BoutMesh::topology() {
     }
 
     for (int i = 0; i < limiter_count; ++i) {
-      int const yind = limiter_yinds[i];
-      int const xstart = limiter_xstarts[i];
-      int const xend = limiter_xends[i];
+      const int yind = limiter_yinds[i];
+      const int xstart = limiter_xstarts[i];
+      const int xend = limiter_xends[i];
       output_info.write("Adding a limiter between y={} and {}. X indices {} to {}\n",
                         yind, yind + 1, xstart, xend);
       add_target(yind, xstart, xend);

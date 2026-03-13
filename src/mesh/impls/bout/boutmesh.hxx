@@ -107,6 +107,7 @@ public:
   MPI_Comm getXcomm(int UNUSED(jy)) const override { return comm_x; }
   /// Return communicator containing all processors in Y
   MPI_Comm getYcomm(int xpos) const override;
+  MPI_Comm getXZcomm() const override { return comm_xz; }
 
   /// Is local X index \p jx periodic in Y?
   ///
@@ -455,6 +456,8 @@ private:
 
   /// Communicator containing all processors in X
   MPI_Comm comm_x{MPI_COMM_NULL};
+  /// Communicator for all processors in an XZ plane
+  MPI_Comm comm_xz{MPI_COMM_NULL};
 
   //////////////////////////////////////////////////
   // Surface communications
