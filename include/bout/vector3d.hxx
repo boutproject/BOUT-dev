@@ -9,7 +9,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -45,10 +45,10 @@ class Vector2D;
  * -------
  *
  * Vector3D f;
- * 
+ *
  * a.x; // Error! a.x not allocated
  *
- * 
+ *
  */
 class Vector3D : public FieldData {
 public:
@@ -70,7 +70,7 @@ public:
   ~Vector3D() override;
 
   /*!
-   * The components of the vector. These can be 
+   * The components of the vector. These can be
    * either co- or contra-variant, depending on
    * the boolean flag "covariant"
    */
@@ -92,8 +92,8 @@ public:
   bool covariant{true};
 
   /*!
-   * In-place conversion to covariant form. 
-   * 
+   * In-place conversion to covariant form.
+   *
    * If already covariant (covariant = true) then does nothing
    * If contravariant, multiplies by metric tensor g_{ij}
    */
@@ -104,7 +104,7 @@ public:
    *
    * If already contravariant (covariant = false) then does nothing
    * If covariant, multiplies by metric tensor g^{ij}
-   * 
+   *
    */
   void toContravariant();
 
@@ -114,14 +114,14 @@ public:
    * The first time this is called, a new Vector3D object is created.
    * Subsequent calls return a pointer to this same object
    *
-   * For convenience, a standalone function "ddt" exists, so that 
+   * For convenience, a standalone function "ddt" exists, so that
    *
    * ddt(v) is equivalent to *(v.timeDeriv())
-   * 
+   *
    * This does some book-keeping to ensure that the time derivative
    * of the components is the same as the components of the time derivative
    *
-   * ddt(v).x == ddt(v.x) 
+   * ddt(v).x == ddt(v.x)
    */
   Vector3D* timeDeriv();
 
@@ -172,7 +172,7 @@ public:
   CELL_LOC getLocation() const override;
 
   // FieldData virtual functions
-  bool is3D() const override { return true; }
+  FieldType field_type() const override { return FieldType::field3d; }
   int elementSize() const override { return 3; }
 
   void applyBoundary(bool init = false) override;
@@ -203,7 +203,7 @@ const Vector3D cross(const Vector3D& lhs, const Vector2D& rhs);
 
 /*!
  * Absolute magnitude (modulus) of a vector  |v|
- * 
+ *
  * sqrt( v.x^2 + v.y^2 + v.z^2 )
  */
 const Field3D abs(const Vector3D& v, const std::string& region = "RGN_ALL");

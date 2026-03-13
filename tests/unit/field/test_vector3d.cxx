@@ -100,12 +100,6 @@ TEST_F(Vector3DTest, ApplyBoundaryString) {
   EXPECT_DOUBLE_EQ(v.x(2, 2, 1), 0.0);
 }
 
-TEST_F(Vector3DTest, Is3D) {
-  Vector3D vector;
-
-  EXPECT_TRUE(vector.is3D());
-}
-
 TEST_F(Vector3DTest, BoutRealSize) {
   Vector3D vector;
 

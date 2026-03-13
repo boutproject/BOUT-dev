@@ -376,38 +376,28 @@ void Mesh::communicate(FieldGroup& g) {
   }
 }
 
-/// This is a bit of a hack for now to get FieldPerp communications
-/// The FieldData class needs to be changed to accomodate FieldPerp objects
-void Mesh::communicate(FieldPerp& f) {
-  comm_handle recv[2];
-
-  int nin = xstart;              // Number of x points in inner guard cell
-  int nout = LocalNx - xend - 1; // Number of x points in outer guard cell
-
-  // Post receives for guard cell regions
-
-  recv[0] = irecvXIn(f[0], nin * LocalNz, 0);
-  recv[1] = irecvXOut(f[xend + 1], nout * LocalNz, 1);
-
-  // Send data
-  sendXIn(f[xstart], nin * LocalNz, 1);
-  sendXOut(f[xend - nout + 1], nout * LocalNz, 0);
-
-  // Wait for receive
-  wait(recv[0]);
-  wait(recv[1]);
-}
-
-int Mesh::msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                  int ylt) {
+int Mesh::msg_len(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
+                  int ylt) const {
   int len = 0;
+
+  using enum Field::FieldType;
+
+  const auto x_length = xlt - xge;
+  const auto y_length = ylt - yge;
+  const auto z_length = LocalNz;
 
   /// Loop over variables
   for (const auto& var : var_list) {
-    if (var->is3D()) {
-      len += (xlt - xge) * (ylt - yge) * LocalNz * var->elementSize();
-    } else {
-      len += (xlt - xge) * (ylt - yge) * var->elementSize();
+    switch (var->field_type()) {
+    case field3d:
+      len += x_length * y_length * z_length * var->elementSize();
+      break;
+    case field2d:
+      len += x_length * y_length * var->elementSize();
+      break;
+    case fieldperp:
+      len += x_length * z_length * var->elementSize();
+      break;
     }
   }
 

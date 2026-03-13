@@ -252,8 +252,7 @@ public:
   Field2D& operator/=(BoutReal rhs);
 
   // FieldData virtual functions
-
-  bool is3D() const override { return false; }
+  FieldType field_type() const override { return FieldType::field2d; }
 
 #if CHECK > 0
   void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }

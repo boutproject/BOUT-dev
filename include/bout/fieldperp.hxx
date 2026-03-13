@@ -303,7 +303,7 @@ public:
    */
   int getNz() const override { return nz; };
 
-  bool is3D() const override { return false; }
+  FieldType field_type() const override { return FieldType::fieldperp; }
 
   friend void swap(FieldPerp& first, FieldPerp& second) noexcept;
 
