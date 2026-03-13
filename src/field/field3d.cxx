@@ -7,7 +7,7 @@
  * Copyright 2010 - 2025 BOUT++ developers
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -25,6 +25,7 @@
  *
  **************************************************************************/
 
+#include "bout/bout_types.hxx"
 #include "bout/build_defines.hxx"
 
 #include <bout/boutcomm.hxx>
@@ -32,7 +33,9 @@
 
 #include <cmath>
 #include <cpptrace/cpptrace.hpp>
+#include <cstddef>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "bout/parallel_boundary_op.hxx"
@@ -52,8 +55,9 @@
 #include "fmt/format.h"
 
 /// Constructor
-Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in)
-    : Field(localmesh, location_in, directions_in) {
+Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in,
+                 std::optional<size_t> regionID)
+    : Field(localmesh, location_in, directions_in), regionID{regionID} {
 #if BOUT_USE_TRACK
   name = "<F3D>";
 #endif
@@ -230,7 +234,7 @@ const Region<Ind2D>& Field3D::getRegion2D(const std::string& region_name) const 
 }
 
 /***************************************************************
- *                         OPERATORS 
+ *                         OPERATORS
  ***************************************************************/
 
 /////////////////// ASSIGNMENT ////////////////////
@@ -706,7 +710,7 @@ Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, const std::string
   return result;
 }
 
-/* 
+/*
  * Use FFT to shift by an angle in the Z direction
  */
 void shiftZ(Field3D& var, int jx, int jy, double zangle) {
