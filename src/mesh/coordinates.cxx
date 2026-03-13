@@ -1910,24 +1910,6 @@ const Coordinates::FieldMetric& Coordinates::invSg() const {
   return *invSgCache;
 }
 
-const Coordinates::FieldMetric& Coordinates::Jg() const {
-  if (not JgCache.has_value()) {
-    auto* coords = this; //
-    // Need to modify yup and ydown fields
-    Field3D Jg = coords->Jxz();
-    Jg.splitParallelSlicesAndAllocate();
-    Field3DParallel B = coords->Bxy;
-    for (size_t j = 0; j < B.numberParallelSlices(); ++j) {
-      BOUT_FOR(i, B.getRegion("RGN_NOBNDRY")) {
-        Jg.yup(j)[i.yp(j + 1)] = Jg[i] * B.yup(j)[i.yp(j + 1)] / B[i];
-        Jg.ydown(j)[i.ym(j + 1)] = Jg[i] * B.ydown(j)[i.ym(j + 1)] / B[i];
-      }
-    }
-    JgCache = Jg;
-  }
-  return *JgCache;
-}
-
 const Coordinates::FieldMetric&
 Coordinates::Grad2_par2_DDY_invSg(CELL_LOC outloc, const std::string& method) const {
   if (auto search = Grad2_par2_DDY_invSgCache.find(method);
