@@ -7,6 +7,8 @@
 #include "bout/output.hxx"
 #include "bout/parallel_boundary_region.hxx"
 
+#include "bout/yboundary_regions.hxx"
+
 #include <fmt/format.h>
 
 #include <vector>
@@ -24,16 +26,38 @@ int main(int argc, char** argv) {
     const auto boundary = static_cast<BoundaryParType>(i);
     const auto boundary_name = toString(boundary);
     mesh->communicate(fields[i]);
-    for (const auto& bndry_par : mesh->getBoundariesPar(boundary)) {
-      output.write("{:s} region\n", boundary_name);
-      for (bndry_par->first(); !bndry_par->isDone(); bndry_par->next()) {
-        fields[i][bndry_par->ind()] += 1;
-        output.write("{:s} increment\n", boundary_name);
+    for (auto& bndry_par : mesh->getBoundariesPar(static_cast<BoundaryParType>(i))) {
+      output.write("{:s} region\n", toString(static_cast<BoundaryParType>(i)));
+      for (const auto& pnt : *bndry_par) {
+        fields[i][pnt.ind()] += 1;
+        output.write("{:s} increment\n", toString(static_cast<BoundaryParType>(i)));
       }
     }
     output.write("{:s} done\n", boundary_name);
 
     dump[fmt::format("field_{:s}", boundary_name)] = fields[i];
+  }
+  for (const auto& name : {"forward_xt_prime", "backward_xt_prime"}) {
+    Field3D tmp;
+    mesh->get(tmp, name);
+    dump[name] = tmp;
+  }
+
+  {
+    Options dummy;
+    YBoundary ybndry;
+    ybndry.init(dummy, mesh);
+
+    std::vector<Field3D> fields((mesh->ystart * 2) + 1, Field3D{0.0});
+    for (auto& field : fields) {
+      field.allocate();
+    }
+    ybndry.iter_pnts(
+        [&](const auto& pnt) { fields[pnt.dir + mesh->ystart][pnt.ind()] += 1; });
+
+    for (int i = -mesh->ystart; i <= mesh->ystart; ++i) {
+      dump[fmt::format("ybndry_{}", i)] = fields[i + mesh->ystart];
+    }
   }
 
   bout::writeDefaultOutputFile(dump);

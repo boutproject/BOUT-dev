@@ -643,22 +643,27 @@ int BoutMesh::load() {
   // Add boundary regions
   addBoundaryRegions();
 
-  // Set cached values
-  {
-    int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
-    int allbndry = 0;
-    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
-    has_boundary_lower_y = static_cast<bool>(allbndry);
-  }
-  {
-    int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
-    int allbndry = 0;
-    mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
-    has_boundary_upper_y = static_cast<bool>(allbndry);
-  }
-
   // Initialize default coordinates
   getCoordinates();
+
+  // Set cached values
+  if (isFci()) {
+    has_boundary_lower_y = false;
+    has_boundary_upper_y = false;
+  } else {
+    {
+      int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
+      int allbndry = 0;
+      mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
+      has_boundary_lower_y = static_cast<bool>(allbndry);
+    }
+    {
+      int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
+      int allbndry = 0;
+      mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
+      has_boundary_upper_y = static_cast<bool>(allbndry);
+    }
+  }
 
   output_info.write(_("\tdone\n"));
 
@@ -2218,9 +2223,9 @@ void BoutMesh::topology() {
     }
 
     for (int i = 0; i < limiter_count; ++i) {
-      int const yind = limiter_yinds[i];
-      int const xstart = limiter_xstarts[i];
-      int const xend = limiter_xends[i];
+      const int yind = limiter_yinds[i];
+      const int xstart = limiter_xstarts[i];
+      const int xend = limiter_xends[i];
       output_info.write("Adding a limiter between y={} and {}. X indices {} to {}\n",
                         yind, yind + 1, xstart, xend);
       add_target(yind, xstart, xend);
@@ -2928,6 +2933,9 @@ void BoutMesh::addBoundaryRegions() {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
 
   int xs = 0;
   int xe = LocalNx - 1;
@@ -2963,6 +2971,9 @@ RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
 
   int xs = 0;
   int xe = LocalNx - 1;
@@ -2997,6 +3008,10 @@ RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryLowerY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+
   int xs = 0;
   int xe = LocalNx - 1;
   if ((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart)) {
@@ -3026,6 +3041,10 @@ RangeIterator BoutMesh::iterateBndryLowerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+
   int xs = 0;
   int xe = LocalNx - 1;
 
@@ -3060,6 +3079,10 @@ RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+
   int xs = 0;
   int xe = LocalNx - 1;
 
@@ -3094,6 +3117,10 @@ RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
 }
 
 RangeIterator BoutMesh::iterateBndryUpperY() const {
+  if (this->isFci()) {
+    throw BoutException("FCI should never use this iterator");
+  }
+
   int xs = 0;
   int xe = LocalNx - 1;
   if ((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart)) {

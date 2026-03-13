@@ -62,6 +62,13 @@
 #include <string>
 #include <string_view>
 
+namespace {
+template <typename T>
+int sgn(T val) {
+  return (T(0) < val) - (val < T(0));
+}
+} // namespace
+
 using namespace std::string_view_literals;
 
 FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
@@ -183,6 +190,8 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
   BoutMask to_remove(map_mesh);
   const int xend = map_mesh->xstart
                    + ((map_mesh->xend - map_mesh->xstart + 1) * map_mesh->getNXPE()) - 1;
+  // Default to the maximum number of points
+  const int defValid{map_mesh->ystart - 1 + std::abs(offset)};
   // Serial loop because call to BoundaryRegionPar::addPoint
   // (probably?) can't be done in parallel
   BOUT_FOR_SERIAL(i, xt_prime.getRegion("RGN_NOBNDRY")) {
@@ -252,11 +261,12 @@ FCIMap::FCIMap(Mesh& mesh, [[maybe_unused]] const Coordinates::FieldMetric& dy,
     // need at least 2 points in the domain.
     ASSERT2(map_mesh->xend - map_mesh->xstart >= 2);
     auto boundary = (xt_prime[i] < map_mesh->xstart) ? inner_boundary : outer_boundary;
-    boundary->add_point(x, y, z, x + dx, y + (0.5 * offset_),
-                        z + dz, // Intersection point in local index space
-                        0.5,    // Distance to intersection
-                        1       // Default to that there is a point in the other direction
-    );
+    if (!boundary->contains(x, y, z)) {
+      boundary->add_point(x, y, z, x + dx, y + offset - (sgn(offset) * 0.5),
+                          z + dz, // Intersection point in local index space
+                          std::abs(offset) - 0.5, // Distance to intersection
+                          defValid, offset);
+    }
   }
   region_no_boundary = region_no_boundary.mask(to_remove);
 
@@ -344,7 +354,6 @@ FCITransform::FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool 
     field_line_maps.emplace_back(mesh, dy, options, -offset, backward_boundary_xin,
                                  backward_boundary_xout, zperiodic);
   }
-  ASSERT0(mesh.ystart == 1);
   const std::array bndries = {forward_boundary_xin, forward_boundary_xout,
                               backward_boundary_xin, backward_boundary_xout};
   for (const auto& bndry : bndries) {
@@ -352,9 +361,13 @@ FCITransform::FCITransform(Mesh& mesh, const Coordinates::FieldMetric& dy, bool 
       if (bndry->dir == bndry2->dir) {
         continue;
       }
-      for (bndry->first(); !bndry->isDone(); bndry->next()) {
-        if (bndry2->contains(*bndry)) {
-          bndry->setValid(0);
+      for (auto pnt : *bndry) {
+        for (auto pnt2 : *bndry2) {
+#warning this could likely be done faster
+          if (pnt.ind() == pnt2.ind()) {
+            pnt.setValid(
+                static_cast<signed char>(std::abs((pnt2.offset() - pnt.offset())) - 2));
+          }
         }
       }
     }
