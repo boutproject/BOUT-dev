@@ -5,6 +5,9 @@ requires = []
 build-backend = "backend"
 backend-path = ["tools/pylib/_boutpp_build/"]
 
+[tool.pytest.ini_options]
+console_output_style = "plain"
+
 [dependency-groups]
 dev = [
      "cmake~=4.2",
