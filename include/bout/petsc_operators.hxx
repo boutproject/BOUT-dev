@@ -10,6 +10,7 @@
 ///
 
 #include "bout/array.hxx"
+#include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
@@ -127,7 +128,7 @@ public:
   template <typename Function>
   void map(Function func) const {
     const std::vector<std::reference_wrapper<const Region<Ind3D>>> regions = {
-        evolving_region, xin_region, xout_region, yup_region, ydown_region};
+        evolving_region, xin_region, xout_region};
     PetscInt row = row_start;
     for (const auto& region : regions) {
       BOUT_FOR_SERIAL(i, region.get()) {
@@ -135,6 +136,15 @@ public:
         ++row;
       }
     }
+    BOUT_FOR_SERIAL(i, yup_region) {
+      func(row, ROUND(forward_cell_number[i]));
+      ++row;
+    }
+    BOUT_FOR_SERIAL(i, ydown_region) {
+      func(row, ROUND(backward_cell_number[i]));
+      ++row;
+    }
+    ASSERT0(row == row_end);
   }
 
   /// Iterate over locally stored entries packed from the main `Field3D`.
@@ -169,7 +179,7 @@ public:
   void map_local_yup(Function func) const {
     PetscInt row = evolving_region.size() + xin_region.size() + xout_region.size();
     BOUT_FOR_SERIAL(i, yup_region) {
-      func(row, i);
+      func(row, i.yp());
       ++row;
     }
   }
@@ -185,7 +195,7 @@ public:
     PetscInt row = evolving_region.size() + xin_region.size() + xout_region.size()
                    + yup_region.size();
     BOUT_FOR_SERIAL(i, ydown_region) {
-      func(row, i);
+      func(row, i.ym());
       ++row;
     }
   }
@@ -201,6 +211,8 @@ private:
 
   /// Mesh-global numbering for cells stored on this rank.
   Field3D cell_number;
+  Field3D forward_cell_number;
+  Field3D backward_cell_number;
 
   /// Evolving cells in the main domain.
   Region<Ind3D> evolving_region;
@@ -301,12 +313,9 @@ private:
   /// This constructor is used internally when creating operators from
   /// PETSc matrix algebra such as composition, addition, or subtraction.
   PetscOperator(PetscMappingPtr mapping, Mat mat)
-      : mapping(std::move(mapping)), mat_operator(mat) {
-    // Allocate working vectors
-    VecCreate(BoutComm::get(), &this->rhs_vec);
-    VecSetSizes(this->rhs_vec, this->mapping->size(), PETSC_DETERMINE);
-    VecDuplicate(this->rhs_vec, &this->result_vec);
-  }
+      : mapping(std::move(mapping)), mat_operator(mat),
+        rhs_vec(createVec(this->mapping->size())),
+        result_vec(createVec(this->mapping->size())) {}
 
   /// Shared mapping between mesh and PETSc numbering.
   PetscMappingPtr mapping;
@@ -319,6 +328,9 @@ private:
 
   /// Work vector holding the packed result.
   Vec result_vec;
+
+  // Allocate MPI vector
+  static Vec createVec(PetscInt local_size);
 };
 
 /// Collection of PETSc operators read from a mesh.
