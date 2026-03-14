@@ -787,8 +787,8 @@ if(BOUT_TESTS)
 
   # Copy the pyproject.toml file
   configure_file(
-    "${PROJECT_SOURCE_DIR}/tests/pyproject.toml"
-    "${PROJECT_BINARY_DIR}/tests/pyproject.toml")
+    "${PROJECT_SOURCE_DIR}/pyproject.toml"
+    "${PROJECT_BINARY_DIR}/pyproject.toml")
 
   # Copy the pytest config file for the boutpp tests
   configure_file(
