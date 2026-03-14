@@ -785,6 +785,11 @@ if(BOUT_TESTS)
     "${PROJECT_SOURCE_DIR}/tests/conftest.py"
     "${PROJECT_BINARY_DIR}/tests/conftest.py")
 
+  # Copy the pyproject.toml file
+  configure_file(
+    "${PROJECT_SOURCE_DIR}/tests/pyproject.toml"
+    "${PROJECT_BINARY_DIR}/tests/pyproject.toml")
+
   # Copy the pytest config file for the boutpp tests
   configure_file(
     "${PROJECT_SOURCE_DIR}/tests/integrated/test-boutpp/conftest.py"
