@@ -120,7 +120,7 @@ PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int
   Mat mat{nullptr};
   BOUT_DO_PETSC(MatCreate(BoutComm::get(), &mat));
   BOUT_DO_PETSC(MatSetType(mat, MATMPIAIJ));
-  int nlocal = this->mapping->size();
+  const int nlocal = this->mapping->size();
   BOUT_DO_PETSC(MatSetSizes(mat, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE));
 
   this->mapping->map_evolving([&](PetscInt row, Ind3D, PetscInt mesh_index) {
@@ -128,7 +128,7 @@ PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int
       return; // No weights -> skip
     }
     // Get the range of indices into columns and weights
-    int start_ind = rows[mesh_index];
+    const int start_ind = rows[mesh_index];
     if (start_ind < 0) {
       return; // No entries
     }
@@ -155,6 +155,26 @@ PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int
   BOUT_DO_PETSC(MatDestroy(&mat));
 }
 
+void PetscOperator::copyToVec(PetscMappingPtr mapping, const Field3D& f, Vec vec) {
+  ASSERT1(f.hasParallelSlices());
+  ASSERT1(f.yup().isAllocated());
+  ASSERT1(f.ydown().isAllocated());
+
+  PetscScalar* x{nullptr};
+  // Copy rows from Field3D cells
+  BOUT_DO_PETSC(VecGetArray(vec, &x));
+  mapping->map_local_field([&](PetscInt row, const Ind3D& i) { x[row] = f[i]; });
+
+  // Copy Yup / Ydown values from boundaries
+  const Field3D& yup = f.yup();
+  mapping->map_local_yup([&](PetscInt row, const Ind3D& i) { x[row] = yup[i]; });
+
+  const Field3D& ydown = f.ydown();
+  mapping->map_local_ydown([&](PetscInt row, const Ind3D& i) { x[row] = ydown[i]; });
+
+  BOUT_DO_PETSC(VecRestoreArray(vec, &x));
+}
+
 Vec PetscOperator::createVec(PetscInt local_size) {
   Vec vec{nullptr};
   BOUT_DO_PETSC(VecCreate(BoutComm::get(), &vec));
@@ -169,34 +189,38 @@ PetscOperator::~PetscOperator() {
   VecDestroy(&this->result_vec);
 }
 
+PetscOperator PetscOperator::diagonal(PetscMappingPtr mapping, const Field3D& f) {
+  Vec diag{createVec(mapping->size())};
+  copyToVec(mapping, f, diag);
+
+  Mat mat{nullptr};
+  // Note: MatMatMult with diagonal and mpiaij not supported
+  // -> Create MPIAIJ
+  BOUT_DO_PETSC(MatCreate(BoutComm::get(), &mat));
+  BOUT_DO_PETSC(MatSetType(mat, MATMPIAIJ));
+  const int nlocal = mapping->size();
+  BOUT_DO_PETSC(MatSetSizes(mat, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE));
+  BOUT_DO_PETSC(MatMPIAIJSetPreallocation(mat, 1, nullptr, 0, nullptr));
+  BOUT_DO_PETSC(MatDiagonalSet(mat, diag, INSERT_VALUES));
+  BOUT_DO_PETSC(MatAssemblyBegin(mat, MAT_FINAL_ASSEMBLY));
+  BOUT_DO_PETSC(MatAssemblyEnd(mat, MAT_FINAL_ASSEMBLY));
+
+  BOUT_DO_PETSC(VecDestroy(&diag));
+
+  return PetscOperator(std::move(mapping), mat);
+}
+
 /// Perform operation
 Field3D PetscOperator::operator()(const Field3D& rhs) const {
-  ASSERT1(rhs.hasParallelSlices());
-  ASSERT1(rhs.yup().isAllocated());
-  ASSERT1(rhs.ydown().isAllocated());
-
   // Fill vec from rhs
-  PetscScalar* x;
-  // Copy rows from Field3D cells
-  BOUT_DO_PETSC(VecGetArray(this->rhs_vec, &x));
-  this->mapping->map_local_field([&](PetscInt row, const Ind3D& i) { x[row] = rhs[i]; });
-
-  // Copy Yup / Ydown values from boundaries
-  const Field3D& yup = rhs.yup();
-  this->mapping->map_local_yup([&](PetscInt row, const Ind3D& i) { x[row] = yup[i]; });
-
-  const Field3D& ydown = rhs.ydown();
-  this->mapping->map_local_ydown(
-      [&](PetscInt row, const Ind3D& i) { x[row] = ydown[i]; });
-
-  BOUT_DO_PETSC(VecRestoreArray(this->rhs_vec, &x));
+  copyToVec(this->mapping, rhs, this->rhs_vec);
 
   // Perform Mat-Vec muliplication
   BOUT_DO_PETSC(MatMult(this->mat_operator, rhs_vec, result_vec));
 
   // Copy result_vec into a Field3D
   Field3D result{emptyFrom(rhs)}; // This allocates memory
-  const PetscScalar* r;
+  const PetscScalar* r{nullptr};
   BOUT_DO_PETSC(VecGetArrayRead(result_vec, &r));
   this->mapping->map_local_field(
       [&](PetscInt row, const Ind3D& i) { result[i] = r[row]; });
@@ -229,6 +253,12 @@ PetscOperator PetscOperator::operator-(const PetscOperator& rhs) const {
   Mat mat;
   BOUT_DO_PETSC(MatDuplicate(mat_operator, MAT_COPY_VALUES, &mat));
   BOUT_DO_PETSC(MatAXPY(mat, -1.0, rhs.mat_operator, UNKNOWN_NONZERO_PATTERN));
+  return PetscOperator(this->mapping, mat);
+}
+
+PetscOperator PetscOperator::transpose() const {
+  Mat mat{nullptr};
+  BOUT_DO_PETSC(MatTranspose(this->mat_operator, MAT_INITIAL_MATRIX, &mat));
   return PetscOperator(this->mapping, mat);
 }
 

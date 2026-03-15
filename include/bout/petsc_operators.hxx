@@ -270,6 +270,9 @@ public:
   /// Destroy the PETSc matrix and working vectors owned by this operator.
   ~PetscOperator();
 
+  /// Create a diagonal operator
+  static PetscOperator diagonal(PetscMappingPtr mapping, const Field3D& f);
+
   /// Apply the operator to a field.
   ///
   /// @param rhs Input field, including any required `yup` and `ydown`
@@ -304,6 +307,9 @@ public:
   /// Both operators must use compatible mappings.
   PetscOperator operator-(const PetscOperator& rhs) const;
 
+  /// Calculate transpose as a new matrix
+  PetscOperator transpose() const;
+
 private:
   /// Construct directly from an existing PETSc matrix.
   ///
@@ -328,6 +334,10 @@ private:
 
   /// Work vector holding the packed result.
   Vec result_vec;
+
+  /// Copy contents of f, f.yup() and f.ydown() into vec.
+  /// Assumes that vec has already been allocated.
+  static void copyToVec(PetscMappingPtr mapping, const Field3D& f, Vec vec);
 
   // Allocate MPI vector
   static Vec createVec(PetscInt local_size);
@@ -360,6 +370,11 @@ public:
   ///
   /// Throws `BoutException` if any of the required arrays are missing.
   PetscOperator get(const std::string& name) const;
+
+  /// Create a diagonal operator
+  PetscOperator diagonal(const Field3D& f) const {
+    return PetscOperator::diagonal(mapping, f);
+  }
 
 private:
   /// Read a `Field3D` from the mesh.
