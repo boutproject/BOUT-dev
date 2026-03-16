@@ -8,7 +8,9 @@
 #include <bout/build_defines.hxx>
 #include <bout/constants.hxx>
 #include <bout/coordinates.hxx>
+#include <bout/field.hxx>
 #include <bout/output.hxx>
+#include <bout/region.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/utils.hxx>
 
