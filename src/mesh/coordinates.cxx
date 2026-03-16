@@ -2014,9 +2014,9 @@ const Coordinates::FieldMetric& Coordinates::g_22_ylow() const {
   }
   _g_22_ylow.emplace(emptyFrom(g_22));
   //_g_22_ylow->setLocation(CELL_YLOW);
-  auto mesh = Bxy.getMesh();
+  auto* mesh = Bxy.getMesh();
   if (Bxy.isFci()) {
-    if (mesh->get(_g_22_ylow.value(), "g_22_cell_ylow", 0.0, false)) { //, CELL_YLOW)) {
+    if (mesh->get(_g_22_ylow.value(), "g_22_cell_ylow", 0.0, false) != 0) {
       throw BoutException("The grid file does not contain `g_22_cell_ylow`.");
     }
   } else {
@@ -2034,10 +2034,9 @@ const Coordinates::FieldMetric& Coordinates::g_22_yhigh() const {
   }
   _g_22_yhigh.emplace(emptyFrom(g_22));
   //_g_22_yhigh->setLocation(CELL_YHIGH);
-  auto mesh = Bxy.getMesh();
+  auto* mesh = Bxy.getMesh();
   if (Bxy.isFci()) {
-    if (mesh->get(_g_22_yhigh.value(), "g_22_cell_yhigh", 0.0,
-                  false)) { //, CELL_YHIGH)) {
+    if (mesh->get(_g_22_yhigh.value(), "g_22_cell_yhigh", 0.0, false) != 0) {
       throw BoutException("The grid file does not contain `g_22_cell_yhigh`.");
     }
   } else {
@@ -2060,13 +2059,13 @@ void Coordinates::_compute_Jxz_cell_faces() const {
     Coordinates::FieldMetric By_c;
     Coordinates::FieldMetric By_h;
     Coordinates::FieldMetric By_l;
-    if (mesh->get(By_c, "By", 0.0, false, CELL_CENTRE)) {
+    if (mesh->get(By_c, "By", 0.0, false, CELL_CENTRE) != 0) {
       throw BoutException("The grid file does not contain `By`.");
     }
-    if (mesh->get(By_l, "By_cell_ylow", 0.0, false)) { //, CELL_YLOW)) {
+    if (mesh->get(By_l, "By_cell_ylow", 0.0, false) != 0) {
       throw BoutException("The grid file does not contain `By_cell_ylow`.");
     }
-    if (mesh->get(By_h, "By_cell_yhigh", 0.0, false)) { //, CELL_YHIGH)) {
+    if (mesh->get(By_h, "By_cell_yhigh", 0.0, false) != 0) {
       throw BoutException("The grid file does not contain `By_cell_yhigh`.");
     }
     BOUT_FOR(i, By_c.getRegion("RGN_NOY")) {
@@ -2088,7 +2087,7 @@ void Coordinates::_compute_cell_area_x() const {
   _cell_area_xhigh.emplace(emptyFrom(area_centre));
   // We cannot setLocation, as that would trigger the computation of staggered
   // metrics.
-  auto mesh = Bxy.getMesh();
+  auto* mesh = Bxy.getMesh();
   ASSERT0(mesh->xstart > 0);
   BOUT_FOR(i, _jxz_centre->getRegion("RGN_NOX")) {
     (*_cell_area_xlow)[i] = 0.5 * (area_centre[i] + area_centre[i.xm()]);
@@ -2112,7 +2111,7 @@ void Coordinates::_compute_cell_area_y() const {
     _cell_area_yhigh.emplace(emptyFrom(area_centre));
     // We cannot setLocation, as that would trigger the computation of staggered
     // metrics.
-    auto mesh = Bxy.getMesh();
+    auto* mesh = Bxy.getMesh();
     ASSERT0(mesh->ystart > 0);
     BOUT_FOR(i, _jxz_centre->getRegion("RGN_NOY")) {
       (*_cell_area_ylow)[i] = 0.5 * (area_centre[i] + area_centre[i.ym()]);

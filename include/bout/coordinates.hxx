@@ -38,6 +38,7 @@
 #include <bout/field2d.hxx>
 #include <bout/field3d.hxx>
 #include <bout/paralleltransform.hxx>
+#include <optional>
 
 class Mesh;
 
