@@ -70,7 +70,7 @@ PetscMapping::PetscMapping(const Field3D& cell_number, const Field3D& forward_ce
       yup_region(create_region(forward_cell_number)),
       ydown_region(create_region(backward_cell_number)) {
   // Calculate size of each region
-  const unsigned int nlocal = this->size();
+  const unsigned int nlocal = this->localSize();
   output.write("Local {} : evolving {} xin {} xout {} yup {} ydown {}", nlocal,
                evolving_region.size(), xin_region.size(), xout_region.size(),
                yup_region.size(), ydown_region.size());
@@ -117,8 +117,8 @@ PetscMapping::~PetscMapping() {
 
 PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int> cols,
                              Array<BoutReal> weights)
-    : mapping(std::move(mapping)), rhs_vec(createVec(this->mapping->size())),
-      result_vec(createVec(this->mapping->size())) {
+    : mapping(std::move(mapping)), rhs_vec(createVec(this->mapping->localSize())),
+      result_vec(createVec(this->mapping->localSize())) {
 
   output.write("PetscOperator Array sizes {} {} {}\n", rows.size(), cols.size(),
                weights.size());
@@ -126,7 +126,7 @@ PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int
   Mat mat{nullptr};
   BOUT_DO_PETSC(MatCreate(BoutComm::get(), &mat));
   BOUT_DO_PETSC(MatSetType(mat, MATMPIAIJ));
-  const int nlocal = this->mapping->size();
+  const int nlocal = this->mapping->localSize();
   BOUT_DO_PETSC(MatSetSizes(mat, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE));
 
   this->mapping->map([&](PetscInt row, PetscInt mesh_index) {
@@ -196,7 +196,7 @@ PetscOperator::~PetscOperator() {
 }
 
 PetscOperator PetscOperator::diagonal(PetscMappingPtr mapping, const Field3D& f) {
-  Vec diag{createVec(mapping->size())};
+  Vec diag{createVec(mapping->localSize())};
   copyToVec(mapping, f, diag);
 
   Mat mat{nullptr};
@@ -204,7 +204,7 @@ PetscOperator PetscOperator::diagonal(PetscMappingPtr mapping, const Field3D& f)
   // -> Create MPIAIJ
   BOUT_DO_PETSC(MatCreate(BoutComm::get(), &mat));
   BOUT_DO_PETSC(MatSetType(mat, MATMPIAIJ));
-  const int nlocal = mapping->size();
+  const int nlocal = mapping->localSize();
   BOUT_DO_PETSC(MatSetSizes(mat, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE));
   BOUT_DO_PETSC(MatMPIAIJSetPreallocation(mat, 1, nullptr, 0, nullptr));
   BOUT_DO_PETSC(MatDiagonalSet(mat, diag, INSERT_VALUES));
@@ -285,9 +285,9 @@ PetscOperators::PetscOperators(Mesh* mesh)
   int mesh_total_cells;
   if (mesh->get(mesh_total_cells, "total_cells") == 0) {
     // Check total number of cells
-    if (mesh_total_cells != mapping->size()) {
-      throw BoutException("Total cells in mesh {} doesn't match mapping size {}",
-                          mesh_total_cells, mapping->size());
+    if (mesh_total_cells != mapping->globalSize()) {
+      throw BoutException("Total cells in mesh {} doesn't match global mapping size {}",
+                          mesh_total_cells, mapping->globalSize());
     }
   }
 }

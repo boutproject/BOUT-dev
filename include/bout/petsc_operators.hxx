@@ -96,9 +96,18 @@ public:
   ///
   /// The count includes evolving cells and all boundary cells represented
   /// in the mapping on this processor.
-  unsigned int size() const {
+  unsigned int localSize() const {
     return evolving_region.size() + xin_region.size() + xout_region.size()
            + yup_region.size() + ydown_region.size();
+  }
+
+  unsigned int globalSize() const {
+    // Get global size
+    PetscInt globalRows{0};
+    PetscInt globalCols{0};
+    BOUT_DO_PETSC(MatGetSize(this->mat_mesh_to_petsc, &globalRows, &globalCols));
+    ASSERT1(globalRows == globalCols);
+    return globalRows;
   }
 
   /// Iterate over locally owned evolving cells in PETSc row order.
@@ -326,8 +335,8 @@ private:
   /// PETSc matrix algebra such as composition, addition, or subtraction.
   PetscOperator(PetscMappingPtr mapping, Mat mat)
       : mapping(std::move(mapping)), mat_operator(mat),
-        rhs_vec(createVec(this->mapping->size())),
-        result_vec(createVec(this->mapping->size())) {}
+        rhs_vec(createVec(this->mapping->localSize())),
+        result_vec(createVec(this->mapping->localSize())) {}
 
   /// Shared mapping between mesh and PETSc numbering.
   PetscMappingPtr mapping;
