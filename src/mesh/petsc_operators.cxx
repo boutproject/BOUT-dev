@@ -94,6 +94,8 @@ PetscMapping::PetscMapping(const Field3D& cell_number, const Field3D& forward_ce
   // Iterate through regions in this order
   this->map([&](PetscInt row, PetscInt col) {
     // `row` is the PETSc index; `col` is the Mesh index
+    ASSERT1(row >= 0);
+    ASSERT1(col >= 0);
     const PetscScalar ONE = 1.0;
     BOUT_DO_PETSC(MatSetValues(mat_mesh_to_petsc, 1, &row, 1, &col, &ONE, INSERT_VALUES));
   });
@@ -123,7 +125,7 @@ PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int
   const int nlocal = this->mapping->size();
   BOUT_DO_PETSC(MatSetSizes(mat, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE));
 
-  this->mapping->map_evolving([&](PetscInt row, Ind3D, PetscInt mesh_index) {
+  this->mapping->map([&](PetscInt row, PetscInt mesh_index) {
     if (mesh_index >= rows.size()) {
       return; // No weights -> skip
     }

@@ -108,6 +108,8 @@ public:
   void next() final { ++bndry_position; }
   bool isDone() final { return (bndry_position == end(bndry_points)); }
 
+  std::size_t size() { return this->bndry_points.size(); }
+
   // getter
   Ind3D ind() const { return bndry_position->index; }
   BoutReal s_x() const { return bndry_position->intersection.s_x; }

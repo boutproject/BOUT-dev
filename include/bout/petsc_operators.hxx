@@ -310,6 +310,8 @@ public:
   /// Calculate transpose as a new matrix
   PetscOperator transpose() const;
 
+  void view() const { MatView(this->mat_operator, PETSC_VIEWER_STDOUT_WORLD); }
+
 private:
   /// Construct directly from an existing PETSc matrix.
   ///
