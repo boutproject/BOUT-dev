@@ -6,7 +6,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -189,7 +189,8 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 template <typename T>
 inline T emptyFrom(const T& f) {
   static_assert(bout::utils::is_Field_v<T>, "emptyFrom only works on Fields");
-  return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()})
+  return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()},
+           f.getRegionID())
       .allocate();
 }
 
@@ -294,6 +295,7 @@ inline void checkPositive(const T& f, const std::string& name = "field",
 template <typename T>
 inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   static_assert(bout::utils::is_Field_v<T>, "toFieldAligned only works on Fields");
+  ASSERT3(f.getCoordinates() != nullptr);
   return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
 }
 
@@ -301,6 +303,7 @@ inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
 template <typename T>
 inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   static_assert(bout::utils::is_Field_v<T>, "fromFieldAligned only works on Fields");
+  ASSERT3(f.getCoordinates() != nullptr);
   return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
 }
 

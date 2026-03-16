@@ -59,13 +59,12 @@ class Mesh;
 #include "bout/sys/range.hxx" // RangeIterator
 #include "bout/unused.hxx"
 
-#include "mpi.h"
-
 #include <map>
 #include <memory>
 #include <optional>
 #include <set>
 #include <string>
+#include <vector>
 
 class BoundaryRegion;
 class BoundaryRegionPar;
@@ -306,11 +305,6 @@ public:
   void communicateYZ(FieldGroup& g);
 
   /*!
-   * Communicate an X-Z field
-   */
-  virtual void communicate(FieldPerp& f);
-
-  /*!
    * Send a list of FieldData objects
    * Packs arguments into a FieldGroup and passes
    * to send(FieldGroup&).
@@ -409,6 +403,7 @@ public:
   } ///< Return communicator containing all processors in X
   virtual MPI_Comm getXcomm(int jy) const = 0; ///< Return X communicator
   virtual MPI_Comm getYcomm(int jx) const = 0; ///< Return Y communicator
+  virtual MPI_Comm getXZcomm() const = 0;      ///< Communicator in X-Z
 
   /// Return pointer to the mesh's MPI Wrapper object
   MpiWrapper& getMpi() { return *mpi; }
@@ -819,8 +814,8 @@ protected:
   const std::vector<int> readInts(const std::string& name, int n);
 
   /// Calculates the size of a message for a given x and y range
-  int msg_len(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-              int ylt);
+  int msg_len(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
+              int ylt) const;
 
   /// Initialise derivatives
   void derivs_init(Options* options);

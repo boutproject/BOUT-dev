@@ -172,7 +172,8 @@ public:
    */
   Field3D(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
           DirectionTypes directions_in = {YDirectionType::Standard,
-                                          ZDirectionType::Standard});
+                                          ZDirectionType::Standard},
+          std::optional<size_t> regionID = {});
 
   /*!
    * Copy constructor
@@ -481,7 +482,7 @@ public:
   ///@}
 
   // FieldData virtual functions
-  bool is3D() const override { return true; }
+  FieldType field_type() const override { return FieldType::field3d; }
 
 #if CHECK > 0
   void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
