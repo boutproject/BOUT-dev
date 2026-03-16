@@ -271,3 +271,74 @@ TEST_F(CoordinatesTest, NegativeB) {
 
   EXPECT_THROW(Coordinates coords(mesh), BoutException);
 }
+
+TEST_F(CoordinatesTest, CellAreas) {
+
+  static_cast<FakeMesh*>(bout::globals::mesh)
+      ->setGridDataSource(
+          new FakeGridDataSource({{"g_11", 4.0}, {"g_22", 1.0}, {"g_33", 9}}));
+
+  Coordinates coords(mesh);
+
+  EXPECT_TRUE(IsFieldEqual(coords.dx, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.dy, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.dz, 1.0));
+
+  EXPECT_TRUE(IsFieldEqual(coords.g11, 4.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g22, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g33, 9.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g12, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g13, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g23, 0.0));
+
+  EXPECT_TRUE(IsFieldEqual(coords.J, 6.0));
+  EXPECT_TRUE(IsFieldEqual(coords.Bxy, 1.0));
+
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_xlow(), 3.0));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_xhigh(), 3.0));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_ylow(), 6.0));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_yhigh(), 6.0));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_zlow(), 2.0));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_zhigh(), 2.0));
+
+  EXPECT_TRUE(IsFieldEqual(coords.cell_volume(), 6.0));
+}
+
+TEST_F(CoordinatesTest, CellAreasUpdate) {
+
+  static_cast<FakeMesh*>(bout::globals::mesh)
+      ->setGridDataSource(new FakeGridDataSource());
+
+  Coordinates coords(mesh);
+
+  EXPECT_TRUE(IsFieldEqual(coords.dx, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.dy, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.dz, 1.0));
+
+  EXPECT_TRUE(IsFieldEqual(coords.g11, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g22, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g33, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g12, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g13, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g23, 0.0));
+
+  EXPECT_TRUE(IsFieldEqual(coords.J, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.Bxy, 1.0));
+
+  coords.cell_area_xlow() *= 2;
+  coords.cell_area_xhigh() *= 3;
+  coords.cell_area_ylow() *= 4;
+  coords.cell_area_yhigh() *= 5;
+  coords.cell_area_zlow() *= 6;
+  coords.cell_area_zhigh() *= 7;
+  coords.cell_volume() *= 8;
+
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_xlow(), 2.0));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_xhigh(), 3.0));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_ylow(), 4.0));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_yhigh(), 5.0));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_zlow(), 6.0));
+  EXPECT_TRUE(IsFieldEqual(coords.cell_area_zhigh(), 7.0));
+
+  EXPECT_TRUE(IsFieldEqual(coords.cell_volume(), 8.0));
+}
