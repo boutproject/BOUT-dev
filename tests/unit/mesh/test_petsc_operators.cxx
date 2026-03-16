@@ -1,3 +1,7 @@
+#include "bout/build_defines.hxx"
+
+#if BOUT_HAS_PETSC
+
 #include "gtest/gtest.h"
 
 #include "bout/array.hxx"
@@ -145,3 +149,5 @@ TEST_F(PetscOperatorTest, identity_yupdown) {
   EXPECT_EQ(21, result(1, 2, 0));
   EXPECT_EQ(32, result(1, 2, 1));
 }
+
+#endif // BOUT_HAS_PETSC

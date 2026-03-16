@@ -9,6 +9,10 @@
 ///   a `Mesh`.
 ///
 
+#include "bout/build_defines.hxx"
+
+#if BOUT_HAS_PETSC
+
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
@@ -411,3 +415,9 @@ private:
   /// Shared mapping used by all operators created from this mesh.
   PetscMappingPtr mapping;
 };
+
+#else // BOUT_HAS_PETSC
+
+#warning PETSc not available. No PetscOperators.
+
+#endif // BOUT_HAS_PETSC

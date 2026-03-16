@@ -1,4 +1,7 @@
-#include "bout/petsc_operators.hxx"
+#include "bout/build_defines.hxx"
+
+#if BOUT_HAS_PETSC
+
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
@@ -6,6 +9,7 @@
 #include "bout/field3d.hxx"
 #include "bout/output.hxx"
 #include "bout/output_bout_types.hxx"
+#include "bout/petsc_operators.hxx"
 #include "bout/petsclib.hxx"
 #include "bout/region.hxx"
 #include <memory>
@@ -293,3 +297,5 @@ PetscOperator PetscOperators::get(const std::string& name) const {
                        this->meshGetArray<int>(this->mesh, name + "_columns"),
                        this->meshGetArray<BoutReal>(this->mesh, name + "_weights"));
 }
+
+#endif // BOUT_HAS_PETSC
