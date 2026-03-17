@@ -7,20 +7,16 @@ from boututils.run_wrapper import launch_safe
 from numpy import isclose
 
 
-print("Running SLEPc eigen solver test")
-status, out = launch_safe("./test-slepc-solver", nproc=1, pipe=True, verbose=True)
+def test_slepc_solver():
 
-with open("run.log", "w") as f:
-    f.write(out)
+    print("Running SLEPc eigen solver test")
+    status, out = launch_safe("./test-slepc-solver", nproc=1, pipe=True, verbose=True)
 
-eigenvalues = collect("t_array", path="data", info=False)
+    with open("run.log", "w") as f:
+        f.write(out)
 
-expected_eigenvalues = [0.0, 1.0]
+    eigenvalues = collect("t_array", path="data", info=False)
 
-if isclose(expected_eigenvalues, eigenvalues).all():
-    print(" => SLEPc test passed")
-    exit(0)
-else:
-    print(" => SLEPc test failed")
-    print("    Eigenvalues:", eigenvalues)
-    exit(1)
+    expected_eigenvalues = [0.0, 1.0]
+
+    assert isclose(expected_eigenvalues, eigenvalues).all(), " => SLEPc test failed\nEigenvalues: {eigenvalues}"
