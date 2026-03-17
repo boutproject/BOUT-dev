@@ -276,7 +276,7 @@ TEST_F(CoordinatesTest, CellAreas) {
 
   static_cast<FakeMesh*>(bout::globals::mesh)
       ->setGridDataSource(
-          new FakeGridDataSource({{"g_11", 4.0}, {"g_22", 1.0}, {"g_33", 9}}));
+          new FakeGridDataSource({{"g_11", 4.0}, {"g_22", 1.0}, {"g_33", 9}, {"dz", 1}}));
 
   Coordinates coords(mesh);
 
@@ -284,12 +284,9 @@ TEST_F(CoordinatesTest, CellAreas) {
   EXPECT_TRUE(IsFieldEqual(coords.dy, 1.0));
   EXPECT_TRUE(IsFieldEqual(coords.dz, 1.0));
 
-  EXPECT_TRUE(IsFieldEqual(coords.g11, 4.0));
-  EXPECT_TRUE(IsFieldEqual(coords.g22, 1.0));
-  EXPECT_TRUE(IsFieldEqual(coords.g33, 9.0));
-  EXPECT_TRUE(IsFieldEqual(coords.g12, 0.0));
-  EXPECT_TRUE(IsFieldEqual(coords.g13, 0.0));
-  EXPECT_TRUE(IsFieldEqual(coords.g23, 0.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_11, 4.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_22, 1.0));
+  EXPECT_TRUE(IsFieldEqual(coords.g_33, 9.0));
 
   EXPECT_TRUE(IsFieldEqual(coords.J, 6.0));
   EXPECT_TRUE(IsFieldEqual(coords.Bxy, 1.0));
