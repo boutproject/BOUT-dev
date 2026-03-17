@@ -129,6 +129,8 @@ PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int
   const int nlocal = this->mapping->localSize();
   BOUT_DO_PETSC(MatSetSizes(mat, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE));
 
+  // This reads CSR format but is defensive in handling negative indices and missing
+  // final 'row' entry.
   this->mapping->map([&](PetscInt row, PetscInt mesh_index) {
     if (mesh_index >= rows.size()) {
       return; // No weights -> skip
@@ -136,16 +138,21 @@ PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int
     // Get the range of indices into columns and weights
     const int start_ind = rows[mesh_index];
     if (start_ind < 0) {
-      return; // No entries
+      return; // No entries (non-standard CSR)
     }
-    int end_ind = cols.size(); // End of the columns array
+    int end_ind =
+        cols.size(); // End of the columns array (should be last element of rows)
     for (int i = mesh_index + 1; i < rows.size(); ++i) {
-      // rows[i] can be -1 if no weights
+      // rows[i] can be -1 if no weights (non-standard CSR)
       if (rows[i] > -1) {
         // This is the next entry in the columns / weights array
         end_ind = rows[i];
         break;
       }
+    }
+    if (end_ind == start_ind) {
+      // Empty row in CSR format
+      return;
     }
     BOUT_DO_PETSC(MatSetValues(mat, 1, &row, end_ind - start_ind, &cols[start_ind],
                                &weights[start_ind], INSERT_VALUES));
