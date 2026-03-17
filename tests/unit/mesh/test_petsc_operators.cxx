@@ -72,7 +72,7 @@ TEST_F(PetscMappingTest, mapping) {
   const PetscMapping mapping(cell_number, forward_cell_number, backward_cell_number);
 
   // Two cells: one evolving and one in xin
-  ASSERT_EQ(2, mapping.size());
+  ASSERT_EQ(2, mapping.localSize());
 }
 
 using PetscOperatorTest = FakeMeshFixture;
@@ -89,7 +89,7 @@ TEST_F(PetscOperatorTest, identity) {
 
   auto mapping = std::make_shared<const PetscMapping>(cell_number, forward_cell_number,
                                                       backward_cell_number);
-  ASSERT_EQ(3, mapping->size());
+  ASSERT_EQ(3, mapping->localSize());
 
   const auto rows = Array<int>::fromValues({0, 1, 2});
   const auto cols = Array<int>::fromValues({0, 1, 2});
@@ -127,7 +127,7 @@ TEST_F(PetscOperatorTest, identity_yupdown) {
 
   auto mapping = std::make_shared<const PetscMapping>(cell_number, forward_cell_number,
                                                       backward_cell_number);
-  ASSERT_EQ(5, mapping->size());
+  ASSERT_EQ(5, mapping->localSize());
 
   const auto rows = Array<int>::fromValues({0, 1, 2});
   const auto cols = Array<int>::fromValues({0, 1, 2});
