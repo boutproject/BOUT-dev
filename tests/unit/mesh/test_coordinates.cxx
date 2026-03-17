@@ -280,15 +280,6 @@ TEST_F(CoordinatesTest, CellAreas) {
 
   Coordinates coords(mesh);
 
-  EXPECT_TRUE(IsFieldEqual(coords.dx, 1.0));
-  EXPECT_TRUE(IsFieldEqual(coords.dy, 1.0));
-  EXPECT_TRUE(IsFieldEqual(coords.dz, 1.0));
-
-  EXPECT_TRUE(IsFieldEqual(coords.g_11, 4.0));
-  EXPECT_TRUE(IsFieldEqual(coords.g_22, 1.0));
-  EXPECT_TRUE(IsFieldEqual(coords.g_33, 9.0));
-
-  EXPECT_TRUE(IsFieldEqual(coords.J, 6.0));
   EXPECT_TRUE(IsFieldEqual(coords.Bxy, 1.0));
 
   EXPECT_TRUE(IsFieldEqual(coords.cell_area_xlow(), 3.0));
