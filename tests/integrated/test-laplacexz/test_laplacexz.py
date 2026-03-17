@@ -10,45 +10,42 @@
 from boututils.run_wrapper import shell, launch_safe, getmpirun
 from boutdata.collect import collect
 import numpy as np
-from sys import exit
 
-tol = 1e-10  # Absolute tolerance
 
-MPIRUN = getmpirun()
+def test_laplacexz():
 
-print("Running LaplaceXZ test")
-success = True
+    tol = 1e-10  # Absolute tolerance
 
-for nproc in [1, 2, 4]:
-    nxpe = nproc
+    MPIRUN = getmpirun()
 
-    cmd = "./test-laplacexz nxpe=" + str(nxpe)
+    print("Running LaplaceXZ test")
+    success = True
 
-    shell(["rm data/BOUT.dmp.*.nc"])
+    for nproc in [1, 2, 4]:
+        nxpe = nproc
 
-    print("   %d processors (nxpe = %d)...." % (nproc, nxpe))
-    s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, mthread=1, pipe=True)
-    with open("run.log." + str(nproc), "w") as f:
-        f.write(out)
+        cmd = "./test-laplacexz nxpe=" + str(nxpe)
 
-    # Collect output data
-    f = collect("f", path="data", info=False)
-    f2 = collect("f2", path="data", info=False)
-    print("      Checking tolerance... ")
-    # Compare benchmark and output
-    if np.shape(f) != np.shape(f2):
-        print("Fail, wrong shape")
-        success = False
-    diff = np.max(np.abs(f2 - f))
-    if diff > tol:
-        print("Fail, maximum difference = " + str(diff))
-        success = False
-    else:
-        print("Pass")
+        shell(["rm data/BOUT.dmp.*.nc"])
 
-if success:
-    print(" => LaplaceXZ inversion test passed")
-    exit(0)
+        print("   %d processors (nxpe = %d)...." % (nproc, nxpe))
+        s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, mthread=1, pipe=True)
+        with open("run.log." + str(nproc), "w") as f:
+            f.write(out)
 
-print(" => LaplaceXZ test failed")
-exit(1)
+        # Collect output data
+        f = collect("f", path="data", info=False)
+        f2 = collect("f2", path="data", info=False)
+        print("      Checking tolerance... ")
+        # Compare benchmark and output
+        if np.shape(f) != np.shape(f2):
+            print("Fail, wrong shape")
+            success = False
+        diff = np.max(np.abs(f2 - f))
+        if diff > tol:
+            print("Fail, maximum difference = " + str(diff))
+            success = False
+        else:
+            print("Pass")
+
+    assert success, " => LaplaceXZ test failed"
