@@ -34,6 +34,30 @@ private:
 };
 
 /// Dirichlet (set to zero) boundary condition
+class BoundaryDirichlet_O1 : public BoundaryOp {
+public:
+  BoundaryDirichlet_O1() : gen(nullptr) {}
+  BoundaryDirichlet_O1(BoundaryRegion* region, std::shared_ptr<FieldGenerator> g)
+      : BoundaryOp(region), gen(std::move(g)) {}
+
+  using BoundaryOp::clone;
+  BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
+
+  using BoundaryOp::apply;
+  void apply(Field2D& f) override;
+  void apply(Field2D& f, BoutReal t) override;
+  void apply(Field3D& f) override;
+  void apply(Field3D& f, BoutReal t) override;
+
+  using BoundaryOp::apply_ddt;
+  void apply_ddt(Field2D& f) override;
+  void apply_ddt(Field3D& f) override;
+
+private:
+  std::shared_ptr<FieldGenerator> gen; // Generator
+};
+
+/// Dirichlet (set to zero) boundary condition
 class BoundaryDirichlet : public BoundaryOp {
 public:
   BoundaryDirichlet() : gen(nullptr) {}
@@ -161,6 +185,30 @@ public:
   using BoundaryOp::apply;
   void apply(Field2D& f) override;
   void apply(Field3D& f) override;
+};
+
+/// Neumann (zero-gradient) boundary condition, using 1st order on boundary
+class BoundaryNeumann_O1 : public BoundaryOp {
+public:
+  BoundaryNeumann_O1() : gen(nullptr) {}
+  BoundaryNeumann_O1(BoundaryRegion* region, std::shared_ptr<FieldGenerator> g)
+      : BoundaryOp(region), gen(std::move(g)) {}
+
+  using BoundaryOp::clone;
+  BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
+
+  using BoundaryOp::apply;
+  void apply(Field2D& f) override;
+  void apply(Field2D& f, BoutReal t) override;
+  void apply(Field3D& f) override;
+  void apply(Field3D& f, BoutReal t) override;
+
+  using BoundaryOp::apply_ddt;
+  void apply_ddt(Field2D& f) override;
+  void apply_ddt(Field3D& f) override;
+
+private:
+  std::shared_ptr<FieldGenerator> gen;
 };
 
 /// Neumann boundary condition set half way between guard cell and grid cell at 2nd order accuracy
