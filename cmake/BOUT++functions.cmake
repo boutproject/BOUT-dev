@@ -265,7 +265,7 @@ function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
     add_test(NAME ${TESTNAME} COMMAND ${TESTNAME} ${BOUT_TEST_OPTIONS_TESTARGS})
   endif()
 
-  string(REGEX REPLACE "^(test-|MMS-)?(.+)$" "test_\\2.py" TEST_FILENAME "${TESTNAME}")
+  string(REGEX REPLACE "^(test-)?(.+)$" "test_\\2.py" TEST_FILENAME "${TESTNAME}")
   string(REPLACE "-" "_" TEST_FILENAME "${TEST_FILENAME}")
   string(REPLACE "test_test_" "test_" TEST_FILENAME "${TEST_FILENAME}")
   bout_copy_file(${TEST_FILENAME})
