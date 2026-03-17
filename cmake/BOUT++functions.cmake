@@ -292,10 +292,12 @@ function(bout_add_integrated_test TESTNAME)
   bout_add_integrated_or_mms_test(
     build-check-integrated-tests ${TESTNAME} ${ARGV}
   )
-  string(REGEX REPLACE "^(test-)?(.+)$" "test_\\2.py" TEST_FILENAME "${TESTNAME}")
-  string(REPLACE "-" "_" TEST_FILENAME "${TEST_FILENAME}")
-  string(REPLACE "test_test_" "test_" TEST_FILENAME "${TEST_FILENAME}")
-  bout_copy_file(${TEST_FILENAME})
+  if(TARGET ${TESTNAME}) # Don't copy if the test has been skipped
+    string(REGEX REPLACE "^(test-)?(.+)$" "test_\\2.py" TEST_FILENAME "${TESTNAME}")
+    string(REPLACE "-" "_" TEST_FILENAME "${TEST_FILENAME}")
+    string(REPLACE "test_test_" "test_" TEST_FILENAME "${TEST_FILENAME}")
+    bout_copy_file(${TEST_FILENAME})
+  endif()
 endfunction()
 
 # Add a new MMS test. See `bout_add_integrated_or_mms_test` for arguments
