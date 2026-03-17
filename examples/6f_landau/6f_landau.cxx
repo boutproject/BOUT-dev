@@ -1239,7 +1239,6 @@ protected:
     diffusion_coef_Hmode0 = options["diffusion_coef_Hmode0"].withDefault(1.0);    // default value of radial diffusion coefficient
     diffusion_coef_Hmode1 = options["diffusion_coef_Hmode1"].withDefault(10.0);   // upper limit of radial diffusion coefficient
 
-    //path = options["path"].withDefault("./");                                   // The path of the original Vexb data
     pos_filter = options["pos_filter"].withDefault(false);                        // switch to turn on the filter of the negative value of zonal background
     pos_filter2 = options["pos_filter2"].withDefault(false);                      // switch to turn on the filter inside certain position
     pos_filter_zf = options["pos_filter_zf"].withDefault(false);                  // switch to turn on the filter of the dc profiles inside certain postion with tanh function
@@ -1716,6 +1715,7 @@ protected:
     if (mesh->get(Bbar, "bmag")) { // Typical magnetic field
       Bbar = 1.0;
     }
+
     // Lbar = options["Lbar"].doc("Reference length scale [m]").withDefault(1.0);
     if (mesh->get(Lbar, "rmag")) { // Typical length scale
       Lbar = 1.0;
@@ -1742,7 +1742,8 @@ protected:
 
     Tbar = Lbar / Va;
 
-    output.write("Normalisations: Bbar = {:e} T   Lbar = {:e} m\n", Bbar, Lbar);
+    output.write("Normalisations:\n");
+    output.write("\t Bbar = {:e} T   Lbar = {:e} m\n", Bbar, Lbar);
     output.write("\t Va = {:e} m/s   Tbar = {:e} s\n", Va, Tbar);
     output.write("\t Nbar = {:e} * {:e} m^-3\n", Nbar, density);
     output.write("\t Pibar = {:e} Pa   Pebar = {:e} Pa\n", ee * Tibar * Nbar * density, ee * Tebar * Nbar * density);
@@ -1965,6 +1966,7 @@ protected:
         P00 = P00 / (ee * Tebar * Nbar * density);
         N0 = n0_height * (pow(P0 / P00, 0.3));
       } else {
+        // N0 = N0tanh(n0_height, n0_ave, n0_width, n0_center, n0_bottom_x);
 	      N0 = N0tanh(n0_height * Nbar, n0_ave * Nbar, n0_width, n0_center, n0_bottom_x); // Do we need Nbar here?
       }
       Ti0 = P0 / N0 / (1.0 + Zi);
@@ -2512,11 +2514,12 @@ protected:
       // kappa_par_i_lin = B0; // It was B0 in older version of v3
       // kappa_par_e_lin = B0; // It was B0 in older version of v3
 
-      for (jx = 0; jx < mesh->LocalNx; jx++)
+      for (jx = 0; jx < mesh->LocalNx; jx++) {
         for (jy = 0; jy < mesh->LocalNy; jy++) {
           kappa_par_i_lin(jx,jy) = kappa_par_i(jx,jy,0);
           kappa_par_e_lin(jx,jy) = kappa_par_e(jx,jy,0);
         }
+      }
     }
 
     if (diffusion_perp > 0.0) {
@@ -4563,6 +4566,9 @@ protected:
 
       if (nonlinear) {
         ddt(U) -= bracket(phi, U, bm_exb); // Advection
+        /*if (compress0)
+          // ddt(U) -= Vipar*Grad_par(U);
+          ddt(U) -= Vpar_Grad_par(Vipar, U);*/
 
 	      if (compress0 && include_vipar) {
 	        ddt(U) -= Vpar_Grad_par(Vipar, U);
@@ -4808,7 +4814,7 @@ protected:
       }
 
       if (compress0) {
-        // ddt(Ni) -= Vipar * Grad_parP(N0, CELL_YLOW);
+        // ddt(Ni) -= Vipar * Grad_parP(N0);
         // ddt(Ni) -= Vpar_Grad_par(Vipar, N0);        
         if (include_vipar) {
           ddt(Ni) -= Vipar * Grad_parP(N0);
@@ -4835,7 +4841,7 @@ protected:
         }
 
         if (nonlinear) {
-          // ddt(Ni) -= Vipar * Grad_par(Ni, CELL_YLOW);
+          // ddt(Ni) -= Vipar * Grad_par(Ni);
 
           // ddt(Ni) -= Vpar_Grad_par(Vipar, Ni);
           // ddt(Ni) += Vipar * bracket(Psi, N0, bm_mag)*B0;      
@@ -4964,7 +4970,7 @@ protected:
         }
 
         if (nonlinear) {
-          // ddt(Ti) -= Vipar * Grad_par(Ti, CELL_YLOW);
+          // ddt(Ti) -= Vipar * Grad_par(Ti);
 
           // ddt(Ti) -= Vpar_Grad_par(Vipar, Ti);
           // ddt(Ti) += Vipar * bracket(Psi, Ti0, bm_mag)*B0;
@@ -4990,48 +4996,47 @@ protected:
 
       if (diffusion_par > 0.0) {
 
-          ddt(Ti) += kappa_par_i * Grad2_par2(Ti) / N0; // Parallel diffusion
-          ddt(Ti) += Grad_par(kappa_par_i) * Grad_par(Ti) / N0;
+        ddt(Ti) += kappa_par_i * Grad2_par2(Ti) / N0; // Parallel diffusion
+        ddt(Ti) += Grad_par(kappa_par_i) * Grad_par(Ti) / N0;
 
-          if (diff_par_flutter) {
-            if (nonlinear) {
-              if (evolve_psi)
-                bracket1i = -bracket(Psi, Ti + Ti0, bm_mag) * B0;
-              else
-                bracket1i = -bracket(Apar, Ti + Ti0, bm_mag);
+        if (diff_par_flutter) {
+          if (nonlinear) {
+            if (evolve_psi)
+              bracket1i = -bracket(Psi, Ti + Ti0, bm_mag) * B0;
+            else
+              bracket1i = -bracket(Apar, Ti + Ti0, bm_mag);
+          } else {
+            if (evolve_psi)
+              bracket1i = -bracket(Psi, Ti0, bm_mag) * B0;
+            else
+              bracket1i = -bracket(Apar, Ti0, bm_mag);
+          }
+          mesh->communicate(bracket1i);
+          bracket1i.applyBoundary();
+          gradpar_ti = Grad_par(Ti); //NOTE(malamast): Do I need to add Ti0 here?
+          mesh->communicate(gradpar_ti);
+          gradpar_ti.applyBoundary();
+
+          ddt(Ti) += Grad_par(kappa_par_i) * bracket1i / N0;
+          ddt(Ti) += kappa_par_i * Grad_par(bracket1i) / N0;
+          if (nonlinear) {
+            if (evolve_psi) {
+              ddt(Ti) -= bracket(Psi, kappa_par_i, bm_mag) * B0 * gradpar_ti / N0;
+              ddt(Ti) -= kappa_par_i * bracket(Psi, gradpar_ti, bm_mag) * B0 / N0;
+              ddt(Ti) -= bracket(Psi, kappa_par_i, bm_mag) * B0 * bracket1i / N0;
+              ddt(Ti) -= kappa_par_i * bracket(Psi, bracket1i, bm_mag) * B0 / N0;
             } else {
-              if (evolve_psi)
-                bracket1i = -bracket(Psi, Ti0, bm_mag) * B0;
-              else
-                bracket1i = -bracket(Apar, Ti0, bm_mag);
-            }
-            mesh->communicate(bracket1i);
-            bracket1i.applyBoundary();
-            gradpar_ti = Grad_par(Ti); //NOTE(malamast): Do I need to add Ti0 here?
-            mesh->communicate(gradpar_ti);
-            gradpar_ti.applyBoundary();
-
-            ddt(Ti) += Grad_par(kappa_par_i) * bracket1i / N0;
-            ddt(Ti) += kappa_par_i * Grad_par(bracket1i) / N0;
-            if (nonlinear) {
-              if (evolve_psi) {
-                ddt(Ti) -= bracket(Psi, kappa_par_i, bm_mag) * B0 * gradpar_ti / N0;
-                ddt(Ti) -= kappa_par_i * bracket(Psi, gradpar_ti, bm_mag) * B0 / N0;
-                ddt(Ti) -= bracket(Psi, kappa_par_i, bm_mag) * B0 * bracket1i / N0;
-                ddt(Ti) -= kappa_par_i * bracket(Psi, bracket1i, bm_mag) * B0 / N0;
-              } else {
-                ddt(Ti) -= bracket(Apar, kappa_par_i, bm_mag) * gradpar_ti / N0;
-                ddt(Ti) -= kappa_par_i * bracket(Apar, gradpar_ti, bm_mag) / N0;
-                ddt(Ti) -= bracket(Apar, kappa_par_i, bm_mag) * bracket1i / N0;
-                ddt(Ti) -= kappa_par_i * bracket(Apar, bracket1i, bm_mag) / N0;
-              }
-            }
-
-            if (output_flux_par) {
-              heatf_par_flutter_i = -kappa_par_i * bracket1i;
+              ddt(Ti) -= bracket(Apar, kappa_par_i, bm_mag) * gradpar_ti / N0;
+              ddt(Ti) -= kappa_par_i * bracket(Apar, gradpar_ti, bm_mag) / N0;
+              ddt(Ti) -= bracket(Apar, kappa_par_i, bm_mag) * bracket1i / N0;
+              ddt(Ti) -= kappa_par_i * bracket(Apar, bracket1i, bm_mag) / N0;
             }
           }
-        // }
+
+          if (output_flux_par) {
+            heatf_par_flutter_i = -kappa_par_i * bracket1i;
+          }
+        }
       }
 
       if (diffusion_perp > 0.0) {
@@ -5216,49 +5221,48 @@ protected:
       }
 
       if (diffusion_par > 0.0) {
-          ddt(Te) += kappa_par_e * Grad2_par2(Te) / Ne0; // Parallel diffusion
-          ddt(Te) += Grad_par(kappa_par_e) * Grad_par(Te) / Ne0;
+        ddt(Te) += kappa_par_e * Grad2_par2(Te) / Ne0; // Parallel diffusion
+        ddt(Te) += Grad_par(kappa_par_e) * Grad_par(Te) / Ne0;
 
-          if (diff_par_flutter) {
-            if (nonlinear) {
-              if (evolve_psi)
-                bracket1e = -bracket(Psi, Te + Te0, bm_mag) * B0;
-              else
-                bracket1e = -bracket(Apar, Te + Te0, bm_mag);
+        if (diff_par_flutter) {
+          if (nonlinear) {
+            if (evolve_psi)
+              bracket1e = -bracket(Psi, Te + Te0, bm_mag) * B0;
+            else
+              bracket1e = -bracket(Apar, Te + Te0, bm_mag);
+          } else {
+            if (evolve_psi)
+              bracket1e = -bracket(Psi, Te0, bm_mag) * B0;
+            else
+              bracket1e = -bracket(Apar, Te0, bm_mag);
+          }
+          mesh->communicate(bracket1e);
+          bracket1e.applyBoundary();
+          gradpar_te = Grad_par(Te); //NOTE(malamast): Should we add Te0 here?
+          mesh->communicate(gradpar_te);
+          gradpar_te.applyBoundary();
+
+          ddt(Te) += Grad_par(kappa_par_e) * bracket1e / Ne0;
+          ddt(Te) += kappa_par_e * Grad_par(bracket1e) / Ne0;
+
+          if (nonlinear) {
+            if (evolve_psi) {
+              ddt(Te) -= bracket(Psi, kappa_par_e, bm_mag) * B0 * gradpar_te / Ne0;
+              ddt(Te) -= kappa_par_e * bracket(Psi, gradpar_te, bm_mag) * B0 / Ne0;
+              ddt(Te) -= bracket(Psi, kappa_par_e, bm_mag) * B0 * bracket1e / Ne0;
+              ddt(Te) -= kappa_par_e * bracket(Psi, bracket1e, bm_mag) * B0 / Ne0;
             } else {
-              if (evolve_psi)
-                bracket1e = -bracket(Psi, Te0, bm_mag) * B0;
-              else
-                bracket1e = -bracket(Apar, Te0, bm_mag);
-            }
-            mesh->communicate(bracket1e);
-            bracket1e.applyBoundary();
-            gradpar_te = Grad_par(Te); //NOTE(malamast): Should we add Te0 here?
-            mesh->communicate(gradpar_te);
-            gradpar_te.applyBoundary();
-
-            ddt(Te) += Grad_par(kappa_par_e) * bracket1e / Ne0;
-            ddt(Te) += kappa_par_e * Grad_par(bracket1e) / Ne0;
-
-            if (nonlinear) {
-              if (evolve_psi) {
-                ddt(Te) -= bracket(Psi, kappa_par_e, bm_mag) * B0 * gradpar_te / Ne0;
-                ddt(Te) -= kappa_par_e * bracket(Psi, gradpar_te, bm_mag) * B0 / Ne0;
-                ddt(Te) -= bracket(Psi, kappa_par_e, bm_mag) * B0 * bracket1e / Ne0;
-                ddt(Te) -= kappa_par_e * bracket(Psi, bracket1e, bm_mag) * B0 / Ne0;
-              } else {
-                ddt(Te) -= bracket(Apar, kappa_par_e, bm_mag) * gradpar_te / Ne0;
-                ddt(Te) -= kappa_par_e * bracket(Apar, gradpar_te, bm_mag) / Ne0;
-                ddt(Te) -= bracket(Apar, kappa_par_e, bm_mag) * bracket1e / Ne0;
-                ddt(Te) -= kappa_par_e * bracket(Apar, bracket1e, bm_mag) / Ne0;
-              }
-            }
-
-            if (output_flux_par) {
-              heatf_par_flutter_e = -kappa_par_e * bracket1e;
+              ddt(Te) -= bracket(Apar, kappa_par_e, bm_mag) * gradpar_te / Ne0;
+              ddt(Te) -= kappa_par_e * bracket(Apar, gradpar_te, bm_mag) / Ne0;
+              ddt(Te) -= bracket(Apar, kappa_par_e, bm_mag) * bracket1e / Ne0;
+              ddt(Te) -= kappa_par_e * bracket(Apar, bracket1e, bm_mag) / Ne0;
             }
           }
-        // }
+
+          if (output_flux_par) {
+            heatf_par_flutter_e = -kappa_par_e * bracket1e;
+          }
+        }
       }
 
       if (diffusion_perp > 0.0) {
