@@ -23,6 +23,7 @@
  *
  **************************************************************************/
 
+#include "bout/petsclib.hxx"
 #include <bout/bout.hxx>
 #include <bout/constants.hxx>
 // #include <bout/sys/timer.hxx>
@@ -36,6 +37,9 @@ BoutReal max_error_at_ystart(const Field3D& error);
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
+
+  PetscLib lib{};
+
   {
     Options* options = Options::getRoot()->getSection("petsc2nd");
     auto invert = Laplacian::create(options);

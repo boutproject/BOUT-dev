@@ -34,12 +34,14 @@
 
 #include "bout/version.hxx"
 #include <bout/mesh.hxx>
+#include <bout/options.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/vector2d.hxx>
 #include <bout/vector3d.hxx>
 
 #include <fmt/core.h>
 
+#include <cstddef>
 #include <string>
 using namespace std::literals;
 
@@ -67,9 +69,10 @@ PhysicsModel::PhysicsModel()
                                                     .withDefault(true)),
       restart_enabled(Options::root()["restart_files"]["enabled"]
                           .doc("Write restart files")
-                          .withDefault(true))
-
-{
+                          .withDefault(true)),
+      flush_frequency(Options::root()["output"]["flush_frequency"]
+                          .doc("How often to flush to disk")
+                          .withDefault<std::size_t>(1)) {
   if (output_enabled) {
     output_file = bout::OptionsIOFactory::getInstance().createOutput();
   }
@@ -188,7 +191,7 @@ int PhysicsModel::postInit(bool restarting) {
 }
 
 void PhysicsModel::outputVars(Options& options) {
-  Timer time("io");
+  const Timer time("io");
   for (const auto& item : dump.getData()) {
     bout::utils::visit(bout::OptionsConversionVisitor{options, item.name}, item.value);
     if (item.repeat) {
@@ -198,7 +201,7 @@ void PhysicsModel::outputVars(Options& options) {
 }
 
 void PhysicsModel::restartVars(Options& options) {
-  Timer time("io");
+  const Timer time("io");
   for (const auto& item : restart.getData()) {
     bout::utils::visit(bout::OptionsConversionVisitor{options, item.name}, item.value);
     if (item.repeat) {
@@ -216,9 +219,7 @@ void PhysicsModel::writeRestartFile() {
 void PhysicsModel::writeOutputFile() { writeOutputFile(output_options); }
 
 void PhysicsModel::writeOutputFile(const Options& options) {
-  if (output_enabled) {
-    output_file->write(options, "t");
-  }
+  writeOutputFile(options, "t");
 }
 
 void PhysicsModel::writeOutputFile(const Options& options,
@@ -229,13 +230,19 @@ void PhysicsModel::writeOutputFile(const Options& options,
 }
 
 void PhysicsModel::finishOutputTimestep() const {
-  if (output_enabled) {
+  const Timer timer("io");
+
+  if (output_enabled and (flush_counter % flush_frequency == 0)) {
+    output_file->flush();
     output_file->verifyTimesteps();
   }
 }
 
 int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime,
                                             int iteration, int nout) {
+
+  model->setFlushCounter(static_cast<std::size_t>(iteration));
+
   // Restart file variables
   solver->outputVars(model->restart_options, false);
   model->restartVars(model->restart_options);
@@ -253,6 +260,9 @@ int PhysicsModel::PhysicsModelMonitor::call(Solver* solver, BoutReal simtime,
   solver->outputVars(model->output_options, true);
   model->outputVars(model->output_options);
   model->writeOutputFile();
+
+  // Reset output options, this avoids rewriting time-independent data
+  model->output_options = Options{};
 
   return monitor_result;
 }

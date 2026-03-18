@@ -6,7 +6,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -33,6 +33,7 @@ class FieldData;
 #include "bout/bout_types.hxx"
 #include "bout/unused.hxx"
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
@@ -71,13 +72,22 @@ public:
   /// Get variable location
   virtual CELL_LOC getLocation() const;
 
+  /// Enum to distinguish the different kinds of Fields
+  enum class FieldType : std::uint8_t { field3d, field2d, fieldperp };
+  /// Is this an instance of `Field3D`, `Field2D`, or `FieldPerp`?
+  virtual FieldType field_type() const = 0;
+
   // Defines interface which must be implemented
   /// True if variable is 3D
-  virtual bool is3D() const = 0;
+  [[deprecated("Use `field_type()` instead")]]
+  bool is3D() const {
+    return field_type() == FieldType::field3d;
+  }
+
   /// Number of BoutReals in one element
   virtual int elementSize() const { return 1; }
 
-  virtual void doneComms(){}; // Notifies that communications done
+  virtual void doneComms() {}; // Notifies that communications done
 
   // Boundary conditions
   void setBoundary(const std::string& name); ///< Set the boundary conditions
@@ -86,13 +96,13 @@ public:
   copyBoundary(const FieldData& f); ///< Copy the boundary conditions from another field
 
   virtual void applyBoundary(bool UNUSED(init) = false) {}
-  virtual void applyTDerivBoundary(){};
+  virtual void applyTDerivBoundary() {};
 
-  virtual void applyParallelBoundary(){};
-  virtual void applyParallelBoundary(BoutReal UNUSED(t)){};
-  virtual void applyParallelBoundary(const std::string& UNUSED(condition)){};
+  virtual void applyParallelBoundary() {};
+  virtual void applyParallelBoundary(BoutReal UNUSED(t)) {};
+  virtual void applyParallelBoundary(const std::string& UNUSED(condition)) {};
   virtual void applyParallelBoundary(const std::string& UNUSED(region),
-                                     const std::string& UNUSED(condition)){};
+                                     const std::string& UNUSED(condition)) {};
   // JMAD
   void addBndryFunction(FuncPtr userfunc, BndryLoc location);
   void addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location);

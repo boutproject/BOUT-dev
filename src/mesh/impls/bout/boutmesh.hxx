@@ -4,6 +4,7 @@
 
 #include "mpi.h"
 
+#include "bout/bout_types.hxx"
 #include "bout/unused.hxx"
 #include <bout/mesh.hxx>
 
@@ -11,6 +12,8 @@
 #include <set>
 #include <string>
 #include <vector>
+
+class Field;
 
 /// Implementation of Mesh (mostly) compatible with BOUT
 ///
@@ -107,6 +110,7 @@ public:
   MPI_Comm getXcomm(int UNUSED(jy)) const override { return comm_x; }
   /// Return communicator containing all processors in Y
   MPI_Comm getYcomm(int xpos) const override;
+  MPI_Comm getXZcomm() const override { return comm_xz; }
 
   /// Is local X index \p jx periodic in Y?
   ///
@@ -455,6 +459,8 @@ private:
 
   /// Communicator containing all processors in X
   MPI_Comm comm_x{MPI_COMM_NULL};
+  /// Communicator for all processors in an XZ plane
+  MPI_Comm comm_xz{MPI_COMM_NULL};
 
   //////////////////////////////////////////////////
   // Surface communications
@@ -476,12 +482,11 @@ private:
   void post_receiveY(CommHandle& ch);
 
   /// Take data from objects and put into a buffer
-  int pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                int ylt, BoutReal* buffer);
+  int pack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge, int ylt,
+                BoutReal* buffer) const;
   /// Copy data from a buffer back into the fields
-
-  int unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
-                  int ylt, BoutReal* buffer);
+  int unpack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge, int ylt,
+                  const BoutReal* buffer) const;
 };
 
 namespace {

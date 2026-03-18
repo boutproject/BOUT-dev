@@ -1,8 +1,7 @@
 /**************************************************************************
- * Copyright 2010-2020 B.D.Dudson, S.Farley, P. Hill, J.T. Omotani, J.T. Parker,
- * M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -33,9 +32,11 @@
 #include "bout/petsclib.hxx"
 #endif
 
-namespace {
+namespace bout {
+namespace details {
 enum class implementation_type { new_weights, petsc, legacy };
 }
+} // namespace bout
 
 class Options;
 class GlobalField3DAccess;
@@ -144,7 +145,7 @@ public:
 /// but also degrades accuracy near maxima and minima.
 /// Perhaps should only impose near boundaries, since that is where
 /// problems most obviously occur.
-template <bool monotonic, implementation_type imp_type>
+template <bool monotonic, bout::details::implementation_type imp_type>
 class XZHermiteSplineBase : public XZInterpolation {
 protected:
   /// This is protected rather than private so that it can be
@@ -224,19 +225,23 @@ public:
 };
 
 using XZMonotonicHermiteSplineSerial =
-    XZHermiteSplineBase<true, implementation_type::new_weights>;
+    XZHermiteSplineBase<true, bout::details::implementation_type::new_weights>;
 using XZHermiteSplineSerial =
-    XZHermiteSplineBase<false, implementation_type::new_weights>;
+    XZHermiteSplineBase<false, bout::details::implementation_type::new_weights>;
 using XZMonotonicHermiteSplineLegacy =
-    XZHermiteSplineBase<true, implementation_type::legacy>;
-using XZHermiteSplineLegacy = XZHermiteSplineBase<false, implementation_type::legacy>;
+    XZHermiteSplineBase<true, bout::details::implementation_type::legacy>;
+using XZHermiteSplineLegacy =
+    XZHermiteSplineBase<false, bout::details::implementation_type::legacy>;
 #if BOUT_HAS_PETSC
-using XZMonotonicHermiteSpline = XZHermiteSplineBase<true, implementation_type::petsc>;
-using XZHermiteSpline = XZHermiteSplineBase<false, implementation_type::petsc>;
+using XZMonotonicHermiteSpline =
+    XZHermiteSplineBase<true, bout::details::implementation_type::petsc>;
+using XZHermiteSpline =
+    XZHermiteSplineBase<false, bout::details::implementation_type::petsc>;
 #else
 using XZMonotonicHermiteSpline =
-    XZHermiteSplineBase<true, implementation_type::new_weights>;
-using XZHermiteSpline = XZHermiteSplineBase<false, implementation_type::new_weights>;
+    XZHermiteSplineBase<true, bout::details::implementation_type::new_weights>;
+using XZHermiteSpline =
+    XZHermiteSplineBase<false, bout::details::implementation_type::new_weights>;
 #endif
 
 /// XZLagrange4pt interpolation class
