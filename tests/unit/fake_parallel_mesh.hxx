@@ -6,8 +6,10 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <vector>
 
 #include "../../src/mesh/impls/bout/boutmesh.hxx"
+#include "bout/assert.hxx"
 #include "bout/boundary_op.hxx"
 #include "bout/boundary_region.hxx"
 #include "bout/boutcomm.hxx"
@@ -129,46 +131,14 @@ public:
     return parentSendY(g, handle);
   }
 
-  // Need to override this functions to trick mesh into communicating for
-  // FieldPerp type
-  void communicate(FieldPerp& f) override {
-    int nin = xstart;              // Number of x points in inner guard cell
-    int nout = LocalNx - xend - 1; // Number of x points in outer guard cell
-
-    if (registeredFieldPerps.count(&f) != 0) {
-      int id = registeredFieldPerps[&f];
-
-      if (xInMesh != nullptr && xInMesh->registeredFieldPerpIds.count(id) != 0) {
-        FieldPerp* xInField = xInMesh->registeredFieldPerpIds[id];
-        for (int i = 0; i < nin * LocalNz; i++) {
-          IndPerp ind(i, 1, LocalNz);
-          f[ind] = (*xInField)[ind.xp(xend - xstart + 1)];
-        }
-      }
-
-      if (xOutMesh != nullptr && xOutMesh->registeredFieldPerpIds.count(id) != 0) {
-        FieldPerp* xOutField = xOutMesh->registeredFieldPerpIds[id];
-        for (int i = 0; i < nout * LocalNz; i++) {
-          IndPerp ind((xend + 1) * LocalNz + i, 1, LocalNz);
-          f[ind] = (*xOutField)[ind.xm(xend - xstart + 1)];
-        }
-      }
-      // No corner cells to communicate for FieldPerp
-    }
-  }
-
   /// Use these methods to let the mesh know that this field has been
   /// created with it. It can then check in with its sibling meshes
   /// (representing other processors) to see if a corresponding field
   /// has been created for them which can be used to communicate guard
   /// cells with.
-  void registerField(FieldData& f, int id) {
+  void registerField(Field& f, int id) {
     registeredFields.emplace(&f, id);
     registeredFieldIds.emplace(id, &f);
-  }
-  void registerField(FieldPerp& f, int id) {
-    registeredFieldPerps.emplace(&f, id);
-    registeredFieldPerpIds.emplace(id, &f);
   }
 
   friend std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz,
@@ -257,10 +227,8 @@ public:
 private:
   FakeParallelMesh *yUpMesh, *yDownMesh, *xInMesh, *xOutMesh;
   bool communicatingX = false, communicatingY = false;
-  std::map<FieldData*, int> registeredFields;
-  std::map<int, FieldData*> registeredFieldIds;
-  std::map<FieldPerp*, int> registeredFieldPerps;
-  std::map<int, FieldPerp*> registeredFieldPerpIds;
+  std::map<Field*, int> registeredFields;
+  std::map<int, Field*> registeredFieldIds;
   std::unique_ptr<FakeMpiWrapper> mpiSmart;
 
   comm_handle parentSendX(FieldGroup& g, comm_handle handle, bool disable_corners) {
@@ -270,10 +238,10 @@ private:
     return BoutMesh::sendY(g, handle);
   }
 
-  FieldGroup makeGroup(FakeParallelMesh* m, const std::vector<int> ids) {
+  static FieldGroup makeGroup(FakeParallelMesh* m, const std::vector<int>& ids) {
     FieldGroup g;
-    for (int i : ids) {
-      ASSERT1(m->registeredFieldIds.count(i) != 0);
+    for (const int i : ids) {
+      ASSERT1(m->registeredFieldIds.contains(i));
       g.add(*m->registeredFieldIds[i]);
     }
     return g;

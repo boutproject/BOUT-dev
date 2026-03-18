@@ -97,12 +97,6 @@ TEST_F(Vector2DTest, ApplyBoundaryString) {
   EXPECT_DOUBLE_EQ(v.x(2, 2), 0.0);
 }
 
-TEST_F(Vector2DTest, Is3D) {
-  Vector2D vector;
-
-  EXPECT_FALSE(vector.is3D());
-}
-
 TEST_F(Vector2DTest, BoutRealSize) {
   Vector2D vector;
 

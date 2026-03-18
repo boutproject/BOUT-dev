@@ -25,6 +25,7 @@
  *
  **************************************************************************/
 
+#include "bout/bout_types.hxx"
 #include "bout/build_defines.hxx"
 
 #include <bout/boutcomm.hxx>
@@ -32,7 +33,9 @@
 
 #include <cmath>
 #include <cpptrace/cpptrace.hpp>
+#include <cstddef>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "bout/parallel_boundary_op.hxx"

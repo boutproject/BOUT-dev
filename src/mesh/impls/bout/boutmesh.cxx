@@ -52,6 +52,7 @@
 #include <bout/utils.hxx>
 
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
 #include <algorithm>
 #include <cmath>
@@ -105,6 +106,9 @@ BoutMesh::~BoutMesh() {
   }
   if (comm_outer != MPI_COMM_NULL) {
     MPI_Comm_free(&comm_outer);
+  }
+  if (comm_xz != MPI_COMM_NULL) {
+    MPI_Comm_free(&comm_xz);
   }
 }
 
@@ -665,9 +669,42 @@ int BoutMesh::load() {
   return 0;
 }
 
+namespace {
+auto make_XZ_communicator(const BoutMesh& mesh, MPI_Group group_world) -> MPI_Comm {
+  std::vector<int> ranks;
+
+  const int yp = mesh.getYProcIndex();
+
+  // All processors with the same Y index
+  for (int xp = 0; xp < mesh.getNXPE(); ++xp) {
+    for (int zp = 0; zp < mesh.getNZPE(); ++zp) {
+      ranks.push_back(mesh.getProcIndex(xp, yp, zp));
+    }
+  }
+  MPI_Group group{};
+  if (MPI_Group_incl(group_world, static_cast<int>(ranks.size()), ranks.data(), &group)
+      != MPI_SUCCESS) {
+    throw BoutException("Could not create X-Z communication group for ranks {}",
+                        fmt::join(ranks, ", "));
+  }
+
+  MPI_Comm comm_xz{};
+  if (MPI_Comm_create(BoutComm::get(), group, &comm_xz) != MPI_SUCCESS) {
+    throw BoutException("Could not create X-Z communicator for yp={} (xind={}, yind={}, "
+                        "zind={}) ranks={}",
+                        yp, mesh.getXProcIndex(), mesh.getYProcIndex(),
+                        mesh.getZProcIndex(), fmt::join(ranks, ", "));
+  }
+
+  return comm_xz;
+}
+} // namespace
+
 void BoutMesh::createCommunicators() {
   MPI_Group group_world{};
   MPI_Comm_group(BoutComm::get(), &group_world); // Get the entire group
+
+  comm_xz = make_XZ_communicator(*this, group_world);
 
   //////////////////////////////////////////////////////
   /// Communicator in X
@@ -1038,7 +1075,9 @@ void BoutMesh::createXBoundaries() {
   }
 }
 
-int BoutMesh::getProcIndex(int X, int Y, int Z) const { return Y * NXPE + X; }
+int BoutMesh::getProcIndex(int X, int Y, int Z) const {
+  return (((Z * NYPE) + Y) * NXPE) + X;
+}
 
 void BoutMesh::createYBoundaries() {
   if (MYG <= 0) {
@@ -2218,9 +2257,9 @@ void BoutMesh::topology() {
     }
 
     for (int i = 0; i < limiter_count; ++i) {
-      int const yind = limiter_yinds[i];
-      int const xstart = limiter_xstarts[i];
-      int const xend = limiter_xends[i];
+      const int yind = limiter_yinds[i];
+      const int xstart = limiter_xstarts[i];
+      const int xend = limiter_xends[i];
       output_info.write("Adding a limiter between y={} and {}. X indices {} to {}\n",
                         yind, yind + 1, xstart, xend);
       add_target(yind, xstart, xend);
@@ -2397,72 +2436,112 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
  *                   Communication utilities
  ****************************************************************/
 
-int BoutMesh::pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt,
-                        int yge, int ylt, BoutReal* buffer) {
+int BoutMesh::pack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
+                        int ylt, BoutReal* buffer) const {
 
+  using enum Field::FieldType;
   int len = 0;
+  const int zge = 0;
+  const int zlt = LocalNz;
 
-  /// Loop over variables
   for (const auto& var : var_list) {
-    if (var->is3D()) {
-      // 3D variable
-      auto* var3d_ref_ptr = dynamic_cast<Field3D*>(var);
+    switch (var->field_type()) {
+    case field3d: {
+      const auto* var3d_ref_ptr = dynamic_cast<Field3D*>(var);
       ASSERT0(var3d_ref_ptr != nullptr);
-      auto& var3d_ref = *var3d_ref_ptr;
+      const auto& var3d_ref = *var3d_ref_ptr;
       ASSERT2(var3d_ref.isAllocated());
-      for (int jx = xge; jx != xlt; jx++) {
+      for (int jx = xge; jx < xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
-          for (int jz = 0; jz < LocalNz; jz++, len++) {
+          for (int jz = zge; jz < zlt; jz++, len++) {
             buffer[len] = var3d_ref(jx, jy, jz);
           }
         }
       }
-    } else {
-      // 2D variable
-      auto* var2d_ref_ptr = dynamic_cast<Field2D*>(var);
+      break;
+    }
+    case field2d: {
+      const auto* var2d_ref_ptr = dynamic_cast<Field2D*>(var);
       ASSERT0(var2d_ref_ptr != nullptr);
-      auto& var2d_ref = *var2d_ref_ptr;
+      const auto& var2d_ref = *var2d_ref_ptr;
       ASSERT2(var2d_ref.isAllocated());
-      for (int jx = xge; jx != xlt; jx++) {
+      for (int jx = xge; jx < xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++, len++) {
           buffer[len] = var2d_ref(jx, jy);
         }
       }
+      break;
+    }
+    case fieldperp: {
+      const auto* varperp_ref_ptr = dynamic_cast<FieldPerp*>(var);
+      ASSERT0(varperp_ref_ptr != nullptr);
+      const auto& varperp_ref = *varperp_ref_ptr;
+      ASSERT2(varperp_ref.isAllocated());
+      for (int jx = xge; jx < xlt; jx++) {
+        for (int jz = zge; jz < zlt; jz++, len++) {
+          buffer[len] = varperp_ref(jx, jz);
+        }
+      }
+      break;
+    }
     }
   }
 
-  return (len);
+  return len;
 }
 
-int BoutMesh::unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt,
-                          int yge, int ylt, BoutReal* buffer) {
+int BoutMesh::unpack_data(const std::vector<Field*>& var_list, int xge, int xlt, int yge,
+                          int ylt, const BoutReal* buffer) const {
 
+  using enum Field::FieldType;
   int len = 0;
+  const int zge = 0;
+  const int zlt = LocalNz;
 
-  /// Loop over variables
   for (const auto& var : var_list) {
-    if (var->is3D()) {
-      // 3D variable
-      auto& var3d_ref = *dynamic_cast<Field3D*>(var);
-      for (int jx = xge; jx != xlt; jx++) {
+    switch (var->field_type()) {
+    case field3d: {
+      auto* var3d_ref_ptr = dynamic_cast<Field3D*>(var);
+      ASSERT0(var3d_ref_ptr != nullptr);
+      auto& var3d_ref = *var3d_ref_ptr;
+      ASSERT2(var3d_ref.isAllocated());
+      for (int jx = xge; jx < xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++) {
-          for (int jz = 0; jz < LocalNz; jz++, len++) {
+          for (int jz = zge; jz < zlt; jz++, len++) {
             var3d_ref(jx, jy, jz) = buffer[len];
           }
         }
       }
-    } else {
-      // 2D variable
-      auto& var2d_ref = *dynamic_cast<Field2D*>(var);
-      for (int jx = xge; jx != xlt; jx++) {
+      break;
+    }
+    case field2d: {
+      auto* var2d_ref_ptr = dynamic_cast<Field2D*>(var);
+      ASSERT0(var2d_ref_ptr != nullptr);
+      auto& var2d_ref = *var2d_ref_ptr;
+      ASSERT2(var2d_ref.isAllocated());
+      for (int jx = xge; jx < xlt; jx++) {
         for (int jy = yge; jy < ylt; jy++, len++) {
           var2d_ref(jx, jy) = buffer[len];
         }
       }
+      break;
+    }
+    case fieldperp: {
+      auto* varperp_ref_ptr = dynamic_cast<FieldPerp*>(var);
+      ASSERT0(varperp_ref_ptr != nullptr);
+      auto& varperp_ref = *varperp_ref_ptr;
+      ASSERT2(varperp_ref.isAllocated());
+      for (int jx = xge; jx < xlt; jx++) {
+        for (int jz = zge; jz < zlt; jz++, len++) {
+          varperp_ref(jx, jz) = buffer[len];
+        }
+      }
+      break;
+    }
     }
   }
 
-  return (len);
+  return len;
 }
 
 /****************************************************************

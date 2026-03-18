@@ -155,7 +155,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh* m, Options* opt, const CELL_LOC loc)
           .withDefault("petsc");
 
   // Get MPI communicator
-  MPI_Comm comm = localmesh->getXcomm();
+  MPI_Comm comm = localmesh->getXZcomm();
 
   // Local size
   int localN = (localmesh->xend - localmesh->xstart + 1) * (localmesh->LocalNz);
