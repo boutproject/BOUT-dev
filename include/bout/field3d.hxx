@@ -776,7 +776,6 @@ public:
                                                            ZDirectionType::Standard},
                            std::optional<size_t> regionID = {})
       : Field3D(localmesh, location_in, directions_in, regionID) {
-    splitParallelSlices();
     ensureFieldAligned();
   }
   explicit Field3DParallel(Array<BoutReal> data, Mesh* localmesh,
