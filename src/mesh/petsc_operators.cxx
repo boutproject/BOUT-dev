@@ -170,7 +170,7 @@ PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int
   BOUT_DO_PETSC(MatDestroy(&mat));
 }
 
-void PetscOperator::copyToVec(PetscMappingPtr mapping, const Field3D& f, Vec vec) {
+void PetscOperator::copyToVec(const PetscMappingPtr& mapping, const Field3D& f, Vec vec) {
   ASSERT1(f.hasParallelSlices());
   ASSERT1(f.yup().isAllocated());
   ASSERT1(f.ydown().isAllocated());
@@ -363,7 +363,7 @@ PetscOperators::Parallel PetscOperators::getParallel() const {
   const auto identity = this->diagonal(one);
 
   // Interpolate at + 1/2
-  const auto interp_plus_op = (identity + forward) * 0.5;
+  auto interp_plus_op = (identity + forward) * 0.5;
 
   // dl averaged at +1/2
   const Field3D dl_plus = interp_plus_op(dl);
@@ -375,10 +375,10 @@ PetscOperators::Parallel PetscOperators::getParallel() const {
   const auto inv_dl_plus_op = this->diagonal(inv_dl_plus);
 
   // Gradient at + 1/2
-  const auto Grad_plus = inv_dl_plus_op * (forward - identity);
+  auto Grad_plus = inv_dl_plus_op * (forward - identity);
 
   // Divergence at -1/2
-  const auto Div_minus = neg_inv_dV_op * Grad_plus.transpose() * dV_op;
+  auto Div_minus = neg_inv_dV_op * Grad_plus.transpose() * dV_op;
 
   // Interpolate at - 1/2
   auto interp_minus_op = (identity + backward) * 0.5;
@@ -396,13 +396,31 @@ PetscOperators::Parallel PetscOperators::getParallel() const {
   auto Grad_minus = inv_dl_minus_op * (identity - backward);
 
   // Divergence at +1/2
-  const auto Div_plus = neg_inv_dV_op * Grad_minus.transpose() * dV_op;
+  auto Div_plus = neg_inv_dV_op * Grad_minus.transpose() * dV_op;
 
   // Div(Grad_par()) operator
   auto Div_par_Grad_par = ((Div_minus * Grad_plus) + (Div_plus * Grad_minus)) * 0.5;
 
-  return Parallel{std::move(Grad_par), std::move(Div_par), std::move(Div_par_Grad_par),
-                  std::move(dV)};
+  return Parallel{std::move(Grad_par),         std::move(Div_par),
+                  std::move(Div_par_Grad_par), std::move(dV),
+                  std::move(Grad_minus),       std::move(Grad_plus),
+                  std::move(Div_minus),        std::move(Div_plus),
+                  std::move(interp_minus_op),  std::move(interp_plus_op)};
+}
+
+Field3D PetscOperators::Parallel::Div_par_K_Grad_par(const Field3D& K,
+                                                     const Field3D& f) const {
+  // Calculate gradients in + and - directions
+  const Field3D grad_plus = this->Grad_plus(f);
+  const Field3D grad_minus = this->Grad_minus(f);
+
+  // Interpolate K to + and - locations
+  const Field3D K_plus = this->Interp_plus(K);
+  const Field3D K_minus = this->Interp_minus(K);
+
+  // Calculate divergence
+  return (this->Div_minus(K_plus * grad_plus) + this->Div_plus(K_minus * grad_minus))
+         * 0.5;
 }
 
 #endif // BOUT_HAS_PETSC

@@ -244,13 +244,13 @@ private:
   Region<Ind3D> ydown_region;
 
   /// First and one-past-last PETSc global rows owned by this rank.
-  PetscInt row_start, row_end;
+  PetscInt row_start{}, row_end{};
 
   /// Permutation matrix mapping mesh-global ordering to PETSc ordering.
-  Mat mat_mesh_to_petsc;
+  Mat mat_mesh_to_petsc{nullptr};
 
   /// Permutation matrix mapping PETSc ordering to mesh-global ordering.
-  Mat mat_petsc_to_mesh;
+  Mat mat_petsc_to_mesh{nullptr};
 };
 
 /// Shared pointer to an immutable `PetscMapping`.
@@ -380,7 +380,7 @@ private:
 
   /// Copy contents of f, f.yup() and f.ydown() into vec.
   /// Assumes that vec has already been allocated.
-  static void copyToVec(PetscMappingPtr mapping, const Field3D& f, Vec vec);
+  static void copyToVec(const PetscMappingPtr& mapping, const Field3D& f, Vec vec);
 
   // Allocate MPI vector
   static UniqueVec createVec(PetscInt local_size);
@@ -426,6 +426,18 @@ public:
     PetscOperator Div_par;          ///< Divergence
     PetscOperator Div_par_Grad_par; ///< Diffusion
     Field3D dV;                     ///< Cell volume
+
+    PetscOperator Grad_minus;
+    PetscOperator Grad_plus;
+    PetscOperator Div_minus;
+    PetscOperator Div_plus;
+
+    PetscOperator Interp_minus;
+    PetscOperator Interp_plus;
+
+    /// This is a bilinear operator that requires multiple
+    /// matrix-vector products.
+    Field3D Div_par_K_Grad_par(const Field3D& K, const Field3D& f) const;
   };
 
   /// Calculate a set of parallel operators
