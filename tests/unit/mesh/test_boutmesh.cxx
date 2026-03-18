@@ -519,7 +519,7 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisible_1) {
 TEST_F(BoutMeshTest, ChooseProcessorSplitNXPE) {
   Options options{{"NXPE", 4}};
 
-  BoutMeshExposer mesh(4, 24, 1, 1, 1, 8);
+  BoutMeshExposer mesh(6, 24, 1, 1, 1, 8);
 
   EXPECT_NO_THROW(mesh.chooseProcessorSplit(options));
 
@@ -717,7 +717,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(BoutMeshProcNumTest, ProcNum) {
   WithQuietOutput info{output_info};
-  BoutMeshExposer mesh(4, 4, 1, 1, 1, 4);
+  BoutMeshExposer mesh(6, 4, 1, 1, 1, 4);
 
   const auto params = GetParam();
   Options options{{"NXPE", params.nxpe}};
