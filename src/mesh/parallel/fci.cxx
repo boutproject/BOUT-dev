@@ -104,7 +104,8 @@ void load_parallel_metric_components(Coordinates* coords, int offset) {
   LOAD_PAR(g_22);
   LOAD_PAR(g_33);
   LOAD_PAR(g_13);
-  LOAD_PAR(J);
+  LOAD_PAR(Bxy);
+
 #undef LOAD_PAR
 }
 #endif
@@ -456,9 +457,19 @@ void FCITransform::outputVars(Options& output_options) {
 
 void FCITransform::loadParallelMetrics(Coordinates* coords) {
 #if BOUT_USE_METRIC_3D
+  const auto JB0 = coords->J * coords->Bxy;
+  coords->J.splitParallelSlices();
+  coords->J.disallowCalcParallelSlices();
   for (int i = 1; i <= mesh.ystart; ++i) {
     load_parallel_metric_components(coords, -i);
     load_parallel_metric_components(coords, i);
+
+    coords->J.ynext(i).allocate();
+    coords->J.ynext(-i).allocate();
+    BOUT_FOR(j, JB0.getRegion("RGN_NO_BNDRY")) {
+      coords->J.ynext(i)[j.yp(i)] = JB0[j] / coords->Bxy.ynext(i)[j.yp(i)];
+      coords->J.ynext(-i)[j.yp(-i)] = JB0[j] / coords->Bxy.ynext(-i)[j.yp(-i)];
+    }
   }
 #endif
 }
