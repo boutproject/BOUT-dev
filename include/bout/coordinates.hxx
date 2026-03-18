@@ -108,43 +108,6 @@ public:
   const FieldMetric& g_22_yhigh() const;
   FieldMetric& g_22_ylow();
   FieldMetric& g_22_yhigh();
-  /// get Jxz at the cell faces or cell centre
-  const FieldMetric& Jxz_ylow() const {
-    if (!_jxz_ylow.has_value()) {
-      _compute_Jxz_cell_faces();
-    }
-    return *_jxz_ylow;
-  }
-  const FieldMetric& Jxz_yhigh() const {
-    if (!_jxz_yhigh.has_value()) {
-      _compute_Jxz_cell_faces();
-    }
-    return *_jxz_yhigh;
-  }
-  const FieldMetric& Jxz() const {
-    if (!_jxz_centre.has_value()) {
-      _compute_Jxz_cell_faces();
-    }
-    return *_jxz_centre;
-  }
-  FieldMetric& Jxz_ylow() {
-    if (!_jxz_ylow.has_value()) {
-      _compute_Jxz_cell_faces();
-    }
-    return *_jxz_ylow;
-  }
-  FieldMetric& Jxz_yhigh() {
-    if (!_jxz_yhigh.has_value()) {
-      _compute_Jxz_cell_faces();
-    }
-    return *_jxz_yhigh;
-  }
-  FieldMetric& Jxz() {
-    if (!_jxz_centre.has_value()) {
-      _compute_Jxz_cell_faces();
-    }
-    return *_jxz_centre;
-  }
   // Cell Areas
   const FieldMetric& cell_area_xlow() const {
     if (!_cell_area_xlow.has_value()) {
