@@ -1,5 +1,6 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include <vector>
 
 #include "bout/boutexception.hxx"
 #include "bout/mesh.hxx"
@@ -288,9 +289,9 @@ TEST_F(MeshTest, MsgLen) {
   Field2D f2D_1(0., &localmesh);
   Field2D f2D_2(0., &localmesh);
 
-  std::vector<FieldData*> var_list{&f3D_1, &f2D_1, &f3D_2, &f2D_2};
+  const std::vector<Field*> var_list{&f3D_1, &f2D_1, &f3D_2, &f2D_2};
 
   const int len = localmesh.msg_len(var_list, 0, nx, 0, ny);
 
-  EXPECT_EQ(len, 2 * (nx * ny * nz) + 2 * (nx * ny));
+  EXPECT_EQ(len, (2 * (nx * ny * nz)) + (2 * (nx * ny)));
 }

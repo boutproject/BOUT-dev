@@ -159,7 +159,7 @@ public:
   explicit HypreVector(IndexerPtr<T> indConverter) : indexConverter(indConverter) {
     Mesh& mesh = *indConverter->getMesh();
     const MPI_Comm comm =
-        std::is_same_v<T, FieldPerp> ? mesh.getXcomm() : BoutComm::get();
+        std::is_same_v<T, FieldPerp> ? mesh.getXZcomm() : BoutComm::get();
 
     HYPRE_BigInt jlower = indConverter->getGlobalStart();
     HYPRE_BigInt jupper = jlower + indConverter->size() - 1; // inclusive end
@@ -380,7 +380,7 @@ public:
       : hypre_matrix(new HYPRE_IJMatrix, MatrixDeleter{}), index_converter(indConverter) {
     Mesh* mesh = indConverter->getMesh();
     const MPI_Comm comm =
-        std::is_same_v<T, FieldPerp> ? mesh->getXcomm() : BoutComm::get();
+        std::is_same_v<T, FieldPerp> ? mesh->getXZcomm() : BoutComm::get();
     parallel_transform = &mesh->getCoordinates()->getParallelTransform();
 
     ilower = indConverter->getGlobalStart();
@@ -812,7 +812,7 @@ public:
                            "values are: gmres, bicgstab, pcg")
                       .withDefault(HYPRE_SOLVER_TYPE::bicgstab);
 
-    comm = std::is_same_v<T, FieldPerp> ? mesh.getXcomm() : BoutComm::get();
+    comm = std::is_same_v<T, FieldPerp> ? mesh.getXZcomm() : BoutComm::get();
 
     auto print_level =
         options["hypre_print_level"]

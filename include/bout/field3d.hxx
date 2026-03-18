@@ -2,7 +2,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -172,7 +172,8 @@ public:
    */
   Field3D(Mesh* localmesh = nullptr, CELL_LOC location_in = CELL_CENTRE,
           DirectionTypes directions_in = {YDirectionType::Standard,
-                                          ZDirectionType::Standard});
+                                          ZDirectionType::Standard},
+          std::optional<size_t> regionID = {});
 
   /*!
    * Copy constructor
@@ -361,7 +362,7 @@ public:
    * Direct access to the underlying data array
    *
    * If CHECK > 2 then bounds checking is performed
-   * 
+   *
    * If CHECK <= 2 then no checks are performed, to
    * allow inlining and optimisation of inner loops
    */
@@ -473,7 +474,7 @@ public:
   ///@}
 
   // FieldData virtual functions
-  bool is3D() const override { return true; }
+  FieldType field_type() const override { return FieldType::field3d; }
 
 #if CHECK > 0
   void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
