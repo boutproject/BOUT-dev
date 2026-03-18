@@ -271,7 +271,7 @@ void BoutMesh::chooseProcessorSplit(Options& options) {
     if ((nx - 2 * MXG) % NXPE != 0) {
       throw BoutException(
           _f("Number of x points ({:d}) not divisible by NPs in x direction ({:d})\n"),
-          nx, NXPE);
+          nx - 2 * MXG, NXPE);
     }
     NYPE = NPES / NXPE;
   } else {
