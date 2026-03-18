@@ -1563,15 +1563,7 @@ Field3D Coordinates::Div_par(const Field3DParallel& f, CELL_LOC outloc,
   // Coordinates object
   const auto& Bxy_floc = f.getCoordinates()->Bxy;
 
-  if (!f.hasParallelSlices()) {
-    // No yup/ydown fields. The Grad_par operator will
-    // shift to field aligned coordinates
-    return Bxy * Grad_par(f / Bxy_floc, outloc, method);
-  }
-
-  // Need to modify yup and ydown fields
-  const Field3D Jg = J / sqrt(g_22.asField3DParallel());
-  return Jg * Grad_par(f / Jg, outloc, method);
+  return Bxy * Grad_par(f / Bxy_floc, outloc, method);
 }
 
 /////////////////////////////////////////////////////////
