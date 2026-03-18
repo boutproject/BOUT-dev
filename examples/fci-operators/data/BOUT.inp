@@ -1,0 +1,5 @@
+[mesh]
+file = "rotating-ellipse-20x8x20.fci.nc"
+
+[mesh:paralleltransform]
+type = fci

@@ -419,6 +419,21 @@ public:
     return PetscOperator::diagonal(mapping, f);
   }
 
+  /// A standard collection of operators
+  /// parallel to the magnetic field
+  struct Parallel {
+    PetscOperator Grad_par;         ///< Gradient
+    PetscOperator Div_par;          ///< Divergence
+    PetscOperator Div_par_Grad_par; ///< Diffusion
+    Field3D dV;                     ///< Cell volume
+  };
+
+  /// Calculate a set of parallel operators
+  ///
+  /// This assumes that "forward" and "backward" operators
+  /// are stored in the mesh.
+  Parallel getParallel() const;
+
 private:
   /// Read a `Field3D` from the mesh.
   ///

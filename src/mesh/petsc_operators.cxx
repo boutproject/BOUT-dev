@@ -299,4 +299,110 @@ PetscOperator PetscOperators::get(const std::string& name) const {
                        this->meshGetArray<BoutReal>(this->mesh, name + "_weights"));
 }
 
+PetscOperators::Parallel PetscOperators::getParallel() const {
+  // Read maps from the mesh
+  auto forward = this->get("forward");
+  auto backward = this->get("backward");
+
+  // ---- Construct Grad_par ----
+  //
+  // Create a parallel gradient operator by combining the parallel
+  // length dl = dy * sqrt(g_22) with forward & backward operators
+  auto* coords = this->mesh->getCoordinates();
+  Field3D dl = coords->dy * sqrt(coords->g_22);
+  dl.splitParallelSlices();
+  dl.yup() = 0.0;
+  dl.ydown() = 0.0;
+  dl.applyParallelBoundary("parallel_neumann_o1");
+
+  auto inv_2dl = 0.5 / dl;
+  inv_2dl.splitParallelSlices();
+  inv_2dl.yup() = 0.0;
+  inv_2dl.ydown() = 0.0;
+  inv_2dl.applyParallelBoundary("parallel_neumann_o1");
+
+  inv_2dl.yup() *= 0.5;
+  inv_2dl.ydown() *= 0.5;
+
+  auto inv_2dl_op = this->diagonal(inv_2dl);
+
+  auto Grad_par = inv_2dl_op * (forward - backward);
+
+  // ---- Construct Div_par ----
+  //
+  // Use the Support Operator Method (SOM) to calculate
+  // Div_par from Grad_par and cell volumes.
+
+  // Cell volume
+  auto dV = coords->J * coords->dx * coords->dy * coords->dz;
+  dV.splitParallelSlices();
+  dV.yup() = 0.0;
+  dV.ydown() = 0.0;
+  dV.applyParallelBoundary("parallel_neumann_o1");
+  auto dV_op = this->diagonal(dV);
+
+  Field3D neg_inv_dV = -1. / dV;
+  neg_inv_dV.splitParallelSlices();
+  neg_inv_dV.yup() = 0.0;
+  neg_inv_dV.ydown() = 0.0;
+  neg_inv_dV.applyParallelBoundary("parallel_neumann_o1");
+  auto neg_inv_dV_op = this->diagonal(neg_inv_dV);
+
+  auto Div_par = neg_inv_dV_op * Grad_par.transpose() * dV_op;
+
+  // ---- Construct Div_par_Grad_par ----
+  //
+  // Requires gradients between planes, at +1/2 and -1/2, and interpolation
+  // operators to calculate quantities between cells.
+
+  // Identity operator
+  Field3D one{1.0};
+  one.splitParallelSlices();
+  one.yup() = 1.0;
+  one.ydown() = 1.0;
+  const auto identity = this->diagonal(one);
+
+  // Interpolate at + 1/2
+  const auto interp_plus_op = (identity + forward) * 0.5;
+
+  // dl averaged at +1/2
+  const Field3D dl_plus = interp_plus_op(dl);
+  Field3D inv_dl_plus = 1. / dl_plus;
+  inv_dl_plus.splitParallelSlices();
+  inv_dl_plus.yup() = 0.0;
+  inv_dl_plus.ydown() = 0.0;
+  inv_dl_plus.applyParallelBoundary("parallel_neumann_o1");
+  const auto inv_dl_plus_op = this->diagonal(inv_dl_plus);
+
+  // Gradient at + 1/2
+  const auto Grad_plus = inv_dl_plus_op * (forward - identity);
+
+  // Divergence at -1/2
+  const auto Div_minus = neg_inv_dV_op * Grad_plus.transpose() * dV_op;
+
+  // Interpolate at - 1/2
+  auto interp_minus_op = (identity + backward) * 0.5;
+
+  // dl averaged at -1/2
+  const Field3D dl_minus = interp_minus_op(dl);
+  Field3D inv_dl_minus = 1. / dl_minus;
+  inv_dl_minus.splitParallelSlices();
+  inv_dl_minus.yup() = 0.0;
+  inv_dl_minus.ydown() = 0.0;
+  inv_dl_minus.applyParallelBoundary("parallel_neumann_o1");
+  const auto inv_dl_minus_op = this->diagonal(inv_dl_minus);
+
+  // Gradient at - 1/2
+  auto Grad_minus = inv_dl_minus_op * (identity - backward);
+
+  // Divergence at +1/2
+  const auto Div_plus = neg_inv_dV_op * Grad_minus.transpose() * dV_op;
+
+  // Div(Grad_par()) operator
+  auto Div_par_Grad_par = ((Div_minus * Grad_plus) + (Div_plus * Grad_minus)) * 0.5;
+
+  return Parallel{std::move(Grad_par), std::move(Div_par), std::move(Div_par_Grad_par),
+                  std::move(dV)};
+}
+
 #endif // BOUT_HAS_PETSC
