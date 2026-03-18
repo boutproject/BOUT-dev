@@ -9,6 +9,7 @@
 #include "bout/field3d.hxx"
 #include "bout/output.hxx"
 #include "bout/output_bout_types.hxx"
+#include "bout/petsc_interface.hxx"
 #include "bout/petsc_operators.hxx"
 #include "bout/petsclib.hxx"
 #include "bout/region.hxx"
@@ -117,7 +118,8 @@ PetscMapping::~PetscMapping() {
 
 PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int> cols,
                              Array<BoutReal> weights)
-    : mapping(std::move(mapping)), rhs_vec(createVec(this->mapping->localSize())),
+    : mapping(std::move(mapping)), mat_operator(new Mat{nullptr}),
+      rhs_vec(createVec(this->mapping->localSize())),
       result_vec(createVec(this->mapping->localSize())) {
 
   output.write("PetscOperator Array sizes {} {} {}\n", rows.size(), cols.size(),
@@ -163,7 +165,7 @@ PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int
   // Row indices are PETSc indices but columns are mesh indices
   // Multiply on the right by PetscToMesh.
   BOUT_DO_PETSC(MatMatMult(mat, this->mapping->getPetscToMesh(), MAT_INITIAL_MATRIX,
-                           PETSC_DETERMINE, &this->mat_operator));
+                           PETSC_DETERMINE, this->mat_operator.get()));
   // Destroy temporary matrix
   BOUT_DO_PETSC(MatDestroy(&mat));
 }
@@ -188,56 +190,48 @@ void PetscOperator::copyToVec(PetscMappingPtr mapping, const Field3D& f, Vec vec
   BOUT_DO_PETSC(VecRestoreArray(vec, &x));
 }
 
-Vec PetscOperator::createVec(PetscInt local_size) {
-  Vec vec{nullptr};
-  BOUT_DO_PETSC(VecCreate(BoutComm::get(), &vec));
-  BOUT_DO_PETSC(VecSetType(vec, VECMPI));
-  BOUT_DO_PETSC(VecSetSizes(vec, local_size, PETSC_DETERMINE));
+PetscOperator::UniqueVec PetscOperator::createVec(PetscInt local_size) {
+  UniqueVec vec(new Vec{nullptr});
+  BOUT_DO_PETSC(VecCreate(BoutComm::get(), vec.get()));
+  BOUT_DO_PETSC(VecSetType(*vec, VECMPI));
+  BOUT_DO_PETSC(VecSetSizes(*vec, local_size, PETSC_DETERMINE));
   return vec;
 }
 
-PetscOperator::~PetscOperator() {
-  MatDestroy(&this->mat_operator);
-  VecDestroy(&this->rhs_vec);
-  VecDestroy(&this->result_vec);
-}
-
 PetscOperator PetscOperator::diagonal(PetscMappingPtr mapping, const Field3D& f) {
-  Vec diag{createVec(mapping->localSize())};
-  copyToVec(mapping, f, diag);
+  const UniqueVec diag{createVec(mapping->localSize())};
+  copyToVec(mapping, f, *diag);
 
-  Mat mat{nullptr};
+  UniqueMat mat(new Mat{nullptr});
   // Note: MatMatMult with diagonal and mpiaij not supported
   // -> Create MPIAIJ
-  BOUT_DO_PETSC(MatCreate(BoutComm::get(), &mat));
-  BOUT_DO_PETSC(MatSetType(mat, MATMPIAIJ));
-  const int nlocal = mapping->localSize();
-  BOUT_DO_PETSC(MatSetSizes(mat, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE));
-  BOUT_DO_PETSC(MatMPIAIJSetPreallocation(mat, 1, nullptr, 0, nullptr));
-  BOUT_DO_PETSC(MatDiagonalSet(mat, diag, INSERT_VALUES));
-  BOUT_DO_PETSC(MatAssemblyBegin(mat, MAT_FINAL_ASSEMBLY));
-  BOUT_DO_PETSC(MatAssemblyEnd(mat, MAT_FINAL_ASSEMBLY));
+  BOUT_DO_PETSC(MatCreate(BoutComm::get(), mat.get()));
+  BOUT_DO_PETSC(MatSetType(*mat, MATMPIAIJ));
+  const PetscInt nlocal = mapping->localSize();
+  BOUT_DO_PETSC(MatSetSizes(*mat, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE));
+  BOUT_DO_PETSC(MatMPIAIJSetPreallocation(*mat, 1, nullptr, 0, nullptr));
+  BOUT_DO_PETSC(MatDiagonalSet(*mat, *diag, INSERT_VALUES));
+  BOUT_DO_PETSC(MatAssemblyBegin(*mat, MAT_FINAL_ASSEMBLY));
+  BOUT_DO_PETSC(MatAssemblyEnd(*mat, MAT_FINAL_ASSEMBLY));
 
-  BOUT_DO_PETSC(VecDestroy(&diag));
-
-  return PetscOperator(std::move(mapping), mat);
+  return PetscOperator(std::move(mapping), std::move(mat));
 }
 
 /// Perform operation
 Field3D PetscOperator::operator()(const Field3D& rhs) const {
   // Fill vec from rhs
-  copyToVec(this->mapping, rhs, this->rhs_vec);
+  copyToVec(this->mapping, rhs, *this->rhs_vec);
 
   // Perform Mat-Vec muliplication
-  BOUT_DO_PETSC(MatMult(this->mat_operator, rhs_vec, result_vec));
+  BOUT_DO_PETSC(MatMult(*this->mat_operator, *rhs_vec, *result_vec));
 
   // Copy result_vec into a Field3D
   Field3D result{emptyFrom(rhs)}; // This allocates memory
   const PetscScalar* r{nullptr};
-  BOUT_DO_PETSC(VecGetArrayRead(result_vec, &r));
+  BOUT_DO_PETSC(VecGetArrayRead(*result_vec, &r));
   this->mapping->map_local_field(
       [&](PetscInt row, const Ind3D& i) { result[i] = r[row]; });
-  BOUT_DO_PETSC(VecRestoreArrayRead(result_vec, &r));
+  BOUT_DO_PETSC(VecRestoreArrayRead(*result_vec, &r));
 
   return result;
 }
@@ -245,37 +239,37 @@ Field3D PetscOperator::operator()(const Field3D& rhs) const {
 /// Operator composition
 PetscOperator PetscOperator::operator*(const PetscOperator& rhs) const {
   ASSERT0(this->mapping == rhs.mapping);
-  Mat mat;
-  BOUT_DO_PETSC(MatMatMult(this->mat_operator, rhs.mat_operator, MAT_INITIAL_MATRIX,
-                           PETSC_DETERMINE, &mat));
-  return PetscOperator(this->mapping, mat);
+  UniqueMat mat(new Mat{nullptr});
+  BOUT_DO_PETSC(MatMatMult(*this->mat_operator, *rhs.mat_operator, MAT_INITIAL_MATRIX,
+                           PETSC_DETERMINE, mat.get()));
+  return PetscOperator(this->mapping, std::move(mat));
 }
 
 /// Operator addition
 PetscOperator PetscOperator::operator+(const PetscOperator& rhs) const {
   ASSERT0(this->mapping == rhs.mapping);
-  Mat mat;
-  BOUT_DO_PETSC(MatDuplicate(mat_operator, MAT_COPY_VALUES, &mat));
-  BOUT_DO_PETSC(MatAXPY(mat, 1.0, rhs.mat_operator, UNKNOWN_NONZERO_PATTERN));
-  return PetscOperator(this->mapping, mat);
+  UniqueMat mat(new Mat{nullptr});
+  BOUT_DO_PETSC(MatDuplicate(*this->mat_operator, MAT_COPY_VALUES, mat.get()));
+  BOUT_DO_PETSC(MatAXPY(*mat, 1.0, *rhs.mat_operator, UNKNOWN_NONZERO_PATTERN));
+  return PetscOperator(this->mapping, std::move(mat));
 }
 
 /// Operator subtraction
 PetscOperator PetscOperator::operator-(const PetscOperator& rhs) const {
   ASSERT0(this->mapping == rhs.mapping);
-  Mat mat;
-  BOUT_DO_PETSC(MatDuplicate(mat_operator, MAT_COPY_VALUES, &mat));
-  BOUT_DO_PETSC(MatAXPY(mat, -1.0, rhs.mat_operator, UNKNOWN_NONZERO_PATTERN));
-  return PetscOperator(this->mapping, mat);
+  UniqueMat mat(new Mat{nullptr});
+  BOUT_DO_PETSC(MatDuplicate(*this->mat_operator, MAT_COPY_VALUES, mat.get()));
+  BOUT_DO_PETSC(MatAXPY(*mat, -1.0, *rhs.mat_operator, UNKNOWN_NONZERO_PATTERN));
+  return PetscOperator(this->mapping, std::move(mat));
 }
 
 PetscOperator PetscOperator::transpose() const {
-  Mat mat{nullptr};
-  BOUT_DO_PETSC(MatTranspose(this->mat_operator, MAT_INITIAL_MATRIX, &mat));
-  return PetscOperator(this->mapping, mat);
+  UniqueMat mat(new Mat{nullptr});
+  BOUT_DO_PETSC(MatTranspose(*this->mat_operator, MAT_INITIAL_MATRIX, mat.get()));
+  return PetscOperator(this->mapping, std::move(mat));
 }
 
-Field3D PetscOperators::meshGetField3D(Mesh* mesh, const std::string& name) const {
+Field3D PetscOperators::meshGetField3D(Mesh* mesh, const std::string& name) {
   Field3D result;
   if (mesh->get(result, name) != 0) {
     throw BoutException("PetscOperators requires field '{}'", name);
@@ -289,7 +283,7 @@ PetscOperators::PetscOperators(Mesh* mesh)
                       meshGetField3D(mesh, "forward_cell_number"),
                       meshGetField3D(mesh, "backward_cell_number"))) {
 
-  int mesh_total_cells;
+  int mesh_total_cells{0};
   if (mesh->get(mesh_total_cells, "total_cells") == 0) {
     // Check total number of cells
     if (mesh_total_cells != mapping->globalSize()) {

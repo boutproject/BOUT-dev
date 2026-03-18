@@ -19,6 +19,7 @@
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
 #include "bout/mesh.hxx"
+#include "bout/petsc_interface.hxx"
 #include "bout/petsclib.hxx"
 #include "bout/region.hxx"
 #include "bout/utils.hxx"
@@ -266,6 +267,9 @@ using PetscMappingPtr = std::shared_ptr<const PetscMapping>;
 /// - composed with other operators; and
 /// - added or subtracted.
 class PetscOperator {
+  using UniqueVec = bout::petsc::UniqueVec; // unique_ptr to Vec
+  using UniqueMat = bout::petsc::UniqueMat; // unique_ptr to Mat
+
 public:
   /// Construct an operator from CSR data in mesh-global numbering.
   ///
@@ -280,8 +284,16 @@ public:
   PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int> cols,
                 Array<BoutReal> weights);
 
+  // No copying
+  PetscOperator(const PetscOperator&) = delete;
+  PetscOperator& operator=(const PetscOperator&) = delete;
+
+  // Allow Moving
+  PetscOperator(PetscOperator&&) noexcept = default;
+  PetscOperator& operator=(PetscOperator&&) noexcept = default;
+
   /// Destroy the PETSc matrix and working vectors owned by this operator.
-  ~PetscOperator();
+  ~PetscOperator() = default;
 
   /// Create a diagonal operator
   static PetscOperator diagonal(PetscMappingPtr mapping, const Field3D& f);
@@ -323,7 +335,23 @@ public:
   /// Calculate transpose as a new matrix
   PetscOperator transpose() const;
 
-  void view() const { MatView(this->mat_operator, PETSC_VIEWER_STDOUT_WORLD); }
+  void view() const { MatView(*this->mat_operator, PETSC_VIEWER_STDOUT_WORLD); }
+
+  /// Multiply by a scalar
+  /// This version allocates a new Mat and so is for lvalues.
+  PetscOperator operator*(BoutReal scalar) const& {
+    UniqueMat mat{new Mat{}};
+    BOUT_DO_PETSC(MatDuplicate(*mat_operator, MAT_COPY_VALUES, mat.get()));
+    BOUT_DO_PETSC(MatScale(*mat, scalar));
+    return PetscOperator(this->mapping, std::move(mat));
+  }
+
+  /// Multiply by a scalar.
+  /// This version is for rvalue temporaries and modifies in-place.
+  PetscOperator operator*(BoutReal scalar) && {
+    BOUT_DO_PETSC(MatScale(*this->mat_operator, scalar));
+    return std::move(*this);
+  }
 
 private:
   /// Construct directly from an existing PETSc matrix.
@@ -333,8 +361,8 @@ private:
   ///
   /// This constructor is used internally when creating operators from
   /// PETSc matrix algebra such as composition, addition, or subtraction.
-  PetscOperator(PetscMappingPtr mapping, Mat mat)
-      : mapping(std::move(mapping)), mat_operator(mat),
+  PetscOperator(PetscMappingPtr mapping, UniqueMat mat)
+      : mapping(std::move(mapping)), mat_operator(std::move(mat)),
         rhs_vec(createVec(this->mapping->localSize())),
         result_vec(createVec(this->mapping->localSize())) {}
 
@@ -342,20 +370,20 @@ private:
   PetscMappingPtr mapping;
 
   /// PETSc matrix implementing the operator.
-  Mat mat_operator;
+  UniqueMat mat_operator;
 
   /// Work vector holding the packed input field.
-  Vec rhs_vec;
+  UniqueVec rhs_vec;
 
   /// Work vector holding the packed result.
-  Vec result_vec;
+  UniqueVec result_vec;
 
   /// Copy contents of f, f.yup() and f.ydown() into vec.
   /// Assumes that vec has already been allocated.
   static void copyToVec(PetscMappingPtr mapping, const Field3D& f, Vec vec);
 
   // Allocate MPI vector
-  static Vec createVec(PetscInt local_size);
+  static UniqueVec createVec(PetscInt local_size);
 };
 
 /// Collection of PETSc operators read from a mesh.
@@ -399,7 +427,7 @@ private:
   /// @return The requested `Field3D`.
   ///
   /// Throws `BoutException` if the field is not present.
-  Field3D meshGetField3D(Mesh* mesh, const std::string& name) const;
+  static Field3D meshGetField3D(Mesh* mesh, const std::string& name);
 
   /// Read a one-dimensional `Array<T>` from the mesh.
   ///
