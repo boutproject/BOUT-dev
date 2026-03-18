@@ -2276,12 +2276,28 @@ Field3DParallel operator*(const Field3D& lhs, const Field3DParallel& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
   if (result.isFci()) {
-    result.splitParallelSlices();
+
     ASSERT2(lhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      ASSERT2(lhs.ydown(i).isAllocated());
+      ASSERT2(lhs.yup(i).isAllocated());
+    }
+
     ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      ASSERT2(rhs.ydown(i).isAllocated());
+      ASSERT2(rhs.yup(i).isAllocated());
+    }
+    result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) * rhs.yup(i);
       result.ydown(i) = lhs.ydown(i) * rhs.ydown(i);
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -2303,12 +2319,28 @@ Field3DParallel operator/(const Field3D& lhs, const Field3DParallel& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
   if (result.isFci()) {
-    result.splitParallelSlices();
+
     ASSERT2(lhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      ASSERT2(lhs.ydown(i).isAllocated());
+      ASSERT2(lhs.yup(i).isAllocated());
+    }
+
     ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      ASSERT2(rhs.ydown(i).isAllocated());
+      ASSERT2(rhs.yup(i).isAllocated());
+    }
+    result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) / rhs.yup(i);
       result.ydown(i) = lhs.ydown(i) / rhs.ydown(i);
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -2330,12 +2362,28 @@ Field3DParallel operator+(const Field3D& lhs, const Field3DParallel& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
   if (result.isFci()) {
-    result.splitParallelSlices();
+
     ASSERT2(lhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      ASSERT2(lhs.ydown(i).isAllocated());
+      ASSERT2(lhs.yup(i).isAllocated());
+    }
+
     ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      ASSERT2(rhs.ydown(i).isAllocated());
+      ASSERT2(rhs.yup(i).isAllocated());
+    }
+    result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) + rhs.yup(i);
       result.ydown(i) = lhs.ydown(i) + rhs.ydown(i);
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -2357,12 +2405,28 @@ Field3DParallel operator-(const Field3D& lhs, const Field3DParallel& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
   if (result.isFci()) {
-    result.splitParallelSlices();
+
     ASSERT2(lhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      ASSERT2(lhs.ydown(i).isAllocated());
+      ASSERT2(lhs.yup(i).isAllocated());
+    }
+
     ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      ASSERT2(rhs.ydown(i).isAllocated());
+      ASSERT2(rhs.yup(i).isAllocated());
+    }
+    result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) - rhs.yup(i);
       result.ydown(i) = lhs.ydown(i) - rhs.ydown(i);
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -2384,12 +2448,28 @@ Field3DParallel operator*(const Field3DParallel& lhs, const Field3D& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
   if (result.isFci()) {
-    result.splitParallelSlices();
+
     ASSERT2(lhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      ASSERT2(lhs.ydown(i).isAllocated());
+      ASSERT2(lhs.yup(i).isAllocated());
+    }
+
     ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      ASSERT2(rhs.ydown(i).isAllocated());
+      ASSERT2(rhs.yup(i).isAllocated());
+    }
+    result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) * rhs.yup(i);
       result.ydown(i) = lhs.ydown(i) * rhs.ydown(i);
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -2451,12 +2531,28 @@ Field3DParallel operator/(const Field3DParallel& lhs, const Field3D& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
   if (result.isFci()) {
-    result.splitParallelSlices();
+
     ASSERT2(lhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      ASSERT2(lhs.ydown(i).isAllocated());
+      ASSERT2(lhs.yup(i).isAllocated());
+    }
+
     ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      ASSERT2(rhs.ydown(i).isAllocated());
+      ASSERT2(rhs.yup(i).isAllocated());
+    }
+    result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) / rhs.yup(i);
       result.ydown(i) = lhs.ydown(i) / rhs.ydown(i);
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -2518,12 +2614,28 @@ Field3DParallel operator+(const Field3DParallel& lhs, const Field3D& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
   if (result.isFci()) {
-    result.splitParallelSlices();
+
     ASSERT2(lhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      ASSERT2(lhs.ydown(i).isAllocated());
+      ASSERT2(lhs.yup(i).isAllocated());
+    }
+
     ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      ASSERT2(rhs.ydown(i).isAllocated());
+      ASSERT2(rhs.yup(i).isAllocated());
+    }
+    result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) + rhs.yup(i);
       result.ydown(i) = lhs.ydown(i) + rhs.ydown(i);
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -2585,12 +2697,28 @@ Field3DParallel operator-(const Field3DParallel& lhs, const Field3D& rhs) {
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
   if (result.isFci()) {
-    result.splitParallelSlices();
+
     ASSERT2(lhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      ASSERT2(lhs.ydown(i).isAllocated());
+      ASSERT2(lhs.yup(i).isAllocated());
+    }
+
     ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      ASSERT2(rhs.ydown(i).isAllocated());
+      ASSERT2(rhs.yup(i).isAllocated());
+    }
+    result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) - rhs.yup(i);
       result.ydown(i) = lhs.ydown(i) - rhs.ydown(i);
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -2652,12 +2780,28 @@ Field3DParallel operator*(const Field3DParallel& lhs, const Field3DParallel& rhs
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
   if (result.isFci()) {
-    result.splitParallelSlices();
+
     ASSERT2(lhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      ASSERT2(lhs.ydown(i).isAllocated());
+      ASSERT2(lhs.yup(i).isAllocated());
+    }
+
     ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      ASSERT2(rhs.ydown(i).isAllocated());
+      ASSERT2(rhs.yup(i).isAllocated());
+    }
+    result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) * rhs.yup(i);
       result.ydown(i) = lhs.ydown(i) * rhs.ydown(i);
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -2719,12 +2863,28 @@ Field3DParallel operator/(const Field3DParallel& lhs, const Field3DParallel& rhs
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
   if (result.isFci()) {
-    result.splitParallelSlices();
+
     ASSERT2(lhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      ASSERT2(lhs.ydown(i).isAllocated());
+      ASSERT2(lhs.yup(i).isAllocated());
+    }
+
     ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      ASSERT2(rhs.ydown(i).isAllocated());
+      ASSERT2(rhs.yup(i).isAllocated());
+    }
+    result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) / rhs.yup(i);
       result.ydown(i) = lhs.ydown(i) / rhs.ydown(i);
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -2786,12 +2946,28 @@ Field3DParallel operator+(const Field3DParallel& lhs, const Field3DParallel& rhs
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
   if (result.isFci()) {
-    result.splitParallelSlices();
+
     ASSERT2(lhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      ASSERT2(lhs.ydown(i).isAllocated());
+      ASSERT2(lhs.yup(i).isAllocated());
+    }
+
     ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      ASSERT2(rhs.ydown(i).isAllocated());
+      ASSERT2(rhs.yup(i).isAllocated());
+    }
+    result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) + rhs.yup(i);
       result.ydown(i) = lhs.ydown(i) + rhs.ydown(i);
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -2853,12 +3029,28 @@ Field3DParallel operator-(const Field3DParallel& lhs, const Field3DParallel& rhs
 
   result.setRegion(lhs.getMesh()->getCommonRegion(lhs.getRegionID(), rhs.getRegionID()));
   if (result.isFci()) {
-    result.splitParallelSlices();
+
     ASSERT2(lhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      ASSERT2(lhs.ydown(i).isAllocated());
+      ASSERT2(lhs.yup(i).isAllocated());
+    }
+
     ASSERT2(rhs.hasParallelSlices());
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      ASSERT2(rhs.ydown(i).isAllocated());
+      ASSERT2(rhs.yup(i).isAllocated());
+    }
+    result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) - rhs.yup(i);
       result.ydown(i) = lhs.ydown(i) - rhs.ydown(i);
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -2919,12 +3111,23 @@ Field3DParallel operator*(const Field3DParallel& lhs, const BoutReal rhs) {
 
   result.setRegion(lhs.getRegionID());
   if (result.isFci()) {
-    result.splitParallelSlices();
-    ASSERT2(lhs.hasParallelSlices());
 
+    ASSERT2(lhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      ASSERT2(lhs.ydown(i).isAllocated());
+      ASSERT2(lhs.yup(i).isAllocated());
+    }
+
+    result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) * rhs;
       result.ydown(i) = lhs.ydown(i) * rhs;
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -2932,9 +3135,6 @@ Field3DParallel operator*(const Field3DParallel& lhs, const BoutReal rhs) {
     result[index] = lhs[index] * rhs;
   }
 
-#if BOUT_USE_TRACK
-  result.name = fmt::format("{:s} * {:s}", lhs.name, "BR");
-#endif
   checkData(result);
   return result;
 }
@@ -2966,9 +3166,6 @@ Field3DParallel& Field3DParallel::operator*=(const BoutReal rhs) {
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
 
     track(rhs, "operator*=");
-#if BOUT_USE_TRACK
-    name = fmt::format("{:s} *= {:s}", this->name, "BR");
-#endif
 
     checkData(*this);
 
@@ -2988,12 +3185,23 @@ Field3DParallel operator/(const Field3DParallel& lhs, const BoutReal rhs) {
 
   result.setRegion(lhs.getRegionID());
   if (result.isFci()) {
-    result.splitParallelSlices();
-    ASSERT2(lhs.hasParallelSlices());
 
+    ASSERT2(lhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      ASSERT2(lhs.ydown(i).isAllocated());
+      ASSERT2(lhs.yup(i).isAllocated());
+    }
+
+    result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) / rhs;
       result.ydown(i) = lhs.ydown(i) / rhs;
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -3002,9 +3210,6 @@ Field3DParallel operator/(const Field3DParallel& lhs, const BoutReal rhs) {
     result[index] = lhs[index] * tmp;
   }
 
-#if BOUT_USE_TRACK
-  result.name = fmt::format("{:s} / {:s}", lhs.name, "BR");
-#endif
   checkData(result);
   return result;
 }
@@ -3036,9 +3241,6 @@ Field3DParallel& Field3DParallel::operator/=(const BoutReal rhs) {
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs; }
 
     track(rhs, "operator/=");
-#if BOUT_USE_TRACK
-    name = fmt::format("{:s} /= {:s}", this->name, "BR");
-#endif
 
     checkData(*this);
 
@@ -3058,12 +3260,23 @@ Field3DParallel operator+(const Field3DParallel& lhs, const BoutReal rhs) {
 
   result.setRegion(lhs.getRegionID());
   if (result.isFci()) {
-    result.splitParallelSlices();
-    ASSERT2(lhs.hasParallelSlices());
 
+    ASSERT2(lhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      ASSERT2(lhs.ydown(i).isAllocated());
+      ASSERT2(lhs.yup(i).isAllocated());
+    }
+
+    result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) + rhs;
       result.ydown(i) = lhs.ydown(i) + rhs;
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -3071,9 +3284,6 @@ Field3DParallel operator+(const Field3DParallel& lhs, const BoutReal rhs) {
     result[index] = lhs[index] + rhs;
   }
 
-#if BOUT_USE_TRACK
-  result.name = fmt::format("{:s} + {:s}", lhs.name, "BR");
-#endif
   checkData(result);
   return result;
 }
@@ -3105,9 +3315,6 @@ Field3DParallel& Field3DParallel::operator+=(const BoutReal rhs) {
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
 
     track(rhs, "operator+=");
-#if BOUT_USE_TRACK
-    name = fmt::format("{:s} += {:s}", this->name, "BR");
-#endif
 
     checkData(*this);
 
@@ -3127,12 +3334,23 @@ Field3DParallel operator-(const Field3DParallel& lhs, const BoutReal rhs) {
 
   result.setRegion(lhs.getRegionID());
   if (result.isFci()) {
-    result.splitParallelSlices();
-    ASSERT2(lhs.hasParallelSlices());
 
+    ASSERT2(lhs.hasParallelSlices());
+    for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
+      ASSERT2(lhs.ydown(i).isAllocated());
+      ASSERT2(lhs.yup(i).isAllocated());
+    }
+
+    result.splitParallelSlices();
     for (size_t i{0}; i < lhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs.yup(i) - rhs;
       result.ydown(i) = lhs.ydown(i) - rhs;
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -3140,9 +3358,6 @@ Field3DParallel operator-(const Field3DParallel& lhs, const BoutReal rhs) {
     result[index] = lhs[index] - rhs;
   }
 
-#if BOUT_USE_TRACK
-  result.name = fmt::format("{:s} - {:s}", lhs.name, "BR");
-#endif
   checkData(result);
   return result;
 }
@@ -3174,9 +3389,6 @@ Field3DParallel& Field3DParallel::operator-=(const BoutReal rhs) {
     BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
 
     track(rhs, "operator-=");
-#if BOUT_USE_TRACK
-    name = fmt::format("{:s} -= {:s}", this->name, "BR");
-#endif
 
     checkData(*this);
 
@@ -3196,12 +3408,22 @@ Field3DParallel operator*(const BoutReal lhs, const Field3DParallel& rhs) {
 
   result.setRegion(rhs.getRegionID());
   if (result.isFci()) {
-    result.splitParallelSlices();
 
     ASSERT2(rhs.hasParallelSlices());
     for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      ASSERT2(rhs.ydown(i).isAllocated());
+      ASSERT2(rhs.yup(i).isAllocated());
+    }
+    result.splitParallelSlices();
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs * rhs.yup(i);
       result.ydown(i) = lhs * rhs.ydown(i);
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -3222,12 +3444,22 @@ Field3DParallel operator/(const BoutReal lhs, const Field3DParallel& rhs) {
 
   result.setRegion(rhs.getRegionID());
   if (result.isFci()) {
-    result.splitParallelSlices();
 
     ASSERT2(rhs.hasParallelSlices());
     for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      ASSERT2(rhs.ydown(i).isAllocated());
+      ASSERT2(rhs.yup(i).isAllocated());
+    }
+    result.splitParallelSlices();
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs / rhs.yup(i);
       result.ydown(i) = lhs / rhs.ydown(i);
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -3248,12 +3480,22 @@ Field3DParallel operator+(const BoutReal lhs, const Field3DParallel& rhs) {
 
   result.setRegion(rhs.getRegionID());
   if (result.isFci()) {
-    result.splitParallelSlices();
 
     ASSERT2(rhs.hasParallelSlices());
     for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      ASSERT2(rhs.ydown(i).isAllocated());
+      ASSERT2(rhs.yup(i).isAllocated());
+    }
+    result.splitParallelSlices();
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs + rhs.yup(i);
       result.ydown(i) = lhs + rhs.ydown(i);
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 
@@ -3274,12 +3516,22 @@ Field3DParallel operator-(const BoutReal lhs, const Field3DParallel& rhs) {
 
   result.setRegion(rhs.getRegionID());
   if (result.isFci()) {
-    result.splitParallelSlices();
 
     ASSERT2(rhs.hasParallelSlices());
     for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
+      ASSERT2(rhs.ydown(i).isAllocated());
+      ASSERT2(rhs.yup(i).isAllocated());
+    }
+    result.splitParallelSlices();
+    for (size_t i{0}; i < rhs.numberParallelSlices(); ++i) {
       result.yup(i) = lhs - rhs.yup(i);
       result.ydown(i) = lhs - rhs.ydown(i);
+    }
+
+    ASSERT2(result.hasParallelSlices());
+    for (size_t i{0}; i < result.numberParallelSlices(); ++i) {
+      ASSERT2(result.ydown(i).isAllocated());
+      ASSERT2(result.yup(i).isAllocated());
     }
   }
 

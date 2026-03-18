@@ -177,7 +177,14 @@ class Field(object):
     def assertParallelSlices(self):
         if self.field_type == "BoutReal":
             return ""
-        return f"ASSERT2({self.name}.hasParallelSlices());"
+
+        return f"""
+        ASSERT2({self.name}.hasParallelSlices());
+        for (size_t i{{0}} ; i < {self.name}.numberParallelSlices() ; ++i) {{
+            ASSERT2({self.ydown}.isAllocated());
+            ASSERT2({self.yup}.isAllocated());
+        }}\
+        """
 
     def __eq__(self, other):
         try:

@@ -30,6 +30,7 @@
           {{out.name}}.yup(i) = {{lhs.yup}} {{operator}} {{rhs.yup}};
           {{out.name}}.ydown(i) = {{lhs.ydown}} {{operator}} {{rhs.ydown}};
         }
+        {{ out.assertParallelSlices }}
       }
     {% endif %}
   {% endif %}
