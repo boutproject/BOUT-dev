@@ -457,9 +457,19 @@ void FCITransform::outputVars(Options& output_options) {
 
 void FCITransform::loadParallelMetrics(Coordinates* coords) {
 #if BOUT_USE_METRIC_3D
+  const auto JB0 = mesh.J * mesh.B;
+  mesh.J.splitParallelSlices();
+  mesh.J.disallowCalcParallelSlices();
   for (int i = 1; i <= mesh.ystart; ++i) {
     load_parallel_metric_components(coords, -i);
     load_parallel_metric_components(coords, i);
+
+    mesh.J.ynext(i).allocate();
+    mesh.J.ynext(-i).allocate();
+    BOUT_FOR(j, JB0.getRegion("RGN_NO_BNDRY")) {
+      mesh.J.ynext(i)[j.yp(i)] = JB0[j] / mesh.B.ynext(i)[j.yp(i)];
+      mesh.J.ynext(-i)[j.yp(-i)] = JB0[j] / mesh.B.ynext(-i)[j.yp(-i)];
+    }
   }
 #endif
 }
