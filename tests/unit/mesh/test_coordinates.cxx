@@ -36,7 +36,7 @@ TEST_F(CoordinatesTest, ZLength) {
                      FieldMetric{0.0},  // g23
                      FieldMetric{1.0},  // g_11
                      FieldMetric{1.0},  // g_22
-                     FieldMetric{1.0},  // g_23
+                     FieldMetric{1.0},  // g_33
                      FieldMetric{0.0},  // g_12
                      FieldMetric{0.0},  // g_13
                      FieldMetric{0.0},  // g_23
@@ -69,7 +69,7 @@ TEST_F(CoordinatesTest, ZLength3D) {
                      FieldMetric{0.0},  // g23
                      FieldMetric{1.0},  // g_11
                      FieldMetric{1.0},  // g_22
-                     FieldMetric{1.0},  // g_23
+                     FieldMetric{1.0},  // g_33
                      FieldMetric{0.0},  // g_12
                      FieldMetric{0.0},  // g_13
                      FieldMetric{0.0},  // g_23
@@ -96,7 +96,7 @@ TEST_F(CoordinatesTest, Jacobian) {
                      FieldMetric{0.0},  // g23
                      FieldMetric{1.0},  // g_11
                      FieldMetric{1.0},  // g_22
-                     FieldMetric{1.0},  // g_23
+                     FieldMetric{1.0},  // g_33
                      FieldMetric{0.0},  // g_12
                      FieldMetric{0.0},  // g_13
                      FieldMetric{0.0},  // g_23
@@ -127,7 +127,7 @@ TEST_F(CoordinatesTest, CalcContravariant) {
                      FieldMetric{0.0},  // g23
                      FieldMetric{0.0},  // g_11
                      FieldMetric{0.0},  // g_22
-                     FieldMetric{0.0},  // g_23
+                     FieldMetric{0.0},  // g_33
                      FieldMetric{0.0},  // g_12
                      FieldMetric{0.0},  // g_13
                      FieldMetric{0.0},  // g_23
@@ -160,7 +160,7 @@ TEST_F(CoordinatesTest, CalcCovariant) {
                      FieldMetric{0.0},  // g23
                      FieldMetric{1.0},  // g_11
                      FieldMetric{1.0},  // g_22
-                     FieldMetric{1.0},  // g_23
+                     FieldMetric{1.0},  // g_33
                      FieldMetric{0.0},  // g_12
                      FieldMetric{0.0},  // g_13
                      FieldMetric{0.0},  // g_23
