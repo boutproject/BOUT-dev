@@ -88,7 +88,7 @@ void load_parallel_metric_component(std::string name, Field3D& component, int of
   if (!component.hasParallelSlices()) {
     component.splitParallelSlices();
     component.disallowCalcParallelSlices();
-    component.resetRegionParallel();
+    component.resetRegionParallel(true);
   }
   auto& pcom = component.ynext(offset);
   pcom.allocate();
@@ -461,7 +461,7 @@ void FCITransform::loadParallelMetrics(Coordinates* coords) {
   const auto JB0 = coords->J * coords->Bxy;
   coords->J.splitParallelSlices();
   coords->J.disallowCalcParallelSlices();
-  coords->J.resetRegionParallel();
+  coords->J.resetRegionParallel(true);
   for (int i = 1; i <= mesh.ystart; ++i) {
     load_parallel_metric_components(coords, -i);
     load_parallel_metric_components(coords, i);
