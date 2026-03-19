@@ -41,6 +41,7 @@
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_data.hxx"
@@ -66,7 +67,7 @@ using namespace std::string_view_literals;
 
 namespace {
 // Get a unique name for a field based on the sign/magnitude of the offset
-std::string parallel_slice_field_name(std::string field, int offset) {
+std::string parallel_slice_field_name(const std::string& field, int offset) {
   const std::string direction = (offset > 0) ? "forward" : "backward";
   // We only have a suffix for parallel slices beyond the first
   // This is for backwards compatibility
