@@ -456,7 +456,7 @@ void FCITransform::outputVars(Options& output_options) {
   output_options["Z"].force(Z, "FCI");
 }
 
-void FCITransform::loadParallelMetrics(Coordinates* coords) {
+void FCITransform::loadParallelMetrics([[maybe_unused]] Coordinates* coords) {
 #if BOUT_USE_METRIC_3D
   const auto JB0 = coords->J * coords->Bxy;
   coords->J.splitParallelSlices();
