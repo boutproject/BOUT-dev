@@ -466,7 +466,7 @@ void FCITransform::loadParallelMetrics(Coordinates* coords) {
 
     coords->J.ynext(i).allocate();
     coords->J.ynext(-i).allocate();
-    BOUT_FOR(j, JB0.getRegion("RGN_NO_BNDRY")) {
+    BOUT_FOR(j, JB0.getRegion("RGN_NOBNDRY")) {
       coords->J.ynext(i)[j.yp(i)] = JB0[j] / coords->Bxy.ynext(i)[j.yp(i)];
       coords->J.ynext(-i)[j.yp(-i)] = JB0[j] / coords->Bxy.ynext(-i)[j.yp(-i)];
     }
