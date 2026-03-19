@@ -1111,15 +1111,11 @@ int Coordinates::geometry(bool recalculate_staggered,
     if (localmesh->get(d2y, "d2y" + suffix, 0.0, false, location)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-      if (dy.isFci()) {
-        d1_dy = BoutNaN;
-      } else {
-        d1_dy = DDY(1. / dy.asField3DParallel()); // d/di(1/dy)
+      d1_dy = DDY(1. / dy.asField3DParallel()); // d/di(1/dy)
 
-        localmesh->communicate_no_slices(d1_dy);
-        d1_dy =
-            interpolateAndExtrapolate(d1_dy, location, true, true, true, transform.get());
-      }
+      localmesh->communicate_no_slices(d1_dy);
+      d1_dy =
+          interpolateAndExtrapolate(d1_dy, location, true, true, true, transform.get());
     } else {
       d2y.setLocation(location);
       // set boundary cells if necessary
