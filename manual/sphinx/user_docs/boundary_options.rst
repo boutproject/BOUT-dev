@@ -495,10 +495,8 @@ geometries, as flux coordinate independent (FCI) method::
 
     class yboundary_example {
     public:
-      yboundary_example(Options* opt, const Field3D& N, const Field3D& V) : N(N), V(V) {
-        // Set what kind of yboundaries you want to include
-        yboundary.init(opt);
-      }
+      yboundary_example(Options* opt, const Field3D& N, const Field3D& V) :
+      N(N), V(V), yboundary(opt) {}
 
       void rhs() {
         BoutReal totalFlux = 0;

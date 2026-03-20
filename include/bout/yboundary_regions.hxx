@@ -23,7 +23,6 @@ class YBoundary {
 public:
   template <class F>
   void iter_regions(const F& f) {
-    ASSERT1(is_init);
     for (auto& region : boundary_regions) {
       f(*region);
     }
@@ -45,13 +44,7 @@ public:
     return iter_regions(f);
   }
 
-  void init(Options& options, Mesh* mesh = nullptr) {
-    if (is_init) {
-      if (optptr == &options) {
-        return;
-      }
-      throw BoutException("YBoundary is already initialised!");
-    }
+  YBoundary(Options& options, Mesh* mesh = nullptr) {
     if (mesh == nullptr) {
       mesh = bout::globals::mesh;
     }
@@ -86,8 +79,6 @@ public:
             mesh, false, mesh->iterateBndryUpperY()));
       }
     }
-    is_init = true;
-    optptr = &options;
     // Cache boundary regions
     _contains.emplace_back(mesh, false);
     _contains.emplace_back(mesh, false);
@@ -127,6 +118,4 @@ private:
   std::vector<std::shared_ptr<NewBoundaryRegionY>> boundary_regions;
 
   std::vector<BoutMask> _contains;
-  bool is_init{false};
-  Options* optptr;
 };

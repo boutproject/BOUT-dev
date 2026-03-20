@@ -45,8 +45,7 @@ int main(int argc, char** argv) {
 
   {
     Options dummy;
-    YBoundary ybndry;
-    ybndry.init(dummy, mesh);
+    YBoundary ybndry(dummy, mesh);
 
     std::vector<Field3D> fields((mesh->ystart * 2) + 1, Field3D{0.0});
     for (auto& field : fields) {
