@@ -883,8 +883,8 @@ void Field3D::setRegion(const std::string& region_name) {
   regionID = fieldmesh->getRegionID(region_name);
 }
 
-void Field3D::resetRegionParallel() {
-  if (isFci()) {
+void Field3D::resetRegionParallel(const bool force) {
+  if (force or isFci()) {
     for (int i = 0; i < fieldmesh->ystart; ++i) {
       yup_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", i + 1));
       ydown_fields[i].setRegion(fmt::format("RGN_YPAR_{:+d}", -i - 1));
