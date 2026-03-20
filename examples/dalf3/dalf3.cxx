@@ -300,7 +300,7 @@ protected:
     // LaplaceXY for n=0 solve
     if (split_n0) {
       // Create an XY solver for n=0 component
-      laplacexy = std::make_unique<LaplaceXY>(mesh);
+      laplacexy = LaplaceXY::create(mesh);
       phi2D = 0.0; // Starting guess
     }
 

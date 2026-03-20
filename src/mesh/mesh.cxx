@@ -408,34 +408,6 @@ int Mesh::ySize(int jx) const {
   return all;
 }
 
-bool Mesh::hasBndryLowerY() {
-  static bool calc = false, answer;
-  if (calc) {
-    return answer; // Already calculated
-  }
-
-  int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
-  int allbndry;
-  mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
-  answer = static_cast<bool>(allbndry);
-  calc = true;
-  return answer;
-}
-
-bool Mesh::hasBndryUpperY() {
-  static bool calc = false, answer;
-  if (calc) {
-    return answer; // Already calculated
-  }
-
-  int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
-  int allbndry;
-  mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
-  answer = static_cast<bool>(allbndry);
-  calc = true;
-  return answer;
-}
-
 int Mesh::localSize3D() {
   if (localNumCells3D < 0) {
     const int xs = firstX() ? xstart - 1 : xstart;

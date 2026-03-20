@@ -15,6 +15,7 @@
 #include <petscoptions.h>
 #include <petscsnes.h>
 #include <petscsys.h>
+#include <petscts.h>
 #include <petscversion.h>
 
 #include <string>
@@ -117,6 +118,12 @@ void PetscLib::setOptionsFromInputFile(SNES& snes) {
   BOUT_DO_PETSC(SNESSetOptionsPrefix(snes, options_prefix.c_str()));
 
   BOUT_DO_PETSC(SNESSetFromOptions(snes));
+}
+
+void PetscLib::setOptionsFromInputFile(TS& ts) {
+  BOUT_DO_PETSC(TSSetOptionsPrefix(ts, options_prefix.c_str()));
+
+  BOUT_DO_PETSC(TSSetFromOptions(ts));
 }
 
 void PetscLib::cleanup() {

@@ -35,8 +35,8 @@ def getversion():
             version = os.environ["BOUT_PRETEND_VERSION"]
             return version
 
-        _bout_previous_version = "v5.1.1"
-        _bout_next_version = "v5.2.0"
+        _bout_previous_version = "v5.2.0"
+        _bout_next_version = "v5.2.1"
 
         try:
             try:
@@ -216,9 +216,16 @@ def build_sdist(sdist_directory, config_settings=None):
             f"""Metadata-Version: 2.1
 Name: {pkgname}
 Version: {getversion()}
-License-File: COPYING
 """
         )
+        with open("LICENSE") as src:
+            pre = "License: "
+            for l in src:
+                f.write(f"{pre}{l}")
+                pre = "         "
+        f.write("Description-Content-Type: text/markdown\n\n")
+        with open("README.md") as src:
+            f.write(src.read())
     run(
         f"tar --append -f {sdist_directory}/{fname} _version.txt --xform='s\\_version.txt\\{prefix}/_version.txt\\'"
     )

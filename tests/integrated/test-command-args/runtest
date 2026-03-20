@@ -5,10 +5,14 @@ import os
 import re
 import shutil
 import unittest
+import platform
+
+
+OUTPUT_FILE = "stdout.log" if platform.system() == "FreeBSD" else "stderr.log"
 
 
 class TestCommandLineArgs(unittest.TestCase):
-    command = "./command-args 2>stderr.log"
+    command = "./command-args >stdout.log 2>stderr.log"
 
     def makeDirAndCopyInput(self, path):
         os.mkdir(path)
@@ -16,7 +20,7 @@ class TestCommandLineArgs(unittest.TestCase):
 
     def setUp(self):
         try:
-            os.remove("stderr.log")
+            os.remove(OUTPUT_FILE)
         except OSError:
             pass
         shutil.rmtree("./data", ignore_errors=True)
@@ -29,7 +33,7 @@ class TestCommandLineArgs(unittest.TestCase):
     def testNoArgumentsNoDirectory(self):
         with self.assertRaises(RuntimeError):
             launch_safe(self.command, pipe=True, nproc=1, mthread=1)
-        with open("stderr.log") as f:
+        with open(OUTPUT_FILE) as f:
             contents = f.read()
             self.assertIn(
                 '"data" does not exist',
@@ -97,7 +101,7 @@ class TestCommandLineArgs(unittest.TestCase):
             launch_safe(
                 self.command + " -d non_existent", pipe=True, nproc=1, mthread=1
             )
-        with open("stderr.log") as f:
+        with open(OUTPUT_FILE) as f:
             contents = f.read()
             self.assertIn(
                 '"non_existent" does not exist',
@@ -108,7 +112,7 @@ class TestCommandLineArgs(unittest.TestCase):
     def testDirectoryArgumentNonDirectory(self):
         with self.assertRaises(RuntimeError):
             launch_safe(self.command + " -d runtest", pipe=True, nproc=1, mthread=1)
-        with open("stderr.log") as f:
+        with open(OUTPUT_FILE) as f:
             contents = f.read()
             self.assertIn(
                 '"runtest" is not a directory',
@@ -175,21 +179,24 @@ class TestCommandLineArgs(unittest.TestCase):
             "--foo_flag",
             "some:option=value",
         ]
-        _, out = launch_safe(
+        launch_safe(
             self.command + " " + " ".join(extra_options), pipe=True, nproc=1, mthread=1
         )
 
-        command_line_options = None
-        for line in out.splitlines():
-            if line.lstrip().startswith("Command line"):
-                command_line_options = line
+        with open("stdout.log") as f:
+            contents = f.read()
 
-        for option in extra_options:
-            self.assertIn(
-                option,
-                command_line_options,
-                msg="FAIL: option {} not printed out".format(option),
-            )
+            command_line_options = None
+            for line in contents.splitlines():
+                if line.lstrip().startswith("Command line"):
+                    command_line_options = line
+
+            for option in extra_options:
+                self.assertIn(
+                    option,
+                    command_line_options,
+                    msg="FAIL: option {} not printed out".format(option),
+                )
 
 
 if __name__ == "__main__":

@@ -67,11 +67,6 @@ def bump_version_numbers(
     new_version_number: VersionNumber, next_version_number: VersionNumber
 ):
     update_version_number_in_file(
-        "configure.ac",
-        r"^AC_INIT\(\[BOUT\+\+\],\[(\d+\.\d+\.\d+)\]",
-        new_version_number,
-    )
-    update_version_number_in_file(
         "CITATION.cff", r"^version: (\d+\.\d+\.\d+)", new_version_number
     )
     update_version_number_in_file(

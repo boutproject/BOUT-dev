@@ -162,7 +162,7 @@ endfunction()
 #
 function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
   set(options USE_RUNTEST USE_DATA_BOUT_INP)
-  set(oneValueArgs EXECUTABLE_NAME PROCESSORS)
+  set(oneValueArgs EXECUTABLE_NAME PROCESSORS DOWNLOAD DOWNLOAD_NAME)
   set(multiValueArgs SOURCES EXTRA_FILES REQUIRES CONFLICTS TESTARGS EXTRA_DEPENDS)
   cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -200,6 +200,20 @@ function(bout_add_integrated_or_mms_test BUILD_CHECK_TARGET TESTNAME)
     add_dependencies(${BUILD_CHECK_TARGET} ${TESTNAME})
   else()
     add_custom_target(${TESTNAME})
+  endif()
+
+  if (BOUT_TEST_OPTIONS_DOWNLOAD)
+    if (NOT BOUT_TEST_OPTIONS_DOWNLOAD_NAME)
+      message(FATAL_ERROR "We need DOWNLOAD_NAME if we should DOWNLOAD!")
+    endif()
+    set(output )
+    add_custom_command(OUTPUT ${BOUT_TEST_OPTIONS_DOWNLOAD_NAME}
+      COMMAND wget ${BOUT_TEST_OPTIONS_DOWNLOAD} -O ${BOUT_TEST_OPTIONS_DOWNLOAD_NAME}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      COMMENT "Downloading ${BOUT_TEST_OPTIONS_DOWNLOAD_NAME}"
+      )
+    add_custom_target(download_test_data DEPENDS ${BOUT_TEST_OPTIONS_DOWNLOAD_NAME})
+    add_dependencies(${TESTNAME} download_test_data)
   endif()
 
   if (BOUT_TEST_OPTIONS_EXTRA_DEPENDS)

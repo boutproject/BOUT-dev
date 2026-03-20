@@ -57,7 +57,7 @@ BOUT_ENUM_CLASS(BoutSnesEquationForm, pseudo_transient, rearranged_backward_eule
 class SNESSolver : public Solver {
 public:
   explicit SNESSolver(Options* opts = nullptr);
-  ~SNESSolver() = default;
+  ~SNESSolver() override = default;
 
   int init() override;
   int run() override;

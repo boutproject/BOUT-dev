@@ -25,8 +25,8 @@ endif()
 # CMake currently doesn't support proper semver
 # Set the version here, strip any extra tags to use in `project`
 # We try to use git to get a full description, inspired by setuptools_scm
-set(_bout_previous_version "5.1.1")
-set(_bout_next_version "5.2.0")
+set(_bout_previous_version "5.2.0")
+set(_bout_next_version "5.2.1")
 execute_process(
   COMMAND "git" describe --tags --match=v${_bout_previous_version}
   COMMAND sed -e s/${_bout_previous_version}-/${_bout_next_version}.dev/ -e s/-/+/
@@ -235,11 +235,13 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.cxx
   ./src/invert/laplace/impls/hypre3d/hypre3d_laplace.hxx
   ./src/invert/laplace/invert_laplace.cxx
+  ./src/invert/laplacexy/impls/hypre/laplacexy-hypre.cxx
+  ./src/invert/laplacexy/impls/hypre/laplacexy-hypre.hxx
+  ./src/invert/laplacexy/impls/petsc/laplacexy-petsc.cxx
+  ./src/invert/laplacexy/impls/petsc/laplacexy-petsc.hxx
+  ./src/invert/laplacexy/impls/petsc2/laplacexy-petsc2.cxx
+  ./src/invert/laplacexy/impls/petsc2/laplacexy-petsc2.hxx
   ./src/invert/laplacexy/laplacexy.cxx
-  ./include/bout/invert/laplacexy2.hxx
-  ./src/invert/laplacexy2/laplacexy2.cxx
-  ./include/bout/invert/laplacexy2_hypre.hxx
-  ./src/invert/laplacexy2/laplacexy2_hypre.cxx 
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.cxx
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.hxx
   ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.cxx
@@ -463,7 +465,7 @@ set(BOUT_LIB_PATH "${CMAKE_CURRENT_BINARY_DIR}/lib")
 set_target_properties(bout++ PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
   ARCHIVE_OUTPUT_DIRECTORY "${BOUT_LIB_PATH}"
-  SOVERSION 5.1.0)
+  SOVERSION 5.2.0)
 
 # Set some variables for the bout-config script
 set(CONFIG_LDFLAGS "${CONFIG_LDFLAGS} -L\$BOUT_LIB_PATH -lbout++")

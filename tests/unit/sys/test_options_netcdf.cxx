@@ -1,6 +1,7 @@
 // Test reading and writing to NetCDF
 
 #include "bout/build_defines.hxx"
+#include "bout/utils.hxx"
 
 #if BOUT_HAS_NETCDF && !BOUT_HAS_LEGACY_NETCDF
 
@@ -91,6 +92,29 @@ TEST_F(OptionsNetCDFTest, ReadWriteField3D) {
   EXPECT_DOUBLE_EQ(value(0, 1, 0), 2.4);
   EXPECT_DOUBLE_EQ(value(1, 0, 1), 2.4);
   EXPECT_DOUBLE_EQ(value(1, 1, 1), 2.4);
+}
+
+TEST_F(OptionsNetCDFTest, ReadWriteMatrixInt) {
+  constexpr int nx = 2;
+  constexpr int ny = 3;
+  Matrix<int> matrix_in(nx, ny);
+  int count = 0;
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      matrix_in(i, j) = ++count;
+    }
+  }
+
+  {
+    Options options{{"int_matrix", matrix_in}};
+    OptionsIO::create(filename)->write(options);
+  }
+
+  Options data = OptionsIO::create(filename)->read();
+
+  const auto matrix_out = data["int_matrix"].as<Matrix<int>>();
+  ASSERT_EQ(matrix_out(nx - 1, ny - 1), matrix_in(nx - 1, ny - 1));
 }
 
 TEST_F(OptionsNetCDFTest, Groups) {

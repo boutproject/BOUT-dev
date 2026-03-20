@@ -219,21 +219,18 @@ public:
                 localmesh->LocalNy, localmesh->LocalNz, localmesh->maxregionblocksize);
           }
         }
-        if (localmesh->firstY() or localmesh->lastY()) {
-          for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
-            if (not localmesh->periodicY(ix)) {
-              if (localmesh->firstY()) {
-                nocorner3D +=
-                    Region<Ind3D>(ix, ix, 0, localmesh->ystart - 1, 0,
-                                  localmesh->LocalNz - 1, localmesh->LocalNy,
-                                  localmesh->LocalNz, localmesh->maxregionblocksize);
-              }
-              if (localmesh->lastY()) {
-                nocorner3D += Region<Ind3D>(
-                    ix, ix, localmesh->LocalNy - localmesh->ystart,
-                    localmesh->LocalNy - 1, 0, localmesh->LocalNz - 1, localmesh->LocalNy,
-                    localmesh->LocalNz, localmesh->maxregionblocksize);
-              }
+        for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
+          if (not localmesh->periodicY(ix)) {
+            if (localmesh->firstY(ix)) {
+              nocorner3D += Region<Ind3D>(
+                  ix, ix, 0, localmesh->ystart - 1, 0, localmesh->LocalNz - 1,
+                  localmesh->LocalNy, localmesh->LocalNz, localmesh->maxregionblocksize);
+            }
+            if (localmesh->lastY(ix)) {
+              nocorner3D += Region<Ind3D>(
+                  ix, ix, localmesh->LocalNy - localmesh->ystart, localmesh->LocalNy - 1,
+                  0, localmesh->LocalNz - 1, localmesh->LocalNy, localmesh->LocalNz,
+                  localmesh->maxregionblocksize);
             }
           }
         }
@@ -259,20 +256,17 @@ public:
                               0, 0, localmesh->LocalNy, 1, localmesh->maxregionblocksize);
           }
         }
-        if (localmesh->firstY() or localmesh->lastY()) {
-          for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
-            if (not localmesh->periodicY(ix)) {
-              if (localmesh->firstY()) {
-                nocorner2D +=
-                    Region<Ind2D>(ix, ix, 0, localmesh->ystart - 1, 0, 0,
-                                  localmesh->LocalNy, 1, localmesh->maxregionblocksize);
-              }
-              if (localmesh->lastY()) {
-                nocorner2D +=
-                    Region<Ind2D>(ix, ix, localmesh->LocalNy - localmesh->ystart,
-                                  localmesh->LocalNy - 1, 0, 0, localmesh->LocalNy, 1,
-                                  localmesh->maxregionblocksize);
-              }
+        for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
+          if (not localmesh->periodicY(ix)) {
+            if (localmesh->firstY(ix)) {
+              nocorner2D +=
+                  Region<Ind2D>(ix, ix, 0, localmesh->ystart - 1, 0, 0,
+                                localmesh->LocalNy, 1, localmesh->maxregionblocksize);
+            }
+            if (localmesh->lastY(ix)) {
+              nocorner2D += Region<Ind2D>(
+                  ix, ix, localmesh->LocalNy - localmesh->ystart, localmesh->LocalNy - 1,
+                  0, 0, localmesh->LocalNy, 1, localmesh->maxregionblocksize);
             }
           }
         }
@@ -575,7 +569,7 @@ public:
 };
 
 #endif // PETSC
-};     // namespace inversion
-};     // namespace bout
+}; // namespace inversion
+}; // namespace bout
 
 #endif // HEADER GUARD

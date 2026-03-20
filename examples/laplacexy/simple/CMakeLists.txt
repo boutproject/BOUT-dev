@@ -6,4 +6,7 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-bout_add_example(laplacexy-simple SOURCES test-laplacexy.cxx)
+bout_add_example(laplacexy-simple
+  SOURCES test-laplacexy.cxx
+  DATA_DIRS data hypre
+)

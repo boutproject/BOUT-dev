@@ -72,6 +72,18 @@ int arkode_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zve
 
 int arkode_jac(N_Vector v, N_Vector Jv, BoutReal t, N_Vector y, N_Vector fy,
                void* user_data, N_Vector tmp);
+
+#if SUNDIALS_VERSION_LESS_THAN(7, 2, 0)
+// Shim for backwards compatibility
+int ARKodeGetNumRhsEvals(void* arkode_mem, int partition_index, long int* num_rhs_evals) {
+  long int temp = 0;
+  if (partition_index == 0) {
+    return ARKStepGetNumRhsEvals(arkode_mem, num_rhs_evals, &temp);
+  } else {
+    return ARKStepGetNumRhsEvals(arkode_mem, &temp, num_rhs_evals);
+  }
+}
+#endif
 } // namespace
 // NOLINTEND(readability-identifier-length)
 
@@ -417,8 +429,7 @@ int ArkodeSolver::init() {
         if (hasPreconditioner()) {
           output.write("\tUsing user-supplied preconditioner\n");
 
-          if (ARKodeSetPreconditioner(arkode_mem, nullptr, arkode_pre)
-              != ARKLS_SUCCESS) {
+          if (ARKodeSetPreconditioner(arkode_mem, nullptr, arkode_pre) != ARKLS_SUCCESS) {
             throw BoutException("ARKodeSetPreconditioner failed\n");
           }
         } else {
@@ -516,12 +527,13 @@ int ArkodeSolver::run() {
     }
 
     // Get additional diagnostics
-    long int temp_long_int, temp_long_int2;
+    long int temp_long_int = 0;
     ARKodeGetNumSteps(arkode_mem, &temp_long_int);
     nsteps = int(temp_long_int);
-    ARKStepGetNumRhsEvals(arkode_mem, &temp_long_int, &temp_long_int2);
+    ARKodeGetNumRhsEvals(arkode_mem, 0, &temp_long_int);
     nfe_evals = int(temp_long_int);
-    nfi_evals = int(temp_long_int2);
+    ARKodeGetNumRhsEvals(arkode_mem, 1, &temp_long_int);
+    nfi_evals = int(temp_long_int);
     if (treatment == Treatment::ImEx or treatment == Treatment::Implicit) {
       ARKodeGetNumNonlinSolvIters(arkode_mem, &temp_long_int);
       nniters = int(temp_long_int);

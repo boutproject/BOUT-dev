@@ -64,12 +64,6 @@ public:
     return nullptr;
   }
 
-  [[deprecated("This will be removed in a future version. Implementations should "
-               "override the Context version of this function.")]] virtual double
-  generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
-    return generate(bout::generator::Context().set("x", x, "y", y, "z", z, "t", t));
-  }
-
   /// Generate a value at the given coordinates (x,y,z,t)
   /// This should be deterministic, always returning the same value given the same inputs
   ///
@@ -78,7 +72,7 @@ public:
   /// them or an infinite recursion results.  This is for backward
   /// compatibility for users and implementors.  In a future version
   /// this function will be made pure virtual.
-  virtual double generate(const bout::generator::Context& ctx);
+  virtual double generate(const bout::generator::Context& ctx) = 0;
 
   /// Create a string representation of the generator, for debugging output
   virtual std::string str() const { return std::string("?"); }
