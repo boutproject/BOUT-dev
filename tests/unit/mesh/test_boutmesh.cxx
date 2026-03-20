@@ -732,24 +732,6 @@ TEST_F(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisibleByNYPE) {
   EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
 }
 
-TEST_F(BoutMeshTest, ChooseProcessorSplitBadNXPENotDivisibleByNYPE) {
-  WithQuietOutput info{output_info};
-  Options options{{"NXPE", 5}};
-
-  BoutMeshExposer mesh(4, 24, 1, 1, 1, 8);
-
-  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
-}
-
-TEST(BoutMeshTest, ChooseProcessorSplitBadNYPENotDivisibleByNYPE) {
-  WithQuietOutput info{output_info};
-  Options options{{"NYPE", 5}};
-
-  BoutMeshExposer mesh(5, 5, 1, 1, 1, 8);
-
-  EXPECT_THROW(mesh.chooseProcessorSplit(options), BoutException);
-}
-
 TEST_F(BoutMeshTest, ChooseProcessorSplitNXPE) {
   Options options{{"NXPE", 4}};
 
@@ -2187,94 +2169,6 @@ TEST_F(BoutMeshTest, CreateXBoundariesDoubleNullInsideOutsideCore) {
   EXPECT_EQ(boundaries[0]->label, "core");
   EXPECT_EQ(boundaries[1]->label, "sol");
 }
-
-//New SF tests for X boundaries
-TEST_F(BoutMeshTest, CreateXBoundariesSnowflakeOuterSOL) {
-  WithQuietOutput info{output_info};
-  // Snowflake topology: outer X boundary below ny_inner is SOL
-  // PE_XIND = NXPE - 1, PE_YIND chosen so yg <= ny_inner
-  BoutMeshExposer mesh(createSnowflake(
-  {/* nx */ 12,
-    /* ny */ 24,
-    /* MXG */ 1,
-    /* MYG */ 1,
-    /* nxpe */ 2,
-    /* nype */ 6,
-    /* pe_xind */ 1,   // outer X
-    /* pe_yind */ 1    // Y chosen so yg <= ny_inner
-  }));
-
-  // Ensure PE_YIND corresponds to yg <= ny_inner
-  mesh.createXBoundaries();
-
-  auto boundaries = mesh.getBoundaries();
-  ASSERT_EQ(boundaries.size(), 1);
-  EXPECT_EQ(boundaries[0]->label, "sol");
-}
-
-
-TEST_F(BoutMeshTest, CreateXBoundariesSnowflakeSouthPFOuter) {
-  WithQuietOutput info{output_info};
-  // Snowflake topology: outer X boundary above ny_inner is PF outer region
-  // PE_XIND = NXPE - 1, PE_YIND chosen so yg > ny_inner
-  // ny >= nype is needed
-  BoutMeshExposer mesh(createSnowflake(
-      {12, 24, 1, 1,
-       3, 6,
-       2, 5}));   // PE_YIND high enough → yg > ny_inner
-
-  mesh.createXBoundaries();
-
-  auto boundaries = mesh.getBoundaries();
-  ASSERT_EQ(boundaries.size(), 1);
-  EXPECT_EQ(boundaries[0]->label, "south_pf_outer");
-}
-
-TEST(BoutMeshTest, CreateXBoundariesSnowflakeInnerPF) {
-  WithQuietOutput info{output_info};
-  // Snowflake topology: inner X boundary inside PF region
-  // PE_XIND = 0
-  BoutMeshExposer mesh(createSnowflake(
-      {12, 3, 1, 1,
-       3, 6,
-       0, 0}));
-
-  mesh.createXBoundaries();
-
-  auto boundaries = mesh.getBoundaries();
-  ASSERT_EQ(boundaries.size(), 1);
-  EXPECT_EQ(boundaries[0]->label, "pf");
-}
-
-TEST_F(BoutMeshTest, CreateXBoundariesSnowflakeSingleCoreInX) {
-  WithQuietOutput info{output_info};
-  // Snowflake topology: one core in X → two boundaries
-  BoutMeshExposer mesh(createSnowflake(
-      {
-        /* nx */ 12,
-        /* ny */ 24,
-        /* MXG */ 1,
-        /* MYG */ 1,
-        /* nxpe */ 1,
-        /* nype */ 6,
-        /* pe_xind */ 0,
-        /* pe_yind */ 2
-      }));
-
-  mesh.createXBoundaries();
-
-  auto boundaries = mesh.getBoundaries();
-  ASSERT_EQ(boundaries.size(), 2);
-
-  // Inner must be either core or PF
-  EXPECT_TRUE(boundaries[0]->label == "core"
-          || boundaries[0]->label == "pf");
-
-  // Outer must be SOL or south PF outer
-  EXPECT_TRUE(boundaries[1]->label == "sol"
-          || boundaries[1]->label == "south_pf_outer");
-}
-
 
 //New SF tests for X boundaries
 TEST_F(BoutMeshTest, CreateXBoundariesSnowflakeOuterSOL) {

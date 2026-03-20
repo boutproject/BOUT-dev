@@ -2703,7 +2703,6 @@ void BoutMesh::topology() {
     }
   }
 
-<<<<<<< HEAD
   if (mesh_topology == MeshTopology::SF) {
     if (ixseps_inner > 0 &&
         (PE_YIND * MYSUB > jyseps1_1) &&
