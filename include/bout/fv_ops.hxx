@@ -115,7 +115,7 @@ struct Fromm {
 
 /*!
    * Second order slope limiter method
-   * 
+   *
    * Limits slope to minimum absolute value
    * of left and right gradients. If at a maximum
    * or minimum slope set to zero, i.e. reverts
@@ -152,8 +152,8 @@ private:
 
 /*!
    * Monotonised Central (MC) second order slope limiter (Van Leer)
-   * 
-   * Limits the slope based on taking the slope with 
+   *
+   * Limits the slope based on taking the slope with
    * the minimum absolute value from central, 2*left and
    * 2*right. If any of these slopes have different signs
    * then the slope reverts to zero (i.e. 1st-order upwinding).
@@ -256,7 +256,7 @@ Field3D Div_par(const Field3D& f_in, const Field3D& v_in, const Field3D& wave_sp
   ASSERT1_FIELDS_COMPATIBLE(f_in, v_in);
   ASSERT1_FIELDS_COMPATIBLE(f_in, wave_speed_in);
 
-  Mesh const* mesh = f_in.getMesh();
+  const Mesh* mesh = f_in.getMesh();
 
   CellEdges cellboundary;
 
@@ -423,9 +423,9 @@ Field3D Div_par(const Field3D& f_in, const Field3D& v_in, const Field3D& wave_sp
    * Div ( n * v )  -- Magnetic drifts
    *
    * This uses the expression
-   * 
+   *
    * Div( A ) = 1/J * d/di ( J * A^i )
-   * 
+   *
    * Hence the input vector should be contravariant
    *
    * Note: Uses to/from FieldAligned

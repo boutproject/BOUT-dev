@@ -22,23 +22,18 @@ OPERATORS = {
     "FV_Div_par_MC": 1.5,
     "FV_Div_par_mod_MC": 1.5,
     "FV_Div_par_fvv_MC": 1.5,
-
     "FV_Div_par_Upwind": 1,
     "FV_Div_par_mod_Upwind": 1,
     "FV_Div_par_fvv_Upwind": 1,
-
     "FV_Div_par_Fromm": 1.5,
     "FV_Div_par_mod_Fromm": 1.5,
     "FV_Div_par_fvv_Fromm": 1.5,
-
     "FV_Div_par_MinMod": 1.5,
     "FV_Div_par_mod_MinMod": 1.5,
     "FV_Div_par_fvv_MinMod": 1.5,
-
     "FV_Div_par_Superbee": 1.5,
     "FV_Div_par_mod_Superbee": 1.5,
     "FV_Div_par_fvv_Superbee": 1.5,
-
     "FV_Div_par_K_Grad_par": 2,
     "FV_Div_par_K_Grad_par_mod": 2,
 }
@@ -131,9 +126,7 @@ def test_fv_operators() -> bool:
 
     final_errors = transpose(all_errors)
     for operator, order in OPERATORS.items():
-        success = assert_convergence(
-            final_errors[operator]["l_2"], dx, operator, order
-        )
+        success = assert_convergence(final_errors[operator]["l_2"], dx, operator, order)
         if not success:
             failures.append(operator)
 

@@ -509,7 +509,6 @@ Field3D XZHermiteSplineBase<monotonic, imp_type>::interpolate(
       f_interp[iyp] =
           +f_z * h00_z[i] + f_zp1 * h01_z[i] + fz_z * h10_z[i] + fz_zp1 * h11_z[i];
 
-
       if constexpr (monotonic) {
         const auto corners = {(*gf)[IndG3D(g3dinds[i][0])], (*gf)[IndG3D(g3dinds[i][1])],
                               (*gf)[IndG3D(g3dinds[i][2])], (*gf)[IndG3D(g3dinds[i][3])]};
