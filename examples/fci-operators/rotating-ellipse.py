@@ -72,18 +72,29 @@ pol_grids = [
 
 grid = zoidberg.grid.Grid(pol_grids, ycoords, yperiod, yperiodic=True)
 
-maps = zoidberg.make_maps(grid, magnetic_field)
+samples_per_dim = 5  # Sub-sampling in each cell
+
+maps = zoidberg.make_maps(grid, magnetic_field, samples_per_dim=samples_per_dim)
 
 #############################################################################
 # Interpolation weights
 
 weight_vars = zoidberg.weights.calculate_parallel_map_operators(maps)
 maps.update(weight_vars)
+# Remove sub-sampled maps from output
+for var in [
+    "forward_xt_primes",
+    "forward_zt_primes",
+    "backward_xt_primes",
+    "backward_zt_primes",
+    "subcell_weights",
+]:
+    maps.pop(var, None)
 
 #############################################################################
 # Write grid file
 
-filename = f"rotating-ellipse-{nx}x{nslices}x{nz}.fci.nc"
+filename = f"rotating-ellipse-{nx}x{nslices}x{nz}-s{samples_per_dim}.fci.nc"
 
 print(f"Writing to grid file '{filename}'")
 zoidberg.write_maps(

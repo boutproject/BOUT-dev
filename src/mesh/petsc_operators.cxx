@@ -321,9 +321,6 @@ PetscOperators::Parallel PetscOperators::getParallel() const {
   inv_2dl.ydown() = 0.0;
   inv_2dl.applyParallelBoundary("parallel_neumann_o1");
 
-  inv_2dl.yup() *= 0.5;
-  inv_2dl.ydown() *= 0.5;
-
   auto inv_2dl_op = this->diagonal(inv_2dl);
 
   auto Grad_par = inv_2dl_op * (forward - backward);
@@ -339,7 +336,19 @@ PetscOperators::Parallel PetscOperators::getParallel() const {
   dV.yup() = 0.0;
   dV.ydown() = 0.0;
   dV.applyParallelBoundary("parallel_neumann_o1");
-  auto dV_op = this->diagonal(dV);
+
+  // Fractional boundary cells
+  const auto forward_boundary_fraction =
+      meshGetField3D(this->mesh, "forward_boundary_fraction");
+  const auto backward_boundary_fraction =
+      meshGetField3D(this->mesh, "backward_boundary_fraction");
+
+  BOUT_FOR(i, dV.getRegion("RGN_NOBNDRY")) {
+    dV.yup()[i.yp()] *= forward_boundary_fraction[i];
+    dV.ydown()[i.ym()] *= backward_boundary_fraction[i];
+  }
+
+  const auto dV_op = this->diagonal(dV);
 
   Field3D neg_inv_dV = -1. / dV;
   neg_inv_dV.splitParallelSlices();
@@ -410,6 +419,18 @@ PetscOperators::Parallel PetscOperators::getParallel() const {
 
 Field3D PetscOperators::Parallel::Div_par_K_Grad_par(const Field3D& K,
                                                      const Field3D& f) const {
+
+  // There are 4 matrix-vector products that could be performed in parallel.
+  // The best way to optimize this is probably to pack f and K into one Vec,
+  // and assemble a single sparse matrix that contains the four blocks:
+  //
+  //  (Grad_plus       0     )           (grad_plus  )
+  //  (Grad_minus      0     ) (f)   ->  (grad_minus )
+  //  (    0     Interp_plus ) (K)       (K_plus     )
+  //  (    0     Interp_minus)           (K_minus    )
+  //
+  // For now we perform each operation in sequence.
+
   // Calculate gradients in + and - directions
   const Field3D grad_plus = this->Grad_plus(f);
   const Field3D grad_minus = this->Grad_minus(f);
