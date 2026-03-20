@@ -331,7 +331,7 @@ PetscOperators::Parallel PetscOperators::getParallel() const {
   // Div_par from Grad_par and cell volumes.
 
   // Cell volume
-  auto dV = coords->J * coords->dx * coords->dy * coords->dz;
+  Field3D dV = coords->J * coords->dx * coords->dy * coords->dz;
   dV.splitParallelSlices();
   dV.yup() = 0.0;
   dV.ydown() = 0.0;
