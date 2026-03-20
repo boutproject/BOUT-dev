@@ -105,6 +105,7 @@ void load_parallel_metric_components(Coordinates* coords, int offset) {
   LOAD_PAR(g_22);
   LOAD_PAR(g_33);
   LOAD_PAR(g_13);
+  LOAD_PAR(dy);
   LOAD_PAR(Bxy);
 
 #undef LOAD_PAR
