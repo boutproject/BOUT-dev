@@ -10,5 +10,5 @@ bout_add_example(
   fci-operators
   SOURCES fci_operators_example.cxx
   DATA_DIRS data
-  EXTRA_FILES rotating-ellipse-20x8x20.fci.nc makeplots.py
+  EXTRA_FILES rotating-ellipse.py makeplots.py
 )
