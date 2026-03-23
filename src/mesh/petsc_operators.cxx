@@ -2,67 +2,99 @@
 
 #if BOUT_HAS_PETSC
 
-#include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
-#include "bout/output.hxx"
-#include "bout/output_bout_types.hxx"
-#include "bout/petsc_interface.hxx"
 #include "bout/petsc_operators.hxx"
-#include "bout/petsclib.hxx"
 #include "bout/region.hxx"
+#include "bout/utils.hxx"
+
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
-Region<Ind3D> PetscMapping::create_region(const Field3D& cell_number) {
+PetscIndexMapping::~PetscIndexMapping() {
+  if (mat_stored_to_petsc != nullptr) {
+    MatDestroy(&mat_stored_to_petsc);
+  }
+  if (mat_petsc_to_stored != nullptr) {
+    MatDestroy(&mat_petsc_to_stored);
+  }
+}
+
+PetscInt PetscIndexMapping::storedToPetsc(int stored_index) const {
+  auto it = local_stored_to_petsc.find(stored_index);
+  if (it == local_stored_to_petsc.end()) {
+    throw BoutException("Stored index {} is not owned locally", stored_index);
+  }
+  return it->second;
+}
+
+void PetscIndexMapping::buildPermutation(PetscInt nlocal, PetscInt nglobal,
+                                         const std::vector<int>& stored_indices) {
+  global_size = nglobal;
+  local_stored_indices = stored_indices;
+
+  BOUT_DO_PETSC(MatCreate(BoutComm::get(), &mat_stored_to_petsc));
+  BOUT_DO_PETSC(MatSetSizes(mat_stored_to_petsc, nlocal, nlocal, nglobal, nglobal));
+  BOUT_DO_PETSC(MatSetType(mat_stored_to_petsc, MATMPIAIJ));
+  BOUT_DO_PETSC(MatMPIAIJSetPreallocation(mat_stored_to_petsc, 1, nullptr, 1, nullptr));
+  BOUT_DO_PETSC(MatGetOwnershipRange(mat_stored_to_petsc, &row_start, &row_end));
+  ASSERT1(row_end - row_start == nlocal);
+
+  const PetscScalar one = 1.0;
+  for (PetscInt i = 0; i < nlocal; ++i) {
+    const PetscInt petsc_row = row_start + i;
+    const PetscInt stored_col = stored_indices[i];
+    ASSERT1(stored_col >= 0);
+    local_stored_to_petsc[static_cast<int>(stored_col)] = petsc_row;
+    BOUT_DO_PETSC(MatSetValues(mat_stored_to_petsc, 1, &petsc_row, 1, &stored_col, &one,
+                               INSERT_VALUES));
+  }
+  BOUT_DO_PETSC(MatAssemblyBegin(mat_stored_to_petsc, MAT_FINAL_ASSEMBLY));
+  BOUT_DO_PETSC(MatAssemblyEnd(mat_stored_to_petsc, MAT_FINAL_ASSEMBLY));
+  BOUT_DO_PETSC(
+      MatTranspose(mat_stored_to_petsc, MAT_INITIAL_MATRIX, &mat_petsc_to_stored));
+}
+
+Region<Ind3D> PetscCellMapping::create_region(const Field3D& cell_number) {
   Region<Ind3D>::RegionIndices indices;
-  BOUT_FOR_SERIAL(i, cell_number.getRegion("RGN_NOBNDRY")) {
-    if (cell_number[i] > -1) {
+  BOUT_FOR(i, cell_number.getRegion("RGN_NOBNDRY")) {
+    if (cell_number[i] >= 0) {
       indices.push_back(i);
     }
   }
   return Region<Ind3D>(indices);
 }
 
-Region<Ind3D> PetscMapping::create_region_xin(const Field3D& cell_number) {
-  Region<Ind3D>::RegionIndices xin_indices;
-  const Mesh* mesh = cell_number.getMesh();
-  if (mesh->firstX()) {
-    for (int i = 0; i < mesh->xstart; ++i) {
-      for (int j = mesh->ystart; j <= mesh->yend; ++j) {
-        for (int k = mesh->zstart; k <= mesh->zend; ++k) {
-          if (cell_number(i, j, k) > -1) {
-            xin_indices.push_back(cell_number.indexAt(i, j, k));
-          }
-        }
-      }
+Region<Ind3D> PetscCellMapping::create_region_xin(const Field3D& cell_number) {
+  Region<Ind3D>::RegionIndices indices;
+  const auto& region = cell_number.getRegion("RGN_INNER_X");
+  BOUT_FOR(i, region) {
+    if (cell_number[i] >= 0) {
+      indices.push_back(i);
     }
   }
-  return Region<Ind3D>(xin_indices);
+  return Region<Ind3D>(indices);
 }
 
-Region<Ind3D> PetscMapping::create_region_xout(const Field3D& cell_number) {
-  Region<Ind3D>::RegionIndices xout_indices;
-  const Mesh* mesh = cell_number.getMesh();
-  if (mesh->lastX()) {
-    for (int i = mesh->xend + 1; i < mesh->LocalNx; ++i) {
-      for (int j = mesh->ystart; j <= mesh->yend; ++j) {
-        for (int k = mesh->zstart; k <= mesh->zend; ++k) {
-          if (cell_number(i, j, k) > -1) {
-            xout_indices.push_back(cell_number.indexAt(i, j, k));
-          }
-        }
-      }
+Region<Ind3D> PetscCellMapping::create_region_xout(const Field3D& cell_number) {
+  Region<Ind3D>::RegionIndices indices;
+  const auto& region = cell_number.getRegion("RGN_OUTER_X");
+  BOUT_FOR(i, region) {
+    if (cell_number[i] >= 0) {
+      indices.push_back(i);
     }
   }
-  return Region<Ind3D>(xout_indices);
+  return Region<Ind3D>(indices);
 }
 
-PetscMapping::PetscMapping(const Field3D& cell_number, const Field3D& forward_cell_number,
-                           const Field3D& backward_cell_number)
+PetscCellMapping::PetscCellMapping(const Field3D& cell_number,
+                                   const Field3D& forward_cell_number,
+                                   const Field3D& backward_cell_number, int total_cells)
     : cell_number(cell_number), forward_cell_number(forward_cell_number),
       backward_cell_number(backward_cell_number),
       evolving_region(create_region(cell_number)),
@@ -70,203 +102,55 @@ PetscMapping::PetscMapping(const Field3D& cell_number, const Field3D& forward_ce
       xout_region(create_region_xout(cell_number)),
       yup_region(create_region(forward_cell_number)),
       ydown_region(create_region(backward_cell_number)) {
-  // Calculate size of each region
-  const unsigned int nlocal = this->localSize();
-  output.write("Local {} : evolving {} xin {} xout {} yup {} ydown {}", nlocal,
-               evolving_region.size(), xin_region.size(), xout_region.size(),
-               yup_region.size(), ydown_region.size());
-
-  // Create a PETSc matrix
-  // Note: Numbering is different from that used in PetscVector / PetscMatrix
-  // because yup/down boundaries are included.
-
-  // Renumbering matrix.
-  // Maps PETSc row (or column) indices to the global indices used in
-  // the mesh.  This is needed because the PETSc indices depend on the
-  // number of processors.
-  BOUT_DO_PETSC(MatCreate(BoutComm::get(), &mat_mesh_to_petsc));
-  BOUT_DO_PETSC(
-      MatSetSizes(mat_mesh_to_petsc, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE));
-  BOUT_DO_PETSC(MatSetType(mat_mesh_to_petsc, MATMPIAIJ));
-  // Each row will have one non-zero entry, which could be in
-  // either the "diagonal" or "off-diagonal" block.
-  BOUT_DO_PETSC(MatMPIAIJSetPreallocation(mat_mesh_to_petsc, 1, nullptr, 1, nullptr));
-
-  // Get the range of rows owned by this processor
-  BOUT_DO_PETSC(MatGetOwnershipRange(mat_mesh_to_petsc, &row_start, &row_end));
-  output.write("Local row range: {} -> {}\n", row_start, row_end);
-
-  // Iterate through regions in this order
-  this->map([&](PetscInt row, PetscInt col) {
-    // `row` is the PETSc index; `col` is the Mesh index
-    ASSERT1(row >= 0);
-    ASSERT1(col >= 0);
-    const PetscScalar ONE = 1.0;
-    BOUT_DO_PETSC(MatSetValues(mat_mesh_to_petsc, 1, &row, 1, &col, &ONE, INSERT_VALUES));
-  });
-  BOUT_DO_PETSC(MatAssemblyBegin(mat_mesh_to_petsc, MAT_FINAL_ASSEMBLY));
-  BOUT_DO_PETSC(MatAssemblyEnd(mat_mesh_to_petsc, MAT_FINAL_ASSEMBLY));
-
-  // Transpose to map petsc indices to mesh indices
-  MatTranspose(mat_mesh_to_petsc, MAT_INITIAL_MATRIX, &mat_petsc_to_mesh);
+  std::vector<int> local_indices;
+  const auto push_region = [&](const Region<Ind3D>& region, const Field3D& values) {
+    BOUT_FOR_SERIAL(i, region) { local_indices.push_back(ROUND(values[i])); }
+  };
+  push_region(evolving_region, this->cell_number);
+  push_region(xin_region, this->cell_number);
+  push_region(xout_region, this->cell_number);
+  push_region(yup_region, this->forward_cell_number);
+  push_region(ydown_region, this->backward_cell_number);
+  buildPermutation(static_cast<PetscInt>(local_indices.size()), total_cells,
+                   local_indices);
 }
 
-PetscMapping::~PetscMapping() {
-  MatDestroy(&this->mat_mesh_to_petsc);
-  MatDestroy(&this->mat_petsc_to_mesh);
+PetscLegMapping::PetscLegMapping(int total_legs, std::vector<int> local_leg_indices) {
+  std::sort(local_leg_indices.begin(), local_leg_indices.end());
+  local_leg_indices.erase(std::unique(local_leg_indices.begin(), local_leg_indices.end()),
+                          local_leg_indices.end());
+  buildPermutation(static_cast<PetscInt>(local_leg_indices.size()), total_legs,
+                   local_leg_indices);
 }
 
-PetscOperator::PetscOperator(PetscMappingPtr mapping, Array<int> rows, Array<int> cols,
-                             Array<BoutReal> weights)
-    : mapping(std::move(mapping)), mat_operator(new Mat{nullptr}),
-      rhs_vec(createVec(this->mapping->localSize())),
-      result_vec(createVec(this->mapping->localSize())) {
-
-  output.write("PetscOperator Array sizes {} {} {}\n", rows.size(), cols.size(),
-               weights.size());
-
-  Mat mat{nullptr};
-  BOUT_DO_PETSC(MatCreate(BoutComm::get(), &mat));
-  BOUT_DO_PETSC(MatSetType(mat, MATMPIAIJ));
-  const int nlocal = this->mapping->localSize();
-  BOUT_DO_PETSC(MatSetSizes(mat, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE));
-
-  // This reads CSR format but is defensive in handling negative indices and missing
-  // final 'row' entry.
-  this->mapping->map([&](PetscInt row, PetscInt mesh_index) {
-    if (mesh_index >= rows.size()) {
-      return; // No weights -> skip
-    }
-    // Get the range of indices into columns and weights
-    const int start_ind = rows[mesh_index];
-    if (start_ind < 0) {
-      return; // No entries (non-standard CSR)
-    }
-    int end_ind =
-        cols.size(); // End of the columns array (should be last element of rows)
-    for (int i = mesh_index + 1; i < rows.size(); ++i) {
-      // rows[i] can be -1 if no weights (non-standard CSR)
-      if (rows[i] > -1) {
-        // This is the next entry in the columns / weights array
-        end_ind = rows[i];
-        break;
-      }
-    }
-    if (end_ind == start_ind) {
-      // Empty row in CSR format
-      return;
-    }
-    BOUT_DO_PETSC(MatSetValues(mat, 1, &row, end_ind - start_ind, &cols[start_ind],
-                               &weights[start_ind], INSERT_VALUES));
-  });
-  BOUT_DO_PETSC(MatAssemblyBegin(mat, MAT_FINAL_ASSEMBLY));
-  BOUT_DO_PETSC(MatAssemblyEnd(mat, MAT_FINAL_ASSEMBLY));
-
-  // Row indices are PETSc indices but columns are mesh indices
-  // Multiply on the right by PetscToMesh.
-  BOUT_DO_PETSC(MatMatMult(mat, this->mapping->getPetscToMesh(), MAT_INITIAL_MATRIX,
-                           PETSC_DETERMINE, this->mat_operator.get()));
-  // Destroy temporary matrix
-  BOUT_DO_PETSC(MatDestroy(&mat));
-}
-
-void PetscOperator::copyToVec(const PetscMappingPtr& mapping, const Field3D& f, Vec vec) {
-  ASSERT1(f.hasParallelSlices());
-  ASSERT1(f.yup().isAllocated());
-  ASSERT1(f.ydown().isAllocated());
-
+PetscCellVector makePetscCellVector(const PetscCellMappingPtr& mapping,
+                                    const Field3D& field) {
+  ASSERT1(field.hasParallelSlices());
+  ASSERT1(field.yup().isAllocated());
+  ASSERT1(field.ydown().isAllocated());
+  PetscCellVector out(mapping);
   PetscScalar* x{nullptr};
-  // Copy rows from Field3D cells
-  BOUT_DO_PETSC(VecGetArray(vec, &x));
-  mapping->map_local_field([&](PetscInt row, const Ind3D& i) { x[row] = f[i]; });
-
-  // Copy Yup / Ydown values from boundaries
-  const Field3D& yup = f.yup();
-  mapping->map_local_yup([&](PetscInt row, const Ind3D& i) { x[row] = yup[i]; });
-
-  const Field3D& ydown = f.ydown();
-  mapping->map_local_ydown([&](PetscInt row, const Ind3D& i) { x[row] = ydown[i]; });
-
-  BOUT_DO_PETSC(VecRestoreArray(vec, &x));
+  BOUT_DO_PETSC(VecGetArray(out.raw(), &x));
+  mapping->mapLocalField([&](PetscInt row, const Ind3D& i) { x[row] = field[i]; });
+  const auto& yup = field.yup();
+  mapping->mapLocalYup([&](PetscInt row, const Ind3D& i) { x[row] = yup[i]; });
+  const auto& ydown = field.ydown();
+  mapping->mapLocalYdown([&](PetscInt row, const Ind3D& i) { x[row] = ydown[i]; });
+  BOUT_DO_PETSC(VecRestoreArray(out.raw(), &x));
+  return out;
 }
 
-PetscOperator::UniqueVec PetscOperator::createVec(PetscInt local_size) {
-  UniqueVec vec(new Vec{nullptr});
-  BOUT_DO_PETSC(VecCreate(BoutComm::get(), vec.get()));
-  BOUT_DO_PETSC(VecSetType(*vec, VECMPI));
-  BOUT_DO_PETSC(VecSetSizes(*vec, local_size, PETSC_DETERMINE));
-  return vec;
-}
-
-PetscOperator PetscOperator::diagonal(PetscMappingPtr mapping, const Field3D& f) {
-  const UniqueVec diag{createVec(mapping->localSize())};
-  copyToVec(mapping, f, *diag);
-
-  UniqueMat mat(new Mat{nullptr});
-  // Note: MatMatMult with diagonal and mpiaij not supported
-  // -> Create MPIAIJ
-  BOUT_DO_PETSC(MatCreate(BoutComm::get(), mat.get()));
-  BOUT_DO_PETSC(MatSetType(*mat, MATMPIAIJ));
-  const PetscInt nlocal = mapping->localSize();
-  BOUT_DO_PETSC(MatSetSizes(*mat, nlocal, nlocal, PETSC_DECIDE, PETSC_DECIDE));
-  BOUT_DO_PETSC(MatMPIAIJSetPreallocation(*mat, 1, nullptr, 0, nullptr));
-  BOUT_DO_PETSC(MatDiagonalSet(*mat, *diag, INSERT_VALUES));
-  BOUT_DO_PETSC(MatAssemblyBegin(*mat, MAT_FINAL_ASSEMBLY));
-  BOUT_DO_PETSC(MatAssemblyEnd(*mat, MAT_FINAL_ASSEMBLY));
-
-  return PetscOperator(std::move(mapping), std::move(mat));
-}
-
-/// Perform operation
-Field3D PetscOperator::operator()(const Field3D& rhs) const {
-  // Fill vec from rhs
-  copyToVec(this->mapping, rhs, *this->rhs_vec);
-
-  // Perform Mat-Vec muliplication
-  BOUT_DO_PETSC(MatMult(*this->mat_operator, *rhs_vec, *result_vec));
-
-  // Copy result_vec into a Field3D
-  Field3D result{emptyFrom(rhs)}; // This allocates memory
-  const PetscScalar* r{nullptr};
-  BOUT_DO_PETSC(VecGetArrayRead(*result_vec, &r));
-  this->mapping->map_local_field(
-      [&](PetscInt row, const Ind3D& i) { result[i] = r[row]; });
-  BOUT_DO_PETSC(VecRestoreArrayRead(*result_vec, &r));
-
+Field3D toField3D(const PetscCellVector& vec, const Field3D& prototype) {
+  auto mapping = std::static_pointer_cast<const PetscCellMapping>(vec.getMapping());
+  Field3D result{emptyFrom(prototype)};
+  const PetscScalar* x{nullptr};
+  BOUT_DO_PETSC(VecGetArrayRead(vec.raw(), &x));
+  mapping->mapLocalField([&](PetscInt row, const Ind3D& i) { result[i] = x[row]; });
+  mapping->mapLocalYup([&](PetscInt row, const Ind3D& i) { result.yup()[i] = x[row]; });
+  mapping->mapLocalYdown(
+      [&](PetscInt row, const Ind3D& i) { result.ydown()[i] = x[row]; });
+  BOUT_DO_PETSC(VecRestoreArrayRead(vec.raw(), &x));
   return result;
-}
-
-/// Operator composition
-PetscOperator PetscOperator::operator*(const PetscOperator& rhs) const {
-  ASSERT0(this->mapping == rhs.mapping);
-  UniqueMat mat(new Mat{nullptr});
-  BOUT_DO_PETSC(MatMatMult(*this->mat_operator, *rhs.mat_operator, MAT_INITIAL_MATRIX,
-                           PETSC_DETERMINE, mat.get()));
-  return PetscOperator(this->mapping, std::move(mat));
-}
-
-/// Operator addition
-PetscOperator PetscOperator::operator+(const PetscOperator& rhs) const {
-  ASSERT0(this->mapping == rhs.mapping);
-  UniqueMat mat(new Mat{nullptr});
-  BOUT_DO_PETSC(MatDuplicate(*this->mat_operator, MAT_COPY_VALUES, mat.get()));
-  BOUT_DO_PETSC(MatAXPY(*mat, 1.0, *rhs.mat_operator, UNKNOWN_NONZERO_PATTERN));
-  return PetscOperator(this->mapping, std::move(mat));
-}
-
-/// Operator subtraction
-PetscOperator PetscOperator::operator-(const PetscOperator& rhs) const {
-  ASSERT0(this->mapping == rhs.mapping);
-  UniqueMat mat(new Mat{nullptr});
-  BOUT_DO_PETSC(MatDuplicate(*this->mat_operator, MAT_COPY_VALUES, mat.get()));
-  BOUT_DO_PETSC(MatAXPY(*mat, -1.0, *rhs.mat_operator, UNKNOWN_NONZERO_PATTERN));
-  return PetscOperator(this->mapping, std::move(mat));
-}
-
-PetscOperator PetscOperator::transpose() const {
-  UniqueMat mat(new Mat{nullptr});
-  BOUT_DO_PETSC(MatTranspose(*this->mat_operator, MAT_INITIAL_MATRIX, mat.get()));
-  return PetscOperator(this->mapping, std::move(mat));
 }
 
 Field3D PetscOperators::meshGetField3D(Mesh* mesh, const std::string& name) {
@@ -277,171 +161,202 @@ Field3D PetscOperators::meshGetField3D(Mesh* mesh, const std::string& name) {
   return result;
 }
 
-PetscOperators::PetscOperators(Mesh* mesh)
-    : mesh(mesh), mapping(std::make_shared<const PetscMapping>(
-                      meshGetField3D(mesh, "cell_number"),
-                      meshGetField3D(mesh, "forward_cell_number"),
-                      meshGetField3D(mesh, "backward_cell_number"))) {
-
-  int mesh_total_cells{0};
-  if (mesh->get(mesh_total_cells, "total_cells") == 0) {
-    // Check total number of cells
-    if (mesh_total_cells != mapping->globalSize()) {
-      throw BoutException("Total cells in mesh {} doesn't match global mapping size {}",
-                          mesh_total_cells, mapping->globalSize());
-    }
+int PetscOperators::meshGetInt(const std::string& name) const {
+  int result{0};
+  if (mesh->get(result, name) != 0) {
+    throw BoutException("PetscOperators requires int '{}'", name);
   }
+  return result;
 }
 
-PetscOperator PetscOperators::get(const std::string& name) const {
-  return PetscOperator(this->mapping, this->meshGetArray<int>(this->mesh, name + "_rows"),
-                       this->meshGetArray<int>(this->mesh, name + "_columns"),
-                       this->meshGetArray<BoutReal>(this->mesh, name + "_weights"));
+PetscOperators::PetscOperators(Mesh* mesh)
+    : mesh(mesh),
+      cell_mapping(std::make_shared<PetscCellMapping>(
+          meshGetField3D(mesh, "cell_number"),
+          meshGetField3D(mesh, "forward_cell_number"),
+          meshGetField3D(mesh, "backward_cell_number"), meshGetInt("total_cells"))),
+      forward_leg_interior_number(meshGetField3D(mesh, "forward_leg_interior_number")),
+      forward_leg_boundary_number(meshGetField3D(mesh, "forward_leg_boundary_number")),
+      backward_leg_interior_number(meshGetField3D(mesh, "backward_leg_interior_number")),
+      backward_leg_boundary_number(meshGetField3D(mesh, "backward_leg_boundary_number")) {
+  std::vector<int> local_forward_legs;
+  std::vector<int> local_backward_legs;
+  cell_mapping->mapOwnedInteriorCells([&](PetscInt, const Ind3D& i, int) {
+    const int f_int = ROUND(forward_leg_interior_number[i]);
+    const int f_bnd = ROUND(forward_leg_boundary_number[i]);
+    const int b_int = ROUND(backward_leg_interior_number[i]);
+    const int b_bnd = ROUND(backward_leg_boundary_number[i]);
+    if (f_int >= 0) {
+      local_forward_legs.push_back(f_int);
+    }
+    if (f_bnd >= 0) {
+      local_forward_legs.push_back(f_bnd);
+    }
+    if (b_int >= 0) {
+      local_backward_legs.push_back(b_int);
+    }
+    if (b_bnd >= 0) {
+      local_backward_legs.push_back(b_bnd);
+    }
+  });
+
+  forward_leg_mapping = std::make_shared<PetscLegMapping>(meshGetInt("n_forward_legs"),
+                                                          std::move(local_forward_legs));
+  backward_leg_mapping = std::make_shared<PetscLegMapping>(
+      meshGetInt("n_backward_legs"), std::move(local_backward_legs));
+}
+
+PetscForwardOperator PetscOperators::forward() const {
+  return PetscForwardOperator(
+      forward_leg_mapping, cell_mapping, meshGetArray<int>("forward_rows"),
+      meshGetArray<int>("forward_columns"), meshGetArray<BoutReal>("forward_weights"));
+}
+
+PetscBackwardOperator PetscOperators::backward() const {
+  return PetscBackwardOperator(
+      backward_leg_mapping, cell_mapping, meshGetArray<int>("backward_rows"),
+      meshGetArray<int>("backward_columns"), meshGetArray<BoutReal>("backward_weights"));
+}
+
+template <typename LegTag>
+PetscOperator<LegTag, CellSpaceTag>
+PetscOperators::buildInjection(const Field3D& interior_leg_number,
+                               const Field3D& boundary_leg_number,
+                               std::shared_ptr<const PetscLegMapping> leg_mapping) const {
+  using Op = PetscOperator<LegTag, CellSpaceTag>;
+  bout::petsc::UniqueMat mat{new Mat{nullptr}};
+  BOUT_DO_PETSC(MatCreate(BoutComm::get(), mat.get()));
+  BOUT_DO_PETSC(MatSetType(*mat, MATMPIAIJ));
+  BOUT_DO_PETSC(MatSetSizes(*mat, leg_mapping->localSize(), cell_mapping->localSize(),
+                            leg_mapping->globalSize(), cell_mapping->globalSize()));
+  BOUT_DO_PETSC(MatMPIAIJSetPreallocation(*mat, 1, nullptr, 1, nullptr));
+  const PetscScalar one = 1.0;
+  cell_mapping->mapOwnedInteriorCells([&](PetscInt cell_row, const Ind3D& i, int) {
+    const int interior = ROUND(interior_leg_number[i]);
+    const int boundary = ROUND(boundary_leg_number[i]);
+    if (interior >= 0) {
+      const PetscInt leg_row = leg_mapping->storedToPetsc(interior);
+      BOUT_DO_PETSC(MatSetValues(*mat, 1, &leg_row, 1, &cell_row, &one, INSERT_VALUES));
+    }
+    if (boundary >= 0) {
+      const PetscInt leg_row = leg_mapping->storedToPetsc(boundary);
+      BOUT_DO_PETSC(MatSetValues(*mat, 1, &leg_row, 1, &cell_row, &one, INSERT_VALUES));
+    }
+  });
+  BOUT_DO_PETSC(MatAssemblyBegin(*mat, MAT_FINAL_ASSEMBLY));
+  BOUT_DO_PETSC(MatAssemblyEnd(*mat, MAT_FINAL_ASSEMBLY));
+  return Op(leg_mapping, cell_mapping, std::move(mat));
+}
+
+template PetscForwardOperator PetscOperators::buildInjection<ForwardLegSpaceTag>(
+    const Field3D&, const Field3D&, std::shared_ptr<const PetscLegMapping>) const;
+template PetscBackwardOperator PetscOperators::buildInjection<BackwardLegSpaceTag>(
+    const Field3D&, const Field3D&, std::shared_ptr<const PetscLegMapping>) const;
+
+PetscForwardOperator PetscOperators::injectForward() const {
+  return buildInjection<ForwardLegSpaceTag>(
+      forward_leg_interior_number, forward_leg_boundary_number, forward_leg_mapping);
+}
+
+PetscBackwardOperator PetscOperators::injectBackward() const {
+  return buildInjection<BackwardLegSpaceTag>(
+      backward_leg_interior_number, backward_leg_boundary_number, backward_leg_mapping);
+}
+
+PetscForwardLegVector PetscOperators::forwardLegWeights() const {
+  return loadLegWeights<PetscForwardLegVector>("forward_leg_weights",
+                                               forward_leg_mapping);
+}
+
+PetscBackwardLegVector PetscOperators::backwardLegWeights() const {
+  return loadLegWeights<PetscBackwardLegVector>("backward_leg_weights",
+                                                backward_leg_mapping);
+}
+
+PetscCellOperator PetscOperators::diagonal(const Field3D& f) const {
+  return PetscCellOperator::diagonal(cell_mapping, makePetscCellVector(cell_mapping, f));
+}
+
+PetscForwardLegOperator PetscOperators::diagonal(const PetscForwardLegVector& v) const {
+  return PetscForwardLegOperator::diagonal(forward_leg_mapping, v);
+}
+
+PetscBackwardLegOperator PetscOperators::diagonal(const PetscBackwardLegVector& v) const {
+  return PetscBackwardLegOperator::diagonal(backward_leg_mapping, v);
 }
 
 PetscOperators::Parallel PetscOperators::getParallel() const {
-  // Read maps from the mesh
-  auto forward = this->get("forward");
-  auto backward = this->get("backward");
+  auto Forward = forward();
+  auto Backward = backward();
+  auto Inject_plus = injectForward();
+  auto Inject_minus = injectBackward();
 
-  // ---- Construct Grad_par ----
-  //
-  // Create a parallel gradient operator by combining the parallel
-  // length dl = dy * sqrt(g_22) with forward & backward operators
-  auto* coords = this->mesh->getCoordinates();
+  auto W_plus = diagonal(forwardLegWeights());
+  auto W_minus = diagonal(backwardLegWeights());
+
+  auto* coords = mesh->getCoordinates();
   Field3D dl = coords->dy * sqrt(coords->g_22);
   dl.splitParallelSlices();
   dl.yup() = 0.0;
   dl.ydown() = 0.0;
   dl.applyParallelBoundary("parallel_neumann_o1");
 
-  auto inv_2dl = 0.5 / dl;
-  inv_2dl.splitParallelSlices();
-  inv_2dl.yup() = 0.0;
-  inv_2dl.ydown() = 0.0;
-  inv_2dl.applyParallelBoundary("parallel_neumann_o1");
+  auto Interp_plus = W_plus * ((Forward + Inject_plus) * 0.5);
+  auto Interp_minus = W_minus * ((Backward + Inject_minus) * 0.5);
 
-  auto inv_2dl_op = this->diagonal(inv_2dl);
+  const auto dl_plus = Interp_plus(dl);
+  const auto dl_minus = Interp_minus(dl);
+  const auto inv_dl_plus = PetscForwardLegVector::reciprocal(dl_plus);
+  const auto inv_dl_minus = PetscBackwardLegVector::reciprocal(dl_minus);
+  const auto Inv_dl_plus = diagonal(inv_dl_plus);
+  const auto Inv_dl_minus = diagonal(inv_dl_minus);
 
-  auto Grad_par = inv_2dl_op * (forward - backward);
+  auto Grad_plus = Inv_dl_plus * (Forward - Inject_plus);
+  auto Grad_minus = Inv_dl_minus * (Inject_minus - Backward);
 
-  // ---- Construct Div_par ----
-  //
-  // Use the Support Operator Method (SOM) to calculate
-  // Div_par from Grad_par and cell volumes.
-
-  // Cell volume
   Field3D dV = coords->J * coords->dx * coords->dy * coords->dz;
   dV.splitParallelSlices();
   dV.yup() = 0.0;
   dV.ydown() = 0.0;
   dV.applyParallelBoundary("parallel_neumann_o1");
 
-  // Fractional boundary cells
-  const auto forward_boundary_fraction =
-      meshGetField3D(this->mesh, "forward_boundary_fraction");
-  const auto backward_boundary_fraction =
-      meshGetField3D(this->mesh, "backward_boundary_fraction");
-
-  BOUT_FOR(i, dV.getRegion("RGN_NOBNDRY")) {
-    dV.yup()[i.yp()] *= forward_boundary_fraction[i];
-    dV.ydown()[i.ym()] *= backward_boundary_fraction[i];
-  }
-
-  const auto dV_op = this->diagonal(dV);
-
-  Field3D neg_inv_dV = -1. / dV;
+  Field3D neg_inv_dV = -1.0 / dV;
   neg_inv_dV.splitParallelSlices();
   neg_inv_dV.yup() = 0.0;
   neg_inv_dV.ydown() = 0.0;
   neg_inv_dV.applyParallelBoundary("parallel_neumann_o1");
-  auto neg_inv_dV_op = this->diagonal(neg_inv_dV);
+  const auto Neg_inv_dV = diagonal(neg_inv_dV);
 
-  auto Div_par = neg_inv_dV_op * Grad_par.transpose() * dV_op;
+  const auto dV_plus = Interp_plus(dV);
+  const auto dV_minus = Interp_minus(dV);
+  const auto DV_plus = diagonal(dV_plus);
+  const auto DV_minus = diagonal(dV_minus);
 
-  // ---- Construct Div_par_Grad_par ----
-  //
-  // Requires gradients between planes, at +1/2 and -1/2, and interpolation
-  // operators to calculate quantities between cells.
+  auto Div_minus = Neg_inv_dV * Grad_plus.transpose() * DV_plus;
+  auto Div_plus = Neg_inv_dV * Grad_minus.transpose() * DV_minus;
 
-  // Identity operator
-  Field3D one{1.0};
-  one.splitParallelSlices();
-  one.yup() = 1.0;
-  one.ydown() = 1.0;
-  const auto identity = this->diagonal(one);
-
-  // Interpolate at + 1/2
-  auto interp_plus_op = (identity + forward) * 0.5;
-
-  // dl averaged at +1/2
-  const Field3D dl_plus = interp_plus_op(dl);
-  Field3D inv_dl_plus = 1. / dl_plus;
-  inv_dl_plus.splitParallelSlices();
-  inv_dl_plus.yup() = 0.0;
-  inv_dl_plus.ydown() = 0.0;
-  inv_dl_plus.applyParallelBoundary("parallel_neumann_o1");
-  const auto inv_dl_plus_op = this->diagonal(inv_dl_plus);
-
-  // Gradient at + 1/2
-  auto Grad_plus = inv_dl_plus_op * (forward - identity);
-
-  // Divergence at -1/2
-  auto Div_minus = neg_inv_dV_op * Grad_plus.transpose() * dV_op;
-
-  // Interpolate at - 1/2
-  auto interp_minus_op = (identity + backward) * 0.5;
-
-  // dl averaged at -1/2
-  const Field3D dl_minus = interp_minus_op(dl);
-  Field3D inv_dl_minus = 1. / dl_minus;
-  inv_dl_minus.splitParallelSlices();
-  inv_dl_minus.yup() = 0.0;
-  inv_dl_minus.ydown() = 0.0;
-  inv_dl_minus.applyParallelBoundary("parallel_neumann_o1");
-  const auto inv_dl_minus_op = this->diagonal(inv_dl_minus);
-
-  // Gradient at - 1/2
-  auto Grad_minus = inv_dl_minus_op * (identity - backward);
-
-  // Divergence at +1/2
-  auto Div_plus = neg_inv_dV_op * Grad_minus.transpose() * dV_op;
-
-  // Div(Grad_par()) operator
   auto Div_par_Grad_par = ((Div_minus * Grad_plus) + (Div_plus * Grad_minus)) * 0.5;
 
-  return Parallel{std::move(Grad_par),         std::move(Div_par),
-                  std::move(Div_par_Grad_par), std::move(dV),
-                  std::move(Grad_minus),       std::move(Grad_plus),
-                  std::move(Div_minus),        std::move(Div_plus),
-                  std::move(interp_minus_op),  std::move(interp_plus_op)};
+  return Parallel{
+      std::move(Forward),      std::move(Backward),         std::move(Inject_plus),
+      std::move(Inject_minus), std::move(Interp_plus),      std::move(Interp_minus),
+      std::move(Grad_plus),    std::move(Grad_minus),       std::move(Div_minus),
+      std::move(Div_plus),     std::move(Div_par_Grad_par), std::move(dV)};
 }
 
 Field3D PetscOperators::Parallel::Div_par_K_Grad_par(const Field3D& K,
                                                      const Field3D& f) const {
+  const auto grad_plus = Grad_plus(f);
+  const auto grad_minus = Grad_minus(f);
+  const auto K_plus = Interp_plus(K);
+  const auto K_minus = Interp_minus(K);
 
-  // There are 4 matrix-vector products that could be performed in parallel.
-  // The best way to optimize this is probably to pack f and K into one Vec,
-  // and assemble a single sparse matrix that contains the four blocks:
-  //
-  //  (Grad_plus       0     )           (grad_plus  )
-  //  (Grad_minus      0     ) (f)   ->  (grad_minus )
-  //  (    0     Interp_plus ) (K)       (K_plus     )
-  //  (    0     Interp_minus)           (K_minus    )
-  //
-  // For now we perform each operation in sequence.
+  const auto flux_plus = PetscForwardLegVector::pointwiseMultiply(K_plus, grad_plus);
+  const auto flux_minus = PetscBackwardLegVector::pointwiseMultiply(K_minus, grad_minus);
 
-  // Calculate gradients in + and - directions
-  const Field3D grad_plus = this->Grad_plus(f);
-  const Field3D grad_minus = this->Grad_minus(f);
-
-  // Interpolate K to + and - locations
-  const Field3D K_plus = this->Interp_plus(K);
-  const Field3D K_minus = this->Interp_minus(K);
-
-  // Calculate divergence
-  return (this->Div_minus(K_plus * grad_plus) + this->Div_plus(K_minus * grad_minus))
-         * 0.5;
+  const auto div_minus = Div_minus(flux_plus);
+  const auto div_plus = Div_plus(flux_minus);
+  return (toField3D(div_minus, K) + toField3D(div_plus, K)) * 0.5;
 }
 
-#endif // BOUT_HAS_PETSC
+#endif
