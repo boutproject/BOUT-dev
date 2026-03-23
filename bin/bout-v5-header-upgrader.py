@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import List
 from subprocess import run
 
-
 header_shim_sentinel = "// BOUT++ header shim"
 
 header_warning = f"""\
@@ -122,8 +121,7 @@ def create_patch(filename, original, modified):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=textwrap.dedent(
-            """\
+        description=textwrap.dedent("""\
             Fix deprecated header locations for BOUT++ v4 -> v5
 
             All BOUT++ headers are now under ``include/bout`` and
@@ -142,8 +140,7 @@ if __name__ == "__main__":
             If you have staged changes, this tool will not work, so to
             avoid committing undesired or unrelated changes.
 
-            """
-        ),
+            """),
     )
 
     parser.add_argument(

@@ -41,7 +41,6 @@ from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
-
 build_and_log("Laplacian inversion test")
 
 # Read benchmark values

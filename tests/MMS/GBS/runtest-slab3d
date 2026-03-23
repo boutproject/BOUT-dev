@@ -14,7 +14,6 @@ from numpy import sqrt, max, abs, mean, array, log, concatenate
 
 import pickle
 
-
 build_and_log("MMS test")
 
 # List of NX values to use
