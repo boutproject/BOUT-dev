@@ -181,28 +181,30 @@ public:
   Vec raw() const { return *this->vec; }
   const std::shared_ptr<const PetscIndexMapping>& getMapping() const { return mapping; }
 
-  PetscSpaceVector duplicate() const {
+  /// Make a copy of the vector
+  PetscSpaceVector copy() const {
     UniqueVec out{new Vec{nullptr}};
     BOUT_DO_PETSC(VecDuplicate(*this->vec, out.get()));
+    BOUT_DO_PETSC(VecCopy(*this->vec, *out.get()));
     return PetscSpaceVector(this->mapping, std::move(out));
   }
 
   PetscSpaceVector operator*(BoutReal scalar) const {
-    auto out = this->duplicate();
+    auto out = this->copy();
     BOUT_DO_PETSC(VecScale(out.raw(), scalar));
     return out;
   }
 
   PetscSpaceVector operator+(const PetscSpaceVector& rhs) const {
     ASSERT0(mapping == rhs.mapping);
-    auto out = this->duplicate();
+    auto out = this->copy();
     BOUT_DO_PETSC(VecAXPY(out.raw(), 1.0, rhs.raw()));
     return out;
   }
 
   PetscSpaceVector operator-(const PetscSpaceVector& rhs) const {
     ASSERT0(mapping == rhs.mapping);
-    auto out = this->duplicate();
+    auto out = this->copy();
     BOUT_DO_PETSC(VecAXPY(out.raw(), -1.0, rhs.raw()));
     return out;
   }
@@ -210,13 +212,13 @@ public:
   static PetscSpaceVector pointwiseMultiply(const PetscSpaceVector& lhs,
                                             const PetscSpaceVector& rhs) {
     ASSERT0(lhs.mapping == rhs.mapping);
-    auto out = lhs.duplicate();
+    auto out = lhs.copy();
     BOUT_DO_PETSC(VecPointwiseMult(out.raw(), lhs.raw(), rhs.raw()));
     return out;
   }
 
   static PetscSpaceVector reciprocal(const PetscSpaceVector& in) {
-    auto out = in.duplicate();
+    auto out = in.copy();
     BOUT_DO_PETSC(VecReciprocal(out.raw()));
     return out;
   }
@@ -438,18 +440,24 @@ public:
   PetscBackwardLegOperator diagonal(const PetscBackwardLegVector& v) const;
 
   struct Parallel {
-    PetscForwardOperator Forward;
-    PetscBackwardOperator Backward;
-    PetscForwardOperator Inject_plus;
-    PetscBackwardOperator Inject_minus;
-    PetscForwardOperator Interp_plus;
-    PetscBackwardOperator Interp_minus;
-    PetscForwardOperator Grad_plus;
-    PetscBackwardOperator Grad_minus;
-    PetscForwardToCellOperator Div_minus;
-    PetscBackwardToCellOperator Div_plus;
+    PetscCellOperator Grad_par;
+    PetscCellOperator Div_par;
     PetscCellOperator Div_par_Grad_par;
     Field3D dV;
+
+    PetscBackwardOperator Grad_minus;
+    PetscForwardOperator Grad_plus;
+    PetscForwardToCellOperator Div_minus;
+    PetscBackwardToCellOperator Div_plus;
+
+    PetscBackwardOperator Inject_minus;
+    PetscForwardOperator Inject_plus;
+
+    PetscBackwardOperator Interp_minus;
+    PetscForwardOperator Interp_plus;
+
+    PetscForwardToCellOperator Restrict_minus;
+    PetscBackwardToCellOperator Restrict_plus;
 
     Field3D Div_par_K_Grad_par(const Field3D& K, const Field3D& f) const;
   };

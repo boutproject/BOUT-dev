@@ -6,6 +6,8 @@
 #include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/field3d.hxx"
+#include "bout/output.hxx"
+#include "bout/output_bout_types.hxx"
 #include "bout/petsc_operators.hxx"
 #include "bout/region.hxx"
 #include "bout/utils.hxx"
@@ -38,10 +40,19 @@ void PetscIndexMapping::buildPermutation(PetscInt nlocal, PetscInt nglobal,
   global_size = nglobal;
   local_stored_indices = stored_indices;
 
+  // Renumbering matrix.
+  // Maps PETSc row (or column) indices to the global indices stored in
+  // the mesh.  This is needed because the PETSc indices depend on the
+  // number of processors.
   BOUT_DO_PETSC(MatCreate(BoutComm::get(), &mat_stored_to_petsc));
   BOUT_DO_PETSC(MatSetSizes(mat_stored_to_petsc, nlocal, nlocal, nglobal, nglobal));
   BOUT_DO_PETSC(MatSetType(mat_stored_to_petsc, MATMPIAIJ));
+
+  // Each row will have one non-zero entry, which could be in
+  // either the "diagonal" or "off-diagonal" block.
   BOUT_DO_PETSC(MatMPIAIJSetPreallocation(mat_stored_to_petsc, 1, nullptr, 1, nullptr));
+
+  // Get the range of rows owned by this processor
   BOUT_DO_PETSC(MatGetOwnershipRange(mat_stored_to_petsc, &row_start, &row_end));
   ASSERT1(row_end - row_start == nlocal);
 
@@ -56,6 +67,7 @@ void PetscIndexMapping::buildPermutation(PetscInt nlocal, PetscInt nglobal,
   }
   BOUT_DO_PETSC(MatAssemblyBegin(mat_stored_to_petsc, MAT_FINAL_ASSEMBLY));
   BOUT_DO_PETSC(MatAssemblyEnd(mat_stored_to_petsc, MAT_FINAL_ASSEMBLY));
+  // Transpose to map petsc indices to stored mesh indices
   BOUT_DO_PETSC(
       MatTranspose(mat_stored_to_petsc, MAT_INITIAL_MATRIX, &mat_petsc_to_stored));
 }
@@ -143,6 +155,10 @@ PetscCellVector makePetscCellVector(const PetscCellMappingPtr& mapping,
 Field3D toField3D(const PetscCellVector& vec, const Field3D& prototype) {
   auto mapping = std::static_pointer_cast<const PetscCellMapping>(vec.getMapping());
   Field3D result{emptyFrom(prototype)};
+  result.splitParallelSlices();
+  result.yup().allocate();
+  result.ydown().allocate();
+
   const PetscScalar* x{nullptr};
   BOUT_DO_PETSC(VecGetArrayRead(vec.raw(), &x));
   mapping->mapLocalField([&](PetscInt row, const Ind3D& i) { result[i] = x[row]; });
@@ -150,6 +166,7 @@ Field3D toField3D(const PetscCellVector& vec, const Field3D& prototype) {
   mapping->mapLocalYdown(
       [&](PetscInt row, const Ind3D& i) { result.ydown()[i] = x[row]; });
   BOUT_DO_PETSC(VecRestoreArrayRead(vec.raw(), &x));
+
   return result;
 }
 
@@ -286,34 +303,32 @@ PetscBackwardLegOperator PetscOperators::diagonal(const PetscBackwardLegVector& 
 }
 
 PetscOperators::Parallel PetscOperators::getParallel() const {
-  auto Forward = forward();
-  auto Backward = backward();
-  auto Inject_plus = injectForward();
-  auto Inject_minus = injectBackward();
+  // Primitive operators from the mesh / metadata
+  auto Forward = this->forward();             // L+ <- C
+  auto Backward = this->backward();           // L- <- C
+  auto Inject_plus = this->injectForward();   // L+ <- C
+  auto Inject_minus = this->injectBackward(); // L- <- C
 
-  auto W_plus = diagonal(forwardLegWeights());
-  auto W_minus = diagonal(backwardLegWeights());
+  // Leg weights
+  const auto w_plus_vec = forwardLegWeights();
+  const auto w_minus_vec = backwardLegWeights();
+  const auto W_plus = diagonal(w_plus_vec);   // L+ <- L+
+  const auto W_minus = diagonal(w_minus_vec); // L- <- L-
+
+  // Weighted adjoints: C <- L+ and C <- L-
+  auto Restrict_minus = Inject_plus.transpose() * W_plus;
+  auto Restrict_plus = Inject_minus.transpose() * W_minus;
 
   auto* coords = mesh->getCoordinates();
+
+  // Parallel spacing in cell space
   Field3D dl = coords->dy * sqrt(coords->g_22);
   dl.splitParallelSlices();
   dl.yup() = 0.0;
   dl.ydown() = 0.0;
   dl.applyParallelBoundary("parallel_neumann_o1");
 
-  auto Interp_plus = W_plus * ((Forward + Inject_plus) * 0.5);
-  auto Interp_minus = W_minus * ((Backward + Inject_minus) * 0.5);
-
-  const auto dl_plus = Interp_plus(dl);
-  const auto dl_minus = Interp_minus(dl);
-  const auto inv_dl_plus = PetscForwardLegVector::reciprocal(dl_plus);
-  const auto inv_dl_minus = PetscBackwardLegVector::reciprocal(dl_minus);
-  const auto Inv_dl_plus = diagonal(inv_dl_plus);
-  const auto Inv_dl_minus = diagonal(inv_dl_minus);
-
-  auto Grad_plus = Inv_dl_plus * (Forward - Inject_plus);
-  auto Grad_minus = Inv_dl_minus * (Inject_minus - Backward);
-
+  // Cell volume
   Field3D dV = coords->J * coords->dx * coords->dy * coords->dz;
   dV.splitParallelSlices();
   dV.yup() = 0.0;
@@ -325,23 +340,68 @@ PetscOperators::Parallel PetscOperators::getParallel() const {
   neg_inv_dV.yup() = 0.0;
   neg_inv_dV.ydown() = 0.0;
   neg_inv_dV.applyParallelBoundary("parallel_neumann_o1");
+
+  const auto DV = diagonal(dV);
   const auto Neg_inv_dV = diagonal(neg_inv_dV);
 
-  const auto dV_plus = Interp_plus(dV);
-  const auto dV_minus = Interp_minus(dV);
-  const auto DV_plus = diagonal(dV_plus);
-  const auto DV_minus = diagonal(dV_minus);
+  // Unweighted interpolation to +1/2 and -1/2 legs
+  auto Interp_plus = (Forward + Inject_plus) * 0.5;    // L+ <- C
+  auto Interp_minus = (Backward + Inject_minus) * 0.5; // L- <- C
 
-  auto Div_minus = Neg_inv_dV * Grad_plus.transpose() * DV_plus;
-  auto Div_plus = Neg_inv_dV * Grad_minus.transpose() * DV_minus;
+  // Leg-centered dl
+  const auto dl_plus = Interp_plus(dl);
+  const auto dl_minus = Interp_minus(dl);
 
-  auto Div_par_Grad_par = ((Div_minus * Grad_plus) + (Div_plus * Grad_minus)) * 0.5;
+  const auto inv_dl_plus = PetscForwardLegVector::reciprocal(dl_plus);
+  const auto inv_dl_minus = PetscBackwardLegVector::reciprocal(dl_minus);
 
-  return Parallel{
-      std::move(Forward),      std::move(Backward),         std::move(Inject_plus),
-      std::move(Inject_minus), std::move(Interp_plus),      std::move(Interp_minus),
-      std::move(Grad_plus),    std::move(Grad_minus),       std::move(Div_minus),
-      std::move(Div_plus),     std::move(Div_par_Grad_par), std::move(dV)};
+  const auto Inv_dl_plus = diagonal(inv_dl_plus);   // L+ <- L+
+  const auto Inv_dl_minus = diagonal(inv_dl_minus); // L- <- L-
+
+  // Half-step gradients
+  auto Grad_plus = Inv_dl_plus * (Forward - Inject_plus);     // L+ <- C
+  auto Grad_minus = Inv_dl_minus * (Inject_minus - Backward); // L- <- C
+
+  // Cell-centered central gradient
+  auto Grad_par =
+      ((Restrict_minus * Grad_plus) + (Restrict_plus * Grad_minus)) * 0.5; // C <- C
+
+  // Leg-centered volumes from unweighted interpolation
+  const auto dV_plus = Interp_plus(dV);   // L+
+  const auto dV_minus = Interp_minus(dV); // L-
+
+  // Physical leg volumes include the leg weights
+  const auto dV_leg_plus = PetscForwardLegVector::pointwiseMultiply(dV_plus, w_plus_vec);
+  const auto dV_leg_minus =
+      PetscBackwardLegVector::pointwiseMultiply(dV_minus, w_minus_vec);
+
+  const auto DV_leg_plus = diagonal(dV_leg_plus);   // L+ <- L+
+  const auto DV_leg_minus = diagonal(dV_leg_minus); // L- <- L-
+
+  // Support-operator divergence from half-step gradients
+  auto Div_minus = Neg_inv_dV * Grad_plus.transpose() * DV_leg_plus;  // C <- L+
+  auto Div_plus = Neg_inv_dV * Grad_minus.transpose() * DV_leg_minus; // C <- L-
+
+  // Cell-centered divergence paired with the cell-centered gradient
+  auto Div_par = Neg_inv_dV * Grad_par.transpose() * DV; // C <- C
+
+  // Diffusion operator assembled from the half-step pieces
+  auto Div_par_Grad_par =
+      ((Div_minus * Grad_plus) + (Div_plus * Grad_minus)) * 0.5; // C <- C
+
+  return Parallel{// Cell <- Cell operators
+                  std::move(Grad_par), std::move(Div_par), std::move(Div_par_Grad_par),
+                  std::move(dV),
+
+                  // Leg <-> Cell operators
+                  std::move(Grad_minus), std::move(Grad_plus), std::move(Div_minus),
+                  std::move(Div_plus),
+
+                  std::move(Inject_minus), std::move(Inject_plus),
+
+                  std::move(Interp_minus), std::move(Interp_plus),
+
+                  std::move(Restrict_minus), std::move(Restrict_plus)};
 }
 
 Field3D PetscOperators::Parallel::Div_par_K_Grad_par(const Field3D& K,
