@@ -346,6 +346,14 @@ private:
   BoutReal hyperviscos;                          // Hyper-viscosity (radial)
   Field3D hyper_mu_x;                            // Hyper-viscosity coefficient
   
+  /// Perpendicular diffusion coefficients. 
+  /// These were not part of the original model but were added for numerical 
+  /// stabilization purposes of turbulence simulations.
+  bool perpendicular_diffusion;   // Include perpendicular diffusion?
+  Field3D diff_perp_Ni, diff_perp_Ti, diff_perp_Te;
+  Field3D diff_perp_U, diff_perp_Vipar;       
+
+
   /// position filter
   bool pos_filter, pos_filter2, keep_zonalPF;
   BoutReal filter_position_ni, filter_position_ti, filter_position_te;
@@ -1559,6 +1567,19 @@ protected:
     neoclassic_e = options["neoclassic_e"].doc("switch for electron neoclassical transport").withDefault(false);
     epsilon  = options["epsilon"].withDefault(0.2);    // the value of reverse aspect ratio
 
+    perpendicular_diffusion = options["perpendicular_diffusion"].doc("include perpendicular diffusion?").withDefault(false);
+    diff_perp_Ni = options["diff_perp_Ni"]
+                 .doc("2nd order perpendicular diffusion for Ni in [m^2/s]").withDefault(0.0);    
+    diff_perp_Ti = options["diff_perp_Ti"]
+                 .doc("2nd order perpendicular diffusion for Ti in [m^2/s]").withDefault(0.0);    
+    diff_perp_Te = options["diff_perp_Te"]
+                 .doc("2nd order perpendicular diffusion for Te in [m^2/s]").withDefault(0.0);    
+    diff_perp_U = options["diff_perp_U"]
+                 .doc("2nd order perpendicular diffusion for U in [m^2/s]").withDefault(0.0);       
+    diff_perp_Vipar = options["diff_perp_Vipar"]
+                 .doc("2nd order perpendicular diffusion for Vipar in [m^2/s]").withDefault(0.0);  
+  
+
     // output terms
     output_Teterms  = options["output_Teterms"].withDefault(false);
     output_Titerms  = options["output_Titerms"].withDefault(false);
@@ -1911,6 +1932,20 @@ protected:
       output.write("perpendicular hyperdiffusion_u4: {:e}\n", hyperdiff_perp_u4);
       dump.add(hyperdiff_perp_u4, "hyperdiff_perp_u4", 0);
     }
+
+    if (perpendicular_diffusion > 0.0) {
+      output.write("Including perpendicular diffusion. \n");
+      // STORM var: SAVE_ONCE(mu_n0, mu_vort0, nu_parallel0, kappa0_perp, diff_perp_U, diff_perp_V);
+
+      diff_perp_Ni /= Lbar * Va;
+      diff_perp_Ti /= Lbar * Va;
+      diff_perp_Te /= Lbar * Va;      
+      diff_perp_U /= Lbar * Va;
+      diff_perp_Vipar /= Lbar * Va;
+
+      SAVE_ONCE(diff_perp_Ni, diff_perp_Ti, diff_perp_Te, diff_perp_U, diff_perp_Vipar);
+    }
+
 
     if (sink_vp > 0.0) {
       output.write("sink_vp(rate): {:e}\n", sink_vp);
@@ -4458,6 +4493,7 @@ protected:
             //ddt(Psi) += hyperresist * Delp2(Jpar / B0);
             ddt(Apar) += hyperresist * Delp2(Jpar);
 	        }
+
 	      }
       } else { // emass
 
@@ -4765,6 +4801,11 @@ protected:
         }
       }
 
+      if (perpendicular_diffusion > 0.0) {
+	      ddt(U) += diff_perp_U * Delp2(U);
+        // ddt(U) += Grad_perp(diff_perp_U) * Grad_perp(U); 
+      }
+
       // left edge sink terms
       if (sink_Ul > 0.0) {
         ddt(U) -= sink_Ul * sink_tanhxl(P0, U, su_widthl, su_lengthl); // core sink
@@ -4890,6 +4931,12 @@ protected:
         tmpN2.applyBoundary();
         ddt(Ni) -= hyperdiff_perp_n4 * Delp2(tmpN2);
       }
+
+      if (perpendicular_diffusion > 0.0) {
+	      ddt(Ni) += diff_perp_Ni * Delp2(Ni);
+        // ddt(Ni) += Grad_perp(diff_perp_Ni) * Grad_perp(Ni); 
+      }
+              
     }
 
 
@@ -5085,6 +5132,12 @@ protected:
         tmpTi2.applyBoundary();
         ddt(Ti) -= hyperdiff_perp_ti4 * Delp2(tmpTi2);
       }
+
+      if (perpendicular_diffusion > 0.0) {
+	      ddt(Ti) += diff_perp_Ti * Delp2(Ti);
+        // ddt(Ti) += Grad_perp(diff_perp_Ti) * Grad_perp(Ti);     
+      }
+
     }
 
     //////////////////////////////////////////////////////////////////
@@ -5301,6 +5354,11 @@ protected:
         ddt(Te) -= hyperdiff_perp_te4 * Delp2(tmpTe2);
       }
 
+      if (perpendicular_diffusion > 0.0) {
+	      ddt(Te) += diff_perp_Te * Delp2(Te);
+        // ddt(Te) += Grad_perp(diff_perp_Te) * Grad_perp(Te);     
+      }
+
       // right edge sink terms
       if (sink_Ter > 0.0) {
         ddt(Te) -= sink_Ter * sink_tanhxr(Te0, Te, ste_widthr, ste_lengthr); // sol sink
@@ -5417,6 +5475,11 @@ protected:
         mesh->communicate(tmpVp2);
         tmpVp2.applyBoundary();
         ddt(Vipar) -= hyperdiff_perp_v4 * Delp2(tmpVp2);
+      }
+
+      if (perpendicular_diffusion > 0.0) {
+	      ddt(Vipar) += diff_perp_Vipar * Delp2(Vipar);
+        // ddt(Vipar) += Grad_perp(diff_perp_Vipar) * Grad_perp(Vipar);     
       }
 
       if (sink_vp > 0.0) {
