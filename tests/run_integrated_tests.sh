@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROJECT_ROOT=$(cd "$(dirname "$0")/.." && pwd)
+PROJECT_ROOT=${PROJECT_BINARY_DIR}
 
 export PYTHONPATH="$PROJECT_ROOT/tools/pylib"
 
