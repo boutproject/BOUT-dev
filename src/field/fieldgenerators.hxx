@@ -381,29 +381,49 @@ public:
   }
 };
 
-/// A `Field3D` that can be used in expressions
+/// A `Field3D` or `Field2D` that can be used in expressions
+///
+/// The variable is read from Mesh when first used and shared between
+/// clones. This is to avoid circular dependencies in construction.
 template <class T, typename = bout::utils::EnableIfField<T>>
 class GridVariable : public FieldGenerator {
+private:
+  struct LazyLoaded {
+    LazyLoaded(Mesh* mesh, std::string name) : mesh(mesh), name(std::move(name)) {}
+
+    Field3D get() {
+      if (!var.isAllocated()) {
+        this->mesh->get(this->var, this->name);
+      }
+      return this->var;
+    }
+
+    Mesh* mesh;
+    std::string name;
+    T var {};
+  };
+
+  std::shared_ptr<LazyLoaded> variable;
 public:
-  GridVariable(T var, std::string name)
-      : variable(std::move(var)), name(std::move(name)) {}
+  GridVariable(Mesh* mesh, std::string name)
+    : variable(std::make_shared<LazyLoaded>(mesh, std::move(name))) {}
+
+  GridVariable(std::shared_ptr<LazyLoaded> variable)
+    : variable(std::move(variable)) {}
 
   double generate(const bout::generator::Context& ctx) override {
-    return variable(ctx.ix(), ctx.jy(), ctx.kz());
+    return variable->get()(ctx.ix(), ctx.jy(), ctx.kz());
   }
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 0) {
       throw ParseException("Variable '{}' takes no arguments but got {:d}", args.size());
     }
-    return std::make_shared<GridVariable<T>>(variable, name);
+    return std::make_shared<GridVariable<T>>(variable);
   }
 
-  std::string str() const override { return name; }
+  std::string str() const override { return variable->name; }
 
-private:
-  T variable;
-  std::string name;
 };
 
 #endif // BOUT_FIELDGENERATORS_H

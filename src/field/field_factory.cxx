@@ -1,5 +1,5 @@
 /**************************************************************************
- * Copyright 2010-2025 BOUT++ contributors
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -94,9 +94,7 @@ private:
 // Read variables from the grid file and make them available in expressions
 template <class T>
 auto add_grid_variable(FieldFactory& factory, Mesh& mesh, const std::string& name) {
-  T var;
-  mesh.get(var, name);
-  factory.addGenerator(name, std::make_shared<GridVariable<T>>(var, name));
+  factory.addGenerator(name, std::make_shared<GridVariable<T>>(&mesh, name));
 }
 
 auto read_grid_variables(FieldFactory& factory, Mesh& mesh, Options& options) {
