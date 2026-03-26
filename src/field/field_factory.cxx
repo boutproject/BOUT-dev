@@ -233,7 +233,7 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   addGenerator("is_periodic_y", std::make_shared<FieldPeriodicY>());
 
   // Variables from the grid file
-  read_grid_variables(*this, *localmesh, nonconst_options);
+  read_grid_variables(*this, *fieldmesh, nonconst_options);
 }
 
 Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
