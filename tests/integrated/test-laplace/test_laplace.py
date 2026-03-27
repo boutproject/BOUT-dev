@@ -10,6 +10,7 @@
 
 from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect, create_cache
+import numpy as np
 import numpy.testing as npt
 from sys import stdout
 
@@ -94,10 +95,10 @@ def test_laplace():
                 stdout.write("      Checking variable " + v + " ... ")
                 result = collect(v, path="data", info=False)
                 # Compare benchmark and output
-                if npt.shape(bmk[v]) != npt.shape(result):
+                if np.shape(bmk[v]) != np.shape(result):
                     print("Fail, wrong shape")
                     success = False
-                diff = npt.max(npt.abs(bmk[v] - result))
+                diff = np.max(np.abs(bmk[v] - result))
                 if diff > tol:
                     print("Fail, maximum difference = " + str(diff))
                     success = False
