@@ -19,8 +19,8 @@ public:
   BoutException(std::string msg);
 
   template <class S, class... Args>
-  BoutException(const S& format, const Args&... args)
-      : BoutException(fmt::format(format, args...)) {}
+  BoutException(const S& format, Args&&... args)
+      : BoutException(fmt::format(format, std::forward<Args>(args)...)) {}
 
   ~BoutException() override;
 
