@@ -2,6 +2,7 @@
 
 #include "test_extras.hxx"
 
+#include "bout/build_defines.hxx"
 #include "bout/derivs.hxx"
 #include "bout/difops.hxx"
 #include "bout/single_index_ops.hxx"

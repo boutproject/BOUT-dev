@@ -1,12 +1,12 @@
 #include <bout/bout_types.hxx>
 #include <bout/boutexception.hxx>
-#include <bout/msg_stack.hxx>
+
 #include <map>
 
 namespace {
 template <typename T>
 const std::string& safeAt(const std::map<T, std::string>& mymap, T t) {
-  AUTO_TRACE();
+
   auto found = mymap.find(t);
   if (found == mymap.end()) {
     throw BoutException("Did not find enum {:d}", static_cast<int>(t));
@@ -16,7 +16,7 @@ const std::string& safeAt(const std::map<T, std::string>& mymap, T t) {
 
 template <typename T>
 const T& safeAt(const std::map<std::string, T>& mymap, const std::string& s) {
-  AUTO_TRACE();
+
   auto found = mymap.find(s);
   if (found == mymap.end()) {
     throw BoutException("Did not find enum {:s}", s);
@@ -26,7 +26,7 @@ const T& safeAt(const std::map<std::string, T>& mymap, const std::string& s) {
 } // namespace
 
 std::string toString(CELL_LOC location) {
-  AUTO_TRACE();
+
   const static std::map<CELL_LOC, std::string> CELL_LOCtoString = {
       ENUMSTR(CELL_DEFAULT), ENUMSTR(CELL_CENTRE), ENUMSTR(CELL_XLOW),
       ENUMSTR(CELL_YLOW),    ENUMSTR(CELL_ZLOW),   ENUMSTR(CELL_VSHIFT)};
@@ -35,7 +35,7 @@ std::string toString(CELL_LOC location) {
 }
 
 CELL_LOC CELL_LOCFromString(const std::string& location_string) {
-  AUTO_TRACE();
+
   const static std::map<std::string, CELL_LOC> stringtoCELL_LOC = {
       STRENUM(CELL_DEFAULT), STRENUM(CELL_CENTRE), STRENUM(CELL_XLOW),
       STRENUM(CELL_YLOW),    STRENUM(CELL_ZLOW),   STRENUM(CELL_VSHIFT)};
@@ -44,7 +44,7 @@ CELL_LOC CELL_LOCFromString(const std::string& location_string) {
 }
 
 std::string toString(DIFF_METHOD location) {
-  AUTO_TRACE();
+
   const static std::map<DIFF_METHOD, std::string> DIFF_METHODtoString = {
       {DIFF_DEFAULT, "DEFAULT"}, {DIFF_U1, "U1"},   {DIFF_U2, "U2"},      {DIFF_U3, "U3"},
       {DIFF_C2, "C2"},           {DIFF_C4, "C4"},   {DIFF_S2, "S2"},      {DIFF_W2, "W2"},
@@ -54,7 +54,7 @@ std::string toString(DIFF_METHOD location) {
 }
 
 std::string toString(REGION region) {
-  AUTO_TRACE();
+
   const static std::map<REGION, std::string> REGIONtoString = {
       ENUMSTR(RGN_ALL), ENUMSTR(RGN_NOBNDRY), ENUMSTR(RGN_NOX), ENUMSTR(RGN_NOY),
       ENUMSTR(RGN_NOZ)};
@@ -62,7 +62,7 @@ std::string toString(REGION region) {
 }
 
 std::string toString(DIRECTION direction) {
-  AUTO_TRACE();
+
   const static std::map<DIRECTION, std::string> DIRECTIONtoString = {
       {DIRECTION::X, "X"},
       {DIRECTION::Y, "Y"},
@@ -116,7 +116,7 @@ bool areDirectionsCompatible(const DirectionTypes& d1, const DirectionTypes& d2)
 }
 
 std::string toString(STAGGER stagger) {
-  AUTO_TRACE();
+
   const static std::map<STAGGER, std::string> STAGGERtoString = {
       {STAGGER::None, "No staggering"},
       {STAGGER::C2L, "Centre to Low"},
@@ -126,7 +126,7 @@ std::string toString(STAGGER stagger) {
 }
 
 std::string toString(DERIV deriv) {
-  AUTO_TRACE();
+
   const static std::map<DERIV, std::string> DERIVtoString = {
       {DERIV::Standard, "Standard"},
       {DERIV::StandardSecond, "Standard -- second order"},
@@ -138,7 +138,7 @@ std::string toString(DERIV deriv) {
 }
 
 std::string toString(YDirectionType d) {
-  AUTO_TRACE();
+
   const static std::map<YDirectionType, std::string> YDirectionTypeToString = {
       {YDirectionType::Standard, "Standard"}, {YDirectionType::Aligned, "Aligned"}};
 
@@ -146,7 +146,7 @@ std::string toString(YDirectionType d) {
 }
 
 YDirectionType YDirectionTypeFromString(const std::string& y_direction_string) {
-  AUTO_TRACE();
+
   const static std::map<std::string, YDirectionType> stringToYDirectionType = {
       {"Standard", YDirectionType::Standard}, {"Aligned", YDirectionType::Aligned}};
 
@@ -154,7 +154,7 @@ YDirectionType YDirectionTypeFromString(const std::string& y_direction_string) {
 }
 
 std::string toString(ZDirectionType d) {
-  AUTO_TRACE();
+
   const static std::map<ZDirectionType, std::string> ZDirectionTypeToString = {
       {ZDirectionType::Standard, "Standard"}, {ZDirectionType::Average, "Average"}};
 
@@ -162,7 +162,7 @@ std::string toString(ZDirectionType d) {
 }
 
 ZDirectionType ZDirectionTypeFromString(const std::string& z_direction_string) {
-  AUTO_TRACE();
+
   const static std::map<std::string, ZDirectionType> stringToZDirectionType = {
       {"Standard", ZDirectionType::Standard}, {"Average", ZDirectionType::Average}};
 

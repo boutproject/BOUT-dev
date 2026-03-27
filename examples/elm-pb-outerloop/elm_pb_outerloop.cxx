@@ -39,7 +39,6 @@
 #include <bout/invert/laplacexy.hxx>
 #include <bout/invert_laplace.hxx>
 #include <bout/invert_parderiv.hxx>
-#include <bout/msg_stack.hxx>
 #include <bout/physicsmodel.hxx>
 #include <bout/rajalib.hxx> // Defines BOUT_FOR_RAJA
 #include <bout/single_index_ops.hxx>

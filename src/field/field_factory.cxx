@@ -227,6 +227,9 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   // Where switch function
   addGenerator("where", std::make_shared<FieldWhere>(nullptr, nullptr, nullptr));
 
+  // Periodic in the Y direction?
+  addGenerator("is_periodic_y", std::make_shared<FieldPeriodicY>());
+
   // Variables from the grid file
   read_grid_variables(*this, *fieldmesh, nonconst_options);
 }
@@ -238,7 +241,6 @@ Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
 
 Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
                                BoutReal t) const {
-  AUTO_TRACE();
 
   if (localmesh == nullptr) {
     if (fieldmesh == nullptr) {
@@ -270,7 +272,6 @@ Field3D FieldFactory::create3D(const std::string& value, const Options* opt,
 
 Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
                                BoutReal t) const {
-  AUTO_TRACE();
 
   if (localmesh == nullptr) {
     if (fieldmesh == nullptr) {
@@ -321,7 +322,6 @@ FieldPerp FieldFactory::createPerp(const std::string& value, const Options* opt,
 
 FieldPerp FieldFactory::createPerp(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
                                    BoutReal t) const {
-  AUTO_TRACE();
 
   if (localmesh == nullptr) {
     if (fieldmesh == nullptr) {

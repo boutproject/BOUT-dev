@@ -1,5 +1,4 @@
 #include <bout/invert_laplace.hxx>
-#include <bout/msg_stack.hxx>
 
 #include <bout/derivs.hxx>
 #include <bout/invertable_operator.hxx>
@@ -26,7 +25,7 @@ private:
 
     // Drop C term for now
     Field3D operator()(const Field3D& input) {
-      TRACE("myLaplacian::operator()");
+
       Timer timer("invertable_operator_operate");
       Field3D result = A * input + D * Delp2(input);
 
@@ -43,7 +42,7 @@ private:
 
     // Drop C term for now
     Field3D operator()(const Field3D& input) {
-      TRACE("myLaplacian::operator()");
+
       Timer timer("invertable_operator_operate");
       Field3D result = A * input + B * Laplace_perp(input);
       if (withDiv) {

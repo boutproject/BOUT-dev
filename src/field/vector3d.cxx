@@ -551,7 +551,7 @@ CELL_LOC Vector3D::getLocation() const {
 
 Vector3D& Vector3D::setLocation(CELL_LOC loc) {
   SCOREP0();
-  TRACE("Vector3D::setLocation");
+
   if (loc == CELL_DEFAULT) {
     loc = CELL_CENTRE;
   }

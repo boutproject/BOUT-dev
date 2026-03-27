@@ -1,0 +1,33 @@
+name: format-command
+
+on:
+  pull_request:
+
+jobs:
+  clang-format:
+    # Release candidate branches tend to have big PRs which causes all sorts of problems
+    if: ${{ !endsWith(github.head_ref, '-rc') }}
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the pull request branch, also include all history
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install dev tools
+        run: uv sync --only-dev
+
+      - name: Check prek versions are up-to-date
+        run: uv tool run sync-with-uv --check --diff
+
+      - name: Run everything
+        run: uv tool run prek run --show-diff-on-failure --from-ref origin/${{ github.base_ref }}

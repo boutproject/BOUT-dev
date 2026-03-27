@@ -18,7 +18,6 @@ from boututils.run_wrapper import shell, build_and_log, launch_safe
 from boutdata.collect import collect
 from sys import exit
 
-
 build_and_log("Multigrid Laplacian inversion test")
 
 print("Running multigrid Laplacian inversion test")

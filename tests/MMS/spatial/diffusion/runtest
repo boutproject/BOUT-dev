@@ -22,7 +22,6 @@ from os.path import join
 
 import matplotlib.pyplot as plt
 
-
 build_and_log("MMS diffusion test")
 
 # List of input directories

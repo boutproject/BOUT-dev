@@ -13,7 +13,6 @@ from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
-
 build_and_log("griddata test")
 
 for nproc in [1]:

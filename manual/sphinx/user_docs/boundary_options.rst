@@ -575,7 +575,7 @@ and implemented in ``boundary_standard.cxx``
 
     void BoundaryNeumann::apply(Field3D &f) {
       for(bndry->first(); !bndry->isDone(); bndry->next())
-        for(int z=0;z<mesh->LocalNz;z++)
+        for(int z= mesh->zstart; z <= mesh->zend;z++)
           f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y -
     bndry->by][z];
     }

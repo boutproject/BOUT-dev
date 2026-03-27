@@ -165,9 +165,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateZ) {
   auto output = this->create("z");
 
   auto expected = makeField<TypeParam>(
-      [](typename TypeParam::ind_type& index) -> BoutReal {
-        return TWOPI * index.z() / FieldFactoryCreationTest<TypeParam>::nz;
-      },
+      [](typename TypeParam::ind_type& index) -> BoutReal { return TWOPI * index.z(); },
       mesh);
 
   EXPECT_TRUE(IsFieldEqual(output, expected));
@@ -213,7 +211,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateZStaggered) {
           offset = 0.5;
         }
 
-        return TWOPI * (index.z() - offset) / FieldFactoryCreationTest<TypeParam>::nz;
+        return TWOPI * (index.z() - offset);
       },
       mesh);
 
@@ -964,7 +962,7 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create3DCantTransform) {
   mesh->getCoordinates()->setParallelTransform(
       bout::utils::make_unique<MockParallelTransform>(*mesh, false));
 
-  FieldFactory factory{mesh};
+  const FieldFactory factory{mesh};
 
   auto output = factory.create3D("x");
 
@@ -983,14 +981,14 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField3D) {
 
   {
     // Write some fields to a grid file
-    FieldFactory factory{mesh};
+    const FieldFactory factory{mesh};
     const auto rho = factory.create3D("sqrt(x^2 + y^2)");
     const auto theta = factory.create3D("atan(y, x)");
-    Options grid{{"rho", rho},
-                 {"theta", theta},
-                 {"nx", mesh->LocalNx},
-                 {"ny", mesh->LocalNy},
-                 {"nz", mesh->LocalNz}};
+    const Options grid{{"rho", rho},
+                       {"theta", theta},
+                       {"nx", mesh->LocalNx},
+                       {"ny", mesh->LocalNy},
+                       {"nz", mesh->LocalNz}};
     bout::OptionsIO::create(filename)->write(grid);
   }
 
@@ -1013,14 +1011,14 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField2D) {
 
   {
     // Write some fields to a grid file
-    FieldFactory factory{mesh};
+    const FieldFactory factory{mesh};
     const auto rho = factory.create2D("sqrt(x^2 + y^2)");
     const auto theta = factory.create2D("atan(y, x)");
-    Options grid{{"rho", rho},
-                 {"theta", theta},
-                 {"nx", mesh->LocalNx},
-                 {"ny", mesh->LocalNy},
-                 {"nz", mesh->LocalNz}};
+    const Options grid{{"rho", rho},
+                       {"theta", theta},
+                       {"nx", mesh->LocalNx},
+                       {"ny", mesh->LocalNy},
+                       {"nz", mesh->LocalNz}};
     bout::OptionsIO::create(filename)->write(grid);
   }
 
@@ -1042,11 +1040,11 @@ TEST_F(FieldFactoryFieldVariableTest, ReadBoutReal) {
   bout::testing::TempFile filename;
 
   {
-    Options grid{{"rho", 4},
-                 {"theta", 5},
-                 {"nx", mesh->LocalNx},
-                 {"ny", mesh->LocalNy},
-                 {"nz", mesh->LocalNz}};
+    const Options grid{{"rho", 4},
+                       {"theta", 5},
+                       {"nx", mesh->LocalNx},
+                       {"ny", mesh->LocalNy},
+                       {"nz", mesh->LocalNz}};
     bout::OptionsIO::create(filename)->write(grid);
   }
 
@@ -1074,12 +1072,12 @@ TEST_F(FieldFactoryFieldVariableTest, MissingVariable) {
 
   {
     // Write some fields to a grid file
-    FieldFactory factory{mesh};
+    const FieldFactory factory{mesh};
     const auto rho = factory.create3D("sqrt(x^2 + y^2)");
-    Options grid{{"rho", rho},
-                 {"nx", mesh->LocalNx},
-                 {"ny", mesh->LocalNy},
-                 {"nz", mesh->LocalNz}};
+    const Options grid{{"rho", rho},
+                       {"nx", mesh->LocalNx},
+                       {"ny", mesh->LocalNy},
+                       {"nz", mesh->LocalNz}};
     bout::OptionsIO::create(filename)->write(grid);
   }
 
@@ -1091,4 +1089,64 @@ TEST_F(FieldFactoryFieldVariableTest, MissingVariable) {
     dynamic_cast<FakeMesh*>(mesh)->setGridDataSource(new GridFile{filename});
     EXPECT_THROW((FieldFactory{mesh, &options}), BoutException);
   }
+}
+
+TYPED_TEST(FieldFactoryCreationTest, CreatePeriodicY) {
+  auto output = this->create("is_periodic_y");
+
+  auto expected = makeField<TypeParam>(
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return mesh->periodicY(index.x());
+      },
+      mesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TYPED_TEST(FieldFactoryCreationTest, CreatePeriodicYoutsideCore) {
+  FakeMesh localmesh{5, 1, 1};
+  localmesh.createDefaultRegions();
+  localmesh.setCoordinates(std::make_shared<Coordinates>(
+      &localmesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{0.0}, Field2D{0.0}));
+  // No call to Coordinates::geometry() needed here
+
+  localmesh.getCoordinates()->setParallelTransform(
+      bout::utils::make_unique<ParallelTransformIdentity>(localmesh));
+
+  localmesh.ix_separatrix = 0; // All points outside core
+
+  auto output = this->create("is_periodic_y", nullptr, &localmesh);
+
+  auto expected = makeField<TypeParam>(
+      [](typename TypeParam::ind_type& index) -> BoutReal { return 0.0; }, &localmesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TYPED_TEST(FieldFactoryCreationTest, CreatePeriodicYacrossSeparatrix) {
+  FakeMesh localmesh{5, 1, 1};
+  localmesh.createDefaultRegions();
+  localmesh.ix_separatrix = 2; // All points in core
+  localmesh.setCoordinates(std::make_shared<Coordinates>(
+      &localmesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{0.0}, Field2D{0.0}));
+  // No call to Coordinates::geometry() needed here
+
+  localmesh.getCoordinates()->setParallelTransform(
+      bout::utils::make_unique<ParallelTransformIdentity>(localmesh));
+
+  auto output = this->create("is_periodic_y", nullptr, &localmesh);
+
+  auto expected = makeField<TypeParam>(
+      [&](typename TypeParam::ind_type& index) -> BoutReal {
+        return index.x() < localmesh.ix_separatrix;
+      },
+      &localmesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
 }

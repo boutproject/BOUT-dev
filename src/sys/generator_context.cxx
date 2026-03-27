@@ -1,5 +1,7 @@
 #include "bout/sys/generator_context.hxx"
+
 #include "bout/boundary_region.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 
@@ -15,9 +17,8 @@ Context::Context(int ix, int iy, int iz, CELL_LOC loc, Mesh* msh, BoutReal t)
   parameters["y"] = (loc == CELL_YLOW) ? PI * (msh->GlobalY(iy) + msh->GlobalY(iy - 1))
                                        : TWOPI * msh->GlobalY(iy);
 
-  parameters["z"] = (loc == CELL_ZLOW)
-                        ? TWOPI * (iz - 0.5) / static_cast<BoutReal>(msh->LocalNz)
-                        : TWOPI * iz / static_cast<BoutReal>(msh->LocalNz);
+  parameters["z"] = (loc == CELL_ZLOW) ? PI * (msh->GlobalZ(iz) + msh->GlobalZ(iz - 1))
+                                       : TWOPI * msh->GlobalZ(iz);
 
   parameters["t"] = t;
 }
@@ -35,9 +36,8 @@ Context::Context(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal t, 
                         ? PI * (msh->GlobalY(jy_) + msh->GlobalY(jy_ - 1))
                         : TWOPI * msh->GlobalY(jy_);
 
-  parameters["z"] = (loc == CELL_ZLOW)
-                        ? TWOPI * (iz - 0.5) / static_cast<BoutReal>(msh->LocalNz)
-                        : TWOPI * iz / static_cast<BoutReal>(msh->LocalNz);
+  parameters["z"] = (loc == CELL_ZLOW) ? PI * (msh->GlobalZ(iz) + msh->GlobalZ(iz - 1))
+                                       : TWOPI * msh->GlobalZ(iz);
 
   parameters["t"] = t;
 }
