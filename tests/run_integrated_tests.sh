@@ -2,7 +2,7 @@
 
 PROJECT_ROOT="@PROJECT_BINARY_DIR@"
 
-export PYTHONPATH="@BOUT_PYTHONPATH@:$PYTHONPATH"
+export PYTHONPATH="@PROJECT_BINARY_DIR@/tools/pylib:@PROJECT_SOURCE_DIR@/tools/pylib:$PYTHONPATH"
 
 # Pre-build the project to prevent concurrent CMake race conditions
 cmake --build "$PROJECT_ROOT"
