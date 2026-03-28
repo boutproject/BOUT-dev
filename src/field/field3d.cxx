@@ -25,8 +25,10 @@
  *
  **************************************************************************/
 
+#include "bout/array.hxx"
 #include "bout/bout_types.hxx"
 #include "bout/build_defines.hxx"
+#include "bout/field2d.hxx"
 
 #include <bout/boutcomm.hxx>
 #include <bout/globals.hxx>

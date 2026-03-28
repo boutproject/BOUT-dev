@@ -33,13 +33,16 @@ class Field2D;
 #define BOUT_FIELD2D_H
 
 #include "bout/array.hxx"
-#include "bout/build_config.hxx"
+#include "bout/bout_types.hxx"
+#include "bout/build_defines.hxx"
 #include "bout/field.hxx"
 #include "bout/field_data.hxx"
 #include "bout/fieldperp.hxx"
 #include "bout/region.hxx"
 
 #include <cstddef>
+#include <iostream>
+#include <string>
 
 #if BOUT_HAS_RAJA
 #include "RAJA/RAJA.hpp" // using RAJA lib
@@ -206,7 +209,7 @@ public:
     }
 #endif
 
-    return data[jx * ny + jy];
+    return data[(jx * ny) + jy];
   }
   inline const BoutReal& operator()(int jx, int jy) const {
 #if CHECK > 2 && !BOUT_HAS_CUDA
@@ -220,7 +223,7 @@ public:
     }
 #endif
 
-    return data[jx * ny + jy];
+    return data[(jx * ny) + jy];
   }
 
   /*!
