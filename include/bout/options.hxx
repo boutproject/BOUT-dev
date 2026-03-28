@@ -74,19 +74,19 @@ class Options;
  * which can be used as a map.
  *
  *     Options options;
- *     
+ *
  *     // Set values
  *     options["key"] = 1.0;
  *
  *     // Get values. Throws BoutException if not found
- *     int val = options["key"]; // Sets val to 1 
+ *     int val = options["key"]; // Sets val to 1
  *
  *     // Return as specified type. Throws BoutException if not found
  *     BoutReal var = options["key"].as<BoutReal>();
  *
  *     // A default value can be used if key is not found
  *     BoutReal value = options["pi"].withDefault(3.14);
- *    
+ *
  *     // Assign value with source label. Throws if already has a value from same source
  *     options["newkey"].assign(1.0, "some source");
  *
@@ -94,7 +94,7 @@ class Options;
  *     options["newkey"].force(2.0, "some source");
  *
  * A legacy interface is also supported:
- * 
+ *
  *     options.set("key", 1.0, "code"); // Sets a key from source "code"
  *
  *     int val;
@@ -119,9 +119,9 @@ class Options;
  *
  * Each Options object can also contain any number of sections, which are
  * themselves Options objects.
- * 
+ *
  *     Options &section = options["section"];
- * 
+ *
  * which can be nested:
  *
  *     options["section"]["subsection"]["value"] = 3;
@@ -134,13 +134,13 @@ class Options;
  *
  * e.g.
  *     options->getSection("section")->getSection("subsection")->set("value", 3);
- * 
+ *
  * Options also know about their parents:
  *
  *     Options &parent = section.parent();
- *     
+ *
  * or
- * 
+ *
  *     Options *parent = section->getParent();
  *
  * Root options object
@@ -150,8 +150,8 @@ class Options;
  * there is a global singleton Options object which can be accessed with a static function
  *
  *    Options &root = Options::root();
- * 
- * or 
+ *
+ * or
  *
  *    Options *root = Options::getRoot();
  *
@@ -193,7 +193,7 @@ public:
   /// @param[in] parent        Parent object
   /// @param[in] sectionName   Name of the section, including path from the root
   Options(Options* parent_instance, std::string full_name)
-      : parent_instance(parent_instance), full_name(std::move(full_name)){};
+      : parent_instance(parent_instance), full_name(std::move(full_name)) {};
 
   /// Initialise with a value
   /// These enable Options to be constructed using initializer lists

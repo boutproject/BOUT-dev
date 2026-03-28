@@ -215,7 +215,7 @@ void ShiftedMetricInterp::checkInputGrid() {
                             "Should be 'orthogonal'.");
     }
   } // else: coordinate_system variable not found in grid input, indicates older input
-    //       file so must rely on the user having ensured the type is correct
+  //       file so must rely on the user having ensured the type is correct
 }
 
 /*!
