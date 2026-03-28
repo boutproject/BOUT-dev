@@ -766,7 +766,7 @@ if(BOUT_TESTS)
   endif()
 
   add_custom_target(check-integrated-tests
-    COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}" pytest -k "test-"
+    COMMAND bash "${PROJECT_BINARY_DIR}/tests/run_integrated_tests.sh"
   )
   add_dependencies(check-integrated-tests build-check-integrated-tests)
 
