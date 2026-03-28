@@ -765,8 +765,8 @@ if(BOUT_TESTS)
     add_dependencies(check-unit-tests build-check-unit-tests)
   endif()
 
-  add_custom_target(
-    check-integrated-tests COMMAND pytest -k "test-"
+  add_custom_target(check-integrated-tests
+    COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH=${PROJECT_BINARY_DIR}/tools/pylib:$ENV{PYTHONPATH}" pytest -k "test-"
   )
   add_dependencies(check-integrated-tests build-check-integrated-tests)
 
