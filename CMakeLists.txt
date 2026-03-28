@@ -766,7 +766,7 @@ if(BOUT_TESTS)
   endif()
 
   add_custom_target(check-integrated-tests
-    COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH=${PROJECT_BINARY_DIR}/tools/pylib:$ENV{PYTHONPATH}" pytest -k "test-"
+    COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH=${BOUT_PYTHONPATH}:$ENV{PYTHONPATH}" pytest -k "test-"
   )
   add_dependencies(check-integrated-tests build-check-integrated-tests)
 
@@ -796,9 +796,10 @@ if(BOUT_TESTS)
     "${PROJECT_BINARY_DIR}/tests/integrated/test-boutpp/conftest.py")
 
   # Copy the pytest shell script
-  configure_file(
-    "${PROJECT_SOURCE_DIR}/tests/run_integrated_tests.sh"
-    "${PROJECT_BINARY_DIR}/tests/run_integrated_tests.sh")
+configure_file(
+  "${PROJECT_SOURCE_DIR}/tests/run_integrated_tests.sh"
+  "${PROJECT_BINARY_DIR}/tests/run_integrated_tests.sh"
+  @ONLY)
 
 endif()
 
