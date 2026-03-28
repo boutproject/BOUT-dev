@@ -12,10 +12,13 @@
 #include "bout/options_io.hxx"
 #include "bout/output.hxx"
 #include "bout/paralleltransform.hxx"
+#include "bout/sys/generator_context.hxx"
 #include "bout/traits.hxx"
 
 #include "fake_mesh_fixture.hxx"
 #include "test_tmpfiles.hxx"
+
+#include <memory>
 
 // The unit tests use the global mesh
 using namespace bout::globals;
@@ -885,7 +888,7 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create2D) {
   mesh->getCoordinates()->setParallelTransform(
       bout::utils::make_unique<MockParallelTransform>(*mesh, true));
 
-  FieldFactory factory;
+  const FieldFactory factory;
 
   auto output = factory.create2D("x");
 
@@ -900,7 +903,7 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create3D) {
   mesh->getCoordinates()->setParallelTransform(
       bout::utils::make_unique<MockParallelTransform>(*mesh, true));
 
-  FieldFactory factory;
+  const FieldFactory factory;
 
   auto output = factory.create3D("x");
 
@@ -916,7 +919,7 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create2DNoTransform) {
 
   Options options;
   options["input"]["transform_from_field_aligned"] = false;
-  FieldFactory factory{mesh, &options};
+  const FieldFactory factory{mesh, &options};
 
   auto output = factory.create2D("x");
 
@@ -933,7 +936,7 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create3DNoTransform) {
 
   Options options;
   options["input"]["transform_from_field_aligned"] = false;
-  FieldFactory factory{mesh, &options};
+  const FieldFactory factory{mesh, &options};
 
   auto output = factory.create3D("x");
 
@@ -947,7 +950,7 @@ TEST_F(FieldFactoryCreateAndTransformTest, Create2DCantTransform) {
   mesh->getCoordinates()->setParallelTransform(
       bout::utils::make_unique<MockParallelTransform>(*mesh, false));
 
-  FieldFactory factory{mesh};
+  const FieldFactory factory{mesh};
 
   auto output = factory.create2D("x");
 
@@ -984,11 +987,9 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField3D) {
     const FieldFactory factory{mesh};
     const auto rho = factory.create3D("sqrt(x^2 + y^2)");
     const auto theta = factory.create3D("atan(y, x)");
-    const Options grid{{"rho", rho},
-                       {"theta", theta},
-                       {"nx", mesh->LocalNx},
-                       {"ny", mesh->LocalNy},
-                       {"nz", mesh->LocalNz}};
+    const Options grid{{"rho", rho},          {"theta", theta},
+                       {"nx", mesh->LocalNx}, {"ny", mesh->LocalNy - 2},
+                       {"nz", mesh->LocalNz}, {"y_boundary_guards", 1}};
     bout::OptionsIO::create(filename)->write(grid);
   }
 
@@ -1002,7 +1003,7 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField3D) {
 
     const auto output = factory.create3D("rho * cos(theta)");
     const auto x = factory.create3D("x");
-    EXPECT_TRUE(IsFieldEqual(output, x));
+    EXPECT_TRUE(IsFieldEqual(output, x, "RGN_ALL", 1e-14));
   }
 }
 
@@ -1014,11 +1015,9 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField2D) {
     const FieldFactory factory{mesh};
     const auto rho = factory.create2D("sqrt(x^2 + y^2)");
     const auto theta = factory.create2D("atan(y, x)");
-    const Options grid{{"rho", rho},
-                       {"theta", theta},
-                       {"nx", mesh->LocalNx},
-                       {"ny", mesh->LocalNy},
-                       {"nz", mesh->LocalNz}};
+    const Options grid{{"rho", rho},          {"theta", theta},
+                       {"nx", mesh->LocalNx}, {"ny", mesh->LocalNy - 2},
+                       {"nz", mesh->LocalNz}, {"y_boundary_guards", 1}};
     bout::OptionsIO::create(filename)->write(grid);
   }
 
@@ -1032,7 +1031,7 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField2D) {
 
     const auto output = factory.create2D("rho * cos(theta)");
     const auto x = factory.create2D("x");
-    EXPECT_TRUE(IsFieldEqual(output, x));
+    EXPECT_TRUE(IsFieldEqual(output, x, "RGN_ALL", 1e-14));
   }
 }
 

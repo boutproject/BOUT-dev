@@ -3,6 +3,7 @@
 #include <bout/griddata.hxx>
 
 #include <bout/array.hxx>
+#include <bout/assert.hxx>
 #include <bout/boutexception.hxx>
 #include <bout/constants.hxx>
 #include <bout/fft.hxx>
