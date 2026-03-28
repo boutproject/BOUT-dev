@@ -2,8 +2,10 @@
 
 #include "fake_mesh.hxx"
 #include "test_extras.hxx"
+#include "bout/bout_types.hxx"
 #include "bout/boutexception.hxx"
 #include "bout/constants.hxx"
+#include "bout/coordinates.hxx"
 #include "bout/field2d.hxx"
 #include "bout/field3d.hxx"
 #include "bout/field_factory.hxx"
@@ -12,13 +14,16 @@
 #include "bout/options_io.hxx"
 #include "bout/output.hxx"
 #include "bout/paralleltransform.hxx"
+#include "bout/sys/expressionparser.hxx"
 #include "bout/sys/generator_context.hxx"
 #include "bout/traits.hxx"
+#include "bout/utils.hxx"
 
 #include "fake_mesh_fixture.hxx"
 #include "test_tmpfiles.hxx"
 
 #include <memory>
+#include <string>
 
 // The unit tests use the global mesh
 using namespace bout::globals;
@@ -777,7 +782,7 @@ TEST_F(FieldFactoryTest, Recursion) {
   opt["input"]["max_recursion_depth"] = 4; // Should be sufficient for n=6
 
   // Create a factory with a max_recursion_depth != 0
-  FieldFactory factory_rec(nullptr, &opt);
+  const FieldFactory factory_rec(nullptr, &opt);
 
   // Fibonacci sequence: 1 1 2 3 5 8
   opt["fib"] = "where({n} - 2.5, [n={n}-1](fib) + [n={n}-2](fib), 1)";
@@ -809,7 +814,7 @@ TEST_F(FieldFactoryTest, ResolveLocalOptions) {
   options["f"] = "2 + 2";
   options["g"] = "f * f";
 
-  FieldFactoryExposer factory_local(mesh, &options);
+  const FieldFactoryExposer factory_local(mesh, &options);
   auto g = factory_local.resolve("g");
 
   EXPECT_EQ(g->generate({}), 16);
@@ -1040,7 +1045,7 @@ struct FieldFactoryFieldVariableTest : public FakeMeshFixture {
 };
 
 TEST_F(FieldFactoryFieldVariableTest, CreateField3D) {
-  bout::testing::TempFile filename;
+  const bout::testing::TempFile filename;
 
   {
     // Write some fields to a grid file
@@ -1063,12 +1068,12 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField3D) {
 
     const auto output = factory.create3D("rho * cos(theta)");
     const auto x = factory.create3D("x");
-    EXPECT_TRUE(IsFieldEqual(output, x, "RGN_ALL", 1e-14));
+    EXPECT_TRUE(IsFieldEqual(output, x, "RGN_NOBNDRY", 1e-14));
   }
 }
 
 TEST_F(FieldFactoryFieldVariableTest, CreateField2D) {
-  bout::testing::TempFile filename;
+  const bout::testing::TempFile filename;
 
   {
     // Write some fields to a grid file
@@ -1096,7 +1101,7 @@ TEST_F(FieldFactoryFieldVariableTest, CreateField2D) {
 }
 
 TEST_F(FieldFactoryFieldVariableTest, ReadBoutReal) {
-  bout::testing::TempFile filename;
+  const bout::testing::TempFile filename;
 
   {
     const Options grid{{"rho", 4},
@@ -1127,7 +1132,7 @@ TEST_F(FieldFactoryFieldVariableTest, NoMeshFile) {
 }
 
 TEST_F(FieldFactoryFieldVariableTest, MissingVariable) {
-  bout::testing::TempFile filename;
+  const bout::testing::TempFile filename;
 
   {
     // Write some fields to a grid file
