@@ -2573,9 +2573,8 @@ bool BoutMesh::periodicY(int jx, BoutReal& ts) const {
 int BoutMesh::numberOfYBoundaries() const {
   if (jyseps2_1 != jyseps1_2) {
     return 2;
-  } else {
-    return 1;
   }
+  return 1;
 }
 
 std::pair<bool, BoutReal> BoutMesh::hasBranchCutLower(int jx) const {
