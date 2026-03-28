@@ -4,7 +4,7 @@
  * Class for 2D X-Y profiles
  *
  **************************************************************************
- * Copyright 2010 - 2025 BOUT++ developers
+ * Copyright 2010 - 2026 BOUT++ developers
  *
  * Contact: Ben Dudson, dudson2@llnl.gov
  *
@@ -47,15 +47,22 @@
 Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in,
                  [[maybe_unused]] std::optional<size_t> regionID)
     : Field(localmesh, location_in, directions_in) {
-  // Note: Even if fieldmesh is not null, LocalNx and LocalNy may not
-  // be initialised.
+  if (fieldmesh != nullptr) {
+    // Note: Even if fieldmesh is not null, LocalNx and LocalNy may
+    // not be initialised.
+    nx = fieldmesh->LocalNx;
+    ny = fieldmesh->LocalNy;
+  }
 #if BOUT_USE_TRACK
   name = "<F2D>";
 #endif
 }
 
 Field2D::Field2D(const Field2D& f) : Field(f), data(f.data) {
-
+  if (fieldmesh != nullptr) {
+    nx = fieldmesh->LocalNx;
+    ny = fieldmesh->LocalNy;
+  }
 #if BOUT_USE_TRACK
   name = f.name;
 #endif

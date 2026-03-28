@@ -65,13 +65,25 @@ Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes direction
 #if BOUT_USE_TRACK
   name = "<F3D>";
 #endif
+
+  if (fieldmesh != nullptr) {
+    nx = fieldmesh->LocalNx;
+    ny = fieldmesh->LocalNy;
+    nz = fieldmesh->LocalNz;
+  }
 }
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change
 /// later)
 Field3D::Field3D(const Field3D& f)
     : Field(f), data(f.data), yup_fields(f.yup_fields), ydown_fields(f.ydown_fields),
-      regionID(f.regionID) {}
+      regionID(f.regionID) {
+  if (fieldmesh != nullptr) {
+    nx = fieldmesh->LocalNx;
+    ny = fieldmesh->LocalNy;
+    nz = fieldmesh->LocalNz;
+  }
+}
 
 Field3D::Field3D(const Field2D& f)
     : Field(f), nx(fieldmesh->LocalNx), ny(fieldmesh->LocalNy), nz(fieldmesh->LocalNz) {
