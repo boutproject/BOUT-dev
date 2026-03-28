@@ -4,9 +4,9 @@
  * \brief Definition of 2D scalar field class
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ developers
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -279,7 +279,7 @@ private:
   Array<BoutReal> data;
 
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
-  int nx{-1}, ny{-1};
+  int nx{0}, ny{0};
 
   /// Time-derivative, can be nullptr
   Field2D* deriv{nullptr};

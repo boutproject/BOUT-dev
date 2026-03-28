@@ -1,7 +1,7 @@
 /**************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2010 - 2026 BOUT++ contributors
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact: Ben Dudson, dudson2@llnl.gov
  *
  * This file is part of BOUT++.
  *
@@ -520,7 +520,7 @@ public:
 
 private:
   /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
-  int nx{-1}, ny{-1}, nz{-1};
+  int nx{0}, ny{0}, nz{0};
 
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;

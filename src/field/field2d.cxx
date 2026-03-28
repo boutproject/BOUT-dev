@@ -46,12 +46,8 @@
 Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in,
                  std::optional<size_t> UNUSED(regionID))
     : Field(localmesh, location_in, directions_in) {
-
-  if (fieldmesh) {
-    nx = fieldmesh->LocalNx;
-    ny = fieldmesh->LocalNy;
-  }
-
+  // Note: Even if fieldmesh is not null, LocalNx and LocalNy may not
+  // be initialised.
 #if BOUT_USE_TRACK
   name = "<F2D>";
 #endif
@@ -62,11 +58,6 @@ Field2D::Field2D(const Field2D& f) : Field(f), data(f.data) {
 #if BOUT_USE_TRACK
   name = f.name;
 #endif
-
-  if (fieldmesh) {
-    nx = fieldmesh->LocalNx;
-    ny = fieldmesh->LocalNy;
-  }
 }
 
 Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field2D(localmesh) { *this = val; }
@@ -89,13 +80,16 @@ Field2D::~Field2D() { delete deriv; }
 
 Field2D& Field2D::allocate() {
   if (data.empty()) {
-    if (!fieldmesh) {
+    if (fieldmesh == nullptr) {
       // fieldmesh was not initialized when this field was initialized, so use
-      // the global mesh and set some members to default values
+      // the global mesh
       fieldmesh = bout::globals::mesh;
-      nx = fieldmesh->LocalNx;
-      ny = fieldmesh->LocalNy;
     }
+    // Get size from the mesh.
+    nx = fieldmesh->LocalNx;
+    ny = fieldmesh->LocalNy;
+    ASSERT1(nx > 0);
+    ASSERT1(ny > 0);
     data.reallocate(nx * ny);
 #if CHECK > 2
     invalidateGuards(*this);
