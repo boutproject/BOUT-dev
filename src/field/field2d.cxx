@@ -29,6 +29,7 @@
 #include "bout/build_defines.hxx"
 
 #include "bout/unused.hxx"
+#include <bout/array.hxx>
 #include <bout/assert.hxx>
 #include <bout/boundary_factory.hxx>
 #include <bout/boundary_op.hxx>

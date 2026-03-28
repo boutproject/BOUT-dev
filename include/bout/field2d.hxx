@@ -43,6 +43,7 @@ class Field2D;
 
 #include <cstddef>
 #include <ostream>
+#include <iostream>
 #include <string>
 
 #if BOUT_HAS_RAJA
