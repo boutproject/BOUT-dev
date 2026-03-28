@@ -39,8 +39,8 @@ void ShiftedMetric::checkInputGrid() {
                             "Should be 'shiftedmetric'.");
     }
   } // else: parallel_transform variable not found in grid input, indicates older input
-    //       file or grid from options so must rely on the user having ensured the type is
-    //       correct
+  //       file or grid from options so must rely on the user having ensured the type is
+  //       correct
 }
 
 void ShiftedMetric::outputVars(Options& output_options) {

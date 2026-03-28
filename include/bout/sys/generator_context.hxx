@@ -33,7 +33,7 @@ public:
   /// The location on the boundary
   Context(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal t, Mesh* msh);
   Context(const BoundaryRegion* bndry, CELL_LOC loc, BoutReal t, Mesh* msh)
-      : Context(bndry, 0, loc, t, msh){};
+      : Context(bndry, 0, loc, t, msh) {};
 
   BoutReal x() const { return get("x"); }
   BoutReal y() const { return get("y"); }

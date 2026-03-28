@@ -202,8 +202,8 @@ private:
   BoutReal kI; ///< (0.2 - 0.4) Integral parameter (smooths history of changes)
   BoutReal kD; ///< (0.1 - 0.3) Derivative (dampens oscillation - optional)
   bool pid_consider_failures; ///< Reduce timestep increases if recent solves have failed
-  BoutReal recent_failure_rate;            ///< Rolling average of recent failure rate
-  BoutReal last_failure_weight;            ///< 1 / number of recent solves
+  BoutReal recent_failure_rate; ///< Rolling average of recent failure rate
+  BoutReal last_failure_weight; ///< 1 / number of recent solves
 
   BoutReal nl_its_prev;
   BoutReal nl_its_prev2;
@@ -245,7 +245,7 @@ private:
   bool matrix_free_operator; ///< Use matrix free Jacobian in the operator?
   int lag_jacobian;          ///< Re-use Jacobian
   bool jacobian_persists; ///< Re-use Jacobian and preconditioner across nonlinear solves
-  bool use_coloring;         ///< Use matrix coloring
+  bool use_coloring;      ///< Use matrix coloring
 
   bool jacobian_recalculated; ///< Flag set when Jacobian is recalculated
   bool prune_jacobian;        ///< Remove small elements in the Jacobian?

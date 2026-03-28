@@ -59,7 +59,9 @@ void MsgStack::pop() {
     return;
   }
   BOUT_OMP_SAFE(single)
-  { --position; }
+  {
+    --position;
+  }
 }
 
 void MsgStack::pop(int id) {
@@ -87,7 +89,9 @@ void MsgStack::clear() {
 
 void MsgStack::dump() {
   BOUT_OMP_SAFE(single)
-  { output << this->getDump(); }
+  {
+    output << this->getDump();
+  }
 }
 
 std::string MsgStack::getDump() {

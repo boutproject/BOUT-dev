@@ -42,8 +42,8 @@ class Field2D;
 #include "bout/region.hxx"
 
 #include <cstddef>
-#include <ostream>
 #include <iostream>
+#include <ostream>
 #include <string>
 
 #if BOUT_HAS_RAJA
