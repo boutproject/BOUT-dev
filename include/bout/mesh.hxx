@@ -605,7 +605,7 @@ public:
   virtual int getLocalZIndexNoBoundaries(int zglobal) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
-  int LocalNx, LocalNy, LocalNz;
+  int LocalNx{0}, LocalNy{0}, LocalNz{0};
 
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend, zstart, zend;

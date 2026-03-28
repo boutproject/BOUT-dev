@@ -63,38 +63,21 @@ Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in, DirectionTypes direction
 #if BOUT_USE_TRACK
   name = "<F3D>";
 #endif
-
-  if (fieldmesh) {
-    nx = fieldmesh->LocalNx;
-    ny = fieldmesh->LocalNy;
-    nz = fieldmesh->LocalNz;
-  }
 }
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change
 /// later)
 Field3D::Field3D(const Field3D& f)
     : Field(f), data(f.data), yup_fields(f.yup_fields), ydown_fields(f.ydown_fields),
-      regionID(f.regionID) {
+      regionID(f.regionID) {}
 
-  if (fieldmesh) {
-    nx = fieldmesh->LocalNx;
-    ny = fieldmesh->LocalNy;
-    nz = fieldmesh->LocalNz;
-  }
-}
-
-Field3D::Field3D(const Field2D& f) : Field(f) {
-
-  nx = fieldmesh->LocalNx;
-  ny = fieldmesh->LocalNy;
-  nz = fieldmesh->LocalNz;
+Field3D::Field3D(const Field2D& f)
+    : Field(f), nx(fieldmesh->LocalNx), ny(fieldmesh->LocalNy), nz(fieldmesh->LocalNz) {
 
   *this = f;
 }
 
 Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
-
   *this = val;
 }
 
@@ -113,11 +96,8 @@ Field3DParallel::Field3DParallel(const BoutReal val, Mesh* localmesh)
 
 Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation,
                  DirectionTypes directions_in)
-    : Field(localmesh, datalocation, directions_in), data(std::move(data_in)) {
-
-  nx = fieldmesh->LocalNx;
-  ny = fieldmesh->LocalNy;
-  nz = fieldmesh->LocalNz;
+    : Field(localmesh, datalocation, directions_in), nx(fieldmesh->LocalNx),
+      ny(fieldmesh->LocalNy), nz(fieldmesh->LocalNz), data(std::move(data_in)) {
 
   ASSERT1(data.size() == nx * ny * nz);
 }
@@ -126,14 +106,17 @@ Field3D::~Field3D() { delete deriv; }
 
 Field3D& Field3D::allocate() {
   if (data.empty()) {
-    if (!fieldmesh) {
+    if (fieldmesh == nullptr) {
       // fieldmesh was not initialized when this field was initialized, so use
       // the global mesh and set some members to default values
       fieldmesh = bout::globals::mesh;
-      nx = fieldmesh->LocalNx;
-      ny = fieldmesh->LocalNy;
-      nz = fieldmesh->LocalNz;
     }
+    nx = fieldmesh->LocalNx;
+    ny = fieldmesh->LocalNy;
+    nz = fieldmesh->LocalNz;
+    ASSERT1(nx > 0);
+    ASSERT1(ny > 0);
+    ASSERT1(nz > 0);
     data.reallocate(nx * ny * nz);
 #if CHECK > 2
     invalidateGuards(*this);
