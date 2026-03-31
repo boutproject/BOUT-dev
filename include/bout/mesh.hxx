@@ -62,6 +62,7 @@ class Mesh;
 
 #include "mpi.h"
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -780,6 +781,18 @@ public:
   void upsertRegion2D(const std::string& region_name, const Region<Ind2D>& new_region);
   void upsertRegion3D(const std::string& region_name, const Region<>& new_region);
 
+  using ValidationCallback = std::function<bool(const Ind3D&)>;
+  void setValidationCallback(ValidationCallback cb) {
+        validationCallback_ = std::move(cb);
+  }
+  bool isValidIndex(const Ind3D& ind3D) const {
+      if (!validationCallback_) {
+        //Default true so if not set, all indices are valid i.e. original behavior preserved.
+        return true;
+      }
+      return validationCallback_(ind3D);
+  }
+
   /// Converts an Ind2D to an Ind3D using calculation
   Ind3D ind2Dto3D(const Ind2D& ind2D, int jz = 0) {
     return {ind2D.ind * LocalNz + jz, LocalNy, LocalNz};
@@ -886,6 +899,9 @@ private:
   Array<int> indexLookup3Dto2D;
 
   int localNumCells3D = -1, localNumCells2D = -1, localNumCellsPerp = -1;
+
+  //callback function useful for checking index valid from outside BOUT.
+  ValidationCallback validationCallback_;
 };
 
 template <>

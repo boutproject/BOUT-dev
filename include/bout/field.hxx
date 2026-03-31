@@ -678,7 +678,8 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
   checkData(var);
   T result = copy(var);
 
-  BOUT_FOR(d, var.getRegion(rgn)) {
+  //IMM_BNDRY_TODO_NEW: Changed below line for not all points. But what about yup and ydown below?
+  BOUT_FOR(d, var.getValidRegionWithDefault(rgn)) {
     if (result[d] < f) {
       result[d] = f;
     }

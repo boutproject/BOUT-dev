@@ -1055,7 +1055,11 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
         if (bndry && !f.evolve_bndry) {
           continue;
         }
-        (*f.var)[f.var->getMesh()->ind2Dto3D(i2d, jz)] = udata[p];
+
+        const auto ind = f.var->getMesh()->ind2Dto3D(i2d, jz);
+        //IMM_BNDRY_TODO: Only annoyance is cant check imm_bdry to ignore validity check.
+        if (!f.var->getMesh()->isValidIndex(ind)) {continue;}
+        (*f.var)[ind] = udata[p];
         p++;
       }
     }
@@ -1081,7 +1085,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
         if (bndry && !f.evolve_bndry) {
           continue;
         }
-        (*f.F_var)[f.F_var->getMesh()->ind2Dto3D(i2d, jz)] = udata[p];
+        const auto ind = f.F_var->getMesh()->ind2Dto3D(i2d, jz);
+        if (!f.F_var->getMesh()->isValidIndex(ind)) {continue;}
+        (*f.F_var)[ind] = udata[p];
         p++;
       }
     }
@@ -1141,7 +1147,10 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
         if (bndry && !f.evolve_bndry) {
           continue;
         }
-        udata[p] = (*f.var)[f.var->getMesh()->ind2Dto3D(i2d, jz)];
+
+        const auto ind = f.var->getMesh()->ind2Dto3D(i2d, jz);
+        if (!f.var->getMesh()->isValidIndex(ind)) {continue;}
+        udata[p] = (*f.var)[ind];
         p++;
       }
     }
@@ -1166,7 +1175,10 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op,
         if (bndry && !f.evolve_bndry) {
           continue;
         }
-        udata[p] = (*f.F_var)[f.F_var->getMesh()->ind2Dto3D(i2d, jz)];
+
+        const auto ind = f.F_var->getMesh()->ind2Dto3D(i2d, jz);
+        if (!f.F_var->getMesh()->isValidIndex(ind)) {continue;}
+        udata[p] = (*f.F_var)[ind];
         p++;
       }
     }
